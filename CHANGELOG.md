@@ -1,5 +1,23 @@
 
 
+## [4.35.0](https://github.com/StarleyDev/githuttbr/compare/v4.34.4...v4.35.0) (2026-11-21)
+
+### Features
+
+* connect a ChatGPT or Claude subscription during onboarding and in Settings → AI ([1af5b46](https://github.com/StarleyDev/githuttbr/commit/1af5b4632e483856feaa3b3a96987cf4dde03dad))
+
+
+### Bug Fixes
+
+* update SheetJS to 0.20.3, past its prototype-pollution and ReDoS advisories for spreadsheet parsing ([cf82c5e](https://github.com/StarleyDev/githuttbr/commit/cf82c5e90580f3577a9a687a171b953bd8f4b6d6))
+* validate and deduplicate Azure build links, and read build logs through the shared streaming reader ([ea373f1](https://github.com/StarleyDev/githuttbr/commit/ea373f1f35ea282282815193c632f917f43f9254))
+* isolate commit-signing drafts and queue reversible config writes ([6d99f31](https://github.com/StarleyDev/githuttbr/commit/6d99f314e400289bbe6fd2b65bc3f2db0a85e643))
+* ignore review notifications that come from a previous profile's request ([e67c61a](https://github.com/StarleyDev/githuttbr/commit/e67c61a0cfbe3861a69a69219cf32cac0d9006e9))
+* stop a cancelled test run before its runner starts ([862d7e5](https://github.com/StarleyDev/githuttbr/commit/862d7e5057e4a74a07af1bdbaf0ebd15d4790742))
+* track test cancellation while the report directory is prepared ([f0d9730](https://github.com/StarleyDev/githuttbr/commit/f0d9730f3015baff1f98411068efbc450c014bc1))
+* resolve canonical repository paths in test reports ([add00bc](https://github.com/StarleyDev/githuttbr/commit/add00bc4314bf5e35d1c6e1d1944d1e80c6f00c5))
+
+
 ## [4.34.4](https://github.com/StarleyDev/githuttbr/compare/v4.34.3...v4.34.4) (2026-11-21)
 
 
