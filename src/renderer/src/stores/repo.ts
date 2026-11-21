@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type {
   BranchesPayload,
+  SigningConfig,
   DoctorCheck,
   RepoConfig,
   RepoConfigResult,
@@ -612,9 +613,14 @@ const awaitingSeen = new Map<string, Set<number>>()
  * (GitLab and Forgejo; GitHub's come from its inbox). Clicking one opens the PR
  * page. Off unless desktop notifications are on in Settings.
  */
-function announceReviewRequests(path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[]): void {
+function announceReviewRequests(
+  path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[], profileId: string
+): void {
   const settings = useSettingsStore.getState()
-  const key = awaitingSeenKey(settings.settings.activeProfileId, path)
+  // A request begun by the previous profile can finish after a switch.
+  // Keep that result out of the new profile's seen set and notifications.
+  if (settings.settings.activeProfileId !== profileId) return
+  const key = awaitingSeenKey(profileId, path)
   const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(key), prs)
   awaitingSeen.set(key, seen)
   if (!fresh.length || !notifiesReviewRequests(provider) || !settings.settings.desktopNotifications) return
@@ -796,7 +802,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         path
       )
       get().patch(path, { prs, prProvider: provider })
-      announceReviewRequests(path, origin.url, provider, prs)
+      announceReviewRequests(path, origin.url, provider, prs, profile.id)
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }
@@ -1313,6 +1319,26 @@ const HUNK_ACTIONS = {
 >
 
 export const repoActions = {
+  setSigningConfig: (path: string, name: string, patch: Partial<SigningConfig>): Promise<boolean> => {
+    let previous: SigningConfig
+    return useRepoStore.getState().run(
+      path,
+      interp(t('signing.saved'), { repo: name }),
+      async () => {
+        previous = await gitApi.signingConfig(path)
+        await gitApi.setSigningConfig(path, patch)
+      },
+      {
+        label: t('signing.title'),
+        undo: () => gitApi.setSigningConfig(path, previous),
+        redo: () => gitApi.setSigningConfig(path, patch)
+      },
+      null,
+      undefined,
+      []
+    )
+  },
+
   // Moving HEAD rewrites the `HEAD -> …` decoration the graph reads off each
   // commit ('log' — it comes from `%D`), the per-directory tree status and each
   // worktree's HEAD; `.gitmodules` and the repo config are tracked files the
