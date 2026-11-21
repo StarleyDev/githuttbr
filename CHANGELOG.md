@@ -1,5 +1,13 @@
 
 
+## [4.34.4](https://github.com/StarleyDev/githuttbr/compare/v4.34.3...v4.34.4) (2026-11-21)
+
+
+### Bug Fixes
+
+* never send an AI API key over plaintext http off this machine ([5889253](https://github.com/StarleyDev/githuttbr/commit/5889253b9132cd8e58f575fcf985fefd4735ead7))
+* strip private details from an error before reporting it as an issue ([c2de86e](https://github.com/StarleyDev/githuttbr/commit/c2de86ed8ede96a71da283c3f9492a3ec471cee1))
+
 ## [4.34.3](https://github.com/StarleyDev/githuttbr/compare/v4.34.2...v4.34.3) (2026-11-21)
 
 
