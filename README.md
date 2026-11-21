@@ -108,6 +108,7 @@ git actually is.
 | **[Pull or push any branch](docs/help/syncing.md)** | Catch a branch up or publish it from its right-click menu, without checking it out first. |
 | **[Untracked-branch repair](docs/help/syncing.md)** | A pull that stops on "no tracking information" offers the fix as a button — link the branch to its remote, or push it if the remote has never seen it. |
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review on GitHub, GitLab, Forgejo and Azure DevOps in a [page of its own](docs/help/hosting.md#reviewing--github-and-gitlab), on the repository's tab or group chip: conversation, each file's diff, checks, an AI review of the host's diff, and a sidebar with reviewers and their decisions, labels, branches and size. A 👁 marks the ones [waiting for your review](docs/help/hosting.md#waiting-for-your-review). Each profile [links its own account](docs/help/hosting.md#tokens) — a token, or a login git's credential helper or the GitHub CLI already holds. |
+| **[Azure Pipelines checks and logs](docs/help/hosting.md#reviewing--github-and-gitlab)** | Build-validation policies appear alongside PR statuses. Read failed tasks or job logs from the Checks tab. |
 | **[Errors that explain themselves](docs/help/syncing.md#when-the-host-refuses)** | A push refused for a missing `workflow` scope, a 100 MB file, a protected branch or a missing credential says why and what to do, in your language — git's raw text one click away. |
 | **[Self-managed GitLab](docs/help/hosting.md#self-managed-gitlab)** | Point a profile at your company's GitLab: merge requests, the clone browser and push sign-in work there, and its token is only ever sent to that instance. |
 | **[Forgejo](docs/help/hosting.md#forgejo)** | Your own Forgejo or Gitea server, or Codeberg: push sign-in, open and create pull requests, clone and create repositories — the token only ever goes to that server. |
@@ -139,7 +140,7 @@ as one plan (or from an error toast's "fix with AI").
 messages, Claude for chat, a local Ollama for the rest — with model lists fetched
 live from each provider. OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral, Ollama, any compatible endpoint, or a [signed-in CLI](docs/help/ai.md)
-you already pay for instead of an API key.
+you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.md#using-a-subscription-instead-of-an-api-key) during onboarding or in Settings → AI.
 
 ### Make it yours
 
