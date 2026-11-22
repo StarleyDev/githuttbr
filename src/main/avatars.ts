@@ -3,7 +3,7 @@ import { app, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { apiToken } from './credentials'
-import { activeProfileAuth, boundProfileAuth } from './settings'
+import { peekActiveProfileAuth, peekBoundProfileAuth, type PeekedAuth } from './settings'
 import { knownGithubEnterpriseInstances } from './gitlabInstances'
 import { pickHostAuth } from '../shared/hostToken'
 import { GITHUB_COM, githubEndpoints, githubInstanceOf } from '../shared/githubEnterprise'
@@ -24,6 +24,12 @@ import {
  * hosting.ts): the profile a repository is bound to, else the active one; and
  * for GitHub, only the token filed for the remote's own server. They are
  * resolved here and never come from the renderer.
+ *
+ * And they are only *peeked*: a picture is drawn at start-up, on the Welcome
+ * screen, before the user has done anything — so it must never be the thing
+ * that brings up the keychain consent dialog or the OS keychain prompt. While
+ * the stored tokens are still encrypted the answer is "unknown", not "none",
+ * and the renderer asks again once something the user did has unlocked them.
  */
 
 const cachePath = (): string => join(app.getPath('userData'), 'github-avatars.json')
@@ -55,12 +61,25 @@ function saveCache(entries: AvatarCacheFile): void {
     .catch(() => undefined)
 }
 
-/** The token for a repository's GitHub remote, or null. Never interactive: a picture is not worth a sign-in window. */
+/**
+ * The token for a repository's GitHub remote, or null — with the store locked
+ * too, which the resolver answers as unknown and caches nothing for. Never
+ * interactive: a picture is not worth a sign-in window.
+ */
 async function tokenForRemote(remoteUrl: string, repoPath: string | undefined): Promise<string | null> {
+  const bound = repoPath ? await peekBoundProfileAuth('github', repoPath, remoteUrl) : undefined
+  if (bound?.locked) return null
+  let locked = false
   const input = await pickHostAuth({
-    bound: repoPath ? await boundProfileAuth('github', repoPath, remoteUrl) : undefined,
-    active: () => activeProfileAuth('github', remoteUrl)
+    bound,
+    active: async () => {
+      const auth = await peekActiveProfileAuth('github', remoteUrl)
+      locked = !!auth.locked
+      return auth
+    }
   })
+  // A PAT outranks the link, so a locked one must not be stood in for by the link's account.
+  if (locked) return null
   return (await apiToken(remoteUrl, input))?.token ?? null
 }
 
@@ -104,7 +123,9 @@ export async function githubAvatarsFor(
 const profileCache = new Map<string, Promise<string | null>>()
 export async function activeProfileGithubAvatar(size: number): Promise<string | null> {
   for (const base of [GITHUB_COM, ...knownGithubEnterpriseInstances()]) {
-    const input = await activeProfileAuth('github', undefined, base).catch(() => ({}))
+    const input = await peekActiveProfileAuth('github', undefined, base).catch((): PeekedAuth => ({}))
+    // Still encrypted: no picture for now, and nothing remembered — asked again once unlocked.
+    if (input.locked) continue
     const auth = await apiToken(base, input).catch(() => null)
     if (!auth?.token) continue
     const key = createHash('sha256').update(`${base}\n${auth.token}`).digest('hex')

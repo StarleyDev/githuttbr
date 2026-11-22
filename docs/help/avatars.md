@@ -53,9 +53,24 @@ screen, each author once — and at most four requests at a time. If the server
 says the rate limit is spent, Gitcito stops asking that server until the time
 it gives, and tries again after.
 
+**GitHub pictures appear once your tokens are unlocked.** Tokens saved in the
+keychain stay encrypted until you do something that needs one — open Settings,
+push, list pull requests. Drawing a picture is not such a thing: it never brings
+up the keychain prompt on its own, so right after launch authors get their
+Gravatar or the generated face, and your title-bar avatar its generated one.
+After the first unlock the GitHub pictures fill in — the graph asks again within
+a couple of minutes, the title bar as soon as Settings has unlocked. A machine
+login (git's credential helper or the GitHub CLI) is not in the keychain store
+and works from the start.
+
 What came back is remembered: for the session in memory, and on disk in
 `github-avatars.json` in Gitcito's data folder — a found picture for 7 days, "no
-account" for a day. The file is keyed on a SHA-256 hash of the server and the
+account" for a day. "No account" is only ever recorded when the server answered
+and said so. A **404** says nothing about the author — GitHub gives the same
+answer for a private repository your token cannot see, or one whose SSO it is
+not authorised for — so Gitcito records nothing and leaves that repository alone
+for ten minutes, while the same authors in repositories you can see still get
+their pictures. The file is keyed on a SHA-256 hash of the server and the
 email, so it holds no address in readable form; deleting it is always safe.
 
 The generated avatar is a small creature, not a coloured square: the same email
@@ -160,7 +175,7 @@ setting that removes avatars entirely.
 | SHA-256 of the email | `gravatar.com` | Every author with an email, unless Show avatars is off. |
 | The account id or login inside a noreply address | `avatars.githubusercontent.com` / `github.com` | A noreply author, unless either switch is off. No token. |
 | The repository's owner/name, a commit sha, and the author's email | The repository's own GitHub server — `api.github.com` for a github.com repository, the Enterprise Server itself for one hosted there | An author with no Gravatar, in a repository on a GitHub your profile has a token for. With that server's token and no other. |
-| Your profile's token | Its own server (`GET /user`) | Once per session, for your own picture in the title bar. |
+| Your profile's token | Its own server (`GET /user`) | Once per session and account, for your own picture in the title bar — again after you connect a different account. |
 
 A token is only ever sent to the server it was saved for: a github.com token
 never goes to an Enterprise Server, an Enterprise Server's token never goes to

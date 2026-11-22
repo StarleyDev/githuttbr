@@ -29,6 +29,7 @@ import {
   adoptExistingConsent,
   canUseKeychain,
   ensureKeychain,
+  getConsent,
   onKeychainEnabled,
   onSessionOnlyProbe
 } from './keychain'
@@ -86,6 +87,13 @@ let secretsUnreadable = false
  */
 let servedSecrets = false
 
+/**
+ * Whether the settings file on disk itself still holds tokens in the clear —
+ * an install from before the encrypted store, which the next unlock migrates.
+ * Tracked apart from the merged view because session-only tokens look the same.
+ */
+let plaintextOnDisk = false
+
 async function loadSecrets(): Promise<SecretStore> {
   try {
     const b64 = await readFile(secretsPath(), 'utf-8')
@@ -121,8 +129,10 @@ export async function readSettings(): Promise<AppSettings> {
     // the file is also written by imports and older builds (see withMigratedAI).
     settings = migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...parsed })
   } catch {
+    plaintextOnDisk = false
     return defaultSettings()
   }
+  plaintextOnDisk = hasSettingsSecrets(settings)
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
   setKnownGitlabInstances(gitlabServerBases(out.profiles))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
@@ -177,6 +187,18 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
 }
 
+/**
+ * Whether reading the profile tokens would have to decrypt (or migrate) the
+ * store — and so could bring up the consent dialog or the OS keychain prompt.
+ * False once something the user did unlocked it, when nothing is stored, and
+ * when consent was declined (the store is then never touched).
+ */
+async function secretsLocked(): Promise<boolean> {
+  if (secretCache) return false
+  if (!existsSync(secretsPath()) && !plaintextOnDisk) return false
+  return (await getConsent()) !== 'declined'
+}
+
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
   github: 'githubToken',
   gitlab: 'gitlabToken',
@@ -196,8 +218,9 @@ async function profileAuth(
   host: RepoHost,
   profileId: string | undefined,
   remoteUrl?: string,
-  expectedBase?: string
-): Promise<{ token?: string; link?: AccountLink }> {
+  expectedBase?: string,
+  peek = false
+): Promise<PeekedAuth> {
   const plain = await readSettings()
   const id = profileId ?? plain.activeProfileId
   const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
@@ -225,6 +248,8 @@ async function profileAuth(
     if (!base || (expectedBase && base !== expectedBase)) return {}
     if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
+  // Checked after the plain-settings gates, so "locked" never stands in for "no such server".
+  if (peek && (await secretsLocked())) return { locked: true }
   const settings = await readSettingsWithSecrets('tokens')
   const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
   if (!profile) return {}
@@ -267,6 +292,23 @@ function gitlabBaseOfRemote(remoteUrl: string, profiles: AppSettings['profiles']
 /** The active profile's PAT and link for a host. */
 export function activeProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<{ token?: string; link?: AccountLink }> {
   return profileAuth(host, undefined, remoteUrl, expectedBase)
+}
+
+/** Credentials as a peek sees them: `locked` when the tokens are still encrypted and were left that way. */
+export interface PeekedAuth {
+  token?: string
+  link?: AccountLink
+  locked?: true
+}
+
+/**
+ * `activeProfileAuth` for lookups nobody asked for — a picture in the title
+ * bar, a commit author's avatar. It never decrypts: with the store still
+ * locked it answers `{ locked: true }`, so the caller treats the answer as
+ * unknown and asks again after something the user did has unlocked it.
+ */
+export function peekActiveProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<PeekedAuth> {
+  return profileAuth(host, undefined, remoteUrl, expectedBase, true)
 }
 
 /** The Forgejo instance a profile (the active one by default) points at, or null. */
@@ -313,6 +355,18 @@ export async function boundProfileAuth(
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
   return profileAuth(host, boundId, remoteUrl)
+}
+
+/** `boundProfileAuth` that never decrypts — see `peekActiveProfileAuth`. */
+export async function peekBoundProfileAuth(
+  host: RepoHost,
+  repoPath: string,
+  remoteUrl?: string
+): Promise<PeekedAuth | undefined> {
+  const plain = await readSettings()
+  const boundId = plain.repoProfiles?.[repoPath]
+  if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
+  return profileAuth(host, boundId, remoteUrl, undefined, true)
 }
 
 /**
