@@ -46,6 +46,12 @@ The bridge ships nothing in a normal build: it only attaches when the app is
 launched with `--shot` (the flag is forwarded into the renderer by the main
 process).
 
+The launch itself — the flag, the throwaway userData dir, the seeded settings
+and keychain answer, the clean environment — lives in
+[`harness.mjs`](./harness.mjs), shared with the end-to-end smoke suite
+([`test/e2e/`](../../test/e2e/README.md)). A launch fix belongs there, so both
+get it.
+
 ## Running it on Linux, or from an editor
 
 - **From VS Code, Cursor or another Electron editor**: their terminals export

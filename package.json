@@ -35,6 +35,7 @@
     "site:serve": "node scripts/build-site.mjs && npx --yes serve dist-site",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-rebuild -f -w node-pty || true && node scripts/sync-grammars.mjs",
     "prepare": "husky",
