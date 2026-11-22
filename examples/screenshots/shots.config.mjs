@@ -962,6 +962,26 @@ export const shots = [
     }
   },
   {
+    // Settings → Integrations → GitLab: two self-managed servers added (no token,
+    // so nothing is ever asked of them — `.example.corp` and `.example.org`
+    // resolve nowhere), one under a relative URL root, and a plain-http address
+    // typed to show the refusal.
+    out: 'gitlab-servers',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.getByRole('button', { name: 'GitLab', exact: true }).click()
+      const field = page.getByPlaceholder('gitlab.example.corp — or with a path, example.com/gitlab')
+      for (const server of ['gitlab.example.corp', 'git.example.org/gitlab']) {
+        await field.fill(server)
+        await page.getByRole('button', { name: 'Add server' }).click()
+      }
+      await field.fill('http://gitlab.legacy.example.corp')
+      await page.locator('.ghes-section').scrollIntoViewIfNeeded()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Integrations with the keychain off — the default every shot launches with
     // (`keychain` unset) — so the notice under the token field says the token
     // lasts until quit, with its Enable button.

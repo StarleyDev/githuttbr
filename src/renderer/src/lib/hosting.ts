@@ -107,7 +107,7 @@ export function repoHasIssueTracker(
 /**
  * True if a remote's host has a rich PR detail/review surface: GitHub, or a
  * GitLab — gitlab.com or one of the self-managed `gitlabInstances` the
- * profiles point at (their `gitlabUrl`s).
+ * profiles list (their `gitlabServers`).
  */
 export function isReviewableRemote(
   url: string | undefined | null,

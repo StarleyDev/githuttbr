@@ -77,6 +77,8 @@ import { CreateIssueModal } from './CreateIssueModal'
 import { RepoSettingsModal } from './RepoSettingsModal'
 import { BranchFieldPicker } from './BranchFieldPicker'
 import { useT, interp } from '../i18n'
+import { GitlabServerSelect } from './GitlabServerSelect'
+import { GITLAB_COM, preferredGitlabBase } from '../../../shared/gitlabInstance'
 import { defaultOptionIndex, isPickInput, normalizeOptions } from '../lib/launchInputs'
 import { AIAccountsNotice } from './AIAccountsNotice'
 
@@ -642,6 +644,9 @@ function RepoPicker({
   const HostIcon = PROVIDER_ICONS[host]
 
   const [org, setOrg] = useState('')
+  // GitLab: gitlab.com or one of the profile's servers — main only honours a server some profile names.
+  const [gitlabBase, setGitlabBase] = useState(() => preferredGitlabBase(profile))
+  const scope = host === 'gitlab' ? (gitlabBase === GITLAB_COM ? undefined : gitlabBase) : org
   const [repos, setRepos] = useState<RemoteRepo[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -651,7 +656,7 @@ function RepoPicker({
     setLoading(true)
     setError(null)
     try {
-      const list = await hostingApi.listRepos(host, token, org)
+      const list = await hostingApi.listRepos(host, token, scope)
       setRepos(list)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -670,7 +675,13 @@ function RepoPicker({
     // Git already uses, including one supplied by `gh auth login`.
     if (host !== 'azure') void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [host, token, profileId])
+  }, [host, token, profileId, gitlabBase])
+
+  // Another profile has other servers: start again from its preferred one.
+  useEffect(() => {
+    setGitlabBase(preferredGitlabBase(profile))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -708,6 +719,7 @@ function RepoPicker({
   return (
     <div className="repo-picker">
       {profileSelector}
+      {host === 'gitlab' && <GitlabServerSelect profile={profile} value={gitlabBase} onChange={setGitlabBase} />}
       {host === 'azure' && (
         <div className="repo-org-row">
           <input
@@ -963,6 +975,9 @@ function ProviderCreateForm({
   // Seeded from the profile so the organization already configured in Settings
   // does not have to be typed a second time here.
   const [azureOrg, setAzureOrg] = useState(profile.azureOrg ?? '')
+  const [gitlabBase, setGitlabBase] = useState(() => preferredGitlabBase(profile))
+  // Azure scopes by organization, GitLab by server (absent = gitlab.com).
+  const scope = host === 'azure' ? azureOrg : host === 'gitlab' && gitlabBase !== GITLAB_COM ? gitlabBase : undefined
   const [repoName, setRepoName] = useState(spec.matchName ?? '')
   const [remoteName, setRemoteName] = useState(spec.defaultName || 'origin')
   const [description, setDescription] = useState('')
@@ -988,8 +1003,7 @@ function ProviderCreateForm({
         description: description.trim() || undefined,
         private: isPrivate
       }
-      // Only Azure scopes by organization; GitLab resolves its instance from the profile.
-      const repo = await hostingApi.createRepo(host, token, opts, host === 'azure' ? azureOrg : undefined)
+      const repo = await hostingApi.createRepo(host, token, opts, scope)
       closeModal()
       await repoActions.addRemoteAndPush(spec.path, remoteName.trim(), repo.url)
     } catch (e) {
@@ -1051,8 +1065,18 @@ function ProviderCreateForm({
               />
             </>
           )}
+          {host === 'gitlab' && (
+            <GitlabServerSelect
+              profile={profile}
+              value={gitlabBase}
+              onChange={(base) => {
+                setOwner(null)
+                setGitlabBase(base)
+              }}
+            />
+          )}
           <label className="modal-label">{host === 'azure' ? t('modal.project') : t('modal.account')}</label>
-          <OwnerSelect host={host} token={token} org={host === 'azure' ? azureOrg : undefined} value={owner} onChange={setOwner} />
+          <OwnerSelect host={host} token={token} org={scope} value={owner} onChange={setOwner} />
 
           <label className="modal-label">{t('modal.repositoryName')}</label>
           <input

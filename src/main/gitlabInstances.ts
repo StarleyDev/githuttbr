@@ -1,7 +1,7 @@
 import { normalizeGitlabUrl } from '../shared/gitlabInstance'
 
 /**
- * The self-managed GitLab instances the profiles point at, so the synchronous
+ * The self-managed GitLab servers the profiles list, so the synchronous
  * host checks (`providerOfHost`, `parseRemoteUrl`) recognise them. Refreshed
  * whenever settings are read or written; gitlab.com is not listed — it is
  * always known.

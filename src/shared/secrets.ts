@@ -1,4 +1,4 @@
-import { tokenMatchesInstance, GITLAB_COM } from './gitlabInstance'
+import { tokenMatchesInstance, GITLAB_COM, migrateGitlabProfile, migrateGitlabSettings, normalizeInstanceUrl } from './gitlabInstance'
 import { normalizeGithubEnterpriseUrl } from './githubEnterprise'
 import type { AppSettings } from './types'
 
@@ -18,6 +18,11 @@ export interface ProfileSecrets {
   /** One token per GitHub Enterprise Server, keyed by its canonical base URL —
    *  so a token can only ever be restored onto the server it was saved for. */
   githubEnterpriseTokens?: Record<string, string>
+  /** One token per self-managed GitLab server, keyed by its canonical base URL.
+   *  `gitlabToken` is gitlab.com's; before servers were a list it could also be
+   *  one self-managed instance's, named by `gitlabTokenIssuer` — see
+   *  `migrateGitlabSecrets`. */
+  gitlabServerTokens?: Record<string, string>
   /** Legacy single AI key, written before accounts existed. Still read. */
   aiApiKey?: string
   /** One API key per AI account id. */
@@ -35,6 +40,7 @@ export function hasSettingsSecrets(settings: AppSettings | null | undefined): bo
     (p) =>
       TOKEN_FIELDS.some((f) => !!p[f]) ||
       (p.githubEnterprise ?? []).some((h) => !!h.token) ||
+      (p.gitlabServers ?? []).some((h) => !!h.token) ||
       !!p.ai?.apiKey ||
       (p.ai?.accounts ?? []).some((a) => !!a.apiKey)
   )
@@ -44,7 +50,7 @@ export function hasSettingsSecrets(settings: AppSettings | null | undefined): bo
 export function stripSettingsSecrets(settings: AppSettings): AppSettings {
   return {
     ...settings,
-    profiles: (settings.profiles ?? []).map((p) => ({
+    profiles: (settings.profiles ?? []).map(migrateGitlabProfile).map((p) => ({
       ...p,
       githubToken: '',
       azureToken: '',
@@ -54,6 +60,7 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
       ...(p.forgejoToken !== undefined ? { forgejoToken: '' } : {}),
       // The servers stay (they are not secret); their tokens go.
       ...(p.githubEnterprise ? { githubEnterprise: p.githubEnterprise.map((h) => ({ ...h, token: '' })) } : {}),
+      ...(p.gitlabServers ? { gitlabServers: p.gitlabServers.map((h) => ({ ...h, token: '' })) } : {}),
       ai: p.ai
         ? {
             ...p.ai,
@@ -68,14 +75,15 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
 /** Pulls every non-empty credential out, keyed by profile id. */
 export function extractSecrets(settings: AppSettings): SecretStore {
   const store: SecretStore = {}
-  for (const p of settings.profiles ?? []) {
+  for (const p of (settings.profiles ?? []).map(migrateGitlabProfile)) {
     const secrets: ProfileSecrets = {}
     for (const field of TOKEN_FIELDS) {
       const value = p[field]
       if (!value) continue
       if (field === 'gitlabToken') {
-        if (!tokenMatchesInstance('gitlab', p.gitlabUrl, p.gitlabTokenIssuer)) continue
-        secrets.gitlabTokenIssuer = p.gitlabTokenIssuer ?? GITLAB_COM
+        // Always gitlab.com's now; servers file theirs below.
+        if (!tokenMatchesInstance('gitlab', undefined, p.gitlabTokenIssuer)) continue
+        secrets.gitlabTokenIssuer = GITLAB_COM
       } else if (field === 'forgejoToken') {
         if (!tokenMatchesInstance('forgejo', p.forgejoUrl, p.forgejoTokenIssuer)) continue
         secrets.forgejoTokenIssuer = p.forgejoTokenIssuer
@@ -88,6 +96,12 @@ export function extractSecrets(settings: AppSettings): SecretStore {
       if (base && h.token) ghes[base] = h.token
     }
     if (Object.keys(ghes).length > 0) secrets.githubEnterpriseTokens = ghes
+    const gitlab: Record<string, string> = {}
+    for (const h of p.gitlabServers ?? []) {
+      const base = normalizeInstanceUrl(h.url)
+      if (base && base !== GITLAB_COM && h.token) gitlab[base] = h.token
+    }
+    if (Object.keys(gitlab).length > 0) secrets.gitlabServerTokens = gitlab
     const aiKeys: Record<string, string> = {}
     for (const account of p.ai?.accounts ?? []) {
       if (account.apiKey) aiKeys[account.id] = account.apiKey
@@ -101,17 +115,39 @@ export function extractSecrets(settings: AppSettings): SecretStore {
   return store
 }
 
+/**
+ * A store written before GitLab servers were a list kept a self-managed
+ * instance's token in `gitlabToken`, its issuer beside it. File it under that
+ * instance instead — never as gitlab.com's. A token already filed there wins.
+ */
+export function migrateGitlabSecrets(store: SecretStore): SecretStore {
+  let out: SecretStore | null = null
+  for (const [id, secrets] of Object.entries(store)) {
+    const issuer = secrets.gitlabTokenIssuer
+    if (!issuer || issuer === GITLAB_COM) continue
+    const { gitlabToken, ...rest } = secrets
+    delete rest.gitlabTokenIssuer
+    const base = normalizeInstanceUrl(issuer)
+    const servers = { ...(base && gitlabToken ? { [base]: gitlabToken } : {}), ...(rest.gitlabServerTokens ?? {}) }
+    out ??= { ...store }
+    out[id] = { ...rest, ...(Object.keys(servers).length > 0 ? { gitlabServerTokens: servers } : {}) }
+  }
+  return out ?? store
+}
+
 /** Puts stored credentials back on their profiles, leaving the rest untouched. */
-export function applySecrets(settings: AppSettings, store: SecretStore): AppSettings {
+export function applySecrets(settings: AppSettings, raw: SecretStore): AppSettings {
+  const store = migrateGitlabSecrets(raw)
   return {
     ...settings,
-    profiles: (settings.profiles ?? []).map((p) => {
+    profiles: migrateGitlabSettings({ profiles: settings.profiles ?? [] }).profiles.map((p) => {
       const secrets = store[p.id]
       const restored = { ...p }
       for (const provider of ['gitlab', 'forgejo'] as const) {
         const field = `${provider}Token` as const
         const issuer = `${provider}TokenIssuer` as const
-        const address = p[`${provider}Url`]
+        // GitLab's own field is gitlab.com's: its servers are restored below.
+        const address = provider === 'forgejo' ? p.forgejoUrl : undefined
         if (p[field] && !tokenMatchesInstance(provider, address, p[issuer])) restored[field] = ''
         if (secrets?.[field] && tokenMatchesInstance(provider, address, secrets[issuer])) {
           restored[field] = secrets[field]
@@ -119,6 +155,14 @@ export function applySecrets(settings: AppSettings, store: SecretStore): AppSett
         }
       }
       if (!secrets) return restored
+      const gitlab = secrets.gitlabServerTokens
+      if (gitlab && restored.gitlabServers) {
+        restored.gitlabServers = restored.gitlabServers.map((h) => {
+          const base = normalizeInstanceUrl(h.url)
+          const token = base ? gitlab[base] : undefined
+          return token ? { ...h, token } : h
+        })
+      }
       const ghes = secrets.githubEnterpriseTokens
       if (ghes && restored.githubEnterprise) {
         restored.githubEnterprise = restored.githubEnterprise.map((h) => {
@@ -165,17 +209,23 @@ export function applySecrets(settings: AppSettings, store: SecretStore): AppSett
  * unlocked: such a save can add or replace a credential, but an absence in it
  * means "I was never given this", not "the user cleared it".
  */
-export function mergeSecretStores(stored: SecretStore, next: SecretStore): SecretStore {
+export function mergeSecretStores(storedRaw: SecretStore, nextRaw: SecretStore): SecretStore {
+  // Both sides in the list shape first: a legacy self-managed `gitlabToken` in
+  // the stored copy must not survive as — or be overwritten by — gitlab.com's.
+  const stored = migrateGitlabSecrets(storedRaw)
+  const next = migrateGitlabSecrets(nextRaw)
   const out: SecretStore = { ...stored }
   for (const [id, secrets] of Object.entries(next)) {
     const base = out[id] ?? {}
     const aiKeys = { ...(base.aiKeys ?? {}), ...(secrets.aiKeys ?? {}) }
     const ghes = { ...(base.githubEnterpriseTokens ?? {}), ...(secrets.githubEnterpriseTokens ?? {}) }
+    const gitlab = { ...(base.gitlabServerTokens ?? {}), ...(secrets.gitlabServerTokens ?? {}) }
     out[id] = {
       ...base,
       ...secrets,
       ...(Object.keys(aiKeys).length > 0 ? { aiKeys } : {}),
-      ...(Object.keys(ghes).length > 0 ? { githubEnterpriseTokens: ghes } : {})
+      ...(Object.keys(ghes).length > 0 ? { githubEnterpriseTokens: ghes } : {}),
+      ...(Object.keys(gitlab).length > 0 ? { gitlabServerTokens: gitlab } : {})
     }
   }
   return out

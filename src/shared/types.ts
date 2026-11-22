@@ -2873,11 +2873,18 @@ export interface Profile {
   azureToken: string
   /** Azure DevOps organization, used to validate the PAT and scope repo/PR lookups. */
   azureOrg?: string
+  /** gitlab.com's token. Never sent to a self-managed server — those keep their
+   *  own, in `gitlabServers`. */
   gitlabToken: string
+  /** Which instance issued `gitlabToken`. Absent or gitlab.com is valid; anything
+   *  else is a leftover from the one-instance model and is never sent. */
   gitlabTokenIssuer?: string
   forgejoTokenIssuer?: string
-  /** Self-managed GitLab this profile's GitLab token belongs to (`https://git.example.org`).
-   *  Empty means gitlab.com. The token is only ever sent to this instance. */
+  /** Self-managed GitLab servers this profile is connected to, each with its own
+   *  token. `gitlabToken` stays gitlab.com's and is never sent to one of these. */
+  gitlabServers?: GitlabServer[]
+  /** Legacy: the single self-managed GitLab of profiles written before
+   *  `gitlabServers`. Read only to migrate (`migrateGitlabProfile`), never written. */
   gitlabUrl?: string
   bitbucketToken: string
   /** Forgejo (or Gitea) access token, for the instance at `forgejoUrl`. Optional:
@@ -2902,6 +2909,17 @@ export interface GithubEnterpriseHost {
   /** The server's address, `https://host[:port]` (see `normalizeGithubEnterpriseUrl`). */
   url: string
   token: string
+}
+
+/** One self-managed GitLab of a profile. Like a GHES token, the token lives in
+ *  the keychain-encrypted store on disk, filed under the server's base URL. */
+export interface GitlabServer {
+  /** The server's base, `https://host[:port][/path]` (see `normalizeGitlabServerUrl`). */
+  url: string
+  token: string
+  /** A login on this machine the profile used for this server — only ever
+   *  carried over from a one-instance profile. Not a secret. */
+  link?: AccountLink
 }
 
 /**

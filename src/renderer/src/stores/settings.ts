@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { GROUP_COLORS, pickGroupColor } from '../lib/groupColors'
+import { migrateGitlabProfile } from '../../../shared/gitlabInstance'
 import { migrateAIConfig, needsAccountsNotice, resolveAI } from '../../../shared/aiAccounts'
 import {
   defaultProfile,
@@ -359,8 +360,8 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   // disappear — this is the only moment the upgrade is still visible.
   const upgraded = settings.profiles.some((p) => needsAccountsNotice(p.ai))
   settings.profiles = settings.profiles.map((p) => ({
-    ...defaults,
-    ...p,
+    // A one-instance GitLab profile (an old file or export) becomes a server list.
+    ...migrateGitlabProfile({ ...defaults, ...p }),
     ai: migrateAIConfig({ ...defaults.ai, ...p.ai, accounts: p.ai?.accounts })
   }))
   if (upgraded && !settings.aiAccountsNoticeSeen) noticeAccounts = true

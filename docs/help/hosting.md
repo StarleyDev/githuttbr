@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Sync & many repos
 order: 56
 summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises
+keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises self-managed GitLab servers several GitLab instances
 ---
 
 # Hosting & pull requests
@@ -141,31 +141,60 @@ takes that for a revoked sign-in and never drops the credential git uses.
 
 ## Self-managed GitLab
 
-A company GitLab lives at its own address. Give a profile that address in
-**Settings → Integrations → GitLab → GitLab address**, for example
-`git.example.org` or `https://example.net/gitlab` for one served under a path.
-From then on, remotes on that host are GitLab: merge requests list, open,
-review and merge, the clone browser and *create repository* talk to it, and
-push and fetch sign in with that profile's token.
+A company GitLab lives at its own address, and many people work with more than
+one: gitlab.com for open source and the company server for work, or two
+company servers after a merger. A profile holds all of them at once —
+gitlab.com plus a list of self-managed servers, each with its own token — so
+nobody has to switch profiles to move between them.
 
-**A GitLab token belongs to one instance.** A profile's token is sent only to
-the address that profile names. If the address is empty, that means gitlab.com.
-A gitlab.com token never reaches the company server, and a company token never
-reaches gitlab.com. If the work and the personal account are on different
-instances, give each its own profile. A repository bound to a profile uses that
-profile's instance.
+gitlab.com is the token at the top of **Settings → Integrations → GitLab**.
+Below it, under **Self-managed GitLab**, type a server's address — for example
+`gitlab.example.corp`, or `https://example.net/gitlab` for one served under a
+path — press **Add server**, then paste a token for it. The row says which
+account the token signs in as.
 
-**Create token** opens the token page on your instance with `api` and
+![The self-managed GitLab list in Settings, with two servers added and a plain http address refused](../screenshots/gitlab-servers.webp)
+
+From then on, a remote on one of those servers is GitLab: merge requests list,
+open, review and merge, and push, fetch and clone sign in with that server's
+token. The clone browser and *create repository* get a **Server** picker with
+gitlab.com and every server of the profile.
+
+**Each token goes only to its own GitLab.** Which token a remote gets is decided
+by where the remote is: gitlab.com remotes get the gitlab.com token, a remote on
+a server in the list gets that server's token, and any other host gets nothing —
+the app never guesses that an unknown host "is probably GitLab". A gitlab.com
+token never reaches a company server, one server's token never reaches another,
+and neither ever reaches gitlab.com. When two servers share a host, the one
+with the longer path wins for https remotes (`example.net/gitlab` before
+`example.net`). Tokens are stored with your OS keychain like every other token,
+filed under their server's address, and left out of a settings export unless
+you tick the option to include secrets.
+
+**Create a token on …** opens that server's token page with `api` and
 `write_repository` pre-selected. A read-only token connects fine and then fails
 on the first push.
+
+**Upgrading from one GitLab per profile.** Before this list existed, a profile
+had a single *GitLab address* and its token belonged to that address. Such a
+profile — on disk, in an old settings export, or in the encrypted token store —
+is converted the first time it is read: the address becomes the first server in
+the list and keeps its token (and, if the profile was signed in through a login
+on this computer, that link). The gitlab.com field is then empty, ready for a
+gitlab.com token of its own. Nothing is sent anywhere it was not sent before: a
+token is only ever moved to the instance that issued it, and one whose issuer
+cannot be told is dropped rather than guessed — re-enter it if a server shows
+*Not connected* after the upgrade.
 
 Limits:
 
 - **https only.** A plain `http://` address is refused, because the token would
-  cross the network in clear text.
-- **One GitLab instance per profile.** Add a second profile for a second
-  instance.
-- Over ssh the host is matched, not the path, so two instances on one host under
+  cross the network in clear text. So is an address with a user name or
+  password in it (the token has its own field), or with `?` or `#`.
+- **Servers sign in with a token.** *Sign in with git* finds a gitlab.com login;
+  for a server, paste a personal access token. git's own credential helper still
+  answers for push and fetch where the profile has nothing, as it always did.
+- Over ssh the host is matched, not the path, so two servers on one host under
   different paths cannot be told apart for an ssh remote.
 - Remote avatars are drawn only for gitlab.com and github.com. A self-managed
   remote gets the plain icon, so its group names are never sent to a public

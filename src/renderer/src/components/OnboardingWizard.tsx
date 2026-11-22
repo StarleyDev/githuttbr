@@ -12,6 +12,7 @@ import {
   type AIConfig,
   type AppSettings,
   type GithubEnterpriseHost,
+  type GitlabServer,
   type Profile,
   type ThemeMode
 } from '../../../shared/types'
@@ -46,7 +47,7 @@ interface WizardData {
   forgejoTokenIssuer?: string
   azureToken: string
   bitbucketToken: string
-  gitlabUrl?: string
+  gitlabServers?: GitlabServer[]
   forgejoUrl?: string
   forgejoToken?: string
   githubEnterprise?: GithubEnterpriseHost[]
@@ -77,7 +78,7 @@ function buildProfile(data: WizardData): Profile {
     gitlabTokenIssuer: data.gitlabTokenIssuer,
     azureToken: data.azureToken,
     bitbucketToken: data.bitbucketToken,
-    gitlabUrl: data.gitlabUrl,
+    gitlabServers: data.gitlabServers,
     forgejoUrl: data.forgejoUrl,
     forgejoToken: data.forgejoToken,
     forgejoTokenIssuer: data.forgejoTokenIssuer,
@@ -331,7 +332,7 @@ function IntegrationsStep({
               ...(p.bitbucketToken !== undefined && { bitbucketToken: p.bitbucketToken }),
               // Fields the page grew after the wizard was written: dropping them made
               // the inputs look dead and left a self-managed token pointed at gitlab.com.
-              ...(p.gitlabUrl !== undefined && { gitlabUrl: p.gitlabUrl }),
+              ...(p.gitlabServers !== undefined && { gitlabServers: p.gitlabServers }),
               ...(p.forgejoUrl !== undefined && { forgejoUrl: p.forgejoUrl }),
               ...('forgejoTokenIssuer' in p && { forgejoTokenIssuer: p.forgejoTokenIssuer }),
               ...(p.forgejoToken !== undefined && { forgejoToken: p.forgejoToken }),
@@ -395,7 +396,7 @@ export function OnboardingWizard(): React.JSX.Element {
     gitlabTokenIssuer: profile.gitlabTokenIssuer,
     azureToken: profile.azureToken,
     bitbucketToken: profile.bitbucketToken,
-    gitlabUrl: profile.gitlabUrl,
+    gitlabServers: profile.gitlabServers,
     forgejoUrl: profile.forgejoUrl,
     forgejoToken: profile.forgejoToken,
     forgejoTokenIssuer: profile.forgejoTokenIssuer,
@@ -484,7 +485,7 @@ export function OnboardingWizard(): React.JSX.Element {
               gitlabTokenIssuer: data.gitlabTokenIssuer,
               azureToken: data.azureToken,
               bitbucketToken: data.bitbucketToken,
-              gitlabUrl: data.gitlabUrl,
+              gitlabServers: data.gitlabServers,
               forgejoUrl: data.forgejoUrl,
               forgejoToken: data.forgejoToken,
               forgejoTokenIssuer: data.forgejoTokenIssuer,
