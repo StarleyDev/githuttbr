@@ -3204,6 +3204,9 @@ export interface AppSettings {
   autoLoadOnScroll: boolean
   relativeDates: boolean
   commitAvatars: boolean
+  /** GitHub profile pictures after Gravatar (docs/help/avatars.md). Off by
+   *  `commitAvatars` too; without a token only noreply addresses are mapped. */
+  githubAvatars: boolean
   /** Idle motion on the title-bar profile avatar. The pose it holds still
    *  follows the working tree either way; this only stops it moving. */
   avatarMotion: boolean
@@ -3708,6 +3711,7 @@ export function defaultSettings(): AppSettings {
     autoLoadOnScroll: true,
     relativeDates: true,
     commitAvatars: true,
+    githubAvatars: true,
     avatarMotion: true,
     fileListView: 'path',
     groupBranches: true,

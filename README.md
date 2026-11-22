@@ -157,8 +157,8 @@ you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.
 [a native macOS menu bar](docs/help/menu-bar.md) that shows the keys you actually
 bound · [profiles](docs/help/profiles.md)
 for separate identities and accounts, each linking its own ·
-[author avatars](docs/help/avatars.md) — Gravatar where it exists, a generated
-blob drawn offline where it does not, and a title-bar face that reacts to
+[author avatars](docs/help/avatars.md) — Gravatar, then the author's GitHub
+picture, then a generated blob drawn offline, and a title-bar face that reacts to
 conflicts, half-finished rebases, a detached HEAD and piles left to grow — or
 [your own picture](docs/help/avatars.md#your-profiles-picture): your account's, an
 icon, or an image ·

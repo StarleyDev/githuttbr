@@ -965,6 +965,8 @@ export const it: Dict = {
   'settings.relativeDatesHint': 'Mostra “3g fa” invece della data assoluta nel grafo.',
   'settings.commitAvatars': 'Mostra gli avatar',
   'settings.commitAvatarsHint': 'Scarica le foto da Gravatar in base all’email del commit. Se non ce n’è una, viene mostrato un avatar generato.',
+  'settings.githubAvatars': 'Usa le foto profilo di GitHub',
+  'settings.githubAvatarsHint': 'Se un autore non ha un Gravatar, mostra la sua foto di GitHub. Gli indirizzi noreply non richiedono nulla; le altre email vengono cercate con il token GitHub di questo profilo, sul server del repository stesso.',
   'settings.avatarMotion': 'Anima l’avatar del profilo',
   'settings.avatarMotionHint': 'L’avatar nella barra del titolo respira e sbatte le palpebre. La sua espressione segue il repository anche quando è disattivato.',
   'settings.groupBranches': 'Raggruppa le ref per prefisso',

@@ -384,6 +384,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.autoLoadOnScroll = settings.autoLoadOnScroll ?? sd.autoLoadOnScroll
   settings.relativeDates = settings.relativeDates ?? sd.relativeDates
   settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
+  settings.githubAvatars = settings.githubAvatars ?? sd.githubAvatars
   settings.avatarMotion = settings.avatarMotion ?? sd.avatarMotion
   settings.fileListView = settings.fileListView ?? sd.fileListView
   settings.groupBranches = settings.groupBranches ?? sd.groupBranches

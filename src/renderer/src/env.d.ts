@@ -179,6 +179,10 @@ interface PreloadApi {
     exportAll(ids: string[]): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
   }
+  avatars: {
+    github(remoteUrl: string, repoPath: string, items: unknown, size: number): Promise<unknown>
+    profileGithub(size: number): Promise<unknown>
+  }
   vault: {
     list(repoPath: string): Promise<unknown>
     upsert(scope: string, repoPath: string, entry: unknown): Promise<unknown>

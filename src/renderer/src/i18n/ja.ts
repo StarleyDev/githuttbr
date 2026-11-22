@@ -964,6 +964,8 @@ export const ja: Dict = {
   'settings.relativeDatesHint': 'グラフで絶対的な日付の代わりに「3日前」のように表示します。',
   'settings.commitAvatars': 'アバターを表示',
   'settings.commitAvatarsHint': 'コミットのメールアドレスから Gravatar の写真を取得します。存在しない場合は自動生成のアバターを表示します。',
+  'settings.githubAvatars': 'GitHub のプロフィール画像を使う',
+  'settings.githubAvatarsHint': '作成者に Gravatar がない場合、GitHub の画像を表示します。noreply アドレスは追加の通信なしで表示できます。それ以外のメールアドレスは、このプロファイルの GitHub トークンを使い、リポジトリ自身のサーバーで照会します。',
   'settings.avatarMotion': 'プロフィールアバターをアニメーションさせる',
   'settings.avatarMotionHint': 'タイトルバーのアバターが呼吸してまばたきします。オフにしても表情はリポジトリの状態に合わせて変わります。',
   'settings.groupBranches': '接頭辞で ref をまとめる',

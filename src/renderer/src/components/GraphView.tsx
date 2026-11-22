@@ -1928,7 +1928,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     style={{ left: x, top: y, boxShadow: `0 0 0 2.5px ${color}` }}
                     title={[c.author, ...(c.coAuthors?.map((a) => `+ ${a.name}`) ?? [])].join('\n')}
                   >
-                    <Avatar email={c.email} name={c.author} size={AVA} />
+                    <Avatar email={c.email} name={c.author} size={AVA} repo={repo.path} sha={c.hash} />
                   </div>
                 )}
               </div>
