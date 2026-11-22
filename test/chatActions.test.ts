@@ -179,6 +179,22 @@ describe('chat action executor', () => {
     git.mockImplementation((method: string) => Promise.resolve(method === 'status' ? status : undefined))
   })
 
+  it('hands the model our own failures in English, keyed for the card to translate', async () => {
+    const { en } = await import('../src/renderer/src/i18n/en')
+    const { actionErrorText } = await import('../src/renderer/src/lib/askActionRun')
+    git.mockImplementation((method: string) =>
+      Promise.resolve(method === 'status' ? { ...status, current: '' } : undefined)
+    )
+    const result = await executeRepoChatActions('/repo', [{ type: 'push', description: 'Publish' } as RepoChatAction])
+    expect(result.error).toMatchObject({
+      code: 'unknown',
+      detail: en['chat.actionNoBranchToPush'],
+      detailKey: 'chat.actionNoBranchToPush'
+    })
+    expect(actionErrorText(result.error)).toBe(en['chat.actionNoBranchToPush'])
+    expect(actionErrorText({ code: 'unknown', detail: 'raw git output' })).toBe('raw git output')
+  })
+
   it('maps every action to its git call, in order', async () => {
     const result = await executeAskActions('/repo', [
       stage,

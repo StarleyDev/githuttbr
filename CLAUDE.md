@@ -169,8 +169,11 @@ Never use these to silence a string a user actually reads.
 
 ### Enforcement
 
-`scripts/check-i18n.mjs` scans the renderer for JSX text, UI props, inline
-ternaries, and toast calls holding literal copy. It runs:
+`scripts/check-i18n.mjs` parses the renderer with the TypeScript compiler and
+flags literal copy in JSX text and expressions, UI props, toast/`run()` labels,
+DOM text (`.textContent`, `setAttribute('title', …)`), canvas `fillText`, and
+sentence-shaped `new Error(…)` messages. It cannot see copy returned from a
+helper or held in a variable — that is still on you. It runs:
 
 - after every renderer edit (`.claude/hooks/i18n-guard.sh`),
 - when a turn ends with source changes (`.claude/hooks/verify-gate.sh`),
