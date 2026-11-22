@@ -1,5 +1,17 @@
 
 
+## [4.36.0](https://github.com/StarleyDev/githuttbr/compare/v4.35.0...v4.36.0) (2026-11-22)
+
+
+### Features
+
+* keep clones running in the background, cancel them, and clone several at once ([c62b9c7](https://github.com/StarleyDev/githuttbr/commit/c62b9c7fd40a075cf074268ae75c968ca5547857))
+
+
+### Bug Fixes
+
+* apply imported settings immediately, not after a restart ([ae6e550](https://github.com/StarleyDev/githuttbr/commit/ae6e5501976c475e6abb2ae16b8d86d13f5d6f0b))
+
 ## [4.35.0](https://github.com/StarleyDev/githuttbr/compare/v4.34.4...v4.35.0) (2026-11-21)
 
 ### Features
