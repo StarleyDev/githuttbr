@@ -3008,6 +3008,62 @@ export const shots = [
     }
   },
   {
+    // A host tab with several repositories ticked: the batch list replaces the
+    // folder-name field. The list is a stubbed `hosting:listRepos`, so the shot
+    // never reaches a real account and shows no one's repositories.
+    out: 'clone-multi-select',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('hosting:listRepos')
+        const repo = (name, extra = {}) => ({ name, url: `https://github.com/${name}.git`, ...extra })
+        ipcMain.handle('hosting:listRepos', () => [
+          repo('studio/api', { private: true }),
+          repo('studio/web'),
+          repo('studio/worker', { private: true }),
+          repo('studio/design-tokens'),
+          repo('studio/infra', { private: true }),
+          repo('octocat/dotfiles')
+        ])
+      })
+      await page.evaluate(() => window.__shot.settings.getState().update((s) => ({ ...s, lastClonePath: '/home/you/code' })))
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'clone', onClone: () => {} }))
+      await page.locator('.remote-tab', { hasText: 'GitHub' }).click()
+      const checks = page.locator('.repo-row-check')
+      await checks.first().waitFor()
+      for (const i of [0, 1, 2]) await checks.nth(i).check()
+      await page.locator('.clone-batch-list').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The corner tray mid-batch: three clones at different stages, a fourth
+    // waiting for a slot. Seeded straight into the clones store — a real clone
+    // of a local playground repo is over before a frame could catch it.
+    out: 'clone-tray',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        const task = (name, progress, extra = {}) => ({
+          id: `shot-${name}`, name, url: `https://github.com/studio/${name}.git`, progress,
+          queued: false, cancelling: false, attached: false, ...extra
+        })
+        window.__shot.clones.setState({
+          tasks: [
+            task('api', { stage: 'receiving', progress: 64, processed: 6400, total: 10000 }),
+            task('web', { stage: 'resolving', progress: 91, processed: 910, total: 1000 }),
+            task('worker', { stage: 'counting', progress: 0, processed: 0, total: 0 }),
+            task('infra', null, { queued: true })
+          ]
+        })
+      })
+      await page.locator('.clone-tray-item').nth(3).waitFor()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Clone with the Advanced section open: shallow, partial, branch picker.
     out: 'clone-advanced',
     repos: ['merge-conflict'],

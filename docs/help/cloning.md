@@ -30,6 +30,8 @@ you start. If two have the same name (`org-a/app` and `org-b/app`), both get
 the owner in their folder name (`org-a-app`, `org-b-app`) instead of racing for
 one folder.
 
+![The GitHub tab of the clone dialog with three repositories ticked, the folders they will land in listed under the parent folder, and a Clone 3 repositories button](../screenshots/clone-multi-select.webp)
+
 The batch goes straight to the corner tray. Three clones run at a time and the
 rest wait as *Queued*; each has its own cancel. Each repository opens in a tab
 as it finishes.
@@ -96,6 +98,8 @@ you all of it. Now closing the dialog — **Run in background**, `Esc`, the ✕ 
 click outside — only hides it: the clone keeps going and moves to a small card
 in the bottom corner with the same progress bar. You can start another clone
 meanwhile; each gets its own card.
+
+![The clone tray in the bottom corner: three clones receiving, resolving and counting, a fourth queued, each with its own cancel button](../screenshots/clone-tray.webp)
 
 Picked the wrong repository? **Cancel clone** in the dialog, or the ✕ on its
 card, stops git and deletes the half-written folder. Nothing else is touched —
