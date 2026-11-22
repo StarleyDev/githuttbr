@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import type { Language } from '../src/shared/types'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const I18N_DIR = join(ROOT, 'src/renderer/src/i18n')
@@ -68,4 +69,48 @@ describe('i18n', () => {
       expect(mismatched).toEqual([])
     }
   )
+})
+
+describe('locale loading', () => {
+  // Fresh module state per test: the loader caches what it has fetched.
+  beforeEach(() => vi.resetModules())
+  const loader = (): Promise<typeof import('../src/renderer/src/i18n/loader')> =>
+    import('../src/renderer/src/i18n/loader')
+
+  it('starts with English only, and reads an unloaded locale as English', async () => {
+    const { isLocaleLoaded, lookup } = await loader()
+    const { en } = await import('../src/renderer/src/i18n/en')
+    expect(isLocaleLoaded('en')).toBe(true)
+    expect(isLocaleLoaded('de')).toBe(false)
+    expect(lookup('de', 'settings.language')).toBe(en['settings.language'])
+  })
+
+  it('translates in the locale once it has loaded', async () => {
+    const { isLocaleLoaded, loadLocale, lookup } = await loader()
+    const { de } = await import('../src/renderer/src/i18n/de')
+    await loadLocale('de')
+    expect(isLocaleLoaded('de')).toBe(true)
+    expect(lookup('de', 'settings.language')).toBe(de['settings.language'])
+    expect(de['settings.language']).not.toBe(lookup('en', 'settings.language'))
+  })
+
+  it('shares one request between concurrent loads and resolves at once when cached', async () => {
+    const { loadLocale, useLocaleStore } = await loader()
+    const sizes: number[] = []
+    const unsub = useLocaleStore.subscribe((s) => sizes.push(Object.keys(s.loaded).length))
+    await Promise.all([loadLocale('ja'), loadLocale('ja')])
+    await loadLocale('ja')
+    await loadLocale('en')
+    unsub()
+    // Exactly one store update: English plus Japanese.
+    expect(sizes).toEqual([2])
+  })
+
+  // The loader map is typed against `Language`; this catches a locale file on
+  // disk that was never wired in, which the type alone cannot see.
+  it.each(LOCALES.filter((l) => l !== 'en'))('has a loader wired for %s', async (locale) => {
+    const { isLocaleLoaded, loadLocale } = await loader()
+    await loadLocale(locale as Language)
+    expect(isLocaleLoaded(locale as Language)).toBe(true)
+  })
 })

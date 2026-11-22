@@ -67,8 +67,9 @@ git tokens) belong in `scripts/i18n-allowlist.json` or carry an inline
 ### Adding a locale
 
 New translations are welcome. Copy `en.ts` to `<code>.ts`, export it as
-`Dict`, translate every value, then wire it into `dictionaries` and `LANGUAGES`
-in `index.ts` and add the code to `Language` in `src/shared/types.ts`. The
+`Dict`, translate every value, then add a loader for it to `dictionaries` in
+`loader.ts` (locales are fetched on demand), add it to `LANGUAGES` in
+`index.ts`, and add the code to `Language` in `src/shared/types.ts`. The
 tests pick the new file up automatically — no test changes needed.
 
 ## Documentation

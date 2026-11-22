@@ -55,6 +55,7 @@ import {
   type TodoScope
 } from '../lib/todos'
 import { PRODUCT_NAME } from '../../../shared/brand'
+import { loadLocale } from '../i18n/loader'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
@@ -472,6 +473,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const raw = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
     const { settings, noticeAccounts } = normalizeSettings(raw)
     if (noticeAccounts) pendingAccountsNotice = true
+    // `loaded` is what lifts the boot spinner, so the active dictionary has to
+    // be in memory first — otherwise the first painted frame is English.
+    await loadLocale(settings.language ?? 'en')
     set({ settings, loaded: true })
   },
 
@@ -488,6 +492,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (incoming.tabs && !incoming.workspaces) merged.workspaces = []
     const { settings, noticeAccounts } = normalizeSettings(merged)
     if (noticeAccounts) pendingAccountsNotice = true
+    // An imported file may switch the language; have its strings ready first.
+    await loadLocale(settings.language ?? 'en')
     set({ settings })
     // Written now, not debounced: opening Settings right after re-reads the file
     // from disk, and a pending save would lose that race and undo the import.
