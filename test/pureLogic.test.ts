@@ -7,6 +7,7 @@ import { parseDiff } from '../src/renderer/src/lib/diff'
 import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
+import { cloneFolderNames } from '../src/renderer/src/lib/cloneBatch'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
@@ -7933,5 +7934,19 @@ describe('parseSettingsImport', () => {
     expect(parseSettingsImport([1, 2])).toBeNull()
     expect(parseSettingsImport('x')).toBeNull()
     expect(parseSettingsImport({ __gitcito: 'settings-export', settings: 'nope' })).toBeNull()
+  })
+})
+
+describe('cloneFolderNames', () => {
+  it('uses the short repository name when nothing collides', () => {
+    expect(cloneFolderNames(['me/api', 'me/web.git', 'group/sub/tools'])).toEqual(['api', 'web', 'tools'])
+  })
+
+  it('spells out the owner only for the names that collide', () => {
+    expect(cloneFolderNames(['org-a/app', 'org-b/App', 'org-a/lib'])).toEqual(['org-a-app', 'org-b-App', 'lib'])
+  })
+
+  it('numbers a repository picked twice', () => {
+    expect(cloneFolderNames(['me/app', 'me/app'])).toEqual(['me-app', 'me-app-2'])
   })
 })

@@ -33,6 +33,7 @@ import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
 import { RepoSwitcher } from './components/RepoSwitcher'
 import { Toasts } from './components/Toasts'
+import { CloneTray } from './components/CloneTray'
 import { UpdateBanner } from './components/UpdateBanner'
 import { RepoCosmos } from './components/cosmos/RepoCosmos'
 import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
@@ -1363,6 +1364,7 @@ export default function App(): React.JSX.Element {
       <CommandPalette />
       <RepoSwitcher />
       <Toasts />
+      <CloneTray />
       <UpdateBanner />
       <RepoCosmos />
     </div>

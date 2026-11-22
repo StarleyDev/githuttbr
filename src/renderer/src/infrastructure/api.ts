@@ -30,6 +30,7 @@ import type {
   RepoDetail,
   CiStatus,
   CloneOptions,
+  CloneProgress,
   GitflowConfig,
   GitflowKind,
   GitflowSnapshot,
@@ -607,6 +608,10 @@ export const gitApi = {
 
   clone: (parentDir: string, url: string, name: string, opts?: CloneOptions) =>
     call<string>('clone', parentDir, url, name, opts ?? {}),
+  /** Abort a clone started with `opts.cloneId`; its half-written folder is removed. */
+  cancelClone: (cloneId: string) => call<boolean>('cancelClone', cloneId),
+  /** Progress for every running clone, tagged with its `cloneId`. Returns the unsubscribe. */
+  onCloneProgress: (cb: (p: CloneProgress) => void): (() => void) => window.api.onCloneProgress(cb),
   /** Branch names a remote advertises — the clone dialog's branch picker. */
   remoteBranches: (url: string, host?: RepoHost, token?: string) =>
     call<string[]>('remoteBranches', url, host, token),

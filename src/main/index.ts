@@ -5,7 +5,7 @@ import { writeFile, readFile, rename, mkdir, chmod, unlink } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
-import { registerGitHandlers } from './git'
+import { abortAllClones, registerGitHandlers } from './git'
 import { readSettings, registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
 import { registerRepoChatHandlers } from './repoChat'
@@ -531,6 +531,7 @@ app.whenReady().then(() => {
 // will never be deleted.
 app.on('before-quit', () => {
   void releaseAllWaits()
+  abortAllClones()
 })
 
 app.on('window-all-closed', () => {

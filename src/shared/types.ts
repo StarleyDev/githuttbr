@@ -2270,6 +2270,8 @@ export interface SnapshotInfo {
 
 /** Progress event streamed from `git clone --progress` while a clone runs. */
 export interface CloneProgress {
+  /** The `CloneOptions.cloneId` this progress belongs to — several clones can run at once. */
+  cloneId?: string
   stage: string // 'counting' | 'compressing' | 'receiving' | 'resolving' | 'checking out' | ...
   progress: number // 0–100 for the current stage
   processed: number
@@ -2297,6 +2299,8 @@ export interface CloneOptions {
   branch?: string
   /** Also clone submodules, recursively. */
   recurseSubmodules?: boolean
+  /** Renderer-chosen id that tags this clone's progress and lets `cancelClone` stop it. */
+  cloneId?: string
 }
 
 /** The three git-flow branch kinds Gitcito automates. */

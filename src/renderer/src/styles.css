@@ -5718,6 +5718,11 @@ body.col-resizing .node-ava {
   width: 740px;
 }
 
+/* 20% over the default 420px: room for a repository list worth multi-selecting. */
+.modal-clone {
+  width: 740px;
+}
+
 .modal h3 {
   font-size: 15px;
   margin-bottom: 14px;
@@ -13172,6 +13177,75 @@ mark.find-hit.active {
 @keyframes clone-progress-slide {
   0% { margin-inline-start: -35%; }
   100% { margin-inline-start: 100%; }
+}
+
+/* Multi-select in the clone dialog's repository list. */
+.repo-row-check {
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.repo-select-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 2px;
+  font-size: 12px;
+}
+.repo-select-count {
+  color: var(--text-2);
+}
+.clone-batch-list {
+  margin-top: 10px;
+}
+
+/* Clones running after their dialog closed — bottom corner, above the status bar. */
+.clone-tray {
+  position: fixed;
+  bottom: 40px;
+  inset-inline-end: 18px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  max-width: calc(100vw - 36px);
+}
+.clone-tray-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.clone-tray-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  color: var(--text-0);
+}
+.clone-tray-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.clone-tray-cancel {
+  display: inline-flex;
+  padding: 3px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.clone-tray-cancel:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 18%, transparent);
+  color: var(--red);
 }
 
 /* ── Issue detail page (tab) ── */

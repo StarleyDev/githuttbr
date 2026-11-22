@@ -2086,3 +2086,33 @@ describe('UTF-16 .strings localization files', () => {
     expect(cfg.trim()).toBe(suggestion!.textconv.trim())
   })
 })
+
+describe('cancelling a clone', () => {
+  it('stops the clone and leaves no folder behind', async () => {
+    const source = cloneFixture('bisect-bug')
+    const parent = mkdtempSync(join(tmpdir(), 'gitcito-clonecancel-'))
+    try {
+      const running = gitService.clone(parent, source, 'copy', { cloneId: 'test-cancel' })
+      // Sent synchronously after the start: the clone must already be cancellable.
+      expect(await gitService.cancelClone('test-cancel')).toBe(true)
+      await expect(running).rejects.toThrow('Clone cancelled')
+      expect(existsSync(join(parent, 'copy'))).toBe(false)
+      // Settled clones are forgotten, so a late cancel is a harmless no-op.
+      expect(await gitService.cancelClone('test-cancel')).toBe(false)
+    } finally {
+      rmSync(parent, { recursive: true, force: true })
+    }
+  })
+
+  it('leaves an uncancelled clone alone', async () => {
+    const source = cloneFixture('bisect-bug')
+    const parent = mkdtempSync(join(tmpdir(), 'gitcito-clonecancel-'))
+    try {
+      const path = await gitService.clone(parent, source, 'copy', { cloneId: 'test-keep' })
+      expect(existsSync(join(path, '.git'))).toBe(true)
+      expect(await gitService.cancelClone('test-keep')).toBe(false)
+    } finally {
+      rmSync(parent, { recursive: true, force: true })
+    }
+  })
+})

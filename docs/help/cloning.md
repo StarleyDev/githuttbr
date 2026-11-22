@@ -3,7 +3,7 @@ title: Cloning
 category: Start here
 order: 2
 summary: Clone from a URL or straight from your host — and narrow what comes down when the repository is enormous.
-keywords: clone shallow depth partial filter blob none single branch submodules recursive ls-remote branch picker unshallow monorepo
+keywords: clone background cancel abort multiple several batch many repositories select all shallow depth partial filter blob none single branch submodules recursive ls-remote branch picker unshallow monorepo
 ---
 
 # Cloning
@@ -16,6 +16,31 @@ dropped, never written into `.git/config`.
 Choose a parent folder and a name; the line under the fields shows exactly where
 the repository will land. A folder that already exists is refused rather than
 merged into.
+
+## Several repositories at once
+
+Setting up a new machine, or pulling down every service a team owns, used to
+mean opening this dialog once per repository. In a host tab, tick the checkbox
+on each repository you want, or **Select all shown** to take everything the
+filter matches. Clicking a row (not its checkbox) still picks that one alone.
+
+With more than one ticked, the dialog clones them all into the same parent
+folder, each in a folder named after the repository. The paths are listed before
+you start. If two have the same name (`org-a/app` and `org-b/app`), both get
+the owner in their folder name (`org-a-app`, `org-b-app`) instead of racing for
+one folder.
+
+The batch goes straight to the corner tray. Three clones run at a time and the
+rest wait as *Queued*; each has its own cancel. Each repository opens in a tab
+as it finishes.
+
+Limits:
+- **Branch to check out** is hidden for a batch: a branch name means nothing
+  across different repositories, so each one gets its default branch. The other
+  Advanced options (partial, shallow, single branch, submodules) apply to all.
+- Multi-select works in the host tabs only. The URL tab takes one URL.
+- One failure does not stop the others. A repository whose folder already
+  exists fails with its own error and the rest carry on.
 
 ## Advanced — narrowing the clone
 
@@ -60,10 +85,26 @@ field stays a plain text box and the clone itself reports the real error.
   `file://` URL when you ask for a shallow copy of a local repository, so the
   depth you asked for is the depth you get.
 
-## Progress
+## Progress, background and cancelling
 
 The bar reports what git reports: counting, compressing, receiving, resolving,
 checking out. A stage that cannot report a total shows an indeterminate bar
 rather than a fake percentage.
 
-The new repository opens in a tab, pinned to the profile you cloned with.
+A big clone takes minutes, and a stray click outside the dialog used to cost
+you all of it. Now closing the dialog — **Run in background**, `Esc`, the ✕ or a
+click outside — only hides it: the clone keeps going and moves to a small card
+in the bottom corner with the same progress bar. You can start another clone
+meanwhile; each gets its own card.
+
+Picked the wrong repository? **Cancel clone** in the dialog, or the ✕ on its
+card, stops git and deletes the half-written folder. Nothing else is touched —
+the folder did not exist before the clone started, which is checked up front.
+A cancelled clone cannot be resumed; starting it again starts from zero.
+
+When it finishes, the new repository opens in a tab, pinned to the profile you
+cloned with, whether or not the dialog is still open.
+
+Clones run inside the app, so quitting Gitcito stops them. The quit does not
+wait for the cleanup, so the half-written folder can be left behind — delete it
+before cloning there again, since the dialog refuses a folder that exists.

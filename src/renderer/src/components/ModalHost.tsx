@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
+import { useClonesStore } from '../stores/clones'
+import { cloneFolderNames } from '../lib/cloneBatch'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
 import { colorName } from './colorMenu'
@@ -10,7 +12,6 @@ import { chooseRepositories } from '../openRepositories'
 import { repoActions } from '../stores/repo'
 import {
   defaultProfile,
-  type CloneProgress,
   type CreateRepoOpts,
   type DivergedStrategy,
   type GroupTab,
@@ -611,13 +612,21 @@ function RepoPicker({
   host,
   onPick,
   selectedUrl,
+  selectedUrls,
+  onToggle,
+  onToggleAll,
   profileId,
   onProfile,
   matchName
 }: {
   host: RepoHost
+  /** A row click: this repository alone. */
   onPick: (repo: RemoteRepo) => void
   selectedUrl: string
+  /** Multi-select (the clone dialog): rows get a checkbox that adds or removes. */
+  selectedUrls?: string[]
+  onToggle?: (repo: RemoteRepo) => void
+  onToggleAll?: (repos: RemoteRepo[], on: boolean) => void
   profileId: string
   onProfile: (id: string) => void
   matchName?: string
@@ -678,6 +687,10 @@ function RepoPicker({
     return list.sort((a, b) => rank(a) - rank(b))
   }, [repos, search, matchName])
 
+  const isSelected = (repo: RemoteRepo): boolean =>
+    selectedUrls ? selectedUrls.includes(repo.url) : selectedUrl === repo.url
+  const allShownSelected = filtered.length > 0 && filtered.every(isSelected)
+
   const profileSelector = profiles.length > 1 && (
     <label className="repo-profile">
       <span>{t('modal.account')}</span>
@@ -716,6 +729,17 @@ function RepoPicker({
         </div>
       )}
 
+      {onToggleAll && repos && filtered.length > 0 && (
+        <div className="repo-select-bar">
+          <button className="link-btn" type="button" onClick={() => onToggleAll(filtered, !allShownSelected)}>
+            {allShownSelected ? t('clone.selectNone') : t('clone.selectAll')}
+          </button>
+          {!!selectedUrls?.length && (
+            <span className="repo-select-count">{interp(t('clone.selectedCount'), { count: selectedUrls.length })}</span>
+          )}
+        </div>
+      )}
+
       <div className="repo-list">
         {loading && (
           <div className="repo-list-state">
@@ -751,9 +775,20 @@ function RepoPicker({
             <button
               key={repo.url || repo.name}
               type="button"
-              className={`repo-row ${selectedUrl === repo.url ? 'selected' : ''}`}
+              className={`repo-row ${isSelected(repo) ? 'selected' : ''}`}
               onClick={() => onPick(repo)}
             >
+              {onToggle && (
+                // The checkbox adds to the selection; the rest of the row picks this one alone.
+                <input
+                  type="checkbox"
+                  className="repo-row-check"
+                  checked={isSelected(repo)}
+                  aria-label={interp(t('clone.toggleRepo'), { name: repo.name })}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => onToggle(repo)}
+                />
+              )}
               {repo.avatarUrl ? (
                 <img className="repo-row-avatar" src={repo.avatarUrl} alt="" loading="lazy" />
               ) : (
@@ -1419,6 +1454,9 @@ function EditRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'editRemot
   )
 }
 
+/** Paths listed under a batch before it collapses to "+N more". */
+const BATCH_PREVIEW = 5
+
 function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1431,12 +1469,18 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const [provider, setProvider] = useState<RemoteProviderId>('url')
   const [profileId, setProfileId] = useState(activeProfileId)
   const [url, setUrl] = useState('')
+  // Provider tabs can pick several repositories; more than one makes this a batch.
+  const [selected, setSelected] = useState<RemoteRepo[]>([])
   const [name, setName] = useState('')
   const [nameTouched, setNameTouched] = useState(false)
   const [dir, setDir] = useState(lastClonePath ?? '')
-  const [cloning, setCloning] = useState(false)
   const [partial, setPartial] = useState(false)
-  const [progress, setProgress] = useState<CloneProgress | null>(null)
+  // The clone itself lives in the clones store, so a click outside the dialog
+  // only hides it — it carries on in the floating tray.
+  const [taskId, setTaskId] = useState<string | null>(null)
+  const task = useClonesStore((s) => (taskId ? s.tasks.find((x) => x.id === taskId) : undefined))
+  const cloning = !!task
+  const progress = task?.progress ?? null
 
   // ── Advanced: what `git clone` can narrow before it starts ──
   const [advanced, setAdvanced] = useState(false)
@@ -1449,15 +1493,24 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const [branchesError, setBranchesError] = useState(false)
   const [loadingBranches, setLoadingBranches] = useState(false)
 
-  useEffect(() => window.api.onCloneProgress(setProgress), [])
+  // Leaving the dialog hands a running clone to the tray.
+  useEffect(() => {
+    if (!taskId) return undefined
+    return () => useClonesStore.getState().attach(taskId, false)
+  }, [taskId])
 
   const profile = profiles.find((p) => p.id === profileId) ?? profiles[0] ?? defaultProfile()
   const host: RepoHost | null = provider === 'url' ? null : provider
-  const valid = !!url.trim() && !!name.trim() && !!dir.trim() && !cloning
+  const batch = provider !== 'url' && selected.length > 1
+  const batchNames = useMemo(() => cloneFolderNames(selected.map((r) => r.name)), [selected])
+  const valid = batch
+    ? !!dir.trim() && !cloning
+    : !!url.trim() && !!name.trim() && !!dir.trim() && !cloning
 
   const changeProvider = (id: RemoteProviderId): void => {
     setProvider(id)
     setUrl('')
+    setSelected([])
     if (!nameTouched) setName('')
     resetBranches()
   }
@@ -1494,10 +1547,28 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     return last.replace(/\.git$/, '')
   }
 
-  const pickRepo = (repo: RemoteRepo): void => {
-    setUrl(repo.url)
-    if (!nameTouched) setName(repoToName(repo))
+  /** One repository left selected behaves exactly like a single pick. */
+  const applySelection = (next: RemoteRepo[]): void => {
+    setSelected(next)
+    setUrl(next.length === 1 ? next[0].url : '')
+    if (!nameTouched) setName(next.length === 1 ? repoToName(next[0]) : '')
     resetBranches()
+  }
+
+  const pickRepo = (repo: RemoteRepo): void => applySelection([repo])
+
+  const toggleRepo = (repo: RemoteRepo): void =>
+    applySelection(
+      selected.some((r) => r.url === repo.url) ? selected.filter((r) => r.url !== repo.url) : [...selected, repo]
+    )
+
+  const toggleAll = (shown: RemoteRepo[], on: boolean): void => {
+    const shownUrls = new Set(shown.map((r) => r.url))
+    applySelection(
+      on
+        ? [...selected, ...shown.filter((r) => !selected.some((x) => x.url === r.url))]
+        : selected.filter((r) => !shownUrls.has(r.url))
+    )
   }
 
   const browse = async (): Promise<void> => {
@@ -1505,14 +1576,60 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     if (picked) setDir(picked)
   }
 
-  const submit = async (): Promise<void> => {
+  /** Every selected repository into the same parent folder, a few at a time,
+   *  straight to the tray: there is no one clone for the dialog to follow. */
+  const submitBatch = (): void => {
+    const token = host ? profile[HOST_META[host].tokenField] : undefined
+    const parsedDepth = Number.parseInt(depth, 10)
+    const parentDir = dir.trim()
+    const profileForRepo = profile.id
+    const { onClone } = spec
+    const clones = useClonesStore.getState()
+    selected.forEach((repo, i) => {
+      const folder = batchNames[i]
+      clones.start(
+        {
+          parentDir,
+          url: repo.url,
+          name: folder,
+          opts: {
+            host: host ?? undefined,
+            token,
+            filter: partial ? 'blob:none' : undefined,
+            depth: shallow && parsedDepth > 0 ? parsedDepth : undefined,
+            singleBranch: shallow ? singleBranch : singleBranch || undefined,
+            // No branch: a name picked for one repository means nothing in the others.
+            recurseSubmodules: submodules
+          },
+          onDone: (path) => {
+            setRepoProfile(path, profileForRepo)
+            onClone({ path, name: folder })
+          }
+        },
+        { attached: false }
+      )
+    })
+    updateSettings((s) => ({ ...s, lastClonePath: parentDir }))
+    closeModal()
+    toast('info', interp(t('clone.batchStarted'), { count: selected.length }))
+  }
+
+  const submit = (): void => {
     if (!valid) return
-    setCloning(true)
-    setProgress(null)
-    try {
-      const token = host ? profile[HOST_META[host].tokenField] : undefined
-      const parsedDepth = Number.parseInt(depth, 10)
-      const path = await gitApi.clone(dir.trim(), url.trim(), name.trim(), {
+    if (batch) {
+      submitBatch()
+      return
+    }
+    const token = host ? profile[HOST_META[host].tokenField] : undefined
+    const parsedDepth = Number.parseInt(depth, 10)
+    const folder = name.trim()
+    const parentDir = dir.trim()
+    const profileForRepo = profile.id
+    const id = useClonesStore.getState().start({
+      parentDir,
+      url: url.trim(),
+      name: folder,
+      opts: {
         host: host ?? undefined,
         token,
         filter: partial ? 'blob:none' : undefined,
@@ -1522,18 +1639,19 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         singleBranch: shallow ? singleBranch : singleBranch || undefined,
         branch: branch.trim() || undefined,
         recurseSubmodules: submodules
-      })
-      updateSettings((s) => ({ ...s, lastClonePath: dir.trim() }))
-      // Pin the new repo to the chosen profile so its identity/tokens apply
-      // automatically whenever its tab is active.
-      setRepoProfile(path, profile.id)
-      closeModal()
-      spec.onClone({ path, name: name.trim() })
-      toast('success', interp(t('clone.done'), { name: name.trim() }))
-    } catch (e) {
-      toast('error', e instanceof Error ? e.message : String(e))
-      setCloning(false)
-    }
+      },
+      // Runs after the dialog may be long gone — it reads nothing from this render
+      // but the values captured above.
+      onDone: (path) => {
+        updateSettings((s) => ({ ...s, lastClonePath: parentDir }))
+        // Pin the new repo to the chosen profile so its identity/tokens apply
+        // automatically whenever its tab is active.
+        setRepoProfile(path, profileForRepo)
+        if (useUIStore.getState().modal === spec) closeModal()
+        spec.onClone({ path, name: folder })
+      }
+    })
+    setTaskId(id)
   }
 
   return (
@@ -1590,7 +1708,16 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
           )}
         </>
       ) : (
-        <RepoPicker host={provider} onPick={pickRepo} selectedUrl={url} profileId={profileId} onProfile={setProfileId} />
+        <RepoPicker
+          host={provider}
+          onPick={pickRepo}
+          selectedUrl={url}
+          selectedUrls={selected.map((r) => r.url)}
+          onToggle={toggleRepo}
+          onToggleAll={toggleAll}
+          profileId={profileId}
+          onProfile={setProfileId}
+        />
       )}
 
       <label className="modal-label">{t('modal.cloneInto')}</label>
@@ -1606,21 +1733,35 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         </button>
       </div>
 
-      <label className="modal-label">{t('modal.folderName')}</label>
-      <input
-        className="modal-input"
-        value={name}
-        placeholder="repository"
-        onChange={(e) => {
-          setNameTouched(true)
-          setName(e.target.value)
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') closeModal()
-        }}
-      />
-      {provider !== 'url' && url && <div className="modal-hint">{url}</div>}
-      {dir && name && <div className="modal-hint">{`${dir.replace(/\/+$/, '')}/${name.trim()}`}</div>}
+      {batch ? (
+        // Each repository keeps its own name — see cloneFolderNames for collisions.
+        <div className="clone-batch-list">
+          {batchNames.slice(0, BATCH_PREVIEW).map((n) => (
+            <div key={n} className="modal-hint">{`${dir.replace(/\/+$/, '') || '…'}/${n}`}</div>
+          ))}
+          {batchNames.length > BATCH_PREVIEW && (
+            <div className="modal-hint">{interp(t('clone.batchMore'), { count: batchNames.length - BATCH_PREVIEW })}</div>
+          )}
+        </div>
+      ) : (
+        <>
+          <label className="modal-label">{t('modal.folderName')}</label>
+          <input
+            className="modal-input"
+            value={name}
+            placeholder="repository"
+            onChange={(e) => {
+              setNameTouched(true)
+              setName(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') closeModal()
+            }}
+          />
+          {provider !== 'url' && url && <div className="modal-hint">{url}</div>}
+          {dir && name && <div className="modal-hint">{`${dir.replace(/\/+$/, '')}/${name.trim()}`}</div>}
+        </>
+      )}
 
       <button className="clone-advanced-toggle" type="button" onClick={() => setAdvanced((v) => !v)}>
         {advanced ? <ChevronDown size={13} /> : <ChevronRight size={13} />} {t('clone.advanced')}
@@ -1676,37 +1817,43 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
             </span>
           </label>
 
-          <label className="modal-label">{t('clone.branch')}</label>
-          <div className="repo-org-row">
-            {branches ? (
-              <select className="modal-input" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                <option value="">{t('clone.branchDefault')}</option>
-                {branches.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className="modal-input"
-                value={branch}
-                placeholder={t('clone.branchPlaceholder')}
-                onChange={(e) => setBranch(e.target.value)}
-              />
-            )}
-            <button className="btn ghost" type="button" disabled={!url.trim() || loadingBranches} onClick={() => void loadBranches()}>
-              {loadingBranches ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />} {t('clone.listBranches')}
-            </button>
-          </div>
-          {branchesError && <div className="modal-hint">{t('clone.branchesFailed')}</div>}
+          {batch ? (
+            <div className="modal-hint">{t('clone.batchBranchHint')}</div>
+          ) : (
+            <>
+              <label className="modal-label">{t('clone.branch')}</label>
+              <div className="repo-org-row">
+                {branches ? (
+                  <select className="modal-input" value={branch} onChange={(e) => setBranch(e.target.value)}>
+                    <option value="">{t('clone.branchDefault')}</option>
+                    {branches.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="modal-input"
+                    value={branch}
+                    placeholder={t('clone.branchPlaceholder')}
+                    onChange={(e) => setBranch(e.target.value)}
+                  />
+                )}
+                <button className="btn ghost" type="button" disabled={!url.trim() || loadingBranches} onClick={() => void loadBranches()}>
+                  {loadingBranches ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />} {t('clone.listBranches')}
+                </button>
+              </div>
+              {branchesError && <div className="modal-hint">{t('clone.branchesFailed')}</div>}
+            </>
+          )}
         </div>
       )}
 
       {cloning && (
         <div className="clone-progress">
           <div className="clone-progress-head" role="status" aria-live="polite">
-            <span>{progress ? `${progress.stage}…` : t('clone.starting')}</span>
+            <span>{task?.queued ? t('clone.queued') : progress ? `${progress.stage}…` : t('clone.starting')}</span>
             {progress && progress.total > 0 && (
               <span className="clone-progress-pct">{Math.round(progress.progress)}%</span>
             )}
@@ -1728,18 +1875,33 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
       )}
 
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal} type="button" disabled={cloning}>
-          {t('common.cancel')}
-        </button>
-        <button className="btn primary" disabled={!valid} onClick={() => void submit()} type="button">
-          {cloning ? (
-            <>
+        {task ? (
+          <>
+            <button
+              className="btn danger"
+              onClick={() => useClonesStore.getState().cancel(task.id)}
+              type="button"
+              disabled={task.cancelling}
+            >
+              {task.cancelling ? t('clone.cancelling') : t('clone.cancel')}
+            </button>
+            <button className="btn ghost" onClick={closeModal} type="button" title={t('clone.backgroundHint')}>
+              {t('clone.background')}
+            </button>
+            <button className="btn primary" disabled type="button">
               <Loader2 size={14} className="spin" /> {t('clone.running')}
-            </>
-          ) : (
-            t('clone.submit')
-          )}
-        </button>
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn ghost" onClick={closeModal} type="button">
+              {t('common.cancel')}
+            </button>
+            <button className="btn primary" disabled={!valid} onClick={submit} type="button">
+              {batch ? interp(t('clone.submitMany'), { count: selected.length }) : t('clone.submit')}
+            </button>
+          </>
+        )}
       </div>
     </>
   )
@@ -2178,7 +2340,9 @@ export function ModalHost(): React.JSX.Element {
           >
             <motion.div
               className={`modal ${
-                modal.kind === 'settings'
+                modal.kind === 'clone'
+                  ? 'modal-clone'
+                  : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
                   : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'

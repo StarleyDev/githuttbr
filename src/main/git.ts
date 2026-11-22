@@ -993,10 +993,12 @@ const CLONE_ENV_UNSAFE = {
 export function cloneGit(
   parentDir: string,
   env: NodeJS.ProcessEnv,
-  onProgress?: (p: CloneProgress) => void
+  onProgress?: (p: CloneProgress) => void,
+  abort?: AbortSignal
 ): SimpleGit {
   const git = simpleGit({
     baseDir: parentDir,
+    abort,
     progress: onProgress
       ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
       : undefined,
@@ -1005,6 +1007,16 @@ export function cloneGit(
   })
   git.env(env)
   return git
+}
+
+/** Clones still running, by the renderer's `cloneId` — what `cancelClone` aborts.
+ *  Clones run in the background now, so the dialog closing no longer ends one;
+ *  this is the only way to stop a clone of the wrong repository. */
+const runningClones = new Map<string, AbortController>()
+
+/** On quit: stop every clone rather than leave git running with no window to report to. */
+export function abortAllClones(): void {
+  for (const controller of runningClones.values()) controller.abort()
 }
 
 /** Map a remote URL's hostname to the provider whose PAT can authenticate it. */
@@ -7214,37 +7226,67 @@ export const gitService = {
     const folder = name.trim() || basename(url).replace(/\.git$/, '') || 'repository'
     const target = join(parentDir, folder)
     if (existsSync(target)) throw new Error(`A folder named "${folder}" already exists here.`)
-    // `git clone --depth` is silently ignored for a local path — a local clone
-    // hardlinks the object store instead of fetching — so a shallow request on
-    // a local repository only takes effect through a file:// URL.
-    const localShallow = !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
-    const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
-    const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token)
-    if (credEnv) await assertGitSupportsCredentialEnv()
-    // Streaming the underlying `git clone --progress` so the UI can show real progress;
-    // simpleGit auto-appends --progress when a progress handler is configured.
-    const git = cloneGit(parentDir, { ...noPromptEnv(), ...(credEnv ?? {}) }, onProgress)
-    const args: string[] = []
-    // A blob filter (e.g. "blob:none") makes this a partial clone — history without
-    // file blobs, fetched on demand. Great for very large repos.
-    if (opts.filter) args.push(`--filter=${opts.filter}`)
-    // `--depth` implies --single-branch in git, so the flag pair below is not
-    // contradictory: asking for full branches back is the case worth spelling out.
-    if (opts.depth && opts.depth > 0) args.push(`--depth=${Math.floor(opts.depth)}`)
-    if (opts.singleBranch === true) args.push('--single-branch')
-    else if (opts.singleBranch === false && opts.depth) args.push('--no-single-branch')
-    if (opts.branch?.trim()) args.push('--branch', opts.branch.trim())
-    if (opts.recurseSubmodules) args.push('--recurse-submodules')
-    await git.clone(cloneUrl, folder, args.length ? args : undefined)
-    // A shallow local clone went through file:// — point origin back at the path the user gave.
-    if (cloneUrl !== url) {
+    // Registered before the first await, so a cancel sent the moment the clone
+    // starts finds it; an abort before git spawns rejects the clone at once.
+    const controller = new AbortController()
+    if (opts.cloneId) runningClones.set(opts.cloneId, controller)
+    try {
+      // `git clone --depth` is silently ignored for a local path — a local clone
+      // hardlinks the object store instead of fetching — so a shallow request on
+      // a local repository only takes effect through a file:// URL.
+      const localShallow =
+        !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
+      const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
+      const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token)
+      if (credEnv) await assertGitSupportsCredentialEnv()
+      // Streaming the underlying `git clone --progress` so the UI can show real progress;
+      // simpleGit auto-appends --progress when a progress handler is configured.
+      const git = cloneGit(
+        parentDir,
+        { ...noPromptEnv(), ...(credEnv ?? {}) },
+        onProgress && ((p) => onProgress({ ...p, cloneId: opts.cloneId })),
+        controller.signal
+      )
+      const args: string[] = []
+      // A blob filter (e.g. "blob:none") makes this a partial clone — history without
+      // file blobs, fetched on demand. Great for very large repos.
+      if (opts.filter) args.push(`--filter=${opts.filter}`)
+      // `--depth` implies --single-branch in git, so the flag pair below is not
+      // contradictory: asking for full branches back is the case worth spelling out.
+      if (opts.depth && opts.depth > 0) args.push(`--depth=${Math.floor(opts.depth)}`)
+      if (opts.singleBranch === true) args.push('--single-branch')
+      else if (opts.singleBranch === false && opts.depth) args.push('--no-single-branch')
+      if (opts.branch?.trim()) args.push('--branch', opts.branch.trim())
+      if (opts.recurseSubmodules) args.push('--recurse-submodules')
       try {
-        await simpleGit(target).remote(['set-url', 'origin', url])
-      } catch {
-        /* non-fatal */
+        await git.clone(cloneUrl, folder, args.length ? args : undefined)
+      } catch (err) {
+        if (!controller.signal.aborted) throw err
+        // Killed mid-transfer, git leaves a half-written folder behind. It did not
+        // exist before this clone (checked above), so nothing of the user's is in it.
+        await rm(target, { recursive: true, force: true }).catch(() => undefined)
+        throw new Error('Clone cancelled')
       }
+      // A shallow local clone went through file:// — point origin back at the path the user gave.
+      if (cloneUrl !== url) {
+        try {
+          await simpleGit(target).remote(['set-url', 'origin', url])
+        } catch {
+          /* non-fatal */
+        }
+      }
+    } finally {
+      if (opts.cloneId) runningClones.delete(opts.cloneId)
     }
     return target
+  },
+
+  /** Stop a running clone and remove what it had written. False when it already ended. */
+  async cancelClone(cloneId: string): Promise<boolean> {
+    const controller = runningClones.get(cloneId)
+    if (!controller) return false
+    controller.abort()
+    return true
   },
 
   async init(parentDir: string, name: string): Promise<string> {
@@ -8267,7 +8309,7 @@ function lockFor(repoPath: string): RwLock {
 // touches the index, working tree, refs, config, or hook files.
 /** Methods whose first argument is not a repository path: they run before a
  *  repo exists locally, or against a remote URL. No lock, no repo-scoped log. */
-const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
+const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
   'isAncestor',
