@@ -3,7 +3,7 @@ title: Fetching, pulling & pushing
 category: Sync & many repos
 order: 50
 summary: Staying in step, with guards on the operations that bite.
-keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all no remote add remote push several branches many branches batch atomic agents
+keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all no remote add remote push several branches many branches batch atomic agents push.default simple tracks origin/main checkout -b different upstream name
 ---
 
 # Fetching, pulling & pushing
@@ -139,20 +139,43 @@ only some branches, select them in the sidebar with Ctrl/⌘-click or
 Shift-click, then right-click and choose **Push N branches…**. A branch folder's
 right-click menu offers the same thing for everything in the folder.
 
-![Push branches: ahead, new, up to date, behind and diverged branches against origin](../screenshots/push-branches.webp)
+![Push branches: ahead, new, up to date, behind and diverged branches against origin, and one that tracks a branch of another name](../screenshots/push-branches.webp)
 
 Each local branch shows where it stands against the chosen remote:
 
 | Badge | Meaning | Ticked at first |
 |-------|---------|-----------------|
-| **↑N** | N commits the remote does not have yet | Yes |
-| **new** | The remote has no branch of that name — this push creates it | Yes |
+| **↑N** | N commits the remote does not have yet | Yes, unless it tracks another name (below) |
+| **new** | The remote has no branch of that name — this push creates it | Yes, unless it tracks another name (below) |
 | **up to date** | Nothing to send | No |
 | **↓N** | Behind: the remote has commits this branch lacks | Disabled |
 | **diverged ↑N ↓M** | Each side has commits the other lacks | Disabled |
 
-A branch whose upstream on that remote has a different name lands on that name,
-shown as **→ origin/other-name**. A lock marks a [protected branch](repo-settings.md).
+Every branch is pushed to **its own name** on the remote, and the badge is
+counted against that branch: `feature` goes to `origin/feature`. That is what
+plain `git push` does with git's default `push.default=simple`.
+
+**A branch that tracks a branch of another name** is the exception worth a
+warning. The usual cause is `git checkout -b feature origin/main`: git makes
+`feature` track `origin/main`, so it looks "ahead", and sending it there would
+fast-forward `main` with unreviewed commits. Plain `git push` refuses that, and
+so does this dialog by default. Such a row:
+
+- says so in amber: **tracks origin/main — pushes to origin/feature**,
+- is **never ticked for you**, even when you opened the dialog from a sidebar
+  selection that included it,
+- offers **push to main instead** on the row. Choose it and the row shows
+  **→ origin/main**, with its badge counted against `main`. When you press
+  Push, a confirmation lists every `branch → remote branch` pair that would be
+  updated. If one of them is a [protected branch](repo-settings.md) or the
+  remote's default branch, the confirmation says so: those commits land there
+  directly, with no pull request and no review.
+
+Two ticked branches that would update the same remote branch are refused
+before git runs, with a message naming both. git would refuse the whole push
+anyway.
+
+A lock marks a [protected branch](repo-settings.md).
 The filter box, **Select all shown** and the count work as in the
 [clone dialog](cloning.md).
 

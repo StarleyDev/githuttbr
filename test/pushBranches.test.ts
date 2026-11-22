@@ -6,6 +6,7 @@ import { join } from 'path'
 import { gitService } from '../src/main/git'
 import {
   classifyPushState,
+  duplicateDestinations,
   parsePushPorcelain,
   parseUpstreamTrack,
   pushRefspecs,
@@ -14,11 +15,15 @@ import {
 } from '../src/shared/pushPorcelain'
 import {
   canBatchPush,
+  chosenPushTargets,
   defaultPushRemote,
   filterPushStates,
   initialPushSelection,
   partitionBySecrets,
-  tallyPushResults
+  pushDestinationClashes,
+  seedPushSelection,
+  tallyPushResults,
+  upstreamPushDecision
 } from '../src/renderer/src/lib/pushBranches'
 import { isSecretFile } from '../src/shared/secretFiles'
 import type { BranchPushState } from '../src/shared/types'
@@ -130,7 +135,8 @@ describe('the push-branches dialog logic', () => {
     remoteExists: state !== 'new',
     ahead: 0,
     behind: 0,
-    state
+    state,
+    upstreamTarget: null
   })
   const states = [st('a', 'ahead'), st('n', 'new'), st('u', 'upToDate'), st('b', 'behind'), st('d', 'diverged', true)]
 
@@ -138,6 +144,71 @@ describe('the push-branches dialog logic', () => {
     expect(initialPushSelection(states)).toEqual(['a', 'n'])
     expect(initialPushSelection(states, ['u', 'd', 'b'])).toEqual(['u'])
     expect(states.filter(canBatchPush).map((s) => s.name)).toEqual(['a', 'n', 'u'])
+  })
+
+  // `git checkout -b feature origin/main`: new under its own name, ahead of main.
+  const fromMain = (name: string, isRemoteDefault = false): BranchPushState => ({
+    ...st(name, 'new'),
+    upstream: 'origin/main',
+    upstreamTarget: { remoteBranch: 'main', remoteExists: true, ahead: 1, behind: 0, state: 'ahead', isRemoteDefault }
+  })
+
+  it('never pre-ticks a branch that tracks a branch of another name', () => {
+    const rows = [...states, fromMain('feature')]
+    expect(initialPushSelection(rows)).toEqual(['a', 'n'])
+    expect(initialPushSelection(rows, ['feature', 'a'])).toEqual(['a'])
+  })
+
+  it('judges a row against the destination chosen for it', () => {
+    const behindUp: BranchPushState = {
+      ...fromMain('f'),
+      upstreamTarget: { remoteBranch: 'main', remoteExists: true, ahead: 1, behind: 2, state: 'diverged', isRemoteDefault: false }
+    }
+    expect(canBatchPush(behindUp)).toBe(true) // its own name is new
+    expect(canBatchPush(behindUp, true)).toBe(false) // main has moved on
+    const rows = [fromMain('feature'), st('a', 'ahead')]
+    expect(chosenPushTargets(rows, new Set(['feature', 'a']), new Set())).toEqual([
+      { branch: 'feature', remoteBranch: 'feature' },
+      { branch: 'a', remoteBranch: 'a' }
+    ])
+    expect(chosenPushTargets(rows, new Set(['feature']), new Set(['feature']))).toEqual([
+      { branch: 'feature', remoteBranch: 'main' }
+    ])
+  })
+
+  it('refuses two branches onto one remote branch, naming both', () => {
+    const rows = [fromMain('f1'), fromMain('f2'), st('main', 'upToDate')]
+    const both = chosenPushTargets(rows, new Set(['f1', 'f2']), new Set(['f1', 'f2']))
+    expect(pushDestinationClashes(both)).toEqual([{ remoteBranch: 'main', branches: ['f1', 'f2'] }])
+    // Onto a branch that is itself being pushed under its own name.
+    const onto = chosenPushTargets(rows, new Set(['f1', 'main']), new Set(['f1']))
+    expect(pushDestinationClashes(onto)).toEqual([{ remoteBranch: 'main', branches: ['f1', 'main'] }])
+    expect(pushDestinationClashes(chosenPushTargets(rows, new Set(['f1', 'f2']), new Set()))).toEqual([])
+    expect(duplicateDestinations([{ branch: 'x', remoteBranch: 'x' }])).toEqual([])
+  })
+
+  it('asks before pushing to another name, and warns harder for protected or default branches', () => {
+    const none = (): boolean => false
+    const own = [{ branch: 'feature', remoteBranch: 'feature' }]
+    const redirected = [{ branch: 'feature', remoteBranch: 'main' }]
+    expect(upstreamPushDecision([fromMain('feature')], own, none).kind).toBe('none')
+    const plain = upstreamPushDecision([{ ...fromMain('feature'), upstreamTarget: { ...fromMain('feature').upstreamTarget!, remoteBranch: 'dev' } }], [{ branch: 'feature', remoteBranch: 'dev' }], none)
+    expect(plain).toEqual({ kind: 'confirm', redirects: [{ branch: 'feature', remoteBranch: 'dev', sensitive: false }] })
+    expect(upstreamPushDecision([fromMain('feature')], redirected, (b) => b === 'main').kind).toBe('confirmSensitive')
+    expect(upstreamPushDecision([fromMain('feature', true)], redirected, none).kind).toBe('confirmSensitive')
+  })
+
+  it('seeds the ticks only from states read against the remote now chosen', () => {
+    // origin: `a` is ahead. upstream: `a` is up to date and `n` is new.
+    const onOrigin = { remote: 'origin', states: [st('a', 'ahead'), st('n', 'upToDate')] }
+    const onUpstream = { remote: 'upstream', states: [st('a', 'upToDate'), st('n', 'new')] }
+    expect(seedPushSelection(onOrigin, 'origin', null)).toEqual(['a'])
+    expect(seedPushSelection(onOrigin, 'origin', 'origin')).toBeNull() // already seeded: the ticks are the user's
+    // Switched to upstream, origin's states still in hand: no seed, and seededFor stays put.
+    expect(seedPushSelection(onOrigin, 'upstream', 'origin')).toBeNull()
+    // Upstream's own states arrive: they seed.
+    expect(seedPushSelection(onUpstream, 'upstream', 'origin')).toEqual(['n'])
+    expect(seedPushSelection(null, 'upstream', 'origin')).toBeNull()
   })
 
   it('filters by name with the current branch first', () => {
@@ -238,7 +309,10 @@ describe('pushing several branches in one go', () => {
     expect(by.uptodate.state).toBe('upToDate')
     expect(by.main).toMatchObject({ state: 'upToDate', isCurrent: true })
     expect(by.diverged).toMatchObject({ state: 'diverged', ahead: 1, behind: 1 })
-    expect(by.renamed).toMatchObject({ state: 'ahead', remoteBranch: 'other-name', upstream: 'origin/other-name' })
+    // Its own name, not the upstream's: the remote has no `renamed`, so it is new there.
+    expect(by.renamed).toMatchObject({ state: 'new', remoteBranch: 'renamed', upstream: 'origin/other-name' })
+    expect(by.renamed.upstreamTarget).toMatchObject({ remoteBranch: 'other-name', state: 'ahead', ahead: 1, behind: 0 })
+    expect(by.ahead.upstreamTarget).toBeNull()
     expect(by.fresh).toMatchObject({ state: 'new', remoteExists: false, upstream: null })
   })
 
@@ -252,20 +326,95 @@ describe('pushing several branches in one go', () => {
   })
 
   it('pushes three branches in one call, creates new ones and links their upstream, without a checkout', async () => {
+    const otherBefore = remoteSha('other-name')
     const res = await gitService.pushBranches(repo, 'origin', ['ahead', 'fresh', 'renamed', 'uptodate'], {
       setUpstream: true
     })
     const by = Object.fromEntries(res.results.map((r) => [r.branch, r]))
     expect(by.ahead.status).toBe('pushed')
     expect(by.fresh).toMatchObject({ status: 'created', upstreamSet: true })
-    expect(by.renamed).toMatchObject({ status: 'pushed', remoteBranch: 'other-name', upstreamSet: false })
+    // Under its own name, and its existing upstream is left as it was.
+    expect(by.renamed).toMatchObject({ status: 'created', remoteBranch: 'renamed', upstreamSet: false })
     expect(by.uptodate.status).toBe('upToDate')
     expect(remoteSha('ahead')).toBe(git('rev-parse', 'ahead'))
     expect(remoteSha('fresh')).toBe(git('rev-parse', 'fresh'))
-    expect(remoteSha('other-name')).toBe(git('rev-parse', 'renamed'))
-    expect(remoteHas('renamed')).toBe(false) // honoured the upstream's name
+    expect(remoteSha('renamed')).toBe(git('rev-parse', 'renamed'))
+    expect(remoteSha('other-name')).toBe(otherBefore)
     expect(git('rev-parse', '--abbrev-ref', 'fresh@{u}')).toBe('origin/fresh')
     expect(git('symbolic-ref', '--short', 'HEAD')).toBe('main')
+  })
+
+  it('pushes to the upstream\'s other name only when asked to', async () => {
+    const res = await gitService.pushBranches(repo, 'origin', ['renamed'], { setUpstream: true, toUpstream: ['renamed'] })
+    expect(res.results[0]).toMatchObject({ status: 'pushed', remoteBranch: 'other-name' })
+    expect(remoteSha('other-name')).toBe(git('rev-parse', 'renamed'))
+    expect(remoteHas('renamed')).toBe(false)
+    // Not for a branch whose upstream has its own name, or none.
+    await expect(
+      gitService.pushBranches(repo, 'origin', ['ahead'], { setUpstream: false, toUpstream: ['ahead'] })
+    ).rejects.toThrow(/does not track a differently named branch/)
+  })
+
+  describe('a branch created from origin/main', () => {
+    // `git checkout -b feature origin/main` — git's default autoSetupMerge makes
+    // it track origin/main. A push of it must never fast-forward main unasked.
+    beforeEach(() => {
+      git('checkout', '-q', '-b', 'feature', 'origin/main')
+      git('commit', '-q', '--allow-empty', '-m', 'unreviewed')
+      git('checkout', '-q', '-b', 'feature2', 'origin/main')
+      git('commit', '-q', '--allow-empty', '-m', 'also unreviewed')
+      git('checkout', '-q', 'main')
+      git('remote', 'set-head', 'origin', 'main')
+    })
+
+    it('shows it as new under its own name, ahead of main as the alternative, and does not tick it', async () => {
+      expect(git('rev-parse', '--abbrev-ref', 'feature@{u}')).toBe('origin/main')
+      const states = await gitService.branchPushStates(repo, 'origin')
+      const feature = states.find((s) => s.name === 'feature')!
+      expect(feature).toMatchObject({ remoteBranch: 'feature', remoteExists: false, state: 'new', ahead: 0 })
+      expect(feature.upstreamTarget).toEqual({
+        remoteBranch: 'main',
+        remoteExists: true,
+        ahead: 1,
+        behind: 0,
+        state: 'ahead',
+        isRemoteDefault: true
+      })
+      expect(initialPushSelection(states)).not.toContain('feature')
+      expect(initialPushSelection(states)).toContain('fresh')
+    })
+
+    it('pushed with the defaults, creates feature on the remote and leaves main untouched', async () => {
+      const mainBefore = remoteSha('main')
+      const res = await gitService.pushBranches(repo, 'origin', ['feature', 'feature2'], { setUpstream: true })
+      expect(res.results.map((r) => [r.branch, r.remoteBranch, r.status])).toEqual([
+        ['feature', 'feature', 'created'],
+        ['feature2', 'feature2', 'created']
+      ])
+      expect(remoteSha('main')).toBe(mainBefore)
+      expect(remoteSha('feature')).toBe(git('rev-parse', 'feature'))
+      expect(git('rev-parse', '--abbrev-ref', 'feature@{u}')).toBe('origin/main') // not re-pointed
+    })
+
+    it('refuses two branches onto main before running git, naming both', async () => {
+      const mainBefore = remoteSha('main')
+      await expect(
+        gitService.pushBranches(repo, 'origin', ['feature', 'feature2'], {
+          setUpstream: false,
+          toUpstream: ['feature', 'feature2']
+        })
+      ).rejects.toThrow(/feature and feature2 would all push to origin\/main/)
+      expect(remoteSha('main')).toBe(mainBefore)
+    })
+
+    it('with the explicit choice, needs the strong confirm and then fast-forwards main', async () => {
+      const states = await gitService.branchPushStates(repo, 'origin')
+      const targets = chosenPushTargets(states, new Set(['feature']), new Set(['feature']))
+      expect(targets).toEqual([{ branch: 'feature', remoteBranch: 'main' }])
+      expect(upstreamPushDecision(states, targets, () => false).kind).toBe('confirmSensitive')
+      await gitService.pushBranches(repo, 'origin', ['feature'], { setUpstream: false, toUpstream: ['feature'] })
+      expect(remoteSha('main')).toBe(git('rev-parse', 'feature'))
+    })
   })
 
   it('leaves upstream alone when asked not to set it', async () => {

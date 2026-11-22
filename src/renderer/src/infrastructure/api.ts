@@ -291,7 +291,12 @@ export const gitApi = {
   outgoingFiles: (path: string, remote: string, branches: string[]) =>
     call<Record<string, string[]>>('outgoingFiles', path, remote, branches),
   /** Several branches in one non-forced `git push`, reported per branch. */
-  pushBranches: (path: string, remote: string, branches: string[], opts: { setUpstream: boolean; atomic?: boolean }) =>
+  pushBranches: (
+    path: string,
+    remote: string,
+    branches: string[],
+    opts: { setUpstream: boolean; atomic?: boolean; toUpstream?: string[] }
+  ) =>
     call<PushBranchesResult>('pushBranches', path, remote, branches, opts),
 
   cherryPickMany: (path: string, hashes: string[], noCommit?: boolean) =>

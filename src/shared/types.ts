@@ -2426,14 +2426,31 @@ export interface BranchPushState {
   isCurrent: boolean
   /** The configured upstream, short form (`origin/feature`), or null. */
   upstream: string | null
-  /** The branch name it would land on at the chosen remote — the upstream's
-   *  name when it tracks that remote under another name, else its own. */
+  /** The branch it lands on by default at the chosen remote: always its own
+   *  name, as `git push` with `push.default=simple` would. */
   remoteBranch: string
   /** Whether `<remote>/<remoteBranch>` exists as a remote-tracking ref. */
+  remoteExists: boolean
+  /** Counted against `<remote>/<remoteBranch>`, not against the upstream. */
+  ahead: number
+  behind: number
+  state: BranchPushStateKind
+  /** Set when the branch tracks a branch of another name on this remote —
+   *  `git checkout -b feature origin/main`. Pushing there is an explicit,
+   *  confirmed choice, never the default. */
+  upstreamTarget: UpstreamPushTarget | null
+}
+
+/** The other destination a branch could be pushed to: its upstream's name. */
+export interface UpstreamPushTarget {
+  /** The upstream's branch name on the remote (`main`). */
+  remoteBranch: string
   remoteExists: boolean
   ahead: number
   behind: number
   state: BranchPushStateKind
+  /** The remote's default branch (`refs/remotes/<remote>/HEAD`), when known. */
+  isRemoteDefault: boolean
 }
 
 /** How one branch of a multi-branch push came out, from `git push --porcelain`. */
