@@ -127,6 +127,17 @@ instead of quietly producing a broken page.
   app against the playground repos — then `npm run playground:rebuild`, because
   capturing mutates them. Every screenshot must be used by some page.
 
+### Translated pages
+
+`docs/help/<locale>/<id>.md` is a translation of `docs/help/<id>.md`. When you
+bring one up to date, finish with `source: <git hash-object docs/help/<id>.md>`
+in its front matter: that is how `npm run lint:docs` knows which English it
+matches, and from then on any edit to the English page flags it as stale — with
+the `git diff` between the two versions. A page without `source:` is only
+compared by shape (sections, images, table rows). Stale pages are a warning;
+`npm run lint:docs -- --strict` (or `DOCS_STRICT=1`) fails on them. Never stamp
+a `source:` on a page you did not check against the English.
+
 ### Screenshots
 
 Each shot is declared in `examples/screenshots/shots.config.mjs`: which

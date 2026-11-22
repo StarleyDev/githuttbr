@@ -3,6 +3,8 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
+// @ts-expect-error — a plain .mjs script, untyped on purpose
+import { alignSections, blobSha, compareStructure, outline, staleness } from '../scripts/docs-staleness.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP_DIR = join(ROOT, 'docs/help')
@@ -71,6 +73,117 @@ describe('docs', () => {
     }
     const orphans = readdirSync(join(ROOT, 'docs/screenshots')).filter((f) => !used.has(f))
     expect(orphans).toEqual([])
+  })
+})
+
+describe('translation staleness', () => {
+  const en = [
+    '---',
+    'title: Cloning',
+    '---',
+    '# Cloning',
+    'Intro with `⌘K`.',
+    '## Several at once',
+    'Tick each one; `org-a/app` becomes `org-a-app`.',
+    '![multi](../screenshots/clone-multi-select.webp)',
+    '## Advanced',
+    'Uses `--filter=blob:none`.',
+    '| Option | Does |',
+    '|---|---|',
+    '| **Partial** | `--filter=blob:none` |',
+    '```sh',
+    '# not a heading',
+    '```',
+    '## Progress',
+    'See [profiles](profiles.md).',
+    ''
+  ].join('\n')
+  // Translated before "Several at once" existed: same shape otherwise.
+  const old = [
+    '---',
+    'title: Clonar',
+    '---',
+    '# Clonar',
+    'Intro con `⌘K`.',
+    '## Avanzado',
+    'Usa `--filter=blob:none`.',
+    '| Opción | Hace |',
+    '|---|---|',
+    '| **Parcial** | `--filter=blob:none` |',
+    '## Progreso',
+    'Mira [perfiles](profiles.md).',
+    ''
+  ].join('\n')
+
+  it('hashes like git hash-object, whatever the line endings', () => {
+    // `printf 'hello\n' | git hash-object --stdin`
+    expect(blobSha('hello\n')).toBe('ce013625030ba8dba906f756967f9e9ca394464a')
+    expect(blobSha('hello\r\n')).toBe(blobSha('hello\n'))
+  })
+
+  it('ignores a heading inside fenced code', () => {
+    expect(outline(en).sections.map((s) => s.text)).toEqual(['Cloning', 'Several at once', 'Advanced', 'Progress'])
+    expect(outline(en).tableRows).toBe(2)
+  })
+
+  it('names the missing section, not the one after it', () => {
+    // Levels alone would pair "Several at once" with "Avanzado" and blame
+    // "Advanced"; the shared code spans put the gap where it really is.
+    const { missing, extra } = alignSections(outline(en).sections, outline(old).sections)
+    expect(missing.map((s) => s.text)).toEqual(['Several at once'])
+    expect(extra).toEqual([])
+  })
+
+  it('calls a translation without provenance stale only when its shape differs', () => {
+    expect(staleness(en, old)).toEqual({
+      status: 'stale',
+      reasons: ['missing section "## Several at once"', 'missing image clone-multi-select.webp']
+    })
+    const caughtUp = old.replace('## Avanzado', '## Varios\n![x](../../screenshots/clone-multi-select.webp)\n## Avanzado')
+    expect(staleness(en, caughtUp)).toEqual({ status: 'unverified', reasons: [] })
+  })
+
+  it('is fresh when its source: is the English as it is now, and stale once English moves', () => {
+    const caughtUp = old
+      .replace('title: Clonar', `title: Clonar\nsource: ${blobSha(en)}`)
+      .replace('## Avanzado', '## Varios\n![x](../../screenshots/clone-multi-select.webp)\n## Avanzado')
+    expect(staleness(en, caughtUp).status).toBe('fresh')
+
+    // A reworded sentence changes no structure; only the hash can see it.
+    const reworded = en.replace('Intro with', 'An introduction with')
+    const verdict = staleness(reworded, caughtUp)
+    expect(verdict.status).toBe('stale')
+    expect(verdict.reasons).toEqual([
+      `English changed since ${blobSha(en).slice(0, 12)} — git diff ${blobSha(en).slice(0, 12)} ${blobSha(reworded).slice(0, 12)}`
+    ])
+  })
+
+  it('still flags a stamped page that lost a section', () => {
+    const stamped = old.replace('title: Clonar', `title: Clonar\nsource: ${blobSha(en).slice(0, 12)}`)
+    expect(staleness(en, stamped).status).toBe('stale')
+  })
+
+  it('counts a table that grew or shrank', () => {
+    const fewer = compareStructure(en.replace('| **Partial** | `--filter=blob:none` |\n', ''), en)
+    expect(fewer).toEqual(['table rows: English has 1, translation 2'])
+  })
+
+  it('fails the docs guard only under --strict', () => {
+    // Today's backlog is a warning; the same backlog is a failure for maintainers.
+    execFileSync('node', [join(ROOT, 'scripts/docs-check.mjs')], { stdio: 'pipe' })
+    const strict = (): Buffer =>
+      execFileSync('node', [join(ROOT, 'scripts/docs-check.mjs'), '--strict'], { stdio: 'pipe' })
+    const anyStale = readdirSync(HELP_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .some((e) =>
+        readdirSync(join(HELP_DIR, e.name)).some(
+          (f) =>
+            staleness(readFileSync(join(HELP_DIR, f), 'utf8'), readFileSync(join(HELP_DIR, e.name, f), 'utf8'))
+              .status === 'stale'
+        )
+      )
+    if (anyStale) expect(strict).toThrow()
+    else expect(strict).not.toThrow()
   })
 })
 

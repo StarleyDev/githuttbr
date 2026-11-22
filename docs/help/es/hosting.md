@@ -4,6 +4,7 @@ category: Sincronizar y muchos repos
 order: 56
 summary: Crea PRs en cualquier hosting; revísalos y fusiónalos en GitHub y GitLab.
 keywords: pull request PR merge request MR GitHub GitLab Bitbucket Azure DevOps revisar review aprobar approve fusionar merge issues incidencias notificaciones
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hosting y pull requests
@@ -89,7 +90,7 @@ La columna principal tiene tres secciones:
 |---|---|
 | **Conversación** | La descripción, los comentarios y los hilos de revisión en línea (`archivo:línea`, con respuestas). Después, el cuadro de comentario con comentar / aprobar / pedir cambios, y el cuadro de merge (merge, squash o rebase) |
 | **Archivos** | Cada archivo cambiado, y el diff del seleccionado junto a la lista, con resaltado de sintaxis y cambios a nivel de palabra (los archivos que parecen secretos se enmascaran si ese ajuste está activo). Una lista ✓ de "visto" recuerda tu avance. Un archivo del que el host no envía diff (binario o demasiado grande) enlaza al host |
-| **Checks** | Check-runs de CI (GitHub), jobs de pipeline (GitLab), estados de commit (Forgejo) o estados del PR (Azure DevOps), con pasa/falla/en curso y enlaces a los logs |
+| **Checks** | Check-runs de CI (GitHub) o jobs de pipeline (GitLab), con pasa/falla/en curso y enlaces a los logs |
 
 La barra lateral muestra:
 
@@ -121,10 +122,6 @@ API de GitLab no devuelve. Revisar y fusionar funciona en gitlab.com y en un
 [GitLab autogestionado](#gitlab-autogestionado). Bitbucket sigue abriéndose en el
 navegador para revisar.
 
-Diferencias de Forgejo: los hilos de comentarios en línea se muestran pero no se
-pueden responder (Forgejo no tiene API para ello), y los checks son los estados
-del commit de la cabeza — más en [Forgejo](#forgejo).
-
 Diferencias de Azure DevOps: aprobar emite tu voto (*Approved*); **pedir
 cambios** vota *Waiting for author*. Completar el PR admite merge, squash o
 rebase. Azure lista los archivos cambiados de un PR pero no envía diff, así que
@@ -137,6 +134,18 @@ La barra lateral también lista los **work items vinculados al PR** — número,
 título, tipo y estado —, cada uno se abre en el navegador. Leerlos requiere un
 token que pueda leer work items (*Work Items: Read*); sin él, la fila
 simplemente no aparece.
+
+Los **checks** incluyen la **validación de compilación** de la rama — el pipeline
+que exige su política, que Azure registra como resultado de política y no como
+estado — junto a cualquier estado que publique un pipeline o una CI externa. Un
+check que es una compilación de Azure Pipelines de esta organización muestra su
+log bajo la fila: las tareas que fallaron, cada una bajo su nombre, o el log
+completo de cada job cuando nada falló, empezando por el final. El token solo va
+a compilaciones de la propia organización del PR. El panel lee como mucho tres
+logs, que comparten un presupuesto de 512 KB del final. Leer logs requiere
+*Build: Read*; sin él, la fila ofrece el navegador. Un token al que le falta un
+permiso simplemente se rechaza: la app nunca lo toma por una sesión revocada ni
+descarta la credencial que usa git.
 
 ## GitLab autogestionado
 
@@ -202,6 +211,8 @@ entrega logs a un navegador con sesión responde con su página de inicio de
 sesión, y la fila lo dice y ofrece el navegador. Los logs muy largos muestran sus
 últimas miles de líneas.
 
+![El log de un job de Forgejo Actions abierto bajo su fila de check](../../screenshots/pr-check-log.webp)
+
 Igual que con GitLab, **un token de Forgejo solo va al servidor que lo emitió**.
 Un perfil sin dirección de Forgejo no tiene ninguna credencial de Forgejo. No hay
 servidor por defecto al que recurrir.
@@ -222,10 +233,20 @@ y **crear una rama para esta incidencia** (con nombre generado por IA). Los
 hitos muestran su progreso y sus incidencias. Los releases se pueden explorar
 con su página de changelog.
 
+**Pull requests vinculados** responde a «¿alguien está ya arreglando esto?»: los
+PRs que cerrarán la incidencia, o que la cerraron — una palabra clave del estilo
+`Closes #N` o un vínculo manual en el cuadro *Development* de GitHub —, primero
+los abiertos, luego los fusionados y después los cerrados. Un PR que solo
+*menciona* la incidencia se omite a propósito, igual que todo lo que pase de los
+50 primeros. Uno de este repositorio se abre en una pestaña de PR; uno de otro
+repositorio, en el navegador. Un token que no puede leer los pull requests del
+repositorio (un token de grano fino sin *Pull requests: read*) recibe un discreto
+«no se pudo cargar» en lugar de un «ninguno» erróneo.
+
 En un servidor [Forgejo](#forgejo) funcionan las mismas listas y páginas, con
-el token de Forgejo del perfil. Dos cosas son solo de GitHub y quedan vacías allí:
-los campos de Projects v2 y los pull requests vinculados a una issue. Las
-releases listan las más recientes, no todo el historial.
+el token de Forgejo del perfil. Dos cosas son solo de GitHub: los campos de
+Projects v2 quedan vacíos, y la sección de pull requests vinculados no se
+muestra. Las releases listan las más recientes, no todo el historial.
 
 ## Esperando tu revisión
 
@@ -234,6 +255,8 @@ En la lista de pull requests de la barra lateral, un 👁 marca los PRs en los q
 igual. Quién eres «tú» se le pregunta al host con la credencial del perfil y se
 recuerda diez minutos. Un token que no puede leer su propio usuario (sin
 `read:user` en Forgejo, por ejemplo) no marca nada.
+
+![Pull requests que esperan tu revisión, marcados con un ojo](../../screenshots/pr-awaiting-review.webp)
 
 Con **Ajustes → Notificaciones del sistema** activado, un pull request de GitLab o
 Forgejo que *empieza* a esperarte lanza una; hacer clic abre la página del PR. La

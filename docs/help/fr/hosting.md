@@ -4,6 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 56
 summary: Créer des pull requests partout ; les relire et les fusionner sur GitHub et GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revue review approuver approve fusionner merge tickets issues
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hébergement et pull requests
@@ -89,7 +90,7 @@ La colonne principale a trois sections :
 |---|---|
 | **Conversation** | La description, les commentaires et les fils de relecture en ligne (`fichier:ligne`, avec réponses). Puis la zone de commentaire avec commenter / approuver / demander des changements, et la zone de merge (merge, squash ou rebase) |
 | **Fichiers** | Chaque fichier modifié, et le diff du fichier choisi à côté de la liste, avec coloration syntaxique et changements au niveau du mot (fichiers d’allure secrète masqués si ce réglage est actif). Une liste ✓ « vu » retient votre avancée. Un fichier dont l’hôte n’envoie pas de diff (binaire, ou trop gros) renvoie vers l’hôte |
-| **Checks** | Check-runs CI (GitHub), jobs de pipeline (GitLab), statuts de commit (Forgejo) ou statuts de PR (Azure DevOps), avec réussi/échoué/en cours et des liens vers les journaux |
+| **Checks** | Check-runs CI (GitHub) ou jobs de pipeline (GitLab), avec réussi/échoué/en cours et des liens vers les journaux |
 
 La barre latérale montre :
 
@@ -122,10 +123,6 @@ mais pas le morceau de diff autour, que l’API de GitLab ne renvoie pas. Relect
 et merge marchent sur gitlab.com et sur un [GitLab auto-hébergé](#gitlab-auto-hébergé).
 Bitbucket s’ouvre toujours dans le navigateur pour la relecture.
 
-Différences Forgejo : les fils de commentaires de ligne sont affichés mais on ne
-peut pas y répondre (Forgejo n’a pas d’API pour cela), et les checks sont les
-statuts du commit de tête — plus d’infos dans [Forgejo](#forgejo).
-
 Différences Azure DevOps : approuver donne votre vote (*Approved*) ; **demander
 des changements** vote *Waiting for author*. Terminer la PR accepte merge, squash
 ou rebase. Azure liste les fichiers modifiés d’une PR mais n’envoie pas de diff,
@@ -138,6 +135,18 @@ La barre latérale liste aussi les **work items liés à la PR** — numéro, ti
 type et état —, chacun s’ouvrant dans le navigateur. Les lire demande un jeton
 capable de lire les work items (*Work Items: Read*) ; sans lui, la ligne est
 simplement omise.
+
+Les **checks** incluent la **validation de build** de la branche — le pipeline
+qu’exige sa stratégie, qu’Azure enregistre comme résultat de stratégie et non
+comme statut — à côté de tout statut publié par un pipeline ou une CI externe.
+Un check qui est un build Azure Pipelines de cette organisation affiche son
+journal sous la ligne : les tâches en échec, chacune sous son nom, ou le journal
+complet de chaque job quand rien n’a échoué, en partant de la fin. Le jeton ne
+va qu’aux builds de l’organisation de la PR. Le panneau lit au plus trois
+journaux, qui se partagent un budget de 512 Ko de fin. Lire les journaux demande
+*Build: Read* ; sans lui, la ligne propose plutôt le navigateur. Un jeton à qui
+il manque une portée est simplement refusé — l’app ne le prend jamais pour une
+connexion révoquée et n’abandonne jamais l’identifiant qu’utilise git.
 
 ## GitLab auto-hébergé
 
@@ -205,6 +214,8 @@ sert les journaux qu’à un navigateur connecté répond par sa page de connexi
 la ligne le dit et propose le navigateur. Les très longs journaux montrent leurs
 quelques milliers de dernières lignes.
 
+![Le journal d’un job Forgejo Actions ouvert sous sa ligne de check](../../screenshots/pr-check-log.webp)
+
 Comme pour GitLab, **un jeton Forgejo ne va qu’au serveur qui l’a émis**. Un
 profil sans adresse Forgejo n’a aucune identité Forgejo. Il n’y a pas de serveur
 par défaut de repli.
@@ -225,9 +236,20 @@ réouverture, et **créer une branche pour ce ticket** (avec nommage par l'IA). 
 jalons affichent leur progression et leurs tickets. Les releases se parcourent
 avec une page de changelog.
 
+**Pull requests liées** répond à « quelqu’un est-il déjà en train de corriger
+ça ? » : les PR qui fermeront le ticket, ou qui l’ont fermé — un mot-clé du type
+`Closes #N` ou un lien manuel dans la zone *Development* de GitHub —, ouvertes
+d’abord, puis fusionnées, puis fermées. Une PR qui se contente de *mentionner* le
+ticket est volontairement exclue, tout comme ce qui dépasse les 50 premières.
+Une PR de ce dépôt s’ouvre dans un onglet de PR ; une d’un autre dépôt, dans le
+navigateur. Un jeton qui ne peut pas lire les pull requests du dépôt (un jeton à
+granularité fine sans *Pull requests: read*) obtient un discret « chargement
+impossible » plutôt qu’un « aucune » erroné.
+
 Sur un serveur [Forgejo](#forgejo), les mêmes listes et pages fonctionnent, avec
-le jeton Forgejo du profil. Deux choses n’existent que sur GitHub et y restent
-vides : les champs de Projects v2 et les pull requests liées à une issue. Les
+le jeton Forgejo du profil. Deux choses n’existent que sur GitHub : les champs de
+Projects v2 restent vides, et la section des pull requests liées n’est pas
+affichée. Les
 releases listent les plus récentes, pas tout l’historique.
 
 ## En attente de votre revue
@@ -237,6 +259,8 @@ Dans la liste des pull requests de la barre latérale, un 👁 marque celles où
 Qui est « vous » est demandé à l’hôte avec l’identité du profil et mémorisé dix
 minutes. Un jeton qui ne peut pas lire son propre utilisateur (sans `read:user`
 sur Forgejo, par exemple) ne marque rien.
+
+![Pull requests en attente de votre revue, marquées d’un œil](../../screenshots/pr-awaiting-review.webp)
 
 Avec **Réglages → Notifications système** activé, une pull request GitLab ou
 Forgejo qui *commence* à vous attendre en déclenche une ; un clic ouvre la page de

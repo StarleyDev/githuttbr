@@ -4,6 +4,7 @@ category: Sincronização e vários repositórios
 order: 56
 summary: Crie PRs em qualquer lugar; revise e faça merge deles no GitHub e no GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revisão review aprovar merge issues
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hosting e pull requests
@@ -33,7 +34,8 @@ deduzida de quatro bases.
 Duas coisas formam esse grupo: o número de pilha do próprio GitHub, quando os PRs
 pertencem a uma [pilha nativa](stacks.md), e senão as próprias refs — um pull
 request cuja base é o head de outro se apoia nele. Essa segunda regra é o que faz
-isso funcionar também no GitLab, Bitbucket e Azure DevOps.
+isso funcionar também no GitLab, Bitbucket e Azure DevOps, e com cadeias abertas
+antes de tudo isso existir.
 
 ![Uma pilha na lista de pull requests](../../screenshots/pr-stack-list.webp)
 
@@ -139,7 +141,8 @@ ao lado de qualquer status que um pipeline ou CI externo publique. Um check que
 as tasks que falharam, cada uma com o nome, ou o log inteiro de cada job quando
 nada falhou, começando pelo fim. O token só vai para builds da própria
 organização do PR. O painel lê até três logs, compartilhando um limite de 512 KB
-do final dos logs. Ler logs exige *Build: Read*; sem isso a linha oferece o navegador. Um token sem algum escopo é só recusado — o app nunca trata isso como
+do final dos logs. Ler logs exige *Build: Read*; sem isso a linha oferece o
+navegador. Um token sem algum escopo é só recusado — o app nunca trata isso como
 login revogado nem apaga a credencial que o git usa.
 
 ## GitLab self-managed
@@ -230,9 +233,19 @@ responsáveis, milestone, campos do Projects v2, fechar/reabrir, e **criar uma
 branch para esta issue** (com nomeação por IA). Milestones mostram progresso e as
 issues delas. Releases são navegáveis com uma página de changelog.
 
+**Pull requests vinculados** responde "alguém já está corrigindo isso?": os PRs
+que vão fechar a issue, ou que a fecharam — uma palavra-chave no estilo
+`Closes #N` ou um vínculo manual na caixa *Development* do GitHub — primeiro os
+abertos, depois os mesclados, depois os fechados. Um PR que só *menciona* a issue
+fica de fora de propósito, assim como tudo além dos primeiros 50. Um deste
+repositório abre numa aba de PR; um de outro repositório abre no navegador. Um
+token que não consegue ler os pull requests do repositório (um token
+fine-grained sem *Pull requests: read*) recebe um discreto "não foi possível
+carregar" em vez de um "nenhum" errado.
+
 Num servidor [Forgejo](#forgejo), as mesmas listas e páginas funcionam, com o
-token Forgejo do perfil. Duas coisas são só do GitHub e ficam vazias lá: os
-campos do Projects v2 e os pull requests vinculados a uma issue. Releases
+token Forgejo do perfil. Duas coisas são só do GitHub: os campos do Projects v2
+ficam vazios, e a seção de pull requests vinculados não aparece. Releases
 listam as mais recentes, não o histórico inteiro.
 
 ## Aguardando a sua revisão

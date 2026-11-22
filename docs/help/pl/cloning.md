@@ -3,7 +3,8 @@ title: Klonowanie
 category: Zacznij tutaj
 order: 2
 summary: Sklonuj z adresu URL albo prosto z hostingu — i zawęź to, co się ściąga, gdy repozytorium jest ogromne.
-keywords: klonowanie sklonuj płytki częściowy filtr podmoduły monorepo clone shallow depth partial filter blob none single branch submodules recursive ls-remote unshallow
+keywords: klonowanie sklonuj płytki częściowy filtr podmoduły monorepo w tle anuluj przerwij wiele kilka naraz zaznacz wszystkie clone background cancel abort multiple several batch many repositories select all shallow depth partial filter blob none single branch submodules recursive ls-remote branch picker unshallow
+source: 3d8942b1073ef47bd000c7887afb5ea8cdebcdd7
 ---
 
 # Klonowanie
@@ -17,6 +18,36 @@ własnych repozytoriów — do klonowania użyty zostanie token wybranego
 Wskaż katalog nadrzędny i nazwę; linijka pod polami pokazuje dokładnie, gdzie
 repozytorium wyląduje. Katalog, który już istnieje, zostanie odrzucony, a nie
 scalony z klonem.
+
+## Kilka repozytoriów naraz
+
+Konfiguracja nowego komputera albo ściągnięcie wszystkich usług zespołu
+oznaczały kiedyś otwieranie tego okna raz na każde repozytorium. W karcie
+hostingu zaznacz pole wyboru przy każdym repozytorium, którego potrzebujesz, albo
+użyj **Zaznacz wszystkie widoczne**, żeby wziąć wszystko, co pasuje do filtra.
+Kliknięcie wiersza (nie jego pola wyboru) nadal wybiera tylko to jedno.
+
+Gdy zaznaczonych jest więcej niż jedno, okno klonuje wszystkie do tego samego
+katalogu nadrzędnego, każde do katalogu nazwanego jak repozytorium. Ścieżki są
+wypisane, zanim zaczniesz. Jeśli dwa mają tę samą nazwę (`org-a/app` i
+`org-b/app`), oba dostają właściciela w nazwie katalogu (`org-a-app`,
+`org-b-app`), zamiast ścigać się o jeden katalog.
+
+![Karta GitHub w oknie klonowania z trzema zaznaczonymi repozytoriami, katalogami, w których wylądują, wypisanymi pod katalogiem nadrzędnym, i przyciskiem Sklonuj 3 repozytoria](../../screenshots/clone-multi-select.webp)
+
+Paczka trafia prosto do zasobnika w rogu. Naraz działają trzy klony, a reszta
+czeka jako *W kolejce*; każdy ma własne anulowanie. Każde repozytorium otwiera
+się w karcie, gdy tylko się skończy.
+
+Ograniczenia:
+- **Gałąź do wypakowania** jest ukryta przy paczce: nazwa gałęzi nic nie znaczy
+  w różnych repozytoriach, więc każde dostaje swoją gałąź domyślną. Pozostałe
+  opcje zaawansowane (częściowy, płytki, jedna gałąź, podmoduły) dotyczą
+  wszystkich.
+- Wielokrotny wybór działa tylko w kartach hostingu. Karta URL przyjmuje jeden
+  adres.
+- Jedna porażka nie zatrzymuje pozostałych. Repozytorium, którego katalog już
+  istnieje, kończy się własnym błędem, a reszta działa dalej.
 
 ## Zaawansowane — zawężanie klonu
 
@@ -66,11 +97,30 @@ prawdziwy błąd.
   repozytorium — tak, żeby głębokość, o którą poprosiłeś, była głębokością,
   którą dostaniesz.
 
-## Postęp
+## Postęp, praca w tle i anulowanie
 
 Pasek raportuje to, co raportuje git: zliczanie, kompresowanie, odbieranie,
 rozwiązywanie, wypakowywanie. Etap, który nie potrafi podać sumy, pokazuje pasek
 nieokreślony zamiast zmyślonego procentu.
 
-Nowe repozytorium otwiera się w karcie, przypięte do profilu, którym zostało
-sklonowane.
+Duży klon trwa minuty, a przypadkowe kliknięcie poza oknem kosztowało kiedyś
+całą tę pracę. Teraz zamknięcie okna — **Uruchom w tle**, `Esc`, ✕ albo
+kliknięcie obok — tylko je ukrywa: klon trwa dalej i przenosi się do małej
+karty w dolnym rogu z tym samym paskiem postępu. W międzyczasie możesz zacząć
+kolejny klon; każdy dostaje własną kartę.
+
+![Zasobnik klonów w dolnym rogu: trzy klony w trakcie odbierania, rozwiązywania i zliczania, czwarty w kolejce, każdy z własnym przyciskiem anulowania](../../screenshots/clone-tray.webp)
+
+Wybrałeś nie to repozytorium? **Anuluj klonowanie** w oknie albo ✕ na jego
+karcie zatrzymuje git i usuwa do połowy zapisany katalog. Nic innego nie jest
+ruszane — katalog nie istniał przed rozpoczęciem klonowania, co jest sprawdzane
+na samym początku. Anulowanego klonu nie da się wznowić; ponowne uruchomienie
+zaczyna od zera.
+
+Po zakończeniu nowe repozytorium otwiera się w karcie, przypięte do profilu,
+którym zostało sklonowane — niezależnie od tego, czy okno jest jeszcze otwarte.
+
+Klony działają wewnątrz aplikacji, więc zamknięcie Gitcito je zatrzymuje.
+Zamykanie nie czeka na sprzątanie, więc do połowy zapisany katalog może zostać —
+usuń go przed ponownym klonowaniem w to miejsce, bo okno odrzuca katalog, który
+istnieje.

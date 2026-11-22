@@ -4,6 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 56
 summary: Maak overal PR's aan; review en merge ze op GitHub en GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review goedkeuren approve mergen issues
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hosting & pull requests
@@ -34,7 +35,8 @@ richting op het scherm staat in plaats van uit vier bases te volgen.
 Twee dingen maken zo'n groep: GitHubs eigen stapelnummer, als de pull requests
 bij een [native stapel](stacks.md) horen, en anders de refs zelf — een pull
 request wiens basis de head van een andere is, staat erop. Die tweede regel is
-waarom dit ook op GitLab, Bitbucket en Azure DevOps werkt.
+waarom dit ook op GitLab, Bitbucket en Azure DevOps werkt, en voor kettingen die
+geopend zijn voordat iets hiervan bestond.
 
 ![Een stapel in de pull-requestlijst](../../screenshots/pr-stack-list.webp)
 
@@ -89,7 +91,7 @@ De hoofdkolom heeft drie onderdelen:
 |---|---|
 | **Gesprek** | De beschrijving, opmerkingen en inline reviewdraden (`bestand:regel`, met antwoorden). Daarna het opmerkingenveld met reageren / goedkeuren / wijzigingen vragen, en het mergevak (merge, squash of rebase) |
 | **Bestanden** | Elk gewijzigd bestand, en de diff van het gekozen bestand naast de lijst, met syntaxkleuring en wijzigingen op woordniveau (geheim ogende bestanden gemaskeerd als die instelling aan staat). Een ✓-„bekeken”-lijst onthoudt je voortgang. Een bestand waarvoor de host geen diff stuurt (binair of te groot) linkt naar de host |
-| **Checks** | CI-check-runs (GitHub), pipelinejobs (GitLab), commitstatussen (Forgejo) of PR-statussen (Azure DevOps), met geslaagd/mislukt/bezig en links naar de logs |
+| **Checks** | CI-check-runs (GitHub) of pipelinejobs (GitLab), met geslaagd/mislukt/bezig en links naar de logs |
 
 De zijbalk toont:
 
@@ -122,10 +124,6 @@ omringende stuk diff, dat de API van GitLab niet teruggeeft. Reviewen en mergen
 werkt op gitlab.com en op een [zelf beheerde GitLab](#zelf-beheerde-gitlab). Bitbucket
 opent voor reviews nog steeds in de browser.
 
-Forgejo-verschillen: draden met regelopmerkingen worden getoond maar je kunt er
-niet op antwoorden (Forgejo heeft daar geen API voor), en de checks zijn de
-statussen van de head-commit — meer bij [Forgejo](#forgejo).
-
 Azure DevOps-verschillen: goedkeuren brengt je stem uit (*Approved*);
 **wijzigingen vragen** stemt *Waiting for author*. De PR afronden kan met merge,
 squash of rebase. Azure geeft de gewijzigde bestanden van een PR maar stuurt geen
@@ -137,6 +135,18 @@ van Azure een aangemelde browser nodig hebben.
 De zijbalk toont ook de **aan de PR gekoppelde work items** — nummer, titel, type
 en status —, elk opent in de browser. Ze lezen vraagt een token dat work items
 mag lezen (*Work Items: Read*); zonder dat valt de rij gewoon weg.
+
+**Checks** bevatten de **buildvalidatie** van de branch — de pipeline die zijn
+policy vereist, die Azure vastlegt als policyresultaat in plaats van als status —
+naast elke status die een pipeline of een externe CI plaatst. Een check die een
+Azure Pipelines-build van deze organisatie is, toont zijn log onder de rij: de
+taken die mislukten, elk onder zijn naam, of het volledige log van elke job als
+er niets mislukte, beginnend aan het eind. Het token gaat alleen naar builds in
+de eigen organisatie van de PR. Het paneel leest hoogstens drie logs, die samen
+een budget van 512 KB aan staart delen. Logs lezen vraagt *Build: Read*; zonder
+dat biedt de rij de browser aan. Een token dat een scope mist, wordt gewoon
+geweigerd — de app houdt dat nooit voor een ingetrokken aanmelding en laat nooit
+de inloggegevens vallen die git gebruikt.
 
 ## Zelf beheerde GitLab
 
@@ -202,6 +212,8 @@ alleen aan een aangemelde browser geeft, antwoordt met zijn aanmeldpagina — de
 zegt dat en biedt de browser aan. Heel lange logs tonen hun laatste paar duizend
 regels.
 
+![Het log van een Forgejo Actions-job, geopend onder de rij van zijn check](../../screenshots/pr-check-log.webp)
+
 Net als bij GitLab gaat **een Forgejo-token alleen naar de server die het
 uitgaf**. Een profiel zonder Forgejo-adres heeft helemaal geen
 Forgejo-aanmelding. Er is geen standaardserver om op terug te vallen.
@@ -221,10 +233,20 @@ toegewezen personen, milestone, Projects v2-velden, sluiten/heropenen, en **maak
 een branch voor dit issue** (met AI-naamgeving). Milestones tonen voortgang en
 hun issues. Releases zijn doorbladerbaar met een changelogpagina.
 
+**Gekoppelde pull requests** beantwoordt „is iemand dit al aan het oplossen?”: de
+PR's die het issue gaan sluiten, of het sloten — een trefwoord in de stijl van
+`Closes #N` of een handmatige koppeling in het vak *Development* van GitHub —
+eerst de open, dan de gemergde, dan de gesloten. Een PR die het issue alleen
+*noemt*, blijft bewust weg, net als alles na de eerste 50. Eén uit deze
+repository opent in een PR-tabblad; één uit een andere repository opent in de
+browser. Een token dat de pull requests van de repository niet mag lezen (een
+fine-grained token zonder *Pull requests: read*) krijgt een rustig „kon niet
+laden” in plaats van een onjuist „geen”.
+
 Op een [Forgejo](#forgejo)-server werken dezelfde lijsten en pagina’s, met het
-Forgejo-token van het profiel. Twee dingen zijn alleen van GitHub en blijven daar
-leeg: velden uit Projects v2 en de aan een issue gekoppelde pull requests.
-Releases tonen de nieuwste, niet de hele geschiedenis.
+Forgejo-token van het profiel. Twee dingen zijn alleen van GitHub: velden uit
+Projects v2 blijven leeg, en het onderdeel met gekoppelde pull requests wordt niet
+getoond. Releases tonen de nieuwste, niet de hele geschiedenis.
 
 ## Wacht op jouw review
 
@@ -233,6 +255,8 @@ reviewer bent en nog niet hebt gereageerd — op GitHub, GitLab en Forgejo. Wie
 „jij” bent, wordt met de aanmelding van het profiel aan de host gevraagd en tien
 minuten onthouden. Een token dat zijn eigen gebruiker niet mag lezen (zonder
 `read:user` op Forgejo, bijvoorbeeld) markeert niets.
+
+![Pull requests die op jouw review wachten, gemarkeerd met een oog](../../screenshots/pr-awaiting-review.webp)
 
 Met **Instellingen → Systeemmeldingen** aan geeft een pull request op GitLab of
 Forgejo die op jou *begint* te wachten er een; een klik opent de PR-pagina. De
