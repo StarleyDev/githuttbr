@@ -96,6 +96,9 @@ import type {
   GitflowStatus,
   GitflowSnapshot,
   PushRemoteResult,
+  BranchPushState,
+  BranchPushResult,
+  PushBranchesResult,
   RerereStatus,
   SubtreeInfo,
   CleanEntry,
@@ -162,6 +165,15 @@ import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
+import {
+  classifyPushState,
+  parsePushPorcelain,
+  parseUpstreamTrack,
+  pushRefspecs,
+  pushResultsFrom,
+  remoteMessages,
+  type PushTarget
+} from '../shared/pushPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../shared/patchHunks'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
@@ -204,6 +216,7 @@ const REC = '\x1e'
 const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   push: 'push',
   pushToRemotes: 'push',
+  pushBranches: 'push',
   pushAllTags: 'push',
   pull: 'pull',
   fetchAll: 'fetch',
@@ -1131,6 +1144,30 @@ async function runGit(
   }
 }
 
+/**
+ * runGit for a command whose stdout still matters when it fails: `git push
+ * --porcelain` exits non-zero as soon as one ref is rejected, and the per-ref
+ * report is exactly what the caller needs then.
+ */
+async function runGitCapture(
+  repoPath: string,
+  args: string[]
+): Promise<{ stdout: string; stderr: string; code: number }> {
+  try {
+    const { stdout, stderr } = await pexecFile('git', ['-C', repoPath, ...args], {
+      env: { ...noPromptEnv(), ...(remoteAuthEnv.getStore() ?? {}) }
+    })
+    return { stdout, stderr, code: 0 }
+  } catch (err) {
+    const e = err as { stdout?: string; stderr?: string; code?: number | string; message?: string }
+    return {
+      stdout: e.stdout ?? '',
+      stderr: redactCredentials(e.stderr || e.message || 'git command failed'),
+      code: typeof e.code === 'number' ? e.code : 1
+    }
+  }
+}
+
 function isObjectId(value: unknown): value is string {
   return typeof value === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(value)
 }
@@ -1771,6 +1808,56 @@ async function branchUpstream(repoPath: string, branch: string): Promise<string>
   } catch {
     return ''
   }
+}
+
+interface LocalBranchRow {
+  name: string
+  sha: string
+  isCurrent: boolean
+  /** `origin/feature`, or null when it tracks nothing. */
+  upstream: string | null
+  upstreamRemote: string
+  /** The upstream's ref on the remote side, `refs/heads/feature`. */
+  upstreamRef: string
+  track: string
+}
+
+/** Every local branch with its upstream tracking, in one `for-each-ref`. */
+async function localBranchRows(repoPath: string): Promise<LocalBranchRow[]> {
+  // lstrip, not :short — :short disambiguates to `heads/x` when a tag `x` exists.
+  const fmt = [
+    '%(refname:lstrip=2)',
+    '%(objectname)',
+    '%(HEAD)',
+    '%(upstream:lstrip=2)',
+    '%(upstream:remotename)',
+    '%(upstream:remoteref)',
+    '%(upstream:track)'
+  ].join('%00')
+  const out = await runGit(repoPath, ['for-each-ref', `--format=${fmt}`, 'refs/heads'])
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [name, sha, head, upstream, upstreamRemote, upstreamRef, track] = line.split('\0')
+      return {
+        name,
+        sha,
+        isCurrent: head === '*',
+        upstream: upstream || null,
+        upstreamRemote: upstreamRemote ?? '',
+        upstreamRef: upstreamRef ?? '',
+        track: track ?? ''
+      }
+    })
+}
+
+/** The branch a push of `row` to `remote` lands on: its upstream's name when it tracks that remote, else its own. */
+function pushDestination(row: LocalBranchRow, remote: string): string {
+  if (row.upstreamRemote === remote && row.upstreamRef.startsWith('refs/heads/')) {
+    return row.upstreamRef.slice('refs/heads/'.length)
+  }
+  return row.name
 }
 
 /** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
@@ -3839,6 +3926,144 @@ export const gitService = {
       }
     }
     return results
+  },
+
+  /**
+   * Every local branch against `remote`: ahead/behind, whether the remote has
+   * it, and so whether a plain push would go through. One `for-each-ref` for
+   * the branches and their upstream tracking, one for the remote's refs; a
+   * `rev-list` only for the few branches that are compared against a remote
+   * branch they do not track and do not match.
+   */
+  async branchPushStates(repoPath: string, remote: string): Promise<BranchPushState[]> {
+    if (!isPlainRef(remote)) throw new Error(`Not a remote name: ${remote}`)
+    const [rows, remoteOut] = await Promise.all([
+      localBranchRows(repoPath),
+      runGit(repoPath, ['for-each-ref', '--format=%(refname)%00%(objectname)', `refs/remotes/${remote}/`])
+    ])
+    const remoteShas = new Map<string, string>()
+    for (const line of remoteOut.split('\n')) {
+      const [ref, sha] = line.split('\0')
+      if (ref && sha) remoteShas.set(ref, sha)
+    }
+    const states: BranchPushState[] = []
+    const toCount: { state: BranchPushState; remoteSha: string }[] = []
+    for (const row of rows) {
+      const remoteBranch = pushDestination(row, remote)
+      const remoteSha = remoteShas.get(`refs/remotes/${remote}/${remoteBranch}`)
+      const state: BranchPushState = {
+        name: row.name,
+        sha: row.sha,
+        isCurrent: row.isCurrent,
+        upstream: row.upstream,
+        remoteBranch,
+        remoteExists: !!remoteSha,
+        ahead: 0,
+        behind: 0,
+        state: 'new'
+      }
+      if (remoteSha && remoteSha !== row.sha) {
+        // The upstream's own counts are free; anything else needs a rev-list.
+        const tracked = row.upstreamRemote === remote && row.upstream === `${remote}/${remoteBranch}`
+        if (tracked && row.track) Object.assign(state, parseUpstreamTrack(row.track))
+        else toCount.push({ state, remoteSha })
+      }
+      states.push(state)
+    }
+    for (let i = 0; i < toCount.length; i += 8) {
+      await Promise.all(
+        toCount.slice(i, i + 8).map(async ({ state, remoteSha }) => {
+          const out = await runGit(repoPath, ['rev-list', '--left-right', '--count', `${state.sha}...${remoteSha}`])
+            .catch(() => '')
+          const [ahead, behind] = out.trim().split(/\s+/).map((n) => Number(n) || 0)
+          state.ahead = ahead ?? 0
+          state.behind = behind ?? 0
+        })
+      )
+    }
+    for (const s of states) s.state = classifyPushState(s.ahead, s.behind, s.remoteExists)
+    return states
+  },
+
+  /**
+   * The files each branch would publish to `remote` — every path touched by a
+   * commit on the branch that none of the remote's tracking refs has. What the
+   * secret guard checks before a multi-branch push. History, not the tip:
+   * a key added and deleted again is still in the commits that go out.
+   */
+  async outgoingFiles(repoPath: string, remote: string, branches: string[]): Promise<Record<string, string[]>> {
+    if (!isPlainRef(remote)) throw new Error(`Not a remote name: ${remote}`)
+    const out: Record<string, string[]> = {}
+    const names = [...new Set(branches)].filter(isPlainRef)
+    for (let i = 0; i < names.length; i += 8) {
+      await Promise.all(
+        names.slice(i, i + 8).map(async (branch) => {
+          const raw = await runGit(
+            repoPath,
+            ['log', '--format=', '--name-only', '-z', `refs/heads/${branch}`, '--not', `--remotes=${remote}`],
+            undefined,
+            256 * 1024 * 1024
+          ).catch(() =>
+            // A history too large to list: fall back to the files at the tip.
+            runGit(repoPath, ['ls-tree', '-r', '-z', '--name-only', `refs/heads/${branch}`], undefined, 256 * 1024 * 1024)
+              .catch(() => '')
+          )
+          out[branch] = [...new Set(raw.split(/[\0\n]/).filter(Boolean))]
+        })
+      )
+    }
+    return out
+  },
+
+  /**
+   * Push several local branches to one remote in a single `git push`, without
+   * checking any of them out. Each lands on its upstream's name when it tracks
+   * this remote under another one, else on its own name. Never forced — no `+`
+   * refspec, no `--force` — so the remote refuses anything that is not a
+   * fast-forward, and that refusal is reported per branch rather than thrown.
+   * `atomic` makes it all or nothing. `setUpstream` links each branch that had
+   * no upstream and made it to the remote.
+   */
+  async pushBranches(
+    repoPath: string,
+    remote: string,
+    branches: string[],
+    opts: { setUpstream: boolean; atomic?: boolean }
+  ): Promise<PushBranchesResult> {
+    if (!isPlainRef(remote)) throw new Error(`Not a remote name: ${remote}`)
+    const wanted = [...new Set(branches)]
+    if (!wanted.length) throw new Error('Choose at least one branch to push.')
+    const bad = wanted.find((b) => !isPlainRef(b))
+    if (bad !== undefined) throw new Error(`Not a branch name: ${bad}`)
+    const rows = new Map((await localBranchRows(repoPath)).map((r) => [r.name, r]))
+    const missing = wanted.find((b) => !rows.has(b))
+    if (missing !== undefined) throw new Error(`No local branch named ${missing}.`)
+
+    const targets: PushTarget[] = wanted.map((branch) => ({
+      branch,
+      remoteBranch: pushDestination(rows.get(branch)!, remote)
+    }))
+    const args = ['push', '--porcelain']
+    if (opts.atomic) args.push('--atomic')
+    args.push(remote, ...pushRefspecs(targets))
+    const run = await withRemoteAuth(repoPath, remote, 'push', () => runGitCapture(repoPath, args))
+    const refs = parsePushPorcelain(run.stdout)
+    // No per-ref report at all: the push never got as far as the refs (auth,
+    // an unknown remote, a server without --atomic). That is a plain failure.
+    if (run.code !== 0 && refs.length === 0) throw new Error(run.stderr.trim() || 'git push failed')
+
+    const results: BranchPushResult[] = pushResultsFrom(targets, refs)
+    if (opts.setUpstream) {
+      // Plain config writes rather than `-u`: that would also re-point a branch
+      // that already tracks another remote, which is not what was asked.
+      for (const r of results) {
+        if (r.status === 'rejected' || r.status === 'notAttempted' || rows.get(r.branch)?.upstream) continue
+        await runGit(repoPath, ['config', `branch.${r.branch}.remote`, remote])
+        await runGit(repoPath, ['config', `branch.${r.branch}.merge`, `refs/heads/${r.remoteBranch}`])
+        r.upstreamSet = true
+      }
+    }
+    return { remote, atomic: !!opts.atomic, results, remoteMessages: remoteMessages(run.stderr) }
   },
 
   /** Publish every local tag to a remote. Annotated and lightweight alike. */
@@ -8366,6 +8591,9 @@ const READ_METHODS = new Set<string>([
   'ignoredTrackedFiles',
   'commitSummary',
   'filesToPush',
+  // The multi-branch push dialog's reads: refs and history, nothing written.
+  'branchPushStates',
+  'outgoingFiles',
   'commitsTouchingPath',
   'protectedBranches',
   'repoConfig',

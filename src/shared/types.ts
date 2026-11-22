@@ -2411,6 +2411,56 @@ export interface PushRemoteResult {
 }
 
 /**
+ * Where a local branch stands against one remote, for the "Push branches"
+ * dialog. Computed from the remote-tracking refs, so it is as fresh as the
+ * last fetch — the push itself is what has the final word.
+ */
+export type BranchPushStateKind = 'ahead' | 'new' | 'upToDate' | 'behind' | 'diverged'
+
+export interface BranchPushState {
+  name: string
+  sha: string
+  isCurrent: boolean
+  /** The configured upstream, short form (`origin/feature`), or null. */
+  upstream: string | null
+  /** The branch name it would land on at the chosen remote — the upstream's
+   *  name when it tracks that remote under another name, else its own. */
+  remoteBranch: string
+  /** Whether `<remote>/<remoteBranch>` exists as a remote-tracking ref. */
+  remoteExists: boolean
+  ahead: number
+  behind: number
+  state: BranchPushStateKind
+}
+
+/** How one branch of a multi-branch push came out, from `git push --porcelain`. */
+export type BranchPushStatus = 'pushed' | 'created' | 'upToDate' | 'rejected' | 'notAttempted'
+
+/** Why git refused a ref, normalised so the UI can explain it in any language. */
+export type BranchPushRejection = 'nonFastForward' | 'fetchFirst' | 'atomic' | 'remoteRejected' | 'other'
+
+export interface BranchPushResult {
+  branch: string
+  remoteBranch: string
+  status: BranchPushStatus
+  /** Set when `status` is `rejected`. */
+  rejection?: BranchPushRejection
+  /** git's own words for the outcome (`non-fast-forward`, `pre-receive hook declined`, …). */
+  reason: string
+  /** Tracking was configured for this branch by this push. */
+  upstreamSet: boolean
+}
+
+export interface PushBranchesResult {
+  remote: string
+  atomic: boolean
+  results: BranchPushResult[]
+  /** `remote:` lines the server sent — where a hosting service explains a
+   *  protected-branch refusal. */
+  remoteMessages: string[]
+}
+
+/**
  * A directory in this repository whose contents came from another repository via
  * `git subtree`. Unlike a submodule there is no `.gitmodules` to read: git
  * records only a `git-subtree-dir:` trailer on the commit that did the import,

@@ -161,6 +161,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const pushItems = (): MenuItem[] => [
     { label: t('toolbar.push'), onClick: () => void repoActions.push(path) },
+    { label: t('push.branches'), onClick: () => openModal({ kind: 'push-branches', repoPath: path }) },
     // Per-remote entries only earn their place once there is more than one.
     ...(repo.remotes.length > 1
       ? [

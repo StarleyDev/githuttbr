@@ -207,6 +207,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'fetch', title: t('cmd.fetch'), group: 'Actions', keywords: 'sync remote prune', icon: <Download size={15} />, run: act(() => void repoActions.fetchAll(path)) },
       { id: 'pull', title: t('cmd.pull'), group: 'Actions', keywords: 'sync merge', icon: <ArrowDownToLine size={15} />, run: act(() => void repoActions.pull(path, 'default')) },
       { id: 'push', title: t('cmd.push'), group: 'Actions', keywords: 'sync upload', icon: <Upload size={15} />, run: act(() => void repoActions.push(path)) },
+      { id: 'push-branches', title: t('cmd.pushBranches'), group: 'Actions', keywords: 'push several many multiple branches batch publish all agents atomic upload', icon: <Upload size={15} />, run: act(() => ui.openModal({ kind: 'push-branches', repoPath: path })) },
       { id: 'commit', title: t('cmd.commit'), group: 'Actions', keywords: 'wip staging compose', icon: <GitCommit size={15} />, run: act(() => useRepoStore.getState().select(path, { type: 'wip' })) },
       { id: 'stash', title: t('cmd.stash'), group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
       { id: 'stash-partial', title: t('cmd.stashSelected'), group: 'Actions', keywords: 'partial stash selected files keep-index shelve', icon: <Archive size={15} />, run: act(() => ui.openModal({ kind: 'stash-partial', repoPath: path })) },
