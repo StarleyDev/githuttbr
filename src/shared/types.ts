@@ -1704,7 +1704,10 @@ export interface RepoChatExecutionResult {
   applied: number
   failedIndex?: number
   failedType?: RepoChatAction['type']
-  error?: { code: RepoChatActionErrorCode; detail?: string; paths?: string[] }
+  /** `detail` is English: the whole result is handed to the model. When the
+   *  failure is Gitcito's own copy, `detailKey` names it so the UI can show it
+   *  in the user's language instead. */
+  error?: { code: RepoChatActionErrorCode; detail?: string; detailKey?: string; paths?: string[] }
   remaining: number
   actionResults: Array<{
     index: number
