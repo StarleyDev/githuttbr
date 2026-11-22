@@ -222,10 +222,15 @@ textarea:focus {
   color: var(--text-1);
 }
 
+/* The selected repo carries a tint of the theme accent, so it stands out from its
+   neighbours in every theme. Mixed over --bg-2 rather than transparent: the
+   ::after seam below must match it exactly, or a stripe shows under the tab. */
 .tab.active {
-  background: var(--bg-2);
+  --tab-active-bg: color-mix(in srgb, var(--accent) 16%, var(--bg-2));
+  background: var(--tab-active-bg);
   color: var(--text-0);
   border-color: var(--border-soft);
+  box-shadow: inset 0 2px 0 var(--accent);
   z-index: 2;
 }
 
@@ -236,7 +241,13 @@ textarea:focus {
   inset-inline-end: 0;
   bottom: -1px;
   height: 2px;
-  background: var(--bg-2);
+  background: var(--tab-active-bg);
+}
+
+/* A grouped tab already draws its top edge in the group's colour; a second,
+   accent-coloured line inside it would clash. */
+.tab.in-group.active {
+  box-shadow: none;
 }
 
 .tab-name {
