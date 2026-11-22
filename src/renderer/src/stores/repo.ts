@@ -47,7 +47,7 @@ import { isSecretFile } from '../lib/secrets'
 import { isProtectedBranch } from '../lib/repoConfig'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
-import { forkUpstream, prsFromFork } from '../lib/hosting'
+import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
 import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
@@ -808,7 +808,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     }
     // A fork's own PRs live on the parent, where origin's list cannot see them.
     // Kept apart from `prs` so stacks and branch lookups only act on origin's.
-    const fork = forkUpstream(repo.remotes)
+    const fork = forkUpstream(repo.remotes, enterpriseBasesOf(useSettingsStore.getState().settings.profiles))
     if (!fork) {
       if (repo.upstreamPrs.length) get().patch(path, { upstreamPrs: [] })
       return

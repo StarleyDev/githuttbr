@@ -1,4 +1,5 @@
 import { apiToken, credentialFor, providerOfHost, type ApiAuth } from './credentials'
+import { GITHUB_COM, GITHUB_COM_ENDPOINTS, githubEndpoints } from '../shared/githubEnterprise'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
 import { pickHostAuth } from '../shared/hostToken'
 import { parseRemoteUrl } from './hosting'
@@ -88,8 +89,8 @@ async function get(url: string, headers: Record<string, string>): Promise<Respon
 
 type HostVerdict = Pick<RemoteAuthCheck, 'login' | 'rejected' | 'scopes' | 'scopeAllowsPush' | 'canPushWorkflows'>
 
-async function askGithub(token: string): Promise<HostVerdict> {
-  const res = await get('https://api.github.com/user', {
+async function askGithub(apiBase: string, token: string): Promise<HostVerdict> {
+  const res = await get(`${apiBase}/user`, {
     Authorization: `Bearer ${token}`,
     Accept: 'application/vnd.github+json'
   })
@@ -137,7 +138,11 @@ async function askForgejo(base: string, token: string): Promise<HostVerdict> {
  */
 function askHost(provider: RepoHost, remoteUrl: string, token: string): Promise<HostVerdict> {
   const base = parseRemoteUrl(remoteUrl)?.base
-  if (provider === 'github' && new URL(remoteUrl).origin === 'https://github.com') return askGithub(token)
+  if (provider === 'github') {
+    // github.com, or the Enterprise Server the remote is on — each answers for its own tokens.
+    if (new URL(remoteUrl).origin === GITHUB_COM) return askGithub(GITHUB_COM_ENDPOINTS.apiBase, token)
+    if (base) return askGithub(githubEndpoints(base).apiBase, token)
+  }
   if (provider === 'gitlab' && base) return askGitlab(base, token)
   if (provider === 'forgejo' && base) return askForgejo(base, token)
   // Azure DevOps and Bitbucket do not report a token's scopes in a way worth a

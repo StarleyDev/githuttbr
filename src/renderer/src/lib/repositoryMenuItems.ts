@@ -5,7 +5,7 @@ import { useRepoStore, repoActions } from '../stores/repo'
 import { useTerminalsStore } from '../stores/terminals'
 import { shellApi } from '../infrastructure/api'
 import { openInEditor } from './editorOpen'
-import { githubRepoUrl } from './hosting'
+import { enterpriseBasesOf, githubRepoUrl } from './hosting'
 import { canonicalRepoName, lookupRepoAlias } from './repoAlias'
 import {
   repoMenuActionTarget,
@@ -32,7 +32,7 @@ export function repoMenuCapabilities(path: string): RepoMenuCapabilities {
     canonicalName: canonicalRepoName(path),
     alias,
     pathAvailable: repo ? !repo.notGit : true,
-    githubUrl: githubRepoUrl(repo?.remotes ?? []) ?? null,
+    githubUrl: githubRepoUrl(repo?.remotes ?? [], enterpriseBasesOf(settings.profiles)) ?? null,
     editorAvailable: !!settings.editor?.command,
     editorName: settings.editor?.name,
     terminalAvailable: true,

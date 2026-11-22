@@ -75,6 +75,7 @@ import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { parseSettingsImport } from '../lib/settingsImport'
 import { Avatar } from './Avatar'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
+import { GithubEnterpriseSettings } from './GithubEnterpriseSettings'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
@@ -804,6 +805,7 @@ export function IntegrationsPage({
       {/* Forgejo cannot pre-select scopes from a link, and a token's scopes are
           fixed once created — so say which ones before the user makes it. */}
       {active.id === 'forgejo' && <p className="settings-hint">{t('settings.forgejoScopesHint')}</p>}
+      {active.id === 'github' && <GithubEnterpriseSettings profile={profile} edit={edit} />}
       <p className="settings-hint">{t('settings.integrationsHint')}</p>
 
       <LocalCiSection />

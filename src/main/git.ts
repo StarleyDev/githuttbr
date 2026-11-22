@@ -169,6 +169,7 @@ import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fi
 import { recordLog } from './log'
 import { activeProfileAuth, readSettings } from './settings'
 import { providerOfHost } from './credentials'
+import { isGithubComHost } from '../shared/githubEnterprise'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
 import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -980,7 +981,10 @@ export async function cloneCredentialEnv(url: string, host?: string, token?: str
   if (!host || hostFromUrl(url) !== host) return null
   // The renderer sends the active profile's token. A GitLab or Forgejo token
   // only goes to the instance that issued it — never to another profile's server.
-  if (host === 'gitlab' || host === 'forgejo') {
+  // GitHub likewise: the renderer's token is github.com's, so a clone from an
+  // Enterprise Server uses the token the profile filed for that server.
+  const ghes = host === 'github' && !isGithubComHost(new URL(url).hostname)
+  if (host === 'gitlab' || host === 'forgejo' || ghes) {
     token = (await activeProfileAuth(host, url)).token
     if (!token) return null
   }

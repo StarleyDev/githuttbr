@@ -1,5 +1,6 @@
 import { execFile } from 'child_process'
-import { isKnownForgejoHost, isKnownGitlabHost } from './gitlabInstances'
+import { isKnownForgejoHost, isKnownGithubEnterpriseHost, isKnownGitlabHost } from './gitlabInstances'
+import { GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
 import type { AccountLink, RepoHost } from '../shared/types'
 import { isAccountLogin } from '../shared/hostToken'
 
@@ -357,7 +358,7 @@ function githubCliToken(host = 'github.com', user?: string): Promise<string | nu
 }
 
 /**
- * GET a public api.github.com URL, signed in with the GitHub CLI login when there
+ * GET a public github.com API URL, signed in with the GitHub CLI login when there
  * is one. Anonymous calls share 60 an hour per network address with every other
  * app on it; signed-in calls get the account's own 5,000. Only the CLI login is
  * used (no credential-helper lookup), so a background check never touches the
@@ -367,7 +368,8 @@ let githubTokenRejected = false
 export async function githubPublicGet(url: string, timeoutMs = 8000): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'gitcito' }
   const target = new URL(url)
-  const signed = target.protocol === 'https:' && target.hostname === 'api.github.com' && !githubTokenRejected
+  const signed =
+    target.protocol === 'https:' && target.origin === GITHUB_COM_ENDPOINTS.apiBase && !githubTokenRejected
   // The CLI lookup gets a short budget of its own so it can't eat the request's timeout.
   const token = signed
     ? await Promise.race([
@@ -458,5 +460,7 @@ export function providerOfHost(host: string): RepoHost | undefined {
   // GitLab; which token it may receive is `profileAuth`'s decision.
   if (isKnownGitlabHost(h)) return 'gitlab'
   if (isKnownForgejoHost(h)) return 'forgejo'
+  // A GitHub Enterprise Server a profile names — GitHub's API, its own host.
+  if (isKnownGithubEnterpriseHost(h)) return 'github'
   return undefined
 }

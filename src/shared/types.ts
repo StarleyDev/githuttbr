@@ -2814,6 +2814,9 @@ export interface Profile {
   gitName: string
   gitEmail: string
   githubToken: string
+  /** GitHub Enterprise Servers this profile is connected to, each with its own
+   *  token. `githubToken` stays github.com's and is never sent to one of these. */
+  githubEnterprise?: GithubEnterpriseHost[]
   azureToken: string
   /** Azure DevOps organization, used to validate the PAT and scope repo/PR lookups. */
   azureOrg?: string
@@ -2838,6 +2841,14 @@ export interface Profile {
   /** Where the profile's picture comes from. Absent means `auto`. */
   avatar?: ProfileAvatar
   ai: AIConfig
+}
+
+/** One GitHub Enterprise Server of a profile. The token is a secret: on disk it
+ *  lives in the keychain-encrypted store, filed under the server's base URL. */
+export interface GithubEnterpriseHost {
+  /** The server's address, `https://host[:port]` (see `normalizeGithubEnterpriseUrl`). */
+  url: string
+  token: string
 }
 
 /**

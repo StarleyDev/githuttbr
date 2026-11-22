@@ -58,7 +58,7 @@ import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { forkUpstream, repoHasIssueTracker, repoSupportsPrReview } from '../lib/hosting'
+import { enterpriseBasesOf, forkUpstream, githubTagUrl, repoHasIssueTracker, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -95,6 +95,9 @@ const forgejoInstances = (): string[] =>
     .getState()
     .settings.profiles.map((p) => p.forgejoUrl?.trim() ?? '')
     .filter(Boolean)
+
+/** The GitHub Enterprise Servers the profiles name, read when a menu is built. */
+const githubEnterprise = (): string[] => enterpriseBasesOf(useSettingsStore.getState().settings.profiles)
 
 /** The self-managed GitLabs the profiles point at, read when a menu is built. */
 const gitlabInstances = (): string[] =>
@@ -806,8 +809,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const tagWebLink = (tagName: string): string | null => {
     const url = repo.remotes[0]?.url
     if (!url) return null
-    const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
-    if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${tagName}`
+    const gh = githubTagUrl(url, tagName, githubEnterprise())
+    if (gh) return gh
     const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
     if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${tagName}`
     return null
@@ -1436,7 +1439,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
     const origin = remote ?? hostOrigin()
     return [
-      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances()) && origin
+      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise()) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1887,7 +1890,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onKeyDown={keyActivate}
           onClick={() => {
             // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances())) {
+            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise())) {
               void window.api.openExternal(pr.url)
               return
             }
@@ -2320,7 +2323,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           )
         )}
         {(() => {
-          const fork = forkUpstream(repo.remotes)
+          const fork = forkUpstream(repo.remotes, githubEnterprise())
           if (!fork || repo.upstreamPrs.length === 0) return null
           return (
             <>
@@ -2870,7 +2873,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   // Issues, Milestones & Releases are listed for GitHub and Forgejo; hide them for other hosts.
-  if (!repoHasIssueTracker(repo.remotes, profiles.map((p) => p.forgejoUrl))) {
+  if (!repoHasIssueTracker(repo.remotes, profiles.map((p) => p.forgejoUrl), enterpriseBasesOf(profiles))) {
     delete sections.issues
     delete sections.milestones
     delete sections.releases
