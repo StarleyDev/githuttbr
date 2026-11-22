@@ -447,7 +447,7 @@ export function FileTree({
           openModal({
             kind: 'confirm',
             title: t('fileTree.ignoreAndUntrackTitle'),
-            message: `Add ${node.path} to .gitignore and stop tracking it in Git. The file(s) stay on disk.`,
+            message: interp(t('fileTree.ignoreAndUntrackMsg'), { path: node.path }),
             confirmLabel: t('fileTree.ignoreAndUntrackConfirm'),
             onConfirm: () => void repoActions.ignoreAndUntrack(path, [node.path], patterns, node.path)
           })
@@ -459,7 +459,7 @@ export function FileTree({
           openModal({
             kind: 'confirm',
             title: t('fileTree.stopTrackingTitle'),
-            message: `Stop tracking ${node.path} in Git? It stays on disk but is removed from the repository on the next commit.`,
+            message: interp(t('fileTree.stopTrackingMsg'), { path: node.path }),
             confirmLabel: t('fileTree.stopTrackingConfirm'),
             onConfirm: () => void repoActions.untrack(path, [node.path], false, node.path)
           })
@@ -471,7 +471,7 @@ export function FileTree({
           openModal({
             kind: 'confirm',
             title: t('fileTree.deleteFromDiskTitle'),
-            message: `Remove ${node.path} from version control and permanently delete from disk? This cannot be undone.`,
+            message: interp(t('fileTree.deleteFromDiskMsg'), { path: node.path }),
             danger: true,
             confirmLabel: t('fileTree.deleteFromDiskConfirm'),
             onConfirm: () => void repoActions.untrack(path, [node.path], true, node.path)
@@ -496,7 +496,7 @@ export function FileTree({
     { separator: true },
     { label: t('fileTree.filterGraph'), onClick: () => useUIStore.getState().setPathFilter(node.path) },
     { separator: true },
-    { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(abs(path, node.path)) },
+    { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(abs(path, node.path)) },
     { label: t('fileTree.openDefaultApp'), onClick: () => void shellApi.openPath(abs(path, node.path)) },
     ...openWithMenuItems(
       abs(path, node.path),

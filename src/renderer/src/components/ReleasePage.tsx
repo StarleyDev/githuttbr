@@ -57,8 +57,8 @@ export function ReleasePage({ tab }: { tab: PageTab }): React.JSX.Element | null
                   </span>
                 )}
                 {date && <span className="changelog-version">{date}</span>}
-                {release.prerelease && <span className="badge release-pre">pre-release</span>}
-                {release.draft && <span className="badge release-draft">draft</span>}
+                {release.prerelease && <span className="badge release-pre">{t('release.prereleaseBadge')}</span>}
+                {release.draft && <span className="badge release-draft">{t('release.draftBadge')}</span>}
               </div>
             </div>
           </div>

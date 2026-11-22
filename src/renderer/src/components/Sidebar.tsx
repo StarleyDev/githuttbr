@@ -819,7 +819,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const shown = remoteNames.slice(0, 2)
     const extra = remoteNames.length - shown.length
     const title = remoteNames.length
-      ? `${local ? 'This computer, ' : ''}${remoteNames.join(', ')}`
+      ? [...(local ? [t('sidebar.thisComputer')] : []), ...remoteNames].join(', ')
       : t('sidebar.localOnly')
     return (
       <span className="sb-presence" title={title}>
@@ -1386,7 +1386,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           openModal({
             kind: 'confirm',
             title: t('sidebar.removeSubmodule'),
-            message: `Remove submodule "${sm.path}"? This deinitializes it and removes it from the index and .gitmodules.`,
+            message: interp(t('sidebar.removeSubmoduleMsg'), { path: sm.path }),
             danger: true,
             confirmLabel: t('common.delete'),
             onConfirm: () => void repoActions.submoduleRemove(path, sm.path)
@@ -2775,7 +2775,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               // The current checkout's state is already the repo's own status panel.
               !w.isCurrent && <WorktreeStatusBadge repoPath={path} worktree={w} />
             )}
-            {w.isMain && <span className="badge">main</span>}
+            {w.isMain && <span className="badge">{t('sidebar.worktreeMainBadge')}</span>}
           </div>
         ))}
       </Section>

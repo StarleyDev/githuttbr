@@ -14,7 +14,7 @@ import {
   stateAt,
   type TlState
 } from '../lib/timelapse'
-import { useT, interp } from '../i18n'
+import { useT, t as tr, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** Commits per second, so a long history stays watchable. */
@@ -138,7 +138,12 @@ export function TimelapseModal({ repoPath }: { repoPath: string }): React.JSX.El
         ctx.fillStyle = 'rgba(255,255,255,0.62)'
         ctx.fillText(commit.author, 24, 70)
         ctx.fillText(
-          `${state.index + 1}/${commits.length} commits · ${state.alive} files · ${state.authors.size} authors`,
+          interp(tr('timelapse.overlayStats'), {
+            index: state.index + 1,
+            total: commits.length,
+            files: state.alive,
+            authors: state.authors.size
+          }),
           24,
           height - 24
         )
@@ -209,7 +214,7 @@ export function TimelapseModal({ repoPath }: { repoPath: string }): React.JSX.El
 
     const name = `${repo?.name ?? 'repo'}-timelapse.webm`
     const saved = await window.api.saveBinary(name, new Uint8Array(await blob.arrayBuffer()), [
-      { name: 'WebM video', extensions: ['webm'] }
+      { name: t('timelapse.webmFilter'), extensions: ['webm'] }
     ])
     if (saved) toast('success', interp(t('timelapse.saved'), { path: saved }))
   }

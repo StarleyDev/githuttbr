@@ -12,7 +12,7 @@ import { draggingCommit, draggingRef, useUIStore, type MenuItem } from '../store
 import { commitDropActions } from '../lib/commitDrop'
 import { openCommitDropMenu } from '../lib/commitDropMenu'
 import { useSettingsStore } from '../stores/settings'
-import { useT, interp, type TranslationKey } from '../i18n'
+import { useT, t as tr, interp, type TranslationKey } from '../i18n'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
@@ -167,10 +167,11 @@ function contrastText(hex: string): string {
 
 function timeAgo(unixSeconds: number): string {
   const diff = Date.now() / 1000 - unixSeconds
-  if (diff < 60) return 'now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-  if (diff < 86400 * 30) return `${Math.floor(diff / 86400)}d`
+  // The compact forms: this is a narrow column, where "5m ago" would not fit.
+  if (diff < 60) return tr('time.nowShort')
+  if (diff < 3600) return interp(tr('time.minutesShort'), { n: Math.floor(diff / 60) })
+  if (diff < 86400) return interp(tr('time.hoursShort'), { n: Math.floor(diff / 3600) })
+  if (diff < 86400 * 30) return interp(tr('time.daysShort'), { n: Math.floor(diff / 86400) })
   return new Date(unixSeconds * 1000).toLocaleDateString()
 }
 
@@ -2101,19 +2102,32 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                         />
                         <span className="wip-stats">
                           {wipStats.added > 0 && (
-                            <span className="wip-stat wip-add" title={`${wipStats.added} added`}>
+                            <span
+                              className="wip-stat wip-add"
+                              title={interp(t(wipStats.added === 1 ? 'chg.addedOne' : 'chg.added'), { n: wipStats.added })}
+                            >
                               <Plus size={11} />
                               {wipStats.added}
                             </span>
                           )}
                           {wipStats.modified > 0 && (
-                            <span className="wip-stat wip-mod" title={`${wipStats.modified} modified`}>
+                            <span
+                              className="wip-stat wip-mod"
+                              title={interp(t(wipStats.modified === 1 ? 'chg.modifiedOne' : 'chg.modified'), {
+                                n: wipStats.modified
+                              })}
+                            >
                               <Pencil size={10} />
                               {wipStats.modified}
                             </span>
                           )}
                           {wipStats.deleted > 0 && (
-                            <span className="wip-stat wip-del" title={`${wipStats.deleted} deleted`}>
+                            <span
+                              className="wip-stat wip-del"
+                              title={interp(t(wipStats.deleted === 1 ? 'chg.deletedOne' : 'chg.deleted'), {
+                                n: wipStats.deleted
+                              })}
+                            >
                               <Minus size={11} />
                               {wipStats.deleted}
                             </span>
@@ -2129,7 +2143,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                       </span>
                     ) : (
                       <span key="message" className="row-subject" title={emojifyGitmoji(c.subject)}>
-                        {newSet.has(c.hash) && <span className="row-new-badge">new</span>}
+                        {newSet.has(c.hash) && <span className="row-new-badge">{t('graph.newBadge')}</span>}
                         {/* A note is invisible in a plain log, so the row is the
                             only place anyone would find out it exists. */}
                         {notedSet.has(c.hash) && (

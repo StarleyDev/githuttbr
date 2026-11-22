@@ -7,6 +7,7 @@ import type {
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { askActionSafety } from './askActions'
+import { t } from '../i18n'
 import { useSettingsStore } from '../stores/settings'
 import { submitStackCore, useRepoStore } from '../stores/repo'
 
@@ -175,7 +176,7 @@ export async function executeRepoChatActions(
         actions,
         applied,
         index,
-        { code: 'unknown', detail: 'File actions must appear before Git actions.' },
+        { code: 'unknown', detail: t('chat.actionOrderInvalid') },
         actionResults
       )
     }
@@ -236,7 +237,8 @@ export async function executeRepoChatActions(
       } else if (action.type === 'push') {
         const branch = action.branch ?? (await gitApi.status(repoPath)).current
         if (!branch) {
-          return failedResult(actions, applied, index, { code: 'unknown', detail: 'No branch to push.' }, actionResults)
+          const noBranch = { code: 'unknown' as const, detail: t('chat.actionNoBranchToPush') }
+          return failedResult(actions, applied, index, noBranch, actionResults)
         }
         // Force is not in the union: a plan may publish work, never rewrite it.
         await gitApi.push(repoPath, branch, action.remote ? { remote: action.remote } : undefined)
@@ -273,9 +275,10 @@ async function openProposedPr(
 ): Promise<NonNullable<RepoChatExecutionResult['prs']>[number]> {
   const repo = useRepoStore.getState().repos[repoPath]
   const origin = repo?.remotes.find((remote) => remote.name === 'origin') ?? repo?.remotes[0]
-  if (!origin) throw new Error('This repository has no remote to open a pull request against.')
+  // Shown to the user (the card's tooltip and the run() toast), so it is translated.
+  if (!origin) throw new Error(t('chat.actionNoRemoteForPr'))
   const source = action.source || repo?.branches.current
-  if (!source) throw new Error('No branch to open a pull request from.')
+  if (!source) throw new Error(t('chat.actionNoBranchForPr'))
   const profile = useSettingsStore.getState().activeProfile()
   const result = await hostingApi.createPR(origin.url, { github: profile.githubToken || undefined }, {
     title: action.title,

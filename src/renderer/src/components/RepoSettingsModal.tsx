@@ -136,7 +136,7 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
         .getState()
         .update((s) => ({ ...s, repoImages: applyRepoImage(s.repoImages, repoPath, imageFile || null) }))
       await gitApi.setProtectedBranches(repoPath, protectedBranches)
-      toast('success', 'Repo settings saved')
+      toast('success', t('repoSettings.saved'))
       closeModal()
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))

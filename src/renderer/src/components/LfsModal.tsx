@@ -16,7 +16,7 @@ export function LfsModal({ repoPath }: { repoPath: string }): React.JSX.Element 
     const full = `${repoPath}/${f.path}`
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     openContextMenu(rect.right, rect.bottom + 4, [
-      { label: shellApi.revealLabel, icon: <FileDown size={15} />, onClick: () => void shellApi.revealInFolder(full) },
+      { label: t(shellApi.revealLabelKey), icon: <FileDown size={15} />, onClick: () => void shellApi.revealInFolder(full) },
       { label: t('lfs.openDefaultApp'), icon: <Download size={15} />, onClick: () => void shellApi.openPath(full) }
     ])
   }
@@ -71,11 +71,19 @@ export function LfsModal({ repoPath }: { repoPath: string }): React.JSX.Element 
         <div className="lfs-banner warn">
           <AlertTriangle size={14} />
           <span>
-            {t('lfs.notInstalled').replace('git-lfs.com', '')}
-            <a href="#" onClick={(e) => { e.preventDefault(); void window.api.openExternal('https://git-lfs.com') }}>
-              git-lfs.com
-            </a>{' '}
-            to manage large files.
+            {/* The link sits wherever the locale puts {link}, so the sentence keeps its own word order. */}
+            {(() => {
+              const [before, after = ''] = t('lfs.notInstalled').split('{link}')
+              return (
+                <>
+                  {before}
+                  <a href="#" onClick={(e) => { e.preventDefault(); void window.api.openExternal('https://git-lfs.com') }}>
+                    git-lfs.com
+                  </a>
+                  {after}
+                </>
+              )
+            })()}
           </span>
         </div>
       ) : (

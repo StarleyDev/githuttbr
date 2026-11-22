@@ -307,7 +307,7 @@ export function ExportModal({
           </span>
           <span className="export-result-size">{fmtBytes(written.bytes)}</span>
           <button className="btn ghost small" type="button" onClick={() => void shellApi.revealInFolder(written.path)}>
-            <FolderOpen size={12} /> {shellApi.revealLabel}
+            <FolderOpen size={12} /> {t(shellApi.revealLabelKey)}
           </button>
         </div>
       )}

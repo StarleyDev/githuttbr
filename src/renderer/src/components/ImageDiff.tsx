@@ -93,10 +93,10 @@ export function ImageDiff({ before, after }: ImageDiffProps): React.JSX.Element 
             </span>
           </div>
           <span className="imgd-tag removed" style={{ opacity: pos > 14 ? 1 : 0 }}>
-            Before
+            {t('imageDiff.before')}
           </span>
           <span className="imgd-tag added right" style={{ opacity: pos < 86 ? 1 : 0 }}>
-            After
+            {t('imageDiff.after')}
           </span>
         </div>
       )}

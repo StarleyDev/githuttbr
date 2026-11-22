@@ -410,7 +410,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
       await shellApi.writeFiles(repoPath, [{ path: file, content: draft }])
       setContent(draft)
       setEditorDirty(false)
-      toast('success', `Saved ${file.split('/').pop()}`)
+      toast('success', interp(t('fileViewer.savedFile'), { file: file.split('/').pop() ?? file }))
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
     } finally {
@@ -1181,9 +1181,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           >
             {blameOverrideRef && (
               <div className="blame-rewind-bar">
-                <span>Blaming at <code>{blameOverrideRef}</code></span>
+                <span>
+                  {t('fileViewer.blamingAt')} <code>{blameOverrideRef}</code>
+                </span>
                 <button className="btn ghost tiny" onClick={() => setBlameOverrideRef(null)}>
-                  Back to latest
+                  {t('fileViewer.blameBackToLatest')}
                 </button>
               </div>
             )}
@@ -1192,7 +1194,10 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <button
                   className="blame-meta"
                   style={{ borderLeftColor: shaColor(b.sha) }}
-                  title={`${b.sha.slice(0, 10)} — ${new Date(b.date * 1000).toLocaleDateString()}\nRight-click for more`}
+                  title={interp(t('fileViewer.blameLineTitle'), {
+                    sha: b.sha.slice(0, 10),
+                    date: new Date(b.date * 1000).toLocaleDateString()
+                  })}
                   onClick={() => setFileView({ ...view, source: { type: 'commit', hash: b.sha }, mode: 'diff' })}
                   onContextMenu={(e) => {
                     e.preventDefault()

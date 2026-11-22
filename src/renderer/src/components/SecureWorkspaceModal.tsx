@@ -311,7 +311,7 @@ export function SecureWorkspaceModal({
     const label =
       specs.length === 1 && specs[0].kind === 'repo'
         ? specs[0].project
-        : owningWs?.name || 'Workspace'
+        : owningWs?.name || t('wshare.workspaceFallback')
     try {
       const res = await secureShareApi.exportV2(specs, label, password)
       if ('error' in res) toast('error', errText(res.error))

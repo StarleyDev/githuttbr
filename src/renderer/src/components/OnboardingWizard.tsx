@@ -278,14 +278,20 @@ function ThemeStep({
       </div>
 
       <div className="onboarding-mode-toggle">
-        {([['light', 'Light', Sun], ['dark', 'Dark', Moon], ['auto', 'Auto', Monitor]] as const).map(
-          ([id, label, Icon]) => (
+        {(
+          [
+            ['light', 'settings.modeLight', Sun],
+            ['dark', 'settings.modeDark', Moon],
+            ['auto', 'settings.modeAuto', Monitor]
+          ] as const
+        ).map(
+          ([id, labelKey, Icon]) => (
             <button
               key={id}
               className={`onboarding-mode-btn${data.themeMode === id ? ' selected' : ''}`}
               onClick={() => patch({ themeMode: id })}
             >
-              <Icon size={13} /> {label}
+              <Icon size={13} /> {t(labelKey)}
             </button>
           )
         )}

@@ -143,6 +143,7 @@ export function LauncherPanel({
   emptyMessage?: string
   recentItems?: LauncherItem[]
 }): React.JSX.Element {
+  const t = useT()
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
   const [renameVal, setRenameVal] = useState('')
 
@@ -169,18 +170,18 @@ export function LauncherPanel({
     <div className="launcher-panel">
       <div className="launcher-actions">
         <button className="btn ghost" onClick={onOpen}>
-          <FolderGit2 size={14} /> Open
+          <FolderGit2 size={14} /> {t('launcher.open')}
         </button>
         <button className="btn ghost" onClick={onClone}>
-          <Download size={14} /> Clone
+          <Download size={14} /> {t('clone.submit')}
         </button>
         <button className="btn ghost" onClick={onCreate}>
-          <Plus size={14} /> Create
+          <Plus size={14} /> {t('common.create')}
         </button>
       </div>
       {onCreateGroup && (
         <button className="btn ghost launcher-create-group" onClick={onCreateGroup}>
-          <Plus size={14} /> Create group
+          <Plus size={14} /> {t('launcher.createGroup')}
         </button>
       )}
       {(items.length > 0 || emptyMessage !== undefined) && (

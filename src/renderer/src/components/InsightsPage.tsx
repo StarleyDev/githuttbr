@@ -107,7 +107,7 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
               <div className="insights-card">
                 <GitCommit size={15} />
                 <span className="insights-card-num">{fmt(data.totalCommits)}</span>
-                <span className="insights-card-label">{t('insights.commits')} · {perDay}/day</span>
+                <span className="insights-card-label">{t('insights.commits')} · {interp(t('insights.perDay'), { n: perDay })}</span>
               </div>
               <div className="insights-card">
                 <Users size={15} />
@@ -187,7 +187,12 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
                     <button
                       key={h.path}
                       className="insights-row hotspot"
-                      title={`${h.path}\n${h.commits} commits · +${fmt(h.added)} −${fmt(h.removed)}`}
+                      title={interp(t('insights.hotspotTitle'), {
+                        path: h.path,
+                        n: h.commits,
+                        added: fmt(h.added),
+                        removed: fmt(h.removed)
+                      })}
                       onClick={() => openHotspot(h.path)}
                     >
                       <span className="insights-row-name mono">{h.path}</span>

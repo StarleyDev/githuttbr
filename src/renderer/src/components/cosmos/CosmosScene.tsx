@@ -2,23 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, TriangleAlert } from 'lucide-react'
 import type { CosmosCommit } from '../../../../shared/types'
 import { createEngine, pickNodeAt, type CosmosEngine } from './engine'
-import { buildCommitGalaxy } from './modes/commitGalaxy'
+import { buildCommitGalaxy, GALAXY_NODE_CAP } from './modes/commitGalaxy'
 import { buildGourceTree, GOURCE_MAX_FILES, type GourceController } from './modes/gourceTree'
 import type { CosmosMode } from './RepoCosmos'
+import { useT, interp, type TranslationKey } from '../../i18n'
 
 // The three.js half of the cosmos view. RepoCosmos loads this module through
 // React.lazy so three.js stays out of the startup chunk: most sessions never
 // open the 3D view, and three is over a megabyte of parse work at launch.
 // Nothing outside this file and RepoCosmos may import engine.ts or modes/*.
 
+// The caption is kept as a key plus its numbers, not as a string, so a language
+// switch re-renders it instead of leaving the scene captioned in the old one.
+interface Caption {
+  key: TranslationKey
+  vars: Record<string, number>
+}
+
 export function CosmosScene({ commits, mode }: { commits: CosmosCommit[]; mode: CosmosMode }): React.JSX.Element {
+  const t = useT()
   const containerRef = useRef<HTMLDivElement>(null)
   const [gource, setGource] = useState<GourceController | null>(null)
-  const [caption, setCaption] = useState('')
+  const [caption, setCaption] = useState<Caption | null>(null)
   const [empty, setEmpty] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string } | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  // The file tree's root node carries an empty label; name it at render time.
+  const nodeName = (label: string): string => label || t('cosmos.root')
 
   useEffect(() => {
     const container = containerRef.current
@@ -36,7 +47,12 @@ export function CosmosScene({ commits, mode }: { commits: CosmosCommit[]; mode: 
         gourceCtrl = buildGourceTree(commits)
         setGource(gourceCtrl)
         setEmpty(gourceCtrl.totalFiles === 0)
-        setCaption(gourceCtrl.capped ? `Showing ${GOURCE_MAX_FILES} most-touched files of ${gourceCtrl.totalFiles}` : `${gourceCtrl.totalFiles} files`)
+        const files = gourceCtrl.totalFiles
+        setCaption(
+          gourceCtrl.capped
+            ? { key: 'cosmos.captionFilesCapped', vars: { shown: GOURCE_MAX_FILES, total: files } }
+            : { key: files === 1 ? 'cosmos.captionFilesOne' : 'cosmos.captionFilesMany', vars: { n: files } }
+        )
         engine = createEngine(container, (dt) => gourceCtrl?.tick(dt))
         engine.scene.add(gourceCtrl.group)
         engine.camera.position.set(0, 160, 420)
@@ -44,7 +60,12 @@ export function CosmosScene({ commits, mode }: { commits: CosmosCommit[]; mode: 
         setGource(null)
         const galaxyCtrl = buildCommitGalaxy(commits)
         setEmpty(galaxyCtrl.nodeCount === 0)
-        setCaption(galaxyCtrl.capped ? `Showing most recent 800 of ${commits.length} commits` : `${galaxyCtrl.nodeCount} commits`)
+        const nodes = galaxyCtrl.nodeCount
+        setCaption(
+          galaxyCtrl.capped
+            ? { key: 'cosmos.captionCommitsCapped', vars: { shown: GALAXY_NODE_CAP, total: commits.length } }
+            : { key: nodes === 1 ? 'cosmos.captionCommitsOne' : 'cosmos.captionCommitsMany', vars: { n: nodes } }
+        )
         let elapsed = 0
         engine = createEngine(container, (dt) => {
           elapsed += dt
@@ -89,22 +110,24 @@ export function CosmosScene({ commits, mode }: { commits: CosmosCommit[]; mode: 
   return (
     <div className="cosmos-canvas-wrap">
       <div ref={containerRef} className="cosmos-canvas" />
-      {!error && !empty && <div className="cosmos-caption">{caption}</div>}
+      {!error && !empty && caption && <div className="cosmos-caption">{interp(t(caption.key), caption.vars)}</div>}
       {mode === 'gource' && gource && !error && <GourcePlayback controller={gource} />}
       {tooltip && (
         <div className="cosmos-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
-          {tooltip.label}
+          {nodeName(tooltip.label)}
         </div>
       )}
-      {selected && <div className="cosmos-selected">Selected: {selected}</div>}
+      {selected !== null && (
+        <div className="cosmos-selected">{interp(t('cosmos.selected'), { label: nodeName(selected) })}</div>
+      )}
       {empty && !error && (
         <div className="cosmos-empty">
-          <TriangleAlert size={18} /> Not enough data for this view.
+          <TriangleAlert size={18} /> {t('cosmos.notEnoughData')}
         </div>
       )}
       {error && (
         <div className="cosmos-empty cosmos-error">
-          <TriangleAlert size={18} /> Failed to build scene: {error}
+          <TriangleAlert size={18} /> {interp(t('cosmos.buildFailed'), { error })}
         </div>
       )}
     </div>

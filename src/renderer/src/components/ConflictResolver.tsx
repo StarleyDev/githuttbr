@@ -379,7 +379,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     setSaving(true)
     try {
       await gitApi.resolveConflict(repoPath, file, editOutput)
-      toast('success', `Resolved ${file}`)
+      toast('success', interp(t('conflict.resolvedFile'), { file }))
       setConflictView(null)
       await refresh(repoPath)
     } catch (err) {

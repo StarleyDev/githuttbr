@@ -294,7 +294,8 @@ export function AIConfigWizard({
   const addCustom = (): void => {
     const p = customPath.trim()
     if (!p) return
-    setCustomArtifacts((prev) => [...prev, { path: p, description: customDesc.trim() || `Custom: ${p}` }])
+    const description = customDesc.trim() || interp(t('aiWizard.customDescFallback'), { path: p })
+    setCustomArtifacts((prev) => [...prev, { path: p, description }])
     setCustomPath('')
     setCustomDesc('')
     setShowCustomForm(false)
@@ -629,14 +630,18 @@ export function AIConfigWizard({
           <button className="btn ghost" onClick={() => setStep(2)} type="button">
             <ChevronLeft size={14} /> {t('onboarding.back')}
           </button>
-          <span className="wizard-count-label">{flatArtifacts.length} file{flatArtifacts.length !== 1 ? 's' : ''} selected</span>
+          <span className="wizard-count-label">
+            {interp(t(flatArtifacts.length === 1 ? 'aiWizard.filesSelectedOne' : 'aiWizard.filesSelectedMany'), {
+              n: flatArtifacts.length
+            })}
+          </span>
           <button
             className="btn primary"
             disabled={flatArtifacts.length === 0}
             onClick={() => { setStep(4); void generate() }}
             type="button"
           >
-            Generate <Wand2 size={14} />
+            {t('aiWizard.generate')} <Wand2 size={14} />
           </button>
         </div>
       </>
