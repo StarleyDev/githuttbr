@@ -47,6 +47,14 @@ Exception: `submodules-worktrees` cannot be cloned — its linked worktrees and
 submodule gitlinks hold absolute paths that do not survive a copy. Use it
 read-only, or build a fresh repo in the test.
 
+The suite runs git with **no machine config**: `test/setup/global-setup.ts`
+points `GIT_CONFIG_GLOBAL` at a file holding only `user.useConfigOnly = true`
+and sets `GIT_CONFIG_NOSYSTEM`. A test that builds its own repo must therefore
+set everything it relies on — `init -b main`, and an identity
+(`-c user.name=… -c user.email=…` or a local `git config`) before any commit,
+merge, rebase or cherry-pick. A test that sets `GIT_CONFIG_GLOBAL` itself must
+restore the previous value afterwards.
+
 Because git output is timing- and version-sensitive, assert on structure
 (counts, ordering, presence of a ref) rather than on exact prose.
 
