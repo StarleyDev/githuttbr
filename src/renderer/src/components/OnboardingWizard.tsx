@@ -12,6 +12,7 @@ import {
   type AIConfig,
   type AppSettings,
   type GithubEnterpriseHost,
+  type BitbucketServerHost,
   type Profile,
   type ThemeMode
 } from '../../../shared/types'
@@ -50,6 +51,7 @@ interface WizardData {
   forgejoUrl?: string
   forgejoToken?: string
   githubEnterprise?: GithubEnterpriseHost[]
+  bitbucketServers?: BitbucketServerHost[]
   defaultOpenApp?: { name: string; path: string }
   importData: ParsedSettingsImport | null
   importHasSecrets: boolean
@@ -82,6 +84,7 @@ function buildProfile(data: WizardData): Profile {
     forgejoToken: data.forgejoToken,
     forgejoTokenIssuer: data.forgejoTokenIssuer,
     githubEnterprise: data.githubEnterprise,
+    bitbucketServers: data.bitbucketServers,
     ai: data.ai
   }
 }
@@ -335,7 +338,8 @@ function IntegrationsStep({
               ...(p.forgejoUrl !== undefined && { forgejoUrl: p.forgejoUrl }),
               ...('forgejoTokenIssuer' in p && { forgejoTokenIssuer: p.forgejoTokenIssuer }),
               ...(p.forgejoToken !== undefined && { forgejoToken: p.forgejoToken }),
-              ...(p.githubEnterprise !== undefined && { githubEnterprise: p.githubEnterprise })
+              ...(p.githubEnterprise !== undefined && { githubEnterprise: p.githubEnterprise }),
+              ...(p.bitbucketServers !== undefined && { bitbucketServers: p.bitbucketServers })
             })
           }}
         />
@@ -400,6 +404,7 @@ export function OnboardingWizard(): React.JSX.Element {
     forgejoToken: profile.forgejoToken,
     forgejoTokenIssuer: profile.forgejoTokenIssuer,
     githubEnterprise: profile.githubEnterprise,
+    bitbucketServers: profile.bitbucketServers,
     defaultOpenApp: settings.defaultOpenApp,
     importData: null,
     importHasSecrets: false,
@@ -489,6 +494,7 @@ export function OnboardingWizard(): React.JSX.Element {
               forgejoToken: data.forgejoToken,
               forgejoTokenIssuer: data.forgejoTokenIssuer,
               githubEnterprise: data.githubEnterprise,
+              bitbucketServers: data.bitbucketServers,
               ai: { ...p.ai, ...data.ai }
             }
           : p

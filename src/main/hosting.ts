@@ -59,6 +59,28 @@ import {
   tokenMatchesInstance
 } from '../shared/gitlabInstance'
 import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
+import {
+  BITBUCKET_CLOUD,
+  bitbucketBaseOfRemote,
+  bitbucketServerCreatePrUrl,
+  bitbucketServerRepoOf,
+  normalizeBitbucketServerUrl,
+  type BitbucketServerRepo
+} from '../shared/bitbucketServer'
+import { knownBitbucketServerInstances } from './bitbucketServerInstances'
+import {
+  bbsCiStatuses,
+  bbsComment,
+  bbsMerge,
+  bbsPullChecks,
+  bbsPullDetail,
+  bbsPullFiles,
+  bbsReview,
+  bbsWhoAmI,
+  createBbsPull,
+  describeBbsAccount,
+  listBbsPulls
+} from './bitbucketServer'
 import { noreplyEmail } from '../shared/profileAvatar'
 import { mergeStackSection } from '../shared/stackPr'
 import {
@@ -122,7 +144,9 @@ interface ParsedRemote {
   project: string // azure project ('' for github)
   repo: string
   /** GitLab: the instance's base URL — gitlab.com or a self-managed one.
-   *  GitHub: a GitHub Enterprise Server's base; absent for github.com. */
+   *  GitHub: a GitHub Enterprise Server's base; absent for github.com.
+   *  Bitbucket: a Data Center's base (context path included); absent for
+   *  bitbucket.org. `owner` is then the project key (`PROJ`, or `~user`). */
   base?: string
 }
 
@@ -175,6 +199,10 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
     const [owner, repo] = fj.path.split('/')
     return { provider: 'forgejo', owner, project: '', repo, base: fj.base }
   }
+
+  // A Bitbucket Data Center a profile names: its own API, projects instead of workspaces.
+  const bbs = bitbucketServerRepoOf(url, knownBitbucketServerInstances())
+  if (bbs) return { provider: 'bitbucket', owner: bbs.projectKey, project: '', repo: bbs.repoSlug, base: bbs.base }
 
   m = /^(?:[\w-]+\.)*bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(target)
   if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
@@ -293,8 +321,11 @@ async function profileAuth(
   // Server (or one whose host cannot be told) resolves its own in main instead.
   const githubElsewhere =
     provider === 'github' && !!remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM
+  // Bitbucket the same: the renderer's token is bitbucket.org's.
+  const bitbucketElsewhere =
+    provider === 'bitbucket' && !!remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD
   return pickHostAuth({
-    sent: provider === 'gitlab' || provider === 'forgejo' || githubElsewhere ? undefined : sent,
+    sent: provider === 'gitlab' || provider === 'forgejo' || githubElsewhere || bitbucketElsewhere ? undefined : sent,
     bound: repoPath ? await boundProfileAuth(provider, repoPath, remoteUrl) : undefined,
     active: () => activeProfileAuth(provider, remoteUrl)
   })
@@ -364,7 +395,7 @@ export function providerBaseUrl(provider: RepoHost, org?: string): string {
     case 'gitlab':
       return gitlabBaseFromOrg(org)
     case 'bitbucket':
-      return 'https://bitbucket.org'
+      return bitbucketBaseFromOrg(org)
     case 'azure':
       return `https://dev.azure.com/${encodeURIComponent(org?.trim() ?? '')}`
     case 'forgejo':
@@ -383,6 +414,36 @@ function githubBaseFromOrg(org: string | undefined): string {
   const base = normalizeGithubEnterpriseUrl(org)
   if (base && knownGithubEnterpriseInstances().includes(base)) return base
   throw new Error('This GitHub Enterprise Server is not saved in any profile yet (it must be https). Add it in Settings → Integrations → GitHub, then try again.')
+}
+
+/**
+ * Bitbucket's `org` is a Data Center's base, sent by its Settings row. Honoured
+ * only when a profile names that server; absent → bitbucket.org; anything else
+ * is an error, never a fallback to bitbucket.org.
+ */
+function bitbucketBaseFromOrg(org: string | undefined): string {
+  if (!org?.trim() || org.trim().toLowerCase() === BITBUCKET_CLOUD) return BITBUCKET_CLOUD
+  const base = normalizeBitbucketServerUrl(org)
+  if (base && knownBitbucketServerInstances().includes(base)) return base
+  throw new Error('This Bitbucket Data Center is not saved in any profile yet (it must be https). Add it in Settings → Integrations → Bitbucket, then try again.')
+}
+
+/** The Data Center repository a remote is on, or null for bitbucket.org and every other host. */
+function bbsRepoOfRemote(remoteUrl: string): BitbucketServerRepo | null {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'bitbucket' || !parsed.base) return null
+  return bitbucketServerRepoOf(remoteUrl, [parsed.base])
+}
+
+const isBbs = (remoteUrl: string): boolean => bbsRepoOfRemote(remoteUrl) !== null
+
+/** A Data Center remote and the token its profile filed for that server, or an error saying what is missing. */
+async function bbsRepoOf(remoteUrl: string, repoPath?: string): Promise<{ repo: BitbucketServerRepo; token: string }> {
+  const repo = bbsRepoOfRemote(remoteUrl)
+  if (!repo) throw new Error('Not a Bitbucket Data Center repository.')
+  const auth = await remoteApiToken(remoteUrl, 'bitbucket', undefined, repoPath)
+  if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+  return { repo, token: auth.token }
 }
 
 /** The endpoints of a parsed GitHub remote — github.com, or its Enterprise Server. */
@@ -409,7 +470,8 @@ async function tokenForProvider(
   org?: string
 ): Promise<(ApiAuth & { base: string }) | null> {
   const base = await providerBase(provider, org)
-  const input = provider === 'gitlab' || provider === 'forgejo' || (provider === 'github' && base !== GITHUB_COM)
+  const input = provider === 'gitlab' || provider === 'forgejo' || (provider === 'github' && base !== GITHUB_COM) ||
+    (provider === 'bitbucket' && base !== BITBUCKET_CLOUD)
     ? await activeProfileAuth(provider, undefined, base)
     : await profileAuth(provider, token)
   const auth = await apiToken(base, input)
@@ -481,6 +543,11 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   if (provider.toLowerCase() === 'github') {
     return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
   }
+  if (provider.toLowerCase() === 'bitbucket' && host && remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD) {
+    return new Error(
+      `No HTTP access token for the Bitbucket Data Center ${host} is saved in this profile. Add one in Settings → Integrations → Bitbucket → Bitbucket Data Center.`
+    )
+  }
   return new Error(
     `No ${provider} account is linked to this profile${host ? ` for ${host}` : ''}. Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there.`
   )
@@ -549,6 +616,7 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
     if (parsed.provider === 'github') login = (await ghJson<{ login: string }>(`${ghEndpointsOf(parsed).apiBase}/user`, token)).login
     else if (parsed.provider === 'gitlab') login = (await glJson<{ username: string }>(`${glApi(parsed.base)}/user`, auth)).username
     else if (parsed.provider === 'forgejo' && parsed.base) login = (await fjJson<{ login: string }>(`${parsed.base}/api/v1/user`, token)).login
+    else if (parsed.provider === 'bitbucket' && parsed.base) login = (await bbsWhoAmI(parsed.base, token))?.name ?? null
   } catch {
     // A token without user scope cannot say who it is: no marks, no error.
   }
@@ -617,6 +685,13 @@ async function listPullRequestsOf(
   if (parsed.provider === 'forgejo') {
     if (!auth || !parsed.base) return { provider: 'forgejo', prs: [] }
     return { provider: 'forgejo', prs: await listForgejoPulls(parsed.base, parsed.owner, parsed.repo, auth.token) }
+  }
+
+  // Bitbucket Data Center pull requests
+  const bbsRepo = parsed.provider === 'bitbucket' && parsed.base ? bitbucketServerRepoOf(remoteUrl, [parsed.base]) : null
+  if (bbsRepo) {
+    if (!auth) return { provider: 'bitbucket', prs: [] }
+    return { provider: 'bitbucket', prs: await listBbsPulls(bbsRepo, auth.token) }
   }
 
   // Bitbucket pull requests
@@ -851,6 +926,8 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   if (parsed.provider === 'gitlab') {
     return `${parsed.base ?? GITLAB_COM}/${parsed.owner}/${parsed.repo}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${encodeURIComponent(source)}&merge_request%5Btarget_branch%5D=${encodeURIComponent(target)}`
   }
+  const bbsRepo = bbsRepoOfRemote(remoteUrl)
+  if (bbsRepo) return bitbucketServerCreatePrUrl(bbsRepo, source, target)
   if (parsed.provider === 'bitbucket') {
     return `https://bitbucket.org/${parsed.owner}/${parsed.repo}/pull-requests/new?source=${encodeURIComponent(source)}&dest=${encodeURIComponent(target)}`
   }
@@ -931,6 +1008,13 @@ async function createPullRequest(
     }
     const d = (await res.json()) as { iid: number; web_url: string }
     return { url: d.web_url, number: d.iid }
+  }
+
+  // Bitbucket Data Center pull request
+  const bbsRepo = bbsRepoOfRemote(remoteUrl)
+  if (bbsRepo) {
+    if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+    return createBbsPull(bbsRepo, auth.token, opts)
   }
 
   // Bitbucket pull request
@@ -1418,6 +1502,10 @@ async function pullRequestDetail(
   number: number
 ): Promise<PrDetail> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestDetail(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullDetail(b.repo, b.token, number)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullDetail(f.base, f.owner, f.repo, f.token, number)
@@ -1564,6 +1652,10 @@ async function pullRequestChecks(
   number: number
 ): Promise<PrCheck[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestChecks(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullChecks(b.repo, b.token, number)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullChecks(f.base, f.owner, f.repo, f.token, number)
@@ -1592,6 +1684,10 @@ async function pullRequestFiles(
   number: number
 ): Promise<PrFile[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullFiles(b.repo, b.token, number)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullFiles(f.base, f.owner, f.repo, f.token, number)
@@ -1641,6 +1737,11 @@ async function replyReviewComment(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureReply(a.ado, a.repo, number, Number(inReplyTo), body)
   }
+  if (isBbs(remoteUrl)) {
+    // A thread's root comment id: the reply nests under it, as the web UI does.
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsComment(b.repo, b.token, number, body, Number(inReplyTo))
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
     return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
   }
@@ -1658,6 +1759,10 @@ async function commentOnPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glCommentOnMr(remoteUrl, tokens.gitlab, number, body)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsComment(b.repo, b.token, number, body)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoComment(f.base, f.owner, f.repo, f.token, number, body)
@@ -1681,6 +1786,10 @@ async function reviewPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glReviewMr(remoteUrl, tokens.gitlab, number, event, body)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsReview(b.repo, b.token, number, event, body)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoReview(f.base, f.owner, f.repo, f.token, number, event, body)
@@ -1703,6 +1812,10 @@ async function mergePr(
   method: PrMergeMethod
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeMr(remoteUrl, tokens.gitlab, number, method)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsMerge(b.repo, b.token, number, method)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoMerge(f.base, f.owner, f.repo, f.token, number, method)
@@ -2218,6 +2331,9 @@ async function ensureGithubStack(
   }
 }
 
+/** Browsing and creating repositories is Bitbucket Cloud's only; a Data Center token never goes to bitbucket.org. */
+const BBS_NO_BROWSE = 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.'
+
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
   const auth = await tokenForProvider(provider, token, org)
   if (!auth) throw await noCredential(provider, await providerBase(provider, org))
@@ -2270,6 +2386,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   if (provider === 'forgejo') return listForgejoRepos(auth.base, auth.token)
 
   if (provider === 'bitbucket') {
+    if (auth.base !== BITBUCKET_CLOUD) throw new Error(BBS_NO_BROWSE)
     const res = await fetch('https://api.bitbucket.org/2.0/repositories?role=member&pagelen=100&sort=-updated_on', {
       headers: { Authorization: bitbucketAuthFor(auth) }
     })
@@ -2372,6 +2489,7 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   if (provider === 'forgejo') return listForgejoOwners(auth.base, auth.token)
 
   if (provider === 'bitbucket') {
+    if (auth.base !== BITBUCKET_CLOUD) throw new Error(BBS_NO_BROWSE)
     const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
       headers: { Authorization: bitbucketAuthFor(auth) }
     })
@@ -2430,6 +2548,11 @@ async function fetchConnectedAccount(
     if (!token.trim()) return null
     link = undefined
     interactive = false
+  }
+  // A Data Center likewise: its own token, sent only to the base it was saved under.
+  if (provider === 'bitbucket' && base !== BITBUCKET_CLOUD) {
+    if (!token.trim()) return null
+    return { source: 'token', ...(await describeBbsAccount(base, token.trim())) }
   }
   if ((provider === 'gitlab' || provider === 'forgejo') && token && !tokenMatchesInstance(provider, base, issuer)) return null
   const auth = await apiToken(base, { token, link }, { interactive })
@@ -2670,6 +2793,7 @@ async function createRepository(
   if (provider === 'forgejo') return createForgejoRepo(auth.base, auth.token, opts)
 
   if (provider === 'bitbucket') {
+    if (auth.base !== BITBUCKET_CLOUD) throw new Error(BBS_NO_BROWSE)
     const slug = opts.name.trim().toLowerCase().replace(/\s+/g, '-')
     const res = await fetch(`https://api.bitbucket.org/2.0/repositories/${opts.owner}/${slug}`, {
       method: 'POST',
@@ -2815,6 +2939,12 @@ export async function fetchCiStatuses(
   token: string
 ): Promise<Record<string, CiStatus>> {
   const parsed = parseRemoteUrl(remoteUrl)
+  // A Data Center's build statuses, quietly: no token or no build-status resource is "no badges".
+  const bbsRepo = bbsRepoOfRemote(remoteUrl)
+  if (bbsRepo) {
+    const bbsAuth = await remoteApiToken(remoteUrl, 'bitbucket', undefined).catch(() => null)
+    return bbsAuth ? bbsCiStatuses(bbsRepo, bbsAuth.token, shas).catch(() => ({})) : {}
+  }
   if (!parsed || parsed.provider !== 'github') return {}
   const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) return {}

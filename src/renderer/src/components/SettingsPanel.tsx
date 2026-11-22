@@ -76,6 +76,7 @@ import { parseSettingsImport } from '../lib/settingsImport'
 import { Avatar } from './Avatar'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
 import { GithubEnterpriseSettings } from './GithubEnterpriseSettings'
+import { BitbucketServerSettings } from './BitbucketServerSettings'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
@@ -806,6 +807,7 @@ export function IntegrationsPage({
           fixed once created — so say which ones before the user makes it. */}
       {active.id === 'forgejo' && <p className="settings-hint">{t('settings.forgejoScopesHint')}</p>}
       {active.id === 'github' && <GithubEnterpriseSettings profile={profile} edit={edit} />}
+      {active.id === 'bitbucket' && <BitbucketServerSettings profile={profile} edit={edit} />}
       <p className="settings-hint">{t('settings.integrationsHint')}</p>
 
       <LocalCiSection />

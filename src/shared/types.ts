@@ -2830,6 +2830,10 @@ export interface Profile {
    *  Empty means gitlab.com. The token is only ever sent to this instance. */
   gitlabUrl?: string
   bitbucketToken: string
+  /** Bitbucket Data Center servers this profile is connected to, each with its
+   *  own HTTP access token. `bitbucketToken` stays bitbucket.org's and is never
+   *  sent to one of these. */
+  bitbucketServers?: BitbucketServerHost[]
   /** Forgejo (or Gitea) access token, for the instance at `forgejoUrl`. Optional:
    *  settings written before Forgejo support have no such field. */
   forgejoToken?: string
@@ -2852,6 +2856,17 @@ export interface GithubEnterpriseHost {
   /** The server's address, `https://host[:port]` (see `normalizeGithubEnterpriseUrl`). */
   url: string
   token: string
+}
+
+/** One Bitbucket Data Center of a profile. The token is a secret: on disk it
+ *  lives in the keychain-encrypted store, filed under the server's base URL. */
+export interface BitbucketServerHost {
+  /** `https://host[:port][/context]` (see `normalizeBitbucketServerUrl`). */
+  url: string
+  token: string
+  /** The account name git sends with a personal token; empty for a project or
+   *  repository token, which git sends as `x-token-auth`. Not a secret. */
+  username?: string
 }
 
 /**

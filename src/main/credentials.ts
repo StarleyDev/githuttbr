@@ -1,6 +1,7 @@
 import { execFile } from 'child_process'
 import { isKnownForgejoHost, isKnownGithubEnterpriseHost, isKnownGitlabHost } from './gitlabInstances'
 import { GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
+import { isKnownBitbucketServerHost } from './bitbucketServerInstances'
 import type { AccountLink, RepoHost } from '../shared/types'
 import { isAccountLogin } from '../shared/hostToken'
 
@@ -264,6 +265,8 @@ export type TokenSource = 'token' | 'git' | 'gh'
 export interface HostAuth {
   token?: string
   link?: AccountLink
+  /** The user name git sends with `token` (a Bitbucket Data Center personal token). */
+  username?: string
 }
 
 export interface ApiAuth {
@@ -274,6 +277,9 @@ export interface ApiAuth {
   /** The account behind a machine login — what a sign-in links. Unknown (until
    *  the API says) for the GitHub CLI's active account. */
   login?: string
+  /** For a typed token: the user name git must send with it, when the host
+   *  needs a specific one. Absent → the provider's fixed name (`basicAuthFor`). */
+  gitUsername?: string
 }
 
 /**
@@ -292,7 +298,9 @@ export interface ApiAuth {
  * account, then the helper's own login window. Git never prompts on a terminal.
  */
 export async function apiToken(remoteUrl: string, auth: HostAuth, opts: FillOpts = {}): Promise<ApiAuth | null> {
-  if (auth.token?.trim()) return { token: auth.token.trim(), source: 'token' }
+  if (auth.token?.trim()) {
+    return { token: auth.token.trim(), source: 'token', ...(auth.username ? { gitUsername: auth.username } : {}) }
+  }
   const host = hostOf(remoteUrl)
   const isGithub = !!host && providerOfHost(host) === 'github'
 
@@ -462,5 +470,7 @@ export function providerOfHost(host: string): RepoHost | undefined {
   if (isKnownForgejoHost(h)) return 'forgejo'
   // A GitHub Enterprise Server a profile names — GitHub's API, its own host.
   if (isKnownGithubEnterpriseHost(h)) return 'github'
+  // A Bitbucket Data Center a profile names: Bitbucket, flavoured by its base.
+  if (isKnownBitbucketServerHost(h)) return 'bitbucket'
   return undefined
 }

@@ -23,6 +23,9 @@ export function validAccountLink(value: unknown): AccountLink | undefined {
 export interface HostAuthInput {
   token?: string
   link?: AccountLink
+  /** The account name git sends with `token`, when the host needs one (a
+   *  Bitbucket Data Center personal access token). Not a secret. */
+  username?: string
 }
 
 /**
@@ -47,7 +50,11 @@ export async function pickHostAuth(opts: {
   bound?: HostAuthInput
   active?: () => Promise<HostAuthInput>
 }): Promise<HostAuthInput> {
-  const clean = (a: HostAuthInput): HostAuthInput => ({ token: a.token?.trim() || undefined, link: a.link })
+  const clean = (a: HostAuthInput): HostAuthInput => ({
+    token: a.token?.trim() || undefined,
+    link: a.link,
+    ...(a.username && a.token?.trim() ? { username: a.username } : {})
+  })
   if (opts.bound) return clean(opts.bound)
   const sent = opts.sent?.trim()
   if (sent) return { token: sent }

@@ -58,7 +58,14 @@ import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { enterpriseBasesOf, forkUpstream, githubTagUrl, repoHasIssueTracker, repoSupportsPrReview } from '../lib/hosting'
+import {
+  bitbucketServerBasesOf,
+  enterpriseBasesOf,
+  forkUpstream,
+  githubTagUrl,
+  repoHasIssueTracker,
+  repoSupportsPrReview
+} from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -98,6 +105,9 @@ const forgejoInstances = (): string[] =>
 
 /** The GitHub Enterprise Servers the profiles name, read when a menu is built. */
 const githubEnterprise = (): string[] => enterpriseBasesOf(useSettingsStore.getState().settings.profiles)
+
+/** The Bitbucket Data Centers the profiles name, read when a menu is built. */
+const bitbucketServers = (): string[] => bitbucketServerBasesOf(useSettingsStore.getState().settings.profiles)
 
 /** The self-managed GitLabs the profiles point at, read when a menu is built. */
 const gitlabInstances = (): string[] =>
@@ -1439,7 +1449,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
     const origin = remote ?? hostOrigin()
     return [
-      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise()) && origin
+      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise(), bitbucketServers()) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1890,7 +1900,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onKeyDown={keyActivate}
           onClick={() => {
             // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise())) {
+            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise(), bitbucketServers())) {
               void window.api.openExternal(pr.url)
               return
             }

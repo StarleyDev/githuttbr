@@ -7,6 +7,8 @@ import { validAccountLink } from '../shared/hostToken'
 import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
 import { GITHUB_COM, githubAuthFor, githubBaseOfRemote, githubEnterpriseBases } from '../shared/githubEnterprise'
+import { BITBUCKET_CLOUD, bitbucketAuthFor, bitbucketBaseOfRemote, bitbucketServerBases } from '../shared/bitbucketServer'
+import { setKnownBitbucketServerInstances } from './bitbucketServerInstances'
 import {
   applySecrets,
   extractSecrets,
@@ -117,6 +119,7 @@ export async function readSettings(): Promise<AppSettings> {
   setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
   setKnownGithubEnterpriseInstances(githubEnterpriseBases(out.profiles))
+  setKnownBitbucketServerInstances(bitbucketServerBases(out.profiles))
   return out
 }
 
@@ -187,7 +190,7 @@ async function profileAuth(
   profileId: string | undefined,
   remoteUrl?: string,
   expectedBase?: string
-): Promise<{ token?: string; link?: AccountLink }> {
+): Promise<{ token?: string; link?: AccountLink; username?: string }> {
   const plain = await readSettings()
   const id = profileId ?? plain.activeProfileId
   const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
@@ -199,6 +202,14 @@ async function profileAuth(
     githubBase = expectedBase ?? (remoteUrl ? githubBaseOfRemote(remoteUrl, githubEnterpriseBases(plain.profiles)) : GITHUB_COM)
     if (!githubBase) return {}
     if (githubBase !== GITHUB_COM && !githubEnterpriseBases([candidate]).includes(githubBase)) return {}
+  }
+  // Bitbucket: bitbucket.org or one Data Center, the same way — by the remote's
+  // host and context path, or the base a provider-level call names.
+  let bitbucketBase: string | null = null
+  if (host === 'bitbucket') {
+    bitbucketBase = expectedBase ?? (remoteUrl ? bitbucketBaseOfRemote(remoteUrl, bitbucketServerBases(plain.profiles)) : BITBUCKET_CLOUD)
+    if (!bitbucketBase) return {}
+    if (bitbucketBase !== BITBUCKET_CLOUD && !bitbucketServerBases([candidate]).includes(bitbucketBase)) return {}
   }
   if (host === 'gitlab' || host === 'forgejo') {
     const base = tokenInstance(host, candidate[`${host}Url`])
@@ -222,13 +233,22 @@ async function profileAuth(
     const auth = githubAuthFor(profile, githubBase)
     return { token: auth.token, link: validAccountLink(auth.link) }
   }
+  if (host === 'bitbucket' && bitbucketBase) {
+    const auth = bitbucketAuthFor(profile, bitbucketBase)
+    const link = validAccountLink(auth.link)
+    return { ...(auth.token ? { token: auth.token } : {}), ...(link ? { link } : {}), ...(auth.username ? { username: auth.username } : {}) }
+  }
   const link = validAccountLink(profile.links?.[host])
   const token = profile[TOKEN_FIELD[host]]?.trim() || undefined
   return { token, link }
 }
 
 /** The active profile's PAT and link for a host. */
-export function activeProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<{ token?: string; link?: AccountLink }> {
+export function activeProfileAuth(
+  host: RepoHost,
+  remoteUrl?: string,
+  expectedBase?: string
+): Promise<{ token?: string; link?: AccountLink; username?: string }> {
   return profileAuth(host, undefined, remoteUrl, expectedBase)
 }
 
@@ -281,7 +301,7 @@ export async function boundProfileAuth(
   host: RepoHost,
   repoPath: string,
   remoteUrl?: string
-): Promise<{ token?: string; link?: AccountLink } | undefined> {
+): Promise<{ token?: string; link?: AccountLink; username?: string } | undefined> {
   const plain = await readSettings()
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
@@ -345,6 +365,7 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   setKnownGithubEnterpriseInstances(githubEnterpriseBases(settings.profiles))
+  setKnownBitbucketServerInstances(bitbucketServerBases(settings.profiles))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)

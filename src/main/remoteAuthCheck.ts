@@ -1,5 +1,6 @@
 import { apiToken, credentialFor, providerOfHost, type ApiAuth } from './credentials'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS, githubEndpoints } from '../shared/githubEnterprise'
+import { bitbucketServerEndpoints } from '../shared/bitbucketServer'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
 import { pickHostAuth } from '../shared/hostToken'
 import { parseRemoteUrl } from './hosting'
@@ -133,6 +134,21 @@ async function askForgejo(base: string, token: string): Promise<HostVerdict> {
 }
 
 /**
+ * Bitbucket Data Center names the token's user in the `X-AUSERNAME` header of
+ * any response; it lists no scopes, so only who it is (or that it was refused).
+ */
+async function askBitbucketServer(base: string, token: string): Promise<HostVerdict> {
+  const res = await get(`${bitbucketServerEndpoints(base).apiBase}/application-properties`, {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json'
+  })
+  if (!res) return {}
+  if (res.status === 401) return { rejected: true }
+  const login = res.headers.get('x-ausername')?.trim()
+  return res.ok && login ? { login } : {}
+}
+
+/**
  * Ask the host the token belongs to. `remoteUrl` decides the instance: the
  * caller already made sure the token is that instance's (`profileAuth`).
  */
@@ -145,6 +161,7 @@ function askHost(provider: RepoHost, remoteUrl: string, token: string): Promise<
   }
   if (provider === 'gitlab' && base) return askGitlab(base, token)
   if (provider === 'forgejo' && base) return askForgejo(base, token)
+  if (provider === 'bitbucket' && base) return askBitbucketServer(base, token)
   // Azure DevOps and Bitbucket do not report a token's scopes in a way worth a
   // round-trip here: the source and profile are still shown.
   return Promise.resolve({})
