@@ -4,6 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 56
 summary: PR'ları her yerde oluşturun; GitHub ve GitLab'da inceleyip birleştirin.
 keywords: pull request PR merge request birleştirme isteği inceleme onay issue konu GitHub GitLab Bitbucket Azure DevOps review approve merge issues
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Sunucular ve pull request'ler
@@ -34,7 +35,8 @@ olduğunu söyleyen küçük bir ok olur; yön ekranda durur, dört temele bakı
 O grubu iki şey oluşturur: pull request'ler bir [yerel yığına](stacks.md) aitse
 GitHub'ın kendi yığın numarası; değilse ref'lerin kendisi — temeli bir başkasının
 ucu olan pull request onun üstünde durur. İkinci kural, bunun GitLab, Bitbucket
-ve Azure DevOps'ta da çalışmasının sebebidir.
+ve Azure DevOps'ta da, bunların hiçbiri yokken açılmış zincirlerde de
+çalışmasının sebebidir.
 
 ![Pull request listesindeki bir yığın](../../screenshots/pr-stack-list.webp)
 
@@ -86,7 +88,7 @@ Ana sütunun üç bölümü vardır:
 |---|---|
 | **Konuşma** | Açıklama, yorumlar ve satır içi inceleme dizileri (`dosya:satır`, yanıtlarıyla). Ardından yorum / onay / değişiklik iste seçenekli yorum kutusu ve birleştirme kutusu (merge, squash veya rebase) |
 | **Dosyalar** | Değişen her dosya ve seçilenin diff’i listenin yanında; sözdizimi vurgulama ve kelime düzeyinde değişikliklerle (o ayar açıkken gizli görünen dosyalar maskelenir). ✓ “görüldü” listesi ilerlemenizi hatırlar. Sunucunun diff göndermediği bir dosya (ikili ya da çok büyük) sunucuya bağlantı verir |
-| **Kontroller** | CI check-run’ları (GitHub), pipeline işleri (GitLab), commit durumları (Forgejo) veya PR durumları (Azure DevOps); sonuç ve günlük bağlantılarıyla |
+| **Kontroller** | CI check-run’ları (GitHub) veya pipeline işleri (GitLab); geçti/başarısız/bekliyor durumu ve günlük bağlantılarıyla |
 
 Kenar çubuğu şunları gösterir:
 
@@ -117,10 +119,6 @@ gösterir, ama GitLab API’sinin döndürmediği çevredeki diff parçasını g
 İnceleme ve birleştirme gitlab.com’da ve [kendi sunucunuzdaki GitLab’da](#kendi-sunucunuzdaki-gitlab)
 çalışır. Bitbucket inceleme için hâlâ tarayıcıda açılır.
 
-Forgejo farkları: satır yorumu dizileri gösterilir ama yanıtlanamaz (Forgejo’nun
-bunun için API’si yoktur), kontroller de baş commit’in durumlarıdır — ayrıntılar
-[Forgejo](#forgejo) bölümünde.
-
 Azure DevOps farkları: onay vermek oyunuzu kullanır (*Approved*); **değişiklik
 iste** *Waiting for author* oyu verir. PR’ı tamamlamak merge, squash veya rebase
 kabul eder. Azure bir PR’ın değişen dosyalarını listeler ama diff göndermez; bu
@@ -132,6 +130,19 @@ açmış bir tarayıcı ister.
 Kenar çubuğu ayrıca **PR’a bağlı iş öğelerini** listeler — numara, başlık, tür ve
 durum; her biri tarayıcıda açılır. Onları okumak, iş öğelerini okuyabilen bir
 token gerektirir (*Work Items: Read*); o olmadan satır basitçe gösterilmez.
+
+**Kontroller**, bir pipeline’ın ya da harici bir CI’ın gönderdiği her durumun
+yanında dalın **derleme doğrulamasını** da içerir — dalın ilkesinin gerektirdiği,
+Azure’un bir durum olarak değil ilke sonucu olarak kaydettiği pipeline. Bu
+organizasyonun Azure Pipelines derlemelerinden biri olan bir kontrol, günlüğünü
+satırın altında gösterir: başarısız olan görevler, her biri kendi adı altında,
+ya da hiçbir şey başarısız olmadıysa her işin tüm günlüğü, sondan başlayarak.
+Token yalnızca PR’ın kendi organizasyonundaki derlemelere gider. Panel en fazla
+üç günlük okur ve bunlar 512 KB’lık ortak bir son kısım bütçesini paylaşır.
+Günlükleri okumak *Build: Read* gerektirir; o olmadan satır bunun yerine
+tarayıcıyı önerir. Bir kapsamı eksik olan token yalnızca reddedilir — uygulama
+bunu asla iptal edilmiş bir oturum sanmaz ve git’in kullandığı kimlik bilgisini
+asla düşürmez.
 
 ## Kendi sunucunuzdaki GitLab
 
@@ -195,6 +206,8 @@ bir CI’dan gelen durum onu asla almaz. Günlükleri yalnızca oturum açmış 
 tarayıcıya veren sunucu giriş sayfasıyla yanıt verir — satır bunu söyler ve
 tarayıcıyı önerir. Çok uzun günlükler son birkaç bin satırını gösterir.
 
+![Kontrol satırının altında açılmış bir Forgejo Actions iş günlüğü](../../screenshots/pr-check-log.webp)
+
 GitLab’da olduğu gibi, **bir Forgejo token’ı yalnızca onu veren sunucuya gider**.
 Forgejo adresi olmayan bir profilin hiçbir Forgejo kimlik bilgisi yoktur. Geri
 düşülecek varsayılan bir sunucu yoktur.
@@ -214,9 +227,19 @@ issue için bir dal oluşturma** (yapay zekâ adlandırmasıyla). Kilometre taş
 ilerlemelerini ve issue'larını gösterir. Sürümlere bir changelog sayfasıyla
 göz atılabilir.
 
+**Bağlı pull request’ler** “biri bunu zaten düzeltiyor mu?” sorusunu yanıtlar:
+issue’yu kapatacak ya da kapatmış PR’lar — `Closes #N` tarzı bir anahtar sözcük
+veya GitHub’ın *Development* kutusundaki elle eklenmiş bir bağlantı — önce
+açıklar, sonra birleştirilenler, sonra kapatılanlar. Issue’dan yalnızca
+*bahseden* bir PR bilerek dışarıda bırakılır, ilk 50’nin ötesindeki her şey de.
+Bu depodaki bir PR bir PR sekmesinde, başka bir depodaki tarayıcıda açılır.
+Deponun pull request’lerini okuyamayan bir token (*Pull requests: read* izni
+olmayan ince ayarlı bir token) yanlış bir “yok” yerine sessiz bir “yüklenemedi”
+alır.
+
 Bir [Forgejo](#forgejo) sunucusunda aynı listeler ve sayfalar, profilin Forgejo
-token’ıyla çalışır. İki şey yalnızca GitHub’dadır ve orada boş kalır: Projects v2
-alanları ve bir issue’ya bağlı pull request’ler. Sürümler, tüm geçmişi değil en
+token’ıyla çalışır. İki şey yalnızca GitHub’dadır: Projects v2 alanları boş kalır
+ve bağlı pull request’ler bölümü gösterilmez. Sürümler, tüm geçmişi değil en
 yenilerini listeler.
 
 ## İncelemenizi bekleyenler
@@ -226,6 +249,8 @@ henüz yanıt vermediğiniz PR’ları işaretler — GitHub, GitLab ve Forgejo�
 şekilde. “Siz”in kim olduğu, profilin kimlik bilgisiyle sunucuya sorulur ve on
 dakika hatırlanır. Kendi kullanıcısını okuyamayan bir token (örneğin Forgejo’da
 `read:user` olmadan) hiçbir şeyi işaretlemez.
+
+![İncelemenizi bekleyen, bir gözle işaretlenmiş pull request’ler](../../screenshots/pr-awaiting-review.webp)
 
 **Ayarlar → Masaüstü bildirimleri** açıkken, sizi *beklemeye başlayan* bir GitLab
 veya Forgejo pull request’i bir bildirim çıkarır; tıklamak PR sayfasını açar. Bir

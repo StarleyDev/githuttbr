@@ -3,7 +3,8 @@ title: Klonen
 category: Begin hier
 order: 2
 summary: Kloon vanaf een URL of rechtstreeks bij je host — en beperk wat er binnenkomt als de repository enorm is.
-keywords: clone klonen shallow depth partial filter blob none single branch submodules recursive ls-remote branchkiezer unshallow monorepo
+keywords: clone klonen achtergrond background annuleren cancel abort meerdere several batch veel repository's alles selecteren select all shallow depth partial filter blob none single branch submodules recursive ls-remote branchkiezer branch picker unshallow monorepo
+source: 3d8942b1073ef47bd000c7887afb5ea8cdebcdd7
 ---
 
 # Klonen
@@ -16,6 +17,36 @@ daarna losgelaten, nooit in `.git/config` geschreven.
 Kies een bovenliggende map en een naam; de regel onder de velden laat precies
 zien waar de repository terechtkomt. Een map die al bestaat wordt geweigerd in
 plaats van erin samengevoegd.
+
+## Meerdere repository's tegelijk
+
+Een nieuwe machine inrichten, of alle services van een team binnenhalen,
+betekende vroeger dit venster één keer per repository openen. Vink in een
+hosttabblad het vakje aan bij elke repository die je wilt, of kies **Alles
+getoonde selecteren** om alles te nemen wat het filter vindt. Een klik op een rij
+(niet op het vakje) kiest nog steeds alleen die ene.
+
+Met meer dan één aangevinkt kloont het venster ze allemaal in dezelfde
+bovenliggende map, elk in een map met de naam van de repository. De paden staan
+opgesomd voordat je begint. Hebben twee dezelfde naam (`org-a/app` en
+`org-b/app`), dan krijgen beide de eigenaar in hun mapnaam (`org-a-app`,
+`org-b-app`) in plaats van om één map te strijden.
+
+![Het GitHub-tabblad van het kloonvenster met drie aangevinkte repository's, de mappen waarin ze terechtkomen onder de bovenliggende map, en een knop 3 repository's klonen](../../screenshots/clone-multi-select.webp)
+
+De reeks gaat meteen naar het bakje in de hoek. Er lopen drie klonen tegelijk en
+de rest wacht als *In wachtrij*; elk heeft een eigen annuleerknop. Elke
+repository opent in een tabblad zodra hij klaar is.
+
+Beperkingen:
+- **Uit te checken branch** is verborgen voor een reeks: een branchnaam zegt
+  niets over verschillende repository's heen, dus elke krijgt zijn
+  standaardbranch. De andere opties onder Geavanceerd (partial, shallow, één
+  branch, submodules) gelden voor alle.
+- Meervoudige selectie werkt alleen in de hosttabbladen. Het URL-tabblad neemt
+  één URL.
+- Eén mislukking houdt de andere niet tegen. Een repository waarvan de map al
+  bestaat, mislukt met zijn eigen fout en de rest gaat door.
 
 ## Geavanceerd — de kloon versmallen
 
@@ -62,11 +93,29 @@ dan blijft het veld een gewoon tekstvak en meldt de kloon zelf de echte fout.
   `file://`-URL wanneer je om een shallow kopie van een lokale repository vraagt,
   zodat de diepte die je vroeg de diepte is die je krijgt.
 
-## Voortgang
+## Voortgang, achtergrond en annuleren
 
 De balk rapporteert wat git rapporteert: tellen, comprimeren, ontvangen,
 oplossen, uitchecken. Een fase die geen totaal kan melden toont een onbepaalde
 balk in plaats van een nep-percentage.
 
-De nieuwe repository opent in een tabblad, vastgezet aan het profiel waarmee je
-kloonde.
+Een grote kloon duurt minuten, en een verdwaalde klik naast het venster kostte je
+vroeger alles. Nu verbergt het sluiten van het venster — **Op de achtergrond
+uitvoeren**, `Esc`, het ✕ of een klik ernaast — het alleen: de kloon gaat door en
+verhuist naar een kleine kaart in de benedenhoek met dezelfde voortgangsbalk. Je
+kunt intussen een andere kloon starten; elke krijgt een eigen kaart.
+
+![Het kloonbakje in de benedenhoek: drie klonen die ontvangen, oplossen en tellen, een vierde in de wachtrij, elk met een eigen annuleerknop](../../screenshots/clone-tray.webp)
+
+De verkeerde repository gekozen? **Kloon annuleren** in het venster, of het ✕ op
+de kaart, stopt git en verwijdert de half geschreven map. Verder wordt er niets
+aangeraakt — de map bestond niet voordat de kloon begon, en dat wordt vooraf
+gecontroleerd. Een geannuleerde kloon kan niet worden hervat; opnieuw starten
+begint bij nul.
+
+Als hij klaar is, opent de nieuwe repository in een tabblad, vastgezet aan het
+profiel waarmee je kloonde, of het venster nu nog open is of niet.
+
+Klonen lopen binnen de app, dus Gitcito afsluiten stopt ze. Het afsluiten wacht
+niet op het opruimen, dus de half geschreven map kan achterblijven — verwijder
+hem voordat je daar opnieuw kloont, want het venster weigert een map die bestaat.

@@ -4,6 +4,7 @@ category: 同步与多仓库
 order: 56
 summary: 在任何平台上创建 PR；在 GitHub 和 GitLab 上评审并合并它们。
 keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab Bitbucket Azure DevOps review 评审 approve 批准 merge 合并 issues 议题
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # 托管与拉取请求
@@ -25,7 +26,7 @@ keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab 
 
 决定它们成组的有两件事：如果这些 PR 属于[原生堆栈](stacks.md)，就用 GitHub 自己的堆栈编号；
 否则看 ref 本身——基底是另一个 PR 的 head，就说明它压在那个上面。第二条规则正是它在 GitLab、
-Bitbucket 和 Azure DevOps 上同样管用的原因。
+Bitbucket 和 Azure DevOps 上同样管用的原因，对这些功能出现之前就开好的链也一样。
 
 ![PR 列表里的堆栈](../../screenshots/pr-stack-list.webp)
 
@@ -68,7 +69,7 @@ fork 上。因此，当一个仓库有指向不同于 `origin` 的 GitHub 仓库
 |---|---|
 | **对话** | 描述、评论和逐行评审讨论串（`文件:行`，含回复）。下方是可评论 / 批准 / 请求修改的评论框，以及合并框（merge、squash 或 rebase） |
 | **文件** | 每个变更的文件，以及列表旁所选文件的 diff，带语法高亮和词级变更（开启该设置时，看起来像机密的文件会被遮盖）。✓“已查看”清单会记住你的进度。主机不提供 diff 的文件（二进制或过大）会链接到主机 |
-| **检查** | CI check run（GitHub）、流水线作业（GitLab）、提交状态（Forgejo）或 PR 状态（Azure DevOps），显示结果并附日志链接 |
+| **检查** | CI check run（GitHub）或流水线作业（GitLab），显示通过／失败／等待中，并附日志链接 |
 
 侧边栏显示：
 
@@ -94,9 +95,6 @@ GitLab 的差异，直说如下：GitLab 没有单一的“提交评审”调用
 但不显示周围的 diff 片段，因为 GitLab 的 API 不返回它。评审与合并可用于 gitlab.com 和
 [自管理 GitLab](#自管理-gitlab)。Bitbucket 的评审仍在浏览器中打开。
 
-Forgejo 的差异：行评论讨论串会显示，但无法回复（Forgejo 没有相应的 API），检查是 head 提交
-的状态——详见 [Forgejo](#forgejo)。
-
 Azure DevOps 的差异：批准即投出你的票（*Approved*）；**请求修改**投 *Waiting for author*。
 完成 PR 支持 merge、squash 或 rebase。Azure 列出 PR 的变更文件，但不发送 diff，所以应用会获取
 每个文件的两个版本并自行计算 diff——仅前 200 个文件；二进制文件或过大的变更会链接到主机。人员
@@ -104,6 +102,13 @@ Azure DevOps 的差异：批准即投出你的票（*Approved*）；**请求修�
 
 侧边栏还会列出**与 PR 关联的工作项**——编号、标题、类型和状态，每一项都在浏览器中打开。读取它们
 需要能读取工作项的令牌（*Work Items: Read*）；没有它，该行只是不显示。
+
+**检查**里包含该分支的**构建验证**——分支策略要求的流水线，Azure 把它记为策略结果而不是
+状态——与流水线或外部 CI 发布的任何状态并列显示。属于本组织 Azure Pipelines 构建的检查，会在
+该行下方显示日志：失败的任务，各自列在其名称下；没有失败时则显示每个作业的完整日志，从末尾
+开始。令牌只会发给 PR 所在组织内的构建。面板最多读取三份日志，共享 512 KB 的尾部额度。读取
+日志需要 *Build: Read*；没有它，该行会改为提供浏览器打开。缺少某个权限范围的令牌只会被拒绝
+——应用绝不会把这当成登录已被撤销，也绝不会丢掉 git 使用的凭据。
 
 ## 自管理 GitLab
 
@@ -155,6 +160,8 @@ Forgejo 没有作业日志的 API，所以应用请求的是网页日志查看�
 上的作业时才发送令牌；来自外部 CI 的状态永远收不到它。只把日志交给已登录浏览器的服务器会返回
 登录页，此时该行会说明情况并提供浏览器打开。很长的日志只显示最后几千行。
 
+![在检查行下方展开的 Forgejo Actions 作业日志](../../screenshots/pr-check-log.webp)
+
 和 GitLab 一样，**Forgejo 令牌只会发送到签发它的服务器**。没有 Forgejo 地址的配置档
 没有任何 Forgejo 凭据。也没有可回退的默认服务器。
 
@@ -169,8 +176,14 @@ Forgejo 没有作业日志的 API，所以应用请求的是网页日志查看�
 
 浏览议题，并打开一个完整的议题标签页：正文、评论、标签、指派人、里程碑、Projects v2 字段、关闭／重新打开，以及**为这个议题创建一个分支**（可由 AI 起名）。里程碑会显示进度和它下面的议题。发布可以连同变更日志页面一起浏览。
 
+**关联的拉取请求**回答的是“是不是已经有人在修了？”：将会关闭该议题、或已经关闭了它的 PR——
+通过 `Closes #N` 这类关键字，或 GitHub *Development* 框里的手动关联——先列打开的，再列已合并的，
+最后是已关闭的。只是*提到*该议题的 PR 会被有意排除，前 50 个之后的也一样。本仓库的 PR 会在 PR
+标签页中打开；其他仓库的则在浏览器中打开。无法读取该仓库拉取请求的令牌（没有
+*Pull requests: read* 的细粒度令牌）会得到一个安静的“无法加载”，而不是错误的“没有”。
+
 在 [Forgejo](#forgejo) 服务器上，同样的列表和页面也能用，使用配置档的 Forgejo 令牌。有两样
-是 GitHub 独有的，在那里保持为空：Projects v2 字段，以及与 issue 关联的拉取请求。发布只列出最近
+是 GitHub 独有的：Projects v2 字段保持为空，关联的拉取请求这一部分不显示。发布只列出最近
 的，而不是全部历史。
 
 ## 等待你的评审
@@ -178,6 +191,8 @@ Forgejo 没有作业日志的 API，所以应用请求的是网页日志查看�
 在侧边栏的拉取请求列表中，👁 标记出**你**是评审者但尚未回应的 PR——GitHub、GitLab 和
 Forgejo 都一样。“你”是谁，会用配置档的凭据向主机查询，并记住十分钟。无法读取自身用户的
 令牌（例如 Forgejo 上没有 `read:user`）不会标记任何内容。
+
+![等待你评审的拉取请求，以一只眼睛标记](../../screenshots/pr-awaiting-review.webp)
 
 开启**设置 → 桌面通知**后，*开始*等待你评审的 GitLab 或 Forgejo 拉取请求会弹出一条通知；
 点击即打开 PR 页面。第一次查看某个仓库时只会记下已在等待的内容，所以打开应用不会把积压的一次性
