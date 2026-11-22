@@ -131,6 +131,25 @@ export function canLoadLanguage(lang: string): boolean {
 
 const loading = new Map<string, Promise<boolean>>()
 
+// Bumped each time an on-demand language registers. Markup rendered before
+// that (a memoised README, a chat message, a hidden tab) cannot know the
+// language arrived; mounted views listen here to upgrade it — see preview/pendingHighlight.
+let registered = 0
+const listeners = new Set<() => void>()
+
+/** How many on-demand languages have registered so far. */
+export function languageVersion(): number {
+  return registered
+}
+
+/** Call `fn` after every on-demand language registration. Returns the unsubscribe. */
+export function onLanguageRegistered(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => {
+    listeners.delete(fn)
+  }
+}
+
 /** Register `lang` on first use. Resolves true once it is highlightable,
  *  false when no language file provides it or the chunk failed to load.
  *  Never rejects, and loads each file at most once. */
@@ -143,7 +162,18 @@ export function loadLanguage(lang: string): Promise<boolean> {
   if (!pending) {
     pending = load().then(
       (fn) => {
-        if (!hljs.getLanguage(mod)) hljs.registerLanguage(mod, fn)
+        if (!hljs.getLanguage(mod)) {
+          hljs.registerLanguage(mod, fn)
+          registered++
+          // A failing listener must not turn this load into a rejection.
+          for (const l of [...listeners]) {
+            try {
+              l()
+            } catch {
+              /* its view simply stays plain */
+            }
+          }
+        }
         return true
       },
       () => false

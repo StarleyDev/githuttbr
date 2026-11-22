@@ -12,6 +12,7 @@ import {
   Scale
 } from 'lucide-react'
 import { renderMarkdown } from '../preview/markdown'
+import { usePendingHighlight } from '../preview/pendingHighlight'
 import { bundledChangelog } from '../changelog'
 import { compareVersions } from '../../../shared/version'
 import { resolveUpdateOffer, type ReleaseRef } from '../lib/updateOffer'
@@ -48,6 +49,7 @@ export function ChangelogPage(): React.JSX.Element {
   const staged = useUpdatesStore((s) => s.staged)
 
   const bundledHtml = useMemo(() => renderMarkdown(bundledChangelog()), [])
+  const bundledRef = usePendingHighlight(bundledHtml)
 
   useEffect(() => {
     void window.api.appVersion().then(setVersion)
@@ -126,6 +128,8 @@ export function ChangelogPage(): React.JSX.Element {
     () => (newer?.notes?.trim() ? renderMarkdown(newer.notes) : null),
     [newer]
   )
+  const selectedRef = usePendingHighlight(selectedHtml)
+  const newerRef = usePendingHighlight(newerHtml)
 
   const selectedDate = useMemo(() => {
     if (!selected?.publishedAt) return ''
@@ -221,6 +225,7 @@ export function ChangelogPage(): React.JSX.Element {
             )}
             {newerHtml && (
               <div
+                ref={newerRef}
                 className="changelog-update-notes md-preview"
                 dangerouslySetInnerHTML={{ __html: newerHtml }}
               />
@@ -259,6 +264,7 @@ export function ChangelogPage(): React.JSX.Element {
             </div>
             {selectedHtml ? (
               <article
+                ref={selectedRef}
                 className="changelog-body md-preview"
                 dangerouslySetInnerHTML={{ __html: selectedHtml }}
               />
@@ -268,6 +274,7 @@ export function ChangelogPage(): React.JSX.Element {
           </>
         ) : (
           <article
+            ref={bundledRef}
             className="changelog-body md-preview"
             dangerouslySetInnerHTML={{ __html: bundledHtml }}
           />

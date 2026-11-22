@@ -5,7 +5,7 @@ import { wikiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
-import { renderMarkdown } from '../preview/markdown'
+import { MarkdownHtml } from './MarkdownHtml'
 import { interp, useT } from '../i18n'
 import { ImportMap, LanguageBar, PageMap, StackList } from './WikiOverview'
 import { topLanguages } from '../../../shared/repoFacts'
@@ -222,7 +222,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
                     {imports && <ImportMap graph={imports} />}
                   </div>
                 )}
-                <div className="md-preview" dangerouslySetInnerHTML={{ __html: renderMarkdown(page.markdown) }} />
+                <MarkdownHtml className="md-preview" markdown={page.markdown} />
 
                 {sources.length > 0 && (
                   <section className="wiki-sources">
