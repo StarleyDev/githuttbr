@@ -123,6 +123,7 @@ function wireMessages(messages: RepoChatEntry[]): RepoChatMessage[] {
 export function createRepoChatStore(
   request: RepoChatRequest,
   finalize: RepoChatFinalizeRequest = async () => {
+    // i18n-ignore the test-only default; the app always passes the real finalizer
     throw new Error('Repository chat finalization is unavailable.')
   }
 ): UseBoundStore<StoreApi<RepoChatState>> {

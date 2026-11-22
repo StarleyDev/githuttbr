@@ -85,6 +85,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
       kind: 'create-branch',
       path: repoPath,
       currentBranch: useRepoStore.getState().repos[repoPath]?.branches.current,
+      // i18n-ignore model input for the branch-name suggestion; "closes #n" is GitHub's keyword
       description: `${issue.title} (closes #${issue.number})`
     })
   }
