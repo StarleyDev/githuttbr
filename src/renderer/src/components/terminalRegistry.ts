@@ -1,85 +1,30 @@
+// The xterm side of the terminal registry, loaded the first time a terminal
+// mounts (see terminalState.ts, which owns the handle map and the prefs).
 import { Terminal, type IMarker } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
-import type { TerminalThemeColors } from '../../../shared/types'
-import { TERMINAL_THEMES } from '../theme/themes'
 import { useTermTitlesStore } from '../stores/termTitles'
 import { useSettingsStore } from '../stores/settings'
 import { createTermSuggest, type TermSuggest } from './termSuggest'
-
-export interface TermHandle {
-  term: Terminal
-  fit: FitAddon
-  container: HTMLDivElement
-  ptyId: number | null
-  // Scroll position snapshotted by the host component just before the
-  // container leaves the DOM — the only moment viewportY is guaranteed to
-  // reflect what the user actually saw. Consumed by the next fitSafely.
-  suspendViewportY: number | null
-  suspendAtBottom: boolean
-  suspend(): void
-  fitSafely(): void
-  pasteText(text: string): void
-  dispose(): void
-}
-
-// Persisted across React mounts / repo switches. xterm instance + PTY survive
-// because the DOM container is moved in/out of the live tree, never destroyed.
-const registry = new Map<string, TermHandle>()
-
-// Terminal appearance comes from Settings (preset + font). The defaults below
-// are what a fresh install sees; App.tsx calls applyTerminalPrefs on start and
-// on every change so existing terminals — which live in the registry across
-// tab switches — pick the new palette/font without a restart.
-const DEFAULT_FONT_FAMILY = 'SF Mono, JetBrains Mono, Menlo, monospace'
-let currentTermTheme: TerminalThemeColors = TERMINAL_THEMES[0].colors
-let currentFontSize = 12.5
-let currentFontFamily = DEFAULT_FONT_FAMILY
-
-// Palette/font options apply instantly, but the refit they imply does not:
-// every fitSafely reflows the whole scrollback per terminal, and a font-size
-// slider drag fires applyTerminalPrefs per tick — coalesce refits into a
-// single trailing-edge pass instead of N terminals × M ticks of reflows.
-let prefRefitTimer = 0
-export function applyTerminalPrefs(
-  theme: TerminalThemeColors,
-  fontSize: number,
-  fontFamily: string
-): void {
-  currentTermTheme = theme
-  currentFontSize = fontSize || 12.5
-  currentFontFamily = fontFamily.trim() || DEFAULT_FONT_FAMILY
-  registry.forEach((h) => {
-    h.term.options.theme = theme
-    h.term.options.fontSize = currentFontSize
-    h.term.options.fontFamily = currentFontFamily
-    h.container.style.background = theme.background
-  })
-  if (prefRefitTimer) window.clearTimeout(prefRefitTimer)
-  prefRefitTimer = window.setTimeout(() => {
-    prefRefitTimer = 0
-    // A font change alters cell metrics — refit so cols/rows and the pty
-    // follow the new size instead of stretching the old grid.
-    registry.forEach((h) => h.fitSafely())
-  }, 150)
-}
+import { registry, terminalPrefs, type TermHandle } from './terminalState'
 
 export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
   const existing = registry.get(panelId)
   if (existing) return existing
 
+  const prefs = terminalPrefs()
   const container = document.createElement('div')
   container.className = 'terminal-host-inner'
   // Paint the container with the terminal bg so xterm's row-rounding leftover
   // never shows the app background — stays correct if THEME changes.
-  container.style.background = currentTermTheme.background
+  container.style.background = prefs.theme.background
 
   const term = new Terminal({
-    fontFamily: currentFontFamily,
-    fontSize: currentFontSize,
+    fontFamily: prefs.fontFamily,
+    fontSize: prefs.fontSize,
     cursorBlink: true,
     scrollback: 5000,
-    theme: currentTermTheme
+    theme: prefs.theme
   })
   const fit = new FitAddon()
   term.loadAddon(fit)
@@ -861,8 +806,4 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   })
 
   return handle
-}
-
-export function disposeTerm(panelId: string): void {
-  registry.get(panelId)?.dispose()
 }

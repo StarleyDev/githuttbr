@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Boxes, Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Link2, Lock, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText, X } from 'lucide-react'
-import hljs from 'highlight.js'
 import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type ConflictViewState } from '../stores/ui'
@@ -27,22 +26,10 @@ import {
 import type { ConflictCommit, ConflictRefInfo, ConflictVersions } from '../../../shared/types'
 import { isPbxprojPath, mergePbxproj } from '../../../shared/pbxproj'
 import { lockfileFor } from '../lib/lockfiles'
+import { guessLanguage, highlightCode } from '../lib/highlight'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function guessLanguage(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase() || ''
-  const map: Record<string, string> = {
-    js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
-    py: 'python', rb: 'ruby', go: 'go', rs: 'rust', java: 'java',
-    cpp: 'cpp', c: 'c', cs: 'csharp', php: 'php', swift: 'swift',
-    kt: 'kotlin', scala: 'scala', sh: 'bash', json: 'json', xml: 'xml',
-    html: 'html', css: 'css', scss: 'scss', md: 'markdown', yml: 'yaml',
-    yaml: 'yaml', toml: 'toml', sql: 'sql', r: 'r',
-  }
-  return map[ext] || 'plaintext'
-}
 
 /** Live pixel size of an element, so ratio-based splits can drive ResizeHandle. */
 function useBoxSize(ref: React.RefObject<HTMLElement>): { w: number; h: number } {
@@ -122,14 +109,8 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const filesRatio = clampRatio(layout.conflictFilesRatio)
 
   const outputHtml = useMemo(() => {
-    let html: string
-    try {
-      html = hljs.highlight(editOutput, { language: lang }).value
-    } catch {
-      html = editOutput.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] as string)
-    }
     // Trailing newline keeps the highlighted layer aligned with the textarea.
-    return html + '\n'
+    return highlightCode(editOutput, lang) + '\n'
   }, [editOutput, lang])
 
   const outputLineCount = useMemo(() => editOutput.split('\n').length, [editOutput])
@@ -870,14 +851,7 @@ function SideFile({
     return map
   }, [hunks, side])
 
-  const highlight = (text: string): string => {
-    try {
-      if (lang === 'plaintext') return escapeHtml(text)
-      return hljs.highlight(text, { language: lang }).value
-    } catch {
-      return escapeHtml(text)
-    }
-  }
+  const highlight = (text: string): string => highlightCode(text, lang)
 
   const chunkAllOn = (h: Hunk): boolean => {
     const arr = side === 'ours' ? h.ours : h.theirs
@@ -960,9 +934,3 @@ function SideFile({
   )
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}

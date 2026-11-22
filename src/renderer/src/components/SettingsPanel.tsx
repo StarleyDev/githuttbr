@@ -67,7 +67,7 @@ import {
   Image as ImageIcon,
   Stethoscope
 } from 'lucide-react'
-import hljs from 'highlight.js'
+import { highlightCode } from '../lib/highlight'
 import { useSettingsStore } from '../stores/settings'
 import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
@@ -1236,12 +1236,7 @@ function TerminalThemeSwatch({ colors }: { colors: TerminalThemeColors }): React
 
 function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element {
   const t = useT()
-  let html: string
-  try {
-    html = hljs.highlight(PREVIEW_CODE, { language: 'javascript' }).value
-  } catch {
-    html = PREVIEW_CODE
-  }
+  const html = highlightCode(PREVIEW_CODE, 'javascript')
   const c = colors
   const style = {
     '--code-text': c.text,
