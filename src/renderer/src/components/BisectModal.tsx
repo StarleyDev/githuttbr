@@ -198,7 +198,9 @@ export function BisectModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
           </div>
           {status.remainingSteps >= 0 && (
             <p className="bisect-remaining">
-              ~{status.remainingSteps} step{status.remainingSteps === 1 ? '' : 's'} left
+              {interp(t(status.remainingSteps === 1 ? 'bisect.stepsLeftOne' : 'bisect.stepsLeftMany'), {
+                n: status.remainingSteps
+              })}
             </p>
           )}
           <p className="bisect-step">{t('bisect.instruction')}</p>
@@ -220,11 +222,14 @@ export function BisectModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
             <p className="settings-hint">{t('bisect.autoHint')}</p>
             {scripts.length > 0 && (
               <div className="bisect-scripts">
-                {scripts.slice(0, 6).map((name) => (
-                  <button key={name} className="btn ghost tiny" onClick={() => setCommand(`npm run ${name}`)}>
-                    {`npm run ${name}`}
-                  </button>
-                ))}
+                {scripts.slice(0, 6).map((name) => {
+                  const command = `npm run ${name}` // i18n-ignore a shell command, not copy
+                  return (
+                    <button key={name} className="btn ghost tiny" onClick={() => setCommand(command)}>
+                      {command}
+                    </button>
+                  )
+                })}
               </div>
             )}
             <div className="bisect-auto-row">

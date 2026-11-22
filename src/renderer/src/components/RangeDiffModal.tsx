@@ -5,7 +5,7 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
-import { useT, interp } from '../i18n'
+import { useT, t as tr, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 const ICON: Record<RangeDiffKind, typeof Plus> = {
@@ -17,10 +17,10 @@ const ICON: Record<RangeDiffKind, typeof Plus> = {
 
 function timeAgo(unix: number): string {
   const d = Date.now() / 1000 - unix
-  if (d < 60) return 'now'
-  if (d < 3600) return `${Math.floor(d / 60)}m ago`
-  if (d < 86400) return `${Math.floor(d / 3600)}h ago`
-  return `${Math.floor(d / 86400)}d ago`
+  if (d < 60) return tr('time.justNow')
+  if (d < 3600) return interp(tr('time.minutesAgo'), { n: Math.floor(d / 60) })
+  if (d < 86400) return interp(tr('time.hoursAgo'), { n: Math.floor(d / 3600) })
+  return interp(tr('time.daysAgo'), { n: Math.floor(d / 86400) })
 }
 
 /** Colour the interdiff by its leading marker, like a patch. */

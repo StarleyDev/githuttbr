@@ -7,7 +7,7 @@ import { useRepoStore } from '../stores/repo'
 import { guessLanguage, highlightLine } from '../lib/highlight'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { useSettingsStore } from '../stores/settings'
-import { useT, interp } from '../i18n'
+import { useT, t as tr, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** How long the scrubber waits after the last move before hitting git. */
@@ -17,11 +17,11 @@ const MAX_PREVIEW_LINES = 2000
 
 function timeAgo(unix: number): string {
   const d = Date.now() / 1000 - unix
-  if (d < 60) return 'now'
-  if (d < 3600) return `${Math.floor(d / 60)}m ago`
-  if (d < 86400) return `${Math.floor(d / 3600)}h ago`
-  if (d < 86400 * 365) return `${Math.floor(d / 86400)}d ago`
-  return `${Math.floor(d / 86400 / 365)}y ago`
+  if (d < 60) return tr('time.justNow')
+  if (d < 3600) return interp(tr('time.minutesAgo'), { n: Math.floor(d / 60) })
+  if (d < 86400) return interp(tr('time.hoursAgo'), { n: Math.floor(d / 3600) })
+  if (d < 86400 * 365) return interp(tr('time.daysAgo'), { n: Math.floor(d / 86400) })
+  return interp(tr('time.yearsAgo'), { n: Math.floor(d / 86400 / 365) })
 }
 
 /**

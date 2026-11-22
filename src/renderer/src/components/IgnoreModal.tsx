@@ -44,7 +44,7 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
       : type === 'ext'
         ? `*.${ext}`
         : base
-  const targetLabel = dir === '' ? '.gitignore (repo root)' : `${dir}/.gitignore`
+  const targetLabel = dir === '' ? t('ignore.rootTarget') : `${dir}/.gitignore`
 
   const apply = (): void => {
     closeModal()

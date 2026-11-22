@@ -223,8 +223,8 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
           onCreate={createRepo}
           onReorder={(from, to) => reorderReposInGroup(tab.id, from, to)}
           items={items}
-          listTitle={tab.repos.length > 0 ? 'REPOSITORIES' : undefined}
-          emptyMessage="No repositories yet."
+          listTitle={tab.repos.length > 0 ? t('launcher.listRepositories') : undefined}
+          emptyMessage={t('launcher.emptyNoRepos')}
           recentItems={recentItems}
         />
       </motion.div>

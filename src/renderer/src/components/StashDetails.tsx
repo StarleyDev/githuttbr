@@ -201,11 +201,13 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
             const targets = targetsFor(f)
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               {
-                label: interp(t('stashPanel.applyFile'), { files: targets.length > 1 ? `${targets.length} files` : 'this file' }),
+                label: interp(t('stashPanel.applyFile'), {
+                  files: targets.length > 1 ? interp(t('stashPanel.nFiles'), { n: targets.length }) : t('stashPanel.thisFile')
+                }),
                 onClick: () => restoreFiles(targets)
               },
               { separator: true },
-              { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
+              { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
               { label: t('stashPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) },
               ...openWithMenuItems(
                 `${repo.path}/${f.path}`,
@@ -222,7 +224,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
           onFolderContext={(folderPath, e) => {
             e.preventDefault()
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
-              { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
+              { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
               { label: t('stashPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${folderPath}`) },
               ...openWithMenuItems(
                 `${repo.path}/${folderPath}`,

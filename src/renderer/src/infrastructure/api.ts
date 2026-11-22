@@ -179,6 +179,7 @@ import type {
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 import type { MenuSpec } from '../../../shared/menu'
 import type { CliOpenPayload } from '../../../shared/cli'
+import type { TranslationKey } from '../i18n'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
 const call = <T>(method: string, ...args: unknown[]): Promise<T> => window.api.git(method, ...args) as Promise<T>
@@ -891,12 +892,13 @@ export const shellApi = {
   openExternal: (url: string) => window.api.openExternal(url),
   writeFiles: (repoPath: string, files: GeneratedFile[]) =>
     window.api.shell.writeFiles(repoPath, files) as Promise<void>,
-  revealLabel:
-    window.api.platform === 'darwin'
-      ? 'Reveal in Finder'
-      : window.api.platform === 'win32'
-        ? 'Reveal in File Explorer'
-        : 'Reveal in file manager'
+  // A key, not the label: this object is built once at import, and a string
+  // here would stay in whatever language was active then.
+  revealLabelKey: (window.api.platform === 'darwin'
+    ? 'repoMenu.revealFinder'
+    : window.api.platform === 'win32'
+      ? 'repoMenu.revealExplorer'
+      : 'repoMenu.revealFileManager') as TranslationKey
 }
 
 export const localCiApi = {

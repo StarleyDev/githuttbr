@@ -1808,14 +1808,14 @@ export const repoActions = {
   batch: async (paths: string[], op: 'fetch' | 'pull', mode: PullMode = 'default') => {
     if (paths.length === 0) return
     const ui = useUIStore.getState()
-    const verb = op === 'fetch' ? 'Fetching' : 'Pulling'
+    const busyKey: TranslationKey = op === 'fetch' ? 'act.batchFetching' : 'act.batchPulling'
     let done = 0
     let failed = 0
     for (const path of paths) {
       const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
       let synced = false
       ui.setBusy(
-        `${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`,
+        interp(t(busyKey), { repo: path.split('/').pop() ?? path, i: done + failed + 1, n: paths.length }),
         op === 'fetch' ? 'fetch' : 'pull'
       )
       try {
@@ -2271,7 +2271,7 @@ export const repoActions = {
   stashPush: (path: string, message: string | undefined, paths: string[], keepIndex: boolean) =>
     useRepoStore.getState().run(
       path,
-      `Stashed ${paths.length} file${paths.length === 1 ? '' : 's'}`,
+      interp(t(paths.length === 1 ? 'act.stashedFilesOne' : 'act.stashedFilesMany'), { n: paths.length }),
       () => gitApi.stashPush(path, message, paths, keepIndex),
       {
         label: t('undoLabel.stash'),
@@ -2286,7 +2286,7 @@ export const repoActions = {
   stashPop: (path: string, index = 0) =>
     useRepoStore.getState().run(
       path,
-      'Popped stash',
+      t('act.poppedStash'),
       () => gitApi.stashPop(path, index),
       {
         label: t('undoLabel.stashPop'),
@@ -2313,7 +2313,7 @@ export const repoActions = {
       .getState()
       .run(
         path,
-        pop ? 'Popped stash (overwrote untracked files)' : 'Applied stash (overwrote untracked files)',
+        pop ? t('act.poppedStashOverwrite') : t('act.appliedStashOverwrite'),
         () => gitApi.stashApplyOverwrite(path, index, pop),
         undefined,
         null,
@@ -2462,7 +2462,7 @@ export const repoActions = {
   commit: (path: string, message: string, amend = false) =>
     useRepoStore.getState().run(
       path,
-      amend ? 'Amended commit' : 'Committed',
+      amend ? t('act.amendedCommit') : t('act.committed'),
       () => gitApi.commit(path, message, amend),
       {
         label: t('undoLabel.commit'),
@@ -2644,7 +2644,7 @@ export const repoActions = {
   applyPatch: (path: string, content: string, am: boolean) =>
     useRepoStore
       .getState()
-      .run(path, am ? 'Applied patch (git am)' : 'Applied patch', () => gitApi.applyPatch(path, content, am)),
+      .run(path, am ? t('act.appliedPatchAm') : t('act.appliedPatch'), () => gitApi.applyPatch(path, content, am)),
 
   createTag: (path: string, name: string, hash?: string, opts?: { message?: string; sign?: boolean }) =>
     useRepoStore.getState().run(path, interp(t('act.createdTag'), { name }), () => gitApi.createTag(path, name, hash, opts), {
@@ -2765,9 +2765,9 @@ export const repoActions = {
   ) =>
     useRepoStore.getState().run(
       path,
-      deleteFromDisk
-        ? `Ignored & deleted ${label ?? `${files.length} file(s)`}`
-        : `Ignored & stopped tracking ${label ?? `${files.length} file(s)`}`,
+      interp(t(deleteFromDisk ? 'act.ignoredAndDeleted' : 'act.ignoredAndUntracked'), {
+        what: label ?? interp(t(files.length === 1 ? 'act.filesOne' : 'act.filesMany'), { n: files.length })
+      }),
       async () => {
         await gitApi.addToGitignoreAt(path, dir, patterns)
         await gitApi.untrack(path, files, deleteFromDisk)
@@ -2900,12 +2900,20 @@ export const repoActions = {
   submoduleUpdate: (path: string, dir?: string) =>
     useRepoStore
       .getState()
-      .run(path, dir ? `Updated submodule ${dir}` : 'Updated submodules', () => gitApi.submoduleUpdate(path, dir, true)),
+      .run(
+        path,
+        dir ? interp(t('act.updatedSubmodule'), { dir }) : t('act.updatedSubmodules'),
+        () => gitApi.submoduleUpdate(path, dir, true)
+      ),
 
   submoduleSync: (path: string, dir?: string) =>
     useRepoStore
       .getState()
-      .run(path, dir ? `Synced submodule ${dir}` : 'Synced submodules', () => gitApi.submoduleSync(path, dir)),
+      .run(
+        path,
+        dir ? interp(t('act.syncedSubmodule'), { dir }) : t('act.syncedSubmodules'),
+        () => gitApi.submoduleSync(path, dir)
+      ),
 
   submoduleSetUrl: (path: string, name: string, url: string) =>
     useRepoStore.getState().run(path, interp(t('act.updatedUrl'), { name }), () => gitApi.submoduleSetUrl(path, name, url)),
@@ -2962,7 +2970,13 @@ export const repoActions = {
       .getState()
       .run(
         path,
-        `Added ${srcPaths.length === 1 ? srcPaths[0].split('/').pop() : `${srcPaths.length} items`} → ${destDir || '/'}`,
+        interp(t('act.importedInto'), {
+          what:
+            srcPaths.length === 1
+              ? (srcPaths[0].split('/').pop() ?? srcPaths[0])
+              : interp(t('act.itemsMany'), { n: srcPaths.length }),
+          dest: destDir || '/'
+        }),
         () => gitApi.fsImport(path, srcPaths, destDir, mode)
       )
 }

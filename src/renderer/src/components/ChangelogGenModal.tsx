@@ -3,7 +3,7 @@ import { FileText, Loader2, Copy, Check, Save, RefreshCw } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 
 export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
@@ -121,7 +121,9 @@ export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX
       </div>
 
       <div className="clgen-meta">
-        {count != null && <span>{count} commit{count === 1 ? '' : 's'} included</span>}
+        {count != null && (
+          <span>{interp(t(count === 1 ? 'changelogGen.includedOne' : 'changelogGen.includedMany'), { n: count })}</span>
+        )}
       </div>
 
       <textarea className="clgen-preview" value={markdown} onChange={(e) => setMarkdown(e.target.value)} spellCheck={false} />

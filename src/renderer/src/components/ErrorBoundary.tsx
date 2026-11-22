@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { useT } from '../i18n'
 
 interface Props {
   children: ReactNode
@@ -29,23 +30,41 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.error) {
       return (
-        <div className="error-boundary">
-          <h3>{this.props.label ?? 'Something went wrong'}</h3>
-          <pre className="error-boundary-msg">{this.state.error.message}</pre>
-          <div className="modal-actions">
-            <button
-              className="btn primary"
-              onClick={() => {
-                this.setState({ error: null })
-                this.props.onReset?.()
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
+        <ErrorFallback
+          label={this.props.label}
+          message={this.state.error.message}
+          onDismiss={() => {
+            this.setState({ error: null })
+            this.props.onReset?.()
+          }}
+        />
       )
     }
     return this.props.children
   }
+}
+
+// A function component so the fallback can use the reactive hook — a class
+// render reading the non-reactive t() would keep the old language on a switch.
+function ErrorFallback({
+  label,
+  message,
+  onDismiss
+}: {
+  label?: string
+  message: string
+  onDismiss: () => void
+}): React.JSX.Element {
+  const t = useT()
+  return (
+    <div className="error-boundary">
+      <h3>{label ?? t('errorBoundary.title')}</h3>
+      <pre className="error-boundary-msg">{message}</pre>
+      <div className="modal-actions">
+        <button className="btn primary" onClick={onDismiss}>
+          {t('toast.dismiss')}
+        </button>
+      </div>
+    </div>
+  )
 }

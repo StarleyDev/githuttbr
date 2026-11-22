@@ -875,6 +875,7 @@ function LocalCiSection(): React.JSX.Element {
         <p className="settings-hint">
           {/* i18n-ignore tool names and versions, identical in every language */}
           {status.act ? `act: ${status.act}` : t('localCi.actMissing')} ·{' '}
+          {/* i18n-ignore product name and a check mark */}
           {status.docker ? 'Docker ✓' : t('localCi.dockerMissing')}
         </p>
       )}
@@ -1526,7 +1527,7 @@ function GraphStyleTab(): React.JSX.Element {
 
   const [showEditor, setShowEditor] = useState(false)
   const [draft, setDraft] = useState<string[]>(() => toSlots(current.colors))
-  const [name, setName] = useState('My palette')
+  const [name, setName] = useState(() => t('settings.paletteDefaultName'))
   const [showAIPrompt, setShowAIPrompt] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -1538,13 +1539,13 @@ function GraphStyleTab(): React.JSX.Element {
 
   const openCreate = (): void => {
     setDraft(toSlots(current.colors))
-    setName('My palette')
+    setName(t('settings.paletteDefaultName'))
     setShowAIPrompt(false)
     setShowEditor((v) => !v)
   }
 
   const savePalette = (): void => {
-    const pal: GraphPalette = { id: `custom-graph-${uid()}`, name: name || 'Custom', colors: draft }
+    const pal: GraphPalette = { id: `custom-graph-${uid()}`, name: name || t('settings.customName'), colors: draft }
     update((s) => ({
       ...s,
       customGraphPalettes: [...(s.customGraphPalettes ?? []), pal],
@@ -1575,7 +1576,7 @@ function GraphStyleTab(): React.JSX.Element {
       setAiPrompt('')
       setShowEditor(true)
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : 'AI palette generation failed.')
+      toast('error', err instanceof Error ? err.message : t('settings.aiPaletteFailed'))
     } finally {
       setGenerating(false)
     }
@@ -1768,7 +1769,7 @@ function GraphStyleTab(): React.JSX.Element {
                     value={c}
                     onChange={(e) => setDraft((d) => d.map((x, j) => (j === i ? e.target.value : x)))}
                   />
-                  <span>Lane {i + 1}</span>
+                  <span>{interp(t('settings.laneN'), { n: i + 1 })}</span>
                 </label>
               ))}
             </div>
@@ -1807,11 +1808,11 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
 
   // Custom editor drafts (seeded from the current selection in the active mode).
   const [appDraft, setAppDraft] = useState<AppThemeColors>(resolveAppColors(currentApp, mode))
-  const [appName, setAppName] = useState('My theme')
+  const [appName, setAppName] = useState(() => t('settings.themeDefaultName'))
   // AI-generated counterpart for the mode NOT currently being edited (null for manual edits).
   const [appOther, setAppOther] = useState<AppThemeColors | null>(null)
   const [codeDraft, setCodeDraft] = useState<CodeThemeColors>(resolveCodeColors(currentCode, mode))
-  const [codeName, setCodeName] = useState('My code theme')
+  const [codeName, setCodeName] = useState(() => t('settings.codeThemeDefaultName'))
   const [codeOther, setCodeOther] = useState<CodeThemeColors | null>(null)
   const [showAppEditor, setShowAppEditor] = useState(false)
   const [showCodeEditor, setShowCodeEditor] = useState(false)
@@ -1836,7 +1837,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
       setAppAIPrompt('')
       setShowAppEditor(true)
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : 'AI theme generation failed.')
+      toast('error', err instanceof Error ? err.message : t('settings.aiThemeFailed'))
     } finally {
       setGeneratingApp(false)
     }
@@ -1854,7 +1855,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
       setCodeAIPrompt('')
       setShowCodeEditor(true)
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : 'AI theme generation failed.')
+      toast('error', err instanceof Error ? err.message : t('settings.aiThemeFailed'))
     } finally {
       setGeneratingCode(false)
     }
@@ -1873,7 +1874,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
   const saveAppTheme = (): void => {
     const theme: AppTheme = {
       id: `custom-app-${uid()}`,
-      name: appName || 'Custom',
+      name: appName || t('settings.customName'),
       light: mode === 'dark' ? (appOther ?? appDraft) : appDraft,
       dark: mode === 'dark' ? appDraft : (appOther ?? appDraft)
     }
@@ -1889,7 +1890,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
   const saveCodeTheme = (): void => {
     const theme: CodeTheme = {
       id: `custom-code-${uid()}`,
-      name: codeName || 'Custom',
+      name: codeName || t('settings.customName'),
       light: mode === 'dark' ? (codeOther ?? codeDraft) : codeDraft,
       dark: mode === 'dark' ? codeDraft : (codeOther ?? codeDraft)
     }
@@ -4002,15 +4003,13 @@ function RepoDataSection(): React.JSX.Element {
     <div style={{ marginTop: 28 }}>
       <h4 className="settings-section-title">
         <Database size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        Cached repositories
+        {t('settings.cachedReposTitle')}
       </h4>
-      <p className="settings-hint">
-        The list of recently opened repositories used for quick access. Clearing it does not touch any repository on disk.
-      </p>
+      <p className="settings-hint">{t('settings.cachedReposHint')}</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
         <button className="btn ghost small" onClick={clear} disabled={count === 0}>
           <Trash2 size={13} />
-          Clear recent repositories
+          {t('settings.clearRecentRepos')}
         </button>
         <span className="settings-hint">{count === 0 ? t('settings.noCachedRepos') : interp(t('settings.nCached'), { n: count })}</span>
       </div>
@@ -4232,7 +4231,7 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
               </table>
               {!knownCost && (
                 <p className="settings-hint" style={{ marginTop: 8 }}>
-                  No cost estimate available for the model(s) in use — only token counts are tracked.
+                  {t('settings.analyticsNoCost')}
                 </p>
               )}
             </>
@@ -4243,7 +4242,7 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
       <div style={{ marginTop: 18 }}>
         <button className="btn ghost small" onClick={() => void clear()}>
           <Trash2 size={13} />
-          Clear analytics
+          {t('settings.clearAnalytics')}
         </button>
       </div>
     </div>
@@ -4370,6 +4369,7 @@ export function RepoHistorySection(): React.JSX.Element {
 
 /** Summary card for the operation log; the full, filterable log opens as a page tab. */
 export function OperationLogSection(): React.JSX.Element {
+  const t = useT()
   const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
@@ -4385,19 +4385,19 @@ export function OperationLogSection(): React.JSX.Element {
     <div style={{ marginTop: 28 }}>
       <h4 className="settings-section-title">
         <ScrollText size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        Operation log
+        {t('settings.opLogTitle')}
       </h4>
-      <p className="settings-hint">
-        Every git operation gitcito ran, with success/failure, filterable by repository. Stored locally on this machine.
-      </p>
+      <p className="settings-hint">{t('settings.opLogHint')}</p>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
         <button className="btn ghost small" onClick={open}>
           <ScrollText size={13} />
-          Open operation log
+          {t('settings.opLogOpen')}
         </button>
         {count !== null && (
           <span className="settings-hint">
-            {count === 0 ? 'No operations recorded yet.' : `${count} operation${count === 1 ? '' : 's'} recorded.`}
+            {count === 0
+              ? t('settings.opLogEmpty')
+              : interp(t(count === 1 ? 'settings.opLogCountOne' : 'settings.opLogCountMany'), { n: count })}
           </span>
         )}
       </div>

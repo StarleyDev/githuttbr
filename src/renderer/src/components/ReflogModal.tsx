@@ -4,16 +4,16 @@ import type { ReflogEntry } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
-import { useT, interp } from '../i18n'
+import { useT, t as tr, interp } from '../i18n'
 
 /** Short "time since" label — mirrors the Toolbar helper. */
 function timeSince(at: number): string {
   if (!at) return ''
   const diff = (Date.now() - at * 1000) / 1000
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
+  if (diff < 60) return tr('time.justNow')
+  if (diff < 3600) return interp(tr('time.minutesAgo'), { n: Math.floor(diff / 60) })
+  if (diff < 86400) return interp(tr('time.hoursAgo'), { n: Math.floor(diff / 3600) })
+  return interp(tr('time.daysAgo'), { n: Math.floor(diff / 86400) })
 }
 
 /** Split "commit: msg" into a leading verb and the rest, for compact display. */
@@ -91,7 +91,10 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
           openModal({
             kind: 'confirm',
             title: t('reflog.resetHardTitle'),
-            message: interp(t('reflog.resetHardMsg'), { branch: repo?.branches.current ?? 'the current branch', sha: short }),
+            message: interp(t('reflog.resetHardMsg'), {
+              branch: repo?.branches.current ?? t('reflog.currentBranchFallback'),
+              sha: short
+            }),
             danger: true,
             confirmLabel: t('reflog.resetHardConfirm'),
             onConfirm: () => void repoActions.reset(repoPath, entry.sha, 'hard')

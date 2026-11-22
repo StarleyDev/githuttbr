@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Filter } from 'lucide-react'
+import { useT } from '../i18n'
 
 export interface FilterOption {
   value: string
@@ -28,6 +29,7 @@ export function GraphHeaderFilter({
   onSelect: (value: string) => void
   title?: string
 }): React.JSX.Element {
+  const tr = useT()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -69,7 +71,7 @@ export function GraphHeaderFilter({
       <button
         ref={btnRef}
         className={`ghc-filter ${isActive ? 'active' : ''}`}
-        title={title ?? 'Filter'}
+        title={title ?? tr('cmdp.filterSubmit')}
         onClick={toggle}
         onMouseDown={(e) => e.stopPropagation()}
       >

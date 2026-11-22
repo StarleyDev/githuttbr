@@ -126,7 +126,9 @@ export function buildGourceTree(commitsDesc: CosmosCommit[]): GourceController {
   })
   treeMesh.instanceMatrix.needsUpdate = true
   if (treeMesh.instanceColor) treeMesh.instanceColor.needsUpdate = true
-  treeMesh.userData.nodeMeta = nodes.map((n) => ({ id: n.id, label: n.id || '(root)' }))
+  // The root's label stays empty: the scene renders it as the translated "(root)", which a
+  // label baked in here would freeze in whatever language was active when the tree was built.
+  treeMesh.userData.nodeMeta = nodes.map((n) => ({ id: n.id, label: n.id }))
   group.add(treeMesh)
 
   // Author ring markers.

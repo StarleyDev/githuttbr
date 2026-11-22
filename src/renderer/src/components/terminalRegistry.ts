@@ -6,6 +6,7 @@ import { TERMINAL_THEMES } from '../theme/themes'
 import { useTermTitlesStore } from '../stores/termTitles'
 import { useSettingsStore } from '../stores/settings'
 import { createTermSuggest, type TermSuggest } from './termSuggest'
+import { t, interp } from '../i18n'
 
 export interface TermHandle {
   term: Terminal
@@ -813,7 +814,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     cleanups.push(window.api.launch.onData(launchId!, writeToTerm))
     cleanups.push(
       window.api.launch.onExit(launchId!, (code) =>
-        term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
+        term.write(`\r\n\x1b[90m${interp(t('terminal.processExitedCode'), { code })}\x1b[0m\r\n`)
       )
     )
     term.onData(sendInput)
@@ -835,7 +836,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     cleanups.push(window.api.term.onData(id, writeToTerm))
     cleanups.push(
       window.api.term.onExit(id, () =>
-        term.write('\r\n\x1b[90m[process exited]\x1b[0m\r\n')
+        term.write(`\r\n\x1b[90m${t('terminal.processExited')}\x1b[0m\r\n`)
       )
     )
     suggest = createTermSuggest({ term, container, ptyId: id, send: sendInput })

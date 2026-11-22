@@ -16,7 +16,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import type { GitHubNotification } from '../../../shared/types'
-import { useT, type TranslationKey } from '../i18n'
+import { useT, t as tr, interp, type TranslationKey } from '../i18n'
 
 /** GitHub's `reason` field → its label's key (the key, not the text: a module
  *  constant would freeze the language active on first import). */
@@ -57,12 +57,12 @@ function typeIcon(type: string): React.JSX.Element {
 function timeLabel(sec: number): string {
   const diff = Date.now() - sec * 1000
   const m = Math.round(diff / 60000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m ago`
+  if (m < 1) return tr('time.justNow')
+  if (m < 60) return interp(tr('time.minutesAgo'), { n: m })
   const h = Math.round(m / 60)
-  if (h < 24) return `${h}h ago`
+  if (h < 24) return interp(tr('time.hoursAgo'), { n: h })
   const d = Math.round(h / 24)
-  if (d < 7) return `${d}d ago`
+  if (d < 7) return interp(tr('time.daysAgo'), { n: d })
   return new Date(sec * 1000).toLocaleDateString()
 }
 
