@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Sync & many repos
 order: 56
 summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises
+keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises Bitbucket Data Center Bitbucket Server Stash HTTP access token
 ---
 
 # Hosting & pull requests
@@ -233,6 +233,93 @@ Limits:
 - GitHub Enterprise Cloud with data residency (`<name>.ghe.com`) is not
   covered: its API lives at a different address, so the list refuses it.
   Enterprise Cloud on github.com itself is just github.com.
+
+## Bitbucket Data Center
+
+Bitbucket Data Center — and Bitbucket Server, its predecessor, which shares
+its API — is the Bitbucket a company runs itself, at an address like
+`bitbucket.acme.corp`, often under a path such as `/bitbucket`. It is not
+bitbucket.org with another name: it has its own REST API
+(`https://<host>[/<path>]/rest/api/…`), projects instead of workspaces, and its
+own tokens. Without telling the app about it, a remote on such a server is
+"some git server": push and fetch work if git can sign in by itself, but there
+are no pull requests and no build status.
+
+Add the server in **Settings → Integrations → Bitbucket → Bitbucket Data
+Center**: type the address you open Bitbucket at — with its path, if it has
+one — press **Add server**, then paste an HTTP access token for it. The row
+says which user the token signs in as. A profile can hold several servers, each
+with its own token, next to its bitbucket.org credential.
+
+![The Bitbucket Data Center list in Settings, with a server under a context path added and a plain http address refused](../screenshots/bitbucket-data-center.webp)
+
+From then on, a remote on that server is Bitbucket Data Center — the https
+clone URL (`https://<host>[/<path>]/scm/<project>/<repo>.git`), the ssh one
+(`ssh://git@<host>:7999/<project>/<repo>.git`), and personal repositories
+(`~user`) alike:
+
+| Works on the server | Notes |
+|---|---|
+| Open pull requests in the sidebar, with build status and a 👁 on the ones waiting for you | Every page of the list, not just the first |
+| The pull request page: conversation, line comments, changed files and their diffs, checks | |
+| Comment, reply in a line thread, approve, request changes | A review's text is posted as a comment first |
+| Merge | The server's merge checks are asked first; a veto is shown in the server's own words and nothing is merged |
+| Create a pull request | Title, description, draft; source and target in the same repository |
+| Build status in the graph | One request finds the commits that have builds, then only those are read |
+| Push, fetch and clone over https | Signed in with that server's token |
+| The *create pull request* page in the browser | Opens on the server, under its path |
+
+**Each token goes only to its own server.** The bitbucket.org credential is
+never sent to a Data Center, one server's token is never sent to another, and a
+host that is not in the list gets nothing. Over https the port *and* the path
+are part of a server's identity: `bitbucket.acme.corp/bitbucket` and
+`bitbucket.acme.corp` are two servers. Over ssh, which has no path and its own
+port, the host name is what is compared. Tokens are stored with your OS keychain
+like every other token, and left out of a settings export unless you tick the
+option to include secrets.
+
+**The token.** Create an HTTP access token in Bitbucket (your avatar → *Manage
+account* → *HTTP access tokens*; **Create a token on …** opens that page).
+Give it **Project read** and **Repository write**: that covers listing,
+reviewing and merging pull requests, and pushing. **Repository read** is
+enough to see pull requests and pull, but not to approve, merge or push. A
+project or repository token works too, with the same permissions.
+
+**User name.** Git sends a user name with the token. A *personal* token needs
+your own Bitbucket user name — once the row says *Connected as …*, a **Use …**
+button fills it in. Leave it empty for a *project* or *repository* token,
+which git then sends as `x-token-auth`, the name Bitbucket expects for those.
+
+Limits:
+
+- **https only, and only the address.** A `http://` address is refused, because
+  the token would cross the network in clear text; so is a user name and
+  password in the address, or a path that is not the server's own (a pasted
+  project, repository or REST address). Internal and private addresses are
+  fine.
+- **Written against the documentation, not a live server.** The calls follow
+  Atlassian's Bitbucket Data Center REST reference (the 10.x documentation
+  and its `latest` API). Older Bitbucket Server releases and servers with
+  plugins that change these resources may behave differently. Something the
+  server does not offer is left out quietly — no build status, no merge
+  check — instead of failing the page.
+- **ssh on another host name.** The app recognises an ssh remote by the
+  server's own host name. A company that serves ssh from a different name (say
+  `git.acme.corp` next to `bitbucket.acme.corp`) gets push and fetch, but no
+  pull requests for those remotes; clone over https, or set the remote to the
+  https URL, to have both.
+- **A certificate from a company CA** (or a self-signed one) is a known gap.
+  Git checks it with its own settings (`http.sslCAInfo`), so push and fetch
+  work once git trusts it; the app's own API calls trust only the certificates
+  that ship with it, so pull requests and build status may fail to load
+  against such a server. The app never offers to skip the check.
+- **Not covered:** default reviewers are not added when a pull request is
+  created here (add them on the server, or open it in the browser); you cannot
+  withdraw an approval from the app; the clone browser and *create repository*
+  stay bitbucket.org's; Jira links, tasks and comment threads' "resolved" state
+  are not shown; the commit menu's *View on GitHub* entries are GitHub-only.
+- **Bitbucket Cloud is unchanged.** bitbucket.org keeps its own token above the
+  list, and works as before.
 
 ## Forgejo
 
