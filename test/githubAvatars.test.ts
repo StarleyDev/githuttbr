@@ -16,7 +16,7 @@ import {
   type AvatarTarget
 } from '../src/main/githubAvatarResolver'
 import { GITHUB_COM } from '../src/shared/githubEnterprise'
-import { avatarSources } from '../src/renderer/src/lib/avatar'
+import { avatarSources, githubAccountFingerprint } from '../src/renderer/src/lib/avatar'
 import { AVATAR_UNKNOWN_RETRY_MS, createAvatarBatcher, type AvatarBatchItem } from '../src/renderer/src/lib/avatarBatch'
 
 describe('github noreply addresses', () => {
@@ -269,6 +269,62 @@ describe('github avatar resolver', () => {
     expect(peak).toBe(3)
   })
 
+  it('treats a 404 on the commit as "cannot see this repository": nothing cached, the repository left alone', async () => {
+    vi.useFakeTimers()
+    try {
+      let saved: AvatarCacheFile | null = null
+      const urls: string[] = []
+      const fetch = vi.fn(async (url: string) => {
+        urls.push(url)
+        if (url.includes('/acme/private/')) return json({ message: 'Not Found' }, 404)
+        return json(commitBy('https://avatars.githubusercontent.com/u/5?v=4'))
+      })
+      const r = createGithubAvatarResolver({ fetch, save: (e) => (saved = e) })
+      const PRIVATE: AvatarTarget = { ...GH, repo: 'private' }
+      expect(await r.resolve(PRIVATE, [{ email: 'dev@corp.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
+      // No list-by-email after it: that would only 404 too.
+      expect(urls).toHaveLength(1)
+      expect(r.hiddenUntil(PRIVATE)).toBeGreaterThan(Date.now())
+      // The repository is not asked again for a while, for any author.
+      expect(await r.resolve(PRIVATE, [{ email: 'other@corp.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
+      expect(urls).toHaveLength(1)
+      // The same author in a repository the token can see still gets a picture.
+      const out = await r.resolve(GH, [{ email: 'dev@corp.test', sha: 'abcdef1' }], 20, async () => 'tok')
+      expect(out['dev@corp.test']).toBe('https://avatars.githubusercontent.com/u/5?v=4&s=20')
+      await vi.advanceTimersByTimeAsync(1000)
+      // And the only thing on disk is that hit — the 404 wrote no miss.
+      expect(saved).toEqual({ [avatarCacheKey(GITHUB_COM, 'dev@corp.test')]: expect.objectContaining({ url: expect.any(String) }) })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('treats a 404 on the list-by-email the same way', async () => {
+    const fetch = vi.fn(async () => json({ message: 'Not Found' }, 404))
+    const r = createGithubAvatarResolver({ fetch })
+    expect(await r.resolve(GH, [{ email: 'dev@corp.test' }], 20, async () => 'tok')).toEqual({})
+    expect(r.hiddenUntil(GH)).toBeGreaterThan(0)
+    // A later batch is not answered "none" from a cache it never wrote.
+    expect(await r.resolve(GH, [{ email: 'dev@corp.test' }], 20, async () => 'tok')).toEqual({})
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('caches a miss only when a 200 proved it — an empty list by that email', async () => {
+    const fetch = vi.fn(async (url: string) => (url.includes('/commits/') ? json({ message: 'No commit found' }, 422) : json([])))
+    const r = createGithubAvatarResolver({ fetch })
+    expect(await r.resolve(GH, [{ email: 'ghost@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({ 'ghost@x.test': null })
+    expect(await r.resolve(GH, [{ email: 'ghost@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({ 'ghost@x.test': null })
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('answers an empty repository (409) as unknown, not as a miss', async () => {
+    const fetch = vi.fn(async () => json({ message: 'Git Repository is empty.' }, 409))
+    const r = createGithubAvatarResolver({ fetch })
+    expect(await r.resolve(GH, [{ email: 'a@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
+    expect(await r.resolve(GH, [{ email: 'a@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
+    expect(fetch).toHaveBeenCalledTimes(4)
+  })
+
   it('treats a network failure as unknown, not as a miss', async () => {
     const fetch = vi.fn(async () => {
       throw new Error('offline')
@@ -293,6 +349,33 @@ describe('avatar source order', () => {
   it('looks nothing up with Show avatars off', () => {
     expect(avatarSources({ ...base, lookups: false })).toEqual([])
     expect(avatarSources({ ...base, email: undefined })).toEqual([])
+  })
+})
+
+describe('profile picture cache key', () => {
+  const base = { githubToken: '', githubEnterprise: [], links: {} }
+
+  it('changes when the account does — a new token, a GHES token, a different link', () => {
+    const none = githubAccountFingerprint(base)
+    const a = githubAccountFingerprint({ ...base, githubToken: 'tok-a' })
+    const b = githubAccountFingerprint({ ...base, githubToken: 'tok-b' })
+    const ghes = githubAccountFingerprint({ ...base, githubEnterprise: [{ url: 'https://ghe.corp', token: 't' }] })
+    const gh = githubAccountFingerprint({ ...base, links: { github: { source: 'gh', login: 'octo' } } })
+    const other = githubAccountFingerprint({ ...base, links: { github: { source: 'gh', login: 'other' } } })
+    expect(new Set([none, a, b, ghes, gh, other]).size).toBe(6)
+  })
+
+  it('changes when locked tokens arrive on unlock, and stays put otherwise', () => {
+    // Hydrated before unlock: the renderer holds no tokens yet.
+    const locked = githubAccountFingerprint({ ...base, links: { github: { source: 'git', login: 'me' } } })
+    const unlocked = githubAccountFingerprint({ ...base, githubToken: 'pat', links: { github: { source: 'git', login: 'me' } } })
+    expect(unlocked).not.toBe(locked)
+    expect(githubAccountFingerprint({ ...base, githubToken: ' pat ', links: { github: { source: 'git', login: 'me' } } })).toBe(unlocked)
+  })
+
+  it('never spells the token out', () => {
+    expect(githubAccountFingerprint({ ...base, githubToken: 'ghp_supersecret' })).not.toContain('supersecret')
+    expect(githubAccountFingerprint(undefined)).toBe('')
   })
 })
 

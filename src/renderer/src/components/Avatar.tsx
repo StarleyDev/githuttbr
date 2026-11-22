@@ -4,7 +4,7 @@ import { happy, idle, mad, sad, scared, sick, sleepy, thinking, unsure } from 'b
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { githubAuthorAvatar, githubProfileAvatar } from '../stores/githubAvatars'
-import { avatarSources, generatedAvatar, gravatarUrl, type AvatarSource } from '../lib/avatar'
+import { avatarSources, generatedAvatar, githubAccountFingerprint, gravatarUrl, type AvatarSource } from '../lib/avatar'
 import { githubNoreplyAvatarUrl } from '../../../shared/githubAvatar'
 import { githubEnterpriseBases, githubInstanceOf } from '../../../shared/githubEnterprise'
 import type { Mood } from '../lib/repoMood'
@@ -69,6 +69,11 @@ export function Avatar({
   const onGithub = useSettingsStore((s) =>
     remoteUrl ? !!githubInstanceOf(remoteUrl, githubEnterpriseBases(s.settings.profiles)) : false
   )
+  // Which GitHub accounts the profile holds: a switch, or its tokens arriving
+  // on unlock, asks for its picture again. A string, so nothing else re-renders.
+  const account = useSettingsStore((s) =>
+    profileId ? githubAccountFingerprint(s.settings.profiles.find((p) => p.id === profileId)) : ''
+  )
   const seed = (email || name || '?').toLowerCase()
   const gen = useMemo(() => generatedAvatar(seed), [seed])
   const px = Math.round(size * 2)
@@ -82,7 +87,7 @@ export function Avatar({
   })
   // Which source is being tried, tied to everything that decides the list: a
   // new email or a changed setting starts again from the first.
-  const key = `${email}\n${px}\n${sources.join(',')}\n${remoteUrl}\n${onGithub}\n${profileId}`
+  const key = `${email}\n${px}\n${sources.join(',')}\n${remoteUrl}\n${onGithub}\n${profileId}\n${account}`
   const [attempt, setAttempt] = useState({ key, step: 0 })
   const step = attempt.key === key ? attempt.step : 0
   const source: AvatarSource | undefined = sources[step]
@@ -99,7 +104,7 @@ export function Avatar({
         : noreply
           ? Promise.resolve(noreply)
           : profileId
-            ? githubProfileAvatar(profileId, px)
+            ? githubProfileAvatar(profileId, account, px)
             : repo && remoteUrl && onGithub
               ? githubAuthorAvatar({ remoteUrl, repoPath: repo, size: px }, email, sha)
               : Promise.resolve(null)
@@ -111,7 +116,7 @@ export function Avatar({
     return () => {
       alive = false
     }
-    // `key` covers email, size, the source list, the remote and the profile.
+    // `key` covers email, size, the source list, the remote, the profile and its account.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, step])
 

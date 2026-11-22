@@ -2,6 +2,7 @@
 // generated fallback so we never fall back to a bare letter.
 
 import { blobatarUri } from 'blobatar/uri'
+import type { Profile } from '../../../shared/types'
 
 // Distinct authors bound these caches, so they are usually tiny — but a
 // session across huge multi-author repos would grow them forever. Reset at a
@@ -89,4 +90,33 @@ export function avatarSources(o: {
   if (!o.lookups || !o.email) return []
   if (o.noreply && o.github) return ['github']
   return o.github && o.githubLookup ? ['gravatar', 'github'] : ['gravatar']
+}
+
+/**
+ * A short fingerprint of which GitHub accounts a profile is connected to — its
+ * tokens (github.com's and each Enterprise Server's) and its machine-login
+ * link. The profile picture is remembered under it, so switching account,
+ * pasting a new token, or the tokens arriving once Settings unlocks them asks
+ * again instead of showing the previous answer for the rest of the session.
+ *
+ * A hash rather than the values: it ends up in a cache key, and the tokens
+ * themselves have no business being spelled out there. FNV-1a is enough — it
+ * only has to change when the input does.
+ */
+export function githubAccountFingerprint(
+  profile: Pick<Profile, 'githubToken' | 'githubEnterprise' | 'links'> | undefined
+): string {
+  if (!profile) return ''
+  const link = profile.links?.github
+  const parts = [
+    profile.githubToken?.trim() ?? '',
+    ...(profile.githubEnterprise ?? []).map((h) => `${h.url}\t${h.token?.trim() ?? ''}`),
+    link ? `${link.source}:${link.login}` : ''
+  ]
+  let h = 0x811c9dc5
+  for (const ch of parts.join('\n')) {
+    h ^= ch.codePointAt(0)!
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return h.toString(36)
 }

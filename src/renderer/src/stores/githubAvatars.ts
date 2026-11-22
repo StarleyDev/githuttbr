@@ -15,12 +15,14 @@ export function githubAuthorAvatar(scope: AvatarBatchScope, email: string, sha?:
 const profile = new Map<string, Promise<string | null>>()
 
 /**
- * The active profile's GitHub account picture, asked once per profile and size
- * (main caches per token). Main answers for whichever profile is active, so the
- * caller only asks while `profileId` is the active one.
+ * The active profile's GitHub account picture, asked once per profile, account
+ * and size (main caches per token). `account` is `githubAccountFingerprint` of
+ * the profile: a different account, or tokens that were still locked the last
+ * time, is a different key. Main answers for whichever profile is active, so
+ * the caller only asks while `profileId` is the active one.
  */
-export function githubProfileAvatar(profileId: string, size: number): Promise<string | null> {
-  const key = `${profileId}\n${size}`
+export function githubProfileAvatar(profileId: string, account: string, size: number): Promise<string | null> {
+  const key = `${profileId}\n${account}\n${size}`
   let job = profile.get(key)
   if (!job) {
     job = avatarApi.profileGithub(size).catch(() => null)
