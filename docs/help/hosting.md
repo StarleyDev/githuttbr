@@ -262,11 +262,11 @@ clone URL (`https://<host>[/<path>]/scm/<project>/<repo>.git`), the ssh one
 |---|---|
 | Open pull requests in the sidebar, with build status and a 👁 on the ones waiting for you | Every page of the list, not just the first |
 | The pull request page: conversation, line comments, changed files and their diffs, checks | |
-| Comment, reply in a line thread, approve, request changes | A review's text is posted as a comment first |
-| Merge | The server's merge checks are asked first; a veto is shown in the server's own words and nothing is merged |
+| Comment, reply in a line thread, approve, request changes | The verdict is set first and a review's text posted after it, so a failed verdict leaves no stray comment |
+| Merge | The page shows a merge-check veto (*Requires 2 approvals*, …) in the server's own words, apart from real conflicts, and keeps **Merge** off until it clears; the checks are asked again before merging and nothing is merged on a veto |
 | Create a pull request | Title, description, draft; source and target in the same repository |
 | Build status in the graph | One request finds the commits that have builds, then only those are read |
-| Push, fetch and clone over https | Signed in with that server's token |
+| Push, fetch and clone over https | Signed in with that server's token — **Clone → URL** too, for an address under a server in the list |
 | The *create pull request* page in the browser | Opens on the server, under its path |
 
 **Each token goes only to its own server.** The bitbucket.org credential is
@@ -287,8 +287,12 @@ project or repository token works too, with the same permissions.
 
 **User name.** Git sends a user name with the token. A *personal* token needs
 your own Bitbucket user name — once the row says *Connected as …*, a **Use …**
-button fills it in. Leave it empty for a *project* or *repository* token,
-which git then sends as `x-token-auth`, the name Bitbucket expects for those.
+button fills it in. Left empty, the user name in the remote URL is used —
+Bitbucket's own clone URLs read `https://<you>@<host>/scm/…` — and with none
+there either, git sends `x-token-auth`, the name Bitbucket expects for a
+*project* or *repository* token. Approving and requesting changes find your
+account's *slug* on the server (an email-style name `jdoe@corp.com` has the
+slug `jdoe_corp.com`), so those work for such names too.
 
 Limits:
 

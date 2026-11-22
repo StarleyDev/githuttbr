@@ -222,6 +222,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const web = remoteWebUrl(remoteUrl)
   const status = pr ? prStatus(pr) : null
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
+  // A merge-check veto blocks the merge without being a conflict (Bitbucket Data Center).
+  const blockers = pr?.mergeBlockers ?? []
+  const mergeBlocked = pr?.mergeable === false || blockers.length > 0
   const counts = checks ? checkCounts(checks) : null
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
@@ -370,13 +373,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </section>
 
               {canMerge && (
-                <section className={`prp-merge ${pr.mergeable === false ? 'is-blocked' : ''}`}>
+                <section className={`prp-merge ${mergeBlocked ? 'is-blocked' : ''}`}>
                   <div className="prp-merge-text">
                     <GitMerge size={16} />
                     <span>
                       {pr.mergeable === false
                         ? t('prDetail.notMergeable')
-                        : pr.mergeable === true
+                        : blockers.length
+                          ? t('prPage.mergeBlocked')
+                          : pr.mergeable === true
                           ? t('prPage.mergeable')
                           : t('prPage.mergeUnknown')}
                     </span>
@@ -388,7 +393,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
                       {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
                     </select>
-                    <button className="btn primary small" onClick={merge} disabled={busy || pr.mergeable === false}>
+                    <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
                       {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
                     </button>
                   </div>
@@ -473,6 +478,13 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 <div className="prp-side-note">{interp(t('prPage.closedOn'), { date: fmtDate(pr.closedAt) })}</div>
               )}
               {canMerge && pr.mergeable === false && <div className="prp-side-note prp-warn">{t('prPage.conflicts')}</div>}
+              {/* The vetoes are the server's own copy (its merge checks), shown as it words them. */}
+              {canMerge &&
+                blockers.map((b, i) => (
+                  <div key={i} className="prp-side-note prp-warn">
+                    {b}
+                  </div>
+                ))}
             </Field>
 
             <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>

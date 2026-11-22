@@ -9,6 +9,7 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
+import { summariseChecks } from './ciSummary'
 import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance } from './settings'
 import {
   createForgejoPull,
@@ -2845,17 +2846,6 @@ interface GithubStackMember {
   user?: { login: string }
   head?: { ref: string; sha: string }
   base?: { ref: string }
-}
-
-/** "3 passed · 1 failing" — the row shows a dot, the tooltip shows this. */
-function summariseChecks(status: CiStatus): string {
-  const count = (state: CiState): number => status.jobs.filter((j) => j.state === state).length
-  const parts: string[] = []
-  if (count('success')) parts.push(`${count('success')} passed`)
-  if (count('failure')) parts.push(`${count('failure')} failing`)
-  if (count('pending')) parts.push(`${count('pending')} running`)
-  if (count('neutral')) parts.push(`${count('neutral')} skipped`)
-  return parts.join(' · ')
 }
 
 // Answers depend on what a credential can see, so each one keeps its own; a

@@ -1,3 +1,4 @@
+import { summariseChecks } from './ciSummary'
 import { splitUnifiedDiff } from './forgejo'
 import {
   bitbucketServerEndpoints,
@@ -44,7 +45,7 @@ import type {
  *   POST …/pull-requests/{id}/merge?version=N                                  merge
  *   GET  /rest/api/latest/projects/{key}/repos/{slug}/settings/pull-requests   merge strategies
  *   GET  /rest/api/latest/application-properties  (+ X-AUSERNAME header)       who the token is
- *   GET  /rest/api/latest/users/{userSlug}                                     getUser
+ *   GET  /rest/api/latest/users?filter=…                                       getUsers (name → slug)
  *   POST /rest/build-status/latest/commits/stats                               build stats, many commits
  *   GET  /rest/build-status/latest/commits/{sha}                               build statuses of a commit
  * Auth: `Authorization: Bearer <HTTP access token>` (Atlassian, "HTTP access tokens").
@@ -322,19 +323,32 @@ export function mapBbsReviews(pr: BbsPull): PrReview[] {
   return out
 }
 
-/** Whether the server would merge now. Unknown (null) when it could not say. */
+const isConflicted = (m: BbsMergeability): boolean => !!m.conflicted || m.outcome === 'CONFLICTED'
+
+/**
+ * Whether the branches merge cleanly — the `mergeable` the PR page reads as
+ * "has conflicts" when false. Only a real conflict says false: a merge-check
+ * veto is not a conflict, and travels as `bbsMergeBlockers` instead. Unknown
+ * (null) when the server could not say.
+ */
 export function bbsCanMerge(m: BbsMergeability | null | undefined): boolean | null {
   if (!m) return null
-  if (typeof m.canMerge === 'boolean') return m.canMerge
-  return !m.conflicted && m.outcome !== 'CONFLICTED' && (m.vetoes ?? []).length === 0
+  if (isConflicted(m)) return false
+  if (m.outcome === 'UNKNOWN') return null
+  return typeof m.canMerge === 'boolean' || m.outcome === 'CLEAN' ? true : null
+}
+
+/** The merge checks that veto the merge, in the server's own words. */
+export function bbsMergeBlockers(m: BbsMergeability | null | undefined): string[] {
+  return (m?.vetoes ?? []).map((v) => [v.summaryMessage, v.detailedMessage].filter(Boolean).join(' — ')).filter(Boolean)
 }
 
 /** Why the server refuses to merge, in its own words (merge checks speak for themselves). */
 export function bbsMergeRefusal(m: BbsMergeability): string | null {
-  if (bbsCanMerge(m) !== false) return null
-  const vetoes = (m.vetoes ?? []).map((v) => [v.summaryMessage, v.detailedMessage].filter(Boolean).join(' — ')).filter(Boolean)
-  if (m.conflicted || m.outcome === 'CONFLICTED') vetoes.unshift('the pull request has conflicts that must be resolved first')
-  return vetoes.length ? vetoes.join('; ') : 'the server does not allow this merge yet'
+  const reasons = bbsMergeBlockers(m)
+  if (isConflicted(m)) reasons.unshift('the pull request has conflicts that must be resolved first')
+  if (reasons.length) return reasons.join('; ')
+  return m.canMerge === false ? 'the server does not allow this merge yet' : null
 }
 
 /**
@@ -372,14 +386,7 @@ export async function listBbsPulls(repo: BitbucketServerRepo, token: string): Pr
     const status = pr.headSha ? ci[pr.headSha] : undefined
     if (!status) continue
     pr.ci = status.state
-    const n = (s: CiState): number => status.jobs.filter((j) => j.state === s).length
-    pr.ciSummary = [
-      n('success') ? `${n('success')} passed` : '',
-      n('failure') ? `${n('failure')} failing` : '',
-      n('pending') ? `${n('pending')} running` : ''
-    ]
-      .filter(Boolean)
-      .join(' · ')
+    pr.ciSummary = summariseChecks(status)
   }
   return prs
 }
@@ -412,6 +419,7 @@ export async function bbsPullDetail(repo: BitbucketServerRepo, token: string, id
     state: open ? 'open' : 'closed',
     merged,
     mergeable: open ? bbsCanMerge(merge) : null,
+    ...(open && bbsMergeBlockers(merge).length ? { mergeBlockers: bbsMergeBlockers(merge) } : {}),
     url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id),
     comments,
     reviews: mapBbsReviews(pr),
@@ -478,20 +486,29 @@ export async function bbsPullChecks(repo: BitbucketServerRepo, token: string, id
   return (await commitBuilds(repo, token, sha).catch(() => [])).map(bbsBuildToCheck)
 }
 
+/** Commits per `stats` request — a graph page's worth. */
+const STATS_BATCH = 40
+
 /**
- * Build status for many commits: one `stats` request says which have builds at
- * all, then only those are read in full — a graph page of 40 commits with three
- * builds costs four requests, not forty.
+ * Build status for many commits: one `stats` request per 40 commits says which
+ * have builds at all, then only those are read in full — a graph page of 40
+ * commits with three builds costs four requests, not forty. The PR list (up to
+ * 200 heads) takes several stats requests, so every row gets its CI.
  */
 export async function bbsCiStatuses(repo: BitbucketServerRepo, token: string, shas: string[]): Promise<Record<string, CiStatus>> {
-  const wanted = [...new Set(shas)].slice(0, 40)
+  // Capped at the PR list's own ceiling (4 pages of 50), so no caller can fan out unbounded.
+  const wanted = [...new Set(shas)].slice(0, 200)
   if (!wanted.length) return {}
-  const stats = await bbsJson<Record<string, BbsBuildStats>>(
-    `${bitbucketServerEndpoints(repo.base).buildStatusBase}/commits/stats`,
-    token,
-    { method: 'POST', body: JSON.stringify(wanted) }
-  )
-  const withBuilds = wanted.filter((sha) => hasBuilds(stats?.[sha]))
+  const withBuilds: string[] = []
+  for (let i = 0; i < wanted.length; i += STATS_BATCH) {
+    const batch = wanted.slice(i, i + STATS_BATCH)
+    const stats = await bbsJson<Record<string, BbsBuildStats>>(
+      `${bitbucketServerEndpoints(repo.base).buildStatusBase}/commits/stats`,
+      token,
+      { method: 'POST', body: JSON.stringify(batch) }
+    )
+    withBuilds.push(...batch.filter((sha) => hasBuilds(stats?.[sha])))
+  }
   const out: Record<string, CiStatus> = {}
   const queue = [...withBuilds]
   const work = async (): Promise<void> => {
@@ -519,13 +536,26 @@ export async function bbsComment(repo: BitbucketServerRepo, token: string, id: n
  * engineers recommend on the developer community). Null when the server does
  * not say — an anonymous answer.
  */
-export async function bbsWhoAmI(base: string, token: string): Promise<{ name: string; slug: string; displayName?: string } | null> {
+export async function bbsWhoAmI(base: string, token: string): Promise<{ name: string; slug?: string; displayName?: string } | null> {
   const api = bitbucketServerEndpoints(base).apiBase
   const res = await bbsResponse(`${api}/application-properties`, token)
   const name = res.headers.get('x-ausername')?.trim()
   if (!name) return null
-  const user = await bbsJson<BbsUser>(`${api}/users/${enc(name)}`, token).catch(() => null)
-  return { name, slug: user?.slug || name, ...(user?.displayName ? { displayName: user.displayName } : {}) }
+  const user = await bbsUserByName(api, name, token)
+  return { name, ...(user?.slug ? { slug: user.slug } : {}), ...(user?.displayName ? { displayName: user.displayName } : {}) }
+}
+
+/**
+ * The user record for a user *name*. `/users/{userSlug}` takes a slug, which
+ * "may not be the user's username, always use the user.slug property" (REST
+ * reference, GET /users/{userSlug}) — an email-style name `jdoe@corp.com` has
+ * the slug `jdoe_corp.com`. So the name is looked up through `GET /users?filter=`
+ * (users whose name, display name or email *contain* it) and matched exactly.
+ */
+async function bbsUserByName(api: string, name: string, token: string): Promise<BbsUser | null> {
+  const users = await bbsPages<BbsUser>(`${api}/users?filter=${enc(name)}`, token, 25, 2).catch(() => [] as BbsUser[])
+  // User names compare case-insensitively on the server; an exact match wins.
+  return users.find((u) => u.name === name) ?? users.find((u) => u.name?.toLowerCase() === name.toLowerCase()) ?? null
 }
 
 /** Settings → Integrations: the account behind a server's token. */
@@ -536,8 +566,23 @@ export async function describeBbsAccount(base: string, token: string): Promise<C
   return {
     login: me.name,
     ...(me.displayName && me.displayName !== me.name ? { name: me.displayName } : {}),
-    profileUrl: `${web}/users/${enc(me.slug)}`
+    // No slug, no link: a page built from the user name would 404 for an email-style one.
+    ...(me.slug ? { profileUrl: `${web}/users/${enc(me.slug)}` } : {})
   }
+}
+
+/**
+ * The slug of the token's user for `participants/{userSlug}`: from the user
+ * search, else from the pull request's own reviewers and participants (who
+ * carry both name and slug), else the name itself — equal to the slug for
+ * every plain user name.
+ */
+async function reviewerSlug(repo: BitbucketServerRepo, token: string, id: number, me: { name: string; slug?: string }): Promise<string> {
+  if (me.slug) return me.slug
+  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token).catch(() => null)
+  const people = [...(pr?.reviewers ?? []), ...(pr?.participants ?? [])].map((p) => p.user)
+  const match = people.find((u) => u?.name === me.name) ?? people.find((u) => u?.name?.toLowerCase() === me.name.toLowerCase())
+  return match?.slug || me.name
 }
 
 export async function bbsReview(
@@ -547,23 +592,27 @@ export async function bbsReview(
   event: PrReviewEvent,
   body: string
 ): Promise<void> {
-  if (body.trim()) await bbsComment(repo, token, id, body)
   if (event === 'COMMENT') {
     if (!body.trim()) throw new BitbucketServerError(400, 'a comment needs some text')
+    await bbsComment(repo, token, id, body)
     return
   }
+  // The verdict first, the comment after: a status that fails leaves nothing
+  // behind, so a retry cannot post the same comment twice.
   const status = PR_STATUS[event]
   const me = await bbsWhoAmI(repo.base, token).catch(() => null)
   if (me) {
-    await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/participants/${enc(me.slug)}`, token, {
+    const slug = await reviewerSlug(repo, token, id, me)
+    await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/participants/${enc(slug)}`, token, {
       method: 'PUT',
       body: JSON.stringify({ status })
     })
-    return
+  } else {
+    // No user to name: the older, deprecated resource approves as the caller.
+    if (status !== 'APPROVED') throw new BitbucketServerError(400, 'the server did not say who this token is, so changes cannot be requested')
+    await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/approve`, token, { method: 'POST' })
   }
-  // No user to name: the older, deprecated resource approves as the caller.
-  if (status !== 'APPROVED') throw new BitbucketServerError(400, 'the server did not say who this token is, so changes cannot be requested')
-  await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/approve`, token, { method: 'POST' })
+  if (body.trim()) await bbsComment(repo, token, id, body)
 }
 
 export async function bbsMerge(repo: BitbucketServerRepo, token: string, id: number, method: PrMergeMethod): Promise<void> {

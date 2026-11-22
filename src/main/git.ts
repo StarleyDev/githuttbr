@@ -170,7 +170,12 @@ import { recordLog } from './log'
 import { activeProfileAuth, readSettings } from './settings'
 import { providerOfHost } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
-import { bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
+import {
+  bitbucketServerBases,
+  bitbucketServerGitUsername,
+  bitbucketServerRepoOf,
+  isBitbucketCloudHost
+} from '../shared/bitbucketServer'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
 import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -948,7 +953,11 @@ export function basicAuthFor(
     case 'bitbucket': {
       // A Data Center HTTP access token: its owner's name for a personal token,
       // `x-token-auth` for a project or repository one.
-      if (url && !isBitbucketCloudHostOf(url)) return { username: bitbucketServerGitUsername(gitUsername), password: t }
+      // With no name in Settings, the one in the remote URL — Bitbucket's own clone
+      // URLs are `https://<user>@host/scm/…` — before the fixed project-token name.
+      if (url && !isBitbucketCloudHostOf(url)) {
+        return { username: bitbucketServerGitUsername(gitUsername?.trim() || urlUsername(url)), password: t }
+      }
       if (!t.includes(':')) return { username: 'x-token-auth', password: t }
       const [user, ...rest] = t.split(':')
       return { username: user, password: rest.join(':') }
@@ -990,9 +999,17 @@ function urlUsername(url: string | undefined): string {
  * duration of the clone, which a crash or a kill would otherwise leave behind.
  */
 export async function cloneCredentialEnv(url: string, host?: string, token?: string): Promise<NodeJS.ProcessEnv | null> {
-  if (!token || !token.trim() || !/^https:\/\//i.test(url)) return null
+  if (!/^https:\/\//i.test(url)) return null
+  // Clone → URL names no provider. A Data Center a profile configures is
+  // recognised from the URL itself (host, port and context path) — its token is
+  // filed under that base, so no other host can be offered anything. Every
+  // other provider still needs the caller to name it.
+  if (!host) {
+    if (!bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
+    host = 'bitbucket'
+  }
   // The caller names the provider; the URL must really be on it.
-  if (!host || hostFromUrl(url) !== host) return null
+  if (hostFromUrl(url) !== host) return null
   // The renderer sends the active profile's token. A GitLab or Forgejo token
   // only goes to the instance that issued it — never to another profile's server.
   // GitHub likewise: the renderer's token is github.com's, so a clone from an
@@ -1002,13 +1019,15 @@ export async function cloneCredentialEnv(url: string, host?: string, token?: str
   // clone uses the token (and user name) the profile filed for that server.
   const dc = host === 'bitbucket' && !isBitbucketCloudHost(new URL(url).hostname)
   let gitUsername: string | undefined
+  // github.com, bitbucket.org and Azure use the token the renderer sent.
+  if (!(host === 'gitlab' || host === 'forgejo' || ghes || dc) && (!token || !token.trim())) return null
   if (host === 'gitlab' || host === 'forgejo' || ghes || dc) {
     const auth = await activeProfileAuth(host, url)
     token = auth.token
     gitUsername = auth.username
     if (!token) return null
   }
-  const auth = basicAuthFor(host as RepoHost | undefined, token, url, gitUsername)
+  const auth = basicAuthFor(host as RepoHost | undefined, token ?? '', url, gitUsername)
   return auth ? gitCredentialEnv(url, auth) : null
 }
 

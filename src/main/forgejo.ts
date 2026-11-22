@@ -243,7 +243,9 @@ export function splitUnifiedDiff(diff: string): PrFile[] {
   const files: PrFile[] = []
   const chunks = diff.split(/^(?=diff --git )/m).filter((c) => c.startsWith('diff --git '))
   for (const chunk of chunks) {
-    const header = /^diff --git a\/(.+?) b\/(.+)$/m.exec(chunk)
+    // git's default `a/`·`b/` prefixes, or the `src://`·`dst://` ones Bitbucket Data Center
+    // runs `git diff` with (its KB, "Understanding diff view in Bitbucket Server").
+    const header = /^diff --git (?:a\/|src:\/\/)(.+?) (?:b\/|dst:\/\/)(.+)$/m.exec(chunk)
     if (!header) continue
     let [, oldPath, newPath] = header
     const renameFrom = /^rename from (.+)$/m.exec(chunk)?.[1]

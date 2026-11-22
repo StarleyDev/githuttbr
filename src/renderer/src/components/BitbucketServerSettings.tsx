@@ -20,10 +20,10 @@ const PROBLEM: Record<BitbucketServerUrlProblem, TranslationKey> = {
   cloud: 'settings.bbsInvalidCloud'
 }
 
-/** `host/context` — what a person recognises the server by. */
+/** `host/context` — what a person recognises the server by. A saved address that no longer parses (an import, a hand-edited settings file) is shown as it is. */
 function serverName(url: string): string {
-  const u = new URL(url)
-  return `${u.host}${u.pathname.replace(/\/+$/, '')}`
+  const base = normalizeBitbucketServerUrl(url)
+  return base ? base.replace(/^https:\/\//, '') : url
 }
 
 /**
@@ -75,9 +75,22 @@ export function BitbucketServerSettings({
       <p className="settings-hint">{t('settings.bbsIntro')}</p>
 
       {hosts.length === 0 && <p className="settings-hint ghes-empty">{t('settings.bbsEmpty')}</p>}
-      {hosts.map((h) => (
-        <BitbucketServerRow key={h.url} host={h} onChange={(patch) => update(h.url, patch)} onRemove={() => remove(h)} />
-      ))}
+      {hosts.map((h) =>
+        normalizeBitbucketServerUrl(h.url) ? (
+          <BitbucketServerRow key={h.url} host={h} onChange={(patch) => update(h.url, patch)} onRemove={() => remove(h)} />
+        ) : (
+          // Nothing is ever sent to an address that does not normalise; it can only be removed.
+          <div className="ghes-row" key={h.url}>
+            <div className="ghes-row-head">
+              <span className="ghes-host">{h.url}</span>
+              <span className="conn-status">{t('settings.bbsInvalid')}</span>
+              <button className="btn ghost small danger" type="button" onClick={() => remove(h)} title={t('settings.bbsRemove')}>
+                <Trash2 size={13} /> {t('settings.bbsRemove')}
+              </button>
+            </div>
+          </div>
+        )
+      )}
 
       <label>
         {t('settings.bbsUrl')}

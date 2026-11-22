@@ -718,6 +718,11 @@ export interface PrDetail {
   state: 'open' | 'closed'
   merged: boolean
   mergeable: boolean | null
+  /**
+   * Why the host refuses the merge although nothing conflicts — Bitbucket Data
+   * Center's merge-check vetoes, in the server's own words. Absent elsewhere.
+   */
+  mergeBlockers?: string[]
   url: string
   comments: PrComment[]
   reviews: PrReview[]

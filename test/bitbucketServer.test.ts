@@ -24,6 +24,7 @@ import { defaultProfile, defaultSettings, type Profile } from '../src/shared/typ
 import {
   bbsCanMerge,
   bbsCiStatus,
+  bbsMergeBlockers,
   bbsMergeRefusal,
   bbsStrategyFor,
   mapBbsActivities,
@@ -439,9 +440,16 @@ describe('mapping the documented shapes', () => {
       'the pull request has conflicts that must be resolved first; You may not merge after 6pm on a Friday. — Please try again on Monday.'
     )
     expect(bbsCanMerge({ conflicted: false, outcome: 'CLEAN', vetoes: [] })).toBe(true)
-    expect(bbsCanMerge({ conflicted: false, outcome: 'CLEAN', vetoes: [{ summaryMessage: 'Needs 2 approvals' }] })).toBe(false)
+    // A veto blocks the merge but is not a conflict: it travels as a blocker, in the server's words.
+    const checks = { canMerge: false, conflicted: false, outcome: 'CLEAN' as const, vetoes: [{ summaryMessage: 'Needs 2 approvals' }] }
+    expect(bbsCanMerge(checks)).toBe(true)
+    expect(bbsMergeBlockers(checks)).toEqual(['Needs 2 approvals'])
+    expect(bbsMergeRefusal(checks)).toBe('Needs 2 approvals')
+    expect(bbsCanMerge({ outcome: 'UNKNOWN' })).toBeNull()
     expect(bbsCanMerge(null)).toBeNull()
+    expect(bbsMergeBlockers(null)).toEqual([])
     expect(bbsMergeRefusal({ canMerge: true, vetoes: [] })).toBeNull()
+    expect(bbsMergeRefusal({ canMerge: false, conflicted: false, vetoes: [] })).toBe('the server does not allow this merge yet')
   })
 
   it('merge methods map to the strategies the repository enables', () => {
@@ -481,6 +489,39 @@ describe('mapping the documented shapes', () => {
       { filename: 'src/b.ts', status: 'renamed', additions: 0, deletions: 0, previousFilename: 'src/old.ts' }
     ])
   })
+
+  // Bitbucket Data Center runs `git diff --src-prefix=src:// --dst-prefix=dst://` (Atlassian KB,
+  // "Understanding diff view in Bitbucket Server"), so its raw diff may carry either prefix style.
+  it('the raw diff parses with src:// / dst:// prefixes as well as a/ / b/', async () => {
+    const { splitUnifiedDiff } = await import('../src/main/forgejo')
+    const srcDst = RAW_DIFF.replace(/a\//g, 'src://').replace(/b\//g, 'dst://')
+    expect(srcDst).toContain('diff --git src://src/a.ts dst://src/a.ts')
+    const added = [
+      'diff --git src://docs/new file.md dst://docs/new file.md',
+      'new file mode 100644',
+      'index 0000000..3333333',
+      '--- /dev/null',
+      '+++ dst://docs/new file.md',
+      '@@ -0,0 +1,2 @@',
+      '+hello',
+      '+world',
+      ''
+    ].join('\n')
+    for (const raw of [RAW_DIFF, srcDst]) {
+      const files = mergeBbsChanges(CHANGES.values as never, splitUnifiedDiff(raw))
+      expect(files[0]).toEqual({
+        filename: 'src/a.ts',
+        status: 'modified',
+        additions: 2,
+        deletions: 1,
+        patch: expect.stringContaining('@@ -1,3 +1,4 @@')
+      })
+    }
+    expect(splitUnifiedDiff(srcDst + added)).toEqual([
+      expect.objectContaining({ filename: 'src/a.ts', additions: 2, deletions: 1 }),
+      expect.objectContaining({ filename: 'docs/new file.md', status: 'added', additions: 2, deletions: 0 })
+    ])
+  })
 })
 
 // ─── Call sites, through the real IPC handlers ──────────────────────────────
@@ -494,6 +535,15 @@ interface Call {
 const calls: Call[] = []
 // Per-test overrides for the merge check.
 let mergeCheck: Record<string, unknown> = { canMerge: true, conflicted: false, outcome: 'CLEAN', vetoes: [] }
+// Who the token is (the X-AUSERNAME header), whether the server lets it search users, and PR 1's extras.
+let ausername = 'jdoe'
+let userSearch = true
+let pr1Over: Record<string, unknown> = {}
+// An email-style user name: its slug is not its name (`@` becomes `_`).
+const EMAIL_USERS = [
+  { ...user('jdoe@corp.com.au', 'Other Jane'), slug: 'jdoe_corp.com.au' },
+  { ...user('jdoe@corp.com', 'Jane Corp'), slug: 'jdoe_corp.com' }
+]
 
 const json = (data: unknown, headers: Record<string, string> = {}): Response =>
   new Response(JSON.stringify(data), { status: 200, headers: { 'content-type': 'application/json', ...headers } })
@@ -504,22 +554,30 @@ function fakeBitbucket(method: string, url: string): Response {
   const start = Number(u.searchParams.get('start') ?? '0')
   if (u.hostname === 'api.bitbucket.org') return json({ values: [] })
   if (path.endsWith('/rest/api/latest/application-properties')) {
-    return json({ version: '8.19.0', buildNumber: '8019000', buildDate: '1700000000000', displayName: 'Bitbucket' }, { 'X-AUSERNAME': 'jdoe' })
+    return json({ version: '8.19.0', buildNumber: '8019000', buildDate: '1700000000000', displayName: 'Bitbucket' }, { 'X-AUSERNAME': ausername })
   }
-  if (path.endsWith('/rest/api/latest/users/jdoe')) return json(user('jdoe', 'Jane Doe'))
+  if (path.endsWith('/rest/api/latest/users') && method === 'GET') {
+    if (!userSearch) return new Response(JSON.stringify({ errors: [{ message: 'forbidden' }] }), { status: 403 })
+    // `filter` matches name, display name or email *containing* it.
+    const f = (u.searchParams.get('filter') ?? '').toLowerCase()
+    const all = [user('jdoe', 'Jane Doe'), ...EMAIL_USERS]
+    return json({ size: 0, limit: 25, isLastPage: true, start: 0, values: all.filter((x) => String(x.name).toLowerCase().includes(f)) })
+  }
+  // Any slug lookup by *name* is the bug this replaced: the resource takes a slug.
+  if (/\/rest\/api\/latest\/users\/[^/]+$/.test(path)) return new Response('{}', { status: 404 })
   if (/\/repos\/app\/pull-requests$/.test(path) && method === 'GET') {
     // Two pages, joined by nextPageStart.
     if (start === 0) return json({ size: 1, limit: 50, isLastPage: false, nextPageStart: 1, start: 0, values: [pull(1)] })
     return json({ size: 1, limit: 50, isLastPage: true, start: 1, values: [pull(2)] })
   }
   if (/\/repos\/app\/pull-requests$/.test(path) && method === 'POST') return json(pull(9))
-  if (/\/pull-requests\/1$/.test(path)) return json(pull(1))
+  if (/\/pull-requests\/1$/.test(path)) return json(pull(1, pr1Over))
   if (/\/pull-requests\/1\/activities$/.test(path)) return json(ACTIVITIES)
   if (/\/pull-requests\/1\/merge$/.test(path)) return json(method === 'GET' ? mergeCheck : pull(1, { state: 'MERGED' }))
   if (/\/pull-requests\/1\/changes$/.test(path)) return json(CHANGES)
   if (/\/pull-requests\/1\.diff$/.test(path)) return new Response(RAW_DIFF, { status: 200, headers: { 'content-type': 'text/plain' } })
   if (/\/pull-requests\/1\/comments$/.test(path)) return json({ id: 99, version: 0, text: 'ok' })
-  if (/\/pull-requests\/1\/participants\/jdoe$/.test(path)) return json({ user: user('jdoe', 'Jane Doe'), role: 'REVIEWER', approved: true, status: 'APPROVED' })
+  if (/\/pull-requests\/1\/participants\/[^/]+$/.test(path)) return json({ user: user('jdoe', 'Jane Doe'), role: 'REVIEWER', approved: true, status: 'APPROVED' })
   if (/\/settings\/pull-requests$/.test(path)) {
     return json({
       mergeConfig: {
@@ -588,6 +646,9 @@ describe('call sites, through the real IPC handlers', () => {
   afterEach(() => {
     calls.length = 0
     mergeCheck = { canMerge: true, conflicted: false, outcome: 'CLEAN', vetoes: [] }
+    ausername = 'jdoe'
+    userSearch = true
+    pr1Over = {}
   })
   afterAll(() => {
     vi.unstubAllGlobals()
@@ -664,8 +725,73 @@ describe('call sites, through the real IPC handlers', () => {
     expect(put).toMatchObject({ url: `${REPO_API}/pull-requests/1/participants/jdoe`, body: { status: 'APPROVED' } })
     calls.length = 0
     await call('hosting:prReview', REMOTE, tokens, 1, 'REQUEST_CHANGES', 'Please add a test.')
-    expect(calls[0]).toMatchObject({ method: 'POST', url: `${REPO_API}/pull-requests/1/comments`, body: { text: 'Please add a test.' } })
-    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ status: 'NEEDS_WORK' })
+    const writes = calls.filter((c) => c.method !== 'GET')
+    // The verdict before the comment: a failed status must not leave a comment a retry would repeat.
+    expect(writes.map((c) => c.method)).toEqual(['PUT', 'POST'])
+    expect(writes[0].body).toEqual({ status: 'NEEDS_WORK' })
+    expect(writes[1]).toMatchObject({ url: `${REPO_API}/pull-requests/1/comments`, body: { text: 'Please add a test.' } })
+  })
+
+  it('a failed verdict posts no comment', async () => {
+    ausername = 'ghost' // the search finds nobody, the PR names nobody → PUT participants/ghost
+    const realFetch = globalThis.fetch
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        if ((init?.method ?? 'GET') === 'PUT') {
+          calls.push({ method: 'PUT', url: String(input), auth: null })
+          return new Response(JSON.stringify({ errors: [{ message: 'no such participant' }] }), { status: 404 })
+        }
+        return realFetch(input, init)
+      })
+    )
+    try {
+      await expect(call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', 'LGTM')).rejects.toThrow(/no such participant/)
+    } finally {
+      vi.stubGlobal('fetch', realFetch)
+    }
+    expect(calls.some((c) => c.method === 'POST')).toBe(false)
+  })
+
+  it('an email-style user is reviewed under its slug, found by an exact name match', async () => {
+    ausername = 'jdoe@corp.com'
+    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    expect(calls.find((c) => c.url.includes('/users?'))?.url).toBe(`${API}/users?filter=jdoe%40corp.com&start=0&limit=25`)
+    // Not `jdoe@corp.com` (a 404), and not the `jdoe@corp.com.au` the filter also matched.
+    expect(calls.find((c) => c.method === 'PUT')?.url).toBe(`${REPO_API}/pull-requests/1/participants/jdoe_corp.com`)
+  })
+
+  it('with no user search allowed, the slug comes from the pull request’s participants', async () => {
+    ausername = 'jdoe@corp.com'
+    userSearch = false
+    pr1Over = { participants: [{ user: EMAIL_USERS[1], role: 'PARTICIPANT', approved: false, status: 'UNAPPROVED' }] }
+    await call('hosting:prReview', REMOTE, tokens, 1, 'REQUEST_CHANGES', '')
+    expect(calls.find((c) => c.method === 'PUT')).toMatchObject({
+      url: `${REPO_API}/pull-requests/1/participants/jdoe_corp.com`,
+      body: { status: 'NEEDS_WORK' }
+    })
+  })
+
+  it('Settings links an email-style account to its slug’s page', async () => {
+    ausername = 'jdoe@corp.com'
+    const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
+    expect(who).toMatchObject({ login: 'jdoe@corp.com', profileUrl: `${BBS}/users/jdoe_corp.com` })
+  })
+
+  it('a merge-check veto is not a conflict: the detail carries the server’s words', async () => {
+    mergeCheck = {
+      canMerge: false,
+      conflicted: false,
+      outcome: 'CLEAN',
+      vetoes: [{ summaryMessage: 'Requires 2 approvals', detailedMessage: 'You still need 1 more approval.' }]
+    }
+    const d = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeBlockers?: string[] }
+    expect(d.mergeable).toBe(true)
+    expect(d.mergeBlockers).toEqual(['Requires 2 approvals — You still need 1 more approval.'])
+    mergeCheck = { canMerge: false, conflicted: true, outcome: 'CONFLICTED', vetoes: [] }
+    const c = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeBlockers?: string[] }
+    expect(c.mergeable).toBe(false)
+    expect(c.mergeBlockers).toBeUndefined()
   })
 
   it('merges with the current version and an enabled strategy', async () => {
@@ -695,6 +821,15 @@ describe('call sites, through the real IPC handlers', () => {
       `${BBS}/rest/build-status/latest/commits/stats`,
       `${BBS}/rest/build-status/latest/commits/sha1?start=0&limit=100`
     ])
+  })
+
+  it('pages the build-status stats in batches of 40, so every head gets its CI', async () => {
+    const shas = Array.from({ length: 95 }, (_, i) => (i === 90 ? 'sha1' : `x${i}`))
+    const res = (await call('hosting:ciStatuses', REMOTE, shas, CLOUD_TOKEN)) as Record<string, { state: string }>
+    const stats = calls.filter((c) => c.url === `${BBS}/rest/build-status/latest/commits/stats`)
+    expect(stats.map((c) => (c.body as string[]).length)).toEqual([40, 40, 15])
+    // sha1 sits in the third batch — beyond the old 40-commit cut-off.
+    expect(res.sha1.state).toBe('failure')
   })
 
   it('reads the checks on a pull request’s head', async () => {
@@ -778,9 +913,32 @@ describe('call sites, through the real IPC handlers', () => {
     expect(Object.values(env)).toContain('credential.https://bitbucket.example.corp.helper')
   })
 
+  it('Clone → URL (no provider sent) uses a configured server’s credential, and nothing for an unknown host', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    const env = (await cloneCredentialEnv(REMOTE, undefined, undefined)) ?? {}
+    expect(JSON.stringify(env)).toContain(BBS_TOKEN)
+    expect(Object.values(env)).toContain('jdoe')
+    expect(await cloneCredentialEnv('https://bitbucket.example.corp/scm/proj/app.git', undefined, undefined)).toBeNull()
+    expect(await cloneCredentialEnv('https://evil.example/bitbucket/scm/proj/app.git', undefined, CLOUD_TOKEN)).toBeNull()
+    expect(await cloneCredentialEnv('https://github.com/o/r.git', undefined, CLOUD_TOKEN)).toBeNull()
+    // remoteBranches (the clone dialog's branch list) goes through the same function.
+    const second = (await cloneCredentialEnv('https://bbs.other.example:8443/scm/team/svc.git', undefined, undefined)) ?? {}
+    expect(JSON.stringify(second)).toContain(BBS_B_TOKEN)
+    expect(JSON.stringify(second)).not.toContain(BBS_TOKEN)
+  })
+
   it('push and fetch send the token as password, with the user name or x-token-auth', async () => {
     const { basicAuthFor } = await import('../src/main/git')
     expect(basicAuthFor('bitbucket', BBS_TOKEN, REMOTE, 'jdoe')).toEqual({ username: 'jdoe', password: BBS_TOKEN })
+    // No name in Settings: the one in Bitbucket's own clone URL, before x-token-auth.
+    expect(basicAuthFor('bitbucket', BBS_B_TOKEN, 'https://jsmith@bbs.other.example:8443/scm/team/svc.git')).toEqual({
+      username: 'jsmith',
+      password: BBS_B_TOKEN
+    })
+    expect(basicAuthFor('bitbucket', BBS_B_TOKEN, 'https://jsmith@bbs.other.example:8443/scm/team/svc.git', 'ops')).toEqual({
+      username: 'ops',
+      password: BBS_B_TOKEN
+    })
     expect(basicAuthFor('bitbucket', BBS_B_TOKEN, 'https://bbs.other.example:8443/scm/team/svc.git')).toEqual({
       username: 'x-token-auth',
       password: BBS_B_TOKEN
