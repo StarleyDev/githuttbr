@@ -11,11 +11,15 @@ import { gitService } from '../src/main/git'
 const dirs: string[] = []
 afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
 
+// Every git call carries an identity. Without one — a machine with no global git
+// config — `merge` aborts before it conflicts, and the conflict tests prove nothing.
+const IDENTITY = ['-c', 'user.name=D', '-c', 'user.email=d@example.invalid']
+
 function repo(): { dir: string; git: (...a: string[]) => string } {
   const dir = mkdtempSync(join(tmpdir(), 'gitcito-discard-undo-'))
   dirs.push(dir)
   const git = (...a: string[]): string =>
-    execFileSync('git', ['-C', dir, '-c', 'user.name=D', '-c', 'user.email=d@example.invalid', ...a], {
+    execFileSync('git', ['-C', dir, ...IDENTITY, ...a], {
       encoding: 'utf8'
     })
   git('init', '-q', '-b', 'main')
@@ -74,7 +78,7 @@ describe('discard all', () => {
     writeFileSync(join(dir, 'a.txt'), 'main\n')
     git('commit', '-qam', 'main')
     try {
-      execFileSync('git', ['-C', dir, 'merge', 'side'], { stdio: 'ignore' })
+      execFileSync('git', ['-C', dir, ...IDENTITY, 'merge', 'side'], { stdio: 'ignore' })
     } catch {
       /* the conflict is the point */
     }
@@ -176,7 +180,7 @@ describe('discard undo', () => {
     writeFileSync(join(dir, 'a.txt'), 'main\n')
     git('commit', '-qam', 'main')
     try {
-      execFileSync('git', ['-C', dir, 'merge', 'side'], { stdio: 'ignore' })
+      execFileSync('git', ['-C', dir, ...IDENTITY, 'merge', 'side'], { stdio: 'ignore' })
     } catch {
       /* the conflict is the point */
     }
