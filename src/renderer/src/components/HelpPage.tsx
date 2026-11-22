@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ExternalLink, LifeBuoy, Search, X } from 'lucide-react'
 import { renderMarkdown } from '../preview/markdown'
+import { usePendingHighlight } from '../preview/pendingHighlight'
 import {
   HELP_PAGES,
   helpExcerpt,
@@ -52,6 +53,7 @@ export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.E
   const page = useMemo(() => pages.find((p) => p.id === current) ?? pages[0], [current, pages])
   // allowFileMedia: bundled screenshots resolve to file:// URLs in the packaged app.
   const html = useMemo(() => (page ? renderMarkdown(resolveMedia(page.body), { allowFileMedia: true }) : ''), [page])
+  const htmlRef = usePendingHighlight(html)
 
   const go = (id: string): void => {
     if (!pages.some((p) => p.id === id)) return
@@ -174,7 +176,7 @@ export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.E
               <LifeBuoy size={14} className="help-head-icon" />
               <span className="help-breadcrumb">{page.category}</span>
             </div>
-            <article className="help-article markdown-body" dangerouslySetInnerHTML={{ __html: html }} />
+            <article ref={htmlRef} className="help-article markdown-body" dangerouslySetInnerHTML={{ __html: html }} />
           </>
         ) : (
           <div className="help-empty">{t('help.empty')}</div>

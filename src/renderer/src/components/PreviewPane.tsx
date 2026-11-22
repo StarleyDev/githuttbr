@@ -3,6 +3,7 @@ import { gitApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
 import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { renderMarkdown, sanitizeHtml } from '../preview/markdown'
+import { usePendingHighlight } from '../preview/pendingHighlight'
 import { isBinaryKind, type PreviewKind } from '../preview/registry'
 import { parsePlist, plistChildCount, plistScalar, type PlistValue } from '../lib/plist'
 import { pbxprojOutline, type PbxTreeNode } from '../lib/pbxprojOutline'
@@ -161,6 +162,7 @@ export function PreviewPane({ repoPath, file, gitRef, kind, prefetchedSource }: 
   }, [repoPath, file, gitRef, kind, refreshKey, force, prefetchedSource])
 
   const mdHtml = useMemo(() => (text !== null ? renderMarkdown(text) : null), [text])
+  const mdRef = usePendingHighlight(mdHtml)
 
   // Render the .pptx visually once its bytes are loaded and the container is mounted.
   useEffect(() => {
@@ -217,7 +219,7 @@ export function PreviewPane({ repoPath, file, gitRef, kind, prefetchedSource }: 
   }
 
   if (kind === 'markdown' && mdHtml !== null) {
-    return <div className="md-preview" dangerouslySetInnerHTML={{ __html: mdHtml }} />
+    return <div ref={mdRef} className="md-preview" dangerouslySetInnerHTML={{ __html: mdHtml }} />
   }
   if (kind === 'plist' && text !== null) {
     return <PlistPreview text={text} />

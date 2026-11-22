@@ -283,6 +283,58 @@ describe('each GitLab gets only its own token', () => {
     expectOnly(A, A_TOKEN)
   })
 
+  // The onboarding wizard keeps its profile to itself until it finishes, so a
+  // server added there is unknown to main when its row checks the token.
+  describe('checking a token against a server no profile has saved yet', () => {
+    const NEW = 'https://gitlab.new.example/sub'
+    const TYPED = 'typed-token'
+
+    it('asks that server, with exactly the token the call carries', async () => {
+      const who = (await call('hosting:whoAmI', 'gitlab', TYPED, `${NEW}/`, false, undefined, NEW)) as { login: string }
+      expect(who.login).toBe('me')
+      expectOnly(NEW, TYPED)
+    })
+
+    it('a stale issuer does not matter: the token was typed for this row', async () => {
+      await call('hosting:whoAmI', 'gitlab', TYPED, NEW, false, undefined, undefined)
+      expectOnly(NEW, TYPED)
+    })
+
+    it('without a token of its own it is refused, and nothing is sent — not even with a link', async () => {
+      await expect(call('hosting:whoAmI', 'gitlab', '', NEW, false, { source: 'git', login: 'me' })).rejects.toThrow(
+        /not saved/
+      )
+      await expect(call('hosting:whoAmI', 'gitlab', '', NEW, true)).rejects.toThrow(/not saved/)
+      expect(calls).toHaveLength(0)
+    })
+
+    it('an address Settings would refuse is refused here too', async () => {
+      for (const bad of ['http://gitlab.new.example', 'https://me:pw@gitlab.new.example', 'https://gitlab.new.example/?a=1']) {
+        await expect(call('hosting:whoAmI', 'gitlab', TYPED, bad, false)).rejects.toThrow(/not saved/)
+      }
+      expect(calls).toHaveLength(0)
+    })
+
+    it('only the explicit check is opened up: listing projects there is still refused', async () => {
+      await expect(call('hosting:listRepos', 'gitlab', TYPED, NEW)).rejects.toThrow(/not saved/)
+      expect(calls).toHaveLength(0)
+    })
+
+    it('no saved token ever reaches the new server', async () => {
+      await call('hosting:whoAmI', 'gitlab', TYPED, NEW, false, { source: 'git', login: 'me' }, NEW)
+      await call('hosting:whoAmI', 'gitlab', '', NEW, true).catch(() => undefined)
+      for (const c of calls) expect(ALL_TOKENS).not.toContain(c.token)
+    })
+
+    it('a saved server and gitlab.com still resolve the normal way', async () => {
+      await call('hosting:whoAmI', 'gitlab', A_TOKEN, A, false, undefined, A)
+      expectOnly(A, A_TOKEN)
+      calls.length = 0
+      await call('hosting:whoAmI', 'gitlab', COM_TOKEN, GITLAB_COM, false, undefined, GITLAB_COM)
+      expectOnly(GITLAB_COM, COM_TOKEN)
+    })
+  })
+
   // Fetch, push and clone resolve through the same profile rule as the API.
   it('the profile resolves each server its own token, and nothing elsewhere', async () => {
     const { activeProfileAuth } = await import('../src/main/settings')

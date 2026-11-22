@@ -1,6 +1,7 @@
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { canLoadLanguage, highlightAuto, highlightCode, isLanguageReady, loadLanguage } from '../lib/highlight'
+import { PENDING_ATTR, settleFailedIn, upgradePendingIn } from './pendingHighlight'
 
 // GitHub-ish defaults: hard line breaks off, GFM on (tables, autolinks, etc).
 marked.setOptions({ gfm: true, breaks: false })
@@ -50,19 +51,11 @@ export function renderMarkdown(src: string, opts?: { allowFileMedia?: boolean })
   return tpl.innerHTML
 }
 
-const PENDING_ATTR = 'data-hl-pending'
-
-/** Highlight the blocks renderMarkdown left plain for `lang`, wherever they
- *  were mounted. They sit inside dangerouslySetInnerHTML, which React never
- *  diffs, so editing them in place is safe; a later re-render produces fresh
- *  markup that the now-registered language highlights directly. A block that
- *  is not in the document yet simply stays plain until its next render. */
+/** Upgrade the blocks renderMarkdown left plain for `lang`, wherever they are
+ *  mounted right now. They sit inside dangerouslySetInnerHTML, which React never
+ *  diffs, so editing them in place is safe. Markup mounted later is the
+ *  `usePendingHighlight` ref's job. */
 function upgradePending(lang: string, ok: boolean): void {
-  document.querySelectorAll(`code[${PENDING_ATTR}]`).forEach((el) => {
-    if (el.getAttribute(PENDING_ATTR) !== lang) return
-    const text = el.textContent || ''
-    el.innerHTML = ok ? highlightCode(text, lang) : highlightAuto(text)
-    el.removeAttribute(PENDING_ATTR)
-    el.classList.add('hljs')
-  })
+  if (ok) upgradePendingIn(document)
+  else settleFailedIn(document, lang)
 }

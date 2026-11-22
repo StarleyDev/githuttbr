@@ -8,8 +8,18 @@ import {
   highlightCode,
   isLanguageReady,
   languageModuleFor,
-  loadLanguage
+  languageVersion,
+  loadLanguage,
+  onLanguageRegistered
 } from '../src/renderer/src/lib/highlight'
+import {
+  PENDING_ATTR,
+  settleFailedIn,
+  upgradePendingIn,
+  watchPending,
+  type BlockRoot,
+  type PendingBlock
+} from '../src/renderer/src/preview/pendingHighlight'
 
 // Every extension guessLanguage knows. Its callers highlight synchronously, so
 // each target has to be in the eager set — a lazy one would render plain.
@@ -92,5 +102,87 @@ describe('highlight — rendering', () => {
     expect(canLoadLanguage('klingon')).toBe(false)
     await expect(loadLanguage('klingon')).resolves.toBe(false)
     await expect(loadLanguage('')).resolves.toBe(false)
+  })
+})
+
+// ─── Fences rendered before, or mounted after, their language loads ──────────
+
+/** Just enough of an element for preview/pendingHighlight. */
+class FakeBlock implements PendingBlock {
+  innerHTML: string
+  attrs = new Map<string, string>()
+  classes = new Set<string>()
+  classList = { add: (c: string): void => void this.classes.add(c) }
+  constructor(
+    public textContent: string,
+    lang: string
+  ) {
+    this.innerHTML = textContent
+    this.attrs.set(PENDING_ATTR, lang)
+  }
+  getAttribute(name: string): string | null {
+    return this.attrs.get(name) ?? null
+  }
+  removeAttribute(name: string): void {
+    this.attrs.delete(name)
+  }
+}
+
+const rootOf = (...blocks: FakeBlock[]): BlockRoot => ({
+  querySelectorAll: () => blocks.filter((b) => b.attrs.has(PENDING_ATTR))
+})
+
+describe('highlight — pending fences', () => {
+  it('counts registrations and tells listeners, until they unsubscribe', async () => {
+    const before = languageVersion()
+    let heard = 0
+    const off = onLanguageRegistered(() => heard++)
+    expect(await loadLanguage('ps1')).toBe(true)
+    expect(languageVersion()).toBe(before + 1)
+    expect(heard).toBe(1)
+    // Already registered: no new registration, no notification.
+    await loadLanguage('powershell')
+    expect(heard).toBe(1)
+    off()
+    await loadLanguage('erlang')
+    expect(heard).toBe(1)
+  })
+
+  it('a language that loaded before the block mounted is applied on mount', async () => {
+    await loadLanguage('lisp')
+    const block = new FakeBlock('(defun f () 1)', 'lisp')
+    watchPending(rootOf(block))
+    expect(block.attrs.has(PENDING_ATTR)).toBe(false)
+    expect(block.classes.has('hljs')).toBe(true)
+    expect(block.innerHTML).toContain('hljs-')
+  })
+
+  it('a block mounted before its language loads is upgraded when it lands', async () => {
+    expect(isLanguageReady('elixir')).toBe(false)
+    const block = new FakeBlock('defmodule A do end', 'exs')
+    watchPending(rootOf(block))
+    expect(block.attrs.has(PENDING_ATTR)).toBe(true)
+    await loadLanguage('exs') // the same load the watcher started
+    expect(block.attrs.has(PENDING_ATTR)).toBe(false)
+    expect(block.innerHTML).toContain('hljs-keyword')
+  })
+
+  it('stopping the watch leaves the block alone', async () => {
+    const block = new FakeBlock('(defn f [] 1)', 'clojure')
+    const stop = watchPending(rootOf(block))
+    stop()
+    await loadLanguage('clojure')
+    expect(block.attrs.has(PENDING_ATTR)).toBe(true)
+  })
+
+  it('a ready language settles at once, an unknown one falls back to escaped auto-detection', () => {
+    const ready = new FakeBlock('const a = 1', 'javascript')
+    const unknown = new FakeBlock('<b>', 'klingon')
+    const missing = upgradePendingIn(rootOf(ready, unknown))
+    expect(ready.innerHTML).toContain('hljs-keyword')
+    expect([...missing]).toEqual(['klingon'])
+    settleFailedIn(rootOf(ready, unknown), 'klingon')
+    expect(unknown.attrs.has(PENDING_ATTR)).toBe(false)
+    expect(unknown.innerHTML).not.toContain('<b>')
   })
 })

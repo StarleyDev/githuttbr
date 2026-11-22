@@ -24,7 +24,7 @@ import { PreviewPane } from './PreviewPane'
 import { GutterMark, ChangeGutterPopup } from './ChangeGutter'
 import { FileMinimap } from './FileMinimap'
 import { computeGutterChanges, gutterMarksByLine, type GutterChange } from '../lib/diff'
-import { renderMarkdown } from '../preview/markdown'
+import { MarkdownHtml } from './MarkdownHtml'
 import { previewKind, isBinaryKind } from '../preview/registry'
 import { GRAPH_COLORS } from '../graph/layout'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
@@ -1294,10 +1294,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <X size={14} />
               </button>
             </div>
-            <div
-              className="fv-explain-body md-preview"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(explain) }}
-            />
+            <MarkdownHtml className="fv-explain-body md-preview" markdown={explain} />
           </div>
         )}
       </div>

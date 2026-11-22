@@ -3,7 +3,7 @@ import { Loader2, Sparkles, AlertTriangle, Lightbulb } from 'lucide-react'
 import { gitApi, aiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { renderMarkdown } from '../preview/markdown'
+import { MarkdownHtml } from './MarkdownHtml'
 import { useT } from '../i18n'
 import type { PRReviewFinding } from '../../../shared/types'
 
@@ -114,10 +114,7 @@ export function AIPRReview({
               {riskFindings.length > 0 ? (
                 <FindingList findings={riskFindings} />
               ) : (
-                <div
-                  className="ai-pr-text md-preview"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(risks) }}
-                />
+                <MarkdownHtml className="ai-pr-text md-preview" markdown={risks} />
               )}
             </section>
           )}
@@ -129,10 +126,7 @@ export function AIPRReview({
               {suggestionFindings.length > 0 ? (
                 <FindingList findings={suggestionFindings} />
               ) : (
-                <div
-                  className="ai-pr-text md-preview"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(suggestions) }}
-                />
+                <MarkdownHtml className="ai-pr-text md-preview" markdown={suggestions} />
               )}
             </section>
           )}
