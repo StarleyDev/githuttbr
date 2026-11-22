@@ -81,6 +81,7 @@ import type {
   IssueInfo,
   IssueDetail,
   LinkedPr,
+  LinkedPrsStatus,
   MilestoneInfo,
   ProjectFieldGroup,
   PrReviewEvent,
@@ -1828,6 +1829,96 @@ async function fetchProjectFields(
   }
 }
 
+/**
+ * The pull requests that close an issue. The timeline's `cross-referenced` events
+ * this replaces listed every PR that merely *mentioned* the issue — "see #12",
+ * a revert, a fork's PR — had no merged state, stopped at one page, and keyed by
+ * number so two repos' #7 collided. `closedByPullRequestsReferences` is GitHub's
+ * own "Development" list: closing keywords plus manual links, nothing else.
+ * `includeClosedPrs` is needed to keep merged ones, which are what closed a closed issue.
+ */
+export const GH_CLOSING_PRS_QUERY = `query($owner:String!,$repo:String!,$number:Int!){
+  repository(owner:$owner,name:$repo){
+    issue(number:$number){
+      closedByPullRequestsReferences(first:50,includeClosedPrs:true){
+        nodes{ number title url state merged isDraft repository{ nameWithOwner } }
+      }
+    }
+  }
+}`
+
+const PR_STATE_ORDER: Record<LinkedPr['state'], number> = { open: 0, merged: 1, closed: 2 }
+
+/**
+ * Parse a `GH_CLOSING_PRS_QUERY` response. Pure, and deliberately forgiving: a
+ * missing scope, a rate limit or a schema surprise must cost the section, never
+ * the issue page, so anything unexpected is `unavailable` rather than a throw.
+ */
+export function parseClosingPrs(
+  json: unknown,
+  owner: string,
+  repo: string
+): { prs: LinkedPr[]; status: Exclude<LinkedPrsStatus, 'unsupported'> } {
+  const unavailable = { prs: [], status: 'unavailable' as const }
+  if (!json || typeof json !== 'object') return unavailable
+  const body = json as {
+    data?: { repository?: { issue?: { closedByPullRequestsReferences?: { nodes?: unknown } | null } | null } | null } | null
+  }
+  // GraphQL can answer 200 with `errors` and partial data — trust the connection if it
+  // came back, otherwise the errors (INSUFFICIENT_SCOPES, NOT_FOUND, …) explain why not.
+  const conn = body.data?.repository?.issue?.closedByPullRequestsReferences
+  if (!conn || !Array.isArray(conn.nodes)) return unavailable
+  const here = `${owner}/${repo}`.toLowerCase()
+  const seen = new Set<string>()
+  const prs: LinkedPr[] = []
+  for (const raw of conn.nodes as unknown[]) {
+    if (!raw || typeof raw !== 'object') continue
+    const n = raw as {
+      number?: unknown
+      title?: unknown
+      url?: unknown
+      state?: unknown
+      merged?: unknown
+      isDraft?: unknown
+      repository?: { nameWithOwner?: unknown } | null
+    }
+    if (typeof n.number !== 'number' || typeof n.url !== 'string' || seen.has(n.url)) continue
+    seen.add(n.url)
+    const prRepo = typeof n.repository?.nameWithOwner === 'string' ? n.repository.nameWithOwner : here
+    prs.push({
+      number: n.number,
+      title: typeof n.title === 'string' ? n.title : '',
+      url: n.url,
+      state: n.merged === true || n.state === 'MERGED' ? 'merged' : n.state === 'OPEN' ? 'open' : 'closed',
+      draft: n.isDraft === true,
+      repo: prRepo,
+      otherRepo: prRepo.toLowerCase() !== here
+    })
+  }
+  // Open first: that is the work still in flight. Array.sort is stable, so GitHub's order holds within a state.
+  prs.sort((a, b) => PR_STATE_ORDER[a.state] - PR_STATE_ORDER[b.state])
+  return { prs, status: 'ok' }
+}
+
+async function fetchClosingPrs(
+  owner: string,
+  repo: string,
+  number: number,
+  token: string
+): Promise<{ prs: LinkedPr[]; status: Exclude<LinkedPrsStatus, 'unsupported'> }> {
+  try {
+    const res = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: GH_CLOSING_PRS_QUERY, variables: { owner, repo, number } })
+    })
+    if (!res.ok) return { prs: [], status: 'unavailable' }
+    return parseClosingPrs(await res.json(), owner, repo)
+  } catch {
+    return { prs: [], status: 'unavailable' }
+  }
+}
+
 async function issueDetail(
   remoteUrl: string,
   tokens: { github?: string },
@@ -1839,7 +1930,7 @@ async function issueDetail(
   }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
-  const [issue, comments, timeline, projectFields] = await Promise.all([
+  const [issue, comments, closing, projectFields] = await Promise.all([
     ghJson<{
       number: number
       title: string
@@ -1856,22 +1947,9 @@ async function issueDetail(
       `${api}/issues/${number}/comments?per_page=100`,
       token
     ),
-    ghJson<
-      Array<{
-        event: string
-        source?: { issue?: { number: number; title: string; html_url: string; state: string; pull_request?: unknown } }
-      }>
-    >(`${api}/issues/${number}/timeline?per_page=100`, token).catch(() => []),
+    fetchClosingPrs(owner, repo, number, token),
     fetchProjectFields(owner, repo, number, token)
   ])
-
-  const linkedMap = new Map<number, LinkedPr>()
-  for (const ev of timeline) {
-    const si = ev.event === 'cross-referenced' ? ev.source?.issue : undefined
-    if (si?.pull_request) {
-      linkedMap.set(si.number, { number: si.number, title: si.title, url: si.html_url, state: si.state })
-    }
-  }
 
   return {
     number: issue.number,
@@ -1885,7 +1963,8 @@ async function issueDetail(
     milestone: issue.milestone?.title ?? null,
     createdAt: issue.created_at,
     comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
-    linkedPrs: [...linkedMap.values()],
+    linkedPrs: closing.prs,
+    linkedPrsStatus: closing.status,
     projectFields
   }
 }

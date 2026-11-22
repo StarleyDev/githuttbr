@@ -12,8 +12,8 @@ import {
   MessageSquare,
   ClipboardList
 } from 'lucide-react'
-import { useT, interp } from '../i18n'
-import type { IssueDetail, PageContent } from '../../../shared/types'
+import { useT, interp, type TranslationKey } from '../i18n'
+import type { IssueDetail, LinkedPr, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -21,6 +21,12 @@ import { autolink, remoteWebUrl } from '../lib/autolink'
 import { useRepoStore } from '../stores/repo'
 
 type IssuePage = Extract<PageContent, { type: 'issue' }>
+
+const PR_STATE_KEY: Record<LinkedPr['state'], TranslationKey> = {
+  open: 'issue.linkedPrOpen',
+  merged: 'issue.linkedPrMerged',
+  closed: 'issue.linkedPrClosed'
+}
 
 export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Element {
   const { repoPath, remoteUrl, issue } = page
@@ -221,34 +227,43 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
             })()}
           </div>
         </div>
-        {/* TODO: Fix this — Linked PRs (from timeline cross-references) are unreliable;
-            hidden until reworked (likely needs GraphQL closingIssuesReferences). Do not delete.
-        <div className="issue-field">
-          <div className="issue-field-label">
-            <GitPullRequest size={12} /> Linked PRs
+        {/* Hidden on hosts with no closing-PR lookup (Forgejo/Gitea): "none" there would be a lie. */}
+        {detail && detail.linkedPrsStatus !== 'unsupported' && (
+          <div className="issue-field">
+            <div className="issue-field-label" title={t('issue.linkedPrsHint')}>
+              <GitPullRequest size={12} /> {t('issue.linkedPrs')}
+            </div>
+            <div className="issue-field-val">
+              {detail.linkedPrsStatus === 'unavailable' ? (
+                <span className="issue-none">{t('issue.linkedPrsUnavailable')}</span>
+              ) : detail.linkedPrs.length ? (
+                detail.linkedPrs.map((pr) => (
+                  <div key={pr.url} className="issue-linked-pr-row">
+                    <a
+                      href="#"
+                      className="issue-linked-pr"
+                      title={pr.otherRepo ? `${pr.repo}#${pr.number} ${pr.title}` : pr.title}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        // Same repo: the in-app PR page, like the sidebar. Another repo has no
+                        // tab to open here, so it goes to the browser.
+                        if (pr.otherRepo) void window.api.openExternal(pr.url)
+                        else openPageTab({ type: 'pr', repoPath, remoteUrl, number: pr.number, title: pr.title })
+                      }}
+                    >
+                      {pr.otherRepo ? `${pr.repo}#${pr.number}` : `#${pr.number}`} {pr.title}
+                    </a>
+                    <span className={`issue-pr-state pr-${pr.draft && pr.state === 'open' ? 'draft' : pr.state}`}>
+                      {t(pr.draft && pr.state === 'open' ? 'issue.linkedPrDraft' : PR_STATE_KEY[pr.state])}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <span className="issue-none">{t('common.none')}</span>
+              )}
+            </div>
           </div>
-          <div className="issue-field-val">
-            {detail?.linkedPrs.length ? (
-              detail.linkedPrs.map((pr) => (
-                <a
-                  key={pr.number}
-                  href="#"
-                  className="issue-linked-pr"
-                  title={pr.title}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    void window.api.openExternal(pr.url)
-                  }}
-                >
-                  #{pr.number} {pr.title}
-                </a>
-              ))
-            ) : (
-              <span className="issue-none">{t('common.none')}</span>
-            )}
-          </div>
-        </div>
-        */}
+        )}
         {detail?.projectFields.map((g) => (
           <div key={g.project} className="issue-field">
             <div className="issue-field-label">

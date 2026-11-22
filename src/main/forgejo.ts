@@ -595,8 +595,10 @@ export async function forgejoIssueDetail(
     milestone: i.milestone?.title ?? null,
     createdAt: i.created_at ?? '',
     comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body ?? '', createdAt: c.created_at ?? '' })),
-    // GitHub-only: the timeline's cross-references and Projects v2 fields.
+    // GitHub-only: closing pull requests and Projects v2 fields. Forgejo's API has no
+    // issue → closing-PR lookup, so the page hides the section rather than claim "none".
     linkedPrs: [],
+    linkedPrsStatus: 'unsupported',
     projectFields: []
   }
 }

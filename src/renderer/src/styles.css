@@ -13298,6 +13298,13 @@ mark.find-hit.active {
 .issue-labels { display: flex; flex-wrap: wrap; gap: 4px; }
 .issue-label { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--bg-3); color: var(--text-1); }
 .issue-linked-pr { display: block; font-size: 12px; color: var(--accent); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.issue-linked-pr-row { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 3px; }
+.issue-linked-pr-row .issue-linked-pr { flex: 1; min-width: 0; margin-bottom: 0; }
+.issue-pr-state { flex: 0 0 auto; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; color: #fff; }
+.issue-pr-state.pr-open { background: var(--ok, #2ea043); }
+.issue-pr-state.pr-merged { background: #8957e5; }
+.issue-pr-state.pr-closed { background: var(--danger, #f85149); }
+.issue-pr-state.pr-draft { background: var(--bg-3); color: var(--text-2); }
 .issue-side-note { font-size: 10.5px; color: var(--text-3); line-height: 1.4; margin: 4px 0 0; }
 .issue-side-note code { font-size: 10px; color: var(--text-2); }
 .issue-project-fields { display: flex; flex-direction: column; gap: 4px; }
