@@ -16772,6 +16772,18 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 }
 
 /* ── Licenses page ──────────────────────────────────────────────────────── */
+/* Suspense fallback for a page tab whose module loads on demand (App.tsx). */
+.page-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: 13px;
+}
+
 .licenses-page {
   flex: 1;
   min-height: 0;
