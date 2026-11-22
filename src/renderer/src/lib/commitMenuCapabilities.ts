@@ -97,7 +97,7 @@ export function splitCommitMessage(message: string): { summary: string; descript
   }
 }
 
-/** GitHub commit URL for a sha, or null when no github.com remote exists. */
-export function commitGitHubUrl(remotes: RemoteInfo[], sha: string): string | null {
-  return githubCommitUrl(remotes, sha)
+/** GitHub commit URL for a sha, or null when no GitHub remote (github.com or a configured GHES) exists. */
+export function commitGitHubUrl(remotes: RemoteInfo[], sha: string, enterprise: readonly string[] = []): string | null {
+  return githubCommitUrl(remotes, sha, enterprise)
 }

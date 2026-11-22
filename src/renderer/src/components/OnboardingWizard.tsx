@@ -11,6 +11,7 @@ import {
   defaultProfile,
   type AIConfig,
   type AppSettings,
+  type GithubEnterpriseHost,
   type Profile,
   type ThemeMode
 } from '../../../shared/types'
@@ -48,6 +49,7 @@ interface WizardData {
   gitlabUrl?: string
   forgejoUrl?: string
   forgejoToken?: string
+  githubEnterprise?: GithubEnterpriseHost[]
   defaultOpenApp?: { name: string; path: string }
   importData: ParsedSettingsImport | null
   importHasSecrets: boolean
@@ -79,6 +81,7 @@ function buildProfile(data: WizardData): Profile {
     forgejoUrl: data.forgejoUrl,
     forgejoToken: data.forgejoToken,
     forgejoTokenIssuer: data.forgejoTokenIssuer,
+    githubEnterprise: data.githubEnterprise,
     ai: data.ai
   }
 }
@@ -325,7 +328,8 @@ function IntegrationsStep({
               ...(p.gitlabUrl !== undefined && { gitlabUrl: p.gitlabUrl }),
               ...(p.forgejoUrl !== undefined && { forgejoUrl: p.forgejoUrl }),
               ...('forgejoTokenIssuer' in p && { forgejoTokenIssuer: p.forgejoTokenIssuer }),
-              ...(p.forgejoToken !== undefined && { forgejoToken: p.forgejoToken })
+              ...(p.forgejoToken !== undefined && { forgejoToken: p.forgejoToken }),
+              ...(p.githubEnterprise !== undefined && { githubEnterprise: p.githubEnterprise })
             })
           }}
         />
@@ -389,6 +393,7 @@ export function OnboardingWizard(): React.JSX.Element {
     forgejoUrl: profile.forgejoUrl,
     forgejoToken: profile.forgejoToken,
     forgejoTokenIssuer: profile.forgejoTokenIssuer,
+    githubEnterprise: profile.githubEnterprise,
     defaultOpenApp: settings.defaultOpenApp,
     importData: null,
     importHasSecrets: false,
@@ -477,6 +482,7 @@ export function OnboardingWizard(): React.JSX.Element {
               forgejoUrl: data.forgejoUrl,
               forgejoToken: data.forgejoToken,
               forgejoTokenIssuer: data.forgejoTokenIssuer,
+              githubEnterprise: data.githubEnterprise,
               ai: { ...p.ai, ...data.ai }
             }
           : p

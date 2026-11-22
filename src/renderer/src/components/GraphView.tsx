@@ -17,7 +17,7 @@ import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
 import { gitApi, localCiApi, shellApi } from '../infrastructure/api'
-import { repoIsGitHub, githubCommitUrl } from '../lib/hosting'
+import { repoIsGitHub, githubCommitUrl, githubTagUrl, enterpriseBasesOf } from '../lib/hosting'
 import {
   commitMenuCapabilities,
   commitMenuDisabledKey,
@@ -493,7 +493,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     [repoLayout, baseColumnOrder]
   )
   // The deployment column shows GitHub CI/deploy status; drop it for other hosts.
-  const isGitHub = repoIsGitHub(repo.remotes)
+  const enterpriseProfiles = useSettingsStore((s) => s.settings.profiles)
+  const githubEnterprise = useMemo(() => enterpriseBasesOf(enterpriseProfiles), [enterpriseProfiles])
+  const isGitHub = repoIsGitHub(repo.remotes, githubEnterprise)
   const columnOrder = useMemo(
     () => (isGitHub ? columnOrderRaw : columnOrderRaw.filter((id) => id !== 'deployment')),
     [columnOrderRaw, isGitHub]
@@ -1109,7 +1111,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       const caps = commitMenuCapabilities({
         ...probe,
         mutationInFlight: useUIStore.getState().inflight > 0,
-        githubCommitUrl: githubCommitUrl(repo.remotes, c.hash)
+        githubCommitUrl: githubCommitUrl(repo.remotes, c.hash, enterpriseBasesOf(useSettingsStore.getState().settings.profiles))
       })
       openContextMenu(x, y, commitMenu(c, caps, probe))
     })()
@@ -1321,8 +1323,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   ]
 
   const tagRemoteUrl = (remoteUrl: string, tagName: string): string | null => {
-    const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(remoteUrl)
-    if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${tagName}`
+    const gh = githubTagUrl(remoteUrl, tagName, enterpriseBasesOf(useSettingsStore.getState().settings.profiles))
+    if (gh) return gh
     const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(remoteUrl)
     if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${tagName}`
     return null

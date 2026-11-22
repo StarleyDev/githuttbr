@@ -39,11 +39,20 @@ import {
   markAllForgejoNotificationsRead,
   FORGEJO_NOTIFICATION
 } from './forgejo'
-import { knownForgejoInstances, knownGitlabInstances } from './gitlabInstances'
+import { knownForgejoInstances, knownGithubEnterpriseInstances, knownGitlabInstances } from './gitlabInstances'
+import {
+  GITHUB_COM,
+  GITHUB_COM_ENDPOINTS,
+  githubBaseOfRemote,
+  githubEndpoints,
+  normalizeGithubEnterpriseUrl,
+  type GithubEndpoints
+} from '../shared/githubEnterprise'
 import {
   GITLAB_COM,
   forgejoInstanceOf,
   gitlabInstanceOf,
+  instanceOf,
   normalizeGitlabUrl,
   profileForgejoBase,
   profileGitlabBase,
@@ -112,7 +121,8 @@ interface ParsedRemote {
   owner: string // github owner / azure organization
   project: string // azure project ('' for github)
   repo: string
-  /** GitLab: the instance's base URL — gitlab.com or a self-managed one. */
+  /** GitLab: the instance's base URL — gitlab.com or a self-managed one.
+   *  GitHub: a GitHub Enterprise Server's base; absent for github.com. */
   base?: string
 }
 
@@ -133,6 +143,13 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
   }
   let m = /^(?:[\w-]+\.)*github\.com\/([^/]+)\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'github', owner: m[1], project: '', repo: m[2] }
+
+  // A GitHub Enterprise Server a profile names: GitHub's API at its own host.
+  const ghes = instanceOf(url, knownGithubEnterpriseInstances())
+  if (ghes && ghes.path.split('/').length === 2) {
+    const [owner, repo] = ghes.path.split('/')
+    return { provider: 'github', owner, project: '', repo, base: ghes.base }
+  }
 
   m = /^dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
@@ -272,8 +289,12 @@ async function profileAuth(
   remoteUrl?: string
 ): Promise<HostAuthInput> {
   // An IPC token alone carries no issuing instance. Resolve scoped tokens in main.
+  // The renderer's GitHub token is github.com's: a remote on an Enterprise
+  // Server (or one whose host cannot be told) resolves its own in main instead.
+  const githubElsewhere =
+    provider === 'github' && !!remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM
   return pickHostAuth({
-    sent: provider === 'gitlab' || provider === 'forgejo' ? undefined : sent,
+    sent: provider === 'gitlab' || provider === 'forgejo' || githubElsewhere ? undefined : sent,
     bound: repoPath ? await boundProfileAuth(provider, repoPath, remoteUrl) : undefined,
     active: () => activeProfileAuth(provider, remoteUrl)
   })
@@ -339,7 +360,7 @@ async function withAzureRetry<T>(
 export function providerBaseUrl(provider: RepoHost, org?: string): string {
   switch (provider) {
     case 'github':
-      return 'https://github.com'
+      return githubBaseFromOrg(org)
     case 'gitlab':
       return gitlabBaseFromOrg(org)
     case 'bitbucket':
@@ -350,6 +371,22 @@ export function providerBaseUrl(provider: RepoHost, org?: string): string {
       return forgejoBaseFromOrg(org)
   }
 }
+
+/**
+ * GitHub's `org` is the base of an Enterprise Server, sent by Settings and the
+ * clone browser. Like GitLab's, it is honoured only when a profile names that
+ * server: anything else would let any string decide where a token goes.
+ * Absent → github.com; unknown → an error, never a fallback to github.com.
+ */
+function githubBaseFromOrg(org: string | undefined): string {
+  if (!org?.trim() || org.trim().toLowerCase() === GITHUB_COM) return GITHUB_COM
+  const base = normalizeGithubEnterpriseUrl(org)
+  if (base && knownGithubEnterpriseInstances().includes(base)) return base
+  throw new Error('This GitHub Enterprise Server is not saved in any profile yet (it must be https). Add it in Settings → Integrations → GitHub, then try again.')
+}
+
+/** The endpoints of a parsed GitHub remote — github.com, or its Enterprise Server. */
+const ghEndpointsOf = (parsed: ParsedRemote): GithubEndpoints => githubEndpoints(parsed.base)
 
 /**
  * Forgejo's `org` is the instance URL of the profile in use. Like GitLab's, it
@@ -372,7 +409,7 @@ async function tokenForProvider(
   org?: string
 ): Promise<(ApiAuth & { base: string }) | null> {
   const base = await providerBase(provider, org)
-  const input = provider === 'gitlab' || provider === 'forgejo'
+  const input = provider === 'gitlab' || provider === 'forgejo' || (provider === 'github' && base !== GITHUB_COM)
     ? await activeProfileAuth(provider, undefined, base)
     : await profileAuth(provider, token)
   const auth = await apiToken(base, input)
@@ -436,6 +473,11 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
       return ''
     }
   })()
+  if (provider.toLowerCase() === 'github' && host && remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM) {
+    return new Error(
+      `No token for the GitHub Enterprise Server ${host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.`
+    )
+  }
   if (provider.toLowerCase() === 'github') {
     return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
   }
@@ -504,7 +546,7 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
   if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return hit.login
   let login: string | null = null
   try {
-    if (parsed.provider === 'github') login = (await ghJson<{ login: string }>('https://api.github.com/user', token)).login
+    if (parsed.provider === 'github') login = (await ghJson<{ login: string }>(`${ghEndpointsOf(parsed).apiBase}/user`, token)).login
     else if (parsed.provider === 'gitlab') login = (await glJson<{ username: string }>(`${glApi(parsed.base)}/user`, auth)).username
     else if (parsed.provider === 'forgejo' && parsed.base) login = (await fjJson<{ login: string }>(`${parsed.base}/api/v1/user`, token)).login
   } catch {
@@ -612,7 +654,8 @@ async function listPullRequestsOf(
   if (parsed.provider === 'github') {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
     if (auth) headers['Authorization'] = `Bearer ${auth.token}`
-    const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
+    const ep = ghEndpointsOf(parsed)
+    const res = await fetch(`${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
       headers
     })
     if (!res.ok) {
@@ -655,7 +698,7 @@ async function listPullRequestsOf(
     const known = new Set(prs.map((p) => p.id))
     for (const stackNumber of stackNumbers) {
       const members = await ghJson<{ pull_requests?: GithubStackMember[] }>(
-        `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/stacks/${stackNumber}`,
+        `${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}/stacks/${stackNumber}`,
         auth.token
       ).catch(() => null)
       for (const m of members?.pull_requests ?? []) {
@@ -667,7 +710,7 @@ async function listPullRequestsOf(
           author: m.user?.login ?? '',
           sourceBranch: m.head?.ref ?? '',
           targetBranch: m.base?.ref ?? '',
-          url: m.html_url ?? `https://github.com/${parsed.owner}/${parsed.repo}/pull/${m.number}`,
+          url: m.html_url ?? `${ep.webBase}/${parsed.owner}/${parsed.repo}/pull/${m.number}`,
           isDraft: m.draft ?? false,
           stackNumber,
           state: m.merged_at ? 'merged' : m.state === 'closed' ? 'closed' : 'open',
@@ -764,7 +807,7 @@ async function listReleases(
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
   const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (auth) headers['Authorization'] = `Bearer ${auth.token}`
-  const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
+  const res = await fetch(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
     headers
   })
   if (!res.ok) {
@@ -800,7 +843,7 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) return null
   if (parsed.provider === 'github') {
-    return `https://github.com/${parsed.owner}/${parsed.repo}/compare/${target}...${source}?expand=1`
+    return `${ghEndpointsOf(parsed).webBase}/${parsed.owner}/${parsed.repo}/compare/${target}...${source}?expand=1`
   }
   if (parsed.provider === 'forgejo' && parsed.base) {
     return forgejoCompareUrl(parsed.base, parsed.owner, parsed.repo, target, source)
@@ -916,7 +959,7 @@ async function createPullRequest(
 
   if (parsed.provider === 'github') {
     if (!auth) throw await noCredential('GitHub', remoteUrl)
-    const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls`, {
+    const res = await fetch(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/pulls`, {
       method: 'POST',
       headers: {
         Accept: 'application/vnd.github+json',
@@ -968,14 +1011,16 @@ async function createPullRequest(
 async function ghRepoOf(
   remoteUrl: string,
   token?: string
-): Promise<{ owner: string; repo: string; token: string }> {
+): Promise<{ owner: string; repo: string; token: string; ep: GithubEndpoints; api: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'github') {
     throw new Error('This action currently supports GitHub repositories only.')
   }
   const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) throw await noCredential('GitHub', remoteUrl)
-  return { owner: parsed.owner, repo: parsed.repo, token: auth.token }
+  const ep = ghEndpointsOf(parsed)
+  // `api` is the repository's REST root on its own server — github.com or GHES.
+  return { owner: parsed.owner, repo: parsed.repo, token: auth.token, ep, api: `${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}` }
 }
 
 // ── GitLab merge request review ─────────────────────────────────────────────
@@ -1381,8 +1426,7 @@ async function pullRequestDetail(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrDetail(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const [pr, comments, reviews, reviewComments] = await Promise.all([
     ghJson<{
       number: number
@@ -1528,8 +1572,7 @@ async function pullRequestChecks(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrChecks(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
   const data = await ghJson<{
     check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string | null; details_url: string | null }>
@@ -1557,7 +1600,7 @@ async function pullRequestFiles(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrFiles(a.ado, a.repo, number)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   type GhFile = {
     filename: string
     status: string
@@ -1569,7 +1612,7 @@ async function pullRequestFiles(
   }
   // per_page above 100 is silently capped: a 150-file PR used to list 100.
   const data = await allPages((page) =>
-    ghJson<GhFile[]>(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`, token)
+    ghJson<GhFile[]>(`${api}/pulls/${number}/files?per_page=100&page=${page}`, token)
   ).catch(() => [] as GhFile[])
   return data.map((f) => ({
     filename: f.filename,
@@ -1601,8 +1644,8 @@ async function replyReviewComment(
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
     return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/comments`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}/comments`, token, {
     method: 'POST',
     body: JSON.stringify({ body, in_reply_to: inReplyTo })
   })
@@ -1623,8 +1666,8 @@ async function commentOnPr(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureComment(a.ado, a.repo, number, body)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/issues/${number}/comments`, token, {
     method: 'POST',
     body: JSON.stringify({ body })
   })
@@ -1646,8 +1689,8 @@ async function reviewPr(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureReview(a.ado, a.repo, number, event, body)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}/reviews`, token, {
     method: 'POST',
     body: JSON.stringify({ event, body: body || undefined })
   })
@@ -1668,8 +1711,8 @@ async function mergePr(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureMerge(a.ado, a.repo, number, method)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}/merge`, token, {
     method: 'PUT',
     body: JSON.stringify({ merge_method: method })
   })
@@ -1698,7 +1741,7 @@ async function listIssues(
       comments: number
       pull_request?: unknown
     }>
-  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, auth.token)
+  >(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, auth.token)
   return {
     provider: 'github',
     // The issues endpoint also returns PRs — filter them out.
@@ -1739,7 +1782,7 @@ async function listMilestones(
       closed_issues: number
       html_url: string
     }>
-  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, auth.token)
+  >(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, auth.token)
   return {
     provider: 'github',
     milestones: data.map((m) => ({
@@ -1761,6 +1804,7 @@ async function listMilestones(
  * error (missing scope, no project) yields an empty list rather than failing.
  */
 async function fetchProjectFields(
+  graphqlUrl: string,
   owner: string,
   repo: string,
   number: number,
@@ -1784,7 +1828,7 @@ async function fetchProjectFields(
     }
   }`
   try {
-    const res = await fetch('https://api.github.com/graphql', {
+    const res = await fetch(graphqlUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables: { owner, repo, number } })
@@ -1901,13 +1945,14 @@ export function parseClosingPrs(
 }
 
 async function fetchClosingPrs(
+  graphqlUrl: string,
   owner: string,
   repo: string,
   number: number,
   token: string
 ): Promise<{ prs: LinkedPr[]; status: Exclude<LinkedPrsStatus, 'unsupported'> }> {
   try {
-    const res = await fetch('https://api.github.com/graphql', {
+    const res = await fetch(graphqlUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: GH_CLOSING_PRS_QUERY, variables: { owner, repo, number } })
@@ -1928,8 +1973,7 @@ async function issueDetail(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return forgejoIssueDetail(f.base, f.owner, f.repo, f.token, number)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api, ep } = await ghRepoOf(remoteUrl, tokens.github)
   const [issue, comments, closing, projectFields] = await Promise.all([
     ghJson<{
       number: number
@@ -1947,8 +1991,8 @@ async function issueDetail(
       `${api}/issues/${number}/comments?per_page=100`,
       token
     ),
-    fetchClosingPrs(owner, repo, number, token),
-    fetchProjectFields(owner, repo, number, token)
+    fetchClosingPrs(ep.graphqlUrl, owner, repo, number, token),
+    fetchProjectFields(ep.graphqlUrl, owner, repo, number, token)
   ])
 
   return {
@@ -1979,7 +2023,7 @@ async function milestoneIssues(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return forgejoMilestoneIssues(f.base, f.owner, f.repo, f.token, number)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<
     Array<{
       number: number
@@ -1990,7 +2034,7 @@ async function milestoneIssues(
       comments: number
       pull_request?: unknown
     }>
-  >(`https://api.github.com/repos/${owner}/${repo}/issues?milestone=${number}&state=all&per_page=100`, token)
+  >(`${api}/issues?milestone=${number}&state=all&per_page=100`, token)
   return data
     .filter((i) => !i.pull_request)
     .map((i) => ({
@@ -2013,8 +2057,8 @@ async function setIssueState(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return setForgejoIssueState(f.base, f.owner, f.repo, f.token, number, state)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/issues/${number}`, token, {
     method: 'PATCH',
     body: JSON.stringify({ state })
   })
@@ -2030,9 +2074,9 @@ async function createIssue(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return createForgejoIssue(f.base, f.owner, f.repo, f.token, opts)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const d = await ghJson<{ number: number; html_url: string }>(
-    `https://api.github.com/repos/${owner}/${repo}/issues`,
+    `${api}/issues`,
     token,
     { method: 'POST', body: JSON.stringify({ title: opts.title, body: opts.body || '' }) }
   )
@@ -2049,8 +2093,7 @@ async function applyPrMeta(
   number: number,
   meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
 ): Promise<void> {
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const tasks: Promise<unknown>[] = []
   if (meta.reviewers?.length)
     tasks.push(
@@ -2083,8 +2126,7 @@ async function applyPrMeta(
  * One request per branch, filtered server-side by head ref.
  */
 async function mergedPrHeads(remoteUrl: string, tokens: { github?: string }, branches: string[]): Promise<string[]> {
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const merged: string[] = []
   for (const branch of branches) {
     const prs = await ghJson<Array<{ merged_at: string | null }>>(
@@ -2107,8 +2149,7 @@ async function updatePullRequest(
   number: number,
   patch: { base?: string; title?: string; stackSection?: string }
 ): Promise<void> {
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const body: { base?: string; title?: string; body?: string } = {}
   if (patch.base) body.base = patch.base
   if (patch.title) body.title = patch.title
@@ -2140,8 +2181,7 @@ async function ensureGithubStack(
   numbers: number[]
 ): Promise<GithubStackInfo | null> {
   if (numbers.length < 2) return null // one PR is not a stack
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
 
   // Whatever stack these PRs are already in, if any: the bottom one decides,
   // because a stack is extended upward.
@@ -2184,7 +2224,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
 
   if (provider === 'github') {
     const res = await fetch(
-      'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
+      `${githubEndpoints(auth.base).apiBase}/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member`,
       { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${auth.token}` } }
     )
     if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
@@ -2295,9 +2335,10 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   if (!auth) throw await noCredential(provider, await providerBase(provider, org))
 
   if (provider === 'github') {
-    const user = await ghJson<{ login: string; avatar_url: string }>('https://api.github.com/user', auth.token)
+    const api = githubEndpoints(auth.base).apiBase
+    const user = await ghJson<{ login: string; avatar_url: string }>(`${api}/user`, auth.token)
     const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
-      'https://api.github.com/user/orgs?per_page=100',
+      `${api}/user/orgs?per_page=100`,
       auth.token
     )
     return [
@@ -2384,10 +2425,16 @@ async function fetchConnectedAccount(
   // the Settings page must not prompt for four providers at once.
   // GitLab: the instance of the profile being edited, which the renderer sends as `org`.
   const base = provider === 'gitlab' || provider === 'forgejo' ? providerBaseUrl(provider, org) : await providerBase(provider, org)
+  // Links name github.com accounts: an Enterprise Server is only ever asked with its own token.
+  if (provider === 'github' && base !== GITHUB_COM) {
+    if (!token.trim()) return null
+    link = undefined
+    interactive = false
+  }
   if ((provider === 'gitlab' || provider === 'forgejo') && token && !tokenMatchesInstance(provider, base, issuer)) return null
   const auth = await apiToken(base, { token, link }, { interactive })
   if (!auth) throw await noCredential(provider, base)
-  const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' ? base : org)
+  const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' || provider === 'github' ? base : org)
   if (link || auth.source === 'token') return account
   // A sign-in found a machine login: hand back the link for the profile to keep.
   // gh is asked by account name, which is the GitHub login; git by the username
@@ -2449,12 +2496,14 @@ async function accountOwner(
 async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string): Promise<ConnectedAccount> {
 
   if (provider === 'github') {
+    // `org` is the server's base here — github.com or a GHES (fetchConnectedAccount).
+    const ep = githubEndpoints(org)
     const user = await ghJson<{ id: number; login: string; name: string | null; avatar_url: string; html_url: string }>(
-      'https://api.github.com/user',
+      `${ep.apiBase}/user`,
       auth.token
     )
     const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
-      'https://api.github.com/user/orgs?per_page=100',
+      `${ep.apiBase}/user/orgs?per_page=100`,
       auth.token
     ).catch(() => [])
     return {
@@ -2462,9 +2511,10 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       login: user.login,
       name: user.name ?? undefined,
       avatarUrl: user.avatar_url,
-      noreplyEmail: noreplyEmail('github', user.id, user.login) ?? undefined,
+      // The users.noreply.github.com address is github.com's: a GHES has its own, if any.
+      noreplyEmail: ep.enterprise ? undefined : (noreplyEmail('github', user.id, user.login) ?? undefined),
       profileUrl: user.html_url,
-      orgs: orgs.map((o) => ({ login: o.login, avatarUrl: o.avatar_url, url: `https://github.com/${o.login}` }))
+      orgs: orgs.map((o) => ({ login: o.login, avatarUrl: o.avatar_url, url: `${ep.webBase}/${o.login}` }))
     }
   }
 
@@ -2588,8 +2638,8 @@ async function createRepository(
   if (provider === 'github') {
     const url =
       opts.ownerType === 'org'
-        ? `https://api.github.com/orgs/${encodeURIComponent(opts.owner)}/repos`
-        : 'https://api.github.com/user/repos'
+        ? `${githubEndpoints(auth.base).apiBase}/orgs/${encodeURIComponent(opts.owner)}/repos`
+        : `${githubEndpoints(auth.base).apiBase}/user/repos`
     const repo = await ghJson<{ full_name: string; clone_url: string; private: boolean }>(url, auth.token, {
       method: 'POST',
       body: JSON.stringify({ name: opts.name, description: opts.description || undefined, private: opts.private })
@@ -2712,6 +2762,7 @@ function ciAccountFor(token: string): CiAccount {
 }
 
 async function lookUpCiStatus(
+  apiBase: string,
   owner: string,
   repo: string,
   sha: string,
@@ -2719,7 +2770,7 @@ async function lookUpCiStatus(
   account: CiAccount
 ): Promise<CiLookup> {
   try {
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs?per_page=30`, {
+    const res = await fetch(`${apiBase}/repos/${owner}/${repo}/commits/${sha}/check-runs?per_page=30`, {
       headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}` }
     })
     const limited = (res.status === 403 || res.status === 429) && mentionsRateLimit(await res.text())
@@ -2768,7 +2819,9 @@ export async function fetchCiStatuses(
   const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) return {}
   const account = ciAccountFor(auth.token)
-  const keyOf = (sha: string): string => `${parsed.owner}/${parsed.repo}@${sha}`
+  const apiBase = ghEndpointsOf(parsed).apiBase
+  // The server is part of the key: the same owner/repo on github.com and on a GHES are two repositories.
+  const keyOf = (sha: string): string => `${parsed.base ?? ''}|${parsed.owner}/${parsed.repo}@${sha}`
 
   const wanted = [...new Set(shas.slice(0, 40))]
   const now = Date.now()
@@ -2794,7 +2847,7 @@ export async function fetchCiStatuses(
     while (queue.length && Date.now() >= account.pausedUntil) {
       const job = queue.shift()!
       try {
-        const lookup = await lookUpCiStatus(parsed.owner, parsed.repo, job.sha, auth.token, account)
+        const lookup = await lookUpCiStatus(apiBase, parsed.owner, parsed.repo, job.sha, auth.token, account)
         rememberCiEntry(account.cache, job.key, nextCiEntry(account.cache.get(job.key), lookup, Date.now()))
       } finally {
         release(job)
@@ -2850,7 +2903,7 @@ async function listGithubNotifications(token: string, all: boolean): Promise<Git
       subject: { title: string; url: string | null; type: string }
       repository: { full_name: string; html_url: string }
     }>
-  >(`https://api.github.com/notifications?all=${all ? 'true' : 'false'}&per_page=50`, token)
+  >(`${GITHUB_COM_ENDPOINTS.apiBase}/notifications?all=${all ? 'true' : 'false'}&per_page=50`, token)
 
   return data.map((n) => {
     // subject.url is an API url (…/repos/o/r/issues/5 or …/pulls/5). Derive the
@@ -2887,7 +2940,7 @@ async function markNotificationRead(token: string, id: string): Promise<void> {
   }
   const auth = await tokenForProvider('github', token)
   if (!auth) return
-  await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
+  await ghJson<unknown>(`${GITHUB_COM_ENDPOINTS.apiBase}/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
     /* already read / gone — non-fatal */
   })
 }
@@ -2900,7 +2953,7 @@ async function markAllNotificationsRead(token: string): Promise<void> {
   token = auth.token
   // The PUT /notifications endpoint returns 202 with an empty body; ghJson would
   // choke parsing JSON, so call fetch directly.
-  await fetch('https://api.github.com/notifications', {
+  await fetch(`${GITHUB_COM_ENDPOINTS.apiBase}/notifications`, {
     method: 'PUT',
     headers: {
       Accept: 'application/vnd.github+json',
@@ -2919,7 +2972,7 @@ async function markAllNotificationsRead(token: string): Promise<void> {
  * the transport will then use. Only the public half is ever sent.
  */
 export async function uploadSshKey(token: string, title: string, publicKey: string): Promise<{ id: number }> {
-  return ghJson<{ id: number }>('https://api.github.com/user/keys', token, {
+  return ghJson<{ id: number }>(`${GITHUB_COM_ENDPOINTS.apiBase}/user/keys`, token, {
     method: 'POST',
     body: JSON.stringify({ title, key: publicKey.trim() })
   })

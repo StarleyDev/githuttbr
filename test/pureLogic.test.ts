@@ -404,8 +404,8 @@ describe('githubCommitUrl', () => {
   })
 
   it('parses ssh and https github remotes', () => {
-    expect(parseGitHubRemote('git@github.com:Acme/App.git')).toEqual({ owner: 'Acme', repo: 'App' })
-    expect(parseGitHubRemote('https://github.com/Acme/App')).toEqual({ owner: 'Acme', repo: 'App' })
+    expect(parseGitHubRemote('git@github.com:Acme/App.git')).toEqual({ owner: 'Acme', repo: 'App', base: 'https://github.com' })
+    expect(parseGitHubRemote('https://github.com/Acme/App')).toEqual({ owner: 'Acme', repo: 'App', base: 'https://github.com' })
   })
 })
 

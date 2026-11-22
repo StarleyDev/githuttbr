@@ -5,7 +5,8 @@ import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
-import { setKnownForgejoInstances, setKnownGitlabInstances } from './gitlabInstances'
+import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
+import { GITHUB_COM, githubAuthFor, githubBaseOfRemote, githubEnterpriseBases } from '../shared/githubEnterprise'
 import {
   applySecrets,
   extractSecrets,
@@ -115,6 +116,7 @@ export async function readSettings(): Promise<AppSettings> {
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
   setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
+  setKnownGithubEnterpriseInstances(githubEnterpriseBases(out.profiles))
   return out
 }
 
@@ -190,6 +192,14 @@ async function profileAuth(
   const id = profileId ?? plain.activeProfileId
   const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
   if (!candidate) return {}
+  // GitHub: github.com or one Enterprise Server, decided by the remote's host
+  // (or the base a provider-level call names). Each gets only its own token.
+  let githubBase: string | null = null
+  if (host === 'github') {
+    githubBase = expectedBase ?? (remoteUrl ? githubBaseOfRemote(remoteUrl, githubEnterpriseBases(plain.profiles)) : GITHUB_COM)
+    if (!githubBase) return {}
+    if (githubBase !== GITHUB_COM && !githubEnterpriseBases([candidate]).includes(githubBase)) return {}
+  }
   if (host === 'gitlab' || host === 'forgejo') {
     const base = tokenInstance(host, candidate[`${host}Url`])
     if (!base || (expectedBase && base !== expectedBase)) return {}
@@ -207,6 +217,10 @@ async function profileAuth(
       )]
       if (instanceOf(remoteUrl, bases)?.base !== base) return {}
     }
+  }
+  if (host === 'github' && githubBase) {
+    const auth = githubAuthFor(profile, githubBase)
+    return { token: auth.token, link: validAccountLink(auth.link) }
   }
   const link = validAccountLink(profile.links?.[host])
   const token = profile[TOKEN_FIELD[host]]?.trim() || undefined
@@ -330,6 +344,7 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
+  setKnownGithubEnterpriseInstances(githubEnterpriseBases(settings.profiles))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)

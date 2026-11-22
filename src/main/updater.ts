@@ -4,10 +4,11 @@ import type { UpdateState, UpdateInfo } from '../shared/types'
 import { isNewerVersion } from '../shared/version'
 import { githubPublicGet } from './credentials'
 import { APP_REPO } from '../shared/appRepo'
+import { GITHUB_COM, GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
 
 const REPO = APP_REPO
 const releaseUrl = (version: string): string =>
-  `https://github.com/${REPO}/releases/tag/v${version.replace(/^v/, '')}`
+  `${GITHUB_COM}/${REPO}/releases/tag/v${version.replace(/^v/, '')}`
 
 // Single source of truth for update state; pushed to every renderer on change.
 const state: UpdateState = {
@@ -53,7 +54,7 @@ async function checkViaGitHub(): Promise<void> {
     return
   }
   try {
-    const res = await githubPublicGet(`https://api.github.com/repos/${REPO}/releases/latest`)
+    const res = await githubPublicGet(`${GITHUB_COM_ENDPOINTS.apiBase}/repos/${REPO}/releases/latest`)
     if (!res.ok) {
       setState({ status: 'not-available' })
       return
