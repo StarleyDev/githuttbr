@@ -1,44 +1,15 @@
+import { useEffect } from 'react'
 import type { Language } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
-import { en, type Dict, type TranslationKey } from './en'
-import { ar } from './ar'
-import { de } from './de'
-import { es } from './es'
-import { fr } from './fr'
-import { he } from './he'
-import { it } from './it'
-import { ja } from './ja'
-import { ko } from './ko'
-import { nl } from './nl'
-import { pl } from './pl'
-import { ptBR } from './pt-BR'
-import { ru } from './ru'
-import { tr } from './tr'
-import { uk } from './uk'
-import { zhCN } from './zh-CN'
+import type { TranslationKey } from './en'
+import { isLocaleLoaded, loadLocale, lookup, useLocaleStore } from './loader'
 import { brandText } from '../../../shared/brand'
 
 export type { TranslationKey }
 
-/** One dictionary per supported language; `en` is the fallback. */
-const dictionaries: Record<Language, Dict> = {
-  en,
-  es,
-  de,
-  fr,
-  'pt-BR': ptBR,
-  it,
-  nl,
-  pl,
-  tr,
-  ru,
-  uk,
-  'zh-CN': zhCN,
-  ja,
-  ko,
-  ar,
-  he
-}
+// The dictionaries themselves live in `loader.ts`: English eagerly, every other
+// locale as its own chunk fetched on demand.
+export { loadLocale, isLocaleLoaded } from './loader'
 
 /**
  * Every language in its own name — someone hunting for Korean is scanning for
@@ -64,9 +35,15 @@ export const LANGUAGES: { id: Language; label: string }[] = [
   { id: 'ko', label: '한국어' }
 ]
 
+/**
+ * `key` in `lang`. A `lang` whose dictionary has not been loaded yet (see
+ * `loadLocale`) reads as English — it neither throws nor shows the bare key.
+ * Boot and the language picker both load before switching, so in practice this
+ * is only hit by a caller racing a switch made some other way.
+ */
 export function translate(lang: Language, key: TranslationKey): string {
   // The dictionaries keep upstream's wording; the product name is applied here.
-  return brandText(dictionaries[lang]?.[key] ?? dictionaries.en[key] ?? key)
+  return brandText(lookup(lang, key))
 }
 
 /** Simple string interpolation — replaces {key} tokens with values. */
@@ -78,11 +55,28 @@ export { isRtl } from './direction'
 /** Non-reactive translator (for use outside React render). */
 export function t(key: TranslationKey): string {
   const lang = useSettingsStore.getState().settings.language ?? 'en'
+  // English until the dictionary lands; asking starts the (deduplicated) load.
+  if (!isLocaleLoaded(lang)) void loadLocale(lang)
   return translate(lang, key)
 }
 
-/** Reactive hook: re-renders when the language setting changes. */
-export function useT(): (key: TranslationKey) => string {
+/**
+ * The language whose dictionary is actually on screen: the chosen one once it
+ * has loaded, English before. Effects that bake translated text into something
+ * outside React (the native menu, measured widths) depend on this rather than
+ * on `settings.language`, so they re-run when the strings really change.
+ */
+export function useUiLanguage(): Language {
   const lang = useSettingsStore((s) => s.settings.language ?? 'en')
+  const ready = useLocaleStore((s) => !!s.loaded[lang])
+  useEffect(() => {
+    if (!ready) void loadLocale(lang)
+  }, [lang, ready])
+  return ready ? lang : 'en'
+}
+
+/** Reactive hook: re-renders when the language setting changes or its dictionary arrives. */
+export function useT(): (key: TranslationKey) => string {
+  const lang = useUiLanguage()
   return (key: TranslationKey) => translate(lang, key)
 }

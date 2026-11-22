@@ -12,7 +12,7 @@ import { useEffect } from 'react'
 import { tabActiveRepoPath } from '../../shared/types'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore } from './stores/repo'
-import { useT } from './i18n'
+import { useT, useUiLanguage } from './i18n'
 import { buildMenuSpec } from './lib/appMenu'
 import { effectiveBindings } from './lib/shortcuts'
 import { menuApi } from './infrastructure/api'
@@ -24,7 +24,7 @@ const APP_NAME = PRODUCT_NAME
 
 export function useAppMenu(): void {
   const t = useT()
-  const language = useSettingsStore((s) => s.settings.language)
+  const language = useUiLanguage()
   const shortcuts = useSettingsStore((s) => s.settings.shortcuts)
   const recentRepos = useSettingsStore((s) => s.settings.recentRepos)
   const editorName = useSettingsStore((s) => s.settings.editor?.name ?? null)

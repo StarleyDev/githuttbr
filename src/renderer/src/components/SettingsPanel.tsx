@@ -116,7 +116,7 @@ import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, git
 import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
 import { repoActions } from '../stores/repo'
-import { useT, interp, type TranslationKey } from '../i18n'
+import { useT, interp, loadLocale, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
 import { LanguagePicker } from './LanguagePicker'
@@ -2970,7 +2970,11 @@ function GeneralPage(): React.JSX.Element {
         <span className="settings-field-label">{t('settings.language')}</span>
         <LanguagePicker
           value={settings.language}
-          onChange={(language) => update((s) => ({ ...s, language }))}
+          // Switch once the dictionary is in, so the UI flips straight to the new
+          // language instead of passing through English.
+          onChange={(language) =>
+            void loadLocale(language).then(() => update((s) => ({ ...s, language })))
+          }
         />
       </label>
 

@@ -60,7 +60,7 @@ import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
-import { useT, interp } from '../i18n'
+import { useT, useUiLanguage, interp } from '../i18n'
 import { timeAgo, isStale } from '../lib/timeAgo'
 import { BranchStatusPicker } from './BranchStatusPicker'
 import { RepoStatusPicker } from './RepoStatusPicker'
@@ -126,7 +126,8 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const inflight = useUIStore((s) => s.inflight > 0)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const sidebarSide = useSettingsStore((s) => s.settings.sidebarSide)
-  const language = useSettingsStore((s) => s.settings.language ?? 'en')
+  // The language actually rendered, so widths are re-measured once its strings land.
+  const language = useUiLanguage()
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
 
