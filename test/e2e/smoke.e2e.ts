@@ -1,5 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { execFileSync } from 'node:child_process'
+import { cpSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { repoPath } from '../helpers'
 import { en, type TranslationKey } from '../../src/renderer/src/i18n/en'
 import { ptBR } from '../../src/renderer/src/i18n/pt-BR'
 import { de } from '../../src/renderer/src/i18n/de'
@@ -165,6 +168,46 @@ describe('e2e smoke', () => {
     )
     expect(await items.nth(0).locator('.clone-progress-pct').innerText()).toBe('64%')
     expect(await items.nth(2).innerText()).toContain(en['clone.queued'])
+    expect(r.errors()).toEqual([])
+  })
+
+  it('pushes several branches to the remote in one go', async () => {
+    const r = await start({ scenario: 'multi-branch-push' })
+    // The scenario's remote is a sibling bare repo (`../multi-branch-push-origin.git`);
+    // copy it next to the private clone so the push is real, local and offline.
+    const origin = join(dirname(r.repo), 'multi-branch-push-origin.git')
+    cpSync(join(dirname(repoPath('multi-branch-push')), 'multi-branch-push-origin.git'), origin, { recursive: true })
+
+    await r.page.evaluate((p) => window.__shot!.ui.getState().openModal({ kind: 'push-branches', repoPath: p }), r.repo)
+    const rows = r.page.locator('.push-branch-row')
+    await rows.first().waitFor()
+    const states = Object.fromEntries(
+      await rows.evaluateAll((els) => els.map((el) => [el.getAttribute('data-branch'), el.getAttribute('data-state')]))
+    )
+    expect(states['agent/billing-fix']).toBe('diverged')
+    expect(await rows.locator('[data-state="diverged"] input, [data-state="behind"] input').count()).toBe(0)
+    const ticked = await r.page
+      .locator('.push-branch-row.selected')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-branch')))
+    expect(ticked).toEqual(expect.arrayContaining(['agent/auth-refresh', 'agent/flaky-tests', 'agent/perf-cache']))
+    expect(ticked).not.toContain('agent/billing-fix')
+
+    await r.page.locator('.push-branches-submit').click()
+    const results = r.page.locator('.push-result')
+    await results.first().waitFor({ timeout: 20_000 })
+    const outcome = Object.fromEntries(
+      await results.evaluateAll((els) => els.map((el) => [el.getAttribute('data-branch'), el.getAttribute('data-status')]))
+    )
+    for (const b of ticked) expect(['pushed', 'created']).toContain(outcome[b as string])
+
+    // The remote really has them now, at the local tips — and nothing diverged was forced.
+    for (const b of ticked) {
+      const dest = b === 'feature/old-name' ? 'feature/new-name' : (b as string)
+      expect(git(origin, 'rev-parse', `refs/heads/${dest}`)).toBe(git(r.repo, 'rev-parse', `refs/heads/${b}`))
+    }
+    expect(git(origin, 'rev-parse', 'refs/heads/agent/billing-fix')).not.toBe(
+      git(r.repo, 'rev-parse', 'refs/heads/agent/billing-fix')
+    )
     expect(r.errors()).toEqual([])
   })
 })
