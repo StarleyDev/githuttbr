@@ -178,8 +178,8 @@ ternaries, and toast calls holding literal copy. It runs:
 - in the suite (`test/i18n.test.ts`, which also checks key parity, duplicate
   keys, and placeholder consistency across **all** locale files it finds).
 
-Adding a locale is four steps — new `<code>.ts`, wire into `dictionaries` and
-`LANGUAGES`, extend `Language` in `src/shared/types.ts`, verify. `/add-locale`
+Adding a locale is four steps — new `<code>.ts`, wire into `dictionaries`
+(`loader.ts`, loaded on demand) and `LANGUAGES`, extend `Language` in `src/shared/types.ts`, verify. `/add-locale`
 does it; the **`translations`** skill has the detail.
 
 ---
