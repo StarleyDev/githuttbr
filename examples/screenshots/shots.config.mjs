@@ -946,6 +946,22 @@ export const shots = [
     }
   },
   {
+    // GitHub Enterprise Server list on the GitHub tab: one fake server added
+    // (no token, so nothing is ever asked of it), and a plain-http address
+    // typed to show the refusal. `.example.corp` resolves nowhere.
+    out: 'github-enterprise',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      const field = page.getByPlaceholder('github.example.corp')
+      await field.fill('github.example.corp')
+      await page.getByRole('button', { name: 'Add server' }).click()
+      await field.fill('http://ghe.legacy.example.corp')
+      await page.locator('.ghes-section').scrollIntoViewIfNeeded()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Integrations with the keychain off — the default every shot launches with
     // (`keychain` unset) — so the notice under the token field says the token
     // lasts until quit, with its Enable button.

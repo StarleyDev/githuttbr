@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Sync & many repos
 order: 56
 summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues
+keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises
 ---
 
 # Hosting & pull requests
@@ -170,6 +170,69 @@ Limits:
 - Remote avatars are drawn only for gitlab.com and github.com. A self-managed
   remote gets the plain icon, so its group names are never sent to a public
   host.
+
+## GitHub Enterprise Server
+
+A company GitHub that runs on its own servers — GitHub Enterprise Server, at an
+address like `github.acme.corp` — speaks the same API as github.com, just at a
+different place: REST under `https://<host>/api/v3`, GraphQL at
+`https://<host>/api/graphql`. Without telling the app about it, a remote on such
+a host is "some git server": push and fetch work, but no pull requests, issues
+or checks.
+
+Add the server in **Settings → Integrations → GitHub → GitHub Enterprise
+Server**: type its address, press **Add server**, then paste a token for it.
+The row says which account the token signs in as. A profile can hold several
+servers, each with its own token, next to its github.com token.
+
+![The GitHub Enterprise Server list in Settings, with a server added and a plain http address refused](../screenshots/github-enterprise.webp)
+
+From then on, a remote whose host is that server is GitHub:
+
+| Works on the server | Notes |
+|---|---|
+| Open pull requests, the pull request page, checks, review, comment, merge | Same as on github.com |
+| Create a pull request, with reviewers, labels and assignees | |
+| Issues, milestones, releases, create a branch for an issue | |
+| Linked pull requests and Projects fields on an issue | GraphQL; see the limits |
+| CI status in the graph and the pull request list | |
+| Commit, tag and compare links | Open on the server, not on github.com |
+| Push, fetch and clone over https | Signed in with that server's token |
+| The clone browser and *create repository* | Against the server you pick |
+
+**Each token goes only to its own server.** The github.com token is never sent
+to an Enterprise Server, one server's token is never sent to another, and a
+server that is not in the list gets nothing at all — the app never guesses
+that an unknown host "is probably GitHub". The server's port is part of its
+identity over https, so `ghe.example.corp:8443` and `ghe.example.corp` are two
+servers. Tokens are stored with your OS keychain like every other token, and
+left out of a settings export unless you tick the option to include secrets.
+
+**Create a token on …** opens the server's token page with the `repo` scope
+pre-selected, which covers pull requests, issues, checks and pushing. Add
+`workflow` if you push changes to `.github/workflows`, and `read:org` if the
+server's policy hides organization membership without it. Fine-grained tokens
+work too, if your server offers them; give them read and write access to
+*Contents*, *Pull requests* and *Issues*.
+
+Limits:
+
+- **https only.** A `http://` address is refused, because the token would cross
+  the network in clear text. Internal and private addresses are fine — that is
+  where most Enterprise Servers live.
+- **Only the address.** A path, a query, or a user name and password in the
+  address are refused. github.com itself is set up above the list, not in it.
+- **Older servers lack newer features.** Each server version ships the API of
+  its day. What a server does not have is left out quietly instead of failing
+  the page: native stacks, the linked pull requests of an issue (they show
+  "couldn't load"), and Projects fields stay empty on a server that predates
+  them.
+- **Not on a server:** the notifications inbox and uploading an SSH key stay
+  github.com's, and *Sign in with git* (the GitHub CLI or git's helper) links
+  github.com accounts only — a server always takes a token.
+- GitHub Enterprise Cloud with data residency (`<name>.ghe.com`) is not
+  covered: its API lives at a different address, so the list refuses it.
+  Enterprise Cloud on github.com itself is just github.com.
 
 ## Forgejo
 
