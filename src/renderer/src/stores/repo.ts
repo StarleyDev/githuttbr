@@ -35,6 +35,7 @@ import type {
   TeammateRadarResult,
   MaintenanceTask,
   MergeOptions,
+  PushBranchesResult,
   TabState
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
@@ -45,6 +46,7 @@ import { useSettingsStore } from './settings'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { isSecretFile } from '../lib/secrets'
 import { isProtectedBranch } from '../lib/repoConfig'
+import { partitionBySecrets, tallyPushResults, type SecretFlag } from '../lib/pushBranches'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
@@ -430,6 +432,14 @@ export type RefreshSlice =
   | 'submodules'
   | 'treeStatus'
   | 'config'
+
+/** What the "Push branches" dialog gets back: git's per-branch report, the
+ *  branches the secret guard held back, or the error that stopped the push. */
+export interface PushBranchesOutcome {
+  result: PushBranchesResult | null
+  held: SecretFlag[]
+  error: string | null
+}
 
 const ALL_SLICES: RefreshSlice[] = [
   'log',
@@ -1071,9 +1081,16 @@ async function pushGuards(
       return false
     }
   }
-  // The repository's own pre-push reminders. Inert text it ships in
-  // `.gitcito.json`, so it is shown verbatim and never translated — and it can
-  // only ever add a confirmation, never remove one.
+  return pushChecklistGuard(path, retry)
+}
+
+/**
+ * The repository's own pre-push reminders. Inert text it ships in
+ * `.gitcito.json`, so it is shown verbatim and never translated — and it can
+ * only ever add a confirmation, never remove one. Returns false when it opened.
+ */
+function pushChecklistGuard(path: string, retry: () => void): boolean {
+  const repoConfig = useRepoStore.getState().repos[path]?.config?.config ?? null
   const checklist = repoConfig?.checklist?.push ?? []
   if (checklist.length && !pushChecklistShown.has(path)) {
     pushChecklistShown.add(path)
@@ -1943,6 +1960,64 @@ export const repoActions = {
         undefined,
         ['branches', 'log']
       )
+  },
+
+  /**
+   * Push several local branches to one remote in a single `git push`, from the
+   * "Push branches" dialog. Never forced, never undoable — the same as a single
+   * push. The secret guard runs on every branch's own outgoing commits: a
+   * flagged branch is held back (and reported, with its files) while the rest
+   * go. The repository's push checklist runs once, as for any push.
+   *
+   * Resolves null when the checklist opened a confirmation — `retry` runs on
+   * approval. Not `run()`: the toast depends on how each branch came out, so it
+   * uses the same queue, busy label and narrow refresh by hand.
+   */
+  pushBranches: async (
+    path: string,
+    remote: string,
+    branches: string[],
+    opts: { setUpstream: boolean; atomic: boolean },
+    retry: () => void
+  ): Promise<PushBranchesOutcome | null> => {
+    if (!branches.length || !remote) return null
+    if (!pushChecklistGuard(path, retry)) return null
+    return enqueue(path, async (): Promise<PushBranchesOutcome> => {
+      const ui = useUIStore.getState()
+      ui.beginInflight()
+      ui.setBusy(interp(t('busy.pushingBranches'), { count: branches.length }), 'push')
+      muteWatcher(path)
+      try {
+        const files = await gitApi.outgoingFiles(path, remote, branches)
+        const { clean, flagged } = partitionBySecrets(branches, files, isSecretFile)
+        if (!clean.length) {
+          toast('error', interp(t('pushBranches.allHeld'), { count: flagged.length }))
+          return { result: null, held: flagged, error: null }
+        }
+        const result = await gitApi.pushBranches(path, remote, clean, opts)
+        const tally = tallyPushResults(result.results)
+        const failed = tally.rejected + tally.notAttempted
+        if (!failed && !flagged.length) {
+          toast('success', interp(t('pushBranches.done'), { count: tally.ok, remote }))
+        } else {
+          toast(
+            tally.ok ? 'info' : 'error',
+            interp(t('pushBranches.partial'), { ok: tally.ok, failed, held: flagged.length, remote })
+          )
+        }
+        return { result, held: flagged, error: null }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        toast('error', message, { repoPath: path })
+        return { result: null, held: [], error: message }
+      } finally {
+        ui.setBusy(null)
+        // A push moves remote-tracking refs and, with tracking, branch config:
+        // the branch list and the graph's ref badges. Nothing in the tree.
+        await useRepoStore.getState().refresh(path, { only: ['branches', 'log'] })
+        ui.endInflight()
+      }
+    })
   },
 
   pushToRemotes: async (path: string, remotes: string[], opts: { force?: boolean; tags?: boolean } = {}) => {

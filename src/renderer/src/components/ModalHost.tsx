@@ -59,6 +59,7 @@ import { CleanModal } from './CleanModal'
 import { ExportModal } from './ExportModal'
 import { MaintenanceModal } from './MaintenanceModal'
 import { MergeOptionsModal } from './MergeOptionsModal'
+import { PushBranchesModal } from './PushBranchesModal'
 import { ObjectExplorer } from './ObjectExplorer'
 import { AttributesModal } from './AttributesModal'
 import { CredentialsModal } from './CredentialsModal'
@@ -2460,6 +2461,9 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
               {modal.kind === 'export' && <ExportModal repoPath={modal.repoPath} initialTab={modal.tab} />}
               {modal.kind === 'maintenance' && <MaintenanceModal repoPath={modal.repoPath} />}
+              {modal.kind === 'push-branches' && (
+                <PushBranchesModal repoPath={modal.repoPath} preselect={modal.preselect} />
+              )}
               {modal.kind === 'merge-options' && (
                 <MergeOptionsModal repoPath={modal.repoPath} source={modal.source} />
               )}

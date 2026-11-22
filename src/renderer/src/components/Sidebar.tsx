@@ -573,6 +573,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const deletable = names.filter((n) => n !== repo.branches.current.trim())
     return [
       {
+        label: interp(t('sidebar.pushNBranches'), { n: names.length }),
+        disabled: repo.remotes.length === 0,
+        onClick: () => {
+          openModal({ kind: 'push-branches', repoPath: path, preselect: names })
+          clearSel()
+        }
+      },
+      { separator: true },
+      {
         label: interp(t('sidebar.deleteNBranches'), { n: deletable.length }),
         danger: true,
         disabled: deletable.length === 0,
@@ -624,7 +633,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const deletable = collectLeaves(node)
       .map((b) => b.name)
       .filter((n) => n !== repo.branches.current.trim())
+    const all = collectLeaves(node).map((b) => b.name)
     return [
+      {
+        label: interp(t('sidebar.pushFolderBranches'), { folder, n: all.length }),
+        disabled: repo.remotes.length === 0,
+        onClick: () => openModal({ kind: 'push-branches', repoPath: path, preselect: all })
+      },
+      { separator: true },
       {
         label: interp(t('sidebar.deleteFolderBranches'), { folder, n: deletable.length }),
         danger: true,
@@ -2131,6 +2147,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         count={locals.length}
         {...dragProps('local')}
         {...persistOpen('local', openUnlessHuge(locals.length))}
+        onHeaderContextMenu={(e) => {
+          e.preventDefault()
+          openContextMenu(e.clientX, e.clientY, [
+            {
+              label: t('push.branches'),
+              disabled: repo.remotes.length === 0,
+              onClick: () => openModal({ kind: 'push-branches', repoPath: path })
+            }
+          ])
+        }}
         actions={
           <span
             className="icon-btn"

@@ -3,7 +3,7 @@ title: Fetching, pulling & pushing
 category: Sync & many repos
 order: 50
 summary: Staying in step, with guards on the operations that bite.
-keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all no remote add remote
+keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all no remote add remote push several branches many branches batch atomic agents
 ---
 
 # Fetching, pulling & pushing
@@ -125,6 +125,83 @@ refused, with a message saying so. Reconciling a divergence is a merge or a
 rebase, and both need a working tree — so that one still costs you a checkout.
 Force-pushing a branch you are not on is offered when the remote rejects the
 push, but the pull-and-retry route is not, for the same reason.
+
+## Pushing several branches at once
+
+When several people — or several coding agents — each work on their own
+branch, publishing them one by one means checking out each branch and pressing
+Push, over and over. **Push branches…** lets you tick the branches you want and
+send them all to one remote in a single `git push`. Nothing is checked out.
+
+Open it from the arrow next to **Push**, by right-clicking the **Local**
+header in the sidebar, or from the command palette (**Push branches…**). To push
+only some branches, select them in the sidebar with Ctrl/⌘-click or
+Shift-click, then right-click and choose **Push N branches…**. A branch folder's
+right-click menu offers the same thing for everything in the folder.
+
+![Push branches: ahead, new, up to date, behind and diverged branches against origin](../screenshots/push-branches.webp)
+
+Each local branch shows where it stands against the chosen remote:
+
+| Badge | Meaning | Ticked at first |
+|-------|---------|-----------------|
+| **↑N** | N commits the remote does not have yet | Yes |
+| **new** | The remote has no branch of that name — this push creates it | Yes |
+| **up to date** | Nothing to send | No |
+| **↓N** | Behind: the remote has commits this branch lacks | Disabled |
+| **diverged ↑N ↓M** | Each side has commits the other lacks | Disabled |
+
+A branch whose upstream on that remote has a different name lands on that name,
+shown as **→ origin/other-name**. A lock marks a [protected branch](repo-settings.md).
+The filter box, **Select all shown** and the count work as in the
+[clone dialog](cloning.md).
+
+**Track the remote branch** (on by default) sets the upstream for each branch
+that had none and made it to the remote, as the first push of a single branch
+does. It never re-points a branch that already tracks something, even another
+remote.
+
+**All or nothing** runs `git push --atomic`. If the remote refuses any branch,
+it updates none of them. With it off, which is the default, each branch
+succeeds or fails on its own: a refused branch does not hold back the others.
+
+When the push finishes, the dialog lists every branch with its outcome: pushed,
+created, already up to date, rejected with git's reason, or held back by the
+secret guard. Any `remote:` lines the server sent are shown too, because that is
+where GitHub or GitLab explains a protected-branch refusal. **Back to the list**
+reloads the states so you can push what is left.
+
+### The guards still apply, branch by branch
+
+- The [secret guard](security.md) checks **each** branch's outgoing commits:
+  every file touched by a commit on the branch that the remote's branches do not
+  already have. That includes a file that was added and then deleted again,
+  because it is still in the history being published. A flagged branch is
+  **held back** and the result shows which files caused it. The other branches
+  still go. To publish a held-back branch, push it on its own. The single push
+  shows you those files and asks you to confirm.
+- The repository's own push checklist from `.gitcito.json` is shown once, as for
+  any push.
+- Protected branches get no extra confirmation, the same as a normal non-forced
+  push. The lock is there so you notice, and the host decides.
+
+### Limits
+
+- **Never forced.** There is no `+` refspec and no `--force`. A behind or
+  diverged branch cannot be ticked. If you need to force-push it, do it one
+  branch at a time from its own menu, with that action's own confirmation.
+- **No undo.** A push cannot be safely reversed, the same as a single push.
+- **States come from the last fetch.** The badges are computed from your
+  remote-tracking refs, without a network round trip. If someone pushed since
+  your last fetch, the remote refuses that branch (*fetch first*). That is
+  reported and never forced. Fetch first to get accurate badges.
+- **One remote per push.** To publish the same branches to a second remote, run
+  the dialog again with that remote picked.
+- **Atomic needs server support.** A server without `--atomic` refuses the
+  whole push with an error. Turn the option off and try again.
+- **A failure before any branch is reached**, such as authentication, a wrong
+  URL or the network, fails the whole push with git's error, the same as a single
+  push.
 
 ## Fetch
 
