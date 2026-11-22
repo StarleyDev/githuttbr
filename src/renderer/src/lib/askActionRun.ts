@@ -7,7 +7,21 @@ import type {
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { askActionSafety } from './askActions'
-import { t } from '../i18n'
+import { t, translate, type TranslationKey } from '../i18n'
+
+/**
+ * A failure in Gitcito's own words. The result travels to the model as well as
+ * to the card, so the detail is English (CLAUDE.md §3, "copy that is also model
+ * input") and the key rides along for the UI to translate.
+ */
+function ownFailure(key: TranslationKey): { code: 'unknown'; detail: string; detailKey: TranslationKey } {
+  return { code: 'unknown', detail: translate('en', key), detailKey: key }
+}
+
+/** What the card and the toast show for a failed plan: translated when it is our copy. */
+export function actionErrorText(error: RepoChatExecutionResult['error']): string | undefined {
+  return error?.detailKey ? t(error.detailKey as TranslationKey) : error?.detail
+}
 import { useSettingsStore } from '../stores/settings'
 import { submitStackCore, useRepoStore } from '../stores/repo'
 
@@ -101,8 +115,10 @@ function redactedErrorDetail(error: unknown): string {
 export function classifyRepoChatActionError(
   action: RepoChatAction,
   error: unknown
-): { code: RepoChatActionErrorCode; detail?: string; paths?: string[] } {
-  const shaped = error as { code?: unknown; detail?: unknown; message?: unknown; paths?: unknown } | null
+): { code: RepoChatActionErrorCode; detail?: string; detailKey?: string; paths?: string[] } {
+  const shaped = error as
+    | { code?: unknown; detail?: unknown; detailKey?: unknown; message?: unknown; paths?: unknown }
+    | null
   const code = typeof shaped?.code === 'string' && ERROR_CODES.has(shaped.code as RepoChatActionErrorCode)
     ? (shaped.code as RepoChatActionErrorCode)
     : action.type === 'commit' && /hook|husky|pre-commit|commit-msg/i.test(redactedErrorDetail(error))
@@ -113,7 +129,13 @@ export function classifyRepoChatActionError(
   const paths = Array.isArray(shaped?.paths)
     ? shaped.paths.filter((path): path is string => typeof path === 'string')
     : undefined
-  return { code, ...(detail ? { detail } : {}), ...(paths?.length ? { paths } : {}) }
+  const detailKey = typeof shaped?.detailKey === 'string' ? shaped.detailKey : undefined
+  return {
+    code,
+    ...(detail ? { detail } : {}),
+    ...(detailKey ? { detailKey } : {}),
+    ...(paths?.length ? { paths } : {})
+  }
 }
 
 function failedResult(
@@ -176,7 +198,7 @@ export async function executeRepoChatActions(
         actions,
         applied,
         index,
-        { code: 'unknown', detail: t('chat.actionOrderInvalid') },
+        ownFailure('chat.actionOrderInvalid'),
         actionResults
       )
     }
@@ -237,8 +259,7 @@ export async function executeRepoChatActions(
       } else if (action.type === 'push') {
         const branch = action.branch ?? (await gitApi.status(repoPath)).current
         if (!branch) {
-          const noBranch = { code: 'unknown' as const, detail: t('chat.actionNoBranchToPush') }
-          return failedResult(actions, applied, index, noBranch, actionResults)
+          return failedResult(actions, applied, index, ownFailure('chat.actionNoBranchToPush'), actionResults)
         }
         // Force is not in the union: a plan may publish work, never rewrite it.
         await gitApi.push(repoPath, branch, action.remote ? { remote: action.remote } : undefined)
@@ -275,10 +296,11 @@ async function openProposedPr(
 ): Promise<NonNullable<RepoChatExecutionResult['prs']>[number]> {
   const repo = useRepoStore.getState().repos[repoPath]
   const origin = repo?.remotes.find((remote) => remote.name === 'origin') ?? repo?.remotes[0]
-  // Shown to the user (the card's tooltip and the run() toast), so it is translated.
-  if (!origin) throw new Error(t('chat.actionNoRemoteForPr'))
+  // Thrown as an English detail plus its key: classifyRepoChatActionError keeps
+  // both, so the model reads English and the card shows the translation.
+  if (!origin) throw Object.assign(new Error(), ownFailure('chat.actionNoRemoteForPr'))
   const source = action.source || repo?.branches.current
-  if (!source) throw new Error(t('chat.actionNoBranchForPr'))
+  if (!source) throw Object.assign(new Error(), ownFailure('chat.actionNoBranchForPr'))
   const profile = useSettingsStore.getState().activeProfile()
   const result = await hostingApi.createPR(origin.url, { github: profile.githubToken || undefined }, {
     title: action.title,

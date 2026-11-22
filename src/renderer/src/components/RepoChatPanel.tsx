@@ -50,7 +50,7 @@ import {
 } from '../lib/repoChatContext'
 import { annotateChatHtml, tokenizeChatText } from '../lib/chatText'
 import { askActionDetail, askActionsAutoRun, destructiveAskFiles } from '../lib/askActions'
-import { executeRepoChatActions, planGuardSnapshot } from '../lib/askActionRun'
+import { actionErrorText, executeRepoChatActions, planGuardSnapshot } from '../lib/askActionRun'
 import { repoChatActionMeta } from '../lib/askActionMeta'
 import { ActionResultLinks, ActionWidget } from './ActionWidgets'
 import { gitApi } from '../infrastructure/api'
@@ -280,7 +280,7 @@ function ChatActionCard({
         )}
         {state === 'failed' && (
           <>
-            <span className="repo-chat-actions-status failed" title={execution?.error?.detail ?? message.actionsError}>
+            <span className="repo-chat-actions-status failed" title={actionErrorText(execution?.error) ?? message.actionsError}>
               <AlertTriangle size={12} />{' '}
               {t(execution?.error ? ACTION_ERROR_KEYS[execution.error.code] ?? 'chat.actionsFailed' : 'chat.actionsFailed')}
             </span>
@@ -497,7 +497,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             execution = await executeRepoChatActions(repoPath, actions)
             if (guard) execution = { ...execution, snapshot: guard }
             void finalizeActions(repoPath, message.id, execution, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })
-            if (execution.error) throw new Error(execution.error.detail ?? execution.error.code)
+            if (execution.error) throw new Error(actionErrorText(execution.error) ?? execution.error.code)
           },
           undefined,
           null,
