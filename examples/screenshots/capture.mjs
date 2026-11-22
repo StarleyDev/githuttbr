@@ -13,20 +13,16 @@
 // file pointing at the right repos, drives the UI into the target state and
 // screenshots it. Motion clips are recorded via a Chromium screencast and
 // stitched into animated WebP with ffmpeg.
-import { _electron as electron } from 'playwright'
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdtemp, mkdir, writeFile, rm, readdir, symlink } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir, cpus } from 'node:os'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import { shots, clips } from './shots.config.mjs'
+import { ROOT, MAIN, makeUserDataDir, seedProfile, launchApp, dismissKeychainConsent } from './harness.mjs'
 
-const HERE = dirname(fileURLToPath(import.meta.url))
-const ROOT = join(HERE, '..', '..')
 const PLAYGROUND = join(ROOT, 'examples', 'playground')
 const OUT_DIR = join(ROOT, 'docs', 'screenshots')
-const MAIN = join(ROOT, 'out', 'main', 'index.js')
 
 // Repos are loaded through neutral symlinks so screenshots show a clean,
 // username-free path (e.g. /tmp/gitcito-demo/octopus-merge) instead of the
@@ -169,82 +165,32 @@ function seedSettings(shot, theme) {
   }
 }
 
-/**
- * The environment a shot's Electron starts with. ELECTRON_RUN_AS_NODE is
- * dropped: an editor built on Electron (VS Code, Cursor) sets it for its own
- * terminals, and inherited it makes Electron start as plain Node — the launch
- * then fails with nothing but "Process failed to launch".
- */
-function shotEnv(shot) {
-  const env = { ...process.env, ...(shot.env ?? {}) }
-  delete env.ELECTRON_RUN_AS_NODE
-  return env
-}
-
 async function launch(shot, theme) {
-  const userDataDir = await mkdtemp(join(tmpdir(), 'gitcito-shot-'))
-  await mkdir(userDataDir, { recursive: true })
+  const userDataDir = await makeUserDataDir()
   const repoPaths = repoPathsFor(shot)
 
   if (shot.prepare) await shot.prepare({ repoPaths, run: (c, a, o) => sh(c, a, o) })
 
-  await writeFile(join(userDataDir, 'gitcito-settings.json'), JSON.stringify(seedSettings(shot, theme), null, 2))
+  // The seeded profile carries a demo AI key; the keychain answer written with
+  // it keeps the consent explainer out of every shot (see harness.mjs). Only
+  // shots that actually need a readable vault opt in with `keychain: true`.
+  await seedProfile(userDataDir, seedSettings(shot, theme), { keychain: !!shot.keychain })
 
-  // Answer the keychain question before it is asked. The seeded profile carries
-  // a demo AI key, so every launch would otherwise raise the consent explainer
-  // and photograph it instead of the feature (each shot gets a fresh userData
-  // dir, so it asks every single time).
-  //
-  // 'declined' is the default on purpose: refusing keeps tokens in memory and
-  // the app fully working, while granting makes macOS raise its own "Gitcito
-  // Safe Storage" dialog — an OS window Playwright cannot dismiss, which would
-  // stall the run. Only shots that actually need a readable vault opt in.
-  await writeFile(
-    join(userDataDir, 'gitcito-keychain.json'),
-    JSON.stringify({ consent: shot.keychain ? 'granted' : 'declined', explained: true }, null, 2)
+  // `shot.env` lets an entry redirect something machine-specific at a
+  // throwaway copy — the SSH key list, say, which must never photograph the
+  // real one. Honoured by the app only under --shot.
+  const { app, page } = await launchApp({ userDataDir, env: shot.env ?? {}, width: WIDTH, height: HEIGHT }).catch(
+    async (e) => {
+      await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
+      throw e
+    }
   )
 
-  const app = await electron.launch({
-    // --disable-gpu forces software (CPU) rasterization so pixel output is
-    // identical across runs, eliminating GPU/subpixel-antialiasing drift.
-    // SHOT_ELECTRON_ARGS adds switches for this machine's display — on a Wayland
-    // desktop whose compositor will not hand Chromium a screenshot,
-    // `--ozone-platform=x11` (with WAYLAND_DISPLAY unset) captures through XWayland.
-    args: [MAIN, '--shot', `--user-data-dir=${userDataDir}`, '--disable-gpu', ...(process.env.SHOT_ELECTRON_ARGS ?? '').split(/\s+/).filter(Boolean)],
-    // `shot.env` lets an entry redirect something machine-specific at a
-    // throwaway copy — the SSH key list, say, which must never photograph the
-    // real one. Honoured by the app only under --shot.
-    env: shotEnv(shot),
-    cwd: ROOT
-  })
-  const page = await app.firstWindow()
-
-  // Deterministic content size + wait for the bridge and the active repo to load.
-  await app.evaluate(
-    ({ BrowserWindow }, { w, h }) => {
-      const win = BrowserWindow.getAllWindows()[0]
-      win.setContentSize(w, h)
-    },
-    { w: WIDTH, h: HEIGHT }
-  )
-  // Options are the *third* argument (the second is `arg`). Interval polling,
-  // not the default requestAnimationFrame: a window the compositor considers
-  // hidden (Wayland, another workspace) never gets a frame, so rAF polling
-  // never runs and the wait times out with the bridge long since ready.
-  await page.waitForFunction(() => window.__shot?.ready === true, undefined, { timeout: 20000, polling: 250 })
   const activePath = shot.groupLanding ? null : repoPaths[shot.repos[0]]
   if (activePath) {
     await page.evaluate((p) => window.__shot.waitForRepo(p), activePath).catch(() => {})
   }
-  // Second line of defence behind the seeded consent file: if anything still
-  // manages to raise the keychain explainer, drop it before the shot is driven.
-  // Only that one kind — every other modal is something a shot asked for.
-  await page
-    .evaluate(() => {
-      const ui = window.__shot.ui.getState()
-      if (ui.modal?.kind === 'keychain-consent') ui.closeModal()
-    })
-    .catch(() => {})
+  await dismissKeychainConsent(page)
 
   // Freeze caret, scrollbars, animations and transitions for clean, deterministic frames.
   await page.addStyleTag({
