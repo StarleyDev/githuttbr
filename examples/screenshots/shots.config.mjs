@@ -2638,6 +2638,22 @@ export const shots = [
     }
   },
   {
+    // Push branches…: every state the dialog tells apart, from a scenario that
+    // builds them against a local bare remote — ahead, new, up to date, behind,
+    // diverged, and one that lands on its upstream's other name.
+    out: 'push-branches',
+    repos: ['multi-branch-push'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['multi-branch-push']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(600)
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'push-branches', repoPath: p }), repo)
+      await page.locator('.push-branch-row').first().waitFor()
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // A force-push that would rewrite what the remote has: the guard fires
     // before anything leaves the machine.
     out: 'force-push-guard',

@@ -1,0 +1,76 @@
+import type { BranchPushResult, BranchPushState } from '../../../shared/types'
+
+/**
+ * Behind and diverged branches cannot go out without a force, and a force push
+ * stays a one-branch-at-a-time decision — so they are shown, but never ticked.
+ */
+export function canBatchPush(state: BranchPushState): boolean {
+  return state.state === 'ahead' || state.state === 'new' || state.state === 'upToDate'
+}
+
+/**
+ * The ticks the dialog opens with. With `preselect` (the sidebar's selection),
+ * exactly those that can be pushed; otherwise everything with something to
+ * publish — ahead, or not on the remote yet.
+ */
+export function initialPushSelection(states: BranchPushState[], preselect?: string[]): string[] {
+  if (preselect?.length) {
+    const wanted = new Set(preselect)
+    return states.filter((s) => wanted.has(s.name) && canBatchPush(s)).map((s) => s.name)
+  }
+  return states.filter((s) => s.state === 'ahead' || s.state === 'new').map((s) => s.name)
+}
+
+/** Case-insensitive substring filter over branch names; the current branch first. */
+export function filterPushStates(states: BranchPushState[], query: string): BranchPushState[] {
+  const q = query.trim().toLowerCase()
+  const shown = q ? states.filter((s) => s.name.toLowerCase().includes(q)) : states
+  return [...shown].sort((a, b) => Number(b.isCurrent) - Number(a.isCurrent))
+}
+
+export interface SecretFlag {
+  branch: string
+  files: string[]
+}
+
+/**
+ * The pre-push secret guard, applied to each branch on its own. A branch whose
+ * outgoing commits touch a credential-looking file is held back from the batch
+ * — the rest go. A flagged branch can still be pushed alone, where the single
+ * push's confirmation asks about exactly those files.
+ */
+export function partitionBySecrets(
+  branches: string[],
+  filesByBranch: Record<string, string[]>,
+  isSecret: (path: string) => boolean
+): { clean: string[]; flagged: SecretFlag[] } {
+  const clean: string[] = []
+  const flagged: SecretFlag[] = []
+  for (const branch of branches) {
+    const files = (filesByBranch[branch] ?? []).filter(isSecret)
+    if (files.length) flagged.push({ branch, files })
+    else clean.push(branch)
+  }
+  return { clean, flagged }
+}
+
+/** The remote the dialog starts on: the current branch's upstream remote, else origin, else the first. */
+export function defaultPushRemote(remotes: string[], currentUpstream: string | null | undefined): string {
+  const up = currentUpstream?.split('/')[0]
+  if (up && remotes.includes(up)) return up
+  if (remotes.includes('origin')) return 'origin'
+  return remotes[0] ?? ''
+}
+
+/** Counts for the summary toast: what went out, what git refused, what never left. */
+export function tallyPushResults(results: BranchPushResult[]): { ok: number; rejected: number; notAttempted: number } {
+  let ok = 0
+  let rejected = 0
+  let notAttempted = 0
+  for (const r of results) {
+    if (r.status === 'rejected') rejected++
+    else if (r.status === 'notAttempted') notAttempted++
+    else ok++
+  }
+  return { ok, rejected, notAttempted }
+}

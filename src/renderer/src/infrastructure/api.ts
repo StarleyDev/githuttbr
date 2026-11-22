@@ -52,6 +52,8 @@ import type {
   RemoteInfo,
   RemoteAuthCheck,
   PushRemoteResult,
+  BranchPushState,
+  PushBranchesResult,
   RepoStatus,
   RerereStatus,
   RepoSummary,
@@ -283,6 +285,14 @@ export const gitApi = {
   pushToRemotes: (path: string, branch: string, remotes: string[], opts?: { force?: boolean; tags?: boolean }) =>
     call<PushRemoteResult[]>('pushToRemotes', path, branch, remotes, opts),
   pushAllTags: (path: string, remote?: string) => call<void>('pushAllTags', path, remote),
+  /** Every local branch against `remote` — ahead/behind, new, diverged. */
+  branchPushStates: (path: string, remote: string) => call<BranchPushState[]>('branchPushStates', path, remote),
+  /** Per branch, the files its not-yet-published commits touch — the secret guard's input. */
+  outgoingFiles: (path: string, remote: string, branches: string[]) =>
+    call<Record<string, string[]>>('outgoingFiles', path, remote, branches),
+  /** Several branches in one non-forced `git push`, reported per branch. */
+  pushBranches: (path: string, remote: string, branches: string[], opts: { setUpstream: boolean; atomic?: boolean }) =>
+    call<PushBranchesResult>('pushBranches', path, remote, branches, opts),
 
   cherryPickMany: (path: string, hashes: string[], noCommit?: boolean) =>
     call<void>('cherryPickMany', path, hashes, noCommit),

@@ -217,6 +217,8 @@ export type ModalSpec =
   | { kind: 'export'; repoPath: string; tab?: 'bundle' | 'archive' }
   | { kind: 'maintenance'; repoPath: string }
   | { kind: 'merge-options'; repoPath: string; source?: string }
+  /** Push several local branches in one go; `preselect` is a sidebar selection. */
+  | { kind: 'push-branches'; repoPath: string; preselect?: string[] }
   | { kind: 'objects'; repoPath: string; rev?: string }
   | { kind: 'attributes'; repoPath: string }
   | { kind: 'credentials'; repoPath: string }

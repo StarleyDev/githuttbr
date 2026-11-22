@@ -76,7 +76,8 @@ const EXPECTED = [
   'moved-code',
   'huge-line',
   'worktree-care',
-  'test-suite'
+  'test-suite',
+  'multi-branch-push'
 ]
 
 describe('playground fixtures', () => {
