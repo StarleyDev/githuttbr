@@ -4,6 +4,7 @@ category: Sincronizzazione e più repo
 order: 56
 summary: Crea PR ovunque; su GitHub e GitLab puoi anche recensirle e fonderle.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review revisione approva merge issue
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hosting e pull request
@@ -34,7 +35,8 @@ non da dedurre da quattro rami base.
 Due cose formano quel gruppo: il numero di pila di GitHub, quando le PR
 appartengono a una [pila nativa](stacks.md), altrimenti le ref stesse: una pull
 request la cui base è la testa di un’altra si appoggia su di essa. La seconda
-regola è ciò che lo fa funzionare anche su GitLab, Bitbucket e Azure DevOps.
+regola è ciò che lo fa funzionare anche su GitLab, Bitbucket e Azure DevOps, e
+per catene aperte prima che tutto questo esistesse.
 
 ![Una pila nell’elenco delle pull request](../../screenshots/pr-stack-list.webp)
 
@@ -87,7 +89,7 @@ La colonna principale ha tre sezioni:
 |---|---|
 | **Conversazione** | La descrizione, i commenti e i thread di revisione in linea (`file:riga`, con risposte). Poi la casella dei commenti con commenta / approva / chiedi modifiche, e il riquadro di merge (merge, squash o rebase) |
 | **File** | Ogni file modificato, e il diff di quello selezionato accanto all’elenco, con evidenziazione della sintassi e modifiche a livello di parola (file dall’aria segreta mascherati se l’impostazione è attiva). Una lista ✓ “visto” ricorda i tuoi progressi. Un file per cui l’host non invia il diff (binario o troppo grande) rimanda all’host |
-| **Check** | Check-run di CI (GitHub), job di pipeline (GitLab), stati del commit (Forgejo) o stati della PR (Azure DevOps), con superato/fallito/in corso e link ai log |
+| **Check** | Check-run di CI (GitHub) o job di pipeline (GitLab), con superato/fallito/in corso e link ai log |
 
 La barra laterale mostra:
 
@@ -120,10 +122,6 @@ che l’API di GitLab non restituisce. Revisione e merge funzionano su gitlab.co
 su un [GitLab self-managed](#gitlab-self-managed). Bitbucket si apre ancora nel browser
 per la revisione.
 
-Differenze di Forgejo: i thread di commenti di riga sono mostrati ma non si può
-rispondere (Forgejo non ha un’API per farlo), e i check sono gli stati del commit
-di testa — di più in [Forgejo](#forgejo).
-
 Differenze di Azure DevOps: approvare esprime il tuo voto (*Approved*); **chiedi
 modifiche** vota *Waiting for author*. Completare la PR accetta merge, squash o
 rebase. Azure elenca i file modificati di una PR ma non invia il diff, quindi
@@ -136,6 +134,18 @@ La barra laterale elenca anche i **work item collegati alla PR** — numero,
 titolo, tipo e stato —, ognuno si apre nel browser. Leggerli richiede un token
 che possa leggere i work item (*Work Items: Read*); senza, la riga semplicemente
 non compare.
+
+I **Check** includono la **build validation** del branch — la pipeline richiesta
+dalla sua policy, che Azure registra come risultato di una policy anziché come
+stato — accanto a ogni stato pubblicato da una pipeline o da una CI esterna. Un
+check che è una build di Azure Pipelines di questa organizzazione mostra il suo
+log sotto la riga: i task falliti, ciascuno sotto il proprio nome, oppure, se
+nulla è fallito, il log completo di ogni job, partendo dalla fine. Il token va
+solo alle build dell’organizzazione della PR. Il pannello legge al massimo tre
+log, che si dividono un budget di 512 KB di coda. Leggere i log richiede
+*Build: Read*; senza, la riga propone il browser. Un token a cui manca un
+permesso viene semplicemente rifiutato: l’app non lo scambia mai per un accesso
+revocato e non scarta mai la credenziale che usa git.
 
 ## GitLab self-managed
 
@@ -200,6 +210,8 @@ stato di una CI esterna non lo riceve mai. Un server che dà i log solo a un
 browser con accesso risponde con la pagina di login, e la riga lo dice e propone
 il browser. I log molto lunghi mostrano le ultime migliaia di righe.
 
+![Il log di un job di Forgejo Actions aperto sotto la riga del suo check](../../screenshots/pr-check-log.webp)
+
 Come per GitLab, **un token Forgejo va solo al server che l’ha emesso**. Un
 profilo senza indirizzo Forgejo non ha alcuna credenziale Forgejo. Non esiste un
 server predefinito di ripiego.
@@ -220,10 +232,20 @@ e **crea un branch per questa issue** (con la denominazione affidata all'AI). Le
 milestone mostrano l'avanzamento e le proprie issue. Le release sono sfogliabili
 con una pagina di changelog.
 
+**Pull request collegate** risponde a «qualcuno la sta già sistemando?»: le PR
+che chiuderanno la issue, o che l’hanno chiusa — una parola chiave in stile
+`Closes #N` o un collegamento manuale nel riquadro *Development* di GitHub —
+prima le aperte, poi le unite, poi le chiuse. Una PR che si limita a *menzionare*
+la issue resta fuori di proposito, e così tutto ciò che va oltre le prime 50. Una
+di questo repository si apre in una scheda PR; una di un altro repository si apre
+nel browser. Un token che non può leggere le pull request del repository (un
+token fine-grained senza *Pull requests: read*) riceve un discreto «impossibile
+caricare» invece di un falso «nessuna».
+
 Su un server [Forgejo](#forgejo) funzionano gli stessi elenchi e le stesse
-pagine, con il token Forgejo del profilo. Due cose sono solo di GitHub e lì
-restano vuote: i campi di Projects v2 e le pull request collegate a una issue. Le
-release elencano le più recenti, non tutta la storia.
+pagine, con il token Forgejo del profilo. Due cose sono solo di GitHub: i campi
+di Projects v2 restano vuoti, e la sezione delle pull request collegate non
+viene mostrata. Le release elencano le più recenti, non tutta la storia.
 
 ## In attesa della tua revisione
 
@@ -232,6 +254,8 @@ Nell’elenco delle pull request della barra laterale, un 👁 segna le PR in cu
 stesso modo. Chi sei «tu» viene chiesto all’host con la credenziale del profilo e
 ricordato per dieci minuti. Un token che non può leggere il proprio utente (senza
 `read:user` su Forgejo, ad esempio) non segna nulla.
+
+![Pull request in attesa della tua revisione, segnate con un occhio](../../screenshots/pr-awaiting-review.webp)
 
 Con **Impostazioni → Notifiche di sistema** attivo, una pull request di GitLab o
 Forgejo che *inizia* ad attenderti ne genera una; un clic apre la pagina della PR.

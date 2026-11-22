@@ -4,6 +4,7 @@ category: Sync & viele Repos
 order: 56
 summary: PRs überall erstellen; auf GitHub und GitLab reviewen und mergen.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review prüfen freigeben approve mergen issues benachrichtigungen token
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hosting & Pull Requests
@@ -90,7 +91,7 @@ Die Hauptspalte hat drei Bereiche:
 |---|---|
 | **Unterhaltung** | Beschreibung, Kommentare und Inline-Review-Threads (`datei:zeile`, mit Antworten). Darunter das Kommentarfeld mit kommentieren / freigeben / Änderungen anfordern und die Merge-Box (Merge, Squash oder Rebase) |
 | **Dateien** | Jede geänderte Datei und der Diff der gewählten neben der Liste, mit Syntax-Hervorhebung und Änderungen auf Wortebene (geheim aussehende Dateien maskiert, wenn diese Einstellung an ist). Eine ✓-„Gesehen“-Liste merkt sich deinen Fortschritt. Eine Datei, für die der Host keinen Diff schickt (binär oder zu groß), verlinkt auf den Host |
-| **Checks** | CI-Check-Runs (GitHub), Pipeline-Jobs (GitLab), Commit-Status (Forgejo) oder PR-Status (Azure DevOps), mit bestanden/fehlgeschlagen/läuft und Links zu den Logs |
+| **Checks** | CI-Check-Runs (GitHub) oder Pipeline-Jobs (GitLab), mit bestanden/fehlgeschlagen/läuft und Links zu den Logs |
 
 Die Seitenleiste zeigt:
 
@@ -123,10 +124,6 @@ umgebenden Diff-Abschnitt, den GitLabs API nicht liefert. Review und Merge
 funktionieren auf gitlab.com und auf einem [selbst betriebenen GitLab](#selbst-betriebenes-gitlab).
 Bitbucket öffnet sich fürs Review weiterhin im Browser.
 
-Forgejo-Unterschiede: Zeilenkommentar-Threads werden angezeigt, lassen sich
-aber nicht beantworten (Forgejo hat keine API dafür), und die Checks sind die
-Commit-Status des Head-Commits — mehr dazu unter [Forgejo](#forgejo).
-
 Azure-DevOps-Unterschiede: Freigeben gibt deine Stimme ab (*Approved*);
 **Änderungen anfordern** stimmt *Waiting for author*. Den PR abschließen geht
 mit Merge, Squash oder Rebase. Azure listet die geänderten Dateien eines PRs,
@@ -139,6 +136,19 @@ Die Seitenleiste listet außerdem die **mit dem PR verknüpften Work Items** —
 Nummer, Titel, Typ und Status —, jedes öffnet sich im Browser. Sie zu lesen
 braucht ein Token, das Work Items lesen darf (*Work Items: Read*); ohne das
 fällt die Zeile einfach weg.
+
+Zu den **Checks** gehört die **Build-Validierung** des Branches — die Pipeline,
+die seine Richtlinie verlangt und die Azure als Richtlinienergebnis statt als
+Status verbucht — neben jedem Status, den eine Pipeline oder eine externe CI
+meldet. Ein Check, der ein Azure-Pipelines-Build dieser Organisation ist, zeigt
+sein Log unter der Zeile: die fehlgeschlagenen Tasks, jeder unter seinem Namen,
+oder das ganze Log jedes Jobs, wenn nichts fehlschlug, beginnend am Ende. Das
+Token geht nur an Builds in der eigenen Organisation des PRs. Das Panel liest
+höchstens drei Logs, die sich ein Budget von 512 KB vom Ende teilen. Logs zu
+lesen braucht *Build: Read*; ohne das bietet die Zeile stattdessen den Browser
+an. Ein Token, dem ein Recht fehlt, wird schlicht abgewiesen — die App hält das
+nie für eine widerrufene Anmeldung und verwirft nie die Zugangsdaten, die git
+nutzt.
 
 ## Selbst betriebenes GitLab
 
@@ -206,6 +216,8 @@ angemeldeten Browser gibt, antwortet mit seiner Anmeldeseite — die Zeile sagt
 das und bietet den Browser an. Sehr lange Logs zeigen ihre letzten paar tausend
 Zeilen.
 
+![Das Log eines Forgejo-Actions-Jobs, geöffnet unter seiner Check-Zeile](../../screenshots/pr-check-log.webp)
+
 Wie bei GitLab gilt: **Ein Forgejo-Token geht nur an den Server, der es
 ausgestellt hat.** Ein Profil ohne Forgejo-Adresse hat überhaupt keine
 Forgejo-Anmeldung. Es gibt keinen Standardserver als Rückfall.
@@ -226,10 +238,21 @@ Schließen/Wiederöffnen und **einen Branch für dieses Issue anlegen** (mit
 KI-Namensvorschlag). Meilensteine zeigen ihren Fortschritt und ihre Issues.
 Releases lassen sich mit einer Changelog-Seite durchblättern.
 
+**Verknüpfte Pull Requests** beantwortet „Behebt das schon jemand?“: die PRs,
+die das Issue schließen werden oder geschlossen haben — über ein Schlüsselwort
+im Stil von `Closes #N` oder eine manuelle Verknüpfung in GitHubs Feld
+*Development* —, offene zuerst, dann gemergte, dann geschlossene. Ein PR, der
+das Issue nur *erwähnt*, bleibt absichtlich draußen, ebenso alles nach den
+ersten 50. Einer aus diesem Repository öffnet sich in einem PR-Tab, einer aus
+einem anderen Repository im Browser. Ein Token, das die Pull Requests des
+Repositorys nicht lesen darf (ein Fine-grained Token ohne *Pull requests:
+read*), bekommt ein dezentes „konnte nicht geladen werden“ statt eines falschen
+„keine“.
+
 Auf einem [Forgejo](#forgejo)-Server funktionieren dieselben Listen und Seiten,
-mit dem Forgejo-Token des Profils. Zwei Dinge gibt es nur bei GitHub, und sie
-bleiben dort leer: Felder aus Projects v2 und die mit einer Issue verknüpften
-Pull Requests. Releases listen die neuesten, nicht die ganze Geschichte.
+mit dem Forgejo-Token des Profils. Zwei Dinge gibt es nur bei GitHub: Felder aus
+Projects v2 bleiben leer, und der Bereich mit verknüpften Pull Requests wird
+nicht angezeigt. Releases listen die neuesten, nicht die ganze Geschichte.
 
 ## Wartet auf dein Review
 
@@ -238,6 +261,8 @@ In der Pull-Request-Liste der Seitenleiste markiert ein 👁 die PRs, bei denen
 GitLab und Forgejo gleichermaßen. Wer „du“ bist, wird beim Host mit der Anmeldung
 des Profils erfragt und zehn Minuten gemerkt. Ein Token, das den eigenen Benutzer
 nicht lesen darf (bei Forgejo etwa ohne `read:user`), markiert nichts.
+
+![Pull Requests, die auf dein Review warten, mit einem Auge markiert](../../screenshots/pr-awaiting-review.webp)
 
 Mit **Einstellungen → Desktop-Benachrichtigungen** löst ein Pull Request auf
 GitLab oder Forgejo, der *beginnt*, auf dich zu warten, eine aus; ein Klick

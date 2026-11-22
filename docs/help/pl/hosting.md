@@ -4,6 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 56
 summary: Twórz PR-y wszędzie; recenzuj je i merguj na GitHubie i GitLabie.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps recenzja zatwierdź merge zgłoszenia review approve issues
+source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
 # Hosting i pull requesty
@@ -33,7 +34,8 @@ wywnioskowania z czterech baz.
 Grupę tworzą dwie rzeczy: własny numer stosu GitHuba, gdy PR-y należą do
 [stosu natywnego](stacks.md), a poza tym same refy — pull request, którego bazą
 jest głowa innego, stoi na nim. Ta druga reguła sprawia, że działa to również na
-GitLabie, Bitbuckecie i Azure DevOps.
+GitLabie, Bitbuckecie i Azure DevOps, a także dla łańcuchów otwartych, zanim
+cokolwiek z tego powstało.
 
 ![Stos na liście pull requestów](../../screenshots/pr-stack-list.webp)
 
@@ -86,7 +88,7 @@ Kolumna główna ma trzy sekcje:
 |---|---|
 | **Rozmowa** | Opis, komentarze i wątki recenzji w kodzie (`plik:wiersz`, z odpowiedziami). Potem pole komentarza z komentuj / zatwierdź / poproś o zmiany oraz pole scalania (merge, squash lub rebase) |
 | **Pliki** | Każdy zmieniony plik i diff wybranego obok listy, z podświetlaniem składni i zmianami na poziomie słów (pliki wyglądające na sekrety zamaskowane, gdy to ustawienie jest włączone). Lista ✓ „obejrzane” pamięta postęp. Plik, dla którego host nie wysyła diffu (binarny lub za duży), linkuje do hosta |
-| **Checki** | Check-runy CI (GitHub), joby pipeline’u (GitLab), statusy commita (Forgejo) lub statusy PR (Azure DevOps), z wynikiem i linkami do logów |
+| **Checki** | Check-runy CI (GitHub) lub joby pipeline’u (GitLab), ze stanem zaliczone/nieudane/w toku i linkami do logów |
 
 Panel boczny pokazuje:
 
@@ -117,10 +119,6 @@ wiersz, ale nie otaczający fragment diffu, którego API GitLaba nie zwraca.
 Recenzja i scalanie działają na gitlab.com i na [GitLabie na własnym serwerze](#gitlab-na-własnym-serwerze).
 Bitbucket do recenzji nadal otwiera się w przeglądarce.
 
-Różnice Forgejo: wątki komentarzy do linii są widoczne, ale nie da się na nie
-odpowiedzieć (Forgejo nie ma do tego API), a checki to statusy commita głowy —
-więcej w [Forgejo](#forgejo).
-
 Różnice Azure DevOps: zatwierdzenie oddaje twój głos (*Approved*); **poproś o
 zmiany** głosuje *Waiting for author*. Ukończenie PR przyjmuje merge, squash lub
 rebase. Azure podaje zmienione pliki PR, ale nie wysyła diffu, więc aplikacja
@@ -132,6 +130,17 @@ Panel boczny pokazuje też **work itemy powiązane z PR** — numer, tytuł, typ
 stan — każdy otwiera się w przeglądarce. Ich odczyt wymaga tokenu, który może
 czytać work itemy (*Work Items: Read*); bez niego wiersz po prostu się nie
 pojawia.
+
+**Checki** obejmują **walidację buildu** gałęzi — pipeline wymagany przez jej
+politykę, który Azure zapisuje jako wynik polityki, a nie jako status — obok
+każdego statusu, który publikuje pipeline albo zewnętrzne CI. Check będący
+buildem Azure Pipelines tej organizacji pokazuje swój log pod wierszem: zadania,
+które się nie powiodły, każde pod swoją nazwą, albo — gdy nic nie zawiodło —
+cały log każdego joba, od końca. Token trafia tylko do buildów w organizacji
+samego PR. Panel czyta najwyżej trzy logi, dzieląc budżet 512 KB końcówek.
+Odczyt logów wymaga *Build: Read*; bez tego wiersz proponuje przeglądarkę. Token
+bez jakiegoś zakresu jest po prostu odrzucany — aplikacja nigdy nie bierze tego
+za cofnięte logowanie i nigdy nie porzuca danych logowania, których używa git.
 
 ## GitLab na własnym serwerze
 
@@ -194,6 +203,8 @@ nigdy go nie dostaje. Serwer, który daje logi tylko zalogowanej przeglądarce,
 odpowiada stroną logowania — wiersz o tym mówi i proponuje przeglądarkę. Bardzo
 długie logi pokazują ostatnie kilka tysięcy wierszy.
 
+![Log joba Forgejo Actions otwarty pod wierszem jego checka](../../screenshots/pr-check-log.webp)
+
 Tak jak przy GitLab, **token Forgejo trafia tylko na serwer, który go wydał**.
 Profil bez adresu Forgejo nie ma żadnych danych logowania do Forgejo. Nie ma
 domyślnego serwera zapasowego.
@@ -214,10 +225,20 @@ ponowne oraz **utwórz gałąź dla tego zgłoszenia** (z nazwą od AI). Kamieni
 milowe pokazują postęp i swoje zgłoszenia. Wydania da się przeglądać razem ze
 stroną changelogu.
 
+**Powiązane pull requesty** odpowiadają na pytanie „czy ktoś już to naprawia?”:
+PR-y, które zamkną zgłoszenie albo już je zamknęły — słowem kluczowym w stylu
+`Closes #N` lub ręcznym powiązaniem w polu *Development* GitHuba — najpierw
+otwarte, potem scalone, potem zamknięte. PR, który tylko *wspomina* zgłoszenie,
+jest celowo pomijany, podobnie jak wszystko poza pierwszymi 50. PR z tego
+repozytorium otwiera się w karcie PR; z innego repozytorium — w przeglądarce.
+Token, który nie może czytać pull requestów repozytorium (token fine-grained bez
+*Pull requests: read*), dostaje spokojne „nie udało się wczytać” zamiast błędnego
+„brak”.
+
 Na serwerze [Forgejo](#forgejo) działają te same listy i strony, z tokenem
-Forgejo profilu. Dwie rzeczy są tylko w GitHubie i tam zostają puste: pola
-Projects v2 i pull requesty powiązane z issue. Wydania pokazują najnowsze, nie
-całą historię.
+Forgejo profilu. Dwie rzeczy są tylko w GitHubie: pola Projects v2 zostają
+puste, a sekcja powiązanych pull requestów się nie pojawia. Wydania pokazują
+najnowsze, nie całą historię.
 
 ## Czeka na Twoją recenzję
 
@@ -226,6 +247,8 @@ jesteś recenzentem i jeszcze nie odpowiedziałeś — na GitHub, GitLab i Forge
 Kim jesteś „Ty”, aplikacja pyta host danymi logowania profilu i pamięta przez
 dziesięć minut. Token, który nie może odczytać własnego użytkownika (np. bez
 `read:user` w Forgejo), niczego nie oznacza.
+
+![Pull requesty czekające na Twoją recenzję, oznaczone okiem](../../screenshots/pr-awaiting-review.webp)
 
 Z włączonym **Ustawienia → Powiadomienia systemowe** pull request w GitLabie lub
 Forgejo, który *zaczyna* na ciebie czekać, wywołuje jedno; kliknięcie otwiera
