@@ -16,6 +16,7 @@ component.
 | `en.ts` | The reference locale. Exports `en`, and derives `Dict = typeof en` and `TranslationKey`. |
 | `<code>.ts` | One per additional locale (`es.ts`, …). Typed `Dict`, so it must cover exactly the reference keys. |
 | `index.ts` | The public API only: `t`, `useT`, `translate`, `interp`, `LANGUAGES`, `TranslationKey`. |
+| `loader.ts` | Loads every locale but `en` on demand; the settings store awaits the active one before first render. An unloaded locale reads as English. |
 
 Import from `'../i18n'`. The locale files are data; `index.ts` is the interface.
 
@@ -104,7 +105,9 @@ translate('en', a.descriptionKey)   // stable prompt input
 1. Copy `en.ts` to `<code>.ts`, change the export to
    `export const <code>: Dict = { … }`, import `Dict` from `./en`, translate
    every value.
-2. In `index.ts`: import it, add it to `dictionaries`, add it to `LANGUAGES`
+2. In `loader.ts`: add a lazy loader to `dictionaries`
+   (`xx: () => import('./xx').then((m) => m.xx)`) — never a static import, or the
+   locale lands back in the start-up chunk. In `index.ts`: add it to `LANGUAGES`
    with its endonym (the language's own name — "Español", not "Spanish").
 3. Add the code to `Language` in `src/shared/types.ts`.
 4. `npm run typecheck && npm test` — the i18n tests discover the new file

@@ -17,8 +17,10 @@ Load the `translations` skill first, then:
    the English string uses it, and preserve product names, filenames, and git
    terms untranslated where that is what a speaker of the language would
    expect.
-3. Wire it in `src/renderer/src/i18n/index.ts`: import it, add it to
-   `dictionaries`, add `{ id: '$1', label: '<endonym>' }` to `LANGUAGES`.
+3. Wire it in: add a lazy loader to `dictionaries` in
+   `src/renderer/src/i18n/loader.ts` (`'$1': () => import('./$1').then((m) => m.<export>)`,
+   never a static import), and add `{ id: '$1', label: '<endonym>' }` to `LANGUAGES`
+   in `src/renderer/src/i18n/index.ts`.
 4. Add `'$1'` to the `Language` union in `src/shared/types.ts`.
 5. Verify: `npm run typecheck && npm test`. The i18n tests discover the new file
    automatically and check key parity, duplicate keys, and placeholder
