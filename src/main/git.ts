@@ -307,10 +307,36 @@ async function resolveHooksDir(git: SimpleGit, repoPath: string): Promise<{ dir:
 // sequentially — preventing concurrent ops (e.g. a user checkout racing a
 // watcher-triggered status refresh) from colliding on `.git/index.lock`.
 const gitInstances = new Map<string, SimpleGit>()
+
+/**
+ * Config keys Gitcito writes through simple-git that are not on its built-in safe list.
+ * simple-git 4 only warns about an unlisted key; its next major refuses the write, which
+ * would silently break stacks, protected branches, git-flow, rerere, subtrees and signing.
+ * `*` matches any characters, dots included, so every pattern is pinned to a leaf the app
+ * owns — a key named here also skips simple-git's vulnerability check, which is why this
+ * is `submodule.*.url` and never `submodule.*` (that would let `submodule.x.update=!cmd`).
+ */
+export const GITCITO_CONFIG_KEYS: readonly string[] = [
+  'branch.*.gitcitoparent',
+  'branch.*.gitcitobase',
+  'gitcito.protectedbranches',
+  'gitcito.subtree.*.url',
+  'gitcito.subtree.*.ref',
+  'gitcito.prepurge.*',
+  // git-flow's own keys, but only the layout: `gitflow.path.hooks` locates scripts.
+  'gitflow.branch.*',
+  'gitflow.prefix.*',
+  'rerere.autoupdate',
+  'commit.gpgsign',
+  'gpg.format',
+  'user.signingkey',
+  'submodule.*.url'
+]
+
 const gitFor = (repoPath: string): SimpleGit => {
   let git = gitInstances.get(repoPath)
   if (!git) {
-    git = simpleGit(repoPath)
+    git = simpleGit(repoPath, { allowConfig: GITCITO_CONFIG_KEYS })
     gitInstances.set(repoPath, git)
   }
   return git
@@ -7178,7 +7204,9 @@ export const gitService = {
     await git.raw(['submodule', 'deinit', '--force', '--', path]).catch(() => '')
     await git.raw(['rm', '--force', '--', path]).catch(() => '')
     // `git rm` of a submodule may leave the stale .git metadata behind.
-    await git.raw(['config', '--remove-section', `submodule.${path}`]).catch(() => '')
+    // Through execFile, not simple-git: no allowConfig pattern can name `submodule.<path>`
+    // without also naming `submodule.<path>.update`, which can run a command.
+    await runGit(repoPath, ['config', '--remove-section', `submodule.${path}`]).catch(() => '')
   },
 
   // ─── Config / profiles ─────────────────────────────────────────────────────
