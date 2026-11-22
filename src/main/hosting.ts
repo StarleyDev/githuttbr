@@ -53,6 +53,7 @@ import {
   forgejoInstanceOf,
   gitlabInstanceOf,
   instanceOf,
+  normalizeGitlabServerUrl,
   normalizeGitlabUrl,
   profileForgejoBase,
   tokenMatchesInstance
@@ -382,6 +383,32 @@ function githubBaseFromOrg(org: string | undefined): string {
   const base = normalizeGithubEnterpriseUrl(org)
   if (base && knownGithubEnterpriseInstances().includes(base)) return base
   throw new Error('This GitHub Enterprise Server is not saved in any profile yet (it must be https). Add it in Settings → Integrations → GitHub, then try again.')
+}
+
+/**
+ * The base of a server a token is being *checked* against before any profile
+ * names it — a GHES or GitLab row added in the onboarding wizard, which keeps
+ * the profile to itself until it finishes. Null unless all of these hold:
+ * - the server is not already known (a known one resolves the normal way);
+ * - the call carries a token of its own — the one the user just typed;
+ * - the address passes the same validation Settings applies (https, no
+ *   credentials, not github.com / gitlab.com).
+ * The caller then sends that token and nothing else: no profile lookup, no
+ * link, no credential helper — so no saved secret can be steered to the host.
+ * Only `hosting:whoAmI` uses this; every other provider-level call still
+ * refuses an unknown server.
+ */
+export function unsavedServerBase(provider: RepoHost, org: string | undefined, token: string): string | null {
+  if (!token.trim() || !org?.trim()) return null
+  if (provider === 'github') {
+    const base = normalizeGithubEnterpriseUrl(org)
+    return base && !knownGithubEnterpriseInstances().includes(base) ? base : null
+  }
+  if (provider === 'gitlab') {
+    const base = normalizeGitlabServerUrl(org)
+    return base && !knownGitlabInstances().includes(base) ? base : null
+  }
+  return null
 }
 
 /** The endpoints of a parsed GitHub remote — github.com, or its Enterprise Server. */
@@ -2423,6 +2450,11 @@ async function fetchConnectedAccount(
   // Nothing on this profile and no sign-in asked for: simply not connected. A
   // login elsewhere on the machine is not this profile's until it is linked.
   if (!token.trim() && !link && !interactive) return null
+  const unsaved = unsavedServerBase(provider, org, token)
+  if (unsaved) {
+    // Exactly the token this call carries — never one looked up — see unsavedServerBase.
+    return describeAccount(provider, { token: token.trim(), source: 'token' }, unsaved)
+  }
   // Only an explicit "sign in" may open the helper's login window. Merely opening
   // the Settings page must not prompt for four providers at once.
   // GitLab: the instance of the profile being edited, which the renderer sends as `org`.
@@ -2516,7 +2548,9 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
 
   if (provider === 'gitlab') {
     const headers = gitlabAuth(auth)
-    const api = glApi(providerBaseUrl('gitlab', org))
+    // `org` is already a resolved base (fetchConnectedAccount, accountOwner): resolving it
+    // again would refuse a server that is being checked before it is saved.
+    const api = glApi(org)
     const userRes = await fetch(`${api}/user`, { headers, redirect: 'error' })
     if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
     const user = (await userRes.json()) as {

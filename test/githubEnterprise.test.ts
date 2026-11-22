@@ -247,7 +247,8 @@ function fakeGithub(url: string): unknown {
   if (/\/issues\/5$/.test(path)) {
     return { number: 5, title: 'Bug', body: '', user: { login: 'dev' }, state: 'open', html_url: '', created_at: '', labels: [], assignees: [], milestone: null }
   }
-  if (/\/issues(\/5\/comments)?$/.test(path) || path === '/user/repos') return []
+  if (path === '/user') return { id: 1, login: 'me', name: null, avatar_url: '', html_url: '' }
+  if (/\/issues(\/5\/comments)?$/.test(path) || path === '/user/repos' || path === '/user/orgs') return []
   return {}
 }
 
@@ -358,6 +359,60 @@ describe('every formerly hardcoded call site uses the resolver', () => {
     calls.length = 0
     await expect(call('hosting:listRepos', 'github', COM_TOKEN, 'https://evil.example')).rejects.toThrow(/not saved/)
     expect(calls).toHaveLength(0)
+  })
+
+  // The onboarding wizard keeps its profile to itself until it finishes, so a
+  // server added there is unknown to main when its row checks the token.
+  describe('checking a token against a server no profile has saved yet', () => {
+    const NEW = 'https://ghe.new.example'
+    const TYPED = 'typed-token'
+    const SAVED = [COM_TOKEN, GHES_TOKEN, GHES_B_TOKEN]
+
+    it('asks that server, with exactly the token the call carries', async () => {
+      await call('hosting:whoAmI', 'github', ` ${TYPED} `, 'GHE.New.Example/', false)
+      expect(calls.map((c) => c.url)).toContain(`${NEW}/api/v3/user`)
+      for (const c of calls) {
+        expect(c.url.startsWith(`${NEW}/api/v3/`)).toBe(true)
+        expect(c.auth).toBe(`Bearer ${TYPED}`)
+      }
+    })
+
+    it('without a token of its own it is refused, and nothing is sent', async () => {
+      await expect(call('hosting:whoAmI', 'github', '', NEW, true)).rejects.toThrow(/not saved/)
+      await expect(call('hosting:whoAmI', 'github', '   ', NEW, false, { source: 'gh', login: 'me' })).rejects.toThrow(
+        /not saved/
+      )
+      expect(calls).toHaveLength(0)
+    })
+
+    it('a link or sign-in request alongside the token changes nothing: only that token goes', async () => {
+      await call('hosting:whoAmI', 'github', TYPED, NEW, true, { source: 'gh', login: 'me' })
+      expect(calls.length).toBeGreaterThan(0)
+      for (const c of calls) expect(c.auth).toBe(`Bearer ${TYPED}`)
+    })
+
+    it('an address Settings would refuse is refused here too', async () => {
+      for (const bad of ['http://ghe.new.example', 'https://me:pw@ghe.new.example', 'https://ghe.new.example/x', 'https://x.ghe.com']) {
+        await expect(call('hosting:whoAmI', 'github', TYPED, bad, false)).rejects.toThrow(/not saved/)
+      }
+      expect(calls).toHaveLength(0)
+    })
+
+    it('only the explicit check is opened up: listing repositories there is still refused', async () => {
+      await expect(call('hosting:listRepos', 'github', TYPED, NEW)).rejects.toThrow(/not saved/)
+      expect(calls).toHaveLength(0)
+    })
+
+    it('no saved token ever reaches the new server', async () => {
+      await call('hosting:whoAmI', 'github', TYPED, NEW, false).catch(() => undefined)
+      await call('hosting:whoAmI', 'github', '', NEW, true).catch(() => undefined)
+      for (const c of calls) for (const t of SAVED) expect(c.auth).not.toContain(t)
+    })
+
+    it('a saved server still resolves the normal way', async () => {
+      await call('hosting:whoAmI', 'github', GHES_TOKEN, GHES, false)
+      expectOnlyGhes()
+    })
   })
 
   // Fetch, push and clone resolve through the same profile rule as the API.
