@@ -1,0 +1,58 @@
+name: E2E smoke
+
+# The end-to-end smoke suite (test/e2e/): the real built app, driven by
+# Playwright under a virtual display. Kept out of the Checks gate so that one
+# stays fast and display-free; this runs beside it on the same triggers.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The playground generator commits; the app itself runs with its own
+      # throwaway global config (see test/e2e/app.ts).
+      - name: Git identity
+        run: |
+          git config --global user.name "Gitcito CI"
+          git config --global user.email "ci@example.invalid"
+
+      - name: Build
+        run: npm run build
+
+      # xvfb-run ships with ubuntu-latest's xvfb package; install it in case
+      # the image stops carrying it.
+      - name: Virtual display
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor,
+      # and Electron's Chromium sandbox needs one (node_modules' chrome-sandbox
+      # is not setuid root). Lifting the restriction on the throwaway runner
+      # keeps the app's sandbox on, rather than testing it with --no-sandbox.
+      - name: Allow the Chromium sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
+      - name: E2E smoke
+        run: xvfb-run -a npm run test:e2e

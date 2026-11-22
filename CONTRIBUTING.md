@@ -192,6 +192,11 @@ npx vitest run test/gitOps.test.ts # one file
 npm run playground:rebuild         # force-regenerate fixtures
 ```
 
+`npm run test:e2e` runs a small smoke suite against the built app (boot,
+languages, lazy views) — run `npm run build` first; it needs a display
+(`xvfb-run -a` on a headless Linux). Not part of `npm test`; see
+[`test/e2e/README.md`](test/e2e/README.md).
+
 ## Pull requests
 
 - PR title must follow the same `type: Subject` format (enforced by CI)
