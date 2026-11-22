@@ -33,6 +33,7 @@ import { modelFor, resolveAI } from '../../../shared/aiAccounts'
 import { useModelCatalogs } from './useModelCatalogs'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { renderMarkdown } from '../preview/markdown'
+import { usePendingHighlight } from '../preview/pendingHighlight'
 import {
   canSubmitRepoChat,
   repoChatSourceView,
@@ -329,6 +330,7 @@ function AssistantMessage({
   const t = useT()
   const setFileView = useUIStore((state) => state.setFileView)
   const html = useMemo(() => annotateChatHtml(renderMarkdown(message.content)), [message.content])
+  const htmlRef = usePendingHighlight(html)
   const sources = message.sources ?? []
   const copyMenu = useCopyMenu(message.content)
 
@@ -338,7 +340,7 @@ function AssistantMessage({
         <Bot size={14} />
       </div>
       <div className="repo-chat-bubble" onContextMenu={copyMenu}>
-        <div className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        <div ref={htmlRef} className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
         {!!message.actions?.length && (
           <ChatActionCard
             message={message}

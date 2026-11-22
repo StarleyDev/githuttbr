@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Rocket, Github, Tag as TagIcon, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 import { renderMarkdown } from '../preview/markdown'
+import { usePendingHighlight } from '../preview/pendingHighlight'
 import { shellApi } from '../infrastructure/api'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -25,6 +26,7 @@ export function ReleasePage({ tab }: { tab: PageTab }): React.JSX.Element | null
     () => renderMarkdown(release?.body?.trim() || `_${t('release.noNotes')}_`),
     [release?.body, t]
   )
+  const htmlRef = usePendingHighlight(html)
 
   if (!page || !release) return null
 
@@ -101,6 +103,7 @@ export function ReleasePage({ tab }: { tab: PageTab }): React.JSX.Element | null
         )}
 
         <article
+          ref={htmlRef}
           className="changelog-body md-preview"
           dangerouslySetInnerHTML={{ __html: html }}
         />

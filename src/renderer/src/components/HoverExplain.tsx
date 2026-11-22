@@ -6,7 +6,7 @@ import { useSettingsStore } from '../stores/settings'
 import { identifierAt, isExplainableToken } from '../lib/hoverToken'
 import { revealLine } from '../lib/reveal'
 import { useT } from '../i18n'
-import { renderMarkdown } from '../preview/markdown'
+import { MarkdownHtml } from './MarkdownHtml'
 import type { HoverExplainResult, HoverModifier, NumberedLine } from '../../../shared/types'
 
 // Hold the modifier, point at an identifier, get one sentence about it. The
@@ -368,7 +368,7 @@ export function useHoverExplain(opts: {
                 )}
                 {detail.error && <div className="hover-explain-error">{detail.error}</div>}
                 {detail.markdown && (
-                  <div className="md-preview" dangerouslySetInnerHTML={{ __html: renderMarkdown(detail.markdown) }} />
+                  <MarkdownHtml className="md-preview" markdown={detail.markdown} />
                 )}
               </div>
             ) : (
