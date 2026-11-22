@@ -13230,6 +13230,31 @@ mark.find-hit.active {
   color: var(--text-2);
   font-size: 11px;
 }
+/* "tracks origin/main — pushes to origin/feature": the warning a plain row
+   does not need, so it reads as one, on its own line under the name. */
+.push-branch-tracks-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  margin-top: 2px;
+  /* .repo-row-name is one ellipsised line; this one has to be read in full. */
+  white-space: normal;
+}
+.push-branch-tracks {
+  color: var(--yellow);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.push-branch-upstream-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+}
+.push-branch-upstream-toggle.active {
+  color: var(--yellow);
+}
 .push-branch-protected {
   display: inline-flex;
   color: var(--yellow);

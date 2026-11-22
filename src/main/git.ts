@@ -99,6 +99,7 @@ import type {
   BranchPushState,
   BranchPushResult,
   PushBranchesResult,
+  UpstreamPushTarget,
   RerereStatus,
   SubtreeInfo,
   CleanEntry,
@@ -167,6 +168,7 @@ import { parseRangeDiff } from '../shared/rangeDiff'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import {
   classifyPushState,
+  duplicateDestinations,
   parsePushPorcelain,
   parseUpstreamTrack,
   pushRefspecs,
@@ -1857,12 +1859,30 @@ async function localBranchRows(repoPath: string): Promise<LocalBranchRow[]> {
     })
 }
 
-/** The branch a push of `row` to `remote` lands on: its upstream's name when it tracks that remote, else its own. */
-function pushDestination(row: LocalBranchRow, remote: string): string {
-  if (row.upstreamRemote === remote && row.upstreamRef.startsWith('refs/heads/')) {
-    return row.upstreamRef.slice('refs/heads/'.length)
-  }
-  return row.name
+/**
+ * The upstream's branch name on `remote` when it differs from the branch's own
+ * name, else null. `git checkout -b feature origin/main` leaves exactly that
+ * behind, and sending `feature` there would fast-forward main — which plain
+ * `git push` (push.default=simple) refuses, so it is never the default here.
+ */
+function otherNamedUpstream(row: LocalBranchRow, remote: string): string | null {
+  if (row.upstreamRemote !== remote || !row.upstreamRef.startsWith('refs/heads/')) return null
+  const name = row.upstreamRef.slice('refs/heads/'.length)
+  return name === row.name ? null : name
+}
+
+/** Ahead/behind from `%(upstream:track)`, without the `gone` flag leaking into a state object. */
+function trackCounts(track: string): { ahead: number; behind: number } {
+  const { ahead, behind } = parseUpstreamTrack(track)
+  return { ahead, behind }
+}
+
+/** The remote's default branch as last fetched (`refs/remotes/<remote>/HEAD`), or null. */
+async function remoteDefaultBranch(repoPath: string, remote: string): Promise<string | null> {
+  const out = await runGit(repoPath, ['symbolic-ref', '--quiet', `refs/remotes/${remote}/HEAD`]).catch(() => '')
+  const prefix = `refs/remotes/${remote}/`
+  const ref = out.trim()
+  return ref.startsWith(prefix) ? ref.slice(prefix.length) : null
 }
 
 /** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
@@ -3942,9 +3962,10 @@ export const gitService = {
    */
   async branchPushStates(repoPath: string, remote: string): Promise<BranchPushState[]> {
     if (!isPlainRef(remote)) throw new Error(`Not a remote name: ${remote}`)
-    const [rows, remoteOut] = await Promise.all([
+    const [rows, remoteOut, remoteDefault] = await Promise.all([
       localBranchRows(repoPath),
-      runGit(repoPath, ['for-each-ref', '--format=%(refname)%00%(objectname)', `refs/remotes/${remote}/`])
+      runGit(repoPath, ['for-each-ref', '--format=%(refname)%00%(objectname)', `refs/remotes/${remote}/`]),
+      remoteDefaultBranch(repoPath, remote)
     ])
     const remoteShas = new Map<string, string>()
     for (const line of remoteOut.split('\n')) {
@@ -3952,41 +3973,64 @@ export const gitService = {
       if (ref && sha) remoteShas.set(ref, sha)
     }
     const states: BranchPushState[] = []
-    const toCount: { state: BranchPushState; remoteSha: string }[] = []
+    const toCount: { into: { ahead: number; behind: number }; sha: string; remoteSha: string }[] = []
     for (const row of rows) {
-      const remoteBranch = pushDestination(row, remote)
-      const remoteSha = remoteShas.get(`refs/remotes/${remote}/${remoteBranch}`)
+      // Always the branch's own name: where `git push` would send it by default.
+      const remoteSha = remoteShas.get(`refs/remotes/${remote}/${row.name}`)
       const state: BranchPushState = {
         name: row.name,
         sha: row.sha,
         isCurrent: row.isCurrent,
         upstream: row.upstream,
-        remoteBranch,
+        remoteBranch: row.name,
         remoteExists: !!remoteSha,
         ahead: 0,
         behind: 0,
-        state: 'new'
+        state: 'new',
+        upstreamTarget: null
       }
       if (remoteSha && remoteSha !== row.sha) {
-        // The upstream's own counts are free; anything else needs a rev-list.
-        const tracked = row.upstreamRemote === remote && row.upstream === `${remote}/${remoteBranch}`
-        if (tracked && row.track) Object.assign(state, parseUpstreamTrack(row.track))
-        else toCount.push({ state, remoteSha })
+        // The upstream's counts are free when the upstream is this very
+        // destination; anything else needs a rev-list.
+        const tracked = row.upstreamRemote === remote && row.upstream === `${remote}/${row.name}`
+        if (tracked && row.track) Object.assign(state, trackCounts(row.track))
+        else toCount.push({ into: state, sha: row.sha, remoteSha })
+      }
+      const other = otherNamedUpstream(row, remote)
+      if (other !== null && row.upstream) {
+        const upSha = remoteShas.get(`refs/remotes/${row.upstream}`)
+        const target: UpstreamPushTarget = {
+          remoteBranch: other,
+          remoteExists: !!upSha,
+          ahead: 0,
+          behind: 0,
+          state: 'new',
+          isRemoteDefault: other === remoteDefault
+        }
+        if (upSha && upSha !== row.sha) {
+          if (row.track) Object.assign(target, trackCounts(row.track))
+          else toCount.push({ into: target, sha: row.sha, remoteSha: upSha })
+        }
+        state.upstreamTarget = target
       }
       states.push(state)
     }
     for (let i = 0; i < toCount.length; i += 8) {
       await Promise.all(
-        toCount.slice(i, i + 8).map(async ({ state, remoteSha }) => {
-          const out = await runGit(repoPath, ['rev-list', '--left-right', '--count', `${state.sha}...${remoteSha}`])
+        toCount.slice(i, i + 8).map(async ({ into, sha, remoteSha }) => {
+          const out = await runGit(repoPath, ['rev-list', '--left-right', '--count', `${sha}...${remoteSha}`])
             .catch(() => '')
           const [ahead, behind] = out.trim().split(/\s+/).map((n) => Number(n) || 0)
-          state.ahead = ahead ?? 0
-          state.behind = behind ?? 0
+          into.ahead = ahead ?? 0
+          into.behind = behind ?? 0
         })
       )
     }
-    for (const s of states) s.state = classifyPushState(s.ahead, s.behind, s.remoteExists)
+    for (const s of states) {
+      s.state = classifyPushState(s.ahead, s.behind, s.remoteExists)
+      const up = s.upstreamTarget
+      if (up) up.state = classifyPushState(up.ahead, up.behind, up.remoteExists)
+    }
     return states
   },
 
@@ -4022,8 +4066,9 @@ export const gitService = {
 
   /**
    * Push several local branches to one remote in a single `git push`, without
-   * checking any of them out. Each lands on its upstream's name when it tracks
-   * this remote under another one, else on its own name. Never forced — no `+`
+   * checking any of them out. Each lands on its own name — the branches in
+   * `toUpstream` (an explicit, confirmed choice in the dialog) on their
+   * upstream's name instead, when that differs. Never forced — no `+`
    * refspec, no `--force` — so the remote refuses anything that is not a
    * fast-forward, and that refusal is reported per branch rather than thrown.
    * `atomic` makes it all or nothing. `setUpstream` links each branch that had
@@ -4033,7 +4078,7 @@ export const gitService = {
     repoPath: string,
     remote: string,
     branches: string[],
-    opts: { setUpstream: boolean; atomic?: boolean }
+    opts: { setUpstream: boolean; atomic?: boolean; toUpstream?: string[] }
   ): Promise<PushBranchesResult> {
     if (!isPlainRef(remote)) throw new Error(`Not a remote name: ${remote}`)
     const wanted = [...new Set(branches)]
@@ -4044,10 +4089,18 @@ export const gitService = {
     const missing = wanted.find((b) => !rows.has(b))
     if (missing !== undefined) throw new Error(`No local branch named ${missing}.`)
 
-    const targets: PushTarget[] = wanted.map((branch) => ({
-      branch,
-      remoteBranch: pushDestination(rows.get(branch)!, remote)
-    }))
+    const toUpstream = new Set(opts.toUpstream ?? [])
+    const targets: PushTarget[] = wanted.map((branch) => {
+      if (!toUpstream.has(branch)) return { branch, remoteBranch: branch }
+      const other = otherNamedUpstream(rows.get(branch)!, remote)
+      if (other === null) throw new Error(`${branch} does not track a differently named branch on ${remote}.`)
+      return { branch, remoteBranch: other }
+    })
+    // git would refuse the whole push anyway; say which branches collide.
+    const clash = duplicateDestinations(targets)[0]
+    if (clash) {
+      throw new Error(`${clash.branches.join(' and ')} would all push to ${remote}/${clash.remoteBranch}. Push one of them.`)
+    }
     const args = ['push', '--porcelain']
     if (opts.atomic) args.push('--atomic')
     args.push(remote, ...pushRefspecs(targets))

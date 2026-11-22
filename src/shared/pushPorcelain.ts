@@ -15,6 +15,17 @@ export function pushRefspecs(targets: PushTarget[]): string[] {
   return targets.map((t) => `refs/heads/${t.branch}:refs/heads/${t.remoteBranch}`)
 }
 
+/**
+ * Destinations more than one branch would update. git refuses the whole push
+ * then ("dst ref receives from more than one src") — so the caller blocks it
+ * first, with a message that names the branches.
+ */
+export function duplicateDestinations(targets: PushTarget[]): { remoteBranch: string; branches: string[] }[] {
+  const by = new Map<string, string[]>()
+  for (const t of targets) by.set(t.remoteBranch, [...(by.get(t.remoteBranch) ?? []), t.branch])
+  return [...by].filter(([, b]) => b.length > 1).map(([remoteBranch, branches]) => ({ remoteBranch, branches }))
+}
+
 export interface PorcelainRef {
   flag: string
   from: string
