@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { disposeTerm } from '../components/terminalRegistry'
+import { disposeTerm } from '../components/terminalState'
 
 export interface TermPanel {
   id: string
