@@ -214,6 +214,11 @@ const api = {
     exportAll: (ids: string[]): Promise<unknown> => ipcRenderer.invoke('profileAvatar:exportAll', ids),
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('profileAvatar:importAll', data)
   },
+  avatars: {
+    github: (remoteUrl: string, repoPath: string, items: unknown, size: number): Promise<unknown> =>
+      ipcRenderer.invoke('avatars:github', remoteUrl, repoPath, items, size),
+    profileGithub: (size: number): Promise<unknown> => ipcRenderer.invoke('avatars:profileGithub', size)
+  },
   vault: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('vault:list', repoPath),
     upsert: (scope: string, repoPath: string, entry: unknown): Promise<unknown> =>

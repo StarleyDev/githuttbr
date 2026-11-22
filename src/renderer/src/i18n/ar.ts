@@ -979,6 +979,8 @@ export const ar: Dict = {
   'settings.relativeDatesHint': 'اعرض «قبل 3 أيام» بدل التواريخ المطلقة في الرسم البياني.',
   'settings.commitAvatars': 'إظهار الصور الرمزية',
   'settings.commitAvatarsHint': 'اجلب صور Gravatar حسب بريد الالتزام. وتُعرض صورة مولَّدة عند عدم وجود واحدة.',
+  'settings.githubAvatars': 'استخدام صور الملف الشخصي على GitHub',
+  'settings.githubAvatarsHint': 'عندما لا يملك المؤلف صورة Gravatar، تُعرض صورته على GitHub. عناوين noreply لا تحتاج إلى شيء؛ أما بقية العناوين فيُبحث عنها برمز GitHub الخاص بهذا الملف الشخصي، على خادم المستودع نفسه.',
   'settings.avatarMotion': 'تحريك صورة الملف الشخصي',
   'settings.avatarMotionHint': 'تتنفّس الصورة في شريط العنوان وترمش. ويبقى تعبيرها يتبع حالة المستودع حتى عند إيقاف هذا الخيار.',
   'settings.groupBranches': 'تجميع المراجع حسب البادئة',

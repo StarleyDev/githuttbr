@@ -59,3 +59,34 @@ export async function gravatarUrl(email: string, size: number): Promise<string> 
   const hash = await sha256Hex(norm)
   return capped(urlCache, key, `https://gravatar.com/avatar/${hash}?s=${size}&d=404`)
 }
+
+/** Where a picture may come from, in the order they are tried. The generated avatar always follows. */
+export type AvatarSource = 'gravatar' | 'github'
+
+/**
+ * The photo sources for an author, in order.
+ *
+ * Gravatar first: it costs no API quota, and an address someone registered
+ * there carries a picture they chose for exactly this. GitHub second, and only
+ * where it can answer: a noreply address (no API, only the image), a
+ * repository on a GitHub the API can be asked, or the active profile's own
+ * account.
+ *
+ * A github.com noreply address skips Gravatar: it is GitHub's own address,
+ * nobody registers it with Gravatar, and the lookup would only tell a third
+ * party which account was looked at.
+ */
+export function avatarSources(o: {
+  email?: string
+  /** The master switch, Settings → Themes → Graph → Show avatars. */
+  lookups: boolean
+  /** Use GitHub profile pictures. */
+  github: boolean
+  /** A repository remote or a profile account the API can be asked about. */
+  githubLookup: boolean
+  noreply: boolean
+}): AvatarSource[] {
+  if (!o.lookups || !o.email) return []
+  if (o.noreply && o.github) return ['github']
+  return o.github && o.githubLookup ? ['gravatar', 'github'] : ['gravatar']
+}

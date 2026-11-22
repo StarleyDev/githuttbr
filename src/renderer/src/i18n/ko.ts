@@ -979,6 +979,8 @@ export const ko: Dict = {
   'settings.relativeDatesHint': '그래프에서 절대 날짜 대신 “3일 전” 형식으로 표시합니다.',
   'settings.commitAvatars': '아바타 표시',
   'settings.commitAvatarsHint': '커밋 이메일로 Gravatar 사진을 가져옵니다. 없으면 자동 생성된 아바타가 표시됩니다.',
+  'settings.githubAvatars': 'GitHub 프로필 사진 사용',
+  'settings.githubAvatarsHint': '작성자에게 Gravatar가 없으면 GitHub 사진을 표시합니다. noreply 주소는 별도 조회가 필요 없고, 그 밖의 이메일은 이 프로필의 GitHub 토큰으로 저장소 자체 서버에서 조회합니다.',
   'settings.avatarMotion': '프로필 아바타 애니메이션',
   'settings.avatarMotionHint': '제목 표시줄의 아바타가 숨을 쉬고 눈을 깜빡입니다. 꺼져 있어도 표정은 저장소 상태를 따릅니다.',
   'settings.groupBranches': '접두사로 ref 묶기',

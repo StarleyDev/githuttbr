@@ -973,6 +973,8 @@ export const en = {
   'settings.relativeDatesHint': 'Show “3d ago” instead of absolute dates in the graph.',
   'settings.commitAvatars': 'Show avatars',
   'settings.commitAvatarsHint': 'Fetch Gravatar photos by commit email. A generated avatar is shown when none exists.',
+  'settings.githubAvatars': 'Use GitHub profile pictures',
+  'settings.githubAvatarsHint': 'When an author has no Gravatar, show their GitHub picture. Noreply addresses need nothing; other emails are looked up with this profile’s GitHub token, on the repository’s own server.',
   'settings.avatarMotion': 'Animate the profile avatar',
   'settings.avatarMotionHint': 'The avatar in the title bar breathes and blinks. Its expression still follows the repository when this is off.',
   'settings.groupBranches': 'Group refs by prefix',

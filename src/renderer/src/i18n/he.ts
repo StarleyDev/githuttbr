@@ -979,6 +979,8 @@ export const he: Dict = {
   'settings.relativeDatesHint': 'הצגת ״לפני 3 ימים״ במקום תאריכים מוחלטים בגרף.',
   'settings.commitAvatars': 'הצגת תמונות פרופיל',
   'settings.commitAvatarsHint': 'הבאת תמונות מ־Gravatar לפי כתובת המייל שבקומיט. כשאין תמונה, מוצגת אחת שנוצרת אוטומטית.',
+  'settings.githubAvatars': 'שימוש בתמונות פרופיל מ־GitHub',
+  'settings.githubAvatarsHint': 'כשלמחבר אין Gravatar, מוצגת התמונה שלו ב־GitHub. כתובות noreply לא דורשות דבר; כתובות מייל אחרות נבדקות עם אסימון ה־GitHub של הפרופיל הזה, בשרת של המאגר עצמו.',
   'settings.avatarMotion': 'הנפשת אווטר הפרופיל',
   'settings.avatarMotionHint': 'האווטר בשורת הכותרת נושם ומצמץ. הבעת הפנים שלו ממשיכה לעקוב אחרי המאגר גם כשזה כבוי.',
   'settings.groupBranches': 'קיבוץ refs לפי קידומת',

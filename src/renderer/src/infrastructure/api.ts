@@ -794,6 +794,14 @@ export const profileAvatarApi = {
   importAll: (data: Record<string, string>) => window.api.profileAvatar.importAll(data) as Promise<number>
 }
 
+/** GitHub pictures for commit authors and the active profile (main/avatars.ts). */
+export const avatarApi = {
+  /** By lowercased email: a URL, `null` for a confirmed miss; an absent email is unknown for now. */
+  github: (remoteUrl: string, repoPath: string, items: { email: string; sha?: string }[], size: number) =>
+    window.api.avatars.github(remoteUrl, repoPath, items, size) as Promise<Record<string, string | null>>,
+  profileGithub: (size: number) => window.api.avatars.profileGithub(size) as Promise<string | null>
+}
+
 export const vaultApi = {
   list: (repoPath: string) => window.api.vault.list(repoPath) as Promise<VaultListResult>,
   upsert: (scope: 'repo' | 'global', repoPath: string, entry: Partial<VaultEntry>) =>

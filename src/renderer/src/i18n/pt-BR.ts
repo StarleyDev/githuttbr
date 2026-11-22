@@ -980,6 +980,8 @@ export const ptBR: Dict = {
   'settings.relativeDatesHint': 'Mostra “há 3d” em vez da data absoluta no grafo.',
   'settings.commitAvatars': 'Mostrar avatares',
   'settings.commitAvatarsHint': 'Busca fotos do Gravatar pelo e-mail do commit. Quando não existe nenhuma, um avatar gerado aparece no lugar.',
+  'settings.githubAvatars': 'Usar fotos de perfil do GitHub',
+  'settings.githubAvatarsHint': 'Quando o autor não tem Gravatar, mostra a foto dele no GitHub. Endereços noreply não precisam de nada; os demais e-mails são consultados com o token do GitHub deste perfil, no próprio servidor do repositório.',
   'settings.avatarMotion': 'Animar o avatar do perfil',
   'settings.avatarMotionHint': 'O avatar na barra de título respira e pisca. A expressão dele continua seguindo o repositório mesmo desativado.',
   'settings.groupBranches': 'Agrupar refs por prefixo',

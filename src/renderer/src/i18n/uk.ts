@@ -979,6 +979,8 @@ export const uk: Dict = {
   'settings.relativeDatesHint': 'Показувати «3 дн. тому» замість точних дат у графі.',
   'settings.commitAvatars': 'Показувати аватари',
   'settings.commitAvatarsHint': 'Завантажувати фото з Gravatar за email коміта. Якщо його немає, показується згенерований аватар.',
+  'settings.githubAvatars': 'Використовувати фото профілю GitHub',
+  'settings.githubAvatarsHint': 'Якщо в автора немає Gravatar, показувати його фото з GitHub. Для адрес noreply нічого не потрібно; решту email шукають з GitHub-токеном цього профілю на власному сервері репозиторію.',
   'settings.avatarMotion': 'Анімувати аватар профілю',
   'settings.avatarMotionHint': 'Аватар у заголовку вікна дихає та блимає. Його вираз усе одно відповідає стану репозиторію, коли це вимкнено.',
   'settings.groupBranches': 'Групувати ref за префіксом',

@@ -61,6 +61,35 @@ describe('e2e smoke', () => {
     expect(unexpected).toEqual([])
   })
 
+  it('shows the GitHub picture of a noreply author, from the CDN only', async () => {
+    const email = '583231+octocat@users.noreply.github.com'
+    // A 1×1 PNG: enough for the <img> to load rather than fall back.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'
+    )
+    const r = await start({
+      prepare: (repo) =>
+        execFileSync(
+          'git',
+          ['-C', repo, '-c', 'user.name=Gitcito E2E', '-c', 'user.email=e2e@example.invalid', 'commit', '--allow-empty',
+            '-m', 'feat: noreply author', '--author', `Octo Cat <${email}>`],
+          { encoding: 'utf8' }
+        ),
+      routes: [{ url: /^https:\/\/avatars\.githubusercontent\.com\//, contentType: 'image/png', body: png }]
+    })
+    const img = r.page.locator('.node-ava img[src^="https://avatars.githubusercontent.com/u/583231?s="]')
+    await img.first().waitFor()
+    expect(await img.first().evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBe(1)
+    // A noreply address is GitHub's own: nothing about it went to Gravatar.
+    const { createHash } = await import('node:crypto')
+    const hash = createHash('sha256').update(email).digest('hex')
+    expect(r.externalRequests().filter((u) => u.includes(hash))).toEqual([])
+    // And no API call: without a token, and for a noreply address, only the image is fetched.
+    expect(r.externalRequests().filter((u) => /api\.github\.com/.test(u))).toEqual([])
+    expect(r.errors()).toEqual([])
+  })
+
   it('cold-starts in Portuguese with no English on the first frame', async () => {
     const r = await start({ language: 'pt-BR' })
     const frame = await captureFirstFrame(r.page)

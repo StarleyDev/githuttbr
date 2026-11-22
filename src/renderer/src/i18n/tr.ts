@@ -964,6 +964,8 @@ export const tr: Dict = {
   'settings.relativeDatesHint': 'Grafikte mutlak tarih yerine “3g önce” göster.',
   'settings.commitAvatars': 'Avatarları göster',
   'settings.commitAvatarsHint': 'Commit e-postasına göre Gravatar fotoğrafları getirir. Yoksa üretilmiş bir avatar gösterilir.',
+  'settings.githubAvatars': 'GitHub profil fotoğraflarını kullan',
+  'settings.githubAvatarsHint': 'Yazarın Gravatar’ı yoksa GitHub fotoğrafını gösterir. Noreply adresleri hiçbir şey gerektirmez; diğer e-postalar bu profilin GitHub belirteciyle, deponun kendi sunucusunda aranır.',
   'settings.avatarMotion': 'Profil avatarını canlandır',
   'settings.avatarMotionHint': 'Başlık çubuğundaki avatar nefes alır ve göz kırpar. Bu kapalıyken de ifadesi depoyu izlemeye devam eder.',
   'settings.groupBranches': 'Ref’leri öneke göre grupla',

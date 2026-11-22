@@ -980,6 +980,8 @@ export const nl: Dict = {
   'settings.relativeDatesHint': 'Toon “3d geleden” in plaats van absolute datums in de graaf.',
   'settings.commitAvatars': 'Avatars tonen',
   'settings.commitAvatarsHint': 'Haalt Gravatar-foto’s op via het e-mailadres van de commit. Bestaat die niet, dan wordt er een avatar gegenereerd.',
+  'settings.githubAvatars': 'GitHub-profielfoto’s gebruiken',
+  'settings.githubAvatarsHint': 'Heeft een auteur geen Gravatar, dan wordt diens GitHub-foto getoond. Noreply-adressen hebben niets nodig; andere e-mailadressen worden opgezocht met het GitHub-token van dit profiel, op de eigen server van de repository.',
   'settings.avatarMotion': 'Profielavatar animeren',
   'settings.avatarMotionHint': 'De avatar in de titelbalk ademt en knippert. Zijn uitdrukking volgt de repository ook als dit uit staat.',
   'settings.groupBranches': 'Refs groeperen op prefix',

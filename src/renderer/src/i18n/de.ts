@@ -979,6 +979,8 @@ export const de: Dict = {
   'settings.relativeDatesHint': 'Zeigt im Graph „vor 3 Tagen“ statt absoluter Datumsangaben.',
   'settings.commitAvatars': 'Avatare anzeigen',
   'settings.commitAvatarsHint': 'Holt Gravatar-Bilder anhand der Commit-E-Mail. Gibt es keines, wird ein generiertes Avatar angezeigt.',
+  'settings.githubAvatars': 'GitHub-Profilbilder verwenden',
+  'settings.githubAvatarsHint': 'Hat ein Autor kein Gravatar, wird sein GitHub-Bild angezeigt. Noreply-Adressen brauchen nichts; andere E-Mails werden mit dem GitHub-Token dieses Profils auf dem Server des Repositorys selbst nachgeschlagen.',
   'settings.avatarMotion': 'Profil-Avatar animieren',
   'settings.avatarMotionHint': 'Der Avatar in der Titelleiste atmet und blinkt. Sein Ausdruck folgt dem Repository auch dann, wenn dies aus ist.',
   'settings.groupBranches': 'Refs nach Präfix gruppieren',

@@ -2,8 +2,8 @@
 title: Author avatars
 category: Make it yours
 order: 103
-summary: Gravatar photos where they exist, a generated blob avatar where they do not — and a title-bar face that reacts to the repository.
-keywords: avatar avatars gravatar blobatar author photo picture identicon face offline privacy email hash mood expression animation motion sad mad happy thinking scared unsure sick sleepy detached stash dormant
+summary: Gravatar photos, then GitHub profile pictures, then a generated blob avatar — and a title-bar face that reacts to the repository.
+keywords: avatar avatars gravatar github noreply profile picture enterprise ghes blobatar author photo picture identicon face offline privacy email hash mood expression animation motion sad mad happy thinking scared unsure sick sleepy detached stash dormant
 ---
 
 # Author avatars
@@ -17,12 +17,46 @@ profile in Settings.
 
 ## Where the picture comes from
 
-Two sources, tried in that order:
+Three sources, tried in that order. The first that has a picture wins:
 
 | Source | When it is used |
 |---|---|
-| **Gravatar** | The commit email has a Gravatar account. Fetched over HTTPS, keyed on a SHA-256 hash of the lowercased email. |
-| **Generated avatar** | Everything else — no Gravatar, no network, or the lookup turned off. Drawn locally from the email, never fetched. |
+| **Gravatar** | The commit email has a Gravatar account. Fetched over HTTPS, keyed on a SHA-256 hash of the lowercased email. Skipped for GitHub noreply addresses, which nobody registers there. |
+| **GitHub** | The email is a GitHub noreply address, or the repository lives on GitHub or a GitHub Enterprise Server your profile has a token for, and the email belongs to an account there. |
+| **Generated avatar** | Everything else — no photo anywhere, no network, or the lookups turned off. Drawn locally from the email, never fetched. |
+
+Gravatar goes first because it costs nothing but one image request, and an
+address someone registered there carries a picture they chose for exactly this.
+GitHub goes second because, for most addresses, it needs an API call.
+
+### How GitHub finds the picture
+
+A commit holds a name and an email, never an account, so the picture has to be
+found from the email. There are two ways, depending on the address:
+
+- **A noreply address** — `12345+login@users.noreply.github.com`, or the older
+  `login@users.noreply.github.com` — names its account outright. Gitcito turns it
+  straight into the picture's address (`avatars.githubusercontent.com/u/12345`, or
+  `github.com/login.png` for the old form) and loads only the image. No token, no
+  API call, and it works in any repository, wherever it is hosted.
+- **Any other address** is looked up on the repository's own server, with your
+  profile's token for that server: Gitcito asks for one commit by that author
+  (`GET /repos/{owner}/{repo}/commits/{sha}`, or, when that commit has not been
+  pushed, the newest commit by that email), and the server answers with the
+  account it belongs to — the same thing it does to draw the commit on its own
+  website. This only finds an account when the email is **added and verified on
+  that account**. A personal address you commit with but never added to GitHub
+  is not linked to you there, and no client can find it.
+
+The graph asks in batches — one request per repository for all the authors on
+screen, each author once — and at most four requests at a time. If the server
+says the rate limit is spent, Gitcito stops asking that server until the time
+it gives, and tries again after.
+
+What came back is remembered: for the session in memory, and on disk in
+`github-avatars.json` in Gitcito's data folder — a found picture for 7 days, "no
+account" for a day. The file is keyed on a SHA-256 hash of the server and the
+email, so it holds no address in readable form; deleting it is always safe.
 
 The generated avatar is a small creature, not a coloured square: the same email
 always produces the same shape and the same colours, so an author stays
@@ -86,7 +120,7 @@ The avatar in the title bar and the profile list is yours, so you can choose it.
 
 | Source | What it shows |
 |---|---|
-| **Automatic** | The default: your Gravatar for the profile's git email, or the generated face — the one that reacts to the repository. |
+| **Automatic** | The default: your Gravatar for the profile's git email, else the picture of the GitHub account the profile is connected to (github.com first, then any Enterprise Server it holds a token for), else the generated face — the one that reacts to the repository. |
 | **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Integrations. Disabled until one is. |
 | **Icon** | One of 24 glyphs on a colour you pick. |
 | **Image** | A file you choose — PNG or JPEG. It is scaled to 256 px and kept on this computer, in Gitcito's data folder, not in the settings file. |
@@ -105,17 +139,34 @@ This is for your own profiles only. Every other author still gets the picture of
 their commit email, as described above. A chosen picture, like a Gravatar photo,
 has no expression: the face that reacts to the repository is the automatic one.
 
-## Turning the lookup off
+## Turning the lookups off
 
-**Settings → Themes → Graph → Show avatars.**
+Two switches, both in **Settings → Themes → Graph**:
 
-Off means:
+- **Show avatars** is the master switch. Off means no request to `gravatar.com`
+  or to GitHub for a picture, ever — not deferred, not cached-and-retried — and
+  avatars still appear, all of them generated locally.
+- **Use GitHub profile pictures** (on by default) turns off only the GitHub
+  source: noreply addresses go back to Gravatar, and the API is never asked
+  about authors. Gravatar keeps working.
 
-- no request to `gravatar.com`, ever — not deferred, not cached-and-retried;
-- avatars still appear, all of them generated locally.
-
-So this is a privacy switch, not a "hide the pictures" switch. There is no
+So these are privacy switches, not "hide the pictures" switches. There is no
 setting that removes avatars entirely.
+
+### What is sent where
+
+| Sent | To | When |
+|---|---|---|
+| SHA-256 of the email | `gravatar.com` | Every author with an email, unless Show avatars is off. |
+| The account id or login inside a noreply address | `avatars.githubusercontent.com` / `github.com` | A noreply author, unless either switch is off. No token. |
+| The repository's owner/name, a commit sha, and the author's email | The repository's own GitHub server — `api.github.com` for a github.com repository, the Enterprise Server itself for one hosted there | An author with no Gravatar, in a repository on a GitHub your profile has a token for. With that server's token and no other. |
+| Your profile's token | Its own server (`GET /user`) | Once per session, for your own picture in the title bar. |
+
+A token is only ever sent to the server it was saved for: a github.com token
+never goes to an Enterprise Server, an Enterprise Server's token never goes to
+github.com, and a repository on any other host sends nothing. Without a token
+there is no API call at all — anonymous clients get 60 requests an hour, which a
+single graph would spend in one scroll. Nothing goes to any other third party.
 
 ## The limits
 
@@ -123,15 +174,26 @@ setting that removes avatars entirely.
   hash is not a secret: anyone holding a candidate email can hash it and compare.
   If a repository's author list is something you would rather not hand to a third
   party, turn the lookup off before you open it.
-- **Only Gravatar.** Avatars you uploaded to GitHub, GitLab or Bitbucket are not
-  read — those need an authenticated host API call per author, which is a lot of
-  network for a decoration.
+- **GitHub only, among hosts.** Pictures uploaded to GitLab, Bitbucket, Azure
+  DevOps or Forgejo are not read for commit authors.
+- **GitHub needs the email on the account.** The API finds an author only by an
+  email added and verified on their GitHub account. A commit made with an
+  address that is not — a work address, a typo, a machine's default — gets
+  Gravatar or the generated face, and so does every author in a repository with
+  no GitHub remote, unless their address is a noreply one.
+- **A GitHub picture can be GitHub's default.** An account that never uploaded a
+  photo has GitHub's generated pattern, and that is what you see.
+- **Enterprise Server noreply addresses are not decoded.** GitHub documents no
+  format for them, so they go through the API like any other address.
+- **The API reads the repository's `origin`** (or its first remote). A fork
+  whose `origin` is your copy finds the authors your copy has.
 - **No overrides.** You cannot pin a chosen picture to an author, and you cannot
   swap the generated style. The avatar is a function of the email and nothing
   else.
-- **A Gravatar photo has no expression.** If your profile email has one, the
-  title bar shows the photo and no face — a photograph cannot pull a face at you.
-  Turn the lookup off if you would rather have the expressive blob.
+- **A photo has no expression.** If your profile email has a Gravatar, or your
+  profile is connected to a GitHub account, the title bar shows the photo and no
+  face — a photograph cannot pull a face at you. Turn the lookups off if you
+  would rather have the expressive blob.
 - **The face follows the active repository only.** On a tab that is not a
   repository there is nothing to react to, so it stays neutral.
 - **One reading at a time.** The face shows the single worst thing it found, so

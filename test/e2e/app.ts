@@ -43,6 +43,13 @@ export interface StartOptions {
   language?: string
   /** Extra settings merged over the seeded ones. */
   settings?: Record<string, unknown>
+  /** Runs on the private copy of the repo before the app opens it. */
+  prepare?: (repo: string) => void
+  /**
+   * Local answers for chosen external URLs, in place of the 404 everything
+   * else gets. Still offline: the response is fulfilled here, never fetched.
+   */
+  routes?: { url: RegExp; contentType: string; body: Buffer }[]
 }
 
 /**
@@ -61,6 +68,7 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
   const sandbox = mkdtempSync(join(tmpdir(), 'gitcito-e2e-'))
   const repo = join(sandbox, scenario)
   cpSync(repoPath(scenario), repo, { recursive: true })
+  opts.prepare?.(repo)
 
   const home = join(sandbox, 'home')
   mkdirSync(join(home, '.ssh'), { recursive: true })
@@ -156,6 +164,13 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
           external.push(route.request().url())
           return route.fulfill({ status: 404, body: '' })
         })
+        // Registered after the catch-all, so Playwright tries these first.
+        for (const r of opts.routes ?? []) {
+          await page.context().route(r.url, (route) => {
+            external.push(route.request().url())
+            return route.fulfill({ status: 200, contentType: r.contentType, body: r.body })
+          })
+        }
       }
     })
   } catch (e) {

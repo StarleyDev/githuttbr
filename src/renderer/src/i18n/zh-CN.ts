@@ -979,6 +979,8 @@ export const zhCN: Dict = {
   'settings.relativeDatesHint': '在提交图中显示「3 天前」而不是绝对日期。',
   'settings.commitAvatars': '显示头像',
   'settings.commitAvatarsHint': '按提交邮箱获取 Gravatar 头像。没有头像时会显示一个自动生成的头像。',
+  'settings.githubAvatars': '使用 GitHub 头像',
+  'settings.githubAvatarsHint': '作者没有 Gravatar 时，显示其 GitHub 头像。noreply 地址无需额外查询；其他邮箱会使用此配置的 GitHub 令牌，在仓库自己的服务器上查询。',
   'settings.avatarMotion': '让头像动起来',
   'settings.avatarMotionHint': '标题栏中的头像会呼吸和眨眼。关闭后表情仍会跟随仓库状态。',
   'settings.groupBranches': '按前缀分组 ref',
