@@ -159,20 +159,24 @@ export function ObjectExplorer({ repoPath, rev }: { repoPath: string; rev?: stri
               {object.commit && (
                 <div className="obj-fields">
                   <div className="obj-field">
+                    {/* i18n-ignore git object header field, named as cat-file prints it */}
                     <span>tree</span>
                     {link(object.commit.tree, object.commit.tree.slice(0, 12), t('objects.openTree'))}
                   </div>
                   {object.commit.parents.map((parent) => (
                     <div key={parent} className="obj-field">
+                      {/* i18n-ignore git object header field, named as cat-file prints it */}
                       <span>parent</span>
                       {link(parent, parent.slice(0, 12))}
                     </div>
                   ))}
                   <div className="obj-field">
+                    {/* i18n-ignore git object header field, named as cat-file prints it */}
                     <span>author</span>
                     <em>{object.commit.author}</em>
                   </div>
                   <div className="obj-field">
+                    {/* i18n-ignore git object header field, named as cat-file prints it */}
                     <span>committer</span>
                     <em>{object.commit.committer}</em>
                   </div>
@@ -183,14 +187,17 @@ export function ObjectExplorer({ repoPath, rev }: { repoPath: string; rev?: stri
               {object.tag && (
                 <div className="obj-fields">
                   <div className="obj-field">
+                    {/* i18n-ignore git object header field, named as cat-file prints it */}
                     <span>object</span>
                     {link(object.tag.object, object.tag.object.slice(0, 12))}
                   </div>
                   <div className="obj-field">
+                    {/* i18n-ignore git object header field, named as cat-file prints it */}
                     <span>type</span>
                     <em>{object.tag.type}</em>
                   </div>
                   <div className="obj-field">
+                    {/* i18n-ignore git object header field, named as cat-file prints it */}
                     <span>tagger</span>
                     <em>{object.tag.tagger}</em>
                   </div>

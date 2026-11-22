@@ -883,8 +883,8 @@ function OwnerSelect({
       <button type="button" className="owner-trigger" onClick={() => setOpen((v) => !v)}>
         {avatar(value)}
         <span className="owner-label">
-          {value ? value.login : 'Select account'}
-          {value && value.type !== 'user' && <span className="owner-tag">org</span>}
+          {value ? value.login : t('modal.selectAccount')}
+          {value && value.type !== 'user' && <span className="owner-tag">{t('modal.orgTag')}</span>}
         </span>
         <ChevronDown size={14} className="owner-chevron" />
       </button>
@@ -910,7 +910,7 @@ function OwnerSelect({
                 {avatar(o)}
                 <span className="owner-label">
                   {o.login}
-                  {o.type !== 'user' && <span className="owner-tag">org</span>}
+                  {o.type !== 'user' && <span className="owner-tag">{t('modal.orgTag')}</span>}
                 </span>
                 {value?.id === o.id && <Check size={13} className="owner-check" />}
               </button>
@@ -1012,7 +1012,9 @@ function ProviderCreateForm({
         placeholder="origin"
         onChange={(e) => setRemoteName(e.target.value)}
       />
-      {duplicate && <div className="modal-hint danger">A remote named “{remoteName.trim()}” already exists.</div>}
+      {duplicate && (
+        <div className="modal-hint danger">{interp(t('modal.remoteExists'), { name: remoteName.trim() })}</div>
+      )}
     </>
   )
 
@@ -1024,14 +1026,14 @@ function ProviderCreateForm({
           className={mode === 'create' ? 'active' : ''}
           onClick={() => setMode('create')}
         >
-          <Plus size={13} /> Create new
+          <Plus size={13} /> {t('modal.remoteModeCreate')}
         </button>
         <button
           type="button"
           className={mode === 'existing' ? 'active' : ''}
           onClick={() => setMode('existing')}
         >
-          <Search size={13} /> Use existing
+          <Search size={13} /> {t('modal.remoteModeExisting')}
         </button>
       </div>
 
@@ -1081,7 +1083,7 @@ function ProviderCreateForm({
               {t('common.cancel')}
             </button>
             <button className="btn primary" disabled={!canCreate} onClick={() => void create()} type="button">
-              {busy ? <Loader2 size={14} className="spin" /> : 'Create remote and push local refs'}
+              {busy ? <Loader2 size={14} className="spin" /> : t('modal.createRemoteAndPush')}
             </button>
           </div>
         </>
@@ -1572,7 +1574,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   }
 
   const browse = async (): Promise<void> => {
-    const picked = await window.api.selectDirectory('Choose where to clone')
+    const picked = await window.api.selectDirectory(t('modal.chooseCloneDir'))
     if (picked) setDir(picked)
   }
 
@@ -1959,7 +1961,7 @@ function ConfirmModal({
             spec.onConfirm()
           }}
         >
-          {spec.confirmLabel ?? 'Confirm'}
+          {spec.confirmLabel ?? t('common.confirm')}
         </button>
       </div>
     </>
@@ -1974,8 +1976,13 @@ function DivergedCheckoutModal({
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const [backup, setBackup] = useState(true)
-  const aheadN = `${spec.ahead} commit${spec.ahead === 1 ? '' : 's'}`
-  const behindN = `${spec.behind} commit${spec.behind === 1 ? '' : 's'}`
+  const commitsN = (n: number): string => interp(t(n === 1 ? 'diverged.commitsOne' : 'diverged.commitsMany'), { n })
+  const vars = {
+    local: spec.localName,
+    remote: spec.fullName,
+    ahead: commitsN(spec.ahead),
+    behind: commitsN(spec.behind)
+  }
   const choose = (strategy: DivergedStrategy): void => {
     closeModal()
     spec.onResolve(strategy, backup)
@@ -1983,29 +1990,25 @@ function DivergedCheckoutModal({
   return (
     <>
       <h3 className="modal-title-row">
-        <GitMerge size={17} /> Branches have diverged
+        <GitMerge size={17} /> {t('diverged.title')}
       </h3>
-      <p className="modal-message">
-        Your local <strong>{spec.localName}</strong> has {aheadN} that the remote doesn&apos;t have, and{' '}
-        <strong>{spec.fullName}</strong> has {behindN} you don&apos;t have locally. A fast-forward isn&apos;t
-        possible — choose how to combine them.
-      </p>
+      <p className="modal-message">{interp(t('diverged.message'), vars)}</p>
       <label
         className="modal-label"
         style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 12 }}
       >
         <input type="checkbox" checked={backup} onChange={(e) => setBackup(e.target.checked)} />
-        Create a backup branch first — recover your commits anytime
+        {t('aheadCheckout.backup')}
       </label>
       <div className="modal-actions" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
         <button className="btn primary" onClick={() => choose('rebase')}>
-          Rebase — replay your {aheadN} on top of the remote (recommended)
+          {interp(t('diverged.rebase'), vars)}
         </button>
         <button className="btn ghost" onClick={() => choose('merge')}>
-          Merge — keep both histories
+          {t('diverged.merge')}
         </button>
         <button className="btn danger" onClick={() => choose('reset-hard')}>
-          Reset to remote — discard your {aheadN}
+          {interp(t('diverged.reset'), vars)}
         </button>
         <button className="btn ghost" onClick={closeModal} style={{ marginTop: 4 }}>
           {t('common.cancel')}
@@ -2085,7 +2088,7 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
   const valid = !!name.trim() && !!dir.trim() && !creating
 
   const browse = async (): Promise<void> => {
-    const picked = await window.api.selectDirectory('Choose where to create the repository')
+    const picked = await window.api.selectDirectory(t('modal.chooseCreateDir'))
     if (picked) setDir(picked)
   }
 
@@ -2096,7 +2099,7 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
       const path = await gitApi.init(dir.trim(), name.trim())
       closeModal()
       spec.onCreate({ path, name: name.trim() })
-      toast('success', `Created ${name.trim()}`)
+      toast('success', interp(t('modal.repoCreated'), { name: name.trim() }))
     } catch (e) {
       toast('error', e instanceof Error ? e.message : String(e))
       setCreating(false)
@@ -2228,14 +2231,18 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     : undefined
 
   const listTitle = spec.groupId
-    ? groupTab?.repos.length ? 'REPOSITORIES' : undefined
-    : settings.recentRepos.length ? 'RECENT' : undefined
+    ? groupTab?.repos.length ? t('launcher.listRepositories') : undefined
+    : settings.recentRepos.length ? t('launcher.listRecent') : undefined
 
-  const emptyMessage = spec.groupId ? 'No repositories in this group.' : undefined
+  const emptyMessage = spec.groupId ? t('launcher.emptyGroup') : undefined
 
   return (
     <>
-      <h3>{spec.groupId ? `Manage — ${groupTab?.name ?? 'Group'}` : 'Open Repository'}</h3>
+      <h3>
+        {spec.groupId
+          ? interp(t('launcher.manageGroup'), { name: groupTab?.name ?? t('launcher.groupFallback') })
+          : t('welcome.openRepo')}
+      </h3>
       <LauncherPanel
         onOpen={() => void openRepo()}
         onClone={cloneRepo}

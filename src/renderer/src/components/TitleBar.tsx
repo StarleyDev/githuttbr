@@ -722,7 +722,7 @@ export function TitleBar(): React.JSX.Element {
           title: t('titlebar.renameTab'),
           label: t('modal.name'),
           initial: tab.name,
-          submitLabel: 'Rename',
+          submitLabel: t('common.rename'),
           onSubmit: (name) => renameTab(tab.id, name)
         })
     })
@@ -1039,9 +1039,10 @@ export function TitleBar(): React.JSX.Element {
           role="button"
           tabIndex={0}
           className="tab-folder-chip"
-          title={`${folder.name} — ${count} ${count === 1 ? t('batch.repository') : t('batch.repositories')}${
-            folder.collapsed ? ' (collapsed)' : ''
-          } · drag to nest, reorder or lift out`}
+          title={interp(t(folder.collapsed ? 'tab.folderChipTitleCollapsed' : 'tab.folderChipTitle'), {
+            name: folder.name,
+            count: interp(t(count === 1 ? 'tab.repoCountOne' : 'tab.repoCountMany'), { n: count })
+          })}
           draggable
           onDragStart={onDragStart({ kind: 'folder', tabId: tab.id, folderId: folder.id })}
           onDragEnd={onDragEnd}
@@ -1221,10 +1222,10 @@ export function TitleBar(): React.JSX.Element {
           const groupStatus = tabStatus(tab)
           const agg = groupAgg(tab)
           const aggTip = [
-            `${tab.repos.length} ${tab.repos.length === 1 ? 'repository' : 'repositories'}`,
-            agg.ahead ? `↑${agg.ahead} to push` : '',
-            agg.behind ? `↓${agg.behind} to pull` : '',
-            agg.dirty ? `${agg.dirty} with changes` : ''
+            interp(t(tab.repos.length === 1 ? 'tab.repoCountOne' : 'tab.repoCountMany'), { n: tab.repos.length }),
+            agg.ahead ? interp(t('tab.groupToPush'), { n: agg.ahead }) : '',
+            agg.behind ? interp(t('tab.groupToPull'), { n: agg.behind }) : '',
+            agg.dirty ? interp(t('tab.groupWithChanges'), { n: agg.dirty }) : ''
           ].filter(Boolean).join(' · ')
 
           const handleGroupContext = (e: React.MouseEvent): void => {

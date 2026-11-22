@@ -32,7 +32,7 @@ export function LanguageBar({ languages }: { languages: LanguageStat[] }): React
             key={l.language}
             className="wiki-langbar-slice"
             style={{ width: `${Math.max(l.share * 100, 0.5)}%`, background: LANG_COLORS[i % LANG_COLORS.length] }}
-            title={`${l.language} — ${share(l)} (${l.files} files)`}
+            title={interp(t('wiki.langShareTitle'), { language: l.language, share: share(l), n: l.files })}
           />
         ))}
       </div>
@@ -153,7 +153,7 @@ export function ImportMap({ graph }: { graph: ImportGraph }): React.JSX.Element 
               style={{ strokeWidth: 1 + (e.count / maxCount) * 3.5 }}
               markerEnd="url(#wiki-arrow)"
             >
-              <title>{`${e.from} → ${e.to} · ${e.count} imports`}</title>
+              <title>{interp(t('wiki.mapEdgeTitle'), { from: e.from, to: e.to, n: e.count })}</title>
             </path>
           ))}
           {layout.nodes.map((n) => (
@@ -173,7 +173,7 @@ export function ImportMap({ graph }: { graph: ImportGraph }): React.JSX.Element 
               <text x={n.x} y={n.y + 4} textAnchor="middle">
                 {n.label}
               </text>
-              <title>{`${n.id} · ${n.files} files · imports ${n.out} · imported ${n.in}`}</title>
+              <title>{interp(t('wiki.mapNodeTitle'), { id: n.id, files: n.files, out: n.out, in: n.in })}</title>
             </g>
           ))}
         </svg>
@@ -250,7 +250,7 @@ export function PageMap({
               <text x={n.x} y={n.y + radius + 15} textAnchor="middle">
                 {n.label}
               </text>
-              <title>{`${n.label} · ${sources} source file(s)`}</title>
+              <title>{interp(t('wiki.mapSourcesTitle'), { label: n.label, n: sources })}</title>
             </g>
           )
         })}

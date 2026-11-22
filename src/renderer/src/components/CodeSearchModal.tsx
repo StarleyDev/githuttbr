@@ -6,7 +6,7 @@ import { useRepoStore } from '../stores/repo'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { guessLanguage, highlightLine } from '../lib/highlight'
 import type { CodeSearchHit, HistorySearchHit } from '../../../shared/types'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 type Tab = 'files' | 'history'
@@ -149,9 +149,16 @@ export function CodeSearchModal({ repoPath, query: initial }: { repoPath: string
           </span>
         ) : query.trim() ? (
           <span>
-            {total} {tab === 'files' ? 'match' : 'commit'}
-            {total === 1 ? '' : tab === 'files' ? 'es' : 's'}
-            {tab === 'files' && grouped.length > 0 ? ` in ${grouped.length} file${grouped.length === 1 ? '' : 's'}` : ''}
+            {tab === 'files'
+              ? grouped.length > 0
+                ? interp(t(total === 1 ? 'search.matchesInFilesOne' : 'search.matchesInFilesMany'), {
+                    n: total,
+                    files: interp(t(grouped.length === 1 ? 'search.filesOne' : 'search.filesMany'), {
+                      n: grouped.length
+                    })
+                  })
+                : interp(t(total === 1 ? 'search.matchesOne' : 'search.matchesMany'), { n: total })
+              : interp(t(total === 1 ? 'search.commitsOne' : 'search.commitsMany'), { n: total })}
           </span>
         ) : (
           <span className="codesearch-hint">

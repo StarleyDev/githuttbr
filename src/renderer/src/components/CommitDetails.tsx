@@ -516,7 +516,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                   })
               },
               { separator: true },
-              { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
+              { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
               { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) },
               ...openWithMenuItems(
                 `${repo.path}/${f.path}`,
@@ -541,7 +541,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
           onFolderContext={(folderPath, e) => {
             e.preventDefault()
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
-              { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
+              { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
               { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${folderPath}`) },
               ...openWithMenuItems(
                 `${repo.path}/${folderPath}`,

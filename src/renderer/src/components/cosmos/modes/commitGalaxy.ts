@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { CosmosCommit } from '../../../../../shared/types'
 import { seedColor } from '../engine'
 
-const NODE_CAP = 800
+export const GALAXY_NODE_CAP = 800
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 const GROW_DURATION = 0.9 // seconds a single branch takes to extend from parent to child
 const GROW_STAGGER = 0.0035 // seconds between successive commits' reveal start, oldest-first
@@ -45,8 +45,8 @@ export interface CommitGalaxyController {
  *  histories real repos have). Each commit links back to its parent(s); branch thickness
  *  reflects how many files it touched. */
 export function buildCommitGalaxy(commitsDesc: CosmosCommit[]): CommitGalaxyController {
-  const capped = commitsDesc.length > NODE_CAP
-  const subset = commitsDesc.slice(0, NODE_CAP) // most-recent-first
+  const capped = commitsDesc.length > GALAXY_NODE_CAP
+  const subset = commitsDesc.slice(0, GALAXY_NODE_CAP) // most-recent-first
   const chronological = [...subset].reverse() // oldest -> newest
   const n = Math.max(1, chronological.length)
 

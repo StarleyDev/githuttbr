@@ -575,7 +575,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       },
       { separator: true },
       ...copyPathItems(targetFiles.map((f) => f.path)),
-      { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
+      { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
       { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${file.path}`) },
       ...openWithMenuItems(
         `${path}/${file.path}`,
@@ -624,7 +624,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         ? { label: interp(t('composer.unstageFolderN'), { n: targets.length }), onClick: () => void repoActions.unstage(path, targets) }
         : { label: interp(t('composer.stageFolderN'), { n: targets.length }), onClick: () => void repoActions.stage(path, targets) },
       { separator: true },
-      { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${folderPath}`) },
+      { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${path}/${folderPath}`) },
       { label: t('common.copyFolderPath'), onClick: () => void navigator.clipboard.writeText(`${path}/${folderPath}`) },
       { separator: true },
       {
@@ -900,7 +900,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                     },
                     { separator: true },
                     ...copyPathItems([f.path]),
-                    { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${f.path}`) },
+                    { label: t(shellApi.revealLabelKey), onClick: () => void shellApi.revealInFolder(`${path}/${f.path}`) },
                     { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${f.path}`) },
                     ...openWithMenuItems(
                       `${path}/${f.path}`,
@@ -1239,7 +1239,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                 }
               }}
             />
-            Amend
+            {t('commit.amendToggle')}
           </label>
           <motion.button
             className="btn primary commit-btn"
