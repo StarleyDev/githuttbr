@@ -12,15 +12,21 @@
 #   • main                 up to date    (current; protected by default)
 #   • agent/billing-fix    diverged      (a teammate pushed too — disabled)
 #   • release/2.4          behind ↓2     (disabled)
-#   • feature/old-name     ahead ↑1, tracking origin/feature/new-name, so it
-#                          lands on that name ("→ origin/feature/new-name")
+#   • feature/old-name     tracks origin/feature/new-name (another name): new
+#                          under its own name, NOT pre-ticked, with a "tracks
+#                          origin/feature/new-name — pushes to
+#                          origin/feature/old-name" warning and a per-row
+#                          "push to feature/new-name instead" (↑1 there)
 #
 # Verify:
-#   • Push ▾ → Push branches… ⇒ the four agent branches with work and
-#     feature/old-name are ticked, "5 selected"; billing-fix and release/2.4
-#     are greyed out with a tooltip saying why.
-#   • Push 5 branches ⇒ every one reports pushed or created; the new ones now
-#     track origin/<name>, and feature/old-name landed on feature/new-name.
+#   • Push ▾ → Push branches… ⇒ the four agent branches with work are ticked,
+#     "4 selected"; billing-fix and release/2.4 are greyed out with a tooltip
+#     saying why; feature/old-name is unticked and shows the tracks warning.
+#   • Push 4 branches ⇒ every one reports pushed or created; the new ones now
+#     track origin/<name>.
+#   • On feature/old-name, "push to feature/new-name instead", then Push ⇒ a
+#     confirmation listing "feature/old-name → origin/feature/new-name"; only
+#     after it does feature/new-name move.
 #   • Tick "All or nothing" and include a branch made diverged again ⇒ nothing
 #     moves on the remote.
 R="$ROOT/multi-branch-push"

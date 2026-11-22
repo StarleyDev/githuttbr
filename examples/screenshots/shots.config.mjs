@@ -2640,7 +2640,7 @@ export const shots = [
   {
     // Push branches…: every state the dialog tells apart, from a scenario that
     // builds them against a local bare remote — ahead, new, up to date, behind,
-    // diverged, and one that lands on its upstream's other name.
+    // diverged, and one tracking a branch of another name (unticked, with its warning).
     out: 'push-branches',
     repos: ['multi-branch-push'],
     themes: ['dark'],
@@ -2650,6 +2650,8 @@ export const shots = [
       await page.waitForTimeout(600)
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'push-branches', repoPath: p }), repo)
       await page.locator('.push-branch-row').first().waitFor()
+      // The list scrolls: bring the tracks-another-name row, with its choice, fully into view.
+      await page.locator('.push-branch-row[data-branch="release/2.4"]').scrollIntoViewIfNeeded()
       await page.waitForTimeout(500)
     }
   },

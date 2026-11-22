@@ -191,6 +191,12 @@ describe('e2e smoke', () => {
       .evaluateAll((els) => els.map((el) => el.getAttribute('data-branch')))
     expect(ticked).toEqual(expect.arrayContaining(['agent/auth-refresh', 'agent/flaky-tests', 'agent/perf-cache']))
     expect(ticked).not.toContain('agent/billing-fix')
+    // Tracks a branch of another name: unticked, warned about, and aimed at its own name.
+    const renamed = r.page.locator('.push-branch-row[data-branch="feature/old-name"]')
+    expect(ticked).not.toContain('feature/old-name')
+    expect(await renamed.getAttribute('data-dest')).toBe('feature/old-name')
+    expect(await renamed.locator('.push-branch-tracks').count()).toBe(1)
+    const newNameBefore = git(origin, 'rev-parse', 'refs/heads/feature/new-name')
 
     await r.page.locator('.push-branches-submit').click()
     const results = r.page.locator('.push-result')
@@ -202,11 +208,33 @@ describe('e2e smoke', () => {
 
     // The remote really has them now, at the local tips — and nothing diverged was forced.
     for (const b of ticked) {
-      const dest = b === 'feature/old-name' ? 'feature/new-name' : (b as string)
-      expect(git(origin, 'rev-parse', `refs/heads/${dest}`)).toBe(git(r.repo, 'rev-parse', `refs/heads/${b}`))
+      expect(git(origin, 'rev-parse', `refs/heads/${b}`)).toBe(git(r.repo, 'rev-parse', `refs/heads/${b}`))
     }
     expect(git(origin, 'rev-parse', 'refs/heads/agent/billing-fix')).not.toBe(
       git(r.repo, 'rev-parse', 'refs/heads/agent/billing-fix')
+    )
+    expect(git(origin, 'rev-parse', 'refs/heads/feature/new-name')).toBe(newNameBefore)
+
+    // The explicit choice: push feature/old-name onto its upstream's name — only after a confirm.
+    await r.page.locator('.push-branches-modal .modal-actions .btn.ghost').click()
+    const row = r.page.locator('.push-branch-row[data-branch="feature/old-name"]')
+    await row.waitFor()
+    // Untick everything, then choose the upstream for the one row (which ticks it).
+    if (await r.page.locator('.push-branch-row.selected').count()) {
+      for (const el of await r.page.locator('.push-branch-row.selected input').all()) await el.click()
+    }
+    await row.locator('.push-branch-upstream-toggle').click()
+    expect(await row.getAttribute('data-dest')).toBe('feature/new-name')
+    expect(await row.getAttribute('data-state')).toBe('ahead')
+    await r.page.locator('.push-branches-submit').click()
+    const confirm = r.page.locator('[role="alertdialog"]')
+    await confirm.waitFor()
+    expect(await confirm.locator('.modal-message').innerText()).toContain('feature/old-name → origin/feature/new-name')
+    expect(git(origin, 'rev-parse', 'refs/heads/feature/new-name')).toBe(newNameBefore) // nothing yet
+    await confirm.locator('.modal-actions button').last().click()
+    await r.page.locator('.push-result[data-branch="feature/old-name"]').waitFor({ timeout: 20_000 })
+    expect(git(origin, 'rev-parse', 'refs/heads/feature/new-name')).toBe(
+      git(r.repo, 'rev-parse', 'refs/heads/feature/old-name')
     )
     expect(r.errors()).toEqual([])
   })

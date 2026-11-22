@@ -1,10 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ArrowUpFromLine, Check, ChevronDown, Globe, Loader2, Lock, Search, ShieldAlert, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowUpFromLine,
+  Check,
+  ChevronDown,
+  GitBranch,
+  Globe,
+  Loader2,
+  Lock,
+  Search,
+  ShieldAlert,
+  X
+} from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type PushBranchesOutcome } from '../stores/repo'
 import { gitApi } from '../infrastructure/api'
 import { isProtectedBranch } from '../lib/repoConfig'
-import { canBatchPush, defaultPushRemote, filterPushStates, initialPushSelection } from '../lib/pushBranches'
+import {
+  canBatchPush,
+  chosenPushTargets,
+  defaultPushRemote,
+  filterPushStates,
+  pushDestinationClashes,
+  pushDestinationOf,
+  seedPushSelection,
+  upstreamPushDecision,
+  type LoadedPushStates
+} from '../lib/pushBranches'
 import { useT, interp, type TranslationKey } from '../i18n'
 import type { BranchPushRejection, BranchPushResult, BranchPushState } from '../../../shared/types'
 
@@ -46,11 +68,17 @@ export function PushBranchesModal({
   const repoConfig = repo?.config?.config ?? null
 
   const [remote, setRemote] = useState(() => defaultPushRemote(remotes, currentUpstream))
-  const [states, setStates] = useState<BranchPushState[] | null>(null)
+  // Kept with the remote they were read against, so a remote switch can never
+  // seed ticks — or show badges — from the previous remote's states.
+  const [loaded, setLoaded] = useState<LoadedPushStates | null>(null)
+  const states = loaded?.remote === remote ? loaded.states : null
   const [loadError, setLoadError] = useState<string | null>(null)
   const [protectedNames, setProtectedNames] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  // Rows the user chose to push to their differently named upstream instead of their own name.
+  const [toUpstream, setToUpstream] = useState<Set<string>>(new Set())
+  const [clash, setClash] = useState<string | null>(null)
   const [atomic, setAtomic] = useState(false)
   const [setUpstream, setSetUpstream] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -67,10 +95,9 @@ export function PushBranchesModal({
   useEffect(() => {
     if (!remote) return
     let live = true
-    setStates(null)
     setLoadError(null)
     gitApi.branchPushStates(repoPath, remote).then(
-      (s) => live && setStates(s),
+      (s) => live && setLoaded({ remote, states: s }),
       (err: unknown) => live && setLoadError(err instanceof Error ? err.message : String(err))
     )
     return () => {
@@ -79,24 +106,43 @@ export function PushBranchesModal({
   }, [repoPath, remote, outcome])
 
   useEffect(() => {
-    if (!states || seededFor === remote) return
-    setSelected(new Set(initialPushSelection(states, usePreselect ? preselect : undefined)))
+    const seed = seedPushSelection(loaded, remote, seededFor, usePreselect ? preselect : undefined)
+    if (!seed) return
+    setSelected(new Set(seed))
+    setToUpstream(new Set())
+    setClash(null)
     setSeededFor(remote)
-  }, [states, remote, seededFor, preselect, usePreselect])
+  }, [loaded, remote, seededFor, preselect, usePreselect])
 
   const shown = useMemo(() => filterPushStates(states ?? [], query), [states, query])
-  const pushableShown = shown.filter(canBatchPush)
+  const pushableShown = shown.filter((s) => canBatchPush(s, toUpstream.has(s.name)))
   const allShownSelected = pushableShown.length > 0 && pushableShown.every((s) => selected.has(s.name))
   // Only branches still listed and still pushable count — a refresh can move one to diverged.
-  const chosen = (states ?? []).filter((s) => selected.has(s.name) && canBatchPush(s)).map((s) => s.name)
+  const targets = chosenPushTargets(states ?? [], selected, toUpstream)
+  const chosen = targets.map((tg) => tg.branch)
+  const isProtectedDest = (branch: string): boolean => isProtectedBranch(branch, protectedNames, repoConfig)
 
-  const toggle = (name: string): void =>
+  const toggle = (name: string): void => {
+    setClash(null)
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(name)) next.delete(name)
       else next.add(name)
       return next
     })
+  }
+  // Choosing the upstream's name ticks the row too — that is why it was chosen.
+  const toggleUpstream = (name: string): void => {
+    setClash(null)
+    const on = !toUpstream.has(name)
+    setToUpstream((prev) => {
+      const next = new Set(prev)
+      if (on) next.add(name)
+      else next.delete(name)
+      return next
+    })
+    if (on) setSelected((prev) => new Set(prev).add(name))
+  }
   const toggleShown = (): void =>
     setSelected((prev) => {
       const next = new Set(prev)
@@ -107,21 +153,50 @@ export function PushBranchesModal({
       return next
     })
 
-  const submit = (): void => {
+  const submit = (redirectConfirmed = false): void => {
     if (!chosen.length || busy) return
+    // Two branches onto one remote branch: git would refuse the whole push.
+    const clashes = pushDestinationClashes(targets)
+    if (clashes.length) {
+      const c = clashes[0]
+      setClash(interp(t('pushBranches.clash'), { branches: c.branches.join(', '), target: `${remote}/${c.remoteBranch}` }))
+      return
+    }
+    const decision = upstreamPushDecision(states ?? [], targets, isProtectedDest)
+    if (decision.kind !== 'none' && !redirectConfirmed) {
+      const list = decision.redirects
+        .map((r) => interp(t('pushBranches.redirectLine'), { branch: r.branch, target: `${remote}/${r.remoteBranch}` }))
+        .join('\n')
+      const sensitive = decision.redirects.filter((r) => r.sensitive).map((r) => `${remote}/${r.remoteBranch}`)
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        danger: decision.kind === 'confirmSensitive',
+        title: t('pushBranches.redirectTitle'),
+        message:
+          interp(t('pushBranches.redirectMessage'), { list }) +
+          (sensitive.length ? `\n\n${interp(t('pushBranches.redirectSensitive'), { targets: sensitive.join(', ') })}` : ''),
+        confirmLabel: t('pushBranches.redirectOk'),
+        onConfirm: () => submit(true)
+      })
+      return
+    }
+    const redirected = targets.filter((tg) => tg.remoteBranch !== tg.branch).map((tg) => tg.branch)
     setBusy(true)
     void repoActions
-      .pushBranches(repoPath, remote, chosen, { atomic, setUpstream }, submit)
+      .pushBranches(repoPath, remote, chosen, { atomic, setUpstream, toUpstream: redirected }, () => submit(true))
       .then((res) => {
         if (res) setOutcome(res)
       })
       .finally(() => setBusy(false))
   }
 
-  const target = (s: BranchPushState): string => `${remote}/${s.remoteBranch}`
+  const target = (s: BranchPushState): string =>
+    `${remote}/${pushDestinationOf(s, toUpstream.has(s.name)).remoteBranch}`
 
-  const badge = (s: BranchPushState): React.JSX.Element => {
-    const vars = { branch: s.name, target: target(s), count: s.ahead }
+  const badge = (row: BranchPushState): React.JSX.Element => {
+    // Against the destination actually chosen for the row, so the badge tells the truth.
+    const s = pushDestinationOf(row, toUpstream.has(row.name))
+    const vars = { branch: row.name, target: target(row), count: s.ahead }
     switch (s.state) {
       case 'ahead':
         return (
@@ -191,7 +266,14 @@ export function PushBranchesModal({
             return (
               <div key={r.branch} className={`repo-row push-result ${ok ? 'ok' : 'failed'}`} data-branch={r.branch} data-status={r.status}>
                 {ok ? <Check size={13} className="push-result-icon" /> : <X size={13} className="push-result-icon" />}
-                <span className="repo-row-name">{r.branch}</span>
+                <span className="repo-row-name">
+                  {r.branch}
+                  {r.remoteBranch !== r.branch && (
+                    <span className="push-branch-dest">
+                      {interp(t('pushBranches.landsOn'), { target: `${remote}/${r.remoteBranch}` })}
+                    </span>
+                  )}
+                </span>
                 <span className="push-result-status">{t(STATUS_KEY[r.status])}</span>
                 {reasonText(r) && <span className="push-result-reason">{reasonText(r)}</span>}
               </div>
@@ -224,6 +306,8 @@ export function PushBranchesModal({
             type="button"
             onClick={() => {
               setUsePreselect(false)
+              // Drop the pre-push states now: seeding from them would beat the reload.
+              setLoaded(null)
               setSeededFor(null)
               setOutcome(null)
             }}
@@ -303,17 +387,20 @@ export function PushBranchesModal({
         {loadError && <div className="repo-list-state danger">{loadError}</div>}
         {states && shown.length === 0 && <div className="repo-list-state">{t('pushBranches.empty')}</div>}
         {shown.map((s) => {
-          const pushable = canBatchPush(s)
+          const redirected = toUpstream.has(s.name)
+          const dest = pushDestinationOf(s, redirected)
+          const pushable = canBatchPush(s, redirected)
           const isProtected =
-            isProtectedBranch(s.name, protectedNames, repoConfig) ||
-            isProtectedBranch(s.remoteBranch, protectedNames, repoConfig)
+            isProtectedDest(s.name) || isProtectedDest(dest.remoteBranch) || (redirected && !!s.upstreamTarget?.isRemoteDefault)
+          const up = s.upstreamTarget
           return (
             <label
               key={s.name}
               className={`repo-row push-branch-row ${selected.has(s.name) && pushable ? 'selected' : ''} ${pushable ? '' : 'disabled'}`}
               data-branch={s.name}
-              data-state={s.state}
-              title={pushable ? undefined : interp(t(s.state === 'behind' ? 'pushBranches.behindTitle' : 'pushBranches.divergedTitle'), { branch: s.name, target: target(s), count: s.ahead })}
+              data-state={dest.state}
+              data-dest={dest.remoteBranch}
+              title={pushable ? undefined : interp(t(dest.state === 'behind' ? 'pushBranches.behindTitle' : 'pushBranches.divergedTitle'), { branch: s.name, target: target(s), count: dest.ahead })}
             >
               <input
                 type="checkbox"
@@ -325,8 +412,48 @@ export function PushBranchesModal({
               />
               <span className="repo-row-name">
                 {s.name}
-                {s.remoteBranch !== s.name && (
+                {redirected && (
                   <span className="push-branch-dest">{interp(t('pushBranches.landsOn'), { target: target(s) })}</span>
+                )}
+                {/* A second line that wraps: the warning, then the per-row choice — never crowding the badge. */}
+                {up && (
+                  <span className="push-branch-tracks-line">
+                    <span
+                      className="push-branch-tracks"
+                      title={interp(t('pushBranches.tracksOtherTitle'), {
+                        branch: s.name,
+                        upstream: `${remote}/${up.remoteBranch}`,
+                        target: `${remote}/${s.name}`
+                      })}
+                    >
+                      {interp(t(redirected ? 'pushBranches.tracksOtherChosen' : 'pushBranches.tracksOther'), {
+                        upstream: `${remote}/${up.remoteBranch}`,
+                        target: `${remote}/${s.name}`
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      className={`link-btn push-branch-upstream-toggle ${redirected ? 'active' : ''}`}
+                      disabled={busy}
+                      aria-pressed={redirected}
+                      title={interp(t(redirected ? 'pushBranches.toOwnTitle' : 'pushBranches.toUpstreamTitle'), {
+                        upstream: `${remote}/${up.remoteBranch}`,
+                        target: `${remote}/${s.name}`
+                      })}
+                      onClick={(e) => {
+                        // Inside the row's <label>: do not let the click tick the checkbox as well.
+                        e.preventDefault()
+                        e.stopPropagation()
+                        toggleUpstream(s.name)
+                      }}
+                    >
+                      <GitBranch size={11} aria-hidden="true" />
+                      {interp(t(redirected ? 'pushBranches.toOwn' : 'pushBranches.toUpstream'), {
+                        upstream: up.remoteBranch,
+                        branch: s.name
+                      })}
+                    </button>
+                  </span>
                 )}
               </span>
               {isProtected && (
@@ -361,6 +488,8 @@ export function PushBranchesModal({
         </span>
       </label>
 
+      {clash && <p className="push-branches-error push-branches-clash">{clash}</p>}
+
       <p className="modal-hint push-branches-stale">
         <AlertTriangle size={11} style={{ verticalAlign: '-1px', marginInlineEnd: 4 }} />
         {t('pushBranches.staleHint')}
@@ -370,7 +499,7 @@ export function PushBranchesModal({
         <button className="btn ghost" type="button" onClick={closeModal}>
           {t('common.cancel')}
         </button>
-        <button className="btn primary push-branches-submit" type="button" disabled={!chosen.length || busy} onClick={submit}>
+        <button className="btn primary push-branches-submit" type="button" disabled={!chosen.length || busy} onClick={() => submit()}>
           {busy ? <Loader2 size={13} className="spin" /> : <ArrowUpFromLine size={13} />}{' '}
           {chosen.length === 1 ? t('pushBranches.pushOne') : interp(t('pushBranches.pushMany'), { count: chosen.length })}
         </button>

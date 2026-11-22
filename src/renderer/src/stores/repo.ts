@@ -1968,6 +1968,9 @@ export const repoActions = {
    * push. The secret guard runs on every branch's own outgoing commits: a
    * flagged branch is held back (and reported, with its files) while the rest
    * go. The repository's push checklist runs once, as for any push.
+   * `opts.toUpstream` names the branches the dialog has already confirmed
+   * sending to their differently named upstream; every other one goes to its
+   * own name.
    *
    * Resolves null when the checklist opened a confirmation — `retry` runs on
    * approval. Not `run()`: the toast depends on how each branch came out, so it
@@ -1977,7 +1980,7 @@ export const repoActions = {
     path: string,
     remote: string,
     branches: string[],
-    opts: { setUpstream: boolean; atomic: boolean },
+    opts: { setUpstream: boolean; atomic: boolean; toUpstream?: string[] },
     retry: () => void
   ): Promise<PushBranchesOutcome | null> => {
     if (!branches.length || !remote) return null
