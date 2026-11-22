@@ -9,7 +9,7 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
-import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance } from './settings'
+import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInstance } from './settings'
 import {
   createForgejoPull,
   createForgejoRepo,
@@ -55,7 +55,6 @@ import {
   instanceOf,
   normalizeGitlabUrl,
   profileForgejoBase,
-  profileGitlabBase,
   tokenMatchesInstance
 } from '../shared/gitlabInstance'
 import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
@@ -431,9 +430,12 @@ function gitlabBaseFromOrg(org: string | undefined): string {
   throw new Error('This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.')
 }
 
-/** `providerBaseUrl`, with GitLab resolved to the active profile's instance. */
+/**
+ * `providerBaseUrl`, with Forgejo resolved to the active profile's instance.
+ * GitLab without an `org` is gitlab.com: a self-managed server is always named
+ * by its base (Settings and the clone browser send it).
+ */
 async function providerBase(provider: RepoHost, org?: string): Promise<string> {
-  if (provider === 'gitlab' && !org) return profileGitlabInstance()
   if (provider === 'forgejo' && !org) {
     const base = await profileForgejoInstance()
     if (!base) return forgejoBaseFromOrg(undefined) // throws: nothing configured
@@ -2458,29 +2460,23 @@ async function accountOwner(
   found: AccountLink,
   exceptProfileId: string
 ): Promise<string | null> {
-  // GitLab accounts are per instance: the same username on gitlab.com and on a
-  // self-managed GitLab are two different people.
-  const instance =
-    provider === 'gitlab'
-      ? await profileGitlabInstance(exceptProfileId)
-      : provider === 'forgejo'
-        ? await profileForgejoInstance(exceptProfileId)
-        : undefined
-  const instanceOfProfile = (p: { gitlabUrl?: string; forgejoUrl?: string }): string | null =>
-    provider === 'gitlab' ? profileGitlabBase(p.gitlabUrl) : profileForgejoBase(p.forgejoUrl)
+  // Accounts are per instance: the same username on two Forgejo servers is two
+  // different people. GitLab's sign-in only ever links a gitlab.com account
+  // (servers use their own tokens), so its profiles are compared on gitlab.com.
+  const instance = provider === 'forgejo' ? await profileForgejoInstance(exceptProfileId) : undefined
   const others = (await allProfileAuth(provider)).filter(
-    (p) => p.id !== exceptProfileId && (instance === undefined || instanceOfProfile(p) === instance)
+    (p) => p.id !== exceptProfileId && (instance === undefined || profileForgejoBase(p.forgejoUrl) === instance)
   )
   const linked = others.find((p) => linkHoldsAccount(p.link, login, found))
   if (linked) return linked.name
   for (const p of others) {
     if (!p.token) continue
-    // GitLab: that profile's own instance, explicitly — empty means gitlab.com, not "the active one".
+    // GitLab: gitlab.com explicitly — allProfileAuth hands out gitlab.com's tokens only.
     const org =
       provider === 'azure'
         ? p.azureOrg
         : provider === 'gitlab'
-          ? profileGitlabBase(p.gitlabUrl)
+          ? GITLAB_COM
           : provider === 'forgejo'
             ? (profileForgejoBase(p.forgejoUrl) ?? undefined)
             : undefined

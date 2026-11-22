@@ -989,18 +989,19 @@ function urlUsername(url: string | undefined): string {
  * duration of the clone, which a crash or a kill would otherwise leave behind.
  */
 export async function cloneCredentialEnv(url: string, host?: string, token?: string): Promise<NodeJS.ProcessEnv | null> {
-  if (!token || !token.trim() || !/^https:\/\//i.test(url)) return null
+  if (!/^https:\/\//i.test(url)) return null
   // The caller names the provider; the URL must really be on it.
   if (!host || hostFromUrl(url) !== host) return null
   // The renderer sends the active profile's token. A GitLab or Forgejo token
   // only goes to the instance that issued it — never to another profile's server.
   // GitHub likewise: the renderer's token is github.com's, so a clone from an
   // Enterprise Server uses the token the profile filed for that server.
+  // Resolved here even when the renderer sent none: its copy of the settings
+  // carries no tokens until Settings has been opened, and a self-managed
+  // server's token is never the one it would send anyway.
   const ghes = host === 'github' && !isGithubComHost(new URL(url).hostname)
-  if (host === 'gitlab' || host === 'forgejo' || ghes) {
-    token = (await activeProfileAuth(host, url)).token
-    if (!token) return null
-  }
+  if (host === 'gitlab' || host === 'forgejo' || ghes) token = (await activeProfileAuth(host, url)).token
+  if (!token || !token.trim()) return null
   const auth = basicAuthFor(host as RepoHost | undefined, token, url)
   return auth ? gitCredentialEnv(url, auth) : null
 }

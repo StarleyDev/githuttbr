@@ -4,7 +4,15 @@ import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
-import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
+import {
+  profileForgejoBase,
+  instanceOf,
+  tokenInstance,
+  GITLAB_COM,
+  gitlabAuthFor,
+  gitlabServerBases,
+  migrateGitlabSettings
+} from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
 import { GITHUB_COM, githubAuthFor, githubBaseOfRemote, githubEnterpriseBases } from '../shared/githubEnterprise'
 import {
@@ -109,12 +117,14 @@ export async function readSettings(): Promise<AppSettings> {
     const raw = await readFile(settingsPath(), 'utf-8')
     const parsed = JSON.parse(raw) as Partial<AppSettings>
     // Existing install without the key → treat as already onboarded.
-    settings = { ...defaultSettings(), onboardingCompleted: true, ...parsed }
+    // A one-instance GitLab profile becomes a server list here, on every read —
+    // the file is also written by imports and older builds (see withMigratedAI).
+    settings = migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...parsed })
   } catch {
     return defaultSettings()
   }
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
-  setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
+  setKnownGitlabInstances(gitlabServerBases(out.profiles))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
   setKnownGithubEnterpriseInstances(githubEnterpriseBases(out.profiles))
   return out
@@ -200,23 +210,39 @@ async function profileAuth(
     if (!githubBase) return {}
     if (githubBase !== GITHUB_COM && !githubEnterpriseBases([candidate]).includes(githubBase)) return {}
   }
-  if (host === 'gitlab' || host === 'forgejo') {
-    const base = tokenInstance(host, candidate[`${host}Url`])
+  // GitLab: gitlab.com or one of the profile's servers, decided by which known
+  // instance the remote sits on (longest base first, so `host/gitlab` beats
+  // `host`). Forgejo bases take part in the match too: a remote on a Forgejo
+  // at the same host must not count as that host's GitLab.
+  let gitlabBase: string | null = null
+  if (host === 'gitlab') {
+    gitlabBase = remoteUrl ? gitlabBaseOfRemote(remoteUrl, plain.profiles) : (expectedBase ?? GITLAB_COM)
+    if (!gitlabBase || (expectedBase && gitlabBase !== expectedBase)) return {}
+    if (gitlabBase !== GITLAB_COM && !gitlabServerBases([candidate]).includes(gitlabBase)) return {}
+  }
+  if (host === 'forgejo') {
+    const base = tokenInstance(host, candidate.forgejoUrl)
     if (!base || (expectedBase && base !== expectedBase)) return {}
     if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
   const settings = await readSettingsWithSecrets('tokens')
   const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
   if (!profile) return {}
-  if (host === 'gitlab' || host === 'forgejo') {
-    const base = tokenInstance(host, profile[`${host}Url`])
+  if (host === 'forgejo') {
+    const base = tokenInstance(host, profile.forgejoUrl)
     if (!base || (expectedBase && base !== expectedBase)) return {}
     if (remoteUrl) {
-      const bases = [GITLAB_COM, ...settings.profiles.flatMap((p) =>
-        [profileForgejoBase(p.forgejoUrl), profileGitlabBase(p.gitlabUrl)].filter((b): b is string => !!b)
+      const bases = [GITLAB_COM, ...gitlabServerBases(settings.profiles), ...settings.profiles.flatMap((p) =>
+        [profileForgejoBase(p.forgejoUrl)].filter((b): b is string => !!b)
       )]
       if (instanceOf(remoteUrl, bases)?.base !== base) return {}
     }
+  }
+  if (host === 'gitlab' && gitlabBase) {
+    // Re-checked on the decrypted settings: they are the ones the token comes from.
+    if (remoteUrl && gitlabBaseOfRemote(remoteUrl, settings.profiles) !== gitlabBase) return {}
+    const auth = gitlabAuthFor(profile, gitlabBase)
+    return { token: auth.token, link: validAccountLink(auth.link) }
   }
   if (host === 'github' && githubBase) {
     const auth = githubAuthFor(profile, githubBase)
@@ -225,6 +251,17 @@ async function profileAuth(
   const link = validAccountLink(profile.links?.[host])
   const token = profile[TOKEN_FIELD[host]]?.trim() || undefined
   return { token, link }
+}
+
+/**
+ * The GitLab whose credentials a remote may receive: gitlab.com, or a server
+ * some profile names — null for any other host (or one that is a Forgejo's).
+ */
+function gitlabBaseOfRemote(remoteUrl: string, profiles: AppSettings['profiles']): string | null {
+  const servers = gitlabServerBases(profiles)
+  const forgejo = profiles.map((p) => profileForgejoBase(p.forgejoUrl)).filter((b): b is string => !!b)
+  const hit = instanceOf(remoteUrl, [GITLAB_COM, ...servers, ...forgejo])?.base ?? null
+  return hit === GITLAB_COM || (hit && servers.includes(hit)) ? hit : null
 }
 
 /** The active profile's PAT and link for a host. */
@@ -242,16 +279,6 @@ export async function profileForgejoInstance(profileId?: string): Promise<string
   return profileForgejoBase(profile?.forgejoUrl)
 }
 
-/** The GitLab instance a profile (the active one by default) is connected to. */
-export async function profileGitlabInstance(profileId?: string): Promise<string> {
-  const plain = await readSettings()
-  const profile =
-    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
-    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
-    plain.profiles[0]
-  return profileGitlabBase(profile?.gitlabUrl)
-}
-
 /**
  * Every profile's PAT and link for a host, with its name — for "is this account
  * already another profile's?", which has to see tokens the renderer may not
@@ -259,15 +286,15 @@ export async function profileGitlabInstance(profileId?: string): Promise<string>
  */
 export async function allProfileAuth(
   host: RepoHost
-): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; gitlabUrl?: string; forgejoUrl?: string }>> {
+): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; forgejoUrl?: string }>> {
   const settings = await readSettingsWithSecrets('tokens')
   return settings.profiles.map((p) => ({
     id: p.id,
     name: p.name,
-    token: p[TOKEN_FIELD[host]]?.trim() || undefined,
+    // GitLab: gitlab.com's credentials — the only GitLab a sign-in links.
+    token: (host === 'gitlab' ? gitlabAuthFor(p, GITLAB_COM).token : p[TOKEN_FIELD[host]])?.trim() || undefined,
     link: validAccountLink(p.links?.[host]),
     azureOrg: p.azureOrg?.trim() || undefined,
-    gitlabUrl: p.gitlabUrl?.trim() || undefined,
     forgejoUrl: p.forgejoUrl?.trim() || undefined
   }))
 }
@@ -340,9 +367,11 @@ export function hasSessionOnlySecrets(): boolean {
 }
 onSessionOnlyProbe(hasSessionOnlySecrets)
 
-async function writeSettings(settings: AppSettings): Promise<void> {
+async function writeSettings(incoming: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
+  // An import or an older renderer may still send the one-instance shape.
+  const settings = migrateGitlabSettings(incoming)
+  setKnownGitlabInstances(gitlabServerBases(settings.profiles))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   setKnownGithubEnterpriseInstances(githubEnterpriseBases(settings.profiles))
   const secrets = extractSecrets(settings)

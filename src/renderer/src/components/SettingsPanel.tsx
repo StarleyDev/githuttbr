@@ -114,6 +114,7 @@ import {
 } from '../theme/themes'
 import { ansiToSpans } from '../lib/ansi'
 import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
+import { GitlabServersSettings } from './GitlabServersSettings'
 import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
 import { repoActions } from '../stores/repo'
@@ -438,8 +439,8 @@ const INTEGRATIONS = [
     field: 'gitlabToken',
     kind: 'pat',
     placeholder: 'glpat-…',
-    // The real link is per instance — see gitlabTokenUrl at the click.
-    tokenUrl: gitlabTokenUrl(undefined)
+    // gitlab.com's; each self-managed server has its own link in its row.
+    tokenUrl: gitlabTokenUrl()
   },
   {
     id: 'bitbucket',
@@ -478,23 +479,19 @@ export function IntegrationsPage({
   const ActiveIcon = active.icon
   const scoped = active.id === 'gitlab' || active.id === 'forgejo' ? active.id : undefined
   const issuer = scoped ? profile[`${scoped}TokenIssuer`] : undefined
-  const address = scoped ? profile[`${scoped}Url`] : undefined
+  // GitLab's field is gitlab.com's token; self-managed servers are a list below it.
+  const address = scoped === 'forgejo' ? profile.forgejoUrl : undefined
   const token = !scoped || tokenMatchesInstance(scoped, address, issuer) ? profile[active.field] ?? '' : ''
   const azureOrg = profile.azureOrg ?? ''
-  const gitlabUrl = profile.gitlabUrl ?? ''
-  // Typed but not an https address: say so, rather than silently using gitlab.com.
-  const gitlabUrlInvalid = !!gitlabUrl.trim() && !normalizeGitlabUrl(gitlabUrl)
   const forgejoUrl = profile.forgejoUrl ?? ''
   const forgejoUrlInvalid = !!forgejoUrl.trim() && !normalizeGitlabUrl(forgejoUrl)
-  // Azure scopes by organization, GitLab and Forgejo by instance (GitLab empty = gitlab.com).
+  // Azure scopes by organization, Forgejo by instance; this tab's GitLab is gitlab.com.
   const whoAmIOrg =
     active.id === 'azure'
       ? azureOrg.trim()
-      : active.id === 'gitlab'
-        ? profile.gitlabUrl?.trim() || undefined
-        : active.id === 'forgejo'
-          ? forgejoUrl.trim() || undefined
-          : undefined
+      : active.id === 'forgejo'
+        ? forgejoUrl.trim() || undefined
+        : undefined
   const azureOrgRequired = t('settings.azureOrgRequired')
 
   const sshNotice = t('settings.sshFromIntegrations').split('{link}')
@@ -611,7 +608,12 @@ export function IntegrationsPage({
           const Icon = i.icon
           // For the tab being viewed the resolved state is known; the others can
           // only report whether a token is configured, without probing them all.
-          const isConnected = i.id === tab ? connected : !!profile[i.field]?.trim() || !!profile.links?.[i.id]
+          const isConnected =
+            i.id === tab
+              ? connected
+              : !!profile[i.field]?.trim() ||
+                !!profile.links?.[i.id] ||
+                (i.id === 'gitlab' && !!profile.gitlabServers?.some((s) => !!s.token.trim() || !!s.link))
           return (
             <button
               key={i.id}
@@ -738,6 +740,7 @@ export function IntegrationsPage({
             ...(scoped && { [`${scoped}TokenIssuer`]: tokenInstance(scoped, address) })
           } as Partial<Profile>)}
         />
+        {active.id === 'gitlab' && <span className="settings-hint">{t('settings.gitlabComHint')}</span>}
       </label>
       <TokenKeychainNotice />
       {active.id === 'azure' && (
@@ -752,21 +755,6 @@ export function IntegrationsPage({
             onChange={(e) => edit({ azureOrg: e.target.value })}
           />
           <span className="settings-hint">{t('settings.azureOrgHint')}</span>
-        </label>
-      )}
-      {active.id === 'gitlab' && (
-        <label>
-          {t('settings.gitlabUrl')}
-          <input
-            type="text"
-            value={gitlabUrl}
-            placeholder={t('settings.gitlabUrlPlaceholder')}
-            aria-invalid={gitlabUrlInvalid}
-            onChange={(e) => edit(editInstance(profile, 'gitlab', e.target.value))}
-          />
-          <span className="settings-hint">
-            {gitlabUrlInvalid ? t('settings.gitlabUrlInvalid') : t('settings.gitlabUrlHint')}
-          </span>
         </label>
       )}
       {active.id === 'forgejo' && (
@@ -791,12 +779,7 @@ export function IntegrationsPage({
         type="button"
         disabled={active.id === 'forgejo' && !forgejoTokenUrl(forgejoUrl)}
         onClick={() => {
-          const url =
-            active.id === 'gitlab'
-              ? gitlabTokenUrl(gitlabUrl)
-              : active.id === 'forgejo'
-                ? forgejoTokenUrl(forgejoUrl)
-                : active.tokenUrl
+          const url = active.id === 'forgejo' ? forgejoTokenUrl(forgejoUrl) : active.tokenUrl
           if (url) void window.api.openExternal(url)
         }}
       >
@@ -806,6 +789,7 @@ export function IntegrationsPage({
           fixed once created — so say which ones before the user makes it. */}
       {active.id === 'forgejo' && <p className="settings-hint">{t('settings.forgejoScopesHint')}</p>}
       {active.id === 'github' && <GithubEnterpriseSettings profile={profile} edit={edit} />}
+      {active.id === 'gitlab' && <GitlabServersSettings profile={profile} edit={edit} />}
       <p className="settings-hint">{t('settings.integrationsHint')}</p>
 
       <LocalCiSection />

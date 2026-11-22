@@ -84,6 +84,7 @@ import { TODO_STATUSES, sortTodos, subtaskProgress, todoStatus, todoSummary, top
 import { TodoPriorityIcon } from './TodoPriorityIcon'
 import { TodoStatusIcon, TODO_STATUS_LABEL } from './TodoStatusIcon'
 import { canonicalRepoPath } from '../lib/repoAlias'
+import { gitlabServerBases } from '../../../shared/gitlabInstance'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark } from '../../../shared/types'
 
@@ -99,12 +100,8 @@ const forgejoInstances = (): string[] =>
 /** The GitHub Enterprise Servers the profiles name, read when a menu is built. */
 const githubEnterprise = (): string[] => enterpriseBasesOf(useSettingsStore.getState().settings.profiles)
 
-/** The self-managed GitLabs the profiles point at, read when a menu is built. */
-const gitlabInstances = (): string[] =>
-  useSettingsStore
-    .getState()
-    .settings.profiles.map((p) => p.gitlabUrl?.trim() ?? '')
-    .filter(Boolean)
+/** The self-managed GitLab servers the profiles list, read when a menu is built. */
+const gitlabInstances = (): string[] => gitlabServerBases(useSettingsStore.getState().settings.profiles)
 
 
 // Keyboard activation for clickable non-button elements: Enter/Space runs the
