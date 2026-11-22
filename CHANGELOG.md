@@ -1,5 +1,20 @@
 
 
+## [4.36.1](https://github.com/StarleyDev/githuttbr/compare/v4.36.0...v4.36.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* allow gitcito's own config keys in simple-git before its next major blocks them ([0f48aef](https://github.com/StarleyDev/githuttbr/commit/0f48aef4ca2a44d569fe0138bb609d7bbf35830b))
+* show the pull requests that close an issue, from github's graphql ([b9f6ef9](https://github.com/StarleyDev/githuttbr/commit/b9f6ef9c32487dd7a5fbf0119bfbfdd662c7fd9d))
+* upgrade echarts and uuid past their security advisories ([b0984b9](https://github.com/StarleyDev/githuttbr/commit/b0984b9ed913e80268372cf5a558cb01f70a6cd6))
+
+
+### Performance Improvements
+
+* load only the active ui language at startup ([d2fd25e](https://github.com/StarleyDev/githuttbr/commit/d2fd25ec586f70e6820a6477e5b760dab1152bdf))
+* load the 3d cosmos view and the licenses page only when they open ([a366fc4](https://github.com/StarleyDev/githuttbr/commit/a366fc4c589d075d8e744fb38685fcd90b6553dd))
+
 ## [4.36.0](https://github.com/StarleyDev/githuttbr/compare/v4.35.0...v4.36.0) (2026-11-22)
 
 
