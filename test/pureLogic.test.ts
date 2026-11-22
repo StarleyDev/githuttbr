@@ -6,6 +6,7 @@ import { parseRemoteUrl } from '../src/main/hosting'
 import { parseDiff } from '../src/renderer/src/lib/diff'
 import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
+import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
@@ -7910,5 +7911,27 @@ describe('ansiToSpans', () => {
   it('strips non-SGR escapes (OSC, cursor moves)', () => {
     const spans = ansiToSpans('[2K[1Gok]8;;http://xurl]8;;')
     expect(spans.map((s) => s.text).join('')).toBe('okurl')
+  })
+})
+
+describe('parseSettingsImport', () => {
+  it('unwraps a settings-export bundle instead of spreading it', () => {
+    const raw = { __gitcito: 'settings-export', version: 1, settings: { language: 'pt-BR' }, info: {} }
+    const parsed = parseSettingsImport(raw)
+    expect(parsed?.settings).toEqual({ language: 'pt-BR' })
+    expect(parsed?.bundle?.info).toEqual({})
+    expect(parsed?.settings).not.toHaveProperty('__gitcito')
+  })
+
+  it('accepts an older bare-settings export', () => {
+    const parsed = parseSettingsImport({ language: 'de', themeMode: 'dark' })
+    expect(parsed).toEqual({ settings: { language: 'de', themeMode: 'dark' }, bundle: null })
+  })
+
+  it('rejects files that are not a settings object', () => {
+    expect(parseSettingsImport(null)).toBeNull()
+    expect(parseSettingsImport([1, 2])).toBeNull()
+    expect(parseSettingsImport('x')).toBeNull()
+    expect(parseSettingsImport({ __gitcito: 'settings-export', settings: 'nope' })).toBeNull()
   })
 })

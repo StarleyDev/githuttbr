@@ -72,6 +72,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
+import { parseSettingsImport } from '../lib/settingsImport'
 import { Avatar } from './Avatar'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
@@ -2445,7 +2446,6 @@ function ThemeDialog({
 function DataManagementSection(): React.JSX.Element {
   const t = useT()
   const settings = useSettingsStore((s) => s.settings)
-  const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -2485,15 +2485,19 @@ function DataManagementSection(): React.JSX.Element {
     try {
       const result = await settingsApi.importFile()
       if (!result) return
-      // New format is a SettingsBundle; older exports are a bare AppSettings.
-      const isBundle = !!result && typeof result === 'object' && '__gitcito' in result
-      const bundle = isBundle ? (result as SettingsBundle) : null
-      const incomingSettings = bundle ? bundle.settings : (result as AppSettings)
+      const parsed = parseSettingsImport(result)
+      if (!parsed) {
+        toast('error', t('settings.importFailed'))
+        return
+      }
+      const { settings: incomingSettings, bundle } = parsed
 
-      if (hasSettingsSecrets(incomingSettings)) {
+      if (hasSettingsSecrets(incomingSettings as AppSettings)) {
         toast('info', t('settings.importKeptTokens'))
       }
-      if (incomingSettings) update((s) => ({ ...s, ...incomingSettings }))
+      // Through the store's normalizer, not a bare spread: that is what makes the
+      // import take effect now rather than on the next launch.
+      await useSettingsStore.getState().importSettings(incomingSettings)
       if (bundle?.info) await infoApi.importAll(bundle.info)
       if (bundle?.vault) await vaultApi.importAll(bundle.vault)
       if (bundle?.avatars) {

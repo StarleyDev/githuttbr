@@ -15,15 +15,19 @@ import {
   type ThemeMode
 } from '../../../shared/types'
 import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
-import { settingsApi, shellApi } from '../infrastructure/api'
+import { infoApi, profileAvatarApi, settingsApi, shellApi, vaultApi } from '../infrastructure/api'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
+import { parseSettingsImport, type ParsedSettingsImport } from '../lib/settingsImport'
+import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { AIPage, IntegrationsPage } from './SettingsPanel'
 import gitcitoLaunch from '../assets/gitcito-launch.png'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Shared with main: also sees AI account keys, which a hand-kept list here missed. */
-const detectSecrets = (s: AppSettings): boolean => hasSettingsSecrets(s)
+/** Shared with main: also sees AI account keys, which a hand-kept list here missed.
+ *  A bundle's vault counts too — it is only exported when secrets were opted in. */
+const detectSecrets = (p: ParsedSettingsImport): boolean =>
+  hasSettingsSecrets(p.settings as AppSettings) || !!p.bundle?.vault
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -45,7 +49,7 @@ interface WizardData {
   forgejoUrl?: string
   forgejoToken?: string
   defaultOpenApp?: { name: string; path: string }
-  importData: AppSettings | null
+  importData: ParsedSettingsImport | null
   importHasSecrets: boolean
   importIncludeSecrets: boolean
 }
@@ -362,6 +366,7 @@ export function OnboardingWizard(): React.JSX.Element {
   const profile = useSettingsStore((s) => s.activeProfile())
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
+  const importSettings = useSettingsStore((s) => s.importSettings)
   const toast = useUIStore((s) => s.toast)
 
   const [step, setStep] = useState(0)
@@ -415,8 +420,12 @@ export function OnboardingWizard(): React.JSX.Element {
     try {
       const result = await settingsApi.importFile()
       if (!result) return
-      const hasSecrets = detectSecrets(result as AppSettings)
-      patch({ importData: result as AppSettings, importHasSecrets: hasSecrets })
+      const parsed = parseSettingsImport(result)
+      if (!parsed) {
+        toast('error', t('onboarding.importFailed'))
+        return
+      }
+      patch({ importData: parsed, importHasSecrets: detectSecrets(parsed) })
     } catch {
       toast('error', t('onboarding.importFailed'))
     } finally {
@@ -424,12 +433,25 @@ export function OnboardingWizard(): React.JSX.Element {
     }
   }
 
-  const applyImport = (): void => {
-    const raw = data.importData!
+  const applyImport = async (): Promise<void> => {
+    if (!data.importData) return
+    const { settings: raw, bundle } = data.importData
+    const keepSecrets = data.importIncludeSecrets
     // The shared strip: a hand-kept list here missed newer secrets (Forgejo, AI account keys).
-    const toApply = data.importIncludeSecrets ? raw : stripSettingsSecrets(raw)
-    update((s) => ({ ...s, ...toApply, onboardingCompleted: true }))
-    toast('success', t('onboarding.imported'))
+    const toApply = keepSecrets ? raw : stripSettingsSecrets(raw as AppSettings)
+    try {
+      // The side stores first: once onboardingCompleted lands, this wizard unmounts.
+      if (bundle?.info) await infoApi.importAll(bundle.info)
+      if (keepSecrets && bundle?.vault) await vaultApi.importAll(bundle.vault)
+      if (bundle?.avatars) {
+        await profileAvatarApi.importAll(bundle.avatars)
+        useProfileAvatarsStore.getState().reloadProfileImages()
+      }
+      await importSettings({ ...toApply, onboardingCompleted: true })
+      toast('success', t('onboarding.imported'))
+    } catch {
+      toast('error', t('onboarding.importFailed'))
+    }
   }
 
   const finish = (): void => {
@@ -498,7 +520,7 @@ export function OnboardingWizard(): React.JSX.Element {
                 data={data}
                 patch={patch}
                 onImport={() => void doImport()}
-                onApplyImport={applyImport}
+                onApplyImport={() => void applyImport()}
                 importing={importing}
               />
             )}

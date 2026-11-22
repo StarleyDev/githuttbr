@@ -181,6 +181,8 @@ interface SettingsState {
 
   load(opts?: { unlock?: boolean }): Promise<void>
   update(mut: (s: AppSettings) => AppSettings): void
+  /** Apply an imported settings file over the current ones and save it at once. */
+  importSettings(incoming: Partial<AppSettings>): Promise<void>
 
   activeProfile(): Profile
   /**
@@ -341,6 +343,121 @@ export function takeAccountsNotice(): boolean {
   return pending
 }
 
+/** Bring a settings object from disk or an import file up to this build's shape:
+ *  fill fields added since it was written, migrate legacy ids and AI keys, and
+ *  rebuild the workspace/tab mirror. Imports must go through it too — skipping it
+ *  is why an imported file used to apply only after a restart. */
+function normalizeSettings(settings: AppSettings): { settings: AppSettings; noticeAccounts: boolean } {
+  let noticeAccounts = false
+  if (!settings.profiles?.length) settings.profiles = [defaultProfile()]
+  // Backwards compatibility: merge in newly added fields. `migrateAIConfig`
+  // also folds a pre-accounts provider/key into the first AI account, so a
+  // settings file written by an older build keeps working untouched.
+  const defaults = defaultProfile()
+  // Checked before migrating, since migration is what makes the old shape
+  // disappear — this is the only moment the upgrade is still visible.
+  const upgraded = settings.profiles.some((p) => needsAccountsNotice(p.ai))
+  settings.profiles = settings.profiles.map((p) => ({
+    ...defaults,
+    ...p,
+    ai: migrateAIConfig({ ...defaults.ai, ...p.ai, accounts: p.ai?.accounts })
+  }))
+  if (upgraded && !settings.aiAccountsNoticeSeen) noticeAccounts = true
+  const sd = defaultSettings()
+  settings.appThemeId = settings.appThemeId ?? sd.appThemeId
+  settings.codeThemeId = settings.codeThemeId ?? sd.codeThemeId
+  settings.themeMode = settings.themeMode ?? sd.themeMode
+  // Migrate legacy single-mode theme ids to the new dynamic theme ids.
+  settings.appThemeId = LEGACY_APP_THEME_IDS[settings.appThemeId] ?? settings.appThemeId
+  settings.codeThemeId = LEGACY_CODE_THEME_IDS[settings.codeThemeId] ?? settings.codeThemeId
+  settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
+  settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
+  settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
+  settings.terminalFontFamily = settings.terminalFontFamily ?? sd.terminalFontFamily
+  settings.terminalShell = settings.terminalShell ?? sd.terminalShell
+  settings.customAppThemes = settings.customAppThemes ?? []
+  settings.customCodeThemes = settings.customCodeThemes ?? []
+  settings.language = settings.language ?? sd.language
+  settings.initialCommitCount = settings.initialCommitCount ?? sd.initialCommitCount
+  settings.loadMoreCount = settings.loadMoreCount ?? sd.loadMoreCount
+  settings.autoLoadOnScroll = settings.autoLoadOnScroll ?? sd.autoLoadOnScroll
+  settings.relativeDates = settings.relativeDates ?? sd.relativeDates
+  settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
+  settings.avatarMotion = settings.avatarMotion ?? sd.avatarMotion
+  settings.fileListView = settings.fileListView ?? sd.fileListView
+  settings.groupBranches = settings.groupBranches ?? sd.groupBranches
+  settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
+  settings.graphStyle = { ...defaultGraphStyle(), ...(settings.graphStyle ?? {}) }
+  // Keep the order list complete: drop unknown ids, append any newly-added
+  // columns (e.g. `deployment`) that an older saved order is missing.
+  {
+    const valid = new Set(sd.graphColumnOrder)
+    const saved = (settings.graphColumnOrder ?? []).filter((id) => valid.has(id))
+    const seen = new Set(saved)
+    settings.graphColumnOrder = [...saved, ...sd.graphColumnOrder.filter((id) => !seen.has(id))]
+  }
+  settings.autoFetchMinutes = settings.autoFetchMinutes ?? sd.autoFetchMinutes
+  settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
+  settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
+  settings.sidebarOrder =
+    settings.sidebarOrder && settings.sidebarOrder.length ? settings.sidebarOrder : sd.sidebarOrder
+  settings.sidebarHidden = settings.sidebarHidden ?? sd.sidebarHidden
+  settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
+  settings.wipSnapshotMinutes = settings.wipSnapshotMinutes ?? sd.wipSnapshotMinutes
+  settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
+  settings.shortcuts = settings.shortcuts ?? sd.shortcuts
+  settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
+  settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
+  settings.terminalPlacement = settings.terminalPlacement ?? sd.terminalPlacement
+  settings.sidebarSide = settings.sidebarSide ?? sd.sidebarSide
+  settings.rightPanelFullHeight = settings.rightPanelFullHeight ?? sd.rightPanelFullHeight
+  settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
+  settings.repoAliases = settings.repoAliases ?? sd.repoAliases
+  settings.repoLayouts = settings.repoLayouts ?? {}
+  // Workspaces: wrap a pre-workspaces install's existing tabs into a default
+  // workspace, then load the active workspace's tabs into the live view.
+  // `defaultSettings()` (merged in by the main process on read) seeds an empty
+  // `default` workspace, so a genuinely un-migrated file — one with live `tabs`
+  // but no real workspace — shows up here as that pristine empty default. Treat
+  // it the same as a missing `workspaces` and wrap the live tabs, or they'd be
+  // discarded at the `settings.tabs = aw.tabs` step below.
+  const pristineDefaultWs =
+    settings.workspaces?.length === 1 &&
+    settings.workspaces[0].id === 'default' &&
+    !settings.workspaces[0].tabs?.length
+  if (!settings.workspaces?.length || (pristineDefaultWs && settings.tabs?.length)) {
+    settings.workspaces = [{ id: 'default', name: PRODUCT_NAME, tabs: settings.tabs, activeTabId: settings.activeTabId }]
+  } else if (
+    settings.workspaces.length === 1 &&
+    settings.workspaces[0].id === 'default' &&
+    // "Gitcito" too: the lone default carries the app's name, and this build has another.
+    (settings.workspaces[0].name === 'Default' || settings.workspaces[0].name === 'Gitcito')
+  ) {
+    // Legacy auto-created workspace was named "Default". The logo now doubles
+    // as the workspace switcher, so rebrand the lone default to the app name.
+    settings.workspaces[0].name = PRODUCT_NAME
+  }
+  settings.activeWorkspaceId =
+    settings.activeWorkspaceId && settings.workspaces.some((w) => w.id === settings.activeWorkspaceId)
+      ? settings.activeWorkspaceId
+      : settings.workspaces[0].id
+  {
+    const aw = settings.workspaces.find((w) => w.id === settings.activeWorkspaceId)!
+    settings.tabs = aw.tabs
+    settings.activeTabId = aw.activeTabId
+  }
+  // Group folders are organisation-only, so reconcile every tree with its
+  // group's repo list on load: a repo removed by another build (or a
+  // hand-edited settings file) must not leave a dangling folder entry.
+  const normalizeTabs = (tabs: TabState[]): TabState[] =>
+    tabs.map((t) =>
+      t.kind === 'group' && t.folders?.length ? { ...t, folders: pruneFolders(t.folders, t.repos) } : t
+    )
+  settings.workspaces = settings.workspaces.map((w) => ({ ...w, tabs: normalizeTabs(w.tabs ?? []) }))
+  settings.tabs = normalizeTabs(settings.tabs)
+  return { settings: migrateRepoAliases(settings), noticeAccounts }
+}
+
 /** Session-only stack of recently closed tabs, for reopen (⌘⇧T). */
 const closedTabStack: { tab: TabState; idx: number }[] = []
 
@@ -352,120 +469,31 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // `unlock` decrypts the stored tokens on the way — used when the user opens
     // Settings, never on start-up (that would pop the OS keychain dialog before
     // the window has even painted).
-    const settings = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
-    if (!settings.profiles.length) settings.profiles = [defaultProfile()]
-    // Backwards compatibility: merge in newly added fields. `migrateAIConfig`
-    // also folds a pre-accounts provider/key into the first AI account, so a
-    // settings file written by an older build keeps working untouched.
-    const defaults = defaultProfile()
-    // Checked before migrating, since migration is what makes the old shape
-    // disappear — this is the only moment the upgrade is still visible.
-    const upgraded = settings.profiles.some((p) => needsAccountsNotice(p.ai))
-    settings.profiles = settings.profiles.map((p) => ({
-      ...defaults,
-      ...p,
-      ai: migrateAIConfig({ ...defaults.ai, ...p.ai, accounts: p.ai?.accounts })
-    }))
-    if (upgraded && !settings.aiAccountsNoticeSeen) pendingAccountsNotice = true
-    const sd = defaultSettings()
-    settings.appThemeId = settings.appThemeId ?? sd.appThemeId
-    settings.codeThemeId = settings.codeThemeId ?? sd.codeThemeId
-    settings.themeMode = settings.themeMode ?? sd.themeMode
-    // Migrate legacy single-mode theme ids to the new dynamic theme ids.
-    settings.appThemeId = LEGACY_APP_THEME_IDS[settings.appThemeId] ?? settings.appThemeId
-    settings.codeThemeId = LEGACY_CODE_THEME_IDS[settings.codeThemeId] ?? settings.codeThemeId
-    settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
-    settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
-    settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
-    settings.terminalFontFamily = settings.terminalFontFamily ?? sd.terminalFontFamily
-    settings.terminalShell = settings.terminalShell ?? sd.terminalShell
-    settings.customAppThemes = settings.customAppThemes ?? []
-    settings.customCodeThemes = settings.customCodeThemes ?? []
-    settings.language = settings.language ?? sd.language
-    settings.initialCommitCount = settings.initialCommitCount ?? sd.initialCommitCount
-    settings.loadMoreCount = settings.loadMoreCount ?? sd.loadMoreCount
-    settings.autoLoadOnScroll = settings.autoLoadOnScroll ?? sd.autoLoadOnScroll
-    settings.relativeDates = settings.relativeDates ?? sd.relativeDates
-    settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
-    settings.avatarMotion = settings.avatarMotion ?? sd.avatarMotion
-    settings.fileListView = settings.fileListView ?? sd.fileListView
-    settings.groupBranches = settings.groupBranches ?? sd.groupBranches
-    settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
-    settings.graphStyle = { ...defaultGraphStyle(), ...(settings.graphStyle ?? {}) }
-    // Keep the order list complete: drop unknown ids, append any newly-added
-    // columns (e.g. `deployment`) that an older saved order is missing.
-    {
-      const valid = new Set(sd.graphColumnOrder)
-      const saved = (settings.graphColumnOrder ?? []).filter((id) => valid.has(id))
-      const seen = new Set(saved)
-      settings.graphColumnOrder = [...saved, ...sd.graphColumnOrder.filter((id) => !seen.has(id))]
-    }
-    settings.autoFetchMinutes = settings.autoFetchMinutes ?? sd.autoFetchMinutes
-    settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
-    settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
-    settings.sidebarOrder =
-      settings.sidebarOrder && settings.sidebarOrder.length ? settings.sidebarOrder : sd.sidebarOrder
-    settings.sidebarHidden = settings.sidebarHidden ?? sd.sidebarHidden
-    settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
-    settings.wipSnapshotMinutes = settings.wipSnapshotMinutes ?? sd.wipSnapshotMinutes
-    settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
-    settings.shortcuts = settings.shortcuts ?? sd.shortcuts
-    settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
-    settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
-    settings.terminalPlacement = settings.terminalPlacement ?? sd.terminalPlacement
-    settings.sidebarSide = settings.sidebarSide ?? sd.sidebarSide
-    settings.rightPanelFullHeight = settings.rightPanelFullHeight ?? sd.rightPanelFullHeight
-    settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
-    settings.repoAliases = settings.repoAliases ?? sd.repoAliases
-    settings.repoLayouts = settings.repoLayouts ?? {}
-    // Workspaces: wrap a pre-workspaces install's existing tabs into a default
-    // workspace, then load the active workspace's tabs into the live view.
-    // `defaultSettings()` (merged in by the main process on read) seeds an empty
-    // `default` workspace, so a genuinely un-migrated file — one with live `tabs`
-    // but no real workspace — shows up here as that pristine empty default. Treat
-    // it the same as a missing `workspaces` and wrap the live tabs, or they'd be
-    // discarded at the `settings.tabs = aw.tabs` step below.
-    const pristineDefaultWs =
-      settings.workspaces?.length === 1 &&
-      settings.workspaces[0].id === 'default' &&
-      !settings.workspaces[0].tabs?.length
-    if (!settings.workspaces?.length || (pristineDefaultWs && settings.tabs?.length)) {
-      settings.workspaces = [{ id: 'default', name: PRODUCT_NAME, tabs: settings.tabs, activeTabId: settings.activeTabId }]
-    } else if (
-      settings.workspaces.length === 1 &&
-      settings.workspaces[0].id === 'default' &&
-      // "Gitcito" too: the lone default carries the app's name, and this build has another.
-      (settings.workspaces[0].name === 'Default' || settings.workspaces[0].name === 'Gitcito')
-    ) {
-      // Legacy auto-created workspace was named "Default". The logo now doubles
-      // as the workspace switcher, so rebrand the lone default to the app name.
-      settings.workspaces[0].name = PRODUCT_NAME
-    }
-    settings.activeWorkspaceId =
-      settings.activeWorkspaceId && settings.workspaces.some((w) => w.id === settings.activeWorkspaceId)
-        ? settings.activeWorkspaceId
-        : settings.workspaces[0].id
-    {
-      const aw = settings.workspaces.find((w) => w.id === settings.activeWorkspaceId)!
-      settings.tabs = aw.tabs
-      settings.activeTabId = aw.activeTabId
-    }
-    // Group folders are organisation-only, so reconcile every tree with its
-    // group's repo list on load: a repo removed by another build (or a
-    // hand-edited settings file) must not leave a dangling folder entry.
-    const normalizeTabs = (tabs: TabState[]): TabState[] =>
-      tabs.map((t) =>
-        t.kind === 'group' && t.folders?.length ? { ...t, folders: pruneFolders(t.folders, t.repos) } : t
-      )
-    settings.workspaces = settings.workspaces.map((w) => ({ ...w, tabs: normalizeTabs(w.tabs ?? []) }))
-    settings.tabs = normalizeTabs(settings.tabs)
-    set({ settings: migrateRepoAliases(settings), loaded: true })
+    const raw = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
+    const { settings, noticeAccounts } = normalizeSettings(raw)
+    if (noticeAccounts) pendingAccountsNotice = true
+    set({ settings, loaded: true })
   },
 
   update: (mut) => {
     const settings = syncActiveWorkspace(mut(get().settings))
     set({ settings })
     persist(settings)
+  },
+
+  importSettings: async (incoming) => {
+    const merged: AppSettings = { ...get().settings, ...incoming }
+    // A pre-workspaces export carries only `tabs`: drop our workspaces so the
+    // normalizer wraps its tabs, instead of replacing them with our own.
+    if (incoming.tabs && !incoming.workspaces) merged.workspaces = []
+    const { settings, noticeAccounts } = normalizeSettings(merged)
+    if (noticeAccounts) pendingAccountsNotice = true
+    set({ settings })
+    // Written now, not debounced: opening Settings right after re-reads the file
+    // from disk, and a pending save would lose that race and undo the import.
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = null
+    await settingsApi.set(settings)
   },
 
   activeProfile: () => {
