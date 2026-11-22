@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope, CircleX, TriangleAlert, Info, ListTodo } from 'lucide-react'
+import { GitMerge, Loader2, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope, CircleX, TriangleAlert, Info, ListTodo } from 'lucide-react'
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -41,7 +41,6 @@ import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from './lib/repositoryMenuItems'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
-import { LicensesPage } from './components/LicensesPage'
 import { MissionControlPage } from './components/MissionControlPage'
 import { HelpPage } from './components/HelpPage'
 import { LogsPage } from './components/LogsPage'
@@ -252,6 +251,19 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
 
 /** Renders a non-repo page tab. Dispatches on the page type so new page
  *  kinds (docs, etc.) are a single added case. */
+// The licenses page carries every bundled notice (~1.3 MB of JSON) and is
+// opened about once per install, so it loads with its tab, not at startup.
+const LicensesPage = lazy(() => import('./components/LicensesPage').then((m) => ({ default: m.LicensesPage })))
+
+function PageLoading(): React.JSX.Element {
+  const t = useT()
+  return (
+    <div className="page-loading">
+      <Loader2 size={18} className="spin" /> {t('common.loading')}
+    </div>
+  )
+}
+
 function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
   switch (tab.page.type) {
     case 'changelog':
@@ -271,7 +283,11 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'help':
       return <HelpPage initialPage={tab.page.page} />
     case 'licenses':
-      return <LicensesPage />
+      return (
+        <Suspense fallback={<PageLoading />}>
+          <LicensesPage />
+        </Suspense>
+      )
     case 'devtools':
       return (
         <DevToolsPage
