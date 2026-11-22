@@ -16,10 +16,19 @@
  *   2. Every page the map points at exists.
  *   3. Every handbook page has complete front matter.
  *   4. No page links to a missing page or a missing image.
+ *   5. Translated pages are well-formed — and, as a warning, still current
+ *      (see `docs-staleness.mjs`). `--strict`, or `DOCS_STRICT=1`, turns a
+ *      stale translation into a failure.
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { staleness } from './docs-staleness.mjs'
+
+// A stale translation is a warning by default: the backlog predates the check,
+// and blocking every commit on fifteen languages of catch-up would only teach
+// people to skip the gate. Maintainers sweeping translations opt in.
+const STRICT = process.argv.includes('--strict') || process.env.DOCS_STRICT === '1'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP_DIR = join(ROOT, 'docs/help')
@@ -118,6 +127,8 @@ const localeDirs = readdirSync(HELP_DIR, { withFileTypes: true })
   .map((e) => e.name)
 
 let translatedCount = 0
+const stale = []
+const unverified = new Map()
 for (const locale of localeDirs) {
   const dir = join(HELP_DIR, locale)
   const localeFiles = readdirSync(dir).filter((f) => f.endsWith('.md'))
@@ -149,7 +160,48 @@ for (const locale of localeDirs) {
     if (/\]\(\.\.\/screenshots\//.test(src)) {
       fail(`${where} uses a top-level image path`, 'From docs/help/<locale>/ it must be ../../screenshots/')
     }
+    const verdict = staleness(readFileSync(join(HELP_DIR, file), 'utf8'), src)
+    if (verdict.status === 'stale') stale.push({ locale, id, reasons: verdict.reasons })
+    if (verdict.status === 'unverified') unverified.set(locale, (unverified.get(locale) ?? 0) + 1)
   }
+}
+
+// Grouped by page, not by locale: a stale page is almost always stale in every
+// language at once, because the English moved, and that is the unit someone
+// sits down to fix.
+function reportStale(print) {
+  if (!stale.length) return
+  const byPage = new Map()
+  for (const entry of stale) byPage.set(entry.id, [...(byPage.get(entry.id) ?? []), entry])
+  const ids = [...byPage.keys()].sort()
+  print(
+    `${STRICT ? '✖' : '⚠'} docs: ${stale.length} of ${translatedCount} translated pages are stale, ` +
+      `across ${ids.length} English page${ids.length === 1 ? '' : 's'}` +
+      (STRICT ? '' : ' (a warning — `npm run lint:docs -- --strict` fails on these)') +
+      '\n'
+  )
+  for (const id of ids) {
+    const entries = byPage.get(id)
+    print(`  ${id}.md — ${entries.map((e) => e.locale).join(' ')}`)
+    // A reason shared by every listed locale prints once; the rest name theirs.
+    const seen = new Map()
+    for (const { locale, reasons } of entries) {
+      for (const reason of reasons) seen.set(reason, [...(seen.get(reason) ?? []), locale])
+    }
+    for (const [reason, locales] of seen) {
+      const who = locales.length === entries.length ? '' : ` [${locales.join(' ')}]`
+      print(`    ${reason}${who}`)
+    }
+  }
+  print(
+    '\n  Bring the page in line with docs/help/<id>.md, then record what it now matches by\n' +
+      '  putting `source: <git hash-object docs/help/<id>.md>` in its front matter.\n'
+  )
+}
+
+if (STRICT && stale.length) {
+  reportStale(console.error)
+  for (const { locale, id } of stale) fail(`${locale}/${id}.md is stale`, 'see above')
 }
 
 if (problems.length) {
@@ -159,8 +211,14 @@ if (problems.length) {
   process.exit(1)
 }
 
+reportStale(console.warn)
+
+const unverifiedCount = [...unverified.values()].reduce((a, b) => a + b, 0)
 const translated = localeDirs.length
-  ? ` ${translatedCount} translated pages across ${localeDirs.length} locales.`
+  ? ` ${translatedCount} translated pages across ${localeDirs.length} locales` +
+    (stale.length ? `, ${stale.length} stale` : '') +
+    (unverifiedCount ? `, ${unverifiedCount} with no source: hash to prove they are current` : '') +
+    '.'
   : ''
 console.log(
   `✔ docs: ${pageIds.size} handbook pages cover ${modals.length} modals, ${pages.length} page tabs, ${panels.length} right panel tabs and ${commands.length} commands.${translated}`

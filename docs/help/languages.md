@@ -118,6 +118,17 @@ filename. `npm run lint:docs` checks that every translated page has an English
 original, that its front matter is complete, and that its links and images
 resolve from one directory deeper.
 
+It also warns when a translation has fallen behind its English page, because
+a translation that is out of date is worse than a missing one: it looks
+finished. A translated page records in its front matter which version of the
+English it matches (`source:`, the id `git hash-object docs/help/<page>.md`
+prints), and any later edit to the English flags it, with the `git diff` that
+shows what to catch up on. Pages translated before that field existed are
+compared by shape instead — the sections, images and table rows they should
+have. That catches a missing section but not a reworded sentence. It is only a
+warning, so a backlog of stale translations never blocks a commit;
+`npm run lint:docs -- --strict` turns it into a failure.
+
 Contributions are welcome — a page at a time is fine, and correcting a clumsy
 translation is as useful as adding a missing one.
 
