@@ -800,13 +800,23 @@ export interface ProjectFieldGroup {
   fields: { name: string; value: string }[]
 }
 
-/** A pull request linked to an issue (via cross-reference). */
+/** A pull request that closes (or, once merged, closed) an issue — GitHub's
+ *  `closedByPullRequestsReferences`: closing keywords plus manual Development links. */
 export interface LinkedPr {
   number: number
   title: string
   url: string
-  state: string
+  state: 'open' | 'merged' | 'closed'
+  draft: boolean
+  /** `owner/name` of the PR's base repository. */
+  repo: string
+  /** The PR lives in another repository than the issue, so it cannot open in an in-app PR tab. */
+  otherRepo: boolean
 }
+
+/** Whether `linkedPrs` is real data: `unavailable` = the host refused (scope, rate limit, error),
+ *  `unsupported` = the host has no equivalent we query. */
+export type LinkedPrsStatus = 'ok' | 'unavailable' | 'unsupported'
 
 /** Full detail for one issue (all fields + conversation + linked PRs). */
 export interface IssueDetail {
@@ -822,6 +832,7 @@ export interface IssueDetail {
   createdAt: string
   comments: PrComment[]
   linkedPrs: LinkedPr[]
+  linkedPrsStatus: LinkedPrsStatus
   projectFields: ProjectFieldGroup[]
 }
 

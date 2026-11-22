@@ -225,9 +225,18 @@ milestone, Projects v2 fields, close/reopen, and **create a branch for this
 issue** (with AI naming). Milestones show progress and their issues. Releases
 are browsable with a changelog page.
 
+**Linked pull requests** answers "is someone already fixing this?": the PRs
+that will close the issue, or closed it — a `Closes #N`-style keyword or a
+manual link in GitHub's *Development* box — open first, then merged, then
+closed. A PR that merely *mentions* the issue is deliberately left out, and so is
+anything past the first 50. One in this repository opens in a PR tab; one from
+another repository opens in the browser. A token that cannot read the
+repository's pull requests (a fine-grained token without *Pull requests: read*)
+gets a quiet "couldn't load" instead of a wrong "none".
+
 On a [Forgejo](#forgejo) server the same lists and pages work, with the
-profile's Forgejo token. Two things are GitHub's alone and stay empty there:
-Projects v2 fields, and the pull requests linked to an issue. Releases list the
+profile's Forgejo token. Two things are GitHub's alone: Projects v2 fields stay
+empty, and the linked pull requests section is not shown. Releases list the
 most recent ones, not the whole history.
 
 ## Waiting for your review
