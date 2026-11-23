@@ -37,12 +37,18 @@ signing in with a token needs git 2.31 or newer. One thing the switch cannot
 reach: a `~/.netrc` entry for the host is still read by git's HTTP layer.
 
 The token is offered to its own server only — including to the submodules a
-`--recurse-submodules` clone fetches. When one address hosts two servers (a
-GitLab at `https://git.example.com/` and a Data Center at
-`https://git.example.com/bitbucket`), it covers this one repository; a submodule
-elsewhere on that address is answered the way git would answer it, not with the
-clone's token. The cost: if such a server redirects the clone to another path,
-git asks again without the token and the clone fails rather than guessing.
+`--recurse-submodules` clone fetches — and to the whole of that server, so a
+redirect from `/group/app` to `/group/app.git` keeps it and Git LFS gets it
+for the repository's objects. A server is its address up to its base: the
+whole host for a server at the root, and everything under the context path for
+one such as a Data Center at `https://git.example.com/bitbucket`. A submodule
+on another server of the same address is answered the way git would answer it,
+not with the clone's token. The one exception is a server nested under another
+(a GitLab at `https://git.example.com/` with that Data Center under it): while
+the GitLab clone runs, the Data Center's paths are asked as nobody — neither
+the GitLab token nor the machine's credential helper answers there, so a
+private submodule on it fails to clone rather than going out as the wrong
+account.
 
 Choose a parent folder and a name; the line under the fields shows exactly where
 the repository will land. A folder that already exists is refused rather than

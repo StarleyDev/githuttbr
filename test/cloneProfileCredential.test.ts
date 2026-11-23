@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
+import { blanksOnly } from './credentialConfig'
 
 // A server's token (GitLab, Forgejo, GitHub Enterprise, Data Center) is resolved
 // in main from the profile picked in the clone dialog — the one the provider tab
@@ -151,9 +152,8 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
  *  machine's credential manager cannot answer as another account. No token. */
 function expectAnonymous(env: NodeJS.ProcessEnv | null, url: string, ...absent: string[]): void {
   expect(env, url).not.toBeNull()
-  // As `git -c` passes it — understood by git older than 2.31 too.
-  expect(env!.GIT_CONFIG_COUNT, url).toBeUndefined()
-  expect(env!.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${new URL(url).origin}.helper='`), url).toBe(true)
+  // As real git reads it, in whichever form the installed git takes.
+  expect(blanksOnly(env, new URL(url).origin), url).toBe(true)
   expect(env!.GIT_ASKPASS, url).toBe('')
   for (const s of absent) expect(JSON.stringify(env), url).not.toContain(s)
 }

@@ -35,6 +35,7 @@ import {
   mergeBbsChanges
 } from '../src/main/bitbucketServer'
 import { isReviewableRemote } from '../src/renderer/src/lib/hosting'
+import { blanksOnly } from './credentialConfig'
 
 // Bitbucket Data Center: one resolver for every Data Center URL, a token that
 // only ever reaches the server it was saved for, and call sites checked through
@@ -1254,8 +1255,7 @@ describe('call sites, through the real IPC handlers', () => {
     const id = defaultSettings().profiles[0].id
     for (const host of ['bitbucket', undefined] as const) {
       const picked = (await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', host, undefined, id)) ?? {}
-      expect(picked.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.https://bbs.third.example.helper='`), String(host)).toBe(true)
-      expect(picked.GIT_CONFIG_COUNT).toBeUndefined()
+      expect(blanksOnly(picked, 'https://bbs.third.example'), String(host)).toBe(true)
       expect(JSON.stringify(picked)).not.toContain('bbs-token-c')
     }
   })

@@ -61,8 +61,10 @@ What binding cannot do:
   it never borrows the active profile's, and git's credential helper is
   switched off for that remote too, so fetch, pull and push go out as nobody
   rather than as whichever account the machine's credential manager holds. A
-  private repository then fails with an authentication error until the profile
-  has a credential for it. Remotes on a host no profile can serve, and
+  private repository then fails with an error naming the bound profile until
+  it has a credential for it. Like a token, going as nobody covers the remote's
+  whole server — its other repositories, a redirect, Git LFS — and no other
+  server on the same address. Remotes on a host no profile can serve, and
   repositories that are not bound, are left to git's helper as before.
 - Notifications are the account's own inbox, not a repository's: they always
   come from the active profile.

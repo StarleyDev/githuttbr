@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
+import { blanksOnly } from './credentialConfig'
 
 // github.com, bitbucket.org and Azure: the clone dialog's provider tab lists as
 // the picked profile, resolved in main (its PAT, else its linked login). The
@@ -140,8 +141,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
       const origin = new URL(c.url).origin
       for (const id of ['', '  ', 'gone', 'empty']) {
         const env = (await cloneCredentialEnv(c.url, c.host, '', id)) ?? {}
-        expect(env.GIT_CONFIG_COUNT, `${c.url} ${id}`).toBeUndefined()
-        expect(env.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${origin}.helper='`), `${c.url} ${id}`).toBe(true)
+        expect(blanksOnly(env, origin), `${c.url} ${id}`).toBe(true)
         expect(env.GIT_ASKPASS).toBe('')
         expect(env.GIT_TERMINAL_PROMPT).toBe('0')
         expect(Object.keys(env).some((k) => k.startsWith('GITCITO_GIT_'))).toBe(false)
@@ -149,7 +149,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
       }
       // The provider check failing for a named profile is just as anonymous.
       const other = (await cloneCredentialEnv(c.url, c.host === 'github' ? 'azure' : 'github', '', 'personal')) ?? {}
-      expect(other.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${origin}.helper='`)).toBe(true)
+      expect(blanksOnly(other, origin)).toBe(true)
       expect(JSON.stringify(other)).not.toContain('personal-')
     }
   })
