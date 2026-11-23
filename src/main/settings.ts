@@ -1,4 +1,4 @@
-import { app, ipcMain, dialog, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
@@ -21,7 +21,10 @@ import {
   hasSettingsSecrets,
   mergeSecretStores,
   pruneSecrets,
+  secretSlot,
+  secretSlots,
   stripSettingsSecrets,
+  type SecretSlots,
   type SecretStore
 } from '../shared/secrets'
 import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
@@ -36,6 +39,7 @@ import {
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
+const secretSlotsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.index.json')
 
 // Profile tokens and the AI API key used to sit in the settings JSON in plain
 // text. They now live in a separate file encrypted with the OS keychain, the
@@ -94,6 +98,60 @@ let servedSecrets = false
  */
 let plaintextOnDisk = false
 
+/**
+ * An unlock was attempted this session and could not use the keychain — no
+ * consent, or consent but no keyring (a Linux desktop without Secret Service).
+ * The stored tokens are then out of reach until the keychain is turned on, so a
+ * peek stops waiting for them and works with what the plain settings hold
+ * (session-only tokens, machine-login links) instead of answering "locked" all
+ * session.
+ */
+let keychainUnusable = false
+onKeychainEnabled(async () => {
+  keychainUnusable = false
+})
+
+/**
+ * The secrets have just been decrypted for the first time this session: tell
+ * the windows, so pictures that were left "unknown" while the store was locked
+ * ask again now instead of waiting out their retry.
+ */
+function announceUnlocked(): void {
+  try {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send('secrets:unlocked')
+    }
+  } catch {
+    // No windows to tell (tests, shutdown).
+  }
+}
+
+/** Best effort: a missing or stale index only makes a peek more cautious. */
+async function writeSecretSlots(store: SecretStore): Promise<void> {
+  await writeFile(secretSlotsPath(), JSON.stringify(secretSlots(store)), 'utf-8').catch(() => undefined)
+}
+
+async function readSecretSlots(): Promise<SecretSlots | null> {
+  try {
+    const parsed = JSON.parse(await readFile(secretSlotsPath(), 'utf-8')) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    const out: SecretSlots = {}
+    for (const [id, slots] of Object.entries(parsed as Record<string, unknown>)) {
+      if (Array.isArray(slots)) out[id] = slots.filter((s): s is string => typeof s === 'string')
+    }
+    return out
+  } catch {
+    return null
+  }
+}
+
+/** Installs the decrypted store for the session, and says so the first time. */
+function setSecretCache(store: SecretStore): void {
+  const first = !secretCache
+  secretCache = store
+  if (first) announceUnlocked()
+}
+
 async function loadSecrets(): Promise<SecretStore> {
   try {
     const b64 = await readFile(secretsPath(), 'utf-8')
@@ -116,6 +174,7 @@ async function saveSecrets(store: SecretStore): Promise<void> {
   }
   const enc = safeStorage.encryptString(JSON.stringify(store))
   await writeFile(secretsPath(), enc.toString('base64'), 'utf-8')
+  await writeSecretSlots(store)
 }
 
 /** The settings JSON, with whatever secrets are already in memory applied. */
@@ -170,7 +229,11 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   // gate — its owner answered the OS prompt long ago, so they are not asked to
   // decide again, only shown the explanation once.
   await adoptExistingConsent([secretsPath()])
-  if (!(await ensureKeychain(reason))) return settings
+  if (!(await ensureKeychain(reason))) {
+    keychainUnusable = true
+    return settings
+  }
+  keychainUnusable = false
 
   const stored = await loadSecrets()
   if (hasSettingsSecrets(settings)) {
@@ -180,23 +243,28 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids)
     await saveSecrets(merged)
     await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
-    secretCache = merged
+    setSecretCache(merged)
     return withMigratedAI(applySecrets(settings, merged))
   }
-  secretCache = stored
+  // An install from before the index gets one now, so its next launch can peek.
+  if (!secretsUnreadable) await writeSecretSlots(stored)
+  setSecretCache(stored)
   return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
 }
 
 /**
- * Whether reading the profile tokens would have to decrypt (or migrate) the
- * store — and so could bring up the consent dialog or the OS keychain prompt.
- * False once something the user did unlocked it, when nothing is stored, and
- * when consent was declined (the store is then never touched).
+ * Whether the encrypted store may hold this profile's token for `slot` — the
+ * one thing a peek cannot see without decrypting. False when nothing is
+ * stored, when the store is out of reach this session (declined, or the
+ * keychain could not be used), and when the plain index of stored slots says
+ * the profile has none there. With no index (written before it existed) it
+ * cannot be ruled out.
  */
-async function secretsLocked(): Promise<boolean> {
-  if (secretCache) return false
-  if (!existsSync(secretsPath()) && !plaintextOnDisk) return false
-  return (await getConsent()) !== 'declined'
+async function storedTokenMayExist(profileId: string, slot: string): Promise<boolean> {
+  if (!existsSync(secretsPath())) return false
+  if (keychainUnusable || (await getConsent()) === 'declined') return false
+  const slots = await readSecretSlots()
+  return slots ? (slots[profileId]?.includes(slot) ?? false) : true
 }
 
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
@@ -248,24 +316,45 @@ async function profileAuth(
     if (!base || (expectedBase && base !== expectedBase)) return {}
     if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
-  // Checked after the plain-settings gates, so "locked" never stands in for "no such server".
-  if (peek && (await secretsLocked())) return { locked: true }
-  const settings = await readSettingsWithSecrets('tokens')
+  // A peek never decrypts. Until something the user did has unlocked the store
+  // it reads the plain settings — which already carry session-only tokens and
+  // ones not yet migrated off disk — and answers "locked" only when a stored
+  // token for this very server may be what is missing: a PAT outranks the
+  // link, so the link must not stand in for one that is merely encrypted.
+  const peeking = peek && !secretCache
+  const settings = peeking ? plain : await readSettingsWithSecrets('tokens')
   const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
   if (!profile) return {}
+  const auth = authFrom(settings, profile, host, remoteUrl, expectedBase, githubBase, gitlabBase)
+  if (!peeking || !auth || auth.token) return auth ?? {}
+  // Checked after the plain-settings gates, so "locked" never stands in for "no such server".
+  const slot = secretSlot(TOKEN_FIELD[host], host === 'github' ? (githubBase ?? undefined) : (gitlabBase ?? undefined))
+  return (await storedTokenMayExist(profile.id, slot)) ? { locked: true } : auth
+}
+
+/** `profileAuth`'s answer from settings already read, or null when the remote is not this profile's. */
+function authFrom(
+  settings: AppSettings,
+  profile: AppSettings['profiles'][number],
+  host: RepoHost,
+  remoteUrl: string | undefined,
+  expectedBase: string | undefined,
+  githubBase: string | null,
+  gitlabBase: string | null
+): { token?: string; link?: AccountLink } | null {
   if (host === 'forgejo') {
     const base = tokenInstance(host, profile.forgejoUrl)
-    if (!base || (expectedBase && base !== expectedBase)) return {}
+    if (!base || (expectedBase && base !== expectedBase)) return null
     if (remoteUrl) {
       const bases = [GITLAB_COM, ...gitlabServerBases(settings.profiles), ...settings.profiles.flatMap((p) =>
         [profileForgejoBase(p.forgejoUrl)].filter((b): b is string => !!b)
       )]
-      if (instanceOf(remoteUrl, bases)?.base !== base) return {}
+      if (instanceOf(remoteUrl, bases)?.base !== base) return null
     }
   }
   if (host === 'gitlab' && gitlabBase) {
     // Re-checked on the decrypted settings: they are the ones the token comes from.
-    if (remoteUrl && gitlabBaseOfRemote(remoteUrl, settings.profiles) !== gitlabBase) return {}
+    if (remoteUrl && gitlabBaseOfRemote(remoteUrl, settings.profiles) !== gitlabBase) return null
     const auth = gitlabAuthFor(profile, gitlabBase)
     return { token: auth.token, link: validAccountLink(auth.link) }
   }
@@ -303,9 +392,11 @@ export interface PeekedAuth {
 
 /**
  * `activeProfileAuth` for lookups nobody asked for — a picture in the title
- * bar, a commit author's avatar. It never decrypts: with the store still
- * locked it answers `{ locked: true }`, so the caller treats the answer as
- * unknown and asks again after something the user did has unlocked it.
+ * bar, a commit author's avatar. It never decrypts: while the store is still
+ * locked and may hold a PAT for that server it answers `{ locked: true }`, so
+ * the caller treats the answer as unknown and asks again after something the
+ * user did has unlocked it. A profile with no stored PAT there gets its
+ * machine-login link (and any session-only token) right away.
  */
 export function peekActiveProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<PeekedAuth> {
   return profileAuth(host, undefined, remoteUrl, expectedBase, true)
@@ -410,7 +501,7 @@ async function persistSessionSecrets(): Promise<void> {
   const stored = secretCache ?? (await loadSecrets())
   const merged = pruneSecrets(mergeSecretStores(stored, sessionSecrets), ids)
   await saveSecrets(merged)
-  secretCache = merged
+  setSecretCache(merged)
   sessionSecrets = {}
 }
 onKeychainEnabled(persistSessionSecrets)
@@ -465,7 +556,7 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
   const base = servedSecrets ? {} : (secretCache ?? (await loadSecrets()))
   const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
   await saveSecrets(merged)
-  secretCache = merged
+  setSecretCache(merged)
   sessionSecrets = {}
   await writeFile(settingsPath(), stripped, 'utf-8')
 }
