@@ -43,6 +43,7 @@ import {
   parseManifest
 } from '../shared/repoFacts'
 import { buildImportGraph } from '../shared/importGraph'
+import { writePrivateFile } from './privateFile'
 
 // A generated wiki for a repository: the model plans the pages, writes each one
 // from files the app hands it, and may only cite those files. Everything is
@@ -67,7 +68,7 @@ async function load(): Promise<WikiData> {
 
 async function save(data: WikiData): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  await writeFile(filePath(), JSON.stringify(data, null, 2), 'utf-8')
+  await writePrivateFile(filePath(), JSON.stringify(data, null, 2))
 }
 
 /** How many pages are written at once. Enough to be quick, few enough to be polite. */

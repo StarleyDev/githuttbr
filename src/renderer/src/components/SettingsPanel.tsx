@@ -114,7 +114,7 @@ import {
   resolveCodeColors
 } from '../theme/themes'
 import { ansiToSpans } from '../lib/ansi'
-import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
+import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, gitlabTokenUrl, instanceUrlProblem } from '../../../shared/gitlabInstance'
 import { GitlabServersSettings } from './GitlabServersSettings'
 import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
@@ -413,6 +413,14 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
   )
 }
 
+/** Why a typed Forgejo address was refused — the self-managed GitLab messages are worded for any server. */
+const FORGEJO_URL_PROBLEM: Record<NonNullable<ReturnType<typeof instanceUrlProblem>>, TranslationKey> = {
+  invalid: 'settings.gitlabServerInvalid',
+  http: 'settings.gitlabUrlInvalid',
+  credentials: 'settings.gitlabServerInvalidCredentials',
+  query: 'settings.gitlabServerInvalidQuery'
+}
+
 const INTEGRATIONS = [
   {
     id: 'github',
@@ -485,7 +493,10 @@ export function IntegrationsPage({
   const token = !scoped || tokenMatchesInstance(scoped, address, issuer) ? profile[active.field] ?? '' : ''
   const azureOrg = profile.azureOrg ?? ''
   const forgejoUrl = profile.forgejoUrl ?? ''
-  const forgejoUrlInvalid = !!forgejoUrl.trim() && !normalizeGitlabUrl(forgejoUrl)
+  // The same checks as a self-managed GitLab: a lenient parse would quietly
+  // drop a user name or a query the user then never sees refused.
+  const forgejoUrlProblem = forgejoUrl.trim() ? instanceUrlProblem(forgejoUrl) : null
+  const forgejoUrlInvalid = !!forgejoUrlProblem
   // Azure scopes by organization, Forgejo by instance; this tab's GitLab is gitlab.com.
   const whoAmIOrg =
     active.id === 'azure'
@@ -771,14 +782,14 @@ export function IntegrationsPage({
             onChange={(e) => edit(editInstance(profile, 'forgejo', e.target.value))}
           />
           <span className="settings-hint">
-            {forgejoUrlInvalid ? t('settings.gitlabUrlInvalid') : t('settings.forgejoUrlHint')}
+            {t(forgejoUrlProblem ? FORGEJO_URL_PROBLEM[forgejoUrlProblem] : 'settings.forgejoUrlHint')}
           </span>
         </label>
       )}
       <button
         className="link-btn"
         type="button"
-        disabled={active.id === 'forgejo' && !forgejoTokenUrl(forgejoUrl)}
+        disabled={active.id === 'forgejo' && (forgejoUrlInvalid || !forgejoTokenUrl(forgejoUrl))}
         onClick={() => {
           const url = active.id === 'forgejo' ? forgejoTokenUrl(forgejoUrl) : active.tokenUrl
           if (url) void window.api.openExternal(url)

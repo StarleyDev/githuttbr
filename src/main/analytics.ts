@@ -1,6 +1,7 @@
 import { app, ipcMain } from 'electron'
 import { join } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, mkdir } from 'fs/promises'
+import { writePrivateFile } from './privateFile'
 import {
   emptyAnalytics,
   emptyAIUsageStat,
@@ -40,7 +41,7 @@ function scheduleSave(): void {
     if (!cache) return
     const snapshot = cache
     void mkdir(app.getPath('userData'), { recursive: true })
-      .then(() => writeFile(filePath(), JSON.stringify(snapshot, null, 2), 'utf-8'))
+      .then(() => writePrivateFile(filePath(), JSON.stringify(snapshot, null, 2)))
       .catch(() => {})
   }, 400)
 }

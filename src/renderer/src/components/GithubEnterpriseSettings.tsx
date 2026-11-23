@@ -10,6 +10,7 @@ import {
   normalizeGithubEnterpriseUrl,
   type GithubEnterpriseUrlProblem
 } from '../../../shared/githubEnterprise'
+import { serverDisplayAddress } from '../../../shared/serverAddress'
 import type { ConnectedAccount, GithubEnterpriseHost, Profile } from '../../../shared/types'
 
 const PROBLEM: Record<GithubEnterpriseUrlProblem, TranslationKey> = {
@@ -19,6 +20,17 @@ const PROBLEM: Record<GithubEnterpriseUrlProblem, TranslationKey> = {
   credentials: 'settings.ghesInvalidCredentials',
   githubCom: 'settings.ghesInvalidGithubCom',
   gheCom: 'settings.ghesInvalidGheCom'
+}
+
+/**
+ * What a row is called: its host. A saved address that no longer parses (an
+ * import, a hand-edited settings file) is shown without any credentials it
+ * carries — never handed to `new URL`, which would throw and take the whole
+ * Integrations page down with it.
+ */
+function hostName(url: string): string {
+  const base = normalizeGithubEnterpriseUrl(url)
+  return base ? base.replace(/^https:\/\//, '') : serverDisplayAddress(url)
 }
 
 /**
@@ -51,7 +63,7 @@ export function GithubEnterpriseSettings({
     edit({ githubEnterprise: hosts.map((h) => (h.url === url ? { ...h, token } : h)) })
 
   const remove = (host: GithubEnterpriseHost): void => {
-    const name = new URL(host.url).host
+    const name = hostName(host.url)
     useUIStore.getState().openDialog({
       kind: 'confirm',
       title: interp(t('settings.ghesRemoveTitle'), { host: name }),
@@ -70,9 +82,22 @@ export function GithubEnterpriseSettings({
       <p className="settings-hint">{t('settings.ghesIntro')}</p>
 
       {hosts.length === 0 && <p className="settings-hint ghes-empty">{t('settings.ghesEmpty')}</p>}
-      {hosts.map((h) => (
-        <GithubEnterpriseRow key={h.url} host={h} onToken={(v) => setToken(h.url, v)} onRemove={() => remove(h)} />
-      ))}
+      {hosts.map((h) =>
+        normalizeGithubEnterpriseUrl(h.url) ? (
+          <GithubEnterpriseRow key={h.url} host={h} onToken={(v) => setToken(h.url, v)} onRemove={() => remove(h)} />
+        ) : (
+          // Nothing is ever sent to an address that does not normalise; it can only be removed.
+          <div className="ghes-row" key={h.url}>
+            <div className="ghes-row-head">
+              <span className="ghes-host">{hostName(h.url)}</span>
+              <span className="conn-status">{t(PROBLEM[githubEnterpriseUrlProblem(h.url) ?? 'invalid'])}</span>
+              <button className="btn ghost small danger" type="button" onClick={() => remove(h)} title={t('settings.ghesRemove')}>
+                <Trash2 size={13} /> {t('settings.ghesRemove')}
+              </button>
+            </div>
+          </div>
+        )
+      )}
 
       <label>
         {t('settings.ghesUrl')}
@@ -113,7 +138,7 @@ function GithubEnterpriseRow({
   onRemove: () => void
 }): React.JSX.Element {
   const t = useT()
-  const name = new URL(host.url).host
+  const name = hostName(host.url)
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
   const [error, setError] = useState<string | null>(null)
 

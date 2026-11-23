@@ -1,8 +1,9 @@
 import { app, ipcMain } from 'electron'
 import { join } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, mkdir } from 'fs/promises'
 import { randomUUID } from 'node:crypto'
 import type { InfoEntry, InfoExport } from '../shared/types'
+import { writePrivateFile } from './privateFile'
 
 // Per-repo, non-private reference metadata (App ID, bundle id, website, social
 // handles…). Unlike the vault these are NOT secrets, so they're stored in plain
@@ -26,7 +27,7 @@ async function load(): Promise<InfoData> {
 
 async function save(data: InfoData): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  await writeFile(filePath(), JSON.stringify(data, null, 2), 'utf-8')
+  await writePrivateFile(filePath(), JSON.stringify(data, null, 2))
 }
 
 async function list(repoPath: string): Promise<InfoEntry[]> {

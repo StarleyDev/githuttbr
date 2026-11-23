@@ -83,6 +83,14 @@ const MAX_BATCH = 200
  * Salted per install: an unsalted hash of an address is the address to anyone
  * holding a list of candidates (a company directory), who could then tell
  * which colleagues' commits this machine has been looking at.
+ *
+ * The key hides the email, not the account: a hit's value is the picture's
+ * URL, and GitHub's (`avatars.githubusercontent.com/u/<id>`) carries the
+ * account's numeric id — public, and one API call from its login. So the file
+ * still says which GitHub accounts were looked up, just not by which address.
+ * The URL is what draws the picture offline; storing less would mean asking
+ * again. The file is owner-only (writePrivateFile), and the handbook says so
+ * (docs/help/avatars.md).
  */
 export function avatarCacheKey(base: string, email: string, salt = ''): string {
   const subject = `${base.toLowerCase()}\n${email.trim().toLowerCase()}`

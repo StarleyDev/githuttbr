@@ -1,10 +1,11 @@
 import { app } from 'electron'
 import { join } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, mkdir } from 'fs/promises'
 import { aiProviderPreset, type AIConfig, type ModelCatalog } from '../shared/types'
 import { assertKeyTransport, authHeaders, baseUrl, fetchFailureReason, isLocal, transportOf } from './aiTransport'
 import { cliModels } from './aiCli'
 import { buildModelLists, chatModelsOnly, normalizeModelIds } from '../shared/aiModelNames'
+import { writePrivateFile } from './privateFile'
 
 /**
  * The live model catalogue.
@@ -48,7 +49,7 @@ async function writeCache(next: Cache): Promise<void> {
   cache = next
   try {
     await mkdir(app.getPath('userData'), { recursive: true })
-    await writeFile(cachePath(), JSON.stringify(next), 'utf-8')
+    await writePrivateFile(cachePath(), JSON.stringify(next))
   } catch {
     // A catalogue that cannot be cached still works; it just refetches.
   }
