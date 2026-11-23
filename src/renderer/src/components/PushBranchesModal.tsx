@@ -349,7 +349,14 @@ export function PushBranchesModal({
             openContextMenu(
               rect.left,
               rect.bottom + 4,
-              remotes.map((r) => ({ label: r, onClick: () => setRemote(r) }))
+              // The clash named the old remote's branches: it says nothing about this one.
+              remotes.map((r) => ({
+                label: r,
+                onClick: () => {
+                  setClash(null)
+                  setRemote(r)
+                }
+              }))
             )
           }}
         >
