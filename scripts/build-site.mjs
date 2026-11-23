@@ -172,7 +172,9 @@ const head = (title, description, depth, opts = {}) => {
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="https://myappdesk.github.io/gitcito/assets/og-image.jpg" />
-<meta name="theme-color" content="#0b0e1a" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#fafafc" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0c0d16" media="(prefers-color-scheme: dark)" />
 <link rel="icon" href="${base}assets/gitcito-mark.png" />
 <link rel="stylesheet" href="${base}styles.css" />
 ${alternates}</head>
@@ -190,29 +192,88 @@ const nav = (depth, locale = 'en') => {
   const home = locale === 'en' ? `${base}index.html` : `${base}${locale}/index.html`
   const handbook =
     locale === 'en' ? `${base}help/getting-started.html` : `${base}help/${locale}/getting-started.html`
+  // Roadmap, GitHub and Sponsor fold away on a phone (`.nav-extra`): the footer
+  // carries all three, and a wrapped nav bar is worse than a short one.
   return `<header class="nav">
-  <a class="brand" href="${home}">
-    <img src="${base}assets/gitcito-mark.png" alt="" width="26" height="26" />
-    <span>Gitcito</span>
-  </a>
-  <nav>
-    <a href="${handbook}">${t('nav.handbook')}</a>
-    <a href="${ROADMAP_URL}">${t('nav.roadmap')}</a>
-    <a href="https://github.com/${REPO}">${t('nav.github')}</a>
-    <a href="${SPONSOR}">${t('nav.sponsor')}</a>
-    <a class="btn small" href="${LATEST}">${t('nav.download')}</a>
-  </nav>
+  <div class="nav-inner">
+    <a class="brand" href="${home}">
+      <img src="${base}assets/gitcito-mark.png" alt="" width="28" height="28" />
+      <span>Gitcito</span>
+    </a>
+    <nav>
+      <a href="${handbook}">${t('nav.handbook')}</a>
+      <a class="nav-extra" href="${ROADMAP_URL}">${t('nav.roadmap')}</a>
+      <a class="nav-extra" href="https://github.com/${REPO}">${t('nav.github')}</a>
+      <a class="nav-extra" href="${SPONSOR}">${t('nav.sponsor')}</a>
+      <a class="btn small primary" href="${LATEST}">${t('nav.download')}</a>
+    </nav>
+  </div>
 </header>`
 }
 
-const footer = (locale = 'en') => {
+/** `languages` is the landing page's endonym list; handbook pages have their own in the sidebar. */
+const footer = (locale = 'en', languages = '', depth = 0) => {
   const t = strings(locale)
-  return `<footer class="foot">
-  <span>${t('foot.license')}</span>
-  <span><a href="https://github.com/${REPO}">${t('foot.source')}</a> · <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a> · <a href="https://github.com/${REPO}/issues/new">${t('foot.reportIssue')}</a> · <a href="${SPONSOR}">${t('foot.sponsor')}</a></span>
+  const base = '../'.repeat(depth)
+  const langs = languages ? `\n  <nav class="lang-bar wrap">\n${languages}\n  </nav>` : ''
+  return `<footer class="foot">${langs}
+  <div class="foot-inner wrap">
+    <p class="foot-brand"><img src="${base}assets/gitcito-mark.png" alt="" width="20" height="20" /> <span>${t('foot.license')}</span></p>
+    <nav class="foot-links">
+      <a href="https://github.com/${REPO}">${t('foot.source')}</a>
+      <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a>
+      <a href="https://github.com/${REPO}/issues/new">${t('foot.reportIssue')}</a>
+      <a href="${SPONSOR}">${t('foot.sponsor')}</a>
+    </nav>
+  </div>
 </footer>
 </body>
 </html>`
+}
+
+// ── Images ──────────────────────────────────────────────────────────────────
+
+const sizes = new Map()
+
+/**
+ * Pixel size of a screenshot, read from its WebP header, so every <img> can
+ * carry width/height and the page does not jump as images arrive. Null for
+ * anything that is not a WebP we can read — the image still renders.
+ */
+function imageSize(name) {
+  if (sizes.has(name)) return sizes.get(name)
+  let size = null
+  try {
+    const b = readFileSync(join(SHOTS_DIR, name))
+    if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') {
+      const kind = b.toString('ascii', 12, 16)
+      if (kind === 'VP8 ') size = { w: b.readUInt16LE(26) & 0x3fff, h: b.readUInt16LE(28) & 0x3fff }
+      else if (kind === 'VP8L') {
+        const bits = b.readUInt32LE(21)
+        size = { w: (bits & 0x3fff) + 1, h: ((bits >> 14) & 0x3fff) + 1 }
+      } else if (kind === 'VP8X') size = { w: b.readUIntLE(24, 3) + 1, h: b.readUIntLE(27, 3) + 1 }
+    }
+  } catch {
+    size = null
+  }
+  sizes.set(name, size)
+  return size
+}
+
+const dims = (name) => {
+  const s = imageSize(name)
+  return s ? ` width="${s.w}" height="${s.h}"` : ''
+}
+
+/**
+ * Polish the HTML `marked` produces: screenshots get their size and load lazily,
+ * and tables sit in a scroller so a wide one cannot push a phone sideways.
+ */
+function enhanceProse(html) {
+  return html
+    .replace(/<img src="([^"]*\/assets\/([\w.-]+))"/g, (_, src, name) => `<img src="${src}"${dims(name)} loading="lazy" decoding="async"`)
+    .replace(/<table>/g, '<div class="table-wrap"><table>')
+    .replace(/<\/table>/g, '</table></div>')
 }
 
 // ── Landing ─────────────────────────────────────────────────────────────────
@@ -259,13 +320,17 @@ function landing(locale = 'en') {
   const cards = FEATURES.map((f) => {
     const shot = cardShot(f.id)
     const title = t(`feature.${f.id}.title`)
+    // The title's link stretches over the whole card (see `.card h3 a::after`),
+    // so the screenshot needs no second link to the same page.
     const figure = shot
-      ? `\n      <a class="card-shot" href="${helpDir}${f.id}.html"><img src="${base}assets/${shot}" alt="${esc(title)}" loading="lazy" /></a>`
+      ? `\n      <div class="card-shot"><img src="${base}assets/${shot}"${dims(shot)} alt="${esc(title)}" loading="lazy" decoding="async" /></div>`
       : ''
     return `    <article class="card">${figure}
-      <span class="card-icon" aria-hidden="true">${f.icon}</span>
-      <h3><a href="${helpDir}${f.id}.html">${title}</a></h3>
-      <p>${t(`feature.${f.id}.body`)}</p>
+      <div class="card-body">
+        <span class="card-icon" aria-hidden="true">${f.icon}</span>
+        <h3><a href="${helpDir}${f.id}.html">${title}</a></h3>
+        <p>${t(`feature.${f.id}.body`)}</p>
+      </div>
     </article>`
   }).join('\n')
 
@@ -279,7 +344,7 @@ function landing(locale = 'en') {
   const handbook = sectionsOf(pageList)
     .map(
       (s) => `      <div class="hb-col">
-        <h4>${esc(s.category)}</h4>
+        <h3>${esc(s.category)}</h3>
         ${s.pages.map((p) => `<a href="${helpDir}${p.id}.html">${esc(p.title)}</a>`).join('\n        ')}
       </div>`
     )
@@ -287,6 +352,9 @@ function landing(locale = 'en') {
 
   const ordinary = (keys) =>
     keys.map((k) => `        <li>${t(`ordinary.${k}`)}</li>`).join('\n')
+
+  const shotImg = (name, alt) =>
+    `<img src="${base}assets/${name}"${dims(name)} alt="${esc(alt)}" loading="lazy" decoding="async" />`
 
   const switcher = siteLocales
     .map((loc) => {
@@ -304,66 +372,91 @@ function landing(locale = 'en') {
 ${nav(depth, locale)}
 <main>
   <section class="hero">
-    <img class="hero-mark" src="${base}assets/gitcito-mark.png" alt="" width="86" height="86" />
-    <h1>${t('hero.title')}</h1>
-    <p class="lede">${t('hero.lede')}</p>
-    <div class="cta">
-      <a class="btn primary" href="${LATEST}" id="download">${t('hero.download')}</a>
-      <a class="btn ghost" href="https://github.com/${REPO}">${t('hero.source')}</a>
+    <div class="wrap hero-copy">
+      <img class="hero-mark" src="${base}assets/gitcito-mark.png" alt="" width="72" height="72" />
+      <h1>${t('hero.title')}</h1>
+      <p class="lede">${t('hero.lede')}</p>
+      <div class="cta">
+        <a class="btn primary large" href="${LATEST}" id="download">${t('hero.download')}</a>
+        <a class="btn ghost large" href="${helpDir}getting-started.html">${t('nav.handbook')}</a>
+      </div>
+      <p class="version">${t('hero.terms', { version: pkg.version })} · <a href="https://github.com/${REPO}">${t('hero.source')}</a></p>
     </div>
-    <p class="version">${t('hero.terms', { version: pkg.version })}</p>
-    <img class="shot" src="${base}assets/graph-dark.webp" alt="${esc(t('hero.graphAlt'))}" loading="lazy" />
-    <div class="lang-bar">
-${switcher}
-    </div>
+    <figure class="frame hero-shot">
+      <!-- The app ships both themes; the page shows the one the reader is in. -->
+      <picture>
+        <source media="(prefers-color-scheme: light)" srcset="${base}assets/graph-light.webp" />
+        <img src="${base}assets/graph-dark.webp"${dims('graph-dark.webp')} alt="${esc(t('hero.graphAlt'))}" fetchpriority="high" decoding="async" />
+      </picture>
+    </figure>
   </section>
 
   <section class="section">
-    <h2>${t('ordinary.title')}</h2>
-    <p class="sub">${t('ordinary.sub')}</p>
-    <div class="two">
-      <ul class="ticks">
+    <div class="wrap">
+      <header class="section-head">
+        <h2>${t('ordinary.title')}</h2>
+        <p class="sub">${t('ordinary.sub')}</p>
+      </header>
+      <div class="two">
+        <ul class="ticks">
 ${ordinary(['graph', 'staging', 'conflicts', 'rebase', 'stacks', 'recovery'])}
-      </ul>
-      <ul class="ticks">
+        </ul>
+        <ul class="ticks">
 ${ordinary(['prs', 'terminal', 'launch', 'ai', 'themes', 'languages'])}
-      </ul>
+        </ul>
+      </div>
+      <figure class="frame">${shotImg('conflict-resolver.webp', t('ordinary.conflictAlt'))}</figure>
     </div>
-    <img class="shot" src="${base}assets/conflict-resolver.webp" alt="${esc(t('ordinary.conflictAlt'))}" loading="lazy" />
   </section>
 
   <section class="section alt">
-    <h2>${t('features.title')}</h2>
-    <p class="sub">${t('features.sub')}</p>
-    <div class="grid">
+    <div class="wrap">
+      <header class="section-head">
+        <h2>${t('features.title')}</h2>
+        <p class="sub">${t('features.sub')}</p>
+      </header>
+      <div class="grid">
 ${cards}
+      </div>
     </div>
   </section>
 
-  <section class="section">
-    <h2>${t('download.title')}</h2>
-    <p class="sub">${t('download.sub', { version: pkg.version })}</p>
-    <div class="downloads">
+  <section class="section" id="get">
+    <div class="wrap">
+      <header class="section-head">
+        <h2>${t('download.title')}</h2>
+        <p class="sub">${t('download.sub', { version: pkg.version })}</p>
+      </header>
+      <div class="downloads">
 ${downloads}
+      </div>
+      <p class="sub small">${t('download.cli', { cli: `${helpDir}cli.html` })}</p>
     </div>
-    <p class="sub small">${t('download.cli', { cli: `${helpDir}cli.html` })}</p>
   </section>
 
   <section class="section alt">
-    <h2>${t('handbook.title', { pages: pages.length })}</h2>
-    <p class="sub">${t('handbook.sub')}</p>
-    <div class="handbook">
+    <div class="wrap">
+      <header class="section-head">
+        <h2>${t('handbook.title', { pages: pages.length })}</h2>
+        <p class="sub">${t('handbook.sub')}</p>
+      </header>
+      <div class="handbook">
 ${handbook}
+      </div>
     </div>
   </section>
 
   <section class="section">
-    <h2>${t('sponsor.title')}</h2>
-    <p class="sub">${t('sponsor.body')}</p>
-    <p><a class="btn primary" href="${SPONSOR}">${t('sponsor.cta')}</a></p>
+    <div class="wrap">
+      <div class="sponsor">
+        <h2>${t('sponsor.title')}</h2>
+        <p class="sub">${t('sponsor.body')}</p>
+        <p><a class="btn primary" href="${SPONSOR}">${t('sponsor.cta')}</a></p>
+      </div>
+    </div>
   </section>
 </main>
-${footer(locale)}
+${footer(locale, switcher, depth)}
 <script>
   // Point the main button at the file for whoever is reading, and highlight
   // their platform in the download list. Everything still resolves to the
@@ -393,7 +486,11 @@ function helpPage(page, locale = 'en', pageList = pages) {
       (s) => `    <div class="side-group">
       <span class="side-title">${esc(s.category)}</span>
       ${s.pages
-        .map((p) => `<a class="${p.id === page.id ? 'active' : ''}" href="${p.id}.html">${esc(p.title)}</a>`)
+        .map((p) =>
+          p.id === page.id
+            ? `<a class="active" aria-current="page" href="${p.id}.html">${esc(p.title)}</a>`
+            : `<a href="${p.id}.html">${esc(p.title)}</a>`
+        )
         .join('\n      ')}
     </div>`
     )
@@ -421,22 +518,39 @@ function helpPage(page, locale = 'en', pageList = pages) {
     dir: RTL_LOCALES.has(locale) ? 'rtl' : 'ltr',
     alternates: alternatesFor(page.id)
   })}
-${nav(depth)}
-<div class="doc">
+${nav(depth, locale)}
+<div class="doc wrap">
   <aside class="side">
+    <details class="side-nav" open>
+      <summary>${t('nav.handbook')}</summary>
+      <div class="side-inner">
     <input class="side-search" type="search" placeholder="${esc(t('doc.filter'))}" aria-label="${esc(t('doc.filterLabel'))}" />
 ${siteLocales.length > 1 ? `    <details class="side-lang">\n      <summary>${esc(LOCALE_NAMES[locale] ?? locale)}</summary>\n${switcher}\n    </details>` : ''}
 ${sidebar}
+      </div>
+    </details>
+    <script>
+      // On a phone the page list collapses above the article instead of pushing
+      // it a screen down. Inline and synchronous, so it settles before first
+      // paint and nothing shifts.
+      (function () {
+        var nav = document.querySelector('.side-nav')
+        var narrow = window.matchMedia('(max-width: 899px)')
+        var sync = function () { nav.open = !narrow.matches }
+        sync()
+        narrow.addEventListener('change', sync)
+      })()
+    </script>
   </aside>
   <main class="doc-body">
     <p class="crumb">${esc(page.category)}</p>
     <article class="prose">
-${marked.parse(siteLinks(page.body, depth))}
+${enhanceProse(marked.parse(siteLinks(page.body, depth)))}
     </article>
     <p class="edit"><a href="https://github.com/${REPO}/blob/main/docs/help/${source}">${edit}</a></p>
   </main>
 </div>
-${footer(locale)}
+${footer(locale, '', depth)}
 <script>
   // Filter the sidebar. Deliberately dumb: no index, no fetch, no dependency.
   var search = document.querySelector('.side-search')
@@ -460,238 +574,967 @@ ${footer(locale)}
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
-const STYLES = `:root {
-  --bg: #0b0e1a;
-  --bg-2: #131829;
-  --bg-3: #1a2036;
-  --line: #232a45;
-  --text: #e8ecf8;
-  --text-2: #a5adc8;
-  --text-3: #6f7899;
-  --accent: #6366f1;
-  --accent-2: #22d3ee;
-  --radius: 14px;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+const STYLES = `/* Plain modern CSS — custom properties, native nesting, color-mix(), logical
+   properties. No preprocessor, so fixing a colour is editing this string. */
 
-/* Scrollbars, themed. The OS default is a bright slab on a dark page, and the
-   sidebar's own scroller made it look like a seam down the middle. */
-* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 8px;
-  border: 3px solid transparent;
-  background-clip: content-box;
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light dark;
+
+  /* The app's own accent (src/renderer/src/styles.css), and a deeper ink of it
+     for text so links clear WCAG AA on white. */
+  --accent: #6c5ce7;
+  --accent-ink: #5343d0;
+  --accent-2: #0ea5b7;
+  --on-accent: #fff;
+
+  --bg: #fafafc;
+  --surface: #ffffff;
+  --surface-2: #f3f3f8;
+  --line: #e4e4ee;
+  --line-strong: #d3d3e0;
+  --ink: #15151f;
+  --ink-2: #474759;
+  --ink-3: #66667a;
+
+  --tint: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  --glow: color-mix(in oklab, var(--accent) 22%, transparent);
+
+  --shadow-sm: 0 1px 2px rgb(20 20 40 / 0.06), 0 1px 1px rgb(20 20 40 / 0.04);
+  --shadow-md: 0 1px 2px rgb(20 20 40 / 0.05), 0 8px 24px -8px rgb(20 20 40 / 0.12);
+  --shadow-lg: 0 2px 6px rgb(20 20 40 / 0.05), 0 30px 70px -30px rgb(30 20 80 / 0.35);
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Inter, Roboto,
+    "Helvetica Neue", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* A minor-third scale, fluid between phone and desktop. */
+  --step--1: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-0: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --step-1: clamp(1.125rem, 1.08rem + 0.25vw, 1.25rem);
+  --step-2: clamp(1.375rem, 1.25rem + 0.6vw, 1.75rem);
+  --step-3: clamp(1.75rem, 1.5rem + 1.2vw, 2.375rem);
+  --step-4: clamp(2.25rem, 1.6rem + 3.2vw, 4rem);
+
+  --wrap: 1160px;
+  --gutter: clamp(16px, 4vw, 32px);
+  --nav-h: 60px;
 }
-::-webkit-scrollbar-thumb:hover { background: #2f3660; background-clip: content-box; }
-::-webkit-scrollbar-corner { background: transparent; }
+
+/* Dark is a second palette, not an inversion: lifted surfaces, softer ink. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #7c6cf0;
+    --accent-ink: #b3a9ff;
+    --accent-2: #4fd1e0;
+    --bg: #0c0d16;
+    --surface: #13141f;
+    --surface-2: #1a1b29;
+    --line: #262838;
+    --line-strong: #33364a;
+    --ink: #ececf4;
+    --ink-2: #b4b6c8;
+    --ink-3: #8c8fa6;
+    --tint: color-mix(in oklab, var(--accent) 12%, var(--surface));
+    --glow: color-mix(in oklab, var(--accent) 30%, transparent);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -10px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.3), 0 40px 90px -30px rgb(0 0 0 / 0.85);
+  }
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 16px);
+}
+
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--text);
-  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  color: var(--ink);
+  font: 400 var(--step-0) / 1.65 var(--sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
-a { color: var(--accent-2); text-decoration: none; }
-a:hover { text-decoration: underline; }
-code { font-family: var(--mono); font-size: 0.9em; background: var(--bg-3); padding: 1px 6px; border-radius: 5px; }
-img { max-width: 100%; }
 
-/* nav */
-.nav {
-  position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: center; gap: 18px;
-  padding: 12px 26px;
-  background: rgba(11, 14, 26, 0.82);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
+img, picture, video { max-width: 100%; height: auto; display: block; }
+
+h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 650; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+/* Japanese breaks at phrase boundaries rather than mid-word, where supported. */
+:lang(ja) :where(h1, h2, h3, .lede, .sub) { word-break: auto-phrase; }
+
+a {
+  color: var(--accent-ink);
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  &:hover { text-decoration: underline; }
 }
-.brand { display: flex; align-items: center; gap: 9px; color: var(--text); font-weight: 700; letter-spacing: 0.2px; }
-.nav nav { margin-left: auto; display: flex; align-items: center; gap: 20px; }
-.nav nav a { color: var(--text-2); font-size: 14px; }
-.nav nav a:hover { color: var(--text); text-decoration: none; }
 
-/* buttons */
+:where(a, button, input, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection { background: color-mix(in oklab, var(--accent) 28%, transparent); }
+
+code, kbd, pre { font-family: var(--mono); }
+code {
+  font-size: 0.875em;
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+/* Scrollbars that belong to the page rather than to the OS. */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
 .btn {
-  display: inline-block; padding: 12px 22px; border-radius: 10px;
-  font-weight: 600; font-size: 15px; border: 1px solid transparent;
-}
-.btn.small { padding: 7px 14px; font-size: 13.5px; }
-.btn.primary { background: linear-gradient(135deg, var(--accent), #8b5cf6); color: #fff; box-shadow: 0 10px 30px -10px var(--accent); }
-.btn.primary:hover { text-decoration: none; filter: brightness(1.08); }
-.btn.ghost { border-color: var(--line); color: var(--text); }
-.btn.ghost:hover { border-color: var(--accent); text-decoration: none; }
-.nav .btn { background: var(--accent); color: #fff; }
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 
-/* hero */
-.hero { max-width: 1000px; margin: 0 auto; padding: 74px 26px 40px; text-align: center; }
-.hero-mark { margin-bottom: 18px; }
-.hero h1 { margin: 0 0 14px; font-size: clamp(32px, 5.6vw, 56px); line-height: 1.1; letter-spacing: -0.02em; }
-.hero h1 em {
-  font-style: normal;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  &:hover { text-decoration: none; }
+  &.small { min-height: 34px; padding: 6px 14px; font-size: 0.875rem; }
+  &.large { min-height: 48px; padding: 12px 24px; font-size: 1rem; }
+
+  &.primary {
+    color: var(--on-accent);
+    background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 88%, white), var(--accent));
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 6px 18px -6px var(--glow);
+    &:hover { background: color-mix(in oklab, var(--accent) 90%, black); transform: translateY(-1px); }
+  }
+
+  &.ghost {
+    color: var(--ink);
+    background: var(--surface);
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-sm);
+    &:hover { border-color: color-mix(in oklab, var(--accent) 50%, var(--line-strong)); transform: translateY(-1px); }
+  }
 }
-.lede { margin: 0 auto 26px; max-width: 620px; color: var(--text-2); font-size: 17px; }
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.nav {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  background: color-mix(in oklab, var(--bg) 78%, transparent);
+  backdrop-filter: saturate(1.6) blur(14px);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  border-block-end: 1px solid color-mix(in oklab, var(--line) 80%, transparent);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: var(--wrap);
+  height: var(--nav-h);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  &:hover { text-decoration: none; }
+  img { border-radius: 7px; }
+}
+
+.nav nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+
+  a:not(.btn) {
+    padding: 6px 12px;
+    border-radius: 999px;
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    &:hover { color: var(--ink); background: var(--surface-2); text-decoration: none; }
+  }
+  .btn { margin-inline-start: 8px; }
+}
+
+@media (max-width: 719px) {
+  .nav .nav-extra { display: none; }
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  padding-block: clamp(56px, 9vw, 112px) clamp(40px, 6vw, 72px);
+  text-align: center;
+
+  /* Two soft lights behind the headline — colour, not decoration. */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -20% -10% auto;
+    height: 760px;
+    z-index: -1;
+    background:
+      radial-gradient(50% 50% at 30% 30%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 70%),
+      radial-gradient(40% 45% at 72% 40%, color-mix(in oklab, var(--accent-2) 14%, transparent), transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+  }
+}
+
+.hero-copy { max-width: 1040px; }
+
+.hero-mark {
+  margin: 0 auto 28px;
+  border-radius: 18px;
+  box-shadow: var(--shadow-md);
+}
+
+.hero h1 {
+  margin: 0 0 20px;
+  font-size: var(--step-4);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+
+  em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--accent) 10%, color-mix(in oklab, var(--accent) 45%, var(--accent-2)) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+.lede {
+  max-width: 640px;
+  margin: 0 auto 32px;
+  color: var(--ink-2);
+  font-size: var(--step-1);
+  line-height: 1.6;
+}
+
 .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.version { margin-top: 14px; color: var(--text-3); font-size: 13px; }
-.shot {
-  margin-top: 42px; border-radius: var(--radius); border: 1px solid var(--line);
-  box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+
+.version {
+  margin: 20px 0 0;
+  color: var(--ink-3);
+  font-size: var(--step--1);
+  a { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line-strong); }
+  a:hover { color: var(--ink); }
 }
 
-/* sections */
-.section { max-width: 1060px; margin: 0 auto; padding: 64px 26px; }
-.section.alt { background: var(--bg-2); max-width: none; }
-.section.alt > * { max-width: 1060px; margin-left: auto; margin-right: auto; }
-.section h2 { font-size: clamp(23px, 3.2vw, 32px); margin: 0 0 10px; letter-spacing: -0.01em; }
-.sub { color: var(--text-2); margin: 0 0 30px; max-width: 660px; }
-.sub.small { font-size: 14px; margin-top: 18px; }
+/* A screenshot in a frame: a hairline, a lifted shadow, a rounded corner. */
+.frame {
+  margin: 0;
+  padding: 6px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
 
-/* feature grid */
-.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); }
+  img {
+    width: 100%;
+    border-radius: calc(var(--radius-lg) - 6px);
+    border: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
+  }
+}
+
+.hero-shot {
+  width: min(100% - 2 * var(--gutter), var(--wrap) - 2 * var(--gutter));
+  margin: clamp(40px, 6vw, 72px) auto 0;
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+
+.section {
+  padding-block: clamp(64px, 9vw, 112px);
+
+  &.alt {
+    background: var(--surface-2);
+    border-block: 1px solid var(--line);
+  }
+
+  .frame { margin-block-start: clamp(40px, 5vw, 64px); }
+}
+
+.section-head {
+  max-width: 720px;
+  margin-block-end: clamp(32px, 4vw, 48px);
+
+  h2 { margin: 0 0 12px; font-size: var(--step-3); }
+}
+
+.sub {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--step-1);
+  line-height: 1.6;
+
+  &.small { margin-block-start: 24px; font-size: var(--step--1); color: var(--ink-3); }
+}
+
+/* ── What you get ───────────────────────────────────────────────────────── */
+
+.two {
+  display: grid;
+  gap: 0 48px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+.ticks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    position: relative;
+    padding-block: 12px;
+    padding-inline-start: 36px;
+    border-block-end: 1px solid var(--line);
+    color: var(--ink-2);
+
+    /* A check drawn in CSS: a tinted disc with a mask, no icon font. */
+    &::before {
+      content: "";
+      position: absolute;
+      inset-inline-start: 0;
+      inset-block-start: 15px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: color-mix(in oklab, var(--accent) 14%, transparent);
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline-start: 5px;
+      inset-block-start: 20px;
+      width: 12px;
+      height: 12px;
+      background: var(--accent-ink);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.3 4.8 9 10 3.2' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.3 4.8 9 10 3.2' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+  }
+}
+
+/* ── Feature cards ──────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+}
+
 .card {
-  padding: 22px; border-radius: var(--radius);
-  background: var(--bg-2); border: 1px solid var(--line);
-  transition: border-color 0.15s, transform 0.15s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in oklab, var(--accent) 35%, var(--line));
+    .card-shot img { transform: scale(1.025); }
+  }
+  &:focus-within { border-color: var(--accent); }
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: var(--step-1);
+    a {
+      color: var(--ink);
+      /* The whole card is the link. */
+      &::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+      &:hover { text-decoration: none; }
+      &:focus-visible { outline: none; }
+      &:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }
+    }
+  }
+
+  p { margin: 0; color: var(--ink-2); font-size: 0.9375rem; line-height: 1.6; }
 }
-.section.alt .card { background: var(--bg-3); }
-.card:hover { border-color: var(--accent); transform: translateY(-2px); }
-/* The screenshot sits above the card's text, cropped to a consistent band so
-   cards keep a common rhythm whatever shape the shot is. */
+
+/* Each shot is cropped to one band, anchored at its top corner, so cards keep
+   a common rhythm whatever shape the screenshot is. */
 .card-shot {
-  display: block; margin: -22px -22px 16px; border-bottom: 1px solid var(--line);
-  border-radius: var(--radius) var(--radius) 0 0; overflow: hidden;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-block-end: 1px solid var(--line);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    transition: transform 0.4s ease;
+  }
 }
-.card-shot img { display: block; width: 100%; height: 148px; object-fit: cover; object-position: top left; }
-.card-icon { font-size: 22px; }
-.card h3 { margin: 10px 0 8px; font-size: 17px; }
-.card h3 a { color: var(--text); }
-.card p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+[dir="rtl"] .card-shot img { object-position: top right; }
 
-/* two columns of ticks */
-.two { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.ticks { list-style: none; margin: 0; padding: 0; }
-.ticks li { padding: 7px 0 7px 26px; position: relative; color: var(--text-2); font-size: 15px; }
-.ticks li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-2); font-weight: 700; }
+.card-body { position: relative; padding: 28px 22px 24px; flex: 1; }
 
-/* downloads */
-.downloads { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); }
+/* The emoji sits on the seam between the shot and the text, like a badge. */
+.card-icon {
+  position: absolute;
+  inset-block-start: -20px;
+  inset-inline-start: 20px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* ── Downloads ──────────────────────────────────────────────────────────── */
+
+.downloads {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+
 .dl {
-  display: block; padding: 20px; border-radius: var(--radius);
-  background: var(--bg-2); border: 1px solid var(--line); color: var(--text);
-}
-.dl:hover { border-color: var(--accent); text-decoration: none; }
-.dl strong { display: block; font-size: 17px; margin-bottom: 4px; }
-.dl span { color: var(--text-3); font-size: 13.5px; }
-.dl.yours { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 22px 24px;
+  padding-inline-end: 56px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 
-/* handbook index */
-.handbook { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-.hb-col h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); }
-.hb-col a { display: block; padding: 3px 0; color: var(--text-2); font-size: 14.5px; }
-.hb-col a:hover { color: var(--accent-2); }
+  strong { font-size: var(--step-1); font-weight: 650; }
+  span { color: var(--ink-3); font-size: var(--step--1); }
 
-/* docs */
-.doc { display: flex; gap: 34px; max-width: 1180px; margin: 0 auto; padding: 30px 26px 70px; }
-.side {
-  width: 248px; flex: none;
-  position: sticky; top: 74px; align-self: flex-start;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
-  /* Reserve the track so the list does not shift when the bar appears, and
-     keep the thumb off the text. */
-  scrollbar-gutter: stable;
-  padding-right: 8px;
-  /* Fade the last row out instead of cutting it mid-letter. */
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent 100%);
-}
-.side-search {
-  width: 100%; margin-bottom: 16px; padding: 7px 10px;
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px;
-  color: var(--text); font-size: 13.5px;
-}
-.side-group { margin-bottom: 16px; }
-.side-title { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); margin-bottom: 5px; }
-.side a { display: block; padding: 4px 9px; border-radius: 7px; color: var(--text-2); font-size: 14px; }
-.side a:hover { background: var(--bg-2); color: var(--text); text-decoration: none; }
-.side a.active { background: var(--bg-3); color: var(--text); font-weight: 600; }
-.doc-body { min-width: 0; flex: 1; }
-.crumb { color: var(--text-3); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; margin: 0 0 4px; }
-.prose { max-width: 780px; }
-.prose h1 { font-size: 34px; margin: 0 0 12px; letter-spacing: -0.02em; }
-.prose h2 { font-size: 21px; margin: 34px 0 10px; padding-bottom: 7px; border-bottom: 1px solid var(--line); }
-.prose h3 { font-size: 16.5px; margin: 24px 0 8px; }
-.prose p, .prose li { color: var(--text-2); }
-.prose strong { color: var(--text); }
-.prose table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14.5px; }
-.prose th, .prose td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
-.prose th { background: var(--bg-2); color: var(--text); }
-.prose blockquote {
-  margin: 16px 0; padding: 10px 16px; border-left: 3px solid var(--accent);
-  background: var(--bg-2); border-radius: 0 8px 8px 0;
-}
-.prose blockquote p { margin: 0; }
-.prose pre { background: var(--bg-2); border: 1px solid var(--line); padding: 14px 16px; border-radius: 10px; overflow-x: auto; }
-.prose pre code { background: none; padding: 0; }
-.prose img { border-radius: 10px; border: 1px solid var(--line); margin: 12px 0; }
-.prose kbd {
-  font-family: var(--mono); font-size: 12px; padding: 2px 6px;
-  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--bg-2);
-}
-.edit { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13.5px; }
+  /* A download arrow, masked so it takes the text colour. */
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: 22px;
+    inset-block-start: 50%;
+    width: 20px;
+    height: 20px;
+    margin-block-start: -10px;
+    background: var(--ink-3);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 3v10m-4-4 4 4 4-4M4 16h12' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 3v10m-4-4 4 4 4-4M4 16h12' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
 
-/* language bar under the hero — sixteen endonyms, each in its own script */
-.lang-bar {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px;
-  max-width: 760px; margin: 34px auto 0; padding-top: 22px;
-  border-top: 1px solid var(--line);
-}
-.lang-bar a {
-  color: var(--text-3); text-decoration: none; font-size: 13.5px;
-  unicode-bidi: isolate;
-}
-.lang-bar a:hover { color: var(--text); }
-.lang-bar a[aria-current] { color: var(--accent-2); }
+  &:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
+    &::after { background: var(--accent-ink); }
+  }
 
-/* language switcher */
-.side-lang { margin-bottom: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); }
-.side-lang summary {
-  cursor: pointer; padding: 7px 10px; font-size: 13px; color: var(--text-2);
-  list-style: none; display: flex; align-items: center; justify-content: space-between;
-}
-.side-lang summary::after { content: '▾'; color: var(--text-3); }
-.side-lang[open] summary::after { content: '▴'; }
-.side-lang summary::-webkit-details-marker { display: none; }
-.side-lang a { display: block; padding: 5px 10px; font-size: 13px; color: var(--text-2); text-decoration: none; }
-.side-lang a:hover { color: var(--text); background: var(--bg-3); }
-.side-lang a[aria-current] { color: var(--accent-2); }
-/* An endonym is written in its own script, so a right-to-left name sits in a
-   left-to-right list. Isolate each so it cannot reorder its neighbours. */
-.side-lang a { unicode-bidi: isolate; }
-
-/* A right-to-left handbook page mirrors its prose but not its code. */
-[dir='rtl'] .prose th, [dir='rtl'] .prose td { text-align: right; }
-[dir='rtl'] .prose pre, [dir='rtl'] .prose code { direction: ltr; unicode-bidi: isolate; text-align: left; }
-[dir='rtl'] .prose blockquote {
-  border-left: 0; border-right: 3px solid var(--accent); border-radius: 8px 0 0 8px;
+  /* The reader's own platform, picked out by the inline script. */
+  &.yours {
+    background: var(--tint);
+    border-color: color-mix(in oklab, var(--accent) 60%, var(--line));
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent), var(--shadow-sm);
+    &::after { background: var(--accent-ink); }
+  }
 }
 
-/* footer */
+/* ── Handbook index ─────────────────────────────────────────────────────── */
+
+.handbook {
+  display: grid;
+  gap: 36px 32px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+}
+
+.hb-col {
+  h3 {
+    margin: 0 0 10px;
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  a {
+    display: block;
+    padding-block: 4px;
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+    &:hover { color: var(--accent-ink); text-decoration: none; }
+  }
+}
+
+/* ── Sponsor ────────────────────────────────────────────────────────────── */
+
+.sponsor {
+  max-width: 820px;
+  margin-inline: auto;
+  padding: clamp(32px, 5vw, 56px);
+  text-align: center;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, var(--line));
+  background:
+    radial-gradient(80% 120% at 50% 0%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow-md);
+
+  h2 { margin: 0 0 12px; font-size: var(--step-3); }
+  .sub { max-width: 620px; margin-inline: auto; }
+  p:last-child { margin: 28px 0 0; }
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
 .foot {
-  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  max-width: 1060px; margin: 0 auto; padding: 30px 26px 46px;
-  border-top: 1px solid var(--line); color: var(--text-3); font-size: 13.5px;
+  border-block-start: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-3);
+  font-size: var(--step--1);
 }
 
-@media (max-width: 820px) {
-  .doc { flex-direction: column; }
-  .side { position: static; width: auto; max-height: none; }
-  .nav nav { gap: 14px; }
+.foot-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  padding-block: 28px 40px;
+}
+
+.foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  img { border-radius: 5px; flex: none; }
+  a { color: var(--ink-2); }
+}
+
+.foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  a { color: var(--ink-2); &:hover { color: var(--ink); } }
+}
+
+/* Sixteen endonyms, each in its own script — isolated so a right-to-left name
+   cannot reorder its neighbours. */
+.lang-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding-block: 28px;
+  border-block-end: 1px solid var(--line);
+
+  a {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    color: var(--ink-3);
+    font-size: var(--step--1);
+    unicode-bidi: isolate;
+    &:hover { color: var(--ink); background: var(--surface-2); text-decoration: none; }
+    &[aria-current] {
+      color: var(--accent-ink);
+      background: var(--tint);
+      border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+    }
+  }
+}
+
+/* ── Handbook pages ─────────────────────────────────────────────────────── */
+
+.doc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding-block: 24px 80px;
+}
+
+@media (min-width: 900px) {
+  .doc {
+    grid-template-columns: 264px minmax(0, 1fr);
+    gap: clamp(32px, 4vw, 64px);
+    padding-block-start: 40px;
+  }
+  .side {
+    position: sticky;
+    inset-block-start: calc(var(--nav-h) + 24px);
+    align-self: start;
+    max-height: calc(100dvh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-inline-end: 8px;
+    /* Fade the last row out instead of cutting it mid-letter. */
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  }
+}
+
+/* On a phone the sidebar is a collapsible card above the article. */
+.side-nav {
+  > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-sm);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+    &::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      /* Physical sides on purpose: a down chevron points down in any script. */
+      border-right: 2px solid var(--ink-3);
+      border-bottom: 2px solid var(--ink-3);
+      transform: rotate(45deg);
+      transition: transform 0.2s;
+    }
+  }
+  &[open] > summary::after { transform: rotate(-135deg); }
+}
+
+/* After the block above, so it wins: on a desktop the list is always shown. */
+@media (min-width: 900px) {
+  .side-nav > summary { display: none; }
+}
+
+@media (max-width: 899px) {
+  .side-nav[open] .side-inner {
+    margin-block-start: 8px;
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+.side-search {
+  width: 100%;
+  margin-block-end: 12px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  &::placeholder { color: var(--ink-3); }
+  &:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
+}
+
+.side-lang {
+  margin-block-end: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    cursor: pointer;
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+    &::after { content: "▾"; color: var(--ink-3); }
+  }
+  &[open] summary { border-block-end: 1px solid var(--line); }
+  &[open] summary::after { content: "▴"; }
+
+  a {
+    display: block;
+    padding: 5px 12px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    unicode-bidi: isolate;
+    &:hover { color: var(--ink); background: var(--surface-2); text-decoration: none; }
+    &[aria-current] { color: var(--accent-ink); font-weight: 600; }
+  }
+}
+
+.side-group { margin-block-end: 20px; }
+
+.side-title {
+  display: block;
+  margin-block-end: 6px;
+  padding-inline: 10px;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.side-group a {
+  display: block;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  &:hover { background: var(--surface-2); color: var(--ink); text-decoration: none; }
+  &.active {
+    background: var(--tint);
+    color: var(--accent-ink);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+}
+[dir="rtl"] .side-group a.active { box-shadow: inset -2px 0 0 var(--accent); }
+
+.doc-body { min-width: 0; }
+
+.crumb {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Long-form reading: a ~70ch measure, a calm rhythm, headings that breathe. */
+.prose {
+  max-width: 72ch;
+  color: var(--ink-2);
+  font-size: var(--step-0);
+  line-height: 1.75;
+  /* A long URL or path in running text wraps instead of widening the page. */
+  overflow-wrap: break-word;
+
+  > :first-child { margin-block-start: 0; }
+  :not(pre) > code { overflow-wrap: anywhere; }
+
+  h1 { margin: 0 0 20px; font-size: var(--step-3); color: var(--ink); letter-spacing: -0.03em; }
+  h2 {
+    margin: 56px 0 14px;
+    padding-block-start: 28px;
+    border-block-start: 1px solid var(--line);
+    font-size: var(--step-2);
+    color: var(--ink);
+  }
+  /* The first section right under the title needs no rule above it. */
+  h1 + h2 { margin-block-start: 32px; padding-block-start: 0; border-block-start: 0; }
+  h3 { margin: 36px 0 10px; font-size: var(--step-1); color: var(--ink); }
+  h4 { margin: 28px 0 8px; font-size: 1rem; color: var(--ink); }
+
+  p, ul, ol { margin: 0 0 18px; }
+  ul, ol { padding-inline-start: 1.4em; }
+  li { margin-block: 6px; }
+  li::marker { color: var(--ink-3); }
+  strong { color: var(--ink); font-weight: 650; }
+
+  a {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--accent-ink) 35%, transparent);
+    &:hover { text-decoration-color: currentColor; }
+  }
+
+  hr { border: 0; border-block-start: 1px solid var(--line); margin: 40px 0; }
+
+  pre {
+    margin: 20px 0 24px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--ink);
+    code { padding: 0; border: 0; background: none; font-size: inherit; }
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 1px 7px;
+    font-size: 0.8em;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-block-end-width: 2px;
+    border-radius: 6px;
+  }
+
+  img {
+    margin: 24px 0;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Blockquotes are callouts. A leading bold word — "Beta.", "Note." — becomes
+     the callout's label, in whatever language the page is in. */
+  blockquote {
+    margin: 24px 0;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: var(--tint);
+    border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--line));
+    border-inline-start: 3px solid var(--accent);
+    color: var(--ink-2);
+
+    p { margin: 0 0 10px; }
+    > :last-child { margin-block-end: 0; }
+
+    > p:first-child > strong:first-child {
+      display: inline-block;
+      margin-inline-end: 6px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--on-accent);
+      font-size: 0.75rem;
+      line-height: 1.7;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      vertical-align: 0.1em;
+    }
+  }
+}
+
+/* Tables scroll inside their own box, never the page. */
+.table-wrap {
+  margin: 20px 0 28px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; line-height: 1.55; }
+  th, td {
+    padding: 10px 14px;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--line);
+  }
+  th {
+    background: var(--surface-2);
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  tr:last-child td { border-block-end: 0; }
+  tbody tr:hover td { background: color-mix(in oklab, var(--surface-2) 60%, transparent); }
+}
+
+.edit {
+  max-width: 72ch;
+  margin: 56px 0 0;
+  padding-block-start: 20px;
+  border-block-start: 1px solid var(--line);
+  font-size: var(--step--1);
+  a { color: var(--ink-3); &:hover { color: var(--accent-ink); } }
+}
+
+/* A right-to-left page mirrors its prose but not its code. */
+[dir="rtl"] :where(pre, code, kbd) { direction: ltr; unicode-bidi: isolate; }
+[dir="rtl"] pre { text-align: left; }
+
+/* ── Small screens ──────────────────────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  .cta .btn { flex: 1 1 100%; }
+  .hero-shot { padding: 4px; border-radius: 14px; }
+  .hero-shot img { border-radius: 10px; }
+  .frame { padding: 4px; border-radius: 14px; }
+  .frame img { border-radius: 10px; }
+  .foot-inner { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .card:hover, .dl:hover, .btn:hover { transform: none; }
+  .card:hover .card-shot img { transform: none; }
 }
 `
 
