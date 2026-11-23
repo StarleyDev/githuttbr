@@ -5319,6 +5319,10 @@ describe('launch run targets (device picker)', () => {
       GITHUTTBR_DEVICE_ID: '39121FDJG0018Z',
       GITHUTTBR_DEVICE_NAME: 'Pixel 8',
       GITHUTTBR_DEVICE_PLATFORM: 'android',
+      // The pre-rename names, for launch configs written for upstream.
+      GITCITO_DEVICE_ID: '39121FDJG0018Z',
+      GITCITO_DEVICE_NAME: 'Pixel 8',
+      GITCITO_DEVICE_PLATFORM: 'android',
       // What makes a plain adb / Gradle flow hit the same handset.
       ANDROID_SERIAL: '39121FDJG0018Z'
     })

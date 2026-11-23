@@ -113,7 +113,12 @@ export function applyDevice(
     ...(config.env ?? {}),
     GITHUTTBR_DEVICE_ID: device.id,
     GITHUTTBR_DEVICE_NAME: device.name,
-    GITHUTTBR_DEVICE_PLATFORM: device.platform
+    GITHUTTBR_DEVICE_PLATFORM: device.platform,
+    // The names before the rename, so scripts written for upstream Gitcito
+    // (and for 4.38) keep finding the device.
+    GITCITO_DEVICE_ID: device.id,
+    GITCITO_DEVICE_NAME: device.name,
+    GITCITO_DEVICE_PLATFORM: device.platform
   }
   // An AVD name is not a serial — setting it would point adb at nothing.
   if (device.platform === 'android' && device.source !== 'avd') env['ANDROID_SERIAL'] = device.id

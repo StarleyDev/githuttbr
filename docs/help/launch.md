@@ -147,6 +147,9 @@ Every launched config also gets `GITCITO_DEVICE_ID`, `GITCITO_DEVICE_NAME` and
 `GITCITO_DEVICE_PLATFORM` in its environment, plus `ANDROID_SERIAL` when the
 target is a real Android device. That is what lets a wrapper script, a Gradle
 task or a bare `adb` hit the same handset without Gitcito rewriting anything.
+The same values are also exported under the names used before 4.39 —
+<code>GIT&#67;ITO_DEVICE_ID</code>, <code>GIT&#67;ITO_DEVICE_NAME</code> and
+<code>GIT&#67;ITO_DEVICE_PLATFORM</code> — so scripts written for them keep working.
 
 **Starting a cold device.** Anything under *Not running* boots when you pick it:
 `flutter emulators --launch`, `xcrun simctl boot` (plus the Simulator window), or
