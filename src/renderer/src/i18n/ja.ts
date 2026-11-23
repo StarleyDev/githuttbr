@@ -1966,6 +1966,7 @@ export const ja: Dict = {
   'pushBranches.rejOther': 'git が拒否しました: {reason}',
   'pushBranches.notAttemptedHint': 'git はこのブランチに到達する前に停止しました。',
   'pushBranches.heldHint': '未公開のコミットが認証情報のようなファイルに触れています。単独でプッシュして内容を確認し、承認してください:',
+  'pushBranches.uncheckedHint': '未公開のコミットが触れるファイルを一覧できなかったため、シークレットガードで確認できませんでした。単独でプッシュすると、ガードがもう一度実行されます。',
   'pushBranches.serverSaid': 'サーバーからの応答',
   'pushBranches.again': '一覧に戻る',
   'pushBranches.done': '{remote} にプッシュしたブランチ: {count}',

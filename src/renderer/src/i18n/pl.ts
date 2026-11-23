@@ -1991,6 +1991,7 @@ export const pl: Dict = {
   'pushBranches.rejOther': 'git odmówił: {reason}',
   'pushBranches.notAttemptedHint': 'git zatrzymał się, zanim doszedł do tego brancha.',
   'pushBranches.heldHint': 'Jego nieopublikowane commity dotykają plików wyglądających na dane uwierzytelniające. Wypchnij go osobno, aby je przejrzeć i potwierdzić:',
+  'pushBranches.uncheckedHint': 'Nie udało się wypisać plików, których dotykają jego nieopublikowane commity, więc strażnik sekretów nie mógł go sprawdzić. Wypchnij go osobno — wtedy sprawdzenie zostanie powtórzone.',
   'pushBranches.serverSaid': 'Odpowiedź serwera',
   'pushBranches.again': 'Wróć do listy',
   'pushBranches.done': 'Wypchnięte branche na {remote}: {count}',

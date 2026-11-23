@@ -1966,6 +1966,7 @@ export const tr: Dict = {
   'pushBranches.rejOther': 'git reddetti: {reason}',
   'pushBranches.notAttemptedHint': 'git bu dala ulaşmadan durdu.',
   'pushBranches.heldHint': 'Yayımlanmamış commit’leri kimlik bilgisine benzeyen dosyalara dokunuyor. Onları gözden geçirip onaylamak için tek başına push’layın:',
+  'pushBranches.uncheckedHint': 'Yayımlanmamış commit’lerinin dokunduğu dosyalar listelenemedi, bu yüzden gizli bilgi koruması onu denetleyemedi. Tek başına push’layın; denetim orada yeniden çalışır.',
   'pushBranches.serverSaid': 'Sunucunun yanıtı',
   'pushBranches.again': 'Listeye dön',
   'pushBranches.done': '{remote} sunucusuna push’lanan dallar: {count}',

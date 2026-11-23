@@ -122,6 +122,8 @@ export function filterPushStates(states: BranchPushState[], query: string): Bran
 export interface SecretFlag {
   branch: string
   files: string[]
+  /** Its outgoing files could not be listed, so the guard never saw them. */
+  unchecked?: boolean
 }
 
 /**
@@ -129,6 +131,10 @@ export interface SecretFlag {
  * outgoing commits touch a credential-looking file is held back from the batch
  * — the rest go. A flagged branch can still be pushed alone, where the single
  * push's confirmation asks about exactly those files.
+ *
+ * A branch missing from `filesByBranch` is one main could not list, and it is
+ * held too, as `unchecked`: an empty answer there would read as "clean" and
+ * push whatever it carries past the guard.
  */
 export function partitionBySecrets(
   branches: string[],
@@ -138,7 +144,12 @@ export function partitionBySecrets(
   const clean: string[] = []
   const flagged: SecretFlag[] = []
   for (const branch of branches) {
-    const files = (filesByBranch[branch] ?? []).filter(isSecret)
+    const listed = Object.prototype.hasOwnProperty.call(filesByBranch, branch) ? filesByBranch[branch] : undefined
+    if (!Array.isArray(listed)) {
+      flagged.push({ branch, files: [], unchecked: true })
+      continue
+    }
+    const files = listed.filter(isSecret)
     if (files.length) flagged.push({ branch, files })
     else clean.push(branch)
   }

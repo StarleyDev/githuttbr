@@ -195,6 +195,16 @@ describe('chat action executor', () => {
     expect(actionErrorText({ code: 'unknown', detail: 'raw git output' })).toBe('raw git output')
   })
 
+  it('never hands the model a token from a failed remote call, even one holding "/"', async () => {
+    const { classifyRepoChatActionError } = await import('../src/renderer/src/lib/askActionRun')
+    const err = new Error(
+      "fatal: unable to access 'https://x-token-auth:BBDCab+/cdSECRET@127.0.0.1:9/scm/x.git/': URL rejected"
+    )
+    const { detail } = classifyRepoChatActionError({ type: 'fetch', description: '' } as RepoChatAction, err)
+    expect(detail).not.toMatch(/SECRET|BBDCab/)
+    expect(detail).toContain('https://[redacted]@127.0.0.1:9/scm/x.git/')
+  })
+
   it('maps every action to its git call, in order', async () => {
     const result = await executeAskActions('/repo', [
       stage,

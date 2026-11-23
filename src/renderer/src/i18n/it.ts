@@ -1967,6 +1967,7 @@ export const it: Dict = {
   'pushBranches.rejOther': 'git lo ha rifiutato: {reason}',
   'pushBranches.notAttemptedHint': 'git si è fermato prima di arrivare a questo branch.',
   'pushBranches.heldHint': 'I suoi commit non pubblicati toccano file che sembrano credenziali. Fai il push da solo per controllarli e confermare:',
+  'pushBranches.uncheckedHint': 'Non è stato possibile elencare i file toccati dai suoi commit non pubblicati, quindi il controllo dei segreti non ha potuto verificarlo. Fai il push da solo, dove il controllo viene ripetuto.',
   'pushBranches.serverSaid': 'Il server ha risposto',
   'pushBranches.again': 'Torna all’elenco',
   'pushBranches.done': 'Branch inviati su {remote}: {count}',
