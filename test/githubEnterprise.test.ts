@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -428,7 +429,7 @@ describe('every formerly hardcoded call site uses the resolver', () => {
 
   it('a clone from a server never carries the github.com token the renderer sent', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const env = JSON.stringify(await cloneCredentialEnv('https://github.example.corp/team/app.git', 'github', COM_TOKEN))
+    const env = revealCredentialEnv(await cloneCredentialEnv('https://github.example.corp/team/app.git', 'github', COM_TOKEN))
     expect(env).toContain(GHES_TOKEN)
     expect(env).not.toContain(COM_TOKEN)
   })

@@ -6,6 +6,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, wr
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
+import { gitWithInput } from './helpers'
 
 // Which account a clone, and every fetch after it, signs in as — against real
 // git, over real https, with a fake "machine" (a credential helper holding some
@@ -214,25 +215,16 @@ afterEach(() => {
 })
 
 /** What git's credential step hands out for `url` under `env`. */
-function fill(env: NodeJS.ProcessEnv, url: string): string {
+async function fill(env: NodeJS.ProcessEnv, url: string): Promise<string> {
   const u = new URL(url)
-  try {
-    return execFileSync('git', ['credential', 'fill'], {
-      input: `protocol=https\nhost=${u.host}\npath=${u.pathname.slice(1)}\n\n`,
-      env: {
-        PATH: process.env.PATH,
-        HOME: dir,
-        GIT_CONFIG_GLOBAL: join(dir, 'gitconfig'),
-        GIT_CONFIG_NOSYSTEM: '1',
-        GIT_TERMINAL_PROMPT: '0',
-        ...env
-      },
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-  } catch {
-    return ''
-  }
+  return gitWithInput(['credential', 'fill'], `protocol=https\nhost=${u.host}\npath=${u.pathname.slice(1)}\n\n`, {
+    PATH: process.env.PATH,
+    HOME: dir,
+    GIT_CONFIG_GLOBAL: join(dir, 'gitconfig'),
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_TERMINAL_PROMPT: '0',
+    ...env
+  }).catch(() => '')
 }
 
 describe.skipIf(!hasOpenssl)('a token reaches its own server only', () => {
@@ -262,12 +254,12 @@ describe.skipIf(!hasOpenssl)('a token reaches its own server only', () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(`${LONE_DC}/scm/proj/app.git`, 'bitbucket', undefined, 'work')) ?? {}
     expect(Object.entries(env).some(([k, v]) => k.startsWith('GIT_CONFIG_KEY_') && v === `credential.${LONE_DC}.helper`)).toBe(true)
-    expect(fill(env, `${LONE_DC}/scm/proj/app.git`)).toContain(`password=${LONE_DC_TOKEN}`)
+    expect(await fill(env, `${LONE_DC}/scm/proj/app.git`)).toContain(`password=${LONE_DC_TOKEN}`)
     // Another repository on the same server, as after a redirect: still its token.
-    expect(fill(env, `${LONE_DC}/scm/other/lib.git`)).toContain(`password=${LONE_DC_TOKEN}`)
+    expect(await fill(env, `${LONE_DC}/scm/other/lib.git`)).toContain(`password=${LONE_DC_TOKEN}`)
     // Outside the base: not offered — git's own helper answers.
-    expect(fill(env, 'https://dc.example.corp/gitlab/group/app.git')).not.toContain(LONE_DC_TOKEN)
-    expect(fill(env, 'https://dc.example.corp/bitbucketx/scm/p/r.git')).not.toContain(LONE_DC_TOKEN)
+    expect(await fill(env, 'https://dc.example.corp/gitlab/group/app.git')).not.toContain(LONE_DC_TOKEN)
+    expect(await fill(env, 'https://dc.example.corp/bitbucketx/scm/p/r.git')).not.toContain(LONE_DC_TOKEN)
   })
 })
 
@@ -277,7 +269,7 @@ describe.skipIf(!hasOpenssl)('Clone → URL resolves the provider from the addre
     const url = 'https://github.com/team/app.git'
     const env = await cloneCredentialEnv(url, undefined, undefined, 'empty')
     expect(env).not.toBeNull()
-    expect(fill(env ?? {}, url)).not.toContain('machine-secret')
+    expect(await fill(env ?? {}, url)).not.toContain('machine-secret')
     expect(existsSync(marker)).toBe(false)
     // Nobody picked: git's own behaviour, as in a terminal.
     expect(await cloneCredentialEnv(url, undefined, undefined)).toBeNull()

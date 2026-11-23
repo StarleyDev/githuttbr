@@ -193,6 +193,7 @@ import {
   gitSupportsCredentialEnv,
   MIN_GIT_FOR_CREDENTIAL_ENV,
   needsConfigEnv,
+  releaseCredentialEnv,
   type BasicCredential,
   type CredentialScope
 } from './gitCredentialEnv'
@@ -2122,11 +2123,16 @@ async function withRemoteAuth<T>(repoPath: string, remote: string, direction: 'f
     if (extra) env = { ...env, ...extra }
   }
   if (!env) return op()
-  // Older git ignores GIT_CONFIG_COUNT and would run without the credential, so
-  // fail with the reason instead of "could not read Username". Going anonymous
-  // works on any git.
-  if (needsConfigEnv(env)) await assertGitSupportsCredentialEnv()
-  return remoteAuthEnv.run(env, op)
+  try {
+    // Older git ignores GIT_CONFIG_COUNT and would run without the credential, so
+    // fail with the reason instead of "could not read Username". Going anonymous
+    // works on any git.
+    if (needsConfigEnv(env)) await assertGitSupportsCredentialEnv()
+    return await remoteAuthEnv.run(env, op)
+  } finally {
+    // Every git the op ran has exited: its credential endpoint goes with it.
+    releaseCredentialEnv(env)
+  }
 }
 
 let gitEnvSupport: Promise<void> | null = null
@@ -7702,8 +7708,8 @@ export const gitService = {
   async remoteBranches(url: string, host?: string, token?: string, profileId?: string): Promise<string[]> {
     assertNotOption(url, 'the URL')
     const credEnv = await cloneCredentialEnv(url, host, token, profileId)
-    if (credEnv && needsConfigEnv(credEnv)) await assertGitSupportsCredentialEnv()
     try {
+      if (credEnv && needsConfigEnv(credEnv)) await assertGitSupportsCredentialEnv()
       // `--` and a neutral cwd: run from inside a repository, a URL git did
       // read as an option would pick up that repository's config and remotes.
       const { stdout } = await pexecFile('git', ['ls-remote', '--heads', '--', url], {
@@ -7718,6 +7724,8 @@ export const gitService = {
     } catch (err) {
       const e = err as { stderr?: string; message?: string }
       throw new Error(redactCredentials((e.stderr || e.message || 'git ls-remote failed').trim()))
+    } finally {
+      releaseCredentialEnv(credEnv)
     }
   },
 
@@ -7745,6 +7753,7 @@ export const gitService = {
     // starts finds it; an abort before git spawns rejects the clone at once.
     const controller = new AbortController()
     if (opts.cloneId) runningClones.set(opts.cloneId, controller)
+    let credEnv: NodeJS.ProcessEnv | null = null
     try {
       // `git clone --depth` is silently ignored for a local path — a local clone
       // hardlinks the object store instead of fetching — so a shallow request on
@@ -7752,7 +7761,7 @@ export const gitService = {
       const localShallow =
         !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
       const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
-      const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token, opts.profileId)
+      credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token, opts.profileId)
       if (credEnv && needsConfigEnv(credEnv)) await assertGitSupportsCredentialEnv()
       // Streaming the underlying `git clone --progress` so the UI can show real progress;
       // simpleGit auto-appends --progress when a progress handler is configured.
@@ -7792,6 +7801,7 @@ export const gitService = {
       }
     } finally {
       if (opts.cloneId) runningClones.delete(opts.cloneId)
+      releaseCredentialEnv(credEnv)
     }
     return target
   },

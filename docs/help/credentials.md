@@ -128,9 +128,9 @@ silently: a helper that needs a login window counts as having nothing.
   erases on request, and nothing else.
 - **A token you gave Gitcito is separate.** Revoking one does not touch the
   other; see [security](security.md) for the keychain side.
-- **A profile's token reaches the repository's hooks.** While a fetch, pull or
-  push signs in with it, the token is in the environment of that git command —
-  and of every hook it runs. See
+- **A profile's token stays out of the repository's hooks' environment.** A
+  hook sees only a code for a private endpoint, valid while that git
+  command runs — enough for a hook that deliberately asks, as git-lfs does. See
   [a profile's token while git runs](security.md#a-profiles-token-while-git-runs).
 
 See also: [Security](security.md) · [SSH keys](ssh-keys.md) ·

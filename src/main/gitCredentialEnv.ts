@@ -12,17 +12,16 @@
  * git ≥ 2.31) registers a credential helper for this host only, after an empty
  * entry that clears any helper the user configured for it — so the profile's
  * account answers, not whichever login the machine holds, and the token is never
- * offered to the helper to `store`. The helper is a shell one-liner that prints
- * the pair from two environment variables, so the secret is in neither the
- * config nor an argument list.
+ * offered to the helper to `store`. The helper fetches the pair from a private
+ * endpoint the app serves for this run (`credentialBroker`): the secret is in
+ * neither the config, an argument list, nor the environment — which every hook,
+ * filter and LFS process git starts inherits. Only a nonce for the endpoint is
+ * there. The caller releases it with `releaseCredentialEnv` once git has exited.
  */
 
-export const GIT_USERNAME_VAR = 'GITCITO_GIT_USERNAME'
-export const GIT_PASSWORD_VAR = 'GITCITO_GIT_PASSWORD'
+import { openCredentialEndpoint, type CredentialTarget } from './credentialBroker'
 
-// Answers `get` only; `store` and `erase` are no-ops, so nothing persists it.
-const helperCommand = (usernameVar: string, passwordVar: string): string =>
-  `!f() { test "$1" = get || exit 0; printf 'username=%s\\npassword=%s\\n' "$${usernameVar}" "$${passwordVar}"; }; f`
+export { releaseCredentialEnv, CREDENTIAL_NONCE_VAR } from './credentialBroker'
 
 export interface BasicCredential {
   username: string
@@ -53,7 +52,8 @@ function scopedUrl(u: URL, scope: CredentialScope): string | null {
 
 /**
  * Environment additions that make git authenticate `url`'s host with `cred`.
- * Null when it cannot apply: not https, an unparseable URL, or a value with a
+ * Opens an endpoint: hand the result to `releaseCredentialEnv` once git has
+ * exited. Null when it cannot apply: not https, an unparseable URL, or a value with a
  * line break (the credential protocol is line-based; such a value would add
  * fields of its own).
  */
@@ -77,23 +77,26 @@ export function gitCredentialEnv(
   // Append to config the caller may already pass this way rather than replace it.
   const n = Number.parseInt(base.GIT_CONFIG_COUNT ?? '', 10)
   const at = Number.isFinite(n) && n > 0 ? n : 0
-  // Each destination of a multi-URL push needs its own helper and secret variables.
-  const usernameVar = scope === 'repository' ? GIT_USERNAME_VAR + '_' + at : GIT_USERNAME_VAR
-  const passwordVar = scope === 'repository' ? GIT_PASSWORD_VAR + '_' + at : GIT_PASSWORD_VAR
   const key = `credential.${origin}.helper`
-  return {
-    GIT_CONFIG_COUNT: String(at + (scope === 'repository' ? 3 : 2)),
-    [`GIT_CONFIG_KEY_${at}`]: key,
-    [`GIT_CONFIG_VALUE_${at}`]: '',
-    [`GIT_CONFIG_KEY_${at + 1}`]: key,
-    [`GIT_CONFIG_VALUE_${at + 1}`]: helperCommand(usernameVar, passwordVar),
-    ...(scope === 'repository' && {
-      [`GIT_CONFIG_KEY_${at + 2}`]: `credential.${origin}.useHttpPath`,
-      [`GIT_CONFIG_VALUE_${at + 2}`]: 'true'
-    }),
-    [usernameVar]: cred.username,
-    [passwordVar]: cred.password
+  const entries: Array<[string, string]> = [[key, '']]
+  if (scope === 'repository') entries.push([`credential.${origin}.useHttpPath`, 'true'])
+  // The endpoint answers only inside the scope git is told to use it for, so a
+  // process that speaks to it with the nonce still cannot ask it for another host.
+  const scoped = new URL(origin)
+  const target: CredentialTarget = {
+    host: scoped.host.toLowerCase(),
+    path: scoped.pathname.replace(/^\/+|\/+$/g, ''),
+    pathSent: entries.some(([k, v]) => /\.usehttppath$/i.test(k) && v === 'true')
   }
+  // Each destination of a multi-URL push gets its own endpoint and nonce variable.
+  const { helper, env } = openCredentialEndpoint(cred, target, at)
+  entries.splice(1, 0, [key, helper])
+  const out: NodeJS.ProcessEnv = { GIT_CONFIG_COUNT: String(at + entries.length), ...env }
+  entries.forEach(([k, v], i) => {
+    out[`GIT_CONFIG_KEY_${at + i}`] = k
+    out[`GIT_CONFIG_VALUE_${at + i}`] = v
+  })
+  return out
 }
 
 /**

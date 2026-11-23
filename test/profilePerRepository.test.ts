@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -355,7 +356,7 @@ describe('the clone dialog lists, clones and binds as the profile it picked', ()
       { url: 'https://github.com/team/app.git', host: 'github', slot: 'com', sent: PERSONAL.com }
     ]
     for (const c of cases) {
-      const env = JSON.stringify(await cloneCredentialEnv(c.url, c.host, c.sent ?? WORK[c.slot], 'personal'))
+      const env = revealCredentialEnv(await cloneCredentialEnv(c.url, c.host, c.sent ?? WORK[c.slot], 'personal'))
       expect(env, c.url).toContain(PERSONAL[c.slot])
       expect(env, c.url).not.toContain('work-')
       for (const id of ['', 'gone']) {
@@ -373,5 +374,5 @@ function expectAnonymous(env: NodeJS.ProcessEnv | null, url: string, ...absent: 
   expect(env!.GIT_CONFIG_COUNT, url).toBeUndefined()
   expect(env!.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${new URL(url).origin}.helper='`), url).toBe(true)
   expect(env!.GIT_ASKPASS, url).toBe('')
-  for (const s of absent) expect(JSON.stringify(env), url).not.toContain(s)
+  for (const s of absent) expect(revealCredentialEnv(env), url).not.toContain(s)
 }

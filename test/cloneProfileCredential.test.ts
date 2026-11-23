@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 
 // A server's token (GitLab, Forgejo, GitHub Enterprise, Data Center) is resolved
 // in main from the profile picked in the clone dialog — the one the provider tab
@@ -75,7 +76,7 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
   it('a GitLab tab clone signs in with the active profile’s token — the one the tab listed with', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     for (const sent of ['', '   ', undefined, 'renderer-token']) {
-      const env = JSON.stringify(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', sent))
+      const env = revealCredentialEnv(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', sent))
       expect(env).toContain(WORK_GITLAB)
       expect(env).not.toContain(PERSONAL_GITLAB)
       expect(env).not.toContain('renderer-token')
@@ -84,7 +85,7 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
 
   it('a Data Center tab clone likewise uses the active profile’s server token', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const env = JSON.stringify(await cloneCredentialEnv(BBS_REPO, 'bitbucket', undefined))
+    const env = revealCredentialEnv(await cloneCredentialEnv(BBS_REPO, 'bitbucket', undefined))
     expect(env).toContain(WORK_BBS)
     expect(env).not.toContain(PERSONAL_BBS)
   })
@@ -100,9 +101,9 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
   it('Clone → URL on a configured Data Center signs in as the profile picked in the dialog', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'personal')) ?? {}
-    expect(JSON.stringify(env)).toContain(PERSONAL_BBS)
-    expect(JSON.stringify(env)).not.toContain(WORK_BBS)
-    expect(Object.values(env)).toContain('me')
+    expect(revealCredentialEnv(env)).toContain(PERSONAL_BBS)
+    expect(revealCredentialEnv(env)).not.toContain(WORK_BBS)
+    expect(credentialEnvValues(env)).toContain('me')
   })
 
   it('Clone → URL with an unknown or empty profile id clones as nobody — not the active profile, not the first', async () => {
@@ -117,10 +118,10 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
   // new repository to it: the clone must sign in as that profile too.
   it('a provider-tab clone signs in as the profile picked in the dialog, not the active one', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const gl = JSON.stringify(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '', 'personal'))
+    const gl = revealCredentialEnv(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '', 'personal'))
     expect(gl).toContain(PERSONAL_GITLAB)
     expect(gl).not.toContain(WORK_GITLAB)
-    const env = JSON.stringify(await cloneCredentialEnv(BBS_REPO, 'bitbucket', 'sent', 'personal'))
+    const env = revealCredentialEnv(await cloneCredentialEnv(BBS_REPO, 'bitbucket', 'sent', 'personal'))
     expect(env).toContain(PERSONAL_BBS)
     expect(env).not.toContain(WORK_BBS)
   })
@@ -139,9 +140,9 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
   it('Clone → URL on a configured Data Center with no profile named signs in as the active profile', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(BBS_REPO, undefined, undefined)) ?? {}
-    expect(JSON.stringify(env)).toContain(WORK_BBS)
-    expect(JSON.stringify(env)).not.toContain(PERSONAL_BBS)
-    expect(Object.values(env)).toContain('worker')
+    expect(revealCredentialEnv(env)).toContain(WORK_BBS)
+    expect(revealCredentialEnv(env)).not.toContain(PERSONAL_BBS)
+    expect(credentialEnvValues(env)).toContain('worker')
     // An address under no configured server gets nothing.
     expect(await cloneCredentialEnv('https://elsewhere.example/scm/proj/app.git', undefined, undefined)).toBeNull()
   })
@@ -155,5 +156,5 @@ function expectAnonymous(env: NodeJS.ProcessEnv | null, url: string, ...absent: 
   expect(env!.GIT_CONFIG_COUNT, url).toBeUndefined()
   expect(env!.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${new URL(url).origin}.helper='`), url).toBe(true)
   expect(env!.GIT_ASKPASS, url).toBe('')
-  for (const s of absent) expect(JSON.stringify(env), url).not.toContain(s)
+  for (const s of absent) expect(revealCredentialEnv(env), url).not.toContain(s)
 }
