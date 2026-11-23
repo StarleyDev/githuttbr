@@ -602,6 +602,8 @@ const glApi = (base: string | undefined): string => `${base ?? GITLAB_COM}/api/v
  * Actionable GitHub setup text for the exact local CLI state we observed. A
  * profile only uses a machine login it has *linked*, so every route ends at
  * Settings → Integrations — `gh auth setup-git` alone no longer connects anything.
+ * English with a fixed shape per state: gitErrorHint translates each one by the
+ * sentence that follows the lead (`gitError.githubNoCredential*`).
  */
 export function githubCredentialMessage(status: GitHubCliAuthStatus, host = 'github.com'): string {
   const lead = `No GitHub account is linked to this profile for ${host}.`
@@ -645,8 +647,19 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   if (provider.toLowerCase() === 'bitbucket' && host && remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD) {
     return new Error(bbsNoTokenMessage(host))
   }
-  return new Error(
-    `No ${provider} account is linked to this profile${host ? ` for ${host}` : ''}. Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there.`
+  return new Error(noLinkedAccountMessage(provider, host))
+}
+
+/**
+ * The no-credential message for any provider but GitHub (which names its CLI's
+ * state, `githubCredentialMessage`). A contract with `gitErrorHint`
+ * (`gitError.noLinkedAccount`, `gitError.noLinkedAccountAnyHost`).
+ */
+export function noLinkedAccountMessage(provider: string, host: string): string {
+  const name = PROVIDER_NAMES[provider.toLowerCase()] ?? provider
+  return (
+    `No ${name} account is linked to this profile${host ? ` for ${host}` : ''}. ` +
+    "Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there."
   )
 }
 

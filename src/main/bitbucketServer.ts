@@ -359,12 +359,22 @@ export function bbsMergeBlockers(m: BbsMergeability | null | undefined): string[
   return (m?.vetoes ?? []).map((v) => [v.summaryMessage, v.detailedMessage].filter(Boolean).join(' — ')).filter(Boolean)
 }
 
-/** Why the server refuses to merge, in its own words (merge checks speak for themselves). */
-export function bbsMergeRefusal(m: BbsMergeability): string | null {
-  const reasons = bbsMergeBlockers(m)
-  if (isConflicted(m)) reasons.unshift('the pull request has conflicts that must be resolved first')
-  if (reasons.length) return reasons.join('; ')
-  return m.canMerge === false ? 'the server does not allow this merge yet' : null
+/**
+ * Why a merge is refused, as a stable code the renderer translates, plus the
+ * server's own veto texts — merge checks speak for themselves, so those are
+ * never reworded. `conflictsVetoed`: conflicts *and* at least one veto.
+ */
+export type BbsMergeRefusalCode = 'conflicts' | 'conflictsVetoed' | 'vetoed' | 'notAllowed'
+export interface BbsMergeRefusal {
+  code: BbsMergeRefusalCode
+  vetoes: string[]
+}
+
+export function bbsMergeRefusal(m: BbsMergeability): BbsMergeRefusal | null {
+  const vetoes = bbsMergeBlockers(m)
+  if (isConflicted(m)) return { code: vetoes.length ? 'conflictsVetoed' : 'conflicts', vetoes }
+  if (vetoes.length) return { code: 'vetoed', vetoes }
+  return m.canMerge === false ? { code: 'notAllowed', vetoes: [] } : null
 }
 
 /**
@@ -652,8 +662,25 @@ export const BBS_USER_NOT_FOUND = 'could not find your user on the server'
 export const BBS_TOKEN_UNRECOGNISED = 'the server did not recognise this token — check that it is valid and not expired'
 export const BBS_COMMENT_EMPTY = 'a comment needs some text'
 export const BBS_NO_IDENTITY = 'the server did not say who this token is, so changes cannot be requested'
-/** `reason` is the server's own words (or bbsMergeRefusal's), shown as they are. */
-export const bbsCannotMergeMessage = (reason: string): string => `cannot merge — ${reason}`
+// The merge refusal's English, for a reader of the raw text. The renderer goes
+// by the `[code]` alone and keeps only the server's veto words: neither
+// sentence below may contain a ';', which is what separates them from those.
+export const BBS_MERGE_CONFLICTS = 'the pull request has conflicts that must be resolved first'
+export const BBS_MERGE_NOT_ALLOWED = 'the server does not allow this merge yet'
+
+/** `cannot merge [code] — …`: the code is the contract with gitErrorHint, the vetoes the server's words. */
+export function bbsCannotMergeMessage(refusal: BbsMergeRefusal): string {
+  const vetoes = refusal.vetoes.join('; ')
+  const detail =
+    refusal.code === 'conflicts'
+      ? BBS_MERGE_CONFLICTS
+      : refusal.code === 'conflictsVetoed'
+        ? `${BBS_MERGE_CONFLICTS}; ${vetoes}`
+        : refusal.code === 'vetoed'
+          ? vetoes
+          : BBS_MERGE_NOT_ALLOWED
+  return `cannot merge [${refusal.code}] — ${detail}`
+}
 export const bbsMethodNotAllowedMessage = (method: string): string => `this repository does not allow ${method} merges`
 
 export async function bbsReview(

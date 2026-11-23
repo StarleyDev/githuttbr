@@ -502,20 +502,22 @@ describe('mapping the documented shapes', () => {
       vetoes: [{ summaryMessage: 'You may not merge after 6pm on a Friday.', detailedMessage: 'Please try again on Monday.' }]
     }
     expect(bbsCanMerge(vetoed as never)).toBe(false)
-    expect(bbsMergeRefusal(vetoed as never)).toBe(
-      'the pull request has conflicts that must be resolved first; You may not merge after 6pm on a Friday. — Please try again on Monday.'
-    )
+    expect(bbsMergeRefusal(vetoed as never)).toEqual({
+      code: 'conflictsVetoed',
+      vetoes: ['You may not merge after 6pm on a Friday. — Please try again on Monday.']
+    })
     expect(bbsCanMerge({ conflicted: false, outcome: 'CLEAN', vetoes: [] })).toBe(true)
     // A veto blocks the merge but is not a conflict: it travels as a blocker, in the server's words.
     const checks = { canMerge: false, conflicted: false, outcome: 'CLEAN' as const, vetoes: [{ summaryMessage: 'Needs 2 approvals' }] }
     expect(bbsCanMerge(checks)).toBe(true)
     expect(bbsMergeBlockers(checks)).toEqual(['Needs 2 approvals'])
-    expect(bbsMergeRefusal(checks)).toBe('Needs 2 approvals')
+    expect(bbsMergeRefusal(checks)).toEqual({ code: 'vetoed', vetoes: ['Needs 2 approvals'] })
     expect(bbsCanMerge({ outcome: 'UNKNOWN' })).toBeNull()
     expect(bbsCanMerge(null)).toBeNull()
     expect(bbsMergeBlockers(null)).toEqual([])
     expect(bbsMergeRefusal({ canMerge: true, vetoes: [] })).toBeNull()
-    expect(bbsMergeRefusal({ canMerge: false, conflicted: false, vetoes: [] })).toBe('the server does not allow this merge yet')
+    expect(bbsMergeRefusal({ canMerge: false, conflicted: false, vetoes: [] })).toEqual({ code: 'notAllowed', vetoes: [] })
+    expect(bbsMergeRefusal({ canMerge: false, conflicted: true, vetoes: [] })).toEqual({ code: 'conflicts', vetoes: [] })
   })
 
   it('canMerge false with no veto and no conflict is a refusal, not a clean merge', () => {

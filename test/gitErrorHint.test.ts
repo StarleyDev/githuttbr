@@ -119,6 +119,82 @@ describe('a missing credential on a repository bound to a profile', () => {
   })
 })
 
+describe('merge refusals carry a code, not English, into the translated sentence', () => {
+  const err = async (text: string): Promise<string> => {
+    const { BitbucketServerError } = await import('../src/main/bitbucketServer')
+    return "Error invoking remote method 'hosting:prMerge': Error: " + new BitbucketServerError(409, text).message
+  }
+
+  it('gives conflicts and a silent refusal their own keys, with no main-side English in them', async () => {
+    const m = await import('../src/main/bitbucketServer')
+    const conflicts = m.bbsMergeRefusal({ canMerge: false, conflicted: true, vetoes: [] })!
+    expect(explainGitError(await err(m.bbsCannotMergeMessage(conflicts)))).toEqual({ key: 'gitError.bbsMergeConflicts' })
+    const silent = m.bbsMergeRefusal({ canMerge: false, conflicted: false, vetoes: [] })!
+    expect(explainGitError(await err(m.bbsCannotMergeMessage(silent)))).toEqual({ key: 'gitError.bbsMergeNotAllowed' })
+  })
+
+  it("keeps only the server's words beside conflicts — its ';' included — and drops main's sentence", async () => {
+    const m = await import('../src/main/bitbucketServer')
+    const both = m.bbsMergeRefusal({
+      canMerge: false,
+      outcome: 'CONFLICTED',
+      vetoes: [{ summaryMessage: 'Needs 2 approvals' }, { summaryMessage: 'Builds; all green', detailedMessage: 'CI is red' }]
+    })!
+    const hint = explainGitError(await err(m.bbsCannotMergeMessage(both)))
+    expect(hint).toEqual({
+      key: 'gitError.bbsMergeConflictsVetoed',
+      vars: { reason: 'Needs 2 approvals; Builds; all green — CI is red' }
+    })
+    expect(hint?.vars?.reason).not.toContain(m.BBS_MERGE_CONFLICTS)
+  })
+
+  it("main's fixed sentences hold no ';', which is what separates them from the server's words", async () => {
+    const m = await import('../src/main/bitbucketServer')
+    expect(m.BBS_MERGE_CONFLICTS).not.toContain(';')
+    expect(m.BBS_MERGE_NOT_ALLOWED).not.toContain(';')
+  })
+})
+
+describe('the no-credential messages built in main', () => {
+  const HOSTING = "Error invoking remote method 'hosting:listPRs': Error: "
+
+  it('translates each GitHub CLI state, keeping the host', async () => {
+    const { githubCredentialMessage } = await import('../src/main/hosting')
+    const cases = [
+      ['missing', 'gitError.githubNoCredentialGhMissing'],
+      ['signed-out', 'gitError.githubNoCredentialGhSignedOut'],
+      ['unknown', 'gitError.githubNoCredentialGhUnknown'],
+      ['authenticated', 'gitError.githubNoCredentialGhSignedIn']
+    ] as const
+    for (const [status, key] of cases) {
+      expect(explainGitError(HOSTING + githubCredentialMessage(status, 'github.com'))).toEqual({ key, vars: { host: 'github.com' } })
+    }
+  })
+
+  it("leaves githubRepoError's private-repository message alone rather than drop its lead", async () => {
+    const { githubCredentialMessage } = await import('../src/main/hosting')
+    const msg = `GitHub cannot see acme/secret without signing in — it is probably private. ${githubCredentialMessage('missing')}`
+    expect(explainGitError(HOSTING + msg)).toBeNull()
+  })
+
+  it('translates the other providers, with and without a host, and never as a GitHub CLI state', async () => {
+    const { noLinkedAccountMessage } = await import('../src/main/hosting')
+    expect(explainGitError(HOSTING + noLinkedAccountMessage('gitlab', 'gitlab.corp.example:8443'))).toEqual({
+      key: 'gitError.noLinkedAccount',
+      vars: { provider: 'GitLab', host: 'gitlab.corp.example:8443' }
+    })
+    expect(explainGitError(HOSTING + noLinkedAccountMessage('Azure DevOps', ''))).toEqual({
+      key: 'gitError.noLinkedAccountAnyHost',
+      vars: { provider: 'Azure DevOps' }
+    })
+    // Unwrapped too: the hint reads the message wherever it surfaces.
+    expect(explainGitError(noLinkedAccountMessage('Forgejo', 'git.example.org'))?.vars).toEqual({
+      provider: 'Forgejo',
+      host: 'git.example.org'
+    })
+  })
+})
+
 describe('server-address and token messages built in main', () => {
   const HOSTING = "Error invoking remote method 'hosting:listRepos': Error: "
 
@@ -163,10 +239,11 @@ describe('Bitbucket Data Center errors raised in main', () => {
 
   it("passes the server's merge veto through, and names a disallowed merge method", async () => {
     const m = await import('../src/main/bitbucketServer')
-    const reason = 'the pull request has conflicts that must be resolved first; needs 2 approvals'
-    expect(explainGitError(await err(409, m.bbsCannotMergeMessage(reason)))).toEqual({
+    const veto = { summaryMessage: 'Needs 2 approvals' }
+    const vetoed = m.bbsMergeRefusal({ canMerge: false, conflicted: false, vetoes: [veto] })!
+    expect(explainGitError(await err(409, m.bbsCannotMergeMessage(vetoed)))).toEqual({
       key: 'gitError.bbsCannotMerge',
-      vars: { reason }
+      vars: { reason: 'Needs 2 approvals' }
     })
     expect(explainGitError(await err(400, m.bbsMethodNotAllowedMessage('squash')))).toEqual({
       key: 'gitError.bbsMethodNotAllowed',
