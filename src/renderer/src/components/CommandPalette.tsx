@@ -155,6 +155,8 @@ export function CommandPalette(): React.JSX.Element {
         : res.reason === 'windows'
           ? t('cmd.cliWindows')
           : (res.error ?? t('cmd.cliFailed'))
+    // A link an older AppImage build left in PATH points into a /tmp mount any
+    // local user can recreate. Removing it is offered wherever it was found.
     if (cliStale) {
       list.push({
         id: 'cli-remove-stale',

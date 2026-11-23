@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 // @ts-expect-error — a plain .mjs script, untyped on purpose
 import { alignSections, blobSha, compareStructure, outline, staleness } from '../scripts/docs-staleness.mjs'
+// @ts-expect-error — a plain .mjs script, untyped on purpose
+import { paletteCommandIds } from '../scripts/docs-surfaces.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP_DIR = join(ROOT, 'docs/help')
@@ -13,6 +15,29 @@ describe('docs', () => {
   it('covers every user-facing surface the app exposes', () => {
     // Throws (and prints every gap) when the guard fails.
     execFileSync('node', [join(ROOT, 'scripts/docs-check.mjs')], { stdio: 'pipe' })
+  })
+
+  it('sees a palette command however its entry is laid out', () => {
+    // The guard once matched `id: 'x', title:` on one line, so an entry the
+    // formatter had wrapped — the CLI commands — slipped past it unmapped.
+    const src = `
+      list.push({ id: 'one-line', title: t('a'), run })
+      list.push({
+        id: 'wrapped',
+        title: t('b'),
+        run
+      })
+      const x = cond
+        ? {
+            id: "in-ternary",
+            group: 'Actions',
+            title: t('c')
+          }
+        : null
+      list.push({ id: \`dynamic:\${b.name}\`, title: b.name })`
+    expect(paletteCommandIds(src)).toEqual(['one-line', 'wrapped', 'in-ternary'])
+    const real = paletteCommandIds(readFileSync(join(ROOT, 'src/renderer/src/components/CommandPalette.tsx'), 'utf8'))
+    for (const id of ['cli-install', 'cli-uninstall', 'cli-remove-stale']) expect(real).toContain(id)
   })
 
   it('states no count that a later commit would have to remember to update', () => {

@@ -145,6 +145,14 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.app.booting .boot-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .workspace {
   flex: 1;
   display: flex;

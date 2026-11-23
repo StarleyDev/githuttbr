@@ -132,8 +132,22 @@ their own, which your next `git diff` would then run. So the AppImage greys
 the bundled converters out; install the `.deb` (or use the macOS or Windows
 build) to get them. A driver an older AppImage build already wrote is flagged
 **points into a temporary AppImage folder** in the list, with a **Remove**
-button that unsets it. Gitcito spots one only in the repository you open this
-dialog on; `git config --get-regexp 'diff\..*\.textconv'` finds others.
+button that unsets it. The flag looks at the whole command, not only its first
+word, so a path hidden behind `env`, a `FOO=1` assignment or `sh -c '…'` is
+caught too — and a command that merely mentions such a folder is flagged
+rather than trusted.
+
+![A diff driver pointing into a temporary AppImage folder, flagged, with a Remove button](../screenshots/attributes-stale-driver.webp)
+
+Gitcito only spots one in the repository you open this dialog on, plus your
+global config. To find others, run this in each repository (and once with
+`--global`) and unset any entry that mentions `/tmp/.mount_` or
+`appimage_extracted_`:
+
+```sh
+git config --get-regexp 'diff\..*\.textconv'
+git config --unset diff.word.textconv    # for each one it lists
+```
 
 ## Clean/smudge filters — with a dry run first
 

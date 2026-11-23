@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import { extractSecrets, mergeSecretStores, pruneSecrets } from '../src/shared/secrets'
-import { settingsIpc } from './settingsIpc'
+import { bootLoaded, settingsIpc } from './settingsIpc'
 
 // A server removed from a profile must take its token with it. The merge path —
 // a save from a renderer that was never sent the secrets — keeps whatever the
@@ -115,6 +115,7 @@ const restart = async (): Promise<void> => {
   handlers.clear()
   const { registerSettingsHandlers } = await import('../src/main/settings')
   registerSettingsHandlers()
+  await bootLoaded(handlers)
 }
 
 const allServers = (a: string, b: string): Profile =>

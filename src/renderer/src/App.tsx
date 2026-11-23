@@ -1,10 +1,10 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitMerge, Loader2, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope, CircleX, TriangleAlert, Info, ListTodo } from 'lucide-react'
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
-import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab, type PageContent } from '../../shared/types'
+import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab, type PageContent, type SettingsErrorKind } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
 import { applyDirection } from './i18n/direction'
 import { todoSummary } from './lib/todos'
@@ -40,6 +40,7 @@ import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from './lib/repositoryMenuItems'
 import { OnboardingWizard } from './components/OnboardingWizard'
+import { BootError, bootErrorKind } from './components/BootError'
 import { ChangelogPage } from './components/ChangelogPage'
 import { MissionControlPage } from './components/MissionControlPage'
 import { HelpPage } from './components/HelpPage'
@@ -508,6 +509,10 @@ function DoctorStatusChip({ path }: { path: string }): React.JSX.Element | null 
   )
 }
 
+// Module-level, not a ref: a remount (or StrictMode's double effect) must not
+// repeat the stale-link warning within one launch.
+let staleCliWarned = false
+
 export default function App(): React.JSX.Element {
   const t = useT()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
@@ -539,11 +544,12 @@ export default function App(): React.JSX.Element {
     settings.skippedUpdateVersion
   )
 
-  // The settings file exists but cannot be parsed. Main refuses to answer with
-  // defaults for it — a renderer running on those would save them over it — so
-  // say why nothing loads instead of spinning forever.
-  const [settingsUnreadable, setSettingsUnreadable] = useState(false)
-  useEffect(() => {
+  // The settings could not be loaded. Main refuses to answer with defaults —
+  // a renderer running on those would save them over the user's file — so say
+  // why nothing loads, and offer a retry, instead of spinning forever.
+  const [bootError, setBootError] = useState<SettingsErrorKind | null>(null)
+  const boot = useCallback((): void => {
+    setBootError(null)
     void useSettingsStore
       .getState()
       .load()
@@ -551,8 +557,12 @@ export default function App(): React.JSX.Element {
         // Only fires on the launch that migrated a pre-accounts AI config.
         if (takeAccountsNotice()) useUIStore.getState().openModal({ kind: 'ai-accounts-notice' })
       })
-      .catch(() => setSettingsUnreadable(true))
+      .catch((err: unknown) => {
+        console.warn('[settings] load failed:', err)
+        setBootError(bootErrorKind(err))
+      })
   }, [])
+  useEffect(() => boot(), [boot])
 
   useEffect(() => {
     void window.api.appVersion().then(setAppVersion)
@@ -604,7 +614,8 @@ export default function App(): React.JSX.Element {
   // link outlives the mount, and whoever recreates the directory decides what
   // the next `gitcito` runs — so say so once per launch; the palette removes it.
   useEffect(() => {
-    if (window.api.platform === 'win32') return
+    if (window.api.platform === 'win32' || staleCliWarned) return
+    staleCliWarned = true
     cliApi
       .status()
       .then((s) => {
@@ -1269,7 +1280,7 @@ export default function App(): React.JSX.Element {
   if (!settingsLoaded) {
     return (
       <div className="app booting">
-        {settingsUnreadable ? <p className="boot-error">{t('app.settingsUnreadable')}</p> : <div className="spinner" />}
+        {bootError ? <BootError kind={bootError} onRetry={boot} /> : <div className="spinner" />}
       </div>
     )
   }

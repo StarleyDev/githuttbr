@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import { saveOver, type SecretStore } from '../src/shared/secrets'
-import { settingsIpc } from './settingsIpc'
+import { bootLoaded, settingsIpc } from './settingsIpc'
 
 // The ways a user's saved tokens and AI keys used to be wiped without anyone
 // asking: a keychain prompt dismissed once, a tokenless import, a debounced
@@ -69,6 +69,7 @@ async function restart(consent: 'granted' | 'declined' = 'granted', wipe = true)
   handlers.clear()
   const mod = await import('../src/main/settings')
   mod.registerSettingsHandlers()
+  await bootLoaded(handlers)
   return mod
 }
 
@@ -219,8 +220,10 @@ describe('the settings file', () => {
   it('one that cannot be parsed is an error, never the defaults — and is left untouched', async () => {
     const mod = await restart()
     writeFileSync(settingsFile(), '{"profiles": [')
-    await expect(call('settings:get')).rejects.toThrow(mod.SettingsUnreadableError)
-    await expect(mod.readSettings()).rejects.toThrow(/could not be read/)
+    // Answered as a reason the boot screen can name, never thrown across IPC.
+    expect(await call('settings:get')).toEqual({ error: 'parse' })
+    await expect(mod.readSettings()).rejects.toThrow(mod.SettingsReadError)
+    await expect(mod.readSettings()).rejects.toThrow(/left untouched/)
     expect(readFileSync(settingsFile(), 'utf8')).toBe('{"profiles": [')
   })
 

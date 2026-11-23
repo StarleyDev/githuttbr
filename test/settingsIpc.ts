@@ -31,3 +31,13 @@ export function settingsIpc(
     return out
   }
 }
+
+/**
+ * A window of its own (sender 99) reads the settings once, as the app does on
+ * start-up: main refuses every save until some get or unlock has answered in
+ * the process. For tests about a renderer that saves before it reads — the
+ * rule is process-wide, so the window under test still holds nothing.
+ */
+export async function bootLoaded(handlers: Map<string, Handler>): Promise<void> {
+  await handlers.get('settings:get')!({ sender: { id: 99 } })
+}

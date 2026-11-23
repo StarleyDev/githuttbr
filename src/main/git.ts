@@ -4938,7 +4938,7 @@ export const gitService = {
           // A converter inside an AppImage mount is reported however it looks:
           // that path is gone (or someone else's) the moment the app quits.
           const info: DiffDriverInfo = { name, textconv, available: converterAvailable(textconv), scope }
-          if (isEphemeralTextconv(textconv)) info.ephemeral = true
+          if (isEphemeralTextconv(textconv, process.env, process.resourcesPath ?? '')) info.ephemeral = true
           return info
         })
         .filter((d): d is DiffDriverInfo => !!d)
@@ -4979,8 +4979,9 @@ export const gitService = {
   async setDiffDriver(repoPath: string, name: string, textconv: string, global = false): Promise<void> {
     const scope = global ? ['--global'] : ['--local']
     const key = `diff.${name}.textconv`
-    // The UI never offers it, but the IPC is reachable: refuse the path here too.
-    if (textconv.trim() && isEphemeralTextconv(textconv)) {
+    // The UI never offers it, but the IPC is reachable: refuse the path here too
+    // — anywhere on the line, and under this AppImage's resources root as well.
+    if (textconv.trim() && isEphemeralTextconv(textconv, process.env, process.resourcesPath ?? '')) {
       throw new Error('Refusing to configure a converter inside a temporary AppImage mount')
     }
     if (textconv.trim()) await runGit(repoPath, ['config', ...scope, key, textconv.trim()])

@@ -35,6 +35,8 @@ describe('importing a one-instance GitLab export', () => {
       ],
       activeProfileId: 'work'
     } as unknown as Partial<AppSettings>
+    // An import lands on settings already loaded: before that, the store refuses it.
+    useSettingsStore.setState({ loaded: true })
     await useSettingsStore.getState().importSettings(exported)
 
     const profile = useSettingsStore.getState().settings.profiles[0]

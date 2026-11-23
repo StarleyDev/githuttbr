@@ -1,4 +1,11 @@
-import type { LaunchInput, LaunchInputResolution, SecretsState, SettingsReply, SettingsSaveOptions } from '../../../shared/types'
+import type {
+  LaunchInput,
+  LaunchInputResolution,
+  SecretsState,
+  SettingsReply,
+  SettingsReplyWire,
+  SettingsSaveOptions
+} from '../../../shared/types'
 import type {
   AskPlan,
   DoctorCheck,
@@ -170,7 +177,10 @@ import type {
   WikiProgress,
   RegistryRepo,
   RepoScanRoot,
-  RepoScanResult
+  RepoScanResult,
+  SettingsErrorKind,
+  SettingsRefusal,
+  MoveAsideReply
 } from '../../../shared/types'
 import type {
   LocalCiStatus,
@@ -693,16 +703,41 @@ export const gitApi = {
   deleteSnapshot: (path: string, ref: string) => call<void>('deleteSnapshot', path, ref)
 }
 
+/** Main answered a get/unlock with why it could not read the settings, not with defaults. */
+export class SettingsLoadError extends Error {
+  constructor(readonly kind: SettingsErrorKind) {
+    super(`settings could not be loaded (${kind})`)
+  }
+}
+
+/** Main refused a save without writing anything. */
+export class SettingsSaveRefused extends Error {
+  constructor(readonly reason: SettingsRefusal) {
+    super(`settings save refused (${reason})`)
+  }
+}
+
+async function settingsReply(pending: Promise<unknown>): Promise<SettingsReply> {
+  const reply = (await pending) as SettingsReplyWire
+  if ('error' in reply) throw new SettingsLoadError(reply.error)
+  return reply
+}
+
 export const settingsApi = {
-  get: () => window.api.settings.get() as Promise<SettingsReply>,
+  get: () => settingsReply(window.api.settings.get()),
   // Decrypts the stored tokens (asking for keychain access if needed) and
   // returns the settings with them filled in. Only call it from an explicit
   // user action — never on start-up.
-  unlock: () => window.api.settings.unlock() as Promise<SettingsReply>,
+  unlock: () => settingsReply(window.api.settings.unlock()),
   // `generation` is the one of the reply the settings were built from: a blank
   // token clears the saved one only when it is still current (main/settings.ts).
-  set: (s: AppSettings, generation: number, options?: SettingsSaveOptions) =>
-    window.api.settings.set(s, generation, options),
+  // A save main would not write at all rejects with `SettingsSaveRefused`.
+  set: async (s: AppSettings, generation: number, options?: SettingsSaveOptions): Promise<void> => {
+    const out = (await window.api.settings.set(s, generation, options)) as { refused?: SettingsRefusal } | undefined
+    if (out?.refused) throw new SettingsSaveRefused(out.refused)
+  },
+  /** Renames an unparseable settings file aside; see `MoveAsideReply` for what else it can answer. */
+  moveAside: () => window.api.settings.moveAside() as Promise<MoveAsideReply>,
   /** Whether a saved token store exists that this session could not read. */
   secretsState: () => window.api.settings.secretsState() as Promise<SecretsState>,
   /** Start a new token store over an unreadable one, keeping the old file as a backup. */

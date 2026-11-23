@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import type { TabState } from '../src/shared/types'
 
 vi.mock('../src/renderer/src/infrastructure/api', () => ({
@@ -12,6 +12,9 @@ const repo = (id: string): TabState =>
   ({ id, kind: 'repo', repos: [{ path: `/repos/${id}` }], activeRepo: `/repos/${id}` }) as unknown as TabState
 
 describe('closeOtherTabs', () => {
+  // A store that never loaded ignores every change (it would be saving defaults).
+  beforeAll(() => useSettingsStore.setState({ loaded: true }))
+
   it('keeps only the chosen tab, makes it active, and ⌘⇧T brings the rest back in order', () => {
     const store = useSettingsStore.getState()
     const tabs = ['a', 'b', 'keep', 'c'].map(repo)

@@ -59,7 +59,46 @@ export function textconvProgram(textconv: string): string {
   return m ? (m[1] ?? m[2] ?? m[3] ?? '') : ''
 }
 
-/** True when a configured textconv runs a program inside an AppImage mount. */
-export function isEphemeralTextconv(textconv: string, env: Env = process.env): boolean {
-  return isEphemeralAppPath(textconvProgram(textconv), env)
+/** A mount or extraction dir named anywhere on a command line, not only as a whole path. */
+const EPHEMERAL_ANYWHERE = /(^|[^\w.-])(\.mount_|appimage_extracted_)/
+
+/** A glob character right before a mount or extraction name: `/tmp/[.]mount_x`, `/tmp/?mount_x`. */
+const GLOBBED_EPHEMERAL = /[?*[\]](mount_|appimage_extracted_)/
+const GLOB_CHARS = /[?*[]/
+
+/**
+ * True when the line names a glob inside the temp directory, or a glob right
+ * before a mount name. The shell expands a glob before git runs the command,
+ * so `/tmp/.moun?_X/…` or a `*` under /tmp reaches the mount without ever
+ * spelling its name. Nothing a real converter is configured with globs into
+ * /tmp, so treating any such word as ephemeral costs no false alarms.
+ */
+function globsIntoTemp(line: string, env: Env): boolean {
+  if (GLOBBED_EPHEMERAL.test(line)) return true
+  const roots = ['/tmp', env['TMPDIR'] ?? ''].map((r) => r.replace(/[\\/]+$/, '')).filter((r) => r !== '')
+  return line
+    .split(/[\s=;&|()`<>]+/)
+    .some((word) => GLOB_CHARS.test(word) && roots.some((root) => within(word, root)))
+}
+
+/**
+ * True when a configured textconv reaches into an AppImage mount anywhere on
+ * its line. Git runs textconv through a shell, so the program is not the only
+ * word that executes: `env /tmp/.mount_x/…`, `FOO=1 "/tmp/.mount_x/…"` and
+ * `sh -c '/tmp/.mount_x/…'` all run the mount. Quotes and backslashes are
+ * dropped first (the shell would), and any occurrence counts — a false alarm
+ * costs a Remove click, a miss runs someone else's script on the next diff.
+ * Under an AppImage, this launch's APPDIR and `resourcesRoot` count too.
+ */
+export function isEphemeralTextconv(textconv: string, env: Env = process.env, resourcesRoot = ''): boolean {
+  if (isEphemeralAppPath(textconvProgram(textconv), env)) return true
+  const line = textconv.replace(/["'\\]/g, '')
+  const slashed = textconv.replace(/["']/g, '').replace(/\\/g, '/')
+  if (EPHEMERAL_ANYWHERE.test(line) || EPHEMERAL_ANYWHERE.test(slashed)) return true
+  if (globsIntoTemp(slashed, env)) return true
+  if (!runningFromAppImage(env)) return false
+  return [env['APPDIR'] ?? '', resourcesRoot].some((root) => {
+    const base = root.replace(/[\\/]+$/, '')
+    return base !== '' && (line.includes(base) || slashed.includes(base))
+  })
 }

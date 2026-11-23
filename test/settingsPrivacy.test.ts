@@ -6,7 +6,7 @@ import { defaultSettings, type AppSettings, type Profile } from '../src/shared/t
 import { saveOver, scrubServerUrls, secretView } from '../src/shared/secrets'
 import { serverUrlWithoutSecrets } from '../src/shared/serverAddress'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
-import { settingsIpc } from './settingsIpc'
+import { bootLoaded, settingsIpc } from './settingsIpc'
 
 // The settings handlers against a fake keyring: what reaches the files, and
 // which renderer's blank counts as a clear.
@@ -58,6 +58,7 @@ async function restart(consent: 'granted' | 'declined' = 'granted', wipe = true)
   handlers.clear()
   const mod = await import('../src/main/settings')
   mod.registerSettingsHandlers()
+  await bootLoaded(handlers)
   return mod
 }
 

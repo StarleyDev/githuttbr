@@ -155,9 +155,12 @@ async function status(): Promise<CliStatus> {
 
 async function removeStale(): Promise<CliInstallResult> {
   try {
-    // Re-read right before removing: only a link that still points into a
-    // mount is ours to delete.
-    for (const link of await staleLinks()) await unlinkMaybePrivileged(link)
+    // Re-read each link right before removing it: only a link that still
+    // points into a mount is ours to delete. Never escalates — a stale link
+    // the user cannot unlink is reported, not removed as root.
+    for (const link of await staleLinks()) {
+      if (isStaleCliTarget(await readlink(link))) await unlink(link)
+    }
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) }

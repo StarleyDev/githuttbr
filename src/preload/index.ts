@@ -144,8 +144,9 @@ const api = {
   settings: {
     get: (): Promise<unknown> => ipcRenderer.invoke('settings:get'),
     unlock: (): Promise<unknown> => ipcRenderer.invoke('settings:unlock'),
-    set: (settings: unknown, generation?: number, options?: unknown): Promise<void> =>
+    set: (settings: unknown, generation?: number, options?: unknown): Promise<unknown> =>
       ipcRenderer.invoke('settings:set', settings, generation, options),
+    moveAside: (): Promise<unknown> => ipcRenderer.invoke('settings:moveAside'),
     secretsState: (): Promise<unknown> => ipcRenderer.invoke('settings:secretsState'),
     replaceUnreadableStore: (): Promise<boolean> => ipcRenderer.invoke('settings:replaceUnreadableStore'),
     importFile: (): Promise<unknown> => ipcRenderer.invoke('settings:importFile'),

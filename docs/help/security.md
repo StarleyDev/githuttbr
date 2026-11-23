@@ -37,6 +37,25 @@ stage. An eye toggle reveals them per view. `.env.example`, `.sample` and
 | **Protected branch** | Committing straight to `main`/`master`, or force-pushing one |
 | **Tracked secrets** | Pushing a repository that *tracks* a secret file — warned once per session |
 
+## The AppImage and paths that outlive it
+
+An AppImage runs from a folder under `/tmp` (`/tmp/.mount_…`) that exists only
+while the app is open, is renamed every launch, and sits in a directory every
+local user can write to. Up to 4.37.1, the AppImage could write a path inside
+that folder into two places that outlive it: the `gitcito` link in `PATH`
+([CLI](cli.md)) and a repository's `diff.<name>.textconv` setting
+([attributes](attributes.md)). Once the app quits, another user on the same
+machine could recreate the folder with a program of their own, which your next
+`gitcito` or `git diff` would run.
+
+Gitcito now refuses both under an AppImage, warns about a stale `gitcito` link
+at start-up (with a palette command to remove it), and flags a stale converter
+in the Attributes dialog with a **Remove** button. It can only see the
+repository you have open; to find stale converters elsewhere, run
+`git config --get-regexp 'diff\..*\.textconv'` in each repository (and with
+`--global`) and unset any entry under `/tmp/.mount_`. A single-user machine is
+not exposed, but the stale entries are still dead weight.
+
 ## The OS keychain
 
 Tokens and [vault](vault.md) entries are encrypted with your OS keychain
@@ -55,9 +74,22 @@ storing.
 While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
 
 A token you **remove** while the keychain is off is gone at once — nothing is
-sent with it any more — and the stored copy is deleted the moment the keychain
-is back on. Until then the notice stays up, since quitting first would bring
-the old token back.
+sent with it any more — but only **for this session**: the encrypted store
+cannot be written while the keychain is off, and the clear is kept in memory,
+never in a file. Turn the keychain back on before quitting and the stored copy
+is deleted then; quit first and the old token is back on the next launch. Until
+then the notice stays up for that reason. To delete a stored token for good in
+one step, clear it while the keychain is on.
+
+A blank only clears what Gitcito showed you. With the keychain off from the
+start, the saved tokens are never decrypted and never shown — the fields are
+empty — so a token you type there and then clear again is the only one
+removed; the saved one underneath it is still there once the keychain is on.
+
+If the window reloads or crashes while the keychain explanation is on screen,
+the question counts as unanswered — not as a no — and is asked again the next
+time a token needs storing. Nothing waits on a question nobody can answer any
+more: the settings load again normally.
 
 ### When the saved tokens cannot be read
 
@@ -74,11 +106,6 @@ token with the one you just typed.
 | **Retry** | Reads the store again — the system may ask for the keychain now. Once it can be read, the tokens typed meanwhile join it. |
 | **Start a new token store** | Asks first. Gitcito stops waiting for the old store and starts a new one with only this session's tokens. The old file stays beside it as a backup for 30 days, then it is deleted. For a store that is gone for good, not a prompt you dismissed. |
 
-The settings file gets the same rule: one that exists but cannot be parsed (a
-hand edit gone wrong, a damaged disk) is **never** replaced by the defaults.
-Gitcito says it could not read it and starts no further; fix or move
-`gitcito-settings.json` in its data folder, then restart.
-
 ## Importing settings
 
 **Settings → Import / Export** moves settings, profiles and themes between
@@ -93,6 +120,52 @@ A file exported with the opt-in carries credentials, so importing it asks:
 | **Add to mine** | The file's are added, replacing any for the same account; all the others are kept |
 | **Replace all** | Become exactly the file's — every saved token and API key the file does not have is deleted |
 | **Cancel** | Nothing is imported |
+
+**Replace all needs the keychain.** With the keychain off or unavailable, the
+old tokens would stay in the encrypted store and come back on the next launch,
+so Gitcito refuses instead: it says so, and nothing is imported. **Add to
+mine** still works, keeping the file's tokens for the session.
+
+**The limit:** credentials belong to a profile. A profile the import removes
+takes its saved tokens with it, whichever you choose.
+
+## The settings file
+
+The settings file and the encrypted token store are written whole: to a new
+owner-only file beside them, then swapped in, so a crash or two saves at once
+never leave half a file. If the settings file is symlinked elsewhere (a
+dotfiles repository), the write goes to the link's target and the link stays.
+
+Only two things write them: a save of your settings, and Gitcito loading them
+(at start-up, or when Settings opens) — which is when an old plaintext token is
+moved into the encrypted store, or a server address with a password in it is
+cleaned. A lookup nobody asked for — a fetch resolving its token, an AI call
+finding its key, a profile picture — only reads, so it can never land on top of
+a save. A save is also refused until the settings have been loaded at least
+once: before that, the app holds only defaults.
+
+One that exists but cannot be parsed (a hand edit gone wrong, a damaged disk)
+is **never** replaced by the defaults: Gitcito says the file is damaged and
+starts no further — no shortcut or menu command can save over it from that
+screen. You can fix `gitcito-settings.json` in its data folder and press
+**Try again**, or press **Move the damaged file aside and start fresh**: the file
+is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
+can still recover from it), a copy of the encrypted token store is kept beside
+it, and Gitcito starts as on a first run. The copy is made first: if it cannot
+be written, nothing is moved, and the screen says so and shows the data folder
+to check, since starting fresh without the copy would let the first token you
+save delete the old profiles' tokens. Fix what keeps the folder from being
+written to (permissions, a full disk) and press **Try again**.
+
+If the file goes bad while Gitcito is running (edited by hand underneath it),
+saves stop and Gitcito says so once: settings cannot be saved until it is
+restarted, and changes made in the meantime are lost.
+
+A file that is there but cannot be *read* for a moment — another program, such
+as an antivirus scan, holding it — is retried for about two seconds. If it still
+fails, or loading fails for any other reason, Gitcito says it could not start,
+that the file has not been changed, and offers **Try again**; it does not call
+the file damaged.
 
 ## A profile's token while git runs
 

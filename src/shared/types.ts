@@ -3473,6 +3473,26 @@ export interface AppSettings {
   skippedUpdateVersion?: string
 }
 
+/**
+ * Why `settings:get` / `settings:unlock` could not answer. `parse`: the file is
+ * there but is not a settings document — the only case worth telling the user
+ * their file is damaged. `io`: it could not be read (locked, permissions).
+ */
+export type SettingsErrorKind = 'parse' | 'io' | 'other'
+
+/** Why main refused a `settings:set` without writing anything. */
+export type SettingsRefusal = 'not-loaded' | 'keychain-required'
+
+/**
+ * What `settings:moveAside` answers: the new name of the damaged file, null when
+ * it was not moved because it parses now (or cannot be read), or a refusal —
+ * the encrypted tokens could not be copied aside first, so nothing was moved.
+ */
+export type MoveAsideReply = string | null | { refused: 'secrets-copy'; dir: string }
+
+/** What `settings:get` / `settings:unlock` answer over IPC: the reply, or why the settings could not be read. */
+export type SettingsReplyWire = SettingsReply | { error: SettingsErrorKind }
+
 export type Language =
   | 'en'
   | 'es'

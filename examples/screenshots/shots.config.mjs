@@ -2890,6 +2890,35 @@ export const shots = [
     }
   },
   {
+    // The stale-driver badge: a converter an AppImage build of 4.37 wrote into
+    // .git/config, pointing at a per-launch /tmp mount that no longer exists.
+    // The path is fake and never created — the badge is decided from the
+    // string alone. A healthy driver sits beside it for contrast.
+    out: 'attributes-stale-driver',
+    repos: ['attributes'],
+    themes: ['light'],
+    env: { HOME: DEMO_HOME },
+    // The whole dialog is already the `attributes` shot; this one is the badge.
+    clipTo: '.attrs-section:has(.attrs-driver)',
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['attributes']
+      await rm(DEMO_HOME, { recursive: true, force: true })
+      await mkdir(DEMO_HOME, { recursive: true })
+      const stale = '"/tmp/.mount_GitcitXYZ/resources/cli/gitcito-textconv"'
+      await run('git', ['-C', repo, 'config', '--local', 'diff.word.textconv', stale])
+      await run('git', ['-C', repo, 'config', '--local', 'diff.pdf.textconv', 'pdftotext -layout - -'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['attributes']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'attributes', repoPath: r }), repo)
+      await page.waitForTimeout(1200)
+      await page.evaluate(() => {
+        document.querySelector('.attrs-driver')?.scrollIntoView({ block: 'center' })
+      })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // Automated bisect: the command box mid-run, with git's output streaming.
     out: 'bisect-run',
     repos: ['bisect-bug'],

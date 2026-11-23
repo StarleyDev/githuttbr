@@ -16,6 +16,19 @@ afterAll(cleanupFixtures)
 const MOUNT = '/tmp/.mount_Git HuO2TrCj'
 const APPIMAGE_ENV = { APPIMAGE: '/home/me/Apps/Git HuttBr.AppImage', APPDIR: MOUNT }
 
+// The program is not the only word that runs: a wrapper, an assignment or a
+// shell can put the mount path anywhere on the line.
+const BYPASSES = [
+  'env /tmp/.mount_x/gitcito-textconv',
+  'FOO=1 "/tmp/.mount_x/gitcito-textconv"',
+  `sh -c '/tmp/.mount_x/gitcito-textconv'`,
+  'sh -c "exec /tmp/.mount_x/resources/cli/gitcito-textconv \\"$1\\"" --',
+  'nice -n 5 /tmp/appimage_extracted_0123/resources/cli/gitcito-textconv',
+  '/tmp/.mo""unt_x/gitcito-textconv',
+  '/tmp/\\.mount_x/gitcito-textconv',
+  'FOO=/tmp/.mount_x/lib pdftotext -layout - -'
+]
+
 describe('AppImage path decisions', () => {
   it('knows an AppImage launch by APPIMAGE', () => {
     expect(runningFromAppImage(APPIMAGE_ENV)).toBe(true)
@@ -65,6 +78,46 @@ describe('AppImage path decisions', () => {
     expect(isEphemeralTextconv(`"${MOUNT}/resources/cli/gitcito-textconv"`, {})).toBe(true)
     expect(isEphemeralTextconv('pdftotext -layout - -', {})).toBe(false)
   })
+
+  it('finds a mount path anywhere on the textconv line, not only as the program', () => {
+    for (const tc of BYPASSES) expect(isEphemeralTextconv(tc, {}), tc).toBe(true)
+    // Ordinary converters, and names that merely contain ".mount_", stay clean.
+    for (const tc of ['pdftotext -layout - -', 'exiftool', '"/opt/Git HuttBr/resources/cli/gitcito-textconv"',
+      '/home/me/project.mount_notes/conv']) {
+      expect(isEphemeralTextconv(tc, {}), tc).toBe(false)
+    }
+  })
+
+  it('finds a mount spelled as a glob, which the shell expands before git runs it', () => {
+    for (const tc of [
+      '/tmp/.moun?_X/resources/cli/gitcito-textconv',
+      '/tmp/[.]mount_X/resources/cli/gitcito-textconv',
+      '/tmp/*/resources/cli/gitcito-textconv',
+      'env "/tmp/.mount_*/AppRun"',
+      'sh -c /tmp/?mount_x/AppRun',
+      '/var/x/[.]appimage_extracted_1/AppRun',
+      'FOO=/tmp/appimage_extracte?_1/lib exiftool'
+    ]) {
+      expect(isEphemeralTextconv(tc, {}), tc).toBe(true)
+    }
+    expect(isEphemeralTextconv('/scratch/*/AppRun', { TMPDIR: '/scratch/' }), 'TMPDIR').toBe(true)
+    // Ordinary converters, globs outside the temp dir, and temp paths without a glob stay clean.
+    for (const tc of ['pdftotext -layout - -', 'exiftool', 'docx2txt', '~/bin/conv', '/tmp/conv',
+      'sh -c "cat -- *"', '/usr/bin/strings -n 8']) {
+      expect(isEphemeralTextconv(tc, {}), tc).toBe(false)
+    }
+  })
+
+  it('finds this launch’s APPDIR or resources root anywhere on the line, under an AppImage', () => {
+    const env = { APPIMAGE: '/x.AppImage', APPDIR: '/opt/custom-runtime/root' }
+    expect(isEphemeralTextconv('env /opt/custom-runtime/root/resources/cli/gitcito-textconv', env)).toBe(true)
+    expect(isEphemeralTextconv(`sh -c '"/opt/custom-runtime/root/x"'`, env)).toBe(true)
+    // The resources root, when it does not sit under APPDIR or look like a mount.
+    const bare = { APPIMAGE: '/x.AppImage' }
+    expect(isEphemeralTextconv('env /opt/odd/resources/cli/gitcito-textconv', bare, '/opt/odd/resources')).toBe(true)
+    // Not an AppImage: an installed resources root is a fine place for a converter.
+    expect(isEphemeralTextconv('env /opt/odd/resources/cli/gitcito-textconv', {}, '/opt/odd/resources')).toBe(false)
+  })
 })
 
 describe('textconv drivers and AppImage mounts', () => {
@@ -88,6 +141,38 @@ describe('textconv drivers and AppImage mounts', () => {
     expect((await gitService.diffDrivers(R)).some((d) => d.name === 'word')).toBe(false)
     // Clearing one always works — that is the repair.
     await expect(gitService.setDiffDriver(R, 'word', '')).resolves.toBeUndefined()
+  })
+
+  it('refuses, and flags, a mount path hidden behind a wrapper', async () => {
+    const R = cloneFixture('bisect-bug')
+    for (const tc of BYPASSES) {
+      await expect(gitService.setDiffDriver(R, 'word', tc), tc).rejects.toThrow(/AppImage/)
+    }
+    expect((await gitService.diffDrivers(R)).some((d) => d.name === 'word')).toBe(false)
+    const { execFileSync } = await import('node:child_process')
+    for (const [i, tc] of BYPASSES.entries()) {
+      execFileSync('git', ['config', '--local', `diff.w${i}.textconv`, tc], { cwd: R })
+    }
+    const flagged = (await gitService.diffDrivers(R)).filter((d) => /^w\d+$/.test(d.name))
+    expect(flagged).toHaveLength(BYPASSES.length)
+    for (const d of flagged) expect(d.ephemeral, d.textconv).toBe(true)
+  })
+
+  it('refuses a converter under this AppImage’s own root, whatever it is called', async () => {
+    const R = cloneFixture('bisect-bug')
+    const saved = { APPIMAGE: process.env.APPIMAGE, APPDIR: process.env.APPDIR }
+    process.env.APPIMAGE = '/x/Git HuttBr.AppImage'
+    process.env.APPDIR = '/opt/custom-runtime/root'
+    try {
+      await expect(
+        gitService.setDiffDriver(R, 'word', 'env /opt/custom-runtime/root/resources/cli/gitcito-textconv')
+      ).rejects.toThrow(/AppImage/)
+    } finally {
+      for (const [k, v] of Object.entries(saved)) {
+        if (v === undefined) delete process.env[k]
+        else process.env[k] = v
+      }
+    }
   })
 
   it('offers the bundled converter disabled, with the reason, when running as an AppImage', async () => {

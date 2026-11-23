@@ -22,10 +22,17 @@ vi.mock('../src/renderer/src/infrastructure/api', () => ({
       return { settings: onDisk, generation: ++generation }
     })
   },
-  reposApi: {}
+  reposApi: {},
+  SettingsSaveRefused: class SettingsSaveRefused extends Error {
+    constructor(readonly reason: string) {
+      super(`settings save refused (${reason})`)
+    }
+  }
 }))
 
 import { useSettingsStore } from '../src/renderer/src/stores/settings'
+import { useUIStore } from '../src/renderer/src/stores/ui'
+import { SettingsSaveRefused } from '../src/renderer/src/infrastructure/api'
 
 const saves = (): typeof log => log.filter((e) => e.op === 'set')
 
@@ -65,6 +72,36 @@ describe('the settings store', () => {
     expect(useSettingsStore.getState().unlocked).toBe(true)
   })
 
+  it('before a successful load, a change is neither applied nor saved', async () => {
+    useSettingsStore.setState({ loaded: false })
+    try {
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'de' }))
+      await vi.advanceTimersByTimeAsync(300)
+      expect(saves()).toHaveLength(0)
+      expect(useSettingsStore.getState().settings.language).not.toBe('de')
+    } finally {
+      useSettingsStore.setState({ loaded: true })
+    }
+  })
+
+  it('an unlock waits for a save already in flight', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    let release: () => void = () => undefined
+    vi.mocked(api.set).mockImplementationOnce(async (settings: AppSettings, gen: number) => {
+      log.push({ op: 'set', settings, generation: gen })
+      await new Promise<void>((r) => (release = r))
+      log.push({ op: 'set-done' })
+    })
+    useSettingsStore.getState().update((s) => ({ ...s, confirmForcePush: false }))
+    await vi.advanceTimersByTimeAsync(300)
+    const unlocking = useSettingsStore.getState().load({ unlock: true })
+    await vi.advanceTimersByTimeAsync(50)
+    expect(log.map((e) => e.op)).toEqual(['set'])
+    release()
+    await unlocking
+    expect(log.map((e) => e.op)).toEqual(['set', 'set-done', 'unlock'])
+  })
+
   it('an import merges credentials unless asked to replace, then reads back what main kept', async () => {
     await useSettingsStore.getState().importSettings({ language: 'fr' })
     expect(saves()[0].options).toEqual({ import: 'merge' })
@@ -76,5 +113,41 @@ describe('the settings store', () => {
     expect(saves()[0].options).toEqual({ import: 'replace' })
     // Settings was unlocked: the read-back is an unlock too.
     expect(log.map((e) => e.op)).toEqual(['set', 'unlock'])
+  })
+
+  it('a refused import keeps its reason, even when the read-back fails too', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    vi.mocked(api.set).mockRejectedValueOnce(new SettingsSaveRefused('keychain-required'))
+    vi.mocked(api.get).mockRejectedValueOnce(new Error('reload failed'))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      await expect(useSettingsStore.getState().importSettings({ language: 'fr' }, { replaceSecrets: true }))
+        .rejects.toMatchObject({ reason: 'keychain-required' })
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('tells the user, once, when main refuses saves because the file went bad', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    vi.mocked(api.set).mockRejectedValue(new SettingsSaveRefused('not-loaded'))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useUIStore.setState({ toasts: [] })
+    try {
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'de' }))
+      await vi.advanceTimersByTimeAsync(300)
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'fr' }))
+      await vi.advanceTimersByTimeAsync(300)
+      const errors = useUIStore.getState().toasts.filter((x) => x.kind === 'error')
+      expect(errors).toHaveLength(1)
+      expect(errors[0].message).toMatch(/damaged/)
+    } finally {
+      vi.mocked(api.set).mockReset()
+      vi.mocked(api.set).mockImplementation(async (settings: AppSettings, gen: number, options?: unknown) => {
+        log.push({ op: 'set', settings, generation: gen, options })
+        onDisk = settings
+      })
+      warn.mockRestore()
+    }
   })
 })

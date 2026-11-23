@@ -5,7 +5,7 @@ import { EventEmitter } from 'events'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
-import { settingsIpc } from './settingsIpc'
+import { bootLoaded, settingsIpc } from './settingsIpc'
 
 // With the keychain declined, a typed token lives only in memory for the
 // session. A save that removed its server pruned the encrypted store but not
@@ -49,6 +49,7 @@ describe('session-only tokens follow the server list (keychain declined)', () =>
     handlers.clear()
     const { registerSettingsHandlers } = await import('../src/main/settings')
     registerSettingsHandlers()
+    await bootLoaded(handlers)
   })
 
   // Every token kind a profile carries, all through the same session path.
@@ -187,6 +188,7 @@ describe('a reloaded renderer holds nothing until it is served again', () => {
     handlers.clear()
     const { registerSettingsHandlers } = await import('../src/main/settings')
     registerSettingsHandlers()
+    await bootLoaded(handlers)
   }
   const tokens = (gh: string, glsrv: string): AppSettings =>
     settingsWith(profileWith({ githubToken: gh, gitlabServers: [{ url: GITLAB, token: glsrv }] }))

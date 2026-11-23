@@ -34,8 +34,15 @@ const electronFor = (userData: string): Record<string, unknown> => ({
     getAllWindows: () => windows.none ? [] : [
       {
         isDestroyed: () => false,
+        // The consent question listens for the page going away, and stops listening once settled.
         once: () => undefined,
-        webContents: { send: (channel: string) => sent.push(channel) && channel === 'keychain:ask' && keyring.asked++ }
+        removeListener: () => undefined,
+        webContents: {
+          send: (channel: string) => sent.push(channel) && channel === 'keychain:ask' && keyring.asked++,
+          on: () => undefined,
+          once: () => undefined,
+          removeListener: () => undefined
+        }
       }
     ]
   },
@@ -192,6 +199,8 @@ describe('avatar peeks before the store is unlocked', () => {
     const settings = setUp({ secrets: { githubToken: 'ghp_unreachable' } })
     keyring.available = false
     await boot()
+    // The window loads its settings first: main refuses a save before any has.
+    await call('settings:get')
     // A token typed now lives in memory only.
     await call('settings:set', { ...settings, profiles: [{ ...settings.profiles[0], githubToken: 'ghp_session' }] })
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)

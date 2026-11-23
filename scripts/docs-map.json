@@ -109,6 +109,9 @@
   },
   "commands": {
     "covered": {
+      "cli-install": "cli",
+      "cli-uninstall": "cli",
+      "cli-remove-stale": "cli",
       "work-item-branch": "branching",
       "repo-switcher": "workspaces",
       "problems": "problems",

@@ -98,15 +98,40 @@ function askUser(reason: KeychainReason, adopted: boolean): Promise<boolean> {
   const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
   if (!win || win.isDestroyed()) return Promise.resolve(false)
 
-  asking = new Promise<boolean>((resolve) => {
-    answer = resolve
-    win.webContents.send('keychain:ask', { reason, adopted })
-    // If the window goes away mid-question, don't leave callers hanging.
-    win.once('closed', () => answer?.(false))
-  }).then(async (granted) => {
-    await setConsent(granted ? 'granted' : 'declined')
-    asking = null
-    answer = null
+  const contents = win.webContents
+  asking = new Promise<{ granted: boolean; answered: boolean }>((resolve) => {
+    // The page that showed the question is gone — reloaded, crashed, closed.
+    // Nobody will ever answer it, and the settings queue waits behind this
+    // promise: left pending, the next renderer's settings:get never returns and
+    // the boot spinner spins forever. Settle it as "not now", without recording
+    // a refusal the user never gave.
+    const abandon = (): void => settle(false, false)
+    // Only a new document in the main frame replaces the page. A subframe (the
+    // PDF preview's <iframe>) or an in-page route change leaves the question on
+    // screen, and settling then would answer it while the user is still reading.
+    const onNavigation = (details: { isMainFrame: boolean; isSameDocument: boolean }): void => {
+      if (details.isMainFrame && !details.isSameDocument) abandon()
+    }
+    const settle = (granted: boolean, answered: boolean): void => {
+      win.removeListener('closed', abandon)
+      contents.removeListener('render-process-gone', abandon)
+      contents.removeListener('did-start-navigation', onNavigation)
+      contents.removeListener('destroyed', abandon)
+      resolve({ granted, answered })
+    }
+    answer = (granted) => settle(granted, true)
+    contents.send('keychain:ask', { reason, adopted })
+    win.once('closed', abandon)
+    contents.once('render-process-gone', abandon)
+    contents.on('did-start-navigation', onNavigation)
+    contents.once('destroyed', abandon)
+  }).then(async ({ granted, answered }) => {
+    try {
+      if (answered) await setConsent(granted ? 'granted' : 'declined')
+    } finally {
+      asking = null
+      answer = null
+    }
     return granted
   })
   return asking
