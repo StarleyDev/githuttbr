@@ -3356,6 +3356,7 @@ export const ru: Dict = {
   'gitError.gitlabNotSaved': 'Этот адрес GitLab ещё не сохранён ни в одном профиле (нужен https). Сохраните его в Настройки → Интеграции и повторите попытку.',
   'gitError.ghesNoToken': 'В этом профиле не сохранён токен для GitHub Enterprise Server {host}. Добавьте его в Настройки → Интеграции → GitHub → GitHub Enterprise Server.',
   'gitError.bbsNoToken': 'В этом профиле не сохранён HTTP-токен доступа для Bitbucket Data Center {host}. Добавьте его в Настройки → Интеграции → Bitbucket → Bitbucket Data Center.',
+  'gitError.heldTokenUnsavedServer': 'Этот токен уже сохранён для другой учётной записи или сервера, поэтому он не отправляется на сервер, который ещё не сохранён ни в одном профиле. Используйте токен, выданный этим сервером.',
   'gitError.bbsNoBrowse': 'Просмотр и создание репозиториев для Bitbucket Data Center пока не поддерживаются — клонируйте по URL.',
   'gitError.notBbsRepo': 'Это не репозиторий Bitbucket Data Center.',
   'gitError.bbsTokenUnrecognised': 'Сервер Bitbucket Data Center не распознал этот токен. Проверьте, что он действителен и не истёк.',

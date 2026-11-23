@@ -1,6 +1,7 @@
 import { tokenMatchesInstance, GITLAB_COM, migrateGitlabProfile, migrateGitlabSettings, normalizeInstanceUrl } from './gitlabInstance'
 import { normalizeGithubEnterpriseUrl } from './githubEnterprise'
 import { normalizeBitbucketServerUrl } from './bitbucketServer'
+import { serverUrlWithoutSecrets } from './serverAddress'
 import type { AppSettings } from './types'
 
 /**
@@ -307,6 +308,115 @@ export function pruneSecrets(store: SecretStore, profileIds: string[], profiles?
       )
       if (Object.keys(filtered).length > 0) kept[field] = filtered
       else delete kept[field]
+    }
+    if (Object.keys(kept).length > 0) out[id] = kept
+  }
+  return out
+}
+
+/**
+ * The same settings with every server address stripped of a userinfo, query
+ * or fragment (`serverUrlWithoutSecrets`). Settings refuses such an address
+ * when it is typed, but an import, a hand-edited file or an older build can
+ * still carry one — and the addresses, unlike the tokens, stay in the plain
+ * JSON. The same object back when nothing needed it, so a caller can tell.
+ */
+export function scrubServerUrls<T extends { profiles?: unknown }>(settings: T): T {
+  if (!Array.isArray(settings.profiles)) return settings
+  let changed = false
+  const clean = (v: unknown): unknown => {
+    if (typeof v !== 'string') return v
+    const out = serverUrlWithoutSecrets(v)
+    if (out !== v) changed = true
+    return out
+  }
+  const hosts = (list: unknown): unknown =>
+    Array.isArray(list)
+      ? list.map((h: unknown) =>
+          h && typeof h === 'object' && 'url' in h ? { ...h, url: clean((h as { url: unknown }).url) } : h
+        )
+      : list
+  const profiles = (settings.profiles as unknown[]).map((raw) => {
+    if (!raw || typeof raw !== 'object') return raw
+    const p = raw as Record<string, unknown>
+    const out: Record<string, unknown> = { ...p }
+    // The issuers name the server a token was typed for, so they are addresses too.
+    for (const key of ['forgejoUrl', 'gitlabUrl', 'gitlabTokenIssuer', 'forgejoTokenIssuer']) {
+      if (key in p) out[key] = clean(p[key])
+    }
+    for (const key of ['githubEnterprise', 'gitlabServers', 'bitbucketServers']) {
+      if (key in p) out[key] = hosts(p[key])
+    }
+    return out
+  })
+  return changed ? { ...settings, profiles } : settings
+}
+
+/**
+ * One credential slot of a store, as `profile \0 field [\0 base-or-account]`,
+ * with its value. The issuer beside a GitLab or Forgejo token is not a slot of
+ * its own: it travels with the token (see `saveOver`).
+ */
+export type SecretView = ReadonlyMap<string, string>
+
+const SINGLE_FIELDS = [...TOKEN_FIELDS, 'aiApiKey'] as const
+const MAP_FIELDS = ['githubEnterpriseTokens', 'gitlabServerTokens', 'bitbucketServerTokens', 'aiKeys'] as const
+const ISSUER_OF: Partial<Record<(typeof SINGLE_FIELDS)[number], 'gitlabTokenIssuer' | 'forgejoTokenIssuer'>> = {
+  gitlabToken: 'gitlabTokenIssuer',
+  forgejoToken: 'forgejoTokenIssuer'
+}
+
+/** Every credential slot of `store` and its value — what a renderer holds once given it. */
+export function secretView(store: SecretStore): SecretView {
+  const out = new Map<string, string>()
+  for (const [id, secrets] of Object.entries(migrateGitlabSecrets(store))) {
+    for (const f of SINGLE_FIELDS) {
+      const v = secrets[f]
+      if (v) out.set(`${id}\0${f}`, v)
+    }
+    for (const f of MAP_FIELDS) {
+      for (const [k, v] of Object.entries(secrets[f] ?? {})) if (v) out.set(`${id}\0${f}\0${k}`, v)
+    }
+  }
+  return out
+}
+
+/** Every credential value in `store`, deduplicated — for "is this one of ours?". */
+export function secretValues(store: SecretStore): string[] {
+  return [...new Set(secretView(store).values())]
+}
+
+/**
+ * What the store becomes after a save carrying `incoming`, from a renderer that
+ * had been given exactly `seen`.
+ *
+ * A value the save carries is the new one. A slot it leaves blank is a clear
+ * only when the sender held that slot *with the value stored now*: a token it
+ * never saw — added by another window, or replaced since it last read the
+ * settings — is not its to erase, so a blank there keeps it. With nothing seen
+ * this is `mergeSecretStores`; with the whole store seen it is the save itself.
+ */
+export function saveOver(currentRaw: SecretStore, incomingRaw: SecretStore, seen: SecretView): SecretStore {
+  const current = migrateGitlabSecrets(currentRaw)
+  const incoming = migrateGitlabSecrets(incomingRaw)
+  const out: SecretStore = {}
+  for (const id of new Set([...Object.keys(current), ...Object.keys(incoming)])) {
+    const cur = current[id] ?? {}
+    const inc = incoming[id] ?? {}
+    const kept: ProfileSecrets = {}
+    const stays = (slot: string, value: string | undefined): value is string => !!value && seen.get(slot) !== value
+    for (const f of SINGLE_FIELDS) {
+      const issuer = ISSUER_OF[f]
+      const from = inc[f] ? inc : stays(`${id}\0${f}`, cur[f]) ? cur : null
+      if (!from) continue
+      kept[f] = from[f]
+      if (issuer && from[issuer]) kept[issuer] = from[issuer]
+    }
+    for (const f of MAP_FIELDS) {
+      const map: Record<string, string> = {}
+      for (const [k, v] of Object.entries(cur[f] ?? {})) if (stays(`${id}\0${f}\0${k}`, v)) map[k] = v
+      for (const [k, v] of Object.entries(inc[f] ?? {})) if (v) map[k] = v
+      if (Object.keys(map).length > 0) kept[f] = map
     }
     if (Object.keys(kept).length > 0) out[id] = kept
   }

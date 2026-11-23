@@ -21,7 +21,9 @@ const BARE_TOKENS: RegExp[] = [
   /\bgithub_pat_[A-Za-z0-9_]{20,}\b/g,
   /\bgl(?:pat|dt|ptt|rt|cbt|oas|imt|ft|soat)-[A-Za-z0-9_-]{16,}/g,
   /\bATATT[A-Za-z0-9_=+/-]{20,}/g,
-  /\bBBDC-[A-Za-z0-9_=+/-]{16,}/g
+  /\bBBDC-[A-Za-z0-9_=+/-]{16,}/g,
+  // Groq API keys: an AI key can land in a hosting or git error as easily.
+  /\bgsk_[A-Za-z0-9]{20,}/g
 ]
 
 /** Bitbucket's token username, `x-token-auth:<token>`, in a credential line

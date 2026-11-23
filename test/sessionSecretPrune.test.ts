@@ -122,9 +122,10 @@ describe('session-only tokens follow the server list (keychain declined)', () =>
     await callFrom(2, 'settings:set', settingsWith(everyToken((n) => (n === 'gh' ? 'gh-new' : ''))))
     expect((await activeProfileAuth('github')).token).toBe('gh-new')
     expect((await activeProfileAuth('azure')).token).toBe(typed('az'))
-    // After that overlay no renderer holds the result — not even the first.
+    // The first renderer keeps its say over what it holds: its blanks clear the
+    // tokens it typed — but not GitHub's, which the overlay replaced since.
     await call('settings:set', settingsWith(everyToken(() => '')))
-    const merged = KINDS.map((n) => (n === 'gh' ? 'gh-new' : typed(n)))
+    const merged = KINDS.map((n) => (n === 'gh' ? 'gh-new' : ''))
     expect(tokensOf(((await callFrom(2, 'settings:get')) as AppSettings).profiles[0])).toEqual(merged)
     // Once served them, its blanks count.
     await callFrom(2, 'settings:set', settingsWith(everyToken(() => '')))
@@ -187,8 +188,9 @@ describe('a reloaded renderer holds nothing until it is served again', () => {
   }
   const tokens = (gh: string, glsrv: string): AppSettings =>
     settingsWith(profileWith({ githubToken: gh, gitlabServers: [{ url: GITLAB, token: glsrv }] }))
+  // `settings:unlock`, as Settings does: a plain read never carries the decrypted store.
   const tokensNow = async (wc: EventEmitter & { id: number }): Promise<string[]> => {
-    const p = ((await callAs(wc, 'settings:get')) as AppSettings).profiles[0]
+    const p = ((await callAs(wc, 'settings:unlock')) as AppSettings).profiles[0]
     return [p.githubToken, p.gitlabServers?.[0]?.token ?? 'missing']
   }
 

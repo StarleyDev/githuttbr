@@ -247,6 +247,29 @@ describe('github avatar resolver', () => {
     }
   })
 
+  it('salts the hash per install: a list of candidate addresses does not reverse it', async () => {
+    vi.useFakeTimers()
+    try {
+      let saved: AvatarCacheFile | null = null
+      const fetch = vi.fn(async () => json(commitBy('https://avatars.githubusercontent.com/u/2?v=4')))
+      const r = createGithubAvatarResolver({ fetch, save: (e) => (saved = e), salt: async () => 'install-salt' })
+      await r.resolve(GH, [{ email: 'secret.person@corp.test', sha: 'abcdef1' }], 20, async () => 'tok')
+      await vi.advanceTimersByTimeAsync(1000)
+      const key = avatarCacheKey(GITHUB_COM, 'secret.person@corp.test', 'install-salt')
+      expect(Object.keys(saved!)).toEqual([key])
+      expect(key).not.toBe(avatarCacheKey(GITHUB_COM, 'secret.person@corp.test'))
+      // Read back under the same salt: answered from the cache, no API call.
+      const again = createGithubAvatarResolver({ fetch, load: async () => saved!, salt: async () => 'install-salt' })
+      fetch.mockClear()
+      expect(await again.resolve(GH, [{ email: 'secret.person@corp.test' }], 20, async () => 'tok')).toEqual({
+        'secret.person@corp.test': expect.stringContaining('avatars.githubusercontent.com/u/2')
+      })
+      expect(fetch).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('prunes expired entries and caps the file', () => {
     const now = AVATAR_HIT_TTL_MS * 3
     const entries: AvatarCacheFile = {

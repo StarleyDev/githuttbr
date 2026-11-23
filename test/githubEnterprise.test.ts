@@ -411,6 +411,16 @@ describe('every formerly hardcoded call site uses the resolver', () => {
       for (const c of calls) for (const t of SAVED) expect(c.auth).not.toContain(t)
     })
 
+    // Main cannot tell a token just typed from a saved one the renderer holds:
+    // one the app already has — any profile, provider or server — stays home.
+    it('a token the app already holds is not sent to the new server', async () => {
+      const { HELD_TOKEN_TO_UNSAVED_SERVER } = await import('../src/main/hosting')
+      for (const saved of SAVED) {
+        await expect(call('hosting:whoAmI', 'github', ` ${saved} `, NEW, false)).rejects.toThrow(HELD_TOKEN_TO_UNSAVED_SERVER)
+      }
+      expect(calls).toHaveLength(0)
+    })
+
     it('a saved server still resolves the normal way', async () => {
       await call('hosting:whoAmI', 'github', GHES_TOKEN, GHES, false)
       expectOnlyGhes()

@@ -93,9 +93,25 @@ tick the box.
 **Report issue** on an error opens a pre-filled GitHub issue — and opening it
 already sends the text to GitHub, before you choose to post. So the message is
 cleaned first: a credential written into a URL, tokens, your home folder (and
-with it your user name), private servers and repository paths, e-mails and LAN
-addresses are replaced. Public hosts such as `github.com` stay, and git's own
-message stays readable. Read the issue before posting it all the same: the
-cleaning recognises known shapes, not everything private.
+with it your user name), private servers and repository paths, the name of the
+profile a repository is bound to, e-mails and IP addresses are replaced. Public
+hosts such as `github.com` stay, and so do file names and git's own message.
+
+**The limit:** a server name standing alone in a sentence is recognised by its
+shape — dotted, lower case. A one-word host (`gitserver`) is caught only in the
+messages Gitcito itself writes, and a server under a top-level domain spelled
+like a file extension (`.sh`, `.md`) is kept as a file name. Read the issue
+before posting it all the same: the cleaning recognises known shapes, not
+everything private.
+
+## What stays on disk
+
+The settings file, the operation log, the avatar cache and the encrypted token
+store are readable by your account only (on macOS and Linux). A server address
+saved with a `user:password@` or a `?token=` in it — from an import or an older
+version — has that part removed when it is read, imported or saved. The commit
+avatar cache stores no e-mail addresses, only hashes salted per install. A
+backup of the token store is deleted once a newer store is written; one that
+only another build of Gitcito can read is kept for 30 days.
 
 **See also:** [Vault](vault.md) · [Secure share](secure-share.md)

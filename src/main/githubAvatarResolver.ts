@@ -54,6 +54,8 @@ export interface AvatarResolverDeps {
   now?: () => number
   load?: () => Promise<AvatarCacheFile>
   save?: (entries: AvatarCacheFile) => void
+  /** This install's secret salt for the cache keys (see avatarCacheKey); none in tests that do not care. */
+  salt?: () => Promise<string>
   concurrency?: number
 }
 
@@ -77,9 +79,14 @@ const MAX_BATCH = 200
  * The cache key: a hash of the server and the lowercased email. The persistent
  * cache lives on disk next to the settings, and a list of every author's
  * address is not something to leave lying in a file.
+ *
+ * Salted per install: an unsalted hash of an address is the address to anyone
+ * holding a list of candidates (a company directory), who could then tell
+ * which colleagues' commits this machine has been looking at.
  */
-export function avatarCacheKey(base: string, email: string): string {
-  return createHash('sha256').update(`${base.toLowerCase()}\n${email.trim().toLowerCase()}`).digest('hex')
+export function avatarCacheKey(base: string, email: string, salt = ''): string {
+  const subject = `${base.toLowerCase()}\n${email.trim().toLowerCase()}`
+  return createHash('sha256').update(salt ? `${salt}\n${subject}` : subject).digest('hex')
 }
 
 /** Whether a cached answer still stands: hits for a week, misses for a day. */
@@ -147,10 +154,16 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
    */
   const repoMisses = new Map<string, number>()
   let disk: Promise<AvatarCacheFile> | null = null
+  let salt = ''
   let saveTimer: ReturnType<typeof setTimeout> | null = null
 
+  // The salt comes with the file: every key is computed after both are in.
   const loadDisk = (): Promise<AvatarCacheFile> =>
-    (disk ??= (deps.load ? deps.load().catch(() => ({})) : Promise.resolve({})).then((f) => {
+    (disk ??= Promise.all([
+      deps.load ? deps.load().catch(() => ({})) : Promise.resolve({}),
+      deps.salt ? deps.salt().catch(() => '') : Promise.resolve('')
+    ]).then(([f, s]) => {
+      salt = s
       for (const [k, e] of Object.entries(f)) {
         if (isAvatarEntryFresh(e, now())) memory.set(k, e)
       }
@@ -280,7 +293,7 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
         out[req.email] = direct
         continue
       }
-      const key = avatarCacheKey(target.base, req.email)
+      const key = avatarCacheKey(target.base, req.email, salt)
       const hit = memory.get(key)
       if (isAvatarEntryFresh(hit, now())) out[req.email] = hit.url ? githubAvatarSized(hit.url, size) : null
       else if (!repoMissFresh(`${repoKey(target)}\n${key}`)) todo.push(req)
@@ -297,7 +310,7 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
       while (next < todo.length) {
         const req = todo[next++]
         if ((paused.get(target.base) ?? 0) > now() || (hidden.get(repoKey(target)) ?? 0) > now()) return
-        const key = avatarCacheKey(target.base, req.email)
+        const key = avatarCacheKey(target.base, req.email, salt)
         // In flight per repository: one repository's "cannot see it" is not another's answer.
         const flight = `${repoKey(target)}\n${key}`
         let job = inflight.get(flight)

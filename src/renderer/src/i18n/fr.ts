@@ -3303,6 +3303,7 @@ export const fr: Dict = {
   'gitError.gitlabNotSaved': "Cette adresse GitLab n'est encore enregistrée dans aucun profil (elle doit utiliser https). Enregistrez-la dans Réglages → Intégrations, puis réessayez.",
   'gitError.ghesNoToken': "Aucun jeton pour le GitHub Enterprise Server {host} n'est enregistré dans ce profil. Ajoutez-en un dans Réglages → Intégrations → GitHub → GitHub Enterprise Server.",
   'gitError.bbsNoToken': "Aucun jeton d'accès HTTP pour le Bitbucket Data Center {host} n'est enregistré dans ce profil. Ajoutez-en un dans Réglages → Intégrations → Bitbucket → Bitbucket Data Center.",
+  'gitError.heldTokenUnsavedServer': "Ce jeton est déjà enregistré pour un autre compte ou serveur : il n'est donc pas envoyé à un serveur qu'aucun profil n'a encore enregistré. Utilisez le jeton émis par ce serveur.",
   'gitError.bbsNoBrowse': "Parcourir et créer des dépôts n'est pas encore pris en charge pour Bitbucket Data Center — clonez plutôt par URL.",
   'gitError.notBbsRepo': "Ce n'est pas un dépôt Bitbucket Data Center.",
   'gitError.bbsTokenUnrecognised': "Le serveur Bitbucket Data Center n'a pas reconnu ce jeton. Vérifiez qu'il est valide et n'a pas expiré.",

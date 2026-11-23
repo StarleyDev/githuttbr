@@ -1,7 +1,8 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { app, ipcMain } from 'electron'
 import { join } from 'node:path'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm } from 'node:fs/promises'
+import { writePrivateFile } from './privateFile'
 import { apiToken } from './credentials'
 import { peekActiveProfileAuth, peekBoundProfileAuth, peekNamedProfileAuth, type PeekedAuth } from './settings'
 import { knownGithubEnterpriseInstances } from './gitlabInstances'
@@ -36,13 +37,41 @@ import {
  */
 
 const cachePath = (): string => join(app.getPath('userData'), 'github-avatars.json')
+const saltPath = (): string => join(app.getPath('userData'), 'github-avatars.salt')
+
+/**
+ * The cache file's format. 2: keys salted per install (avatarCacheKey). A
+ * version-1 file — unsalted keys — is read as empty, and the next save
+ * replaces it.
+ */
+const CACHE_VERSION = 2
+
+/**
+ * This install's salt for the avatar cache keys: random, made once, kept
+ * owner-only beside the cache. Never fails — without a file to keep it in, the
+ * salt lives for the session and the cache with it.
+ */
+let saltJob: Promise<string> | null = null
+function avatarSalt(): Promise<string> {
+  return (saltJob ??= (async () => {
+    const stored = (await readFile(saltPath(), 'utf8').catch(() => '')).trim()
+    if (/^[0-9a-f]{64}$/.test(stored)) return stored
+    const fresh = randomBytes(32).toString('hex')
+    await mkdir(app.getPath('userData'), { recursive: true })
+      .then(() => writePrivateFile(saltPath(), fresh))
+      .catch(() => undefined)
+    return fresh
+  })())
+}
 
 async function loadCache(): Promise<AvatarCacheFile> {
   const raw = await readFile(cachePath(), 'utf8').catch(() => null)
   if (!raw) return {}
   try {
     const parsed = JSON.parse(raw) as { v?: number; entries?: unknown }
-    if (parsed.v !== 1 || !parsed.entries || typeof parsed.entries !== 'object') return {}
+    // Unsalted keys: gone now, not at the next save — which may never come.
+    if (parsed.v === 1) await rm(cachePath(), { force: true }).catch(() => undefined)
+    if (parsed.v !== CACHE_VERSION || !parsed.entries || typeof parsed.entries !== 'object') return {}
     const out: AvatarCacheFile = {}
     for (const [k, e] of Object.entries(parsed.entries as Record<string, { url?: unknown; at?: unknown }>)) {
       if (!/^[0-9a-f]{64}$/.test(k) || typeof e?.at !== 'number') continue
@@ -59,7 +88,7 @@ function saveCache(entries: AvatarCacheFile): void {
   const file = cachePath()
   const tmp = `${file}.tmp`
   void mkdir(app.getPath('userData'), { recursive: true })
-    .then(() => writeFile(tmp, JSON.stringify({ v: 1, entries })))
+    .then(() => writePrivateFile(tmp, JSON.stringify({ v: CACHE_VERSION, entries })))
     .then(() => rename(tmp, file))
     .catch(() => undefined)
 }
@@ -89,7 +118,8 @@ async function tokenForRemote(remoteUrl: string, repoPath: string | undefined): 
 const resolver = createGithubAvatarResolver({
   fetch: (url, init) => fetch(url, init),
   load: loadCache,
-  save: saveCache
+  save: saveCache,
+  salt: avatarSalt
 })
 
 /** Requests off the IPC boundary, shaped or dropped. */

@@ -3359,6 +3359,7 @@ export const he: Dict = {
   'gitError.gitlabNotSaved': 'כתובת GitLab הזו עדיין לא שמורה באף פרופיל (היא חייבת להשתמש ב‑https). שמרו אותה בהגדרות → אינטגרציות, ונסו שוב.',
   'gitError.ghesNoToken': 'בפרופיל הזה לא שמור אסימון עבור GitHub Enterprise Server ‏{host}. הוסיפו אחד בהגדרות → אינטגרציות → GitHub → GitHub Enterprise Server.',
   'gitError.bbsNoToken': 'בפרופיל הזה לא שמור אסימון גישת HTTP עבור Bitbucket Data Center ‏{host}. הוסיפו אחד בהגדרות → אינטגרציות → Bitbucket → Bitbucket Data Center.',
+  'gitError.heldTokenUnsavedServer': 'האסימון הזה כבר שמור עבור חשבון או שרת אחר, ולכן הוא לא נשלח לשרת שאף פרופיל עוד לא שמר. השתמשו באסימון שהשרת הזה הנפיק.',
   'gitError.bbsNoBrowse': 'עיון במאגרים ויצירתם עדיין לא נתמכים ב‑Bitbucket Data Center — שכפלו לפי כתובת URL במקום זאת.',
   'gitError.notBbsRepo': 'זה לא מאגר של Bitbucket Data Center.',
   'gitError.bbsTokenUnrecognised': 'שרת Bitbucket Data Center לא זיהה את האסימון הזה. בדקו שהוא תקף ושתוקפו לא פג.',

@@ -1,5 +1,6 @@
 import { PRODUCT_NAME } from './brand'
 import { instanceOf } from './gitlabInstance'
+import { serverDisplayAddress } from './serverAddress'
 import type { AccountLink, GithubEnterpriseHost, Profile } from './types'
 
 export type { GithubEnterpriseHost }
@@ -100,7 +101,8 @@ export function normalizeGithubEnterpriseUrl(raw: string | undefined): string | 
 export function githubEndpoints(base?: string | null): GithubEndpoints {
   if (!base || base.toLowerCase() === GITHUB_COM) return GITHUB_COM_ENDPOINTS
   const norm = normalizeGithubEnterpriseUrl(base)
-  if (!norm) throw new Error(`Not a GitHub Enterprise Server address: ${base}`)
+  // Never the raw base in the message: it may carry a credential.
+  if (!norm) throw new Error(`Not a GitHub Enterprise Server address: ${serverDisplayAddress(base)}`)
   return { apiBase: `${norm}/api/v3`, graphqlUrl: `${norm}/api/graphql`, webBase: norm, enterprise: true }
 }
 

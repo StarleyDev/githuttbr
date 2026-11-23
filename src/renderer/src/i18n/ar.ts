@@ -3359,6 +3359,7 @@ export const ar: Dict = {
   'gitError.gitlabNotSaved': 'عنوان GitLab هذا غير محفوظ في أي ملف شخصي بعد (يجب أن يستخدم https). احفظه من الإعدادات ← التكاملات، ثم حاول مرة أخرى.',
   'gitError.ghesNoToken': 'لا يوجد رمز محفوظ في هذا الملف الشخصي لخادم GitHub Enterprise Server ‏{host}. أضف واحدًا من الإعدادات ← التكاملات ← GitHub ← GitHub Enterprise Server.',
   'gitError.bbsNoToken': 'لا يوجد رمز وصول HTTP محفوظ في هذا الملف الشخصي لخادم Bitbucket Data Center ‏{host}. أضف واحدًا من الإعدادات ← التكاملات ← Bitbucket ← Bitbucket Data Center.',
+  'gitError.heldTokenUnsavedServer': 'هذا الرمز محفوظ بالفعل لحساب أو خادم آخر، لذلك لا يُرسَل إلى خادم لم يحفظه أي ملف شخصي بعد. استخدم الرمز الذي أصدره هذا الخادم.',
   'gitError.bbsNoBrowse': 'تصفّح المستودعات وإنشاؤها غير مدعوم بعد في Bitbucket Data Center — استنسخ عبر عنوان URL بدلًا من ذلك.',
   'gitError.notBbsRepo': 'هذا ليس مستودع Bitbucket Data Center.',
   'gitError.bbsTokenUnrecognised': 'لم يتعرّف خادم Bitbucket Data Center على هذا الرمز. تحقّق من أنه صالح ولم تنتهِ صلاحيته.',

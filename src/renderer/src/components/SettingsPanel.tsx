@@ -3588,8 +3588,10 @@ function KeychainCard(): React.JSX.Element {
   const set = async (granted: boolean): Promise<void> => {
     await keychainApi.set(granted)
     // Enabling also unlocks whatever is already stored, so the token fields
-    // stop looking empty; disabling just re-reads what is left in memory.
-    await load(granted ? { unlock: true } : undefined)
+    // stop looking empty; disabling re-reads what is left in memory. Both ask
+    // for the tokens explicitly: a plain read never carries the decrypted
+    // ones, and a declined keychain is never prompted for.
+    await load({ unlock: true })
     refresh()
   }
 
