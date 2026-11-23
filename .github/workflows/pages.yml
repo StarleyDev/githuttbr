@@ -11,6 +11,7 @@ on:
     paths:
       - 'docs/**'
       - 'scripts/build-site.mjs'
+      - 'scripts/site-i18n/**'
       - 'package.json'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
