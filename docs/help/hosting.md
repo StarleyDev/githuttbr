@@ -14,7 +14,30 @@ Create a pull (or merge) request without leaving the app: branch dropdowns,
 title and body prefilled from the branch's commits, a draft toggle, and the
 people and labels it should land with.
 
-![Creating a pull request, with a reviewer, an assignee and two labels picked](../screenshots/create-pr.webp)
+![Creating a pull request, with a reviewer, an assignee and two labels picked, and the open-in-browser option left off](../screenshots/create-pr.webp)
+
+### After you press Create
+
+The new pull request is listed in the app: the sidebar's **PULL REQUESTS**
+section refreshes straight away, and a message — *Created PR #12. Follow it
+under PULL REQUESTS in the sidebar.* — carries a **View in app** link that
+opens it on its own page, the same one a click in the list opens (see
+[Reviewing](#reviewing--github-and-gitlab) for what each host shows there).
+
+The browser stays shut unless you ask for it. Tick **Open the pull request in
+the browser after creating it** and the host's page for the new request opens
+as well, as it did before this option existed. The choice is remembered on
+this computer for the next pull request; it starts off.
+
+**Open in browser**, at the bottom left, is something else: it skips creating
+anything here and opens the host's own *compare* page with the two branches
+filled in.
+
+*Limits:* the section lists `origin`'s pull requests. When the dialog was
+opened for another remote, **View in app** still opens the new request, but the
+section does not list it. The message with the link fades after a few
+seconds; the request itself is then one click away in the section (origin) or
+on the host.
 
 ### Reviewers, assignees and labels
 
@@ -115,7 +138,8 @@ How each one is set:
   internal id (GitLab, bitbucket.org, Azure DevOps reviewers) nobody could
   type, the field is disabled. Labels can always be typed.
 - **A pick the host refuses after the fact** does not undo the pull request:
-  it is created, opened in the browser as usual, and a second message names
+  it is created, listed (and opened in the browser, if you ticked that) as
+  usual, and a second message names
   what could not be set (*reviewers*, say), so you can add it on the host. This
   covers GitHub refusing a review request, GitHub quietly skipping an
   assignee it will not take (the assignees it answers with are checked against

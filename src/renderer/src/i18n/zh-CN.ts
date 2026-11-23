@@ -2662,7 +2662,9 @@ export const zhCN: Dict = {
   'createPR.openBrowser': '在浏览器中打开',
   'createPR.openBrowserTitle': '改为打开托管平台的比较页面',
   'createPR.createButton': '创建拉取请求',
-  'createPR.created': '已创建拉取请求 #{n}',
+  'createPR.createdFollow': '已创建拉取请求 #{n}。可在侧边栏的“{list}”中跟进。',
+  'createPR.viewInApp': '在应用中查看',
+  'createPR.openAfterCreate': '创建后在浏览器中打开拉取请求',
 
   // Create tag modal
   'createTag.title': '创建标签',

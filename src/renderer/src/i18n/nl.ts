@@ -2663,7 +2663,9 @@ export const nl: Dict = {
   'createPR.openBrowser': 'In de browser openen',
   'createPR.openBrowserTitle': 'In plaats daarvan de vergelijkingspagina van de host openen',
   'createPR.createButton': 'PR aanmaken',
-  'createPR.created': 'PR #{n} aangemaakt',
+  'createPR.createdFollow': 'PR #{n} aangemaakt. Volg hem onder {list} in de zijbalk.',
+  'createPR.viewInApp': 'Bekijken in de app',
+  'createPR.openAfterCreate': 'Open de pull request in de browser nadat hij is aangemaakt',
 
   // Venster om een tag aan te maken
   'createTag.title': 'Tag aanmaken',

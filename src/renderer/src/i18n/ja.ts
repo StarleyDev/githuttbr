@@ -2621,7 +2621,9 @@ export const ja: Dict = {
   'createPR.openBrowser': 'ブラウザーで開く',
   'createPR.openBrowserTitle': '代わりにホストの比較ページを開きます',
   'createPR.createButton': 'PR を作成',
-  'createPR.created': 'PR #{n} を作成しました',
+  'createPR.createdFollow': 'PR #{n} を作成しました。サイドバーの {list} で確認できます。',
+  'createPR.viewInApp': 'アプリで表示',
+  'createPR.openAfterCreate': '作成後にプルリクエストをブラウザーで開く',
 
   'createTag.title': 'タグを作成',
   'createTag.annotated': '注釈付き',

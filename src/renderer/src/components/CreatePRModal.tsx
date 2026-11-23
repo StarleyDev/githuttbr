@@ -6,7 +6,9 @@ import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
 import { PrMetaPicker } from './PrMetaPicker'
-import { useT, useUiLanguage, interp, type TranslationKey } from '../i18n'
+import { useT, type TranslationKey } from '../i18n'
+import { readOpenAfterCreate, writeOpenAfterCreate } from '../lib/prCreated'
+import { announcePrCreated } from '../stores/prCreated'
 import {
   createPickerCache,
   freeEntry,
@@ -71,6 +73,8 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [title, setTitle] = useState(spec.defaultTitle ?? '')
   const [body, setBody] = useState(spec.defaultBody ?? '')
   const [draft, setDraft] = useState(false)
+  // Remembered per machine, like the other dialog and diff toggles; off until turned on.
+  const [openAfter, setOpenAfter] = useState(() => readOpenAfterCreate(globalThis.localStorage))
   const [busy, setBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [picked, setPicked] = useState<Record<PrMetaField, string[]>>({ ...NO_PICKS })
@@ -80,7 +84,6 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [metaState, setMetaState] = useState<'loading' | 'ready' | 'failed'>('loading')
   const aiEnabled = profile.ai?.enabled !== false
   const t = useT()
-  const lang = useUiLanguage()
 
   // Draft the PR title + body from the branch's commits + diff via AI.
   const aiDraft = async (): Promise<void> => {
@@ -188,13 +191,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         ...picksToSend(meta, withPendingText(meta, picked, pending))
       })
       closeModal()
-      toast('success', interp(t('createPR.created'), { n: res.number }))
-      // The PR exists either way; a pick the host refused is said, never dropped quietly.
-      if (res.metaFailed?.length) {
-        const parts = new Intl.ListFormat(lang, { type: 'conjunction' }).format(res.metaFailed.map((f) => t(FIELD_LABEL[f])))
-        toast('error', interp(t('createPR.createdMetaFailed'), { n: res.number, parts }))
-      }
-      void window.api.openExternal(res.url)
+      void announcePrCreated(res, { repoPath: spec.repoPath, remoteUrl, title: title.trim(), openInBrowser: openAfter })
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
       setBusy(false)
@@ -295,6 +292,17 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
       <label className="pr-draft">
         <input type="checkbox" checked={draft} onChange={(e) => setDraft(e.target.checked)} />
         <span>{t('createPR.createDraft')}</span>
+      </label>
+      <label className="pr-draft">
+        <input
+          type="checkbox"
+          checked={openAfter}
+          onChange={(e) => {
+            setOpenAfter(e.target.checked)
+            writeOpenAfterCreate(globalThis.localStorage, e.target.checked)
+          }}
+        />
+        <span>{t('createPR.openAfterCreate')}</span>
       </label>
 
       <div className="modal-actions pr-actions">

@@ -2662,7 +2662,9 @@ export const ru: Dict = {
   'createPR.openBrowser': 'Открыть в браузере',
   'createPR.openBrowserTitle': 'Открыть вместо этого страницу сравнения на сервисе',
   'createPR.createButton': 'Создать пул-реквест',
-  'createPR.created': 'Пул-реквест #{n} создан',
+  'createPR.createdFollow': 'Пул-реквест #{n} создан. Следите за ним в разделе {list} на боковой панели.',
+  'createPR.viewInApp': 'Открыть в приложении',
+  'createPR.openAfterCreate': 'Открыть пул-реквест в браузере после создания',
 
   // Модальное окно создания тега
   'createTag.title': 'Создать тег',

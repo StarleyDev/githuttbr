@@ -2662,7 +2662,9 @@ export const ar: Dict = {
   'createPR.openBrowser': 'فتح في المتصفح',
   'createPR.openBrowserTitle': 'افتح صفحة المقارنة لدى المضيف بدلًا من ذلك',
   'createPR.createButton': 'إنشاء طلب السحب',
-  'createPR.created': 'أُنشئ طلب السحب رقم {n}',
+  'createPR.createdFollow': 'أُنشئ طلب السحب رقم {n}. تابعه في قسم {list} في الشريط الجانبي.',
+  'createPR.viewInApp': 'عرض في التطبيق',
+  'createPR.openAfterCreate': 'فتح طلب السحب في المتصفح بعد إنشائه',
 
   // Create tag modal
   'createTag.title': 'إنشاء وسم',

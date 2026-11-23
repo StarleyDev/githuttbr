@@ -2662,7 +2662,9 @@ export const uk: Dict = {
   'createPR.openBrowser': 'Відкрити у браузері',
   'createPR.openBrowserTitle': 'Натомість відкрити сторінку порівняння на хостингу',
   'createPR.createButton': 'Створити PR',
-  'createPR.created': 'Створено PR #{n}',
+  'createPR.createdFollow': 'Створено PR #{n}. Стежте за ним у розділі {list} на бічній панелі.',
+  'createPR.viewInApp': 'Відкрити в застосунку',
+  'createPR.openAfterCreate': 'Відкрити pull request у браузері після створення',
 
   // Вікно створення тега
   'createTag.title': 'Створити тег',

@@ -2662,7 +2662,9 @@ export const ko: Dict = {
   'createPR.openBrowser': '브라우저에서 열기',
   'createPR.openBrowserTitle': '대신 호스트의 비교 페이지를 엽니다',
   'createPR.createButton': 'PR 만들기',
-  'createPR.created': 'PR #{n}을 만들었습니다',
+  'createPR.createdFollow': 'PR #{n}을 만들었습니다. 사이드바의 {list}에서 확인하세요.',
+  'createPR.viewInApp': '앱에서 보기',
+  'createPR.openAfterCreate': '만든 뒤 브라우저에서 풀 리퀘스트 열기',
 
   // 태그 생성 모달
   'createTag.title': '태그 만들기',

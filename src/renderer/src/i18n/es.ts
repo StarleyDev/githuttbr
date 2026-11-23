@@ -2656,7 +2656,9 @@ export const es: Dict = {
   'createPR.openBrowser': 'Abrir en el navegador',
   'createPR.openBrowserTitle': 'Abrir la página de comparación del host',
   'createPR.createButton': 'Crear PR',
-  'createPR.created': 'PR #{n} creado',
+  'createPR.createdFollow': 'PR #{n} creado. Síguelo en {list} en la barra lateral.',
+  'createPR.viewInApp': 'Ver en la app',
+  'createPR.openAfterCreate': 'Abrir el pull request en el navegador después de crearlo',
 
   // Create tag modal
   'createTag.title': 'Crear etiqueta',

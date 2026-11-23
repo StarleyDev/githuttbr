@@ -2621,7 +2621,9 @@ export const tr: Dict = {
   'createPR.openBrowser': 'Tarayıcıda aç',
   'createPR.openBrowserTitle': 'Bunun yerine sunucunun karşılaştırma sayfasını aç',
   'createPR.createButton': 'PR oluştur',
-  'createPR.created': 'PR #{n} oluşturuldu',
+  'createPR.createdFollow': 'PR #{n} oluşturuldu. Kenar çubuğundaki {list} bölümünden takip edin.',
+  'createPR.viewInApp': 'Uygulamada görüntüle',
+  'createPR.openAfterCreate': 'Oluşturduktan sonra pull request’i tarayıcıda aç',
 
   'createTag.title': 'Etiket oluştur',
   'createTag.annotated': 'Açıklamalı',

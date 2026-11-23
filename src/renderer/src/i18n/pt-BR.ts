@@ -2663,7 +2663,9 @@ export const ptBR: Dict = {
   'createPR.openBrowser': 'Abrir no navegador',
   'createPR.openBrowserTitle': 'Abrir a página de comparação do host em vez disso',
   'createPR.createButton': 'Criar PR',
-  'createPR.created': 'PR #{n} criado',
+  'createPR.createdFollow': 'PR #{n} criado. Acompanhe-o em {list} na barra lateral.',
+  'createPR.viewInApp': 'Ver no app',
+  'createPR.openAfterCreate': 'Abrir o pull request no navegador depois de criá-lo',
 
   // Modal de criar tag
   'createTag.title': 'Criar tag',

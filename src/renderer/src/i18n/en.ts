@@ -2661,7 +2661,9 @@ export const en = {
   'createPR.openBrowser': 'Open in browser',
   "createPR.openBrowserTitle": "Open the host's compare page instead",
   'createPR.createButton': 'Create PR',
-  'createPR.created': 'Created PR #{n}',
+  'createPR.createdFollow': 'Created PR #{n}. Follow it under {list} in the sidebar.',
+  'createPR.viewInApp': 'View in app',
+  'createPR.openAfterCreate': 'Open the pull request in the browser after creating it',
 
   // Create tag modal
   'createTag.title': 'Create tag',

@@ -13676,6 +13676,10 @@ mark.find-hit.active {
   color: var(--text-1);
   cursor: pointer;
 }
+/* The second option sits under the first, not a section away. */
+.pr-draft + .pr-draft {
+  margin-top: 2px;
+}
 .pr-actions {
   align-items: center;
 }

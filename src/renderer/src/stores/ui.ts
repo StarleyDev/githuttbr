@@ -15,6 +15,18 @@ export interface Toast {
   message: string
   /** Repository the message came from — lets an error toast offer "Fix with AI". */
   repoPath?: string
+  /** One next step, drawn as a link under the message. `label` is already translated. */
+  action?: ToastAction
+}
+
+export interface ToastAction {
+  label: string
+  run: () => void
+}
+
+export interface ToastOpts {
+  repoPath?: string
+  action?: ToastAction
 }
 
 export interface MenuItem {
@@ -435,7 +447,7 @@ interface UIState {
   touchRepoMru(path: string): void
   setRepositoriesQuery(query: string | null): void
   setGithubUnread(n: number): void
-  toast(kind: Toast['kind'], message: string, opts?: { repoPath?: string }): void
+  toast(kind: Toast['kind'], message: string, opts?: ToastOpts): void
   dismissToast(id: number): void
   toggleTerminal(repoPath: string): void
   toggleProblems(repoPath: string): void
@@ -548,9 +560,11 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   toast: (kind, message, opts) => {
     const id = ++toastId
-    set({ toasts: [...get().toasts, { id, kind, message, ...(opts?.repoPath ? { repoPath: opts.repoPath } : {}) }] })
+    const extra = { ...(opts?.repoPath ? { repoPath: opts.repoPath } : {}), ...(opts?.action ? { action: opts.action } : {}) }
+    set({ toasts: [...get().toasts, { id, kind, message, ...extra }] })
     // An explained error carries a next step to read and act on: it stays longer.
-    const ms = kind === 'error' ? (explainGitError(message) ? 15000 : 7000) : 3500
+    // So does a toast with a button — it has to stay long enough to be reached.
+    const ms = kind === 'error' ? (explainGitError(message) ? 15000 : 7000) : opts?.action ? 8000 : 3500
     setTimeout(() => get().dismissToast(id), ms)
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),

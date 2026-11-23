@@ -2662,7 +2662,9 @@ export const de: Dict = {
   'createPR.openBrowser': 'Im Browser öffnen',
   'createPR.openBrowserTitle': 'Stattdessen die Vergleichsseite des Hosts öffnen',
   'createPR.createButton': 'PR erstellen',
-  'createPR.created': 'PR #{n} erstellt',
+  'createPR.createdFollow': 'PR #{n} erstellt. Verfolge ihn unter {list} in der Seitenleiste.',
+  'createPR.viewInApp': 'In der App ansehen',
+  'createPR.openAfterCreate': 'Pull Request nach dem Erstellen im Browser öffnen',
 
   // Create tag modal
   'createTag.title': 'Tag erstellen',

@@ -2621,7 +2621,9 @@ export const fr: Dict = {
   'createPR.openBrowser': 'Ouvrir dans le navigateur',
   'createPR.openBrowserTitle': 'Ouvrir plutôt la page de comparaison de l’hébergeur',
   'createPR.createButton': 'Créer la PR',
-  'createPR.created': 'PR #{n} créée',
+  'createPR.createdFollow': 'PR #{n} créée. Suivez-la dans {list}, dans la barre latérale.',
+  'createPR.viewInApp': 'Voir dans l’app',
+  'createPR.openAfterCreate': 'Ouvrir la pull request dans le navigateur après sa création',
 
   'createTag.title': 'Créer une étiquette',
   'createTag.annotated': 'Annotée',

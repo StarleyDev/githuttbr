@@ -2662,7 +2662,9 @@ export const he: Dict = {
   'createPR.openBrowser': 'פתיחה בדפדפן',
   'createPR.openBrowserTitle': 'פתיחת עמוד ההשוואה של המארח במקום',
   'createPR.createButton': 'יצירת בקשת משיכה',
-  'createPR.created': 'נוצרה בקשת משיכה #{n}',
+  'createPR.createdFollow': 'נוצרה בקשת משיכה #{n}. אפשר לעקוב אחריה תחת {list} בסרגל הצד.',
+  'createPR.viewInApp': 'הצגה באפליקציה',
+  'createPR.openAfterCreate': 'פתיחת בקשת המשיכה בדפדפן לאחר יצירתה',
 
   // Create tag modal
   'createTag.title': 'יצירת תגית',

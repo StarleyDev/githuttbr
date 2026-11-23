@@ -71,6 +71,18 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
             {expanded ? t('toast.showLess') : t('toast.showMore')}
           </button>
         )}
+        {toast.action && (
+          <button
+            className="toast-more"
+            onClick={(e) => {
+              e.stopPropagation()
+              toast.action?.run()
+              onDismiss()
+            }}
+          >
+            {toast.action.label}
+          </button>
+        )}
         {hint && (
           <>
             <button className="toast-more" onClick={() => setShowDetail((v) => !v)}>

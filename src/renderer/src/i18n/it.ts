@@ -2622,7 +2622,9 @@ export const it: Dict = {
   'createPR.openBrowser': 'Apri nel browser',
   'createPR.openBrowserTitle': 'Apri invece la pagina di confronto dell’host',
   'createPR.createButton': 'Crea la PR',
-  'createPR.created': 'Creata la PR #{n}',
+  'createPR.createdFollow': 'Creata la PR #{n}. Seguila in {list} nella barra laterale.',
+  'createPR.viewInApp': 'Vedi nell’app',
+  'createPR.openAfterCreate': 'Apri la pull request nel browser dopo averla creata',
 
   'createTag.title': 'Crea un tag',
   'createTag.annotated': 'Annotato',
