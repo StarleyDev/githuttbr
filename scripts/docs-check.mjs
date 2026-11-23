@@ -24,6 +24,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { staleness } from './docs-staleness.mjs'
+import { paletteCommandIds } from './docs-surfaces.mjs'
 
 // A stale translation is a warning by default: the backlog predates the check,
 // and blocking every commit on fifteen languages of catch-up would only teach
@@ -49,7 +50,7 @@ const pageBlock = types.split('export type PageContent')[1]?.split('/**')[0] ?? 
 const pages = [...new Set([...pageBlock.matchAll(/\{ type: '([\w-]+)'/g)].map((m) => m[1]))]
 
 const palette = read('src/renderer/src/components/CommandPalette.tsx')
-const commands = [...new Set([...palette.matchAll(/id: '([\w-]+)', title:/g)].map((m) => m[1]))]
+const commands = paletteCommandIds(palette)
 
 // The right column is a surface too: a tab there is as findable as a modal, and
 // went undocumented once because nothing asked about it.
