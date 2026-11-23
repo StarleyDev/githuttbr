@@ -253,12 +253,62 @@ export function mergeSecretStores(storedRaw: SecretStore, nextRaw: SecretStore):
   return out
 }
 
-/** Drops entries for profiles that no longer exist. */
-export function pruneSecrets(store: SecretStore, profileIds: string[]): SecretStore {
+type Profiles = AppSettings['profiles']
+type ServerTokenField = 'githubEnterpriseTokens' | 'gitlabServerTokens' | 'bitbucketServerTokens'
+
+// Each map, with the profile's server list it is keyed by and the same
+// normalization `extractSecrets` files the tokens under.
+const SERVER_TOKEN_MAPS: {
+  field: ServerTokenField
+  bases: (p: Profiles[number]) => (string | null)[]
+}[] = [
+  { field: 'githubEnterpriseTokens', bases: (p) => (p.githubEnterprise ?? []).map((h) => normalizeGithubEnterpriseUrl(h.url)) },
+  {
+    field: 'gitlabServerTokens',
+    bases: (p) => (p.gitlabServers ?? []).map((h) => normalizeInstanceUrl(h.url)).filter((b) => b !== GITLAB_COM)
+  },
+  { field: 'bitbucketServerTokens', bases: (p) => (p.bitbucketServers ?? []).map((h) => normalizeBitbucketServerUrl(h.url)) }
+]
+
+const normalizerOf: Record<ServerTokenField, (raw: string) => string | null> = {
+  githubEnterpriseTokens: normalizeGithubEnterpriseUrl,
+  gitlabServerTokens: normalizeInstanceUrl,
+  bitbucketServerTokens: normalizeBitbucketServerUrl
+}
+
+/**
+ * Drops entries for profiles that no longer exist and, given the profiles
+ * themselves, every server token whose server the profile no longer lists. The
+ * merge path keeps whatever a save did not mention, so without this a server
+ * removed in Settings kept its token in the store, and adding the same URL back
+ * later silently restored an old — maybe revoked — token.
+ */
+export function pruneSecrets(store: SecretStore, profileIds: string[], profiles?: Profiles): SecretStore {
   const keep = new Set(profileIds)
+  const listed = profiles ? new Map(profiles.map(migrateGitlabProfile).map((p) => [p.id, p])) : null
   const out: SecretStore = {}
   for (const [id, secrets] of Object.entries(store)) {
-    if (keep.has(id)) out[id] = secrets
+    if (!keep.has(id)) continue
+    const profile = listed?.get(id)
+    if (!listed) {
+      out[id] = secrets
+      continue
+    }
+    const kept: ProfileSecrets = { ...secrets }
+    for (const { field, bases } of SERVER_TOKEN_MAPS) {
+      const tokens = secrets[field]
+      if (!tokens) continue
+      const allowed = new Set(profile ? bases(profile).filter((b): b is string => !!b) : [])
+      const filtered = Object.fromEntries(
+        Object.entries(tokens).filter(([base]) => {
+          const canonical = normalizerOf[field](base)
+          return !!canonical && allowed.has(canonical)
+        })
+      )
+      if (Object.keys(filtered).length > 0) kept[field] = filtered
+      else delete kept[field]
+    }
+    if (Object.keys(kept).length > 0) out[id] = kept
   }
   return out
 }
