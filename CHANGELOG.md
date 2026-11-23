@@ -1,5 +1,12 @@
 
 
+## [4.39.1](https://github.com/StarleyDev/githuttbr/compare/v4.39.0...v4.39.1) (2026-11-23)
+
+
+### Features
+
+* **pr:** make opening the new pull request in the browser optional ([c20aa65](https://github.com/StarleyDev/githuttbr/commit/c20aa65a0614c22bc63bffe03d8d5e8f7808bf04))
+
 ## [4.39.0](https://github.com/StarleyDev/githuttbr/compare/v4.38.0...v4.39.0) (2026-11-23)
 
 
