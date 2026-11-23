@@ -10,21 +10,44 @@ permissions:
   contents: read
 
 jobs:
+  # One draft for every job to attach to. Without it Linux and Windows raced to
+  # create it (electron-builder creates one when none exists), and macOS — which
+  # uploads with gh, not electron-builder — would have nothing to upload to.
+  draft:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Create the draft release if it does not exist
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Refusing to release: tag '$TAG' is not vX.Y.Z"
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+          else
+            # The title is the bare version, as electron-builder names its drafts.
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "${TAG#v}" --notes ''
+          fi
+
+  # Linux and Windows. electron-builder --publish uploads to the draft above.
   release:
-    # electron-builder --publish uploads the assets to the draft release.
+    needs: draft
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
-
-    # 'true' when the macOS signing cert secret is configured. Drives whether the
-    # mac build is signed + notarized or shipped unsigned. See docs/code-signing-macos.md.
-    env:
-      HAS_APPLE_CERT: ${{ secrets.CSC_LINK != '' }}
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -43,97 +66,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # A signing cert without the notarization credentials is a half-configured
-      # release: electron-builder 26 only warns and ships a build that is signed
-      # but not notarized, which Gatekeeper still blocks. Fail before building.
-      # Only emptiness is tested — the values never reach the log.
-      - name: Check notarization credentials
-        if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          missing=''
-          [ -n "${APPLE_ID:-}" ] || missing="$missing APPLE_ID"
-          [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ] || missing="$missing APPLE_APP_SPECIFIC_PASSWORD"
-          [ -n "${APPLE_TEAM_ID:-}" ] || missing="$missing APPLE_TEAM_ID"
-          if [ -n "$missing" ]; then
-            echo "::error::CSC_LINK is set but notarization secrets are empty:$missing"
-            exit 1
-          fi
-
-      # electron-builder 24.13.3 created a temp keychain with a random
-      # password, then called `security set-key-partition-list -k` with the
-      # .p12 password instead (electron-builder#10066), which macos-26 rejects.
-      # 26.x passes the keychain password, but this import is the path that is
-      # known to sign on macos-26, so it stays: we import the cert ourselves and
-      # keep CSC_LINK unset so builder only finds the identity already there.
-      - name: Import signing cert
-        if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
-        env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          CERT_PATH="$RUNNER_TEMP/certificate.p12"
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
-          # Generated values are not secrets GitHub knows about, so mask them
-          # before anything can print them — and before they reach GITHUB_ENV.
-          echo "::add-mask::$KEYCHAIN_PASSWORD"
-          P12_PASSWORD="$(printf '%s' "${CSC_KEY_PASSWORD:-}" | tr -d '\r\n')"
-          if [ -n "$P12_PASSWORD" ]; then echo "::add-mask::$P12_PASSWORD"; fi
-          export CERT_PATH
-          python3 -c 'import os, base64; open(os.environ["CERT_PATH"], "wb").write(base64.b64decode(os.environ["CSC_LINK"]))'
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$P12_PASSWORD" \
-            -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/productsign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
-            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
-          rm -f "$CERT_PATH"
-          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q 'Developer ID Application'; then
-            echo 'No Developer ID Application identity in the signing keychain'
-            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
-            exit 1
-          fi
-          echo "CSC_KEYCHAIN=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
-          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
-
-      # macOS WITH signing secrets -> signed + notarized. electron-builder 25+
-      # takes `mac.notarize` as a boolean only and reads APPLE_ID,
-      # APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID from the environment, so
-      # the team id is no longer passed as --config.mac.notarize.teamId.
-      - name: Build and publish (signed macOS)
-        if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_KEYCHAIN: ${{ env.CSC_KEYCHAIN }}
-          KEYCHAIN_PASSWORD: ${{ env.KEYCHAIN_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$CSC_KEYCHAIN"
-          npm run release -- --config.forceCodeSigning=true
-
-      # Everything else: unsigned macOS (no secrets), or Windows/Linux.
-      # CSC_IDENTITY_AUTO_DISCOVERY=false stops electron-builder from failing
-      # when no signing identity is present (harmless on Windows/Linux).
-      - name: Build and publish (unsigned)
-        if: matrix.os != 'macos-latest' || env.HAS_APPLE_CERT != 'true'
+      # CSC_IDENTITY_AUTO_DISCOVERY=false keeps electron-builder from looking
+      # for a signing identity (harmless on Windows/Linux).
+      - name: Build and publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
         run: npm run release
 
-  # Flip the draft release to published, but ONLY after all three build jobs
-  # succeed. If any OS build fails, this job is skipped and the release stays a
-  # hidden draft (no half-uploaded release ever goes public).
+  # macOS no longer blocks the release. It builds in its own reusable workflow
+  # and attaches its files whenever it gets a runner — before or after the
+  # release goes public. When it never does, Release retry re-runs just this
+  # job, and Release mac backfill keeps trying for 48 h. Pinned to macos-26
+  # (what macos-latest points at since the 2026 migration) so the image does not
+  # change under a release unannounced.
+  mac:
+    needs: draft
+    permissions:
+      contents: write
+      issues: write
+    uses: ./.github/workflows/release-mac.yml
+    with:
+      tag: ${{ github.ref_name }}
+      runner: macos-26
+      # Matches MAX_ATTEMPTS in release-retry.yml: the issue opens once the
+      # automatic re-runs are used up, not on the first empty queue.
+      notify-from-attempt: 3
+    secrets: inherit
+
+  # Flip the draft release to published, but ONLY after the Linux and Windows
+  # jobs succeed and their update files and binaries are all attached. If
+  # either fails, this job is skipped and the release stays a hidden draft (no
+  # half-uploaded release ever goes public). macOS is not waited for.
   publish:
     needs: release
     runs-on: ubuntu-latest
@@ -166,6 +130,19 @@ jobs:
           # backticks or $() never get re-interpreted by the shell.
           awk "/^## \[${VERSION}\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
             | sed '/^$/d' | head -100 > release-notes.md
+
+      # Both jobs reporting success is not proof: check that latest.yml and
+      # latest-linux.yml are attached and that every file they name is too.
+      - name: Check Linux and Windows are complete
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ymls"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets > "$RUNNER_TEMP/assets.json"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/ymls" --clobber \
+            --pattern latest.yml --pattern latest-linux.yml || true
+          node scripts/release-assets.mjs gate "$RUNNER_TEMP/assets.json" "$RUNNER_TEMP/ymls"
 
       - name: Publish the release
         env:

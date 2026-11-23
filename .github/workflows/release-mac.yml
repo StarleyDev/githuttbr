@@ -1,0 +1,223 @@
+name: Release macOS
+
+# The macOS half of a release, called by Release (on the tag push) and by
+# Release mac backfill (when that first try never got a runner). It builds with
+# `--publish never` and attaches the files itself with `gh release upload
+# --clobber`: electron-builder's own GitHub upload silently skips a release that
+# is already published, and macOS is now allowed to arrive after Linux and
+# Windows have gone public. See CONTRIBUTING.md → Releasing.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to build, vX.Y.Z
+        required: true
+        type: string
+      runner:
+        description: macOS runner label
+        required: false
+        type: string
+        default: macos-26
+      notify-from-attempt:
+        description: >-
+          Open the "macOS build missing" issue only from this run attempt on, so
+          the automatic re-runs of a never-started job get their chance first.
+        required: false
+        type: number
+        default: 1
+
+# The caller grants the ceiling; each job below asks for what it needs.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ inputs.runner }})
+    runs-on: ${{ inputs.runner }}
+    # Counts from the moment a runner starts the job, not queue time. A signed,
+    # notarized build takes ~25 min; this only stops a wedged notarization.
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag }}
+      # 'true' when the macOS signing cert secret is configured. Drives whether
+      # the build is signed + notarized or shipped unsigned.
+      HAS_APPLE_CERT: ${{ secrets.CSC_LINK != '' }}
+    steps:
+      - name: Check the tag
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Refusing to build: tag '$TAG' is not vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Check the version
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p 'require("./package.json").version')"
+          if [ "v$VERSION" != "$TAG" ]; then
+            echo "::error::package.json says $VERSION but the tag is $TAG"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      # No secret in this step's env, and checkout keeps no token in .git/config:
+      # the install scripts of a thousand packages run here.
+      - name: Install dependencies
+        run: npm ci
+
+      # A signing cert without the notarization credentials is a half-configured
+      # release: electron-builder 26 only warns and ships a build that is signed
+      # but not notarized, which Gatekeeper still blocks. Fail before building.
+      # Only emptiness is tested — the values never reach the log.
+      - name: Check notarization credentials
+        if: env.HAS_APPLE_CERT == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          missing=''
+          [ -n "${APPLE_ID:-}" ] || missing="$missing APPLE_ID"
+          [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ] || missing="$missing APPLE_APP_SPECIFIC_PASSWORD"
+          [ -n "${APPLE_TEAM_ID:-}" ] || missing="$missing APPLE_TEAM_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::CSC_LINK is set but notarization secrets are empty:$missing"
+            exit 1
+          fi
+
+      # electron-builder 24.13.3 created a temp keychain with a random
+      # password, then called `security set-key-partition-list -k` with the
+      # .p12 password instead (electron-builder#10066), which macos-26 rejects.
+      # 26.x passes the keychain password, but this import is the path that is
+      # known to sign on macos-26, so it stays: we import the cert ourselves and
+      # keep CSC_LINK unset so builder only finds the identity already there.
+      - name: Import signing cert
+        if: env.HAS_APPLE_CERT == 'true'
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+          # Generated values are not secrets GitHub knows about, so mask them
+          # before anything can print them — and before they reach GITHUB_ENV.
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          P12_PASSWORD="$(printf '%s' "${CSC_KEY_PASSWORD:-}" | tr -d '\r\n')"
+          if [ -n "$P12_PASSWORD" ]; then echo "::add-mask::$P12_PASSWORD"; fi
+          export CERT_PATH
+          python3 -c 'import os, base64; open(os.environ["CERT_PATH"], "wb").write(base64.b64decode(os.environ["CSC_LINK"]))'
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$P12_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/productsign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          rm -f "$CERT_PATH"
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q 'Developer ID Application'; then
+            echo 'No Developer ID Application identity in the signing keychain'
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
+          echo "CSC_KEYCHAIN=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
+
+      # WITH signing secrets -> signed + notarized. electron-builder 25+ takes
+      # `mac.notarize` as a boolean only and reads APPLE_ID,
+      # APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID from the environment.
+      # No GH_TOKEN here: nothing in the build publishes.
+      - name: Build (signed macOS)
+        if: env.HAS_APPLE_CERT == 'true'
+        env:
+          CSC_KEYCHAIN: ${{ env.CSC_KEYCHAIN }}
+          KEYCHAIN_PASSWORD: ${{ env.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$CSC_KEYCHAIN"
+          npm run build
+          node scripts/check-native.mjs
+          npx electron-builder --mac --publish never --config.forceCodeSigning=true
+
+      # No secrets -> unsigned. CSC_IDENTITY_AUTO_DISCOVERY=false stops
+      # electron-builder from failing when no signing identity is present.
+      - name: Build (unsigned macOS)
+        if: env.HAS_APPLE_CERT != 'true'
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          npm run build
+          node scripts/check-native.mjs
+          npx electron-builder --mac --publish never
+
+      # Works on a draft and on a published release alike. The binaries go
+      # first and latest-mac.yml last, so an updater never reads a yml whose zip
+      # is not attached yet; --clobber makes a second run replace, not fail.
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Through a file, not <(…): set -e does not see a process substitution fail.
+          node scripts/release-assets.mjs mac-upload dist "$VERSION" > "$RUNNER_TEMP/upload.txt"
+          mapfile -t files < "$RUNNER_TEMP/upload.txt"
+          printf 'Uploading %s\n' "${files[@]}"
+          last=$(( ${#files[@]} - 1 ))
+          gh release upload "$TAG" "${files[@]:0:$last}" --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$TAG" "${files[$last]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  # Tell the maintainer, on Linux so it runs even when no macOS runner ever
+  # appeared. Success closes the issue; failure opens or updates it.
+  report:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ inputs.tag }}
+      MAC_RESULT: ${{ needs.build.result }}
+      MAC_RUNNER: ${{ inputs.runner }}
+      ATTEMPT: ${{ github.run_attempt }}
+      NOTIFY_FROM: ${{ inputs.notify-from-attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Open, update or close the issue
+        run: |
+          set -euo pipefail
+          if [ "$MAC_RESULT" = "success" ]; then
+            node scripts/release-mac.mjs issue close "$TAG"
+          # A real failure (the build ran and broke) will not be retried
+          # automatically, so it is reported at once; a job that never got a
+          # runner waits for the Release retry workflow's re-runs first.
+          elif [ "$MAC_RESULT" = "failure" ] || [ "$ATTEMPT" -ge "$NOTIFY_FROM" ]; then
+            node scripts/release-mac.mjs issue open "$TAG"
+          else
+            echo "macOS $MAC_RESULT on attempt $ATTEMPT; Release retry gets a turn before an issue is opened."
+          fi

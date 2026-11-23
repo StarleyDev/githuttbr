@@ -87,20 +87,21 @@ describe('packaging hardening', () => {
   })
 
   describe('release workflow: a signed macOS build must also be notarized', () => {
-    const wf = yaml.load(readFileSync(join(ROOT, '.github/workflows/release.yml'), 'utf8')) as {
-      jobs: { release: { steps: Step[] } }
+    // macOS builds in its own reusable workflow, called by Release and by the backfill.
+    const wf = yaml.load(readFileSync(join(ROOT, '.github/workflows/release-mac.yml'), 'utf8')) as {
+      jobs: { build: { steps: Step[] } }
     }
-    const steps = wf.jobs.release.steps
+    const steps = wf.jobs.build.steps
     const check = steps.find((s) => s.name === 'Check notarization credentials')
 
     it('checks the three notarization secrets before the signed build, only when signing', () => {
       expect(check).toBeDefined()
-      expect(check!.if).toBe("matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'")
+      expect(check!.if).toBe("env.HAS_APPLE_CERT == 'true'")
       for (const k of ['APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID']) {
         expect(check!.env?.[k]).toBe(`\${{ secrets.${k} }}`)
       }
       const at = (name: string): number => steps.findIndex((s) => s.name === name)
-      expect(at('Check notarization credentials')).toBeLessThan(at('Build and publish (signed macOS)'))
+      expect(at('Check notarization credentials')).toBeLessThan(at('Build (signed macOS)'))
     })
 
     it('fails when any one of them is empty, and passes when all are set', () => {

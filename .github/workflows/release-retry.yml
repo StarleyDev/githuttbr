@@ -1,9 +1,14 @@
 name: Release retry
 
-# A Release run whose failed job never got a runner (GitHub's macOS arm64 queue
-# runs dry now and then: "The job was not acquired by Runner…") is re-run, up to
-# three attempts, without anyone having to notice the stuck draft. A real build
-# failure ran steps, and scripts/release-retry.mjs leaves it alone.
+# A Release run whose job never got a runner (GitHub's macOS queue runs dry now
+# and then: the job sits queued and is cancelled without a single step) is
+# re-run, up to MAX_ATTEMPTS attempts in all, without anyone having to notice.
+# A never-started job is re-run by id — that job and its dependents only, so
+# Linux and Windows are not rebuilt for a macOS that never showed up. A real
+# build failure ran steps, and scripts/release-retry.mjs leaves it alone.
+#
+# After the last attempt, Release mac backfill (every 6 h, for 48 h) takes over
+# for macOS, and the "vX.Y.Z: macOS build missing" issue says so.
 on:
   workflow_run:
     workflows: [Release]
@@ -15,8 +20,13 @@ permissions:
 
 jobs:
   retry:
-    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt < 3
+    # Not only 'failure': a run whose only bad job was cancelled in the queue
+    # concludes 'cancelled', and that is exactly the case worth retrying.
+    if: >-
+      contains(fromJSON('["failure","cancelled","timed_out","startup_failure"]'), github.event.workflow_run.conclusion)
     runs-on: ubuntu-latest
+    env:
+      MAX_ATTEMPTS: 3
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -30,8 +40,21 @@ jobs:
           ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
         run: |
           set -euo pipefail
-          verdict="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/attempts/$ATTEMPT/jobs" | node scripts/release-retry.mjs)"
-          echo "$verdict"
-          if [ "$verdict" = "retry" ]; then
-            gh run rerun "$RUN_ID" --repo "$GITHUB_REPOSITORY" --failed
+          api="repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID"
+          # Read the run as it is now, not as the event saw it: someone may
+          # have re-run it by hand in the meantime.
+          gh api "$api" > "$RUNNER_TEMP/run.json"
+          gh api "$api/attempts/$ATTEMPT/jobs?per_page=100" > "$RUNNER_TEMP/jobs.json"
+          verdict="$(node scripts/release-retry.mjs "$RUNNER_TEMP/jobs.json" "$RUNNER_TEMP/run.json" "$ATTEMPT" "$MAX_ATTEMPTS")"
+          echo "Attempt $ATTEMPT: $verdict"
+          case "$verdict" in
+            rerun-job\ *) endpoint="repos/$GITHUB_REPOSITORY/actions/jobs/${verdict#rerun-job }/rerun" ;;
+            rerun-failed) endpoint="$api/rerun-failed-jobs" ;;
+            *) exit 0 ;;
+          esac
+          # A refused re-run (the run started again a moment ago, or GitHub
+          # will not re-run it) is not a broken release: say why and leave the
+          # rest to Release mac backfill and the issue it keeps.
+          if ! out="$(gh api -X POST "$endpoint" 2>&1)"; then
+            echo "::warning::Re-run was refused: $out"
           fi

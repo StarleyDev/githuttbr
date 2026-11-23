@@ -1,0 +1,100 @@
+name: Release mac backfill
+
+# The backstop for a release published without macOS. Every 6 hours, look at
+# the latest release: if it has no latest-mac.yml, no Release run for it is
+# still going, and it was published less than 48 h ago, build macOS from the
+# tag and attach it. Idempotent — a release that has latest-mac.yml is left
+# alone — and bounded by that 48 h window (about eight tries). By hand (Run
+# workflow) it takes any tag, ignores the window, and lets you pick the runner.
+
+on:
+  schedule:
+    - cron: '41 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (vX.Y.Z). Empty means the latest release.
+        required: false
+        type: string
+      runner:
+        description: macOS runner
+        required: false
+        type: choice
+        options: [macos-26, macos-15]
+        default: macos-26
+
+permissions:
+  contents: read
+
+# Two backfills for one release would upload over each other.
+concurrency:
+  group: release-mac-backfill
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    # A copy of this fork would otherwise build on someone else's behalf.
+    if: github.repository == 'StarleyDev/githuttbr'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      # Only to close a stale "macOS build missing" issue once someone has
+      # attached macOS by other means.
+      issues: write
+    outputs:
+      tag: ${{ steps.pick.outputs.tag }}
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Find a release without macOS
+        id: pick
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_RUNNER: ${{ inputs.runner }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_TAG" ] && [[ ! "$INPUT_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::'$INPUT_TAG' is not vX.Y.Z"
+            exit 1
+          fi
+          # Without a tag, gh shows the latest published release.
+          gh release view ${INPUT_TAG:+"$INPUT_TAG"} --repo "$GITHUB_REPOSITORY" \
+            --json tagName,isDraft,publishedAt,assets > "$RUNNER_TEMP/release.json" || true
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow release.yml --limit 30 \
+            --json status,headBranch > "$RUNNER_TEMP/runs.json" || echo '[]' > "$RUNNER_TEMP/runs.json"
+          verdict="$(node scripts/release-mac.mjs pick "$RUNNER_TEMP/release.json" "$RUNNER_TEMP/runs.json" "$INPUT_TAG")"
+          echo "$verdict"
+          case "$verdict" in
+            tag=*) echo "tag=${verdict#tag=}" >> "$GITHUB_OUTPUT" ;;
+            *'already has latest-mac.yml'*)
+              node scripts/release-mac.mjs issue close "$(node -p 'require(process.argv[1]).tagName' "$RUNNER_TEMP/release.json")"
+              exit 0 ;;
+            *) exit 0 ;;
+          esac
+          # A dry queue tends to be one image's queue: scheduled tries alternate
+          # between the two supported Apple-silicon images.
+          if [ -n "$INPUT_RUNNER" ]; then runner="$INPUT_RUNNER"
+          elif [ $(( RUN_NUMBER % 2 )) -eq 0 ]; then runner=macos-26
+          else runner=macos-15
+          fi
+          echo "runner=$runner" >> "$GITHUB_OUTPUT"
+
+  mac:
+    needs: pick
+    if: needs.pick.outputs.tag != ''
+    permissions:
+      contents: write
+      issues: write
+    uses: ./.github/workflows/release-mac.yml
+    with:
+      tag: ${{ needs.pick.outputs.tag }}
+      runner: ${{ needs.pick.outputs.runner }}
+      notify-from-attempt: 1
+    secrets: inherit
