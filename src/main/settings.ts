@@ -437,6 +437,16 @@ export function namedProfileAuth(
   return profileAuth(host, profileId, remoteUrl, expectedBase)
 }
 
+/**
+ * A profile id off the IPC boundary, normalised once for every call that takes
+ * one (clone, the branch list, the repository and account lists, create): a
+ * string names a profile — an empty or unknown one names nobody, and gets
+ * nothing; anything else means "no profile named", which is the active one.
+ */
+export function asProfileIdArg(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
 /** Whether some profile has this id — an empty or unknown one names nobody. */
 export async function isProfileId(profileId: unknown): Promise<boolean> {
   if (typeof profileId !== 'string' || !profileId.trim()) return false
@@ -494,6 +504,13 @@ export async function boundProfileAuth(
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
   return profileAuth(host, boundId, remoteUrl)
+}
+
+/** The name of the profile a repository is explicitly bound to, or undefined when it is not bound. */
+export async function boundProfileName(repoPath: string): Promise<string | undefined> {
+  const plain = await readSettings()
+  const boundId = plain.repoProfiles?.[repoPath]
+  return boundId ? plain.profiles.find((p) => p.id === boundId)?.name : undefined
 }
 
 /** `boundProfileAuth` that never decrypts — see `peekActiveProfileAuth`. */

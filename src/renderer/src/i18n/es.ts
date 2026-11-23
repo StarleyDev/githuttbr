@@ -3338,6 +3338,7 @@ export const es: Dict = {
   'gitError.fileTooLargeAny': 'GitHub rechaza archivos de más de 100 MB, y el push incluye uno. Quítalo de los commits que se envían o gestiónalo con Git LFS.',
   'gitError.protectedBranch': 'El servidor protege esta rama y rechazó el push. Envía a una rama nueva y abre un pull request.',
   'gitError.noCredential': 'Git no tiene credenciales para {host}. Conecta una cuenta en Ajustes → Integraciones, o inicia sesión en el credential helper de git, y vuelve a intentarlo.',
+  'gitError.boundProfileNoCredential': "Ninguna cuenta de {provider} está vinculada al perfil «{profile}» al que está asociado este repositorio, para {host}. Cambia a ese perfil e inicia sesión en Ajustes → Integraciones, o añade un token allí.",
   'gitError.permissionDenied': 'El host rechazó la escritura: la cuenta en uso no puede escribir aquí, o su token caducó. Revisa el perfil activo, el acceso de la cuenta y el token.',
   'gitError.repoNotFound': 'El servidor dice que el repositorio no existe — o la cuenta en uso no puede verlo. Revisa la URL del remoto y el perfil activo.',
   'gitError.sshKey': 'El servidor rechazó tu clave SSH. Revisa qué clave tiene el agente en Ajustes → Seguridad y que esté añadida a tu cuenta.',

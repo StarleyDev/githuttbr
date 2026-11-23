@@ -252,7 +252,14 @@ interface PreloadApi {
     prDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     workItem(repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
     prComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
-    prReplyReviewComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown>
+    prReplyReviewComment(
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      inReplyTo: number | string,
+      body: string
+    ): Promise<unknown>
     prCheckLog(repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
     prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>

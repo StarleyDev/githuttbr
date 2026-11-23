@@ -51,6 +51,7 @@ import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
 import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
+import { effectiveProfileId } from '../lib/repoProfile'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -627,9 +628,12 @@ function announceReviewRequests(
   path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[], profileId: string
 ): void {
   const settings = useSettingsStore.getState()
-  // A request begun by the previous profile can finish after a switch.
-  // Keep that result out of the new profile's seen set and notifications.
-  if (settings.settings.activeProfileId !== profileId) return
+  // `profileId` is the account the list was fetched as — the repository's
+  // bound profile, else the active one. A request begun before a switch (or a
+  // re-binding) can finish after it: keep that result out of the other
+  // account's seen set and notifications. Switching the active profile does
+  // not change a bound repository's account, so its PRs are not re-announced.
+  if (effectiveProfileId(settings.settings, path) !== profileId) return
   const key = awaitingSeenKey(profileId, path)
   const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(key), prs)
   awaitingSeen.set(key, seen)
@@ -799,6 +803,8 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
     if (!repo || !origin) return
     const profile = useSettingsStore.getState().activeProfile()
+    // Whose review requests these are: main lists them as this account.
+    const account = effectiveProfileId(useSettingsStore.getState().settings, path)
     try {
       const { provider, prs } = await hostingApi.listPRs(path, origin.url, {
         github: profile.githubToken || undefined,
@@ -808,7 +814,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         forgejo: profile.forgejoToken || undefined
       })
       get().patch(path, { prs, prProvider: provider })
-      announceReviewRequests(path, origin.url, provider, prs, profile.id)
+      announceReviewRequests(path, origin.url, provider, prs, account)
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }

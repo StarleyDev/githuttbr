@@ -76,6 +76,11 @@ const RULES: Rule[] = [
     hint: () => ({ key: 'gitError.tokenScopeAny' })
   },
   {
+    // hosting.ts boundNoCredentialMessage — main has no language.
+    test: /No (.+?) account is linked to the profile "(.*)" this repository is bound to, for ([^\s]+?)\. /,
+    hint: (m) => ({ key: 'gitError.boundProfileNoCredential', vars: { provider: m[1], profile: m[2], host: m[3] } })
+  },
+  {
     // bitbucketServer.ts BBS_USER_NOT_FOUND — main has no language.
     test: /Bitbucket Data Center: could not find your user on the server/,
     hint: () => ({ key: 'gitError.bbsUserNotFound' })

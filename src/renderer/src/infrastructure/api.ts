@@ -1036,8 +1036,14 @@ export const hostingApi = {
     window.api.hosting.workItem(repoPath, remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
   prComment: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, body: string) =>
     window.api.hosting.prComment(repoPath, remoteUrl, tokens, number, body) as Promise<void>,
-  prReplyReviewComment: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, inReplyTo: number | string, body: string) =>
-    window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
+  prReplyReviewComment: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    inReplyTo: number | string,
+    body: string
+  ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
   prCheckLog: (repoPath: string, remoteUrl: string, tokens: PrTokens, url: string) =>
     window.api.hosting.prCheckLog(repoPath, remoteUrl, tokens, url) as Promise<string | null>,
@@ -1062,8 +1068,13 @@ export const hostingApi = {
     window.api.hosting.uploadSshKey(token, title, publicKey) as Promise<{ id: number }>,
   issueDetail: (repoPath: string, remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.issueDetail(repoPath, remoteUrl, tokens, number) as Promise<IssueDetail>,
-  setIssueState: (repoPath: string, remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
-    window.api.hosting.setIssueState(repoPath, remoteUrl, tokens, number, state) as Promise<void>,
+  setIssueState: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: { github?: string },
+    number: number,
+    state: 'open' | 'closed'
+  ) => window.api.hosting.setIssueState(repoPath, remoteUrl, tokens, number, state) as Promise<void>,
   createIssue: (repoPath: string, remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
     window.api.hosting.createIssue(repoPath, remoteUrl, tokens, opts) as Promise<{ number: number; url: string }>,
   applyPrMeta: (

@@ -3336,6 +3336,7 @@ export const zhCN: Dict = {
   'gitError.fileTooLargeAny': 'GitHub 拒绝超过 100 MB 的文件，而此次推送包含这样的文件。请将它从要推送的提交中移除，或改用 Git LFS 管理。',
   'gitError.protectedBranch': '服务器保护了此分支并拒绝了推送。请推送到新分支并发起拉取请求。',
   'gitError.noCredential': 'git 没有 {host} 的凭据。请在 设置 → 集成 中连接账号，或登录 git 的 credential helper，然后重试。',
+  'gitError.boundProfileNoCredential': "此仓库绑定的配置文件“{profile}”没有关联 {host} 的 {provider} 账号。请切换到该配置文件并在 设置 → 集成 中登录，或在那里添加令牌。",
   'gitError.permissionDenied': '主机拒绝了写入：当前账号无权在此写入，或其令牌已过期。请检查当前配置文件、账号权限和令牌。',
   'gitError.repoNotFound': '服务器表示仓库不存在——或当前账号无法看到它。请检查远程 URL 和当前配置文件。',
   'gitError.sshKey': '服务器拒绝了你的 SSH 密钥。请在 设置 → 安全 中查看代理持有的密钥，并确认它已添加到你的账号。',

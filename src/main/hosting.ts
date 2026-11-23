@@ -14,7 +14,9 @@ import { countChecks } from './ciSummary'
 import {
   activeProfileAuth,
   allProfileAuth,
+  asProfileIdArg,
   boundProfileAuth,
+  boundProfileName,
   isProfileId,
   namedProfileAuth,
   namedProfileForgejoInstance,
@@ -349,7 +351,11 @@ async function profileAuth(provider: RepoHost, sent: string | undefined, remoteU
 }
 
 /** `apiToken` for a repository's remote, with the profile resolution above. */
-async function remoteApiToken(remoteUrl: string, provider: RepoHost, sent: string | undefined): Promise<ApiAuth | null> {
+async function remoteApiToken(
+  remoteUrl: string,
+  provider: RepoHost,
+  sent: string | undefined
+): Promise<ApiAuth | null> {
   return apiToken(remoteUrl, await profileAuth(provider, sent, remoteUrl))
 }
 
@@ -594,6 +600,12 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
       return ''
     }
   })()
+  // A repository bound to a profile only ever uses that profile, so "this
+  // profile" would point at the active one — say which. English with a fixed
+  // shape: main has no language, and the renderer's gitErrorHint translates it.
+  const repoPath = hostingRepo.getStore()
+  const bound = repoPath ? await boundProfileName(repoPath) : undefined
+  if (bound) return new Error(boundNoCredentialMessage(provider, bound, host || provider))
   if (provider.toLowerCase() === 'github' && host && remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM) {
     return new Error(
       `No token for the GitHub Enterprise Server ${host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.`
@@ -610,6 +622,27 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   return new Error(
     `No ${provider} account is linked to this profile${host ? ` for ${host}` : ''}. Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there.`
   )
+}
+
+/**
+ * The no-credential message for a repository bound to a profile. Its shape is a
+ * contract with `gitErrorHint` (`gitError.boundProfileNoCredential`), which
+ * renders it in the reader's language.
+ */
+export function boundNoCredentialMessage(provider: string, profile: string, host: string): string {
+  const name = PROVIDER_NAMES[provider.toLowerCase()] ?? provider
+  return (
+    `No ${name} account is linked to the profile "${profile}" this repository is bound to, for ${host}. ` +
+    'Switch to that profile and sign in from Settings → Integrations, or add a token there.'
+  )
+}
+
+const PROVIDER_NAMES: Record<string, string> = {
+  github: 'GitHub',
+  gitlab: 'GitLab',
+  bitbucket: 'Bitbucket',
+  azure: 'Azure DevOps',
+  forgejo: 'Forgejo'
 }
 
 /** What GitHub said about a failed request, beyond the status code. */
@@ -2387,7 +2420,12 @@ async function ensureGithubStack(
 /** Browsing and creating repositories is Bitbucket Cloud's only; a Data Center token never goes to bitbucket.org. */
 const BBS_NO_BROWSE = 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.'
 
-async function listRepositories(provider: RepoHost, token: string, org?: string, profileId?: string): Promise<RemoteRepo[]> {
+async function listRepositories(
+  provider: RepoHost,
+  token: string,
+  org?: string,
+  profileId?: string
+): Promise<RemoteRepo[]> {
   const auth = await tokenForProvider(provider, token, org, profileId)
   if (!auth) throw await noCredential(provider, await providerBase(provider, org, profileId))
 
@@ -3166,19 +3204,14 @@ function handleForRepo<A extends unknown[]>(channel: string, run: (...args: A) =
   )
 }
 
-/** A profile id off the IPC boundary: a string names one (even an unknown one, which gets nothing); anything else means "the active profile". */
-function asProfileId(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined
-}
-
 export function registerHostingHandlers(): void {
   // Provider-level: no repository yet. `profileId` is the clone (or add-remote)
   // dialog's picked profile; absent → the active one.
   ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string, profileId?: unknown) =>
-    listRepositories(provider, token, org, asProfileId(profileId))
+    listRepositories(provider, token, org, asProfileIdArg(profileId))
   )
   ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string, profileId?: unknown) =>
-    listOwners(provider, token, org, asProfileId(profileId))
+    listOwners(provider, token, org, asProfileIdArg(profileId))
   )
   ipcMain.handle(
     'hosting:accountOwner',
@@ -3196,7 +3229,7 @@ export function registerHostingHandlers(): void {
   ipcMain.handle(
     'hosting:createRepo',
     (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string, profileId?: unknown) =>
-      createRepository(provider, token, opts, org, asProfileId(profileId))
+      createRepository(provider, token, opts, org, asProfileIdArg(profileId))
   )
   // No credential: a browser page.
   ipcMain.handle('hosting:openCreatePR', (_e, remoteUrl: string, source: string, target: string) => {
@@ -3219,8 +3252,12 @@ export function registerHostingHandlers(): void {
   )
 
   // Repository-scoped: first argument is the repository path (see handleForRepo).
-  handleForRepo('hosting:listPRs', (remoteUrl: string, tokens: HostTokens) => listPullRequests(remoteUrl, tokens))
-  handleForRepo('hosting:listReleases', (remoteUrl: string, tokens: { github?: string }) => listReleases(remoteUrl, tokens))
+  handleForRepo('hosting:listPRs', (remoteUrl: string, tokens: HostTokens) =>
+    listPullRequests(remoteUrl, tokens)
+  )
+  handleForRepo('hosting:listReleases', (remoteUrl: string, tokens: { github?: string }) =>
+    listReleases(remoteUrl, tokens)
+  )
   handleForRepo('hosting:ciStatuses', (remoteUrl: string, shas: string[], token: string) =>
     fetchCiStatuses(remoteUrl, shas, token)
   )
@@ -3270,10 +3307,16 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo(
     'hosting:updatePR',
-    (remoteUrl: string, tokens: { github?: string }, number: number, patch: { base?: string; title?: string; stackSection?: string }) =>
-      updatePullRequest(remoteUrl, tokens, number, patch)
+    (
+      remoteUrl: string,
+      tokens: { github?: string },
+      number: number,
+      patch: { base?: string; title?: string; stackSection?: string }
+    ) => updatePullRequest(remoteUrl, tokens, number, patch)
   )
-  handleForRepo('hosting:listIssues', (remoteUrl: string, tokens: { github?: string }) => listIssues(remoteUrl, tokens))
+  handleForRepo('hosting:listIssues', (remoteUrl: string, tokens: { github?: string }) =>
+    listIssues(remoteUrl, tokens)
+  )
   handleForRepo('hosting:listMilestones', (remoteUrl: string, tokens: { github?: string }) =>
     listMilestones(remoteUrl, tokens)
   )
@@ -3288,12 +3331,18 @@ export function registerHostingHandlers(): void {
     (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
       setIssueState(remoteUrl, tokens, number, state)
   )
-  handleForRepo('hosting:createIssue', (remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
-    createIssue(remoteUrl, tokens, opts)
+  handleForRepo(
+    'hosting:createIssue',
+    (remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
+      createIssue(remoteUrl, tokens, opts)
   )
   handleForRepo(
     'hosting:applyPrMeta',
-    (remoteUrl: string, tokens: { github?: string }, number: number, meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }) =>
-      applyPrMeta(remoteUrl, tokens, number, meta)
+    (
+      remoteUrl: string,
+      tokens: { github?: string },
+      number: number,
+      meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
+    ) => applyPrMeta(remoteUrl, tokens, number, meta)
   )
 }

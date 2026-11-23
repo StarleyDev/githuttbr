@@ -322,7 +322,14 @@ const api = {
       ipcRenderer.invoke('hosting:workItem', repoPath, remoteUrl, tokens, id),
     prComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prComment', repoPath, remoteUrl, tokens, number, body),
-    prReplyReviewComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown> =>
+    prReplyReviewComment: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      inReplyTo: number | string,
+      body: string
+    ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReplyReviewComment', repoPath, remoteUrl, tokens, number, inReplyTo, body),
     prCheckLog: (repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prCheckLog', repoPath, remoteUrl, tokens, url),
@@ -330,7 +337,14 @@ const api = {
       ipcRenderer.invoke('hosting:prChecks', repoPath, remoteUrl, tokens, number),
     prFiles: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prFiles', repoPath, remoteUrl, tokens, number),
-    prReview: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown> =>
+    prReview: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      event: string,
+      body: string
+    ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReview', repoPath, remoteUrl, tokens, number, event, body),
     prMerge: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prMerge', repoPath, remoteUrl, tokens, number, method),

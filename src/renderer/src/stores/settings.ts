@@ -183,6 +183,9 @@ interface SettingsState {
 
   load(opts?: { unlock?: boolean }): Promise<void>
   update(mut: (s: AppSettings) => AppSettings): void
+  /** Write the pending settings now instead of after the debounce — for a change
+   *  main must see before the next call (a repository's binding before a push). */
+  flush(): Promise<void>
   /** Apply an imported settings file over the current ones and save it at once. */
   importSettings(incoming: Partial<AppSettings>): Promise<void>
 
@@ -485,6 +488,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const settings = syncActiveWorkspace(mut(get().settings))
     set({ settings })
     persist(settings)
+  },
+
+  flush: async () => {
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = null
+    await settingsApi.set(get().settings)
   },
 
   importSettings: async (incoming) => {

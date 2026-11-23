@@ -4,6 +4,7 @@ import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useClonesStore } from '../stores/clones'
 import { cloneFolderNames } from '../lib/cloneBatch'
+import { bindingAfterAddRemote, effectiveProfileId } from '../lib/repoProfile'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
 import { colorName } from './colorMenu'
@@ -644,27 +645,36 @@ function RepoPicker({
   const HostIcon = PROVIDER_ICONS[host]
 
   const [org, setOrg] = useState('')
-  // GitLab: gitlab.com or one of the profile's servers — main only honours a server some profile names.
-  const [gitlabBase, setGitlabBase] = useState(() => preferredGitlabBase(profile))
+  // GitLab: gitlab.com or one of the profile's servers — main only honours a
+  // server some profile names. Remembered per profile, so another pick starts
+  // from its own preferred server in the same render — no second load.
+  const [gitlabPick, setGitlabPick] = useState(() => ({ profileId: profile.id, base: preferredGitlabBase(profile) }))
+  const gitlabBase = gitlabPick.profileId === profile.id ? gitlabPick.base : preferredGitlabBase(profile)
+  const setGitlabBase = (base: string): void => setGitlabPick({ profileId: profile.id, base })
   const scope = host === 'gitlab' ? (gitlabBase === GITLAB_COM ? undefined : gitlabBase) : org
   const [repos, setRepos] = useState<RemoteRepo[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  // Only the latest request may answer: a list for the profile picked a moment
+  // ago must not land under the one picked now.
+  const latestLoad = useRef(0)
 
   const load = async (): Promise<void> => {
+    const id = ++latestLoad.current
     setLoading(true)
     setError(null)
     try {
       // The picked profile, by id: main resolves a server's token from it, and
       // the clone that follows signs in and binds as the same one.
       const list = await hostingApi.listRepos(host, token, scope, profile.id)
-      setRepos(list)
+      if (id === latestLoad.current) setRepos(list)
     } catch (e) {
+      if (id !== latestLoad.current) return
       setError(e instanceof Error ? e.message : String(e))
       setRepos(null)
     } finally {
-      setLoading(false)
+      if (id === latestLoad.current) setLoading(false)
     }
   }
 
@@ -676,14 +686,10 @@ function RepoPicker({
     // A typed token is optional: the main process can borrow the credential
     // Git already uses, including one supplied by `gh auth login`.
     if (host !== 'azure') void load()
+    // Azure waits for an organization: whatever is in flight is no longer wanted.
+    else latestLoad.current++
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [host, token, profile.id, gitlabBase])
-
-  // Another profile has other servers: start again from its preferred one.
-  useEffect(() => {
-    setGitlabBase(preferredGitlabBase(profile))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileId])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -940,6 +946,19 @@ function OwnerSelect({
   )
 }
 
+/**
+ * Bind the repository to the profile picked in Add remote, when it is not the
+ * one the repository already acts as, and write it before returning — main
+ * reads the binding for the push that follows.
+ */
+async function bindToPicked(path: string, picked: string): Promise<void> {
+  const store = useSettingsStore.getState()
+  const bind = bindingAfterAddRemote(store.settings, path, picked)
+  if (!bind) return
+  store.setRepoProfile(path, bind)
+  await store.flush()
+}
+
 /** Add the remote, then finish the fetch/pull/push that opened this dialog. */
 function finishAddRemote(
   spec: Extract<ModalSpec, { kind: 'addRemote' }>,
@@ -981,6 +1000,18 @@ function ProviderCreateForm({
   // does not have to be typed a second time here.
   const [azureOrg, setAzureOrg] = useState(profile.azureOrg ?? '')
   const [gitlabBase, setGitlabBase] = useState(() => preferredGitlabBase(profile))
+  // Another profile (picked in either mode) has its own servers, organization
+  // and accounts: start again from its own, or listOwners/createRepo would send
+  // the new profile with the old one's server.
+  const seededFor = useRef(profile.id)
+  useEffect(() => {
+    if (seededFor.current === profile.id) return
+    seededFor.current = profile.id
+    setOwner(null)
+    setAzureOrg(profile.azureOrg ?? '')
+    setGitlabBase(preferredGitlabBase(profile))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.id])
   // Azure scopes by organization, GitLab by server (absent = gitlab.com).
   const scope = host === 'azure' ? azureOrg : host === 'gitlab' && gitlabBase !== GITLAB_COM ? gitlabBase : undefined
   const [repoName, setRepoName] = useState(spec.matchName ?? '')
@@ -1010,6 +1041,8 @@ function ProviderCreateForm({
       }
       const repo = await hostingApi.createRepo(host, token, opts, scope, profile.id)
       closeModal()
+      // Created as the picked profile: push and every later call go as it too.
+      await bindToPicked(spec.path, profile.id)
       await repoActions.addRemoteAndPush(spec.path, remoteName.trim(), repo.url)
     } catch (e) {
       setBusy(false)
@@ -1017,9 +1050,11 @@ function ProviderCreateForm({
     }
   }
 
-  const attach = (): void => {
+  const attach = async (): Promise<void> => {
     if (!canAttach) return
     closeModal()
+    // Listed as the picked profile: the fetch or push that follows goes as it too.
+    await bindToPicked(spec.path, profile.id)
     finishAddRemote(spec, remoteName.trim(), existingUrl.trim())
   }
 
@@ -1133,7 +1168,7 @@ function ProviderCreateForm({
             <button className="btn ghost" onClick={closeModal} type="button">
               {t('common.cancel')}
             </button>
-            <button className="btn primary" disabled={!canAttach} onClick={attach} type="button">
+            <button className="btn primary" disabled={!canAttach} onClick={() => void attach()} type="button">
               {t('modal.addRemote')}
             </button>
           </div>
@@ -1342,9 +1377,12 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
 function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
-  const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
+  // The picker starts at the profile this repository already acts as — the
+  // one it is bound to, else the active one — so listing, creating and the
+  // push that follows are the same account unless the user picks another.
+  const startProfileId = useSettingsStore((s) => effectiveProfileId(s.settings, spec.path))
   const [provider, setProvider] = useState<RemoteProviderId>('url')
-  const [profileId, setProfileId] = useState(activeProfileId)
+  const [profileId, setProfileId] = useState(startProfileId)
   // URL-tab state
   const [name, setName] = useState(spec.defaultName || 'origin')
   const [pullUrl, setPullUrl] = useState('')

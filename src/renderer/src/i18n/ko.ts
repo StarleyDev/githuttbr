@@ -3336,6 +3336,7 @@ export const ko: Dict = {
   'gitError.fileTooLargeAny': 'GitHub는 100MB를 넘는 파일을 거부하며, 이 푸시에 그런 파일이 있습니다. 푸시하는 커밋에서 빼거나 Git LFS로 관리하세요.',
   'gitError.protectedBranch': '서버가 이 브랜치를 보호하고 있어 푸시를 거부했습니다. 새 브랜치로 푸시하고 풀 리퀘스트를 여세요.',
   'gitError.noCredential': 'git에 {host} 자격 증명이 없습니다. 설정 → 통합에서 계정을 연결하거나 git의 credential helper에 로그인한 뒤 다시 시도하세요.',
+  'gitError.boundProfileNoCredential': "이 저장소가 연결된 프로필 “{profile}”에 {host}용 {provider} 계정이 연결되어 있지 않습니다. 해당 프로필로 전환한 뒤 설정 → 통합에서 로그인하거나 그곳에 토큰을 추가하세요.",
   'gitError.permissionDenied': '호스트가 쓰기를 거부했습니다. 사용 중인 계정에 쓰기 권한이 없거나 토큰이 만료되었습니다. 활성 프로필, 계정의 권한, 토큰을 확인하세요.',
   'gitError.repoNotFound': '서버는 저장소가 없다고 합니다. 또는 사용 중인 계정에서 볼 수 없습니다. 원격 URL과 활성 프로필을 확인하세요.',
   'gitError.sshKey': '서버가 SSH 키를 거부했습니다. 설정 → 보안에서 에이전트가 가진 키와 그 키가 계정에 추가되어 있는지 확인하세요.',

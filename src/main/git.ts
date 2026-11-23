@@ -182,8 +182,8 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { activeProfileAuth, isProfileId, namedProfileAuth, readSettings } from './settings'
-import { providerOfHost } from './credentials'
+import { activeProfileAuth, asProfileIdArg, isProfileId, namedProfileAuth, readSettings } from './settings'
+import { apiToken, providerOfHost } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
 import {
   bitbucketServerBases,
@@ -1021,15 +1021,17 @@ function urlUsername(url: string | undefined): string {
  * tab listed repositories with and the new repository is then bound to — so a
  * repository is listed, cloned and later fetched as one account. An empty or
  * unknown id gets nothing (an anonymous clone), never the active profile's or
- * the first one's. Absent (a clone nobody picked a profile for): the active one.
+ * the first one's. Absent — or not a string, which names nobody — means a clone
+ * nobody picked a profile for: the active one.
  */
 export async function cloneCredentialEnv(
   url: string,
   host?: string,
   token?: string,
-  profileId?: string
+  profileIdArg?: unknown
 ): Promise<NodeJS.ProcessEnv | null> {
   if (!/^https:\/\//i.test(url)) return null
+  const profileId = asProfileIdArg(profileIdArg)
   if (profileId !== undefined && !(await isProfileId(profileId))) return null
   // Clone → URL names no provider. A Data Center a profile configures is
   // recognised from the URL itself (host, port and context path) — its token is
@@ -1051,18 +1053,27 @@ export async function cloneCredentialEnv(
   // Bitbucket the same: the renderer's token is bitbucket.org's; a Data Center
   // clone uses the token (and user name) the profile filed for that server.
   const dc = host === 'bitbucket' && !isBitbucketCloudHost(new URL(url).hostname)
-  let gitUsername: string | undefined
-  let tokenKind: BitbucketServerTokenKind | undefined
-  if (host === 'gitlab' || host === 'forgejo' || ghes || dc) {
-    const auth = profileId !== undefined ? await namedProfileAuth(host, profileId, url) : await activeProfileAuth(host, url)
-    token = auth.token
-    gitUsername = auth.username
-    tokenKind = auth.tokenKind
-  }
+  const selfHosted = host === 'gitlab' || host === 'forgejo' || ghes || dc
   // github.com, bitbucket.org and Azure clone with the renderer's token — the
-  // picked profile's; a profile with none clones anonymously.
-  if (!token?.trim()) return null
-  const auth = basicAuthFor(host as RepoHost | undefined, token, url, gitUsername, tokenKind)
+  // picked profile's.
+  const sent = selfHosted ? undefined : token?.trim()
+  if (sent) {
+    const auth = basicAuthFor(host as RepoHost, sent, url)
+    return auth ? gitCredentialEnv(url, auth) : null
+  }
+  // Nothing sent: the renderer holds no tokens until Settings is opened, and
+  // never a link. So the profile's own credential is resolved here — its PAT,
+  // else the machine login it linked (the GitHub CLI's account, or one git's
+  // helper holds) — the way push resolves it (`remoteCredential`). Without
+  // this, git's own helper would pick whichever account it likes. A cloud host
+  // with no profile named keeps cloning anonymously, as before.
+  if (!selfHosted && profileId === undefined) return null
+  const repoHost = host as RepoHost
+  const input =
+    profileId !== undefined ? await namedProfileAuth(repoHost, profileId, url) : await activeProfileAuth(repoHost, url)
+  const found = await apiToken(url, input).catch(() => null)
+  if (!found) return null
+  const auth = found.cred ?? basicAuthFor(repoHost, found.token, url, found.gitUsername, found.gitTokenKind)
   return auth ? gitCredentialEnv(url, auth) : null
 }
 
