@@ -905,6 +905,9 @@ export const uk: Dict = {
   'settings.termPlaceBottomHint': 'На всю ширину внизу.',
   'settings.termPlaceCenterHint': 'Лише під графом; бічні панелі лишаються на всю висоту.',
   'settings.termPlaceRightHint': 'Власна колонка праворуч.',
+  'settings.openTerminalOnRepoOpen': 'Відкривати термінал під час відкриття репозиторію',
+  'settings.openTerminalOnRepoOpenHint':
+    'Під час першого відкриття кожного репозиторію в сеансі. Якщо закрити його, він лишиться закритим до наступного запуску.',
   'settings.sidebarSide': 'Сторона бічної панелі',
   'settings.sidebarSideHint': 'До якого краю кріпиться панель гілок/файлів.',
   'settings.sidebarSectionsHint': 'Розділи, що показуються за замовчуванням у бічній панелі кожного репозиторія. Репозиторій може обрати власний набір у меню розділів.',

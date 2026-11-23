@@ -890,6 +890,9 @@ export const fr: Dict = {
   'settings.termPlaceBottomHint': 'Sur toute la largeur, en bas.',
   'settings.termPlaceCenterHint': 'Sous le graphe uniquement ; les barres latérales gardent toute la hauteur.',
   'settings.termPlaceRightHint': 'Dans sa propre colonne, à droite.',
+  'settings.openTerminalOnRepoOpen': 'Ouvrir le terminal à l’ouverture d’un dépôt',
+  'settings.openTerminalOnRepoOpenHint':
+    'À la première ouverture de chaque dépôt pendant la session. Fermé, il le reste jusqu’au prochain lancement.',
   'settings.sidebarSide': 'Côté de la barre latérale',
   'settings.sidebarSideHint': 'Le bord sur lequel s’ancre la barre latérale des branches et des fichiers.',
   'settings.sidebarSectionsHint': 'Sections affichées par défaut dans la barre latérale de chaque dépôt. Un dépôt peut choisir les siennes depuis le menu des sections.',

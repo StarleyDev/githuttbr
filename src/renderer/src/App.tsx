@@ -11,6 +11,7 @@ import { todoSummary } from './lib/todos'
 import { doctorSummary } from './lib/repoConfig'
 import { canonicalRepoPath } from './lib/repoAlias'
 import { baseName } from './lib/bookmarks'
+import { claimTerminalAutoOpen } from './lib/terminalAutoOpen'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme, findTerminalTheme } from './theme/themes'
 import { applyTerminalPrefs } from './components/terminalState'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
@@ -515,6 +516,9 @@ function DoctorStatusChip({ path }: { path: string }): React.JSX.Element | null 
 // repeat the stale-link warning within one launch.
 let staleCliWarned = false
 
+// Repositories whose terminal already had its automatic open this session.
+const terminalAutoOpened = new Set<string>()
+
 /** The app's name before 4.39 — where migrated settings came from. A product name, never translated. */
 const LEGACY_PRODUCT_NAME = 'Gitcito'
 
@@ -1017,8 +1021,22 @@ export default function App(): React.JSX.Element {
   const repo = useRepoStore((s) => (activeRepoPath ? s.repos[activeRepoPath] ?? null : null))
   const forceConflictPanel = !!repo?.mergeState && (repo.status?.conflicted.length ?? 0) > 0
 
+  // A repository opens with its terminal showing (Settings → Layout), once per
+  // session: a pane the user closed stays closed when they come back to the tab.
+  // Mounting the pane is what spawns the shell (TerminalContainer.ensureRepo).
+  const repoReady = !!repo && !repo.loading && !repo.notGit && !repo.missingFolder
+  useEffect(() => {
+    if (!settingsLoaded) return
+    const open = claimTerminalAutoOpen(terminalAutoOpened, {
+      repoPath: activeRepoPath,
+      enabled: settings.openTerminalOnRepoOpen,
+      ready: repoReady
+    })
+    if (open && activeRepoPath) useUIStore.getState().setTerminalOpen(activeRepoPath, true)
+  }, [settingsLoaded, activeRepoPath, repoReady, settings.openTerminalOnRepoOpen])
+
   // The center-workspace + terminal region, arranged per the layout settings:
-  //   • terminalPlacement — bottom (full width) | center (under graph only) | right (own column)
+  //   • terminalPlacement — bottom (full width) | center (under graph only, the default) | right (own column)
   //   • sidebarSide       — dock the sidebar left or right
   //   • rightPanelFullHeight — in bottom mode, keep the terminal out from under
   //     the right panel so that panel spans the full height.

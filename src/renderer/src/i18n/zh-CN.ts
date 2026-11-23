@@ -905,6 +905,9 @@ export const zhCN: Dict = {
   'settings.termPlaceBottomHint': '沿底部通栏显示。',
   'settings.termPlaceCenterHint': '只在提交图下方；侧边栏保持整高。',
   'settings.termPlaceRightHint': '在右侧单占一列。',
+  'settings.openTerminalOnRepoOpen': '打开仓库时打开终端',
+  'settings.openTerminalOnRepoOpenHint':
+    '每个仓库在本次会话中首次打开时打开。关闭后，在下次启动前保持关闭。',
   'settings.sidebarSide': '侧边栏位置',
   'settings.sidebarSideHint': '分支/文件侧边栏停靠在哪一边。',
   'settings.sidebarSectionsHint': '每个仓库侧边栏默认显示的分区。各仓库仍可在分区菜单中自行选择。',

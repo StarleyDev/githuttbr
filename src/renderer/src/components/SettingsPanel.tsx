@@ -2821,6 +2821,21 @@ function LayoutPage(): React.JSX.Element {
         </div>
       </label>
 
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.openTerminalOnRepoOpen}
+          onChange={(e) => update((s) => ({ ...s, openTerminalOnRepoOpen: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.openTerminalOnRepoOpen')}</strong>
+          <span className="settings-hint">{t('settings.openTerminalOnRepoOpenHint')}</span>
+        </span>
+      </label>
+
       {window.api.platform === 'win32' && (
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.terminalShell')}</span>

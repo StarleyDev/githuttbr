@@ -906,6 +906,9 @@ export const nl: Dict = {
   'settings.termPlaceBottomHint': 'Over de volle breedte onderaan.',
   'settings.termPlaceCenterHint': 'Alleen onder de graaf; de zijbalken blijven op volle hoogte.',
   'settings.termPlaceRightHint': 'In een eigen kolom aan de rechterkant.',
+  'settings.openTerminalOnRepoOpen': 'Terminal openen wanneer een repository opent',
+  'settings.openTerminalOnRepoOpenHint':
+    'De eerste keer dat elke repository in een sessie opent. Sluit je hem, dan blijft hij dicht tot de volgende start.',
   'settings.sidebarSide': 'Kant van de zijbalk',
   'settings.sidebarSideHint': 'Aan welke rand de zijbalk met branches/bestanden aanmeert.',
   'settings.sidebarSectionsHint': 'Secties die standaard in de zijbalk van elke repository worden getoond. Een repository kan via het sectiemenu een eigen set kiezen.',

@@ -905,6 +905,9 @@ export const ru: Dict = {
   'settings.termPlaceBottomHint': 'Во всю ширину внизу.',
   'settings.termPlaceCenterHint': 'Только под графом; боковые панели остаются во всю высоту.',
   'settings.termPlaceRightHint': 'Отдельная колонка справа.',
+  'settings.openTerminalOnRepoOpen': 'Открывать терминал при открытии репозитория',
+  'settings.openTerminalOnRepoOpenHint':
+    'При первом открытии каждого репозитория за сеанс. Если закрыть его, он останется закрытым до следующего запуска.',
   'settings.sidebarSide': 'Сторона боковой панели',
   'settings.sidebarSideHint': 'У какого края стыкуется панель веток и файлов.',
   'settings.sidebarSectionsHint': 'Разделы, показываемые по умолчанию в боковой панели каждого репозитория. Репозиторий может выбрать свой набор в меню разделов.',

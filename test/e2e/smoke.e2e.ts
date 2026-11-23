@@ -267,4 +267,25 @@ describe('e2e smoke', () => {
     )
     expect(r.errors()).toEqual([])
   })
+  it('opens the terminal under the graph when a repository opens, once per session', async () => {
+    // A settings file from before the option existed: neither key is stored.
+    const r = await start({ settings: { openTerminalOnRepoOpen: undefined } })
+    const pane = r.page.locator('.terminal-pane.terminal-pane--center')
+    await pane.locator('.xterm').waitFor({ timeout: 15_000 })
+    // The pane spawned a shell session for this repository.
+    await expect
+      .poll(() => r.page.evaluate((p) => window.__shot!.terminals.getState().byRepo[p]?.groups.length ?? 0, r.repo))
+      .toBeGreaterThan(0)
+
+    // Closed by the user, it stays closed when the tab comes back.
+    await r.page.evaluate((p) => window.__shot!.ui.getState().setTerminalOpen(p, false), r.repo)
+    await pane.waitFor({ state: 'detached' })
+    await r.page.evaluate(() => window.__shot!.settings.getState().openPageTab({ type: 'licenses' }))
+    await r.page.locator('.licenses-list').waitFor({ timeout: 15_000 })
+    await r.page.evaluate(() => window.__shot!.settings.getState().setActiveTab('e2e-tab'))
+    await r.page.locator('.graph-row').first().waitFor()
+    await r.page.waitForTimeout(500)
+    expect(await r.page.locator('.terminal-pane').count()).toBe(0)
+    expect(r.errors()).toEqual([])
+  })
 })

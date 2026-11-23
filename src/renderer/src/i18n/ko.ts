@@ -905,6 +905,9 @@ export const ko: Dict = {
   'settings.termPlaceBottomHint': '아래쪽 전체 너비를 차지합니다.',
   'settings.termPlaceCenterHint': '그래프 아래에만 놓이고, 사이드바는 높이를 그대로 유지합니다.',
   'settings.termPlaceRightHint': '오른쪽에 자기 칸을 갖습니다.',
+  'settings.openTerminalOnRepoOpen': '저장소를 열 때 터미널 열기',
+  'settings.openTerminalOnRepoOpenHint':
+    '세션에서 각 저장소를 처음 열 때 열립니다. 닫으면 다음 실행까지 닫힌 상태로 유지됩니다.',
   'settings.sidebarSide': '사이드바 위치',
   'settings.sidebarSideHint': '브랜치/파일 사이드바가 붙는 방향입니다.',
   'settings.sidebarSectionsHint': '모든 리포지토리 사이드바에 기본으로 표시할 섹션입니다. 각 리포지토리는 섹션 메뉴에서 별도로 선택할 수 있습니다.',

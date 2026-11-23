@@ -890,6 +890,9 @@ export const ja: Dict = {
   'settings.termPlaceBottomHint': '下部に横幅いっぱいで開きます。',
   'settings.termPlaceCenterHint': 'グラフの下だけに開き、サイドバーは高さいっぱいのままです。',
   'settings.termPlaceRightHint': '右側の独立した列として開きます。',
+  'settings.openTerminalOnRepoOpen': 'リポジトリを開いたときにターミナルを開く',
+  'settings.openTerminalOnRepoOpenHint':
+    'セッション中、各リポジトリを最初に開いたときに開きます。閉じると次回の起動まで閉じたままです。',
   'settings.sidebarSide': 'サイドバーの位置',
   'settings.sidebarSideHint': 'ブランチ / ファイルのサイドバーをドックする側です。',
   'settings.sidebarSectionsHint': 'すべてのリポジトリのサイドバーにデフォルトで表示するセクション。各リポジトリはセクションメニューで独自に選択できます。',

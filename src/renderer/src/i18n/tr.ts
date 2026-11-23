@@ -890,6 +890,9 @@ export const tr: Dict = {
   'settings.termPlaceBottomHint': 'Altta tam genişlikte.',
   'settings.termPlaceCenterHint': 'Yalnızca grafiğin altında; kenar çubukları tam yükseklikte kalır.',
   'settings.termPlaceRightHint': 'Sağda kendine ait bir sütun.',
+  'settings.openTerminalOnRepoOpen': 'Bir depo açıldığında terminali aç',
+  'settings.openTerminalOnRepoOpenHint':
+    'Her depo oturumda ilk kez açıldığında. Kapatırsanız bir sonraki başlatmaya kadar kapalı kalır.',
   'settings.sidebarSide': 'Kenar çubuğu tarafı',
   'settings.sidebarSideHint': 'Dallar/dosyalar kenar çubuğunun hangi kenara yerleşeceği.',
   'settings.sidebarSectionsHint': 'Her depo kenar çubuğunda varsayılan olarak gösterilen bölümler. Bir depo, bölümler menüsünden kendi seçimini yapabilir.',

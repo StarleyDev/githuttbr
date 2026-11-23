@@ -899,6 +899,9 @@ export const es: Dict = {
   'settings.termPlaceBottomHint': 'Ancho completo en la parte inferior.',
   'settings.termPlaceCenterHint': 'Solo bajo el grafo; las barras laterales ocupan todo el alto.',
   'settings.termPlaceRightHint': 'Su propia columna a la derecha.',
+  'settings.openTerminalOnRepoOpen': 'Abrir la terminal al abrir un repositorio',
+  'settings.openTerminalOnRepoOpenHint':
+    'La primera vez que se abre cada repositorio en la sesión. Si la cierras, sigue cerrada hasta el próximo inicio.',
   'settings.sidebarSide': 'Lado de la barra lateral',
   'settings.sidebarSideHint': 'En qué borde se ancla la barra de ramas/archivos.',
   'settings.sidebarSectionsHint': 'Secciones mostradas por defecto en la barra lateral de cada repositorio. Cada repositorio puede elegir las suyas desde el menú de secciones.',

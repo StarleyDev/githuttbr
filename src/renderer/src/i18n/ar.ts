@@ -905,6 +905,9 @@ export const ar: Dict = {
   'settings.termPlaceBottomHint': 'بعرض النافذة كاملًا في الأسفل.',
   'settings.termPlaceCenterHint': 'تحت الرسم البياني فقط؛ وتبقى الأشرطة الجانبية بكامل الارتفاع.',
   'settings.termPlaceRightHint': 'في عمود خاص بها على اليمين.',
+  'settings.openTerminalOnRepoOpen': 'افتح الطرفية عند فتح مستودع',
+  'settings.openTerminalOnRepoOpenHint':
+    'أول مرة يُفتح فيها كل مستودع خلال الجلسة. إذا أغلقتها تبقى مغلقة حتى التشغيل التالي.',
   'settings.sidebarSide': 'جانب الشريط الجانبي',
   'settings.sidebarSideHint': 'على أي حافة يرسو شريط الفروع والملفات.',
   'settings.sidebarSectionsHint': 'الأقسام المعروضة افتراضياً في الشريط الجانبي لكل مستودع. يمكن لكل مستودع اختيار مجموعته من قائمة الأقسام.',

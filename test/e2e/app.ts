@@ -122,6 +122,9 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
     themeMode: 'dark',
     onboardingCompleted: true,
     language: opts.language ?? 'en',
+    // A shell spawned on open is not what most cases test; the one that does
+    // passes the key itself.
+    openTerminalOnRepoOpen: false,
     ...opts.settings
   }
 

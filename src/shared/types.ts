@@ -3487,10 +3487,14 @@ export interface AppSettings {
    *  repo-within-group. 'always' = every close; 'wip' = only when there are
    *  uncommitted changes or merge conflicts; 'never' = close silently. */
   warnOnClose: 'always' | 'wip' | 'never'
-  /** Where the integrated terminal pane docks: full-width along the bottom
-   *  (default), under the center graph column only (sidebars stay full height),
-   *  or as its own right-hand column. */
+  /** Where the integrated terminal pane docks: full-width along the bottom,
+   *  under the center graph column only (default — sidebars stay full height),
+   *  or as its own right-hand column. A file that never stored the key gets the
+   *  default; a stored 'bottom' from before 4.40 is kept as the user chose it. */
   terminalPlacement: 'bottom' | 'center' | 'right'
+  /** Open the integrated terminal the first time each repository becomes the
+   *  active one in a session. Closing it is respected until the next launch. */
+  openTerminalOnRepoOpen: boolean
   /** Integrated-terminal palette preset (`TERMINAL_THEMES` id) and font. */
   terminalThemeId: string
   terminalFontSize: number
@@ -3955,7 +3959,8 @@ export function defaultSettings(): AppSettings {
     shortcuts: {},
     largeFileKb: 5120,
     warnOnClose: 'always',
-    terminalPlacement: 'bottom',
+    terminalPlacement: 'center',
+    openTerminalOnRepoOpen: true,
     terminalThemeId: 'gitcito',
     terminalFontSize: 12.5,
     terminalFontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',

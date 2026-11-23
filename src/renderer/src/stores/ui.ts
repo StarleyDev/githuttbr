@@ -372,9 +372,10 @@ interface UIState {
   missionOpen: boolean
   /** Unread GitHub notification count for the toolbar bell badge. */
   githubUnread: number
-  /** Terminal-pane visibility, per repo path. Switching to a tab that never
-   *  opened its terminal keeps the pane closed; reopening the tab restores it.
-   *  In-memory only — resets to all-closed on cold start. */
+  /** Terminal-pane visibility, per repo path. App opens it the first time a
+   *  repo becomes active in a session (`openTerminalOnRepoOpen`); after that,
+   *  switching tabs restores whatever the user left. In-memory only — resets to
+   *  all-closed on cold start. */
   terminalOpenByRepo: Record<string, boolean>
   /** Which repos have the Problems dock open. */
   problemsOpenByRepo: Record<string, boolean>

@@ -898,6 +898,9 @@ export const en = {
   'settings.termPlaceBottomHint': 'Full width along the bottom.',
   'settings.termPlaceCenterHint': 'Under the graph only; sidebars stay full height.',
   'settings.termPlaceRightHint': 'Its own column on the right.',
+  'settings.openTerminalOnRepoOpen': 'Open the terminal when a repository opens',
+  'settings.openTerminalOnRepoOpenHint':
+    'The first time each repository opens in a session. Close it and it stays closed until the next launch.',
   'settings.sidebarSide': 'Sidebar side',
   'settings.sidebarSideHint': 'Which edge the branches/files sidebar docks on.',
   'settings.sidebarSections': 'Sidebar sections',

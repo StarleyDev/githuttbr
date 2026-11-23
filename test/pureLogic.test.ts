@@ -92,6 +92,7 @@ import type {
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
+import { claimTerminalAutoOpen } from '../src/renderer/src/lib/terminalAutoOpen'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
 import {
   detectHotRuntime,
@@ -8061,5 +8062,39 @@ describe('Clone: the new repository is bound on disk before its tab opens', () =
       open: () => opened.push('open')
     })
     expect(opened).toEqual(['open'])
+  })
+})
+
+describe('claimTerminalAutoOpen', () => {
+  const A = '/repos/a'
+  const B = '/repos/b'
+
+  it('opens each repository once per session', () => {
+    const claimed = new Set<string>()
+    expect(claimTerminalAutoOpen(claimed, { repoPath: A, enabled: true, ready: true })).toBe(true)
+    // Back to the same tab after the user closed the pane: not reopened.
+    expect(claimTerminalAutoOpen(claimed, { repoPath: A, enabled: true, ready: true })).toBe(false)
+    expect(claimTerminalAutoOpen(claimed, { repoPath: B, enabled: true, ready: true })).toBe(true)
+    expect(claimTerminalAutoOpen(claimed, { repoPath: B, enabled: true, ready: true })).toBe(false)
+  })
+
+  it('waits for the repository to load before claiming it', () => {
+    const claimed = new Set<string>()
+    expect(claimTerminalAutoOpen(claimed, { repoPath: A, enabled: true, ready: false })).toBe(false)
+    expect(claimed.has(A)).toBe(false)
+    expect(claimTerminalAutoOpen(claimed, { repoPath: A, enabled: true, ready: true })).toBe(true)
+  })
+
+  it('never opens with the setting off, and turning it on later spares repositories already seen', () => {
+    const claimed = new Set<string>()
+    expect(claimTerminalAutoOpen(claimed, { repoPath: A, enabled: false, ready: true })).toBe(false)
+    expect(claimTerminalAutoOpen(claimed, { repoPath: A, enabled: true, ready: true })).toBe(false)
+    expect(claimTerminalAutoOpen(claimed, { repoPath: B, enabled: true, ready: true })).toBe(true)
+  })
+
+  it('does nothing without an active repository', () => {
+    const claimed = new Set<string>()
+    expect(claimTerminalAutoOpen(claimed, { repoPath: null, enabled: true, ready: true })).toBe(false)
+    expect(claimed.size).toBe(0)
   })
 })

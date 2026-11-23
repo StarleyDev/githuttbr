@@ -905,6 +905,9 @@ export const de: Dict = {
   'settings.termPlaceBottomHint': 'Über die volle Breite am unteren Rand.',
   'settings.termPlaceCenterHint': 'Nur unter dem Graph; die Seitenleisten bleiben auf voller Höhe.',
   'settings.termPlaceRightHint': 'Eine eigene Spalte auf der rechten Seite.',
+  'settings.openTerminalOnRepoOpen': 'Terminal beim Öffnen eines Repositorys öffnen',
+  'settings.openTerminalOnRepoOpenHint':
+    'Beim ersten Öffnen jedes Repositorys in einer Sitzung. Schließt du es, bleibt es bis zum nächsten Start geschlossen.',
   'settings.sidebarSide': 'Seite der Seitenleiste',
   'settings.sidebarSideHint': 'An welchem Rand die Branch-/Dateileiste andockt.',
   'settings.sidebarSectionsHint': 'Bereiche, die standardmäßig in jeder Repository-Sidebar angezeigt werden. Jedes Repository kann über das Bereichsmenü eine eigene Auswahl treffen.',

@@ -891,6 +891,9 @@ export const it: Dict = {
   'settings.termPlaceBottomHint': 'A tutta larghezza lungo il bordo inferiore.',
   'settings.termPlaceCenterHint': 'Solo sotto al grafo; le barre laterali restano a tutta altezza.',
   'settings.termPlaceRightHint': 'In una colonna tutta sua sulla destra.',
+  'settings.openTerminalOnRepoOpen': 'Apri il terminale all’apertura di un repository',
+  'settings.openTerminalOnRepoOpenHint':
+    'La prima volta che ogni repository si apre nella sessione. Se lo chiudi, resta chiuso fino al prossimo avvio.',
   'settings.sidebarSide': 'Lato della barra laterale',
   'settings.sidebarSideHint': 'Su quale bordo si aggancia la barra laterale di branch e file.',
   'settings.sidebarSectionsHint': 'Sezioni mostrate di default nella barra laterale di ogni repository. Ogni repository può scegliere le proprie dal menu delle sezioni.',

@@ -905,6 +905,9 @@ export const pl: Dict = {
   'settings.termPlaceBottomHint': 'Na pełną szerokość, wzdłuż dołu.',
   'settings.termPlaceCenterHint': 'Tylko pod grafem; panele boczne zostają na pełnej wysokości.',
   'settings.termPlaceRightHint': 'Własna kolumna po prawej.',
+  'settings.openTerminalOnRepoOpen': 'Otwieraj terminal po otwarciu repozytorium',
+  'settings.openTerminalOnRepoOpenHint':
+    'Przy pierwszym otwarciu każdego repozytorium w sesji. Zamknięty pozostaje zamknięty do następnego uruchomienia.',
   'settings.sidebarSide': 'Strona panelu bocznego',
   'settings.sidebarSideHint': 'Przy której krawędzi dokuje panel z branchami i plikami.',
   'settings.sidebarSectionsHint': 'Sekcje wyświetlane domyślnie na pasku bocznym każdego repozytorium. Repozytorium może wybrać własny zestaw z menu sekcji.',

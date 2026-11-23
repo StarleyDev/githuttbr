@@ -523,6 +523,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
   settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
   settings.terminalPlacement = settings.terminalPlacement ?? sd.terminalPlacement
+  settings.openTerminalOnRepoOpen = settings.openTerminalOnRepoOpen ?? sd.openTerminalOnRepoOpen
   settings.sidebarSide = settings.sidebarSide ?? sd.sidebarSide
   settings.rightPanelFullHeight = settings.rightPanelFullHeight ?? sd.rightPanelFullHeight
   settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles

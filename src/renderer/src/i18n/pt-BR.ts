@@ -906,6 +906,9 @@ export const ptBR: Dict = {
   'settings.termPlaceBottomHint': 'Largura total, na parte de baixo.',
   'settings.termPlaceCenterHint': 'Só embaixo do grafo; as barras laterais ficam com a altura toda.',
   'settings.termPlaceRightHint': 'Numa coluna própria, à direita.',
+  'settings.openTerminalOnRepoOpen': 'Abrir o terminal quando um repositório abrir',
+  'settings.openTerminalOnRepoOpenHint':
+    'Na primeira vez que cada repositório abre na sessão. Se você fechar, ele fica fechado até a próxima inicialização.',
   'settings.sidebarSide': 'Lado da barra lateral',
   'settings.sidebarSideHint': 'Em qual borda a barra de branches/arquivos fica ancorada.',
   'settings.sidebarSectionsHint': 'Seções exibidas por padrão na barra lateral de cada repositório. Cada repositório pode escolher as suas no menu de seções.',

@@ -905,6 +905,9 @@ export const he: Dict = {
   'settings.termPlaceBottomHint': 'ברוחב מלא לאורך התחתית.',
   'settings.termPlaceCenterHint': 'מתחת לגרף בלבד; סרגלי הצד נשארים בגובה מלא.',
   'settings.termPlaceRightHint': 'בעמודה משלו בצד.',
+  'settings.openTerminalOnRepoOpen': 'פתח את המסוף כשמאגר נפתח',
+  'settings.openTerminalOnRepoOpenHint':
+    'בפעם הראשונה שכל מאגר נפתח בהפעלה. אם תסגור אותו, הוא יישאר סגור עד ההפעלה הבאה.',
   'settings.sidebarSide': 'צד סרגל הצד',
   'settings.sidebarSideHint': 'לאיזה קצה מעוגן סרגל הענפים והקבצים.',
   'settings.sidebarSectionsHint': 'המקטעים שיוצגו כברירת מחדל בסרגל הצד של כל מאגר. כל מאגר יכול לבחור משלו מתפריט המקטעים.',
