@@ -149,6 +149,8 @@ function profile(id: string, name: string, t: Record<string, string>): Record<st
   }
 }
 
+let ciSha = 0
+
 /** Run one call as the renderer would: the repository first, then the active profile's tokens. */
 function invoke(repoPath: string, provider: Provider, [channel, ...args]: Provider['ops'][number]): Promise<unknown> {
   // What the renderer sends is always the active (Work) profile's tokens.
@@ -157,7 +159,8 @@ function invoke(repoPath: string, provider: Provider, [channel, ...args]: Provid
     Promise.resolve()
       .then(() => handlers.get(name)!({}, repoPath, provider.remote, ...rest))
       .catch(() => undefined) // the fake answers {} — what matters is who asked
-  if (channel === 'hosting:ciStatuses-github') return run('hosting:ciStatuses', ['abc1234'], WORK.com)
+  // A fresh commit each time: CI answers are cached per account, and a cached one sends nothing.
+  if (channel === 'hosting:ciStatuses-github') return run('hosting:ciStatuses', [`c0ffee${++ciSha}`], WORK.com)
   return run(channel, sent, ...args)
 }
 
