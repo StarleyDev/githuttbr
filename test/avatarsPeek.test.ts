@@ -20,8 +20,12 @@ const windows = { none: false }
 const machineLogins: { url: string; login?: string }[] = []
 const sent: string[] = []
 
-vi.mock('electron', () => ({
-  app: { getPath: () => dir, isPackaged: false },
+// The electron each boot sees, its userData fixed to that test's directory. Not a
+// live read of `dir`: the avatar cache coalesces its writes on a 500 ms timer, and
+// one still pending from the previous test's modules would otherwise resolve
+// userData *now* and seed this test's fresh directory with that test's pictures.
+const electronFor = (userData: string): Record<string, unknown> => ({
+  app: { getPath: () => userData, isPackaged: false },
   ipcMain: { handle: (channel: string, fn: (...args: unknown[]) => unknown) => handlers.set(channel, fn), on: () => undefined },
   dialog: {},
   shell: {},
@@ -46,7 +50,7 @@ vi.mock('electron', () => ({
       return b.toString().replace(/^enc:/, '')
     }
   }
-}))
+})
 
 // The machine login (git's credential helper / gh) is outside the app: answer for it here.
 vi.mock('../src/main/credentials', () => ({
@@ -93,6 +97,9 @@ function setUp(o: Setup): AppSettings {
 
 async function boot(): Promise<void> {
   vi.resetModules()
+  // vi.mock's factory result survives resetModules, so the binding is redone per boot.
+  const userData = dir
+  vi.doMock('electron', () => electronFor(userData))
   handlers.clear()
   const { readSettings, registerSettingsHandlers } = await import('../src/main/settings')
   await readSettings()
