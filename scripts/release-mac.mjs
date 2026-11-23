@@ -139,10 +139,20 @@ export function releaseState(release) {
   return { draft: false, deadline }
 }
 
+/**
+ * Whether the release already carries a macOS build — uploaded by another run,
+ * the backfill, or by hand from a Mac. Then a run that did not build is no
+ * longer news: the issue is closed instead of opened.
+ * @param {{ assets?: Array<{ name: string }> } | null} release
+ */
+export function hasMacBuild(release) {
+  return (release?.assets ?? []).some((a) => a.name === 'latest-mac.yml')
+}
+
 /** @param {string} repo @param {string} tag */
 function readRelease(repo, tag) {
   try {
-    return JSON.parse(gh(['release', 'view', tag, '-R', repo, '--json', 'isDraft,publishedAt']))
+    return JSON.parse(gh(['release', 'view', tag, '-R', repo, '--json', 'isDraft,publishedAt,assets']))
   } catch {
     return null
   }
@@ -174,18 +184,24 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (issue) gh(['issue', 'close', issue, '-R', repo, '-c', `macOS artifacts for ${tag} were uploaded by ${runUrl}.`])
       console.log(issue ? `closed #${issue}` : 'no open issue')
     } else if (mode === 'open') {
-      const body = issueBody({
-        tag,
-        repo,
-        server,
-        runUrl,
-        result: process.env.MAC_RESULT || 'failure',
-        runner: process.env.MAC_RUNNER || undefined,
-        ...releaseState(readRelease(repo, tag))
-      })
-      if (issue) gh(['issue', 'edit', issue, '-R', repo, '--body', body])
-      else gh(['issue', 'create', '-R', repo, '--title', title, '--body', body])
-      console.log(issue ? `updated #${issue}` : 'opened')
+      const release = readRelease(repo, tag)
+      if (hasMacBuild(release)) {
+        if (issue) gh(['issue', 'close', issue, '-R', repo, '-c', `macOS artifacts for ${tag} are already on the release.`])
+        console.log(issue ? `closed #${issue} (macOS already attached)` : 'macOS already attached; no issue')
+      } else {
+        const body = issueBody({
+          tag,
+          repo,
+          server,
+          runUrl,
+          result: process.env.MAC_RESULT || 'failure',
+          runner: process.env.MAC_RUNNER || undefined,
+          ...releaseState(release)
+        })
+        if (issue) gh(['issue', 'edit', issue, '-R', repo, '--body', body])
+        else gh(['issue', 'create', '-R', repo, '--title', title, '--body', body])
+        console.log(issue ? `updated #${issue}` : 'opened')
+      }
     } else {
       throw new Error('usage: release-mac.mjs issue open|close <tag>')
     }

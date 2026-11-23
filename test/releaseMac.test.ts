@@ -6,7 +6,7 @@ import { ROOT } from './helpers'
 // @ts-expect-error — plain .mjs scripts, untyped on purpose
 import { parseUpdateInfo, publishGate, macUploadPlan, macUploadCheck, hasMac, assetNames } from '../scripts/release-assets.mjs'
 // @ts-expect-error — plain .mjs scripts, untyped on purpose
-import { pickTarget, issueTitle, issueBody, releaseState, BACKFILL_WINDOW_HOURS } from '../scripts/release-mac.mjs'
+import { pickTarget, issueTitle, issueBody, releaseState, hasMacBuild, BACKFILL_WINDOW_HOURS } from '../scripts/release-mac.mjs'
 
 const V = '4.40.0'
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
@@ -300,5 +300,15 @@ describe('release workflows', () => {
         }
       }
     }
+  })
+})
+
+describe('hasMacBuild — a missed run is not news once macOS is attached', () => {
+  it('sees latest-mac.yml uploaded by another run or by hand', () => {
+    expect(hasMacBuild({ assets: [{ name: 'latest.yml' }, { name: 'latest-mac.yml' }] })).toBe(true)
+  })
+  it('is false without it, and for an unreadable release', () => {
+    expect(hasMacBuild({ assets: [{ name: 'GitHuttBr-4.40.1-arm64.zip' }] })).toBe(false)
+    expect(hasMacBuild(null)).toBe(false)
   })
 })
