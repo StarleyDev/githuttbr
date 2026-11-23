@@ -4232,6 +4232,7 @@ export const de: Dict = {
   'settings.imported': 'Einstellungen importiert',
   'settings.importFailed': 'Import fehlgeschlagen',
   'settings.saveRefusedDamaged': 'Einstellungen können nicht gespeichert werden: Die Einstellungsdatei ist beschädigt. Starte Gitcito neu, um sie zu reparieren – jetzt vorgenommene Änderungen gehen verloren.',
+  'settings.reloadFailed': 'Die Einstellungen konnten nicht erneut gelesen werden. Es wurde nichts geändert – versuche es gleich noch einmal.',
   'settings.importSecretsTitle': 'Diese Datei enthält Zugangsdaten',
   'settings.importSecretsMessage': 'Sollen sie zu deinen gespeicherten Zugangsdaten hinzugefügt werden — gleiche Konten werden ersetzt, der Rest bleibt — oder sollen alle gespeicherten Tokens und API-Schlüssel durch die aus der Datei ersetzt werden? Beim Ersetzen wird alles gelöscht, was nicht in der Datei steht.',
   'settings.importSecretsMerge': 'Hinzufügen',

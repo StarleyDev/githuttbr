@@ -4224,6 +4224,7 @@ export const pl: Dict = {
   'settings.imported': 'Ustawienia zaimportowane',
   'settings.importFailed': 'Import nieudany',
   'settings.saveRefusedDamaged': 'Nie można zapisać ustawień: plik ustawień jest uszkodzony. Uruchom ponownie Gitcito, aby go naprawić — zmiany wprowadzone teraz zostaną utracone.',
+  'settings.reloadFailed': 'Nie udało się ponownie odczytać ustawień. Nic nie zostało zmienione — spróbuj ponownie za chwilę.',
   'settings.importSecretsTitle': 'Ten plik zawiera dane logowania',
   'settings.importSecretsMessage': 'Dodać je do zapisanych danych logowania — zastępując te dla tego samego konta i zachowując resztę — czy zastąpić wszystkie zapisane tokeny i klucze API tymi z pliku? Zastąpienie usuwa każde zapisane dane logowania, których nie ma w pliku.',
   'settings.importSecretsMerge': 'Dodaj do moich',

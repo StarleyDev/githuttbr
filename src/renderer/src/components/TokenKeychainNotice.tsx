@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { KeyRound, Loader2 } from 'lucide-react'
 import { keychainApi, settingsApi } from '../infrastructure/api'
-import { useSettingsStore } from '../stores/settings'
+import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
 import type { KeychainConsent } from '../../../shared/types'
@@ -43,8 +43,9 @@ export function TokenKeychainNotice(): React.JSX.Element | null {
     setEnabling(true)
     try {
       await keychainApi.set(true)
-      // Same as Settings → Security: re-read with the store unlocked.
-      await load({ unlock: true })
+      // Same as Settings → Security: re-read with the store unlocked. A failed
+      // re-read is not a failed enable: said for what it is.
+      await load({ unlock: true }).catch(reportLoadFailure)
     } catch {
       // The tokens are still in memory; the refreshed status keeps the notice up.
       toast('error', t('keychain.enableFailed'))

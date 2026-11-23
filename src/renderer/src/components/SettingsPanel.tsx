@@ -68,7 +68,7 @@ import {
   Stethoscope
 } from 'lucide-react'
 import { highlightCode } from '../lib/highlight'
-import { useSettingsStore } from '../stores/settings'
+import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
@@ -3634,7 +3634,7 @@ function KeychainCard(): React.JSX.Element {
   const retry = async (): Promise<void> => {
     setRetrying(true)
     try {
-      await load({ unlock: true })
+      await load({ unlock: true }).catch(reportLoadFailure)
     } finally {
       setRetrying(false)
       refresh()
@@ -3653,7 +3653,7 @@ function KeychainCard(): React.JSX.Element {
       onConfirm: () =>
         void settingsApi
           .replaceUnreadableStore()
-          .then(() => load({ unlock: true }))
+          .then(() => load({ unlock: true }).catch(reportLoadFailure))
           .catch(() => undefined)
           .finally(refresh)
     })
@@ -3664,7 +3664,7 @@ function KeychainCard(): React.JSX.Element {
     // stop looking empty; disabling re-reads what is left in memory. Both ask
     // for the tokens explicitly: a plain read never carries the decrypted
     // ones, and a declined keychain is never prompted for.
-    await load({ unlock: true })
+    await load({ unlock: true }).catch(reportLoadFailure)
     refresh()
   }
 
@@ -4546,7 +4546,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   // than replacing this dialog with the consent one the moment it opens.
   useEffect(() => {
     void keychainApi.status().then((st) => {
-      if (st.consent === 'granted' && st.explained) void useSettingsStore.getState().load({ unlock: true })
+      if (st.consent === 'granted' && st.explained) void useSettingsStore.getState().load({ unlock: true }).catch(reportLoadFailure)
     })
   }, [])
 

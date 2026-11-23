@@ -150,4 +150,66 @@ describe('the settings store', () => {
       warn.mockRestore()
     }
   })
+
+  it('says it again when the file goes bad again after a save went through', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useUIStore.setState({ toasts: [] })
+    try {
+      vi.mocked(api.set).mockRejectedValueOnce(new SettingsSaveRefused('not-loaded'))
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'de' }))
+      await vi.advanceTimersByTimeAsync(300)
+      // Fixed by hand: the next save lands.
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'fr' }))
+      await vi.advanceTimersByTimeAsync(300)
+      vi.mocked(api.set).mockRejectedValueOnce(new SettingsSaveRefused('not-loaded'))
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'it' }))
+      await vi.advanceTimersByTimeAsync(300)
+      expect(useUIStore.getState().toasts.filter((x) => x.kind === 'error')).toHaveLength(2)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('a refused flush is said like any other failed save, and still rejects', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useUIStore.setState({ toasts: [] })
+    try {
+      vi.mocked(api.set).mockRejectedValueOnce(new SettingsSaveRefused('not-loaded'))
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'de' }))
+      await expect(useSettingsStore.getState().flush()).rejects.toMatchObject({ reason: 'not-loaded' })
+      const errors = useUIStore.getState().toasts.filter((x) => x.kind === 'error')
+      expect(errors).toHaveLength(1)
+      expect(errors[0].message).toMatch(/damaged/)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('a reply older than the one already applied is ignored', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    const applied = useSettingsStore.getState().secretsGeneration
+    vi.mocked(api.unlock).mockResolvedValueOnce({ settings: { ...onDisk, language: 'ja' }, generation: applied - 1 })
+    await useSettingsStore.getState().load({ unlock: true })
+    expect(useSettingsStore.getState().secretsGeneration).toBe(applied)
+    expect(useSettingsStore.getState().settings.language).not.toBe('ja')
+    expect(useSettingsStore.getState().unlocked).toBe(false)
+  })
+
+  it('a failed re-read says why, by kind, instead of rejecting unheard', async () => {
+    const { reportLoadFailure } = await import('../src/renderer/src/stores/settings')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useUIStore.setState({ toasts: [] })
+    try {
+      reportLoadFailure(Object.assign(new Error('io'), { kind: 'io' }))
+      reportLoadFailure(Object.assign(new Error('parse'), { kind: 'parse' }))
+      const errors = useUIStore.getState().toasts.filter((x) => x.kind === 'error').map((x) => x.message)
+      expect(errors).toHaveLength(2)
+      expect(errors[0]).toMatch(/could not be read again/)
+      expect(errors[1]).toMatch(/damaged/)
+    } finally {
+      warn.mockRestore()
+    }
+  })
 })

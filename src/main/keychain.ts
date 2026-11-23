@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, safeStorage, app } from 'electron'
+import { BrowserWindow, ipcMain, safeStorage, app, type WebContents } from 'electron'
 import { join } from 'path'
 import { readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -89,6 +89,48 @@ export async function canUseKeychain(): Promise<boolean> {
 }
 
 /**
+ * The pages (by webContents id) that have been served their settings since
+ * they last started loading. Only such a page can show the question: App
+ * renders its modals once the settings are loaded, and until then shows a
+ * spinner. A question sent to a page still loading is never seen — and the
+ * save that asked holds the settings queue, so that page's own `settings:get`
+ * waits behind it for good. Set by the settings module on a successful
+ * get/unlock reply; cleared when a new document starts in the main frame.
+ */
+const settingsReady = new Set<number>()
+const watchedPages = new WeakSet<object>()
+
+/** A get/unlock was just answered for this page: from now on it can be asked. */
+export function noteSettingsServed(contents: Partial<Pick<WebContents, 'id' | 'on' | 'once'>> | undefined): void {
+  if (!contents || typeof contents.id !== 'number' || typeof contents.on !== 'function') return
+  const id = contents.id
+  settingsReady.add(id)
+  if (watchedPages.has(contents)) return
+  watchedPages.add(contents)
+  const page = contents as WebContents
+  const forget = (): void => {
+    settingsReady.delete(id)
+  }
+  // The same test as the question's own: a subframe or an in-page route
+  // change leaves the page, and its loaded settings, where they were.
+  page.on('did-start-navigation', (details: { isMainFrame: boolean; isSameDocument: boolean }) => {
+    if (details.isMainFrame && !details.isSameDocument) forget()
+  })
+  page.on('render-process-gone', forget)
+  page.once('destroyed', forget)
+}
+
+/** Whether this page can show the question now (see `settingsReady`). */
+function canShowQuestion(contents: WebContents): boolean {
+  if (!settingsReady.has(contents.id)) return false
+  try {
+    return !contents.isLoadingMainFrame()
+  } catch {
+    return false
+  }
+}
+
+/**
  * Ask the renderer to show the explainer, once, and wait for the answer.
  * Concurrent callers share the same dialog. With no window to ask in (headless
  * runs, tests) the answer is "no" — never a silent keychain prompt.
@@ -99,6 +141,9 @@ function askUser(reason: KeychainReason, adopted: boolean): Promise<boolean> {
   if (!win || win.isDestroyed()) return Promise.resolve(false)
 
   const contents = win.webContents
+  // A page reloading, or not yet past its boot spinner, would never show it:
+  // answered at once as "not now", nothing recorded, asked again next time.
+  if (!canShowQuestion(contents)) return Promise.resolve(false)
   asking = new Promise<{ granted: boolean; answered: boolean }>((resolve) => {
     // The page that showed the question is gone — reloaded, crashed, closed.
     // Nobody will ever answer it, and the settings queue waits behind this

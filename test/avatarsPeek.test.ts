@@ -38,6 +38,8 @@ const electronFor = (userData: string): Record<string, unknown> => ({
         once: () => undefined,
         removeListener: () => undefined,
         webContents: {
+          id: 1,
+          isLoadingMainFrame: () => false,
           send: (channel: string) => sent.push(channel) && channel === 'keychain:ask' && keyring.asked++,
           on: () => undefined,
           once: () => undefined,
@@ -76,7 +78,10 @@ const FOUND = { 'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&
 const PROFILE_PIC = 'https://avatars.githubusercontent.com/u/42?v=4&s=64'
 const LINK = { source: 'git' as const, login: 'octo' }
 const calls: { url: string; auth: string | null }[] = []
-const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+// From the window's page: the consent question is only put to a page that has loaded its settings.
+const page = { id: 1, on: () => undefined, once: () => undefined }
+const call = (channel: string, ...args: unknown[]): Promise<unknown> =>
+  Promise.resolve(handlers.get(channel)!({ sender: page }, ...args))
 
 interface Setup {
   /** The encrypted store's content for the profile; omitted means no `gitcito-secrets.enc` at all. */
@@ -226,6 +231,8 @@ describe('avatar peeks before the store is unlocked', () => {
     setUp({ secrets: { githubToken: 'ghp_never_read' }, consent: 'unset', profile: { links: { github: LINK } } })
     await boot()
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
+    // The page booted (a plain get), then Settings opens.
+    await call('settings:get')
     const unlocking = call('settings:unlock')
     await vi.waitFor(() => expect(sent).toContain('keychain:ask'))
     expect(sent).not.toContain('secrets:unlocked')

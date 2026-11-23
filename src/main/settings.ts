@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { basename, join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, readdir, mkdir, rename, rm, stat } from 'fs/promises'
+import { readFile, readdir, mkdir, realpath, rename, rm, stat } from 'fs/promises'
 import { copyPrivateFile, updatePrivateFile, writePrivateFile } from './privateFile'
 import {
   defaultSettings,
@@ -55,6 +55,7 @@ import {
   ensureKeychain,
   getConsent,
   getConsentState,
+  noteSettingsServed,
   onKeychainDeclined,
   onKeychainEnabled,
   onSessionOnlyProbe
@@ -144,6 +145,24 @@ function exclusive<T>(fn: () => Promise<T>): Promise<T> {
  * needs a token (a push, a PR listing, opening Settings) instead.
  */
 let secretCache: SecretStore | null = null
+
+/**
+ * The cache holds tokens the encrypted file does not: a background read
+ * installed it from a plaintext settings file without writing (see
+ * `readWithSecrets`). The first save that can write the store does — a save
+ * strips the settings file, and those tokens would otherwise be left in memory only.
+ */
+let cacheUnwritten = false
+
+/** The stored tokens with a plaintext settings file's over them — the file wins, it is what the user last saved. */
+function plaintextMerged(stored: SecretStore, settings: AppSettings): SecretStore {
+  const profiles = settings.profiles ?? []
+  return pruneSecrets(
+    mergeSecretStores(stored, extractSecrets(settings)),
+    profiles.map((p) => p.id),
+    profiles
+  )
+}
 
 async function canEncrypt(): Promise<boolean> {
   // Never triggers an OS prompt: it only reports a consent already given.
@@ -256,6 +275,7 @@ async function saveSecrets(store: SecretStore): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   const enc = safeStorage.encryptString(JSON.stringify(store))
   await writePrivateFile(secretsPath(), enc.toString('base64'))
+  cacheUnwritten = false
   await retireBackups(store)
 }
 
@@ -560,19 +580,31 @@ async function readWithSecrets(
       if (hasSettingsSecrets(settings)) {
         // Upgrade from a plaintext settings file: the values on disk win, since
         // they are what the user last saved.
-        const ids = (settings.profiles ?? []).map((p) => p.id)
-        const merged = pruneSecrets(mergeSecretStores(stored, extractSecrets(settings)), ids, settings.profiles ?? [])
+        const merged = plaintextMerged(stored, settings)
         if (mode === 'background') {
-          // Answered from memory; the move itself waits for a queued unlock.
-          const applied = mergeSecretStores(merged, sessionSecrets)
-          return { settings: withMigratedAI(applySecrets(settings, applied)), applied }
+          // Installed in memory only — a background reader never writes — so
+          // the next git or AI call does not decrypt again, and a peek sees
+          // the store unlocked. The move itself waits for a queued unlock.
+          setSecretCache(merged)
+          cacheUnwritten = true
+        } else {
+          // Rewrite the JSON without them.
+          await saveSecrets(merged)
+          if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
+          setSecretCache(merged)
         }
-        // Rewrite the JSON without them.
+      } else {
+        setSecretCache(stored)
+      }
+    } else if (mode === 'queued') {
+      // Installed by a background read from a plaintext file (or a file an
+      // older build wrote tokens into since): the move into the store is this read's.
+      const { settings, raw } = await readStoredSettings(mode)
+      if (hasSettingsSecrets(settings) && (await canEncrypt())) {
+        const merged = plaintextMerged(secretCache, settings)
         await saveSecrets(merged)
         if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
         setSecretCache(merged)
-      } else {
-        setSecretCache(stored)
       }
     }
     // Tokens typed while the store was out of reach, and clears made while it
@@ -1061,7 +1093,7 @@ async function writeSettings(
       const next = over(secretCache)
       const changed = JSON.stringify(next) !== JSON.stringify(secretCache)
       // Clears still waiting for the store are written by the first save that can.
-      if (changed || pendingClears.size > 0) {
+      if (changed || pendingClears.size > 0 || cacheUnwritten) {
         if (await canEncrypt()) {
           await saveSecrets(next)
           setSecretCache(next)
@@ -1159,7 +1191,11 @@ async function moveSettingsAside(): Promise<MoveAsideReply> {
     if (!(err instanceof SettingsReadError) || err.kind !== 'parse') return null
   }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const target = `${settingsPath()}.corrupt-${stamp}`
+  // A settings file symlinked into a dotfiles repository: the damaged file is
+  // the link's target, so that is what moves. The link stays, and the fresh
+  // start is written through it (`writePrivateFile`) instead of over it.
+  const damaged = await realpath(settingsPath())
+  const target = `${damaged}.corrupt-${stamp}`
   // The stored tokens belong to the profiles in that file; a fresh start prunes
   // them on its first token save. Keep an (encrypted) copy beside it, first,
   // and refuse when it cannot be made: moving the file without it would let
@@ -1172,7 +1208,7 @@ async function moveSettingsAside(): Promise<MoveAsideReply> {
       return { refused: 'secrets-copy', dir: app.getPath('userData') }
     }
   }
-  await rename(settingsPath(), target)
+  await rename(damaged, target)
   settingsBroken = false
   return basename(target)
 }
@@ -1202,35 +1238,70 @@ const watchedRenderers = new WeakSet<WebContents>()
  * neither the stored nor the session secrets, and its blanks are not clears
  * until it is served them anew.
  */
-function arrive(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined): number {
+function arrive(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined): Arrival {
   const generation = ++lastGeneration
   // The view stays until the reply replaces it: a save that arrived before
   // this request still runs on what its sender held then.
   const sender = senderOf(e)
-  holdings.set(sender, { view: holdings.get(sender)?.view ?? NOTHING_HELD, generation })
+  const before = holdings.get(sender)
+  holdings.set(sender, { view: before?.view ?? NOTHING_HELD, generation })
   forgetOnReload(e)
-  return generation
+  return { generation, before }
 }
+
+/** A get/unlock taken on arrival: its generation, and what its sender held before it. */
+interface Arrival {
+  generation: number
+  before: { view: SecretView; generation: number } | undefined
+}
+
+/**
+ * The newest reply each renderer was actually given. A renderer applies the
+ * newest reply it receives and ignores an older one answered after it, so this
+ * is what it holds once a newer request has failed (see `unserved`).
+ */
+const lastServed = new Map<number, { view: SecretView; generation: number }>()
 
 /** Records what a renderer was just served — unless a newer get/unlock from it arrived meanwhile. */
 function served(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined, generation: number, applied: SecretStore): void {
   settingsServed = true
   const sender = senderOf(e)
-  if (holdings.get(sender)?.generation === generation) holdings.set(sender, { view: secretView(applied), generation })
+  const view = secretView(applied)
+  if ((lastServed.get(sender)?.generation ?? 0) < generation) lastServed.set(sender, { view, generation })
+  if (holdings.get(sender)?.generation === generation) holdings.set(sender, { view, generation })
+}
+
+/**
+ * A get/unlock that failed: its renderer applied nothing and still saves with
+ * the generation it had. Left on the generation taken on arrival, every later
+ * save from it read as stale, and every clear it made was dropped without a
+ * word. Back to what it holds — the newest reply it was given, or what it held
+ * before — unless a newer request from it has arrived since.
+ */
+function unserved(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined, arrival: Arrival): void {
+  const sender = senderOf(e)
+  if (holdings.get(sender)?.generation !== arrival.generation) return
+  const given = lastServed.get(sender)
+  const back = given && given.generation > (arrival.before?.generation ?? 0) ? given : arrival.before
+  if (back) holdings.set(sender, back)
+  else holdings.delete(sender)
 }
 
 /** Answers a get/unlock: the settings and their generation, or why they could not be read — never defaults for a bad file. */
 async function serve(
   e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined,
-  generation: number,
+  arrival: Arrival,
   read: () => Promise<{ settings: AppSettings; applied: SecretStore }>
 ): Promise<SettingsReplyWire> {
+  const { generation } = arrival
   try {
     const { settings, applied } = await read()
     served(e, generation, applied)
+    noteSettingsServed(e?.sender)
     return { settings: withForcedOnboarding(settings), generation }
   } catch (err) {
     console.warn('[settings] could not be read:', (err as Error).message)
+    unserved(e, arrival)
     return { error: err instanceof SettingsReadError ? err.kind : 'other' }
   }
 }
@@ -1243,6 +1314,7 @@ function forgetOnReload(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefin
   const id = wc.id
   const forget = (): void => {
     holdings.delete(id)
+    lastServed.delete(id)
   }
   wc.on('did-navigate', forget)
   wc.on('render-process-gone', forget)
@@ -1267,8 +1339,8 @@ export function registerSettingsHandlers(): void {
   // typed this session are applied either way: they are already the renderer's.
   // Queued behind saves, and the one plain read allowed to fix the file on disk.
   ipcMain.handle('settings:get', (e): Promise<SettingsReplyWire> => {
-    const generation = arrive(e)
-    return exclusive(() => serve(e, generation, () => readPlain('queued')))
+    const arrival = arrive(e)
+    return exclusive(() => serve(e, arrival, () => readPlain('queued')))
   })
   ipcMain.handle(
     'settings:set',
@@ -1297,8 +1369,8 @@ export function registerSettingsHandlers(): void {
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
   ipcMain.handle('settings:unlock', (e): Promise<SettingsReplyWire> => {
-    const generation = arrive(e)
-    return serve(e, generation, () => readWithSecrets('settings', 'queued'))
+    const arrival = arrive(e)
+    return serve(e, arrival, () => readWithSecrets('settings', 'queued'))
   })
   ipcMain.handle('settings:secretsState', (): SecretsState => ({ unreadable: secretsUnreadable }))
   ipcMain.handle('settings:replaceUnreadableStore', () => replaceUnreadableStore())

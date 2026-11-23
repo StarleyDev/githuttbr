@@ -1,4 +1,4 @@
-import { chmod, open, readFile, realpath, rename, rm, type FileHandle } from 'fs/promises'
+import { chmod, open, readFile, readlink, realpath, rename, rm, type FileHandle } from 'fs/promises'
 import { randomBytes } from 'crypto'
 import { basename, dirname, join, resolve } from 'path'
 
@@ -63,13 +63,17 @@ async function renameOver(from: string, to: string): Promise<void> {
  * a dotfiles repo means the link's target: renaming over the link itself would
  * replace it with a plain file and silently cut the dotfiles off.
  */
-async function resolveTarget(path: string): Promise<string> {
+async function resolveTarget(path: string, hops = 0): Promise<string> {
   try {
     return await realpath(path)
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return path
-    throw err
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
   }
+  // A link whose target is not there (yet): a damaged settings file moved
+  // aside leaves one. The write creates the target, and the link stays.
+  if (hops >= 8) return path
+  const link = await readlink(path).catch(() => null)
+  return link === null ? path : resolveTarget(resolve(dirname(path), link), hops + 1)
 }
 
 /** Makes the rename itself durable: without it a crash can bring back the old file, or none. */

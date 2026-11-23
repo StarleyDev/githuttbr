@@ -4227,6 +4227,7 @@ export const he: Dict = {
   'settings.imported': 'ההגדרות יובאו',
   'settings.importFailed': 'הייבוא נכשל',
   'settings.saveRefusedDamaged': 'לא ניתן לשמור את ההגדרות: קובץ ההגדרות פגום. הפעל מחדש את Gitcito כדי לתקן אותו — שינויים שתבצע עכשיו יאבדו.',
+  'settings.reloadFailed': 'לא ניתן היה לקרוא שוב את ההגדרות. דבר לא שונה — נסה שוב בעוד רגע.',
   'settings.importSecretsTitle': 'הקובץ הזה מכיל פרטי התחברות',
   'settings.importSecretsMessage': 'להוסיף אותם לפרטי ההתחברות השמורים — תוך החלפת אלה של אותו חשבון ושמירת השאר — או להחליף את כל הטוקנים ומפתחות ה-API השמורים באלה שבקובץ? החלפה מוחקת כל פרט התחברות שמור שאינו בקובץ.',
   'settings.importSecretsMerge': 'הוסף לשלי',

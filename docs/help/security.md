@@ -153,7 +153,9 @@ screen. You can fix `gitcito-settings.json` in its data folder and press
 **Try again**, or press **Move the damaged file aside and start fresh**: the file
 is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside
-it, and Gitcito starts as on a first run. The copy is made first: if it cannot
+it, and Gitcito starts as on a first run. A symlinked settings file is handled
+the same way as a write: the link's target is the file renamed, the link stays,
+and the fresh settings are written through it into your dotfiles. The copy is made first: if it cannot
 be written, nothing is moved, and the screen says so and shows the data folder
 to check, since starting fresh without the copy would let the first token you
 save delete the old profiles' tokens. Fix what keeps the folder from being

@@ -161,16 +161,40 @@ function withTodoOrder(
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 let damagedNoticeShown = false
+
+/** Says the settings file is damaged — once, until a save or a load succeeds again. */
+function noticeDamaged(): void {
+  if (damagedNoticeShown) return
+  damagedNoticeShown = true
+  useUIStore.getState().toast('error', t('settings.saveRefusedDamaged'))
+}
+
 /**
- * A background save that failed. Main refuses every save once a read has found
- * the file unparseable (hand-edited while the app runs): logged only, each edit
- * after that vanished silently. Said once — every later save fails the same way.
+ * A save that failed. Main refuses every save once a read has found the file
+ * unparseable (hand-edited while the app runs): logged only, each edit after
+ * that vanished silently. Said once — every later save fails the same way —
+ * and again only after the file was readable in between.
  */
 function reportSaveFailure(err: unknown): void {
   console.warn('[settings] save failed:', err)
-  if (!(err instanceof SettingsSaveRefused) || err.reason !== 'not-loaded' || damagedNoticeShown) return
-  damagedNoticeShown = true
-  useUIStore.getState().toast('error', t('settings.saveRefusedDamaged'))
+  if (err instanceof SettingsSaveRefused && err.reason === 'not-loaded') noticeDamaged()
+}
+
+/**
+ * A re-read that failed after start-up (opening Settings, turning the
+ * keychain on, a retry). The state on screen stays as it was; left unhandled,
+ * the user saw nothing happen. Only a file that does not parse is called damaged.
+ */
+export function reportLoadFailure(err: unknown): void {
+  console.warn('[settings] load failed:', err)
+  if (settingsErrorKind(err) === 'parse') noticeDamaged()
+  else useUIStore.getState().toast('error', t('settings.reloadFailed'))
+}
+
+/** `SettingsLoadError`'s kind, read off the error: 'other' for anything else. */
+function settingsErrorKind(err: unknown): string {
+  const kind = err instanceof Error ? (err as Error & { kind?: unknown }).kind : undefined
+  return typeof kind === 'string' ? kind : 'other'
 }
 /**
  * Debounced save. What goes out is the state when the timer *fires*, with the
@@ -200,13 +224,19 @@ function track<T>(save: Promise<T>): Promise<T> {
     () => undefined,
     () => undefined
   )
-  inFlight = Promise.all([inFlight, settled])
+  // Chained flat: `Promise.all([inFlight, settled])` nested one array deeper per save.
+  inFlight = Promise.all([inFlight, settled]).then(() => undefined)
   return save
 }
 
 function send(options?: { import?: 'merge' | 'replace' }): Promise<void> {
   const { settings, secretsGeneration } = useSettingsStore.getState()
-  return track(settingsApi.set(settings, secretsGeneration, options))
+  return track(
+    settingsApi.set(settings, secretsGeneration, options).then(() => {
+      // Written: a damaged file seen earlier is fixed, and a new one is worth saying.
+      damagedNoticeShown = false
+    })
+  )
 }
 
 /** Sends a pending debounced save now, if there is one, and waits for every save in flight. */
@@ -550,6 +580,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // `loaded` is what lifts the boot spinner, so the active dictionary has to
     // be in memory first — otherwise the first painted frame is English.
     await loadLocale(settings.language ?? 'en')
+    // Two loads in flight (Settings opening while an import reads back): main
+    // may answer the older one last. Its sender holds the newest reply main
+    // gave it, so that is the one kept — applying the older would leave every
+    // later save stale in main's eyes, and every clear in it ignored.
+    if (get().loaded && reply.generation < get().secretsGeneration) return
+    damagedNoticeShown = false
     // The settings and their generation in one step: a save fired in between
     // sends the older pair, which main treats as clearing nothing.
     set({ settings, secretsGeneration: reply.generation, unlocked: !!opts?.unlock, loaded: true })
@@ -569,7 +605,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     saveTimer = null
     // Defaults are not the user's settings: nothing to write before a load.
     if (!get().loaded) return
-    await send()
+    // Said like any other failed save, and still rejected: the caller (a
+    // binding written before a push) must not go on as if it had landed.
+    await send().catch((err: unknown) => {
+      reportSaveFailure(err)
+      throw err
+    })
   },
 
   importSettings: async (incoming, opts) => {
@@ -596,7 +637,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Caught here: a failed reload must not replace why the import failed.
       await get()
         .load({ unlock: get().unlocked })
-        .catch((err) => console.warn('[settings] reload after import failed:', err))
+        .catch(reportLoadFailure)
     }
   },
 

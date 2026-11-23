@@ -4172,6 +4172,7 @@ export const fr: Dict = {
   'settings.imported': 'Paramètres importés',
   'settings.importFailed': 'Échec de l’import',
   'settings.saveRefusedDamaged': 'Impossible d’enregistrer les réglages : le fichier de réglages est endommagé. Redémarrez Gitcito pour le réparer — les modifications faites maintenant seront perdues.',
+  'settings.reloadFailed': 'Impossible de relire les réglages. Rien n’a été modifié — réessayez dans un instant.',
   'settings.importSecretsTitle': 'Ce fichier contient des identifiants',
   'settings.importSecretsMessage': 'Les ajouter à vos identifiants enregistrés — en remplaçant ceux du même compte et en gardant les autres — ou remplacer tous vos jetons et clés d’API enregistrés par ceux du fichier ? Remplacer supprime tout identifiant enregistré absent du fichier.',
   'settings.importSecretsMerge': 'Ajouter aux miens',

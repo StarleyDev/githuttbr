@@ -4232,6 +4232,7 @@ export const nl: Dict = {
   'settings.imported': 'Instellingen geïmporteerd',
   'settings.importFailed': 'Importeren mislukt',
   'settings.saveRefusedDamaged': 'Instellingen kunnen niet worden opgeslagen: het instellingenbestand is beschadigd. Start Gitcito opnieuw om het te herstellen — wijzigingen die je nu maakt gaan verloren.',
+  'settings.reloadFailed': 'De instellingen konden niet opnieuw worden gelezen. Er is niets gewijzigd — probeer het zo opnieuw.',
   'settings.importSecretsTitle': 'Dit bestand bevat inloggegevens',
   'settings.importSecretsMessage': 'Toevoegen aan je opgeslagen inloggegevens — gegevens voor hetzelfde account vervangen, de rest behouden — of al je opgeslagen tokens en API-sleutels vervangen door die uit het bestand? Vervangen verwijdert elk opgeslagen gegeven dat niet in het bestand staat.',
   'settings.importSecretsMerge': 'Toevoegen aan de mijne',

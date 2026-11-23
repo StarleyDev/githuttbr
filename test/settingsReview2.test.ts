@@ -56,8 +56,12 @@ const writeStore = (s: SecretStore): void =>
   writeFileSync(storeFile(), Buffer.from(`enc:${JSON.stringify(s)}`).toString('base64'))
 
 type Reply = { settings: AppSettings; generation: number }
+// From the fake window's page when there is one: the consent question is only
+// put to a page that has loaded its settings.
 const raw = (channel: string, ...args: unknown[]): Promise<unknown> =>
-  Promise.resolve(handlers.get(channel)!({ sender: { id: 1 } }, ...args))
+  Promise.resolve(
+    handlers.get(channel)!({ sender: (seams.windows[0] as { webContents?: unknown } | undefined)?.webContents ?? { id: 1 } }, ...args)
+  )
 async function reply(channel: 'settings:get' | 'settings:unlock'): Promise<Reply> {
   const out = (await raw(channel)) as Reply
   expect(out.settings).toBeTruthy()
@@ -98,8 +102,11 @@ async function fresh(opts: { consent?: 'granted' | 'declined'; store?: SecretSto
 }
 
 /** A window the consent question can be shown in, and whose page can go away. */
-function fakeWindow(): { win: EventEmitter; contents: EventEmitter & { send: ReturnType<typeof vi.fn> } } {
-  const contents = Object.assign(new EventEmitter(), { send: vi.fn() })
+function fakeWindow(): {
+  win: EventEmitter
+  contents: EventEmitter & { id: number; send: ReturnType<typeof vi.fn>; isLoadingMainFrame: () => boolean }
+} {
+  const contents = Object.assign(new EventEmitter(), { id: 1, send: vi.fn(), isLoadingMainFrame: () => false })
   const win = Object.assign(new EventEmitter(), { webContents: contents, isDestroyed: () => false })
   seams.windows = [win]
   return { win, contents }
@@ -136,12 +143,15 @@ describe('a consent question whose page went away', () => {
     const r = await reply('settings:get')
     const first = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'a' })), r.generation)
     await tick()
+    const watching = contents.listenerCount('did-start-navigation') - 1
     contents.emit('did-start-navigation', { isMainFrame: true, isSameDocument: false })
     await first
-    const second = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'b' })), r.generation)
+    // The new page boots: only a page that has loaded its settings is asked.
+    const r2 = await reply('settings:get')
+    const second = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'b' })), r2.generation)
     await tick()
-    // The old page's listeners are gone: a second reload event is this question's own.
-    expect(contents.listenerCount('did-start-navigation')).toBe(1)
+    // The old question's listener is gone: a second reload event is this question's own.
+    expect(contents.listenerCount('did-start-navigation')).toBe(watching + 1)
     await raw('keychain:answer', true)
     expect(await within(second)).toBeUndefined()
     expect(storeJson().p).toEqual({ githubToken: 'b' })
