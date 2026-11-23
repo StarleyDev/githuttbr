@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/gitcito-mark.png" alt="GitHuttBr" width="120" />
+<img src="docs/githuttbr-mark.png" alt="GitHuttBr" width="120" />
 
 # GitHuttBr
 

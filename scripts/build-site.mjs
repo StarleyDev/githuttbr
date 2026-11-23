@@ -28,8 +28,11 @@ const HELP_DIR = join(ROOT, 'docs/help')
 const SHOTS_DIR = join(ROOT, 'docs/screenshots')
 const OUT = join(ROOT, 'dist-site')
 
-const REPO = 'MyAppDesk/gitcito'
-const SITE_URL = 'https://myappdesk.github.io/gitcito'
+const REPO = 'StarleyDev/githuttbr'
+const SITE_URL = 'https://starleydev.github.io/githuttbr'
+// The project this fork is built from. Its handbook pages link to it for
+// feedback; on the fork's site that feedback belongs to the fork instead.
+const UPSTREAM_REPO = 'MyAppDesk/gitcito'
 const RELEASES = `https://github.com/${REPO}/releases`
 const LATEST = `${RELEASES}/latest`
 const SPONSOR = 'https://github.com/sponsors/StarleyDev'
@@ -98,6 +101,7 @@ function siteLinks(markdown, depth = 1) {
   return markdown
     .replace(/\]\(([\w-]+)\.md\)/g, '](./$1.html)')
     .replace(/\]\(\.\.\/(?:\.\.\/)?screenshots\/([\w.-]+)\)/g, `](${assets}$1)`)
+    .replaceAll(`https://github.com/${UPSTREAM_REPO}/issues`, `https://github.com/${REPO}/issues`)
 }
 
 // ── Translated handbooks ────────────────────────────────────────────────────
@@ -176,11 +180,11 @@ const head = (title, description, depth, opts = {}) => {
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://myappdesk.github.io/gitcito/assets/og-image.jpg" />
+<meta property="og:image" content="${SITE_URL}/assets/og-image.jpg" />
 <meta name="color-scheme" content="light dark" />
 <meta name="theme-color" content="#fafafc" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#0c0d16" media="(prefers-color-scheme: dark)" />
-<link rel="icon" href="${base}assets/gitcito-mark.png" />
+<link rel="icon" href="${base}assets/githuttbr-mark.png" />
 <link rel="stylesheet" href="${base}styles.css" />
 ${alternates}</head>
 <body>`
@@ -202,7 +206,7 @@ const nav = (depth, locale = 'en') => {
   return `<header class="nav">
   <div class="nav-inner">
     <a class="brand" href="${home}">
-      <img src="${base}assets/gitcito-mark.png" alt="" width="28" height="28" />
+      <img src="${base}assets/githuttbr-mark.png" alt="" width="28" height="28" />
       <span>GitHuttBr</span>
     </a>
     <nav>
@@ -223,7 +227,7 @@ const footer = (locale = 'en', languages = '', depth = 0) => {
   const langs = languages ? `\n  <nav class="lang-bar wrap">\n${languages}\n  </nav>` : ''
   return `<footer class="foot">${langs}
   <div class="foot-inner wrap">
-    <p class="foot-brand"><img src="${base}assets/gitcito-mark.png" alt="" width="20" height="20" /> <span>${t('foot.license')}</span></p>
+    <p class="foot-brand"><img src="${base}assets/githuttbr-mark.png" alt="" width="20" height="20" /> <span>${t('foot.license')}</span></p>
     <nav class="foot-links">
       <a href="https://github.com/${REPO}">${t('foot.source')}</a>
       <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a>
@@ -379,7 +383,7 @@ ${nav(depth, locale)}
 <main>
   <section class="hero">
     <div class="wrap hero-copy">
-      <img class="hero-mark" src="${base}assets/gitcito-mark.png" alt="" width="72" height="72" />
+      <img class="hero-mark" src="${base}assets/githuttbr-mark.png" alt="" width="72" height="72" />
       <h1>${t('hero.title')}</h1>
       <p class="lede">${t('hero.lede')}</p>
       <div class="cta">
@@ -1572,7 +1576,7 @@ for (const [locale, pageList] of localeSets) {
 
 // Every screenshot the handbook and the landing can reference, plus the mark.
 for (const file of readdirSync(SHOTS_DIR)) copyFileSync(join(SHOTS_DIR, file), join(OUT, 'assets', file))
-copyFileSync(join(ROOT, 'docs/gitcito-mark.png'), join(OUT, 'assets/gitcito-mark.png'))
+copyFileSync(join(ROOT, 'docs/githuttbr-mark.png'), join(OUT, 'assets/githuttbr-mark.png'))
 // The share card is a 1200x630 JPEG: the screenshots are WebP now, and LinkedIn
 // and Facebook are unreliable with it. JPEG is the format every scraper agrees
 // on, and a quarter of the PNG's bytes for a photo-like screenshot.
