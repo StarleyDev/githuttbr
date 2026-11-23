@@ -619,6 +619,9 @@ export interface PullRequest {
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'forgejo' | null
 
+/** Whether a hosting action on a remote has a credential: 'unknown' while the token store is still locked. */
+export type HostingAccess = 'yes' | 'no' | 'unknown'
+
 /** The ref-naming convention a forge uses to publish pull request heads. */
 export type PrRefFlavor = 'github' | 'gitlab' | 'bitbucket' | 'azure'
 

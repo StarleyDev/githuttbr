@@ -313,6 +313,8 @@ const api = {
       ipcRenderer.invoke('hosting:listReleases', repoPath, remoteUrl, tokens),
     ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciStatuses', repoPath, remoteUrl, shas, token),
+    canAct: (repoPath: string, remoteUrl: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:canAct', repoPath, remoteUrl),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>
       ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target),
     createPR: (repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>

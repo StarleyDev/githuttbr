@@ -247,6 +247,7 @@ interface PreloadApi {
     listPRs(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     listReleases(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     ciStatuses(repoPath: string, remoteUrl: string, shas: string[], token: string): Promise<unknown>
+    canAct(repoPath: string, remoteUrl: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
     createPR(repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
     prDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
