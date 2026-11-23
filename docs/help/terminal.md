@@ -2,8 +2,8 @@
 title: Integrated terminal
 category: Workspace tools
 order: 90
-summary: A real PTY docked under the repo, with tabs per repository.
-keywords: terminal shell pty xterm console tabs docked autocomplete npm run scripts make makefile composer branch checkout
+summary: A real PTY docked under the graph, opened with each repository, with tabs per repository.
+keywords: terminal shell pty xterm console tabs docked placement center bottom open on startup auto open autocomplete npm run scripts make makefile composer branch checkout
 ---
 
 # Integrated terminal
@@ -14,13 +14,23 @@ your aliases.
 ![The integrated terminal](../screenshots/terminal.webp)
 
 - **Multiple tabs per repository**, each starting in that repository's folder.
-- Dock it **under** the graph or as a **right-hand column**; the pane remembers
-  its size.
+- It docks **under the graph** by default, with the sidebars keeping the full
+  height; Settings → Layout moves it to the **whole bottom edge** or a
+  **right-hand column**. The pane remembers its size, and a placement you chose
+  before this became the default is kept.
+- **It opens with the repository.** The first time a repository becomes the
+  active tab in a session — restored at startup, opened from the welcome screen,
+  cloned, or sent by `githuttbr .` — its terminal opens with a shell in that
+  folder. Close it and it stays closed for that repository until the next
+  launch; switching tabs does not bring it back. Each repository you visit costs
+  one shell process, so if you hop across many, turn off **Open the terminal
+  when a repository opens** in Settings → Layout.
 - Each terminal remembers **where you were reading**: switch terminals, groups
   or repo tabs and the scrollback stays put — pinned to the bottom when it was
   already following output, back on the same line when it was not.
-- Terminal visibility is per repository: switching to a tab that never opened one
-  keeps it closed.
+- Terminal visibility is per repository: closing one repository's terminal
+  leaves the others as they are. With the option above off, switching to a tab
+  that never opened one keeps it closed.
 - Tabs name themselves after what is running in them.
 - Collapsing the terminal list shrinks it to a **rail**: one icon per terminal
   (split terminals show a mini panel map), click to switch, right-click for the

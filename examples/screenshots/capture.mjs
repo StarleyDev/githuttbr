@@ -161,7 +161,10 @@ function seedSettings(shot, theme) {
     appThemeId: shot.appTheme ?? 'gitcito',
     codeThemeId: shot.appTheme ?? 'gitcito',
     themeMode: theme,
-    onboardingCompleted: true
+    onboardingCompleted: true,
+    // A terminal opening on its own would change every shot that is not about it.
+    openTerminalOnRepoOpen: false,
+    ...shot.settings
   }
 }
 

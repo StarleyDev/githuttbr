@@ -24,8 +24,9 @@ Midnight, Contrast and Daltonic — each with a light and a dark variant.
 ## Layout
 
 Sidebar on the left or the right, resizable panels everywhere, a collapsible
-sidebar for when the graph deserves the whole window, per-repository terminal
-placement, and the global **Sidebar sections** checklist — the default set of
+sidebar for when the graph deserves the whole window, where the
+[terminal](terminal.md) docks (under the graph by default) and whether it opens
+with each repository, and the global **Sidebar sections** checklist — the default set of
 panes every repository sidebar starts with (a repository can override it from
 its own sections menu).
 

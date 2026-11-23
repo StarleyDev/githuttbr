@@ -18,6 +18,7 @@ prompt, seus aliases.
   tamanho dele.
 - A visibilidade do terminal é por repositório: mudar para uma aba que nunca abriu
   um terminal o mantém fechado.
+- **Ele abre junto com o repositório e fica embaixo do grafo por padrão.** Na primeira vez que um repositório vira a aba ativa na sessão, o terminal dele abre com um shell naquela pasta. Se você fechar, ele fica fechado para aquele repositório até a próxima inicialização. Cada repositório visitado custa um processo de shell; desligue **Abrir o terminal quando um repositório abrir** ou mude a posição em Configurações → Layout.
 - As abas se nomeiam conforme o que está rodando nelas.
 - Colapsar a lista de terminais a encolhe num **trilho**: um ícone por terminal
   (terminais divididos mostram um mini mapa de painéis), clique para trocar, botão

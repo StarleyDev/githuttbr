@@ -19,6 +19,7 @@ prompt, jouw aliassen.
   zijn grootte.
 - De zichtbaarheid van de terminal is per repository: naar een tabblad wisselen
   dat er nooit een opende houdt hem dicht.
+- **Hij opent met de repository en dokt standaard onder de grafiek.** De eerste keer dat een repository in een sessie het actieve tabblad wordt, opent zijn terminal met een shell in die map. Sluit je hem, dan blijft hij voor die repository dicht tot de volgende start. Elke bezochte repository kost één shellproces; zet **Terminal openen wanneer een repository opent** uit of kies een andere plek in Instellingen → Indeling.
 - Tabbladen noemen zichzelf naar wat erin draait.
 - De terminallijst inklappen krimpt hem tot een **rail**: één icoon per terminal
   (gesplitste terminals tonen een minipaneelkaart), klik om te wisselen,

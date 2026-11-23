@@ -117,6 +117,9 @@ async function seedTodos(page, repoPath) {
  * @property {(userDataDir: string) => Promise<void>} [userData]  Write files into the
  *   shot's own userData dir after it is seeded, before launch — the app's own
  *   files in a given state (a damaged settings file), never a copy of yours.
+ * @property {Record<string, unknown>} [settings]  Settings merged over the seeded
+ *   file. Every shot is seeded with `openTerminalOnRepoOpen: false`, so only a
+ *   shot about the terminal shows one; a shot of the default layout sets it back.
  * @property {(page: import('playwright').Page, repoPaths: Record<string,string>) => Promise<void>} [drive]
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
  */
@@ -1246,21 +1249,18 @@ export const shots = [
     }
   },
   {
-    // Integrated terminal — a real PTY (xterm + node-pty) docked under the repo.
+    // Integrated terminal — a real PTY (xterm + node-pty) in the default layout:
+    // under the graph column, opened by the app itself when the repository opened.
     out: 'terminal',
     repos: ['deep-history-monorepo'],
     themes: ['dark'],
     appTheme: 'midnight',
     env: neutralShell(),
+    settings: { openTerminalOnRepoOpen: true },
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
-      await page.waitForTimeout(300)
-      // Open the terminal pane for this repo (per-repo flag; toggles, so guard).
-      await page.evaluate((p) => {
-        const ui = window.__shot.ui.getState()
-        if (!ui.terminalOpenByRepo[p]) ui.toggleTerminal(p)
-      }, repo)
+      await page.locator('.terminal-pane .xterm').waitFor()
       await page.waitForTimeout(1200)
       // Type a command so the shot shows real output, not a bare prompt.
       await page.click('.xterm').catch(() => {})

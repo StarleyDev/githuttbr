@@ -19,6 +19,7 @@ twój znak zachęty, twoje aliasy.
   rozmiar.
 - Widoczność terminala jest per repozytorium: przełączenie się na kartę, która
   nigdy żadnego nie otworzyła, zostawia go zamkniętym.
+- **Otwiera się razem z repozytorium i domyślnie dokuje pod grafem.** Gdy repozytorium po raz pierwszy w sesji staje się aktywną kartą, jego terminal otwiera się z powłoką w tym katalogu. Zamknięty zostaje zamknięty dla tego repozytorium do następnego uruchomienia. Każde odwiedzone repozytorium to jeden proces powłoki; wyłącz **Otwieraj terminal po otwarciu repozytorium** albo zmień położenie w Ustawienia → Układ.
 - Karty nazywają się same, według tego, co w nich działa.
 - Zwinięcie listy terminali kurczy ją do **szyny**: jedna ikona na terminal
   (terminale podzielone pokazują mini mapę paneli), kliknij, żeby przełączyć,

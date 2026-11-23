@@ -18,6 +18,7 @@ sizin komut satırınız, sizin takma adlarınız.
   panel boyutunu hatırlar.
 - Terminalin görünürlüğü depo bazındadır: hiç terminal açılmamış bir sekmeye
   geçtiğinizde kapalı kalır.
+- **Depoyla birlikte açılır ve varsayılan olarak grafiğin altına yerleşir.** Bir depo oturumda ilk kez etkin sekme olduğunda, terminali o klasörde bir kabukla açılır. Kapatırsanız o depo için bir sonraki başlatmaya kadar kapalı kalır. Ziyaret ettiğiniz her depo bir kabuk süreci demektir; **Bir depo açıldığında terminali aç** seçeneğini kapatabilir ya da konumu Ayarlar → Yerleşim'den değiştirebilirsiniz.
 - Sekmeler, içlerinde çalışan şeye göre kendilerini adlandırır.
 - Terminal listesini katlamak onu bir **raya** indirger: terminal başına bir
   simge (bölünmüş terminaller küçük bir panel haritası gösterir), geçiş yapmak

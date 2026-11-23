@@ -19,6 +19,7 @@ prompt, tus alias.
   recuerda su tamaño.
 - La visibilidad del terminal es por repositorio: cambiar a una pestaña que nunca
   abrió uno lo deja cerrado.
+- **Se abre con el repositorio y se acopla bajo el grafo por defecto.** La primera vez que un repositorio pasa a ser la pestaña activa en la sesión, su terminal se abre con una shell en esa carpeta. Si la cierras, sigue cerrada para ese repositorio hasta el próximo inicio. Cada repositorio que visitas cuesta un proceso de shell; desactiva **Abrir la terminal al abrir un repositorio** o cambia la posición en Ajustes → Diseño.
 - Las pestañas se nombran solas según lo que se esté ejecutando en ellas.
 - Plegar la lista de terminales la reduce a un **raíl**: un icono por terminal
   (los terminales divididos muestran un minimapa de paneles), pulsa para cambiar,

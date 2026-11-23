@@ -18,6 +18,7 @@ invite, vos alias.
   souvient de sa taille.
 - La visibilité du terminal est propre à chaque dépôt : passer sur un onglet qui
   n'en a jamais ouvert le laisse fermé.
+- **Il s'ouvre avec le dépôt et s'ancre sous le graphe par défaut.** La première fois qu'un dépôt devient l'onglet actif pendant la session, son terminal s'ouvre avec un shell dans ce dossier. Fermé, il le reste pour ce dépôt jusqu'au prochain lancement. Chaque dépôt visité coûte un processus shell ; désactivez **Ouvrir le terminal à l’ouverture d’un dépôt** ou changez la position dans Paramètres → Disposition.
 - Les onglets se nomment d'après ce qui tourne dedans.
 - Replier la liste des terminaux la réduit à un **rail** : une icône par terminal
   (les terminaux divisés affichent une mini-carte des panneaux), clic pour
