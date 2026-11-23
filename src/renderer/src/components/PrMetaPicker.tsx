@@ -2,13 +2,14 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 're
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useT, interp } from '../i18n'
-import { filterPicker, freeLabelCandidate, type PickerItem } from '../lib/prPicker'
+import { filterPicker, freeLabelCandidate, pickerKey, type PickerItem } from '../lib/prPicker'
 
 /**
  * A multi-select for the create-PR dialog: picked rows as removable chips,
  * type to filter, ↑/↓/Enter to pick, Backspace on an empty field to drop the
  * last chip, Escape to close the list without closing the dialog. The list is
  * drawn in a portal, as RefPicker's is, because the dialog scrolls and clips.
+ * The key rules live in `pickerKey` (lib/prPicker.ts), where they are tested.
  */
 export function PrMetaPicker({
   label,
@@ -17,6 +18,7 @@ export function PrMetaPicker({
   onChange,
   placeholder,
   failed,
+  partial,
   allowFree
 }: {
   label: string
@@ -25,7 +27,9 @@ export function PrMetaPicker({
   onChange: (next: string[]) => void
   placeholder: string
   failed: boolean
-  /** The host takes labels that do not exist yet (Azure DevOps): Enter adds what was typed. */
+  /** The list was read only in part: someone may be missing from it. */
+  partial?: boolean
+  /** What was typed can be added as is — a label the host creates, or a login when the list failed. */
   allowFree?: boolean
 }): React.JSX.Element {
   const t = useT()
@@ -87,25 +91,30 @@ export function PrMetaPicker({
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault()
-      if (!open) {
+    // keyCode 229 is how some engines still flag a key the IME is handling.
+    const composing = e.nativeEvent.isComposing || e.keyCode === 229
+    const action = pickerKey({ key: e.key, composing, open, cursor, rowCount, text, picked: value.length })
+    // Enter in the field never submits the dialog, whatever it does here — unless the IME has it.
+    if (!composing && (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp')) e.preventDefault()
+    switch (action.kind) {
+      case 'open':
         setOpen(true)
         setCursor(0)
-        return
-      }
-      const step = e.key === 'ArrowDown' ? 1 : -1
-      setCursor((c) => Math.min(Math.max(0, rowCount - 1), Math.max(0, c + step)))
-    } else if (e.key === 'Enter') {
-      // Enter in the field never submits the dialog: it picks, or does nothing.
-      e.preventDefault()
-      if (cursor < shown.length && shown[cursor]) add(shown[cursor].id)
-      else if (free) add(free)
-    } else if (e.key === 'Escape' && open) {
-      e.stopPropagation()
-      setOpen(false)
-    } else if (e.key === 'Backspace' && !text && value.length) {
-      remove(value[value.length - 1])
+        break
+      case 'move':
+        setCursor(action.cursor)
+        break
+      case 'add':
+        if (action.row < shown.length) add(shown[action.row].id)
+        else if (free) add(free)
+        break
+      case 'close':
+        e.stopPropagation()
+        setOpen(false)
+        break
+      case 'removeLast':
+        remove(value[value.length - 1])
+        break
     }
   }
 
@@ -155,6 +164,10 @@ export function PrMetaPicker({
           spellCheck={false}
           placeholder={value.length ? '' : placeholder}
           onFocus={() => setOpen(true)}
+          onBlur={(e) => {
+            // Tab away closes the list; focus moving into the list itself does not.
+            if (!listRef.current?.contains(e.relatedTarget as Node | null)) setOpen(false)
+          }}
           onChange={(e) => {
             setText(e.target.value)
             setCursor(0)
@@ -163,7 +176,8 @@ export function PrMetaPicker({
           onKeyDown={onKeyDown}
         />
       </div>
-      {failed && <p className="prmeta-hint">{t('createPR.pickerFailed')}</p>}
+      {failed && <p className="prmeta-hint">{t(allowFree ? 'createPR.pickerFailedTyped' : 'createPR.pickerFailed')}</p>}
+      {!failed && partial && <p className="prmeta-hint">{t('createPR.pickerPartial')}</p>}
       {open &&
         !disabled &&
         rect &&

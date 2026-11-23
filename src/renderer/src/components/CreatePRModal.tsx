@@ -7,11 +7,11 @@ import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
 import { PrMetaPicker } from './PrMetaPicker'
 import { useT, useUiLanguage, interp, type TranslationKey } from '../i18n'
-import { createPickerCache, labelItem, personItem, picksToSend, shownFields } from '../lib/prPicker'
+import { createPickerCache, freeEntry, labelItem, personItem, pickerCacheKey, picksToSend, shownFields } from '../lib/prPicker'
 import type { PrMetaField, PrPickerOptions } from '../../../shared/types'
 
-// Choices read once per repository + remote, and reused for a few minutes, so
-// reopening the dialog does not walk the host's member and label lists again.
+// Choices read once per repository + remote + account, and reused for a few
+// minutes, so reopening the dialog does not walk the host's lists again.
 const pickerCache = createPickerCache()
 
 const FIELD_LABEL: Record<PrMetaField, TranslationKey> = {
@@ -23,6 +23,12 @@ const FIELD_PLACEHOLDER: Record<PrMetaField, TranslationKey> = {
   reviewers: 'createPR.reviewersPlaceholder',
   assignees: 'createPR.assigneesPlaceholder',
   labels: 'createPR.labelsPlaceholder'
+}
+
+/** A free field says so: a label to type on a host that creates them, a login when the list failed. */
+function placeholderFor(meta: PrPickerOptions | null, f: PrMetaField): TranslationKey {
+  if (!freeEntry(meta, f)) return FIELD_PLACEHOLDER[f]
+  return f === 'labels' ? 'createPR.labelsFreePlaceholder' : 'createPR.peopleFreePlaceholder'
 }
 
 /** Best guess at the base branch when none is supplied — never the source itself. */
@@ -38,6 +44,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
+  const boundProfileId = useSettingsStore((s) => s.settings.repoProfiles[spec.repoPath])
   const aiFor = useSettingsStore((s) => s.aiFor)
   const repo = useRepoStore((s) => s.repos[spec.repoPath])
 
@@ -115,12 +122,14 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
 
   // Reviewers, assignees and labels: which ones the host takes, and the choices,
   // read lazily once the dialog is open. A failure only costs those fields.
+  // Keyed by account too: another profile, or a new token, must not be served this one's lists.
+  const cacheKey = pickerCacheKey(spec.repoPath, remoteUrl, [profile.id, boundProfileId], tokens)
   useEffect(() => {
     if (!remoteUrl) return
     let cancelled = false
     setMetaState('loading')
     pickerCache
-      .get(`${spec.repoPath}\n${remoteUrl}`, () => hostingApi.prPickerOptions(spec.repoPath, remoteUrl, tokens))
+      .get(cacheKey, () => hostingApi.prPickerOptions(spec.repoPath, remoteUrl, tokens))
       .then(
         (o) => {
           if (cancelled) return
@@ -132,9 +141,9 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     return () => {
       cancelled = true
     }
-    // The tokens object is rebuilt each render; the remote is what decides the answer.
+    // The tokens object is rebuilt each render; the key carries their fingerprint.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec.repoPath, remoteUrl])
+  }, [cacheKey])
 
   const fields = shownFields(meta)
   const people = useMemo(
@@ -247,9 +256,10 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
                 items={f === 'labels' ? labelRows : people[f]}
                 value={picked[f]}
                 onChange={(next) => setPicked((p) => ({ ...p, [f]: next }))}
-                placeholder={t(f === 'labels' && meta?.freeLabels ? 'createPR.labelsFreePlaceholder' : FIELD_PLACEHOLDER[f])}
+                placeholder={t(placeholderFor(meta, f))}
                 failed={!!meta?.failed.includes(f)}
-                allowFree={f === 'labels' && !!meta?.freeLabels}
+                partial={!!meta?.partial?.includes(f)}
+                allowFree={freeEntry(meta, f)}
               />
             </div>
           ))}

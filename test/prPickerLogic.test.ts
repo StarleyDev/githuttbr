@@ -3,14 +3,30 @@ import { cleanPrMeta, labelColor, picks, prMetaSupport, sortLabels, uniqueById, 
 import {
   createPickerCache,
   filterPicker,
+  freeEntry,
   freeLabelCandidate,
   labelItem,
   personItem,
   PICKER_ROWS,
+  pickerCacheKey,
+  pickerKey,
+  type PickerKeyState,
   picksToSend,
-  shownFields
+  shownFields,
+  tokenFingerprint
 } from '../src/renderer/src/lib/prPicker'
-import { collectPickerOptions, gitlabMetaBody, gitlabMetaMissing, reviewersMissing } from '../src/main/prMeta'
+import {
+  azureReviewerIds,
+  bbsReviewerIds,
+  bitbucketReviewerIds,
+  collectPickerOptions,
+  createWithoutRejectedReviewers,
+  gitlabMetaBody,
+  gitlabMetaMissing,
+  PrCreateError,
+  rejectsReviewers,
+  reviewersMissing
+} from '../src/main/prMeta'
 import type { PrPickerOptions } from '../src/shared/types'
 
 // The pure half of reviewers / assignees / labels on a new pull request: the
@@ -85,10 +101,55 @@ describe('provider mapping', () => {
     expect(gitlabMetaMissing(opts, {})).toEqual([])
   })
 
-  it('Bitbucket: fewer reviewers back than asked for is a failure', () => {
-    expect(reviewersMissing({ ...opts, reviewers: ['a', 'b'] }, [{}])).toEqual(['reviewers'])
-    expect(reviewersMissing({ ...opts, reviewers: ['a'] }, [{}])).toEqual([])
-    expect(reviewersMissing(opts, undefined)).toEqual([])
+  it('reviewersMissing compares identities, not counts — a host-added default reviewer hides nothing', () => {
+    expect(reviewersMissing({ ...opts, reviewers: ['a', 'b'] }, ['a'])).toEqual(['reviewers'])
+    expect(reviewersMissing({ ...opts, reviewers: ['a', 'b'] }, ['a', 'default'])).toEqual(['reviewers'])
+    expect(reviewersMissing({ ...opts, reviewers: ['a'] }, ['A', 'default'])).toEqual([])
+    expect(reviewersMissing(opts, [])).toEqual([])
+  })
+
+  it('reviewer identities per host', () => {
+    expect(bitbucketReviewerIds([{ uuid: '{a}' }, {}, null])).toEqual(['{a}'])
+    expect(bbsReviewerIds([{ user: { name: 'Ana', slug: 'ana' } }, { user: {} }])).toEqual(['Ana', 'ana'])
+    expect(azureReviewerIds([{ id: 'x' }, { id: 3 }])).toEqual(['x'])
+    expect(bitbucketReviewerIds(undefined)).toEqual([])
+  })
+
+  it('rejectsReviewers: only a 400/409 that does not blame another field', () => {
+    expect(rejectsReviewers(new PrCreateError('x', 400))).toBe(true)
+    expect(rejectsReviewers(new PrCreateError('x', 409))).toBe(true)
+    expect(rejectsReviewers(new PrCreateError('x', 400, ['reviewers']))).toBe(true)
+    expect(rejectsReviewers(new PrCreateError('x', 400, ['source']))).toBe(false)
+    expect(rejectsReviewers({ status: 409, exceptions: ['com.atlassian.bitbucket.pull.DuplicatePullRequestException'] })).toBe(false)
+    expect(rejectsReviewers({ status: 409, exceptions: ['com.atlassian.bitbucket.pull.InvalidPullRequestReviewersException'] })).toBe(true)
+    for (const status of [401, 403, 404, 422, 500]) expect(rejectsReviewers(new PrCreateError('x', status))).toBe(false)
+    expect(rejectsReviewers(new TypeError('fetch failed'))).toBe(false)
+  })
+
+  it('createWithoutRejectedReviewers: one retry without reviewers, never without a reason', async () => {
+    const sent: unknown[] = []
+    const refuse = async (o: typeof opts): Promise<number> => {
+      sent.push(o.reviewers)
+      if (o.reviewers) throw new PrCreateError('bad reviewer', 400)
+      return 7
+    }
+    expect(await createWithoutRejectedReviewers({ ...opts, reviewers: ['x'] }, refuse)).toEqual({ result: 7, dropped: true })
+    expect(sent).toEqual([['x'], undefined])
+    sent.length = 0
+    // No reviewers picked: the failure is the create's own, thrown as is.
+    await expect(
+      createWithoutRejectedReviewers(opts, async () => {
+        throw new PrCreateError('bad', 400)
+      })
+    ).rejects.toThrow('bad')
+    let n = 0
+    await expect(
+      createWithoutRejectedReviewers({ ...opts, reviewers: ['x'] }, async () => {
+        n++
+        throw new PrCreateError('auth', 401)
+      })
+    ).rejects.toThrow('auth')
+    expect(n).toBe(1)
   })
 
   it('collectPickerOptions: one failing list does not take the others down', async () => {
@@ -181,5 +242,72 @@ describe('the dialog’s picker', () => {
     await Promise.resolve()
     await cache.get('c', ok)
     expect(loads).toBe(5)
+  })
+})
+
+describe('pickerKey — the picker field’s keys', () => {
+  const base: PickerKeyState = { key: 'Enter', composing: false, open: true, cursor: 0, rowCount: 3, text: '', picked: 0 }
+
+  it('Enter with the list closed opens it and adds nothing', () => {
+    expect(pickerKey({ ...base, open: false })).toEqual({ kind: 'open' })
+  })
+  it('Enter with the list open adds the row under the cursor, or nothing when there is none', () => {
+    expect(pickerKey({ ...base, cursor: 2 })).toEqual({ kind: 'add', row: 2 })
+    expect(pickerKey({ ...base, rowCount: 0 })).toEqual({ kind: 'none' })
+  })
+  it('during an IME composition no key picks, moves or removes', () => {
+    for (const key of ['Enter', 'ArrowDown', 'ArrowUp', 'Backspace', 'Escape']) {
+      expect(pickerKey({ ...base, key, composing: true, picked: 2 })).toEqual({ kind: 'none' })
+    }
+  })
+  it('arrows open a closed list, then move within the rows', () => {
+    expect(pickerKey({ ...base, key: 'ArrowDown', open: false })).toEqual({ kind: 'open' })
+    expect(pickerKey({ ...base, key: 'ArrowDown', cursor: 2 })).toEqual({ kind: 'move', cursor: 2 })
+    expect(pickerKey({ ...base, key: 'ArrowUp', cursor: 0 })).toEqual({ kind: 'move', cursor: 0 })
+    expect(pickerKey({ ...base, key: 'ArrowDown', cursor: 0 })).toEqual({ kind: 'move', cursor: 1 })
+  })
+  it('Backspace on an empty field drops the last pick; Escape closes an open list', () => {
+    expect(pickerKey({ ...base, key: 'Backspace', picked: 1 })).toEqual({ kind: 'removeLast' })
+    expect(pickerKey({ ...base, key: 'Backspace', picked: 1, text: 'a' })).toEqual({ kind: 'none' })
+    expect(pickerKey({ ...base, key: 'Escape' })).toEqual({ kind: 'close' })
+    expect(pickerKey({ ...base, key: 'Escape', open: false })).toEqual({ kind: 'none' })
+  })
+})
+
+describe('freeEntry — what a typed entry can stand for', () => {
+  const o = (extra: Partial<PrPickerOptions>): PrPickerOptions => ({
+    supports: { reviewers: true, assignees: true, labels: true },
+    reviewers: [],
+    assignees: [],
+    labels: [],
+    failed: [],
+    ...extra
+  })
+  it('labels on a host that creates them, always', () => {
+    expect(freeEntry(o({ freeLabels: true }), 'labels')).toBe(true)
+    expect(freeEntry(o({}), 'labels')).toBe(false)
+  })
+  it('people only where the id is the login, and only when the list failed', () => {
+    expect(freeEntry(o({ freePeople: true }), 'reviewers')).toBe(false)
+    expect(freeEntry(o({ freePeople: true, failed: ['reviewers'] }), 'reviewers')).toBe(true)
+    expect(freeEntry(o({ freePeople: true, failed: ['reviewers'] }), 'assignees')).toBe(false)
+    expect(freeEntry(o({ failed: ['reviewers'] }), 'reviewers')).toBe(false)
+    expect(freeEntry(null, 'labels')).toBe(false)
+  })
+})
+
+describe('pickerCacheKey — one entry per account, never the token', () => {
+  const tokens = { github: 'ghp_secret_token_1' }
+  it('changes with the profile and with the token, and holds neither token', () => {
+    const k = pickerCacheKey('/r', 'https://github.com/a/b', ['work', undefined], tokens)
+    expect(k).not.toContain('ghp_secret')
+    expect(pickerCacheKey('/r', 'https://github.com/a/b', ['personal', undefined], tokens)).not.toBe(k)
+    expect(pickerCacheKey('/r', 'https://github.com/a/b', ['work', 'personal'], tokens)).not.toBe(k)
+    expect(pickerCacheKey('/r', 'https://github.com/a/b', ['work', undefined], { github: 'ghp_secret_token_2' })).not.toBe(k)
+    expect(pickerCacheKey('/r', 'https://github.com/a/b', ['work', undefined], { ...tokens })).toBe(k)
+  })
+  it('the fingerprint is short and stable', () => {
+    expect(tokenFingerprint({ a: 'x', b: undefined })).toMatch(/^[0-9a-f]{8}$/)
+    expect(tokenFingerprint({ b: undefined, a: 'x' })).toBe(tokenFingerprint({ a: 'x', b: undefined }))
   })
 })

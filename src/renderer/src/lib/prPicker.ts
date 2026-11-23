@@ -62,6 +62,91 @@ export function freeLabelCandidate(query: string, items: PickerItem[], picked: s
   return v
 }
 
+/**
+ * Whether a field takes what was typed, as well as what is listed: labels on a
+ * host that creates them by name, and people on a host whose id is the login —
+ * but only when the list could not be read, since a loaded list is everyone
+ * the host would accept anyway.
+ */
+export function freeEntry(options: PrPickerOptions | null, field: PrMetaField): boolean {
+  if (!options) return false
+  if (field === 'labels') return !!options.freeLabels
+  return !!options.freePeople && options.failed.includes(field)
+}
+
+/** What a key in the picker's field does. Pure, so the IME and closed-list cases are testable. */
+export type PickerKeyAction =
+  | { kind: 'none' }
+  | { kind: 'open' }
+  | { kind: 'move'; cursor: number }
+  | { kind: 'add'; row: number }
+  | { kind: 'close' }
+  | { kind: 'removeLast' }
+
+export interface PickerKeyState {
+  key: string
+  /** An IME composition is in progress (ja / zh / ko): Enter confirms the text there, not a pick. */
+  composing: boolean
+  open: boolean
+  cursor: number
+  rowCount: number
+  text: string
+  picked: number
+}
+
+/**
+ * The picker's keys. Enter never submits the dialog, and never adds a row the
+ * user cannot see: with the list closed it only opens it. During an IME
+ * composition every key is the input method's.
+ */
+export function pickerKey(s: PickerKeyState): PickerKeyAction {
+  if (s.composing) return { kind: 'none' }
+  switch (s.key) {
+    case 'ArrowDown':
+    case 'ArrowUp':
+      if (!s.open) return { kind: 'open' }
+      return { kind: 'move', cursor: Math.min(Math.max(0, s.rowCount - 1), Math.max(0, s.cursor + (s.key === 'ArrowDown' ? 1 : -1))) }
+    case 'Enter':
+      if (!s.open) return { kind: 'open' }
+      return s.rowCount ? { kind: 'add', row: Math.min(s.cursor, s.rowCount - 1) } : { kind: 'none' }
+    case 'Escape':
+      return s.open ? { kind: 'close' } : { kind: 'none' }
+    case 'Backspace':
+      return !s.text && s.picked ? { kind: 'removeLast' } : { kind: 'none' }
+    default:
+      return { kind: 'none' }
+  }
+}
+
+/** A short, non-reversible tag of the tokens a read was made with — the cache key never holds a token. */
+export function tokenFingerprint(tokens: Record<string, string | undefined>): string {
+  // FNV-1a over the sorted slots: enough to tell one credential set from another, nothing to recover.
+  let h = 0x811c9dc5
+  const text = Object.keys(tokens)
+    .sort()
+    .map((k) => `${k}=${tokens[k] ?? ''}`)
+    .join('\n')
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return h.toString(16).padStart(8, '0')
+}
+
+/**
+ * The picker cache key: repository, remote, the profiles whose credentials may
+ * answer (active and bound), and the tokens' fingerprint — so switching
+ * profile or pasting a new token never serves another account's lists.
+ */
+export function pickerCacheKey(
+  repoPath: string,
+  remoteUrl: string,
+  profileIds: Array<string | null | undefined>,
+  tokens: Record<string, string | undefined>
+): string {
+  return [repoPath, remoteUrl, profileIds.map((p) => p ?? '').join(','), tokenFingerprint(tokens)].join('\n')
+}
+
 /** The fields the dialog shows: supported ones, in a fixed order. */
 export function shownFields(options: PrPickerOptions | null): PrMetaField[] {
   if (!options) return []
