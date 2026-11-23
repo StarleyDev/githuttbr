@@ -235,3 +235,47 @@ npm run release:major   # 0.9.0 → 1.0.0
 ```
 
 This bumps the version, updates `CHANGELOG.md`, commits, tags, and pushes. The GitHub Actions workflow then builds and publishes the release automatically.
+
+### What the workflows do with a tag
+
+| Step | Workflow / job | What it does |
+|------|----------------|--------------|
+| 1 | Release → `draft` | Creates the draft release for the tag (once), so every job uploads to the same one. |
+| 2 | Release → `release` (Linux, Windows) | `npm run release`: electron-builder builds and uploads to the draft. |
+| 3 | Release → `publish` | Needs Linux **and** Windows. Checks that `latest.yml` and `latest-linux.yml` are attached and that every file they name is too, then flips the draft to published with the changelog as notes. macOS is **not** waited for. |
+| 4 | Release → `mac` (`release-mac.yml`) | On `macos-26`: builds with `--publish never` (signed + notarized when `CSC_LINK` is set, unsigned otherwise), checks `latest-mac.yml` names this version and only files that exist, then `gh release upload --clobber` — binaries first, `latest-mac.yml` last. Works on a draft and on a published release alike. |
+| 5 | Release retry | When a Release run ends with a job that never started a step (no runner), re-runs **that job** by id — up to 3 attempts in all. A job that ran and failed is never retried. |
+| 6 | Release mac backfill | Every 6 h: if the latest release has no `latest-mac.yml`, no Release run for it is still going, and it was published under 48 h ago, builds macOS from the tag and uploads it. Alternates `macos-26` / `macos-15`. |
+
+electron-builder's own GitHub upload is not used for macOS on purpose: it
+silently skips a release that is already published, and macOS is now allowed
+to arrive after the release went public.
+
+### When macOS is late, or never arrives
+
+GitHub's macOS queue sometimes hands out no runner at all: the job sits queued
+and is cancelled without running a step. Linux and Windows users get the
+release regardless. On a Mac, the update is not offered until `latest-mac.yml`
+is attached.
+
+- **Late** — the macOS job uploads whenever it runs; nothing to do.
+- **Never started** — Release retry re-runs just the macOS job (attempts 2 and
+  3). After the third attempt an issue **"vX.Y.Z: macOS build missing"** is
+  opened, with links to the run and the release; a macOS build that *ran and
+  failed* opens it at once, since nothing retries that. The backfill then tries
+  every 6 h for 48 h. Whichever upload succeeds closes the issue with a comment.
+- **Still missing after 48 h** — the issue stays open. Run it by hand:
+  Actions → **Release mac backfill** → *Run workflow*, with the tag (and the
+  other runner if one keeps failing). It ignores the 48 h window, is safe to
+  repeat, and closes the issue when it uploads. Or, on a Mac, from the tag:
+
+  ```bash
+  git checkout vX.Y.Z && npm ci && npm run build
+  npx electron-builder --mac --publish never
+  node scripts/release-assets.mjs mac-upload dist X.Y.Z > files.txt   # checks latest-mac.yml
+  gh release upload vX.Y.Z $(grep -v latest-mac.yml files.txt) --clobber
+  gh release upload vX.Y.Z dist/latest-mac.yml --clobber
+  ```
+
+If Linux or Windows fails, the release stays a draft — fix, then re-run the
+failed jobs of the Release run; `publish` follows once both are green.
