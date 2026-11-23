@@ -1,5 +1,38 @@
 
 
+## [4.38.0](https://github.com/StarleyDev/githuttbr/compare/v4.37.2...v4.38.0) (2026-11-23)
+
+
+### Features
+
+* support github enterprise server hosts ([c14249e](https://github.com/StarleyDev/githuttbr/commit/c14249e5c017747e61dfdc876a9fabd15deae5d7))
+* let a profile hold several self-managed gitlab servers ([3ce66a7](https://github.com/StarleyDev/githuttbr/commit/3ce66a786e0ba888383e28657501e813bdeaaf1e))
+* support bitbucket data center servers ([30d5543](https://github.com/StarleyDev/githuttbr/commit/30d55435bba0b65f510492c0cbce3b6b18e6fc3c))
+* show github profile pictures for commit authors ([cc36e4a](https://github.com/StarleyDev/githuttbr/commit/cc36e4aae42269dcd36e5c754c8235624dff0ccf))
+* pick reviewers, assignees and labels when creating a pull request ([d8ac9df](https://github.com/StarleyDev/githuttbr/commit/d8ac9df091eaa775c1440ca33b5a7732f247255b), [f3d1506](https://github.com/StarleyDev/githuttbr/commit/f3d15060d93adcedf29cadd3ddd6a8a67f62b9c5), [b824d9c](https://github.com/StarleyDev/githuttbr/commit/b824d9ca9faef2b3e4130976f30d69e667e07da6), [f195a48](https://github.com/StarleyDev/githuttbr/commit/f195a4892d36f3b0ca060af5275554f0ab69e73e), [9658372](https://github.com/StarleyDev/githuttbr/commit/96583724976c287fced99e89ecb1f4df6b9fb9a5))
+* run every repository hosting action as the profile the repository is bound to ([68088de](https://github.com/StarleyDev/githuttbr/commit/68088deaba6dfbfc460076929926e0f4f7658073), [ad513f4](https://github.com/StarleyDev/githuttbr/commit/ad513f4fd55171630cb37699dbb987c682a6e63c), [7c544f6](https://github.com/StarleyDev/githuttbr/commit/7c544f67132bdf762277ea02c1ebd1725bb86132), [6f1de1e](https://github.com/StarleyDev/githuttbr/commit/6f1de1e4ac3ebcd6bdea81c3040cfd983d81bb13))
+
+
+### Security
+
+* serve the profile token to git's helper over a private endpoint, not the environment ([a77fef5](https://github.com/StarleyDev/githuttbr/commit/a77fef5268693369da9eb830e12a789c1cd952e3), [d911de1](https://github.com/StarleyDev/githuttbr/commit/d911de13049955fc389cf57404367590d845ddd5))
+* scope credential config to the server and encode its key ([fe4af8e](https://github.com/StarleyDev/githuttbr/commit/fe4af8ea6985258d931c9e19d4a57a225e1b2ff4))
+* match remotes on their encoded path and exact cloud hosts; resolve a provider by its full server address ([26204dc](https://github.com/StarleyDev/githuttbr/commit/26204dc519ad6de9e5ccc8806a64314391bf9331), [46e8288](https://github.com/StarleyDev/githuttbr/commit/46e828845b02bce3d9d056e1e0fee4a9f2b468ee), [b663d07](https://github.com/StarleyDev/githuttbr/commit/b663d0732ec39a89b649927ad78f5ae115477925))
+* keep private servers, profile names and stale tokens out of reports and files ([acd6e34](https://github.com/StarleyDev/githuttbr/commit/acd6e34e7cefb95e024bf28d33671dcd87bbf211), [00a9218](https://github.com/StarleyDev/githuttbr/commit/00a92181d18439b83a72e6c6fb10a7428696a56c))
+* harden appimage paths, packaged cli shims and mac notarization ([ca5020c](https://github.com/StarleyDev/githuttbr/commit/ca5020c33544778779c3862aac875899060cbaba))
+* stop saved tokens and ai keys from being silently wiped; atomic settings writes and safe recovery from a damaged settings file ([c74cb3a](https://github.com/StarleyDev/githuttbr/commit/c74cb3a2428bd1e440cf011d573c4b6bc12a7283), [da849a0](https://github.com/StarleyDev/githuttbr/commit/da849a021abfe80231a74094a1ed1cbc20b214f6), [c320269](https://github.com/StarleyDev/githuttbr/commit/c32026937f89318b83d6c717d093faf7ad6f9076), [20198b0](https://github.com/StarleyDev/githuttbr/commit/20198b0d8297f2717658d6b6d4900ce9d9ff0542), [a5f682d](https://github.com/StarleyDev/githuttbr/commit/a5f682df81540154b99c2147f25550173dfaa216), [0d60b44](https://github.com/StarleyDev/githuttbr/commit/0d60b4485de103422b8f41450b32b0cc9f04ea6d))
+* keep avatar lookups off the keychain and stop caching 404s as misses ([b49a885](https://github.com/StarleyDev/githuttbr/commit/b49a8854e2436df0a6652078e777227bbc015e3d), [d09f66b](https://github.com/StarleyDev/githuttbr/commit/d09f66b81b76f63dba0564faa180588dc053fb31), [be2597c](https://github.com/StarleyDev/githuttbr/commit/be2597c4cfeec2417d2b551510767dab5450a0b9))
+
+
+### Bug Fixes
+
+* clone as nobody when the picked profile has no credential ([1849827](https://github.com/StarleyDev/githuttbr/commit/18498272279e2a501bd1041508b932f14bf4b961))
+* offer create pr for profiles with only an enterprise or data center token ([8813b7c](https://github.com/StarleyDev/githuttbr/commit/8813b7ce11d7fe07d2ad1ca9a026d401adef31a1), [ae3471f](https://github.com/StarleyDev/githuttbr/commit/ae3471f432feb91af36dbc2cb06cf46400a7eb75))
+* drop a removed server's token from the encrypted store; clear a session-only token the user empties ([3fa6240](https://github.com/StarleyDev/githuttbr/commit/3fa62409866d097da9d4ef277d98833e177c0fe0), [9c56808](https://github.com/StarleyDev/githuttbr/commit/9c568082d34ae276fbaffc2f70f7995db6beb6c1))
+* translate hosting errors and no-credential messages shown outside toasts ([bccfe7c](https://github.com/StarleyDev/githuttbr/commit/bccfe7c50d1d653dc57738264a5e513ccc62a3f0), [407a0e5](https://github.com/StarleyDev/githuttbr/commit/407a0e51453017f07cf98050f5f7ee60148171c4))
+* let a settings row check its token against a server not saved yet ([e810589](https://github.com/StarleyDev/githuttbr/commit/e8105897cdaafc92b674cbf5ea776f5db63d2867), [faf5b9b](https://github.com/StarleyDev/githuttbr/commit/faf5b9b9f3d734e8bbabc7065b4e8c1519770d0c))
+* keep empty commit lists per repository and re-ask avatars on unlock ([2b0df70](https://github.com/StarleyDev/githuttbr/commit/2b0df70a7ba9aed3f71bc0df61557fbf819285ba))
+
 ## [4.37.2](https://github.com/StarleyDev/githuttbr/compare/v4.37.1...v4.37.2) (2026-11-23)
 
 
