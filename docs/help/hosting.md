@@ -28,16 +28,37 @@ while an input method (Japanese, Chinese, Korean) is composing, the keys are
 its own. Tab moves on and closes the list. Labels show their colour, people
 their picture where the host gives one.
 
+Text left in a field when you press **Create** is not thrown away. If it names
+a listed row exactly (a login or a label, ignoring case) that row is added; if
+the field takes typed entries (a new label, or a login where the list could not
+be read) the text is added as it is. A field that only takes listed rows has
+nothing it could add, so unmatched text there is dropped rather than blocking
+the create. A login may be typed with its `@` — `@ana` is sent as `ana`.
+
 All three are optional. Leave them empty and the request is exactly the one
 the app always sent. The choices are read when the dialog opens — a small
 *Loading…* line shows meanwhile — and kept for a few minutes, so reopening the
 dialog does not ask the host again. That memory is per account: switch
-profile, or change a token, and the lists are read afresh.
+profile, or change a token, and the lists are read afresh. If that happens with
+the dialog open, the picks made so far are cleared too — people and labels
+chosen from one account's lists are never sent under another.
 
 Reading the choices never touches your saved credentials. If the token cannot
 read a list — an Azure DevOps PAT with only the Code scope, say, which cannot
 read teams — that field says so and the rest of the dialog works as before;
 the saved git login the pull request and your pushes use is left alone.
+
+The same holds after the create. Only the create itself may replace a saved git
+login the host turned down (and only once); the calls that follow it — Azure
+DevOps labels, GitHub's reviewers, assignees and labels — use the login the
+create succeeded with and never remove a saved credential. A label Azure DevOps
+refuses because your account may not create tag definitions costs the labels,
+nothing more.
+
+A remote on a Bitbucket Data Center whose path the app cannot read as a
+repository (`<server>/scm/PROJECT/repo.git`) is refused with a message saying
+so. It never falls back to bitbucket.org, so the Data Center's token is never
+sent there.
 
 Each host takes a different set, and the dialog shows only the fields the
 repository's host supports:
@@ -61,7 +82,8 @@ How each one is set:
   reviewers — someone without access, the author, an account since removed —
   the app creates the pull request once more without them and tells you the
   reviewers were not set. It only retries after a validation answer (400 or
-  409) that means nothing was created, so a pull request is never opened
+  409, or Data Center's 404 for a user name it does not know) that means
+  nothing was created, so a pull request is never opened
   twice; a sign-in failure, a server error or a lost connection is reported as
   it was, and a refusal the host pins on another field (bitbucket.org) or
   another cause (Data Center's duplicate pull request) is not retried.
@@ -72,8 +94,11 @@ How each one is set:
   refuse the author. GitLab and Azure DevOps allow it, so there you are listed.
 - **The lists stop at a thousand** people or labels, read 100 at a time. Azure
   DevOps reads the members of the project's first ten teams (up to 500 each);
-  every team is still offered as a reviewer itself. A list cut short by any of
-  these — or by a team whose members could not be read — says *This list may
+  every team is still offered as a reviewer itself. A Bitbucket Data Center
+  list stops at the same thousand. On bitbucket.org, when the token may not
+  list the workspace's members and only the repository's default reviewers
+  are offered instead, the list is marked the same way. A list cut short by
+  any of these — or by a team whose members could not be read — says *This list may
   be incomplete* under the field, so a missing name is not mistaken for someone
   without access.
 - **New labels can be typed** on GitHub, GitLab and Azure DevOps: a name that
@@ -92,7 +117,9 @@ How each one is set:
 - **A pick the host refuses after the fact** does not undo the pull request:
   it is created, opened in the browser as usual, and a second message names
   what could not be set (*reviewers*, say), so you can add it on the host. This
-  covers GitHub refusing a review request, GitLab silently dropping a reviewer
+  covers GitHub refusing a review request, GitHub quietly skipping an
+  assignee it will not take (the assignees it answers with are checked against
+  your picks), GitLab silently dropping a reviewer
   without access, a reviewer Azure DevOps or Bitbucket rejects outright (see
   the retry above), and a host that leaves a picked reviewer off. Reviewers the
   host adds on its own — Bitbucket's default reviewers, say — do not count
