@@ -25,11 +25,24 @@ profile with neither clones anonymously; it never falls back to the active
 profile's credential, and git's helper is not left to pick an account: for that
 host, the clone and the branch list switch git's credential helpers and askpass
 off, so a private repository fails to clone instead of signing in as whichever
-account the machine's credential manager holds. Clone → URL has no picked host:
-only an address under a Bitbucket Data Center a profile names is signed in (or,
-with no credential there, cloned anonymously the same way); anything else is
-cloned as git itself would, credential helper included. One thing the switch
-cannot reach: a `~/.netrc` entry for the host is still read by git's HTTP layer.
+account the machine's credential manager holds. Clone → URL has no host tab, so
+the provider is read from the address itself: github.com, gitlab.com,
+bitbucket.org, Azure DevOps, or an address under a server some profile
+configures (a GitHub Enterprise Server, a self-managed GitLab, Forgejo, a
+Bitbucket Data Center — matched by its full base, port and path included) is
+signed in as the picked profile, or cloned anonymously the same way when it has
+nothing for that server. Only an address no profile could serve is cloned as git
+itself would, credential helper included. Going anonymous works on any git;
+signing in with a token needs git 2.31 or newer. One thing the switch cannot
+reach: a `~/.netrc` entry for the host is still read by git's HTTP layer.
+
+The token is offered to its own server only — including to the submodules a
+`--recurse-submodules` clone fetches. When one address hosts two servers (a
+GitLab at `https://git.example.com/` and a Data Center at
+`https://git.example.com/bitbucket`), it covers this one repository; a submodule
+elsewhere on that address is answered the way git would answer it, not with the
+clone's token. The cost: if such a server redirects the clone to another path,
+git asks again without the token and the clone fails rather than guessing.
 
 Choose a parent folder and a name; the line under the fields shows exactly where
 the repository will land. A folder that already exists is refused rather than

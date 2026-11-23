@@ -183,21 +183,18 @@ import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileAuth, asProfileIdArg, isProfileId, namedProfileAuth, readSettings } from './settings'
-import { apiToken, providerOfRemote } from './credentials'
+import { apiToken, knownServers, providerOfRemote, resolveRemote } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
-import {
-  bitbucketServerBases,
-  bitbucketServerGitUsername,
-  bitbucketServerRepoOf,
-  isBitbucketCloudHost
-} from '../shared/bitbucketServer'
+import { bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
 import {
   anonymousGitEnv,
   gitCredentialEnv,
   gitSupportsCredentialEnv,
   MIN_GIT_FOR_CREDENTIAL_ENV,
-  type BasicCredential
+  needsConfigEnv,
+  type BasicCredential,
+  type CredentialScope
 } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
@@ -1046,11 +1043,54 @@ export async function cloneCredentialEnv(
   // holding another account's login for this host — and the repository would
   // then be bound to the picked profile while cloned as someone else. A clone
   // nobody picked a profile for keeps git's own behaviour, as in a terminal —
-  // and so does Clone → URL (no host) for an address no profile serves: the
+  // and so does Clone → URL (no host) for an address no profile can serve: the
   // user pasted it, and the helper may be the only way in to that server.
   if (profileId === undefined) return null
-  if (!host && !bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
+  if (!host && !(await servedProviderOf(url))) return null
   return anonymousGitEnv(url)
+}
+
+/**
+ * The provider a pasted clone address is on when a profile could hold its
+ * credential: a cloud host, or under a server some profile configures (by its
+ * base — a hostname match alone names no server whose token belongs there).
+ * Undefined for anything else, which Clone → URL leaves to git.
+ */
+async function servedProviderOf(url: string): Promise<RepoHost | undefined> {
+  await readSettings() // populates the server registries resolveRemote reads
+  const r = resolveRemote(url)
+  return r && (r.base || r.provider === 'azure') ? r.provider : undefined
+}
+
+/**
+ * Where a clone's credential is registered (see `CredentialScope`). The env
+ * reaches every git the clone runs, submodules included, so the token must not
+ * cover more than its own server: one server alone on its origin takes the
+ * origin (or its base, under a context path); an origin other configured
+ * servers share takes this repository's URL only — a submodule elsewhere on it
+ * is answered as git would answer it, never with this server's token.
+ */
+function cloneCredentialScope(url: string): CredentialScope {
+  const u = new URL(url)
+  const r = resolveRemote(url)
+  // Azure has no configurable server: dev.azure.com is the only one.
+  if (r?.provider === 'azure') return 'host'
+  const base = r?.base
+  if (!base) return 'repository'
+  const { gitlab, forgejo, githubEnterprise, bitbucketServer } = knownServers()
+  const sameOrigin = (b: string): boolean => {
+    try {
+      return new URL(b).origin === u.origin
+    } catch {
+      return false
+    }
+  }
+  const norm = (b: string): string => b.replace(/\/+$/, '')
+  const shared = [...gitlab, ...forgejo, ...githubEnterprise, ...bitbucketServer].some(
+    (b) => sameOrigin(b) && norm(b) !== norm(base)
+  )
+  if (shared) return 'repository'
+  return new URL(base).pathname.replace(/\/+$/, '') ? { prefix: base } : 'host'
 }
 
 async function profileCredentialEnv(
@@ -1061,13 +1101,13 @@ async function profileCredentialEnv(
 ): Promise<NodeJS.ProcessEnv | null> {
   if (!/^https:\/\//i.test(url)) return null
   if (profileId !== undefined && !(await isProfileId(profileId))) return null
-  // Clone → URL names no provider. A Data Center a profile configures is
-  // recognised from the URL itself (host, port and context path) — its token is
-  // filed under that base, so no other host can be offered anything. Every
-  // other provider still needs the caller to name it.
+  // Clone → URL names no provider, so it is told from the URL itself by the
+  // rule every remote follows (host, port and context path): a cloud host, or a
+  // server a profile configures — whose token is filed under that base, so no
+  // other server can be offered it. Anything else is left to git.
   if (!host) {
-    if (!bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
-    host = 'bitbucket'
+    host = await servedProviderOf(url)
+    if (!host) return null
   }
   // The caller names the provider; the URL must really be on it.
   if (hostFromUrl(url) !== host) return null
@@ -1087,7 +1127,7 @@ async function profileCredentialEnv(
   const sent = selfHosted ? undefined : token?.trim()
   if (sent) {
     const auth = basicAuthFor(host as RepoHost, sent, url)
-    return auth ? gitCredentialEnv(url, auth) : null
+    return auth ? gitCredentialEnv(url, auth, process.env, cloneCredentialScope(url)) : null
   }
   // Nothing sent: the renderer holds no tokens until Settings is opened, and
   // never a link. So the profile's own credential is resolved here — its PAT,
@@ -1102,7 +1142,7 @@ async function profileCredentialEnv(
   const found = await apiToken(url, input).catch(() => null)
   if (!found) return null
   const auth = found.cred ?? basicAuthFor(repoHost, found.token, url, found.gitUsername, found.gitTokenKind)
-  return auth ? gitCredentialEnv(url, auth) : null
+  return auth ? gitCredentialEnv(url, auth, process.env, cloneCredentialScope(url)) : null
 }
 
 /**
@@ -1146,6 +1186,8 @@ export function cloneGit(
       ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
       : undefined,
     unsafe: CLONE_ENV_UNSAFE,
+    // A credential scoped to one repository (`gitCredentialEnv`'s 'repository').
+    allowConfig: ['credential.*.usehttppath'],
     allowEnvironment: Object.keys(env).filter((k) => isGuardedEnvKey(k))
   })
   git.env(env)
@@ -2011,10 +2053,13 @@ const remoteAuthEnv = new AsyncLocalStorage<NodeJS.ProcessEnv>()
  * the account it linked (the GitHub CLI's, or one git's helper holds), else
  * none. The profile is the one the repository is bound to, else the active one.
  */
-async function remoteCredential(repoPath: string, url: string): Promise<BasicCredential | null> {
-  const { credential } = await profileCredentialForUrl(repoPath, url)
-  if (!credential) return null
-  return credential.cred ?? basicAuthFor(hostFromUrl(url), credential.token, url, credential.gitUsername, credential.gitTokenKind)
+async function remoteCredential(repoPath: string, url: string): Promise<{ cred: BasicCredential | null; bound: boolean }> {
+  const { credential, bound } = await profileCredentialForUrl(repoPath, url)
+  const cred = credential
+    ? (credential.cred ??
+      basicAuthFor(hostFromUrl(url), credential.token, url, credential.gitUsername, credential.gitTokenKind))
+    : null
+  return { cred, bound: !!bound }
 }
 
 /**
@@ -2024,7 +2069,10 @@ async function remoteCredential(repoPath: string, url: string): Promise<BasicCre
  * to `.git/config`, never in an argument list. Nothing on disk changes, so a
  * read under the shared lock can use it too. With no profile credential (ssh,
  * an unknown host, nothing configured) the op runs as-is — git's own helper may
- * still answer — and `GIT_TERMINAL_PROMPT=0` makes a miss fail fast.
+ * still answer — and `GIT_TERMINAL_PROMPT=0` makes a miss fail fast. Except for
+ * a repository bound to a profile: there the remote is asked as nobody
+ * (`anonymousGitEnv`), as its clone was, because the helper would sign in as
+ * whichever account the machine holds while the UI names the bound profile.
  */
 async function pushUrls(repoPath: string, remote: string): Promise<string[]> {
   const { stdout } = await pexecFile('git', ['-C', repoPath, 'remote', 'get-url', '--push', '--all', '--', remote])
@@ -2035,15 +2083,19 @@ async function withRemoteAuth<T>(repoPath: string, remote: string, direction: 'f
   const urls = direction === 'push' ? await pushUrls(repoPath, remote) : [await getRemoteUrl(repoPath, remote)]
   let env: NodeJS.ProcessEnv | undefined
   for (const url of urls) {
-    const cred = await remoteCredential(repoPath, url).catch(() => null)
-    if (!cred) continue
-    const extra = gitCredentialEnv(url, cred, { ...process.env, ...env }, 'repository')
+    const { cred, bound } = await remoteCredential(repoPath, url).catch(() => ({ cred: null, bound: false }))
+    const base = { ...process.env, ...env }
+    // Scoped to this remote's URL: another destination of a multi-URL push on
+    // the same origin keeps its own credential (or none).
+    const extra =
+      (cred && gitCredentialEnv(url, cred, base, 'repository')) || (bound ? anonymousGitEnv(url, base, 'repository') : null)
     if (extra) env = { ...env, ...extra }
   }
   if (!env) return op()
   // Older git ignores GIT_CONFIG_COUNT and would run without the credential, so
-  // fail with the reason instead of "could not read Username".
-  await assertGitSupportsCredentialEnv()
+  // fail with the reason instead of "could not read Username". Going anonymous
+  // works on any git.
+  if (needsConfigEnv(env)) await assertGitSupportsCredentialEnv()
   return remoteAuthEnv.run(env, op)
 }
 
@@ -7605,7 +7657,7 @@ export const gitService = {
    *  Never touches disk — `ls-remote` is a network read with no local repo. */
   async remoteBranches(url: string, host?: string, token?: string, profileId?: string): Promise<string[]> {
     const credEnv = await cloneCredentialEnv(url, host, token, profileId)
-    if (credEnv) await assertGitSupportsCredentialEnv()
+    if (credEnv && needsConfigEnv(credEnv)) await assertGitSupportsCredentialEnv()
     try {
       const { stdout } = await pexecFile('git', ['ls-remote', '--heads', url], {
         env: { ...noPromptEnv(), ...(credEnv ?? {}) }
@@ -7643,7 +7695,7 @@ export const gitService = {
         !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
       const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
       const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token, opts.profileId)
-      if (credEnv) await assertGitSupportsCredentialEnv()
+      if (credEnv && needsConfigEnv(credEnv)) await assertGitSupportsCredentialEnv()
       // Streaming the underlying `git clone --progress` so the UI can show real progress;
       // simpleGit auto-appends --progress when a progress handler is configured.
       const git = cloneGit(

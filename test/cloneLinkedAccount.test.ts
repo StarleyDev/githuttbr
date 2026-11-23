@@ -140,9 +140,8 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
       const origin = new URL(c.url).origin
       for (const id of ['', '  ', 'gone', 'empty']) {
         const env = (await cloneCredentialEnv(c.url, c.host, '', id)) ?? {}
-        expect(env.GIT_CONFIG_COUNT, `${c.url} ${id}`).toBe('1')
-        expect(env.GIT_CONFIG_KEY_0).toBe(`credential.${origin}.helper`)
-        expect(env.GIT_CONFIG_VALUE_0).toBe('')
+        expect(env.GIT_CONFIG_COUNT, `${c.url} ${id}`).toBeUndefined()
+        expect(env.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${origin}.helper='`), `${c.url} ${id}`).toBe(true)
         expect(env.GIT_ASKPASS).toBe('')
         expect(env.GIT_TERMINAL_PROMPT).toBe('0')
         expect(Object.keys(env).some((k) => k.startsWith('GITCITO_GIT_'))).toBe(false)
@@ -150,7 +149,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
       }
       // The provider check failing for a named profile is just as anonymous.
       const other = (await cloneCredentialEnv(c.url, c.host === 'github' ? 'azure' : 'github', '', 'personal')) ?? {}
-      expect(other.GIT_CONFIG_VALUE_0).toBe('')
+      expect(other.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${origin}.helper='`)).toBe(true)
       expect(JSON.stringify(other)).not.toContain('personal-')
     }
   })
