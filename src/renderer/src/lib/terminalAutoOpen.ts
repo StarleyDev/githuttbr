@@ -24,3 +24,20 @@ export function claimTerminalAutoOpen(claimed: Set<string>, input: TerminalAutoO
   claimed.add(repoPath)
   return enabled
 }
+
+/**
+ * The one-time 4.40 move of the terminal to the center. Earlier builds saved
+ * every setting, so most installs carry an explicit 'bottom' that is really
+ * just the old default; the product now defaults to 'center' and moves those
+ * once. After that the marker is set and whatever the user picks stays put.
+ */
+export function applyTerminalCenterDefault<
+  T extends { terminalPlacement: 'bottom' | 'center' | 'right'; terminalCenterApplied?: boolean }
+>(settings: T): T {
+  if (settings.terminalCenterApplied) return settings
+  return {
+    ...settings,
+    terminalPlacement: settings.terminalPlacement === 'bottom' ? 'center' : settings.terminalPlacement,
+    terminalCenterApplied: true
+  }
+}

@@ -3490,8 +3490,12 @@ export interface AppSettings {
   /** Where the integrated terminal pane docks: full-width along the bottom,
    *  under the center graph column only (default — sidebars stay full height),
    *  or as its own right-hand column. A file that never stored the key gets the
-   *  default; a stored 'bottom' from before 4.40 is kept as the user chose it. */
+   *  default. 4.40 moves a stored 'bottom' to 'center' once (see
+   *  `terminalCenterApplied`); a later choice of 'bottom' or 'right' is kept. */
   terminalPlacement: 'bottom' | 'center' | 'right'
+  /** Set once the 4.40 switch of the terminal to the center has run, so it
+   *  never moves a placement the user picks afterwards. */
+  terminalCenterApplied: boolean
   /** Open the integrated terminal the first time each repository becomes the
    *  active one in a session. Closing it is respected until the next launch. */
   openTerminalOnRepoOpen: boolean
@@ -3960,6 +3964,7 @@ export function defaultSettings(): AppSettings {
     largeFileKb: 5120,
     warnOnClose: 'always',
     terminalPlacement: 'center',
+    terminalCenterApplied: false,
     openTerminalOnRepoOpen: true,
     terminalThemeId: 'gitcito',
     terminalFontSize: 12.5,

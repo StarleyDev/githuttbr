@@ -16,8 +16,9 @@ your aliases.
 - **Multiple tabs per repository**, each starting in that repository's folder.
 - It docks **under the graph** by default, with the sidebars keeping the full
   height; Settings → Layout moves it to the **whole bottom edge** or a
-  **right-hand column**. The pane remembers its size, and a placement you chose
-  before this became the default is kept.
+  **right-hand column**. The pane remembers its size. Updating to 4.40 moves a
+  terminal docked at the bottom to the center once; any placement you pick after
+  that stays as you set it.
 - **It opens with the repository.** The first time a repository becomes the
   active tab in a session — restored at startup, opened from the welcome screen,
   cloned, or sent by `githuttbr .` — its terminal opens with a shell in that

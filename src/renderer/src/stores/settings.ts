@@ -35,6 +35,7 @@ import {
 import { gitApi, reposApi, settingsApi, SettingsSaveRefused } from '../infrastructure/api'
 import { t } from '../i18n'
 import { repathRepoSettings, repathRepoTabs } from '../lib/repoRepath'
+import { applyTerminalCenterDefault } from '../lib/terminalAutoOpen'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { useProfileAvatarsStore } from './profileAvatars'
@@ -524,6 +525,11 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
   settings.terminalPlacement = settings.terminalPlacement ?? sd.terminalPlacement
   settings.openTerminalOnRepoOpen = settings.openTerminalOnRepoOpen ?? sd.openTerminalOnRepoOpen
+  {
+    const moved = applyTerminalCenterDefault(settings)
+    settings.terminalPlacement = moved.terminalPlacement
+    settings.terminalCenterApplied = moved.terminalCenterApplied
+  }
   settings.sidebarSide = settings.sidebarSide ?? sd.sidebarSide
   settings.rightPanelFullHeight = settings.rightPanelFullHeight ?? sd.rightPanelFullHeight
   settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles

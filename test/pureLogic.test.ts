@@ -92,7 +92,7 @@ import type {
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
-import { claimTerminalAutoOpen } from '../src/renderer/src/lib/terminalAutoOpen'
+import { applyTerminalCenterDefault, claimTerminalAutoOpen } from '../src/renderer/src/lib/terminalAutoOpen'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
 import {
   detectHotRuntime,
@@ -8096,5 +8096,20 @@ describe('claimTerminalAutoOpen', () => {
     const claimed = new Set<string>()
     expect(claimTerminalAutoOpen(claimed, { repoPath: null, enabled: true, ready: true })).toBe(false)
     expect(claimed.size).toBe(0)
+  })
+})
+
+describe('applyTerminalCenterDefault', () => {
+  it('moves a pre-4.40 bottom terminal to the center once', () => {
+    const out = applyTerminalCenterDefault({ terminalPlacement: 'bottom' as const })
+    expect(out).toEqual({ terminalPlacement: 'center', terminalCenterApplied: true })
+  })
+  it('keeps right, and marks it so it is never revisited', () => {
+    const out = applyTerminalCenterDefault({ terminalPlacement: 'right' as const, terminalCenterApplied: false })
+    expect(out).toEqual({ terminalPlacement: 'right', terminalCenterApplied: true })
+  })
+  it('never moves a placement chosen after the switch ran', () => {
+    const s = { terminalPlacement: 'bottom' as const, terminalCenterApplied: true }
+    expect(applyTerminalCenterDefault(s)).toBe(s)
   })
 })
