@@ -344,7 +344,7 @@ describe('the clone dialog lists, clones and binds as the profile it picked', ()
     expect(calls).toEqual([])
   })
 
-  it('the clone signs in as the picked profile on every provider tab, and nothing for an unknown id', async () => {
+  it('the clone signs in as the picked profile on every provider tab, and as nobody for an unknown id', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const cases: Array<{ url: string; host: string; slot: keyof typeof WORK; sent?: string }> = [
       { url: `${GHES}/team/app.git`, host: 'github', slot: 'ghes' },
@@ -358,7 +358,20 @@ describe('the clone dialog lists, clones and binds as the profile it picked', ()
       const env = JSON.stringify(await cloneCredentialEnv(c.url, c.host, c.sent ?? WORK[c.slot], 'personal'))
       expect(env, c.url).toContain(PERSONAL[c.slot])
       expect(env, c.url).not.toContain('work-')
-      for (const id of ['', 'gone']) expect(await cloneCredentialEnv(c.url, c.host, c.sent ?? WORK[c.slot], id)).toBeNull()
+      for (const id of ['', 'gone']) {
+        expectAnonymous(await cloneCredentialEnv(c.url, c.host, c.sent ?? WORK[c.slot], id), c.url, 'work-', 'personal-')
+      }
     }
   })
 })
+
+/** Anonymous, not "nothing": the host's credential helpers are blanked, so the
+ *  machine's credential manager cannot answer as another account. No token. */
+function expectAnonymous(env: NodeJS.ProcessEnv | null, url: string, ...absent: string[]): void {
+  expect(env, url).not.toBeNull()
+  expect(env!.GIT_CONFIG_COUNT, url).toBe('1')
+  expect(env!.GIT_CONFIG_KEY_0, url).toBe(`credential.${new URL(url).origin}.helper`)
+  expect(env!.GIT_CONFIG_VALUE_0, url).toBe('')
+  expect(env!.GIT_ASKPASS, url).toBe('')
+  for (const s of absent) expect(JSON.stringify(env), url).not.toContain(s)
+}

@@ -105,13 +105,12 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
     expect(Object.values(env)).toContain('me')
   })
 
-  it('Clone → URL with an unknown or empty profile id gets nothing — not the active profile, not the first', async () => {
+  it('Clone → URL with an unknown or empty profile id clones as nobody — not the active profile, not the first', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'gone')).toBeNull()
-    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, '')).toBeNull()
-    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, '  ')).toBeNull()
-    // A profile with no entry for that server.
-    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'empty')).toBeNull()
+    // The last one: a profile with no entry for that server.
+    for (const id of ['gone', '', '  ', 'empty']) {
+      expectAnonymous(await cloneCredentialEnv(BBS_REPO, undefined, undefined, id), BBS_REPO, WORK_BBS, PERSONAL_BBS)
+    }
   })
 
   // The provider tab lists with the picked profile, and the dialog binds the
@@ -126,11 +125,12 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
     expect(env).not.toContain(WORK_BBS)
   })
 
-  it('a provider-tab clone with an unknown or empty profile id gets nothing — not even the token the renderer sent', async () => {
+  it('a provider-tab clone with an unknown or empty profile id clones as nobody — not even with the token the renderer sent', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     for (const id of ['gone', '', '  ']) {
-      expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', 'renderer-token', id)).toBeNull()
-      expect(await cloneCredentialEnv('https://github.com/team/app.git', 'github', 'renderer-token', id)).toBeNull()
+      const gh = 'https://github.com/team/app.git'
+      expectAnonymous(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', 'renderer-token', id), GITLAB_REPO, 'renderer-token')
+      expectAnonymous(await cloneCredentialEnv(gh, 'github', 'renderer-token', id), gh, 'renderer-token')
     }
   })
 
@@ -146,3 +146,14 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
     expect(await cloneCredentialEnv('https://elsewhere.example/scm/proj/app.git', undefined, undefined)).toBeNull()
   })
 })
+
+/** Anonymous, not "nothing": the host's credential helpers are blanked, so the
+ *  machine's credential manager cannot answer as another account. No token. */
+function expectAnonymous(env: NodeJS.ProcessEnv | null, url: string, ...absent: string[]): void {
+  expect(env, url).not.toBeNull()
+  expect(env!.GIT_CONFIG_COUNT, url).toBe('1')
+  expect(env!.GIT_CONFIG_KEY_0, url).toBe(`credential.${new URL(url).origin}.helper`)
+  expect(env!.GIT_CONFIG_VALUE_0, url).toBe('')
+  expect(env!.GIT_ASKPASS, url).toBe('')
+  for (const s of absent) expect(JSON.stringify(env), url).not.toContain(s)
+}
