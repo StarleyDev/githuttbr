@@ -606,8 +606,9 @@ export interface PullRequest {
   headSha?: string
   /** Rolled-up state of the head commit's checks, when they were read. */
   ci?: CiState
-  /** "2 passed · 1 failing", for the row's tooltip. */
-  ciSummary?: string
+  /** The head's checks counted per outcome, for the row's tooltip — the
+   *  renderer words them ("2 passed · 1 failing") in the user's language. */
+  ciCounts?: CiCounts
   /** owner/repo the head branch lives in (GitHub), to tell a fork's PRs apart. */
   headRepo?: string
   /** Logins asked to review and not answered yet, as the list reports them. */
@@ -718,6 +719,14 @@ export interface PrDetail {
   state: 'open' | 'closed'
   merged: boolean
   mergeable: boolean | null
+  /**
+   * Why the host refuses the merge although nothing conflicts — Bitbucket Data
+   * Center's merge-check vetoes, in the server's own words. Absent elsewhere.
+   */
+  mergeBlockers?: string[]
+  /** The host refuses the merge without saying why (Data Center's `canMerge: false`
+   *  with no veto and no conflict). Absent elsewhere. */
+  mergeRefused?: boolean
   url: string
   comments: PrComment[]
   reviews: PrReview[]
@@ -883,6 +892,9 @@ export interface RemoteAuthCheck {
   login?: string
   /** A linked account whose credential could not be found on this machine. */
   linkMissing?: boolean
+  /** A Bitbucket Data Center personal token with no user name in Settings or
+   *  in the remote URL — git cannot send it. */
+  needsUsername?: boolean
   /** The host refused the credential (401). */
   rejected?: boolean
   /** Scopes the host reported; absent when it does not report them (fine-grained tokens). */
@@ -986,6 +998,19 @@ export interface CiJob {
   name: string
   state: CiState
   url?: string
+  /** Why a `neutral` job is neutral, when the host says it was not skipped —
+   *  Bitbucket Data Center's CANCELLED and UNKNOWN builds. Absent: skipped. */
+  neutralAs?: 'cancelled' | 'unknown'
+}
+
+/** A commit's checks counted per outcome. */
+export interface CiCounts {
+  passed: number
+  failed: number
+  pending: number
+  skipped: number
+  cancelled: number
+  unknown: number
 }
 
 export interface CiStatus {
@@ -2302,6 +2327,11 @@ export interface CloneOptions {
   host?: RepoHost
   /** Token for that host — used for this clone only, never written to config. */
   token?: string
+  /** The profile picked in the clone dialog — the one the new repository is
+   *  bound to. A self-hosted server's token (GitLab, Forgejo, Enterprise
+   *  Server, Data Center) is read from it, for every tab; an empty or unknown id
+   *  gets none. Absent: the active profile. */
+  profileId?: string
   /** Partial clone spec for `--filter`, e.g. `blob:none`. */
   filter?: string
   /** Shallow clone: keep only this many commits of history. */
@@ -2884,16 +2914,30 @@ export interface Profile {
   gitName: string
   gitEmail: string
   githubToken: string
+  /** GitHub Enterprise Servers this profile is connected to, each with its own
+   *  token. `githubToken` stays github.com's and is never sent to one of these. */
+  githubEnterprise?: GithubEnterpriseHost[]
   azureToken: string
   /** Azure DevOps organization, used to validate the PAT and scope repo/PR lookups. */
   azureOrg?: string
+  /** gitlab.com's token. Never sent to a self-managed server — those keep their
+   *  own, in `gitlabServers`. */
   gitlabToken: string
+  /** Which instance issued `gitlabToken`. Absent or gitlab.com is valid; anything
+   *  else is a leftover from the one-instance model and is never sent. */
   gitlabTokenIssuer?: string
   forgejoTokenIssuer?: string
-  /** Self-managed GitLab this profile's GitLab token belongs to (`https://git.example.org`).
-   *  Empty means gitlab.com. The token is only ever sent to this instance. */
+  /** Self-managed GitLab servers this profile is connected to, each with its own
+   *  token. `gitlabToken` stays gitlab.com's and is never sent to one of these. */
+  gitlabServers?: GitlabServer[]
+  /** Legacy: the single self-managed GitLab of profiles written before
+   *  `gitlabServers`. Read only to migrate (`migrateGitlabProfile`), never written. */
   gitlabUrl?: string
   bitbucketToken: string
+  /** Bitbucket Data Center servers this profile is connected to, each with its
+   *  own HTTP access token. `bitbucketToken` stays bitbucket.org's and is never
+   *  sent to one of these. */
+  bitbucketServers?: BitbucketServerHost[]
   /** Forgejo (or Gitea) access token, for the instance at `forgejoUrl`. Optional:
    *  settings written before Forgejo support have no such field. */
   forgejoToken?: string
@@ -2909,6 +2953,47 @@ export interface Profile {
   avatar?: ProfileAvatar
   ai: AIConfig
 }
+
+/** One GitHub Enterprise Server of a profile. The token is a secret: on disk it
+ *  lives in the keychain-encrypted store, filed under the server's base URL. */
+export interface GithubEnterpriseHost {
+  /** The server's address, `https://host[:port]` (see `normalizeGithubEnterpriseUrl`). */
+  url: string
+  token: string
+}
+
+/** One self-managed GitLab of a profile. Like a GHES token, the token lives in
+ *  the keychain-encrypted store on disk, filed under the server's base URL. */
+export interface GitlabServer {
+  /** The server's base, `https://host[:port][/path]` (see `normalizeGitlabServerUrl`). */
+  url: string
+  token: string
+  /** A login on this machine the profile used for this server — only ever
+   *  carried over from a one-instance profile. Not a secret. */
+  link?: AccountLink
+}
+
+/** One Bitbucket Data Center of a profile. The token is a secret: on disk it
+ *  lives in the keychain-encrypted store, filed under the server's base URL. */
+export interface BitbucketServerHost {
+  /** `https://host[:port][/context]` (see `normalizeBitbucketServerUrl`). */
+  url: string
+  token: string
+  /** The account name git sends with a personal token; empty for a project or
+   *  repository token, which git sends as `x-token-auth`. Not a secret. */
+  username?: string
+  /**
+   * Whose token this is. A personal token goes with its owner's name — this
+   * entry's `username`, else the one in the remote URL; a project or repository
+   * token always with `x-token-auth`, which Basic auth requires for it. Absent
+   * (not set — the default, never inferred): `username`, else the remote URL's,
+   * else `x-token-auth`, as before the choice existed.
+   */
+  tokenKind?: BitbucketServerTokenKind
+}
+
+/** A Data Center HTTP access token's owner: one user, or a project or repository. */
+export type BitbucketServerTokenKind = 'personal' | 'project'
 
 /**
  * The picture a profile shows in the title bar and the profile list. Only the
@@ -3210,6 +3295,9 @@ export interface AppSettings {
   autoLoadOnScroll: boolean
   relativeDates: boolean
   commitAvatars: boolean
+  /** GitHub profile pictures after Gravatar (docs/help/avatars.md). Off by
+   *  `commitAvatars` too; without a token only noreply addresses are mapped. */
+  githubAvatars: boolean
   /** Idle motion on the title-bar profile avatar. The pose it holds still
    *  follows the working tree either way; this only stops it moving. */
   avatarMotion: boolean
@@ -3714,6 +3802,7 @@ export function defaultSettings(): AppSettings {
     autoLoadOnScroll: true,
     relativeDates: true,
     commitAvatars: true,
+    githubAvatars: true,
     avatarMotion: true,
     fileListView: 'path',
     groupBranches: true,

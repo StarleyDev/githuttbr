@@ -8,6 +8,7 @@ import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/s
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
 import { cloneFolderNames } from '../src/renderer/src/lib/cloneBatch'
+import { bindingAfterAddRemote, effectiveProfileId } from '../src/renderer/src/lib/repoProfile'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
@@ -404,8 +405,8 @@ describe('githubCommitUrl', () => {
   })
 
   it('parses ssh and https github remotes', () => {
-    expect(parseGitHubRemote('git@github.com:Acme/App.git')).toEqual({ owner: 'Acme', repo: 'App' })
-    expect(parseGitHubRemote('https://github.com/Acme/App')).toEqual({ owner: 'Acme', repo: 'App' })
+    expect(parseGitHubRemote('git@github.com:Acme/App.git')).toEqual({ owner: 'Acme', repo: 'App', base: 'https://github.com' })
+    expect(parseGitHubRemote('https://github.com/Acme/App')).toEqual({ owner: 'Acme', repo: 'App', base: 'https://github.com' })
   })
 })
 
@@ -7948,5 +7949,45 @@ describe('cloneFolderNames', () => {
 
   it('numbers a repository picked twice', () => {
     expect(cloneFolderNames(['me/app', 'me/app'])).toEqual(['me-app', 'me-app-2'])
+  })
+})
+
+// ─── CI counts in words (src/renderer/src/lib/ciCounts.ts) ─────────────────
+
+import { ciCountParts } from '../src/renderer/src/lib/ciCounts'
+
+describe('ciCountParts', () => {
+  it('keeps the non-zero counts, in reading order, as keys', () => {
+    expect(ciCountParts({ passed: 2, failed: 0, pending: 1, skipped: 0, cancelled: 1, unknown: 3 })).toEqual([
+      { key: 'ci.countPassed', vars: { n: 2 } },
+      { key: 'ci.countPending', vars: { n: 1 } },
+      { key: 'ci.countCancelled', vars: { n: 1 } },
+      { key: 'ci.countUnknown', vars: { n: 3 } }
+    ])
+    expect(ciCountParts(undefined)).toEqual([])
+    expect(ciCountParts({ passed: 0, failed: 0, pending: 0, skipped: 0, cancelled: 0, unknown: 0 })).toEqual([])
+  })
+})
+
+describe('Add remote: which profile the repository ends up bound to', () => {
+  const s = {
+    activeProfileId: 'work',
+    profiles: [{ id: 'work' }, { id: 'personal' }, { id: 'side' }],
+    repoProfiles: { '/bound': 'personal' }
+  }
+  it('starts the picker at the bound profile, else the active one', () => {
+    expect(effectiveProfileId(s, '/bound')).toBe('personal')
+    expect(effectiveProfileId(s, '/free')).toBe('work')
+  })
+  it('binds to another pick, so create, push and later calls are one account', () => {
+    expect(bindingAfterAddRemote(s, '/bound', 'side')).toBe('side')
+    expect(bindingAfterAddRemote(s, '/bound', 'work')).toBe('work')
+    expect(bindingAfterAddRemote(s, '/free', 'personal')).toBe('personal')
+  })
+  it('changes nothing when the pick is what the repository already acts as, or names nobody', () => {
+    expect(bindingAfterAddRemote(s, '/bound', 'personal')).toBeNull()
+    expect(bindingAfterAddRemote(s, '/free', 'work')).toBeNull()
+    expect(bindingAfterAddRemote(s, '/bound', 'gone')).toBeNull()
+    expect(bindingAfterAddRemote(s, '/bound', '')).toBeNull()
   })
 })

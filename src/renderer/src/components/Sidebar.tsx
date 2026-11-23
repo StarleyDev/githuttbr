@@ -57,8 +57,16 @@ import { useLaunchStore } from '../stores/launch'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
+import { ciCountParts } from '../lib/ciCounts'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { forkUpstream, repoHasIssueTracker, repoSupportsPrReview } from '../lib/hosting'
+import {
+  bitbucketServerBasesOf,
+  enterpriseBasesOf,
+  forkUpstream,
+  githubTagUrl,
+  repoHasIssueTracker,
+  repoSupportsPrReview
+} from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -84,8 +92,9 @@ import { TODO_STATUSES, sortTodos, subtaskProgress, todoStatus, todoSummary, top
 import { TodoPriorityIcon } from './TodoPriorityIcon'
 import { TodoStatusIcon, TODO_STATUS_LABEL } from './TodoStatusIcon'
 import { canonicalRepoPath } from '../lib/repoAlias'
+import { gitlabServerBases } from '../../../shared/gitlabInstance'
 import { defaultSettings } from '../../../shared/types'
-import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark } from '../../../shared/types'
+import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark, CiState, CiCounts } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -96,12 +105,14 @@ const forgejoInstances = (): string[] =>
     .settings.profiles.map((p) => p.forgejoUrl?.trim() ?? '')
     .filter(Boolean)
 
-/** The self-managed GitLabs the profiles point at, read when a menu is built. */
-const gitlabInstances = (): string[] =>
-  useSettingsStore
-    .getState()
-    .settings.profiles.map((p) => p.gitlabUrl?.trim() ?? '')
-    .filter(Boolean)
+/** The GitHub Enterprise Servers the profiles name, read when a menu is built. */
+const githubEnterprise = (): string[] => enterpriseBasesOf(useSettingsStore.getState().settings.profiles)
+
+/** The self-managed GitLab servers the profiles list, read when a menu is built. */
+const gitlabInstances = (): string[] => gitlabServerBases(useSettingsStore.getState().settings.profiles)
+
+/** The Bitbucket Data Centers the profiles name, read when a menu is built. */
+const bitbucketServers = (): string[] => bitbucketServerBasesOf(useSettingsStore.getState().settings.profiles)
 
 
 // Keyboard activation for clickable non-button elements: Enter/Space runs the
@@ -129,6 +140,12 @@ function KindIcon({ kind, open }: { kind: RefKind; open?: boolean }): React.JSX.
           ? <Cloud size={size} />
           : <Tag size={size} />
   return <span className="sb-ref-icon" aria-hidden="true">{glyph}</span>
+}
+
+/** A PR row's checks on hover: the rolled-up state, then the counts main read. */
+function ciTitle(state: CiState, counts: CiCounts | undefined, t: (key: TranslationKey) => string): string {
+  const parts = ciCountParts(counts).map((p) => interp(t(p.key), p.vars))
+  return parts.length ? interp(t('ci.stateWithCounts'), { state: t(CI_STATE_KEY[state]), counts: parts.join(' · ') }) : t(CI_STATE_KEY[state])
 }
 
 /** Collapsed runs (`dependabot/npm_and_yarn`) mute the empty prefixes so the
@@ -822,8 +839,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const tagWebLink = (tagName: string): string | null => {
     const url = repo.remotes[0]?.url
     if (!url) return null
-    const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
-    if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${tagName}`
+    const gh = githubTagUrl(url, tagName, githubEnterprise())
+    if (gh) return gh
     const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
     if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${tagName}`
     return null
@@ -1452,7 +1469,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
     const origin = remote ?? hostOrigin()
     return [
-      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances()) && origin
+      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise(), bitbucketServers()) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1903,7 +1920,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onKeyDown={keyActivate}
           onClick={() => {
             // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances())) {
+            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances(), githubEnterprise(), bitbucketServers())) {
               void window.api.openExternal(pr.url)
               return
             }
@@ -1928,7 +1945,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           {/* The checks on the head, read with the list. Hover for the counts;
               the row is too narrow to spell them out. */}
           {pr.ci && (
-            <span className="sb-pr-ci" title={`${t(CI_STATE_KEY[pr.ci])}${pr.ciSummary ? ` — ${pr.ciSummary}` : ''}`}>
+            <span className="sb-pr-ci" title={ciTitle(pr.ci, pr.ciCounts, t)}>
               {ciIcon(pr.ci, 11)}
             </span>
           )}
@@ -2346,7 +2363,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           )
         )}
         {(() => {
-          const fork = forkUpstream(repo.remotes)
+          const fork = forkUpstream(repo.remotes, githubEnterprise())
           if (!fork || repo.upstreamPrs.length === 0) return null
           return (
             <>
@@ -2896,7 +2913,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   // Issues, Milestones & Releases are listed for GitHub and Forgejo; hide them for other hosts.
-  if (!repoHasIssueTracker(repo.remotes, profiles.map((p) => p.forgejoUrl))) {
+  if (!repoHasIssueTracker(repo.remotes, profiles.map((p) => p.forgejoUrl), enterpriseBasesOf(profiles))) {
     delete sections.issues
     delete sections.milestones
     delete sections.releases

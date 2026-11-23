@@ -21,7 +21,7 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
     if (!title.trim()) return
     setBusy(true)
     try {
-      const { url } = await hostingApi.createIssue(remoteUrl, tokens, { title: title.trim(), body: body.trim() })
+      const { url } = await hostingApi.createIssue(repoPath, remoteUrl, tokens, { title: title.trim(), body: body.trim() })
       toast('success', t('issue.created'))
       void useRepoStore.getState().refreshIssues(repoPath, { silent: true })
       void shellApi.openExternal(url)

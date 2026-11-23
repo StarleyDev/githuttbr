@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { GROUP_COLORS, pickGroupColor } from '../lib/groupColors'
+import { migrateGitlabProfile } from '../../../shared/gitlabInstance'
 import { migrateAIConfig, needsAccountsNotice, resolveAI } from '../../../shared/aiAccounts'
 import {
   defaultProfile,
@@ -182,6 +183,9 @@ interface SettingsState {
 
   load(opts?: { unlock?: boolean }): Promise<void>
   update(mut: (s: AppSettings) => AppSettings): void
+  /** Write the pending settings now instead of after the debounce — for a change
+   *  main must see before the next call (a repository's binding before a push). */
+  flush(): Promise<void>
   /** Apply an imported settings file over the current ones and save it at once. */
   importSettings(incoming: Partial<AppSettings>): Promise<void>
 
@@ -359,8 +363,8 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   // disappear — this is the only moment the upgrade is still visible.
   const upgraded = settings.profiles.some((p) => needsAccountsNotice(p.ai))
   settings.profiles = settings.profiles.map((p) => ({
-    ...defaults,
-    ...p,
+    // A one-instance GitLab profile (an old file or export) becomes a server list.
+    ...migrateGitlabProfile({ ...defaults, ...p }),
     ai: migrateAIConfig({ ...defaults.ai, ...p.ai, accounts: p.ai?.accounts })
   }))
   if (upgraded && !settings.aiAccountsNoticeSeen) noticeAccounts = true
@@ -384,6 +388,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.autoLoadOnScroll = settings.autoLoadOnScroll ?? sd.autoLoadOnScroll
   settings.relativeDates = settings.relativeDates ?? sd.relativeDates
   settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
+  settings.githubAvatars = settings.githubAvatars ?? sd.githubAvatars
   settings.avatarMotion = settings.avatarMotion ?? sd.avatarMotion
   settings.fileListView = settings.fileListView ?? sd.fileListView
   settings.groupBranches = settings.groupBranches ?? sd.groupBranches
@@ -483,6 +488,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const settings = syncActiveWorkspace(mut(get().settings))
     set({ settings })
     persist(settings)
+  },
+
+  flush: async () => {
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = null
+    await settingsApi.set(get().settings)
   },
 
   importSettings: async (incoming) => {

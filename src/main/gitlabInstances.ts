@@ -1,7 +1,7 @@
 import { normalizeGitlabUrl } from '../shared/gitlabInstance'
 
 /**
- * The self-managed GitLab instances the profiles point at, so the synchronous
+ * The self-managed GitLab servers the profiles list, so the synchronous
  * host checks (`providerOfHost`, `parseRemoteUrl`) recognise them. Refreshed
  * whenever settings are read or written; gitlab.com is not listed — it is
  * always known.
@@ -38,4 +38,25 @@ export function knownForgejoInstances(): readonly string[] {
 export function isKnownForgejoHost(hostname: string): boolean {
   const h = hostname.toLowerCase()
   return knownForgejo.some((base) => new URL(base).hostname === h)
+}
+
+// GitHub Enterprise Servers, the same way: recognised by host (`host[:port]`),
+// authorised per profile and per server (`githubAuthFor`).
+let knownGithubEnterprise: string[] = []
+
+export function setKnownGithubEnterpriseInstances(bases: readonly string[]): void {
+  knownGithubEnterprise = [...new Set(bases)]
+}
+
+export function knownGithubEnterpriseInstances(): readonly string[] {
+  return knownGithubEnterprise
+}
+
+/** Recognition only, by hostname: which token a remote gets is decided on its full host. */
+export function isKnownGithubEnterpriseHost(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  return knownGithubEnterprise.some((base) => {
+    const u = new URL(base)
+    return u.hostname === h || u.host === h
+  })
 }

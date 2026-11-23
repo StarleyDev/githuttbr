@@ -24,6 +24,7 @@ import { registerTodoScanHandlers } from './todoScan'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
 import { registerProfileAvatarHandlers } from './profileAvatar'
+import { registerAvatarHandlers } from './avatars'
 import { registerRepoRegistryHandlers } from './repoRegistry'
 import { registerKeychainHandlers } from './keychain'
 import { registerSecureShareHandlers } from './secureShare'
@@ -497,6 +498,7 @@ app.whenReady().then(() => {
   registerWatcherHandlers()
   registerVaultHandlers()
   registerProfileAvatarHandlers()
+  registerAvatarHandlers()
   registerRepoRegistryHandlers()
   registerKeychainHandlers()
   registerSecureShareHandlers()

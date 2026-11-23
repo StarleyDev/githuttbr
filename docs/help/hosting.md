@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Sync & many repos
 order: 56
 summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues
+keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises self-managed GitLab servers several GitLab instances Data Center Stash HTTP access token
 ---
 
 # Hosting & pull requests
@@ -141,35 +141,245 @@ takes that for a revoked sign-in and never drops the credential git uses.
 
 ## Self-managed GitLab
 
-A company GitLab lives at its own address. Give a profile that address in
-**Settings → Integrations → GitLab → GitLab address**, for example
-`git.example.org` or `https://example.net/gitlab` for one served under a path.
-From then on, remotes on that host are GitLab: merge requests list, open,
-review and merge, the clone browser and *create repository* talk to it, and
-push and fetch sign in with that profile's token.
+A company GitLab lives at its own address, and many people work with more than
+one: gitlab.com for open source and the company server for work, or two
+company servers after a merger. A profile holds all of them at once —
+gitlab.com plus a list of self-managed servers, each with its own token — so
+nobody has to switch profiles to move between them.
 
-**A GitLab token belongs to one instance.** A profile's token is sent only to
-the address that profile names. If the address is empty, that means gitlab.com.
-A gitlab.com token never reaches the company server, and a company token never
-reaches gitlab.com. If the work and the personal account are on different
-instances, give each its own profile. A repository bound to a profile uses that
-profile's instance.
+gitlab.com is the token at the top of **Settings → Integrations → GitLab**.
+Below it, under **Self-managed GitLab**, type a server's address — for example
+`gitlab.example.corp`, or `https://example.net/gitlab` for one served under a
+path — press **Add server**, then paste a token for it. The row says which
+account the token signs in as.
 
-**Create token** opens the token page on your instance with `api` and
+![The self-managed GitLab list in Settings, with two servers added and a plain http address refused](../screenshots/gitlab-servers.webp)
+
+From then on, a remote on one of those servers is GitLab: merge requests list,
+open, review and merge, and push, fetch and clone sign in with that server's
+token. The clone browser and *create repository* get a **Server** picker with
+gitlab.com and every server of the profile.
+
+**Each token goes only to its own GitLab.** Which token a remote gets is decided
+by where the remote is: gitlab.com remotes get the gitlab.com token, a remote on
+a server in the list gets that server's token, and any other host gets nothing —
+the app never guesses that an unknown host "is probably GitLab". A gitlab.com
+token never reaches a company server, one server's token never reaches another,
+and neither ever reaches gitlab.com. When two servers share a host, the one
+with the longer path wins for https remotes (`example.net/gitlab` before
+`example.net`). Tokens are stored with your OS keychain like every other token,
+filed under their server's address, and left out of a settings export unless
+you tick the option to include secrets.
+
+**Create a token on …** opens that server's token page with `api` and
 `write_repository` pre-selected. A read-only token connects fine and then fails
 on the first push.
+
+**Upgrading from one GitLab per profile.** Before this list existed, a profile
+had a single *GitLab address* and its token belonged to that address. Such a
+profile — on disk, in an old settings export, or in the encrypted token store —
+is converted the first time it is read: the address becomes the first server in
+the list and keeps its token (and, if the profile was signed in through a login
+on this computer, that link). The gitlab.com field is then empty, ready for a
+gitlab.com token of its own. Nothing is sent anywhere it was not sent before: a
+token is only ever moved to the instance that issued it, and one whose issuer
+cannot be told is dropped rather than guessed — re-enter it if a server shows
+*Not connected* after the upgrade.
 
 Limits:
 
 - **https only.** A plain `http://` address is refused, because the token would
-  cross the network in clear text.
-- **One GitLab instance per profile.** Add a second profile for a second
-  instance.
-- Over ssh the host is matched, not the path, so two instances on one host under
+  cross the network in clear text. So is an address with a user name or
+  password in it (the token has its own field), or with `?` or `#`.
+- **Servers sign in with a token.** *Sign in with git* finds a gitlab.com login;
+  for a server, paste a personal access token. git's own credential helper still
+  answers for push and fetch where the profile has nothing, as it always did.
+- Over ssh the host is matched, not the path, so two servers on one host under
   different paths cannot be told apart for an ssh remote.
 - Remote avatars are drawn only for gitlab.com and github.com. A self-managed
   remote gets the plain icon, so its group names are never sent to a public
   host.
+
+## GitHub Enterprise Server
+
+A company GitHub that runs on its own servers — GitHub Enterprise Server, at an
+address like `github.acme.corp` — speaks the same API as github.com, just at a
+different place: REST under `https://<host>/api/v3`, GraphQL at
+`https://<host>/api/graphql`. Without telling the app about it, a remote on such
+a host is "some git server": push and fetch work, but no pull requests, issues
+or checks.
+
+Add the server in **Settings → Integrations → GitHub → GitHub Enterprise
+Server**: type its address, press **Add server**, then paste a token for it.
+The row says which account the token signs in as. A profile can hold several
+servers, each with its own token, next to its github.com token.
+
+![The GitHub Enterprise Server list in Settings, with a server added and a plain http address refused](../screenshots/github-enterprise.webp)
+
+From then on, a remote whose host is that server is GitHub:
+
+| Works on the server | Notes |
+|---|---|
+| Open pull requests, the pull request page, checks, review, comment, merge | Same as on github.com |
+| Create a pull request, with reviewers, labels and assignees | |
+| Issues, milestones, releases, create a branch for an issue | |
+| Linked pull requests and Projects fields on an issue | GraphQL; see the limits |
+| CI status in the graph and the pull request list | |
+| Commit, tag and compare links | Open on the server, not on github.com |
+| Push, fetch and clone over https | Signed in with that server's token |
+| The clone browser and *create repository* | Against the server you pick |
+
+**Each token goes only to its own server.** The github.com token is never sent
+to an Enterprise Server, one server's token is never sent to another, and a
+server that is not in the list gets nothing at all — the app never guesses
+that an unknown host "is probably GitHub". The server's port is part of its
+identity over https, so `ghe.example.corp:8443` and `ghe.example.corp` are two
+servers. Tokens are stored with your OS keychain like every other token, and
+left out of a settings export unless you tick the option to include secrets.
+
+**Create a token on …** opens the server's token page with the `repo` scope
+pre-selected, which covers pull requests, issues, checks and pushing. Add
+`workflow` if you push changes to `.github/workflows`, and `read:org` if the
+server's policy hides organization membership without it. Fine-grained tokens
+work too, if your server offers them; give them read and write access to
+*Contents*, *Pull requests* and *Issues*.
+
+Limits:
+
+- **https only.** A `http://` address is refused, because the token would cross
+  the network in clear text. Internal and private addresses are fine — that is
+  where most Enterprise Servers live.
+- **Only the address.** A path, a query, or a user name and password in the
+  address are refused. github.com itself is set up above the list, not in it.
+- **Older servers lack newer features.** Each server version ships the API of
+  its day. What a server does not have is left out quietly instead of failing
+  the page: native stacks, the linked pull requests of an issue (they show
+  "couldn't load"), and Projects fields stay empty on a server that predates
+  them.
+- **Not on a server:** the notifications inbox and uploading an SSH key stay
+  github.com's, and *Sign in with git* (the GitHub CLI or git's helper) links
+  github.com accounts only — a server always takes a token.
+- GitHub Enterprise Cloud with data residency (`<name>.ghe.com`) is not
+  covered: its API lives at a different address, so the list refuses it.
+  Enterprise Cloud on github.com itself is just github.com.
+
+## Bitbucket Data Center
+
+Bitbucket Data Center — and Bitbucket Server, its predecessor, which shares
+its API — is the Bitbucket a company runs itself, at an address like
+`bitbucket.acme.corp`, often under a path such as `/bitbucket`. It is not
+bitbucket.org with another name: it has its own REST API
+(`https://<host>[/<path>]/rest/api/…`), projects instead of workspaces, and its
+own tokens. Without telling the app about it, a remote on such a server is
+"some git server": push and fetch work if git can sign in by itself, but there
+are no pull requests and no build status.
+
+Add the server in **Settings → Integrations → Bitbucket → Bitbucket Data
+Center**: type the address you open Bitbucket at — with its path, if it has
+one — press **Add server**, then paste an HTTP access token for it. The row
+says which user the token signs in as. A profile can hold several servers, each
+with its own token, next to its bitbucket.org credential.
+
+![The Bitbucket Data Center list in Settings, with a server under a context path added and a plain http address refused](../screenshots/bitbucket-data-center.webp)
+
+From then on, a remote on that server is Bitbucket Data Center — the https
+clone URL (`https://<host>[/<path>]/scm/<project>/<repo>.git`), the ssh one
+(`ssh://git@<host>:7999/<project>/<repo>.git`), and personal repositories
+(`~user`) alike:
+
+| Works on the server | Notes |
+|---|---|
+| Open pull requests in the sidebar, with build status and a 👁 on the ones waiting for you | Every page of the list, not just the first |
+| The pull request page: conversation, line comments, changed files and their diffs, checks | |
+| Comment, reply in a line thread, approve, request changes | The verdict is set first and a review's text posted after it, so a failed verdict leaves no stray comment |
+| Merge | The page shows a merge-check veto (*Requires 2 approvals*, …) in the server's own words, apart from real conflicts, and keeps **Merge** off until it clears; the checks are asked again before merging and nothing is merged on a veto |
+| Create a pull request | Title, description, draft; source and target in the same repository |
+| Build status in the graph | One request finds the commits that have builds, then only those are read. In the pull request list, the 50 newest heads with builds are read in full; older rows show none |
+| Push, fetch and clone over https | Signed in with that server's token — **Clone → URL** too, for an address under a server in the list, signed in as the profile picked in the clone dialog — the one the new repository is then bound to |
+| The *create pull request* page in the browser | Opens on the server, under its path |
+
+**Each token goes only to its own server.** The bitbucket.org credential is
+never sent to a Data Center, one server's token is never sent to another, and a
+host that is not in the list gets nothing. Over https the port *and* the path
+are part of a server's identity: `bitbucket.acme.corp/bitbucket` and
+`bitbucket.acme.corp` are two servers. Over ssh, which has no path and its own
+port, the host name is what is compared. Tokens are stored with your OS keychain
+like every other token, and left out of a settings export unless you tick the
+option to include secrets.
+
+**The token.** Create an HTTP access token in Bitbucket (your avatar → *Manage
+account* → *HTTP access tokens*; **Create a token on …** opens that page).
+Give it **Project read** and **Repository write**: that covers listing,
+reviewing and merging pull requests, and pushing. **Repository read** is
+enough to see pull requests and pull, but not to approve, merge or push. A
+project or repository token works too, with the same permissions.
+
+**Token type and user name.** Git sends a user name with the token, and which
+one depends on whose token it is — Atlassian's [HTTP access tokens](https://confluence.atlassian.com/bitbucketserver/http-access-tokens-939515499.html)
+page sets the rule. The app never guesses the type: it is what you pick, and it
+stays until you change it.
+
+| Token type | User name git sends |
+|------------|---------------------|
+| **Not set** (the default) | The **User name** field; left empty, the one in the remote URL (Bitbucket's own clone URLs read `https://<you>@<host>/scm/…`); with neither, `x-token-auth` |
+| **Personal token** | The **User name** field, else the one in the remote URL — never `x-token-auth`. With neither, no credential is sent: git reports the failed sign-in, and the remote's sign-in check says the token needs a user name |
+| **Project or repository token** | Always `x-token-auth`, which Bitbucket requires for these tokens — even when the remote URL names whoever copied it. The **User name** field is disabled |
+
+*Not set* covers both kinds as long as the remote URL is a plain one for a
+project token, or names you for a personal one. Pick a type when it does not:
+a project token cloned from a URL that names a person needs **Project or
+repository token**. For a personal token, once the row says *Connected as …*,
+a **Use …** button fills in the name the server reported (it is not offered for
+a project token, whose account is the server's bot user). Approving and requesting changes find your account's *slug* on the
+server (an email-style name `jdoe@corp.com` has the slug `jdoe_corp.com`), so
+those work for such names too. When the server does not let the token search
+users, a plain name is tried as a slug, and kept only if the server answers for
+it — Atlassian does not document how a slug is derived from a name, so it is not
+assumed. With no slug found at all, **Approve** still works through the older
+approve resource, which needs none; **Request changes** then says your user was
+not found, and has to be done on the server.
+
+**Merging.** The PR page asks the server whether the pull request can merge
+before enabling **Merge**. A merge check that refuses (say, *Requires 2
+approvals*) is shown in the server's own words; a refusal the server gives no
+reason for is shown as such, and **Merge** stays disabled either way.
+
+![A Data Center pull request whose merge check asks for one more approval, with Merge disabled](../screenshots/bitbucket-merge-blocked.webp)
+
+Builds the
+server reports as *cancelled* or *unknown* are counted under those names in the
+pull request list, not as skipped.
+
+Limits:
+
+- **https only, and only the address.** A `http://` address is refused, because
+  the token would cross the network in clear text; so is a user name and
+  password in the address, or a path that is not the server's own (a pasted
+  project, repository or REST address). Internal and private addresses are
+  fine.
+- **Written against the documentation, not a live server.** The calls follow
+  Atlassian's Bitbucket Data Center REST reference (the 10.x documentation
+  and its `latest` API). Older Bitbucket Server releases and servers with
+  plugins that change these resources may behave differently. Something the
+  server does not offer is left out quietly — no build status, no merge
+  check — instead of failing the page.
+- **ssh on another host name.** The app recognises an ssh remote by the
+  server's own host name. A company that serves ssh from a different name (say
+  `git.acme.corp` next to `bitbucket.acme.corp`) gets push and fetch, but no
+  pull requests for those remotes; clone over https, or set the remote to the
+  https URL, to have both.
+- **A certificate from a company CA** (or a self-signed one) is a known gap.
+  Git checks it with its own settings (`http.sslCAInfo`), so push and fetch
+  work once git trusts it; the app's own API calls trust only the certificates
+  that ship with it, so pull requests and build status may fail to load
+  against such a server. The app never offers to skip the check.
+- **Not covered:** default reviewers are not added when a pull request is
+  created here (add them on the server, or open it in the browser); you cannot
+  withdraw an approval from the app; the clone browser and *create repository*
+  stay bitbucket.org's; Jira links, tasks and comment threads' "resolved" state
+  are not shown; the commit menu's *View on GitHub* entries are GitHub-only.
+- **Bitbucket Cloud is unchanged.** bitbucket.org keeps its own token above the
+  list, and works as before.
 
 ## Forgejo
 
@@ -290,7 +500,10 @@ profile only: a token is cleared (it stays valid on the host until you revoke
 it there), a link is dropped (the login stays in gh or the helper).
 
 The host's API — pull requests, issues, CI — and git's own fetch, pull and
-push over https both use the profile's token or linked account. The credential
+push over https both use the profile's token or linked account: the profile
+the repository is [bound to](profiles.md#per-repository-binding), else the
+active one. A repository's hosting actions always run as its bound profile,
+whichever profile is active. The credential
 reaches git for that one command, scoped to the remote's host, and is never
 written to `.git/config`. A profile with neither leaves git to its own
 credential helper. Azure DevOps, GitLab and Bitbucket link through git's

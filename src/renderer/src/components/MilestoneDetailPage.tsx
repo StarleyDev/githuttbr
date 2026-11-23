@@ -21,7 +21,7 @@ export function MilestoneDetailPage({ page }: { page: MilestonePage }): React.JS
   useEffect(() => {
     let cancelled = false
     hostingApi
-      .milestoneIssues(remoteUrl, tokens, milestone.number)
+      .milestoneIssues(repoPath, remoteUrl, tokens, milestone.number)
       .then((is) => !cancelled && setIssues(is))
       .catch((err) => !cancelled && setError(err instanceof Error ? err.message : String(err)))
       .finally(() => !cancelled && setLoading(false))
@@ -29,7 +29,7 @@ export function MilestoneDetailPage({ page }: { page: MilestonePage }): React.JS
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remoteUrl, milestone.number])
+  }, [repoPath, remoteUrl, milestone.number])
 
   const total = milestone.openIssues + milestone.closedIssues
   const pct = total > 0 ? Math.round((milestone.closedIssues / total) * 100) : 0

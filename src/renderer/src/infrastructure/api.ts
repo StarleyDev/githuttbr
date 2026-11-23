@@ -629,8 +629,9 @@ export const gitApi = {
   /** Progress for every running clone, tagged with its `cloneId`. Returns the unsubscribe. */
   onCloneProgress: (cb: (p: CloneProgress) => void): (() => void) => window.api.onCloneProgress(cb),
   /** Branch names a remote advertises — the clone dialog's branch picker. */
-  remoteBranches: (url: string, host?: RepoHost, token?: string) =>
-    call<string[]>('remoteBranches', url, host, token),
+  /** `profileId`: the clone dialog's picked profile — a self-hosted server's token is read from it. */
+  remoteBranches: (url: string, host?: RepoHost, token?: string, profileId?: string) =>
+    call<string[]>('remoteBranches', url, host, token, profileId),
   init: (parentDir: string, name: string) => call<string>('init', parentDir, name),
   initHere: (path: string) => call<void>('initHere', path),
 
@@ -809,6 +810,14 @@ export const profileAvatarApi = {
   importAll: (data: Record<string, string>) => window.api.profileAvatar.importAll(data) as Promise<number>
 }
 
+/** GitHub pictures for commit authors and the active profile (main/avatars.ts). */
+export const avatarApi = {
+  /** By lowercased email: a URL, `null` for a confirmed miss; an absent email is unknown for now. */
+  github: (remoteUrl: string, repoPath: string, items: { email: string; sha?: string }[], size: number) =>
+    window.api.avatars.github(remoteUrl, repoPath, items, size) as Promise<Record<string, string | null>>,
+  profileGithub: (size: number) => window.api.avatars.profileGithub(size) as Promise<string | null>
+}
+
 export const vaultApi = {
   list: (repoPath: string) => window.api.vault.list(repoPath) as Promise<VaultListResult>,
   upsert: (scope: 'repo' | 'global', repoPath: string, entry: Partial<VaultEntry>) =>
@@ -985,108 +994,115 @@ export const editorApi = {
   open: (setting: EditorSetting, target: EditorTarget) => window.api.editor.open(setting, target)
 }
 
+type PrTokens = { github?: string; gitlab?: string; forgejo?: string; azure?: string }
+type HostTokens = PrTokens & { bitbucket?: string }
+
+/**
+ * Hosting calls. Two kinds:
+ *
+ * - Provider-level (`listRepos`, `listOwners`, `createRepo`): no repository yet.
+ *   `profileId` is the dialog's picked profile — the list, the clone and the new
+ *   repository's binding all use it; absent means the active profile.
+ * - Repository-scoped (everything taking `repoPath` first): the repository the
+ *   call acts for. Main runs it as the profile that repository is bound to
+ *   (see shared/hostToken.ts), so the path is required, never optional.
+ */
 export const hostingApi = {
-  listRepos: (provider: RepoHost, token: string, org?: string) =>
-    window.api.hosting.listRepos(provider, token, org) as Promise<RemoteRepo[]>,
-  listOwners: (provider: RepoHost, token: string, org?: string) =>
-    window.api.hosting.listOwners(provider, token, org) as Promise<RemoteOwner[]>,
+  listRepos: (provider: RepoHost, token: string, org?: string, profileId?: string) =>
+    window.api.hosting.listRepos(provider, token, org, profileId) as Promise<RemoteRepo[]>,
+  listOwners: (provider: RepoHost, token: string, org?: string, profileId?: string) =>
+    window.api.hosting.listOwners(provider, token, org, profileId) as Promise<RemoteOwner[]>,
   /** Name of another profile already holding this account (link or token), else null. */
   accountOwner: (provider: RepoHost, login: string, found: AccountLink, exceptProfileId: string) =>
     window.api.hosting.accountOwner(provider, login, found, exceptProfileId) as Promise<string | null>,
   /** Null when the profile has neither a token nor a link and no sign-in was asked for. */
   whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink, issuer?: string) =>
     window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer) as Promise<ConnectedAccount | null>,
-  createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
-    window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
-  // `repoPath` lets main use the profile the repository is bound to (see shared/hostToken.ts).
-  listPRs: (
-    remoteUrl: string,
-    tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string },
-    repoPath?: string
-  ) =>
-    window.api.hosting.listPRs(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
-  listReleases: (remoteUrl: string, tokens: { github?: string }, repoPath?: string) =>
-    window.api.hosting.listReleases(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
-  ciStatuses: (remoteUrl: string, shas: string[], token: string) =>
-    window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
+  createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string, profileId?: string) =>
+    window.api.hosting.createRepo(provider, token, opts, org, profileId) as Promise<RemoteRepo>,
+  listPRs: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
+    window.api.hosting.listPRs(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
+  listReleases: (repoPath: string, remoteUrl: string, tokens: { github?: string }) =>
+    window.api.hosting.listReleases(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
+  ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string) =>
+    window.api.hosting.ciStatuses(repoPath, remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
     window.api.hosting.openCreatePR(remoteUrl, source, target),
-  createPR: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string }, opts: CreatePrOpts) =>
-    window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
-  prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
-    window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,
-  workItem: (remoteUrl: string, tokens: { azure?: string }, id: number) =>
-    window.api.hosting.workItem(remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
-  prComment: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number, body: string) =>
-    window.api.hosting.prComment(remoteUrl, tokens, number, body) as Promise<void>,
+  createPR: (repoPath: string, remoteUrl: string, tokens: HostTokens, opts: CreatePrOpts) =>
+    window.api.hosting.createPR(repoPath, remoteUrl, tokens, opts) as Promise<CreatePrResult>,
+  prDetail: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prDetail(repoPath, remoteUrl, tokens, number) as Promise<PrDetail>,
+  workItem: (repoPath: string, remoteUrl: string, tokens: { azure?: string }, id: number) =>
+    window.api.hosting.workItem(repoPath, remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
+  prComment: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, body: string) =>
+    window.api.hosting.prComment(repoPath, remoteUrl, tokens, number, body) as Promise<void>,
   prReplyReviewComment: (
+    repoPath: string,
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
+    tokens: PrTokens,
     number: number,
     inReplyTo: number | string,
     body: string
-  ) => window.api.hosting.prReplyReviewComment(remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
+  ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
-  prCheckLog: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, url: string) =>
-    window.api.hosting.prCheckLog(remoteUrl, tokens, url) as Promise<string | null>,
-  prChecks: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
-    window.api.hosting.prChecks(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
-  prFiles: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
-    window.api.hosting.prFiles(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
-  prReview: (
-    remoteUrl: string,
-    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
-    number: number,
-    event: PrReviewEvent,
-    body: string
-  ) => window.api.hosting.prReview(remoteUrl, tokens, number, event, body) as Promise<void>,
-  prMerge: (
-    remoteUrl: string,
-    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
-    number: number,
-    method: PrMergeMethod
-  ) => window.api.hosting.prMerge(remoteUrl, tokens, number, method) as Promise<void>,
+  prCheckLog: (repoPath: string, remoteUrl: string, tokens: PrTokens, url: string) =>
+    window.api.hosting.prCheckLog(repoPath, remoteUrl, tokens, url) as Promise<string | null>,
+  prChecks: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prChecks(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
+  prFiles: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
+  prReview: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, event: PrReviewEvent, body: string) =>
+    window.api.hosting.prReview(repoPath, remoteUrl, tokens, number, event, body) as Promise<void>,
+  prMerge: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, method: PrMergeMethod) =>
+    window.api.hosting.prMerge(repoPath, remoteUrl, tokens, number, method) as Promise<void>,
   listNotifications: (token: string, all?: boolean) =>
     window.api.hosting.listNotifications(token, all) as Promise<GitHubNotification[]>,
   markNotificationRead: (token: string, id: string) =>
     window.api.hosting.markNotificationRead(token, id) as Promise<void>,
   markAllNotificationsRead: (token: string) =>
     window.api.hosting.markAllNotificationsRead(token) as Promise<void>,
-  listIssues: (remoteUrl: string, tokens: { github?: string }, repoPath?: string) =>
-    window.api.hosting.listIssues(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
+  listIssues: (repoPath: string, remoteUrl: string, tokens: { github?: string }) =>
+    window.api.hosting.listIssues(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
   /** Register a public key on the user's GitHub account (GitHub only). */
   uploadSshKey: (token: string, title: string, publicKey: string) =>
     window.api.hosting.uploadSshKey(token, title, publicKey) as Promise<{ id: number }>,
-  issueDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>
-    window.api.hosting.issueDetail(remoteUrl, tokens, number) as Promise<IssueDetail>,
-  setIssueState: (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
-    window.api.hosting.setIssueState(remoteUrl, tokens, number, state) as Promise<void>,
-  createIssue: (remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
-    window.api.hosting.createIssue(remoteUrl, tokens, opts) as Promise<{ number: number; url: string }>,
+  issueDetail: (repoPath: string, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    window.api.hosting.issueDetail(repoPath, remoteUrl, tokens, number) as Promise<IssueDetail>,
+  setIssueState: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: { github?: string },
+    number: number,
+    state: 'open' | 'closed'
+  ) => window.api.hosting.setIssueState(repoPath, remoteUrl, tokens, number, state) as Promise<void>,
+  createIssue: (repoPath: string, remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
+    window.api.hosting.createIssue(repoPath, remoteUrl, tokens, opts) as Promise<{ number: number; url: string }>,
   applyPrMeta: (
+    repoPath: string,
     remoteUrl: string,
     tokens: { github?: string },
     number: number,
     meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
-  ) => window.api.hosting.applyPrMeta(remoteUrl, tokens, number, meta) as Promise<void>,
+  ) => window.api.hosting.applyPrMeta(repoPath, remoteUrl, tokens, number, meta) as Promise<void>,
   updatePR: (
+    repoPath: string,
     remoteUrl: string,
     tokens: { github?: string },
     number: number,
     patch: { base?: string; title?: string; stackSection?: string }
-  ) => window.api.hosting.updatePR(remoteUrl, tokens, number, patch) as Promise<void>,
-  mergedPrHeads: (remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
-    window.api.hosting.mergedPrHeads(remoteUrl, tokens, branches) as Promise<string[]>,
+  ) => window.api.hosting.updatePR(repoPath, remoteUrl, tokens, number, patch) as Promise<void>,
+  mergedPrHeads: (repoPath: string, remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
+    window.api.hosting.mergedPrHeads(repoPath, remoteUrl, tokens, branches) as Promise<string[]>,
   /** Register chained PRs as a native GitHub stack; null when unavailable. */
-  ensureStack: (remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
-    window.api.hosting.ensureStack(remoteUrl, tokens, numbers) as Promise<GithubStackInfo | null>,
-  listMilestones: (remoteUrl: string, tokens: { github?: string }, repoPath?: string) =>
-    window.api.hosting.listMilestones(remoteUrl, tokens, repoPath) as Promise<{
+  ensureStack: (repoPath: string, remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
+    window.api.hosting.ensureStack(repoPath, remoteUrl, tokens, numbers) as Promise<GithubStackInfo | null>,
+  listMilestones: (repoPath: string, remoteUrl: string, tokens: { github?: string }) =>
+    window.api.hosting.listMilestones(repoPath, remoteUrl, tokens) as Promise<{
       provider: HostingProvider
       milestones: MilestoneInfo[]
     }>,
-  milestoneIssues: (remoteUrl: string, tokens: { github?: string }, number: number) =>
-    window.api.hosting.milestoneIssues(remoteUrl, tokens, number) as Promise<IssueInfo[]>
+  milestoneIssues: (repoPath: string, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    window.api.hosting.milestoneIssues(repoPath, remoteUrl, tokens, number) as Promise<IssueInfo[]>
 }
 
 // OS keychain consent. Nothing in the app touches safeStorage until the user
@@ -1103,7 +1119,9 @@ export const keychainApi = {
       /** Some token is held in memory only and will not survive a quit. */
       sessionOnly: boolean
     }>,
-  set: (granted: boolean) => window.api.keychain.set(granted)
+  set: (granted: boolean) => window.api.keychain.set(granted),
+  /** Fires once the stored tokens have been decrypted this session — by Settings, a push, anything. */
+  onUnlocked: (cb: () => void) => window.api.keychain.onUnlocked(cb)
 }
 
 // Installs/checks the `gitcito` shell command, the equivalent of VS Code's

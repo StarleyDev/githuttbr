@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../src/renderer/src/lib/reviewNotify'
+import { effectiveProfileId, type RepoProfileSettings } from '../src/renderer/src/lib/repoProfile'
 import type { PullRequest } from '../src/shared/types'
 
 const pr = (id: number, awaitingYou = false): PullRequest =>
@@ -48,5 +49,35 @@ describe('awaitingSeenKey — a profile switch', () => {
     // Back to personal, where #2 is genuinely new.
     expect(look('personal', [pr(1, true), pr(2, true)]).map((p) => p.id)).toEqual([2])
     expect(awaitingSeenKey('a', '/r')).not.toBe(awaitingSeenKey('b', '/r'))
+  })
+})
+
+describe('review notices for a repository bound to a profile', () => {
+  const settings = (active: string): RepoProfileSettings => ({
+    activeProfileId: active,
+    profiles: [{ id: 'work' }, { id: 'personal' }],
+    repoProfiles: { '/bound': 'personal' }
+  })
+  const seen = new Map<string, Set<number>>()
+  // What refreshPRs does: the list is fetched as the repository's account, and
+  // remembered under it.
+  const look = (active: string, path: string, prs: PullRequest[]): PullRequest[] => {
+    const key = awaitingSeenKey(effectiveProfileId(settings(active), path), path)
+    const r = newlyAwaitingReview(seen.get(key), prs)
+    seen.set(key, r.seen)
+    return r.fresh
+  }
+
+  it('switching the active profile does not re-announce what the bound account still has waiting', () => {
+    expect(look('work', '/bound', [pr(1, true), pr(2, true)])).toEqual([]) // first look primes
+    expect(look('personal', '/bound', [pr(1, true), pr(2, true)])).toEqual([])
+    expect(look('work', '/bound', [pr(1, true), pr(2, true), pr(3, true)]).map((p) => p.id)).toEqual([3])
+  })
+
+  it('an unbound repository still follows the active profile', () => {
+    expect(effectiveProfileId(settings('work'), '/free')).toBe('work')
+    expect(effectiveProfileId(settings('personal'), '/free')).toBe('personal')
+    // A binding to a deleted profile counts as none.
+    expect(effectiveProfileId({ ...settings('work'), repoProfiles: { '/bound': 'gone' } }, '/bound')).toBe('work')
   })
 })

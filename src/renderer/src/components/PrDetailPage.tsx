@@ -48,6 +48,7 @@ import { DiffViewer } from './DiffViewer'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { readableError } from '../lib/gitErrorHint'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'files' | 'checks'
@@ -135,14 +136,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const load = useCallback(async (): Promise<void> => {
     setError(null)
     try {
-      setPr(await hostingApi.prDetail(remoteUrl, tokens, number))
+      setPr(await hostingApi.prDetail(repoPath, remoteUrl, tokens, number))
       // Checks and files fill in after the conversation: the page is usable first.
-      void hostingApi.prChecks(remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
-      void hostingApi.prFiles(remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
+      void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
+      void hostingApi.prFiles(repoPath, remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [remoteUrl, number, tokens])
+  }, [repoPath, remoteUrl, number, tokens])
 
   useEffect(() => {
     setLoading(true)
@@ -157,7 +158,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       void useRepoStore.getState().refreshPRs(repoPath, { silent: true })
       toast('success', ok)
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
+      // The explanation in the user's language when there is one, else the host's own words.
+      toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
     } finally {
       setBusy(false)
     }
@@ -166,24 +168,24 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const submitComment = (): void => {
     if (!comment.trim()) return
     void act(
-      () => hostingApi.prComment(remoteUrl, tokens, number, comment.trim()).then(() => setComment('')),
+      () => hostingApi.prComment(repoPath, remoteUrl, tokens, number, comment.trim()).then(() => setComment('')),
       t('prDetail.commentPosted')
     )
   }
   const review = (event: PrReviewEvent): void =>
     void act(
-      () => hostingApi.prReview(remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')),
+      () => hostingApi.prReview(repoPath, remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')),
       t('prDetail.reviewSubmitted')
     )
   const merge = (): void =>
-    void act(() => hostingApi.prMerge(remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
+    void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
   const replyToThread = (rootId: number | string): void => {
     const body = (replies[rootId] ?? '').trim()
     if (!body) return
     void act(
       () =>
         hostingApi
-          .prReplyReviewComment(remoteUrl, tokens, number, rootId, body)
+          .prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body)
           .then(() => setReplies((r) => ({ ...r, [rootId]: '' }))),
       t('prDetail.replyPosted')
     )
@@ -222,6 +224,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const web = remoteWebUrl(remoteUrl)
   const status = pr ? prStatus(pr) : null
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
+  // A merge-check veto blocks the merge without being a conflict (Bitbucket Data Center).
+  const blockers = pr?.mergeBlockers ?? []
+  const refused = !!pr?.mergeRefused
+  const mergeBlocked = pr?.mergeable === false || blockers.length > 0 || refused
   const counts = checks ? checkCounts(checks) : null
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
@@ -370,13 +376,17 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </section>
 
               {canMerge && (
-                <section className={`prp-merge ${pr.mergeable === false ? 'is-blocked' : ''}`}>
+                <section className={`prp-merge ${mergeBlocked ? 'is-blocked' : ''}`}>
                   <div className="prp-merge-text">
                     <GitMerge size={16} />
                     <span>
                       {pr.mergeable === false
                         ? t('prDetail.notMergeable')
-                        : pr.mergeable === true
+                        : blockers.length
+                          ? t('prPage.mergeBlocked')
+                          : refused
+                          ? t('prPage.mergeRefusedShort')
+                          : pr.mergeable === true
                           ? t('prPage.mergeable')
                           : t('prPage.mergeUnknown')}
                     </span>
@@ -388,7 +398,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
                       {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
                     </select>
-                    <button className="btn primary small" onClick={merge} disabled={busy || pr.mergeable === false}>
+                    <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
                       {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
                     </button>
                   </div>
@@ -441,7 +451,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       </button>
                     )}
                   </div>
-                  {openLog === c.url && <CheckLogPanel remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
+                  {openLog === c.url && <CheckLogPanel repoPath={repoPath} remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
                 </div>
               ))}
             </div>
@@ -473,6 +483,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 <div className="prp-side-note">{interp(t('prPage.closedOn'), { date: fmtDate(pr.closedAt) })}</div>
               )}
               {canMerge && pr.mergeable === false && <div className="prp-side-note prp-warn">{t('prPage.conflicts')}</div>}
+              {/* The vetoes are the server's own copy (its merge checks), shown as it words them. */}
+              {canMerge &&
+                blockers.map((b, i) => (
+                  <div key={i} className="prp-side-note prp-warn">
+                    {b}
+                  </div>
+                ))}
+              {canMerge && refused && <div className="prp-side-note prp-warn">{t('prPage.mergeRefused')}</div>}
             </Field>
 
             <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>

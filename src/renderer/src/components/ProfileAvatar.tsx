@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
+import { useSettingsStore } from '../stores/settings'
 import { validProfileAvatar, type ProfileAvatarIcon } from '../../../shared/profileAvatar'
 import type { Profile } from '../../../shared/types'
 import type { Mood } from '../lib/repoMood'
@@ -84,6 +85,8 @@ export function ProfileAvatar({
   const avatar = validProfileAvatar(profile.avatar) ?? { source: 'auto' as const }
   const image = useProfileAvatarsStore((s) => s.images[profile.id])
   const ensureProfileImage = useProfileAvatarsStore((s) => s.ensureProfileImage)
+  // Main answers the account question for the active profile only, so only it asks.
+  const isActive = useSettingsStore((s) => (s.settings.activeProfileId ?? s.settings.profiles[0]?.id) === profile.id)
   // The URL that failed, not a flag: picking another account picture retries.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
@@ -116,5 +119,15 @@ export function ProfileAvatar({
       </span>
     )
   }
-  return <Avatar email={profile.gitEmail} name={profile.name} size={size} mood={mood} animate={animate} className={className} />
+  return (
+    <Avatar
+      email={profile.gitEmail}
+      name={profile.name}
+      size={size}
+      mood={mood}
+      animate={animate}
+      className={className}
+      profileId={isActive ? profile.id : undefined}
+    />
+  )
 }

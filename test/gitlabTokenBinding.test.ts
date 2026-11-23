@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { activeProfileAuth, boundProfileAuth, profileGitlabInstance, readSettings } from '../src/main/settings'
+import { activeProfileAuth, boundProfileAuth, readSettings } from '../src/main/settings'
 import { providerOfHost } from '../src/main/credentials'
 import { parseRemoteUrl } from '../src/main/hosting'
 import { defaultSettings } from '../src/shared/types'
@@ -13,7 +13,9 @@ import { defaultSettings } from '../src/shared/types'
 /**
  * A GitLab token (or link) belongs to one instance. These run against a real
  * settings file: the rule lives in settings.profileAuth, the one place every
- * push, clone and hosting call resolves a profile's GitLab credential.
+ * push, clone and hosting call resolves a profile's GitLab credential. The
+ * files are written in the one-instance shape (`gitlabUrl`), so they also
+ * check that a migrated profile keeps its link on its own server.
  */
 const dirs: string[] = []
 afterEach(() => {
@@ -57,7 +59,6 @@ describe('GitLab credentials stay on their own instance', () => {
     await withProfiles([{ id: 'work', gitlabUrl: 'https://git.example.org' }])
     expect(await activeProfileAuth('gitlab', COM_REMOTE)).toEqual({})
     expect((await activeProfileAuth('gitlab', SELF_REMOTE)).link?.login).toBe('work-user')
-    expect(await profileGitlabInstance()).toBe('https://git.example.org')
   })
 
   it('a repository bound to the self-managed profile resolves it there', async () => {
@@ -79,7 +80,7 @@ describe('GitLab credentials stay on their own instance', () => {
   })
 })
 
-describe.each(['gitlab', 'forgejo'] as const)('%s token issuer', (provider) => {
+describe.each(['forgejo'] as const)('%s token issuer', (provider) => {
   it('does not transfer a credential through an address edit or an address-only import', () => {
     const settings = defaultSettings()
     const address = `${provider}Url` as const
@@ -101,6 +102,19 @@ it('restores a pre-instance GitLab token only on gitlab.com', () => {
   const settings = defaultSettings()
   const store = { [settings.profiles[0].id]: { gitlabToken: 'legacy' } }
   expect(applySecrets(settings, store).profiles[0].gitlabToken).toBe('legacy')
+  // A self-managed address now becomes a server of its own: the token stays
+  // gitlab.com's (the instance that issued it) and never lands on the server.
   settings.profiles[0].gitlabUrl = 'https://other.example'
-  expect(applySecrets(settings, store).profiles[0].gitlabToken).toBe('')
+  const restored = applySecrets(settings, store).profiles[0]
+  expect(restored.gitlabToken).toBe('legacy')
+  expect(restored.gitlabServers).toEqual([{ url: 'https://other.example', token: '' }])
+})
+
+it('a self-managed token in a one-instance store restores onto its server, not gitlab.com', () => {
+  const settings = defaultSettings()
+  settings.profiles[0].gitlabUrl = 'https://other.example'
+  const store = { [settings.profiles[0].id]: { gitlabToken: 'self', gitlabTokenIssuer: 'https://other.example' } }
+  const restored = applySecrets(settings, store).profiles[0]
+  expect(restored.gitlabToken).toBe('')
+  expect(restored.gitlabServers).toEqual([{ url: 'https://other.example', token: 'self' }])
 })

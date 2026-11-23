@@ -47,12 +47,12 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   const load = useCallback(async (): Promise<void> => {
     setError(null)
     try {
-      setDetail(await hostingApi.issueDetail(remoteUrl, tokens, issue.number))
+      setDetail(await hostingApi.issueDetail(repoPath, remoteUrl, tokens, issue.number))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remoteUrl, issue.number])
+  }, [repoPath, remoteUrl, issue.number])
 
   useEffect(() => {
     void load().finally(() => setLoading(false))
@@ -74,11 +74,11 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
 
   const postComment = (): void => {
     if (!comment.trim()) return
-    void act(() => hostingApi.prComment(remoteUrl, tokens, issue.number, comment.trim()).then(() => setComment('')), t('issue.commentPosted'))
+    void act(() => hostingApi.prComment(repoPath, remoteUrl, tokens, issue.number, comment.trim()).then(() => setComment('')), t('issue.commentPosted'))
   }
   const toggleState = (): void => {
     const next = detail?.state === 'open' ? 'closed' : 'open'
-    void act(() => hostingApi.setIssueState(remoteUrl, tokens, issue.number, next), next === 'closed' ? t('issue.closedToast') : t('issue.reopenedToast'))
+    void act(() => hostingApi.setIssueState(repoPath, remoteUrl, tokens, issue.number, next), next === 'closed' ? t('issue.closedToast') : t('issue.reopenedToast'))
   }
   const createBranch = (): void => {
     openModal({

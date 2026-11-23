@@ -10,10 +10,12 @@ import { interp, useT } from '../i18n'
  * the server will not hand it to the token, says so and offers the browser.
  */
 export function CheckLogPanel({
+  repoPath,
   remoteUrl,
   tokens,
   url
 }: {
+  repoPath: string
   remoteUrl: string
   tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }
   url: string
@@ -25,13 +27,13 @@ export function CheckLogPanel({
   useEffect(() => {
     let live = true
     hostingApi
-      .prCheckLog(remoteUrl, tokens, url)
+      .prCheckLog(repoPath, remoteUrl, tokens, url)
       .then((text) => live && setLog(text))
       .catch(() => live && setLog(null))
     return () => {
       live = false
     }
-  }, [remoteUrl, tokens, url])
+  }, [repoPath, remoteUrl, tokens, url])
 
   const tail = useMemo(() => (log ? logTail(log) : null), [log])
   // The failure is at the bottom: start there.

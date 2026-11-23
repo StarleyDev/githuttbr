@@ -3,7 +3,7 @@ import {
   GITLAB_COM,
   gitlabInstanceOf,
   normalizeGitlabUrl,
-  profileGitlabBase,
+  preferredGitlabBase,
   remoteIsOnGitlab
 } from '../src/shared/gitlabInstance'
 
@@ -25,9 +25,9 @@ describe('normalizeGitlabUrl', () => {
     expect(normalizeGitlabUrl('https://me:pw@git.example.org/?x=1#y')).toBe(SELF)
   })
 
-  it('a profile without a URL uses gitlab.com', () => {
-    expect(profileGitlabBase('')).toBe(GITLAB_COM)
-    expect(profileGitlabBase('git.example.org')).toBe(SELF)
+  it('a profile with no servers uses gitlab.com', () => {
+    expect(preferredGitlabBase({ gitlabToken: '' })).toBe(GITLAB_COM)
+    expect(preferredGitlabBase({ gitlabToken: '', gitlabServers: [{ url: 'git.example.org', token: '' }] })).toBe(SELF)
   })
 })
 

@@ -79,4 +79,26 @@ describe('readableError', () => {
     expect(readableError('remote: Repository not found.', t, interp)).toBe('<gitError.repoNotFound>{}')
     expect(readableError("Error invoking remote method 'git': Error: fatal: boom", t, interp)).toBe('fatal: boom')
   })
+
+  // Thrown in main as BBS_USER_NOT_FOUND, which has no language; translated here.
+  it('translates the Data Center "user not found" review error', async () => {
+    const { BBS_USER_NOT_FOUND, BitbucketServerError } = await import('../src/main/bitbucketServer')
+    const msg = "Error invoking remote method 'hosting:prReview': Error: " + new BitbucketServerError(404, BBS_USER_NOT_FOUND).message
+    expect(explainGitError(msg)).toEqual({ key: 'gitError.bbsUserNotFound' })
+  })
+})
+
+describe('a missing credential on a repository bound to a profile', () => {
+  // Thrown in main by noCredential, which has no language; the hint renders it.
+  it('names the bound profile, and the hint translates it with provider, profile and host', async () => {
+    const { boundNoCredentialMessage } = await import('../src/main/hosting')
+    const msg = "Error invoking remote method 'hosting:prDetail': Error: " + boundNoCredentialMessage('github', 'Work', 'github.com')
+    expect(msg).toContain('the profile "Work" this repository is bound to')
+    expect(explainGitError(msg)).toEqual({
+      key: 'gitError.boundProfileNoCredential',
+      vars: { provider: 'GitHub', profile: 'Work', host: 'github.com' }
+    })
+    const server = boundNoCredentialMessage('gitlab', 'Side "project"', 'gitlab.example.corp:8443')
+    expect(explainGitError(server)?.vars).toEqual({ provider: 'GitLab', profile: 'Side "project"', host: 'gitlab.example.corp:8443' })
+  })
 })

@@ -264,7 +264,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     const url = profileUrl(a.name, a.email, repo.remotes)
     return (
       <div key={a.email} className="commit-coauthor-row">
-        <Avatar email={a.email} name={a.name} size={16} />
+        <Avatar email={a.email} name={a.name} size={16} repo={repo.path} />
         <span>{a.name}</span>
         {url && (
           <a
@@ -284,7 +284,15 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     <div className="details">
       <div className="details-info">
         <div className="commit-header">
-          <Avatar email={commit.email} name={commit.author} size={38} className="avatar" title={commit.email} />
+          <Avatar
+            email={commit.email}
+            name={commit.author}
+            size={38}
+            className="avatar"
+            title={commit.email}
+            repo={repo.path}
+            sha={commit.hash}
+          />
           <div className="commit-meta">
             <span className="commit-author-row">
               <strong>{commit.author}</strong>
@@ -341,7 +349,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             <div className="commit-coauthor-avatars">
               {visibleCoAuthors.map((a) => (
                 <span key={a.email} className="coauthor-avatar-wrap">
-                  <Avatar email={a.email} name={a.name} size={20} />
+                  <Avatar email={a.email} name={a.name} size={20} repo={repo.path} />
                   <div className="commit-coauthor-pop">{renderCoauthorRow(a)}</div>
                 </span>
               ))}

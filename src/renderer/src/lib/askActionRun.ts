@@ -302,7 +302,7 @@ async function openProposedPr(
   const source = action.source || repo?.branches.current
   if (!source) throw Object.assign(new Error(), ownFailure('chat.actionNoBranchForPr'))
   const profile = useSettingsStore.getState().activeProfile()
-  const result = await hostingApi.createPR(origin.url, { github: profile.githubToken || undefined }, {
+  const result = await hostingApi.createPR(repoPath, origin.url, { github: profile.githubToken || undefined }, {
     title: action.title,
     body: action.body ?? '',
     source,

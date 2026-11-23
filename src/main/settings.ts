@@ -1,11 +1,22 @@
-import { app, ipcMain, dialog, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
-import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
+import { readFile, writeFile, mkdir, copyFile, rm } from 'fs/promises'
+import { defaultSettings, type AccountLink, type AppSettings, type BitbucketServerTokenKind, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
-import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
-import { setKnownForgejoInstances, setKnownGitlabInstances } from './gitlabInstances'
+import {
+  profileForgejoBase,
+  instanceOf,
+  tokenInstance,
+  GITLAB_COM,
+  gitlabAuthFor,
+  gitlabServerBases,
+  migrateGitlabSettings
+} from '../shared/gitlabInstance'
+import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
+import { GITHUB_COM, githubAuthFor, githubBaseOfRemote, githubEnterpriseBases } from '../shared/githubEnterprise'
+import { BITBUCKET_CLOUD, bitbucketAuthFor, bitbucketBaseOfRemote, bitbucketServerBases } from '../shared/bitbucketServer'
+import { setKnownBitbucketServerInstances } from './bitbucketServerInstances'
 import {
   applySecrets,
   extractSecrets,
@@ -20,12 +31,27 @@ import {
   adoptExistingConsent,
   canUseKeychain,
   ensureKeychain,
+  getConsent,
+  getConsentState,
+  onKeychainDeclined,
   onKeychainEnabled,
   onSessionOnlyProbe
 } from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
+/**
+ * A plain list of which token slots the encrypted store held, written by
+ * builds that used it to let a locked peek fall back to a machine login. It
+ * could go stale (an older build rewriting the store, a failed write) and it
+ * named every GitHub Enterprise and GitLab server ever configured, including
+ * removed ones — so it is no longer written, and a leftover copy is deleted.
+ */
+const legacySecretsIndexPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.index.json')
+
+export async function removeLegacySecretsIndex(): Promise<void> {
+  await rm(legacySecretsIndexPath(), { force: true }).catch(() => undefined)
+}
 
 // Profile tokens and the AI API key used to sit in the settings JSON in plain
 // text. They now live in a separate file encrypted with the OS keychain, the
@@ -77,6 +103,43 @@ let secretsUnreadable = false
  */
 let servedSecrets = false
 
+/**
+ * A real unlock attempt this session found the keyring unusable: consent was
+ * granted and explained, and `isEncryptionAvailable` said no (a Linux desktop
+ * without Secret Service). The stored tokens are out of reach until the
+ * keychain is turned on, so a peek stops waiting for them. Set only by
+ * `readSettingsWithSecrets` — never by a peek, which must not touch
+ * safeStorage at all, and never on the no-window path, which settles nothing.
+ */
+let keyringUnavailable = false
+onKeychainEnabled(async () => {
+  keyringUnavailable = false
+})
+
+/**
+ * What a peek may read just changed (see peekView): the secrets were decrypted
+ * for the first time this session, or the store went out of reach (declined,
+ * or no keyring). Tell the windows, so pictures that were left "unknown" while
+ * the store was locked ask again now instead of waiting out their retry. The
+ * channel keeps its first name; the renderer treats both the same way.
+ */
+function announceUnlocked(): void {
+  try {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send('secrets:unlocked')
+    }
+  } catch {
+    // No windows to tell (tests, shutdown).
+  }
+}
+
+/** Installs the decrypted store for the session, and says so the first time. */
+function setSecretCache(store: SecretStore): void {
+  const first = !secretCache
+  secretCache = store
+  if (first) announceUnlocked()
+}
+
 async function loadSecrets(): Promise<SecretStore> {
   try {
     const b64 = await readFile(secretsPath(), 'utf-8')
@@ -108,13 +171,17 @@ export async function readSettings(): Promise<AppSettings> {
     const raw = await readFile(settingsPath(), 'utf-8')
     const parsed = JSON.parse(raw) as Partial<AppSettings>
     // Existing install without the key → treat as already onboarded.
-    settings = { ...defaultSettings(), onboardingCompleted: true, ...parsed }
+    // A one-instance GitLab profile becomes a server list here, on every read —
+    // the file is also written by imports and older builds (see withMigratedAI).
+    settings = migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...parsed })
   } catch {
     return defaultSettings()
   }
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
-  setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
+  setKnownGitlabInstances(gitlabServerBases(out.profiles))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
+  setKnownGithubEnterpriseInstances(githubEnterpriseBases(out.profiles))
+  setKnownBitbucketServerInstances(bitbucketServerBases(out.profiles))
   return out
 }
 
@@ -148,7 +215,16 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   // gate — its owner answered the OS prompt long ago, so they are not asked to
   // decide again, only shown the explanation once.
   await adoptExistingConsent([secretsPath()])
-  if (!(await ensureKeychain(reason))) return settings
+  if (!(await ensureKeychain(reason))) {
+    // Granted and explained after the attempt means safeStorage itself said no.
+    // Unset or unexplained means no window was there to ask: nothing settled.
+    const after = await getConsentState()
+    if (after.consent === 'granted' && after.explained && !keyringUnavailable) {
+      keyringUnavailable = true
+      announceUnlocked()
+    }
+    return settings
+  }
 
   const stored = await loadSecrets()
   if (hasSettingsSecrets(settings)) {
@@ -158,11 +234,34 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids)
     await saveSecrets(merged)
     await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
-    secretCache = merged
+    setSecretCache(merged)
     return withMigratedAI(applySecrets(settings, merged))
   }
-  secretCache = stored
+  setSecretCache(stored)
   return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
+}
+
+/**
+ * What a peek — a lookup nobody asked for — may read without decrypting:
+ *
+ * - `unlocked`: something the user did already decrypted the store this
+ *   session, so the full settings are in memory (a PAT outranks a link).
+ * - `plain`: there is no encrypted store to wait for this session — none on
+ *   disk, consent declined, or an unlock attempt already found no usable
+ *   keyring (`keyringUnavailable`). The plain settings, with session-only
+ *   tokens and machine-login links, are then the whole truth.
+ * - `locked`: anything else, consent granted but never explained included. The
+ *   store may hold a token; a peek cannot know whether a PAT is in there, so it
+ *   must not let a link stand in.
+ *
+ * Never calls safeStorage, not even `isEncryptionAvailable`: on macOS the first
+ * real safeStorage call is what brings up the keychain prompt (see keychain.ts).
+ */
+async function peekView(): Promise<'unlocked' | 'plain' | 'locked'> {
+  if (secretCache) return 'unlocked'
+  if (!existsSync(secretsPath())) return 'plain'
+  if ((await getConsent()) === 'declined' || keyringUnavailable) return 'plain'
+  return 'locked'
 }
 
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
@@ -184,28 +283,96 @@ async function profileAuth(
   host: RepoHost,
   profileId: string | undefined,
   remoteUrl?: string,
-  expectedBase?: string
-): Promise<{ token?: string; link?: AccountLink }> {
+  expectedBase?: string,
+  peek = false
+): Promise<PeekedAuth> {
   const plain = await readSettings()
   const id = profileId ?? plain.activeProfileId
-  const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
+  const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId !== undefined ? undefined : plain.profiles[0])
   if (!candidate) return {}
-  if (host === 'gitlab' || host === 'forgejo') {
-    const base = tokenInstance(host, candidate[`${host}Url`])
+  // GitHub: github.com or one Enterprise Server, decided by the remote's host
+  // (or the base a provider-level call names). Each gets only its own token.
+  let githubBase: string | null = null
+  if (host === 'github') {
+    githubBase = expectedBase ?? (remoteUrl ? githubBaseOfRemote(remoteUrl, githubEnterpriseBases(plain.profiles)) : GITHUB_COM)
+    if (!githubBase) return {}
+    if (githubBase !== GITHUB_COM && !githubEnterpriseBases([candidate]).includes(githubBase)) return {}
+  }
+  // GitLab: gitlab.com or one of the profile's servers, decided by which known
+  // instance the remote sits on (longest base first, so `host/gitlab` beats
+  // `host`). Forgejo bases take part in the match too: a remote on a Forgejo
+  // at the same host must not count as that host's GitLab.
+  let gitlabBase: string | null = null
+  if (host === 'gitlab') {
+    gitlabBase = remoteUrl ? gitlabBaseOfRemote(remoteUrl, plain.profiles) : (expectedBase ?? GITLAB_COM)
+    if (!gitlabBase || (expectedBase && gitlabBase !== expectedBase)) return {}
+    if (gitlabBase !== GITLAB_COM && !gitlabServerBases([candidate]).includes(gitlabBase)) return {}
+  }
+  // Bitbucket: bitbucket.org or one Data Center, the same way — by the remote's
+  // host and context path, or the base a provider-level call names.
+  let bitbucketBase: string | null = null
+  if (host === 'bitbucket') {
+    bitbucketBase = expectedBase ?? (remoteUrl ? bitbucketBaseOfRemote(remoteUrl, bitbucketServerBases(plain.profiles)) : BITBUCKET_CLOUD)
+    if (!bitbucketBase) return {}
+    if (bitbucketBase !== BITBUCKET_CLOUD && !bitbucketServerBases([candidate]).includes(bitbucketBase)) return {}
+  }
+  if (host === 'forgejo') {
+    const base = tokenInstance(host, candidate.forgejoUrl)
     if (!base || (expectedBase && base !== expectedBase)) return {}
     if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
-  const settings = await readSettingsWithSecrets('tokens')
-  const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
+  // A peek never decrypts (see peekView).
+  const view = peek ? await peekView() : 'unlocked'
+  const settings = view === 'unlocked' ? await readSettingsWithSecrets('tokens') : plain
+  const profile = settings.profiles.find((p) => p.id === id) ?? (profileId !== undefined ? undefined : settings.profiles[0])
   if (!profile) return {}
-  if (host === 'gitlab' || host === 'forgejo') {
-    const base = tokenInstance(host, profile[`${host}Url`])
-    if (!base || (expectedBase && base !== expectedBase)) return {}
+  const auth = authFrom(settings, profile, host, remoteUrl, expectedBase, githubBase, gitlabBase, bitbucketBase)
+  // Checked after the plain-settings gates, so "locked" never stands in for "no such server".
+  // A token already in the plain view — typed this session, or not yet migrated
+  // off disk — wins over the stored one on unlock, so it is the answer either way.
+  if (view === 'locked' && auth && !auth.token) return { locked: true }
+  return auth ?? {}
+}
+
+/** `profileAuth`'s answer from settings already read, or null when the remote is not this profile's. */
+function authFrom(
+  settings: AppSettings,
+  profile: AppSettings['profiles'][number],
+  host: RepoHost,
+  remoteUrl: string | undefined,
+  expectedBase: string | undefined,
+  githubBase: string | null,
+  gitlabBase: string | null,
+  bitbucketBase: string | null
+): { token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind } | null {
+  if (host === 'forgejo') {
+    const base = tokenInstance(host, profile.forgejoUrl)
+    if (!base || (expectedBase && base !== expectedBase)) return null
     if (remoteUrl) {
-      const bases = [GITLAB_COM, ...settings.profiles.flatMap((p) =>
-        [profileForgejoBase(p.forgejoUrl), profileGitlabBase(p.gitlabUrl)].filter((b): b is string => !!b)
+      const bases = [GITLAB_COM, ...gitlabServerBases(settings.profiles), ...settings.profiles.flatMap((p) =>
+        [profileForgejoBase(p.forgejoUrl)].filter((b): b is string => !!b)
       )]
-      if (instanceOf(remoteUrl, bases)?.base !== base) return {}
+      if (instanceOf(remoteUrl, bases)?.base !== base) return null
+    }
+  }
+  if (host === 'gitlab' && gitlabBase) {
+    // Re-checked on the decrypted settings: they are the ones the token comes from.
+    if (remoteUrl && gitlabBaseOfRemote(remoteUrl, settings.profiles) !== gitlabBase) return null
+    const auth = gitlabAuthFor(profile, gitlabBase)
+    return { token: auth.token, link: validAccountLink(auth.link) }
+  }
+  if (host === 'github' && githubBase) {
+    const auth = githubAuthFor(profile, githubBase)
+    return { token: auth.token, link: validAccountLink(auth.link) }
+  }
+  if (host === 'bitbucket' && bitbucketBase) {
+    const auth = bitbucketAuthFor(profile, bitbucketBase)
+    const link = validAccountLink(auth.link)
+    return {
+      ...(auth.token ? { token: auth.token } : {}),
+      ...(link ? { link } : {}),
+      ...(auth.username ? { username: auth.username } : {}),
+      ...(auth.tokenKind ? { tokenKind: auth.tokenKind } : {})
     }
   }
   const link = validAccountLink(profile.links?.[host])
@@ -213,9 +380,84 @@ async function profileAuth(
   return { token, link }
 }
 
+/**
+ * The GitLab whose credentials a remote may receive: gitlab.com, or a server
+ * some profile names — null for any other host (or one that is a Forgejo's).
+ */
+function gitlabBaseOfRemote(remoteUrl: string, profiles: AppSettings['profiles']): string | null {
+  const servers = gitlabServerBases(profiles)
+  const forgejo = profiles.map((p) => profileForgejoBase(p.forgejoUrl)).filter((b): b is string => !!b)
+  const hit = instanceOf(remoteUrl, [GITLAB_COM, ...servers, ...forgejo])?.base ?? null
+  return hit === GITLAB_COM || (hit && servers.includes(hit)) ? hit : null
+}
+
 /** The active profile's PAT and link for a host. */
-export function activeProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<{ token?: string; link?: AccountLink }> {
+export function activeProfileAuth(
+  host: RepoHost,
+  remoteUrl?: string,
+  expectedBase?: string
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind }> {
   return profileAuth(host, undefined, remoteUrl, expectedBase)
+}
+
+/** Credentials as a peek sees them: `locked` when the tokens are still encrypted and were left that way. */
+export interface PeekedAuth {
+  token?: string
+  link?: AccountLink
+  username?: string
+  tokenKind?: BitbucketServerTokenKind
+  locked?: true
+}
+
+/**
+ * `activeProfileAuth` for lookups nobody asked for — a picture in the title
+ * bar, a commit author's avatar. It never decrypts: while the store is still
+ * locked it answers `{ locked: true }`, so the caller treats the answer as
+ * unknown and asks again after something the user did has unlocked it. With no
+ * store to wait for (see peekView) it answers from the plain settings — a
+ * machine-login link or a session-only token — right away.
+ */
+export function peekActiveProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<PeekedAuth> {
+  return profileAuth(host, undefined, remoteUrl, expectedBase, true)
+}
+
+/**
+ * One named profile's PAT and link for a host — the clone dialog's pick. An
+ * empty id or one no profile has gets nothing, never the active profile's or
+ * the first one's. `expectedBase` is the server a provider-level call (the
+ * dialog's repository list) names, as for `activeProfileAuth`.
+ */
+export function namedProfileAuth(
+  host: RepoHost,
+  profileId: string,
+  remoteUrl?: string,
+  expectedBase?: string
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind }> {
+  if (!profileId.trim()) return Promise.resolve({})
+  return profileAuth(host, profileId, remoteUrl, expectedBase)
+}
+
+/**
+ * A profile id off the IPC boundary, normalised once for every call that takes
+ * one (clone, the branch list, the repository and account lists, create): a
+ * string names a profile — an empty or unknown one names nobody, and gets
+ * nothing; anything else means "no profile named", which is the active one.
+ */
+export function asProfileIdArg(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+/** Whether some profile has this id — an empty or unknown one names nobody. */
+export async function isProfileId(profileId: unknown): Promise<boolean> {
+  if (typeof profileId !== 'string' || !profileId.trim()) return false
+  return (await readSettings()).profiles.some((p) => p.id === profileId)
+}
+
+/** The Forgejo instance of exactly this profile, or null — never another profile's for an unknown id. */
+export async function namedProfileForgejoInstance(profileId: string): Promise<string | null> {
+  if (!profileId.trim()) return null
+  const profile = (await readSettings()).profiles.find((p) => p.id === profileId)
+  return profileForgejoBase(profile?.forgejoUrl)
 }
 
 /** The Forgejo instance a profile (the active one by default) points at, or null. */
@@ -228,16 +470,6 @@ export async function profileForgejoInstance(profileId?: string): Promise<string
   return profileForgejoBase(profile?.forgejoUrl)
 }
 
-/** The GitLab instance a profile (the active one by default) is connected to. */
-export async function profileGitlabInstance(profileId?: string): Promise<string> {
-  const plain = await readSettings()
-  const profile =
-    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
-    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
-    plain.profiles[0]
-  return profileGitlabBase(profile?.gitlabUrl)
-}
-
 /**
  * Every profile's PAT and link for a host, with its name — for "is this account
  * already another profile's?", which has to see tokens the renderer may not
@@ -245,15 +477,15 @@ export async function profileGitlabInstance(profileId?: string): Promise<string>
  */
 export async function allProfileAuth(
   host: RepoHost
-): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; gitlabUrl?: string; forgejoUrl?: string }>> {
+): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; forgejoUrl?: string }>> {
   const settings = await readSettingsWithSecrets('tokens')
   return settings.profiles.map((p) => ({
     id: p.id,
     name: p.name,
-    token: p[TOKEN_FIELD[host]]?.trim() || undefined,
+    // GitLab: gitlab.com's credentials — the only GitLab a sign-in links.
+    token: (host === 'gitlab' ? gitlabAuthFor(p, GITLAB_COM).token : p[TOKEN_FIELD[host]])?.trim() || undefined,
     link: validAccountLink(p.links?.[host]),
     azureOrg: p.azureOrg?.trim() || undefined,
-    gitlabUrl: p.gitlabUrl?.trim() || undefined,
     forgejoUrl: p.forgejoUrl?.trim() || undefined
   }))
 }
@@ -267,11 +499,30 @@ export async function boundProfileAuth(
   host: RepoHost,
   repoPath: string,
   remoteUrl?: string
-): Promise<{ token?: string; link?: AccountLink } | undefined> {
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind } | undefined> {
   const plain = await readSettings()
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
   return profileAuth(host, boundId, remoteUrl)
+}
+
+/** The name of the profile a repository is explicitly bound to, or undefined when it is not bound. */
+export async function boundProfileName(repoPath: string): Promise<string | undefined> {
+  const plain = await readSettings()
+  const boundId = plain.repoProfiles?.[repoPath]
+  return boundId ? plain.profiles.find((p) => p.id === boundId)?.name : undefined
+}
+
+/** `boundProfileAuth` that never decrypts — see `peekActiveProfileAuth`. */
+export async function peekBoundProfileAuth(
+  host: RepoHost,
+  repoPath: string,
+  remoteUrl?: string
+): Promise<PeekedAuth | undefined> {
+  const plain = await readSettings()
+  const boundId = plain.repoProfiles?.[repoPath]
+  if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
+  return profileAuth(host, boundId, remoteUrl, undefined, true)
 }
 
 /**
@@ -315,10 +566,11 @@ async function persistSessionSecrets(): Promise<void> {
   const stored = secretCache ?? (await loadSecrets())
   const merged = pruneSecrets(mergeSecretStores(stored, sessionSecrets), ids)
   await saveSecrets(merged)
-  secretCache = merged
+  setSecretCache(merged)
   sessionSecrets = {}
 }
 onKeychainEnabled(persistSessionSecrets)
+onKeychainDeclined(announceUnlocked)
 
 /** True while some token exists only in memory and would be lost on quit. */
 export function hasSessionOnlySecrets(): boolean {
@@ -326,10 +578,14 @@ export function hasSessionOnlySecrets(): boolean {
 }
 onSessionOnlyProbe(hasSessionOnlySecrets)
 
-async function writeSettings(settings: AppSettings): Promise<void> {
+async function writeSettings(incoming: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
+  // An import or an older renderer may still send the one-instance shape.
+  const settings = migrateGitlabSettings(incoming)
+  setKnownGitlabInstances(gitlabServerBases(settings.profiles))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
+  setKnownGithubEnterpriseInstances(githubEnterpriseBases(settings.profiles))
+  setKnownBitbucketServerInstances(bitbucketServerBases(settings.profiles))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)
@@ -367,7 +623,7 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   const base = servedSecrets ? {} : (secretCache ?? (await loadSecrets()))
   const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
   await saveSecrets(merged)
-  secretCache = merged
+  setSecretCache(merged)
   sessionSecrets = {}
   await writeFile(settingsPath(), stripped, 'utf-8')
 }
@@ -383,6 +639,7 @@ function withForcedOnboarding(settings: AppSettings): AppSettings {
 }
 
 export function registerSettingsHandlers(): void {
+  void removeLegacySecretsIndex()
   ipcMain.handle('settings:get', async () => {
     const settings = withForcedOnboarding(await readSettings())
     servedSecrets = hasSettingsSecrets(settings)

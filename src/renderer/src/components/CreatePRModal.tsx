@@ -105,11 +105,11 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     if (!valid) return
     setBusy(true)
     try {
-      const res = await hostingApi.createPR(remoteUrl, tokens, { title: title.trim(), body, source, target, draft })
+      const res = await hostingApi.createPR(spec.repoPath, remoteUrl, tokens, { title: title.trim(), body, source, target, draft })
       // Best-effort: apply reviewers / labels / assignees (GitHub only).
       if (isGitHub && (reviewers.trim() || labels.trim() || assignees.trim())) {
         await hostingApi
-          .applyPrMeta(remoteUrl, tokens, res.number, {
+          .applyPrMeta(spec.repoPath, remoteUrl, tokens, res.number, {
             reviewers: splitList(reviewers),
             labels: splitList(labels),
             assignees: splitList(assignees)

@@ -72,7 +72,13 @@ const api = {
     },
     answer: (granted: boolean): Promise<void> => ipcRenderer.invoke('keychain:answer', granted),
     status: (): Promise<unknown> => ipcRenderer.invoke('keychain:status'),
-    set: (granted: boolean): Promise<boolean> => ipcRenderer.invoke('keychain:set', granted)
+    set: (granted: boolean): Promise<boolean> => ipcRenderer.invoke('keychain:set', granted),
+    // The stored tokens were decrypted for the first time this session.
+    onUnlocked: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on('secrets:unlocked', listener)
+      return () => ipcRenderer.removeListener('secrets:unlocked', listener)
+    }
   },
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
@@ -214,6 +220,11 @@ const api = {
     exportAll: (ids: string[]): Promise<unknown> => ipcRenderer.invoke('profileAvatar:exportAll', ids),
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('profileAvatar:importAll', data)
   },
+  avatars: {
+    github: (remoteUrl: string, repoPath: string, items: unknown, size: number): Promise<unknown> =>
+      ipcRenderer.invoke('avatars:github', remoteUrl, repoPath, items, size),
+    profileGithub: (size: number): Promise<unknown> => ipcRenderer.invoke('avatars:profileGithub', size)
+  },
   vault: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('vault:list', repoPath),
     upsert: (scope: string, repoPath: string, entry: unknown): Promise<unknown> =>
@@ -285,72 +296,86 @@ const api = {
   },
 
   hosting: {
-    listRepos: (provider: string, token: string, org?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listRepos', provider, token, org),
-    listOwners: (provider: string, token: string, org?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listOwners', provider, token, org),
+    listRepos: (provider: string, token: string, org?: string, profileId?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listRepos', provider, token, org, profileId),
+    listOwners: (provider: string, token: string, org?: string, profileId?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listOwners', provider, token, org, profileId),
     accountOwner: (provider: string, login: string, found: unknown, exceptProfileId: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:accountOwner', provider, login, found, exceptProfileId),
     whoAmI: (provider: string, token: string, org?: string, interactive?: boolean, link?: unknown, issuer?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:whoAmI', provider, token, org, interactive, link, issuer),
-    createRepo: (provider: string, token: string, opts: unknown, org?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org),
-    listPRs: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listPRs', remoteUrl, tokens, repoPath),
-    listReleases: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listReleases', remoteUrl, tokens, repoPath),
-    ciStatuses: (remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:ciStatuses', remoteUrl, shas, token),
+    createRepo: (provider: string, token: string, opts: unknown, org?: string, profileId?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org, profileId),
+    listPRs: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listPRs', repoPath, remoteUrl, tokens),
+    listReleases: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listReleases', repoPath, remoteUrl, tokens),
+    ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciStatuses', repoPath, remoteUrl, shas, token),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>
       ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target),
-    createPR: (remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:createPR', remoteUrl, tokens, opts),
-    prDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prDetail', remoteUrl, tokens, number),
-    workItem: (remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:workItem', remoteUrl, tokens, id),
-    prComment: (remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prComment', remoteUrl, tokens, number, body),
-    prReplyReviewComment: (remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prReplyReviewComment', remoteUrl, tokens, number, inReplyTo, body),
-    prCheckLog: (remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prCheckLog', remoteUrl, tokens, url),
-    prChecks: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prChecks', remoteUrl, tokens, number),
-    prFiles: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prFiles', remoteUrl, tokens, number),
-    prReview: (remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prReview', remoteUrl, tokens, number, event, body),
-    prMerge: (remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prMerge', remoteUrl, tokens, number, method),
+    createPR: (repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:createPR', repoPath, remoteUrl, tokens, opts),
+    prDetail: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prDetail', repoPath, remoteUrl, tokens, number),
+    workItem: (repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:workItem', repoPath, remoteUrl, tokens, id),
+    prComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prComment', repoPath, remoteUrl, tokens, number, body),
+    prReplyReviewComment: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      inReplyTo: number | string,
+      body: string
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prReplyReviewComment', repoPath, remoteUrl, tokens, number, inReplyTo, body),
+    prCheckLog: (repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prCheckLog', repoPath, remoteUrl, tokens, url),
+    prChecks: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prChecks', repoPath, remoteUrl, tokens, number),
+    prFiles: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prFiles', repoPath, remoteUrl, tokens, number),
+    prReview: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      event: string,
+      body: string
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prReview', repoPath, remoteUrl, tokens, number, event, body),
+    prMerge: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prMerge', repoPath, remoteUrl, tokens, number, method),
     listNotifications: (token: string, all?: boolean): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listNotifications', token, all),
     markNotificationRead: (token: string, id: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:markNotificationRead', token, id),
     markAllNotificationsRead: (token: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:markAllNotificationsRead', token),
-    listIssues: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens, repoPath),
+    listIssues: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listIssues', repoPath, remoteUrl, tokens),
     uploadSshKey: (token: string, title: string, publicKey: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:uploadSshKey', token, title, publicKey),
-    issueDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:issueDetail', remoteUrl, tokens, number),
-    setIssueState: (remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:setIssueState', remoteUrl, tokens, number, state),
-    createIssue: (remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:createIssue', remoteUrl, tokens, opts),
-    applyPrMeta: (remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:applyPrMeta', remoteUrl, tokens, number, meta),
-    updatePR: (remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:updatePR', remoteUrl, tokens, number, patch),
-    mergedPrHeads: (remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:mergedPrHeads', remoteUrl, tokens, branches),
-    ensureStack: (remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:ensureStack', remoteUrl, tokens, numbers),
-    listMilestones: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens, repoPath),
-    milestoneIssues: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:milestoneIssues', remoteUrl, tokens, number)
+    issueDetail: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:issueDetail', repoPath, remoteUrl, tokens, number),
+    setIssueState: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:setIssueState', repoPath, remoteUrl, tokens, number, state),
+    createIssue: (repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:createIssue', repoPath, remoteUrl, tokens, opts),
+    applyPrMeta: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:applyPrMeta', repoPath, remoteUrl, tokens, number, meta),
+    updatePR: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:updatePR', repoPath, remoteUrl, tokens, number, patch),
+    mergedPrHeads: (repoPath: string, remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:mergedPrHeads', repoPath, remoteUrl, tokens, branches),
+    ensureStack: (repoPath: string, remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ensureStack', repoPath, remoteUrl, tokens, numbers),
+    listMilestones: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listMilestones', repoPath, remoteUrl, tokens),
+    milestoneIssues: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:milestoneIssues', repoPath, remoteUrl, tokens, number)
   },
 
   term: {

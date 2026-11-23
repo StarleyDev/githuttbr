@@ -112,7 +112,9 @@ git actually is.
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review on GitHub, GitLab, Forgejo and Azure DevOps in a [page of its own](docs/help/hosting.md#reviewing--github-and-gitlab), on the repository's tab or group chip: conversation, each file's diff, checks, an AI review of the host's diff, and a sidebar with reviewers and their decisions, labels, branches and size. A 👁 marks the ones [waiting for your review](docs/help/hosting.md#waiting-for-your-review). Each profile [links its own account](docs/help/hosting.md#tokens) — a token, or a login git's credential helper or the GitHub CLI already holds. |
 | **[Azure Pipelines checks and logs](docs/help/hosting.md#reviewing--github-and-gitlab)** | Build-validation policies appear alongside PR statuses. Read failed tasks or job logs from the Checks tab. |
 | **[Errors that explain themselves](docs/help/syncing.md#when-the-host-refuses)** | A push refused for a missing `workflow` scope, a 100 MB file, a protected branch or a missing credential says why and what to do, in your language — git's raw text one click away. |
-| **[Self-managed GitLab](docs/help/hosting.md#self-managed-gitlab)** | Point a profile at your company's GitLab: merge requests, the clone browser and push sign-in work there, and its token is only ever sent to that instance. |
+| **[GitHub Enterprise Server](docs/help/hosting.md#github-enterprise-server)** | Add your company's self-hosted GitHub: pull requests, issues, checks, releases and push sign-in work there, each server with its own token that is never sent anywhere else. |
+| **[Self-managed GitLab](docs/help/hosting.md#self-managed-gitlab)** | Add your company's GitLab servers — as many as you work with — next to gitlab.com in one profile: merge requests, the clone browser and push sign-in work on each, and each server's token is only ever sent to that server. |
+| **[Bitbucket Data Center](docs/help/hosting.md#bitbucket-data-center)** | Your company's self-hosted Bitbucket: pull requests with review, comments, approve and merge (merge checks respected), build status in the graph, and push sign-in — each server with its own HTTP access token that is never sent anywhere else. |
 | **[Forgejo](docs/help/hosting.md#forgejo)** | Your own Forgejo or Gitea server, or Codeberg: push sign-in, open and create pull requests, clone and create repositories — the token only ever goes to that server. |
 | **[Azure Boards work items](docs/help/branching.md#a-branch-from-an-azure-boards-work-item)** | Start a branch from a work item's number, named from its type and title — and `AB#1234` in commits and pull requests links to the item. |
 | **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, [worktrees](docs/help/worktrees.md#looking-after-worktrees) (with what each one holds, lock, move and repair), submodules, LFS, sparse-checkout, patches, hooks. |
@@ -156,8 +158,8 @@ you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.
 [a native macOS menu bar](docs/help/menu-bar.md) that shows the keys you actually
 bound · [profiles](docs/help/profiles.md)
 for separate identities and accounts, each linking its own ·
-[author avatars](docs/help/avatars.md) — Gravatar where it exists, a generated
-blob drawn offline where it does not, and a title-bar face that reacts to
+[author avatars](docs/help/avatars.md) — Gravatar, then the author's GitHub
+picture, then a generated blob drawn offline, and a title-bar face that reacts to
 conflicts, half-finished rebases, a detached HEAD and piles left to grow — or
 [your own picture](docs/help/avatars.md#your-profiles-picture): your account's, an
 icon, or an image ·

@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash } from 'node:crypto'
 import { ipcMain, shell } from 'electron'
 import {
@@ -9,7 +10,18 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
-import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance } from './settings'
+import { countChecks } from './ciSummary'
+import {
+  activeProfileAuth,
+  allProfileAuth,
+  asProfileIdArg,
+  boundProfileAuth,
+  boundProfileName,
+  isProfileId,
+  namedProfileAuth,
+  namedProfileForgejoInstance,
+  profileForgejoInstance
+} from './settings'
 import {
   createForgejoPull,
   createForgejoRepo,
@@ -39,17 +51,48 @@ import {
   markAllForgejoNotificationsRead,
   FORGEJO_NOTIFICATION
 } from './forgejo'
-import { knownForgejoInstances, knownGitlabInstances } from './gitlabInstances'
+import { knownForgejoInstances, knownGithubEnterpriseInstances, knownGitlabInstances } from './gitlabInstances'
+import {
+  GITHUB_COM,
+  GITHUB_COM_ENDPOINTS,
+  githubBaseOfRemote,
+  githubEndpoints,
+  normalizeGithubEnterpriseUrl,
+  type GithubEndpoints
+} from '../shared/githubEnterprise'
 import {
   GITLAB_COM,
   forgejoInstanceOf,
   gitlabInstanceOf,
+  instanceOf,
+  normalizeGitlabServerUrl,
   normalizeGitlabUrl,
   profileForgejoBase,
-  profileGitlabBase,
   tokenMatchesInstance
 } from '../shared/gitlabInstance'
 import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
+import {
+  BITBUCKET_CLOUD,
+  bitbucketBaseOfRemote,
+  bitbucketServerCreatePrUrl,
+  bitbucketServerRepoOf,
+  normalizeBitbucketServerUrl,
+  type BitbucketServerRepo
+} from '../shared/bitbucketServer'
+import { knownBitbucketServerInstances } from './bitbucketServerInstances'
+import {
+  bbsCiStatuses,
+  bbsComment,
+  bbsMerge,
+  bbsPullChecks,
+  bbsPullDetail,
+  bbsPullFiles,
+  bbsReview,
+  bbsWhoAmI,
+  createBbsPull,
+  describeBbsAccount,
+  listBbsPulls
+} from './bitbucketServer'
 import { noreplyEmail } from '../shared/profileAvatar'
 import { mergeStackSection } from '../shared/stackPr'
 import {
@@ -112,7 +155,10 @@ interface ParsedRemote {
   owner: string // github owner / azure organization
   project: string // azure project ('' for github)
   repo: string
-  /** GitLab: the instance's base URL — gitlab.com or a self-managed one. */
+  /** GitLab: the instance's base URL — gitlab.com or a self-managed one.
+   *  GitHub: a GitHub Enterprise Server's base; absent for github.com.
+   *  Bitbucket: a Data Center's base (context path included); absent for
+   *  bitbucket.org. `owner` is then the project key (`PROJ`, or `~user`). */
   base?: string
 }
 
@@ -133,6 +179,13 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
   }
   let m = /^(?:[\w-]+\.)*github\.com\/([^/]+)\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'github', owner: m[1], project: '', repo: m[2] }
+
+  // A GitHub Enterprise Server a profile names: GitHub's API at its own host.
+  const ghes = instanceOf(url, knownGithubEnterpriseInstances())
+  if (ghes && ghes.path.split('/').length === 2) {
+    const [owner, repo] = ghes.path.split('/')
+    return { provider: 'github', owner, project: '', repo, base: ghes.base }
+  }
 
   m = /^dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
@@ -158,6 +211,10 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
     const [owner, repo] = fj.path.split('/')
     return { provider: 'forgejo', owner, project: '', repo, base: fj.base }
   }
+
+  // A Bitbucket Data Center a profile names: its own API, projects instead of workspaces.
+  const bbs = bitbucketServerRepoOf(url, knownBitbucketServerInstances())
+  if (bbs) return { provider: 'bitbucket', owner: bbs.projectKey, project: '', repo: bbs.repoSlug, base: bbs.base }
 
   m = /^(?:[\w-]+\.)*bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(target)
   if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
@@ -260,20 +317,34 @@ function isAuthFailure(err: unknown): boolean {
 export type HostTokens = { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string }
 
 /**
+ * The repository a hosting call acts for, set once per IPC call by
+ * `handleForRepo` and read by `profileAuth`. A scope rather than a parameter:
+ * every helper under a handler (ghRepoOf, glProjectOf, azRepoOf, fjRepoOf,
+ * bbsRepoOf, forgejoRemote, the CI lookups) reaches `profileAuth` without each
+ * having to pass the path on — and a helper that forgot to is exactly how PR
+ * detail, review and merge used to run as the active profile instead of the
+ * one the repository is bound to.
+ */
+const hostingRepo = new AsyncLocalStorage<string | undefined>()
+
+/**
  * The profile credentials for a hosting call — precedence in `pickHostAuth`.
  * Resolved here rather than trusted from the renderer: its settings carry no
  * tokens until Settings is opened, it never sends links, and it only knows the
  * *active* profile, not the one a background tab's repository is bound to.
  */
-async function profileAuth(
-  provider: RepoHost,
-  sent: string | undefined,
-  repoPath?: string,
-  remoteUrl?: string
-): Promise<HostAuthInput> {
+async function profileAuth(provider: RepoHost, sent: string | undefined, remoteUrl?: string): Promise<HostAuthInput> {
+  const repoPath = hostingRepo.getStore()
   // An IPC token alone carries no issuing instance. Resolve scoped tokens in main.
+  // The renderer's GitHub token is github.com's: a remote on an Enterprise
+  // Server (or one whose host cannot be told) resolves its own in main instead.
+  const githubElsewhere =
+    provider === 'github' && !!remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM
+  // Bitbucket the same: the renderer's token is bitbucket.org's.
+  const bitbucketElsewhere =
+    provider === 'bitbucket' && !!remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD
   return pickHostAuth({
-    sent: provider === 'gitlab' || provider === 'forgejo' ? undefined : sent,
+    sent: provider === 'gitlab' || provider === 'forgejo' || githubElsewhere || bitbucketElsewhere ? undefined : sent,
     bound: repoPath ? await boundProfileAuth(provider, repoPath, remoteUrl) : undefined,
     active: () => activeProfileAuth(provider, remoteUrl)
   })
@@ -283,10 +354,9 @@ async function profileAuth(
 async function remoteApiToken(
   remoteUrl: string,
   provider: RepoHost,
-  sent: string | undefined,
-  repoPath?: string
+  sent: string | undefined
 ): Promise<ApiAuth | null> {
-  return apiToken(remoteUrl, await profileAuth(provider, sent, repoPath, remoteUrl))
+  return apiToken(remoteUrl, await profileAuth(provider, sent, remoteUrl))
 }
 
 /** A repo path off the IPC boundary — only ever a lookup key into `repoProfiles`. */
@@ -302,10 +372,9 @@ function asRepoPath(value: unknown): string | undefined {
 async function tokenForRemote(
   remoteUrl: string,
   provider: Exclude<HostingProvider, null>,
-  tokens: HostTokens,
-  repoPath?: string
+  tokens: HostTokens
 ): Promise<ApiAuth | null> {
-  return remoteApiToken(remoteUrl, provider, tokens[provider], repoPath)
+  return remoteApiToken(remoteUrl, provider, tokens[provider])
 }
 
 /**
@@ -339,17 +408,93 @@ async function withAzureRetry<T>(
 export function providerBaseUrl(provider: RepoHost, org?: string): string {
   switch (provider) {
     case 'github':
-      return 'https://github.com'
+      return githubBaseFromOrg(org)
     case 'gitlab':
       return gitlabBaseFromOrg(org)
     case 'bitbucket':
-      return 'https://bitbucket.org'
+      return bitbucketBaseFromOrg(org)
     case 'azure':
       return `https://dev.azure.com/${encodeURIComponent(org?.trim() ?? '')}`
     case 'forgejo':
       return forgejoBaseFromOrg(org)
   }
 }
+
+/**
+ * GitHub's `org` is the base of an Enterprise Server, sent by Settings and the
+ * clone browser. Like GitLab's, it is honoured only when a profile names that
+ * server: anything else would let any string decide where a token goes.
+ * Absent → github.com; unknown → an error, never a fallback to github.com.
+ */
+function githubBaseFromOrg(org: string | undefined): string {
+  if (!org?.trim() || org.trim().toLowerCase() === GITHUB_COM) return GITHUB_COM
+  const base = normalizeGithubEnterpriseUrl(org)
+  if (base && knownGithubEnterpriseInstances().includes(base)) return base
+  throw new Error('This GitHub Enterprise Server is not saved in any profile yet (it must be https). Add it in Settings → Integrations → GitHub, then try again.')
+}
+
+/**
+ * The base of a server a token is being *checked* against before any profile
+ * names it — a GHES, GitLab or Bitbucket Data Center row added in the onboarding wizard, which keeps
+ * the profile to itself until it finishes. Null unless all of these hold:
+ * - the server is not already known (a known one resolves the normal way);
+ * - the call carries a token of its own — the one the user just typed;
+ * - the address passes the same validation Settings applies (https, no
+ *   credentials, not github.com / gitlab.com).
+ * The caller then sends that token and nothing else: no profile lookup, no
+ * link, no credential helper — so no saved secret can be steered to the host.
+ * Only `hosting:whoAmI` uses this; every other provider-level call still
+ * refuses an unknown server.
+ */
+export function unsavedServerBase(provider: RepoHost, org: string | undefined, token: string): string | null {
+  if (!token.trim() || !org?.trim()) return null
+  if (provider === 'github') {
+    const base = normalizeGithubEnterpriseUrl(org)
+    return base && !knownGithubEnterpriseInstances().includes(base) ? base : null
+  }
+  if (provider === 'gitlab') {
+    const base = normalizeGitlabServerUrl(org)
+    return base && !knownGitlabInstances().includes(base) ? base : null
+  }
+  if (provider === 'bitbucket') {
+    const base = normalizeBitbucketServerUrl(org)
+    return base && !knownBitbucketServerInstances().includes(base) ? base : null
+  }
+  return null
+}
+
+/**
+ * Bitbucket's `org` is a Data Center's base, sent by its Settings row. Honoured
+ * only when a profile names that server; absent → bitbucket.org; anything else
+ * is an error, never a fallback to bitbucket.org.
+ */
+function bitbucketBaseFromOrg(org: string | undefined): string {
+  if (!org?.trim() || org.trim().toLowerCase() === BITBUCKET_CLOUD) return BITBUCKET_CLOUD
+  const base = normalizeBitbucketServerUrl(org)
+  if (base && knownBitbucketServerInstances().includes(base)) return base
+  throw new Error('This Bitbucket Data Center is not saved in any profile yet (it must be https). Add it in Settings → Integrations → Bitbucket, then try again.')
+}
+
+/** The Data Center repository a remote is on, or null for bitbucket.org and every other host. */
+function bbsRepoOfRemote(remoteUrl: string): BitbucketServerRepo | null {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'bitbucket' || !parsed.base) return null
+  return bitbucketServerRepoOf(remoteUrl, [parsed.base])
+}
+
+const isBbs = (remoteUrl: string): boolean => bbsRepoOfRemote(remoteUrl) !== null
+
+/** A Data Center remote and the token its profile filed for that server, or an error saying what is missing. */
+async function bbsRepoOf(remoteUrl: string): Promise<{ repo: BitbucketServerRepo; token: string }> {
+  const repo = bbsRepoOfRemote(remoteUrl)
+  if (!repo) throw new Error('Not a Bitbucket Data Center repository.')
+  const auth = await remoteApiToken(remoteUrl, 'bitbucket', undefined)
+  if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+  return { repo, token: auth.token }
+}
+
+/** The endpoints of a parsed GitHub remote — github.com, or its Enterprise Server. */
+const ghEndpointsOf = (parsed: ParsedRemote): GithubEndpoints => githubEndpoints(parsed.base)
 
 /**
  * Forgejo's `org` is the instance URL of the profile in use. Like GitLab's, it
@@ -365,16 +510,31 @@ function forgejoBaseFromOrg(org: string | undefined): string {
 /**
  * The credential for a provider outside any repository. Same precedence as
  * `tokenForRemote`: what the user configured, else what git already holds.
+ *
+ * `profileId` is the profile the clone dialog's picker names: the list it
+ * shows, the clone and the binding of the new repository all use that one
+ * profile. An empty id or one no profile has gets nothing — not the active
+ * profile's credential, nor the token the renderer sent alongside it. Absent
+ * (Settings, notifications): the active profile, as before.
  */
 async function tokenForProvider(
   provider: RepoHost,
   token: string,
-  org?: string
+  org?: string,
+  profileId?: string
 ): Promise<(ApiAuth & { base: string }) | null> {
-  const base = await providerBase(provider, org)
-  const input = provider === 'gitlab' || provider === 'forgejo'
-    ? await activeProfileAuth(provider, undefined, base)
-    : await profileAuth(provider, token)
+  if (profileId !== undefined && !(await isProfileId(profileId))) return null
+  const base = await providerBase(provider, org, profileId)
+  const profile = (expectedBase?: string): ReturnType<typeof activeProfileAuth> =>
+    profileId !== undefined
+      ? namedProfileAuth(provider, profileId, undefined, expectedBase)
+      : activeProfileAuth(provider, undefined, expectedBase)
+  // A server's token is resolved here and only for its own base; the renderer's
+  // token is github.com's, bitbucket.org's or Azure's — the picked profile's.
+  const input = provider === 'gitlab' || provider === 'forgejo' || (provider === 'github' && base !== GITHUB_COM) ||
+    (provider === 'bitbucket' && base !== BITBUCKET_CLOUD)
+    ? await profile(base)
+    : await pickHostAuth({ sent: token, active: () => profile() })
   const auth = await apiToken(base, input)
   return auth ? { ...auth, base } : null
 }
@@ -394,11 +554,15 @@ function gitlabBaseFromOrg(org: string | undefined): string {
   throw new Error('This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.')
 }
 
-/** `providerBaseUrl`, with GitLab resolved to the active profile's instance. */
-async function providerBase(provider: RepoHost, org?: string): Promise<string> {
-  if (provider === 'gitlab' && !org) return profileGitlabInstance()
+/**
+ * `providerBaseUrl`, with Forgejo resolved to the instance of the profile in
+ * use — the one `profileId` names, else the active one. GitLab without an
+ * `org` is gitlab.com: a self-managed server is always named by its base
+ * (Settings and the clone browser send it).
+ */
+async function providerBase(provider: RepoHost, org?: string, profileId?: string): Promise<string> {
   if (provider === 'forgejo' && !org) {
-    const base = await profileForgejoInstance()
+    const base = profileId !== undefined ? await namedProfileForgejoInstance(profileId) : await profileForgejoInstance()
     if (!base) return forgejoBaseFromOrg(undefined) // throws: nothing configured
     return base
   }
@@ -436,12 +600,49 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
       return ''
     }
   })()
+  // A repository bound to a profile only ever uses that profile, so "this
+  // profile" would point at the active one — say which. English with a fixed
+  // shape: main has no language, and the renderer's gitErrorHint translates it.
+  const repoPath = hostingRepo.getStore()
+  const bound = repoPath ? await boundProfileName(repoPath) : undefined
+  if (bound) return new Error(boundNoCredentialMessage(provider, bound, host || provider))
+  if (provider.toLowerCase() === 'github' && host && remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM) {
+    return new Error(
+      `No token for the GitHub Enterprise Server ${host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.`
+    )
+  }
   if (provider.toLowerCase() === 'github') {
     return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
+  }
+  if (provider.toLowerCase() === 'bitbucket' && host && remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD) {
+    return new Error(
+      `No HTTP access token for the Bitbucket Data Center ${host} is saved in this profile. Add one in Settings → Integrations → Bitbucket → Bitbucket Data Center.`
+    )
   }
   return new Error(
     `No ${provider} account is linked to this profile${host ? ` for ${host}` : ''}. Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there.`
   )
+}
+
+/**
+ * The no-credential message for a repository bound to a profile. Its shape is a
+ * contract with `gitErrorHint` (`gitError.boundProfileNoCredential`), which
+ * renders it in the reader's language.
+ */
+export function boundNoCredentialMessage(provider: string, profile: string, host: string): string {
+  const name = PROVIDER_NAMES[provider.toLowerCase()] ?? provider
+  return (
+    `No ${name} account is linked to the profile "${profile}" this repository is bound to, for ${host}. ` +
+    'Switch to that profile and sign in from Settings → Integrations, or add a token there.'
+  )
+}
+
+const PROVIDER_NAMES: Record<string, string> = {
+  github: 'GitHub',
+  gitlab: 'GitLab',
+  bitbucket: 'Bitbucket',
+  azure: 'Azure DevOps',
+  forgejo: 'Forgejo'
 }
 
 /** What GitHub said about a failed request, beyond the status code. */
@@ -504,9 +705,10 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
   if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return hit.login
   let login: string | null = null
   try {
-    if (parsed.provider === 'github') login = (await ghJson<{ login: string }>('https://api.github.com/user', token)).login
+    if (parsed.provider === 'github') login = (await ghJson<{ login: string }>(`${ghEndpointsOf(parsed).apiBase}/user`, token)).login
     else if (parsed.provider === 'gitlab') login = (await glJson<{ username: string }>(`${glApi(parsed.base)}/user`, auth)).username
     else if (parsed.provider === 'forgejo' && parsed.base) login = (await fjJson<{ login: string }>(`${parsed.base}/api/v1/user`, token)).login
+    else if (parsed.provider === 'bitbucket' && parsed.base) login = (await bbsWhoAmI(parsed.base, token))?.name ?? null
   } catch {
     // A token without user scope cannot say who it is: no marks, no error.
   }
@@ -517,25 +719,23 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
 /** The open PRs of a remote, with the ones waiting on your review marked. */
 async function listPullRequests(
   remoteUrl: string,
-  tokens: HostTokens,
-  repoPath?: string
+  tokens: HostTokens
 ): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
-  const result = await listPullRequestsOf(remoteUrl, tokens, repoPath)
+  const result = await listPullRequestsOf(remoteUrl, tokens)
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || !result.prs.some((p) => p.requestedReviewers?.length)) return result
-  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens, repoPath).catch(() => null)
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens).catch(() => null)
   if (!auth) return result
   return { ...result, prs: markAwaitingYou(result.prs, await myLogin(parsed, auth.token, auth)) }
 }
 
 async function listPullRequestsOf(
   remoteUrl: string,
-  tokens: HostTokens,
-  repoPath?: string
+  tokens: HostTokens
 ): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) return { provider: null, prs: [] }
-  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens, repoPath)
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
 
   // GitLab merge requests
   if (parsed.provider === 'gitlab') {
@@ -577,6 +777,13 @@ async function listPullRequestsOf(
     return { provider: 'forgejo', prs: await listForgejoPulls(parsed.base, parsed.owner, parsed.repo, auth.token) }
   }
 
+  // Bitbucket Data Center pull requests
+  const bbsRepo = parsed.provider === 'bitbucket' && parsed.base ? bitbucketServerRepoOf(remoteUrl, [parsed.base]) : null
+  if (bbsRepo) {
+    if (!auth) return { provider: 'bitbucket', prs: [] }
+    return { provider: 'bitbucket', prs: await listBbsPulls(bbsRepo, auth.token) }
+  }
+
   // Bitbucket pull requests
   if (parsed.provider === 'bitbucket') {
     if (!auth) return { provider: 'bitbucket', prs: [] }
@@ -612,7 +819,8 @@ async function listPullRequestsOf(
   if (parsed.provider === 'github') {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
     if (auth) headers['Authorization'] = `Bearer ${auth.token}`
-    const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
+    const ep = ghEndpointsOf(parsed)
+    const res = await fetch(`${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
       headers
     })
     if (!res.ok) {
@@ -655,7 +863,7 @@ async function listPullRequestsOf(
     const known = new Set(prs.map((p) => p.id))
     for (const stackNumber of stackNumbers) {
       const members = await ghJson<{ pull_requests?: GithubStackMember[] }>(
-        `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/stacks/${stackNumber}`,
+        `${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}/stacks/${stackNumber}`,
         auth.token
       ).catch(() => null)
       for (const m of members?.pull_requests ?? []) {
@@ -667,7 +875,7 @@ async function listPullRequestsOf(
           author: m.user?.login ?? '',
           sourceBranch: m.head?.ref ?? '',
           targetBranch: m.base?.ref ?? '',
-          url: m.html_url ?? `https://github.com/${parsed.owner}/${parsed.repo}/pull/${m.number}`,
+          url: m.html_url ?? `${ep.webBase}/${parsed.owner}/${parsed.repo}/pull/${m.number}`,
           isDraft: m.draft ?? false,
           stackNumber,
           state: m.merged_at ? 'merged' : m.state === 'closed' ? 'closed' : 'open',
@@ -684,7 +892,7 @@ async function listPullRequestsOf(
       const status = pr.headSha ? ci[pr.headSha] : undefined
       if (!status) continue
       pr.ci = status.state
-      pr.ciSummary = summariseChecks(status)
+      pr.ciCounts = countChecks(status)
     }
     return { provider: 'github', prs }
   }
@@ -730,12 +938,11 @@ async function listPullRequestsOf(
  * remote is not on a Forgejo server or no credential reaches it.
  */
 async function forgejoRemote(
-  remoteUrl: string,
-  repoPath?: string
+  remoteUrl: string
 ): Promise<{ base: string; owner: string; repo: string; token: string } | null> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'forgejo' || !parsed.base) return null
-  const auth = await remoteApiToken(remoteUrl, 'forgejo', undefined, repoPath)
+  const auth = await remoteApiToken(remoteUrl, 'forgejo', undefined)
   return auth ? { base: parsed.base, owner: parsed.owner, repo: parsed.repo, token: auth.token } : null
 }
 
@@ -750,21 +957,20 @@ const isForgejo = (remoteUrl: string): boolean => parseRemoteUrl(remoteUrl)?.pro
 
 async function listReleases(
   remoteUrl: string,
-  tokens: { github?: string },
-  repoPath?: string
+  tokens: { github?: string }
 ): Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (parsed?.provider === 'forgejo') {
-    const f = await forgejoRemote(remoteUrl, repoPath)
+    const f = await forgejoRemote(remoteUrl)
     return { provider: 'forgejo', releases: f ? await listForgejoReleases(f.base, f.owner, f.repo, f.token) : [] }
   }
   // Azure DevOps "releases" are pipelines, and GitLab's are not wired: GitHub and Forgejo only.
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, releases: [] }
 
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
-  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
+  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github)
   if (auth) headers['Authorization'] = `Bearer ${auth.token}`
-  const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
+  const res = await fetch(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
     headers
   })
   if (!res.ok) {
@@ -800,7 +1006,7 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) return null
   if (parsed.provider === 'github') {
-    return `https://github.com/${parsed.owner}/${parsed.repo}/compare/${target}...${source}?expand=1`
+    return `${ghEndpointsOf(parsed).webBase}/${parsed.owner}/${parsed.repo}/compare/${target}...${source}?expand=1`
   }
   if (parsed.provider === 'forgejo' && parsed.base) {
     return forgejoCompareUrl(parsed.base, parsed.owner, parsed.repo, target, source)
@@ -808,6 +1014,8 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   if (parsed.provider === 'gitlab') {
     return `${parsed.base ?? GITLAB_COM}/${parsed.owner}/${parsed.repo}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${encodeURIComponent(source)}&merge_request%5Btarget_branch%5D=${encodeURIComponent(target)}`
   }
+  const bbsRepo = bbsRepoOfRemote(remoteUrl)
+  if (bbsRepo) return bitbucketServerCreatePrUrl(bbsRepo, source, target)
   if (parsed.provider === 'bitbucket') {
     return `https://bitbucket.org/${parsed.owner}/${parsed.repo}/pull-requests/new?source=${encodeURIComponent(source)}&dest=${encodeURIComponent(target)}`
   }
@@ -890,6 +1098,13 @@ async function createPullRequest(
     return { url: d.web_url, number: d.iid }
   }
 
+  // Bitbucket Data Center pull request
+  const bbsRepo = bbsRepoOfRemote(remoteUrl)
+  if (bbsRepo) {
+    if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+    return createBbsPull(bbsRepo, auth.token, opts)
+  }
+
   // Bitbucket pull request
   if (parsed.provider === 'bitbucket') {
     if (!auth) throw await noCredential('Bitbucket', remoteUrl)
@@ -916,7 +1131,7 @@ async function createPullRequest(
 
   if (parsed.provider === 'github') {
     if (!auth) throw await noCredential('GitHub', remoteUrl)
-    const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls`, {
+    const res = await fetch(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/pulls`, {
       method: 'POST',
       headers: {
         Accept: 'application/vnd.github+json',
@@ -968,14 +1183,16 @@ async function createPullRequest(
 async function ghRepoOf(
   remoteUrl: string,
   token?: string
-): Promise<{ owner: string; repo: string; token: string }> {
+): Promise<{ owner: string; repo: string; token: string; ep: GithubEndpoints; api: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'github') {
     throw new Error('This action currently supports GitHub repositories only.')
   }
   const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) throw await noCredential('GitHub', remoteUrl)
-  return { owner: parsed.owner, repo: parsed.repo, token: auth.token }
+  const ep = ghEndpointsOf(parsed)
+  // `api` is the repository's REST root on its own server — github.com or GHES.
+  return { owner: parsed.owner, repo: parsed.repo, token: auth.token, ep, api: `${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}` }
 }
 
 // ── GitLab merge request review ─────────────────────────────────────────────
@@ -1373,6 +1590,10 @@ async function pullRequestDetail(
   number: number
 ): Promise<PrDetail> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestDetail(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullDetail(b.repo, b.token, number)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullDetail(f.base, f.owner, f.repo, f.token, number)
@@ -1381,8 +1602,7 @@ async function pullRequestDetail(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrDetail(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const [pr, comments, reviews, reviewComments] = await Promise.all([
     ghJson<{
       number: number
@@ -1520,6 +1740,10 @@ async function pullRequestChecks(
   number: number
 ): Promise<PrCheck[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestChecks(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullChecks(b.repo, b.token, number)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullChecks(f.base, f.owner, f.repo, f.token, number)
@@ -1528,8 +1752,7 @@ async function pullRequestChecks(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrChecks(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
   const data = await ghJson<{
     check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string | null; details_url: string | null }>
@@ -1549,6 +1772,10 @@ async function pullRequestFiles(
   number: number
 ): Promise<PrFile[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullFiles(b.repo, b.token, number)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullFiles(f.base, f.owner, f.repo, f.token, number)
@@ -1557,7 +1784,7 @@ async function pullRequestFiles(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrFiles(a.ado, a.repo, number)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   type GhFile = {
     filename: string
     status: string
@@ -1569,7 +1796,7 @@ async function pullRequestFiles(
   }
   // per_page above 100 is silently capped: a 150-file PR used to list 100.
   const data = await allPages((page) =>
-    ghJson<GhFile[]>(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`, token)
+    ghJson<GhFile[]>(`${api}/pulls/${number}/files?per_page=100&page=${page}`, token)
   ).catch(() => [] as GhFile[])
   return data.map((f) => ({
     filename: f.filename,
@@ -1598,11 +1825,16 @@ async function replyReviewComment(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureReply(a.ado, a.repo, number, Number(inReplyTo), body)
   }
+  if (isBbs(remoteUrl)) {
+    // A thread's root comment id: the reply nests under it, as the web UI does.
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsComment(b.repo, b.token, number, body, Number(inReplyTo))
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
     return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/comments`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}/comments`, token, {
     method: 'POST',
     body: JSON.stringify({ body, in_reply_to: inReplyTo })
   })
@@ -1615,6 +1847,10 @@ async function commentOnPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glCommentOnMr(remoteUrl, tokens.gitlab, number, body)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsComment(b.repo, b.token, number, body)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoComment(f.base, f.owner, f.repo, f.token, number, body)
@@ -1623,8 +1859,8 @@ async function commentOnPr(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureComment(a.ado, a.repo, number, body)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/issues/${number}/comments`, token, {
     method: 'POST',
     body: JSON.stringify({ body })
   })
@@ -1638,6 +1874,10 @@ async function reviewPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glReviewMr(remoteUrl, tokens.gitlab, number, event, body)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsReview(b.repo, b.token, number, event, body)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoReview(f.base, f.owner, f.repo, f.token, number, event, body)
@@ -1646,8 +1886,8 @@ async function reviewPr(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureReview(a.ado, a.repo, number, event, body)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}/reviews`, token, {
     method: 'POST',
     body: JSON.stringify({ event, body: body || undefined })
   })
@@ -1660,6 +1900,10 @@ async function mergePr(
   method: PrMergeMethod
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeMr(remoteUrl, tokens.gitlab, number, method)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsMerge(b.repo, b.token, number, method)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoMerge(f.base, f.owner, f.repo, f.token, number, method)
@@ -1668,8 +1912,8 @@ async function mergePr(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureMerge(a.ado, a.repo, number, method)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}/merge`, token, {
     method: 'PUT',
     body: JSON.stringify({ merge_method: method })
   })
@@ -1677,16 +1921,15 @@ async function mergePr(
 
 async function listIssues(
   remoteUrl: string,
-  tokens: { github?: string },
-  repoPath?: string
+  tokens: { github?: string }
 ): Promise<{ provider: HostingProvider; issues: IssueInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (parsed?.provider === 'forgejo') {
-    const f = await forgejoRemote(remoteUrl, repoPath)
+    const f = await forgejoRemote(remoteUrl)
     return { provider: 'forgejo', issues: f ? await listForgejoIssues(f.base, f.owner, f.repo, f.token) : [] }
   }
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, issues: [] }
-  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
+  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github)
   if (!auth) return { provider: 'github', issues: [] }
   const data = await ghJson<
     Array<{
@@ -1698,7 +1941,7 @@ async function listIssues(
       comments: number
       pull_request?: unknown
     }>
-  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, auth.token)
+  >(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, auth.token)
   return {
     provider: 'github',
     // The issues endpoint also returns PRs — filter them out.
@@ -1717,16 +1960,15 @@ async function listIssues(
 
 async function listMilestones(
   remoteUrl: string,
-  tokens: { github?: string },
-  repoPath?: string
+  tokens: { github?: string }
 ): Promise<{ provider: HostingProvider; milestones: MilestoneInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (parsed?.provider === 'forgejo') {
-    const f = await forgejoRemote(remoteUrl, repoPath)
+    const f = await forgejoRemote(remoteUrl)
     return { provider: 'forgejo', milestones: f ? await listForgejoMilestones(f.base, f.owner, f.repo, f.token) : [] }
   }
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, milestones: [] }
-  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
+  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github)
   if (!auth) return { provider: 'github', milestones: [] }
   const data = await ghJson<
     Array<{
@@ -1739,7 +1981,7 @@ async function listMilestones(
       closed_issues: number
       html_url: string
     }>
-  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, auth.token)
+  >(`${ghEndpointsOf(parsed).apiBase}/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, auth.token)
   return {
     provider: 'github',
     milestones: data.map((m) => ({
@@ -1761,6 +2003,7 @@ async function listMilestones(
  * error (missing scope, no project) yields an empty list rather than failing.
  */
 async function fetchProjectFields(
+  graphqlUrl: string,
   owner: string,
   repo: string,
   number: number,
@@ -1784,7 +2027,7 @@ async function fetchProjectFields(
     }
   }`
   try {
-    const res = await fetch('https://api.github.com/graphql', {
+    const res = await fetch(graphqlUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables: { owner, repo, number } })
@@ -1901,13 +2144,14 @@ export function parseClosingPrs(
 }
 
 async function fetchClosingPrs(
+  graphqlUrl: string,
   owner: string,
   repo: string,
   number: number,
   token: string
 ): Promise<{ prs: LinkedPr[]; status: Exclude<LinkedPrsStatus, 'unsupported'> }> {
   try {
-    const res = await fetch('https://api.github.com/graphql', {
+    const res = await fetch(graphqlUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: GH_CLOSING_PRS_QUERY, variables: { owner, repo, number } })
@@ -1928,8 +2172,7 @@ async function issueDetail(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return forgejoIssueDetail(f.base, f.owner, f.repo, f.token, number)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api, ep } = await ghRepoOf(remoteUrl, tokens.github)
   const [issue, comments, closing, projectFields] = await Promise.all([
     ghJson<{
       number: number
@@ -1947,8 +2190,8 @@ async function issueDetail(
       `${api}/issues/${number}/comments?per_page=100`,
       token
     ),
-    fetchClosingPrs(owner, repo, number, token),
-    fetchProjectFields(owner, repo, number, token)
+    fetchClosingPrs(ep.graphqlUrl, owner, repo, number, token),
+    fetchProjectFields(ep.graphqlUrl, owner, repo, number, token)
   ])
 
   return {
@@ -1979,7 +2222,7 @@ async function milestoneIssues(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return forgejoMilestoneIssues(f.base, f.owner, f.repo, f.token, number)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<
     Array<{
       number: number
@@ -1990,7 +2233,7 @@ async function milestoneIssues(
       comments: number
       pull_request?: unknown
     }>
-  >(`https://api.github.com/repos/${owner}/${repo}/issues?milestone=${number}&state=all&per_page=100`, token)
+  >(`${api}/issues?milestone=${number}&state=all&per_page=100`, token)
   return data
     .filter((i) => !i.pull_request)
     .map((i) => ({
@@ -2013,8 +2256,8 @@ async function setIssueState(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return setForgejoIssueState(f.base, f.owner, f.repo, f.token, number, state)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, token, {
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/issues/${number}`, token, {
     method: 'PATCH',
     body: JSON.stringify({ state })
   })
@@ -2030,9 +2273,9 @@ async function createIssue(
     const f = await forgejoRemoteOrThrow(remoteUrl)
     return createForgejoIssue(f.base, f.owner, f.repo, f.token, opts)
   }
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const d = await ghJson<{ number: number; html_url: string }>(
-    `https://api.github.com/repos/${owner}/${repo}/issues`,
+    `${api}/issues`,
     token,
     { method: 'POST', body: JSON.stringify({ title: opts.title, body: opts.body || '' }) }
   )
@@ -2049,8 +2292,7 @@ async function applyPrMeta(
   number: number,
   meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
 ): Promise<void> {
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const tasks: Promise<unknown>[] = []
   if (meta.reviewers?.length)
     tasks.push(
@@ -2083,8 +2325,7 @@ async function applyPrMeta(
  * One request per branch, filtered server-side by head ref.
  */
 async function mergedPrHeads(remoteUrl: string, tokens: { github?: string }, branches: string[]): Promise<string[]> {
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const merged: string[] = []
   for (const branch of branches) {
     const prs = await ghJson<Array<{ merged_at: string | null }>>(
@@ -2107,8 +2348,7 @@ async function updatePullRequest(
   number: number,
   patch: { base?: string; title?: string; stackSection?: string }
 ): Promise<void> {
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const body: { base?: string; title?: string; body?: string } = {}
   if (patch.base) body.base = patch.base
   if (patch.title) body.title = patch.title
@@ -2140,8 +2380,7 @@ async function ensureGithubStack(
   numbers: number[]
 ): Promise<GithubStackInfo | null> {
   if (numbers.length < 2) return null // one PR is not a stack
-  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
 
   // Whatever stack these PRs are already in, if any: the bottom one decides,
   // because a stack is extended upward.
@@ -2178,13 +2417,21 @@ async function ensureGithubStack(
   }
 }
 
-async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
-  const auth = await tokenForProvider(provider, token, org)
-  if (!auth) throw await noCredential(provider, await providerBase(provider, org))
+/** Browsing and creating repositories is Bitbucket Cloud's only; a Data Center token never goes to bitbucket.org. */
+const BBS_NO_BROWSE = 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.'
+
+async function listRepositories(
+  provider: RepoHost,
+  token: string,
+  org?: string,
+  profileId?: string
+): Promise<RemoteRepo[]> {
+  const auth = await tokenForProvider(provider, token, org, profileId)
+  if (!auth) throw await noCredential(provider, await providerBase(provider, org, profileId))
 
   if (provider === 'github') {
     const res = await fetch(
-      'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
+      `${githubEndpoints(auth.base).apiBase}/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member`,
       { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${auth.token}` } }
     )
     if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
@@ -2230,6 +2477,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   if (provider === 'forgejo') return listForgejoRepos(auth.base, auth.token)
 
   if (provider === 'bitbucket') {
+    if (auth.base !== BITBUCKET_CLOUD) throw new Error(BBS_NO_BROWSE)
     const res = await fetch('https://api.bitbucket.org/2.0/repositories?role=member&pagelen=100&sort=-updated_on', {
       headers: { Authorization: bitbucketAuthFor(auth) }
     })
@@ -2290,14 +2538,15 @@ async function ghJson<T>(url: string, token: string, init?: RequestInit): Promis
 }
 
 /** Accounts a new repo can be created under: the authenticated user plus their orgs/groups. */
-async function listOwners(provider: RepoHost, token: string, org?: string): Promise<RemoteOwner[]> {
-  const auth = await tokenForProvider(provider, token, org)
-  if (!auth) throw await noCredential(provider, await providerBase(provider, org))
+async function listOwners(provider: RepoHost, token: string, org?: string, profileId?: string): Promise<RemoteOwner[]> {
+  const auth = await tokenForProvider(provider, token, org, profileId)
+  if (!auth) throw await noCredential(provider, await providerBase(provider, org, profileId))
 
   if (provider === 'github') {
-    const user = await ghJson<{ login: string; avatar_url: string }>('https://api.github.com/user', auth.token)
+    const api = githubEndpoints(auth.base).apiBase
+    const user = await ghJson<{ login: string; avatar_url: string }>(`${api}/user`, auth.token)
     const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
-      'https://api.github.com/user/orgs?per_page=100',
+      `${api}/user/orgs?per_page=100`,
       auth.token
     )
     return [
@@ -2331,6 +2580,7 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   if (provider === 'forgejo') return listForgejoOwners(auth.base, auth.token)
 
   if (provider === 'bitbucket') {
+    if (auth.base !== BITBUCKET_CLOUD) throw new Error(BBS_NO_BROWSE)
     const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
       headers: { Authorization: bitbucketAuthFor(auth) }
     })
@@ -2380,14 +2630,31 @@ async function fetchConnectedAccount(
   // Nothing on this profile and no sign-in asked for: simply not connected. A
   // login elsewhere on the machine is not this profile's until it is linked.
   if (!token.trim() && !link && !interactive) return null
+  const unsaved = unsavedServerBase(provider, org, token)
+  if (unsaved) {
+    // Exactly the token this call carries — never one looked up — see unsavedServerBase.
+    if (provider === 'bitbucket') return { source: 'token', ...(await describeBbsAccount(unsaved, token.trim())) }
+    return describeAccount(provider, { token: token.trim(), source: 'token' }, unsaved)
+  }
   // Only an explicit "sign in" may open the helper's login window. Merely opening
   // the Settings page must not prompt for four providers at once.
   // GitLab: the instance of the profile being edited, which the renderer sends as `org`.
   const base = provider === 'gitlab' || provider === 'forgejo' ? providerBaseUrl(provider, org) : await providerBase(provider, org)
+  // Links name github.com accounts: an Enterprise Server is only ever asked with its own token.
+  if (provider === 'github' && base !== GITHUB_COM) {
+    if (!token.trim()) return null
+    link = undefined
+    interactive = false
+  }
+  // A Data Center likewise: its own token, sent only to the base it was saved under.
+  if (provider === 'bitbucket' && base !== BITBUCKET_CLOUD) {
+    if (!token.trim()) return null
+    return { source: 'token', ...(await describeBbsAccount(base, token.trim())) }
+  }
   if ((provider === 'gitlab' || provider === 'forgejo') && token && !tokenMatchesInstance(provider, base, issuer)) return null
   const auth = await apiToken(base, { token, link }, { interactive })
   if (!auth) throw await noCredential(provider, base)
-  const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' ? base : org)
+  const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' || provider === 'github' ? base : org)
   if (link || auth.source === 'token') return account
   // A sign-in found a machine login: hand back the link for the profile to keep.
   // gh is asked by account name, which is the GitHub login; git by the username
@@ -2411,29 +2678,23 @@ async function accountOwner(
   found: AccountLink,
   exceptProfileId: string
 ): Promise<string | null> {
-  // GitLab accounts are per instance: the same username on gitlab.com and on a
-  // self-managed GitLab are two different people.
-  const instance =
-    provider === 'gitlab'
-      ? await profileGitlabInstance(exceptProfileId)
-      : provider === 'forgejo'
-        ? await profileForgejoInstance(exceptProfileId)
-        : undefined
-  const instanceOfProfile = (p: { gitlabUrl?: string; forgejoUrl?: string }): string | null =>
-    provider === 'gitlab' ? profileGitlabBase(p.gitlabUrl) : profileForgejoBase(p.forgejoUrl)
+  // Accounts are per instance: the same username on two Forgejo servers is two
+  // different people. GitLab's sign-in only ever links a gitlab.com account
+  // (servers use their own tokens), so its profiles are compared on gitlab.com.
+  const instance = provider === 'forgejo' ? await profileForgejoInstance(exceptProfileId) : undefined
   const others = (await allProfileAuth(provider)).filter(
-    (p) => p.id !== exceptProfileId && (instance === undefined || instanceOfProfile(p) === instance)
+    (p) => p.id !== exceptProfileId && (instance === undefined || profileForgejoBase(p.forgejoUrl) === instance)
   )
   const linked = others.find((p) => linkHoldsAccount(p.link, login, found))
   if (linked) return linked.name
   for (const p of others) {
     if (!p.token) continue
-    // GitLab: that profile's own instance, explicitly — empty means gitlab.com, not "the active one".
+    // GitLab: gitlab.com explicitly — allProfileAuth hands out gitlab.com's tokens only.
     const org =
       provider === 'azure'
         ? p.azureOrg
         : provider === 'gitlab'
-          ? profileGitlabBase(p.gitlabUrl)
+          ? GITLAB_COM
           : provider === 'forgejo'
             ? (profileForgejoBase(p.forgejoUrl) ?? undefined)
             : undefined
@@ -2449,12 +2710,14 @@ async function accountOwner(
 async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string): Promise<ConnectedAccount> {
 
   if (provider === 'github') {
+    // `org` is the server's base here — github.com or a GHES (fetchConnectedAccount).
+    const ep = githubEndpoints(org)
     const user = await ghJson<{ id: number; login: string; name: string | null; avatar_url: string; html_url: string }>(
-      'https://api.github.com/user',
+      `${ep.apiBase}/user`,
       auth.token
     )
     const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
-      'https://api.github.com/user/orgs?per_page=100',
+      `${ep.apiBase}/user/orgs?per_page=100`,
       auth.token
     ).catch(() => [])
     return {
@@ -2462,15 +2725,18 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       login: user.login,
       name: user.name ?? undefined,
       avatarUrl: user.avatar_url,
-      noreplyEmail: noreplyEmail('github', user.id, user.login) ?? undefined,
+      // The users.noreply.github.com address is github.com's: a GHES has its own, if any.
+      noreplyEmail: ep.enterprise ? undefined : (noreplyEmail('github', user.id, user.login) ?? undefined),
       profileUrl: user.html_url,
-      orgs: orgs.map((o) => ({ login: o.login, avatarUrl: o.avatar_url, url: `https://github.com/${o.login}` }))
+      orgs: orgs.map((o) => ({ login: o.login, avatarUrl: o.avatar_url, url: `${ep.webBase}/${o.login}` }))
     }
   }
 
   if (provider === 'gitlab') {
     const headers = gitlabAuth(auth)
-    const api = glApi(providerBaseUrl('gitlab', org))
+    // `org` is already a resolved base (fetchConnectedAccount, accountOwner): resolving it
+    // again would refuse a server that is being checked before it is saved.
+    const api = glApi(org)
     const userRes = await fetch(`${api}/user`, { headers, redirect: 'error' })
     if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
     const user = (await userRes.json()) as {
@@ -2579,17 +2845,18 @@ async function createRepository(
   provider: RepoHost,
   token: string,
   opts: CreateRepoOpts,
-  org?: string
+  org?: string,
+  profileId?: string
 ): Promise<RemoteRepo> {
   if (!opts.name.trim()) throw new Error('Repository name is required.')
-  const auth = await tokenForProvider(provider, token, org)
-  if (!auth) throw await noCredential(provider, await providerBase(provider, org))
+  const auth = await tokenForProvider(provider, token, org, profileId)
+  if (!auth) throw await noCredential(provider, await providerBase(provider, org, profileId))
 
   if (provider === 'github') {
     const url =
       opts.ownerType === 'org'
-        ? `https://api.github.com/orgs/${encodeURIComponent(opts.owner)}/repos`
-        : 'https://api.github.com/user/repos'
+        ? `${githubEndpoints(auth.base).apiBase}/orgs/${encodeURIComponent(opts.owner)}/repos`
+        : `${githubEndpoints(auth.base).apiBase}/user/repos`
     const repo = await ghJson<{ full_name: string; clone_url: string; private: boolean }>(url, auth.token, {
       method: 'POST',
       body: JSON.stringify({ name: opts.name, description: opts.description || undefined, private: opts.private })
@@ -2620,6 +2887,7 @@ async function createRepository(
   if (provider === 'forgejo') return createForgejoRepo(auth.base, auth.token, opts)
 
   if (provider === 'bitbucket') {
+    if (auth.base !== BITBUCKET_CLOUD) throw new Error(BBS_NO_BROWSE)
     const slug = opts.name.trim().toLowerCase().replace(/\s+/g, '-')
     const res = await fetch(`https://api.bitbucket.org/2.0/repositories/${opts.owner}/${slug}`, {
       method: 'POST',
@@ -2673,17 +2941,6 @@ interface GithubStackMember {
   base?: { ref: string }
 }
 
-/** "3 passed · 1 failing" — the row shows a dot, the tooltip shows this. */
-function summariseChecks(status: CiStatus): string {
-  const count = (state: CiState): number => status.jobs.filter((j) => j.state === state).length
-  const parts: string[] = []
-  if (count('success')) parts.push(`${count('success')} passed`)
-  if (count('failure')) parts.push(`${count('failure')} failing`)
-  if (count('pending')) parts.push(`${count('pending')} running`)
-  if (count('neutral')) parts.push(`${count('neutral')} skipped`)
-  return parts.join(' · ')
-}
-
 // Answers depend on what a credential can see, so each one keeps its own; a
 // profile per repo or a per-remote credential helper means several in turn.
 // Keyed by a fingerprint so the map never holds the token itself.
@@ -2712,6 +2969,7 @@ function ciAccountFor(token: string): CiAccount {
 }
 
 async function lookUpCiStatus(
+  apiBase: string,
   owner: string,
   repo: string,
   sha: string,
@@ -2719,7 +2977,7 @@ async function lookUpCiStatus(
   account: CiAccount
 ): Promise<CiLookup> {
   try {
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs?per_page=30`, {
+    const res = await fetch(`${apiBase}/repos/${owner}/${repo}/commits/${sha}/check-runs?per_page=30`, {
       headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}` }
     })
     const limited = (res.status === 403 || res.status === 429) && mentionsRateLimit(await res.text())
@@ -2764,11 +3022,19 @@ export async function fetchCiStatuses(
   token: string
 ): Promise<Record<string, CiStatus>> {
   const parsed = parseRemoteUrl(remoteUrl)
+  // A Data Center's build statuses, quietly: no token or no build-status resource is "no badges".
+  const bbsRepo = bbsRepoOfRemote(remoteUrl)
+  if (bbsRepo) {
+    const bbsAuth = await remoteApiToken(remoteUrl, 'bitbucket', undefined).catch(() => null)
+    return bbsAuth ? bbsCiStatuses(bbsRepo, bbsAuth.token, shas).catch(() => ({})) : {}
+  }
   if (!parsed || parsed.provider !== 'github') return {}
   const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) return {}
   const account = ciAccountFor(auth.token)
-  const keyOf = (sha: string): string => `${parsed.owner}/${parsed.repo}@${sha}`
+  const apiBase = ghEndpointsOf(parsed).apiBase
+  // The server is part of the key: the same owner/repo on github.com and on a GHES are two repositories.
+  const keyOf = (sha: string): string => `${parsed.base ?? ''}|${parsed.owner}/${parsed.repo}@${sha}`
 
   const wanted = [...new Set(shas.slice(0, 40))]
   const now = Date.now()
@@ -2794,7 +3060,7 @@ export async function fetchCiStatuses(
     while (queue.length && Date.now() >= account.pausedUntil) {
       const job = queue.shift()!
       try {
-        const lookup = await lookUpCiStatus(parsed.owner, parsed.repo, job.sha, auth.token, account)
+        const lookup = await lookUpCiStatus(apiBase, parsed.owner, parsed.repo, job.sha, auth.token, account)
         rememberCiEntry(account.cache, job.key, nextCiEntry(account.cache.get(job.key), lookup, Date.now()))
       } finally {
         release(job)
@@ -2850,7 +3116,7 @@ async function listGithubNotifications(token: string, all: boolean): Promise<Git
       subject: { title: string; url: string | null; type: string }
       repository: { full_name: string; html_url: string }
     }>
-  >(`https://api.github.com/notifications?all=${all ? 'true' : 'false'}&per_page=50`, token)
+  >(`${GITHUB_COM_ENDPOINTS.apiBase}/notifications?all=${all ? 'true' : 'false'}&per_page=50`, token)
 
   return data.map((n) => {
     // subject.url is an API url (…/repos/o/r/issues/5 or …/pulls/5). Derive the
@@ -2887,7 +3153,7 @@ async function markNotificationRead(token: string, id: string): Promise<void> {
   }
   const auth = await tokenForProvider('github', token)
   if (!auth) return
-  await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
+  await ghJson<unknown>(`${GITHUB_COM_ENDPOINTS.apiBase}/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
     /* already read / gone — non-fatal */
   })
 }
@@ -2900,7 +3166,7 @@ async function markAllNotificationsRead(token: string): Promise<void> {
   token = auth.token
   // The PUT /notifications endpoint returns 202 with an empty body; ghJson would
   // choke parsing JSON, so call fetch directly.
-  await fetch('https://api.github.com/notifications', {
+  await fetch(`${GITHUB_COM_ENDPOINTS.apiBase}/notifications`, {
     method: 'PUT',
     headers: {
       Accept: 'application/vnd.github+json',
@@ -2919,18 +3185,33 @@ async function markAllNotificationsRead(token: string): Promise<void> {
  * the transport will then use. Only the public half is ever sent.
  */
 export async function uploadSshKey(token: string, title: string, publicKey: string): Promise<{ id: number }> {
-  return ghJson<{ id: number }>('https://api.github.com/user/keys', token, {
+  return ghJson<{ id: number }>(`${GITHUB_COM_ENDPOINTS.apiBase}/user/keys`, token, {
     method: 'POST',
     body: JSON.stringify({ title, key: publicKey.trim() })
   })
 }
 
-export function registerHostingHandlers(): void {
-  ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string) =>
-    listRepositories(provider, token, org)
+/**
+ * Register a handler for a call that acts on one repository's remote. Its first
+ * IPC argument is that repository's path — the same convention as the git
+ * channel — and the whole call, every helper under it included, runs as the
+ * profile the repository is bound to (`hostingRepo`). An unbound repository, or
+ * no path, falls back to the active profile.
+ */
+function handleForRepo<A extends unknown[]>(channel: string, run: (...args: A) => unknown): void {
+  ipcMain.handle(channel, (_e, repoPath: unknown, ...args: unknown[]) =>
+    hostingRepo.run(asRepoPath(repoPath), () => run(...(args as A)))
   )
-  ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string) =>
-    listOwners(provider, token, org)
+}
+
+export function registerHostingHandlers(): void {
+  // Provider-level: no repository yet. `profileId` is the clone (or add-remote)
+  // dialog's picked profile; absent → the active one.
+  ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string, profileId?: unknown) =>
+    listRepositories(provider, token, org, asProfileIdArg(profileId))
+  )
+  ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string, profileId?: unknown) =>
+    listOwners(provider, token, org, asProfileIdArg(profileId))
   )
   ipcMain.handle(
     'hosting:accountOwner',
@@ -2945,83 +3226,18 @@ export function registerHostingHandlers(): void {
     (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: unknown, issuer?: string) =>
       fetchConnectedAccount(provider, token, org, interactive, validAccountLink(link), issuer)
   )
-  ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
-    createRepository(provider, token, opts, org)
+  ipcMain.handle(
+    'hosting:createRepo',
+    (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string, profileId?: unknown) =>
+      createRepository(provider, token, opts, org, asProfileIdArg(profileId))
   )
-  ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: HostTokens, repoPath?: unknown) =>
-    listPullRequests(remoteUrl, tokens, asRepoPath(repoPath))
-  )
-  ipcMain.handle('hosting:listReleases', (_e, remoteUrl: string, tokens: { github?: string }, repoPath?: unknown) =>
-    listReleases(remoteUrl, tokens, asRepoPath(repoPath))
-  )
-  ipcMain.handle('hosting:ciStatuses', (_e, remoteUrl: string, shas: string[], token: string) =>
-    fetchCiStatuses(remoteUrl, shas, token)
-  )
+  // No credential: a browser page.
   ipcMain.handle('hosting:openCreatePR', (_e, remoteUrl: string, source: string, target: string) => {
     const url = createPullRequestUrl(remoteUrl, source, target)
     if (url) shell.openExternal(url)
     return url != null
   })
-  ipcMain.handle(
-    'hosting:createPR',
-    (_e, remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }, opts: CreatePrOpts) =>
-      createPullRequest(remoteUrl, tokens, opts)
-  )
-  ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestDetail(remoteUrl, tokens, number)
-  )
-  // An Azure Boards work item, in the organization of the repository's Azure remote.
-  ipcMain.handle('hosting:workItem', async (_e, remoteUrl: string, tokens: HostTokens, id: number) => {
-    if (!Number.isInteger(id) || id <= 0) throw new Error('A work item number is a positive integer.')
-    const a = await azRepoOf(remoteUrl, tokens.azure)
-    // Work Items is a scope a code token may lack: a refusal is shown, never retried.
-    return azureWorkItem(a.optional, a.repo.org, id)
-  })
-  ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
-    commentOnPr(remoteUrl, tokens, number, body)
-  )
-  ipcMain.handle(
-    'hosting:prReplyReviewComment',
-    (_e, remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
-      replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
-  )
-  ipcMain.handle('hosting:prFiles', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestFiles(remoteUrl, tokens, number)
-  )
-  ipcMain.handle('hosting:prCheckLog', (_e, remoteUrl: string, tokens: HostTokens, url: string) =>
-    pullRequestCheckLog(remoteUrl, tokens, url)
-  )
-  ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestChecks(remoteUrl, tokens, number)
-  )
-  ipcMain.handle(
-    'hosting:prReview',
-    (_e, remoteUrl: string, tokens: HostTokens, number: number, event: PrReviewEvent, body: string) =>
-      reviewPr(remoteUrl, tokens, number, event, body)
-  )
-  ipcMain.handle(
-    'hosting:prMerge',
-    (_e, remoteUrl: string, tokens: HostTokens, number: number, method: PrMergeMethod) =>
-      mergePr(remoteUrl, tokens, number, method)
-  )
-  ipcMain.handle('hosting:mergedPrHeads', (_e, remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
-    mergedPrHeads(remoteUrl, tokens, branches)
-  )
-  ipcMain.handle(
-    'hosting:ensureStack',
-    (_e, remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
-      ensureGithubStack(remoteUrl, tokens, numbers)
-  )
-  ipcMain.handle(
-    'hosting:updatePR',
-    (
-      _e,
-      remoteUrl: string,
-      tokens: { github?: string },
-      number: number,
-      patch: { base?: string; title?: string; stackSection?: string }
-    ) => updatePullRequest(remoteUrl, tokens, number, patch)
-  )
+  // The account's own inbox: the active profile's.
   ipcMain.handle('hosting:listNotifications', (_e, token: string, all?: boolean) =>
     listNotifications(token, all)
   )
@@ -3031,34 +3247,102 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:markAllNotificationsRead', (_e, token: string) =>
     markAllNotificationsRead(token)
   )
-  ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }, repoPath?: unknown) =>
-    listIssues(remoteUrl, tokens, asRepoPath(repoPath))
-  )
-  ipcMain.handle('hosting:listMilestones', (_e, remoteUrl: string, tokens: { github?: string }, repoPath?: unknown) =>
-    listMilestones(remoteUrl, tokens, asRepoPath(repoPath))
-  )
-  ipcMain.handle('hosting:milestoneIssues', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
-    milestoneIssues(remoteUrl, tokens, number)
-  )
   ipcMain.handle('hosting:uploadSshKey', (_e, token: string, title: string, publicKey: string) =>
     uploadSshKey(token, title, publicKey)
   )
-  ipcMain.handle('hosting:issueDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+
+  // Repository-scoped: first argument is the repository path (see handleForRepo).
+  handleForRepo('hosting:listPRs', (remoteUrl: string, tokens: HostTokens) =>
+    listPullRequests(remoteUrl, tokens)
+  )
+  handleForRepo('hosting:listReleases', (remoteUrl: string, tokens: { github?: string }) =>
+    listReleases(remoteUrl, tokens)
+  )
+  handleForRepo('hosting:ciStatuses', (remoteUrl: string, shas: string[], token: string) =>
+    fetchCiStatuses(remoteUrl, shas, token)
+  )
+  handleForRepo('hosting:createPR', (remoteUrl: string, tokens: HostTokens, opts: CreatePrOpts) =>
+    createPullRequest(remoteUrl, tokens, opts)
+  )
+  handleForRepo('hosting:prDetail', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestDetail(remoteUrl, tokens, number)
+  )
+  // An Azure Boards work item, in the organization of the repository's Azure remote.
+  handleForRepo('hosting:workItem', async (remoteUrl: string, tokens: HostTokens, id: number) => {
+    if (!Number.isInteger(id) || id <= 0) throw new Error('A work item number is a positive integer.')
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    // Work Items is a scope a code token may lack: a refusal is shown, never retried.
+    return azureWorkItem(a.optional, a.repo.org, id)
+  })
+  handleForRepo('hosting:prComment', (remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
+    commentOnPr(remoteUrl, tokens, number, body)
+  )
+  handleForRepo(
+    'hosting:prReplyReviewComment',
+    (remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
+      replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
+  )
+  handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestFiles(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
+    pullRequestCheckLog(remoteUrl, tokens, url)
+  )
+  handleForRepo('hosting:prChecks', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestChecks(remoteUrl, tokens, number)
+  )
+  handleForRepo(
+    'hosting:prReview',
+    (remoteUrl: string, tokens: HostTokens, number: number, event: PrReviewEvent, body: string) =>
+      reviewPr(remoteUrl, tokens, number, event, body)
+  )
+  handleForRepo('hosting:prMerge', (remoteUrl: string, tokens: HostTokens, number: number, method: PrMergeMethod) =>
+    mergePr(remoteUrl, tokens, number, method)
+  )
+  handleForRepo('hosting:mergedPrHeads', (remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
+    mergedPrHeads(remoteUrl, tokens, branches)
+  )
+  handleForRepo('hosting:ensureStack', (remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
+    ensureGithubStack(remoteUrl, tokens, numbers)
+  )
+  handleForRepo(
+    'hosting:updatePR',
+    (
+      remoteUrl: string,
+      tokens: { github?: string },
+      number: number,
+      patch: { base?: string; title?: string; stackSection?: string }
+    ) => updatePullRequest(remoteUrl, tokens, number, patch)
+  )
+  handleForRepo('hosting:listIssues', (remoteUrl: string, tokens: { github?: string }) =>
+    listIssues(remoteUrl, tokens)
+  )
+  handleForRepo('hosting:listMilestones', (remoteUrl: string, tokens: { github?: string }) =>
+    listMilestones(remoteUrl, tokens)
+  )
+  handleForRepo('hosting:milestoneIssues', (remoteUrl: string, tokens: { github?: string }, number: number) =>
+    milestoneIssues(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:issueDetail', (remoteUrl: string, tokens: { github?: string }, number: number) =>
     issueDetail(remoteUrl, tokens, number)
   )
-  ipcMain.handle(
+  handleForRepo(
     'hosting:setIssueState',
-    (_e, remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
+    (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
       setIssueState(remoteUrl, tokens, number, state)
   )
-  ipcMain.handle(
+  handleForRepo(
     'hosting:createIssue',
-    (_e, remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
+    (remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
       createIssue(remoteUrl, tokens, opts)
   )
-  ipcMain.handle(
+  handleForRepo(
     'hosting:applyPrMeta',
-    (_e, remoteUrl: string, tokens: { github?: string }, number: number, meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }) =>
-      applyPrMeta(remoteUrl, tokens, number, meta)
+    (
+      remoteUrl: string,
+      tokens: { github?: string },
+      number: number,
+      meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
+    ) => applyPrMeta(remoteUrl, tokens, number, meta)
   )
 }

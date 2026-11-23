@@ -88,7 +88,14 @@ export function BranchComparison({
     })
   }
 
-  const hasToken = !!(profile.githubToken || profile.azureToken || profile.gitlabToken || profile.bitbucketToken || profile.forgejoToken)
+  const hasToken = !!(
+    profile.githubToken ||
+    profile.azureToken ||
+    profile.gitlabToken ||
+    profile.bitbucketToken ||
+    profile.forgejoToken ||
+    profile.gitlabServers?.some((s) => !!s.token)
+  )
 
   return (
     <div className="bc-root">
