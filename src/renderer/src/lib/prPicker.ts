@@ -52,9 +52,23 @@ export function filterPicker(items: PickerItem[], query: string, picked: string[
   return [...starts, ...rest].slice(0, PICKER_ROWS)
 }
 
-/** A typed label to offer as new, for a host that takes free labels — never a duplicate of one picked or listed. */
-export function freeLabelCandidate(query: string, items: PickerItem[], picked: string[]): string | null {
+/** What was typed, as an entry: a person's login loses the `@` people write in front of one. */
+export function typedEntry(query: string, kind: 'label' | 'person' = 'label'): string {
   const v = query.trim()
+  return kind === 'person' ? v.replace(/^@+/, '').trim() : v
+}
+
+/**
+ * A typed label (or login) to offer as new, for a host that takes free
+ * entries — never a duplicate of one picked or listed.
+ */
+export function freeLabelCandidate(
+  query: string,
+  items: PickerItem[],
+  picked: string[],
+  kind: 'label' | 'person' = 'label'
+): string | null {
+  const v = typedEntry(query, kind)
   if (!v || v.includes(',')) return null
   const lower = v.toLowerCase()
   if (picked.some((p) => p.toLowerCase() === lower)) return null
@@ -72,6 +86,53 @@ export function freeEntry(options: PrPickerOptions | null, field: PrMetaField): 
   if (!options) return false
   if (field === 'labels') return !!options.freeLabels
   return !!options.freePeople && options.failed.includes(field)
+}
+
+/** The empty picks, one list per field. */
+export const NO_PICKS: Readonly<Record<PrMetaField, string[]>> = { reviewers: [], assignees: [], labels: [] }
+
+/** A field's rows, as the dialog draws them. */
+export function fieldItems(options: PrPickerOptions | null, field: PrMetaField): PickerItem[] {
+  if (!options) return []
+  return field === 'labels' ? options.labels.map(labelItem) : options[field].map(personItem)
+}
+
+/**
+ * The picks with what was typed but never confirmed with Enter, so Create does
+ * not silently drop it. Per shown field, the trimmed text becomes:
+ * - the listed row it names exactly (login or label, ignoring case) — on any field;
+ * - else itself, on a field that takes free entries (`freeEntry`);
+ * - else nothing: a field that only takes listed rows has nothing it could add,
+ *   and the text is cleared with the dialog rather than blocking Create.
+ */
+export function withPendingText(
+  options: PrPickerOptions | null,
+  picked: Record<PrMetaField, string[]>,
+  pending: Partial<Record<PrMetaField, string>>
+): Record<PrMetaField, string[]> {
+  const out: Record<PrMetaField, string[]> = { ...picked }
+  for (const f of shownFields(options)) {
+    const kind = f === 'labels' ? 'label' : 'person'
+    const v = typedEntry(pending[f] ?? '', kind)
+    if (!v) continue
+    const listed = fieldItems(options, f).find((i) => i.primary.toLowerCase() === v.toLowerCase())
+    const add = listed?.id ?? (freeEntry(options, f) ? freeLabelCandidate(v, [], picked[f], kind) : null)
+    if (add && !picked[f].includes(add)) out[f] = [...picked[f], add]
+  }
+  return out
+}
+
+/**
+ * Picks gathered under one account are never sent under another: when the
+ * picker key (profile + token fingerprint) changes while the dialog is open,
+ * the picks start over. `prevKey` null is the first load, which keeps them.
+ */
+export function picksForAccount(
+  prevKey: string | null,
+  nextKey: string,
+  picked: Record<PrMetaField, string[]>
+): Record<PrMetaField, string[]> {
+  return prevKey === null || prevKey === nextKey ? picked : { ...NO_PICKS }
 }
 
 /** What a key in the picker's field does. Pure, so the IME and closed-list cases are testable. */

@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 're
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useT, interp } from '../i18n'
-import { filterPicker, freeLabelCandidate, pickerKey, type PickerItem } from '../lib/prPicker'
+import { filterPicker, freeLabelCandidate, pickerKey, typedEntry, type PickerItem } from '../lib/prPicker'
 
 /**
  * A multi-select for the create-PR dialog: picked rows as removable chips,
@@ -10,6 +10,9 @@ import { filterPicker, freeLabelCandidate, pickerKey, type PickerItem } from '..
  * last chip, Escape to close the list without closing the dialog. The list is
  * drawn in a portal, as RefPicker's is, because the dialog scrolls and clips.
  * The key rules live in `pickerKey` (lib/prPicker.ts), where they are tested.
+ *
+ * The typed text is the dialog's (`text` / `onTextChange`), so Create can add
+ * what was typed but never confirmed with Enter (`withPendingText`).
  */
 export function PrMetaPicker({
   label,
@@ -19,7 +22,10 @@ export function PrMetaPicker({
   placeholder,
   failed,
   partial,
-  allowFree
+  allowFree,
+  people,
+  text,
+  onTextChange
 }: {
   label: string
   items: PickerItem[]
@@ -31,10 +37,14 @@ export function PrMetaPicker({
   partial?: boolean
   /** What was typed can be added as is — a label the host creates, or a login when the list failed. */
   allowFree?: boolean
+  /** A people field: a typed `@login` is taken as `login`. */
+  people?: boolean
+  text: string
+  onTextChange: (text: string) => void
 }): React.JSX.Element {
   const t = useT()
   const listId = useId()
-  const [text, setText] = useState('')
+  const setText = onTextChange
   const [open, setOpen] = useState(false)
   const [cursor, setCursor] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -43,8 +53,10 @@ export function PrMetaPicker({
   const [rect, setRect] = useState<{ left: number; top: number; width: number } | null>(null)
 
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items])
-  const shown = useMemo(() => filterPicker(items, text, value), [items, text, value])
-  const free = allowFree ? freeLabelCandidate(text, items, value) : null
+  // `@ana` finds `ana`: the `@` is how people write a login, not part of it.
+  const query = people ? typedEntry(text, 'person') : text
+  const shown = useMemo(() => filterPicker(items, query, value), [items, query, value])
+  const free = allowFree ? freeLabelCandidate(text, items, value, people ? 'person' : 'label') : null
   // The rows the cursor walks: the matches, then "Add “…”" for a free label.
   const rowCount = shown.length + (free ? 1 : 0)
 

@@ -7,7 +7,18 @@ import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
 import { PrMetaPicker } from './PrMetaPicker'
 import { useT, useUiLanguage, interp, type TranslationKey } from '../i18n'
-import { createPickerCache, freeEntry, labelItem, personItem, pickerCacheKey, picksToSend, shownFields } from '../lib/prPicker'
+import {
+  createPickerCache,
+  freeEntry,
+  labelItem,
+  NO_PICKS,
+  personItem,
+  pickerCacheKey,
+  picksForAccount,
+  picksToSend,
+  shownFields,
+  withPendingText
+} from '../lib/prPicker'
 import type { PrMetaField, PrPickerOptions } from '../../../shared/types'
 
 // Choices read once per repository + remote + account, and reused for a few
@@ -62,7 +73,9 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [draft, setDraft] = useState(false)
   const [busy, setBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
-  const [picked, setPicked] = useState<Record<PrMetaField, string[]>>({ reviewers: [], assignees: [], labels: [] })
+  const [picked, setPicked] = useState<Record<PrMetaField, string[]>>({ ...NO_PICKS })
+  // What each picker's field holds but was not confirmed with Enter — added on Create.
+  const [pending, setPending] = useState<Partial<Record<PrMetaField, string>>>({})
   const [meta, setMeta] = useState<PrPickerOptions | null>(null)
   const [metaState, setMetaState] = useState<'loading' | 'ready' | 'failed'>('loading')
   const aiEnabled = profile.ai?.enabled !== false
@@ -124,9 +137,19 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   // read lazily once the dialog is open. A failure only costs those fields.
   // Keyed by account too: another profile, or a new token, must not be served this one's lists.
   const cacheKey = pickerCacheKey(spec.repoPath, remoteUrl, [profile.id, boundProfileId], tokens)
+  const loadedKey = useRef<string | null>(null)
   useEffect(() => {
     if (!remoteUrl) return
     let cancelled = false
+    // Another account while open: its lists are reloaded and the picks start over —
+    // never send people or labels chosen from one account's lists under another.
+    const prev = loadedKey.current
+    loadedKey.current = cacheKey
+    if (prev !== null && prev !== cacheKey) {
+      setPicked((p) => picksForAccount(prev, cacheKey, p))
+      setPending({})
+      setMeta(null)
+    }
     setMetaState('loading')
     pickerCache
       .get(cacheKey, () => hostingApi.prPickerOptions(spec.repoPath, remoteUrl, tokens))
@@ -162,7 +185,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         source,
         target,
         draft,
-        ...picksToSend(meta, picked)
+        ...picksToSend(meta, withPendingText(meta, picked, pending))
       })
       closeModal()
       toast('success', interp(t('createPR.created'), { n: res.number }))
@@ -260,6 +283,9 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
                 failed={!!meta?.failed.includes(f)}
                 partial={!!meta?.partial?.includes(f)}
                 allowFree={freeEntry(meta, f)}
+                people={f !== 'labels'}
+                text={pending[f] ?? ''}
+                onTextChange={(text) => setPending((p) => ({ ...p, [f]: text }))}
               />
             </div>
           ))}
