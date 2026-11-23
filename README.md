@@ -19,14 +19,16 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 ---
 
 > [!WARNING]
-> **Honest disclaimer.** Git HuttBr is young. **GitHub** is the battle-tested path:
-> issues, milestones, notifications, inline CI and project fields are
-> GitHub-only. **GitLab** (gitlab.com) now gets the full PR detail screen too —
-> review, comment, approve and merge. Bitbucket and Azure DevOps can **list and
-> create** PRs/MRs, but their detail/review/merge screens are not built yet.
-> OpenAI and Anthropic each speak their own API; the remaining AI providers use
-> an OpenAI-compatible call shape and are unverified. If it breaks: well, **it
-> works on my machine**. PRs welcome. 💜
+> **Honest disclaimer.** Git HuttBr is young. **GitHub** is the battle-tested path,
+> and the only one with Projects fields. The pull request page — review, comment,
+> approve, merge — also works on **GitLab**, **Forgejo**, **Azure DevOps** and
+> **Bitbucket Data Center**; on bitbucket.org you can list and create pull requests,
+> but review still opens in the browser. Issues, milestones, releases and the
+> notifications inbox are GitHub and Forgejo only. **GitHub Enterprise Server,
+> self-managed GitLab and Bitbucket Data Center are beta**: tested against simulated
+> servers, not yet against real ones. OpenAI and Anthropic each speak their own
+> API; the remaining AI providers use an OpenAI-compatible call shape and are
+> unverified. If it breaks: well, **it works on my machine**. PRs welcome. 💜
 
 ## Install
 
@@ -68,7 +70,14 @@ git actually is.
 | **[Commit graph](docs/help/graph.md)** | Octopus merges drawn properly, windowed for huge histories, focus modes (linear, hide merged branches, solo), "new since last fetch" marks. |
 | **[Code search](docs/help/search.md)** (`⌘⇧F`) | `git grep` across the tree, or a history pickaxe. |
 | **[Blame & history](docs/help/blame.md)** | Per-file, with follow-the-line and "reblame before this commit". |
+| **[Diffs & previews](docs/help/diffs.md)** | Split or unified, word-level highlights, code that only moved marked as moved, image diffs. |
+| **[Semantic diff](docs/help/semantic-diff.md)** | What changed symbol by symbol — `startServer` → `bootServer` instead of a red/green wall, parsed with tree-sitter. |
+| **[What changed since](docs/help/range-diff.md)** | Someone force-pushed the branch you reviewed: `git range-diff` pairs the old and new commits, the old ones read from the reflog. |
 | **[Commit notes](docs/help/notes.md)** | Annotate a commit that is already pushed, without rewriting it. |
+| **[Signed commits](docs/help/signing.md)** | GPG, SSH or X.509 signing per repository, with a verification badge on every commit. |
+| **[Time machine](docs/help/time-machine.md)** | Drag a slider and watch the repository itself change, commit by commit — HEAD never moves. |
+| **[Timelapse](docs/help/timelapse.md)** | Replay the repository's whole life as an animation, and export it. |
+| **[Teammate radar](docs/help/teammate-radar.md)** | Who moved what upstream since the last fetch — and whether it lands on files you are editing right now. |
 | **[Insights](docs/help/insights.md)** | Commits/day, contributors, weekly churn, file hotspots. |
 
 ### Changing code
@@ -77,6 +86,9 @@ git actually is.
 |---|---|
 | **[Commit composer](docs/help/committing.md)** | Conventional, [Gitmoji](docs/help/committing.md#gitmoji) (all 75, searchable in your language), Gitmoji + Conventional with the emoji following the type, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. Other tools' `:sparkles:` subjects read as ✨ across the history views. |
 | **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines** — and the same precision to [unstage, discard, revert or apply](docs/help/staging.md#hunk-and-line-actions) one hunk or a few lines, each undoable. File-list headers split the count by modified / added / deleted. |
+| **[Stashes](docs/help/stashes.md)** | Stash only the files you tick, apply just some of a stash's files or one hunk, or turn a stash into a branch. |
+| **[Absorb](docs/help/absorb.md)** | Send each staged review fix to the unpushed commit that introduced the line — `fixup!` commits, folded in by an autosquash rebase if you want. |
+| **[Conflict radar](docs/help/conflict-radar.md)** | Which branches will conflict with a base *before* you merge any of them — merged inside the object database, nothing checked out. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[Xcode project merge](docs/help/conflicts.md)** | A `project.pbxproj` conflict merged by object identity instead of by line — and refused, by name, where a build setting genuinely diverged. |
 | **[Lockfile conflicts](docs/help/conflicts.md)** | `Podfile.lock`, `Package.resolved`, `yarn.lock` and friends: take a side, and the command that regenerates it, instead of merging a graph nobody solved. |
@@ -87,6 +99,7 @@ git actually is.
 | **[Drop a commit on a branch](docs/help/merging.md#drag-a-commit-onto-a-branch)** | Drag a commit from the graph onto a branch: cherry-pick it there, or move the branch to it — confirmed first, and undoable. |
 | **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains, edited as a route: a start branch and one stop per level, added, swapped, reordered or removed from typeaheads — then one click pushes every level and opens/retargets the chained PRs, registering them as a **native GitHub stack** where that exists and carrying stack navigation in every body where it does not. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
+| **[Changelog generator](docs/help/changelog.md)** | Conventional commits between two refs — latest tag → HEAD by default — grouped into a changelog, breaking changes first, ready to prepend to `CHANGELOG.md`. |
 | **[Merge options](docs/help/merge-options.md)** | `-X ours`, whitespace-blind merges, squash, `-s subtree` — and the commits behind a conflict. |
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — guided bisect, or hand the search to `git bisect run`, and one-click removal of the stale `.lock` file a crashed git left behind. |
 | **[Local CI](docs/help/local-ci.md)** | Run the repo's GitHub Actions on your machine with [act](https://nektosact.com) before pushing — including against a commit or range you're not on, via throwaway worktrees, with the run cost stated up front. |
@@ -97,11 +110,16 @@ git actually is.
 | **[Repository maintenance](docs/help/maintenance.md)** | Where the disk went — packed, loose, unreachable — and what gc, repack, prune or fsck would do about it. |
 | **[Remove untracked files](docs/help/clean.md)** | `git clean` as a dry run: every path sized, ignored files apart and unselected, Trash by default. |
 
+<div align="center">
+<img src="docs/screenshots/conflict-radar.webp" alt="Conflict radar: which branches will conflict with main, and the files they fight over" width="620" />
+</div>
+
 ### Many repositories, and your hosts
 
 | | |
 |---|---|
 | **[Repositories](docs/help/repositories.md)** | Every repository Git HuttBr has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. |
+| **[Mission control](docs/help/mission-control.md)** | Every repository of the workspace on one screen, worst first — blocked, then to sync, then dirty — with a fetch for just the stale ones. |
 | **[Clone many at once](docs/help/cloning.md#several-repositories-at-once)** | Tick several repositories in a host tab, or select all shown, and clone them into one folder — a few at a time, in a corner tray that keeps going after the dialog closes, each with its own cancel. |
 | **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. Switching is instant even next to a huge `node_modules`: the file watcher follows only what git tracks, and a bar under the toolbar shows while the repository you switched to catches up. |
 | **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. Browser-like tab sizing, opt-in auto-grouping of [worktrees](docs/help/worktrees.md#grouping-worktrees-in-the-header). [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
@@ -109,21 +127,35 @@ git actually is.
 | **[Pull or push any branch](docs/help/syncing.md)** | Catch a branch up or publish it from its right-click menu, without checking it out first. |
 | **[Push several branches at once](docs/help/syncing.md#pushing-several-branches-at-once)** | Tick the branches you want and push them all to one remote in a single push. Each branch shows whether it is ahead, new or diverged, the secret guard checks every branch, and nothing is ever forced. |
 | **[Untracked-branch repair](docs/help/syncing.md)** | A pull that stops on "no tracking information" offers the fix as a button — link the branch to its remote, or push it if the remote has never seen it. |
-| **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps, with [reviewers, assignees and labels](docs/help/hosting.md#reviewers-assignees-and-labels) picked from the host's own lists. Review on GitHub, GitLab, Forgejo and Azure DevOps in a [page of its own](docs/help/hosting.md#reviewing--github-and-gitlab), on the repository's tab or group chip: conversation, each file's diff, checks, an AI review of the host's diff, and a sidebar with reviewers and their decisions, labels, branches and size. A 👁 marks the ones [waiting for your review](docs/help/hosting.md#waiting-for-your-review). Each profile [links its own account](docs/help/hosting.md#tokens) — a token, or a login git's credential helper or the GitHub CLI already holds. |
+| **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket, Azure DevOps and Forgejo, with [reviewers, assignees and labels](docs/help/hosting.md#reviewers-assignees-and-labels) picked from the host's own lists where the host has them. Review on GitHub, GitLab, Forgejo, Azure DevOps and Bitbucket Data Center in a [page of its own](docs/help/hosting.md#reviewing--github-and-gitlab), on the repository's tab or group chip: conversation, each file's diff, checks, an AI review of the host's diff, and a sidebar with reviewers and their decisions, labels, branches and size. A 👁 marks the ones [waiting for your review](docs/help/hosting.md#waiting-for-your-review). Each profile [links its own account](docs/help/hosting.md#tokens) — a token, or a login git's credential helper or the GitHub CLI already holds. |
+| **[Preview a pull request](docs/help/pr-preview.md)** | Run someone else's pull request on your machine — forks included, on any host — without committing anything. |
+| **[Issues, milestones & notifications](docs/help/hosting.md#issues-milestones-releases--github-and-forgejo)** | On GitHub and Forgejo: issues with a *create a branch for this issue*, milestones, releases, and the [notifications inbox](docs/help/hosting.md#notifications--github-and-forgejo) behind the toolbar bell. |
 | **[Azure Pipelines checks and logs](docs/help/hosting.md#reviewing--github-and-gitlab)** | Build-validation policies appear alongside PR statuses. Read failed tasks or job logs from the Checks tab. |
 | **[Errors that explain themselves](docs/help/syncing.md#when-the-host-refuses)** | A push refused for a missing `workflow` scope, a 100 MB file, a protected branch or a missing credential says why and what to do, in your language — git's raw text one click away. |
+| **[A profile per repository](docs/help/profiles.md#per-repository-binding)** | Bind a repository to a profile, and every hosting action on it — fetch, push, the pull request pages, creating PRs, CI badges, issues — runs as that profile, whichever one is active. |
 | **[GitHub Enterprise Server](docs/help/hosting.md#github-enterprise-server)** *(beta)* | Add your company's self-hosted GitHub: pull requests, issues, checks, releases and push sign-in work there, each server with its own token that is never sent anywhere else. |
 | **[Self-managed GitLab](docs/help/hosting.md#self-managed-gitlab)** *(beta)* | Add your company's GitLab servers — as many as you work with — next to gitlab.com in one profile: merge requests, the clone browser and push sign-in work on each, and each server's token is only ever sent to that server. |
 | **[Bitbucket Data Center](docs/help/hosting.md#bitbucket-data-center)** *(beta)* | Your company's self-hosted Bitbucket: pull requests with review, comments, approve and merge (merge checks respected), build status in the graph, and push sign-in — each server with its own HTTP access token that is never sent anywhere else. |
 | **[Forgejo](docs/help/hosting.md#forgejo)** | Your own Forgejo or Gitea server, or Codeberg: push sign-in, open and create pull requests, clone and create repositories — the token only ever goes to that server. |
 | **[Azure Boards work items](docs/help/branching.md#a-branch-from-an-azure-boards-work-item)** | Start a branch from a work item's number, named from its type and title — and `AB#1234` in commits and pull requests links to the item. |
-| **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, [worktrees](docs/help/worktrees.md#looking-after-worktrees) (with what each one holds, lock, move and repair), submodules, LFS, sparse-checkout, patches, hooks. |
+| **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | [Tags](docs/help/tags.md) (lightweight, annotated or signed), [worktrees](docs/help/worktrees.md#looking-after-worktrees) (with what each one holds, lock, move and repair), [submodules](docs/help/worktrees.md#submodules), LFS, sparse-checkout, patches, [hooks and `.gitignore`](docs/help/hooks.md). |
 | **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |
 | **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. Launched from an editor's terminal, git never borrows that editor's sign-in window. |
 | **[Remote sign-in check](docs/help/credentials.md#which-account-a-push-uses)** | Right-click a remote: see the account and token scopes for each push destination, including separate push URLs. |
 | **[Environment check](docs/help/environment.md)** | Git version, LFS, the native terminal, git's credential helper, the GitHub CLI's `workflow` scope and the inotify limit — checked in one place, each fix a command to copy. |
 | **[SSH keys](docs/help/ssh-keys.md)** | See which key the agent is holding, generate one, test the host — the auth path tokens never covered. |
+
+<table>
+<tr>
+<td><img src="docs/screenshots/push-branches.webp" alt="Push several branches at once, each marked ahead, new or diverged" /></td>
+<td><img src="docs/screenshots/create-pr.webp" alt="Create a pull request with reviewers, assignees and labels" /></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/pull-request-page.webp" alt="A pull request on a page of its own: conversation, approve, merge, and a reviewer sidebar" /></td>
+<td><img src="docs/screenshots/mission-control.webp" alt="Mission control: every repository of the workspace, worst first" /></td>
+</tr>
+</table>
 
 ### AI, optional and grounded
 
@@ -153,6 +185,8 @@ you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.
 </div>
 
 [Themes](docs/help/themes.md) in light and dark, plus **AI-generated** ones ·
+[the interface in your language](docs/help/languages.md), picked by flag and its
+own name, with a mirrored layout for Arabic and Hebrew ·
 [screen-reader and keyboard accessibility](docs/help/accessibility.md) ·
 [rebindable shortcuts](docs/help/keyboard.md) ·
 [a native macOS menu bar](docs/help/menu-bar.md) that shows the keys you actually
@@ -186,7 +220,8 @@ you right-clicked, with [Xcode projects and other packages](docs/help/editor.md)
 treated as one item rather than a folder to dig through ·
 [**Problems**](docs/help/problems.md) — what your project's own analyzers
 (`tsc`, `dart analyze`, ESLint, Clippy, `go vet`, Ruff) say, in a dock at the
-bottom, with a toggle for "only the files I changed" ·
+bottom, with a toggle for "only the files I changed", and a
+[Tests](docs/help/problems.md#tests) tab that runs the suite and opens a failure at its line ·
 [**Code TODOs**](docs/help/code-todos.md) — every `TODO`, `FIXME` and `HACK` the
 source carries, in the same dock, grouped by tag, by folder, or by the owner in
 `TODO(cgm)` ·
@@ -211,6 +246,16 @@ encrypted with your **OS keychain** — and before it ever touches that keychain
 tells you what for and lets you say no; the app keeps working either way. Nothing
 is synced or phoned home. The only network calls are to your Git host and, if you
 turn it on, your AI provider. Details in [Security & secrets](docs/help/security.md).
+
+A few of the guards, each with its section in that page:
+
+| | |
+|---|---|
+| **[Tokens git never sees in plain sight](docs/help/security.md#a-profiles-token-while-git-runs)** | A profile's token reaches git through a private, per-operation endpoint — not `.git/config`, not the command line, not the environment every hook inherits. |
+| **[One token, one server](docs/help/hosting.md#github-enterprise-server)** | A github.com, Enterprise Server, GitLab or Data Center token is only ever sent to the server it was saved for. |
+| **[A keychain prompt you dismiss wipes nothing](docs/help/security.md#when-the-saved-tokens-cannot-be-read)** | Unreadable saved tokens are left untouched — retry, or start a new store with the old one kept as a backup. |
+| **[A damaged settings file is never overwritten](docs/help/security.md#the-settings-file)** | Settings are written atomically; a file that cannot be parsed stops the app with *Try again* or *move it aside*, instead of silently resetting to defaults. |
+| **[AppImage paths that outlive the app](docs/help/security.md#the-appimage-and-paths-that-outlive-it)** | The AppImage refuses to write its temporary mount path into the `gitcito` shim or a diff converter, and flags stale ones it finds. |
 
 Team sharing works the same way: [secure share](docs/help/secure-share.md) packs
 secrets, commit notes, and whole workspace layouts into one encrypted file a
