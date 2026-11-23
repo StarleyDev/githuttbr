@@ -369,9 +369,9 @@ describe('the clone dialog lists, clones and binds as the profile it picked', ()
  *  machine's credential manager cannot answer as another account. No token. */
 function expectAnonymous(env: NodeJS.ProcessEnv | null, url: string, ...absent: string[]): void {
   expect(env, url).not.toBeNull()
-  expect(env!.GIT_CONFIG_COUNT, url).toBe('1')
-  expect(env!.GIT_CONFIG_KEY_0, url).toBe(`credential.${new URL(url).origin}.helper`)
-  expect(env!.GIT_CONFIG_VALUE_0, url).toBe('')
+  // As `git -c` passes it — understood by git older than 2.31 too.
+  expect(env!.GIT_CONFIG_COUNT, url).toBeUndefined()
+  expect(env!.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.${new URL(url).origin}.helper='`), url).toBe(true)
   expect(env!.GIT_ASKPASS, url).toBe('')
   for (const s of absent) expect(JSON.stringify(env), url).not.toContain(s)
 }

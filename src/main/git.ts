@@ -1105,9 +1105,12 @@ async function profileCredentialEnv(
   // rule every remote follows (host, port and context path): a cloud host, or a
   // server a profile configures — whose token is filed under that base, so no
   // other server can be offered it. Anything else is left to git.
+  // A token sent with no provider named says nothing about whose it is, so it
+  // is never used: the picked (or active) profile's own credential is.
   if (!host) {
     host = await servedProviderOf(url)
     if (!host) return null
+    token = undefined
   }
   // The caller names the provider; the URL must really be on it.
   if (hostFromUrl(url) !== host) return null
