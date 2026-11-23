@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterAll } from 'vitest'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
@@ -106,8 +106,9 @@ describe('moving a damaged settings file aside', () => {
     writeFileSync(settingsFile(), '{"profiles": [')
     expect(await raw('settings:get')).toEqual({ error: 'parse' })
     const moved = (await raw('settings:moveAside')) as string
-    expect(moved).toMatch(/^gitcito-settings\.json\.corrupt-/)
-    expect(readFileSync(join(dir, moved), 'utf8')).toBe('{"profiles": [')
+    // The full path, so the boot screen can say where it went.
+    expect(moved.startsWith(join(realpathSync(dir), 'gitcito-settings.json.corrupt-'))).toBe(true)
+    expect(readFileSync(moved, 'utf8')).toBe('{"profiles": [')
     expect(existsSync(settingsFile())).toBe(false)
     expect(readdirSync(dir).some((f) => f.startsWith('gitcito-secrets.enc.corrupt-'))).toBe(true)
     const { settings, generation } = await reply('settings:get')

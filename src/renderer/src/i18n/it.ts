@@ -4183,6 +4183,7 @@ export const it: Dict = {
   'app.settingsRetry': 'Riprova',
   'app.settingsMoveAside': 'Sposta da parte il file danneggiato e ricomincia da zero',
   'app.settingsMoveAsideRefused': 'Il file danneggiato non è stato spostato: Gitcito non è riuscito prima a fare un backup dei token salvati (il file cifrato dei segreti), e spostare il file senza quel backup potrebbe farli perdere. Non è stato modificato nulla. Verifica che la cartella dei dati sia scrivibile — {dir} — e riprova.',
+  'app.settingsMovedAside': 'Il file delle impostazioni danneggiato è stato spostato in {path}',
   'settings.importReplaceNeedsKeychain': 'Sostituire tutte le credenziali salvate richiede il portachiavi di sistema, disattivato o non disponibile. Non è stato importato nulla.',
   'settings.importReplaceStoreUnreadable': 'Sostituire tutte le credenziali salvate richiede i token salvati, che Gitcito non è riuscito a leggere (vedi Impostazioni → Sicurezza). Non è stato importato nulla.',
   'settings.recentCleared': 'Repository recenti azzerati',

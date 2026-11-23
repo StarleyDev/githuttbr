@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron'
-import { basename, join } from 'path'
+import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, readdir, mkdir, realpath, rename, rm, stat } from 'fs/promises'
 import { copyPrivateFile, updatePrivateFile, writePrivateFile } from './privateFile'
@@ -146,14 +146,6 @@ function exclusive<T>(fn: () => Promise<T>): Promise<T> {
  */
 let secretCache: SecretStore | null = null
 
-/**
- * The cache holds tokens the encrypted file does not: a background read
- * installed it from a plaintext settings file without writing (see
- * `readWithSecrets`). The first save that can write the store does — a save
- * strips the settings file, and those tokens would otherwise be left in memory only.
- */
-let cacheUnwritten = false
-
 /** The stored tokens with a plaintext settings file's over them — the file wins, it is what the user last saved. */
 function plaintextMerged(stored: SecretStore, settings: AppSettings): SecretStore {
   const profiles = settings.profiles ?? []
@@ -275,7 +267,6 @@ async function saveSecrets(store: SecretStore): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   const enc = safeStorage.encryptString(JSON.stringify(store))
   await writePrivateFile(secretsPath(), enc.toString('base64'))
-  cacheUnwritten = false
   await retireBackups(store)
 }
 
@@ -582,29 +573,21 @@ async function readWithSecrets(
         // they are what the user last saved.
         const merged = plaintextMerged(stored, settings)
         if (mode === 'background') {
-          // Installed in memory only — a background reader never writes — so
-          // the next git or AI call does not decrypt again, and a peek sees
-          // the store unlocked. The move itself waits for a queued unlock.
-          setSecretCache(merged)
-          cacheUnwritten = true
-        } else {
-          // Rewrite the JSON without them.
-          await saveSecrets(merged)
-          if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
-          setSecretCache(merged)
+          // Answered from this view, for this call only: a background reader
+          // never writes, and installs nothing. A cache holding tokens the store
+          // does not would outlive a clear the user makes before the move —
+          // the renderer was never served the store, so its blank is no clear,
+          // and the token would come back. The move waits for a queued unlock;
+          // until then each such call decrypts again, and peeks stay locked.
+          const applied = mergeSecretStores(merged, sessionSecrets)
+          return { settings: withMigratedAI(applySecrets(settings, applied)), applied }
         }
-      } else {
-        setSecretCache(stored)
-      }
-    } else if (mode === 'queued') {
-      // Installed by a background read from a plaintext file (or a file an
-      // older build wrote tokens into since): the move into the store is this read's.
-      const { settings, raw } = await readStoredSettings(mode)
-      if (hasSettingsSecrets(settings) && (await canEncrypt())) {
-        const merged = plaintextMerged(secretCache, settings)
+        // Rewrite the JSON without them.
         await saveSecrets(merged)
         if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
         setSecretCache(merged)
+      } else {
+        setSecretCache(stored)
       }
     }
     // Tokens typed while the store was out of reach, and clears made while it
@@ -1093,7 +1076,7 @@ async function writeSettings(
       const next = over(secretCache)
       const changed = JSON.stringify(next) !== JSON.stringify(secretCache)
       // Clears still waiting for the store are written by the first save that can.
-      if (changed || pendingClears.size > 0 || cacheUnwritten) {
+      if (changed || pendingClears.size > 0) {
         if (await canEncrypt()) {
           await saveSecrets(next)
           setSecretCache(next)
@@ -1192,8 +1175,10 @@ async function moveSettingsAside(): Promise<MoveAsideReply> {
   }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   // A settings file symlinked into a dotfiles repository: the damaged file is
-  // the link's target, so that is what moves. The link stays, and the fresh
-  // start is written through it (`writePrivateFile`) instead of over it.
+  // the link's target, so that is what moves — beside the target, which is why
+  // the reply is the full path. The link is left dangling, and the first save
+  // replaces it with a regular file (`writePrivateFile` follows only a link
+  // whose target exists).
   const damaged = await realpath(settingsPath())
   const target = `${damaged}.corrupt-${stamp}`
   // The stored tokens belong to the profiles in that file; a fresh start prunes
@@ -1210,7 +1195,7 @@ async function moveSettingsAside(): Promise<MoveAsideReply> {
   }
   await rename(damaged, target)
   settingsBroken = false
-  return basename(target)
+  return target
 }
 
 // Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
@@ -1282,7 +1267,9 @@ function unserved(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined, ar
   const sender = senderOf(e)
   if (holdings.get(sender)?.generation !== arrival.generation) return
   const given = lastServed.get(sender)
-  const back = given && given.generation > (arrival.before?.generation ?? 0) ? given : arrival.before
+  // On a tie the reply wins: `arrive` stamps a newer generation onto the view
+  // held before it, so `before` at that generation may be an older reply's view.
+  const back = given && given.generation >= (arrival.before?.generation ?? 0) ? given : arrival.before
   if (back) holdings.set(sender, back)
   else holdings.delete(sender)
 }

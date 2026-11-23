@@ -17,7 +17,7 @@ vi.stubGlobal('window', {
 })
 
 const { settingsApi, SettingsLoadError, SettingsSaveRefused } = await import('../src/renderer/src/infrastructure/api')
-const { bootErrorKind, moveAsideRefusedDir } = await import('../src/renderer/src/components/BootError')
+const { bootErrorKind, moveAsideRefusedDir, movedAsidePath } = await import('../src/renderer/src/components/BootError')
 
 describe('settings errors across IPC', () => {
   it('a load error carries its kind; anything else is "other"', async () => {
@@ -42,8 +42,11 @@ describe('settings errors across IPC', () => {
   it('a move-aside refused for the token backup names the data folder; a move or a no-op retries', async () => {
     answers.moveAside = { refused: 'secrets-copy', dir: '/home/me/.config/Gitcito' }
     expect(moveAsideRefusedDir(await settingsApi.moveAside())).toBe('/home/me/.config/Gitcito')
-    answers.moveAside = 'gitcito-settings.json.corrupt-2026'
+    answers.moveAside = '/home/me/dotfiles/gitcito-settings.json.corrupt-2026'
     expect(moveAsideRefusedDir(await settingsApi.moveAside())).toBeNull()
+    expect(movedAsidePath(await settingsApi.moveAside())).toBe('/home/me/dotfiles/gitcito-settings.json.corrupt-2026')
+    expect(movedAsidePath({ refused: 'secrets-copy', dir: '/x' })).toBeNull()
+    expect(movedAsidePath(null)).toBeNull()
     answers.moveAside = null
     expect(moveAsideRefusedDir(await settingsApi.moveAside())).toBeNull()
     // The IPC call itself failed: nothing to explain, the retry tells what happened.

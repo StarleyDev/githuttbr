@@ -3,10 +3,10 @@ import { EventEmitter } from 'events'
 import {
   existsSync,
   lstatSync,
-  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync
@@ -18,8 +18,8 @@ import type { SecretStore } from '../src/shared/secrets'
 
 // The review of the v4.37.2 → 4.38 forward-merge: a failed or overtaken
 // settings reply that left a renderer's clears ignored, a consent question put
-// to a page that could not show it, background readers that stopped caching a
-// plaintext store, and a symlinked settings file moved aside. Real main-process
+// to a page that could not show it, background readers meeting a plaintext
+// settings file, and a symlinked settings file moved aside. Real main-process
 // handlers, the real renderer store wired to them, a fake keyring.
 
 const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-merge-'))
@@ -207,6 +207,59 @@ describe('a settings reply that failed or was overtaken', () => {
     const after = (await raw('settings:get')) as Reply
     expect(after.settings.profiles[0].githubToken).toBeFalsy()
   })
+
+  /**
+   * Request `a` is answered after request `b` has arrived, and `b` then fails:
+   * the renderer holds `a`'s reply, at the generation `b`'s arrival stamped
+   * onto the view it held before `a`. `a` reads the settings file `aReads`
+   * times, `b` arrives while its read number `at` is held up, and every read
+   * after `a`'s fails.
+   */
+  async function servedThenNewerFails(
+    a: 'settings:get' | 'settings:unlock',
+    b: 'settings:get' | 'settings:unlock',
+    aReads: number,
+    at: number
+  ): Promise<Reply> {
+    let reads = 0
+    seams.readFile = async (path) => {
+      if (path !== settingsFile()) return undefined
+      const n = ++reads
+      if (n === at) await tick(50)
+      if (n <= aReads) return undefined
+      await tick(200)
+      throw Object.assign(new Error('EIO: i/o error'), { code: 'EIO' })
+    }
+    const first = raw(a) as Promise<Reply>
+    await vi.waitFor(() => expect(reads).toBe(at))
+    const second = raw(b) as Promise<SettingsReplyWire>
+    const r = await first
+    await silenced(async () => expect(await second).toEqual({ error: 'io' }))
+    seams.readFile = null
+    return r
+  }
+
+  it('a plain get served, then a newer load failing: blanks from that reply clear nothing', async () => {
+    await fresh({ consent: 'granted' })
+    // Settings opened earlier: the renderer was shown the stored tokens.
+    await raw('settings:unlock')
+    const r = await servedThenNewerFails('settings:get', 'settings:unlock', 1, 1)
+    expect(r.settings.profiles[0].githubToken).toBeFalsy()
+    // The plain reply's blanks are not clears: it never showed those tokens.
+    await save({ ...r.settings, language: 'de' }, r.generation)
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_old', azureToken: 'az_old' })
+  })
+
+  it('an unlock served, then a newer load failing: a clear from that reply still counts', async () => {
+    await fresh({ consent: 'granted' })
+    await raw('settings:get')
+    // One read before the queue, two inside it: the get, arriving once it is inside, queues behind it.
+    const r = await servedThenNewerFails('settings:unlock', 'settings:get', 3, 2)
+    expect(r.settings.profiles[0].githubToken).toBe('ghp_old')
+    const cleared = { ...r.settings, profiles: r.settings.profiles.map((p) => ({ ...p, githubToken: undefined })) }
+    await save(cleared, r.generation)
+    expect(storeJson().p).toEqual({ azureToken: 'az_old' })
+  })
 })
 
 /** A window whose page can be loading, reloading, or past its boot spinner. */
@@ -265,54 +318,68 @@ describe('a background reader meeting plaintext tokens beside an encrypted store
   const snapshot = (): Record<string, string> =>
     Object.fromEntries(readdirSync(dir).sort().map((f) => [f, readFileSync(join(dir, f), 'utf8')]))
 
-  it('installs the store in memory, tells the windows, and writes nothing', async () => {
+  it('answers from the plaintext view for that call only: installs nothing, writes nothing', async () => {
     await fresh({ consent: 'granted', store: { p: { azureToken: 'az_old' } }, profile: { githubToken: 'ghp_plain' } })
     const { contents } = fakeWindow()
     const mod = await import('../src/main/settings')
     const before = snapshot()
     expect((await mod.activeProfileAuth('github')).token).toBe('ghp_plain')
-    expect(contents.send).toHaveBeenCalledWith('secrets:unlocked')
-    // A peek now reads the unlocked view, not "locked".
-    const peeked = await mod.peekActiveProfileAuth('github')
-    expect(peeked.locked).toBeUndefined()
-    expect(peeked.token).toBe('ghp_plain')
     expect((await mod.activeProfileAuth('azure')).token).toBe('az_old')
+    // Nothing installed: no unlock announced, and a peek at a stored-only token
+    // still reads "locked" until Settings is opened (the documented cost on
+    // such installs). The plaintext one is in the plain view a peek reads.
+    expect(contents.send).not.toHaveBeenCalledWith('secrets:unlocked')
+    expect((await mod.peekActiveProfileAuth('azure')).locked).toBe(true)
+    expect((await mod.peekActiveProfileAuth('github')).token).toBe('ghp_plain')
     expect(snapshot()).toEqual(before)
   })
 
-  it('a save without tokens after that keeps the plaintext ones, in the store', async () => {
+  it('a token cleared before the queued unlock does not come back', async () => {
+    await fresh({ consent: 'granted', store: { p: { azureToken: 'az_old' } }, profile: { githubToken: 'ghp_plain' } })
+    const mod = await import('../src/main/settings')
+    expect((await mod.activeProfileAuth('github')).token).toBe('ghp_plain')
+    await useSettingsStore.getState().load()
+    expect(useSettingsStore.getState().settings.profiles[0].githubToken).toBe('ghp_plain')
+    await clearGithubTokenInStore()
+    expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_plain')
+    await useSettingsStore.getState().load({ unlock: true })
+    expect(useSettingsStore.getState().settings.profiles[0].githubToken).toBeFalsy()
+    expect(storeJson().p).toEqual({ azureToken: 'az_old' })
+    expect((await mod.activeProfileAuth('github')).token).toBeFalsy()
+  })
+
+  it('the queued unlock still moves the plaintext tokens into the store', async () => {
     await fresh({ consent: 'granted', store: { p: { azureToken: 'az_old' } }, profile: { githubToken: 'ghp_plain' } })
     const mod = await import('../src/main/settings')
     await mod.activeProfileAuth('github')
-    const r = (await raw('settings:get')) as Reply
-    // A renderer that never held the plaintext token: its blank is no clear.
-    await save({ ...settingsWith(profileWith({ name: 'Mine' })), language: 'de' }, r.generation)
+    await useSettingsStore.getState().load({ unlock: true })
     expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_plain')
     expect(storeJson().p).toEqual({ azureToken: 'az_old', githubToken: 'ghp_plain' })
   })
 })
 
 describe('moving a symlinked damaged settings file aside', () => {
-  it('moves the target, keeps the link, and the fresh start is written through it', async () => {
+  it('moves the target and says where; the first save replaces the dangling link', async () => {
     await fresh({ consent: 'granted' })
     const dotfiles = mkdtempSync(join(tmpdir(), 'gitcito-dotfiles-'))
     try {
-      mkdirSync(dotfiles, { recursive: true })
-      const real = join(dotfiles, 'gitcito.json')
+      const real = join(realpathSync(dotfiles), 'gitcito.json')
       writeFileSync(real, '{"profiles": [')
       rmSync(settingsFile())
       symlinkSync(real, settingsFile())
       await silenced(async () => expect(await raw('settings:get')).toEqual({ error: 'parse' }))
-      const moved = await raw('settings:moveAside')
-      expect(typeof moved).toBe('string')
-      expect(lstatSync(settingsFile()).isSymbolicLink()).toBe(true)
+      const moved = (await raw('settings:moveAside')) as string
+      // Beside the target, not the link: the full path is what the boot screen shows.
+      expect(moved.startsWith(`${real}.corrupt-`)).toBe(true)
+      expect(readFileSync(moved, 'utf8')).toBe('{"profiles": [')
       expect(existsSync(real)).toBe(false)
-      expect(readdirSync(dotfiles).filter((f) => f.startsWith('gitcito.json.corrupt-'))).toEqual([moved])
-      // Fresh start: defaults, and the first save lands in the dotfiles copy.
+      // Fresh start: defaults, and the first save lands as a regular file in
+      // the data folder — a dangling link is not followed.
       const r = (await raw('settings:get')) as Reply
       await save({ ...r.settings, language: 'de' }, r.generation)
-      expect(lstatSync(settingsFile()).isSymbolicLink()).toBe(true)
-      expect(JSON.parse(readFileSync(real, 'utf8')).language).toBe('de')
+      expect(lstatSync(settingsFile()).isSymbolicLink()).toBe(false)
+      expect(JSON.parse(readFileSync(settingsFile(), 'utf8')).language).toBe('de')
+      expect(existsSync(real)).toBe(false)
     } finally {
       rmSync(dotfiles, { recursive: true, force: true })
     }

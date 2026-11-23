@@ -136,7 +136,10 @@ takes its saved tokens with it, whichever you choose.
 The settings file and the encrypted token store are written whole: to a new
 owner-only file beside them, then swapped in, so a crash or two saves at once
 never leave half a file. If the settings file is symlinked elsewhere (a
-dotfiles repository), the write goes to the link's target and the link stays.
+dotfiles repository), the write goes to the link's target and the link stays —
+as long as that target exists. A link pointing at nothing is replaced by a
+regular file instead: following it would fail every save whenever the target's
+folder is gone.
 
 Only two things write them: a save of your settings, and Gitcito loading them
 (at start-up, or when Settings opens) — which is when an old plaintext token is
@@ -145,6 +148,12 @@ cleaned. A lookup nobody asked for — a fetch resolving its token, an AI call
 finding its key, a profile picture — only reads, so it can never land on top of
 a save. A save is also refused until the settings have been loaded at least
 once: before that, the app holds only defaults.
+
+**The cost on an old install** that still has plaintext tokens in its settings
+file: until Settings is opened once (or the app restarts and loads them), each
+lookup that needs a token decrypts the store again, and profile pictures that
+need a stored token wait. Nothing is moved by a lookup, so a token you clear in
+the meantime stays cleared.
 
 One that exists but cannot be parsed (a hand edit gone wrong, a damaged disk)
 is **never** replaced by the defaults: Gitcito says the file is damaged and
@@ -157,9 +166,11 @@ You can fix `gitcito-settings.json` in its data folder and press
 **Try again**, or press **Move the damaged file aside and start fresh**: the file
 is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside
-it, and Gitcito starts as on a first run. A symlinked settings file is handled
-the same way as a write: the link's target is the file renamed, the link stays,
-and the fresh settings are written through it into your dotfiles. The copy is made first: if it cannot
+it, and Gitcito starts as on a first run, with a note saying where the file
+went. For a symlinked settings file it is the link's target that is renamed, so
+the damaged copy stays in your dotfiles; the link, now pointing at nothing, is
+replaced by a regular settings file on the first save — link it again by hand if
+you want the dotfiles copy back in use. The copy is made first: if it cannot
 be written, nothing is moved, and the screen says so and shows the data folder
 to check, since starting fresh without the copy would let the first token you
 save delete the old profiles' tokens. Fix what keeps the folder from being

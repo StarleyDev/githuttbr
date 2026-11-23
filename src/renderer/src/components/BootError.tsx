@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { interp, useT } from '../i18n'
 import { SettingsLoadError, settingsApi } from '../infrastructure/api'
+import { useUIStore } from '../stores/ui'
 import type { MoveAsideReply, SettingsErrorKind } from '../../../shared/types'
 
 /** What the boot screen should say for a failed settings load. */
@@ -14,6 +15,11 @@ export function bootErrorKind(err: unknown): SettingsErrorKind {
  */
 export function moveAsideRefusedDir(reply: MoveAsideReply | undefined): string | null {
   return reply && typeof reply === 'object' && reply.refused === 'secrets-copy' ? reply.dir : null
+}
+
+/** Where the damaged file went (beside a symlink's target, not the link), or null when it was not moved. */
+export function movedAsidePath(reply: MoveAsideReply | undefined): string | null {
+  return typeof reply === 'string' ? reply : null
 }
 
 /**
@@ -42,6 +48,9 @@ export function BootError({ kind, onRetry }: { kind: SettingsErrorKind; onRetry:
     // Nothing moved and the file is still damaged: a silent retry would only
     // bring this same screen back. Say why, and leave Try again to the user.
     if (dir !== null) return setRefusedDir(dir)
+    // Toasted, not shown here: the retry below replaces this screen with the app.
+    const moved = movedAsidePath(reply)
+    if (moved !== null) useUIStore.getState().toast('info', interp(t('app.settingsMovedAside'), { path: moved }))
     onRetry()
   }
 

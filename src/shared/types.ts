@@ -3484,7 +3484,8 @@ export type SettingsErrorKind = 'parse' | 'io' | 'other'
 export type SettingsRefusal = 'not-loaded' | 'keychain-required' | 'store-unreadable'
 
 /**
- * What `settings:moveAside` answers: the new name of the damaged file, null when
+ * What `settings:moveAside` answers: the full path the damaged file was moved to
+ * (beside a symlink's target, not the link), null when
  * it was not moved because it parses now (or cannot be read), or a refusal —
  * the encrypted tokens could not be copied aside first, so nothing was moved.
  */

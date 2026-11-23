@@ -4182,6 +4182,7 @@ export const fr: Dict = {
   'app.settingsRetry': 'Réessayer',
   'app.settingsMoveAside': 'Mettre le fichier endommagé de côté et repartir de zéro',
   'app.settingsMoveAsideRefused': 'Le fichier endommagé n’a pas été déplacé : Gitcito n’a pas pu sauvegarder d’abord vos jetons enregistrés (le fichier chiffré des secrets), et déplacer le fichier sans cette sauvegarde pourrait les faire perdre. Rien n’a été modifié. Vérifiez que le dossier de données est accessible en écriture — {dir} — puis réessayez.',
+  'app.settingsMovedAside': 'Le fichier de paramètres endommagé a été déplacé vers {path}',
   'settings.importReplaceNeedsKeychain': 'Remplacer tous les identifiants enregistrés nécessite le trousseau du système, désactivé ou indisponible. Rien n’a été importé.',
   'settings.importReplaceStoreUnreadable': 'Remplacer tous les identifiants enregistrés nécessite les jetons enregistrés, que Gitcito n’a pas pu lire (voir Réglages → Sécurité). Rien n’a été importé.',
   'settings.recentCleared': 'Dépôts récents effacés',

@@ -4174,6 +4174,7 @@ export const ja: Dict = {
   'app.settingsRetry': '再試行',
   'app.settingsMoveAside': '破損したファイルを退避して新しく始める',
   'app.settingsMoveAsideRefused': '破損したファイルは移動していません。保存済みのトークン（暗号化されたシークレットファイル）を先にバックアップできず、バックアップなしで移動するとトークンを失うおそれがあるためです。何も変更されていません。データフォルダー（{dir}）に書き込めることを確認してから、もう一度お試しください。',
+  'app.settingsMovedAside': '破損した設定ファイルを {path} に移動しました',
   'settings.importReplaceNeedsKeychain': '保存済みの認証情報をすべて置き換えるにはシステムのキーチェーンが必要ですが、オフまたは利用できません。何もインポートされていません。',
   'settings.importReplaceStoreUnreadable': '保存済みの認証情報をすべて置き換えるには保存済みのトークンが必要ですが、Gitcito はそれを読み取れませんでした（設定 → セキュリティを参照）。何もインポートされていません。',
   'settings.recentCleared': '最近使ったリポジトリを消去しました',

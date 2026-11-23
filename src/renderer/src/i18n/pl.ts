@@ -4234,6 +4234,7 @@ export const pl: Dict = {
   'app.settingsRetry': 'Spróbuj ponownie',
   'app.settingsMoveAside': 'Odłóż uszkodzony plik i zacznij od nowa',
   'app.settingsMoveAsideRefused': 'Uszkodzony plik nie został przeniesiony: Gitcito nie mógł najpierw wykonać kopii zapasowej zapisanych tokenów (zaszyfrowanego pliku sekretów), a przeniesienie pliku bez tej kopii mogłoby je utracić. Nic nie zostało zmienione. Sprawdź, czy do folderu danych można zapisywać — {dir} — i spróbuj ponownie.',
+  'app.settingsMovedAside': 'Uszkodzony plik ustawień przeniesiono do {path}',
   'settings.importReplaceNeedsKeychain': 'Zastąpienie wszystkich zapisanych poświadczeń wymaga systemowego pęku kluczy, który jest wyłączony lub niedostępny. Nic nie zaimportowano.',
   'settings.importReplaceStoreUnreadable': 'Zastąpienie wszystkich zapisanych poświadczeń wymaga zapisanych tokenów, których Gitcito nie mógł odczytać (zob. Ustawienia → Bezpieczeństwo). Nic nie zaimportowano.',
   'settings.recentCleared': 'Wyczyszczono listę ostatnich repozytoriów',

@@ -4241,6 +4241,7 @@ export const en = {
   'app.settingsRetry': 'Try again',
   'app.settingsMoveAside': 'Move the damaged file aside and start fresh',
   'app.settingsMoveAsideRefused': 'The damaged file was not moved: Gitcito could not first back up your saved tokens (the encrypted secrets file), and moving the file without that backup could lose them. Nothing was changed. Check that the data folder can be written to — {dir} — then try again.',
+  'app.settingsMovedAside': 'The damaged settings file was moved to {path}',
   'settings.importReplaceNeedsKeychain': 'Replacing all saved credentials needs the system keychain, which is off or unavailable. Nothing was imported.',
   'settings.importReplaceStoreUnreadable': 'Replacing all saved credentials needs the saved tokens, which Gitcito could not read (see Settings → Security). Nothing was imported.',
   'settings.recentCleared': 'Recent repositories cleared',
