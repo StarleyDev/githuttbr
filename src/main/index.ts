@@ -49,6 +49,7 @@ import { githubPublicGet } from './credentials'
 import { APP_RELEASES_API } from '../shared/appRepo'
 import { SHOT_RENDERER_FLAG } from '../shared/shotMode'
 import { initShotMode, isShotMode } from './shotMode'
+import { sandboxNotice } from './sandboxNotice'
 
 // First, before anything logs: a closed stdout/stderr must not crash main (see stdioGuard).
 guardStdio()
@@ -210,6 +211,10 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   app.setName(app.isPackaged ? 'Gitcito' : 'Gitcito Dev')
+
+  // An AppImage may have been started without the sandbox behind our back.
+  const unsandboxed = sandboxNotice(app.commandLine.hasSwitch('no-sandbox'))
+  if (unsandboxed) console.warn(unsandboxed)
 
   // Fills the self-managed GitLab / Forgejo registry before anything parses a
   // remote — the window does it again on settings:get, a CLI run never would.

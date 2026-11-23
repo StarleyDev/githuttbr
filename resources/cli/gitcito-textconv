@@ -6,19 +6,28 @@
 # plain text using Gitcito's own runtime, so document diffs work with no
 # pandoc/xlsx2csv/jq installed.
 #
-# Inside the packaged app this file lives at Contents/Resources/cli/, next to
-# app.asar and two levels below the executable. ELECTRON_RUN_AS_NODE turns
-# that executable into plain Node — no window, no second app instance, and
-# stdout flows back to git. In a source checkout it falls back to node and
-# the built output. It is NOT run from inside the app itself.
+# Inside the packaged app this file lives in resources/cli/, next to app.asar.
+# The build (scripts/after-pack.cjs) writes cli/app-binary: the app executable
+# relative to resources/ — ../gitcito on Linux, ../MacOS/<name> on macOS,
+# ../<name>.exe on Windows. ELECTRON_RUN_AS_NODE turns that executable into
+# plain Node — no window, no second app instance, and stdout flows back to git.
+# A packaged copy that cannot find it fails closed rather than run whatever
+# `node` is on PATH. Only a source checkout uses node and the built output.
+# It is NOT run from inside the app itself.
 
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+RES=$(CDPATH= cd -- "$DIR/.." && pwd)
 
-APP_BIN="$DIR/../../MacOS/Gitcito"
-ASAR_MAIN="$DIR/../app.asar/out/main/textconvCli.js"
-
-if [ -x "$APP_BIN" ] && [ -e "$DIR/../app.asar" ]; then
-  ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$ASAR_MAIN" "$@"
+if [ -e "$RES/app.asar" ] || [ -e "$DIR/app-binary" ]; then
+  rel=""
+  [ -r "$DIR/app-binary" ] && IFS= read -r rel < "$DIR/app-binary"
+  APP_BIN=""
+  [ -n "$rel" ] && APP_BIN="$RES/$rel"
+  if [ -z "$APP_BIN" ] || [ ! -f "$APP_BIN" ] || [ ! -x "$APP_BIN" ] || [ ! -e "$RES/app.asar" ]; then
+    echo "gitcito-textconv: this installation is incomplete (no app executable found from $RES) — reinstall Gitcito" >&2
+    exit 1
+  fi
+  ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$RES/app.asar/out/main/textconvCli.js" "$@"
 fi
 
 # Source checkout: resources/cli/ sits at the repo root, the build in out/.

@@ -877,6 +877,11 @@ export const ko: Dict = {
   'cmd.cliInstalled': 'gitcito 명령을 설치했습니다',
   'cmd.cliUninstalled': 'gitcito 명령을 제거했습니다',
   'cmd.cliFailed': 'gitcito 명령을 갱신하지 못했습니다',
+  'cmd.cliAppImage': "AppImage는 gitcito 명령을 설치할 수 없습니다. 앱이 실행 중일 때만 임시 폴더에 존재하기 때문입니다. 명령을 쓰려면 .deb 패키지를 설치하세요.",
+  'cmd.cliWindows': "gitcito 명령은 아직 Windows에 설치할 수 없습니다",
+  'cmd.cliStale': "PATH의 gitcito 명령이 다른 사용자가 가로챌 수 있는 AppImage 임시 폴더를 가리킵니다. 명령 팔레트에서 제거하세요.",
+  'cmd.cliRemoveStale': "오래된 gitcito 명령을 PATH에서 제거",
+  'cmd.cliStaleRemoved': "오래된 gitcito 명령을 제거했습니다",
 
   // 설정
   'settings.title': '설정',
@@ -1230,6 +1235,10 @@ export const ko: Dict = {
   'attrs.driverMissing': '변환기가 설치되지 않음',
   'attrs.needsBinary': 'PATH에 {binary} — 이 실행 파일이 필요합니다.',
   'attrs.bundledConverter': 'Gitcito에 포함되어 있어 설치할 것이 없습니다.',
+  'attrs.driverEphemeral': "AppImage 임시 폴더를 가리킴",
+  'attrs.driverEphemeralHint': "AppImage 버전 Gitcito가 이 변환기를 설정했습니다. /tmp 아래의 해당 폴더는 앱을 종료하면 사라지고, 이 컴퓨터의 다른 사용자가 그 경로에 프로그램을 두면 다음 git diff가 그것을 실행합니다. 제거하세요.",
+  'attrs.driverRemove': "제거",
+  'attrs.bundledAppImage': "AppImage에서는 사용할 수 없습니다. Gitcito의 변환기는 앱이 실행 중일 때만 존재합니다. 사용하려면 .deb 패키지를 설치하세요.",
   'attrs.filtersTitle': 'clean/smudge 필터',
   'attrs.filtersHint': '필터는 들어올 때(clean, 스테이징 시)와 나갈 때(smudge, 체크아웃 시) 파일 내용을 다시 씁니다 — git-lfs와 키 제거가 이 방식으로 동작합니다. 잘못된 필터는 작업 트리를 조용히 망가뜨리므로, Gitcito는 저장하기 전에 실제 파일로 드라이 런을 반드시 거치게 합니다.',
   'attrs.filterCleanPh': 'clean 명령 (stdin → stdout)',

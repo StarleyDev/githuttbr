@@ -43,6 +43,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # A signing cert without the notarization credentials is a half-configured
+      # release: electron-builder 26 only warns and ships a build that is signed
+      # but not notarized, which Gatekeeper still blocks. Fail before building.
+      # Only emptiness is tested — the values never reach the log.
+      - name: Check notarization credentials
+        if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          missing=''
+          [ -n "${APPLE_ID:-}" ] || missing="$missing APPLE_ID"
+          [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ] || missing="$missing APPLE_APP_SPECIFIC_PASSWORD"
+          [ -n "${APPLE_TEAM_ID:-}" ] || missing="$missing APPLE_TEAM_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::CSC_LINK is set but notarization secrets are empty:$missing"
+            exit 1
+          fi
+
       # electron-builder 24.13.3 created a temp keychain with a random
       # password, then called `security set-key-partition-list -k` with the
       # .p12 password instead (electron-builder#10066), which macos-26 rejects.

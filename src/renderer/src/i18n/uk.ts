@@ -877,6 +877,11 @@ export const uk: Dict = {
   'cmd.cliInstalled': 'Команду «gitcito» встановлено',
   'cmd.cliUninstalled': 'Команду «gitcito» прибрано',
   'cmd.cliFailed': 'Не вдалося оновити команду «gitcito»',
+  'cmd.cliAppImage': "AppImage не може встановити команду «gitcito»: застосунок існує в тимчасовій теці лише доки запущений. Встановіть пакет .deb, щоб отримати її.",
+  'cmd.cliWindows': "Команду «gitcito» поки не можна встановити у Windows",
+  'cmd.cliStale': "Команда «gitcito» у вашому PATH вказує в тимчасову теку AppImage, яку може захопити інший користувач. Видаліть її через палітру команд.",
+  'cmd.cliRemoveStale': "Видалити застарілу команду «gitcito» з PATH",
+  'cmd.cliStaleRemoved': "Застарілу команду «gitcito» видалено",
 
   // Налаштування
   'settings.title': 'Налаштування',
@@ -1230,6 +1235,10 @@ export const uk: Dict = {
   'attrs.driverMissing': 'конвертер не встановлено',
   'attrs.needsBinary': 'Потрібен {binary} у вашому PATH.',
   'attrs.bundledConverter': 'Постачається разом із Gitcito — нічого встановлювати не потрібно.',
+  'attrs.driverEphemeral': "вказує в тимчасову теку AppImage",
+  'attrs.driverEphemeralHint': "Цей конвертер налаштувала версія Gitcito у форматі AppImage. Її тека в /tmp зникає після виходу із застосунку, і будь-який інший користувач цього комп’ютера може покласти туди програму, яку запустить ваш наступний git diff. Видаліть його.",
+  'attrs.driverRemove': "Видалити",
+  'attrs.bundledAppImage': "Недоступно в AppImage: конвертер Gitcito існує, лише доки застосунок запущений. Встановіть пакет .deb, щоб ним користуватися.",
   'attrs.filtersTitle': 'Фільтри clean/smudge',
   'attrs.filtersHint': 'Фільтр переписує вміст файлу на вході (clean, під час індексування) і на виході (smudge, під час витягання файлів) — саме так працюють git-lfs і вирізання ключів. Хибний фільтр тихо псує робоче дерево, тож Gitcito вимагає пробний запуск на справжніх файлах, перш ніж щось зберегти.',
   'attrs.filterCleanPh': 'команда clean (stdin → stdout)',

@@ -32,16 +32,45 @@ while [ -L "$self" ]; do
   esac
 done
 DIR=$(CDPATH= cd -- "$(dirname -- "$self")" && pwd)
+RES=$(CDPATH= cd -- "$DIR/.." && pwd)
 
-APP_BIN="$DIR/../../MacOS/Gitcito"
-ASAR_MAIN="$DIR/../app.asar/out/main/cliEntry.js"
+# A variable meant for the headless half must never leak into a window launch.
+unset ELECTRON_RUN_AS_NODE
 
-# Run a terminal verb as plain Node. Packaged: the app binary with
-# ELECTRON_RUN_AS_NODE (no second instance, no window). Source checkout:
+# Packaged, cli/ sits next to app.asar, and the build (scripts/after-pack.cjs)
+# writes cli/app-binary: the app executable relative to that directory —
+# ../gitcito on Linux, ../MacOS/<name> on macOS, ../<name>.exe on Windows. A
+# packaged shim that cannot find it fails closed: falling back to whatever
+# `node` is first on PATH would run an interpreter the app never shipped.
+PACKAGED=0
+if [ -e "$RES/app.asar" ] || [ -e "$DIR/app-binary" ]; then
+  PACKAGED=1
+  rel=""
+  [ -r "$DIR/app-binary" ] && IFS= read -r rel < "$DIR/app-binary"
+  APP_BIN=""
+  [ -n "$rel" ] && APP_BIN="$RES/$rel"
+  if [ -z "$APP_BIN" ] || [ ! -f "$APP_BIN" ] || [ ! -x "$APP_BIN" ] || [ ! -e "$RES/app.asar" ]; then
+    echo "gitcito: this installation is incomplete (no app executable found from $RES) — reinstall Gitcito" >&2
+    exit 1
+  fi
+fi
+
+# Run an out/main entry as plain Node. Packaged: the app binary with
+# ELECTRON_RUN_AS_NODE (no second instance, no window). Source checkout only:
 # whatever `node` is on PATH, against the electron-vite build in out/.
+node_main() {
+  entry=$1
+  shift
+  if [ "$PACKAGED" = 1 ]; then
+    ELECTRON_RUN_AS_NODE=1 "$APP_BIN" "$RES/app.asar/out/main/$entry" "$@"
+  else
+    node "$DIR/../../out/main/$entry" "$@"
+  fi
+}
+
 headless() {
-  if [ -x "$APP_BIN" ] && [ -e "$DIR/../app.asar" ]; then
-    ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$ASAR_MAIN" "$@"
+  if [ "$PACKAGED" = 1 ]; then
+    ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$RES/app.asar/out/main/cliEntry.js" "$@"
   fi
   exec node "$DIR/../../out/main/cliEntry.js" "$@"
 }
@@ -143,13 +172,7 @@ fi
 # already knows by tab name. Resolved through the headless half, which is the
 # only side that can read the app's settings file.
 if [ "${by_name:-0}" = "1" ] && [ -n "$dir" ] && [ ! -d "$dir" ]; then
-  resolved=$(
-    if [ -x "$APP_BIN" ] && [ -e "$DIR/../app.asar" ]; then
-      ELECTRON_RUN_AS_NODE=1 "$APP_BIN" "$ASAR_MAIN" --resolve "$dir" 2>/dev/null
-    else
-      node "$DIR/../../out/main/cliEntry.js" --resolve "$dir" 2>/dev/null
-    fi
-  )
+  resolved=$(node_main cliEntry.js --resolve "$dir" 2>/dev/null)
   if [ -z "$resolved" ]; then
     echo "gitcito: no repository matching \"$dir\" — try 'gitcito repos'" >&2
     exit 1
@@ -198,12 +221,21 @@ launch_failed() {
 }
 
 if [ "$(uname -s)" = "Darwin" ]; then
-  open -n -a "Gitcito" --args "$@" || launch_failed
+  if [ "$PACKAGED" = 1 ]; then
+    # The very bundle this shim lives in (Contents/Resources/cli → *.app). By
+    # path, not by name: "Gitcito" stopped matching when the bundle became
+    # "Git HuttBr.app", and a name or bundle-id lookup may pick another copy.
+    APP_BUNDLE=$(CDPATH= cd -- "$RES/../.." && pwd)
+    open -n -a "$APP_BUNDLE" --args "$@" || launch_failed
+  else
+    # Source checkout: the installed app, by the appId in package.json.
+    open -n -b com.gitcito.desktop --args "$@" || launch_failed
+  fi
 else
   # Linux: no `open --args`. Launch the binary directly and detach — Electron's
   # own single-instance lock does the hand-off to a running window.
-  if [ -x "$DIR/../../gitcito" ]; then
-    "$DIR/../../gitcito" "$@" >/dev/null 2>&1 &
+  if [ "$PACKAGED" = 1 ]; then
+    "$APP_BIN" "$@" >/dev/null 2>&1 &
   elif command -v gitcito-app >/dev/null 2>&1; then
     gitcito-app "$@" >/dev/null 2>&1 &
   else

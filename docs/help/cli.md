@@ -32,6 +32,19 @@ asking for admin rights only if neither is writable by you. On Linux it goes to
 `~/.local/bin`, which needs no rights at all. Run the same command again to
 uninstall. Windows is not supported yet.
 
+**The AppImage cannot install it.** An AppImage lives in a folder under `/tmp`
+that exists only while the app runs and is renamed on every launch, so a link
+into it dangles once you quit — and any other user on the machine could
+recreate that folder with a script of their own for your next `gitcito` to run.
+The command palette says so instead of installing; the `.deb` package installs
+it properly. If an older AppImage build already put a link there, Gitcito warns
+at start-up and the palette offers **Remove the stale 'gitcito' command from
+PATH**.
+
+The shim runs the app's own executable as Node for the terminal verbs, and
+stops with an error if it cannot find that executable — it never falls back to
+whatever `node` happens to be on your `PATH`.
+
 Then, optionally:
 
 ```sh
