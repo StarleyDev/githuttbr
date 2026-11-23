@@ -183,7 +183,7 @@ import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileAuth, asProfileIdArg, isProfileId, namedProfileAuth, readSettings } from './settings'
-import { apiToken, providerOfHost } from './credentials'
+import { apiToken, providerOfRemote } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
 import {
   bitbucketServerBases,
@@ -1136,14 +1136,11 @@ export function abortAllClones(): void {
 
 /** Map a remote URL's hostname to the provider whose PAT can authenticate it. */
 export function hostFromUrl(url: string): RepoHost | undefined {
-  try {
-    // Exact host or a dotted subdomain of a known provider: `github.evil.com` or
-    // `notgithub.com` must never be offered the profile's token.
-    return providerOfHost(new URL(url).hostname)
-  } catch {
-    /* not a parseable URL (e.g. scp-style ssh) → no host */
-  }
-  return undefined
+  // Exact host or a dotted subdomain of a known provider: `github.evil.com` or
+  // `notgithub.com` must never be offered the profile's token. A configured
+  // server by its full base, so a Data Center beside a GitLab on one hostname
+  // is still the Data Center (`resolveRemoteProvider`).
+  return providerOfRemote(url)
 }
 
 /**

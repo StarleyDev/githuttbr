@@ -6,7 +6,6 @@ import { defaultSettings, type AccountLink, type AppSettings, type BitbucketServ
 import { validAccountLink } from '../shared/hostToken'
 import {
   profileForgejoBase,
-  instanceOf,
   tokenInstance,
   GITLAB_COM,
   gitlabAuthFor,
@@ -14,9 +13,10 @@ import {
   migrateGitlabSettings
 } from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
-import { GITHUB_COM, githubAuthFor, githubBaseOfRemote, githubEnterpriseBases } from '../shared/githubEnterprise'
-import { BITBUCKET_CLOUD, bitbucketAuthFor, bitbucketBaseOfRemote, bitbucketServerBases } from '../shared/bitbucketServer'
+import { GITHUB_COM, githubAuthFor, githubEnterpriseBases } from '../shared/githubEnterprise'
+import { BITBUCKET_CLOUD, bitbucketAuthFor, bitbucketServerBases } from '../shared/bitbucketServer'
 import { setKnownBitbucketServerInstances } from './bitbucketServerInstances'
+import { resolveRemoteProvider, type ResolvedRemote } from '../shared/remoteProvider'
 import {
   applySecrets,
   extractSecrets,
@@ -290,12 +290,20 @@ async function profileAuth(
   const id = profileId ?? plain.activeProfileId
   const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId !== undefined ? undefined : plain.profiles[0])
   if (!candidate) return {}
+  // Which provider and server the remote is on, decided once across every
+  // configured server list (`resolveRemoteProvider`). A remote that is another
+  // provider's — a Data Center beside a GitLab on the same hostname — or whose
+  // server cannot be told (ssh to a hostname two providers share) gets nothing.
+  const onRemote = remoteUrl ? remoteServerOf(remoteUrl, plain.profiles) : null
+  if (onRemote && onRemote.provider !== host) return {}
+  if (remoteUrl && host !== 'azure' && !onRemote?.base) return {}
+  const serverOfRemote = onRemote?.base
   // GitHub: github.com or one Enterprise Server, decided by the remote's host
   // (or the base a provider-level call names). Each gets only its own token.
   let githubBase: string | null = null
   if (host === 'github') {
-    githubBase = expectedBase ?? (remoteUrl ? githubBaseOfRemote(remoteUrl, githubEnterpriseBases(plain.profiles)) : GITHUB_COM)
-    if (!githubBase) return {}
+    githubBase = expectedBase ?? (remoteUrl ? (serverOfRemote ?? null) : GITHUB_COM)
+    if (!githubBase || (serverOfRemote && githubBase !== serverOfRemote)) return {}
     if (githubBase !== GITHUB_COM && !githubEnterpriseBases([candidate]).includes(githubBase)) return {}
   }
   // GitLab: gitlab.com or one of the profile's servers, decided by which known
@@ -304,7 +312,7 @@ async function profileAuth(
   // at the same host must not count as that host's GitLab.
   let gitlabBase: string | null = null
   if (host === 'gitlab') {
-    gitlabBase = remoteUrl ? gitlabBaseOfRemote(remoteUrl, plain.profiles) : (expectedBase ?? GITLAB_COM)
+    gitlabBase = remoteUrl ? (serverOfRemote ?? null) : (expectedBase ?? GITLAB_COM)
     if (!gitlabBase || (expectedBase && gitlabBase !== expectedBase)) return {}
     if (gitlabBase !== GITLAB_COM && !gitlabServerBases([candidate]).includes(gitlabBase)) return {}
   }
@@ -312,14 +320,14 @@ async function profileAuth(
   // host and context path, or the base a provider-level call names.
   let bitbucketBase: string | null = null
   if (host === 'bitbucket') {
-    bitbucketBase = expectedBase ?? (remoteUrl ? bitbucketBaseOfRemote(remoteUrl, bitbucketServerBases(plain.profiles)) : BITBUCKET_CLOUD)
-    if (!bitbucketBase) return {}
+    bitbucketBase = expectedBase ?? (remoteUrl ? (serverOfRemote ?? null) : BITBUCKET_CLOUD)
+    if (!bitbucketBase || (serverOfRemote && bitbucketBase !== serverOfRemote)) return {}
     if (bitbucketBase !== BITBUCKET_CLOUD && !bitbucketServerBases([candidate]).includes(bitbucketBase)) return {}
   }
   if (host === 'forgejo') {
     const base = tokenInstance(host, candidate.forgejoUrl)
     if (!base || (expectedBase && base !== expectedBase)) return {}
-    if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
+    if (remoteUrl && serverOfRemote !== base) return {}
   }
   // A peek never decrypts (see peekView).
   const view = peek ? await peekView() : 'unlocked'
@@ -349,10 +357,8 @@ function authFrom(
     const base = tokenInstance(host, profile.forgejoUrl)
     if (!base || (expectedBase && base !== expectedBase)) return null
     if (remoteUrl) {
-      const bases = [GITLAB_COM, ...gitlabServerBases(settings.profiles), ...settings.profiles.flatMap((p) =>
-        [profileForgejoBase(p.forgejoUrl)].filter((b): b is string => !!b)
-      )]
-      if (instanceOf(remoteUrl, bases)?.base !== base) return null
+      const on = remoteServerOf(remoteUrl, settings.profiles)
+      if (on?.provider !== 'forgejo' || on.base !== base) return null
     }
   }
   if (host === 'gitlab' && gitlabBase) {
@@ -381,14 +387,27 @@ function authFrom(
 }
 
 /**
+ * Which provider and server a remote is on, across every server the profiles
+ * configure — the same rule `parseRemoteUrl` and the git network calls use,
+ * here over the settings being read rather than the synchronous registries.
+ */
+function remoteServerOf(remoteUrl: string, profiles: AppSettings['profiles']): ResolvedRemote | null {
+  return resolveRemoteProvider(remoteUrl, {
+    gitlab: gitlabServerBases(profiles),
+    forgejo: profiles.map((p) => profileForgejoBase(p.forgejoUrl)).filter((b): b is string => !!b),
+    githubEnterprise: githubEnterpriseBases(profiles),
+    bitbucketServer: bitbucketServerBases(profiles)
+  })
+}
+
+/**
  * The GitLab whose credentials a remote may receive: gitlab.com, or a server
- * some profile names — null for any other host (or one that is a Forgejo's).
+ * some profile names — null for any other host, or one another provider's
+ * server claims (a Forgejo or a Data Center at the same hostname).
  */
 function gitlabBaseOfRemote(remoteUrl: string, profiles: AppSettings['profiles']): string | null {
-  const servers = gitlabServerBases(profiles)
-  const forgejo = profiles.map((p) => profileForgejoBase(p.forgejoUrl)).filter((b): b is string => !!b)
-  const hit = instanceOf(remoteUrl, [GITLAB_COM, ...servers, ...forgejo])?.base ?? null
-  return hit === GITLAB_COM || (hit && servers.includes(hit)) ? hit : null
+  const on = remoteServerOf(remoteUrl, profiles)
+  return on?.provider === 'gitlab' ? (on.base ?? null) : null
 }
 
 /** The active profile's PAT and link for a host. */

@@ -1,7 +1,8 @@
 import { execFile } from 'child_process'
-import { isKnownForgejoHost, isKnownGithubEnterpriseHost, isKnownGitlabHost } from './gitlabInstances'
+import { knownForgejoInstances, knownGithubEnterpriseInstances, knownGitlabInstances } from './gitlabInstances'
 import { GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
-import { isKnownBitbucketServerHost } from './bitbucketServerInstances'
+import { knownBitbucketServerInstances } from './bitbucketServerInstances'
+import { httpsFormOf, resolveRemoteProvider, type ResolvedRemote, type ServerRegistry } from '../shared/remoteProvider'
 import type { AccountLink, BitbucketServerTokenKind, RepoHost } from '../shared/types'
 import { isAccountLogin } from '../shared/hostToken'
 
@@ -310,26 +311,29 @@ export async function apiToken(remoteUrl: string, auth: HostAuth, opts: FillOpts
       ...(auth.tokenKind ? { gitTokenKind: auth.tokenKind } : {})
     }
   }
-  const host = hostOf(remoteUrl)
-  const isGithub = !!host && providerOfHost(host) === 'github'
+  // An scp remote (`git@github.com:o/r.git`) is asked about in its https form:
+  // `new URL` cannot read it, and git's helper and `gh` key a login by web host.
+  const url = httpsFormOf(remoteUrl) ?? remoteUrl
+  const host = hostOf(url)
+  const isGithub = !!host && providerOfRemote(remoteUrl) === 'github'
 
   if (auth.link) {
     if (auth.link.source === 'gh') {
       const token = isGithub ? await githubCliToken(host, auth.link.login) : null
       return token ? { token, source: 'gh', login: auth.link.login } : null
     }
-    const cred = await credentialFor(remoteUrl, { ...opts, username: auth.link.login })
+    const cred = await credentialFor(url, { ...opts, username: auth.link.login })
     return cred ? { token: cred.password, cred, source: 'git', login: cred.username || auth.link.login } : null
   }
 
   if (!opts.interactive) return null
-  const silent = await credentialFor(remoteUrl, { ...opts, interactive: false })
+  const silent = await credentialFor(url, { ...opts, interactive: false })
   if (silent) return { token: silent.password, cred: silent, source: 'git', login: silent.username }
   if (isGithub) {
     const gh = await githubCliToken(host)
     if (gh) return { token: gh, source: 'gh' }
   }
-  const cred = await credentialFor(remoteUrl, opts)
+  const cred = await credentialFor(url, opts)
   return cred ? { token: cred.password, cred, source: 'git', login: cred.username } : null
 }
 
@@ -466,20 +470,31 @@ export async function githubCliAuthStatus(): Promise<GitHubCliAuthStatus> {
   }
 }
 
-/** Provider a host name belongs to, for picking the right Authorization scheme. */
+/** Every server the profiles configure, as the synchronous registries hold them. */
+export function knownServers(): ServerRegistry {
+  return {
+    gitlab: knownGitlabInstances(),
+    forgejo: knownForgejoInstances(),
+    githubEnterprise: knownGithubEnterpriseInstances(),
+    bitbucketServer: knownBitbucketServerInstances()
+  }
+}
+
+/**
+ * Which provider and server a remote URL belongs to: `resolveRemoteProvider`
+ * over the configured servers. Being recognised only names the provider;
+ * which token the remote may receive is `profileAuth`'s decision.
+ */
+export function resolveRemote(url: string): ResolvedRemote | null {
+  return resolveRemoteProvider(url, knownServers())
+}
+
+/** The provider a remote URL belongs to, for picking the right Authorization scheme. */
+export function providerOfRemote(url: string): RepoHost | undefined {
+  return resolveRemote(url)?.provider
+}
+
+/** The provider of a bare `host[:port]`: a remote at its root, by the same rule. */
 export function providerOfHost(host: string): RepoHost | undefined {
-  const h = host.toLowerCase()
-  if (h === 'github.com' || h.endsWith('.github.com')) return 'github'
-  if (h === 'dev.azure.com' || h.endsWith('.visualstudio.com')) return 'azure'
-  if (h === 'gitlab.com' || h.endsWith('.gitlab.com')) return 'gitlab'
-  if (h === 'bitbucket.org' || h.endsWith('.bitbucket.org')) return 'bitbucket'
-  // A self-managed GitLab a profile points at. Being recognised only makes it
-  // GitLab; which token it may receive is `profileAuth`'s decision.
-  if (isKnownGitlabHost(h)) return 'gitlab'
-  if (isKnownForgejoHost(h)) return 'forgejo'
-  // A GitHub Enterprise Server a profile names — GitHub's API, its own host.
-  if (isKnownGithubEnterpriseHost(h)) return 'github'
-  // A Bitbucket Data Center a profile names: Bitbucket, flavoured by its base.
-  if (isKnownBitbucketServerHost(h)) return 'bitbucket'
-  return undefined
+  return providerOfRemote(`https://${host}/`)
 }
