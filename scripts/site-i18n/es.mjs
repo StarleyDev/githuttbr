@@ -12,7 +12,7 @@ export const es = {
   'foot.reportIssue': 'Informar de un problema',
   'foot.sponsor': 'Patrocinar',
 
-  'meta.title': 'Git HuttBr — todo git, con una interfaz que te lo muestra',
+  'meta.title': 'GitHuttBr — todo git, con una interfaz que te lo muestra',
   'meta.description':
     'Un cliente de Git enteramente vibe-coded. Gratis. Grafo, preparación línea a línea, rebase, worktrees, submódulos, LFS — y unas pocas cosas que no sabías que git podía hacer.',
 
@@ -22,11 +22,11 @@ export const es = {
   'hero.download': 'Descargar para tu plataforma',
   'hero.source': 'Ver el código',
   'hero.terms': 'Gratis · MIT · v{version}',
-  'hero.graphAlt': 'El grafo de commits de Git HuttBr',
+  'hero.graphAlt': 'El grafo de commits de GitHuttBr',
 
   'features.title': 'Unas pocas cosas que no sabías que git podía hacer',
   'features.sub':
-    'Ninguna de ellas es la razón para usar Git HuttBr — la razón es la lista de arriba. Existen porque git ya sabe la respuesta; Git HuttBr simplemente se la pregunta.',
+    'Ninguna de ellas es la razón para usar GitHuttBr — la razón es la lista de arriba. Existen porque git ya sabe la respuesta; GitHuttBr simplemente se la pregunta.',
 
   'ordinary.title': 'Lo que incluye',
   'ordinary.sub':
@@ -49,7 +49,7 @@ export const es = {
   'download.sub':
     'Última versión: <strong>v{version}</strong>. Cada build se publica desde CI.',
   'download.cli':
-    'O abre un repositorio desde tu terminal con <code>gitcito .</code> — mira <a href="{cli}">la línea de comandos</a>.',
+    'O abre un repositorio desde tu terminal con <code>githuttbr .</code> — mira <a href="{cli}">la línea de comandos</a>.',
   'download.macNote': 'Apple silicon &amp; Intel · firmado y notarizado',
   'download.winNote': 'Instalador (x64)',
   'download.linuxNote': 'AppImage · deb',
@@ -58,12 +58,12 @@ export const es = {
   'handbook.title': 'Un manual de {pages} páginas, dentro de la app',
   'handbook.sub': 'Cada función explicada — sin conexión en la app, y aquí mismo.',
 
-  'sponsor.title': 'Patrocina Git HuttBr',
+  'sponsor.title': 'Patrocina GitHuttBr',
   'sponsor.body':
     'Gratis, MIT, sin backend, sin telemetría, nada que colocarte — así que no hay nada que comprar. El patrocinio paga el certificado de Apple Developer que necesitan las builds firmadas de macOS, el manual y las traducciones. Un informe de error vale exactamente lo mismo.',
   'sponsor.cta': 'Patrocinar en GitHub',
 
-  'doc.titleSuffix': 'Manual de Git HuttBr',
+  'doc.titleSuffix': 'Manual de GitHuttBr',
   'doc.filter': 'Filtrar páginas…',
   'doc.filterLabel': 'Filtrar páginas',
   'doc.edit': 'Editar esta página en GitHub',
@@ -116,7 +116,7 @@ export const es = {
     'Sin backend. Los tokens y las entradas de la caja fuerte se cifran con el llavero de tu sistema — y nada toca ese llavero hasta que se te ha dicho para qué y has dicho que sí.',
   'feature.cli.title': 'Una GUI de Git con una CLI de verdad',
   'feature.cli.body':
-    '`gitcito .` abre un repositorio, `gitcito blame src/api.ts -l 84` lo abre en esa línea, y `gitcito doctor` no abre ninguna ventana: comprueba lo que el repositorio exige y sale con un código que tu CI puede leer.',
+    '`githuttbr .` abre un repositorio, `githuttbr blame src/api.ts -l 84` lo abre en esa línea, y `githuttbr doctor` no abre ninguna ventana: comprueba lo que el repositorio exige y sale con un código que tu CI puede leer.',
   'feature.hosting.title': 'Pull requests en cualquier servidor',
   'feature.hosting.body':
     'Crea, revisa y fusiona en GitHub, GitLab, Bitbucket, Azure DevOps y Forgejo — también en los servidores de tu empresa: GitHub Enterprise, GitLab y Bitbucket Data Center — con revisores, asignados y etiquetas elegidos del propio repositorio.'

@@ -12,7 +12,7 @@ export const ja = {
   'foot.reportIssue': '問題を報告',
   'foot.sponsor': 'スポンサー',
 
-  'meta.title': 'Git HuttBr — git のすべてを見せる UI',
+  'meta.title': 'GitHuttBr — git のすべてを見せる UI',
   'meta.description':
     '完全に vibe-coded な Git クライアント。無料。グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS — さらに、git にできるとは知らなかったことをいくつか。',
 
@@ -22,11 +22,11 @@ export const ja = {
   'hero.download': 'お使いのプラットフォーム用をダウンロード',
   'hero.source': 'ソースを見る',
   'hero.terms': '無料 · MIT · v{version}',
-  'hero.graphAlt': 'Git HuttBr のコミットグラフ',
+  'hero.graphAlt': 'GitHuttBr のコミットグラフ',
 
   'features.title': 'git にできるとは知らなかったことを、いくつか',
   'features.sub':
-    'どれも Git HuttBr を使う理由ではありません — 理由は上のリストです。これらがあるのは、git がすでに答えを知っているから。Git HuttBr はただ、それを訊くだけです。',
+    'どれも GitHuttBr を使う理由ではありません — 理由は上のリストです。これらがあるのは、git がすでに答えを知っているから。GitHuttBr はただ、それを訊くだけです。',
 
   'ordinary.title': '手に入るもの',
   'ordinary.sub':
@@ -50,7 +50,7 @@ export const ja = {
   'download.sub':
     '最新リリースは <strong>v{version}</strong> です。すべてのビルドは CI から公開されます。',
   'download.cli':
-    'または <code>gitcito .</code> でターミナルからリポジトリを開けます — <a href="{cli}">コマンドライン</a>を参照してください。',
+    'または <code>githuttbr .</code> でターミナルからリポジトリを開けます — <a href="{cli}">コマンドライン</a>を参照してください。',
   'download.macNote': 'Apple silicon &amp; Intel · 署名と公証済み',
   'download.winNote': 'インストーラー（x64）',
   'download.linuxNote': 'AppImage · deb',
@@ -59,12 +59,12 @@ export const ja = {
   'handbook.title': '{pages} ページのハンドブックを、アプリに内蔵',
   'handbook.sub': 'すべての機能に解説を — アプリの中でオフラインでも、そしてこの場でも。',
 
-  'sponsor.title': 'Git HuttBr をスポンサーする',
+  'sponsor.title': 'GitHuttBr をスポンサーする',
   'sponsor.body':
     '無料、MIT、バックエンドなし、テレメトリなし、売りつけるものもなし — つまり買うものは何もありません。スポンサーは、署名済み macOS ビルドに必要な Apple Developer 証明書と、ハンドブックと翻訳の費用になります。バグ報告にも同じだけの価値があります。',
   'sponsor.cta': 'GitHub でスポンサーする',
 
-  'doc.titleSuffix': 'Git HuttBr ハンドブック',
+  'doc.titleSuffix': 'GitHuttBr ハンドブック',
   'doc.filter': 'ページを絞り込む…',
   'doc.filterLabel': 'ページを絞り込む',
   'doc.edit': 'このページを GitHub で編集',
@@ -117,7 +117,7 @@ export const ja = {
     'バックエンドはありません。トークンと金庫のエントリーは OS のキーチェーンで暗号化されます — そして何のためかを伝えられ、あなたが承諾するまで、そのキーチェーンには何も触れません。',
   'feature.cli.title': '本物の CLI を備えた Git GUI',
   'feature.cli.body':
-    '`gitcito .` はリポジトリを開き、`gitcito blame src/api.ts -l 84` はその行で開きます。`gitcito doctor` はウィンドウをまったく開かず、リポジトリの要件を検査して CI が読める終了コードを返します。',
+    '`githuttbr .` はリポジトリを開き、`githuttbr blame src/api.ts -l 84` はその行で開きます。`githuttbr doctor` はウィンドウをまったく開かず、リポジトリの要件を検査して CI が読める終了コードを返します。',
   'feature.hosting.title': 'どのサーバーでもプルリクエスト',
   'feature.hosting.body':
     'GitHub、GitLab、Bitbucket、Azure DevOps、Forgejo で作成・レビュー・マージ。社内の GitHub Enterprise、GitLab、Bitbucket Data Center サーバーにも対応し、レビュアー・担当者・ラベルはリポジトリから選べます。'

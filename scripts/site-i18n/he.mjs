@@ -12,7 +12,7 @@ export const he = {
   'foot.reportIssue': 'דיווח על תקלה',
   'foot.sponsor': 'חסות',
 
-  'meta.title': 'Git HuttBr — כל מה שיש ב־git, עם ממשק שמראה לכם אותו',
+  'meta.title': 'GitHuttBr — כל מה שיש ב־git, עם ממשק שמראה לכם אותו',
   'meta.description':
     'לקוח Git שנכתב כולו בסגנון vibe coding. חינם. גרף קומיטים, סטייג׳ עד רמת השורה, ריבייס, עצי עבודה, תת־מודולים, LFS — ועוד כמה דברים שלא ידעתם ש־git מסוגל להם.',
 
@@ -22,11 +22,11 @@ export const he = {
   'hero.download': 'הורדה לפלטפורמה שלכם',
   'hero.source': 'צפייה בקוד',
   'hero.terms': 'חינם · MIT · v{version}',
-  'hero.graphAlt': 'גרף הקומיטים של Git HuttBr',
+  'hero.graphAlt': 'גרף הקומיטים של GitHuttBr',
 
   'features.title': 'כמה דברים שלא ידעתם ש־git מסוגל להם',
   'features.sub':
-    'אף אחד מהם אינו הסיבה להשתמש ב־Git HuttBr — הרשימה שלמעלה היא הסיבה. הם קיימים כי git כבר יודע את התשובה; Git HuttBr פשוט שואל.',
+    'אף אחד מהם אינו הסיבה להשתמש ב־GitHuttBr — הרשימה שלמעלה היא הסיבה. הם קיימים כי git כבר יודע את התשובה; GitHuttBr פשוט שואל.',
 
   'ordinary.title': 'מה אתם מקבלים',
   'ordinary.sub':
@@ -48,7 +48,7 @@ export const he = {
   'download.title': 'הורדה',
   'download.sub': 'הגרסה האחרונה: <strong>v{version}</strong>. כל בנייה מתפרסמת מתוך CI.',
   'download.cli':
-    'או פתחו מאגר מהטרמינל עם <code>gitcito .</code> — ראו <a href="{cli}">שורת הפקודה</a>.',
+    'או פתחו מאגר מהטרמינל עם <code>githuttbr .</code> — ראו <a href="{cli}">שורת הפקודה</a>.',
   'download.macNote': 'מעבדי Apple &amp; Intel · חתום ומאושר נוטריונית',
   'download.winNote': 'מתקין (x64)',
   'download.linuxNote': 'AppImage · deb',
@@ -57,12 +57,12 @@ export const he = {
   'handbook.title': 'מדריך בן {pages} עמודים, מובנה בתוך האפליקציה',
   'handbook.sub': 'כל יכולת מוסברת — בלי חיבור לרשת בתוך האפליקציה, וגם כאן.',
 
-  'sponsor.title': 'תמכו ב־Git HuttBr',
+  'sponsor.title': 'תמכו ב־GitHuttBr',
   'sponsor.body':
     'חינם, ברישיון MIT, בלי שרת אחורי, בלי טלמטריה, בלי שום דבר למכור לכם — ולכן גם אין כאן מה לקנות. התמיכה מממנת את תעודת Apple Developer שהבניות החתומות ל־macOS זקוקות לה, את המדריך ואת התרגומים. דיווח על באג שווה בדיוק אותו הדבר.',
   'sponsor.cta': 'תמיכה דרך GitHub',
 
-  'doc.titleSuffix': 'המדריך של Git HuttBr',
+  'doc.titleSuffix': 'המדריך של GitHuttBr',
   'doc.filter': 'סינון עמודים…',
   'doc.filterLabel': 'סינון עמודים',
   'doc.edit': 'עריכת העמוד הזה ב־GitHub',
@@ -115,7 +115,7 @@ export const he = {
     'בלי שרת אחורי. טוקנים ורשומות בכספת מוצפנים במחזיק המפתחות של מערכת ההפעלה — ושום דבר לא נוגע במחזיק הזה לפני שאמרו לכם בשביל מה ואישרתם.',
   'feature.cli.title': 'ממשק גרפי ל-Git עם CLI אמיתי',
   'feature.cli.body':
-    '\u200f`gitcito .` פותח מאגר, \u200f`gitcito blame src/api.ts -l 84` פותח אותו בדיוק באותה שורה, ו-`gitcito doctor` אינו פותח חלון כלל — הוא בודק מה המאגר דורש ומסיים בקוד יציאה שה-CI שלך יודע לקרוא.',
+    '\u200f`githuttbr .` פותח מאגר, \u200f`githuttbr blame src/api.ts -l 84` פותח אותו בדיוק באותה שורה, ו-`githuttbr doctor` אינו פותח חלון כלל — הוא בודק מה המאגר דורש ומסיים בקוד יציאה שה-CI שלך יודע לקרוא.',
   'feature.hosting.title': 'בקשות מיזוג בכל שרת',
   'feature.hosting.body':
     'צרו, סקרו ומזגו ב-GitHub, ‏GitLab, ‏Bitbucket, ‏Azure DevOps ו-Forgejo — וגם בשרתים של החברה שלכם: GitHub Enterprise, ‏GitLab ו-Bitbucket Data Center — עם סוקרים, אחראים ותוויות שנבחרים מתוך המאגר.'

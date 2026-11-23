@@ -12,7 +12,7 @@ export const ar = {
   'foot.reportIssue': 'الإبلاغ عن مشكلة',
   'foot.sponsor': 'الرعاية',
 
-  'meta.title': 'Git HuttBr — كل ما في git، مع واجهة تُظهره لك',
+  'meta.title': 'GitHuttBr — كل ما في git، مع واجهة تُظهره لك',
   'meta.description':
     'عميل Git مكتوب بالكامل بأسلوب vibe coding. مجاني. رسم الالتزامات، والتحضير سطرًا سطرًا، وإعادة الأساس، وأشجار العمل، والوحدات الفرعية، وLFS — إضافة إلى أمور قليلة لم تكن تعلم أن git قادر عليها.',
 
@@ -22,11 +22,11 @@ export const ar = {
   'hero.download': 'نزّله لمنصّتك',
   'hero.source': 'عرض الشيفرة',
   'hero.terms': 'مجاني · MIT · v{version}',
-  'hero.graphAlt': 'رسم الالتزامات في Git HuttBr',
+  'hero.graphAlt': 'رسم الالتزامات في GitHuttBr',
 
   'features.title': 'أمور قليلة لم تكن تعلم أن git قادر عليها',
   'features.sub':
-    'لا شيء من هذه هو سبب استخدام Git HuttBr — القائمة أعلاه هي السبب. وهي موجودة لأن git يعرف الجواب أصلًا؛ وGit HuttBr يسأله فحسب.',
+    'لا شيء من هذه هو سبب استخدام GitHuttBr — القائمة أعلاه هي السبب. وهي موجودة لأن git يعرف الجواب أصلًا؛ وGitHuttBr يسأله فحسب.',
 
   'ordinary.title': 'ما الذي تحصل عليه',
   'ordinary.sub':
@@ -48,7 +48,7 @@ export const ar = {
   'download.title': 'التنزيل',
   'download.sub': 'أحدث إصدار: <strong>v{version}</strong>. وكل بناء يُنشر من CI.',
   'download.cli':
-    'أو افتح مستودعًا من طرفيتك بالأمر <code>gitcito .</code> — انظر <a href="{cli}">سطر الأوامر</a>.',
+    'أو افتح مستودعًا من طرفيتك بالأمر <code>githuttbr .</code> — انظر <a href="{cli}">سطر الأوامر</a>.',
   'download.macNote': 'معالجات Apple &amp; Intel · موقّع وموثّق',
   'download.winNote': 'مثبّت (x64)',
   'download.linuxNote': 'AppImage · deb',
@@ -57,12 +57,12 @@ export const ar = {
   'handbook.title': 'دليل من {pages} صفحة، مدمج في التطبيق',
   'handbook.sub': 'كل ميزة مشروحة — دون اتصال داخل التطبيق، وهنا أيضًا.',
 
-  'sponsor.title': 'ارعَ Git HuttBr',
+  'sponsor.title': 'ارعَ GitHuttBr',
   'sponsor.body':
     'مجاني، برخصة MIT، بلا خادم خلفي، وبلا تتبّع، وبلا شيء يُباع لك إضافيًا — فلا شيء هنا لتشتريه. الرعاية تدفع ثمن شهادة Apple Developer التي تحتاجها بنى macOS الموقّعة، وثمن الدليل والترجمات. وبلاغات العلل لا تقل عن ذلك قيمة.',
   'sponsor.cta': 'الرعاية عبر GitHub',
 
-  'doc.titleSuffix': 'دليل Git HuttBr',
+  'doc.titleSuffix': 'دليل GitHuttBr',
   'doc.filter': 'تصفية الصفحات…',
   'doc.filterLabel': 'تصفية الصفحات',
   'doc.edit': 'حرّر هذه الصفحة على GitHub',
@@ -115,7 +115,7 @@ export const ar = {
     'بلا خادم خلفي. تُشفَّر الرموز ومدخلات الخزنة بسلسلة مفاتيح نظامك — ولا شيء يمسّ تلك السلسلة قبل أن تُخبَر بالسبب وتوافق.',
   'feature.cli.title': 'واجهة Git رسومية بسطر أوامر حقيقي',
   'feature.cli.body':
-    'الأمر `gitcito .` يفتح المستودع، و`gitcito blame src/api.ts -l 84` يفتحه عند ذلك السطر تحديدًا، أما `gitcito doctor` فلا يفتح نافذة إطلاقًا: يفحص ما يشترطه المستودع ويخرج برمز تقرؤه أدوات التكامل المستمر لديك.',
+    'الأمر `githuttbr .` يفتح المستودع، و`githuttbr blame src/api.ts -l 84` يفتحه عند ذلك السطر تحديدًا، أما `githuttbr doctor` فلا يفتح نافذة إطلاقًا: يفحص ما يشترطه المستودع ويخرج برمز تقرؤه أدوات التكامل المستمر لديك.',
   'feature.hosting.title': 'طلبات الدمج على أي خادم',
   'feature.hosting.body':
     'أنشئ طلبات الدمج وراجعها وادمجها على GitHub وGitLab وBitbucket وAzure DevOps وForgejo — وعلى خوادم شركتك أيضًا: GitHub Enterprise وGitLab وBitbucket Data Center — مع اختيار المراجعين والمكلّفين والتسميات من المستودع نفسه.'

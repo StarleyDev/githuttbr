@@ -12,7 +12,7 @@ export const uk = {
   'foot.reportIssue': 'Повідомити про проблему',
   'foot.sponsor': 'Підтримати',
 
-  'meta.title': 'Git HuttBr — увесь git, з інтерфейсом, який його показує',
+  'meta.title': 'GitHuttBr — увесь git, з інтерфейсом, який його показує',
   'meta.description':
     'Git-клієнт, повністю створений у vibe-coding. Безкоштовний. Граф, індексація по рядках, ребейз, робочі дерева, підмодулі, LFS — плюс кілька речей, яких ви від git не чекали.',
 
@@ -22,11 +22,11 @@ export const uk = {
   'hero.download': 'Завантажити для вашої платформи',
   'hero.source': 'Переглянути код',
   'hero.terms': 'Безкоштовно · MIT · v{version}',
-  'hero.graphAlt': 'Граф комітів Git HuttBr',
+  'hero.graphAlt': 'Граф комітів GitHuttBr',
 
   'features.title': 'Кілька речей, яких ви від git не чекали',
   'features.sub':
-    'Жодна з них не є причиною користуватися Git HuttBr — причина у списку вище. Вони існують тому, що git уже знає відповідь; Git HuttBr просто запитує.',
+    'Жодна з них не є причиною користуватися GitHuttBr — причина у списку вище. Вони існують тому, що git уже знає відповідь; GitHuttBr просто запитує.',
 
   'ordinary.title': 'Що ви отримуєте',
   'ordinary.sub':
@@ -49,7 +49,7 @@ export const uk = {
   'download.title': 'Завантаження',
   'download.sub': 'Останній випуск: <strong>v{version}</strong>. Кожну збірку публікує CI.',
   'download.cli':
-    'Або відкрийте репозиторій із термінала командою <code>gitcito .</code> — див. <a href="{cli}">командний рядок</a>.',
+    'Або відкрийте репозиторій із термінала командою <code>githuttbr .</code> — див. <a href="{cli}">командний рядок</a>.',
   'download.macNote': 'Apple silicon &amp; Intel · підписано й нотаризовано',
   'download.winNote': 'Інсталятор (x64)',
   'download.linuxNote': 'AppImage · deb',
@@ -58,12 +58,12 @@ export const uk = {
   'handbook.title': 'Довідник на {pages} сторінок, вбудований у застосунок',
   'handbook.sub': 'Кожна можливість із поясненням — офлайн у застосунку і просто тут.',
 
-  'sponsor.title': 'Підтримати Git HuttBr',
+  'sponsor.title': 'Підтримати GitHuttBr',
   'sponsor.body':
     'Безкоштовний, MIT, без бекенду, без телеметрії, без нічого на продаж — тож купувати нема чого. Спонсорство оплачує сертифікат Apple Developer, потрібний підписаним збіркам для macOS, довідник і переклади. Звіти про помилки варті рівно стільки ж.',
   'sponsor.cta': 'Підтримати на GitHub',
 
-  'doc.titleSuffix': 'Довідник Git HuttBr',
+  'doc.titleSuffix': 'Довідник GitHuttBr',
   'doc.filter': 'Фільтрувати сторінки…',
   'doc.filterLabel': 'Фільтрувати сторінки',
   'doc.edit': 'Редагувати цю сторінку на GitHub',
@@ -116,7 +116,7 @@ export const uk = {
     'Жодного бекенду. Токени та записи сейфа шифруються ключницею вашої ОС — і ніщо не торкається тієї ключниці, доки вам не сказали навіщо і ви не погодилися.',
   'feature.cli.title': 'Графічний клієнт Git зі справжнім CLI',
   'feature.cli.body':
-    '`gitcito .` відкриває репозиторій, `gitcito blame src/api.ts -l 84` відкриває його на потрібному рядку, а `gitcito doctor` не відкриває вікна взагалі — він перевіряє вимоги репозиторію й завершується кодом, зрозумілим вашому CI.',
+    '`githuttbr .` відкриває репозиторій, `githuttbr blame src/api.ts -l 84` відкриває його на потрібному рядку, а `githuttbr doctor` не відкриває вікна взагалі — він перевіряє вимоги репозиторію й завершується кодом, зрозумілим вашому CI.',
   'feature.hosting.title': 'Pull request\'и на будь-якому сервері',
   'feature.hosting.body':
     'Створюйте, переглядайте та зливайте на GitHub, GitLab, Bitbucket, Azure DevOps і Forgejo — і на власних серверах компанії: GitHub Enterprise, GitLab і Bitbucket Data Center — з рецензентами, виконавцями та мітками, вибраними з репозиторію.'
