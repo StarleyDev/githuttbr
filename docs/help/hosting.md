@@ -500,7 +500,10 @@ profile only: a token is cleared (it stays valid on the host until you revoke
 it there), a link is dropped (the login stays in gh or the helper).
 
 The host's API — pull requests, issues, CI — and git's own fetch, pull and
-push over https both use the profile's token or linked account. The credential
+push over https both use the profile's token or linked account: the profile
+the repository is [bound to](profiles.md#per-repository-binding), else the
+active one. A repository's hosting actions always run as its bound profile,
+whichever profile is active. The credential
 reaches git for that one command, scoped to the remote's host, and is never
 written to `.git/config`. A profile with neither leaves git to its own
 credential helper. Azure DevOps, GitLab and Bitbucket link through git's

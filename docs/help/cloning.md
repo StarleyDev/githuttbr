@@ -13,6 +13,14 @@ GitHub, GitLab, Bitbucket or Azure DevOps and pick from your own repositories �
 the token for the chosen [profile](profiles.md) is used for the clone and then
 dropped, never written into `.git/config`.
 
+The dialog's **profile picker** decides one account for the whole job: the
+host tab lists repositories as that profile, the clone signs in as it — a
+self-hosted server's token is the one that profile saved for that server — and
+the new repository is then bound to it, so later fetches, pull requests and CI
+run as the same account. Changing the picker reloads the list. A profile with
+no credential for the host clones anonymously; it never falls back to the
+active profile's.
+
 Choose a parent folder and a name; the line under the fields shows exactly where
 the repository will land. A folder that already exists is refused rather than
 merged into.
