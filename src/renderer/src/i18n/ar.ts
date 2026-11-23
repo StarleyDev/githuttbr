@@ -879,9 +879,9 @@ export const ar: Dict = {
   'cmd.cliFailed': 'تعذّر تحديث الأمر gitcito',
   'cmd.cliAppImage': "لا يستطيع إصدار AppImage تثبيت الأمر gitcito: التطبيق لا يوجد إلا في مجلد مؤقت أثناء تشغيله. ثبّت حزمة ‎.deb للحصول عليه.",
   'cmd.cliWindows': "لا يمكن تثبيت الأمر gitcito على Windows بعد",
-  'cmd.cliStale': "الأمر gitcito في PATH يشير إلى مجلد AppImage مؤقت يمكن لمستخدم آخر الاستيلاء عليه. أزِله من لوحة الأوامر.",
-  'cmd.cliRemoveStale': "إزالة الأمر gitcito القديم من PATH",
-  'cmd.cliStaleRemoved': "أُزيل الأمر gitcito القديم",
+  'cmd.cliStale': "الأمر {name} في PATH يشير إلى مجلد AppImage مؤقت يمكن لمستخدم آخر الاستيلاء عليه. أزِله من لوحة الأوامر.",
+  'cmd.cliRemoveStale': "إزالة الأمر {name} القديم من PATH",
+  'cmd.cliStaleRemoved': "أُزيل الأمر {name} القديم",
 
   // Settings
   'settings.title': 'الإعدادات',

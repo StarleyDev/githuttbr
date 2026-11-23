@@ -879,9 +879,9 @@ export const ko: Dict = {
   'cmd.cliFailed': 'gitcito 명령을 갱신하지 못했습니다',
   'cmd.cliAppImage': "AppImage는 gitcito 명령을 설치할 수 없습니다. 앱이 실행 중일 때만 임시 폴더에 존재하기 때문입니다. 명령을 쓰려면 .deb 패키지를 설치하세요.",
   'cmd.cliWindows': "gitcito 명령은 아직 Windows에 설치할 수 없습니다",
-  'cmd.cliStale': "PATH의 gitcito 명령이 다른 사용자가 가로챌 수 있는 AppImage 임시 폴더를 가리킵니다. 명령 팔레트에서 제거하세요.",
-  'cmd.cliRemoveStale': "오래된 gitcito 명령을 PATH에서 제거",
-  'cmd.cliStaleRemoved': "오래된 gitcito 명령을 제거했습니다",
+  'cmd.cliStale': "PATH의 {name} 명령이 다른 사용자가 가로챌 수 있는 AppImage 임시 폴더를 가리킵니다. 명령 팔레트에서 제거하세요.",
+  'cmd.cliRemoveStale': "오래된 {name} 명령을 PATH에서 제거",
+  'cmd.cliStaleRemoved': "오래된 {name} 명령을 제거했습니다",
 
   // 설정
   'settings.title': '설정',

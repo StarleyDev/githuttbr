@@ -865,9 +865,9 @@ export const tr: Dict = {
   'cmd.cliFailed': '“gitcito” komutu güncellenemedi',
   'cmd.cliAppImage': "AppImage “gitcito” komutunu kuramaz: uygulama yalnızca çalışırken geçici bir klasörde bulunur. Komutu almak için .deb paketini kurun.",
   'cmd.cliWindows': "“gitcito” komutu henüz Windows’ta kurulamıyor",
-  'cmd.cliStale': "PATH’inizdeki “gitcito” komutu, başka bir kullanıcının ele geçirebileceği geçici bir AppImage klasörünü gösteriyor. Komut paletinden kaldırın.",
-  'cmd.cliRemoveStale': "Eskimiş “gitcito” komutunu PATH’ten kaldır",
-  'cmd.cliStaleRemoved': "Eskimiş “gitcito” komutu kaldırıldı",
+  'cmd.cliStale': "PATH’inizdeki “{name}” komutu, başka bir kullanıcının ele geçirebileceği geçici bir AppImage klasörünü gösteriyor. Komut paletinden kaldırın.",
+  'cmd.cliRemoveStale': "Eskimiş “{name}” komutunu PATH’ten kaldır",
+  'cmd.cliStaleRemoved': "Eskimiş “{name}” komutu kaldırıldı",
 
   'settings.title': 'Ayarlar',
   'settings.profile': 'Profil',

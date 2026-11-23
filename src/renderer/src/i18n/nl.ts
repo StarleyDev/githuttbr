@@ -880,9 +880,9 @@ export const nl: Dict = {
   'cmd.cliFailed': 'Kon het commando ‘gitcito’ niet bijwerken',
   'cmd.cliAppImage': "De AppImage kan het commando ‘gitcito’ niet installeren: de app bestaat alleen in een tijdelijke map zolang hij draait. Installeer het .deb-pakket om het te krijgen.",
   'cmd.cliWindows': "Het commando ‘gitcito’ kan nog niet op Windows worden geïnstalleerd",
-  'cmd.cliStale': "Het commando ‘gitcito’ in je PATH wijst naar een tijdelijke AppImage-map die een andere gebruiker kan overnemen. Verwijder het via het opdrachtenpalet.",
-  'cmd.cliRemoveStale': "Het verouderde commando ‘gitcito’ uit PATH verwijderen",
-  'cmd.cliStaleRemoved': "Verouderd commando ‘gitcito’ verwijderd",
+  'cmd.cliStale': "Het commando ‘{name}’ in je PATH wijst naar een tijdelijke AppImage-map die een andere gebruiker kan overnemen. Verwijder het via het opdrachtenpalet.",
+  'cmd.cliRemoveStale': "Het verouderde commando ‘{name}’ uit PATH verwijderen",
+  'cmd.cliStaleRemoved': "Verouderd commando ‘{name}’ verwijderd",
 
   // Instellingen
   'settings.title': 'Instellingen',

@@ -10,6 +10,7 @@ import { applyDirection } from './i18n/direction'
 import { todoSummary } from './lib/todos'
 import { doctorSummary } from './lib/repoConfig'
 import { canonicalRepoPath } from './lib/repoAlias'
+import { baseName } from './lib/bookmarks'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme, findTerminalTheme } from './theme/themes'
 import { applyTerminalPrefs } from './components/terminalState'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
@@ -623,7 +624,9 @@ export default function App(): React.JSX.Element {
     cliApi
       .status()
       .then((s) => {
-        if (s.staleLink) useUIStore.getState().toast('error', tr('cmd.cliStale'))
+        if (s.staleLink) {
+          useUIStore.getState().toast('error', interp(tr('cmd.cliStale'), { name: baseName(s.staleLink) }))
+        }
       })
       .catch(() => undefined)
   }, [])

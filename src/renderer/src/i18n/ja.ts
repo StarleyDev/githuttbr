@@ -865,9 +865,9 @@ export const ja: Dict = {
   'cmd.cliFailed': '「gitcito」コマンドを更新できませんでした',
   'cmd.cliAppImage': "AppImage 版では「gitcito」コマンドをインストールできません。アプリは実行中だけ一時フォルダーに存在するためです。使うには .deb パッケージをインストールしてください。",
   'cmd.cliWindows': "「gitcito」コマンドは Windows ではまだインストールできません",
-  'cmd.cliStale': "PATH の「gitcito」コマンドが、他のユーザーに乗っ取られうる AppImage の一時フォルダーを指しています。コマンドパレットから削除してください。",
-  'cmd.cliRemoveStale': "古い「gitcito」コマンドを PATH から削除",
-  'cmd.cliStaleRemoved': "古い「gitcito」コマンドを削除しました",
+  'cmd.cliStale': "PATH の「{name}」コマンドが、他のユーザーに乗っ取られうる AppImage の一時フォルダーを指しています。コマンドパレットから削除してください。",
+  'cmd.cliRemoveStale': "古い「{name}」コマンドを PATH から削除",
+  'cmd.cliStaleRemoved': "古い「{name}」コマンドを削除しました",
 
   'settings.title': '設定',
   'settings.profile': 'プロファイル',

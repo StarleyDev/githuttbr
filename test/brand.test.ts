@@ -164,6 +164,15 @@ describe('the upgrading page', () => {
     expect(text).toContain('point at gitcito-textconv')
   })
 
+  it('says what is carried over and what is not', () => {
+    const text = shown()
+    for (const item of ['Local Storage', 'Repository list', 'Profile pictures', 'Operation log']) {
+      expect(text).toContain(item)
+    }
+    expect(text).toContain('Tokens, AI keys, vault secrets')
+    expect(text).toContain('Keychain consent')
+  })
+
   it('names the new ones as the new ones', () => {
     const text = shown()
     expect(text).toContain('set core.editor to githuttbr --wait')

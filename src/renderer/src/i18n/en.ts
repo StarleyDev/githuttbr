@@ -872,9 +872,9 @@ export const en = {
   'cmd.cliFailed': "Couldn't update the 'gitcito' command",
   'cmd.cliAppImage': "The AppImage can't install the 'gitcito' command: the app only exists in a temporary folder while it runs. Install the .deb package to get it.",
   'cmd.cliWindows': "The 'gitcito' command can't be installed on Windows yet",
-  'cmd.cliStale': "The 'gitcito' command in your PATH points into a temporary AppImage folder that another user could take over. Remove it from the command palette.",
-  'cmd.cliRemoveStale': "Remove the stale 'gitcito' command from PATH",
-  'cmd.cliStaleRemoved': "Stale 'gitcito' command removed",
+  'cmd.cliStale': "The '{name}' command in your PATH points into a temporary AppImage folder that another user could take over. Remove it from the command palette.",
+  'cmd.cliRemoveStale': "Remove the stale '{name}' command from PATH",
+  'cmd.cliStaleRemoved': "Stale '{name}' command removed",
 
   // Settings
   'settings.title': 'Settings',

@@ -68,7 +68,7 @@ A few things outside the app still name the old command:
 | What | What to do |
 |------|------------|
 | **The terminal command** is now `githuttbr` | Command palette → **Install 'githuttbr' command in PATH**. The old link stays until you remove it (on Linux, <code>~/.local/bin/git&#99;ito</code>) |
-| **git's editor** still runs <code>git&#99;ito --wait</code> | `githuttbr doctor` flags it and prints the exact `git config` line; `githuttbr doctor --fix` applies it. Or run `githuttbr editor install` |
+| **git's editor** still runs <code>git&#99;ito --wait</code> | `githuttbr doctor` flags it and prints the exact `git config` line; `githuttbr doctor --fix` applies it. Or run `githuttbr editor install`, or set `core.editor` to `githuttbr --wait` |
 | **Diff drivers** that use the bundled converter point at <code>git&#99;ito-textconv</code> | The [diff drivers](attributes.md) list marks them as stale, with a **Remove** button; then add the driver again from the suggestions |
 
 ## Limits

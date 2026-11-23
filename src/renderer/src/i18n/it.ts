@@ -866,9 +866,9 @@ export const it: Dict = {
   'cmd.cliFailed': 'Non è stato possibile aggiornare il comando ’gitcito’',
   'cmd.cliAppImage': "L’AppImage non può installare il comando ’gitcito’: l’app esiste solo in una cartella temporanea mentre è in esecuzione. Installa il pacchetto .deb per averlo.",
   'cmd.cliWindows': "Il comando ’gitcito’ non si può ancora installare su Windows",
-  'cmd.cliStale': "Il comando ’gitcito’ nel tuo PATH punta a una cartella temporanea dell’AppImage di cui un altro utente potrebbe impadronirsi. Rimuovilo dalla palette dei comandi.",
-  'cmd.cliRemoveStale': "Rimuovi dal PATH il comando ’gitcito’ obsoleto",
-  'cmd.cliStaleRemoved': "Comando ’gitcito’ obsoleto rimosso",
+  'cmd.cliStale': "Il comando ’{name}’ nel tuo PATH punta a una cartella temporanea dell’AppImage di cui un altro utente potrebbe impadronirsi. Rimuovilo dalla palette dei comandi.",
+  'cmd.cliRemoveStale': "Rimuovi dal PATH il comando ’{name}’ obsoleto",
+  'cmd.cliStaleRemoved': "Comando ’{name}’ obsoleto rimosso",
 
   'settings.title': 'Impostazioni',
   'settings.profile': 'Profilo',

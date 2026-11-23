@@ -879,9 +879,9 @@ export const uk: Dict = {
   'cmd.cliFailed': 'Не вдалося оновити команду «gitcito»',
   'cmd.cliAppImage': "AppImage не може встановити команду «gitcito»: застосунок існує в тимчасовій теці лише доки запущений. Встановіть пакет .deb, щоб отримати її.",
   'cmd.cliWindows': "Команду «gitcito» поки не можна встановити у Windows",
-  'cmd.cliStale': "Команда «gitcito» у вашому PATH вказує в тимчасову теку AppImage, яку може захопити інший користувач. Видаліть її через палітру команд.",
-  'cmd.cliRemoveStale': "Видалити застарілу команду «gitcito» з PATH",
-  'cmd.cliStaleRemoved': "Застарілу команду «gitcito» видалено",
+  'cmd.cliStale': "Команда «{name}» у вашому PATH вказує в тимчасову теку AppImage, яку може захопити інший користувач. Видаліть її через палітру команд.",
+  'cmd.cliRemoveStale': "Видалити застарілу команду «{name}» з PATH",
+  'cmd.cliStaleRemoved': "Застарілу команду «{name}» видалено",
 
   // Налаштування
   'settings.title': 'Налаштування',

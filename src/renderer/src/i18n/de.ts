@@ -879,9 +879,9 @@ export const de: Dict = {
   'cmd.cliFailed': 'Der Befehl „gitcito“ konnte nicht aktualisiert werden',
   'cmd.cliAppImage': "Das AppImage kann den Befehl „gitcito“ nicht installieren: Die App existiert nur während der Ausführung in einem temporären Ordner. Installieren Sie das .deb-Paket, um ihn zu erhalten.",
   'cmd.cliWindows': "Der Befehl „gitcito“ lässt sich unter Windows noch nicht installieren",
-  'cmd.cliStale': "Der Befehl „gitcito“ in Ihrem PATH zeigt in einen temporären AppImage-Ordner, den ein anderer Benutzer übernehmen könnte. Entfernen Sie ihn über die Befehlspalette.",
-  'cmd.cliRemoveStale': "Veralteten Befehl „gitcito“ aus dem PATH entfernen",
-  'cmd.cliStaleRemoved': "Veralteter Befehl „gitcito“ entfernt",
+  'cmd.cliStale': "Der Befehl „{name}“ in Ihrem PATH zeigt in einen temporären AppImage-Ordner, den ein anderer Benutzer übernehmen könnte. Entfernen Sie ihn über die Befehlspalette.",
+  'cmd.cliRemoveStale': "Veralteten Befehl „{name}“ aus dem PATH entfernen",
+  'cmd.cliStaleRemoved': "Veralteter Befehl „{name}“ entfernt",
 
   // Settings
   'settings.title': 'Einstellungen',

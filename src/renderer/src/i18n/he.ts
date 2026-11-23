@@ -879,9 +879,9 @@ export const he: Dict = {
   'cmd.cliFailed': 'לא ניתן היה לעדכן את הפקודה gitcito',
   'cmd.cliAppImage': "גרסת ה־AppImage לא יכולה להתקין את הפקודה gitcito: האפליקציה קיימת רק בתיקייה זמנית בזמן שהיא רצה. התקינו את חבילת ה־‎.deb כדי לקבל אותה.",
   'cmd.cliWindows': "עדיין אי אפשר להתקין את הפקודה gitcito ב־Windows",
-  'cmd.cliStale': "הפקודה gitcito ב־PATH מצביעה לתיקיית AppImage זמנית שמשתמש אחר יכול להשתלט עליה. הסירו אותה מלוח הפקודות.",
-  'cmd.cliRemoveStale': "הסרת הפקודה gitcito הישנה מ־PATH",
-  'cmd.cliStaleRemoved': "הפקודה gitcito הישנה הוסרה",
+  'cmd.cliStale': "הפקודה {name} ב־PATH מצביעה לתיקיית AppImage זמנית שמשתמש אחר יכול להשתלט עליה. הסירו אותה מלוח הפקודות.",
+  'cmd.cliRemoveStale': "הסרת הפקודה {name} הישנה מ־PATH",
+  'cmd.cliStaleRemoved': "הפקודה {name} הישנה הוסרה",
 
   // Settings
   'settings.title': 'הגדרות',

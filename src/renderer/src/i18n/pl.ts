@@ -879,9 +879,9 @@ export const pl: Dict = {
   'cmd.cliFailed': 'Nie udało się zaktualizować polecenia „gitcito”',
   'cmd.cliAppImage': "AppImage nie może zainstalować polecenia „gitcito”: aplikacja istnieje tylko w tymczasowym folderze, dopóki działa. Zainstaluj pakiet .deb, aby je mieć.",
   'cmd.cliWindows': "Polecenia „gitcito” nie można jeszcze zainstalować w systemie Windows",
-  'cmd.cliStale': "Polecenie „gitcito” w twoim PATH wskazuje na tymczasowy folder AppImage, który inny użytkownik mógłby przejąć. Usuń je z palety poleceń.",
-  'cmd.cliRemoveStale': "Usuń z PATH nieaktualne polecenie „gitcito”",
-  'cmd.cliStaleRemoved': "Usunięto nieaktualne polecenie „gitcito”",
+  'cmd.cliStale': "Polecenie „{name}” w twoim PATH wskazuje na tymczasowy folder AppImage, który inny użytkownik mógłby przejąć. Usuń je z palety poleceń.",
+  'cmd.cliRemoveStale': "Usuń z PATH nieaktualne polecenie „{name}”",
+  'cmd.cliStaleRemoved': "Usunięto nieaktualne polecenie „{name}”",
 
   // Ustawienia
   'settings.title': 'Ustawienia',

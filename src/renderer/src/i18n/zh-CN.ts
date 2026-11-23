@@ -879,9 +879,9 @@ export const zhCN: Dict = {
   'cmd.cliFailed': '无法更新 gitcito 命令',
   'cmd.cliAppImage': "AppImage 版无法安装 gitcito 命令：应用只在运行期间存在于临时文件夹中。请安装 .deb 软件包来获得它。",
   'cmd.cliWindows': "暂时还不能在 Windows 上安装 gitcito 命令",
-  'cmd.cliStale': "PATH 中的 gitcito 命令指向一个 AppImage 临时文件夹，其他用户可能会占用它。请从命令面板中移除。",
-  'cmd.cliRemoveStale': "从 PATH 中移除过期的 gitcito 命令",
-  'cmd.cliStaleRemoved': "已移除过期的 gitcito 命令",
+  'cmd.cliStale': "PATH 中的 {name} 命令指向一个 AppImage 临时文件夹，其他用户可能会占用它。请从命令面板中移除。",
+  'cmd.cliRemoveStale': "从 PATH 中移除过期的 {name} 命令",
+  'cmd.cliStaleRemoved': "已移除过期的 {name} 命令",
 
   // Settings
   'settings.title': '设置',

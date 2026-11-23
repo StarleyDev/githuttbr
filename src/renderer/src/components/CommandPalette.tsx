@@ -67,6 +67,7 @@ import { enterpriseBasesOf, repoHasIssueTracker } from '../lib/hosting'
 import { openInEditor } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { fuzzyScore } from '../lib/fuzzy'
+import { baseName } from '../lib/bookmarks'
 
 // Display label for a group id (groups stay English internally for sorting).
 const GROUP_KEYS: Record<string, TranslationKey> = {
@@ -109,7 +110,8 @@ export function CommandPalette(): React.JSX.Element {
   const [active, setActive] = useState(0)
   const [files, setFiles] = useState<string[]>([])
   const [cliInstalled, setCliInstalled] = useState(false)
-  const [cliStale, setCliStale] = useState(false)
+  // The stale link's command name (`githuttbr`, or the pre-4.39 `gitcito`), or null.
+  const [cliStale, setCliStale] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -127,11 +129,11 @@ export function CommandPalette(): React.JSX.Element {
         .status()
         .then((s) => {
           setCliInstalled(s.installed)
-          setCliStale(!!s.staleLink)
+          setCliStale(s.staleLink ? baseName(s.staleLink) : null)
         })
         .catch(() => {
           setCliInstalled(false)
-          setCliStale(false)
+          setCliStale(null)
         })
     }
     return () => cancelAnimationFrame(id)
@@ -160,15 +162,15 @@ export function CommandPalette(): React.JSX.Element {
     if (cliStale) {
       list.push({
         id: 'cli-remove-stale',
-        title: t('cmd.cliRemoveStale'),
+        title: interp(t('cmd.cliRemoveStale'), { name: cliStale }),
         group: 'Actions',
         keywords: 'terminal shell path command line appimage stale githuttbr gitcito',
         icon: <TerminalSquare size={15} />,
         run: act(() => {
           void cliApi.removeStale().then((res) => {
             if (res.ok) {
-              setCliStale(false)
-              ui.toast('success', t('cmd.cliStaleRemoved'))
+              setCliStale(null)
+              ui.toast('success', interp(t('cmd.cliStaleRemoved'), { name: cliStale }))
             } else ui.toast('error', cliRefused(res))
           })
         })
