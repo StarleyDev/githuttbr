@@ -1,0 +1,15 @@
+#!/bin/sh
+# gitcito-textconv — compatibility stub for the converter's pre-4.39 name.
+#
+# 4.38 wrote the absolute path of this file into `diff.<name>.textconv`, in a
+# repository's config and sometimes the global one. 4.39 renamed the converter
+# to githuttbr-textconv; without this stub an in-place update (same install
+# directory) would leave every such driver failing at the next `git diff`.
+# The app also rewrites those entries to the new name when it starts and when
+# it opens a repository (main/legacyShims.ts), so this stub only has to cover
+# the terminal until then — and installs the app never gets to run in.
+#
+# It does nothing but hand over to its sibling, with the same arguments.
+
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec "$DIR/githuttbr-textconv" "$@"

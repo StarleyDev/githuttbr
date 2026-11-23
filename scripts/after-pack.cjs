@@ -79,6 +79,23 @@ async function writeCliAppBinary(context) {
   await fs.writeFile(path.join(cliDir, 'app-binary'), `${relative}\n`, { mode: 0o644 })
 }
 
+/**
+ * The shims git and the shell run directly. extraResources copies modes as it
+ * finds them, and a checkout on a filesystem without them (or a Windows build
+ * host) would ship a converter git cannot execute — a failure nobody sees until
+ * the first `git diff` of a .docx. `gitcito-textconv` is the pre-4.39 name,
+ * kept as a stub because 4.38 wrote its absolute path into git config.
+ */
+const CLI_SHIMS = ['githuttbr', 'githuttbr-textconv', 'gitcito-textconv']
+
+async function markCliExecutable(context) {
+  const fs = require('node:fs/promises')
+  const cliDir = path.join(cliAppBinary(context).resources, 'cli')
+  // A missing shim is a broken build: the stub in particular has no other
+  // way to be noticed before a user's diffs start failing.
+  for (const name of CLI_SHIMS) await fs.chmod(path.join(cliDir, name), 0o755)
+}
+
 /** Kept apart from the hook so the fuse choice can be read (and tested) on its own. */
 async function fuseConfig() {
   const { FuseVersion, FuseV1Options } = await import('@electron/fuses')
@@ -96,6 +113,7 @@ async function afterPack(context) {
   await flipFuses(electronBinary(context), { ...(await fuseConfig()), resetAdHocDarwinSignature: darwin })
   // Before signing, like the fuses: the file is part of the sealed bundle.
   await writeCliAppBinary(context)
+  await markCliExecutable(context)
 }
 
 module.exports = afterPack
@@ -103,3 +121,5 @@ module.exports.default = afterPack
 module.exports.fuseConfig = fuseConfig
 module.exports.cliAppBinary = cliAppBinary
 module.exports.writeCliAppBinary = writeCliAppBinary
+module.exports.markCliExecutable = markCliExecutable
+module.exports.CLI_SHIMS = CLI_SHIMS
