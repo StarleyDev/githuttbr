@@ -253,6 +253,7 @@ interface PreloadApi {
     canAct(repoPath: string, remoteUrl: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
     createPR(repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
+    prPickerOptions(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     prDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     workItem(repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
     prComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
@@ -276,7 +277,6 @@ interface PreloadApi {
     issueDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     setIssueState(repoPath: string, remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
     createIssue(repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
-    applyPrMeta(repoPath: string, remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
     updatePR(repoPath: string, remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
     mergedPrHeads(repoPath: string, remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
     ensureStack(repoPath: string, remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown>

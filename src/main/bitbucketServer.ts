@@ -1,4 +1,6 @@
 import { countChecks } from './ciSummary'
+import { bbsReviewerIds, collectPickerOptions, createWithoutRejectedReviewers, PICKER_MAX_PAGES, reviewersMissing } from './prMeta'
+import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
 import {
   bitbucketServerEndpoints,
@@ -17,6 +19,9 @@ import type {
   PrDetail,
   PrFile,
   PrMergeMethod,
+  PrMetaField,
+  PrPickerOptions,
+  PrPickerPerson,
   PrReview,
   PrReviewComment,
   PrReviewEvent,
@@ -46,6 +51,7 @@ import type {
  *   GET  /rest/api/latest/projects/{key}/repos/{slug}/settings/pull-requests   merge strategies
  *   GET  /rest/api/latest/application-properties  (+ X-AUSERNAME header)       who the token is
  *   GET  /rest/api/latest/users?filter=…                                       getUsers (name → slug)
+ *   GET  /rest/api/latest/users?permission.1=REPO_READ&…                       getUsers (who may review)
  *   POST /rest/build-status/latest/commits/stats                               build stats, many commits
  *   GET  /rest/build-status/latest/commits/{sha}                               build statuses of a commit
  * Auth: `Authorization: Bearer <HTTP access token>` (Atlassian, "HTTP access tokens").
@@ -54,9 +60,12 @@ import type {
 /** A failed Data Center request, with its status so a caller can degrade quietly. */
 export class BitbucketServerError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** The `exceptionName` of each error, when the server named one — how a reviewer refusal is told apart. */
+  exceptions: string[]
+  constructor(status: number, message: string, exceptions: string[] = []) {
     super(message ? `Bitbucket Data Center: ${message}` : `Bitbucket Data Center API error (${status})`)
     this.status = status
+    this.exceptions = exceptions
   }
 }
 
@@ -84,12 +93,13 @@ async function bbsResponse(url: string, token: string, init?: RequestInit): Prom
   })
   if (!res.ok) {
     // Errors come as `{ errors: [{ message }] }`.
-    const d = (await res.json().catch(() => null)) as { errors?: Array<{ message?: unknown }> } | null
+    const d = (await res.json().catch(() => null)) as { errors?: Array<{ message?: unknown; exceptionName?: unknown }> } | null
     const msg = (d?.errors ?? [])
       .map((e) => (typeof e?.message === 'string' ? e.message.trim() : ''))
       .filter(Boolean)
       .join('; ')
-    throw new BitbucketServerError(res.status, msg)
+    const exceptions = (d?.errors ?? []).flatMap((e) => (typeof e?.exceptionName === 'string' ? [e.exceptionName] : []))
+    throw new BitbucketServerError(res.status, msg, exceptions)
   }
   return res
 }
@@ -747,16 +757,55 @@ export async function createBbsPull(repo: BitbucketServerRepo, token: string, op
     id: `refs/heads/${branch}`,
     repository: { slug: repo.repoSlug, project: { key: repo.projectKey } }
   })
-  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests`, token, {
-    method: 'POST',
-    body: JSON.stringify({
-      title: opts.title,
-      description: opts.body,
-      fromRef: ref(opts.source),
-      toRef: ref(opts.target),
-      // Drafts arrived in 8.18; an older server is only told about one when asked for.
-      ...(opts.draft ? { draft: true } : {})
+  // A reviewer the server refuses (InvalidPullRequestReviewersException, a 409)
+  // costs the reviewers, not the pull request.
+  const { result: pr, dropped } = await createWithoutRejectedReviewers(opts, (o) =>
+    bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests`, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: o.title,
+        description: o.body,
+        fromRef: ref(o.source),
+        toRef: ref(o.target),
+        // Drafts arrived in 8.18; an older server is only told about one when asked for.
+        ...(o.draft ? { draft: true } : {}),
+        // Reviewers by user name, the shape the create resource documents.
+        ...(o.reviewers?.length ? { reviewers: o.reviewers.map((name) => ({ user: { name } })) } : {})
+      })
     })
-  })
-  return { url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id), number: pr.id }
+  )
+  const metaFailed: PrMetaField[] = dropped ? ['reviewers'] : reviewersMissing(opts, bbsReviewerIds(pr.reviewers))
+  return {
+    url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id),
+    number: pr.id,
+    ...(metaFailed.length ? { metaFailed } : {})
+  }
+}
+
+/**
+ * Reviewers for a new pull request: the users who can read this repository —
+ * a reviewer needs at least that — less the signed-in account, which Data
+ * Center refuses as a reviewer of its own pull request. No assignees or labels:
+ * Data Center pull requests have neither.
+ */
+export async function bbsPickerOptions(repo: BitbucketServerRepo, token: string): Promise<PrPickerOptions> {
+  const api = bitbucketServerEndpoints(repo.base).apiBase
+  const filter = `permission.1=REPO_READ&permission.1.projectKey=${enc(repo.projectKey)}&permission.1.repositorySlug=${enc(repo.repoSlug)}`
+  return collectPickerOptions(
+    prMetaSupport('bitbucket'),
+    {
+      reviewers: async () => {
+        const [users, me] = await Promise.all([
+          bbsPages<BbsUser>(`${api}/users?${filter}`, token, 100, PICKER_MAX_PAGES),
+          bbsWhoAmI(repo.base, token).catch(() => null)
+        ])
+        const people = users.flatMap((u): PrPickerPerson[] =>
+          u.name ? [{ id: u.name, login: u.name, ...(u.displayName ? { name: u.displayName } : {}) }] : []
+        )
+        return withoutSelf(uniqueById(people), me?.name)
+      }
+    },
+    // A reviewer is a user name, so one can be typed when the list could not be read.
+    { people: true }
+  )
 }

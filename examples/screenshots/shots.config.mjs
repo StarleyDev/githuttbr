@@ -1106,11 +1106,31 @@ export const shots = [
     }
   },
   {
-    // Create-PR form, prefilled from a branch's commits.
+    // Create-PR form, prefilled from a branch's commits, with a reviewer, an
+    // assignee and two labels picked. The choices are faked — no server.
     out: 'create-pr',
     repos: ['pr-ready-branch'],
     themes: ['light'],
-    drive: async (page, repoPaths) => {
+    drive: async (page, repoPaths, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('hosting:prPickerOptions')
+        const people = [
+          { id: 'alex', login: 'alex', name: 'Alex Moreno' },
+          { id: 'sam', login: 'sam', name: 'Sam Lee' },
+          { id: 'riley', login: 'riley', name: 'Riley Chen' }
+        ]
+        ipcMain.handle('hosting:prPickerOptions', () => ({
+          supports: { reviewers: true, assignees: true, labels: true },
+          reviewers: people,
+          assignees: people,
+          labels: [
+            { id: 'bug', name: 'bug', color: '#d73a4a' },
+            { id: 'documentation', name: 'documentation', color: '#0075ca' },
+            { id: 'enhancement', name: 'enhancement', color: '#a2eeef' }
+          ],
+          failed: []
+        }))
+      })
       const repo = repoPaths['pr-ready-branch']
       await page.evaluate((p) => {
         const s = window.__shot
@@ -1126,7 +1146,22 @@ export const shots = [
           defaultBody: '- add awesome() helper\n- wire awesome() into app\n- document awesome feature'
         })
       }, repo)
-      await page.waitForTimeout(500)
+      const pick = async (field, typed) => {
+        // Focus, not click: the previous field's list stays open over the next one.
+        const input = page.locator('.prmeta-field').nth(field).locator('input')
+        await input.focus()
+        await input.fill(typed)
+        await input.press('Enter')
+      }
+      await page.locator('.prmeta-field').first().waitFor()
+      await pick(0, 'sam')
+      await pick(1, 'alex')
+      await pick(2, 'enh')
+      await pick(2, 'doc')
+      // Close the last list by pressing outside it, not Escape (which would close the dialog).
+      // Inside the dialog: a press on the backdrop would close it.
+      await page.locator('.modal h3').first().click()
+      await page.waitForTimeout(400)
     }
   },
   {

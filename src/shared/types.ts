@@ -965,12 +965,55 @@ export interface CreatePrOpts {
   source: string // head branch
   target: string // base branch
   draft: boolean
+  /** Optional picks, as `PrPickerPerson.id` / `PrPickerLabel.id` from `hosting:prPickerOptions`.
+   *  Absent or empty: the request is exactly what it was before these existed. */
+  reviewers?: string[]
+  assignees?: string[]
+  labels?: string[]
 }
 
 /** Result of a created PR/MR. */
 export interface CreatePrResult {
   url: string
   number: number
+  /** Picks the host did not take. The PR exists regardless — this only says what is missing from it. */
+  metaFailed?: PrMetaField[]
+}
+
+/** The optional fields a new PR can carry besides its title and body. */
+export type PrMetaField = 'reviewers' | 'assignees' | 'labels'
+
+/** A person a PR can be handed to. `id` is what the host's API takes back: a
+ *  login on GitHub and Data Center, a numeric id on GitLab, a uuid on
+ *  bitbucket.org, an identity id on Azure DevOps. */
+export interface PrPickerPerson {
+  id: string
+  login: string
+  name?: string
+  avatarUrl?: string
+}
+
+export interface PrPickerLabel {
+  id: string
+  name: string
+  /** `#rrggbb`, when the host gives labels a colour. */
+  color?: string
+}
+
+/** What the create dialog can offer for one remote. */
+export interface PrPickerOptions {
+  supports: Record<PrMetaField, boolean>
+  /** The host takes a typed label it does not list yet, and creates it (GitHub, GitLab, Azure DevOps). */
+  freeLabels?: boolean
+  /** A person's id is their login, so one can be typed when the list could not be read (GitHub, Data Center). */
+  freePeople?: boolean
+  reviewers: PrPickerPerson[]
+  assignees: PrPickerPerson[]
+  labels: PrPickerLabel[]
+  /** Supported fields whose choices could not be read. */
+  failed: PrMetaField[]
+  /** Fields whose list was read only in part (a cap, or a part that failed): someone may be missing. */
+  partial?: PrMetaField[]
 }
 
 export interface BlameLine {
