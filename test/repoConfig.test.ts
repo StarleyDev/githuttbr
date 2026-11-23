@@ -234,6 +234,13 @@ describe('proposing a config from the repository', () => {
     expect((await suggestRepoConfig(dir)).protect).toContain('release/2.x')
   })
 
+  it('treats an empty githuttbr.protectedbranches as the answer, not as absent', async () => {
+    const dir = cloneFixture('project-tree')
+    git(dir, 'config', 'gitcito.protectedbranches', 'main,release/2.x')
+    git(dir, 'config', 'githuttbr.protectedbranches', '')
+    expect((await suggestRepoConfig(dir)).protect ?? []).not.toContain('release/2.x')
+  })
+
   it('reads the scopes the history is already using, ignoring one-offs', async () => {
     const dir = cloneFixture('project-tree')
     for (const subject of ['feat(ui): a', 'fix(ui): b', 'chore(build): c', 'docs(build): d', 'feat(once): e']) {

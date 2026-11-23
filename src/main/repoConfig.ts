@@ -265,12 +265,14 @@ export async function suggestRepoConfig(repoPath: string): Promise<RepoConfig> {
   const defaults = ['main', 'master', 'develop'].filter((b) => locals.includes(b))
   // Existing protection is per-clone (git config); lifting it into the file is
   // how it stops being something each teammate has to rediscover.
-  let configured = ''
+  // A key that is set but empty is an answer ("nothing extra"), exactly as in
+  // protectedBranches(): only an absent key falls through to the legacy one.
+  let configured: string | null = null
   for (const ns of APP_IDS) {
-    configured = await git(repoPath, ['config', '--get', `${ns}.protectedbranches`]).catch(() => '')
-    if (configured) break
+    configured = await git(repoPath, ['config', '--get', `${ns}.protectedbranches`]).catch(() => null)
+    if (configured !== null) break
   }
-  const listed = configured
+  const listed = (configured ?? '')
     .split(',')
     .map((b) => b.trim())
     .filter(Boolean)
