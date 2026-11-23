@@ -288,7 +288,7 @@ export function PushBranchesModal({
               <span className="repo-row-name">{h.branch}</span>
               <span className="push-result-status">{t('pushBranches.resHeld')}</span>
               <span className="push-result-reason">
-                {t('pushBranches.heldHint')}
+                {h.unchecked ? t('pushBranches.uncheckedHint') : t('pushBranches.heldHint')}
                 <span className="push-held-files">
                   {h.files.slice(0, 10).join('\n')}
                   {h.files.length > 10 ? `\n${interp(t('confirm.pushSecrets.more'), { n: h.files.length - 10 })}` : ''}
