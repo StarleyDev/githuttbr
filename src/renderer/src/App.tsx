@@ -543,11 +543,19 @@ export default function App(): React.JSX.Element {
     settings.skippedUpdateVersion
   )
 
+  // The settings file exists but cannot be parsed. Main refuses to answer with
+  // defaults for it — a renderer running on those would save them over it — so
+  // say why nothing loads instead of spinning forever.
+  const [settingsUnreadable, setSettingsUnreadable] = useState(false)
   useEffect(() => {
-    void useSettingsStore.getState().load().then(() => {
-      // Only fires on the launch that migrated a pre-accounts AI config.
-      if (takeAccountsNotice()) useUIStore.getState().openModal({ kind: 'ai-accounts-notice' })
-    })
+    void useSettingsStore
+      .getState()
+      .load()
+      .then(() => {
+        // Only fires on the launch that migrated a pre-accounts AI config.
+        if (takeAccountsNotice()) useUIStore.getState().openModal({ kind: 'ai-accounts-notice' })
+      })
+      .catch(() => setSettingsUnreadable(true))
   }, [])
 
   useEffect(() => {
@@ -1266,7 +1274,7 @@ export default function App(): React.JSX.Element {
   if (!settingsLoaded) {
     return (
       <div className="app booting">
-        <div className="spinner" />
+        {settingsUnreadable ? <p className="boot-error">{t('app.settingsUnreadable')}</p> : <div className="spinner" />}
       </div>
     )
   }

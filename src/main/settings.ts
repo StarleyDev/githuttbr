@@ -1,7 +1,8 @@
 import { app, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
+import { readFile, writeFile, mkdir } from 'fs/promises'
+import { copyPrivateFile, writePrivateFile } from './privateFile'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
@@ -77,6 +78,30 @@ let secretsUnreadable = false
  */
 let servedSecrets = false
 
+/**
+ * Every `settings:get` / `settings:unlock` reply gets a new generation, and the
+ * renderer names the one its state was built from when it saves. Only a save
+ * from the latest reply can clear credentials: a debounced save scheduled
+ * before an unlock but landing after it carries the pre-unlock blanks, and
+ * `servedSecrets` alone would read those as "the user cleared every token".
+ */
+let lastGeneration = 0
+
+/** How a `settings:set` came about. An import never clears a credential the file does not carry. */
+export interface SaveOptions {
+  /** `merge` adds the file's credentials; `replace` (user-confirmed) makes them the only ones. */
+  import?: 'merge' | 'replace'
+}
+
+function generationArg(value: unknown): number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : -1
+}
+
+function saveOptionsArg(value: unknown): SaveOptions {
+  const mode = value && typeof value === 'object' ? (value as { import?: unknown }).import : undefined
+  return mode === 'merge' || mode === 'replace' ? { import: mode } : {}
+}
+
 async function loadSecrets(): Promise<SecretStore> {
   try {
     const b64 = await readFile(secretsPath(), 'utf-8')
@@ -94,28 +119,47 @@ async function saveSecrets(store: SecretStore): Promise<void> {
   if (secretsUnreadable) {
     // Keep the copy we could not decrypt: the build identity that wrote it can
     // still read it, and this write would otherwise be the point of no return.
-    await copyFile(secretsPath(), `${secretsPath()}.bak`).catch(() => {})
+    await copyPrivateFile(secretsPath(), `${secretsPath()}.bak`).catch(() => {})
     secretsUnreadable = false
   }
   const enc = safeStorage.encryptString(JSON.stringify(store))
-  await writeFile(secretsPath(), enc.toString('base64'), 'utf-8')
+  await writePrivateFile(secretsPath(), enc.toString('base64'))
 }
 
 /** The settings JSON, with whatever secrets are already in memory applied. */
 export async function readSettings(): Promise<AppSettings> {
-  let settings: AppSettings
-  try {
-    const raw = await readFile(settingsPath(), 'utf-8')
-    const parsed = JSON.parse(raw) as Partial<AppSettings>
-    // Existing install without the key → treat as already onboarded.
-    settings = { ...defaultSettings(), onboardingCompleted: true, ...parsed }
-  } catch {
-    return defaultSettings()
-  }
+  const parsed = await readSettingsFile()
+  if (!parsed) return defaultSettings()
+  // Existing install without the key → treat as already onboarded.
+  const settings: AppSettings = { ...defaultSettings(), onboardingCompleted: true, ...parsed }
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
   setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
   return out
+}
+
+const READ_RETRIES = 4
+
+/**
+ * The parsed settings file, or null when there is none yet.
+ *
+ * A file that exists but does not parse is never answered with defaults: a
+ * renderer hydrated from them would save them over the user's real settings.
+ * Writes are atomic now, but an older build sharing the data folder still
+ * writes in place, so a bad read is retried briefly before it becomes an error.
+ */
+async function readSettingsFile(): Promise<Partial<AppSettings> | null> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const parsed: unknown = JSON.parse(await readFile(settingsPath(), 'utf-8'))
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('settings file is not an object')
+      return parsed as Partial<AppSettings>
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
+      if (attempt >= READ_RETRIES) throw new Error(`Could not read ${settingsPath()}: ${(err as Error).message}`)
+      await new Promise((r) => setTimeout(r, 25 * (attempt + 1)))
+    }
+  }
 }
 
 /**
@@ -157,7 +201,7 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     const ids = (settings.profiles ?? []).map((p) => p.id)
     const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids)
     await saveSecrets(merged)
-    await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+    await writePrivateFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2))
     secretCache = merged
     return withMigratedAI(applySecrets(settings, merged))
   }
@@ -326,7 +370,12 @@ export function hasSessionOnlySecrets(): boolean {
 }
 onSessionOnlyProbe(hasSessionOnlySecrets)
 
-async function writeSettings(settings: AppSettings): Promise<void> {
+/** `generation` is the reply the renderer's state was built from (-1: unknown). */
+async function writeSettings(
+  settings: AppSettings,
+  generation = -1,
+  options: SaveOptions = {}
+): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
@@ -334,14 +383,24 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)
 
-  // A credential-less save must not wipe the store unless the renderer was
-  // actually holding the credentials (`servedSecrets`) — otherwise it simply
-  // never had them to send back. Same while they are still encrypted on disk,
-  // and when the file exists but this build could not decrypt it: our empty
-  // view of the store is not the truth, and persisting it would erase the
-  // real one.
-  if (!hasSecrets && (!servedSecrets || !secretCache || secretsUnreadable)) {
-    await writeFile(settingsPath(), stripped, 'utf-8')
+  // Whether a blank token in this save means "the user cleared it". Only for a
+  // save built on the latest reply that actually carried the credentials — a
+  // stale one (scheduled before an unlock) never had them to send back. An
+  // import is never that: a file without a token is not a request to delete
+  // it. Only an explicit "Replace all", with a file that carries credentials,
+  // replaces the stored ones.
+  const replacing = options.import === 'replace' && hasSecrets
+  const authoritative = replacing || (!options.import && servedSecrets && generation === lastGeneration)
+  // An import changes what the renderer holds without a new reply: its next
+  // ordinary save must not be read as clears until it has reloaded.
+  if (options.import) lastGeneration++
+
+  // A credential-less save must not wipe the store unless it is authoritative.
+  // Same while they are still encrypted on disk, and when the file exists but
+  // this build could not decrypt it: our empty view of the store is not the
+  // truth, and persisting it would erase the real one.
+  if (!hasSecrets && (!authoritative || !secretCache || secretsUnreadable)) {
+    await writePrivateFile(settingsPath(), stripped)
     return
   }
 
@@ -353,7 +412,7 @@ async function writeSettings(settings: AppSettings): Promise<void> {
     // Refused (or no keyring): hold the secrets in memory for this session and
     // keep them out of the file, rather than writing them in the clear.
     if (hasSecrets) sessionSecrets = mergeSecretStores(sessionSecrets, secrets)
-    await writeFile(settingsPath(), stripped, 'utf-8')
+    await writePrivateFile(settingsPath(), stripped)
     return
   }
   // Secrets first: if the keychain write fails, the JSON on disk still holds the
@@ -364,12 +423,12 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   // never saw them can only add — its save is overlaid on the stored values,
   // so the credentials it was never given survive.
   const ids = (settings.profiles ?? []).map((p) => p.id)
-  const base = servedSecrets ? {} : (secretCache ?? (await loadSecrets()))
+  const base = authoritative ? {} : (secretCache ?? (await loadSecrets()))
   const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
   await saveSecrets(merged)
   secretCache = merged
   sessionSecrets = {}
-  await writeFile(settingsPath(), stripped, 'utf-8')
+  await writePrivateFile(settingsPath(), stripped)
 }
 
 // Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
@@ -386,18 +445,18 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle('settings:get', async () => {
     const settings = withForcedOnboarding(await readSettings())
     servedSecrets = hasSettingsSecrets(settings)
-    return settings
+    return { settings, generation: ++lastGeneration }
   })
-  ipcMain.handle('settings:set', (_e, settings: AppSettings) => {
+  ipcMain.handle('settings:set', (_e, settings: AppSettings, generation?: unknown, options?: unknown) => {
     if (settings.onboardingCompleted) forceOnboarding = false
-    return writeSettings(settings)
+    return writeSettings(settings, generationArg(generation), saveOptionsArg(options))
   })
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
   ipcMain.handle('settings:unlock', async () => {
     const settings = withForcedOnboarding(await readSettingsWithSecrets('settings'))
     servedSecrets = hasSettingsSecrets(settings)
-    return settings
+    return { settings, generation: ++lastGeneration }
   })
 
   ipcMain.handle('settings:importFile', async () => {

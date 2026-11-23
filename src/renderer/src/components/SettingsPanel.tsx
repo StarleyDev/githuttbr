@@ -2487,20 +2487,40 @@ function DataManagementSection(): React.JSX.Element {
         return
       }
       const { settings: incomingSettings, bundle } = parsed
+      const apply = async (replaceSecrets: boolean): Promise<void> => {
+        try {
+          // Through the store's normalizer, not a bare spread: that is what makes the
+          // import take effect now rather than on the next launch.
+          await useSettingsStore.getState().importSettings(incomingSettings, { replaceSecrets })
+          if (bundle?.info) await infoApi.importAll(bundle.info)
+          if (bundle?.vault) await vaultApi.importAll(bundle.vault)
+          if (bundle?.avatars) {
+            await profileAvatarApi.importAll(bundle.avatars)
+            useProfileAvatarsStore.getState().reloadProfileImages()
+          }
+          toast('success', t('settings.imported'))
+        } catch {
+          toast('error', t('settings.importFailed'))
+        }
+      }
 
-      if (hasSettingsSecrets(incomingSettings as AppSettings)) {
-        toast('info', t('settings.importKeptTokens'))
+      // A file without credentials (the default export) never clears the saved
+      // ones. One with credentials asks: add them, or make them the only ones.
+      if (!hasSettingsSecrets(incomingSettings as AppSettings)) {
+        await apply(false)
+        return
       }
-      // Through the store's normalizer, not a bare spread: that is what makes the
-      // import take effect now rather than on the next launch.
-      await useSettingsStore.getState().importSettings(incomingSettings)
-      if (bundle?.info) await infoApi.importAll(bundle.info)
-      if (bundle?.vault) await vaultApi.importAll(bundle.vault)
-      if (bundle?.avatars) {
-        await profileAvatarApi.importAll(bundle.avatars)
-        useProfileAvatarsStore.getState().reloadProfileImages()
-      }
-      toast('success', t('settings.imported'))
+      useUIStore.getState().openDialog({
+        kind: 'confirm',
+        title: t('settings.importSecretsTitle'),
+        message: t('settings.importSecretsMessage'),
+        confirmLabel: t('settings.importSecretsMerge'),
+        autoFocusConfirm: true,
+        onConfirm: () => void apply(false),
+        secondaryLabel: t('settings.importSecretsReplace'),
+        secondaryDanger: true,
+        onSecondary: () => void apply(true)
+      })
     } catch {
       toast('error', t('settings.importFailed'))
     } finally {

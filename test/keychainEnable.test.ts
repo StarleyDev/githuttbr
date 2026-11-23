@@ -42,13 +42,13 @@ describe('turning the keychain on', () => {
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
   it('keeps a token typed while it was off in memory only, never in the clear', async () => {
-    const settings = (await call('settings:get')) as { profiles: Array<Record<string, unknown>> }
+    const { settings } = (await call('settings:get')) as { settings: { profiles: Array<Record<string, unknown>> } }
     settings.profiles[0].azureToken = 'TYPED-WHILE-OFF'
     await call('settings:set', settings)
 
     expect(existsSync(join(dir, 'gitcito-secrets.enc'))).toBe(false)
     expect(readFileSync(join(dir, 'gitcito-settings.json'), 'utf8')).not.toContain('TYPED-WHILE-OFF')
-    const reread = (await call('settings:get')) as { profiles: Array<Record<string, unknown>> }
+    const { settings: reread } = (await call('settings:get')) as { settings: { profiles: Array<Record<string, unknown>> } }
     expect(reread.profiles[0].azureToken).toBe('TYPED-WHILE-OFF')
   })
 
@@ -62,7 +62,7 @@ describe('turning the keychain on', () => {
 
     expect(existsSync(join(dir, 'gitcito-secrets.enc'))).toBe(false)
     expect(await call('keychain:status')).toMatchObject({ consent: 'granted', sessionOnly: true })
-    const reread = (await call('settings:get')) as { profiles: Array<Record<string, unknown>> }
+    const { settings: reread } = (await call('settings:get')) as { settings: { profiles: Array<Record<string, unknown>> } }
     expect(reread.profiles[0].azureToken).toBe('TYPED-WHILE-OFF')
   })
 

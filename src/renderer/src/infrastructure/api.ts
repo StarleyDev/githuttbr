@@ -691,13 +691,24 @@ export const gitApi = {
   deleteSnapshot: (path: string, ref: string) => call<void>('deleteSnapshot', path, ref)
 }
 
+/**
+ * Settings as main served them, with the generation of that reply. A save names
+ * the generation its state was built from; only the latest one can clear a
+ * credential.
+ */
+export interface SettingsReply {
+  settings: AppSettings
+  generation: number
+}
+
 export const settingsApi = {
-  get: () => window.api.settings.get() as Promise<AppSettings>,
+  get: () => window.api.settings.get() as Promise<SettingsReply>,
   // Decrypts the stored tokens (asking for keychain access if needed) and
   // returns the settings with them filled in. Only call it from an explicit
   // user action — never on start-up.
-  unlock: () => window.api.settings.unlock() as Promise<AppSettings>,
-  set: (s: AppSettings) => window.api.settings.set(s),
+  unlock: () => window.api.settings.unlock() as Promise<SettingsReply>,
+  set: (s: AppSettings, generation: number, options?: { import?: 'merge' | 'replace' }) =>
+    window.api.settings.set(s, generation, options),
   importFile: () => window.api.settings.importFile() as Promise<unknown>,
   exportFile: (data: unknown) => window.api.settings.exportFile(data)
 }

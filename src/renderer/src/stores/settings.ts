@@ -157,9 +157,28 @@ function withTodoOrder(
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
-function persist(settings: AppSettings): void {
+/**
+ * Debounced save. What goes out is the state when the timer *fires*, with the
+ * generation it was built from: a state captured when the save was scheduled
+ * could be one a newer reply (an unlock) has since replaced, and main would
+ * read its blank tokens as clears.
+ */
+function persist(): void {
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => void settingsApi.set(settings), 250)
+  saveTimer = setTimeout(() => {
+    saveTimer = null
+    const { settings, secretsGeneration } = useSettingsStore.getState()
+    void settingsApi.set(settings, secretsGeneration)
+  }, 250)
+}
+
+/** Sends a pending debounced save now, if there is one. */
+async function flushPending(): Promise<void> {
+  if (!saveTimer) return
+  clearTimeout(saveTimer)
+  saveTimer = null
+  const { settings, secretsGeneration } = useSettingsStore.getState()
+  await settingsApi.set(settings, secretsGeneration)
 }
 
 /** Mirror the live `tabs`/`activeTabId` into the active workspace record so a
@@ -179,11 +198,19 @@ function syncActiveWorkspace(s: AppSettings): AppSettings {
 interface SettingsState {
   settings: AppSettings
   loaded: boolean
+  /** The generation of the main-process reply `settings` was built from (see `SettingsReply`). */
+  secretsGeneration: number
+  /** Whether `settings` carries the decrypted credentials (`load({ unlock: true })`). */
+  unlocked: boolean
 
   load(opts?: { unlock?: boolean }): Promise<void>
   update(mut: (s: AppSettings) => AppSettings): void
-  /** Apply an imported settings file over the current ones and save it at once. */
-  importSettings(incoming: Partial<AppSettings>): Promise<void>
+  /**
+   * Apply an imported settings file over the current ones and save it at once.
+   * Credentials merge — the file's are added, none is cleared — unless
+   * `replaceSecrets` (the user confirmed it, and the file carries some).
+   */
+  importSettings(incoming: Partial<AppSettings>, opts?: { replaceSecrets?: boolean }): Promise<void>
 
   activeProfile(): Profile
   /**
@@ -465,27 +492,34 @@ const closedTabStack: { tab: TabState; idx: number }[] = []
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings(),
   loaded: false,
+  secretsGeneration: 0,
+  unlocked: false,
 
   load: async (opts) => {
+    // A change still waiting for the debounce goes first, built from the state
+    // it was made on — not landing after the reply below has replaced it.
+    await flushPending()
     // `unlock` decrypts the stored tokens on the way — used when the user opens
     // Settings, never on start-up (that would pop the OS keychain dialog before
     // the window has even painted).
-    const raw = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
-    const { settings, noticeAccounts } = normalizeSettings(raw)
+    const reply = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
+    const { settings, noticeAccounts } = normalizeSettings(reply.settings)
     if (noticeAccounts) pendingAccountsNotice = true
     // `loaded` is what lifts the boot spinner, so the active dictionary has to
     // be in memory first — otherwise the first painted frame is English.
     await loadLocale(settings.language ?? 'en')
-    set({ settings, loaded: true })
+    // The settings and their generation in one step: a save fired in between
+    // sends the older pair, which main treats as clearing nothing.
+    set({ settings, secretsGeneration: reply.generation, unlocked: !!opts?.unlock, loaded: true })
   },
 
   update: (mut) => {
     const settings = syncActiveWorkspace(mut(get().settings))
     set({ settings })
-    persist(settings)
+    persist()
   },
 
-  importSettings: async (incoming) => {
+  importSettings: async (incoming, opts) => {
     const merged: AppSettings = { ...get().settings, ...incoming }
     // A pre-workspaces export carries only `tabs`: drop our workspaces so the
     // normalizer wraps its tabs, instead of replacing them with our own.
@@ -499,7 +533,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // from disk, and a pending save would lose that race and undo the import.
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = null
-    await settingsApi.set(settings)
+    await settingsApi.set(settings, get().secretsGeneration, { import: opts?.replaceSecrets ? 'replace' : 'merge' })
+    // Read back what main kept: a merge leaves credentials the file did not
+    // carry, which this state shows as blanks until it is replaced.
+    await get().load({ unlock: get().unlocked })
   },
 
   activeProfile: () => {

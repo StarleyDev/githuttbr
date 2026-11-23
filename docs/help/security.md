@@ -3,7 +3,7 @@ title: Security & secrets
 category: Security
 order: 70
 summary: Masking, guards, the keychain — and what Gitcito refuses to do.
-keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy
+keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable
 ---
 
 # Security & secrets
@@ -72,6 +72,33 @@ A fresh install makes **zero** keychain calls until something actually needs
 storing.
 
 While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
+
+## Importing settings
+
+**Settings → Import / Export** moves settings, profiles and themes between
+machines. The default export carries **no tokens or API keys**, and importing
+such a file never touches the ones you have saved — a blank token in the file
+means "not in this file", not "remove mine".
+
+A file exported with the opt-in carries credentials, so importing it asks:
+
+| Choice | Your saved credentials |
+|--------|------------------------|
+| **Add to mine** | The file's are added, replacing any for the same account; all the others are kept |
+| **Replace all** | Become exactly the file's — every saved token and API key the file does not have is deleted |
+| **Cancel** | Nothing is imported |
+
+**The limit:** credentials belong to a profile. A profile the import removes
+takes its saved tokens with it, whichever you choose.
+
+## The settings file
+
+The settings file and the encrypted token store are written whole: to a new
+owner-only file beside them, then swapped in, so a crash or two saves at once
+never leave half a file. One that exists but cannot be parsed (a hand edit gone
+wrong, a damaged disk) is **never** replaced by the defaults: Gitcito says it
+could not read it and starts no further. Fix or move `gitcito-settings.json` in
+its data folder, then restart.
 
 ## A profile's token while git runs
 
