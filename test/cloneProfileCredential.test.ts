@@ -4,8 +4,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
 
-// A provider tab whose profile sent no token clones anonymously, as it always
-// did; only Clone → URL on a configured Data Center resolves a token in main.
+// A server's token (GitLab, Forgejo, GitHub Enterprise, Data Center) is resolved
+// in main from the active profile — the one the provider tab lists with — since
+// the renderer's own token is gitlab.com's / bitbucket.org's, and it may hold
+// none until Settings is opened. github.com, bitbucket.org and Azure clone with
+// the renderer's token, or anonymously without one. Clone → URL on a configured
+// Data Center signs in as the profile picked in the dialog.
 
 const dir = mkdtempSync(join(tmpdir(), 'gitcito-clone-profile-'))
 
@@ -68,16 +72,27 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
   })
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-  it('a GitLab tab clone that sent no token gets no credential, not the active profile’s', async () => {
+  it('a GitLab tab clone signs in with the active profile’s token — the one the tab listed with', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '')).toBeNull()
-    expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '   ')).toBeNull()
-    expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', undefined)).toBeNull()
+    for (const sent of ['', '   ', undefined, 'renderer-token']) {
+      const env = JSON.stringify(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', sent))
+      expect(env).toContain(WORK_GITLAB)
+      expect(env).not.toContain(PERSONAL_GITLAB)
+      expect(env).not.toContain('renderer-token')
+    }
   })
 
-  it('a Data Center tab clone that sent no token gets no credential either', async () => {
+  it('a Data Center tab clone likewise uses the active profile’s server token', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    expect(await cloneCredentialEnv(BBS_REPO, 'bitbucket', undefined)).toBeNull()
+    const env = JSON.stringify(await cloneCredentialEnv(BBS_REPO, 'bitbucket', undefined))
+    expect(env).toContain(WORK_BBS)
+    expect(env).not.toContain(PERSONAL_BBS)
+  })
+
+  it('github.com and bitbucket.org clone anonymously when the renderer sent no token', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    expect(await cloneCredentialEnv('https://github.com/team/app.git', 'github', '')).toBeNull()
+    expect(await cloneCredentialEnv('https://bitbucket.org/team/app.git', 'bitbucket', undefined)).toBeNull()
   })
 
   // The dialog then pins the new repository to that profile, so it is cloned
@@ -101,7 +116,9 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
 
   it('a provider-tab clone ignores the URL tab’s profile id', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '', 'personal')).toBeNull()
+    const gl = JSON.stringify(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '', 'personal'))
+    expect(gl).toContain(WORK_GITLAB)
+    expect(gl).not.toContain(PERSONAL_GITLAB)
     const env = JSON.stringify(await cloneCredentialEnv(BBS_REPO, 'bitbucket', 'sent', 'personal'))
     expect(env).toContain(WORK_BBS)
     expect(env).not.toContain(PERSONAL_BBS)

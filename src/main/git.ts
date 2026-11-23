@@ -1029,14 +1029,11 @@ export async function cloneCredentialEnv(
   // filed under that base, so no other host can be offered anything. It is
   // resolved from the profile picked in the dialog (`urlProfileId`), the one the
   // new repository is then bound to, so it is cloned and later fetched as the
-  // same account. Every other provider still needs the caller to name it, and
-  // to send a token: a provider tab whose profile has none clones anonymously.
+  // same account. Every other provider still needs the caller to name it.
   const urlTab = !host
   if (!host) {
     if (!bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
     host = 'bitbucket'
-  } else if (!token?.trim()) {
-    return null
   }
   // The caller names the provider; the URL must really be on it.
   if (hostFromUrl(url) !== host) return null
@@ -1059,9 +1056,12 @@ export async function cloneCredentialEnv(
     token = auth.token
     gitUsername = auth.username
     tokenKind = auth.tokenKind
-    if (!token) return null
   }
-  const auth = basicAuthFor(host as RepoHost | undefined, token ?? '', url, gitUsername, tokenKind)
+  // github.com, bitbucket.org and Azure clone with the renderer's token; a tab
+  // whose profile has none clones anonymously. A server's token above was
+  // resolved here, from the same (active) profile the provider tab listed with.
+  if (!token?.trim()) return null
+  const auth = basicAuthFor(host as RepoHost | undefined, token, url, gitUsername, tokenKind)
   return auth ? gitCredentialEnv(url, auth) : null
 }
 

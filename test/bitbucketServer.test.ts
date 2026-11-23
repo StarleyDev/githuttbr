@@ -1162,12 +1162,14 @@ describe('call sites, through the real IPC handlers', () => {
     expect(calls[0].auth).toBe(`Bearer ${CLOUD_TOKEN}`)
   })
 
-  it('Settings checks a server with the token typed for it, and refuses one no profile names', async () => {
+  it('Settings checks a saved server with the token typed for it', async () => {
     const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; name: string }
     expect(who).toMatchObject({ login: 'jdoe', name: 'Jane Doe', source: 'token' })
     expectOnlyServerA()
+    // A server no profile names is checked only with the token the call carries
+    // (see the unsaved-server case below); without one nothing is sent.
     calls.length = 0
-    await expect(call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, 'https://evil.example', false)).rejects.toThrow(/not saved/)
+    expect(await call('hosting:whoAmI', 'bitbucket', '', 'https://evil.example', false)).toBeNull()
     expect(calls).toHaveLength(0)
   })
 
