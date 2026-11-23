@@ -46,6 +46,8 @@ import { MAIN_WINDOW_STATE, showMainWindow } from './windowState'
 import { attachRendererRecovery, registerRendererRecoveryHandlers } from './rendererRecovery'
 import { githubPublicGet } from './credentials'
 import { APP_RELEASES_API } from '../shared/appRepo'
+import { SHOT_RENDERER_FLAG } from '../shared/shotMode'
+import { initShotMode, isShotMode } from './shotMode'
 
 // First, before anything logs: a closed stdout/stderr must not crash main (see stdioGuard).
 guardStdio()
@@ -55,6 +57,8 @@ guardStdio()
 fixPath()
 // Launched from an editor's terminal: git must not borrow the editor's login prompt.
 stripEditorGitAskpass(process.env)
+// `--shot` is automation-only; a packaged build ignores it (see shotMode.ts).
+initShotMode(app.isPackaged, process.argv)
 
 // Sends a CLI-requested path to a window once its page has actually loaded.
 // Applies to both cold launch and second-instance hand-off (see whenReady()
@@ -172,9 +176,9 @@ function createWindow(): void {
       // `will-attach-webview` below — this app holds credentials, and a panel
       // that could navigate anywhere is not something to hand out lightly.
       webviewTag: true,
-      // Forward the screenshot-automation flag into the renderer/preload
-      // process so the capture harness can enable its store bridge.
-      additionalArguments: process.argv.includes('--shot') ? ['--shot'] : []
+      // Tell the preload that screenshot mode is on, so the capture harness can
+      // attach its store bridge. Only main decides, and only when unpackaged.
+      additionalArguments: isShotMode() ? [SHOT_RENDERER_FLAG] : []
     }
   })
 
@@ -332,7 +336,7 @@ app.whenReady().then(() => {
   }
   ipcMain.handle('app:releases', async (): Promise<AppRelease[]> => {
     // Scripted runs stay off GitHub so they cannot spend the real app's hourly quota.
-    if (process.argv.includes('--shot')) return cachedReleases()
+    if (isShotMode()) return cachedReleases()
     try {
       // What's New waits on this before showing notes, so a hanging network must not stall it.
       const res = await githubPublicGet(`${APP_RELEASES_API}?per_page=20`)

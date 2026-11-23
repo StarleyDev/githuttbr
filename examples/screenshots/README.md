@@ -42,9 +42,10 @@ Needs **ffmpeg** (`brew install ffmpeg`): it encodes every image.
    into animated WebP (`clip-*.webp`) — a UI clip is full-colour, which GIF's
    256-entry palette both dithers and pays ~8x the bytes for.
 
-The bridge ships nothing in a normal build: it only attaches when the app is
-launched with `--shot` (the flag is forwarded into the renderer by the main
-process).
+The bridge is inert in an installed app: it only attaches when the **unpackaged**
+app (`electron out/main/index.js`, which is how the harness launches it) is
+started with `--shot`. Main decides (`src/main/shotMode.ts`) and tells the
+renderer with its own switch; a packaged build ignores `--shot` entirely.
 
 The launch itself — the flag, the throwaway userData dir, the seeded settings
 and keychain answer, the clean environment — lives in
@@ -81,9 +82,10 @@ env: { GITCITO_SSH_DIR: DEMO_SSH },
 prepare: async ({ run }) => { /* ssh-keygen into DEMO_SSH */ }
 ```
 
-`GITCITO_SSH_DIR` is read by `src/main/ssh.ts` **only when the app was launched
-with `--shot`** — the same flag that enables the store bridge. A normal run
-always reads `~/.ssh` and cannot be redirected by an environment variable.
+`GITCITO_SSH_DIR` is read by `src/main/ssh.ts` **only when the unpackaged app
+was launched with `--shot`** — the same gate that enables the store bridge. A
+normal run, and any packaged build, always reads `~/.ssh` and cannot be
+redirected by an environment variable.
 
 The shot shows the real UI with fake data, which beats masking values: an
 interface full of `***` looks broken, and redaction logic in production code is

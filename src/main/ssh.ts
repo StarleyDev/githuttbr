@@ -5,6 +5,7 @@ import { existsSync, readdirSync } from 'fs'
 import { readFile, mkdir, chmod } from 'fs/promises'
 import { homedir } from 'os'
 import { join } from 'path'
+import { isShotMode } from './shotMode'
 import {
   agentFingerprints,
   parseKeygenLine,
@@ -34,12 +35,13 @@ const pexecFile = promisify(execFile)
  * The screenshot harness needs a deterministic, publishable set of keys instead
  * of whoever ran it — a documentation shot must not carry a real fingerprint or
  * the email in a key comment. It gets one by pointing this at a throwaway
- * directory, and the override is honoured **only** in `--shot` mode, the same
- * flag that enables the capture bridge. A normal run cannot be redirected by an
- * environment variable.
+ * directory, and the override is honoured **only** in screenshot mode — `--shot`
+ * on an unpackaged build (see shotMode.ts), the same switch that enables the
+ * capture bridge. An installed app cannot be redirected by an environment
+ * variable or a flag.
  */
 const sshDir = (): string => {
-  const override = process.argv.includes('--shot') ? process.env['GITCITO_SSH_DIR'] : undefined
+  const override = isShotMode() ? process.env['GITCITO_SSH_DIR'] : undefined
   return override || join(homedir(), '.ssh')
 }
 
