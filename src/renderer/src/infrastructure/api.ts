@@ -948,6 +948,12 @@ export const testsApi = {
   cancel: (repoPath: string) => window.api.tests.cancel(repoPath)
 }
 
+// The one-time notice after 4.39 copied settings over from the old "Gitcito"
+// folder: tokens could not come along, and the user has to be told so.
+export const migrationApi = {
+  takeNotice: (): Promise<boolean> => window.api.takeMigrationNotice()
+}
+
 export const shellApi = {
   selectDirectory: (title?: string) => window.api.selectDirectory(title),
   selectDirectories: (title?: string) => window.api.selectDirectories(title),

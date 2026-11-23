@@ -4705,4 +4705,7 @@ export const ko: Dict = {
   'timeMachine.upOneFolder': '상위 폴더',
   'timeMachine.root': '루트',
   'history.searchPlaceholder': '제목, 작성자, SHA 또는 참조로 커밋 검색…',
+  'migration.title': '설정을 가져왔습니다',
+  'migration.message': '프로필, 워크스페이스, 환경설정을 {old}에서 {app}(으)로 복사했습니다. 저장된 토큰과 AI 키는 가져올 수 없었습니다. 설정 → 데이터에서 토큰이 포함된 내보내기 파일로 가져오거나 다시 입력하세요.',
+  'migration.dismiss': '확인',
 }

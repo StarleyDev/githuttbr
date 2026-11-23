@@ -4712,6 +4712,9 @@ export const en = {
   'timeMachine.upOneFolder': 'Up one folder',
   'timeMachine.root': 'Root',
   'history.searchPlaceholder': 'Find commits by subject, author, SHA or ref…',
+  'migration.title': 'Settings carried over',
+  'migration.message': 'Your profiles, workspaces and preferences were copied from {old} into {app}. Saved tokens and AI keys could not come along: import them in Settings → Data from an export that includes tokens, or enter them again.',
+  'migration.dismiss': 'Got it',
 }
 
 /** The shape every locale must implement. */

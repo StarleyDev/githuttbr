@@ -4708,4 +4708,7 @@ export const he: Dict = {
   'timeMachine.upOneFolder': 'תיקייה אחת למעלה',
   'timeMachine.root': 'שורש',
   'history.searchPlaceholder': 'חיפוש commits לפי נושא, מחבר, SHA או הפניה…',
+  'migration.title': 'ההגדרות הועברו',
+  'migration.message': 'הפרופילים, סביבות העבודה וההעדפות שלך הועתקו מ-{old} אל {app}. אסימונים שמורים ומפתחות AI לא הועברו: ייבא אותם בהגדרות ← נתונים מקובץ ייצוא שכולל אסימונים, או הזן אותם מחדש.',
+  'migration.dismiss': 'הבנתי',
 }

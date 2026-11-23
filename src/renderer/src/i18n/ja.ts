@@ -4645,4 +4645,7 @@ export const ja: Dict = {
   'timeMachine.upOneFolder': '親フォルダーへ',
   'timeMachine.root': 'ルート',
   'history.searchPlaceholder': '件名、作成者、SHA、参照からコミットを検索…',
+  'migration.title': '設定を引き継ぎました',
+  'migration.message': 'プロファイル、ワークスペース、各種設定を {old} から {app} にコピーしました。保存済みのトークンと AI キーは引き継げませんでした。設定 → データ で、トークンを含むエクスポートから読み込むか、もう一度入力してください。',
+  'migration.dismiss': '了解',
 }

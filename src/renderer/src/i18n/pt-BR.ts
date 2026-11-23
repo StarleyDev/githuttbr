@@ -4714,4 +4714,7 @@ export const ptBR: Dict = {
   'timeMachine.upOneFolder': 'Subir uma pasta',
   'timeMachine.root': 'Raiz',
   'history.searchPlaceholder': 'Buscar commits por assunto, autor, SHA ou referência…',
+  'migration.title': 'Configurações transferidas',
+  'migration.message': 'Seus perfis, espaços de trabalho e preferências foram copiados do {old} para o {app}. Tokens salvos e chaves de IA não puderam vir junto: importe-os em Configurações → Dados a partir de uma exportação com tokens, ou digite-os novamente.',
+  'migration.dismiss': 'Entendi',
 }

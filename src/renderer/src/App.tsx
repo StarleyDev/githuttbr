@@ -62,7 +62,8 @@ import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent
 import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
 import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
-import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
+import { hostingApi, gitApi, cliApi, keychainApi, migrationApi } from './infrastructure/api'
+import { PRODUCT_NAME } from '../../shared/brand'
 import { cliViewAction, type CliAction } from './lib/cliView'
 import type { CliOpenPayload } from '../../shared/cli'
 import { runAppCommand } from './appCommands'
@@ -513,6 +514,9 @@ function DoctorStatusChip({ path }: { path: string }): React.JSX.Element | null 
 // repeat the stale-link warning within one launch.
 let staleCliWarned = false
 
+/** The app's name before 4.39 — where migrated settings came from. A product name, never translated. */
+const LEGACY_PRODUCT_NAME = 'Gitcito'
+
 export default function App(): React.JSX.Element {
   const t = useT()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
@@ -622,6 +626,34 @@ export default function App(): React.JSX.Element {
         if (s.staleLink) useUIStore.getState().toast('error', tr('cmd.cliStale'))
       })
       .catch(() => undefined)
+  }, [])
+
+  // 4.39 moved the settings folder with the app's new name, and copied the old
+  // settings over without their tokens (main/legacyMigration.ts). Say so once,
+  // after the dictionary for the user's language is in.
+  useEffect(() => {
+    const show = (): void => {
+      void migrationApi
+        .takeNotice()
+        .then((pending) => {
+          if (!pending) return
+          useUIStore.getState().openModal({
+            kind: 'confirm',
+            title: tr('migration.title'),
+            message: interp(tr('migration.message'), { old: LEGACY_PRODUCT_NAME, app: PRODUCT_NAME }),
+            confirmLabel: tr('migration.dismiss'),
+            onConfirm: () => undefined
+          })
+        })
+        .catch(() => undefined)
+    }
+    if (useSettingsStore.getState().loaded) return show()
+    const unsub = useSettingsStore.subscribe((s) => {
+      if (!s.loaded) return
+      unsub()
+      show()
+    })
+    return unsub
   }, [])
 
   // `gitcito --wait <file>` — git is blocked on a shell process until the app

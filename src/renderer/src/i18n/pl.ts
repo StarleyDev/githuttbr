@@ -4705,4 +4705,7 @@ export const pl: Dict = {
   'timeMachine.upOneFolder': 'Jeden folder wyżej',
   'timeMachine.root': 'Katalog główny',
   'history.searchPlaceholder': 'Szukaj commitów po temacie, autorze, SHA lub referencji…',
+  'migration.title': 'Ustawienia przeniesione',
+  'migration.message': 'Twoje profile, obszary robocze i preferencje zostały skopiowane z {old} do {app}. Zapisane tokeny i klucze AI nie mogły zostać przeniesione: zaimportuj je w Ustawienia → Dane z eksportu zawierającego tokeny albo wpisz je ponownie.',
+  'migration.dismiss': 'Rozumiem',
 }
