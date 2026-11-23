@@ -31,6 +31,7 @@ export function remoteAuthFindings(c: RemoteAuthCheck): RemoteAuthFinding[] {
   if (c.source === 'none') return [{ status: 'warn', key: 'remoteAuth.noCred' }]
   if (c.rejected) return [{ status: 'fail', key: 'remoteAuth.rejected' }]
   if (c.linkMissing) return [{ status: 'fail', key: 'remoteAuth.linkMissing', vars: { login: c.login ?? '' } }]
+  if (c.needsUsername) return [{ status: 'fail', key: 'remoteAuth.needsUsername' }]
 
   const out: RemoteAuthFinding[] = []
   if (c.source === 'embedded') out.push({ status: 'warn', key: 'remoteAuth.embedded' })

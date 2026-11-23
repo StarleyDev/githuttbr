@@ -629,8 +629,9 @@ export const gitApi = {
   /** Progress for every running clone, tagged with its `cloneId`. Returns the unsubscribe. */
   onCloneProgress: (cb: (p: CloneProgress) => void): (() => void) => window.api.onCloneProgress(cb),
   /** Branch names a remote advertises — the clone dialog's branch picker. */
-  remoteBranches: (url: string, host?: RepoHost, token?: string) =>
-    call<string[]>('remoteBranches', url, host, token),
+  /** `urlProfileId`: Clone → URL's picked profile, sent only when no `host` is. */
+  remoteBranches: (url: string, host?: RepoHost, token?: string, urlProfileId?: string) =>
+    call<string[]>('remoteBranches', url, host, token, urlProfileId),
   init: (parentDir: string, name: string) => call<string>('init', parentDir, name),
   initHere: (path: string) => call<void>('initHere', path),
 

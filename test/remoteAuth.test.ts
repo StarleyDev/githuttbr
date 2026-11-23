@@ -78,6 +78,55 @@ describe('remoteAuthFindings', () => {
     expect(remoteAuthStatus({ ...base, source: 'none' })).toBe('warn')
     expect(remoteAuthStatus({ ...base, source: 'ssh' })).toBe('ok')
   })
+
+  it('a personal Data Center token with no user name is a failure of its own', () => {
+    const c: RemoteAuthCheck = { ...base, provider: 'bitbucket', source: 'token', needsUsername: true }
+    expect(remoteAuthFindings(c).map((f) => f.key)).toEqual(['remoteAuth.needsUsername'])
+    expect(remoteAuthStatus(c)).toBe('fail')
+  })
+})
+
+describe('checkRemoteAuth with a Data Center personal token and no user name', () => {
+  // git gets no credential from such a token (basicAuthFor → null), so the
+  // check must not validate it over REST and call the remote signed in.
+  it('reports the missing user name, and asks the server nothing', async () => {
+    const { mkdtempSync, rmSync, writeFileSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { vi } = await import('vitest')
+    const { app } = await import('electron')
+    const { readSettings } = await import('../src/main/settings')
+    const { defaultSettings } = await import('../src/shared/types')
+    const { checkRemoteAuth, profileCredentialForUrl } = await import('../src/main/remoteAuthCheck')
+
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-ra-bbs-'))
+    const getPath = vi.spyOn(app, 'getPath').mockReturnValue(dir)
+    const fetchSpy = vi.fn(async () => new Response('{}', { status: 200, headers: { 'X-AUSERNAME': 'bot' } }))
+    vi.stubGlobal('fetch', fetchSpy)
+    try {
+      const s = defaultSettings()
+      const p = {
+        ...s.profiles[0],
+        bitbucketServers: [{ url: 'https://bbs.personal.example', token: 'bbs-personal-token', tokenKind: 'personal' as const }]
+      }
+      writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+      writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify({ ...s, onboardingCompleted: true, profiles: [p] }))
+      await readSettings()
+      const remote = 'https://bbs.personal.example/scm/team/app.git'
+      expect(await profileCredentialForUrl('/nowhere', remote)).toEqual({ needsUsername: true })
+      const c = await checkRemoteAuth('/nowhere', 'origin', remote)
+      expect(c).toMatchObject({ provider: 'bitbucket', source: 'token', needsUsername: true })
+      expect(c.login).toBeUndefined()
+      expect(fetchSpy).not.toHaveBeenCalled()
+      // A user name in the remote URL is enough: the check goes ahead.
+      const named = await profileCredentialForUrl('/nowhere', 'https://jdoe@bbs.personal.example/scm/team/app.git')
+      expect(named.credential).toMatchObject({ token: 'bbs-personal-token', gitTokenKind: 'personal' })
+    } finally {
+      vi.unstubAllGlobals()
+      getPath.mockRestore()
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
 })
 
 describe('checkRemoteAuth across GitLab instances', () => {

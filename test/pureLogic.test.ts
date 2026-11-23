@@ -7950,3 +7950,20 @@ describe('cloneFolderNames', () => {
     expect(cloneFolderNames(['me/app', 'me/app'])).toEqual(['me-app', 'me-app-2'])
   })
 })
+
+// ─── CI counts in words (src/renderer/src/lib/ciCounts.ts) ─────────────────
+
+import { ciCountParts } from '../src/renderer/src/lib/ciCounts'
+
+describe('ciCountParts', () => {
+  it('keeps the non-zero counts, in reading order, as keys', () => {
+    expect(ciCountParts({ passed: 2, failed: 0, pending: 1, skipped: 0, cancelled: 1, unknown: 3 })).toEqual([
+      { key: 'ci.countPassed', vars: { n: 2 } },
+      { key: 'ci.countPending', vars: { n: 1 } },
+      { key: 'ci.countCancelled', vars: { n: 1 } },
+      { key: 'ci.countUnknown', vars: { n: 3 } }
+    ])
+    expect(ciCountParts(undefined)).toEqual([])
+    expect(ciCountParts({ passed: 0, failed: 0, pending: 0, skipped: 0, cancelled: 0, unknown: 0 })).toEqual([])
+  })
+})

@@ -1,6 +1,7 @@
 import type { Profile, RemoteInfo } from '../../../shared/types'
 import { GITHUB_COM, githubEndpoints, githubEnterpriseBases, githubInstanceOf } from '../../../shared/githubEnterprise'
 import { forgejoInstanceOf, gitlabInstanceOf, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
+import { bitbucketServerBases, bitbucketServerRepoOf } from '../../../shared/bitbucketServer'
 
 // PR tabs are saved to settings. Keep credentials and URL parameters out of that file.
 export function prRemoteIdentity(raw: string): string {
@@ -25,6 +26,11 @@ export function prRemoteIdentity(raw: string): string {
  */
 export function enterpriseBasesOf(profiles: ReadonlyArray<Pick<Profile, 'githubEnterprise'>>): string[] {
   return githubEnterpriseBases(profiles)
+}
+
+/** The Bitbucket Data Centers the profiles name, as canonical bases. Recognition only, as above. */
+export function bitbucketServerBasesOf(profiles: ReadonlyArray<Pick<Profile, 'bitbucketServers'>>): string[] {
+  return bitbucketServerBases(profiles)
 }
 
 /** True if a remote URL points at github.com or a configured GitHub Enterprise Server (SSH or HTTPS). */
@@ -113,9 +119,11 @@ export function isReviewableRemote(
   url: string | undefined | null,
   gitlabInstances: readonly string[] = [],
   forgejoInstances: readonly string[] = [],
-  enterprise: readonly string[] = []
+  enterprise: readonly string[] = [],
+  bitbucketServers: readonly string[] = []
 ): boolean {
   if (!url) return false
+  if (bitbucketServerRepoOf(url, bitbucketServers)) return true
   if (/(?:^|[/@.])github\.com[/:]/i.test(url)) return true
   if (githubInstanceOf(url, enterprise)) return true
   // Azure DevOps, current and legacy addresses (https and ssh).
@@ -130,10 +138,11 @@ export function repoSupportsPrReview(
   remotes: RemoteInfo[],
   gitlabInstances: readonly string[] = [],
   forgejoInstances: readonly string[] = [],
-  enterprise: readonly string[] = []
+  enterprise: readonly string[] = [],
+  bitbucketServers: readonly string[] = []
 ): boolean {
   const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0]
-  return isReviewableRemote(origin?.url, gitlabInstances, forgejoInstances, enterprise)
+  return isReviewableRemote(origin?.url, gitlabInstances, forgejoInstances, enterprise, bitbucketServers)
 }
 
 /**

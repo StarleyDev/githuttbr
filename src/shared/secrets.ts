@@ -1,5 +1,6 @@
 import { tokenMatchesInstance, GITLAB_COM, migrateGitlabProfile, migrateGitlabSettings, normalizeInstanceUrl } from './gitlabInstance'
 import { normalizeGithubEnterpriseUrl } from './githubEnterprise'
+import { normalizeBitbucketServerUrl } from './bitbucketServer'
 import type { AppSettings } from './types'
 
 /**
@@ -23,6 +24,9 @@ export interface ProfileSecrets {
    *  one self-managed instance's, named by `gitlabTokenIssuer` — see
    *  `migrateGitlabSecrets`. */
   gitlabServerTokens?: Record<string, string>
+  /** One HTTP access token per Bitbucket Data Center, keyed by its canonical
+   *  base URL (context path included), for the same reason. */
+  bitbucketServerTokens?: Record<string, string>
   /** Legacy single AI key, written before accounts existed. Still read. */
   aiApiKey?: string
   /** One API key per AI account id. */
@@ -41,6 +45,7 @@ export function hasSettingsSecrets(settings: AppSettings | null | undefined): bo
       TOKEN_FIELDS.some((f) => !!p[f]) ||
       (p.githubEnterprise ?? []).some((h) => !!h.token) ||
       (p.gitlabServers ?? []).some((h) => !!h.token) ||
+      (p.bitbucketServers ?? []).some((h) => !!h.token) ||
       !!p.ai?.apiKey ||
       (p.ai?.accounts ?? []).some((a) => !!a.apiKey)
   )
@@ -61,6 +66,7 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
       // The servers stay (they are not secret); their tokens go.
       ...(p.githubEnterprise ? { githubEnterprise: p.githubEnterprise.map((h) => ({ ...h, token: '' })) } : {}),
       ...(p.gitlabServers ? { gitlabServers: p.gitlabServers.map((h) => ({ ...h, token: '' })) } : {}),
+      ...(p.bitbucketServers ? { bitbucketServers: p.bitbucketServers.map((h) => ({ ...h, token: '' })) } : {}),
       ai: p.ai
         ? {
             ...p.ai,
@@ -102,6 +108,12 @@ export function extractSecrets(settings: AppSettings): SecretStore {
       if (base && base !== GITLAB_COM && h.token) gitlab[base] = h.token
     }
     if (Object.keys(gitlab).length > 0) secrets.gitlabServerTokens = gitlab
+    const bbs: Record<string, string> = {}
+    for (const h of p.bitbucketServers ?? []) {
+      const base = normalizeBitbucketServerUrl(h.url)
+      if (base && h.token) bbs[base] = h.token
+    }
+    if (Object.keys(bbs).length > 0) secrets.bitbucketServerTokens = bbs
     const aiKeys: Record<string, string> = {}
     for (const account of p.ai?.accounts ?? []) {
       if (account.apiKey) aiKeys[account.id] = account.apiKey
@@ -171,6 +183,14 @@ export function applySecrets(settings: AppSettings, raw: SecretStore): AppSettin
           return token ? { ...h, token } : h
         })
       }
+      const bbs = secrets.bitbucketServerTokens
+      if (bbs && restored.bitbucketServers) {
+        restored.bitbucketServers = restored.bitbucketServers.map((h) => {
+          const base = normalizeBitbucketServerUrl(h.url)
+          const token = base ? bbs[base] : undefined
+          return token ? { ...h, token } : h
+        })
+      }
       for (const field of TOKEN_FIELDS) {
         if (field === 'gitlabToken' || field === 'forgejoToken') continue
         if (secrets[field]) restored[field] = secrets[field] as string
@@ -220,12 +240,14 @@ export function mergeSecretStores(storedRaw: SecretStore, nextRaw: SecretStore):
     const aiKeys = { ...(base.aiKeys ?? {}), ...(secrets.aiKeys ?? {}) }
     const ghes = { ...(base.githubEnterpriseTokens ?? {}), ...(secrets.githubEnterpriseTokens ?? {}) }
     const gitlab = { ...(base.gitlabServerTokens ?? {}), ...(secrets.gitlabServerTokens ?? {}) }
+    const bbs = { ...(base.bitbucketServerTokens ?? {}), ...(secrets.bitbucketServerTokens ?? {}) }
     out[id] = {
       ...base,
       ...secrets,
       ...(Object.keys(aiKeys).length > 0 ? { aiKeys } : {}),
       ...(Object.keys(ghes).length > 0 ? { githubEnterpriseTokens: ghes } : {}),
-      ...(Object.keys(gitlab).length > 0 ? { gitlabServerTokens: gitlab } : {})
+      ...(Object.keys(gitlab).length > 0 ? { gitlabServerTokens: gitlab } : {}),
+      ...(Object.keys(bbs).length > 0 ? { bitbucketServerTokens: bbs } : {})
     }
   }
   return out

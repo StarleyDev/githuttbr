@@ -74,6 +74,11 @@ const RULES: Rule[] = [
     // GitLab's OAuth-style refusal for a token with too few scopes.
     test: /insufficient_scope/i,
     hint: () => ({ key: 'gitError.tokenScopeAny' })
+  },
+  {
+    // bitbucketServer.ts BBS_USER_NOT_FOUND — main has no language.
+    test: /Bitbucket Data Center: could not find your user on the server/,
+    hint: () => ({ key: 'gitError.bbsUserNotFound' })
   }
 ]
 

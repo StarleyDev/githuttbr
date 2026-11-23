@@ -713,6 +713,35 @@ export const shots = [
     }
   },
   {
+    // A Data Center pull request a merge check vetoes: the veto in the server's
+    // own words beside the reviewers, and Merge off. Faked detail — no server.
+    out: 'bitbucket-merge-blocked',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 118, title: 'Retry failed webhook deliveries', author: 'sam', source: 'webhook-retry', target: 'main',
+          body: 'Retries a failed delivery three times, with backoff.', state: 'open', draft: false, merged: false,
+          mergeable: true, mergeBlockers: ['Requires 2 approvals — You still need 1 more approval.'],
+          url: 'https://bitbucket.example.corp/bitbucket/projects/PLAT/repos/hooks/pull-requests/118',
+          comments: [], reviews: [{ author: 'alex', state: 'APPROVED', body: '', submittedAt: '2026-11-20T10:00:00Z' }],
+          reviewThreads: [], requestedReviewers: [{ login: 'jordan' }], commits: 2, changedFiles: 3, additions: 41, deletions: 6
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => [])
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://bitbucket.example.corp/bitbucket/scm/plat/hooks.git', number: 118,
+        title: 'Retry failed webhook deliveries'
+      }), repos['octopus-merge'])
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-merge').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // The Checks tab with a Forgejo Actions job's log open under its row.
     out: 'pr-check-log',
     repos: ['octopus-merge'],
@@ -978,6 +1007,23 @@ export const shots = [
       }
       await field.fill('http://gitlab.legacy.example.corp')
       await page.locator('.ghes-section').scrollIntoViewIfNeeded()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Bitbucket Data Center list on the Bitbucket tab: one fake server under a
+    // context path (no token, so nothing is ever asked of it), and a plain-http
+    // address typed to show the refusal. `.example.corp` resolves nowhere.
+    out: 'bitbucket-data-center',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.locator('.remote-tab', { hasText: 'Bitbucket' }).click()
+      const field = page.getByPlaceholder('bitbucket.example.corp/bitbucket')
+      await field.fill('bitbucket.example.corp/bitbucket')
+      await page.getByRole('button', { name: 'Add server' }).click()
+      await field.fill('http://stash.legacy.example.corp')
+      await page.locator('.bbs-section').scrollIntoViewIfNeeded()
       await page.waitForTimeout(400)
     }
   },

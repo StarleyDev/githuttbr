@@ -79,4 +79,11 @@ describe('readableError', () => {
     expect(readableError('remote: Repository not found.', t, interp)).toBe('<gitError.repoNotFound>{}')
     expect(readableError("Error invoking remote method 'git': Error: fatal: boom", t, interp)).toBe('fatal: boom')
   })
+
+  // Thrown in main as BBS_USER_NOT_FOUND, which has no language; translated here.
+  it('translates the Data Center "user not found" review error', async () => {
+    const { BBS_USER_NOT_FOUND, BitbucketServerError } = await import('../src/main/bitbucketServer')
+    const msg = "Error invoking remote method 'hosting:prReview': Error: " + new BitbucketServerError(404, BBS_USER_NOT_FOUND).message
+    expect(explainGitError(msg)).toEqual({ key: 'gitError.bbsUserNotFound' })
+  })
 })
