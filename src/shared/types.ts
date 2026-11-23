@@ -3365,6 +3365,13 @@ export type SettingsErrorKind = 'parse' | 'io' | 'other'
 /** Why main refused a `settings:set` without writing anything. */
 export type SettingsRefusal = 'not-loaded' | 'keychain-required'
 
+/**
+ * What `settings:moveAside` answers: the new name of the damaged file, null when
+ * it was not moved because it parses now (or cannot be read), or a refusal —
+ * the encrypted tokens could not be copied aside first, so nothing was moved.
+ */
+export type MoveAsideReply = string | null | { refused: 'secrets-copy'; dir: string }
+
 export type Language =
   | 'en'
   | 'es'

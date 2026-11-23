@@ -4125,6 +4125,7 @@ export const es: Dict = {
   'app.settingsLoadFailed': 'Gitcito no pudo iniciarse: falló la carga de su configuración. Tu archivo de configuración no se ha modificado. Suele ser temporal: otro programa puede estar usando el archivo. Vuelve a intentarlo.',
   'app.settingsRetry': 'Reintentar',
   'app.settingsMoveAside': 'Apartar el archivo dañado y empezar de cero',
+  'app.settingsMoveAsideRefused': 'El archivo dañado no se movió: Gitcito no pudo hacer antes una copia de seguridad de tus tokens guardados (el archivo cifrado de secretos), y mover el archivo sin esa copia podría hacerlos perder. No se cambió nada. Comprueba que se puede escribir en la carpeta de datos — {dir} — y vuelve a intentarlo.',
   'settings.importReplaceNeedsKeychain': 'Reemplazar todas las credenciales guardadas requiere el llavero del sistema, que está desactivado o no disponible. No se importó nada.',
   'settings.recentCleared': 'Repositorios recientes borrados',
   'settings.analyticsCleared': 'Analíticas borradas',

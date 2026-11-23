@@ -99,10 +99,16 @@ function askUser(reason: KeychainReason, adopted: boolean): Promise<boolean> {
     // the boot spinner spins forever. Settle it as "not now", without recording
     // a refusal the user never gave.
     const abandon = (): void => settle(false, false)
+    // Only a new document in the main frame replaces the page. A subframe (the
+    // PDF preview's <iframe>) or an in-page route change leaves the question on
+    // screen, and settling then would answer it while the user is still reading.
+    const onNavigation = (details: { isMainFrame: boolean; isSameDocument: boolean }): void => {
+      if (details.isMainFrame && !details.isSameDocument) abandon()
+    }
     const settle = (granted: boolean, answered: boolean): void => {
       win.removeListener('closed', abandon)
       contents.removeListener('render-process-gone', abandon)
-      contents.removeListener('did-start-loading', abandon)
+      contents.removeListener('did-start-navigation', onNavigation)
       contents.removeListener('destroyed', abandon)
       resolve({ granted, answered })
     }
@@ -110,7 +116,7 @@ function askUser(reason: KeychainReason, adopted: boolean): Promise<boolean> {
     contents.send('keychain:ask', { reason, adopted })
     win.once('closed', abandon)
     contents.once('render-process-gone', abandon)
-    contents.once('did-start-loading', abandon)
+    contents.on('did-start-navigation', onNavigation)
     contents.once('destroyed', abandon)
   }).then(async ({ granted, answered }) => {
     try {

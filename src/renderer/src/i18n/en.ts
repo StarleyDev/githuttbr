@@ -4129,6 +4129,7 @@ export const en = {
   'app.settingsLoadFailed': 'Gitcito could not start: loading its settings failed. Your settings file has not been changed. This is often temporary — another program may be holding the file. Try again.',
   'app.settingsRetry': 'Try again',
   'app.settingsMoveAside': 'Move the damaged file aside and start fresh',
+  'app.settingsMoveAsideRefused': 'The damaged file was not moved: Gitcito could not first back up your saved tokens (the encrypted secrets file), and moving the file without that backup could lose them. Nothing was changed. Check that the data folder can be written to — {dir} — then try again.',
   'settings.importReplaceNeedsKeychain': 'Replacing all saved credentials needs the system keychain, which is off or unavailable. Nothing was imported.',
   'settings.recentCleared': 'Recent repositories cleared',
   'settings.analyticsCleared': 'Analytics cleared',

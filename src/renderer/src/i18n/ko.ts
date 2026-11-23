@@ -4122,6 +4122,7 @@ export const ko: Dict = {
   'app.settingsLoadFailed': 'Gitcito를 시작하지 못했습니다. 설정을 불러오지 못했습니다. 설정 파일은 변경되지 않았습니다. 대개 일시적인 문제로, 다른 프로그램이 파일을 사용 중일 수 있습니다. 다시 시도하세요.',
   'app.settingsRetry': '다시 시도',
   'app.settingsMoveAside': '손상된 파일을 옮기고 새로 시작',
+  'app.settingsMoveAsideRefused': '손상된 파일을 옮기지 않았습니다. Gitcito가 저장된 토큰(암호화된 시크릿 파일)을 먼저 백업하지 못했고, 백업 없이 파일을 옮기면 토큰을 잃을 수 있기 때문입니다. 아무것도 변경되지 않았습니다. 데이터 폴더({dir})에 쓸 수 있는지 확인한 뒤 다시 시도하세요.',
   'settings.importReplaceNeedsKeychain': '저장된 자격 증명을 모두 바꾸려면 시스템 키체인이 필요하지만 꺼져 있거나 사용할 수 없습니다. 아무것도 가져오지 않았습니다.',
   'settings.recentCleared': '최근 저장소 목록을 지웠습니다',
   'settings.analyticsCleared': '분석 데이터를 지웠습니다',

@@ -4131,6 +4131,7 @@ export const ptBR: Dict = {
   'app.settingsLoadFailed': 'O Gitcito não conseguiu iniciar: falhou ao carregar as configurações. O arquivo de configurações não foi alterado. Isso costuma ser temporário — outro programa pode estar usando o arquivo. Tente de novo.',
   'app.settingsRetry': 'Tentar de novo',
   'app.settingsMoveAside': 'Mover o arquivo danificado e começar do zero',
+  'app.settingsMoveAsideRefused': 'O arquivo danificado não foi movido: o Gitcito não conseguiu antes fazer um backup dos seus tokens salvos (o arquivo criptografado de segredos), e mover o arquivo sem esse backup poderia perdê-los. Nada foi alterado. Verifique se a pasta de dados pode ser gravada — {dir} — e tente novamente.',
   'settings.importReplaceNeedsKeychain': 'Substituir todas as credenciais salvas requer o chaveiro do sistema, que está desativado ou indisponível. Nada foi importado.',
   'settings.recentCleared': 'Repositórios recentes limpos',
   'settings.analyticsCleared': 'Métricas limpas',

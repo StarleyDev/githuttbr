@@ -4070,6 +4070,7 @@ export const fr: Dict = {
   'app.settingsLoadFailed': 'Gitcito n’a pas pu démarrer : le chargement de ses paramètres a échoué. Votre fichier de paramètres n’a pas été modifié. C’est souvent passager — un autre programme utilise peut-être le fichier. Réessayez.',
   'app.settingsRetry': 'Réessayer',
   'app.settingsMoveAside': 'Mettre le fichier endommagé de côté et repartir de zéro',
+  'app.settingsMoveAsideRefused': 'Le fichier endommagé n’a pas été déplacé : Gitcito n’a pas pu sauvegarder d’abord vos jetons enregistrés (le fichier chiffré des secrets), et déplacer le fichier sans cette sauvegarde pourrait les faire perdre. Rien n’a été modifié. Vérifiez que le dossier de données est accessible en écriture — {dir} — puis réessayez.',
   'settings.importReplaceNeedsKeychain': 'Remplacer tous les identifiants enregistrés nécessite le trousseau du système, désactivé ou indisponible. Rien n’a été importé.',
   'settings.recentCleared': 'Dépôts récents effacés',
   'settings.analyticsCleared': 'Statistiques effacées',

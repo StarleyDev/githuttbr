@@ -171,7 +171,8 @@ import type {
   RepoScanRoot,
   RepoScanResult,
   SettingsErrorKind,
-  SettingsRefusal
+  SettingsRefusal,
+  MoveAsideReply
 } from '../../../shared/types'
 import type {
   LocalCiStatus,
@@ -733,8 +734,8 @@ export const settingsApi = {
     const out = (await window.api.settings.set(s, generation, options)) as { refused?: SettingsRefusal } | undefined
     if (out?.refused) throw new SettingsSaveRefused(out.refused)
   },
-  /** Renames an unparseable settings file aside; null when it was not (it parses, or is unreadable). */
-  moveAside: () => window.api.settings.moveAside(),
+  /** Renames an unparseable settings file aside; see `MoveAsideReply` for what else it can answer. */
+  moveAside: () => window.api.settings.moveAside() as Promise<MoveAsideReply>,
   importFile: () => window.api.settings.importFile() as Promise<unknown>,
   exportFile: (data: unknown) => window.api.settings.exportFile(data)
 }

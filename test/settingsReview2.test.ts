@@ -6,8 +6,8 @@ import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import type { SecretStore } from '../src/shared/secrets'
 
-// The second v4.37.2 review: a consent question that could block settings
-// forever, clears lost across a restart, and generations that went stale.
+// The second and third v4.37.2 reviews: a consent question that could block
+// settings forever, keychain-off clears, and generations that went stale.
 // Real handlers, a fake keyring, and a seam in front of fs reads.
 
 const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-review2-'))
@@ -106,7 +106,12 @@ function fakeWindow(): { win: EventEmitter; contents: EventEmitter & { send: Ret
 }
 
 describe('a consent question whose page went away', () => {
-  for (const event of ['did-start-loading', 'render-process-gone', 'destroyed']) {
+  const pageGone: Array<[string, unknown[]]> = [
+    ['did-start-navigation', [{ isMainFrame: true, isSameDocument: false }]],
+    ['render-process-gone', []],
+    ['destroyed', []]
+  ]
+  for (const [event, args] of pageGone) {
     it(`settles on '${event}', so the next renderer's settings:get is answered`, async () => {
       await fresh({ store: null })
       const { contents } = fakeWindow()
@@ -115,7 +120,7 @@ describe('a consent question whose page went away', () => {
       const saving = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'ghp_new' })), r.generation)
       await tick()
       expect(contents.send).toHaveBeenCalledWith('keychain:ask', expect.anything())
-      contents.emit(event)
+      contents.emit(event, ...args)
       const next = await within(raw('settings:get'))
       expect(next).not.toBe('timeout')
       expect((next as Reply).settings.profiles[0].name).toBe('Mine')
@@ -131,15 +136,31 @@ describe('a consent question whose page went away', () => {
     const r = await reply('settings:get')
     const first = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'a' })), r.generation)
     await tick()
-    contents.emit('did-start-loading')
+    contents.emit('did-start-navigation', { isMainFrame: true, isSameDocument: false })
     await first
     const second = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'b' })), r.generation)
     await tick()
     // The old page's listeners are gone: a second reload event is this question's own.
-    expect(contents.listenerCount('did-start-loading')).toBe(1)
+    expect(contents.listenerCount('did-start-navigation')).toBe(1)
     await raw('keychain:answer', true)
     expect(await within(second)).toBeUndefined()
     expect(storeJson().p).toEqual({ githubToken: 'b' })
+  })
+
+  it('a subframe or in-page navigation leaves the question open', async () => {
+    await fresh({ store: null })
+    const { contents } = fakeWindow()
+    const r = await reply('settings:get')
+    const saving = save(settingsWith(profileWith({ name: 'Mine', githubToken: 'ghp_a' })), r.generation)
+    await tick()
+    // The PDF preview's <iframe> loading (Electron reports it as both), and a route change in the page.
+    contents.emit('did-start-loading')
+    contents.emit('did-start-navigation', { isMainFrame: false, isSameDocument: false })
+    contents.emit('did-start-navigation', { isMainFrame: true, isSameDocument: true })
+    expect(await within(saving, 200)).toBe('timeout')
+    await raw('keychain:answer', true)
+    expect(await within(saving)).toBeUndefined()
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_a' })
   })
 })
 
@@ -150,37 +171,42 @@ describe('a token cleared while the keychain was off', () => {
     await save(settingsWith(profileWith({ name: 'Mine', githubToken: 'ghp_new' })), r.generation)
     r = await reply('settings:get')
     await save(settingsWith(profileWith({ name: 'Mine' })), r.generation)
-    // What is owed is on disk — slot ids only, never a token.
-    const file = readFileSync(settingsFile(), 'utf8')
-    expect(JSON.parse(file).pendingSecretClears).toEqual(['p\u0000githubToken'])
-    expect(file).not.toContain('ghp_')
-    // Quit, and come back with the keychain on.
-    writeFileSync(consentFile(), JSON.stringify({ consent: 'granted', explained: true }))
-    await boot()
+    // Nothing about the clear reaches the settings file.
+    expect(JSON.parse(readFileSync(settingsFile(), 'utf8'))).not.toHaveProperty('pendingSecretClears')
   }
 
-  it('stays cleared after a restart, and the store loses it on the first unlock', async () => {
+  it('stays cleared for the session, and the store loses it when the keychain is turned on', async () => {
     await clearWhileOff()
-    const u = await reply('settings:unlock')
-    expect(u.settings.profiles[0].githubToken).toBeFalsy()
-    expect(u.settings).not.toHaveProperty('pendingSecretClears')
+    expect((await reply('settings:unlock')).settings.profiles[0].githubToken).toBeFalsy()
+    // Still in the store until the keychain can be written.
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_old', azureToken: 'az_old' })
+    await raw('keychain:set', true)
     expect(storeJson().p).toEqual({ azureToken: 'az_old' })
-    expect(JSON.parse(readFileSync(settingsFile(), 'utf8'))).not.toHaveProperty('pendingSecretClears')
-    // Nothing brings it back on the restart after that.
     await boot()
     expect((await reply('settings:unlock')).settings.profiles[0].githubToken).toBeFalsy()
   })
 
-  it('reaches the store through a credential-less save too, never shown to the renderer', async () => {
+  it('comes back after a restart if the keychain was never turned on: the documented limit', async () => {
     await clearWhileOff()
-    const r = await reply('settings:get')
-    expect(r.settings).not.toHaveProperty('pendingSecretClears')
-    await save({ ...r.settings, language: 'de' }, r.generation)
-    expect(storeJson().p).toEqual({ azureToken: 'az_old' })
+    writeFileSync(consentFile(), JSON.stringify({ consent: 'granted', explained: true }))
+    await boot()
+    expect((await reply('settings:unlock')).settings.profiles[0].githubToken).toBe('ghp_old')
+  })
+
+  it('a pendingSecretClears list left by a pre-release build is never obeyed, and a save drops it', async () => {
+    await fresh({ consent: 'granted' })
+    const stale = { ...settingsWith(profileWith({ name: 'Mine' })), pendingSecretClears: ['p\u0000githubToken'] }
+    writeFileSync(settingsFile(), JSON.stringify(stale))
+    await boot()
+    const u = await reply('settings:unlock')
+    expect(u.settings).not.toHaveProperty('pendingSecretClears')
+    expect(u.settings.profiles[0].githubToken).toBe('ghp_old')
+    await save({ ...u.settings, language: 'de' }, u.generation)
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_old', azureToken: 'az_old' })
     expect(JSON.parse(readFileSync(settingsFile(), 'utf8'))).not.toHaveProperty('pendingSecretClears')
   })
 
-  it('a save from the renderer cannot write its own list of clears', async () => {
+  it('a save from the renderer cannot write a list of clears either', async () => {
     await fresh({ consent: 'granted' })
     const r = await reply('settings:get')
     const forged = { ...r.settings, pendingSecretClears: ['p\u0000azureToken'] } as unknown as AppSettings
@@ -188,6 +214,43 @@ describe('a token cleared while the keychain was off', () => {
     expect(JSON.parse(readFileSync(settingsFile(), 'utf8'))).not.toHaveProperty('pendingSecretClears')
     await boot()
     expect((await reply('settings:unlock')).settings.profiles[0].azureToken).toBe('az_old')
+  })
+})
+
+describe('readers outside the settings queue', () => {
+  /** Every file in the data folder, by name, with its bytes. */
+  const snapshot = (): Record<string, string> =>
+    Object.fromEntries(readdirSync(dir).sort().map((f) => [f, readFileSync(join(dir, f), 'utf8')]))
+
+  it('never write: not after a keychain-off clear, not with a stale clear list, not for a plaintext file', async () => {
+    // A clear owed to the store, held in this session.
+    await fresh({ consent: 'declined' })
+    let r = await reply('settings:get')
+    await save(settingsWith(profileWith({ name: 'Mine', githubToken: 'ghp_new' })), r.generation)
+    r = await reply('settings:get')
+    await save(settingsWith(profileWith({ name: 'Mine' })), r.generation)
+    let mod = await import('../src/main/settings')
+    let before = snapshot()
+    await mod.activeProfileAuth('github')
+    await mod.allProfileAuth('github')
+    await mod.activeProfileAiKey()
+    expect(snapshot()).toEqual(before)
+
+    // A stale clear list and a plaintext token in the file, keychain on.
+    await fresh({ consent: 'granted' })
+    const plain = { ...settingsWith(profileWith({ name: 'Mine', githubToken: 'ghp_plain' })), pendingSecretClears: ['p\u0000azureToken'] }
+    writeFileSync(settingsFile(), JSON.stringify(plain))
+    await boot()
+    mod = await import('../src/main/settings')
+    before = snapshot()
+    expect((await mod.activeProfileAuth('github')).token).toBe('ghp_plain')
+    expect((await mod.allProfileAuth('github'))[0].token).toBe('ghp_plain')
+    await mod.activeProfileAiKey()
+    expect(snapshot()).toEqual(before)
+    // The queued unlock is what moves the plaintext token into the store.
+    await reply('settings:unlock')
+    expect(storeJson().p).toMatchObject({ githubToken: 'ghp_plain' })
+    expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_plain')
   })
 })
 
@@ -219,7 +282,7 @@ describe('turning the keychain on while a reply is being built', () => {
 })
 
 describe('moving a damaged settings file aside', () => {
-  it('refuses, and leaves the file where it is, when the secrets cannot be copied', async () => {
+  it('refuses, says so, and leaves the file where it is, when the secrets cannot be copied', async () => {
     await fresh({ consent: 'granted' })
     writeFileSync(settingsFile(), '{"profiles": [')
     expect(await raw('settings:get')).toEqual({ error: 'parse' })
@@ -229,7 +292,7 @@ describe('moving a damaged settings file aside', () => {
     }
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
-      expect(await raw('settings:moveAside')).toBeNull()
+      expect(await raw('settings:moveAside')).toEqual({ refused: 'secrets-copy', dir })
     } finally {
       warn.mockRestore()
     }

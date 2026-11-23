@@ -4062,6 +4062,7 @@ export const ja: Dict = {
   'app.settingsLoadFailed': 'Gitcito を起動できませんでした。設定の読み込みに失敗しました。設定ファイルは変更されていません。多くは一時的なもので、別のプログラムがファイルを使用している可能性があります。再試行してください。',
   'app.settingsRetry': '再試行',
   'app.settingsMoveAside': '破損したファイルを退避して新しく始める',
+  'app.settingsMoveAsideRefused': '破損したファイルは移動していません。保存済みのトークン（暗号化されたシークレットファイル）を先にバックアップできず、バックアップなしで移動するとトークンを失うおそれがあるためです。何も変更されていません。データフォルダー（{dir}）に書き込めることを確認してから、もう一度お試しください。',
   'settings.importReplaceNeedsKeychain': '保存済みの認証情報をすべて置き換えるにはシステムのキーチェーンが必要ですが、オフまたは利用できません。何もインポートされていません。',
   'settings.recentCleared': '最近使ったリポジトリを消去しました',
   'settings.analyticsCleared': '分析データを消去しました',

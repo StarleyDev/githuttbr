@@ -4071,6 +4071,7 @@ export const it: Dict = {
   'app.settingsLoadFailed': 'Gitcito non è riuscito ad avviarsi: il caricamento delle impostazioni non è riuscito. Il file delle impostazioni non è stato modificato. Spesso è temporaneo: un altro programma potrebbe tenere aperto il file. Riprova.',
   'app.settingsRetry': 'Riprova',
   'app.settingsMoveAside': 'Sposta da parte il file danneggiato e ricomincia da zero',
+  'app.settingsMoveAsideRefused': 'Il file danneggiato non è stato spostato: Gitcito non è riuscito prima a fare un backup dei token salvati (il file cifrato dei segreti), e spostare il file senza quel backup potrebbe farli perdere. Non è stato modificato nulla. Verifica che la cartella dei dati sia scrivibile — {dir} — e riprova.',
   'settings.importReplaceNeedsKeychain': 'Sostituire tutte le credenziali salvate richiede il portachiavi di sistema, disattivato o non disponibile. Non è stato importato nulla.',
   'settings.recentCleared': 'Repository recenti azzerati',
   'settings.analyticsCleared': 'Statistiche azzerate',

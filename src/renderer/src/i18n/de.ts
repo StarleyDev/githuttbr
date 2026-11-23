@@ -4130,6 +4130,7 @@ export const de: Dict = {
   'app.settingsLoadFailed': 'Gitcito konnte nicht starten: Das Laden der Einstellungen ist fehlgeschlagen. Ihre Einstellungsdatei wurde nicht verändert. Das ist oft vorübergehend – ein anderes Programm hält die Datei womöglich offen. Versuchen Sie es erneut.',
   'app.settingsRetry': 'Erneut versuchen',
   'app.settingsMoveAside': 'Beschädigte Datei beiseitelegen und neu beginnen',
+  'app.settingsMoveAsideRefused': 'Die beschädigte Datei wurde nicht verschoben: Gitcito konnte deine gespeicherten Tokens (die verschlüsselte Secrets-Datei) nicht zuerst sichern, und ohne diese Sicherung könnten sie beim Verschieben verloren gehen. Es wurde nichts geändert. Prüfe, ob in den Datenordner geschrieben werden kann — {dir} — und versuche es erneut.',
   'settings.importReplaceNeedsKeychain': 'Alle gespeicherten Zugangsdaten zu ersetzen erfordert den Systemschlüsselbund, der aus oder nicht verfügbar ist. Es wurde nichts importiert.',
   'settings.recentCleared': 'Liste der zuletzt genutzten Repositories geleert',
   'settings.analyticsCleared': 'Auswertung gelöscht',

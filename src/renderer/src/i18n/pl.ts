@@ -4122,6 +4122,7 @@ export const pl: Dict = {
   'app.settingsLoadFailed': 'Gitcito nie mógł się uruchomić: wczytanie ustawień nie powiodło się. Plik ustawień nie został zmieniony. Często jest to chwilowe — inny program może blokować plik. Spróbuj ponownie.',
   'app.settingsRetry': 'Spróbuj ponownie',
   'app.settingsMoveAside': 'Odłóż uszkodzony plik i zacznij od nowa',
+  'app.settingsMoveAsideRefused': 'Uszkodzony plik nie został przeniesiony: Gitcito nie mógł najpierw wykonać kopii zapasowej zapisanych tokenów (zaszyfrowanego pliku sekretów), a przeniesienie pliku bez tej kopii mogłoby je utracić. Nic nie zostało zmienione. Sprawdź, czy do folderu danych można zapisywać — {dir} — i spróbuj ponownie.',
   'settings.importReplaceNeedsKeychain': 'Zastąpienie wszystkich zapisanych poświadczeń wymaga systemowego pęku kluczy, który jest wyłączony lub niedostępny. Nic nie zaimportowano.',
   'settings.recentCleared': 'Wyczyszczono listę ostatnich repozytoriów',
   'settings.analyticsCleared': 'Analityka wyczyszczona',

@@ -73,7 +73,7 @@ storing.
 
 While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
 
-Clearing a token while the keychain is off clears it for real: it is gone for the rest of the session, and the copy in the encrypted store is deleted the first time the store can be written again — when you turn the keychain on, or on a later launch with it on. Until then the settings file remembers *which* token was cleared (never the token itself), so quitting first does not bring it back.
+Clearing a token while the keychain is off clears it **for this session only**. A token saved earlier, while the keychain was on, still sits in the encrypted store, and the store cannot be written while the keychain is off: if you quit without turning it on, that token is back on the next launch. To delete a stored token for good, turn the keychain on — in the same session, before quitting, the token you cleared is then deleted from the store rather than written back — or clear it while the keychain is on.
 
 If the window reloads or crashes while the keychain explanation is on screen, the question counts as unanswered — not as a no — and is asked again the next time a token needs storing.
 
@@ -115,8 +115,10 @@ screen. You can fix `gitcito-settings.json` in its data folder and press
 is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside
 it, and Gitcito starts as on a first run. The copy is made first: if it cannot
-be written, nothing is moved and the screen stays, since starting fresh without
-it would let the first token you save delete the old profiles' tokens.
+be written, nothing is moved, and the screen says so and shows the data folder
+to check, since starting fresh without the copy would let the first token you
+save delete the old profiles' tokens. Fix what keeps the folder from being
+written to (permissions, a full disk) and press **Try again**.
 
 If the file goes bad while Gitcito is running (edited by hand underneath it),
 saves stop and Gitcito says so once: settings cannot be saved until it is
