@@ -2429,6 +2429,8 @@ export function ModalHost(): React.JSX.Element {
               className={`modal ${
                 modal.kind === 'clone'
                   ? 'modal-clone'
+                  : modal.kind === 'push-branches'
+                  ? 'modal-push-branches'
                   : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
                   : modal.kind === 'ai-config-wizard'

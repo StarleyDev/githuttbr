@@ -5734,6 +5734,12 @@ body.col-resizing .node-ava {
   width: 740px;
 }
 
+/* 20% over the default 420px: branch names, their state badges and the
+   "tracks origin/…" line fit without wrapping. */
+.modal-push-branches {
+  width: 504px;
+}
+
 .modal h3 {
   font-size: 15px;
   margin-bottom: 14px;
