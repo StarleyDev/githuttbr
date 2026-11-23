@@ -86,6 +86,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
             bitbucketToken: PERSONAL.bitbucket,
             azureToken: PERSONAL.azure
           },
+          { ...base, id: 'empty', name: 'Empty' },
           {
             ...base,
             id: 'linked',
@@ -130,12 +131,33 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
     expect(env).toContain('typed-now')
   })
 
-  it('an empty or unknown id still gets nothing; no id still clones a cloud host anonymously', async () => {
+  // Nothing to offer is not "let git decide": git's helper would answer with
+  // whatever login the machine holds, and the repository would be bound to the
+  // picked profile while cloned as that other account.
+  it('an empty, unknown or credential-less id clones as nobody: no token, the host’s helpers blanked', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     for (const c of CLOUD) {
-      for (const id of ['', '  ', 'gone']) expect(await cloneCredentialEnv(c.url, c.host, '', id)).toBeNull()
-      expect(await cloneCredentialEnv(c.url, c.host, '')).toBeNull()
+      const origin = new URL(c.url).origin
+      for (const id of ['', '  ', 'gone', 'empty']) {
+        const env = (await cloneCredentialEnv(c.url, c.host, '', id)) ?? {}
+        expect(env.GIT_CONFIG_COUNT, `${c.url} ${id}`).toBe('1')
+        expect(env.GIT_CONFIG_KEY_0).toBe(`credential.${origin}.helper`)
+        expect(env.GIT_CONFIG_VALUE_0).toBe('')
+        expect(env.GIT_ASKPASS).toBe('')
+        expect(env.GIT_TERMINAL_PROMPT).toBe('0')
+        expect(Object.keys(env).some((k) => k.startsWith('GITCITO_GIT_'))).toBe(false)
+        expect(JSON.stringify(env)).not.toMatch(/work-|personal-|helper-/)
+      }
+      // The provider check failing for a named profile is just as anonymous.
+      const other = (await cloneCredentialEnv(c.url, c.host === 'github' ? 'azure' : 'github', '', 'personal')) ?? {}
+      expect(other.GIT_CONFIG_VALUE_0).toBe('')
+      expect(JSON.stringify(other)).not.toContain('personal-')
     }
+  })
+
+  it('no id at all keeps today’s behaviour: a cloud host gets nothing, git’s helpers as usual', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    for (const c of CLOUD) expect(await cloneCredentialEnv(c.url, c.host, '')).toBeNull()
   })
 
   // One rule at the IPC boundary: a string names a profile, anything else names

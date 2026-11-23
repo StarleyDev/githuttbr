@@ -73,6 +73,35 @@ export function gitCredentialEnv(
   }
 }
 
+/**
+ * Environment additions that make git ask `url`'s host as nobody: the same empty
+ * `credential.<origin>.helper` entry `gitCredentialEnv` writes first, with no
+ * helper after it, so a credential manager holding another account's login for
+ * that host is never consulted. `GIT_ASKPASS` set but empty also skips
+ * `core.askPass` and `SSH_ASKPASS` (git takes the first one *set*, and runs it
+ * only when non-empty), and with terminal prompts off a server that wants a
+ * login fails at once. Null for a URL with no credential step (ssh, a path).
+ */
+export function anonymousGitEnv(url: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv | null {
+  let origin: string
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
+    origin = u.origin
+  } catch {
+    return null
+  }
+  const n = Number.parseInt(base.GIT_CONFIG_COUNT ?? '', 10)
+  const at = Number.isFinite(n) && n > 0 ? n : 0
+  return {
+    GIT_CONFIG_COUNT: String(at + 1),
+    [`GIT_CONFIG_KEY_${at}`]: `credential.${origin}.helper`,
+    [`GIT_CONFIG_VALUE_${at}`]: '',
+    GIT_ASKPASS: '',
+    GIT_TERMINAL_PROMPT: '0'
+  }
+}
+
 /** Config-from-environment (`GIT_CONFIG_COUNT`) arrived in git 2.31. */
 export const MIN_GIT_FOR_CREDENTIAL_ENV = '2.31'
 

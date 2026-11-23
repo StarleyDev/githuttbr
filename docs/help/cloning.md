@@ -22,9 +22,14 @@ The clone signs in with that profile's token for the host — for a self-hosted
 server, the one it saved for that server — or, with no token, the login it
 linked (the GitHub CLI's account, or one git's credential helper holds). A
 profile with neither clones anonymously; it never falls back to the active
-profile's credential, and git's helper is not left to pick an account. Clone →
-URL has no picked host: only an address under a Bitbucket Data Center a profile
-names is signed in; anything else is cloned as git itself would.
+profile's credential, and git's helper is not left to pick an account: for that
+host, the clone and the branch list switch git's credential helpers and askpass
+off, so a private repository fails to clone instead of signing in as whichever
+account the machine's credential manager holds. Clone → URL has no picked host:
+only an address under a Bitbucket Data Center a profile names is signed in (or,
+with no credential there, cloned anonymously the same way); anything else is
+cloned as git itself would, credential helper included. One thing the switch
+cannot reach: a `~/.netrc` entry for the host is still read by git's HTTP layer.
 
 Choose a parent folder and a name; the line under the fields shows exactly where
 the repository will land. A folder that already exists is refused rather than

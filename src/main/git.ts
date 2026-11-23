@@ -192,7 +192,13 @@ import {
   isBitbucketCloudHost
 } from '../shared/bitbucketServer'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
-import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
+import {
+  anonymousGitEnv,
+  gitCredentialEnv,
+  gitSupportsCredentialEnv,
+  MIN_GIT_FOR_CREDENTIAL_ENV,
+  type BasicCredential
+} from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -1021,8 +1027,10 @@ function urlUsername(url: string | undefined): string {
  * tab listed repositories with and the new repository is then bound to — so a
  * repository is listed, cloned and later fetched as one account. An empty or
  * unknown id gets nothing (an anonymous clone), never the active profile's or
- * the first one's. Absent — or not a string, which names nobody — means a clone
- * nobody picked a profile for: the active one.
+ * the first one's — and git's own credential helpers are switched off for the
+ * host, so no login the machine holds answers either. Absent — or not a string,
+ * which names nobody — means a clone nobody picked a profile for: the active
+ * one, and when it has nothing, git's helpers as usual.
  */
 export async function cloneCredentialEnv(
   url: string,
@@ -1030,8 +1038,28 @@ export async function cloneCredentialEnv(
   token?: string,
   profileIdArg?: unknown
 ): Promise<NodeJS.ProcessEnv | null> {
-  if (!/^https:\/\//i.test(url)) return null
   const profileId = asProfileIdArg(profileIdArg)
+  const env = await profileCredentialEnv(url, host, token, profileId)
+  if (env) return env
+  // A picked profile with no usable credential clones as nobody. Left to git,
+  // its own credential helper would answer — a system credential manager
+  // holding another account's login for this host — and the repository would
+  // then be bound to the picked profile while cloned as someone else. A clone
+  // nobody picked a profile for keeps git's own behaviour, as in a terminal —
+  // and so does Clone → URL (no host) for an address no profile serves: the
+  // user pasted it, and the helper may be the only way in to that server.
+  if (profileId === undefined) return null
+  if (!host && !bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
+  return anonymousGitEnv(url)
+}
+
+async function profileCredentialEnv(
+  url: string,
+  host: string | undefined,
+  token: string | undefined,
+  profileId: string | undefined
+): Promise<NodeJS.ProcessEnv | null> {
+  if (!/^https:\/\//i.test(url)) return null
   if (profileId !== undefined && !(await isProfileId(profileId))) return null
   // Clone → URL names no provider. A Data Center a profile configures is
   // recognised from the URL itself (host, port and context path) — its token is
