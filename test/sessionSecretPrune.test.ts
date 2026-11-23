@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { EventEmitter } from 'events'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
@@ -25,6 +26,8 @@ vi.mock('electron', () => ({
   }
 }))
 
+afterAll(() => rmSync(dir, { recursive: true, force: true }))
+
 const callFrom = (sender: number, channel: string, ...args: unknown[]): Promise<unknown> =>
   Promise.resolve(handlers.get(channel)!({ sender: { id: sender } }, ...args))
 /** The app's window. */
@@ -45,7 +48,6 @@ describe('session-only tokens follow the server list (keychain declined)', () =>
     const { registerSettingsHandlers } = await import('../src/main/settings')
     registerSettingsHandlers()
   })
-  afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
   // Every token kind a profile carries, all through the same session path.
   const FORGEJO = 'https://forgejo.corp.example'
@@ -161,6 +163,61 @@ describe('session-only tokens follow the server list (keychain declined)', () =>
       const after = ((await call('settings:get')) as AppSettings).profiles[0]
       expect(after.githubEnterprise?.map((s) => s.token)).toEqual([''])
       expect(after.gitlabServers?.map((s) => s.token)).toEqual(['gl-session'])
+    })
+  }
+})
+
+// A renderer that reloads (or crashes) starts over holding nothing, and may save
+// before it has read the settings again. Its blanks must not count as clears.
+const RESETS = ['did-navigate', 'render-process-gone', 'destroyed'] as const
+
+/** A stand-in webContents: an id and the events the main process watches. */
+const fakeRenderer = (id: number): EventEmitter & { id: number } => Object.assign(new EventEmitter(), { id })
+const callAs = (wc: EventEmitter & { id: number }, channel: string, ...args: unknown[]): Promise<unknown> =>
+  Promise.resolve(handlers.get(channel)!({ sender: wc }, ...args))
+
+describe('a reloaded renderer holds nothing until it is served again', () => {
+  const restart = async (consent: 'declined' | 'granted'): Promise<void> => {
+    for (const f of ['gitcito-settings.json', 'gitcito-secrets.enc']) rmSync(join(dir, f), { force: true })
+    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent, explained: true }))
+    vi.resetModules()
+    handlers.clear()
+    const { registerSettingsHandlers } = await import('../src/main/settings')
+    registerSettingsHandlers()
+  }
+  const tokens = (gh: string, glsrv: string): AppSettings =>
+    settingsWith(profileWith({ githubToken: gh, gitlabServers: [{ url: GITLAB, token: glsrv }] }))
+  const tokensNow = async (wc: EventEmitter & { id: number }): Promise<string[]> => {
+    const p = ((await callAs(wc, 'settings:get')) as AppSettings).profiles[0]
+    return [p.githubToken, p.gitlabServers?.[0]?.token ?? 'missing']
+  }
+
+  for (const reset of RESETS) {
+    it(`session-only tokens (keychain declined) survive blanks after ${reset}`, async () => {
+      await restart('declined')
+      const wc = fakeRenderer(7)
+      await callAs(wc, 'settings:set', tokens('gh-typed', 'gl-typed'))
+      expect(await tokensNow(wc)).toEqual(['gh-typed', 'gl-typed'])
+      wc.emit(reset)
+      await callAs(wc, 'settings:set', tokens('', ''))
+      const { activeProfileAuth } = await import('../src/main/settings')
+      expect((await activeProfileAuth('github')).token).toBe('gh-typed')
+      // Served again, its blanks are clears once more.
+      expect(await tokensNow(wc)).toEqual(['gh-typed', 'gl-typed'])
+      await callAs(wc, 'settings:set', tokens('', ''))
+      expect(await tokensNow(wc)).toEqual(['', ''])
+    })
+
+    it(`stored tokens (keychain granted) survive blanks after ${reset}`, async () => {
+      await restart('granted')
+      const wc = fakeRenderer(8)
+      await callAs(wc, 'settings:set', tokens('gh-stored', 'gl-stored'))
+      expect(await tokensNow(wc)).toEqual(['gh-stored', 'gl-stored'])
+      wc.emit(reset)
+      await callAs(wc, 'settings:set', tokens('', ''))
+      expect(await tokensNow(wc)).toEqual(['gh-stored', 'gl-stored'])
+      await callAs(wc, 'settings:set', tokens('', ''))
+      expect(await tokensNow(wc)).toEqual(['', ''])
     })
   }
 })

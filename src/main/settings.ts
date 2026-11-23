@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile, rm } from 'fs/promises'
@@ -112,7 +112,8 @@ async function canEncrypt(): Promise<boolean> {
 let secretsUnreadable = false
 
 /**
- * Whether the settings the renderer last loaded included the stored secrets.
+ * The renderers (webContents ids) whose last-loaded settings included the
+ * stored secrets.
  *
  * A renderer hydrated before any unlock persists a credential-less copy of the
  * settings on every mutation (a tab move, a repo opened). If a background
@@ -121,7 +122,7 @@ let secretsUnreadable = false
  * cleared everything" overwrites the encrypted store with nothing. Only once
  * the renderer was actually served the secrets is an empty save a deletion.
  */
-let servedSecrets = false
+const servedSecrets = new Set<number>()
 
 /**
  * A real unlock attempt this session found the keyring unusable: consent was
@@ -648,7 +649,7 @@ async function writeSettings(incoming: AppSettings, sender: number): Promise<voi
   // and when the file exists but this build could not decrypt it: our empty
   // view of the store is not the truth, and persisting it would erase the
   // real one.
-  if (!hasSecrets && (!servedSecrets || !secretCache || secretsUnreadable)) {
+  if (!hasSecrets && (!servedSecrets.has(sender) || !secretCache || secretsUnreadable)) {
     // What it can do is say which servers are gone: a token filed for a server
     // the profile no longer lists would otherwise come back with the URL.
     // The session-only tokens too (consent declined): they are applied on every
@@ -688,7 +689,7 @@ async function writeSettings(incoming: AppSettings, sender: number): Promise<voi
   // never saw them can only add — its save is overlaid on the stored values,
   // so the credentials it was never given survive.
   const ids = (settings.profiles ?? []).map((p) => p.id)
-  const base = servedSecrets ? {} : (secretCache ?? (await loadSecrets()))
+  const base = servedSecrets.has(sender) ? {} : (secretCache ?? (await loadSecrets()))
   const merged = pruneSecrets(mergeSecretStores(base, secrets), ids, settings.profiles ?? [])
   await saveSecrets(merged)
   setSecretCache(merged)
@@ -707,28 +708,59 @@ function withForcedOnboarding(settings: AppSettings): AppSettings {
 }
 
 /** The renderer an IPC call came from; -1 when the event names none. */
-function senderOf(e: { sender?: { id?: number } } | undefined): number {
+function senderOf(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined): number {
   return e?.sender?.id ?? -1
+}
+
+const watchedRenderers = new WeakSet<WebContents>()
+
+/**
+ * Records what a renderer was just served. A reload or a crash starts it over
+ * with nothing — and it can save before it has read the settings again — so
+ * from then on it holds neither the stored nor the session secrets, and its
+ * blanks are not clears until it is served them anew.
+ */
+function served(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined, settings: AppSettings): void {
+  const id = senderOf(e)
+  if (hasSettingsSecrets(settings)) servedSecrets.add(id)
+  else servedSecrets.delete(id)
+  sessionHolders.add(id)
+  forgetOnReload(e)
+}
+
+/** Once per renderer: drop what it holds when it reloads, crashes or closes. */
+function forgetOnReload(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined): void {
+  const wc = e?.sender
+  if (!wc || typeof wc.on !== 'function' || watchedRenderers.has(wc)) return
+  watchedRenderers.add(wc)
+  const id = wc.id
+  const forget = (): void => {
+    servedSecrets.delete(id)
+    sessionHolders.delete(id)
+  }
+  wc.on('did-navigate', forget)
+  wc.on('render-process-gone', forget)
+  wc.once('destroyed', forget)
 }
 
 export function registerSettingsHandlers(): void {
   void removeLegacySecretsIndex()
   ipcMain.handle('settings:get', async (e) => {
     const settings = withForcedOnboarding(await readSettings())
-    servedSecrets = hasSettingsSecrets(settings)
-    sessionHolders.add(senderOf(e))
+    served(e, settings)
     return settings
   })
   ipcMain.handle('settings:set', (e, settings: AppSettings) => {
     if (settings.onboardingCompleted) forceOnboarding = false
+    // A save can make its renderer a holder (it typed the tokens): watch it too.
+    forgetOnReload(e)
     return writeSettings(settings, senderOf(e))
   })
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
   ipcMain.handle('settings:unlock', async (e) => {
     const settings = withForcedOnboarding(await readSettingsWithSecrets('settings'))
-    servedSecrets = hasSettingsSecrets(settings)
-    sessionHolders.add(senderOf(e))
+    served(e, settings)
     return settings
   })
 
