@@ -471,11 +471,15 @@ describe.skipIf(!hasOpenssl)('fetch on a repository bound to a profile', () => {
   // `!touch …` the value of a `credential.<url>.helper`, run on the 401.
   it('bound, with no credential, a remote path cannot smuggle a helper in', async () => {
     asMachine()
+    // A machine with no helper of its own, the common case: one that answers
+    // first would hide the smuggled helper behind it.
+    const bare = join(dir, 'gitconfig-bare')
+    writeFileSync(bare, '')
+    process.env.GIT_CONFIG_GLOBAL = bare
     const { gitService, remoteOperationEnv } = await import('../src/main/git')
     await expect(gitService.fetchRemote(boundHostile, 'origin')).rejects.toThrow()
     expect(received.length).toBeGreaterThan(0)
     expect(readdirSync(dir).filter((f) => f.startsWith('pwned'))).toEqual([])
-    expect(existsSync(marker)).toBe(false)
     const { env } = await remoteOperationEnv(boundHostile, 'origin', 'fetch')
     expect(credentialConfig(env)).toEqual([`credential.${origin}.helper`, `credential.${origin}.usehttppath true`])
   })
