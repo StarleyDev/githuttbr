@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { AUTHOR_NAME, PRODUCT_NAME, brandText } from '../src/shared/brand'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { marked } from 'marked'
 import { en } from '../src/renderer/src/i18n/en'
 import { ptBR } from '../src/renderer/src/i18n/pt-BR'
 import { ja } from '../src/renderer/src/i18n/ja'
@@ -135,5 +136,40 @@ describe('the handbook, in every language', () => {
     for (const page of pages) {
       expect(leftover(brandText(readFileSync(join(root, page), 'utf8'))), page).toBeNull()
     }
+  })
+})
+
+describe('the upgrading page', () => {
+  // The one page that has to name the old app, its folder and its command.
+  // Branding would rewrite a plain spelling into the new name, so the page
+  // writes the old one with an entity; this checks what a reader sees.
+  const shown = (): string => {
+    const md = brandText(readFileSync(join(__dirname, '../docs/help/upgrading.md'), 'utf8'))
+    const html = marked.parse(md.slice(md.indexOf('\n---', 3) + 4), { async: false })
+    return html
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(Number(n)))
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
+      .replace(/\s+/g, ' ')
+  }
+
+  it('names the old folder, command and files as they are on disk', () => {
+    const text = shown()
+    expect(text).toContain('named Gitcito')
+    expect(text).toContain('.gitcito.json')
+    expect(text).toContain('~/.local/bin/gitcito')
+    expect(text).toContain('still runs gitcito --wait')
+    expect(text).toContain('point at gitcito-textconv')
+  })
+
+  it('names the new ones as the new ones', () => {
+    const text = shown()
+    expect(text).toContain('set core.editor to githuttbr --wait')
+    expect(text).toContain("Install 'githuttbr' command in PATH")
+    expect(text).toContain('all say GitHuttBr')
+    expect(text).not.toContain('named GitHuttBr')
+    expect(text).not.toContain('runs githuttbr --wait')
   })
 })

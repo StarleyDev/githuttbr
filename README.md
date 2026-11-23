@@ -34,6 +34,8 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 
 Grab the latest build from **[Releases](https://github.com/StarleyDev/githuttbr/releases)**.
 On Linux and Windows the app then updates itself from those releases.
+Coming from 4.38 or earlier? Settings come along on their own; tokens and a few terminal
+settings do not — see **[Upgrading from 4.38](docs/help/upgrading.md)**.
 
 The macOS build is **not signed**, so macOS blocks it the first time ("Apple could not
 verify…"). Open it once, then go to **System Settings → Privacy & Security** and click
