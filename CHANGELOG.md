@@ -1,5 +1,16 @@
 
 
+## [4.37.1](https://github.com/StarleyDev/githuttbr/compare/v4.37.0...v4.37.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* bump electron to 43.8.12 and audit it in ci ([3084669](https://github.com/StarleyDev/githuttbr/commit/3084669d1f45228ac435877ef475153871b1b47d))
+* drop cwd-relative search path entries before main spawns anything ([00da47b](https://github.com/StarleyDev/githuttbr/commit/00da47b3a670fd83a00eb8406df499d502743b28))
+* harden git argument, credential redaction and clone paths ([c34c7c1](https://github.com/StarleyDev/githuttbr/commit/c34c7c1bdabe7a7e864cc98abaa3db2a564319d7))
+* ignore --shot in packaged builds ([216b753](https://github.com/StarleyDev/githuttbr/commit/216b7538fe0f0fe28c42bb4162d2901c44e8c6b0))
+* set electron fuses and drop dyld entitlements on macos ([bacc2cc](https://github.com/StarleyDev/githuttbr/commit/bacc2cce5f2d0977a52fd654a43069e9d0ec764b))
+
 ## [4.37.0](https://github.com/StarleyDev/githuttbr/compare/v4.36.1...v4.37.0) (2026-11-23)
 
 
