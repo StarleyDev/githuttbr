@@ -694,6 +694,17 @@ export const shots = [
     }
   },
   {
+    // Every known repository on one page: the open tabs, recents and the full list.
+    out: 'repositories',
+    repos: ['file-nav', 'host-remotes'],
+    themes: ['light'],
+    recents: ['collaborators', 'octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.settings.getState().openPageTab({ type: 'repositories' }))
+      await page.waitForTimeout(900)
+    }
+  },
+  {
     out: 'pull-request-page',
     repos: ['octopus-merge'],
     drive: async (page, repos, app) => {
