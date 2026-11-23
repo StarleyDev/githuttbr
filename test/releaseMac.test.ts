@@ -312,3 +312,15 @@ describe('hasMacBuild — a missed run is not news once macOS is attached', () =
     expect(hasMacBuild(null)).toBe(false)
   })
 })
+
+describe('macOS steps run under bash 3.2', () => {
+  // GitHub's macOS runners run `run:` steps with /bin/bash 3.2, which has no
+  // mapfile/readarray, associative arrays or ${var,,}. 4.40.2 lost a signed,
+  // notarized build to a `mapfile: command not found` in the upload step.
+  it('uses no bash 4 features in release-mac.yml', () => {
+    const src = readFileSync(join(ROOT, '.github/workflows/release-mac.yml'), 'utf8')
+    for (const bad of [/\bmapfile\b/, /\breadarray\b/, /declare -A/, /\$\{[A-Za-z_]+(,,|\^\^)\}/]) {
+      expect(src).not.toMatch(bad)
+    }
+  })
+})

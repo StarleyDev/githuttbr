@@ -228,7 +228,12 @@ jobs:
           if [ "$verdict" != upload ]; then exit 0; fi
           # Through a file, not <(…): set -e does not see a process substitution fail.
           node .release-ci/scripts/release-assets.mjs mac-upload dist "$VERSION" > "$RUNNER_TEMP/upload.txt"
-          mapfile -t files < "$RUNNER_TEMP/upload.txt"
+          # macOS runs steps with bash 3.2: read the list line by line (no bash 4).
+          files=()
+          while IFS= read -r f; do
+            if [ -n "$f" ]; then files+=("$f"); fi
+          done < "$RUNNER_TEMP/upload.txt"
+          [ ${#files[@]} -gt 0 ] || { echo "::error::nothing to upload"; exit 1; }
           printf 'Uploading %s\n' "${files[@]}"
           last=$(( ${#files[@]} - 1 ))
           gh release upload "$TAG" "${files[@]:0:$last}" --repo "$GITHUB_REPOSITORY" --clobber
