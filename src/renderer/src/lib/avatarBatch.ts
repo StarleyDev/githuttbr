@@ -24,6 +24,8 @@ export type AvatarBatchSend = (scope: AvatarBatchScope, items: AvatarBatchItem[]
 
 export interface AvatarBatcher {
   request(scope: AvatarBatchScope, email: string, sha?: string): Promise<string | null>
+  /** Drops every held-back "unknown" — the tokens just unlocked, so they are worth asking now. */
+  forgetUnknown(): void
 }
 
 interface PendingItem {
@@ -90,6 +92,9 @@ export function createAvatarBatcher(
         } else batch.items.set(norm, { sha, waiters: [resolve] })
         if (batch.items.size >= MAX_BATCH) flush(scopeKey)
       })
+    },
+    forgetUnknown() {
+      unknownUntil.clear()
     }
   }
 }

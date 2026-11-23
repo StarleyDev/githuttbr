@@ -75,6 +75,7 @@ interface PreloadApi {
       available: boolean | null
     }>
     set(granted: boolean): Promise<boolean>
+    onUnlocked(cb: () => void): () => void
   }
   selectDirectory(title?: string): Promise<string | null>
   selectDirectories(title?: string): Promise<string[]>

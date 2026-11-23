@@ -3,7 +3,7 @@ import { Blobatar } from 'blobatar/react'
 import { happy, idle, mad, sad, scared, sick, sleepy, thinking, unsure } from 'blobatar/expression'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
-import { githubAuthorAvatar, githubProfileAvatar } from '../stores/githubAvatars'
+import { githubAuthorAvatar, githubProfileAvatar, useSecretsUnlocks } from '../stores/githubAvatars'
 import { avatarSources, generatedAvatar, githubAccountFingerprint, gravatarUrl, type AvatarSource } from '../lib/avatar'
 import { githubNoreplyAvatarUrl } from '../../../shared/githubAvatar'
 import { githubEnterpriseBases, githubInstanceOf } from '../../../shared/githubEnterprise'
@@ -93,6 +93,7 @@ export function Avatar({
   const source: AvatarSource | undefined = sources[step]
   const advance = (): void => setAttempt({ key, step: step + 1 })
   const [photo, setPhoto] = useState<string | null>(null)
+  const unlocks = useSecretsUnlocks()
 
   useEffect(() => {
     let alive = true
@@ -119,6 +120,17 @@ export function Avatar({
     // `key` covers email, size, the source list, the remote, the profile and its account.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, step])
+
+  // The tokens were still encrypted when GitHub was asked, so its "none" may
+  // only have meant "locked": once they unlock, go back to it. An avatar
+  // already showing a photo, or that never got as far as GitHub, stays put.
+  useEffect(() => {
+    if (!unlocks || photo) return
+    const gh = sources.indexOf('github')
+    if (gh >= 0 && step > gh) setAttempt({ key, step: gh })
+    // Only the unlock itself is the trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocks])
 
   // An expressive blob is inline SVG, which a photo cannot be — so a Gravatar
   // still wins, and the pose is what you get when there is none.

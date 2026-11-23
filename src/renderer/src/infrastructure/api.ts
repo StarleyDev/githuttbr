@@ -1111,7 +1111,9 @@ export const keychainApi = {
       /** Some token is held in memory only and will not survive a quit. */
       sessionOnly: boolean
     }>,
-  set: (granted: boolean) => window.api.keychain.set(granted)
+  set: (granted: boolean) => window.api.keychain.set(granted),
+  /** Fires once the stored tokens have been decrypted this session — by Settings, a push, anything. */
+  onUnlocked: (cb: () => void) => window.api.keychain.onUnlocked(cb)
 }
 
 // Installs/checks the `gitcito` shell command, the equivalent of VS Code's

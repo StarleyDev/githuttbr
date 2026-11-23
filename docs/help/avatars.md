@@ -58,20 +58,31 @@ keychain stay encrypted until you do something that needs one — open Settings,
 push, list pull requests. Drawing a picture is not such a thing: it never brings
 up the keychain prompt on its own, so right after launch authors get their
 Gravatar or the generated face, and your title-bar avatar its generated one.
-After the first unlock the GitHub pictures fill in — the graph asks again within
-a couple of minutes, the title bar as soon as Settings has unlocked. A machine
-login (git's credential helper or the GitHub CLI) is not in the keychain store
-and works from the start.
+The moment the tokens unlock, the pictures that were waiting on them ask again —
+in the graph and in the title bar alike. A machine login (git's credential
+helper or the GitHub CLI) is not in the keychain store and works from the start,
+as long as the profile has no token of its own saved for that server; a saved
+token outranks the machine login, so with one Gitcito waits for the unlock
+rather than ask as a different account. (Gitcito tells the two apart from a
+plain list of which servers have a saved token — names only, kept next to the
+encrypted store. An install from before that list existed waits for one unlock
+to write it.) A token you typed while the keychain was unavailable lives only
+in memory for the session, and is used straight away.
 
 What came back is remembered: for the session in memory, and on disk in
 `github-avatars.json` in Gitcito's data folder — a found picture for 7 days, "no
-account" for a day. "No account" is only ever recorded when the server answered
-and said so. A **404** says nothing about the author — GitHub gives the same
-answer for a private repository your token cannot see, or one whose SSO it is
-not authorised for — so Gitcito records nothing and leaves that repository alone
+account" for a day. "No account" is only ever recorded when the server showed a
+commit by that email whose author is no account. **No commit by that email in
+this repository** — an author who only ever pushed elsewhere — proves nothing
+about the account, so it is remembered for this repository only, for the
+session, and the same author still gets their picture in the next repository. A
+**404** says nothing about the author either — GitHub gives the same answer for
+a private repository your token cannot see, or one whose SSO it is not
+authorised for — so Gitcito records nothing and leaves that repository alone
 for ten minutes, while the same authors in repositories you can see still get
-their pictures. The file is keyed on a SHA-256 hash of the server and the
-email, so it holds no address in readable form; deleting it is always safe.
+their pictures. An **empty repository** (409) is left alone for ten minutes the
+same way. The file is keyed on a SHA-256 hash of the server and the email, so
+it holds no address in readable form; deleting it is always safe.
 
 The generated avatar is a small creature, not a coloured square: the same email
 always produces the same shape and the same colours, so an author stays

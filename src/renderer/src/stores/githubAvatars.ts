@@ -1,4 +1,5 @@
-import { avatarApi } from '../infrastructure/api'
+import { useSyncExternalStore } from 'react'
+import { avatarApi, keychainApi } from '../infrastructure/api'
 import { createAvatarBatcher, type AvatarBatchScope } from '../lib/avatarBatch'
 
 /**
@@ -33,4 +34,32 @@ export function githubProfileAvatar(profileId: string, account: string, size: nu
     })
   }
   return job
+}
+
+/**
+ * How many times the stored tokens have been unlocked this session (0 or 1 in
+ * practice). An `<Avatar>` that fell past GitHub while they were still
+ * encrypted watches it and asks once more; the batcher forgets its held-back
+ * "unknown" answers first, so that ask reaches main. Subscribed on first use,
+ * not on import, so nothing here needs a window to load.
+ */
+let unlocks = 0
+const unlockListeners = new Set<() => void>()
+let listening = false
+
+function subscribeUnlocks(cb: () => void): () => void {
+  if (!listening) {
+    listening = true
+    keychainApi.onUnlocked(() => {
+      unlocks++
+      batcher.forgetUnknown()
+      for (const l of unlockListeners) l()
+    })
+  }
+  unlockListeners.add(cb)
+  return () => unlockListeners.delete(cb)
+}
+
+export function useSecretsUnlocks(): number {
+  return useSyncExternalStore(subscribeUnlocks, () => unlocks)
 }

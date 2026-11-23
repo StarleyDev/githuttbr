@@ -72,7 +72,13 @@ const api = {
     },
     answer: (granted: boolean): Promise<void> => ipcRenderer.invoke('keychain:answer', granted),
     status: (): Promise<unknown> => ipcRenderer.invoke('keychain:status'),
-    set: (granted: boolean): Promise<boolean> => ipcRenderer.invoke('keychain:set', granted)
+    set: (granted: boolean): Promise<boolean> => ipcRenderer.invoke('keychain:set', granted),
+    // The stored tokens were decrypted for the first time this session.
+    onUnlocked: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on('secrets:unlocked', listener)
+      return () => ipcRenderer.removeListener('secrets:unlocked', listener)
+    }
   },
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),

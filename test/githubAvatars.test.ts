@@ -309,20 +309,47 @@ describe('github avatar resolver', () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('caches a miss only when a 200 proved it — an empty list by that email', async () => {
-    const fetch = vi.fn(async (url: string) => (url.includes('/commits/') ? json({ message: 'No commit found' }, 422) : json([])))
+  it('caches a server-wide miss only when a 200 proved it — a commit by that email with no account', async () => {
+    const fetch = vi.fn(async () => json(commitBy(null)))
     const r = createGithubAvatarResolver({ fetch })
     expect(await r.resolve(GH, [{ email: 'ghost@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({ 'ghost@x.test': null })
-    expect(await r.resolve(GH, [{ email: 'ghost@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({ 'ghost@x.test': null })
-    expect(fetch).toHaveBeenCalledTimes(2)
+    // Another repository on the same server: the account question is settled.
+    expect(await r.resolve({ ...GH, repo: 'other' }, [{ email: 'ghost@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({ 'ghost@x.test': null })
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('answers an empty repository (409) as unknown, not as a miss', async () => {
+  it('takes an empty list by that email as a miss for this repository only', async () => {
+    vi.useFakeTimers()
+    try {
+      let saved: AvatarCacheFile | null = null
+      const fetch = vi.fn(async (url: string) => {
+        if (url.includes('/commits/')) return json({ message: 'No commit found' }, 422)
+        return url.includes('/acme/app/') ? json([]) : json([commitBy('https://avatars.githubusercontent.com/u/3?v=4')])
+      })
+      const r = createGithubAvatarResolver({ fetch, save: (e) => (saved = e) })
+      const ITEM = [{ email: 'dev@x.test', sha: 'abcdef1' }]
+      expect(await r.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({ 'dev@x.test': null })
+      // Asked again in the same repository: remembered, no request.
+      expect(await r.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({ 'dev@x.test': null })
+      expect(fetch).toHaveBeenCalledTimes(2)
+      // The same author's commits elsewhere on the server still find the account.
+      const out = await r.resolve({ ...GH, repo: 'lib' }, ITEM, 20, async () => 'tok')
+      expect(out['dev@x.test']).toBe('https://avatars.githubusercontent.com/u/3?v=4&s=20')
+      await vi.advanceTimersByTimeAsync(1000)
+      // Nothing server-wide was written as "no account".
+      expect(Object.values(saved ?? {}).every((e) => e.url !== null)).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('leaves an empty repository (409) alone for a while: unknown, no miss, no request per author', async () => {
     const fetch = vi.fn(async () => json({ message: 'Git Repository is empty.' }, 409))
     const r = createGithubAvatarResolver({ fetch })
     expect(await r.resolve(GH, [{ email: 'a@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
-    expect(await r.resolve(GH, [{ email: 'a@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
-    expect(fetch).toHaveBeenCalledTimes(4)
+    expect(r.hiddenUntil(GH)).toBeGreaterThan(Date.now())
+    expect(await r.resolve(GH, [{ email: 'b@x.test', sha: 'abcdef1' }], 20, async () => 'tok')).toEqual({})
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('treats a network failure as unknown, not as a miss', async () => {
@@ -408,6 +435,34 @@ describe('avatar batcher', () => {
       await vi.advanceTimersByTimeAsync(60)
       await later
       expect(sent[1]).toEqual([{ email: 'c@x.test', sha: undefined }])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('asks a held-back "unknown" again at once after the tokens unlock', async () => {
+    vi.useFakeTimers()
+    try {
+      let answer: Record<string, string | null> = {}
+      const sent: AvatarBatchItem[][] = []
+      const b = createAvatarBatcher(async (_scope, items) => {
+        sent.push(items)
+        return answer
+      }, 50, () => 0)
+      const scope = { remoteUrl: 'https://github.com/acme/app.git', repoPath: '/r', size: 32 }
+      const first = b.request(scope, 'c@x.test')
+      await vi.advanceTimersByTimeAsync(60)
+      expect(await first).toBeNull()
+      // Locked: held back, no second batch.
+      void b.request(scope, 'c@x.test')
+      await vi.advanceTimersByTimeAsync(60)
+      expect(sent).toHaveLength(1)
+      answer = { 'c@x.test': 'https://avatars.githubusercontent.com/u/3' }
+      b.forgetUnknown()
+      const again = b.request(scope, 'c@x.test')
+      await vi.advanceTimersByTimeAsync(60)
+      expect(await again).toBe('https://avatars.githubusercontent.com/u/3')
+      expect(sent).toHaveLength(2)
     } finally {
       vi.useRealTimers()
     }
