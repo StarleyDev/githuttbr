@@ -138,8 +138,9 @@ const api = {
   settings: {
     get: (): Promise<unknown> => ipcRenderer.invoke('settings:get'),
     unlock: (): Promise<unknown> => ipcRenderer.invoke('settings:unlock'),
-    set: (settings: unknown, generation?: number, options?: unknown): Promise<void> =>
+    set: (settings: unknown, generation?: number, options?: unknown): Promise<unknown> =>
       ipcRenderer.invoke('settings:set', settings, generation, options),
+    moveAside: (): Promise<string | null> => ipcRenderer.invoke('settings:moveAside'),
     importFile: (): Promise<unknown> => ipcRenderer.invoke('settings:importFile'),
     exportFile: (settings: unknown): Promise<boolean> => ipcRenderer.invoke('settings:exportFile', settings)
   },

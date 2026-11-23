@@ -158,6 +158,44 @@ export function mergeSecretStores(stored: SecretStore, next: SecretStore): Secre
   return out
 }
 
+/**
+ * A store flattened to one entry per credential ("slot"): `profileId\0field`, or
+ * `profileId\0aiKeys\0accountId`. What clearing one token means, without the
+ * per-profile spreads that would drop or revive its neighbours.
+ */
+export function secretSlots(store: SecretStore): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const [id, secrets] of Object.entries(store)) {
+    for (const [field, value] of Object.entries(secrets)) {
+      if (field === 'aiKeys') {
+        for (const [account, key] of Object.entries((value ?? {}) as Record<string, string>)) {
+          if (key) out.set(`${id}\0aiKeys\0${account}`, key)
+        }
+      } else if (typeof value === 'string' && value) out.set(`${id}\0${field}`, value)
+    }
+  }
+  return out
+}
+
+/** The inverse of `secretSlots`. */
+export function fromSecretSlots(slots: Map<string, string>): SecretStore {
+  const out: SecretStore = {}
+  for (const [slot, value] of slots) {
+    const [id, field, account] = slot.split('\0')
+    const p = (out[id] ??= {})
+    if (field === 'aiKeys') p.aiKeys = { ...(p.aiKeys ?? {}), [account]: value }
+    else (p as Record<string, string>)[field] = value
+  }
+  return out
+}
+
+/** `store` without the given slots. */
+export function dropSecretSlots(store: SecretStore, drop: Iterable<string>): SecretStore {
+  const slots = secretSlots(store)
+  for (const slot of drop) slots.delete(slot)
+  return fromSecretSlots(slots)
+}
+
 /** Drops entries for profiles that no longer exist. */
 export function pruneSecrets(store: SecretStore, profileIds: string[]): SecretStore {
   const keep = new Set(profileIds)

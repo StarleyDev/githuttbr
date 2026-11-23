@@ -1,4 +1,4 @@
-import { chmod, open, readFile, rename, rm } from 'fs/promises'
+import { chmod, open, readFile, realpath, rename, rm, type FileHandle } from 'fs/promises'
 import { randomBytes } from 'crypto'
 import { basename, dirname, join, resolve } from 'path'
 
@@ -57,7 +57,38 @@ async function renameOver(from: string, to: string): Promise<void> {
   }
 }
 
-async function writeAtomic(path: string, data: string | Uint8Array): Promise<void> {
+/**
+ * Where a write to `path` really lands. A user who symlinked the settings into
+ * a dotfiles repo means the link's target: renaming over the link itself would
+ * replace it with a plain file and silently cut the dotfiles off.
+ */
+async function resolveTarget(path: string): Promise<string> {
+  try {
+    return await realpath(path)
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return path
+    throw err
+  }
+}
+
+/** Makes the rename itself durable: without it a crash can bring back the old file, or none. */
+async function syncDir(dir: string): Promise<void> {
+  if (process.platform === 'win32') return
+  let fh: FileHandle | undefined
+  try {
+    fh = await open(dir, 'r')
+    await fh.sync()
+  } catch (err) {
+    // Some filesystems cannot fsync a directory; the data itself is already synced.
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'EISDIR' && code !== 'EINVAL' && code !== 'EPERM' && code !== 'ENOTSUP') throw err
+  } finally {
+    await fh?.close().catch(() => undefined)
+  }
+}
+
+async function writeAtomic(linkPath: string, data: string | Uint8Array): Promise<void> {
+  const path = await resolveTarget(linkPath)
   // Same directory, so the rename never crosses a filesystem. `wx` refuses an
   // existing file: the name is random, and a planted one is never written through.
   const tmp = join(dirname(path), `.${basename(path)}.${randomBytes(6).toString('hex')}.tmp`)
@@ -76,6 +107,7 @@ async function writeAtomic(path: string, data: string | Uint8Array): Promise<voi
     await rm(tmp, { force: true }).catch(() => undefined)
     throw err
   }
+  await syncDir(dirname(path))
 }
 
 export async function writePrivateFile(path: string, data: string | Uint8Array): Promise<void> {

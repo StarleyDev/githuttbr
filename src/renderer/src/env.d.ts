@@ -130,7 +130,8 @@ interface PreloadApi {
   settings: {
     get(): Promise<unknown>
     unlock(): Promise<unknown>
-    set(settings: unknown, generation?: number, options?: unknown): Promise<void>
+    set(settings: unknown, generation?: number, options?: unknown): Promise<unknown>
+    moveAside(): Promise<string | null>
     importFile(): Promise<unknown>
     exportFile(settings: unknown): Promise<boolean>
   }

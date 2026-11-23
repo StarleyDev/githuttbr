@@ -3355,6 +3355,16 @@ export interface AppSettings {
   skippedUpdateVersion?: string
 }
 
+/**
+ * Why `settings:get` / `settings:unlock` could not answer. `parse`: the file is
+ * there but is not a settings document — the only case worth telling the user
+ * their file is damaged. `io`: it could not be read (locked, permissions).
+ */
+export type SettingsErrorKind = 'parse' | 'io' | 'other'
+
+/** Why main refused a `settings:set` without writing anything. */
+export type SettingsRefusal = 'not-loaded' | 'keychain-required'
+
 export type Language =
   | 'en'
   | 'es'

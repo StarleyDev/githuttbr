@@ -65,6 +65,36 @@ describe('the settings store', () => {
     expect(useSettingsStore.getState().unlocked).toBe(true)
   })
 
+  it('before a successful load, a change is neither applied nor saved', async () => {
+    useSettingsStore.setState({ loaded: false })
+    try {
+      useSettingsStore.getState().update((s) => ({ ...s, language: 'de' }))
+      await vi.advanceTimersByTimeAsync(300)
+      expect(saves()).toHaveLength(0)
+      expect(useSettingsStore.getState().settings.language).not.toBe('de')
+    } finally {
+      useSettingsStore.setState({ loaded: true })
+    }
+  })
+
+  it('an unlock waits for a save already in flight', async () => {
+    const api = (await import('../src/renderer/src/infrastructure/api')).settingsApi
+    let release: () => void = () => undefined
+    vi.mocked(api.set).mockImplementationOnce(async (settings: AppSettings, gen: number) => {
+      log.push({ op: 'set', settings, generation: gen })
+      await new Promise<void>((r) => (release = r))
+      log.push({ op: 'set-done' })
+    })
+    useSettingsStore.getState().update((s) => ({ ...s, confirmForcePush: false }))
+    await vi.advanceTimersByTimeAsync(300)
+    const unlocking = useSettingsStore.getState().load({ unlock: true })
+    await vi.advanceTimersByTimeAsync(50)
+    expect(log.map((e) => e.op)).toEqual(['set'])
+    release()
+    await unlocking
+    expect(log.map((e) => e.op)).toEqual(['set', 'set-done', 'unlock'])
+  })
+
   it('an import merges credentials unless asked to replace, then reads back what main kept', async () => {
     await useSettingsStore.getState().importSettings({ language: 'fr' })
     expect(saves()[0].options).toEqual({ import: 'merge' })

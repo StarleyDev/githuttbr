@@ -1,17 +1,27 @@
 import { app, ipcMain, dialog, safeStorage } from 'electron'
-import { join } from 'path'
+import { basename, join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, mkdir, rename } from 'fs/promises'
 import { copyPrivateFile, writePrivateFile } from './privateFile'
-import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
+import {
+  defaultSettings,
+  type AccountLink,
+  type AppSettings,
+  type RepoHost,
+  type SettingsErrorKind,
+  type SettingsRefusal
+} from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGitlabInstances } from './gitlabInstances'
 import {
   applySecrets,
+  dropSecretSlots,
   extractSecrets,
+  fromSecretSlots,
   hasSettingsSecrets,
   mergeSecretStores,
+  secretSlots,
   pruneSecrets,
   stripSettingsSecrets,
   type SecretStore
@@ -43,6 +53,18 @@ const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets
 let sessionSecrets: SecretStore = {}
 
 /**
+ * Credentials the user cleared while the keychain could not be written (see
+ * `secretSlots`). The encrypted store still holds them; they are masked out of
+ * every view and deleted from the store the moment it becomes writable.
+ */
+const tombstones = new Set<string>()
+
+/** A store read from disk, minus what the user cleared while it was out of reach. */
+function adopt(store: SecretStore): SecretStore {
+  return tombstones.size ? dropSecretSlots(store, tombstones) : store
+}
+
+/**
  * Decrypted secrets for this run, or null while they are still on disk.
  *
  * Nothing hydrates them at start-up: reading the encrypted file means calling
@@ -67,25 +89,75 @@ async function canEncrypt(): Promise<boolean> {
 let secretsUnreadable = false
 
 /**
- * Whether the settings the renderer last loaded included the stored secrets.
+ * The generation of the reply that carried the whole decrypted store, or -1.
  *
  * A renderer hydrated before any unlock persists a credential-less copy of the
  * settings on every mutation (a tab move, a repo opened). If a background
  * operation — a fetch resolving its token, an AI call resolving its key — has
  * unlocked the store in the meantime, treating such a save as "the user
- * cleared everything" overwrites the encrypted store with nothing. Only once
- * the renderer was actually served the secrets is an empty save a deletion.
+ * cleared everything" overwrites the encrypted store with nothing. Only a reply
+ * built with the store decrypted counts: one carrying just the session-only
+ * tokens (keychain declined) still had stored ones it never saw.
  */
-let servedSecrets = false
+let servedGeneration = -1
 
 /**
- * Every `settings:get` / `settings:unlock` reply gets a new generation, and the
- * renderer names the one its state was built from when it saves. Only a save
- * from the latest reply can clear credentials: a debounced save scheduled
- * before an unlock but landing after it carries the pre-unlock blanks, and
- * `servedSecrets` alone would read those as "the user cleared every token".
+ * Every `settings:get` / `settings:unlock` reply gets a new generation, taken
+ * the moment the request arrives, and the renderer names the one its state was
+ * built from when it saves. Only a save from the latest reply can clear
+ * credentials: a debounced save scheduled before an unlock but landing after it
+ * carries the pre-unlock blanks. Bumped too whenever the store gains what the
+ * last reply did not carry (`persistSessionSecrets`).
  */
 let lastGeneration = 0
+
+/**
+ * Whether a get/unlock has answered in this process. Until then the renderer
+ * holds nothing but defaults, and a save from it would write them over the
+ * user's file.
+ */
+let settingsServed = false
+
+/** True from a parse failure until the file next reads cleanly: no save may land on it meanwhile. */
+let settingsBroken = false
+
+/** Why the settings file could not be read; `kind` crosses IPC to pick what the boot screen says. */
+export class SettingsReadError extends Error {
+  constructor(
+    readonly kind: SettingsErrorKind,
+    message: string
+  ) {
+    super(message)
+  }
+}
+
+/** A save main would not write at all. Answered to the renderer, never thrown across IPC. */
+class SettingsRefused extends Error {
+  constructor(readonly reason: SettingsRefusal) {
+    super(reason)
+  }
+}
+
+/**
+ * Settings reads, writes and the session-secret move run one at a time, in
+ * arrival order. Each reads and replaces `secretCache` / `sessionSecrets`
+ * across awaits; interleaved, an unlock could serve the store as it was before
+ * a clear still being written, and the renderer would save the token back.
+ */
+let settingsQueue: Promise<unknown> = Promise.resolve()
+function serialized<T>(fn: () => Promise<T>): Promise<T> {
+  const run = settingsQueue.then(fn, fn)
+  settingsQueue = run.catch(() => undefined)
+  return run
+}
+
+/** What a save may clear, decided when it arrives — never after an await. */
+interface SaveAuthority {
+  /** Built on the latest reply, which carried the whole store: blanks are clears. */
+  store: boolean
+  /** Built on the latest reply: it saw every session-only token, so blanks there are clears. */
+  session: boolean
+}
 
 /** How a `settings:set` came about. An import never clears a credential the file does not carry. */
 export interface SaveOptions {
@@ -132,13 +204,19 @@ export async function readSettings(): Promise<AppSettings> {
   if (!parsed) return defaultSettings()
   // Existing install without the key → treat as already onboarded.
   const settings: AppSettings = { ...defaultSettings(), onboardingCompleted: true, ...parsed }
-  const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+  const out = withMigratedAI(applySecrets(settings, mergeSecretStores(secretCache ?? {}, sessionSecrets)))
   setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
   return out
 }
 
-const READ_RETRIES = 4
+// A half-written file from an older build is whole again within a moment.
+const SHORT_DELAYS = [25, 50, 75, 100]
+// An antivirus or backup scan can hold the file for longer: about 2 s in all.
+const BUSY_DELAYS = [50, 100, 200, 300, 400, 450, 500]
+const BUSY_CODES = new Set(['EBUSY', 'EPERM', 'EACCES'])
+
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 /**
  * The parsed settings file, or null when there is none yet.
@@ -150,14 +228,33 @@ const READ_RETRIES = 4
  */
 async function readSettingsFile(): Promise<Partial<AppSettings> | null> {
   for (let attempt = 0; ; attempt++) {
+    let text: string
     try {
-      const parsed: unknown = JSON.parse(await readFile(settingsPath(), 'utf-8'))
+      text = await readFile(settingsPath(), 'utf-8')
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code === 'ENOENT') {
+        settingsBroken = false
+        return null
+      }
+      const delays = code && BUSY_CODES.has(code) ? BUSY_DELAYS : SHORT_DELAYS
+      if (attempt >= delays.length) {
+        throw new SettingsReadError('io', `Could not read ${settingsPath()}: ${(err as Error).message}`)
+      }
+      await sleep(delays[attempt])
+      continue
+    }
+    try {
+      const parsed: unknown = JSON.parse(text)
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('settings file is not an object')
+      settingsBroken = false
       return parsed as Partial<AppSettings>
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
-      if (attempt >= READ_RETRIES) throw new Error(`Could not read ${settingsPath()}: ${(err as Error).message}`)
-      await new Promise((r) => setTimeout(r, 25 * (attempt + 1)))
+      if (attempt >= SHORT_DELAYS.length) {
+        settingsBroken = true
+        throw new SettingsReadError('parse', `Could not parse ${settingsPath()}: ${(err as Error).message}`)
+      }
+      await sleep(SHORT_DELAYS[attempt])
     }
   }
 }
@@ -194,7 +291,7 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   await adoptExistingConsent([secretsPath()])
   if (!(await ensureKeychain(reason))) return settings
 
-  const stored = await loadSecrets()
+  const stored = adopt(await loadSecrets())
   if (hasSettingsSecrets(settings)) {
     // Upgrade from a plaintext settings file: the values on disk win, since
     // they are what the user last saved. Rewrite the JSON without them.
@@ -206,7 +303,7 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     return withMigratedAI(applySecrets(settings, merged))
   }
   secretCache = stored
-  return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
+  return withMigratedAI(applySecrets(settings, mergeSecretStores(stored, sessionSecrets)))
 }
 
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
@@ -354,15 +451,21 @@ export async function activeProfileAiKey(accountId?: string): Promise<string | u
  * quitting before that lost them again.
  */
 async function persistSessionSecrets(): Promise<void> {
-  if (Object.keys(sessionSecrets).length === 0) return
+  if (Object.keys(sessionSecrets).length === 0 && tombstones.size === 0) return
   const ids = (await readSettings()).profiles.map((p) => p.id)
-  const stored = secretCache ?? (await loadSecrets())
-  const merged = pruneSecrets(mergeSecretStores(stored, sessionSecrets), ids)
+  const stored = secretCache ?? adopt(await loadSecrets())
+  // The cleared slots go too: otherwise turning the keychain on wrote back
+  // every token the user had deleted while it was off.
+  const merged = pruneSecrets(dropSecretSlots(mergeSecretStores(stored, sessionSecrets), tombstones), ids)
   await saveSecrets(merged)
   secretCache = merged
   sessionSecrets = {}
+  tombstones.clear()
+  // The store now holds credentials the renderer's last reply may not have
+  // carried: a save built on that reply must not read their absence as clears.
+  lastGeneration++
 }
-onKeychainEnabled(persistSessionSecrets)
+onKeychainEnabled(() => serialized(persistSessionSecrets))
 
 /** True while some token exists only in memory and would be lost on quit. */
 export function hasSessionOnlySecrets(): boolean {
@@ -370,18 +473,39 @@ export function hasSessionOnlySecrets(): boolean {
 }
 onSessionOnlyProbe(hasSessionOnlySecrets)
 
-/** `generation` is the reply the renderer's state was built from (-1: unknown). */
-async function writeSettings(
-  settings: AppSettings,
-  generation = -1,
-  options: SaveOptions = {}
-): Promise<void> {
+/**
+ * Keychain refused or unavailable: the credentials live in memory only. A save
+ * built on the latest reply makes the in-memory view exactly what it sent — a
+ * blank is a clear, recorded as a tombstone so the encrypted store loses it too
+ * once it can be written. An older save can only add.
+ */
+function holdInSession(secrets: SecretStore, ids: string[], auth: SaveAuthority): void {
+  const next = secretSlots(secrets)
+  for (const slot of next.keys()) tombstones.delete(slot)
+  if (!auth.session) {
+    sessionSecrets = mergeSecretStores(sessionSecrets, secrets)
+    return
+  }
+  const seen = secretSlots(mergeSecretStores(auth.store ? (secretCache ?? {}) : {}, sessionSecrets))
+  const cleared = [...seen.keys()].filter((slot) => !next.has(slot))
+  for (const slot of cleared) tombstones.add(slot)
+  if (secretCache) secretCache = dropSecretSlots(secretCache, cleared)
+  // Only what differs from the store is session-only; the rest is already safe.
+  const cached = secretSlots(secretCache ?? {})
+  sessionSecrets = pruneSecrets(
+    fromSecretSlots(new Map([...next].filter(([slot, value]) => cached.get(slot) !== value))),
+    ids
+  )
+}
+
+async function writeSettings(settings: AppSettings, auth: SaveAuthority, options: SaveOptions = {}): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)
+  const ids = (settings.profiles ?? []).map((p) => p.id)
 
   // Whether a blank token in this save means "the user cleared it". Only for a
   // save built on the latest reply that actually carried the credentials — a
@@ -390,10 +514,22 @@ async function writeSettings(
   // it. Only an explicit "Replace all", with a file that carries credentials,
   // replaces the stored ones.
   const replacing = options.import === 'replace' && hasSecrets
-  const authoritative = replacing || (!options.import && servedSecrets && generation === lastGeneration)
-  // An import changes what the renderer holds without a new reply: its next
-  // ordinary save must not be read as clears until it has reloaded.
-  if (options.import) lastGeneration++
+  const authoritative = replacing || auth.store
+
+  // Saving a token is the moment worth asking about — and only then. A settings
+  // write with nothing sensitive in it never goes near the keychain.
+  const allowed = hasSecrets ? await ensureKeychain('tokens') : await canEncrypt()
+
+  if (!allowed) {
+    // "Replace all" cannot be honoured in memory: the encrypted store would
+    // hand the old tokens back on the next launch. Refuse before writing anything.
+    if (replacing) throw new SettingsRefused('keychain-required')
+    // Refused (or no keyring): hold the secrets in memory for this session and
+    // keep them out of the file, rather than writing them in the clear.
+    holdInSession(secrets, ids, auth)
+    await writePrivateFile(settingsPath(), stripped)
+    return
+  }
 
   // A credential-less save must not wipe the store unless it is authoritative.
   // Same while they are still encrypted on disk, and when the file exists but
@@ -404,17 +540,6 @@ async function writeSettings(
     return
   }
 
-  // Saving a token is the moment worth asking about — and only then. A settings
-  // write with nothing sensitive in it never goes near the keychain.
-  const allowed = hasSecrets ? await ensureKeychain('tokens') : await canEncrypt()
-
-  if (!allowed) {
-    // Refused (or no keyring): hold the secrets in memory for this session and
-    // keep them out of the file, rather than writing them in the clear.
-    if (hasSecrets) sessionSecrets = mergeSecretStores(sessionSecrets, secrets)
-    await writePrivateFile(settingsPath(), stripped)
-    return
-  }
   // Secrets first: if the keychain write fails, the JSON on disk still holds the
   // previous values instead of being stripped with nowhere to read them from.
   //
@@ -422,13 +547,38 @@ async function writeSettings(
   // in the UI removes it here too, and so does deleting a profile. One that
   // never saw them can only add — its save is overlaid on the stored values,
   // so the credentials it was never given survive.
-  const ids = (settings.profiles ?? []).map((p) => p.id)
-  const base = authoritative ? {} : (secretCache ?? (await loadSecrets()))
+  const base = authoritative
+    ? {}
+    : dropSecretSlots(mergeSecretStores(secretCache ?? adopt(await loadSecrets()), sessionSecrets), tombstones)
   const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
   await saveSecrets(merged)
   secretCache = merged
   sessionSecrets = {}
+  tombstones.clear()
   await writePrivateFile(settingsPath(), stripped)
+}
+
+/**
+ * Renames an unparseable settings file aside — never deletes it — so the app
+ * can start fresh. Refuses (null) unless the file really does not parse.
+ */
+async function moveSettingsAside(): Promise<string | null> {
+  try {
+    await readSettingsFile()
+    return null
+  } catch (err) {
+    if (!(err instanceof SettingsReadError) || err.kind !== 'parse') return null
+  }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const target = `${settingsPath()}.corrupt-${stamp}`
+  await rename(settingsPath(), target)
+  // The stored tokens belong to the profiles in that file; a fresh start prunes
+  // them on its first token save. Keep an (encrypted) copy beside it.
+  if (existsSync(secretsPath())) {
+    await copyPrivateFile(secretsPath(), `${secretsPath()}.corrupt-${stamp}`).catch(() => undefined)
+  }
+  settingsBroken = false
+  return basename(target)
 }
 
 // Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
@@ -441,23 +591,57 @@ function withForcedOnboarding(settings: AppSettings): AppSettings {
   return forceOnboarding ? { ...settings, onboardingCompleted: false } : settings
 }
 
+/** What get/unlock answer: the settings and their generation, or why they could not be read. */
+type SettingsReplyWire = { settings: AppSettings; generation: number } | { error: SettingsErrorKind }
+
+function serveSettings(read: () => Promise<AppSettings>): Promise<SettingsReplyWire> {
+  // Taken on arrival, before the snapshot is read: a save already on its way
+  // was built on an older reply and can no longer clear anything.
+  const generation = ++lastGeneration
+  return serialized(async () => {
+    try {
+      const settings = withForcedOnboarding(await read())
+      settingsServed = true
+      servedGeneration = secretCache !== null ? generation : -1
+      return { settings, generation }
+    } catch (err) {
+      return { error: err instanceof SettingsReadError ? err.kind : 'other' }
+    }
+  })
+}
+
 export function registerSettingsHandlers(): void {
-  ipcMain.handle('settings:get', async () => {
-    const settings = withForcedOnboarding(await readSettings())
-    servedSecrets = hasSettingsSecrets(settings)
-    return { settings, generation: ++lastGeneration }
-  })
-  ipcMain.handle('settings:set', (_e, settings: AppSettings, generation?: unknown, options?: unknown) => {
-    if (settings.onboardingCompleted) forceOnboarding = false
-    return writeSettings(settings, generationArg(generation), saveOptionsArg(options))
-  })
+  ipcMain.handle('settings:get', () => serveSettings(readSettings))
+  ipcMain.handle(
+    'settings:set',
+    (_e, settings: AppSettings, generation?: unknown, options?: unknown): Promise<{ refused: SettingsRefusal } | undefined> => {
+      const gen = generationArg(generation)
+      const opts = saveOptionsArg(options)
+      const current = gen === lastGeneration && !opts.import
+      const auth: SaveAuthority = { store: current && gen === servedGeneration, session: current }
+      // An import changes what the renderer holds without a new reply: its next
+      // ordinary save must not be read as clears until it has reloaded.
+      if (opts.import) lastGeneration++
+      return serialized(async () => {
+        // Nothing the renderer holds is the user's yet, or the file on disk is
+        // one we could not read: writing would replace it with defaults.
+        if (!settingsServed || settingsBroken) return { refused: 'not-loaded' }
+        if (settings.onboardingCompleted) forceOnboarding = false
+        try {
+          await writeSettings(settings, auth, opts)
+        } catch (err) {
+          if (err instanceof SettingsRefused) return { refused: err.reason }
+          throw err
+        }
+        return undefined
+      })
+    }
+  )
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
-  ipcMain.handle('settings:unlock', async () => {
-    const settings = withForcedOnboarding(await readSettingsWithSecrets('settings'))
-    servedSecrets = hasSettingsSecrets(settings)
-    return { settings, generation: ++lastGeneration }
-  })
+  ipcMain.handle('settings:unlock', () => serveSettings(() => readSettingsWithSecrets('settings')))
+  // Only from the boot screen, for a file that does not parse: renamed, never deleted.
+  ipcMain.handle('settings:moveAside', () => serialized(moveSettingsAside))
 
   ipcMain.handle('settings:importFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

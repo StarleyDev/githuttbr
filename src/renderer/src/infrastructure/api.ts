@@ -169,7 +169,9 @@ import type {
   WikiProgress,
   RegistryRepo,
   RepoScanRoot,
-  RepoScanResult
+  RepoScanResult,
+  SettingsErrorKind,
+  SettingsRefusal
 } from '../../../shared/types'
 import type {
   LocalCiStatus,
@@ -701,14 +703,38 @@ export interface SettingsReply {
   generation: number
 }
 
+/** Main answered a get/unlock with why it could not read the settings, not with defaults. */
+export class SettingsLoadError extends Error {
+  constructor(readonly kind: SettingsErrorKind) {
+    super(`settings could not be loaded (${kind})`)
+  }
+}
+
+/** Main refused a save without writing anything. */
+export class SettingsSaveRefused extends Error {
+  constructor(readonly reason: SettingsRefusal) {
+    super(`settings save refused (${reason})`)
+  }
+}
+
+async function settingsReply(pending: Promise<unknown>): Promise<SettingsReply> {
+  const reply = (await pending) as SettingsReply | { error: SettingsErrorKind }
+  if ('error' in reply) throw new SettingsLoadError(reply.error)
+  return reply
+}
+
 export const settingsApi = {
-  get: () => window.api.settings.get() as Promise<SettingsReply>,
+  get: () => settingsReply(window.api.settings.get()),
   // Decrypts the stored tokens (asking for keychain access if needed) and
   // returns the settings with them filled in. Only call it from an explicit
   // user action — never on start-up.
-  unlock: () => window.api.settings.unlock() as Promise<SettingsReply>,
-  set: (s: AppSettings, generation: number, options?: { import?: 'merge' | 'replace' }) =>
-    window.api.settings.set(s, generation, options),
+  unlock: () => settingsReply(window.api.settings.unlock()),
+  set: async (s: AppSettings, generation: number, options?: { import?: 'merge' | 'replace' }): Promise<void> => {
+    const out = (await window.api.settings.set(s, generation, options)) as { refused?: SettingsRefusal } | undefined
+    if (out?.refused) throw new SettingsSaveRefused(out.refused)
+  },
+  /** Renames an unparseable settings file aside; null when it was not (it parses, or is unreadable). */
+  moveAside: () => window.api.settings.moveAside(),
   importFile: () => window.api.settings.importFile() as Promise<unknown>,
   exportFile: (data: unknown) => window.api.settings.exportFile(data)
 }

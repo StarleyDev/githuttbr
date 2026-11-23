@@ -164,21 +164,44 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
  * read its blank tokens as clears.
  */
 function persist(): void {
+  // Before a successful load the state is defaults: saving it would replace
+  // the user's file (main refuses too — this is the first of two locks).
+  if (!useSettingsStore.getState().loaded) return
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     saveTimer = null
-    const { settings, secretsGeneration } = useSettingsStore.getState()
-    void settingsApi.set(settings, secretsGeneration)
+    void send().catch((err) => console.warn('[settings] save failed:', err))
   }, 250)
 }
 
-/** Sends a pending debounced save now, if there is one. */
-async function flushPending(): Promise<void> {
-  if (!saveTimer) return
-  clearTimeout(saveTimer)
-  saveTimer = null
+/**
+ * Every save still on its way to main. A reload waits for them: an unlock
+ * answered while a clear is in flight would hand the cleared token back.
+ */
+let inFlight: Promise<unknown> = Promise.resolve()
+
+function track<T>(save: Promise<T>): Promise<T> {
+  const settled = save.then(
+    () => undefined,
+    () => undefined
+  )
+  inFlight = Promise.all([inFlight, settled])
+  return save
+}
+
+function send(options?: { import?: 'merge' | 'replace' }): Promise<void> {
   const { settings, secretsGeneration } = useSettingsStore.getState()
-  await settingsApi.set(settings, secretsGeneration)
+  return track(settingsApi.set(settings, secretsGeneration, options))
+}
+
+/** Sends a pending debounced save now, if there is one, and waits for every save in flight. */
+async function flushPending(): Promise<void> {
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+    saveTimer = null
+    await send().catch((err) => console.warn('[settings] save failed:', err))
+  }
+  await inFlight
 }
 
 /** Mirror the live `tabs`/`activeTabId` into the active workspace record so a
@@ -514,12 +537,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   update: (mut) => {
+    // Nothing to change yet: the boot error screen keeps shortcuts and menus
+    // live, and a change on top of defaults is a save of defaults.
+    if (!get().loaded) return
     const settings = syncActiveWorkspace(mut(get().settings))
     set({ settings })
     persist()
   },
 
   importSettings: async (incoming, opts) => {
+    if (!get().loaded) throw new Error('settings not loaded')
     const merged: AppSettings = { ...get().settings, ...incoming }
     // A pre-workspaces export carries only `tabs`: drop our workspaces so the
     // normalizer wraps its tabs, instead of replacing them with our own.
@@ -533,10 +560,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // from disk, and a pending save would lose that race and undo the import.
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = null
-    await settingsApi.set(settings, get().secretsGeneration, { import: opts?.replaceSecrets ? 'replace' : 'merge' })
-    // Read back what main kept: a merge leaves credentials the file did not
-    // carry, which this state shows as blanks until it is replaced.
-    await get().load({ unlock: get().unlocked })
+    try {
+      await send({ import: opts?.replaceSecrets ? 'replace' : 'merge' })
+    } finally {
+      // Read back what main kept: a merge leaves credentials the file did not
+      // carry, which this state shows as blanks until it is replaced — and a
+      // refused import left everything as it was, which this state is not.
+      await get().load({ unlock: get().unlocked })
+    }
   },
 
   activeProfile: () => {

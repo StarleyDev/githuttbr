@@ -148,7 +148,7 @@ describe('the settings file on disk', () => {
   it('present but unparseable is an error, never defaults, and is left untouched', async () => {
     await storedTokens()
     writeFileSync(settingsFile(), '{"profiles": [')
-    await expect(raw('settings:get')).rejects.toThrow()
+    expect(await raw('settings:get')).toEqual({ error: 'parse' })
     expect(readFileSync(settingsFile(), 'utf8')).toBe('{"profiles": [')
   })
 

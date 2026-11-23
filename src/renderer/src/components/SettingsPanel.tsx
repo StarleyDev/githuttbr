@@ -77,7 +77,7 @@ import { Avatar } from './Avatar'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi, SettingsSaveRefused } from '../infrastructure/api'
 import type { AnalyzerMode } from '../../../shared/types'
 import type { LocalCiStatus } from '../../../shared/localCi'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
@@ -2499,8 +2499,9 @@ function DataManagementSection(): React.JSX.Element {
             useProfileAvatarsStore.getState().reloadProfileImages()
           }
           toast('success', t('settings.imported'))
-        } catch {
-          toast('error', t('settings.importFailed'))
+        } catch (err) {
+          const needsKeychain = err instanceof SettingsSaveRefused && err.reason === 'keychain-required'
+          toast('error', needsKeychain ? t('settings.importReplaceNeedsKeychain') : t('settings.importFailed'))
         }
       }
 
