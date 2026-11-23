@@ -2327,10 +2327,11 @@ export interface CloneOptions {
   host?: RepoHost
   /** Token for that host — used for this clone only, never written to config. */
   token?: string
-  /** Clone → URL only (no `host`): the profile picked in the dialog, which a
-   *  configured Data Center's token is read from — the profile the new
-   *  repository is bound to. Ignored whenever `host` is set. */
-  urlProfileId?: string
+  /** The profile picked in the clone dialog — the one the new repository is
+   *  bound to. A self-hosted server's token (GitLab, Forgejo, Enterprise
+   *  Server, Data Center) is read from it, for every tab; an empty or unknown id
+   *  gets none. Absent: the active profile. */
+  profileId?: string
   /** Partial clone spec for `--filter`, e.g. `blob:none`. */
   filter?: string
   /** Shallow clone: keep only this many commits of history. */

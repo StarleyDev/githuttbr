@@ -136,14 +136,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const load = useCallback(async (): Promise<void> => {
     setError(null)
     try {
-      setPr(await hostingApi.prDetail(remoteUrl, tokens, number))
+      setPr(await hostingApi.prDetail(repoPath, remoteUrl, tokens, number))
       // Checks and files fill in after the conversation: the page is usable first.
-      void hostingApi.prChecks(remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
-      void hostingApi.prFiles(remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
+      void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
+      void hostingApi.prFiles(repoPath, remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [remoteUrl, number, tokens])
+  }, [repoPath, remoteUrl, number, tokens])
 
   useEffect(() => {
     setLoading(true)
@@ -168,24 +168,24 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const submitComment = (): void => {
     if (!comment.trim()) return
     void act(
-      () => hostingApi.prComment(remoteUrl, tokens, number, comment.trim()).then(() => setComment('')),
+      () => hostingApi.prComment(repoPath, remoteUrl, tokens, number, comment.trim()).then(() => setComment('')),
       t('prDetail.commentPosted')
     )
   }
   const review = (event: PrReviewEvent): void =>
     void act(
-      () => hostingApi.prReview(remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')),
+      () => hostingApi.prReview(repoPath, remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')),
       t('prDetail.reviewSubmitted')
     )
   const merge = (): void =>
-    void act(() => hostingApi.prMerge(remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
+    void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
   const replyToThread = (rootId: number | string): void => {
     const body = (replies[rootId] ?? '').trim()
     if (!body) return
     void act(
       () =>
         hostingApi
-          .prReplyReviewComment(remoteUrl, tokens, number, rootId, body)
+          .prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body)
           .then(() => setReplies((r) => ({ ...r, [rootId]: '' }))),
       t('prDetail.replyPosted')
     )
@@ -451,7 +451,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       </button>
                     )}
                   </div>
-                  {openLog === c.url && <CheckLogPanel remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
+                  {openLog === c.url && <CheckLogPanel repoPath={repoPath} remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
                 </div>
               ))}
             </div>

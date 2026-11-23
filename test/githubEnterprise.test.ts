@@ -296,6 +296,8 @@ describe('every formerly hardcoded call site uses the resolver', () => {
   })
 
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  // A repository-scoped call's first argument is the repository; '' is none (the active profile).
+  const UNBOUND = ''
   const REMOTE = 'https://github.example.corp/team/app.git'
   // What the renderer sends: the github.com token, always. It must never reach the server.
   const tokens = { github: COM_TOKEN }
@@ -309,7 +311,7 @@ describe('every formerly hardcoded call site uses the resolver', () => {
   }
 
   it('pull requests and their checks', async () => {
-    const res = (await call('hosting:listPRs', REMOTE, tokens)) as { provider: string; prs: unknown[] }
+    const res = (await call('hosting:listPRs', UNBOUND, REMOTE, tokens)) as { provider: string; prs: unknown[] }
     expect(res.provider).toBe('github')
     expect(res.prs).toHaveLength(1)
     expectOnlyGhes()
@@ -318,25 +320,25 @@ describe('every formerly hardcoded call site uses the resolver', () => {
   })
 
   it('pull request checks', async () => {
-    await call('hosting:prChecks', REMOTE, tokens, 1)
+    await call('hosting:prChecks', UNBOUND, REMOTE, tokens, 1)
     expectOnlyGhes()
     expect(calls.map((c) => c.url)).toContain(`${GHES}/api/v3/repos/team/app/pulls/1`)
   })
 
   it('issues', async () => {
-    await call('hosting:listIssues', REMOTE, tokens)
+    await call('hosting:listIssues', UNBOUND, REMOTE, tokens)
     expectOnlyGhes()
     expect(calls[0].url).toBe(`${GHES}/api/v3/repos/team/app/issues?state=open&per_page=50`)
   })
 
   it('issue detail, including the GraphQL linked-PRs query', async () => {
-    await call('hosting:issueDetail', REMOTE, tokens, 5)
+    await call('hosting:issueDetail', UNBOUND, REMOTE, tokens, 5)
     expectOnlyGhes()
     expect(calls.filter((c) => c.url === `${GHES}/api/graphql`).length).toBe(2) // linked PRs + project fields
   })
 
   it('a second server gets its own token, not the first one’s', async () => {
-    await call('hosting:listIssues', 'git@ghe.other.example:team/app.git', tokens)
+    await call('hosting:listIssues', UNBOUND, 'git@ghe.other.example:team/app.git', tokens)
     expect(calls[0].url).toBe('https://ghe.other.example:8443/api/v3/repos/team/app/issues?state=open&per_page=50')
     expect(calls[0].auth).toBe(`Bearer ${GHES_B_TOKEN}`)
   })
@@ -347,7 +349,7 @@ describe('every formerly hardcoded call site uses the resolver', () => {
   })
 
   it('github.com is unchanged: public API, github.com token', async () => {
-    await call('hosting:listIssues', 'https://github.com/octo/app.git', tokens)
+    await call('hosting:listIssues', UNBOUND, 'https://github.com/octo/app.git', tokens)
     expect(calls[0].url).toBe('https://api.github.com/repos/octo/app/issues?state=open&per_page=50')
     expect(calls[0].auth).toBe(`Bearer ${COM_TOKEN}`)
   })

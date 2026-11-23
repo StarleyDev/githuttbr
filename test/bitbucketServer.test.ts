@@ -834,6 +834,8 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  // A repository-scoped call's first argument is the repository; '' is none (the active profile).
+  const UNBOUND = ''
   const REMOTE = 'https://bitbucket.example.corp/bitbucket/scm/proj/app.git'
   // What the renderer sends: the bitbucket.org token, always. It must never reach a Data Center.
   const tokens = { bitbucket: CLOUD_TOKEN }
@@ -847,7 +849,7 @@ describe('call sites, through the real IPC handlers', () => {
   }
 
   it('lists open pull requests across pages, with the build status of each head and the ones waiting on you', async () => {
-    const res = (await call('hosting:listPRs', REMOTE, tokens)) as {
+    const res = (await call('hosting:listPRs', UNBOUND, REMOTE, tokens)) as {
       provider: string
       prs: Array<{ id: number; awaitingYou?: boolean; ci?: string; ciCounts?: unknown; ciSummary?: unknown }>
     }
@@ -869,7 +871,7 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('reads the detail: the pull request, its activity and whether it can merge', async () => {
-    const d = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean; comments: unknown[]; reviewThreads: unknown[] }
+    const d = (await call('hosting:prDetail', UNBOUND, REMOTE, tokens, 1)) as { mergeable: boolean; comments: unknown[]; reviewThreads: unknown[] }
     expect(d.mergeable).toBe(true)
     expect(d.comments).toHaveLength(1)
     expect(d.reviewThreads).toHaveLength(1)
@@ -884,28 +886,28 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('lists the changed files with their hunks', async () => {
-    const files = (await call('hosting:prFiles', REMOTE, tokens, 1)) as Array<{ filename: string; patch?: string }>
+    const files = (await call('hosting:prFiles', UNBOUND, REMOTE, tokens, 1)) as Array<{ filename: string; patch?: string }>
     expect(files.map((f) => f.filename)).toEqual(['src/a.ts', 'src/b.ts'])
     expect(files[0].patch).toContain('+three')
     expectOnlyServerA()
   })
 
   it('comments, and replies inside a thread', async () => {
-    await call('hosting:prComment', REMOTE, tokens, 1, 'Thanks!')
+    await call('hosting:prComment', UNBOUND, REMOTE, tokens, 1, 'Thanks!')
     expectOnlyServerA()
     expect(calls[0]).toMatchObject({ method: 'POST', url: `${REPO_API}/pull-requests/1/comments`, body: { text: 'Thanks!' } })
     calls.length = 0
-    await call('hosting:prReplyReviewComment', REMOTE, tokens, 1, 12, 'Agreed.')
+    await call('hosting:prReplyReviewComment', UNBOUND, REMOTE, tokens, 1, 12, 'Agreed.')
     expect(calls[0]).toMatchObject({ method: 'POST', url: `${REPO_API}/pull-requests/1/comments`, body: { text: 'Agreed.', parent: { id: 12 } } })
   })
 
   it('approves as the token’s user, and requests changes the same way', async () => {
-    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    await call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'APPROVE', '')
     expectOnlyServerA()
     const put = calls.find((c) => c.method === 'PUT')
     expect(put).toMatchObject({ url: `${REPO_API}/pull-requests/1/participants/jdoe`, body: { status: 'APPROVED' } })
     calls.length = 0
-    await call('hosting:prReview', REMOTE, tokens, 1, 'REQUEST_CHANGES', 'Please add a test.')
+    await call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'REQUEST_CHANGES', 'Please add a test.')
     const writes = calls.filter((c) => c.method !== 'GET')
     // The verdict before the comment: a failed status must not leave a comment a retry would repeat.
     expect(writes.map((c) => c.method)).toEqual(['PUT', 'POST'])
@@ -927,7 +929,7 @@ describe('call sites, through the real IPC handlers', () => {
       })
     )
     try {
-      await expect(call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', 'LGTM')).rejects.toThrow(/no such participant/)
+      await expect(call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'APPROVE', 'LGTM')).rejects.toThrow(/no such participant/)
     } finally {
       vi.stubGlobal('fetch', realFetch)
     }
@@ -936,7 +938,7 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('an email-style user is reviewed under its slug, found by an exact name match', async () => {
     ausername = 'jdoe@corp.com'
-    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    await call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'APPROVE', '')
     expect(calls.find((c) => c.url.includes('/users?'))?.url).toBe(`${API}/users?filter=jdoe%40corp.com&start=0&limit=100`)
     // Not `jdoe@corp.com` (a 404), and not the `jdoe@corp.com.au` the filter also matched.
     expect(calls.find((c) => c.method === 'PUT')?.url).toBe(`${REPO_API}/pull-requests/1/participants/jdoe_corp.com`)
@@ -948,11 +950,11 @@ describe('call sites, through the real IPC handlers', () => {
   it('a user with no slug to find approves through the legacy resource, and cannot request changes', async () => {
     ausername = 'jdoe@corp.com'
     userSearch = false
-    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    await call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'APPROVE', '')
     expect(calls.some((c) => c.method === 'PUT')).toBe(false)
     expect(calls.find((c) => c.method === 'POST')?.url).toBe(`${REPO_API}/pull-requests/1/approve`)
     calls.length = 0
-    await expect(call('hosting:prReview', REMOTE, tokens, 1, 'REQUEST_CHANGES', 'no')).rejects.toThrow(
+    await expect(call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'REQUEST_CHANGES', 'no')).rejects.toThrow(
       'Bitbucket Data Center: could not find your user on the server'
     )
     // Nothing written: no verdict, and so no comment.
@@ -963,7 +965,7 @@ describe('call sites, through the real IPC handlers', () => {
     ausername = 'jdoe@corp.com'
     userSearch = false
     pr1Over = { participants: [{ user: EMAIL_USERS[1], role: 'PARTICIPANT', approved: false, status: 'UNAPPROVED' }] }
-    await call('hosting:prReview', REMOTE, tokens, 1, 'REQUEST_CHANGES', '')
+    await call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'REQUEST_CHANGES', '')
     expect(calls.find((c) => c.method === 'PUT')).toMatchObject({
       url: `${REPO_API}/pull-requests/1/participants/jdoe_corp.com`,
       body: { status: 'NEEDS_WORK' }
@@ -1021,7 +1023,7 @@ describe('call sites, through the real IPC handlers', () => {
     ausername = 'ghost'
     userSearch = false
     pr1Over = { participants: [{ user: { ...user('ghost', 'Ghost'), slug: 'ghost-slug' }, role: 'PARTICIPANT', approved: false, status: 'UNAPPROVED' }] }
-    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    await call('hosting:prReview', UNBOUND, REMOTE, tokens, 1, 'APPROVE', '')
     expect(calls.find((c) => c.method === 'PUT')?.url).toBe(`${REPO_API}/pull-requests/1/participants/ghost-slug`)
   })
 
@@ -1049,11 +1051,11 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('canMerge false with no veto: the detail disables Merge with a reason of its own', async () => {
     mergeCheck = { canMerge: false, conflicted: false, vetoes: [] }
-    const d = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeRefused?: boolean }
+    const d = (await call('hosting:prDetail', UNBOUND, REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeRefused?: boolean }
     expect(d.mergeable).toBeNull()
     expect(d.mergeRefused).toBe(true)
     mergeCheck = { canMerge: true, conflicted: false, outcome: 'CLEAN', vetoes: [] }
-    const ok = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeRefused?: boolean }
+    const ok = (await call('hosting:prDetail', UNBOUND, REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeRefused?: boolean }
     expect(ok.mergeable).toBe(true)
     expect(ok.mergeRefused).toBeUndefined()
   })
@@ -1071,17 +1073,17 @@ describe('call sites, through the real IPC handlers', () => {
       outcome: 'CLEAN',
       vetoes: [{ summaryMessage: 'Requires 2 approvals', detailedMessage: 'You still need 1 more approval.' }]
     }
-    const d = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeBlockers?: string[] }
+    const d = (await call('hosting:prDetail', UNBOUND, REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeBlockers?: string[] }
     expect(d.mergeable).toBe(true)
     expect(d.mergeBlockers).toEqual(['Requires 2 approvals — You still need 1 more approval.'])
     mergeCheck = { canMerge: false, conflicted: true, outcome: 'CONFLICTED', vetoes: [] }
-    const c = (await call('hosting:prDetail', REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeBlockers?: string[] }
+    const c = (await call('hosting:prDetail', UNBOUND, REMOTE, tokens, 1)) as { mergeable: boolean | null; mergeBlockers?: string[] }
     expect(c.mergeable).toBe(false)
     expect(c.mergeBlockers).toBeUndefined()
   })
 
   it('merges with the current version and an enabled strategy', async () => {
-    await call('hosting:prMerge', REMOTE, tokens, 1, 'squash')
+    await call('hosting:prMerge', UNBOUND, REMOTE, tokens, 1, 'squash')
     expectOnlyServerA()
     const post = calls.find((c) => c.method === 'POST')
     expect(post).toMatchObject({ url: `${REPO_API}/pull-requests/1/merge?version=3`, body: { version: 3, strategyId: 'squash' } })
@@ -1089,17 +1091,17 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('refuses to merge when a merge check vetoes, saying why — and never sends the merge', async () => {
     mergeCheck = { canMerge: false, conflicted: false, outcome: 'CLEAN', vetoes: [{ summaryMessage: 'Requires 2 approvals', detailedMessage: '' }] }
-    await expect(call('hosting:prMerge', REMOTE, tokens, 1, 'merge')).rejects.toThrow(/Requires 2 approvals/)
+    await expect(call('hosting:prMerge', UNBOUND, REMOTE, tokens, 1, 'merge')).rejects.toThrow(/Requires 2 approvals/)
     expect(calls.some((c) => c.method === 'POST')).toBe(false)
   })
 
   it('refuses a strategy the repository has turned off, before merging', async () => {
-    await expect(call('hosting:prMerge', REMOTE, tokens, 1, 'rebase')).rejects.toThrow(/does not allow rebase/)
+    await expect(call('hosting:prMerge', UNBOUND, REMOTE, tokens, 1, 'rebase')).rejects.toThrow(/does not allow rebase/)
     expect(calls.some((c) => c.method === 'POST')).toBe(false)
   })
 
   it('reads build status for the graph: one stats request, then only the commits with builds', async () => {
-    const res = (await call('hosting:ciStatuses', REMOTE, ['sha1', 'sha2', 'sha3'], CLOUD_TOKEN)) as Record<string, { state: string }>
+    const res = (await call('hosting:ciStatuses', UNBOUND, REMOTE, ['sha1', 'sha2', 'sha3'], CLOUD_TOKEN)) as Record<string, { state: string }>
     expect(Object.keys(res)).toEqual(['sha1'])
     expect(res.sha1.state).toBe('failure')
     expectOnlyServerA()
@@ -1111,7 +1113,7 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('pages the build-status stats in batches of 40, so every head gets its CI', async () => {
     const shas = Array.from({ length: 95 }, (_, i) => (i === 90 ? 'sha1' : `x${i}`))
-    const res = (await call('hosting:ciStatuses', REMOTE, shas, CLOUD_TOKEN)) as Record<string, { state: string }>
+    const res = (await call('hosting:ciStatuses', UNBOUND, REMOTE, shas, CLOUD_TOKEN)) as Record<string, { state: string }>
     const stats = calls.filter((c) => c.url === `${BBS}/rest/build-status/latest/commits/stats`)
     expect(stats.map((c) => (c.body as string[]).length)).toEqual([40, 40, 15])
     // sha1 sits in the third batch — beyond the old 40-commit cut-off.
@@ -1119,7 +1121,7 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('reads the checks on a pull request’s head', async () => {
-    const checks = (await call('hosting:prChecks', REMOTE, tokens, 1)) as Array<{ name: string; conclusion: string | null }>
+    const checks = (await call('hosting:prChecks', UNBOUND, REMOTE, tokens, 1)) as Array<{ name: string; conclusion: string | null }>
     expectOnlyServerA()
     // PR 1's head is `sha1` in the fixture.
     expect(checks.map((c) => [c.name, c.conclusion])).toEqual([
@@ -1129,7 +1131,7 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('creates a pull request with fully-qualified refs in this repository', async () => {
-    const res = (await call('hosting:createPR', REMOTE, tokens, { title: 'T', body: 'B', source: 'feature', target: 'main', draft: false })) as {
+    const res = (await call('hosting:createPR', UNBOUND, REMOTE, tokens, { title: 'T', body: 'B', source: 'feature', target: 'main', draft: false })) as {
       number: number
       url: string
     }
@@ -1149,14 +1151,14 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('a second server gets its own token, not the first one’s', async () => {
-    await call('hosting:prComment', 'ssh://git@bbs.other.example:7999/team/svc.git', tokens, 1, 'hi')
+    await call('hosting:prComment', UNBOUND, 'ssh://git@bbs.other.example:7999/team/svc.git', tokens, 1, 'hi')
     expect(calls).toHaveLength(1)
     expect(calls[0].url).toBe('https://bbs.other.example:8443/rest/api/latest/projects/TEAM/repos/svc/pull-requests/1/comments')
     expect(calls[0].auth).toBe(`Bearer ${BBS_B_TOKEN}`)
   })
 
   it('bitbucket.org is unchanged: its own API, the Cloud token', async () => {
-    await call('hosting:listPRs', 'https://bitbucket.org/team/app.git', tokens)
+    await call('hosting:listPRs', UNBOUND, 'https://bitbucket.org/team/app.git', tokens)
     expect(calls).toHaveLength(1)
     expect(calls[0].url).toBe('https://api.bitbucket.org/2.0/repositories/team/app/pullrequests?state=OPEN&pagelen=30')
     expect(calls[0].auth).toBe(`Bearer ${CLOUD_TOKEN}`)

@@ -224,6 +224,8 @@ describe('each GitLab gets only its own token', () => {
   })
 
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  // A repository-scoped call's first argument is the repository; '' is none (the active profile).
+  const UNBOUND = ''
   // What the renderer sends: whatever is in its gitlab slot. Main must ignore it.
   const tokens = { gitlab: RENDERER_TOKEN }
 
@@ -236,31 +238,31 @@ describe('each GitLab gets only its own token', () => {
   }
 
   it('server A: its API, its token', async () => {
-    const res = (await call('hosting:listPRs', `${A}/team/app.git`, tokens)) as { provider: string }
+    const res = (await call('hosting:listPRs', UNBOUND, `${A}/team/app.git`, tokens)) as { provider: string }
     expect(res.provider).toBe('gitlab')
     expectOnly(A, A_TOKEN)
     expect(calls[0].url).toBe(`${A}/api/v4/projects/team%2Fapp/merge_requests?state=opened&per_page=30`)
   })
 
   it('server B under a path: the API under that path, its token — over https and ssh', async () => {
-    await call('hosting:listPRs', 'https://git.example.org/gitlab/team/sub/app.git', tokens)
+    await call('hosting:listPRs', UNBOUND, 'https://git.example.org/gitlab/team/sub/app.git', tokens)
     expectOnly(B, B_TOKEN)
     expect(calls[0].url).toBe(`${B}/api/v4/projects/team%2Fsub%2Fapp/merge_requests?state=opened&per_page=30`)
     calls.length = 0
-    await call('hosting:listPRs', 'git@git.example.org:team/app.git', tokens)
+    await call('hosting:listPRs', UNBOUND, 'git@git.example.org:team/app.git', tokens)
     expectOnly(B, B_TOKEN)
   })
 
   it('gitlab.com: the public API, the gitlab.com token', async () => {
-    await call('hosting:listPRs', 'https://gitlab.com/team/app.git', tokens)
+    await call('hosting:listPRs', UNBOUND, 'https://gitlab.com/team/app.git', tokens)
     expectOnly(GITLAB_COM, COM_TOKEN)
   })
 
   it('another profile’s server and an unknown host get no token at all', async () => {
-    await call('hosting:listPRs', `${D}/team/app.git`, tokens)
-    await call('hosting:listPRs', 'https://gitlab.unknown.example/team/app.git', tokens)
+    await call('hosting:listPRs', UNBOUND, `${D}/team/app.git`, tokens)
+    await call('hosting:listPRs', UNBOUND, 'https://gitlab.unknown.example/team/app.git', tokens)
     // The same host as B, outside its path, is not B.
-    await call('hosting:listPRs', 'https://git.example.org/team/app.git', tokens)
+    await call('hosting:listPRs', UNBOUND, 'https://git.example.org/team/app.git', tokens)
     for (const c of calls) expect(ALL_TOKENS).not.toContain(c.token)
   })
 

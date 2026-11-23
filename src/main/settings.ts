@@ -422,17 +422,32 @@ export function peekActiveProfileAuth(host: RepoHost, remoteUrl?: string, expect
 }
 
 /**
- * One named profile's PAT and link for a host — Clone → URL's pick. An empty
- * id or one no profile has gets nothing, never the active profile's or the
- * first one's.
+ * One named profile's PAT and link for a host — the clone dialog's pick. An
+ * empty id or one no profile has gets nothing, never the active profile's or
+ * the first one's. `expectedBase` is the server a provider-level call (the
+ * dialog's repository list) names, as for `activeProfileAuth`.
  */
 export function namedProfileAuth(
   host: RepoHost,
   profileId: string,
-  remoteUrl?: string
+  remoteUrl?: string,
+  expectedBase?: string
 ): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind }> {
   if (!profileId.trim()) return Promise.resolve({})
-  return profileAuth(host, profileId, remoteUrl)
+  return profileAuth(host, profileId, remoteUrl, expectedBase)
+}
+
+/** Whether some profile has this id — an empty or unknown one names nobody. */
+export async function isProfileId(profileId: unknown): Promise<boolean> {
+  if (typeof profileId !== 'string' || !profileId.trim()) return false
+  return (await readSettings()).profiles.some((p) => p.id === profileId)
+}
+
+/** The Forgejo instance of exactly this profile, or null — never another profile's for an unknown id. */
+export async function namedProfileForgejoInstance(profileId: string): Promise<string | null> {
+  if (!profileId.trim()) return null
+  const profile = (await readSettings()).profiles.find((p) => p.id === profileId)
+  return profileForgejoBase(profile?.forgejoUrl)
 }
 
 /** The Forgejo instance a profile (the active one by default) points at, or null. */

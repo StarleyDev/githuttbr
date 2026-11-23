@@ -29,7 +29,7 @@ export function WorkItemBranchModal({ spec }: { spec: Extract<ModalSpec, { kind:
     setError(null)
     setItem(null)
     try {
-      setItem(await hostingApi.workItem(spec.remoteUrl, { azure: azureToken || undefined }, n))
+      setItem(await hostingApi.workItem(spec.path, spec.remoteUrl, { azure: azureToken || undefined }, n))
     } catch (err) {
       setError(readableError(err instanceof Error ? err.message : String(err), t, interp))
     } finally {

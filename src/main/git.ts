@@ -182,7 +182,7 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { activeProfileAuth, namedProfileAuth, readSettings } from './settings'
+import { activeProfileAuth, isProfileId, namedProfileAuth, readSettings } from './settings'
 import { providerOfHost } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
 import {
@@ -1016,34 +1016,37 @@ function urlUsername(url: string | undefined): string {
  * `withRemoteAuth`: the token never enters the URL, so it is in neither the
  * process list nor the new repository's `.git/config` — not even for the
  * duration of the clone, which a crash or a kill would otherwise leave behind.
+ *
+ * `profileId` is the profile picked in the clone dialog — the one its provider
+ * tab listed repositories with and the new repository is then bound to — so a
+ * repository is listed, cloned and later fetched as one account. An empty or
+ * unknown id gets nothing (an anonymous clone), never the active profile's or
+ * the first one's. Absent (a clone nobody picked a profile for): the active one.
  */
 export async function cloneCredentialEnv(
   url: string,
   host?: string,
   token?: string,
-  urlProfileId?: string
+  profileId?: string
 ): Promise<NodeJS.ProcessEnv | null> {
   if (!/^https:\/\//i.test(url)) return null
+  if (profileId !== undefined && !(await isProfileId(profileId))) return null
   // Clone → URL names no provider. A Data Center a profile configures is
   // recognised from the URL itself (host, port and context path) — its token is
-  // filed under that base, so no other host can be offered anything. It is
-  // resolved from the profile picked in the dialog (`urlProfileId`), the one the
-  // new repository is then bound to, so it is cloned and later fetched as the
-  // same account. Every other provider still needs the caller to name it.
-  const urlTab = !host
+  // filed under that base, so no other host can be offered anything. Every
+  // other provider still needs the caller to name it.
   if (!host) {
     if (!bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
     host = 'bitbucket'
   }
   // The caller names the provider; the URL must really be on it.
   if (hostFromUrl(url) !== host) return null
-  // The renderer sends the active profile's token. A GitLab or Forgejo token
-  // only goes to the instance that issued it — never to another profile's server.
-  // GitHub likewise: the renderer's token is github.com's, so a clone from an
-  // Enterprise Server uses the token the profile filed for that server.
-  // Resolved here even when the renderer sent none: its copy of the settings
-  // carries no tokens until Settings has been opened, and a self-managed
-  // server's token is never the one it would send anyway.
+  // A GitLab or Forgejo token only goes to the instance that issued it — never
+  // to another profile's server. GitHub likewise: the renderer's token is
+  // github.com's, so a clone from an Enterprise Server uses the token the
+  // profile filed for that server. Resolved here even when the renderer sent
+  // none: its copy of the settings carries no tokens until Settings has been
+  // opened, and a self-managed server's token is never the one it would send.
   const ghes = host === 'github' && !isGithubComHost(new URL(url).hostname)
   // Bitbucket the same: the renderer's token is bitbucket.org's; a Data Center
   // clone uses the token (and user name) the profile filed for that server.
@@ -1051,15 +1054,13 @@ export async function cloneCredentialEnv(
   let gitUsername: string | undefined
   let tokenKind: BitbucketServerTokenKind | undefined
   if (host === 'gitlab' || host === 'forgejo' || ghes || dc) {
-    // Only the URL tab names a profile; an empty or unknown id gets nothing.
-    const auth = urlTab && urlProfileId !== undefined ? await namedProfileAuth(host, urlProfileId, url) : await activeProfileAuth(host, url)
+    const auth = profileId !== undefined ? await namedProfileAuth(host, profileId, url) : await activeProfileAuth(host, url)
     token = auth.token
     gitUsername = auth.username
     tokenKind = auth.tokenKind
   }
-  // github.com, bitbucket.org and Azure clone with the renderer's token; a tab
-  // whose profile has none clones anonymously. A server's token above was
-  // resolved here, from the same (active) profile the provider tab listed with.
+  // github.com, bitbucket.org and Azure clone with the renderer's token — the
+  // picked profile's; a profile with none clones anonymously.
   if (!token?.trim()) return null
   const auth = basicAuthFor(host as RepoHost | undefined, token, url, gitUsername, tokenKind)
   return auth ? gitCredentialEnv(url, auth) : null
@@ -7566,8 +7567,8 @@ export const gitService = {
 
   /** Branch names a remote advertises, for the clone dialog's branch picker.
    *  Never touches disk — `ls-remote` is a network read with no local repo. */
-  async remoteBranches(url: string, host?: string, token?: string, urlProfileId?: string): Promise<string[]> {
-    const credEnv = await cloneCredentialEnv(url, host, token, urlProfileId)
+  async remoteBranches(url: string, host?: string, token?: string, profileId?: string): Promise<string[]> {
+    const credEnv = await cloneCredentialEnv(url, host, token, profileId)
     if (credEnv) await assertGitSupportsCredentialEnv()
     try {
       const { stdout } = await pexecFile('git', ['ls-remote', '--heads', url], {
@@ -7605,7 +7606,7 @@ export const gitService = {
       const localShallow =
         !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
       const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
-      const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token, opts.urlProfileId)
+      const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token, opts.profileId)
       if (credEnv) await assertGitSupportsCredentialEnv()
       // Streaming the underlying `git clone --progress` so the UI can show real progress;
       // simpleGit auto-appends --progress when a progress handler is configured.

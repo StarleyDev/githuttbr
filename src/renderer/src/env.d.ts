@@ -238,39 +238,39 @@ interface PreloadApi {
     clear(): Promise<unknown>
   }
   hosting: {
-    listRepos(provider: string, token: string, org?: string): Promise<unknown>
+    listRepos(provider: string, token: string, org?: string, profileId?: string): Promise<unknown>
     uploadSshKey(token: string, title: string, publicKey: string): Promise<unknown>
-    listOwners(provider: string, token: string, org?: string): Promise<unknown>
+    listOwners(provider: string, token: string, org?: string, profileId?: string): Promise<unknown>
     accountOwner(provider: string, login: string, found: unknown, exceptProfileId: string): Promise<unknown>
     whoAmI(provider: string, token: string, org?: string, interactive?: boolean, link?: unknown, issuer?: string): Promise<unknown>
-    createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
-    listPRs(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
-    listReleases(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
-    ciStatuses(remoteUrl: string, shas: string[], token: string): Promise<unknown>
+    createRepo(provider: string, token: string, opts: unknown, org?: string, profileId?: string): Promise<unknown>
+    listPRs(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
+    listReleases(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
+    ciStatuses(repoPath: string, remoteUrl: string, shas: string[], token: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
-    createPR(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
-    prDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
-    workItem(remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
-    prComment(remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
-    prReplyReviewComment(remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown>
-    prCheckLog(remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
-    prChecks(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
-    prFiles(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
-    prReview(remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
-    prMerge(remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
+    createPR(repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
+    prDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    workItem(repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
+    prComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
+    prReplyReviewComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown>
+    prCheckLog(repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
+    prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prReview(repoPath: string, remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
+    prMerge(repoPath: string, remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
     listNotifications(token: string, all?: boolean): Promise<unknown>
     markNotificationRead(token: string, id: string): Promise<unknown>
     markAllNotificationsRead(token: string): Promise<unknown>
-    listIssues(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
-    issueDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
-    setIssueState(remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
-    createIssue(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
-    applyPrMeta(remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
-    updatePR(remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
-    mergedPrHeads(remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
-    ensureStack(remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown>
-    listMilestones(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
-    milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    listIssues(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
+    issueDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    setIssueState(repoPath: string, remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
+    createIssue(repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
+    applyPrMeta(repoPath: string, remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
+    updatePR(repoPath: string, remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
+    mergedPrHeads(repoPath: string, remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
+    ensureStack(repoPath: string, remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown>
+    listMilestones(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
+    milestoneIssues(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }
   term: TermApi
   launch: LaunchApi

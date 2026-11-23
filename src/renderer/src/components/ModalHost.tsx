@@ -656,7 +656,9 @@ function RepoPicker({
     setLoading(true)
     setError(null)
     try {
-      const list = await hostingApi.listRepos(host, token, scope)
+      // The picked profile, by id: main resolves a server's token from it, and
+      // the clone that follows signs in and binds as the same one.
+      const list = await hostingApi.listRepos(host, token, scope, profile.id)
       setRepos(list)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -675,7 +677,7 @@ function RepoPicker({
     // Git already uses, including one supplied by `gh auth login`.
     if (host !== 'azure') void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [host, token, profileId, gitlabBase])
+  }, [host, token, profile.id, gitlabBase])
 
   // Another profile has other servers: start again from its preferred one.
   useEffect(() => {
@@ -823,12 +825,15 @@ function OwnerSelect({
   host,
   token,
   org,
+  profileId,
   value,
   onChange
 }: {
   host: RepoHost
   token: string
   org?: string
+  /** The profile picked in the dialog — the one whose accounts are listed. */
+  profileId: string
   value: RemoteOwner | null
   onChange: (owner: RemoteOwner | null) => void
 }): React.JSX.Element {
@@ -857,7 +862,7 @@ function OwnerSelect({
     setLoading(true)
     setError(null)
     hostingApi
-      .listOwners(host, token, org)
+      .listOwners(host, token, org, profileId)
       .then((list) => {
         if (cancelled) return
         setOwners(list)
@@ -869,7 +874,7 @@ function OwnerSelect({
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [host, token, org])
+  }, [host, token, org, profileId])
 
   if (loading) {
     return (
@@ -1003,7 +1008,7 @@ function ProviderCreateForm({
         description: description.trim() || undefined,
         private: isPrivate
       }
-      const repo = await hostingApi.createRepo(host, token, opts, scope)
+      const repo = await hostingApi.createRepo(host, token, opts, scope, profile.id)
       closeModal()
       await repoActions.addRemoteAndPush(spec.path, remoteName.trim(), repo.url)
     } catch (e) {
@@ -1076,7 +1081,7 @@ function ProviderCreateForm({
             />
           )}
           <label className="modal-label">{host === 'azure' ? t('modal.project') : t('modal.account')}</label>
-          <OwnerSelect host={host} token={token} org={scope} value={owner} onChange={setOwner} />
+          <OwnerSelect host={host} token={token} org={scope} profileId={profile.id} value={owner} onChange={setOwner} />
 
           <label className="modal-label">{t('modal.repositoryName')}</label>
           <input
@@ -1557,8 +1562,8 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     setBranchesError(false)
     try {
       const token = host ? profile[HOST_META[host].tokenField] : undefined
-      // Clone → URL: a configured Data Center's token comes from the picked profile.
-      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token, host ? undefined : profile.id))
+      // Every tab: a self-hosted server's token comes from the picked profile.
+      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token, profile.id))
     } catch {
       // A private repo with no token, a typo'd URL, an offline machine — the
       // clone itself will report it properly, so this stays a soft failure and
@@ -1627,7 +1632,8 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
             depth: shallow && parsedDepth > 0 ? parsedDepth : undefined,
             singleBranch: shallow ? singleBranch : singleBranch || undefined,
             // No branch: a name picked for one repository means nothing in the others.
-            recurseSubmodules: submodules
+            recurseSubmodules: submodules,
+            profileId: profileForRepo
           },
           onDone: (path) => {
             setRepoProfile(path, profileForRepo)
@@ -1667,10 +1673,10 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         singleBranch: shallow ? singleBranch : singleBranch || undefined,
         branch: branch.trim() || undefined,
         recurseSubmodules: submodules,
-        // Clone → URL only: the profile the repository is pinned to below also
-        // signs the clone in, for a configured Data Center. Provider tabs send
-        // their token instead.
-        ...(host ? {} : { urlProfileId: profileForRepo })
+        // The profile the repository is pinned to below also signs the clone in:
+        // a self-hosted server's token is read from it in main, on every tab.
+        // github.com, bitbucket.org and Azure use `token`, the same profile's.
+        profileId: profileForRepo
       },
       // Runs after the dialog may be long gone — it reads nothing from this render
       // but the values captured above.

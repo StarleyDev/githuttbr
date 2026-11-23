@@ -769,7 +769,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       return !cur || cur.state === 'pending'
     })
     if (!toFetch.length) return
-    const fresh = await hostingApi.ciStatuses(origin.url, toFetch, token).catch(() => ({}))
+    const fresh = await hostingApi.ciStatuses(path, origin.url, toFetch, token).catch(() => ({}))
     get().patch(path, { ciStatuses: { ...existing, ...fresh } })
   },
 
@@ -800,17 +800,13 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!repo || !origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { provider, prs } = await hostingApi.listPRs(
-        origin.url,
-        {
-          github: profile.githubToken || undefined,
-          azure: profile.azureToken || undefined,
-          gitlab: profile.gitlabToken || undefined,
-          bitbucket: profile.bitbucketToken || undefined,
-          forgejo: profile.forgejoToken || undefined
-        },
-        path
-      )
+      const { provider, prs } = await hostingApi.listPRs(path, origin.url, {
+        github: profile.githubToken || undefined,
+        azure: profile.azureToken || undefined,
+        gitlab: profile.gitlabToken || undefined,
+        bitbucket: profile.bitbucketToken || undefined,
+        forgejo: profile.forgejoToken || undefined
+      })
       get().patch(path, { prs, prProvider: provider })
       announceReviewRequests(path, origin.url, provider, prs, profile.id)
     } catch (err) {
@@ -824,7 +820,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       return
     }
     try {
-      const { prs } = await hostingApi.listPRs(fork.upstream.url, { github: profile.githubToken || undefined }, path)
+      const { prs } = await hostingApi.listPRs(path, fork.upstream.url, { github: profile.githubToken || undefined })
       get().patch(path, { upstreamPrs: prsFromFork(prs, fork.fork) })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -837,7 +833,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { issues } = await hostingApi.listIssues(origin.url, { github: profile.githubToken || undefined }, path)
+      const { issues } = await hostingApi.listIssues(path, origin.url, { github: profile.githubToken || undefined })
       get().patch(path, { issues })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -850,11 +846,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { milestones } = await hostingApi.listMilestones(
-        origin.url,
-        { github: profile.githubToken || undefined },
-        path
-      )
+      const { milestones } = await hostingApi.listMilestones(path, origin.url, { github: profile.githubToken || undefined })
       get().patch(path, { milestones })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -867,11 +859,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { provider, releases } = await hostingApi.listReleases(
-        origin.url,
-        { github: profile.githubToken || undefined },
-        path
-      )
+      const { provider, releases } = await hostingApi.listReleases(path, origin.url, {
+        github: profile.githubToken || undefined
+      })
       get().patch(path, { releases, releaseProvider: provider })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -3086,7 +3076,7 @@ export async function submitStackCore(path: string, leaf?: string): Promise<Stac
     const preStack = await gitApi.stackInfo(path, leaf).catch(() => null)
     const hostMerged = preStack?.branches.length
       ? await hostingApi
-          .mergedPrHeads(origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
+          .mergedPrHeads(path, origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
           .catch(() => [])
       : []
     const pruned = await gitApi.stackPruneMerged(path, hostMerged, leaf)
@@ -3162,7 +3152,7 @@ export async function submitStackCore(path: string, leaf?: string): Promise<Stac
         // the PR, the list becomes the description.
         const cmp = await gitApi.compareBranches(path, a.branch, a.base).catch(() => null)
         const oldest = cmp?.aheadCommits.at(-1)
-        const res = await hostingApi.createPR(origin.url, tokens, {
+        const res = await hostingApi.createPR(path, origin.url, tokens, {
           title: oldest?.subject || a.branch,
           body: (cmp?.aheadCommits ?? []).map((c) => `- ${c.subject}`).join('\n'),
           source: a.branch,
@@ -3172,7 +3162,7 @@ export async function submitStackCore(path: string, leaf?: string): Promise<Stac
         numbered.push({ branch: a.branch, number: res.number })
         done.push({ branch: a.branch, base: a.base, number: res.number, url: res.url, action: 'create' })
       } else {
-        if (a.action === 'retarget') await hostingApi.updatePR(origin.url, tokens, a.number!, { base: a.base })
+        if (a.action === 'retarget') await hostingApi.updatePR(path, origin.url, tokens, a.number!, { base: a.base })
         numbered.push({ branch: a.branch, number: a.number! })
         done.push({ branch: a.branch, base: a.base, number: a.number!, url: a.url ?? '', action: a.action })
       }
@@ -3182,7 +3172,7 @@ export async function submitStackCore(path: string, leaf?: string): Promise<Stac
     // with the "you are here" pointer personalised per PR.
     step(interp(t('stack.stepNav'), { n: numbered.length }))
     for (const n of numbered) {
-      await hostingApi.updatePR(origin.url, tokens, n.number, {
+      await hostingApi.updatePR(path, origin.url, tokens, n.number, {
         stackSection: buildStackSection(numbered, n.number, trunk)
       })
     }
@@ -3191,7 +3181,7 @@ export async function submitStackCore(path: string, leaf?: string): Promise<Stac
     // rebase and a merge that lands the levels below — and costs one call.
     step(t('stack.stepRegister'))
     const stackInfo = await hostingApi
-      .ensureStack(origin.url, tokens, numbered.map((n) => n.number))
+      .ensureStack(path, origin.url, tokens, numbered.map((n) => n.number))
       .catch(() => null)
 
     await useRepoStore.getState().refreshPRs(path, { silent: true })

@@ -5,11 +5,11 @@ import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
 
 // A server's token (GitLab, Forgejo, GitHub Enterprise, Data Center) is resolved
-// in main from the active profile — the one the provider tab lists with — since
-// the renderer's own token is gitlab.com's / bitbucket.org's, and it may hold
-// none until Settings is opened. github.com, bitbucket.org and Azure clone with
-// the renderer's token, or anonymously without one. Clone → URL on a configured
-// Data Center signs in as the profile picked in the dialog.
+// in main from the profile picked in the clone dialog — the one the provider tab
+// lists with and the new repository is bound to — or the active profile when no
+// caller names one. The renderer's own token is gitlab.com's / bitbucket.org's,
+// and it may hold none until Settings is opened. github.com, bitbucket.org and
+// Azure clone with the renderer's token, or anonymously without one.
 
 const dir = mkdtempSync(join(tmpdir(), 'gitcito-clone-profile-'))
 
@@ -114,14 +114,24 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
     expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'empty')).toBeNull()
   })
 
-  it('a provider-tab clone ignores the URL tab’s profile id', async () => {
+  // The provider tab lists with the picked profile, and the dialog binds the
+  // new repository to it: the clone must sign in as that profile too.
+  it('a provider-tab clone signs in as the profile picked in the dialog, not the active one', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const gl = JSON.stringify(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '', 'personal'))
-    expect(gl).toContain(WORK_GITLAB)
-    expect(gl).not.toContain(PERSONAL_GITLAB)
+    expect(gl).toContain(PERSONAL_GITLAB)
+    expect(gl).not.toContain(WORK_GITLAB)
     const env = JSON.stringify(await cloneCredentialEnv(BBS_REPO, 'bitbucket', 'sent', 'personal'))
-    expect(env).toContain(WORK_BBS)
-    expect(env).not.toContain(PERSONAL_BBS)
+    expect(env).toContain(PERSONAL_BBS)
+    expect(env).not.toContain(WORK_BBS)
+  })
+
+  it('a provider-tab clone with an unknown or empty profile id gets nothing — not even the token the renderer sent', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    for (const id of ['gone', '', '  ']) {
+      expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', 'renderer-token', id)).toBeNull()
+      expect(await cloneCredentialEnv('https://github.com/team/app.git', 'github', 'renderer-token', id)).toBeNull()
+    }
   })
 
   // With no profile named (an older caller), the active one — the rule every
