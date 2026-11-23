@@ -137,6 +137,14 @@ textarea:focus {
   justify-content: center;
 }
 
+.app.booting .boot-error {
+  max-width: 460px;
+  padding: 0 16px;
+  text-align: center;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
 .workspace {
   flex: 1;
   display: flex;

@@ -2486,20 +2486,40 @@ function DataManagementSection(): React.JSX.Element {
         return
       }
       const { settings: incomingSettings, bundle } = parsed
+      const apply = async (replaceSecrets: boolean): Promise<void> => {
+        try {
+          // Through the store's normalizer, not a bare spread: that is what makes the
+          // import take effect now rather than on the next launch.
+          await useSettingsStore.getState().importSettings(incomingSettings, { replaceSecrets })
+          if (bundle?.info) await infoApi.importAll(bundle.info)
+          if (bundle?.vault) await vaultApi.importAll(bundle.vault)
+          if (bundle?.avatars) {
+            await profileAvatarApi.importAll(bundle.avatars)
+            useProfileAvatarsStore.getState().reloadProfileImages()
+          }
+          toast('success', t('settings.imported'))
+        } catch {
+          toast('error', t('settings.importFailed'))
+        }
+      }
 
-      if (hasSettingsSecrets(incomingSettings as AppSettings)) {
-        toast('info', t('settings.importKeptTokens'))
+      // A file without credentials (the default export) never clears the saved
+      // ones. One with credentials asks: add them, or make them the only ones.
+      if (!hasSettingsSecrets(incomingSettings as AppSettings)) {
+        await apply(false)
+        return
       }
-      // Through the store's normalizer, not a bare spread: that is what makes the
-      // import take effect now rather than on the next launch.
-      await useSettingsStore.getState().importSettings(incomingSettings)
-      if (bundle?.info) await infoApi.importAll(bundle.info)
-      if (bundle?.vault) await vaultApi.importAll(bundle.vault)
-      if (bundle?.avatars) {
-        await profileAvatarApi.importAll(bundle.avatars)
-        useProfileAvatarsStore.getState().reloadProfileImages()
-      }
-      toast('success', t('settings.imported'))
+      useUIStore.getState().openDialog({
+        kind: 'confirm',
+        title: t('settings.importSecretsTitle'),
+        message: t('settings.importSecretsMessage'),
+        confirmLabel: t('settings.importSecretsMerge'),
+        autoFocusConfirm: true,
+        onConfirm: () => void apply(false),
+        secondaryLabel: t('settings.importSecretsReplace'),
+        secondaryDanger: true,
+        onSecondary: () => void apply(true)
+      })
     } catch {
       toast('error', t('settings.importFailed'))
     } finally {
@@ -3588,13 +3608,47 @@ function EditorCard(): React.JSX.Element {
 
 function KeychainCard(): React.JSX.Element {
   const [status, setStatus] = useState<{ consent: KeychainConsent; available: boolean | null } | null>(null)
+  const [unreadable, setUnreadable] = useState(false)
+  const [retrying, setRetrying] = useState(false)
   const load = useSettingsStore((s) => s.load)
   const t = useT()
 
   const refresh = (): void => {
     void keychainApi.status().then(setStatus)
+    void settingsApi
+      .secretsState()
+      .then((s) => setUnreadable(s.unreadable))
+      .catch(() => setUnreadable(false))
   }
   useEffect(refresh, [])
+
+  // Reading the store again is an unlock: the OS may ask for the keychain now.
+  const retry = async (): Promise<void> => {
+    setRetrying(true)
+    try {
+      await load({ unlock: true })
+    } finally {
+      setRetrying(false)
+      refresh()
+    }
+  }
+
+  // Destructive for whoever could read the old store, so it is asked first and
+  // says what happens to it: kept beside the new one as a backup, for a while.
+  const askReplace = (): void =>
+    useUIStore.getState().openDialog({
+      kind: 'confirm',
+      title: t('keychain.replaceStoreTitle'),
+      message: t('keychain.replaceStoreMessage'),
+      danger: true,
+      confirmLabel: t('keychain.replaceStore'),
+      onConfirm: () =>
+        void settingsApi
+          .replaceUnreadableStore()
+          .then(() => load({ unlock: true }))
+          .catch(() => undefined)
+          .finally(refresh)
+    })
 
   const set = async (granted: boolean): Promise<void> => {
     await keychainApi.set(granted)
@@ -3634,6 +3688,19 @@ function KeychainCard(): React.JSX.Element {
           </button>
         )}
       </div>
+      {unreadable && (
+        <div className="kc-status" role="alert">
+          <span className="kc-dot declined" />
+          <span className="settings-hint kc-status-text">{t('keychain.storeUnreadable')}</span>
+          <button className="btn ghost small" disabled={retrying} onClick={() => void retry()}>
+            {retrying && <Loader2 size={12} className="spin" />}
+            {t('modal.retry')}
+          </button>
+          <button className="btn ghost small" onClick={askReplace}>
+            {t('keychain.replaceStore')}
+          </button>
+        </div>
+      )}
     </>
   )
 }

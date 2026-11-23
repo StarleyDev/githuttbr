@@ -5,6 +5,7 @@ import { EventEmitter } from 'events'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
+import { settingsIpc } from './settingsIpc'
 
 // With the keychain declined, a typed token lives only in memory for the
 // session. A save that removed its server pruned the encrypted store but not
@@ -28,8 +29,9 @@ vi.mock('electron', () => ({
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
+const ipc = settingsIpc(handlers)
 const callFrom = (sender: number, channel: string, ...args: unknown[]): Promise<unknown> =>
-  Promise.resolve(handlers.get(channel)!({ sender: { id: sender } }, ...args))
+  ipc({ sender: { id: sender } }, channel, ...args)
 /** The app's window. */
 const call = (channel: string, ...args: unknown[]): Promise<unknown> => callFrom(1, channel, ...args)
 
@@ -175,7 +177,7 @@ const RESETS = ['did-navigate', 'render-process-gone', 'destroyed'] as const
 /** A stand-in webContents: an id and the events the main process watches. */
 const fakeRenderer = (id: number): EventEmitter & { id: number } => Object.assign(new EventEmitter(), { id })
 const callAs = (wc: EventEmitter & { id: number }, channel: string, ...args: unknown[]): Promise<unknown> =>
-  Promise.resolve(handlers.get(channel)!({ sender: wc }, ...args))
+  ipc({ sender: wc }, channel, ...args)
 
 describe('a reloaded renderer holds nothing until it is served again', () => {
   const restart = async (consent: 'declined' | 'granted'): Promise<void> => {

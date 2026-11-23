@@ -6,6 +6,7 @@ import { defaultSettings, type AppSettings, type Profile } from '../src/shared/t
 import { saveOver, scrubServerUrls, secretView } from '../src/shared/secrets'
 import { serverUrlWithoutSecrets } from '../src/shared/serverAddress'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
+import { settingsIpc } from './settingsIpc'
 
 // The settings handlers against a fake keyring: what reaches the files, and
 // which renderer's blank counts as a clear.
@@ -40,8 +41,9 @@ const settingsFile = (): string => join(dir, 'gitcito-settings.json')
 const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
 const store = (): string => Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString()
 
+const ipc = settingsIpc(handlers)
 const callFrom = (sender: number, channel: string, ...args: unknown[]): Promise<unknown> =>
-  Promise.resolve(handlers.get(channel)!({ sender: { id: sender } }, ...args))
+  ipc({ sender: { id: sender } }, channel, ...args)
 const call = (channel: string, ...args: unknown[]): Promise<unknown> => callFrom(1, channel, ...args)
 
 const profileWith = (over: Partial<Profile>): Profile => ({ ...defaultSettings().profiles[0], id: 'p', ...over })
@@ -200,24 +202,45 @@ describe.skipIf(process.platform === 'win32')('files in the user-data folder', (
     expect(mode(storeFile())).toBe(0o600)
   })
 
-  it('the backup of our own store goes after a successful write', async () => {
+  it('a backup of our own store goes only once every token in it is in the store', async () => {
     await restart()
-    writeFileSync(`${storeFile()}.bak`, Buffer.from('enc:{"p":{"githubToken":"revoked"}}').toString('base64'))
+    const bak = `${storeFile()}.bak`
+    // Holds a token the store will not: deleting it would lose that token.
+    writeFileSync(bak, Buffer.from('enc:{"p":{"githubToken":"only-here"}}').toString('base64'))
     await call('settings:set', tokens('ghp_new', ''))
-    expect(existsSync(`${storeFile()}.bak`)).toBe(false)
+    expect(existsSync(bak)).toBe(true)
+    // Everything in it is in the store now: nothing is lost with it.
+    writeFileSync(bak, Buffer.from('enc:{"p":{"githubToken":"ghp_new"}}').toString('base64'))
+    await call('settings:set', tokens('ghp_new', 'az_new'))
+    expect(existsSync(bak)).toBe(false)
   })
 
-  it('a backup only another build can read is kept, owner-only, until it is old', async () => {
-    await restart()
-    // Another build's store: this one cannot decrypt it, so it is backed up first.
-    writeFileSync(storeFile(), Buffer.from('other-build').toString('base64'))
+  it('a store this build cannot read is never written over — only replaced on request, kept as a backup', async () => {
+    const mod = await restart()
+    // Another build's store: this one cannot decrypt it.
+    const theirs = Buffer.from('other-build').toString('base64')
+    writeFileSync(storeFile(), theirs)
     await call('settings:set', tokens('ghp_new', ''))
+    // Untouched, nothing backed up yet; the token is this session's only.
+    expect(readFileSync(storeFile(), 'utf8')).toBe(theirs)
+    expect(existsSync(`${storeFile()}.bak`)).toBe(false)
+    expect((await mod.activeProfileAuth('github')).token).toBe('ghp_new')
+    expect(await call('settings:secretsState')).toEqual({ unreadable: true })
+
+    // The user chooses to start over: the old file becomes the backup.
+    expect(await call('settings:replaceUnreadableStore')).toBe(true)
     const bak = `${storeFile()}.bak`
-    expect(existsSync(bak)).toBe(true)
+    expect(readFileSync(bak, 'utf8')).toBe(theirs)
     expect(mode(bak)).toBe(0o600)
+    expect(store()).toContain('ghp_new')
+    expect(await call('settings:secretsState')).toEqual({ unreadable: false })
+    // A later save keeps a backup it cannot read while it is young…
+    await call('settings:set', tokens('ghp_newer', ''))
+    expect(existsSync(bak)).toBe(true)
+    // …and lets it go once it is old.
     const old = (Date.now() - 31 * 24 * 60 * 60 * 1000) / 1000
     utimesSync(bak, old, old)
-    await call('settings:set', tokens('ghp_newer', ''))
+    await call('settings:set', tokens('ghp_newest', ''))
     expect(existsSync(bak)).toBe(false)
   })
 })

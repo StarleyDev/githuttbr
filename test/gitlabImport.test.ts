@@ -6,7 +6,9 @@ vi.mock('../src/renderer/src/infrastructure/api', () => ({
   settingsApi: {
     set: vi.fn(async (s: AppSettings) => {
       saved.push(s)
-    })
+    }),
+    // An import reads the settings back from main afterwards: here, what was saved.
+    get: vi.fn(async () => ({ settings: saved.at(-1), generation: 1 }))
   },
   reposApi: {}
 }))

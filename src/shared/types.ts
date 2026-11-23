@@ -3253,6 +3253,33 @@ export interface Workspace {
 
 export type TabRepoLabel = 'both' | 'name' | 'image'
 
+/**
+ * What `settings:get` and `settings:unlock` answer: the settings, and the
+ * generation of credentials the renderer was just handed. A save names the
+ * generation its state was built from; a blank token is a clear only when that
+ * is still the current one for the window (see main/settings.ts).
+ */
+export interface SettingsReply {
+  settings: AppSettings
+  generation: number
+}
+
+/** How a settings save treats the credentials it carries. */
+export interface SettingsSaveOptions {
+  /**
+   * An imported file. `merge` (the default for an import) only adds or replaces
+   * credentials — a blank never clears one; `replace` makes the saved
+   * credentials exactly the file's, and only counts when the file carries some.
+   */
+  import?: 'merge' | 'replace'
+}
+
+/** The encrypted token store, as Settings → Security reports it. */
+export interface SecretsState {
+  /** A store exists that this session could not decrypt: it is left untouched. */
+  unreadable: boolean
+}
+
 export interface AppSettings {
   profiles: Profile[]
   activeProfileId: string

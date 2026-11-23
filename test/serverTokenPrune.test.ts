@@ -4,6 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 import { extractSecrets, mergeSecretStores, pruneSecrets } from '../src/shared/secrets'
+import { settingsIpc } from './settingsIpc'
 
 // A server removed from a profile must take its token with it. The merge path —
 // a save from a renderer that was never sent the secrets — keeps whatever the
@@ -103,7 +104,8 @@ vi.mock('electron', () => ({
   }
 }))
 
-const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+const ipc = settingsIpc(handlers)
+const call = (channel: string, ...args: unknown[]): Promise<unknown> => ipc({}, channel, ...args)
 const storeFile = (): string =>
   Buffer.from(readFileSync(join(dir, 'gitcito-secrets.enc'), 'utf8'), 'base64').toString().replace(/^enc:/, '')
 

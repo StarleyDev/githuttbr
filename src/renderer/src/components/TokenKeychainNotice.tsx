@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { KeyRound, Loader2 } from 'lucide-react'
-import { keychainApi } from '../infrastructure/api'
+import { keychainApi, settingsApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
@@ -24,6 +24,7 @@ export function TokenKeychainNotice(): React.JSX.Element | null {
     available: boolean | null
     sessionOnly: boolean
   } | null>(null)
+  const [unreadable, setUnreadable] = useState(false)
   const [enabling, setEnabling] = useState(false)
 
   const refresh = (): void => {
@@ -31,6 +32,10 @@ export function TokenKeychainNotice(): React.JSX.Element | null {
       .status()
       .then(setStatus)
       .catch(() => setStatus(null))
+    void settingsApi
+      .secretsState()
+      .then((s) => setUnreadable(s.unreadable))
+      .catch(() => setUnreadable(false))
   }
   useEffect(refresh, [])
 
@@ -55,10 +60,14 @@ export function TokenKeychainNotice(): React.JSX.Element | null {
   const notMoved = status.consent === 'granted' && status.available === true && status.sessionOnly
   if (status.consent !== 'declined' && !noKeyring && !notMoved) return null
 
+  // Not moved because the saved store could not be read (a dismissed keychain
+  // prompt, a locked keyring): retrying reads it again, then moves them.
   const message = noKeyring
     ? 'keychain.tokenNoKeyring'
     : notMoved
-      ? 'keychain.tokenNotMoved'
+      ? unreadable
+        ? 'keychain.tokenStoreUnreadable'
+        : 'keychain.tokenNotMoved'
       : 'keychain.tokenSessionOnly'
   return (
     <div className="token-keychain-notice" role="note">
