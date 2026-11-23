@@ -25,7 +25,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // Called only when a request arrives, so the import cycle with gitCredentialEnv
 // (which opens endpoints from here) never sees a half-initialised module.
-import { encodeConfigPath } from './gitCredentialEnv'
+import { withoutDefaultPort } from './gitCredentialEnv'
 
 /** The environment variable (suffixed `_<n>`) that carries an endpoint's nonce to its helper. */
 export const CREDENTIAL_NONCE_VAR = 'GITCITO_CREDENTIAL'
@@ -100,15 +100,71 @@ export function requestInScope(
   req: { protocol?: unknown; host?: unknown; path?: unknown }
 ): boolean {
   if (req.protocol !== 'https') return false
-  if (typeof req.host !== 'string' || req.host.toLowerCase() !== t.host) return false
+  // git sends the host as the remote spells it: `h.example:443` is the server
+  // the key `https://h.example` names, as git's own url matching agrees.
+  if (typeof req.host !== 'string' || withoutDefaultPort(req.host.toLowerCase(), 'https') !== t.host) return false
+  const exclude = (t.exclude ?? []).filter(Boolean)
   // git matched the config URL's path itself, but sent us none to check.
-  if (req.path === undefined) return !t.pathSent || (!t.path && !t.exclude?.length)
+  if (req.path === undefined) return !t.pathSent || (!t.path && !exclude.length)
   if (typeof req.path !== 'string') return false
-  // The scope is in the encoded spelling the config key uses; so is the request, then.
-  const p = encodeConfigPath('/' + req.path.replace(/^\/+/, ''))?.replace(/^\/+/, '')
-  if (p === undefined) return false
+  // The whole host, nothing carved out of it: any path is in, whatever it holds.
+  if (!t.path && !exclude.length) return true
+  // git sends the path decoded (`a%25b` arrives as `a%b`), so it is encoded
+  // here as it stands — never decoded a second time, which would throw on a
+  // literal `%` or turn `%2F` into a separator.
+  const p = literalPath(req.path)
   const within = (prefix: string): boolean => !prefix || p === prefix || p.startsWith(`${prefix}/`)
-  return within(t.path) && !(t.exclude ?? []).some((x) => x && within(x))
+  return within(t.path) && !exclude.some((x) => reachesNested(req.path as string, x))
+}
+
+/** A path git sent, in the encoded spelling of the config key: every byte but the unreserved ones escaped. */
+function literalPath(path: string): string {
+  return path
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .map((seg) => {
+      let enc = ''
+      for (const byte of Buffer.from(seg, 'utf8')) {
+        const c = String.fromCharCode(byte)
+        enc += /[A-Za-z0-9\-._~]/.test(c) ? c : `%${byte.toString(16).toUpperCase().padStart(2, '0')}`
+      }
+      return enc
+    })
+    .join('/')
+}
+
+/** Decoded once if it can be, lower case, `;params` and trailing dots and blanks cut: how a proxy might route it. */
+function routedSegment(seg: string): string {
+  let s = seg
+  try {
+    s = decodeURIComponent(seg)
+  } catch {
+    /* a stray `%`: compared as written */
+  }
+  return s.toLowerCase().split(';')[0].replace(/[.\s]+$/, '')
+}
+
+/**
+ * Whether a request under an outer server could reach the server `nested`
+ * (encoded, as the scope holds it) carved out of it. git — and our own match
+ * above — compare paths byte for byte, but the server behind them may not:
+ * Tomcat drops `;params` from a segment, nginx matches a location by prefix and
+ * may be case-insensitive, and Windows hosts drop trailing dots — so
+ * `/bitbucket;x/…`, `/Bitbucket/…`, `/bitbucket./…` and `/bitbucketx/…` may all
+ * land on a Data Center at `/bitbucket`, and must not get the outer server's
+ * token. With a carve-out, then: any `;` or a segment ending in `.` is refused
+ * outright, and the segments are compared the way such a server might route
+ * them, the last one of the nested base by prefix.
+ */
+function reachesNested(path: string, nested: string): boolean {
+  if (path.includes(';') || /%3b/i.test(path)) return true
+  const raw = path.replace(/^\/+|\/+$/g, '').split('/')
+  if (raw.some((seg) => /\.$/.test(seg) || /%2e$/i.test(seg))) return true
+  const segs = raw.flatMap((seg) => routedSegment(seg).split('/'))
+  const want = nested.split('/').map(routedSegment)
+  if (segs.length < want.length) return false
+  const last = want.length - 1
+  return want.every((w, i) => (i === last ? segs[i].startsWith(w) : segs[i] === w))
 }
 
 function answer(ep: Endpoint | undefined, line: string): Record<string, string> {

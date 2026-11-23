@@ -1,6 +1,9 @@
 import { PRODUCT_NAME } from './brand'
 import { instanceOf } from './gitlabInstance'
 import { ambiguousRemotePath } from './remotePath'
+// A cycle (the resolver names github.com by GITHUB_COM): both sides only call
+// each other's functions, never at import time.
+import { resolveRemoteProvider, type ServerRegistry } from './remoteProvider'
 import { serverDisplayAddress } from './serverAddress'
 import type { AccountLink, GithubEnterpriseHost, Profile } from './types'
 
@@ -151,50 +154,53 @@ export function resolveGithubHost(host: string, enterprise: readonly string[]): 
   return base ? githubEndpoints(base) : null
 }
 
-/** The host of a remote — `host[:port]` for https, the bare hostname for ssh — or null. */
-function remoteHostOf(url: string): { host: string; hostname: string; scheme: 'https' | 'ssh' } | null {
-  const scp = /^[\w.-]+@([\w.-]+):(?!\/\/)/.exec(url)
-  if (scp) return { host: scp[1].toLowerCase(), hostname: scp[1].toLowerCase(), scheme: 'ssh' }
-  try {
-    const u = new URL(url)
-    if (!u.hostname) return null
-    const hostname = u.hostname.toLowerCase()
-    // Only https is ever sent a token; http and git:// are recognised by host but never matched to a server.
-    if (u.protocol === 'https:') return { host: u.host.toLowerCase(), hostname, scheme: 'https' }
-    if (u.protocol === 'ssh:') return { host: hostname, hostname, scheme: 'ssh' }
-    return { host: '', hostname, scheme: 'https' }
-  } catch {
-    return null
-  }
-}
-
 /**
  * Which GitHub's credentials a remote may receive, by host alone: the GHES base
  * when its host is a configured server, `GITHUB_COM` for github.com, else null
  * — an unknown host gets nothing, not the github.com token.
+ *
+ * Decided by `resolveRemoteProvider`, so it can never disagree with the
+ * resolver about a remote (`https://github.com\@evil.com/o` is no GitHub to
+ * either). Main passes `reg`, every configured server: a GHES hostname another
+ * provider shares is then placed as the resolver places it.
  */
-export function githubBaseOfRemote(remoteUrl: string, enterprise: readonly string[]): string | null {
-  const r = remoteHostOf(remoteUrl)
-  if (!r) return null
-  const ghes = r.host ? githubEnterpriseBaseOfHost(r.host, enterprise, r.scheme) : null
-  if (ghes) return ghes
-  return isGithubComHost(r.hostname) ? GITHUB_COM : null
+export function githubBaseOfRemote(
+  remoteUrl: string,
+  enterprise: readonly string[],
+  reg?: ServerRegistry
+): string | null {
+  const r = resolveRemoteProvider(remoteUrl, reg ?? githubOnly(enterprise))
+  return r?.provider === 'github' && r.base ? r.base : null
 }
+
+/** A registry with only the given GHES bases, for a caller that knows no other server. */
+const githubOnly = (enterprise: readonly string[]): ServerRegistry => ({
+  gitlab: [],
+  forgejo: [],
+  githubEnterprise: enterprise,
+  bitbucketServer: []
+})
 
 /**
  * Which GitHub a remote is on, and its owner/repo — https or ssh. `base` is
  * `GITHUB_COM` or the GHES base. Null for any other host, or a path that is not
- * exactly `owner/repo`.
+ * exactly `owner/repo` — and whenever `resolveRemoteProvider` does not place
+ * the remote on that same GitHub (`https://github.com:x@evil.com/o` is on
+ * evil.com).
  */
 export function githubInstanceOf(
   remoteUrl: string,
-  enterprise: readonly string[]
+  enterprise: readonly string[],
+  reg?: ServerRegistry
 ): { base: string; owner: string; repo: string } | null {
+  const resolved = resolveRemoteProvider(remoteUrl, reg ?? githubOnly(enterprise))
+  if (resolved?.provider !== 'github' || !resolved.base) return null
   const ghes = instanceOf(remoteUrl, enterprise)
   if (ghes) {
     const parts = ghes.path.split('/')
-    return parts.length === 2 ? { base: ghes.base, owner: parts[0], repo: parts[1] } : null
+    return parts.length === 2 && ghes.base === resolved.base ? { base: ghes.base, owner: parts[0], repo: parts[1] } : null
   }
+  if (resolved.base !== GITHUB_COM) return null
   const m = /^(?:[\w.-]+@)?((?:[\w-]+\.)*github\.com)[:/](.+)$/i.exec(remoteUrl.replace(/^[a-z]+:\/\//i, ''))
   // The owner and repo are spliced into API paths: none that could walk out of them.
   if (!m || !isGithubComHost(m[1]) || ambiguousRemotePath(remoteUrl)) return null

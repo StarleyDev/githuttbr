@@ -7,6 +7,7 @@ import {
   type ApiAuth,
   githubCliAuthStatus,
   isJwt,
+  knownServers,
   resolveRemote,
   type GitCredential,
   type GitHubCliAuthStatus
@@ -350,10 +351,10 @@ async function profileAuth(provider: RepoHost, sent: string | undefined, remoteU
   // The renderer's GitHub token is github.com's: a remote on an Enterprise
   // Server (or one whose host cannot be told) resolves its own in main instead.
   const githubElsewhere =
-    provider === 'github' && !!remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM
+    provider === 'github' && !!remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances(), knownServers()) !== GITHUB_COM
   // Bitbucket the same: the renderer's token is bitbucket.org's.
   const bitbucketElsewhere =
-    provider === 'bitbucket' && !!remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD
+    provider === 'bitbucket' && !!remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances(), knownServers()) !== BITBUCKET_CLOUD
   return pickHostAuth({
     sent: provider === 'gitlab' || provider === 'forgejo' || githubElsewhere || bitbucketElsewhere ? undefined : sent,
     bound: repoPath ? await boundProfileAuth(provider, repoPath, remoteUrl) : undefined,
@@ -641,13 +642,13 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   const repoPath = hostingRepo.getStore()
   const bound = repoPath ? await boundProfileName(repoPath) : undefined
   if (bound) return new Error(boundNoCredentialMessage(provider, bound, host || provider))
-  if (provider.toLowerCase() === 'github' && host && remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM) {
+  if (provider.toLowerCase() === 'github' && host && remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances(), knownServers()) !== GITHUB_COM) {
     return new Error(ghesNoTokenMessage(host))
   }
   if (provider.toLowerCase() === 'github') {
     return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
   }
-  if (provider.toLowerCase() === 'bitbucket' && host && remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD) {
+  if (provider.toLowerCase() === 'bitbucket' && host && remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances(), knownServers()) !== BITBUCKET_CLOUD) {
     return new Error(bbsNoTokenMessage(host))
   }
   return new Error(noLinkedAccountMessage(provider, host))

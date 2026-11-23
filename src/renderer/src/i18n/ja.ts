@@ -3298,6 +3298,7 @@ export const ja: Dict = {
   'gitError.gitlabNotSaved': 'この GitLab のアドレスはまだどのプロファイルにも保存されていません（https である必要があります）。設定 → 連携 で保存してから、もう一度お試しください。',
   'gitError.ghesNoToken': 'このプロファイルには GitHub Enterprise Server {host} のトークンが保存されていません。設定 → 連携 → GitHub → GitHub Enterprise Server で追加してください。',
   'gitError.bbsNoToken': 'このプロファイルには Bitbucket Data Center {host} の HTTP アクセストークンが保存されていません。設定 → 連携 → Bitbucket → Bitbucket Data Center で追加してください。',
+  'gitError.nonCanonicalHost': '{host} にはこのプロファイルのアカウントを使用しませんでした。git がこのサーバーアドレスを Gitcito とは別のサーバーとして解釈し、代わりにこのマシンのログインが応答する可能性があります。ホスト名を通常の形式（IDN、数値の省略形、エンコードされた文字なし）で入力して再試行してください。',
   'gitError.heldTokenUnsavedServer': 'このトークンは別のアカウントまたはサーバー用にすでに保存されているため、まだどのプロファイルにも保存されていないサーバーには送信されません。このサーバーが発行したトークンを使用してください。',
   'gitError.bbsNoBrowse': 'Bitbucket Data Center ではリポジトリの閲覧と作成にまだ対応していません。代わりに URL でクローンしてください。',
   'gitError.notBbsRepo': 'これは Bitbucket Data Center のリポジトリではありません。',

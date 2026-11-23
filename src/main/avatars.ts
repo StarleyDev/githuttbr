@@ -3,7 +3,7 @@ import { app, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { mkdir, readFile, rename, rm } from 'node:fs/promises'
 import { writePrivateFile } from './privateFile'
-import { apiToken } from './credentials'
+import { apiToken, knownServers } from './credentials'
 import { peekActiveProfileAuth, peekBoundProfileAuth, peekNamedProfileAuth, type PeekedAuth } from './settings'
 import { knownGithubEnterpriseInstances } from './gitlabInstances'
 import { pickHostAuth } from '../shared/hostToken'
@@ -141,7 +141,7 @@ export async function githubAvatarsFor(
   items: AvatarRequest[],
   size: number
 ): Promise<Record<string, string | null>> {
-  const inst = githubInstanceOf(remoteUrl, knownGithubEnterpriseInstances())
+  const inst = githubInstanceOf(remoteUrl, knownGithubEnterpriseInstances(), knownServers())
   if (!inst) return {}
   const target: AvatarTarget = { base: inst.base, owner: inst.owner, repo: inst.repo }
   return resolver.resolve(target, items, size, () => tokenForRemote(remoteUrl, repoPath))

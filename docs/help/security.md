@@ -87,7 +87,32 @@ What it still cannot do:
   any other host, a plain `http` request, a path outside the server's base, and
   a server nested under it (a Data Center at `/bitbucket` beside a GitLab at
   the root) — even with the right code. A multi-URL push gets one endpoint per
-  server, each holding only that server's login.
+  server, each holding only that server's login. Under a server with another
+  nested inside it, a path the nested server's proxy could route to itself is
+  refused too: any `;` in it (Tomcat drops `;params`), a segment ending in a
+  dot, and the nested base's name in another case or as a prefix
+  (`/Bitbucket/`, `/bitbucketx/`) — so a group on the outer server whose name
+  starts with the nested server's path does not get its token either.
+- **A carve-out does not survive a redirect on the server's own side.** The
+  check is on the path git asks about. If the outer server itself redirects a
+  request into the nested server's path, or a proxy rewrites it there after
+  git has sent its login, no client can see that.
+- **A login inherited through `git -c` is set aside.** A credential helper (or
+  an `include` that could add one) passed down in `GIT_CONFIG_PARAMETERS` — the
+  app started from a git alias, or by another git — is removed for the
+  operation, so it is never offered the profile's token to store, nor asked as
+  nobody. Every other inherited `-c` setting is kept.
+- **A server address must be written the way git reads it.** Gitcito names the
+  server by the standard URL rules, git by its own: an internationalised name
+  (`bücher.example`), a numeric shorthand (`127.1`, `0x7f.0.0.1`), a compressed
+  or mapped IPv6 address, or an encoded character in the host are a different
+  server to each. With a profile involved, such an address is refused with a
+  message instead of being left to the machine's own login. Case and an
+  explicit default port (`:443`) are fine.
+- **Git older than 2.26** matched a credential entry only for the exact
+  address, not for everything under a server's base. Asking as nobody, the app
+  then switches the helpers off for the whole host for that one command;
+  signing in with a token needs git 2.31 anyway.
 - **Do not run hooks you do not trust** with a profile signed in all the same. A
   repository you just cloned can ship hooks through tools such as husky, which
   install them on `npm install`; git runs whatever sits in `.git/hooks`, from
