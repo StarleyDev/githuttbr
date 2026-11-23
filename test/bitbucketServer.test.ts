@@ -1245,6 +1245,16 @@ describe('call sites, through the real IPC handlers', () => {
     expect(Object.values(personal)).toContain('jsmith')
     // …and with no name anywhere, no credential at all rather than x-token-auth.
     expect(await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', undefined, undefined)).toBeNull()
+    // Picked in the dialog, that same server is cloned as nobody — git's helper
+    // for it switched off, not left to answer with another account.
+    const id = defaultSettings().profiles[0].id
+    for (const host of ['bitbucket', undefined] as const) {
+      const picked = (await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', host, undefined, id)) ?? {}
+      expect(picked.GIT_CONFIG_KEY_0, String(host)).toBe('credential.https://bbs.third.example.helper')
+      expect(picked.GIT_CONFIG_VALUE_0).toBe('')
+      expect(picked.GIT_CONFIG_COUNT).toBe('1')
+      expect(JSON.stringify(picked)).not.toContain('bbs-token-c')
+    }
   })
 
   // An entry with an empty user name and no kind — every personal-token setup

@@ -231,7 +231,7 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     // Upgrade from a plaintext settings file: the values on disk win, since
     // they are what the user last saved. Rewrite the JSON without them.
     const ids = (settings.profiles ?? []).map((p) => p.id)
-    const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids)
+    const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids, settings.profiles ?? [])
     await saveSecrets(merged)
     await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
     setSecretCache(merged)
@@ -596,9 +596,10 @@ export async function activeProfileAiKey(accountId?: string): Promise<string | u
  */
 async function persistSessionSecrets(): Promise<void> {
   if (Object.keys(sessionSecrets).length === 0) return
-  const ids = (await readSettings()).profiles.map((p) => p.id)
+  const { profiles } = await readSettings()
+  const ids = profiles.map((p) => p.id)
   const stored = secretCache ?? (await loadSecrets())
-  const merged = pruneSecrets(mergeSecretStores(stored, sessionSecrets), ids)
+  const merged = pruneSecrets(mergeSecretStores(stored, sessionSecrets), ids, profiles)
   await saveSecrets(merged)
   setSecretCache(merged)
   sessionSecrets = {}
@@ -631,6 +632,16 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
   // view of the store is not the truth, and persisting it would erase the
   // real one.
   if (!hasSecrets && (!servedSecrets || !secretCache || secretsUnreadable)) {
+    // What it can do is say which servers are gone: a token filed for a server
+    // the profile no longer lists would otherwise come back with the URL.
+    if (secretCache && !secretsUnreadable) {
+      const ids = (settings.profiles ?? []).map((p) => p.id)
+      const pruned = pruneSecrets(secretCache, ids, settings.profiles ?? [])
+      if (JSON.stringify(pruned) !== JSON.stringify(secretCache) && (await canEncrypt())) {
+        await saveSecrets(pruned)
+        setSecretCache(pruned)
+      }
+    }
     await writeFile(settingsPath(), stripped, 'utf-8')
     return
   }
@@ -642,7 +653,10 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
   if (!allowed) {
     // Refused (or no keyring): hold the secrets in memory for this session and
     // keep them out of the file, rather than writing them in the clear.
-    if (hasSecrets) sessionSecrets = mergeSecretStores(sessionSecrets, secrets)
+    if (hasSecrets) {
+      const ids = (settings.profiles ?? []).map((p) => p.id)
+      sessionSecrets = pruneSecrets(mergeSecretStores(sessionSecrets, secrets), ids, settings.profiles ?? [])
+    }
     await writeFile(settingsPath(), stripped, 'utf-8')
     return
   }
@@ -655,7 +669,7 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
   // so the credentials it was never given survive.
   const ids = (settings.profiles ?? []).map((p) => p.id)
   const base = servedSecrets ? {} : (secretCache ?? (await loadSecrets()))
-  const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
+  const merged = pruneSecrets(mergeSecretStores(base, secrets), ids, settings.profiles ?? [])
   await saveSecrets(merged)
   setSecretCache(merged)
   sessionSecrets = {}
