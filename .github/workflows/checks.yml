@@ -54,3 +54,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Electron is a devDependency, so `npm audit --omit=dev` never reports it
+      # even though it is the runtime the app ships. Needs the network, which
+      # is why it lives here and not in the local gate.
+      - name: Electron advisories
+        run: npm run audit:electron
