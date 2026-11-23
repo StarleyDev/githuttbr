@@ -9,6 +9,7 @@ import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
 import { cloneFolderNames } from '../src/renderer/src/lib/cloneBatch'
 import { bindBeforeOpen, bindingAfterAddRemote, effectiveProfileId } from '../src/renderer/src/lib/repoProfile'
+import { profileHasHostingToken } from '../src/renderer/src/lib/profileTokens'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
@@ -8046,5 +8047,30 @@ describe('Clone: the new repository is bound on disk before its tab opens', () =
       open: () => opened.push('open')
     })
     expect(opened).toEqual(['open'])
+  })
+})
+
+describe('profileHasHostingToken', () => {
+  it('counts every cloud token', () => {
+    for (const field of ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken', 'forgejoToken'] as const) {
+      expect(profileHasHostingToken({ [field]: 'tok' })).toBe(true)
+    }
+  })
+  it('counts a token on any self-hosted server — GitHub Enterprise and Bitbucket Data Center included', () => {
+    expect(profileHasHostingToken({ githubEnterprise: [{ url: 'https://ghe.corp.test', token: 'ghes' }] })).toBe(true)
+    expect(profileHasHostingToken({ gitlabServers: [{ url: 'https://gl.corp.test', token: 'glpat' }] })).toBe(true)
+    expect(profileHasHostingToken({ bitbucketServers: [{ url: 'https://bb.corp.test', token: 'bbdc' }] })).toBe(true)
+  })
+  it('is false with nothing, or with only empty and blank tokens', () => {
+    expect(profileHasHostingToken({})).toBe(false)
+    expect(
+      profileHasHostingToken({
+        githubToken: '',
+        gitlabToken: '  ',
+        githubEnterprise: [{ url: 'https://ghe.corp.test', token: '' }],
+        gitlabServers: [],
+        bitbucketServers: [{ url: 'https://bb.corp.test', token: ' ' }]
+      })
+    ).toBe(false)
   })
 })
