@@ -78,6 +78,7 @@ import { CreateIssueModal } from './CreateIssueModal'
 import { RepoSettingsModal } from './RepoSettingsModal'
 import { BranchFieldPicker } from './BranchFieldPicker'
 import { useT, interp } from '../i18n'
+import { readableError } from '../lib/gitErrorHint'
 import { GitlabServerSelect } from './GitlabServerSelect'
 import { GITLAB_COM, preferredGitlabBase } from '../../../shared/gitlabInstance'
 import { defaultOptionIndex, isPickInput, normalizeOptions } from '../lib/launchInputs'
@@ -769,7 +770,7 @@ function RepoPicker({
         )}
         {!loading && error && (
           <div className="repo-list-state danger">
-            <span>{error}</span>
+            <span>{readableError(error, t, interp)}</span>
             <div className="remote-connect-actions">
               <button className="link-btn" type="button" onClick={() => void load()}>
                 {t('modal.retry')}
@@ -889,7 +890,7 @@ function OwnerSelect({
       </div>
     )
   }
-  if (error) return <div className="modal-hint danger">{error}</div>
+  if (error) return <div className="modal-hint danger">{readableError(error, t, interp)}</div>
   if (!owners?.length) return <div className="modal-hint">{t('modal.noAccounts')}</div>
 
   const HostIcon = PROVIDER_ICONS[host]

@@ -77,13 +77,67 @@ const RULES: Rule[] = [
   },
   {
     // hosting.ts boundNoCredentialMessage — main has no language.
-    test: /No (.+?) account is linked to the profile "(.*)" this repository is bound to, for ([^\s]+?)\. /,
+    // The host is lazy up to the fixed sentence that follows, so a value with a
+    // space in it (a provider name, when no host could be read) still matches.
+    test: /No (.+?) account is linked to the profile "(.*)" this repository is bound to, for (.+?)\. Switch to that profile/,
     hint: (m) => ({ key: 'gitError.boundProfileNoCredential', vars: { provider: m[1], profile: m[2], host: m[3] } })
   },
   {
     // bitbucketServer.ts BBS_USER_NOT_FOUND — main has no language.
     test: /Bitbucket Data Center: could not find your user on the server/,
     hint: () => ({ key: 'gitError.bbsUserNotFound' })
+  },
+  // hosting.ts — a server address no profile names, and a missing token for one
+  // that does. Main has no language; each rule mirrors one message there.
+  {
+    test: /This GitHub Enterprise Server is not saved in any profile yet/,
+    hint: () => ({ key: 'gitError.ghesNotSaved' })
+  },
+  {
+    test: /This Bitbucket Data Center is not saved in any profile yet/,
+    hint: () => ({ key: 'gitError.bbsNotSaved' })
+  },
+  {
+    test: /This GitLab address is not saved in any profile yet/,
+    hint: () => ({ key: 'gitError.gitlabNotSaved' })
+  },
+  {
+    test: /No token for the GitHub Enterprise Server (.+?) is saved in this profile\./,
+    hint: (m) => ({ key: 'gitError.ghesNoToken', vars: { host: m[1] } })
+  },
+  {
+    test: /No HTTP access token for the Bitbucket Data Center (.+?) is saved in this profile\./,
+    hint: (m) => ({ key: 'gitError.bbsNoToken', vars: { host: m[1] } })
+  },
+  {
+    test: /Browsing and creating repositories is not supported for Bitbucket Data Center yet/,
+    hint: () => ({ key: 'gitError.bbsNoBrowse' })
+  },
+  {
+    test: /Not a Bitbucket Data Center repository\./,
+    hint: () => ({ key: 'gitError.notBbsRepo' })
+  },
+  // bitbucketServer.ts — BitbucketServerError, which prefixes "Bitbucket Data Center: ".
+  {
+    test: /Bitbucket Data Center: the server did not recognise this token/,
+    hint: () => ({ key: 'gitError.bbsTokenUnrecognised' })
+  },
+  {
+    test: /Bitbucket Data Center: a comment needs some text/,
+    hint: () => ({ key: 'gitError.bbsCommentEmpty' })
+  },
+  {
+    test: /Bitbucket Data Center: the server did not say who this token is/,
+    hint: () => ({ key: 'gitError.bbsNoIdentity' })
+  },
+  {
+    // The reason is the server's own words: passed through as they are.
+    test: /Bitbucket Data Center: cannot merge — ([\s\S]+)$/,
+    hint: (m) => ({ key: 'gitError.bbsCannotMerge', vars: { reason: m[1].trim() } })
+  },
+  {
+    test: /Bitbucket Data Center: this repository does not allow (\w+) merges/,
+    hint: (m) => ({ key: 'gitError.bbsMethodNotAllowed', vars: { method: m[1] } })
   }
 ]
 

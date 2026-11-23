@@ -617,7 +617,7 @@ async function bbsUserByName(api: string, name: string, token: string): Promise<
 /** Settings → Integrations: the account behind a server's token. */
 export async function describeBbsAccount(base: string, token: string): Promise<ConnectedAccount> {
   const me = await bbsWhoAmI(base, token)
-  if (!me) throw new BitbucketServerError(401, 'the server did not recognise this token — check that it is valid and not expired')
+  if (!me) throw new BitbucketServerError(401, BBS_TOKEN_UNRECOGNISED)
   const web = bitbucketServerEndpoints(base).webBase
   return {
     login: me.name,
@@ -648,6 +648,13 @@ async function reviewerSlug(
 
 /** The message the renderer recognises and translates (`gitError.bbsUserNotFound`). */
 export const BBS_USER_NOT_FOUND = 'could not find your user on the server'
+// Like BBS_USER_NOT_FOUND: English with a fixed shape, translated by gitErrorHint.
+export const BBS_TOKEN_UNRECOGNISED = 'the server did not recognise this token — check that it is valid and not expired'
+export const BBS_COMMENT_EMPTY = 'a comment needs some text'
+export const BBS_NO_IDENTITY = 'the server did not say who this token is, so changes cannot be requested'
+/** `reason` is the server's own words (or bbsMergeRefusal's), shown as they are. */
+export const bbsCannotMergeMessage = (reason: string): string => `cannot merge — ${reason}`
+export const bbsMethodNotAllowedMessage = (method: string): string => `this repository does not allow ${method} merges`
 
 export async function bbsReview(
   repo: BitbucketServerRepo,
@@ -657,7 +664,7 @@ export async function bbsReview(
   body: string
 ): Promise<void> {
   if (event === 'COMMENT') {
-    if (!body.trim()) throw new BitbucketServerError(400, 'a comment needs some text')
+    if (!body.trim()) throw new BitbucketServerError(400, BBS_COMMENT_EMPTY)
     await bbsComment(repo, token, id, body)
     return
   }
@@ -679,7 +686,7 @@ export async function bbsReview(
     await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/approve`, token, { method: 'POST' })
   } else {
     // No user to name: the older, deprecated resource approves as the caller.
-    if (status !== 'APPROVED') throw new BitbucketServerError(400, 'the server did not say who this token is, so changes cannot be requested')
+    if (status !== 'APPROVED') throw new BitbucketServerError(400, BBS_NO_IDENTITY)
     await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/approve`, token, { method: 'POST' })
   }
   if (body.trim()) await bbsComment(repo, token, id, body)
@@ -692,7 +699,7 @@ export async function bbsMerge(repo: BitbucketServerRepo, token: string, id: num
   const check = await mergeability(repo, token, id)
   if (check) {
     const refusal = bbsMergeRefusal(check)
-    if (refusal) throw new BitbucketServerError(409, `cannot merge — ${refusal}`)
+    if (refusal) throw new BitbucketServerError(409, bbsCannotMergeMessage(refusal))
   }
   const settings = await bbsJson<{ mergeConfig?: { strategies?: Array<{ id?: string; enabled?: boolean }> } }>(
     `${r}/settings/pull-requests`,
@@ -701,7 +708,7 @@ export async function bbsMerge(repo: BitbucketServerRepo, token: string, id: num
   const strategies = settings?.mergeConfig?.strategies
   const enabled = strategies ? strategies.filter((s) => s.enabled && s.id).map((s) => s.id!) : null
   const strategyId = bbsStrategyFor(method, enabled)
-  if (strategyId === null) throw new BitbucketServerError(400, `this repository does not allow ${method} merges`)
+  if (strategyId === null) throw new BitbucketServerError(400, bbsMethodNotAllowedMessage(method))
   await bbsJson(`${r}/pull-requests/${id}/merge?version=${pr.version ?? 0}`, token, {
     method: 'POST',
     body: JSON.stringify({ version: pr.version ?? 0, ...(strategyId ? { strategyId } : {}) })

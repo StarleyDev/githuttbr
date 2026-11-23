@@ -4,6 +4,7 @@ import type { IssueInfo, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
+import { readableError } from '../lib/gitErrorHint'
 
 type MilestonePage = Extract<PageContent, { type: 'milestone' }>
 
@@ -72,7 +73,7 @@ export function MilestoneDetailPage({ page }: { page: MilestonePage }): React.JS
           <Loader2 size={16} className="spin" /> {t('common.loading')}
         </div>
       ) : error ? (
-        <div className="issue-error">{error}</div>
+        <div className="issue-error">{readableError(error, t, interp)}</div>
       ) : issues.length === 0 ? (
         <div className="ms-empty">{t('milestone.noIssues')}</div>
       ) : (

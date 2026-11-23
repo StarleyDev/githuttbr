@@ -284,7 +284,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
             </div>
           ) : error ? (
-            <div className="prd-error">{error}</div>
+            <div className="prd-error">{readableError(error, t, interp)}</div>
           ) : !pr ? null : section === 'conversation' ? (
             <>
               <article className="prp-card">

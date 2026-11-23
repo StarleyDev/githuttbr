@@ -430,8 +430,24 @@ function githubBaseFromOrg(org: string | undefined): string {
   if (!org?.trim() || org.trim().toLowerCase() === GITHUB_COM) return GITHUB_COM
   const base = normalizeGithubEnterpriseUrl(org)
   if (base && knownGithubEnterpriseInstances().includes(base)) return base
-  throw new Error('This GitHub Enterprise Server is not saved in any profile yet (it must be https). Add it in Settings → Integrations → GitHub, then try again.')
+  throw new Error(GHES_NOT_SAVED)
 }
+
+// The "not saved", "no token" and "not supported" messages below are English
+// with a fixed shape: main has no language, and gitErrorHint translates each
+// one by its wording — a change here needs the matching rule changed there.
+export const GHES_NOT_SAVED =
+  'This GitHub Enterprise Server is not saved in any profile yet (it must be https). Add it in Settings → Integrations → GitHub, then try again.'
+export const BBS_NOT_SAVED =
+  'This Bitbucket Data Center is not saved in any profile yet (it must be https). Add it in Settings → Integrations → Bitbucket, then try again.'
+export const GITLAB_NOT_SAVED =
+  'This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.'
+export const NOT_BBS_REPO = 'Not a Bitbucket Data Center repository.'
+
+export const ghesNoTokenMessage = (host: string): string =>
+  `No token for the GitHub Enterprise Server ${host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.`
+export const bbsNoTokenMessage = (host: string): string =>
+  `No HTTP access token for the Bitbucket Data Center ${host} is saved in this profile. Add one in Settings → Integrations → Bitbucket → Bitbucket Data Center.`
 
 /**
  * The base of a server a token is being *checked* against before any profile
@@ -472,7 +488,7 @@ function bitbucketBaseFromOrg(org: string | undefined): string {
   if (!org?.trim() || org.trim().toLowerCase() === BITBUCKET_CLOUD) return BITBUCKET_CLOUD
   const base = normalizeBitbucketServerUrl(org)
   if (base && knownBitbucketServerInstances().includes(base)) return base
-  throw new Error('This Bitbucket Data Center is not saved in any profile yet (it must be https). Add it in Settings → Integrations → Bitbucket, then try again.')
+  throw new Error(BBS_NOT_SAVED)
 }
 
 /** The Data Center repository a remote is on, or null for bitbucket.org and every other host. */
@@ -487,7 +503,7 @@ const isBbs = (remoteUrl: string): boolean => bbsRepoOfRemote(remoteUrl) !== nul
 /** A Data Center remote and the token its profile filed for that server, or an error saying what is missing. */
 async function bbsRepoOf(remoteUrl: string): Promise<{ repo: BitbucketServerRepo; token: string }> {
   const repo = bbsRepoOfRemote(remoteUrl)
-  if (!repo) throw new Error('Not a Bitbucket Data Center repository.')
+  if (!repo) throw new Error(NOT_BBS_REPO)
   const auth = await remoteApiToken(remoteUrl, 'bitbucket', undefined)
   if (!auth) throw await noCredential('Bitbucket', remoteUrl)
   return { repo, token: auth.token }
@@ -551,7 +567,7 @@ function gitlabBaseFromOrg(org: string | undefined): string {
   if (base === GITLAB_COM || (base && knownGitlabInstances().includes(base))) return base
   // Fail closed: falling back to gitlab.com here would hand a self-managed
   // instance's token to a third party.
-  throw new Error('This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.')
+  throw new Error(GITLAB_NOT_SAVED)
 }
 
 /**
@@ -594,8 +610,12 @@ export function githubCredentialMessage(status: GitHubCliAuthStatus, host = 'git
 /** A clear "no credential at all" message naming the setup step that failed. */
 async function noCredential(provider: string, remoteUrl?: string): Promise<Error> {
   const host = (() => {
+    if (!remoteUrl) return ''
+    // An scp-style ssh remote (`git@host:path`) is no URL, but it names a host all the same.
+    const scp = /^(?:[\w.-]+@)?([\w.-]+):(?!\/\/)/.exec(remoteUrl)
+    if (scp) return scp[1]
     try {
-      return remoteUrl ? new URL(remoteUrl).host : ''
+      return new URL(remoteUrl).host
     } catch {
       return ''
     }
@@ -607,17 +627,13 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   const bound = repoPath ? await boundProfileName(repoPath) : undefined
   if (bound) return new Error(boundNoCredentialMessage(provider, bound, host || provider))
   if (provider.toLowerCase() === 'github' && host && remoteUrl && githubBaseOfRemote(remoteUrl, knownGithubEnterpriseInstances()) !== GITHUB_COM) {
-    return new Error(
-      `No token for the GitHub Enterprise Server ${host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.`
-    )
+    return new Error(ghesNoTokenMessage(host))
   }
   if (provider.toLowerCase() === 'github') {
     return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
   }
   if (provider.toLowerCase() === 'bitbucket' && host && remoteUrl && bitbucketBaseOfRemote(remoteUrl, knownBitbucketServerInstances()) !== BITBUCKET_CLOUD) {
-    return new Error(
-      `No HTTP access token for the Bitbucket Data Center ${host} is saved in this profile. Add one in Settings → Integrations → Bitbucket → Bitbucket Data Center.`
-    )
+    return new Error(bbsNoTokenMessage(host))
   }
   return new Error(
     `No ${provider} account is linked to this profile${host ? ` for ${host}` : ''}. Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there.`
@@ -2418,7 +2434,7 @@ async function ensureGithubStack(
 }
 
 /** Browsing and creating repositories is Bitbucket Cloud's only; a Data Center token never goes to bitbucket.org. */
-const BBS_NO_BROWSE = 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.'
+export const BBS_NO_BROWSE = 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.'
 
 async function listRepositories(
   provider: RepoHost,
