@@ -114,6 +114,9 @@ async function seedTodos(page, repoPath) {
  *   small to read in a 1440px window (a title-bar control, a single badge).
  * @property {number} [clipPad]  Padding around `clipTo`, in px (default 12).
  * @property {(ctx: {repoPaths: Record<string,string>, run: Function}) => Promise<void>} [prepare]
+ * @property {(userDataDir: string) => Promise<void>} [userData]  Write files into the
+ *   shot's own userData dir after it is seeded, before launch — the app's own
+ *   files in a given state (a damaged settings file), never a copy of yours.
  * @property {(page: import('playwright').Page, repoPaths: Record<string,string>) => Promise<void>} [drive]
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
  */
@@ -3362,6 +3365,24 @@ export const shots = [
       await page.waitForSelector('.number-field-error', { timeout: 5000 })
     }
   },
+  {
+    // The boot screen for a settings file that does not parse: a hand edit
+    // cut off mid-profile. Nothing loads, nothing is overwritten.
+    out: 'settings-damaged',
+    repos: ['octopus-merge'],
+    // Light whatever is asked: the theme is a setting, and none could be read.
+    themes: ['light'],
+    // The screen is a short paragraph and two buttons in an empty window.
+    clipTo: '.boot-error',
+    clipPad: 48,
+    userData: async (dir) => {
+      await writeFile(join(dir, 'gitcito-settings.json'), '{\n  "onboardingCompleted": true,\n  "profiles": [\n    { "name": "Work",\n')
+    },
+    drive: async (page) => {
+      await page.waitForSelector('.boot-error', { timeout: 15000 })
+      await page.waitForTimeout(400)
+    }
+  }
 ]
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
 // Captured by sampling screenshots at a steady fps, so GIF playback stays

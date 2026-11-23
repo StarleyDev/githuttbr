@@ -149,7 +149,11 @@ once: before that, the app holds only defaults.
 One that exists but cannot be parsed (a hand edit gone wrong, a damaged disk)
 is **never** replaced by the defaults: Gitcito says the file is damaged and
 starts no further — no shortcut or menu command can save over it from that
-screen. You can fix `gitcito-settings.json` in its data folder and press
+screen.
+
+![The boot screen for a damaged settings file, with Try again and Move the damaged file aside and start fresh](../screenshots/settings-damaged.webp)
+
+You can fix `gitcito-settings.json` in its data folder and press
 **Try again**, or press **Move the damaged file aside and start fresh**: the file
 is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside

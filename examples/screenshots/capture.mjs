@@ -175,6 +175,9 @@ async function launch(shot, theme) {
   // it keeps the consent explainer out of every shot (see harness.mjs). Only
   // shots that actually need a readable vault opt in with `keychain: true`.
   await seedProfile(userDataDir, seedSettings(shot, theme), { keychain: !!shot.keychain })
+  // A shot of what the app does with its own files in some state (a damaged
+  // settings file, say) writes them here, over the seeded ones.
+  if (shot.userData) await shot.userData(userDataDir)
 
   // `shot.env` lets an entry redirect something machine-specific at a
   // throwaway copy — the SSH key list, say, which must never photograph the

@@ -107,6 +107,9 @@ Add one entry to [`shots.config.mjs`](./shots.config.mjs):
   keychain: true,              // rarely: grant keychain consent (see below)
   // Optional: mutate the repo on disk before launch.
   prepare: async ({ repoPaths, run }) => { /* e.g. start a merge */ },
+  // Optional: write the app's own files into the shot's userData dir before
+  // launch (the `settings-damaged` shot writes an unparseable settings file).
+  userData: async (userDataDir) => { /* writeFile(join(userDataDir, …)) */ },
   // Optional: put the running UI into the target state.
   drive: async (page, repoPaths) => {
     await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' }))
