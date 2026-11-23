@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
-import type { CliOpenPayload } from '../shared/cli'
+import type { CliInstallResult, CliOpenPayload, CliStatus } from '../shared/cli'
 import { SHOT_RENDERER_FLAG } from '../shared/shotMode'
 
 const api = {
@@ -484,8 +484,10 @@ const api = {
 
   cli: {
     isInstalled: (): Promise<boolean> => ipcRenderer.invoke('cli:isInstalled'),
-    install: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('cli:install'),
-    uninstall: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('cli:uninstall'),
+    install: (): Promise<CliInstallResult> => ipcRenderer.invoke('cli:install'),
+    uninstall: (): Promise<CliInstallResult> => ipcRenderer.invoke('cli:uninstall'),
+    status: (): Promise<CliStatus> => ipcRenderer.invoke('cli:status'),
+    removeStale: (): Promise<CliInstallResult> => ipcRenderer.invoke('cli:removeStale'),
     // Fired when `gitcito <dir>` asks this window to open a folder — on cold
     // launch (main sends it once the page finishes loading) or when a second
     // `gitcito` invocation hands off to this already-running instance.

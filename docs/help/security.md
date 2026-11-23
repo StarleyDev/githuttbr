@@ -37,6 +37,25 @@ stage. An eye toggle reveals them per view. `.env.example`, `.sample` and
 | **Protected branch** | Committing straight to `main`/`master`, or force-pushing one |
 | **Tracked secrets** | Pushing a repository that *tracks* a secret file — warned once per session |
 
+## The AppImage and paths that outlive it
+
+An AppImage runs from a folder under `/tmp` (`/tmp/.mount_…`) that exists only
+while the app is open, is renamed every launch, and sits in a directory every
+local user can write to. Up to 4.37.1, the AppImage could write a path inside
+that folder into two places that outlive it: the `gitcito` link in `PATH`
+([CLI](cli.md)) and a repository's `diff.<name>.textconv` setting
+([attributes](attributes.md)). Once the app quits, another user on the same
+machine could recreate the folder with a program of their own, which your next
+`gitcito` or `git diff` would run.
+
+Gitcito now refuses both under an AppImage, warns about a stale `gitcito` link
+at start-up (with a palette command to remove it), and flags a stale converter
+in the Attributes dialog with a **Remove** button. It can only see the
+repository you have open; to find stale converters elsewhere, run
+`git config --get-regexp 'diff\..*\.textconv'` in each repository (and with
+`--global`) and unset any entry under `/tmp/.mount_`. A single-user machine is
+not exposed, but the stale entries are still dead weight.
+
 ## The OS keychain
 
 Tokens and [vault](vault.md) entries are encrypted with your OS keychain

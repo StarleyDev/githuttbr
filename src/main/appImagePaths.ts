@@ -1,0 +1,65 @@
+/**
+ * Paths an AppImage build must never write into a file that outlives it.
+ *
+ * An AppImage runs from a FUSE mount the runtime creates per launch —
+ * `/tmp/.mount_<name><random>/` — or, with `--appimage-extract-and-run`, from
+ * `/tmp/appimage_extracted_<hash>/`. `process.resourcesPath` lives under it.
+ * The directory is gone the moment the app quits, its name changes every launch,
+ * and it sits in world-writable, sticky /tmp: once it has vanished, any other
+ * local user may create it again with a script of their own at the same path.
+ *
+ * So a path under it written into `~/.local/bin` (the CLI symlink) or into a
+ * repository's `.git/config` (`diff.<name>.textconv`) is a loaded gun pointed
+ * at the next `gitcito` or `git diff`. These helpers decide when a path is that
+ * kind of path. Pure — no Electron, no filesystem — so the decisions are tested
+ * on their own (test/appImagePaths.test.ts).
+ */
+
+type Env = Record<string, string | undefined>
+
+/** Directory names the AppImage runtimes give the app's root. */
+const EPHEMERAL_SEGMENT = /(^|[\\/])(\.mount_[^\\/]*|appimage_extracted_[^\\/]*)([\\/]|$)/
+
+function within(path: string, root: string): boolean {
+  const base = root.replace(/[\\/]+$/, '')
+  return base !== '' && (path === base || path.startsWith(`${base}/`))
+}
+
+/** True when this process was started from an AppImage (the runtime sets `APPIMAGE`). */
+export function runningFromAppImage(env: Env = process.env): boolean {
+  return !!env['APPIMAGE']
+}
+
+/**
+ * True when `path` lies inside an AppImage's per-launch root — this one's
+ * (`APPDIR`) or any other: a stale path from an earlier launch names a mount
+ * that no longer exists, which is precisely the dangerous case.
+ */
+export function isEphemeralAppPath(path: string, env: Env = process.env): boolean {
+  if (!path) return false
+  if (runningFromAppImage(env) && env['APPDIR'] && within(path, env['APPDIR'])) return true
+  return EPHEMERAL_SEGMENT.test(path)
+}
+
+/**
+ * Why a path inside the app (a bundled shim) may not be written into a file
+ * that outlives this process, or null when it may. Under an AppImage the whole
+ * app root is ephemeral, so `resourcesRoot` is refused even when its name does
+ * not look like a mount (an extracted or custom-runtime AppImage).
+ */
+export function persistBlocker(path: string, resourcesRoot: string, env: Env = process.env): 'appimage' | null {
+  if (isEphemeralAppPath(path, env)) return 'appimage'
+  if (runningFromAppImage(env) && resourcesRoot && within(path, resourcesRoot)) return 'appimage'
+  return null
+}
+
+/** The program a `textconv` command line runs: a quoted path, or the first word. */
+export function textconvProgram(textconv: string): string {
+  const m = /^"([^"]+)"|^'([^']+)'|^(\S+)/.exec(textconv.trim())
+  return m ? (m[1] ?? m[2] ?? m[3] ?? '') : ''
+}
+
+/** True when a configured textconv runs a program inside an AppImage mount. */
+export function isEphemeralTextconv(textconv: string, env: Env = process.env): boolean {
+  return isEphemeralAppPath(textconvProgram(textconv), env)
+}

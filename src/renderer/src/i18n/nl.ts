@@ -875,6 +875,11 @@ export const nl: Dict = {
   'cmd.cliInstalled': 'Commando ‘gitcito’ geïnstalleerd',
   'cmd.cliUninstalled': 'Commando ‘gitcito’ verwijderd',
   'cmd.cliFailed': 'Kon het commando ‘gitcito’ niet bijwerken',
+  'cmd.cliAppImage': "De AppImage kan het commando ‘gitcito’ niet installeren: de app bestaat alleen in een tijdelijke map zolang hij draait. Installeer het .deb-pakket om het te krijgen.",
+  'cmd.cliWindows': "Het commando ‘gitcito’ kan nog niet op Windows worden geïnstalleerd",
+  'cmd.cliStale': "Het commando ‘gitcito’ in je PATH wijst naar een tijdelijke AppImage-map die een andere gebruiker kan overnemen. Verwijder het via het opdrachtenpalet.",
+  'cmd.cliRemoveStale': "Het verouderde commando ‘gitcito’ uit PATH verwijderen",
+  'cmd.cliStaleRemoved': "Verouderd commando ‘gitcito’ verwijderd",
 
   // Instellingen
   'settings.title': 'Instellingen',
@@ -1225,6 +1230,10 @@ export const nl: Dict = {
   'attrs.driverMissing': 'converter niet geïnstalleerd',
   'attrs.needsBinary': 'Vereist {binary} in je PATH.',
   'attrs.bundledConverter': 'Meegeleverd met Gitcito — niets te installeren.',
+  'attrs.driverEphemeral': "wijst naar een tijdelijke AppImage-map",
+  'attrs.driverEphemeralHint': "Een AppImage-versie van Gitcito heeft deze converter ingesteld. De map onder /tmp verdwijnt zodra de app stopt, en elke andere gebruiker op deze machine kan daar een programma neerzetten dat je volgende git diff uitvoert. Verwijder hem.",
+  'attrs.driverRemove': "Verwijderen",
+  'attrs.bundledAppImage': "Niet beschikbaar in de AppImage: de converter van Gitcito bestaat alleen zolang de app draait. Installeer het .deb-pakket om hem te gebruiken.",
   'attrs.filtersTitle': 'Clean/smudge-filters',
   'attrs.filtersHint': 'Een filter herschrijft bestandsinhoud op weg naar binnen (clean, bij het stagen) en op weg naar buiten (smudge, bij checkout) — zo werken git-lfs en het strippen van sleutels. Een verkeerd filter beschadigt je working tree geruisloos, dus Gitcito eist eerst een proefrun tegen echte bestanden voordat er iets wordt opgeslagen.',
   'attrs.filterCleanPh': 'clean-commando (stdin → stdout)',

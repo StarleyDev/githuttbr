@@ -508,6 +508,10 @@ function DoctorStatusChip({ path }: { path: string }): React.JSX.Element | null 
   )
 }
 
+// Module-level, not a ref: a remount (or StrictMode's double effect) must not
+// repeat the stale-link warning within one launch.
+let staleCliWarned = false
+
 export default function App(): React.JSX.Element {
   const t = useT()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
@@ -590,6 +594,20 @@ export default function App(): React.JSX.Element {
       off()
       unsub()
     }
+  }, [])
+
+  // An AppImage build used to link `gitcito` into its own /tmp mount. That
+  // link outlives the mount, and whoever recreates the directory decides what
+  // the next `gitcito` runs — so say so once per launch; the palette removes it.
+  useEffect(() => {
+    if (window.api.platform === 'win32' || staleCliWarned) return
+    staleCliWarned = true
+    cliApi
+      .status()
+      .then((s) => {
+        if (s.staleLink) useUIStore.getState().toast('error', tr('cmd.cliStale'))
+      })
+      .catch(() => undefined)
   }, [])
 
   // `gitcito --wait <file>` — git is blocked on a shell process until the app

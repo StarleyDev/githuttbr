@@ -875,6 +875,11 @@ export const ptBR: Dict = {
   'cmd.cliInstalled': 'Comando ‘gitcito’ instalado',
   'cmd.cliUninstalled': 'Comando ‘gitcito’ removido',
   'cmd.cliFailed': 'Não foi possível atualizar o comando ‘gitcito’',
+  'cmd.cliAppImage': "A AppImage não pode instalar o comando ‘gitcito’: o app só existe numa pasta temporária enquanto está em execução. Instale o pacote .deb para tê-lo.",
+  'cmd.cliWindows': "O comando ‘gitcito’ ainda não pode ser instalado no Windows",
+  'cmd.cliStale': "O comando ‘gitcito’ no seu PATH aponta para uma pasta temporária da AppImage que outro usuário poderia tomar. Remova-o pela paleta de comandos.",
+  'cmd.cliRemoveStale': "Remover do PATH o comando ‘gitcito’ obsoleto",
+  'cmd.cliStaleRemoved': "Comando ‘gitcito’ obsoleto removido",
 
   // Configurações
   'settings.title': 'Configurações',
@@ -1225,6 +1230,10 @@ export const ptBR: Dict = {
   'attrs.driverMissing': 'conversor não instalado',
   'attrs.needsBinary': 'Precisa do {binary} no seu PATH.',
   'attrs.bundledConverter': 'Incluído no Gitcito — nada para instalar.',
+  'attrs.driverEphemeral': "aponta para uma pasta temporária da AppImage",
+  'attrs.driverEphemeralHint': "Uma versão AppImage do Gitcito configurou este conversor. A pasta dele em /tmp some quando o app fecha, e qualquer outro usuário desta máquina poderia colocar ali um programa que o seu próximo git diff executaria. Remova-o.",
+  'attrs.driverRemove': "Remover",
+  'attrs.bundledAppImage': "Indisponível na AppImage: o conversor do Gitcito só existe enquanto o app está em execução. Instale o pacote .deb para usá-lo.",
   'attrs.filtersTitle': 'Filtros clean/smudge',
   'attrs.filtersHint': 'Um filtro reescreve o conteúdo do arquivo na entrada (clean, no stage) e na saída (smudge, no checkout) — é assim que funcionam o git-lfs e a remoção de chaves. Um filtro errado corrompe sua working tree em silêncio, então o Gitcito exige uma simulação com arquivos reais antes de salvar qualquer coisa.',
   'attrs.filterCleanPh': 'comando clean (stdin → stdout)',

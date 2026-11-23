@@ -874,6 +874,11 @@ export const ru: Dict = {
   'cmd.cliInstalled': 'Команда «gitcito» установлена',
   'cmd.cliUninstalled': 'Команда «gitcito» удалена',
   'cmd.cliFailed': 'Не удалось обновить команду «gitcito»',
+  'cmd.cliAppImage': "AppImage не может установить команду «gitcito»: приложение существует во временной папке только пока запущено. Установите пакет .deb, чтобы получить её.",
+  'cmd.cliWindows': "Команду «gitcito» пока нельзя установить в Windows",
+  'cmd.cliStale': "Команда «gitcito» в вашем PATH указывает во временную папку AppImage, которую может захватить другой пользователь. Удалите её через палитру команд.",
+  'cmd.cliRemoveStale': "Удалить устаревшую команду «gitcito» из PATH",
+  'cmd.cliStaleRemoved': "Устаревшая команда «gitcito» удалена",
 
   // Настройки
   'settings.title': 'Настройки',
@@ -1224,6 +1229,10 @@ export const ru: Dict = {
   'attrs.driverMissing': 'конвертер не установлен',
   'attrs.needsBinary': 'Нужен {binary} в вашем PATH.',
   'attrs.bundledConverter': 'Поставляется вместе с Gitcito — ничего устанавливать не нужно.',
+  'attrs.driverEphemeral': "указывает во временную папку AppImage",
+  'attrs.driverEphemeralHint': "Этот конвертер настроила версия Gitcito в формате AppImage. Её папка в /tmp исчезает при выходе из приложения, и любой другой пользователь этого компьютера может положить туда программу, которую запустит ваш следующий git diff. Удалите его.",
+  'attrs.driverRemove': "Удалить",
+  'attrs.bundledAppImage': "Недоступно в AppImage: конвертер Gitcito существует, только пока приложение запущено. Установите пакет .deb, чтобы им пользоваться.",
   'attrs.filtersTitle': 'Фильтры clean/smudge',
   'attrs.filtersHint': 'Фильтр переписывает содержимое файла на входе (clean, при индексировании) и на выходе (smudge, при извлечении файлов) — так работают git-lfs и вырезание ключей. Неверный фильтр тихо портит рабочее дерево, поэтому Gitcito требует пробный запуск на настоящих файлах, прежде чем что-либо сохранить.',
   'attrs.filterCleanPh': 'команда clean (stdin → stdout)',

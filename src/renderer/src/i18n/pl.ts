@@ -874,6 +874,11 @@ export const pl: Dict = {
   'cmd.cliInstalled': 'Polecenie „gitcito” zainstalowane',
   'cmd.cliUninstalled': 'Polecenie „gitcito” usunięte',
   'cmd.cliFailed': 'Nie udało się zaktualizować polecenia „gitcito”',
+  'cmd.cliAppImage': "AppImage nie może zainstalować polecenia „gitcito”: aplikacja istnieje tylko w tymczasowym folderze, dopóki działa. Zainstaluj pakiet .deb, aby je mieć.",
+  'cmd.cliWindows': "Polecenia „gitcito” nie można jeszcze zainstalować w systemie Windows",
+  'cmd.cliStale': "Polecenie „gitcito” w twoim PATH wskazuje na tymczasowy folder AppImage, który inny użytkownik mógłby przejąć. Usuń je z palety poleceń.",
+  'cmd.cliRemoveStale': "Usuń z PATH nieaktualne polecenie „gitcito”",
+  'cmd.cliStaleRemoved': "Usunięto nieaktualne polecenie „gitcito”",
 
   // Ustawienia
   'settings.title': 'Ustawienia',
@@ -1224,6 +1229,10 @@ export const pl: Dict = {
   'attrs.driverMissing': 'konwerter niezainstalowany',
   'attrs.needsBinary': 'Wymaga {binary} w twoim PATH.',
   'attrs.bundledConverter': 'Dołączony do Gitcito — nic nie trzeba instalować.',
+  'attrs.driverEphemeral': "wskazuje na tymczasowy folder AppImage",
+  'attrs.driverEphemeralHint': "Ten konwerter ustawiła wersja AppImage Gitcito. Jej folder w /tmp znika po zamknięciu aplikacji, a każdy inny użytkownik tego komputera mógłby umieścić tam program, który uruchomi twój następny git diff. Usuń go.",
+  'attrs.driverRemove': "Usuń",
+  'attrs.bundledAppImage': "Niedostępne w AppImage: konwerter Gitcito istnieje tylko, gdy aplikacja działa. Zainstaluj pakiet .deb, aby z niego korzystać.",
   'attrs.filtersTitle': 'Filtry clean/smudge',
   'attrs.filtersHint': 'Filtr przepisuje zawartość pliku w drodze do środka (clean, przy indeksowaniu) i w drodze na zewnątrz (smudge, przy checkoucie) — tak działają git-lfs i wycinanie kluczy. Zły filtr po cichu psuje katalog roboczy, dlatego Gitcito wymaga próby na sucho na prawdziwych plikach, zanim cokolwiek zapisze.',
   'attrs.filterCleanPh': 'polecenie clean (stdin → stdout)',

@@ -867,6 +867,11 @@ export const en = {
   'cmd.cliInstalled': "'gitcito' command installed",
   'cmd.cliUninstalled': "'gitcito' command removed",
   'cmd.cliFailed': "Couldn't update the 'gitcito' command",
+  'cmd.cliAppImage': "The AppImage can't install the 'gitcito' command: the app only exists in a temporary folder while it runs. Install the .deb package to get it.",
+  'cmd.cliWindows': "The 'gitcito' command can't be installed on Windows yet",
+  'cmd.cliStale': "The 'gitcito' command in your PATH points into a temporary AppImage folder that another user could take over. Remove it from the command palette.",
+  'cmd.cliRemoveStale': "Remove the stale 'gitcito' command from PATH",
+  'cmd.cliStaleRemoved': "Stale 'gitcito' command removed",
 
   // Settings
   'settings.title': 'Settings',
@@ -1218,6 +1223,10 @@ export const en = {
   'attrs.driverMissing': 'converter not installed',
   'attrs.needsBinary': 'Needs {binary} on your PATH.',
   'attrs.bundledConverter': 'Included with Gitcito — nothing to install.',
+  'attrs.driverEphemeral': "points into a temporary AppImage folder",
+  'attrs.driverEphemeralHint': "An AppImage build of Gitcito set this converter. Its folder under /tmp vanishes when the app quits, and anyone else on this machine could put a program at that path for your next git diff to run. Remove it.",
+  'attrs.driverRemove': "Remove",
+  'attrs.bundledAppImage': "Not available in the AppImage: Gitcito's converter only exists while the app is running. Install the .deb package to use it.",
   'attrs.filtersTitle': 'Clean/smudge filters',
   'attrs.filtersHint': 'A filter rewrites file content on the way in (clean, at staging) and on the way out (smudge, at checkout) — how git-lfs and key-stripping work. A wrong one corrupts your working tree quietly, so Gitcito insists on a dry run against real files before saving anything.',
   'attrs.filterCleanPh': 'clean command (stdin → stdout)',

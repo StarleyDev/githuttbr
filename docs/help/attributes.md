@@ -124,6 +124,24 @@ The bundled drivers also point at *your* Gitcito install path, so a teammate
 who clones gets the `diff=word` rule and, until they wire their own converter
 (Gitcito or otherwise), the old unreadable diff. Say so in your README.
 
+**Not in the AppImage.** An AppImage runs from a folder under `/tmp` that
+exists only while the app is open and gets a new random name every launch. A
+converter path inside it would be dead the moment you quit — and, worse, any
+other user on the machine could create that folder again with a program of
+their own, which your next `git diff` would then run. So the AppImage greys
+the bundled converters out; install the `.deb` (or use the macOS or Windows
+build) to get them. A driver an older AppImage build already wrote is flagged
+**points into a temporary AppImage folder** in the list, with a **Remove**
+button that unsets it. Gitcito only spots one in the repository you open this
+dialog on, plus your global config. To find others, run this in each
+repository (and once with `--global`) and unset any entry whose path starts
+with `/tmp/.mount_`:
+
+```sh
+git config --get-regexp 'diff\..*\.textconv'
+git config --unset diff.word.textconv    # for each one it lists
+```
+
 ## Clean/smudge filters — with a dry run first
 
 A **filter** rewrites content on its way in and out of the repository: `clean`

@@ -874,6 +874,11 @@ export const zhCN: Dict = {
   'cmd.cliInstalled': 'gitcito 命令已安装',
   'cmd.cliUninstalled': 'gitcito 命令已移除',
   'cmd.cliFailed': '无法更新 gitcito 命令',
+  'cmd.cliAppImage': "AppImage 版无法安装 gitcito 命令：应用只在运行期间存在于临时文件夹中。请安装 .deb 软件包来获得它。",
+  'cmd.cliWindows': "暂时还不能在 Windows 上安装 gitcito 命令",
+  'cmd.cliStale': "PATH 中的 gitcito 命令指向一个 AppImage 临时文件夹，其他用户可能会占用它。请从命令面板中移除。",
+  'cmd.cliRemoveStale': "从 PATH 中移除过期的 gitcito 命令",
+  'cmd.cliStaleRemoved': "已移除过期的 gitcito 命令",
 
   // Settings
   'settings.title': '设置',
@@ -1224,6 +1229,10 @@ export const zhCN: Dict = {
   'attrs.driverMissing': '转换器未安装',
   'attrs.needsBinary': '需要 PATH 中有 {binary}。',
   'attrs.bundledConverter': '随 Gitcito 附带——无需安装。',
+  'attrs.driverEphemeral': "指向 AppImage 临时文件夹",
+  'attrs.driverEphemeralHint': "这个转换器是 AppImage 版 Gitcito 设置的。它在 /tmp 下的文件夹会在应用退出时消失，这台机器上的任何其他用户都可以在该路径放一个程序，让你下一次 git diff 去运行它。请移除。",
+  'attrs.driverRemove': "移除",
+  'attrs.bundledAppImage': "AppImage 版不可用：Gitcito 的转换器只在应用运行期间存在。请安装 .deb 软件包后使用。",
   'attrs.filtersTitle': 'clean/smudge 过滤器',
   'attrs.filtersHint': '过滤器会在文件进入时（clean，暂存阶段）和取出时（smudge，检出阶段）改写其内容——git-lfs 和密钥剥离正是这样工作的。写错的过滤器会悄悄损坏你的工作区，因此 Gitcito 坚持在保存之前先用真实文件试运行一次。',
   'attrs.filterCleanPh': 'clean 命令（stdin → stdout）',

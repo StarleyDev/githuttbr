@@ -2579,6 +2579,9 @@ export interface DiffDriverInfo {
   available: boolean
   /** Where the setting lives, so the UI can say what it would change. */
   scope: 'repo' | 'global'
+  /** True when the converter sits inside an AppImage's per-launch /tmp mount:
+   *  stale once that app quits, and recreatable by any other local user. */
+  ephemeral?: boolean
 }
 
 /** A converter Gitcito knows how to wire up, if it is installed. */
@@ -2594,6 +2597,9 @@ export interface DiffDriverSuggestion {
   /** True when the converter is the one Gitcito ships — nothing to install. */
   bundled?: boolean
   available: boolean
+  /** Why a bundled converter is offered but not available: 'appimage' — its
+   *  path only exists while this AppImage runs. */
+  unavailableReason?: 'appimage'
 }
 
 /** A configured `filter.<name>` clean/smudge driver. */

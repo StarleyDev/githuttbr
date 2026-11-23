@@ -874,6 +874,11 @@ export const de: Dict = {
   'cmd.cliInstalled': 'Befehl „gitcito“ installiert',
   'cmd.cliUninstalled': 'Befehl „gitcito“ entfernt',
   'cmd.cliFailed': 'Der Befehl „gitcito“ konnte nicht aktualisiert werden',
+  'cmd.cliAppImage': "Das AppImage kann den Befehl „gitcito“ nicht installieren: Die App existiert nur während der Ausführung in einem temporären Ordner. Installieren Sie das .deb-Paket, um ihn zu erhalten.",
+  'cmd.cliWindows': "Der Befehl „gitcito“ lässt sich unter Windows noch nicht installieren",
+  'cmd.cliStale': "Der Befehl „gitcito“ in Ihrem PATH zeigt in einen temporären AppImage-Ordner, den ein anderer Benutzer übernehmen könnte. Entfernen Sie ihn über die Befehlspalette.",
+  'cmd.cliRemoveStale': "Veralteten Befehl „gitcito“ aus dem PATH entfernen",
+  'cmd.cliStaleRemoved': "Veralteter Befehl „gitcito“ entfernt",
 
   // Settings
   'settings.title': 'Einstellungen',
@@ -1224,6 +1229,10 @@ export const de: Dict = {
   'attrs.driverMissing': 'Konverter nicht installiert',
   'attrs.needsBinary': 'Benötigt {binary} in deinem PATH.',
   'attrs.bundledConverter': 'In Gitcito enthalten – nichts zu installieren.',
+  'attrs.driverEphemeral': "zeigt in einen temporären AppImage-Ordner",
+  'attrs.driverEphemeralHint': "Eine AppImage-Version von Gitcito hat diesen Konverter eingerichtet. Sein Ordner unter /tmp verschwindet, wenn die App beendet wird, und jeder andere Benutzer dieses Rechners könnte dort ein Programm ablegen, das Ihr nächstes git diff ausführt. Entfernen Sie ihn.",
+  'attrs.driverRemove': "Entfernen",
+  'attrs.bundledAppImage': "Im AppImage nicht verfügbar: Der Konverter von Gitcito existiert nur, solange die App läuft. Installieren Sie das .deb-Paket, um ihn zu nutzen.",
   'attrs.filtersTitle': 'Clean-/Smudge-Filter',
   'attrs.filtersHint': 'Ein Filter schreibt Dateiinhalte auf dem Weg hinein um (clean, beim Stagen) und auf dem Weg hinaus (smudge, beim Checkout) — so funktionieren git-lfs und das Ausfiltern von Schlüsseln. Ein falscher Filter beschädigt dein Arbeitsverzeichnis still und leise, deshalb besteht Gitcito vor dem Speichern auf einem Probelauf mit echten Dateien.',
   'attrs.filterCleanPh': 'clean-Befehl (stdin → stdout)',

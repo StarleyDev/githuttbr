@@ -874,6 +874,11 @@ export const ar: Dict = {
   'cmd.cliInstalled': 'ثُبِّت الأمر gitcito',
   'cmd.cliUninstalled': 'أُزيل الأمر gitcito',
   'cmd.cliFailed': 'تعذّر تحديث الأمر gitcito',
+  'cmd.cliAppImage': "لا يستطيع إصدار AppImage تثبيت الأمر gitcito: التطبيق لا يوجد إلا في مجلد مؤقت أثناء تشغيله. ثبّت حزمة ‎.deb للحصول عليه.",
+  'cmd.cliWindows': "لا يمكن تثبيت الأمر gitcito على Windows بعد",
+  'cmd.cliStale': "الأمر gitcito في PATH يشير إلى مجلد AppImage مؤقت يمكن لمستخدم آخر الاستيلاء عليه. أزِله من لوحة الأوامر.",
+  'cmd.cliRemoveStale': "إزالة الأمر gitcito القديم من PATH",
+  'cmd.cliStaleRemoved': "أُزيل الأمر gitcito القديم",
 
   // Settings
   'settings.title': 'الإعدادات',
@@ -1224,6 +1229,10 @@ export const ar: Dict = {
   'attrs.driverMissing': 'المحوّل غير مثبَّت',
   'attrs.needsBinary': 'يحتاج إلى {binary} ضمن مسار PATH لديك.',
   'attrs.bundledConverter': 'مضمَّن مع Gitcito — لا حاجة لتثبيت أي شيء.',
+  'attrs.driverEphemeral': "يشير إلى مجلد AppImage مؤقت",
+  'attrs.driverEphemeralHint': "ضبط إصدار AppImage من Gitcito هذا المحوّل. مجلده في ‎/tmp يختفي عند إغلاق التطبيق، ويمكن لأي مستخدم آخر على هذا الجهاز وضع برنامج في ذلك المسار يشغّله أمر git diff التالي لديك. أزِله.",
+  'attrs.driverRemove': "إزالة",
+  'attrs.bundledAppImage': "غير متاح في إصدار AppImage: محوّل Gitcito لا يوجد إلا أثناء تشغيل التطبيق. ثبّت حزمة ‎.deb لاستخدامه.",
   'attrs.filtersTitle': 'مرشّحات clean/smudge',
   'attrs.filtersHint': 'يعيد المرشّح كتابة محتوى الملف عند الدخول (clean، عند الإدراج) وعند الخروج (smudge، عند السحب) — هكذا يعمل git-lfs ونزع المفاتيح. المرشّح الخاطئ يفسد شجرة العمل بصمت، لذا يصرّ Gitcito على تشغيل تجريبي على ملفات حقيقية قبل حفظ أي شيء.',
   'attrs.filterCleanPh': 'أمر clean (stdin → stdout)',
