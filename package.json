@@ -46,6 +46,7 @@
   "build": {
     "appId": "com.gitcito.desktop",
     "productName": "Git HuttBr",
+    "afterPack": "./scripts/after-pack.cjs",
     "files": [
       "out/**/*",
       "resources/**",
