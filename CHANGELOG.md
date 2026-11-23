@@ -1,5 +1,31 @@
 
 
+## [4.37.0](https://github.com/StarleyDev/githuttbr/compare/v4.36.1...v4.37.0) (2026-11-23)
+
+
+### Features
+
+* **docs:** warn when a translated handbook page has fallen behind its english ([b96f092](https://github.com/StarleyDev/githuttbr/commit/b96f092d25bc8228b66ef8fc7d6cef40c27df3d2))
+* extend the i18n guard with a syntax pass ([8f6649a](https://github.com/StarleyDev/githuttbr/commit/8f6649a8aa787f984b0e9c679fcf2d638da4be83))
+* push several branches at once ([331150a](https://github.com/StarleyDev/githuttbr/commit/331150acd9281423ead909acdf53b1c26f8ef899))
+
+
+### Bug Fixes
+
+* **build:** derive the licence list from the lockfile, not npm ls paths ([50d9020](https://github.com/StarleyDev/githuttbr/commit/50d9020881f9da0f0db0a51f9a4a1282ff1fae7a))
+* clear the push destination clash on select all/none ([c3ddc78](https://github.com/StarleyDev/githuttbr/commit/c3ddc78a63fda751ac240ed845ca3e9721b33306))
+* clear the push destination clash when the remote changes ([a693a6a](https://github.com/StarleyDev/githuttbr/commit/a693a6a5abaa6a2d9a76aaf473314147e145157a))
+* highlight on-demand code fences that mount after their language loads ([65afd76](https://github.com/StarleyDev/githuttbr/commit/65afd76cd0e8e04a3ba6d30e7f11d53aed8c76f9))
+* push each branch to its own name in the push branches dialog ([6bb2f04](https://github.com/StarleyDev/githuttbr/commit/6bb2f04cd7bc5d50f5bb66fcf99f96e80e783588))
+* send chat action failures to the model in english, translated on the card ([2f37f8b](https://github.com/StarleyDev/githuttbr/commit/2f37f8b89288855e01d82c851ab109a2306f6bb4))
+* translate the renderer copy the i18n guard could not see ([3fe620f](https://github.com/StarleyDev/githuttbr/commit/3fe620f9c7156c25541f68907362654fb546f45e))
+
+
+### Performance Improvements
+
+* load xterm with the first terminal instead of at startup ([b79d87e](https://github.com/StarleyDev/githuttbr/commit/b79d87e732d4d53b54f5fa2df0a2044dc469b8c9))
+* register a curated highlight.js set and load other languages on demand ([9d6b70b](https://github.com/StarleyDev/githuttbr/commit/9d6b70be789d424d2c4f532ce6e68c89dbcb6fc6))
+
 ## [4.36.1](https://github.com/StarleyDev/githuttbr/compare/v4.36.0...v4.36.1) (2026-11-22)
 
 

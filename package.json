@@ -2,7 +2,7 @@
   "name": "gitcito",
   "productName": "Gitcito",
   "desktopName": "gitcito.desktop",
-  "version": "4.36.1",
+  "version": "4.37.0",
   "description": "A lightweight Git client built with Electron, React and clean architecture",
   "main": "out/main/index.js",
   "license": "MIT",
