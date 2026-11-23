@@ -15,6 +15,8 @@ import { defaultSettings, type AppSettings, type KeychainConsent } from '../src/
 let dir = ''
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const keyring = { decrypts: 0, asked: 0, available: true, probes: 0 }
+/** No window to ask in: the consent question then settles nothing. */
+const windows = { none: false }
 const machineLogins: { url: string; login?: string }[] = []
 const sent: string[] = []
 
@@ -25,7 +27,7 @@ vi.mock('electron', () => ({
   shell: {},
   BrowserWindow: {
     getFocusedWindow: () => null,
-    getAllWindows: () => [
+    getAllWindows: () => windows.none ? [] : [
       {
         isDestroyed: () => false,
         once: () => undefined,
@@ -68,13 +70,15 @@ interface Setup {
   /** The encrypted store's content for the profile; omitted means no `gitcito-secrets.enc` at all. */
   secrets?: ProfileSecrets
   consent?: KeychainConsent
+  /** Whether the user has seen the explainer; false is an install that predates it. */
+  explained?: boolean
   profile?: Partial<AppSettings['profiles'][number]>
 }
 
 function setUp(o: Setup): AppSettings {
   dir = mkdtempSync(join(tmpdir(), 'gitcito-avatars-peek-'))
   if (o.consent !== 'unset') {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: o.consent ?? 'granted', explained: true }))
+    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: o.consent ?? 'granted', explained: o.explained ?? true }))
   }
   const base = defaultSettings()
   const profile = { ...base.profiles[0], ...o.profile }
@@ -93,8 +97,10 @@ async function boot(): Promise<void> {
   const { readSettings, registerSettingsHandlers } = await import('../src/main/settings')
   await readSettings()
   const { registerAvatarHandlers } = await import('../src/main/avatars')
+  const { registerKeychainHandlers } = await import('../src/main/keychain')
   registerSettingsHandlers()
   registerAvatarHandlers()
+  registerKeychainHandlers()
 }
 
 const dirs: string[] = []
@@ -104,6 +110,7 @@ beforeEach(() => {
   keyring.asked = 0
   keyring.probes = 0
   keyring.available = true
+  windows.none = false
   calls.length = 0
   machineLogins.length = 0
   sent.length = 0
@@ -135,14 +142,36 @@ describe('avatar peeks before the store is unlocked', () => {
     expect(machineLogins).toEqual([])
     expect(keyring.decrypts).toBe(0)
     expect(keyring.asked).toBe(0)
+    // Not even "is there a keyring": on macOS the first safeStorage call is the prompt.
+    expect(keyring.probes).toBe(0)
     expect(sent).not.toContain('secrets:unlocked')
   })
 
-  it('uses the plain view when consent is granted but no keyring is available — no earlier token read needed', async () => {
+  it('treats consent granted but never explained as locked, without touching safeStorage', async () => {
+    setUp({ secrets: { aiKeys: { acct: 'sk' } }, explained: false, profile: { links: { github: LINK } } })
+    keyring.available = false
+    await boot()
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
+    expect(keyring.probes).toBe(0)
+    // An unlock with no window to ask in settles nothing: still locked, still no probe.
+    windows.none = true
+    await call('settings:unlock')
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
+    expect(keyring.probes).toBe(0)
+    expect(sent).not.toContain('secrets:unlocked')
+    expect(calls).toEqual([])
+  })
+
+  it('uses the plain view once an unlock found no keyring, and tells the windows', async () => {
     setUp({ secrets: { githubToken: 'ghp_unreachable' }, profile: { links: { github: LINK } } })
     keyring.available = false
     await boot()
-    // Nothing has tried to read a token yet: the very first peek decides from the keyring as it is.
+    // A peek never asks safeStorage, so before any unlock it cannot know the keyring is missing.
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
+    expect(keyring.probes).toBe(0)
+    await call('settings:unlock')
+    // The pictures that fell past GitHub hear that the view changed.
+    expect(sent.filter((c) => c === 'secrets:unlocked')).toHaveLength(1)
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
     expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
     expect(calls.length).toBeGreaterThan(0)
@@ -173,6 +202,31 @@ describe('avatar peeks before the store is unlocked', () => {
     expect(keyring.asked).toBe(0)
     // Declined never touches safeStorage, not even to ask whether it is there.
     expect(keyring.probes).toBe(0)
+  })
+
+  it('tells the windows when the consent dialog is declined, then uses the plain view', async () => {
+    // An install from before the gate: consent is adopted unexplained, so the unlock asks first.
+    setUp({ secrets: { githubToken: 'ghp_never_read' }, consent: 'unset', profile: { links: { github: LINK } } })
+    await boot()
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
+    const unlocking = call('settings:unlock')
+    await vi.waitFor(() => expect(sent).toContain('keychain:ask'))
+    expect(sent).not.toContain('secrets:unlocked')
+    await call('keychain:answer', false)
+    await unlocking
+    expect(sent).toContain('secrets:unlocked')
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
+    for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
+    expect(keyring.decrypts).toBe(0)
+  })
+
+  it('tells the windows when Settings → Security turns the keychain off', async () => {
+    setUp({ secrets: { githubToken: 'ghp_never_read' }, profile: { links: { github: LINK } } })
+    await boot()
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
+    await call('keychain:set', false)
+    expect(sent).toContain('secrets:unlocked')
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
   })
 
   it('uses the machine login when there is no encrypted store at all', async () => {

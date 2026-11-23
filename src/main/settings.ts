@@ -30,6 +30,8 @@ import {
   canUseKeychain,
   ensureKeychain,
   getConsent,
+  getConsentState,
+  onKeychainDeclined,
   onKeychainEnabled,
   onSessionOnlyProbe
 } from './keychain'
@@ -100,16 +102,24 @@ let secretsUnreadable = false
 let servedSecrets = false
 
 /**
- * Whether the settings file on disk itself still holds tokens in the clear —
- * an install from before the encrypted store, which the next unlock migrates.
- * Tracked apart from the merged view because session-only tokens look the same.
+ * A real unlock attempt this session found the keyring unusable: consent was
+ * granted and explained, and `isEncryptionAvailable` said no (a Linux desktop
+ * without Secret Service). The stored tokens are out of reach until the
+ * keychain is turned on, so a peek stops waiting for them. Set only by
+ * `readSettingsWithSecrets` — never by a peek, which must not touch
+ * safeStorage at all, and never on the no-window path, which settles nothing.
  */
-let plaintextOnDisk = false
+let keyringUnavailable = false
+onKeychainEnabled(async () => {
+  keyringUnavailable = false
+})
 
 /**
- * The secrets have just been decrypted for the first time this session: tell
- * the windows, so pictures that were left "unknown" while the store was locked
- * ask again now instead of waiting out their retry.
+ * What a peek may read just changed (see peekView): the secrets were decrypted
+ * for the first time this session, or the store went out of reach (declined,
+ * or no keyring). Tell the windows, so pictures that were left "unknown" while
+ * the store was locked ask again now instead of waiting out their retry. The
+ * channel keeps its first name; the renderer treats both the same way.
  */
 function announceUnlocked(): void {
   try {
@@ -163,10 +173,8 @@ export async function readSettings(): Promise<AppSettings> {
     // the file is also written by imports and older builds (see withMigratedAI).
     settings = migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...parsed })
   } catch {
-    plaintextOnDisk = false
     return defaultSettings()
   }
-  plaintextOnDisk = hasSettingsSecrets(settings)
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
   setKnownGitlabInstances(gitlabServerBases(out.profiles))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
@@ -204,7 +212,16 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   // gate — its owner answered the OS prompt long ago, so they are not asked to
   // decide again, only shown the explanation once.
   await adoptExistingConsent([secretsPath()])
-  if (!(await ensureKeychain(reason))) return settings
+  if (!(await ensureKeychain(reason))) {
+    // Granted and explained after the attempt means safeStorage itself said no.
+    // Unset or unexplained means no window was there to ask: nothing settled.
+    const after = await getConsentState()
+    if (after.consent === 'granted' && after.explained && !keyringUnavailable) {
+      keyringUnavailable = true
+      announceUnlocked()
+    }
+    return settings
+  }
 
   const stored = await loadSecrets()
   if (hasSettingsSecrets(settings)) {
@@ -227,21 +244,20 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
  * - `unlocked`: something the user did already decrypted the store this
  *   session, so the full settings are in memory (a PAT outranks a link).
  * - `plain`: there is no encrypted store to wait for this session — none on
- *   disk, consent declined, or granted with no usable keyring (a Linux desktop
- *   without Secret Service). The plain settings, with session-only tokens and
- *   machine-login links, are then the whole truth.
- * - `locked`: the store may hold a token and is not decrypted yet. A peek
- *   cannot know whether a PAT is in there, so it must not let a link stand in.
+ *   disk, consent declined, or an unlock attempt already found no usable
+ *   keyring (`keyringUnavailable`). The plain settings, with session-only
+ *   tokens and machine-login links, are then the whole truth.
+ * - `locked`: anything else, consent granted but never explained included. The
+ *   store may hold a token; a peek cannot know whether a PAT is in there, so it
+ *   must not let a link stand in.
  *
- * Decided from the files and the keyring as they are now, never from a flag an
- * earlier read left behind. `isEncryptionAvailable` never prompts.
+ * Never calls safeStorage, not even `isEncryptionAvailable`: on macOS the first
+ * real safeStorage call is what brings up the keychain prompt (see keychain.ts).
  */
 async function peekView(): Promise<'unlocked' | 'plain' | 'locked'> {
   if (secretCache) return 'unlocked'
   if (!existsSync(secretsPath())) return 'plain'
-  const consent = await getConsent()
-  if (consent === 'declined') return 'plain'
-  if (consent === 'granted' && !(await canUseKeychain())) return 'plain'
+  if ((await getConsent()) === 'declined' || keyringUnavailable) return 'plain'
   return 'locked'
 }
 
@@ -480,6 +496,7 @@ async function persistSessionSecrets(): Promise<void> {
   sessionSecrets = {}
 }
 onKeychainEnabled(persistSessionSecrets)
+onKeychainDeclined(announceUnlocked)
 
 /** True while some token exists only in memory and would be lost on quit. */
 export function hasSessionOnlySecrets(): boolean {

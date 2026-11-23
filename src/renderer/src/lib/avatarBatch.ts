@@ -75,7 +75,9 @@ export function createAvatarBatcher(
           // and not at all when an unlock came while it was in flight: it may
           // only have meant "locked", and holding it back would hide the retry.
           if (url !== undefined) known.set(`${scopeKey}\n${email}`, url)
-          else if (sentAt === generation) unknownUntil.set(`${scopeKey}\n${email}`, now() + AVATAR_UNKNOWN_RETRY_MS)
+          else if (sentAt === generation) {
+            unknownUntil.set(`${scopeKey}\n${email}`, now() + AVATAR_UNKNOWN_RETRY_MS)
+          }
           for (const w of v.waiters) w(url ?? null)
         }
       })
@@ -108,5 +110,31 @@ export function createAvatarBatcher(
       unknownUntil.clear()
     },
     generation: () => generation
+  }
+}
+
+/**
+ * One shared request per profile, account, size and unlock generation, for the
+ * active profile's own picture. The generation is part of the key: an avatar
+ * that mounts after an unlock must not share a request made while the tokens
+ * were still locked, whose "none" only meant "locked". A miss is forgotten, so
+ * the next mount asks again.
+ */
+export function createProfileAvatarCache(
+  ask: (size: number) => Promise<string | null>,
+  generation: () => number
+): (profileId: string, account: string, size: number) => Promise<string | null> {
+  const jobs = new Map<string, Promise<string | null>>()
+  return (profileId, account, size) => {
+    const key = `${profileId}\n${account}\n${size}\n${generation()}`
+    let job = jobs.get(key)
+    if (!job) {
+      job = ask(size).catch(() => null)
+      jobs.set(key, job)
+      void job.then((u) => {
+        if (!u) jobs.delete(key)
+      })
+    }
+    return job
   }
 }

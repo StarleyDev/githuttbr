@@ -71,11 +71,15 @@ machine login**, when the same computer has saved other secrets in the keychain
 first unlock, not at launch. Noreply addresses need no token and show at once.
 
 When there is no encrypted store to wait for — nothing saved in the keychain at
-all, the keychain declined in **Settings → Security**, or a keychain that is on
-but not available on this system (a Linux desktop without a Secret Service) —
+all, or the keychain declined (in the explainer or in **Settings → Security**) —
 the machine login and any token you typed this session are all there is, and
-they are used from the start. A token you typed while the keychain was
-unavailable lives only in memory for the session.
+they are used from the start. A keychain that is on but not available on this
+system (a Linux desktop without a Secret Service) is only discovered by the
+first real unlock attempt — drawing a picture never asks the keyring anything,
+since on macOS that question is itself the prompt — so there the pictures wait
+for that first push, pull request listing or visit to Settings, then use the
+machine login. A token you typed while the keychain was unavailable lives only
+in memory for the session, and is used straight away.
 
 What came back is remembered: for the session in memory, and on disk in
 `github-avatars.json` in Gitcito's data folder — a found picture for 7 days, "no

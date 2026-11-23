@@ -162,6 +162,8 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
     if (!deps.save || saveTimer) return
     saveTimer = setTimeout(() => {
       saveTimer = null
+      // The per-repository misses live in memory only: pruned on the same beat.
+      for (const [k, at] of repoMisses) if (now() - at >= AVATAR_REPO_MISS_TTL_MS) repoMisses.delete(k)
       deps.save!(pruneAvatarCache(Object.fromEntries(memory), now()))
     }, 500)
     saveTimer.unref?.()
@@ -170,6 +172,15 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
   const remember = (key: string, url: string | null): void => {
     memory.set(key, { url, at: now() })
     scheduleSave()
+  }
+
+  /** Whether a per-repository miss still holds; an expired one is dropped as it is read. */
+  const repoMissFresh = (k: string): boolean => {
+    const at = repoMisses.get(k)
+    if (at === undefined) return false
+    if (now() - at < AVATAR_REPO_MISS_TTL_MS) return true
+    repoMisses.delete(k)
+    return false
   }
 
   const repoKey = (t: AvatarTarget): string => `${t.base.toLowerCase()}\n${t.owner.toLowerCase()}/${t.repo.toLowerCase()}`
@@ -236,7 +247,8 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
       if (commit.status === 'ok') return { url: avatarOf(commit.body, ep.webBase) }
       if (commit.status === 'hidden') return hideRepo(target)
     }
-    const list = await getJson(`${repoApi}/commits?author=${encodeURIComponent(req.email)}&per_page=1`, token, target.base)
+    const byEmail = `${repoApi}/commits?author=${encodeURIComponent(req.email)}&per_page=1`
+    const list = await getJson(byEmail, token, target.base)
     if (list.status === 'hidden') return hideRepo(target)
     if (list.status !== 'ok' || !Array.isArray(list.body)) return undefined
     return list.body.length ? { url: avatarOf(list.body[0], ep.webBase) } : { url: null, repoOnly: true }
@@ -271,7 +283,7 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
       const key = avatarCacheKey(target.base, req.email)
       const hit = memory.get(key)
       if (isAvatarEntryFresh(hit, now())) out[req.email] = hit.url ? githubAvatarSized(hit.url, size) : null
-      else if (now() - (repoMisses.get(`${repoKey(target)}\n${key}`) ?? -Infinity) >= AVATAR_REPO_MISS_TTL_MS) todo.push(req)
+      else if (!repoMissFresh(`${repoKey(target)}\n${key}`)) todo.push(req)
     }
     if (!todo.length || (paused.get(target.base) ?? 0) > now() || (hidden.get(repoKey(target)) ?? 0) > now()) return out
 

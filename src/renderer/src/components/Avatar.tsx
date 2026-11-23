@@ -3,8 +3,19 @@ import { Blobatar } from 'blobatar/react'
 import { happy, idle, mad, sad, scared, sick, sleepy, thinking, unsure } from 'blobatar/expression'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
-import { githubAuthorAvatar, githubProfileAvatar, secretsUnlockGeneration, useSecretsUnlocks } from '../stores/githubAvatars'
-import { avatarSources, generatedAvatar, githubAccountFingerprint, gravatarUrl, type AvatarSource } from '../lib/avatar'
+import {
+  githubAuthorAvatar,
+  githubProfileAvatar,
+  secretsUnlockGeneration,
+  useSecretsUnlocks
+} from '../stores/githubAvatars'
+import {
+  avatarSources,
+  generatedAvatar,
+  githubAccountFingerprint,
+  gravatarUrl,
+  type AvatarSource
+} from '../lib/avatar'
 import { githubNoreplyAvatarUrl } from '../../../shared/githubAvatar'
 import { githubEnterpriseBases, githubInstanceOf } from '../../../shared/githubEnterprise'
 import type { Mood } from '../lib/repoMood'

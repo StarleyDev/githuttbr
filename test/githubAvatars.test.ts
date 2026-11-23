@@ -18,7 +18,12 @@ import {
 } from '../src/main/githubAvatarResolver'
 import { GITHUB_COM } from '../src/shared/githubEnterprise'
 import { avatarSources, githubAccountFingerprint } from '../src/renderer/src/lib/avatar'
-import { AVATAR_UNKNOWN_RETRY_MS, createAvatarBatcher, type AvatarBatchItem } from '../src/renderer/src/lib/avatarBatch'
+import {
+  AVATAR_UNKNOWN_RETRY_MS,
+  createAvatarBatcher,
+  createProfileAvatarCache,
+  type AvatarBatchItem
+} from '../src/renderer/src/lib/avatarBatch'
 
 describe('github noreply addresses', () => {
   it('maps the ID+login form straight to the avatar CDN', () => {
@@ -515,5 +520,24 @@ describe('avatar batcher', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('never hands a profile picture asked while locked to an avatar that mounts after the unlock', async () => {
+    let gen = 0
+    const pending: ((u: string | null) => void)[] = []
+    const ask = vi.fn(() => new Promise<string | null>((r) => pending.push(r)))
+    const profile = createProfileAvatarCache(ask, () => gen)
+    const locked = profile('p', 'acct', 64)
+    // Same key, same generation: one shared request.
+    void profile('p', 'acct', 64)
+    expect(ask).toHaveBeenCalledTimes(1)
+    // The unlock lands while that request is still in main.
+    gen++
+    const mountedAfter = profile('p', 'acct', 64)
+    expect(ask).toHaveBeenCalledTimes(2)
+    pending[0](null)
+    pending[1]('https://avatars.githubusercontent.com/u/42')
+    expect(await locked).toBeNull()
+    expect(await mountedAfter).toBe('https://avatars.githubusercontent.com/u/42')
   })
 })
