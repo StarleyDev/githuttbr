@@ -94,19 +94,36 @@ export function isGitlabComHost(hostname: string): boolean {
  * - gitlab.com — it has its own token, configured above the list.
  */
 export function gitlabServerUrlProblem(raw: string | undefined): GitlabServerUrlProblem | null {
+  const problem = instanceUrlProblem(raw)
+  if (problem) return problem
+  return isGitlabComAddress(parseTypedUrl(raw!.trim())!.hostname) ? 'gitlabCom' : null
+}
+
+/** A typed address as a URL — a bare host gets https — or null when it does not parse. */
+function parseTypedUrl(s: string): URL | null {
+  try {
+    return new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The checks every typed-in instance address gets — a self-managed GitLab or
+ * a Forgejo: https, a host, no user name or password, no query or fragment.
+ * `normalizeInstanceUrl` alone silently drops the last two, so the address
+ * a token is set up for would not be the one the user typed.
+ */
+export function instanceUrlProblem(raw: string | undefined): Exclude<GitlabServerUrlProblem, 'gitlabCom'> | null {
   const s = raw?.trim()
   if (!s) return 'invalid'
-  let u: URL
-  try {
-    u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`)
-  } catch {
-    return 'invalid'
-  }
+  const u = parseTypedUrl(s)
+  if (!u) return 'invalid'
   if (u.protocol !== 'https:') return u.protocol === 'http:' ? 'http' : 'invalid'
   if (!u.hostname) return 'invalid'
-  if (u.username || u.password) return 'credentials'
-  if (u.search || u.hash) return 'query'
-  if (isGitlabComAddress(u.hostname)) return 'gitlabCom'
+  // A bare `@` or `?` parses to an empty username or search: the character itself is refused.
+  if (u.username || u.password || /^(?:[a-z][a-z0-9+.-]*:\/\/)?[^/?#]*@/i.test(s)) return 'credentials'
+  if (u.search || u.hash || /[?#]/.test(s)) return 'query'
   return null
 }
 

@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, safeStorage, app } from 'electron'
 import { join } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 
 /**
@@ -17,6 +17,7 @@ import { existsSync } from 'fs'
  * reading it can never depend on the very code path it is meant to gate.
  */
 import type { KeychainConsent, KeychainReason } from '../shared/types'
+import { writePrivateFile } from './privateFile'
 
 export type { KeychainConsent, KeychainReason }
 
@@ -47,7 +48,7 @@ async function readFileState(): Promise<ConsentFile> {
 async function writeFileState(next: ConsentFile): Promise<void> {
   cached = next
   await mkdir(app.getPath('userData'), { recursive: true })
-  await writeFile(consentPath(), JSON.stringify(next, null, 2), 'utf-8')
+  await writePrivateFile(consentPath(), JSON.stringify(next, null, 2))
 }
 
 export async function getConsent(): Promise<KeychainConsent> {

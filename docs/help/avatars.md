@@ -94,8 +94,14 @@ a private repository your token cannot see, or one whose SSO it is not
 authorised for — so Gitcito records nothing and leaves that repository alone
 for ten minutes, while the same authors in repositories you can see still get
 their pictures. An **empty repository** (409) is left alone for ten minutes the
-same way. The file is keyed on a SHA-256 hash of the server and the email, so
-it holds no address in readable form; deleting it is always safe.
+same way. The file is keyed on a SHA-256 hash of the server and the email,
+salted per install, so it holds no address in readable form. **It does name the
+accounts**, though: a found picture is stored as its address, and a GitHub
+picture's address carries the account's numeric id
+(`avatars.githubusercontent.com/u/12345`), which anyone can turn back into a
+login. So the file says which GitHub accounts this computer has drawn — not by
+which email. It is readable only by your user account, and deleting it is
+always safe: the pictures are asked for again.
 
 The generated avatar is a small creature, not a coloured square: the same email
 always produces the same shape and the same colours, so an author stays

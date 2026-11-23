@@ -11,6 +11,7 @@ import {
   normalizeInstanceUrl,
   type GitlabServerUrlProblem
 } from '../../../shared/gitlabInstance'
+import { serverDisplayAddress } from '../../../shared/serverAddress'
 import type { ConnectedAccount, GitlabServer, Profile } from '../../../shared/types'
 
 const PROBLEM: Record<GitlabServerUrlProblem, TranslationKey> = {
@@ -21,10 +22,15 @@ const PROBLEM: Record<GitlabServerUrlProblem, TranslationKey> = {
   gitlabCom: 'settings.gitlabServerInvalidGitlabCom'
 }
 
-/** `host[/path]` — what a row is called. The path matters: two GitLabs can share a host. */
+/**
+ * `host[/path]` — what a row is called. The path matters: two GitLabs can share
+ * a host. A saved address that no longer parses (an import, a hand-edited
+ * settings file) is shown without any credentials it carries, instead of
+ * reaching `new URL` and throwing.
+ */
 function serverName(url: string): string {
-  const u = new URL(url)
-  return `${u.host}${u.pathname.replace(/\/+$/, '')}`
+  const base = normalizeInstanceUrl(url)
+  return base ? base.replace(/^https:\/\//, '') : serverDisplayAddress(url)
 }
 
 /**
@@ -94,15 +100,28 @@ export function GitlabServersSettings({
       <p className="settings-hint">{t('settings.gitlabServersIntro')}</p>
 
       {servers.length === 0 && <p className="settings-hint ghes-empty">{t('settings.gitlabServersEmpty')}</p>}
-      {servers.map((s) => (
-        <GitlabServerRow
-          key={s.url}
-          server={s}
-          onToken={(token) => update(s.url, { token })}
-          onUnlink={() => unlink(s)}
-          onRemove={() => remove(s)}
-        />
-      ))}
+      {servers.map((s) =>
+        normalizeInstanceUrl(s.url) ? (
+          <GitlabServerRow
+            key={s.url}
+            server={s}
+            onToken={(token) => update(s.url, { token })}
+            onUnlink={() => unlink(s)}
+            onRemove={() => remove(s)}
+          />
+        ) : (
+          // Nothing is ever sent to an address that does not normalise; it can only be removed.
+          <div className="ghes-row" key={s.url}>
+            <div className="ghes-row-head">
+              <span className="ghes-host">{serverName(s.url)}</span>
+              <span className="conn-status">{t(PROBLEM[gitlabServerUrlProblem(s.url) ?? 'invalid'])}</span>
+              <button className="btn ghost small danger" type="button" onClick={() => remove(s)} title={t('settings.gitlabServerRemove')}>
+                <Trash2 size={13} /> {t('settings.gitlabServerRemove')}
+              </button>
+            </div>
+          </div>
+        )
+      )}
 
       <label>
         {t('settings.gitlabServerUrl')}

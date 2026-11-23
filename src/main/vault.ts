@@ -1,11 +1,12 @@
 import { app, ipcMain, safeStorage } from 'electron'
 import { join } from 'path'
-import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
+import { readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { randomUUID } from 'node:crypto'
 import type { VaultEntry, VaultListResult, VaultExport } from '../shared/types'
 import type { BundleVaultEntry } from './secureBundle'
 import { adoptExistingConsent, canUseKeychain, ensureKeychain } from './keychain'
+import { copyPrivateFile, writePrivateFile } from './privateFile'
 
 // A small local secrets store, encrypted at rest with the OS keychain via
 // Electron safeStorage. Two scopes: per-repo entries (keyed by repo path) and a
@@ -42,11 +43,11 @@ async function save(data: VaultData): Promise<void> {
   if (vaultUnreadable) {
     // Preserve the copy the other build identity can still decrypt before we
     // overwrite it with a vault that started fresh.
-    await copyFile(filePath(), `${filePath()}.bak`).catch(() => {})
+    await copyPrivateFile(filePath(), `${filePath()}.bak`).catch(() => {})
     vaultUnreadable = false
   }
   const enc = safeStorage.encryptString(JSON.stringify(data))
-  await writeFile(filePath(), enc.toString('base64'), 'utf-8')
+  await writePrivateFile(filePath(), enc.toString('base64'))
 }
 
 function bucket(data: VaultData, scope: Scope, repoPath: string): VaultEntry[] {

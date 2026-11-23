@@ -35,6 +35,29 @@ const TOKENS: RegExp[] = [
 ]
 
 /**
+ * A credential by the name it is given — a query parameter, a header, a
+ * config line: `access_token=…`, `x-access-token: …`, `api_key: "…"`. The
+ * name stays (it says what failed); the value goes when it holds a digit or is
+ * long, so "password: required" still reads.
+ */
+const NAMED_SECRET =
+  /\b(access[_-]?token|refresh[_-]?token|id[_-]?token|private[_-]?token|x-access-token|x-api-key|api[_-]?key|client[_-]?secret|secret[_-]?key|password|passwd)(["']?\s*[:=]\s*["']?)(?!<redacted>)(?=[^\s"'&,;<>]*\d|[^\s"'&,;<>]{16})[^\s"'&,;<>]{6,}/gi
+
+/**
+ * An IPv6 literal: bracketed as in a URL or bare as curl and Node print it,
+ * with an optional zone (`fe80::1%eth0`). The candidates are checked in
+ * `isIpv6`, so a clock time or a `Foo::bar` path is not one.
+ */
+const IPV6 = /\[([0-9a-f:]+)(%[\w.-]+)?\]|(?<![\w:.])([0-9a-f]{0,4}(?::[0-9a-f]{0,4}){2,7})(%[\w.-]+)?(?![\w:])/gi
+
+/** Compressed (`::`) or all eight groups, and a digit somewhere — never `12:30:45` or `a::b`. */
+function isIpv6(candidate: string): boolean {
+  if (!/\d/.test(candidate)) return false
+  if (candidate.includes('::')) return !candidate.includes(':::')
+  return candidate.split(':').length === 8
+}
+
+/**
  * What an error message may carry that is not the reader's business: a
  * credential in a URL, a token, the home folder (and so the user name), a
  * private server, its repositories, an e-mail or a LAN address. Opening the
@@ -46,6 +69,7 @@ export function redactForReport(text: string): string {
   // Credentials written into a URL, before anything else reads the URL.
   out = redactSecrets(redactUrlUserinfo(out, ''), '<redacted>')
   for (const re of TOKENS) out = out.replace(re, '<redacted>')
+  out = out.replace(NAMED_SECRET, '$1$2<redacted>')
   // URLs: a public host stays (it helps the diagnosis), a private one does not;
   // the path names repositories and organisations either way.
   out = out.replace(/\b([a-z][a-z0-9+.-]*):\/\/([a-z0-9[][^/\s?#'"`<>)]*)([^\s'"`<>)]*)/gi, (_m, scheme: string, host: string, rest: string) => {
@@ -59,10 +83,17 @@ export function redactForReport(text: string): string {
   for (const [re, parts] of MESSAGE_SHAPES) {
     out = out.replace(re, (...m: string[]) => parts.map((part, i) => redactPart(part, m[i + 1])).join(''))
   }
+  // An IPv6 address names a machine as surely as a host name, and the host
+  // rule below would read only its first group.
+  out = out.replace(IPV6, (m: string, inBrackets?: string, _zone?: string, bare?: string) =>
+    isIpv6(inBrackets ?? bare ?? '') ? '<ip>' : m
+  )
   // A host named outside a URL: git, curl and ssh say which one they could not
-  // reach, and so does the refusal to send an AI key over http.
+  // reach, Node's resolver which one it could not find, and so does the
+  // refusal to send an AI key over http. By position, so a single-label host
+  // (`buildbox`) and an internationalised one go too.
   out = out.replace(
-    /\b(resolve host:?|resolve hostname|connect to host|Failed to connect to|send the API key to)(\s+)([a-z0-9][\w.-]*(?::\d+)?)/gi,
+    /\b(resolve host:?|resolve hostname|connect to host|Failed to connect to|send the API key to|ENOTFOUND|EAI_AGAIN|EAI_NONAME)(\s+)([\p{L}\p{N}][\p{L}\p{N}_.-]*(?::\d+)?)/giu,
     (_m, lead: string, gap: string, host: string) => `${lead}${gap}${isPublicHost(host) ? host : '<host>'}`
   )
   // scp-style git remotes: git@host:owner/repo.git
@@ -72,11 +103,18 @@ export function redactForReport(text: string): string {
   // `git@` is the SSH user every host shares, not a person — and the remotes
   // above were already reduced to it.
   out = out.replace(/(?<![\w.+-])(?!git@)[\w.+-]+@[\w-]+(\.[\w-]+)+\b/g, '<email>')
-  // The home folder names the user: keep the path from there on.
-  out = out.replace(/\/home\/[^/\s'"]+/g, '~').replace(/\/Users\/[^/\s'"]+/g, '~')
-  out = out.replace(/\b[A-Za-z]:\\Users\\[^\\\s'"]+/g, '~')
-  // Any profile name that is quoted, whatever message it came in.
-  out = out.replace(/\bprofile "[^"\n]*"/gi, 'profile "<profile>"')
+  // `user@host` with a single-label host — ssh's `jane@buildbox`: both halves
+  // are private. `HEAD@{1}` and `pkg@1.2.3` do not start the host with a letter.
+  out = out.replace(/(?<![\w.+-])([\w.+-]+)@([A-Za-z][A-Za-z0-9-]*)(?![\w@:{/-]|\.[\w-])/g, (_m, user: string) =>
+    user === 'git' ? 'git@<host>' : '<user>@<host>'
+  )
+  // The home folder names the user: keep the path from there on. A name with
+  // spaces (`/Users/Jane Doe/`) counts only when a separator follows it, so
+  // `/home/jane: not found` keeps its message. Windows first: its forward-slash
+  // form holds `/Users/` too.
+  out = out.replace(HOME_WINDOWS, '~').replace(HOME_POSIX, '~')
+  // Any profile name that is quoted, in any quote style, whatever message it came in.
+  out = out.replace(/\bprofile (["'“‘«„])[^"'”’»“\n]*(["'”’»“])/gi, 'profile $1<profile>$2')
   out = out.replace(/\b(10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2})\b/g, '<lan-ip>')
   out = out.replace(/(?<![\w.])\d{1,3}(\.\d{1,3}){3}(?![\w.])/g, '<ip>')
   // Last, anything else shaped like a host name, wherever it stands: a private
@@ -85,8 +123,11 @@ export function redactForReport(text: string): string {
   return out
 }
 
-/** Where a host and a profile name sit in each message main builds (hosting.ts). */
-type Part = string | 'host' | 'profile'
+const HOME_WINDOWS = /\b[A-Za-z]:[\\/]Users[\\/](?:[^\\/\s'"`:]+(?: [^\\/\s'"`:]+){1,3}(?=[\\/])|[^\\/\s'"`:]+)/g
+const HOME_POSIX = /\/(?:home|Users)\/(?:[^/\s'"`:]+(?: [^/\s'"`:]+){1,3}(?=\/)|[^/\s'"`:]+)/g
+
+/** Where a host, a profile or an organisation name sits in each message main builds (hosting.ts). */
+type Part = string | 'host' | 'profile' | 'org'
 const MESSAGE_SHAPES: [RegExp, Part[]][] = [
   // ghesNoTokenMessage, bbsNoTokenMessage
   [/(No token for the GitHub Enterprise Server )(.+?)( is saved in this profile\.)/g, ['', 'host', '']],
@@ -97,7 +138,10 @@ const MESSAGE_SHAPES: [RegExp, Part[]][] = [
     ['', 'profile', '', 'host', '']
   ],
   // githubCredentialMessage, noLinkedAccountMessage
-  [/(account is linked to this profile for )(.+?)(\. (?:GitHub CLI|Checking the GitHub CLI|Sign in from))/g, ['', 'host', '']]
+  [/(account is linked to this profile for )(.+?)(\. (?:GitHub CLI|Checking the GitHub CLI|Sign in from))/g, ['', 'host', '']],
+  // azureAuthError: the organisation is the company's name
+  [/(has access to the ")(.*?)(" organization)/g, ['', 'org', '']],
+  [/(Azure DevOps organization ")(.*?)(" was not found)/g, ['', 'org', '']]
 ]
 
 /** Provider names stand where a host could not be read: nothing private. */
@@ -105,6 +149,7 @@ const PROVIDER_WORDS = new Set(['github', 'gitlab', 'bitbucket', 'azure', 'azure
 
 function redactPart(kind: Part, value: string): string {
   if (kind === 'profile') return '<profile>'
+  if (kind === 'org') return '<org>'
   if (kind === 'host') return isPublicHost(value) || PROVIDER_WORDS.has(value.toLowerCase()) ? value : '<host>'
   return value
 }
@@ -134,16 +179,29 @@ const FILE_EXTENSIONS = new Set(
 )
 
 /**
+ * Top-level labels that end a host and no identifier: a name written in mixed
+ * case (`ghe.Acme.corp`, `Gitlab.Internal.Example`) is still a host when it
+ * ends in one. Short on purpose — `.app`, `.test` and `.is` end method
+ * names (`Electron.App`, `Pattern.test`, `Object.is`) too.
+ */
+const MIXED_CASE_TLDS = new Set(
+  'com net org edu gov io co biz info corp internal intranet lan local localdomain example invalid cloud'.split(' ')
+)
+
+/**
  * Whether a dotted name is a host rather than code or a file: `litellm.Error`
- * and `AsyncCompletions.create` are identifiers (a capitalised or camel-case
- * label — host names are written in lower case by every normaliser here and by
- * git itself), `package.json` is a file.
+ * and `AsyncCompletions.create` are identifiers (a camel-case label, or a
+ * capitalised one not ending in a host's top-level label — host names are
+ * mostly written in lower case, by every normaliser here and by git itself),
+ * `package.json` is a file.
  */
 function looksLikeHost(token: string): boolean {
   const name = token.replace(/:\d+$/, '')
   const labels = name.split('.')
-  if (labels.some((l) => /[a-z][A-Z]|^[A-Z][a-z]/.test(l))) return false
-  return !FILE_EXTENSIONS.has(labels[labels.length - 1].toLowerCase())
+  const tld = labels[labels.length - 1].toLowerCase()
+  if (labels.some((l) => /[a-z][A-Z]/.test(l))) return false
+  if (labels.some((l) => /^[A-Z][a-z]/.test(l))) return MIXED_CASE_TLDS.has(tld)
+  return !FILE_EXTENSIONS.has(tld)
 }
 
 /** The title for a reported error: its first line, without the IPC wrapper that

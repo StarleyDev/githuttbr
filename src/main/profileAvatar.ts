@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, type NativeImage } from 'electron'
 import { join } from 'path'
-import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises'
+import { mkdir, readFile, rm, stat } from 'fs/promises'
+import { writePrivateFile } from './privateFile'
 import {
   AVATAR_MAX_BYTES,
   avatarDataUrlPayload,
@@ -40,7 +41,7 @@ function normalise(buf: Buffer): Buffer | null {
 
 async function store(id: string, png: Buffer): Promise<void> {
   await mkdir(avatarsDir(), { recursive: true })
-  await writeFile(avatarPath(id), png)
+  await writePrivateFile(avatarPath(id), png)
 }
 
 /** The stored picture as a data URL, or null when the profile has none. */

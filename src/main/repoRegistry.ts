@@ -1,10 +1,11 @@
 import { app, ipcMain } from 'electron'
 import { join, basename, isAbsolute } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import type { RegistryRepo, RepoScanResult, RepoScanRoot } from '../shared/types'
 import { gitDirOf, readHeadBranch, readOriginOwner } from './repoMeta'
 import { scanForRepos } from './repoScan'
+import { writePrivateFile } from './privateFile'
 
 // Every repository Gitcito knows about, whether or not it is open. Kept in its
 // own file rather than in settings: it is a cache of what is on *this* disk,
@@ -60,7 +61,7 @@ async function load(): Promise<RegistryRepo[]> {
 async function save(repos: RegistryRepo[]): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   const data: RegistryData = { repos }
-  await writeFile(registryFilePath(), JSON.stringify(data, null, 2), 'utf-8')
+  await writePrivateFile(registryFilePath(), JSON.stringify(data, null, 2))
 }
 
 /** The registry, with `missing` refreshed. Stat-ing every path is why this is
