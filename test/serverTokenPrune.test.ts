@@ -154,7 +154,8 @@ describe('a save from a renderer never sent the secrets', () => {
       Object.fromEntries(MAPS.map((m) => [m.list, [{ url: m.a, token: '' }, { url: m.b, token: '' }]]))
     )
     await call('settings:set', settingsWith({ ...readded, githubToken: 'ghp-typed' }))
-    const settings = (await call('settings:get')) as AppSettings
+    // `settings:unlock`: a plain `settings:get` never carries the decrypted store.
+    const settings = (await call('settings:unlock')) as AppSettings
     const p = settings.profiles[0]
     for (const m of MAPS) {
       const servers = (p[m.list] ?? []) as { url: string; token: string }[]

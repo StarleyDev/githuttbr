@@ -1,5 +1,6 @@
 import { ambiguousRemotePath } from './remotePath'
 import type { AccountLink, BitbucketServerHost, BitbucketServerTokenKind, Profile } from './types'
+import { serverDisplayAddress } from './serverAddress'
 
 export type { BitbucketServerHost }
 
@@ -118,7 +119,8 @@ export interface BitbucketServerEndpoints {
 /** The endpoints of a server by its base. Throws on anything that is not a valid base. */
 export function bitbucketServerEndpoints(base: string): BitbucketServerEndpoints {
   const norm = normalizeBitbucketServerUrl(base)
-  if (!norm) throw new Error(`Not a Bitbucket Data Center address: ${base}`)
+  // Never the raw base in the message: it may carry a credential.
+  if (!norm) throw new Error(`Not a Bitbucket Data Center address: ${serverDisplayAddress(base)}`)
   return { apiBase: `${norm}/rest/api/latest`, buildStatusBase: `${norm}/rest/build-status/latest`, webBase: norm }
 }
 
@@ -257,23 +259,10 @@ export function bitbucketAuthFor(
 /**
  * A saved address that does not normalise, made safe to show: any
  * `user:password@` is dropped (an import or a hand-edited file can carry one),
- * leaving host and path. Everything up to the *last* `@` after the scheme goes,
- * not only a userinfo a URL parser recognises: a password holding a `/` ends
- * the authority early (`https://u:pa/ss@host` parses as host `u`), so the
- * secret would otherwise survive as "path".
+ * leaving host and path — see `serverDisplayAddress`.
  */
 export function bitbucketServerDisplayAddress(url: string): string {
-  const noScheme = url.trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
-  const at = noScheme.lastIndexOf('@')
-  const rest = at < 0 ? noScheme : noScheme.slice(at + 1)
-  try {
-    const u = new URL(`https://${rest}`)
-    return `${u.host}${u.pathname === '/' ? '' : u.pathname}`
-  } catch {
-    // Not a URL (a port out of range, a space in the host): still never more
-    // than host and path — a query or fragment can carry a token too.
-    return rest.replace(/[?#][\s\S]*$/, '')
-  }
+  return serverDisplayAddress(url)
 }
 
 /** The fixed name Basic auth takes with a project or repository token. */

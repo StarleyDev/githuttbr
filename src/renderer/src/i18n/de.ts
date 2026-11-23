@@ -3365,6 +3365,7 @@ export const de: Dict = {
   'gitError.gitlabNotSaved': 'Diese GitLab-Adresse ist noch in keinem Profil gespeichert (sie muss https verwenden). Speichere sie unter Einstellungen → Integrationen und versuche es erneut.',
   'gitError.ghesNoToken': 'In diesem Profil ist kein Token für den GitHub Enterprise Server {host} gespeichert. Füge eines unter Einstellungen → Integrationen → GitHub → GitHub Enterprise Server hinzu.',
   'gitError.bbsNoToken': 'In diesem Profil ist kein HTTP-Zugriffstoken für das Bitbucket Data Center {host} gespeichert. Füge eines unter Einstellungen → Integrationen → Bitbucket → Bitbucket Data Center hinzu.',
+  'gitError.heldTokenUnsavedServer': 'Dieses Token ist bereits für ein anderes Konto oder einen anderen Server gespeichert und wird deshalb nicht an einen Server gesendet, den noch kein Profil gespeichert hat. Verwende das Token, das dieser Server ausgestellt hat.',
   'gitError.bbsNoBrowse': 'Repositorys durchsuchen und anlegen wird für Bitbucket Data Center noch nicht unterstützt — klone stattdessen per URL.',
   'gitError.notBbsRepo': 'Dies ist kein Bitbucket-Data-Center-Repository.',
   'gitError.bbsTokenUnrecognised': 'Der Bitbucket-Data-Center-Server hat dieses Token nicht erkannt. Prüfe, ob es gültig und nicht abgelaufen ist.',

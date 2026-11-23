@@ -222,6 +222,11 @@ describe('server-address and token messages built in main', () => {
     expect(explainGitError(HOSTING + BBS_NO_BROWSE)).toEqual({ key: 'gitError.bbsNoBrowse' })
     expect(explainGitError(HOSTING + NOT_BBS_REPO)).toEqual({ key: 'gitError.notBbsRepo' })
   })
+
+  it('translates the refusal to send a held token to an unsaved server', async () => {
+    const { HELD_TOKEN_TO_UNSAVED_SERVER } = await import('../src/main/hosting')
+    expect(explainGitError(HOSTING + HELD_TOKEN_TO_UNSAVED_SERVER)).toEqual({ key: 'gitError.heldTokenUnsavedServer' })
+  })
 })
 
 describe('Bitbucket Data Center errors raised in main', () => {

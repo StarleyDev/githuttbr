@@ -18,6 +18,7 @@ import {
   asProfileIdArg,
   boundProfileAuth,
   boundProfileName,
+  isHeldSecret,
   isProfileId,
   namedProfileAuth,
   namedProfileForgejoInstance,
@@ -453,6 +454,8 @@ export const BBS_NOT_SAVED =
 export const GITLAB_NOT_SAVED =
   'This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.'
 export const NOT_BBS_REPO = 'Not a Bitbucket Data Center repository.'
+export const HELD_TOKEN_TO_UNSAVED_SERVER =
+  'This token is already saved for another account or server, so it is not sent to a server no profile has saved yet. Use the token this server issued.'
 
 export const ghesNoTokenMessage = (host: string): string =>
   `No token for the GitHub Enterprise Server ${host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.`
@@ -2672,6 +2675,9 @@ async function fetchConnectedAccount(
   const unsaved = unsavedServerBase(provider, org, token)
   if (unsaved) {
     // Exactly the token this call carries — never one looked up — see unsavedServerBase.
+    // Main cannot tell a token just typed from a saved one the renderer holds
+    // and sent here, so one the app already has is not sent to a new host.
+    if (await isHeldSecret(token)) throw new Error(HELD_TOKEN_TO_UNSAVED_SERVER)
     if (provider === 'bitbucket') return { source: 'token', ...(await describeBbsAccount(unsaved, token.trim())) }
     return describeAccount(provider, { token: token.trim(), source: 'token' }, unsaved)
   }

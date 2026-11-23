@@ -125,6 +125,11 @@ const RULES: Rule[] = [
     hint: (m) => ({ key: 'gitError.bbsNoToken', vars: { host: m[1] } })
   },
   {
+    // hosting.ts HELD_TOKEN_TO_UNSAVED_SERVER
+    test: /This token is already saved for another account or server, so it is not sent to a server no profile has saved yet/,
+    hint: () => ({ key: 'gitError.heldTokenUnsavedServer' })
+  },
+  {
     test: /Browsing and creating repositories is not supported for Bitbucket Data Center yet/,
     hint: () => ({ key: 'gitError.bbsNoBrowse' })
   },

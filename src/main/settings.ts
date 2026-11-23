@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, dialog, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, writeFile, mkdir, copyFile, rm } from 'fs/promises'
+import { readFile, mkdir, rm, stat } from 'fs/promises'
+import { createHash, timingSafeEqual } from 'crypto'
+import { copyPrivateFile, writePrivateFile } from './privateFile'
 import { defaultSettings, type AccountLink, type AppSettings, type BitbucketServerTokenKind, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import {
@@ -23,8 +25,13 @@ import {
   hasSettingsSecrets,
   mergeSecretStores,
   pruneSecrets,
+  saveOver,
+  scrubServerUrls,
+  secretValues,
+  secretView,
   stripSettingsSecrets,
-  type SecretStore
+  type SecretStore,
+  type SecretView
 } from '../shared/secrets'
 import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
 import {
@@ -68,24 +75,17 @@ export async function removeLegacySecretsIndex(): Promise<void> {
 let sessionSecrets: SecretStore = {}
 
 /**
- * Which renderers hold every session-only token — `servedSecrets`, for
- * `sessionSecrets`, by webContents id. Every read applies them, so being served
- * the settings is holding them, and so is having typed them in the saves that
- * made them. Only for a holder does a token missing from a save mean the user
- * cleared it; any other renderer would erase what it never had.
+ * Which credentials each renderer (by webContents id) holds, slot by slot with
+ * the value it holds: what it was last served, or what it last sent. A token
+ * missing from a save is a clear only where the sender held that slot with the
+ * value stored now (`saveOver`) — any other renderer, or the same one after
+ * another window changed the token, would erase what it never had.
+ *
+ * One map for both stores, the encrypted one and `sessionSecrets`: it records
+ * what the renderer holds, not where that came from.
  */
-let sessionHolders = new Set<number>()
-
-/** What `sessionSecrets` becomes after a save from `sender` carrying `secrets`. */
-function sessionAfterSave(secrets: SecretStore, profiles: AppSettings['profiles'], sender: number): SecretStore {
-  const ids = profiles.map((p) => p.id)
-  // Nothing held in memory: there is nothing a save could erase by mistake.
-  const held = Object.keys(sessionSecrets).length === 0 || sessionHolders.has(sender)
-  // A holder's save is the new truth, and only it has seen it; anyone else's is
-  // overlaid, which leaves no renderer holding the result.
-  sessionHolders = held ? new Set([sender]) : new Set()
-  return pruneSecrets(held ? secrets : mergeSecretStores(sessionSecrets, secrets), ids, profiles)
-}
+const holdings = new Map<number, SecretView>()
+const NOTHING_HELD: SecretView = new Map()
 
 /**
  * Decrypted secrets for this run, or null while they are still on disk.
@@ -111,18 +111,12 @@ async function canEncrypt(): Promise<boolean> {
  */
 let secretsUnreadable = false
 
-/**
- * The renderers (webContents ids) whose last-loaded settings included the
- * stored secrets.
- *
- * A renderer hydrated before any unlock persists a credential-less copy of the
- * settings on every mutation (a tab move, a repo opened). If a background
- * operation — a fetch resolving its token, an AI call resolving its key — has
- * unlocked the store in the meantime, treating such a save as "the user
- * cleared everything" overwrites the encrypted store with nothing. Only once
- * the renderer was actually served the secrets is an empty save a deletion.
- */
-const servedSecrets = new Set<number>()
+// A renderer hydrated before any unlock persists a credential-less copy of the
+// settings on every mutation (a tab move, a repo opened). If a background
+// operation — a fetch resolving its token, an AI call resolving its key — has
+// unlocked the store in the meantime, treating such a save as "the user
+// cleared everything" overwrites the encrypted store with nothing. Only what a
+// renderer actually holds (`holdings`) can it clear.
 
 /**
  * A real unlock attempt this session found the keyring unusable: consent was
@@ -173,32 +167,68 @@ async function loadSecrets(): Promise<SecretStore> {
   }
 }
 
+const backupPath = (): string => `${secretsPath()}.bak`
+
+/** How long a backup this build cannot read is kept for whoever can. */
+const BACKUP_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
+
 async function saveSecrets(store: SecretStore): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   if (secretsUnreadable) {
     // Keep the copy we could not decrypt: the build identity that wrote it can
     // still read it, and this write would otherwise be the point of no return.
-    await copyFile(secretsPath(), `${secretsPath()}.bak`).catch(() => {})
+    await copyPrivateFile(secretsPath(), backupPath()).catch(() => {})
     secretsUnreadable = false
   }
   const enc = safeStorage.encryptString(JSON.stringify(store))
-  await writeFile(secretsPath(), enc.toString('base64'), 'utf-8')
+  await writePrivateFile(secretsPath(), enc.toString('base64'))
+  await retireBackup()
 }
 
-/** The settings JSON, with whatever secrets are already in memory applied. */
+/**
+ * A backup is old tokens — some revoked, some removed in Settings on purpose —
+ * and it outlives every clear. One this build can decrypt is its own earlier
+ * store, superseded by the write that just succeeded: it goes. One it cannot
+ * read is kept for the build that can, for a while, then goes too.
+ */
+async function retireBackup(): Promise<void> {
+  const path = backupPath()
+  if (!existsSync(path)) return
+  let ours = false
+  try {
+    safeStorage.decryptString(Buffer.from(await readFile(path, 'utf-8'), 'base64'))
+    ours = true
+  } catch {
+    // Another build's — or not a store at all.
+  }
+  const old = await stat(path)
+    .then((s) => Date.now() - s.mtimeMs > BACKUP_MAX_AGE_MS)
+    .catch(() => false)
+  if (ours || old) await rm(path, { force: true }).catch(() => undefined)
+}
+
+/**
+ * The settings JSON as stored, with the session-only tokens applied — never the
+ * decrypted store: that reaches a renderer only from `settings:unlock`, and
+ * main's own lookups through `readSettingsWithSecrets`.
+ */
 export async function readSettings(): Promise<AppSettings> {
   let settings: AppSettings
   try {
     const raw = await readFile(settingsPath(), 'utf-8')
     const parsed = JSON.parse(raw) as Partial<AppSettings>
+    // A server address carrying a credential (an import, an older build, a
+    // hand edit) is cleaned on the way in and on disk, once.
+    const clean = scrubServerUrls(parsed)
+    if (clean !== parsed) await writePrivateFile(settingsPath(), JSON.stringify(clean, null, 2)).catch(() => undefined)
     // Existing install without the key → treat as already onboarded.
     // A one-instance GitLab profile becomes a server list here, on every read —
     // the file is also written by imports and older builds (see withMigratedAI).
-    settings = migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...parsed })
+    settings = migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...clean })
   } catch {
     return defaultSettings()
   }
-  const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+  const out = withMigratedAI(applySecrets(settings, sessionSecrets))
   setKnownGitlabInstances(gitlabServerBases(out.profiles))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
   setKnownGithubEnterpriseInstances(githubEnterpriseBases(out.profiles))
@@ -227,7 +257,7 @@ function withMigratedAI(settings: AppSettings): AppSettings {
  */
 async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens'): Promise<AppSettings> {
   const settings = await readSettings()
-  if (secretCache) return settings
+  if (secretCache) return withMigratedAI(applySecrets(settings, { ...secretCache, ...sessionSecrets }))
   // Git may already authenticate through its own helper or SSH. With no app
   // secrets to decrypt or migrate, touching Safe Storage only causes a needless prompt.
   if (!existsSync(secretsPath()) && !hasSettingsSecrets(settings)) return settings
@@ -254,7 +284,7 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     const ids = (settings.profiles ?? []).map((p) => p.id)
     const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids, settings.profiles ?? [])
     await saveSecrets(merged)
-    await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+    await writePrivateFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2))
     setSecretCache(merged)
     return withMigratedAI(applySecrets(settings, merged))
   }
@@ -625,6 +655,31 @@ async function persistSessionSecrets(): Promise<void> {
 onKeychainEnabled(persistSessionSecrets)
 onKeychainDeclined(announceUnlocked)
 
+/**
+ * Whether `value` is a credential this app already holds — for any profile,
+ * provider or server: in the session, in the plain file (not yet migrated), or
+ * in the encrypted store *if it is already decrypted*. A locked store is not
+ * unlocked to answer, so a token only in there is not recognised; the callers
+ * use this to refuse, never to allow.
+ *
+ * Compared as SHA-256 digests with `timingSafeEqual`, every candidate every
+ * time: how long the answer takes says nothing about how close a guess came.
+ */
+export async function isHeldSecret(value: string): Promise<boolean> {
+  const wanted = value.trim()
+  if (!wanted) return false
+  const candidates = [
+    ...secretValues(sessionSecrets),
+    ...secretValues(secretCache ?? {}),
+    ...secretValues(extractSecrets(await readSettings()))
+  ]
+  const digest = (s: string): Buffer => createHash('sha256').update(s.trim()).digest()
+  const want = digest(wanted)
+  let held = false
+  for (const c of candidates) held = timingSafeEqual(want, digest(c)) || held
+  return held
+}
+
 /** True while some token exists only in memory and would be lost on quit. */
 export function hasSessionOnlySecrets(): boolean {
   return Object.keys(sessionSecrets).length > 0
@@ -633,8 +688,9 @@ onSessionOnlyProbe(hasSessionOnlySecrets)
 
 async function writeSettings(incoming: AppSettings, sender: number): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  // An import or an older renderer may still send the one-instance shape.
-  const settings = migrateGitlabSettings(incoming)
+  // An import or an older renderer may still send the one-instance shape — or
+  // a server address with a credential in it, which the plain file must not keep.
+  const settings = migrateGitlabSettings(scrubServerUrls(incoming))
   setKnownGitlabInstances(gitlabServerBases(settings.profiles))
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   setKnownGithubEnterpriseInstances(githubEnterpriseBases(settings.profiles))
@@ -642,59 +698,57 @@ async function writeSettings(incoming: AppSettings, sender: number): Promise<voi
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)
+  const profiles = settings.profiles ?? []
+  const ids = profiles.map((p) => p.id)
+  // A token the save carries is the new one; one it leaves blank is cleared
+  // only where this sender held it with the value stored now (`saveOver`) —
+  // clearing a token in the UI, deleting a profile. Anything it was never
+  // given survives. Either way a server the profile no longer lists takes its
+  // token along: it would otherwise come back with the URL.
+  const seen = holdings.get(sender) ?? NOTHING_HELD
+  const over = (current: SecretStore): SecretStore => pruneSecrets(saveOver(current, secrets, seen), ids, profiles)
+  // Afterwards the sender holds exactly what it sent: whatever was kept beside
+  // it is still not its to clear.
+  const holds = (): void => {
+    holdings.set(sender, secretView(secrets))
+  }
 
-  // A credential-less save must not wipe the store unless the renderer was
-  // actually holding the credentials (`servedSecrets`) — otherwise it simply
-  // never had them to send back. Same while they are still encrypted on disk,
-  // and when the file exists but this build could not decrypt it: our empty
-  // view of the store is not the truth, and persisting it would erase the
-  // real one.
-  if (!hasSecrets && (!servedSecrets.has(sender) || !secretCache || secretsUnreadable)) {
-    // What it can do is say which servers are gone: a token filed for a server
-    // the profile no longer lists would otherwise come back with the URL.
-    // The session-only tokens too (consent declined): they are applied on every
-    // read, so a removed server's token would otherwise return with its URL —
-    // and one the renderer held and sent back empty was cleared.
-    const ids = (settings.profiles ?? []).map((p) => p.id)
-    sessionSecrets = sessionAfterSave({}, settings.profiles ?? [], sender)
+  if (!hasSecrets) {
+    // Nothing sensitive in it: never goes near the keychain prompt. The
+    // session-only tokens follow the save (they are applied on every read);
+    // the decrypted store too, when there is one this build can read — while
+    // still encrypted on disk, or unreadable, our empty view of it is not the
+    // truth, and persisting it would erase the real one.
+    sessionSecrets = over(sessionSecrets)
     if (secretCache && !secretsUnreadable) {
-      const pruned = pruneSecrets(secretCache, ids, settings.profiles ?? [])
-      if (JSON.stringify(pruned) !== JSON.stringify(secretCache) && (await canEncrypt())) {
-        await saveSecrets(pruned)
-        setSecretCache(pruned)
+      const next = over(secretCache)
+      if (JSON.stringify(next) !== JSON.stringify(secretCache) && (await canEncrypt())) {
+        await saveSecrets(next)
+        setSecretCache(next)
       }
     }
-    await writeFile(settingsPath(), stripped, 'utf-8')
+    await writePrivateFile(settingsPath(), stripped)
+    holds()
     return
   }
 
-  // Saving a token is the moment worth asking about — and only then. A settings
-  // write with nothing sensitive in it never goes near the keychain.
-  const allowed = hasSecrets ? await ensureKeychain('tokens') : await canEncrypt()
-
-  if (!allowed) {
+  // Saving a token is the moment worth asking about — and only then.
+  if (!(await ensureKeychain('tokens'))) {
     // Refused (or no keyring): hold the secrets in memory for this session and
     // keep them out of the file, rather than writing them in the clear.
-    // A renderer holding the session tokens is authoritative over them, as one
-    // served the store is over it below: a token it sends back empty is gone.
-    if (hasSecrets) sessionSecrets = sessionAfterSave(secrets, settings.profiles ?? [], sender)
-    await writeFile(settingsPath(), stripped, 'utf-8')
+    sessionSecrets = over(sessionSecrets)
+    await writePrivateFile(settingsPath(), stripped)
+    holds()
     return
   }
   // Secrets first: if the keychain write fails, the JSON on disk still holds the
   // previous values instead of being stripped with nowhere to read them from.
-  //
-  // A renderer that was served the secrets is authoritative: clearing a token
-  // in the UI removes it here too, and so does deleting a profile. One that
-  // never saw them can only add — its save is overlaid on the stored values,
-  // so the credentials it was never given survive.
-  const ids = (settings.profiles ?? []).map((p) => p.id)
-  const base = servedSecrets.has(sender) ? {} : (secretCache ?? (await loadSecrets()))
-  const merged = pruneSecrets(mergeSecretStores(base, secrets), ids, settings.profiles ?? [])
+  const merged = over(secretCache ?? (await loadSecrets()))
   await saveSecrets(merged)
   setSecretCache(merged)
   sessionSecrets = {}
-  await writeFile(settingsPath(), stripped, 'utf-8')
+  await writePrivateFile(settingsPath(), stripped)
+  holds()
 }
 
 // Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
@@ -720,11 +774,8 @@ const watchedRenderers = new WeakSet<WebContents>()
  * from then on it holds neither the stored nor the session secrets, and its
  * blanks are not clears until it is served them anew.
  */
-function served(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined, settings: AppSettings): void {
-  const id = senderOf(e)
-  if (hasSettingsSecrets(settings)) servedSecrets.add(id)
-  else servedSecrets.delete(id)
-  sessionHolders.add(id)
+function served(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefined, applied: SecretStore): void {
+  holdings.set(senderOf(e), secretView(applied))
   forgetOnReload(e)
 }
 
@@ -735,8 +786,7 @@ function forgetOnReload(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefin
   watchedRenderers.add(wc)
   const id = wc.id
   const forget = (): void => {
-    servedSecrets.delete(id)
-    sessionHolders.delete(id)
+    holdings.delete(id)
   }
   wc.on('did-navigate', forget)
   wc.on('render-process-gone', forget)
@@ -745,9 +795,13 @@ function forgetOnReload(e: Partial<Pick<IpcMainInvokeEvent, 'sender'>> | undefin
 
 export function registerSettingsHandlers(): void {
   void removeLegacySecretsIndex()
+  // Plain: whatever else unlocked the store this session (a push resolving its
+  // token, an AI call), a renderer gets the decrypted tokens only by asking for
+  // them — `settings:unlock`, which Settings calls when it opens. The tokens
+  // typed this session are applied either way: they are already the renderer's.
   ipcMain.handle('settings:get', async (e) => {
     const settings = withForcedOnboarding(await readSettings())
-    served(e, settings)
+    served(e, sessionSecrets)
     return settings
   })
   ipcMain.handle('settings:set', (e, settings: AppSettings) => {
@@ -760,7 +814,7 @@ export function registerSettingsHandlers(): void {
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
   ipcMain.handle('settings:unlock', async (e) => {
     const settings = withForcedOnboarding(await readSettingsWithSecrets('settings'))
-    served(e, settings)
+    served(e, secretCache ? { ...secretCache, ...sessionSecrets } : sessionSecrets)
     return settings
   })
 
@@ -787,7 +841,8 @@ export function registerSettingsHandlers(): void {
     })
     if (canceled || !filePath) return false
     try {
-      await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
+      // Owner-only: an export may carry the tokens, when the user opted in.
+      await writePrivateFile(filePath, JSON.stringify(data, null, 2))
       return true
     } catch {
       return false

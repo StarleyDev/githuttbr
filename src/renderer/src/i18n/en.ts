@@ -3357,6 +3357,7 @@ export const en = {
   'gitError.gitlabNotSaved': 'This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.',
   'gitError.ghesNoToken': 'No token for the GitHub Enterprise Server {host} is saved in this profile. Add one in Settings → Integrations → GitHub → GitHub Enterprise Server.',
   'gitError.bbsNoToken': 'No HTTP access token for the Bitbucket Data Center {host} is saved in this profile. Add one in Settings → Integrations → Bitbucket → Bitbucket Data Center.',
+  'gitError.heldTokenUnsavedServer': 'This token is already saved for another account or server, so it is not sent to a server no profile has saved yet. Use the token this server issued.',
   'gitError.bbsNoBrowse': 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.',
   'gitError.notBbsRepo': 'This is not a Bitbucket Data Center repository.',
   'gitError.bbsTokenUnrecognised': 'The Bitbucket Data Center server did not recognise this token. Check that it is valid and has not expired.',

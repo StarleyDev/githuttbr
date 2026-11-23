@@ -3358,6 +3358,7 @@ export const zhCN: Dict = {
   'gitError.gitlabNotSaved': '此 GitLab 地址尚未保存在任何配置文件中（必须使用 https）。请在 设置 → 集成 中保存，然后重试。',
   'gitError.ghesNoToken': '此配置文件中没有保存 GitHub Enterprise Server {host} 的令牌。请在 设置 → 集成 → GitHub → GitHub Enterprise Server 中添加。',
   'gitError.bbsNoToken': '此配置文件中没有保存 Bitbucket Data Center {host} 的 HTTP 访问令牌。请在 设置 → 集成 → Bitbucket → Bitbucket Data Center 中添加。',
+  'gitError.heldTokenUnsavedServer': '此令牌已为其他账户或服务器保存，因此不会发送到尚未被任何配置文件保存的服务器。请使用此服务器签发的令牌。',
   'gitError.bbsNoBrowse': 'Bitbucket Data Center 暂不支持浏览和创建仓库——请改用 URL 克隆。',
   'gitError.notBbsRepo': '这不是 Bitbucket Data Center 仓库。',
   'gitError.bbsTokenUnrecognised': 'Bitbucket Data Center 服务器无法识别此令牌。请检查它是否有效且未过期。',
