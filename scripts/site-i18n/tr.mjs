@@ -13,7 +13,7 @@ export const tr = {
   'foot.reportIssue': 'Sorun bildir',
   'foot.sponsor': 'Destek ol',
 
-  'meta.title': 'Gitcito — git’in tamamı, onu size gösteren bir arayüzle',
+  'meta.title': 'Git HuttBr — git’in tamamı, onu size gösteren bir arayüzle',
   'meta.description':
     'Baştan sona vibe coding ile yazılmış bir Git istemcisi. Ücretsiz. Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS — artı git’in yapabildiğini bilmediğiniz birkaç şey.',
 
@@ -23,11 +23,11 @@ export const tr = {
   'hero.download': 'Platformunuz için indirin',
   'hero.source': 'Kaynağı görüntüle',
   'hero.terms': 'Ücretsiz · MIT · v{version}',
-  'hero.graphAlt': 'Gitcito commit grafiği',
+  'hero.graphAlt': 'Git HuttBr commit grafiği',
 
   'features.title': 'Git’in yapabildiğini bilmediğiniz birkaç şey',
   'features.sub':
-    'Bunların hiçbiri Gitcito’yu kullanma sebebi değil — sebep yukarıdaki liste. Var olmalarının nedeni, git’in yanıtı zaten biliyor olması; Gitcito sadece soruyor.',
+    'Bunların hiçbiri Git HuttBr’yu kullanma sebebi değil — sebep yukarıdaki liste. Var olmalarının nedeni, git’in yanıtı zaten biliyor olması; Git HuttBr sadece soruyor.',
 
   'ordinary.title': 'Neler var',
   'ordinary.sub':
@@ -58,12 +58,12 @@ export const tr = {
   'handbook.title': 'Uygulamaya gömülü, {pages} sayfalık bir el kitabı',
   'handbook.sub': 'Her özellik açıklanmış — uygulamada çevrimdışı ve tam burada.',
 
-  'sponsor.title': 'Gitcito’ya destek olun',
+  'sponsor.title': 'Git HuttBr’ya destek olun',
   'sponsor.body':
     'Ücretsiz, MIT, arka uç yok, telemetri yok, üste satılacak bir şey yok — yani satın alınacak bir şey de yok. Sponsorluk, imzalı macOS yapılarının ihtiyaç duyduğu Apple Developer sertifikasını, el kitabını ve çevirileri karşılıyor. Hata bildirimleri de tam olarak o kadar değerli.',
   'sponsor.cta': 'GitHub üzerinden destek olun',
 
-  'doc.titleSuffix': 'Gitcito el kitabı',
+  'doc.titleSuffix': 'Git HuttBr el kitabı',
   'doc.filter': 'Sayfaları süz…',
   'doc.filterLabel': 'Sayfaları süz',
   'doc.edit': 'Bu sayfayı GitHub üzerinde düzenle',
@@ -116,5 +116,8 @@ export const tr = {
     'Arka uç yok. Token’lar ve kasa girdileri işletim sisteminizin anahtar zinciriyle şifrelenir — ve ne için olduğu size söylenip siz evet demeden o anahtar zincirine hiçbir şey dokunmaz.',
   'feature.cli.title': 'Gerçek bir CLI’si olan Git arayüzü',
   'feature.cli.body':
-    '`gitcito .` bir depoyu açar, `gitcito blame src/api.ts -l 84` onu tam o satırda açar, `gitcito doctor` ise hiç pencere açmaz — deponun neyi gerektirdiğini denetler ve CI’nizin okuyabileceği bir çıkış koduyla biter.'
+    '`gitcito .` bir depoyu açar, `gitcito blame src/api.ts -l 84` onu tam o satırda açar, `gitcito doctor` ise hiç pencere açmaz — deponun neyi gerektirdiğini denetler ve CI’nizin okuyabileceği bir çıkış koduyla biter.',
+  'feature.hosting.title': 'Her sunucuda pull request',
+  'feature.hosting.body':
+    'GitHub, GitLab, Bitbucket, Azure DevOps ve Forgejo\'da oluşturun, inceleyin ve birleştirin — şirketinizin kendi GitHub Enterprise, GitLab ve Bitbucket Data Center sunucularında da — gözden geçirenler, atananlar ve etiketler doğrudan depodan seçilir.'
 }

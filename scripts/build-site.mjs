@@ -198,7 +198,7 @@ const nav = (depth, locale = 'en') => {
   <div class="nav-inner">
     <a class="brand" href="${home}">
       <img src="${base}assets/gitcito-mark.png" alt="" width="28" height="28" />
-      <span>Gitcito</span>
+      <span>Git HuttBr</span>
     </a>
     <nav>
       <a href="${handbook}">${t('nav.handbook')}</a>
@@ -281,6 +281,7 @@ function enhanceProse(html) {
 // The landing page's headline cards, in display order. Each id is a handbook
 // page; the card's title and body live in `site-i18n/` as `feature.<id>.*`.
 const FEATURES = [
+  { icon: '🔀', id: 'hosting' },
   { icon: '🛡️', id: 'recovery' },
   { icon: '✏️', id: 'commit-edit' },
   { icon: '🔑', id: 'ai' },
@@ -300,7 +301,7 @@ const DOWNLOADS = [
 
 // A feature card shows the handbook page's own screenshot. The file is named
 // after the page id, bar the one case where the page covers more than its shot.
-const CARD_SHOT = { security: 'secret-masking', recovery: 'snapshots', ai: 'settings-ai', cli: 'cli-edit' }
+const CARD_SHOT = { security: 'secret-masking', recovery: 'snapshots', ai: 'settings-ai', cli: 'cli-edit', hosting: 'create-pr' }
 
 /** The card's screenshot, or null when there is none to show. */
 function cardShot(id) {

@@ -12,7 +12,7 @@ export const zhCN = {
   'foot.reportIssue': '报告问题',
   'foot.sponsor': '赞助',
 
-  'meta.title': 'Gitcito——git 的全部，配上一个让你看得见的界面',
+  'meta.title': 'Git HuttBr——git 的全部，配上一个让你看得见的界面',
   'meta.description':
     '一个完全由 vibe coding 写成的 Git 客户端。免费。提交图、逐行暂存、变基、工作树、子模块、LFS——外加几件你不知道 git 还能做的事。',
 
@@ -22,11 +22,11 @@ export const zhCN = {
   'hero.download': '下载适合你平台的版本',
   'hero.source': '查看源码',
   'hero.terms': '免费 · MIT · v{version}',
-  'hero.graphAlt': 'Gitcito 的提交图',
+  'hero.graphAlt': 'Git HuttBr 的提交图',
 
   'features.title': '几件你不知道 git 还能做的事',
   'features.sub':
-    '这些都不是你该用 Gitcito 的理由——上面那份清单才是。它们存在，只是因为 git 早就知道答案；Gitcito 不过是去问了一声。',
+    '这些都不是你该用 Git HuttBr 的理由——上面那份清单才是。它们存在，只是因为 git 早就知道答案；Git HuttBr 不过是去问了一声。',
 
   'ordinary.title': '你会得到什么',
   'ordinary.sub':
@@ -57,12 +57,12 @@ export const zhCN = {
   'handbook.title': '一本 {pages} 页的手册，内置在应用里',
   'handbook.sub': '每个功能都讲清楚——在应用里离线可读，这里也能读。',
 
-  'sponsor.title': '赞助 Gitcito',
+  'sponsor.title': '赞助 Git HuttBr',
   'sponsor.body':
     '免费、MIT、没有后端、没有遥测、没有任何东西要向你追加销售——所以也没有什么可买的。赞助用来支付签名版 macOS 构建所需的 Apple Developer 证书、手册和翻译。报告缺陷的价值一样大。',
   'sponsor.cta': '在 GitHub 上赞助',
 
-  'doc.titleSuffix': 'Gitcito 手册',
+  'doc.titleSuffix': 'Git HuttBr 手册',
   'doc.filter': '筛选页面…',
   'doc.filterLabel': '筛选页面',
   'doc.edit': '在 GitHub 上编辑此页',
@@ -115,5 +115,8 @@ export const zhCN = {
     '没有后端。令牌和保险库条目用你系统的钥匙串加密——而且在告诉你用途、你也点头之前，什么都不会碰那个钥匙串。',
   'feature.cli.title': '带有真正命令行的 Git 图形客户端',
   'feature.cli.body':
-    '`gitcito .` 打开仓库，`gitcito blame src/api.ts -l 84` 直接定位到那一行，而 `gitcito doctor` 根本不打开窗口——它检查仓库的要求，并以 CI 能读懂的退出码结束。'
+    '`gitcito .` 打开仓库，`gitcito blame src/api.ts -l 84` 直接定位到那一行，而 `gitcito doctor` 根本不打开窗口——它检查仓库的要求，并以 CI 能读懂的退出码结束。',
+  'feature.hosting.title': '在任何服务器上处理拉取请求',
+  'feature.hosting.body':
+    '在 GitHub、GitLab、Bitbucket、Azure DevOps 和 Forgejo 上创建、审查和合并——公司自建的 GitHub Enterprise、GitLab 和 Bitbucket Data Center 服务器同样支持——审查者、负责人和标签直接从仓库中选择。'
 }

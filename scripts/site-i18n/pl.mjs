@@ -13,7 +13,7 @@ export const pl = {
   'foot.reportIssue': 'Zgłoś problem',
   'foot.sponsor': 'Wesprzyj',
 
-  'meta.title': 'Gitcito — cały git, z interfejsem, który ci go pokazuje',
+  'meta.title': 'Git HuttBr — cały git, z interfejsem, który ci go pokazuje',
   'meta.description':
     'Klient Gita napisany w całości vibe codingiem. Za darmo. Graf, przechowalnia z dokładnością do linii, rebase, worktree, podmoduły, LFS — plus kilka rzeczy, których nikt się po gicie nie spodziewa.',
 
@@ -23,11 +23,11 @@ export const pl = {
   'hero.download': 'Pobierz na swoją platformę',
   'hero.source': 'Zobacz źródła',
   'hero.terms': 'Za darmo · MIT · v{version}',
-  'hero.graphAlt': 'Graf commitów w Gitcito',
+  'hero.graphAlt': 'Graf commitów w Git HuttBr',
 
   'features.title': 'Kilka rzeczy, których nikt się po gicie nie spodziewa',
   'features.sub':
-    'Żadna z nich nie jest powodem, by używać Gitcito — jest nim lista powyżej. Istnieją dlatego, że git zna już odpowiedź; Gitcito po prostu o nią pyta.',
+    'Żadna z nich nie jest powodem, by używać Git HuttBr — jest nim lista powyżej. Istnieją dlatego, że git zna już odpowiedź; Git HuttBr po prostu o nią pyta.',
 
   'ordinary.title': 'Co dostajesz',
   'ordinary.sub':
@@ -59,12 +59,12 @@ export const pl = {
   'handbook.title': 'Podręcznik na {pages} stron, wbudowany w aplikację',
   'handbook.sub': 'Każda funkcja wyjaśniona — offline w aplikacji i tutaj.',
 
-  'sponsor.title': 'Wesprzyj Gitcito',
+  'sponsor.title': 'Wesprzyj Git HuttBr',
   'sponsor.body':
     'Za darmo, na licencji MIT, bez backendu, bez telemetrii, bez niczego do dosprzedania — więc nie ma tu czego kupować. Wsparcie opłaca certyfikat Apple Developer, którego potrzebują podpisane kompilacje dla macOS, podręcznik i tłumaczenia. Zgłoszenia błędów są warte dokładnie tyle samo.',
   'sponsor.cta': 'Wesprzyj w serwisie GitHub',
 
-  'doc.titleSuffix': 'Podręcznik Gitcito',
+  'doc.titleSuffix': 'Podręcznik Git HuttBr',
   'doc.filter': 'Filtruj strony…',
   'doc.filterLabel': 'Filtruj strony',
   'doc.edit': 'Edytuj tę stronę w serwisie GitHub',
@@ -117,5 +117,8 @@ export const pl = {
     'Żadnego backendu. Tokeny i wpisy sejfu są szyfrowane pękiem kluczy twojego systemu — a nic nie dotyka tego pęku, dopóki nie usłyszysz po co i się nie zgodzisz.',
   'feature.cli.title': 'Graficzny klient Gita z prawdziwym CLI',
   'feature.cli.body':
-    '`gitcito .` otwiera repozytorium, `gitcito blame src/api.ts -l 84` otwiera je w tym wierszu, a `gitcito doctor` nie otwiera żadnego okna — sprawdza, czego wymaga repozytorium, i kończy się kodem, który odczyta twoje CI.'
+    '`gitcito .` otwiera repozytorium, `gitcito blame src/api.ts -l 84` otwiera je w tym wierszu, a `gitcito doctor` nie otwiera żadnego okna — sprawdza, czego wymaga repozytorium, i kończy się kodem, który odczyta twoje CI.',
+  'feature.hosting.title': 'Pull requesty na każdym serwerze',
+  'feature.hosting.body':
+    'Twórz, recenzuj i scalaj na GitHubie, GitLabie, Bitbuckecie, Azure DevOps i Forgejo — także na serwerach własnej firmy: GitHub Enterprise, GitLab i Bitbucket Data Center — z recenzentami, przypisanymi osobami i etykietami wybranymi z repozytorium.'
 }
