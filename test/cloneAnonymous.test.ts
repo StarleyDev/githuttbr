@@ -2,11 +2,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { anonymousGitEnv } from '../src/main/gitCredentialEnv'
 import { gitService } from '../src/main/git'
+import { credentialConfig } from './credentialConfig'
 
 // A clone for a picked profile that has no credential must be anonymous. Left to
 // git, "the machine" — a credential manager holding another account's login for
@@ -46,6 +47,19 @@ const machineEnv = (): NodeJS.ProcessEnv => ({
 const reset = (): void => {
   rmSync(marker, { force: true })
   rmSync(askpassMarker, { force: true })
+}
+
+const fillPath = (env: NodeJS.ProcessEnv, path: string): string => {
+  try {
+    return execFileSync('git', ['credential', 'fill'], {
+      input: `protocol=https\nhost=github.com\npath=${path}\n\n`,
+      env,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
+  } catch {
+    return ''
+  }
 }
 
 const fill = (env: NodeJS.ProcessEnv, host = 'github.com'): string => {
@@ -89,25 +103,71 @@ describe('anonymousGitEnv against real git', () => {
     // `git -c`'s own variable, so git older than 2.31 honours it too; the
     // config-from-environment entries are left alone.
     expect(extra.GIT_CONFIG_COUNT).toBeUndefined()
-    expect(extra.GIT_CONFIG_PARAMETERS).toBe("'user.email=kept@example.com' 'credential.https://github.com.helper='")
+    expect(extra.GIT_CONFIG_PARAMETERS).toBe(
+      "'user.email=kept@example.com' 'credential.https://github.com.helper=' 'credential.https://github.com.useHttpPath=true'"
+    )
     const env = { ...base, ...extra }
     expect(execFileSync('git', ['config', 'user.name'], { env, encoding: 'utf8' }).trim()).toBe('kept')
     expect(execFileSync('git', ['config', 'user.email'], { env, encoding: 'utf8' }).trim()).toBe('kept@example.com')
     expect(fill(env)).not.toContain('machine-secret')
   })
 
-  it('repository scope blanks the helpers for that one repository', () => {
+  it('a server scope blanks the helpers under its base only', () => {
     const base = machineEnv()
-    const env = { ...base, ...anonymousGitEnv('https://github.com/acme/widgets.git', base, 'repository') }
-    expect(fill(env)).not.toContain('machine-secret')
-    expect(existsSync(marker)).toBe(false)
-    // Another repository on the same host is left to git, as before.
-    const other = execFileSync('git', ['credential', 'fill'], {
-      input: 'protocol=https\nhost=github.com\npath=acme/other.git\n\n',
-      env: { ...base, GIT_CONFIG_PARAMETERS: env.GIT_CONFIG_PARAMETERS },
-      encoding: 'utf8'
-    })
-    expect(other).toContain('password=machine-secret')
+    const scope = { prefix: 'https://github.com/acme' }
+    for (const configCount of [false, true]) {
+      const env = { ...base, ...anonymousGitEnv('https://github.com/acme/widgets.git', base, scope, { configCount }) }
+      expect(fill(env)).not.toContain('machine-secret')
+      expect(existsSync(marker)).toBe(false)
+      // Another repository under the base, as after a redirect: still nobody.
+      expect(fillPath(env, 'acme/widgets')).not.toContain('machine-secret')
+      // Outside the base, on the same host: left to git, as before.
+      expect(fillPath(env, 'other/repo.git')).toContain('password=machine-secret')
+      reset()
+    }
+  })
+
+  // The old `'key=value'` form splits at the first `=`, and a URL path keeps
+  // `= ! $ ; '` raw: a path holding `.helper=!cmd` made the rest the value of
+  // a `credential.<url>.helper`, run as a shell command on the first 401.
+  it('nothing a URL path holds reaches the key: no command runs, one empty helper entry', () => {
+    const pwned = join(dir, 'pwned')
+    const hostile = [
+      `/o/r.helper=!touch$IFS${pwned};.git`,
+      `/o/r.helper=!touch$IFS${pwned}`,
+      `/o/r/.helper=!touch$IFS${pwned}`,
+      "/o/it's;$HOME!=x.git",
+      '/o/with space/and%20percent%3D/r.git',
+      '/o/%41%2F%3D%27/r.git'
+    ]
+    for (const path of hostile) {
+      const url = `https://github.com${path}`
+      const base = machineEnv()
+      for (const scope of ['host', { prefix: 'https://github.com/o' }] as const) {
+        for (const configCount of [false, true]) {
+          const extra = anonymousGitEnv(url, base, scope, { configCount })
+          expect(extra, path).not.toBeNull()
+          const context = scope === 'host' ? 'https://github.com' : 'https://github.com/o'
+          expect(credentialConfig(extra), path).toEqual([
+            `credential.${context}.helper`,
+            `credential.${context}.usehttppath true`
+          ])
+          const env = { ...base, ...extra }
+          expect(fillPath(env, new URL(url).pathname.slice(1))).not.toContain('machine-secret')
+          expect(readdirSync(dir).filter((f) => f.startsWith('pwned')), path).toEqual([])
+          expect(existsSync(marker), path).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('a configured base is encoded too, and a line break or a hostile host is refused', () => {
+    const extra = anonymousGitEnv('https://h.example/a=b!c/r.git', {}, { prefix: 'https://h.example/a=b!c' })
+    expect(credentialConfig(extra)).toContain('credential.https://h.example/a%3Db%21c.helper')
+    expect(anonymousGitEnv('https://github.com/a\n/b.git')).toBeNull()
+    expect(anonymousGitEnv('https://github.com/a\r/b.git')).toBeNull()
+    expect(anonymousGitEnv('https://x.helper=!id/r.git')).toBeNull()
+    expect(anonymousGitEnv('https://h.example/%zz/r.git', {}, { prefix: 'https://h.example' })).toBeNull()
   })
 
   it('has nothing to say for a URL with no credential step', () => {
