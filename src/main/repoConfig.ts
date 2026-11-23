@@ -65,23 +65,33 @@ function relativeInside(repoPath: string, value: string): string | undefined {
 }
 
 /**
+ * The config file actually present: `.githuttbr.json`, else upstream's
+ * `.gitcito.json`, with its raw text. Null when the repository has neither.
+ * The CLI's `config show` prints the text as written, so this stops short of
+ * parsing.
+ */
+export async function findRepoConfigFile(repoPath: string): Promise<{ path: string; raw: string } | null> {
+  for (const name of REPO_CONFIG_FILES) {
+    const path = join(repoPath, name)
+    try {
+      return { path, raw: await readFile(path, 'utf8') }
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
+/**
  * The repository's config: `.githuttbr.json`, else upstream's `.gitcito.json`.
  * `path` names the file actually read, so the editor can say which one it is;
  * with neither present it is where a save would create one.
  */
 export async function readRepoConfig(repoPath: string): Promise<RepoConfigResult> {
-  for (const name of REPO_CONFIG_FILES) {
-    const path = join(repoPath, name)
-    let raw: string
-    try {
-      raw = await readFile(path, 'utf8')
-    } catch {
-      continue
-    }
-    const { config, issues } = parseRepoConfig(raw)
-    return { path, exists: true, config, issues }
-  }
-  return { path: join(repoPath, REPO_CONFIG_FILE), exists: false, config: null, issues: [] }
+  const found = await findRepoConfigFile(repoPath)
+  if (!found) return { path: join(repoPath, REPO_CONFIG_FILE), exists: false, config: null, issues: [] }
+  const { config, issues } = parseRepoConfig(found.raw)
+  return { path: found.path, exists: true, config, issues }
 }
 
 /**

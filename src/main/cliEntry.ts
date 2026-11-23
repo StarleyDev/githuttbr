@@ -10,7 +10,8 @@
  *
  * The contract with a caller is git's contract: text on stdout, diagnostics on
  * stderr, and an exit code that means something. `githuttbr doctor` in a CI job
- * is the whole point — the guard rails a repository declares in `.gitcito.json`
+ * is the whole point — the guard rails a repository declares in `.githuttbr.json`
+ * (or upstream's `.gitcito.json`)
  * are worth little if only the person with the GUI open ever sees them.
  */
 
@@ -21,11 +22,17 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { readFile, writeFile } from 'node:fs/promises'
 import { existsSync, readFileSync } from 'node:fs'
-import { join, resolve, isAbsolute } from 'node:path'
+import { basename, join, resolve, isAbsolute } from 'node:path'
 import { homedir } from 'node:os'
 import { REPO_CONFIG_FILE, isRepoConfigEmpty, parseRepoConfig, serializeRepoConfig } from '../shared/repoConfig'
 import { knownRepos, matchesRepo, resolveRepo } from '../shared/cliRepos'
-import { readRepoConfig, runRepoDoctor, applyDoctorFix, suggestRepoConfig } from './repoConfig'
+import {
+  findRepoConfigFile,
+  readRepoConfig,
+  runRepoDoctor,
+  applyDoctorFix,
+  suggestRepoConfig
+} from './repoConfig'
 import { checkCommitMessage, type CommitCheckIssue } from '../shared/commitCheck'
 import type { DoctorCheck, RepoConfig } from '../shared/types'
 import { PRODUCT_NAME } from '../shared/brand'
@@ -132,9 +139,9 @@ function doctorLine(check: DoctorCheck): string {
 async function cmdDoctor(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
   const root = await repoRoot(args.rest[0])
-  const { config } = await readRepoConfig(root)
+  const { config, path } = await readRepoConfig(root)
   if (!config?.requires) {
-    out(`${dim('No requirements declared in')} ${REPO_CONFIG_FILE}${dim('.')}`)
+    out(`${dim('No requirements declared in')} ${basename(path)}${dim('.')}`)
     out(dim(`Run \`githuttbr config init\` to propose one from what this repository already contains.`))
     return 0
   }
@@ -153,7 +160,7 @@ async function cmdDoctor(argv: string[]): Promise<number> {
     checks = await runRepoDoctor(root)
   }
 
-  out(bold(`Doctor · ${root}`))
+  out(`${bold(`Doctor · ${root}`)} ${dim(`(${basename(path)})`)}`)
   for (const check of checks) {
     out(doctorLine(check))
     if (check.why) out(`      ${dim(check.why)}`)
@@ -206,7 +213,7 @@ async function cmdStatus(argv: string[]): Promise<number> {
   const counts = countPorcelain(porcelain)
   const ahead = upstream ? await gitOr(root, ['rev-list', '--count', `${upstream}..HEAD`], '0') : '0'
   const behind = upstream ? await gitOr(root, ['rev-list', '--count', `HEAD..${upstream}`], '0') : '0'
-  const { config } = await readRepoConfig(root)
+  const { config, path: configPath } = await readRepoConfig(root)
 
   const tracking = upstream
     ? `${dim('→')} ${upstream}${Number(ahead) ? ` ${green(`↑${ahead}`)}` : ''}${Number(behind) ? ` ${yellow(`↓${behind}`)}` : ''}`
@@ -227,7 +234,7 @@ async function cmdStatus(argv: string[]): Promise<number> {
 
   if (config) {
     const protectedHere = (config.protect ?? []).some((p) => branchMatchesGlob(p, branch))
-    if (protectedHere) out(`  ${WARN} ${branch} is protected by ${REPO_CONFIG_FILE}`)
+    if (protectedHere) out(`  ${WARN} ${branch} is protected by ${basename(configPath)}`)
     const checklist = config.checklist?.push ?? []
     if (checklist.length) {
       out()
@@ -297,38 +304,43 @@ async function cmdConfig(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
   const [sub, dir] = args.rest
   const root = await repoRoot(dir)
-  const file = join(root, REPO_CONFIG_FILE)
+  // Read from whichever file the repository has — upstream's `.gitcito.json`
+  // counts — and name that one; `init` only ever writes `.githuttbr.json`.
+  const found = await findRepoConfigFile(root)
+  const name = found ? basename(found.path) : REPO_CONFIG_FILE
 
   switch (sub) {
     case undefined:
     case 'show': {
-      const raw = await readFile(file, 'utf8').catch(() => '')
-      if (!raw) {
+      if (!found?.raw) {
         out(dim(`No ${REPO_CONFIG_FILE} in ${root}.`))
         return 0
       }
-      out(raw.trimEnd())
+      // The name on stderr: stdout stays the file, fit to pipe back into one.
+      err(dim(`${name} in ${root}`))
+      out(found.raw.trimEnd())
       return 0
     }
     case 'check': {
-      const raw = await readFile(file, 'utf8').catch(() => '')
-      if (!raw) {
+      if (!found?.raw) {
         err(`githuttbr: no ${REPO_CONFIG_FILE} in ${root}`)
         return 2
       }
-      const { config, issues } = parseRepoConfig(raw)
+      const { config, issues } = parseRepoConfig(found.raw)
       if (!config) {
-        out(`${FAIL} ${REPO_CONFIG_FILE} could not be read as a v1 config.`)
+        out(`${FAIL} ${name} could not be read as a v1 config.`)
         for (const i of issues) out(`  ${FAIL} ${i.field}: ${i.code}`)
         return 1
       }
       for (const i of issues) out(`  ${WARN} ${i.field}: ${i.code} ${dim('(dropped)')}`)
-      out(issues.length ? `${WARN} ${issues.length} field(s) dropped; the rest applies.` : `${OK} ${REPO_CONFIG_FILE} is valid.`)
+      out(issues.length ? `${WARN} ${issues.length} field(s) dropped; the rest applies.` : `${OK} ${name} is valid.`)
       return 0
     }
     case 'init': {
-      if (existsSync(file) && !args.has('force')) {
-        err(`githuttbr: ${REPO_CONFIG_FILE} already exists — pass --force to overwrite`)
+      // A legacy file counts as existing: a new `.githuttbr.json` would shadow
+      // its rules, which is an overwrite in effect if not on disk.
+      if (found && !args.has('force')) {
+        err(`githuttbr: ${name} already exists — pass --force to overwrite`)
         return 2
       }
       const suggested = await suggestRepoConfig(root)
@@ -341,8 +353,11 @@ async function cmdConfig(argv: string[]): Promise<number> {
         out(text)
         return 0
       }
-      await writeFile(file, text, 'utf8')
+      await writeFile(join(root, REPO_CONFIG_FILE), text, 'utf8')
       out(`${OK} Wrote ${REPO_CONFIG_FILE}`)
+      if (found && name !== REPO_CONFIG_FILE) {
+        out(dim(`${name} is left as it was; this app reads ${REPO_CONFIG_FILE} from now on.`))
+      }
       out(dim('Review it before committing — it becomes every teammate’s rules.'))
       summarizeConfig(suggested)
       return 0
