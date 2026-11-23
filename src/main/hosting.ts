@@ -106,13 +106,17 @@ import {
   applyGithubPrMeta,
   azureMetaBody,
   azurePickerOptions,
+  azureReviewerIds,
   bitbucketCloudJson,
   bitbucketMetaBody,
   bitbucketPickerOptions,
+  bitbucketReviewerIds,
+  createWithoutRejectedReviewers,
   githubPickerOptions,
   gitlabMetaBody,
   gitlabMetaMissing,
   gitlabPickerOptions,
+  PrCreateError,
   reviewersMissing
 } from './prMeta'
 import { mergeStackSection } from '../shared/stackPr'
@@ -151,6 +155,7 @@ import type {
   ProjectFieldGroup,
   PrReviewEvent,
   PrMergeMethod,
+  PrMetaField,
   PrPickerOptions,
   ReleaseInfo,
   RemoteOwner,
@@ -1172,26 +1177,30 @@ async function createPullRequest(
   // Bitbucket pull request
   if (parsed.provider === 'bitbucket') {
     if (!auth) throw await noCredential('Bitbucket', remoteUrl)
-    const res = await fetch(
-      `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests`,
-      {
-        method: 'POST',
-        headers: { Authorization: bitbucketAuthFor(auth), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: opts.title,
-          description: opts.body,
-          source: { branch: { name: opts.source } },
-          destination: { branch: { name: opts.target } },
-          ...bitbucketMetaBody(opts)
-        })
+    // A reviewer bitbucket.org refuses (the author, someone without access) costs the reviewers, not the PR.
+    const { result: d, dropped } = await createWithoutRejectedReviewers(opts, async (o) => {
+      const res = await fetch(
+        `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests`,
+        {
+          method: 'POST',
+          headers: { Authorization: bitbucketAuthFor(auth), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: o.title,
+            description: o.body,
+            source: { branch: { name: o.source } },
+            destination: { branch: { name: o.target } },
+            ...bitbucketMetaBody(o)
+          })
+        }
+      )
+      if (!res.ok) {
+        const e = (await res.json().catch(() => null)) as { error?: { message?: string; fields?: unknown } } | null
+        const fields = e?.error?.fields && typeof e.error.fields === 'object' ? Object.keys(e.error.fields) : []
+        throw new PrCreateError(`Bitbucket: ${e?.error?.message || `API error (${res.status})`}`, res.status, fields)
       }
-    )
-    if (!res.ok) {
-      const d = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-      throw new Error(`Bitbucket: ${d?.error?.message || `API error (${res.status})`}`)
-    }
-    const d = (await res.json()) as { id: number; links: { html: { href: string } }; reviewers?: unknown[] }
-    const metaFailed = reviewersMissing(opts, d.reviewers)
+      return (await res.json()) as { id: number; links: { html: { href: string } }; reviewers?: unknown }
+    })
+    const metaFailed: PrMetaField[] = dropped ? ['reviewers'] : reviewersMissing(opts, bitbucketReviewerIds(d.reviewers))
     return { url: d.links.html.href, number: d.id, ...(metaFailed.length ? { metaFailed } : {}) }
   }
 
@@ -1228,18 +1237,25 @@ async function createPullRequest(
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
   const repoApi = `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}`
   const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
-  const d = await ado<{ pullRequestId: number }>(`${repoApi}/pullrequests?api-version=7.1`, {
-    method: 'POST',
-    body: JSON.stringify({
-      sourceRefName: `refs/heads/${opts.source}`,
-      targetRefName: `refs/heads/${opts.target}`,
-      title: opts.title,
-      description: opts.body,
-      isDraft: opts.draft,
-      ...azureMetaBody(opts)
+  // A reviewer Azure refuses (a 400 naming an identity it cannot add) costs the reviewers, not the PR.
+  const { result: d, dropped } = await createWithoutRejectedReviewers(opts, (o) =>
+    ado<{ pullRequestId: number; reviewers?: unknown }>(`${repoApi}/pullrequests?api-version=7.1`, {
+      method: 'POST',
+      body: JSON.stringify({
+        sourceRefName: `refs/heads/${o.source}`,
+        targetRefName: `refs/heads/${o.target}`,
+        title: o.title,
+        description: o.body,
+        isDraft: o.draft,
+        ...azureMetaBody(o)
+      })
     })
-  })
-  const metaFailed = await applyAzureLabels(repoApi, d.pullRequestId, opts.labels, ado)
+  )
+  const metaFailed: PrMetaField[] = [
+    // Azure answers with the reviewers it kept; an answer without the list is not read as a refusal.
+    ...(dropped ? (['reviewers'] as const) : Array.isArray(d.reviewers) ? reviewersMissing(opts, azureReviewerIds(d.reviewers)) : []),
+    ...(await applyAzureLabels(repoApi, d.pullRequestId, opts.labels, ado))
+  ]
   return {
     url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${d.pullRequestId}`,
     number: d.pullRequestId,
@@ -1252,6 +1268,9 @@ async function createPullRequest(
  * assignees and labels the host takes, and the choices for each. A list the
  * token cannot read is reported in `failed` rather than thrown, so the dialog
  * still opens the PR; only a missing credential throws, as createPR would.
+ *
+ * Every read here is a plain one on every host: no retry that evicts a
+ * borrowed credential. Opening a dialog must never cost the user a saved login.
  */
 async function prPickerOptions(remoteUrl: string, tokens: HostTokens): Promise<PrPickerOptions> {
   const parsed = parseRemoteUrl(remoteUrl)
@@ -1278,9 +1297,10 @@ async function prPickerOptions(remoteUrl: string, tokens: HostTokens): Promise<P
     return bitbucketPickerOptions(parsed.owner, parsed.repo, bitbucketCloudJson(bitbucketAuthFor(auth)))
   }
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
-  return azurePickerOptions(parsed.owner, parsed.project, (url, init) =>
-    withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
-  )
+  // A plain read, never withAzureRetry: a token without the Project and Team
+  // read scope answers 401 here, and that must cost only the list — not evict
+  // the git credential the user's pushes and the create itself rely on.
+  return azurePickerOptions(parsed.owner, parsed.project, (url, init) => adoJson(url, auth.token, init))
 }
 
 /** Resolve a GitHub remote to {owner, repo} or throw (these B2 ops are GitHub-only for now). */
@@ -2387,42 +2407,6 @@ async function createIssue(
 }
 
 /**
- * Best-effort apply reviewers / labels / assignees to a PR after creation.
- * Each call is independent; a failure on one doesn't block the others.
- */
-async function applyPrMeta(
-  remoteUrl: string,
-  tokens: { github?: string },
-  number: number,
-  meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
-): Promise<void> {
-  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
-  const tasks: Promise<unknown>[] = []
-  if (meta.reviewers?.length)
-    tasks.push(
-      ghJson(`${api}/pulls/${number}/requested_reviewers`, token, {
-        method: 'POST',
-        body: JSON.stringify({ reviewers: meta.reviewers })
-      }).catch(() => {})
-    )
-  if (meta.labels?.length)
-    tasks.push(
-      ghJson(`${api}/issues/${number}/labels`, token, {
-        method: 'POST',
-        body: JSON.stringify({ labels: meta.labels })
-      }).catch(() => {})
-    )
-  if (meta.assignees?.length)
-    tasks.push(
-      ghJson(`${api}/issues/${number}/assignees`, token, {
-        method: 'POST',
-        body: JSON.stringify({ assignees: meta.assignees })
-      }).catch(() => {})
-    )
-  await Promise.all(tasks)
-}
-
-/**
  * Which of these head branches have a MERGED pull request (GitHub only)?
  * This is how squash-merged stack bottoms get detected: the squashed patch
  * leaves no ancestry a local git can follow, but the host knows the PR landed.
@@ -3471,14 +3455,5 @@ export function registerHostingHandlers(): void {
     'hosting:createIssue',
     (remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
       createIssue(remoteUrl, tokens, opts)
-  )
-  handleForRepo(
-    'hosting:applyPrMeta',
-    (
-      remoteUrl: string,
-      tokens: { github?: string },
-      number: number,
-      meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
-    ) => applyPrMeta(remoteUrl, tokens, number, meta)
   )
 }

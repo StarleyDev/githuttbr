@@ -1,5 +1,5 @@
 import { countChecks } from './ciSummary'
-import { collectPickerOptions, PICKER_MAX_PAGES, reviewersMissing } from './prMeta'
+import { bbsReviewerIds, collectPickerOptions, createWithoutRejectedReviewers, PICKER_MAX_PAGES, reviewersMissing } from './prMeta'
 import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
 import {
@@ -19,6 +19,7 @@ import type {
   PrDetail,
   PrFile,
   PrMergeMethod,
+  PrMetaField,
   PrPickerOptions,
   PrPickerPerson,
   PrReview,
@@ -59,9 +60,12 @@ import type {
 /** A failed Data Center request, with its status so a caller can degrade quietly. */
 export class BitbucketServerError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** The `exceptionName` of each error, when the server named one — how a reviewer refusal is told apart. */
+  exceptions: string[]
+  constructor(status: number, message: string, exceptions: string[] = []) {
     super(message ? `Bitbucket Data Center: ${message}` : `Bitbucket Data Center API error (${status})`)
     this.status = status
+    this.exceptions = exceptions
   }
 }
 
@@ -89,12 +93,13 @@ async function bbsResponse(url: string, token: string, init?: RequestInit): Prom
   })
   if (!res.ok) {
     // Errors come as `{ errors: [{ message }] }`.
-    const d = (await res.json().catch(() => null)) as { errors?: Array<{ message?: unknown }> } | null
+    const d = (await res.json().catch(() => null)) as { errors?: Array<{ message?: unknown; exceptionName?: unknown }> } | null
     const msg = (d?.errors ?? [])
       .map((e) => (typeof e?.message === 'string' ? e.message.trim() : ''))
       .filter(Boolean)
       .join('; ')
-    throw new BitbucketServerError(res.status, msg)
+    const exceptions = (d?.errors ?? []).flatMap((e) => (typeof e?.exceptionName === 'string' ? [e.exceptionName] : []))
+    throw new BitbucketServerError(res.status, msg, exceptions)
   }
   return res
 }
@@ -752,20 +757,24 @@ export async function createBbsPull(repo: BitbucketServerRepo, token: string, op
     id: `refs/heads/${branch}`,
     repository: { slug: repo.repoSlug, project: { key: repo.projectKey } }
   })
-  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests`, token, {
-    method: 'POST',
-    body: JSON.stringify({
-      title: opts.title,
-      description: opts.body,
-      fromRef: ref(opts.source),
-      toRef: ref(opts.target),
-      // Drafts arrived in 8.18; an older server is only told about one when asked for.
-      ...(opts.draft ? { draft: true } : {}),
-      // Reviewers by user name, the shape the create resource documents.
-      ...(opts.reviewers?.length ? { reviewers: opts.reviewers.map((name) => ({ user: { name } })) } : {})
+  // A reviewer the server refuses (InvalidPullRequestReviewersException, a 409)
+  // costs the reviewers, not the pull request.
+  const { result: pr, dropped } = await createWithoutRejectedReviewers(opts, (o) =>
+    bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests`, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: o.title,
+        description: o.body,
+        fromRef: ref(o.source),
+        toRef: ref(o.target),
+        // Drafts arrived in 8.18; an older server is only told about one when asked for.
+        ...(o.draft ? { draft: true } : {}),
+        // Reviewers by user name, the shape the create resource documents.
+        ...(o.reviewers?.length ? { reviewers: o.reviewers.map((name) => ({ user: { name } })) } : {})
+      })
     })
-  })
-  const metaFailed = reviewersMissing(opts, pr.reviewers)
+  )
+  const metaFailed: PrMetaField[] = dropped ? ['reviewers'] : reviewersMissing(opts, bbsReviewerIds(pr.reviewers))
   return {
     url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id),
     number: pr.id,
@@ -795,6 +804,8 @@ export async function bbsPickerOptions(repo: BitbucketServerRepo, token: string)
         )
         return withoutSelf(uniqueById(people), me?.name)
       }
-    }
+    },
+    // A reviewer is a user name, so one can be typed when the list could not be read.
+    { people: true }
   )
 }

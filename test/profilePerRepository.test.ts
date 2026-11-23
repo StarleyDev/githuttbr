@@ -86,7 +86,8 @@ const PICKER: Provider['ops'][number] = ['hosting:prPickerOptions']
 const GITHUB_ONLY: Provider['ops'] = [
   ['hosting:createPR', { title: 'T', body: '', source: 'feature', target: 'main', draft: false }],
   ['hosting:updatePR', 1, { base: 'main' }],
-  ['hosting:applyPrMeta', 1, { labels: ['bug'] }],
+  // With picks: the reviewer / assignee / label calls after the create run as the same profile.
+  ['hosting:createPR', { title: 'T', body: '', source: 'feature', target: 'main', draft: false, reviewers: ['ana'], labels: ['bug'] }],
   ['hosting:mergedPrHeads', ['feature']],
   ['hosting:listReleases'],
   ['hosting:milestoneIssues', 1]

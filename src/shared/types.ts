@@ -1003,13 +1003,17 @@ export interface PrPickerLabel {
 /** What the create dialog can offer for one remote. */
 export interface PrPickerOptions {
   supports: Record<PrMetaField, boolean>
-  /** Labels the host accepts by name without a list to pick from (Azure DevOps). */
+  /** The host takes a typed label it does not list yet, and creates it (GitHub, GitLab, Azure DevOps). */
   freeLabels?: boolean
+  /** A person's id is their login, so one can be typed when the list could not be read (GitHub, Data Center). */
+  freePeople?: boolean
   reviewers: PrPickerPerson[]
   assignees: PrPickerPerson[]
   labels: PrPickerLabel[]
   /** Supported fields whose choices could not be read. */
   failed: PrMetaField[]
+  /** Fields whose list was read only in part (a cap, or a part that failed): someone may be missing. */
+  partial?: PrMetaField[]
 }
 
 export interface BlameLine {

@@ -1,4 +1,4 @@
-import { labelColor, prMetaSupport, sortLabels, uniqueById, withoutSelf } from '../shared/prMeta'
+import { labelColor, PR_META_FIELDS, prMetaSupport, sortLabels, uniqueById, withoutSelf } from '../shared/prMeta'
 import type { CreatePrOpts, PrMetaField, PrPickerLabel, PrPickerOptions, PrPickerPerson } from '../shared/types'
 
 /**
@@ -25,31 +25,40 @@ export type Json = <T>(url: string, init?: RequestInit) => Promise<T>
 /** At most this many pages of 100 are read per list — a thousand people or labels. */
 export const PICKER_MAX_PAGES = 10
 
-/** Page-numbered lists (GitHub, GitLab): stop at a short page, or at the cap. */
-async function numberedPages<T>(url: (page: number) => string, json: Json): Promise<T[]> {
+/**
+ * Page-numbered lists (GitHub, GitLab): stop at a short page, or at the cap —
+ * where a full last page means there may be more, said through `partial`.
+ */
+async function numberedPages<T>(url: (page: number) => string, json: Json, partial?: () => void): Promise<T[]> {
   const out: T[] = []
   for (let page = 1; page <= PICKER_MAX_PAGES; page++) {
     const items = (await json<T[]>(url(page))) ?? []
     out.push(...items)
-    if (items.length < 100) break
+    if (items.length < 100) return out
   }
+  partial?.()
   return out
 }
 
-type Loader<T> = (() => Promise<T[]>) | undefined
+/** A list read. `partial` says the host has more than was read, so the dialog can say the list may be incomplete. */
+type Loader<T> = ((partial: () => void) => Promise<T[]>) | undefined
 
 /**
  * Run each supported list on its own: one the token may not read (labels, say)
  * fails alone and is reported in `failed`, and the others still fill in.
+ * `free` names what a typed entry can stand for: labels the host creates by
+ * name, and people whose id is their login (so one can be typed when the list
+ * could not be read).
  */
 export async function collectPickerOptions(
   supports: Record<PrMetaField, boolean>,
   loaders: { reviewers?: Loader<PrPickerPerson>; assignees?: Loader<PrPickerPerson>; labels?: Loader<PrPickerLabel> },
-  freeLabels = false
+  free: { labels?: boolean; people?: boolean } = {}
 ): Promise<PrPickerOptions> {
+  const partial = new Set<PrMetaField>()
   const run = async <T>(field: PrMetaField, load: Loader<T>): Promise<T[] | null> => {
     if (!supports[field] || !load) return []
-    return load().catch(() => null)
+    return load(() => partial.add(field)).catch(() => null)
   }
   const [reviewers, assignees, labels] = await Promise.all([
     run('reviewers', loaders.reviewers),
@@ -60,9 +69,12 @@ export async function collectPickerOptions(
   if (reviewers === null) failed.push('reviewers')
   if (assignees === null) failed.push('assignees')
   if (labels === null) failed.push('labels')
+  const incomplete = PR_META_FIELDS.filter((f) => partial.has(f) && !failed.includes(f))
   return {
     supports,
-    ...(freeLabels ? { freeLabels } : {}),
+    ...(free.labels ? { freeLabels: true } : {}),
+    ...(free.people ? { freePeople: true } : {}),
+    ...(incomplete.length ? { partial: incomplete } : {}),
     reviewers: reviewers ?? [],
     assignees: assignees ?? [],
     labels: labels ?? [],
@@ -91,26 +103,34 @@ interface GhUser {
  * a review request to the PR's own author.
  */
 export async function githubPickerOptions(repoApi: string, apiBase: string, json: Json): Promise<PrPickerOptions> {
+  let peoplePartial = false
   const people = once(async () =>
-    (await numberedPages<GhUser>((p) => `${repoApi}/assignees?per_page=100&page=${p}`, json)).map(
-      (u): PrPickerPerson => ({ id: u.login, login: u.login, ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}) })
-    )
+    (
+      await numberedPages<GhUser>((p) => `${repoApi}/assignees?per_page=100&page=${p}`, json, () => (peoplePartial = true))
+    ).map((u): PrPickerPerson => ({ id: u.login, login: u.login, ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}) }))
   )
+  const shared = async (partial: () => void): Promise<PrPickerPerson[]> => {
+    const all = await people()
+    if (peoplePartial) partial()
+    return all
+  }
   return collectPickerOptions(
     prMetaSupport('github'),
     {
-      reviewers: async () => {
-        const [all, me] = await Promise.all([people(), json<GhUser>(`${apiBase}/user`).catch(() => null)])
+      reviewers: async (partial) => {
+        const [all, me] = await Promise.all([shared(partial), json<GhUser>(`${apiBase}/user`).catch(() => null)])
         return withoutSelf(all, me?.login)
       },
-      assignees: people,
-      labels: async () =>
+      assignees: shared,
+      labels: async (partial) =>
         sortLabels(
-          (await numberedPages<{ name: string; color?: string }>((p) => `${repoApi}/labels?per_page=100&page=${p}`, json)).map(
-            (l) => ({ id: l.name, name: l.name, ...(labelColor(l.color) ? { color: labelColor(l.color) } : {}) })
-          )
+          (
+            await numberedPages<{ name: string; color?: string }>((p) => `${repoApi}/labels?per_page=100&page=${p}`, json, partial)
+          ).map((l) => ({ id: l.name, name: l.name, ...(labelColor(l.color) ? { color: labelColor(l.color) } : {}) }))
         )
-    }
+    },
+    // GitHub creates a label added by a name it does not know, and takes a login as a person's id.
+    { labels: true, people: true }
   )
 }
 
@@ -152,9 +172,12 @@ interface GlMember {
 
 /** `projectApi` is `…/api/v4/projects/{id}` on gitlab.com or a self-managed server. */
 export async function gitlabPickerOptions(projectApi: string, json: Json): Promise<PrPickerOptions> {
+  let peoplePartial = false
   // members/all: direct and inherited (group) members — who can actually review.
   const people = once(async () =>
-    (await numberedPages<GlMember>((p) => `${projectApi}/members/all?per_page=100&page=${p}`, json))
+    (
+      await numberedPages<GlMember>((p) => `${projectApi}/members/all?per_page=100&page=${p}`, json, () => (peoplePartial = true))
+    )
       .filter((m) => !m.state || m.state === 'active')
       .map(
         (m): PrPickerPerson => ({
@@ -165,18 +188,26 @@ export async function gitlabPickerOptions(projectApi: string, json: Json): Promi
         })
       )
   )
+  const shared = async (partial: () => void): Promise<PrPickerPerson[]> => {
+    const all = uniqueById(await people())
+    if (peoplePartial) partial()
+    return all
+  }
   return collectPickerOptions(
     prMetaSupport('gitlab'),
     {
-      reviewers: async () => uniqueById(await people()),
-      assignees: async () => uniqueById(await people()),
-      labels: async () =>
+      reviewers: shared,
+      assignees: shared,
+      labels: async (partial) =>
         sortLabels(
-          (await numberedPages<{ name: string; color?: string }>((p) => `${projectApi}/labels?per_page=100&page=${p}`, json)).map(
-            (l) => ({ id: l.name, name: l.name, ...(labelColor(l.color) ? { color: labelColor(l.color) } : {}) })
-          )
+          (
+            await numberedPages<{ name: string; color?: string }>((p) => `${projectApi}/labels?per_page=100&page=${p}`, json, partial)
+          ).map((l) => ({ id: l.name, name: l.name, ...(labelColor(l.color) ? { color: labelColor(l.color) } : {}) }))
         )
-    }
+    },
+    // GitLab creates a project label given on a merge request by a new name. People
+    // stay list-only: the create takes numeric ids, which nobody can type.
+    { labels: true }
   )
 }
 
@@ -213,6 +244,8 @@ export function gitlabMetaMissing(
 
 /** Teams read for their members — a project with more is still offered every team itself. */
 export const AZURE_MAX_TEAMS = 10
+/** Members read per team: a team this big is flagged as possibly listed short. */
+export const AZURE_MAX_MEMBERS = 500
 
 interface AzIdentity {
   id: string
@@ -225,22 +258,49 @@ interface AzIdentity {
  * and the members of its first teams. Labels are free text: Azure creates a
  * label on first use and has no project list of them. No assignees — Azure
  * pull requests have none. Pictures are left out: Azure's need a signed-in browser.
+ *
+ * Teams are paged with `$skip` up to the shared cap. Members are not: a project
+ * with more teams than are read, a team with a full page of members, or a team
+ * whose members could not be read marks the list partial instead.
+ *
+ * `ado` must be a plain read: a picker read never retries with, or evicts, a
+ * borrowed credential (see prPickerOptions in hosting.ts).
  */
 export async function azurePickerOptions(org: string, project: string, ado: Json): Promise<PrPickerOptions> {
   const projectApi = `https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}`
   return collectPickerOptions(
     prMetaSupport('azure'),
     {
-      reviewers: async () => {
-        const teams =
-          (await ado<{ value?: Array<{ id: string; name: string }> }>(`${projectApi}/teams?$top=100&api-version=7.1`))?.value ?? []
+      reviewers: async (partial) => {
+        const teams: Array<{ id: string; name: string }> = []
+        for (let page = 0; ; page++) {
+          const got =
+            (
+              await ado<{ value?: Array<{ id: string; name: string }> }>(
+                `${projectApi}/teams?$top=100&$skip=${page * 100}&api-version=7.1`
+              )
+            )?.value ?? []
+          teams.push(...got)
+          if (got.length < 100) break
+          if (page + 1 >= PICKER_MAX_PAGES) {
+            partial()
+            break
+          }
+        }
+        if (teams.length > AZURE_MAX_TEAMS) partial()
         const members = await Promise.all(
           teams.slice(0, AZURE_MAX_TEAMS).map((t) =>
             ado<{ value?: Array<{ identity?: AzIdentity }> }>(
-              `${projectApi}/teams/${encodeURIComponent(t.id)}/members?$top=500&api-version=7.1`
+              `${projectApi}/teams/${encodeURIComponent(t.id)}/members?$top=${AZURE_MAX_MEMBERS}&api-version=7.1`
             ).then(
-              (d) => (d?.value ?? []).flatMap((m) => (m.identity ? [m.identity] : [])),
-              () => [] as AzIdentity[]
+              (d) => {
+                if ((d?.value?.length ?? 0) >= AZURE_MAX_MEMBERS) partial()
+                return (d?.value ?? []).flatMap((m) => (m.identity ? [m.identity] : []))
+              },
+              () => {
+                partial()
+                return [] as AzIdentity[]
+              }
             )
           )
         )
@@ -256,7 +316,8 @@ export async function azurePickerOptions(org: string, project: string, ado: Json
       },
       labels: async () => []
     },
-    true
+    // Labels by name; reviewers are identity ids, which nobody can type.
+    { labels: true }
   )
 }
 
@@ -317,7 +378,7 @@ export function bitbucketCloudJson(authorization: string): Json {
 }
 
 /** Follow `next` links, but only while they stay on the API the token was sent to. */
-async function bitbucketPages<T>(first: string, json: Json): Promise<T[]> {
+async function bitbucketPages<T>(first: string, json: Json, partial?: () => void): Promise<T[]> {
   const out: T[] = []
   let url: string | undefined = first
   for (let page = 0; url && page < PICKER_MAX_PAGES; page++) {
@@ -325,6 +386,7 @@ async function bitbucketPages<T>(first: string, json: Json): Promise<T[]> {
     out.push(...(d?.values ?? []))
     url = typeof d?.next === 'string' && d.next.startsWith(`${BB_API}/`) ? d.next : undefined
   }
+  if (url) partial?.()
   return out
 }
 
@@ -348,11 +410,15 @@ export async function bitbucketPickerOptions(workspace: string, repo: string, js
   return collectPickerOptions(
     prMetaSupport('bitbucket'),
     {
-      reviewers: async () => {
-        const users = await bitbucketPages<{ user?: BbUser }>(`${BB_API}/workspaces/${ws}/members?pagelen=100`, json)
+      reviewers: async (partial) => {
+        const users = await bitbucketPages<{ user?: BbUser }>(`${BB_API}/workspaces/${ws}/members?pagelen=100`, json, partial)
           .then((m) => m.flatMap((x) => (x.user ? [x.user] : [])))
           .catch(() =>
-            bitbucketPages<BbUser>(`${BB_API}/repositories/${ws}/${encodeURIComponent(repo)}/default-reviewers?pagelen=100`, json)
+            bitbucketPages<BbUser>(
+              `${BB_API}/repositories/${ws}/${encodeURIComponent(repo)}/default-reviewers?pagelen=100`,
+              json,
+              partial
+            )
           )
         const me = await json<BbUser>(`${BB_API}/user`).catch(() => null)
         return withoutSelf(uniqueById(users.flatMap((u) => bbPerson(u) ?? [])), me?.uuid)
@@ -366,7 +432,91 @@ export function bitbucketMetaBody(opts: CreatePrOpts): Record<string, unknown> {
   return opts.reviewers?.length ? { reviewers: opts.reviewers.map((uuid) => ({ uuid })) } : {}
 }
 
-/** A reviewer asked for but absent from what the host created — both Bitbucket flavours answer with the list. */
-export function reviewersMissing(opts: CreatePrOpts, created: unknown[] | undefined): PrMetaField[] {
-  return opts.reviewers?.length && (created?.length ?? 0) < opts.reviewers.length ? ['reviewers'] : []
+/**
+ * A reviewer asked for but absent from what the host created. Compared by
+ * identity, not by count: a host that adds its own default reviewers answers
+ * with more people than were picked, and a count would call a dropped pick a
+ * success. `created` is every identity the host's reviewers carry; case is ignored.
+ */
+export function reviewersMissing(opts: CreatePrOpts, created: string[]): PrMetaField[] {
+  if (!opts.reviewers?.length) return []
+  const got = new Set(created.map((c) => c.toLowerCase()))
+  return opts.reviewers.every((r) => got.has(r.toLowerCase())) ? [] : ['reviewers']
+}
+
+const strings = (...v: unknown[]): string[] => v.filter((x): x is string => typeof x === 'string' && !!x)
+
+/** bitbucket.org reviewers on a created PR, by uuid — what the picks are. */
+export function bitbucketReviewerIds(reviewers: unknown): string[] {
+  return Array.isArray(reviewers) ? reviewers.flatMap((r) => strings((r as BbUser | null)?.uuid)) : []
+}
+
+/** Data Center reviewers on a created PR: user name and slug, since a pick is a user name. */
+export function bbsReviewerIds(reviewers: unknown): string[] {
+  if (!Array.isArray(reviewers)) return []
+  return reviewers.flatMap((r) => {
+    const u = (r as { user?: { name?: unknown; slug?: unknown } } | null)?.user
+    return strings(u?.name, u?.slug)
+  })
+}
+
+/** Azure DevOps reviewers on a created PR, by identity id. */
+export function azureReviewerIds(reviewers: unknown): string[] {
+  return Array.isArray(reviewers) ? reviewers.flatMap((r) => strings((r as { id?: unknown } | null)?.id)) : []
+}
+
+// ─── A create the host refused because of a reviewer ───────────────────────
+
+/**
+ * A create failure carrying what the host said, so a refusal of the reviewers
+ * can be told from any other. `fields` is bitbucket.org's per-field error map.
+ */
+export class PrCreateError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly fields: string[] = []
+  ) {
+    super(message)
+  }
+}
+
+/**
+ * Whether a failed create may have failed over its reviewers: a 400 or 409 —
+ * a validation answer, which means nothing was created. Never an auth failure,
+ * a server error or a network one, where the PR may exist or a retry would
+ * only fail again. When the host names the fields (bitbucket.org) or the
+ * exceptions (Data Center) at fault and none is about reviewers, it is not this.
+ */
+export function rejectsReviewers(err: unknown): boolean {
+  const e = err as { status?: unknown; fields?: unknown; exceptions?: unknown } | null
+  if (!e || (e.status !== 400 && e.status !== 409)) return false
+  for (const named of [e.fields, e.exceptions]) {
+    const list = Array.isArray(named) ? named.filter((x): x is string => typeof x === 'string') : []
+    if (list.length && !list.some((x) => /reviewer/i.test(x))) return false
+  }
+  return true
+}
+
+/**
+ * Create with the picks; if the host refused the request and reviewers were
+ * in it, create once more without them. A picked reviewer the host will not
+ * take (no access, the author, a stale id) would otherwise fail the whole
+ * create; this way it costs only the reviewers, which `dropped` reports. One
+ * retry, and only after a 400/409 — an answer that means the first request
+ * created nothing, so a PR is never opened twice. If the second create fails
+ * too, its error is the one thrown: it is why the PR cannot be opened at all.
+ */
+export async function createWithoutRejectedReviewers<R>(
+  opts: CreatePrOpts,
+  create: (o: CreatePrOpts) => Promise<R>
+): Promise<{ result: R; dropped: boolean }> {
+  try {
+    return { result: await create(opts), dropped: false }
+  } catch (err) {
+    if (!opts.reviewers?.length || !rejectsReviewers(err)) throw err
+    const rest: CreatePrOpts = { ...opts }
+    delete rest.reviewers
+    return { result: await create(rest), dropped: true }
+  }
 }

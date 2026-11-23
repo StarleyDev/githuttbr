@@ -327,7 +327,7 @@ describe('Azure DevOps', () => {
       { id: 'id-1', login: 'ana@acme.example', name: 'Ana' },
       { id: 'id-2', login: 'Bo', name: 'Bo' }
     ])
-    expect(calls[0].url).toBe(`${PROJECTS}/teams?$top=100&api-version=7.1`)
+    expect(calls[0].url).toBe(`${PROJECTS}/teams?$top=100&$skip=0&api-version=7.1`)
   })
 })
 
@@ -431,6 +431,161 @@ describe('Bitbucket Data Center', () => {
       { id: 'bo', login: 'bo' }
     ])
     for (const c of calls) expect(c.url.startsWith(`${API}/`)).toBe(true)
+  })
+})
+
+describe('a reviewer the host refuses costs the reviewers, never the pull request', () => {
+  const posts = (): Call[] => calls.filter((c) => c.method === 'POST')
+
+  describe('bitbucket.org', () => {
+    const pr = { id: 4, links: { html: { href: 'https://bitbucket.org/ws/app/pull-requests/4' } } }
+    it('a 400 over reviewers: created once more without them, and reported', async () => {
+      route = (m, _u, body) => {
+        if (m !== 'POST') return undefined
+        return (body as Record<string, unknown>).reviewers
+          ? json({ type: 'error', error: { message: 'Malformed reviewers list', fields: { reviewers: ['bad'] } } }, 400)
+          : pr
+      }
+      const res = await create(REMOTE.bitbucket, { reviewers: ['{ghost}'] })
+      expect(res).toEqual({ url: 'https://bitbucket.org/ws/app/pull-requests/4', number: 4, metaFailed: ['reviewers'] })
+      expect(posts()).toHaveLength(2)
+      expect((posts()[1].body as Record<string, unknown>).reviewers).toBeUndefined()
+    })
+    it('the success path sends one create', async () => {
+      route = (m) => (m === 'POST' ? { ...pr, reviewers: [{ uuid: '{a}' }] } : undefined)
+      const res = await create(REMOTE.bitbucket, { reviewers: ['{a}'] })
+      expect(res.metaFailed).toBeUndefined()
+      expect(posts()).toHaveLength(1)
+    })
+    it('a 400 about another field is not retried', async () => {
+      route = (m) =>
+        m === 'POST' ? json({ type: 'error', error: { message: 'bad branch', fields: { source: ['nope'] } } }, 400) : undefined
+      await expect(create(REMOTE.bitbucket, { reviewers: ['{a}'] })).rejects.toThrow(/bad branch/)
+      expect(posts()).toHaveLength(1)
+    })
+    it('a 401 is not retried', async () => {
+      route = (m) => (m === 'POST' ? json({ type: 'error', error: { message: 'Unauthorized' } }, 401) : undefined)
+      await expect(create(REMOTE.bitbucket, { reviewers: ['{a}'] })).rejects.toThrow(/Unauthorized/)
+      expect(posts()).toHaveLength(1)
+    })
+    it('a host-added default reviewer does not hide a dropped pick', async () => {
+      route = (m) => (m === 'POST' ? { ...pr, reviewers: [{ uuid: '{a}' }, { uuid: '{default}' }] } : undefined)
+      expect((await create(REMOTE.bitbucket, { reviewers: ['{a}', '{b}'] })).metaFailed).toEqual(['reviewers'])
+      expect((await create(REMOTE.bitbucket, { reviewers: ['{a}'] })).metaFailed).toBeUndefined()
+    })
+  })
+
+  describe('Bitbucket Data Center', () => {
+    const refusal = (exceptionName: string): Response =>
+      json({ errors: [{ message: 'Errors encountered while adding some reviewers', exceptionName }] }, 409)
+    it('InvalidPullRequestReviewersException: created once more without them, and reported', async () => {
+      route = (m, _u, body) => {
+        if (m !== 'POST') return undefined
+        return (body as Record<string, unknown>).reviewers
+          ? refusal('com.atlassian.bitbucket.pull.InvalidPullRequestReviewersException')
+          : { id: 9, title: 'T' }
+      }
+      const res = await create(REMOTE.bbs, { reviewers: ['ghost'] })
+      expect(res.number).toBe(9)
+      expect(res.metaFailed).toEqual(['reviewers'])
+      expect(posts()).toHaveLength(2)
+      expect(Object.keys(posts()[1].body as object)).toEqual(['title', 'description', 'fromRef', 'toRef'])
+    })
+    it('a duplicate pull request (also a 409) is not retried', async () => {
+      route = (m) => (m === 'POST' ? refusal('com.atlassian.bitbucket.pull.DuplicatePullRequestException') : undefined)
+      await expect(create(REMOTE.bbs, { reviewers: ['ana'] })).rejects.toThrow()
+      expect(posts()).toHaveLength(1)
+    })
+    it('a 401 is not retried', async () => {
+      route = (m) => (m === 'POST' ? json({ errors: [{ message: 'Authentication failed' }] }, 401) : undefined)
+      await expect(create(REMOTE.bbs, { reviewers: ['ana'] })).rejects.toThrow(/Authentication failed/)
+      expect(posts()).toHaveLength(1)
+    })
+    it('a reviewer the server added by default does not hide a dropped pick; a slug matches too', async () => {
+      route = (m) =>
+        m === 'POST' ? { id: 9, reviewers: [{ user: { name: 'Ana.Silva', slug: 'ana.silva' } }, { user: { name: 'lead' } }] } : undefined
+      expect((await create(REMOTE.bbs, { reviewers: ['ana.silva', 'ghost'] })).metaFailed).toEqual(['reviewers'])
+      expect((await create(REMOTE.bbs, { reviewers: ['ana.silva'] })).metaFailed).toBeUndefined()
+    })
+  })
+
+  describe('Azure DevOps', () => {
+    const creates = (): Call[] => posts().filter((c) => c.url.includes('/pullrequests?'))
+    it('a 400 with reviewers: created once more without them, labels still applied', async () => {
+      route = (m, u, body) => {
+        if (u.pathname.endsWith('/labels')) return {}
+        if (m !== 'POST') return undefined
+        return (body as Record<string, unknown>).reviewers ? json({ message: 'TF401181: invalid reviewer' }, 400) : { pullRequestId: 31 }
+      }
+      const res = await create(REMOTE.azure, { reviewers: ['id-x'], labels: ['bug'] })
+      expect(res.number).toBe(31)
+      expect(res.metaFailed).toEqual(['reviewers'])
+      expect(creates()).toHaveLength(2)
+      expect((creates()[1].body as Record<string, unknown>).reviewers).toBeUndefined()
+      expect(posts().filter((c) => c.url.includes('/labels'))).toHaveLength(1)
+    })
+    it('a 401 is not retried without reviewers', async () => {
+      route = (m) => (m === 'POST' ? json({ message: 'no' }, 401) : undefined)
+      await expect(create(REMOTE.azure, { reviewers: ['id-1'] })).rejects.toThrow()
+      expect(creates()).toHaveLength(1)
+    })
+    it('a reviewer Azure answers without is reported, by id', async () => {
+      route = (m) => (m === 'POST' ? { pullRequestId: 31, reviewers: [{ id: 'ID-1' }, { id: 'default-team' }] } : undefined)
+      expect((await create(REMOTE.azure, { reviewers: ['id-1', 'id-2'] })).metaFailed).toEqual(['reviewers'])
+      expect((await create(REMOTE.azure, { reviewers: ['id-1'] })).metaFailed).toBeUndefined()
+    })
+  })
+})
+
+describe('free entries and partial lists', () => {
+  it('GitHub takes new labels and typed logins; GitLab new labels only', async () => {
+    route = (_m, u) => (u.pathname.endsWith('/assignees') || u.pathname.endsWith('/labels') ? [] : undefined)
+    const gh = await options(REMOTE.github)
+    expect(gh.freeLabels).toBe(true)
+    expect(gh.freePeople).toBe(true)
+    route = () => []
+    const gl = await options(REMOTE.gitlab)
+    expect(gl.freeLabels).toBe(true)
+    expect(gl.freePeople).toBeUndefined()
+  })
+
+  it('a GitHub list cut at the cap is flagged partial', async () => {
+    route = (_m, u) =>
+      u.pathname.endsWith('/assignees')
+        ? users('u', 100, Number(u.searchParams.get('page')) * 100)
+        : u.pathname.endsWith('/labels')
+          ? []
+          : undefined
+    const o = await options(REMOTE.github)
+    expect(o.partial).toEqual(['reviewers', 'assignees'])
+  })
+
+  it('Azure pages teams, and flags members it did not read', async () => {
+    const team = (i: number): { id: string; name: string } => ({ id: `t${i}`, name: `Team ${i}` })
+    route = (_m, u) => {
+      if (u.pathname.endsWith('/teams')) {
+        const skip = Number(u.searchParams.get('$skip'))
+        return { value: skip === 0 ? Array.from({ length: 100 }, (_, i) => team(i)) : [team(100), team(101)] }
+      }
+      if (u.pathname.includes('/members')) return { value: [] }
+      return undefined
+    }
+    const o = await options(REMOTE.azure)
+    expect(o.failed).toEqual([])
+    expect(o.partial).toEqual(['reviewers'])
+    expect(o.reviewers).toHaveLength(102)
+    expect(calls.filter((c) => c.url.includes('/teams?')).map((c) => new URL(c.url).searchParams.get('$skip'))).toEqual(['0', '100'])
+  })
+
+  it('a team whose members could not be read flags the list; a small project is not flagged', async () => {
+    route = (_m, u) => {
+      if (u.pathname.endsWith('/teams')) return { value: [{ id: 't1', name: 'One' }, { id: 't2', name: 'Two' }] }
+      if (u.pathname.endsWith('/teams/t2/members')) return json({ message: 'no' }, 500)
+      return { value: [] }
+    }
+    expect((await options(REMOTE.azure)).partial).toEqual(['reviewers'])
+    route = (_m, u) => (u.pathname.endsWith('/teams') ? { value: [{ id: 't1', name: 'One' }] } : { value: [] })
+    expect((await options(REMOTE.azure)).partial).toBeUndefined()
   })
 })
 

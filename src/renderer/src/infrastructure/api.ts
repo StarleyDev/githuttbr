@@ -1128,13 +1128,6 @@ export const hostingApi = {
   ) => window.api.hosting.setIssueState(repoPath, remoteUrl, tokens, number, state) as Promise<void>,
   createIssue: (repoPath: string, remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
     window.api.hosting.createIssue(repoPath, remoteUrl, tokens, opts) as Promise<{ number: number; url: string }>,
-  applyPrMeta: (
-    repoPath: string,
-    remoteUrl: string,
-    tokens: { github?: string },
-    number: number,
-    meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
-  ) => window.api.hosting.applyPrMeta(repoPath, remoteUrl, tokens, number, meta) as Promise<void>,
   updatePR: (
     repoPath: string,
     remoteUrl: string,

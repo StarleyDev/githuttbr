@@ -375,8 +375,6 @@ const api = {
       ipcRenderer.invoke('hosting:setIssueState', repoPath, remoteUrl, tokens, number, state),
     createIssue: (repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:createIssue', repoPath, remoteUrl, tokens, opts),
-    applyPrMeta: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:applyPrMeta', repoPath, remoteUrl, tokens, number, meta),
     updatePR: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:updatePR', repoPath, remoteUrl, tokens, number, patch),
     mergedPrHeads: (repoPath: string, remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown> =>

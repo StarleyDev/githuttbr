@@ -277,7 +277,6 @@ interface PreloadApi {
     issueDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     setIssueState(repoPath: string, remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
     createIssue(repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
-    applyPrMeta(repoPath: string, remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
     updatePR(repoPath: string, remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
     mergedPrHeads(repoPath: string, remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
     ensureStack(repoPath: string, remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown>
