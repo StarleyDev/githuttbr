@@ -79,6 +79,11 @@ A few things outside the app still name the old command:
   export and import it instead.
 - The panel layout comes along only when 4.39 has no Local Storage of its own
   yet: two of those databases cannot be merged, so an existing one wins.
+- On Linux, the `githuttbr` .deb declares that it replaces the `gitcito`
+  package, so installing it removes 4.38 — its <code>/usr/bin/git&#99;ito</code>
+  link and its AppArmor profile go with it. An AppImage is just a file: delete
+  the old one yourself. On macOS and Windows 4.39 installs over 4.38, and the
+  4.38 updater can deliver it.
 - An export made **without** the tick carries no secrets — that is what the
   default export is for. Delete the file with secrets once it is imported:
   anyone holding it holds your tokens.

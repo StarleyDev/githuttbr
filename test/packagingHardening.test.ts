@@ -6,12 +6,19 @@ import { FuseV1Options } from '@electron/fuses'
 import { spawnSync } from 'node:child_process'
 import yaml from 'js-yaml'
 import { ROOT } from './helpers'
+import { BUNDLE_ID } from '../src/main/appIdentity'
 
 const require = createRequire(import.meta.url)
 const afterPack = require('../scripts/after-pack.cjs') as { fuseConfig(): Promise<Record<string, unknown>> }
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
   homepage?: string
-  build: { appId: string; afterPack?: string; linux?: { desktop?: { entry?: Record<string, string> } } }
+  build: {
+    appId: string
+    afterPack?: string
+    linux?: { executableName?: string; desktop?: { entry?: Record<string, string> } }
+    deb?: { fpm?: string[] }
+    rpm?: { fpm?: string[] }
+  }
 }
 
 interface Step {
@@ -54,6 +61,22 @@ describe('packaging hardening', () => {
     expect(pkg.homepage).toMatch(/^https:\/\//)
     // electron-builder 26 reads desktop keys from `desktop.entry`; top-level keys fail schema validation.
     expect(pkg.build.linux?.desktop?.entry?.StartupWMClass).toBe('githuttbr')
+  })
+
+  it('keeps the pre-rename appId, so 4.39 upgrades 4.38 in place', () => {
+    // The macOS bundle id, the NSIS uninstall GUID and the updater all hang off it.
+    expect(pkg.build.appId).toBe(BUNDLE_ID)
+    expect(BUNDLE_ID).toBe('com.gitcito.desktop')
+  })
+
+  it('the renamed linux package replaces the old gitcito one', () => {
+    expect(pkg.build.linux?.executableName).toBe('githuttbr')
+    for (const fpm of [pkg.build.deb?.fpm, pkg.build.rpm?.fpm]) {
+      const flags = (fpm ?? []).join(' ')
+      for (const flag of ['--replaces gitcito', '--conflicts gitcito', '--provides gitcito']) {
+        expect(flags).toContain(flag)
+      }
+    }
   })
 
   it('the source-checkout shim opens the app by the appId in package.json', () => {

@@ -45,7 +45,7 @@
     "repo:stats": "bash examples/repo-stats.sh"
   },
   "build": {
-    "appId": "com.starleydev.githuttbr",
+    "appId": "com.gitcito.desktop",
     "productName": "GitHuttBr",
     "artifactName": "${productName}-${version}-${arch}.${ext}",
     "afterPack": "./scripts/after-pack.cjs",
@@ -126,6 +126,26 @@
           "StartupWMClass": "githuttbr"
         }
       }
+    },
+    "deb": {
+      "fpm": [
+        "--replaces",
+        "gitcito",
+        "--conflicts",
+        "gitcito",
+        "--provides",
+        "gitcito"
+      ]
+    },
+    "rpm": {
+      "fpm": [
+        "--replaces",
+        "gitcito",
+        "--conflicts",
+        "gitcito",
+        "--provides",
+        "gitcito"
+      ]
     }
   },
   "dependencies": {

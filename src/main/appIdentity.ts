@@ -10,6 +10,15 @@
  */
 import { join } from 'path'
 
+/**
+ * The package identity (`build.appId` in package.json): the macOS bundle id,
+ * the Windows NSIS uninstall GUID and the updater's notion of "the same app".
+ * It intentionally stays the pre-rename value: users never see it, and keeping
+ * it is what lets a 4.39 installer upgrade 4.38 in place — and 4.38's updater
+ * install 4.39 — instead of leaving two apps side by side. Do not rename it.
+ */
+export const BUNDLE_ID = 'com.gitcito.desktop'
+
 /** `app.setName` for packaged builds: the userData folder and the keychain entry. */
 export const APP_NAME = 'GitHuttBr'
 /** Dev builds: a separate userData folder, its own single-instance lock. */

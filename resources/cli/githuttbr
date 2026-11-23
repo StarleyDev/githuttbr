@@ -228,8 +228,10 @@ if [ "$(uname -s)" = "Darwin" ]; then
     APP_BUNDLE=$(CDPATH= cd -- "$RES/../.." && pwd)
     open -n -a "$APP_BUNDLE" --args "$@" || launch_failed
   else
-    # Source checkout: the installed app, by the appId in package.json.
-    open -n -b com.starleydev.githuttbr --args "$@" || launch_failed
+    # Source checkout: the installed app, by the appId in package.json — still
+    # the pre-rename com.gitcito.desktop on purpose (see BUNDLE_ID in
+    # src/main/appIdentity.ts).
+    open -n -b com.gitcito.desktop --args "$@" || launch_failed
   fi
 else
   # Linux: no `open --args`. Launch the binary directly and detach — Electron's
