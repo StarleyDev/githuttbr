@@ -11,8 +11,8 @@ import './styles.css'
 import 'blobatar/motion.css'
 import '@xterm/xterm/css/xterm.css'
 
-// Screenshot automation: only when launched with `--shot` (forwarded by the
-// main process). Attaches the store bridge used by the capture harness.
+// Screenshot automation: only when main enabled screenshot mode, which needs
+// `--shot` on an unpackaged build. Attaches the store bridge the harness drives.
 if (window.api?.shotMode) {
   void import('./lib/shotBridge').then((m) => m.installShotBridge())
 }

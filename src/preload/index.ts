@@ -1,12 +1,14 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import type { CliOpenPayload } from '../shared/cli'
+import { SHOT_RENDERER_FLAG } from '../shared/shotMode'
 
 const api = {
   platform: process.platform,
 
-  // True when launched with `--shot` (forwarded by the main process via
-  // webPreferences.additionalArguments). Gates the screenshot-automation bridge.
-  shotMode: process.argv.includes('--shot'),
+  // True only when main put SHOT_RENDERER_FLAG on this renderer's command line
+  // (webPreferences.additionalArguments), which it does for `--shot` on an
+  // unpackaged build. Gates the screenshot-automation bridge.
+  shotMode: process.argv.includes(SHOT_RENDERER_FLAG),
 
   // Terminal scroll forensics: set GITCITO_SCROLL_DEBUG=1 at launch and the
   // terminal scroll listener streams its decisions through push() into
