@@ -163,6 +163,9 @@ beforeAll(async () => {
         res.writeHead(status, headers)
         res.end(all.subarray(split + 4))
       })
+      // http-backend may answer (and exit) before reading the whole body — e.g. a
+      // 401 — so a late write gets EPIPE. That is the server's choice, not a failure.
+      cgi.stdin.on('error', () => {})
       cgi.stdin.end(body)
     })
   })
