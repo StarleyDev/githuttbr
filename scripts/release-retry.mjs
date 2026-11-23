@@ -1,25 +1,41 @@
-// Decides what to re-run after a Release run ends badly. Only jobs that never
-// started a step are retried — the mark of a job no runner picked up (GitHub's
-// macOS queue runs dry now and then). A real build failure ran steps and is
-// never retried, so this cannot loop on a broken build.
+// Decides what to re-run after a Release run ends badly. Only the macOS jobs
+// are ever re-run automatically, and only when they never started a step — the
+// mark of a job no runner picked up (GitHub's macOS queue runs dry now and
+// then). A real build failure ran steps and is never retried, so this cannot
+// loop on a broken build.
+//
+// Why only macOS: this also fires on a run that concluded 'cancelled', and a
+// maintainer cancels a run by hand to stop it. Re-running `publish` (or
+// `rerun-failed-jobs` on the whole run, which includes it) after that could
+// make a bad draft public. The macOS job only uploads assets to the release
+// and never publishes, so re-running it after a manual cancel is harmless.
+// Linux, Windows, draft and publish are left to a person.
 //
 // Usage: node scripts/release-retry.mjs <jobs.json> <run.json> <event-attempt> <max-attempts>
 //   jobs.json — `gh api …/runs/ID/attempts/N/jobs`
 //   run.json  — `gh api …/runs/ID`, read *now*, not from the event payload
-// Prints one line: `rerun-failed`, `rerun-job <id>` or `stop: <reason>`.
+// Prints one line: `rerun-job <id>` or `stop: <reason>`.
 
 import { readFileSync } from 'node:fs'
 
 const BAD = new Set(['failure', 'cancelled', 'timed_out', 'startup_failure'])
 
+// Jobs of a reusable workflow are named "<caller job id> / <job name>": the
+// Release job `mac` calls release-mac.yml, whose jobs are `build (<runner>)`
+// and `report`. test/releaseRetry.test.ts pins those names to the workflows.
+export const MAC_BUILD_RE = /^mac \/ build\b/
+export const MAC_REPORT_RE = /^mac \/ report$/
+
 /**
  * @typedef {{ id?: number; name: string; conclusion: string | null; steps?: Array<{ conclusion: string | null }> }} Job
  * @typedef {{ status?: string; run_attempt?: number }} Run
- * @typedef {{ action: 'rerun-failed' } | { action: 'rerun-job'; jobId: number } | { action: 'stop'; reason: string }} Decision
+ * @typedef {{ action: 'rerun-job'; jobId: number } | { action: 'stop'; reason: string; unstarted?: string[] }} Decision
  */
 
 /** @param {Job} j */
 const ranSteps = (j) => (j.steps ?? []).some((s) => s.conclusion && s.conclusion !== 'skipped')
+/** @param {Job} j */
+const isMac = (j) => MAC_BUILD_RE.test(j.name) || MAC_REPORT_RE.test(j.name)
 
 /**
  * @param {{ jobs?: Job[] }} payload jobs of the attempt that just completed
@@ -35,31 +51,38 @@ export function retryDecision(payload, ctx = {}) {
   if (run && attempt && run.run_attempt && run.run_attempt !== attempt) {
     return { action: 'stop', reason: `attempt ${run.run_attempt} already exists` }
   }
-  if (attempt && attempt >= maxAttempts) return { action: 'stop', reason: `${attempt} of ${maxAttempts} attempts used` }
 
   const jobs = payload.jobs ?? []
-  const bad = jobs.filter((j) => BAD.has(j.conclusion ?? ''))
-  if (!bad.length) return { action: 'stop', reason: 'no failed job' }
-  const never = bad.filter((j) => !ranSteps(j))
-  const real = bad.filter(ranSteps)
-  if (!never.length) return { action: 'stop', reason: `a real failure in ${real.map((j) => j.name).join(', ')}` }
-  // Re-run-failed would also repeat the real failure; a single job re-run does
-  // not, and the never-started job (macOS, as a rule) can still reach the draft.
-  if (real.length) {
-    const only = never.length === 1 ? never[0] : null
-    if (only && typeof only.id === 'number') return { action: 'rerun-job', jobId: only.id }
-    return { action: 'stop', reason: `a real failure in ${real.map((j) => j.name).join(', ')}` }
+  // Never-started jobs that are not macOS are reported, never re-run: a
+  // Linux or Windows job left in the queue (or a run cancelled by hand) is
+  // for a person to look at, since re-running it leads on to `publish`.
+  const unstarted = jobs.filter((j) => !isMac(j) && BAD.has(j.conclusion ?? '') && !ranSteps(j)).map((j) => j.name)
+  /** @param {string} reason @returns {Decision} */
+  const stop = (reason) => (unstarted.length ? { action: 'stop', reason, unstarted } : { action: 'stop', reason })
+  if (attempt && attempt >= maxAttempts) return stop(`${attempt} of ${maxAttempts} attempts used`)
+
+  const build = jobs.find((j) => MAC_BUILD_RE.test(j.name))
+  const report = jobs.find((j) => MAC_REPORT_RE.test(j.name))
+  if (!build) return stop('no macOS job in this run')
+  if (build.conclusion === 'success') {
+    // The build landed but its report never ran (the run was cancelled
+    // around it): re-run the report alone so the issue gets closed.
+    if (report && BAD.has(report.conclusion ?? '') && !ranSteps(report) && typeof report.id === 'number') {
+      return { action: 'rerun-job', jobId: report.id }
+    }
+    return stop('macOS already built')
   }
-  // One never-started job is re-run by id: exactly that job and its dependents,
-  // never the ones that already passed.
-  if (never.length === 1 && typeof never[0].id === 'number') return { action: 'rerun-job', jobId: never[0].id }
-  return { action: 'rerun-failed' }
+  if (!BAD.has(build.conclusion ?? '')) return stop(`macOS build ${build.conclusion ?? 'has no conclusion'}`)
+  if (ranSteps(build)) return stop(`a real failure in ${build.name}`)
+  // Re-running a job by id re-runs it and its dependents (the report), never
+  // the jobs that passed and never `publish`, which does not depend on it.
+  if (typeof build.id !== 'number') return stop(`${build.name} has no job id`)
+  return { action: 'rerun-job', jobId: build.id }
 }
 
 /** @param {Decision} d */
 export function formatDecision(d) {
   if (d.action === 'rerun-job') return `rerun-job ${d.jobId}`
-  if (d.action === 'rerun-failed') return 'rerun-failed'
   return `stop: ${d.reason}`
 }
 
@@ -72,4 +95,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     maxAttempts: Number(max) || 3
   })
   console.log(formatDecision(d))
+  // On stderr, so the verdict line on stdout stays one line for the workflow.
+  if (d.action === 'stop' && d.unstarted?.length) console.error(`unstarted: ${d.unstarted.join(', ')}`)
 }

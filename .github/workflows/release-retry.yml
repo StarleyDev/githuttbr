@@ -1,11 +1,14 @@
 name: Release retry
 
-# A Release run whose job never got a runner (GitHub's macOS queue runs dry now
-# and then: the job sits queued and is cancelled without a single step) is
-# re-run, up to MAX_ATTEMPTS attempts in all, without anyone having to notice.
-# A never-started job is re-run by id — that job and its dependents only, so
-# Linux and Windows are not rebuilt for a macOS that never showed up. A real
-# build failure ran steps, and scripts/release-retry.mjs leaves it alone.
+# A Release run whose macOS job never got a runner (GitHub's macOS queue runs
+# dry now and then: the job sits queued and is cancelled without a single step)
+# has that job re-run, up to MAX_ATTEMPTS attempts in all, without anyone having
+# to notice. Only the macOS jobs are ever re-run, by id — never the whole run,
+# never draft, Linux, Windows or publish. That matters because this also fires
+# on a run a maintainer cancelled by hand: re-running publish then could make a
+# bad draft public, while the macOS job only uploads assets and never publishes.
+# A real build failure ran steps, and scripts/release-retry.mjs leaves it alone.
+# A Linux or Windows job that never started is only reported, for a person.
 #
 # After the last attempt, Release mac backfill (every 6 h, for 48 h) takes over
 # for macOS, and the "vX.Y.Z: macOS build missing" issue says so.
@@ -45,11 +48,23 @@ jobs:
           # have re-run it by hand in the meantime.
           gh api "$api" > "$RUNNER_TEMP/run.json"
           gh api "$api/attempts/$ATTEMPT/jobs?per_page=100" > "$RUNNER_TEMP/jobs.json"
-          verdict="$(node scripts/release-retry.mjs "$RUNNER_TEMP/jobs.json" "$RUNNER_TEMP/run.json" "$ATTEMPT" "$MAX_ATTEMPTS")"
+          if ! verdict="$(node scripts/release-retry.mjs "$RUNNER_TEMP/jobs.json" "$RUNNER_TEMP/run.json" "$ATTEMPT" "$MAX_ATTEMPTS" \
+            2> "$RUNNER_TEMP/unstarted.txt")"; then
+            cat "$RUNNER_TEMP/unstarted.txt" >&2
+            exit 1
+          fi
           echo "Attempt $ATTEMPT: $verdict"
+          # Draft, Linux, Windows or publish never started: not re-run on
+          # purpose (it may be a cancel by hand). Say so where a person looks.
+          if [ -s "$RUNNER_TEMP/unstarted.txt" ]; then
+            msg="Release run $RUN_ID: $(cat "$RUNNER_TEMP/unstarted.txt"). Not re-run automatically; re-run them by hand if the cancel was not yours."
+            echo "::warning::$msg"
+            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # Only ever a single macOS job by id: never "re-run all failed jobs",
+          # which would include publish.
           case "$verdict" in
             rerun-job\ *) endpoint="repos/$GITHUB_REPOSITORY/actions/jobs/${verdict#rerun-job }/rerun" ;;
-            rerun-failed) endpoint="$api/rerun-failed-jobs" ;;
             *) exit 0 ;;
           esac
           # A refused re-run (the run started again a moment ago, or GitHub
