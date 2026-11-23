@@ -8,6 +8,7 @@ import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/s
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
 import { cloneFolderNames } from '../src/renderer/src/lib/cloneBatch'
+import { bindingAfterAddRemote, effectiveProfileId } from '../src/renderer/src/lib/repoProfile'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
@@ -7965,5 +7966,28 @@ describe('ciCountParts', () => {
     ])
     expect(ciCountParts(undefined)).toEqual([])
     expect(ciCountParts({ passed: 0, failed: 0, pending: 0, skipped: 0, cancelled: 0, unknown: 0 })).toEqual([])
+  })
+})
+
+describe('Add remote: which profile the repository ends up bound to', () => {
+  const s = {
+    activeProfileId: 'work',
+    profiles: [{ id: 'work' }, { id: 'personal' }, { id: 'side' }],
+    repoProfiles: { '/bound': 'personal' }
+  }
+  it('starts the picker at the bound profile, else the active one', () => {
+    expect(effectiveProfileId(s, '/bound')).toBe('personal')
+    expect(effectiveProfileId(s, '/free')).toBe('work')
+  })
+  it('binds to another pick, so create, push and later calls are one account', () => {
+    expect(bindingAfterAddRemote(s, '/bound', 'side')).toBe('side')
+    expect(bindingAfterAddRemote(s, '/bound', 'work')).toBe('work')
+    expect(bindingAfterAddRemote(s, '/free', 'personal')).toBe('personal')
+  })
+  it('changes nothing when the pick is what the repository already acts as, or names nobody', () => {
+    expect(bindingAfterAddRemote(s, '/bound', 'personal')).toBeNull()
+    expect(bindingAfterAddRemote(s, '/free', 'work')).toBeNull()
+    expect(bindingAfterAddRemote(s, '/bound', 'gone')).toBeNull()
+    expect(bindingAfterAddRemote(s, '/bound', '')).toBeNull()
   })
 })

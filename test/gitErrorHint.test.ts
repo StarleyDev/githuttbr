@@ -87,3 +87,18 @@ describe('readableError', () => {
     expect(explainGitError(msg)).toEqual({ key: 'gitError.bbsUserNotFound' })
   })
 })
+
+describe('a missing credential on a repository bound to a profile', () => {
+  // Thrown in main by noCredential, which has no language; the hint renders it.
+  it('names the bound profile, and the hint translates it with provider, profile and host', async () => {
+    const { boundNoCredentialMessage } = await import('../src/main/hosting')
+    const msg = "Error invoking remote method 'hosting:prDetail': Error: " + boundNoCredentialMessage('github', 'Work', 'github.com')
+    expect(msg).toContain('the profile "Work" this repository is bound to')
+    expect(explainGitError(msg)).toEqual({
+      key: 'gitError.boundProfileNoCredential',
+      vars: { provider: 'GitHub', profile: 'Work', host: 'github.com' }
+    })
+    const server = boundNoCredentialMessage('gitlab', 'Side "project"', 'gitlab.example.corp:8443')
+    expect(explainGitError(server)?.vars).toEqual({ provider: 'GitLab', profile: 'Side "project"', host: 'gitlab.example.corp:8443' })
+  })
+})

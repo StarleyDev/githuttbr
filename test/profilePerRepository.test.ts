@@ -53,6 +53,7 @@ const PERSONAL = tokens('personal')
 
 const BOUND = '/repos/bound-to-personal'
 const UNBOUND = '/repos/never-bound'
+const BOUND_TO_EMPTY = '/repos/bound-to-empty'
 
 interface Provider {
   name: string
@@ -173,8 +174,12 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
         ...defaultSettings(),
         onboardingCompleted: true,
         activeProfileId: 'work',
-        profiles: [profile('work', 'Work', WORK), profile('personal', 'Personal', PERSONAL)],
-        repoProfiles: { [BOUND]: 'personal' }
+        profiles: [
+          profile('work', 'Work', WORK),
+          profile('personal', 'Personal', PERSONAL),
+          { ...defaultSettings().profiles[0], id: 'empty', name: 'Empty' }
+        ],
+        repoProfiles: { [BOUND]: 'personal', [BOUND_TO_EMPTY]: 'empty' }
       })
     )
     const { readSettings } = await import('../src/main/settings')
@@ -217,6 +222,18 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
       }
     })
   }
+
+  // Bound to a profile with nothing for the host: nothing is sent, and the
+  // error names that profile — "this profile" would point at the active one.
+  it('a bound profile with no credential sends nothing and says which profile it is', async () => {
+    for (const remote of ['https://gitlab.example.corp/team/app.git', `${GHES}/team/app.git`]) {
+      const err = await Promise.resolve()
+        .then(() => handlers.get('hosting:prDetail')!({}, BOUND_TO_EMPTY, remote, { github: WORK.com, gitlab: WORK.gitlab }, 1))
+        .then(() => null, (e: Error) => e)
+      expect(err?.message, remote).toContain('the profile "Empty" this repository is bound to')
+    }
+    expect(calls).toEqual([])
+  })
 
   it('no repository at all (a malformed path) falls back to the active profile, not to a guess', async () => {
     const github = PROVIDERS[0]
@@ -301,6 +318,15 @@ describe('the clone dialog lists, clones and binds as the profile it picked', ()
     await Promise.resolve(handlers.get('hosting:listOwners')!({}, 'gitlab', '', GITLAB, 'personal')).catch(() => undefined)
     expect(calls.length).toBeGreaterThan(0)
     for (const c of calls) expect(c.credentials).toContain(PERSONAL.gitlab)
+  })
+
+  // One rule at the IPC boundary: a string names a profile, anything else none.
+  it('a non-string profile id means the active profile, as for the clone', async () => {
+    for (const id of [null, 42, {}]) {
+      await listRepos('gitlab', '', GITLAB, id as unknown as string).catch(() => undefined)
+    }
+    expect(calls.length).toBeGreaterThan(0)
+    for (const c of calls) expect(c.credentials).toContain(WORK.gitlab)
   })
 
   it('no picked profile (Settings, an older caller) keeps the active one', async () => {
