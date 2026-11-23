@@ -1,4 +1,4 @@
-import type { CiState, CiStatus } from '../shared/types'
+import type { CiJob, CiState, CiStatus } from '../shared/types'
 
 /**
  * A head commit's checks as the PR list's one-line summary — "3 passed · 1 failing".
@@ -10,6 +10,9 @@ export function summariseChecks(status: CiStatus): string {
   if (count('success')) parts.push(`${count('success')} passed`)
   if (count('failure')) parts.push(`${count('failure')} failing`)
   if (count('pending')) parts.push(`${count('pending')} running`)
-  if (count('neutral')) parts.push(`${count('neutral')} skipped`)
+  const neutral = (as: CiJob['neutralAs']): number => status.jobs.filter((j) => j.state === 'neutral' && j.neutralAs === as).length
+  if (neutral(undefined)) parts.push(`${neutral(undefined)} skipped`)
+  if (neutral('cancelled')) parts.push(`${neutral('cancelled')} cancelled`)
+  if (neutral('unknown')) parts.push(`${neutral('unknown')} unknown`)
   return parts.join(' · ')
 }

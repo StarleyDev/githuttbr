@@ -224,7 +224,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
   // A merge-check veto blocks the merge without being a conflict (Bitbucket Data Center).
   const blockers = pr?.mergeBlockers ?? []
-  const mergeBlocked = pr?.mergeable === false || blockers.length > 0
+  const refused = !!pr?.mergeRefused
+  const mergeBlocked = pr?.mergeable === false || blockers.length > 0 || refused
   const counts = checks ? checkCounts(checks) : null
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
@@ -381,6 +382,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                         ? t('prDetail.notMergeable')
                         : blockers.length
                           ? t('prPage.mergeBlocked')
+                          : refused
+                          ? t('prPage.mergeRefused')
                           : pr.mergeable === true
                           ? t('prPage.mergeable')
                           : t('prPage.mergeUnknown')}
@@ -485,6 +488,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     {b}
                   </div>
                 ))}
+              {canMerge && refused && <div className="prp-side-note prp-warn">{t('prPage.mergeRefused')}</div>}
             </Field>
 
             <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>

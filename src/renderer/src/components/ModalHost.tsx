@@ -1532,7 +1532,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     setBranchesError(false)
     try {
       const token = host ? profile[HOST_META[host].tokenField] : undefined
-      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token))
+      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token, profile.id))
     } catch {
       // A private repo with no token, a typo'd URL, an offline machine — the
       // clone itself will report it properly, so this stays a soft failure and
@@ -1597,6 +1597,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
           opts: {
             host: host ?? undefined,
             token,
+            profileId: profileForRepo,
             filter: partial ? 'blob:none' : undefined,
             depth: shallow && parsedDepth > 0 ? parsedDepth : undefined,
             singleBranch: shallow ? singleBranch : singleBranch || undefined,
@@ -1634,6 +1635,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
       opts: {
         host: host ?? undefined,
         token,
+        profileId: profileForRepo,
         filter: partial ? 'blob:none' : undefined,
         depth: shallow && parsedDepth > 0 ? parsedDepth : undefined,
         // Only meaningful as an explicit choice: `--depth` already implies

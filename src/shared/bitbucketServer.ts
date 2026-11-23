@@ -1,4 +1,4 @@
-import type { AccountLink, BitbucketServerHost, Profile } from './types'
+import type { AccountLink, BitbucketServerHost, BitbucketServerTokenKind, Profile } from './types'
 
 export type { BitbucketServerHost }
 
@@ -231,17 +231,59 @@ export function bitbucketAuthFor(
   const entry = (profile.bitbucketServers ?? []).find((h) => normalizeBitbucketServerUrl(h.url) === target)
   if (!entry) return {}
   const token = entry.token?.trim() || undefined
-  const username = entry.username?.trim() || undefined
+  const username = bitbucketServerEntryUsername(entry)
   return { ...(token ? { token } : {}), ...(token && username ? { username } : {}) }
 }
 
 /**
- * The user name git sends with a Data Center HTTP access token. A personal
- * token needs its owner's user name; a project or repository token takes the
- * fixed `x-token-auth` (Atlassian, "HTTP access tokens").
+ * A saved address that does not normalise, made safe to show: any
+ * `user:password@` is dropped (an import or a hand-edited file can carry one),
+ * leaving host and path. Text that is not a URL at all loses everything up to
+ * its last `@` before the first `/`, for the same reason.
  */
-export function bitbucketServerGitUsername(username: string | undefined): string {
-  return username?.trim() || 'x-token-auth'
+export function bitbucketServerDisplayAddress(url: string): string {
+  const raw = url.trim()
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`)
+    return `${u.host}${u.pathname === '/' ? '' : u.pathname}`
+  } catch {
+    const noScheme = raw.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    const slash = noScheme.indexOf('/')
+    const authority = slash < 0 ? noScheme : noScheme.slice(0, slash)
+    const at = authority.lastIndexOf('@')
+    return at < 0 ? noScheme : noScheme.slice(at + 1)
+  }
+}
+
+/** The fixed name Basic auth takes with a project or repository token. */
+export const BBS_PROJECT_TOKEN_USERNAME = 'x-token-auth'
+
+/** Whose token a server entry holds — its explicit choice, else inferred from the user name. */
+export function bitbucketServerTokenKind(entry: Pick<BitbucketServerHost, 'username' | 'tokenKind'>): BitbucketServerTokenKind {
+  return entry.tokenKind ?? (entry.username?.trim() ? 'personal' : 'project')
+}
+
+/**
+ * The user name a server entry fixes for git, or undefined when it leaves the
+ * choice to the remote URL. Atlassian, "HTTP access tokens"
+ * (confluence.atlassian.com/bitbucketserver/http-access-tokens-939515499.html):
+ * a personal token substitutes for its user's password, so it goes with that
+ * user's name; "when using basic auth with project or repository tokens, you
+ * must set the username to x-token-auth" — so the copying user's name that
+ * Bitbucket writes into its clone URLs must never replace it.
+ */
+export function bitbucketServerEntryUsername(entry: Pick<BitbucketServerHost, 'username' | 'tokenKind'>): string | undefined {
+  if (bitbucketServerTokenKind(entry) === 'project') return BBS_PROJECT_TOKEN_USERNAME
+  return entry.username?.trim() || undefined
+}
+
+/**
+ * The user name git sends with a Data Center HTTP access token: the one the
+ * profile fixes (see `bitbucketServerEntryUsername`), else — a personal token
+ * with no name in Settings — the remote URL's, else `x-token-auth`.
+ */
+export function bitbucketServerGitUsername(username: string | undefined, urlUsername?: string): string {
+  return username?.trim() || urlUsername?.trim() || BBS_PROJECT_TOKEN_USERNAME
 }
 
 // ─── Web links ──────────────────────────────────────────────────────────────

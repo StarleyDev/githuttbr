@@ -723,6 +723,9 @@ export interface PrDetail {
    * Center's merge-check vetoes, in the server's own words. Absent elsewhere.
    */
   mergeBlockers?: string[]
+  /** The host refuses the merge without saying why (Data Center's `canMerge: false`
+   *  with no veto and no conflict). Absent elsewhere. */
+  mergeRefused?: boolean
   url: string
   comments: PrComment[]
   reviews: PrReview[]
@@ -991,6 +994,9 @@ export interface CiJob {
   name: string
   state: CiState
   url?: string
+  /** Why a `neutral` job is neutral, when the host says it was not skipped —
+   *  Bitbucket Data Center's CANCELLED and UNKNOWN builds. Absent: skipped. */
+  neutralAs?: 'cancelled' | 'unknown'
 }
 
 export interface CiStatus {
@@ -2307,6 +2313,9 @@ export interface CloneOptions {
   host?: RepoHost
   /** Token for that host — used for this clone only, never written to config. */
   token?: string
+  /** The profile the clone dialog picked — the one the new repository is bound
+   *  to, so the clone authenticates as that profile's account too. */
+  profileId?: string
   /** Partial clone spec for `--filter`, e.g. `blob:none`. */
   filter?: string
   /** Shallow clone: keep only this many commits of history. */
@@ -2872,7 +2881,17 @@ export interface BitbucketServerHost {
   /** The account name git sends with a personal token; empty for a project or
    *  repository token, which git sends as `x-token-auth`. Not a secret. */
   username?: string
+  /**
+   * Whose token this is. A personal token goes with its owner's name — this
+   * entry's `username`, else the one in the remote URL; a project or repository
+   * token always with `x-token-auth`, which Basic auth requires for it. Absent
+   * (automatic): personal when a user name is set, project or repository otherwise.
+   */
+  tokenKind?: BitbucketServerTokenKind
 }
+
+/** A Data Center HTTP access token's owner: one user, or a project or repository. */
+export type BitbucketServerTokenKind = 'personal' | 'project'
 
 /**
  * The picture a profile shows in the title bar and the profile list. Only the

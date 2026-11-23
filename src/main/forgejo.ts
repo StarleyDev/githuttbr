@@ -235,6 +235,85 @@ async function fjText(url: string, token: string): Promise<string> {
 const repoApi = (base: string, owner: string, repo: string): string =>
   `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
 
+// git's default `a/`·`b/` prefixes, or the `src://`·`dst://` ones Bitbucket Data Center
+// runs `git diff` with (its KB, "Understanding diff view in Bitbucket Server"). Always
+// as a pair: a `src://` path may itself contain " b/".
+const DIFF_PREFIXES: ReadonlyArray<readonly [string, string]> = [
+  ['a/', 'b/'],
+  ['src://', 'dst://']
+]
+
+const C_ESCAPES: Record<string, number> = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, '\\': 92 }
+
+/**
+ * A path as git prints it: plain, or — when it holds a quote, a backslash, a
+ * control or a non-ASCII byte — C-quoted, `"caf\303\251.md"`, one octal escape
+ * per UTF-8 byte.
+ */
+export function unquoteGitPath(raw: string): string {
+  if (!(raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"'))) return raw
+  const body = raw.slice(1, -1)
+  const bytes: number[] = []
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] !== '\\') {
+      bytes.push(...Buffer.from(body[i], 'utf8'))
+      continue
+    }
+    const oct = /^[0-7]{3}/.exec(body.slice(i + 1))
+    if (oct) {
+      bytes.push(parseInt(oct[0], 8))
+      i += 3
+    } else if (body[i + 1] in C_ESCAPES) {
+      bytes.push(C_ESCAPES[body[i + 1]])
+      i += 1
+    } else {
+      bytes.push(92)
+    }
+  }
+  return Buffer.from(bytes).toString('utf8')
+}
+
+/** A ---/+++ path without its side's prefix; null for /dev/null or an unknown prefix. */
+function stripDiffPrefix(path: string, side: 'old' | 'new'): string | null {
+  if (path === '/dev/null') return null
+  for (const [src, dst] of DIFF_PREFIXES) {
+    const prefix = side === 'old' ? src : dst
+    if (path.startsWith(prefix)) return path.slice(prefix.length)
+  }
+  return null
+}
+
+const QUOTED_PATH = String.raw`"(?:[^"\\]|\\.)*"`
+
+/**
+ * Both paths of a `diff --git` line. A quoted path is unambiguous; for plain
+ * ones with a space the split is guessed as git guesses it — equal halves
+ * first (any change but a rename), else the first separator. The ---/+++ lines
+ * correct the guess whenever the file has hunks.
+ */
+function diffHeaderPaths(line: string): [string, string] | null {
+  const rest = line.replace(/^diff --git /, '')
+  for (const [src, dst] of DIFF_PREFIXES) {
+    const quoted = new RegExp(`^(${QUOTED_PATH}|\\S.*?) (${QUOTED_PATH}|\\S.*)$`).exec(rest)
+    if (quoted && (quoted[1].startsWith('"') || quoted[2].startsWith('"'))) {
+      const a = unquoteGitPath(quoted[1])
+      const b = unquoteGitPath(quoted[2])
+      if (a.startsWith(src) && b.startsWith(dst)) return [a.slice(src.length), b.slice(dst.length)]
+      continue
+    }
+    if (!rest.startsWith(src)) continue
+    const body = rest.slice(src.length)
+    const sep = ` ${dst}`
+    const half = (body.length - sep.length) / 2
+    if (Number.isInteger(half) && body.slice(half, half + sep.length) === sep && body.slice(0, half) === body.slice(half + sep.length)) {
+      return [body.slice(0, half), body.slice(0, half)]
+    }
+    const at = body.indexOf(sep)
+    if (at > 0) return [body.slice(0, at), body.slice(at + sep.length)]
+  }
+  return null
+}
+
 /**
  * One unified diff for the whole PR, split into a file each — Forgejo's file
  * list endpoint carries no patch, but `/pulls/:n.diff` has them all.
@@ -243,14 +322,25 @@ export function splitUnifiedDiff(diff: string): PrFile[] {
   const files: PrFile[] = []
   const chunks = diff.split(/^(?=diff --git )/m).filter((c) => c.startsWith('diff --git '))
   for (const chunk of chunks) {
-    // git's default `a/`·`b/` prefixes, or the `src://`·`dst://` ones Bitbucket Data Center
-    // runs `git diff` with (its KB, "Understanding diff view in Bitbucket Server").
-    const header = /^diff --git (?:a\/|src:\/\/)(.+?) (?:b\/|dst:\/\/)(.+)$/m.exec(chunk)
+    const eol = chunk.indexOf('\n')
+    const header = diffHeaderPaths(eol < 0 ? chunk : chunk.slice(0, eol))
     if (!header) continue
-    let [, oldPath, newPath] = header
-    const renameFrom = /^rename from (.+)$/m.exec(chunk)?.[1]
-    const renameTo = /^rename to (.+)$/m.exec(chunk)?.[1]
-    if (renameFrom && renameTo) [oldPath, newPath] = [renameFrom, renameTo]
+    let [oldPath, newPath] = header
+    // The extended header, up to the first hunk — a removed line `-- x` inside a
+    // hunk reads as `--- x` and must not be taken for a path.
+    const hunkStart = chunk.search(/^@@ /m)
+    const head = hunkStart < 0 ? chunk : chunk.slice(0, hunkStart)
+    // The ---/+++ lines name one path each, so a space in a name cannot make
+    // them ambiguous the way the header can; /dev/null is the missing side.
+    const minus = /^--- (.+)$/m.exec(head)?.[1]
+    const plus = /^\+\+\+ (.+)$/m.exec(head)?.[1]
+    const fromMinus = minus ? stripDiffPrefix(unquoteGitPath(minus.replace(/\t$/, '')), 'old') : null
+    const fromPlus = plus ? stripDiffPrefix(unquoteGitPath(plus.replace(/\t$/, '')), 'new') : null
+    if (fromMinus) oldPath = fromMinus
+    if (fromPlus) newPath = fromPlus
+    const renameFrom = /^rename from (.+)$/m.exec(head)?.[1]
+    const renameTo = /^rename to (.+)$/m.exec(head)?.[1]
+    if (renameFrom && renameTo) [oldPath, newPath] = [unquoteGitPath(renameFrom), unquoteGitPath(renameTo)]
     const status = /^new file mode/m.test(chunk)
       ? 'added'
       : /^deleted file mode/m.test(chunk)

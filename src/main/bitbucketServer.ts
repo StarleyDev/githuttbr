@@ -262,7 +262,13 @@ export function bbsBuildToCheck(b: BbsBuildStatus): PrCheck {
 /** One commit's builds rolled up the way the graph shows GitHub's checks. */
 export function bbsCiStatus(builds: BbsBuildStatus[]): CiStatus | null {
   if (!builds.length) return null
-  const jobs: CiJob[] = builds.map((b) => ({ name: b.name || b.key || 'build', state: bbsCiState(b.state), ...(b.url ? { url: b.url } : {}) }))
+  const jobs: CiJob[] = builds.map((b) => ({
+    name: b.name || b.key || 'build',
+    state: bbsCiState(b.state),
+    ...(b.url ? { url: b.url } : {}),
+    // Neutral, but not skipped: a cancelled build, or one whose state the server does not know.
+    ...(b.state === 'CANCELLED' ? { neutralAs: 'cancelled' as const } : b.state === 'UNKNOWN' || !b.state ? { neutralAs: 'unknown' as const } : {})
+  }))
   const state: CiState = jobs.some((j) => j.state === 'failure')
     ? 'failure'
     : jobs.some((j) => j.state === 'pending')
@@ -335,7 +341,17 @@ export function bbsCanMerge(m: BbsMergeability | null | undefined): boolean | nu
   if (!m) return null
   if (isConflicted(m)) return false
   if (m.outcome === 'UNKNOWN') return null
-  return typeof m.canMerge === 'boolean' || m.outcome === 'CLEAN' ? true : null
+  // `canMerge: false` alone says nothing about conflicts — only `true` or a CLEAN outcome does.
+  return m.canMerge === true || m.outcome === 'CLEAN' ? true : null
+}
+
+/**
+ * The server refuses the merge but names neither a conflict nor a merge check —
+ * `canMerge: false` with no vetoes. The PR page then disables Merge with a
+ * generic reason instead of letting the click fail.
+ */
+export function bbsMergeRefusedSilently(m: BbsMergeability | null | undefined): boolean {
+  return !!m && m.canMerge === false && !isConflicted(m) && !bbsMergeBlockers(m).length
 }
 
 /** The merge checks that veto the merge, in the server's own words. */
@@ -420,6 +436,7 @@ export async function bbsPullDetail(repo: BitbucketServerRepo, token: string, id
     merged,
     mergeable: open ? bbsCanMerge(merge) : null,
     ...(open && bbsMergeBlockers(merge).length ? { mergeBlockers: bbsMergeBlockers(merge) } : {}),
+    ...(open && bbsMergeRefusedSilently(merge) ? { mergeRefused: true } : {}),
     url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id),
     comments,
     reviews: mapBbsReviews(pr),
@@ -499,16 +516,21 @@ export async function bbsCiStatuses(repo: BitbucketServerRepo, token: string, sh
   // Capped at the PR list's own ceiling (4 pages of 50), so no caller can fan out unbounded.
   const wanted = [...new Set(shas)].slice(0, 200)
   if (!wanted.length) return {}
-  const withBuilds: string[] = []
-  for (let i = 0; i < wanted.length; i += STATS_BATCH) {
-    const batch = wanted.slice(i, i + STATS_BATCH)
-    const stats = await bbsJson<Record<string, BbsBuildStats>>(
-      `${bitbucketServerEndpoints(repo.base).buildStatusBase}/commits/stats`,
-      token,
-      { method: 'POST', body: JSON.stringify(batch) }
+  const batches: string[][] = []
+  for (let i = 0; i < wanted.length; i += STATS_BATCH) batches.push(wanted.slice(i, i + STATS_BATCH))
+  // At most five batches, so all of them at once. One that fails costs only
+  // its own rows their CI, not every row's.
+  const found = await Promise.all(
+    batches.map((batch) =>
+      bbsJson<Record<string, BbsBuildStats>>(`${bitbucketServerEndpoints(repo.base).buildStatusBase}/commits/stats`, token, {
+        method: 'POST',
+        body: JSON.stringify(batch)
+      })
+        .then((stats) => batch.filter((sha) => hasBuilds(stats?.[sha])))
+        .catch(() => [] as string[])
     )
-    withBuilds.push(...batch.filter((sha) => hasBuilds(stats?.[sha])))
-  }
+  )
+  const withBuilds = found.flat()
   const out: Record<string, CiStatus> = {}
   const queue = [...withBuilds]
   const work = async (): Promise<void> => {
@@ -542,8 +564,14 @@ export async function bbsWhoAmI(base: string, token: string): Promise<{ name: st
   const name = res.headers.get('x-ausername')?.trim()
   if (!name) return null
   const user = await bbsUserByName(api, name, token)
-  return { name, ...(user?.slug ? { slug: user.slug } : {}), ...(user?.displayName ? { displayName: user.displayName } : {}) }
+  // A search that misses (too many "contains" matches, or no permission to
+  // search): a plain name is its own slug, so it still links and reviews.
+  const slug = user?.slug || (PLAIN_SLUG.test(name) ? name : undefined)
+  return { name, ...(slug ? { slug } : {}), ...(user?.displayName ? { displayName: user.displayName } : {}) }
 }
+
+/** A user name made only of slug-safe characters, for which slug and name agree. */
+const PLAIN_SLUG = /^[A-Za-z0-9._-]+$/
 
 /**
  * The user record for a user *name*. `/users/{userSlug}` takes a slug, which
@@ -553,9 +581,21 @@ export async function bbsWhoAmI(base: string, token: string): Promise<{ name: st
  * (users whose name, display name or email *contain* it) and matched exactly.
  */
 async function bbsUserByName(api: string, name: string, token: string): Promise<BbsUser | null> {
-  const users = await bbsPages<BbsUser>(`${api}/users?filter=${enc(name)}`, token, 25, 2).catch(() => [] as BbsUser[])
-  // User names compare case-insensitively on the server; an exact match wins.
-  return users.find((u) => u.name === name) ?? users.find((u) => u.name?.toLowerCase() === name.toLowerCase()) ?? null
+  // Pages of 100, read only until the exact name turns up: a short name such as
+  // `al` matches every Alice and Alan, and the wanted one may be pages in.
+  let start = 0
+  let ci: BbsUser | null = null
+  for (let page = 0; page < 4; page++) {
+    const data = await bbsJson<BbsPage<BbsUser>>(`${api}/users?filter=${enc(name)}&start=${start}&limit=100`, token).catch(() => null)
+    const users = data?.values ?? []
+    // User names compare case-insensitively on the server; an exact match wins.
+    const exact = users.find((u) => u.name === name)
+    if (exact) return exact
+    ci ??= users.find((u) => u.name?.toLowerCase() === name.toLowerCase()) ?? null
+    if (!data || data.isLastPage !== false || typeof data.nextPageStart !== 'number' || data.nextPageStart <= start) break
+    start = data.nextPageStart
+  }
+  return ci
 }
 
 /** Settings → Integrations: the account behind a server's token. */

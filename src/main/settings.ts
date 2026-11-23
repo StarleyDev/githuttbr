@@ -252,6 +252,19 @@ export function activeProfileAuth(
   return profileAuth(host, undefined, remoteUrl, expectedBase)
 }
 
+/**
+ * One profile's PAT and link for a host — the profile a caller names (the clone
+ * dialog's pick), else the active one. A named profile that no longer exists
+ * gets nothing rather than someone else's.
+ */
+export function chosenProfileAuth(
+  host: RepoHost,
+  profileId: string | undefined,
+  remoteUrl?: string
+): Promise<{ token?: string; link?: AccountLink; username?: string }> {
+  return profileAuth(host, profileId, remoteUrl)
+}
+
 /** The Forgejo instance a profile (the active one by default) points at, or null. */
 export async function profileForgejoInstance(profileId?: string): Promise<string | null> {
   const plain = await readSettings()

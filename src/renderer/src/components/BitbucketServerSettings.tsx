@@ -5,12 +5,14 @@ import { useUIStore } from '../stores/ui'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { readableError } from '../lib/gitErrorHint'
 import {
+  bitbucketServerDisplayAddress,
+  bitbucketServerTokenKind,
   bitbucketServerTokenUrl,
   bitbucketServerUrlProblem,
   normalizeBitbucketServerUrl,
   type BitbucketServerUrlProblem
 } from '../../../shared/bitbucketServer'
-import type { BitbucketServerHost, ConnectedAccount, Profile } from '../../../shared/types'
+import type { BitbucketServerHost, BitbucketServerTokenKind, ConnectedAccount, Profile } from '../../../shared/types'
 
 const PROBLEM: Record<BitbucketServerUrlProblem, TranslationKey> = {
   invalid: 'settings.bbsInvalid',
@@ -20,10 +22,16 @@ const PROBLEM: Record<BitbucketServerUrlProblem, TranslationKey> = {
   cloud: 'settings.bbsInvalidCloud'
 }
 
-/** `host/context` — what a person recognises the server by. A saved address that no longer parses (an import, a hand-edited settings file) is shown as it is. */
+const TOKEN_KINDS: { id: BitbucketServerTokenKind | 'auto'; labelKey: TranslationKey }[] = [
+  { id: 'auto', labelKey: 'settings.bbsTokenKindAuto' },
+  { id: 'personal', labelKey: 'settings.bbsTokenKindPersonal' },
+  { id: 'project', labelKey: 'settings.bbsTokenKindProject' }
+]
+
+/** `host/context` — what a person recognises the server by. A saved address that no longer parses (an import, a hand-edited settings file) is shown without any credentials it carries. */
 function serverName(url: string): string {
   const base = normalizeBitbucketServerUrl(url)
-  return base ? base.replace(/^https:\/\//, '') : url
+  return base ? base.replace(/^https:\/\//, '') : bitbucketServerDisplayAddress(url)
 }
 
 /**
@@ -82,8 +90,8 @@ export function BitbucketServerSettings({
           // Nothing is ever sent to an address that does not normalise; it can only be removed.
           <div className="ghes-row" key={h.url}>
             <div className="ghes-row-head">
-              <span className="ghes-host">{h.url}</span>
-              <span className="conn-status">{t('settings.bbsInvalid')}</span>
+              <span className="ghes-host">{serverName(h.url)}</span>
+              <span className="conn-status">{t(PROBLEM[bitbucketServerUrlProblem(h.url) ?? 'invalid'])}</span>
               <button className="btn ghost small danger" type="button" onClick={() => remove(h)} title={t('settings.bbsRemove')}>
                 <Trash2 size={13} /> {t('settings.bbsRemove')}
               </button>
@@ -156,7 +164,16 @@ function BitbucketServerRow({
     }
   }, [host.url, host.token])
 
+  // Left on automatic, the kind is settled once the server says who the token
+  // is: a real user record (one with a profile page) means a personal token.
+  const auto = host.tokenKind === undefined
+  useEffect(() => {
+    if (auto && account) onChange({ tokenKind: account.profileUrl ? 'personal' : 'project' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new answer settles it
+  }, [account, auto])
+
   const username = host.username ?? ''
+  const kind = bitbucketServerTokenKind(host)
   return (
     <div className="ghes-row">
       <div className="ghes-row-head">
@@ -179,10 +196,30 @@ function BitbucketServerRow({
         <span className="settings-hint">{interp(t('settings.bbsTokenHint'), { host: name })}</span>
       </label>
       <label>
+        {t('settings.bbsTokenKind')}
+        <select
+          value={host.tokenKind ?? 'auto'}
+          onChange={(e) =>
+            onChange({ tokenKind: e.target.value === 'auto' ? undefined : (e.target.value as BitbucketServerTokenKind) })
+          }
+        >
+          {TOKEN_KINDS.map((k) => (
+            <option key={k.id} value={k.id}>
+              {t(k.labelKey)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
         {t('settings.bbsUsername')}
         <span className="ghes-add">
-          <input type="text" value={username} onChange={(e) => onChange({ username: e.target.value })} />
-          {account && !username.trim() && (
+          <input
+            type="text"
+            value={username}
+            disabled={kind === 'project'}
+            onChange={(e) => onChange({ username: e.target.value })}
+          />
+          {account && kind === 'personal' && !username.trim() && (
             <button className="btn small" type="button" onClick={() => onChange({ username: account.login })}>
               {interp(t('settings.bbsUseLogin'), { login: account.login })}
             </button>
