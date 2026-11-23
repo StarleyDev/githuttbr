@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  launchArgs,
   listShells,
   loginArgs,
   machineProbe,
@@ -177,5 +178,16 @@ describe.skipIf(process.platform === 'win32')('on this machine', () => {
     expect(() => execFileSync(sh, ['-c', 'exit 0'])).not.toThrow()
     const env = process.env['SHELL']
     if (env && env.startsWith('/') && machineProbe().isExecutable(env)) expect(sh).toBe(env)
+  })
+})
+
+describe('launchArgs — how a launch task starts', () => {
+  it('is a login shell in the user\'s own POSIX shell', () => {
+    expect(launchArgs('/bin/zsh', 'npm run dev')).toEqual(['-lic', 'npm run dev'])
+    expect(launchArgs('/usr/bin/bash', 'x')).toEqual(['-lic', 'x'])
+  })
+  it('is not a login shell when it stands in for fish or nu, so the probed PATH survives', () => {
+    expect(launchArgs('/usr/bin/fish', 'npm run dev')).toEqual(['-ic', 'npm run dev'])
+    expect(launchArgs('/opt/homebrew/bin/nu', 'x')).toEqual(['-ic', 'x'])
   })
 })

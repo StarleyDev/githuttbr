@@ -157,7 +157,8 @@ The limits:
 - Run & debug tasks are written in POSIX shell syntax (`a && b`, `( … )`), so
   they run in your shell only when it is sh-compatible (bash, zsh, ksh, dash…).
   For fish, nu or tcsh users they run in zsh (macOS) or bash (Linux), with the
-  `PATH` read from your own shell.
+  `PATH` read from your own shell — and not as a login shell, so a system
+  profile that resets `PATH` (Debian, Ubuntu) does not throw it away.
 - tcsh, nu and xonsh cannot be asked for `PATH` the same way; for them it is
   read from zsh or bash, so only what those shells' profiles set is found.
 

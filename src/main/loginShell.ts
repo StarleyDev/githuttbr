@@ -156,6 +156,18 @@ export function posixShell(refresh = false): string {
   return executable(fallback) ? fallback : '/bin/sh'
 }
 
+/**
+ * How a launch task's sh-syntax command line is started. In the user's own
+ * POSIX shell it is a login shell, so version managers in ~/.zprofile load.
+ * When it stands in for fish or nu it is not: a login bash runs /etc/profile,
+ * which on Debian/Ubuntu resets PATH, and the stand-in never reads the user's
+ * own config anyway — keeping the PATH the app already probed from that shell
+ * is the only way the task finds the same tools.
+ */
+export function launchArgs(system: string, commandLine: string): string[] {
+  return isPosixSyntax(system) ? ['-lic', commandLine] : ['-ic', commandLine]
+}
+
 /** The shell that reads the login PATH: the user's when it is POSIX or fish (the
  *  probe has a script for each); tcsh cannot combine `-l` with `-c`, and nu or
  *  xonsh speak neither, so those fall back to the POSIX shell. */

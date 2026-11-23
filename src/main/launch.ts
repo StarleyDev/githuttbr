@@ -6,7 +6,7 @@ import { join, relative, sep } from 'path'
 import type { LaunchConfig, LaunchGroup, LaunchInput, LaunchTask } from '../shared/types'
 import { resolveLaunchInputs } from './launchInputFiles'
 import { makeBatchedSender } from './ptyBatch'
-import { posixShell } from './loginShell'
+import { launchArgs, posixShell, systemShell } from './loginShell'
 import { PRODUCT_NAME } from '../shared/brand'
 
 // ─── JSONC parsing ──────────────────────────────────────────────────────────
@@ -736,7 +736,7 @@ function spawnSession(
     const pty = require('node-pty') as {
       spawn(file: string, args: string[], opts: Record<string, unknown>): PtyProcess
     }
-    const shellArgs = process.platform === 'win32' ? ['-NoLogo', '-Command', commandLine] : ['-lic', commandLine]
+    const shellArgs = process.platform === 'win32' ? ['-NoLogo', '-Command', commandLine] : launchArgs(systemShell(), commandLine)
     const p = pty.spawn(defaultShell(), shellArgs, {
       name: 'xterm-256color',
       cwd,
@@ -804,7 +804,7 @@ function spawnFallback(
   sink: ReturnType<typeof makeSink>,
   tap?: (chunk: string) => void
 ): LaunchSession {
-  const args = process.platform === 'win32' ? ['-NoLogo', '-Command', commandLine] : ['-lic', commandLine]
+  const args = process.platform === 'win32' ? ['-NoLogo', '-Command', commandLine] : launchArgs(systemShell(), commandLine)
   const child: ChildProcess = spawn(defaultShell(), args, { cwd, env: { ...process.env, ...env } })
   sink.emit(banner)
   const chunk = (d: Buffer): void => {

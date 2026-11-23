@@ -48,8 +48,10 @@ function resolveShell(sel?: string): ResolvedShell {
     case 'system':
       return { file: system, args: [] }
     default:
-      // ''/undefined → system default; anything else is a custom exe path.
-      return { file: sel?.trim() ? sel.trim() : system, args: [] }
+      // ''/undefined → system default; anything else is a custom exe path. A
+      // POSIX path ('/usr/bin/zsh') came from settings made on macOS/Linux.
+      if (!sel?.trim() || sel.trim().startsWith('/')) return { file: system, args: [] }
+      return { file: sel.trim(), args: [] }
   }
 }
 
@@ -108,6 +110,9 @@ function createPty(
       env: {
         ...process.env,
         TERM: 'xterm-256color',
+        // What runs inside (tmux, `$SHELL -c`, editors) starts the shell this
+        // terminal actually runs, not the app's inherited one.
+        ...(process.platform !== 'win32' ? { SHELL: sh.file } : {}),
         ...(poshEnv ? { POSH_THEME: poshEnv } : {})
       } as Record<string, string>
     })
@@ -164,7 +169,7 @@ function createPty(
 function createFallback(wc: WebContents, id: number, cwd: string, sh: ResolvedShell): TermSession {
   const child: ChildProcess = spawn(sh.file, sh.args, {
     cwd,
-    env: { ...process.env, TERM: 'dumb' }
+    env: { ...process.env, TERM: 'dumb', ...(process.platform !== 'win32' ? { SHELL: sh.file } : {}) }
   })
   const send = (text: string): void => {
     if (!wc.isDestroyed()) wc.send(`term:data:${id}`, text)
