@@ -422,6 +422,21 @@ export function peekActiveProfileAuth(host: RepoHost, remoteUrl?: string, expect
 }
 
 /**
+ * `namedProfileAuth` that never decrypts — see `peekActiveProfileAuth`. For a
+ * lookup that names its profile because the active one on disk may lag the
+ * renderer: a profile switch is written only after the settings debounce.
+ */
+export function peekNamedProfileAuth(
+  host: RepoHost,
+  profileId: string,
+  remoteUrl?: string,
+  expectedBase?: string
+): Promise<PeekedAuth> {
+  if (!profileId.trim()) return Promise.resolve({})
+  return profileAuth(host, profileId, remoteUrl, expectedBase, true)
+}
+
+/**
  * One named profile's PAT and link for a host — the clone dialog's pick. An
  * empty id or one no profile has gets nothing, never the active profile's or
  * the first one's. `expectedBase` is the server a provider-level call (the

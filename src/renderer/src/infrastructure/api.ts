@@ -815,7 +815,8 @@ export const avatarApi = {
   /** By lowercased email: a URL, `null` for a confirmed miss; an absent email is unknown for now. */
   github: (remoteUrl: string, repoPath: string, items: { email: string; sha?: string }[], size: number) =>
     window.api.avatars.github(remoteUrl, repoPath, items, size) as Promise<Record<string, string | null>>,
-  profileGithub: (size: number) => window.api.avatars.profileGithub(size) as Promise<string | null>
+  profileGithub: (profileId: string, size: number) =>
+    window.api.avatars.profileGithub(profileId, size) as Promise<string | null>
 }
 
 export const vaultApi = {

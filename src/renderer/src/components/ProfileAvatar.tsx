@@ -85,7 +85,9 @@ export function ProfileAvatar({
   const avatar = validProfileAvatar(profile.avatar) ?? { source: 'auto' as const }
   const image = useProfileAvatarsStore((s) => s.images[profile.id])
   const ensureProfileImage = useProfileAvatarsStore((s) => s.ensureProfileImage)
-  // Main answers the account question for the active profile only, so only it asks.
+  // Only the active profile asks for its account picture: one `GET /user` per
+  // token, not one per profile listed. Main answers for the id sent, so a switch
+  // not yet written to disk still gets this profile's picture, not the last one's.
   const isActive = useSettingsStore((s) => (s.settings.activeProfileId ?? s.settings.profiles[0]?.id) === profile.id)
   // The URL that failed, not a flag: picking another account picture retries.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)

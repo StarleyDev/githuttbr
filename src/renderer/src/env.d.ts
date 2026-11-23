@@ -182,7 +182,7 @@ interface PreloadApi {
   }
   avatars: {
     github(remoteUrl: string, repoPath: string, items: unknown, size: number): Promise<unknown>
-    profileGithub(size: number): Promise<unknown>
+    profileGithub(profileId: string, size: number): Promise<unknown>
   }
   vault: {
     list(repoPath: string): Promise<unknown>

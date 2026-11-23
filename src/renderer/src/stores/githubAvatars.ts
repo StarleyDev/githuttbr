@@ -19,15 +19,18 @@ export function githubAuthorAvatar(
   return batcher.request(scope, email, sha)
 }
 
-const profile = createProfileAvatarCache((size) => avatarApi.profileGithub(size), () => batcher.generation())
+const profile = createProfileAvatarCache(
+  (profileId, size) => avatarApi.profileGithub(profileId, size),
+  () => batcher.generation()
+)
 
 /**
  * The active profile's GitHub account picture, asked once per profile, account,
  * size and unlock generation (main caches per token). `account` is
  * `githubAccountFingerprint` of the profile: a different account, or tokens
  * that were still locked the last time, is a different key. Main answers for
- * whichever profile is active, so the caller only asks while `profileId` is the
- * active one.
+ * the profile named here, never for whichever one its settings file says is
+ * active — that lags a switch by the settings debounce.
  */
 export function githubProfileAvatar(profileId: string, account: string, size: number): Promise<string | null> {
   return profile(profileId, account, size)
