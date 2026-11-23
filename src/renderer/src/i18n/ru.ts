@@ -158,6 +158,7 @@ export const ru: Dict = {
   'sidebar.todos': 'ЗАДАЧИ',
   'sidebar.noTodos': 'Задач пока нет',
   'sidebar.noPRs': 'Открытые пул-реквесты не загружены',
+  'sidebar.prsServerUnmatched': 'Сервер этого удалённого репозитория не удалось сопоставить ни с одним настроенным сервером — для пул-реквестов используйте https-адрес',
   'sidebar.upstreamPRs': 'В {repo}',
   'sidebar.upstreamPRsTitle': 'Ваши открытые пул-реквесты в репозитории, от которого создан этот форк',
   'sidebar.stackOf': 'Стек из {n}',

@@ -5,18 +5,18 @@ import { readFile, writeFile, mkdir, copyFile, rm } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type BitbucketServerTokenKind, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import {
-  profileForgejoBase,
   tokenInstance,
   GITLAB_COM,
   gitlabAuthFor,
   gitlabServerBases,
+  profileForgejoBase,
   migrateGitlabSettings
 } from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
 import { GITHUB_COM, githubAuthFor, githubEnterpriseBases } from '../shared/githubEnterprise'
 import { BITBUCKET_CLOUD, bitbucketAuthFor, bitbucketServerBases } from '../shared/bitbucketServer'
 import { setKnownBitbucketServerInstances } from './bitbucketServerInstances'
-import { resolveRemoteProvider, type ResolvedRemote } from '../shared/remoteProvider'
+import { resolveRemoteProvider, serverRegistryOf, type ResolvedRemote } from '../shared/remoteProvider'
 import {
   applySecrets,
   extractSecrets,
@@ -296,7 +296,9 @@ async function profileAuth(
   // server cannot be told (ssh to a hostname two providers share) gets nothing.
   const onRemote = remoteUrl ? remoteServerOf(remoteUrl, plain.profiles) : null
   if (onRemote && onRemote.provider !== host) return {}
-  if (remoteUrl && host !== 'azure' && !onRemote?.base) return {}
+  // Azure DevOps has no configured servers, so no base: it is placed by its
+  // hostname alone, and a remote that is not on one gets nothing.
+  if (remoteUrl && (host === 'azure' ? onRemote?.provider !== 'azure' : !onRemote?.base)) return {}
   const serverOfRemote = onRemote?.base
   // GitHub: github.com or one Enterprise Server, decided by the remote's host
   // (or the base a provider-level call names). Each gets only its own token.
@@ -392,12 +394,7 @@ function authFrom(
  * here over the settings being read rather than the synchronous registries.
  */
 function remoteServerOf(remoteUrl: string, profiles: AppSettings['profiles']): ResolvedRemote | null {
-  return resolveRemoteProvider(remoteUrl, {
-    gitlab: gitlabServerBases(profiles),
-    forgejo: profiles.map((p) => profileForgejoBase(p.forgejoUrl)).filter((b): b is string => !!b),
-    githubEnterprise: githubEnterpriseBases(profiles),
-    bitbucketServer: bitbucketServerBases(profiles)
-  })
+  return resolveRemoteProvider(remoteUrl, serverRegistryOf(profiles))
 }
 
 /**
@@ -634,8 +631,11 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
   if (!hasSecrets && (!servedSecrets || !secretCache || secretsUnreadable)) {
     // What it can do is say which servers are gone: a token filed for a server
     // the profile no longer lists would otherwise come back with the URL.
+    // The session-only tokens too (consent declined): they are applied on every
+    // read, so a removed server's token would otherwise return with its URL.
+    const ids = (settings.profiles ?? []).map((p) => p.id)
+    sessionSecrets = pruneSecrets(sessionSecrets, ids, settings.profiles ?? [])
     if (secretCache && !secretsUnreadable) {
-      const ids = (settings.profiles ?? []).map((p) => p.id)
       const pruned = pruneSecrets(secretCache, ids, settings.profiles ?? [])
       if (JSON.stringify(pruned) !== JSON.stringify(secretCache) && (await canEncrypt())) {
         await saveSecrets(pruned)

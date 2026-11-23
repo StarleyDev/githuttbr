@@ -1,7 +1,7 @@
-import type { RepoHost } from './types'
-import { BITBUCKET_CLOUD, isBitbucketCloudHost } from './bitbucketServer'
-import { GITHUB_COM, isGithubComHost } from './githubEnterprise'
-import { GITLAB_COM } from './gitlabInstance'
+import type { Profile, RepoHost } from './types'
+import { BITBUCKET_CLOUD, bitbucketServerBases, isBitbucketCloudHost } from './bitbucketServer'
+import { GITHUB_COM, githubEnterpriseBases, isGithubComHost } from './githubEnterprise'
+import { GITLAB_COM, gitlabServerBases, profileForgejoBase } from './gitlabInstance'
 
 /**
  * Every self-hosted server the profiles configure, by provider. Recognition
@@ -12,6 +12,18 @@ export interface ServerRegistry {
   forgejo: readonly string[]
   githubEnterprise: readonly string[]
   bitbucketServer: readonly string[]
+}
+
+/** Every server the given profiles configure, as canonical bases. */
+export function serverRegistryOf(
+  profiles: ReadonlyArray<Pick<Profile, 'gitlabServers' | 'forgejoUrl' | 'githubEnterprise' | 'bitbucketServers'>>
+): ServerRegistry {
+  return {
+    gitlab: gitlabServerBases(profiles),
+    forgejo: profiles.map((p) => profileForgejoBase(p.forgejoUrl)).filter((b): b is string => !!b),
+    githubEnterprise: githubEnterpriseBases(profiles),
+    bitbucketServer: bitbucketServerBases(profiles)
+  }
 }
 
 export interface ResolvedRemote {
@@ -33,14 +45,20 @@ interface Parts {
   port: number | null
   /** Leading `/` kept, percent-decoded. */
   path: string
+  /** Written `[user@]host:path`, which has no room for a port. */
+  scp: boolean
 }
 
 function partsOf(url: string): Parts | null {
-  // scp-style ssh, `[user@]host:path` — never a `scheme://` URL.
-  const scp = url.includes('://') ? null : /^(?:[\w.-]+@)?([\w.-]+):(.+)$/.exec(url)
+  // scp-style ssh, `[user@]host:path` — never a `scheme://` URL. A drive
+  // letter (`C:/repos/app.git`, `C:\repos`) is a local path, as git reads it,
+  // not an ssh host called `c`. The user stays optional: an ssh config alias
+  // (`work:team/app.git`) is a real remote.
+  const drive = /^[a-z]:[\\/]/i.test(url)
+  const scp = url.includes('://') || drive ? null : /^(?:[\w.-]+@)?([\w.-]+):(.+)$/.exec(url)
   if (scp) {
     const hostname = scp[1].toLowerCase()
-    return { scheme: 'ssh', host: hostname, hostname, port: null, path: '/' + scp[2].replace(/^\/+/, '') }
+    return { scheme: 'ssh', host: hostname, hostname, port: null, path: '/' + scp[2].replace(/^\/+/, ''), scp: true }
   }
   try {
     const u = new URL(url)
@@ -53,9 +71,11 @@ function partsOf(url: string): Parts | null {
       /* keep it encoded */
     }
     const port = u.port ? Number(u.port) : null
-    if (u.protocol === 'https:') return { scheme: 'https', host: u.host.toLowerCase(), hostname, port, path }
-    if (u.protocol === 'ssh:' || u.protocol === 'git+ssh:') return { scheme: 'ssh', host: hostname, hostname, port, path }
-    return { scheme: 'other', host: hostname, hostname, port, path }
+    if (u.protocol === 'https:') return { scheme: 'https', host: u.host.toLowerCase(), hostname, port, path, scp: false }
+    if (u.protocol === 'ssh:' || u.protocol === 'git+ssh:') {
+      return { scheme: 'ssh', host: hostname, hostname, port, path, scp: false }
+    }
+    return { scheme: 'other', host: hostname, hostname, port, path, scp: false }
   } catch {
     return null
   }
@@ -113,7 +133,9 @@ const byPrefix = (a: Candidate, b: Candidate): number => b.prefix.length - a.pre
  * 3. ssh carries neither the web port nor the context path, only a hostname
  *    and the ssh daemon's port: port 7999 (Data Center's default) with a Data
  *    Center on that hostname → Data Center; otherwise the provider when exactly
- *    one provider has servers on that hostname; several → unknown.
+ *    one provider has servers on that hostname; several → unknown. An scp
+ *    remote (`git@host:path`) has no port to give, so a Data Center sharing the
+ *    hostname with another provider does not count for it.
  * 4. Anything else (http, git://, an https remote at a port or path no base
  *    covers): by hostname only, when exactly one provider has servers there —
  *    with no base, so no server's token is offered.
@@ -147,9 +169,14 @@ export function resolveRemoteProvider(url: string, reg: ServerRegistry): Resolve
   if (r.scheme === 'ssh') {
     const dc = onHostname.filter((c) => c.provider === 'bitbucket').sort(byPrefix)
     if (r.port === BITBUCKET_SERVER_SSH_PORT && dc.length > 0) return { provider: 'bitbucket', base: dc[0].base }
-    const provider = soleProvider(onHostname)
+    // An scp remote cannot name a port, so it reaches the daemon on 22 — not a
+    // Data Center's, which listens on 7999. Beside another provider, the Data
+    // Center is dropped; on its own, it keeps its hostname (an admin may have
+    // moved its daemon to 22).
+    const pool = r.scp && dc.length < onHostname.length ? onHostname.filter((c) => c.provider !== 'bitbucket') : onHostname
+    const provider = soleProvider(pool)
     // One provider on the host: its longest base, as every server matcher picks.
-    return provider ? { provider, base: [...onHostname].sort(byPrefix)[0].base } : null
+    return provider ? { provider, base: [...pool].sort(byPrefix)[0].base } : null
   }
 
   const provider = soleProvider(onHostname)
@@ -162,11 +189,33 @@ export function resolveRemoteProvider(url: string, reg: ServerRegistry): Resolve
  * `ssh://git@host:22/o/r.git` become `https://host/o/r.git` (the ssh port says
  * nothing about the web one). An https URL comes back as it is; anything else
  * (http, git://, a local path) is null.
+ *
+ * With the server the remote resolved to (`resolveRemoteProvider`), the form is
+ * built on that server's base instead — its web port and context path are part
+ * of the address a helper with `useHttpPath` files a login under. A Data
+ * Center serves its repositories over https under `/scm`, so
+ * `ssh://git@dc:7999/p/r.git` is `<base>/scm/p/r.git`.
  */
-export function httpsFormOf(url: string): string | null {
+export function httpsFormOf(url: string, resolved?: ResolvedRemote | null): string | null {
   const r = partsOf(url.trim())
   if (!r) return null
   if (r.scheme === 'https') return url.trim()
   if (r.scheme !== 'ssh') return null
-  return `https://${r.hostname}${r.path.split('/').map(encodeURIComponent).join('/')}`
+  const path = r.path.split('/').map(encodeURIComponent).join('/')
+  const base = resolved?.base?.replace(/\/+$/, '')
+  if (!base) return `https://${r.hostname}${path}`
+  const dataCenter = resolved?.provider === 'bitbucket' && base !== BITBUCKET_CLOUD
+  return `${base}${dataCenter ? '/scm' : ''}${path}`
+}
+
+/**
+ * True when a remote's hostname is one a profile configures a server on, yet
+ * `resolveRemoteProvider` cannot place it — ssh to a hostname two providers
+ * share, or two providers on the very same base. Such a remote gets no hosting
+ * features, and without saying so the empty panel looks like a bug.
+ */
+export function remoteServerUnmatched(url: string, reg: ServerRegistry): boolean {
+  const r = partsOf(url.trim())
+  if (!r || resolveRemoteProvider(url, reg)) return false
+  return candidatesOf(reg).some((c) => c.hostname === r.hostname)
 }

@@ -158,6 +158,7 @@ export const uk: Dict = {
   'sidebar.todos': 'ЗАВДАННЯ',
   'sidebar.noTodos': 'Завдань поки немає',
   'sidebar.noPRs': 'Відкриті PR не завантажено',
+  'sidebar.prsServerUnmatched': 'Сервер цього віддаленого репозиторію не вдалося зіставити з жодним налаштованим сервером — для PR використовуйте https-адресу',
   'sidebar.upstreamPRs': 'У {repo}',
   'sidebar.upstreamPRsTitle': 'Ваші відкриті пул-реквести в репозиторії, з якого створено цей форк',
   'sidebar.stackOf': 'Стек із {n}',

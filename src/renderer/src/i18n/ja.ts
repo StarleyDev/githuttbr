@@ -157,6 +157,7 @@ export const ja: Dict = {
   'sidebar.todos': 'TODO',
   'sidebar.noTodos': 'TODO はまだありません',
   'sidebar.noPRs': '読み込まれたオープンなプルリクエストはありません',
+  'sidebar.prsServerUnmatched': 'このリモートのサーバーは設定済みのどのサーバーとも一致しませんでした。プルリクエストには https のリモートを使ってください',
   'sidebar.upstreamPRs': '{repo} 上',
   'sidebar.upstreamPRsTitle': 'このフォークの元のリポジトリにある、あなたのオープンなプルリクエスト',
   'sidebar.stackOf': '{n} 件のスタック',

@@ -157,6 +157,7 @@ export const fr: Dict = {
   'sidebar.todos': 'TÂCHES',
   'sidebar.noTodos': 'Aucune tâche pour l’instant',
   'sidebar.noPRs': 'Aucune pull request ouverte chargée',
+  'sidebar.prsServerUnmatched': 'Le serveur de ce remote ne correspond à aucun serveur configuré — utilisez son remote https pour les pull requests',
   'sidebar.upstreamPRs': 'Sur {repo}',
   'sidebar.upstreamPRsTitle': 'Vos pull requests ouvertes sur le dépôt dont ce fork est issu',
   'sidebar.stackOf': 'Pile de {n}',

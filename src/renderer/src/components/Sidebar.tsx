@@ -68,6 +68,7 @@ import {
   repoSupportsPrReview
 } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
+import { remoteServerUnmatched, serverRegistryOf } from '../../../shared/remoteProvider'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
@@ -312,6 +313,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const sidebarHidden = useMemo(() => repoLayout?.sidebarHidden ?? baseSidebarHidden, [repoLayout, baseSidebarHidden])
   const groupBranches = useSettingsStore((s) => s.settings.groupBranches)
   const profiles = useSettingsStore((s) => s.settings.profiles)
+  // A remote on a configured server's hostname that no server claims (ssh to a
+  // hostname two providers share) gets no PRs: say why rather than show "none".
+  const prOriginUrl = (repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0])?.url
+  const prServerUnmatched = useMemo(
+    () => !!prOriginUrl && remoteServerUnmatched(prOriginUrl, serverRegistryOf(profiles)),
+    [prOriginUrl, profiles]
+  )
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
@@ -2318,7 +2326,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </>
         }
       >
-        {repo.prs.length === 0 && repo.upstreamPrs.length === 0 && <div className="sb-empty">{t('sidebar.noPRs')}</div>}
+        {repo.prs.length === 0 && repo.upstreamPrs.length === 0 && (
+          <div className="sb-empty">
+            {!repo.prProvider && prServerUnmatched ? t('sidebar.prsServerUnmatched') : t('sidebar.noPRs')}
+          </div>
+        )}
         {groupPrStacks(repo.prs).map((group) =>
           group.kind === 'single' ? (
             prRow(group.pr)

@@ -158,6 +158,7 @@ export const de: Dict = {
   'sidebar.todos': 'AUFGABEN',
   'sidebar.noTodos': 'Noch keine Aufgaben',
   'sidebar.noPRs': 'Keine offenen PRs geladen',
+  'sidebar.prsServerUnmatched': 'Der Server dieses Remotes passt zu keinem konfigurierten Server – nutze für Pull-Requests das https-Remote',
   'sidebar.upstreamPRs': 'In {repo}',
   'sidebar.upstreamPRsTitle': 'Deine offenen Pull Requests im Repository, von dem dieser Fork stammt',
   'sidebar.stackOf': 'Stapel aus {n}',

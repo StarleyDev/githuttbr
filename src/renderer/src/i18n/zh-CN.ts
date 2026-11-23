@@ -158,6 +158,7 @@ export const zhCN: Dict = {
   'sidebar.todos': '待办',
   'sidebar.noTodos': '还没有待办',
   'sidebar.noPRs': '未加载任何开启中的拉取请求',
+  'sidebar.prsServerUnmatched': '无法将此远程仓库的服务器匹配到已配置的服务器——请使用其 https 远程地址来处理拉取请求',
   'sidebar.upstreamPRs': '位于 {repo}',
   'sidebar.upstreamPRsTitle': '你在此复刻所来自的仓库上开启的拉取请求',
   'sidebar.stackOf': '{n} 个 PR 的堆栈',

@@ -158,6 +158,7 @@ export const nl: Dict = {
   'sidebar.todos': 'TAKEN',
   'sidebar.noTodos': 'Nog geen taken',
   'sidebar.noPRs': 'Geen open PR’s geladen',
+  'sidebar.prsServerUnmatched': 'De server van deze remote komt met geen enkele geconfigureerde server overeen — gebruik de https-remote voor PR’s',
   'sidebar.upstreamPRs': 'Op {repo}',
   'sidebar.upstreamPRsTitle': 'Je open pull requests op de repository waar deze fork van afkomstig is',
   'sidebar.stackOf': 'Stapel van {n}',
