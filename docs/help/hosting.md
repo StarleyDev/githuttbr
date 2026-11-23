@@ -266,7 +266,7 @@ clone URL (`https://<host>[/<path>]/scm/<project>/<repo>.git`), the ssh one
 | Merge | The page shows a merge-check veto (*Requires 2 approvals*, …) in the server's own words, apart from real conflicts, and keeps **Merge** off until it clears; the checks are asked again before merging and nothing is merged on a veto |
 | Create a pull request | Title, description, draft; source and target in the same repository |
 | Build status in the graph | One request finds the commits that have builds, then only those are read |
-| Push, fetch and clone over https | Signed in with that server's token — **Clone → URL** too, for an address under a server in the list; a clone signs in as the profile picked in the clone dialog |
+| Push, fetch and clone over https | Signed in with that server's token — **Clone → URL** too, for an address under a server in the list, signed in as the active profile |
 | The *create pull request* page in the browser | Opens on the server, under its path |
 
 **Each token goes only to its own server.** The bitbucket.org credential is
@@ -287,19 +287,25 @@ project or repository token works too, with the same permissions.
 
 **Token type and user name.** Git sends a user name with the token, and which
 one depends on whose token it is — Atlassian's [HTTP access tokens](https://confluence.atlassian.com/bitbucketserver/http-access-tokens-939515499.html)
-page sets the rule:
+page sets the rule. The app never guesses the type: it is what you pick, and
+pasting a new token sets it back to *Not set*.
 
 | Token type | User name git sends |
 |------------|---------------------|
-| **Personal token** | The **User name** field; left empty, the one in the remote URL (Bitbucket's own clone URLs read `https://<you>@<host>/scm/…`); with neither, `x-token-auth` |
-| **Project or repository token** | Always `x-token-auth`, which Bitbucket requires for these tokens — even when the remote URL names whoever copied it |
-| **Automatic** (the default) | Personal when the **User name** field is filled, project or repository otherwise. Once the row says *Connected as …*, the choice is settled: a token whose account is a real user on the server is taken as personal |
+| **Not set** (the default) | The **User name** field; left empty, the one in the remote URL (Bitbucket's own clone URLs read `https://<you>@<host>/scm/…`); with neither, `x-token-auth` |
+| **Personal token** | The **User name** field, else the one in the remote URL — never `x-token-auth`. With neither, no credential is sent, and git reports the failed sign-in |
+| **Project or repository token** | Always `x-token-auth`, which Bitbucket requires for these tokens — even when the remote URL names whoever copied it. The **User name** field is disabled |
 
-For a personal token, the **Use …** button fills in the name the server
-reported. Approving and requesting changes find your account's *slug* on the
+*Not set* covers both kinds as long as the remote URL is a plain one for a
+project token, or names you for a personal one. Pick a type when it does not:
+a project token cloned from a URL that names a person needs **Project or
+repository token**. Once the row says *Connected as …*, a **Use …** button
+fills in the name the server reported. Approving and requesting changes find your account's *slug* on the
 server (an email-style name `jdoe@corp.com` has the slug `jdoe_corp.com`), so
-those work for such names too; when the server does not let the token search
-users, a plain name is used as its own slug.
+those work for such names too. When the server does not let the token search
+users, a plain name is tried as a slug, and kept only if the server answers for
+it — Atlassian does not document how a slug is derived from a name, so it is not
+assumed.
 
 **Merging.** The PR page asks the server whether the pull request can merge
 before enabling **Merge**. A merge check that refuses (say, *Requires 2

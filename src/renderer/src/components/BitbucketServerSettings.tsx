@@ -6,7 +6,6 @@ import { useT, interp, type TranslationKey } from '../i18n'
 import { readableError } from '../lib/gitErrorHint'
 import {
   bitbucketServerDisplayAddress,
-  bitbucketServerTokenKind,
   bitbucketServerTokenUrl,
   bitbucketServerUrlProblem,
   normalizeBitbucketServerUrl,
@@ -22,8 +21,8 @@ const PROBLEM: Record<BitbucketServerUrlProblem, TranslationKey> = {
   cloud: 'settings.bbsInvalidCloud'
 }
 
-const TOKEN_KINDS: { id: BitbucketServerTokenKind | 'auto'; labelKey: TranslationKey }[] = [
-  { id: 'auto', labelKey: 'settings.bbsTokenKindAuto' },
+const TOKEN_KINDS: { id: BitbucketServerTokenKind | 'unset'; labelKey: TranslationKey }[] = [
+  { id: 'unset', labelKey: 'settings.bbsTokenKindUnset' },
   { id: 'personal', labelKey: 'settings.bbsTokenKindPersonal' },
   { id: 'project', labelKey: 'settings.bbsTokenKindProject' }
 ]
@@ -164,16 +163,10 @@ function BitbucketServerRow({
     }
   }, [host.url, host.token])
 
-  // Left on automatic, the kind is settled once the server says who the token
-  // is: a real user record (one with a profile page) means a personal token.
-  const auto = host.tokenKind === undefined
-  useEffect(() => {
-    if (auto && account) onChange({ tokenKind: account.profileUrl ? 'personal' : 'project' })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new answer settles it
-  }, [account, auto])
-
   const username = host.username ?? ''
-  const kind = bitbucketServerTokenKind(host)
+  // Only the person says whose token it is — never inferred from the server's
+  // answer, which cannot tell a project token's bot user from a person.
+  const kind = host.tokenKind
   return (
     <div className="ghes-row">
       <div className="ghes-row-head">
@@ -192,15 +185,20 @@ function BitbucketServerRow({
       </div>
       <label>
         {t('settings.bbsToken')}
-        <input type="password" value={host.token} onChange={(e) => onChange({ token: e.target.value })} />
+        {/* A new token may be someone else's: its kind is chosen again. */}
+        <input
+          type="password"
+          value={host.token}
+          onChange={(e) => onChange({ token: e.target.value, tokenKind: undefined })}
+        />
         <span className="settings-hint">{interp(t('settings.bbsTokenHint'), { host: name })}</span>
       </label>
       <label>
         {t('settings.bbsTokenKind')}
         <select
-          value={host.tokenKind ?? 'auto'}
+          value={host.tokenKind ?? 'unset'}
           onChange={(e) =>
-            onChange({ tokenKind: e.target.value === 'auto' ? undefined : (e.target.value as BitbucketServerTokenKind) })
+            onChange({ tokenKind: e.target.value === 'unset' ? undefined : (e.target.value as BitbucketServerTokenKind) })
           }
         >
           {TOKEN_KINDS.map((k) => (
@@ -219,7 +217,7 @@ function BitbucketServerRow({
             disabled={kind === 'project'}
             onChange={(e) => onChange({ username: e.target.value })}
           />
-          {account && kind === 'personal' && !username.trim() && (
+          {account && kind !== 'project' && !username.trim() && (
             <button className="btn small" type="button" onClick={() => onChange({ username: account.login })}>
               {interp(t('settings.bbsUseLogin'), { login: account.login })}
             </button>

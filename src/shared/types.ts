@@ -606,8 +606,9 @@ export interface PullRequest {
   headSha?: string
   /** Rolled-up state of the head commit's checks, when they were read. */
   ci?: CiState
-  /** "2 passed · 1 failing", for the row's tooltip. */
-  ciSummary?: string
+  /** The head's checks counted per outcome, for the row's tooltip — the
+   *  renderer words them ("2 passed · 1 failing") in the user's language. */
+  ciCounts?: CiCounts
   /** owner/repo the head branch lives in (GitHub), to tell a fork's PRs apart. */
   headRepo?: string
   /** Logins asked to review and not answered yet, as the list reports them. */
@@ -997,6 +998,16 @@ export interface CiJob {
   /** Why a `neutral` job is neutral, when the host says it was not skipped —
    *  Bitbucket Data Center's CANCELLED and UNKNOWN builds. Absent: skipped. */
   neutralAs?: 'cancelled' | 'unknown'
+}
+
+/** A commit's checks counted per outcome. */
+export interface CiCounts {
+  passed: number
+  failed: number
+  pending: number
+  skipped: number
+  cancelled: number
+  unknown: number
 }
 
 export interface CiStatus {
@@ -2313,9 +2324,6 @@ export interface CloneOptions {
   host?: RepoHost
   /** Token for that host — used for this clone only, never written to config. */
   token?: string
-  /** The profile the clone dialog picked — the one the new repository is bound
-   *  to, so the clone authenticates as that profile's account too. */
-  profileId?: string
   /** Partial clone spec for `--filter`, e.g. `blob:none`. */
   filter?: string
   /** Shallow clone: keep only this many commits of history. */
@@ -2885,7 +2893,8 @@ export interface BitbucketServerHost {
    * Whose token this is. A personal token goes with its owner's name — this
    * entry's `username`, else the one in the remote URL; a project or repository
    * token always with `x-token-auth`, which Basic auth requires for it. Absent
-   * (automatic): personal when a user name is set, project or repository otherwise.
+   * (not set — the default, never inferred): `username`, else the remote URL's,
+   * else `x-token-auth`, as before the choice existed.
    */
   tokenKind?: BitbucketServerTokenKind
 }

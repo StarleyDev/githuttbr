@@ -9,7 +9,7 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
-import { summariseChecks } from './ciSummary'
+import { countChecks } from './ciSummary'
 import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance } from './settings'
 import {
   createForgejoPull,
@@ -803,7 +803,7 @@ async function listPullRequestsOf(
       const status = pr.headSha ? ci[pr.headSha] : undefined
       if (!status) continue
       pr.ci = status.state
-      pr.ciSummary = summariseChecks(status)
+      pr.ciCounts = countChecks(status)
     }
     return { provider: 'github', prs }
   }

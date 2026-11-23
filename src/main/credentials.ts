@@ -2,7 +2,7 @@ import { execFile } from 'child_process'
 import { isKnownForgejoHost, isKnownGithubEnterpriseHost, isKnownGitlabHost } from './gitlabInstances'
 import { GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
 import { isKnownBitbucketServerHost } from './bitbucketServerInstances'
-import type { AccountLink, RepoHost } from '../shared/types'
+import type { AccountLink, BitbucketServerTokenKind, RepoHost } from '../shared/types'
 import { isAccountLogin } from '../shared/hostToken'
 
 /**
@@ -267,6 +267,8 @@ export interface HostAuth {
   link?: AccountLink
   /** The user name git sends with `token` (a Bitbucket Data Center personal token). */
   username?: string
+  /** A Data Center token's kind, when Settings sets one. */
+  tokenKind?: BitbucketServerTokenKind
 }
 
 export interface ApiAuth {
@@ -280,6 +282,8 @@ export interface ApiAuth {
   /** For a typed token: the user name git must send with it, when the host
    *  needs a specific one. Absent → the provider's fixed name (`basicAuthFor`). */
   gitUsername?: string
+  /** For a typed Data Center token: its kind, when Settings sets one. */
+  gitTokenKind?: BitbucketServerTokenKind
 }
 
 /**
@@ -299,7 +303,12 @@ export interface ApiAuth {
  */
 export async function apiToken(remoteUrl: string, auth: HostAuth, opts: FillOpts = {}): Promise<ApiAuth | null> {
   if (auth.token?.trim()) {
-    return { token: auth.token.trim(), source: 'token', ...(auth.username ? { gitUsername: auth.username } : {}) }
+    return {
+      token: auth.token.trim(),
+      source: 'token',
+      ...(auth.username ? { gitUsername: auth.username } : {}),
+      ...(auth.tokenKind ? { gitTokenKind: auth.tokenKind } : {})
+    }
   }
   const host = hostOf(remoteUrl)
   const isGithub = !!host && providerOfHost(host) === 'github'

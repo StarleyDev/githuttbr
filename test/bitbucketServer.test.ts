@@ -17,7 +17,6 @@ import {
   bitbucketServerPullRequestUrl,
   bitbucketServerRepoOf,
   bitbucketServerRepoUrl,
-  bitbucketServerTokenKind,
   bitbucketServerUrlProblem,
   normalizeBitbucketServerUrl
 } from '../src/shared/bitbucketServer'
@@ -215,25 +214,45 @@ describe('token isolation (pure)', () => {
 
   it('each server gets only its own token (and user name), never a link', () => {
     expect(bitbucketAuthFor(p, BBS)).toEqual({ token: BBS_TOKEN, username: 'jdoe' })
-    // No user name, kind left on automatic: a project or repository token.
-    expect(bitbucketAuthFor(p, BBS_B)).toEqual({ token: BBS_B_TOKEN, username: 'x-token-auth' })
+    // No user name and no kind (every entry saved before the choice existed):
+    // nothing is fixed, so git keeps the remote URL's name, else x-token-auth.
+    expect(bitbucketAuthFor(p, BBS_B)).toEqual({ token: BBS_B_TOKEN })
   })
 
   // Atlassian, "HTTP access tokens": basic auth with a project or repository token
   // must send x-token-auth; a personal token stands in for its user's password.
-  it('the token kind decides the git user name: x-token-auth for a project token, whatever the URL', () => {
-    expect(bitbucketServerTokenKind({ username: 'jdoe' })).toBe('personal')
-    expect(bitbucketServerTokenKind({})).toBe('project')
-    expect(bitbucketServerTokenKind({ username: 'jdoe', tokenKind: 'project' })).toBe('project')
+  it('only an explicit kind changes the git user name; none is ever inferred', () => {
     const kinds = profileWith({
       bitbucketServers: [
         { url: BBS, token: BBS_TOKEN, username: 'jdoe', tokenKind: 'project' },
         { url: BBS_B, token: BBS_B_TOKEN, tokenKind: 'personal' }
       ]
     })
-    expect(bitbucketAuthFor(kinds, BBS)).toEqual({ token: BBS_TOKEN, username: 'x-token-auth' })
+    expect(bitbucketAuthFor(kinds, BBS)).toEqual({ token: BBS_TOKEN, username: 'x-token-auth', tokenKind: 'project' })
     // A personal token with no name in Settings leaves the name to the remote URL.
-    expect(bitbucketAuthFor(kinds, BBS_B)).toEqual({ token: BBS_B_TOKEN })
+    expect(bitbucketAuthFor(kinds, BBS_B)).toEqual({ token: BBS_B_TOKEN, tokenKind: 'personal' })
+    // A kind with no token travels nowhere; an unknown one (a hand edit) is "not set".
+    const odd = profileWith({ bitbucketServers: [{ url: BBS, token: BBS_TOKEN, tokenKind: 'robot' as never }] })
+    expect(bitbucketAuthFor(odd, BBS)).toEqual({ token: BBS_TOKEN })
+  })
+
+  // Atlassian, "HTTP access tokens": basic auth with a project or repository token
+  // must send x-token-auth; a personal token stands in for its user's password.
+  it('not set: the Settings name, else the URL name, else x-token-auth — the behaviour from before the choice', () => {
+    expect(bitbucketServerGitUsername('jdoe', 'jsmith')).toBe('jdoe')
+    expect(bitbucketServerGitUsername('', 'jsmith')).toBe('jsmith')
+    expect(bitbucketServerGitUsername(undefined, '')).toBe('x-token-auth')
+  })
+
+  it('project: always x-token-auth, whatever the Settings or URL name', () => {
+    expect(bitbucketServerGitUsername('jdoe', 'jsmith', 'project')).toBe('x-token-auth')
+    expect(bitbucketServerGitUsername(undefined, 'jsmith', 'project')).toBe('x-token-auth')
+  })
+
+  it('personal: the Settings name, else the URL name, never x-token-auth', () => {
+    expect(bitbucketServerGitUsername('jdoe', 'jsmith', 'personal')).toBe('jdoe')
+    expect(bitbucketServerGitUsername('  ', 'jsmith', 'personal')).toBe('jsmith')
+    expect(bitbucketServerGitUsername(undefined, undefined, 'personal')).toBeNull()
   })
 
   it('a saved address that does not parse is shown without its credentials', () => {
@@ -242,6 +261,16 @@ describe('token isolation (pure)', () => {
     expect(bitbucketServerDisplayAddress('jdoe:hunter2@bbs.corp:7990/x')).toBe('bbs.corp:7990/x')
     expect(bitbucketServerDisplayAddress('https://jdoe:hun ter2@bad host/x')).not.toContain('hun')
     expect(bitbucketServerDisplayAddress('not a url')).toBe('not a url')
+  })
+
+  // A `/` in the password ends the authority early for a URL parser: the
+  // password used to survive as host and "path".
+  it('a password with a slash in it is not shown either', () => {
+    for (const raw of ['https://jdoe:pa/ss@bbs.corp/x', 'https://jdoe:12/34@bbs.corp', 'jdoe:a/b/c@bbs.corp:7990', 'https://u:p@ss:/w@rd@bbs.corp/b']) {
+      const shown = bitbucketServerDisplayAddress(raw)
+      expect(shown).not.toMatch(/pa|ss|34|a\/b|w@rd|jdoe|u:p/)
+      expect(shown.startsWith('bbs.corp')).toBe(true)
+    }
   })
 
   it('an unconfigured server, or the same host without its context path, gets nothing', () => {
@@ -524,16 +553,17 @@ describe('mapping the documented shapes', () => {
     expect(bbsCiStatus([{ key: 'a', state: 'CANCELLED' }])?.state).toBe('neutral')
   })
 
-  it('a cancelled or unknown build is summarised as such, not as skipped', async () => {
-    const { summariseChecks } = await import('../src/main/ciSummary')
+  // Counts, not English words: main has no language, the renderer words them.
+  it('a cancelled or unknown build is counted as such, not as skipped', async () => {
+    const { countChecks } = await import('../src/main/ciSummary')
     const status = bbsCiStatus([
       { key: 'a', state: 'SUCCESSFUL' },
       { key: 'b', state: 'CANCELLED' },
       { key: 'c', state: 'UNKNOWN' }
     ])!
-    expect(summariseChecks(status)).toBe('1 passed · 1 cancelled · 1 unknown')
-    // Other hosts' neutral jobs keep their word.
-    expect(summariseChecks({ state: 'neutral', jobs: [{ name: 'lint', state: 'neutral' }] })).toBe('1 skipped')
+    expect(countChecks(status)).toEqual({ passed: 1, failed: 0, pending: 0, skipped: 0, cancelled: 1, unknown: 1 })
+    // Other hosts' neutral jobs are skipped ones.
+    expect(countChecks({ state: 'neutral', jobs: [{ name: 'lint', state: 'neutral' }] })).toMatchObject({ skipped: 1, cancelled: 0 })
   })
 
   it('the file list comes from /changes, the hunks from the raw diff', async () => {
@@ -609,6 +639,41 @@ describe('mapping the documented shapes', () => {
       expect(splitUnifiedDiff(headerOnly)[0].filename).toBe('café.md')
     }
   })
+
+  // With core.quotePath off, git prints non-ASCII as is inside a quoted path —
+  // an emoji is two UTF-16 units, and splitting them made two U+FFFD.
+  it('an emoji in a quoted path survives unquoting', async () => {
+    const { unquoteGitPath, splitUnifiedDiff } = await import('../src/main/forgejo')
+    expect(unquoteGitPath('"say \\"🎉\\".md"')).toBe('say "🎉".md')
+    expect(unquoteGitPath('"🎉\\303\\251🚀"')).toBe('🎉é🚀')
+    const raw = ['diff --git "a/🎉 \\"x\\".md" "b/🎉 \\"x\\".md"', '--- "a/🎉 \\"x\\".md"', '+++ "b/🎉 \\"x\\".md"', '@@ -1 +1 @@', '-a', '+b', ''].join('\n')
+    expect(splitUnifiedDiff(raw)[0].filename).toBe('🎉 "x".md')
+  })
+
+  // A rename from a plain path with a space to one git quotes: the header has
+  // one quoted and one plain path and does not split — the chunk is still read.
+  it('a header mixing a quoted and a plain path falls back to the ---/+++ and rename lines', async () => {
+    const { splitUnifiedDiff } = await import('../src/main/forgejo')
+    const renamed = [
+      'diff --git a/my notes.md "b/caf\\303\\251 notes.md"',
+      'similarity index 90%',
+      'rename from my notes.md',
+      'rename to "caf\\303\\251 notes.md"',
+      'index 1111111..2222222 100644',
+      '--- a/my notes.md',
+      '+++ "b/caf\\303\\251 notes.md"',
+      '@@ -1 +1 @@',
+      '-a',
+      '+b',
+      ''
+    ].join('\n')
+    expect(splitUnifiedDiff(renamed)).toEqual([
+      expect.objectContaining({ filename: 'café notes.md', previousFilename: 'my notes.md', status: 'renamed', additions: 1, deletions: 1 })
+    ])
+    // A pure rename has no ---/+++: the rename lines alone name both sides.
+    const pure = ['diff --git a/my notes.md "b/caf\\303\\251 notes.md"', 'similarity index 100%', 'rename from my notes.md', 'rename to "caf\\303\\251 notes.md"', ''].join('\n')
+    expect(splitUnifiedDiff(pure)).toEqual([expect.objectContaining({ filename: 'café notes.md', previousFilename: 'my notes.md', status: 'renamed' })])
+  })
 })
 
 // ─── Call sites, through the real IPC handlers ──────────────────────────────
@@ -652,8 +717,13 @@ function fakeBitbucket(method: string, url: string, body?: unknown): Response {
     const all = [user('jdoe', 'Jane Doe'), ...EMAIL_USERS]
     return json({ size: 0, limit: 25, isLastPage: true, start: 0, values: all.filter((x) => String(x.name).toLowerCase().includes(f)) })
   }
-  // Any slug lookup by *name* is the bug this replaced: the resource takes a slug.
-  if (/\/rest\/api\/latest\/users\/[^/]+$/.test(path)) return new Response('{}', { status: 404 })
+  // The resource takes a *slug*: only a real one answers. `jdoe@corp.com` (a
+  // name, not a slug) and `ghost` (no such user) are 404s.
+  const bySlug = /\/rest\/api\/latest\/users\/([^/]+)$/.exec(path)
+  if (bySlug) {
+    const found = [user('jdoe', 'Jane Doe'), ...EMAIL_USERS].find((x) => x.slug === decodeURIComponent(bySlug[1]))
+    return found ? json(found) : new Response('{}', { status: 404 })
+  }
   if (/\/repos\/app\/pull-requests$/.test(path) && method === 'GET') {
     // Two pages, joined by nextPageStart.
     if (start === 0) return json({ size: 1, limit: 50, isLastPage: false, nextPageStart: 1, start: 0, values: [pull(1)] })
@@ -713,7 +783,8 @@ describe('call sites, through the real IPC handlers', () => {
             bitbucketServers: [
               { url: BBS, token: BBS_TOKEN, username: 'jdoe' },
               { url: BBS_B, token: BBS_B_TOKEN },
-              { url: 'https://bbs.third.example', token: 'bbs-token-c', tokenKind: 'personal' }
+              { url: 'https://bbs.third.example', token: 'bbs-token-c', tokenKind: 'personal' },
+              { url: 'https://bbs.fourth.example', token: 'bbs-token-d', tokenKind: 'project' }
             ]
           }
         ]
@@ -763,7 +834,7 @@ describe('call sites, through the real IPC handlers', () => {
   it('lists open pull requests across pages, with the build status of each head and the ones waiting on you', async () => {
     const res = (await call('hosting:listPRs', REMOTE, tokens)) as {
       provider: string
-      prs: Array<{ id: number; awaitingYou?: boolean; ci?: string }>
+      prs: Array<{ id: number; awaitingYou?: boolean; ci?: string; ciCounts?: unknown; ciSummary?: unknown }>
     }
     expect(res.provider).toBe('bitbucket')
     expect(res.prs.map((p) => p.id)).toEqual([1, 2])
@@ -771,6 +842,9 @@ describe('call sites, through the real IPC handlers', () => {
     expect(res.prs.every((p) => p.awaitingYou)).toBe(true)
     expect(calls.some((c) => c.url === `${API}/application-properties`)).toBe(true)
     expect(res.prs[0].ci).toBe('failure')
+    // Counts for the renderer to word in the user's language — no English sentence from main.
+    expect(res.prs[0].ciCounts).toEqual({ passed: 1, failed: 1, pending: 0, skipped: 0, cancelled: 0, unknown: 0 })
+    expect(res.prs[0].ciSummary).toBeUndefined()
     expectOnlyServerA()
     expect(calls[0].url).toBe(`${REPO_API}/pull-requests?state=OPEN&order=NEWEST&start=0&limit=50`)
     expect(calls[1].url).toBe(`${REPO_API}/pull-requests?state=OPEN&order=NEWEST&start=1&limit=50`)
@@ -864,14 +938,36 @@ describe('call sites, through the real IPC handlers', () => {
     })
   })
 
-  it('a user search that is not allowed still links a plain user name to its page', async () => {
+  it('a user search that is not allowed still links a plain user name — once the server confirms the slug', async () => {
     userSearch = false
     const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
     expect(who).toMatchObject({ login: 'jdoe', profileUrl: `${BBS}/users/jdoe` })
-    // An email-style name is not its own slug: no link rather than a 404.
+    expect(calls.filter((c) => c.url === `${API}/users/jdoe`)).toHaveLength(1)
+    // A plain name the server does not know as a slug: no link, rather than a 404.
+    calls.length = 0
+    ausername = 'ghost'
+    const ghost = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { profileUrl?: string }
+    expect(ghost.profileUrl).toBeUndefined()
+    expect(calls.filter((c) => c.url === `${API}/users/ghost`)).toHaveLength(1)
+    // An email-style name is not tried as a slug at all.
+    calls.length = 0
     ausername = 'jdoe@corp.com'
     const email = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { profileUrl?: string }
     expect(email.profileUrl).toBeUndefined()
+    expect(calls.some((c) => /\/users\/[^?]+$/.test(c.url))).toBe(false)
+  })
+
+  it('a found user is not looked up again by slug', async () => {
+    await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)
+    expect(calls.some((c) => c.url === `${API}/users/jdoe`)).toBe(false)
+  })
+
+  it('with no user search and an unknown slug, approving falls back to the participants', async () => {
+    ausername = 'ghost'
+    userSearch = false
+    pr1Over = { participants: [{ user: { ...user('ghost', 'Ghost'), slug: 'ghost-slug' }, role: 'PARTICIPANT', approved: false, status: 'UNAPPROVED' }] }
+    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    expect(calls.find((c) => c.method === 'PUT')?.url).toBe(`${REPO_API}/pull-requests/1/participants/ghost-slug`)
   })
 
   it('one failed build-status batch costs only its own rows their CI', async () => {
@@ -1017,10 +1113,21 @@ describe('call sites, through the real IPC handlers', () => {
   it('the profile resolves each server its own token, and nothing for an unknown host', async () => {
     const { activeProfileAuth } = await import('../src/main/settings')
     expect(await activeProfileAuth('bitbucket', REMOTE)).toEqual({ token: BBS_TOKEN, username: 'jdoe' })
-    expect(await activeProfileAuth('bitbucket', 'ssh://git@bbs.other.example:7999/team/svc.git')).toEqual({
-      token: BBS_B_TOKEN,
-      username: 'x-token-auth'
+    // No kind set: no name fixed, as before the choice existed.
+    expect(await activeProfileAuth('bitbucket', 'ssh://git@bbs.other.example:7999/team/svc.git')).toEqual({ token: BBS_B_TOKEN })
+    expect(await activeProfileAuth('bitbucket', 'https://bbs.fourth.example/scm/team/svc.git')).toEqual({
+      token: 'bbs-token-d',
+      username: 'x-token-auth',
+      tokenKind: 'project'
     })
+    expect(await activeProfileAuth('bitbucket', 'https://bbs.third.example/scm/team/svc.git')).toEqual({
+      token: 'bbs-token-c',
+      tokenKind: 'personal'
+    })
+    // …and the kind reaches the credential push and fetch build.
+    const { profileCredentialForUrl } = await import('../src/main/remoteAuthCheck')
+    const fourth = await profileCredentialForUrl('/no/such/repo', 'https://jsmith@bbs.fourth.example/scm/team/svc.git')
+    expect(fourth.credential).toMatchObject({ token: 'bbs-token-d', gitUsername: 'x-token-auth', gitTokenKind: 'project' })
     expect((await activeProfileAuth('bitbucket', 'https://bitbucket.org/team/app.git')).token).toBe(CLOUD_TOKEN)
     // Same host, no context path: not the configured server.
     expect(await activeProfileAuth('bitbucket', 'https://bitbucket.example.corp/scm/proj/app.git')).toEqual({})
@@ -1054,15 +1161,28 @@ describe('call sites, through the real IPC handlers', () => {
 
   // Bitbucket's own clone URLs carry the copying user's name; a project or
   // repository token must still go as x-token-auth (Atlassian, "HTTP access tokens").
-  it('a project token goes as x-token-auth even when the clone URL names a user', async () => {
+  it('a token marked project goes as x-token-auth even when the clone URL names a user', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const env = (await cloneCredentialEnv('https://jsmith@bbs.other.example:8443/scm/team/svc.git', undefined, undefined)) ?? {}
+    const env = (await cloneCredentialEnv('https://jsmith@bbs.fourth.example/scm/team/svc.git', undefined, undefined)) ?? {}
+    expect(JSON.stringify(env)).toContain('bbs-token-d')
     expect(Object.values(env)).toContain('x-token-auth')
     expect(Object.values(env)).not.toContain('jsmith')
     // A personal token with no name in Settings takes the URL's.
     const personal = (await cloneCredentialEnv('https://jsmith@bbs.third.example/scm/team/svc.git', undefined, undefined)) ?? {}
     expect(JSON.stringify(personal)).toContain('bbs-token-c')
     expect(Object.values(personal)).toContain('jsmith')
+    // …and with no name anywhere, no credential at all rather than x-token-auth.
+    expect(await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', undefined, undefined)).toBeNull()
+  })
+
+  // An entry with an empty user name and no kind — every personal-token setup
+  // from before the choice existed — keeps the remote URL's name.
+  it('a token with no kind set keeps the clone URL’s user name, as before', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    const env = (await cloneCredentialEnv('https://jsmith@bbs.other.example:8443/scm/team/svc.git', undefined, undefined)) ?? {}
+    expect(JSON.stringify(env)).toContain(BBS_B_TOKEN)
+    expect(Object.values(env)).toContain('jsmith')
+    expect(Object.values(env)).not.toContain('x-token-auth')
   })
 
   it('push and fetch send the token as password, with the user name or x-token-auth', async () => {
@@ -1081,6 +1201,10 @@ describe('call sites, through the real IPC handlers', () => {
       username: 'x-token-auth',
       password: BBS_B_TOKEN
     })
+    const named = 'https://jsmith@bbs.other.example:8443/scm/team/svc.git'
+    expect(basicAuthFor('bitbucket', BBS_B_TOKEN, named, undefined, 'project')).toEqual({ username: 'x-token-auth', password: BBS_B_TOKEN })
+    expect(basicAuthFor('bitbucket', BBS_B_TOKEN, named, undefined, 'personal')).toEqual({ username: 'jsmith', password: BBS_B_TOKEN })
+    expect(basicAuthFor('bitbucket', BBS_B_TOKEN, 'https://bbs.other.example:8443/scm/team/svc.git', undefined, 'personal')).toBeNull()
     // bitbucket.org keeps its own rules.
     expect(basicAuthFor('bitbucket', 'me:app-pass', 'https://bitbucket.org/team/app.git')).toEqual({ username: 'me', password: 'app-pass' })
   })

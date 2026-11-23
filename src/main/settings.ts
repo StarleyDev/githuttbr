@@ -2,7 +2,7 @@ import { app, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
-import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
+import { defaultSettings, type AccountLink, type AppSettings, type BitbucketServerTokenKind, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGithubEnterpriseInstances, setKnownGitlabInstances } from './gitlabInstances'
@@ -190,10 +190,10 @@ async function profileAuth(
   profileId: string | undefined,
   remoteUrl?: string,
   expectedBase?: string
-): Promise<{ token?: string; link?: AccountLink; username?: string }> {
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind }> {
   const plain = await readSettings()
   const id = profileId ?? plain.activeProfileId
-  const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
+  const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId !== undefined ? undefined : plain.profiles[0])
   if (!candidate) return {}
   // GitHub: github.com or one Enterprise Server, decided by the remote's host
   // (or the base a provider-level call names). Each gets only its own token.
@@ -217,7 +217,7 @@ async function profileAuth(
     if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
   const settings = await readSettingsWithSecrets('tokens')
-  const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
+  const profile = settings.profiles.find((p) => p.id === id) ?? (profileId !== undefined ? undefined : settings.profiles[0])
   if (!profile) return {}
   if (host === 'gitlab' || host === 'forgejo') {
     const base = tokenInstance(host, profile[`${host}Url`])
@@ -236,7 +236,12 @@ async function profileAuth(
   if (host === 'bitbucket' && bitbucketBase) {
     const auth = bitbucketAuthFor(profile, bitbucketBase)
     const link = validAccountLink(auth.link)
-    return { ...(auth.token ? { token: auth.token } : {}), ...(link ? { link } : {}), ...(auth.username ? { username: auth.username } : {}) }
+    return {
+      ...(auth.token ? { token: auth.token } : {}),
+      ...(link ? { link } : {}),
+      ...(auth.username ? { username: auth.username } : {}),
+      ...(auth.tokenKind ? { tokenKind: auth.tokenKind } : {})
+    }
   }
   const link = validAccountLink(profile.links?.[host])
   const token = profile[TOKEN_FIELD[host]]?.trim() || undefined
@@ -248,21 +253,8 @@ export function activeProfileAuth(
   host: RepoHost,
   remoteUrl?: string,
   expectedBase?: string
-): Promise<{ token?: string; link?: AccountLink; username?: string }> {
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind }> {
   return profileAuth(host, undefined, remoteUrl, expectedBase)
-}
-
-/**
- * One profile's PAT and link for a host — the profile a caller names (the clone
- * dialog's pick), else the active one. A named profile that no longer exists
- * gets nothing rather than someone else's.
- */
-export function chosenProfileAuth(
-  host: RepoHost,
-  profileId: string | undefined,
-  remoteUrl?: string
-): Promise<{ token?: string; link?: AccountLink; username?: string }> {
-  return profileAuth(host, profileId, remoteUrl)
 }
 
 /** The Forgejo instance a profile (the active one by default) points at, or null. */
@@ -314,7 +306,7 @@ export async function boundProfileAuth(
   host: RepoHost,
   repoPath: string,
   remoteUrl?: string
-): Promise<{ token?: string; link?: AccountLink; username?: string } | undefined> {
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind } | undefined> {
   const plain = await readSettings()
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined

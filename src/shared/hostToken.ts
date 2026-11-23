@@ -1,4 +1,4 @@
-import type { AccountLink } from './types'
+import type { AccountLink, BitbucketServerTokenKind } from './types'
 
 /**
  * Whether `s` can be an account name in a link. It is written into git's
@@ -26,6 +26,9 @@ export interface HostAuthInput {
   /** The account name git sends with `token`, when the host needs one (a
    *  Bitbucket Data Center personal access token). Not a secret. */
   username?: string
+  /** A Data Center token's kind, when Settings sets one — decides the name git
+   *  falls back to (`bitbucketServerGitUsername`). Absent: not set. */
+  tokenKind?: BitbucketServerTokenKind
 }
 
 /**
@@ -53,7 +56,8 @@ export async function pickHostAuth(opts: {
   const clean = (a: HostAuthInput): HostAuthInput => ({
     token: a.token?.trim() || undefined,
     link: a.link,
-    ...(a.username && a.token?.trim() ? { username: a.username } : {})
+    ...(a.username && a.token?.trim() ? { username: a.username } : {}),
+    ...(a.tokenKind && a.token?.trim() ? { tokenKind: a.tokenKind } : {})
   })
   if (opts.bound) return clean(opts.bound)
   const sent = opts.sent?.trim()

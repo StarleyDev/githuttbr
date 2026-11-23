@@ -256,7 +256,12 @@ export function unquoteGitPath(raw: string): string {
   const bytes: number[] = []
   for (let i = 0; i < body.length; i++) {
     if (body[i] !== '\\') {
-      bytes.push(...Buffer.from(body[i], 'utf8'))
+      // The whole run up to the next escape at once: one UTF-16 unit at a time
+      // would split an emoji's surrogate pair into two replacement characters.
+      const next = body.indexOf('\\', i)
+      const end = next < 0 ? body.length : next
+      bytes.push(...Buffer.from(body.slice(i, end), 'utf8'))
+      i = end - 1
       continue
     }
     const oct = /^[0-7]{3}/.exec(body.slice(i + 1))
@@ -323,9 +328,11 @@ export function splitUnifiedDiff(diff: string): PrFile[] {
   const chunks = diff.split(/^(?=diff --git )/m).filter((c) => c.startsWith('diff --git '))
   for (const chunk of chunks) {
     const eol = chunk.indexOf('\n')
+    // A header that does not split (one path quoted, the other plain, with a
+    // space) is not the end of the file: the ---/+++ and rename lines below
+    // name each path on a line of its own.
     const header = diffHeaderPaths(eol < 0 ? chunk : chunk.slice(0, eol))
-    if (!header) continue
-    let [oldPath, newPath] = header
+    let [oldPath, newPath]: [string | null, string | null] = header ?? [null, null]
     // The extended header, up to the first hunk — a removed line `-- x` inside a
     // hunk reads as `--- x` and must not be taken for a path.
     const hunkStart = chunk.search(/^@@ /m)
@@ -341,6 +348,10 @@ export function splitUnifiedDiff(diff: string): PrFile[] {
     const renameFrom = /^rename from (.+)$/m.exec(head)?.[1]
     const renameTo = /^rename to (.+)$/m.exec(head)?.[1]
     if (renameFrom && renameTo) [oldPath, newPath] = [unquoteGitPath(renameFrom), unquoteGitPath(renameTo)]
+    // An added or deleted file names only one side; with no header, that side is both.
+    oldPath ??= newPath
+    newPath ??= oldPath
+    if (oldPath === null || newPath === null) continue
     const status = /^new file mode/m.test(chunk)
       ? 'added'
       : /^deleted file mode/m.test(chunk)

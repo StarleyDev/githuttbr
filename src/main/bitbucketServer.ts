@@ -1,4 +1,4 @@
-import { summariseChecks } from './ciSummary'
+import { countChecks } from './ciSummary'
 import { splitUnifiedDiff } from './forgejo'
 import {
   bitbucketServerEndpoints,
@@ -402,7 +402,7 @@ export async function listBbsPulls(repo: BitbucketServerRepo, token: string): Pr
     const status = pr.headSha ? ci[pr.headSha] : undefined
     if (!status) continue
     pr.ci = status.state
-    pr.ciSummary = summariseChecks(status)
+    pr.ciCounts = countChecks(status)
   }
   return prs
 }
@@ -563,15 +563,23 @@ export async function bbsWhoAmI(base: string, token: string): Promise<{ name: st
   const res = await bbsResponse(`${api}/application-properties`, token)
   const name = res.headers.get('x-ausername')?.trim()
   if (!name) return null
-  const user = await bbsUserByName(api, name, token)
   // A search that misses (too many "contains" matches, or no permission to
-  // search): a plain name is its own slug, so it still links and reviews.
-  const slug = user?.slug || (PLAIN_SLUG.test(name) ? name : undefined)
-  return { name, ...(slug ? { slug } : {}), ...(user?.displayName ? { displayName: user.displayName } : {}) }
+  // search): a plain name is tried as a slug — one more request, only then.
+  // Not assumed to be one: the REST reference only says a slug "may not be the
+  // user's username" and never how it is derived (its case, for one), so the
+  // server's answer is what is used, never the guess.
+  const user = (await bbsUserByName(api, name, token)) ?? (PLAIN_SLUG.test(name) ? await bbsUserBySlug(api, name, token) : null)
+  return { name, ...(user?.slug ? { slug: user.slug } : {}), ...(user?.displayName ? { displayName: user.displayName } : {}) }
 }
 
-/** A user name made only of slug-safe characters, for which slug and name agree. */
+/** A user name made only of slug-safe characters — the only kind worth trying as a slug. */
 const PLAIN_SLUG = /^[A-Za-z0-9._-]+$/
+
+/** `GET /users/{userSlug}`, kept only when the record it returns is that user. */
+async function bbsUserBySlug(api: string, name: string, token: string): Promise<BbsUser | null> {
+  const user = await bbsJson<BbsUser>(`${api}/users/${enc(name)}`, token).catch(() => null)
+  return user?.slug && user.name?.toLowerCase() === name.toLowerCase() ? user : null
+}
 
 /**
  * The user record for a user *name*. `/users/{userSlug}` takes a slug, which
