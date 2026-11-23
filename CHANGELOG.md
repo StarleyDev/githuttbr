@@ -1,5 +1,35 @@
 
 
+## [4.39.0](https://github.com/StarleyDev/githuttbr/compare/v4.38.0...v4.39.0) (2026-11-23)
+
+
+### ⚠ Upgrading from 4.38
+
+Export your settings **with tokens** (Settings → Data) before installing. Settings and preferences move automatically; saved tokens and AI keys must be imported from that export or typed again, because the OS keychain entry is new. See [Upgrading from 4.38](docs/help/upgrading.md).
+
+
+### Features
+
+* rename the product to GitHuttBr: app name, settings folder, packages, the `githuttbr` command and `GITHUTTBR_*` variables ([5f9d92a](https://github.com/StarleyDev/githuttbr/commit/5f9d92a46837f1f25bf0b3514a9e5a47426eab65), [2cb3ce2](https://github.com/StarleyDev/githuttbr/commit/2cb3ce22923b1d66352d48949f298eae092fa63f))
+* write repository data as `.githuttbr.json`, `githuttbr.*` config keys and `refs/githuttbr/*`, still reading the old `gitcito` names ([ba2aefc](https://github.com/StarleyDev/githuttbr/commit/ba2aefc7966968912fb4512230ad4ad477cd1cf8), [f69004a](https://github.com/StarleyDev/githuttbr/commit/f69004a9ca9cfa77405cac905718cb841aedee4c))
+* carry settings, preferences and plain user data over from 4.38 on first launch, once; tokens and AI keys come back from an export made with tokens ([5eaaeb3](https://github.com/StarleyDev/githuttbr/commit/5eaaeb3b4a3a7def73014f9e27d8b1741651f069), [f51d458](https://github.com/StarleyDev/githuttbr/commit/f51d458e7cfe07b77318ef01c90a6d8b05a095ef), [9536409](https://github.com/StarleyDev/githuttbr/commit/95364095248a66c4d9589b127fa9e7b0550cb91a))
+* repoint 4.38 diff converters automatically and flag git editors left on the old command ([d319758](https://github.com/StarleyDev/githuttbr/commit/d3197585fd2153e4c8872db6b416679bb020db10), [6065f87](https://github.com/StarleyDev/githuttbr/commit/6065f87c39c56bad40694bd88bc934bbd001a019), [f3b7872](https://github.com/StarleyDev/githuttbr/commit/f3b787278bf331b518c00976d98286821eefb520))
+* show GitHuttBr and the new identifiers everywhere the app and the website display text ([0746009](https://github.com/StarleyDev/githuttbr/commit/0746009853482ca8fa4c67c52a7dfd6eaa2715f0), [2215424](https://github.com/StarleyDev/githuttbr/commit/22154248465b3f4c7281a2833c501cdbe6e999d3))
+* website points at this fork and credits the upstream Gitcito project in the footer ([e8a6bad](https://github.com/StarleyDev/githuttbr/commit/e8a6bad654c30ce86f9fa8b2c276a1da1af2469b), [aff412c](https://github.com/StarleyDev/githuttbr/commit/aff412ccaa76d0d9fc2306fb95f5212948d5f385))
+
+
+### Bug Fixes
+
+* keep the pre-rename app id so updates replace 4.38 in place; the deb replaces the gitcito package ([db068b2](https://github.com/StarleyDev/githuttbr/commit/db068b2108abada2b58522113bbf7454a8883af7))
+* read the legacy `.gitcito.json` in doctor, status and config ([bf6c8a3](https://github.com/StarleyDev/githuttbr/commit/bf6c8a3c3c478b11b4af1e273f198ad04c269e1f))
+* also export the pre-rename device variables to launch configurations ([d72af9a](https://github.com/StarleyDev/githuttbr/commit/d72af9a830294a34aa3b70e1cc7b50587e798acc))
+* name the stale command link that was actually found ([22edd84](https://github.com/StarleyDev/githuttbr/commit/22edd84601fcd8f254756cf8d1d98a4c1409f68e))
+
+
+### Documentation
+
+* add an upgrading from 4.38 page, rename the fork's own docs and regenerate the screenshots ([de6044c](https://github.com/StarleyDev/githuttbr/commit/de6044c319b6de176031181f36f056a2ec6bee8a), [53ed46f](https://github.com/StarleyDev/githuttbr/commit/53ed46fc433aa08445838f7f94153f3d202cced1), [cabe9e2](https://github.com/StarleyDev/githuttbr/commit/cabe9e2a229b845fb8b0e27611e342b0089d7751))
+
 ## [4.38.0](https://github.com/StarleyDev/githuttbr/compare/v4.37.2...v4.38.0) (2026-11-23)
 
 
