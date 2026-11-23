@@ -12,9 +12,12 @@
  * git ≥ 2.31) registers a credential helper for this server only, after an
  * empty entry that clears any helper the user configured for it — so the
  * profile's account answers, not whichever login the machine holds, and the
- * token is never offered to the helper to `store`. The helper is a shell
- * one-liner that prints the pair from two environment variables, so the secret
- * is in neither the config nor an argument list.
+ * token is never offered to the helper to `store`. The helper fetches the pair
+ * from a private endpoint the app serves for this run (`credentialBroker`): the
+ * secret is in neither the config, an argument list, nor the environment —
+ * which every hook, filter and LFS process git starts inherits. Only a nonce
+ * for the endpoint is there. The caller releases it with `releaseCredentialEnv`
+ * once git has exited.
  *
  * The `credential.<url>` part of every key is built from the origin and a
  * configured server base only, in a percent-encoded spelling with nothing git
@@ -22,12 +25,9 @@
  * repository path a remote names.
  */
 
-export const GIT_USERNAME_VAR = 'GITCITO_GIT_USERNAME'
-export const GIT_PASSWORD_VAR = 'GITCITO_GIT_PASSWORD'
+import { openCredentialEndpoint } from './credentialBroker'
 
-// Answers `get` only; `store` and `erase` are no-ops, so nothing persists it.
-const helperCommand = (usernameVar: string, passwordVar: string): string =>
-  `!f() { test "$1" = get || exit 0; printf 'username=%s\\npassword=%s\\n' "$${usernameVar}" "$${passwordVar}"; }; f`
+export { releaseCredentialEnv, CREDENTIAL_NONCE_VAR } from './credentialBroker'
 
 export interface BasicCredential {
   username: string
@@ -175,8 +175,18 @@ const blanked = (context: string): Array<[string, string]> => [
 ]
 
 /**
+ * Whether `gitCredentialEnv` would hand `cred` to git for `url` under `scope`,
+ * without opening an endpoint for it.
+ */
+export function credentialUsable(url: string, cred: BasicCredential, scope: CredentialScope = 'host'): boolean {
+  if (/[\r\n\0]/.test(cred.username) || /[\r\n\0]/.test(cred.password) || !cred.password) return false
+  return credentialContexts(url, scope) !== null
+}
+
+/**
  * Environment additions that make git authenticate `url`'s server with `cred`.
- * Null when it cannot apply: not https, an unparseable or unsafe URL, a scope
+ * Opens an endpoint: hand the result to `releaseCredentialEnv` once git has
+ * exited. Null when it cannot apply: not https, an unparseable or unsafe URL, a scope
  * that does not cover it, or a value with a line break (the credential
  * protocol is line-based; such a value would add fields of its own).
  */
@@ -186,23 +196,36 @@ export function gitCredentialEnv(
   base: NodeJS.ProcessEnv = process.env,
   scope: CredentialScope = 'host'
 ): NodeJS.ProcessEnv | null {
+  if (!credentialUsable(url, cred, scope)) return null
   const ctx = credentialContexts(url, scope)
   if (!ctx) return null
-  if (/[\r\n\0]/.test(cred.username) || /[\r\n\0]/.test(cred.password) || !cred.password) return null
 
-  // Stacked on another server's entries (a multi-URL push), each needs its own
-  // secret variables, or the second would answer for the first.
-  const at = countAt(base)
-  const usernameVar = at ? `${GIT_USERNAME_VAR}_${at}` : GIT_USERNAME_VAR
-  const passwordVar = at ? `${GIT_PASSWORD_VAR}_${at}` : GIT_PASSWORD_VAR
   const [reset, httpPath] = blanked(ctx.context)
+  const at = countAt(base)
+  // The endpoint answers only inside the context git is told to use it for, and
+  // not under a nested server carved out of it — so a process that speaks to it
+  // with the nonce still cannot ask it for another server. Stacked on another
+  // server's entries (a multi-URL push), each entry gets an endpoint and nonce
+  // variable of its own, so the second never answers for the first.
+  const scoped = new URL(ctx.context)
+  const pathOf = (context: string): string => new URL(context).pathname.replace(/^\/+|\/+$/g, '')
+  const { helper, env: nonceEnv } = openCredentialEndpoint(
+    cred,
+    {
+      host: scoped.host.toLowerCase(),
+      path: pathOf(ctx.context),
+      pathSent: httpPath[1] === 'true',
+      exclude: ctx.exclude.map(pathOf)
+    },
+    at
+  )
   const env = countEntries(base, [
     reset,
-    [`credential.${ctx.context}.helper`, helperCommand(usernameVar, passwordVar)],
+    [`credential.${ctx.context}.helper`, helper],
     httpPath,
     ...ctx.exclude.flatMap(blanked)
   ])
-  return { ...env, [usernameVar]: cred.username, [passwordVar]: cred.password }
+  return { ...env, ...nonceEnv }
 }
 
 /**

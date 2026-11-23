@@ -6,6 +6,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSyn
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
+import { gitWithInput } from './helpers'
 import { credentialConfig } from './credentialConfig'
 
 // Which account a clone, and every fetch after it, signs in as — against real
@@ -256,7 +257,7 @@ afterEach(() => {
  * What git-lfs gets for `url` under `env`: it sends the path only when
  * `credential.<url>.useHttpPath` says so, and asks with none otherwise.
  */
-function lfsFill(env: NodeJS.ProcessEnv, url: string): string {
+async function lfsFill(env: NodeJS.ProcessEnv, url: string): Promise<string> {
   const u = new URL(url)
   const gitEnv = {
     PATH: process.env.PATH,
@@ -276,38 +277,24 @@ function lfsFill(env: NodeJS.ProcessEnv, url: string): string {
   } catch {
     withPath = false
   }
-  try {
-    return execFileSync('git', ['credential', 'fill'], {
-      input: `protocol=https\nhost=${u.host}\n${withPath ? `path=${u.pathname.slice(1)}\n` : ''}\n`,
-      env: gitEnv,
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-  } catch {
-    return ''
-  }
+  return gitWithInput(
+    ['credential', 'fill'],
+    `protocol=https\nhost=${u.host}\n${withPath ? `path=${u.pathname.slice(1)}\n` : ''}\n`,
+    gitEnv
+  ).catch(() => '')
 }
 
 /** What git's credential step hands out for `url` under `env`. */
-function fill(env: NodeJS.ProcessEnv, url: string): string {
+async function fill(env: NodeJS.ProcessEnv, url: string): Promise<string> {
   const u = new URL(url)
-  try {
-    return execFileSync('git', ['credential', 'fill'], {
-      input: `protocol=https\nhost=${u.host}\npath=${u.pathname.slice(1)}\n\n`,
-      env: {
-        PATH: process.env.PATH,
-        HOME: dir,
-        GIT_CONFIG_GLOBAL: join(dir, 'gitconfig'),
-        GIT_CONFIG_NOSYSTEM: '1',
-        GIT_TERMINAL_PROMPT: '0',
-        ...env
-      },
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-  } catch {
-    return ''
-  }
+  return gitWithInput(['credential', 'fill'], `protocol=https\nhost=${u.host}\npath=${u.pathname.slice(1)}\n\n`, {
+    PATH: process.env.PATH,
+    HOME: dir,
+    GIT_CONFIG_GLOBAL: join(dir, 'gitconfig'),
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_TERMINAL_PROMPT: '0',
+    ...env
+  }).catch(() => '')
 }
 
 describe.skipIf(!hasOpenssl)('a token reaches its own server only', () => {
@@ -353,17 +340,17 @@ describe.skipIf(!hasOpenssl)('a token reaches its own server only', () => {
     expect(sub.some((r) => r.auth.includes(GL_TOKEN))).toBe(false)
     // …and not through git-lfs either, which asks with no path unless told to.
     const env = (await cloneCredentialEnv(`${origin}/group/withdc.git`, 'gitlab', undefined, 'work')) ?? {}
-    expect(lfsFill(env, `${origin}/group/withdc.git/info/lfs`)).toContain(`password=${GL_TOKEN}`)
-    expect(lfsFill(env, `${origin}/bitbucket/scm/proj/sub2.git/info/lfs`)).not.toContain(GL_TOKEN)
+    expect(await lfsFill(env, `${origin}/group/withdc.git/info/lfs`)).toContain(`password=${GL_TOKEN}`)
+    expect(await lfsFill(env, `${origin}/bitbucket/scm/proj/sub2.git/info/lfs`)).not.toContain(GL_TOKEN)
   })
 
   it('git-lfs gets a Data Center’s token for its repository, beside a GitLab on the origin and alone', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const shared = (await cloneCredentialEnv(`${origin}/bitbucket/scm/proj/top.git`, 'bitbucket', undefined, 'work')) ?? {}
-    expect(lfsFill(shared, `${origin}/bitbucket/scm/proj/top.git/info/lfs`)).toContain(`password=${DC_TOKEN}`)
-    expect(lfsFill(shared, `${origin}/group/app.git/info/lfs`)).not.toContain(DC_TOKEN)
+    expect(await lfsFill(shared, `${origin}/bitbucket/scm/proj/top.git/info/lfs`)).toContain(`password=${DC_TOKEN}`)
+    expect(await lfsFill(shared, `${origin}/group/app.git/info/lfs`)).not.toContain(DC_TOKEN)
     const lone = (await cloneCredentialEnv(`${LONE_DC}/scm/proj/app.git`, 'bitbucket', undefined, 'work')) ?? {}
-    expect(lfsFill(lone, `${LONE_DC}/scm/proj/app.git/info/lfs`)).toContain(`password=${LONE_DC_TOKEN}`)
+    expect(await lfsFill(lone, `${LONE_DC}/scm/proj/app.git/info/lfs`)).toContain(`password=${LONE_DC_TOKEN}`)
   })
 
   it('a clone the server redirects to `.git` keeps its token', async () => {
@@ -380,12 +367,12 @@ describe.skipIf(!hasOpenssl)('a token reaches its own server only', () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(`${LONE_DC}/scm/proj/app.git`, 'bitbucket', undefined, 'work')) ?? {}
     expect(Object.entries(env).some(([k, v]) => k.startsWith('GIT_CONFIG_KEY_') && v === `credential.${LONE_DC}.helper`)).toBe(true)
-    expect(fill(env, `${LONE_DC}/scm/proj/app.git`)).toContain(`password=${LONE_DC_TOKEN}`)
+    expect(await fill(env, `${LONE_DC}/scm/proj/app.git`)).toContain(`password=${LONE_DC_TOKEN}`)
     // Another repository on the same server, as after a redirect: still its token.
-    expect(fill(env, `${LONE_DC}/scm/other/lib.git`)).toContain(`password=${LONE_DC_TOKEN}`)
+    expect(await fill(env, `${LONE_DC}/scm/other/lib.git`)).toContain(`password=${LONE_DC_TOKEN}`)
     // Outside the base: not offered — git's own helper answers.
-    expect(fill(env, 'https://dc.example.corp/gitlab/group/app.git')).not.toContain(LONE_DC_TOKEN)
-    expect(fill(env, 'https://dc.example.corp/bitbucketx/scm/p/r.git')).not.toContain(LONE_DC_TOKEN)
+    expect(await fill(env, 'https://dc.example.corp/gitlab/group/app.git')).not.toContain(LONE_DC_TOKEN)
+    expect(await fill(env, 'https://dc.example.corp/bitbucketx/scm/p/r.git')).not.toContain(LONE_DC_TOKEN)
   })
 })
 
@@ -395,7 +382,7 @@ describe.skipIf(!hasOpenssl)('Clone → URL resolves the provider from the addre
     const url = 'https://github.com/team/app.git'
     const env = await cloneCredentialEnv(url, undefined, undefined, 'empty')
     expect(env).not.toBeNull()
-    expect(fill(env ?? {}, url)).not.toContain('machine-secret')
+    expect(await fill(env ?? {}, url)).not.toContain('machine-secret')
     expect(existsSync(marker)).toBe(false)
     // Nobody picked: git's own behaviour, as in a terminal.
     expect(await cloneCredentialEnv(url, undefined, undefined)).toBeNull()
@@ -463,7 +450,7 @@ describe.skipIf(!hasOpenssl)('fetch on a repository bound to a profile', () => {
     expect(received.every((r) => r.auth === '')).toBe(true)
     expect(existsSync(marker)).toBe(false)
     const { env } = await remoteOperationEnv(boundEmpty, 'origin', 'fetch')
-    expect(lfsFill(env ?? {}, `${origin}/group/app.git/info/lfs`)).not.toContain('machine-secret')
+    expect(await lfsFill(env ?? {}, `${origin}/group/app.git/info/lfs`)).not.toContain('machine-secret')
     expect(existsSync(marker)).toBe(false)
   })
 

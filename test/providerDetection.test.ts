@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -145,16 +146,16 @@ describe('provider detection — a Data Center sharing a hostname with a GitLab'
 
   it('a clone of a Data Center URL gets its token, never the GitLab’s', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const port = JSON.stringify(await cloneCredentialEnv(DC_PORT_REPO, 'bitbucket', undefined))
+    const port = revealCredentialEnv(await cloneCredentialEnv(DC_PORT_REPO, 'bitbucket', undefined))
     expect(port).toContain(DC_PORT_TOKEN)
     expect(port).not.toContain(GITLAB_TOKEN)
-    const path = JSON.stringify(await cloneCredentialEnv(DC_PATH_REPO, 'bitbucket', undefined))
+    const path = revealCredentialEnv(await cloneCredentialEnv(DC_PATH_REPO, 'bitbucket', undefined))
     expect(path).toContain(DC_PATH_TOKEN)
     expect(path).not.toContain(GITLAB_TOKEN)
     // Named as GitLab, a Data Center URL is refused outright.
     expect(await cloneCredentialEnv(DC_PATH_REPO, 'gitlab', undefined)).toBeNull()
     expect(await cloneCredentialEnv(DC_PORT_REPO, 'gitlab', undefined)).toBeNull()
-    expect(JSON.stringify(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', undefined))).toContain(GITLAB_TOKEN)
+    expect(revealCredentialEnv(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', undefined))).toContain(GITLAB_TOKEN)
   })
 
   it('the GitLab server’s token is never offered for a URL under the Data Center’s context path', async () => {
@@ -236,7 +237,7 @@ describe('provider detection — a Data Center sharing a hostname with a GitLab'
     expect(await cloneCredentialEnv('https://x.github.com/o/r.git', 'github', GITHUB_TOKEN)).toBeNull()
     expect(await cloneCredentialEnv('https://x.bitbucket.org/w/r.git', 'bitbucket', BITBUCKET_TOKEN)).toBeNull()
     expect(await cloneCredentialEnv('https://x.gitlab.com/g/r.git', 'gitlab', undefined)).toBeNull()
-    expect(JSON.stringify(await cloneCredentialEnv('https://github.com/o/r.git', 'github', GITHUB_TOKEN))).toContain(GITHUB_TOKEN)
+    expect(revealCredentialEnv(await cloneCredentialEnv('https://github.com/o/r.git', 'github', GITHUB_TOKEN))).toContain(GITHUB_TOKEN)
   })
 
   it('the Azure PAT goes only to an Azure DevOps remote', async () => {

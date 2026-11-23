@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -360,12 +361,12 @@ describe('each GitLab gets only its own token', () => {
 
   it('a clone carries the server’s token, never the one the renderer sent', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const envA = JSON.stringify(await cloneCredentialEnv(`${A}/team/app.git`, 'gitlab', RENDERER_TOKEN))
+    const envA = revealCredentialEnv(await cloneCredentialEnv(`${A}/team/app.git`, 'gitlab', RENDERER_TOKEN))
     expect(envA).toContain(A_TOKEN)
     for (const t of [COM_TOKEN, B_TOKEN, D_TOKEN, RENDERER_TOKEN]) expect(envA).not.toContain(t)
     // A renderer that was never unlocked sends nothing: the server's token is still found.
-    expect(JSON.stringify(await cloneCredentialEnv(`${B}/team/app.git`, 'gitlab', ''))).toContain(B_TOKEN)
-    const envCom = JSON.stringify(await cloneCredentialEnv('https://gitlab.com/team/app.git', 'gitlab', RENDERER_TOKEN))
+    expect(revealCredentialEnv(await cloneCredentialEnv(`${B}/team/app.git`, 'gitlab', ''))).toContain(B_TOKEN)
+    const envCom = revealCredentialEnv(await cloneCredentialEnv('https://gitlab.com/team/app.git', 'gitlab', RENDERER_TOKEN))
     expect(envCom).toContain(COM_TOKEN)
     expect(envCom).not.toContain(A_TOKEN)
     expect(await cloneCredentialEnv(`${D}/team/app.git`, 'gitlab', RENDERER_TOKEN)).toBeNull()

@@ -56,31 +56,47 @@ While it is off, the token field in Integrations says so — *Saved only until y
 
 ## A profile's token while git runs
 
-When a [profile](profiles.md) signs a fetch, pull or push in with its token,
-Gitcito does not write the token into `.git/config` or into the command line,
-where any local user could read it in the process list. It hands it to that one
-git command through its **environment** (`GITCITO_GIT_PASSWORD*`), with a
-credential helper scoped to the remote's host.
+When a [profile](profiles.md) signs a clone, fetch, pull or push in with its
+token, the token goes into none of the places another program could read it:
+not `.git/config`, not the command line (any local user can read the process
+list), and not the **environment** of the git command — which every hook, filter
+and LFS process git starts inherits, along with every npm package a husky or
+lefthook script runs.
 
-**The limit:** every program that git command starts inherits that environment.
-That includes the repository's **hooks** — a `pre-push` hook, a husky script, a
-`post-merge` hook a pull triggers — which can read the token while the
-operation runs, and so can anything those hooks start in turn.
+Instead, for each operation Gitcito opens a private endpoint of its own — a
+socket in a folder only your user can enter (a named pipe with a random name on
+Windows) — and registers a credential helper for that one server. When git asks
+for a login, the helper connects, proves it belongs to this operation with a
+random code made for it alone, says which host and repository git is asking about, and
+receives the login. The endpoint answers every request of the operation — git
+can ask more than once, for LFS, after a redirect, for each process it starts —
+and is closed and deleted when git exits. A hook that dumps its environment
+finds the code, not the token.
 
-What follows from that:
+What it still cannot do:
 
-- **Do not run hooks you do not trust** with a profile signed in. A repository
-  you just cloned can ship hooks through tools such as husky, which install
-  them on `npm install`; git runs whatever sits in `.git/hooks`, from Gitcito
-  or from a terminal alike. Read a stranger's hooks before you push from their
-  repository.
+- **A hook can still ask, while the operation runs.** That code is in
+  git's environment, because the helper is a program git starts and git gives
+  every program it starts the same environment. A hook written to speak the
+  helper's protocol can use the code to ask for the login until git exits —
+  that is exactly how git-lfs's `pre-push` hook gets one. It is a far smaller
+  opening than a token sitting in a variable — nothing reads it by accident,
+  a dump or a crash report shows only a code that is useless once git exits —
+  but it is an opening.
+- **It answers only for the server it was opened for.** The endpoint refuses
+  any other host, a plain `http` request, a path outside the server's base, and
+  a server nested under it (a Data Center at `/bitbucket` beside a GitLab at
+  the root) — even with the right code. A multi-URL push gets one endpoint per
+  server, each holding only that server's login.
+- **Do not run hooks you do not trust** with a profile signed in all the same. A
+  repository you just cloned can ship hooks through tools such as husky, which
+  install them on `npm install`; git runs whatever sits in `.git/hooks`, from
+  Gitcito or from a terminal alike, and a hook can do far worse than read a
+  token.
 - **Scope the token down.** A token that can only write to the repositories you
-  work on is worth much less to a hook that leaks it than an all-access one.
-- **SSH remotes are not affected** — no token goes into the environment for
-  them; the [SSH agent](ssh-keys.md) answers instead.
-
-A delivery that keeps the token away from hooks is planned; until then, this is
-how it works.
+  work on is worth much less to anything that gets hold of it.
+- **SSH remotes are not affected** — no token is involved; the
+  [SSH agent](ssh-keys.md) answers instead.
 
 ## Sharing safely
 

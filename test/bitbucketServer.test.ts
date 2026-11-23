@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -1212,28 +1213,28 @@ describe('call sites, through the real IPC handlers', () => {
   it('a clone from a server carries its token and user name, never the Cloud token the renderer sent', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(REMOTE, 'bitbucket', CLOUD_TOKEN)) ?? {}
-    const text = JSON.stringify(env)
+    const text = revealCredentialEnv(env)
     expect(text).toContain(BBS_TOKEN)
     expect(text).not.toContain(CLOUD_TOKEN)
-    expect(Object.values(env)).toContain('jdoe')
+    expect(credentialEnvValues(env)).toContain('jdoe')
     // Scoped to the server's base, context path included — not the whole origin,
     // which another server (a GitLab at its root) may share.
-    expect(Object.values(env)).toContain('credential.https://bitbucket.example.corp/bitbucket.helper')
-    expect(Object.values(env)).not.toContain('credential.https://bitbucket.example.corp.helper')
+    expect(credentialEnvValues(env)).toContain('credential.https://bitbucket.example.corp/bitbucket.helper')
+    expect(credentialEnvValues(env)).not.toContain('credential.https://bitbucket.example.corp.helper')
   })
 
   it('Clone → URL (no provider sent) uses a configured server’s credential, and nothing for an unknown host', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(REMOTE, undefined, undefined)) ?? {}
-    expect(JSON.stringify(env)).toContain(BBS_TOKEN)
-    expect(Object.values(env)).toContain('jdoe')
+    expect(revealCredentialEnv(env)).toContain(BBS_TOKEN)
+    expect(credentialEnvValues(env)).toContain('jdoe')
     expect(await cloneCredentialEnv('https://bitbucket.example.corp/scm/proj/app.git', undefined, undefined)).toBeNull()
     expect(await cloneCredentialEnv('https://evil.example/bitbucket/scm/proj/app.git', undefined, CLOUD_TOKEN)).toBeNull()
     expect(await cloneCredentialEnv('https://github.com/o/r.git', undefined, CLOUD_TOKEN)).toBeNull()
     // remoteBranches (the clone dialog's branch list) goes through the same function.
     const second = (await cloneCredentialEnv('https://bbs.other.example:8443/scm/team/svc.git', undefined, undefined)) ?? {}
-    expect(JSON.stringify(second)).toContain(BBS_B_TOKEN)
-    expect(JSON.stringify(second)).not.toContain(BBS_TOKEN)
+    expect(revealCredentialEnv(second)).toContain(BBS_B_TOKEN)
+    expect(revealCredentialEnv(second)).not.toContain(BBS_TOKEN)
   })
 
   // Bitbucket's own clone URLs carry the copying user's name; a project or
@@ -1241,13 +1242,13 @@ describe('call sites, through the real IPC handlers', () => {
   it('a token marked project goes as x-token-auth even when the clone URL names a user', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv('https://jsmith@bbs.fourth.example/scm/team/svc.git', undefined, undefined)) ?? {}
-    expect(JSON.stringify(env)).toContain('bbs-token-d')
-    expect(Object.values(env)).toContain('x-token-auth')
-    expect(Object.values(env)).not.toContain('jsmith')
+    expect(revealCredentialEnv(env)).toContain('bbs-token-d')
+    expect(credentialEnvValues(env)).toContain('x-token-auth')
+    expect(credentialEnvValues(env)).not.toContain('jsmith')
     // A personal token with no name in Settings takes the URL's.
     const personal = (await cloneCredentialEnv('https://jsmith@bbs.third.example/scm/team/svc.git', undefined, undefined)) ?? {}
-    expect(JSON.stringify(personal)).toContain('bbs-token-c')
-    expect(Object.values(personal)).toContain('jsmith')
+    expect(revealCredentialEnv(personal)).toContain('bbs-token-c')
+    expect(credentialEnvValues(personal)).toContain('jsmith')
     // …and with no name anywhere, no credential at all rather than x-token-auth.
     expect(await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', undefined, undefined)).toBeNull()
     // Picked in the dialog, that same server is cloned as nobody — git's helper
@@ -1256,7 +1257,7 @@ describe('call sites, through the real IPC handlers', () => {
     for (const host of ['bitbucket', undefined] as const) {
       const picked = (await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', host, undefined, id)) ?? {}
       expect(blanksOnly(picked, 'https://bbs.third.example'), String(host)).toBe(true)
-      expect(JSON.stringify(picked)).not.toContain('bbs-token-c')
+      expect(revealCredentialEnv(picked)).not.toContain('bbs-token-c')
     }
   })
 
@@ -1265,9 +1266,9 @@ describe('call sites, through the real IPC handlers', () => {
   it('a token with no kind set keeps the clone URL’s user name, as before', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv('https://jsmith@bbs.other.example:8443/scm/team/svc.git', undefined, undefined)) ?? {}
-    expect(JSON.stringify(env)).toContain(BBS_B_TOKEN)
-    expect(Object.values(env)).toContain('jsmith')
-    expect(Object.values(env)).not.toContain('x-token-auth')
+    expect(revealCredentialEnv(env)).toContain(BBS_B_TOKEN)
+    expect(credentialEnvValues(env)).toContain('jsmith')
+    expect(credentialEnvValues(env)).not.toContain('x-token-auth')
   })
 
   it('push and fetch send the token as password, with the user name or x-token-auth', async () => {

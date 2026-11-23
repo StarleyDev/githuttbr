@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultSettings } from '../src/shared/types'
+import { credentialEnvValues, revealCredentialEnv } from './helpers'
 import { blanksOnly } from './credentialConfig'
 
 // github.com, bitbucket.org and Azure: the clone dialog's provider tab lists as
@@ -110,7 +111,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
     const { cloneCredentialEnv } = await import('../src/main/git')
     for (const c of CLOUD) {
       for (const sent of [undefined, '', '  ']) {
-        const env = JSON.stringify(await cloneCredentialEnv(c.url, c.host, sent, 'personal'))
+        const env = revealCredentialEnv(await cloneCredentialEnv(c.url, c.host, sent, 'personal'))
         expect(env, c.url).toContain(PERSONAL[c.host])
         expect(env, c.url).not.toContain('work-')
       }
@@ -121,14 +122,14 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
     const { cloneCredentialEnv } = await import('../src/main/git')
     for (const c of CLOUD) {
       const env = (await cloneCredentialEnv(c.url, c.host, '', 'linked')) ?? {}
-      expect(Object.values(env), c.url).toContain('helper-linked-me')
-      expect(JSON.stringify(env)).not.toContain('work-')
+      expect(credentialEnvValues(env), c.url).toContain('helper-linked-me')
+      expect(revealCredentialEnv(env)).not.toContain('work-')
     }
   })
 
   it('a token the renderer sent — the picked profile’s — is still what goes', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
-    const env = JSON.stringify(await cloneCredentialEnv(CLOUD[0].url, 'github', 'typed-now', 'personal'))
+    const env = revealCredentialEnv(await cloneCredentialEnv(CLOUD[0].url, 'github', 'typed-now', 'personal'))
     expect(env).toContain('typed-now')
   })
 
@@ -145,12 +146,12 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
         expect(env.GIT_ASKPASS).toBe('')
         expect(env.GIT_TERMINAL_PROMPT).toBe('0')
         expect(Object.keys(env).some((k) => k.startsWith('GITCITO_GIT_'))).toBe(false)
-        expect(JSON.stringify(env)).not.toMatch(/work-|personal-|helper-/)
+        expect(revealCredentialEnv(env)).not.toMatch(/work-|personal-|helper-/)
       }
       // The provider check failing for a named profile is just as anonymous.
       const other = (await cloneCredentialEnv(c.url, c.host === 'github' ? 'azure' : 'github', '', 'personal')) ?? {}
       expect(blanksOnly(other, origin)).toBe(true)
-      expect(JSON.stringify(other)).not.toContain('personal-')
+      expect(revealCredentialEnv(other)).not.toContain('personal-')
     }
   })
 
@@ -164,7 +165,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
   it('a non-string profile id means the active profile, not an unknown one', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     for (const id of [null, 42, {}]) {
-      const env = JSON.stringify(await cloneCredentialEnv(`${GITLAB}/team/app.git`, 'gitlab', '', id))
+      const env = revealCredentialEnv(await cloneCredentialEnv(`${GITLAB}/team/app.git`, 'gitlab', '', id))
       expect(env).toContain(WORK.gitlab)
     }
   })
