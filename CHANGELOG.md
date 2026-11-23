@@ -1,5 +1,19 @@
 
 
+## [4.40.2](https://github.com/StarleyDev/githuttbr/compare/v4.40.1...v4.40.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* **mac:** the unsigned macOS app opens again — 4.38.0 to 4.40.1 wrote a file into the bundle after sealing it, and macOS refused the app as damaged ([bb8668a](https://github.com/StarleyDev/githuttbr/commit/bb8668a12ffd2473ba34ab7daf850948827de5a6))
+
+
+### Releases
+
+* build macOS on an Intel runner; GitHub's macOS arm64 runners were out of capacity ([8f055e4](https://github.com/StarleyDev/githuttbr/commit/8f055e4a5986332dd6bc2d2bd97891f8733e861d))
+* verify every macOS app's signature before uploading it ([e6d79f2](https://github.com/StarleyDev/githuttbr/commit/e6d79f2520c8016277eca27eb44b263b917f202c))
+* close, not open, the macOS-missing issue when the build is already on the release ([a15bf0c](https://github.com/StarleyDev/githuttbr/commit/a15bf0c830bf32658180c2e118919cc1737b0534))
+
 ## [4.40.1](https://github.com/StarleyDev/githuttbr/compare/v4.40.0...v4.40.1) (2026-11-23)
 
 
