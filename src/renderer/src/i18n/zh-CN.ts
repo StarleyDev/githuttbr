@@ -4113,6 +4113,7 @@ export const zhCN: Dict = {
   'settings.exportFailed': '导出失败',
   'settings.imported': '设置已导入',
   'settings.importFailed': '导入失败',
+  'settings.saveRefusedDamaged': '无法保存设置：设置文件已损坏。请重启 Gitcito 进行修复——现在所做的更改将会丢失。',
   'settings.importSecretsTitle': '此文件包含凭据',
   'settings.importSecretsMessage': '要把它们添加到你已保存的凭据中（替换同一账户的凭据，保留其余的），还是用文件中的凭据替换你保存的所有令牌和 API 密钥？替换会删除文件中没有的所有已保存凭据。',
   'settings.importSecretsMerge': '添加到我的',

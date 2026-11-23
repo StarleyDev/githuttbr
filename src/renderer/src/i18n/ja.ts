@@ -4053,6 +4053,7 @@ export const ja: Dict = {
   'settings.exportFailed': 'エクスポートに失敗しました',
   'settings.imported': '設定をインポートしました',
   'settings.importFailed': 'インポートに失敗しました',
+  'settings.saveRefusedDamaged': '設定を保存できません：設定ファイルが破損しています。修復するには Gitcito を再起動してください。今行った変更は失われます。',
   'settings.importSecretsTitle': 'このファイルには認証情報が含まれています',
   'settings.importSecretsMessage': '保存済みの認証情報に追加しますか (同じアカウントのものは置き換え、それ以外は残します)? それとも保存済みのトークンと API キーをすべてファイルのものに置き換えますか? 置き換えると、ファイルにない保存済みの認証情報はすべて削除されます。',
   'settings.importSecretsMerge': '追加する',

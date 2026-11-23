@@ -91,15 +91,34 @@ function askUser(reason: KeychainReason, adopted: boolean): Promise<boolean> {
   const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
   if (!win || win.isDestroyed()) return Promise.resolve(false)
 
-  asking = new Promise<boolean>((resolve) => {
-    answer = resolve
-    win.webContents.send('keychain:ask', { reason, adopted })
-    // If the window goes away mid-question, don't leave callers hanging.
-    win.once('closed', () => answer?.(false))
-  }).then(async (granted) => {
-    await setConsent(granted ? 'granted' : 'declined')
-    asking = null
-    answer = null
+  const contents = win.webContents
+  asking = new Promise<{ granted: boolean; answered: boolean }>((resolve) => {
+    // The page that showed the question is gone — reloaded, crashed, closed.
+    // Nobody will ever answer it, and the settings queue waits behind this
+    // promise: left pending, the next renderer's settings:get never returns and
+    // the boot spinner spins forever. Settle it as "not now", without recording
+    // a refusal the user never gave.
+    const abandon = (): void => settle(false, false)
+    const settle = (granted: boolean, answered: boolean): void => {
+      win.removeListener('closed', abandon)
+      contents.removeListener('render-process-gone', abandon)
+      contents.removeListener('did-start-loading', abandon)
+      contents.removeListener('destroyed', abandon)
+      resolve({ granted, answered })
+    }
+    answer = (granted) => settle(granted, true)
+    contents.send('keychain:ask', { reason, adopted })
+    win.once('closed', abandon)
+    contents.once('render-process-gone', abandon)
+    contents.once('did-start-loading', abandon)
+    contents.once('destroyed', abandon)
+  }).then(async ({ granted, answered }) => {
+    try {
+      if (answered) await setConsent(granted ? 'granted' : 'declined')
+    } finally {
+      asking = null
+      answer = null
+    }
     return granted
   })
   return asking

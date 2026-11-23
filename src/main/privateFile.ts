@@ -107,7 +107,10 @@ async function writeAtomic(linkPath: string, data: string | Uint8Array): Promise
     await rm(tmp, { force: true }).catch(() => undefined)
     throw err
   }
-  await syncDir(dirname(path))
+  // The rename has happened: the new contents are what every reader now sees.
+  // Failing the write here would tell the caller the old file is still in
+  // place, and the secrets cache would disagree with the disk.
+  await syncDir(dirname(path)).catch((err: Error) => console.warn('[privateFile] directory fsync failed:', err.message))
 }
 
 export async function writePrivateFile(path: string, data: string | Uint8Array): Promise<void> {

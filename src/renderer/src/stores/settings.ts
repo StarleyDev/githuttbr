@@ -31,7 +31,8 @@ import {
   pruneFolders,
   updateFolder
 } from '../lib/repoFolders'
-import { gitApi, reposApi, settingsApi } from '../infrastructure/api'
+import { gitApi, reposApi, settingsApi, SettingsSaveRefused } from '../infrastructure/api'
+import { t } from '../i18n'
 import { repathRepoSettings, repathRepoTabs } from '../lib/repoRepath'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
@@ -157,6 +158,19 @@ function withTodoOrder(
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+let damagedNoticeShown = false
+/**
+ * A background save that failed. Main refuses every save once a read has found
+ * the file unparseable (hand-edited while the app runs): logged only, each edit
+ * after that vanished silently. Said once — every later save fails the same way.
+ */
+function reportSaveFailure(err: unknown): void {
+  console.warn('[settings] save failed:', err)
+  if (!(err instanceof SettingsSaveRefused) || err.reason !== 'not-loaded' || damagedNoticeShown) return
+  damagedNoticeShown = true
+  useUIStore.getState().toast('error', t('settings.saveRefusedDamaged'))
+}
 /**
  * Debounced save. What goes out is the state when the timer *fires*, with the
  * generation it was built from: a state captured when the save was scheduled
@@ -170,7 +184,7 @@ function persist(): void {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     saveTimer = null
-    void send().catch((err) => console.warn('[settings] save failed:', err))
+    void send().catch(reportSaveFailure)
   }, 250)
 }
 
@@ -199,7 +213,7 @@ async function flushPending(): Promise<void> {
   if (saveTimer) {
     clearTimeout(saveTimer)
     saveTimer = null
-    await send().catch((err) => console.warn('[settings] save failed:', err))
+    await send().catch(reportSaveFailure)
   }
   await inFlight
 }
@@ -566,7 +580,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Read back what main kept: a merge leaves credentials the file did not
       // carry, which this state shows as blanks until it is replaced — and a
       // refused import left everything as it was, which this state is not.
-      await get().load({ unlock: get().unlocked })
+      // Caught here: a failed reload must not replace why the import failed.
+      await get()
+        .load({ unlock: get().unlocked })
+        .catch((err) => console.warn('[settings] reload after import failed:', err))
     }
   },
 

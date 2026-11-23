@@ -4122,6 +4122,7 @@ export const ptBR: Dict = {
   'settings.exportFailed': 'A exportação falhou',
   'settings.imported': 'Configurações importadas',
   'settings.importFailed': 'A importação falhou',
+  'settings.saveRefusedDamaged': 'Não é possível salvar as configurações: o arquivo de configurações está danificado. Reinicie o Gitcito para repará-lo — as alterações feitas agora serão perdidas.',
   'settings.importSecretsTitle': 'Este arquivo contém credenciais',
   'settings.importSecretsMessage': 'Adicioná-las às suas credenciais salvas — substituindo as da mesma conta e mantendo o resto — ou substituir todos os seus tokens e chaves de API salvos pelos do arquivo? Substituir apaga toda credencial salva que não estiver no arquivo.',
   'settings.importSecretsMerge': 'Adicionar às minhas',

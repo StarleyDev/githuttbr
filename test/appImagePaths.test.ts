@@ -88,6 +88,26 @@ describe('AppImage path decisions', () => {
     }
   })
 
+  it('finds a mount spelled as a glob, which the shell expands before git runs it', () => {
+    for (const tc of [
+      '/tmp/.moun?_X/resources/cli/gitcito-textconv',
+      '/tmp/[.]mount_X/resources/cli/gitcito-textconv',
+      '/tmp/*/resources/cli/gitcito-textconv',
+      'env "/tmp/.mount_*/AppRun"',
+      'sh -c /tmp/?mount_x/AppRun',
+      '/var/x/[.]appimage_extracted_1/AppRun',
+      'FOO=/tmp/appimage_extracte?_1/lib exiftool'
+    ]) {
+      expect(isEphemeralTextconv(tc, {}), tc).toBe(true)
+    }
+    expect(isEphemeralTextconv('/scratch/*/AppRun', { TMPDIR: '/scratch/' }), 'TMPDIR').toBe(true)
+    // Ordinary converters, globs outside the temp dir, and temp paths without a glob stay clean.
+    for (const tc of ['pdftotext -layout - -', 'exiftool', 'docx2txt', '~/bin/conv', '/tmp/conv',
+      'sh -c "cat -- *"', '/usr/bin/strings -n 8']) {
+      expect(isEphemeralTextconv(tc, {}), tc).toBe(false)
+    }
+  })
+
   it('finds this launch’s APPDIR or resources root anywhere on the line, under an AppImage', () => {
     const env = { APPIMAGE: '/x.AppImage', APPDIR: '/opt/custom-runtime/root' }
     expect(isEphemeralTextconv('env /opt/custom-runtime/root/resources/cli/gitcito-textconv', env)).toBe(true)

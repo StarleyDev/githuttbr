@@ -4116,6 +4116,7 @@ export const ar: Dict = {
   'settings.exportFailed': 'فشل التصدير',
   'settings.imported': 'استُوردت الإعدادات',
   'settings.importFailed': 'فشل الاستيراد',
+  'settings.saveRefusedDamaged': 'تعذّر حفظ الإعدادات: ملف الإعدادات تالف. أعد تشغيل Gitcito لإصلاحه — ستُفقد التغييرات التي تجريها الآن.',
   'settings.importSecretsTitle': 'يحتوي هذا الملف على بيانات اعتماد',
   'settings.importSecretsMessage': 'هل تريد إضافتها إلى بيانات الاعتماد المحفوظة — مع استبدال ما يخص الحساب نفسه والإبقاء على الباقي — أم استبدال كل رموزك ومفاتيح API المحفوظة بما في الملف؟ الاستبدال يحذف كل بيانات اعتماد محفوظة غير موجودة في الملف.',
   'settings.importSecretsMerge': 'أضِف إلى بياناتي',

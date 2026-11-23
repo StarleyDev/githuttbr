@@ -4120,6 +4120,7 @@ export const en = {
   'settings.exportFailed': 'Export failed',
   'settings.imported': 'Settings imported',
   'settings.importFailed': 'Import failed',
+  'settings.saveRefusedDamaged': 'Settings cannot be saved: the settings file is damaged. Restart Gitcito to repair it — changes made now will be lost.',
   'settings.importSecretsTitle': 'This file contains credentials',
   'settings.importSecretsMessage': 'Add them to your saved credentials — replacing any for the same account and keeping the rest — or replace all your saved tokens and API keys with the ones in the file? Replacing deletes every saved credential the file does not have.',
   'settings.importSecretsMerge': 'Add to mine',

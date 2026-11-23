@@ -4113,6 +4113,7 @@ export const ko: Dict = {
   'settings.exportFailed': '내보내기에 실패했습니다',
   'settings.imported': '설정을 가져왔습니다',
   'settings.importFailed': '가져오기에 실패했습니다',
+  'settings.saveRefusedDamaged': '설정을 저장할 수 없습니다: 설정 파일이 손상되었습니다. 복구하려면 Gitcito를 다시 시작하세요. 지금 변경한 내용은 사라집니다.',
   'settings.importSecretsTitle': '이 파일에 자격 증명이 들어 있습니다',
   'settings.importSecretsMessage': '저장된 자격 증명에 추가할까요(같은 계정은 바꾸고 나머지는 유지)? 아니면 저장된 토큰과 API 키를 모두 파일의 것으로 바꿀까요? 바꾸면 파일에 없는 저장된 자격 증명은 모두 삭제됩니다.',
   'settings.importSecretsMerge': '내 것에 추가',

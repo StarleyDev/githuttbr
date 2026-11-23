@@ -62,6 +62,25 @@ export function textconvProgram(textconv: string): string {
 /** A mount or extraction dir named anywhere on a command line, not only as a whole path. */
 const EPHEMERAL_ANYWHERE = /(^|[^\w.-])(\.mount_|appimage_extracted_)/
 
+/** A glob character right before a mount or extraction name: `/tmp/[.]mount_x`, `/tmp/?mount_x`. */
+const GLOBBED_EPHEMERAL = /[?*[\]](mount_|appimage_extracted_)/
+const GLOB_CHARS = /[?*[]/
+
+/**
+ * True when the line names a glob inside the temp directory, or a glob right
+ * before a mount name. The shell expands a glob before git runs the command,
+ * so `/tmp/.moun?_X/…` or a `*` under /tmp reaches the mount without ever
+ * spelling its name. Nothing a real converter is configured with globs into
+ * /tmp, so treating any such word as ephemeral costs no false alarms.
+ */
+function globsIntoTemp(line: string, env: Env): boolean {
+  if (GLOBBED_EPHEMERAL.test(line)) return true
+  const roots = ['/tmp', env['TMPDIR'] ?? ''].map((r) => r.replace(/[\\/]+$/, '')).filter((r) => r !== '')
+  return line
+    .split(/[\s=;&|()`<>]+/)
+    .some((word) => GLOB_CHARS.test(word) && roots.some((root) => within(word, root)))
+}
+
 /**
  * True when a configured textconv reaches into an AppImage mount anywhere on
  * its line. Git runs textconv through a shell, so the program is not the only
@@ -76,6 +95,7 @@ export function isEphemeralTextconv(textconv: string, env: Env = process.env, re
   const line = textconv.replace(/["'\\]/g, '')
   const slashed = textconv.replace(/["']/g, '').replace(/\\/g, '/')
   if (EPHEMERAL_ANYWHERE.test(line) || EPHEMERAL_ANYWHERE.test(slashed)) return true
+  if (globsIntoTemp(slashed, env)) return true
   if (!runningFromAppImage(env)) return false
   return [env['APPDIR'] ?? '', resourcesRoot].some((root) => {
     const base = root.replace(/[\\/]+$/, '')

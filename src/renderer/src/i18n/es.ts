@@ -4116,6 +4116,7 @@ export const es: Dict = {
   'settings.exportFailed': 'Falló la exportación',
   'settings.imported': 'Ajustes importados',
   'settings.importFailed': 'Falló la importación',
+  'settings.saveRefusedDamaged': 'No se pueden guardar los ajustes: el archivo de ajustes está dañado. Reinicia Gitcito para repararlo; los cambios que hagas ahora se perderán.',
   'settings.importSecretsTitle': 'Este archivo contiene credenciales',
   'settings.importSecretsMessage': '¿Añadirlas a tus credenciales guardadas —sustituyendo las de la misma cuenta y conservando el resto— o reemplazar todos tus tokens y claves de API guardados por los del archivo? Al reemplazar se elimina toda credencial guardada que no esté en el archivo.',
   'settings.importSecretsMerge': 'Añadir a las mías',

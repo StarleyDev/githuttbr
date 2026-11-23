@@ -4062,6 +4062,7 @@ export const it: Dict = {
   'settings.exportFailed': 'Esportazione fallita',
   'settings.imported': 'Impostazioni importate',
   'settings.importFailed': 'Importazione fallita',
+  'settings.saveRefusedDamaged': 'Impossibile salvare le impostazioni: il file delle impostazioni è danneggiato. Riavvia Gitcito per ripararlo: le modifiche fatte ora andranno perse.',
   'settings.importSecretsTitle': 'Questo file contiene credenziali',
   'settings.importSecretsMessage': 'Aggiungerle alle credenziali salvate — sostituendo quelle dello stesso account e mantenendo le altre — oppure sostituire tutti i token e le chiavi API salvati con quelli del file? La sostituzione elimina ogni credenziale salvata che il file non contiene.',
   'settings.importSecretsMerge': 'Aggiungi alle mie',

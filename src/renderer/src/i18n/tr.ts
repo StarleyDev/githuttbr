@@ -4056,6 +4056,7 @@ export const tr: Dict = {
   'settings.exportFailed': 'Dışa aktarma başarısız',
   'settings.imported': 'Ayarlar içe aktarıldı',
   'settings.importFailed': 'İçe aktarma başarısız',
+  'settings.saveRefusedDamaged': 'Ayarlar kaydedilemiyor: ayar dosyası bozuk. Onarmak için Gitcito’yu yeniden başlatın — şimdi yapılan değişiklikler kaybolacak.',
   'settings.importSecretsTitle': 'Bu dosya kimlik bilgileri içeriyor',
   'settings.importSecretsMessage': 'Bunlar kayıtlı kimlik bilgilerinize eklensin mi — aynı hesabınkiler değiştirilir, kalanlar korunur — yoksa tüm kayıtlı belirteç ve API anahtarlarınız dosyadakilerle mi değiştirilsin? Değiştirmek, dosyada olmayan her kayıtlı kimlik bilgisini siler.',
   'settings.importSecretsMerge': 'Benimkilere ekle',

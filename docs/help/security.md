@@ -73,7 +73,9 @@ storing.
 
 While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
 
-Clearing a token while the keychain is off clears it for real: it is gone for the rest of the session, and when the keychain is turned on the copy in the encrypted store is deleted rather than written back.
+Clearing a token while the keychain is off clears it for real: it is gone for the rest of the session, and the copy in the encrypted store is deleted the first time the store can be written again — when you turn the keychain on, or on a later launch with it on. Until then the settings file remembers *which* token was cleared (never the token itself), so quitting first does not bring it back.
+
+If the window reloads or crashes while the keychain explanation is on screen, the question counts as unanswered — not as a no — and is asked again the next time a token needs storing.
 
 ## Importing settings
 
@@ -112,7 +114,13 @@ screen. You can fix `gitcito-settings.json` in its data folder and press
 **Try again**, or press **Move the damaged file aside and start fresh**: the file
 is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside
-it, and Gitcito starts as on a first run.
+it, and Gitcito starts as on a first run. The copy is made first: if it cannot
+be written, nothing is moved and the screen stays, since starting fresh without
+it would let the first token you save delete the old profiles' tokens.
+
+If the file goes bad while Gitcito is running (edited by hand underneath it),
+saves stop and Gitcito says so once: settings cannot be saved until it is
+restarted, and changes made in the meantime are lost.
 
 A file that is there but cannot be *read* for a moment — another program, such
 as an antivirus scan, holding it — is retried for about two seconds. If it still

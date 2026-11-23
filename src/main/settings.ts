@@ -56,8 +56,64 @@ let sessionSecrets: SecretStore = {}
  * Credentials the user cleared while the keychain could not be written (see
  * `secretSlots`). The encrypted store still holds them; they are masked out of
  * every view and deleted from the store the moment it becomes writable.
+ *
+ * The slot ids (never the secrets) are also kept in the settings file as
+ * `pendingSecretClears`: held in memory only, a quit before the keychain came
+ * back brought the cleared token back on the next launch.
  */
 const tombstones = new Set<string>()
+const PENDING_CLEARS = 'pendingSecretClears'
+/** Whether this process has taken the persisted clears from the settings file yet. */
+let pendingClearsLoaded = false
+
+/** Takes the persisted clears in once per process, from the first settings file that reads cleanly. */
+function loadPendingClears(parsed: Record<string, unknown>): void {
+  if (pendingClearsLoaded) return
+  pendingClearsLoaded = true
+  const ids = parsed[PENDING_CLEARS]
+  if (Array.isArray(ids)) for (const id of ids) if (typeof id === 'string') tombstones.add(id)
+}
+
+/** The settings file as written: no secrets, plus the clears still owed to the encrypted store. */
+function settingsFileJson(settings: AppSettings): string {
+  const out: Record<string, unknown> = { ...stripSettingsSecrets(settings) }
+  // Never what the renderer sent: only main knows which clears are still owed.
+  delete out[PENDING_CLEARS]
+  if (tombstones.size) out[PENDING_CLEARS] = [...tombstones]
+  return JSON.stringify(out, null, 2)
+}
+
+/** Drops `pendingSecretClears` from the file once the store no longer holds those slots. */
+async function forgetPendingClears(): Promise<void> {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(await readFile(settingsPath(), 'utf-8'))
+  } catch {
+    return
+  }
+  if (!parsed || typeof parsed !== 'object' || !(PENDING_CLEARS in parsed)) return
+  const next = { ...(parsed as Record<string, unknown>) }
+  delete next[PENDING_CLEARS]
+  await writePrivateFile(settingsPath(), JSON.stringify(next, null, 2))
+}
+
+/**
+ * Applies the owed clears to the encrypted store, with the keychain already
+ * usable. Called wherever the store is loaded or a write would otherwise skip
+ * it, so a clear made with the keychain off reaches the disk at the first
+ * chance rather than at the next token save.
+ */
+async function flushTombstones(): Promise<void> {
+  if (!tombstones.size) return
+  const stored = secretCache ?? adopt(await loadSecrets())
+  // A store this build cannot decrypt is left alone; the clears stay owed.
+  if (secretsUnreadable) return
+  const next = dropSecretSlots(stored, tombstones)
+  if (existsSync(secretsPath())) await saveSecrets(next)
+  secretCache = next
+  tombstones.clear()
+  await forgetPendingClears()
+}
 
 /** A store read from disk, minus what the user cleared while it was out of reach. */
 function adopt(store: SecretStore): SecretStore {
@@ -157,6 +213,8 @@ interface SaveAuthority {
   store: boolean
   /** Built on the latest reply: it saw every session-only token, so blanks there are clears. */
   session: boolean
+  /** The generation the save was built on. */
+  generation: number
 }
 
 /** How a `settings:set` came about. An import never clears a credential the file does not carry. */
@@ -204,6 +262,8 @@ export async function readSettings(): Promise<AppSettings> {
   if (!parsed) return defaultSettings()
   // Existing install without the key → treat as already onboarded.
   const settings: AppSettings = { ...defaultSettings(), onboardingCompleted: true, ...parsed }
+  // Bookkeeping for main, not a setting: never shown, never exported.
+  delete (settings as unknown as Record<string, unknown>)[PENDING_CLEARS]
   const out = withMigratedAI(applySecrets(settings, mergeSecretStores(secretCache ?? {}, sessionSecrets)))
   setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
   setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
@@ -227,7 +287,11 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
  * writes in place, so a bad read is retried briefly before it becomes an error.
  */
 async function readSettingsFile(): Promise<Partial<AppSettings> | null> {
-  for (let attempt = 0; ; attempt++) {
+  // Separate budgets: a scan holding the file for a while must not use up the
+  // retries a half-written file gets once it can be read.
+  let ioAttempt = 0
+  let parseAttempt = 0
+  for (;;) {
     let text: string
     try {
       text = await readFile(settingsPath(), 'utf-8')
@@ -238,23 +302,24 @@ async function readSettingsFile(): Promise<Partial<AppSettings> | null> {
         return null
       }
       const delays = code && BUSY_CODES.has(code) ? BUSY_DELAYS : SHORT_DELAYS
-      if (attempt >= delays.length) {
+      if (ioAttempt >= delays.length) {
         throw new SettingsReadError('io', `Could not read ${settingsPath()}: ${(err as Error).message}`)
       }
-      await sleep(delays[attempt])
+      await sleep(delays[ioAttempt++])
       continue
     }
     try {
       const parsed: unknown = JSON.parse(text)
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('settings file is not an object')
       settingsBroken = false
+      loadPendingClears(parsed as Record<string, unknown>)
       return parsed as Partial<AppSettings>
     } catch (err) {
-      if (attempt >= SHORT_DELAYS.length) {
+      if (parseAttempt >= SHORT_DELAYS.length) {
         settingsBroken = true
         throw new SettingsReadError('parse', `Could not parse ${settingsPath()}: ${(err as Error).message}`)
       }
-      await sleep(SHORT_DELAYS[attempt])
+      await sleep(SHORT_DELAYS[parseAttempt++])
     }
   }
 }
@@ -283,7 +348,17 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   if (secretCache) return settings
   // Git may already authenticate through its own helper or SSH. With no app
   // secrets to decrypt or migrate, touching Safe Storage only causes a needless prompt.
-  if (!existsSync(secretsPath()) && !hasSettingsSecrets(settings)) return settings
+  if (!existsSync(secretsPath()) && !hasSettingsSecrets(settings)) {
+    // Keychain already usable and no store yet: the store is known to be
+    // empty. Recorded, so this reply counts as having carried the whole store
+    // and a token saved and then cleared in this session really is cleared.
+    if (await canEncrypt()) {
+      secretCache = {}
+      tombstones.clear()
+      await forgetPendingClears()
+    }
+    return settings
+  }
 
   // An install that already has an encrypted secrets file predates the consent
   // gate — its owner answered the OS prompt long ago, so they are not asked to
@@ -298,11 +373,13 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     const ids = (settings.profiles ?? []).map((p) => p.id)
     const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids)
     await saveSecrets(merged)
-    await writePrivateFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2))
+    tombstones.clear()
+    await writePrivateFile(settingsPath(), settingsFileJson(settings))
     secretCache = merged
     return withMigratedAI(applySecrets(settings, merged))
   }
   secretCache = stored
+  await flushTombstones()
   return withMigratedAI(applySecrets(settings, mergeSecretStores(stored, sessionSecrets)))
 }
 
@@ -460,12 +537,20 @@ async function persistSessionSecrets(): Promise<void> {
   await saveSecrets(merged)
   secretCache = merged
   sessionSecrets = {}
-  tombstones.clear()
-  // The store now holds credentials the renderer's last reply may not have
-  // carried: a save built on that reply must not read their absence as clears.
-  lastGeneration++
+  if (tombstones.size) {
+    tombstones.clear()
+    await forgetPendingClears()
+  }
 }
-onKeychainEnabled(() => serialized(persistSessionSecrets))
+onKeychainEnabled(() => {
+  // The store is about to hold credentials the renderer's last reply may not
+  // have carried: a save built on that reply must not read their absence as
+  // clears. Bumped on arrival, like every other generation: bumped inside the
+  // queue, it also outdated a get that arrived after it and was served after
+  // the move, leaving the renderer unable to clear anything.
+  if (Object.keys(sessionSecrets).length > 0 || tombstones.size > 0) lastGeneration++
+  return serialized(persistSessionSecrets)
+})
 
 /** True while some token exists only in memory and would be lost on quit. */
 export function hasSessionOnlySecrets(): boolean {
@@ -504,7 +589,6 @@ async function writeSettings(settings: AppSettings, auth: SaveAuthority, options
   setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
-  const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)
   const ids = (settings.profiles ?? []).map((p) => p.id)
 
   // Whether a blank token in this save means "the user cleared it". Only for a
@@ -527,7 +611,7 @@ async function writeSettings(settings: AppSettings, auth: SaveAuthority, options
     // Refused (or no keyring): hold the secrets in memory for this session and
     // keep them out of the file, rather than writing them in the clear.
     holdInSession(secrets, ids, auth)
-    await writePrivateFile(settingsPath(), stripped)
+    await writePrivateFile(settingsPath(), settingsFileJson(settings))
     return
   }
 
@@ -536,7 +620,9 @@ async function writeSettings(settings: AppSettings, auth: SaveAuthority, options
   // this build could not decrypt it: our empty view of the store is not the
   // truth, and persisting it would erase the real one.
   if (!hasSecrets && (!authoritative || !secretCache || secretsUnreadable)) {
-    await writePrivateFile(settingsPath(), stripped)
+    // The keychain is usable again: clears made while it was off are owed now.
+    await flushTombstones()
+    await writePrivateFile(settingsPath(), settingsFileJson(settings))
     return
   }
 
@@ -550,12 +636,17 @@ async function writeSettings(settings: AppSettings, auth: SaveAuthority, options
   const base = authoritative
     ? {}
     : dropSecretSlots(mergeSecretStores(secretCache ?? adopt(await loadSecrets()), sessionSecrets), tombstones)
+  // No store before this save, and the save is from the latest reply: the
+  // renderer holds everything the new store will. Recorded like an unlock, or
+  // clearing the token it just saved would be ignored for the rest of the session.
+  const firstStore = secretCache === null && auth.session && !options.import && !existsSync(secretsPath())
   const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
   await saveSecrets(merged)
   secretCache = merged
   sessionSecrets = {}
   tombstones.clear()
-  await writePrivateFile(settingsPath(), stripped)
+  if (firstStore) servedGeneration = auth.generation
+  await writePrivateFile(settingsPath(), settingsFileJson(settings))
 }
 
 /**
@@ -571,12 +662,19 @@ async function moveSettingsAside(): Promise<string | null> {
   }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const target = `${settingsPath()}.corrupt-${stamp}`
-  await rename(settingsPath(), target)
   // The stored tokens belong to the profiles in that file; a fresh start prunes
-  // them on its first token save. Keep an (encrypted) copy beside it.
+  // them on its first token save. Keep an (encrypted) copy beside it, first,
+  // and refuse when it cannot be made: moving the file without it would let
+  // onboarding delete every old profile's token.
   if (existsSync(secretsPath())) {
-    await copyPrivateFile(secretsPath(), `${secretsPath()}.corrupt-${stamp}`).catch(() => undefined)
+    try {
+      await copyPrivateFile(secretsPath(), `${secretsPath()}.corrupt-${stamp}`)
+    } catch (err) {
+      console.warn('[settings] could not copy the secrets store aside:', (err as Error).message)
+      return null
+    }
   }
+  await rename(settingsPath(), target)
   settingsBroken = false
   return basename(target)
 }
@@ -618,7 +716,7 @@ export function registerSettingsHandlers(): void {
       const gen = generationArg(generation)
       const opts = saveOptionsArg(options)
       const current = gen === lastGeneration && !opts.import
-      const auth: SaveAuthority = { store: current && gen === servedGeneration, session: current }
+      const auth: SaveAuthority = { store: current && gen === servedGeneration, session: current, generation: gen }
       // An import changes what the renderer holds without a new reply: its next
       // ordinary save must not be read as clears until it has reloaded.
       if (opts.import) lastGeneration++
