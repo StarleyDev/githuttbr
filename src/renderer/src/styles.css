@@ -5756,6 +5756,12 @@ body.col-resizing .node-ava {
   width: 504px;
 }
 
+/* 20px over the default 420px: the reviewer, assignee and label chips and the
+   two checkboxes breathe without wrapping. */
+.modal-create-pr {
+  width: 440px;
+}
+
 .modal h3 {
   font-size: 15px;
   margin-bottom: 14px;
