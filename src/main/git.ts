@@ -168,7 +168,7 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { activeProfileAuth, readSettings } from './settings'
+import { activeProfileAuth, namedProfileAuth, readSettings } from './settings'
 import { providerOfHost } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
 import {
@@ -1002,14 +1002,21 @@ function urlUsername(url: string | undefined): string {
  * process list nor the new repository's `.git/config` — not even for the
  * duration of the clone, which a crash or a kill would otherwise leave behind.
  */
-export async function cloneCredentialEnv(url: string, host?: string, token?: string): Promise<NodeJS.ProcessEnv | null> {
+export async function cloneCredentialEnv(
+  url: string,
+  host?: string,
+  token?: string,
+  urlProfileId?: string
+): Promise<NodeJS.ProcessEnv | null> {
   if (!/^https:\/\//i.test(url)) return null
   // Clone → URL names no provider. A Data Center a profile configures is
   // recognised from the URL itself (host, port and context path) — its token is
-  // filed under that base, so no other host can be offered anything, and it is
-  // resolved here the way every other Data Center call resolves it. Every other
-  // provider still needs the caller to name it, and to send a token: a provider
-  // tab whose profile has none clones anonymously.
+  // filed under that base, so no other host can be offered anything. It is
+  // resolved from the profile picked in the dialog (`urlProfileId`), the one the
+  // new repository is then bound to, so it is cloned and later fetched as the
+  // same account. Every other provider still needs the caller to name it, and
+  // to send a token: a provider tab whose profile has none clones anonymously.
+  const urlTab = !host
   if (!host) {
     if (!bitbucketServerRepoOf(url, bitbucketServerBases((await readSettings()).profiles))) return null
     host = 'bitbucket'
@@ -1029,7 +1036,8 @@ export async function cloneCredentialEnv(url: string, host?: string, token?: str
   let gitUsername: string | undefined
   let tokenKind: BitbucketServerTokenKind | undefined
   if (host === 'gitlab' || host === 'forgejo' || ghes || dc) {
-    const auth = await activeProfileAuth(host, url)
+    // Only the URL tab names a profile; an empty or unknown id gets nothing.
+    const auth = urlTab && urlProfileId !== undefined ? await namedProfileAuth(host, urlProfileId, url) : await activeProfileAuth(host, url)
     token = auth.token
     gitUsername = auth.username
     tokenKind = auth.tokenKind
@@ -7277,8 +7285,8 @@ export const gitService = {
 
   /** Branch names a remote advertises, for the clone dialog's branch picker.
    *  Never touches disk — `ls-remote` is a network read with no local repo. */
-  async remoteBranches(url: string, host?: string, token?: string): Promise<string[]> {
-    const credEnv = await cloneCredentialEnv(url, host, token)
+  async remoteBranches(url: string, host?: string, token?: string, urlProfileId?: string): Promise<string[]> {
+    const credEnv = await cloneCredentialEnv(url, host, token, urlProfileId)
     if (credEnv) await assertGitSupportsCredentialEnv()
     try {
       const { stdout } = await pexecFile('git', ['ls-remote', '--heads', url], {
@@ -7316,7 +7324,7 @@ export const gitService = {
       const localShallow =
         !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
       const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
-      const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token)
+      const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token, opts.urlProfileId)
       if (credEnv) await assertGitSupportsCredentialEnv()
       // Streaming the underlying `git clone --progress` so the UI can show real progress;
       // simpleGit auto-appends --progress when a progress handler is configured.

@@ -507,6 +507,14 @@ export async function bbsPullChecks(repo: BitbucketServerRepo, token: string, id
 const STATS_BATCH = 40
 
 /**
+ * Commits read in full per call. The stats requests are cheap and cover all
+ * 200 heads; each full read is one more request, so a list where every head
+ * has builds would otherwise cost 200. The first 50 — the newest pull
+ * requests, in the list's own order — get their CI; the rest show none.
+ */
+export const BBS_CI_FULL_READS = 50
+
+/**
  * Build status for many commits: one `stats` request per 40 commits says which
  * have builds at all, then only those are read in full — a graph page of 40
  * commits with three builds costs four requests, not forty. The PR list (up to
@@ -530,7 +538,7 @@ export async function bbsCiStatuses(repo: BitbucketServerRepo, token: string, sh
         .catch(() => [] as string[])
     )
   )
-  const withBuilds = found.flat()
+  const withBuilds = found.flat().slice(0, BBS_CI_FULL_READS)
   const out: Record<string, CiStatus> = {}
   const queue = [...withBuilds]
   const work = async (): Promise<void> => {
@@ -622,16 +630,24 @@ export async function describeBbsAccount(base: string, token: string): Promise<C
 /**
  * The slug of the token's user for `participants/{userSlug}`: from the user
  * search, else from the pull request's own reviewers and participants (who
- * carry both name and slug), else the name itself — equal to the slug for
- * every plain user name.
+ * carry both name and slug), else a plain name as its own slug. Null for a
+ * name that cannot be one (`jdoe@corp.com`): sending it would only 404.
  */
-async function reviewerSlug(repo: BitbucketServerRepo, token: string, id: number, me: { name: string; slug?: string }): Promise<string> {
+async function reviewerSlug(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number,
+  me: { name: string; slug?: string }
+): Promise<string | null> {
   if (me.slug) return me.slug
   const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token).catch(() => null)
   const people = [...(pr?.reviewers ?? []), ...(pr?.participants ?? [])].map((p) => p.user)
   const match = people.find((u) => u?.name === me.name) ?? people.find((u) => u?.name?.toLowerCase() === me.name.toLowerCase())
-  return match?.slug || me.name
+  return match?.slug || (PLAIN_SLUG.test(me.name) ? me.name : null)
 }
+
+/** The message the renderer recognises and translates (`gitError.bbsUserNotFound`). */
+export const BBS_USER_NOT_FOUND = 'could not find your user on the server'
 
 export async function bbsReview(
   repo: BitbucketServerRepo,
@@ -649,12 +665,18 @@ export async function bbsReview(
   // behind, so a retry cannot post the same comment twice.
   const status = PR_STATUS[event]
   const me = await bbsWhoAmI(repo.base, token).catch(() => null)
-  if (me) {
-    const slug = await reviewerSlug(repo, token, id, me)
+  const slug = me ? await reviewerSlug(repo, token, id, me) : null
+  if (slug) {
     await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/participants/${enc(slug)}`, token, {
       method: 'PUT',
       body: JSON.stringify({ status })
     })
+  } else if (me) {
+    // A user with no slug to be found: approving needs none — the deprecated
+    // `POST …/approve` (still in the 10.2 reference) approves as the caller.
+    // Requesting changes has no such resource.
+    if (status !== 'APPROVED') throw new BitbucketServerError(404, BBS_USER_NOT_FOUND)
+    await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/approve`, token, { method: 'POST' })
   } else {
     // No user to name: the older, deprecated resource approves as the caller.
     if (status !== 'APPROVED') throw new BitbucketServerError(400, 'the server did not say who this token is, so changes cannot be requested')

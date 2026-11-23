@@ -1,6 +1,6 @@
 import { apiToken, credentialFor, providerOfHost, type ApiAuth } from './credentials'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS, githubEndpoints } from '../shared/githubEnterprise'
-import { bitbucketServerEndpoints } from '../shared/bitbucketServer'
+import { bitbucketServerEndpoints, bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
 import { pickHostAuth } from '../shared/hostToken'
 import { parseRemoteUrl } from './hosting'
@@ -181,6 +181,9 @@ async function profileName(repoPath: string): Promise<{ name?: string; bound: bo
 export async function profileCredentialForUrl(repoPath: string, url: string): Promise<{
   credential?: ApiAuth
   missing?: AccountLink
+  /** A Data Center personal token with no user name in Settings or in the URL:
+   *  git would get no credential from it, so it counts as none. */
+  needsUsername?: boolean
 }> {
   if (!/^https:\/\//i.test(url) || remoteUrlKind(url) !== 'https') return {}
   await readSettings() // populate self-managed host registry on first use
@@ -191,7 +194,22 @@ export async function profileCredentialForUrl(repoPath: string, url: string): Pr
     active: () => activeProfileAuth(provider, url)
   })
   const credential = await apiToken(url, auth).catch(() => null)
+  if (credential && personalTokenWithoutName(provider, url, credential)) return { needsUsername: true }
   return credential ? { credential } : { missing: auth.link }
+}
+
+/** The case `basicAuthFor` turns into no credential: a personal Data Center token with no name to send. */
+function personalTokenWithoutName(provider: RepoHost, url: string, c: ApiAuth): boolean {
+  if (provider !== 'bitbucket' || c.cred || c.source !== 'token') return false
+  const u = new URL(url)
+  if (isBitbucketCloudHost(u.hostname)) return false
+  let urlName = ''
+  try {
+    urlName = decodeURIComponent(u.username)
+  } catch {
+    urlName = ''
+  }
+  return bitbucketServerGitUsername(c.gitUsername, urlName, c.gitTokenKind) === null
 }
 
 export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl: string): Promise<RemoteAuthCheck> {
@@ -212,6 +230,13 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
       return { ...base, source: 'embedded' }
     }
     return { ...base, source: 'embedded', ...(provider ? await askHost(provider, pushUrl, password) : {}) }
+  }
+
+  // The profile has a token git cannot use: say why, rather than validating it
+  // over REST and reporting a sign-in that push would never make.
+  if (resolved.needsUsername) {
+    const who = await profileName(repoPath)
+    return { ...base, profile: who.name, bound: who.bound, source: 'token', needsUsername: true }
   }
 
   if (provider && resolved.credential) {

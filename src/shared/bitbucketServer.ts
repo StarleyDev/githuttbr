@@ -253,7 +253,9 @@ export function bitbucketServerDisplayAddress(url: string): string {
     const u = new URL(`https://${rest}`)
     return `${u.host}${u.pathname === '/' ? '' : u.pathname}`
   } catch {
-    return rest
+    // Not a URL (a port out of range, a space in the host): still never more
+    // than host and path — a query or fragment can carry a token too.
+    return rest.replace(/[?#][\s\S]*$/, '')
   }
 }
 

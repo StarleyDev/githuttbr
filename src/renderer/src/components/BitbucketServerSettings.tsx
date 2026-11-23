@@ -185,12 +185,7 @@ function BitbucketServerRow({
       </div>
       <label>
         {t('settings.bbsToken')}
-        {/* A new token may be someone else's: its kind is chosen again. */}
-        <input
-          type="password"
-          value={host.token}
-          onChange={(e) => onChange({ token: e.target.value, tokenKind: undefined })}
-        />
+        <input type="password" value={host.token} onChange={(e) => onChange({ token: e.target.value })} />
         <span className="settings-hint">{interp(t('settings.bbsTokenHint'), { host: name })}</span>
       </label>
       <label>
@@ -217,7 +212,9 @@ function BitbucketServerRow({
             disabled={kind === 'project'}
             onChange={(e) => onChange({ username: e.target.value })}
           />
-          {account && kind !== 'project' && !username.trim() && (
+          {/* Personal only: a project token's account is its bot user, and its
+              name in this field would replace the x-token-auth it needs. */}
+          {account && kind === 'personal' && !username.trim() && (
             <button className="btn small" type="button" onClick={() => onChange({ username: account.login })}>
               {interp(t('settings.bbsUseLogin'), { login: account.login })}
             </button>

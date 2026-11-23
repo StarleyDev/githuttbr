@@ -80,9 +80,36 @@ describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
     expect(await cloneCredentialEnv(BBS_REPO, 'bitbucket', undefined)).toBeNull()
   })
 
-  // Only Clone → URL (no provider named) resolves a token in main — the same
-  // profile every other Data Center call uses, the active one.
-  it('Clone → URL on a configured Data Center signs in as the active profile', async () => {
+  // The dialog then pins the new repository to that profile, so it is cloned
+  // and later fetched as the same account.
+  it('Clone → URL on a configured Data Center signs in as the profile picked in the dialog', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    const env = (await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'personal')) ?? {}
+    expect(JSON.stringify(env)).toContain(PERSONAL_BBS)
+    expect(JSON.stringify(env)).not.toContain(WORK_BBS)
+    expect(Object.values(env)).toContain('me')
+  })
+
+  it('Clone → URL with an unknown or empty profile id gets nothing — not the active profile, not the first', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'gone')).toBeNull()
+    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, '')).toBeNull()
+    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, '  ')).toBeNull()
+    // A profile with no entry for that server.
+    expect(await cloneCredentialEnv(BBS_REPO, undefined, undefined, 'empty')).toBeNull()
+  })
+
+  it('a provider-tab clone ignores the URL tab’s profile id', async () => {
+    const { cloneCredentialEnv } = await import('../src/main/git')
+    expect(await cloneCredentialEnv(GITLAB_REPO, 'gitlab', '', 'personal')).toBeNull()
+    const env = JSON.stringify(await cloneCredentialEnv(BBS_REPO, 'bitbucket', 'sent', 'personal'))
+    expect(env).toContain(WORK_BBS)
+    expect(env).not.toContain(PERSONAL_BBS)
+  })
+
+  // With no profile named (an older caller), the active one — the rule every
+  // other Data Center call uses.
+  it('Clone → URL on a configured Data Center with no profile named signs in as the active profile', async () => {
     const { cloneCredentialEnv } = await import('../src/main/git')
     const env = (await cloneCredentialEnv(BBS_REPO, undefined, undefined)) ?? {}
     expect(JSON.stringify(env)).toContain(WORK_BBS)

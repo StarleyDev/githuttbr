@@ -1532,7 +1532,8 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     setBranchesError(false)
     try {
       const token = host ? profile[HOST_META[host].tokenField] : undefined
-      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token))
+      // Clone → URL: a configured Data Center's token comes from the picked profile.
+      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token, host ? undefined : profile.id))
     } catch {
       // A private repo with no token, a typo'd URL, an offline machine — the
       // clone itself will report it properly, so this stays a soft failure and
@@ -1640,7 +1641,11 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         // single-branch, so `false` is how the user asks for the others back.
         singleBranch: shallow ? singleBranch : singleBranch || undefined,
         branch: branch.trim() || undefined,
-        recurseSubmodules: submodules
+        recurseSubmodules: submodules,
+        // Clone → URL only: the profile the repository is pinned to below also
+        // signs the clone in, for a configured Data Center. Provider tabs send
+        // their token instead.
+        ...(host ? {} : { urlProfileId: profileForRepo })
       },
       // Runs after the dialog may be long gone — it reads nothing from this render
       // but the values captured above.

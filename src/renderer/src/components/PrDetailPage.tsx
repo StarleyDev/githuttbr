@@ -48,6 +48,7 @@ import { DiffViewer } from './DiffViewer'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { readableError } from '../lib/gitErrorHint'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'files' | 'checks'
@@ -157,7 +158,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       void useRepoStore.getState().refreshPRs(repoPath, { silent: true })
       toast('success', ok)
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
+      // The explanation in the user's language when there is one, else the host's own words.
+      toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
     } finally {
       setBusy(false)
     }
@@ -383,7 +385,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                         : blockers.length
                           ? t('prPage.mergeBlocked')
                           : refused
-                          ? t('prPage.mergeRefused')
+                          ? t('prPage.mergeRefusedShort')
                           : pr.mergeable === true
                           ? t('prPage.mergeable')
                           : t('prPage.mergeUnknown')}

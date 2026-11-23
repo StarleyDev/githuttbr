@@ -263,6 +263,12 @@ describe('token isolation (pure)', () => {
     expect(bitbucketServerDisplayAddress('not a url')).toBe('not a url')
   })
 
+  it('an address that does not parse shows no query or fragment either', () => {
+    const shown = bitbucketServerDisplayAddress('https://host:99999/bitbucket?access_token=SECRET')
+    expect(shown).toBe('host:99999/bitbucket')
+    expect(bitbucketServerDisplayAddress('bad host/x#token=SECRET')).toBe('bad host/x')
+  })
+
   // A `/` in the password ends the authority early for a URL parser: the
   // password used to survive as host and "path".
   it('a password with a slash in it is not shown either', () => {
@@ -693,6 +699,8 @@ let userSearch = true
 let pr1Over: Record<string, unknown> = {}
 // A stats request carrying this commit fails, as a flaky server would.
 let failStatsFor: string | null = null
+// Every commit asked about has builds (a busy list), not only sha1.
+let allHaveBuilds = false
 // An email-style user name: its slug is not its name (`@` becomes `_`).
 const EMAIL_USERS = [
   { ...user('jdoe@corp.com.au', 'Other Jane'), slug: 'jdoe_corp.com.au' },
@@ -750,7 +758,13 @@ function fakeBitbucket(method: string, url: string, body?: unknown): Response {
   }
   if (path.endsWith('/rest/build-status/latest/commits/stats')) {
     if (failStatsFor && Array.isArray(body) && body.includes(failStatsFor)) return new Response('boom', { status: 500 })
+    if (allHaveBuilds && Array.isArray(body)) {
+      return json(Object.fromEntries((body as string[]).map((sha) => [sha, { successful: 1, failed: 0, inProgress: 0, cancelled: 0, unknown: 0 }])))
+    }
     return json({ sha1: { successful: 1, failed: 1, inProgress: 0, cancelled: 0, unknown: 0 } })
+  }
+  if (allHaveBuilds && /\/rest\/build-status\/latest\/commits\/[^/]+$/.test(path) && !path.endsWith('/stats')) {
+    return json({ size: 1, limit: 100, isLastPage: true, start: 0, values: [{ state: 'SUCCESSFUL', key: 'B', name: 'Build', dateAdded: 1 }] })
   }
   if (/\/rest\/build-status\/latest\/commits\/sha1$/.test(path)) {
     return json({
@@ -812,6 +826,7 @@ describe('call sites, through the real IPC handlers', () => {
     userSearch = true
     pr1Over = {}
     failStatsFor = null
+    allHaveBuilds = false
   })
   afterAll(() => {
     vi.unstubAllGlobals()
@@ -927,6 +942,23 @@ describe('call sites, through the real IPC handlers', () => {
     expect(calls.find((c) => c.method === 'PUT')?.url).toBe(`${REPO_API}/pull-requests/1/participants/jdoe_corp.com`)
   })
 
+  // An email-style name with no slug anywhere (no search, not a participant):
+  // `PUT participants/jdoe@corp.com` would 404. The deprecated POST …/approve,
+  // still in the 10.2 reference, approves as the caller and needs no slug.
+  it('a user with no slug to find approves through the legacy resource, and cannot request changes', async () => {
+    ausername = 'jdoe@corp.com'
+    userSearch = false
+    await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
+    expect(calls.some((c) => c.method === 'PUT')).toBe(false)
+    expect(calls.find((c) => c.method === 'POST')?.url).toBe(`${REPO_API}/pull-requests/1/approve`)
+    calls.length = 0
+    await expect(call('hosting:prReview', REMOTE, tokens, 1, 'REQUEST_CHANGES', 'no')).rejects.toThrow(
+      'Bitbucket Data Center: could not find your user on the server'
+    )
+    // Nothing written: no verdict, and so no comment.
+    expect(calls.some((c) => c.method !== 'GET')).toBe(false)
+  })
+
   it('with no user search allowed, the slug comes from the pull request’s participants', async () => {
     ausername = 'jdoe@corp.com'
     userSearch = false
@@ -968,6 +1000,19 @@ describe('call sites, through the real IPC handlers', () => {
     pr1Over = { participants: [{ user: { ...user('ghost', 'Ghost'), slug: 'ghost-slug' }, role: 'PARTICIPANT', approved: false, status: 'UNAPPROVED' }] }
     await call('hosting:prReview', REMOTE, tokens, 1, 'APPROVE', '')
     expect(calls.find((c) => c.method === 'PUT')?.url).toBe(`${REPO_API}/pull-requests/1/participants/ghost-slug`)
+  })
+
+  it('every head is asked about in stats, but only the first 50 with builds are read in full', async () => {
+    const { bbsCiStatuses, BBS_CI_FULL_READS } = await import('../src/main/bitbucketServer')
+    allHaveBuilds = true
+    const shas = Array.from({ length: 120 }, (_, i) => `h${i}`)
+    const ci = await bbsCiStatuses({ base: BBS, projectKey: 'PROJ', repoSlug: 'app' }, BBS_TOKEN, shas)
+    expect(BBS_CI_FULL_READS).toBe(50)
+    expect(calls.filter((c) => c.url.endsWith('/commits/stats'))).toHaveLength(3)
+    const full = calls.filter((c) => /\/commits\/h\d+\?/.test(c.url))
+    expect(full).toHaveLength(50)
+    // The newest ones, in the list's order.
+    expect(Object.keys(ci).sort()).toEqual(shas.slice(0, 50).sort())
   })
 
   it('one failed build-status batch costs only its own rows their CI', async () => {

@@ -257,6 +257,20 @@ export function activeProfileAuth(
   return profileAuth(host, undefined, remoteUrl, expectedBase)
 }
 
+/**
+ * One named profile's PAT and link for a host — Clone → URL's pick. An empty
+ * id or one no profile has gets nothing, never the active profile's or the
+ * first one's.
+ */
+export function namedProfileAuth(
+  host: RepoHost,
+  profileId: string,
+  remoteUrl?: string
+): Promise<{ token?: string; link?: AccountLink; username?: string; tokenKind?: BitbucketServerTokenKind }> {
+  if (!profileId.trim()) return Promise.resolve({})
+  return profileAuth(host, profileId, remoteUrl)
+}
+
 /** The Forgejo instance a profile (the active one by default) points at, or null. */
 export async function profileForgejoInstance(profileId?: string): Promise<string | null> {
   const plain = await readSettings()

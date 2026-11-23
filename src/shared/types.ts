@@ -892,6 +892,9 @@ export interface RemoteAuthCheck {
   login?: string
   /** A linked account whose credential could not be found on this machine. */
   linkMissing?: boolean
+  /** A Bitbucket Data Center personal token with no user name in Settings or
+   *  in the remote URL — git cannot send it. */
+  needsUsername?: boolean
   /** The host refused the credential (401). */
   rejected?: boolean
   /** Scopes the host reported; absent when it does not report them (fine-grained tokens). */
@@ -2324,6 +2327,10 @@ export interface CloneOptions {
   host?: RepoHost
   /** Token for that host — used for this clone only, never written to config. */
   token?: string
+  /** Clone → URL only (no `host`): the profile picked in the dialog, which a
+   *  configured Data Center's token is read from — the profile the new
+   *  repository is bound to. Ignored whenever `host` is set. */
+  urlProfileId?: string
   /** Partial clone spec for `--filter`, e.g. `blob:none`. */
   filter?: string
   /** Shallow clone: keep only this many commits of history. */
