@@ -192,6 +192,23 @@ fails, or loading fails for any other reason, Gitcito says it could not start,
 that the file has not been changed, and offers **Try again**; it does not call
 the file damaged.
 
+### Known limits
+
+These need unusual conditions, and are listed so nobody is surprised by them:
+
+- **A very old install with tokens still in the settings file.** If the keychain
+  is turned off after the saved tokens were unlocked, or declined while an AI key
+  is still stored in the old plaintext format, that plaintext copy can be dropped
+  on the next save and the token is gone after a restart. Open Settings once with
+  the keychain on after upgrading from such a build, and the tokens move into the
+  encrypted store for good.
+- **A save and a failed reload crossing in the same window.** A token typed in a
+  save that overtakes a reload which then fails cannot be cleared from that
+  window until Settings loads again; reopen Settings and clear it.
+- **A symlinked settings file whose folder is missing.** The token store is
+  written before the settings file fails, so the two are out of step until the
+  folder is back. Restore it (mount the drive, clone the dotfiles) and save again.
+
 ## A profile's token while git runs
 
 When a [profile](profiles.md) signs a clone, fetch, pull or push in with its
