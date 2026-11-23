@@ -143,7 +143,9 @@ export function PushBranchesModal({
     })
     if (on) setSelected((prev) => new Set(prev).add(name))
   }
-  const toggleShown = (): void =>
+  // Any change to what is chosen can resolve a destination clash, so the old message goes with it.
+  const toggleShown = (): void => {
+    setClash(null)
     setSelected((prev) => {
       const next = new Set(prev)
       for (const s of pushableShown) {
@@ -152,6 +154,7 @@ export function PushBranchesModal({
       }
       return next
     })
+  }
 
   const submit = (redirectConfirmed = false): void => {
     if (!chosen.length || busy) return
@@ -346,7 +349,14 @@ export function PushBranchesModal({
             openContextMenu(
               rect.left,
               rect.bottom + 4,
-              remotes.map((r) => ({ label: r, onClick: () => setRemote(r) }))
+              // The clash named the old remote's branches: it says nothing about this one.
+              remotes.map((r) => ({
+                label: r,
+                onClick: () => {
+                  setClash(null)
+                  setRemote(r)
+                }
+              }))
             )
           }}
         >

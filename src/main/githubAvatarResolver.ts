@@ -37,9 +37,10 @@ export interface AvatarRequest {
 }
 
 /**
- * `url` null is a confirmed miss: a 200 showed the email belongs to no account
- * on that server. Nothing short of a 200 is ever written as one — a 404 may be
- * a private repository the token cannot see, and says nothing about the author.
+ * `url` null is a confirmed miss: a 200 showed a commit by that email whose
+ * author is no account on that server. Nothing short of that is ever written as
+ * one — a 404 may be a private repository the token cannot see, and an empty
+ * list by that email only says the author has no commit in *that* repository.
  */
 export interface AvatarCacheEntry {
   url: string | null
@@ -60,8 +61,13 @@ export const AVATAR_HIT_TTL_MS = 7 * 24 * 60 * 60 * 1000
 export const AVATAR_MISS_TTL_MS = 24 * 60 * 60 * 1000
 /** A refusal that is not a rate limit (SSO not authorised, no access): ask again later, not per author. */
 const AVATAR_FORBIDDEN_PAUSE_MS = 10 * 60 * 1000
-/** A 404 for the repository itself — private and out of the token's reach, or gone. */
+/** A 404 for the repository itself — private and out of the token's reach, or gone — or a 409, empty. */
 export const AVATAR_HIDDEN_REPO_PAUSE_MS = 10 * 60 * 1000
+/**
+ * "No commit by this email in this repository yet" — true only until the next
+ * push, so it holds the lookup back briefly and is never handed out as a miss.
+ */
+export const AVATAR_REPO_MISS_TTL_MS = 10 * 60 * 1000
 /** Secondary limits without a retry-after: the docs say at least a minute. */
 const AVATAR_SECONDARY_PAUSE_MS = 60 * 1000
 const CACHE_MAX_ENTRIES = 5000
@@ -133,6 +139,13 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
   const inflight = new Map<string, Promise<string | null | undefined>>()
   const paused = new Map<string, number>()
   const hidden = new Map<string, number>()
+  /**
+   * "No commit by this email in this repository", by repository and author.
+   * Memory only, for AVATAR_REPO_MISS_TTL_MS, and answered as unknown rather
+   * than as a miss: the author's next push changes it, and the same author may
+   * have commits — and a linked account — in the next repository.
+   */
+  const repoMisses = new Map<string, number>()
   let disk: Promise<AvatarCacheFile> | null = null
   let saveTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -149,6 +162,8 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
     if (!deps.save || saveTimer) return
     saveTimer = setTimeout(() => {
       saveTimer = null
+      // The per-repository misses live in memory only: pruned on the same beat.
+      for (const [k, at] of repoMisses) if (now() - at >= AVATAR_REPO_MISS_TTL_MS) repoMisses.delete(k)
       deps.save!(pruneAvatarCache(Object.fromEntries(memory), now()))
     }, 500)
     saveTimer.unref?.()
@@ -157,6 +172,15 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
   const remember = (key: string, url: string | null): void => {
     memory.set(key, { url, at: now() })
     scheduleSave()
+  }
+
+  /** Whether a per-repository miss still holds; an expired one is dropped as it is read. */
+  const repoMissFresh = (k: string): boolean => {
+    const at = repoMisses.get(k)
+    if (at === undefined) return false
+    if (now() - at < AVATAR_REPO_MISS_TTL_MS) return true
+    repoMisses.delete(k)
+    return false
   }
 
   const repoKey = (t: AvatarTarget): string => `${t.base.toLowerCase()}\n${t.owner.toLowerCase()}/${t.repo.toLowerCase()}`
@@ -173,8 +197,11 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
    * One API call, sorted by what it can prove. `hidden` is a 404: GitHub
    * answers that both for a repository that is not there and for a private one
    * the token cannot see (or whose SSO it is not authorised for) — so it says
-   * nothing about any author. `absent` is a sha or a history the server does
-   * not have (422, 409). A refusal throws, after pausing the server.
+   * nothing about any author. A 409 (the repository is empty) is the same for
+   * our purpose: no author can be found there until something is pushed, so
+   * asking again per author every couple of minutes only spends quota.
+   * `absent` is a sha the server does not have (422). A refusal throws, after
+   * pausing the server.
    */
   async function getJson(url: string, token: string, base: string): Promise<Answer> {
     const res = await deps.fetch(url, {
@@ -190,8 +217,8 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
       paused.set(base, now() + backoff)
       throw new Error('GitHub refused the avatar lookup')
     }
-    if (res.status === 404) return { status: 'hidden' }
-    if (res.status === 422 || res.status === 409) return { status: 'absent' }
+    if (res.status === 404 || res.status === 409) return { status: 'hidden' }
+    if (res.status === 422) return { status: 'absent' }
     if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
     return { status: 'ok', body: await res.json() }
   }
@@ -201,25 +228,30 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
     return author && isGithubAvatarUrl(author.avatar_url, webBase) ? author.avatar_url : null
   }
 
+  /** A lookup's answer; `repoOnly` when it holds for this repository alone. */
+  type Found = { url: string | null; repoOnly?: true }
+
   /**
-   * The picture, `null` for a miss a 200 proved (a commit whose author is no
-   * account, or no commit by that email at all), `undefined` for unknown —
-   * which is never written to the server-wide cache.
+   * The picture, `null` for a miss a 200 proved, `undefined` for unknown —
+   * which is never written to any cache. A commit whose author is no account
+   * proves it server-wide; an empty list by that email only for this
+   * repository.
    */
-  async function lookUp(target: AvatarTarget, token: string, req: AvatarRequest): Promise<string | null | undefined> {
+  async function lookUp(target: AvatarTarget, token: string, req: AvatarRequest): Promise<Found | undefined> {
     const ep = githubEndpoints(target.base)
     const repoApi = `${ep.apiBase}/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}`
     if (req.sha && SHA.test(req.sha)) {
       const commit = await getJson(`${repoApi}/commits/${req.sha}`, token, target.base)
       // Found, with or without an account: that is the answer. Only a sha the
       // server does not have falls through to the search by email.
-      if (commit.status === 'ok') return avatarOf(commit.body, ep.webBase)
+      if (commit.status === 'ok') return { url: avatarOf(commit.body, ep.webBase) }
       if (commit.status === 'hidden') return hideRepo(target)
     }
-    const list = await getJson(`${repoApi}/commits?author=${encodeURIComponent(req.email)}&per_page=1`, token, target.base)
+    const byEmail = `${repoApi}/commits?author=${encodeURIComponent(req.email)}&per_page=1`
+    const list = await getJson(byEmail, token, target.base)
     if (list.status === 'hidden') return hideRepo(target)
     if (list.status !== 'ok' || !Array.isArray(list.body)) return undefined
-    return list.body.length ? avatarOf(list.body[0], ep.webBase) : null
+    return list.body.length ? { url: avatarOf(list.body[0], ep.webBase) } : { url: null, repoOnly: true }
   }
 
   async function resolve(
@@ -248,9 +280,10 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
         out[req.email] = direct
         continue
       }
-      const hit = memory.get(avatarCacheKey(target.base, req.email))
+      const key = avatarCacheKey(target.base, req.email)
+      const hit = memory.get(key)
       if (isAvatarEntryFresh(hit, now())) out[req.email] = hit.url ? githubAvatarSized(hit.url, size) : null
-      else todo.push(req)
+      else if (!repoMissFresh(`${repoKey(target)}\n${key}`)) todo.push(req)
     }
     if (!todo.length || (paused.get(target.base) ?? 0) > now() || (hidden.get(repoKey(target)) ?? 0) > now()) return out
 
@@ -270,9 +303,14 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
         let job = inflight.get(flight)
         if (!job) {
           job = lookUp(target, token, req)
-            .then((url) => {
-              if (url !== undefined) remember(key, url)
-              return url
+            .then((found) => {
+              if (!found) return undefined
+              if (found.repoOnly) {
+                repoMisses.set(flight, now())
+                return undefined
+              }
+              remember(key, found.url)
+              return found.url
             })
             .catch(() => undefined)
             .finally(() => inflight.delete(flight))

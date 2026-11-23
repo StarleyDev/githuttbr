@@ -22,7 +22,7 @@ export type { KeychainConsent, KeychainReason }
 
 const consentPath = (): string => join(app.getPath('userData'), 'gitcito-keychain.json')
 
-interface ConsentFile {
+export interface ConsentFile {
   consent: KeychainConsent
   /** Whether the user has actually seen our explanation (see adoptExistingConsent). */
   explained: boolean
@@ -54,8 +54,14 @@ export async function getConsent(): Promise<KeychainConsent> {
   return (await readFileState()).consent
 }
 
+/** The consent and whether the user has seen our explanation — read from our own file, never safeStorage. */
+export async function getConsentState(): Promise<ConsentFile> {
+  return { ...(await readFileState()) }
+}
+
 export async function setConsent(value: KeychainConsent): Promise<void> {
   await writeFileState({ consent: value, explained: true })
+  if (value === 'declined') for (const listener of declinedListeners) listener()
 }
 
 /**
@@ -133,6 +139,16 @@ export async function ensureKeychain(reason: KeychainReason): Promise<boolean> {
  * on is the moment to put them where they survive a restart.
  */
 const grantedListeners: Array<() => Promise<void>> = []
+/**
+ * Run whenever consent becomes "declined" — from the explainer or from
+ * Settings → Security. Registered by the settings module for the same
+ * import-cycle reason: with the store out of reach, avatar lookups stop waiting
+ * for it, and the windows have to hear so.
+ */
+const declinedListeners: Array<() => void> = []
+export function onKeychainDeclined(listener: () => void): void {
+  declinedListeners.push(listener)
+}
 export function onKeychainEnabled(listener: () => Promise<void>): void {
   grantedListeners.push(listener)
 }
