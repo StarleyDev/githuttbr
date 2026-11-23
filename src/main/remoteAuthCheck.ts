@@ -1,4 +1,4 @@
-import { apiToken, credentialFor, providerOfHost, type ApiAuth } from './credentials'
+import { apiToken, credentialFor, providerOfRemote, type ApiAuth } from './credentials'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS, githubEndpoints } from '../shared/githubEnterprise'
 import { bitbucketServerEndpoints, bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
@@ -187,7 +187,7 @@ export async function profileCredentialForUrl(repoPath: string, url: string): Pr
 }> {
   if (!/^https:\/\//i.test(url) || remoteUrlKind(url) !== 'https') return {}
   await readSettings() // populate self-managed host registry on first use
-  const provider = providerOfHost(new URL(url).hostname)
+  const provider = providerOfRemote(url)
   if (!provider) return {}
   const auth = await pickHostAuth({
     bound: await boundProfileAuth(provider, repoPath, url),
@@ -218,7 +218,7 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
   if (kind === 'ssh' || kind === 'other') return { remote, url, source: kind === 'ssh' ? 'ssh' : 'none' }
 
   const resolved = await profileCredentialForUrl(repoPath, pushUrl)
-  const provider = providerOfHost(new URL(pushUrl).hostname)
+  const provider = providerOfRemote(pushUrl)
   const base = { remote, url, ...(provider ? { provider } : {}) }
 
   // git uses a password in the URL before asking any helper.

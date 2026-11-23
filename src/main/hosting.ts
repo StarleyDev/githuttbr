@@ -7,6 +7,7 @@ import {
   type ApiAuth,
   githubCliAuthStatus,
   isJwt,
+  resolveRemote,
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
@@ -63,7 +64,6 @@ import {
 import {
   GITLAB_COM,
   forgejoInstanceOf,
-  gitlabInstanceOf,
   instanceOf,
   normalizeGitlabServerUrl,
   normalizeGitlabUrl,
@@ -180,11 +180,37 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
   let m = /^(?:[\w-]+\.)*github\.com\/([^/]+)\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'github', owner: m[1], project: '', repo: m[2] }
 
-  // A GitHub Enterprise Server a profile names: GitHub's API at its own host.
-  const ghes = instanceOf(url, knownGithubEnterpriseInstances())
-  if (ghes && ghes.path.split('/').length === 2) {
+  // A self-hosted server, or gitlab.com: which one is decided once, across every
+  // configured server list together (`resolveRemoteProvider`) — a Data Center
+  // beside a GitLab on one hostname must never be read as that GitLab.
+  const resolved = resolveRemote(url)
+  const base = resolved?.base
+  if (base && resolved.provider === 'github' && base !== GITHUB_COM) {
+    // A GitHub Enterprise Server a profile names: GitHub's API at its own host.
+    const ghes = instanceOf(url, [base])
+    if (!ghes || ghes.path.split('/').length !== 2) return null
     const [owner, repo] = ghes.path.split('/')
-    return { provider: 'github', owner, project: '', repo, base: ghes.base }
+    return { provider: 'github', owner, project: '', repo, base }
+  }
+  if (base && resolved.provider === 'gitlab') {
+    // GitLab: namespace may be multi-level (group/subgroup/repo) — owner holds the
+    // full namespace path, repo the last segment.
+    const gl = instanceOf(url, [base])
+    if (!gl) return null
+    const i = gl.path.lastIndexOf('/')
+    return { provider: 'gitlab', owner: gl.path.slice(0, i), project: '', repo: gl.path.slice(i + 1), base }
+  }
+  if (base && resolved.provider === 'forgejo') {
+    // A Forgejo/Gitea instance a profile points at — always self-chosen, never guessed.
+    const fj = forgejoInstanceOf(url, [base])
+    if (!fj) return null
+    const [owner, repo] = fj.path.split('/')
+    return { provider: 'forgejo', owner, project: '', repo, base }
+  }
+  if (base && resolved.provider === 'bitbucket' && base !== BITBUCKET_CLOUD) {
+    // A Bitbucket Data Center a profile names: its own API, projects instead of workspaces.
+    const bbs = bitbucketServerRepoOf(url, [base])
+    return bbs ? { provider: 'bitbucket', owner: bbs.projectKey, project: '', repo: bbs.repoSlug, base } : null
   }
 
   m = /^dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
@@ -195,26 +221,6 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
 
   m = /^([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
-
-  // GitLab: namespace may be multi-level (group/subgroup/repo) — owner holds the
-  // full namespace path, repo the last segment.
-  // gitlab.com and every self-managed instance a profile points at.
-  const gl = gitlabInstanceOf(url, knownGitlabInstances())
-  if (gl) {
-    const i = gl.path.lastIndexOf('/')
-    return { provider: 'gitlab', owner: gl.path.slice(0, i), project: '', repo: gl.path.slice(i + 1), base: gl.base }
-  }
-
-  // A Forgejo/Gitea instance a profile points at — always self-chosen, never guessed.
-  const fj = forgejoInstanceOf(url, knownForgejoInstances())
-  if (fj) {
-    const [owner, repo] = fj.path.split('/')
-    return { provider: 'forgejo', owner, project: '', repo, base: fj.base }
-  }
-
-  // A Bitbucket Data Center a profile names: its own API, projects instead of workspaces.
-  const bbs = bitbucketServerRepoOf(url, knownBitbucketServerInstances())
-  if (bbs) return { provider: 'bitbucket', owner: bbs.projectKey, project: '', repo: bbs.repoSlug, base: bbs.base }
 
   m = /^(?:[\w-]+\.)*bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(target)
   if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
