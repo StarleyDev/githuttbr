@@ -60,6 +60,14 @@ function subscribeUnlocks(cb: () => void): () => void {
   return () => unlockListeners.delete(cb)
 }
 
+/**
+ * The batcher's unlock generation, read at request time: a null answer that
+ * comes back under a newer one was asked while the tokens were still locked.
+ */
+export function secretsUnlockGeneration(): number {
+  return batcher.generation()
+}
+
 export function useSecretsUnlocks(): number {
   return useSyncExternalStore(subscribeUnlocks, () => unlocks)
 }

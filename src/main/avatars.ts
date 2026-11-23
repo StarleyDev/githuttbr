@@ -28,8 +28,11 @@ import {
  * And they are only *peeked*: a picture is drawn at start-up, on the Welcome
  * screen, before the user has done anything — so it must never be the thing
  * that brings up the keychain consent dialog or the OS keychain prompt. While
- * the stored tokens are still encrypted the answer is "unknown", not "none",
- * and the renderer asks again once something the user did has unlocked them.
+ * the stored tokens are still encrypted the answer is "unknown", not "none" —
+ * even for a profile signed in through a machine login, since a stored PAT
+ * would outrank it — and the renderer asks again once something the user did
+ * has unlocked them. With no encrypted store to wait for, the plain settings
+ * (machine-login links, session-only tokens) answer at once.
  */
 
 const cachePath = (): string => join(app.getPath('userData'), 'github-avatars.json')
@@ -124,8 +127,10 @@ const profileCache = new Map<string, Promise<string | null>>()
 export async function activeProfileGithubAvatar(size: number): Promise<string | null> {
   for (const base of [GITHUB_COM, ...knownGithubEnterpriseInstances()]) {
     const input = await peekActiveProfileAuth('github', undefined, base).catch((): PeekedAuth => ({}))
-    // Still encrypted: no picture for now, and nothing remembered — asked again once unlocked.
-    if (input.locked) continue
+    // Still encrypted: no picture for now, and nothing remembered — asked again
+    // once unlocked. Stop rather than move on: a later server's account is not
+    // this one's, and the title bar would keep the wrong picture.
+    if (input.locked) return null
     const auth = await apiToken(base, input).catch(() => null)
     if (!auth?.token) continue
     const key = createHash('sha256').update(`${base}\n${auth.token}`).digest('hex')

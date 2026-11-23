@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
+import { readFile, writeFile, mkdir, copyFile, rm } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
 import {
@@ -21,10 +21,7 @@ import {
   hasSettingsSecrets,
   mergeSecretStores,
   pruneSecrets,
-  secretSlot,
-  secretSlots,
   stripSettingsSecrets,
-  type SecretSlots,
   type SecretStore
 } from '../shared/secrets'
 import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
@@ -39,7 +36,18 @@ import {
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
-const secretSlotsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.index.json')
+/**
+ * A plain list of which token slots the encrypted store held, written by
+ * builds that used it to let a locked peek fall back to a machine login. It
+ * could go stale (an older build rewriting the store, a failed write) and it
+ * named every GitHub Enterprise and GitLab server ever configured, including
+ * removed ones — so it is no longer written, and a leftover copy is deleted.
+ */
+const legacySecretsIndexPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.index.json')
+
+export async function removeLegacySecretsIndex(): Promise<void> {
+  await rm(legacySecretsIndexPath(), { force: true }).catch(() => undefined)
+}
 
 // Profile tokens and the AI API key used to sit in the settings JSON in plain
 // text. They now live in a separate file encrypted with the OS keychain, the
@@ -99,19 +107,6 @@ let servedSecrets = false
 let plaintextOnDisk = false
 
 /**
- * An unlock was attempted this session and could not use the keychain — no
- * consent, or consent but no keyring (a Linux desktop without Secret Service).
- * The stored tokens are then out of reach until the keychain is turned on, so a
- * peek stops waiting for them and works with what the plain settings hold
- * (session-only tokens, machine-login links) instead of answering "locked" all
- * session.
- */
-let keychainUnusable = false
-onKeychainEnabled(async () => {
-  keychainUnusable = false
-})
-
-/**
  * The secrets have just been decrypted for the first time this session: tell
  * the windows, so pictures that were left "unknown" while the store was locked
  * ask again now instead of waiting out their retry.
@@ -123,25 +118,6 @@ function announceUnlocked(): void {
     }
   } catch {
     // No windows to tell (tests, shutdown).
-  }
-}
-
-/** Best effort: a missing or stale index only makes a peek more cautious. */
-async function writeSecretSlots(store: SecretStore): Promise<void> {
-  await writeFile(secretSlotsPath(), JSON.stringify(secretSlots(store)), 'utf-8').catch(() => undefined)
-}
-
-async function readSecretSlots(): Promise<SecretSlots | null> {
-  try {
-    const parsed = JSON.parse(await readFile(secretSlotsPath(), 'utf-8')) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
-    const out: SecretSlots = {}
-    for (const [id, slots] of Object.entries(parsed as Record<string, unknown>)) {
-      if (Array.isArray(slots)) out[id] = slots.filter((s): s is string => typeof s === 'string')
-    }
-    return out
-  } catch {
-    return null
   }
 }
 
@@ -174,7 +150,6 @@ async function saveSecrets(store: SecretStore): Promise<void> {
   }
   const enc = safeStorage.encryptString(JSON.stringify(store))
   await writeFile(secretsPath(), enc.toString('base64'), 'utf-8')
-  await writeSecretSlots(store)
 }
 
 /** The settings JSON, with whatever secrets are already in memory applied. */
@@ -229,11 +204,7 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   // gate — its owner answered the OS prompt long ago, so they are not asked to
   // decide again, only shown the explanation once.
   await adoptExistingConsent([secretsPath()])
-  if (!(await ensureKeychain(reason))) {
-    keychainUnusable = true
-    return settings
-  }
-  keychainUnusable = false
+  if (!(await ensureKeychain(reason))) return settings
 
   const stored = await loadSecrets()
   if (hasSettingsSecrets(settings)) {
@@ -246,25 +217,32 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     setSecretCache(merged)
     return withMigratedAI(applySecrets(settings, merged))
   }
-  // An install from before the index gets one now, so its next launch can peek.
-  if (!secretsUnreadable) await writeSecretSlots(stored)
   setSecretCache(stored)
   return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
 }
 
 /**
- * Whether the encrypted store may hold this profile's token for `slot` — the
- * one thing a peek cannot see without decrypting. False when nothing is
- * stored, when the store is out of reach this session (declined, or the
- * keychain could not be used), and when the plain index of stored slots says
- * the profile has none there. With no index (written before it existed) it
- * cannot be ruled out.
+ * What a peek — a lookup nobody asked for — may read without decrypting:
+ *
+ * - `unlocked`: something the user did already decrypted the store this
+ *   session, so the full settings are in memory (a PAT outranks a link).
+ * - `plain`: there is no encrypted store to wait for this session — none on
+ *   disk, consent declined, or granted with no usable keyring (a Linux desktop
+ *   without Secret Service). The plain settings, with session-only tokens and
+ *   machine-login links, are then the whole truth.
+ * - `locked`: the store may hold a token and is not decrypted yet. A peek
+ *   cannot know whether a PAT is in there, so it must not let a link stand in.
+ *
+ * Decided from the files and the keyring as they are now, never from a flag an
+ * earlier read left behind. `isEncryptionAvailable` never prompts.
  */
-async function storedTokenMayExist(profileId: string, slot: string): Promise<boolean> {
-  if (!existsSync(secretsPath())) return false
-  if (keychainUnusable || (await getConsent()) === 'declined') return false
-  const slots = await readSecretSlots()
-  return slots ? (slots[profileId]?.includes(slot) ?? false) : true
+async function peekView(): Promise<'unlocked' | 'plain' | 'locked'> {
+  if (secretCache) return 'unlocked'
+  if (!existsSync(secretsPath())) return 'plain'
+  const consent = await getConsent()
+  if (consent === 'declined') return 'plain'
+  if (consent === 'granted' && !(await canUseKeychain())) return 'plain'
+  return 'locked'
 }
 
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
@@ -316,20 +294,17 @@ async function profileAuth(
     if (!base || (expectedBase && base !== expectedBase)) return {}
     if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
-  // A peek never decrypts. Until something the user did has unlocked the store
-  // it reads the plain settings — which already carry session-only tokens and
-  // ones not yet migrated off disk — and answers "locked" only when a stored
-  // token for this very server may be what is missing: a PAT outranks the
-  // link, so the link must not stand in for one that is merely encrypted.
-  const peeking = peek && !secretCache
-  const settings = peeking ? plain : await readSettingsWithSecrets('tokens')
+  // A peek never decrypts (see peekView).
+  const view = peek ? await peekView() : 'unlocked'
+  const settings = view === 'unlocked' ? await readSettingsWithSecrets('tokens') : plain
   const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
   if (!profile) return {}
   const auth = authFrom(settings, profile, host, remoteUrl, expectedBase, githubBase, gitlabBase)
-  if (!peeking || !auth || auth.token) return auth ?? {}
   // Checked after the plain-settings gates, so "locked" never stands in for "no such server".
-  const slot = secretSlot(TOKEN_FIELD[host], host === 'github' ? (githubBase ?? undefined) : (gitlabBase ?? undefined))
-  return (await storedTokenMayExist(profile.id, slot)) ? { locked: true } : auth
+  // A token already in the plain view — typed this session, or not yet migrated
+  // off disk — wins over the stored one on unlock, so it is the answer either way.
+  if (view === 'locked' && auth && !auth.token) return { locked: true }
+  return auth ?? {}
 }
 
 /** `profileAuth`'s answer from settings already read, or null when the remote is not this profile's. */
@@ -393,10 +368,10 @@ export interface PeekedAuth {
 /**
  * `activeProfileAuth` for lookups nobody asked for — a picture in the title
  * bar, a commit author's avatar. It never decrypts: while the store is still
- * locked and may hold a PAT for that server it answers `{ locked: true }`, so
- * the caller treats the answer as unknown and asks again after something the
- * user did has unlocked it. A profile with no stored PAT there gets its
- * machine-login link (and any session-only token) right away.
+ * locked it answers `{ locked: true }`, so the caller treats the answer as
+ * unknown and asks again after something the user did has unlocked it. With no
+ * store to wait for (see peekView) it answers from the plain settings — a
+ * machine-login link or a session-only token — right away.
  */
 export function peekActiveProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<PeekedAuth> {
   return profileAuth(host, undefined, remoteUrl, expectedBase, true)
@@ -572,6 +547,7 @@ function withForcedOnboarding(settings: AppSettings): AppSettings {
 }
 
 export function registerSettingsHandlers(): void {
+  void removeLegacySecretsIndex()
   ipcMain.handle('settings:get', async () => {
     const settings = withForcedOnboarding(await readSettings())
     servedSecrets = hasSettingsSecrets(settings)

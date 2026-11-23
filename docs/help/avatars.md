@@ -59,23 +59,32 @@ push, list pull requests. Drawing a picture is not such a thing: it never brings
 up the keychain prompt on its own, so right after launch authors get their
 Gravatar or the generated face, and your title-bar avatar its generated one.
 The moment the tokens unlock, the pictures that were waiting on them ask again —
-in the graph and in the title bar alike. A machine login (git's credential
-helper or the GitHub CLI) is not in the keychain store and works from the start,
-as long as the profile has no token of its own saved for that server; a saved
-token outranks the machine login, so with one Gitcito waits for the unlock
-rather than ask as a different account. (Gitcito tells the two apart from a
-plain list of which servers have a saved token — names only, kept next to the
-encrypted store. An install from before that list existed waits for one unlock
-to write it.) A token you typed while the keychain was unavailable lives only
-in memory for the session, and is used straight away.
+in the graph and in the title bar alike.
+
+Until then Gitcito cannot tell which servers have a saved token without
+decrypting the store, and a saved token outranks a machine login (git's
+credential helper or the GitHub CLI) — so while there is an encrypted store
+that could hold one, it waits for the unlock rather than ask GitHub as what may
+be a different account. **That includes a profile signed in only through a
+machine login**, when the same computer has saved other secrets in the keychain
+(an AI key, another profile's token): its GitHub pictures arrive after the
+first unlock, not at launch. Noreply addresses need no token and show at once.
+
+When there is no encrypted store to wait for — nothing saved in the keychain at
+all, the keychain declined in **Settings → Security**, or a keychain that is on
+but not available on this system (a Linux desktop without a Secret Service) —
+the machine login and any token you typed this session are all there is, and
+they are used from the start. A token you typed while the keychain was
+unavailable lives only in memory for the session.
 
 What came back is remembered: for the session in memory, and on disk in
 `github-avatars.json` in Gitcito's data folder — a found picture for 7 days, "no
 account" for a day. "No account" is only ever recorded when the server showed a
 commit by that email whose author is no account. **No commit by that email in
 this repository** — an author who only ever pushed elsewhere — proves nothing
-about the account, so it is remembered for this repository only, for the
-session, and the same author still gets their picture in the next repository. A
+about the account — and changes with the author's next push — so it only holds
+the lookup back in this repository for ten minutes and is never recorded as "no
+account"; the same author still gets their picture in the next repository. A
 **404** says nothing about the author either — GitHub gives the same answer for
 a private repository your token cannot see, or one whose SSO it is not
 authorised for — so Gitcito records nothing and leaves that repository alone
@@ -207,6 +216,10 @@ single graph would spend in one scroll. Nothing goes to any other third party.
   address that is not — a work address, a typo, a machine's default — gets
   Gravatar or the generated face, and so does every author in a repository with
   no GitHub remote, unless their address is a noreply one.
+- **Locked tokens hold GitHub pictures back.** While the keychain store is
+  still encrypted, non-noreply authors and your title-bar picture wait for the
+  first unlock — even with a machine login, if anything at all is saved in the
+  keychain. See above for why.
 - **A GitHub picture can be GitHub's default.** An account that never uploaded a
   photo has GitHub's generated pattern, and that is what you see.
 - **Enterprise Server noreply addresses are not decoded.** GitHub documents no

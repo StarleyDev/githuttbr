@@ -63,6 +63,11 @@ export const AVATAR_MISS_TTL_MS = 24 * 60 * 60 * 1000
 const AVATAR_FORBIDDEN_PAUSE_MS = 10 * 60 * 1000
 /** A 404 for the repository itself — private and out of the token's reach, or gone — or a 409, empty. */
 export const AVATAR_HIDDEN_REPO_PAUSE_MS = 10 * 60 * 1000
+/**
+ * "No commit by this email in this repository yet" — true only until the next
+ * push, so it holds the lookup back briefly and is never handed out as a miss.
+ */
+export const AVATAR_REPO_MISS_TTL_MS = 10 * 60 * 1000
 /** Secondary limits without a retry-after: the docs say at least a minute. */
 const AVATAR_SECONDARY_PAUSE_MS = 60 * 1000
 const CACHE_MAX_ENTRIES = 5000
@@ -136,8 +141,9 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
   const hidden = new Map<string, number>()
   /**
    * "No commit by this email in this repository", by repository and author.
-   * Memory only, and never the server-wide answer: the same author may have
-   * commits — and a linked account — in the next repository.
+   * Memory only, for AVATAR_REPO_MISS_TTL_MS, and answered as unknown rather
+   * than as a miss: the author's next push changes it, and the same author may
+   * have commits — and a linked account — in the next repository.
    */
   const repoMisses = new Map<string, number>()
   let disk: Promise<AvatarCacheFile> | null = null
@@ -265,8 +271,7 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
       const key = avatarCacheKey(target.base, req.email)
       const hit = memory.get(key)
       if (isAvatarEntryFresh(hit, now())) out[req.email] = hit.url ? githubAvatarSized(hit.url, size) : null
-      else if (now() - (repoMisses.get(`${repoKey(target)}\n${key}`) ?? -Infinity) < AVATAR_MISS_TTL_MS) out[req.email] = null
-      else todo.push(req)
+      else if (now() - (repoMisses.get(`${repoKey(target)}\n${key}`) ?? -Infinity) >= AVATAR_REPO_MISS_TTL_MS) todo.push(req)
     }
     if (!todo.length || (paused.get(target.base) ?? 0) > now() || (hidden.get(repoKey(target)) ?? 0) > now()) return out
 
@@ -288,8 +293,11 @@ export function createGithubAvatarResolver(deps: AvatarResolverDeps): GithubAvat
           job = lookUp(target, token, req)
             .then((found) => {
               if (!found) return undefined
-              if (found.repoOnly) repoMisses.set(flight, now())
-              else remember(key, found.url)
+              if (found.repoOnly) {
+                repoMisses.set(flight, now())
+                return undefined
+              }
+              remember(key, found.url)
               return found.url
             })
             .catch(() => undefined)

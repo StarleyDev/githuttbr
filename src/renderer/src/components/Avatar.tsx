@@ -3,7 +3,7 @@ import { Blobatar } from 'blobatar/react'
 import { happy, idle, mad, sad, scared, sick, sleepy, thinking, unsure } from 'blobatar/expression'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
-import { githubAuthorAvatar, githubProfileAvatar, useSecretsUnlocks } from '../stores/githubAvatars'
+import { githubAuthorAvatar, githubProfileAvatar, secretsUnlockGeneration, useSecretsUnlocks } from '../stores/githubAvatars'
 import { avatarSources, generatedAvatar, githubAccountFingerprint, gravatarUrl, type AvatarSource } from '../lib/avatar'
 import { githubNoreplyAvatarUrl } from '../../../shared/githubAvatar'
 import { githubEnterpriseBases, githubInstanceOf } from '../../../shared/githubEnterprise'
@@ -94,11 +94,14 @@ export function Avatar({
   const advance = (): void => setAttempt({ key, step: step + 1 })
   const [photo, setPhoto] = useState<string | null>(null)
   const unlocks = useSecretsUnlocks()
+  // Bumped to ask the same source again (see the unlock check below).
+  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
     let alive = true
     setPhoto(null)
     if (!source || !email) return
+    const askedAt = secretsUnlockGeneration()
     const load: Promise<string | null> =
       source === 'gravatar'
         ? gravatarUrl(email, px)
@@ -112,6 +115,10 @@ export function Avatar({
     void load.then((u) => {
       if (!alive) return
       if (u) setPhoto(u)
+      // The tokens unlocked while GitHub was being asked: its "none" may only
+      // have meant "locked", and the unlock effect below has already run with
+      // this step still in flight — so ask again here instead of moving on.
+      else if (source === 'github' && secretsUnlockGeneration() !== askedAt) setRetry((r) => r + 1)
       else setAttempt({ key, step: step + 1 })
     })
     return () => {
@@ -119,7 +126,7 @@ export function Avatar({
     }
     // `key` covers email, size, the source list, the remote, the profile and its account.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, step])
+  }, [key, step, retry])
 
   // The tokens were still encrypted when GitHub was asked, so its "none" may
   // only have meant "locked": once they unlock, go back to it. An avatar

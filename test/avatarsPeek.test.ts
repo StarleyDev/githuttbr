@@ -1,18 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { secretSlot, secretSlots, type SecretStore } from '../src/shared/secrets'
-import { defaultSettings, type AppSettings } from '../src/shared/types'
+import type { ProfileSecrets } from '../src/shared/secrets'
+import { defaultSettings, type AppSettings, type KeychainConsent } from '../src/shared/types'
 
-// What an avatar may use while the encrypted store is still locked. It never
-// decrypts — but "locked" must not swallow credentials that are not in the
-// store at all: a machine-login link, or a token typed this session while the
-// keychain could not be used. Real IPC handlers and settings files, a fake
-// keyring that counts, and a stand-in for the machine login itself.
+// What an avatar may use before the encrypted store is unlocked. It never
+// decrypts, and the rule has no index to go stale: with a store that may hold a
+// PAT the answer is "unknown" (a PAT outranks a machine login, so the link must
+// not stand in for it); with no store to wait for this session — none on disk,
+// consent declined, or no usable keyring — the plain settings are the truth.
+// Real IPC handlers and settings files, a fake keyring that counts, and a
+// stand-in for the machine login itself.
 let dir = ''
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
-const keyring = { decrypts: 0, asked: 0, available: true }
+const keyring = { decrypts: 0, asked: 0, available: true, probes: 0 }
 const machineLogins: { url: string; login?: string }[] = []
 const sent: string[] = []
 
@@ -32,7 +34,10 @@ vi.mock('electron', () => ({
     ]
   },
   safeStorage: {
-    isEncryptionAvailable: () => keyring.available,
+    isEncryptionAvailable: () => {
+      keyring.probes++
+      return keyring.available
+    },
     encryptString: (s: string) => Buffer.from(`enc:${s}`),
     decryptString: (b: Buffer) => {
       keyring.decrypts++
@@ -53,18 +58,31 @@ vi.mock('../src/main/credentials', () => ({
 
 const REMOTE = 'https://github.com/acme/app.git'
 const ITEMS = [{ email: 'dev@corp.test', sha: 'abcdef1' }]
+const FOUND = { 'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&s=40' }
+const PROFILE_PIC = 'https://avatars.githubusercontent.com/u/42?v=4&s=64'
+const LINK = { source: 'git' as const, login: 'octo' }
 const calls: { url: string; auth: string | null }[] = []
 const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
 
-function setUp(o: { secrets: SecretStore; index: boolean; profile?: Partial<AppSettings['profiles'][number]> }): AppSettings {
+interface Setup {
+  /** The encrypted store's content for the profile; omitted means no `gitcito-secrets.enc` at all. */
+  secrets?: ProfileSecrets
+  consent?: KeychainConsent
+  profile?: Partial<AppSettings['profiles'][number]>
+}
+
+function setUp(o: Setup): AppSettings {
   dir = mkdtempSync(join(tmpdir(), 'gitcito-avatars-peek-'))
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
+  if (o.consent !== 'unset') {
+    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: o.consent ?? 'granted', explained: true }))
+  }
   const base = defaultSettings()
   const profile = { ...base.profiles[0], ...o.profile }
   const settings = { ...base, onboardingCompleted: true, profiles: [profile] }
-  const store = Object.fromEntries(Object.entries(o.secrets).map(([, v]) => [profile.id, v]))
-  writeFileSync(join(dir, 'gitcito-secrets.enc'), Buffer.from(`enc:${JSON.stringify(store)}`).toString('base64'))
-  if (o.index) writeFileSync(join(dir, 'gitcito-secrets.index.json'), JSON.stringify(secretSlots(store)))
+  if (o.secrets) {
+    const store = { [profile.id]: o.secrets }
+    writeFileSync(join(dir, 'gitcito-secrets.enc'), Buffer.from(`enc:${JSON.stringify(store)}`).toString('base64'))
+  }
   writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify(settings))
   return settings
 }
@@ -84,6 +102,7 @@ beforeEach(() => {
   if (dir) dirs.push(dir)
   keyring.decrypts = 0
   keyring.asked = 0
+  keyring.probes = 0
   keyring.available = true
   calls.length = 0
   machineLogins.length = 0
@@ -105,100 +124,106 @@ afterAll(() => {
   for (const d of [...dirs, dir]) rmSync(d, { recursive: true, force: true })
 })
 
-const LINK = { source: 'git' as const, login: 'octo' }
-
-describe('avatar peeks with the store still locked', () => {
-  it('uses a machine-login link when the store holds no GitHub PAT for the profile — only, say, an AI key', async () => {
-    setUp({ secrets: { p: { aiKeys: { acct: 'sk-ai-key' } } }, index: true, profile: { links: { github: LINK } } })
-    await boot()
-    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({
-      'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&s=40'
-    })
-    expect(await call('avatars:profileGithub', 64)).toBe('https://avatars.githubusercontent.com/u/42?v=4&s=64')
-    expect(machineLogins.length).toBeGreaterThan(0)
-    for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
-    expect(keyring.decrypts).toBe(0)
-    expect(keyring.asked).toBe(0)
-  })
-
-  it('stays "unknown" when the store does hold a GitHub PAT: the link must not stand in for it', async () => {
-    setUp({ secrets: { p: { githubToken: 'ghp_stored' } }, index: true, profile: { links: { github: LINK } } })
+describe('avatar peeks before the store is unlocked', () => {
+  it('answers "unknown" with a locked store, even with a machine login: no decrypt, no prompt, no fetch', async () => {
+    // The store holds only an AI key — but a peek cannot see that without decrypting.
+    setUp({ secrets: { aiKeys: { acct: 'sk-ai-key' } }, profile: { links: { github: LINK } } })
     await boot()
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
     expect(await call('avatars:profileGithub', 64)).toBeNull()
     expect(calls).toEqual([])
     expect(machineLogins).toEqual([])
     expect(keyring.decrypts).toBe(0)
-  })
-
-  it('stays "unknown" for a store written before the index existed, and writes the index on unlock', async () => {
-    setUp({ secrets: { p: { aiKeys: { acct: 'sk-ai-key' } } }, index: false, profile: { links: { github: LINK } } })
-    await boot()
-    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
-    expect(keyring.decrypts).toBe(0)
-    expect(sent).not.toContain('secrets:unlocked')
-    await call('settings:unlock')
-    // The window hears of it, so pictures left "unknown" ask again now.
-    expect(sent.filter((c) => c === 'secrets:unlocked')).toHaveLength(1)
-    await call('settings:unlock')
-    expect(sent.filter((c) => c === 'secrets:unlocked')).toHaveLength(1)
-    // The next launch can peek: boot again over the same folder, still locked.
-    await boot()
-    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({
-      'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&s=40'
-    })
-    expect(keyring.decrypts).toBe(1)
-  })
-
-  it('uses session-only tokens once an unlock found the keyring unavailable, without asking again', async () => {
-    const settings = setUp({ secrets: { p: { githubToken: 'ghp_unreachable' } }, index: true })
-    keyring.available = false
-    await boot()
-    // Something the user did tried to unlock; the keyring is not there this session.
-    await call('settings:unlock')
-    // A token typed now lives in memory only.
-    await call('settings:set', { ...settings, profiles: [{ ...settings.profiles[0], githubToken: 'ghp_session' }] })
-    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({
-      'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&s=40'
-    })
-    expect(calls.length).toBeGreaterThan(0)
-    for (const c of calls) expect(c.auth).toBe('Bearer ghp_session')
-    expect(keyring.decrypts).toBe(0)
     expect(keyring.asked).toBe(0)
     expect(sent).not.toContain('secrets:unlocked')
   })
 
-  it('falls back to the machine login once an unlock found the keyring unavailable', async () => {
-    setUp({ secrets: { p: { githubToken: 'ghp_unreachable' } }, index: true, profile: { links: { github: LINK } } })
+  it('uses the plain view when consent is granted but no keyring is available — no earlier token read needed', async () => {
+    setUp({ secrets: { githubToken: 'ghp_unreachable' }, profile: { links: { github: LINK } } })
     keyring.available = false
+    await boot()
+    // Nothing has tried to read a token yet: the very first peek decides from the keyring as it is.
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
+    expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
+    expect(calls.length).toBeGreaterThan(0)
+    for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
+    expect(keyring.decrypts).toBe(0)
+    expect(keyring.asked).toBe(0)
+  })
+
+  it('uses a session-only token when no keyring is available', async () => {
+    const settings = setUp({ secrets: { githubToken: 'ghp_unreachable' } })
+    keyring.available = false
+    await boot()
+    // A token typed now lives in memory only.
+    await call('settings:set', { ...settings, profiles: [{ ...settings.profiles[0], githubToken: 'ghp_session' }] })
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
+    expect(calls.length).toBeGreaterThan(0)
+    for (const c of calls) expect(c.auth).toBe('Bearer ghp_session')
+    expect(keyring.decrypts).toBe(0)
+    expect(keyring.asked).toBe(0)
+  })
+
+  it('uses the plain view when the keychain was declined', async () => {
+    setUp({ secrets: { githubToken: 'ghp_never_read' }, consent: 'declined', profile: { links: { github: LINK } } })
+    await boot()
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
+    for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
+    expect(keyring.decrypts).toBe(0)
+    expect(keyring.asked).toBe(0)
+    // Declined never touches safeStorage, not even to ask whether it is there.
+    expect(keyring.probes).toBe(0)
+  })
+
+  it('uses the machine login when there is no encrypted store at all', async () => {
+    setUp({ consent: 'unset', profile: { links: { github: LINK } } })
+    await boot()
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
+    expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
+    for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
+    expect(keyring.decrypts).toBe(0)
+    expect(keyring.asked).toBe(0)
+    expect(keyring.probes).toBe(0)
+  })
+
+  it('once unlocked, a stored PAT outranks the machine login, and the windows hear of the unlock once', async () => {
+    setUp({ secrets: { githubToken: 'ghp_stored' }, profile: { links: { github: LINK } } })
     await boot()
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
     await call('settings:unlock')
-    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({
-      'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&s=40'
+    await call('settings:unlock')
+    expect(sent.filter((c) => c === 'secrets:unlocked')).toHaveLength(1)
+    expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
+    expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
+    expect(calls.length).toBeGreaterThan(0)
+    for (const c of calls) expect(c.auth).toBe('Bearer ghp_stored')
+    expect(machineLogins).toEqual([])
+    expect(keyring.decrypts).toBe(1)
+  })
+
+  it('does not consult an Enterprise Server for the title-bar picture while github.com is locked', async () => {
+    // A GHES token still in the clear in the settings file (not migrated yet): usable on its own,
+    // but github.com comes first and its answer is unknown — so the title bar must not show GHES's account.
+    setUp({
+      secrets: { aiKeys: { acct: 'sk-ai-key' } },
+      profile: { links: { github: LINK }, githubEnterprise: [{ url: 'https://ghe.corp.test', token: 'ghes_plain' }] }
     })
-    for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
+    await boot()
+    expect(await call('avatars:profileGithub', 64)).toBeNull()
+    expect(calls).toEqual([])
+    expect(machineLogins).toEqual([])
     expect(keyring.decrypts).toBe(0)
   })
 })
 
-describe('stored-slot index', () => {
-  it('names each stored host token by field or server, never its value, and matches the lookup slot', () => {
-    const slots = secretSlots({
-      p: {
-        githubToken: 'ghp_x',
-        aiKeys: { a: 'sk' },
-        githubEnterpriseTokens: { 'https://ghe.corp': 't' },
-        gitlabServerTokens: { 'https://gl.corp': 't' }
-      },
-      q: { aiApiKey: 'sk' }
-    })
-    expect(slots).toEqual({ p: ['githubToken', 'githubEnterprise:https://ghe.corp', 'gitlabServer:https://gl.corp'], q: [] })
-    expect(JSON.stringify(slots)).not.toMatch(/ghp_x|sk/)
-    expect(secretSlot('githubToken', 'https://github.com')).toBe('githubToken')
-    expect(secretSlot('githubToken', 'https://ghe.corp')).toBe('githubEnterprise:https://ghe.corp')
-    expect(secretSlot('gitlabToken', 'https://gitlab.com')).toBe('gitlabToken')
-    expect(secretSlot('gitlabToken', 'https://gl.corp')).toBe('gitlabServer:https://gl.corp')
-    expect(secretSlot('forgejoToken')).toBe('forgejoToken')
+describe('the old secrets index', () => {
+  it('is deleted on startup — it named servers, including removed ones — and never written again', async () => {
+    setUp({ secrets: { githubToken: 'ghp_stored' } })
+    const index = join(dir, 'gitcito-secrets.index.json')
+    writeFileSync(index, JSON.stringify({ p: ['githubToken', 'githubEnterprise:https://old-ghe.corp.test'] }))
+    await boot()
+    await vi.waitFor(() => expect(existsSync(index)).toBe(false))
+    await call('settings:unlock')
+    expect(existsSync(index)).toBe(false)
   })
 })

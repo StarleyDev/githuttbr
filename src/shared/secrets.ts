@@ -1,5 +1,5 @@
 import { tokenMatchesInstance, GITLAB_COM, migrateGitlabProfile, migrateGitlabSettings, normalizeInstanceUrl } from './gitlabInstance'
-import { GITHUB_COM, normalizeGithubEnterpriseUrl } from './githubEnterprise'
+import { normalizeGithubEnterpriseUrl } from './githubEnterprise'
 import type { AppSettings } from './types'
 
 /**
@@ -239,35 +239,4 @@ export function pruneSecrets(store: SecretStore, profileIds: string[]): SecretSt
     if (keep.has(id)) out[id] = secrets
   }
   return out
-}
-
-/**
- * Which host tokens each profile has stored — names only, never a value. Kept
- * in plain text beside the encrypted store so a lookup nobody asked for (an
- * avatar) can tell "this profile has no PAT for that server" from "its PAT is
- * still encrypted" without decrypting anything. GitHub Enterprise and GitLab
- * servers are named by their canonical base, as `secretSlot` spells them.
- */
-export type SecretSlots = Record<string, string[]>
-
-export function secretSlots(raw: SecretStore): SecretSlots {
-  const out: SecretSlots = {}
-  for (const [id, secrets] of Object.entries(migrateGitlabSecrets(raw))) {
-    const slots: string[] = TOKEN_FIELDS.filter((f) => !!secrets[f])
-    for (const [base, token] of Object.entries(secrets.githubEnterpriseTokens ?? {})) {
-      if (token) slots.push(`githubEnterprise:${base}`)
-    }
-    for (const [base, token] of Object.entries(secrets.gitlabServerTokens ?? {})) {
-      if (token) slots.push(`gitlabServer:${base}`)
-    }
-    out[id] = slots
-  }
-  return out
-}
-
-/** The slot a host token sits in: the plain field, or a server's base under its kind. */
-export function secretSlot(field: (typeof TOKEN_FIELDS)[number], base?: string): string {
-  if (field === 'githubToken' && base && base !== GITHUB_COM) return `githubEnterprise:${base}`
-  if (field === 'gitlabToken' && base && base !== GITLAB_COM) return `gitlabServer:${base}`
-  return field
 }

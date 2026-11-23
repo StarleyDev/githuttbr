@@ -8,6 +8,7 @@ import {
 import {
   AVATAR_HIT_TTL_MS,
   AVATAR_MISS_TTL_MS,
+  AVATAR_REPO_MISS_TTL_MS,
   avatarBackoffMs,
   avatarCacheKey,
   createGithubAvatarResolver,
@@ -318,19 +319,22 @@ describe('github avatar resolver', () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('takes an empty list by that email as a miss for this repository only', async () => {
+  it('takes an empty list by that email as "not yet" for this repository only: unknown, held back, then asked again', async () => {
     vi.useFakeTimers()
     try {
       let saved: AvatarCacheFile | null = null
+      let clock = 1_000_000
+      let pushed = false
       const fetch = vi.fn(async (url: string) => {
         if (url.includes('/commits/')) return json({ message: 'No commit found' }, 422)
-        return url.includes('/acme/app/') ? json([]) : json([commitBy('https://avatars.githubusercontent.com/u/3?v=4')])
+        return url.includes('/acme/app/') && !pushed ? json([]) : json([commitBy('https://avatars.githubusercontent.com/u/3?v=4')])
       })
-      const r = createGithubAvatarResolver({ fetch, save: (e) => (saved = e) })
+      const r = createGithubAvatarResolver({ fetch, now: () => clock, save: (e) => (saved = e) })
       const ITEM = [{ email: 'dev@x.test', sha: 'abcdef1' }]
-      expect(await r.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({ 'dev@x.test': null })
-      // Asked again in the same repository: remembered, no request.
-      expect(await r.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({ 'dev@x.test': null })
+      // Unknown, not a miss: the renderer would keep a miss for the session.
+      expect(await r.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({})
+      // Asked again in the same repository soon after: held back, no request.
+      expect(await r.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({})
       expect(fetch).toHaveBeenCalledTimes(2)
       // The same author's commits elsewhere on the server still find the account.
       const out = await r.resolve({ ...GH, repo: 'lib' }, ITEM, 20, async () => 'tok')
@@ -338,6 +342,20 @@ describe('github avatar resolver', () => {
       await vi.advanceTimersByTimeAsync(1000)
       // Nothing server-wide was written as "no account".
       expect(Object.values(saved ?? {}).every((e) => e.url !== null)).toBe(true)
+
+      // A fresh resolver (no server-wide hit cached): the hold-back expires and the push is seen.
+      const r2 = createGithubAvatarResolver({ fetch, now: () => clock })
+      const before = fetch.mock.calls.length
+      expect(await r2.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({})
+      pushed = true
+      clock += AVATAR_REPO_MISS_TTL_MS - 1
+      expect(await r2.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({})
+      // Two calls for the first ask (commit, then list), none while held back.
+      expect(fetch.mock.calls.length).toBe(before + 2)
+      clock += 2
+      expect(await r2.resolve(GH, ITEM, 20, async () => 'tok')).toEqual({
+        'dev@x.test': 'https://avatars.githubusercontent.com/u/3?v=4&s=20'
+      })
     } finally {
       vi.useRealTimers()
     }
@@ -459,6 +477,37 @@ describe('avatar batcher', () => {
       expect(sent).toHaveLength(1)
       answer = { 'c@x.test': 'https://avatars.githubusercontent.com/u/3' }
       b.forgetUnknown()
+      const again = b.request(scope, 'c@x.test')
+      await vi.advanceTimersByTimeAsync(60)
+      expect(await again).toBe('https://avatars.githubusercontent.com/u/3')
+      expect(sent).toHaveLength(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('ignores an "unknown" that was in flight across an unlock, and tells the caller to ask again', async () => {
+    vi.useFakeTimers()
+    try {
+      const sent: AvatarBatchItem[][] = []
+      let release: (v: Record<string, string | null>) => void = () => undefined
+      let answer: Record<string, string | null> | null = null
+      const b = createAvatarBatcher((_scope, items) => {
+        sent.push(items)
+        return answer ? Promise.resolve(answer) : new Promise((r) => (release = r))
+      }, 50, () => 0)
+      const scope = { remoteUrl: 'https://github.com/acme/app.git', repoPath: '/r', size: 32 }
+      const askedAt = b.generation()
+      const first = b.request(scope, 'c@x.test')
+      await vi.advanceTimersByTimeAsync(60)
+      // The batch is in main, answered while the store was locked — and the unlock lands before it returns.
+      b.forgetUnknown()
+      release({})
+      expect(await first).toBeNull()
+      // The caller sees the generation moved, so its null is not the final word.
+      expect(b.generation()).not.toBe(askedAt)
+      // And the stale "unknown" was not held back: the retry reaches main now.
+      answer = { 'c@x.test': 'https://avatars.githubusercontent.com/u/3' }
       const again = b.request(scope, 'c@x.test')
       await vi.advanceTimersByTimeAsync(60)
       expect(await again).toBe('https://avatars.githubusercontent.com/u/3')

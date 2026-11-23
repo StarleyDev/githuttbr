@@ -26,6 +26,12 @@ export interface AvatarBatcher {
   request(scope: AvatarBatchScope, email: string, sha?: string): Promise<string | null>
   /** Drops every held-back "unknown" — the tokens just unlocked, so they are worth asking now. */
   forgetUnknown(): void
+  /**
+   * Bumped by every `forgetUnknown`. A caller that got null back compares it
+   * with the value at request time: changed means the answer predates the
+   * unlock and is worth asking again.
+   */
+  generation(): number
 }
 
 interface PendingItem {
@@ -50,6 +56,7 @@ export function createAvatarBatcher(
   const unknownUntil = new Map<string, number>()
   const pending = new Map<string, { scope: AvatarBatchScope; items: Map<string, PendingItem> }>()
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
+  let generation = 0
 
   const flush = (scopeKey: string): void => {
     const batch = pending.get(scopeKey)
@@ -58,14 +65,17 @@ export function createAvatarBatcher(
     timers.delete(scopeKey)
     if (!batch) return
     const entries = [...batch.items.entries()]
+    const sentAt = generation
     void send(batch.scope, entries.map(([email, v]) => ({ email, sha: v.sha })))
       .catch((): Record<string, string | null> => ({}))
       .then((res) => {
         for (const [email, v] of entries) {
           const url = res[email]
-          // An answer is kept for the session; "unknown" only for a short while.
+          // An answer is kept for the session; "unknown" only for a short while —
+          // and not at all when an unlock came while it was in flight: it may
+          // only have meant "locked", and holding it back would hide the retry.
           if (url !== undefined) known.set(`${scopeKey}\n${email}`, url)
-          else unknownUntil.set(`${scopeKey}\n${email}`, now() + AVATAR_UNKNOWN_RETRY_MS)
+          else if (sentAt === generation) unknownUntil.set(`${scopeKey}\n${email}`, now() + AVATAR_UNKNOWN_RETRY_MS)
           for (const w of v.waiters) w(url ?? null)
         }
       })
@@ -94,7 +104,9 @@ export function createAvatarBatcher(
       })
     },
     forgetUnknown() {
+      generation++
       unknownUntil.clear()
-    }
+    },
+    generation: () => generation
   }
 }
