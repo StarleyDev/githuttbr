@@ -38,6 +38,18 @@ jobs:
     # Counts from the moment a runner starts the job, not queue time. A signed,
     # notarized build takes ~25 min; this only stops a wedged notarization.
     timeout-minutes: 90
+    # Every macOS build of one tag runs one at a time, whoever called it:
+    # Release, its re-run, the scheduled backfill and a backfill by hand. Two at
+    # once would leave latest-mac.yml's sha512 from one build next to zips from
+    # the other, and every macOS update would fail its checksum. It is on the
+    # job, not the workflow: a job's concurrency in a called workflow can read
+    # `inputs`, and the group is shared across callers. Not cancel-in-progress:
+    # a build that is uploading must finish. (GitHub keeps one *pending* job
+    # per group; a newer arrival replaces an older one still waiting, which the
+    # upload check below makes harmless.)
+    concurrency:
+      group: release-mac-${{ inputs.tag }}
+      cancel-in-progress: false
     permissions:
       contents: write
     env:
@@ -170,16 +182,38 @@ jobs:
           node scripts/check-native.mjs
           npx electron-builder --mac --publish never
 
+      # The release scripts come from the commit this workflow runs from, not
+      # from the tag: a backfill of a tag older than these scripts would find
+      # none in its checkout. Checked out after the build, beside it, so the
+      # app sources and the packaged app are the tag's alone.
+      - name: Checkout the release scripts
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-ci
+          sparse-checkout: scripts
+          persist-credentials: false
+
       # Works on a draft and on a published release alike. The binaries go
       # first and latest-mac.yml last, so an updater never reads a yml whose zip
-      # is not attached yet; --clobber makes a second run replace, not fail.
+      # is not attached yet; --clobber lets a run finish an upload an earlier
+      # one left half done.
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          # Checked right before uploading: once latest-mac.yml is attached,
+          # another run finished a complete upload for this version, and
+          # clobbering its zips would orphan the sha512 in its yml. To replace
+          # a bad macOS build on purpose, delete latest-mac.yml from the
+          # release first.
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets > "$RUNNER_TEMP/assets.json"
+          verdict="$(node .release-ci/scripts/release-assets.mjs mac-upload-check "$RUNNER_TEMP/assets.json")"
+          echo "$verdict"
+          if [ "$verdict" != upload ]; then exit 0; fi
           # Through a file, not <(…): set -e does not see a process substitution fail.
-          node scripts/release-assets.mjs mac-upload dist "$VERSION" > "$RUNNER_TEMP/upload.txt"
+          node .release-ci/scripts/release-assets.mjs mac-upload dist "$VERSION" > "$RUNNER_TEMP/upload.txt"
           mapfile -t files < "$RUNNER_TEMP/upload.txt"
           printf 'Uploading %s\n' "${files[@]}"
           last=$(( ${#files[@]} - 1 ))

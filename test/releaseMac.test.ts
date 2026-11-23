@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import yaml from 'js-yaml'
 import { ROOT } from './helpers'
 // @ts-expect-error — plain .mjs scripts, untyped on purpose
-import { parseUpdateInfo, publishGate, macUploadPlan, hasMac, assetNames } from '../scripts/release-assets.mjs'
+import { parseUpdateInfo, publishGate, macUploadPlan, macUploadCheck, hasMac, assetNames } from '../scripts/release-assets.mjs'
 // @ts-expect-error — plain .mjs scripts, untyped on purpose
 import { pickTarget, issueTitle, issueBody, BACKFILL_WINDOW_HOURS } from '../scripts/release-mac.mjs'
 
@@ -105,6 +105,24 @@ describe('mac upload plan', () => {
   })
 })
 
+// Two macOS builds of one tag (Release's job or its re-run, and a backfill)
+// must not interleave uploads: latest-mac.yml from one, zips from the other.
+describe('mac upload check, right before uploading', () => {
+  it('uploads when nothing macOS is attached yet', () => {
+    expect(macUploadCheck(['latest.yml', 'latest-linux.yml'])).toEqual({ upload: true })
+  })
+
+  it('finishes a half-done upload: binaries attached but no latest-mac.yml', () => {
+    expect(macUploadCheck(['latest.yml', ...macDist()])).toEqual({ upload: true })
+  })
+
+  it('skips, never clobbers, once another run attached latest-mac.yml', () => {
+    const c = macUploadCheck(['latest.yml', ...macDist(), 'latest-mac.yml'])
+    expect(c.upload).toBe(false)
+    expect(c.reason).toContain('already attached')
+  })
+})
+
 describe('backfill target', () => {
   const now = Date.parse('2026-11-23T12:00:00Z')
   const hoursAgo = (h: number): string => new Date(now - h * 3600_000).toISOString()
@@ -184,7 +202,8 @@ describe('release workflows', () => {
     uses?: string
     with?: Record<string, unknown>
     permissions?: Record<string, string>
-    steps?: Array<{ uses?: string; with?: Record<string, unknown> }>
+    concurrency?: { group: string; 'cancel-in-progress': boolean }
+    steps?: Array<{ name?: string; uses?: string; run?: string; with?: Record<string, unknown> }>
   }
   const load = (f: string) =>
     yaml.load(readFileSync(join(ROOT, '.github/workflows', f), 'utf8')) as { jobs: Record<string, Job> }
@@ -209,6 +228,28 @@ describe('release workflows', () => {
     expect(mac).not.toContain('npm run release')
     expect(mac.match(/electron-builder --mac --publish never/g)).toHaveLength(2)
     expect(mac).toContain('--clobber')
+  })
+
+  it('serializes every macOS build of a tag, whichever workflow called it', () => {
+    const mac = load('release-mac.yml')
+    expect(mac.jobs.build.concurrency).toEqual({ group: 'release-mac-${{ inputs.tag }}', 'cancel-in-progress': false })
+    // Both callers go through the same reusable workflow, so through that group.
+    expect(release.jobs.mac.uses).toBe('./.github/workflows/release-mac.yml')
+    expect(load('release-mac-backfill.yml').jobs.mac.uses).toBe('./.github/workflows/release-mac.yml')
+  })
+
+  it('checks for an existing latest-mac.yml before uploading, with scripts from the workflow commit', () => {
+    const steps = load('release-mac.yml').jobs.build.steps ?? []
+    const names = steps.map((s) => s.name)
+    const scripts = steps.find((s) => s.name === 'Checkout the release scripts')
+    expect(scripts?.with).toMatchObject({ ref: '${{ github.workflow_sha }}', path: '.release-ci', 'persist-credentials': false })
+    // After the build, so nothing of it lands in the packaged app.
+    expect(names.indexOf('Checkout the release scripts')).toBeGreaterThan(names.indexOf('Build (unsigned macOS)'))
+    const upload = steps.find((s) => s.name === 'Upload to the release')?.run ?? ''
+    expect(upload.indexOf('mac-upload-check')).toBeGreaterThan(-1)
+    expect(upload.indexOf('mac-upload-check')).toBeLessThan(upload.indexOf('gh release upload'))
+    // Never the tag's own copy, which an older tag does not have.
+    expect(upload).not.toMatch(/node scripts\//)
   })
 
   it('pins every action by SHA and keeps no credentials in checkout', () => {

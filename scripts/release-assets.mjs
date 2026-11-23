@@ -11,6 +11,9 @@
 //   node scripts/release-assets.mjs mac-upload <dist-dir> <version>
 //       Prints the files to upload, one per line, latest-mac.yml last. Exit 1
 //       when the yml names a file the build did not produce, or another version.
+//   node scripts/release-assets.mjs mac-upload-check <assets.json>
+//       Prints `upload`, or `skip: <reason>` when latest-mac.yml is already
+//       attached by another run.
 //   node scripts/release-assets.mjs has-mac <assets.json>
 //       Prints `yes` or `no`.
 
@@ -74,6 +77,21 @@ export function hasMac(names) {
 }
 
 /**
+ * Whether a macOS build should upload, decided from the release's assets read
+ * right before uploading. latest-mac.yml goes up last, so its presence means
+ * another run already finished a complete upload for this tag (assets belong
+ * to one release, so one version): clobbering that run's zips now would leave
+ * its yml's sha512 pointing at different bytes. Binaries without the yml are
+ * a half-finished upload, and finishing it with --clobber is safe.
+ * @param {string[]} names asset names on the release
+ * @returns {{ upload: true } | { upload: false; reason: string }}
+ */
+export function macUploadCheck(names) {
+  if (hasMac(names)) return { upload: false, reason: `${MAC_YML} is already attached; another run uploaded macOS` }
+  return { upload: true }
+}
+
+/**
  * The macOS files to upload from a `--publish never` build, the yml last so an
  * updater never reads a latest-mac.yml whose zip is not there yet.
  * @param {string[]} files names in the dist directory
@@ -126,8 +144,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     for (const f of plan.upload) console.log(join(a, f))
   } else if (cmd === 'has-mac') {
     console.log(hasMac(assetNames(readJson(a))) ? 'yes' : 'no')
+  } else if (cmd === 'mac-upload-check') {
+    const c = macUploadCheck(assetNames(readJson(a)))
+    console.log(c.upload ? 'upload' : `skip: ${c.reason}`)
   } else {
-    console.error('usage: release-assets.mjs gate|mac-upload|has-mac …')
+    console.error('usage: release-assets.mjs gate|mac-upload|mac-upload-check|has-mac …')
     process.exit(2)
   }
 }
