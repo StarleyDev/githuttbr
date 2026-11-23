@@ -34,7 +34,11 @@ signed in as the picked profile, or cloned anonymously the same way when it has
 nothing for that server. Only an address no profile could serve is cloned as git
 itself would, credential helper included. Going anonymous works on any git;
 signing in with a token needs git 2.31 or newer. One thing the switch cannot
-reach: a `~/.netrc` entry for the host is still read by git's HTTP layer.
+reach: a `~/.netrc` entry for the host is still read by git's HTTP layer. With a
+profile picked, an address whose host git reads as another server than the app
+does — an internationalised name, a numeric shorthand such as `127.1`, an
+encoded character — is refused with a message; write the host in its usual
+form. A path holding `;` (or `%3B`) is placed on no server and gets no token.
 
 The token is offered to its own server only — including to the submodules a
 `--recurse-submodules` clone fetches — and to the whole of that server, so a
@@ -48,7 +52,9 @@ not with the clone's token. The one exception is a server nested under another
 the GitLab clone runs, the Data Center's paths are asked as nobody — neither
 the GitLab token nor the machine's credential helper answers there, so a
 private submodule on it fails to clone rather than going out as the wrong
-account.
+account. That carve-out is decided on the path git asks about: a redirect the
+GitLab itself issues into the Data Center's path is outside what it can see
+(see [Security](security.md)).
 
 Choose a parent folder and a name; the line under the fields shows exactly where
 the repository will land. A folder that already exists is refused rather than

@@ -1,4 +1,7 @@
 import { ambiguousRemotePath } from './remotePath'
+// A cycle (the resolver names bitbucket.org by BITBUCKET_CLOUD): both sides only
+// call each other's functions, never at import time.
+import { resolveRemoteProvider, type ServerRegistry } from './remoteProvider'
 import type { AccountLink, BitbucketServerHost, BitbucketServerTokenKind, Profile } from './types'
 import { serverDisplayAddress } from './serverAddress'
 
@@ -213,13 +216,15 @@ export function bitbucketServerRepoOf(remoteUrl: string, bases: readonly string[
  * Which Bitbucket's credentials a remote may receive, by host alone: the Data
  * Center base when the remote is on a configured server, `BITBUCKET_CLOUD` for
  * bitbucket.org, else null — an unknown host gets neither token.
+ *
+ * Decided by `resolveRemoteProvider`, so it never disagrees with the resolver:
+ * main passes `reg`, every configured server, and `ssh://git@host/p/r.git` on
+ * a hostname a GitLab shares is then the GitLab's (port 22 is no Data Center's
+ * daemon), not the Data Center's.
  */
-export function bitbucketBaseOfRemote(remoteUrl: string, bases: readonly string[]): string | null {
-  const dc = bitbucketServerRepoOf(remoteUrl, bases)
-  if (dc) return dc.base
-  const r = remoteParts(remoteUrl)
-  const hostname = r ? r.host.replace(/:\d+$/, '') : null
-  return hostname && isBitbucketCloudHost(hostname) ? BITBUCKET_CLOUD : null
+export function bitbucketBaseOfRemote(remoteUrl: string, bases: readonly string[], reg?: ServerRegistry): string | null {
+  const r = resolveRemoteProvider(remoteUrl, reg ?? { gitlab: [], forgejo: [], githubEnterprise: [], bitbucketServer: bases })
+  return r?.provider === 'bitbucket' && r.base ? r.base : null
 }
 
 /** Every configured Data Center base across the profiles, de-duplicated. Recognition only — not authorisation. */

@@ -13,17 +13,21 @@
  * - a `.` or `..` segment (`new URL` resolves them away, so the raw text is read);
  * - a percent-encoded `/`, `\` or unreserved character (`%2F`, `%5C`, `%2E`,
  *   `%62` …) — something a decoder changes and a matcher would not see;
- * - a `%` that is not an escape, which decoders disagree about.
+ * - a `%` that is not an escape, which decoders disagree about;
+ * - a `;`, raw or as `%3B`: Tomcat (the Data Center's server) drops a
+ *   segment's `;params` before routing, so `/bitbucket;x/…` is the Data Center
+ *   to it and the GitLab at the root to a prefix matcher;
+ * - `%00`, which a server may read as the end of the path.
  *
  * Ordinary escapes (`%20`) are fine: they decode to nothing a router splits on.
  */
 export function ambiguousRemotePath(url: string): boolean {
   const path = rawPathOf(url.trim())
-  if (path.includes('\\')) return true
+  if (path.includes('\\') || path.includes(';')) return true
   if (path.split('/').some((seg) => seg === '.' || seg === '..')) return true
   if (/%(?![0-9a-f]{2})/i.test(path)) return true
   for (const m of path.matchAll(/%([0-9a-f]{2})/gi)) {
-    if (/[A-Za-z0-9\-._~/\\]/.test(String.fromCharCode(parseInt(m[1], 16)))) return true
+    if (/[A-Za-z0-9\-._~/\\;\0]/.test(String.fromCharCode(parseInt(m[1], 16)))) return true
   }
   return false
 }

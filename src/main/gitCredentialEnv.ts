@@ -80,6 +80,64 @@ export function encodeConfigPath(pathname: string): string | null {
   return out.join('/')
 }
 
+/** The port a scheme uses when none is written: WHATWG drops it, and git's url matching does too. */
+const DEFAULT_PORT: Record<string, string> = { 'https:': '443', 'http:': '80' }
+
+/**
+ * The host as git reads it out of `raw` — everything between `://` and the
+ * first `/`, after the first `@` — lowercased, a default port dropped. git does
+ * no IDNA, no IPv4 shorthand, no IPv6 compression and no percent-decoding of a
+ * host, and stops at neither `\`, `?` nor `#` there; WHATWG does all of that.
+ * Null when there is no authority to read.
+ */
+function gitHostOf(raw: string, protocol: string): string | null {
+  const m = /^[a-z][a-z0-9+.-]*:\/\/([^/]*)/i.exec(raw)
+  if (!m) return null
+  const at = m[1].indexOf('@')
+  const host = (at < 0 ? m[1] : m[1].slice(at + 1)).toLowerCase()
+  return withoutDefaultPort(host, protocol)
+}
+
+/** `host[:port]` with the scheme's default port dropped, as WHATWG and git's url matching both do. */
+export function withoutDefaultPort(host: string, protocol: string): string {
+  const port = DEFAULT_PORT[protocol.endsWith(':') ? protocol : `${protocol}:`]
+  return port && host.endsWith(`:${port}`) ? host.slice(0, -port.length - 1) : host
+}
+
+/**
+ * Whether git and WHATWG name the same server for `url`. The `credential.<url>`
+ * key is built from WHATWG's host; git matches it against its own reading. When
+ * they differ (`bücher.example` → `xn--bcher-kva.example`, `127.1` →
+ * `127.0.0.1`, `[0:0::1]` → `[::1]`, `h%2eexample`, `github.com\@evil.com`) no
+ * entry this module writes would apply to what git asks — the machine's helper
+ * would answer instead — so such a spelling gets no credential handling at
+ * all, and a caller acting for a profile refuses the operation
+ * (`nonCanonicalHostMessage`). Case and a default port are the same server to
+ * both, and are fine.
+ */
+export function canonicalUrlHost(url: string): boolean {
+  let u: URL
+  try {
+    u = new URL(url)
+  } catch {
+    return false
+  }
+  return gitHostOf(url, u.protocol) === u.host
+}
+
+/**
+ * Why an operation for a profile was refused over a non-canonical host (see
+ * `canonicalUrlHost`). English with a fixed shape: main has no language, and the
+ * renderer's gitErrorHint translates it (`gitError.nonCanonicalHost`).
+ */
+export function nonCanonicalHostMessage(url: string): string {
+  const host = /^[a-z][a-z0-9+.-]*:\/\/([^/]*)/i.exec(url)?.[1].replace(/^.*?@/, '') ?? url
+  return (
+    `Refusing to use a profile's account for "${host}": git could read that server address as another server. ` +
+    'Write the host name in its usual form and retry.'
+  )
+}
+
 /** `scheme://host[:port]` and the encoded path of `raw`; null when either is unsafe. */
 function strictParts(raw: string, protocols: readonly string[]): { origin: string; path: string } | null {
   // WHATWG drops tabs and line breaks silently: the URL git reads would differ.
@@ -91,6 +149,8 @@ function strictParts(raw: string, protocols: readonly string[]): { origin: strin
     return null
   }
   if (!protocols.includes(u.protocol) || !SAFE_HOST.test(u.host)) return null
+  // A host git reads as another server: no key here would match its request.
+  if (gitHostOf(raw, u.protocol) !== u.host) return null
   const path = encodeConfigPath(u.pathname)
   return path === null ? null : { origin: `${u.protocol}//${u.host}`, path }
 }
@@ -202,6 +262,14 @@ export function gitCredentialEnv(
 
   const [reset, httpPath] = blanked(ctx.context)
   const at = countAt(base)
+  // Every key is checked before the endpoint opens: a refusal after it would
+  // leave a socket nobody releases.
+  const env = countEntries(base, [
+    reset,
+    [`credential.${ctx.context}.helper`, ''],
+    httpPath,
+    ...ctx.exclude.flatMap(blanked)
+  ])
   // The endpoint answers only inside the context git is told to use it for, and
   // not under a nested server carved out of it — so a process that speaks to it
   // with the nonce still cannot ask it for another server. Stacked on another
@@ -219,13 +287,8 @@ export function gitCredentialEnv(
     },
     at
   )
-  const env = countEntries(base, [
-    reset,
-    [`credential.${ctx.context}.helper`, helper],
-    httpPath,
-    ...ctx.exclude.flatMap(blanked)
-  ])
-  return { ...env, ...nonceEnv }
+  env[`GIT_CONFIG_VALUE_${at + 1}`] = helper
+  return { ...env, ...scrubbedParameters(base), ...nonceEnv }
 }
 
 /**
@@ -250,21 +313,105 @@ export function anonymousGitEnv(
   url: string,
   base: NodeJS.ProcessEnv = process.env,
   scope: CredentialScope = 'host',
-  opts: { configCount?: boolean } = {}
+  opts: { configCount?: boolean; exactUrlMatch?: boolean } = {}
 ): NodeJS.ProcessEnv | null {
   const ctx = credentialContexts(url, scope, ['https:', 'http:'])
   if (!ctx) return null
   // A nested server's requests match the base's own empty entry already.
   const pairs = blanked(ctx.context)
+  // Before 2.26 git matched `credential.<url>` field by field, the path exactly:
+  // a server base's path (`/bitbucket`) never equals a repository's, so the
+  // blank above would not apply and the machine's helper would answer. The
+  // origin, which has no path, does match — for the whole host, for this one
+  // command, which costs nothing when asking as nobody.
+  const origin = new URL(ctx.context).origin
+  if (opts.exactUrlMatch && origin !== ctx.context) pairs.push([`credential.${origin}.helper`, ''])
   const prompt = { GIT_ASKPASS: '', GIT_TERMINAL_PROMPT: '0' }
-  if (opts.configCount) return { ...countEntries(base, pairs), ...prompt }
+  if (opts.configCount) return { ...countEntries(base, pairs), ...scrubbedParameters(base), ...prompt }
   const entries = pairs.map(([k, v]) => sqQuote(`${assertSafeKey(k)}=${v}`)).join(' ')
-  const before = base.GIT_CONFIG_PARAMETERS?.trim()
+  const before = scrubbedParameters(base).GIT_CONFIG_PARAMETERS?.trim()
   return { GIT_CONFIG_PARAMETERS: before ? `${before} ${entries}` : entries, ...prompt }
 }
 
 /** git's own quoting for `GIT_CONFIG_PARAMETERS` (`sq_quote_buf`): `'` becomes `'\''`. */
 const sqQuote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
+
+/** One `sq_quote`d word at `i` in `s`, as git's `sq_dequote_step` reads it; null when malformed. */
+function readQuoted(s: string, i: number): { value: string; end: number } | null {
+  if (s[i] !== "'") return null
+  let out = ''
+  let at = i + 1
+  for (;;) {
+    const close = s.indexOf("'", at)
+    if (close < 0) return null
+    out += s.slice(at, close)
+    at = close + 1
+    // `'\''` and `'\!'`: a quote or a bang outside the quotes, then the quoting resumes.
+    if (s[at] === '\\' && (s[at + 1] === "'" || s[at + 1] === '!') && s[at + 2] === "'") {
+      out += s[at + 1]
+      at += 3
+      continue
+    }
+    return { value: out, end: at }
+  }
+}
+
+/**
+ * The entries of a `GIT_CONFIG_PARAMETERS` value — `'key=value'` (every git),
+ * `'key'='value'` and `'key'=` (2.31) — each with its key and its raw text.
+ * Null when it cannot be read the way git reads it.
+ */
+export function parseConfigParameters(s: string): Array<{ key: string; raw: string }> | null {
+  const out: Array<{ key: string; raw: string }> = []
+  let i = 0
+  for (;;) {
+    while (i < s.length && /\s/.test(s[i])) i++
+    if (i >= s.length) return out
+    const start = i
+    const first = readQuoted(s, i)
+    if (!first) return null
+    i = first.end
+    let key: string
+    if (s[i] === '=') {
+      key = first.value
+      i++
+      if (s[i] === "'") {
+        const value = readQuoted(s, i)
+        if (!value) return null
+        i = value.end
+      }
+    } else {
+      const eq = first.value.indexOf('=')
+      key = eq < 0 ? first.value : first.value.slice(0, eq)
+    }
+    if (i < s.length && !/\s/.test(s[i])) return null
+    out.push({ key, raw: s.slice(start, i) })
+  }
+}
+
+/**
+ * `base`'s `GIT_CONFIG_PARAMETERS` without its `credential.*` entries, nor the
+ * `include.*` / `includeIf.*` ones that could pull a helper in from a file.
+ *
+ * git reads the `GIT_CONFIG_COUNT` entries before `GIT_CONFIG_PARAMETERS`, so a
+ * `credential.helper` inherited there — the app launched from a git alias run
+ * with `-c`, or by a git that exported its own — came after the empty entry
+ * that clears the machine's helpers, and survived it: it was offered the
+ * profile's token to `store` (in plain text, for `store`), and answered `get`
+ * when asking as nobody. Removing them rather than moving every entry of ours
+ * into `GIT_CONFIG_PARAMETERS`: the `GIT_CONFIG_COUNT` keys are never split, and
+ * global and system config, read before either, are cleared already. A value
+ * that cannot be read is dropped whole. Empty when `base` has none: nothing to
+ * override.
+ */
+function scrubbedParameters(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const inherited = base.GIT_CONFIG_PARAMETERS
+  if (inherited === undefined) return {}
+  const entries = parseConfigParameters(inherited)
+  if (!entries) return { GIT_CONFIG_PARAMETERS: '' }
+  const kept = entries.filter(({ key }) => !/^(?:credential|include|includeif)\./i.test(key.trim()))
+  return { GIT_CONFIG_PARAMETERS: kept.map((e) => e.raw).join(' ') }
+}
 
 /**
  * Whether an environment from this module needs config-from-environment
@@ -289,4 +436,18 @@ export function gitSupportsCredentialEnv(versionOutput: string): { ok: boolean; 
   const major = Number(m[1])
   const minor = Number(m[2])
   return { ok: major > 2 || (major === 2 && minor >= 31), found: m[0] }
+}
+
+/**
+ * Whether the output of `git --version` names a git that matches
+ * `credential.<url>` with its url-matching rules (2.26): a path-scoped entry
+ * then covers everything under that path. Before, the path had to be equal —
+ * see `anonymousGitEnv`'s `exactUrlMatch`. An output that cannot be read counts
+ * as old here: the extra entry that needs is harmless on a newer git.
+ */
+export function gitMatchesCredentialUrlPrefix(versionOutput: string): boolean {
+  const m = /(\d+)\.(\d+)/.exec(versionOutput)
+  if (!m) return false
+  const major = Number(m[1])
+  return major > 2 || (major === 2 && Number(m[2]) >= 26)
 }

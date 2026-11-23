@@ -3366,6 +3366,7 @@ export const nl: Dict = {
   'gitError.gitlabNotSaved': 'Dit GitLab-adres is nog in geen enkel profiel opgeslagen (het moet https gebruiken). Sla het op via Instellingen → Integraties en probeer het opnieuw.',
   'gitError.ghesNoToken': 'In dit profiel is geen token voor de GitHub Enterprise Server {host} opgeslagen. Voeg er een toe via Instellingen → Integraties → GitHub → GitHub Enterprise Server.',
   'gitError.bbsNoToken': 'In dit profiel is geen HTTP-toegangstoken voor het Bitbucket Data Center {host} opgeslagen. Voeg er een toe via Instellingen → Integraties → Bitbucket → Bitbucket Data Center.',
+  'gitError.nonCanonicalHost': 'Het account van dit profiel is niet gebruikt voor {host}: git zou dat serveradres als een andere server kunnen lezen dan Gitcito, en dan antwoordt de login van de computer. Schrijf de hostnaam in zijn gebruikelijke vorm (zonder IDN, numerieke afkorting of gecodeerde tekens) en probeer het opnieuw.',
   'gitError.heldTokenUnsavedServer': 'Dit token is al opgeslagen voor een ander account of een andere server en wordt daarom niet verstuurd naar een server die nog door geen enkel profiel is opgeslagen. Gebruik het token dat deze server heeft uitgegeven.',
   'gitError.bbsNoBrowse': 'Repositories bladeren en aanmaken wordt voor Bitbucket Data Center nog niet ondersteund — kloon in plaats daarvan via URL.',
   'gitError.notBbsRepo': 'Dit is geen Bitbucket Data Center-repository.',

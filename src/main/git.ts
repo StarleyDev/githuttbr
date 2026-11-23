@@ -190,12 +190,15 @@ import { bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitb
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
 import {
   anonymousGitEnv,
+  canonicalUrlHost,
   credentialContexts,
   credentialUsable,
   gitCredentialEnv,
+  gitMatchesCredentialUrlPrefix,
   gitSupportsCredentialEnv,
   MIN_GIT_FOR_CREDENTIAL_ENV,
   needsConfigEnv,
+  nonCanonicalHostMessage,
   releaseCredentialEnv,
   type BasicCredential,
   type CredentialScope
@@ -1047,6 +1050,8 @@ export async function cloneCredentialEnv(
   profileIdArg?: unknown
 ): Promise<NodeJS.ProcessEnv | null> {
   const profileId = asProfileIdArg(profileIdArg)
+  // A picked profile, or a token sent for one: never left to the machine's helper.
+  if (profileId !== undefined || (host && token?.trim())) assertCanonicalHost(url)
   const env = await profileCredentialEnv(url, host, token, profileId)
   if (env) return env
   // A picked profile with no usable credential clones as nobody. Left to git,
@@ -1121,21 +1126,23 @@ function credentialScopeFor(url: string): CredentialScope {
   return { prefix: own, exclude }
 }
 
-let configEnvProbe: Promise<boolean> | null = null
+let anonymousFormProbe: Promise<{ configCount: boolean; exactUrlMatch: boolean }> | null = null
 /**
- * Whether the installed git reads `GIT_CONFIG_COUNT` (2.31). Going anonymous
- * uses it when it can, and `GIT_CONFIG_PARAMETERS` otherwise; an output that
- * cannot be read counts as old here, since the older form works everywhere.
+ * How the installed git reads the entries that make it ask as nobody: whether
+ * it reads `GIT_CONFIG_COUNT` (2.31) — `GIT_CONFIG_PARAMETERS` otherwise — and
+ * whether it matches `credential.<url>` only exactly (before 2.26; see
+ * `anonymousGitEnv`). An output that cannot be read counts as old here, since
+ * the older form works everywhere.
  */
-function gitHasConfigEnv(): Promise<boolean> {
-  configEnvProbe ??= pexecFile('git', ['--version']).then(
+function anonymousConfigForm(): Promise<{ configCount: boolean; exactUrlMatch: boolean }> {
+  anonymousFormProbe ??= pexecFile('git', ['--version']).then(
     ({ stdout }) => {
       const v = gitSupportsCredentialEnv(String(stdout))
-      return v.ok && v.found !== undefined
+      return { configCount: v.ok && v.found !== undefined, exactUrlMatch: !gitMatchesCredentialUrlPrefix(String(stdout)) }
     },
-    () => false
+    () => ({ configCount: false, exactUrlMatch: true })
   )
-  return configEnvProbe
+  return anonymousFormProbe
 }
 
 /** `anonymousGitEnv` for `url`'s server, in the config form the installed git reads best. */
@@ -1143,7 +1150,17 @@ async function anonymousServerEnv(
   url: string,
   base: NodeJS.ProcessEnv = process.env
 ): Promise<NodeJS.ProcessEnv | null> {
-  return anonymousGitEnv(url, base, credentialScopeFor(url), { configCount: await gitHasConfigEnv() })
+  return anonymousGitEnv(url, base, credentialScopeFor(url), await anonymousConfigForm())
+}
+
+/**
+ * Refuse, for an operation acting for a profile, a remote whose host git reads
+ * differently from the app (`canonicalUrlHost`): no credential entry would
+ * apply to it, so the machine's helper would answer — another account, for a
+ * profile that names one. Only http(s) has a credential step to protect.
+ */
+function assertCanonicalHost(url: string): void {
+  if (/^https?:\/\//i.test(url) && !canonicalUrlHost(url)) throw new Error(nonCanonicalHostMessage(url))
 }
 
 async function profileCredentialEnv(
@@ -2194,6 +2211,7 @@ export async function remoteOperationEnv(
   for (const url of urls) {
     const { cred, bound } = await remoteCredential(repoPath, url).catch(() => ({ cred: null, bound: false }))
     if (!cred && !bound) continue
+    assertCanonicalHost(url)
     // Scoped to this remote's server: two destinations of a multi-URL push on
     // one server share its entry; one on another server keeps its own.
     const scope = credentialScopeFor(url)
@@ -2209,15 +2227,21 @@ export async function remoteOperationEnv(
   // ones before it. So the blank entries go first, and an outer server's token
   // before a nested one's — the outer's carve-out would clear it otherwise.
   tokens.sort((a, b) => a.context.length - b.context.length)
-  const configCount = anonymous.length > 0 && (await gitHasConfigEnv())
+  const form = anonymous.length > 0 ? await anonymousConfigForm() : { configCount: false, exactUrlMatch: false }
   let env: NodeJS.ProcessEnv | undefined
-  for (const a of anonymous) {
-    const extra = anonymousGitEnv(a.url, { ...process.env, ...env }, a.scope, { configCount })
-    if (extra) env = { ...env, ...extra }
-  }
-  for (const t of tokens) {
-    const extra = gitCredentialEnv(t.url, t.cred, { ...process.env, ...env }, t.scope)
-    if (extra) env = { ...env, ...extra }
+  try {
+    for (const a of anonymous) {
+      const extra = anonymousGitEnv(a.url, { ...process.env, ...env }, a.scope, form)
+      if (extra) env = { ...env, ...extra }
+    }
+    for (const t of tokens) {
+      const extra = gitCredentialEnv(t.url, t.cred, { ...process.env, ...env }, t.scope)
+      if (extra) env = { ...env, ...extra }
+    }
+  } catch (err) {
+    // The endpoints already opened for the URLs before it would outlive the run.
+    releaseCredentialEnv(env)
+    throw err
   }
   return { env, anonymousUrl: anonymous[0]?.url }
 }

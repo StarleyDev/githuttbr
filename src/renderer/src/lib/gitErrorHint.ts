@@ -76,6 +76,11 @@ const RULES: Rule[] = [
     hint: () => ({ key: 'gitError.tokenScopeAny' })
   },
   {
+    // gitCredentialEnv.ts nonCanonicalHostMessage — main has no language.
+    test: /Refusing to use a profile's account for "(.+?)": git could read that server address as another server/,
+    hint: (m) => ({ key: 'gitError.nonCanonicalHost', vars: { host: m[1] } })
+  },
+  {
     // hosting.ts boundNoCredentialMessage — main has no language.
     // The host is lazy up to the fixed sentence that follows, so a value with a
     // space in it (a provider name, when no host could be read) still matches.

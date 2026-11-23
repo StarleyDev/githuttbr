@@ -91,6 +91,8 @@ const MESSAGE_SHAPES: [RegExp, Part[]][] = [
   // ghesNoTokenMessage, bbsNoTokenMessage
   [/(No token for the GitHub Enterprise Server )(.+?)( is saved in this profile\.)/g, ['', 'host', '']],
   [/(No HTTP access token for the Bitbucket Data Center )(.+?)( is saved in this profile\.)/g, ['', 'host', '']],
+  // gitCredentialEnv.ts nonCanonicalHostMessage
+  [/(Refusing to use a profile's account for ")(.+?)(": git could read)/g, ['', 'host', '']],
   // boundNoCredentialMessage
   [
     /(account is linked to the profile ")(.*?)(" this repository is bound to, for )(.+?)(\. Switch to that profile)/g,

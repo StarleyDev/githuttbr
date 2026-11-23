@@ -3358,6 +3358,7 @@ export const pl: Dict = {
   'gitError.gitlabNotSaved': 'Ten adres GitLab nie jest jeszcze zapisany w żadnym profilu (musi używać https). Zapisz go w Ustawienia → Integracje i spróbuj ponownie.',
   'gitError.ghesNoToken': 'W tym profilu nie zapisano tokenu dla GitHub Enterprise Server {host}. Dodaj go w Ustawienia → Integracje → GitHub → GitHub Enterprise Server.',
   'gitError.bbsNoToken': 'W tym profilu nie zapisano tokenu dostępu HTTP dla Bitbucket Data Center {host}. Dodaj go w Ustawienia → Integracje → Bitbucket → Bitbucket Data Center.',
+  'gitError.nonCanonicalHost': 'Nie użyto konta tego profilu dla {host}: git mógłby odczytać ten adres jako inny serwer niż Gitcito, a wtedy odpowiedziałoby logowanie zapisane na komputerze. Wpisz nazwę hosta w zwykłej postaci (bez IDN, skrótów liczbowych i zakodowanych znaków) i spróbuj ponownie.',
   'gitError.heldTokenUnsavedServer': 'Ten token jest już zapisany dla innego konta lub serwera, więc nie zostanie wysłany do serwera, którego żaden profil jeszcze nie zapisał. Użyj tokenu wydanego przez ten serwer.',
   'gitError.bbsNoBrowse': 'Przeglądanie i tworzenie repozytoriów nie jest jeszcze obsługiwane dla Bitbucket Data Center — sklonuj z adresu URL.',
   'gitError.notBbsRepo': 'To nie jest repozytorium Bitbucket Data Center.',

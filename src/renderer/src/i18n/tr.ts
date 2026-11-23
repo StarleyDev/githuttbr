@@ -3301,6 +3301,7 @@ export const tr: Dict = {
   'gitError.gitlabNotSaved': "Bu GitLab adresi henüz hiçbir profilde kayıtlı değil (https olmalı). Ayarlar → Entegrasyonlar'dan kaydedin ve tekrar deneyin.",
   'gitError.ghesNoToken': "Bu profilde {host} GitHub Enterprise Server için kayıtlı bir token yok. Ayarlar → Entegrasyonlar → GitHub → GitHub Enterprise Server'dan bir tane ekleyin.",
   'gitError.bbsNoToken': "Bu profilde {host} Bitbucket Data Center için kayıtlı bir HTTP erişim token'ı yok. Ayarlar → Entegrasyonlar → Bitbucket → Bitbucket Data Center'dan bir tane ekleyin.",
+  'gitError.nonCanonicalHost': 'Bu profilin hesabı {host} için kullanılmadı: git bu sunucu adresini Gitcito\'dan farklı bir sunucu olarak okuyabilir ve bunun yerine makinedeki oturum yanıt verirdi. Ana bilgisayar adını olağan biçimiyle (IDN, sayısal kısaltma veya kodlanmış karakter olmadan) yazıp yeniden deneyin.',
   'gitError.heldTokenUnsavedServer': "Bu token başka bir hesap veya sunucu için zaten kayıtlı, bu yüzden henüz hiçbir profilin kaydetmediği bir sunucuya gönderilmez. Bu sunucunun verdiği token'ı kullanın.",
   'gitError.bbsNoBrowse': 'Bitbucket Data Center için depolara göz atma ve depo oluşturma henüz desteklenmiyor — bunun yerine URL ile klonlayın.',
   'gitError.notBbsRepo': 'Bu bir Bitbucket Data Center deposu değil.',

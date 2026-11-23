@@ -54,6 +54,7 @@ const electronFor = (userData: string): Record<string, unknown> => ({
 
 // The machine login (git's credential helper / gh) is outside the app: answer for it here.
 vi.mock('../src/main/credentials', () => ({
+  knownServers: () => ({ gitlab: [], forgejo: [], githubEnterprise: [], bitbucketServer: [] }),
   apiToken: async (url: string, auth: { token?: string; link?: { login: string } }) => {
     if (auth.token) return { token: auth.token, source: 'token' }
     if (!auth.link) return null
