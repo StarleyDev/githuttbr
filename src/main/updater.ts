@@ -6,6 +6,7 @@ import { githubPublicGet } from './credentials'
 import { APP_REPO } from '../shared/appRepo'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
 import { isShotMode } from './shotMode'
+import { isMissingChannelFile } from './updaterErrors'
 
 const REPO = APP_REPO
 const releaseUrl = (version: string): string =>
@@ -30,6 +31,19 @@ function broadcast(): void {
 function setState(patch: Partial<UpdateState>): void {
   Object.assign(state, patch)
   broadcast()
+}
+
+/** A failed check or download. The feed lacking this OS's channel file (macOS
+ *  not uploaded yet for a published release) is "nothing to install", logged
+ *  and shown as not-available; anything else is a real error. */
+function setFailed(err: unknown, fallback: string): void {
+  if (isMissingChannelFile(err)) {
+    console.warn('[updater] the latest release has no update file for this platform yet:', (err as Error).message)
+    if (state.status === 'downloaded') return
+    setState({ status: 'not-available', error: null })
+    return
+  }
+  setState({ status: 'error', error: (err as Error)?.message ?? (err == null ? fallback : String(err)) })
 }
 
 /** Coerce electron-updater's releaseNotes (string | {note}[] | null) to text. */
@@ -168,7 +182,7 @@ function wireAutoUpdater(): void {
   autoUpdater.on('error', (err) => {
     // A failed background re-check must not bury an update already on disk.
     if (state.status === 'downloaded') return
-    setState({ status: 'error', error: err?.message ?? String(err) })
+    setFailed(err, 'Update check failed.')
   })
 }
 
@@ -187,7 +201,7 @@ export function registerUpdaterHandlers(): void {
       await runCheck(silent === true)
     } catch (err) {
       if (silent === true) return
-      setState({ status: 'error', error: (err as Error)?.message ?? 'Update check failed.' })
+      setFailed(err, 'Update check failed.')
     }
   })
 
@@ -208,7 +222,7 @@ export function registerUpdaterHandlers(): void {
       if (state.status !== 'downloading') await runCheck(true)
       await autoUpdater.downloadUpdate()
     } catch (err) {
-      setState({ status: 'error', error: (err as Error)?.message ?? 'Download failed.' })
+      setFailed(err, 'Download failed.')
     }
   })
 
@@ -226,7 +240,7 @@ export function checkForUpdatesOnLaunch(): void {
   scheduleRechecks()
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((err) => {
-      setState({ status: 'error', error: (err as Error)?.message ?? 'Update check failed.' })
+      setFailed(err, 'Update check failed.')
     })
   }, 4000)
 }

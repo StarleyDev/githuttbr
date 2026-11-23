@@ -258,6 +258,14 @@ and is cancelled without running a step. Linux and Windows users get the
 release regardless. On a Mac, the update is not offered until `latest-mac.yml`
 is attached.
 
+`publish` marks the release `--latest` as soon as Linux and Windows are in, so
+for that window electron-updater on a Mac asks the latest release for
+`latest-mac.yml` and gets a 404. Builds after 4.40.0 treat that as "no update
+yet" (logged, status *not available*). Installs of **4.40.0 and older** do not:
+they show an update **error** on every check until macOS lands. That is
+expected and clears by itself once `latest-mac.yml` is attached — nothing to
+fix on the release.
+
 - **Late** — the macOS job uploads whenever it runs; nothing to do.
 - **Never started** — Release retry re-runs just the macOS job (attempts 2 and
   3). After the third attempt an issue **"vX.Y.Z: macOS build missing"** is
