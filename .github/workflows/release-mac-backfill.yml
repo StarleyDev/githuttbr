@@ -20,8 +20,8 @@ on:
         description: macOS runner
         required: false
         type: choice
-        options: [macos-15, macos-26]
-        default: macos-15
+        options: [macos-15-intel, macos-26-intel, macos-15, macos-26]
+        default: macos-15-intel
 
 permissions:
   contents: read
@@ -81,8 +81,8 @@ jobs:
           # A dry queue tends to be one image's queue: scheduled tries alternate
           # between the two supported Apple-silicon images.
           if [ -n "$INPUT_RUNNER" ]; then runner="$INPUT_RUNNER"
-          elif [ $(( RUN_NUMBER % 2 )) -eq 0 ]; then runner=macos-26
-          else runner=macos-15
+          elif [ $(( RUN_NUMBER % 2 )) -eq 0 ]; then runner=macos-26-intel
+          else runner=macos-15-intel
           fi
           echo "runner=$runner" >> "$GITHUB_OUTPUT"
 

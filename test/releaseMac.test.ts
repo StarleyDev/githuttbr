@@ -252,7 +252,7 @@ describe('release workflows', () => {
     const matrix = (release.jobs.release as { strategy: { matrix: { os: string[] } } }).strategy.matrix.os
     expect([...matrix].sort()).toEqual(['ubuntu-latest', 'windows-latest'])
     expect(release.jobs.mac.uses).toBe('./.github/workflows/release-mac.yml')
-    expect(release.jobs.mac.with?.runner).toBe('macos-15')
+    expect(release.jobs.mac.with?.runner).toBe('macos-15-intel')
   })
 
   it('opens the issue only once the automatic re-runs are used up', () => {
