@@ -237,7 +237,7 @@ describe('provider detection — a Data Center sharing a hostname with a GitLab'
     expect(await cloneCredentialEnv('https://x.github.com/o/r.git', 'github', GITHUB_TOKEN)).toBeNull()
     expect(await cloneCredentialEnv('https://x.bitbucket.org/w/r.git', 'bitbucket', BITBUCKET_TOKEN)).toBeNull()
     expect(await cloneCredentialEnv('https://x.gitlab.com/g/r.git', 'gitlab', undefined)).toBeNull()
-    expect(JSON.stringify(await cloneCredentialEnv('https://github.com/o/r.git', 'github', GITHUB_TOKEN))).toContain(GITHUB_TOKEN)
+    expect(revealCredentialEnv(await cloneCredentialEnv('https://github.com/o/r.git', 'github', GITHUB_TOKEN))).toContain(GITHUB_TOKEN)
   })
 
   it('the Azure PAT goes only to an Azure DevOps remote', async () => {
