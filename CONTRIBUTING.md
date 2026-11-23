@@ -264,6 +264,9 @@ is attached.
   opened, with links to the run and the release; a macOS build that *ran and
   failed* opens it at once, since nothing retries that. The backfill then tries
   every 6 h for 48 h. Whichever upload succeeds closes the issue with a comment.
+  If the release is still a **draft** (Linux or Windows did not complete), the
+  issue says so: nothing is public, and the scheduled backfill skips drafts —
+  publish first, then run the backfill by hand.
 - **Still missing after 48 h** — the issue stays open. Run it by hand:
   Actions → **Release mac backfill** → *Run workflow*, with the tag (and the
   other runner if one keeps failing). It ignores the 48 h window, is safe to

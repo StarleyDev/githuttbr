@@ -6,7 +6,7 @@ import { ROOT } from './helpers'
 // @ts-expect-error — plain .mjs scripts, untyped on purpose
 import { parseUpdateInfo, publishGate, macUploadPlan, macUploadCheck, hasMac, assetNames } from '../scripts/release-assets.mjs'
 // @ts-expect-error — plain .mjs scripts, untyped on purpose
-import { pickTarget, issueTitle, issueBody, BACKFILL_WINDOW_HOURS } from '../scripts/release-mac.mjs'
+import { pickTarget, issueTitle, issueBody, releaseState, BACKFILL_WINDOW_HOURS } from '../scripts/release-mac.mjs'
 
 const V = '4.40.0'
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
@@ -193,6 +193,39 @@ describe('the maintainer issue', () => {
     const b = issueBody({ tag: 'v4.40.0', repo: 'o/r', runUrl: 'u', result: 'failure', deadline: null })
     expect(b).toContain('ended with `failure`')
     expect(b).toContain('every 6 hours for 48 h')
+  })
+
+  it('says Linux and Windows are out only when the release is published', () => {
+    const published = issueBody({ tag: 'v4.40.0', repo: 'o/r', runUrl: 'u', result: 'cancelled', draft: false, deadline: 'D' })
+    expect(published).toContain('Linux and Windows are published')
+    expect(published).toContain('retries every 6 hours until **D**')
+    expect(published).not.toContain('draft')
+  })
+
+  it('on a draft, says nothing is public and that the backfill skips drafts', () => {
+    const draft = issueBody({ tag: 'v4.40.0', repo: 'o/r', runUrl: 'u', result: 'cancelled', draft: true })
+    expect(draft).toContain('still a **draft**: nothing is public yet')
+    expect(draft).toContain('skips drafts')
+    expect(draft).toContain('run it by hand')
+    expect(draft).not.toContain('Linux and Windows are published')
+    expect(draft).not.toContain('retries every 6 hours until')
+  })
+
+  it('claims neither when the release state could not be read', () => {
+    const unknown = issueBody({ tag: 'v4.40.0', repo: 'o/r', runUrl: 'u', result: 'cancelled' })
+    expect(unknown).not.toContain('Linux and Windows are published')
+    expect(unknown).not.toContain('still a **draft**')
+    expect(unknown).toContain('could not be read')
+  })
+
+  it('reads the release state from gh release view', () => {
+    expect(releaseState({ isDraft: true, publishedAt: null })).toEqual({ draft: true, deadline: null })
+    expect(releaseState({ isDraft: false, publishedAt: '2026-11-23T10:00:00Z' })).toEqual({
+      draft: false,
+      deadline: '2026-11-25 10:00 UTC'
+    })
+    expect(releaseState(null)).toEqual({ draft: null, deadline: null })
+    expect(releaseState({})).toEqual({ draft: null, deadline: null })
   })
 })
 

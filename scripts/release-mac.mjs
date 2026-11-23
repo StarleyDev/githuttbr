@@ -61,25 +61,42 @@ export function issueTitle(tag) {
 }
 
 /**
- * @param {{ tag: string; repo: string; server?: string; runUrl: string; result: string; runner?: string; deadline?: string | null }} o
+ * The issue body. `draft` is whether the release is still a draft when the
+ * issue is written (null when that could not be read): a draft means nothing
+ * is public yet and the scheduled backfill, which skips drafts, will not help.
+ * @param {{ tag: string; repo: string; server?: string; runUrl: string; result: string; runner?: string; deadline?: string | null; draft?: boolean | null }} o
  */
-export function issueBody({ tag, repo, server = 'https://github.com', runUrl, result, runner, deadline }) {
+export function issueBody({ tag, repo, server = 'https://github.com', runUrl, result, runner, deadline, draft = null }) {
   const base = `${server}/${repo}`
   const why =
     result === 'cancelled' || result === 'skipped'
       ? 'the macOS job never got a runner (GitHub cancels a job its macOS queue does not pick up)'
       : `the macOS job ended with \`${result}\``
-  const next = deadline
+  const backfill = deadline
     ? `The **Release mac backfill** workflow retries every 6 hours until **${deadline}** (48 h after publishing) and closes this issue when the upload lands.`
     : 'The **Release mac backfill** workflow retries every 6 hours for 48 h after the release is published, and closes this issue when the upload lands.'
+  const meaning =
+    draft === true
+      ? '**What this means.** The release is still a **draft**: nothing is public yet, Linux and Windows included. ' +
+        'Once it is published, macOS users are not offered the update until `latest-mac.yml` is attached.'
+      : draft === false
+        ? '**What this means.** Linux and Windows are published. macOS users are not offered the update until ' +
+          '`latest-mac.yml` is attached, and the download page has no `.dmg` for this version.'
+        : '**What this means.** macOS users are not offered this version until `latest-mac.yml` is attached ' +
+          '(whether the release is published could not be read when this was written).'
+  const next =
+    draft === true
+      ? 'Nothing retries a draft on its own: the scheduled **Release mac backfill** skips drafts. Once the release ' +
+        'is published it retries every 6 hours for 48 h; to have macOS sooner, run it by hand as below after ' +
+        'publishing (given the tag explicitly, it builds for a draft too).'
+      : backfill
   return [
     `The release [${tag}](${base}/releases/tag/${tag}) has no macOS build: ${why}.`,
     '',
     `- Last attempt: ${runUrl}${runner ? ` (\`${runner}\`)` : ''}`,
     `- Release runs for this tag: ${base}/actions/workflows/release.yml?query=branch%3A${encodeURIComponent(tag)}`,
     '',
-    '**What this means.** Linux and Windows are published. macOS users are not offered the update until ' +
-      '`latest-mac.yml` is attached, and the download page has no `.dmg` for this version.',
+    meaning,
     '',
     `**What happens next.** ${next}`,
     '',
@@ -103,13 +120,26 @@ function findIssue(repo, title) {
   return hit ? String(hit.number) : null
 }
 
-/** @param {string} tag */
-function deadlineFor(repo, tag) {
+/**
+ * Read now, when the issue is written: the release may have been published
+ * since the run started, or still be a draft.
+ * @param {{ isDraft?: boolean; publishedAt?: string | null } | null} release
+ * @returns {{ draft: boolean | null; deadline: string | null }}
+ */
+export function releaseState(release) {
+  if (!release || typeof release.isDraft !== 'boolean') return { draft: null, deadline: null }
+  if (release.isDraft) return { draft: true, deadline: null }
+  const t = release.publishedAt ? Date.parse(release.publishedAt) : NaN
+  const deadline = Number.isNaN(t)
+    ? null
+    : new Date(t + BACKFILL_WINDOW_HOURS * 3600_000).toISOString().replace(/:\d\d\.\d+Z$/, ' UTC').replace('T', ' ')
+  return { draft: false, deadline }
+}
+
+/** @param {string} repo @param {string} tag */
+function readRelease(repo, tag) {
   try {
-    const at = gh(['release', 'view', tag, '-R', repo, '--json', 'publishedAt', '-q', '.publishedAt'])
-    const t = Date.parse(at)
-    if (Number.isNaN(t)) return null
-    return new Date(t + BACKFILL_WINDOW_HOURS * 3600_000).toISOString().replace(/:\d\d\.\d+Z$/, ' UTC').replace('T', ' ')
+    return JSON.parse(gh(['release', 'view', tag, '-R', repo, '--json', 'isDraft,publishedAt']))
   } catch {
     return null
   }
@@ -148,7 +178,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         runUrl,
         result: process.env.MAC_RESULT || 'failure',
         runner: process.env.MAC_RUNNER || undefined,
-        deadline: deadlineFor(repo, tag)
+        ...releaseState(readRelease(repo, tag))
       })
       if (issue) gh(['issue', 'edit', issue, '-R', repo, '--body', body])
       else gh(['issue', 'create', '-R', repo, '--title', title, '--body', body])
