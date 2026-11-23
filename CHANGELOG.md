@@ -1,5 +1,24 @@
 
 
+## [4.40.1](https://github.com/StarleyDev/githuttbr/compare/v4.40.0...v4.40.1) (2026-11-23)
+
+
+### Features
+
+* **terminal:** pick the shell on macOS and Linux in Settings → Layout (system default, the shells in /etc/shells, or a custom path) ([54283b6](https://github.com/StarleyDev/githuttbr/commit/54283b6c488aa6129fcf9b56a4ad316372e70c31), [287d678](https://github.com/StarleyDev/githuttbr/commit/287d6785a122af0363325add9390779a353ab4a7))
+
+
+### Bug Fixes
+
+* **terminal:** start `$SHELL`, falling back to the account's login shell, and tell programs inside the terminal which shell runs ([755773d](https://github.com/StarleyDev/githuttbr/commit/755773d27bfe379f7eebf5955652218e5146dfec), [5097177](https://github.com/StarleyDev/githuttbr/commit/50971776b9a75b223f17aeeb8615f983a3d8a1e0))
+* **terminal:** keep a fish user's PATH in launch tasks on Debian/Ubuntu ([5097177](https://github.com/StarleyDev/githuttbr/commit/50971776b9a75b223f17aeeb8615f983a3d8a1e0))
+
+
+### Releases
+
+* build macOS on macos-15, and let a manual backfill run while a release is still queued ([c53911e](https://github.com/StarleyDev/githuttbr/commit/c53911e39f094cdd54a8ea86cb0d47dacf90f4e9))
+* move every GitHub action to its Node 24 release ([980e1ac](https://github.com/StarleyDev/githuttbr/commit/980e1ac570692cdd15044f43ec8ae00cd752dbe2))
+
 ## [4.40.0](https://github.com/StarleyDev/githuttbr/compare/v4.39.1...v4.40.0) (2026-11-23)
 
 
