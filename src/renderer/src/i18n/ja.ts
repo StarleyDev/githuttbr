@@ -1887,7 +1887,7 @@ export const ja: Dict = {
   'settings.terminalShellHint': '新しい統合ターミナルセッションのシェル（既存のセッションは現在のシェルを維持します）。',
     'settings.terminalShellCustom': 'カスタム…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': '統合ターミナルの新しいセッションで使うシェル（ログインシェルとして起動）。システム既定はアカウントのログインシェルで、新しいターミナルごとに読み直します。chsh の後は、ログアウトしなくても次のターミナルから反映されます。',
+    'settings.terminalShellPosixHint': '統合ターミナルの新しいセッションで使うシェル（ログインシェルとして起動）。システム既定は $SHELL で、SHELL が未設定ならアカウントのログインシェルを使います。chsh の後は、ここでシェルを選ぶか、ログアウトして再ログインしてください。',
     'settings.terminalShellSystem': 'システム既定（{shell}）',
     'settings.terminalShellSystemPlain': 'システム既定',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

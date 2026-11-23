@@ -1888,7 +1888,7 @@ export const it: Dict = {
   'settings.terminalShellHint': 'Shell per le nuove sessioni del terminale integrato (le sessioni esistenti mantengono la propria).',
     'settings.terminalShellCustom': 'Personalizzata…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Shell per le nuove sessioni del terminale integrato, avviata come shell di login. Il predefinito di sistema è la shell di login del tuo account, riletta a ogni nuovo terminale: dopo chsh, il terminale successivo la usa senza dover rifare l\'accesso.',
+    'settings.terminalShellPosixHint': 'Shell per le nuove sessioni del terminale integrato, avviata come shell di login. Il predefinito di sistema è $SHELL, oppure la shell di login del tuo account se SHELL non è impostata. Dopo chsh, scegli la shell qui oppure esci e rientra nella sessione.',
     'settings.terminalShellSystem': 'Predefinita di sistema ({shell})',
     'settings.terminalShellSystemPlain': 'Predefinita di sistema',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

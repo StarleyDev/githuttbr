@@ -1909,7 +1909,7 @@ export const nl: Dict = {
   'settings.terminalShellHint': 'Shell voor nieuwe geïntegreerde terminalsessies (bestaande sessies behouden de huidige).',
     'settings.terminalShellCustom': 'Aangepast…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Shell voor nieuwe sessies van de geïntegreerde terminal, gestart als login-shell. Systeemstandaard is de login-shell van je account, voor elke nieuwe terminal opnieuw gelezen — na chsh gebruikt de volgende terminal hem zonder opnieuw in te loggen.',
+    'settings.terminalShellPosixHint': 'Shell voor nieuwe sessies van de geïntegreerde terminal, gestart als login-shell. Systeemstandaard is $SHELL, of de login-shell van je account als SHELL niet is ingesteld. Kies na chsh de shell hier, of log uit en weer in.',
     'settings.terminalShellSystem': 'Systeemstandaard ({shell})',
     'settings.terminalShellSystemPlain': 'Systeemstandaard',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

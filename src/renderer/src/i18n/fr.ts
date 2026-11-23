@@ -1887,7 +1887,7 @@ export const fr: Dict = {
   'settings.terminalShellHint': 'Shell pour les nouvelles sessions du terminal intégré (les sessions existantes gardent le leur).',
     'settings.terminalShellCustom': 'Personnalisé…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Shell des nouvelles sessions du terminal intégré, lancé comme shell de connexion. Le défaut système est le shell de connexion de votre compte, relu à chaque nouveau terminal : après chsh, le terminal suivant l\'utilise sans vous reconnecter.',
+    'settings.terminalShellPosixHint': 'Shell des nouvelles sessions du terminal intégré, lancé comme shell de connexion. Le défaut système est $SHELL, ou le shell de connexion de votre compte si SHELL n\'est pas défini. Après chsh, choisissez le shell ici ou déconnectez-vous puis reconnectez-vous.',
     'settings.terminalShellSystem': 'Défaut du système ({shell})',
     'settings.terminalShellSystemPlain': 'Défaut du système',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

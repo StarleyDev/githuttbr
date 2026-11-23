@@ -3523,7 +3523,7 @@ export interface AppSettings {
    *  ('powershell' | 'pwsh' | 'cmd' | 'gitbash' | 'wsl' | 'system') or a custom
    *  executable path; 'system' = COMSPEC (cmd.exe). macOS/Linux: '' / 'system'
    *  (and any Windows preset, since the stored default is 'powershell') = the
-   *  account's login shell, or an absolute path. Existing sessions keep the
+   *  system shell ($SHELL, else the account's), or an absolute path. Existing sessions keep the
    *  shell they were created with. */
   terminalShell: string
   /** Oh My Posh theme for new terminal sessions — a bare theme name (resolved

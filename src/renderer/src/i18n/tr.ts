@@ -1887,7 +1887,7 @@ export const tr: Dict = {
   'settings.terminalShellHint': 'Yeni tümleşik terminal oturumları için kabuk (mevcut oturumlar kendi kabuğunu korur).',
     'settings.terminalShellCustom': 'Özel…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Tümleşik terminalin yeni oturumları için kabuk, oturum açma kabuğu olarak başlatılır. Sistem varsayılanı hesabınızın oturum açma kabuğudur ve her yeni terminalde yeniden okunur — chsh sonrasında bir sonraki terminal, oturumu kapatmadan onu kullanır.',
+    'settings.terminalShellPosixHint': 'Tümleşik terminalin yeni oturumları için kabuk, oturum açma kabuğu olarak başlatılır. Sistem varsayılanı $SHELL\'dir; SHELL tanımlı değilse hesabınızın oturum açma kabuğu kullanılır. chsh sonrasında kabuğu buradan seçin ya da oturumu kapatıp yeniden açın.',
     'settings.terminalShellSystem': 'Sistem varsayılanı ({shell})',
     'settings.terminalShellSystemPlain': 'Sistem varsayılanı',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

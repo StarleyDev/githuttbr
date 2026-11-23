@@ -5,11 +5,11 @@ import { basename, dirname, isAbsolute, join } from 'path'
 /**
  * Which shell the terminal, launch tasks and the PATH probe run on macOS/Linux.
  *
- * `process.env.SHELL` alone is wrong for a GUI app: launched from the Dock or a
- * desktop menu it holds whatever the session started with, so a `chsh` to fish
- * only shows up after logging out — and it can be missing entirely. The
- * account database is the source of truth (`getpwuid`, which on macOS reads
- * Directory Services and so sees `chsh` at once); SHELL is the fallback.
+ * A valid `$SHELL` wins: it is the shell the user's session actually runs, and
+ * people do keep an account shell they never use (fish in passwd, zsh in
+ * SHELL). When SHELL is missing or unusable — a GUI app can start without it —
+ * the account database (`getpwuid`, Directory Services on macOS) is next. A
+ * `chsh` therefore shows after a relogin, or at once through the Settings picker.
  */
 
 /** Everything the decision reads from the machine — injected so tests can fake it. */
@@ -83,10 +83,10 @@ function validate(file: string | null | undefined, probe: ShellProbe, source: st
   return f
 }
 
-/** The resolution order, pure: account shell → SHELL → the OS default → /bin/sh. */
+/** The resolution order, pure: SHELL → account shell → the OS default → /bin/sh. */
 export function pickSystemShell(probe: ShellProbe): string {
   if (probe.platform === 'win32') return probe.envShell || 'powershell.exe'
-  const found = validate(probe.accountShell(), probe, 'account') ?? validate(probe.envShell, probe, 'SHELL')
+  const found = validate(probe.envShell, probe, 'SHELL') ?? validate(probe.accountShell(), probe, 'account')
   if (found) return found
   const fallback = probe.platform === 'darwin' ? '/bin/zsh' : '/bin/bash'
   return probe.isExecutable(fallback) ? fallback : '/bin/sh'
@@ -120,7 +120,7 @@ export function machineProbe(): ShellProbe {
       try {
         return userInfo().shell
       } catch {
-        // No passwd entry (some containers): fall through to SHELL.
+        // No passwd entry (some containers): fall through to the OS default.
         return null
       }
     },
@@ -139,7 +139,8 @@ let cached: string | null = null
 
 /**
  * The user's shell. Cached, but `refresh` re-reads it — a new terminal asks
- * for that (a getpwuid and a stat), so a `chsh` shows in the next terminal.
+ * for that (a stat or two), so a shell installed or removed meanwhile, or an
+ * account shell changed while SHELL is unusable, shows in the next terminal.
  */
 export function systemShell(refresh = false): string {
   if (refresh || cached === null) cached = pickSystemShell(machineProbe())

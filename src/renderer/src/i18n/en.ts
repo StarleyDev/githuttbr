@@ -1905,7 +1905,7 @@ export const en = {
   'settings.terminalShellHint': 'Shell for new integrated-terminal sessions (existing sessions keep theirs).',
     'settings.terminalShellCustom': 'Custom…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Shell for new integrated-terminal sessions, started as a login shell. System default is your account\'s login shell, read fresh for every new terminal — after chsh, the next terminal uses it without logging out.',
+    'settings.terminalShellPosixHint': 'Shell for new integrated-terminal sessions, started as a login shell. System default is $SHELL, or your account\'s login shell when SHELL is not set. After chsh, pick the shell here or log out and back in.',
     'settings.terminalShellSystem': 'System default ({shell})',
     'settings.terminalShellSystemPlain': 'System default',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

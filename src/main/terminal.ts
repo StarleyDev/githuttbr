@@ -24,14 +24,14 @@ const sessions = new Map<number, TermSession>()
 
 /**
  * Maps the `terminalShell` setting to an executable + args. Windows: a preset
- * id, 'system' (COMSPEC) or a custom exe path. macOS/Linux: the account's login
- * shell (see loginShell.ts) or an absolute path, started as a *login* shell —
+ * id, 'system' (COMSPEC) or a custom exe path. macOS/Linux: the system shell
+ * ($SHELL, else the account's; see loginShell.ts) or an absolute path, started as a *login* shell —
  * without `-l` zsh/bash skip ~/.zprofile and ~/.bash_profile, which is where
  * version managers and `brew shellenv` put themselves on PATH, and a tool that
  * works in Terminal.app fails here with `command not found`.
  */
 function resolveShell(sel?: string): ResolvedShell {
-  // Re-read per terminal: a `chsh` reaches the next terminal without a relaunch.
+  // Re-read per terminal (cheap): what is installed can change while the app runs.
   const system = systemShell(true)
   if (process.platform !== 'win32') return resolvePosixShell(sel, machineProbe(), system)
   switch (sel) {

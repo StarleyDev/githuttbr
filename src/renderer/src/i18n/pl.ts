@@ -1908,7 +1908,7 @@ export const pl: Dict = {
   'settings.terminalShellHint': 'Powłoka dla nowych sesji zintegrowanego terminala (istniejące sesje zachowują swoją).',
     'settings.terminalShellCustom': 'Niestandardowa…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Powłoka dla nowych sesji zintegrowanego terminala, uruchamiana jako powłoka logowania. Domyślna systemowa to powłoka logowania Twojego konta, odczytywana na nowo dla każdego terminala — po chsh następny terminal użyje jej bez ponownego logowania.',
+    'settings.terminalShellPosixHint': 'Powłoka dla nowych sesji zintegrowanego terminala, uruchamiana jako powłoka logowania. Domyślna systemowa to $SHELL lub powłoka logowania Twojego konta, gdy SHELL nie jest ustawiona. Po chsh wybierz powłokę tutaj albo wyloguj się i zaloguj ponownie.',
     'settings.terminalShellSystem': 'Domyślna systemowa ({shell})',
     'settings.terminalShellSystemPlain': 'Domyślna systemowa',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

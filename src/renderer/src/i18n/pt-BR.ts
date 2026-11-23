@@ -1909,7 +1909,7 @@ export const ptBR: Dict = {
   'settings.terminalShellHint': 'Shell para novas sessões do terminal integrado (sessões existentes mantêm a sua).',
     'settings.terminalShellCustom': 'Personalizado…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Shell das novas sessões do terminal integrado, iniciado como shell de login. O padrão do sistema é o shell de login da sua conta, lido de novo a cada terminal — depois de um chsh, o próximo terminal já o usa sem precisar sair da sessão.',
+    'settings.terminalShellPosixHint': 'Shell das novas sessões do terminal integrado, iniciado como shell de login. O padrão do sistema é $SHELL, ou o shell de login da sua conta quando SHELL não está definido. Depois de um chsh, escolha o shell aqui ou saia e entre de novo na sessão.',
     'settings.terminalShellSystem': 'Padrão do sistema ({shell})',
     'settings.terminalShellSystemPlain': 'Padrão do sistema',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

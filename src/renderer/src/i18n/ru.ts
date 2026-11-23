@@ -1908,7 +1908,7 @@ export const ru: Dict = {
   'settings.terminalShellHint': 'Оболочка для новых сеансов встроенного терминала (существующие сеансы сохраняют свою).',
     'settings.terminalShellCustom': 'Другая…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Оболочка для новых сеансов встроенного терминала, запускается как оболочка входа. По умолчанию — оболочка входа вашей учётной записи, она перечитывается для каждого нового терминала: после chsh следующий терминал использует её без повторного входа в систему.',
+    'settings.terminalShellPosixHint': 'Оболочка для новых сеансов встроенного терминала, запускается как оболочка входа. По умолчанию — $SHELL, а если SHELL не задана — оболочка входа вашей учётной записи. После chsh выберите оболочку здесь или выйдите из системы и войдите снова.',
     'settings.terminalShellSystem': 'Системная по умолчанию ({shell})',
     'settings.terminalShellSystemPlain': 'Системная по умолчанию',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

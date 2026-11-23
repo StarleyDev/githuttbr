@@ -1908,7 +1908,7 @@ export const zhCN: Dict = {
   'settings.terminalShellHint': '新建集成终端会话使用的 Shell（现有会话保留原 Shell）。',
     'settings.terminalShellCustom': '自定义…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': '新建集成终端会话使用的 Shell，以登录 Shell 方式启动。系统默认是你账户的登录 Shell，每个新终端都会重新读取——执行 chsh 后，无需重新登录，下一个终端就会使用它。',
+    'settings.terminalShellPosixHint': '新建集成终端会话使用的 Shell，以登录 Shell 方式启动。系统默认是 $SHELL；未设置 SHELL 时使用你账户的登录 Shell。执行 chsh 后，请在此处选择 Shell，或注销后重新登录。',
     'settings.terminalShellSystem': '系统默认（{shell}）',
     'settings.terminalShellSystemPlain': '系统默认',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

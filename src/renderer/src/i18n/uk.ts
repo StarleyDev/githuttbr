@@ -1908,7 +1908,7 @@ export const uk: Dict = {
   'settings.terminalShellHint': 'Оболонка для нових сеансів вбудованого термінала (наявні сеанси зберігають свою).',
     'settings.terminalShellCustom': 'Інша…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'Оболонка для нових сеансів вбудованого термінала, запускається як оболонка входу. Типова системна — оболонка входу вашого облікового запису, її перечитують для кожного нового термінала: після chsh наступний термінал використає її без повторного входу.',
+    'settings.terminalShellPosixHint': 'Оболонка для нових сеансів вбудованого термінала, запускається як оболонка входу. Типова системна — $SHELL, а якщо SHELL не задано — оболонка входу вашого облікового запису. Після chsh виберіть оболонку тут або вийдіть із системи й увійдіть знову.',
     'settings.terminalShellSystem': 'Типова системна ({shell})',
     'settings.terminalShellSystemPlain': 'Типова системна',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

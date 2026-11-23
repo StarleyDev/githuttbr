@@ -1908,7 +1908,7 @@ export const ar: Dict = {
   'settings.terminalShellHint': 'الصدفة لجلسات الطرفية المدمجة الجديدة (الجلسات الحالية تحتفظ بصدفتها).',
     'settings.terminalShellCustom': 'مخصص…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'الصدفة المستخدمة لجلسات الطرفية المدمجة الجديدة، وتُشغَّل كصدفة تسجيل دخول. الافتراضي للنظام هو صدفة تسجيل الدخول لحسابك، وتُقرأ من جديد لكل طرفية جديدة — بعد chsh تستخدمها الطرفية التالية دون تسجيل الخروج.',
+    'settings.terminalShellPosixHint': 'الصدفة المستخدمة لجلسات الطرفية المدمجة الجديدة، وتُشغَّل كصدفة تسجيل دخول. الافتراضي للنظام هو $SHELL، أو صدفة تسجيل الدخول لحسابك إذا لم يكن SHELL معيّنًا. بعد chsh اختر الصدفة من هنا أو سجّل الخروج ثم الدخول من جديد.',
     'settings.terminalShellSystem': 'افتراضي النظام ({shell})',
     'settings.terminalShellSystemPlain': 'افتراضي النظام',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

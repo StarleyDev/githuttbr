@@ -95,26 +95,30 @@ the list follows the folder the terminal opened in.
 
 ## Which shell starts
 
-**macOS and Linux** start your account's **login shell** — the one `chsh`
-sets — not whatever `$SHELL` happened to say when the app was launched. An app
-started from the Dock or a desktop menu keeps the `$SHELL` of the moment you
-logged in, so after `chsh -s /opt/homebrew/bin/fish` it would still open zsh
-until you logged out. Gitcito reads the account database instead (on macOS that
-is Directory Services), and reads it again for every new terminal: the next
-terminal you open uses the new shell, no relogin and no relaunch needed.
-
-The order, first usable one wins:
+**macOS and Linux** start the shell your session runs: `$SHELL`, as the app
+inherited it. When `$SHELL` is not set or does not point at a usable shell — a
+GUI app can start without one — the account's **login shell** (the one `chsh`
+sets, read from the account database; on macOS that is Directory Services)
+comes next. The order, first usable one wins:
 
 | Step | Where it comes from |
 |------|---------------------|
-| 1 | Your account's login shell (`chsh`, or Users & Groups on macOS) |
-| 2 | `$SHELL` from the environment the app started in |
+| 1 | `$SHELL` from the environment the app started in |
+| 2 | Your account's login shell (`chsh`, or Users & Groups on macOS) |
 | 3 | `/bin/zsh` on macOS, `/bin/bash` on Linux |
 | 4 | `/bin/sh` |
 
-"Usable" means an absolute path to an executable file. Accounts set to
-`nologin` or `false` are skipped. A shell missing from `/etc/shells` — common
-for a Homebrew shell — is still used; the app only notes it in its log.
+`$SHELL` goes first because it is the shell you actually use: an account can
+name fish while every session runs zsh, and the terminal should match the rest
+of your desktop, not the account record.
+
+**After `chsh`**, an app started from the Dock or a desktop menu still sees the
+`$SHELL` of the moment you logged in. Either pick the new shell in Settings
+(below), which applies to the next terminal at once, or log out and back in.
+
+"Usable" means an absolute path to an executable file. `nologin` or `false`
+are skipped. A shell missing from `/etc/shells` — common for a Homebrew shell —
+is still used; the app only notes it in its log.
 
 To pick something else, Settings → Layout → **Terminal shell** lists *System
 default* (with the shell it detected), every usable shell in `/etc/shells`, and
@@ -148,8 +152,8 @@ asks the same shell the terminal opens by default, so a tool that only
 The limits:
 
 - The `PATH` is read from your **system default** shell, not from a shell picked
-  in Settings, and at startup only: after a `chsh`, relaunch the app for hooks
-  to see the new shell's `PATH`.
+  in Settings, and at startup only: after a `chsh`, hooks see the new shell's
+  `PATH` once you have logged out and back in.
 - Run & debug tasks are written in POSIX shell syntax (`a && b`, `( … )`), so
   they run in your shell only when it is sh-compatible (bash, zsh, ksh, dash…).
   For fish, nu or tcsh users they run in zsh (macOS) or bash (Linux), with the

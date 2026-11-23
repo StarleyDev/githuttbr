@@ -16,8 +16,8 @@ import {
 } from '../src/main/loginShell'
 
 // Which shell the terminal, launch tasks and the PATH probe start on macOS/Linux.
-// The account's login shell (getpwuid) wins over SHELL, which a Dock-launched app
-// keeps from login time — a `chsh` to fish would otherwise need a relogin.
+// A valid SHELL wins — it is the shell the session runs, even when the account
+// names another — then the account's login shell (getpwuid), then the OS default.
 
 function probe(over: Partial<ShellProbe> & { exe?: string[] } = {}): ShellProbe & { warnings: string[] } {
   const exe = new Set(over.exe ?? ['/bin/zsh', '/bin/bash', '/bin/sh', '/opt/homebrew/bin/fish', '/usr/bin/fish'])
@@ -35,15 +35,28 @@ function probe(over: Partial<ShellProbe> & { exe?: string[] } = {}): ShellProbe 
 }
 
 describe('pickSystemShell — resolution order', () => {
-  it('prefers the account shell over a stale SHELL (chsh without relogin)', () => {
-    expect(pickSystemShell(probe({ accountShell: () => '/usr/bin/fish', envShell: '/bin/zsh' }))).toBe('/usr/bin/fish')
+  it('a valid SHELL wins over a different account shell (fish in passwd, zsh in use)', () => {
+    expect(pickSystemShell(probe({ accountShell: () => '/usr/bin/fish', envShell: '/bin/zsh' }))).toBe('/bin/zsh')
   })
 
-  it('falls back to SHELL when the account shell is unknown or unusable', () => {
-    expect(pickSystemShell(probe({ envShell: '/bin/bash' }))).toBe('/bin/bash')
-    expect(pickSystemShell(probe({ accountShell: () => '/gone/zsh', envShell: '/bin/bash' }))).toBe('/bin/bash')
-    expect(pickSystemShell(probe({ accountShell: () => 'zsh', envShell: '/bin/bash' }))).toBe('/bin/bash')
-    expect(pickSystemShell(probe({ accountShell: () => '/usr/sbin/nologin', envShell: '/bin/bash' }))).toBe('/bin/bash')
+  it('keeps SHELL after a chsh until relogin — the Settings picker is the way to switch at once', () => {
+    // chsh changed the account to fish; the running session's SHELL still says zsh.
+    const p = probe({ accountShell: () => '/usr/bin/fish', envShell: '/bin/zsh' })
+    expect(pickSystemShell(p)).toBe('/bin/zsh')
+    expect(resolvePosixShell('/usr/bin/fish', p, pickSystemShell(p)).file).toBe('/usr/bin/fish')
+  })
+
+  it('falls back to the account shell when SHELL is missing or unusable', () => {
+    expect(pickSystemShell(probe({ accountShell: () => '/usr/bin/fish' }))).toBe('/usr/bin/fish')
+    expect(pickSystemShell(probe({ accountShell: () => '/usr/bin/fish', envShell: '' }))).toBe('/usr/bin/fish')
+    expect(pickSystemShell(probe({ accountShell: () => '/usr/bin/fish', envShell: '/gone/zsh' }))).toBe('/usr/bin/fish')
+    expect(pickSystemShell(probe({ accountShell: () => '/usr/bin/fish', envShell: 'zsh' }))).toBe('/usr/bin/fish')
+    expect(pickSystemShell(probe({ accountShell: () => '/bin/bash', envShell: '/usr/sbin/nologin' }))).toBe('/bin/bash')
+  })
+
+  it('skips an unusable account shell too', () => {
+    expect(pickSystemShell(probe({ accountShell: () => '/usr/sbin/nologin' }))).toBe('/bin/zsh')
+    expect(pickSystemShell(probe({ platform: 'linux', accountShell: () => '/gone/fish' }))).toBe('/bin/bash')
   })
 
   it('uses the OS default when neither is usable: zsh on macOS, bash on Linux, then sh', () => {
@@ -158,9 +171,11 @@ describe.skipIf(process.platform === 'win32')('on this machine', () => {
     expect(resolvePosixShell(file, machineProbe(), '/bin/sh').missing).toBe(file)
   })
 
-  it('resolves the system shell to an executable', () => {
+  it('resolves the system shell to an executable — SHELL itself when it is one', () => {
     const sh = pickSystemShell(machineProbe())
     expect(sh.startsWith('/')).toBe(true)
     expect(() => execFileSync(sh, ['-c', 'exit 0'])).not.toThrow()
+    const env = process.env['SHELL']
+    if (env && env.startsWith('/') && machineProbe().isExecutable(env)) expect(sh).toBe(env)
   })
 })

@@ -199,7 +199,7 @@ picture, then a generated blob drawn offline, and a title-bar face that reacts t
 conflicts, half-finished rebases, a detached HEAD and piles left to grow — or
 [your own picture](docs/help/avatars.md#your-profiles-picture): your account's, an
 icon, or an image ·
-[integrated terminal](docs/help/terminal.md) in [your login shell](docs/help/terminal.md#which-shell-starts) with splits, and
+[integrated terminal](docs/help/terminal.md) in [your shell or one you pick](docs/help/terminal.md#which-shell-starts) with splits, and
 [suggestions](docs/help/terminal.md#script-suggestions) for `npm run` scripts, `make` targets
 and branch names ·
 [**A real CLI**](docs/help/cli.md) — `githuttbr .` opens a repo, `githuttbr blame

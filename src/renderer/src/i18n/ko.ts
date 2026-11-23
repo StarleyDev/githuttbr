@@ -1908,7 +1908,7 @@ export const ko: Dict = {
   'settings.terminalShellHint': '새 통합 터미널 세션의 셸입니다 (기존 세션은 현재 셸을 유지합니다).',
     'settings.terminalShellCustom': '사용자 지정…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': '통합 터미널의 새 세션에서 사용할 셸로, 로그인 셸로 시작됩니다. 시스템 기본값은 계정의 로그인 셸이며 새 터미널마다 다시 읽습니다. chsh 후에는 다시 로그인하지 않아도 다음 터미널부터 적용됩니다.',
+    'settings.terminalShellPosixHint': '통합 터미널의 새 세션에서 사용할 셸로, 로그인 셸로 시작됩니다. 시스템 기본값은 $SHELL이며, SHELL이 설정되지 않았으면 계정의 로그인 셸을 사용합니다. chsh 후에는 여기서 셸을 선택하거나 로그아웃했다가 다시 로그인하세요.',
     'settings.terminalShellSystem': '시스템 기본값 ({shell})',
     'settings.terminalShellSystemPlain': '시스템 기본값',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',

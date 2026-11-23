@@ -6,7 +6,7 @@ import { useT, interp } from '../i18n'
 // so on macOS/Linux they mean "system default" (main reads them the same way).
 const WINDOWS_PRESETS = ['powershell', 'pwsh', 'cmd', 'gitbash', 'wsl']
 
-/** The macOS/Linux terminal shell picker: the account's login shell, every usable
+/** The macOS/Linux terminal shell picker: the system shell ($SHELL, else the account's), every usable
  *  /etc/shells entry, or a custom path. Windows has its own preset list. */
 export function PosixShellPicker(): React.JSX.Element {
   const value = useSettingsStore((s) => s.settings.terminalShell)

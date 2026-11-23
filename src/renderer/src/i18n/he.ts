@@ -1908,7 +1908,7 @@ export const he: Dict = {
   'settings.terminalShellHint': 'המעטפת לסשנים חדשים של הטרמינל המשולב (סשנים קיימים שומרים על שלהם).',
     'settings.terminalShellCustom': 'מותאם אישית…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
-    'settings.terminalShellPosixHint': 'המעטפת לסשנים חדשים של הטרמינל המשולב, מופעלת כמעטפת התחברות. ברירת המחדל של המערכת היא מעטפת ההתחברות של החשבון שלך, ונקראת מחדש לכל טרמינל חדש — אחרי chsh הטרמינל הבא משתמש בה בלי להתנתק.',
+    'settings.terminalShellPosixHint': 'המעטפת לסשנים חדשים של הטרמינל המשולב, מופעלת כמעטפת התחברות. ברירת המחדל של המערכת היא $SHELL, או מעטפת ההתחברות של החשבון שלך כש־SHELL אינו מוגדר. אחרי chsh בחרו את המעטפת כאן, או התנתקו והתחברו מחדש.',
     'settings.terminalShellSystem': 'ברירת המחדל של המערכת ({shell})',
     'settings.terminalShellSystemPlain': 'ברירת המחדל של המערכת',
     'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',
