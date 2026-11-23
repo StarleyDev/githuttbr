@@ -182,6 +182,20 @@ jobs:
           node scripts/check-native.mjs
           npx electron-builder --mac --publish never
 
+      # Signed or not, every app must carry an intact seal: a file written into
+      # the bundle after it was signed makes macOS refuse it as "damaged"
+      # (4.38.0–4.40.1 shipped exactly that). Fail before anything is uploaded.
+      - name: Verify the app signatures
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apps=(dist/mac*/*.app)
+          [ ${#apps[@]} -gt 0 ] || { echo "::error::no .app under dist/mac*"; exit 1; }
+          for app in "${apps[@]}"; do
+            echo "codesign --verify $app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+          done
+
       # The release scripts come from the commit this workflow runs from, not
       # from the tag: a backfill of a tag older than these scripts would find
       # none in its checkout. Checked out after the build, beside it, so the

@@ -281,8 +281,9 @@ fix on the release.
   repeat, and closes the issue when it uploads. Or, on a Mac, from the tag:
 
   ```bash
-  git checkout vX.Y.Z && npm ci && npm run build
-  npx electron-builder --mac --publish never
+  git checkout vX.Y.Z && npm ci --allow-remote=all && npm run build
+  CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac --publish never
+  for app in dist/mac*/*.app; do codesign --verify --deep --strict "$app"; done
   node scripts/release-assets.mjs mac-upload dist X.Y.Z > files.txt   # checks latest-mac.yml
   gh release upload vX.Y.Z $(grep -v latest-mac.yml files.txt) --clobber
   gh release upload vX.Y.Z dist/latest-mac.yml --clobber
