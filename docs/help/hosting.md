@@ -256,6 +256,12 @@ takes that for a revoked sign-in and never drops the credential git uses.
 
 ## Self-managed GitLab
 
+> **Beta.** self-managed GitLab support is new in 4.38 and has been tested against simulated
+> servers, not yet against a real self-managed GitLab. If anything here does not work on
+> yours — sign-in, cloning, pull requests, the reviewer lists — please
+> [open an issue](https://github.com/StarleyDev/githuttbr/issues) with the server
+> version and what you saw. Leave tokens and private addresses out of it.
+
 A company GitLab lives at its own address, and many people work with more than
 one: gitlab.com for open source and the company server for work, or two
 company servers after a merger. A profile holds all of them at once —
@@ -316,6 +322,12 @@ Limits:
   host.
 
 ## GitHub Enterprise Server
+
+> **Beta.** GitHub Enterprise Server support is new in 4.38 and has been tested against simulated
+> servers, not yet against a real GitHub Enterprise Server. If anything here does not work on
+> yours — sign-in, cloning, pull requests, the reviewer lists — please
+> [open an issue](https://github.com/StarleyDev/githuttbr/issues) with the server
+> version and what you saw. Leave tokens and private addresses out of it.
 
 A company GitHub that runs on its own servers — GitHub Enterprise Server, at an
 address like `github.acme.corp` — speaks the same API as github.com, just at a
@@ -383,6 +395,12 @@ Limits:
   Enterprise Cloud on github.com itself is just github.com.
 
 ## Bitbucket Data Center
+
+> **Beta.** Bitbucket Data Center support is new in 4.38 and has been tested against simulated
+> servers, not yet against a real Bitbucket Data Center. If anything here does not work on
+> yours — sign-in, cloning, pull requests, the reviewer lists — please
+> [open an issue](https://github.com/StarleyDev/githuttbr/issues) with the server
+> version and what you saw. Leave tokens and private addresses out of it.
 
 Bitbucket Data Center — and Bitbucket Server, its predecessor, which shares
 its API — is the Bitbucket a company runs itself, at an address like
