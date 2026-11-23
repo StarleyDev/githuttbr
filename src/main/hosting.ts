@@ -419,7 +419,7 @@ function githubBaseFromOrg(org: string | undefined): string {
 
 /**
  * The base of a server a token is being *checked* against before any profile
- * names it — a GHES or GitLab row added in the onboarding wizard, which keeps
+ * names it — a GHES, GitLab or Bitbucket Data Center row added in the onboarding wizard, which keeps
  * the profile to itself until it finishes. Null unless all of these hold:
  * - the server is not already known (a known one resolves the normal way);
  * - the call carries a token of its own — the one the user just typed;
@@ -439,6 +439,10 @@ export function unsavedServerBase(provider: RepoHost, org: string | undefined, t
   if (provider === 'gitlab') {
     const base = normalizeGitlabServerUrl(org)
     return base && !knownGitlabInstances().includes(base) ? base : null
+  }
+  if (provider === 'bitbucket') {
+    const base = normalizeBitbucketServerUrl(org)
+    return base && !knownBitbucketServerInstances().includes(base) ? base : null
   }
   return null
 }
@@ -2572,6 +2576,7 @@ async function fetchConnectedAccount(
   const unsaved = unsavedServerBase(provider, org, token)
   if (unsaved) {
     // Exactly the token this call carries — never one looked up — see unsavedServerBase.
+    if (provider === 'bitbucket') return { source: 'token', ...(await describeBbsAccount(unsaved, token.trim())) }
     return describeAccount(provider, { token: token.trim(), source: 'token' }, unsaved)
   }
   // Only an explicit "sign in" may open the helper's login window. Merely opening

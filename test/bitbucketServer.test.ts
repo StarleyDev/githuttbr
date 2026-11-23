@@ -970,6 +970,29 @@ describe('call sites, through the real IPC handlers', () => {
     })
   })
 
+  it('checks a typed token against a Data Center no profile names yet — that token only, nothing saved', async () => {
+    const NEW = 'https://bbs.unsaved.example/bitbucket'
+    // The onboarding wizard's row: the server is not saved, the token is the one just typed.
+    await call('hosting:whoAmI', 'bitbucket', 'typed-token', NEW, false).catch(() => null)
+    expect(calls.length).toBeGreaterThan(0)
+    for (const c of calls) {
+      expect(c.url.startsWith(`${NEW}/`)).toBe(true)
+      expect(c.auth).toBe('Bearer typed-token')
+    }
+    // No token in the call: simply not connected, and nothing is sent — never a saved one.
+    calls.length = 0
+    expect(await call('hosting:whoAmI', 'bitbucket', '', NEW, false)).toBeNull()
+    expect(calls).toHaveLength(0)
+    // An address Settings would refuse is refused here too.
+    for (const bad of ['http://bbs.unsaved.example', 'https://jdoe:pw@bbs.unsaved.example']) {
+      await expect(call('hosting:whoAmI', 'bitbucket', 'typed-token', bad, false)).rejects.toThrow()
+    }
+    expect(calls).toHaveLength(0)
+    // Saved tokens never leave for the new host.
+    const saved = [BBS_TOKEN, BBS_B_TOKEN, CLOUD_TOKEN, 'bbs-token-c', 'bbs-token-d']
+    expect(calls.some((c) => saved.some((t) => c.auth?.includes(t)))).toBe(false)
+  })
+
   it('a user search that is not allowed still links a plain user name — once the server confirms the slug', async () => {
     userSearch = false
     const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
