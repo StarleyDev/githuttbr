@@ -1,5 +1,25 @@
 
 
+## [4.40.0](https://github.com/StarleyDev/githuttbr/compare/v4.39.1...v4.40.0) (2026-11-23)
+
+
+### Features
+
+* **terminal:** dock under the graph and open with each repository by default ([570cab3](https://github.com/StarleyDev/githuttbr/commit/570cab3e49abdf11bef555768b62a42016ec1477))
+* **terminal:** move a bottom-docked terminal to the center once on upgrade ([eb251a4](https://github.com/StarleyDev/githuttbr/commit/eb251a496dd08dcc665b6a0f0a1c652d8310441b))
+* widen the create pull request dialog by 20px ([9ff2d21](https://github.com/StarleyDev/githuttbr/commit/9ff2d217a4911ab28e80ba741ac344bb7df609fd))
+
+### Bug Fixes
+
+* **pr:** prefill a new pull request from the remote base, not the local branch ([eb30f86](https://github.com/StarleyDev/githuttbr/commit/eb30f862bc64c3e00d3a5370352952157a9bae3b))
+* **updater:** treat a release without this platform's update file as no update ([97d4137](https://github.com/StarleyDev/githuttbr/commit/97d413776935caf4db25b4304d7fa292044e3667))
+
+
+### Releases
+
+* publish Linux and Windows without waiting for a macOS runner; macOS uploads when it builds, retries on its own for 48 h, and opens an issue while it is missing ([f6d506b](https://github.com/StarleyDev/githuttbr/commit/f6d506bfaf0df51332877700ba7beb5994b260f5), [9ecceef](https://github.com/StarleyDev/githuttbr/commit/9ecceefa51c3b48eeb72762172d27fc8677f10db))
+* retry only the macOS job, never republish after a manual cancel, and never let two macOS builds of one tag overwrite each other ([d9cc191](https://github.com/StarleyDev/githuttbr/commit/d9cc19127b4bd69312685ec02f05f48bfe48e95e), [4921395](https://github.com/StarleyDev/githuttbr/commit/49213953e0912378e0422213ef51f90740d6448b), [5251319](https://github.com/StarleyDev/githuttbr/commit/525131984fc88d51e8ded924c0d18b16e796fc98), [dbaf96d](https://github.com/StarleyDev/githuttbr/commit/dbaf96dbbb3aa1d9d307e2b5b2fde475689e5cb3))
+
 ## [4.39.1](https://github.com/StarleyDev/githuttbr/compare/v4.39.0...v4.39.1) (2026-11-23)
 
 
