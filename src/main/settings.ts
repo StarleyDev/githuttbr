@@ -68,6 +68,26 @@ export async function removeLegacySecretsIndex(): Promise<void> {
 let sessionSecrets: SecretStore = {}
 
 /**
+ * Which renderers hold every session-only token — `servedSecrets`, for
+ * `sessionSecrets`, by webContents id. Every read applies them, so being served
+ * the settings is holding them, and so is having typed them in the saves that
+ * made them. Only for a holder does a token missing from a save mean the user
+ * cleared it; any other renderer would erase what it never had.
+ */
+let sessionHolders = new Set<number>()
+
+/** What `sessionSecrets` becomes after a save from `sender` carrying `secrets`. */
+function sessionAfterSave(secrets: SecretStore, profiles: AppSettings['profiles'], sender: number): SecretStore {
+  const ids = profiles.map((p) => p.id)
+  // Nothing held in memory: there is nothing a save could erase by mistake.
+  const held = Object.keys(sessionSecrets).length === 0 || sessionHolders.has(sender)
+  // A holder's save is the new truth, and only it has seen it; anyone else's is
+  // overlaid, which leaves no renderer holding the result.
+  sessionHolders = held ? new Set([sender]) : new Set()
+  return pruneSecrets(held ? secrets : mergeSecretStores(sessionSecrets, secrets), ids, profiles)
+}
+
+/**
  * Decrypted secrets for this run, or null while they are still on disk.
  *
  * Nothing hydrates them at start-up: reading the encrypted file means calling
@@ -610,7 +630,7 @@ export function hasSessionOnlySecrets(): boolean {
 }
 onSessionOnlyProbe(hasSessionOnlySecrets)
 
-async function writeSettings(incoming: AppSettings): Promise<void> {
+async function writeSettings(incoming: AppSettings, sender: number): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   // An import or an older renderer may still send the one-instance shape.
   const settings = migrateGitlabSettings(incoming)
@@ -632,9 +652,10 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
     // What it can do is say which servers are gone: a token filed for a server
     // the profile no longer lists would otherwise come back with the URL.
     // The session-only tokens too (consent declined): they are applied on every
-    // read, so a removed server's token would otherwise return with its URL.
+    // read, so a removed server's token would otherwise return with its URL —
+    // and one the renderer held and sent back empty was cleared.
     const ids = (settings.profiles ?? []).map((p) => p.id)
-    sessionSecrets = pruneSecrets(sessionSecrets, ids, settings.profiles ?? [])
+    sessionSecrets = sessionAfterSave({}, settings.profiles ?? [], sender)
     if (secretCache && !secretsUnreadable) {
       const pruned = pruneSecrets(secretCache, ids, settings.profiles ?? [])
       if (JSON.stringify(pruned) !== JSON.stringify(secretCache) && (await canEncrypt())) {
@@ -653,10 +674,9 @@ async function writeSettings(incoming: AppSettings): Promise<void> {
   if (!allowed) {
     // Refused (or no keyring): hold the secrets in memory for this session and
     // keep them out of the file, rather than writing them in the clear.
-    if (hasSecrets) {
-      const ids = (settings.profiles ?? []).map((p) => p.id)
-      sessionSecrets = pruneSecrets(mergeSecretStores(sessionSecrets, secrets), ids, settings.profiles ?? [])
-    }
+    // A renderer holding the session tokens is authoritative over them, as one
+    // served the store is over it below: a token it sends back empty is gone.
+    if (hasSecrets) sessionSecrets = sessionAfterSave(secrets, settings.profiles ?? [], sender)
     await writeFile(settingsPath(), stripped, 'utf-8')
     return
   }
@@ -686,22 +706,29 @@ function withForcedOnboarding(settings: AppSettings): AppSettings {
   return forceOnboarding ? { ...settings, onboardingCompleted: false } : settings
 }
 
+/** The renderer an IPC call came from; -1 when the event names none. */
+function senderOf(e: { sender?: { id?: number } } | undefined): number {
+  return e?.sender?.id ?? -1
+}
+
 export function registerSettingsHandlers(): void {
   void removeLegacySecretsIndex()
-  ipcMain.handle('settings:get', async () => {
+  ipcMain.handle('settings:get', async (e) => {
     const settings = withForcedOnboarding(await readSettings())
     servedSecrets = hasSettingsSecrets(settings)
+    sessionHolders.add(senderOf(e))
     return settings
   })
-  ipcMain.handle('settings:set', (_e, settings: AppSettings) => {
+  ipcMain.handle('settings:set', (e, settings: AppSettings) => {
     if (settings.onboardingCompleted) forceOnboarding = false
-    return writeSettings(settings)
+    return writeSettings(settings, senderOf(e))
   })
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
-  ipcMain.handle('settings:unlock', async () => {
+  ipcMain.handle('settings:unlock', async (e) => {
     const settings = withForcedOnboarding(await readSettingsWithSecrets('settings'))
     servedSecrets = hasSettingsSecrets(settings)
+    sessionHolders.add(senderOf(e))
     return settings
   })
 

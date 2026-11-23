@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
+import { migrateAIConfig } from '../src/shared/aiAccounts'
 
 // With the keychain declined, a typed token lives only in memory for the
 // session. A save that removed its server pruned the encrypted store but not
@@ -24,7 +25,10 @@ vi.mock('electron', () => ({
   }
 }))
 
-const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+const callFrom = (sender: number, channel: string, ...args: unknown[]): Promise<unknown> =>
+  Promise.resolve(handlers.get(channel)!({ sender: { id: sender } }, ...args))
+/** The app's window. */
+const call = (channel: string, ...args: unknown[]): Promise<unknown> => callFrom(1, channel, ...args)
 
 const GHES = 'https://ghe.corp.example'
 const GITLAB = 'https://gitlab.corp.example'
@@ -43,6 +47,88 @@ describe('session-only tokens follow the server list (keychain declined)', () =>
   })
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
+  // Every token kind a profile carries, all through the same session path.
+  const FORGEJO = 'https://forgejo.corp.example'
+  const DC = 'https://bbs.corp.example'
+  const everyToken = (v: (name: string) => string): Profile => {
+    const base = profileWith({})
+    const ai = migrateAIConfig(base.ai)
+    return profileWith({
+      githubToken: v('gh'),
+      gitlabToken: v('gl'),
+      bitbucketToken: v('bb'),
+      azureToken: v('az'),
+      forgejoUrl: FORGEJO,
+      forgejoTokenIssuer: FORGEJO,
+      forgejoToken: v('fj'),
+      githubEnterprise: [{ url: GHES, token: v('ghes') }],
+      gitlabServers: [{ url: GITLAB, token: v('glsrv') }],
+      bitbucketServers: [{ url: DC, token: v('dc') }],
+      ai: { ...ai, accounts: ai.accounts.map((a) => ({ ...a, apiKey: v('ai') })) }
+    })
+  }
+  const tokensOf = (p: Profile): string[] => [
+    p.githubToken,
+    p.gitlabToken,
+    p.bitbucketToken,
+    p.azureToken,
+    p.forgejoToken,
+    p.githubEnterprise?.[0]?.token ?? 'missing',
+    p.gitlabServers?.[0]?.token ?? 'missing',
+    p.bitbucketServers?.[0]?.token ?? 'missing',
+    migrateAIConfig(p.ai).accounts[0]?.apiKey ?? 'missing'
+  ]
+  const KINDS = ['gh', 'gl', 'bb', 'az', 'fj', 'ghes', 'glsrv', 'dc', 'ai']
+  const typed = (n: string): string => `${n}-session`
+
+  it('a token the renderer held and sent back empty is cleared — every kind, at once', async () => {
+    await call('settings:get')
+    await call('settings:set', settingsWith(everyToken(typed)))
+    expect(tokensOf(((await call('settings:get')) as AppSettings).profiles[0])).toEqual(KINDS.map(typed))
+    await call('settings:set', settingsWith(everyToken(() => '')))
+    expect(tokensOf(((await call('settings:get')) as AppSettings).profiles[0])).toEqual(KINDS.map(() => ''))
+    const { activeProfileAuth } = await import('../src/main/settings')
+    expect((await activeProfileAuth('github')).token).toBeUndefined()
+    expect((await activeProfileAuth('azure')).token).toBeUndefined()
+  })
+
+  it('clearing one token keeps the others — each kind on its own', async () => {
+    for (const cleared of KINDS) {
+      await call('settings:set', settingsWith(everyToken(typed)))
+      await call('settings:set', settingsWith(everyToken((n) => (n === cleared ? '' : typed(n)))))
+      const after = tokensOf(((await call('settings:get')) as AppSettings).profiles[0])
+      expect(after, cleared).toEqual(KINDS.map((n) => (n === cleared ? '' : typed(n))))
+    }
+  })
+
+  it('a renderer that typed the tokens holds them, even without a settings read', async () => {
+    await call('settings:set', settingsWith(everyToken(typed)))
+    await call('settings:set', settingsWith(everyToken((n) => (n === 'gh' ? '' : typed(n)))))
+    const { activeProfileAuth } = await import('../src/main/settings')
+    expect((await activeProfileAuth('github')).token).toBeUndefined()
+    expect((await activeProfileAuth('azure')).token).toBe(typed('az'))
+  })
+
+  it('a renderer that never held the session tokens cannot clear them by sending blanks', async () => {
+    await call('settings:set', settingsWith(everyToken(typed)))
+    // Another renderer (webContents 2): never served these settings, never typed
+    // these tokens — its blanks are what it never had, not a clear.
+    await callFrom(2, 'settings:set', settingsWith(everyToken(() => '')))
+    const { activeProfileAuth } = await import('../src/main/settings')
+    expect((await activeProfileAuth('azure')).token).toBe(typed('az'))
+    // A token it does type is still added, and nothing it lacked is lost.
+    await callFrom(2, 'settings:set', settingsWith(everyToken((n) => (n === 'gh' ? 'gh-new' : ''))))
+    expect((await activeProfileAuth('github')).token).toBe('gh-new')
+    expect((await activeProfileAuth('azure')).token).toBe(typed('az'))
+    // After that overlay no renderer holds the result — not even the first.
+    await call('settings:set', settingsWith(everyToken(() => '')))
+    const merged = KINDS.map((n) => (n === 'gh' ? 'gh-new' : typed(n)))
+    expect(tokensOf(((await callFrom(2, 'settings:get')) as AppSettings).profiles[0])).toEqual(merged)
+    // Once served them, its blanks count.
+    await callFrom(2, 'settings:set', settingsWith(everyToken(() => '')))
+    expect(tokensOf(((await call('settings:get')) as AppSettings).profiles[0])).toEqual(KINDS.map(() => ''))
+  })
+
   for (const served of [false, true]) {
     it(`a removed server’s token does not come back with its URL${served ? ' (renderer served the secrets)' : ''}`, async () => {
       await call(
@@ -54,18 +140,22 @@ describe('session-only tokens follow the server list (keychain declined)', () =>
           })
         )
       )
+      // The saves below come from a second renderer: one never served the
+      // session tokens (it sends GitLab's back blank, which must not clear it),
+      // or one served them (it sends GitLab's back as it was given it).
+      const kept = served ? 'gl-session' : ''
       if (served) {
-        // A renderer that was served the session tokens: the removal must count all the same.
-        const first = (await call('settings:get')) as AppSettings
+        const first = (await callFrom(2, 'settings:get')) as AppSettings
         expect(first.profiles[0].githubEnterprise?.[0]?.token).toBe('ghes-session')
       }
-      // Remove the GHES server; the GitLab server stays, its token not sent back.
-      await call('settings:set', settingsWith(profileWith({ gitlabServers: [{ url: GITLAB, token: '' }] })))
+      // Remove the GHES server; the GitLab server stays.
+      await callFrom(2, 'settings:set', settingsWith(profileWith({ gitlabServers: [{ url: GITLAB, token: kept }] })))
       // Add the same URL again, with no token.
-      await call(
+      await callFrom(
+        2,
         'settings:set',
         settingsWith(
-          profileWith({ githubEnterprise: [{ url: GHES, token: '' }], gitlabServers: [{ url: GITLAB, token: '' }] })
+          profileWith({ githubEnterprise: [{ url: GHES, token: '' }], gitlabServers: [{ url: GITLAB, token: kept }] })
         )
       )
       const after = ((await call('settings:get')) as AppSettings).profiles[0]
