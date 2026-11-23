@@ -94,6 +94,8 @@ vi.mock('../src/renderer/src/infrastructure/api', () => {
 })
 
 import { useSettingsStore } from '../src/renderer/src/stores/settings'
+import { useUIStore } from '../src/renderer/src/stores/ui'
+import { t } from '../src/renderer/src/i18n'
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 afterEach(() => {
@@ -260,6 +262,29 @@ describe('a settings reply that failed or was overtaken', () => {
     await save(cleared, r.generation)
     expect(storeJson().p).toEqual({ azureToken: 'az_old' })
   })
+
+  it('a token typed and saved on the last reply, then a newer load failing: clearing it still counts', async () => {
+    await fresh({ consent: 'granted' })
+    const r = (await raw('settings:unlock')) as Reply
+    const withToken = (githubToken: string | undefined): AppSettings => ({
+      ...r.settings,
+      profiles: r.settings.profiles.map((p) => ({ ...p, githubToken }))
+    })
+    // Typed and saved on that reply: the renderer now holds the new token, not the reply's.
+    await save(withToken('ghp_typed'), r.generation)
+    expect(storeJson().p.githubToken).toBe('ghp_typed')
+    seams.readFile = async (path) => {
+      if (path === settingsFile()) throw Object.assign(new Error('EIO: i/o error'), { code: 'EIO' })
+      return undefined
+    }
+    await silenced(async () => expect(await raw('settings:get')).toEqual({ error: 'io' }))
+    seams.readFile = null
+    // The user blanks the token they typed, on the state still on screen.
+    await save(withToken(undefined), r.generation)
+    expect(storeJson().p).toEqual({ azureToken: 'az_old' })
+    const after = (await raw('settings:unlock')) as Reply
+    expect(after.settings.profiles[0].githubToken).toBeFalsy()
+  })
 })
 
 /** A window whose page can be loading, reloading, or past its boot spinner. */
@@ -356,10 +381,53 @@ describe('a background reader meeting plaintext tokens beside an encrypted store
     expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_plain')
     expect(storeJson().p).toEqual({ azureToken: 'az_old', githubToken: 'ghp_plain' })
   })
+
+  const writePlainToken = (githubToken: string): void =>
+    writeFileSync(settingsFile(), JSON.stringify(settingsWith(profileWith({ name: 'Mine', githubToken }))))
+
+  it('a save from a renderer never shown the plaintext token leaves it in the file', async () => {
+    await fresh({ consent: 'granted', store: { p: { azureToken: 'az_old' } } })
+    const r = (await raw('settings:get')) as Reply
+    // An older build writes a token into the file after this renderer loaded.
+    writePlainToken('ghp_plain')
+    const mod = await import('../src/main/settings')
+    expect((await mod.activeProfileAuth('github')).token).toBe('ghp_plain')
+    await save({ ...r.settings, language: 'de' }, r.generation)
+    const file = JSON.parse(readFileSync(settingsFile(), 'utf8')) as AppSettings
+    expect(file.language).toBe('de')
+    expect(file.profiles[0].githubToken).toBe('ghp_plain')
+    // Opening Settings serves it, and moves it into the store.
+    const u = (await raw('settings:unlock')) as Reply
+    expect(u.settings.profiles[0].githubToken).toBe('ghp_plain')
+    expect(storeJson().p).toEqual({ azureToken: 'az_old', githubToken: 'ghp_plain' })
+    expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_plain')
+  })
+
+  it('a plaintext token appearing after the store was unlocked is moved by the next unlock', async () => {
+    await fresh({ consent: 'granted' })
+    await raw('settings:unlock')
+    writePlainToken('ghp_new')
+    const u = (await raw('settings:unlock')) as Reply
+    expect(u.settings.profiles[0].githubToken).toBe('ghp_new')
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_new', azureToken: 'az_old' })
+    expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_new')
+  })
+
+  it('no plaintext in the file: a save writes it stripped and the store as before', async () => {
+    await fresh({ consent: 'granted' })
+    const r = (await raw('settings:unlock')) as Reply
+    await save({ ...r.settings, language: 'de' }, r.generation)
+    expect(readFileSync(settingsFile(), 'utf8')).not.toMatch(/ghp_|az_/)
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_old', azureToken: 'az_old' })
+    const typed = { ...r.settings, profiles: r.settings.profiles.map((p) => ({ ...p, githubToken: 'ghp_typed' })) }
+    await save(typed, r.generation)
+    expect(readFileSync(settingsFile(), 'utf8')).not.toMatch(/ghp_|az_/)
+    expect(storeJson().p).toEqual({ githubToken: 'ghp_typed', azureToken: 'az_old' })
+  })
 })
 
 describe('moving a symlinked damaged settings file aside', () => {
-  it('moves the target and says where; the first save replaces the dangling link', async () => {
+  it('moves the target and says where; the first save writes through the dangling link', async () => {
     await fresh({ consent: 'granted' })
     const dotfiles = mkdtempSync(join(tmpdir(), 'gitcito-dotfiles-'))
     try {
@@ -373,15 +441,35 @@ describe('moving a symlinked damaged settings file aside', () => {
       expect(moved.startsWith(`${real}.corrupt-`)).toBe(true)
       expect(readFileSync(moved, 'utf8')).toBe('{"profiles": [')
       expect(existsSync(real)).toBe(false)
-      // Fresh start: defaults, and the first save lands as a regular file in
-      // the data folder — a dangling link is not followed.
+      // Fresh start: defaults, and the first save creates a new target through
+      // the link — the link itself is never replaced.
       const r = (await raw('settings:get')) as Reply
       await save({ ...r.settings, language: 'de' }, r.generation)
-      expect(lstatSync(settingsFile()).isSymbolicLink()).toBe(false)
-      expect(JSON.parse(readFileSync(settingsFile(), 'utf8')).language).toBe('de')
-      expect(existsSync(real)).toBe(false)
+      expect(lstatSync(settingsFile()).isSymbolicLink()).toBe(true)
+      expect(JSON.parse(readFileSync(real, 'utf8')).language).toBe('de')
+      expect(readFileSync(moved, 'utf8')).toBe('{"profiles": [')
     } finally {
       rmSync(dotfiles, { recursive: true, force: true })
     }
+  })
+
+  it('a link into a folder that is gone: the save fails, says so once, and touches nothing', async () => {
+    await fresh({ consent: 'granted' })
+    await useSettingsStore.getState().load()
+    const gone = join(dir, 'gone', 'gitcito.json')
+    rmSync(settingsFile())
+    symlinkSync(gone, settingsFile())
+    const toast = vi.spyOn(useUIStore.getState(), 'toast')
+    try {
+      for (const confirmForcePush of [false, true]) {
+        useSettingsStore.getState().update((s) => ({ ...s, confirmForcePush }))
+        await silenced(() => expect(useSettingsStore.getState().flush()).rejects.toThrow(/folder does not exist/))
+      }
+      expect(toast.mock.calls).toEqual([['error', t('settings.saveFailed')]])
+    } finally {
+      toast.mockRestore()
+    }
+    expect(lstatSync(settingsFile()).isSymbolicLink()).toBe(true)
+    expect(existsSync(join(dir, 'gone'))).toBe(false)
   })
 })

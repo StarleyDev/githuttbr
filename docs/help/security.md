@@ -136,10 +136,17 @@ takes its saved tokens with it, whichever you choose.
 The settings file and the encrypted token store are written whole: to a new
 owner-only file beside them, then swapped in, so a crash or two saves at once
 never leave half a file. If the settings file is symlinked elsewhere (a
-dotfiles repository), the write goes to the link's target and the link stays —
-as long as that target exists. A link pointing at nothing is replaced by a
-regular file instead: following it would fail every save whenever the target's
-folder is gone.
+dotfiles repository), the write goes to the link's target and the link stays.
+Gitcito never replaces the link. One pointing at a file that is not there yet is
+written through, creating that file — as long as its folder exists. When the
+folder is gone too, the save fails instead, with one message saying so: the
+link and wherever it points are left untouched, and changes made meanwhile last
+only until Gitcito closes. Restore the folder, or point the link somewhere that
+exists, and the next save goes through.
+
+Plaintext tokens an older version left in the settings file are never dropped
+by a save: they stay in the file until Gitcito loads them into the encrypted
+store (opening Settings does), unless you clear one yourself.
 
 Only two things write them: a save of your settings, and Gitcito loading them
 (at start-up, or when Settings opens) — which is when an old plaintext token is
@@ -168,9 +175,8 @@ is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside
 it, and Gitcito starts as on a first run, with a note saying where the file
 went. For a symlinked settings file it is the link's target that is renamed, so
-the damaged copy stays in your dotfiles; the link, now pointing at nothing, is
-replaced by a regular settings file on the first save — link it again by hand if
-you want the dotfiles copy back in use. The copy is made first: if it cannot
+the damaged copy stays in your dotfiles, beside the fresh settings file the
+first save then writes through the link. The copy is made first: if it cannot
 be written, nothing is moved, and the screen says so and shows the data folder
 to check, since starting fresh without the copy would let the first token you
 save delete the old profiles' tokens. Fix what keeps the folder from being

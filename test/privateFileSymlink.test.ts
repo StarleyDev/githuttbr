@@ -1,5 +1,16 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'fs'
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync
+} from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { writePrivateFile } from '../src/main/privateFile'
@@ -25,14 +36,30 @@ describe.skipIf(process.platform === 'win32')('writing a private file through a 
     expect(readdirSync(join(dir, 'dotfiles')).filter((f) => f.endsWith('.tmp'))).toEqual([])
   })
 
-  it('a dangling link whose target folder is gone is replaced by a regular file', async () => {
-    const link = join(dir, 'dangling.json')
-    symlinkSync(join(dir, 'gone', 'gitcito-settings.json'), link)
+  it('a dangling link whose target folder exists is written through, and the link stays', async () => {
+    mkdirSync(join(dir, 'moved'))
+    const target = join(dir, 'moved', 'gitcito-settings.json')
+    const link = join(dir, 'through.json')
+    symlinkSync(target, link)
 
     await writePrivateFile(link, '{"new":true}')
 
-    expect(lstatSync(link).isSymbolicLink()).toBe(false)
-    expect(readFileSync(link, 'utf8')).toBe('{"new":true}')
+    expect(lstatSync(link).isSymbolicLink()).toBe(true)
+    expect(readlinkSync(link)).toBe(target)
+    expect(readFileSync(target, 'utf8')).toBe('{"new":true}')
+  })
+
+  it('a dangling link whose target folder is gone fails the write and is left alone', async () => {
+    const target = join(dir, 'gone', 'gitcito-settings.json')
+    const link = join(dir, 'dangling.json')
+    symlinkSync(target, link)
+
+    await expect(writePrivateFile(link, '{"new":true}')).rejects.toThrow(/symlink.*folder does not exist/)
+
+    expect(lstatSync(link).isSymbolicLink()).toBe(true)
+    expect(readlinkSync(link)).toBe(target)
+    expect(existsSync(join(dir, 'gone'))).toBe(false)
+    expect(readdirSync(dir).filter((f) => f.endsWith('.tmp'))).toEqual([])
   })
 
   it('a missing file is still created where asked', async () => {

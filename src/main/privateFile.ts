@@ -1,4 +1,4 @@
-import { chmod, open, readFile, realpath, rename, rm, type FileHandle } from 'fs/promises'
+import { chmod, open, readFile, readlink, realpath, rename, rm, stat, type FileHandle } from 'fs/promises'
 import { randomBytes } from 'crypto'
 import { basename, dirname, join, resolve } from 'path'
 
@@ -62,17 +62,35 @@ async function renameOver(from: string, to: string): Promise<void> {
  * Where a write to `path` really lands. A user who symlinked the settings into
  * a dotfiles repo means the link's target: renaming over the link itself would
  * replace it with a plain file and silently cut the dotfiles off.
+ *
+ * A link is never replaced. One whose target is missing (a damaged file moved
+ * aside leaves one) is written through, creating the target — when the
+ * target's folder exists. When it does not, the write fails and says why:
+ * the link and wherever it points are left exactly as they were.
  */
-async function resolveTarget(path: string): Promise<string> {
+async function resolveTarget(path: string, hops = 0): Promise<string> {
   try {
     return await realpath(path)
   } catch (err) {
-    // Missing, or a link whose target is missing: written at the path itself.
-    // Following a dangling link would fail every write when the target's
-    // folder is gone; replacing the link at least keeps the settings saving.
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return path
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+  }
+  let link: string
+  try {
+    link = await readlink(path)
+  } catch (err) {
+    // Not a link (EINVAL), or not there at all: a plain first write at the path.
+    const code = (err as NodeJS.ErrnoException).code
+    if (code === 'EINVAL' || code === 'ENOENT') return path
     throw err
   }
+  const target = resolve(dirname(path), link)
+  if (hops >= 8) throw new Error(`Not written: ${path} is a chain of symlinks that never reaches a file`)
+  const folder = await stat(dirname(target)).catch(() => null)
+  if (!folder?.isDirectory()) {
+    throw new Error(`Not written: ${path} is a symlink to ${target}, whose folder does not exist`)
+  }
+  // The target may itself be a dangling link: the same rules, one hop further.
+  return resolveTarget(target, hops + 1)
 }
 
 /** Makes the rename itself durable: without it a crash can bring back the old file, or none. */

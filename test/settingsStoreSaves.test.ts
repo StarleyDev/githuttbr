@@ -177,7 +177,8 @@ describe('the settings store', () => {
     useUIStore.setState({ toasts: [] })
     try {
       vi.mocked(api.set).mockRejectedValueOnce(new SettingsSaveRefused('not-loaded'))
-      useSettingsStore.getState().update((s) => ({ ...s, language: 'de' }))
+      // Not the language: a German dictionary finishing its load mid-test made the toast German.
+      useSettingsStore.getState().update((s) => ({ ...s, confirmForcePush: false }))
       await expect(useSettingsStore.getState().flush()).rejects.toMatchObject({ reason: 'not-loaded' })
       const errors = useUIStore.getState().toasts.filter((x) => x.kind === 'error')
       expect(errors).toHaveLength(1)

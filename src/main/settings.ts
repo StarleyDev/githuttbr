@@ -400,6 +400,43 @@ function settingsFileJson(settings: AppSettings): string {
 }
 
 /**
+ * The settings file a save writes: `settingsFileJson`, except for plaintext
+ * tokens the file on disk carries now (an older build, a hand edit) that
+ * `store` — the encrypted store as this save left it — does not hold with the
+ * same value. Only a queued unlock moves those into the store; stripping them
+ * here would lose them, so they stay in the file as they are. A slot the save
+ * cleared or replaced (`after` no longer holds it with that value) goes.
+ */
+async function savedFileJson(
+  settings: AppSettings,
+  after: (onDisk: SecretStore) => SecretStore,
+  store: SecretStore | null
+): Promise<string> {
+  let onDisk: SecretStore = {}
+  try {
+    // Read once, without the retries and broken-file bookkeeping of a load: a
+    // file that cannot be read or parsed has no tokens to keep.
+    const parsed: unknown = JSON.parse(await readFile(settingsPath(), 'utf-8'))
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const clean = scrubServerUrls(withoutStaleKeys(parsed as Partial<AppSettings>))
+      onDisk = extractSecrets(migrateGitlabSettings({ ...defaultSettings(), ...clean }))
+    }
+  } catch {
+    // Nothing on disk to keep.
+  }
+  if (Object.keys(onDisk).length === 0) return settingsFileJson(settings)
+  const survives = secretView(after(onDisk))
+  const stored = secretView(store ?? {})
+  const drop = new Map<string, string>()
+  for (const [slot, value] of secretView(onDisk)) {
+    if (survives.get(slot) !== value || stored.get(slot) === value) drop.set(slot, value)
+  }
+  const keep = withoutSlots(onDisk, drop)
+  if (Object.keys(keep).length === 0) return settingsFileJson(settings)
+  return JSON.stringify(withoutStaleKeys(applySecrets(stripSettingsSecrets(settings), keep)), null, 2)
+}
+
+/**
  * Rewrites the settings file from a read, unless it changed since: a rewrite
  * derived from an earlier read must not land over a save made in between.
  */
@@ -476,7 +513,10 @@ export async function readSettings(): Promise<AppSettings> {
 /** `readSettings`, with exactly the credentials it applied — what a renderer is then given. */
 async function readPlain(mode: ReadMode = 'background'): Promise<{ settings: AppSettings; applied: SecretStore }> {
   const { settings } = await readStoredSettings(mode)
-  const applied = sessionSecrets
+  // What the reply shows: plaintext tokens still in the file (not yet moved
+  // into the store) too, so a renderer that blanks one of them has cleared it
+  // (`savedFileJson`) — and one it was never shown is kept.
+  const applied = mergeSecretStores(extractSecrets(settings), sessionSecrets)
   return { settings: withMigratedAI(applySecrets(settings, applied)), applied }
 }
 
@@ -589,13 +629,25 @@ async function readWithSecrets(
       } else {
         setSecretCache(stored)
       }
+    } else if (mode === 'queued') {
+      // The store was unlocked already, and the file carries plaintext tokens
+      // again — kept there by a save (`savedFileJson`), or written by an older
+      // build since: the move into the store is this read's.
+      const { settings, raw } = await readStoredSettings(mode)
+      if (hasSettingsSecrets(settings) && (await canEncrypt())) {
+        const merged = plaintextMerged(secretCache, settings)
+        await saveSecrets(merged)
+        if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
+        setSecretCache(merged)
+      }
     }
     // Tokens typed while the store was out of reach, and clears made while it
     // could not be written, go in now that it is readable — from the queued
     // unlock only. A failed write keeps them in memory, as before: this read still answers.
     if (mode === 'queued') await persistPendingLocked().catch(() => undefined)
     const after = await readPlain(mode)
-    const applied = inMemorySecrets()
+    // Plaintext the move above could not strip is still on screen (`readPlain`).
+    const applied = mergeSecretStores(after.applied, inMemorySecrets())
     return { settings: withMigratedAI(applySecrets(after.settings, applied)), applied }
   })
 }
@@ -1028,7 +1080,6 @@ async function writeSettings(
   setKnownBitbucketServerInstances(bitbucketServerBases(settings.profiles))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
-  const stripped = settingsFileJson(settings)
   const profiles = settings.profiles ?? []
   const ids = profiles.map((p) => p.id)
   // A token the save carries is the new one; one it leaves blank is cleared
@@ -1062,7 +1113,12 @@ async function writeSettings(
   const holds = (): void => {
     if (!fresh && !options.import) return
     if ((holdings.get(sender)?.generation ?? 0) !== current) return
-    holdings.set(sender, { view: secretView(secrets), generation: current })
+    const view = secretView(secrets)
+    holdings.set(sender, { view, generation: current })
+    // The reply at this generation is no longer what the renderer holds — this
+    // save is. A later failed get/unlock falls back to `lastServed` on a tie
+    // (`unserved`), and must land on the token typed here, not before it.
+    if (lastServed.get(sender)?.generation === current) lastServed.set(sender, { view, generation: current })
   }
 
   if (!hasSecrets) {
@@ -1086,7 +1142,7 @@ async function writeSettings(
         }
       }
     }
-    await writePrivateFile(settingsPath(), stripped)
+    await writePrivateFile(settingsPath(), await savedFileJson(settings, over, secretCache))
     holds()
     return
   }
@@ -1101,7 +1157,7 @@ async function writeSettings(
     // store already decrypted follows in memory, so a clear made now holds.
     sessionSecrets = over(sessionSecrets)
     if (secretCache) applyInMemory(over(secretCache))
-    await writePrivateFile(settingsPath(), stripped)
+    await writePrivateFile(settingsPath(), await savedFileJson(settings, over, secretCache))
     holds()
     return
   }
@@ -1114,7 +1170,7 @@ async function writeSettings(
     // every token in it with this save's: keep them for the session instead,
     // and let Settings say why (`settings:secretsState`).
     sessionSecrets = over(sessionSecrets)
-    await writePrivateFile(settingsPath(), stripped)
+    await writePrivateFile(settingsPath(), await savedFileJson(settings, over, null))
     holds()
     return
   }
@@ -1125,7 +1181,7 @@ async function writeSettings(
   setSecretCache(merged)
   sessionSecrets = {}
   pendingClears = new Map()
-  await writePrivateFile(settingsPath(), stripped)
+  await writePrivateFile(settingsPath(), await savedFileJson(settings, over, merged))
   holds()
 }
 
@@ -1177,8 +1233,8 @@ async function moveSettingsAside(): Promise<MoveAsideReply> {
   // A settings file symlinked into a dotfiles repository: the damaged file is
   // the link's target, so that is what moves — beside the target, which is why
   // the reply is the full path. The link is left dangling, and the first save
-  // replaces it with a regular file (`writePrivateFile` follows only a link
-  // whose target exists).
+  // writes through it, creating a fresh target beside the moved one
+  // (`writePrivateFile` never replaces a link).
   const damaged = await realpath(settingsPath())
   const target = `${damaged}.corrupt-${stamp}`
   // The stored tokens belong to the profiles in that file; a fresh start prunes

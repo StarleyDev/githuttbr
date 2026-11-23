@@ -178,6 +178,19 @@ function noticeDamaged(): void {
 function reportSaveFailure(err: unknown): void {
   console.warn('[settings] save failed:', err)
   if (err instanceof SettingsSaveRefused && err.reason === 'not-loaded') noticeDamaged()
+  else if (!(err instanceof SettingsSaveRefused)) noticeWriteFailed()
+}
+
+let writeFailedNoticeShown = false
+
+/**
+ * Main could not write the file (a disk error, a symlink whose target folder is
+ * gone): said once, until a save lands again — every later save fails the same way.
+ */
+function noticeWriteFailed(): void {
+  if (writeFailedNoticeShown) return
+  writeFailedNoticeShown = true
+  useUIStore.getState().toast('error', t('settings.saveFailed'))
 }
 
 /**
@@ -235,6 +248,7 @@ function send(options?: { import?: 'merge' | 'replace' }): Promise<void> {
     settingsApi.set(settings, secretsGeneration, options).then(() => {
       // Written: a damaged file seen earlier is fixed, and a new one is worth saying.
       damagedNoticeShown = false
+      writeFailedNoticeShown = false
     })
   )
 }

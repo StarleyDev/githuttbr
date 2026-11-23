@@ -4224,6 +4224,7 @@ export const ko: Dict = {
   'settings.imported': '설정을 가져왔습니다',
   'settings.importFailed': '가져오기에 실패했습니다',
   'settings.saveRefusedDamaged': '설정을 저장할 수 없습니다: 설정 파일이 손상되었습니다. 복구하려면 Gitcito를 다시 시작하세요. 지금 변경한 내용은 사라집니다.',
+  'settings.saveFailed': '설정을 디스크에 저장하지 못했습니다. 지금 변경한 내용은 Gitcito를 닫으면 사라집니다. 설정 파일이 심볼릭 링크라면 링크가 가리키는 폴더가 있는지 확인하세요.',
   'settings.reloadFailed': '설정을 다시 읽지 못했습니다. 변경된 내용은 없습니다. 잠시 후 다시 시도하세요.',
   'settings.importSecretsTitle': '이 파일에 자격 증명이 들어 있습니다',
   'settings.importSecretsMessage': '저장된 자격 증명에 추가할까요(같은 계정은 바꾸고 나머지는 유지)? 아니면 저장된 토큰과 API 키를 모두 파일의 것으로 바꿀까요? 바꾸면 파일에 없는 저장된 자격 증명은 모두 삭제됩니다.',
