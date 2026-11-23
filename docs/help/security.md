@@ -130,4 +130,35 @@ avatar cache stores no e-mail addresses, only hashes salted per install. A
 backup of the token store is deleted once a newer store is written; one that
 only another build of Gitcito can read is kept for 30 days.
 
+## Linux packages: the sandbox and AppArmor
+
+Chromium's sandbox needs unprivileged user namespaces. Ubuntu 24.04 and later
+deny those to any program without an AppArmor profile that allows them, and
+the two Linux packages deal with that differently:
+
+| Package | What happens |
+|---------|--------------|
+| `.deb` | Installs `/etc/apparmor.d/gitcito`, a profile for `/opt/Git HuttBr/gitcito` that allows user namespaces. The app runs sandboxed. |
+| AppImage | Has no profile. Its launcher tries `unshare -Ur true`, and when that fails it starts the app with `--no-sandbox` — on Ubuntu 24.04+, that is every launch. Gitcito prints a warning to its console output when this happens. |
+
+To run the AppImage sandboxed, install the `.deb` instead, or give the
+AppImage its own AppArmor profile that allows `userns` (or, machine-wide,
+`sysctl kernel.apparmor_restrict_unprivileged_userns=0`, which switches the
+restriction off for everything).
+
+**The limit of the `.deb` profile.** It is `flags=(unconfined)` with `userns`
+allowed, and it attaches to the executable path. The same executable also runs
+as plain Node when started with `ELECTRON_RUN_AS_NODE=1` — that is how the
+`gitcito` command, the bundled diff converter and Gitcito's credential helper
+work, so the switch cannot be turned off without breaking them. Together that
+means any local program can use Gitcito's executable as a Node interpreter that
+is allowed to create user namespaces — the same kind of gap as the known
+workarounds for Ubuntu's restriction through other profiled programs. It does
+not give anyone more than their own account's rights; it weakens a kernel
+hardening layer Ubuntu adds on top. AppArmor cannot tell the two modes of one
+executable apart, so a narrower profile is not possible while the CLI shares
+it; a separate helper binary for the CLI is on the roadmap.
+Administrators who would rather not have this can add a deny rule in
+`/etc/apparmor.d/local/gitcito`, at the cost of the sandbox.
+
 **See also:** [Vault](vault.md) · [Secure share](secure-share.md)

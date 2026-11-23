@@ -112,3 +112,24 @@ export function parseCliOpenArgs(argv: string[]): CliOpenPayload | null {
     wait: readFlag('--wait')
   }
 }
+
+/** Why "Install 'gitcito' command in PATH" refuses: 'windows' has no shim yet;
+ *  'appimage' has no path that outlives the running app (main/cliInstall.ts). */
+export type CliInstallRefusal = 'appimage' | 'windows'
+
+export interface CliInstallResult {
+  ok: boolean
+  /** A refusal the renderer translates; set instead of `error`. */
+  reason?: CliInstallRefusal
+  /** An OS error, shown as is. */
+  error?: string
+}
+
+export interface CliStatus {
+  /** A `gitcito` link in PATH points at this app's shim. */
+  installed: boolean
+  /** A `gitcito` link pointing into an AppImage mount — stale, and hijackable. */
+  staleLink: string | null
+  /** Set when this build cannot install the command at all. */
+  refusal: CliInstallRefusal | null
+}

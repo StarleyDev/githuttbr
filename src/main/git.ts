@@ -206,6 +206,7 @@ import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileAct
 import { PRODUCT_NAME } from '../shared/brand'
 import { redactSecrets } from '../shared/redact'
 import { cloneFolderProblem } from '../shared/cloneFolder'
+import { isEphemeralTextconv, persistBlocker } from './appImagePaths'
 
 const SEP = '\x1f'
 
@@ -4910,7 +4911,11 @@ export const gitService = {
           const name = /^diff\.(.*)\.textconv$/.exec(line.slice(0, space))?.[1]
           const textconv = line.slice(space + 1).trim()
           if (!name || !textconv) return null
-          return { name, textconv, available: converterAvailable(textconv), scope }
+          // A converter inside an AppImage mount is reported however it looks:
+          // that path is gone (or someone else's) the moment the app quits.
+          const info: DiffDriverInfo = { name, textconv, available: converterAvailable(textconv), scope }
+          if (isEphemeralTextconv(textconv)) info.ephemeral = true
+          return info
         })
         .filter((d): d is DiffDriverInfo => !!d)
     }
@@ -4927,14 +4932,19 @@ export const gitService = {
     // rather than writing a driver that fails at the first diff.
     const shim = bundledTextconvPath()
     const shimConv = `"${shim}"`
-    const shimOk = canExecute(shim)
+    // An AppImage's shim lives in a per-launch /tmp mount, so writing its path
+    // into .git/config would leave the next `git diff` running whatever another
+    // local user puts there after we quit. Offered, but disabled, with the reason.
+    const blocked = persistBlocker(shim, process.resourcesPath ?? '')
+    const shimOk = !blocked && canExecute(shim)
+    const shimWhy = blocked ? { unavailableReason: blocked } : {}
     const candidates: DiffDriverSuggestion[] = [
-      { name: 'word', patterns: ['*.docx'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
-      { name: 'excel', patterns: ['*.xlsx', '*.xls'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
-      { name: 'json', patterns: ['*.json', '*.xcstrings'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      { name: 'word', patterns: ['*.docx'], textconv: shimConv, binary: '', bundled: true, available: shimOk, ...shimWhy },
+      { name: 'excel', patterns: ['*.xlsx', '*.xls'], textconv: shimConv, binary: '', bundled: true, available: shimOk, ...shimWhy },
+      { name: 'json', patterns: ['*.json', '*.xcstrings'], textconv: shimConv, binary: '', bundled: true, available: shimOk, ...shimWhy },
       // Git calls a UTF-16 .strings binary and shows no diff at all, which is
       // the one file where seeing which string moved matters most.
-      { name: 'strings', patterns: ['*.strings'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      { name: 'strings', patterns: ['*.strings'], textconv: shimConv, binary: '', bundled: true, available: shimOk, ...shimWhy },
       { name: 'pdf', patterns: ['*.pdf'], textconv: 'pdftotext -layout - -', binary: 'pdftotext', available: hasBinary('pdftotext') },
       { name: 'exif', patterns: ['*.jpg', '*.jpeg', '*.png'], textconv: 'exiftool', binary: 'exiftool', available: hasBinary('exiftool') }
     ]
@@ -4945,6 +4955,10 @@ export const gitService = {
   async setDiffDriver(repoPath: string, name: string, textconv: string, global = false): Promise<void> {
     const scope = global ? ['--global'] : ['--local']
     const key = `diff.${name}.textconv`
+    // The UI never offers it, but the IPC is reachable: refuse the path here too.
+    if (textconv.trim() && isEphemeralTextconv(textconv)) {
+      throw new Error('Refusing to configure a converter inside a temporary AppImage mount')
+    }
     if (textconv.trim()) await runGit(repoPath, ['config', ...scope, key, textconv.trim()])
     else await runGit(repoPath, ['config', ...scope, '--unset', key]).catch(() => undefined)
   },

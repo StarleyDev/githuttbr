@@ -322,10 +322,32 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
             <span className="attrs-driver-cmd" title={driver.textconv}>
               {driver.textconv}
             </span>
-            {!driver.available && (
-              <span className="attrs-missing">
-                <AlertTriangle size={11} /> {t('attrs.driverMissing')}
-              </span>
+            {driver.ephemeral ? (
+              <>
+                <span className="attrs-missing" title={t('attrs.driverEphemeralHint')}>
+                  <AlertTriangle size={11} /> {t('attrs.driverEphemeral')}
+                </span>
+                <button
+                  className="btn ghost tiny"
+                  disabled={busy}
+                  title={t('attrs.driverEphemeralHint')}
+                  onClick={() => {
+                    // No undo: the only thing an undo could restore is the path
+                    // someone else can plant a program at.
+                    void repoActions
+                      .setDiffDriver(repoPath, driver.name, '', driver.scope === 'global')
+                      .then(() => load())
+                  }}
+                >
+                  {t('attrs.driverRemove')}
+                </button>
+              </>
+            ) : (
+              !driver.available && (
+                <span className="attrs-missing">
+                  <AlertTriangle size={11} /> {t('attrs.driverMissing')}
+                </span>
+              )
             )}
           </div>
         ))}
@@ -336,7 +358,9 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
               className="btn ghost tiny"
               disabled={busy || !suggestion.available}
               title={
-                suggestion.bundled
+                suggestion.unavailableReason === 'appimage'
+                  ? t('attrs.bundledAppImage')
+                  : suggestion.bundled
                   ? t('attrs.bundledConverter')
                   : suggestion.available
                     ? suggestion.textconv

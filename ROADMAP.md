@@ -20,6 +20,17 @@ An unsigned Windows build hits the SmartScreen wall on first run. The CI change
 is about fifteen lines; the blocker is a certificate, and the only option that
 buys immediate reputation for a project this size is Azure Trusted Signing.
 
+### A helper binary, so RunAsNode can go
+The `gitcito` command, the bundled diff converter and the credential helper all
+run the app's own executable as Node (`ELECTRON_RUN_AS_NODE`), which is why the
+RunAsNode fuse stays on. On Linux that makes the `.deb`'s AppArmor profile —
+unconfined, user namespaces allowed, attached to that executable — available to
+any local program that wants a Node interpreter with `userns`
+([security](docs/help/security.md)). A small separate helper (Node SEA or a
+native shim) for those three would let the fuse go off and the profile cover
+only the browser. The cost is a second binary to sign, notarize and keep in
+step with the app on three platforms.
+
 ### Issue trackers beyond GitHub
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.

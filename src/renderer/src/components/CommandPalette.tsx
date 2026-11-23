@@ -61,6 +61,7 @@ import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { gitApi, cliApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
+import type { CliInstallResult } from '../../../shared/cli'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
 import { enterpriseBasesOf, repoHasIssueTracker } from '../lib/hosting'
 import { openInEditor } from '../lib/editorOpen'
@@ -108,6 +109,7 @@ export function CommandPalette(): React.JSX.Element {
   const [active, setActive] = useState(0)
   const [files, setFiles] = useState<string[]>([])
   const [cliInstalled, setCliInstalled] = useState(false)
+  const [cliStale, setCliStale] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -120,7 +122,18 @@ export function CommandPalette(): React.JSX.Element {
     const id = requestAnimationFrame(() => inputRef.current?.focus())
     if (repo) gitApi.listFiles(repo.path).then(setFiles).catch(() => setFiles([]))
     else setFiles([])
-    if (window.api.platform === 'darwin') cliApi.isInstalled().then(setCliInstalled).catch(() => setCliInstalled(false))
+    if (window.api.platform !== 'win32') {
+      cliApi
+        .status()
+        .then((s) => {
+          setCliInstalled(s.installed)
+          setCliStale(!!s.staleLink)
+        })
+        .catch(() => {
+          setCliInstalled(false)
+          setCliStale(false)
+        })
+    }
     return () => cancelAnimationFrame(id)
   }, [open, repo?.path])
 
@@ -134,7 +147,32 @@ export function CommandPalette(): React.JSX.Element {
     const list: Command[] = []
 
     // ── Global (available with no repo open) ──
-    if (window.api.platform === 'darwin') {
+    // A refused install (the AppImage) still lists the command: its toast says
+    // why, which beats a command that silently is not there.
+    const cliRefused = (res: CliInstallResult): string =>
+      res.reason === 'appimage'
+        ? t('cmd.cliAppImage')
+        : res.reason === 'windows'
+          ? t('cmd.cliWindows')
+          : (res.error ?? t('cmd.cliFailed'))
+    if (cliStale) {
+      list.push({
+        id: 'cli-remove-stale',
+        title: t('cmd.cliRemoveStale'),
+        group: 'Actions',
+        keywords: 'terminal shell path command line appimage stale gitcito',
+        icon: <TerminalSquare size={15} />,
+        run: act(() => {
+          void cliApi.removeStale().then((res) => {
+            if (res.ok) {
+              setCliStale(false)
+              ui.toast('success', t('cmd.cliStaleRemoved'))
+            } else ui.toast('error', cliRefused(res))
+          })
+        })
+      })
+    }
+    if (window.api.platform !== 'win32') {
       list.push(
         cliInstalled
           ? {
@@ -148,7 +186,7 @@ export function CommandPalette(): React.JSX.Element {
                   if (res.ok) {
                     setCliInstalled(false)
                     ui.toast('success', t('cmd.cliUninstalled'))
-                  } else ui.toast('error', res.error ?? t('cmd.cliFailed'))
+                  } else ui.toast('error', cliRefused(res))
                 })
               })
             }
@@ -163,7 +201,7 @@ export function CommandPalette(): React.JSX.Element {
                   if (res.ok) {
                     setCliInstalled(true)
                     ui.toast('success', t('cmd.cliInstalled'))
-                  } else ui.toast('error', res.error ?? t('cmd.cliFailed'))
+                  } else ui.toast('error', cliRefused(res))
                 })
               })
             }
@@ -359,7 +397,7 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [repo, repoPath, tabs, files, setOpen, aiEnabled, t, cliInstalled])
+  }, [repo, repoPath, tabs, files, setOpen, aiEnabled, t, cliInstalled, cliStale])
 
   // Usage stats, refreshed each time the palette opens.
   const frec = useMemo(() => (open ? getFrecency() : {}), [open])

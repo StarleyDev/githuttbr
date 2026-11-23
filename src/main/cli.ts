@@ -4,6 +4,14 @@ import { promisify } from 'util'
 import { join } from 'path'
 import { homedir } from 'os'
 import { lstat, readlink, symlink, unlink, mkdir, writeFile } from 'fs/promises'
+import type { CliInstallResult, CliStatus } from '../shared/cli'
+import {
+  cliInstallRefusal,
+  isStaleCliTarget,
+  privilegedLinkCommand,
+  privilegedScript,
+  privilegedUnlinkCommand
+} from './cliInstall'
 
 const execFileAsync = promisify(execFile)
 
@@ -64,19 +72,20 @@ async function isInstalled(): Promise<boolean> {
 
 /** Runs a shell command with administrator privileges via the macOS Authorization
  *  dialog — same escalation path Finder/VS Code use when writing outside the
- *  user's home directory. */
+ *  user's home directory. The command comes from cliInstall.ts, which quotes
+ *  every path in it. */
 function runPrivileged(command: string): Promise<void> {
   if (process.platform !== 'darwin') return Promise.reject(new Error('No privilege escalation available'))
-  const script = `do shell script ${JSON.stringify(command)} with administrator privileges`
-  return execFileAsync('osascript', ['-e', script]).then(() => undefined)
+  return execFileAsync('osascript', ['-e', privilegedScript(command)]).then(() => undefined)
 }
 
-async function install(): Promise<{ ok: boolean; error?: string }> {
-  // Windows has no symlink-into-PATH convention and needs an installer-written
-  // .cmd shim instead; until that exists, saying so is better than failing at
-  // the first `ln`.
-  if (process.platform === 'win32') return { ok: false, error: 'Not supported on Windows yet' }
+async function install(): Promise<CliInstallResult> {
   const shim = shimPath()
+  // Windows needs an installer-written .cmd shim; an AppImage's shim vanishes
+  // with its /tmp mount, and cliInstall.ts says why that is dangerous rather
+  // than merely broken. Either way the renderer gets a reason it can translate.
+  const refusal = cliInstallRefusal(shim, process.platform)
+  if (refusal) return { ok: false, reason: refusal }
   const dir = await targetDir()
   const link = join(dir, LINK_NAME)
   try {
@@ -91,7 +100,7 @@ async function install(): Promise<{ ok: boolean; error?: string }> {
   } catch (err) {
     // Likely EACCES/EPERM — retry with an admin-privileged shell command.
     try {
-      await runPrivileged(`mkdir -p ${dir} && ln -sf ${shim} ${link}`)
+      await runPrivileged(privilegedLinkCommand(dir, shim, link))
       return { ok: true }
     } catch {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
@@ -99,17 +108,56 @@ async function install(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
-async function uninstall(): Promise<{ ok: boolean; error?: string }> {
+async function uninstall(): Promise<CliInstallResult> {
   try {
     const link = await linkPath()
     if (!(await isInstalled())) return { ok: true } // nothing to do
+    await unlinkMaybePrivileged(link)
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+async function unlinkMaybePrivileged(link: string): Promise<void> {
+  try {
+    await unlink(link)
+  } catch (err) {
+    await runPrivileged(privilegedUnlinkCommand(link)).catch(() => {
+      throw err
+    })
+  }
+}
+
+/** Every `gitcito` symlink in a candidate PATH dir that points into an
+ *  AppImage mount — left there by an AppImage build before it refused to. */
+async function staleLinks(): Promise<string[]> {
+  const found: string[] = []
+  for (const dir of CANDIDATE_DIRS) {
+    const link = join(dir, LINK_NAME)
     try {
-      await unlink(link)
-    } catch (err) {
-      await runPrivileged(`rm -f ${link}`).catch(() => {
-        throw err
-      })
+      if ((await lstat(link)).isSymbolicLink() && isStaleCliTarget(await readlink(link))) found.push(link)
+    } catch {
+      // no link here
     }
+  }
+  return found
+}
+
+async function status(): Promise<CliStatus> {
+  const stale = await staleLinks()
+  return {
+    installed: await isInstalled(),
+    staleLink: stale[0] ?? null,
+    refusal: cliInstallRefusal(shimPath(), process.platform)
+  }
+}
+
+async function removeStale(): Promise<CliInstallResult> {
+  try {
+    // Re-read right before removing: only a link that still points into a
+    // mount is ours to delete.
+    for (const link of await staleLinks()) await unlinkMaybePrivileged(link)
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) }
@@ -149,6 +197,8 @@ export function registerCliHandlers(): void {
   ipcMain.handle('cli:isInstalled', () => isInstalled())
   ipcMain.handle('cli:install', () => install())
   ipcMain.handle('cli:uninstall', () => uninstall())
+  ipcMain.handle('cli:status', () => status())
+  ipcMain.handle('cli:removeStale', () => removeStale())
 
   // The renderer finished (or abandoned) an edit git is waiting on. `content`
   // null means cancel: git treats an empty message as "abort the commit", which

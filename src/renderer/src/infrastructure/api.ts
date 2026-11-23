@@ -1137,6 +1137,10 @@ export const cliApi = {
   isInstalled: () => window.api.cli.isInstalled(),
   install: () => window.api.cli.install(),
   uninstall: () => window.api.cli.uninstall(),
+  /** Installed, refused (and why), or a stale AppImage link left in PATH. */
+  status: () => window.api.cli.status(),
+  /** Delete `gitcito` links that point into an AppImage's /tmp mount. */
+  removeStale: () => window.api.cli.removeStale(),
   onOpenPath: (cb: (payload: CliOpenPayload) => void) => window.api.cli.onOpenPath(cb),
   onEdit: (cb: (req: { file: string; sentinel: string; content: string }) => void) =>
     window.api.cli.onEdit(cb),

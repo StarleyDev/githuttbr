@@ -877,6 +877,11 @@ export const he: Dict = {
   'cmd.cliInstalled': 'הפקודה gitcito הותקנה',
   'cmd.cliUninstalled': 'הפקודה gitcito הוסרה',
   'cmd.cliFailed': 'לא ניתן היה לעדכן את הפקודה gitcito',
+  'cmd.cliAppImage': "גרסת ה־AppImage לא יכולה להתקין את הפקודה gitcito: האפליקציה קיימת רק בתיקייה זמנית בזמן שהיא רצה. התקינו את חבילת ה־‎.deb כדי לקבל אותה.",
+  'cmd.cliWindows': "עדיין אי אפשר להתקין את הפקודה gitcito ב־Windows",
+  'cmd.cliStale': "הפקודה gitcito ב־PATH מצביעה לתיקיית AppImage זמנית שמשתמש אחר יכול להשתלט עליה. הסירו אותה מלוח הפקודות.",
+  'cmd.cliRemoveStale': "הסרת הפקודה gitcito הישנה מ־PATH",
+  'cmd.cliStaleRemoved': "הפקודה gitcito הישנה הוסרה",
 
   // Settings
   'settings.title': 'הגדרות',
@@ -1230,6 +1235,10 @@ export const he: Dict = {
   'attrs.driverMissing': 'הממיר לא מותקן',
   'attrs.needsBinary': 'דורש את {binary} ב־PATH שלכם.',
   'attrs.bundledConverter': 'מגיע עם Gitcito — אין צורך להתקין דבר.',
+  'attrs.driverEphemeral': "מצביע לתיקיית AppImage זמנית",
+  'attrs.driverEphemeralHint': "גרסת AppImage של Gitcito הגדירה את הממיר הזה. התיקייה שלו תחת ‎/tmp נעלמת כשהאפליקציה נסגרת, וכל משתמש אחר במחשב הזה יכול לשים בנתיב הזה תוכנה שה־git diff הבא שלכם יריץ. הסירו אותו.",
+  'attrs.driverRemove': "הסרה",
+  'attrs.bundledAppImage': "לא זמין ב־AppImage: הממיר של Gitcito קיים רק בזמן שהאפליקציה רצה. התקינו את חבילת ה־‎.deb כדי להשתמש בו.",
   'attrs.filtersTitle': 'מסנני clean/smudge',
   'attrs.filtersHint': 'מסנן משכתב את תוכן הקובץ בכניסה (clean, בעת ההוספה לאינדקס) וביציאה (smudge, בעת צ׳קאאוט) — כך עובדים git-lfs והסרת מפתחות. מסנן שגוי משחית את עץ העבודה בשקט, ולכן Gitcito מתעקש על הרצת ניסיון מול קבצים אמיתיים לפני שמירה של כל דבר.',
   'attrs.filterCleanPh': 'פקודת clean (stdin → stdout)',
