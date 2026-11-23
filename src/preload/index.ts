@@ -223,7 +223,8 @@ const api = {
   avatars: {
     github: (remoteUrl: string, repoPath: string, items: unknown, size: number): Promise<unknown> =>
       ipcRenderer.invoke('avatars:github', remoteUrl, repoPath, items, size),
-    profileGithub: (size: number): Promise<unknown> => ipcRenderer.invoke('avatars:profileGithub', size)
+    profileGithub: (profileId: string, size: number): Promise<unknown> =>
+      ipcRenderer.invoke('avatars:profileGithub', profileId, size)
   },
   vault: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('vault:list', repoPath),

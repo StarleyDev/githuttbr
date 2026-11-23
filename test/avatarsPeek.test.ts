@@ -144,7 +144,7 @@ describe('avatar peeks before the store is unlocked', () => {
     setUp({ secrets: { aiKeys: { acct: 'sk-ai-key' } }, profile: { links: { github: LINK } } })
     await boot()
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual({})
-    expect(await call('avatars:profileGithub', 64)).toBeNull()
+    expect(await call('avatars:profileGithub', 'default', 64)).toBeNull()
     expect(calls).toEqual([])
     expect(machineLogins).toEqual([])
     expect(keyring.decrypts).toBe(0)
@@ -180,7 +180,7 @@ describe('avatar peeks before the store is unlocked', () => {
     // The pictures that fell past GitHub hear that the view changed.
     expect(sent.filter((c) => c === 'secrets:unlocked')).toHaveLength(1)
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
-    expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
+    expect(await call('avatars:profileGithub', 'default', 64)).toBe(PROFILE_PIC)
     expect(calls.length).toBeGreaterThan(0)
     for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
     expect(keyring.decrypts).toBe(0)
@@ -240,7 +240,7 @@ describe('avatar peeks before the store is unlocked', () => {
     setUp({ consent: 'unset', profile: { links: { github: LINK } } })
     await boot()
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
-    expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
+    expect(await call('avatars:profileGithub', 'default', 64)).toBe(PROFILE_PIC)
     for (const c of calls) expect(c.auth).toBe('Bearer helper-token')
     expect(keyring.decrypts).toBe(0)
     expect(keyring.asked).toBe(0)
@@ -255,7 +255,7 @@ describe('avatar peeks before the store is unlocked', () => {
     await call('settings:unlock')
     expect(sent.filter((c) => c === 'secrets:unlocked')).toHaveLength(1)
     expect(await call('avatars:github', REMOTE, '/repos/any', ITEMS, 40)).toEqual(FOUND)
-    expect(await call('avatars:profileGithub', 64)).toBe(PROFILE_PIC)
+    expect(await call('avatars:profileGithub', 'default', 64)).toBe(PROFILE_PIC)
     expect(calls.length).toBeGreaterThan(0)
     for (const c of calls) expect(c.auth).toBe('Bearer ghp_stored')
     expect(machineLogins).toEqual([])
@@ -270,10 +270,51 @@ describe('avatar peeks before the store is unlocked', () => {
       profile: { links: { github: LINK }, githubEnterprise: [{ url: 'https://ghe.corp.test', token: 'ghes_plain' }] }
     })
     await boot()
-    expect(await call('avatars:profileGithub', 64)).toBeNull()
+    expect(await call('avatars:profileGithub', 'default', 64)).toBeNull()
     expect(calls).toEqual([])
     expect(machineLogins).toEqual([])
     expect(keyring.decrypts).toBe(0)
+  })
+})
+
+describe('the title-bar picture after a profile switch', () => {
+  it('answers for the profile the renderer names, not the one still active on disk', async () => {
+    // The renderer switched A → B; the 250 ms settings debounce has not written it yet,
+    // so the file still says A. B's picture (or nothing) — never A's.
+    dir = mkdtempSync(join(tmpdir(), 'gitcito-avatars-switch-'))
+    const base = defaultSettings()
+    // Session-only tokens (no keyring store on disk), so each account has its own.
+    const a = { ...base.profiles[0], id: 'pa', name: 'A', githubToken: 'ghp_alice' }
+    const b = { ...base.profiles[0], id: 'pb', name: 'B', githubToken: 'ghp_bob' }
+    const c = { ...base.profiles[0], id: 'pc', name: 'C' }
+    writeFileSync(
+      join(dir, 'gitcito-settings.json'),
+      JSON.stringify({ ...base, onboardingCompleted: true, profiles: [a, b, c], activeProfileId: 'pa' })
+    )
+    await boot()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        const auth = ((init?.headers ?? {}) as Record<string, string>).Authorization ?? null
+        calls.push({ url: String(input), auth })
+        const login = auth?.replace('Bearer ghp_', '')
+        return new Response(JSON.stringify({ avatar_url: `https://avatars.githubusercontent.com/u/${login}?v=4` }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+    expect(await call('avatars:profileGithub', 'pa', 64)).toBe('https://avatars.githubusercontent.com/u/alice?v=4&s=64')
+    expect(await call('avatars:profileGithub', 'pb', 64)).toBe('https://avatars.githubusercontent.com/u/bob?v=4&s=64')
+    // A profile with no GitHub account gets nothing, never the active profile's picture.
+    expect(await call('avatars:profileGithub', 'pc', 64)).toBeNull()
+    // An empty, unknown or malformed id names nobody.
+    expect(await call('avatars:profileGithub', '', 64)).toBeNull()
+    expect(await call('avatars:profileGithub', 'nobody', 64)).toBeNull()
+    expect(await call('avatars:profileGithub', 64)).toBeNull()
+    expect(calls.map((c) => c.auth)).toEqual(['Bearer ghp_alice', 'Bearer ghp_bob'])
+    expect(keyring.decrypts).toBe(0)
+    expect(keyring.probes).toBe(0)
   })
 })
 

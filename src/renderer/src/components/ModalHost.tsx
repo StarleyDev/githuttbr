@@ -4,7 +4,7 @@ import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useClonesStore } from '../stores/clones'
 import { cloneFolderNames } from '../lib/cloneBatch'
-import { bindingAfterAddRemote, effectiveProfileId } from '../lib/repoProfile'
+import { bindBeforeOpen, bindingAfterAddRemote, effectiveProfileId } from '../lib/repoProfile'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
 import { colorName } from './colorMenu'
@@ -1673,10 +1673,12 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
             recurseSubmodules: submodules,
             profileId: profileForRepo
           },
-          onDone: (path) => {
-            setRepoProfile(path, profileForRepo)
-            onClone({ path, name: folder })
-          }
+          onDone: (path) =>
+            void bindBeforeOpen({
+              bind: () => setRepoProfile(path, profileForRepo),
+              persist: () => useSettingsStore.getState().flush(),
+              open: () => onClone({ path, name: folder })
+            })
         },
         { attached: false }
       )
@@ -1720,11 +1722,14 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
       // but the values captured above.
       onDone: (path) => {
         updateSettings((s) => ({ ...s, lastClonePath: parentDir }))
-        // Pin the new repo to the chosen profile so its identity/tokens apply
-        // automatically whenever its tab is active.
-        setRepoProfile(path, profileForRepo)
         if (useUIStore.getState().modal === spec) closeModal()
-        spec.onClone({ path, name: folder })
+        // Pin the new repo to the chosen profile so its identity/tokens apply
+        // automatically whenever its tab is active — written before the tab opens.
+        void bindBeforeOpen({
+          bind: () => setRepoProfile(path, profileForRepo),
+          persist: () => useSettingsStore.getState().flush(),
+          open: () => spec.onClone({ path, name: folder })
+        })
       }
     })
     setTaskId(id)

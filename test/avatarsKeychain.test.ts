@@ -88,7 +88,7 @@ describe('avatars never unlock the keychain', () => {
   const ITEMS = [{ email: 'dev@corp.test', sha: 'abcdef1' }]
 
   it('answers "unknown" while locked, without touching the keyring, asking, or calling the API', async () => {
-    expect(await call('avatars:profileGithub', 64)).toBeNull()
+    expect(await call('avatars:profileGithub', 'default', 64)).toBeNull()
     // Unknown is an absent key, not a `null` miss the renderer would keep.
     expect(await call('avatars:github', REMOTE, '/repos/unbound', ITEMS, 40)).toEqual({})
     expect(await call('avatars:github', REMOTE, BOUND_REPO, ITEMS, 40)).toEqual({})
@@ -100,7 +100,7 @@ describe('avatars never unlock the keychain', () => {
   it('resolves once something the user did unlocked the store, and nothing was cached as a miss meanwhile', async () => {
     await call('settings:unlock')
     expect(keyring.decrypts).toBe(1)
-    expect(await call('avatars:profileGithub', 64)).toBe('https://avatars.githubusercontent.com/u/42?v=4&s=64')
+    expect(await call('avatars:profileGithub', 'default', 64)).toBe('https://avatars.githubusercontent.com/u/42?v=4&s=64')
     expect(await call('avatars:github', REMOTE, BOUND_REPO, ITEMS, 40)).toEqual({
       'dev@corp.test': 'https://avatars.githubusercontent.com/u/7?v=4&s=40'
     })

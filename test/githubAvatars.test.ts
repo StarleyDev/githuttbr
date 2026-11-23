@@ -525,7 +525,7 @@ describe('avatar batcher', () => {
   it('never hands a profile picture asked while locked to an avatar that mounts after the unlock', async () => {
     let gen = 0
     const pending: ((u: string | null) => void)[] = []
-    const ask = vi.fn(() => new Promise<string | null>((r) => pending.push(r)))
+    const ask = vi.fn((_id: string, _size: number) => new Promise<string | null>((r) => pending.push(r)))
     const profile = createProfileAvatarCache(ask, () => gen)
     const locked = profile('p', 'acct', 64)
     // Same key, same generation: one shared request.

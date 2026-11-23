@@ -8,7 +8,8 @@ import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/s
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
 import { cloneFolderNames } from '../src/renderer/src/lib/cloneBatch'
-import { bindingAfterAddRemote, effectiveProfileId } from '../src/renderer/src/lib/repoProfile'
+import { bindBeforeOpen, bindingAfterAddRemote, effectiveProfileId } from '../src/renderer/src/lib/repoProfile'
+import { profileHasHostingToken } from '../src/renderer/src/lib/profileTokens'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
@@ -7989,5 +7990,87 @@ describe('Add remote: which profile the repository ends up bound to', () => {
     expect(bindingAfterAddRemote(s, '/free', 'work')).toBeNull()
     expect(bindingAfterAddRemote(s, '/bound', 'gone')).toBeNull()
     expect(bindingAfterAddRemote(s, '/bound', '')).toBeNull()
+  })
+})
+
+describe('Clone: the new repository is bound on disk before its tab opens', () => {
+  // Main reads repoProfiles from the settings file; the tab's first hosting calls
+  // must already see the clone's profile, not the active one.
+  function world(): {
+    memory: Record<string, string>
+    disk: Record<string, string>
+    seenAtOpen: Record<string, string>[]
+    persist: () => Promise<void>
+  } {
+    const memory: Record<string, string> = {}
+    const disk: Record<string, string> = {}
+    const seenAtOpen: Record<string, string>[] = []
+    // An async write, like the settings IPC: the disk changes only once it lands.
+    const persist = (): Promise<void> =>
+      new Promise((r) =>
+        setTimeout(() => {
+          Object.assign(disk, memory)
+          r()
+        }, 5)
+      )
+    return { memory, disk, seenAtOpen, persist }
+  }
+
+  it('writes the binding before the open callback runs', async () => {
+    const w = world()
+    await bindBeforeOpen({
+      bind: () => (w.memory['/repos/new'] = 'personal'),
+      persist: w.persist,
+      open: () => w.seenAtOpen.push({ ...w.disk })
+    })
+    expect(w.seenAtOpen).toEqual([{ '/repos/new': 'personal' }])
+  })
+
+  it('does not open before the write lands, and still opens when the write fails', async () => {
+    const order: string[] = []
+    let land: () => void = () => undefined
+    const done = bindBeforeOpen({
+      bind: () => order.push('bind'),
+      persist: () => new Promise<void>((r) => (land = r)).then(() => void order.push('persisted')),
+      open: () => order.push('open')
+    })
+    await Promise.resolve()
+    expect(order).toEqual(['bind'])
+    land()
+    await done
+    expect(order).toEqual(['bind', 'persisted', 'open'])
+
+    const opened: string[] = []
+    await bindBeforeOpen({
+      bind: () => undefined,
+      persist: () => Promise.reject(new Error('disk full')),
+      open: () => opened.push('open')
+    })
+    expect(opened).toEqual(['open'])
+  })
+})
+
+describe('profileHasHostingToken', () => {
+  it('counts every cloud token', () => {
+    for (const field of ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken', 'forgejoToken'] as const) {
+      expect(profileHasHostingToken({ [field]: 'tok' })).toBe(true)
+    }
+  })
+  it('counts a token on any self-hosted server — GitHub Enterprise and Bitbucket Data Center included', () => {
+    expect(profileHasHostingToken({ githubEnterprise: [{ url: 'https://ghe.corp.test', token: 'ghes' }] })).toBe(true)
+    expect(profileHasHostingToken({ gitlabServers: [{ url: 'https://gl.corp.test', token: 'glpat' }] })).toBe(true)
+    expect(profileHasHostingToken({ bitbucketServers: [{ url: 'https://bb.corp.test', token: 'bbdc' }] })).toBe(true)
+  })
+  it('is false with nothing, or with only empty and blank tokens', () => {
+    expect(profileHasHostingToken({})).toBe(false)
+    expect(
+      profileHasHostingToken({
+        githubToken: '',
+        gitlabToken: '  ',
+        githubEnterprise: [{ url: 'https://ghe.corp.test', token: '' }],
+        gitlabServers: [],
+        bitbucketServers: [{ url: 'https://bb.corp.test', token: ' ' }]
+      })
+    ).toBe(false)
   })
 })

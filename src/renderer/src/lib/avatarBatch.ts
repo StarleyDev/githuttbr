@@ -114,14 +114,15 @@ export function createAvatarBatcher(
 }
 
 /**
- * One shared request per profile, account, size and unlock generation, for the
- * active profile's own picture. The generation is part of the key: an avatar
+ * One shared request per profile, account, size and unlock generation, for a
+ * profile's own picture. The profile id travels to main, which answers for
+ * that profile and not for whichever one is active on disk. The generation is part of the key: an avatar
  * that mounts after an unlock must not share a request made while the tokens
  * were still locked, whose "none" only meant "locked". A miss is forgotten, so
  * the next mount asks again.
  */
 export function createProfileAvatarCache(
-  ask: (size: number) => Promise<string | null>,
+  ask: (profileId: string, size: number) => Promise<string | null>,
   generation: () => number
 ): (profileId: string, account: string, size: number) => Promise<string | null> {
   const jobs = new Map<string, Promise<string | null>>()
@@ -129,7 +130,7 @@ export function createProfileAvatarCache(
     const key = `${profileId}\n${account}\n${size}\n${generation()}`
     let job = jobs.get(key)
     if (!job) {
-      job = ask(size).catch(() => null)
+      job = ask(profileId, size).catch(() => null)
       jobs.set(key, job)
       void job.then((u) => {
         if (!u) jobs.delete(key)

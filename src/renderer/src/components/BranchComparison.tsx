@@ -9,6 +9,7 @@ import { DiffViewer } from './DiffViewer'
 import { RefPicker, type RefOption } from './RefPicker'
 import { useT, t as tr, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
+import { profileHasHostingToken } from '../lib/profileTokens'
 
 function timeAgo(unix: number): string {
   const d = Date.now() / 1000 - unix
@@ -88,14 +89,7 @@ export function BranchComparison({
     })
   }
 
-  const hasToken = !!(
-    profile.githubToken ||
-    profile.azureToken ||
-    profile.gitlabToken ||
-    profile.bitbucketToken ||
-    profile.forgejoToken ||
-    profile.gitlabServers?.some((s) => !!s.token)
-  )
+  const hasToken = profileHasHostingToken(profile)
 
   return (
     <div className="bc-root">

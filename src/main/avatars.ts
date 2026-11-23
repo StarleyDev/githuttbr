@@ -3,7 +3,7 @@ import { app, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { apiToken } from './credentials'
-import { peekActiveProfileAuth, peekBoundProfileAuth, type PeekedAuth } from './settings'
+import { peekActiveProfileAuth, peekBoundProfileAuth, peekNamedProfileAuth, type PeekedAuth } from './settings'
 import { knownGithubEnterpriseInstances } from './gitlabInstances'
 import { pickHostAuth } from '../shared/hostToken'
 import { GITHUB_COM, githubEndpoints, githubInstanceOf } from '../shared/githubEnterprise'
@@ -118,15 +118,22 @@ export async function githubAvatarsFor(
 }
 
 /**
- * The active profile's own GitHub picture: github.com first, then each
- * Enterprise Server the profile holds a token for. One `GET /user` per token
- * per session — the token's hash keys it, so connecting another account shows
- * the new picture without a restart.
+ * A profile's own GitHub picture: github.com first, then each Enterprise
+ * Server the profile holds a token for. One `GET /user` per token per session
+ * — the token's hash keys it, so connecting another account shows the new
+ * picture without a restart.
+ *
+ * The renderer names the profile rather than main reading `activeProfileId`:
+ * a switch reaches disk only after the settings debounce, and the renderer
+ * caches a picture under the new profile's id — so the active profile on disk
+ * would keep the previous one's picture in the title bar all session. An empty
+ * or unknown id gets nothing.
  */
 const profileCache = new Map<string, Promise<string | null>>()
-export async function activeProfileGithubAvatar(size: number): Promise<string | null> {
+export async function profileGithubAvatar(profileId: string, size: number): Promise<string | null> {
+  if (!profileId.trim()) return null
   for (const base of [GITHUB_COM, ...knownGithubEnterpriseInstances()]) {
-    const input = await peekActiveProfileAuth('github', undefined, base).catch((): PeekedAuth => ({}))
+    const input = await peekNamedProfileAuth('github', profileId, undefined, base).catch((): PeekedAuth => ({}))
     // Still encrypted: no picture for now, and nothing remembered — asked again
     // once unlocked. Stop rather than move on: a later server's account is not
     // this one's, and the title bar would keep the wrong picture.
@@ -166,5 +173,7 @@ export function registerAvatarHandlers(): void {
       ? githubAvatarsFor(remoteUrl, typeof repoPath === 'string' && repoPath ? repoPath : undefined, asRequests(items), asSize(size))
       : {}
   )
-  ipcMain.handle('avatars:profileGithub', (_e, size: unknown) => activeProfileGithubAvatar(asSize(size)))
+  ipcMain.handle('avatars:profileGithub', (_e, profileId: unknown, size: unknown) =>
+    typeof profileId === 'string' ? profileGithubAvatar(profileId, asSize(size)) : null
+  )
 }
