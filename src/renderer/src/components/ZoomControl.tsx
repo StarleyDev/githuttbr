@@ -6,7 +6,7 @@ import { useT } from '../i18n'
 const LEVELS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2]
 const MIN = LEVELS[0]
 const MAX = LEVELS[LEVELS.length - 1]
-const ZOOM_KEY = 'gitcito-zoom'
+const ZOOM_KEY = 'githuttbr-zoom'
 
 function loadZoom(): number {
   const raw = Number(localStorage.getItem(ZOOM_KEY))

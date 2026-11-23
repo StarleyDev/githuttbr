@@ -33,7 +33,7 @@ import { PRODUCT_NAME } from '../shared/brand'
 const pexecFile = promisify(execFile)
 
 // The one notes namespace bundles carry: the user-facing commit notes. The
-// app's own refs (e.g. refs/notes/gitcito-ci) stay machine-local on purpose.
+// app's own refs (e.g. refs/notes/githuttbr-ci) stay machine-local on purpose.
 const NOTES_REF = 'refs/notes/commits'
 
 const gitOut = (repoPath: string, args: string[]): Promise<string> =>

@@ -14,7 +14,7 @@ let compoundSeq = 0
 
 /** The selected run target is a per-machine preference, like the window layout —
  *  it names a simulator that exists on this laptop and nowhere else. */
-const DEVICE_KEY = 'gitcito.launchDevice.'
+const DEVICE_KEY = 'githuttbr.launchDevice.'
 
 function readStoredDevice(repoPath: string): RunDevice | null {
   try {

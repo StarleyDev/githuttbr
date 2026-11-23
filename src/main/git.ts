@@ -207,6 +207,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
 import { PRODUCT_NAME } from '../shared/brand'
+import { APP_ID, APP_IDS, LEGACY_APP_ID, isPrePurgePrefix, prePurgeRefRoot, snapshotRefRoot } from '../shared/identifiers'
 import { redactSecrets } from '../shared/redact'
 import { cloneFolderProblem } from '../shared/cloneFolder'
 import { isEphemeralTextconv, persistBlocker } from './appImagePaths'
@@ -345,20 +346,24 @@ async function resolveHooksDir(git: SimpleGit, repoPath: string): Promise<{ dir:
 const gitInstances = new Map<string, SimpleGit>()
 
 /**
- * Config keys Gitcito writes through simple-git that are not on its built-in safe list.
+ * Config keys the app writes through simple-git that are not on its built-in safe list.
  * simple-git 4 only warns about an unlisted key; its next major refuses the write, which
  * would silently break stacks, protected branches, git-flow, rerere, subtrees and signing.
  * `*` matches any characters, dots included, so every pattern is pinned to a leaf the app
  * owns — a key named here also skips simple-git's vulnerability check, which is why this
  * is `submodule.*.url` and never `submodule.*` (that would let `submodule.x.update=!cmd`).
  */
-export const GITHUTTBR_CONFIG_KEYS: readonly string[] = [
-  'branch.*.gitcitoparent',
-  'branch.*.gitcitobase',
-  'gitcito.protectedbranches',
-  'gitcito.subtree.*.url',
-  'gitcito.subtree.*.ref',
-  'gitcito.prepurge.*',
+export const APP_CONFIG_KEYS: readonly string[] = [
+  // Both namespaces: new values are written under githuttbr, but clearing a
+  // stack level or forgetting a subtree also unsets what upstream Gitcito left.
+  ...APP_IDS.flatMap((ns) => [
+    `branch.*.${ns}parent`,
+    `branch.*.${ns}base`,
+    `${ns}.protectedbranches`,
+    `${ns}.subtree.*.url`,
+    `${ns}.subtree.*.ref`,
+    `${ns}.prepurge.*`
+  ]),
   // git-flow's own keys, but only the layout: `gitflow.path.hooks` locates scripts.
   'gitflow.branch.*',
   'gitflow.prefix.*',
@@ -372,7 +377,7 @@ export const GITHUTTBR_CONFIG_KEYS: readonly string[] = [
 const gitFor = (repoPath: string): SimpleGit => {
   let git = gitInstances.get(repoPath)
   if (!git) {
-    git = simpleGit(repoPath, { allowConfig: GITHUTTBR_CONFIG_KEYS })
+    git = simpleGit(repoPath, { allowConfig: APP_CONFIG_KEYS })
     gitInstances.set(repoPath, git)
   }
   return git
@@ -554,8 +559,49 @@ function decodeSubtreeKey(key: string): string {
 async function rememberSubtree(repoPath: string, prefix: string, url: string, ref: string): Promise<void> {
   const key = encodeSubtreeKey(prefix)
   const git = gitFor(repoPath)
-  await git.raw(['config', `gitcito.subtree.${key}.url`, url])
-  await git.raw(['config', `gitcito.subtree.${key}.ref`, ref])
+  await git.raw(['config', `${APP_ID}.subtree.${key}.url`, url])
+  await git.raw(['config', `${APP_ID}.subtree.${key}.ref`, ref])
+}
+
+// ─── Stack metadata in git config ───────────────────────────────────────────
+// branch.<name>.githuttbrparent / .githuttbrbase, read with a fallback to the
+// keys upstream Gitcito wrote (gitcitoparent / gitcitobase), so a stack built
+// before the rename is still a stack. Writes always go to the new keys.
+
+type StackField = 'parent' | 'base'
+
+async function readStackMeta(git: SimpleGit, branch: string, field: StackField): Promise<string> {
+  for (const ns of APP_IDS) {
+    const value = (await git.raw(['config', '--get', `branch.${branch}.${ns}${field}`]).catch(() => '')).trim()
+    if (value) return value
+  }
+  return ''
+}
+
+async function writeStackMeta(git: SimpleGit, branch: string, field: StackField, value: string): Promise<void> {
+  await git.raw(['config', `branch.${branch}.${APP_ID}${field}`, value])
+}
+
+/** Unset under both names — a legacy key left behind would quietly bring the link back. */
+async function clearStackMeta(git: SimpleGit, branch: string, field: StackField): Promise<void> {
+  for (const ns of APP_IDS) await git.raw(['config', '--unset', `branch.${branch}.${ns}${field}`]).catch(() => {})
+}
+
+/** Every recorded stack parent, branch → parent. The new key wins over a legacy one. */
+async function readStackParents(git: SimpleGit): Promise<Map<string, string>> {
+  const parents = new Map<string, string>()
+  // Legacy first, so the current namespace overwrites it.
+  for (const ns of [...APP_IDS].reverse()) {
+    const raw = await git.raw(['config', '--get-regexp', `^branch\\..*\\.${ns}parent$`]).catch(() => '')
+    for (const line of raw.split('\n')) {
+      const sp = line.indexOf(' ')
+      if (sp < 0) continue
+      const key = line.slice(0, sp) // branch.<name>.<ns>parent
+      const name = key.slice('branch.'.length, key.length - `.${ns}parent`.length)
+      if (name) parents.set(name, line.slice(sp + 1).trim())
+    }
+  }
+  return parents
 }
 
 /**
@@ -617,8 +663,8 @@ async function withRerereCapture<T>(repoPath: string, op: () => Promise<T>): Pro
 
 /** Config key holding the paths a purge removed. Git config keys must begin
  *  with a letter, so the timestamp cannot stand alone. */
-function prePurgeKey(at: number): string {
-  return `gitcito.prepurge.at${at}`
+function prePurgeKey(at: number, ns: string = APP_ID): string {
+  return `${ns}.prepurge.at${at}`
 }
 
 /**
@@ -1540,7 +1586,14 @@ async function listSnapshotRefs(repoPath: string): Promise<{ ref: string; sha: s
   // pretty-format feature). refname/sha/unixtime contain no spaces, so a plain
   // space is a safe field separator here.
   const raw = await gitFor(repoPath)
-    .raw(['for-each-ref', '--sort=-creatordate', '--format=%(refname) %(objectname) %(creatordate:unix)', 'refs/gitcito/wip'])
+    .raw([
+      'for-each-ref',
+      '--sort=-creatordate',
+      '--format=%(refname) %(objectname) %(creatordate:unix)',
+      // Snapshots taken before the rename live under refs/gitcito/wip and are
+      // listed, restored and pruned exactly like new ones.
+      ...APP_IDS.map(snapshotRefRoot)
+    ])
     .catch(() => '')
   const out: { ref: string; sha: string; time: number }[] = []
   for (const line of raw.split('\n')) {
@@ -3514,22 +3567,23 @@ export const gitService = {
   // ─── Stacked branches ──────────────────────────────────────────────────
   // A "stack" is a chain of dependent branches where each is based on the one
   // below it. We persist the parent (and the parent tip we last rebased onto)
-  // in git config under branch.<name>.gitcitoparent / .gitcitobase, so the
-  // metadata travels with the repo and never touches history.
+  // in git config under branch.<name>.githuttbrparent / .githuttbrbase (see
+  // readStackMeta for the legacy keys), so the metadata travels with the repo
+  // and never touches history.
 
   /** Record (or change) a branch's stack parent, snapshotting the parent tip. */
   async stackSetParent(repoPath: string, branch: string, parent: string): Promise<void> {
     const git = gitFor(repoPath)
     const tip = (await git.revparse([parent])).trim()
-    await git.raw(['config', `branch.${branch}.gitcitoparent`, parent])
-    await git.raw(['config', `branch.${branch}.gitcitobase`, tip])
+    await writeStackMeta(git, branch, 'parent', parent)
+    await writeStackMeta(git, branch, 'base', tip)
   },
 
   /** Stop tracking a branch as part of a stack. */
   async stackClearParent(repoPath: string, branch: string): Promise<void> {
     const git = gitFor(repoPath)
-    await git.raw(['config', '--unset', `branch.${branch}.gitcitoparent`]).catch(() => {})
-    await git.raw(['config', '--unset', `branch.${branch}.gitcitobase`]).catch(() => {})
+    await clearStackMeta(git, branch, 'parent')
+    await clearStackMeta(git, branch, 'base')
   },
 
   /**
@@ -3544,19 +3598,7 @@ export const gitService = {
     if (!head || head === 'HEAD') return { trunk: '', branches: [] }
 
     // Read all recorded parents in one shot.
-    const raw = await git
-      .raw(['config', '--get-regexp', '^branch\\..*\\.gitcitoparent$'])
-      .catch(() => '')
-    const parents: Record<string, string> = {}
-    for (const line of raw.split('\n')) {
-      if (!line.trim()) continue
-      const sp = line.indexOf(' ')
-      if (sp < 0) continue
-      const key = line.slice(0, sp) // branch.<name>.gitcitoparent
-      const val = line.slice(sp + 1).trim()
-      const name = key.slice('branch.'.length, key.length - '.gitcitoparent'.length)
-      parents[name] = val
-    }
+    const parents: Record<string, string> = Object.fromEntries(await readStackParents(git))
 
     // Walk down to the trunk, guarding against cycles.
     const chainTopDown: string[] = []
@@ -3632,15 +3674,14 @@ export const gitService = {
     // below is what makes "nothing happened" true after a conflict.
     await withStackRollback(repoPath, [...order, trunk], async () => {
       for (const branch of order) {
-        const existing = (await git.raw(['config', '--get', `branch.${branch}.gitcitobase`]).catch(() => '')).trim()
+        const existing = await readStackMeta(git, branch, 'base')
         if (existing) continue
-        const oldParent =
-          (await git.raw(['config', '--get', `branch.${branch}.gitcitoparent`]).catch(() => '')).trim() || trunk
+        const oldParent = (await readStackMeta(git, branch, 'parent')) || trunk
         const base = (await git.raw(['merge-base', oldParent, branch]).catch(() => '')).trim()
-        if (base) await git.raw(['config', `branch.${branch}.gitcitobase`, base])
+        if (base) await writeStackMeta(git, branch, 'base', base)
       }
       for (let i = 0; i < order.length; i++) {
-        await git.raw(['config', `branch.${order[i]}.gitcitoparent`, i === 0 ? trunk : order[i - 1]])
+        await writeStackMeta(git, order[i], 'parent', i === 0 ? trunk : order[i - 1])
       }
       await gitService.stackRestack(repoPath, order[order.length - 1])
     })
@@ -3676,17 +3717,7 @@ export const gitService = {
    * often than not. This is how it finds the stacks that exist anyway.
    */
   async stackLeaves(repoPath: string): Promise<string[]> {
-    const raw = await gitFor(repoPath)
-      .raw(['config', '--get-regexp', '^branch\\..*\\.gitcitoparent$'])
-      .catch(() => '')
-    const parents = new Map<string, string>()
-    for (const line of raw.split('\n')) {
-      const sp = line.indexOf(' ')
-      if (sp < 0) continue
-      const key = line.slice(0, sp)
-      const name = key.slice('branch.'.length, key.length - '.gitcitoparent'.length)
-      if (name) parents.set(name, line.slice(sp + 1).trim())
-    }
+    const parents = await readStackParents(gitFor(repoPath))
     const claimed = new Set(parents.values())
     return [...parents.keys()].filter((b) => !claimed.has(b)).sort((a, b) => a.localeCompare(b))
   },
@@ -3733,21 +3764,17 @@ export const gitService = {
    */
   async stackInsert(repoPath: string, name: string, parent: string): Promise<void> {
     const git = gitFor(repoPath)
-    const raw = await git.raw(['config', '--get-regexp', '^branch\\..*\\.gitcitoparent$']).catch(() => '')
     let child: string | null = null
-    for (const line of raw.split('\n')) {
-      const sp = line.indexOf(' ')
-      if (sp < 0) continue
-      const key = line.slice(0, sp)
-      if (line.slice(sp + 1).trim() !== parent) continue
-      child = key.slice('branch.'.length, key.length - '.gitcitoparent'.length)
+    for (const [branch, recorded] of await readStackParents(git)) {
+      if (recorded !== parent) continue
+      child = branch
       break
     }
     await git.raw(['branch', name, parent])
     await gitService.stackSetParent(repoPath, name, parent)
     // Only the link moves — the child's recorded base still marks where its own
     // commits start, and the new level's tip is the same commit it had before.
-    if (child && child !== name) await git.raw(['config', `branch.${child}.gitcitoparent`, name])
+    if (child && child !== name) await writeStackMeta(git, child, 'parent', name)
     await git.checkout(name)
   },
 
@@ -3775,10 +3802,10 @@ export const gitService = {
       const mergeBase = (await git.raw(['merge-base', parentTip, b.name]).catch(() => '')).trim()
       if (mergeBase === parentTip) {
         // Parent tip already in this branch — nothing to replay.
-        await git.raw(['config', `branch.${b.name}.gitcitobase`, parentTip])
+        await writeStackMeta(git, b.name, 'base', parentTip)
         continue
       }
-      let base = (await git.raw(['config', '--get', `branch.${b.name}.gitcitobase`]).catch(() => '')).trim()
+      let base = await readStackMeta(git, b.name, 'base')
       if (!base) base = (await git.raw(['merge-base', b.parent, b.name])).trim()
       // 3-arg form checks out b.name and rebases its commits since `base` onto parentTip.
       // A conflict here is the only failure a user meets often, so it is named
@@ -3788,7 +3815,7 @@ export const gitService = {
         if (!/conflict/i.test(msg)) throw err
         throw new Error(`${ROUTE_CONFLICT}:${b.name}:${b.parent}`)
       })
-      await git.raw(['config', `branch.${b.name}.gitcitobase`, parentTip])
+      await writeStackMeta(git, b.name, 'base', parentTip)
     }
     await git.checkout(leaf)
   },
@@ -5682,15 +5709,20 @@ export const gitService = {
   },
 
   /**
-   * Per-repo protected branches, stored in git config (gitcito.protectedbranches,
+   * Per-repo protected branches, stored in git config (githuttbr.protectedbranches,
    * comma-joined) so they travel with the repo. Unset → default main/master.
+   * Upstream's gitcito.protectedbranches is read when the new key is absent.
    */
   async protectedBranches(repoPath: string): Promise<string[]> {
     // `runGit`, not simple-git: `config --get` exits 1 for a key that is not
     // there, and simple-git hands that back as an empty string rather than an
     // error — which quietly turned "never configured" into "nothing is
     // protected", and took the force-push guard on main with it.
-    const raw = await runGit(repoPath, ['config', '--get', 'gitcito.protectedbranches']).catch(() => null)
+    let raw: string | null = null
+    for (const ns of APP_IDS) {
+      raw = await runGit(repoPath, ['config', '--get', `${ns}.protectedbranches`]).catch(() => null)
+      if (raw !== null) break
+    }
     if (raw === null) return ['main', 'master'] // never configured → sensible default
     return raw
       .trim()
@@ -5701,10 +5733,10 @@ export const gitService = {
 
   async setProtectedBranches(repoPath: string, branches: string[]): Promise<void> {
     const value = branches.map((b) => b.trim()).filter(Boolean).join(',')
-    await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
+    await gitFor(repoPath).raw(['config', `${APP_ID}.protectedbranches`, value])
   },
 
-  // ─── .gitcito.json ───────────────────────────────────────────────────────
+  // ─── .githuttbr.json ─────────────────────────────────────────────────────
   // The repository's own house rules, committed alongside the code. Thin
   // delegates: the reasoning, the validation and the safety rules all live in
   // main/repoConfig.ts, next to shared/repoConfig.ts which the editor shares.
@@ -5838,12 +5870,18 @@ export const gitService = {
     }
 
     // Anything the user told us about, including prefixes added by another tool.
-    const remembered = await git.raw(['config', '--get-regexp', '^gitcito\\.subtree\\.']).catch(() => '')
+    // Legacy gitcito.subtree.* first, so a githuttbr.subtree.* value overwrites it.
+    const remembered = await git
+      .raw(['config', '--get-regexp', `^(${APP_ID}|${LEGACY_APP_ID})\\.subtree\\.`])
+      .catch(() => '')
+    const lines = remembered
+      .split('\n')
+      .map((line) => /^(\w+)\.subtree\.(.+)\.(url|ref)\s+(.*)$/.exec(line.trim()))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .sort((a, b) => Number(a[1] === APP_ID) - Number(b[1] === APP_ID))
     const meta = new Map<string, { url: string; ref: string }>()
-    for (const line of remembered.split('\n')) {
-      const match = /^gitcito\.subtree\.(.+)\.(url|ref)\s+(.*)$/.exec(line.trim())
-      if (!match) continue
-      const [, key, field, value] = match
+    for (const match of lines) {
+      const [, , key, field, value] = match
       const prefix = decodeSubtreeKey(key)
       const entry = meta.get(prefix) ?? { url: '', ref: '' }
       if (field === 'url') entry.url = value
@@ -5905,8 +5943,10 @@ export const gitService = {
   async subtreeForget(repoPath: string, prefix: string): Promise<void> {
     const key = encodeSubtreeKey(prefix)
     const git = gitFor(repoPath)
-    for (const field of ['url', 'ref']) {
-      await git.raw(['config', '--unset', `gitcito.subtree.${key}.${field}`]).catch(() => undefined)
+    for (const ns of APP_IDS) {
+      for (const field of ['url', 'ref']) {
+        await git.raw(['config', '--unset', `${ns}.subtree.${key}.${field}`]).catch(() => undefined)
+      }
     }
   },
 
@@ -5957,7 +5997,7 @@ export const gitService = {
    * entirely — the single most common reason someone's notes "disappear" on
    * another machine. These two move them explicitly. Only the user-facing
    * commit-notes ref travels: a wildcard would also publish the app's own
-   * refs/notes/gitcito-ci verdicts, which are promised to stay local.
+   * refs/notes/githuttbr-ci (and legacy gitcito-ci) verdicts, which are promised to stay local.
    */
   async fetchNotes(repoPath: string, remote = 'origin'): Promise<void> {
     await withRemoteAuth(repoPath, remote, 'fetch', () =>
@@ -6055,7 +6095,7 @@ export const gitService = {
         : ''
 
     // `--branches --tags` mirrors exactly what the rewrite will touch. `--all`
-    // would also walk `refs/gitcito/pre-purge/*`, so a second purge in the same
+    // would also walk `refs/githuttbr/pre-purge/*`, so a second purge in the same
     // repository would count commits that only a previous backup still holds
     // and promise work the rewrite is not going to do.
     const log = await git
@@ -6085,7 +6125,7 @@ export const gitService = {
 
   /**
    * Rewrite every branch and tag without the given paths, after copying each ref
-   * to `refs/gitcito/pre-purge/<timestamp>/…`.
+   * to `refs/githuttbr/pre-purge/<timestamp>/…`.
    *
    * The backup is deliberately outside `--all`'s reach, so the rewrite cannot
    * eat its own safety net — and it keeps the old objects alive, which is why
@@ -6101,7 +6141,7 @@ export const gitService = {
     if (!preview.commits) throw new Error('No commit touches that path — nothing to rewrite.')
 
     const at = Math.floor(Date.now() / 1000)
-    const prefix = `refs/gitcito/pre-purge/${at}`
+    const prefix = `${prePurgeRefRoot()}/${at}`
     const refs = (await git.raw(['for-each-ref', '--format=%(refname) %(objectname)', 'refs/heads', 'refs/tags']))
       .split('\n')
       .map((line) => line.trim().split(' '))
@@ -6157,21 +6197,30 @@ export const gitService = {
   /** Every purge backup still in the repository, newest first. */
   async historyPurgeBackups(repoPath: string): Promise<HistoryPurgeBackup[]> {
     const git = gitFor(repoPath)
-    const refs = (await git.raw(['for-each-ref', '--format=%(refname)', 'refs/gitcito/pre-purge']).catch(() => ''))
+    // Backups a purge made before the rename sit under refs/gitcito/pre-purge
+    // and stay listed, restorable and droppable.
+    const refs = (
+      await git.raw(['for-each-ref', '--format=%(refname)', ...APP_IDS.map(prePurgeRefRoot)]).catch(() => '')
+    )
       .split('\n')
       .map((r) => r.trim())
       .filter(Boolean)
 
-    const byStamp = new Map<number, number>()
+    const byPrefix = new Map<string, { ns: string; at: number; count: number }>()
     for (const ref of refs) {
-      const at = Number(ref.split('/')[3])
-      if (Number.isFinite(at)) byStamp.set(at, (byStamp.get(at) ?? 0) + 1)
+      const [, ns, , stamp] = ref.split('/')
+      const at = Number(stamp)
+      if (!Number.isFinite(at)) continue
+      const prefix = `${prePurgeRefRoot(ns)}/${at}`
+      const entry = byPrefix.get(prefix) ?? { ns, at, count: 0 }
+      entry.count++
+      byPrefix.set(prefix, entry)
     }
     const out: HistoryPurgeBackup[] = []
-    for (const [at, count] of byStamp) {
-      const recorded = await git.raw(['config', '--get', prePurgeKey(at)]).catch(() => '')
+    for (const [prefix, { ns, at, count }] of byPrefix) {
+      const recorded = await git.raw(['config', '--get', prePurgeKey(at, ns)]).catch(() => '')
       out.push({
-        prefix: `refs/gitcito/pre-purge/${at}`,
+        prefix,
         at,
         refs: count,
         paths: recorded.trim() ? recorded.trim().split('\n') : []
@@ -6183,7 +6232,7 @@ export const gitService = {
   /** Put every branch and tag back where the backup says it was. */
   async historyPurgeRestore(repoPath: string, prefix: string): Promise<void> {
     const git = gitFor(repoPath)
-    if (!prefix.startsWith('refs/gitcito/pre-purge/')) throw new Error('Not a purge backup.')
+    if (!isPrePurgePrefix(prefix)) throw new Error('Not a purge backup.')
     const saved = (await git.raw(['for-each-ref', '--format=%(refname) %(objectname)', prefix]))
       .split('\n')
       .map((line) => line.trim().split(' '))
@@ -6206,13 +6255,14 @@ export const gitService = {
    */
   async historyPurgeDropBackup(repoPath: string, prefix: string): Promise<void> {
     const git = gitFor(repoPath)
-    if (!prefix.startsWith('refs/gitcito/pre-purge/')) throw new Error('Not a purge backup.')
+    if (!isPrePurgePrefix(prefix)) throw new Error('Not a purge backup.')
     const refs = (await git.raw(['for-each-ref', '--format=%(refname)', prefix]).catch(() => ''))
       .split('\n')
       .map((r) => r.trim())
       .filter(Boolean)
     for (const ref of refs) await git.raw(['update-ref', '-d', ref]).catch(() => undefined)
-    await git.raw(['config', '--unset', prePurgeKey(Number(prefix.split('/')[3]))]).catch(() => undefined)
+    const [, ns, , stamp] = prefix.split('/')
+    await git.raw(['config', '--unset', prePurgeKey(Number(stamp), ns)]).catch(() => undefined)
     // The old commits are only unreachable once the reflog forgets them too.
     await git.raw(['reflog', 'expire', '--expire=now', '--all']).catch(() => undefined)
     await git.raw(['gc', '--prune=now']).catch(() => undefined)
@@ -8710,7 +8760,7 @@ export const gitService = {
   // A safety net for uncommitted work: the whole working tree — modified,
   // staged AND untracked files — is committed through a throwaway index
   // (read-tree/add/write-tree/commit-tree, so neither the real index nor the
-  // stash list is touched) and pinned under refs/gitcito/wip/ where gc cannot
+  // stash list is touched) and pinned under refs/githuttbr/wip/ where gc cannot
   // reach it. Taken on a timer, by hand, or as a guard right before a
   // destructive operation (see guardSnapshot). `git stash create` was the old
   // mechanism; it cannot capture untracked files, which is exactly what a
@@ -8723,7 +8773,7 @@ export const gitService = {
     if (!status || status.isClean()) return null
 
     const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
-    const tmpIndex = join(gitDir, `gitcito-snap-${process.pid}-${Date.now()}`)
+    const tmpIndex = join(gitDir, `githuttbr-snap-${process.pid}-${Date.now()}`)
     const env = { GIT_INDEX_FILE: tmpIndex }
     try {
       const head = (await runGit(repoPath, ['rev-parse', '--verify', 'HEAD']).catch(() => '')).trim()
@@ -8748,11 +8798,11 @@ export const gitService = {
       }
 
       const ts = Math.floor(Date.now() / 1000)
-      const label = `gitcito-wip ${new Date(ts * 1000).toISOString()} (${kind})`
+      const label = `githuttbr-wip ${new Date(ts * 1000).toISOString()} (${kind})`
       const sha = (await runGit(repoPath, ['commit-tree', tree, '-m', label, ...(head ? ['-p', head] : [])])).trim()
       // Millisecond ref names keep a guard and a timer tick within the same
       // second from colliding; displayed time comes from the commit, not the name.
-      const ref = `refs/gitcito/wip/${Date.now()}${SNAPSHOT_SUFFIX[kind]}`
+      const ref = `${snapshotRefRoot()}/${Date.now()}${SNAPSHOT_SUFFIX[kind]}`
       await git.raw(['update-ref', ref, sha])
       // Prune oldest beyond `max`.
       const all = await listSnapshotRefs(repoPath)
@@ -8877,8 +8927,8 @@ async function withStackRollback<T>(
     const tip = (await git.revparse([b]).catch(() => '')).trim()
     if (tip) tips.set(b, tip)
     config.set(b, {
-      parent: (await git.raw(['config', '--get', `branch.${b}.gitcitoparent`]).catch(() => '')).trim(),
-      base: (await git.raw(['config', '--get', `branch.${b}.gitcitobase`]).catch(() => '')).trim()
+      parent: await readStackMeta(git, b, 'parent'),
+      base: await readStackMeta(git, b, 'base')
     })
   }
   try {
@@ -8903,12 +8953,10 @@ async function withStackRollback<T>(
       else await runGit(repoPath, ['update-ref', `refs/heads/${branch}`, tip]).catch(() => undefined)
     }
     for (const [branch, saved] of config) {
-      for (const [key, value] of [
-        [`branch.${branch}.gitcitoparent`, saved.parent],
-        [`branch.${branch}.gitcitobase`, saved.base]
-      ] as const) {
-        if (value) await git.raw(['config', key, value]).catch(() => undefined)
-        else await git.raw(['config', '--unset', key]).catch(() => undefined)
+      for (const field of ['parent', 'base'] as const) {
+        const value = saved[field]
+        if (value) await writeStackMeta(git, branch, field, value).catch(() => undefined)
+        else await clearStackMeta(git, branch, field)
       }
     }
     throw err

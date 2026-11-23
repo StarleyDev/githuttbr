@@ -34,7 +34,7 @@ export const en = {
   'foot.reportIssue': 'Report an issue',
   'foot.sponsor': 'Sponsor',
 
-  'meta.title': 'Git HuttBr — the whole of git, with a UI that shows it to you',
+  'meta.title': 'GitHuttBr — the whole of git, with a UI that shows it to you',
   'meta.description':
     'A fully vibe-coded Git client. Free. Graph, staging by line, rebase, worktrees, submodules, LFS — plus a few things you did not know git could do.',
 
@@ -44,11 +44,11 @@ export const en = {
   'hero.download': 'Download for your platform',
   'hero.source': 'View source',
   'hero.terms': 'Free · MIT · v{version}',
-  'hero.graphAlt': 'The Git HuttBr commit graph',
+  'hero.graphAlt': 'The GitHuttBr commit graph',
 
   'features.title': 'A few things you did not know git could do',
   'features.sub':
-    'None of these is the reason to use Git HuttBr — the list above is. They exist because git already knows the answer; Git HuttBr just asks.',
+    'None of these is the reason to use GitHuttBr — the list above is. They exist because git already knows the answer; GitHuttBr just asks.',
 
   'ordinary.title': 'What you get',
   'ordinary.sub':
@@ -70,7 +70,7 @@ export const en = {
   'download.title': 'Download',
   'download.sub': 'Latest release: <strong>v{version}</strong>. Every build is published from CI.',
   'download.cli':
-    'Or open a repository from your terminal with <code>gitcito .</code> — see <a href="{cli}">the command line</a>.',
+    'Or open a repository from your terminal with <code>githuttbr .</code> — see <a href="{cli}">the command line</a>.',
   'download.macNote': 'Apple silicon &amp; Intel · signed and notarised',
   'download.winNote': 'Installer (x64)',
   'download.linuxNote': 'AppImage · deb',
@@ -79,12 +79,12 @@ export const en = {
   'handbook.title': 'A {pages}-page handbook, built into the app',
   'handbook.sub': 'Every feature explained — offline in the app, and right here.',
 
-  'sponsor.title': 'Sponsor Git HuttBr',
+  'sponsor.title': 'Sponsor GitHuttBr',
   'sponsor.body':
     'Free, MIT, no backend, no telemetry, nothing to upsell — so there is nothing to buy. Sponsorship pays for the Apple Developer certificate the signed macOS builds need, the handbook and the translations. Bug reports are worth just as much.',
   'sponsor.cta': 'Sponsor on GitHub',
 
-  'doc.titleSuffix': 'Git HuttBr handbook',
+  'doc.titleSuffix': 'GitHuttBr handbook',
   'doc.filter': 'Filter pages…',
   'doc.filterLabel': 'Filter pages',
   'doc.edit': 'Edit this page on GitHub',
@@ -137,7 +137,7 @@ export const en = {
     'No backend. Tokens and vault entries are encrypted with your OS keychain — and nothing touches that keychain until you have been told what for and said yes.',
   'feature.cli.title': 'A Git GUI with a real CLI',
   'feature.cli.body':
-    '`gitcito .` opens a repository, `gitcito blame src/api.ts -l 84` opens it at that line, and `gitcito doctor` never opens a window at all — it checks what the repository requires and exits with a code your CI can read.',
+    '`githuttbr .` opens a repository, `githuttbr blame src/api.ts -l 84` opens it at that line, and `githuttbr doctor` never opens a window at all — it checks what the repository requires and exits with a code your CI can read.',
   'feature.hosting.title': 'Pull requests on every server',
   'feature.hosting.body':
     'Create, review and merge on GitHub, GitLab, Bitbucket, Azure DevOps and Forgejo — your company\'s own GitHub Enterprise, GitLab and Bitbucket Data Center servers too — with reviewers, assignees and labels picked from the repository.'

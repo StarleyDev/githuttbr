@@ -164,16 +164,16 @@ export function DiffViewer({
   const hasHunkActions = hunkActions.length > 0
   const hunkData = useMemo(() => (hasHunkActions ? extractHunks(diff) : null), [diff, hasHunkActions])
 
-  const [wordDiffOn, setWordDiffOn] = useState(() => localStorage.getItem('gitcito-word-diff') !== 'off')
-  useEffect(() => localStorage.setItem('gitcito-word-diff', wordDiffOn ? 'on' : 'off'), [wordDiffOn])
+  const [wordDiffOn, setWordDiffOn] = useState(() => localStorage.getItem('githuttbr-word-diff') !== 'off')
+  useEffect(() => localStorage.setItem('githuttbr-word-diff', wordDiffOn ? 'on' : 'off'), [wordDiffOn])
 
-  const [splitView, setSplitView] = useState(() => localStorage.getItem('gitcito-split-diff') === 'on')
-  useEffect(() => localStorage.setItem('gitcito-split-diff', splitView ? 'on' : 'off'), [splitView])
+  const [splitView, setSplitView] = useState(() => localStorage.getItem('githuttbr-split-diff') === 'on')
+  useEffect(() => localStorage.setItem('githuttbr-split-diff', splitView ? 'on' : 'off'), [splitView])
 
   // Moved code is marked by default: a block that only changed place is the
   // most common thing a reader mistakes for a rewrite.
-  const [movedOn, setMovedOn] = useState(() => localStorage.getItem('gitcito-diff-moved') !== 'off')
-  useEffect(() => localStorage.setItem('gitcito-diff-moved', movedOn ? 'on' : 'off'), [movedOn])
+  const [movedOn, setMovedOn] = useState(() => localStorage.getItem('githuttbr-diff-moved') !== 'off')
+  useEffect(() => localStorage.setItem('githuttbr-diff-moved', movedOn ? 'on' : 'off'), [movedOn])
 
   // Line wrapping, one preference for both views. Off by default: in split
   // view one line per row keeps the two sides row-for-row comparable; in the
@@ -181,15 +181,15 @@ export function DiffViewer({
   // fold — inside their column side by side, inside the pane when unified —
   // instead of scrolling sideways, which is what a minified file or a long
   // prose line needs.
-  const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('gitcito-diff-wrap') === 'on')
-  useEffect(() => localStorage.setItem('gitcito-diff-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
+  const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('githuttbr-diff-wrap') === 'on')
+  useEffect(() => localStorage.setItem('githuttbr-diff-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
 
   // Scrolling with wrap off: each column fully on its own, or the two locked
   // together both ways — vertically and sideways. Locked is the default: the
   // sides are worth comparing at the same row and column, and one that drifts
   // is the reason to look away from a split view.
-  const [linkScroll, setLinkScroll] = useState(() => localStorage.getItem('gitcito-diff-link-scroll') !== 'off')
-  useEffect(() => localStorage.setItem('gitcito-diff-link-scroll', linkScroll ? 'on' : 'off'), [linkScroll])
+  const [linkScroll, setLinkScroll] = useState(() => localStorage.getItem('githuttbr-diff-link-scroll') !== 'off')
+  useEffect(() => localStorage.setItem('githuttbr-diff-link-scroll', linkScroll ? 'on' : 'off'), [linkScroll])
 
   // Per-line changed-character ranges (for word-level highlighting).
   const wordRanges = useMemo(() => wordRangesByLine(lines), [lines])

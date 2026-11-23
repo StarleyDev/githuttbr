@@ -3245,7 +3245,7 @@ export const shots = [
     }
   },
   {
-    // The repository's own rules — `.gitcito.json` and the doctor that checks
+    // The repository's own rules — `.githuttbr.json` and the doctor that checks
     // them. Written in `prepare` rather than shipped in a scenario so the shot
     // shows a mixed verdict on purpose: Node passing, a hooks path and a
     // missing `.env` failing with a repair offered.
@@ -3256,7 +3256,7 @@ export const shots = [
       const repo = repoPaths['deep-history-monorepo']
       await writeFile(join(repo, '.env.example'), 'API_URL=https://staging.example.com\nAPI_TOKEN=replace-me\n')
       await writeFile(
-        join(repo, '.gitcito.json'),
+        join(repo, '.githuttbr.json'),
         `${JSON.stringify(
           {
             version: 1,

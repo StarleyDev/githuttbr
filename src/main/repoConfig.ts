@@ -1,5 +1,5 @@
 /**
- * `.gitcito.json` on disk: reading it, writing it, checking what it requires,
+ * `.githuttbr.json` (or upstream's `.gitcito.json`) on disk: reading it, writing it, checking what it requires,
  * and proposing one for a repository that has none.
  *
  * The renderer never reaches this module directly — everything here is exposed
@@ -19,6 +19,7 @@ import { existsSync } from 'fs'
 import { join, relative, resolve, sep } from 'path'
 import {
   REPO_CONFIG_FILE,
+  REPO_CONFIG_FILES,
   REPO_CONFIG_VERSION,
   isSafeRepoRelPath,
   parseRepoConfig,
@@ -27,6 +28,7 @@ import {
   validateRepoConfig
 } from '../shared/repoConfig'
 import type { DoctorCheck, DoctorFix, RepoConfig, RepoConfigResult } from '../shared/types'
+import { APP_IDS } from '../shared/identifiers'
 
 const pexecFile = promisify(execFile)
 
@@ -62,20 +64,30 @@ function relativeInside(repoPath: string, value: string): string | undefined {
   return isSafeRepoRelPath(rel) ? rel : undefined
 }
 
+/**
+ * The repository's config: `.githuttbr.json`, else upstream's `.gitcito.json`.
+ * `path` names the file actually read, so the editor can say which one it is;
+ * with neither present it is where a save would create one.
+ */
 export async function readRepoConfig(repoPath: string): Promise<RepoConfigResult> {
-  const path = join(repoPath, REPO_CONFIG_FILE)
-  let raw: string
-  try {
-    raw = await readFile(path, 'utf8')
-  } catch {
-    return { path, exists: false, config: null, issues: [] }
+  for (const name of REPO_CONFIG_FILES) {
+    const path = join(repoPath, name)
+    let raw: string
+    try {
+      raw = await readFile(path, 'utf8')
+    } catch {
+      continue
+    }
+    const { config, issues } = parseRepoConfig(raw)
+    return { path, exists: true, config, issues }
   }
-  const { config, issues } = parseRepoConfig(raw)
-  return { path, exists: true, config, issues }
+  return { path: join(repoPath, REPO_CONFIG_FILE), exists: false, config: null, issues: [] }
 }
 
 /**
- * Write the config file. Validated again here rather than trusted from the
+ * Write the config file — always `.githuttbr.json`. A legacy `.gitcito.json`
+ * is left where it is: it may be there for teammates on upstream Gitcito, and
+ * the new file shadows it from here on. Validated again here rather than trusted from the
  * renderer: the editor is one caller, and the next one should not be able to
  * introduce a field the loader would reject.
  */
@@ -243,11 +255,16 @@ export async function suggestRepoConfig(repoPath: string): Promise<RepoConfig> {
   const defaults = ['main', 'master', 'develop'].filter((b) => locals.includes(b))
   // Existing protection is per-clone (git config); lifting it into the file is
   // how it stops being something each teammate has to rediscover.
-  const configured = (await git(repoPath, ['config', '--get', 'gitcito.protectedbranches']).catch(() => ''))
+  let configured = ''
+  for (const ns of APP_IDS) {
+    configured = await git(repoPath, ['config', '--get', `${ns}.protectedbranches`]).catch(() => '')
+    if (configured) break
+  }
+  const listed = configured
     .split(',')
     .map((b) => b.trim())
     .filter(Boolean)
-  const protect = [...new Set([...defaults, ...configured])]
+  const protect = [...new Set([...defaults, ...listed])]
   if (protect.length) config.protect = protect
 
   const requires: NonNullable<RepoConfig['requires']> = {}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bring upstream Gitcito into Git HuttBr's main, then check it.
+# Bring upstream Gitcito into GitHuttBr's main, then check it.
 #
 #   scripts/sync-upstream.sh          merge and run the gate
 #   scripts/sync-upstream.sh --push   …and push main when the gate is green

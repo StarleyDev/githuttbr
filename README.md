@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/gitcito-mark.png" alt="Git HuttBr" width="120" />
+<img src="docs/gitcito-mark.png" alt="GitHuttBr" width="120" />
 
-# Git HuttBr
+# GitHuttBr
 
 **A Git client for macOS, Windows and Linux.**
 
@@ -12,14 +12,14 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 [![License](https://img.shields.io/badge/license-MIT-6366f1?style=flat-square)](LICENSE)
 ![Platforms](https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-6366f1?style=flat-square)
 
-<img src="docs/screenshots/graph-dark.webp" alt="Git HuttBr's commit graph" width="820" />
+<img src="docs/screenshots/graph-dark.webp" alt="GitHuttBr's commit graph" width="820" />
 
 </div>
 
 ---
 
 > [!WARNING]
-> **Honest disclaimer.** Git HuttBr is young. **GitHub** is the battle-tested path,
+> **Honest disclaimer.** GitHuttBr is young. **GitHub** is the battle-tested path,
 > and the only one with Projects fields. The pull request page — review, comment,
 > approve, merge — also works on **GitLab**, **Forgejo**, **Azure DevOps** and
 > **Bitbucket Data Center**; on bitbucket.org you can list and create pull requests,
@@ -40,7 +40,7 @@ verify…"). Open it once, then go to **System Settings → Privacy & Security**
 **Open Anyway** (since macOS 15, right-click → Open no longer does it). Or, in a terminal:
 
 ```sh
-xattr -dr com.apple.quarantine "/Applications/Git HuttBr.app"
+xattr -dr com.apple.quarantine "/Applications/GitHuttBr.app"
 ```
 
 macOS only lets a signed app update itself, so on a Mac each new version is downloaded
@@ -49,12 +49,12 @@ from Releases by hand.
 Then, optionally, open repositories from your terminal:
 
 ```sh
-gitcito .                        # open this folder
-gitcito ~/code/api -n "API"      # …with a display name
-gitcito . -g "Work"              # …inside a group tab
+githuttbr .                      # open this folder
+githuttbr ~/code/api -n "API"    # …with a display name
+githuttbr . -g "Work"            # …inside a group tab
 ```
 
-Install the shim from the command palette: `⌘K` → **Install 'gitcito' command in PATH**.
+Install the shim from the command palette: `⌘K` → **Install 'githuttbr' command in PATH**.
 
 ## What you get
 
@@ -118,7 +118,7 @@ git actually is.
 
 | | |
 |---|---|
-| **[Repositories](docs/help/repositories.md)** | Every repository Git HuttBr has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. |
+| **[Repositories](docs/help/repositories.md)** | Every repository GitHuttBr has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. |
 | **[Mission control](docs/help/mission-control.md)** | Every repository of the workspace on one screen, worst first — blocked, then to sync, then dirty — with a fetch for just the stale ones. |
 | **[Clone many at once](docs/help/cloning.md#several-repositories-at-once)** | Tick several repositories in a host tab, or select all shown, and clone them into one folder — a few at a time, in a corner tray that keeps going after the dialog closes, each with its own cancel. |
 | **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. Switching is instant even next to a huge `node_modules`: the file watcher follows only what git tracks, and a bar under the toolbar shows while the repository you switched to catches up. |
@@ -200,11 +200,11 @@ icon, or an image ·
 [integrated terminal](docs/help/terminal.md) with splits, and
 [suggestions](docs/help/terminal.md#script-suggestions) for `npm run` scripts, `make` targets
 and branch names ·
-[**A real CLI**](docs/help/cli.md) — `gitcito .` opens a repo, `gitcito blame
-src/api.ts -l 84` opens it *there*, `gitcito doctor` answers in the terminal with
-an exit code your CI can use, and `gitcito editor install` makes Git HuttBr the
+[**A real CLI**](docs/help/cli.md) — `githuttbr .` opens a repo, `githuttbr blame
+src/api.ts -l 84` opens it *there*, `githuttbr doctor` answers in the terminal with
+an exit code your CI can use, and `githuttbr editor install` makes GitHuttBr the
 editor `git commit` and `git rebase -i` open ·
-[**Repository rules**](docs/help/repo-config.md) — an optional `.gitcito.json`
+[**Repository rules**](docs/help/repo-config.md) — an optional `.githuttbr.json`
 carries the house rules with the clone: protected branches, commit scopes,
 tracker links, a push checklist, and a doctor that tells a newcomer why the
 project does not run yet ·
@@ -241,7 +241,7 @@ readable in the app.
 
 ## Your secrets stay yours
 
-Git HuttBr has no backend. Tokens and [vault](docs/help/vault.md) entries are
+GitHuttBr has no backend. Tokens and [vault](docs/help/vault.md) entries are
 encrypted with your **OS keychain** — and before it ever touches that keychain it
 tells you what for and lets you say no; the app keeps working either way. Nothing
 is synced or phoned home. The only network calls are to your Git host and, if you
@@ -255,7 +255,7 @@ A few of the guards, each with its section in that page:
 | **[One token, one server](docs/help/hosting.md#github-enterprise-server)** | A github.com, Enterprise Server, GitLab or Data Center token is only ever sent to the server it was saved for. |
 | **[A keychain prompt you dismiss wipes nothing](docs/help/security.md#when-the-saved-tokens-cannot-be-read)** | Unreadable saved tokens are left untouched — retry, or start a new store with the old one kept as a backup. |
 | **[A damaged settings file is never overwritten](docs/help/security.md#the-settings-file)** | Settings are written atomically; a file that cannot be parsed stops the app with *Try again* or *move it aside*, instead of silently resetting to defaults. |
-| **[AppImage paths that outlive the app](docs/help/security.md#the-appimage-and-paths-that-outlive-it)** | The AppImage refuses to write its temporary mount path into the `gitcito` shim or a diff converter, and flags stale ones it finds. |
+| **[AppImage paths that outlive the app](docs/help/security.md#the-appimage-and-paths-that-outlive-it)** | The AppImage refuses to write its temporary mount path into the `githuttbr` shim or a diff converter, and flags stale ones it finds. |
 
 Team sharing works the same way: [secure share](docs/help/secure-share.md) packs
 secrets, commit notes, and whole workspace layouts into one encrypted file a
@@ -280,7 +280,7 @@ is deliberately out of scope. Ideas welcome as
 
 ## Sponsor
 
-If Git HuttBr saves you an afternoon of `git reflog`, consider
+If GitHuttBr saves you an afternoon of `git reflog`, consider
 [sponsoring its development](https://github.com/sponsors/StarleyDev). 💜
 
 ## License
@@ -289,7 +289,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## Origin
 
-Git HuttBr is a fork of **[Gitcito](https://github.com/MyAppDesk/gitcito)** by MyAppDesk,
+GitHuttBr is a fork of **[Gitcito](https://github.com/MyAppDesk/gitcito)** by MyAppDesk,
 released under the MIT licence; [LICENSE](LICENSE) keeps its original copyright notice.
 Thanks to its author for the foundation this project grew from.
 

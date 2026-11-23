@@ -17428,7 +17428,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .todos-footer { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 .todos-footer .btn { margin-inline-start: auto; }
 
-/* ─── Repo config (.gitcito.json) ─────────────────────────────────────────── */
+/* ─── Repo config (.githuttbr.json) ─────────────────────────────────────────── */
 
 /* Like the todo chip, this one has to climb out of the status bar's muted
    opacity — a warning nobody can see is not a warning. */

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Static site generator for gitcito's GitHub Pages.
+ * Static site generator for GitHuttBr's GitHub Pages.
  *
  * Two outputs from one source of truth:
  *   - a landing page, whose feature copy is the same one the README carries;
@@ -18,6 +18,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 import { LOCALE_NAMES, RTL_LOCALES, SITE, coverage, strings } from './site-i18n/index.mjs'
+// The handbook is upstream's text, branded at display time exactly as the app
+// does it (src/renderer/src/help/pages.ts). A plain TypeScript module with
+// nothing but erasable types, so Node loads it without a build step.
+import { brandText } from '../src/shared/brand.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP_DIR = join(ROOT, 'docs/help')
@@ -42,9 +46,10 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, 
 
 // ── Handbook ────────────────────────────────────────────────────────────────
 
-/** Flat `key: value` front matter — the same shape the app parses. */
+/** Flat `key: value` front matter — the same shape the app parses. Branded as
+ *  a whole, before parsing, so title, summary, keywords and body all match. */
 function parsePage(file) {
-  const src = readFileSync(join(HELP_DIR, file), 'utf8')
+  const src = brandText(readFileSync(join(HELP_DIR, file), 'utf8'))
   // `file` may be `absorb.md` or `es/absorb.md`; the id is the basename either way.
   const id = (file.split('/').pop() ?? file).replace(/\.md$/, '')
   if (!src.startsWith('---')) return { id, title: id, category: 'Guide', order: 999, summary: '', body: src }
@@ -198,7 +203,7 @@ const nav = (depth, locale = 'en') => {
   <div class="nav-inner">
     <a class="brand" href="${home}">
       <img src="${base}assets/gitcito-mark.png" alt="" width="28" height="28" />
-      <span>Git HuttBr</span>
+      <span>GitHuttBr</span>
     </a>
     <nav>
       <a href="${handbook}">${t('nav.handbook')}</a>

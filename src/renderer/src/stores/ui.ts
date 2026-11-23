@@ -309,8 +309,8 @@ export interface PanelLayout {
   composerStagedCollapsed: boolean
 }
 
-const LAYOUT_KEY = 'gitcito-layout'
-const SIDEBAR_KEY = 'gitcito-sidebar-collapsed'
+const LAYOUT_KEY = 'githuttbr-layout'
+const SIDEBAR_KEY = 'githuttbr-sidebar-collapsed'
 const DEFAULT_LAYOUT: PanelLayout = {
   sidebarWidth: 248,
   panelWidth: 420,

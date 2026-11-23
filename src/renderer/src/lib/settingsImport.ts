@@ -20,10 +20,15 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
  *  in the plain settings file. */
 export function parseSettingsImport(raw: unknown): ParsedSettingsImport | null {
   if (!isObject(raw)) return null
-  if (raw.__gitcito === 'settings-export') {
+  // `__gitcito` is the marker upstream Gitcito, and this fork up to 4.38, wrote.
+  // A backup made before the rename has to restore — tokens and vault included.
+  if (raw.__githuttbr === 'settings-export' || raw.__gitcito === 'settings-export') {
     if (!isObject(raw.settings)) return null
     const settings = scrubServerUrls(raw.settings as Partial<AppSettings>)
-    return { settings, bundle: { ...(raw as unknown as SettingsBundle), settings } as SettingsBundle }
+    const rest: Record<string, unknown> = { ...raw }
+    delete rest.__gitcito
+    const bundle = { ...rest, __githuttbr: 'settings-export', settings } as unknown as SettingsBundle
+    return { settings, bundle }
   }
   return { settings: scrubServerUrls(raw as Partial<AppSettings>), bundle: null }
 }

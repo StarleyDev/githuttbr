@@ -87,10 +87,10 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   // View toggles, mirroring the diff viewer's habits. Wrap folds long lines
   // inside the A/B panes (the output keeps one row per line — its gutter and
   // side tints are aligned by line height and would drift under wrapping).
-  const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('gitcito-conflict-wrap') === 'on')
-  useEffect(() => localStorage.setItem('gitcito-conflict-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
-  const [syncOn, setSyncOn] = useState(() => localStorage.getItem('gitcito-conflict-sync') !== 'off')
-  useEffect(() => localStorage.setItem('gitcito-conflict-sync', syncOn ? 'on' : 'off'), [syncOn])
+  const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('githuttbr-conflict-wrap') === 'on')
+  useEffect(() => localStorage.setItem('githuttbr-conflict-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
+  const [syncOn, setSyncOn] = useState(() => localStorage.getItem('githuttbr-conflict-sync') !== 'off')
+  useEffect(() => localStorage.setItem('githuttbr-conflict-sync', syncOn ? 'on' : 'off'), [syncOn])
   const editRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)

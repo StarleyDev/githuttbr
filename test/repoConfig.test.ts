@@ -16,7 +16,7 @@ const git = (dir: string, ...args: string[]): string =>
 
 afterAll(cleanupFixtures)
 
-describe('reading and writing .gitcito.json', () => {
+describe('reading and writing .githuttbr.json', () => {
   it('reports a repository that has none, without inventing a config', async () => {
     const dir = cloneFixture('project-tree')
     const result = await readRepoConfig(dir)
@@ -32,7 +32,27 @@ describe('reading and writing .gitcito.json', () => {
     expect(back.exists).toBe(true)
     expect(back.config).toEqual({ version: 1, protect: ['main'], commit: { scopes: ['ui'] } })
     // It is a plain tracked file, so it shows up as a working-tree change.
-    expect(git(dir, 'status', '--porcelain')).toContain('.gitcito.json')
+    expect(git(dir, 'status', '--porcelain')).toContain('.githuttbr.json')
+  })
+
+  it("reads upstream's .gitcito.json when there is no .githuttbr.json", async () => {
+    const dir = cloneFixture('project-tree')
+    writeFileSync(join(dir, '.gitcito.json'), JSON.stringify({ version: 1, protect: ['legacy'] }))
+    const result = await readRepoConfig(dir)
+    expect(result.exists).toBe(true)
+    expect(result.path).toBe(join(dir, '.gitcito.json'))
+    expect(result.config?.protect).toEqual(['legacy'])
+  })
+
+  it('prefers .githuttbr.json, writes only it, and leaves the legacy file alone', async () => {
+    const dir = cloneFixture('project-tree')
+    const legacy = JSON.stringify({ version: 1, protect: ['legacy'] })
+    writeFileSync(join(dir, '.gitcito.json'), legacy)
+    await writeRepoConfig(dir, { version: 1, protect: ['main'] })
+    const back = await readRepoConfig(dir)
+    expect(back.path).toBe(join(dir, '.githuttbr.json'))
+    expect(back.config?.protect).toEqual(['main'])
+    expect(readFileSync(join(dir, '.gitcito.json'), 'utf8')).toBe(legacy)
   })
 
   it('re-validates on write rather than trusting the caller', async () => {
@@ -204,8 +224,14 @@ describe('proposing a config from the repository', () => {
 
   it('lifts protected branches out of the per-clone git config', async () => {
     const dir = cloneFixture('project-tree')
-    git(dir, 'config', 'gitcito.protectedbranches', 'main,release/3.x')
+    git(dir, 'config', 'githuttbr.protectedbranches', 'main,release/3.x')
     expect((await suggestRepoConfig(dir)).protect).toContain('release/3.x')
+  })
+
+  it("falls back to upstream's gitcito.protectedbranches", async () => {
+    const dir = cloneFixture('project-tree')
+    git(dir, 'config', 'gitcito.protectedbranches', 'main,release/2.x')
+    expect((await suggestRepoConfig(dir)).protect).toContain('release/2.x')
   })
 
   it('reads the scopes the history is already using, ignoring one-offs', async () => {

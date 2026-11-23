@@ -1,4 +1,4 @@
-# Contributing to Gitcito
+# Contributing to GitHuttBr
 
 ## Development setup
 
@@ -74,7 +74,7 @@ tests pick the new file up automatically — no test changes needed.
 
 ## Documentation
 
-Gitcito carries its own handbook: **`docs/help/*.md`**. The app renders it
+GitHuttBr carries its own handbook: **`docs/help/*.md`**. The app renders it
 (the **Help** button in the status bar) and GitHub renders the same files —
 one source, two readers, offline in both.
 

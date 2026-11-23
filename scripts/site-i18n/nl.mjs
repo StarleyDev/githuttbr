@@ -13,7 +13,7 @@ export const nl = {
   'foot.reportIssue': 'Een probleem melden',
   'foot.sponsor': 'Sponsoren',
 
-  'meta.title': 'Git HuttBr — heel git, met een UI die het je laat zien',
+  'meta.title': 'GitHuttBr — heel git, met een UI die het je laat zien',
   'meta.description':
     'Een volledig vibe-coded Git-client. Gratis. Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS — plus een paar dingen waarvan je niet wist dat git ze kon.',
 
@@ -23,11 +23,11 @@ export const nl = {
   'hero.download': 'Download voor jouw platform',
   'hero.source': 'Broncode bekijken',
   'hero.terms': 'Gratis · MIT · v{version}',
-  'hero.graphAlt': 'De commitgrafiek van Git HuttBr',
+  'hero.graphAlt': 'De commitgrafiek van GitHuttBr',
 
   'features.title': 'Een paar dingen waarvan je niet wist dat git ze kon',
   'features.sub':
-    'Geen van deze is de reden om Git HuttBr te gebruiken — de lijst hierboven is dat. Ze bestaan omdat git het antwoord allang weet; Git HuttBr vraagt er gewoon naar.',
+    'Geen van deze is de reden om GitHuttBr te gebruiken — de lijst hierboven is dat. Ze bestaan omdat git het antwoord allang weet; GitHuttBr vraagt er gewoon naar.',
 
   'ordinary.title': 'Wat je krijgt',
   'ordinary.sub':
@@ -52,7 +52,7 @@ export const nl = {
   'download.sub':
     'Nieuwste release: <strong>v{version}</strong>. Elke build wordt vanuit CI gepubliceerd.',
   'download.cli':
-    'Of open een repository vanuit je terminal met <code>gitcito .</code> — zie <a href="{cli}">de commandoregel</a>.',
+    'Of open een repository vanuit je terminal met <code>githuttbr .</code> — zie <a href="{cli}">de commandoregel</a>.',
   'download.macNote': 'Apple silicon &amp; Intel · ondertekend en genotariseerd',
   'download.winNote': 'Installatieprogramma (x64)',
   'download.linuxNote': 'AppImage · deb',
@@ -61,12 +61,12 @@ export const nl = {
   'handbook.title': 'Een handboek van {pages} pagina’s, ingebouwd in de app',
   'handbook.sub': 'Elke functie uitgelegd — offline in de app, en hier.',
 
-  'sponsor.title': 'Git HuttBr sponsoren',
+  'sponsor.title': 'GitHuttBr sponsoren',
   'sponsor.body':
     'Gratis, MIT, geen backend, geen telemetrie, niets om je aan te smeren — er valt dus niets te kopen. Sponsoring betaalt het Apple Developer-certificaat dat de ondertekende macOS-builds nodig hebben, het handboek en de vertalingen. Bugmeldingen zijn net zoveel waard.',
   'sponsor.cta': 'Sponsor op GitHub',
 
-  'doc.titleSuffix': 'Git HuttBr-handboek',
+  'doc.titleSuffix': 'GitHuttBr-handboek',
   'doc.filter': 'Pagina’s filteren…',
   'doc.filterLabel': 'Pagina’s filteren',
   'doc.edit': 'Deze pagina op GitHub bewerken',
@@ -119,7 +119,7 @@ export const nl = {
     'Geen backend. Tokens en kluisregels worden versleuteld met de sleutelhanger van je besturingssysteem — en er raakt niets die sleutelhanger tot je verteld is waarvoor, en je ja hebt gezegd.',
   'feature.cli.title': 'Een Git-GUI met een echte CLI',
   'feature.cli.body':
-    '`gitcito .` opent een repository, `gitcito blame src/api.ts -l 84` opent hem op die regel, en `gitcito doctor` opent helemaal geen venster — het controleert wat de repository vereist en eindigt met een code die je CI kan lezen.',
+    '`githuttbr .` opent een repository, `githuttbr blame src/api.ts -l 84` opent hem op die regel, en `githuttbr doctor` opent helemaal geen venster — het controleert wat de repository vereist en eindigt met een code die je CI kan lezen.',
   'feature.hosting.title': 'Pull requests op elke server',
   'feature.hosting.body':
     'Maak, review en merge op GitHub, GitLab, Bitbucket, Azure DevOps en Forgejo — ook op de eigen servers van je bedrijf: GitHub Enterprise, GitLab en Bitbucket Data Center — met reviewers, toegewezenen en labels gekozen uit de repository.'

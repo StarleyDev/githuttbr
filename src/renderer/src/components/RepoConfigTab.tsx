@@ -137,7 +137,7 @@ function DoctorRow({ check, repoPath }: { check: DoctorCheck; repoPath: string }
 }
 
 /**
- * The repository's own `.gitcito.json`, edited as a form.
+ * The repository's own `.githuttbr.json` (or upstream's `.gitcito.json`), edited as a form.
  *
  * Editing it here rather than in a text editor is the point: the file is a
  * schema most people will meet once, and a form is what makes its fields
@@ -148,6 +148,9 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
   const t = useT()
   const repo = useRepoStore((s) => s.repos[repoPath])
   const stored = repo?.config ?? null
+  // The file actually read — a repository may still carry upstream's name.
+  // Saving always writes REPO_CONFIG_FILE, which the dirty hint says.
+  const storedFile = stored?.exists ? (stored.path.split(/[\\/]/).pop() ?? REPO_CONFIG_FILE) : REPO_CONFIG_FILE
   const doctor = repo?.doctor ?? []
   const branchOptions = useMemo(() => repo?.branches.locals.map((b) => b.name) ?? [], [repo])
   const [draft, setDraft] = useState<RepoConfig>(() => stored?.config ?? emptyRepoConfig())
@@ -213,7 +216,7 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
 
   return (
     <div className="rc">
-      <span className="settings-hint">{interp(t('repoConfig.intro'), { file: REPO_CONFIG_FILE })}</span>
+      <span className="settings-hint">{interp(t('repoConfig.intro'), { file: storedFile })}</span>
 
       {stored && !stored.exists && (
         <div className="rc-empty">

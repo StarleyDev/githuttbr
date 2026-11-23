@@ -9,6 +9,7 @@ import { promisify } from 'util'
 import { readdir, readFile, mkdtemp, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { APP_IDS, ciNotesRef } from '../shared/identifiers'
 import {
   parseWorkflowName,
   type LocalCiStatus,
@@ -226,7 +227,7 @@ const git = (repoPath: string, args: string[]): Promise<string> =>
 
 /**
  * Pin a finished run's verdict to the commit it tested, as a git note under
- * refs/notes/gitcito-ci. Only recorded when the working tree is CLEAN — a
+ * refs/notes/githuttbr-ci. Only recorded when the working tree is CLEAN — a
  * dirty tree means the run tested something no commit contains, and a verdict
  * pinned to HEAD would lie. Notes are local and never pushed by default.
  */
@@ -235,24 +236,31 @@ async function record(repoPath: string, workflowFile: string, ok: boolean): Prom
   const sha = (await git(repoPath, ['rev-parse', 'HEAD'])).trim()
   if (dirty) return { recorded: false, sha }
   const note = JSON.stringify({ ok, workflow: workflowFile, at: Date.now() })
-  await git(repoPath, ['notes', '--ref=gitcito-ci', 'add', '-f', '-m', note, sha])
+  await git(repoPath, ['notes', `--ref=${ciNotesRef()}`, 'add', '-f', '-m', note, sha])
   return { recorded: true, sha }
 }
 
 /** Pin a verdict to an explicit sha — used by worktree runs, which are clean by construction. */
 async function recordAt(repoPath: string, workflowFile: string, ok: boolean, sha: string): Promise<void> {
   const note = JSON.stringify({ ok, workflow: workflowFile, at: Date.now() })
-  await git(repoPath, ['notes', '--ref=gitcito-ci', 'add', '-f', '-m', note, sha])
+  await git(repoPath, ['notes', `--ref=${ciNotesRef()}`, 'add', '-f', '-m', note, sha])
 }
 
-/** Every recorded verdict, keyed by commit sha — feeds the graph's ✓/✗ badges. */
+/** Every recorded verdict, keyed by commit sha — feeds the graph's ✓/✗ badges.
+ *  Verdicts recorded before the rename (refs/notes/gitcito-ci) are read too;
+ *  a newer githuttbr-ci note on the same commit wins. */
 async function verdicts(repoPath: string): Promise<Record<string, LocalCiVerdict>> {
-  const raw = await git(repoPath, ['notes', '--ref=gitcito-ci', 'list']).catch(() => '')
   const out: Record<string, LocalCiVerdict> = {}
+  for (const ns of [...APP_IDS].reverse()) await readVerdicts(repoPath, ciNotesRef(ns), out)
+  return out
+}
+
+async function readVerdicts(repoPath: string, ref: string, out: Record<string, LocalCiVerdict>): Promise<void> {
+  const raw = await git(repoPath, ['notes', `--ref=${ref}`, 'list']).catch(() => '')
   for (const line of raw.split('\n')) {
     const [, sha] = line.trim().split(' ')
     if (!sha) continue
-    const body = await git(repoPath, ['notes', '--ref=gitcito-ci', 'show', sha]).catch(() => '')
+    const body = await git(repoPath, ['notes', `--ref=${ref}`, 'show', sha]).catch(() => '')
     try {
       const parsed = JSON.parse(body) as LocalCiVerdict
       if (typeof parsed.ok === 'boolean') out[sha] = { ok: parsed.ok, workflow: parsed.workflow, at: parsed.at }
@@ -260,7 +268,6 @@ async function verdicts(repoPath: string): Promise<Record<string, LocalCiVerdict
       /* an unreadable note is just skipped */
     }
   }
-  return out
 }
 
 export function registerLocalCiHandlers(): void {

@@ -545,10 +545,10 @@ describe('remote and history actions', () => {
     )
   })
 
-  it('hands the model the shape of .gitcito.json rather than letting it invent one', () => {
+  it('hands the model the shape of .githuttbr.json rather than letting it invent one', () => {
     const rules = repoChatActionRules(true, true, false)
-    expect(rules).toContain('.gitcito.json')
+    expect(rules).toContain('.githuttbr.json')
     expect(rules).toContain('"version":1')
-    expect(repoChatActionRules(true, false, false)).not.toContain('.gitcito.json')
+    expect(repoChatActionRules(true, false, false)).not.toContain('.githuttbr.json')
   })
 })
