@@ -4,6 +4,7 @@ import { gitApi } from '../infrastructure/api'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
+import { readableError } from '../lib/gitErrorHint'
 import { parsePrNumber, defaultPreviewBranch } from '../../../shared/prRefs'
 import type { PrPreviewMode, PrRefProbe } from '../../../shared/types'
 
@@ -203,7 +204,7 @@ export function PrPreviewModal({
       )}
       {error && (
         <p className="pr-preview-error">
-          <AlertTriangle size={13} /> {error}
+          <AlertTriangle size={13} /> {readableError(error, t, interp)}
         </p>
       )}
 

@@ -101,4 +101,76 @@ describe('a missing credential on a repository bound to a profile', () => {
     const server = boundNoCredentialMessage('gitlab', 'Side "project"', 'gitlab.example.corp:8443')
     expect(explainGitError(server)?.vars).toEqual({ provider: 'GitLab', profile: 'Side "project"', host: 'gitlab.example.corp:8443' })
   })
+
+  // An scp-style ssh remote is no URL: main used to fall back to the provider
+  // name, and the old `[^\s]+?` capture then missed the whole message.
+  it('still matches when the host value has a space in it', async () => {
+    const { boundNoCredentialMessage } = await import('../src/main/hosting')
+    expect(explainGitError(boundNoCredentialMessage('Azure DevOps', 'Work', 'Azure DevOps'))).toEqual({
+      key: 'gitError.boundProfileNoCredential',
+      vars: { provider: 'Azure DevOps', profile: 'Work', host: 'Azure DevOps' }
+    })
+  })
+
+  it('names the ssh host of an Azure remote', async () => {
+    const { boundNoCredentialMessage } = await import('../src/main/hosting')
+    const msg = IPC + boundNoCredentialMessage('azure', 'Work', 'ssh.dev.azure.com')
+    expect(explainGitError(msg)?.vars).toEqual({ provider: 'Azure DevOps', profile: 'Work', host: 'ssh.dev.azure.com' })
+  })
+})
+
+describe('server-address and token messages built in main', () => {
+  const HOSTING = "Error invoking remote method 'hosting:listRepos': Error: "
+
+  it('translates each "not saved in any profile" message', async () => {
+    const { GHES_NOT_SAVED, BBS_NOT_SAVED, GITLAB_NOT_SAVED } = await import('../src/main/hosting')
+    expect(explainGitError(HOSTING + GHES_NOT_SAVED)).toEqual({ key: 'gitError.ghesNotSaved' })
+    expect(explainGitError(HOSTING + BBS_NOT_SAVED)).toEqual({ key: 'gitError.bbsNotSaved' })
+    expect(explainGitError(HOSTING + GITLAB_NOT_SAVED)).toEqual({ key: 'gitError.gitlabNotSaved' })
+  })
+
+  it('names the server a token is missing for', async () => {
+    const { ghesNoTokenMessage, bbsNoTokenMessage } = await import('../src/main/hosting')
+    expect(explainGitError(HOSTING + ghesNoTokenMessage('ghe.corp.example:8443'))).toEqual({
+      key: 'gitError.ghesNoToken',
+      vars: { host: 'ghe.corp.example:8443' }
+    })
+    expect(explainGitError(HOSTING + bbsNoTokenMessage('bitbucket.corp.example'))).toEqual({
+      key: 'gitError.bbsNoToken',
+      vars: { host: 'bitbucket.corp.example' }
+    })
+  })
+
+  it('translates the Data Center browse refusal and the not-a-Data-Center error', async () => {
+    const { BBS_NO_BROWSE, NOT_BBS_REPO } = await import('../src/main/hosting')
+    expect(explainGitError(HOSTING + BBS_NO_BROWSE)).toEqual({ key: 'gitError.bbsNoBrowse' })
+    expect(explainGitError(HOSTING + NOT_BBS_REPO)).toEqual({ key: 'gitError.notBbsRepo' })
+  })
+})
+
+describe('Bitbucket Data Center errors raised in main', () => {
+  const err = async (status: number, text: string): Promise<string> => {
+    const { BitbucketServerError } = await import('../src/main/bitbucketServer')
+    return "Error invoking remote method 'hosting:prReview': Error: " + new BitbucketServerError(status, text).message
+  }
+
+  it('translates the fixed messages', async () => {
+    const m = await import('../src/main/bitbucketServer')
+    expect(explainGitError(await err(401, m.BBS_TOKEN_UNRECOGNISED))).toEqual({ key: 'gitError.bbsTokenUnrecognised' })
+    expect(explainGitError(await err(400, m.BBS_COMMENT_EMPTY))).toEqual({ key: 'gitError.bbsCommentEmpty' })
+    expect(explainGitError(await err(400, m.BBS_NO_IDENTITY))).toEqual({ key: 'gitError.bbsNoIdentity' })
+  })
+
+  it("passes the server's merge veto through, and names a disallowed merge method", async () => {
+    const m = await import('../src/main/bitbucketServer')
+    const reason = 'the pull request has conflicts that must be resolved first; needs 2 approvals'
+    expect(explainGitError(await err(409, m.bbsCannotMergeMessage(reason)))).toEqual({
+      key: 'gitError.bbsCannotMerge',
+      vars: { reason }
+    })
+    expect(explainGitError(await err(400, m.bbsMethodNotAllowedMessage('squash')))).toEqual({
+      key: 'gitError.bbsMethodNotAllowed',
+      vars: { method: 'squash' }
+    })
+  })
 })

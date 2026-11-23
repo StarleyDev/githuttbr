@@ -13,6 +13,7 @@ import {
   ClipboardList
 } from 'lucide-react'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { readableError } from '../lib/gitErrorHint'
 import type { IssueDetail, LinkedPr, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -123,7 +124,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
             <Loader2 size={16} className="spin" /> {t('common.loading')}
           </div>
         ) : error ? (
-          <div className="issue-error">{error}</div>
+          <div className="issue-error">{readableError(error, t, interp)}</div>
         ) : detail ? (
           <>
             <div className="issue-by">
