@@ -3,7 +3,7 @@ title: Security & secrets
 category: Security
 order: 70
 summary: Masking, guards, the keychain — and what Gitcito refuses to do.
-keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy
+keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable backup
 ---
 
 # Security & secrets
@@ -53,6 +53,46 @@ A fresh install makes **zero** keychain calls until something actually needs
 storing.
 
 While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
+
+A token you **remove** while the keychain is off is gone at once — nothing is
+sent with it any more — and the stored copy is deleted the moment the keychain
+is back on. Until then the notice stays up, since quitting first would bring
+the old token back.
+
+### When the saved tokens cannot be read
+
+If you dismiss the system's keychain prompt, the keyring is locked, or the token
+store was written by another copy of Gitcito (a development build, a re-signed
+one), Gitcito **cannot read your saved tokens — and leaves them untouched**.
+Settings → Security says *Gitcito could not read your saved tokens*, and a token
+you type meanwhile is kept for the session only (the field says so too). It is
+never written over the store it could not read: that would replace every saved
+token with the one you just typed.
+
+| Button | What it does |
+|--------|--------------|
+| **Retry** | Reads the store again — the system may ask for the keychain now. Once it can be read, the tokens typed meanwhile join it. |
+| **Start a new token store** | Asks first. Gitcito stops waiting for the old store and starts a new one with only this session's tokens. The old file stays beside it as a backup for 30 days, then it is deleted. For a store that is gone for good, not a prompt you dismissed. |
+
+The settings file gets the same rule: one that exists but cannot be parsed (a
+hand edit gone wrong, a damaged disk) is **never** replaced by the defaults.
+Gitcito says it could not read it and starts no further; fix or move
+`gitcito-settings.json` in its data folder, then restart.
+
+## Importing settings
+
+**Settings → Import / Export** moves settings, profiles and themes between
+machines. The default export carries **no tokens or API keys**, and importing
+such a file never touches the ones you have saved — a blank token in the file
+means "not in this file", not "remove mine".
+
+A file exported with the opt-in carries credentials, so importing it asks:
+
+| Choice | Your saved credentials |
+|--------|------------------------|
+| **Add to mine** | The file's are added, replacing any for the same account; all the others are kept |
+| **Replace all** | Become exactly the file's — every saved token and API key the file does not have is deleted |
+| **Cancel** | Nothing is imported |
 
 ## A profile's token while git runs
 
@@ -126,8 +166,12 @@ The settings file, the operation log, the avatar cache and the encrypted token
 store are readable by your account only (on macOS and Linux). A server address
 saved with a `user:password@` or a `?token=` in it — from an import or an older
 version — has that part removed when it is read, imported or saved. The commit
-avatar cache stores no e-mail addresses, only hashes salted per install. A
-backup of the token store is deleted once a newer store is written; one that
-only another build of Gitcito can read is kept for 30 days.
+avatar cache stores no e-mail addresses, only hashes salted per install.
+
+Each of these files is written whole: to a new file beside it, then swapped in,
+so a crash or two saves at once never leave half a file — which Gitcito would
+otherwise have to treat as unreadable. A backup of the token store is deleted
+early only when every token in it is also in the current store; any other
+backup is kept for 30 days.
 
 **See also:** [Vault](vault.md) · [Secure share](secure-share.md)

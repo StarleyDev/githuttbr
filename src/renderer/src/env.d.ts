@@ -131,7 +131,9 @@ interface PreloadApi {
   settings: {
     get(): Promise<unknown>
     unlock(): Promise<unknown>
-    set(settings: unknown): Promise<void>
+    set(settings: unknown, generation?: number, options?: unknown): Promise<void>
+    secretsState(): Promise<unknown>
+    replaceUnreadableStore(): Promise<boolean>
     importFile(): Promise<unknown>
     exportFile(settings: unknown): Promise<boolean>
   }

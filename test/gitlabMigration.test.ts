@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { GITLAB_COM, migrateGitlabProfile, migrateGitlabSettings } from '../src/shared/gitlabInstance'
 import { applySecrets, extractSecrets, migrateGitlabSecrets, type SecretStore } from '../src/shared/secrets'
 import { defaultProfile, defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
+import { settingsIpc } from './settingsIpc'
 
 // From one self-managed GitLab per profile (`gitlabUrl` + one token) to a list
 // of servers. The shapes below are what builds before the list wrote: the
@@ -130,7 +131,8 @@ describe('the encrypted store of a one-instance profile', () => {
 describe('upgrading an install, through the real settings handlers', () => {
   const settingsFile = join(dir, 'gitcito-settings.json')
   const secretsFile = join(dir, 'gitcito-secrets.enc')
-  const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  const ipc = settingsIpc(handlers)
+  const call = (channel: string, ...args: unknown[]): Promise<unknown> => ipc({}, channel, ...args)
   const readStore = (): SecretStore =>
     JSON.parse(Buffer.from(readFileSync(secretsFile, 'utf8'), 'base64').toString().replace(/^enc:/, '')) as SecretStore
 

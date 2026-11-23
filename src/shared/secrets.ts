@@ -403,7 +403,11 @@ export function saveOver(currentRaw: SecretStore, incomingRaw: SecretStore, seen
   for (const id of new Set([...Object.keys(current), ...Object.keys(incoming)])) {
     const cur = current[id] ?? {}
     const inc = incoming[id] ?? {}
-    const kept: ProfileSecrets = {}
+    // Fields this build does not know (a newer build wrote them) are nobody's
+    // to clear from here: they start out kept, and only the known slots below
+    // follow the held-slot rule.
+    const kept: ProfileSecrets = { ...cur }
+    for (const f of [...SINGLE_FIELDS, ...MAP_FIELDS, 'gitlabTokenIssuer', 'forgejoTokenIssuer'] as const) delete kept[f]
     const stays = (slot: string, value: string | undefined): value is string => !!value && seen.get(slot) !== value
     for (const f of SINGLE_FIELDS) {
       const issuer = ISSUER_OF[f]
@@ -421,4 +425,86 @@ export function saveOver(currentRaw: SecretStore, incomingRaw: SecretStore, seen
     if (Object.keys(kept).length > 0) out[id] = kept
   }
   return out
+}
+
+/** Whether every credential slot of `part` is in `whole`, with the same value. */
+export function isSubsetStore(part: SecretStore, whole: SecretStore): boolean {
+  const have = secretView(whole)
+  for (const [slot, value] of secretView(part)) if (have.get(slot) !== value) return false
+  return true
+}
+
+/** The slots of `before` that `after` no longer holds with that value — what a save cleared. */
+export function clearedSlots(before: SecretStore, after: SecretStore): SecretView {
+  const now = secretView(after)
+  const out = new Map<string, string>()
+  for (const [slot, value] of secretView(before)) if (now.get(slot) !== value) out.set(slot, value)
+  return out
+}
+
+/**
+ * `store` without the slots in `tombstones` — each only while it still holds
+ * the value that was cleared, so a token set again since is not removed.
+ */
+export function withoutSlots(storeRaw: SecretStore, tombstones: SecretView): SecretStore {
+  if (tombstones.size === 0) return storeRaw
+  const store = migrateGitlabSecrets(storeRaw)
+  const out: SecretStore = {}
+  for (const [id, secrets] of Object.entries(store)) {
+    const kept: ProfileSecrets = { ...secrets }
+    for (const f of SINGLE_FIELDS) {
+      if (kept[f] && tombstones.get(`${id}\0${f}`) === kept[f]) {
+        delete kept[f]
+        const issuer = ISSUER_OF[f]
+        if (issuer) delete kept[issuer]
+      }
+    }
+    for (const f of MAP_FIELDS) {
+      const map = kept[f]
+      if (!map) continue
+      const left = Object.fromEntries(Object.entries(map).filter(([k, v]) => tombstones.get(`${id}\0${f}\0${k}`) !== v))
+      if (Object.keys(left).length > 0) kept[f] = left
+      else delete kept[f]
+    }
+    if (Object.keys(kept).length > 0) out[id] = kept
+  }
+  return out
+}
+
+// Whitespace, and the invisible characters that render as nothing: padding a
+// held token with either must not make it look like a different one.
+const INVISIBLE = /[\s\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180E\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/g
+
+/** A credential as compared: no whitespace, no invisible characters. */
+export function canonicalSecret(value: string): string {
+  return value.replace(INVISIBLE, '')
+}
+
+/**
+ * Below this, "contains" would match by accident — a held value this short is
+ * only ever compared whole.
+ */
+export const MIN_CONTAINED_SECRET = 8
+/** A supplied value this long that sits inside a held one is a piece of it. */
+export const MIN_SECRET_FRAGMENT = 16
+
+/**
+ * Whether `supplied` carries a held credential: equal to one, containing one,
+ * or — when long enough to be no accident — contained in one. Both sides are
+ * compared canonical (`canonicalSecret`), so `' ghp_x '`, `'ghp_x\u200B'` or
+ * `'ghp_x junk'` are all the held `ghp_x`. Every candidate is checked every
+ * time; there is no early exit to time.
+ */
+export function carriesHeldSecret(supplied: string, held: Iterable<string>): boolean {
+  const want = canonicalSecret(supplied)
+  if (!want) return false
+  let hit = false
+  for (const raw of held) {
+    const c = canonicalSecret(raw)
+    if (!c) continue
+    const contains = c.length >= MIN_CONTAINED_SECRET ? want.includes(c) : want === c
+    const piece = want.length >= MIN_SECRET_FRAGMENT && c.includes(want)
+    hit = contains || piece || hit
+  }
+  return hit
 }

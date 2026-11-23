@@ -1,4 +1,4 @@
-import type { LaunchInput, LaunchInputResolution } from '../../../shared/types'
+import type { LaunchInput, LaunchInputResolution, SecretsState, SettingsReply, SettingsSaveOptions } from '../../../shared/types'
 import type {
   AskPlan,
   DoctorCheck,
@@ -694,12 +694,19 @@ export const gitApi = {
 }
 
 export const settingsApi = {
-  get: () => window.api.settings.get() as Promise<AppSettings>,
+  get: () => window.api.settings.get() as Promise<SettingsReply>,
   // Decrypts the stored tokens (asking for keychain access if needed) and
   // returns the settings with them filled in. Only call it from an explicit
   // user action — never on start-up.
-  unlock: () => window.api.settings.unlock() as Promise<AppSettings>,
-  set: (s: AppSettings) => window.api.settings.set(s),
+  unlock: () => window.api.settings.unlock() as Promise<SettingsReply>,
+  // `generation` is the one of the reply the settings were built from: a blank
+  // token clears the saved one only when it is still current (main/settings.ts).
+  set: (s: AppSettings, generation: number, options?: SettingsSaveOptions) =>
+    window.api.settings.set(s, generation, options),
+  /** Whether a saved token store exists that this session could not read. */
+  secretsState: () => window.api.settings.secretsState() as Promise<SecretsState>,
+  /** Start a new token store over an unreadable one, keeping the old file as a backup. */
+  replaceUnreadableStore: () => window.api.settings.replaceUnreadableStore(),
   importFile: () => window.api.settings.importFile() as Promise<unknown>,
   exportFile: (data: unknown) => window.api.settings.exportFile(data)
 }

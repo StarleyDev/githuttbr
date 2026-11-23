@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { settingsIpc } from './settingsIpc'
 
 // A token typed while the keychain is off lives in memory only. Turning the
 // keychain on used to change nothing until another setting was saved, so
@@ -27,8 +28,9 @@ vi.mock('electron', () => ({
   }
 }))
 
+const ipc = settingsIpc(handlers)
 const call = (channel: string, ...args: unknown[]): Promise<unknown> =>
-  Promise.resolve(handlers.get(channel)!({}, ...args))
+  ipc({}, channel, ...args)
 
 describe('turning the keychain on', () => {
   beforeAll(async () => {
