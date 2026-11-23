@@ -1092,6 +1092,9 @@ async function writeSettings(
   }
   const stored = secretCache ?? (await loadSecrets(false))
   if (!stored) {
+    // Nor over a store this session cannot read: its tokens would come back the
+    // moment it can be read again.
+    if (replacing) throw new SettingsRefused('store-unreadable')
     // A store exists that this session cannot read. Writing ours would replace
     // every token in it with this save's: keep them for the session instead,
     // and let Settings say why (`settings:secretsState`).

@@ -3481,7 +3481,7 @@ export interface AppSettings {
 export type SettingsErrorKind = 'parse' | 'io' | 'other'
 
 /** Why main refused a `settings:set` without writing anything. */
-export type SettingsRefusal = 'not-loaded' | 'keychain-required'
+export type SettingsRefusal = 'not-loaded' | 'keychain-required' | 'store-unreadable'
 
 /**
  * What `settings:moveAside` answers: the new name of the damaged file, null when

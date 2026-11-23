@@ -2499,8 +2499,15 @@ function DataManagementSection(): React.JSX.Element {
           }
           toast('success', t('settings.imported'))
         } catch (err) {
-          const needsKeychain = err instanceof SettingsSaveRefused && err.reason === 'keychain-required'
-          toast('error', needsKeychain ? t('settings.importReplaceNeedsKeychain') : t('settings.importFailed'))
+          const refused = err instanceof SettingsSaveRefused ? err.reason : null
+          toast(
+            'error',
+            refused === 'keychain-required'
+              ? t('settings.importReplaceNeedsKeychain')
+              : refused === 'store-unreadable'
+                ? t('settings.importReplaceStoreUnreadable')
+                : t('settings.importFailed')
+          )
         }
       }
 

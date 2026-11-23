@@ -4242,6 +4242,7 @@ export const nl: Dict = {
   'app.settingsMoveAside': 'Beschadigd bestand opzij zetten en opnieuw beginnen',
   'app.settingsMoveAsideRefused': 'Het beschadigde bestand is niet verplaatst: Gitcito kon eerst geen back-up maken van je opgeslagen tokens (het versleutelde secrets-bestand), en het bestand verplaatsen zonder die back-up kon ze laten verloren gaan. Er is niets gewijzigd. Controleer of er in de gegevensmap geschreven kan worden — {dir} — en probeer het opnieuw.',
   'settings.importReplaceNeedsKeychain': 'Alle opgeslagen inloggegevens vervangen vereist de systeemsleutelhanger, die uit of niet beschikbaar is. Er is niets geïmporteerd.',
+  'settings.importReplaceStoreUnreadable': 'Alle opgeslagen inloggegevens vervangen vereist de opgeslagen tokens, die Gitcito niet kon lezen (zie Instellingen → Beveiliging). Er is niets geïmporteerd.',
   'settings.recentCleared': 'Recente repositories gewist',
   'settings.analyticsCleared': 'Statistieken gewist',
   'settings.noCachedRepos': 'Geen repositories in de cache',

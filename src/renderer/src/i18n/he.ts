@@ -4237,6 +4237,7 @@ export const he: Dict = {
   'app.settingsMoveAside': 'הזיזו את הקובץ הפגום הצידה והתחילו מחדש',
   'app.settingsMoveAsideRefused': 'הקובץ הפגום לא הועבר: Gitcito לא הצליח קודם לגבות את האסימונים השמורים (קובץ הסודות המוצפן), והעברת הקובץ בלי הגיבוי הזה עלולה לאבד אותם. דבר לא שונה. ודאו שאפשר לכתוב לתיקיית הנתונים — {dir} — ונסו שוב.',
   'settings.importReplaceNeedsKeychain': 'החלפת כל פרטי הגישה השמורים דורשת את מחזיק המפתחות של המערכת, שכבוי או לא זמין. דבר לא יובא.',
+  'settings.importReplaceStoreUnreadable': 'החלפת כל פרטי הגישה השמורים דורשת את האסימונים השמורים, ש-Gitcito לא הצליח לקרוא (ראו הגדרות ← אבטחה). דבר לא יובא.',
   'settings.recentCleared': 'רשימת המאגרים האחרונים נוקתה',
   'settings.analyticsCleared': 'נתוני האנליטיקה נוקו',
   'settings.noCachedRepos': 'אין מאגרים במטמון',

@@ -4234,6 +4234,7 @@ export const zhCN: Dict = {
   'app.settingsMoveAside': '将损坏的文件移到一旁并重新开始',
   'app.settingsMoveAsideRefused': '损坏的文件未被移动：Gitcito 无法先备份你保存的令牌（加密的机密文件），而在没有备份的情况下移动文件可能会丢失它们。未做任何更改。请确认数据文件夹可写入（{dir}），然后重试。',
   'settings.importReplaceNeedsKeychain': '替换所有已保存的凭据需要系统钥匙串，但它已关闭或不可用。未导入任何内容。',
+  'settings.importReplaceStoreUnreadable': '替换所有已保存的凭据需要已保存的令牌，但 Gitcito 无法读取它们（见 设置 → 安全）。未导入任何内容。',
   'settings.recentCleared': '最近打开的仓库已清空',
   'settings.analyticsCleared': '统计数据已清空',
   'settings.noCachedRepos': '没有缓存的仓库',

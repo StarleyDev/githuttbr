@@ -115,6 +115,19 @@ describe('a store this session could not read (one dismissed keychain prompt)', 
     expect(await call('settings:secretsState')).toEqual({ unreadable: false })
   })
 
+  it('"Replace all" is refused over it, and nothing is written — its tokens would come back once readable', async () => {
+    await storedTokens()
+    keyring.failNext = 1
+    // The failed read marks the store unreadable.
+    await call('settings:set', settingsWith(profileWith({ bitbucketToken: 'bb_new' })))
+    const settingsBefore = readFileSync(settingsFile(), 'utf8')
+    const storeBefore = readFileSync(storeFile(), 'utf8')
+    const imported = settingsWith(profileWith({ name: 'Imported', githubToken: 'ghp_file' }))
+    expect(await call('settings:set', imported, 0, { import: 'replace' })).toEqual({ refused: 'store-unreadable' })
+    expect(readFileSync(settingsFile(), 'utf8')).toBe(settingsBefore)
+    expect(readFileSync(storeFile(), 'utf8')).toBe(storeBefore)
+  })
+
   it('a damaged store (not even base64 of a store) is unreadable, never empty', async () => {
     await restart()
     writeFileSync(settingsFile(), JSON.stringify(settingsWith(profileWith({}))))

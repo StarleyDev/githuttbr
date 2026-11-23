@@ -4243,6 +4243,7 @@ export const ptBR: Dict = {
   'app.settingsMoveAside': 'Mover o arquivo danificado e começar do zero',
   'app.settingsMoveAsideRefused': 'O arquivo danificado não foi movido: o Gitcito não conseguiu antes fazer um backup dos seus tokens salvos (o arquivo criptografado de segredos), e mover o arquivo sem esse backup poderia perdê-los. Nada foi alterado. Verifique se a pasta de dados pode ser gravada — {dir} — e tente novamente.',
   'settings.importReplaceNeedsKeychain': 'Substituir todas as credenciais salvas requer o chaveiro do sistema, que está desativado ou indisponível. Nada foi importado.',
+  'settings.importReplaceStoreUnreadable': 'Substituir todas as credenciais salvas requer os tokens salvos, que o Gitcito não conseguiu ler (veja Configurações → Segurança). Nada foi importado.',
   'settings.recentCleared': 'Repositórios recentes limpos',
   'settings.analyticsCleared': 'Métricas limpas',
   'settings.noCachedRepos': 'Nenhum repositório em cache',

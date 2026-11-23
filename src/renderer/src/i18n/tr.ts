@@ -4177,6 +4177,7 @@ export const tr: Dict = {
   'app.settingsMoveAside': 'Bozuk dosyayı kenara al ve sıfırdan başla',
   'app.settingsMoveAsideRefused': 'Bozuk dosya taşınmadı: Gitcito kayıtlı belirteçlerinizi (şifreli sırlar dosyası) önce yedekleyemedi ve dosyayı bu yedek olmadan taşımak onları kaybettirebilirdi. Hiçbir şey değiştirilmedi. Veri klasörüne yazılabildiğini denetleyin — {dir} — ve yeniden deneyin.',
   'settings.importReplaceNeedsKeychain': 'Kayıtlı tüm kimlik bilgilerini değiştirmek, kapalı ya da kullanılamayan sistem anahtar zincirini gerektirir. Hiçbir şey içe aktarılmadı.',
+  'settings.importReplaceStoreUnreadable': 'Kayıtlı tüm kimlik bilgilerini değiştirmek, Gitcito’nun okuyamadığı kayıtlı belirteçleri gerektirir (bkz. Ayarlar → Güvenlik). Hiçbir şey içe aktarılmadı.',
   'settings.recentCleared': 'Son kullanılan depolar temizlendi',
   'settings.analyticsCleared': 'Analiz verileri temizlendi',
   'settings.noCachedRepos': 'Önbelleğe alınmış depo yok',

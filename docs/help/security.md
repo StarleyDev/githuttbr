@@ -123,8 +123,10 @@ A file exported with the opt-in carries credentials, so importing it asks:
 
 **Replace all needs the keychain.** With the keychain off or unavailable, the
 old tokens would stay in the encrypted store and come back on the next launch,
-so Gitcito refuses instead: it says so, and nothing is imported. **Add to
-mine** still works, keeping the file's tokens for the session.
+so Gitcito refuses instead: it says so, and nothing is imported. The same goes
+while the saved tokens cannot be read (see above): they would come back the
+moment they could. **Add to mine** still works, keeping the file's tokens for
+the session.
 
 **The limit:** credentials belong to a profile. A profile the import removes
 takes its saved tokens with it, whichever you choose.
