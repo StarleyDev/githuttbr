@@ -4706,6 +4706,6 @@ export const zhCN: Dict = {
   'timeMachine.root': '根目录',
   'history.searchPlaceholder': '按主题、作者、SHA 或引用查找提交…',
   'migration.title': '设置已迁移',
-  'migration.message': '你的配置文件、工作区和偏好设置已从 {old} 复制到 {app}。已保存的令牌和 AI 密钥无法一并迁移：请在 设置 → 数据 中从包含令牌的导出文件导入，或重新输入。',
+  'migration.message': '你的配置文件、工作区、偏好设置和面板布局已从 {old} 复制到 {app}，仓库列表、仓库信息、Wiki、操作日志、使用统计和头像也一并复制。已保存的令牌、AI 密钥和保险库机密无法一并迁移：请在 设置 → 数据 中从包含令牌的导出文件导入，或重新输入。',
   'migration.dismiss': '知道了',
 }

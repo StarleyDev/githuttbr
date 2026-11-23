@@ -4654,6 +4654,6 @@ export const fr: Dict = {
   'timeMachine.root': 'Racine',
   'history.searchPlaceholder': 'Rechercher des commits par sujet, auteur, SHA ou référence…',
   'migration.title': 'Paramètres repris',
-  'migration.message': 'Vos profils, espaces de travail et préférences ont été copiés de {old} vers {app}. Les jetons enregistrés et les clés d’IA n’ont pas pu suivre : importez-les dans Paramètres → Données depuis un export qui inclut les jetons, ou saisissez-les à nouveau.',
+  'migration.message': 'Vos profils, espaces de travail, préférences et la disposition des panneaux ont été copiés de {old} vers {app}, ainsi que votre liste de dépôts, les infos des dépôts, les wikis, le journal des opérations, les statistiques d’utilisation et les photos de profil. Les jetons enregistrés, les clés d’IA et les secrets du coffre n’ont pas pu suivre : importez-les dans Paramètres → Données depuis un export qui inclut les jetons, ou saisissez-les à nouveau.',
   'migration.dismiss': 'Compris',
 }

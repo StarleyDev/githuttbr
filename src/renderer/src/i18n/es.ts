@@ -4709,6 +4709,6 @@ export const es: Dict = {
   'timeMachine.root': 'Raíz',
   'history.searchPlaceholder': 'Buscar commits por asunto, autor, SHA o referencia…',
   'migration.title': 'Ajustes trasladados',
-  'migration.message': 'Tus perfiles, espacios de trabajo y preferencias se copiaron de {old} a {app}. Los tokens guardados y las claves de IA no pudieron trasladarse: impórtalos en Ajustes → Datos desde una exportación que incluya tokens, o vuelve a introducirlos.',
+  'migration.message': 'Tus perfiles, espacios de trabajo, preferencias y la disposición de los paneles se copiaron de {old} a {app}, junto con tu lista de repositorios, la información de los repositorios, las wikis, el registro de operaciones, las estadísticas de uso y las fotos de perfil. Los tokens guardados, las claves de IA y los secretos de la bóveda no pudieron trasladarse: impórtalos en Ajustes → Datos desde una exportación que incluya tokens, o vuelve a introducirlos.',
   'migration.dismiss': 'Entendido',
 }

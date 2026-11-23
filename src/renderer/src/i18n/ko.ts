@@ -4706,6 +4706,6 @@ export const ko: Dict = {
   'timeMachine.root': '루트',
   'history.searchPlaceholder': '제목, 작성자, SHA 또는 참조로 커밋 검색…',
   'migration.title': '설정을 가져왔습니다',
-  'migration.message': '프로필, 워크스페이스, 환경설정을 {old}에서 {app}(으)로 복사했습니다. 저장된 토큰과 AI 키는 가져올 수 없었습니다. 설정 → 데이터에서 토큰이 포함된 내보내기 파일로 가져오거나 다시 입력하세요.',
+  'migration.message': '프로필, 워크스페이스, 환경설정, 패널 레이아웃을 저장소 목록, 저장소 정보, 위키, 작업 기록, 사용 통계, 프로필 사진과 함께 {old}에서 {app}(으)로 복사했습니다. 저장된 토큰, AI 키, 보관함 비밀은 가져올 수 없었습니다. 설정 → 데이터에서 토큰이 포함된 내보내기 파일로 가져오거나 다시 입력하세요.',
   'migration.dismiss': '확인',
 }

@@ -19,12 +19,28 @@ page lists it so nothing goes missing quietly.
 
 ## Copied for you
 
-The first time 4.39 starts with no settings of its own, it copies **settings,
-profiles, workspaces and preferences** from the 4.38 data folder, named
-<code>Git&#99;ito</code> (in `~/.config` on Linux, `~/Library/Application Support`
-on macOS, `%APPDATA%` on Windows). The old folder is **left untouched** — nothing
-is moved or deleted — so an older install still finds it. A note in the app
-says so once.
+The first time 4.39 starts with no data of its own, it copies from the 4.38
+data folder, named <code>Git&#99;ito</code> (in `~/.config` on Linux,
+`~/Library/Application Support` on macOS, `%APPDATA%` on Windows):
+
+| Carried over | What it holds |
+|--------------|---------------|
+| Settings | Profiles (without their tokens), workspaces, open tabs, preferences |
+| Local Storage | Panel layout, diff toggles, zoom, recent commands and the other per-window choices |
+| Repository list | Every repository the app knew about, open or not |
+| Repository info and wikis | The reference notes and generated wikis kept per repository |
+| Operation log and usage stats | The history behind the log and the activity charts |
+| Profile pictures | Images chosen for a profile |
+
+| Not carried over | Why |
+|------------------|-----|
+| Tokens, AI keys, vault secrets | Encrypted with the old keychain entry — see below |
+| Keychain consent | Given to the old entry; you are asked again |
+| Caches (AI model lists, avatars, release notes) | They refill on their own |
+
+The old folder is **left untouched** — nothing is moved or deleted — so an
+older install still finds it. A file 4.39 already has is never overwritten. A
+note in the app says so once.
 
 What lives in your repositories keeps working without any step: a
 <code>.git&#99;ito.json</code> config, WIP snapshots, stack parents and the other
@@ -57,8 +73,12 @@ A few things outside the app still name the old command:
 
 ## Limits
 
-- The copy runs once, and only while 4.39 has no settings of its own. What you
-  change in 4.38 afterwards does not follow; export and import it instead.
+- The copy runs once, and only while 4.39 has no settings of its own. It
+  leaves a marker behind, so resetting 4.39's settings later starts clean rather
+  than copying 4.38 again. What you change in 4.38 afterwards does not follow;
+  export and import it instead.
+- The panel layout comes along only when 4.39 has no Local Storage of its own
+  yet: two of those databases cannot be merged, so an existing one wins.
 - An export made **without** the tick carries no secrets — that is what the
   default export is for. Delete the file with secrets once it is imported:
   anyone holding it holds your tokens.

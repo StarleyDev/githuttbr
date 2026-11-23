@@ -4715,6 +4715,6 @@ export const ptBR: Dict = {
   'timeMachine.root': 'Raiz',
   'history.searchPlaceholder': 'Buscar commits por assunto, autor, SHA ou referência…',
   'migration.title': 'Configurações transferidas',
-  'migration.message': 'Seus perfis, espaços de trabalho e preferências foram copiados do {old} para o {app}. Tokens salvos e chaves de IA não puderam vir junto: importe-os em Configurações → Dados a partir de uma exportação com tokens, ou digite-os novamente.',
+  'migration.message': 'Seus perfis, espaços de trabalho, preferências e layout dos painéis foram copiados do {old} para o {app}, junto com a lista de repositórios, as informações dos repositórios, as wikis, o log de operações, as estatísticas de uso e as fotos de perfil. Tokens salvos, chaves de IA e segredos do cofre não puderam vir junto: importe-os em Configurações → Dados a partir de uma exportação com tokens, ou digite-os novamente.',
   'migration.dismiss': 'Entendi',
 }

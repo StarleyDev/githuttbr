@@ -221,5 +221,9 @@ describe('renderer localStorage keys', () => {
     expect(store.data.get('gitcito-layout')).toBe('{"sidebar":200}')
     // Idempotent: a second start copies nothing.
     expect(migrateLegacyStorageKeys(store)).toBe(0)
+    // And a key the app removed on purpose does not come back from its legacy twin.
+    store.data.delete('githuttbr-layout')
+    expect(migrateLegacyStorageKeys(store)).toBe(0)
+    expect(store.data.has('githuttbr-layout')).toBe(false)
   })
 })

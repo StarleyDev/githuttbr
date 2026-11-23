@@ -39,7 +39,7 @@ import { fixPath } from './fix-path'
 import { stripEditorGitAskpass } from './editorEnv'
 import { registerCliHandlers, trackWait, releaseAllWaits } from './cli'
 import { APP_NAME, DEV_USER_DATA_DIR, FILE_PREFIX, LEGACY_APP_NAME, SETTINGS_FILE } from './appIdentity'
-import { migrateLegacySettings, takeMigrationNotice } from './legacyMigration'
+import { migrateLegacyData, takeMigrationNotice } from './legacyMigration'
 import { registerEditorHandlers } from './editor'
 import { registerMenuHandlers } from './menu'
 import { registerSshHandlers } from './ssh'
@@ -105,14 +105,16 @@ async function deliverEdit(win: BrowserWindow, file: string, sentinel: string): 
 // encrypts tokens from the app name, so it is pinned here (appIdentity.ts),
 // before anything reads userData, instead of following the display name.
 // Until 4.38 it was "Gitcito"; 4.39 renamed it to "GitHuttBr", which starts a
-// new folder and a new keychain entry. The old settings are copied over once,
-// without credentials — the old token store is sealed with the old keychain
-// entry and cannot be read under the new one (legacyMigration.ts).
+// new folder and a new keychain entry. The old settings, plain-data files and
+// renderer localStorage are copied over once, without credentials — the old
+// token store is sealed with the old keychain entry and cannot be read under
+// the new one (legacyMigration.ts). It runs here, before the first window, so
+// Chromium opens the copied `Local Storage` rather than creating an empty one.
 if (app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
   app.setName(APP_NAME)
   const userData = join(app.getPath('appData'), APP_NAME)
   app.setPath('userData', userData)
-  migrateLegacySettings(userData, join(app.getPath('appData'), LEGACY_APP_NAME))
+  migrateLegacyData(userData, join(app.getPath('appData'), LEGACY_APP_NAME))
 }
 
 if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {

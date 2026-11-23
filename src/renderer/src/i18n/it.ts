@@ -4655,6 +4655,6 @@ export const it: Dict = {
   'timeMachine.root': 'Radice',
   'history.searchPlaceholder': 'Cerca commit per oggetto, autore, SHA o riferimento…',
   'migration.title': 'Impostazioni trasferite',
-  'migration.message': 'Profili, spazi di lavoro e preferenze sono stati copiati da {old} a {app}. I token salvati e le chiavi IA non sono stati trasferiti: importali in Impostazioni → Dati da un’esportazione che include i token, oppure inseriscili di nuovo.',
+  'migration.message': 'Profili, spazi di lavoro, preferenze e disposizione dei pannelli sono stati copiati da {old} a {app}, insieme all’elenco dei repository, alle info dei repository, alle wiki, al registro delle operazioni, alle statistiche d’uso e alle foto profilo. I token salvati, le chiavi IA e i segreti della cassaforte non sono stati trasferiti: importali in Impostazioni → Dati da un’esportazione che include i token, oppure inseriscili di nuovo.',
   'migration.dismiss': 'Ho capito',
 }

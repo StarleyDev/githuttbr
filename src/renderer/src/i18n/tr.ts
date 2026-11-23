@@ -4649,6 +4649,6 @@ export const tr: Dict = {
   'timeMachine.root': 'Kök',
   'history.searchPlaceholder': 'Commitleri konu, yazar, SHA veya referansa göre bul…',
   'migration.title': 'Ayarlar taşındı',
-  'migration.message': 'Profilleriniz, çalışma alanlarınız ve tercihleriniz {old} uygulamasından {app} uygulamasına kopyalandı. Kayıtlı belirteçler ve yapay zekâ anahtarları taşınamadı: bunları Ayarlar → Veri bölümünde belirteç içeren bir dışa aktarımdan içe aktarın veya yeniden girin.',
+  'migration.message': 'Profilleriniz, çalışma alanlarınız, tercihleriniz ve panel düzeniniz; depo listeniz, depo bilgileri, wiki\'ler, işlem günlüğü, kullanım istatistikleri ve profil fotoğraflarıyla birlikte {old} uygulamasından {app} uygulamasına kopyalandı. Kayıtlı belirteçler, yapay zekâ anahtarları ve kasa sırları taşınamadı: bunları Ayarlar → Veri bölümünde belirteç içeren bir dışa aktarımdan içe aktarın veya yeniden girin.',
   'migration.dismiss': 'Anladım',
 }

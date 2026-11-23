@@ -4713,7 +4713,7 @@ export const en = {
   'timeMachine.root': 'Root',
   'history.searchPlaceholder': 'Find commits by subject, author, SHA or ref…',
   'migration.title': 'Settings carried over',
-  'migration.message': 'Your profiles, workspaces and preferences were copied from {old} into {app}. Saved tokens and AI keys could not come along: import them in Settings → Data from an export that includes tokens, or enter them again.',
+  'migration.message': 'Your profiles, workspaces, preferences and panel layout were copied from {old} into {app}, along with your repository list, repository info, wikis, operation log, usage stats and profile pictures. Saved tokens, AI keys and vault secrets could not come along: import them in Settings → Data from an export that includes tokens, or enter them again.',
   'migration.dismiss': 'Got it',
 }
 
