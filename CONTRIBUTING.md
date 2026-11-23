@@ -260,8 +260,8 @@ is attached.
 
 `publish` marks the release `--latest` as soon as Linux and Windows are in, so
 for that window electron-updater on a Mac asks the latest release for
-`latest-mac.yml` and gets a 404. Builds after 4.40.0 treat that as "no update
-yet" (logged, status *not available*). Installs of **4.40.0 and older** do not:
+`latest-mac.yml` and gets a 404. 4.40.0 and later treat that as "no update
+yet" (logged, status *not available*). Installs **older than 4.40.0** do not:
 they show an update **error** on every check until macOS lands. That is
 expected and clears by itself once `latest-mac.yml` is attached — nothing to
 fix on the release.
