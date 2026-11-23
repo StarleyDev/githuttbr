@@ -39,8 +39,11 @@ export function pickTarget({ release, runs, explicitTag, now, windowHours = BACK
   if (!TAG_RE.test(tag)) return { skip: `'${tag}' is not vX.Y.Z` }
   if (explicitTag && tag !== explicitTag) return { skip: `asked for ${explicitTag}, found ${tag}` }
   if ((release.assets ?? []).some((a) => a.name === 'latest-mac.yml')) return { skip: `${tag} already has latest-mac.yml` }
-  // The Release run (or its automatic re-run) may still deliver macOS itself.
-  if (runs.some((r) => r.headBranch === tag && ACTIVE.has(r.status ?? ''))) {
+  // The Release run (or its automatic re-run) may still deliver macOS itself,
+  // so the schedule waits for it. A person who runs this by hand has decided:
+  // the per-tag concurrency group in release-mac.yml already keeps the two
+  // builds from overlapping, and the upload skips if the other one finished.
+  if (!explicitTag && runs.some((r) => r.headBranch === tag && ACTIVE.has(r.status ?? ''))) {
     return { skip: `a Release run for ${tag} is still going` }
   }
   // A draft has not shipped to anyone; only a person should push it along.

@@ -143,6 +143,11 @@ describe('backfill target', () => {
     expect(pickTarget({ release: r, runs: [], now })).toEqual({ skip: 'v4.40.0 already has latest-mac.yml' })
   })
 
+  it('a run by hand builds even while a Release run for the tag is still queued', () => {
+    const runs = [{ status: 'queued', headBranch: 'v4.40.0' }]
+    expect(pickTarget({ release: release(), runs, now, explicitTag: 'v4.40.0' })).toEqual({ tag: 'v4.40.0' })
+  })
+
   it('waits while a Release run for the tag is still going', () => {
     const runs = [{ status: 'queued', headBranch: 'v4.40.0' }, { status: 'completed', headBranch: 'v4.39.1' }]
     expect('skip' in pickTarget({ release: release(), runs, now })).toBe(true)
@@ -247,7 +252,7 @@ describe('release workflows', () => {
     const matrix = (release.jobs.release as { strategy: { matrix: { os: string[] } } }).strategy.matrix.os
     expect([...matrix].sort()).toEqual(['ubuntu-latest', 'windows-latest'])
     expect(release.jobs.mac.uses).toBe('./.github/workflows/release-mac.yml')
-    expect(release.jobs.mac.with?.runner).toBe('macos-26')
+    expect(release.jobs.mac.with?.runner).toBe('macos-15')
   })
 
   it('opens the issue only once the automatic re-runs are used up', () => {

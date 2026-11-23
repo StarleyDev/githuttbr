@@ -20,8 +20,8 @@ on:
         description: macOS runner
         required: false
         type: choice
-        options: [macos-26, macos-15]
-        default: macos-26
+        options: [macos-15, macos-26]
+        default: macos-15
 
 permissions:
   contents: read

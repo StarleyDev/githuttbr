@@ -77,9 +77,10 @@ jobs:
   # macOS no longer blocks the release. It builds in its own reusable workflow
   # and attaches its files whenever it gets a runner — before or after the
   # release goes public. When it never does, Release retry re-runs just this
-  # job, and Release mac backfill keeps trying for 48 h. Pinned to macos-26
-  # (what macos-latest points at since the 2026 migration) so the image does not
-  # change under a release unannounced.
+  # job, and Release mac backfill keeps trying for 48 h. Pinned to macos-15:
+  # macos-26 (what macos-latest points at since the 2026 migration) handed this
+  # repository no runner at all for 4.39.0–4.40.0, every attempt cancelled after
+  # 15 minutes in the queue. The backfill still alternates both.
   mac:
     needs: draft
     permissions:
@@ -88,7 +89,7 @@ jobs:
     uses: ./.github/workflows/release-mac.yml
     with:
       tag: ${{ github.ref_name }}
-      runner: macos-26
+      runner: macos-15
       # Matches MAX_ATTEMPTS in release-retry.yml: the issue opens once the
       # automatic re-runs are used up, not on the first empty queue.
       notify-from-attempt: 3
