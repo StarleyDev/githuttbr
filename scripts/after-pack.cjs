@@ -18,10 +18,17 @@
  * - Cookie encryption stays OFF. It keys the cookie store with the OS keychain
  *   at every launch, while Gitcito touches the keychain only after the user
  *   opts in (main/keychain.ts); the app keeps nothing of value in cookies.
- * - Embedded asar integrity / OnlyLoadAppFromAsar stay OFF. The app is in an
- *   asar, but electron-builder 24 does not embed the integrity record on every
- *   platform, and an integrity fuse without one refuses to start. Revisit with
- *   the electron-builder upgrade.
+ * - Embedded asar integrity / OnlyLoadAppFromAsar stay OFF. electron-builder 26
+ *   writes the integrity record for macOS (Info.plist ElectronAsarIntegrity)
+ *   and Windows (an exe resource) only; Electron has no Linux record at all, so
+ *   on Linux the fuse would guard nothing. Turning it on for macOS/Windows
+ *   needs a signed build on those platforms to prove the app still starts,
+ *   which no local Linux build can show. OnlyLoadAppFromAsar alone buys little:
+ *   whoever can drop a resources/app folder can rewrite app.asar just as well.
+ *
+ * electron-builder's own `electronFuses` option is not used: it flips fuses
+ * with the @electron/fuses it bundles, while this hook pins the version in our
+ * devDependencies and keeps the choice testable (test/packagingHardening.test.ts).
  *
  * Runs before signing (electron-builder signs after afterPack), so the signed
  * binary is the fused one. An unsigned macOS build is re-signed ad hoc, since

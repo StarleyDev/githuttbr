@@ -14,6 +14,11 @@ describe('the repository this build is published from', () => {
     expect(`${pkg.build.publish.owner}/${pkg.build.publish.repo}`.toLowerCase()).toBe(APP_REPO.toLowerCase())
   })
 
+  it('is the homepage the .deb advertises', () => {
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { homepage?: string }
+    expect(pkg.homepage?.toLowerCase()).toBe(`https://github.com/${APP_REPO}`.toLowerCase())
+  })
+
   it('is named only in shared/appRepo.ts', () => {
     // A copy anywhere else is the one a fork would forget to change.
     const hits: string[] = []
