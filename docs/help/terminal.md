@@ -3,7 +3,7 @@ title: Integrated terminal
 category: Workspace tools
 order: 90
 summary: A real PTY docked under the graph, opened with each repository, with tabs per repository.
-keywords: terminal shell pty xterm console tabs docked placement center bottom open on startup auto open autocomplete npm run scripts make makefile composer branch checkout
+keywords: terminal shell login shell chsh fish zsh bash etc shells default shell pty xterm console tabs docked placement center bottom open on startup auto open autocomplete npm run scripts make makefile composer branch checkout
 ---
 
 # Integrated terminal
@@ -93,23 +93,76 @@ line out of its sight, so it stays quiet until the next Enter rather than
 complete the wrong thing. On Windows the current directory cannot be read, so
 the list follows the folder the terminal opened in.
 
+## Which shell starts
+
+**macOS and Linux** start your account's **login shell** — the one `chsh`
+sets — not whatever `$SHELL` happened to say when the app was launched. An app
+started from the Dock or a desktop menu keeps the `$SHELL` of the moment you
+logged in, so after `chsh -s /opt/homebrew/bin/fish` it would still open zsh
+until you logged out. Gitcito reads the account database instead (on macOS that
+is Directory Services), and reads it again for every new terminal: the next
+terminal you open uses the new shell, no relogin and no relaunch needed.
+
+The order, first usable one wins:
+
+| Step | Where it comes from |
+|------|---------------------|
+| 1 | Your account's login shell (`chsh`, or Users & Groups on macOS) |
+| 2 | `$SHELL` from the environment the app started in |
+| 3 | `/bin/zsh` on macOS, `/bin/bash` on Linux |
+| 4 | `/bin/sh` |
+
+"Usable" means an absolute path to an executable file. Accounts set to
+`nologin` or `false` are skipped. A shell missing from `/etc/shells` — common
+for a Homebrew shell — is still used; the app only notes it in its log.
+
+To pick something else, Settings → Layout → **Terminal shell** lists *System
+default* (with the shell it detected), every usable shell in `/etc/shells`, and
+**Custom…** for any other path. The choice applies to new terminals; open ones
+keep their shell. If a custom path stops existing, the terminal opens your
+system default instead and prints a note naming both — once per path and app
+run, not in every terminal.
+
+![The terminal shell picker in Settings → Layout](../screenshots/settings-terminal-shell.webp)
+
+**Windows** picks from PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash,
+WSL, or a custom executable, in the same place. *System default* there is
+`%COMSPEC%`.
+
 ## Your PATH
 
 The shell starts as a **login shell**, the same as Terminal.app or iTerm, so
-`~/.zprofile`, `~/.zlogin` and `~/.bash_profile` all run. That matters because
-version managers and `brew shellenv` usually install themselves there — a tool
-like `fvm`, `nvm` or `pyenv` that works in your terminal works here too.
+`~/.zprofile`, `~/.zlogin`, `~/.bash_profile` and fish's login configuration all
+run. That matters because version managers and `brew shellenv` usually install
+themselves there — a tool like `fvm`, `nvm` or `pyenv` that works in your
+terminal works here too. Known shells (sh, bash, zsh, ksh, fish, tcsh, nu…) get
+the login flag; a custom shell Gitcito does not recognise is started with no
+arguments, since an unknown flag could stop it starting at all.
 
 Gitcito also asks your login shell for its real `PATH` at startup and merges it
-into everything it spawns, because a GUI app launched from the Dock inherits
-almost nothing. If a command is still not found, check that it is on `PATH` for
-a login shell and not only for an interactive one.
+into everything it spawns — git hooks, [Run & debug](launch.md) tasks, the
+terminal — because a GUI app launched from the Dock inherits almost nothing. It
+asks the same shell the terminal opens by default, so a tool that only
+`~/.config/fish/config.fish` puts on `PATH` is found by a husky hook too.
 
-## Shell, theme & Oh My Posh
+The limits:
 
-On Windows, Settings → Layout picks the shell each new terminal spawns —
-PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL, or a custom
-executable. Terminal visuals (theme, font size, font family) live under
+- The `PATH` is read from your **system default** shell, not from a shell picked
+  in Settings, and at startup only: after a `chsh`, relaunch the app for hooks
+  to see the new shell's `PATH`.
+- Run & debug tasks are written in POSIX shell syntax (`a && b`, `( … )`), so
+  they run in your shell only when it is sh-compatible (bash, zsh, ksh, dash…).
+  For fish, nu or tcsh users they run in zsh (macOS) or bash (Linux), with the
+  `PATH` read from your own shell.
+- tcsh, nu and xonsh cannot be asked for `PATH` the same way; for them it is
+  read from zsh or bash, so only what those shells' profiles set is found.
+
+If a command is still not found, check that it is on `PATH` for a login shell
+and not only for an interactive one.
+
+## Theme & Oh My Posh
+
+Terminal visuals (theme, font size, font family) live under
 Settings → Themes → Terminal theme and apply live to every session.
 
 If [Oh My Posh](https://ohmyposh.dev) is installed, the terminal theme section
