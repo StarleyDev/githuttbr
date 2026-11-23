@@ -158,6 +158,8 @@ export const tr: Dict = {
   'sidebar.noTodos': 'Henüz görev yok',
   'sidebar.noPRs': 'Yüklenmiş açık PR yok',
   'sidebar.prsServerUnmatched': 'Bu uzak deponun sunucusu yapılandırılmış hiçbir sunucuyla eşleşmedi — PR’lar için https uzak adresini kullanın',
+  'sidebar.prsServerSharedBase': 'Bu uzak deponun sunucusu iki sağlayıcı altında yapılandırılmış — PR’ları görmek için Ayarlar’da yalnızca birinde bırakın',
+  'sidebar.prsServerUnmatchedOther': 'Bu uzak deponun sunucusu yapılandırılmış hiçbir sunucuyla eşleşmedi, bu yüzden PR’lar gösterilemiyor',
   'sidebar.upstreamPRs': '{repo} üzerinde',
   'sidebar.upstreamPRsTitle': 'Bu fork’un geldiği depodaki açık pull request’leriniz',
   'sidebar.stackOf': '{n} katmanlı yığın',

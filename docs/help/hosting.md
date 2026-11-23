@@ -238,9 +238,13 @@ From then on, a remote whose host is that server is GitHub:
 **Each token goes only to its own server.** The github.com token is never sent
 to an Enterprise Server, one server's token is never sent to another, and a
 server that is not in the list gets nothing at all — the app never guesses
-that an unknown host "is probably GitHub". The server's port is part of its
-identity over https, so `ghe.example.corp:8443` and `ghe.example.corp` are two
-servers. Tokens are stored with your OS keychain like every other token, and
+that an unknown host "is probably GitHub". Nor does a host count as github.com
+just for ending in it: the github.com token goes to `github.com`,
+`api.github.com`, `gist.github.com` and `ssh.github.com` (ssh over port 443)
+only — the same holds for `gitlab.com` (plus `altssh.gitlab.com`) and
+`bitbucket.org` (plus `api.bitbucket.org` and `altssh.bitbucket.org`); any other
+subdomain is an unknown host. The server's port is part of its identity over
+https, so `ghe.example.corp:8443` and `ghe.example.corp` are two servers. Tokens are stored with your OS keychain like every other token, and
 left out of a settings export unless you tick the option to include secrets.
 
 **Create a token on …** opens the server's token page with the `repo` scope
@@ -318,19 +322,34 @@ GitLab, a Forgejo or a GitHub Enterprise Server lives on the same host name —
 `git.acme.corp` for GitLab, `git.acme.corp:7990` or `git.acme.corp/bitbucket` for
 the Data Center — an https remote belongs to the server whose whole address
 (port and path included) it sits under, the longest path winning. An ssh remote
-says less. Written `ssh://git@git.acme.corp:7999/…`, it is the Data Center. The
-short form, `git@git.acme.corp:team/app.git`, cannot name a port at all, so it
-reaches the ssh daemon on port 22 — not the Data Center's 7999 — and counts as
-the *other* provider on that host name, as long as there is exactly one other.
-Any other `ssh://` remote on a host name two providers share is left
-unrecognised — no pull requests, and no token offered for it — rather than
-guessed, and the Pull requests section says so instead of showing an empty list.
-Use the https remote in that setup.
+says less. Written `ssh://git@git.acme.corp:7999/…`, it is the Data Center. A
+remote that reaches port 22 — the short form `git@git.acme.corp:team/app.git`,
+which cannot name a port at all, and `ssh://git@git.acme.corp/…` or
+`ssh://git@git.acme.corp:22/…` — reaches the ssh daemon on port 22, not the Data
+Center's 7999, and counts as the *other* provider on that host name, as long as
+there is exactly one other. An `ssh://` remote on any other port, on a host name
+two providers share, is left unrecognised — no pull requests, and no token
+offered for it — rather than guessed, and the Pull requests section says so
+instead of showing an empty list. Use the https remote in that setup.
 
-The limit: the short form is read by what git itself would do with it. If your
+The limit: a port-22 remote is read by what git itself would do with it. If your
 `~/.ssh/config` sends that host name to port 7999, the app does not read that
 file, and treats the remote as the other provider's. Write the remote as
 `ssh://git@host:7999/…`, or use https.
+
+**Two providers on one address.** If two providers in Settings name the very
+same server address — the same GitLab added again as a Forgejo, say — an https
+remote there cannot be told apart either, and gets no token. The Pull requests
+section says the server is configured under two providers; remove the one that
+is wrong.
+
+**Paths that could mean two things.** A remote whose path holds an encoded
+slash, backslash or dot (`%2F`, `%5C`, `%2E`), any other encoded plain letter
+or digit, a literal backslash, or a `.` or `..` segment matches no server, and
+no token is offered for it. A reverse proxy in front of the server may decode
+such a path and route it somewhere else than it appears to go —
+`https://git.acme.corp/bitbucket%2F..%2Fteam/app.git` reads as the Data Center
+but can land on the GitLab at the root. Ordinary escapes such as `%20` are fine.
 
 **The token.** Create an HTTP access token in Bitbucket (your avatar → *Manage
 account* → *HTTP access tokens*; **Create a token on …** opens that page).

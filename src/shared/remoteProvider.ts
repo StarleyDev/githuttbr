@@ -1,7 +1,8 @@
 import type { Profile, RepoHost } from './types'
 import { BITBUCKET_CLOUD, bitbucketServerBases, isBitbucketCloudHost } from './bitbucketServer'
 import { GITHUB_COM, githubEnterpriseBases, isGithubComHost } from './githubEnterprise'
-import { GITLAB_COM, gitlabServerBases, profileForgejoBase } from './gitlabInstance'
+import { GITLAB_COM, gitlabServerBases, isGitlabComHost, profileForgejoBase } from './gitlabInstance'
+import { ambiguousRemotePath } from './remotePath'
 
 /**
  * Every self-hosted server the profiles configure, by provider. Recognition
@@ -43,13 +44,16 @@ interface Parts {
   host: string
   hostname: string
   port: number | null
-  /** Leading `/` kept, percent-decoded. */
+  /** Leading `/` kept, percent-ENCODED: matched as written, never as a proxy might decode it. */
   path: string
-  /** Written `[user@]host:path`, which has no room for a port. */
-  scp: boolean
 }
 
 function partsOf(url: string): Parts | null {
+  return ambiguousRemotePath(url) ? null : readParts(url)
+}
+
+/** `partsOf` without the ambiguity check — for saying why a remote was not placed, never for placing it. */
+function readParts(url: string): Parts | null {
   // scp-style ssh, `[user@]host:path` — never a `scheme://` URL. A drive
   // letter (`C:/repos/app.git`, `C:\repos`) is a local path, as git reads it,
   // not an ssh host called `c`. The user stays optional: an ssh config alias
@@ -58,24 +62,19 @@ function partsOf(url: string): Parts | null {
   const scp = url.includes('://') || drive ? null : /^(?:[\w.-]+@)?([\w.-]+):(.+)$/.exec(url)
   if (scp) {
     const hostname = scp[1].toLowerCase()
-    return { scheme: 'ssh', host: hostname, hostname, port: null, path: '/' + scp[2].replace(/^\/+/, ''), scp: true }
+    // An scp path is literal text; encode it so every path here has one form.
+    const path = '/' + scp[2].replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/')
+    return { scheme: 'ssh', host: hostname, hostname, port: null, path }
   }
   try {
     const u = new URL(url)
     if (!u.hostname) return null
     const hostname = u.hostname.toLowerCase()
-    let path = u.pathname
-    try {
-      path = decodeURIComponent(path)
-    } catch {
-      /* keep it encoded */
-    }
+    const path = u.pathname
     const port = u.port ? Number(u.port) : null
-    if (u.protocol === 'https:') return { scheme: 'https', host: u.host.toLowerCase(), hostname, port, path, scp: false }
-    if (u.protocol === 'ssh:' || u.protocol === 'git+ssh:') {
-      return { scheme: 'ssh', host: hostname, hostname, port, path, scp: false }
-    }
-    return { scheme: 'other', host: hostname, hostname, port, path, scp: false }
+    if (u.protocol === 'https:') return { scheme: 'https', host: u.host.toLowerCase(), hostname, port, path }
+    if (u.protocol === 'ssh:' || u.protocol === 'git+ssh:') return { scheme: 'ssh', host: hostname, hostname, port, path }
+    return { scheme: 'other', host: hostname, hostname, port, path }
   } catch {
     return null
   }
@@ -119,13 +118,22 @@ function soleProvider(list: Candidate[]): RepoHost | null {
 /** Longest context path first: `host/gitlab` must win over `host`. */
 const byPrefix = (a: Candidate, b: Candidate): number => b.prefix.length - a.prefix.length
 
+/** The bases an https remote sits under with the longest context path — several only when misconfigured. */
+function deepestBases(all: Candidate[], r: Parts): Candidate[] {
+  const under = all
+    .filter((c) => c.host === r.host && (c.prefix === '' || r.path === c.prefix || r.path.startsWith(`${c.prefix}/`)))
+    .sort(byPrefix)
+  return under.filter((c) => c.prefix.length === under[0].prefix.length)
+}
+
 /**
  * Which provider — and which server — a remote URL belongs to. The single
  * answer every provider-from-URL decision in main uses, so that a token, an
  * auth scheme and an API client can never disagree about a remote.
  *
+ * 0. A path a proxy could read differently (`ambiguousRemotePath`): unknown.
  * 1. A cloud host (github.com, gitlab.com, bitbucket.org, Azure DevOps) by its
- *    hostname.
+ *    exact hostname — a listed one, never any subdomain.
  * 2. https: the configured server whose FULL base — host, port and context
  *    path — the remote sits under, across GitLab, Forgejo, GitHub Enterprise
  *    and Data Center together, longest context path first. Two providers
@@ -133,9 +141,11 @@ const byPrefix = (a: Candidate, b: Candidate): number => b.prefix.length - a.pre
  * 3. ssh carries neither the web port nor the context path, only a hostname
  *    and the ssh daemon's port: port 7999 (Data Center's default) with a Data
  *    Center on that hostname → Data Center; otherwise the provider when exactly
- *    one provider has servers on that hostname; several → unknown. An scp
- *    remote (`git@host:path`) has no port to give, so a Data Center sharing the
- *    hostname with another provider does not count for it.
+ *    one provider has servers on that hostname; several → unknown. A remote
+ *    that reaches port 22 — scp (`git@host:path`, which cannot name a port),
+ *    or `ssh://` with no port or `:22` — does not reach a Data Center's 7999,
+ *    so a Data Center sharing the hostname with another provider does not
+ *    count for it. Any other explicit port stays ambiguous when shared.
  * 4. Anything else (http, git://, an https remote at a port or path no base
  *    covers): by hostname only, when exactly one provider has servers there —
  *    with no base, so no server's token is offered.
@@ -148,7 +158,7 @@ export function resolveRemoteProvider(url: string, reg: ServerRegistry): Resolve
   const h = r.hostname
   if (isGithubComHost(h)) return { provider: 'github', base: GITHUB_COM }
   if (h === 'dev.azure.com' || h === 'ssh.dev.azure.com' || h.endsWith('.visualstudio.com')) return { provider: 'azure' }
-  if (h === 'gitlab.com' || h.endsWith('.gitlab.com')) return { provider: 'gitlab', base: GITLAB_COM }
+  if (isGitlabComHost(h)) return { provider: 'gitlab', base: GITLAB_COM }
   if (isBitbucketCloudHost(h)) return { provider: 'bitbucket', base: BITBUCKET_CLOUD }
 
   const all = candidatesOf(reg)
@@ -156,11 +166,8 @@ export function resolveRemoteProvider(url: string, reg: ServerRegistry): Resolve
   if (onHostname.length === 0) return null
 
   if (r.scheme === 'https') {
-    const under = all
-      .filter((c) => c.host === r.host && (c.prefix === '' || r.path === c.prefix || r.path.startsWith(`${c.prefix}/`)))
-      .sort(byPrefix)
-    if (under.length > 0) {
-      const top = under.filter((c) => c.prefix.length === under[0].prefix.length)
+    const top = deepestBases(all, r)
+    if (top.length > 0) {
       const provider = soleProvider(top)
       return provider ? { provider, base: top[0].base } : null
     }
@@ -169,11 +176,12 @@ export function resolveRemoteProvider(url: string, reg: ServerRegistry): Resolve
   if (r.scheme === 'ssh') {
     const dc = onHostname.filter((c) => c.provider === 'bitbucket').sort(byPrefix)
     if (r.port === BITBUCKET_SERVER_SSH_PORT && dc.length > 0) return { provider: 'bitbucket', base: dc[0].base }
-    // An scp remote cannot name a port, so it reaches the daemon on 22 — not a
-    // Data Center's, which listens on 7999. Beside another provider, the Data
-    // Center is dropped; on its own, it keeps its hostname (an admin may have
-    // moved its daemon to 22).
-    const pool = r.scp && dc.length < onHostname.length ? onHostname.filter((c) => c.provider !== 'bitbucket') : onHostname
+    // Port 22 (scp cannot name another; `ssh://` with none means it too) is not
+    // a Data Center's daemon, which listens on 7999. Beside another provider,
+    // the Data Center is dropped; on its own, it keeps its hostname (an admin
+    // may have moved its daemon to 22).
+    const port22 = r.port === null || r.port === 22
+    const pool = port22 && dc.length < onHostname.length ? onHostname.filter((c) => c.provider !== 'bitbucket') : onHostname
     const provider = soleProvider(pool)
     // One provider on the host: its longest base, as every server matcher picks.
     return provider ? { provider, base: [...pool].sort(byPrefix)[0].base } : null
@@ -201,7 +209,7 @@ export function httpsFormOf(url: string, resolved?: ResolvedRemote | null): stri
   if (!r) return null
   if (r.scheme === 'https') return url.trim()
   if (r.scheme !== 'ssh') return null
-  const path = r.path.split('/').map(encodeURIComponent).join('/')
+  const path = r.path
   const base = resolved?.base?.replace(/\/+$/, '')
   if (!base) return `https://${r.hostname}${path}`
   const dataCenter = resolved?.provider === 'bitbucket' && base !== BITBUCKET_CLOUD
@@ -215,7 +223,26 @@ export function httpsFormOf(url: string, resolved?: ResolvedRemote | null): stri
  * features, and without saying so the empty panel looks like a bug.
  */
 export function remoteServerUnmatched(url: string, reg: ServerRegistry): boolean {
-  const r = partsOf(url.trim())
-  if (!r || resolveRemoteProvider(url, reg)) return false
-  return candidatesOf(reg).some((c) => c.hostname === r.hostname)
+  return remoteUnmatchedReason(url, reg) !== null
+}
+
+/** Why `remoteServerUnmatched` holds, so the hint can say what to do about it. */
+export type UnmatchedRemoteReason =
+  /** ssh to a hostname several providers share: the https remote would be placed. */
+  | 'ssh'
+  /** https on a base two providers both configure: only Settings can fix it. */
+  | 'sharedBase'
+  /** Anything else — http, git://, a port no base covers, a path a proxy could read differently. */
+  | 'other'
+
+/** The reason a remote on a configured server's hostname is not placed, or null when it is (or is on no such hostname). */
+export function remoteUnmatchedReason(url: string, reg: ServerRegistry): UnmatchedRemoteReason | null {
+  const r = readParts(url.trim())
+  if (!r || resolveRemoteProvider(url, reg)) return null
+  const all = candidatesOf(reg)
+  if (!all.some((c) => c.hostname === r.hostname)) return null
+  if (ambiguousRemotePath(url)) return 'other'
+  if (r.scheme === 'ssh') return 'ssh'
+  if (r.scheme === 'https' && deepestBases(all, r).length > 1) return 'sharedBase'
+  return 'other'
 }

@@ -158,6 +158,8 @@ export const fr: Dict = {
   'sidebar.noTodos': 'Aucune tâche pour l’instant',
   'sidebar.noPRs': 'Aucune pull request ouverte chargée',
   'sidebar.prsServerUnmatched': 'Le serveur de ce remote ne correspond à aucun serveur configuré — utilisez son remote https pour les pull requests',
+  'sidebar.prsServerSharedBase': 'Le serveur de ce remote est configuré sous deux fournisseurs — gardez-le sous un seul dans les Réglages pour voir les pull requests',
+  'sidebar.prsServerUnmatchedOther': 'Le serveur de ce remote ne correspond à aucun serveur configuré, les pull requests ne peuvent donc pas être affichées',
   'sidebar.upstreamPRs': 'Sur {repo}',
   'sidebar.upstreamPRsTitle': 'Vos pull requests ouvertes sur le dépôt dont ce fork est issu',
   'sidebar.stackOf': 'Pile de {n}',
