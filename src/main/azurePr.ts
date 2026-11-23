@@ -250,6 +250,9 @@ export function azureBuildRef(org: string, link: string): { project: string; bui
   if (rest.length !== 3 || rest[1] !== '_build' || rest[2] !== 'results' || !Number.isInteger(buildId) || buildId <= 0) {
     return null
   }
+  // The project is decoded, and encodeURIComponent leaves dots alone: a `..`
+  // here would walk the API URL the token is sent to out of this organization.
+  if (rest[0] === '.' || rest[0] === '..' || /[/\\]/.test(rest[0])) return null
   return { project: rest[0], buildId }
 }
 
@@ -357,6 +360,8 @@ export async function azureBuildLog(ado: Ado, text: AdoText, r: AzureRepo, link:
   const ref = azureBuildRef(r.org, link)
   if (!ref) return null
   const build = `https://dev.azure.com/${encodeURIComponent(r.org)}/${encodeURIComponent(ref.project)}/_apis/build/builds/${ref.buildId}`
+  // Normalised as fetch will send it, the URL must still be this organization's.
+  if (!new URL(build).pathname.startsWith(`/${encodeURIComponent(r.org)}/`)) return null
   const timeline = await ado<{ records?: AzTimelineRecord[] }>(`${build}/timeline?${V}`).catch(() => null)
   const parts = pickBuildLogs(timeline?.records ?? [])
   if (!parts.length) return null

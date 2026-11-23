@@ -2057,6 +2057,7 @@ export const en = {
   'pushBranches.rejOther': 'git refused it: {reason}',
   'pushBranches.notAttemptedHint': 'git stopped before it reached this branch.',
   'pushBranches.heldHint': 'Its unpublished commits touch files that look like credentials. Push it on its own to review them and confirm:',
+  'pushBranches.uncheckedHint': 'The files its unpublished commits touch could not be listed, so the secret guard could not check it. Push it on its own, where the guard runs again.',
   'pushBranches.serverSaid': 'The server said',
   'pushBranches.again': 'Back to the list',
   'pushBranches.done': 'Pushed branches to {remote}: {count}',

@@ -2059,6 +2059,7 @@ export const nl: Dict = {
   'pushBranches.rejOther': 'git weigerde: {reason}',
   'pushBranches.notAttemptedHint': 'git stopte voordat het deze branch bereikte.',
   'pushBranches.heldHint': 'De ongepubliceerde commits raken bestanden die op inloggegevens lijken. Push hem apart om ze te bekijken en te bevestigen:',
+  'pushBranches.uncheckedHint': 'De bestanden die de ongepubliceerde commits raken konden niet worden opgesomd, dus de geheimenbewaking kon hem niet controleren. Push hem apart, dan wordt opnieuw gecontroleerd.',
   'pushBranches.serverSaid': 'De server meldde',
   'pushBranches.again': 'Terug naar de lijst',
   'pushBranches.done': 'Branches gepusht naar {remote}: {count}',

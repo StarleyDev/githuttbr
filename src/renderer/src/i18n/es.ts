@@ -2052,6 +2052,7 @@ export const es: Dict = {
   'pushBranches.rejOther': 'git la rechazó: {reason}',
   'pushBranches.notAttemptedHint': 'git se detuvo antes de llegar a esta rama.',
   'pushBranches.heldHint': 'Sus commits sin publicar tocan archivos que parecen credenciales. Envíala por separado para revisarlos y confirmar:',
+  'pushBranches.uncheckedHint': 'No se pudieron listar los archivos que tocan sus commits sin publicar, así que la protección de secretos no pudo revisarla. Envíala por separado y la revisión se repetirá.',
   'pushBranches.serverSaid': 'El servidor dijo',
   'pushBranches.again': 'Volver a la lista',
   'pushBranches.done': 'Ramas enviadas a {remote}: {count}',

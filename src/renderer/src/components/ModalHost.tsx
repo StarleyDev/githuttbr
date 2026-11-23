@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useClonesStore } from '../stores/clones'
-import { cloneFolderNames } from '../lib/cloneBatch'
+import { cloneFolderName, cloneFolderNames } from '../lib/cloneBatch'
 import { bindBeforeOpen, bindingAfterAddRemote, effectiveProfileId } from '../lib/repoProfile'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
@@ -603,13 +603,7 @@ const PROVIDER_ICONS: Record<RemoteProviderId, typeof Globe> = {
 }
 
 function repoToName(repo: RemoteRepo): string {
-  return (
-    repo.name
-      .split('/')
-      .filter(Boolean)
-      .pop()
-      ?.replace(/\.git$/, '') ?? 'origin'
-  )
+  return cloneFolderName(repo.name)
 }
 
 /** Integration-backed repository picker shown for provider tabs. */

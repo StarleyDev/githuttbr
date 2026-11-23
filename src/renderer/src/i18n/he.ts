@@ -2058,6 +2058,7 @@ export const he: Dict = {
   'pushBranches.rejOther': 'git סירב: {reason}',
   'pushBranches.notAttemptedHint': 'git עצר לפני שהגיע לענף הזה.',
   'pushBranches.heldHint': 'הקומיטים שעוד לא פורסמו נוגעים בקבצים שנראים כמו פרטי גישה. דחפו אותו לבד כדי לבדוק אותם ולאשר:',
+  'pushBranches.uncheckedHint': 'לא ניתן היה לפרט את הקבצים שהקומיטים שעוד לא פורסמו נוגעים בהם, ולכן שומר הסודות לא יכול היה לבדוק אותו. דחפו אותו לבד, והבדיקה תרוץ שוב.',
   'pushBranches.serverSaid': 'תשובת השרת',
   'pushBranches.again': 'חזרה לרשימה',
   'pushBranches.done': 'ענפים שנדחפו אל {remote}: {count}',

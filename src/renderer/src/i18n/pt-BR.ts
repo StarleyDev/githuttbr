@@ -2059,6 +2059,7 @@ export const ptBR: Dict = {
   'pushBranches.rejOther': 'O git recusou: {reason}',
   'pushBranches.notAttemptedHint': 'O git parou antes de chegar a este branch.',
   'pushBranches.heldHint': 'Os commits não publicados mexem em arquivos que parecem credenciais. Envie-o sozinho para revisá-los e confirmar:',
+  'pushBranches.uncheckedHint': 'Não foi possível listar os arquivos que os commits não publicados alteram, então a proteção de segredos não conseguiu verificá-lo. Envie-o sozinho, e a verificação roda de novo.',
   'pushBranches.serverSaid': 'O servidor disse',
   'pushBranches.again': 'Voltar à lista',
   'pushBranches.done': 'Branches enviados para {remote}: {count}',

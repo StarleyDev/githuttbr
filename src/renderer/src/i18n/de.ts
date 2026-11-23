@@ -2058,6 +2058,7 @@ export const de: Dict = {
   'pushBranches.rejOther': 'git hat abgelehnt: {reason}',
   'pushBranches.notAttemptedHint': 'git hat aufgehört, bevor es diesen Branch erreichte.',
   'pushBranches.heldHint': 'Seine unveröffentlichten Commits berühren Dateien, die wie Zugangsdaten aussehen. Einzeln pushen, um sie zu prüfen und zu bestätigen:',
+  'pushBranches.uncheckedHint': 'Die Dateien seiner unveröffentlichten Commits ließen sich nicht auflisten, daher konnte der Geheimnisschutz ihn nicht prüfen. Einzeln pushen – dort prüft der Schutz erneut.',
   'pushBranches.serverSaid': 'Der Server meldete',
   'pushBranches.again': 'Zurück zur Liste',
   'pushBranches.done': 'Branches nach {remote} gepusht: {count}',

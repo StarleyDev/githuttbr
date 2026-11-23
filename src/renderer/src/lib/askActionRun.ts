@@ -7,6 +7,7 @@ import type {
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { askActionSafety } from './askActions'
+import { redactSecrets } from '../../../shared/redact'
 import { t, translate, type TranslationKey } from '../i18n'
 
 /**
@@ -105,8 +106,7 @@ function isPreparedFileAction(action: RepoChatAction): action is PreparedRepoCha
 
 function redactedErrorDetail(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
-  return message
-    .replace(/(https?:\/\/)[^\s/@]+:[^\s/@]+@/gi, '$1[redacted]@')
+  return redactSecrets(message, '[redacted]')
     .replace(/\b(?:sk|ghp|lt_llm)_[A-Za-z0-9_-]{8,}\b/g, '[redacted]')
     .replace(/\b(api[_ -]?key|token|authorization)\s*[:=]\s*\S+/gi, '$1=[redacted]')
 }

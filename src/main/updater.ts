@@ -5,6 +5,7 @@ import { isNewerVersion } from '../shared/version'
 import { githubPublicGet } from './credentials'
 import { APP_REPO } from '../shared/appRepo'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
+import { isShotMode } from './shotMode'
 
 const REPO = APP_REPO
 const releaseUrl = (version: string): string =>
@@ -49,7 +50,7 @@ function notesToText(notes: unknown): string | null {
 async function checkViaGitHub(): Promise<void> {
   // Scripted runs (screenshots, probes, real-app checks) launch the app many times
   // an hour; GitHub's anonymous limit is 60 per address, shared with the real app.
-  if (process.argv.includes('--shot')) {
+  if (isShotMode()) {
     setState({ status: 'not-available' })
     return
   }

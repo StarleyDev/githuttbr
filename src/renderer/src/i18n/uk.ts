@@ -2058,6 +2058,7 @@ export const uk: Dict = {
   'pushBranches.rejOther': 'git відхилив: {reason}',
   'pushBranches.notAttemptedHint': 'git зупинився, не дійшовши до цієї гілки.',
   'pushBranches.heldHint': 'Її неопубліковані коміти зачіпають файли, схожі на облікові дані. Надішліть її окремо, щоб переглянути їх і підтвердити:',
+  'pushBranches.uncheckedHint': 'Не вдалося отримати список файлів, які зачіпають її неопубліковані коміти, тож захист від секретів не зміг її перевірити. Надішліть її окремо — там перевірка виконається знову.',
   'pushBranches.serverSaid': 'Відповідь сервера',
   'pushBranches.again': 'Назад до списку',
   'pushBranches.done': 'Гілки надіслано в {remote}: {count}',

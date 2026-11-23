@@ -549,7 +549,28 @@ export function forgejoJobLogUrl(base: string, target: string): string | null {
   const prefix = `${base.replace(/\/+$/, '')}/`
   if (!target.startsWith(prefix)) return null
   const m = /^([^/?#]+)\/([^/?#]+)\/actions\/runs\/(\d+)\/jobs\/(\d+)\/?$/.exec(target.slice(prefix.length))
-  return m ? `${prefix}${m[1]}/${m[2]}/actions/runs/${m[3]}/jobs/${m[4]}/logs` : null
+  if (!m || !isPlainSegment(m[1]) || !isPlainSegment(m[2])) return null
+  const url = `${prefix}${m[1]}/${m[2]}/actions/runs/${m[3]}/jobs/${m[4]}/logs`
+  // The string check above is not what fetch sends: it normalises the URL
+  // first. Check the normalised one is still on this instance, under its path.
+  return stillUnder(prefix, url) ? url : null
+}
+
+/** An owner or repository name as Forgejo allows it — not `.`/`..`, and no
+ *  `%`, so neither `..` nor `%2e%2e` can walk out of the instance's path. */
+function isPlainSegment(s: string): boolean {
+  return /^[A-Za-z0-9_.-]+$/.test(s) && s !== '.' && s !== '..'
+}
+
+/** Whether `url`, as fetch would normalise it, is on `prefix`'s origin and under its path. */
+function stillUnder(prefix: string, url: string): boolean {
+  try {
+    const p = new URL(prefix)
+    const u = new URL(url)
+    return u.origin === p.origin && u.pathname.startsWith(p.pathname)
+  } catch {
+    return false
+  }
 }
 
 /** How much of a log the page shows: the end, where a failure is. */

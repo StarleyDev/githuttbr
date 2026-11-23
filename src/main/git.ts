@@ -200,6 +200,8 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
 import { PRODUCT_NAME } from '../shared/brand'
+import { redactSecrets } from '../shared/redact'
+import { cloneFolderProblem } from '../shared/cloneFolder'
 
 const SEP = '\x1f'
 
@@ -554,6 +556,11 @@ async function rememberSubtree(repoPath: string, prefix: string, url: string, re
  * "'subtree' is not a git command" reach a toast.
  */
 async function runSubtree(repoPath: string, args: string[]): Promise<string> {
+  // The script hands the repository and ref straight to `git fetch`/`git push`
+  // without a `--`, so an option-shaped one must never reach it.
+  for (const a of args.slice(1)) {
+    if (!a.startsWith('--prefix=') && a !== '--squash' && a !== '-b') assertNotOption(a, 'a subtree argument')
+  }
   // `git subtree` checks for local modifications with a plumbing command that
   // trusts the index's stat cache. A repository whose files were touched without
   // being changed — a checkout, a copy, a restored backup — then looks dirty and
@@ -1249,7 +1256,8 @@ export function logSignaturesDisabled(repoPath: string): boolean {
 export const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PROMPT: '0', LANGUAGE: 'en' })
 
 /**
- * Strip `user:secret@` out of every URL in a message.
+ * Strip `user:secret@` out of every URL in a message, and the bare token
+ * shapes the hosts issue (see shared/redact.ts).
  *
  * Git echoes the remote URL back in its errors, and a clone or a clone-dialog
  * a URL the user pasted with `user:token@` in it is echoed as-is — so without
@@ -1258,7 +1266,23 @@ export const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMI
  * URL is caught the same way.
  */
 export function redactCredentials(msg: string): string {
-  return msg.replace(/(:\/\/)[^/\s@]+(?::[^/\s@]*)?@/g, '$1***@')
+  return redactSecrets(msg)
+}
+
+/**
+ * Refuse a remote name, URL or ref that git would parse as an option.
+ *
+ * These arrive from the renderer, from a hosting server's API (a clone_url) or
+ * from a pasted string, and git's option parser permutes: `--upload-pack=<cmd>`
+ * is an option wherever it sits in the argument list, and it runs `<cmd>`. No
+ * real remote, URL or branch starts with `-`, so refusing costs nothing. Call
+ * sites also put `--` before their positionals; this is the second line, for
+ * commands such as `git subtree` that forward their arguments onward.
+ */
+export function assertNotOption(value: string | undefined, what: string): void {
+  if (typeof value === 'string' && /^\s*-/.test(value)) {
+    throw new Error(`Refusing ${what} "${value}": it starts with "-", so git would read it as an option.`)
+  }
 }
 
 /**
@@ -1931,7 +1955,7 @@ function contiguousRuns(lines: number[]): [number, number][] {
 
 async function getRemoteUrl(repoPath: string, remote: string): Promise<string> {
   try {
-    const { stdout } = await pexecFile('git', ['-C', repoPath, 'remote', 'get-url', remote])
+    const { stdout } = await pexecFile('git', ['-C', repoPath, 'remote', 'get-url', '--', remote])
     return stdout.trim()
   } catch {
     return ''
@@ -2083,6 +2107,9 @@ async function pushUrls(repoPath: string, remote: string): Promise<string[]> {
 }
 
 async function withRemoteAuth<T>(repoPath: string, remote: string, direction: 'fetch' | 'push', op: () => Promise<T>): Promise<T> {
+  // Every network call goes through here, so this one check covers the remote
+  // argument of all of them (see assertNotOption).
+  assertNotOption(remote, 'the remote')
   const urls = direction === 'push' ? await pushUrls(repoPath, remote) : [await getRemoteUrl(repoPath, remote)]
   let env: NodeJS.ProcessEnv | undefined
   for (const url of urls) {
@@ -3101,6 +3128,9 @@ export const gitService = {
   },
 
   async addRemote(repoPath: string, name: string, url: string, pushUrl?: string): Promise<void> {
+    for (const [v, what] of [[name, 'the remote name'], [url, 'the URL'], [pushUrl, 'the push URL']] as const) {
+      assertNotOption(v, what)
+    }
     const git = gitFor(repoPath)
     await git.addRemote(name, url)
     if (pushUrl && pushUrl !== url) await git.remote(['set-url', '--push', name, pushUrl])
@@ -3118,6 +3148,9 @@ export const gitService = {
     url: string,
     pushUrl?: string
   ): Promise<void> {
+    for (const [v, what] of [[newName, 'the remote name'], [url, 'the URL'], [pushUrl, 'the push URL']] as const) {
+      assertNotOption(v, what)
+    }
     const git = gitFor(repoPath)
     if (newName && newName !== oldName) await git.remote(['rename', oldName, newName])
     const name = newName || oldName
@@ -3128,7 +3161,7 @@ export const gitService = {
   },
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
-    await withRemoteAuth(repoPath, name, 'fetch', () => runGit(repoPath, ['fetch', name, '--prune']))
+    await withRemoteAuth(repoPath, name, 'fetch', () => runGit(repoPath, ['fetch', '--prune', '--', name]))
   },
 
   // ─── Previewing someone else's work ────────────────────────────────────────
@@ -3152,7 +3185,7 @@ export const gitService = {
   async resolvePrRef(repoPath: string, remote: string, number: number): Promise<PrRefProbe | null> {
     const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote))
     const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
-      runGit(repoPath, ['ls-remote', remote, ...candidates.map((c) => c.ref)])
+      runGit(repoPath, ['ls-remote', '--', remote, ...candidates.map((c) => c.ref)])
     )
     const found = new Map<string, string>()
     for (const line of out.split('\n')) {
@@ -3187,7 +3220,7 @@ export const gitService = {
     mode: PrPreviewMode,
     localBranch?: string
   ): Promise<PrPreviewResult> {
-    await withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, ['fetch', '--no-tags', remote, ref]))
+    await withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, ['fetch', '--no-tags', '--', remote, ref]))
     const sha = (await runGit(repoPath, ['rev-parse', 'FETCH_HEAD'])).trim()
 
     if (mode === 'checkout') {
@@ -3235,7 +3268,7 @@ export const gitService = {
       // exclusive lock, so nothing else runs alongside to collide on
       // `.git/index.lock`. Best-effort: offline/auth hiccups shouldn't block
       // checking out the locally-known ref.
-      await withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, ['fetch', remote, localName])).catch(() => {})
+      await withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, ['fetch', '--', remote, localName])).catch(() => {})
     }
     // If a local branch with that name already exists, just switch to it
     // instead of trying to recreate a tracking branch (which would fail with
@@ -3321,7 +3354,7 @@ export const gitService = {
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
     try {
-      await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, '--delete', name]))
+      await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', '--delete', '--', remote, name]))
     } catch (err) {
       // The branch may already be gone on the remote (e.g. Dependabot deleted it
       // after merging its PR) while our local remote-tracking ref lingers because
@@ -3482,7 +3515,7 @@ export const gitService = {
   async remoteHasBranches(repoPath: string, remote: string, branches: string[]): Promise<string[]> {
     if (!branches.length) return []
     const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
-      runGit(repoPath, ['ls-remote', '--heads', remote, ...branches.map((b) => `refs/heads/${b}`)])
+      runGit(repoPath, ['ls-remote', '--heads', '--', remote, ...branches.map((b) => `refs/heads/${b}`)])
     ).catch(() => '')
     const present = new Set<string>()
     for (const line of out.split('\n')) {
@@ -3674,8 +3707,8 @@ export const gitService = {
   async renameBranchRemote(repoPath: string, oldName: string, newName: string, remote: string): Promise<void> {
     await gitFor(repoPath).branch(['-m', oldName, newName])
     await withRemoteAuth(repoPath, remote, 'push', async () => {
-      await runGit(repoPath, ['push', remote, '--delete', oldName]).catch(() => undefined)
-      await runGit(repoPath, ['push', '-u', remote, newName])
+      await runGit(repoPath, ['push', '--delete', '--', remote, oldName]).catch(() => undefined)
+      await runGit(repoPath, ['push', '-u', '--', remote, newName])
     })
   },
 
@@ -3956,7 +3989,7 @@ export const gitService = {
     const remote = opts.remote ?? 'origin'
     const args = ['push']
     if (opts.force) args.push('--force-with-lease')
-    args.push('--set-upstream', remote, branch)
+    args.push('--set-upstream', '--', remote, branch)
     await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, args))
   },
 
@@ -3970,7 +4003,7 @@ export const gitService = {
   async pushRef(repoPath: string, local: string, remote: string, remoteBranch: string): Promise<void> {
     if (![local, remote, remoteBranch].every(isPlainRef)) throw new Error(`Not a branch name: ${local}`)
     await withRemoteAuth(repoPath, remote, 'push', () =>
-      runGit(repoPath, ['push', remote, `refs/heads/${local}:refs/heads/${remoteBranch}`])
+      runGit(repoPath, ['push', '--', remote, `refs/heads/${local}:refs/heads/${remoteBranch}`])
     )
   },
 
@@ -3997,7 +4030,7 @@ export const gitService = {
     const remoteBranch = upstream.slice(slash + 1)
     try {
       await withRemoteAuth(repoPath, remote, 'fetch', () =>
-        runGit(repoPath, ['fetch', remote, `${remoteBranch}:${branch}`])
+        runGit(repoPath, ['fetch', '--', remote, `${remoteBranch}:${branch}`])
       )
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -4091,7 +4124,7 @@ export const gitService = {
       // the last remote pushed to is not automatically the one to track.
       if (remote === targets[0]) args.push('--set-upstream')
       if (opts.tags) args.push('--follow-tags')
-      args.push(remote, branch)
+      args.push('--', remote, branch)
       try {
         await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, args))
         results.push({ remote, ok: true, error: '' })
@@ -4188,6 +4221,10 @@ export const gitService = {
    * commit on the branch that none of the remote's tracking refs has. What the
    * secret guard checks before a multi-branch push. History, not the tip:
    * a key added and deleted again is still in the commits that go out.
+   *
+   * A branch whose files cannot be listed at all is left out of the result,
+   * never answered with an empty list: the renderer holds a missing branch as
+   * unchecked, where `[]` would have read as clean and pushed it unguarded.
    */
   async outgoingFiles(repoPath: string, remote: string, branches: string[]): Promise<Record<string, string[]>> {
     if (!isPlainRef(remote)) throw new Error(`Not a remote name: ${remote}`)
@@ -4204,9 +4241,9 @@ export const gitService = {
           ).catch(() =>
             // A history too large to list: fall back to the files at the tip.
             runGit(repoPath, ['ls-tree', '-r', '-z', '--name-only', `refs/heads/${branch}`], undefined, 256 * 1024 * 1024)
-              .catch(() => '')
+              .catch(() => null)
           )
-          out[branch] = [...new Set(raw.split(/[\0\n]/).filter(Boolean))]
+          if (raw !== null) out[branch] = [...new Set(raw.split(/[\0\n]/).filter(Boolean))]
         })
       )
     }
@@ -4252,7 +4289,7 @@ export const gitService = {
     }
     const args = ['push', '--porcelain']
     if (opts.atomic) args.push('--atomic')
-    args.push(remote, ...pushRefspecs(targets))
+    args.push('--', remote, ...pushRefspecs(targets))
     const run = await withRemoteAuth(repoPath, remote, 'push', () => runGitCapture(repoPath, args))
     const refs = parsePushPorcelain(run.stdout)
     // No per-ref report at all: the push never got as far as the refs (auth,
@@ -4275,7 +4312,7 @@ export const gitService = {
 
   /** Publish every local tag to a remote. Annotated and lightweight alike. */
   async pushAllTags(repoPath: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, '--tags']))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', '--tags', '--', remote]))
   },
 
   // ─── Stash operations ──────────────────────────────────────────────────────
@@ -5203,7 +5240,8 @@ export const gitService = {
       const short = ref.replace(/^refs\/heads\//, '').replace(/^refs\//, '')
       return `+${ref}:refs/remotes/bundle/${short}`
     })
-    await runGit(repoPath, ['fetch', file, ...specs])
+    assertNotOption(file, 'the bundle path')
+    await runGit(repoPath, ['fetch', '--', file, ...specs])
     return wanted.map((ref) => `bundle/${ref.replace(/^refs\/heads\//, '').replace(/^refs\//, '')}`)
   },
 
@@ -5767,12 +5805,12 @@ export const gitService = {
    */
   async fetchNotes(repoPath: string, remote = 'origin'): Promise<void> {
     await withRemoteAuth(repoPath, remote, 'fetch', () =>
-      runGit(repoPath, ['fetch', remote, '+refs/notes/commits:refs/notes/commits'])
+      runGit(repoPath, ['fetch', '--', remote, '+refs/notes/commits:refs/notes/commits'])
     )
   },
 
   async pushNotes(repoPath: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, 'refs/notes/commits']))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', '--', remote, 'refs/notes/commits']))
   },
 
   // ─── Removing a path from history ────────────────────────────────────────
@@ -6821,11 +6859,11 @@ export const gitService = {
   },
 
   async pushTag(repoPath: string, name: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, `refs/tags/${name}`]))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', '--', remote, `refs/tags/${name}`]))
   },
 
   async deleteRemoteTag(repoPath: string, name: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, '--delete', `refs/tags/${name}`]))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', '--delete', '--', remote, `refs/tags/${name}`]))
   },
 
   async getRemoteTags(repoPath: string, remote = 'origin'): Promise<string[]> {
@@ -6835,7 +6873,7 @@ export const gitService = {
       // that withRemoteAuth writes nothing to disk — and the token stays out of
       // the argument list, where it used to go and where `ps` could read it.
       const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
-        runGit(repoPath, ['ls-remote', '--tags', '--refs', remote])
+        runGit(repoPath, ['ls-remote', '--tags', '--refs', '--', remote])
       )
       return out.split('\n').filter(Boolean).map((line) => {
         const ref = line.split('\t')[1] ?? ''
@@ -7593,6 +7631,8 @@ export const gitService = {
   },
 
   async submoduleAdd(repoPath: string, url: string, path: string, branch?: string): Promise<void> {
+    assertNotOption(url, 'the submodule URL')
+    assertNotOption(branch, 'the branch')
     const args = ['submodule', 'add']
     if (branch) args.push('-b', branch)
     args.push('--', url, path)
@@ -7601,6 +7641,7 @@ export const gitService = {
 
   /** Update a submodule's remote URL in `.gitmodules` and sync the live config. */
   async submoduleSetUrl(repoPath: string, name: string, url: string): Promise<void> {
+    assertNotOption(url, 'the submodule URL')
     const git = gitFor(repoPath)
     await git.raw(['config', '--file', '.gitmodules', `submodule.${name}.url`, url])
     await git.raw(['submodule', 'sync', '--', name]).catch(() => '')
@@ -7659,10 +7700,14 @@ export const gitService = {
   /** Branch names a remote advertises, for the clone dialog's branch picker.
    *  Never touches disk — `ls-remote` is a network read with no local repo. */
   async remoteBranches(url: string, host?: string, token?: string, profileId?: string): Promise<string[]> {
+    assertNotOption(url, 'the URL')
     const credEnv = await cloneCredentialEnv(url, host, token, profileId)
     if (credEnv && needsConfigEnv(credEnv)) await assertGitSupportsCredentialEnv()
     try {
-      const { stdout } = await pexecFile('git', ['ls-remote', '--heads', url], {
+      // `--` and a neutral cwd: run from inside a repository, a URL git did
+      // read as an option would pick up that repository's config and remotes.
+      const { stdout } = await pexecFile('git', ['ls-remote', '--heads', '--', url], {
+        cwd: tmpdir(),
         env: { ...noPromptEnv(), ...(credEnv ?? {}) }
       })
       return stdout
@@ -7683,8 +7728,18 @@ export const gitService = {
     opts: CloneOptions = {},
     onProgress?: (p: CloneProgress) => void
   ): Promise<string> {
+    assertNotOption(url, 'the URL')
+    assertNotOption(opts.branch?.trim(), 'the branch')
     const folder = name.trim() || basename(url).replace(/\.git$/, '') || 'repository'
+    // The name may be a hosting server's, so it is checked here, not only in
+    // the dialog: one that names a path would clone outside `parentDir`.
+    const problem = cloneFolderProblem(folder)
+    if (problem) throw new Error(`Refusing the folder name "${folder}": it ${problem}.`)
     const target = join(parentDir, folder)
+    const inside = relative(resolvePath(parentDir), resolvePath(target))
+    if (!inside || inside.startsWith('..') || isAbsolute(inside)) {
+      throw new Error(`Refusing the folder name "${folder}": it resolves outside the chosen folder.`)
+    }
     if (existsSync(target)) throw new Error(`A folder named "${folder}" already exists here.`)
     // Registered before the first await, so a cancel sent the moment the clone
     // starts finds it; an abort before git spawns rejects the clone at once.

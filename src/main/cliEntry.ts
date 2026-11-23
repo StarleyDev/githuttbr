@@ -14,6 +14,9 @@
  * are worth little if only the person with the GUI open ever sees them.
  */
 
+// First import: the same environment repair as the app (see hardenEnv.ts) —
+// these verbs run git inside repositories too.
+import './hardenEnv'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { readFile, writeFile } from 'node:fs/promises'

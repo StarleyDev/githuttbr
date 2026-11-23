@@ -2058,6 +2058,7 @@ export const ar: Dict = {
   'pushBranches.rejOther': 'رفضه git: {reason}',
   'pushBranches.notAttemptedHint': 'توقّف git قبل أن يصل إلى هذا الفرع.',
   'pushBranches.heldHint': 'إيداعاته غير المنشورة تمسّ ملفات تبدو كبيانات اعتماد. أرسله وحده لمراجعتها وتأكيدها:',
+  'pushBranches.uncheckedHint': 'تعذّر سرد الملفات التي تمسّها إيداعاته غير المنشورة، فلم يتمكن حارس الأسرار من فحصه. أرسله وحده ليُعاد الفحص.',
   'pushBranches.serverSaid': 'ردّ الخادم',
   'pushBranches.again': 'العودة إلى القائمة',
   'pushBranches.done': 'الفروع المُرسلة إلى {remote}: {count}',

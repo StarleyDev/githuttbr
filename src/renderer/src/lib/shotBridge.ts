@@ -1,10 +1,12 @@
 // Screenshot/automation bridge.
 //
-// Only loaded when the app is launched with `--shot` (see main.tsx). It exposes
-// the app's zustand stores on `window.__shot` so an external Playwright driver
-// (examples/screenshots/capture.mjs) can put the UI into an exact state —
-// open a conflict, preview a file, show a settings page — and screenshot it,
-// without depending on fragile click paths. It ships nothing in normal builds.
+// Only loaded in screenshot mode (see main.tsx): `--shot` on an unpackaged
+// build, decided by main (src/main/shotMode.ts) — a packaged app ignores the
+// flag. It exposes the app's zustand stores on `window.__shot` so an external
+// Playwright driver (examples/screenshots/capture.mjs) can put the UI into an
+// exact state — open a conflict, preview a file, show a settings page — and
+// screenshot it, without depending on fragile click paths. The module is in
+// every build as a lazy chunk, but nothing imports it unless that gate is on.
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'

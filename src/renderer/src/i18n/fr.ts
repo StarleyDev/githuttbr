@@ -2033,6 +2033,7 @@ export const fr: Dict = {
   'pushBranches.rejOther': 'git l’a refusée : {reason}',
   'pushBranches.notAttemptedHint': 'git s’est arrêté avant d’atteindre cette branche.',
   'pushBranches.heldHint': 'Ses commits non publiés touchent des fichiers qui ressemblent à des identifiants. Poussez-la seule pour les examiner et confirmer :',
+  'pushBranches.uncheckedHint': 'Impossible de lister les fichiers que touchent ses commits non publiés : la protection contre les secrets n’a pas pu la vérifier. Poussez-la seule, la vérification sera refaite.',
   'pushBranches.serverSaid': 'Le serveur a répondu',
   'pushBranches.again': 'Retour à la liste',
   'pushBranches.done': 'Branches poussées vers {remote} : {count}',

@@ -2058,6 +2058,7 @@ export const zhCN: Dict = {
   'pushBranches.rejOther': 'git 拒绝了：{reason}',
   'pushBranches.notAttemptedHint': 'git 在处理到此分支之前就停止了。',
   'pushBranches.heldHint': '它尚未发布的提交涉及看起来像凭据的文件。请单独推送它，以查看并确认：',
+  'pushBranches.uncheckedHint': '无法列出它尚未发布的提交所涉及的文件，因此密钥防护无法检查它。请单独推送它，届时会重新检查。',
   'pushBranches.serverSaid': '服务器返回',
   'pushBranches.again': '返回列表',
   'pushBranches.done': '已推送到 {remote} 的分支：{count}',

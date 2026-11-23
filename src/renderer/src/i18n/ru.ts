@@ -2058,6 +2058,7 @@ export const ru: Dict = {
   'pushBranches.rejOther': 'git отклонил: {reason}',
   'pushBranches.notAttemptedHint': 'git остановился, не дойдя до этой ветки.',
   'pushBranches.heldHint': 'Её неопубликованные коммиты затрагивают файлы, похожие на учётные данные. Отправьте её отдельно, чтобы проверить их и подтвердить:',
+  'pushBranches.uncheckedHint': 'Не удалось получить список файлов, которые затрагивают её неопубликованные коммиты, поэтому защита от секретов не смогла её проверить. Отправьте её отдельно — там проверка выполнится снова.',
   'pushBranches.serverSaid': 'Ответ сервера',
   'pushBranches.again': 'Назад к списку',
   'pushBranches.done': 'Ветки отправлены в {remote}: {count}',

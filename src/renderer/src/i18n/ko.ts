@@ -2058,6 +2058,7 @@ export const ko: Dict = {
   'pushBranches.rejOther': 'git이 거부했습니다: {reason}',
   'pushBranches.notAttemptedHint': 'git이 이 브랜치에 닿기 전에 멈췄습니다.',
   'pushBranches.heldHint': '게시되지 않은 커밋이 자격 증명처럼 보이는 파일을 건드립니다. 따로 푸시해서 확인하고 승인하세요:',
+  'pushBranches.uncheckedHint': '게시되지 않은 커밋이 건드리는 파일 목록을 가져오지 못해 비밀 정보 보호 검사를 할 수 없었습니다. 따로 푸시하면 검사가 다시 실행됩니다.',
   'pushBranches.serverSaid': '서버 응답',
   'pushBranches.again': '목록으로 돌아가기',
   'pushBranches.done': '{remote}에 푸시한 브랜치: {count}',

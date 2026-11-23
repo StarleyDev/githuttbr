@@ -5,6 +5,7 @@ import { homedir } from 'os'
 import { basename, join } from 'path'
 import { ipcMain } from 'electron'
 import type { RunDevice, RunDeviceSnapshot } from '../shared/types'
+import { isShotMode } from './shotMode'
 
 const pexec = promisify(execFile)
 
@@ -31,10 +32,11 @@ const TOOL_TIMEOUT = 10_000
  * Screenshot mode points every SDK lookup at a generated fake tree: a
  * documentation shot must show a deterministic device list, not whichever phone
  * happened to be plugged into the machine that captured it. Honoured **only**
- * under `--shot`, the same shape as `GITCITO_SSH_DIR`.
+ * in screenshot mode — `--shot` on an unpackaged build (see shotMode.ts) — the
+ * same shape as `GITCITO_SSH_DIR`.
  */
 function shotTool(cmd: string): string | undefined {
-  if (!process.argv.includes('--shot')) return undefined
+  if (!isShotMode()) return undefined
   const dir = process.env['GITCITO_DEVICE_BIN']
   if (!dir) return undefined
   const p = join(dir, basename(cmd))

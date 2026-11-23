@@ -1,5 +1,6 @@
 import { withoutIpcPrefix } from './gitErrorHint'
 import { APP_ISSUES_NEW_URL } from '../../../shared/appRepo'
+import { redactSecrets, redactUrlUserinfo } from '../../../shared/redact'
 
 const ISSUES_NEW_URL = APP_ISSUES_NEW_URL
 
@@ -40,7 +41,7 @@ const TOKENS: RegExp[] = [
 export function redactForReport(text: string): string {
   let out = text
   // Credentials written into a URL, before anything else reads the URL.
-  out = out.replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s@]+@/gi, '$1')
+  out = redactSecrets(redactUrlUserinfo(out, ''), '<redacted>')
   for (const re of TOKENS) out = out.replace(re, '<redacted>')
   // URLs: a public host stays (it helps the diagnosis), a private one does not;
   // the path names repositories and organisations either way.

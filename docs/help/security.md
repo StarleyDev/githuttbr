@@ -54,6 +54,34 @@ storing.
 
 While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
 
+## A profile's token while git runs
+
+When a [profile](profiles.md) signs a fetch, pull or push in with its token,
+Gitcito does not write the token into `.git/config` or into the command line,
+where any local user could read it in the process list. It hands it to that one
+git command through its **environment** (`GITCITO_GIT_PASSWORD*`), with a
+credential helper scoped to the remote's host.
+
+**The limit:** every program that git command starts inherits that environment.
+That includes the repository's **hooks** — a `pre-push` hook, a husky script, a
+`post-merge` hook a pull triggers — which can read the token while the
+operation runs, and so can anything those hooks start in turn.
+
+What follows from that:
+
+- **Do not run hooks you do not trust** with a profile signed in. A repository
+  you just cloned can ship hooks through tools such as husky, which install
+  them on `npm install`; git runs whatever sits in `.git/hooks`, from Gitcito
+  or from a terminal alike. Read a stranger's hooks before you push from their
+  repository.
+- **Scope the token down.** A token that can only write to the repositories you
+  work on is worth much less to a hook that leaks it than an all-access one.
+- **SSH remotes are not affected** — no token goes into the environment for
+  them; the [SSH agent](ssh-keys.md) answers instead.
+
+A delivery that keeps the token away from hooks is planned; until then, this is
+how it works.
+
 ## Sharing safely
 
 [Secure share](secure-share.md) exports settings, vault entries or whole
