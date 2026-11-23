@@ -29,7 +29,7 @@ export const MAC_REPORT_RE = /^mac \/ report$/
 /**
  * @typedef {{ id?: number; name: string; conclusion: string | null; steps?: Array<{ conclusion: string | null }> }} Job
  * @typedef {{ status?: string; run_attempt?: number }} Run
- * @typedef {{ action: 'rerun-job'; jobId: number } | { action: 'stop'; reason: string; unstarted?: string[] }} Decision
+ * @typedef {({ action: 'rerun-job'; jobId: number } | { action: 'stop'; reason: string }) & { unstarted?: string[] }} Decision
  */
 
 /** @param {Job} j */
@@ -57,8 +57,12 @@ export function retryDecision(payload, ctx = {}) {
   // Linux or Windows job left in the queue (or a run cancelled by hand) is
   // for a person to look at, since re-running it leads on to `publish`.
   const unstarted = jobs.filter((j) => !isMac(j) && BAD.has(j.conclusion ?? '') && !ranSteps(j)).map((j) => j.name)
-  /** @param {string} reason @returns {Decision} */
-  const stop = (reason) => (unstarted.length ? { action: 'stop', reason, unstarted } : { action: 'stop', reason })
+  /** @param {Decision} d @returns {Decision} */
+  const withUnstarted = (d) => (unstarted.length ? { ...d, unstarted } : d)
+  /** @param {string} reason */
+  const stop = (reason) => withUnstarted({ action: 'stop', reason })
+  /** @param {number} jobId */
+  const rerun = (jobId) => withUnstarted({ action: 'rerun-job', jobId })
   if (attempt && attempt >= maxAttempts) return stop(`${attempt} of ${maxAttempts} attempts used`)
 
   const build = jobs.find((j) => MAC_BUILD_RE.test(j.name))
@@ -68,7 +72,7 @@ export function retryDecision(payload, ctx = {}) {
     // The build landed but its report never ran (the run was cancelled
     // around it): re-run the report alone so the issue gets closed.
     if (report && BAD.has(report.conclusion ?? '') && !ranSteps(report) && typeof report.id === 'number') {
-      return { action: 'rerun-job', jobId: report.id }
+      return rerun(report.id)
     }
     return stop('macOS already built')
   }
@@ -77,7 +81,7 @@ export function retryDecision(payload, ctx = {}) {
   // Re-running a job by id re-runs it and its dependents (the report), never
   // the jobs that passed and never `publish`, which does not depend on it.
   if (typeof build.id !== 'number') return stop(`${build.name} has no job id`)
-  return { action: 'rerun-job', jobId: build.id }
+  return rerun(build.id)
 }
 
 /** @param {Decision} d */
@@ -96,5 +100,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   })
   console.log(formatDecision(d))
   // On stderr, so the verdict line on stdout stays one line for the workflow.
-  if (d.action === 'stop' && d.unstarted?.length) console.error(`unstarted: ${d.unstarted.join(', ')}`)
+  if (d.unstarted?.length) console.error(`unstarted: ${d.unstarted.join(', ')}`)
 }

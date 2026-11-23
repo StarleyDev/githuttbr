@@ -47,7 +47,8 @@ describe('release retry decision', () => {
       },
       { run: done, attempt: 1 }
     )
-    expect(d).toEqual({ action: 'rerun-job', jobId: mac.id })
+    expect(d).toEqual({ action: 'rerun-job', jobId: mac.id, unstarted: ['release (windows-latest)', 'publish'] })
+    expect(formatDecision(d)).toBe(`rerun-job ${mac.id}`)
   })
 
   it('after a cancel by hand, re-runs nothing when macOS was already built', () => {
