@@ -43,7 +43,38 @@ export const LANGUAGES: { id: Language; label: string }[] = [
  */
 export function translate(lang: Language, key: TranslationKey): string {
   // The dictionaries keep upstream's wording; the product name is applied here.
-  return brandText(lookup(lang, key))
+  // brandText runs a handful of regexes over the string, and a render asks for
+  // hundreds of keys, so the result is kept per (language, key).
+  let byKey = branded.get(lang)
+  if (!byKey) branded.set(lang, (byKey = new Map()))
+  let text = byKey.get(key)
+  if (text === undefined) byKey.set(key, (text = brandText(lookup(lang, key))))
+  return text
+}
+
+/**
+ * Branded strings, per language then key. Emptied whenever a dictionary
+ * arrives — a language read before its dictionary loaded was answered in
+ * English, and that answer must not outlive the load — and when the UI
+ * language changes (`noteUiLanguage`), which is when a stale entry would show.
+ */
+const branded = new Map<Language, Map<TranslationKey, string>>()
+useLocaleStore.subscribe(() => branded.clear())
+
+// Seen through t() and useT() rather than a settings-store subscription: the
+// settings store imports this module, so subscribing at load would be circular.
+let uiLanguage: Language | null = null
+function noteUiLanguage(lang: Language): void {
+  if (lang === uiLanguage) return
+  if (uiLanguage !== null) branded.clear()
+  uiLanguage = lang
+}
+
+/** How many branded strings are cached. For tests. */
+export function brandedCacheSize(): number {
+  let n = 0
+  for (const byKey of branded.values()) n += byKey.size
+  return n
 }
 
 /** Simple string interpolation — replaces {key} tokens with values. */
@@ -57,6 +88,7 @@ export function t(key: TranslationKey): string {
   const lang = useSettingsStore.getState().settings.language ?? 'en'
   // English until the dictionary lands; asking starts the (deduplicated) load.
   if (!isLocaleLoaded(lang)) void loadLocale(lang)
+  noteUiLanguage(lang)
   return translate(lang, key)
 }
 
@@ -78,5 +110,6 @@ export function useUiLanguage(): Language {
 /** Reactive hook: re-renders when the language setting changes or its dictionary arrives. */
 export function useT(): (key: TranslationKey) => string {
   const lang = useUiLanguage()
+  noteUiLanguage(lang)
   return (key: TranslationKey) => translate(lang, key)
 }
