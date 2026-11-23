@@ -22,6 +22,12 @@ four are listed in the sidebar.
 Start one from branch-compare, the graph, the `+` in the PR panel, or from an
 issue (which fills in `Closes #N`).
 
+Branch-compare offers **Create PR** only when the profile the repository uses
+has something to sign in with on that host — a token, or a linked sign-in. Right
+after start-up, while saved tokens are still locked in the keychain, it offers
+the button anyway rather than ask the keychain just to draw it: clicking unlocks
+the store, and the dialog says plainly if no account turns out to be there.
+
 ## Stacks in the list
 
 Pull requests that sit on each other collapse into one row with a stack icon,

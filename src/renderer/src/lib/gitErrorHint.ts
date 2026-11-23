@@ -83,6 +83,21 @@ const RULES: Rule[] = [
     hint: (m) => ({ key: 'gitError.boundProfileNoCredential', vars: { provider: m[1], profile: m[2], host: m[3] } })
   },
   {
+    // hosting.ts githubCredentialMessage: one sentence per GitHub CLI state
+    // after a fixed lead. Not inside githubRepoError's "cannot see … private"
+    // message, whose own lead the hint would otherwise drop.
+    test: /(?<!probably private\. )No GitHub account is linked to this profile for (.+?)\. (GitHub CLI \(gh\) is not installed|GitHub CLI \(gh\) is installed but not authenticated|Checking the GitHub CLI \(gh\) timed out|GitHub CLI \(gh\) is signed in)/,
+    hint: (m) => ({ key: GITHUB_CLI_STATE_KEYS[m[2]], vars: { host: m[1] } })
+  },
+  {
+    // hosting.ts noLinkedAccountMessage — every other provider; the host is optional.
+    test: /No (.+?) account is linked to this profile(?: for (.+?))?\. Sign in from Settings → Integrations to link a login/,
+    hint: (m): GitErrorHint =>
+      m[2]
+        ? { key: 'gitError.noLinkedAccount', vars: { provider: m[1], host: m[2] } }
+        : { key: 'gitError.noLinkedAccountAnyHost', vars: { provider: m[1] } }
+  },
+  {
     // bitbucketServer.ts BBS_USER_NOT_FOUND — main has no language.
     test: /Bitbucket Data Center: could not find your user on the server/,
     hint: () => ({ key: 'gitError.bbsUserNotFound' })
@@ -131,15 +146,33 @@ const RULES: Rule[] = [
     hint: () => ({ key: 'gitError.bbsNoIdentity' })
   },
   {
-    // The reason is the server's own words: passed through as they are.
-    test: /Bitbucket Data Center: cannot merge — ([\s\S]+)$/,
-    hint: (m) => ({ key: 'gitError.bbsCannotMerge', vars: { reason: m[1].trim() } })
+    // bitbucketServer.ts bbsCannotMergeMessage: the code picks the sentence, and
+    // only the server's own veto words are passed through — after main's fixed
+    // conflicts sentence (which holds no ';') for `conflictsVetoed`.
+    test: /Bitbucket Data Center: cannot merge \[(\w+)\] — ([\s\S]+)$/,
+    hint: (m) => {
+      const detail = m[2].trim()
+      if (m[1] === 'conflicts') return { key: 'gitError.bbsMergeConflicts' }
+      if (m[1] === 'notAllowed') return { key: 'gitError.bbsMergeNotAllowed' }
+      if (m[1] === 'conflictsVetoed') {
+        const reason = detail.slice(detail.indexOf('; ') + 2)
+        return { key: 'gitError.bbsMergeConflictsVetoed', vars: { reason } }
+      }
+      return { key: 'gitError.bbsCannotMerge', vars: { reason: detail } }
+    }
   },
   {
     test: /Bitbucket Data Center: this repository does not allow (\w+) merges/,
     hint: (m) => ({ key: 'gitError.bbsMethodNotAllowed', vars: { method: m[1] } })
   }
 ]
+
+const GITHUB_CLI_STATE_KEYS: Record<string, TranslationKey> = {
+  'GitHub CLI (gh) is not installed': 'gitError.githubNoCredentialGhMissing',
+  'GitHub CLI (gh) is installed but not authenticated': 'gitError.githubNoCredentialGhSignedOut',
+  'Checking the GitHub CLI (gh) timed out': 'gitError.githubNoCredentialGhUnknown',
+  'GitHub CLI (gh) is signed in': 'gitError.githubNoCredentialGhSignedIn'
+}
 
 function hostOf(url: string): string {
   try {

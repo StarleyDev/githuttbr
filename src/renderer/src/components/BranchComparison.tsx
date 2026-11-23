@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, ArrowLeftRight } from 'lucide-react'
-import type { BranchCompareResult } from '../../../shared/types'
-import { gitApi } from '../infrastructure/api'
+import type { BranchCompareResult, HostingAccess } from '../../../shared/types'
+import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -9,7 +9,6 @@ import { DiffViewer } from './DiffViewer'
 import { RefPicker, type RefOption } from './RefPicker'
 import { useT, t as tr, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
-import { profileHasHostingToken } from '../lib/profileTokens'
 
 function timeAgo(unix: number): string {
   const d = Date.now() / 1000 - unix
@@ -40,6 +39,27 @@ export function BranchComparison({
   const [b, setB] = useState(branchB)
   const [result, setResult] = useState<BranchCompareResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+  const originUrl = origin?.url
+  // Main decides whether Create PR has a credential behind it: the renderer's
+  // profile carries no tokens until Settings is unlocked, and never links. The
+  // profile is a dependency so an unlock or a profile switch asks again.
+  const [access, setAccess] = useState<HostingAccess | null>(null)
+  useEffect(() => {
+    if (!originUrl) {
+      setAccess('no')
+      return
+    }
+    let live = true
+    hostingApi
+      .canAct(repoPath, originUrl)
+      .then((a) => live && setAccess(a))
+      // A failed ask is not a "no": the action reports its own failure.
+      .catch(() => live && setAccess('unknown'))
+    return () => {
+      live = false
+    }
+  }, [repoPath, originUrl, profile])
 
   // Every ref the user can pick from (free-typing a raw SHA also works, since
   // compareBranches just passes the strings to git).
@@ -69,7 +89,6 @@ export function BranchComparison({
   }
 
   const openPR = (): void => {
-    const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
     if (!origin) {
       toast('error', t('compare.noRemote'))
       return
@@ -89,7 +108,8 @@ export function BranchComparison({
     })
   }
 
-  const hasToken = profileHasHostingToken(profile)
+  // 'unknown' (the store is still locked) offers it: clicking unlocks, as any hosting action does.
+  const canCreatePr = access === 'yes' || access === 'unknown'
 
   return (
     <div className="bc-root">
@@ -97,7 +117,7 @@ export function BranchComparison({
         <div className="bc-header-top">
           <h3>{t('compare.title')}</h3>
           <div className="bc-header-actions">
-            {hasToken && (
+            {canCreatePr && (
               <button className="btn primary small" onClick={openPR}>
                 {t('compare.createPr')}
               </button>

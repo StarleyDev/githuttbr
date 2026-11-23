@@ -71,6 +71,7 @@ import type {
   IssueDetail,
   MilestoneInfo,
   ReleaseInfo,
+  HostingAccess,
   HostingProvider,
   RepoHost,
   RemoteRepo,
@@ -1027,6 +1028,9 @@ export const hostingApi = {
     window.api.hosting.listReleases(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
   ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string) =>
     window.api.hosting.ciStatuses(repoPath, remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
+  /** Whether a hosting action on this remote has a credential — main peeks, never decrypts. */
+  canAct: (repoPath: string, remoteUrl: string) =>
+    window.api.hosting.canAct(repoPath, remoteUrl) as Promise<HostingAccess>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
     window.api.hosting.openCreatePR(remoteUrl, source, target),
   createPR: (repoPath: string, remoteUrl: string, tokens: HostTokens, opts: CreatePrOpts) =>
