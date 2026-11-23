@@ -1,4 +1,6 @@
 import { countChecks } from './ciSummary'
+import { collectPickerOptions, PICKER_MAX_PAGES, reviewersMissing } from './prMeta'
+import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
 import {
   bitbucketServerEndpoints,
@@ -17,6 +19,8 @@ import type {
   PrDetail,
   PrFile,
   PrMergeMethod,
+  PrPickerOptions,
+  PrPickerPerson,
   PrReview,
   PrReviewComment,
   PrReviewEvent,
@@ -46,6 +50,7 @@ import type {
  *   GET  /rest/api/latest/projects/{key}/repos/{slug}/settings/pull-requests   merge strategies
  *   GET  /rest/api/latest/application-properties  (+ X-AUSERNAME header)       who the token is
  *   GET  /rest/api/latest/users?filter=…                                       getUsers (name → slug)
+ *   GET  /rest/api/latest/users?permission.1=REPO_READ&…                       getUsers (who may review)
  *   POST /rest/build-status/latest/commits/stats                               build stats, many commits
  *   GET  /rest/build-status/latest/commits/{sha}                               build statuses of a commit
  * Auth: `Authorization: Bearer <HTTP access token>` (Atlassian, "HTTP access tokens").
@@ -755,8 +760,41 @@ export async function createBbsPull(repo: BitbucketServerRepo, token: string, op
       fromRef: ref(opts.source),
       toRef: ref(opts.target),
       // Drafts arrived in 8.18; an older server is only told about one when asked for.
-      ...(opts.draft ? { draft: true } : {})
+      ...(opts.draft ? { draft: true } : {}),
+      // Reviewers by user name, the shape the create resource documents.
+      ...(opts.reviewers?.length ? { reviewers: opts.reviewers.map((name) => ({ user: { name } })) } : {})
     })
   })
-  return { url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id), number: pr.id }
+  const metaFailed = reviewersMissing(opts, pr.reviewers)
+  return {
+    url: pr.links?.self?.[0]?.href ?? bitbucketServerPullRequestUrl(repo, pr.id),
+    number: pr.id,
+    ...(metaFailed.length ? { metaFailed } : {})
+  }
+}
+
+/**
+ * Reviewers for a new pull request: the users who can read this repository —
+ * a reviewer needs at least that — less the signed-in account, which Data
+ * Center refuses as a reviewer of its own pull request. No assignees or labels:
+ * Data Center pull requests have neither.
+ */
+export async function bbsPickerOptions(repo: BitbucketServerRepo, token: string): Promise<PrPickerOptions> {
+  const api = bitbucketServerEndpoints(repo.base).apiBase
+  const filter = `permission.1=REPO_READ&permission.1.projectKey=${enc(repo.projectKey)}&permission.1.repositorySlug=${enc(repo.repoSlug)}`
+  return collectPickerOptions(
+    prMetaSupport('bitbucket'),
+    {
+      reviewers: async () => {
+        const [users, me] = await Promise.all([
+          bbsPages<BbsUser>(`${api}/users?${filter}`, token, 100, PICKER_MAX_PAGES),
+          bbsWhoAmI(repo.base, token).catch(() => null)
+        ])
+        const people = users.flatMap((u): PrPickerPerson[] =>
+          u.name ? [{ id: u.name, login: u.name, ...(u.displayName ? { name: u.displayName } : {}) }] : []
+        )
+        return withoutSelf(uniqueById(people), me?.name)
+      }
+    }
+  )
 }

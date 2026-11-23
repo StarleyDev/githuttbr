@@ -325,6 +325,8 @@ const api = {
       ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target),
     createPR: (repoPath: string, remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:createPR', repoPath, remoteUrl, tokens, opts),
+    prPickerOptions: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prPickerOptions', repoPath, remoteUrl, tokens),
     prDetail: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prDetail', repoPath, remoteUrl, tokens, number),
     workItem: (repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>

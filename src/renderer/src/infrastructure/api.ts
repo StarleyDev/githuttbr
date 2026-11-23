@@ -88,6 +88,7 @@ import type {
   CreateRepoOpts,
   CreatePrOpts,
   CreatePrResult,
+  PrPickerOptions,
   WorktreeInfo,
   WorktreeStatus,
   SubmoduleInfo,
@@ -1077,6 +1078,9 @@ export const hostingApi = {
     window.api.hosting.openCreatePR(remoteUrl, source, target),
   createPR: (repoPath: string, remoteUrl: string, tokens: HostTokens, opts: CreatePrOpts) =>
     window.api.hosting.createPR(repoPath, remoteUrl, tokens, opts) as Promise<CreatePrResult>,
+  /** Which of reviewers / assignees / labels the host takes, and the choices for each. */
+  prPickerOptions: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
+    window.api.hosting.prPickerOptions(repoPath, remoteUrl, tokens) as Promise<PrPickerOptions>,
   prDetail: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prDetail(repoPath, remoteUrl, tokens, number) as Promise<PrDetail>,
   workItem: (repoPath: string, remoteUrl: string, tokens: { azure?: string }, id: number) =>

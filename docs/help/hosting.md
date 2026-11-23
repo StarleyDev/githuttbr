@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Sync & many repos
 order: 56
 summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises self-managed GitLab servers several GitLab instances Data Center Stash HTTP access token
+keywords: pull request PR merge request reviewers assignees labels request review GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises self-managed GitLab servers several GitLab instances Data Center Stash HTTP access token
 ---
 
 # Hosting & pull requests
@@ -11,10 +11,66 @@ keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps rev
 ## Creating
 
 Create a pull (or merge) request without leaving the app: branch dropdowns,
-title and body prefilled from the branch's commits, a draft toggle, and — on
-GitHub — reviewers, labels and assignees applied on create.
+title and body prefilled from the branch's commits, a draft toggle, and the
+people and labels it should land with.
 
-![Creating a pull request](../screenshots/create-pr.webp)
+![Creating a pull request, with a reviewer, an assignee and two labels picked](../screenshots/create-pr.webp)
+
+### Reviewers, assignees and labels
+
+A pull request opened without reviewers waits until someone notices it; one
+opened without labels skips the triage the team relies on. So the dialog asks
+for them up front, as pickers rather than free text: type part of a login, a
+name or a label, pick with ↑/↓ and Enter (or the mouse), and each choice
+becomes a chip that × — or Backspace in an empty field — removes. Labels show
+their colour, people their picture where the host gives one.
+
+All three are optional. Leave them empty and the request is exactly the one
+the app always sent. The choices are read when the dialog opens — a small
+*Loading…* line shows meanwhile — and kept for a few minutes, so reopening the
+dialog does not ask the host again.
+
+Each host takes a different set, and the dialog shows only the fields the
+repository's host supports:
+
+| Host | Reviewers | Assignees | Labels | Choices come from |
+|---|---|---|---|---|
+| **GitHub**, GitHub Enterprise Server | ✓ | ✓ | ✓ | The repository's assignable users; its labels |
+| **GitLab**, gitlab.com and self-managed | ✓ | ✓ | ✓ | The project's members, inherited ones included; its labels |
+| **Azure DevOps** | ✓ | — | ✓ | The project's teams and their members; labels are typed freely |
+| **Bitbucket** (bitbucket.org) | ✓ | — | — | The workspace's members, else the repository's default reviewers |
+| **Bitbucket Data Center** | ✓ | — | — | The users who can read the repository |
+| **Forgejo** | — | — | — | No fields are shown |
+
+How each one is set:
+
+- **GitHub** opens the pull request first and then requests the reviewers,
+  adds the assignees and applies the labels — three calls after the create.
+- **GitLab**, **Azure DevOps** reviewers and both **Bitbucket**s send them
+  with the create itself. Azure labels follow, one call each.
+
+*Limits:*
+
+- **You are not offered as your own reviewer** on GitHub or Bitbucket: both
+  refuse the author. GitLab and Azure DevOps allow it, so there you are listed.
+- **The lists stop at a thousand** people or labels, read 100 at a time. Azure
+  DevOps reads the members of the project's first ten teams; every team is
+  still offered as a reviewer itself.
+- **Azure DevOps has no label list to read**, so its labels field takes what you
+  type (Enter adds it); a label is created on first use. It has no assignees.
+- **Bitbucket has no assignees or labels** on pull requests, cloud or Data
+  Center.
+- **A list the token may not read** — a GitLab token without the right scope,
+  a Bitbucket token that cannot list workspace members and a repository with no
+  default reviewers — leaves that field disabled with a note saying so. The
+  pull request can still be created.
+- **A pick the host refuses after the fact** does not undo the pull request:
+  it is created, opened in the browser as usual, and a second message names
+  what could not be set (*reviewers*, say), so you can add it on the host. This
+  covers GitHub refusing a review request, GitLab silently dropping a reviewer
+  without access, and Bitbucket returning fewer reviewers than were asked for.
+  A reviewer Azure DevOps or Bitbucket rejects outright fails the create
+  itself, with the host's message.
 
 Works on **GitHub, GitLab, Bitbucket and Azure DevOps**. Open PRs/MRs for all
 four are listed in the sidebar.

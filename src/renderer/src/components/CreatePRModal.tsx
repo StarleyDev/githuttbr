@@ -1,11 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GitPullRequest, Loader2, ExternalLink, ArrowRight, Sparkles } from 'lucide-react'
 import { gitApi, hostingApi, aiApi } from '../infrastructure/api'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
-import { useT, interp } from '../i18n'
+import { PrMetaPicker } from './PrMetaPicker'
+import { useT, useUiLanguage, interp, type TranslationKey } from '../i18n'
+import { createPickerCache, labelItem, personItem, picksToSend, shownFields } from '../lib/prPicker'
+import type { PrMetaField, PrPickerOptions } from '../../../shared/types'
+
+// Choices read once per repository + remote, and reused for a few minutes, so
+// reopening the dialog does not walk the host's member and label lists again.
+const pickerCache = createPickerCache()
+
+const FIELD_LABEL: Record<PrMetaField, TranslationKey> = {
+  reviewers: 'createPR.reviewersLabel',
+  assignees: 'createPR.assigneesLabel',
+  labels: 'createPR.labelsLabel'
+}
+const FIELD_PLACEHOLDER: Record<PrMetaField, TranslationKey> = {
+  reviewers: 'createPR.reviewersPlaceholder',
+  assignees: 'createPR.assigneesPlaceholder',
+  labels: 'createPR.labelsPlaceholder'
+}
 
 /** Best guess at the base branch when none is supplied — never the source itself. */
 function guessTarget(branches: string[], source: string): string {
@@ -37,11 +55,12 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [draft, setDraft] = useState(false)
   const [busy, setBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
-  const [reviewers, setReviewers] = useState('')
-  const [labels, setLabels] = useState('')
-  const [assignees, setAssignees] = useState('')
+  const [picked, setPicked] = useState<Record<PrMetaField, string[]>>({ reviewers: [], assignees: [], labels: [] })
+  const [meta, setMeta] = useState<PrPickerOptions | null>(null)
+  const [metaState, setMetaState] = useState<'loading' | 'ready' | 'failed'>('loading')
   const aiEnabled = profile.ai?.enabled !== false
   const t = useT()
+  const lang = useUiLanguage()
 
   // Draft the PR title + body from the branch's commits + diff via AI.
   const aiDraft = async (): Promise<void> => {
@@ -93,31 +112,56 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     forgejo: profile.forgejoToken || undefined
   }
   const valid = !!remoteUrl && !!source && !!target && source !== target && !!title.trim() && !busy
-  const isGitHub = /github\.com/i.test(remoteUrl ?? '')
 
-  const splitList = (s: string): string[] =>
-    s
-      .split(',')
-      .map((x) => x.trim().replace(/^@/, ''))
-      .filter(Boolean)
+  // Reviewers, assignees and labels: which ones the host takes, and the choices,
+  // read lazily once the dialog is open. A failure only costs those fields.
+  useEffect(() => {
+    if (!remoteUrl) return
+    let cancelled = false
+    setMetaState('loading')
+    pickerCache
+      .get(`${spec.repoPath}\n${remoteUrl}`, () => hostingApi.prPickerOptions(spec.repoPath, remoteUrl, tokens))
+      .then(
+        (o) => {
+          if (cancelled) return
+          setMeta(o)
+          setMetaState('ready')
+        },
+        () => !cancelled && setMetaState('failed')
+      )
+    return () => {
+      cancelled = true
+    }
+    // The tokens object is rebuilt each render; the remote is what decides the answer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spec.repoPath, remoteUrl])
+
+  const fields = shownFields(meta)
+  const people = useMemo(
+    () => ({ reviewers: (meta?.reviewers ?? []).map(personItem), assignees: (meta?.assignees ?? []).map(personItem) }),
+    [meta]
+  )
+  const labelRows = useMemo(() => (meta?.labels ?? []).map(labelItem), [meta])
 
   const submit = async (): Promise<void> => {
     if (!valid) return
     setBusy(true)
     try {
-      const res = await hostingApi.createPR(spec.repoPath, remoteUrl, tokens, { title: title.trim(), body, source, target, draft })
-      // Best-effort: apply reviewers / labels / assignees (GitHub only).
-      if (isGitHub && (reviewers.trim() || labels.trim() || assignees.trim())) {
-        await hostingApi
-          .applyPrMeta(spec.repoPath, remoteUrl, tokens, res.number, {
-            reviewers: splitList(reviewers),
-            labels: splitList(labels),
-            assignees: splitList(assignees)
-          })
-          .catch(() => {})
-      }
+      const res = await hostingApi.createPR(spec.repoPath, remoteUrl, tokens, {
+        title: title.trim(),
+        body,
+        source,
+        target,
+        draft,
+        ...picksToSend(meta, picked)
+      })
       closeModal()
       toast('success', interp(t('createPR.created'), { n: res.number }))
+      // The PR exists either way; a pick the host refused is said, never dropped quietly.
+      if (res.metaFailed?.length) {
+        const parts = new Intl.ListFormat(lang, { type: 'conjunction' }).format(res.metaFailed.map((f) => t(FIELD_LABEL[f])))
+        toast('error', interp(t('createPR.createdMetaFailed'), { n: res.number, parts }))
+      }
       void window.api.openExternal(res.url)
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -187,20 +231,28 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         spellCheck
       />
 
-      {isGitHub && (
+      {remoteUrl && metaState === 'loading' && (
+        <p className="prmeta-status">
+          <Loader2 size={12} className="spin" /> {t('createPR.metaLoading')}
+        </p>
+      )}
+      {remoteUrl && metaState === 'failed' && <p className="prmeta-hint">{t('createPR.metaLoadFailed')}</p>}
+      {fields.length > 0 && (
         <div className="pr-meta">
-          <label className="modal-label">{t('createPR.reviewersLabel')}</label>
-          <input className="modal-input" value={reviewers} onChange={(e) => setReviewers(e.target.value)} placeholder={t('createPR.reviewersPlaceholder')} />
-          <div className="form-row two">
-            <label>
-              {t('createPR.labelsLabel')}
-              <input className="modal-input" value={labels} onChange={(e) => setLabels(e.target.value)} placeholder={t('createPR.labelsPlaceholder')} />
-            </label>
-            <label>
-              {t('createPR.assigneesLabel')}
-              <input className="modal-input" value={assignees} onChange={(e) => setAssignees(e.target.value)} placeholder={t('createPR.assigneesPlaceholder')} />
-            </label>
-          </div>
+          {fields.map((f) => (
+            <div key={f} className="prmeta-field">
+              <label className="modal-label">{t(FIELD_LABEL[f])}</label>
+              <PrMetaPicker
+                label={t(FIELD_LABEL[f])}
+                items={f === 'labels' ? labelRows : people[f]}
+                value={picked[f]}
+                onChange={(next) => setPicked((p) => ({ ...p, [f]: next }))}
+                placeholder={t(f === 'labels' && meta?.freeLabels ? 'createPR.labelsFreePlaceholder' : FIELD_PLACEHOLDER[f])}
+                failed={!!meta?.failed.includes(f)}
+                allowFree={f === 'labels' && !!meta?.freeLabels}
+              />
+            </div>
+          ))}
         </div>
       )}
 

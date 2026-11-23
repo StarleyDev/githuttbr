@@ -81,6 +81,8 @@ const ISSUE_OPS: Provider['ops'] = [
   ['hosting:createIssue', { title: 'Bug' }],
   ['hosting:listMilestones']
 ]
+// Reviewer / assignee / label choices for the create dialog — every host but Forgejo has some.
+const PICKER: Provider['ops'][number] = ['hosting:prPickerOptions']
 const GITHUB_ONLY: Provider['ops'] = [
   ['hosting:createPR', { title: 'T', body: '', source: 'feature', target: 'main', draft: false }],
   ['hosting:updatePR', 1, { base: 'main' }],
@@ -95,27 +97,27 @@ const PROVIDERS: Provider[] = [
     name: 'github.com',
     remote: 'https://github.com/team/app.git',
     slot: 'com',
-    ops: [...PR_OPS, ...ISSUE_OPS, ...GITHUB_ONLY, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, ['hosting:ciStatuses-github']]
   },
   {
     name: 'GitHub Enterprise Server',
     remote: `${GHES}/team/app.git`,
     slot: 'ghes',
-    ops: [...PR_OPS, ...ISSUE_OPS, ...GITHUB_ONLY, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, ['hosting:ciStatuses-github']]
   },
-  { name: 'a GitLab server', remote: `${GITLAB}/team/app.git`, slot: 'gitlab', ops: PR_OPS },
+  { name: 'a GitLab server', remote: `${GITLAB}/team/app.git`, slot: 'gitlab', ops: [...PR_OPS, PICKER] },
   {
     name: 'a Bitbucket Data Center',
     remote: `${BBS}/scm/proj/app.git`,
     slot: 'bbs',
-    ops: [...PR_OPS, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, PICKER, ['hosting:ciStatuses-github']]
   },
   { name: 'Forgejo', remote: `${FORGEJO}/team/app.git`, slot: 'forgejo', ops: [...PR_OPS, ...ISSUE_OPS, ['hosting:listReleases']] },
   {
     name: 'Azure DevOps',
     remote: 'https://dev.azure.com/acme/proj/_git/app',
     slot: 'azure',
-    ops: [...PR_OPS, ['hosting:workItem', 7]]
+    ops: [...PR_OPS, PICKER, ['hosting:workItem', 7]]
   }
 ]
 
