@@ -1,4 +1,5 @@
 import { PRODUCT_NAME } from './brand'
+import { ambiguousRemotePath } from './remotePath'
 /**
  * GitLab instances: gitlab.com plus the self-managed ones profiles point at.
  *
@@ -64,9 +65,22 @@ export const normalizeGitlabUrl = normalizeInstanceUrl
 /** Why a typed-in server address was refused — each has its own message in Settings. */
 export type GitlabServerUrlProblem = 'invalid' | 'http' | 'credentials' | 'query' | 'gitlabCom'
 
-function isGitlabComHost(hostname: string): boolean {
+/** gitlab.com as typed into Settings — what is refused as a self-managed address. */
+function isGitlabComAddress(hostname: string): boolean {
   const h = hostname.toLowerCase()
   return h === 'gitlab.com' || h === 'www.gitlab.com'
+}
+
+/**
+ * The gitlab.com hosts a remote names, exactly: the web, API and git host, and
+ * ssh over port 443 (`ssh://git@altssh.gitlab.com:443/g/r.git`). A list, not a
+ * suffix: any other `*.gitlab.com` is never handed the gitlab.com token.
+ */
+const GITLAB_COM_HOSTS: ReadonlySet<string> = new Set(['gitlab.com', 'altssh.gitlab.com'])
+
+/** One of the gitlab.com hosts above — the check before the gitlab.com token goes anywhere. */
+export function isGitlabComHost(hostname: string): boolean {
+  return GITLAB_COM_HOSTS.has(hostname.toLowerCase())
 }
 
 /**
@@ -92,7 +106,7 @@ export function gitlabServerUrlProblem(raw: string | undefined): GitlabServerUrl
   if (!u.hostname) return 'invalid'
   if (u.username || u.password) return 'credentials'
   if (u.search || u.hash) return 'query'
-  if (isGitlabComHost(u.hostname)) return 'gitlabCom'
+  if (isGitlabComAddress(u.hostname)) return 'gitlabCom'
   return null
 }
 
@@ -205,13 +219,16 @@ export function migrateGitlabSettings<S extends { profiles: Profile[] }>(setting
 
 /** Host and path of a remote URL, https or ssh (`git@host:path`, `ssh://git@host[:port]/path`). */
 function remoteParts(url: string): { scheme: 'https' | 'ssh'; host: string; path: string } | null {
+  // Matched on the path as written: one a proxy could decode into another
+  // server's (`/gitlab%2F..%2Fother/`) belongs to no instance here.
+  if (ambiguousRemotePath(url)) return null
   const scp = /^[\w.-]+@([\w.-]+):(?!\/\/)(.+)$/.exec(url)
   if (scp) return { scheme: 'ssh', host: scp[1].toLowerCase(), path: scp[2].replace(/^\/+/, '') }
   try {
     const u = new URL(url)
     const scheme = u.protocol === 'https:' ? 'https' : u.protocol === 'ssh:' ? 'ssh' : null
     if (!scheme) return null
-    return { scheme, host: (scheme === 'https' ? u.host : u.hostname).toLowerCase(), path: decodeURIComponent(u.pathname).replace(/^\/+/, '') }
+    return { scheme, host: (scheme === 'https' ? u.host : u.hostname).toLowerCase(), path: u.pathname.replace(/^\/+/, '') }
   } catch {
     return null
   }
@@ -243,7 +260,9 @@ export function instanceOf(remoteUrl: string, bases: readonly string[]): { base:
     }
     path = path.replace(/\.git$/, '').replace(/\/+$/, '')
     if (!path.includes('/')) continue
-    return { base, path }
+    // Matched encoded; handed out as the project path the API is asked about.
+    // Safe to decode now: no escape left can add a separator or a dot segment.
+    return { base, path: decodeURIComponent(path) }
   }
   return null
 }

@@ -43,11 +43,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # electron-builder 24.13.3 creates a temp keychain with a random
-      # password, then calls `security set-key-partition-list -k` with the
-      # .p12 password instead (electron-builder#10066). macos-26 rejects
-      # that. Import the cert ourselves and keep CSC_LINK unset so builder
-      # only finds the identity already in the keychain.
+      # electron-builder 24.13.3 created a temp keychain with a random
+      # password, then called `security set-key-partition-list -k` with the
+      # .p12 password instead (electron-builder#10066), which macos-26 rejects.
+      # 26.x passes the keychain password, but this import is the path that is
+      # known to sign on macos-26, so it stays: we import the cert ourselves and
+      # keep CSC_LINK unset so builder only finds the identity already there.
       - name: Import signing cert
         if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
         env:
@@ -82,7 +83,10 @@ jobs:
           echo "CSC_KEYCHAIN=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
 
-      # macOS WITH signing secrets -> signed + notarized.
+      # macOS WITH signing secrets -> signed + notarized. electron-builder 25+
+      # takes `mac.notarize` as a boolean only and reads APPLE_ID,
+      # APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID from the environment, so
+      # the team id is no longer passed as --config.mac.notarize.teamId.
       - name: Build and publish (signed macOS)
         if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
         env:
@@ -94,7 +98,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$CSC_KEYCHAIN"
-          npm run release -- --config.mac.notarize.teamId="$APPLE_TEAM_ID" --config.forceCodeSigning=true
+          npm run release -- --config.forceCodeSigning=true
 
       # Everything else: unsigned macOS (no secrets), or Windows/Linux.
       # CSC_IDENTITY_AUTO_DISCOVERY=false stops electron-builder from failing

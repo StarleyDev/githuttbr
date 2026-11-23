@@ -23,6 +23,9 @@ import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+// Called only when a request arrives, so the import cycle with gitCredentialEnv
+// (which opens endpoints from here) never sees a half-initialised module.
+import { encodeConfigPath } from './gitCredentialEnv'
 
 /** The environment variable (suffixed `_<n>`) that carries an endpoint's nonce to its helper. */
 export const CREDENTIAL_NONCE_VAR = 'GITCITO_CREDENTIAL'
@@ -35,6 +38,8 @@ export interface CredentialTarget {
   path: string
   /** Whether git is told to send the path (`useHttpPath`): then a request without one is refused. */
   pathSent: boolean
+  /** Nested servers carved out of `path` (same spelling): their repositories are refused. */
+  exclude?: readonly string[]
 }
 
 interface Endpoint {
@@ -96,12 +101,14 @@ export function requestInScope(
 ): boolean {
   if (req.protocol !== 'https') return false
   if (typeof req.host !== 'string' || req.host.toLowerCase() !== t.host) return false
-  if (!t.path) return true
   // git matched the config URL's path itself, but sent us none to check.
-  if (req.path === undefined) return !t.pathSent
+  if (req.path === undefined) return !t.pathSent || (!t.path && !t.exclude?.length)
   if (typeof req.path !== 'string') return false
-  const p = req.path.replace(/^\/+/, '')
-  return p === t.path || p.startsWith(`${t.path}/`)
+  // The scope is in the encoded spelling the config key uses; so is the request, then.
+  const p = encodeConfigPath('/' + req.path.replace(/^\/+/, ''))?.replace(/^\/+/, '')
+  if (p === undefined) return false
+  const within = (prefix: string): boolean => !prefix || p === prefix || p.startsWith(`${prefix}/`)
+  return within(t.path) && !(t.exclude ?? []).some((x) => x && within(x))
 }
 
 function answer(ep: Endpoint | undefined, line: string): Record<string, string> {

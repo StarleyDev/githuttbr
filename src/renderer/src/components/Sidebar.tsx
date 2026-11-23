@@ -68,7 +68,7 @@ import {
   repoSupportsPrReview
 } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
-import { remoteServerUnmatched, serverRegistryOf } from '../../../shared/remoteProvider'
+import { remoteUnmatchedReason, serverRegistryOf, type UnmatchedRemoteReason } from '../../../shared/remoteProvider'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
@@ -141,6 +141,13 @@ function KindIcon({ kind, open }: { kind: RefKind; open?: boolean }): React.JSX.
           ? <Cloud size={size} />
           : <Tag size={size} />
   return <span className="sb-ref-icon" aria-hidden="true">{glyph}</span>
+}
+
+/** Why the Pull requests section is empty for an unplaced remote — the https advice only fits ssh. */
+const UNMATCHED_HINT: Record<UnmatchedRemoteReason, TranslationKey> = {
+  ssh: 'sidebar.prsServerUnmatched',
+  sharedBase: 'sidebar.prsServerSharedBase',
+  other: 'sidebar.prsServerUnmatchedOther'
 }
 
 /** A PR row's checks on hover: the rolled-up state, then the counts main read. */
@@ -317,7 +324,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // hostname two providers share) gets no PRs: say why rather than show "none".
   const prOriginUrl = (repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0])?.url
   const prServerUnmatched = useMemo(
-    () => !!prOriginUrl && remoteServerUnmatched(prOriginUrl, serverRegistryOf(profiles)),
+    () => (prOriginUrl ? remoteUnmatchedReason(prOriginUrl, serverRegistryOf(profiles)) : null),
     [prOriginUrl, profiles]
   )
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
@@ -2328,7 +2335,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       >
         {repo.prs.length === 0 && repo.upstreamPrs.length === 0 && (
           <div className="sb-empty">
-            {!repo.prProvider && prServerUnmatched ? t('sidebar.prsServerUnmatched') : t('sidebar.noPRs')}
+            {!repo.prProvider && prServerUnmatched ? t(UNMATCHED_HINT[prServerUnmatched]) : t('sidebar.noPRs')}
           </div>
         )}
         {groupPrStacks(repo.prs).map((group) =>

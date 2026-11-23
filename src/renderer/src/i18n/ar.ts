@@ -159,6 +159,8 @@ export const ar: Dict = {
   'sidebar.noTodos': 'لا توجد مهام بعد',
   'sidebar.noPRs': 'لم تُحمَّل أي طلبات سحب مفتوحة',
   'sidebar.prsServerUnmatched': 'تعذّر مطابقة خادم هذا المستودع البعيد مع أي خادم مُعدّ — استخدم عنوان https البعيد لطلبات السحب',
+  'sidebar.prsServerSharedBase': 'خادم هذا المستودع البعيد مُعدّ ضمن مزوّدَين — أبقِه ضمن مزوّد واحد في الإعدادات لعرض طلبات السحب',
+  'sidebar.prsServerUnmatchedOther': 'تعذّر مطابقة خادم هذا المستودع البعيد مع أي خادم مُعدّ، لذا لا يمكن عرض طلبات السحب',
   'sidebar.upstreamPRs': 'على {repo}',
   'sidebar.upstreamPRsTitle': 'طلبات السحب المفتوحة الخاصة بك في المستودع الذي تفرّع منه هذا المستودع',
   'sidebar.stackOf': 'كومة من {n}',

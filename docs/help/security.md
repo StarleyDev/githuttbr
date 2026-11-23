@@ -65,7 +65,7 @@ lefthook script runs.
 
 Instead, for each operation Gitcito opens a private endpoint of its own — a
 socket in a folder only your user can enter (a named pipe with a random name on
-Windows) — and registers a credential helper for that one remote. When git asks
+Windows) — and registers a credential helper for that one server. When git asks
 for a login, the helper connects, proves it belongs to this operation with a
 random code made for it alone, says which host and repository git is asking about, and
 receives the login. The endpoint answers every request of the operation — git
@@ -83,9 +83,11 @@ What it still cannot do:
   opening than a token sitting in a variable — nothing reads it by accident,
   a dump or a crash report shows only a code that is useless once git exits —
   but it is an opening.
-- **It answers only for the remote it was opened for.** The endpoint refuses
-  any other host, a plain `http` request, and — for a repository-scoped login —
-  any other repository, even with the right code.
+- **It answers only for the server it was opened for.** The endpoint refuses
+  any other host, a plain `http` request, a path outside the server's base, and
+  a server nested under it (a Data Center at `/bitbucket` beside a GitLab at
+  the root) — even with the right code. A multi-URL push gets one endpoint per
+  server, each holding only that server's login.
 - **Do not run hooks you do not trust** with a profile signed in all the same. A
   repository you just cloned can ship hooks through tools such as husky, which
   install them on `npm install`; git runs whatever sits in `.git/hooks`, from

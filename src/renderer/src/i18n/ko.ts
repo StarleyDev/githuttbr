@@ -159,6 +159,8 @@ export const ko: Dict = {
   'sidebar.noTodos': '아직 할 일이 없습니다',
   'sidebar.noPRs': '불러온 열린 PR이 없습니다',
   'sidebar.prsServerUnmatched': '이 리모트의 서버를 설정된 서버와 연결할 수 없습니다. PR에는 https 리모트를 사용하세요',
+  'sidebar.prsServerSharedBase': '이 리모트의 서버가 두 공급자에 설정되어 있습니다. PR을 보려면 설정에서 하나만 남기세요',
+  'sidebar.prsServerUnmatchedOther': '이 리모트의 서버를 설정된 서버와 연결할 수 없어 PR을 표시할 수 없습니다',
   'sidebar.upstreamPRs': '{repo}에서',
   'sidebar.upstreamPRsTitle': '이 포크의 원본 저장소에 있는 내 열린 풀 리퀘스트',
   'sidebar.stackOf': '{n}개짜리 스택',

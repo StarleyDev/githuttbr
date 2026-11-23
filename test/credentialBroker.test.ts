@@ -40,6 +40,8 @@ vi.mock('electron', () => ({
 }))
 
 const TOKEN = 'glpat-broker-secret-0123456789'
+// A Data Center nested under the GitLab at the origin's root, with a token of its own.
+const DC_TOKEN = 'bbs-broker-secret-9876543210'
 const root = join(dir, 'served')
 const ident = {
   GIT_AUTHOR_NAME: 'T',
@@ -120,7 +122,8 @@ beforeAll(async () => {
       const header = req.headers.authorization
       const auth = header ? Buffer.from(header.replace(/^Basic /, ''), 'base64').toString() : ''
       received.push({ path: url.pathname, auth })
-      if (auth !== `oauth2:${TOKEN}`) {
+      const expected = url.pathname.startsWith('/b/') ? `worker:${DC_TOKEN}` : `oauth2:${TOKEN}`
+      if (auth !== expected) {
         res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="test"' })
         res.end()
         return
@@ -177,8 +180,17 @@ beforeAll(async () => {
   run(work, ['push', '-q', bare, 'main'])
   run(bare, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
 
+  const dcBare = join(root, 'b/scm/proj/app.git')
+  mkdirSync(dcBare, { recursive: true })
+  run(dcBare, ['init', '-q', '--bare'])
+  run(work, ['push', '-q', dcBare, 'main'])
+
   run(dir, ['clone', '-q', bare, repo])
   run(repo, ['remote', 'set-url', 'origin', `${origin}/group/app.git`])
+  // One push, two servers on one origin: each URL must be offered its own token only.
+  run(repo, ['remote', 'add', 'both', `${origin}/group/app.git`])
+  run(repo, ['remote', 'set-url', '--add', '--push', 'both', `${origin}/group/app.git`])
+  run(repo, ['remote', 'set-url', '--add', '--push', 'both', `${origin}/b/scm/proj/app.git`])
 
   writeFileSync(join(dir, 'gitconfig'), '')
   writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
@@ -190,7 +202,15 @@ beforeAll(async () => {
       onboardingCompleted: true,
       activeProfileId: 'work',
       repoProfiles: { [repo]: 'work' },
-      profiles: [{ ...base, id: 'work', name: 'Work', gitlabServers: [{ url: origin, token: TOKEN }] }]
+      profiles: [
+        {
+          ...base,
+          id: 'work',
+          name: 'Work',
+          gitlabServers: [{ url: origin, token: TOKEN }],
+          bitbucketServers: [{ url: `${origin}/b`, token: DC_TOKEN, username: 'worker' }]
+        }
+      ]
     })
   )
   const { readSettings } = await import('../src/main/settings')
@@ -280,6 +300,28 @@ describe.skipIf(!hasOpenssl)("a profile's token never enters git's environment",
     expect(received.some((r) => r.auth === `oauth2:${TOKEN}` && r.path.endsWith('git-receive-pack'))).toBe(true)
   })
 
+  it('a push to two servers stacks two endpoints, and each answers only for its own server', async () => {
+    isolated()
+    const { gitService } = await import('../src/main/git')
+    const dump = join(dir, 'stacked.env')
+    hook('pre-push', dump)
+    writeFileSync(join(repo, 'stacked'), 's')
+    run(repo, ['add', 'stacked'])
+    run(repo, ['commit', '-q', '-m', 'stacked'])
+    await gitService.push(repo, 'main', { remote: 'both' })
+    rmSync(join(repo, '.git', 'hooks', 'pre-push'), { force: true })
+    const env = readFileSync(dump, 'utf8')
+    expect(env).not.toContain(TOKEN)
+    expect(env).not.toContain(DC_TOKEN)
+    expect(env.match(/^GITCITO_CREDENTIAL_\d+=/gm)?.length).toBe(2)
+    const packs = received.filter((r) => r.path.endsWith('git-receive-pack'))
+    expect(packs.some((r) => r.path.startsWith('/group/') && r.auth === `oauth2:${TOKEN}`)).toBe(true)
+    expect(packs.some((r) => r.path.startsWith('/b/') && r.auth === `worker:${DC_TOKEN}`)).toBe(true)
+    // Nothing ever crossed over: not the GitLab token to the Data Center, nor back.
+    expect(received.some((r) => r.path.startsWith('/b/') && r.auth.includes(TOKEN))).toBe(false)
+    expect(received.some((r) => r.path.startsWith('/group/') && r.auth.includes(DC_TOKEN))).toBe(false)
+  })
+
   it('once the run is over the endpoint is gone: socket, helper and directory, and a late ask gets nothing', async () => {
     isolated()
     const { gitService } = await import('../src/main/git')
@@ -312,7 +354,7 @@ describe('the endpoint itself', () => {
   })
 
   async function openOne(
-    scope: 'host' | 'repository' | { prefix: string } = 'repository'
+    scope: 'host' | { prefix: string; exclude?: string[] } = { prefix: 'https://git.example.com/team/app.git' }
   ): Promise<{ env: NodeJS.ProcessEnv; endpoint: string; helper: string; nonceVar: string; nonce: string }> {
     const { gitCredentialEnv } = await import('../src/main/gitCredentialEnv')
     const env = gitCredentialEnv('https://git.example.com/team/app.git', { username: 'oauth2', password: TOKEN }, {}, scope)!
@@ -364,7 +406,7 @@ describe('the endpoint itself', () => {
     ]) {
       expect(JSON.parse(await ask(endpoint, { ...ok, ...bad })), JSON.stringify(bad)).toEqual({})
     }
-    // A repository scope tells git to send the path; a request without one is refused.
+    // A path-scoped entry tells git to send the path (useHttpPath); a request without one is refused.
     const noPath = { nonce, protocol: 'https', host: 'git.example.com' }
     expect(JSON.parse(await ask(endpoint, noPath))).toEqual({})
     // The same through the helper git runs, as a hook speaking its protocol would.
@@ -382,6 +424,16 @@ describe('the endpoint itself', () => {
     const p = { nonce: prefix.nonce, protocol: 'https', host: 'git.example.com' }
     expect(JSON.parse(await ask(prefix.endpoint, { ...p, path: 'team/lib.git' })).password).toBe(TOKEN)
     expect(JSON.parse(await ask(prefix.endpoint, { ...p, path: 'teamx/lib.git' }))).toEqual({})
+  })
+
+  it('an outer server refuses the server nested under it, in any spelling of its path', async () => {
+    const outer = await openOne({ prefix: 'https://git.example.com', exclude: ['https://git.example.com/bitbucket'] })
+    const q = { nonce: outer.nonce, protocol: 'https', host: 'git.example.com' }
+    expect(JSON.parse(await ask(outer.endpoint, { ...q, path: 'team/app.git' })).password).toBe(TOKEN)
+    expect(JSON.parse(await ask(outer.endpoint, { ...q, path: 'bitbucket/scm/p/r.git' }))).toEqual({})
+    expect(JSON.parse(await ask(outer.endpoint, { ...q, path: '%62itbucket/scm/p/r.git' }))).toEqual({})
+    // With a carve-out, "no path" could be either server: refused.
+    expect(JSON.parse(await ask(outer.endpoint, q))).toEqual({})
   })
 
   it('store and erase are no-ops: the helper answers only get', async () => {

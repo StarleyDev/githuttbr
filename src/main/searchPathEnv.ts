@@ -13,7 +13,9 @@
  * trailing empty entry whenever the variable was unset — the common case. The
  * launcher is outside our code, so the main process repairs the environment
  * before anything can spawn, and every child (simple-git, execFile, the pty)
- * inherits the repaired `process.env`.
+ * inherits the repaired `process.env`. electron-builder 26.15+ fixed its
+ * launcher (GHSA-7g7r-gx96-252g); this stays, because the variable can arrive
+ * broken from the user's shell or a desktop launcher too.
  *
  * Policy:
  * - Empty entries and `.` are always removed. They are never what anyone meant

@@ -158,6 +158,8 @@ export const es: Dict = {
   'sidebar.noTodos': 'Aún no hay tareas',
   'sidebar.noPRs': 'No hay PRs abiertos cargados',
   'sidebar.prsServerUnmatched': 'El servidor de este remoto no coincide con ningún servidor configurado: usa su remoto https para los PRs',
+  'sidebar.prsServerSharedBase': 'El servidor de este remoto está configurado con dos proveedores: déjalo en uno solo en Ajustes para ver los PRs',
+  'sidebar.prsServerUnmatchedOther': 'El servidor de este remoto no coincide con ningún servidor configurado, así que no se pueden mostrar los PRs',
   'sidebar.upstreamPRs': 'En {repo}',
   'sidebar.upstreamPRsTitle': 'Tus pull requests abiertos en el repositorio del que proviene este fork',
   'sidebar.stackOf': 'Pila de {n}',
