@@ -1,6 +1,6 @@
 name: Upstream watch
 
-# Git HuttBr follows Gitcito. Once a day, see whether the upstream main has
+# GitHuttBr follows Gitcito. Once a day, see whether the upstream main has
 # commits this fork's main lacks, and keep one issue saying so: opened or
 # updated while there are, closed once main has caught up.
 #

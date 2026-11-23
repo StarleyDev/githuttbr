@@ -2,7 +2,7 @@
  * The name this build leaves behind inside a user's repository: the git config
  * section, the ref namespace, the notes ref and the repository's own config file.
  *
- * Git HuttBr is built from Gitcito, which wrote all of these under `gitcito`.
+ * GitHuttBr is built from Gitcito, which wrote all of these under `gitcito`.
  * They live in the user's repositories, not in this app, so renaming them is
  * a promise to keep reading the old ones: everything here is written under
  * `APP_ID` and read under `APP_ID` first, then `LEGACY_APP_ID`. Nothing written

@@ -6,6 +6,7 @@ import { callModel, missingCredential, transportOf, type ChatMessage, type Model
 import { listAccountModels } from './aiModels'
 import { detectCliBinaries, signInSubscription, testSubscription } from './aiCli'
 import { createHash } from 'node:crypto'
+import { PRODUCT_NAME } from '../shared/brand'
 import { normalizeGitmojiConventional, normalizeGitmojiUnicode } from '../shared/gitmoji'
 import {
   APP_THEME_KEYS,
@@ -996,7 +997,7 @@ ${list(status.unstaged)}
 Conflicted files:
 ${list(status.conflicted)}`
 
-  const system = `You translate a user's plain-language git instruction into a concrete plan of actions for the Gitcito desktop app to execute.
+  const system = `You translate a user's plain-language git instruction into a concrete plan of actions for the ${PRODUCT_NAME} desktop app to execute.
 
 You are given the repository's current working-tree state. Resolve any globs or descriptions (e.g. "*.tsx", "the markdown files", "everything unstaged") to LITERAL repo-relative file paths drawn ONLY from the lists provided. Never invent paths that aren't listed (except .gitignore patterns, which are literal glob strings the user wants ignored).
 

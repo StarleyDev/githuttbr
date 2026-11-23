@@ -13,8 +13,8 @@ import { ROOT } from './helpers'
 
 afterAll(cleanupFixtures)
 
-const MOUNT = '/tmp/.mount_Git HuO2TrCj'
-const APPIMAGE_ENV = { APPIMAGE: '/home/me/Apps/Git HuttBr.AppImage', APPDIR: MOUNT }
+const MOUNT = '/tmp/.mount_GitHutO2TrCj'
+const APPIMAGE_ENV = { APPIMAGE: '/home/me/Apps/GitHuttBr.AppImage', APPDIR: MOUNT }
 
 // The program is not the only word that runs: a wrapper, an assignment or a
 // shell can put the mount path anywhere on the line.
@@ -53,8 +53,8 @@ describe('AppImage path decisions', () => {
 
   it('leaves installed locations alone', () => {
     for (const p of [
-      '/opt/Git HuttBr/resources/cli/githuttbr',
-      '/Applications/Git HuttBr.app/Contents/Resources/cli/githuttbr',
+      '/opt/GitHuttBr/resources/cli/githuttbr',
+      '/Applications/GitHuttBr.app/Contents/Resources/cli/githuttbr',
       '/home/me/.mounted/x',
       '/home/me/project.mount_notes/x',
       ''
@@ -68,7 +68,7 @@ describe('AppImage path decisions', () => {
     // An AppImage whose root does not look like a mount is still refused.
     const env = { APPIMAGE: '/x.AppImage' }
     expect(persistBlocker('/opt/odd/resources/cli/githuttbr-textconv', '/opt/odd/resources', env)).toBe('appimage')
-    expect(persistBlocker('/opt/Git HuttBr/resources/cli/githuttbr-textconv', '/opt/Git HuttBr/resources', {})).toBeNull()
+    expect(persistBlocker('/opt/GitHuttBr/resources/cli/githuttbr-textconv', '/opt/GitHuttBr/resources', {})).toBeNull()
   })
 
   it('finds the program in a textconv command line', () => {
@@ -82,7 +82,7 @@ describe('AppImage path decisions', () => {
   it('finds a mount path anywhere on the textconv line, not only as the program', () => {
     for (const tc of BYPASSES) expect(isEphemeralTextconv(tc, {}), tc).toBe(true)
     // Ordinary converters, and names that merely contain ".mount_", stay clean.
-    for (const tc of ['pdftotext -layout - -', 'exiftool', '"/opt/Git HuttBr/resources/cli/githuttbr-textconv"',
+    for (const tc of ['pdftotext -layout - -', 'exiftool', '"/opt/GitHuttBr/resources/cli/githuttbr-textconv"',
       '/home/me/project.mount_notes/conv']) {
       expect(isEphemeralTextconv(tc, {}), tc).toBe(false)
     }
@@ -161,7 +161,7 @@ describe('textconv drivers and AppImage mounts', () => {
   it('refuses a converter under this AppImage’s own root, whatever it is called', async () => {
     const R = cloneFixture('bisect-bug')
     const saved = { APPIMAGE: process.env.APPIMAGE, APPDIR: process.env.APPDIR }
-    process.env.APPIMAGE = '/x/Git HuttBr.AppImage'
+    process.env.APPIMAGE = '/x/GitHuttBr.AppImage'
     process.env.APPDIR = '/opt/custom-runtime/root'
     try {
       await expect(
@@ -179,7 +179,7 @@ describe('textconv drivers and AppImage mounts', () => {
     const R = cloneFixture('bisect-bug')
     const saved = { APPIMAGE: process.env.APPIMAGE, APPDIR: process.env.APPDIR }
     // In the test run the shim sits under the repo; pretend that is the mount.
-    process.env.APPIMAGE = '/x/Git HuttBr.AppImage'
+    process.env.APPIMAGE = '/x/GitHuttBr.AppImage'
     process.env.APPDIR = ROOT
     try {
       expect(bundledTextconvPath().startsWith(join(ROOT, 'resources'))).toBe(true)

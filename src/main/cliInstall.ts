@@ -29,8 +29,8 @@ export function privilegedScript(command: string): string {
 }
 
 /** The root command that links the shim into a PATH directory. Every path is
- *  quoted: the bundle is "Git HuttBr.app", and a root shell splitting on its
- *  space is the least of what an unquoted path can do. */
+ *  quoted: "GitHuttBr.app" may sit in a folder with a space in its name, and a
+ *  root shell splitting on it is the least of what an unquoted path can do. */
 export function privilegedLinkCommand(dir: string, shim: string, link: string): string {
   return `mkdir -p ${posixQuote(dir)} && ln -sf ${posixQuote(shim)} ${posixQuote(link)}`
 }
