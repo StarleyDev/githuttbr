@@ -342,6 +342,25 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
                   {t('attrs.driverRemove')}
                 </button>
               </>
+            ) : driver.stale ? (
+              <>
+                <span className="attrs-missing" title={t('attrs.driverStaleHint')}>
+                  <AlertTriangle size={11} /> {t('attrs.driverStale')}
+                </span>
+                <button
+                  className="btn ghost tiny"
+                  disabled={busy}
+                  title={t('attrs.driverStaleHint')}
+                  onClick={() => {
+                    // No undo: what it would restore is a converter that no longer runs.
+                    void repoActions
+                      .setDiffDriver(repoPath, driver.name, '', driver.scope === 'global')
+                      .then(() => load())
+                  }}
+                >
+                  {t('attrs.driverRemove')}
+                </button>
+              </>
             ) : (
               !driver.available && (
                 <span className="attrs-missing">

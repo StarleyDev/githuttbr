@@ -1237,6 +1237,8 @@ export const he: Dict = {
   'attrs.bundledConverter': 'מגיע עם Gitcito — אין צורך להתקין דבר.',
   'attrs.driverEphemeral': "מצביע לתיקיית AppImage זמנית",
   'attrs.driverEphemeralHint': "גרסת AppImage של Gitcito הגדירה את הממיר הזה. התיקייה שלו תחת ‎/tmp נעלמת כשהאפליקציה נסגרת, וכל משתמש אחר במחשב הזה יכול לשים בנתיב הזה תוכנה שה־git diff הבא שלכם יריץ. הסירו אותו.",
+  'attrs.driverStale': 'הממיר חסר או קודם לגרסה 4.39',
+  'attrs.driverStaleHint': 'הממיר הזה מצביע על תוכנית שכבר לא קיימת, או על הממיר שגרסאות שלפני 4.39 כללו תחת השם הישן של האפליקציה. כל git diff של הקבצים האלה ייכשל עד שהוא יוסר. הסר אותו והוסף את המנהל מחדש מההצעות שלמטה.',
   'attrs.driverRemove': "הסרה",
   'attrs.bundledAppImage': "לא זמין ב־AppImage: הממיר של Gitcito קיים רק בזמן שהאפליקציה רצה. התקינו את חבילת ה־‎.deb כדי להשתמש בו.",
   'attrs.filtersTitle': 'מסנני clean/smudge',

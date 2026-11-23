@@ -211,6 +211,7 @@ import { APP_ID, APP_IDS, LEGACY_APP_ID, isPrePurgePrefix, prePurgeRefRoot, snap
 import { redactSecrets } from '../shared/redact'
 import { cloneFolderProblem } from '../shared/cloneFolder'
 import { isEphemeralTextconv, persistBlocker } from './appImagePaths'
+import { isStaleTextconv } from './legacyShims'
 
 const SEP = '\x1f'
 
@@ -4966,6 +4967,8 @@ export const gitService = {
           // that path is gone (or someone else's) the moment the app quits.
           const info: DiffDriverInfo = { name, textconv, available: converterAvailable(textconv), scope }
           if (isEphemeralTextconv(textconv, process.env, process.resourcesPath ?? '')) info.ephemeral = true
+          // Left by 4.38 (or a converter since uninstalled): fails every diff.
+          else if (isStaleTextconv(textconv, existsSync)) info.stale = true
           return info
         })
         .filter((d): d is DiffDriverInfo => !!d)

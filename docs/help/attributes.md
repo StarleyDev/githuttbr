@@ -149,6 +149,14 @@ git config --get-regexp 'diff\..*\.textconv'
 git config --unset diff.word.textconv    # for each one it lists
 ```
 
+**After the 4.39 rename.** Versions up to 4.38 wrote the bundled converter as
+<code>…/cli/git&#99;ito-textconv</code>; 4.39 ships it under the new name, so those
+drivers fail every diff. The list marks such a driver — and any driver whose
+converter is an absolute path that no longer exists — **converter is gone or
+predates 4.39**, with the same **Remove** button. Remove it, then add the
+driver again from the suggestions. As with the AppImage flag, only this
+repository and your global config are checked. See [upgrading](upgrading.md).
+
 ## Clean/smudge filters — with a dry run first
 
 A **filter** rewrites content on its way in and out of the repository: `clean`

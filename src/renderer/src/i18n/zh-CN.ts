@@ -1237,6 +1237,8 @@ export const zhCN: Dict = {
   'attrs.bundledConverter': '随 Gitcito 附带——无需安装。',
   'attrs.driverEphemeral': "指向 AppImage 临时文件夹",
   'attrs.driverEphemeralHint': "这个转换器是 AppImage 版 Gitcito 设置的。它在 /tmp 下的文件夹会在应用退出时消失，这台机器上的任何其他用户都可以在该路径放一个程序，让你下一次 git diff 去运行它。请移除。",
+  'attrs.driverStale': '转换器已不存在或早于 4.39',
+  'attrs.driverStaleHint': '此转换器指向一个已不存在的程序，或指向 4.39 之前的版本以应用旧名称附带的转换器。在将其移除之前，这些文件的每次 git diff 都会失败。请移除它，然后从下方的建议中重新添加该驱动。',
   'attrs.driverRemove': "移除",
   'attrs.bundledAppImage': "AppImage 版不可用：Gitcito 的转换器只在应用运行期间存在。请安装 .deb 软件包后使用。",
   'attrs.filtersTitle': 'clean/smudge 过滤器',

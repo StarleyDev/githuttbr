@@ -1231,6 +1231,8 @@ export const en = {
   'attrs.bundledConverter': 'Included with Gitcito — nothing to install.',
   'attrs.driverEphemeral': "points into a temporary AppImage folder",
   'attrs.driverEphemeralHint': "An AppImage build of Gitcito set this converter. Its folder under /tmp vanishes when the app quits, and anyone else on this machine could put a program at that path for your next git diff to run. Remove it.",
+  'attrs.driverStale': 'converter is gone or predates 4.39',
+  'attrs.driverStaleHint': 'This converter points at a program that no longer exists, or at the converter versions before 4.39 shipped under the app\'s old name. Every git diff of these files fails until it is removed. Remove it, then add the driver again from the suggestions below.',
   'attrs.driverRemove': "Remove",
   'attrs.bundledAppImage': "Not available in the AppImage: Gitcito's converter only exists while the app is running. Install the .deb package to use it.",
   'attrs.filtersTitle': 'Clean/smudge filters',

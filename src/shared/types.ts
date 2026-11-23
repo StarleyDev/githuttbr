@@ -2661,6 +2661,9 @@ export interface DiffDriverInfo {
   /** True when the converter sits inside an AppImage's per-launch /tmp mount:
    *  stale once that app quits, and recreatable by any other local user. */
   ephemeral?: boolean
+  /** True when the converter is the pre-4.39 `gitcito-textconv`, or an absolute
+   *  path that no longer exists: every diff through it fails until it is removed. */
+  stale?: boolean
 }
 
 /** A converter Gitcito knows how to wire up, if it is installed. */

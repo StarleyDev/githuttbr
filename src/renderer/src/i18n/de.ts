@@ -1237,6 +1237,8 @@ export const de: Dict = {
   'attrs.bundledConverter': 'In Gitcito enthalten – nichts zu installieren.',
   'attrs.driverEphemeral': "zeigt in einen temporären AppImage-Ordner",
   'attrs.driverEphemeralHint': "Eine AppImage-Version von Gitcito hat diesen Konverter eingerichtet. Sein Ordner unter /tmp verschwindet, wenn die App beendet wird, und jeder andere Benutzer dieses Rechners könnte dort ein Programm ablegen, das Ihr nächstes git diff ausführt. Entfernen Sie ihn.",
+  'attrs.driverStale': 'Konverter fehlt oder stammt von vor 4.39',
+  'attrs.driverStaleHint': 'Dieser Konverter verweist auf ein Programm, das es nicht mehr gibt, oder auf den Konverter, den Versionen vor 4.39 unter dem alten Namen der App mitbrachten. Jedes git diff dieser Dateien schlägt fehl, bis er entfernt ist. Entfernen Sie ihn und fügen Sie den Treiber über die Vorschläge unten erneut hinzu.',
   'attrs.driverRemove': "Entfernen",
   'attrs.bundledAppImage': "Im AppImage nicht verfügbar: Der Konverter von Gitcito existiert nur, solange die App läuft. Installieren Sie das .deb-Paket, um ihn zu nutzen.",
   'attrs.filtersTitle': 'Clean-/Smudge-Filter',

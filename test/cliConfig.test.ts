@@ -105,3 +105,37 @@ describe('githuttbr config / doctor on a repository with only .gitcito.json', ()
     expect(r.stderr).toContain('no .githuttbr.json')
   })
 })
+
+describe('githuttbr doctor and an editor setting left by 4.38', () => {
+  function cliWith(env: Record<string, string>, ...args: string[]): { code: number | null; stdout: string } {
+    const r = spawnSync(process.execPath, [entry, ...args], {
+      encoding: 'utf8',
+      env: { ...process.env, NO_COLOR: '1', ...env }
+    })
+    return { code: r.status, stdout: r.stdout }
+  }
+  const gitIn = (dir: string, env: Record<string, string>, ...args: string[]): string =>
+    spawnSync('git', args, { cwd: dir, encoding: 'utf8', env: { ...process.env, ...env } }).stdout.trim()
+
+  it('names the stale setting and the exact command that fixes it, then --fix repairs it', () => {
+    const dir = cloneFixture('project-tree')
+    const globalDir = mkdtempSync(join(tmpdir(), 'githuttbr-gitconfig-'))
+    const globalFile = join(globalDir, 'config')
+    writeFileSync(globalFile, '[sequence]\n\teditor = /usr/bin/gitcito --wait\n')
+    const env = { GIT_CONFIG_GLOBAL: globalFile }
+    gitIn(dir, env, 'config', '--local', 'core.editor', 'gitcito --wait')
+
+    const r = cliWith(env, 'doctor', dir)
+    // A warning about the user's git config never fails a build.
+    expect(r.code).toBe(0)
+    expect(r.stdout).toContain('core.editor (local) runs the old command')
+    expect(r.stdout).toContain('Fix: git config --local core.editor "githuttbr --wait"')
+    expect(r.stdout).toContain('Fix: git config --global sequence.editor "githuttbr --wait"')
+
+    cliWith(env, 'doctor', dir, '--fix')
+    expect(gitIn(dir, env, 'config', '--local', 'core.editor')).toBe('githuttbr --wait')
+    expect(readFileSync(globalFile, 'utf8')).toContain('githuttbr --wait')
+    expect(cliWith(env, 'doctor', dir).stdout).not.toContain('runs the old command')
+    rmSync(globalDir, { recursive: true, force: true })
+  })
+})

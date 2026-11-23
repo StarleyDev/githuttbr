@@ -1238,6 +1238,8 @@ export const nl: Dict = {
   'attrs.bundledConverter': 'Meegeleverd met Gitcito — niets te installeren.',
   'attrs.driverEphemeral': "wijst naar een tijdelijke AppImage-map",
   'attrs.driverEphemeralHint': "Een AppImage-versie van Gitcito heeft deze converter ingesteld. De map onder /tmp verdwijnt zodra de app stopt, en elke andere gebruiker op deze machine kan daar een programma neerzetten dat je volgende git diff uitvoert. Verwijder hem.",
+  'attrs.driverStale': 'converter ontbreekt of is van vóór 4.39',
+  'attrs.driverStaleHint': 'Deze converter verwijst naar een programma dat niet meer bestaat, of naar de converter die versies vóór 4.39 onder de oude naam van de app meeleverden. Elke git diff van deze bestanden mislukt totdat hij is verwijderd. Verwijder hem en voeg de driver opnieuw toe via de suggesties hieronder.',
   'attrs.driverRemove': "Verwijderen",
   'attrs.bundledAppImage': "Niet beschikbaar in de AppImage: de converter van Gitcito bestaat alleen zolang de app draait. Installeer het .deb-pakket om hem te gebruiken.",
   'attrs.filtersTitle': 'Clean/smudge-filters',

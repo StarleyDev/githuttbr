@@ -1237,6 +1237,8 @@ export const ar: Dict = {
   'attrs.bundledConverter': 'مضمَّن مع Gitcito — لا حاجة لتثبيت أي شيء.',
   'attrs.driverEphemeral': "يشير إلى مجلد AppImage مؤقت",
   'attrs.driverEphemeralHint': "ضبط إصدار AppImage من Gitcito هذا المحوّل. مجلده في ‎/tmp يختفي عند إغلاق التطبيق، ويمكن لأي مستخدم آخر على هذا الجهاز وضع برنامج في ذلك المسار يشغّله أمر git diff التالي لديك. أزِله.",
+  'attrs.driverStale': 'المحوِّل مفقود أو أقدم من 4.39',
+  'attrs.driverStaleHint': 'يشير هذا المحوِّل إلى برنامج لم يعد موجودًا، أو إلى المحوِّل الذي كانت الإصدارات السابقة لـ 4.39 تشحنه باسم التطبيق القديم. يفشل كل git diff لهذه الملفات حتى تتم إزالته. أزِله، ثم أضِف المُشغِّل مجددًا من الاقتراحات أدناه.',
   'attrs.driverRemove': "إزالة",
   'attrs.bundledAppImage': "غير متاح في إصدار AppImage: محوّل Gitcito لا يوجد إلا أثناء تشغيل التطبيق. ثبّت حزمة ‎.deb لاستخدامه.",
   'attrs.filtersTitle': 'مرشّحات clean/smudge',

@@ -1222,6 +1222,8 @@ export const tr: Dict = {
   'attrs.bundledConverter': 'Gitcito ile birlikte gelir — kurulacak bir şey yok.',
   'attrs.driverEphemeral': "geçici bir AppImage klasörünü gösteriyor",
   'attrs.driverEphemeralHint': "Bu dönüştürücüyü Gitcito’nun AppImage sürümü ayarladı. /tmp altındaki klasörü uygulama kapanınca yok olur ve bu makinedeki başka herhangi bir kullanıcı oraya bir sonraki git diff komutunuzun çalıştıracağı bir program koyabilir. Kaldırın.",
+  'attrs.driverStale': 'dönüştürücü yok ya da 4.39 öncesine ait',
+  'attrs.driverStaleHint': 'Bu dönüştürücü artık var olmayan bir programı ya da 4.39 öncesi sürümlerin uygulamanın eski adıyla getirdiği dönüştürücüyü gösteriyor. Kaldırılana kadar bu dosyaların her git diff işlemi başarısız olur. Kaldırın, ardından sürücüyü aşağıdaki önerilerden yeniden ekleyin.',
   'attrs.driverRemove': "Kaldır",
   'attrs.bundledAppImage': "AppImage’da kullanılamaz: Gitcito’nun dönüştürücüsü yalnızca uygulama çalışırken var olur. Kullanmak için .deb paketini kurun.",
   'attrs.filtersTitle': 'Clean/smudge filtreleri',

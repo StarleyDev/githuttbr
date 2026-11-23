@@ -38,6 +38,7 @@ import type { DoctorCheck, RepoConfig } from '../shared/types'
 import { PRODUCT_NAME } from '../shared/brand'
 import { APP_REPO_URL } from '../shared/appRepo'
 import { APP_NAME, SETTINGS_FILE, appDataDir } from './appIdentity'
+import { EDITOR_KEYS, EDITOR_VALUE, editorFixCommand, isLegacyEditor } from './legacyShims'
 
 const pexecFile = promisify(execFile)
 
@@ -136,9 +137,52 @@ function doctorLine(check: DoctorCheck): string {
   return `  ${mark} ${bold(check.id)}${want}${got}`
 }
 
+interface StaleEditor {
+  key: string
+  scope: 'global' | 'local'
+  value: string
+}
+
+/** `core.editor` / `sequence.editor` still running the pre-4.39 `gitcito --wait`, where they are set. */
+async function staleEditorSettings(root: string): Promise<StaleEditor[]> {
+  const found: StaleEditor[] = []
+  for (const scope of ['local', 'global'] as const) {
+    for (const key of EDITOR_KEYS) {
+      const value = await gitOr(root, ['config', `--${scope}`, '--get', key])
+      if (value && isLegacyEditor(value)) found.push({ key, scope, value })
+    }
+  }
+  return found
+}
+
+/**
+ * A stale editor setting makes every `git commit` fail with "command not
+ * found" — worth a line whatever the repository config asks for. A warning,
+ * not a failure: it is the user's git config, not the repository's state.
+ */
+async function reportStaleEditors(root: string, fix: boolean): Promise<void> {
+  const stale = await staleEditorSettings(root)
+  if (!stale.length) return
+  for (const s of stale) {
+    if (fix) {
+      try {
+        await git(root, ['config', `--${s.scope}`, s.key, EDITOR_VALUE])
+        out(`  ${OK} fixed ${bold(s.key)} ${dim(`(${s.scope})`)}`)
+        continue
+      } catch (e) {
+        out(`  ${FAIL} could not fix ${bold(s.key)}: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
+    out(`  ${WARN} ${bold(s.key)} ${dim(`(${s.scope}) runs the old command · found ${s.value}`)}`)
+    out(`      ${dim('Fix:')} ${editorFixCommand(s.key, s.scope)}`)
+  }
+  out()
+}
+
 async function cmdDoctor(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
   const root = await repoRoot(args.rest[0])
+  await reportStaleEditors(root, args.has('fix'))
   const { config, path } = await readRepoConfig(root)
   if (!config?.requires) {
     out(`${dim('No requirements declared in')} ${basename(path)}${dim('.')}`)
@@ -454,8 +498,7 @@ async function cmdEditor(argv: string[]): Promise<number> {
     err(`githuttbr editor: unknown subcommand "${sub}" (expected install or uninstall)`)
     return 2
   }
-  await set('core.editor', 'githuttbr --wait')
-  await set('sequence.editor', 'githuttbr --wait')
+  for (const key of EDITOR_KEYS) await set(key, EDITOR_VALUE)
   out(`${OK} git will now open commit messages and rebase todos in ${PRODUCT_NAME} (${scope.slice(2)}).`)
   out(dim('Undo with `githuttbr editor uninstall`.'))
   return 0

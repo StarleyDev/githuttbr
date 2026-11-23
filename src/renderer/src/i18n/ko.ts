@@ -1237,6 +1237,8 @@ export const ko: Dict = {
   'attrs.bundledConverter': 'Gitcito에 포함되어 있어 설치할 것이 없습니다.',
   'attrs.driverEphemeral': "AppImage 임시 폴더를 가리킴",
   'attrs.driverEphemeralHint': "AppImage 버전 Gitcito가 이 변환기를 설정했습니다. /tmp 아래의 해당 폴더는 앱을 종료하면 사라지고, 이 컴퓨터의 다른 사용자가 그 경로에 프로그램을 두면 다음 git diff가 그것을 실행합니다. 제거하세요.",
+  'attrs.driverStale': '변환기가 없거나 4.39 이전 버전의 것입니다',
+  'attrs.driverStaleHint': '이 변환기는 더 이상 존재하지 않는 프로그램, 또는 4.39 이전 버전이 앱의 옛 이름으로 제공하던 변환기를 가리킵니다. 제거하기 전까지 이 파일들의 git diff는 모두 실패합니다. 제거한 뒤 아래 추천 항목에서 드라이버를 다시 추가하세요.',
   'attrs.driverRemove': "제거",
   'attrs.bundledAppImage': "AppImage에서는 사용할 수 없습니다. Gitcito의 변환기는 앱이 실행 중일 때만 존재합니다. 사용하려면 .deb 패키지를 설치하세요.",
   'attrs.filtersTitle': 'clean/smudge 필터',

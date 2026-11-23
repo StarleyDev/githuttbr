@@ -1233,6 +1233,8 @@ export const es: Dict = {
   'attrs.bundledConverter': 'Incluido con Gitcito: no hay nada que instalar.',
   'attrs.driverEphemeral': "apunta a una carpeta temporal de AppImage",
   'attrs.driverEphemeralHint': "Una versión AppImage de Gitcito configuró este conversor. Su carpeta en /tmp desaparece al cerrar la app, y cualquier otro usuario de este equipo podría poner en esa ruta un programa que tu próximo git diff ejecutaría. Elimínalo.",
+  'attrs.driverStale': 'el conversor ya no existe o es anterior a 4.39',
+  'attrs.driverStaleHint': 'Este conversor apunta a un programa que ya no existe, o al conversor que las versiones anteriores a 4.39 incluían con el nombre antiguo de la aplicación. Cada git diff de estos archivos falla hasta que se elimine. Elimínalo y vuelve a añadir el controlador desde las sugerencias de abajo.',
   'attrs.driverRemove': "Eliminar",
   'attrs.bundledAppImage': "No disponible en la AppImage: el conversor de Gitcito solo existe mientras la app está abierta. Instala el paquete .deb para usarlo.",
   'attrs.filtersTitle': 'Filtros clean/smudge',

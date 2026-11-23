@@ -1237,6 +1237,8 @@ export const pl: Dict = {
   'attrs.bundledConverter': 'Dołączony do Gitcito — nic nie trzeba instalować.',
   'attrs.driverEphemeral': "wskazuje na tymczasowy folder AppImage",
   'attrs.driverEphemeralHint': "Ten konwerter ustawiła wersja AppImage Gitcito. Jej folder w /tmp znika po zamknięciu aplikacji, a każdy inny użytkownik tego komputera mógłby umieścić tam program, który uruchomi twój następny git diff. Usuń go.",
+  'attrs.driverStale': 'konwerter zniknął lub pochodzi sprzed 4.39',
+  'attrs.driverStaleHint': 'Ten konwerter wskazuje program, który już nie istnieje, albo konwerter dołączany przez wersje sprzed 4.39 pod starą nazwą aplikacji. Każdy git diff tych plików kończy się błędem, dopóki go nie usuniesz. Usuń go, a potem dodaj sterownik ponownie z sugestii poniżej.',
   'attrs.driverRemove': "Usuń",
   'attrs.bundledAppImage': "Niedostępne w AppImage: konwerter Gitcito istnieje tylko, gdy aplikacja działa. Zainstaluj pakiet .deb, aby z niego korzystać.",
   'attrs.filtersTitle': 'Filtry clean/smudge',

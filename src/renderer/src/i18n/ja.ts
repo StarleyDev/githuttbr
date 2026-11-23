@@ -1222,6 +1222,8 @@ export const ja: Dict = {
   'attrs.bundledConverter': 'Gitcito に同梱 — インストールは不要です。',
   'attrs.driverEphemeral': "AppImage の一時フォルダーを指しています",
   'attrs.driverEphemeralHint': "この変換器は AppImage 版の Gitcito が設定したものです。/tmp 内のフォルダーはアプリ終了時に消え、このマシンの他のユーザーがそのパスにプログラムを置くと、次の git diff がそれを実行します。削除してください。",
+  'attrs.driverStale': '変換器が見つからないか、4.39 より前のものです',
+  'attrs.driverStaleHint': 'この変換器は、もう存在しないプログラム、または 4.39 より前のバージョンがアプリの旧名で同梱していた変換器を指しています。削除するまで、これらのファイルの git diff はすべて失敗します。削除してから、下の候補からドライバーを追加し直してください。',
   'attrs.driverRemove': "削除",
   'attrs.bundledAppImage': "AppImage 版では使えません。Gitcito の変換器はアプリの実行中しか存在しないためです。使うには .deb パッケージをインストールしてください。",
   'attrs.filtersTitle': 'clean/smudge フィルター',
