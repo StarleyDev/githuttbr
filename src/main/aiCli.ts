@@ -181,7 +181,7 @@ export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promi
   const stamped = (cfg.cliCwd ?? '').trim()
   const cwd = stamped && existsSync(stamped) ? stamped : undefined
   if (cfg.subscription && !cwd) {
-    const directory = await mkdtemp(join(tmpdir(), 'gitcito-model-'))
+    const directory = await mkdtemp(join(tmpdir(), 'githuttbr-model-'))
     try {
       return await invokeCli(cfg, messages, directory, true)
     } finally {
@@ -209,7 +209,7 @@ async function invokeCli(
   let stdout: string
   let stderr: string
   if (spec.promptFile) {
-    const dir = await mkdtemp(join(tmpdir(), 'gitcito-prompt-'))
+    const dir = await mkdtemp(join(tmpdir(), 'githuttbr-prompt-'))
     try {
       const promptPath = join(dir, 'prompt.txt')
       await writeFile(promptPath, prompt, 'utf8')
@@ -273,7 +273,7 @@ export async function signInSubscription(
 ): Promise<SubscriptionTest> {
   if ((binary !== 'codex' && binary !== 'claude') || typeof path !== 'string') return 'failed'
   await shellPathReady()
-  const directory = await mkdtemp(join(tmpdir(), 'gitcito-sign-in-'))
+  const directory = await mkdtemp(join(tmpdir(), 'githuttbr-sign-in-'))
   const file = path.trim() || binary
   const env = subscriptionEnv()
   try {
@@ -313,7 +313,7 @@ export async function testSubscription(binary: SubscriptionCli, path: string): P
   if (typeof path !== 'string') return 'failed'
   const file = path.trim() || binary
   await shellPathReady()
-  const directory = await mkdtemp(join(tmpdir(), 'gitcito-connection-'))
+  const directory = await mkdtemp(join(tmpdir(), 'githuttbr-connection-'))
   try {
     const env = subscriptionEnv()
     await requireSubscription(file, binary, env, directory)

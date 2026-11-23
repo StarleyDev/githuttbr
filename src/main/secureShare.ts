@@ -52,7 +52,7 @@ export async function readRepoNotes(repoPath: string): Promise<BundleNote[]> {
   return notes
 }
 
-// IPC surface for sharing files as encrypted .gitcito bundles. All filesystem
+// IPC surface for sharing files as encrypted .githuttbr bundles. All filesystem
 // and crypto work stays in the main process; the renderer only ever sees
 // relative paths, sizes and error codes — never key material.
 
@@ -152,8 +152,8 @@ async function exportBundle(
   const safeName = (project || 'project').replace(/[^\w.-]+/g, '-')
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: 'Export secure bundle',
-    defaultPath: `${safeName}.gitcito`,
-    filters: [{ name: `${PRODUCT_NAME} bundle`, extensions: ['gitcito'] }]
+    defaultPath: `${safeName}.githuttbr`,
+    filters: [{ name: `${PRODUCT_NAME} bundle`, extensions: ['githuttbr'] }]
   })
   if (canceled || !filePath) return { canceled: true }
   try {
@@ -170,7 +170,8 @@ async function pickBundle(): Promise<
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Import secure bundle',
     filters: [
-      { name: `${PRODUCT_NAME} bundle`, extensions: ['gitcito'] },
+      // Bundles saved before the 4.39 rename end in `.gitcito`; they open the same.
+      { name: `${PRODUCT_NAME} bundle`, extensions: ['githuttbr', 'gitcito'] },
       { name: 'All files', extensions: ['*'] }
     ],
     properties: ['openFile']
@@ -312,8 +313,8 @@ export async function exportSectionsV2(
   const safeName = (project || 'workspace').replace(/[^\w.-]+/g, '-')
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: 'Export secure bundle',
-    defaultPath: `${safeName}.gitcito`,
-    filters: [{ name: `${PRODUCT_NAME} bundle`, extensions: ['gitcito'] }]
+    defaultPath: `${safeName}.githuttbr`,
+    filters: [{ name: `${PRODUCT_NAME} bundle`, extensions: ['githuttbr'] }]
   })
   if (canceled || !filePath) return { canceled: true }
   try {

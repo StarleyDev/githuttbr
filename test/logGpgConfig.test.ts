@@ -15,7 +15,7 @@ import { gitService, logSignaturesDisabled } from '../src/main/git'
 // plain log still works) needs a git that parses the gpg config lazily. Probe
 // once at collect time and skip where the scenario cannot exist.
 const brokenGpgBreaksOnlySignatures = ((): boolean => {
-  const dir = mkdtempSync(join(tmpdir(), 'gitcito-gpgcfg-probe-'))
+  const dir = mkdtempSync(join(tmpdir(), 'githuttbr-gpgcfg-probe-'))
   try {
     const repo = join(dir, 'repo')
     const bad = join(dir, 'gitconfig')
@@ -41,7 +41,7 @@ describe('graph log with a broken gpg config', () => {
 
   beforeAll(() => {
     if (!brokenGpgBreaksOnlySignatures) return
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-gpgcfg-'))
+    dir = mkdtempSync(join(tmpdir(), 'githuttbr-gpgcfg-'))
     repo = join(dir, 'repo')
     const badConfig = join(dir, 'gitconfig')
     writeFileSync(badConfig, '[user]\n\tname = T\n\temail = t@example.com\n[gpg]\n\tformat = \n')

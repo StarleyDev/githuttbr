@@ -54,7 +54,7 @@ function recover(win: BrowserWindow, reason: RecoveryReason, detail: string): vo
   const delay = recoveryDelayMs(history, now)
   history.push(now)
   while (history.length && now - history[0]! >= RECOVERY_WINDOW_MS * 4) history.shift()
-  console.error(`[gitcito] renderer ${reason}: ${detail}; reloading in ${delay} ms`)
+  console.error(`[githuttbr] renderer ${reason}: ${detail}; reloading in ${delay} ms`)
   void writeLog(formatRecoveryLine(new Date(now), reason, detail, delay))
   pending.set(
     win,

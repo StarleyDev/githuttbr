@@ -16,7 +16,7 @@ afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
 const IDENTITY = ['-c', 'user.name=D', '-c', 'user.email=d@example.invalid']
 
 function repo(): { dir: string; git: (...a: string[]) => string } {
-  const dir = mkdtempSync(join(tmpdir(), 'gitcito-discard-undo-'))
+  const dir = mkdtempSync(join(tmpdir(), 'githuttbr-discard-undo-'))
   dirs.push(dir)
   const git = (...a: string[]): string =>
     execFileSync('git', ['-C', dir, ...IDENTITY, ...a], {
@@ -195,7 +195,7 @@ describe('discard undo', () => {
 
   it('refuses a path behind a symlinked folder', async () => {
     const { dir } = repo()
-    const outside = mkdtempSync(join(tmpdir(), 'gitcito-discard-outside-'))
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-discard-outside-'))
     dirs.push(outside)
     writeFileSync(join(outside, 'victim.txt'), 'precious\n')
     symlinkSync(outside, join(dir, 'link'))

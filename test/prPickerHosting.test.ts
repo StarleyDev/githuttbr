@@ -10,7 +10,7 @@ import { defaultSettings, type CreatePrResult, type PrPickerOptions } from '../s
 // that a create with none sends exactly what it always did, and that a pick the
 // host refuses is reported on a PR that still counts as created.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-pr-picker-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-pr-picker-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -69,10 +69,10 @@ const users = (prefix: string, n: number, from = 0): Array<{ login: string; avat
   Array.from({ length: n }, (_, i) => ({ login: `${prefix}${from + i}`, avatar_url: `https://avatars.example/${prefix}${from + i}` }))
 
 beforeAll(async () => {
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
   const base = defaultSettings()
   writeFileSync(
-    join(dir, 'gitcito-settings.json'),
+    join(dir, 'githuttbr-settings.json'),
     JSON.stringify({
       ...base,
       onboardingCompleted: true,

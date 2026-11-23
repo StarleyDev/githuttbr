@@ -53,7 +53,7 @@ describe('gen-licenses against a broken install', () => {
   // The script resolves everything relative to its own location, so a copy in
   // a temp tree runs against that tree's (empty) node_modules.
   it('exits nonzero and writes nothing instead of a shrunken list', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-licenses-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-licenses-'))
     dirs.push(dir)
     mkdirSync(join(dir, 'scripts'))
     mkdirSync(join(dir, 'src/renderer/src'), { recursive: true })

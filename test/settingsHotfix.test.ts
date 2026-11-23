@@ -10,7 +10,7 @@ import type { SecretStore } from '../src/shared/secrets'
 // unlock landing after it, and a half-written settings file read as "no
 // settings". Real handlers, a fake keyring.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-hotfix-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-settings-hotfix-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -28,8 +28,8 @@ vi.mock('electron', () => ({
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-const settingsFile = (): string => join(dir, 'gitcito-settings.json')
-const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
+const settingsFile = (): string => join(dir, 'githuttbr-settings.json')
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
 const storeJson = (): SecretStore =>
   JSON.parse(Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString().replace(/^enc:/, '')) as SecretStore
 const writeStore = (s: SecretStore): void =>
@@ -58,7 +58,7 @@ const settingsWith = (profile: Profile, extra: Partial<AppSettings> = {}): AppSe
 /** A fresh main process over a store holding a GitHub and an Azure token. */
 async function storedTokens(): Promise<void> {
   for (const f of readdirSync(dir)) rmSync(join(dir, f), { force: true, recursive: true })
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
   writeStore({ p: { githubToken: 'ghp_old', azureToken: 'az_old' } })
   writeFileSync(settingsFile(), JSON.stringify(settingsWith(profileWith({}))))
   vi.resetModules()

@@ -38,7 +38,7 @@ jobs:
       # throwaway global config (see test/e2e/app.ts).
       - name: Git identity
         run: |
-          git config --global user.name "Gitcito CI"
+          git config --global user.name "GitHuttBr CI"
           git config --global user.email "ci@example.invalid"
 
       - name: Build

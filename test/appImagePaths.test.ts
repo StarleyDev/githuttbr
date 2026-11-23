@@ -19,13 +19,13 @@ const APPIMAGE_ENV = { APPIMAGE: '/home/me/Apps/Git HuttBr.AppImage', APPDIR: MO
 // The program is not the only word that runs: a wrapper, an assignment or a
 // shell can put the mount path anywhere on the line.
 const BYPASSES = [
-  'env /tmp/.mount_x/gitcito-textconv',
-  'FOO=1 "/tmp/.mount_x/gitcito-textconv"',
-  `sh -c '/tmp/.mount_x/gitcito-textconv'`,
-  'sh -c "exec /tmp/.mount_x/resources/cli/gitcito-textconv \\"$1\\"" --',
-  'nice -n 5 /tmp/appimage_extracted_0123/resources/cli/gitcito-textconv',
-  '/tmp/.mo""unt_x/gitcito-textconv',
-  '/tmp/\\.mount_x/gitcito-textconv',
+  'env /tmp/.mount_x/githuttbr-textconv',
+  'FOO=1 "/tmp/.mount_x/githuttbr-textconv"',
+  `sh -c '/tmp/.mount_x/githuttbr-textconv'`,
+  'sh -c "exec /tmp/.mount_x/resources/cli/githuttbr-textconv \\"$1\\"" --',
+  'nice -n 5 /tmp/appimage_extracted_0123/resources/cli/githuttbr-textconv',
+  '/tmp/.mo""unt_x/githuttbr-textconv',
+  '/tmp/\\.mount_x/githuttbr-textconv',
   'FOO=/tmp/.mount_x/lib pdftotext -layout - -'
 ]
 
@@ -36,16 +36,16 @@ describe('AppImage path decisions', () => {
   })
 
   it('treats any AppImage mount or extraction dir as ephemeral, live or stale', () => {
-    expect(isEphemeralAppPath(`${MOUNT}/resources/cli/gitcito`, {})).toBe(true)
+    expect(isEphemeralAppPath(`${MOUNT}/resources/cli/githuttbr`, {})).toBe(true)
     // A mount from an earlier launch — the dangerous case — matches by shape.
-    expect(isEphemeralAppPath('/tmp/.mount_GitcitXYZ/resources/cli/gitcito-textconv', APPIMAGE_ENV)).toBe(true)
+    expect(isEphemeralAppPath('/tmp/.mount_GitcitXYZ/resources/cli/githuttbr-textconv', APPIMAGE_ENV)).toBe(true)
     expect(isEphemeralAppPath('/var/tmp/.mount_abc/x', {})).toBe(true)
-    expect(isEphemeralAppPath('/tmp/appimage_extracted_0123abcd/resources/cli/gitcito', {})).toBe(true)
+    expect(isEphemeralAppPath('/tmp/appimage_extracted_0123abcd/resources/cli/githuttbr', {})).toBe(true)
   })
 
   it('treats this launch’s APPDIR as ephemeral whatever it is called', () => {
     const env = { APPIMAGE: '/x.AppImage', APPDIR: '/opt/custom-runtime/root' }
-    expect(isEphemeralAppPath('/opt/custom-runtime/root/resources/cli/gitcito', env)).toBe(true)
+    expect(isEphemeralAppPath('/opt/custom-runtime/root/resources/cli/githuttbr', env)).toBe(true)
     expect(isEphemeralAppPath('/opt/custom-runtime/rootless/x', env)).toBe(false)
     // APPDIR without APPIMAGE is just some variable, not a mount.
     expect(isEphemeralAppPath('/opt/custom-runtime/root/x', { APPDIR: '/opt/custom-runtime/root' })).toBe(false)
@@ -53,8 +53,8 @@ describe('AppImage path decisions', () => {
 
   it('leaves installed locations alone', () => {
     for (const p of [
-      '/opt/Git HuttBr/resources/cli/gitcito',
-      '/Applications/Git HuttBr.app/Contents/Resources/cli/gitcito',
+      '/opt/Git HuttBr/resources/cli/githuttbr',
+      '/Applications/Git HuttBr.app/Contents/Resources/cli/githuttbr',
       '/home/me/.mounted/x',
       '/home/me/project.mount_notes/x',
       ''
@@ -64,25 +64,25 @@ describe('AppImage path decisions', () => {
   })
 
   it('blocks persisting a bundled path only under an AppImage', () => {
-    expect(persistBlocker(`${MOUNT}/resources/cli/gitcito-textconv`, `${MOUNT}/resources`, APPIMAGE_ENV)).toBe('appimage')
+    expect(persistBlocker(`${MOUNT}/resources/cli/githuttbr-textconv`, `${MOUNT}/resources`, APPIMAGE_ENV)).toBe('appimage')
     // An AppImage whose root does not look like a mount is still refused.
     const env = { APPIMAGE: '/x.AppImage' }
-    expect(persistBlocker('/opt/odd/resources/cli/gitcito-textconv', '/opt/odd/resources', env)).toBe('appimage')
-    expect(persistBlocker('/opt/Git HuttBr/resources/cli/gitcito-textconv', '/opt/Git HuttBr/resources', {})).toBeNull()
+    expect(persistBlocker('/opt/odd/resources/cli/githuttbr-textconv', '/opt/odd/resources', env)).toBe('appimage')
+    expect(persistBlocker('/opt/Git HuttBr/resources/cli/githuttbr-textconv', '/opt/Git HuttBr/resources', {})).toBeNull()
   })
 
   it('finds the program in a textconv command line', () => {
-    expect(textconvProgram(`"${MOUNT}/resources/cli/gitcito-textconv"`)).toBe(`${MOUNT}/resources/cli/gitcito-textconv`)
+    expect(textconvProgram(`"${MOUNT}/resources/cli/githuttbr-textconv"`)).toBe(`${MOUNT}/resources/cli/githuttbr-textconv`)
     expect(textconvProgram(`'/tmp/.mount_a/b' --x`)).toBe('/tmp/.mount_a/b')
     expect(textconvProgram('pdftotext -layout - -')).toBe('pdftotext')
-    expect(isEphemeralTextconv(`"${MOUNT}/resources/cli/gitcito-textconv"`, {})).toBe(true)
+    expect(isEphemeralTextconv(`"${MOUNT}/resources/cli/githuttbr-textconv"`, {})).toBe(true)
     expect(isEphemeralTextconv('pdftotext -layout - -', {})).toBe(false)
   })
 
   it('finds a mount path anywhere on the textconv line, not only as the program', () => {
     for (const tc of BYPASSES) expect(isEphemeralTextconv(tc, {}), tc).toBe(true)
     // Ordinary converters, and names that merely contain ".mount_", stay clean.
-    for (const tc of ['pdftotext -layout - -', 'exiftool', '"/opt/Git HuttBr/resources/cli/gitcito-textconv"',
+    for (const tc of ['pdftotext -layout - -', 'exiftool', '"/opt/Git HuttBr/resources/cli/githuttbr-textconv"',
       '/home/me/project.mount_notes/conv']) {
       expect(isEphemeralTextconv(tc, {}), tc).toBe(false)
     }
@@ -90,9 +90,9 @@ describe('AppImage path decisions', () => {
 
   it('finds a mount spelled as a glob, which the shell expands before git runs it', () => {
     for (const tc of [
-      '/tmp/.moun?_X/resources/cli/gitcito-textconv',
-      '/tmp/[.]mount_X/resources/cli/gitcito-textconv',
-      '/tmp/*/resources/cli/gitcito-textconv',
+      '/tmp/.moun?_X/resources/cli/githuttbr-textconv',
+      '/tmp/[.]mount_X/resources/cli/githuttbr-textconv',
+      '/tmp/*/resources/cli/githuttbr-textconv',
       'env "/tmp/.mount_*/AppRun"',
       'sh -c /tmp/?mount_x/AppRun',
       '/var/x/[.]appimage_extracted_1/AppRun',
@@ -110,13 +110,13 @@ describe('AppImage path decisions', () => {
 
   it('finds this launch’s APPDIR or resources root anywhere on the line, under an AppImage', () => {
     const env = { APPIMAGE: '/x.AppImage', APPDIR: '/opt/custom-runtime/root' }
-    expect(isEphemeralTextconv('env /opt/custom-runtime/root/resources/cli/gitcito-textconv', env)).toBe(true)
+    expect(isEphemeralTextconv('env /opt/custom-runtime/root/resources/cli/githuttbr-textconv', env)).toBe(true)
     expect(isEphemeralTextconv(`sh -c '"/opt/custom-runtime/root/x"'`, env)).toBe(true)
     // The resources root, when it does not sit under APPDIR or look like a mount.
     const bare = { APPIMAGE: '/x.AppImage' }
-    expect(isEphemeralTextconv('env /opt/odd/resources/cli/gitcito-textconv', bare, '/opt/odd/resources')).toBe(true)
+    expect(isEphemeralTextconv('env /opt/odd/resources/cli/githuttbr-textconv', bare, '/opt/odd/resources')).toBe(true)
     // Not an AppImage: an installed resources root is a fine place for a converter.
-    expect(isEphemeralTextconv('env /opt/odd/resources/cli/gitcito-textconv', {}, '/opt/odd/resources')).toBe(false)
+    expect(isEphemeralTextconv('env /opt/odd/resources/cli/githuttbr-textconv', {}, '/opt/odd/resources')).toBe(false)
   })
 })
 
@@ -126,7 +126,7 @@ describe('textconv drivers and AppImage mounts', () => {
     const { execFileSync } = await import('node:child_process')
     // What an AppImage build of 4.37 wrote: written straight with git, since
     // setDiffDriver now refuses the path.
-    execFileSync('git', ['config', '--local', 'diff.word.textconv', `"${MOUNT}/resources/cli/gitcito-textconv"`], {
+    execFileSync('git', ['config', '--local', 'diff.word.textconv', `"${MOUNT}/resources/cli/githuttbr-textconv"`], {
       cwd: R
     })
     const word = (await gitService.diffDrivers(R)).find((d) => d.name === 'word')!
@@ -136,7 +136,7 @@ describe('textconv drivers and AppImage mounts', () => {
   it('refuses to write a converter path inside a mount', async () => {
     const R = cloneFixture('bisect-bug')
     await expect(
-      gitService.setDiffDriver(R, 'word', `"/tmp/.mount_GitcitXYZ/resources/cli/gitcito-textconv"`)
+      gitService.setDiffDriver(R, 'word', `"/tmp/.mount_GitcitXYZ/resources/cli/githuttbr-textconv"`)
     ).rejects.toThrow(/AppImage/)
     expect((await gitService.diffDrivers(R)).some((d) => d.name === 'word')).toBe(false)
     // Clearing one always works — that is the repair.
@@ -165,7 +165,7 @@ describe('textconv drivers and AppImage mounts', () => {
     process.env.APPDIR = '/opt/custom-runtime/root'
     try {
       await expect(
-        gitService.setDiffDriver(R, 'word', 'env /opt/custom-runtime/root/resources/cli/gitcito-textconv')
+        gitService.setDiffDriver(R, 'word', 'env /opt/custom-runtime/root/resources/cli/githuttbr-textconv')
       ).rejects.toThrow(/AppImage/)
     } finally {
       for (const [k, v] of Object.entries(saved)) {

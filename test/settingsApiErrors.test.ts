@@ -42,9 +42,9 @@ describe('settings errors across IPC', () => {
   it('a move-aside refused for the token backup names the data folder; a move or a no-op retries', async () => {
     answers.moveAside = { refused: 'secrets-copy', dir: '/home/me/.config/Gitcito' }
     expect(moveAsideRefusedDir(await settingsApi.moveAside())).toBe('/home/me/.config/Gitcito')
-    answers.moveAside = '/home/me/dotfiles/gitcito-settings.json.corrupt-2026'
+    answers.moveAside = '/home/me/dotfiles/githuttbr-settings.json.corrupt-2026'
     expect(moveAsideRefusedDir(await settingsApi.moveAside())).toBeNull()
-    expect(movedAsidePath(await settingsApi.moveAside())).toBe('/home/me/dotfiles/gitcito-settings.json.corrupt-2026')
+    expect(movedAsidePath(await settingsApi.moveAside())).toBe('/home/me/dotfiles/githuttbr-settings.json.corrupt-2026')
     expect(movedAsidePath({ refused: 'secrets-copy', dir: '/x' })).toBeNull()
     expect(movedAsidePath(null)).toBeNull()
     answers.moveAside = null

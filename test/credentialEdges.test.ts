@@ -31,7 +31,7 @@ const gitCredentialEnv = (...args: Parameters<typeof openCredentialEnv>): NodeJS
   return e
 }
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-cred-edges-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-cred-edges-'))
 const log = join(dir, 'helper.log')
 const logger = join(dir, 'logger.sh')
 const machine = join(dir, 'machine.sh')

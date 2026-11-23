@@ -1,7 +1,7 @@
 /**
  * Screenshot mode (`--shot`): the capture harness and the e2e suite launch the
  * built app with it to get the renderer store bridge, a fake `~/.ssh`
- * (GITCITO_SSH_DIR), a fake device SDK tree (GITCITO_DEVICE_BIN) and no GitHub
+ * (GITHUTTBR_SSH_DIR), a fake device SDK tree (GITHUTTBR_DEVICE_BIN) and no GitHub
  * calls. Every one of those lets a command line or an environment variable
  * redirect the app, which is fine for automation and wrong for an installed
  * app — so it is honoured only when unpackaged (`electron out/main/index.js`,

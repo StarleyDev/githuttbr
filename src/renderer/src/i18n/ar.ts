@@ -4708,4 +4708,7 @@ export const ar: Dict = {
   'timeMachine.upOneFolder': 'مجلد واحد لأعلى',
   'timeMachine.root': 'الجذر',
   'history.searchPlaceholder': 'ابحث حسب الموضوع أو المؤلف أو SHA أو المرجع…',
+  'migration.title': 'تم نقل الإعدادات',
+  'migration.message': 'نُسخت ملفاتك الشخصية ومساحات العمل والتفضيلات من {old} إلى {app}. تعذّر نقل الرموز المحفوظة ومفاتيح الذكاء الاصطناعي: استوردها من الإعدادات ← البيانات من ملف تصدير يتضمن الرموز، أو أدخلها من جديد.',
+  'migration.dismiss': 'حسنًا',
 }

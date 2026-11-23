@@ -13,7 +13,7 @@ import {
   noLinkedAccountMessage
 } from '../src/main/hosting'
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-privacy-edges-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-privacy-edges-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -181,8 +181,8 @@ describe.skipIf(process.platform === 'win32')('the other files in the user-data 
   const mode = (f: string): number => statSync(f).mode & 0o777
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
 
-  it('gitcito-info.json — keyed by repository paths — new, and one written world-readable', async () => {
-    const file = join(dir, 'gitcito-info.json')
+  it('githuttbr-info.json — keyed by repository paths — new, and one written world-readable', async () => {
+    const file = join(dir, 'githuttbr-info.json')
     writeFileSync(file, JSON.stringify({ repos: {} }))
     chmodSync(file, 0o644)
     const { registerInfoHandlers } = await import('../src/main/info')
@@ -192,14 +192,14 @@ describe.skipIf(process.platform === 'win32')('the other files in the user-data 
     expect(mode(file)).toBe(0o600)
   })
 
-  it('gitcito-keychain.json', async () => {
+  it('githuttbr-keychain.json', async () => {
     const { setConsent } = await import('../src/main/keychain')
     await setConsent('declined')
-    expect(mode(join(dir, 'gitcito-keychain.json'))).toBe(0o600)
+    expect(mode(join(dir, 'githuttbr-keychain.json'))).toBe(0o600)
   })
 
-  it('gitcito-repos.json', async () => {
-    const file = join(dir, 'gitcito-repos.json')
+  it('githuttbr-repos.json', async () => {
+    const file = join(dir, 'githuttbr-repos.json')
     writeFileSync(file, '[]')
     chmodSync(file, 0o644)
     const { forgetRepo } = await import('../src/main/repoRegistry')
@@ -207,11 +207,11 @@ describe.skipIf(process.platform === 'win32')('the other files in the user-data 
     expect(mode(file)).toBe(0o600)
   })
 
-  it('gitcito-analytics.json', async () => {
+  it('githuttbr-analytics.json', async () => {
     const { recordEvent } = await import('../src/main/analytics')
     await recordEvent('commit')
     await new Promise((r) => setTimeout(r, 700))
-    expect(mode(join(dir, 'gitcito-analytics.json'))).toBe(0o600)
+    expect(mode(join(dir, 'githuttbr-analytics.json'))).toBe(0o600)
   })
 
   it('no module that keeps a file in the user-data folder writes it with the default umask', () => {

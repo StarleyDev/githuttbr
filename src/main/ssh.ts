@@ -41,7 +41,7 @@ const pexecFile = promisify(execFile)
  * variable or a flag.
  */
 const sshDir = (): string => {
-  const override = isShotMode() ? process.env['GITCITO_SSH_DIR'] : undefined
+  const override = isShotMode() ? process.env['GITHUTTBR_SSH_DIR'] : undefined
   return override || join(homedir(), '.ssh')
 }
 
@@ -138,9 +138,9 @@ export async function sshAddToAgent(publicKeyPath: string, passphrase: string): 
   // reaches argv where any other process could read it off the process list.
   const { writeFile, rm, mkdtemp } = await import('fs/promises')
   const { tmpdir } = await import('os')
-  const dir = await mkdtemp(join(tmpdir(), 'gitcito-askpass-'))
+  const dir = await mkdtemp(join(tmpdir(), 'githuttbr-askpass-'))
   const askpass = join(dir, 'askpass.sh')
-  await writeFile(askpass, '#!/bin/sh\nprintf %s "$GITCITO_SSH_PASSPHRASE"\n', { mode: 0o700 })
+  await writeFile(askpass, '#!/bin/sh\nprintf %s "$GITHUTTBR_SSH_PASSPHRASE"\n', { mode: 0o700 })
   try {
     const { stdout, stderr } = await pexecFile('ssh-add', args, {
       env: {
@@ -150,7 +150,7 @@ export async function sshAddToAgent(publicKeyPath: string, passphrase: string): 
         // on one, so both are set.
         SSH_ASKPASS_REQUIRE: 'force',
         DISPLAY: process.env['DISPLAY'] || ':0',
-        GITCITO_SSH_PASSPHRASE: passphrase
+        GITHUTTBR_SSH_PASSPHRASE: passphrase
       }
     }).catch((e: { stdout?: string; stderr?: string; message?: string }) => ({
       stdout: e.stdout ?? '',

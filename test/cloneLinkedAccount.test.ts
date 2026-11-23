@@ -12,7 +12,7 @@ import { blanksOnly } from './credentialConfig'
 // link-only profile — so the clone must resolve that same profile in main too,
 // or git's own helper picks whichever account it likes.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-clone-linked-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-clone-linked-'))
 
 vi.mock('electron', () => ({
   app: { getPath: () => dir, isPackaged: false },
@@ -61,10 +61,10 @@ const CLOUD = [
 
 describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org and Azure', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     const base = defaultSettings().profiles[0]
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...defaultSettings(),
         onboardingCompleted: true,
@@ -145,7 +145,7 @@ describe('cloneCredentialEnv — a picked profile on github.com, bitbucket.org a
         expect(blanksOnly(env, origin), `${c.url} ${id}`).toBe(true)
         expect(env.GIT_ASKPASS).toBe('')
         expect(env.GIT_TERMINAL_PROMPT).toBe('0')
-        expect(Object.keys(env).some((k) => k.startsWith('GITCITO_GIT_'))).toBe(false)
+        expect(Object.keys(env).some((k) => k.startsWith('GITHUTTBR_GIT_'))).toBe(false)
         expect(revealCredentialEnv(env)).not.toMatch(/work-|personal-|helper-/)
       }
       // The provider check failing for a named profile is just as anonymous.

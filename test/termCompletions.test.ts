@@ -80,7 +80,7 @@ describe('reading from the shell directory', () => {
     execFileSync('git', ['-C', R, 'branch', 'topic/one'])
     const got = await readBranches(R)
     expect(Object.keys(got?.items ?? {})).toContain('topic/one')
-    const outside = mkdtempSync(join(tmpdir(), 'gitcito-nogit-'))
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-nogit-'))
     temp.push(outside)
     // An env var could point git elsewhere; a ceiling keeps it from walking up into a repo.
     process.env.GIT_CEILING_DIRECTORIES = tmpdir()
@@ -92,7 +92,7 @@ describe('reading from the shell directory', () => {
   })
 
   it('reads the Makefile of the current directory only', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-make-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-make-'))
     temp.push(dir)
     expect(await readMakeTargets(dir)).toBeNull()
     writeFileSync(join(dir, 'Makefile'), 'run: ## Start it\n')

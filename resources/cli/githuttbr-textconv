@@ -1,5 +1,5 @@
 #!/bin/sh
-# gitcito-textconv — the git textconv filter Gitcito ships.
+# githuttbr-textconv — the git textconv filter Gitcito ships.
 #
 # git invokes this with one argument, a path to (a temp copy of) the file,
 # and diffs whatever is printed to stdout. It turns .docx/.xlsx/.json into
@@ -8,7 +8,7 @@
 #
 # Inside the packaged app this file lives in resources/cli/, next to app.asar.
 # The build (scripts/after-pack.cjs) writes cli/app-binary: the app executable
-# relative to resources/ — ../gitcito on Linux, ../MacOS/<name> on macOS,
+# relative to resources/ — ../githuttbr on Linux, ../MacOS/<name> on macOS,
 # ../<name>.exe on Windows. ELECTRON_RUN_AS_NODE turns that executable into
 # plain Node — no window, no second app instance, and stdout flows back to git.
 # A packaged copy that cannot find it fails closed rather than run whatever
@@ -24,7 +24,7 @@ if [ -e "$RES/app.asar" ] || [ -e "$DIR/app-binary" ]; then
   APP_BIN=""
   [ -n "$rel" ] && APP_BIN="$RES/$rel"
   if [ -z "$APP_BIN" ] || [ ! -f "$APP_BIN" ] || [ ! -x "$APP_BIN" ] || [ ! -e "$RES/app.asar" ]; then
-    echo "gitcito-textconv: this installation is incomplete (no app executable found from $RES) — reinstall Gitcito" >&2
+    echo "githuttbr-textconv: this installation is incomplete (no app executable found from $RES) — reinstall GitHuttBr" >&2
     exit 1
   fi
   ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$RES/app.asar/out/main/textconvCli.js" "$@"

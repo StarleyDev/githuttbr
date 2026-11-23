@@ -10,10 +10,10 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
           // Headless git-textconv entry, run via ELECTRON_RUN_AS_NODE by
-          // resources/cli/gitcito-textconv — must stay electron-free.
+          // resources/cli/githuttbr-textconv — must stay electron-free.
           textconvCli: resolve(__dirname, 'src/main/textconvCli.ts'),
-          // Headless `gitcito doctor|status|repos|…`, run the same way by
-          // resources/cli/gitcito — also electron-free.
+          // Headless `githuttbr doctor|status|repos|…`, run the same way by
+          // resources/cli/githuttbr — also electron-free.
           cliEntry: resolve(__dirname, 'src/main/cliEntry.ts')
         }
       }

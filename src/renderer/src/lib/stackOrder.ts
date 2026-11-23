@@ -63,6 +63,6 @@ export function targetFor(info: StackInfo | null, branch: string): string {
  * git's paragraph about `rebase --continue`.
  */
 export function parseRouteConflict(message: string): { branch: string; parent: string } | null {
-  const m = /GITCITO_ROUTE_CONFLICT:([^:\s]+):([^:\s]+)/.exec(message)
+  const m = /GITHUTTBR_ROUTE_CONFLICT:([^:\s]+):([^:\s]+)/.exec(message)
   return m ? { branch: m[1], parent: m[2] } : null
 }

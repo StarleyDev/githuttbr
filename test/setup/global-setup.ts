@@ -18,7 +18,7 @@ import { MANIFEST, SETUP_SCRIPT } from '../helpers'
  * Workers are spawned after this runs, so they inherit the environment.
  */
 function hermeticGit(): () => void {
-  const dir = mkdtempSync(join(tmpdir(), 'gitcito-test-gitconfig-'))
+  const dir = mkdtempSync(join(tmpdir(), 'githuttbr-test-gitconfig-'))
   const file = join(dir, 'gitconfig')
   writeFileSync(file, '[user]\n\tuseConfigOnly = true\n')
   process.env.GIT_CONFIG_GLOBAL = file

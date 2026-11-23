@@ -11,7 +11,7 @@ import { bootLoaded, settingsIpc } from './settingsIpc'
 // The settings handlers against a fake keyring: what reaches the files, and
 // which renderer's blank counts as a clear.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-privacy-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-settings-privacy-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const keyring = { decrypts: 0 }
 
@@ -36,9 +36,9 @@ vi.mock('electron', () => ({
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-const FILES = ['gitcito-settings.json', 'gitcito-secrets.enc', 'gitcito-secrets.enc.bak', 'gitcito-log.json']
-const settingsFile = (): string => join(dir, 'gitcito-settings.json')
-const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
+const FILES = ['githuttbr-settings.json', 'githuttbr-secrets.enc', 'githuttbr-secrets.enc.bak', 'githuttbr-log.json']
+const settingsFile = (): string => join(dir, 'githuttbr-settings.json')
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
 const store = (): string => Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString()
 
 const ipc = settingsIpc(handlers)
@@ -53,7 +53,7 @@ const tokens = (gh: string, az: string): AppSettings => settingsWith(profileWith
 /** A fresh main process: nothing decrypted, no renderer holding anything. */
 async function restart(consent: 'granted' | 'declined' = 'granted', wipe = true): Promise<typeof import('../src/main/settings')> {
   if (wipe) for (const f of FILES) rmSync(join(dir, f), { force: true })
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent, explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent, explained: true }))
   vi.resetModules()
   handlers.clear()
   const mod = await import('../src/main/settings')

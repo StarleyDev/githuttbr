@@ -4713,4 +4713,7 @@ export const de: Dict = {
   'timeMachine.upOneFolder': 'Ein Ordner nach oben',
   'timeMachine.root': 'Stammordner',
   'history.searchPlaceholder': 'Commits nach Betreff, Autor, SHA oder Ref finden…',
+  'migration.title': 'Einstellungen übernommen',
+  'migration.message': 'Ihre Profile, Arbeitsbereiche und Präferenzen wurden aus {old} nach {app} kopiert. Gespeicherte Tokens und KI-Schlüssel konnten nicht mitkommen: Importieren Sie sie unter Einstellungen → Daten aus einem Export mit Tokens, oder geben Sie sie erneut ein.',
+  'migration.dismiss': 'Verstanden',
 }

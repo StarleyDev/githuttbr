@@ -6,22 +6,22 @@ import { join } from 'node:path'
 import { answerRepoChat } from '../src/main/repoChat'
 import { defaultProfile } from '../src/shared/types'
 
-const live = process.env.GITCITO_LIVE_AI === '1' ? it : it.skip
+const live = process.env.GITHUTTBR_LIVE_AI === '1' ? it : it.skip
 const roots: string[] = []
 
 afterAll(() => roots.forEach((root) => rmSync(root, { recursive: true, force: true })))
 
 live('prepares a license file action through an OpenAI-compatible provider', async () => {
-  const endpoint = process.env.GITCITO_LIVE_ENDPOINT
-  const apiKey = process.env.GITCITO_LIVE_API_KEY
-  const model = process.env.GITCITO_LIVE_MODEL
+  const endpoint = process.env.GITHUTTBR_LIVE_ENDPOINT
+  const apiKey = process.env.GITHUTTBR_LIVE_API_KEY
+  const model = process.env.GITHUTTBR_LIVE_MODEL
   expect(endpoint && apiKey && model).toBeTruthy()
 
-  const repo = mkdtempSync(join(tmpdir(), 'gitcito-live-chat-'))
+  const repo = mkdtempSync(join(tmpdir(), 'githuttbr-live-chat-'))
   roots.push(repo)
   execFileSync('git', ['-C', repo, 'init'])
   execFileSync('git', ['-C', repo, 'config', 'user.name', 'Gitcito Test'])
-  execFileSync('git', ['-C', repo, 'config', 'user.email', 'gitcito@example.invalid'])
+  execFileSync('git', ['-C', repo, 'config', 'user.email', 'githuttbr@example.invalid'])
   writeFileSync(join(repo, 'LICENSE'), 'MIT License\n\nCopyright MyAppDesk\n')
   execFileSync('git', ['-C', repo, 'add', 'LICENSE'])
   execFileSync('git', ['-C', repo, 'commit', '-m', 'test: seed license'])

@@ -30,7 +30,7 @@ describe('packaging hardening', () => {
     const config = await afterPack.fuseConfig()
     expect(config[FuseV1Options.EnableNodeOptionsEnvironmentVariable]).toBe(false)
     expect(config[FuseV1Options.EnableNodeCliInspectArguments]).toBe(false)
-    // resources/cli/gitcito runs its headless verbs with ELECTRON_RUN_AS_NODE.
+    // resources/cli/githuttbr runs its headless verbs with ELECTRON_RUN_AS_NODE.
     expect(config[FuseV1Options.RunAsNode]).toBe(true)
   })
 
@@ -53,11 +53,11 @@ describe('packaging hardening', () => {
     // fpm refuses to build the .deb without a project homepage.
     expect(pkg.homepage).toMatch(/^https:\/\//)
     // electron-builder 26 reads desktop keys from `desktop.entry`; top-level keys fail schema validation.
-    expect(pkg.build.linux?.desktop?.entry?.StartupWMClass).toBe('gitcito')
+    expect(pkg.build.linux?.desktop?.entry?.StartupWMClass).toBe('githuttbr')
   })
 
   it('the source-checkout shim opens the app by the appId in package.json', () => {
-    const shim = readFileSync(join(ROOT, 'resources/cli/gitcito'), 'utf8')
+    const shim = readFileSync(join(ROOT, 'resources/cli/githuttbr'), 'utf8')
     expect(shim).toContain(`open -n -b ${pkg.build.appId} --args`)
     // The old lookup by name: "Gitcito" stopped matching when the bundle was renamed.
     expect(shim).not.toContain('open -n -a "Gitcito"')

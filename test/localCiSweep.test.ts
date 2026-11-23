@@ -12,15 +12,15 @@ import { cloneFixture, cleanupFixtures } from './fixtures'
 let fakeDir = ''
 
 beforeAll(() => {
-  fakeDir = mkdtempSync(join(tmpdir(), 'gitcito-fake-act-'))
+  fakeDir = mkdtempSync(join(tmpdir(), 'githuttbr-fake-act-'))
   const bin = join(fakeDir, 'fake-act')
   writeFileSync(bin, '#!/bin/sh\nif [ "$1" = "--version" ]; then echo fake-act 1.0; exit 0; fi\necho "run in $PWD"\ntest -f ok.flag\n')
   chmodSync(bin, 0o755)
-  process.env.GITCITO_ACT_BIN = bin
+  process.env.GITHUTTBR_ACT_BIN = bin
 })
 
 afterAll(() => {
-  delete process.env.GITCITO_ACT_BIN
+  delete process.env.GITHUTTBR_ACT_BIN
   rmSync(fakeDir, { recursive: true, force: true })
   cleanupFixtures()
 })

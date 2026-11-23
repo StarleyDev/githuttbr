@@ -8,7 +8,7 @@ import type { SecretStore } from '../src/shared/secrets'
 // The v4.37.2 review: ways the settings hotfix could still overwrite the
 // user's file or lose (or resurrect) a token. Real handlers, a fake keyring.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-review-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-settings-review-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -26,8 +26,8 @@ vi.mock('electron', () => ({
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-const settingsFile = (): string => join(dir, 'gitcito-settings.json')
-const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
+const settingsFile = (): string => join(dir, 'githuttbr-settings.json')
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
 const storeJson = (): SecretStore =>
   JSON.parse(Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString().replace(/^enc:/, '')) as SecretStore
 const writeStore = (s: SecretStore): void =>
@@ -55,7 +55,7 @@ const settingsWith = (profile: Profile, extra: Partial<AppSettings> = {}): AppSe
 /** A fresh main process over a store holding a GitHub and an Azure token. */
 async function fresh(consent: 'granted' | 'declined' = 'granted'): Promise<void> {
   for (const f of readdirSync(dir)) rmSync(join(dir, f), { force: true, recursive: true })
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent, explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent, explained: true }))
   writeStore({ p: { githubToken: 'ghp_old', azureToken: 'az_old' } })
   writeFileSync(settingsFile(), JSON.stringify(settingsWith(profileWith({ name: 'Mine' }))))
   vi.resetModules()
@@ -107,10 +107,10 @@ describe('moving a damaged settings file aside', () => {
     expect(await raw('settings:get')).toEqual({ error: 'parse' })
     const moved = (await raw('settings:moveAside')) as string
     // The full path, so the boot screen can say where it went.
-    expect(moved.startsWith(join(realpathSync(dir), 'gitcito-settings.json.corrupt-'))).toBe(true)
+    expect(moved.startsWith(join(realpathSync(dir), 'githuttbr-settings.json.corrupt-'))).toBe(true)
     expect(readFileSync(moved, 'utf8')).toBe('{"profiles": [')
     expect(existsSync(settingsFile())).toBe(false)
-    expect(readdirSync(dir).some((f) => f.startsWith('gitcito-secrets.enc.corrupt-'))).toBe(true)
+    expect(readdirSync(dir).some((f) => f.startsWith('githuttbr-secrets.enc.corrupt-'))).toBe(true)
     const { settings, generation } = await reply('settings:get')
     expect(settings.onboardingCompleted).toBe(defaultSettings().onboardingCompleted)
     expect(await save({ ...settings, language: 'de' }, generation)).toBeUndefined()

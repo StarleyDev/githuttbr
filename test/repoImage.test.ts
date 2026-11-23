@@ -38,7 +38,7 @@ describe('repoImage', () => {
 
   it('refuses paths that escape the repository, directly or through a symlink', async () => {
     const R = cloneFixture('bisect-bug')
-    const outside = mkdtempSync(join(tmpdir(), 'gitcito-img-'))
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-img-'))
     writeFileSync(join(outside, 'secret.png'), PNG)
     expect(await gitService.repoImage(R, relative(R, join(outside, 'secret.png')))).toBeNull()
     expect(await gitService.repoImage(R, join(outside, 'secret.png'))).toBeNull()

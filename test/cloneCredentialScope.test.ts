@@ -15,7 +15,7 @@ import { credentialConfig } from './credentialConfig'
 // Bitbucket Data Center under /bitbucket, the shape where a token registered
 // for the whole origin reaches the other server.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-cred-scope-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-cred-scope-'))
 const hasOpenssl = (() => {
   try {
     execFileSync('openssl', ['version'], { stdio: 'ignore' })
@@ -199,10 +199,10 @@ beforeAll(async () => {
   chmodSync(helper, 0o755)
   writeFileSync(join(dir, 'gitconfig'), `[credential]\n\thelper = ${helper}\n`)
 
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
   const base = defaultSettings().profiles[0]
   writeFileSync(
-    join(dir, 'gitcito-settings.json'),
+    join(dir, 'githuttbr-settings.json'),
     JSON.stringify({
       ...defaultSettings(),
       onboardingCompleted: true,

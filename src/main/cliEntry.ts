@@ -1,7 +1,7 @@
 /**
- * The headless half of the `gitcito` command.
+ * The headless half of the `githuttbr` command.
  *
- * `resources/cli/gitcito` sends a verb here — `doctor`, `status`, `repos`,
+ * `resources/cli/githuttbr` sends a verb here — `doctor`, `status`, `repos`,
  * `commit-check`, `config`, `editor`, `completions` — when the answer belongs
  * in the terminal rather than in a window. The shim runs this file through the
  * app binary with `ELECTRON_RUN_AS_NODE`, i.e. as plain Node: **nothing
@@ -9,7 +9,7 @@
  * app instance that the single-instance lock immediately kills.
  *
  * The contract with a caller is git's contract: text on stdout, diagnostics on
- * stderr, and an exit code that means something. `gitcito doctor` in a CI job
+ * stderr, and an exit code that means something. `githuttbr doctor` in a CI job
  * is the whole point — the guard rails a repository declares in `.gitcito.json`
  * are worth little if only the person with the GUI open ever sees them.
  */
@@ -30,6 +30,7 @@ import { checkCommitMessage, type CommitCheckIssue } from '../shared/commitCheck
 import type { DoctorCheck, RepoConfig } from '../shared/types'
 import { PRODUCT_NAME } from '../shared/brand'
 import { APP_REPO_URL } from '../shared/appRepo'
+import { APP_NAME, SETTINGS_FILE, appDataDir } from './appIdentity'
 
 const pexecFile = promisify(execFile)
 
@@ -73,12 +74,12 @@ const gitOr = (cwd: string, args: string[], fallback = ''): Promise<string> =>
 async function repoRoot(dir?: string): Promise<string> {
   const start = resolve(dir ?? process.cwd())
   if (!existsSync(start)) {
-    err(`gitcito: no such directory: ${start}`)
+    err(`githuttbr: no such directory: ${start}`)
     process.exit(2)
   }
   const top = await gitOr(start, ['rev-parse', '--show-toplevel'])
   if (!top) {
-    err(`gitcito: not a git repository: ${start}`)
+    err(`githuttbr: not a git repository: ${start}`)
     process.exit(2)
   }
   return top
@@ -119,7 +120,7 @@ function parseArgs(argv: string[], aliases: Record<string, string> = {}): Args {
   }
 }
 
-// ─── gitcito doctor ─────────────────────────────────────────────────────────
+// ─── githuttbr doctor ─────────────────────────────────────────────────────────
 
 function doctorLine(check: DoctorCheck): string {
   const mark = check.status === 'ok' ? OK : check.status === 'warn' ? WARN : FAIL
@@ -134,7 +135,7 @@ async function cmdDoctor(argv: string[]): Promise<number> {
   const { config } = await readRepoConfig(root)
   if (!config?.requires) {
     out(`${dim('No requirements declared in')} ${REPO_CONFIG_FILE}${dim('.')}`)
-    out(dim(`Run \`gitcito config init\` to propose one from what this repository already contains.`))
+    out(dim(`Run \`githuttbr config init\` to propose one from what this repository already contains.`))
     return 0
   }
 
@@ -167,7 +168,7 @@ async function cmdDoctor(argv: string[]): Promise<number> {
   return failed.length ? 1 : 0
 }
 
-// ─── gitcito status ─────────────────────────────────────────────────────────
+// ─── githuttbr status ─────────────────────────────────────────────────────────
 
 interface StatusCounts {
   staged: number
@@ -246,7 +247,7 @@ function branchMatchesGlob(pattern: string, branch: string): boolean {
   return rx.test(branch)
 }
 
-// ─── gitcito commit-check ───────────────────────────────────────────────────
+// ─── githuttbr commit-check ───────────────────────────────────────────────────
 
 async function cmdCommitCheck(argv: string[]): Promise<number> {
   // `-m "text"` reads better in a shell than `--message=text`, and a hook is
@@ -266,7 +267,7 @@ async function cmdCommitCheck(argv: string[]): Promise<number> {
     const path = isAbsolute(file) ? file : resolve(cwd, file)
     raw = await readFile(path, 'utf8').catch(() => '')
     if (!raw) {
-      err(`gitcito: nothing to check — no message given and ${path} is empty`)
+      err(`githuttbr: nothing to check — no message given and ${path} is empty`)
       return 2
     }
   }
@@ -290,7 +291,7 @@ function reportCommitIssues(issues: CommitCheckIssue[]): number {
   return errors ? 1 : 0
 }
 
-// ─── gitcito config ─────────────────────────────────────────────────────────
+// ─── githuttbr config ─────────────────────────────────────────────────────────
 
 async function cmdConfig(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
@@ -312,7 +313,7 @@ async function cmdConfig(argv: string[]): Promise<number> {
     case 'check': {
       const raw = await readFile(file, 'utf8').catch(() => '')
       if (!raw) {
-        err(`gitcito: no ${REPO_CONFIG_FILE} in ${root}`)
+        err(`githuttbr: no ${REPO_CONFIG_FILE} in ${root}`)
         return 2
       }
       const { config, issues } = parseRepoConfig(raw)
@@ -327,7 +328,7 @@ async function cmdConfig(argv: string[]): Promise<number> {
     }
     case 'init': {
       if (existsSync(file) && !args.has('force')) {
-        err(`gitcito: ${REPO_CONFIG_FILE} already exists — pass --force to overwrite`)
+        err(`githuttbr: ${REPO_CONFIG_FILE} already exists — pass --force to overwrite`)
         return 2
       }
       const suggested = await suggestRepoConfig(root)
@@ -347,7 +348,7 @@ async function cmdConfig(argv: string[]): Promise<number> {
       return 0
     }
     default:
-      err(`gitcito config: unknown subcommand "${sub}" (expected init, show or check)`)
+      err(`githuttbr config: unknown subcommand "${sub}" (expected init, show or check)`)
       return 2
   }
 }
@@ -358,20 +359,17 @@ function summarizeConfig(config: RepoConfig): void {
   if (config.commit?.scopes?.length) out(`  ${dim('scopes')} ${config.commit.scopes.join(', ')}`)
 }
 
-// ─── gitcito repos ──────────────────────────────────────────────────────────
+// ─── githuttbr repos ──────────────────────────────────────────────────────────
 
 /** Where the desktop app keeps its settings, per platform. Mirrors Electron's
  *  own `app.getPath('userData')` — which is unavailable here, because importing
  *  electron is exactly what this entry point may not do. */
 function userDataDir(): string {
-  const home = homedir()
-  if (process.platform === 'darwin') return join(home, 'Library', 'Application Support', 'Gitcito')
-  if (process.platform === 'win32') return join(process.env.APPDATA ?? join(home, 'AppData', 'Roaming'), 'Gitcito')
-  return join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'Gitcito')
+  return join(appDataDir(homedir()), APP_NAME)
 }
 
 function readSettings(): unknown {
-  const file = join(userDataDir(), 'gitcito-settings.json')
+  const file = join(userDataDir(), SETTINGS_FILE)
   try {
     return JSON.parse(readFileSync(file, 'utf8'))
   } catch {
@@ -383,13 +381,13 @@ async function cmdRepos(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
   const repos = knownRepos(readSettings())
   if (!repos.length) {
-    out(dim(`No repositories yet — open one in ${PRODUCT_NAME}, or run \`gitcito .\` in a checkout.`))
+    out(dim(`No repositories yet — open one in ${PRODUCT_NAME}, or run \`githuttbr .\` in a checkout.`))
     return 0
   }
   const filter = args.rest[0]?.toLowerCase()
   const shown = filter ? repos.filter((r) => matchesRepo(r, filter)) : repos
   if (args.has('paths')) {
-    // Machine-readable, for `cd "$(gitcito repos --paths api | head -1)"`.
+    // Machine-readable, for `cd "$(githuttbr repos --paths api | head -1)"`.
     for (const repo of shown) out(repo.path)
     return shown.length ? 0 : 1
   }
@@ -404,7 +402,7 @@ async function cmdRepos(argv: string[]): Promise<number> {
   return shown.length ? 0 : 1
 }
 
-/** Resolve `gitcito open <name>` against the known repositories. Exported for
+/** Resolve `githuttbr open <name>` against the known repositories. Exported for
  *  the shim's `--resolve` mode, which needs the path before it can call `open`. */
 async function cmdResolve(argv: string[]): Promise<number> {
   const needle = argv[0]?.toLowerCase()
@@ -415,7 +413,7 @@ async function cmdResolve(argv: string[]): Promise<number> {
   return 0
 }
 
-// ─── gitcito editor ─────────────────────────────────────────────────────────
+// ─── githuttbr editor ─────────────────────────────────────────────────────────
 
 /** Wire (or unwire) Gitcito as git's message editor. `--wait` is what makes it
  *  usable there: git blocks until the file comes back, so the command has to
@@ -438,17 +436,17 @@ async function cmdEditor(argv: string[]): Promise<number> {
     return 0
   }
   if (sub !== 'install') {
-    err(`gitcito editor: unknown subcommand "${sub}" (expected install or uninstall)`)
+    err(`githuttbr editor: unknown subcommand "${sub}" (expected install or uninstall)`)
     return 2
   }
-  await set('core.editor', 'gitcito --wait')
-  await set('sequence.editor', 'gitcito --wait')
+  await set('core.editor', 'githuttbr --wait')
+  await set('sequence.editor', 'githuttbr --wait')
   out(`${OK} git will now open commit messages and rebase todos in ${PRODUCT_NAME} (${scope.slice(2)}).`)
-  out(dim('Undo with `gitcito editor uninstall`.'))
+  out(dim('Undo with `githuttbr editor uninstall`.'))
   return 0
 }
 
-// ─── gitcito completions ────────────────────────────────────────────────────
+// ─── githuttbr completions ────────────────────────────────────────────────────
 
 const HEADLESS_VERBS = ['doctor', 'status', 'repos', 'commit-check', 'config', 'editor', 'completions', 'help']
 const WINDOW_VERBS = [
@@ -492,9 +490,9 @@ function completions(shell: string): number {
   const verbs = ALL_VERBS.join(' ')
   switch (shell) {
     case 'bash':
-      out(`# gitcito bash completion — add to ~/.bashrc:
-#   eval "$(gitcito completions bash)"
-_gitcito() {
+      out(`# githuttbr bash completion — add to ~/.bashrc:
+#   eval "$(githuttbr completions bash)"
+_githuttbr() {
   local cur="\${COMP_WORDS[COMP_CWORD]}"
   if [ "\$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( \$(compgen -W "${verbs}" -- "\$cur") )
@@ -502,29 +500,29 @@ _gitcito() {
     COMPREPLY=( \$(compgen -d -- "\$cur") )
   fi
 }
-complete -F _gitcito gitcito`)
+complete -F _githuttbr githuttbr`)
       return 0
     case 'zsh':
-      out(`# gitcito zsh completion — add to ~/.zshrc:
-#   eval "$(gitcito completions zsh)"
-_gitcito() {
+      out(`# githuttbr zsh completion — add to ~/.zshrc:
+#   eval "$(githuttbr completions zsh)"
+_githuttbr() {
   if (( CURRENT == 2 )); then
     compadd ${verbs}
   else
     _files -/
   fi
 }
-compdef _gitcito gitcito`)
+compdef _githuttbr githuttbr`)
       return 0
     case 'fish':
-      out(`# gitcito fish completion — write to ~/.config/fish/completions/gitcito.fish:
-#   gitcito completions fish > ~/.config/fish/completions/gitcito.fish
-complete -c gitcito -f
-complete -c gitcito -n "__fish_use_subcommand" -a "${verbs}"
-complete -c gitcito -n "not __fish_use_subcommand" -a "(__fish_complete_directories)"`)
+      out(`# githuttbr fish completion — write to ~/.config/fish/completions/githuttbr.fish:
+#   githuttbr completions fish > ~/.config/fish/completions/githuttbr.fish
+complete -c githuttbr -f
+complete -c githuttbr -n "__fish_use_subcommand" -a "${verbs}"
+complete -c githuttbr -n "not __fish_use_subcommand" -a "(__fish_complete_directories)"`)
       return 0
     default:
-      err('gitcito completions: expected bash, zsh or fish')
+      err('githuttbr completions: expected bash, zsh or fish')
       return 2
   }
 }
@@ -545,34 +543,34 @@ function appVersion(): string {
 
 function usage(): void {
   const h = (s: string): string => bold(s)
-  out(`${h('gitcito')} — ${PRODUCT_NAME} from the command line
+  out(`${h('githuttbr')} — ${PRODUCT_NAME} from the command line
 
 ${h('OPEN')}
-  gitcito [path]                 Open a repository (default: the current directory)
-  gitcito open <name|path>       Open by tab name — \`gitcito open api\` finds it
-  gitcito [path] -n <name>       …with a display name
-  gitcito [path] -g <group>      …inside a group tab
+  githuttbr [path]                 Open a repository (default: the current directory)
+  githuttbr open <name|path>       Open by tab name — \`githuttbr open api\` finds it
+  githuttbr [path] -n <name>       …with a display name
+  githuttbr [path] -g <group>      …inside a group tab
 
 ${h('JUMP STRAIGHT TO A SURFACE')}
-  gitcito diff [path]            Working changes
-  gitcito graph [path]           The commit graph
-  gitcito show <ref>             One commit, in detail
-  gitcito blame <file> [-l N]    Blame, scrolled to a line
-  gitcito search <query>         Search the repository's code
-  gitcito conflicts | stack | stash | reflog | todos | chat | settings
-  gitcito ci | clean | bisect | absorb | snapshots | insights | terminal
-                                 …and the rest — \`gitcito help verbs\` lists them
+  githuttbr diff [path]            Working changes
+  githuttbr graph [path]           The commit graph
+  githuttbr show <ref>             One commit, in detail
+  githuttbr blame <file> [-l N]    Blame, scrolled to a line
+  githuttbr search <query>         Search the repository's code
+  githuttbr conflicts | stack | stash | reflog | todos | chat | settings
+  githuttbr ci | clean | bisect | absorb | snapshots | insights | terminal
+                                 …and the rest — \`githuttbr help verbs\` lists them
 
 ${h('ANSWER IN THE TERMINAL')}
-  gitcito status [path]          Branch, tracking, working tree, push checklist
-  gitcito doctor [path] [--fix]  Check what ${REPO_CONFIG_FILE} requires. Exit 1 on failure
-  gitcito commit-check [file]    Lint a commit message. Exit 1 on an error
-  gitcito config init|show|check Propose, print or validate ${REPO_CONFIG_FILE}
-  gitcito repos [filter]         Repositories ${PRODUCT_NAME} knows about (--paths for scripts)
+  githuttbr status [path]          Branch, tracking, working tree, push checklist
+  githuttbr doctor [path] [--fix]  Check what ${REPO_CONFIG_FILE} requires. Exit 1 on failure
+  githuttbr commit-check [file]    Lint a commit message. Exit 1 on an error
+  githuttbr config init|show|check Propose, print or validate ${REPO_CONFIG_FILE}
+  githuttbr repos [filter]         Repositories ${PRODUCT_NAME} knows about (--paths for scripts)
 
 ${h('SET UP')}
-  gitcito editor install         Use ${PRODUCT_NAME} for commit messages and rebase todos
-  gitcito completions <shell>    bash · zsh · fish
+  githuttbr editor install         Use ${PRODUCT_NAME} for commit messages and rebase todos
+  githuttbr completions <shell>    bash · zsh · fish
 
 ${h('OPTIONS')}
   -w, --wait                     Block until the opened file is closed (for git)
@@ -634,7 +632,7 @@ async function main(): Promise<void> {
       out(appVersion())
       break
     default:
-      err(`gitcito: unknown command "${verb}"`)
+      err(`githuttbr: unknown command "${verb}"`)
       usage()
       code = 2
   }
@@ -642,6 +640,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e) => {
-  err(`gitcito: ${e instanceof Error ? e.message : String(e)}`)
+  err(`githuttbr: ${e instanceof Error ? e.message : String(e)}`)
   process.exit(2)
 })

@@ -1,0 +1,34 @@
+/**
+ * The names the operating system knows this app by — distinct from the name it
+ * shows (`PRODUCT_NAME` in shared/brand.ts), which is free to change.
+ *
+ * Electron derives the settings folder and the OS keychain entry that encrypts
+ * tokens ("<name> Safe Storage") from the app name, so these are pinned here
+ * rather than read from the display name: renaming the product must never move
+ * the settings or orphan the keychain entry again. Pure — no Electron — so the
+ * CLI's headless half (cliEntry.ts) can use it too.
+ */
+import { join } from 'path'
+
+/** `app.setName` for packaged builds: the userData folder and the keychain entry. */
+export const APP_NAME = 'GitHuttBr'
+/** Dev builds: a separate userData folder, its own single-instance lock. */
+export const DEV_USER_DATA_DIR = 'githuttbr-dev'
+/** Every file the app keeps in userData starts with this. */
+export const FILE_PREFIX = 'githuttbr-'
+
+/** The app before 4.39 — its userData folder and file prefix, read once to migrate. */
+export const LEGACY_APP_NAME = 'Gitcito'
+export const LEGACY_FILE_PREFIX = 'gitcito-'
+
+export const SETTINGS_FILE = `${FILE_PREFIX}settings.json`
+export const LEGACY_SETTINGS_FILE = `${LEGACY_FILE_PREFIX}settings.json`
+
+type Env = Record<string, string | undefined>
+
+/** Electron's appData for this platform, computed without Electron (the CLI runs as plain Node). */
+export function appDataDir(home: string, platform: NodeJS.Platform = process.platform, env: Env = process.env): string {
+  if (platform === 'darwin') return join(home, 'Library', 'Application Support')
+  if (platform === 'win32') return env['APPDATA'] ?? join(home, 'AppData', 'Roaming')
+  return env['XDG_CONFIG_HOME'] ?? join(home, '.config')
+}

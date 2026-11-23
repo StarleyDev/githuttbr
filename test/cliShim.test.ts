@@ -9,7 +9,7 @@ import { ROOT } from './helpers'
 /**
  * The shell shims in resources/cli, run against a fake packaged layout:
  *
- *   <root>/Git HuttBr/gitcito-bin          the "app executable" (echoes how it was run)
+ *   <root>/Git HuttBr/githuttbr-bin          the "app executable" (echoes how it was run)
  *   <root>/Git HuttBr/resources/app.asar/  stands in for the archive
  *   <root>/Git HuttBr/resources/cli/       the shims + app-binary
  *
@@ -35,20 +35,20 @@ function exe(path: string, body: string): void {
 }
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), 'gitcito-shim-'))
+  root = mkdtempSync(join(tmpdir(), 'githuttbr-shim-'))
   app = join(root, 'Git HuttBr')
   res = join(app, 'resources')
   mkdirSync(join(res, 'cli'), { recursive: true })
   mkdirSync(join(res, 'app.asar', 'out', 'main'), { recursive: true })
-  for (const f of ['gitcito', 'gitcito-textconv']) {
+  for (const f of ['githuttbr', 'githuttbr-textconv']) {
     copyFileSync(join(ROOT, 'resources/cli', f), join(res, 'cli', f))
     chmodSync(join(res, 'cli', f), 0o755)
   }
   exe(
-    join(app, 'gitcito-bin'),
+    join(app, 'githuttbr-bin'),
     `line="APP RUN_AS_NODE=\${ELECTRON_RUN_AS_NODE:-} $*"\necho "$line"\necho "$line" >> '${join(root, 'launch.log')}'`
   )
-  writeFileSync(join(res, 'cli', 'app-binary'), '../gitcito-bin\n')
+  writeFileSync(join(res, 'cli', 'app-binary'), '../githuttbr-bin\n')
 
   // The planted interpreter and the planted entry point.
   fakeBinDir = join(root, 'path-bin')
@@ -60,7 +60,7 @@ beforeEach(() => {
 
   // Installed the way cli.ts installs it: an absolute symlink in a PATH dir.
   mkdirSync(join(root, 'local-bin'))
-  symlinkSync(join(res, 'cli', 'gitcito'), join(root, 'local-bin', 'gitcito'))
+  symlinkSync(join(res, 'cli', 'githuttbr'), join(root, 'local-bin', 'githuttbr'))
 })
 
 afterEach(() => {
@@ -76,9 +76,9 @@ function run(cmd: string, args: string[]): { status: number | null; stdout: stri
   return { status: r.status, stdout: r.stdout, stderr: r.stderr }
 }
 
-describe('resources/cli/gitcito, packaged', () => {
+describe('resources/cli/githuttbr, packaged', () => {
   it('runs headless verbs through the app binary as Node, via a PATH symlink', () => {
-    const r = run(join(root, 'local-bin', 'gitcito'), ['--version'])
+    const r = run(join(root, 'local-bin', 'githuttbr'), ['--version'])
     expect(r.status).toBe(0)
     expect(r.stdout.trim()).toBe(`APP RUN_AS_NODE=1 ${res}/app.asar/out/main/cliEntry.js --version`)
     expect(r.stdout).not.toContain('PLANTED')
@@ -86,7 +86,7 @@ describe('resources/cli/gitcito, packaged', () => {
 
   it('fails closed, without a PATH node, when the app binary cannot be found', () => {
     rmSync(join(res, 'cli', 'app-binary'))
-    const r = run(join(root, 'local-bin', 'gitcito'), ['doctor'])
+    const r = run(join(root, 'local-bin', 'githuttbr'), ['doctor'])
     expect(r.status).not.toBe(0)
     expect(r.stderr).toMatch(/incomplete/)
     expect(r.stdout).not.toContain('PLANTED')
@@ -94,30 +94,30 @@ describe('resources/cli/gitcito, packaged', () => {
 
   it('fails closed when app-binary names something that is not there', () => {
     writeFileSync(join(res, 'cli', 'app-binary'), '../MacOS/Gitcito\n')
-    const r = run(join(root, 'local-bin', 'gitcito'), ['status'])
+    const r = run(join(root, 'local-bin', 'githuttbr'), ['status'])
     expect(r.status).not.toBe(0)
     expect(r.stdout).not.toContain('PLANTED')
   })
 
   it('opens a window with the app binary itself, not with run-as-node', () => {
     // Even with the variable already in the caller's environment.
-    const r = run('sh', ['-c', `ELECTRON_RUN_AS_NODE=1 '${join(root, 'local-bin', 'gitcito')}' . ; sleep 0.3`])
+    const r = run('sh', ['-c', `ELECTRON_RUN_AS_NODE=1 '${join(root, 'local-bin', 'githuttbr')}' . ; sleep 0.3`])
     expect(r.status).toBe(0)
     expect(r.stderr).toBe('')
     expect(readFileSync(join(root, 'launch.log'), 'utf8').trim()).toBe(`APP RUN_AS_NODE= --open=${cwd}`)
   })
 })
 
-describe('resources/cli/gitcito-textconv, packaged', () => {
+describe('resources/cli/githuttbr-textconv, packaged', () => {
   it('runs the converter through the app binary as Node', () => {
-    const r = run(join(res, 'cli', 'gitcito-textconv'), ['/tmp/some file.docx'])
+    const r = run(join(res, 'cli', 'githuttbr-textconv'), ['/tmp/some file.docx'])
     expect(r.status).toBe(0)
     expect(r.stdout.trim()).toBe(`APP RUN_AS_NODE=1 ${res}/app.asar/out/main/textconvCli.js /tmp/some file.docx`)
   })
 
   it('fails closed, without a PATH node, when the app binary cannot be found', () => {
     rmSync(join(res, 'cli', 'app-binary'))
-    const r = run(join(res, 'cli', 'gitcito-textconv'), ['x.docx'])
+    const r = run(join(res, 'cli', 'githuttbr-textconv'), ['x.docx'])
     expect(r.status).not.toBe(0)
     expect(r.stderr).toMatch(/incomplete/)
     expect(r.stdout).not.toContain('PLANTED')
@@ -128,11 +128,11 @@ describe('after-pack writes cli/app-binary', () => {
   const ctx = (platform: string): unknown => ({
     appOutDir: '/out',
     electronPlatformName: platform,
-    packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'gitcito' }
+    packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'githuttbr' }
   })
 
   it('points each platform at its real executable', () => {
-    expect(afterPack.cliAppBinary(ctx('linux'))).toEqual({ resources: '/out/resources', relative: '../gitcito' })
+    expect(afterPack.cliAppBinary(ctx('linux'))).toEqual({ resources: '/out/resources', relative: '../githuttbr' })
     expect(afterPack.cliAppBinary(ctx('win32'))).toEqual({ resources: '/out/resources', relative: '../Git HuttBr.exe' })
     expect(afterPack.cliAppBinary(ctx('darwin'))).toEqual({
       resources: '/out/Git HuttBr.app/Contents/Resources',
@@ -143,16 +143,16 @@ describe('after-pack writes cli/app-binary', () => {
   it('writes the file the shims read, and refuses a layout without the shims', async () => {
     const out = join(root, 'linux-unpacked')
     mkdirSync(join(out, 'resources'), { recursive: true })
-    exe(join(out, 'gitcito'), 'true')
+    exe(join(out, 'githuttbr'), 'true')
     const context = {
       appOutDir: out,
       electronPlatformName: 'linux',
-      packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'gitcito' }
+      packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'githuttbr' }
     }
     await expect(afterPack.writeCliAppBinary(context)).rejects.toThrow()
     mkdirSync(join(out, 'resources', 'cli'))
-    writeFileSync(join(out, 'resources', 'cli', 'gitcito'), '')
+    writeFileSync(join(out, 'resources', 'cli', 'githuttbr'), '')
     await afterPack.writeCliAppBinary(context)
-    expect(readFileSync(join(out, 'resources', 'cli', 'app-binary'), 'utf8')).toBe('../gitcito\n')
+    expect(readFileSync(join(out, 'resources', 'cli', 'app-binary'), 'utf8')).toBe('../githuttbr\n')
   })
 })

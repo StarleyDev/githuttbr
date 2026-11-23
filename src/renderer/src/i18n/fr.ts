@@ -4653,4 +4653,7 @@ export const fr: Dict = {
   'timeMachine.upOneFolder': 'Remonter d’un dossier',
   'timeMachine.root': 'Racine',
   'history.searchPlaceholder': 'Rechercher des commits par sujet, auteur, SHA ou référence…',
+  'migration.title': 'Paramètres repris',
+  'migration.message': 'Vos profils, espaces de travail et préférences ont été copiés de {old} vers {app}. Les jetons enregistrés et les clés d’IA n’ont pas pu suivre : importez-les dans Paramètres → Données depuis un export qui inclut les jetons, ou saisissez-les à nouveau.',
+  'migration.dismiss': 'Compris',
 }

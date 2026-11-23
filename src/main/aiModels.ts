@@ -22,7 +22,7 @@ import { writePrivateFile } from './privateFile'
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
-const cachePath = (): string => join(app.getPath('userData'), 'gitcito-models.json')
+const cachePath = (): string => join(app.getPath('userData'), 'githuttbr-models.json')
 
 interface CacheEntry {
   models: string[]

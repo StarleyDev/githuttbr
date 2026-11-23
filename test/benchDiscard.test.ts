@@ -11,7 +11,7 @@ afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
 
 describe('discard batching', () => {
   it('discards 30 modified files in a handful of spawns, not one-per-file', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-bench-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-bench-'))
     dirs.push(dir)
     const git = (...a: string[]): string =>
       execFileSync('git', ['-C', dir, '-c', 'user.name=T', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' })

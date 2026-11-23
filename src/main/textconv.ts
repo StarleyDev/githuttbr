@@ -53,7 +53,7 @@ export function stringsToText(buf: Buffer): string {
     // Node decodes little-endian only. Swap a copy — the caller's buffer is not
     // ours to reverse in place.
     const be = Buffer.from(buf.subarray(2))
-    if (be.length % 2 !== 0) throw new Error('gitcito-textconv: truncated UTF-16 .strings')
+    if (be.length % 2 !== 0) throw new Error('githuttbr-textconv: truncated UTF-16 .strings')
     text = be.swap16().toString('utf16le')
   } else {
     text = buf.toString('utf-8').replace(/^\uFEFF/, '')
@@ -71,6 +71,6 @@ export async function convertFile(path: string): Promise<string> {
   if (ext === '.docx') return docxToText(await readFile(path))
   if (ext === '.xlsx' || ext === '.xls') return xlsxToCsv(await readFile(path))
   throw new Error(
-    `gitcito-textconv: unsupported file type '${ext || path}' (supported: .docx, .xlsx, .xls, .json, .xcstrings, .strings)`
+    `githuttbr-textconv: unsupported file type '${ext || path}' (supported: .docx, .xlsx, .xls, .json, .xcstrings, .strings)`
   )
 }

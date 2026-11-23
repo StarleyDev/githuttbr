@@ -179,7 +179,7 @@ describe('deep-history-monorepo', () => {
 describe('picking several folders to open', () => {
   it('tells a repository from a plain or missing folder', async () => {
     const path = repoPath('line-staging')
-    const plain = mkdtempSync(join(tmpdir(), 'gitcito-plain-'))
+    const plain = mkdtempSync(join(tmpdir(), 'githuttbr-plain-'))
     try {
       expect(await gitService.isRepository(path)).toBe(true)
       expect(await gitService.isRepository(plain)).toBe(false)

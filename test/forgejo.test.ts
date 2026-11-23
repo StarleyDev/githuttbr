@@ -71,12 +71,12 @@ describe('Forgejo credentials stay on their own instance', () => {
   })
 
   async function withProfile(forgejoUrl?: string): Promise<void> {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-fj-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-fj-'))
     dirs.push(dir)
     vi.spyOn(app, 'getPath').mockReturnValue(dir)
     const s = defaultSettings()
     const profile = { ...s.profiles[0], forgejoUrl, links: { forgejo: { source: 'git' as const, login: 'me' } } }
-    writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify({ ...s, onboardingCompleted: true, profiles: [profile] }))
+    writeFileSync(join(dir, 'githuttbr-settings.json'), JSON.stringify({ ...s, onboardingCompleted: true, profiles: [profile] }))
     await readSettings()
   }
 
@@ -103,14 +103,14 @@ describe('clone credentials across two Forgejo servers', () => {
   })
 
   it("never hands the active profile's token to another profile's server", async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-fj2-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-fj2-'))
     dirs.push(dir)
     vi.spyOn(app, 'getPath').mockReturnValue(dir)
     const s = defaultSettings()
     const work = { ...s.profiles[0], id: 'work', name: 'work', forgejoTokenIssuer: 'https://git.work.example', forgejoToken: 'fj_work', forgejoUrl: 'git.work.example' }
     const home = { ...s.profiles[0], id: 'home', name: 'home', forgejoUrl: 'git.home.example' }
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({ ...s, onboardingCompleted: true, activeProfileId: 'work', profiles: [work, home] })
     )
     await readSettings()

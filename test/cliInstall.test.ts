@@ -38,11 +38,11 @@ describe('posixQuote', () => {
 
 describe('the privileged install command', () => {
   it('links and unlinks paths with spaces, quotes, $ and backticks without running them', () => {
-    const root = mkdtempSync(join(tmpdir(), 'gitcito-cli-quote-'))
+    const root = mkdtempSync(join(tmpdir(), 'githuttbr-cli-quote-'))
     try {
       const dir = join(root, "bin dir $(touch pwned) `touch pwned` it's")
-      const shim = join(root, "Git HuttBr.app/Contents/Resources/cli/gitcito $HOME")
-      const link = join(dir, 'gitcito')
+      const shim = join(root, "Git HuttBr.app/Contents/Resources/cli/githuttbr $HOME")
+      const link = join(dir, 'githuttbr')
       execFileSync('sh', ['-c', privilegedLinkCommand(dir, shim, link)], { cwd: root })
       expect(lstatSync(link).isSymbolicLink()).toBe(true)
       expect(readlinkSync(link)).toBe(shim)
@@ -58,9 +58,9 @@ describe('the privileged install command', () => {
 
   it('embeds the command in an AppleScript string that escapes only \\ and "', () => {
     expect(appleScriptString('a "b" \\c')).toBe('"a \\"b\\" \\\\c"')
-    const script = privilegedScript(privilegedLinkCommand('/usr/local/bin', '/Applications/Git HuttBr.app/x', '/usr/local/bin/gitcito'))
+    const script = privilegedScript(privilegedLinkCommand('/usr/local/bin', '/Applications/Git HuttBr.app/x', '/usr/local/bin/githuttbr'))
     expect(script).toBe(
-      `do shell script "mkdir -p '/usr/local/bin' && ln -sf '/Applications/Git HuttBr.app/x' '/usr/local/bin/gitcito'" with administrator privileges`
+      `do shell script "mkdir -p '/usr/local/bin' && ln -sf '/Applications/Git HuttBr.app/x' '/usr/local/bin/githuttbr'" with administrator privileges`
     )
   })
 
@@ -81,32 +81,32 @@ describe('the privileged install command', () => {
 
 describe('when the CLI may be installed', () => {
   it('refuses on Windows and under any AppImage', () => {
-    expect(cliInstallRefusal('C:\\x\\gitcito', 'win32', {})).toBe('windows')
-    expect(cliInstallRefusal('/tmp/.mount_GitHu1234/resources/cli/gitcito', 'linux', { APPIMAGE: '/a.AppImage' })).toBe(
+    expect(cliInstallRefusal('C:\\x\\githuttbr', 'win32', {})).toBe('windows')
+    expect(cliInstallRefusal('/tmp/.mount_GitHu1234/resources/cli/githuttbr', 'linux', { APPIMAGE: '/a.AppImage' })).toBe(
       'appimage'
     )
     // APPIMAGE alone is enough: an extract-and-run root need not look like a mount.
-    expect(cliInstallRefusal('/opt/odd/resources/cli/gitcito', 'linux', { APPIMAGE: '/a.AppImage' })).toBe('appimage')
-    expect(cliInstallRefusal('/tmp/.mount_GitHu1234/resources/cli/gitcito', 'linux', {})).toBe('appimage')
+    expect(cliInstallRefusal('/opt/odd/resources/cli/githuttbr', 'linux', { APPIMAGE: '/a.AppImage' })).toBe('appimage')
+    expect(cliInstallRefusal('/tmp/.mount_GitHu1234/resources/cli/githuttbr', 'linux', {})).toBe('appimage')
   })
 
   it('allows a .deb or a macOS bundle', () => {
-    expect(cliInstallRefusal('/opt/Git HuttBr/resources/cli/gitcito', 'linux', {})).toBeNull()
-    expect(cliInstallRefusal('/Applications/Git HuttBr.app/Contents/Resources/cli/gitcito', 'darwin', {})).toBeNull()
+    expect(cliInstallRefusal('/opt/Git HuttBr/resources/cli/githuttbr', 'linux', {})).toBeNull()
+    expect(cliInstallRefusal('/Applications/Git HuttBr.app/Contents/Resources/cli/githuttbr', 'darwin', {})).toBeNull()
   })
 
   it('calls a link into an AppImage mount stale, and nothing else', () => {
-    expect(isStaleCliTarget('/tmp/.mount_Git HuO2TrCj/resources/cli/gitcito')).toBe(true)
-    expect(isStaleCliTarget('/tmp/appimage_extracted_ab12/resources/cli/gitcito')).toBe(true)
-    expect(isStaleCliTarget('/opt/Git HuttBr/resources/cli/gitcito')).toBe(false)
-    expect(isStaleCliTarget('/Applications/Git HuttBr.app/Contents/Resources/cli/gitcito')).toBe(false)
+    expect(isStaleCliTarget('/tmp/.mount_Git HuO2TrCj/resources/cli/githuttbr')).toBe(true)
+    expect(isStaleCliTarget('/tmp/appimage_extracted_ab12/resources/cli/githuttbr')).toBe(true)
+    expect(isStaleCliTarget('/opt/Git HuttBr/resources/cli/githuttbr')).toBe(false)
+    expect(isStaleCliTarget('/Applications/Git HuttBr.app/Contents/Resources/cli/githuttbr')).toBe(false)
   })
 
   it('judges a stale link by its target name, not by whether the target exists', () => {
     const root = mkdtempSync(join(tmpdir(), '.mount_GitcitoTest'))
     try {
-      writeFileSync(join(root, 'gitcito'), '#!/bin/sh\necho planted\n')
-      expect(isStaleCliTarget(join(root, 'gitcito'))).toBe(true)
+      writeFileSync(join(root, 'githuttbr'), '#!/bin/sh\necho planted\n')
+      expect(isStaleCliTarget(join(root, 'githuttbr'))).toBe(true)
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

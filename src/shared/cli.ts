@@ -1,9 +1,9 @@
-/** The `gitcito` command line: what an invocation can ask the app to do, and
+/** The `githuttbr` command line: what an invocation can ask the app to do, and
  *  how that request survives the trip through Chromium's argv parser.
  *
  *  Two halves live behind the one binary. Everything in this file is the
  *  *launcher* half — a request that needs the window, forwarded to the running
- *  instance over IPC. The *headless* half (`gitcito doctor`, `status`, …) never
+ *  instance over IPC. The *headless* half (`githuttbr doctor`, `status`, …) never
  *  reaches Electron at all; it runs as plain Node out of `main/cliEntry.ts`. */
 
 /** A surface the CLI can ask the window to open once the repository is on
@@ -52,7 +52,7 @@ export function isCliView(value: string): value is CliView {
   return (CLI_VIEWS as readonly string[]).includes(value)
 }
 
-/** Payload carried by a `gitcito <dir> [-n name] [-g group] [verb …]` CLI
+/** Payload carried by a `githuttbr <dir> [-n name] [-g group] [verb …]` CLI
  *  invocation. Parsed by the main process from `process.argv` on cold launch
  *  and from the `second-instance` event's argv on subsequent invocations (see
  *  src/main/index.ts), then forwarded to the renderer over IPC. */
@@ -69,14 +69,14 @@ export interface CliOpenPayload {
   /** 1-based line to scroll to, for the file-backed views. */
   line?: number
   /** Absolute path of a file the app was asked to edit on git's behalf
-   *  (`core.editor = gitcito --wait`). */
+   *  (`core.editor = githuttbr --wait`). */
   edit?: string
   /** Sentinel file the waiting shell process polls. Main deletes it when the
    *  edit finishes, which is what unblocks git. */
   wait?: string
 }
 
-/** Extracts the `--flag=value` switches the bundled shim (resources/cli/gitcito)
+/** Extracts the `--flag=value` switches the bundled shim (resources/cli/githuttbr)
  *  passes through `open -a Gitcito --args`.
  *
  *  Flags MUST use the `--flag=value` form (single token), not `--flag value`
@@ -113,7 +113,7 @@ export function parseCliOpenArgs(argv: string[]): CliOpenPayload | null {
   }
 }
 
-/** Why "Install 'gitcito' command in PATH" refuses: 'windows' has no shim yet;
+/** Why "Install 'githuttbr' command in PATH" refuses: 'windows' has no shim yet;
  *  'appimage' has no path that outlives the running app (main/cliInstall.ts). */
 export type CliInstallRefusal = 'appimage' | 'windows'
 
@@ -126,9 +126,9 @@ export interface CliInstallResult {
 }
 
 export interface CliStatus {
-  /** A `gitcito` link in PATH points at this app's shim. */
+  /** A `githuttbr` link in PATH points at this app's shim. */
   installed: boolean
-  /** A `gitcito` link pointing into an AppImage mount — stale, and hijackable. */
+  /** A `githuttbr` link pointing into an AppImage mount — stale, and hijackable. */
   staleLink: string | null
   /** Set when this build cannot install the command at all. */
   refusal: CliInstallRefusal | null

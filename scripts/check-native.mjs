@@ -14,7 +14,7 @@
  * failure this catches is not an ABI mismatch — it is the addon missing or its
  * native build absent for this platform.
  *
- * GITCITO_ALLOW_BASIC_TERMINAL=1 packages anyway, for a platform where node-pty
+ * GITHUTTBR_ALLOW_BASIC_TERMINAL=1 packages anyway, for a platform where node-pty
  * genuinely cannot be built.
  */
 import { spawnSync } from 'node:child_process'
@@ -25,8 +25,8 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(join(root, 'package.json'))
 
-if (process.env.GITCITO_ALLOW_BASIC_TERMINAL === '1') {
-  console.warn('⚠ check-native: GITCITO_ALLOW_BASIC_TERMINAL=1 — packaging without checking node-pty.')
+if (process.env.GITHUTTBR_ALLOW_BASIC_TERMINAL === '1') {
+  console.warn('⚠ check-native: GITHUTTBR_ALLOW_BASIC_TERMINAL=1 — packaging without checking node-pty.')
   process.exit(0)
 }
 
@@ -56,6 +56,6 @@ console.error(`✖ check-native: node-pty does not load in Electron ${version}: 
     npm install                          # builds node-pty, then rebuilds it for Electron
     npx electron-rebuild -f -w node-pty  # or just the rebuild, and read its output
 
-  To package anyway: GITCITO_ALLOW_BASIC_TERMINAL=1
+  To package anyway: GITHUTTBR_ALLOW_BASIC_TERMINAL=1
 `)
 process.exit(1)

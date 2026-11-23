@@ -191,7 +191,7 @@ export async function runTests(repoPath: string): Promise<TestRunResult> {
   let dir: string | undefined
   try {
     // A private directory, so the report's name is not guessable in the shared tmp.
-    dir = await mkdtemp(join(tmpdir(), 'gitcito-tests-'))
+    dir = await mkdtemp(join(tmpdir(), 'githuttbr-tests-'))
     if (cancelled.has(runId)) {
       return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms: Date.now() - started, cancelled: true }
     }

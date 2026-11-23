@@ -54,7 +54,7 @@ interface WikiData {
   repos: Record<string, RepoWiki>
 }
 
-const filePath = (): string => join(app.getPath('userData'), 'gitcito-wiki.json')
+const filePath = (): string => join(app.getPath('userData'), 'githuttbr-wiki.json')
 const empty = (): WikiData => ({ repos: {} })
 
 async function load(): Promise<WikiData> {

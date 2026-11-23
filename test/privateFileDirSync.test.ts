@@ -25,7 +25,7 @@ vi.mock('fs/promises', async (importOriginal) => {
   return { ...real, default: { ...real, open }, open }
 })
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-dirsync-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-dirsync-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
 describe('writePrivateFile when the directory fsync fails', () => {

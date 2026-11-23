@@ -264,7 +264,7 @@ describe('pushing several branches in one go', () => {
   }
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-pushbranches-'))
+    dir = mkdtempSync(join(tmpdir(), 'githuttbr-pushbranches-'))
     repo = join(dir, 'repo')
     remote = join(dir, 'remote.git')
     execFileSync('git', ['init', '-q', '--bare', '-b', 'main', remote])

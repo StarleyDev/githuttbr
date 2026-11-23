@@ -4708,4 +4708,7 @@ export const es: Dict = {
   'timeMachine.upOneFolder': 'Subir una carpeta',
   'timeMachine.root': 'Raíz',
   'history.searchPlaceholder': 'Buscar commits por asunto, autor, SHA o referencia…',
+  'migration.title': 'Ajustes trasladados',
+  'migration.message': 'Tus perfiles, espacios de trabajo y preferencias se copiaron de {old} a {app}. Los tokens guardados y las claves de IA no pudieron trasladarse: impórtalos en Ajustes → Datos desde una exportación que incluya tokens, o vuelve a introducirlos.',
+  'migration.dismiss': 'Entendido',
 }

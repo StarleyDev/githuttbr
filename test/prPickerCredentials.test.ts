@@ -9,7 +9,7 @@ import { defaultSettings, type CreatePrResult, type PrPickerOptions } from '../s
 // without the Project and Team scope, say — must cost the list and nothing
 // else: never evict the credential the user's pushes and the create rely on.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-pr-picker-cred-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-pr-picker-cred-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -52,8 +52,8 @@ const GITLAB = 'https://gitlab.com/team/app.git'
 let status = 401
 
 beforeAll(async () => {
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
-  writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify({ ...defaultSettings(), onboardingCompleted: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-settings.json'), JSON.stringify({ ...defaultSettings(), onboardingCompleted: true }))
   const { readSettings } = await import('../src/main/settings')
   await readSettings()
   const { registerHostingHandlers } = await import('../src/main/hosting')

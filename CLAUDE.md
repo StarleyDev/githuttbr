@@ -361,7 +361,7 @@ that needs a repo in an odd state is a scenario, not a `prepare` hack.
 `~/.ssh`, a global git config, a credential store — must be pointed at a
 generated fake for its shot, not captured as it is on your disk. The SSH shot is
 the worked example: it generates a throwaway keypair and redirects the app with
-`GITCITO_SSH_DIR`, which `main/ssh.ts` honours **only** under `--shot`. Masking
+`GITHUTTBR_SSH_DIR`, which `main/ssh.ts` honours **only** under `--shot`. Masking
 values with `***` is the wrong fix — it makes the UI look broken and puts
 redaction logic in production code.
 
@@ -398,12 +398,12 @@ redaction logic in production code.
 | `.claude/hooks/` | The i18n guard (per edit) and the verify gate (per turn) |
 | `docs/help/` | The in-app handbook — one Markdown file per page |
 | `scripts/docs-check.mjs` | The docs guard (`npm run lint:docs`) |
-| `scripts/check-native.mjs` | The packaging guard (`npm run check:native`, run by `dist:*` and `release`): refuses to package when node-pty does not load in Electron, since the terminal would silently fall back to basic shell mode. `GITCITO_ALLOW_BASIC_TERMINAL=1` overrides |
+| `scripts/check-native.mjs` | The packaging guard (`npm run check:native`, run by `dist:*` and `release`): refuses to package when node-pty does not load in Electron, since the terminal would silently fall back to basic shell mode. `GITHUTTBR_ALLOW_BASIC_TERMINAL=1` overrides |
 | `scripts/docs-map.json` | Which page documents which modal / page tab / command |
 | `scripts/build-site.mjs` | The GitHub Pages site (`npm run site`) |
 | `examples/screenshots/` | Playwright screenshot + clip automation (`npm run screenshots`) |
 | `examples/monster-repo.sh` | Builds a 140k-commit / 92k-file repo for perf work (`npm run playground:monster`). Not part of the playground — it lives in gitignored `examples/monster/` and nothing wipes it |
 | `examples/repo-stats.sh` | Times the git commands a refresh spawns, against any repo (`npm run repo:stats [path]`) |
-| `test/perf.bench.test.ts` | Times the gitService reads a refresh performs — skipped unless `GITCITO_BENCH_REPO` points at a repo |
+| `test/perf.bench.test.ts` | Times the gitService reads a refresh performs — skipped unless `GITHUTTBR_BENCH_REPO` points at a repo |
 | `ROADMAP.md` | What might come next, and what is deliberately out |
 | `.github/workflows/pages.yml` | Deploys that site on release and on docs pushes |

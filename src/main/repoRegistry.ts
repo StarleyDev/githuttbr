@@ -31,7 +31,7 @@ function isPlausibleRepoPath(path: unknown): path is string {
   return p.length > 0 && p.length <= 4096 && isAbsolute(p) && !p.includes('\0')
 }
 
-export const registryFilePath = (): string => join(app.getPath('userData'), 'gitcito-repos.json')
+export const registryFilePath = (): string => join(app.getPath('userData'), 'githuttbr-repos.json')
 
 // Every mutation below is load-mutate-save, so two overlapping calls would be
 // last-writer-wins — and `remember` is fired without awaiting on every tab

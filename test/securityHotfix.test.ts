@@ -19,7 +19,7 @@ const gitIn = (cwd: string, ...args: string[]): string =>
 
 const dirs: string[] = []
 const scratch = (): string => {
-  const d = mkdtempSync(join(tmpdir(), 'gitcito-sec-'))
+  const d = mkdtempSync(join(tmpdir(), 'githuttbr-sec-'))
   dirs.push(d)
   return d
 }

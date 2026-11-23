@@ -18,7 +18,7 @@ export interface TokenUsage {
   totalTokens: number
 }
 
-const filePath = (): string => join(app.getPath('userData'), 'gitcito-analytics.json')
+const filePath = (): string => join(app.getPath('userData'), 'githuttbr-analytics.json')
 
 let cache: Analytics | null = null
 

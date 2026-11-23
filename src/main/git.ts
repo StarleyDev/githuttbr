@@ -352,7 +352,7 @@ const gitInstances = new Map<string, SimpleGit>()
  * owns — a key named here also skips simple-git's vulnerability check, which is why this
  * is `submodule.*.url` and never `submodule.*` (that would let `submodule.x.update=!cmd`).
  */
-export const GITCITO_CONFIG_KEYS: readonly string[] = [
+export const GITHUTTBR_CONFIG_KEYS: readonly string[] = [
   'branch.*.gitcitoparent',
   'branch.*.gitcitobase',
   'gitcito.protectedbranches',
@@ -372,7 +372,7 @@ export const GITCITO_CONFIG_KEYS: readonly string[] = [
 const gitFor = (repoPath: string): SimpleGit => {
   let git = gitInstances.get(repoPath)
   if (!git) {
-    git = simpleGit(repoPath, { allowConfig: GITCITO_CONFIG_KEYS })
+    git = simpleGit(repoPath, { allowConfig: GITHUTTBR_CONFIG_KEYS })
     gitInstances.set(repoPath, git)
   }
   return git
@@ -816,13 +816,13 @@ async function copyIgnoredIntoWorktree(srcRepo: string, dest: string): Promise<v
   }
 }
 
-/** The textconv shim Gitcito ships (resources/cli/gitcito-textconv). */
+/** The textconv shim Gitcito ships (resources/cli/githuttbr-textconv). */
 export function bundledTextconvPath(): string {
   // Packaged: extraResources puts cli/ next to app.asar. Source checkout and
   // tests: resources/ sits at the repo root, two levels up from this file.
-  const packaged = process.resourcesPath ? join(process.resourcesPath, 'cli', 'gitcito-textconv') : ''
+  const packaged = process.resourcesPath ? join(process.resourcesPath, 'cli', 'githuttbr-textconv') : ''
   if (packaged && existsSync(packaged)) return packaged
-  return resolvePath(__dirname, '../../resources/cli/gitcito-textconv')
+  return resolvePath(__dirname, '../../resources/cli/githuttbr-textconv')
 }
 
 function canExecute(path: string): boolean {
@@ -1618,7 +1618,7 @@ async function mergeHunkIntoFile(
   if (!oursPath) return null
   if (!(await lstat(oursPath).catch(() => null))?.isFile()) return null
 
-  const dir = await mkdtemp(join(tmpdir(), 'gitcito-merge-'))
+  const dir = await mkdtemp(join(tmpdir(), 'githuttbr-merge-'))
   try {
     // Bytes, and through the file's filters (eol, LFS smudge), so the base is
     // in the same form as the working copy it is merged with. A patch that then
@@ -1650,7 +1650,7 @@ async function mergeHunkIntoFile(
       () => false
     )
     if (!applied) return null
-    const basePath = join(dir, '.gitcito-merge-base')
+    const basePath = join(dir, '.githuttbr-merge-base')
     await writeFile(basePath, base)
 
     // merge-file exits with the number of conflicts, so a non-zero exit with
@@ -1751,8 +1751,8 @@ async function rewriteWithEdits(
 ): Promise<CommitEditPreview> {
   const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
   const stamp = `${process.pid}-${Date.now()}`
-  const tmpIndex = join(gitDir, `gitcito-edit-index-${stamp}`)
-  const tmpBlob = join(gitDir, `gitcito-edit-blob-${stamp}`)
+  const tmpIndex = join(gitDir, `githuttbr-edit-index-${stamp}`)
+  const tmpBlob = join(gitDir, `githuttbr-edit-blob-${stamp}`)
   const env = { GIT_INDEX_FILE: tmpIndex }
   try {
     // 1. The edited commit's replacement tree.
@@ -4554,7 +4554,7 @@ export const gitService = {
     const index = (await runGit(repoPath, ['write-tree']).catch(() => '')).trim()
     if (!index) return null
     const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
-    const tmpIndex = join(gitDir, `gitcito-save-${process.pid}-${Date.now()}`)
+    const tmpIndex = join(gitDir, `githuttbr-save-${process.pid}-${Date.now()}`)
     const env = { GIT_INDEX_FILE: tmpIndex }
     try {
       // Seeded from a copy of the real index, so `add -A` in the throwaway one
@@ -4951,7 +4951,7 @@ export const gitService = {
   // the dispatcher locks on it.
   async diffDriverSuggestions(_repoPath: string): Promise<DiffDriverSuggestion[]> {
     // Word, Excel and JSON ride the converter Gitcito ships (resources/cli/
-    // gitcito-textconv), so they work with nothing installed. The rest still
+    // githuttbr-textconv), so they work with nothing installed. The rest still
     // need a real tool on PATH, and the UI says plainly which are missing
     // rather than writing a driver that fails at the first diff.
     const shim = bundledTextconvPath()
@@ -5938,7 +5938,7 @@ export const gitService = {
     // fighting the shell over quoting.
     const { writeFile, rm, mkdtemp } = await import('fs/promises')
     const { tmpdir } = await import('os')
-    const dir = await mkdtemp(join(tmpdir(), 'gitcito-note-'))
+    const dir = await mkdtemp(join(tmpdir(), 'githuttbr-note-'))
     const file = join(dir, 'note.txt')
     try {
       await writeFile(file, text, 'utf-8')
@@ -7995,7 +7995,7 @@ export const gitService = {
   },
 
   async runInteractiveRebase(repoPath: string, base: string, steps: RebaseStep[]): Promise<void> {
-    const tmpTodo = join(tmpdir(), `gitcito-rebase-${Date.now()}.txt`)
+    const tmpTodo = join(tmpdir(), `githuttbr-rebase-${Date.now()}.txt`)
     const lines: string[] = []
     for (const s of steps) {
       if (s.action === 'drop') {
@@ -8123,7 +8123,7 @@ export const gitService = {
   },
 
   async stagePatch(repoPath: string, patch: string): Promise<void> {
-    const tmpPatch = join(tmpdir(), `gitcito-patch-${Date.now()}.patch`)
+    const tmpPatch = join(tmpdir(), `githuttbr-patch-${Date.now()}.patch`)
     await writeFile(tmpPatch, patch, 'utf-8')
     try {
       await gitFor(repoPath).raw(['apply', '--cached', tmpPatch])
@@ -8166,7 +8166,7 @@ export const gitService = {
     ignoreWhitespace = false
   ): Promise<{ conflicts: number; merge?: string }> {
     if (target === 'worktree') await guardSnapshot(repoPath)
-    const tmpPatch = join(tmpdir(), `gitcito-hunk-${Date.now()}-${Math.random().toString(36).slice(2)}.patch`)
+    const tmpPatch = join(tmpdir(), `githuttbr-hunk-${Date.now()}-${Math.random().toString(36).slice(2)}.patch`)
     await writeFile(tmpPatch, patch, 'utf-8')
     try {
       const args = ['apply', '--whitespace=nowarn']
@@ -8331,7 +8331,7 @@ export const gitService = {
    * the working tree without committing. Both use 3-way merge for better fuzz.
    */
   async applyPatch(repoPath: string, content: string, am = false): Promise<void> {
-    const tmp = join(tmpdir(), `gitcito-apply-${Date.now()}.patch`)
+    const tmp = join(tmpdir(), `githuttbr-apply-${Date.now()}.patch`)
     await writeFile(tmp, content, 'utf-8')
     try {
       await gitFor(repoPath).raw(am ? ['am', '--3way', tmp] : ['apply', '--3way', tmp])
@@ -8845,7 +8845,7 @@ async function withLockRetry<T>(op: () => Promise<T>): Promise<T> {
 
 /** Marker the renderer looks for, so a conflicted route edit can be worded in
  *  the user's language with the two branches in it. */
-export const ROUTE_CONFLICT = 'GITCITO_ROUTE_CONFLICT'
+export const ROUTE_CONFLICT = 'GITHUTTBR_ROUTE_CONFLICT'
 
 /**
  * Run a stack edit so that a failure leaves the repository exactly as it was.

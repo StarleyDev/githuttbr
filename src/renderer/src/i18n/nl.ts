@@ -4713,4 +4713,7 @@ export const nl: Dict = {
   'timeMachine.upOneFolder': 'Één map omhoog',
   'timeMachine.root': 'Hoofdmap',
   'history.searchPlaceholder': 'Zoek commits op onderwerp, auteur, SHA of ref…',
+  'migration.title': 'Instellingen overgenomen',
+  'migration.message': 'Je profielen, werkruimten en voorkeuren zijn van {old} naar {app} gekopieerd. Opgeslagen tokens en AI-sleutels konden niet mee: importeer ze via Instellingen → Gegevens uit een export met tokens, of voer ze opnieuw in.',
+  'migration.dismiss': 'Begrepen',
 }

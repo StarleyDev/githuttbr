@@ -37,7 +37,7 @@ export function displayArgs() {
 /** A fresh userData dir. Each launch gets its own, so runs never share state
  *  and never touch the real profile — and the single-instance lock, which lives
  *  in this dir, lets several launches run side by side. */
-export function makeUserDataDir(prefix = 'gitcito-shot-') {
+export function makeUserDataDir(prefix = 'githuttbr-shot-') {
   return mkdtemp(join(tmpdir(), prefix))
 }
 
@@ -48,15 +48,15 @@ export function makeUserDataDir(prefix = 'gitcito-shot-') {
  *
  * The keychain answer is 'declined' unless asked otherwise: refusing keeps
  * tokens in memory and the app fully working, while granting makes macOS raise
- * its own "Gitcito Safe Storage" dialog — an OS window Playwright cannot
+ * its own "GitHuttBr Safe Storage" dialog — an OS window Playwright cannot
  * dismiss, which stalls the run. A seeded profile carrying any token would
  * otherwise raise the consent explainer on every launch, since each launch has
  * a fresh userData dir.
  */
 export async function seedProfile(userDataDir, settings, { keychain = false } = {}) {
-  await writeFile(join(userDataDir, 'gitcito-settings.json'), JSON.stringify(settings, null, 2))
+  await writeFile(join(userDataDir, 'githuttbr-settings.json'), JSON.stringify(settings, null, 2))
   await writeFile(
-    join(userDataDir, 'gitcito-keychain.json'),
+    join(userDataDir, 'githuttbr-keychain.json'),
     JSON.stringify({ consent: keychain ? 'granted' : 'declined', explained: true }, null, 2)
   )
 }

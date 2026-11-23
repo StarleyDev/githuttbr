@@ -15,7 +15,7 @@ describe('fast-forwarding a branch from a drop', () => {
   const sha = (ref: string): string => git('rev-parse', ref)
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'gitcito-ff-'))
+    repo = mkdtempSync(join(tmpdir(), 'githuttbr-ff-'))
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
     writeFileSync(join(repo, 'a.txt'), '1')
     git('add', '.')
@@ -62,7 +62,7 @@ describe('pushing a branch to another remote branch from a drop', () => {
     }).trim()
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-pushref-'))
+    dir = mkdtempSync(join(tmpdir(), 'githuttbr-pushref-'))
     repo = join(dir, 'repo')
     execFileSync('git', ['init', '-q', '--bare', '-b', 'main', join(dir, 'remote.git')])
     execFileSync('git', ['init', '-q', '-b', 'main', repo])

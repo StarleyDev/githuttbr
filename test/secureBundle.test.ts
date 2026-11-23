@@ -12,7 +12,7 @@ import {
 } from '../src/main/secureBundle'
 import { isSecretFile } from '../src/shared/secretFiles'
 
-// Round-trip and safety tests for the .gitcito secure-bundle format.
+// Round-trip and safety tests for the .githuttbr secure-bundle format.
 // These are pure (no Electron, no fs) — packing runs scrypt, so each
 // pack/unpack costs a few hundred ms by design.
 

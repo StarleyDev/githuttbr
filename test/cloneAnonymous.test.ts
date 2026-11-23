@@ -14,7 +14,7 @@ import { credentialConfig } from './credentialConfig'
 // the host — answers, and the repository is bound to the picked profile while
 // cloned as someone else. Real git, a fake machine in a temp HOME.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-anon-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-anon-'))
 const marker = join(dir, 'helper-was-asked')
 const askpassMarker = join(dir, 'askpass-was-run')
 

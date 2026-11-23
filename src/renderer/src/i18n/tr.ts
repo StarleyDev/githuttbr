@@ -4648,4 +4648,7 @@ export const tr: Dict = {
   'timeMachine.upOneFolder': 'Bir üst klasör',
   'timeMachine.root': 'Kök',
   'history.searchPlaceholder': 'Commitleri konu, yazar, SHA veya referansa göre bul…',
+  'migration.title': 'Ayarlar taşındı',
+  'migration.message': 'Profilleriniz, çalışma alanlarınız ve tercihleriniz {old} uygulamasından {app} uygulamasına kopyalandı. Kayıtlı belirteçler ve yapay zekâ anahtarları taşınamadı: bunları Ayarlar → Veri bölümünde belirteç içeren bir dışa aktarımdan içe aktarın veya yeniden girin.',
+  'migration.dismiss': 'Anladım',
 }

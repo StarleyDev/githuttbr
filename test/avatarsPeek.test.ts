@@ -84,7 +84,7 @@ const call = (channel: string, ...args: unknown[]): Promise<unknown> =>
   Promise.resolve(handlers.get(channel)!({ sender: page }, ...args))
 
 interface Setup {
-  /** The encrypted store's content for the profile; omitted means no `gitcito-secrets.enc` at all. */
+  /** The encrypted store's content for the profile; omitted means no `githuttbr-secrets.enc` at all. */
   secrets?: ProfileSecrets
   consent?: KeychainConsent
   /** Whether the user has seen the explainer; false is an install that predates it. */
@@ -93,18 +93,18 @@ interface Setup {
 }
 
 function setUp(o: Setup): AppSettings {
-  dir = mkdtempSync(join(tmpdir(), 'gitcito-avatars-peek-'))
+  dir = mkdtempSync(join(tmpdir(), 'githuttbr-avatars-peek-'))
   if (o.consent !== 'unset') {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: o.consent ?? 'granted', explained: o.explained ?? true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: o.consent ?? 'granted', explained: o.explained ?? true }))
   }
   const base = defaultSettings()
   const profile = { ...base.profiles[0], ...o.profile }
   const settings = { ...base, onboardingCompleted: true, profiles: [profile] }
   if (o.secrets) {
     const store = { [profile.id]: o.secrets }
-    writeFileSync(join(dir, 'gitcito-secrets.enc'), Buffer.from(`enc:${JSON.stringify(store)}`).toString('base64'))
+    writeFileSync(join(dir, 'githuttbr-secrets.enc'), Buffer.from(`enc:${JSON.stringify(store)}`).toString('base64'))
   }
-  writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify(settings))
+  writeFileSync(join(dir, 'githuttbr-settings.json'), JSON.stringify(settings))
   return settings
 }
 
@@ -298,14 +298,14 @@ describe('the title-bar picture after a profile switch', () => {
   it('answers for the profile the renderer names, not the one still active on disk', async () => {
     // The renderer switched A → B; the 250 ms settings debounce has not written it yet,
     // so the file still says A. B's picture (or nothing) — never A's.
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-avatars-switch-'))
+    dir = mkdtempSync(join(tmpdir(), 'githuttbr-avatars-switch-'))
     const base = defaultSettings()
     // Session-only tokens (no keyring store on disk), so each account has its own.
     const a = { ...base.profiles[0], id: 'pa', name: 'A', githubToken: 'ghp_alice' }
     const b = { ...base.profiles[0], id: 'pb', name: 'B', githubToken: 'ghp_bob' }
     const c = { ...base.profiles[0], id: 'pc', name: 'C' }
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({ ...base, onboardingCompleted: true, profiles: [a, b, c], activeProfileId: 'pa' })
     )
     await boot()
@@ -338,7 +338,7 @@ describe('the title-bar picture after a profile switch', () => {
 describe('the old secrets index', () => {
   it('is deleted on startup — it named servers, including removed ones — and never written again', async () => {
     setUp({ secrets: { githubToken: 'ghp_stored' } })
-    const index = join(dir, 'gitcito-secrets.index.json')
+    const index = join(dir, 'githuttbr-secrets.index.json')
     writeFileSync(index, JSON.stringify({ p: ['githubToken', 'githubEnterprise:https://old-ghe.corp.test'] }))
     await boot()
     await vi.waitFor(() => expect(existsSync(index)).toBe(false))

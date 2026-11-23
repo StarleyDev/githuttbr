@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
 import { sanitizeDirList } from './searchPathEnv'
+import { APP_NAME } from './appIdentity'
 
 /**
  * macOS/Linux GUI apps launched from Finder/Dock/Spotlight (not a terminal)
@@ -22,8 +23,8 @@ import { sanitizeDirList } from './searchPathEnv'
  * ESM-only dependency in the CJS main bundle. Best-effort: never throws.
  */
 
-const BEGIN = '__GITCITO_PATH_BEGIN__'
-const END = '__GITCITO_PATH_END__'
+const BEGIN = '__GITHUTTBR_PATH_BEGIN__'
+const END = '__GITHUTTBR_PATH_END__'
 // `${PATH}` must be brace-wrapped — `$PATH${END}` would glue the marker into
 // the variable name (`$PATHmarker` → empty), yielding no PATH at all.
 const SCRIPT = `echo "${BEGIN}\${PATH}${END}"`
@@ -33,7 +34,7 @@ let ready: Promise<void> = Promise.resolve()
 function cacheFile(): string {
   // Shared by the dev and installed apps; it holds nothing but a PATH.
   const base = process.platform === 'darwin' ? join(homedir(), 'Library', 'Caches') : join(homedir(), '.cache')
-  return join(base, 'Gitcito', 'shell-path')
+  return join(base, APP_NAME, 'shell-path')
 }
 
 function mergeIntoPath(resolved: string): void {

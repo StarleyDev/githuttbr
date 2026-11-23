@@ -24,7 +24,7 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
-      "env": { "GITCITO_FORCE_ONBOARDING": "1" },
+      "env": { "GITHUTTBR_FORCE_ONBOARDING": "1" },
       "presentation": { "group": "1_app", "order": 3 }
     },
     {

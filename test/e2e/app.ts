@@ -65,7 +65,7 @@ export interface StartOptions {
  */
 export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
   const scenario = opts.scenario ?? 'octopus-merge'
-  const sandbox = mkdtempSync(join(tmpdir(), 'gitcito-e2e-'))
+  const sandbox = mkdtempSync(join(tmpdir(), 'githuttbr-e2e-'))
   const repo = join(sandbox, scenario)
   cpSync(repoPath(scenario), repo, { recursive: true })
   opts.prepare?.(repo)
@@ -81,7 +81,7 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
     XDG_CACHE_HOME: join(home, '.cache'),
     GIT_CONFIG_GLOBAL: gitconfig,
     GIT_CONFIG_NOSYSTEM: '1',
-    GITCITO_SSH_DIR: join(home, '.ssh'),
+    GITHUTTBR_SSH_DIR: join(home, '.ssh'),
     // A stray value from the shell would make every git message localised.
     LANG: 'C.UTF-8',
     LC_ALL: 'C.UTF-8'
@@ -125,7 +125,7 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
     ...opts.settings
   }
 
-  const userDataDir = await makeUserDataDir('gitcito-e2e-profile-')
+  const userDataDir = await makeUserDataDir('githuttbr-e2e-profile-')
   await seedProfile(userDataDir, settings)
 
   const seen: string[] = []

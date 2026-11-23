@@ -10,11 +10,11 @@ const api = {
   // unpackaged build. Gates the screenshot-automation bridge.
   shotMode: process.argv.includes(SHOT_RENDERER_FLAG),
 
-  // Terminal scroll forensics: set GITCITO_SCROLL_DEBUG=1 at launch and the
+  // Terminal scroll forensics: set GITHUTTBR_SCROLL_DEBUG=1 at launch and the
   // terminal scroll listener streams its decisions through push() into
-  // userData/gitcito-scroll-debug.log. Diagnostic only.
+  // userData/githuttbr-scroll-debug.log. Diagnostic only.
   scrollDebug: {
-    enabled: process.env.GITCITO_SCROLL_DEBUG === '1',
+    enabled: process.env.GITHUTTBR_SCROLL_DEBUG === '1',
     push: (line: string): void => {
       ipcRenderer.send('scroll-debug', line)
     }
@@ -103,6 +103,8 @@ const api = {
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
   appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   appReleases: (): Promise<unknown> => ipcRenderer.invoke('app:releases'),
+  /** True once, on the first start after settings were copied from a pre-4.39 install. */
+  takeMigrationNotice: (): Promise<boolean> => ipcRenderer.invoke('app:takeMigrationNotice'),
 
   shell: {
     showItemInFolder: (fullPath: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', fullPath),
@@ -520,15 +522,15 @@ const api = {
     uninstall: (): Promise<CliInstallResult> => ipcRenderer.invoke('cli:uninstall'),
     status: (): Promise<CliStatus> => ipcRenderer.invoke('cli:status'),
     removeStale: (): Promise<CliInstallResult> => ipcRenderer.invoke('cli:removeStale'),
-    // Fired when `gitcito <dir>` asks this window to open a folder — on cold
+    // Fired when `githuttbr <dir>` asks this window to open a folder — on cold
     // launch (main sends it once the page finishes loading) or when a second
-    // `gitcito` invocation hands off to this already-running instance.
+    // `githuttbr` invocation hands off to this already-running instance.
     onOpenPath: (cb: (payload: CliOpenPayload) => void): (() => void) => {
       const listener = (_e: unknown, payload: CliOpenPayload): void => cb(payload)
       ipcRenderer.on('cli:open-path', listener)
       return () => ipcRenderer.removeListener('cli:open-path', listener)
     },
-    // `gitcito --wait <file>` — git is blocked until finishEdit is called, so
+    // `githuttbr --wait <file>` — git is blocked until finishEdit is called, so
     // every path out of the editor surface must call it exactly once.
     onEdit: (cb: (req: { file: string; sentinel: string; content: string }) => void): (() => void) => {
       const listener = (_e: unknown, req: { file: string; sentinel: string; content: string }): void => cb(req)

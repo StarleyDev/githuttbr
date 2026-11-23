@@ -16,7 +16,7 @@ import { blanksOnly } from './credentialConfig'
 // The real IPC handlers run against a fake fetch and a real settings file; the
 // assertion is on the credential each request carried.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-profile-per-repo-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-profile-per-repo-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -172,9 +172,9 @@ function invoke(repoPath: string, provider: Provider, [channel, ...args]: Provid
 
 describe('a repository’s hosting actions run as the profile it is bound to', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...defaultSettings(),
         onboardingCompleted: true,
@@ -265,9 +265,9 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
 describe('the clone dialog lists, clones and binds as the profile it picked', () => {
   // Same settings as above; written again so this block stands on its own.
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...defaultSettings(),
         onboardingCompleted: true,

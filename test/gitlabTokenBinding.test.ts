@@ -24,7 +24,7 @@ afterEach(() => {
 })
 
 async function withProfiles(profiles: Array<{ id: string; gitlabUrl?: string }>, repoProfiles = {}): Promise<void> {
-  const dir = mkdtempSync(join(tmpdir(), 'gitcito-gl-'))
+  const dir = mkdtempSync(join(tmpdir(), 'githuttbr-gl-'))
   dirs.push(dir)
   vi.spyOn(app, 'getPath').mockReturnValue(dir)
   const base = defaultSettings()
@@ -41,7 +41,7 @@ async function withProfiles(profiles: Array<{ id: string; gitlabUrl?: string }>,
       links: { gitlab: { source: 'git', login: `${p.id}-user` } }
     }))
   }
-  writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify(settings))
+  writeFileSync(join(dir, 'githuttbr-settings.json'), JSON.stringify(settings))
   await readSettings() // refreshes the known-instance registry, as the app's first read does
 }
 

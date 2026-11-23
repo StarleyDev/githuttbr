@@ -111,9 +111,9 @@ export function applyDevice(
   // makes a plain `adb`/Gradle flow hit the right handset.
   const env: Record<string, string> = {
     ...(config.env ?? {}),
-    GITCITO_DEVICE_ID: device.id,
-    GITCITO_DEVICE_NAME: device.name,
-    GITCITO_DEVICE_PLATFORM: device.platform
+    GITHUTTBR_DEVICE_ID: device.id,
+    GITHUTTBR_DEVICE_NAME: device.name,
+    GITHUTTBR_DEVICE_PLATFORM: device.platform
   }
   // An AVD name is not a serial — setting it would point adb at nothing.
   if (device.platform === 'android' && device.source !== 'avd') env['ANDROID_SERIAL'] = device.id

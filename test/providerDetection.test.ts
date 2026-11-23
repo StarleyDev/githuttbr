@@ -32,7 +32,7 @@ import {
 // push and clone, and for the one under the context path, the GitLab server's
 // token offered for the Data Center's URL.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-provider-detection-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-provider-detection-'))
 
 vi.mock('electron', () => ({
   app: { getPath: () => dir, isPackaged: false },
@@ -90,10 +90,10 @@ const AZURE_TOKEN = 'azure-pat'
 
 describe('provider detection — a Data Center sharing a hostname with a GitLab', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     const base = defaultSettings()
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...base,
         onboardingCompleted: true,
