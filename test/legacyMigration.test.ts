@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterAll, beforeEach } from 'vitest'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
@@ -175,6 +175,52 @@ describe('migrateLegacyData', () => {
     writeFileSync(join(newDir, 'Local Storage', 'leveldb', 'CURRENT'), 'new')
     migrateLegacyData(newDir, legacyDir)
     expect(readdirSync(join(newDir, 'Local Storage', 'leveldb'))).toEqual(['CURRENT'])
+  })
+
+  // Rare, but a copy can die half way (a full disk, a file the user cannot
+  // read). Nothing half-copied may stay, and the next start must try again.
+  it('leaves no half-copied Local Storage and no marker when a copy fails, then finishes on retry', () => {
+    if (process.getuid?.() === 0) return // root reads a mode-000 file anyway
+    seedLegacy()
+    writeFileSync(join(legacyDir, 'gitcito-info.json'), '{"old":"info"}')
+    mkdirSync(join(legacyDir, 'Local Storage', 'leveldb'), { recursive: true })
+    writeFileSync(join(legacyDir, 'Local Storage', 'leveldb', '000003.log'), 'layout')
+    const locked = join(legacyDir, 'Local Storage', 'leveldb', 'MANIFEST-000001')
+    writeFileSync(locked, 'manifest')
+    chmodSync(locked, 0o000)
+    try {
+      expect(migrateLegacyData(newDir, legacyDir)).toBe('incomplete')
+      expect(existsSync(join(newDir, 'Local Storage'))).toBe(false)
+      expect(existsSync(join(newDir, 'Local Storage.migrating'))).toBe(false)
+      expect(existsSync(join(newDir, MIGRATION_MARKER))).toBe(false)
+      // What did copy stays copied.
+      expect(existsSync(join(newDir, 'githuttbr-settings.json'))).toBe(true)
+    } finally {
+      chmodSync(locked, 0o644)
+    }
+
+    // The app ran in between: what it wrote is not overwritten by the retry.
+    writeFileSync(join(newDir, 'githuttbr-settings.json'), '{"language":"de"}')
+    writeFileSync(join(newDir, 'githuttbr-info.json'), '{"new":"info"}')
+    expect(migrateLegacyData(newDir, legacyDir)).toBe('migrated')
+    expect(readFileSync(join(newDir, 'githuttbr-settings.json'), 'utf8')).toBe('{"language":"de"}')
+    expect(readFileSync(join(newDir, 'githuttbr-info.json'), 'utf8')).toBe('{"new":"info"}')
+    expect(readFileSync(join(newDir, 'Local Storage', 'leveldb', '000003.log'), 'utf8')).toBe('layout')
+    expect(readFileSync(join(newDir, 'Local Storage', 'leveldb', 'MANIFEST-000001'), 'utf8')).toBe('manifest')
+    expect(readdirSync(newDir)).not.toContain('githuttbr-migration.pending')
+    expect(takeMigrationNotice(newDir)).toBe(true)
+    expect(migrateLegacyData(newDir, legacyDir)).toBe('already-migrated')
+  })
+
+  it('clears a partial Local Storage copy an earlier attempt left behind', () => {
+    seedLegacy()
+    mkdirSync(join(legacyDir, 'Local Storage', 'leveldb'), { recursive: true })
+    writeFileSync(join(legacyDir, 'Local Storage', 'leveldb', '000003.log'), 'layout')
+    mkdirSync(join(newDir, 'Local Storage.migrating', 'leveldb'), { recursive: true })
+    writeFileSync(join(newDir, 'Local Storage.migrating', 'leveldb', 'junk'), 'half')
+    expect(migrateLegacyData(newDir, legacyDir)).toBe('migrated')
+    expect(readdirSync(join(newDir, 'Local Storage', 'leveldb'))).toEqual(['000003.log'])
+    expect(existsSync(join(newDir, 'Local Storage.migrating'))).toBe(false)
   })
 
   it('does nothing without an old install, or with an unreadable old file', () => {
