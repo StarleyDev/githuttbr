@@ -8,6 +8,7 @@ export const ru = {
 
   'foot.license':
     'Лицензия MIT · Автор: <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> · с 💜',
+  'foot.credit': 'Форк {upstream} от MyAppDesk, под лицензией MIT.',
   'foot.source': 'Исходники',
   'foot.roadmap': 'Дорожная карта',
   'foot.reportIssue': 'Сообщить о проблеме',

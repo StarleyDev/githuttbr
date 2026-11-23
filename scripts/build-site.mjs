@@ -228,6 +228,7 @@ const footer = (locale = 'en', languages = '', depth = 0) => {
   return `<footer class="foot">${langs}
   <div class="foot-inner wrap">
     <p class="foot-brand"><img src="${base}assets/githuttbr-mark.png" alt="" width="20" height="20" /> <span>${t('foot.license')}</span></p>
+    <p class="foot-credit">${t('foot.credit').replace('{upstream}', `<a href="https://github.com/${UPSTREAM_REPO}">Gitcito</a>`)}</p>
     <nav class="foot-links">
       <a href="https://github.com/${REPO}">${t('foot.source')}</a>
       <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a>
@@ -1171,6 +1172,13 @@ code {
   justify-content: space-between;
   gap: 16px 32px;
   padding-block: 28px 40px;
+}
+.foot-credit {
+  margin: 0;
+  flex-basis: 100%;
+  order: 3;
+  font-size: 0.85em;
+  color: var(--ink-3);
 }
 
 .foot-brand {

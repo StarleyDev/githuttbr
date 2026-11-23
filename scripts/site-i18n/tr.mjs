@@ -8,6 +8,7 @@ export const tr = {
 
   'foot.license':
     'MIT lisanslı · <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> tarafından 💜 ile yapıldı',
+  'foot.credit': 'MyAppDesk\'in {upstream} projesinin bir çatalı, MIT lisansıyla.',
   'foot.source': 'Kaynak kod',
   'foot.roadmap': 'Yol haritası',
   'foot.reportIssue': 'Sorun bildir',

@@ -8,6 +8,7 @@ export const fr = {
 
   'foot.license':
     'Sous licence MIT · Fait par <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> avec 💜',
+  'foot.credit': 'Un fork de {upstream}, par MyAppDesk, sous licence MIT.',
   'foot.source': 'Code source',
   'foot.roadmap': 'Feuille de route',
   'foot.reportIssue': 'Signaler un problème',
