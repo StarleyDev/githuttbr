@@ -159,6 +159,8 @@ export const he: Dict = {
   'sidebar.noTodos': 'אין עדיין משימות',
   'sidebar.noPRs': 'לא נטענו בקשות משיכה פתוחות',
   'sidebar.prsServerUnmatched': 'לא ניתן היה להתאים את השרת של המאגר המרוחק הזה לשרת מוגדר — השתמשו בכתובת ה-https שלו לבקשות משיכה',
+  'sidebar.prsServerSharedBase': 'השרת של המאגר המרוחק הזה מוגדר תחת שני ספקים — השאירו אותו תחת ספק אחד בהגדרות כדי לראות בקשות משיכה',
+  'sidebar.prsServerUnmatchedOther': 'לא ניתן היה להתאים את השרת של המאגר המרוחק הזה לשרת מוגדר, ולכן לא ניתן להציג בקשות משיכה',
   'sidebar.upstreamPRs': 'ב-{repo}',
   'sidebar.upstreamPRsTitle': 'בקשות המשיכה הפתוחות שלך במאגר שממנו הפורק הזה נוצר',
   'sidebar.stackOf': 'ערימה של {n}',

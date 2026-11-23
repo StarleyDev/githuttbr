@@ -1,5 +1,6 @@
 import { PRODUCT_NAME } from './brand'
 import { instanceOf } from './gitlabInstance'
+import { ambiguousRemotePath } from './remotePath'
 import type { AccountLink, GithubEnterpriseHost, Profile } from './types'
 
 export type { GithubEnterpriseHost }
@@ -40,8 +41,23 @@ export const GITHUB_COM_ENDPOINTS: GithubEndpoints = Object.freeze({
   enterprise: false
 })
 
-/** github.com itself, or one of its subdomains (`api.github.com`, `gist.github.com`). */
+/**
+ * The github.com hosts a remote or an API call names, exactly: the web and git
+ * host, the REST API, gists (`https://gist.github.com/<id>.git` is a remote) and
+ * ssh over port 443 (`ssh://git@ssh.github.com:443/o/r.git`). A list, not a
+ * suffix: any other `*.github.com` — the ones nobody here needs, and any that
+ * might one day serve someone else's content — is never handed the github.com
+ * token. Avatars (`avatars.githubusercontent.com`) are fetched without one.
+ */
+const GITHUB_COM_HOSTS: ReadonlySet<string> = new Set(['github.com', 'api.github.com', 'gist.github.com', 'ssh.github.com'])
+
+/** One of the github.com hosts above — the check before the github.com token goes anywhere. */
 export function isGithubComHost(hostname: string): boolean {
+  return GITHUB_COM_HOSTS.has(hostname.toLowerCase())
+}
+
+/** Anything under github.com — broader on purpose: what Settings refuses as an Enterprise Server address. */
+function isUnderGithubCom(hostname: string): boolean {
   const h = hostname.toLowerCase()
   return h === 'github.com' || h.endsWith('.github.com')
 }
@@ -76,7 +92,7 @@ export function githubEnterpriseUrlProblem(raw: string | undefined): GithubEnter
   if (!u.hostname) return 'invalid'
   if (u.username || u.password) return 'credentials'
   if ((u.pathname && u.pathname !== '/') || u.search || u.hash) return 'path'
-  if (isGithubComHost(u.hostname)) return 'githubCom'
+  if (isUnderGithubCom(u.hostname)) return 'githubCom'
   // Enterprise Cloud with data residency serves its API at `api.<name>.ghe.com`,
   // not `/api/v3`: accepting it would send requests to an address that is not its API.
   if (/(^|\.)ghe\.com$/i.test(u.hostname)) return 'gheCom'
@@ -124,7 +140,7 @@ export function githubEnterpriseBaseOfHost(
 
 /**
  * Endpoints for the GitHub at a host, or null when the host is no GitHub the
- * app knows. github.com (and its subdomains) always resolve; a GHES only when
+ * app knows. github.com (its listed hosts, `isGithubComHost`) always resolves; a GHES only when
  * configured — an unknown host never is "probably GitHub".
  */
 export function resolveGithubHost(host: string, enterprise: readonly string[]): GithubEndpoints | null {
@@ -178,7 +194,8 @@ export function githubInstanceOf(
     return parts.length === 2 ? { base: ghes.base, owner: parts[0], repo: parts[1] } : null
   }
   const m = /^(?:[\w.-]+@)?((?:[\w-]+\.)*github\.com)[:/](.+)$/i.exec(remoteUrl.replace(/^[a-z]+:\/\//i, ''))
-  if (!m || !isGithubComHost(m[1])) return null
+  // The owner and repo are spliced into API paths: none that could walk out of them.
+  if (!m || !isGithubComHost(m[1]) || ambiguousRemotePath(remoteUrl)) return null
   const path = m[2].replace(/\.git$/, '').replace(/\/+$/, '').split('/')
   return path.length === 2 && path[0] && path[1] ? { base: GITHUB_COM, owner: path[0], repo: path[1] } : null
 }

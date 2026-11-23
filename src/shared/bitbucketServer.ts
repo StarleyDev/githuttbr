@@ -1,3 +1,4 @@
+import { ambiguousRemotePath } from './remotePath'
 import type { AccountLink, BitbucketServerHost, BitbucketServerTokenKind, Profile } from './types'
 
 export type { BitbucketServerHost }
@@ -25,8 +26,21 @@ export type { BitbucketServerHost }
 
 export const BITBUCKET_CLOUD = 'https://bitbucket.org'
 
-/** bitbucket.org itself, or one of its subdomains (`api.bitbucket.org`). */
+/**
+ * The bitbucket.org hosts a remote or an API call names, exactly: the web and
+ * git host, the REST API, and ssh over port 443
+ * (`ssh://git@altssh.bitbucket.org:443/w/r.git`). A list, not a suffix: any
+ * other `*.bitbucket.org` is never handed the Bitbucket Cloud token.
+ */
+const BITBUCKET_CLOUD_HOSTS: ReadonlySet<string> = new Set(['bitbucket.org', 'api.bitbucket.org', 'altssh.bitbucket.org'])
+
+/** One of the bitbucket.org hosts above — the check before the Bitbucket Cloud token goes anywhere. */
 export function isBitbucketCloudHost(hostname: string): boolean {
+  return BITBUCKET_CLOUD_HOSTS.has(hostname.toLowerCase())
+}
+
+/** Anything under bitbucket.org — broader on purpose: what Settings refuses as a Data Center address. */
+function isUnderBitbucketOrg(hostname: string): boolean {
   const h = hostname.toLowerCase()
   return h === 'bitbucket.org' || h.endsWith('.bitbucket.org')
 }
@@ -76,7 +90,7 @@ export function bitbucketServerUrlProblem(raw: string | undefined): BitbucketSer
     if (!SEGMENT.test(seg) || seg === '.' || seg === '..') return 'path'
     if (BELOW_BASE.has(seg.toLowerCase())) return 'path'
   }
-  if (isBitbucketCloudHost(u.hostname)) return 'cloud'
+  if (isUnderBitbucketOrg(u.hostname)) return 'cloud'
   return null
 }
 
@@ -128,6 +142,9 @@ interface RemoteParts {
 
 function remoteParts(url: string): RemoteParts | null {
   const s = url.trim()
+  // Matched on the path as written: one a proxy could decode into another
+  // server's (`/bitbucket%2F..%2Fother/`) belongs to no server here.
+  if (ambiguousRemotePath(s)) return null
   // scp-like `git@host:KEY/repo.git` — ssh on the default port.
   const scp = /^[\w.-]+@([\w.-]+):(?!\/\/)(.+)$/.exec(s)
   if (scp) return { scheme: 'ssh', host: scp[1].toLowerCase(), path: '/' + scp[2] }
@@ -135,8 +152,8 @@ function remoteParts(url: string): RemoteParts | null {
     const u = new URL(s)
     if (!u.hostname) return null
     // Only https is ever sent a token; plain http is never matched to a server.
-    if (u.protocol === 'https:') return { scheme: 'https', host: u.host.toLowerCase(), path: decodeURIComponent(u.pathname) }
-    if (u.protocol === 'ssh:') return { scheme: 'ssh', host: u.hostname.toLowerCase(), path: decodeURIComponent(u.pathname) }
+    if (u.protocol === 'https:') return { scheme: 'https', host: u.host.toLowerCase(), path: u.pathname }
+    if (u.protocol === 'ssh:') return { scheme: 'ssh', host: u.hostname.toLowerCase(), path: u.pathname }
   } catch {
     /* not a URL */
   }

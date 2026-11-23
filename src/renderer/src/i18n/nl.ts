@@ -159,6 +159,8 @@ export const nl: Dict = {
   'sidebar.noTodos': 'Nog geen taken',
   'sidebar.noPRs': 'Geen open PR’s geladen',
   'sidebar.prsServerUnmatched': 'De server van deze remote komt met geen enkele geconfigureerde server overeen — gebruik de https-remote voor PR’s',
+  'sidebar.prsServerSharedBase': 'De server van deze remote is onder twee providers ingesteld — houd hem in Instellingen onder één om PR’s te zien',
+  'sidebar.prsServerUnmatchedOther': 'De server van deze remote komt met geen enkele geconfigureerde server overeen, dus PR’s kunnen niet worden getoond',
   'sidebar.upstreamPRs': 'Op {repo}',
   'sidebar.upstreamPRsTitle': 'Je open pull requests op de repository waar deze fork van afkomstig is',
   'sidebar.stackOf': 'Stapel van {n}',

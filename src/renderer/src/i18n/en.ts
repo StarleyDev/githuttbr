@@ -160,6 +160,8 @@ export const en = {
   'sidebar.noTodos': 'No todos yet',
   'sidebar.noPRs': 'No open PRs loaded',
   'sidebar.prsServerUnmatched': 'This remote\'s server could not be matched to a configured server — use its https remote for pull requests',
+  'sidebar.prsServerSharedBase': 'This remote\'s server is configured under two providers — keep it under one in Settings to see pull requests',
+  'sidebar.prsServerUnmatchedOther': 'This remote\'s server could not be matched to a configured server, so pull requests cannot be shown',
   'sidebar.upstreamPRs': 'On {repo}',
   'sidebar.upstreamPRsTitle': 'Your open pull requests on the repository this fork comes from',
   'sidebar.stackOf': 'Stack of {n}',
