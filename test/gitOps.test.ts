@@ -714,7 +714,7 @@ describe('removing a path from history (leaked-secret playground)', () => {
   const freshClone = async (): Promise<string> => {
     const R = cloneFixture('leaked-secret')
     expect(await raw(R, ['log', '--branches', '--tags', '--oneline', '--', SECRET])).not.toBe('')
-    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/gitcito/pre-purge'])).toBe('')
+    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/githuttbr/pre-purge', 'refs/gitcito/pre-purge'])).toBe('')
     return R
   }
 
@@ -799,7 +799,7 @@ describe('removing a path from history (leaked-secret playground)', () => {
 
     await gitService.historyPurgeDropBackup(R, backup.prefix)
     expect(await gitService.historyPurgeBackups(R)).toEqual([])
-    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/gitcito/pre-purge'])).toBe('')
+    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/githuttbr/pre-purge', 'refs/gitcito/pre-purge'])).toBe('')
     expect(await raw(R, ['log', '--all', '--oneline', '--', SECRET])).toBe('')
   })
 

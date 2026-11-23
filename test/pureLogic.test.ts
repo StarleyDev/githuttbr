@@ -5022,6 +5022,17 @@ describe('launch hot actions (detectHotRuntime)', () => {
     expect(detectHotRuntime(cfg({ command: 'flutter run', gitcito: { hotActions: [] } }))).toBeNull()
   })
 
+  it('reads the githuttbr block, which wins over a legacy gitcito one', () => {
+    const rt = detectHotRuntime(
+      cfg({
+        command: 'python app.py',
+        githuttbr: { hotActions: [{ label: 'New', send: 'n' }] },
+        gitcito: { hotActions: [{ label: 'Old', send: 'o' }] }
+      })
+    )
+    expect(rt?.actions.map((a) => a.send)).toEqual(['n'])
+  })
+
   it('shows a newline in an override as the Enter key', () => {
     const rt = detectHotRuntime(cfg({ gitcito: { hotActions: [{ label: 'Restart', send: 'rs\n' }] } }))
     expect(rt?.actions[0].keyHint).toBe('rs ⏎')
@@ -6349,7 +6360,7 @@ describe('repository todos', () => {
   })
 })
 
-describe('.gitcito.json validation', () => {
+describe('.githuttbr.json validation', () => {
   it('accepts a full config and keeps every field', () => {
     const { config, issues } = validateRepoConfig({
       version: 1,
@@ -6413,7 +6424,7 @@ describe('.gitcito.json validation', () => {
   it('reports invalid JSON as one issue instead of throwing', () => {
     const { config, issues } = parseRepoConfig('{ nope')
     expect(config).toBeNull()
-    expect(issues).toEqual([{ field: '.gitcito.json', code: 'json' }])
+    expect(issues).toEqual([{ field: '.githuttbr.json', code: 'json' }])
   })
 
   it('round-trips through the serializer', () => {

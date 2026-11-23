@@ -22,15 +22,15 @@ const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
 
 /** Throwaway SSH keys for the ssh-keys shot. Outside the repository on purpose:
  *  disposable or not, these are real private key files. */
-const DEMO_SSH = join(tmpdir(), 'gitcito-demo-ssh')
+const DEMO_SSH = join(tmpdir(), 'githuttbr-demo-ssh')
 
 /** A neutral shell for terminal shots. The real one runs the machine's profile,
  *  whose prompt prints the user, the host name and often the LAN address.
  *  `bash --noprofile --norc` reads none of it; the prompt is a bare `$ `. */
-const DEMO_SHELL = join(tmpdir(), 'gitcito-demo-shell.sh')
+const DEMO_SHELL = join(tmpdir(), 'githuttbr-demo-shell.sh')
 /** Its own HOME, not DEMO_HOME: the credential shot wipes that one in `prepare`,
  *  which under --jobs would pull it from under a running terminal. */
-const DEMO_SHELL_HOME = join(tmpdir(), 'gitcito-demo-shell-home')
+const DEMO_SHELL_HOME = join(tmpdir(), 'githuttbr-demo-shell-home')
 const neutralShell = () => {
   writeFileSync(DEMO_SHELL, '#!/bin/sh\nexport PS1="$ "\nexec bash --noprofile --norc\n')
   chmodSync(DEMO_SHELL, 0o755)
@@ -40,9 +40,9 @@ const neutralShell = () => {
 
 /** A throwaway HOME for the credential-helper shot: the real one holds this
  *  machine's global git config and possibly live passwords. */
-const DEMO_HOME = join(tmpdir(), 'gitcito-demo-home')
+const DEMO_HOME = join(tmpdir(), 'githuttbr-demo-home')
 // Stand-in SDK CLIs for the run-target shot — see the launch-device entry.
-const DEMO_SDK = join(tmpdir(), 'gitcito-demo-sdk')
+const DEMO_SDK = join(tmpdir(), 'githuttbr-demo-sdk')
 
 /**
  * Expand sidebar sections by their title (as rendered: 'WORKTREES').
@@ -3245,7 +3245,7 @@ export const shots = [
     }
   },
   {
-    // The repository's own rules — `.gitcito.json` and the doctor that checks
+    // The repository's own rules — `.githuttbr.json` and the doctor that checks
     // them. Written in `prepare` rather than shipped in a scenario so the shot
     // shows a mixed verdict on purpose: Node passing, a hooks path and a
     // missing `.env` failing with a repair offered.
@@ -3256,7 +3256,7 @@ export const shots = [
       const repo = repoPaths['deep-history-monorepo']
       await writeFile(join(repo, '.env.example'), 'API_URL=https://staging.example.com\nAPI_TOKEN=replace-me\n')
       await writeFile(
-        join(repo, '.gitcito.json'),
+        join(repo, '.githuttbr.json'),
         `${JSON.stringify(
           {
             version: 1,
@@ -3336,7 +3336,7 @@ export const shots = [
         window.__shot.ui.getState().openModal({
           kind: 'cli-edit',
           file: `${p}/.git/COMMIT_EDITMSG`,
-          sentinel: '/tmp/gitcito-wait.example',
+          sentinel: '/tmp/githuttbr-wait.example',
           content
         })
       }, repo)

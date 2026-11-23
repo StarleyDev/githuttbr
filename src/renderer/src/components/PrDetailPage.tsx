@@ -100,7 +100,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   // "Viewed" ticks are local and kept per repo + PR: GitHub's own viewed state
   // has no simple REST call. Same key as the modal used, so ticks carry over.
-  const viewedKey = `gitcito-pr-viewed:${remoteUrl}#${number}`
+  const viewedKey = `githuttbr-pr-viewed:${remoteUrl}#${number}`
   const [viewed, setViewed] = useState<Set<string>>(() => {
     try {
       return new Set(JSON.parse(localStorage.getItem(viewedKey) || '[]') as string[])

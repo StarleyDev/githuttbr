@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { configKeyMatcher, isSafeConfigKey } from '@simple-git/argv-parser'
-import { gitService, GITCITO_CONFIG_KEYS } from '../src/main/git'
+import { gitService, APP_CONFIG_KEYS } from '../src/main/git'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 
 afterAll(() => cleanupFixtures())
@@ -9,12 +9,19 @@ afterAll(() => cleanupFixtures())
 // simple-git 4 warns on a config write outside its safe list and its next major refuses it.
 // These keys are the app's own features, so the allow-list has to keep covering them — and
 // must not grow into a pattern that also lets through a key git would execute.
-const allowed = configKeyMatcher(GITCITO_CONFIG_KEYS)
+const allowed = configKeyMatcher(APP_CONFIG_KEYS)
 const permitted = (key: string): boolean => isSafeConfigKey(key) || allowed(key)
 
 describe('simple-git allowConfig', () => {
   it('covers every config key gitService writes through simple-git', () => {
     for (const key of [
+      'branch.feature/api.githuttbrParent',
+      'branch.main.githuttbrbase',
+      'githuttbr.protectedbranches',
+      'githuttbr.subtree.vendor%2Fparser.url',
+      'githuttbr.subtree.vendor%2Fparser.ref',
+      'githuttbr.prepurge.at1795382730',
+      // Legacy keys: unset when a stack level is cleared or a subtree forgotten.
       'branch.feature/api.gitcitoParent',
       'branch.main.gitcitobase',
       'gitcito.protectedbranches',

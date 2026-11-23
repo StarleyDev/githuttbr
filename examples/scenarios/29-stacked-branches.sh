@@ -1,8 +1,11 @@
 # shellcheck shell=bash disable=SC2154
 # 29. stacked-branches — exercise the branch-stack feature (Layers icon / ⌘K).
 #
-# Builds a 2-level stack on top of main and records the stack metadata gitcito
-# stores in git config (branch.<name>.gitcitoparent / .gitcitobase):
+# Builds a 2-level stack on top of main and records the stack metadata the app
+# stores in git config (branch.<name>.githuttbrparent / .githuttbrbase). The
+# upper level deliberately uses upstream Gitcito's older key names
+# (gitcitoparent / gitcitobase): a stack built before the rename must still
+# read as one stack.
 #
 #     feature/ui   (leaf, current)   ── parent: feature/api
 #     feature/api                    ── parent: main
@@ -29,8 +32,8 @@ EOF
 git -C "$R" add -A && git -C "$R" commit -qm "api: add fetchUser"
 echo "export const fetchOrg = (id) => ({ id })" >> "$R/api.js"
 git -C "$R" add -A && git -C "$R" commit -qm "api: add fetchOrg"
-git -C "$R" config branch.feature/api.gitcitoparent main
-git -C "$R" config branch.feature/api.gitcitobase "$MAIN_TIP"
+git -C "$R" config branch.feature/api.githuttbrparent main
+git -C "$R" config branch.feature/api.githuttbrbase "$MAIN_TIP"
 API_TIP="$(git -C "$R" rev-parse feature/api)"
 
 # ── Level 2: feature/ui on feature/api ───────────────────────────────────
@@ -42,6 +45,7 @@ EOF
 git -C "$R" add -A && git -C "$R" commit -qm "ui: add UserCard"
 echo "export const OrgCard = (id) => id" >> "$R/ui.js"
 git -C "$R" add -A && git -C "$R" commit -qm "ui: add OrgCard"
+# Legacy key names on purpose — see the header.
 git -C "$R" config branch.feature/ui.gitcitoparent feature/api
 git -C "$R" config branch.feature/ui.gitcitobase "$API_TIP"
 

@@ -256,7 +256,7 @@ describe('repository file action application', () => {
     expect(readFileSync(join(repo, 'a.txt'), 'utf8')).toBe('old\n')
     expect(existsSync(join(repo, 'new.txt'))).toBe(false)
     expect(readFileSync(join(repo, 'gone.txt'), 'utf8')).toBe('remove\n')
-    expect(readdirSync(repo).some((name) => name.includes('.gitcito-'))).toBe(false)
+    expect(readdirSync(repo).some((name) => name.includes('.githuttbr-') || name.includes('.gitcito-'))).toBe(false)
   })
 
   it('reports every path whose rollback restoration fails', async () => {

@@ -108,7 +108,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     // In the combined style the type and its gitmoji move together (feat → ✨).
     setSummary(commitStyle === 'gitmoji-conventional' ? applyCcTypeWithGitmoji(summary, ty) : applyCcType(summary, ty))
   }
-  // Scopes the repository itself declares in `.gitcito.json`. When it lists
+  // Scopes the repository itself declares in `.githuttbr.json`. When it lists
   // them, the composer stops being a free-text field and offers the real set —
   // which is the difference between `feat(renderer)` and `feat(rendererr)`.
   const repoConfig = repo.config?.config ?? null

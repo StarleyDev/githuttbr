@@ -2454,7 +2454,7 @@ function DataManagementSection(): React.JSX.Element {
       // lives in its own store and is never part of settings). Secrets — profile
       // API tokens AND the vault — only go in when the user opts in.
       const bundle: SettingsBundle = {
-        __gitcito: 'settings-export',
+        __githuttbr: 'settings-export',
         version: 1,
         settings: exportIncludeSecrets ? settings : stripSettingsSecrets(settings),
         info: await infoApi.exportAll()
@@ -4511,7 +4511,7 @@ function DataPage(): React.JSX.Element {
   )
 }
 
-const LAST_PAGE_KEY = 'gitcito.settings.lastPage'
+const LAST_PAGE_KEY = 'githuttbr.settings.lastPage'
 const PAGE_IDS: SettingsPage[] = ['profile', 'workspaces', 'integrations', 'ai', 'themes', 'general', 'data']
 
 function readLastPage(): SettingsPage {

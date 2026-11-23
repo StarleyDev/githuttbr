@@ -144,7 +144,7 @@ function localDiff(beforePath: string, afterPath: string): Promise<string> {
 }
 
 async function previewFor(path: string, before: string | null, after: string | null): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'gitcito-file-preview-'))
+  const dir = await mkdtemp(join(tmpdir(), 'githuttbr-file-preview-'))
   const beforePath = join(dir, 'before')
   const afterPath = join(dir, 'after')
   try {
@@ -389,7 +389,7 @@ export async function applyPreparedRepoFileActions(
       await ensureParentDirectories(repoPath, state.absolute, io, createdDirectories)
       state.temp = join(
         dirname(state.absolute),
-        `.gitcito-${basename(state.absolute)}.tmp-${randomUUID()}`
+        `.githuttbr-${basename(state.absolute)}.tmp-${randomUUID()}`
       )
       await io.writeFile(state.temp, state.current, { encoding: 'utf8', flag: 'wx' })
       if (state.mode !== undefined) await io.chmod(state.temp, state.mode & 0o777)
@@ -401,7 +401,7 @@ export async function applyPreparedRepoFileActions(
       if (state.original === null || state.current === state.original) continue
       state.backup = join(
         dirname(state.absolute),
-        `.gitcito-${basename(state.absolute)}.bak-${randomUUID()}`
+        `.githuttbr-${basename(state.absolute)}.bak-${randomUUID()}`
       )
       await io.rename(state.absolute, state.backup)
       state.backupMoved = true

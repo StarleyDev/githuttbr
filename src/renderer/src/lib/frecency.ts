@@ -2,7 +2,7 @@
 // command id was run, persisted in localStorage. Used to surface recents and
 // to nudge fuzzy ranking toward what you actually use.
 
-const KEY = 'gitcito-cmd-frecency'
+const KEY = 'githuttbr-cmd-frecency'
 
 export interface FrecencyEntry {
   n: number // run count

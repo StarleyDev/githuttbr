@@ -204,7 +204,7 @@ let exitHook = false
  */
 function socketParent(): string {
   const base = tmpdir()
-  return process.platform !== 'win32' && Buffer.byteLength(join(base, 'gitcito-cred-XXXXXX', 's')) > 100 ? '/tmp' : base
+  return process.platform !== 'win32' && Buffer.byteLength(join(base, 'githuttbr-cred-XXXXXX', 's')) > 100 ? '/tmp' : base
 }
 
 /**
@@ -218,12 +218,12 @@ export function openCredentialEndpoint(
   target: CredentialTarget,
   index: number
 ): { helper: string; env: NodeJS.ProcessEnv } {
-  const dir = mkdtempSync(join(socketParent(), 'gitcito-cred-'))
+  const dir = mkdtempSync(join(socketParent(), 'githuttbr-cred-'))
   try {
     const id = randomBytes(16).toString('hex')
     // The id leads, so release can find the endpoint from the environment alone.
     const nonce = `${id}.${randomBytes(32).toString('hex')}`
-    const endpoint = process.platform === 'win32' ? `\\\\.\\pipe\\gitcito-cred-${id}` : join(dir, 's')
+    const endpoint = process.platform === 'win32' ? `\\\\.\\pipe\\githuttbr-cred-${id}` : join(dir, 's')
     const script = join(dir, 'helper.cjs')
     writeFileSync(script, HELPER_SOURCE, { mode: 0o600, flag: 'wx' })
     const server = createServer((sock) => serve(id, sock))

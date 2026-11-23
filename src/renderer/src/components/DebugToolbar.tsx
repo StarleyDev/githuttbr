@@ -38,7 +38,7 @@ import {
   type HotIcon
 } from '../lib/launchActions'
 
-const POS_KEY = 'gitcito.debugToolbarPos'
+const POS_KEY = 'githuttbr.debugToolbarPos'
 // Must match the CSS `top` of .debug-toolbar — offsets are relative to it.
 const BASE_TOP = 10
 const EDGE_MARGIN = 6

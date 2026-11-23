@@ -2016,7 +2016,10 @@ export interface RunDeviceSnapshot {
  *  (non-secret). Analytics/usage live in their own machine-local store and are
  *  never exported. */
 export interface SettingsBundle {
-  __gitcito: 'settings-export'
+  /** The export marker. Upstream Gitcito (and this fork up to 4.38) wrote
+   *  `__gitcito` instead; `parseSettingsImport` accepts either and hands back
+   *  this shape. */
+  __githuttbr: 'settings-export'
   version: 1
   settings: AppSettings
   info?: InfoExport
@@ -2344,9 +2347,9 @@ export interface SavedWork {
   worktree: string
 }
 
-/** A saved WIP snapshot (a commit of the whole working tree kept under refs/gitcito/wip). */
+/** A saved WIP snapshot (a commit of the whole working tree kept under refs/githuttbr/wip). */
 export interface SnapshotInfo {
-  ref: string // full ref name (refs/gitcito/wip/<ts>-<a|m|g>)
+  ref: string // full ref name (refs/githuttbr/wip/<ts>-<a|m|g>)
   sha: string
   time: number // unix seconds
   files: number // changed files captured
@@ -2465,7 +2468,7 @@ export interface HistoryPathEntry {
 
 /** A safety copy of every ref as it stood before a purge. */
 export interface HistoryPurgeBackup {
-  /** `refs/gitcito/pre-purge/<timestamp>`. */
+  /** `refs/githuttbr/pre-purge/<timestamp>`. */
   prefix: string
   /** Epoch seconds, the timestamp in the prefix. */
   at: number
@@ -3951,7 +3954,7 @@ export function defaultSettings(): AppSettings {
   }
 }
 
-// ─── .gitcito.json — the repository's own house rules ────────────────────────
+// ─── .githuttbr.json — the repository's own house rules ────────────────────────
 //
 // An optional file committed at the root of a repository. Unlike everything in
 // AppSettings, it travels with the clone: whoever opens the repo inherits it.
@@ -4010,7 +4013,7 @@ export interface RepoConfig {
   }
 }
 
-/** Why a field of `.gitcito.json` was rejected. Rendered from the dictionary. */
+/** Why a field of `.githuttbr.json` was rejected. Rendered from the dictionary. */
 export type RepoConfigIssueCode =
   | 'json'
   | 'version'

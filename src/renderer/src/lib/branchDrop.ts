@@ -147,7 +147,7 @@ export function branchNameOf(ref: DropRef): string {
 
 /** The drag payload, kept as a mime type of our own so a dragged file or tab
  *  never reads as a branch. */
-export const BRANCH_DND_TYPE = 'application/x-gitcito-ref'
+export const BRANCH_DND_TYPE = 'application/x-githuttbr-ref'
 
 export function encodeDropRef(ref: DropRef): string {
   return JSON.stringify(ref)

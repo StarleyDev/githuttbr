@@ -1,5 +1,5 @@
 /**
- * Validation for `.gitcito.json` — the optional file a repository ships to
+ * Validation for `.githuttbr.json` — the optional file a repository ships to
  * describe its own house rules.
  *
  * Lives in `shared/` because both sides need the same verdict: the main process
@@ -32,8 +32,16 @@ import type {
   RepoConfigLink
 } from './types'
 
-/** The file name, at the repository root. */
-export const REPO_CONFIG_FILE = '.gitcito.json'
+/** The file name, at the repository root. Every write goes here. */
+export const REPO_CONFIG_FILE = '.githuttbr.json'
+
+/** Upstream Gitcito's name for the same file. Still read when the new one is
+ *  absent — a repository that ships it for Gitcito users keeps its rules here
+ *  too — and never deleted or renamed by this app. */
+export const LEGACY_REPO_CONFIG_FILE = '.gitcito.json'
+
+/** Names to look for, in order: the first that exists is the config. */
+export const REPO_CONFIG_FILES: readonly string[] = [REPO_CONFIG_FILE, LEGACY_REPO_CONFIG_FILE]
 
 /** Schema version this build understands. A newer file is ignored, not guessed at. */
 export const REPO_CONFIG_VERSION = 1
