@@ -312,8 +312,9 @@ export async function apiToken(remoteUrl: string, auth: HostAuth, opts: FillOpts
     }
   }
   // An scp remote (`git@github.com:o/r.git`) is asked about in its https form:
-  // `new URL` cannot read it, and git's helper and `gh` key a login by web host.
-  const url = httpsFormOf(remoteUrl) ?? remoteUrl
+  // `new URL` cannot read it, and git's helper and `gh` key a login by web host
+  // (and, with useHttpPath, by path — hence the resolved server's base).
+  const url = httpsFormOf(remoteUrl, resolveRemote(remoteUrl)) ?? remoteUrl
   const host = hostOf(url)
   const isGithub = !!host && providerOfRemote(remoteUrl) === 'github'
 

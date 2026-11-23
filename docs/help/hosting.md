@@ -318,10 +318,19 @@ GitLab, a Forgejo or a GitHub Enterprise Server lives on the same host name —
 `git.acme.corp` for GitLab, `git.acme.corp:7990` or `git.acme.corp/bitbucket` for
 the Data Center — an https remote belongs to the server whose whole address
 (port and path included) it sits under, the longest path winning. An ssh remote
-says less: on port 7999 it is the Data Center; on any other port it is the one
-provider with a server on that host name, and when two providers share it the
-remote is left unrecognised — no pull requests, and no token offered for it —
-rather than guessed. Use the https remote in that setup.
+says less. Written `ssh://git@git.acme.corp:7999/…`, it is the Data Center. The
+short form, `git@git.acme.corp:team/app.git`, cannot name a port at all, so it
+reaches the ssh daemon on port 22 — not the Data Center's 7999 — and counts as
+the *other* provider on that host name, as long as there is exactly one other.
+Any other `ssh://` remote on a host name two providers share is left
+unrecognised — no pull requests, and no token offered for it — rather than
+guessed, and the Pull requests section says so instead of showing an empty list.
+Use the https remote in that setup.
+
+The limit: the short form is read by what git itself would do with it. If your
+`~/.ssh/config` sends that host name to port 7999, the app does not read that
+file, and treats the remote as the other provider's. Write the remote as
+`ssh://git@host:7999/…`, or use https.
 
 **The token.** Create an HTTP access token in Bitbucket (your avatar → *Manage
 account* → *HTTP access tokens*; **Create a token on …** opens that page).

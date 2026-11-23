@@ -158,6 +158,7 @@ export const pl: Dict = {
   'sidebar.todos': 'ZADANIA',
   'sidebar.noTodos': 'Brak zadań',
   'sidebar.noPRs': 'Nie wczytano otwartych PR-ów',
+  'sidebar.prsServerUnmatched': 'Serwera tego remote’a nie udało się dopasować do żadnego skonfigurowanego serwera — do PR-ów użyj remote’a https',
   'sidebar.upstreamPRs': 'W {repo}',
   'sidebar.upstreamPRsTitle': 'Twoje otwarte pull requesty w repozytorium, z którego pochodzi ten fork',
   'sidebar.stackOf': 'Stos z {n}',

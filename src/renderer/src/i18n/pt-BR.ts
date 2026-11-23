@@ -158,6 +158,7 @@ export const ptBR: Dict = {
   'sidebar.todos': 'TAREFAS',
   'sidebar.noTodos': 'Ainda sem tarefas',
   'sidebar.noPRs': 'Nenhum PR aberto carregado',
+  'sidebar.prsServerUnmatched': 'O servidor deste remote não corresponde a nenhum servidor configurado — use o remote https para PRs',
   'sidebar.upstreamPRs': 'Em {repo}',
   'sidebar.upstreamPRsTitle': 'Seus pull requests abertos no repositório de onde este fork veio',
   'sidebar.stackOf': 'Pilha de {n}',

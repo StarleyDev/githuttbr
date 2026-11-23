@@ -157,6 +157,7 @@ export const tr: Dict = {
   'sidebar.todos': 'YAPILACAKLAR',
   'sidebar.noTodos': 'Henüz görev yok',
   'sidebar.noPRs': 'Yüklenmiş açık PR yok',
+  'sidebar.prsServerUnmatched': 'Bu uzak deponun sunucusu yapılandırılmış hiçbir sunucuyla eşleşmedi — PR’lar için https uzak adresini kullanın',
   'sidebar.upstreamPRs': '{repo} üzerinde',
   'sidebar.upstreamPRsTitle': 'Bu fork’un geldiği depodaki açık pull request’leriniz',
   'sidebar.stackOf': '{n} katmanlı yığın',
