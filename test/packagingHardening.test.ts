@@ -114,3 +114,18 @@ describe('packaging hardening', () => {
     })
   })
 })
+
+describe('afterPack order on macOS', () => {
+  // flipFuses re-signs the bundle ad hoc and seals the files present then; an
+  // unsigned build is never signed again, so a file written afterwards leaves
+  // macOS a "damaged" app (4.38.0–4.40.1).
+  it('writes the CLI files before flipping the fuses', () => {
+    const src = readFileSync(join(ROOT, 'scripts/after-pack.cjs'), 'utf8')
+    const body = src.slice(src.indexOf('async function afterPack'))
+    const flip = body.indexOf('await flipFuses(')
+    expect(flip).toBeGreaterThan(-1)
+    expect(body.indexOf('await writeCliAppBinary(')).toBeGreaterThan(-1)
+    expect(body.indexOf('await writeCliAppBinary(')).toBeLessThan(flip)
+    expect(body.indexOf('await markCliExecutable(')).toBeLessThan(flip)
+  })
+})

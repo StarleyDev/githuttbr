@@ -110,10 +110,14 @@ async function fuseConfig() {
 async function afterPack(context) {
   const { flipFuses } = await import('@electron/fuses')
   const darwin = context.electronPlatformName === 'darwin' || context.electronPlatformName === 'mas'
-  await flipFuses(electronBinary(context), { ...(await fuseConfig()), resetAdHocDarwinSignature: darwin })
-  // Before signing, like the fuses: the file is part of the sealed bundle.
+  // The CLI files go in FIRST. On macOS flipFuses re-signs the bundle ad hoc
+  // (resetAdHocDarwinSignature), and that signature seals every file present at
+  // that moment: anything written afterwards breaks the seal. A build with a
+  // Developer ID is signed again later and hid this; an unsigned build is not,
+  // so 4.38.0–4.40.1 shipped Macs a bundle macOS refused as "damaged".
   await writeCliAppBinary(context)
   await markCliExecutable(context)
+  await flipFuses(electronBinary(context), { ...(await fuseConfig()), resetAdHocDarwinSignature: darwin })
 }
 
 module.exports = afterPack
