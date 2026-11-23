@@ -3389,6 +3389,7 @@ export const he: Dict = {
   'gitError.heldTokenUnsavedServer': 'האסימון הזה כבר שמור עבור חשבון או שרת אחר, ולכן הוא לא נשלח לשרת שאף פרופיל עוד לא שמר. השתמשו באסימון שהשרת הזה הנפיק.',
   'gitError.bbsNoBrowse': 'עיון במאגרים ויצירתם עדיין לא נתמכים ב‑Bitbucket Data Center — שכפלו לפי כתובת URL במקום זאת.',
   'gitError.notBbsRepo': 'זה לא מאגר של Bitbucket Data Center.',
+  'gitError.bbsBadRemote': 'לא ניתן לקרוא את כתובת המאגר הזו של Bitbucket Data Center. היא אמורה להיראות כמו <server>/scm/PROJECT/repo.git.',
   'gitError.bbsTokenUnrecognised': 'שרת Bitbucket Data Center לא זיהה את האסימון הזה. בדקו שהוא תקף ושתוקפו לא פג.',
   'gitError.bbsCommentEmpty': 'תגובה צריכה להכיל טקסט.',
   'gitError.bbsNoIdentity': 'שרת Bitbucket Data Center לא ציין למי שייך האסימון הזה, ולכן אי אפשר לבקש שינויים מכאן.',

@@ -290,8 +290,8 @@ describe('Azure DevOps', () => {
     expect(res.metaFailed).toBeUndefined()
     expect((calls[0].body as Record<string, unknown>).reviewers).toEqual([{ id: 'id-1' }, { id: 'team-1' }])
     expect(calls.slice(1)).toEqual([
-      { method: 'POST', url: `${REPO}/pullRequests/31/labels?api-version=7.1`, body: { name: 'bug' } },
-      { method: 'POST', url: `${REPO}/pullRequests/31/labels?api-version=7.1`, body: { name: 'needs docs' } }
+      { method: 'POST', url: `${REPO}/pullRequests/31/labels?api-version=7.1-preview.1`, body: { name: 'bug' } },
+      { method: 'POST', url: `${REPO}/pullRequests/31/labels?api-version=7.1-preview.1`, body: { name: 'needs docs' } }
     ])
   })
 

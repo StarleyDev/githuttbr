@@ -112,18 +112,26 @@ export async function bbsJson<T>(url: string, token: string, init?: RequestInit)
 /**
  * Walk a paged resource: `start` is the cursor the previous page's
  * `nextPageStart` names, and `isLastPage` ends it. Capped, so a runaway list
- * (or a server that never says "last") cannot spin.
+ * (or a server that never says "last") cannot spin — and `partial` is told
+ * when the cap, not the server, ended the walk, so a caller can say so.
  */
-export async function bbsPages<T>(url: string, token: string, limit = 50, maxPages = 20): Promise<T[]> {
+export async function bbsPages<T>(
+  url: string,
+  token: string,
+  limit = 50,
+  maxPages = 20,
+  partial?: () => void
+): Promise<T[]> {
   const out: T[] = []
   let start = 0
   for (let page = 0; page < maxPages; page++) {
     const sep = url.includes('?') ? '&' : '?'
     const data = await bbsJson<BbsPage<T>>(`${url}${sep}start=${start}&limit=${limit}`, token)
     out.push(...(data?.values ?? []))
-    if (!data || data.isLastPage !== false || typeof data.nextPageStart !== 'number' || data.nextPageStart <= start) break
+    if (!data || data.isLastPage !== false || typeof data.nextPageStart !== 'number' || data.nextPageStart <= start) return out
     start = data.nextPageStart
   }
+  partial?.()
   return out
 }
 
@@ -794,9 +802,9 @@ export async function bbsPickerOptions(repo: BitbucketServerRepo, token: string)
   return collectPickerOptions(
     prMetaSupport('bitbucket'),
     {
-      reviewers: async () => {
+      reviewers: async (partial) => {
         const [users, me] = await Promise.all([
-          bbsPages<BbsUser>(`${api}/users?${filter}`, token, 100, PICKER_MAX_PAGES),
+          bbsPages<BbsUser>(`${api}/users?${filter}`, token, 100, PICKER_MAX_PAGES, partial),
           bbsWhoAmI(repo.base, token).catch(() => null)
         ])
         const people = users.flatMap((u): PrPickerPerson[] =>

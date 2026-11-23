@@ -3386,6 +3386,7 @@ export const zhCN: Dict = {
   'gitError.heldTokenUnsavedServer': '此令牌已为其他账户或服务器保存，因此不会发送到尚未被任何配置文件保存的服务器。请使用此服务器签发的令牌。',
   'gitError.bbsNoBrowse': 'Bitbucket Data Center 暂不支持浏览和创建仓库——请改用 URL 克隆。',
   'gitError.notBbsRepo': '这不是 Bitbucket Data Center 仓库。',
+  'gitError.bbsBadRemote': '无法读取此 Bitbucket Data Center 仓库地址。它应形如 <server>/scm/PROJECT/repo.git。',
   'gitError.bbsTokenUnrecognised': 'Bitbucket Data Center 服务器无法识别此令牌。请检查它是否有效且未过期。',
   'gitError.bbsCommentEmpty': '评论需要填写内容。',
   'gitError.bbsNoIdentity': 'Bitbucket Data Center 服务器没有说明此令牌属于谁，因此无法在此请求更改。',

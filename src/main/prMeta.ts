@@ -134,10 +134,20 @@ export async function githubPickerOptions(repoApi: string, apiBase: string, json
   )
 }
 
+/** A GitHub login as typed: `@ana` is how people write one, and GitHub wants `ana`. */
+export const ghLogin = (v: string): string => v.trim().replace(/^@+/, '')
+
 /**
  * Set the picks on a PR GitHub has just opened. The pulls API takes none of
  * them on create, so each is its own call; one failing does not stop the
  * others, and each failure is named so the user hears about it.
+ *
+ * GitHub answers the assignees call with 201 even when it silently skipped a
+ * login (no access, no such user), so the issue it returns is read back: a
+ * pick missing from its `assignees` is a field that did not stick. An answer
+ * without the list is not read as a refusal.
+ *
+ * `json` must be a plain call: setting a pick never evicts a saved credential.
  */
 export async function applyGithubPrMeta(
   repoApi: string,
@@ -145,14 +155,24 @@ export async function applyGithubPrMeta(
   opts: CreatePrOpts,
   json: Json
 ): Promise<PrMetaField[]> {
-  const calls: Array<[PrMetaField, string, Record<string, string[]>]> = []
-  if (opts.reviewers?.length) calls.push(['reviewers', `${repoApi}/pulls/${number}/requested_reviewers`, { reviewers: opts.reviewers }])
-  if (opts.assignees?.length) calls.push(['assignees', `${repoApi}/issues/${number}/assignees`, { assignees: opts.assignees }])
-  if (opts.labels?.length) calls.push(['labels', `${repoApi}/issues/${number}/labels`, { labels: opts.labels }])
+  const logins = (list?: string[]): string[] => [...new Set((list ?? []).map(ghLogin).filter(Boolean))]
+  const reviewers = logins(opts.reviewers)
+  const assignees = logins(opts.assignees)
+  const assigned = (d: unknown): boolean => {
+    const got = (d as { assignees?: unknown } | null)?.assignees
+    if (!Array.isArray(got)) return true
+    const have = new Set(got.flatMap((u) => strings((u as { login?: unknown } | null)?.login)).map((l) => l.toLowerCase()))
+    return assignees.every((a) => have.has(a.toLowerCase()))
+  }
+  const calls: Array<[PrMetaField, string, Record<string, string[]>, (d: unknown) => boolean]> = []
+  const stuck = (): boolean => true
+  if (reviewers.length) calls.push(['reviewers', `${repoApi}/pulls/${number}/requested_reviewers`, { reviewers }, stuck])
+  if (assignees.length) calls.push(['assignees', `${repoApi}/issues/${number}/assignees`, { assignees }, assigned])
+  if (opts.labels?.length) calls.push(['labels', `${repoApi}/issues/${number}/labels`, { labels: opts.labels }, stuck])
   const results = await Promise.all(
-    calls.map(([field, url, body]) =>
-      json(url, { method: 'POST', body: JSON.stringify(body) }).then(
-        () => null,
+    calls.map(([field, url, body, ok]) =>
+      json<unknown>(url, { method: 'POST', body: JSON.stringify(body) }).then(
+        (d) => (ok(d) ? null : field),
         () => field
       )
     )
@@ -326,7 +346,12 @@ export function azureMetaBody(opts: CreatePrOpts): Record<string, unknown> {
   return opts.reviewers?.length ? { reviewers: opts.reviewers.map((id) => ({ id })) } : {}
 }
 
-/** Labels go on after the PR exists, one call each; any refusal names the field. */
+/**
+ * Labels go on after the PR exists, one call each; any refusal names the field.
+ * The Pull Request Labels resource is a preview API, so it is asked for as one.
+ * `ado` must be a plain call with the token the create used: a label refused
+ * for want of "Create tag definition" must not evict the user's git login.
+ */
 export async function applyAzureLabels(
   repoApi: string,
   id: number,
@@ -336,7 +361,7 @@ export async function applyAzureLabels(
   if (!labels?.length) return []
   const results = await Promise.all(
     labels.map((name) =>
-      ado(`${repoApi}/pullRequests/${id}/labels?api-version=7.1`, { method: 'POST', body: JSON.stringify({ name }) }).then(
+      ado(`${repoApi}/pullRequests/${id}/labels?api-version=7.1-preview.1`, { method: 'POST', body: JSON.stringify({ name }) }).then(
         () => true,
         () => false
       )
@@ -403,7 +428,9 @@ const bbPerson = (u: BbUser): PrPickerPerson | null =>
 /**
  * Reviewers from the workspace's members; a token that may not list members
  * (a repository access token, say) still gets the repository's default
- * reviewers. The signed-in account is left out: Bitbucket refuses the author.
+ * reviewers — flagged partial, since they are only some of who could review,
+ * and failed when there are none, so the field says so instead of looking
+ * empty. The signed-in account is left out: Bitbucket refuses the author.
  */
 export async function bitbucketPickerOptions(workspace: string, repo: string, json: Json): Promise<PrPickerOptions> {
   const ws = encodeURIComponent(workspace)
@@ -413,13 +440,15 @@ export async function bitbucketPickerOptions(workspace: string, repo: string, js
       reviewers: async (partial) => {
         const users = await bitbucketPages<{ user?: BbUser }>(`${BB_API}/workspaces/${ws}/members?pagelen=100`, json, partial)
           .then((m) => m.flatMap((x) => (x.user ? [x.user] : [])))
-          .catch(() =>
-            bitbucketPages<BbUser>(
+          .catch(async () => {
+            const defaults = await bitbucketPages<BbUser>(
               `${BB_API}/repositories/${ws}/${encodeURIComponent(repo)}/default-reviewers?pagelen=100`,
-              json,
-              partial
+              json
             )
-          )
+            if (!defaults.length) throw new Error('no members and no default reviewers')
+            partial()
+            return defaults
+          })
         const me = await json<BbUser>(`${BB_API}/user`).catch(() => null)
         return withoutSelf(uniqueById(users.flatMap((u) => bbPerson(u) ?? [])), me?.uuid)
       }
@@ -481,19 +510,32 @@ export class PrCreateError extends Error {
   }
 }
 
+/** An exception name about a reviewer — Data Center answers a reviewer it has no user for with NoSuchUserException. */
+const REVIEWER_EXCEPTION = /reviewer|NoSuchUser/i
+
 /**
  * Whether a failed create may have failed over its reviewers: a 400 or 409 —
  * a validation answer, which means nothing was created. Never an auth failure,
  * a server error or a network one, where the PR may exist or a retry would
  * only fail again. When the host names the fields (bitbucket.org) or the
  * exceptions (Data Center) at fault and none is about reviewers, it is not this.
+ *
+ * A 404 counts only when Data Center names a reviewer-shaped exception: it
+ * answers a typed user name it does not know with NoSuchUserException, and
+ * nothing was created. A bare 404 (no such repository) is never retried.
  */
 export function rejectsReviewers(err: unknown): boolean {
   const e = err as { status?: unknown; fields?: unknown; exceptions?: unknown } | null
-  if (!e || (e.status !== 400 && e.status !== 409)) return false
+  if (!e) return false
+  const names = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+  if (e.status === 404) {
+    const named = names(e.exceptions)
+    return named.length > 0 && named.every((x) => REVIEWER_EXCEPTION.test(x))
+  }
+  if (e.status !== 400 && e.status !== 409) return false
   for (const named of [e.fields, e.exceptions]) {
-    const list = Array.isArray(named) ? named.filter((x): x is string => typeof x === 'string') : []
-    if (list.length && !list.some((x) => /reviewer/i.test(x))) return false
+    const list = names(named)
+    if (list.length && !list.some((x) => REVIEWER_EXCEPTION.test(x))) return false
   }
   return true
 }

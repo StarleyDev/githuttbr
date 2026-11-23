@@ -3333,6 +3333,7 @@ export const fr: Dict = {
   'gitError.heldTokenUnsavedServer': "Ce jeton est déjà enregistré pour un autre compte ou serveur : il n'est donc pas envoyé à un serveur qu'aucun profil n'a encore enregistré. Utilisez le jeton émis par ce serveur.",
   'gitError.bbsNoBrowse': "Parcourir et créer des dépôts n'est pas encore pris en charge pour Bitbucket Data Center — clonez plutôt par URL.",
   'gitError.notBbsRepo': "Ce n'est pas un dépôt Bitbucket Data Center.",
+  'gitError.bbsBadRemote': 'Impossible de lire cette adresse de dépôt Bitbucket Data Center. Elle devrait avoir la forme <server>/scm/PROJECT/repo.git.',
   'gitError.bbsTokenUnrecognised': "Le serveur Bitbucket Data Center n'a pas reconnu ce jeton. Vérifiez qu'il est valide et n'a pas expiré.",
   'gitError.bbsCommentEmpty': 'Un commentaire doit contenir du texte.',
   'gitError.bbsNoIdentity': "Le serveur Bitbucket Data Center n'a pas indiqué à qui appartient ce jeton : impossible de demander des modifications d'ici.",

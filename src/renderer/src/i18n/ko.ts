@@ -3386,6 +3386,7 @@ export const ko: Dict = {
   'gitError.heldTokenUnsavedServer': '이 토큰은 이미 다른 계정이나 서버용으로 저장되어 있으므로, 아직 어떤 프로필에도 저장되지 않은 서버로는 보내지 않습니다. 이 서버가 발급한 토큰을 사용하세요.',
   'gitError.bbsNoBrowse': 'Bitbucket Data Center에서는 아직 저장소 탐색과 생성을 지원하지 않습니다. 대신 URL로 클론하세요.',
   'gitError.notBbsRepo': '이것은 Bitbucket Data Center 저장소가 아닙니다.',
+  'gitError.bbsBadRemote': '이 Bitbucket Data Center 저장소 주소를 읽을 수 없습니다. <server>/scm/PROJECT/repo.git 형식이어야 합니다.',
   'gitError.bbsTokenUnrecognised': 'Bitbucket Data Center 서버가 이 토큰을 인식하지 못했습니다. 유효하고 만료되지 않았는지 확인하세요.',
   'gitError.bbsCommentEmpty': '댓글에는 내용이 있어야 합니다.',
   'gitError.bbsNoIdentity': 'Bitbucket Data Center 서버가 이 토큰의 소유자를 알려 주지 않아 여기서 변경을 요청할 수 없습니다.',

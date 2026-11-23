@@ -142,6 +142,11 @@ const RULES: Rule[] = [
     test: /Not a Bitbucket Data Center repository\./,
     hint: () => ({ key: 'gitError.notBbsRepo' })
   },
+  {
+    // hosting.ts BBS_BAD_REMOTE
+    test: /Could not read this Bitbucket Data Center repository address/,
+    hint: () => ({ key: 'gitError.bbsBadRemote' })
+  },
   // bitbucketServer.ts — BitbucketServerError, which prefixes "Bitbucket Data Center: ".
   {
     test: /Bitbucket Data Center: the server did not recognise this token/,

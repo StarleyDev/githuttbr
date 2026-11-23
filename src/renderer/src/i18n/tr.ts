@@ -3329,6 +3329,7 @@ export const tr: Dict = {
   'gitError.heldTokenUnsavedServer': "Bu token başka bir hesap veya sunucu için zaten kayıtlı, bu yüzden henüz hiçbir profilin kaydetmediği bir sunucuya gönderilmez. Bu sunucunun verdiği token'ı kullanın.",
   'gitError.bbsNoBrowse': 'Bitbucket Data Center için depolara göz atma ve depo oluşturma henüz desteklenmiyor — bunun yerine URL ile klonlayın.',
   'gitError.notBbsRepo': 'Bu bir Bitbucket Data Center deposu değil.',
+  'gitError.bbsBadRemote': 'Bu Bitbucket Data Center depo adresi okunamadı. <server>/scm/PROJECT/repo.git biçiminde olmalı.',
   'gitError.bbsTokenUnrecognised': "Bitbucket Data Center sunucusu bu token'ı tanımadı. Geçerli olduğunu ve süresinin dolmadığını kontrol edin.",
   'gitError.bbsCommentEmpty': 'Bir yorumun biraz metin içermesi gerekir.',
   'gitError.bbsNoIdentity': "Bitbucket Data Center sunucusu bu token'ın kime ait olduğunu bildirmedi, bu yüzden buradan değişiklik istenemez.",

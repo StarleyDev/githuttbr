@@ -435,6 +435,35 @@ async function withAzureRetry<T>(
 }
 
 /**
+ * The evicting retry of `withAzureRetry`, for a pull-request create — the one
+ * call allowed to evict — kept as state across that create's attempts:
+ * - a second attempt (the retry without refused reviewers) runs with the
+ *   token the first one ended on, not the one it started with, so a re-minted
+ *   credential is used rather than the evicted one;
+ * - it evicts at most once, whatever the attempts;
+ * - `token()` is what the create actually succeeded with, for the calls that
+ *   follow it (labels), which go out plain and never evict.
+ */
+function azureCreateSession(remoteUrl: string, auth: ApiAuth): { create: Ado; token: () => string } {
+  let current = auth
+  let evicted = false
+  const create: Ado = async (url, init) => {
+    try {
+      return await adoJson(url, current.token, init)
+    } catch (err) {
+      if (evicted || !current.cred || !isAuthFailure(err)) throw err
+      evicted = true
+      await forgetCredential(remoteUrl, current.cred)
+      const fresh = await apiToken(remoteUrl, { link: { source: 'git', login: current.cred.username } })
+      if (!fresh) throw err
+      current = fresh
+      return adoJson(url, current.token, init)
+    }
+  }
+  return { create, token: () => current.token }
+}
+
+/**
  * The URL a provider's credential is filed under when there is no repository in
  * hand (Settings, the clone browser). Azure DevOps keys per organization, since
  * each one needs its own token.
@@ -477,6 +506,8 @@ export const BBS_NOT_SAVED =
 export const GITLAB_NOT_SAVED =
   'This GitLab address is not saved in any profile yet (it must be https). Save it in Settings → Integrations, then try again.'
 export const NOT_BBS_REPO = 'Not a Bitbucket Data Center repository.'
+export const BBS_BAD_REMOTE =
+  'Could not read this Bitbucket Data Center repository address. It should look like <server>/scm/PROJECT/repo.git.'
 export const HELD_TOKEN_TO_UNSAVED_SERVER =
   'This token is already saved for another account or server, so it is not sent to a server no profile has saved yet. Use the token this server issued.'
 
@@ -535,6 +566,23 @@ function bbsRepoOfRemote(remoteUrl: string): BitbucketServerRepo | null {
 }
 
 const isBbs = (remoteUrl: string): boolean => bbsRepoOfRemote(remoteUrl) !== null
+
+/** Whether a remote's server is a Data Center a profile names — whether or not its path parses. */
+function onDataCenter(remoteUrl: string): boolean {
+  const r = resolveRemote(remoteUrl)
+  return r?.provider === 'bitbucket' && !!r.base && r.base !== BITBUCKET_CLOUD
+}
+
+/**
+ * Fail closed on a Data Center remote whose path is not one of its
+ * repositories: such a remote must never reach a bitbucket.org code path,
+ * which would send the Data Center's token to api.bitbucket.org. Called where
+ * an entry point would otherwise fall through to bitbucket.org, and before
+ * every bitbucket.org request that a repository remote leads to.
+ */
+function refuseUnreadableDataCenter(remoteUrl: string): void {
+  if (onDataCenter(remoteUrl) && !isBbs(remoteUrl)) throw new Error(BBS_BAD_REMOTE)
+}
 
 /** A Data Center remote and the token its profile filed for that server, or an error saying what is missing. */
 async function bbsRepoOf(remoteUrl: string): Promise<{ repo: BitbucketServerRepo; token: string }> {
@@ -851,6 +899,7 @@ async function listPullRequestsOf(
 
   // Bitbucket pull requests
   if (parsed.provider === 'bitbucket') {
+    refuseUnreadableDataCenter(remoteUrl)
     if (!auth) return { provider: 'bitbucket', prs: [] }
     const res = await fetch(
       `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests?state=OPEN&pagelen=30`,
@@ -1081,6 +1130,7 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   }
   const bbsRepo = bbsRepoOfRemote(remoteUrl)
   if (bbsRepo) return bitbucketServerCreatePrUrl(bbsRepo, source, target)
+  if (onDataCenter(remoteUrl)) return null
   if (parsed.provider === 'bitbucket') {
     return `https://bitbucket.org/${parsed.owner}/${parsed.repo}/pull-requests/new?source=${encodeURIComponent(source)}&dest=${encodeURIComponent(target)}`
   }
@@ -1133,6 +1183,7 @@ async function createPullRequest(
 ): Promise<CreatePrResult> {
   // Picks off the IPC boundary: string lists or nothing, so an empty pick sends today's request.
   const opts = cleanPrMeta(sent)
+  refuseUnreadableDataCenter(remoteUrl)
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub, GitLab, Forgejo, Bitbucket and Azure DevOps.')
   const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
@@ -1176,6 +1227,7 @@ async function createPullRequest(
 
   // Bitbucket pull request
   if (parsed.provider === 'bitbucket') {
+    refuseUnreadableDataCenter(remoteUrl)
     if (!auth) throw await noCredential('Bitbucket', remoteUrl)
     // A reviewer bitbucket.org refuses (the author, someone without access) costs the reviewers, not the PR.
     const { result: d, dropped } = await createWithoutRejectedReviewers(opts, async (o) => {
@@ -1236,10 +1288,12 @@ async function createPullRequest(
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
   const repoApi = `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}`
-  const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
+  // Only the create may evict a borrowed credential; the labels after it go out
+  // plain, with the token the create succeeded with (see azureCreateSession).
+  const session = azureCreateSession(remoteUrl, auth)
   // A reviewer Azure refuses (a 400 naming an identity it cannot add) costs the reviewers, not the PR.
   const { result: d, dropped } = await createWithoutRejectedReviewers(opts, (o) =>
-    ado<{ pullRequestId: number; reviewers?: unknown }>(`${repoApi}/pullrequests?api-version=7.1`, {
+    session.create<{ pullRequestId: number; reviewers?: unknown }>(`${repoApi}/pullrequests?api-version=7.1`, {
       method: 'POST',
       body: JSON.stringify({
         sourceRefName: `refs/heads/${o.source}`,
@@ -1254,7 +1308,7 @@ async function createPullRequest(
   const metaFailed: PrMetaField[] = [
     // Azure answers with the reviewers it kept; an answer without the list is not read as a refusal.
     ...(dropped ? (['reviewers'] as const) : Array.isArray(d.reviewers) ? reviewersMissing(opts, azureReviewerIds(d.reviewers)) : []),
-    ...(await applyAzureLabels(repoApi, d.pullRequestId, opts.labels, ado))
+    ...(await applyAzureLabels(repoApi, d.pullRequestId, opts.labels, (url, init) => adoJson(url, session.token(), init)))
   ]
   return {
     url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${d.pullRequestId}`,
@@ -1273,6 +1327,7 @@ async function createPullRequest(
  * borrowed credential. Opening a dialog must never cost the user a saved login.
  */
 async function prPickerOptions(remoteUrl: string, tokens: HostTokens): Promise<PrPickerOptions> {
+  refuseUnreadableDataCenter(remoteUrl)
   const parsed = parseRemoteUrl(remoteUrl)
   const supports = prMetaSupport(parsed?.provider ?? null)
   if (!parsed || !Object.values(supports).some(Boolean)) return { supports, reviewers: [], assignees: [], labels: [], failed: [] }
@@ -1293,6 +1348,7 @@ async function prPickerOptions(remoteUrl: string, tokens: HostTokens): Promise<P
     return bbsPickerOptions(bbsRepo, auth.token)
   }
   if (parsed.provider === 'bitbucket') {
+    refuseUnreadableDataCenter(remoteUrl)
     if (!auth) throw await noCredential('Bitbucket', remoteUrl)
     return bitbucketPickerOptions(parsed.owner, parsed.repo, bitbucketCloudJson(bitbucketAuthFor(auth)))
   }

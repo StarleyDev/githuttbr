@@ -3385,6 +3385,7 @@ export const en = {
   'gitError.heldTokenUnsavedServer': 'This token is already saved for another account or server, so it is not sent to a server no profile has saved yet. Use the token this server issued.',
   'gitError.bbsNoBrowse': 'Browsing and creating repositories is not supported for Bitbucket Data Center yet — clone by URL instead.',
   'gitError.notBbsRepo': 'This is not a Bitbucket Data Center repository.',
+  'gitError.bbsBadRemote': 'Could not read this Bitbucket Data Center repository address. It should look like <server>/scm/PROJECT/repo.git.',
   'gitError.bbsTokenUnrecognised': 'The Bitbucket Data Center server did not recognise this token. Check that it is valid and has not expired.',
   'gitError.bbsCommentEmpty': 'A comment needs some text.',
   'gitError.bbsNoIdentity': 'The Bitbucket Data Center server did not say who this token belongs to, so changes cannot be requested from here.',

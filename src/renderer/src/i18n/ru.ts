@@ -3386,6 +3386,7 @@ export const ru: Dict = {
   'gitError.heldTokenUnsavedServer': 'Этот токен уже сохранён для другой учётной записи или сервера, поэтому он не отправляется на сервер, который ещё не сохранён ни в одном профиле. Используйте токен, выданный этим сервером.',
   'gitError.bbsNoBrowse': 'Просмотр и создание репозиториев для Bitbucket Data Center пока не поддерживаются — клонируйте по URL.',
   'gitError.notBbsRepo': 'Это не репозиторий Bitbucket Data Center.',
+  'gitError.bbsBadRemote': 'Не удалось разобрать адрес репозитория Bitbucket Data Center. Он должен выглядеть как <server>/scm/PROJECT/repo.git.',
   'gitError.bbsTokenUnrecognised': 'Сервер Bitbucket Data Center не распознал этот токен. Проверьте, что он действителен и не истёк.',
   'gitError.bbsCommentEmpty': 'В комментарии должен быть текст.',
   'gitError.bbsNoIdentity': 'Сервер Bitbucket Data Center не сообщил, кому принадлежит этот токен, поэтому запросить изменения отсюда нельзя.',

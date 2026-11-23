@@ -3326,6 +3326,7 @@ export const ja: Dict = {
   'gitError.heldTokenUnsavedServer': 'このトークンは別のアカウントまたはサーバー用にすでに保存されているため、まだどのプロファイルにも保存されていないサーバーには送信されません。このサーバーが発行したトークンを使用してください。',
   'gitError.bbsNoBrowse': 'Bitbucket Data Center ではリポジトリの閲覧と作成にまだ対応していません。代わりに URL でクローンしてください。',
   'gitError.notBbsRepo': 'これは Bitbucket Data Center のリポジトリではありません。',
+  'gitError.bbsBadRemote': 'この Bitbucket Data Center のリポジトリアドレスを読み取れませんでした。<server>/scm/PROJECT/repo.git の形式である必要があります。',
   'gitError.bbsTokenUnrecognised': 'Bitbucket Data Center サーバーがこのトークンを認識しませんでした。有効で期限切れでないか確認してください。',
   'gitError.bbsCommentEmpty': 'コメントにはテキストが必要です。',
   'gitError.bbsNoIdentity': 'Bitbucket Data Center サーバーがこのトークンの所有者を返さなかったため、ここから変更を依頼できません。',

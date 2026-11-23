@@ -3389,6 +3389,7 @@ export const ar: Dict = {
   'gitError.heldTokenUnsavedServer': 'هذا الرمز محفوظ بالفعل لحساب أو خادم آخر، لذلك لا يُرسَل إلى خادم لم يحفظه أي ملف شخصي بعد. استخدم الرمز الذي أصدره هذا الخادم.',
   'gitError.bbsNoBrowse': 'تصفّح المستودعات وإنشاؤها غير مدعوم بعد في Bitbucket Data Center — استنسخ عبر عنوان URL بدلًا من ذلك.',
   'gitError.notBbsRepo': 'هذا ليس مستودع Bitbucket Data Center.',
+  'gitError.bbsBadRemote': 'تعذّرت قراءة عنوان مستودع Bitbucket Data Center هذا. يجب أن يكون بالشكل <server>/scm/PROJECT/repo.git.',
   'gitError.bbsTokenUnrecognised': 'لم يتعرّف خادم Bitbucket Data Center على هذا الرمز. تحقّق من أنه صالح ولم تنتهِ صلاحيته.',
   'gitError.bbsCommentEmpty': 'يحتاج التعليق إلى بعض النص.',
   'gitError.bbsNoIdentity': 'لم يذكر خادم Bitbucket Data Center لمن يعود هذا الرمز، لذا لا يمكن طلب تغييرات من هنا.',
