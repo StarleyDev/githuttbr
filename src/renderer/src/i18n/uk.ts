@@ -2660,6 +2660,8 @@ export const uk: Dict = {
   'createPR.pickerPartial': "Цей список може бути неповним. Почніть вводити, щоб шукати в ньому.",
   'createPR.metaLoading': 'Завантаження рецензентів, виконавців і міток…',
   'createPR.metaLoadFailed': 'Не вдалося завантажити рецензентів, виконавців або мітки. Pull request можна створити й без них.',
+  'createPR.baseLocal': 'Порівняно з локальною {target}: на {remote} ще немає гілки {target}.',
+  'createPR.baseStale': 'Порівняно з останньою отриманою {remote}/{target}: оновити її зараз не вдалося.',
   'createPR.createdMetaFailed': 'PR #{n} створено, але не вдалося задати: {parts}. Додайте їх на хостингу.',
   'createPR.createDraft': 'Створити як чернетку',
   'createPR.openBrowser': 'Відкрити у браузері',

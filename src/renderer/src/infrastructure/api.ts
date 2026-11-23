@@ -19,6 +19,7 @@ import type {
   ModelCatalog,
   BlameLine,
   BranchCompareResult,
+  PrComparison,
   BranchesPayload,
   CheckoutRemoteResult,
   DivergedStrategy,
@@ -674,6 +675,10 @@ export const gitApi = {
     call<void>('restoreHunkMerge', path, merge, side),
   compareBranches: (path: string, a: string, b: string) =>
     call<BranchCompareResult>('compareBranches', path, a, b),
+  refreshPrBase: (path: string, remote: string, target: string) =>
+    call<boolean>('refreshPrBase', path, remote, target),
+  prComparison: (path: string, source: string, target: string, remote: string) =>
+    call<PrComparison>('prComparison', path, source, target, remote),
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
   teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),

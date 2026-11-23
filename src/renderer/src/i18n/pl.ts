@@ -2660,6 +2660,8 @@ export const pl: Dict = {
   'createPR.pickerPartial': "Ta lista może być niepełna. Pisz, aby ją przeszukać.",
   'createPR.metaLoading': 'Wczytywanie recenzentów, przypisanych i etykiet…',
   'createPR.metaLoadFailed': 'Nie udało się wczytać recenzentów, przypisanych ani etykiet. Pull request można utworzyć także bez nich.',
+  'createPR.baseLocal': 'Porównano z lokalnym {target}: {remote} nie ma jeszcze gałęzi {target}.',
+  'createPR.baseStale': 'Porównano z ostatnio pobranym {remote}/{target}: nie udało się go teraz odświeżyć.',
   'createPR.createdMetaFailed': 'Utworzono PR #{n}, ale nie udało się ustawić: {parts}. Dodaj je na serwerze.',
   'createPR.createDraft': 'Utwórz jako szkic',
   'createPR.openBrowser': 'Otwórz w przeglądarce',

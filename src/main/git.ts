@@ -27,6 +27,7 @@ import type {
   RepoConfig,
   RepoConfigResult,
   BranchCompareResult,
+  PrComparison,
   CheckoutRemoteResult,
   ConflictSide,
   DivergedStrategy,
@@ -1415,6 +1416,9 @@ export function logSignaturesDisabled(repoPath: string): boolean {
  * only, so character encoding and dates stay as the user has them. The UI is
  * translated by the app; git's raw text is what "details" and bug reports show.
  */
+/** How long the pull-request dialog waits for its base branch to refresh before comparing with what it has. */
+const PR_BASE_FETCH_TIMEOUT_MS = 10_000
+
 export const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PROMPT: '0', LANGUAGE: 'en' })
 
 /**
@@ -1461,13 +1465,15 @@ async function runGit(
   repoPath: string,
   args: string[],
   extraEnv?: NodeJS.ProcessEnv,
-  maxBuffer?: number
+  maxBuffer?: number,
+  timeoutMs?: number
 ): Promise<string> {
   try {
     const { stdout } = await pexecFile('git', ['-C', repoPath, ...args], {
       // Inside withRemoteAuth, the profile's credential rides along (see gitCredentialEnv).
       env: { ...noPromptEnv(), ...(remoteAuthEnv.getStore() ?? {}), ...(extraEnv ?? {}) },
-      ...(maxBuffer ? { maxBuffer } : {})
+      ...(maxBuffer ? { maxBuffer } : {}),
+      ...(timeoutMs ? { timeout: timeoutMs } : {})
     })
     return stdout
   } catch (err) {
@@ -8492,6 +8498,73 @@ export const gitService = {
     return { aheadCommits, behindCommits, diff }
   },
 
+  /**
+   * Bring `refs/remotes/<remote>/<target>` up to date before a pull request is
+   * drafted against it. A write — it moves a remote-tracking ref and FETCH_HEAD —
+   * so it stays out of READ_METHODS and takes the exclusive lock, and the
+   * comparison itself (`prComparison`) is a separate read.
+   *
+   * Never throws: offline, no access, or a branch the remote does not have all
+   * return false, and the caller compares against whatever ref is already there.
+   * Short timeout, no prompts — it only exists to make a prefill more accurate.
+   */
+  async refreshPrBase(repoPath: string, remote: string, target: string): Promise<boolean> {
+    try {
+      assertNotOption(target, 'the branch')
+      await withRemoteAuth(repoPath, remote, 'fetch', () =>
+        runGit(repoPath, ['fetch', '--no-tags', '--', remote, target], undefined, undefined, PR_BASE_FETCH_TIMEOUT_MS)
+      )
+      return true
+    } catch {
+      return false
+    }
+  },
+
+  /**
+   * What a pull request from `source` into `target` on `remote` would contain.
+   * The host compares against its own copy of the target, so this does too:
+   * after `git pull <remote> main` was merged into a feature branch while the
+   * local `main` stayed behind, a comparison with the local branch would count
+   * every upstream commit that came in through the merge. Merge commits are
+   * left out as well — the PR's prose is about the user's own work.
+   *
+   * Falls back to the local `target` when the remote has no tracking ref for
+   * it, and says so (`baseIsRemote: false`).
+   */
+  async prComparison(repoPath: string, source: string, target: string, remote: string): Promise<PrComparison> {
+    assertNotOption(source, 'the branch')
+    assertNotOption(target, 'the branch')
+    assertNotOption(remote, 'the remote')
+    const remoteRef = `refs/remotes/${remote}/${target}`
+    const hasRemote = await runGit(repoPath, ['rev-parse', '--verify', '--quiet', `${remoteRef}^{commit}`])
+      .then(() => true)
+      .catch(() => false)
+    const base = hasRemote ? remoteRef : target
+    const format = `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${REC}`
+    // execFile's default 1 MB buffer is small for a long-lived branch's diff.
+    const [log, diff] = await Promise.all([
+      runGit(repoPath, ['log', '--no-merges', format, `${base}..${source}`, '--'], undefined, 16 << 20).catch(() => ''),
+      runGit(repoPath, ['diff', `${base}...${source}`, '--'], undefined, 64 << 20).catch(() => '')
+    ])
+    const commits = log
+      .split(REC)
+      .map((r) => r.trim())
+      .filter(Boolean)
+      .map((rec) => {
+        const [hash, parents, author, email, date, refs, subject] = rec.split(SEP)
+        return {
+          hash,
+          parents: parents ? parents.split(' ').filter(Boolean) : [],
+          author,
+          email,
+          date: +date,
+          refs: refs ? refs.split(',').map((x) => x.trim()).filter(Boolean) : [],
+          subject: subject ?? ''
+        }
+      })
+    return { base, baseIsRemote: hasRemote, commits, diff }
+  },
+
   /** Per-day commit counts and author tallies from the repo's history. `sinceDays` 0 = whole history. */
   async repoStats(repoPath: string, sinceDays = 0): Promise<RepoStats> {
     const git = gitFor(repoPath)
@@ -9211,6 +9284,7 @@ const READ_METHODS = new Set<string>([
   'conflictVersions',
   'interactiveRebaseSteps',
   'compareBranches',
+  'prComparison',
   'mergePreview',
   'teammateRadar',
   'commitEditInfo',

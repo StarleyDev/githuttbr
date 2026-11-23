@@ -2659,6 +2659,8 @@ export const en = {
   'createPR.pickerPartial': "This list may be incomplete. Type to search it.",
   'createPR.metaLoading': 'Loading reviewers, assignees and labels…',
   'createPR.metaLoadFailed': 'Could not load reviewers, assignees or labels. The pull request can still be created without them.',
+  'createPR.baseLocal': 'Compared with your local {target}: {remote} has no {target} branch yet.',
+  'createPR.baseStale': 'Compared with the last fetched {remote}/{target}: it could not be refreshed just now.',
   'createPR.createdMetaFailed': 'Created PR #{n}, but could not set {parts}. Add them on the host.',
   'createPR.createDraft': 'Create as draft',
   'createPR.openBrowser': 'Open in browser',

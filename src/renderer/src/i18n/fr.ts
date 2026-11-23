@@ -2619,6 +2619,8 @@ export const fr: Dict = {
   'createPR.pickerPartial': "Cette liste est peut-être incomplète. Tapez pour y chercher.",
   'createPR.metaLoading': 'Chargement des relecteurs, assignés et labels…',
   'createPR.metaLoadFailed': 'Impossible de charger les relecteurs, assignés ou labels. La pull request peut tout de même être créée sans eux.',
+  'createPR.baseLocal': 'Comparé à votre {target} local : {remote} n’a pas encore de branche {target}.',
+  'createPR.baseStale': 'Comparé au dernier {remote}/{target} récupéré : impossible de l’actualiser pour l’instant.',
   'createPR.createdMetaFailed': 'PR #{n} créée, mais impossible de définir : {parts}. Ajoutez-les sur l’hébergeur.',
   'createPR.createDraft': 'Créer en brouillon',
   'createPR.openBrowser': 'Ouvrir dans le navigateur',

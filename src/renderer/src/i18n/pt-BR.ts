@@ -2661,6 +2661,8 @@ export const ptBR: Dict = {
   'createPR.pickerPartial': "Esta lista pode estar incompleta. Digite para pesquisar nela.",
   'createPR.metaLoading': 'Carregando revisores, responsáveis e labels…',
   'createPR.metaLoadFailed': 'Não foi possível carregar revisores, responsáveis ou labels. O pull request ainda pode ser criado sem eles.',
+  'createPR.baseLocal': 'Comparado com o {target} local: {remote} ainda não tem a branch {target}.',
+  'createPR.baseStale': 'Comparado com o último {remote}/{target} obtido: não foi possível atualizá-lo agora.',
   'createPR.createdMetaFailed': 'PR #{n} criado, mas não foi possível definir: {parts}. Adicione-os no host.',
   'createPR.createDraft': 'Criar como rascunho',
   'createPR.openBrowser': 'Abrir no navegador',

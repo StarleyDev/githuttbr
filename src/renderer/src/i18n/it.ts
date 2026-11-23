@@ -2620,6 +2620,8 @@ export const it: Dict = {
   'createPR.pickerPartial': "Questo elenco potrebbe essere incompleto. Digita per cercarvi.",
   'createPR.metaLoading': 'Caricamento di revisori, assegnatari ed etichette…',
   'createPR.metaLoadFailed': 'Impossibile caricare revisori, assegnatari o etichette. La pull request si può comunque creare senza.',
+  'createPR.baseLocal': 'Confrontato con il tuo {target} locale: {remote} non ha ancora il branch {target}.',
+  'createPR.baseStale': 'Confrontato con l’ultimo {remote}/{target} recuperato: non è stato possibile aggiornarlo ora.',
   'createPR.createdMetaFailed': 'PR #{n} creata, ma non è stato possibile impostare: {parts}. Aggiungili sull’host.',
   'createPR.createDraft': 'Crea come bozza',
   'createPR.openBrowser': 'Apri nel browser',

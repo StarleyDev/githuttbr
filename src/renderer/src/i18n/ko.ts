@@ -2660,6 +2660,8 @@ export const ko: Dict = {
   'createPR.pickerPartial': "이 목록은 일부만 표시되었을 수 있습니다. 입력해서 검색하세요.",
   'createPR.metaLoading': '리뷰어, 담당자, 라벨을 불러오는 중…',
   'createPR.metaLoadFailed': '리뷰어, 담당자, 라벨을 불러오지 못했습니다. 이 항목 없이도 풀 리퀘스트를 만들 수 있습니다.',
+  'createPR.baseLocal': '로컬 {target}와 비교했습니다: {remote}에 아직 {target} 브랜치가 없습니다.',
+  'createPR.baseStale': '마지막으로 가져온 {remote}/{target}와 비교했습니다: 지금은 새로 고치지 못했습니다.',
   'createPR.createdMetaFailed': 'PR #{n}을(를) 만들었지만 다음을 설정하지 못했습니다: {parts}. 호스트에서 추가하세요.',
   'createPR.createDraft': '초안으로 만들기',
   'createPR.openBrowser': '브라우저에서 열기',

@@ -2660,6 +2660,8 @@ export const he: Dict = {
   'createPR.pickerPartial': "ייתכן שהרשימה חלקית. הקלידו כדי לחפש בה.",
   'createPR.metaLoading': 'טוען מבקרים, אחראים ותוויות…',
   'createPR.metaLoadFailed': 'לא ניתן לטעון מבקרים, אחראים או תוויות. עדיין אפשר ליצור את בקשת המשיכה בלעדיהם.',
+  'createPR.baseLocal': 'הושווה מול {target} המקומי: ב-{remote} עדיין אין ענף {target}.',
+  'createPR.baseStale': 'הושווה מול {remote}/{target} שנמשך לאחרונה: לא ניתן היה לרענן אותו כעת.',
   'createPR.createdMetaFailed': 'בקשת המשיכה #{n} נוצרה, אך לא ניתן היה להגדיר: {parts}. הוסיפו אותם אצל המארח.',
   'createPR.createDraft': 'יצירה כטיוטה',
   'createPR.openBrowser': 'פתיחה בדפדפן',

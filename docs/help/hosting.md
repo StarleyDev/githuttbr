@@ -16,6 +16,33 @@ people and labels it should land with.
 
 ![Creating a pull request, with a reviewer, an assignee and two labels picked, and the open-in-browser option left off](../screenshots/create-pr.webp)
 
+### What the prefill counts
+
+The title, the body and **Draft with AI** describe what the host will show as
+the pull request's changes — so they are measured the way the host measures
+them: against the **remote's** copy of the target branch (`origin/main`), not
+your local `main`. That matters after `git pull origin main` on a feature
+branch: the merge brings upstream work in while your local `main` stays where
+it was, and a comparison with the local branch would list every upstream
+commit as if it were yours.
+
+- When the dialog opens, it fetches that one branch from the remote — quietly,
+  with no password prompt and a short timeout — so the comparison is current.
+- Only your own commits are listed. Merge commits are left out, and so is
+  anything the remote's target already contains.
+- The diff the AI reads is the branch's changes since it forked from the
+  remote target (`git diff origin/main...feature`).
+- The remote is the one the dialog creates the PR on; with no match, the
+  source branch's upstream remote, else `origin`.
+
+*Limits:* offline, or when the remote refuses the fetch, the comparison uses
+the last fetched `origin/main` and a small note under the branch pickers says
+so — if upstream moved since, the list can include commits the host would not.
+When the remote has no such branch at all, the local branch stands in, with a
+note as well. The fetch updates `origin/<target>` and nothing else; your local
+branches are never moved. The pull request itself is unaffected either way —
+the host computes its own commits.
+
 ### After you press Create
 
 The new pull request is listed in the app: the sidebar's **PULL REQUESTS**

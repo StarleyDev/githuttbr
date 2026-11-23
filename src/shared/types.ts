@@ -1070,6 +1070,22 @@ export interface BranchCompareResult {
   diff: string
 }
 
+/**
+ * What a new pull request would contain, measured the way the host measures it:
+ * against the remote's copy of the target branch, not the local one (which may
+ * be behind after `git pull <remote> <target>` was merged into the source).
+ */
+export interface PrComparison {
+  /** The ref compared against: `refs/remotes/<remote>/<target>`, or the local `target` as a fallback. */
+  base: string
+  /** False when the remote has no tracking ref for the target and the local branch stood in. */
+  baseIsRemote: boolean
+  /** The source's own commits on top of the base — merge commits left out. */
+  commits: GraphCommit[]
+  /** `git diff <base>...<source>`: the source's changes since it forked from the base. */
+  diff: string
+}
+
 export interface WorktreeInfo {
   path: string
   branch: string | null

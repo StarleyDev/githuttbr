@@ -2619,6 +2619,8 @@ export const tr: Dict = {
   'createPR.pickerPartial': "Bu liste eksik olabilir. Aramak için yazın.",
   'createPR.metaLoading': 'İnceleyenler, atananlar ve etiketler yükleniyor…',
   'createPR.metaLoadFailed': 'İnceleyenler, atananlar veya etiketler yüklenemedi. Pull request yine de bunlar olmadan oluşturulabilir.',
+  'createPR.baseLocal': 'Yerel {target} ile karşılaştırıldı: {remote} üzerinde henüz {target} dalı yok.',
+  'createPR.baseStale': 'En son alınan {remote}/{target} ile karşılaştırıldı: şu anda güncellenemedi.',
   'createPR.createdMetaFailed': 'PR #{n} oluşturuldu, ancak şunlar ayarlanamadı: {parts}. Bunları barındırma hizmetinde ekleyin.',
   'createPR.createDraft': 'Taslak olarak oluştur',
   'createPR.openBrowser': 'Tarayıcıda aç',

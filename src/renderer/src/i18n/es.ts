@@ -2654,6 +2654,8 @@ export const es: Dict = {
   'createPR.pickerPartial': "Puede que esta lista esté incompleta. Escribe para buscar en ella.",
   'createPR.metaLoading': 'Cargando revisores, asignados y etiquetas…',
   'createPR.metaLoadFailed': 'No se pudieron cargar revisores, asignados ni etiquetas. La pull request se puede crear igualmente sin ellos.',
+  'createPR.baseLocal': 'Comparado con tu {target} local: {remote} aún no tiene la rama {target}.',
+  'createPR.baseStale': 'Comparado con el último {remote}/{target} obtenido: no se pudo actualizar ahora.',
   'createPR.createdMetaFailed': 'PR #{n} creada, pero no se pudo establecer: {parts}. Añádelos en el servidor.',
   'createPR.createDraft': 'Crear como borrador',
   'createPR.openBrowser': 'Abrir en el navegador',

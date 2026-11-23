@@ -2660,6 +2660,8 @@ export const ru: Dict = {
   'createPR.pickerPartial': "Этот список может быть неполным. Начните вводить, чтобы искать в нём.",
   'createPR.metaLoading': 'Загрузка ревьюеров, исполнителей и меток…',
   'createPR.metaLoadFailed': 'Не удалось загрузить ревьюеров, исполнителей или метки. Пул-реквест можно создать и без них.',
+  'createPR.baseLocal': 'Сравнено с локальной {target}: на {remote} ещё нет ветки {target}.',
+  'createPR.baseStale': 'Сравнено с последней полученной {remote}/{target}: обновить её сейчас не удалось.',
   'createPR.createdMetaFailed': 'PR #{n} создан, но не удалось задать: {parts}. Добавьте их на хостинге.',
   'createPR.createDraft': 'Создать черновиком',
   'createPR.openBrowser': 'Открыть в браузере',

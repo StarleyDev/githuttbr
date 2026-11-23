@@ -2660,6 +2660,8 @@ export const de: Dict = {
   'createPR.pickerPartial': "Diese Liste ist möglicherweise unvollständig. Tippe, um sie zu durchsuchen.",
   'createPR.metaLoading': 'Reviewer:innen, Zuständige und Labels werden geladen…',
   'createPR.metaLoadFailed': 'Reviewer:innen, Zuständige und Labels konnten nicht geladen werden. Der Pull Request lässt sich trotzdem ohne sie erstellen.',
+  'createPR.baseLocal': 'Mit deinem lokalen {target} verglichen: {remote} hat noch keinen Branch {target}.',
+  'createPR.baseStale': 'Mit dem zuletzt abgerufenen {remote}/{target} verglichen: er ließ sich gerade nicht aktualisieren.',
   'createPR.createdMetaFailed': 'PR #{n} erstellt, aber {parts} ließ sich nicht setzen. Bitte auf dem Host ergänzen.',
   'createPR.createDraft': 'Als Entwurf erstellen',
   'createPR.openBrowser': 'Im Browser öffnen',

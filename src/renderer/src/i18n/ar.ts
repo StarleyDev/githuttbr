@@ -2660,6 +2660,8 @@ export const ar: Dict = {
   'createPR.pickerPartial': "قد تكون هذه القائمة غير مكتملة. اكتب للبحث فيها.",
   'createPR.metaLoading': 'جارٍ تحميل المراجعين والمكلّفين والتسميات…',
   'createPR.metaLoadFailed': 'تعذّر تحميل المراجعين أو المكلّفين أو التسميات. لا يزال بالإمكان إنشاء طلب السحب بدونها.',
+  'createPR.baseLocal': 'تمت المقارنة مع {target} المحلي: لا يوجد فرع {target} على {remote} بعد.',
+  'createPR.baseStale': 'تمت المقارنة مع آخر نسخة مجلوبة من {remote}/{target}: تعذّر تحديثها الآن.',
   'createPR.createdMetaFailed': 'أُنشئ طلب السحب #{n}، لكن تعذّر تعيين: {parts}. أضفها على المضيف.',
   'createPR.createDraft': 'إنشاؤه كمسودة',
   'createPR.openBrowser': 'فتح في المتصفح',

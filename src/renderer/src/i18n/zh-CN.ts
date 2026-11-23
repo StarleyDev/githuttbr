@@ -2660,6 +2660,8 @@ export const zhCN: Dict = {
   'createPR.pickerPartial': "此列表可能不完整。输入以进行搜索。",
   'createPR.metaLoading': '正在加载评审者、指派人和标记…',
   'createPR.metaLoadFailed': '无法加载评审者、指派人或标记。不设置这些项也可以创建拉取请求。',
+  'createPR.baseLocal': '已与本地 {target} 比较：{remote} 上还没有 {target} 分支。',
+  'createPR.baseStale': '已与上次获取的 {remote}/{target} 比较：暂时无法刷新。',
   'createPR.createdMetaFailed': '已创建 PR #{n}，但未能设置：{parts}。请在托管平台上添加。',
   'createPR.createDraft': '创建为草稿',
   'createPR.openBrowser': '在浏览器中打开',

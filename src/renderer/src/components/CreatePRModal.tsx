@@ -6,8 +6,9 @@ import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
 import { PrMetaPicker } from './PrMetaPicker'
-import { useT, type TranslationKey } from '../i18n'
+import { interp, useT, type TranslationKey } from '../i18n'
 import { readOpenAfterCreate, writeOpenAfterCreate } from '../lib/prCreated'
+import { prBaseHint, prBaseRemote } from '../lib/prBase'
 import { announcePrCreated } from '../stores/prCreated'
 import {
   createPickerCache,
@@ -21,7 +22,7 @@ import {
   shownFields,
   withPendingText
 } from '../lib/prPicker'
-import type { PrMetaField, PrPickerOptions } from '../../../shared/types'
+import type { PrComparison, PrMetaField, PrPickerOptions } from '../../../shared/types'
 
 // Choices read once per repository + remote + account, and reused for a few
 // minutes, so reopening the dialog does not walk the host's lists again.
@@ -82,16 +83,38 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [pending, setPending] = useState<Partial<Record<PrMetaField, string>>>({})
   const [meta, setMeta] = useState<PrPickerOptions | null>(null)
   const [metaState, setMetaState] = useState<'loading' | 'ready' | 'failed'>('loading')
+  const [baseHint, setBaseHint] = useState<TranslationKey | null>(null)
   const aiEnabled = profile.ai?.enabled !== false
   const t = useT()
+
+  // The host measures a PR against its own copy of the target, so the prefill
+  // and the AI draft do too: a local `main` left behind after `git pull origin
+  // main` was merged into the source would otherwise count every upstream commit.
+  const sourceUpstream = repo?.branches.locals.find((b) => b.name === source)?.upstream
+  const baseRemote = prBaseRemote(repo?.remotes ?? [], remoteUrl, sourceUpstream)
+  // One refresh of the base per remote + target while the dialog is open: the
+  // prefill and the AI draft share it, and switching back and forth costs nothing.
+  const refreshes = useRef(new Map<string, Promise<boolean>>())
+  const refreshBase = (): Promise<boolean> => {
+    const key = `${baseRemote}\0${target}`
+    let refreshed = refreshes.current.get(key)
+    if (!refreshed) {
+      refreshed = gitApi.refreshPrBase(spec.repoPath, baseRemote, target).catch(() => false)
+      refreshes.current.set(key, refreshed)
+    }
+    return refreshed
+  }
+  const comparePr = (): Promise<PrComparison> => gitApi.prComparison(spec.repoPath, source, target, baseRemote)
 
   // Draft the PR title + body from the branch's commits + diff via AI.
   const aiDraft = async (): Promise<void> => {
     if (!source || !target || source === target) return
     setAiBusy(true)
     try {
-      const cmp = await gitApi.compareBranches(spec.repoPath, source, target)
-      const commits = cmp.aheadCommits.map((c) => `- ${c.subject}`).join('\n')
+      const ok = await refreshBase()
+      const cmp = await comparePr()
+      setBaseHint(prBaseHint(cmp.baseIsRemote, ok))
+      const commits = cmp.commits.map((c) => `- ${c.subject}`).join('\n')
       const { title: t, body: b } = await aiApi.prDescription(commits, cmp.diff, { ...aiFor('review'), cliCwd: spec.repoPath })
       if (t) {
         titleTouched.current = true
@@ -113,19 +136,34 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const titleTouched = useRef(!!spec.defaultTitle)
   const bodyTouched = useRef(!!spec.defaultBody)
   useEffect(() => {
+    setBaseHint(null)
     if (!remoteUrl || !source || !target || source === target) return
     if (titleTouched.current && bodyTouched.current) return
     let cancelled = false
-    void gitApi.compareBranches(spec.repoPath, source, target).then((r) => {
-      if (cancelled) return
-      const ahead = r.aheadCommits
+    const fill = (r: PrComparison): void => {
+      const ahead = r.commits
       if (!titleTouched.current) setTitle(ahead.length === 1 ? ahead[0].subject : source)
       if (!bodyTouched.current) setBody(ahead.map((c) => `- ${c.subject}`).join('\n'))
-    })
+    }
+    // Fill at once from the remote base as last fetched, then again once it is
+    // refreshed — a slow or unreachable remote never holds the dialog up.
+    void (async () => {
+      const first = await comparePr()
+      if (cancelled) return
+      fill(first)
+      const ok = await refreshBase()
+      if (cancelled) return
+      const cmp = ok ? await comparePr() : first
+      if (cancelled) return
+      fill(cmp)
+      setBaseHint(prBaseHint(cmp.baseIsRemote, ok))
+    })().catch(() => {})
     return () => {
       cancelled = true
     }
-  }, [spec.repoPath, source, target, remoteUrl])
+    // comparePr and refreshBase read only what the dependencies below already cover.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spec.repoPath, source, target, remoteUrl, baseRemote])
 
   const tokens = {
     github: profile.githubToken || undefined,
@@ -222,6 +260,9 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         </label>
       </div>
       {source === target && <p className="pr-warn">{t('createPR.differentBranches')}</p>}
+      {baseHint && source !== target && (
+        <p className="prmeta-hint">{interp(t(baseHint), { remote: baseRemote, target })}</p>
+      )}
       {!remoteUrl && <p className="pr-warn">{t('createPR.noRemote')}</p>}
 
       <label className="modal-label">{t('createPR.titleLabel')}</label>

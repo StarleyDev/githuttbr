@@ -2661,6 +2661,8 @@ export const nl: Dict = {
   'createPR.pickerPartial': "Deze lijst is mogelijk onvolledig. Typ om erin te zoeken.",
   'createPR.metaLoading': 'Reviewers, toegewezenen en labels laden…',
   'createPR.metaLoadFailed': 'Reviewers, toegewezenen of labels konden niet worden geladen. De pull request kan nog steeds zonder worden aangemaakt.',
+  'createPR.baseLocal': 'Vergeleken met je lokale {target}: {remote} heeft nog geen branch {target}.',
+  'createPR.baseStale': 'Vergeleken met de laatst opgehaalde {remote}/{target}: die kon nu niet worden bijgewerkt.',
   'createPR.createdMetaFailed': 'PR #{n} aangemaakt, maar {parts} kon niet worden ingesteld. Voeg ze toe op de host.',
   'createPR.createDraft': 'Als concept aanmaken',
   'createPR.openBrowser': 'In de browser openen',

@@ -2619,6 +2619,8 @@ export const ja: Dict = {
   'createPR.pickerPartial': "このリストは一部しか表示されていない可能性があります。入力して検索してください。",
   'createPR.metaLoading': 'レビュアー、担当者、ラベルを読み込み中…',
   'createPR.metaLoadFailed': 'レビュアー、担当者、ラベルを読み込めませんでした。これらを指定しなくてもプルリクエストは作成できます。',
+  'createPR.baseLocal': 'ローカルの {target} と比較しました: {remote} にはまだ {target} ブランチがありません。',
+  'createPR.baseStale': '最後に取得した {remote}/{target} と比較しました: 今は更新できませんでした。',
   'createPR.createdMetaFailed': 'PR #{n} を作成しましたが、{parts} を設定できませんでした。ホスト側で追加してください。',
   'createPR.createDraft': 'ドラフトとして作成',
   'createPR.openBrowser': 'ブラウザーで開く',
