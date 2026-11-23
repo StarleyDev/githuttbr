@@ -71,7 +71,10 @@ Push, pull and fetch need somewhere to go. A repository with none — a fresh
 nothing, or succeed with an empty fetch. They now open **Add remote** instead,
 with a warning, so you can paste a URL or create the repo on the host. Adding
 it finishes the action you started: a push publishes the current branch, a
-pull fetches then pulls, a fetch just fetches.
+pull fetches then pulls, a fetch just fetches. A host tab acts as the profile in
+its picker — the repository's bound one to start with; picking another binds the
+repository to it before that push, so it is one account throughout (see
+[profiles](profiles.md#per-repository-binding)).
 
 Background auto-fetch stays quiet when there is nothing to fetch. It does not
 open a dialog on a timer.

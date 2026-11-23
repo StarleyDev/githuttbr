@@ -45,6 +45,16 @@ lists repositories, clones and then binds as the **profile picked in the
 dialog** (the active one unless you change it). Change the picker and the list
 reloads as that profile.
 
+**Add remote** works the same way for a repository you already have. Its picker
+starts at the profile the repository is bound to (else the active one). Pick
+another, and creating the repository on the host, the push that follows and
+every later hosting call run as the new pick: the repository is bound to it as
+soon as the remote is added. Pasting a URL changes no binding.
+
+When a bound profile has no credential for a host, the error says so by name —
+*No GitHub account is linked to the profile "Work" this repository is bound
+to* — rather than pointing at whichever profile is active.
+
 What binding cannot do:
 - It picks which of *your* saved credentials is used; it does not create one. A
   bound profile with no token or link for that host gets no credential at all —
