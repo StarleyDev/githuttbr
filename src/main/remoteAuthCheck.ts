@@ -1,4 +1,4 @@
-import { apiToken, credentialFor, providerOfRemote, type ApiAuth } from './credentials'
+import { apiToken, credentialFor, providerOfRemote, resolveRemote, type ApiAuth } from './credentials'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS, githubEndpoints } from '../shared/githubEnterprise'
 import { bitbucketServerEndpoints, bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
@@ -184,18 +184,24 @@ export async function profileCredentialForUrl(repoPath: string, url: string): Pr
   /** A Data Center personal token with no user name in Settings or in the URL:
    *  git would get no credential from it, so it counts as none. */
   needsUsername?: boolean
+  /** The repository is explicitly bound to a profile, and the remote is on a
+   *  server a profile can hold a credential for (a cloud host, or a configured
+   *  base). With no credential, git's own helper must not answer for it: that
+   *  would sign in as whichever account the machine holds, under the bound
+   *  profile's name. */
+  bound?: true
 }> {
   if (!/^https:\/\//i.test(url) || remoteUrlKind(url) !== 'https') return {}
   await readSettings() // populate self-managed host registry on first use
-  const provider = providerOfRemote(url)
+  const resolved = resolveRemote(url)
+  const provider = resolved?.provider
   if (!provider) return {}
-  const auth = await pickHostAuth({
-    bound: await boundProfileAuth(provider, repoPath, url),
-    active: () => activeProfileAuth(provider, url)
-  })
+  const boundAuth = await boundProfileAuth(provider, repoPath, url)
+  const bound = boundAuth !== undefined && (!!resolved.base || provider === 'azure') ? { bound: true as const } : {}
+  const auth = await pickHostAuth({ bound: boundAuth, active: () => activeProfileAuth(provider, url) })
   const credential = await apiToken(url, auth).catch(() => null)
-  if (credential && personalTokenWithoutName(provider, url, credential)) return { needsUsername: true }
-  return credential ? { credential } : { missing: auth.link }
+  if (credential && personalTokenWithoutName(provider, url, credential)) return { needsUsername: true, ...bound }
+  return credential ? { credential } : { missing: auth.link, ...bound }
 }
 
 /** The case `basicAuthFor` turns into no credential: a personal Data Center token with no name to send. */
@@ -245,8 +251,9 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
     return { ...base, profile: who.name, bound: who.bound, source, login, ...(await askHost(provider, pushUrl, token)) }
   }
 
-  // No profile credential: git's own helper answers, if it has anything.
-  const cred = await credentialFor(pushUrl, { repoPath }).catch(() => null)
+  // No profile credential: git's own helper answers, if it has anything —
+  // except for a bound repository, whose push goes out as nobody (`withRemoteAuth`).
+  const cred = resolved.bound ? null : await credentialFor(pushUrl, { repoPath }).catch(() => null)
   if (!cred) {
     if (resolved.missing) return { ...base, source: resolved.missing.source, login: resolved.missing.login, linkMissing: true }
     return { ...base, source: 'none' }

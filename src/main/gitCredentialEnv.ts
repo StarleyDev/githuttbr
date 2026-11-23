@@ -30,6 +30,28 @@ export interface BasicCredential {
 }
 
 /**
+ * Which URLs a credential (or its absence) is registered for. `host`: the whole
+ * origin. `repository`: this one repository — the path must be the one git
+ * asks about. `{ prefix }`: every repository under one server's base, such as
+ * a Data Center at `https://host/bitbucket`, so a GitLab at `https://host/` is
+ * not offered its token while a redirect inside the base still is. git matches
+ * a path-scoped `credential.<url>` entry against the path it asks about, at a
+ * `/` boundary.
+ */
+export type CredentialScope = 'host' | 'repository' | { prefix: string }
+
+/** The `credential.<url>` context for `u` under `scope`; null when a prefix does not cover `u`. */
+function scopedUrl(u: URL, scope: CredentialScope): string | null {
+  if (scope === 'host') return u.origin
+  if (scope === 'repository') return u.origin + u.pathname
+  const p = new URL(scope.prefix)
+  const prefix = p.pathname.replace(/\/+$/, '')
+  if (p.origin !== u.origin) return null
+  if (prefix && u.pathname !== prefix && !u.pathname.startsWith(`${prefix}/`)) return null
+  return u.origin + prefix
+}
+
+/**
  * Environment additions that make git authenticate `url`'s host with `cred`.
  * Null when it cannot apply: not https, an unparseable URL, or a value with a
  * line break (the credential protocol is line-based; such a value would add
@@ -39,16 +61,17 @@ export function gitCredentialEnv(
   url: string,
   cred: BasicCredential,
   base: NodeJS.ProcessEnv = process.env,
-  scope: 'host' | 'repository' = 'host'
+  scope: CredentialScope = 'host'
 ): NodeJS.ProcessEnv | null {
-  let origin: string
+  let origin: string | null
   try {
     const u = new URL(url)
     if (u.protocol !== 'https:') return null
-    origin = u.origin + (scope === 'repository' ? u.pathname : '')
+    origin = scopedUrl(u, scope)
   } catch {
     return null
   }
+  if (!origin) return null
   if (/[\r\n\0]/.test(cred.username) || /[\r\n\0]/.test(cred.password) || !cred.password) return null
 
   // Append to config the caller may already pass this way rather than replace it.
@@ -74,32 +97,53 @@ export function gitCredentialEnv(
 }
 
 /**
- * Environment additions that make git ask `url`'s host as nobody: the same empty
- * `credential.<origin>.helper` entry `gitCredentialEnv` writes first, with no
- * helper after it, so a credential manager holding another account's login for
- * that host is never consulted. `GIT_ASKPASS` set but empty also skips
- * `core.askPass` and `SSH_ASKPASS` (git takes the first one *set*, and runs it
- * only when non-empty), and with terminal prompts off a server that wants a
- * login fails at once. Null for a URL with no credential step (ssh, a path).
+ * Environment additions that make git ask `url`'s host as nobody: an empty
+ * `credential.<url>.helper` entry with no helper after it, so a credential
+ * manager holding another account's login for that host is never consulted.
+ * `GIT_ASKPASS` set but empty also skips `core.askPass` and `SSH_ASKPASS` (git
+ * takes the first one *set*, and runs it only when non-empty), and with
+ * terminal prompts off a server that wants a login fails at once. Null for a
+ * URL with no credential step (ssh, a path).
+ *
+ * The entry rides in `GIT_CONFIG_PARAMETERS`, which is what `git -c` sets for
+ * the commands it runs, in the `'key=value'` form every git reads — not in
+ * `GIT_CONFIG_COUNT`, which needs git 2.31. Nothing secret is in it, and going
+ * anonymous must work on the git a distribution ships (Ubuntu 20.04: 2.25):
+ * there, a version refusal would turn the clone of a public repository into an
+ * error.
  */
-export function anonymousGitEnv(url: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv | null {
-  let origin: string
+export function anonymousGitEnv(
+  url: string,
+  base: NodeJS.ProcessEnv = process.env,
+  scope: 'host' | 'repository' = 'host'
+): NodeJS.ProcessEnv | null {
+  let at: string | null
   try {
     const u = new URL(url)
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
-    origin = u.origin
+    at = scopedUrl(u, scope)
   } catch {
     return null
   }
-  const n = Number.parseInt(base.GIT_CONFIG_COUNT ?? '', 10)
-  const at = Number.isFinite(n) && n > 0 ? n : 0
+  if (!at) return null
+  const entry = sqQuote(`credential.${at}.helper=`)
+  const before = base.GIT_CONFIG_PARAMETERS?.trim()
   return {
-    GIT_CONFIG_COUNT: String(at + 1),
-    [`GIT_CONFIG_KEY_${at}`]: `credential.${origin}.helper`,
-    [`GIT_CONFIG_VALUE_${at}`]: '',
+    GIT_CONFIG_PARAMETERS: before ? `${before} ${entry}` : entry,
     GIT_ASKPASS: '',
     GIT_TERMINAL_PROMPT: '0'
   }
+}
+
+/** git's own quoting for `GIT_CONFIG_PARAMETERS` (`sq_quote_buf`): `'` becomes `'\''`. */
+const sqQuote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
+
+/**
+ * Whether an environment from this module needs config-from-environment
+ * (`GIT_CONFIG_COUNT`, git 2.31): a credential does; going anonymous does not.
+ */
+export function needsConfigEnv(env: NodeJS.ProcessEnv): boolean {
+  return env.GIT_CONFIG_COUNT !== undefined
 }
 
 /** Config-from-environment (`GIT_CONFIG_COUNT`) arrived in git 2.31. */

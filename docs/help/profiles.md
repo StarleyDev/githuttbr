@@ -58,7 +58,12 @@ to* — rather than pointing at whichever profile is active.
 What binding cannot do:
 - It picks which of *your* saved credentials is used; it does not create one. A
   bound profile with no token or link for that host gets no credential at all —
-  it never borrows the active profile's.
+  it never borrows the active profile's, and git's credential helper is
+  switched off for that remote too, so fetch, pull and push go out as nobody
+  rather than as whichever account the machine's credential manager holds. A
+  private repository then fails with an authentication error until the profile
+  has a credential for it. Remotes on a host no profile can serve, and
+  repositories that are not bound, are left to git's helper as before.
 - Notifications are the account's own inbox, not a repository's: they always
   come from the active profile.
 

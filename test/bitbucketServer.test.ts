@@ -1215,8 +1215,10 @@ describe('call sites, through the real IPC handlers', () => {
     expect(text).toContain(BBS_TOKEN)
     expect(text).not.toContain(CLOUD_TOKEN)
     expect(Object.values(env)).toContain('jdoe')
-    // Scoped to the server's origin, nowhere else.
-    expect(Object.values(env)).toContain('credential.https://bitbucket.example.corp.helper')
+    // Scoped to the server's base, context path included — not the whole origin,
+    // which another server (a GitLab at its root) may share.
+    expect(Object.values(env)).toContain('credential.https://bitbucket.example.corp/bitbucket.helper')
+    expect(Object.values(env)).not.toContain('credential.https://bitbucket.example.corp.helper')
   })
 
   it('Clone → URL (no provider sent) uses a configured server’s credential, and nothing for an unknown host', async () => {
@@ -1252,9 +1254,8 @@ describe('call sites, through the real IPC handlers', () => {
     const id = defaultSettings().profiles[0].id
     for (const host of ['bitbucket', undefined] as const) {
       const picked = (await cloneCredentialEnv('https://bbs.third.example/scm/team/svc.git', host, undefined, id)) ?? {}
-      expect(picked.GIT_CONFIG_KEY_0, String(host)).toBe('credential.https://bbs.third.example.helper')
-      expect(picked.GIT_CONFIG_VALUE_0).toBe('')
-      expect(picked.GIT_CONFIG_COUNT).toBe('1')
+      expect(picked.GIT_CONFIG_PARAMETERS?.endsWith(`'credential.https://bbs.third.example.helper='`), String(host)).toBe(true)
+      expect(picked.GIT_CONFIG_COUNT).toBeUndefined()
       expect(JSON.stringify(picked)).not.toContain('bbs-token-c')
     }
   })

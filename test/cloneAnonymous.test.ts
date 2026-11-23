@@ -78,14 +78,36 @@ describe('anonymousGitEnv against real git', () => {
   })
 
   it('appends to config the environment already carries instead of replacing it', () => {
-    const base = { ...machineEnv(), GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'user.name', GIT_CONFIG_VALUE_0: 'kept' }
+    const base = {
+      ...machineEnv(),
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'user.name',
+      GIT_CONFIG_VALUE_0: 'kept',
+      GIT_CONFIG_PARAMETERS: "'user.email=kept@example.com'"
+    }
     const extra = anonymousGitEnv('https://github.com/x.git', base)!
-    expect(extra.GIT_CONFIG_COUNT).toBe('2')
-    expect(extra.GIT_CONFIG_KEY_1).toBe('credential.https://github.com.helper')
-    expect(extra.GIT_CONFIG_VALUE_1).toBe('')
+    // `git -c`'s own variable, so git older than 2.31 honours it too; the
+    // config-from-environment entries are left alone.
+    expect(extra.GIT_CONFIG_COUNT).toBeUndefined()
+    expect(extra.GIT_CONFIG_PARAMETERS).toBe("'user.email=kept@example.com' 'credential.https://github.com.helper='")
     const env = { ...base, ...extra }
     expect(execFileSync('git', ['config', 'user.name'], { env, encoding: 'utf8' }).trim()).toBe('kept')
+    expect(execFileSync('git', ['config', 'user.email'], { env, encoding: 'utf8' }).trim()).toBe('kept@example.com')
     expect(fill(env)).not.toContain('machine-secret')
+  })
+
+  it('repository scope blanks the helpers for that one repository', () => {
+    const base = machineEnv()
+    const env = { ...base, ...anonymousGitEnv('https://github.com/acme/widgets.git', base, 'repository') }
+    expect(fill(env)).not.toContain('machine-secret')
+    expect(existsSync(marker)).toBe(false)
+    // Another repository on the same host is left to git, as before.
+    const other = execFileSync('git', ['credential', 'fill'], {
+      input: 'protocol=https\nhost=github.com\npath=acme/other.git\n\n',
+      env: { ...base, GIT_CONFIG_PARAMETERS: env.GIT_CONFIG_PARAMETERS },
+      encoding: 'utf8'
+    })
+    expect(other).toContain('password=machine-secret')
   })
 
   it('has nothing to say for a URL with no credential step', () => {
