@@ -1,5 +1,18 @@
 
 
+## [4.37.2](https://github.com/StarleyDev/githuttbr/compare/v4.37.1...v4.37.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* catch appimage mount paths anywhere on a textconv line ([c7bb0b0](https://github.com/StarleyDev/githuttbr/commit/c7bb0b0bc40efd520f55235c3b355db1981e2711))
+* docs guard sees wrapped palette entries, map the cli commands ([9ca94d5](https://github.com/StarleyDev/githuttbr/commit/9ca94d51b604d8413ea216af17d0a4473ce7dc1a))
+* keep background reads read-only and explain a refused move-aside ([c3fffa2](https://github.com/StarleyDev/githuttbr/commit/c3fffa29f2349435b03e818200c189d0677f82bc))
+* refuse appimage mount paths for cli and textconv ([67cc87b](https://github.com/StarleyDev/githuttbr/commit/67cc87b5e0223252fe2a0b1ee1cf54086f6818ac))
+* settle abandoned keychain asks and keep keychain-off clears for the session ([905b2f1](https://github.com/StarleyDev/githuttbr/commit/905b2f13612459575972c71a5080b00f93640306))
+* stop settings imports and saves from wiping saved tokens ([4c22542](https://github.com/StarleyDev/githuttbr/commit/4c225420b04337ed325fdbabd0855a920d5ee6f6))
+* stop settings saves from overwriting unreadable files or reviving tokens ([ff6e9ad](https://github.com/StarleyDev/githuttbr/commit/ff6e9adc3793a0af8e0417f47a678863514bf455))
+
 ## [4.37.1](https://github.com/StarleyDev/githuttbr/compare/v4.37.0...v4.37.1) (2026-11-23)
 
 
