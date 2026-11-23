@@ -150,12 +150,19 @@ git config --unset diff.word.textconv    # for each one it lists
 ```
 
 **After the 4.39 rename.** Versions up to 4.38 wrote the bundled converter as
-<code>…/cli/git&#99;ito-textconv</code>; 4.39 ships it under the new name, so those
-drivers fail every diff. The list marks such a driver — and any driver whose
-converter is an absolute path that no longer exists — **converter is gone or
-predates 4.39**, with the same **Remove** button. Remove it, then add the
-driver again from the suggestions. As with the AppImage flag, only this
-repository and your global config are checked. See [upgrading](upgrading.md).
+<code>…/cli/git&#99;ito-textconv</code>; 4.39 ships it under the new name. Such
+entries are **repointed automatically** — your global config when the app
+starts, a repository's config when you open it — with one note saying how many,
+and an **Undo**. Only entries whose program is that converter are touched; the
+arguments after it are kept.
+
+What cannot be repointed keeps the flag **converter predates 4.39**, with the
+same **Remove** button (which can be undone): that is the AppImage, whose own
+converter path must never be written into a config, and a config the app could
+not write. Remove it, then add the driver again from the suggestions. The flag
+is only about that converter: a driver whose program is merely missing shows
+**converter not installed** instead, so an MSYS-style or escaped Windows path this
+machine cannot resolve is never called stale. See [upgrading](upgrading.md).
 
 ## Clean/smudge filters — with a dry run first
 

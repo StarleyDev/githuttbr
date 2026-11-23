@@ -69,7 +69,33 @@ A few things outside the app still name the old command:
 |------|------------|
 | **The terminal command** is now `githuttbr` | Command palette → **Install 'githuttbr' command in PATH**. The old link stays until you remove it (on Linux, <code>~/.local/bin/git&#99;ito</code>) |
 | **git's editor** still runs <code>git&#99;ito --wait</code> | `githuttbr doctor` flags it and prints the exact `git config` line; `githuttbr doctor --fix` applies it. Or run `githuttbr editor install`, or set `core.editor` to `githuttbr --wait` |
-| **Diff drivers** that use the bundled converter point at <code>git&#99;ito-textconv</code> | The [diff drivers](attributes.md) list marks them as stale, with a **Remove** button; then add the driver again from the suggestions |
+| **Diff drivers** that use the bundled converter point at <code>git&#99;ito-textconv</code> | Nothing, usually — see below |
+
+### Diff drivers from 4.38
+
+4.38 wrote the bundled converter for Word, Excel, JSON and `.strings` into git
+config as an absolute path ending in <code>git&#99;ito-textconv</code>. 4.39
+ships it as `githuttbr-textconv`, and the install folder may have moved too.
+Left alone, every `git diff` of those files would fail — in the app and in the
+terminal. Three things keep that from happening:
+
+- **Repointed for you.** At start-up the app rewrites such entries in your
+  global git config, and when it opens a repository, in that repository's
+  config, to the converter it ships now. Arguments after the program are kept;
+  every other driver is left exactly as it is. A note says how many changed,
+  and the change is on the repository's **Undo**.
+- **A stub under the old name.** An update installed over 4.38 in the same
+  folder also ships <code>git&#99;ito-textconv</code>, which just hands over to
+  the new converter — so the old path keeps working until the app has rewritten
+  it, and for repositories the app never opens.
+- **The list still flags what is left.** A repository you have not opened since
+  upgrading keeps the old entry until you do.
+
+**On the AppImage** nothing is rewritten: an AppImage runs from a folder under
+`/tmp` that changes at every launch, so its converter path must never be written
+into a config (see [diff drivers](attributes.md)). The old entries stay, marked
+**converter predates 4.39**; remove them, or install the `.deb` and let it
+repoint them on its first start.
 
 ## Limits
 

@@ -352,9 +352,10 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
                   disabled={busy}
                   title={t('attrs.driverStaleHint')}
                   onClick={() => {
-                    // No undo: what it would restore is a converter that no longer runs.
+                    // Undoable: the old path may still run (an in-place update keeps a
+                    // stub under the old name), and it is the user's config to keep.
                     void repoActions
-                      .setDiffDriver(repoPath, driver.name, '', driver.scope === 'global')
+                      .setDiffDriver(repoPath, driver.name, '', driver.scope === 'global', driver.textconv)
                       .then(() => load())
                   }}
                 >
@@ -386,8 +387,17 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
                     : interp(t('attrs.needsBinary'), { binary: suggestion.binary })
               }
               onClick={() => {
+                // The repo-level value it replaces comes back on undo — unless it points
+                // into an AppImage mount, which must not be written again.
+                const replaced = drivers.find((d) => d.scope === 'repo' && d.name === suggestion.name)
                 void repoActions
-                  .setDiffDriver(repoPath, suggestion.name, suggestion.textconv, false)
+                  .setDiffDriver(
+                    repoPath,
+                    suggestion.name,
+                    suggestion.textconv,
+                    false,
+                    replaced?.ephemeral ? undefined : (replaced?.textconv ?? '')
+                  )
                   .then(() => {
                     // A driver nothing points at does nothing — write the rules too.
                     let content = current.content

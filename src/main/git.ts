@@ -116,6 +116,7 @@ import type {
   CredentialUrlRule,
   AttributeFile,
   DiffDriverInfo,
+  DiffDriverRepoint,
   DiffDriverSuggestion,
   FilterDriverInfo,
   FilterDryRunFile,
@@ -211,7 +212,7 @@ import { APP_ID, APP_IDS, LEGACY_APP_ID, isPrePurgePrefix, prePurgeRefRoot, snap
 import { redactSecrets } from '../shared/redact'
 import { cloneFolderProblem } from '../shared/cloneFolder'
 import { isEphemeralTextconv, persistBlocker } from './appImagePaths'
-import { isStaleTextconv } from './legacyShims'
+import { isStaleTextconv, planTextconvRepoints } from './legacyShims'
 
 const SEP = '\x1f'
 
@@ -870,6 +871,56 @@ export function bundledTextconvPath(): string {
   const packaged = process.resourcesPath ? join(process.resourcesPath, 'cli', 'githuttbr-textconv') : ''
   if (packaged && existsSync(packaged)) return packaged
   return resolvePath(__dirname, '../../resources/cli/githuttbr-textconv')
+}
+
+/**
+ * Rewrite the pre-4.39 converter entries of one config scope to the converter
+ * this install ships. Only entries naming `gitcito-textconv` are touched; under
+ * an AppImage nothing is (the mount path must never be persisted — those
+ * entries keep their stale badge), nor when the shim is not there to run.
+ */
+async function repointLegacyTextconvs(cwd: string, scope: 'repo' | 'global'): Promise<DiffDriverRepoint[]> {
+  const flag = scope === 'global' ? '--global' : '--local'
+  const listing = await runGit(cwd, ['config', flag, '--get-regexp', '^diff\\..*\\.textconv$']).catch(() => '')
+  if (!listing.trim()) return []
+  const shim = bundledTextconvPath()
+  const resources = process.resourcesPath ?? ''
+  const plan = planTextconvRepoints(listing, shim, {
+    blocked: !!persistBlocker(shim, resources) || !canExecute(shim),
+    ephemeral: (textconv) => isEphemeralTextconv(textconv, process.env, resources)
+  })
+  const done: DiffDriverRepoint[] = []
+  for (const entry of plan) {
+    try {
+      await runGit(cwd, ['config', flag, `diff.${entry.name}.textconv`, entry.next])
+      done.push({ ...entry, scope })
+    } catch (err) {
+      // One unwritable entry (a read-only include, a locked config) must not
+      // stop the rest; it keeps its stale badge and the Remove button.
+      console.warn(`[textconv] could not repoint diff.${entry.name}.textconv:`, (err as Error).message)
+    }
+  }
+  return done
+}
+
+/** Started once per process; what it rewrote waits for the first repository to report it. */
+let globalRepoint: Promise<DiffDriverRepoint[]> | null = null
+let globalRepointReported = false
+
+/**
+ * Repoint the user's global config, once per run. Called at start-up so the
+ * terminal's `git diff` works before any repository is opened; repository
+ * opens await the same promise, so the two never write the config at once.
+ */
+export function repointGlobalLegacyTextconvs(): Promise<DiffDriverRepoint[]> {
+  globalRepoint ??= repointLegacyTextconvs(homedir(), 'global').catch(() => [])
+  return globalRepoint
+}
+
+/** Test seam: forget this run's global repoint, as a fresh start would. */
+export function resetGlobalTextconvRepoint(): void {
+  globalRepoint = null
+  globalRepointReported = false
 }
 
 function canExecute(path: string): boolean {
@@ -4967,8 +5018,9 @@ export const gitService = {
           // that path is gone (or someone else's) the moment the app quits.
           const info: DiffDriverInfo = { name, textconv, available: converterAvailable(textconv), scope }
           if (isEphemeralTextconv(textconv, process.env, process.resourcesPath ?? '')) info.ephemeral = true
-          // Left by 4.38 (or a converter since uninstalled): fails every diff.
-          else if (isStaleTextconv(textconv, existsSync)) info.stale = true
+          // Left by 4.38 and not repointed (an AppImage, or a config we could
+          // not write): fails every diff outside an in-place update.
+          else if (isStaleTextconv(textconv)) info.stale = true
           return info
         })
         .filter((d): d is DiffDriverInfo => !!d)
@@ -5003,6 +5055,20 @@ export const gitService = {
       { name: 'exif', patterns: ['*.jpg', '*.jpeg', '*.png'], textconv: 'exiftool', binary: 'exiftool', available: hasBinary('exiftool') }
     ]
     return candidates
+  },
+
+  /**
+   * Point this repository's pre-4.39 converter entries at the one this install
+   * ships, and report them along with the global ones start-up rewrote (those
+   * only once per run, to whichever repository asks first). A write: it takes
+   * the exclusive lock, so it never interleaves with a setDiffDriver.
+   */
+  async repointLegacyDiffDrivers(repoPath: string): Promise<DiffDriverRepoint[]> {
+    const global = await repointGlobalLegacyTextconvs()
+    const reportGlobal = !globalRepointReported && global.length > 0
+    if (reportGlobal) globalRepointReported = true
+    const local = await repointLegacyTextconvs(repoPath, 'repo')
+    return [...local, ...(reportGlobal ? global : [])]
   },
 
   /** Set (or clear) `diff.<name>.textconv`. */

@@ -102,6 +102,7 @@ import type {
   ReplaceStatus,
   AttributeFile,
   DiffDriverInfo,
+  DiffDriverRepoint,
   FilterDriverInfo,
   FilterDryRunResult,
   FilterDriverPrevious,
@@ -411,6 +412,7 @@ export const gitApi = {
   checkAttributes: (path: string, paths: string[]) => call<AttributeCheck[]>('checkAttributes', path, paths),
   diffDrivers: (path: string) => call<DiffDriverInfo[]>('diffDrivers', path),
   diffDriverSuggestions: (path: string) => call<DiffDriverSuggestion[]>('diffDriverSuggestions', path),
+  repointLegacyDiffDrivers: (path: string) => call<DiffDriverRepoint[]>('repointLegacyDiffDrivers', path),
   setDiffDriver: (path: string, name: string, textconv: string, global?: boolean) =>
     call<void>('setDiffDriver', path, name, textconv, global),
   filterDrivers: (path: string) => call<FilterDriverInfo[]>('filterDrivers', path),

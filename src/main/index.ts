@@ -8,7 +8,7 @@ import { writeFile, readFile, rename, mkdir, chmod, unlink } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
-import { abortAllClones, registerGitHandlers } from './git'
+import { abortAllClones, registerGitHandlers, repointGlobalLegacyTextconvs } from './git'
 import { readSettings, registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
 import { registerRepoChatHandlers } from './repoChat'
@@ -35,7 +35,7 @@ import { registerInfoHandlers } from './info'
 import { registerEnvironmentHandlers } from './environment'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { guardStdio } from './stdioGuard'
-import { fixPath } from './fix-path'
+import { fixPath, shellPathReady } from './fix-path'
 import { stripEditorGitAskpass } from './editorEnv'
 import { registerCliHandlers, trackWait, releaseAllWaits } from './cli'
 import { APP_NAME, DEV_USER_DATA_DIR, FILE_PREFIX, LEGACY_APP_NAME, SETTINGS_FILE } from './appIdentity'
@@ -501,6 +501,9 @@ app.whenReady().then(() => {
   }
 
   registerGitHandlers()
+  // 4.38 may have written its converter's old path into the global git config;
+  // fix it before the user's next terminal `git diff`, not only once a repo opens.
+  void shellPathReady().then(() => repointGlobalLegacyTextconvs())
   registerSettingsHandlers()
   registerAiHandlers()
   registerRepoChatHandlers()

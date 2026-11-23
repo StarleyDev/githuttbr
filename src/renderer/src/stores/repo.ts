@@ -671,6 +671,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     set((s) => ({ repos: { ...s.repos, [path]: { ...emptyRepo(path), ...revived } } }))
     await get().refresh(path)
     if (get().repos[path]?.missingFolder) return
+    void repointLegacyDiffDrivers(path)
     // Hosting data (PRs, releases) lives behind the network, so it is fetched
     // after the local refresh and kept silent — a missing token or offline box
     // should not spam error toasts every time a repo is opened.
@@ -1285,6 +1286,28 @@ function pushUndo(path: string, entry: UndoEntry): void {
   const repo = store.repos[path]
   if (!repo) return
   store.patch(path, { undoStack: [...repo.undoStack, entry].slice(-30), redoStack: [] })
+}
+
+/** Repositories already checked for pre-4.39 converter paths this session. */
+const repointChecked = new Set<string>()
+
+/**
+ * 4.38 wrote its converter's old path into `diff.<name>.textconv`; main points
+ * those entries at this install's converter (this repository's config, plus the
+ * global one start-up fixed, reported once). One toast says so, and one undo
+ * entry puts every value back. Silent when there was nothing to change, and on
+ * failure: the Attributes dialog still flags what is left.
+ */
+async function repointLegacyDiffDrivers(path: string): Promise<void> {
+  if (repointChecked.has(path)) return
+  repointChecked.add(path)
+  const changed = await gitApi.repointLegacyDiffDrivers(path).catch(() => [])
+  if (changed.length === 0) return
+  toast('info', interp(t('act.diffDriversRepointed'), { count: changed.length }))
+  const write = (pick: 'previous' | 'next') => async (): Promise<void> => {
+    for (const entry of changed) await gitApi.setDiffDriver(path, entry.name, entry[pick], entry.scope === 'global')
+  }
+  pushUndo(path, { label: t('undoLabel.diffDriversRepointed'), undo: write('previous'), redo: write('next') })
 }
 
 /** True when the repository really is mid-merge/rebase/cherry-pick right now. */
@@ -2169,14 +2192,23 @@ export const repoActions = {
       ['status', 'treeStatus']
     ),
 
-  setDiffDriver: (path: string, name: string, textconv: string, global: boolean) =>
+  // `previous` is the value being replaced, when it may be written back: an
+  // undo restores it. Left out where the old value must not return (a path
+  // into an AppImage mount, which main refuses to write anyway).
+  setDiffDriver: (path: string, name: string, textconv: string, global: boolean, previous?: string) =>
     useRepoStore
       .getState()
       .run(
         path,
         interp(textconv.trim() ? t('act.diffDriverSet') : t('act.diffDriverCleared'), { name }),
         () => gitApi.setDiffDriver(path, name, textconv, global),
-        undefined,
+        previous === undefined || previous === textconv
+          ? undefined
+          : {
+              label: interp(t('undoLabel.diffDriver'), { name }),
+              undo: () => gitApi.setDiffDriver(path, name, previous, global),
+              redo: () => gitApi.setDiffDriver(path, name, textconv, global)
+            },
         null,
         undefined,
         []
