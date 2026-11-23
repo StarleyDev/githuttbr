@@ -1,3 +1,6 @@
+// Must stay the first import: it repairs PATH / LD_LIBRARY_PATH before any
+// module below can spawn a child that would inherit a cwd-relative entry.
+import './hardenEnv'
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname, resolve, sep } from 'path'
 import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'fs'

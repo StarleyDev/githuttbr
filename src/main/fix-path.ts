@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
+import { sanitizeDirList } from './searchPathEnv'
 
 /**
  * macOS/Linux GUI apps launched from Finder/Dock/Spotlight (not a terminal)
@@ -41,7 +42,9 @@ function mergeIntoPath(resolved: string): void {
   const merged = [...resolved.split(':'), ...(process.env['PATH'] || '').split(':')]
     .map((p) => p.trim())
     .filter(Boolean)
-  process.env['PATH'] = [...new Set(merged)].join(':')
+  // The login shell's PATH can carry `.` or (inside an AppImage) relative
+  // entries the startup sanitizer already removed; do not let them back in.
+  process.env['PATH'] = sanitizeDirList([...new Set(merged)].join(':'), !!process.env['APPIMAGE'])
 }
 
 function ask(shell: string, args: string[], timeout: number): Promise<string | undefined> {
