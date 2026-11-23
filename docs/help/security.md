@@ -322,7 +322,7 @@ the two Linux packages deal with that differently:
 
 | Package | What happens |
 |---------|--------------|
-| `.deb` | Installs `/etc/apparmor.d/gitcito`, a profile for `/opt/Git HuttBr/gitcito` that allows user namespaces. The app runs sandboxed. |
+| `.deb` | Installs `/etc/apparmor.d/gitcito`, a profile for `/opt/GitHuttBr/gitcito` that allows user namespaces. The app runs sandboxed. |
 | AppImage | Has no profile. Its launcher tries `unshare -Ur true`, and when that fails it starts the app with `--no-sandbox` — on Ubuntu 24.04+, that is every launch. Gitcito prints a warning to its console output when this happens. |
 
 To run the AppImage sandboxed, install the `.deb` instead, or give the

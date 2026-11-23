@@ -1,6 +1,6 @@
 # Roadmap
 
-What Gitcito might do next, and why. Nothing here is a promise — it is the
+What GitHuttBr might do next, and why. Nothing here is a promise — it is the
 shortlist, kept honest about cost and about what each item actually buys.
 
 Two sources feed it: gaps against other clients (GitKraken, Fork, Tower,
@@ -8,7 +8,7 @@ SourceTree, Sublime Merge), and **[Pro Git](https://git-scm.com/book/en/v2)** �
 the parts of git the book teaches that no client surfaces. Shipped items leave
 this file; what is here is what is not built yet.
 
-Ideas are welcome as [issues](https://github.com/MyAppDesk/gitcito/issues).
+Ideas are welcome as [issues](https://github.com/StarleyDev/githuttbr/issues).
 
 ---
 
@@ -21,7 +21,7 @@ is about fifteen lines; the blocker is a certificate, and the only option that
 buys immediate reputation for a project this size is Azure Trusted Signing.
 
 ### A helper binary, so RunAsNode can go
-The `gitcito` command, the bundled diff converter and the credential helper all
+The `githuttbr` command, the bundled diff converter and the credential helper all
 run the app's own executable as Node (`ELECTRON_RUN_AS_NODE`), which is why the
 RunAsNode fuse stays on. On Linux that makes the `.deb`'s AppArmor profile —
 unconfined, user namespaces allowed, attached to that executable — available to
@@ -43,7 +43,7 @@ worth targeting can emit machine-readable output (`vitest --reporter=json`,
 junit-xml for the rest), so the work is the adapter table and the UI, not
 parsing scrollback.
 
-What would make it Gitcito's rather than an IDE's: running only the tests that
+What would make it GitHuttBr's rather than an IDE's: running only the tests that
 cover what you changed, before the commit, and hanging the verdict off the
 commit the way local CI already does. The cost is honest — an adapter per
 runner, and a promise to keep them working across runner versions.
@@ -53,7 +53,7 @@ Breakpoints, stepping, variables. Doing it properly means a Debug Adapter
 Protocol client — launch the adapter, capabilities, breakpoints, stack frames,
 scopes, evaluate — plus an adapter per language (`dart debug_adapter`,
 vscode-js-debug, debugpy, `dlv dap`, codelldb). It is the largest single item
-on this list, and today the handbook says plainly that Gitcito is not a
+on this list, and today the handbook says plainly that GitHuttBr is not a
 debugger.
 
 If it happens: one adapter first (Dart, because it ships with the SDK), with
@@ -68,16 +68,16 @@ For mobile it is not. No API embeds an iOS Simulator or an Android emulator
 window inside an Electron app. The alternatives are worse than they sound: a
 screenshot mirror (`adb exec-out screencap`, `simctl io screenshot`) is laggy
 and cannot be touched, and `scrcpy` is genuinely good but is its own window —
-at best Gitcito could launch it, not contain it. A laggy mirror that looks like
+at best GitHuttBr could launch it, not contain it. A laggy mirror that looks like
 a device but does not behave like one is not worth shipping.
 
 ---
 
 ## Deliberately not doing
 
-- **Cloud workspaces, telemetry, shared team boards.** Gitcito has no backend
+- **Cloud workspaces, telemetry, shared team boards.** GitHuttBr has no backend
   and phones nothing home. That is a feature, and these would end it.
-- **Hosting our own git implementation.** Gitcito drives the real `git`. A bug
+- **Hosting our own git implementation.** GitHuttBr drives the real `git`. A bug
   in git is a bug you can reproduce in a terminal, and that is worth more than
   any speed-up.
 - **A plugin system**, until the core is finished. An extension API freezes

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bring a feature branch into Git HuttBr's main — only the commits whose change
+# Bring a feature branch into GitHuttBr's main — only the commits whose change
 # main does not already have.
 #
 #   scripts/bring-branch.sh <branch> [<branch>…]
