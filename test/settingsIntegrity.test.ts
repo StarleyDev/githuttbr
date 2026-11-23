@@ -11,7 +11,7 @@ import { bootLoaded, settingsIpc } from './settingsIpc'
 // save landing after an unlock, a half-written file, a newer build's fields,
 // a clear made while the keychain was off. Real handlers, a fake keyring.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-integrity-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-settings-integrity-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const keyring = { failNext: 0, available: true }
 
@@ -39,12 +39,12 @@ vi.mock('electron', () => ({
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-const settingsFile = (): string => join(dir, 'gitcito-settings.json')
-const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
+const settingsFile = (): string => join(dir, 'githuttbr-settings.json')
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
 const store = (): string => (existsSync(storeFile()) ? Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString() : '')
 const storeJson = (): SecretStore => JSON.parse(store().replace(/^enc:/, '')) as SecretStore
 const writeStore = (s: SecretStore): void => writeFileSync(storeFile(), Buffer.from(`enc:${JSON.stringify(s)}`).toString('base64'))
-const backups = (): string[] => readdirSync(dir).filter((f) => f.startsWith('gitcito-secrets.enc.bak'))
+const backups = (): string[] => readdirSync(dir).filter((f) => f.startsWith('githuttbr-secrets.enc.bak'))
 
 const ipc = settingsIpc(handlers)
 const callFrom = (sender: number, channel: string, ...args: unknown[]): Promise<unknown> =>
@@ -62,7 +62,7 @@ const settingsWith = (profile: Profile): AppSettings => ({ ...defaultSettings(),
 /** A fresh main process: nothing decrypted, no renderer holding anything. */
 async function restart(consent: 'granted' | 'declined' = 'granted', wipe = true): Promise<typeof import('../src/main/settings')> {
   if (wipe) for (const f of readdirSync(dir)) rmSync(join(dir, f), { force: true, recursive: true })
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent, explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent, explained: true }))
   keyring.failNext = 0
   keyring.available = true
   vi.resetModules()

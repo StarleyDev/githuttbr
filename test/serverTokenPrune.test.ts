@@ -88,7 +88,7 @@ describe('pruneSecrets — server tokens follow the profile’s server list', ()
 })
 
 // The same, through the real settings handlers and a fake keyring.
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-server-prune-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-server-prune-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -107,7 +107,7 @@ vi.mock('electron', () => ({
 const ipc = settingsIpc(handlers)
 const call = (channel: string, ...args: unknown[]): Promise<unknown> => ipc({}, channel, ...args)
 const storeFile = (): string =>
-  Buffer.from(readFileSync(join(dir, 'gitcito-secrets.enc'), 'utf8'), 'base64').toString().replace(/^enc:/, '')
+  Buffer.from(readFileSync(join(dir, 'githuttbr-secrets.enc'), 'utf8'), 'base64').toString().replace(/^enc:/, '')
 
 /** A fresh main process: nothing decrypted yet, no renderer served secrets. */
 const restart = async (): Promise<void> => {
@@ -127,7 +127,7 @@ const allServers = (a: string, b: string): Profile =>
 
 describe('a save from a renderer never sent the secrets', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
     await restart()
     await call('settings:set', settingsWith(allServers('old-a', 'kept-b')))
     for (const m of MAPS) {

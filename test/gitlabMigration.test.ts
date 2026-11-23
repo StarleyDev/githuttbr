@@ -14,7 +14,7 @@ import { settingsIpc } from './settingsIpc'
 // and without secrets. The encrypted path runs the real settings handlers on a
 // reversible fake keyring.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-glmig-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-glmig-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -129,15 +129,15 @@ describe('the encrypted store of a one-instance profile', () => {
 })
 
 describe('upgrading an install, through the real settings handlers', () => {
-  const settingsFile = join(dir, 'gitcito-settings.json')
-  const secretsFile = join(dir, 'gitcito-secrets.enc')
+  const settingsFile = join(dir, 'githuttbr-settings.json')
+  const secretsFile = join(dir, 'githuttbr-secrets.enc')
   const ipc = settingsIpc(handlers)
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => ipc({}, channel, ...args)
   const readStore = (): SecretStore =>
     JSON.parse(Buffer.from(readFileSync(secretsFile, 'utf8'), 'base64').toString().replace(/^enc:/, '')) as SecretStore
 
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
     const base = defaultSettings()
     // Exactly what v4.36 left on disk for a profile on a company GitLab.
     writeFileSync(

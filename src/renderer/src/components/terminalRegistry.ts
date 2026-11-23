@@ -169,11 +169,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // 'bottom'. A rolling deadline stays open for the whole drag instead.
   let resizeQuietUntil = 0
   // Opt-in scroll forensics for the resize-autoscroll hunt: launch with
-  // GITCITO_SCROLL_DEBUG=1 and every decision the listener makes is streamed
-  // to userData/gitcito-scroll-debug.log (readable on packaged builds where
+  // GITHUTTBR_SCROLL_DEBUG=1 and every decision the listener makes is streamed
+  // to userData/githuttbr-scroll-debug.log (readable on packaged builds where
   // DevTools is unavailable) and kept in a ring dumpable from DevTools via
   // __termScrollLog() on dev builds. Off by default.
-  // Scroll forensics are off by default (GITCITO_SCROLL_DEBUG=1); anything
+  // Scroll forensics are off by default (GITHUTTBR_SCROLL_DEBUG=1); anything
   // that only exists to feed the log — regex sweeps, sequence capture — must
   // be gated by this flag, not computed per chunk.
   const debugOn = !!window.api?.scrollDebug?.enabled

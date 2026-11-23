@@ -67,8 +67,8 @@ export function registerMenuHandlers(): void {
 
   // The About item is a role, so the panel is drawn (and localised) by macOS.
   app.setAboutPanelOptions({
-    // The display name: app.getName() stays "Gitcito" inside, to keep the
-    // settings folder and keychain entry (see index.ts).
+    // The display name: app.getName() is pinned to APP_NAME (appIdentity.ts),
+    // which names the settings folder and keychain entry (see index.ts).
     applicationName: PRODUCT_NAME,
     applicationVersion: app.getVersion(),
     version: ''

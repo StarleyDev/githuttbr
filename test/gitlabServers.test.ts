@@ -30,7 +30,7 @@ import { PRODUCT_NAME } from '../src/shared/brand'
 // migration from the one-instance shape (and its encrypted store) is in
 // gitlabMigration.test.ts.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-glsrv-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-glsrv-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -178,10 +178,10 @@ function fakeGitlab(url: string): unknown {
 
 describe('each GitLab gets only its own token', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     const base = defaultSettings()
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...base,
         onboardingCompleted: true,

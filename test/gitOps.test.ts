@@ -288,7 +288,7 @@ describe('rename branch', () => {
 describe('pull a branch you are not on', () => {
   /** A working clone of a bare repo, plus a second clone used to publish to it. */
   const twoClones = async (): Promise<{ mine: string; theirs: string; tmp: string }> => {
-    const tmp = mkdtempSync(join(tmpdir(), 'gitcito-pullbranch-'))
+    const tmp = mkdtempSync(join(tmpdir(), 'githuttbr-pullbranch-'))
     const bare = join(tmp, 'origin.git')
     await raw(tmp, ['init', '--bare', '-b', 'main', bare])
     const seed = join(tmp, 'seed')
@@ -549,7 +549,7 @@ describe('clone options (merge-conflict playground as the remote)', () => {
   // isolated copy so nothing here can touch the shared playground.
   const parents: string[] = []
   const parentDir = (): string => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-clone-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-clone-'))
     parents.push(dir)
     return dir
   }
@@ -1018,7 +1018,7 @@ describe('subtrees (subtree playground)', () => {
     const R = cloneFixture('subtree')
     const lib = cloneFixture('subtree-lib.git')
     // Move the library on: a clone of the bare repo, a commit, a push back.
-    const work = mkdtempSync(join(tmpdir(), 'gitcito-lib-work-'))
+    const work = mkdtempSync(join(tmpdir(), 'githuttbr-lib-work-'))
     await raw(work, ['clone', lib, 'w'])
     const w = join(work, 'w')
     writeFileSync(join(w, 'parser.js'), 'exports.parse = () => 42\n')
@@ -1214,7 +1214,7 @@ describe('bundles and archives', () => {
 
   it('bundles the whole repository, and another repo can fetch from the file', async () => {
     const R = cloneFixture('tags-and-releases')
-    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-bundle-')), 'all.bundle')
+    const out = join(mkdtempSync(join(tmpdir(), 'githuttbr-bundle-')), 'all.bundle')
     const result = await gitService.bundleCreate(R, out, { kind: 'all' })
     expect(existsSync(out)).toBe(true)
     expect(result.bytes).toBeGreaterThan(0)
@@ -1238,7 +1238,7 @@ describe('bundles and archives', () => {
 
   it('bundles a range, and says so when the other side lacks its starting point', async () => {
     const R = cloneFixture('tags-and-releases')
-    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-bundle-')), 'range.bundle')
+    const out = join(mkdtempSync(join(tmpdir(), 'githuttbr-bundle-')), 'range.bundle')
     await gitService.bundleCreate(R, out, { kind: 'range', from: 'HEAD~2', to: 'main' })
 
     // In the repository it came from, everything it builds on is present.
@@ -1254,7 +1254,7 @@ describe('bundles and archives', () => {
 
   it('refuses to create an empty bundle rather than writing a useless file', async () => {
     const R = cloneFixture('tags-and-releases')
-    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-bundle-')), 'empty.bundle')
+    const out = join(mkdtempSync(join(tmpdir(), 'githuttbr-bundle-')), 'empty.bundle')
     await expect(gitService.bundleCreate(R, out, { kind: 'range', from: 'main', to: 'main' })).rejects.toThrow()
   })
 
@@ -1264,7 +1264,7 @@ describe('bundles and archives', () => {
     await raw(R, ['add', '-A'])
     await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'add export-ignore'])
 
-    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-archive-')), 'src.tar')
+    const out = join(mkdtempSync(join(tmpdir(), 'githuttbr-archive-')), 'src.tar')
     const result = await gitService.archiveCreate(R, out, 'main', 'tar', 'demo-1.0', '')
     expect(result.bytes).toBeGreaterThan(0)
 
@@ -1278,7 +1278,7 @@ describe('bundles and archives', () => {
     const R = cloneFixture('deep-history-monorepo')
     const dirs = (await raw(R, ['ls-tree', '--name-only', '-d', 'HEAD'])).split('\n').filter(Boolean)
     const dir = dirs[0]
-    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-archive-')), 'part.tar')
+    const out = join(mkdtempSync(join(tmpdir(), 'githuttbr-archive-')), 'part.tar')
     await gitService.archiveCreate(R, out, 'HEAD', 'tar', '', dir)
 
     const entries = await tarEntries(out)
@@ -1694,7 +1694,7 @@ describe('gitattributes', () => {
     await raw(R, ['add', '-A'])
     await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'export-ignore'])
 
-    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-attr-')), 'src.tar')
+    const out = join(mkdtempSync(join(tmpdir(), 'githuttbr-attr-')), 'src.tar')
     await gitService.archiveCreate(R, out, 'HEAD', 'tar', '', '')
     const { execFile } = await import('node:child_process')
     const { promisify } = await import('node:util')
@@ -1729,7 +1729,7 @@ describe('gitattributes', () => {
       const s = suggestions.find((x) => x.name === name)!
       expect(s.bundled).toBe(true)
       expect(s.available).toBe(true)
-      expect(s.textconv).toContain('gitcito-textconv')
+      expect(s.textconv).toContain('githuttbr-textconv')
     }
   })
 })
@@ -2090,7 +2090,7 @@ describe('UTF-16 .strings localization files', () => {
 describe('cancelling a clone', () => {
   it('stops the clone and leaves no folder behind', async () => {
     const source = cloneFixture('bisect-bug')
-    const parent = mkdtempSync(join(tmpdir(), 'gitcito-clonecancel-'))
+    const parent = mkdtempSync(join(tmpdir(), 'githuttbr-clonecancel-'))
     try {
       const running = gitService.clone(parent, source, 'copy', { cloneId: 'test-cancel' })
       // Sent synchronously after the start: the clone must already be cancellable.
@@ -2106,7 +2106,7 @@ describe('cancelling a clone', () => {
 
   it('leaves an uncancelled clone alone', async () => {
     const source = cloneFixture('bisect-bug')
-    const parent = mkdtempSync(join(tmpdir(), 'gitcito-clonecancel-'))
+    const parent = mkdtempSync(join(tmpdir(), 'githuttbr-clonecancel-'))
     try {
       const path = await gitService.clone(parent, source, 'copy', { cloneId: 'test-keep' })
       expect(existsSync(join(path, '.git'))).toBe(true)

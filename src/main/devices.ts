@@ -33,11 +33,11 @@ const TOOL_TIMEOUT = 10_000
  * documentation shot must show a deterministic device list, not whichever phone
  * happened to be plugged into the machine that captured it. Honoured **only**
  * in screenshot mode — `--shot` on an unpackaged build (see shotMode.ts) — the
- * same shape as `GITCITO_SSH_DIR`.
+ * same shape as `GITHUTTBR_SSH_DIR`.
  */
 function shotTool(cmd: string): string | undefined {
   if (!isShotMode()) return undefined
-  const dir = process.env['GITCITO_DEVICE_BIN']
+  const dir = process.env['GITHUTTBR_DEVICE_BIN']
   if (!dir) return undefined
   const p = join(dir, basename(cmd))
   return existsSync(p) ? p : undefined

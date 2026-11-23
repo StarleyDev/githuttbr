@@ -221,7 +221,7 @@ describe('hunk merge fallback safety', () => {
   it('refuses a patch naming a file outside the repository', async () => {
     const R = cloneFixture('line-staging')
     const patch = await staleRevert(R)
-    const outside = mkdtempSync(join(tmpdir(), 'gitcito-hunk-outside-'))
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-hunk-outside-'))
     const victim = join(outside, 'victim.js')
     writeFileSync(victim, config(R))
     const rel = relative(R, victim)
@@ -235,7 +235,7 @@ describe('hunk merge fallback safety', () => {
   it('does not write through a symlink', async () => {
     const R = cloneFixture('line-staging')
     const patch = await staleRevert(R)
-    const outside = mkdtempSync(join(tmpdir(), 'gitcito-hunk-outside-'))
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-hunk-outside-'))
     const victim = join(outside, 'victim.js')
     writeFileSync(victim, config(R))
     rmSync(join(R, 'config.js'))

@@ -21,7 +21,7 @@ import { writePrivateFile } from './privateFile'
 
 export type { KeychainConsent, KeychainReason }
 
-const consentPath = (): string => join(app.getPath('userData'), 'gitcito-keychain.json')
+const consentPath = (): string => join(app.getPath('userData'), 'githuttbr-keychain.json')
 
 export interface ConsentFile {
   consent: KeychainConsent

@@ -80,7 +80,7 @@ async function get(url: string, headers: Record<string, string>): Promise<Respon
   try {
     return await fetch(url, {
       redirect: 'error',
-      headers: { 'User-Agent': 'Gitcito', ...headers },
+      headers: { 'User-Agent': 'githuttbr', ...headers },
       signal: AbortSignal.timeout(TIMEOUT_MS)
     })
   } catch {

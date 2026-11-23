@@ -7,7 +7,7 @@ import type { WebContents } from 'electron'
 
 // The Linux watch — one non-recursive watch per tracked directory — forced on
 // whatever platform runs the suite, since that is the path CI on macOS skips.
-process.env.GITCITO_WATCH_PER_DIR = '1'
+process.env.GITHUTTBR_WATCH_PER_DIR = '1'
 const { clearWatch, setWatch } = await import('../src/main/watcher')
 
 describe('per-directory watcher', () => {
@@ -27,7 +27,7 @@ describe('per-directory watcher', () => {
   const settle = (ms = 700): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
   beforeAll(async () => {
-    repo = mkdtempSync(join(tmpdir(), 'gitcito-watch-dir-'))
+    repo = mkdtempSync(join(tmpdir(), 'githuttbr-watch-dir-'))
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
     mkdirSync(join(repo, 'src'))
     writeFileSync(join(repo, 'src', 'app.ts'), 'one\n')

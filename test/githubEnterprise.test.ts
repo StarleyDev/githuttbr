@@ -29,7 +29,7 @@ import {
 // only ever reaches the server it was saved for. The call-site tests run the
 // real IPC handlers against a fake fetch and a real settings file.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-ghes-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-ghes-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const opened: string[] = []
 
@@ -255,10 +255,10 @@ function fakeGithub(url: string): unknown {
 
 describe('every formerly hardcoded call site uses the resolver', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     const base = defaultSettings()
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...base,
         onboardingCompleted: true,

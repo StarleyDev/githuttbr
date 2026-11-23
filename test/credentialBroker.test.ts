@@ -12,7 +12,7 @@ import { defaultSettings } from '../src/shared/types'
 // hook, filter and LFS process git starts inherits. Real git, real https, real
 // hooks: a hook that dumps its environment must find no token in it.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-cred-broker-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-cred-broker-'))
 const hasOpenssl = (() => {
   try {
     execFileSync('openssl', ['version'], { stdio: 'ignore' })
@@ -68,7 +68,7 @@ function hook(name: string, out: string, extra = ''): void {
 /** The endpoint, nonce variable and nonce a dumped environment names. */
 function endpointIn(dump: string): { endpoint: string; script: string; nonceVar: string; nonce: string; helper: string } {
   const helper = dump.split('\n').find((l) => /^GIT_CONFIG_VALUE_\d+=!/.test(l))!.replace(/^GIT_CONFIG_VALUE_\d+=/, '')
-  const m = /'([^']*)' '([^']*)' (GITCITO_CREDENTIAL_\d+)$/.exec(helper)!
+  const m = /'([^']*)' '([^']*)' (GITHUTTBR_CREDENTIAL_\d+)$/.exec(helper)!
   const nonce = dump.split('\n').find((l) => l.startsWith(`${m[3]}=`))!.slice(m[3].length + 1)
   return { script: m[1], endpoint: m[2], nonceVar: m[3], nonce, helper: helper.slice(1) }
 }
@@ -196,10 +196,10 @@ beforeAll(async () => {
   run(repo, ['remote', 'set-url', '--add', '--push', 'both', `${origin}/b/scm/proj/app.git`])
 
   writeFileSync(join(dir, 'gitconfig'), '')
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
   const base = defaultSettings().profiles[0]
   writeFileSync(
-    join(dir, 'gitcito-settings.json'),
+    join(dir, 'githuttbr-settings.json'),
     JSON.stringify({
       ...defaultSettings(),
       onboardingCompleted: true,
@@ -253,8 +253,8 @@ describe.skipIf(!hasOpenssl)("a profile's token never enters git's environment",
     await gitService.push(repo, 'main')
     const env = readFileSync(dump, 'utf8')
     expect(env).not.toContain(TOKEN)
-    expect(env).not.toContain('GITCITO_GIT_PASSWORD')
-    expect(env).toContain('GITCITO_CREDENTIAL_')
+    expect(env).not.toContain('GITHUTTBR_GIT_PASSWORD')
+    expect(env).toContain('GITHUTTBR_CREDENTIAL_')
     expect(received.some((r) => r.auth === `oauth2:${TOKEN}` && r.path.endsWith('git-receive-pack'))).toBe(true)
   })
 
@@ -316,7 +316,7 @@ describe.skipIf(!hasOpenssl)("a profile's token never enters git's environment",
     const env = readFileSync(dump, 'utf8')
     expect(env).not.toContain(TOKEN)
     expect(env).not.toContain(DC_TOKEN)
-    expect(env.match(/^GITCITO_CREDENTIAL_\d+=/gm)?.length).toBe(2)
+    expect(env.match(/^GITHUTTBR_CREDENTIAL_\d+=/gm)?.length).toBe(2)
     const packs = received.filter((r) => r.path.endsWith('git-receive-pack'))
     expect(packs.some((r) => r.path.startsWith('/group/') && r.auth === `oauth2:${TOKEN}`)).toBe(true)
     expect(packs.some((r) => r.path.startsWith('/b/') && r.auth === `worker:${DC_TOKEN}`)).toBe(true)

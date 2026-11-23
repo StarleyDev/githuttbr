@@ -383,7 +383,7 @@ export interface StackSubmitResult {
 }
 
 /** Thrown when the branch a stack lands on has never been pushed. */
-const TRUNK_MISSING = 'GITCITO_TRUNK_MISSING'
+const TRUNK_MISSING = 'GITHUTTBR_TRUNK_MISSING'
 
 /**
  * A submit that cannot open its bottom PR because the branch the stack lands on

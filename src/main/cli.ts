@@ -26,14 +26,17 @@ const CANDIDATE_DIRS =
       // on PATH by default on every modern distribution. /usr/local/bin stays
       // as the fallback for a system-wide install.
       [join(homedir(), '.local', 'bin'), '/usr/local/bin']
-const LINK_NAME = 'gitcito'
+const LINK_NAME = 'githuttbr'
+/** The command's name before 4.39. Never installed any more, but an AppImage
+ *  build may have left one pointing into its /tmp mount — still worth finding. */
+const LEGACY_LINK_NAMES = ['gitcito']
 
 /** Path to the bundled shim script, inside the packaged app's resources (or the
  *  repo's `resources/` folder in dev). */
 function shimPath(): string {
   return app.isPackaged
-    ? join(process.resourcesPath, 'cli', 'gitcito')
-    : join(__dirname, '../../resources/cli/gitcito')
+    ? join(process.resourcesPath, 'cli', 'githuttbr')
+    : join(__dirname, '../../resources/cli/githuttbr')
 }
 
 /** First candidate dir that already exists, so we don't try to create new
@@ -129,16 +132,19 @@ async function unlinkMaybePrivileged(link: string): Promise<void> {
   }
 }
 
-/** Every `gitcito` symlink in a candidate PATH dir that points into an
- *  AppImage mount — left there by an AppImage build before it refused to. */
+/** Every `githuttbr` (or pre-4.39 `gitcito`) symlink in a candidate PATH dir
+ *  that points into an AppImage mount — left there by an AppImage build before
+ *  it refused to. */
 async function staleLinks(): Promise<string[]> {
   const found: string[] = []
   for (const dir of CANDIDATE_DIRS) {
-    const link = join(dir, LINK_NAME)
-    try {
-      if ((await lstat(link)).isSymbolicLink() && isStaleCliTarget(await readlink(link))) found.push(link)
-    } catch {
-      // no link here
+    for (const name of [LINK_NAME, ...LEGACY_LINK_NAMES]) {
+      const link = join(dir, name)
+      try {
+        if ((await lstat(link)).isSymbolicLink() && isStaleCliTarget(await readlink(link))) found.push(link)
+      } catch {
+        // no link here
+      }
     }
   }
   return found
@@ -167,10 +173,10 @@ async function removeStale(): Promise<CliInstallResult> {
   }
 }
 
-// ─── `gitcito --wait` — the git editor ──────────────────────────────────────
+// ─── `githuttbr --wait` — the git editor ──────────────────────────────────────
 
 /**
- * Sentinel files a `gitcito --wait` shell process is currently blocked on.
+ * Sentinel files a `githuttbr --wait` shell process is currently blocked on.
  *
  * The shim polls for its sentinel and returns to git the moment it disappears,
  * so deleting one is the *only* signal that matters — and never deleting one

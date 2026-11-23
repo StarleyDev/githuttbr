@@ -28,7 +28,7 @@ Needs **ffmpeg** (`brew install ffmpeg`): it encodes every image.
 1. **Build** the app (`electron-vite build`), so shots reflect the current source
    rather than a stale `out/`. `--no-build` reuses what is there.
 2. **Seed** the playground repos (`setup-playground.sh`), then symlink them under
-   `/tmp/gitcito-demo/` so screenshots show a clean, username-free path.
+   `/tmp/githuttbr-demo/` so screenshots show a clean, username-free path.
    `--no-seed` skips it.
 3. For each shot: launch the built Electron app with `--shot`, which enables an
    in-app **store bridge** (`window.__shot`, see
@@ -78,11 +78,11 @@ So that entry generates a throwaway pair with `ssh-keygen` in a temp dir and
 points the app at it:
 
 ```js
-env: { GITCITO_SSH_DIR: DEMO_SSH },
+env: { GITHUTTBR_SSH_DIR: DEMO_SSH },
 prepare: async ({ run }) => { /* ssh-keygen into DEMO_SSH */ }
 ```
 
-`GITCITO_SSH_DIR` is read by `src/main/ssh.ts` **only when the unpackaged app
+`GITHUTTBR_SSH_DIR` is read by `src/main/ssh.ts` **only when the unpackaged app
 was launched with `--shot`** — the same gate that enables the store bridge. A
 normal run, and any packaged build, always reads `~/.ssh` and cannot be
 redirected by an environment variable.
@@ -136,10 +136,10 @@ npm run playground:rebuild
 
 The seeded profile carries a demo AI key, so the app would ask to store it on
 every launch and the explainer would land on top of the shot. Each run therefore
-writes `gitcito-keychain.json` into the throwaway userData dir before launching.
+writes `githuttbr-keychain.json` into the throwaway userData dir before launching.
 
 The answer is **declined** by default: refusing keeps tokens in memory and the
-app fully working, while granting makes macOS raise its own "Gitcito Safe
+app fully working, while granting makes macOS raise its own "GitHuttBr Safe
 Storage" dialog — an OS window Playwright cannot dismiss, which stalls the run.
 Set `keychain: true` only on shots that need a readable vault (`vault`,
 `secure-share`, `secure-workspace`); expect a one-off OS prompt on those.

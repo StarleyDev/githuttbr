@@ -13,7 +13,7 @@ describe('remote tags', () => {
   const git = (...args: string[]): string => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim()
 
   beforeAll(() => {
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-rtags-'))
+    dir = mkdtempSync(join(tmpdir(), 'githuttbr-rtags-'))
     repo = join(dir, 'repo')
     const bare = join(dir, 'remote.git')
     execFileSync('git', ['init', '-q', '--bare', bare])

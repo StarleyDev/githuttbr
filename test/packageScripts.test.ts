@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { detectPackageManager, nearestPackageDir, readPackageScripts, shellCwd } from '../src/main/packageScripts'
 
-const root = realpathSync(mkdtempSync(join(tmpdir(), 'gitcito-scripts-')))
+const root = realpathSync(mkdtempSync(join(tmpdir(), 'githuttbr-scripts-')))
 afterAll(() => rmSync(root, { recursive: true, force: true }))
 
 writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { dev: 'vite', build: 'vite build', bad: 42 } }))

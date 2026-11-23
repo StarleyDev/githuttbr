@@ -21,7 +21,7 @@ const pexecFile = promisify(execFile)
 
 // Overridable so tests (and users with act outside PATH) can point at a
 // different runner binary. Tests substitute a tiny script for the real act.
-const actBin = (): string => process.env.GITCITO_ACT_BIN || 'act'
+const actBin = (): string => process.env.GITHUTTBR_ACT_BIN || 'act'
 
 /** One run per repo at a time; a second Run press means "restart". */
 const running = new Map<string, ReturnType<typeof spawn>>()
@@ -123,7 +123,7 @@ async function runAt(
 ): Promise<{ sha: string; exit: number | null; ok: boolean; recorded: boolean }> {
   assertWorkflowFilename(workflowFile)
   const full = (await git(repoPath, ['rev-parse', '--verify', `${sha}^{commit}`])).trim()
-  const dir = await mkdtemp(join(tmpdir(), 'gitcito-ci-'))
+  const dir = await mkdtemp(join(tmpdir(), 'githuttbr-ci-'))
   // Bypasses gitService's repo lock on purpose, like the rest of this module:
   // a CI run can hold the repo for minutes, and the worktree add/remove pair
   // only touches worktree metadata.

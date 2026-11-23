@@ -7,7 +7,7 @@ import { settingsIpc } from './settingsIpc'
 // A token typed while the keychain is off lives in memory only. Turning the
 // keychain on used to change nothing until another setting was saved, so
 // quitting first lost the token again. Real handlers, a fake keyring.
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-keychain-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-keychain-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const keyring = { broken: false }
 
@@ -34,7 +34,7 @@ const call = (channel: string, ...args: unknown[]): Promise<unknown> =>
 
 describe('turning the keychain on', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     const { registerSettingsHandlers } = await import('../src/main/settings')
     const { registerKeychainHandlers } = await import('../src/main/keychain')
     registerSettingsHandlers()
@@ -48,8 +48,8 @@ describe('turning the keychain on', () => {
     settings.profiles[0].azureToken = 'TYPED-WHILE-OFF'
     await call('settings:set', settings)
 
-    expect(existsSync(join(dir, 'gitcito-secrets.enc'))).toBe(false)
-    expect(readFileSync(join(dir, 'gitcito-settings.json'), 'utf8')).not.toContain('TYPED-WHILE-OFF')
+    expect(existsSync(join(dir, 'githuttbr-secrets.enc'))).toBe(false)
+    expect(readFileSync(join(dir, 'githuttbr-settings.json'), 'utf8')).not.toContain('TYPED-WHILE-OFF')
     const reread = (await call('settings:get')) as { profiles: Array<Record<string, unknown>> }
     expect(reread.profiles[0].azureToken).toBe('TYPED-WHILE-OFF')
   })
@@ -62,7 +62,7 @@ describe('turning the keychain on', () => {
       keyring.broken = false
     }
 
-    expect(existsSync(join(dir, 'gitcito-secrets.enc'))).toBe(false)
+    expect(existsSync(join(dir, 'githuttbr-secrets.enc'))).toBe(false)
     expect(await call('keychain:status')).toMatchObject({ consent: 'granted', sessionOnly: true })
     const reread = (await call('settings:get')) as { profiles: Array<Record<string, unknown>> }
     expect(reread.profiles[0].azureToken).toBe('TYPED-WHILE-OFF')
@@ -72,10 +72,10 @@ describe('turning the keychain on', () => {
     expect(await call('keychain:set', true)).toBe(true)
     expect(await call('keychain:status')).toMatchObject({ sessionOnly: false })
 
-    const file = join(dir, 'gitcito-secrets.enc')
+    const file = join(dir, 'githuttbr-secrets.enc')
     expect(existsSync(file)).toBe(true)
     const stored = Buffer.from(readFileSync(file, 'utf8'), 'base64').toString().replace(/^enc:/, '')
     expect(stored).toContain('TYPED-WHILE-OFF')
-    expect(readFileSync(join(dir, 'gitcito-settings.json'), 'utf8')).not.toContain('TYPED-WHILE-OFF')
+    expect(readFileSync(join(dir, 'githuttbr-settings.json'), 'utf8')).not.toContain('TYPED-WHILE-OFF')
   })
 })

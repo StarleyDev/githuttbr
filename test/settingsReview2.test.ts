@@ -10,7 +10,7 @@ import type { SecretStore } from '../src/shared/secrets'
 // settings forever, keychain-off clears, and generations that went stale.
 // Real handlers, a fake keyring, and a seam in front of fs reads.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-review2-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-settings-review2-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 const seams = vi.hoisted(() => ({
@@ -47,9 +47,9 @@ afterEach(() => {
   seams.windows = []
 })
 
-const settingsFile = (): string => join(dir, 'gitcito-settings.json')
-const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
-const consentFile = (): string => join(dir, 'gitcito-keychain.json')
+const settingsFile = (): string => join(dir, 'githuttbr-settings.json')
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
+const consentFile = (): string => join(dir, 'githuttbr-keychain.json')
 const storeJson = (): SecretStore =>
   JSON.parse(Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString().replace(/^enc:/, '')) as SecretStore
 const writeStore = (s: SecretStore): void =>

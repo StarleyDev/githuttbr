@@ -9,7 +9,7 @@ import { defaultSettings, type CreatePrResult, type PrPickerOptions } from '../s
 // lose their `@`, and a list read only in part says so. Real IPC handlers, a
 // fake fetch, a borrowed git credential (no token in Settings).
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-pr-meta-final-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-pr-meta-final-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -77,10 +77,10 @@ const create = (remote: string, extra: Record<string, unknown> = {}): Promise<Cr
 const azToken = (auth?: string): string => Buffer.from((auth ?? '').replace(/^Basic /, ''), 'base64').toString().slice(1)
 
 beforeAll(async () => {
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
   const base = defaultSettings()
   writeFileSync(
-    join(dir, 'gitcito-settings.json'),
+    join(dir, 'githuttbr-settings.json'),
     JSON.stringify({
       ...base,
       onboardingCompleted: true,

@@ -1490,7 +1490,7 @@ export const MYAPPDESK_COAUTHOR = 'Starley - Mestre Jedi <9012499+StarleyDev@use
 /** Error-message marker thrown by `fileContent`/`fileDataUrl` when a file
  *  exceeds the in-memory size cap. The byte count follows the colon; the
  *  renderer parses it to show the size and offer "load anyway" (force=true). */
-export const FILE_TOO_LARGE_PREFIX = 'GITCITO_FILE_TOO_LARGE:'
+export const FILE_TOO_LARGE_PREFIX = 'GITHUTTBR_FILE_TOO_LARGE:'
 
 // ─── Generated repo wiki ────────────────────────────────────────────────────
 
@@ -2051,7 +2051,7 @@ export function emptyAIUsageStat(): AIUsageStat {
   return { requests: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, cost: 0 }
 }
 
-/** Activity events recorded as the user drives gitcito. */
+/** Activity events recorded as the user drives githuttbr. */
 export type ActivityEvent =
   | 'commit'
   | 'amend'
@@ -2209,7 +2209,7 @@ export interface InfoExport {
   repos: Record<string, InfoEntry[]>
 }
 
-// ─── Secure share (.gitcito bundles) ─────────────────────────────────────────
+// ─── Secure share (.githuttbr bundles) ─────────────────────────────────────────
 
 /** A repo file offered in the secure-share export picker. */
 export interface SecureShareCandidate {
@@ -2218,7 +2218,7 @@ export interface SecureShareCandidate {
   secret: boolean // matches the secret-file heuristics — preselected in the UI
 }
 
-/** Plaintext envelope of a .gitcito bundle, readable without the password. A v1
+/** Plaintext envelope of a .githuttbr bundle, readable without the password. A v1
  *  bundle carries a single repo's files (project/fileCount only); a v2 bundle
  *  carries N sections (repos + the global vault) summarised in `sections`. */
 export interface SecureBundleHeader {
@@ -2312,9 +2312,9 @@ export interface SecureSharePreviewEntry {
 }
 
 export type SecureShareError =
-  | 'invalid' // not a .gitcito bundle / malformed
+  | 'invalid' // not a .githuttbr bundle / malformed
   | 'bad-password' // wrong password or tampered payload (GCM auth failed)
-  | 'unsupported-version' // bundle written by a newer gitcito
+  | 'unsupported-version' // bundle written by a newer githuttbr
   | 'read-failed'
   | 'write-failed'
 

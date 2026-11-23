@@ -5305,9 +5305,9 @@ describe('launch run targets (device picker)', () => {
     // The only lever left when a config runs a wrapper script we must not edit.
     const env = applyDevice(cfg({ command: 'npx expo start' }), pixel).env
     expect(env).toMatchObject({
-      GITCITO_DEVICE_ID: '39121FDJG0018Z',
-      GITCITO_DEVICE_NAME: 'Pixel 8',
-      GITCITO_DEVICE_PLATFORM: 'android',
+      GITHUTTBR_DEVICE_ID: '39121FDJG0018Z',
+      GITHUTTBR_DEVICE_NAME: 'Pixel 8',
+      GITHUTTBR_DEVICE_PLATFORM: 'android',
       // What makes a plain adb / Gradle flow hit the same handset.
       ANDROID_SERIAL: '39121FDJG0018Z'
     })
@@ -5325,7 +5325,7 @@ describe('launch run targets (device picker)', () => {
     const odd = { ...(iphone as object), id: 'iPhone 16 Pro Max' } as never
     const out = applyDevice(cfg({ type: 'flutter' }), odd)
     expect(out.args).toBeUndefined()
-    expect(out.env?.GITCITO_DEVICE_ID).toBe('iPhone 16 Pro Max')
+    expect(out.env?.GITHUTTBR_DEVICE_ID).toBe('iPhone 16 Pro Max')
   })
 })
 

@@ -10,8 +10,8 @@ import { defaultSettings, type AppSettings } from '../src/shared/types'
 // never has links. Main answers from the same resolution every hosting call
 // uses — and, since it is asked just by opening a dialog, never decrypts or
 // prompts. Real IPC handlers, real settings files, a keyring that counts.
-const plainDir = mkdtempSync(join(tmpdir(), 'gitcito-canact-plain-'))
-const lockedDir = mkdtempSync(join(tmpdir(), 'gitcito-canact-locked-'))
+const plainDir = mkdtempSync(join(tmpdir(), 'githuttbr-canact-plain-'))
+const lockedDir = mkdtempSync(join(tmpdir(), 'githuttbr-canact-locked-'))
 let dir = plainDir
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const keyring = { decrypts: 0, asked: 0 }
@@ -74,7 +74,7 @@ afterAll(() => {
 describe('hosting:canAct with no encrypted store', () => {
   beforeAll(async () => {
     dir = plainDir
-    writeFileSync(join(plainDir, 'gitcito-settings.json'), JSON.stringify(settingsWith('')))
+    writeFileSync(join(plainDir, 'githuttbr-settings.json'), JSON.stringify(settingsWith('')))
     await boot()
   })
 
@@ -100,13 +100,13 @@ describe('hosting:canAct with tokens in a locked store', () => {
     keyring.decrypts = 0
     keyring.asked = 0
     const withTokens = settingsWith(TOKEN)
-    writeFileSync(join(lockedDir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
+    writeFileSync(join(lockedDir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
     writeFileSync(
-      join(lockedDir, 'gitcito-secrets.enc'),
+      join(lockedDir, 'githuttbr-secrets.enc'),
       Buffer.from(`enc:${JSON.stringify(extractSecrets(withTokens))}`).toString('base64')
     )
     // The token lives only in the encrypted store, as it does after a restart.
-    writeFileSync(join(lockedDir, 'gitcito-settings.json'), JSON.stringify(settingsWith('')))
+    writeFileSync(join(lockedDir, 'githuttbr-settings.json'), JSON.stringify(settingsWith('')))
     await boot()
   })
 

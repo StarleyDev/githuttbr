@@ -388,7 +388,7 @@ function githubCliToken(host = 'github.com', user?: string): Promise<string | nu
  */
 let githubTokenRejected = false
 export async function githubPublicGet(url: string, timeoutMs = 8000): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'gitcito' }
+  const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'githuttbr' }
   const target = new URL(url)
   const signed =
     target.protocol === 'https:' && target.origin === GITHUB_COM_ENDPOINTS.apiBase && !githubTokenRejected

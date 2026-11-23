@@ -9,7 +9,7 @@ import { copyPrivateFile, updatePrivateFile, writePrivateFile } from '../src/mai
 // reader in between saw half a document (and the settings reader took that for
 // "no settings"), and two writes at once left a file neither of them wrote.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-private-file-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-private-file-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
 describe('writePrivateFile', () => {

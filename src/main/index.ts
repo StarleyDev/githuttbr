@@ -38,6 +38,8 @@ import { guardStdio } from './stdioGuard'
 import { fixPath } from './fix-path'
 import { stripEditorGitAskpass } from './editorEnv'
 import { registerCliHandlers, trackWait, releaseAllWaits } from './cli'
+import { APP_NAME, DEV_USER_DATA_DIR, FILE_PREFIX, LEGACY_APP_NAME, SETTINGS_FILE } from './appIdentity'
+import { migrateLegacySettings, takeMigrationNotice } from './legacyMigration'
 import { registerEditorHandlers } from './editor'
 import { registerMenuHandlers } from './menu'
 import { registerSshHandlers } from './ssh'
@@ -76,7 +78,7 @@ function sendOpenPath(win: BrowserWindow, payload: CliOpenPayload): void {
   else deliver()
 }
 
-/** `gitcito --wait <file>` — git is blocked on a shell process polling a
+/** `githuttbr --wait <file>` — git is blocked on a shell process polling a
  *  sentinel, so the file's contents go to the renderer and the sentinel is
  *  recorded here. Reading fails? Release immediately: a hung `git commit` is a
  *  far worse outcome than an editor that refused to open. */
@@ -91,26 +93,30 @@ async function deliverEdit(win: BrowserWindow, file: string, sentinel: string): 
 }
 
 // Dev builds get their own userData dir. The single-instance lock below lives
-// in userData, and dev's app name ("gitcito", from package.json) resolves to
-// the same dir as the packaged app ("Gitcito") on case-insensitive filesystems
-// — so `electron-vite dev` would silently quit whenever the installed app is
-// running. A separate dir gives dev its own lock and keeps dev runs from
-// mutating real settings/vault data.
+// in userData, and dev's app name ("githuttbr", from package.json) resolves to
+// the same dir as the packaged app ("GitHuttBr") on case-insensitive
+// filesystems — so `electron-vite dev` would silently quit whenever the
+// installed app is running. A separate dir gives dev its own lock and keeps dev
+// runs from mutating real settings/vault data.
 // An explicit --user-data-dir (screenshot harness, scripted runs) must win:
 // Electron has already applied it, and redirecting to the dev dir here would
 // replace the caller's seeded throwaway settings with a copy of prod data.
-// The installer, executable and window say "Git HuttBr", but the app keeps the
-// name it has always had inside: Electron derives both the settings folder and
-// the OS keychain entry that encrypts tokens from it. Renaming it would start
-// on empty settings and leave every saved token undecryptable. Pinned here,
-// before anything reads userData, so the packaged product name cannot move it.
+// Electron derives both the settings folder and the OS keychain entry that
+// encrypts tokens from the app name, so it is pinned here (appIdentity.ts),
+// before anything reads userData, instead of following the display name.
+// Until 4.38 it was "Gitcito"; 4.39 renamed it to "GitHuttBr", which starts a
+// new folder and a new keychain entry. The old settings are copied over once,
+// without credentials — the old token store is sealed with the old keychain
+// entry and cannot be read under the new one (legacyMigration.ts).
 if (app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
-  app.setName('Gitcito')
-  app.setPath('userData', join(app.getPath('appData'), 'Gitcito'))
+  app.setName(APP_NAME)
+  const userData = join(app.getPath('appData'), APP_NAME)
+  app.setPath('userData', userData)
+  migrateLegacySettings(userData, join(app.getPath('appData'), LEGACY_APP_NAME))
 }
 
 if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
-  const devDir = join(app.getPath('appData'), 'gitcito-dev')
+  const devDir = join(app.getPath('appData'), DEV_USER_DATA_DIR)
   app.setPath('userData', devDir)
   // First dev run: seed from the installed app's data so dev mirrors the real
   // setup (workspaces, settings, repo info). Only when dev has no settings yet
@@ -118,16 +124,16 @@ if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
   // which is often the thing under test. Re-seed by deleting the dev dir.
   // The vault copy is best-effort: if dev's keychain entry differs from prod's,
   // vault load() just falls back to an empty vault.
-  const prodDir = join(app.getPath('appData'), 'Gitcito')
-  if (!existsSync(join(devDir, 'gitcito-settings.json')) && existsSync(prodDir)) {
+  const prodDir = join(app.getPath('appData'), APP_NAME)
+  if (!existsSync(join(devDir, SETTINGS_FILE)) && existsSync(prodDir)) {
     mkdirSync(devDir, { recursive: true })
     for (const f of readdirSync(prodDir)) {
-      if (/^gitcito-.+\.(json|enc)$/.test(f)) copyFileSync(join(prodDir, f), join(devDir, f))
+      if (f.startsWith(FILE_PREFIX) && /\.(json|enc)$/.test(f)) copyFileSync(join(prodDir, f), join(devDir, f))
     }
   }
 }
 
-// Only one Gitcito instance should run — `gitcito <dir>` from a second
+// Only one instance should run — `githuttbr <dir>` from a second
 // terminal should hand its path to the existing window rather than spawn a
 // new app instance.
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
@@ -210,7 +216,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  app.setName(app.isPackaged ? 'Gitcito' : 'Gitcito Dev')
+  app.setName(app.isPackaged ? APP_NAME : `${APP_NAME} Dev`)
 
   // An AppImage may have been started without the sandbox behind our back.
   const unsandboxed = sandboxNotice(app.commandLine.hasSwitch('no-sandbox'))
@@ -481,10 +487,10 @@ app.whenReady().then(() => {
   ipcMain.on('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close())
 
   // Terminal scroll forensics (see terminalRegistry.ts): only wired when the
-  // app is launched with GITCITO_SCROLL_DEBUG=1. Lines stream into a plain
+  // app is launched with GITHUTTBR_SCROLL_DEBUG=1. Lines stream into a plain
   // text log under userData so the trace is readable on packaged builds.
-  if (process.env.GITCITO_SCROLL_DEBUG === '1') {
-    const scrollLogPath = join(app.getPath('userData'), 'gitcito-scroll-debug.log')
+  if (process.env.GITHUTTBR_SCROLL_DEBUG === '1') {
+    const scrollLogPath = join(app.getPath('userData'), 'githuttbr-scroll-debug.log')
     ipcMain.on('scroll-debug', (_e, line: unknown) => {
       if (typeof line === 'string' && line.length < 2000) {
         void writeFile(scrollLogPath, `${line}\n`, { flag: 'a' }).catch(() => {})
@@ -518,6 +524,8 @@ app.whenReady().then(() => {
   registerEnvironmentHandlers()
   registerUpdaterHandlers()
   registerCliHandlers()
+  // Once, after the first start on a settings folder copied from Gitcito.
+  ipcMain.handle('app:takeMigrationNotice', () => takeMigrationNotice(app.getPath('userData')))
   registerEditorHandlers()
   registerSshHandlers()
   registerDiffToolHandlers()
@@ -527,7 +535,7 @@ app.whenReady().then(() => {
   createWindow()
   checkForUpdatesOnLaunch()
 
-  // Cold launch via `gitcito <dir>` (open -a Gitcito --args --open <path> ...).
+  // Cold launch via `githuttbr <dir>` (open -a GitHuttBr --args --open <path> ...).
   // process.argv here is the *main* process's own argv — not visible to the
   // preload/renderer processes, which only see whatever we forward explicitly.
   const openPayload = parseCliOpenArgs(process.argv)

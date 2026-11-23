@@ -61,8 +61,8 @@ import {
   onSessionOnlyProbe
 } from './keychain'
 
-const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
-const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
+const settingsPath = (): string => join(app.getPath('userData'), 'githuttbr-settings.json')
+const secretsPath = (): string => join(app.getPath('userData'), 'githuttbr-secrets.enc')
 /**
  * A plain list of which token slots the encrypted store held, written by
  * builds that used it to let a locked peek fall back to a machine login. It
@@ -70,7 +70,7 @@ const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets
  * named every GitHub Enterprise and GitLab server ever configured, including
  * removed ones — so it is no longer written, and a leftover copy is deleted.
  */
-const legacySecretsIndexPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.index.json')
+const legacySecretsIndexPath = (): string => join(app.getPath('userData'), 'githuttbr-secrets.index.json')
 
 export async function removeLegacySecretsIndex(): Promise<void> {
   await rm(legacySecretsIndexPath(), { force: true }).catch(() => undefined)
@@ -255,7 +255,7 @@ function markUnreadable(): null {
   return null
 }
 
-const BACKUP_PREFIX = 'gitcito-secrets.enc.bak'
+const BACKUP_PREFIX = 'githuttbr-secrets.enc.bak'
 const backupPath = (): string => `${secretsPath()}.bak`
 
 /** How long a backup that is not already part of the store is kept. */
@@ -1254,11 +1254,11 @@ async function moveSettingsAside(): Promise<MoveAsideReply> {
   return target
 }
 
-// Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
+// Dev aid: launching with GITHUTTBR_FORCE_ONBOARDING=1 re-runs the first-run
 // wizard without touching the settings file. The flag holds until the wizard
 // itself saves its completion (consuming it per read breaks under StrictMode's
 // double hydration), so a reload before finishing shows the wizard again.
-let forceOnboarding = process.env['GITCITO_FORCE_ONBOARDING'] === '1'
+let forceOnboarding = process.env['GITHUTTBR_FORCE_ONBOARDING'] === '1'
 
 function withForcedOnboarding(settings: AppSettings): AppSettings {
   return forceOnboarding ? { ...settings, onboardingCompleted: false } : settings
@@ -1438,7 +1438,7 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle('settings:exportFile', async (_e, data: unknown) => {
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Export Settings',
-      defaultPath: 'gitcito-settings.json',
+      defaultPath: 'githuttbr-settings.json',
       filters: [{ name: 'JSON', extensions: ['json'] }]
     })
     if (canceled || !filePath) return false

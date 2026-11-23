@@ -94,7 +94,7 @@ describe.skipIf(process.platform === 'win32')('hardenEnv at startup', () => {
   let repo = ''
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'gitcito-searchpath-'))
+    repo = mkdtempSync(join(tmpdir(), 'githuttbr-searchpath-'))
     execFileSync('git', ['init', '-q', repo])
     // An alias runs as git's own child, with cwd = the repository.
     execFileSync('git', ['-C', repo, 'config', 'alias.ldp', '!printf %s "$LD_LIBRARY_PATH"'])

@@ -10,7 +10,7 @@ import { defaultAIConfig } from '../src/shared/types'
 
 describe.skipIf(process.platform === 'win32')('subscription CLI connections', () => {
   let root: string
-  beforeAll(async () => { root = await mkdtemp(join(tmpdir(), 'gitcito-test-cli-')) })
+  beforeAll(async () => { root = await mkdtemp(join(tmpdir(), 'githuttbr-test-cli-')) })
   afterAll(async () => { await rm(root, { recursive: true, force: true }) })
 
   async function cli(name: string, body: string): Promise<string> {

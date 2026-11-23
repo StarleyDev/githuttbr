@@ -19,7 +19,7 @@ interface VaultData {
   global: VaultEntry[]
 }
 
-const filePath = (): string => join(app.getPath('userData'), 'gitcito-vault.enc')
+const filePath = (): string => join(app.getPath('userData'), 'githuttbr-vault.enc')
 const empty = (): VaultData => ({ repos: {}, global: [] })
 
 // A vault file exists but this build's safeStorage key cannot read it — written

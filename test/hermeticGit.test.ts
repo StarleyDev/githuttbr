@@ -9,14 +9,14 @@ import { join } from 'node:path'
 // failing elsewhere.
 describe('the suite runs git hermetically', () => {
   it('points the global config at the suite’s own file and turns the system one off', () => {
-    expect(process.env.GIT_CONFIG_GLOBAL).toMatch(/gitcito-test-gitconfig-/)
+    expect(process.env.GIT_CONFIG_GLOBAL).toMatch(/githuttbr-test-gitconfig-/)
     expect(process.env.GIT_CONFIG_NOSYSTEM).toBe('1')
     const keys = execFileSync('git', ['config', '--global', '--list'], { encoding: 'utf8' })
     expect(keys.trim()).toBe('user.useconfigonly=true')
   })
 
   it('refuses to commit without an explicit identity', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-hermetic-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-hermetic-'))
     try {
       execFileSync('git', ['init', '-q', '-b', 'main', dir])
       expect(() =>

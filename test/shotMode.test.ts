@@ -14,7 +14,7 @@ describe('screenshot mode', () => {
   })
 
   it('is ignored by a packaged build, so an installed app cannot be redirected by a flag', () => {
-    expect(initShotMode(true, ['/opt/Gitcito/gitcito', '--shot'])).toBe(false)
+    expect(initShotMode(true, ['/opt/Gitcito/githuttbr', '--shot'])).toBe(false)
     expect(isShotMode()).toBe(false)
   })
 

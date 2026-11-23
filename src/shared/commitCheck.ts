@@ -1,5 +1,5 @@
 /**
- * `gitcito commit-check` — the same conventions the composer nudges about,
+ * `githuttbr commit-check` — the same conventions the composer nudges about,
  * evaluated on a whole commit-message file so a `commit-msg` hook or a CI job
  * can fail on them.
  *

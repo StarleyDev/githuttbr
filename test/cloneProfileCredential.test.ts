@@ -13,7 +13,7 @@ import { blanksOnly } from './credentialConfig'
 // and it may hold none until Settings is opened. github.com, bitbucket.org and
 // Azure clone with the renderer's token, or anonymously without one.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-clone-profile-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-clone-profile-'))
 
 vi.mock('electron', () => ({
   app: { getPath: () => dir, isPackaged: false },
@@ -42,10 +42,10 @@ const BBS_REPO = 'https://bitbucket.example.corp/scm/proj/app.git'
 
 describe('cloneCredentialEnv — when a clone signs in, and as whom', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     const base = defaultSettings()
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({
         ...base,
         onboardingCompleted: true,

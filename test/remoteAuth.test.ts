@@ -99,7 +99,7 @@ describe('checkRemoteAuth with a Data Center personal token and no user name', (
     const { defaultSettings } = await import('../src/shared/types')
     const { checkRemoteAuth, profileCredentialForUrl } = await import('../src/main/remoteAuthCheck')
 
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-ra-bbs-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-ra-bbs-'))
     const getPath = vi.spyOn(app, 'getPath').mockReturnValue(dir)
     const fetchSpy = vi.fn(async () => new Response('{}', { status: 200, headers: { 'X-AUSERNAME': 'bot' } }))
     vi.stubGlobal('fetch', fetchSpy)
@@ -109,8 +109,8 @@ describe('checkRemoteAuth with a Data Center personal token and no user name', (
         ...s.profiles[0],
         bitbucketServers: [{ url: 'https://bbs.personal.example', token: 'bbs-personal-token', tokenKind: 'personal' as const }]
       }
-      writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
-      writeFileSync(join(dir, 'gitcito-settings.json'), JSON.stringify({ ...s, onboardingCompleted: true, profiles: [p] }))
+      writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+      writeFileSync(join(dir, 'githuttbr-settings.json'), JSON.stringify({ ...s, onboardingCompleted: true, profiles: [p] }))
       await readSettings()
       const remote = 'https://bbs.personal.example/scm/team/app.git'
       expect(await profileCredentialForUrl('/nowhere', remote)).toEqual({ needsUsername: true })
@@ -140,7 +140,7 @@ describe('checkRemoteAuth across GitLab instances', () => {
     const { defaultSettings } = await import('../src/shared/types')
     const { checkRemoteAuth } = await import('../src/main/remoteAuthCheck')
 
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-ra-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-ra-'))
     const getPath = vi.spyOn(app, 'getPath').mockReturnValue(dir)
     const fetchSpy = vi.fn(async () => new Response('{}', { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
@@ -150,7 +150,7 @@ describe('checkRemoteAuth across GitLab instances', () => {
       const personal = { ...s.profiles[0], id: 'personal', links: { gitlab: { source: 'gh' as const, login: 'me' } } }
       const work = { ...s.profiles[0], id: 'work', gitlabUrl: 'git.example.org' }
       writeFileSync(
-        join(dir, 'gitcito-settings.json'),
+        join(dir, 'githuttbr-settings.json'),
         JSON.stringify({ ...s, onboardingCompleted: true, activeProfileId: 'personal', profiles: [personal, work] })
       )
       await readSettings()

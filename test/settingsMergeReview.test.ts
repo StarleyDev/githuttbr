@@ -22,7 +22,7 @@ import type { SecretStore } from '../src/shared/secrets'
 // settings file, and a symlinked settings file moved aside. Real main-process
 // handlers, the real renderer store wired to them, a fake keyring.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-settings-merge-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-settings-merge-'))
 
 const seams = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
@@ -104,9 +104,9 @@ afterEach(() => {
   seams.page = { id: 1, on: () => undefined, once: () => undefined }
 })
 
-const settingsFile = (): string => join(dir, 'gitcito-settings.json')
-const storeFile = (): string => join(dir, 'gitcito-secrets.enc')
-const consentFile = (): string => join(dir, 'gitcito-keychain.json')
+const settingsFile = (): string => join(dir, 'githuttbr-settings.json')
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
+const consentFile = (): string => join(dir, 'githuttbr-keychain.json')
 const storeJson = (): SecretStore =>
   JSON.parse(Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString().replace(/^enc:/, '')) as SecretStore
 const writeStore = (s: SecretStore): void =>
@@ -429,7 +429,7 @@ describe('a background reader meeting plaintext tokens beside an encrypted store
 describe('moving a symlinked damaged settings file aside', () => {
   it('moves the target and says where; the first save writes through the dangling link', async () => {
     await fresh({ consent: 'granted' })
-    const dotfiles = mkdtempSync(join(tmpdir(), 'gitcito-dotfiles-'))
+    const dotfiles = mkdtempSync(join(tmpdir(), 'githuttbr-dotfiles-'))
     try {
       const real = join(realpathSync(dotfiles), 'gitcito.json')
       writeFileSync(real, '{"profiles": [')

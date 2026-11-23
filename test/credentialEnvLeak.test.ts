@@ -9,7 +9,7 @@ import { defaultSettings } from '../src/shared/types'
 // the second one failed, the first stayed open — a socket and a helper script
 // nobody would release. No network: the environment is built, never used.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-cred-leak-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-cred-leak-'))
 
 vi.mock('electron', () => ({
   app: { getPath: () => dir, isPackaged: false },
@@ -53,10 +53,10 @@ beforeAll(async () => {
   execFileSync('git', ['-C', repo, 'remote', 'set-url', '--add', '--push', 'both', `${origin}/group/app.git`], { env })
   execFileSync('git', ['-C', repo, 'remote', 'set-url', '--add', '--push', 'both', `${origin}/b/scm/proj/app.git`], { env })
   writeFileSync(join(dir, 'gitconfig'), '')
-  writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
   const base = defaultSettings().profiles[0]
   writeFileSync(
-    join(dir, 'gitcito-settings.json'),
+    join(dir, 'githuttbr-settings.json'),
     JSON.stringify({
       ...defaultSettings(),
       onboardingCompleted: true,

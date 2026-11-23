@@ -17,14 +17,14 @@ import { writePrivateFile } from '../src/main/privateFile'
 
 // A settings file symlinked into a dotfiles repo: the atomic write used to
 // rename over the link, replacing it with a plain file.
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-private-link-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-private-link-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
 describe.skipIf(process.platform === 'win32')('writing a private file through a symlink', () => {
   it('writes the target and keeps the link', async () => {
     mkdirSync(join(dir, 'dotfiles'))
-    const target = join(dir, 'dotfiles', 'gitcito-settings.json')
-    const link = join(dir, 'gitcito-settings.json')
+    const target = join(dir, 'dotfiles', 'githuttbr-settings.json')
+    const link = join(dir, 'githuttbr-settings.json')
     writeFileSync(target, '{"old":true}')
     symlinkSync(target, link)
 
@@ -38,7 +38,7 @@ describe.skipIf(process.platform === 'win32')('writing a private file through a 
 
   it('a dangling link whose target folder exists is written through, and the link stays', async () => {
     mkdirSync(join(dir, 'moved'))
-    const target = join(dir, 'moved', 'gitcito-settings.json')
+    const target = join(dir, 'moved', 'githuttbr-settings.json')
     const link = join(dir, 'through.json')
     symlinkSync(target, link)
 
@@ -50,7 +50,7 @@ describe.skipIf(process.platform === 'win32')('writing a private file through a 
   })
 
   it('a dangling link whose target folder is gone fails the write and is left alone', async () => {
-    const target = join(dir, 'gone', 'gitcito-settings.json')
+    const target = join(dir, 'gone', 'githuttbr-settings.json')
     const link = join(dir, 'dangling.json')
     symlinkSync(target, link)
 

@@ -51,9 +51,9 @@ describe('parseCliOpenArgs', () => {
   })
 
   it('carries an edit request and its sentinel', () => {
-    const payload = parseCliOpenArgs(['--open=/repo', '--edit=/repo/.git/COMMIT_EDITMSG', '--wait=/tmp/gitcito-wait.aB'])
+    const payload = parseCliOpenArgs(['--open=/repo', '--edit=/repo/.git/COMMIT_EDITMSG', '--wait=/tmp/githuttbr-wait.aB'])
     expect(payload?.edit).toBe('/repo/.git/COMMIT_EDITMSG')
-    expect(payload?.wait).toBe('/tmp/gitcito-wait.aB')
+    expect(payload?.wait).toBe('/tmp/githuttbr-wait.aB')
   })
 })
 

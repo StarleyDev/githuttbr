@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2154
-# 44. workspace-share — multi-section .gitcito bundles from the Global Vault.
+# 44. workspace-share — multi-section .githuttbr bundles from the Global Vault.
 #
 # The Secure Share feature now lives in the Global Vault too, and a bundle can
 # carry MORE THAN ONE section: the global vault's key/value secrets plus any
@@ -32,13 +32,13 @@
 #      .env.example listed without a key badge, unselected). Toggling a single
 #      repo on must preselect its secrets too. Clicking the group checkbox
 #      again clears the whole workspace.
-#   4. Type matching 8+ char passwords → "Export bundle" → save workspace.gitcito.
+#   4. Type matching 8+ char passwords → "Export bundle" → save workspace.githuttbr.
 #      EXPECT: success toast. grep the file for "sk_live_x", "API_KEY", ".env":
 #      none may appear (values, contents AND paths are encrypted; only repo
 #      folder/remote and the envelope label are plaintext, for matching).
 #
 #   Import (delete the local .env files first, or use fresh clones):
-#   5. "Workspace secure share" → Import → pick workspace.gitcito. EXPECT: the
+#   5. "Workspace secure share" → Import → pick workspace.githuttbr. EXPECT: the
 #      envelope shows the label and "N sections" before any password.
 #   6. Wrong password → Unlock. EXPECT: "Wrong password" toast.
 #   7. Right password → Unlock. EXPECT: one card per section:
@@ -117,4 +117,4 @@ chmod +x "$TOOLS/deploy.sh"
 git -C "$TOOLS" add -A
 collab_commit "$TOOLS" "Alan Turing" "alan@example.com" "feat: scaffold acme-tools"
 
-summary "workspace-share" "multi-section .gitcito from the Global Vault — bundle vault secrets + multiple repos (nested acme-web/acme-tools), import routes each section (repos auto-matched by remote/folder, vault merges into global)"
+summary "workspace-share" "multi-section .githuttbr from the Global Vault — bundle vault secrets + multiple repos (nested acme-web/acme-tools), import routes each section (repos auto-matched by remote/folder, vault merges into global)"

@@ -10,15 +10,15 @@ import { gitService } from '../src/main/git'
  * which repo it runs against:
  *
  *   npm run playground:monster
- *   GITCITO_BENCH_REPO=examples/monster/universal-ish npx vitest run test/perf.bench.test.ts
+ *   GITHUTTBR_BENCH_REPO=examples/monster/universal-ish npx vitest run test/perf.bench.test.ts
  *
  * This measures the whole main-process path — subprocess spawn, git's own work,
  * and the parsing on our side — which is the part `examples/repo-stats.sh`
  * cannot see. When the two disagree, the gap is our parsing.
  */
 
-const REPO = process.env.GITCITO_BENCH_REPO
-const RUNS = Number(process.env.GITCITO_BENCH_RUNS ?? 5)
+const REPO = process.env.GITHUTTBR_BENCH_REPO
+const RUNS = Number(process.env.GITHUTTBR_BENCH_RUNS ?? 5)
 
 const suite = REPO ? describe : describe.skip
 

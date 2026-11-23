@@ -22,15 +22,15 @@ const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
 
 /** Throwaway SSH keys for the ssh-keys shot. Outside the repository on purpose:
  *  disposable or not, these are real private key files. */
-const DEMO_SSH = join(tmpdir(), 'gitcito-demo-ssh')
+const DEMO_SSH = join(tmpdir(), 'githuttbr-demo-ssh')
 
 /** A neutral shell for terminal shots. The real one runs the machine's profile,
  *  whose prompt prints the user, the host name and often the LAN address.
  *  `bash --noprofile --norc` reads none of it; the prompt is a bare `$ `. */
-const DEMO_SHELL = join(tmpdir(), 'gitcito-demo-shell.sh')
+const DEMO_SHELL = join(tmpdir(), 'githuttbr-demo-shell.sh')
 /** Its own HOME, not DEMO_HOME: the credential shot wipes that one in `prepare`,
  *  which under --jobs would pull it from under a running terminal. */
-const DEMO_SHELL_HOME = join(tmpdir(), 'gitcito-demo-shell-home')
+const DEMO_SHELL_HOME = join(tmpdir(), 'githuttbr-demo-shell-home')
 const neutralShell = () => {
   writeFileSync(DEMO_SHELL, '#!/bin/sh\nexport PS1="$ "\nexec bash --noprofile --norc\n')
   chmodSync(DEMO_SHELL, 0o755)
@@ -40,9 +40,9 @@ const neutralShell = () => {
 
 /** A throwaway HOME for the credential-helper shot: the real one holds this
  *  machine's global git config and possibly live passwords. */
-const DEMO_HOME = join(tmpdir(), 'gitcito-demo-home')
+const DEMO_HOME = join(tmpdir(), 'githuttbr-demo-home')
 // Stand-in SDK CLIs for the run-target shot — see the launch-device entry.
-const DEMO_SDK = join(tmpdir(), 'gitcito-demo-sdk')
+const DEMO_SDK = join(tmpdir(), 'githuttbr-demo-sdk')
 
 /**
  * Expand sidebar sections by their title (as rendered: 'WORKTREES').
@@ -109,7 +109,7 @@ async function seedTodos(page, repoPath) {
  *   shots that need a readable vault — granting makes macOS raise its own
  *   dialog, which Playwright cannot dismiss. Everything else runs declined.
  * @property {Record<string,string>} [env]  Extra env for the launched app. For
- *   redirecting something machine-specific (e.g. GITCITO_SSH_DIR) at a fake.
+ *   redirecting something machine-specific (e.g. GITHUTTBR_SSH_DIR) at a fake.
  * @property {string} [clipTo]  CSS selector to crop the shot to. For a detail too
  *   small to read in a 1440px window (a title-bar control, a single badge).
  * @property {number} [clipPad]  Padding around `clipTo`, in px (default 12).
@@ -1979,12 +1979,12 @@ export const shots = [
     // Driven by a fake SDK tree rather than the real `flutter` / `adb` /
     // `simctl`: a documentation shot must not photograph whichever phone is
     // plugged into the machine that captured it, and the list has to be the
-    // same every time. GITCITO_DEVICE_BIN is only honoured under --shot.
+    // same every time. GITHUTTBR_DEVICE_BIN is only honoured under --shot.
     out: 'launch-device',
     repos: ['launch-configs'],
     themes: ['dark'],
     appTheme: 'midnight',
-    env: { GITCITO_DEVICE_BIN: DEMO_SDK },
+    env: { GITHUTTBR_DEVICE_BIN: DEMO_SDK },
     prepare: async ({ repoPaths }) => {
       // A pubspec.yaml is what makes Gitcito ask the (fake) Flutter CLI at all.
       await writeFile(join(repoPaths['launch-configs'], 'pubspec.yaml'), 'name: demo_app\n')
@@ -2942,7 +2942,7 @@ export const shots = [
       const repo = repoPaths['attributes']
       await rm(DEMO_HOME, { recursive: true, force: true })
       await mkdir(DEMO_HOME, { recursive: true })
-      const stale = '"/tmp/.mount_GitcitXYZ/resources/cli/gitcito-textconv"'
+      const stale = '"/tmp/.mount_GitcitXYZ/resources/cli/githuttbr-textconv"'
       await run('git', ['-C', repo, 'config', '--local', 'diff.word.textconv', stale])
       await run('git', ['-C', repo, 'config', '--local', 'diff.pdf.textconv', 'pdftotext -layout - -'])
     },
@@ -3151,12 +3151,12 @@ export const shots = [
     //
     // Generated into a throwaway directory rather than photographing the real
     // ~/.ssh: a fingerprint and the email in a key comment are exactly the kind
-    // of thing that should not end up in documentation. GITCITO_SSH_DIR is only
+    // of thing that should not end up in documentation. GITHUTTBR_SSH_DIR is only
     // honoured under --shot.
     out: 'ssh-keys',
     repos: ['multi-remote'],
     themes: ['light'],
-    env: { GITCITO_SSH_DIR: DEMO_SSH },
+    env: { GITHUTTBR_SSH_DIR: DEMO_SSH },
     prepare: async ({ run }) => {
       const dir = DEMO_SSH
       await rm(dir, { recursive: true, force: true })
@@ -3309,7 +3309,7 @@ export const shots = [
     }
   },
   {
-    // `gitcito --wait` — what git gets instead of vim. Driven through the same
+    // `githuttbr --wait` — what git gets instead of vim. Driven through the same
     // IPC payload the shim sends, with a realistic COMMIT_EDITMSG (subject,
     // body, and git's own comment block) so the counter and hints have
     // something true to say.
@@ -3336,7 +3336,7 @@ export const shots = [
         window.__shot.ui.getState().openModal({
           kind: 'cli-edit',
           file: `${p}/.git/COMMIT_EDITMSG`,
-          sentinel: '/tmp/gitcito-wait.example',
+          sentinel: '/tmp/githuttbr-wait.example',
           content
         })
       }, repo)
@@ -3411,7 +3411,7 @@ export const shots = [
     clipTo: '.boot-error',
     clipPad: 48,
     userData: async (dir) => {
-      await writeFile(join(dir, 'gitcito-settings.json'), '{\n  "onboardingCompleted": true,\n  "profiles": [\n    { "name": "Work",\n')
+      await writeFile(join(dir, 'githuttbr-settings.json'), '{\n  "onboardingCompleted": true,\n  "profiles": [\n    { "name": "Work",\n')
     },
     drive: async (page) => {
       await page.waitForSelector('.boot-error', { timeout: 15000 })

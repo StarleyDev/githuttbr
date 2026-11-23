@@ -9,7 +9,7 @@ import { defaultSettings } from '../src/shared/types'
 // the user has done anything. With tokens in the encrypted store, drawing it
 // must never decrypt them: on macOS that is the keychain prompt out of nowhere.
 // Real IPC handlers, a real settings file, a fake keyring that counts.
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-avatars-keychain-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-avatars-keychain-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 const keyring = { decrypts: 0, asked: 0 }
 
@@ -46,17 +46,17 @@ const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.
 
 describe('avatars never unlock the keychain', () => {
   beforeAll(async () => {
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
     const base = defaultSettings()
     const profile = { ...base.profiles[0], githubToken: TOKEN }
     const withTokens = { ...base, onboardingCompleted: true, profiles: [profile] }
     writeFileSync(
-      join(dir, 'gitcito-secrets.enc'),
+      join(dir, 'githuttbr-secrets.enc'),
       Buffer.from(`enc:${JSON.stringify(extractSecrets(withTokens))}`).toString('base64')
     )
     // The settings file holds no token: it lives only in the encrypted store.
     writeFileSync(
-      join(dir, 'gitcito-settings.json'),
+      join(dir, 'githuttbr-settings.json'),
       JSON.stringify({ ...withTokens, profiles: [{ ...profile, githubToken: '' }], repoProfiles: { [BOUND_REPO]: profile.id } })
     )
     vi.stubGlobal(

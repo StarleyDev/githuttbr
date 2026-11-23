@@ -25,9 +25,9 @@ const PLAYGROUND = join(ROOT, 'examples', 'playground')
 const OUT_DIR = join(ROOT, 'docs', 'screenshots')
 
 // Repos are loaded through neutral symlinks so screenshots show a clean,
-// username-free path (e.g. /tmp/gitcito-demo/octopus-merge) instead of the
+// username-free path (e.g. /tmp/githuttbr-demo/octopus-merge) instead of the
 // real checkout location.
-const DEMO_ROOT = join('/tmp', 'gitcito-demo')
+const DEMO_ROOT = join('/tmp', 'githuttbr-demo')
 
 // Fixed content size for crisp, consistent shots regardless of the host OS chrome.
 const WIDTH = 1440
@@ -322,7 +322,7 @@ async function captureGif(shot) {
 async function captureGifOnce(shot) {
   const theme = (shot.themes ?? ['dark'])[0]
   const { app, page, userDataDir } = await launch(shot, theme)
-  const framesDir = await mkdtemp(join(tmpdir(), 'gitcito-frames-'))
+  const framesDir = await mkdtemp(join(tmpdir(), 'githuttbr-frames-'))
   const fps = 12
   try {
     await settle(page, 600)

@@ -40,7 +40,7 @@ each case isolates the machine:
 
 - The repo is a **private copy** of a playground scenario, so the app never
   touches the repos `npm test` reads.
-- `HOME`, the XDG dirs, `GIT_CONFIG_GLOBAL` and `GITCITO_SSH_DIR` point into a
+- `HOME`, the XDG dirs, `GIT_CONFIG_GLOBAL` and `GITHUTTBR_SSH_DIR` point into a
   temp dir; `GIT_CONFIG_NOSYSTEM=1`. Nothing reads `~/.ssh`, `~/.gitconfig` or
   the keyring.
 - The profile has no tokens and AI off, and every `http(s)` request is answered

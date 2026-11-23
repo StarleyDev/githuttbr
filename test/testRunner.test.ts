@@ -98,7 +98,7 @@ describe('filterTestFiles', () => {
 describe('runTests — a real vitest run', () => {
   it('runs the installed vitest and reads its JSON report, from a path with a space and an &', async () => {
     // No shell in between: a space or an `&` in the path must reach vitest as plain characters.
-    const root = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    const root = mkdtempSync(join(tmpdir(), 'githuttbr-tests-'))
     temp.push(root)
     const dir = join(root, 'my app & co')
     mkdirSync(join(dir, 'node_modules'), { recursive: true })
@@ -133,7 +133,7 @@ describe('runTests — a real vitest run', () => {
   }, 60_000)
 
   it('answers "unavailable" for a runner declared but not installed, instead of an English error', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-tests-'))
     temp.push(dir)
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { jest: '*' } }))
     expect(installedRunner(dir)).toEqual({ runner: 'jest', installed: false })
@@ -141,7 +141,7 @@ describe('runTests — a real vitest run', () => {
   })
 
   it('reports a stopped run as cancelled, not as a runner that wrote no report', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-tests-'))
     temp.push(dir)
     // A stand-in "vitest" whose entry just waits, so there is time to stop it.
     mkdirSync(join(dir, 'node_modules', 'vitest'), { recursive: true })
@@ -156,7 +156,7 @@ describe('runTests — a real vitest run', () => {
   }, 20_000)
 
   it('cancels before the report directory is ready and the process has started', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-tests-'))
     temp.push(dir)
     mkdirSync(join(dir, 'node_modules'), { recursive: true })
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '*' } }))
@@ -167,7 +167,7 @@ describe('runTests — a real vitest run', () => {
   })
 
   it('keeps a stopped run cancelled when a new run starts before it has exited', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    const dir = mkdtempSync(join(tmpdir(), 'githuttbr-tests-'))
     temp.push(dir)
     mkdirSync(join(dir, 'node_modules', 'vitest'), { recursive: true })
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '*' } }))

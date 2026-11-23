@@ -104,7 +104,7 @@ describe('code search (code-search playground)', () => {
   })
 
   it('searchFileMatches never reads outside the repository on the regex path', async () => {
-    const outside = mkdtempSync(join(tmpdir(), 'gitcito-outside-'))
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-outside-'))
     try {
       writeFileSync(join(outside, 'secret.txt'), 'needle\n')
       const rel = join('..', '..', '..', '..', '..', '..', '..', '..', outside, 'secret.txt')
@@ -165,14 +165,14 @@ describe('stacked branches (stacked-branches playground)', () => {
 })
 
 describe('remote branch worktree checkout', () => {
-  const root = mkdtempSync(join(tmpdir(), 'gitcito-remote-worktree-'))
+  const root = mkdtempSync(join(tmpdir(), 'githuttbr-remote-worktree-'))
   const repo = join(root, 'repo')
   const worktree = join(root, 'worktree')
 
   beforeAll(() => {
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
     execFileSync('git', ['-C', repo, 'config', 'user.name', 'Gitcito Test'])
-    execFileSync('git', ['-C', repo, 'config', 'user.email', 'gitcito@example.com'])
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'githuttbr@example.com'])
     writeFileSync(join(repo, 'state.txt'), 'main\n')
     execFileSync('git', ['-C', repo, 'add', 'state.txt'])
     execFileSync('git', ['-C', repo, 'commit', '-qm', 'main'])
@@ -245,7 +245,7 @@ describe('worktreeAdd ignored-file copy', () => {
     writeFileSync(join(R, 'ignored-dir/generated/node_modules/skip.txt'), 'generated')
 
     const settingsDir = mkdtempSync(join(tmpdir(), 'wt-settings-'))
-    const settingsFile = join(settingsDir, 'gitcito-settings.json')
+    const settingsFile = join(settingsDir, 'githuttbr-settings.json')
     const destRoot = mkdtempSync(join(tmpdir(), 'wt-'))
     const dest = join(destRoot, 'wt')
     const getPath = vi.spyOn(app, 'getPath').mockReturnValue(settingsDir)
@@ -482,7 +482,7 @@ describe('stacked-PR autopilot plumbing (stacked-branches playground)', () => {
 
   it('pushes a non-current stack level to a remote without checking it out', async () => {
     const R = cloneFixture('stacked-branches') // checked out on feature/ui
-    const bare = join(mkdtempSync(join(tmpdir(), 'gitcito-stack-origin-')), 'origin.git')
+    const bare = join(mkdtempSync(join(tmpdir(), 'githuttbr-stack-origin-')), 'origin.git')
     execFileSync('git', ['init', '-q', '--bare', bare])
     execFileSync('git', ['-C', R, 'remote', 'add', 'origin', bare])
     try {
@@ -684,7 +684,7 @@ describe('deleteRemoteBranch (stale tracking ref)', () => {
   // straight from the bare repo — simulating e.g. Dependabot removing its branch
   // on GitHub after merging. The local remote-tracking ref survives until a
   // pruning fetch, so the branch still shows up in the UI. Deleting it from
-  // gitcito must NOT fail with "remote ref does not exist"; it should just prune
+  // githuttbr must NOT fail with "remote ref does not exist"; it should just prune
   // the stale tracking ref so the branch disappears.
   const git = (cwd: string, ...args: string[]): string =>
     execFileSync('git', ['-C', cwd, ...args], { stdio: ['ignore', 'pipe', 'ignore'] })
@@ -692,8 +692,8 @@ describe('deleteRemoteBranch (stale tracking ref)', () => {
       .trim()
 
   it('prunes the stale tracking ref instead of erroring when the remote ref is gone', async () => {
-    const remote = mkdtempSync(join(tmpdir(), 'gitcito-remote-'))
-    const work = mkdtempSync(join(tmpdir(), 'gitcito-work-'))
+    const remote = mkdtempSync(join(tmpdir(), 'githuttbr-remote-'))
+    const work = mkdtempSync(join(tmpdir(), 'githuttbr-work-'))
     try {
       execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore' })
       execFileSync('git', ['init', '-b', 'main', work], { stdio: 'ignore' })
@@ -716,7 +716,7 @@ describe('deleteRemoteBranch (stale tracking ref)', () => {
         stdio: 'ignore'
       })
 
-      // Deleting from gitcito must succeed and drop the stale tracking ref.
+      // Deleting from githuttbr must succeed and drop the stale tracking ref.
       await expect(gitService.deleteRemoteBranch(work, 'origin', 'gone-branch')).resolves.toBeUndefined()
 
       const after = await gitService.branches(work)
@@ -1059,7 +1059,7 @@ describe('absorb (absorb playground)', () => {
     // Publish everything: now there is nothing left that may be rewritten.
     // Push to a throwaway bare repo — the fixture's own origin is shared with
     // the playground, and writing to it would corrupt the next test run.
-    const bare = mkdtempSync(join(tmpdir(), 'gitcito-absorb-origin-'))
+    const bare = mkdtempSync(join(tmpdir(), 'githuttbr-absorb-origin-'))
     execFileSync('git', ['init', '-q', '--bare', bare])
     execFileSync('git', ['-C', R, 'remote', 'set-url', 'origin', bare])
     execFileSync('git', ['-C', R, 'push', '-q', 'origin', 'HEAD:main'])
@@ -1507,7 +1507,7 @@ describe('a route edit that conflicts (stacked-branches playground)', () => {
   it('names both branches, so the toast can say which two clash', async () => {
     const R = conflictingStack()
     await expect(gitService.stackSetRoute(R, 'main', ['note-2', 'note-1'])).rejects.toThrow(
-      /GITCITO_ROUTE_CONFLICT:note-1:note-2/
+      /GITHUTTBR_ROUTE_CONFLICT:note-1:note-2/
     )
   })
 })

@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2154
-# 42. secure-share — exercise encrypted .gitcito file bundles (export/import).
+# 42. secure-share — exercise encrypted .githuttbr file bundles (export/import).
 #
 # A repo with gitignored secrets at several depths (root .env, app/.env.prod,
 # certs/dev.pem) plus normal tracked sources. Manual test guide:
@@ -13,12 +13,12 @@
 #      content never appears.
 #   2. Type a password shorter than 8 chars. EXPECT: warning, Export disabled.
 #   3. Type matching 8+ char passwords, click "Export bundle", save as
-#      secure-share.gitcito. EXPECT: success toast with the saved path; the
+#      secure-share.githuttbr. EXPECT: success toast with the saved path; the
 #      file on disk is JSON whose payload is base64 — grep it for "API_KEY"
 #      and for ".env": neither may appear (paths are encrypted too).
 #
 #   Import (use a second clone or delete the local .env files first):
-#   4. ⌘K → "Import secure bundle", pick the .gitcito file. EXPECT: project
+#   4. ⌘K → "Import secure bundle", pick the .githuttbr file. EXPECT: project
 #      name, file count and date shown before any password is asked.
 #   5. Enter a wrong password → Unlock. EXPECT: "Wrong password" toast, no
 #      file list.
@@ -74,4 +74,4 @@ echo "module.exports = (s) => s" > "$R/node_modules/leftpad/index.js"
 git -C "$R" add -A
 collab_commit "$R" "Ada Lovelace" "ada@example.com" "feat: scaffold secure-share playground"
 
-summary "secure-share" "encrypted .gitcito bundles — export gitignored secrets (root + nested), import recreates them at the same relative paths (Vault tab or ⌘K)"
+summary "secure-share" "encrypted .githuttbr bundles — export gitignored secrets (root + nested), import recreates them at the same relative paths (Vault tab or ⌘K)"

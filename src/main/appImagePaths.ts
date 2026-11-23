@@ -10,7 +10,7 @@
  *
  * So a path under it written into `~/.local/bin` (the CLI symlink) or into a
  * repository's `.git/config` (`diff.<name>.textconv`) is a loaded gun pointed
- * at the next `gitcito` or `git diff`. These helpers decide when a path is that
+ * at the next `githuttbr` or `git diff`. These helpers decide when a path is that
  * kind of path. Pure — no Electron, no filesystem — so the decisions are tested
  * on their own (test/appImagePaths.test.ts).
  */

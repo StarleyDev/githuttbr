@@ -13,7 +13,7 @@ interface InfoData {
   repos: Record<string, InfoEntry[]>
 }
 
-const filePath = (): string => join(app.getPath('userData'), 'gitcito-info.json')
+const filePath = (): string => join(app.getPath('userData'), 'githuttbr-info.json')
 const empty = (): InfoData => ({ repos: {} })
 
 async function load(): Promise<InfoData> {

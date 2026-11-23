@@ -13,7 +13,7 @@ import { gitService } from '../src/main/git'
 // to be 2.25 and, like it, ignores GIT_CONFIG_COUNT — so a blanking that relied
 // on config-from-environment would let the machine's helper answer.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-old-git-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-old-git-'))
 const bin = join(dir, 'bin')
 const marker = join(dir, 'helper-was-asked')
 const realGit = execFileSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).trim()

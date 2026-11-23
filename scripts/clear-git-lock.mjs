@@ -28,7 +28,7 @@ const lockPath = resolve(gitDir, 'index.lock')
 // A Gitcito instance open on THIS repo is the usual culprit: its background
 // `git status` refreshes grab index.lock and race release-it's commit. Detect
 // it up front so the user can close it instead of hitting a mid-release crash.
-const gitcitoOnThisRepo = () => {
+const githuttbrOnThisRepo = () => {
   try {
     const repoRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim()
     const out = execSync('pgrep -fl Electron', { encoding: 'utf-8' })
@@ -40,11 +40,11 @@ const gitcitoOnThisRepo = () => {
   }
 }
 
-if (gitcitoOnThisRepo()) {
+if (githuttbrOnThisRepo()) {
   console.error(
-    '\n✖ Gitcito appears to be running on this repository.\n' +
+    '\n✖ GitHuttBr appears to be running on this repository.\n' +
       '  Its background git refreshes race release-it for .git/index.lock.\n' +
-      '  Close Gitcito (and any `electron-vite dev` session) for this repo, then retry.\n'
+      '  Close GitHuttBr (and any `electron-vite dev` session) for this repo, then retry.\n'
   )
   process.exit(1)
 }
@@ -85,7 +85,7 @@ if (!existsSync(lockPath)) {
 if (gitProcessRunning()) {
   console.error(
     `\n✖ ${lockPath} is held by a running git process.\n` +
-      `  Close other git clients (including Gitcito if it has this repo open) and retry.\n`
+      `  Close other git clients (including GitHuttBr if it has this repo open) and retry.\n`
   )
   process.exit(1)
 }

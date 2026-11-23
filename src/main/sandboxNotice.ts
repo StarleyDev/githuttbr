@@ -15,7 +15,7 @@ export function sandboxNotice(noSandboxSwitch: boolean, env: Env = process.env):
   const disabledByEnv = !!env['ELECTRON_DISABLE_SANDBOX']
   if (!noSandboxSwitch && !disabledByEnv) return null
   const how = noSandboxSwitch ? '--no-sandbox' : 'ELECTRON_DISABLE_SANDBOX'
-  const lines = [`[gitcito] warning: the Chromium sandbox is OFF (${how}).`]
+  const lines = [`[githuttbr] warning: the Chromium sandbox is OFF (${how}).`]
   if (env['APPIMAGE']) {
     lines.push(
       '  The AppImage launcher adds --no-sandbox when unprivileged user namespaces are unavailable',

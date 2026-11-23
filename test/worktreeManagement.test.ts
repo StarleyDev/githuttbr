@@ -21,7 +21,7 @@ describe('worktree management', () => {
 
   beforeEach(() => {
     // realpath: macOS tmpdir is /var, a symlink, but git reports /private/var.
-    dir = realpathSync(mkdtempSync(join(tmpdir(), 'gitcito-wt-')))
+    dir = realpathSync(mkdtempSync(join(tmpdir(), 'githuttbr-wt-')))
     repo = join(dir, 'repo')
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
     git(repo, 'config', 'user.name', 'T')

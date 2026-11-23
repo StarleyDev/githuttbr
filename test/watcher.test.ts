@@ -29,7 +29,7 @@ describe('repository watcher', () => {
   const settle = (ms = 700): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
   beforeAll(async () => {
-    repo = mkdtempSync(join(tmpdir(), 'gitcito-watch-'))
+    repo = mkdtempSync(join(tmpdir(), 'githuttbr-watch-'))
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
     mkdirSync(join(repo, 'src'))
     writeFileSync(join(repo, 'src', 'app.ts'), 'one\n')

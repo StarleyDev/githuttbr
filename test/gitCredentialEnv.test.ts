@@ -22,7 +22,7 @@ describe('profile credential handed to git through a private endpoint', () => {
   let storeFile: string
 
   beforeAll(() => {
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-credenv-'))
+    dir = mkdtempSync(join(tmpdir(), 'githuttbr-credenv-'))
     storeFile = join(dir, 'stored-credentials')
     writeFileSync(storeFile, 'https://machine-user:machine-secret@github.com\nhttps://machine-user:machine-secret@gitlab.com\n')
     // "The machine": a global config whose helper holds another account.

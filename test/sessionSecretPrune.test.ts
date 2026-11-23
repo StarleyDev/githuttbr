@@ -11,7 +11,7 @@ import { bootLoaded, settingsIpc } from './settingsIpc'
 // session. A save that removed its server pruned the encrypted store but not
 // that memory copy, so adding the same URL back brought the token back with it.
 
-const dir = mkdtempSync(join(tmpdir(), 'gitcito-session-prune-'))
+const dir = mkdtempSync(join(tmpdir(), 'githuttbr-session-prune-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
 
 vi.mock('electron', () => ({
@@ -43,8 +43,8 @@ const settingsWith = (profile: Profile): AppSettings => ({ ...defaultSettings(),
 
 describe('session-only tokens follow the server list (keychain declined)', () => {
   beforeEach(async () => {
-    for (const f of ['gitcito-settings.json', 'gitcito-secrets.enc']) rmSync(join(dir, f), { force: true })
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+    for (const f of ['githuttbr-settings.json', 'githuttbr-secrets.enc']) rmSync(join(dir, f), { force: true })
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
     vi.resetModules()
     handlers.clear()
     const { registerSettingsHandlers } = await import('../src/main/settings')
@@ -182,8 +182,8 @@ const callAs = (wc: EventEmitter & { id: number }, channel: string, ...args: unk
 
 describe('a reloaded renderer holds nothing until it is served again', () => {
   const restart = async (consent: 'declined' | 'granted'): Promise<void> => {
-    for (const f of ['gitcito-settings.json', 'gitcito-secrets.enc']) rmSync(join(dir, f), { force: true })
-    writeFileSync(join(dir, 'gitcito-keychain.json'), JSON.stringify({ consent, explained: true }))
+    for (const f of ['githuttbr-settings.json', 'githuttbr-secrets.enc']) rmSync(join(dir, f), { force: true })
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent, explained: true }))
     vi.resetModules()
     handlers.clear()
     const { registerSettingsHandlers } = await import('../src/main/settings')

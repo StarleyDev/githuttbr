@@ -22,7 +22,7 @@ import {
 
 const roots: string[] = []
 const root = (): string => {
-  const value = mkdtempSync(join(tmpdir(), 'gitcito-file-actions-'))
+  const value = mkdtempSync(join(tmpdir(), 'githuttbr-file-actions-'))
   roots.push(value)
   return value
 }
@@ -256,7 +256,7 @@ describe('repository file action application', () => {
     expect(readFileSync(join(repo, 'a.txt'), 'utf8')).toBe('old\n')
     expect(existsSync(join(repo, 'new.txt'))).toBe(false)
     expect(readFileSync(join(repo, 'gone.txt'), 'utf8')).toBe('remove\n')
-    expect(readdirSync(repo).some((name) => name.includes('.gitcito-'))).toBe(false)
+    expect(readdirSync(repo).some((name) => name.includes('.githuttbr-'))).toBe(false)
   })
 
   it('reports every path whose rollback restoration fails', async () => {

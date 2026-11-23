@@ -11,7 +11,7 @@
  *
  * Deliberately left alone:
  *
- * - RunAsNode stays ON. resources/cli/gitcito and gitcito-textconv run
+ * - RunAsNode stays ON. resources/cli/githuttbr and githuttbr-textconv run
  *   out/main/cliEntry.js / textconvCli.js through the app binary with
  *   ELECTRON_RUN_AS_NODE, and the test runner (main/testRunner.ts) does the
  *   same with process.execPath. Turning it off breaks every headless verb.
@@ -48,7 +48,7 @@ function electronBinary(context) {
 /**
  * Where the bundled CLI shims are told to find the app executable.
  *
- * resources/cli/gitcito and gitcito-textconv run the app binary with
+ * resources/cli/githuttbr and githuttbr-textconv run the app binary with
  * ELECTRON_RUN_AS_NODE, and its name differs per platform — the product name on
  * macOS and Windows, the package's executableName on Linux. Guessing it in shell
  * is how the shims ended up looking for a MacOS/Gitcito that never existed, so
@@ -74,7 +74,7 @@ async function writeCliAppBinary(context) {
   const { resources, relative } = cliAppBinary(context)
   const cliDir = path.join(resources, 'cli')
   // No cli/ (extraResources changed) is a broken build, not something to paper over.
-  await fs.access(path.join(cliDir, 'gitcito'))
+  await fs.access(path.join(cliDir, 'githuttbr'))
   await fs.access(path.join(resources, relative))
   await fs.writeFile(path.join(cliDir, 'app-binary'), `${relative}\n`, { mode: 0o644 })
 }

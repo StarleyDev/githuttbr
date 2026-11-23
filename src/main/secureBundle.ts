@@ -1,7 +1,7 @@
 import { randomBytes, scryptSync, createCipheriv, createDecipheriv } from 'node:crypto'
 import type { SecureBundleHeader, SecureBundleSectionSummary, SecureWorkspaceTab } from '../shared/types'
 
-// Pure pack/unpack logic for .gitcito secure bundles — a password-encrypted set
+// Pure pack/unpack logic for .githuttbr secure bundles — a password-encrypted set
 // of sections shared out-of-band. A section is either a repo's files (typically
 // .env and friends, re-materialised at the same relative paths in another
 // checkout) or the global vault's key/value secrets. No Electron imports so it
@@ -127,7 +127,7 @@ function encodeSection(section: BundleSection): unknown {
   }
 }
 
-/** Pack sections into a v2 `.gitcito` bundle string. `project` is the envelope
+/** Pack sections into a v2 `.githuttbr` bundle string. `project` is the envelope
  *  label shown before unlock (a repo name, or e.g. "Workspace" for a multi-repo
  *  bundle). */
 export function packSections(project: string, sections: BundleSection[], password: string): string {
@@ -161,7 +161,7 @@ export function packBundle(project: string, files: BundleFile[], password: strin
 }
 
 /** Parse the plaintext envelope without decrypting. Returns null when the text
- *  is not a gitcito bundle at all; throws on a bundle from a newer version. */
+ *  is not a githuttbr bundle at all; throws on a bundle from a newer version. */
 export function readBundleHeader(text: string): SecureBundleHeader | null {
   let raw: Record<string, unknown>
   try {

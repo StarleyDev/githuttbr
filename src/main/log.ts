@@ -7,7 +7,7 @@ import type { ActivityEvent, LogEntry } from '../shared/types'
 /** Hard cap on retained entries; oldest are dropped once exceeded. */
 const MAX_ENTRIES = 1000
 
-const filePath = (): string => join(app.getPath('userData'), 'gitcito-log.json')
+const filePath = (): string => join(app.getPath('userData'), 'githuttbr-log.json')
 
 let cache: LogEntry[] | null = null
 

@@ -41,7 +41,7 @@ const DEBOUNCE_MS = 350
 const NATIVE_RECURSIVE =
   (process.platform === 'darwin' || process.platform === 'win32') &&
   // The test suite forces the Linux path so it runs on every platform.
-  process.env.GITCITO_WATCH_PER_DIR !== '1'
+  process.env.GITHUTTBR_WATCH_PER_DIR !== '1'
 
 /** More inotify watches than this is a tree we should not watch dir by dir;
  *  `.git` plus the periodic and on-focus refreshes still cover it. */
