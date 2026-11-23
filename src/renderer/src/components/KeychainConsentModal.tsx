@@ -3,7 +3,7 @@ import { Check, KeyRound, Laptop, Lock, ShieldOff } from 'lucide-react'
 import type { KeychainReason } from '../../../shared/types'
 import { keychainApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
-import { useSettingsStore } from '../stores/settings'
+import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useT } from '../i18n'
 
 /**
@@ -41,11 +41,17 @@ export function KeychainConsentModal({
   const answer = async (granted: boolean): Promise<void> => {
     setBusy(true)
     answered.current = true
-    await keychainApi.answer(granted)
-    // Tokens that were held in memory land on disk once access is granted, so
-    // re-read what the main process now considers the truth.
-    await load()
-    closeModal()
+    try {
+      await keychainApi.answer(granted)
+      // Tokens that were held in memory land on disk once access is granted, so
+      // re-read what the main process now considers the truth.
+      await load().catch(reportLoadFailure)
+    } catch (err) {
+      console.warn('[keychain] could not send the answer:', err)
+    } finally {
+      // Never left spinning: a failed re-read is toasted, and the dialog goes either way.
+      closeModal()
+    }
   }
 
   return (

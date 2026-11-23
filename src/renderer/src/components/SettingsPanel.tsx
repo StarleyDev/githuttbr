@@ -4546,7 +4546,9 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   // than replacing this dialog with the consent one the moment it opens.
   useEffect(() => {
     void keychainApi.status().then((st) => {
-      if (st.consent === 'granted' && st.explained) void useSettingsStore.getState().load({ unlock: true }).catch(reportLoadFailure)
+      if (st.consent === 'granted' && st.explained) {
+        void useSettingsStore.getState().load({ unlock: true }).catch(reportLoadFailure)
+      }
     })
   }, [])
 
