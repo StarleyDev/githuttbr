@@ -26,7 +26,9 @@ const DEMO_SSH = join(tmpdir(), 'githuttbr-demo-ssh')
 
 /** A neutral shell for terminal shots. The real one runs the machine's profile,
  *  whose prompt prints the user, the host name and often the LAN address.
- *  `bash --noprofile --norc` reads none of it; the prompt is a bare `$ `. */
+ *  `bash --noprofile --norc` reads none of it; the prompt is a bare `$ `.
+ *  The shots pick it through the terminalShell setting as well as SHELL: the
+ *  app prefers the account's login shell over SHELL, as a Dock launch would. */
 const DEMO_SHELL = join(tmpdir(), 'githuttbr-demo-shell.sh')
 /** Its own HOME, not DEMO_HOME: the credential shot wipes that one in `prepare`,
  *  which under --jobs would pull it from under a running terminal. */
@@ -862,6 +864,7 @@ export const shots = [
     themes: ['dark'],
     appTheme: 'midnight',
     env: neutralShell(),
+    settings: { terminalShell: DEMO_SHELL },
     drive: async (page, repoPaths, app) => {
       await app.evaluate(({ ipcMain }) => {
         ipcMain.removeHandler('term:completions')
@@ -956,6 +959,26 @@ export const shots = [
     themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'shortcuts' }))
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Settings → Layout → Terminal shell on macOS/Linux. The detected shell and
+    // the /etc/shells list are faked: the real ones describe this machine.
+    out: 'settings-terminal-shell',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    clipTo: '.terminal-shell-field',
+    drive: async (page, _repoPaths, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('term:shells')
+        ipcMain.handle('term:shells', () => ({
+          system: '/opt/homebrew/bin/fish',
+          shells: ['/bin/bash', '/bin/dash', '/bin/ksh', '/bin/sh', '/bin/tcsh', '/bin/zsh', '/opt/homebrew/bin/fish']
+        }))
+      })
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'layout' }))
+      await page.locator('.terminal-shell-field select').waitFor()
       await page.waitForTimeout(400)
     }
   },
@@ -1256,7 +1279,7 @@ export const shots = [
     themes: ['dark'],
     appTheme: 'midnight',
     env: neutralShell(),
-    settings: { openTerminalOnRepoOpen: true },
+    settings: { openTerminalOnRepoOpen: true, terminalShell: DEMO_SHELL },
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
@@ -2556,6 +2579,7 @@ export const shots = [
     themes: ['dark'],
     appTheme: 'midnight',
     env: neutralShell(),
+    settings: { terminalShell: DEMO_SHELL },
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => {

@@ -74,6 +74,7 @@ import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { parseSettingsImport } from '../lib/settingsImport'
 import { Avatar } from './Avatar'
+import { PosixShellPicker } from './PosixShellPicker'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
 import { GithubEnterpriseSettings } from './GithubEnterpriseSettings'
 import { BitbucketServerSettings } from './BitbucketServerSettings'
@@ -2872,6 +2873,7 @@ function LayoutPage(): React.JSX.Element {
           )}
         </label>
       )}
+      {window.api.platform !== 'win32' && <PosixShellPicker />}
 
       <label className="settings-field">
         <span className="settings-field-label">{t('settings.tabSizing')}</span>

@@ -400,6 +400,9 @@ const api = {
     poshThemes: (): Promise<{ dir: string | null; exe: string | null; themes: string[] }> =>
       ipcRenderer.invoke('term:posh-themes'),
     poshPreview: (theme: string): Promise<string | null> => ipcRenderer.invoke('term:posh-preview', theme),
+    shells: (): Promise<{ system: string; shells: string[] }> => ipcRenderer.invoke('term:shells'),
+    shellNotice: (id: number): Promise<{ missing: string; used: string } | null> =>
+      ipcRenderer.invoke('term:shell-notice', id),
     onData: (id: number, cb: (data: string) => void): (() => void) => {
       const listener = (_e: unknown, data: string): void => cb(data)
       ipcRenderer.on(`term:data:${id}`, listener)

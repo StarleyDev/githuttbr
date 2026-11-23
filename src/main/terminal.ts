@@ -5,6 +5,7 @@ import { join } from 'path'
 import { makeBatchedSender } from './ptyBatch'
 import { shellCwd } from './packageScripts'
 import { readCompletions, type CompletionKind } from './termCompletions'
+import { listShells, machineProbe, resolvePosixShell, systemShell, type ResolvedShell } from './loginShell'
 
 interface TermSession {
   write(data: string): void
@@ -21,28 +22,18 @@ interface TermSession {
 let nextId = 1
 const sessions = new Map<number, TermSession>()
 
-function defaultShell(): string {
-  if (process.platform === 'win32') return process.env['COMSPEC'] || 'powershell.exe'
-  return process.env['SHELL'] || '/bin/zsh'
-}
-
 /**
- * Args that make the shell a *login* shell.
- *
- * Without them zsh/bash skip ~/.zprofile, ~/.zlogin and ~/.bash_profile — which
- * is where version managers and `brew shellenv` put themselves on PATH. The
- * symptom is a tool that runs fine in Terminal.app (always a login shell)
- * failing here with `command not found`.
+ * Maps the `terminalShell` setting to an executable + args. Windows: a preset
+ * id, 'system' (COMSPEC) or a custom exe path. macOS/Linux: the account's login
+ * shell (see loginShell.ts) or an absolute path, started as a *login* shell —
+ * without `-l` zsh/bash skip ~/.zprofile and ~/.bash_profile, which is where
+ * version managers and `brew shellenv` put themselves on PATH, and a tool that
+ * works in Terminal.app fails here with `command not found`.
  */
-function shellArgs(): string[] {
-  return process.platform === 'win32' ? [] : ['-l']
-}
-
-/** Maps the `terminalShell` setting to an executable + args. Unknown values are
- *  treated as a custom executable path. POSIX ignores the setting (SHELL is
- *  already the user's choice); a login-shell arg is kept there. */
-function resolveShell(sel?: string): { file: string; args: string[] } {
-  if (process.platform !== 'win32') return { file: defaultShell(), args: shellArgs() }
+function resolveShell(sel?: string): ResolvedShell {
+  // Re-read per terminal: a `chsh` reaches the next terminal without a relaunch.
+  const system = systemShell(true)
+  if (process.platform !== 'win32') return resolvePosixShell(sel, machineProbe(), system)
   switch (sel) {
     case 'powershell':
       return { file: 'powershell.exe', args: ['-NoLogo'] }
@@ -55,14 +46,33 @@ function resolveShell(sel?: string): { file: string; args: string[] } {
     case 'wsl':
       return { file: 'wsl.exe', args: [] }
     case 'system':
-      return { file: defaultShell(), args: [] }
+      return { file: system, args: [] }
     default:
       // ''/undefined → system default; anything else is a custom exe path.
-      return { file: sel?.trim() ? sel.trim() : defaultShell(), args: [] }
+      return { file: sel?.trim() ? sel.trim() : system, args: [] }
   }
 }
 
-function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows: number, shell?: string, poshTheme?: string): TermSession | null {
+/** Custom shells that could not be started, by terminal id, until the renderer
+ *  asks — it prints the translated notice. Each missing path is reported once. */
+const shellNotices = new Map<number, { missing: string; used: string }>()
+const noticedPaths = new Set<string>()
+
+function noteFallback(id: number, sh: ResolvedShell): void {
+  if (!sh.missing || noticedPaths.has(sh.missing)) return
+  noticedPaths.add(sh.missing)
+  shellNotices.set(id, { missing: sh.missing, used: sh.file })
+}
+
+function createPty(
+  wc: WebContents,
+  id: number,
+  cwd: string,
+  cols: number,
+  rows: number,
+  sh: ResolvedShell,
+  poshTheme?: string
+): TermSession | null {
   try {
     interface PtyProcess {
       write(data: string): void
@@ -79,7 +89,6 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
     const pty = require('node-pty') as {
       spawn(file: string, args: string[], opts: Record<string, unknown>): PtyProcess
     }
-    const sh = resolveShell(shell)
     // Oh My Posh honors $env:POSH_THEME at `oh-my-posh init` — inject the
     // configured theme so a bare name resolves under %POSH_THEMES_PATH%.
     const theme = poshTheme?.trim()
@@ -152,8 +161,8 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
   }
 }
 
-function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
-  const child: ChildProcess = spawn(defaultShell(), shellArgs(), {
+function createFallback(wc: WebContents, id: number, cwd: string, sh: ResolvedShell): TermSession {
+  const child: ChildProcess = spawn(sh.file, sh.args, {
     cwd,
     env: { ...process.env, TERM: 'dumb' }
   })
@@ -198,7 +207,7 @@ function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
     },
     resize: () => undefined,
     kill: () => child.kill(),
-    procName: () => defaultShell().split('/').pop() || '',
+    procName: () => sh.file.split(/[\\/]/).pop() || '',
     startCwd: cwd
   }
 }
@@ -251,10 +260,24 @@ function poshThemePath(theme: string): string | null {
 export function registerTerminalHandlers(): void {
   ipcMain.handle('term:create', (e, cwd: string, cols: number, rows: number, shell?: string, poshTheme?: string) => {
     const id = nextId++
-    const session = createPty(e.sender, id, cwd, cols, rows, shell, poshTheme) ?? createFallback(e.sender, id, cwd)
+    const sh = resolveShell(shell)
+    const session = createPty(e.sender, id, cwd, cols, rows, sh, poshTheme) ?? createFallback(e.sender, id, cwd, sh)
     sessions.set(id, session)
+    noteFallback(id, sh)
     return id
   })
+  // Asked once per terminal, right after create: the custom shell it fell back from.
+  ipcMain.handle('term:shell-notice', (_e, id: number) => {
+    const notice = shellNotices.get(id) ?? null
+    shellNotices.delete(id)
+    return notice
+  })
+  // The settings picker (macOS/Linux): the detected shell and the usable /etc/shells entries.
+  ipcMain.handle('term:shells', () =>
+    process.platform === 'win32'
+      ? { system: '', shells: [] as string[] }
+      : { system: systemShell(true), shells: listShells() }
+  )
   ipcMain.handle('term:process', (_e, id: number) => sessions.get(id)?.procName() ?? '')
   // What the terminal's suggestion list offers after `npm run`, `make`,
   // `git checkout`…, read from the shell's current directory.

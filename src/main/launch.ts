@@ -6,6 +6,7 @@ import { join, relative, sep } from 'path'
 import type { LaunchConfig, LaunchGroup, LaunchInput, LaunchTask } from '../shared/types'
 import { resolveLaunchInputs } from './launchInputFiles'
 import { makeBatchedSender } from './ptyBatch'
+import { posixShell } from './loginShell'
 import { PRODUCT_NAME } from '../shared/brand'
 
 // ─── JSONC parsing ──────────────────────────────────────────────────────────
@@ -696,9 +697,11 @@ function makeSink(
   }
 }
 
+// The command line is POSIX sh (`a && exec b`, `( … )`), so a fish or nu user's
+// tasks run in bash/zsh instead — their own shell when it is POSIX-compatible.
 function defaultShell(): string {
   if (process.platform === 'win32') return process.env['COMSPEC'] || 'powershell.exe'
-  return process.env['SHELL'] || '/bin/zsh'
+  return posixShell(true)
 }
 
 /**

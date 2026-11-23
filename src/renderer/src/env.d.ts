@@ -9,6 +9,10 @@ interface TermApi {
   completions(id: number, kind: string): Promise<unknown>
   poshThemes(): Promise<{ dir: string | null; exe: string | null; themes: string[] }>
   poshPreview(theme: string): Promise<string | null>
+  /** macOS/Linux: the detected login shell and the usable /etc/shells entries. */
+  shells(): Promise<{ system: string; shells: string[] }>
+  /** The custom shell a new terminal could not start, once, or null. */
+  shellNotice(id: number): Promise<{ missing: string; used: string } | null>
   onData(id: number, cb: (data: string) => void): () => void
   onExit(id: number, cb: () => void): () => void
 }

@@ -778,6 +778,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   const { terminalShell, terminalPoshTheme } = useSettingsStore.getState().settings
   void window.api.term.create(cwd, term.cols || 80, term.rows || 24, terminalShell, terminalPoshTheme).then((id) => {
     handle.ptyId = id
+    // A custom shell that is gone: say which one and what runs instead.
+    void window.api.term.shellNotice(id).then((n) => {
+      if (n) term.write(`\x1b[33m${interp(t('terminal.shellMissing'), { missing: n.missing, used: n.used })}\x1b[0m\r\n`)
+    })
     cleanups.push(window.api.term.onData(id, writeToTerm))
     cleanups.push(
       window.api.term.onExit(id, () =>

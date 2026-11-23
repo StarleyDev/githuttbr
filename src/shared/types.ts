@@ -3519,10 +3519,12 @@ export interface AppSettings {
   terminalThemeId: string
   terminalFontSize: number
   terminalFontFamily: string
-  /** Shell spawned for new integrated-terminal sessions on Windows: a preset id
+  /** Shell spawned for new integrated-terminal sessions. Windows: a preset id
    *  ('powershell' | 'pwsh' | 'cmd' | 'gitbash' | 'wsl' | 'system') or a custom
-   *  executable path. 'system' = COMSPEC (cmd.exe). Existing sessions keep the
-   *  shell they were created with. Ignored on POSIX (uses SHELL). */
+   *  executable path; 'system' = COMSPEC (cmd.exe). macOS/Linux: '' / 'system'
+   *  (and any Windows preset, since the stored default is 'powershell') = the
+   *  account's login shell, or an absolute path. Existing sessions keep the
+   *  shell they were created with. */
   terminalShell: string
   /** Oh My Posh theme for new terminal sessions — a bare theme name (resolved
    *  under %POSH_THEMES_PATH%) or a full .omp.json path. Empty leaves the

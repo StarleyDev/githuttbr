@@ -1905,6 +1905,10 @@ export const en = {
   'settings.terminalShellHint': 'Shell for new integrated-terminal sessions (existing sessions keep theirs).',
     'settings.terminalShellCustom': 'Custom…',
     'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
+    'settings.terminalShellPosixHint': 'Shell for new integrated-terminal sessions, started as a login shell. System default is your account\'s login shell, read fresh for every new terminal — after chsh, the next terminal uses it without logging out.',
+    'settings.terminalShellSystem': 'System default ({shell})',
+    'settings.terminalShellSystemPlain': 'System default',
+    'settings.terminalShellPosixPlaceholder': '/opt/homebrew/bin/fish',
     'settings.terminalPoshTheme': 'Oh My Posh theme',
     'settings.terminalPoshThemeHint':
     'Theme name (e.g. kushal) or full .omp.json path — injected as POSH_THEME for new terminals. Empty uses the shell default.',
@@ -4721,6 +4725,7 @@ export const en = {
   'terminal.restart': 'Restart',
   'terminal.processExitedCode': '[process exited with code {code}]',
   'terminal.processExited': '[process exited]',
+  'terminal.shellMissing': 'Shell {missing} was not found or is not executable, so this terminal runs {used}. Change it in Settings → Layout.',
   'timeMachine.upOneFolder': 'Up one folder',
   'timeMachine.root': 'Root',
   'history.searchPlaceholder': 'Find commits by subject, author, SHA or ref…',

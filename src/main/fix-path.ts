@@ -5,6 +5,7 @@ import { join } from 'path'
 import { homedir } from 'os'
 import { sanitizeDirList } from './searchPathEnv'
 import { APP_NAME } from './appIdentity'
+import { isFish, pathProbeShell, posixShell, systemShell } from './loginShell'
 
 /**
  * macOS/Linux GUI apps launched from Finder/Dock/Spotlight (not a terminal)
@@ -28,6 +29,8 @@ const END = '__GITHUTTBR_PATH_END__'
 // `${PATH}` must be brace-wrapped — `$PATH${END}` would glue the marker into
 // the variable name (`$PATHmarker` → empty), yielding no PATH at all.
 const SCRIPT = `echo "${BEGIN}\${PATH}${END}"`
+// fish keeps PATH as a list and rejects `${PATH}` outright; it joins it itself.
+const FISH_SCRIPT = `echo ${BEGIN}(string join : -- $PATH)${END}`
 
 let ready: Promise<void> = Promise.resolve()
 
@@ -61,10 +64,10 @@ function ask(shell: string, args: string[], timeout: number): Promise<string | u
   })
 }
 
-async function refresh(shell: string): Promise<void> {
+async function refresh(shell: string, script: string): Promise<void> {
   // `-ilc` loads ~/.zshrc (nvm and friends) and takes 6–12 s on a busy Mac;
   // nothing waits on it, so it gets a generous timeout.
-  const full = await ask(shell, ['-ilc', SCRIPT], 30000)
+  const full = await ask(shell, ['-ilc', script], 30000)
   if (!full) return
   mergeIntoPath(full)
   const file = cacheFile()
@@ -75,7 +78,10 @@ async function refresh(shell: string): Promise<void> {
 export function fixPath(): void {
   // Windows GUI apps already inherit the full system/user PATH.
   if (process.platform === 'win32') return
-  const shell = process.env['SHELL'] || '/bin/zsh'
+  // The same shell the terminal opens, so a tool that ~/.config/fish or
+  // ~/.zprofile puts on PATH is found by hooks and launch tasks too.
+  const shell = pathProbeShell(systemShell(), posixShell())
+  const script = isFish(shell) ? FISH_SCRIPT : SCRIPT
   let cached = ''
   try {
     cached = readFileSync(cacheFile(), 'utf8').trim()
@@ -85,10 +91,10 @@ export function fixPath(): void {
   if (cached) mergeIntoPath(cached)
   // Without a cache, a plain login shell (no rc files, a fraction of a second)
   // gives git writes a usable PATH while the full one is still loading.
-  else ready = ask(shell, ['-lc', SCRIPT], 5000).then((login) => {
+  else ready = ask(shell, ['-lc', script], 5000).then((login) => {
     if (login) mergeIntoPath(login)
   })
-  void refresh(shell).catch(() => undefined)
+  void refresh(shell, script).catch(() => undefined)
 }
 
 /** Resolves once git writes have a usable PATH: at once with a cache, else after the quick probe. */
