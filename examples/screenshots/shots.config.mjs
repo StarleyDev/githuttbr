@@ -2667,6 +2667,83 @@ export const shots = [
     }
   },
   {
+    // Avatar from a repository: a mobile project bound to the profile, whose
+    // icons are drawn here — real PNGs, no machine data — laid out the way an
+    // iOS + Android project keeps them, dependencies and smaller sizes included.
+    out: 'profile-avatar-repo',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      const root = join(tmpdir(), 'githuttbr-demo-mobile')
+      rmSync(root, { recursive: true, force: true })
+      mkdirSync(root, { recursive: true })
+      execFileSync('git', ['init', '-q', '-b', 'main', root])
+      const png = await page.evaluate(() => {
+        const draw = (from, to, round) => {
+          const c = document.createElement('canvas')
+          c.width = c.height = 256
+          const g = c.getContext('2d')
+          const grad = g.createLinearGradient(0, 0, 256, 256)
+          grad.addColorStop(0, from)
+          grad.addColorStop(1, to)
+          g.fillStyle = grad
+          if (round) {
+            g.beginPath()
+            g.arc(128, 128, 120, 0, Math.PI * 2)
+            g.fill()
+          } else g.fillRect(0, 0, 256, 256)
+          g.fillStyle = '#ffffff'
+          g.beginPath()
+          g.moveTo(72, 180)
+          g.lineTo(128, 72)
+          g.lineTo(184, 180)
+          g.closePath()
+          g.fill()
+          g.fillStyle = from
+          g.beginPath()
+          g.arc(128, 152, 18, 0, Math.PI * 2)
+          g.fill()
+          return c.toDataURL('image/png').split(',')[1]
+        }
+        return {
+          app: draw('#0ea5e9', '#6366f1', false),
+          ios: draw('#22c1ee', '#5b5ff0', false),
+          android: draw('#0ea5e9', '#0284c7', true),
+          logo: draw('#6366f1', '#a855f7', true),
+          dep: draw('#94a3b8', '#64748b', false)
+        }
+      })
+      const put = (file, data) => {
+        mkdirSync(dirname(join(root, file)), { recursive: true })
+        writeFileSync(join(root, file), typeof data === 'string' ? Buffer.from(data, 'base64') : data)
+      }
+      put('Resources/icon.png', png.app)
+      for (const size of ['Icon-20.png', 'Icon-60@3x.png', 'Icon-1024.png'])
+        put(`ios/MyApp/Images.xcassets/AppIcon.appiconset/${size}`, png.ios)
+      put('android/app/src/main/res/mipmap-mdpi/ic_launcher.png', png.android)
+      put('android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png', png.android)
+      put('android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml', Buffer.from('<adaptive-icon/>\n'))
+      put('assets/images/logo.png', png.logo)
+      put('ios/Pods/SomeKit/Assets/icon.png', png.dep)
+      await page.evaluate((path) => {
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          repoProfiles: { ...s.repoProfiles, [path]: s.activeProfileId },
+          repoAliases: { ...s.repoAliases, [path]: 'my-app' }
+        }))
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' })
+      }, root)
+      // The suggestion appears on "Automatic"; "Choose another" opens the list.
+      const suggestion = page.locator('.repo-avatar-suggest')
+      await suggestion.waitFor()
+      await suggestion.locator('button').nth(1).click()
+      await page.locator('.repo-avatar-candidate').first().waitFor()
+      await page.locator('.repo-avatar-thumb img').first().waitFor()
+      await page.evaluate(() => document.querySelector('.profile-avatar-settings')?.scrollIntoView({ block: 'start' }))
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // A profile's AI as one line — general or its own, what answers, and the
     // way to the AI page — above its writing preferences.
     out: 'settings-profile-ai',

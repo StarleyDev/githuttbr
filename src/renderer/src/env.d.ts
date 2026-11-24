@@ -187,6 +187,7 @@ interface PreloadApi {
   profileAvatar: {
     get(id: string): Promise<unknown>
     pick(id: string, title: string, filterName: string): Promise<unknown>
+    setData(id: string, dataUrl: string): Promise<unknown>
     remove(id: string): Promise<unknown>
     exportAll(ids: string[]): Promise<unknown>
     importAll(data: unknown): Promise<unknown>

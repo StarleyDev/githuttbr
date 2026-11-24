@@ -5,6 +5,7 @@ import { useT, interp, type TranslationKey } from '../i18n'
 import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { ProfileAvatar, PROFILE_AVATAR_GLYPHS } from './ProfileAvatar'
+import { RepoAvatarPicker, RepoAvatarSuggestion } from './RepoAvatarPicker'
 import {
   PROFILE_AVATAR_COLORS,
   PROFILE_AVATAR_ICONS,
@@ -23,7 +24,8 @@ const SOURCES: { id: ProfileAvatarSetting['source']; key: TranslationKey }[] = [
   { id: 'auto', key: 'profileAvatar.sourceAuto' },
   { id: 'account', key: 'profileAvatar.sourceAccount' },
   { id: 'icon', key: 'profileAvatar.sourceIcon' },
-  { id: 'image', key: 'profileAvatar.sourceImage' }
+  { id: 'image', key: 'profileAvatar.sourceImage' },
+  { id: 'repo', key: 'profileAvatar.sourceRepo' }
 ]
 
 export type ProfileAccounts = Partial<Record<AvatarHost, ConnectedAccount>>
@@ -78,12 +80,19 @@ export function ProfileAvatarSettings({
   const image = useProfileAvatarsStore((s) => s.images[profile.id])
   const ensureProfileImage = useProfileAvatarsStore((s) => s.ensureProfileImage)
   const [picking, setPicking] = useState(false)
+  // "From a repository" opens the list without changing the avatar: it only
+  // changes once a picture has been copied in, as "Image" does with its dialog.
+  const [repoListOpen, setRepoListOpen] = useState(false)
   const current = validProfileAvatar(profile.avatar) ?? { source: 'auto' as const }
   const withPicture = HOSTS.filter((h) => accounts[h.id]?.avatarUrl)
+  const shown = repoListOpen ? 'repo' : current.source
 
   useEffect(() => ensureProfileImage(profile.id), [profile.id, ensureProfileImage])
 
-  const setAvatar = (avatar: ProfileAvatarSetting): void => edit({ avatar })
+  const setAvatar = (avatar: ProfileAvatarSetting): void => {
+    setRepoListOpen(false)
+    edit({ avatar })
+  }
 
   const chooseImage = async (): Promise<void> => {
     setPicking(true)
@@ -98,6 +107,10 @@ export function ProfileAvatarSettings({
   }
 
   const chooseSource = (source: ProfileAvatarSetting['source']): void => {
+    if (source === 'repo') {
+      if (current.source !== 'repo') setRepoListOpen(true)
+      return
+    }
     if (source === 'auto') setAvatar({ source: 'auto' })
     else if (source === 'icon')
       setAvatar(current.source === 'icon' ? current : { source: 'icon', icon: 'user', color: PROFILE_AVATAR_COLORS[0] })
@@ -123,8 +136,8 @@ export function ProfileAvatarSettings({
                 key={s.id}
                 type="button"
                 role="radio"
-                aria-checked={current.source === s.id}
-                className={`btn ghost small profile-avatar-source${current.source === s.id ? ' selected' : ''}`}
+                aria-checked={shown === s.id}
+                className={`btn ghost small profile-avatar-source${shown === s.id ? ' selected' : ''}`}
                 disabled={disabled}
                 title={disabled ? t('profileAvatar.noAccount') : undefined}
                 onClick={() => chooseSource(s.id)}
@@ -135,9 +148,28 @@ export function ProfileAvatarSettings({
           })}
         </div>
 
-        {current.source === 'auto' && <span className="settings-hint">{t('profileAvatar.sourceAutoHint')}</span>}
+        {shown === 'auto' && <span className="settings-hint">{t('profileAvatar.sourceAutoHint')}</span>}
+        {shown === 'auto' && !profile.avatarRepoHintDismissed && (
+          <RepoAvatarSuggestion
+            profile={profile}
+            onPicked={setAvatar}
+            onChooseAnother={() => setRepoListOpen(true)}
+            onDismiss={() => edit({ avatarRepoHintDismissed: true })}
+          />
+        )}
 
-        {current.source === 'account' && (
+        {shown === 'repo' && (
+          <>
+            <span className="settings-hint">
+              {current.source === 'repo'
+                ? interp(t('profileAvatar.repoFrom'), { repo: current.repo, file: current.file })
+                : t('profileAvatar.repoHint')}
+            </span>
+            <RepoAvatarPicker profile={profile} current={current} onPicked={setAvatar} />
+          </>
+        )}
+
+        {!repoListOpen && current.source === 'account' && (
           <div className="profile-avatar-accounts">
             {withPicture.map((h) => (
               <button
@@ -154,7 +186,7 @@ export function ProfileAvatarSettings({
           </div>
         )}
 
-        {current.source === 'icon' && (
+        {!repoListOpen && current.source === 'icon' && (
           <>
             <div className="profile-avatar-icons">
               {PROFILE_AVATAR_ICONS.map((id) => {
@@ -191,7 +223,7 @@ export function ProfileAvatarSettings({
           </>
         )}
 
-        {current.source === 'image' && (
+        {!repoListOpen && current.source === 'image' && (
           <div className="form-inline-actions">
             <button type="button" className="btn ghost small" disabled={picking} onClick={() => void chooseImage()}>
               {picking ? <Loader2 size={13} className="spin" /> : <ImageUp size={13} />}
@@ -199,7 +231,7 @@ export function ProfileAvatarSettings({
             </button>
           </div>
         )}
-        {current.source === 'image' && <span className="settings-hint">{t('profileAvatar.imageHint')}</span>}
+        {!repoListOpen && current.source === 'image' && <span className="settings-hint">{t('profileAvatar.imageHint')}</span>}
         <span className="settings-hint">{t('profileAvatar.commitsHint')}</span>
       </div>
     </div>

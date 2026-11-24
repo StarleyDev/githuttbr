@@ -859,6 +859,8 @@ export const profileAvatarApi = {
    *  `title` and `filterName` label the native file dialog, so they arrive translated. */
   pick: (id: string, title: string, filterName: string) =>
     window.api.profileAvatar.pick(id, title, filterName) as Promise<string | null | { error: string }>,
+  setData: (id: string, dataUrl: string) =>
+    window.api.profileAvatar.setData(id, dataUrl) as Promise<string | { error: string }>,
   remove: (id: string) => window.api.profileAvatar.remove(id) as Promise<void>,
   exportAll: (ids: string[]) => window.api.profileAvatar.exportAll(ids) as Promise<Record<string, string>>,
   importAll: (data: Record<string, string>) => window.api.profileAvatar.importAll(data) as Promise<number>

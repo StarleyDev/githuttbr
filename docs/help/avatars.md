@@ -161,7 +161,7 @@ hundred a scrolling graph draws.
 ## Your profile's picture
 
 The avatar in the title bar and the profile list is yours, so you can choose it.
-**Settings → Profile → Avatar** offers four sources:
+**Settings → Profile → Avatar** offers five sources:
 
 | Source | What it shows |
 |---|---|
@@ -169,9 +169,37 @@ The avatar in the title bar and the profile list is yours, so you can choose it.
 | **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Integrations. Disabled until one is. |
 | **Icon** | One of 24 glyphs on a colour you pick. |
 | **Image** | A file you choose — PNG or JPEG. It is scaled to 256 px and kept on this computer, in Gitcito's data folder, not in the settings file. |
+| **From a repository** | An icon or logo found in one of the profile's repositories — the app's or the company's — copied into the profile like an image. |
 
 An image travels with **Settings → Data → Export settings** and comes back on import;
 deleting the profile deletes it.
+
+### An icon from a repository
+
+A work profile often has a ready-made picture: the app or company icon sitting in
+its repository. **From a repository** lists the likeliest ones from the
+repositories **bound to the profile** (or, with none bound, the one open now):
+
+- the app icon itself (`icon.png`, `Resources/icon.png`) first;
+- an iOS `AppIcon.appiconset` as its **largest** size, an Android launcher icon
+  (`mipmap-*/ic_launcher.png`) at its **highest** density;
+- then logos, and other icon-named images.
+
+Under the list, what was left out is counted and explained: images in dependency
+and build folders (`node_modules`, `Pods`, `build`…), the smaller sizes of the
+icons already listed, and launcher icons that are vector XML. Picking one copies
+it into the profile, scaled to 256 px — moving, renaming or deleting the
+repository does not touch the avatar.
+
+While a profile is on **Automatic**, the page offers the likeliest icon once: *Use
+the icon of my-app?* — **Use**, **Choose another**, or **Not now**, which stops
+asking for that profile. Nothing changes until you pick.
+
+![Choosing a profile picture from the app icons of a mobile repository](../screenshots/profile-avatar-repo.webp)
+
+What it cannot do: it only offers images the repository holds as files (PNG,
+JPEG, WebP, SVG and the like), not icons generated at build time; and it does
+not keep up with the repository — a new icon there is picked again by hand.
 
 **A commit never carries a picture.** It holds a name and an email, and that is
 all. GitHub and GitLab show your account picture on a commit when its email

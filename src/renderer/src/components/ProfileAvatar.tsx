@@ -29,7 +29,7 @@ import {
 import { Avatar } from './Avatar'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { useSettingsStore } from '../stores/settings'
-import { validProfileAvatar, type ProfileAvatarIcon } from '../../../shared/profileAvatar'
+import { hasStoredImage, validProfileAvatar, type ProfileAvatarIcon } from '../../../shared/profileAvatar'
 import type { Profile } from '../../../shared/types'
 import type { Mood } from '../lib/repoMood'
 
@@ -93,13 +93,14 @@ export function ProfileAvatar({
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (avatar.source === 'image') ensureProfileImage(profile.id)
+    if (hasStoredImage(avatar)) ensureProfileImage(profile.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatar.source, profile.id, ensureProfileImage])
 
   const frame = { width: size, height: size }
   const cls = `ava${className ? ` ${className}` : ''}`
 
-  if (avatar.source === 'image' && image) {
+  if (hasStoredImage(avatar) && image) {
     return (
       <span className={cls} style={frame}>
         <img src={image} alt="" draggable={false} />

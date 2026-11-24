@@ -80,7 +80,7 @@ que um grafo desenha ao rolar.
 ## A imagem do seu perfil
 
 O avatar da barra de título e da lista de perfis é seu, então você pode escolhê-lo.
-**Configurações → Perfil → Avatar** oferece quatro fontes:
+**Configurações → Perfil → Avatar** oferece cinco fontes:
 
 | Fonte | O que mostra |
 |---|---|
@@ -88,9 +88,38 @@ O avatar da barra de título e da lista de perfis é seu, então você pode esco
 | **Da integração** | A foto da conta GitHub ou GitLab que este perfil tem conectada em Integrações. Desabilitado até haver uma. |
 | **Ícone** | Um de 24 símbolos, na cor que você escolher. |
 | **Imagem** | Um arquivo que você escolhe — PNG ou JPEG. É reduzido para 256 px e guardado neste computador, na pasta de dados do Gitcito, não no arquivo de configurações. |
+| **Do repositório** | Um ícone ou logo encontrado num dos repositórios do perfil — o do app ou o da empresa — copiado para o perfil como uma imagem. |
 
 A imagem vai junto em **Configurações → Dados → Exportar configurações** e volta na importação;
 apagar o perfil apaga a imagem.
+
+### Um ícone do repositório
+
+Um perfil de trabalho costuma ter uma imagem pronta: o ícone do app ou da empresa,
+guardado no repositório. **Do repositório** lista os mais prováveis dos
+repositórios **vinculados ao perfil** (ou, sem nenhum vinculado, do que está
+aberto):
+
+- primeiro o ícone do app (`icon.png`, `Resources/icon.png`);
+- o `AppIcon.appiconset` do iOS no **maior** tamanho, e o ícone de launcher do
+  Android (`mipmap-*/ic_launcher.png`) na **maior** densidade;
+- depois os logos e outras imagens com nome de ícone.
+
+Embaixo da lista, o que ficou de fora é contado e explicado: imagens em pastas de
+dependências e de build (`node_modules`, `Pods`, `build`…), os tamanhos menores
+dos ícones já listados e os ícones de launcher em vetor (XML). Escolher um copia
+a imagem para o perfil, reduzida para 256 px — mover, renomear ou apagar o
+repositório não mexe no avatar.
+
+Enquanto o perfil está em **Automático**, a página sugere o ícone mais provável:
+*Usar o ícone de meu-app?* — **Usar**, **Escolher outro** ou **Agora não**, que
+para de perguntar naquele perfil. Nada muda até você escolher.
+
+![Escolhendo a imagem do perfil entre os ícones de um repositório mobile](../../screenshots/profile-avatar-repo.webp)
+
+O que ele não faz: só oferece imagens que o repositório guarda como arquivo (PNG,
+JPEG, WebP, SVG e afins), não ícones gerados no build; e não acompanha o
+repositório — um ícone novo lá é escolhido de novo à mão.
 
 **Um commit nunca leva uma imagem.** Ele guarda um nome e um e-mail, e só. O GitHub
 e o GitLab mostram a foto da sua conta num commit quando o e-mail dele pertence à

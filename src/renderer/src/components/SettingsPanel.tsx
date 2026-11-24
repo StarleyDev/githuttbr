@@ -93,6 +93,7 @@ import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
 import { personalOf, withoutAISecretsSeed } from '../../../shared/aiScope'
+import { hasStoredImage } from '../../../shared/profileAvatar'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
@@ -2730,7 +2731,7 @@ function DataManagementSection(): React.JSX.Element {
       }
       if (exportIncludeSecrets) bundle.vault = await vaultApi.exportAll()
       // Pictures live outside settings (one PNG per profile); ship the ones in use.
-      const withImage = settings.profiles.filter((p) => p.avatar?.source === 'image').map((p) => p.id)
+      const withImage = settings.profiles.filter((p) => hasStoredImage(p.avatar)).map((p) => p.id)
       if (withImage.length) {
         const avatars = await profileAvatarApi.exportAll(withImage)
         if (Object.keys(avatars).length) bundle.avatars = avatars

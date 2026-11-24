@@ -171,6 +171,11 @@ export function avatarFitSize(width: number, height: number, max = AVATAR_MAX_SI
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) }
 }
 
+/** Whether the avatar is a picture in the profile's image store (chosen, or copied from a repository). */
+export function hasStoredImage(avatar: ProfileAvatar | undefined): boolean {
+  return avatar?.source === 'image' || avatar?.source === 'repo'
+}
+
 /**
  * A well-formed avatar setting, or undefined. Settings files are imported and
  * hand-edited, so an unknown icon or a colour that is not a hex value falls
@@ -185,6 +190,14 @@ export function validProfileAvatar(value: unknown): ProfileAvatar | undefined {
       return { source: 'auto' }
     case 'image':
       return { source: 'image' }
+    case 'repo': {
+      // Shown as text only, never used as a path — but still bounded and clean.
+      const clean = (s: unknown): string | undefined =>
+        typeof s === 'string' && s.length > 0 && s.length <= 512 && !/[\u0000-\u001f]/.test(s) ? s : undefined
+      const repo = clean(v.repo)
+      const file = clean(v.file)
+      return repo && file ? { source: 'repo', repo, file } : { source: 'image' }
+    }
     case 'icon': {
       const icon = (PROFILE_AVATAR_ICONS as readonly string[]).includes(v.icon as string) ? (v.icon as string) : 'user'
       return { source: 'icon', icon, color: color ?? PROFILE_AVATAR_COLORS[0] }

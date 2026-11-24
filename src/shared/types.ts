@@ -3128,6 +3128,8 @@ export interface Profile {
   links?: Partial<Record<RepoHost, AccountLink>>
   /** Where the profile's picture comes from. Absent means `auto`. */
   avatar?: ProfileAvatar
+  /** "Not now" on the suggestion to use a repository's icon as the avatar. */
+  avatarRepoHintDismissed?: boolean
   /**
    * Whether this profile answers with its own AI engine instead of the general
    * one (`AppSettings.ai`). Absent or false: the general engine. `ai` always
@@ -3194,6 +3196,10 @@ export type ProfileAvatar =
   | { source: 'icon'; icon: string; color: string }
   /** An image the user chose, stored on this computer. */
   | { source: 'image' }
+  /** An image picked from one of the profile's repositories, copied into the
+   *  same store as `image` — the repository can move or go without the picture
+   *  going with it. `repo` and `file` only say where it came from. */
+  | { source: 'repo'; repo: string; file: string }
 
 /** Which machine login a profile uses for a provider. `login` is the gh account,
  *  or the username git's credential helper filed the credential under. Not a secret. */

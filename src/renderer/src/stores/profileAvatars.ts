@@ -15,6 +15,8 @@ interface ProfileAvatarsState {
   ensureProfileImage(id: string): void
   /** Ask for a file and store it. Resolves `'unreadable'` or `'tooLarge'` when it was refused. */
   pickProfileImage(id: string): Promise<'picked' | 'cancelled' | 'unreadable' | 'tooLarge'>
+  /** Store a picture already in hand (a PNG data URL), e.g. one drawn from a repository image. */
+  setProfileImage(id: string, dataUrl: string): Promise<'picked' | 'unreadable' | 'tooLarge'>
   removeProfileImage(id: string): Promise<void>
   /** Forget what is in memory, so the next render reads the stored files again (after an import). */
   reloadProfileImages(): void
@@ -47,6 +49,14 @@ export const useProfileAvatarsStore = create<ProfileAvatarsState>((set, get) => 
   pickProfileImage: async (id) => {
     const result = await profileAvatarApi.pick(id, t('profileAvatar.dialogTitle'), t('profileAvatar.dialogFilter'))
     if (result === null) return 'cancelled'
+    if (typeof result !== 'string') return result.error === 'tooLarge' ? 'tooLarge' : 'unreadable'
+    bump(id)
+    set((s) => ({ images: { ...s.images, [id]: result } }))
+    return 'picked'
+  },
+
+  setProfileImage: async (id, dataUrl) => {
+    const result = await profileAvatarApi.setData(id, dataUrl)
     if (typeof result !== 'string') return result.error === 'tooLarge' ? 'tooLarge' : 'unreadable'
     bump(id)
     set((s) => ({ images: { ...s.images, [id]: result } }))

@@ -82,6 +82,19 @@ export function registerProfileAvatarHandlers(): void {
     return asDataUrl(png)
   })
 
+  // A picture the renderer already holds — an image from one of the profile's
+  // repositories, drawn to a PNG there so SVG and WebP work too. It came over
+  // IPC, so it gets the same checks as an import before anything is written.
+  ipcMain.handle('profileAvatar:setData', async (_e, id: unknown, dataUrl: unknown) => {
+    if (!isProfileAvatarId(id)) return { error: 'invalid' }
+    const payload = avatarDataUrlPayload(dataUrl)
+    if (!payload) return { error: 'tooLarge' }
+    const png = normalise(Buffer.from(payload, 'base64'))
+    if (!png) return { error: 'unreadable' }
+    await store(id, png)
+    return asDataUrl(png)
+  })
+
   ipcMain.handle('profileAvatar:remove', async (_e, id: unknown) => {
     if (isProfileAvatarId(id)) await rm(avatarPath(id), { force: true })
   })
