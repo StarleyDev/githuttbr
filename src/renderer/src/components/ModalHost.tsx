@@ -334,12 +334,38 @@ function InputModal({
   const storeClose = useUIStore((s) => s.closeModal)
   const closeModal = onClose ?? storeClose
   const [value, setValue] = useState(spec.initial ?? '')
-  const canSubmit = spec.allowEmpty || !!value.trim()
+  const inputRef = useRef<HTMLInputElement>(null)
+  // A question asked again straight after an answer (a wrong password) lands on
+  // this same instance: the stacked dialog keeps one key, and AnimatePresence
+  // revives the copy still animating out. Start it from the new spec, not from
+  // the refused answer.
+  const [shownSpec, setShownSpec] = useState(spec)
+  if (shownSpec !== spec) {
+    setShownSpec(spec)
+    setValue(spec.initial ?? '')
+  }
+  // A password is taken as typed: a leading or trailing space is part of it.
+  const answer = spec.secret ? value : value.trim()
+  const canSubmit = spec.allowEmpty || !!answer
+
+  // Same contract as ConfirmModal: every way out but a submit ends this effect,
+  // so a caller waiting on the answer always gets one.
+  const answered = useRef(false)
+  useEffect(() => {
+    answered.current = false
+    // autoFocus only fires on mount; a revived dialog has to take focus itself.
+    inputRef.current?.focus()
+    return () => {
+      const { modal, dialog } = useUIStore.getState()
+      if (!answered.current && modal !== spec && dialog !== spec) spec.onCancel?.()
+    }
+  }, [spec])
 
   const submit = (): void => {
     if (!canSubmit) return
+    answered.current = true
     closeModal()
-    spec.onSubmit(value.trim())
+    spec.onSubmit(answer)
   }
 
   return (
@@ -347,8 +373,12 @@ function InputModal({
       <h3>{spec.title}</h3>
       <label className="modal-label">{spec.label}</label>
       <input
+        ref={inputRef}
         autoFocus
         className="modal-input"
+        type={spec.secret ? 'password' : 'text'}
+        autoComplete={spec.secret ? 'off' : undefined}
+        spellCheck={spec.secret ? false : undefined}
         value={value}
         placeholder={spec.placeholder}
         onChange={(e) => setValue(e.target.value)}
@@ -362,6 +392,11 @@ function InputModal({
           }
         }}
       />
+      {spec.error && (
+        <p className="modal-input-error" role="alert">
+          {spec.error}
+        </p>
+      )}
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
           {t('common.cancel')}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   User, Bot, Palette, Plug, Check, ChevronRight, ChevronLeft, ShieldCheck,
-  Upload, AlertTriangle, Sun, Moon, Monitor, Loader2, ExternalLink
+  Upload, AlertTriangle, Sun, Moon, Monitor, Loader2, ExternalLink, Lock
 } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -21,6 +21,8 @@ import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
 import { infoApi, profileAvatarApi, settingsApi, shellApi, vaultApi } from '../infrastructure/api'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { parseSettingsImport, type ParsedSettingsImport } from '../lib/settingsImport'
+import { settingsDecryptMessageKey } from '../lib/settingsPassword'
+import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { AIPage, IntegrationsPage } from './SettingsPanel'
 import gitcitoLaunch from '../assets/gitcito-launch.png'
@@ -57,6 +59,11 @@ interface WizardData {
   importData: ParsedSettingsImport | null
   importHasSecrets: boolean
   importIncludeSecrets: boolean
+  /** A password-protected export, still sealed, waiting for its password. Asked
+   *  for in this step rather than in a dialog, which would open behind the wizard. */
+  importLocked: unknown | null
+  importPassword: string
+  importPasswordError: string
 }
 
 const TOTAL_STEPS = 4
@@ -97,12 +104,14 @@ function WelcomeStep({
   patch,
   onImport,
   onApplyImport,
+  onUnlockImport,
   importing
 }: {
   data: WizardData
   patch: (p: Partial<WizardData>) => void
   onImport: () => void
   onApplyImport: () => void
+  onUnlockImport: () => void
   importing: boolean
 }): React.JSX.Element {
   const t = useT()
@@ -146,6 +155,44 @@ function WelcomeStep({
               <button
                 className="btn ghost"
                 onClick={() => patch({ importData: null, importHasSecrets: false, importIncludeSecrets: false })}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        ) : data.importLocked ? (
+          <div className="onboarding-import-locked">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Lock size={16} color="var(--text-1)" aria-hidden="true" />
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-0)' }}>{t('settings.importPasswordTitle')}</span>
+            </div>
+            <label className="onboarding-import-password">
+              <span className="settings-hint">{t('settings.importPasswordLabel')}</span>
+              <input
+                type="password"
+                autoFocus
+                autoComplete="off"
+                spellCheck={false}
+                value={data.importPassword}
+                aria-invalid={!!data.importPasswordError}
+                onChange={(e) => patch({ importPassword: e.target.value, importPasswordError: '' })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && data.importPassword) onUnlockImport()
+                }}
+              />
+            </label>
+            {data.importPasswordError && (
+              <p className="settings-export-password-error" role="alert">
+                {data.importPasswordError}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button className="btn primary" onClick={onUnlockImport} disabled={!data.importPassword || importing}>
+                {importing ? <Loader2 size={14} className="spin" /> : <Lock size={14} />} {t('settings.importPasswordUnlock')}
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => patch({ importLocked: null, importPassword: '', importPasswordError: '' })}
               >
                 {t('common.cancel')}
               </button>
@@ -409,7 +456,10 @@ export function OnboardingWizard(): React.JSX.Element {
     defaultOpenApp: settings.defaultOpenApp,
     importData: null,
     importHasSecrets: false,
-    importIncludeSecrets: false
+    importIncludeSecrets: false,
+    importLocked: null,
+    importPassword: '',
+    importPasswordError: ''
   })
 
   const patch = (partial: Partial<WizardData>): void => setData((d) => ({ ...d, ...partial }))
@@ -437,12 +487,42 @@ export function OnboardingWizard(): React.JSX.Element {
     try {
       const result = await settingsApi.importFile()
       if (!result) return
-      const parsed = parseSettingsImport(result)
-      if (!parsed) {
-        toast('error', t('onboarding.importFailed'))
+      if (isEncryptedSettingsExport(result)) {
+        patch({ importLocked: result, importPassword: '', importPasswordError: '' })
         return
       }
-      patch({ importData: parsed, importHasSecrets: detectSecrets(parsed) })
+      loadImport(result)
+    } catch {
+      toast('error', t('onboarding.importFailed'))
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const loadImport = (result: unknown): void => {
+    const parsed = parseSettingsImport(result)
+    if (!parsed) {
+      toast('error', t('onboarding.importFailed'))
+      return
+    }
+    patch({ importData: parsed, importHasSecrets: detectSecrets(parsed) })
+  }
+
+  const unlockImport = async (): Promise<void> => {
+    if (!data.importLocked || !data.importPassword) return
+    setImporting(true)
+    try {
+      const r = await settingsApi.decryptImport(data.importLocked, data.importPassword)
+      if (r.ok) {
+        // The password has done its job; it does not stay in the wizard's state.
+        patch({ importLocked: null, importPassword: '', importPasswordError: '' })
+        loadImport(r.data)
+      } else if (r.reason === 'bad-password') {
+        patch({ importPassword: '', importPasswordError: t(settingsDecryptMessageKey(r.reason)) })
+      } else {
+        patch({ importLocked: null, importPassword: '', importPasswordError: '' })
+        toast('error', t(settingsDecryptMessageKey(r.reason)))
+      }
     } catch {
       toast('error', t('onboarding.importFailed'))
     } finally {
@@ -540,6 +620,7 @@ export function OnboardingWizard(): React.JSX.Element {
                 patch={patch}
                 onImport={() => void doImport()}
                 onApplyImport={() => void applyImport()}
+                onUnlockImport={() => void unlockImport()}
                 importing={importing}
               />
             )}

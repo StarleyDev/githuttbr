@@ -28,7 +28,9 @@ Send it however you already send files; the password travels separately.
 
 Secrets are only ever included when you **tick the box**. A bundle without that
 tick contains no credentials at all. App settings do not travel in a bundle —
-they have their own plain-JSON export in Settings.
+they have their own export in Settings, which can be
+[protected with a password](security.md#protecting-an-export-with-a-password)
+using the same cipher.
 
 ## Importing
 

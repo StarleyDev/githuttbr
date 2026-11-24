@@ -142,7 +142,9 @@ interface PreloadApi {
     secretsState(): Promise<unknown>
     replaceUnreadableStore(): Promise<boolean>
     importFile(): Promise<unknown>
-    exportFile(settings: unknown): Promise<boolean>
+    /** With a non-empty password the file is written encrypted. */
+    exportFile(settings: unknown, password?: string): Promise<boolean>
+    decryptImport(raw: unknown, password: string): Promise<unknown>
   }
   ai: {
     commitMessage(diff: string, cfg: unknown, ctx: unknown): Promise<unknown>

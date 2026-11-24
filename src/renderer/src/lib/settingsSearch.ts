@@ -170,6 +170,10 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('data', 'settings.importExport'),
   e('data', 'settings.includeSecrets', 'settings.includeSecretsHint'),
   e('data', 'settings.exportWarnTitle'),
+  e('data', 'settings.exportProtect', 'settings.exportProtectHint'),
+  // Shown only while protection is on; the toggle above matches "password" too.
+  e('data', 'settings.exportPassword'),
+  e('data', 'settings.exportPasswordConfirm'),
   e('data', 'repos.scanRoots'),
   e('data', 'settings.cachedReposTitle'),
 

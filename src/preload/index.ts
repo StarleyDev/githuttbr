@@ -152,7 +152,10 @@ const api = {
     secretsState: (): Promise<unknown> => ipcRenderer.invoke('settings:secretsState'),
     replaceUnreadableStore: (): Promise<boolean> => ipcRenderer.invoke('settings:replaceUnreadableStore'),
     importFile: (): Promise<unknown> => ipcRenderer.invoke('settings:importFile'),
-    exportFile: (settings: unknown): Promise<boolean> => ipcRenderer.invoke('settings:exportFile', settings)
+    exportFile: (settings: unknown, password?: string): Promise<boolean> =>
+      ipcRenderer.invoke('settings:exportFile', settings, password),
+    decryptImport: (raw: unknown, password: string): Promise<unknown> =>
+      ipcRenderer.invoke('settings:decryptImport', raw, password)
   },
 
   ai: {

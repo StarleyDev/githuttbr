@@ -5813,6 +5813,8 @@ body.col-resizing .node-ava {
 .modal-input {
   width: 100%;
 }
+/* Why the last answer was refused (a wrong password). */
+.modal-input-error { margin: 6px 0 0; font-size: 12px; color: var(--red, #e5484d); }
 
 /* Select-looking button that opens the app's own context menu — a native
    <select> keeps OS chrome and looks foreign inside a styled modal. Mirrors
@@ -10930,6 +10932,42 @@ input[type='range']:focus-visible {
   align-items: flex-start;
   text-align: start;
 }
+
+/* A password-protected export waiting for its password, asked in the step
+   itself: a stacked dialog would open behind the wizard. */
+.onboarding-import-locked { text-align: start; }
+.onboarding-import-password { display: flex; flex-direction: column; gap: 6px; }
+.onboarding-import-password input { width: 100%; }
+
+/* Settings → Data: the optional export password and its no-recovery warning. */
+.settings-export-password { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding-inline-start: 4px; }
+.settings-export-password input[aria-invalid='true'] { border-color: var(--red, #e5484d); }
+.settings-export-password-error { margin: 0; font-size: 12px; color: var(--red, #e5484d); }
+.settings-export-norecovery {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--yellow) 10%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--yellow) 25%, transparent);
+}
+.settings-export-norecovery > svg { flex-shrink: 0; margin-top: 1px; color: var(--yellow); }
+/* `.settings-form label` stacks every label as a column; this one is a checkbox
+   beside its sentence. */
+.settings-export-norecovery label.settings-export-ack {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-weight: 400;
+  text-align: start;
+}
+.settings-export-ack input { width: auto; flex: 0 0 auto; margin: 0; }
 
 .onboarding-secret-check {
   display: flex;

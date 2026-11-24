@@ -1030,6 +1030,25 @@ export const shots = [
     }
   },
   {
+    // Settings → Data: an export protected with a password — both fields
+    // filled, the no-recovery warning acknowledged, Export enabled.
+    out: 'settings-export-password',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'data' }))
+      const protect = page.locator('.settings-toggle-card', { hasText: 'Protect with a password' })
+      await protect.waitFor()
+      await protect.click()
+      const fields = page.locator('.settings-export-password input[type="password"]')
+      await fields.nth(0).fill('correct horse battery staple')
+      await fields.nth(1).fill('correct horse battery staple')
+      await page.locator('.settings-export-ack input').check()
+      await page.locator('.settings-export-norecovery').scrollIntoViewIfNeeded()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     out: 'remote-sign-in',
     repos: ['octopus-merge'],
     prepare: async ({ repoPaths, run }) => {

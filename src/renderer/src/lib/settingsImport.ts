@@ -1,5 +1,6 @@
 import type { AppSettings, SettingsBundle } from '../../../shared/types'
 import { scrubServerUrls } from '../../../shared/secrets'
+import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
 
 export interface ParsedSettingsImport {
   settings: Partial<AppSettings>
@@ -20,6 +21,9 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
  *  in the plain settings file. */
 export function parseSettingsImport(raw: unknown): ParsedSettingsImport | null {
   if (!isObject(raw)) return null
+  // Still sealed: the caller decrypts first. Read as bare settings it would
+  // import nothing and report success.
+  if (isEncryptedSettingsExport(raw)) return null
   // `__gitcito` is the marker upstream Gitcito, and this fork up to 4.38, wrote.
   // A backup made before the rename has to restore — tokens and vault included.
   if (raw.__githuttbr === 'settings-export' || raw.__gitcito === 'settings-export') {

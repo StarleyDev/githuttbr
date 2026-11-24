@@ -3,6 +3,8 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, readdir, mkdir, realpath, rename, rm, stat } from 'fs/promises'
 import { copyPrivateFile, updatePrivateFile, writePrivateFile } from './privateFile'
+import { openSettingsExport, sealSettingsExport } from './settingsEncryption'
+import type { SettingsDecryptResult } from '../shared/settingsEncryption'
 import {
   defaultSettings,
   type AccountLink,
@@ -1435,7 +1437,11 @@ export function registerSettingsHandlers(): void {
     }
   })
 
-  ipcMain.handle('settings:exportFile', async (_e, data: unknown) => {
+  // A password the user chose seals the file (scrypt + AES-256-GCM, as Secure
+  // share); without one it stays the readable JSON it always was. The password
+  // is used here and dropped — never stored, never logged.
+  ipcMain.handle('settings:exportFile', async (_e, data: unknown, password?: unknown) => {
+    const seal = typeof password === 'string' && password.length > 0
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Export Settings',
       defaultPath: 'githuttbr-settings.json',
@@ -1444,10 +1450,18 @@ export function registerSettingsHandlers(): void {
     if (canceled || !filePath) return false
     try {
       // Owner-only: an export may carry the tokens, when the user opted in.
-      await writePrivateFile(filePath, JSON.stringify(data, null, 2))
+      await writePrivateFile(filePath, seal ? sealSettingsExport(data, password) : JSON.stringify(data, null, 2))
       return true
     } catch {
       return false
     }
   })
+
+  // An encrypted export comes back from importFile still sealed; the renderer
+  // asks for the password and sends both here.
+  ipcMain.handle(
+    'settings:decryptImport',
+    (_e, raw: unknown, password: unknown): SettingsDecryptResult =>
+      typeof password === 'string' ? openSettingsExport(raw, password) : { ok: false, reason: 'invalid' }
+  )
 }

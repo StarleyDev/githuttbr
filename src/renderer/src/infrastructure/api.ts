@@ -1,3 +1,4 @@
+import type { SettingsDecryptResult } from '../../../shared/settingsEncryption'
 import type {
   LaunchInput,
   LaunchInputResolution,
@@ -751,7 +752,9 @@ export const settingsApi = {
   /** Start a new token store over an unreadable one, keeping the old file as a backup. */
   replaceUnreadableStore: () => window.api.settings.replaceUnreadableStore(),
   importFile: () => window.api.settings.importFile() as Promise<unknown>,
-  exportFile: (data: unknown) => window.api.settings.exportFile(data)
+  exportFile: (data: unknown, password?: string) => window.api.settings.exportFile(data, password),
+  decryptImport: (raw: unknown, password: string) =>
+    window.api.settings.decryptImport(raw, password) as Promise<SettingsDecryptResult>
 }
 
 export interface ArtifactRequest {

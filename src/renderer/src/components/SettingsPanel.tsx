@@ -73,6 +73,7 @@ import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { parseSettingsImport } from '../lib/settingsImport'
+import { unlockSettingsImport } from '../lib/settingsPassword'
 import { Avatar } from './Avatar'
 import { PosixShellPicker } from './PosixShellPicker'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
@@ -2451,6 +2452,19 @@ function DataManagementSection(): React.JSX.Element {
   const [importing, setImporting] = useState(false)
   const [exportIncludeSecrets, setExportIncludeSecrets] = useState(false)
   const [showExportWarn, setShowExportWarn] = useState(false)
+  // Optional password protection. Held only here, sent once with the export,
+  // and cleared after it — never saved anywhere.
+  const [protect, setProtect] = useState(false)
+  const [password, setPassword] = useState('')
+  const [passwordAgain, setPasswordAgain] = useState('')
+  const [noRecoveryAck, setNoRecoveryAck] = useState(false)
+  const passwordsDiffer = passwordAgain.length > 0 && password !== passwordAgain
+  const protectReady = !protect || (password.length > 0 && password === passwordAgain && noRecoveryAck)
+  const clearPassword = (): void => {
+    setPassword('')
+    setPasswordAgain('')
+    setNoRecoveryAck(false)
+  }
 
   const doExport = async (): Promise<void> => {
     setExporting(true)
@@ -2471,8 +2485,13 @@ function DataManagementSection(): React.JSX.Element {
         const avatars = await profileAvatarApi.exportAll(withImage)
         if (Object.keys(avatars).length) bundle.avatars = avatars
       }
-      const ok = await settingsApi.exportFile(bundle)
-      if (ok) toast('success', t('settings.exported'))
+      const sealed = protect && password.length > 0
+      const ok = await settingsApi.exportFile(bundle, sealed ? password : undefined)
+      if (ok) {
+        toast('success', t(sealed ? 'settings.exportedEncrypted' : 'settings.exported'))
+        clearPassword()
+        setProtect(false)
+      }
     } catch {
       toast('error', t('settings.exportFailed'))
     } finally {
@@ -2483,7 +2502,10 @@ function DataManagementSection(): React.JSX.Element {
   const doImport = async (): Promise<void> => {
     setImporting(true)
     try {
-      const result = await settingsApi.importFile()
+      const picked = await settingsApi.importFile()
+      if (!picked) return
+      // A password-protected export asks for its password first; cancelling ends here.
+      const result = await unlockSettingsImport(picked)
       if (!result) return
       const parsed = parseSettingsImport(result)
       if (!parsed) {
@@ -2555,10 +2577,11 @@ function DataManagementSection(): React.JSX.Element {
         <button
           className="btn ghost small"
           onClick={() => {
-            if (exportIncludeSecrets) setShowExportWarn(true)
+            // Encrypted, the file is no longer readable by whoever finds it.
+            if (exportIncludeSecrets && !protect) setShowExportWarn(true)
             else void doExport()
           }}
-          disabled={exporting}
+          disabled={exporting || !protectReady}
         >
           {exporting ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
           {t('settings.exportSettings')}
@@ -2581,6 +2604,64 @@ function DataManagementSection(): React.JSX.Element {
           <span className="settings-hint">{t('settings.includeSecretsHint')}</span>
         </span>
       </label>
+      <label className="settings-toggle-card" style={{ marginTop: 8 }}>
+        <input
+          type="checkbox"
+          checked={protect}
+          onChange={(e) => {
+            setProtect(e.target.checked)
+            if (e.target.checked) setShowExportWarn(false)
+            else clearPassword()
+          }}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.exportProtect')}</strong>
+          <span className="settings-hint">{t('settings.exportProtectHint')}</span>
+        </span>
+      </label>
+      {protect && (
+        <div className="settings-export-password">
+          <label className="settings-field">
+            <span className="settings-field-label">{t('settings.exportPassword')}</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              spellCheck={false}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+          <label className="settings-field">
+            <span className="settings-field-label">{t('settings.exportPasswordConfirm')}</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              spellCheck={false}
+              value={passwordAgain}
+              aria-invalid={passwordsDiffer}
+              onChange={(e) => setPasswordAgain(e.target.value)}
+            />
+          </label>
+          {passwordsDiffer && (
+            <p className="settings-export-password-error" role="alert">
+              {t('settings.exportPasswordMismatch')}
+            </p>
+          )}
+          <div className="settings-export-norecovery">
+            <AlertTriangle size={14} aria-hidden="true" />
+            <div>
+              <strong>{t('settings.exportNoRecovery')}</strong>
+              <label className="settings-export-ack">
+                <input type="checkbox" checked={noRecoveryAck} onChange={(e) => setNoRecoveryAck(e.target.checked)} />
+                {t('settings.exportNoRecoveryAck')}
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
       {showExportWarn && (
         <div style={{
           display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 10,

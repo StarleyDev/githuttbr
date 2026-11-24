@@ -131,6 +131,39 @@ the session.
 **The limit:** credentials belong to a profile. A profile the import removes
 takes its saved tokens with it, whichever you choose.
 
+### Protecting an export with a password
+
+An export with the credentials ticked is as good as the tokens themselves to
+whoever finds the file — a synced folder, a forgotten USB stick, an attachment.
+**Protect with a password**, under the export button, encrypts the file with the
+same cipher as [Secure share](secure-share.md) (a scrypt-derived key and
+AES-256-GCM), so nothing in it — not even whether it carries credentials — can
+be read without the password.
+
+It is optional, with or without the credentials tick, and the password has no
+minimum length. You type it twice and tick that you understand it cannot be
+recovered; importing the file asks for it — in a dialog in Settings, inside the
+welcome step on first run — and a wrong one asks again.
+
+![Settings → Data: an export protected with a password, the no-recovery warning acknowledged](../screenshots/settings-export-password.webp)
+
+| | Without a password | With a password |
+|---|---|---|
+| **Who can read it** | Anyone who has the file | Only someone with the password |
+| **A changed byte** | Read as it is | Refused, as a wrong password is |
+| **Opens in** | Any version | Versions that know the encrypted format |
+
+**There is no recovery.** The password is not kept anywhere — not in the file,
+not on this machine — and there is no server to ask. Forget it and the file is
+lost; export again from a machine that still has the settings.
+
+Limits: an older version cannot open an encrypted export, and it does not know
+that either — it reports the settings as imported and changes nothing. Import a
+protected file with a version that asks for its password. A short password is
+still weak against someone who has the file and time to guess; the scrypt key makes each guess slow, not impossible. The
+password protects the file, not the running app: the credentials are decrypted
+in memory while they are gathered for the export, as they always were.
+
 ## The settings file
 
 The settings file and the encrypted token store are written whole: to a new

@@ -73,6 +73,48 @@ function deriveKey(password: string, salt: Buffer): Buffer {
   return scryptSync(password, salt, 32, { ...SCRYPT, maxmem: SCRYPT_MAXMEM })
 }
 
+/** The encrypted half of an envelope: how the key was derived, the cipher's
+ *  nonce and tag, and the ciphertext — all base64. Shared by secure bundles and
+ *  password-protected settings exports. */
+export interface SealedPayload {
+  kdf: { algo: 'scrypt'; N: number; r: number; p: number; salt: string }
+  cipher: { algo: 'aes-256-gcm'; iv: string; tag: string }
+  payload: string
+}
+
+/** Encrypt `plain` under a scrypt key from `password`, with a fresh salt and nonce. */
+export function sealPayload(plain: Buffer, password: string): SealedPayload {
+  const salt = randomBytes(16)
+  const iv = randomBytes(12)
+  const cipher = createCipheriv('aes-256-gcm', deriveKey(password, salt), iv)
+  const enc = Buffer.concat([cipher.update(plain), cipher.final()])
+  return {
+    kdf: { algo: 'scrypt', ...SCRYPT, salt: salt.toString('base64') },
+    cipher: { algo: 'aes-256-gcm', iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64') },
+    payload: enc.toString('base64')
+  }
+}
+
+/** Decrypt what `sealPayload` produced. Throws `invalid` when a field is missing
+ *  and `bad-password` when the tag does not verify — GCM cannot tell a wrong
+ *  password from a tampered file, and neither is readable. */
+export function openPayload(sealed: unknown, password: string): Buffer {
+  const raw = (sealed ?? {}) as { kdf?: { salt?: unknown }; cipher?: { iv?: unknown; tag?: unknown }; payload?: unknown }
+  const salt = raw.kdf?.salt
+  const iv = raw.cipher?.iv
+  const tag = raw.cipher?.tag
+  if (typeof salt !== 'string' || typeof iv !== 'string' || typeof tag !== 'string' || typeof raw.payload !== 'string') {
+    throw new BundleError('invalid')
+  }
+  const decipher = createDecipheriv('aes-256-gcm', deriveKey(password, Buffer.from(salt, 'base64')), Buffer.from(iv, 'base64'))
+  try {
+    decipher.setAuthTag(Buffer.from(tag, 'base64'))
+    return Buffer.concat([decipher.update(Buffer.from(raw.payload, 'base64')), decipher.final()])
+  } catch {
+    throw new BundleError('bad-password')
+  }
+}
+
 function summarise(section: BundleSection): SecureBundleSectionSummary {
   if (section.kind === 'vault') return { kind: 'vault', entryCount: section.entries.length }
   if (section.kind === 'workspace') {
@@ -131,12 +173,8 @@ function encodeSection(section: BundleSection): unknown {
  *  label shown before unlock (a repo name, or e.g. "Workspace" for a multi-repo
  *  bundle). */
 export function packSections(project: string, sections: BundleSection[], password: string): string {
-  const salt = randomBytes(16)
-  const iv = randomBytes(12)
-  const key = deriveKey(password, salt)
   const plain = Buffer.from(JSON.stringify({ sections: sections.map(encodeSection) }), 'utf-8')
-  const cipher = createCipheriv('aes-256-gcm', key, iv)
-  const enc = Buffer.concat([cipher.update(plain), cipher.final()])
+  const sealed = sealPayload(plain, password)
   const fileCount = sections.reduce((n, s) => n + (s.kind === 'repo' ? s.files.length : 0), 0)
   // Stamp the lowest version that can express this bundle, so a v2-only build
   // still opens bundles that carry nothing new.
@@ -148,9 +186,7 @@ export function packSections(project: string, sections: BundleSection[], passwor
     createdAt: Date.now(),
     fileCount,
     sections: sections.map(summarise),
-    kdf: { algo: 'scrypt', ...SCRYPT, salt: salt.toString('base64') },
-    cipher: { algo: 'aes-256-gcm', iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64') },
-    payload: enc.toString('base64')
+    ...sealed
   }
   return JSON.stringify(bundle, null, 2)
 }
@@ -189,24 +225,8 @@ export function readBundleHeader(text: string): SecureBundleHeader | null {
 function decrypt(text: string, password: string): { version: number; obj: Record<string, unknown> } {
   const head = readBundleHeader(text)
   if (head === null) throw new BundleError('invalid')
-  const raw = JSON.parse(text) as {
-    version?: number
-    kdf?: { salt?: string }
-    cipher?: { iv?: string; tag?: string }
-    payload?: string
-  }
-  if (!raw.kdf?.salt || !raw.cipher?.iv || !raw.cipher?.tag || !raw.payload) {
-    throw new BundleError('invalid')
-  }
-  const key = deriveKey(password, Buffer.from(raw.kdf.salt, 'base64'))
-  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(raw.cipher.iv, 'base64'))
-  decipher.setAuthTag(Buffer.from(raw.cipher.tag, 'base64'))
-  let plain: Buffer
-  try {
-    plain = Buffer.concat([decipher.update(Buffer.from(raw.payload, 'base64')), decipher.final()])
-  } catch {
-    throw new BundleError('bad-password')
-  }
+  const raw = JSON.parse(text) as { version?: number }
+  const plain = openPayload(raw, password)
   try {
     return { version: raw.version ?? 1, obj: JSON.parse(plain.toString('utf-8')) }
   } catch {

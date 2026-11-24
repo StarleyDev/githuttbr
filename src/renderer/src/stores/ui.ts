@@ -78,7 +78,13 @@ export type ModalSpec =
       initial?: string
       submitLabel?: string
       allowEmpty?: boolean
+      /** A password: masked, never autocompleted, and passed on untrimmed. */
+      secret?: boolean
+      /** Shown under the field — why the last answer was refused (a wrong password). */
+      error?: string
       onSubmit: (value: string) => void
+      /** Runs when the dialog closes without a submit: Cancel, Esc, ✕, a click outside. */
+      onCancel?: () => void
     }
   | {
       /** One `${input:id}` prompt from a launch.json `inputs` array: a real
