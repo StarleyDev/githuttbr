@@ -405,7 +405,8 @@ function UserMessage({ message }: { message: RepoChatEntry }): React.JSX.Element
 export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoName: string }): React.JSX.Element {
   const t = useT()
   const profile = useSettingsStore((state) => state.activeProfile())
-  const saveProfile = useSettingsStore((state) => state.saveProfile)
+  const ai = useSettingsStore((state) => state.activeAI())
+  const saveAIFor = useSettingsStore((state) => state.saveAIFor)
   const thread = useRepoChatStore((state) => state.threads[repoPath])
   const send = useRepoChatStore((state) => state.send)
   const retry = useRepoChatStore((state) => state.retry)
@@ -438,16 +439,16 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const pending = thread?.pending ?? false
   const attachments = thread?.attachments ?? []
   const skipped = thread?.skipped ?? []
-  const { catalogs } = useModelCatalogs(profile.ai)
+  const { catalogs } = useModelCatalogs(ai)
   const modelGroups = useMemo(
-    () => chatModelGroups(profile.ai, Object.fromEntries(Object.entries(catalogs).map(([id, c]) => [id, c.models]))),
-    [profile.ai, catalogs]
+    () => chatModelGroups(ai, Object.fromEntries(Object.entries(catalogs).map(([id, c]) => [id, c.models]))),
+    [ai, catalogs]
   )
   // The header shows the account the chat is actually pointed at, so switching
   // account elsewhere is visible here rather than silently changing the answer.
-  const chatAssignment = profile.ai.assignments?.chat
+  const chatAssignment = ai.assignments?.chat
   const chatSelection = chatAssignment ? `${chatAssignment.accountId}\u0000${chatAssignment.model}` : ''
-  const defaultChatModel = modelFor(profile.ai)
+  const defaultChatModel = modelFor(ai)
   const suggestions = useMemo(
     () =>
       suggestedAttachments({
@@ -471,8 +472,8 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
     draftRef.current?.focus()
   }, [chatPrompt, repoPath, consumeChatPrompt])
 
-  const approval: ChatActionApproval = profile.ai.repoChatApproval ?? 'ask'
-  const actionsEnabled = profile.ai.repoChatActions !== false
+  const approval: ChatActionApproval = ai.repoChatApproval ?? 'ask'
+  const actionsEnabled = ai.repoChatActions !== false
 
   const runActions = (message: RepoChatEntry, auto = false): void => {
     const actions = message.actions
@@ -498,7 +499,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             const guard = await planGuardSnapshot(repoPath, actions)
             execution = await executeRepoChatActions(repoPath, actions)
             if (guard) execution = { ...execution, snapshot: guard }
-            void finalizeActions(repoPath, message.id, execution, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })
+            void finalizeActions(repoPath, message.id, execution, { ...resolveAI(ai, 'chat'), cliCwd: repoPath })
             if (execution.error) throw new Error(actionErrorText(execution.error) ?? execution.error.code)
           },
           undefined,
@@ -605,9 +606,9 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
 
   const submit = (): void => {
     const content = draft.trim()
-    if (!canSubmitRepoChat(profile.ai.enabled !== false, pending, content)) return
+    if (!canSubmitRepoChat(ai.enabled !== false, pending, content)) return
     setDraft('')
-    void send(repoPath, content, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })
+    void send(repoPath, content, { ...resolveAI(ai, 'chat'), cliCwd: repoPath })
   }
 
   const resolveImg = (ref: string): Promise<string | null> => {
@@ -718,10 +719,12 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               title={t('chat.modelLabel')}
               onChange={(event) => {
                 const [accountId, model] = event.target.value.split('\u0000')
-                const assignments = { ...(profile.ai.assignments ?? {}) }
+                const assignments = { ...(ai.assignments ?? {}) }
                 if (!accountId) delete assignments.chat
                 else assignments.chat = { accountId, model }
-                saveProfile({ ...profile, ai: { ...profile.ai, assignments } })
+                // The chat model is engine: it lands on the general AI unless
+                // this profile has its own.
+                saveAIFor(profile.id, { assignments })
               }}
             >
               <option value="">{interp(t('chat.modelDefault'), { model: defaultChatModel })}</option>
@@ -749,7 +752,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
         </button>
       </header>
 
-      {profile.ai.enabled === false ? (
+      {ai.enabled === false ? (
         <div className="repo-chat-empty">
           <Bot size={28} />
           <strong>{t('chat.aiDisabled')}</strong>
@@ -831,7 +834,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             {thread?.error && !pending && (
               <div className="repo-chat-error" role="alert">
                 <span>{thread.error}</span>
-                <button type="button" className="btn ghost small" onClick={() => void retry(repoPath, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })}>
+                <button type="button" className="btn ghost small" onClick={() => void retry(repoPath, { ...resolveAI(ai, 'chat'), cliCwd: repoPath })}>
                   <RotateCcw size={12} /> {t('chat.retry')}
                 </button>
               </div>
@@ -892,10 +895,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
                     value={approval}
                     aria-label={t('chat.approvalTitle')}
                     onChange={(event) =>
-                      saveProfile({
-                        ...profile,
-                        ai: { ...profile.ai, repoChatApproval: event.target.value as ChatActionApproval }
-                      })
+                      saveAIFor(profile.id, { repoChatApproval: event.target.value as ChatActionApproval })
                     }
                   >
                     <option value="ask">{t('chat.approvalAsk')}</option>

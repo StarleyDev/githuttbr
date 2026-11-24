@@ -516,7 +516,7 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
   const aiFor = useSettingsStore((s) => s.aiFor)
-  const aiEnabled = profile.ai.enabled !== false
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
 
   const [name, setName] = useState(spec.initialName ?? '')
   const [description, setDescription] = useState(spec.description ?? '')

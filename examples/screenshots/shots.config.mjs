@@ -2666,6 +2666,27 @@ export const shots = [
     }
   },
   {
+    // Editing a profile the app is not using: the amber band, and Integrations
+    // naming that profile on the link button — the moment accounts went astray.
+    out: 'settings-profile-band',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        const st = window.__shot.settings.getState()
+        const inUse = st.settings.activeProfileId
+        st.addProfile('Work')
+        st.setActiveProfile(inUse)
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' })
+      })
+      const picker = page.locator('.settings-profile-bar select')
+      await picker.waitFor()
+      const work = await picker.locator('option', { hasText: 'Work' }).getAttribute('value')
+      await picker.selectOption(work)
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Profile avatar — an icon picked over the generated face, so the shot shows
     // the source switch, the icon grid and the colours. The seeded profile has
     // no integration, so "From integration" is the disabled one, as it should be.

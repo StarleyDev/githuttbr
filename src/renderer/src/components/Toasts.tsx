@@ -21,7 +21,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   const [copied, setCopied] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
   const msgRef = useRef<HTMLSpanElement>(null)
-  const aiChat = useSettingsStore((state) => repoChatAvailable(state.activeProfile().ai))
+  const aiChat = useSettingsStore((state) => repoChatAvailable(state.activeAI()))
   const openChatPanelWith = useUIStore((state) => state.openChatPanelWith)
 
   // Measured while clamped (base CSS limits to 3 lines), so a taller scrollHeight

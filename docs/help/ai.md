@@ -13,6 +13,29 @@ Nothing is sent anywhere until you ask for something specific.
 
 ![AI settings](../screenshots/settings-ai.webp)
 
+## One AI for every profile
+
+The AI is set up once, in **Settings → AI**, and every [profile](profiles.md)
+uses it: a profile you create later already has the AI, with no account to add
+again. The page lists each profile and whether it follows this **general AI**.
+
+A profile can use **its own AI** instead — a work profile that must go through
+the company's account, for cost or data policy. On that profile's **Profile**
+page, choose **Use its own AI in this profile**: it starts as a copy of the
+general AI, and its accounts and keys from then on are its alone. **Back to the
+general AI** removes them, after a confirmation, and leaves the general AI as it
+was.
+
+How the AI **writes** stays per profile either way: commit message style,
+explanation style, conflict and branch naming styles, custom instructions,
+co-author line and repository chat. They are on the **Profile** page, under
+*AI preferences of this profile*, so a work profile can write `ticket` commits
+while a personal one writes `conventional` ones, both on the same AI.
+
+Upgrading from a version where each profile had its own AI loses nothing: the
+AI of the profile in use becomes the general AI, and any other profile whose AI
+was different keeps it as its own.
+
 ## Accounts
 
 An **account** is one way of reaching a model: a provider, where to reach it,
@@ -49,7 +72,7 @@ A sign-in that takes more than three minutes stops and can be retried.
 
 Connecting also tests the session. If you signed in from a terminal, choose **Test connection**. Gitcito checks the CLI’s sign-in method and sends a short test
 prompt from an empty temporary directory. The request counts toward your provider’s allowance.
-After **Connected**, choose **Add account**. On a fresh profile this becomes the default.
+After **Connected**, choose **Add account**. The first account of the general AI becomes the default.
 For an existing setup, use **Make default** or assign individual features below.
 To skip setup, continue onboarding and return to Settings when ready.
 
@@ -171,6 +194,9 @@ reason rather than read.
   session per request.
 - Keys are stored per account in your OS keychain. Deleting an account deletes
   its key — it asks first, and there is no undo.
+- Going back to a version from before the general AI loses the general AI's keys:
+  that version does not know where they are kept and drops them when it saves.
+  The accounts stay; type the keys again. A profile's own AI is not affected.
 
 **See also:** [Repository chat](repo-chat.md) · [Repo wiki](repo-wiki.md) ·
 [Security & secrets](security.md)

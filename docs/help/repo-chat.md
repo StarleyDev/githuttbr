@@ -74,7 +74,7 @@ touch an excluded path are dropped from that diff, not the whole commit.
 
 ## Settings
 
-**Settings → AI → Repository chat**:
+**Settings → Profile → AI preferences of this profile → Repository chat** (each profile has its own):
 
 | Setting | Does |
 |---|---|
@@ -217,7 +217,7 @@ that summary fails, the card remains the authoritative record.
 
 ### Approval modes
 
-The shield dropdown under the composer (also in **Settings → AI → Repository
+The shield dropdown under the composer (also in **Settings → Profile → Repository
 chat**) decides how a card runs:
 
 | Mode | Runs |

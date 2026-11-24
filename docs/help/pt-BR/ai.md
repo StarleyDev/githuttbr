@@ -13,6 +13,30 @@ Nada é enviado para lugar nenhum até você pedir algo específico.
 
 ![Configurações de IA](../../screenshots/settings-ai.webp)
 
+## Uma IA para todos os perfis
+
+A IA é configurada uma vez, em **Configurações → IA**, e todos os
+[perfis](profiles.md) usam ela: um perfil criado depois já tem IA, sem cadastrar
+conta de novo. A página lista cada perfil e se ele segue esta **IA geral**.
+
+Um perfil pode usar **uma IA própria** — um perfil de trabalho que precisa
+passar pela conta da empresa, por custo ou política de dados. Na página
+**Perfil** dele, escolha **Usar uma IA própria neste perfil**: ela começa como
+uma cópia da IA geral, e as contas e chaves dali em diante são só dele.
+**Voltar para a IA geral** apaga essas contas, depois de uma confirmação, e não
+mexe na IA geral.
+
+O jeito como a IA **escreve** continua por perfil nos dois casos: estilo da
+mensagem de commit, estilo das explicações, estilos de conflito e de nome de
+branch, instruções personalizadas, linha de coautor e chat do repositório. Eles
+ficam na página **Perfil**, em *Preferências de IA deste perfil*, então um
+perfil de trabalho pode fazer commits no estilo `ticket` e um pessoal no
+`conventional`, os dois com a mesma IA.
+
+Quem atualiza de uma versão em que cada perfil tinha a sua IA não perde nada:
+a IA do perfil em uso vira a IA geral, e qualquer outro perfil com uma IA
+diferente fica com ela como própria.
+
 ## Contas
 
 Uma **conta** é um jeito de alcançar um modelo: um provedor, onde encontrá-lo e
@@ -157,6 +181,9 @@ mão, que é recusado com um motivo em vez de lido.
 - Uma conta de CLI não consegue informar o uso de tokens a menos que a CLI o
   faça, então os números de uso e custo nas configurações vão subestimar essas
   chamadas.
+- Voltar para uma versão anterior à IA geral perde as chaves da IA geral: essa
+  versão não sabe onde elas ficam e as descarta ao salvar. As contas continuam;
+  basta digitar as chaves de novo. A IA própria de um perfil não é afetada.
 - Respostas por CLI são mais lentas que uma chamada direta à API: o binário
   inicia uma sessão inteira a cada pedido.
 - As chaves ficam guardadas por conta no chaveiro do seu sistema. Excluir uma

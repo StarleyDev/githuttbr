@@ -188,7 +188,7 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
 
 export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; initialTab?: Tab }): React.JSX.Element {
   const repo = useRepoStore((s) => s.repos[repoPath])
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const t = useT()
   const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
   // Easter egg: five title clicks inside 1.5s open the cosmos view. Deliberately

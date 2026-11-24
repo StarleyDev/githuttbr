@@ -3128,6 +3128,13 @@ export interface Profile {
   links?: Partial<Record<RepoHost, AccountLink>>
   /** Where the profile's picture comes from. Absent means `auto`. */
   avatar?: ProfileAvatar
+  /**
+   * Whether this profile answers with its own AI engine instead of the general
+   * one (`AppSettings.ai`). Absent or false: the general engine. `ai` always
+   * carries the profile's personal fields (styles, instructions, chat policy),
+   * and its engine fields only count while this is true — see `shared/aiScope.ts`.
+   */
+  ownAI?: boolean
   ai: AIConfig
 }
 
@@ -3565,6 +3572,20 @@ export interface AppSettings {
    * Set once the user dismisses it, so an upgrade explains itself exactly once.
    */
   aiAccountsNoticeSeen?: boolean
+  /**
+   * The general AI: the engine (accounts, keys, assignments) every profile uses
+   * unless it has its own (`Profile.ownAI`). Its personal fields are ignored —
+   * those always come from the profile. See `shared/aiScope.ts`.
+   */
+  ai: AIConfig
+  /**
+   * The profile whose keychain entry still holds the general AI's keys: set when
+   * the general AI was first built from that profile, read by `applySecrets`
+   * only while the general AI has no entry of its own. Dropped by the renderer
+   * once an unlocked read has handed it the keys, so a key cleared later is
+   * never brought back from there.
+   */
+  aiSecretsFrom?: string
   /** Auto-open the changelog page tab after the app updates to a new version. */
   autoOpenChangelog: boolean
   /** Minutes between automatic WIP snapshots (0 = off). */
@@ -4075,6 +4096,7 @@ export function defaultSettings(): AppSettings {
     sidebarHidden: [],
     onboardingCompleted: false,
     aiAccountsNoticeSeen: false,
+    ai: defaultAIConfig(),
     autoOpenChangelog: true,
     wipSnapshotMinutes: 15,
     snapshotGuard: true,

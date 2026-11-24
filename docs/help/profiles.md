@@ -17,6 +17,30 @@ have two GitHub accounts.
 
 ![A profile: git identity on one side, its integration tokens on the other](../screenshots/settings-profiles.webp)
 
+## Editing a profile, using a profile
+
+Settings splits its pages in two. **This profile** holds the pages that change
+with the profile — **Profile** and **Integrations**. **App** holds everything
+else, which applies in any profile and says so at the top of the page.
+
+The two profile pages open with a bar: *Editing the profile* and a picker. The
+picker chooses which profile you are **editing**; it does not change the one the
+app is **using**. When they differ, an amber band says so — *You are editing
+Work. The app is using Personal* — with **Use this profile** to switch. That is
+the moment an account is most easily linked to the wrong profile, so the
+Integrations page also names the profile on every card and on the button itself:
+**Link to the profile Work**, and the confirmation repeats it. New and delete are
+in the same bar; deleting asks first.
+
+![Editing the Work profile while the app uses another: the amber band, and the link button naming Work](../screenshots/settings-profile-band.webp)
+
+## The AI is shared
+
+A profile does not need its own AI: one [general AI](ai.md#one-ai-for-every-profile)
+serves every profile, and a profile opts into its own only when it must. What a
+profile always keeps is how the AI writes for it — commit style, custom
+instructions and the rest of *AI preferences of this profile*.
+
 ## Each profile, its own accounts
 
 Besides a token, a profile can **link** a login already on the machine — from

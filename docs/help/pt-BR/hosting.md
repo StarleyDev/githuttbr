@@ -285,7 +285,7 @@ git** já guarda, então uma organização em que você já se autenticou muitas
 não precisa de configuração nenhuma. Veja [Segurança e segredos](security.md).
 
 Cada perfil **vincula a sua própria conta**. Em Configurações → Integrações,
-**Entrar com o git** procura um login que já esteja na máquina — o credential
+**Vincular ao perfil** procura um login que já esteja na máquina — o credential
 helper do git, depois a conta ativa do **GitHub CLI**, depois a janela de login
 do próprio helper — e liga essa conta ao perfil. Nada é compartilhado
 implicitamente: um perfil novo começa desconectado, e uma conta que outro perfil

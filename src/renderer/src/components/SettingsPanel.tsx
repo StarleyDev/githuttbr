@@ -68,7 +68,8 @@ import {
   Keyboard,
   Map as MapIcon,
   Image as ImageIcon,
-  Stethoscope
+  Stethoscope,
+  Globe
 } from 'lucide-react'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
@@ -91,7 +92,8 @@ import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
+import { personalOf, withoutAISecretsSeed } from '../../../shared/aiScope'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
@@ -147,19 +149,24 @@ type SettingsPage = SettingsPageId
 // Labels live in SETTINGS_PAGE_KEYS, shared with the search, so a page's name
 // in the sidebar and in the results can never differ.
 // `tone`: the page's colour under Settings → Themes → Icon colours; none stays grey.
-const PAGES: { id: SettingsPage; icon: React.ReactNode; tone?: IconTone }[] = [
-  { id: 'general', icon: <Settings2 size={13} /> },
-  { id: 'layout', icon: <PanelBottom size={13} />, tone: 'ref' },
-  { id: 'profile', icon: <UserCircle2 size={13} />, tone: 'outgoing' },
-  { id: 'workspaces', icon: <LayoutGrid size={13} />, tone: 'ref' },
-  { id: 'integrations', icon: <Plug size={13} />, tone: 'incoming' },
-  { id: 'ai', icon: <Bot size={13} />, tone: 'ref' },
-  { id: 'themes', icon: <Palette size={13} />, tone: 'shelf' },
-  { id: 'security', icon: <ShieldCheck size={13} />, tone: 'guard' },
-  { id: 'shortcuts', icon: <KeyboardIcon size={13} /> },
-  { id: 'data', icon: <HardDrive size={13} />, tone: 'incoming' },
-  { id: 'environment', icon: <Stethoscope size={13} />, tone: 'outgoing' }
+// `scope`: whether the page edits the profile chosen in the profile bar or the
+// whole app. The sidebar groups by it, because the two looked like one kind of
+// choice and accounts ended up linked into the wrong profile.
+const PAGES: { id: SettingsPage; icon: React.ReactNode; tone?: IconTone; scope: 'profile' | 'app' }[] = [
+  { id: 'profile', icon: <UserCircle2 size={13} />, tone: 'outgoing', scope: 'profile' },
+  { id: 'integrations', icon: <Plug size={13} />, tone: 'incoming', scope: 'profile' },
+  { id: 'general', icon: <Settings2 size={13} />, scope: 'app' },
+  { id: 'layout', icon: <PanelBottom size={13} />, tone: 'ref', scope: 'app' },
+  { id: 'workspaces', icon: <LayoutGrid size={13} />, tone: 'ref', scope: 'app' },
+  { id: 'ai', icon: <Bot size={13} />, tone: 'ref', scope: 'app' },
+  { id: 'themes', icon: <Palette size={13} />, tone: 'shelf', scope: 'app' },
+  { id: 'security', icon: <ShieldCheck size={13} />, tone: 'guard', scope: 'app' },
+  { id: 'shortcuts', icon: <KeyboardIcon size={13} />, scope: 'app' },
+  { id: 'data', icon: <HardDrive size={13} />, tone: 'incoming', scope: 'app' },
+  { id: 'environment', icon: <Stethoscope size={13} />, tone: 'outgoing', scope: 'app' }
 ]
+const PROFILE_PAGES = PAGES.filter((p) => p.scope === 'profile')
+const APP_PAGES = PAGES.filter((p) => p.scope === 'app')
 
 const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
   { id: 'auto', key: 'commitStyle.auto' },
@@ -334,7 +341,7 @@ function SigningControls({ repo }: {
 }
 
 function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
-  const { settings, setActiveProfile, deleteProfile, activeRepo } = useSettingsStore()
+  const { activeRepo } = useSettingsStore()
   const toast = useUIStore((s) => s.toast)
   const t = useT()
   const accounts = useProfileAccounts(profile)
@@ -355,26 +362,11 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
 
   return (
     <>
-      <div className="form-row two">
-        <label>
-          {t('settings.profileName')}
-          <input value={profile.name} onChange={(e) => edit({ name: e.target.value })} />
-        </label>
-        <div className="form-inline-actions">
-          {profile.id !== settings.activeProfileId ? (
-            <button className="btn ghost small" onClick={() => setActiveProfile(profile.id)}>
-              {t('settings.makeActive')}
-            </button>
-          ) : (
-            <span className="active-pill">{t('settings.activeProfile')}</span>
-          )}
-          {settings.profiles.length > 1 && (
-            <button className="icon-btn danger" title={t('settings.deleteProfile')} onClick={() => deleteProfile(profile.id)}>
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Using, creating and deleting profiles live in the profile bar above. */}
+      <label>
+        {t('settings.profileName')}
+        <input value={profile.name} onChange={(e) => edit({ name: e.target.value })} />
+      </label>
 
       <h4>
         <ImageIcon size={14} /> {t('profileAvatar.title')}
@@ -406,7 +398,9 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
         {t('settings.commitStyle')}
         <select
           value={profile.ai.commitStyle}
-          onChange={(e) => edit({ ai: { ...profile.ai, commitStyle: e.target.value as CommitStyle } })}
+          onChange={(e) =>
+            useSettingsStore.getState().saveAIFor(profile.id, { commitStyle: e.target.value as CommitStyle })
+          }
         >
           {COMMIT_STYLES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -416,6 +410,8 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
         </select>
         <span className="settings-hint">{t('settings.commitStyleHint')}</span>
       </label>
+
+      <ProfileAISection profile={profile} />
     </>
   )
 }
@@ -553,9 +549,15 @@ export function IntegrationsPage({
     })
   }
 
+  // The token last typed, per tab. A check that resolves an account for it, or
+  // for a sign-in, says which profile took the account; the silent check on
+  // opening the page, which only re-reads a known account, says nothing.
+  const tokenEdit = useRef<{ tab: string; token: string } | null>(null)
+
   const check = useCallback(
     (interactive: boolean): (() => void) => {
       let alive = true
+      const announce = interactive || (tokenEdit.current?.tab === active.id && tokenEdit.current.token === token)
       setAccount(null)
       setAccountError(null)
       if (active.id === 'azure' && !whoAmIOrg) {
@@ -589,6 +591,13 @@ export function IntegrationsPage({
             edit({ links: { ...profile.links, [active.id]: found } })
           }
           setAccount(info)
+          if (info && announce) {
+            tokenEdit.current = null
+            useUIStore.getState().toast(
+              'success',
+              interp(t('settings.accountLinkedToProfile'), { login: info.login, profile: profile.name })
+            )
+          }
         })
         .catch((err: Error) => {
           if (alive) setAccountError(err.message)
@@ -609,11 +618,6 @@ export function IntegrationsPage({
 
   return (
     <>
-      <div className="integration-profile-banner">
-        <UserCircle2 size={15} />
-        <span>{t('settings.integrationsForProfile').replace('{name}', profile.name)}</span>
-      </div>
-
       <p className="settings-hint">
         {sshNotice[0]}
         <button className="link-inline" type="button" onClick={onGoToSecurity}>
@@ -651,8 +655,10 @@ export function IntegrationsPage({
       </div>
 
       <div className="integration-head">
+        {/* Named here, not only in the profile bar: the moment of linking is
+            where an account landed in the wrong profile. */}
         <h4>
-          <ActiveIcon size={15} /> {active.label}
+          <ActiveIcon size={15} /> {interp(t('settings.providerAccountOfProfile'), { provider: active.label, profile: profile.name })}
         </h4>
         {connected ? (
           <span className="conn-status connected">
@@ -685,8 +691,8 @@ export function IntegrationsPage({
           </div>
         )}
         {!loadingAccount && !account && !(active.id === 'azure' && !whoAmIOrg) && (
-          <button className="btn ghost small" type="button" onClick={() => check(true)}>
-            {t('settings.signInWithGit')}
+          <button className="btn ghost small" type="button" title={t('settings.signInWithGit')} onClick={() => check(true)}>
+            {interp(t('settings.linkToProfile'), { profile: profile.name })}
           </button>
         )}
         {!loadingAccount && account && (
@@ -754,11 +760,15 @@ export function IntegrationsPage({
           value={token}
           placeholder={'placeholderKey' in active ? t(active.placeholderKey) : active.placeholder}
           disabled={!!scoped && !tokenInstance(scoped, address)}
-          onChange={(e) => edit({
-            [active.field]: e.target.value,
-            ...(scoped && { [`${scoped}TokenIssuer`]: tokenInstance(scoped, address) })
-          } as Partial<Profile>)}
+          onChange={(e) => {
+            tokenEdit.current = { tab: active.id, token: e.target.value }
+            edit({
+              [active.field]: e.target.value,
+              ...(scoped && { [`${scoped}TokenIssuer`]: tokenInstance(scoped, address) })
+            } as Partial<Profile>)
+          }}
         />
+        <span className="settings-hint">{interp(t('settings.tokenForProfile'), { profile: profile.name })}</span>
         {active.id === 'gitlab' && <span className="settings-hint">{t('settings.gitlabComHint')}</span>}
       </label>
       <TokenKeychainNotice />
@@ -889,17 +899,130 @@ function LocalCiSection(): React.JSX.Element {
   )
 }
 
-export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
+/**
+ * The general AI: one engine for every profile that does not use its own. The
+ * list under it shows which profiles follow it, so an exception never hides.
+ */
+function GeneralAIPage({ onOpenProfile }: { onOpenProfile: (id: string) => void }): React.JSX.Element {
   const t = useT()
-  const ai = profile.ai
+  const generalAI = useSettingsStore((s) => s.settings.ai)
+  const profiles = useSettingsStore((s) => s.settings.profiles)
+  const saveGeneralAI = useSettingsStore((s) => s.saveGeneralAI)
+  return (
+    <>
+      <p className="settings-hint">{t('settings.aiGeneralHint')}</p>
+      <AIPage ai={generalAI} onChange={saveGeneralAI} parts="engine" />
+
+      <h4>
+        <UserCircle2 size={14} /> {t('settings.aiByProfile')}
+      </h4>
+      <ul className="settings-ai-profiles">
+        {profiles.map((p) => (
+          <li key={p.id}>
+            <UserCircle2 size={14} />
+            <span className="settings-ai-profile-name">{p.name}</span>
+            <span className={`settings-ai-profile-mode ${p.ownAI ? 'own' : ''}`}>
+              {p.ownAI ? t('settings.aiOwnShort') : t('settings.aiUsesGeneral')}
+            </span>
+            <button className="btn ghost tiny" onClick={() => onOpenProfile(p.id)}>
+              {t('settings.aiOpenProfile')}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <span className="settings-hint">{t('settings.aiByProfileHint')}</span>
+    </>
+  )
+}
+
+/**
+ * A profile's AI: the general one or its own, then how the AI writes for this
+ * profile. Leaving its own AI drops that profile's accounts and keys, so it
+ * asks first.
+ */
+function ProfileAISection({ profile }: { profile: Profile }): React.JSX.Element {
+  const t = useT()
+  const ai = useSettingsStore((s) => s.aiOfProfile(profile.id))
+  const saveAIFor = useSettingsStore((s) => s.saveAIFor)
+  const setProfileOwnAI = useSettingsStore((s) => s.setProfileOwnAI)
+  // Its own AI starts as a copy of the general one, keys included — which only
+  // exist once the keychain is unlocked; before that the copy would have none.
+  const unlocked = useSettingsStore((s) => s.unlocked)
+  const own = profile.ownAI === true
+
+  const backToGeneral = (): void =>
+    useUIStore.getState().openDialog({
+      kind: 'confirm',
+      title: t('settings.backToGeneralAiTitle'),
+      message: interp(t('settings.backToGeneralAiConfirm'), { profile: profile.name }),
+      danger: true,
+      confirmLabel: t('settings.backToGeneralAi'),
+      onConfirm: () => setProfileOwnAI(profile.id, false)
+    })
 
   return (
     <>
+      <h4>
+        <Bot size={14} /> {t('settings.profileAiTitle')}
+      </h4>
+      <div className={`settings-ai-mode ${own ? 'own' : ''}`} data-setting="settings.useOwnAi">
+        <span className="settings-hint">
+          {own ? interp(t('settings.profileAiOwn'), { profile: profile.name }) : t('settings.profileAiGeneral')}
+        </span>
+        {own ? (
+          <button className="btn ghost small" onClick={backToGeneral}>
+            {t('settings.backToGeneralAi')}
+          </button>
+        ) : (
+          <button
+            className="btn ghost small"
+            disabled={!unlocked}
+            title={unlocked ? undefined : t('settings.useOwnAiLocked')}
+            onClick={() => setProfileOwnAI(profile.id, true)}
+          >
+            {t('settings.useOwnAi')}
+          </button>
+        )}
+      </div>
+      {own && <AIPage ai={ai} onChange={(next) => saveAIFor(profile.id, next)} parts="engine" />}
+
+      <h4>
+        <SlidersHorizontal size={14} /> {t('settings.profileAiPrefs')}
+      </h4>
+      <span className="settings-hint">{t('settings.profileAiPrefsHint')}</span>
+      {/* Only the preferences are written from here: the engine shown beside them
+          may be the general AI's, which this page must not change. */}
+      <AIPage ai={ai} onChange={(next) => saveAIFor(profile.id, personalOf(next))} parts="personal" />
+    </>
+  )
+}
+
+/** Which half of an AI config a page edits. The engine (on/off, accounts, which
+ *  model does what) is the general AI's or a profile's own; the preferences
+ *  (how the AI writes) always belong to a profile. Onboarding edits both. */
+export type AIPageParts = 'all' | 'engine' | 'personal'
+
+export function AIPage({
+  ai,
+  onChange,
+  parts = 'all'
+}: {
+  ai: AIConfig
+  onChange: (next: AIConfig) => void
+  parts?: AIPageParts
+}): React.JSX.Element {
+  const t = useT()
+  const showEngine = parts !== 'personal'
+  const showPersonal = parts !== 'engine'
+
+  return (
+    <>
+      {showEngine && (
       <label className="settings-toggle-card">
         <input
           type="checkbox"
           checked={ai.enabled !== false}
-          onChange={(e) => edit({ ai: { ...ai, enabled: e.target.checked } })}
+          onChange={(e) => onChange({ ...ai, enabled: e.target.checked })}
         />
         <span className="settings-toggle-control" aria-hidden="true">
           <span className="settings-toggle-thumb" />
@@ -909,15 +1032,19 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
           <span className="settings-hint">{t('settings.aiEnabledHint')}</span>
         </span>
       </label>
+      )}
 
       <div style={ai.enabled === false ? { opacity: 0.4, pointerEvents: 'none' } : undefined}>
-      <AIAccountsEditor ai={ai} onChange={(next) => edit({ ai: next })} />
+      {showEngine && <AIAccountsEditor ai={ai} onChange={(next) => onChange(next)} />}
+
+      {showPersonal && (
+      <>
 
       <label className="settings-toggle-card" style={{ marginTop: 12 }}>
         <input
           type="checkbox"
           checked={ai.generateDescription}
-          onChange={(e) => edit({ ai: { ...ai, generateDescription: e.target.checked } })}
+          onChange={(e) => onChange({ ...ai, generateDescription: e.target.checked })}
         />
         <span className="settings-toggle-control" aria-hidden="true">
           <span className="settings-toggle-thumb" />
@@ -932,7 +1059,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
       <label>
         <select
           value={ai.explainStyle ?? 'normal'}
-          onChange={(e) => edit({ ai: { ...ai, explainStyle: e.target.value as ExplainStyle } })}
+          onChange={(e) => onChange({ ...ai, explainStyle: e.target.value as ExplainStyle })}
         >
           {EXPLAIN_STYLES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -947,7 +1074,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         <input
           type="checkbox"
           checked={ai.hoverExplain !== false}
-          onChange={(e) => edit({ ai: { ...ai, hoverExplain: e.target.checked } })}
+          onChange={(e) => onChange({ ...ai, hoverExplain: e.target.checked })}
         />
         <span className="settings-toggle-control" aria-hidden="true">
           <span className="settings-toggle-thumb" />
@@ -964,7 +1091,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
           <label>
             <select
               value={ai.hoverExplainKey ?? 'shift'}
-              onChange={(e) => edit({ ai: { ...ai, hoverExplainKey: e.target.value as HoverModifier } })}
+              onChange={(e) => onChange({ ...ai, hoverExplainKey: e.target.value as HoverModifier })}
             >
               {HOVER_MODIFIERS.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -982,7 +1109,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         <input
           type="checkbox"
           checked={ai.repoChat !== false}
-          onChange={(e) => edit({ ai: { ...ai, repoChat: e.target.checked } })}
+          onChange={(e) => onChange({ ...ai, repoChat: e.target.checked })}
         />
         <span className="settings-toggle-control" aria-hidden="true">
           <span className="settings-toggle-thumb" />
@@ -999,7 +1126,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
             <input
               type="checkbox"
               checked={ai.repoChatCommittedOnly === true}
-              onChange={(e) => edit({ ai: { ...ai, repoChatCommittedOnly: e.target.checked } })}
+              onChange={(e) => onChange({ ...ai, repoChatCommittedOnly: e.target.checked })}
             />
             <span className="settings-toggle-control" aria-hidden="true">
               <span className="settings-toggle-thumb" />
@@ -1014,7 +1141,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
             <input
               type="checkbox"
               checked={ai.repoChatActions !== false}
-              onChange={(e) => edit({ ai: { ...ai, repoChatActions: e.target.checked } })}
+              onChange={(e) => onChange({ ...ai, repoChatActions: e.target.checked })}
             />
             <span className="settings-toggle-control" aria-hidden="true">
               <span className="settings-toggle-thumb" />
@@ -1031,7 +1158,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
                 <input
                   type="checkbox"
                   checked={ai.repoChatReadOnly !== false}
-                  onChange={(e) => edit({ ai: { ...ai, repoChatReadOnly: e.target.checked } })}
+                  onChange={(e) => onChange({ ...ai, repoChatReadOnly: e.target.checked })}
                 />
                 <span className="settings-toggle-control" aria-hidden="true">
                   <span className="settings-toggle-thumb" />
@@ -1046,7 +1173,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
                 <input
                   type="checkbox"
                   checked={ai.repoChatRemoteActions === true}
-                  onChange={(e) => edit({ ai: { ...ai, repoChatRemoteActions: e.target.checked } })}
+                  onChange={(e) => onChange({ ...ai, repoChatRemoteActions: e.target.checked })}
                 />
                 <span className="settings-toggle-control" aria-hidden="true">
                   <span className="settings-toggle-thumb" />
@@ -1062,7 +1189,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
                 <select
                   value={ai.repoChatApproval ?? 'ask'}
                   onChange={(e) =>
-                    edit({ ai: { ...ai, repoChatApproval: e.target.value as typeof ai.repoChatApproval } })
+                    onChange({ ...ai, repoChatApproval: e.target.value as typeof ai.repoChatApproval })
                   }
                 >
                   <option value="ask">{t('chat.approvalAsk')}</option>
@@ -1080,7 +1207,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
       <label>
         <select
           value={ai.conflictStyle ?? 'clean'}
-          onChange={(e) => edit({ ai: { ...ai, conflictStyle: e.target.value as ConflictStyle } })}
+          onChange={(e) => onChange({ ...ai, conflictStyle: e.target.value as ConflictStyle })}
         >
           {CONFLICT_STYLES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -1095,7 +1222,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
       <label>
         <select
           value={ai.branchNamingStyle ?? 'prefix/description'}
-          onChange={(e) => edit({ ai: { ...ai, branchNamingStyle: e.target.value as BranchNamingStyle } })}
+          onChange={(e) => onChange({ ...ai, branchNamingStyle: e.target.value as BranchNamingStyle })}
         >
           {BRANCH_NAMING_STYLES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -1116,7 +1243,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
             rows={3}
             value={ai.customInstructions}
             placeholder={t('settings.customInstructionsPlaceholder')}
-            onChange={(e) => edit({ ai: { ...ai, customInstructions: e.target.value } })}
+            onChange={(e) => onChange({ ...ai, customInstructions: e.target.value })}
           />
         </label>
 
@@ -1124,7 +1251,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
           <input
             type="checkbox"
             checked={ai.coAuthor !== false}
-            onChange={(e) => edit({ ai: { ...ai, coAuthor: e.target.checked } })}
+            onChange={(e) => onChange({ ...ai, coAuthor: e.target.checked })}
           />
           <span className="settings-toggle-control" aria-hidden="true">
             <span className="settings-toggle-thumb" />
@@ -1135,6 +1262,8 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
           </span>
         </label>
       </details>
+      </>
+      )}
       </div>
     </>
   )
@@ -1515,7 +1644,7 @@ function PaletteSwatch({ colors }: { colors: string[] }): React.JSX.Element {
 
 function GraphStyleTab(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
-  const activeProfile = useSettingsStore((s) => s.activeProfile())
+  const activeAI = useSettingsStore((s) => s.activeAI())
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
   const t = useT()
@@ -1524,7 +1653,7 @@ function GraphStyleTab(): React.JSX.Element {
   const customPalettes = settings.customGraphPalettes ?? []
   const palettes = allGraphPalettes(customPalettes)
   const current = findGraphPalette(style.paletteId, customPalettes)
-  const aiEnabled = activeProfile.ai.enabled
+  const aiEnabled = activeAI.enabled
 
   const [showEditor, setShowEditor] = useState(false)
   const [draft, setDraft] = useState<string[]>(() => toSlots(current.colors))
@@ -1570,7 +1699,7 @@ function GraphStyleTab(): React.JSX.Element {
     if (!aiPrompt.trim()) return
     setGenerating(true)
     try {
-      const result = await aiApi.generateGraphPalette(aiPrompt.trim(), resolveAI(activeProfile.ai, 'theme'))
+      const result = await aiApi.generateGraphPalette(aiPrompt.trim(), resolveAI(activeAI, 'theme'))
       setDraft(toSlots(result.colors))
       setName(result.name)
       setShowAIPrompt(false)
@@ -1794,7 +1923,7 @@ function GraphStyleTab(): React.JSX.Element {
 
 function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
-  const activeProfile = useSettingsStore((s) => s.activeProfile())
+  const activeAI = useSettingsStore((s) => s.activeAI())
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
   const t = useT()
@@ -1805,7 +1934,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
   const currentApp = findAppTheme(settings.appThemeId, settings.customAppThemes)
   const currentCode = findCodeTheme(settings.codeThemeId, settings.customCodeThemes)
   const currentCodeColors = resolveCodeColors(currentCode, mode)
-  const aiEnabled = activeProfile.ai.enabled
+  const aiEnabled = activeAI.enabled
 
   // Custom editor drafts (seeded from the current selection in the active mode).
   const [appDraft, setAppDraft] = useState<AppThemeColors>(resolveAppColors(currentApp, mode))
@@ -1830,7 +1959,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
     if (!appAIPrompt.trim()) return
     setGeneratingApp(true)
     try {
-      const result = await aiApi.generateAppTheme(appAIPrompt.trim(), resolveAI(activeProfile.ai, 'theme'))
+      const result = await aiApi.generateAppTheme(appAIPrompt.trim(), resolveAI(activeAI, 'theme'))
       setAppDraft(mode === 'dark' ? result.dark : result.light)
       setAppOther(mode === 'dark' ? result.light : result.dark)
       setAppName(result.name)
@@ -1848,7 +1977,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
     if (!codeAIPrompt.trim()) return
     setGeneratingCode(true)
     try {
-      const result = await aiApi.generateCodeTheme(codeAIPrompt.trim(), resolveAI(activeProfile.ai, 'theme'))
+      const result = await aiApi.generateCodeTheme(codeAIPrompt.trim(), resolveAI(activeAI, 'theme'))
       setCodeDraft(mode === 'dark' ? result.dark : result.light)
       setCodeOther(mode === 'dark' ? result.light : result.dark)
       setCodeName(result.name)
@@ -2510,7 +2639,8 @@ function DataManagementSection(): React.JSX.Element {
       const bundle: SettingsBundle = {
         __githuttbr: 'settings-export',
         version: 1,
-        settings: exportIncludeSecrets ? settings : stripSettingsSecrets(settings),
+        // The keychain seed names this machine's profiles: never exported.
+        settings: withoutAISecretsSeed(exportIncludeSecrets ? settings : stripSettingsSecrets(settings)),
         info: await infoApi.exportAll()
       }
       if (exportIncludeSecrets) bundle.vault = await vaultApi.exportAll()
@@ -4577,11 +4707,85 @@ function DataPage(): React.JSX.Element {
 }
 
 const LAST_PAGE_KEY = 'githuttbr.settings.lastPage'
-const PAGE_IDS: SettingsPage[] = ['profile', 'workspaces', 'integrations', 'ai', 'themes', 'general', 'data']
+const PAGE_IDS: SettingsPage[] = PAGES.map((p) => p.id)
 
 function readLastPage(): SettingsPage {
   const stored = localStorage.getItem(LAST_PAGE_KEY)
   return stored && (PAGE_IDS as string[]).includes(stored) ? (stored as SettingsPage) : 'general'
+}
+
+/** A translated sentence with its placeholders filled in bold. The same
+ *  template interp() takes, so each locale keeps its own word order. */
+function interpStrong(template: string, vars: Record<string, string>): ReactNode[] {
+  return template.split(/(\{\w+\})/).map((part, i) => {
+    const name = /^\{(\w+)\}$/.exec(part)?.[1]
+    return name && name in vars ? <strong key={i}>{vars[name]}</strong> : part
+  })
+}
+
+/**
+ * Which profile the Profile and Integrations pages edit. Choosing one here does
+ * not make the app use it: the profile being edited and the one in use are two
+ * separate things, and the band below says so whenever they differ.
+ */
+function ProfileBar({
+  profile,
+  onSelectProfile,
+  onNewProfile,
+  onDeleteProfile
+}: {
+  profile: Profile
+  onSelectProfile: (id: string) => void
+  onNewProfile: () => void
+  onDeleteProfile: () => void
+}): React.JSX.Element {
+  const t = useT()
+  const profiles = useSettingsStore((s) => s.settings.profiles)
+  const activeId = useSettingsStore((s) => s.settings.activeProfileId)
+  const setActiveProfile = useSettingsStore((s) => s.setActiveProfile)
+  const selectId = useId()
+  const inUse = profile.id === activeId
+  const activeProfile = profiles.find((p) => p.id === activeId)
+
+  return (
+    <>
+      <div className="settings-profile-bar">
+        <label htmlFor={selectId}>
+          <UserCircle2 size={14} /> {t('settings.editingProfile')}
+        </label>
+        <select id={selectId} value={profile.id} onChange={(e) => onSelectProfile(e.target.value)}>
+          {profiles.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.id === activeId ? interp(t('settings.profileOptionInUse'), { name: p.name }) : p.name}
+            </option>
+          ))}
+        </select>
+        <span className={`settings-profile-state ${inUse ? 'in-use' : ''}`}>
+          {inUse && <span className="settings-profile-state-dot" />}
+          {t(inUse ? 'settings.profileInUse' : 'settings.profileNotInUse')}
+        </span>
+        <span className="settings-profile-bar-spacer" />
+        <button className="btn ghost small" type="button" data-setting="settings.newProfile" onClick={onNewProfile}>
+          <Plus size={13} /> {t('settings.newProfile')}
+        </button>
+        {profiles.length > 1 && (
+          <button className="icon-btn danger" type="button" title={t('settings.deleteProfile')} onClick={onDeleteProfile}>
+            <Trash2 size={14} />
+          </button>
+        )}
+      </div>
+      {!inUse && activeProfile && (
+        <div className="settings-profile-band" role="status">
+          <p>
+            {interpStrong(t('settings.profileNotInUseBand'), { profile: profile.name, active: activeProfile.name })}
+          </p>
+          <button className="btn small settings-profile-band-btn" type="button" onClick={() => setActiveProfile(profile.id)}>
+            {t('settings.useThisProfile')}
+          </button>
+        </div>
+      )}
+    </>
+  )
 }
 
 export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: SettingsPage; initialThemeTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
@@ -4657,6 +4861,46 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   const edit = (partial: Partial<Profile>): void =>
     useSettingsStore.getState().saveProfile({ ...profile, ...partial })
 
+  // Named up front, as from the profile switcher — a "Profile 3" to rename
+  // afterwards is a step people skip.
+  const askNewProfile = (): void => {
+    const fallback = interp(t('settings.profileNameDefault'), { n: settings.profiles.length + 1 })
+    openDialog({
+      kind: 'input',
+      title: t('settings.newProfile'),
+      label: t('settings.profileName'),
+      placeholder: fallback,
+      submitLabel: t('settings.newProfile'),
+      allowEmpty: true,
+      onSubmit: (name) => {
+        addProfile(name.trim() || fallback)
+        setSelectedId(useSettingsStore.getState().settings.activeProfileId)
+      }
+    })
+  }
+
+  const navItem = (p: (typeof PAGES)[number]): React.JSX.Element => {
+    // While searching, a page shows how many matches it holds, and one with
+    // none steps back — clicking it still opens it.
+    const hits = search.active ? (search.counts[p.id] ?? 0) : null
+    return (
+      <button
+        key={p.id}
+        className={`profile-item ${!search.active && page === p.id ? 'selected' : ''} ${hits === 0 ? 'dim' : ''}`}
+        data-tone={p.tone}
+        onClick={() => {
+          search.setQuery('')
+          setPage(p.id)
+        }}
+      >
+        {p.icon}
+        <span>{t(SETTINGS_PAGE_KEYS[p.id])}</span>
+        {hits !== null && hits > 0 && <span className="settings-search-count">{hits}</span>}
+      </button>
+    )
+  }
+  const pageScope = PAGES.find((p) => p.id === page)?.scope ?? 'app'
+
   const confirmDeleteProfile = (id: string, name: string): void =>
     openDialog({
       kind: 'confirm',
@@ -4679,80 +4923,20 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
       <div className="settings-body">
         <aside className="settings-profiles">
           <div className="settings-side-scroll">
+            {/* Grouped by what a page edits: the profile chosen in the profile
+                bar, or the whole app. The chip names that profile. */}
             <div className="settings-side-header">
-              <span>{t('settings.profilesHeader')}</span>
-              <button
-                className="icon-btn"
-                title={t('settings.newProfile')}
-                onClick={() => {
-                  // Named up front, as from the profile switcher — a "Profile 3" to
-                  // rename afterwards is a step people skip.
-                  const fallback = interp(t('settings.profileNameDefault'), { n: settings.profiles.length + 1 })
-                  openDialog({
-                    kind: 'input',
-                    title: t('settings.newProfile'),
-                    label: t('settings.profileName'),
-                    placeholder: fallback,
-                    submitLabel: t('settings.newProfile'),
-                    allowEmpty: true,
-                    onSubmit: (name) => {
-                      addProfile(name.trim() || fallback)
-                      setSelectedId(useSettingsStore.getState().settings.activeProfileId)
-                    }
-                  })
-                }}
-              >
-                <Plus size={14} />
-              </button>
+              <span>{t('settings.navThisProfile')}</span>
+              <span className="settings-side-chip" title={profile.name}>
+                {profile.name}
+              </span>
             </div>
-            {settings.profiles.map((p) => (
-              <div key={p.id} className={`profile-row ${p.id === selectedId ? 'selected' : ''}`}>
-                <button
-                  className="profile-item"
-                  onClick={() => setSelectedId(p.id)}
-                >
-                  <UserCircle2 size={15} />
-                  <span>{p.name}</span>
-                  {p.id === settings.activeProfileId && <BadgeCheck size={13} className="profile-active-mark" />}
-                </button>
-                {settings.profiles.length > 1 && (
-                  <button
-                    className="icon-btn danger profile-delete"
-                    title={t('settings.deleteProfile')}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      confirmDeleteProfile(p.id, p.name)
-                    }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                )}
-              </div>
-            ))}
+            {PROFILE_PAGES.map(navItem)}
 
             <div className="settings-side-header pages">
-              <span>{t('settings.sectionsHeader')}</span>
+              <span>{t('settings.navApp')}</span>
             </div>
-            {PAGES.map((p) => {
-              // While searching, a page shows how many matches it holds, and
-              // one with none steps back — clicking it still opens it.
-              const hits = search.active ? (search.counts[p.id] ?? 0) : null
-              return (
-                <button
-                  key={p.id}
-                  className={`profile-item ${!search.active && page === p.id ? 'selected' : ''} ${hits === 0 ? 'dim' : ''}`}
-                  data-tone={p.tone}
-                  onClick={() => {
-                    search.setQuery('')
-                    setPage(p.id)
-                  }}
-                >
-                  {p.icon}
-                  <span>{t(SETTINGS_PAGE_KEYS[p.id])}</span>
-                  {hits !== null && hits > 0 && <span className="settings-search-count">{hits}</span>}
-                </button>
-              )
-            })}
+            {APP_PAGES.map(navItem)}
           </div>
 
           <div className="settings-footer">
@@ -4807,12 +4991,31 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
           {/* Hidden, not unmounted, while searching: a theme being edited or an AI
               account half filled in survives a look at the results. */}
           <div className="settings-page-host" hidden={search.active}>
+            {pageScope === 'profile' ? (
+              <ProfileBar
+                profile={profile}
+                onSelectProfile={setSelectedId}
+                onNewProfile={askNewProfile}
+                onDeleteProfile={() => confirmDeleteProfile(profile.id, profile.name)}
+              />
+            ) : (
+              <p className="settings-scope-note">
+                <Globe size={13} /> {t('settings.appScopeNote')}
+              </p>
+            )}
             {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
             {page === 'workspaces' && <WorkspacesPage />}
             {page === 'integrations' && (
               <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
             )}
-            {page === 'ai' && <AIPage profile={profile} edit={edit} />}
+            {page === 'ai' && (
+              <GeneralAIPage
+                onOpenProfile={(id) => {
+                  setSelectedId(id)
+                  setPage('profile')
+                }}
+              />
+            )}
             {page === 'themes' && <ThemesPage key={themeNonce} initialTab={themeTab} />}
             {page === 'general' && <GeneralPage />}
             {page === 'layout' && <LayoutPage />}

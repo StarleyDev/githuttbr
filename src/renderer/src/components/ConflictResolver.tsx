@@ -58,7 +58,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const refresh = useRepoStore((s) => s.refresh)
   const ctx = useRepoStore((s) => s.repos[view.repoPath]?.conflictContext ?? null)
   const t = useT()
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const [replayed, setReplayed] = useState(false)
   const [mergeTool, setMergeTool] = useState('')
   const [toolRunning, setToolRunning] = useState(false)

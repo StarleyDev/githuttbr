@@ -20,6 +20,7 @@ import {
 import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
 import { infoApi, profileAvatarApi, settingsApi, shellApi, vaultApi } from '../infrastructure/api'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
+import { withAIPatch } from '../../../shared/aiScope'
 import { parseSettingsImport, type ParsedSettingsImport } from '../lib/settingsImport'
 import { settingsDecryptMessageKey } from '../lib/settingsPassword'
 import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
@@ -272,12 +273,7 @@ function AIStep({
         <div className="onboarding-subtitle">{t('onboarding.aiSubtitle')}</div>
       </div>
       <div className="settings-form">
-        <AIPage
-          profile={buildProfile(data)}
-          edit={(partial) => {
-            if (partial.ai !== undefined) patch({ ai: { ...data.ai, ...partial.ai } })
-          }}
-        />
+        <AIPage ai={buildProfile(data).ai} onChange={(next) => patch({ ai: { ...data.ai, ...next } })} />
       </div>
     </>
   )
@@ -426,6 +422,7 @@ function IntegrationsStep({
 export function OnboardingWizard(): React.JSX.Element {
   const t = useT()
   const profile = useSettingsStore((s) => s.activeProfile())
+  const activeAI = useSettingsStore((s) => s.activeAI())
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const importSettings = useSettingsStore((s) => s.importSettings)
@@ -439,7 +436,9 @@ export function OnboardingWizard(): React.JSX.Element {
     profileName: profile.name,
     gitName: profile.gitName,
     gitEmail: profile.gitEmail,
-    ai: { ...profile.ai },
+    // The effective AI: on a fresh install the profile uses the general one,
+    // whose accounts the AI step edits.
+    ai: { ...activeAI },
     themeId: settings.appThemeId,
     themeMode: settings.themeMode,
     githubToken: profile.githubToken,
@@ -552,35 +551,39 @@ export function OnboardingWizard(): React.JSX.Element {
   }
 
   const finish = (): void => {
-    update((s) => ({
-      ...s,
-      appThemeId: data.themeId,
-      themeMode: data.themeMode,
-      onboardingCompleted: true,
-      defaultOpenApp: data.defaultOpenApp,
-      profiles: s.profiles.map((p) =>
-        p.id === s.activeProfileId
-          ? {
-              ...p,
-              name: data.profileName || p.name,
-              gitName: data.gitName,
-              gitEmail: data.gitEmail,
-              githubToken: data.githubToken,
-              gitlabToken: data.gitlabToken,
-              gitlabTokenIssuer: data.gitlabTokenIssuer,
-              azureToken: data.azureToken,
-              bitbucketToken: data.bitbucketToken,
-              gitlabServers: data.gitlabServers,
-              forgejoUrl: data.forgejoUrl,
-              forgejoToken: data.forgejoToken,
-              forgejoTokenIssuer: data.forgejoTokenIssuer,
-              githubEnterprise: data.githubEnterprise,
-              bitbucketServers: data.bitbucketServers,
-              ai: { ...p.ai, ...data.ai }
-            }
-          : p
-      )
-    }))
+    // The AI lands where the active profile reads it — the general AI on a
+    // fresh install — so the first profile added afterwards inherits it.
+    update((s) => {
+      const next = {
+        ...s,
+        appThemeId: data.themeId,
+        themeMode: data.themeMode,
+        onboardingCompleted: true,
+        defaultOpenApp: data.defaultOpenApp,
+        profiles: s.profiles.map((p) =>
+          p.id === s.activeProfileId
+            ? {
+                ...p,
+                name: data.profileName || p.name,
+                gitName: data.gitName,
+                gitEmail: data.gitEmail,
+                githubToken: data.githubToken,
+                gitlabToken: data.gitlabToken,
+                gitlabTokenIssuer: data.gitlabTokenIssuer,
+                azureToken: data.azureToken,
+                bitbucketToken: data.bitbucketToken,
+                gitlabServers: data.gitlabServers,
+                forgejoUrl: data.forgejoUrl,
+                forgejoToken: data.forgejoToken,
+                forgejoTokenIssuer: data.forgejoTokenIssuer,
+                githubEnterprise: data.githubEnterprise,
+                bitbucketServers: data.bitbucketServers
+              }
+            : p
+        )
+      }
+      return withAIPatch(next, s.activeProfileId, data.ai)
+    })
   }
 
   return (

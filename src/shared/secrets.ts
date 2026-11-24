@@ -2,7 +2,8 @@ import { tokenMatchesInstance, GITLAB_COM, migrateGitlabProfile, migrateGitlabSe
 import { normalizeGithubEnterpriseUrl } from './githubEnterprise'
 import { normalizeBitbucketServerUrl } from './bitbucketServer'
 import { serverUrlWithoutSecrets } from './serverAddress'
-import type { AppSettings } from './types'
+import { aiEnginesEqual, withoutAIEngine } from './aiScope'
+import type { AIConfig, AppSettings } from './types'
 
 /**
  * The credentials a profile can hold. They are kept out of the settings JSON on
@@ -34,21 +35,77 @@ export interface ProfileSecrets {
   aiKeys?: Record<string, string>
 }
 
-/** Secrets for every profile that has any, keyed by profile id. */
+/** Secrets for every profile that has any, keyed by profile id — and the
+ *  general AI's keys under `GENERAL_AI_SECRETS_ID`. */
 export type SecretStore = Record<string, ProfileSecrets>
+
+/**
+ * Where the general AI (`AppSettings.ai`) files its keys in a `SecretStore`. Not
+ * a profile id: those are `default` or short base-36 strings, never with an `@`.
+ * Only `aiKeys`/`aiApiKey` are ever filed under it.
+ */
+export const GENERAL_AI_SECRETS_ID = '@general-ai'
+
+/** Whether an AI config holds any key. */
+function hasAIKeys(ai: AIConfig | undefined): boolean {
+  return !!ai?.apiKey || (ai?.accounts ?? []).some((a) => !!a.apiKey)
+}
+
+/** The same config without any key. */
+function withoutAIKeys(ai: AIConfig): AIConfig {
+  return { ...ai, apiKey: '', accounts: (ai.accounts ?? []).map((a) => ({ ...a, apiKey: '' })) }
+}
+
+/** An AI config's keys as the store files them: one per account, or the legacy single key. */
+function aiSecretsOf(ai: AIConfig | undefined): Pick<ProfileSecrets, 'aiKeys' | 'aiApiKey'> {
+  const aiKeys: Record<string, string> = {}
+  for (const account of ai?.accounts ?? []) {
+    if (account.apiKey) aiKeys[account.id] = account.apiKey
+  }
+  if (Object.keys(aiKeys).length > 0) return { aiKeys }
+  // Only written when the config predates accounts; migration folds it into
+  // `aiKeys` the first time the settings are saved afterwards.
+  if (ai?.apiKey) return { aiApiKey: ai.apiKey }
+  return {}
+}
+
+/** Puts stored keys back on an AI config's accounts. */
+function restoreAIKeys(ai: AIConfig, secrets: ProfileSecrets): AIConfig {
+  let restored = ai
+  const accounts = ai.accounts ?? []
+  if (accounts.length > 0) {
+    const keys = secrets.aiKeys ?? {}
+    // A pre-accounts key belongs to the account the migration built from it.
+    const legacyOwner = ai.defaultAccountId || accounts[0].id
+    restored = {
+      ...ai,
+      accounts: accounts.map((a) => {
+        const key = keys[a.id] ?? (a.id === legacyOwner ? secrets.aiApiKey : undefined)
+        return key ? { ...a, apiKey: key } : a
+      })
+    }
+  }
+  // Keep the resolved field in step so a config used before migration still
+  // authenticates.
+  const resolvedKey =
+    secrets.aiKeys?.[restored.accountId ?? restored.defaultAccountId ?? ''] ??
+    secrets.aiKeys?.[accounts[0]?.id ?? ''] ??
+    secrets.aiApiKey
+  return resolvedKey ? { ...restored, apiKey: resolvedKey } : restored
+}
 
 /** Profile fields holding a host access token. */
 export const TOKEN_FIELDS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken', 'forgejoToken'] as const
 
 export function hasSettingsSecrets(settings: AppSettings | null | undefined): boolean {
+  if (hasAIKeys(settings?.ai)) return true
   return (settings?.profiles ?? []).some(
     (p) =>
       TOKEN_FIELDS.some((f) => !!p[f]) ||
       (p.githubEnterprise ?? []).some((h) => !!h.token) ||
       (p.gitlabServers ?? []).some((h) => !!h.token) ||
       (p.bitbucketServers ?? []).some((h) => !!h.token) ||
-      !!p.ai?.apiKey ||
-      (p.ai?.accounts ?? []).some((a) => !!a.apiKey)
+      hasAIKeys(p.ai)
   )
 }
 
@@ -56,6 +113,8 @@ export function hasSettingsSecrets(settings: AppSettings | null | undefined): bo
 export function stripSettingsSecrets(settings: AppSettings): AppSettings {
   return {
     ...settings,
+    // A raw import may predate the general AI: never add the field to it.
+    ...(settings.ai ? { ai: withoutAIKeys(settings.ai) } : {}),
     profiles: (settings.profiles ?? []).map(migrateGitlabProfile).map((p) => ({
       ...p,
       githubToken: '',
@@ -68,13 +127,7 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
       ...(p.githubEnterprise ? { githubEnterprise: p.githubEnterprise.map((h) => ({ ...h, token: '' })) } : {}),
       ...(p.gitlabServers ? { gitlabServers: p.gitlabServers.map((h) => ({ ...h, token: '' })) } : {}),
       ...(p.bitbucketServers ? { bitbucketServers: p.bitbucketServers.map((h) => ({ ...h, token: '' })) } : {}),
-      ai: p.ai
-        ? {
-            ...p.ai,
-            apiKey: '',
-            accounts: (p.ai.accounts ?? []).map((a) => ({ ...a, apiKey: '' }))
-          }
-        : p.ai
+      ai: p.ai ? withoutAIKeys(p.ai) : p.ai
     }))
   }
 }
@@ -115,16 +168,11 @@ export function extractSecrets(settings: AppSettings): SecretStore {
       if (base && h.token) bbs[base] = h.token
     }
     if (Object.keys(bbs).length > 0) secrets.bitbucketServerTokens = bbs
-    const aiKeys: Record<string, string> = {}
-    for (const account of p.ai?.accounts ?? []) {
-      if (account.apiKey) aiKeys[account.id] = account.apiKey
-    }
-    if (Object.keys(aiKeys).length > 0) secrets.aiKeys = aiKeys
-    // Only written when the config predates accounts; migration folds it into
-    // `aiKeys` the first time the settings are saved afterwards.
-    else if (p.ai?.apiKey) secrets.aiApiKey = p.ai.apiKey
+    Object.assign(secrets, aiSecretsOf(p.ai))
     if (Object.keys(secrets).length > 0) store[p.id] = secrets
   }
+  const general = aiSecretsOf(settings.ai)
+  if (Object.keys(general).length > 0) store[GENERAL_AI_SECRETS_ID] = general
   return store
 }
 
@@ -149,9 +197,9 @@ export function migrateGitlabSecrets(store: SecretStore): SecretStore {
 }
 
 /** Puts stored credentials back on their profiles, leaving the rest untouched. */
-export function applySecrets(settings: AppSettings, raw: SecretStore): AppSettings {
+export function applySecrets(settings: AppSettings, raw: SecretStore, opts?: { seed?: boolean }): AppSettings {
   const store = migrateGitlabSecrets(raw)
-  return {
+  const restored: AppSettings = {
     ...settings,
     profiles: migrateGitlabSettings({ profiles: settings.profiles ?? [] }).profiles.map((p) => {
       const secrets = store[p.id]
@@ -197,29 +245,140 @@ export function applySecrets(settings: AppSettings, raw: SecretStore): AppSettin
         if (secrets[field]) restored[field] = secrets[field] as string
       }
       if (!restored.ai) return restored
-
-      const accounts = restored.ai.accounts ?? []
-      if (accounts.length > 0) {
-        const keys = secrets.aiKeys ?? {}
-        // A pre-accounts key belongs to the account the migration built from it.
-        const legacyOwner = restored.ai.defaultAccountId || accounts[0].id
-        restored.ai = {
-          ...restored.ai,
-          accounts: accounts.map((a) => {
-            const key = keys[a.id] ?? (a.id === legacyOwner ? secrets.aiApiKey : undefined)
-            return key ? { ...a, apiKey: key } : a
-          })
-        }
-      }
-
-      // Keep the resolved field in step so a config used before migration still
-      // authenticates.
-      const resolvedKey =
-        secrets.aiKeys?.[restored.ai.accountId ?? restored.ai.defaultAccountId ?? ''] ??
-        secrets.aiKeys?.[accounts[0]?.id ?? ''] ??
-        secrets.aiApiKey
-      if (resolvedKey) restored.ai = { ...restored.ai, apiKey: resolvedKey }
+      restored.ai = restoreAIKeys(restored.ai, secrets)
       return restored
+    })
+  }
+  return withGeneralAISecrets(restored, store, opts?.seed !== false)
+}
+
+/**
+ * A profile the migration put on the general AI although only an encrypted key
+ * told it apart from the profile the general AI was built from (`source`): it
+ * has keys of its own in the store, its engine matches the source's in
+ * everything but those keys, and with them it differs.
+ *
+ * Measured against the source profile, never the general AI: the source's
+ * engine is frozen since the migration, while the general AI may have been
+ * edited since — and a profile that only drifted from an edited general AI is
+ * not one that had a key of its own. A profile added since has no keys in the
+ * store and never matches.
+ */
+function keyOnlyDifference(p: Profiles[number], source: AIConfig, store: SecretStore): boolean {
+  if (p.ownAI === true || !p.ai) return false
+  const own = store[p.id]
+  if (!own?.aiKeys && !own?.aiApiKey) return false
+  const mine = restoreAIKeys(p.ai, own)
+  return aiEnginesEqual(mine, source, { ignoreKeys: true }) && !aiEnginesEqual(mine, source)
+}
+
+/**
+ * The source profile's engine with its keys — what `keyOnlyDifference` measures
+ * against. A source deleted since leaves the general AI, built as its copy, with
+ * the keys its entry still holds (kept by `secretOwnerIds`).
+ */
+function seedSource(settings: AppSettings, store: SecretStore): AIConfig | undefined {
+  const from = settings.aiSecretsFrom
+  if (!from) return undefined
+  const source = (settings.profiles ?? []).find((p) => p.id === from)
+  if (source?.ai) return restoreAIKeys(source.ai, store[from] ?? {})
+  return settings.ai ? restoreAIKeys(settings.ai, store[from] ?? {}) : undefined
+}
+
+/** `profiles` with every key-only exception given its own AI back (`keyOnlyDifference`). */
+function withKeyOnlyExceptions(settings: AppSettings, store: SecretStore): Profiles {
+  const source = seedSource(settings, store)
+  if (!source) return settings.profiles
+  return settings.profiles.map((p) =>
+    p.id !== settings.aiSecretsFrom && keyOnlyDifference(p, source, store) ? { ...p, ownAI: true } : p
+  )
+}
+
+/**
+ * Puts the general AI's keys back — from its own entry, or, while the general
+ * AI still has none and was built from a profile (`aiSecretsFrom`), from that
+ * profile's. `seed: false` reads only its own entry and leaves every profile's
+ * `ownAI` alone: the settings file's plaintext keep-list must not invent
+ * either (see main's `savedFileJson`).
+ *
+ * While `aiSecretsFrom` is set the migration is also re-checked with the keys
+ * (`withKeyOnlyExceptions`), so a read before main settles it (`settleGeneralAI`)
+ * already sends each profile's calls to its own key.
+ */
+function withGeneralAISecrets(settings: AppSettings, store: SecretStore, seed: boolean): AppSettings {
+  if (!settings.ai) return settings
+  const own = store[GENERAL_AI_SECRETS_ID]
+  const seedId = seed && !own ? settings.aiSecretsFrom : undefined
+  const secrets = own ?? (seedId ? store[seedId] : undefined)
+  const ai = secrets ? restoreAIKeys(settings.ai, secrets) : settings.ai
+  if (!seed || !settings.aiSecretsFrom) return { ...settings, ai }
+  return { ...settings, ai, profiles: withKeyOnlyExceptions(settings, store) }
+}
+
+/** The same secrets without any AI key. */
+function withoutAISecrets(secrets: ProfileSecrets): ProfileSecrets {
+  const { aiKeys: _keys, aiApiKey: _legacy, ...rest } = secrets
+  void _keys
+  void _legacy
+  return rest
+}
+
+/**
+ * Finishes the move to the general AI once the whole store is in hand — main
+ * calls it on the first decrypted, queued read (`settings:unlock`) and persists
+ * both halves:
+ *
+ * - the general AI gets its own entry, copied from the profile it was built
+ *   from, so deleting that profile can no longer take the key with it;
+ * - every profile that differed only by an encrypted key gets `ownAI` for good;
+ * - every profile left on the general AI loses its old engine and its AI keys
+ *   in the store — nothing shows them any more, and an export or a rotated
+ *   general key must not leave a copy behind;
+ * - `aiSecretsFrom` goes.
+ *
+ * Without the marker it returns both unchanged.
+ */
+export function settleGeneralAI(
+  settings: AppSettings,
+  raw: SecretStore,
+  fallback: AIConfig
+): { settings: AppSettings; store: SecretStore } {
+  const from = settings.aiSecretsFrom
+  if (!from || !settings.ai) return { settings, store: raw }
+  const store: SecretStore = { ...raw }
+  if (!store[GENERAL_AI_SECRETS_ID] && raw[from]) {
+    const general = aiSecretsOf(restoreAIKeys(settings.ai, raw[from]))
+    if (Object.keys(general).length > 0) store[GENERAL_AI_SECRETS_ID] = general
+  }
+  const profiles = withKeyOnlyExceptions(settings, raw).map((p) => {
+    if (p.ownAI === true) return p
+    if (store[p.id]) store[p.id] = withoutAISecrets(store[p.id])
+    return { ...p, ai: withoutAIEngine(p.ai, fallback) }
+  })
+  // The source profile may be gone: its entry only lived on for the seed.
+  if (store[from] && !profiles.some((p) => p.id === from)) store[from] = withoutAISecrets(store[from])
+  for (const id of Object.keys(store)) if (Object.keys(store[id]).length === 0) delete store[id]
+  const { aiSecretsFrom: _from, ...rest } = settings
+  void _from
+  return { settings: { ...rest, profiles }, store }
+}
+
+/**
+ * A save built on settings read before main settled the general AI (it still
+ * carries `aiSecretsFrom`, the file no longer does): it must not put the marker
+ * back nor undo what settling decided. Profiles that got their own AI keep it;
+ * the others drop the old engine again.
+ */
+export function reconcileSettledSave(incoming: AppSettings, onDisk: AppSettings, fallback: AIConfig): AppSettings {
+  const own = new Set(onDisk.profiles.filter((p) => p.ownAI === true).map((p) => p.id))
+  const { aiSecretsFrom: _from, ...rest } = incoming
+  void _from
+  return {
+    ...rest,
+    profiles: incoming.profiles.map((p) => {
+      if (p.ownAI === true) return p
+      if (own.has(p.id)) return { ...p, ownAI: true }
+      return { ...p, ai: withoutAIEngine(p.ai, fallback) }
     })
   }
 }
@@ -278,6 +437,16 @@ const normalizerOf: Record<ServerTokenField, (raw: string) => string | null> = {
 }
 
 /**
+ * The store ids a settings object still owns: its profiles', and — while the
+ * general AI's keys still live there (`aiSecretsFrom`) — that profile's even
+ * after it was deleted, or pruning would take the general AI's only key.
+ */
+export function secretOwnerIds(settings: Pick<AppSettings, 'profiles' | 'aiSecretsFrom'>): string[] {
+  const ids = (settings.profiles ?? []).map((p) => p.id)
+  return settings.aiSecretsFrom ? [...ids, settings.aiSecretsFrom] : ids
+}
+
+/**
  * Drops entries for profiles that no longer exist and, given the profiles
  * themselves, every server token whose server the profile no longer lists. The
  * merge path keeps whatever a save did not mention, so without this a server
@@ -285,7 +454,8 @@ const normalizerOf: Record<ServerTokenField, (raw: string) => string | null> = {
  * later silently restored an old — maybe revoked — token.
  */
 export function pruneSecrets(store: SecretStore, profileIds: string[], profiles?: Profiles): SecretStore {
-  const keep = new Set(profileIds)
+  // The general AI's entry belongs to no profile, so no profile list removes it.
+  const keep = new Set([...profileIds, GENERAL_AI_SECRETS_ID])
   const listed = profiles ? new Map(profiles.map(migrateGitlabProfile).map((p) => [p.id, p])) : null
   const out: SecretStore = {}
   for (const [id, secrets] of Object.entries(store)) {

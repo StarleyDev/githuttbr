@@ -132,9 +132,9 @@ export function DiffViewer({
   const lines = useMemo(() => parseDiff(diff), [diff])
 
   // ─── Hover-to-explain over the diff's own lines ───
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
-  const hoverOn = useSettingsStore((s) => s.activeProfile().ai.hoverExplain !== false)
-  const hoverKey = useSettingsStore((s) => s.activeProfile().ai.hoverExplainKey ?? 'shift')
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
+  const hoverOn = useSettingsStore((s) => s.activeAI().hoverExplain !== false)
+  const hoverKey = useSettingsStore((s) => s.activeAI().hoverExplainKey ?? 'shift')
   // The diff only shows hunks, so the window has gaps. Numbers come from the new
   // side where there is one, and from the old side for removed lines.
   const hoverLines = useMemo<NumberedLine[]>(

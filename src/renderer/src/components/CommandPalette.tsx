@@ -100,7 +100,7 @@ export function CommandPalette(): React.JSX.Element {
   const repos = useRepoStore((s) => s.repos)
   const tabs = useSettingsStore((s) => s.settings.tabs)
   const activeTabId = useSettingsStore((s) => s.settings.activeTabId)
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
   const editor = useSettingsStore((s) => s.settings.editor)
 

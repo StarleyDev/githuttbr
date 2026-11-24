@@ -192,15 +192,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
-  const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiFor = useSettingsStore((s) => s.aiFor)
   const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   // The Conventional-Commit type dropdown shows only when the profile's commit
   // style is Conventional (Settings → Profile → Preferences).
-  const commitStyle = useSettingsStore((s) => s.activeProfile().ai.commitStyle)
+  const commitStyle = useSettingsStore((s) => s.activeAI().commitStyle)
   const usesConventional = commitStyle === 'conventional' || commitStyle === 'gitmoji-conventional'
   const usesGitmoji = commitStyle === 'gitmoji' || commitStyle === 'gitmoji-conventional'
   // Switch the active commit style straight from the composer. AI-only styles
@@ -210,8 +209,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     [aiEnabled]
   )
   const setCommitStyle = (v: CommitStyle): void => {
-    const p = activeProfile()
-    useSettingsStore.getState().saveProfile({ ...p, ai: { ...p.ai, commitStyle: v } })
+    const store = useSettingsStore.getState()
+    store.saveAIFor(store.activeProfile().id, { commitStyle: v })
   }
 
   const layout = useUIStore((s) => s.layout)
@@ -740,7 +739,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     let message = description.trim() ? `${summary.trim()}\n\n${description.trim()}` : summary.trim()
     if (!message) return
     const trailer = `Co-authored-by: ${MYAPPDESK_COAUTHOR}`
-    if (activeProfile().ai.coAuthor !== false && !message.includes(trailer)) {
+    if (useSettingsStore.getState().activeAI().coAuthor !== false && !message.includes(trailer)) {
       message = `${message}\n\n${trailer}`
     }
     // Trailers the repository asks every commit to carry (`Refs: {ticket}`…).

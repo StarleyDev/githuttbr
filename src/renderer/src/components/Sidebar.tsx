@@ -335,8 +335,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
-  const activeProfile = useSettingsStore((s) => s.activeProfile)
-  const aiEnabled = activeProfile().ai.enabled !== false
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
   // Todos are app state, not repository state: they live in settings keyed by

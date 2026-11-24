@@ -56,6 +56,21 @@ const e = (page: SettingsPageId, key: TranslationKey, hint?: TranslationKey, tab
 
 /** In sidebar order, then top to bottom within a page — the order ties keep. */
 export const SETTINGS_INDEX: readonly SettingsEntry[] = [
+  // Profile — the profile bar on top, then the page
+  e('profile', 'settings.newProfile'),
+  e('profile', 'settings.gitIdentity'),
+  e('profile', 'profileAvatar.title'),
+  e('profile', 'settings.preferences'),
+  e('profile', 'signing.title'),
+  e('profile', 'signing.signAll', 'signing.signAllHint'),
+
+  // Integrations
+  e('integrations', 'settings.ghesTitle'),
+  e('integrations', 'settings.gitlabServersTitle'),
+  e('integrations', 'settings.bbsTitle'),
+  e('integrations', 'localCi.title'),
+  e('integrations', 'localCi.enable', 'localCi.intro'),
+
   // General
   e('general', 'settings.language'),
   e('general', 'settings.general'),
@@ -104,38 +119,28 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('layout', 'settings.worktreeShortLabels', 'settings.worktreeShortLabelsHint'),
   e('layout', 'settings.resetPanelSizes', 'settings.resetPanelSizesHint'),
 
-  // Profile
-  e('profile', 'settings.gitIdentity'),
-  e('profile', 'profileAvatar.title'),
-  e('profile', 'settings.preferences'),
-  e('profile', 'signing.title'),
-  e('profile', 'signing.signAll', 'signing.signAllHint'),
-
   // Workspaces
   e('workspaces', 'ws.title'),
 
-  // Integrations
-  e('integrations', 'settings.ghesTitle'),
-  e('integrations', 'settings.gitlabServersTitle'),
-  e('integrations', 'settings.bbsTitle'),
-  e('integrations', 'localCi.title'),
-  e('integrations', 'localCi.enable', 'localCi.intro'),
-
-  // AI
+  // AI — the general AI is an app page; the AI preferences belong to each profile
   e('ai', 'settings.aiEnabled', 'settings.aiEnabledHint'),
-  e('ai', 'settings.generateDescription', 'settings.generateDescriptionHint'),
-  e('ai', 'settings.coAuthor', 'settings.coAuthorHint'),
-  e('ai', 'settings.branchNamingStyle'),
-  e('ai', 'settings.conflictStyle'),
-  e('ai', 'settings.hoverExplain', 'settings.hoverExplainHint'),
-  e('ai', 'settings.hoverExplainKey'),
-  e('ai', 'settings.explainStyle'),
-  e('ai', 'settings.repoChat'),
-  e('ai', 'settings.repoChatEnable', 'settings.repoChatEnableHint'),
-  e('ai', 'settings.repoChatCommitted', 'settings.repoChatCommittedHint'),
-  e('ai', 'settings.repoChatActions', 'settings.repoChatActionsHint'),
-  e('ai', 'settings.repoChatReadOnly', 'settings.repoChatReadOnlyHint'),
-  e('ai', 'settings.repoChatRemoteActions', 'settings.repoChatRemoteActionsHint'),
+  e('ai', 'settings.aiByProfile', 'settings.aiByProfileHint'),
+  e('profile', 'settings.profileAiTitle', 'settings.profileAiGeneral'),
+  e('profile', 'settings.useOwnAi', 'settings.profileAiGeneral'),
+  e('profile', 'settings.profileAiPrefs', 'settings.profileAiPrefsHint'),
+  e('profile', 'settings.generateDescription', 'settings.generateDescriptionHint'),
+  e('profile', 'settings.coAuthor', 'settings.coAuthorHint'),
+  e('profile', 'settings.branchNamingStyle'),
+  e('profile', 'settings.conflictStyle'),
+  e('profile', 'settings.hoverExplain', 'settings.hoverExplainHint'),
+  e('profile', 'settings.hoverExplainKey'),
+  e('profile', 'settings.explainStyle'),
+  e('profile', 'settings.repoChat'),
+  e('profile', 'settings.repoChatEnable', 'settings.repoChatEnableHint'),
+  e('profile', 'settings.repoChatCommitted', 'settings.repoChatCommittedHint'),
+  e('profile', 'settings.repoChatActions', 'settings.repoChatActionsHint'),
+  e('profile', 'settings.repoChatReadOnly', 'settings.repoChatReadOnlyHint'),
+  e('profile', 'settings.repoChatRemoteActions', 'settings.repoChatRemoteActionsHint'),
 
   // Themes — the Theme tab
   e('themes', 'settings.appearance', undefined, 'theme'),

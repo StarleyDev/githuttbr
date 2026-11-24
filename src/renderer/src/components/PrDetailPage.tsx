@@ -200,7 +200,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     useUIStore.getState().openModal({ kind: 'pr-preview', repoPath, number, remote })
   }
 
-  const aiEnabled = profile.ai.enabled !== false
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   // The AI review reads the PR's diff as the host gave it, once the files are
   // in; until then it falls back to comparing the branches locally.
   const reviewWithAi = (): void => {

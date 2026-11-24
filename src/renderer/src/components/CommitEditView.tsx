@@ -65,7 +65,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const [preview, setPreview] = useState<CommitEditPreview | null>(null)
   const [busy, setBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const aiFor = useSettingsStore((s) => s.aiFor)
   const branch = useRepoStore((s) => s.repos[repoPath]?.branches.current ?? '')
 

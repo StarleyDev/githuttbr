@@ -176,9 +176,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const goHit = (delta: number): void =>
     setActiveHit((i) => (hitCount ? (i + delta + hitCount) % hitCount : 0))
   const t = useT()
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
-  const hoverExplainOn = useSettingsStore((s) => s.activeProfile().ai.hoverExplain !== false)
-  const hoverExplainKey = useSettingsStore((s) => s.activeProfile().ai.hoverExplainKey ?? 'shift')
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
+  const hoverExplainOn = useSettingsStore((s) => s.activeAI().hoverExplain !== false)
+  const hoverExplainKey = useSettingsStore((s) => s.activeAI().hoverExplainKey ?? 'shift')
   const [content, setContent] = useState<string | null>(null)
   // Size-cap refusal from main (byte count) + the user's explicit override.
   const [tooLarge, setTooLarge] = useState<number | null>(null)

@@ -73,7 +73,7 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 
 ## Configurações
 
-**Configurações → IA → Chat do repositório**:
+**Configurações → Perfil → Preferências de IA deste perfil → Chat do repositório** (cada perfil tem as suas):
 
 | Configuração | O que faz |
 |---|---|
@@ -207,7 +207,7 @@ local consiga retirar.
 
 ### Modos de aprovação
 
-O menu com escudo abaixo da caixa de mensagem (também em **Configurações → IA
+O menu com escudo abaixo da caixa de mensagem (também em **Configurações → Perfil
 → Chat do repositório**) decide como um cartão executa:
 
 | Modo | Executa |

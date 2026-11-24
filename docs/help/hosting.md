@@ -363,7 +363,7 @@ Limits:
 - **https only.** A plain `http://` address is refused, because the token would
   cross the network in clear text. So is an address with a user name or
   password in it (the token has its own field), or with `?` or `#`.
-- **Servers sign in with a token.** *Sign in with git* finds a gitlab.com login;
+- **Servers sign in with a token.** *Link to the profile* finds a gitlab.com login;
   for a server, paste a personal access token. git's own credential helper still
   answers for push and fetch where the profile has nothing, as it always did.
 - Over ssh the host is matched, not the path, so two servers on one host under
@@ -439,7 +439,7 @@ Limits:
   "couldn't load"), and Projects fields stay empty on a server that predates
   them.
 - **Not on a server:** the notifications inbox and uploading an SSH key stay
-  github.com's, and *Sign in with git* (the GitHub CLI or git's helper) links
+  github.com's, and *Link to the profile* (the GitHub CLI or git's helper) links
   github.com accounts only — a server always takes a token.
 - GitHub Enterprise Cloud with data residency (`<name>.ghe.com`) is not
   covered: its API lives at a different address, so the list refuses it.
@@ -707,8 +707,8 @@ Gitcito can also borrow whatever your **git credential helper** already holds,
 so an org you have already authenticated for often needs no setup at all. See
 [Security & secrets](security.md).
 
-Each profile **links its own account**. In Settings → Integrations, **Sign in
-with git** looks for a login already on the machine — git's credential helper,
+Each profile **links its own account**. In Settings → Integrations, **Link to the
+profile** looks for a login already on the machine — git's credential helper,
 then the **GitHub CLI**'s active account, then the helper's own sign-in window
 — and ties that account to the profile. Nothing is shared implicitly: a new
 profile starts disconnected, and an account another profile already linked is

@@ -534,7 +534,7 @@ export default function App(): React.JSX.Element {
   const settingsLoaded = useSettingsStore((s) => s.loaded)
   const settings = useSettingsStore((s) => s.settings)
   // Chat is only a surface while its provider is configured to answer.
-  const activeProfile = useSettingsStore((s) => s.activeProfile())
+  const activeAI = useSettingsStore((s) => s.activeAI())
   const ensure = useRepoStore((s) => s.ensure)
   const terminalOpenByRepo = useUIStore((s) => s.terminalOpenByRepo)
   const problemsOpenByRepo = useUIStore((s) => s.problemsOpenByRepo)
@@ -1212,7 +1212,7 @@ export default function App(): React.JSX.Element {
           const selectedDetailsAvailable = !!repo.selected || forceConflictPanel
           const detailsState = rightPanelDetailsState(!!repo.selected, forceConflictPanel, repo.status)
           const detailsAvailable = detailsState.available
-          const chatAvailable = repoChatAvailable(activeProfile.ai)
+          const chatAvailable = repoChatAvailable(activeAI)
           const chatOpen = chatPanelOpen && chatAvailable
           const activeRightPanelTab =
             rightPanelTab === 'chat' && chatOpen

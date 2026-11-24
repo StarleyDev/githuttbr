@@ -121,7 +121,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     const id = setTimeout(() => setShowSwitching(true), SWITCH_LOADING_DELAY_MS)
     return () => clearTimeout(id)
   }, [switching])
-  const chatAvailable = useSettingsStore((s) => repoChatAvailable(s.activeProfile().ai))
+  const chatAvailable = useSettingsStore((s) => repoChatAvailable(s.activeAI()))
   const chatPanelOpen = useUIStore((s) => s.chatPanelOpen)
   const rightPanelTab = useUIStore((s) => s.rightPanelTab)
   const openChatPanel = useUIStore((s) => s.openChatPanel)

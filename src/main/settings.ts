@@ -6,6 +6,7 @@ import { copyPrivateFile, updatePrivateFile, writePrivateFile } from './privateF
 import { openSettingsExport, sealSettingsExport } from './settingsEncryption'
 import type { SettingsDecryptResult } from '../shared/settingsEncryption'
 import {
+  defaultAIConfig,
   defaultSettings,
   type AccountLink,
   type AppSettings,
@@ -41,8 +42,11 @@ import {
   isSubsetStore,
   mergeSecretStores,
   pruneSecrets,
+  reconcileSettledSave,
   saveOver,
   scrubServerUrls,
+  secretOwnerIds,
+  settleGeneralAI,
   secretValues,
   secretView,
   stripSettingsSecrets,
@@ -51,6 +55,7 @@ import {
   type SecretView
 } from '../shared/secrets'
 import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
+import { effectiveAI, ensureGeneralAI } from '../shared/aiScope'
 import {
   adoptExistingConsent,
   canUseKeychain,
@@ -151,11 +156,7 @@ let secretCache: SecretStore | null = null
 /** The stored tokens with a plaintext settings file's over them — the file wins, it is what the user last saved. */
 function plaintextMerged(stored: SecretStore, settings: AppSettings): SecretStore {
   const profiles = settings.profiles ?? []
-  return pruneSecrets(
-    mergeSecretStores(stored, extractSecrets(settings)),
-    profiles.map((p) => p.id),
-    profiles
-  )
+  return pruneSecrets(mergeSecretStores(stored, extractSecrets(settings)), secretOwnerIds(settings), profiles)
 }
 
 async function canEncrypt(): Promise<boolean> {
@@ -435,7 +436,9 @@ async function savedFileJson(
   }
   const keep = withoutSlots(onDisk, drop)
   if (Object.keys(keep).length === 0) return settingsFileJson(settings)
-  return JSON.stringify(withoutStaleKeys(applySecrets(stripSettingsSecrets(settings), keep)), null, 2)
+  // No seed: the keep-list is plaintext found in the file, and must neither
+  // spread a profile's key onto the general AI nor decide any profile's `ownAI`.
+  return JSON.stringify(withoutStaleKeys(applySecrets(stripSettingsSecrets(settings), keep, { seed: false })), null, 2)
 }
 
 /**
@@ -495,7 +498,14 @@ async function fromFile(
   // Existing install without the key → treat as already onboarded.
   // A one-instance GitLab profile becomes a server list here, on every read —
   // the file is also written by imports and older builds (see withMigratedAI).
-  return { settings: migrateGitlabSettings({ ...defaultSettings(), onboardingCompleted: true, ...clean }), raw: now }
+  // The defaults' general AI is dropped first: a file without one predates it,
+  // and `ensureGeneralAI` builds it from the profiles instead. Here, before any
+  // credential is applied, so every reader — locked or not — derives the same
+  // thing from the same file.
+  const { ai: _defaultAI, ...defaults } = defaultSettings()
+  void _defaultAI
+  const merged = ensureGeneralAI({ ...defaults, onboardingCompleted: true, ...clean })
+  return { settings: migrateGitlabSettings(merged), raw: now }
 }
 
 /**
@@ -531,7 +541,7 @@ async function readPlain(mode: ReadMode = 'background'): Promise<{ settings: App
  */
 function withMigratedAI(settings: AppSettings): AppSettings {
   return {
-    ...settings,
+    ...ensureGeneralAI(settings),
     profiles: (settings.profiles ?? []).map((p) => ({ ...p, ai: migrateAIConfig(p.ai) }))
   }
 }
@@ -647,11 +657,34 @@ async function readWithSecrets(
     // could not be written, go in now that it is readable — from the queued
     // unlock only. A failed write keeps them in memory, as before: this read still answers.
     if (mode === 'queued') await persistPendingLocked().catch(() => undefined)
+    // Only when the read above saw the seed: settling re-reads the file, and a
+    // settled install has nothing to settle.
+    if (mode === 'queued' && plain.settings.aiSecretsFrom) await settleGeneralAILocked().catch(() => undefined)
     const after = await readPlain(mode)
     // Plaintext the move above could not strip is still on screen (`readPlain`).
     const applied = mergeSecretStores(after.applied, inMemorySecrets())
     return { settings: withMigratedAI(applySecrets(after.settings, applied)), applied }
   })
+}
+
+/**
+ * Finishes the move to the general AI (`settleGeneralAI`) on the first queued,
+ * decrypted read: until then its keys live only in the entry of the profile it
+ * was built from. The store goes first — if the file rewrite then loses to a
+ * save, the next unlock settles again from where the store already is. Waits
+ * while the file still carries plaintext keys: the move into the store comes
+ * first. Runs inside `exclusive`.
+ */
+async function settleGeneralAILocked(): Promise<void> {
+  if (!secretCache) return
+  const { settings, raw } = await readStoredSettings('queued')
+  if (!settings.aiSecretsFrom || raw === null || hasSettingsSecrets(settings)) return
+  if (!(await canEncrypt())) return
+  const settled = settleGeneralAI(settings, secretCache, defaultAIConfig())
+  const store = pruneSecrets(settled.store, secretOwnerIds(settled.settings), settled.settings.profiles)
+  await saveSecrets(store)
+  setSecretCache(store)
+  await rewriteIfUnchanged(raw, settingsFileJson(settled.settings))
 }
 
 /**
@@ -971,8 +1004,8 @@ export async function peekBoundProfileAuth(
 }
 
 /**
- * The API key for one AI account of the active profile, or undefined when none
- * is configured.
+ * The API key for one AI account of the active profile's effective AI — the
+ * general one, or its own (`effectiveAI`) — or undefined when none is configured.
  *
  * The renderer only ever sees these keys after the user opens Settings (that is
  * the one call that unlocks). Every other AI action starts from a store that
@@ -992,10 +1025,9 @@ export async function activeProfileAiKey(accountId?: string): Promise<string | u
   const settings = await readSettingsWithSecrets('tokens')
   const profile = settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0]
   if (!profile?.ai) return undefined
-  const account = accountId
-    ? profile.ai.accounts?.find((a) => a.id === accountId)
-    : accountFor(profile.ai)
-  const key = account?.apiKey ?? profile.ai.apiKey
+  const ai = effectiveAI(settings, profile)
+  const account = accountId ? ai.accounts?.find((a) => a.id === accountId) : accountFor(ai)
+  const key = account?.apiKey ?? ai.apiKey
   return key && key.trim() ? key.trim() : undefined
 }
 
@@ -1012,8 +1044,9 @@ async function persistPendingLocked(): Promise<void> {
   const stored = secretCache ?? (await loadSecrets(true))
   // Still unreadable: they stay where they are, and Settings keeps saying so.
   if (!stored) return
-  const { profiles } = await readSettings()
-  const ids = profiles.map((p) => p.id)
+  const current = await readSettings()
+  const { profiles } = current
+  const ids = secretOwnerIds(current)
   const merged = pruneSecrets(mergeSecretStores(withoutSlots(stored, pendingClears), sessionSecrets), ids, profiles)
   await saveSecrets(merged)
   setSecretCache(merged)
@@ -1073,6 +1106,15 @@ async function writeSettings(
   options: SettingsSaveOptions
 ): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
+  // A renderer that read the settings before an unlock settled the general AI
+  // still carries the seed: its save must not bring it, or the old engines, back.
+  // An import's seed is its own (it names the imported profiles), never stale.
+  if (incoming.aiSecretsFrom && !options.import) {
+    const disk = await readStoredSettings().catch(() => null)
+    if (disk && disk.raw !== null && !disk.settings.aiSecretsFrom) {
+      incoming = reconcileSettledSave(incoming, disk.settings, defaultAIConfig())
+    }
+  }
   // An import or an older renderer may still send the one-instance shape — or
   // a server address with a credential in it, which the plain file must not keep.
   const settings = migrateGitlabSettings(scrubServerUrls(incoming))
@@ -1083,7 +1125,7 @@ async function writeSettings(
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const profiles = settings.profiles ?? []
-  const ids = profiles.map((p) => p.id)
+  const ids = secretOwnerIds(settings)
   // A token the save carries is the new one; one it leaves blank is cleared
   // only where this sender held it with the value stored now (`saveOver`) —
   // clearing a token in the UI, deleting a profile. Anything it was never
@@ -1200,12 +1242,8 @@ async function replaceUnreadableStore(): Promise<boolean> {
     // A backup already there is someone's tokens too: never written over.
     const target = existsSync(backupPath()) ? `${backupPath()}-${Date.now()}` : backupPath()
     await copyPrivateFile(secretsPath(), target)
-    const { profiles } = await readSettings()
-    const fresh = pruneSecrets(
-      sessionSecrets,
-      profiles.map((p) => p.id),
-      profiles
-    )
+    const current = await readSettings()
+    const fresh = pruneSecrets(sessionSecrets, secretOwnerIds(current), current.profiles)
     // Written without retiring backups: the one just made must outlive this call.
     const enc = safeStorage.encryptString(JSON.stringify(fresh))
     await writePrivateFile(secretsPath(), enc.toString('base64'))

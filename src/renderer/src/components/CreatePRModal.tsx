@@ -84,7 +84,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [meta, setMeta] = useState<PrPickerOptions | null>(null)
   const [metaState, setMetaState] = useState<'loading' | 'ready' | 'failed'>('loading')
   const [baseHint, setBaseHint] = useState<TranslationKey | null>(null)
-  const aiEnabled = profile.ai?.enabled !== false
+  const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const t = useT()
 
   // The host measures a PR against its own copy of the target, so the prefill

@@ -3,6 +3,14 @@ import { GROUP_COLORS, pickGroupColor } from '../lib/groupColors'
 import { migrateGitlabProfile } from '../../../shared/gitlabInstance'
 import { migrateAIConfig, needsAccountsNotice, resolveAI } from '../../../shared/aiAccounts'
 import {
+  effectiveAI,
+  ensureGeneralAI,
+  withAIPatch,
+  withGeneralAI,
+  withProfileOwnAI
+} from '../../../shared/aiScope'
+import {
+  defaultAIConfig,
   defaultProfile,
   defaultSettings,
   ICON_COLOR_MODES,
@@ -301,12 +309,36 @@ interface SettingsState {
 
   activeProfile(): Profile
   /**
-   * The active profile's AI config with the connection for `feature` resolved
-   * onto it. Every AI call site uses this instead of `activeProfile().ai`, so
-   * pointing one feature at a different account is a settings change and not a
-   * code change.
+   * The active profile's effective AI: its personal fields over the general
+   * AI's engine, or its own AI when it has one (`effectiveAI`). Read this, never
+   * `activeProfile().ai`, whose engine fields are ignored on a profile that uses
+   * the general AI. Memoized per config, so a selector returning it is stable.
+   */
+  activeAI(): AIConfig
+  /** `activeAI` for any profile; the active one's for an unknown id. */
+  aiOfProfile(id: string): AIConfig
+  /**
+   * The active profile's effective AI with the connection for `feature`
+   * resolved onto it. Every AI call site uses this, so pointing one feature at
+   * a different account is a settings change and not a code change.
    */
   aiFor(feature?: AIFeature): AIConfig
+  /** Write the general AI's engine (`AppSettings.ai`). Personal fields in `ai` are ignored. */
+  saveGeneralAI(ai: AIConfig): void
+  /**
+   * Give a profile its own AI (starting from a copy of the general engine) or
+   * hand it back to the general one (its own engine is reset, so its keys leave
+   * the store) — see `withProfileOwnAI`. Turning it on needs the general AI's
+   * keys in hand (`unlocked`): copied while still encrypted they would arrive
+   * blank. Refused then, and `false` says so; disable the control on `!unlocked`.
+   */
+  setProfileOwnAI(profileId: string, own: boolean): boolean
+  /**
+   * Change a profile's AI where it takes effect: engine fields to the general
+   * AI when the profile uses it, or to its own; personal fields always to the
+   * profile. Every surface that edits AI settings writes through this.
+   */
+  saveAIFor(profileId: string, partial: Partial<AIConfig>): void
   setActiveProfile(id: string): void
   saveProfile(profile: Profile): void
   addProfile(name: string): void
@@ -478,6 +510,9 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
     ai: migrateAIConfig({ ...defaults.ai, ...p.ai, accounts: p.ai?.accounts })
   }))
   if (upgraded && !settings.aiAccountsNoticeSeen) noticeAccounts = true
+  // Main has normally done this already; an import of an older export has not.
+  // After the profiles, so the general AI is built from migrated configs.
+  settings = ensureGeneralAI(settings)
   const sd = defaultSettings()
   settings.appThemeId = settings.appThemeId ?? sd.appThemeId
   settings.codeThemeId = settings.codeThemeId ?? sd.codeThemeId
@@ -582,6 +617,23 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   return { settings: migrateRepoAliases(settings), noticeAccounts }
 }
 
+/**
+ * `effectiveAI` memoized on the objects it reads. Components select it straight
+ * from the store, and a fresh object on every call would re-render them on any
+ * settings change at all; keyed by the profile's `ai`, so a different profile
+ * never evicts another's entry.
+ */
+const effectiveMemo = new WeakMap<AIConfig, { general: AIConfig; own: boolean; result: AIConfig }>()
+
+function memoEffectiveAI(settings: AppSettings, profile: Profile): AIConfig {
+  const own = profile.ownAI === true
+  const hit = effectiveMemo.get(profile.ai)
+  if (hit && hit.general === settings.ai && hit.own === own) return hit.result
+  const result = effectiveAI(settings, profile)
+  effectiveMemo.set(profile.ai, { general: settings.ai, own, result })
+  return result
+}
+
 /** Session-only stack of recently closed tabs, for reopen (⌘⇧T). */
 const closedTabStack: { tab: TabState; idx: number }[] = []
 
@@ -643,6 +695,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // A pre-workspaces export carries only `tabs`: drop our workspaces so the
     // normalizer wraps its tabs, instead of replacing them with our own.
     if (incoming.tabs && !incoming.workspaces) merged.workspaces = []
+    // An export from before the general AI brings profiles without one: build
+    // it from those profiles (`ensureGeneralAI`), not keep ours — that would
+    // put every imported profile on an engine none of them had.
+    if (incoming.profiles && !incoming.ai) delete (merged as Partial<AppSettings>).ai
+    // Our keychain seed names our profiles; with the file's profiles or general
+    // AI in place it would hand our key to an account of theirs that merely
+    // shares its id. The file's own seed (an older export) is the only one kept.
+    if (incoming.profiles || incoming.ai) {
+      if (incoming.aiSecretsFrom) merged.aiSecretsFrom = incoming.aiSecretsFrom
+      else delete merged.aiSecretsFrom
+    }
     const { settings, noticeAccounts } = normalizeSettings(merged)
     if (noticeAccounts) pendingAccountsNotice = true
     // An imported file may switch the language; have its strings ready first.
@@ -670,7 +733,24 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     return settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0] ?? defaultProfile()
   },
 
-  aiFor: (feature) => resolveAI(get().activeProfile().ai, feature),
+  activeAI: () => memoEffectiveAI(get().settings, get().activeProfile()),
+
+  aiOfProfile: (id) => {
+    const profile = get().settings.profiles.find((p) => p.id === id)
+    return profile ? memoEffectiveAI(get().settings, profile) : get().activeAI()
+  },
+
+  aiFor: (feature) => resolveAI(get().activeAI(), feature),
+
+  saveGeneralAI: (ai) => get().update((s) => withGeneralAI(s, ai)),
+
+  setProfileOwnAI: (profileId, own) => {
+    if (own && !get().unlocked) return false
+    get().update((s) => withProfileOwnAI(s, profileId, own, defaultAIConfig()))
+    return true
+  },
+
+  saveAIFor: (profileId, partial) => get().update((s) => withAIPatch(s, profileId, partial)),
 
   setActiveProfile: (id) => get().update((s) => ({ ...s, activeProfileId: id })),
 
@@ -682,6 +762,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   addProfile: (name) =>
     get().update((s) => {
+      // No `ownAI`: a new profile answers with the general AI, so accounts and
+      // keys set up once are not set up again per profile.
       const profile: Profile = { ...defaultProfile(), id: uid(), name }
       return { ...s, profiles: [...s.profiles, profile], activeProfileId: profile.id }
     }),

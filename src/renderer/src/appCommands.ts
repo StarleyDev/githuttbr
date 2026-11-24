@@ -52,7 +52,7 @@ function toggleRightPanel(): void {
     !!data.selected,
     forceConflict,
     ui.chatPanelOpen,
-    repoChatAvailable(useSettingsStore.getState().activeProfile().ai)
+    repoChatAvailable(useSettingsStore.getState().activeAI())
   )
   if (action === 'open-chat') {
     ui.openChatPanel()
