@@ -1,5 +1,17 @@
 
 
+## [4.46.0](https://github.com/StarleyDev/githuttbr/compare/v4.45.0...v4.46.0) (2026-11-24)
+
+
+### Features
+
+* **settings:** split profile and app settings, and share one AI across profiles ([42ae873](https://github.com/StarleyDev/githuttbr/commit/42ae873a0fcf1228892e935f9f800baad20db95a))
+
+
+### Bug Fixes
+
+* **site:** name the Apache 2.0 license in the hero badge and sponsor copy ([ac9dad1](https://github.com/StarleyDev/githuttbr/commit/ac9dad1a0453be36c3ea01039919134ebe5f0da7))
+
 ## [4.45.0](https://github.com/StarleyDev/githuttbr/compare/v4.44.0...v4.45.0) (2026-11-24)
 
 
