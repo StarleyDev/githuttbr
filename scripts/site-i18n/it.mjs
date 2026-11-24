@@ -22,7 +22,7 @@ export const it = {
     'Grafo, staging riga per riga, rebase, worktree, sottomoduli, LFS.<br />Le cose ordinarie, fatte come si deve — più alcune che non sapevi che git potesse fare.',
   'hero.download': 'Scarica per la tua piattaforma',
   'hero.source': 'Vedi il codice',
-  'hero.terms': 'Gratis · MIT · v{version}',
+  'hero.terms': 'Gratis · Apache 2.0 · v{version}',
   'hero.graphAlt': 'Il grafo dei commit di GitHuttBr',
 
   'features.title': 'Alcune cose che non sapevi che git potesse fare',
@@ -60,7 +60,7 @@ export const it = {
 
   'sponsor.title': 'Sostieni GitHuttBr',
   'sponsor.body':
-    'Gratis, MIT, senza backend, senza telemetria, niente da piazzarti — quindi non c’è niente da comprare. Le sponsorizzazioni pagano il certificato Apple Developer che serve alle build macOS firmate, il manuale e le traduzioni. Una segnalazione di bug vale esattamente lo stesso.',
+    'Gratis, Apache 2.0, senza backend, senza telemetria, niente da piazzarti — quindi non c’è niente da comprare. Le sponsorizzazioni pagano il certificato Apple Developer che serve alle build macOS firmate, il manuale e le traduzioni. Una segnalazione di bug vale esattamente lo stesso.',
   'sponsor.cta': 'Sostieni su GitHub',
 
   'doc.titleSuffix': 'Manuale di GitHuttBr',

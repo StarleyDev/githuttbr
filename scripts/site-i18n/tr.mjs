@@ -23,7 +23,7 @@ export const tr = {
     'Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS.<br />Sıradan şeyler, düzgünce yapılmış — artı git’in yapabildiğini bilmediğiniz birkaçı.',
   'hero.download': 'Platformunuz için indirin',
   'hero.source': 'Kaynağı görüntüle',
-  'hero.terms': 'Ücretsiz · MIT · v{version}',
+  'hero.terms': 'Ücretsiz · Apache 2.0 · v{version}',
   'hero.graphAlt': 'GitHuttBr commit grafiği',
 
   'features.title': 'Git’in yapabildiğini bilmediğiniz birkaç şey',
@@ -60,7 +60,7 @@ export const tr = {
 
   'sponsor.title': 'GitHuttBr’ya destek olun',
   'sponsor.body':
-    'Ücretsiz, MIT, arka uç yok, telemetri yok, üste satılacak bir şey yok — yani satın alınacak bir şey de yok. Sponsorluk, imzalı macOS yapılarının ihtiyaç duyduğu Apple Developer sertifikasını, el kitabını ve çevirileri karşılıyor. Hata bildirimleri de tam olarak o kadar değerli.',
+    'Ücretsiz, Apache 2.0, arka uç yok, telemetri yok, üste satılacak bir şey yok — yani satın alınacak bir şey de yok. Sponsorluk, imzalı macOS yapılarının ihtiyaç duyduğu Apple Developer sertifikasını, el kitabını ve çevirileri karşılıyor. Hata bildirimleri de tam olarak o kadar değerli.',
   'sponsor.cta': 'GitHub üzerinden destek olun',
 
   'doc.titleSuffix': 'GitHuttBr el kitabı',

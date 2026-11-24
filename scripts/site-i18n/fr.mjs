@@ -23,7 +23,7 @@ export const fr = {
     'Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS.<br />Les choses ordinaires, faites correctement — plus quelques-unes dont vous ne soupçonniez pas git capable.',
   'hero.download': 'Télécharger pour votre plateforme',
   'hero.source': 'Voir le code source',
-  'hero.terms': 'Gratuit · MIT · v{version}',
+  'hero.terms': 'Gratuit · Apache 2.0 · v{version}',
   'hero.graphAlt': 'Le graphe des commits de GitHuttBr',
 
   'features.title': 'Quelques choses dont vous ne soupçonniez pas git capable',
@@ -66,7 +66,7 @@ export const fr = {
 
   'sponsor.title': 'Soutenir GitHuttBr',
   'sponsor.body':
-    'Gratuit, MIT, pas de backend, pas de télémétrie, rien à vous vendre en plus — il n’y a donc rien à acheter. Le parrainage paie le certificat Apple Developer dont les builds macOS signés ont besoin, le manuel et les traductions. Les rapports de bugs valent tout autant.',
+    'Gratuit, Apache 2.0, pas de backend, pas de télémétrie, rien à vous vendre en plus — il n’y a donc rien à acheter. Le parrainage paie le certificat Apple Developer dont les builds macOS signés ont besoin, le manuel et les traductions. Les rapports de bugs valent tout autant.',
   'sponsor.cta': 'Devenir sponsor sur GitHub',
 
   'doc.titleSuffix': 'Manuel de GitHuttBr',

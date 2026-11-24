@@ -22,7 +22,7 @@ export const ptBR = {
     'Grafo, staging linha a linha, rebase, worktrees, submódulos, LFS.<br />As coisas comuns, feitas direito — além de algumas que você não sabia que o git podia fazer.',
   'hero.download': 'Baixar para a sua plataforma',
   'hero.source': 'Ver o código',
-  'hero.terms': 'Grátis · MIT · v{version}',
+  'hero.terms': 'Grátis · Apache 2.0 · v{version}',
   'hero.graphAlt': 'O grafo de commits do GitHuttBr',
 
   'features.title': 'Algumas coisas que você não sabia que o git podia fazer',
@@ -60,7 +60,7 @@ export const ptBR = {
 
   'sponsor.title': 'Patrocine o GitHuttBr',
   'sponsor.body':
-    'Grátis, MIT, sem backend, sem telemetria, nada para te empurrar — então não há nada para comprar. O patrocínio paga o certificado da Apple Developer de que os builds assinados de macOS precisam, o manual e as traduções. Um relato de bug vale exatamente o mesmo.',
+    'Grátis, Apache 2.0, sem backend, sem telemetria, nada para te empurrar — então não há nada para comprar. O patrocínio paga o certificado da Apple Developer de que os builds assinados de macOS precisam, o manual e as traduções. Um relato de bug vale exatamente o mesmo.',
   'sponsor.cta': 'Patrocinar no GitHub',
 
   'doc.titleSuffix': 'Manual do GitHuttBr',

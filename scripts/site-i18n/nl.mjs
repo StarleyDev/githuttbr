@@ -23,7 +23,7 @@ export const nl = {
     'Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS.<br />De gewone dingen, netjes gedaan — plus een paar waarvan je niet wist dat git ze kon.',
   'hero.download': 'Download voor jouw platform',
   'hero.source': 'Broncode bekijken',
-  'hero.terms': 'Gratis · MIT · v{version}',
+  'hero.terms': 'Gratis · Apache 2.0 · v{version}',
   'hero.graphAlt': 'De commitgrafiek van GitHuttBr',
 
   'features.title': 'Een paar dingen waarvan je niet wist dat git ze kon',
@@ -63,7 +63,7 @@ export const nl = {
 
   'sponsor.title': 'GitHuttBr sponsoren',
   'sponsor.body':
-    'Gratis, MIT, geen backend, geen telemetrie, niets om je aan te smeren — er valt dus niets te kopen. Sponsoring betaalt het Apple Developer-certificaat dat de ondertekende macOS-builds nodig hebben, het handboek en de vertalingen. Bugmeldingen zijn net zoveel waard.',
+    'Gratis, Apache 2.0, geen backend, geen telemetrie, niets om je aan te smeren — er valt dus niets te kopen. Sponsoring betaalt het Apple Developer-certificaat dat de ondertekende macOS-builds nodig hebben, het handboek en de vertalingen. Bugmeldingen zijn net zoveel waard.',
   'sponsor.cta': 'Sponsor op GitHub',
 
   'doc.titleSuffix': 'GitHuttBr-handboek',

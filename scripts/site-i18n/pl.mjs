@@ -23,7 +23,7 @@ export const pl = {
     'Graf, przechowalnia z dokładnością do linii, rebase, worktree, podmoduły, LFS.<br />Zwyczajne rzeczy, zrobione porządnie — plus kilka, których nikt się po gicie nie spodziewa.',
   'hero.download': 'Pobierz na swoją platformę',
   'hero.source': 'Zobacz źródła',
-  'hero.terms': 'Za darmo · MIT · v{version}',
+  'hero.terms': 'Za darmo · Apache 2.0 · v{version}',
   'hero.graphAlt': 'Graf commitów w GitHuttBr',
 
   'features.title': 'Kilka rzeczy, których nikt się po gicie nie spodziewa',
@@ -61,7 +61,7 @@ export const pl = {
 
   'sponsor.title': 'Wesprzyj GitHuttBr',
   'sponsor.body':
-    'Za darmo, na licencji MIT, bez backendu, bez telemetrii, bez niczego do dosprzedania — więc nie ma tu czego kupować. Wsparcie opłaca certyfikat Apple Developer, którego potrzebują podpisane kompilacje dla macOS, podręcznik i tłumaczenia. Zgłoszenia błędów są warte dokładnie tyle samo.',
+    'Za darmo, na licencji Apache 2.0, bez backendu, bez telemetrii, bez niczego do dosprzedania — więc nie ma tu czego kupować. Wsparcie opłaca certyfikat Apple Developer, którego potrzebują podpisane kompilacje dla macOS, podręcznik i tłumaczenia. Zgłoszenia błędów są warte dokładnie tyle samo.',
   'sponsor.cta': 'Wesprzyj w serwisie GitHub',
 
   'doc.titleSuffix': 'Podręcznik GitHuttBr',

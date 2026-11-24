@@ -22,7 +22,7 @@ export const zhCN = {
     '提交图、逐行暂存、变基、工作树、子模块、LFS。<br />那些寻常的事，都做到位了——外加几件你不知道 git 还能做的事。',
   'hero.download': '下载适合你平台的版本',
   'hero.source': '查看源码',
-  'hero.terms': '免费 · MIT · v{version}',
+  'hero.terms': '免费 · Apache 2.0 · v{version}',
   'hero.graphAlt': 'GitHuttBr 的提交图',
 
   'features.title': '几件你不知道 git 还能做的事',
@@ -59,7 +59,7 @@ export const zhCN = {
 
   'sponsor.title': '赞助 GitHuttBr',
   'sponsor.body':
-    '免费、MIT、没有后端、没有遥测、没有任何东西要向你追加销售——所以也没有什么可买的。赞助用来支付签名版 macOS 构建所需的 Apple Developer 证书、手册和翻译。报告缺陷的价值一样大。',
+    '免费、Apache 2.0、没有后端、没有遥测、没有任何东西要向你追加销售——所以也没有什么可买的。赞助用来支付签名版 macOS 构建所需的 Apple Developer 证书、手册和翻译。报告缺陷的价值一样大。',
   'sponsor.cta': '在 GitHub 上赞助',
 
   'doc.titleSuffix': 'GitHuttBr 手册',

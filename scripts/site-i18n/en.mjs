@@ -44,7 +44,7 @@ export const en = {
     'Graph, staging by line, rebase, worktrees, submodules, LFS.<br />The ordinary things, done properly — plus a few you did not know git could do.',
   'hero.download': 'Download for your platform',
   'hero.source': 'View source',
-  'hero.terms': 'Free · MIT · v{version}',
+  'hero.terms': 'Free · Apache 2.0 · v{version}',
   'hero.graphAlt': 'The GitHuttBr commit graph',
 
   'features.title': 'A few things you did not know git could do',
@@ -81,7 +81,7 @@ export const en = {
 
   'sponsor.title': 'Sponsor GitHuttBr',
   'sponsor.body':
-    'Free, MIT, no backend, no telemetry, nothing to upsell — so there is nothing to buy. Sponsorship pays for the Apple Developer certificate the signed macOS builds need, the handbook and the translations. Bug reports are worth just as much.',
+    'Free, Apache 2.0, no backend, no telemetry, nothing to upsell — so there is nothing to buy. Sponsorship pays for the Apple Developer certificate the signed macOS builds need, the handbook and the translations. Bug reports are worth just as much.',
   'sponsor.cta': 'Sponsor on GitHub',
 
   'doc.titleSuffix': 'GitHuttBr handbook',

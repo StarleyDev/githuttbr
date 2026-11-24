@@ -22,7 +22,7 @@ export const ko = {
     '그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS.<br />평범한 것들을 제대로 — 그리고 git이 할 줄은 몰랐던 몇 가지까지.',
   'hero.download': '내 플랫폼용 다운로드',
   'hero.source': '소스 보기',
-  'hero.terms': '무료 · MIT · v{version}',
+  'hero.terms': '무료 · Apache 2.0 · v{version}',
   'hero.graphAlt': 'GitHuttBr 커밋 그래프',
 
   'features.title': 'git이 할 줄은 몰랐던 몇 가지',
@@ -59,7 +59,7 @@ export const ko = {
 
   'sponsor.title': 'GitHuttBr 후원하기',
   'sponsor.body':
-    '무료, MIT, 백엔드 없음, 텔레메트리 없음, 더 팔 것도 없음 — 그러니 살 것이 없어요. 후원은 서명된 macOS 빌드에 필요한 Apple Developer 인증서와 안내서, 그리고 번역에 쓰여요. 버그 신고도 그만큼 값져요.',
+    '무료, Apache 2.0, 백엔드 없음, 텔레메트리 없음, 더 팔 것도 없음 — 그러니 살 것이 없어요. 후원은 서명된 macOS 빌드에 필요한 Apple Developer 인증서와 안내서, 그리고 번역에 쓰여요. 버그 신고도 그만큼 값져요.',
   'sponsor.cta': 'GitHub에서 후원하기',
 
   'doc.titleSuffix': 'GitHuttBr 안내서',

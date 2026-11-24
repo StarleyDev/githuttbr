@@ -22,7 +22,7 @@ export const ja = {
     'グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS。<br />ふつうのことを、きちんと — さらに、git にできるとは知らなかったことをいくつか。',
   'hero.download': 'お使いのプラットフォーム用をダウンロード',
   'hero.source': 'ソースを見る',
-  'hero.terms': '無料 · MIT · v{version}',
+  'hero.terms': '無料 · Apache 2.0 · v{version}',
   'hero.graphAlt': 'GitHuttBr のコミットグラフ',
 
   'features.title': 'git にできるとは知らなかったことを、いくつか',
@@ -61,7 +61,7 @@ export const ja = {
 
   'sponsor.title': 'GitHuttBr をスポンサーする',
   'sponsor.body':
-    '無料、MIT、バックエンドなし、テレメトリなし、売りつけるものもなし — つまり買うものは何もありません。スポンサーは、署名済み macOS ビルドに必要な Apple Developer 証明書と、ハンドブックと翻訳の費用になります。バグ報告にも同じだけの価値があります。',
+    '無料、Apache 2.0、バックエンドなし、テレメトリなし、売りつけるものもなし — つまり買うものは何もありません。スポンサーは、署名済み macOS ビルドに必要な Apple Developer 証明書と、ハンドブックと翻訳の費用になります。バグ報告にも同じだけの価値があります。',
   'sponsor.cta': 'GitHub でスポンサーする',
 
   'doc.titleSuffix': 'GitHuttBr ハンドブック',
