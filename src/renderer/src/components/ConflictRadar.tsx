@@ -3,6 +3,7 @@ import { AlertTriangle, ChevronDown, ChevronRight, Check, CircleSlash, Loader2, 
 import type { MergePreviewEntry, MergePreviewResult, MergeRiskKind } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { openBranchCompare } from '../lib/branchCompare'
 import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
 import { useT, interp } from '../i18n'
@@ -49,7 +50,6 @@ export function ConflictRadar({
   repoPath: string
   initialBase?: string
 }): React.JSX.Element {
-  const openModal = useUIStore((s) => s.openModal)
   const toast = useUIStore((s) => s.toast)
   const repo = useRepoStore((s) => s.repos[repoPath])
   const patch = useRepoStore((s) => s.patch)
@@ -133,7 +133,7 @@ export function ConflictRadar({
     })
 
   const compare = (ref: string): void =>
-    openModal({ kind: 'branch-compare', repoPath, branchA: ref, branchB: base })
+    openBranchCompare({ repoPath, branchA: ref, branchB: base })
 
   return (
     <div className="radar-root">

@@ -18,7 +18,6 @@
       "remoteAuth": "credentials",
       "editRemote": "branching",
       "bisect": "recovery",
-      "branch-compare": "merging",
       "changelog-gen": "changelog",
       "cheatsheet": "keyboard",
       "clean": "clean",

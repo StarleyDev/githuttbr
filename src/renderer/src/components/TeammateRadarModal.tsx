@@ -13,6 +13,7 @@ import {
 import type { MergeRiskKind, TeammateRadarEntry, TeammateRadarResult } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { openBranchCompare } from '../lib/branchCompare'
 import { useRepoStore, repoActions } from '../stores/repo'
 import { useT, t as tr, interp } from '../i18n'
 
@@ -35,7 +36,6 @@ function timeLabel(sec: number): string {
 export function TeammateRadarModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
-  const openModal = useUIStore((s) => s.openModal)
   const repo = useRepoStore((s) => s.repos[repoPath])
   const patch = useRepoStore((s) => s.patch)
 
@@ -84,7 +84,7 @@ export function TeammateRadarModal({ repoPath }: { repoPath: string }): React.JS
 
   const compare = (e: TeammateRadarEntry): void => {
     const current = repo?.branches.current || 'HEAD'
-    openModal({ kind: 'branch-compare', repoPath, branchA: e.ref, branchB: current })
+    openBranchCompare({ repoPath, branchA: e.ref, branchB: current })
   }
 
   const entries = result?.entries ?? []

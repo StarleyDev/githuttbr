@@ -75,13 +75,31 @@ recorded. If it conflicts, you land in [the resolver](conflicts.md).
 
 ## Compare any two refs
 
-Pick a base and a compare ref — branch, tag or raw SHA, with a swap button — and
-you get ahead/behind counts, the commits unique to each side, the full combined
-diff, and a one-click hand-off to **open a PR**.
+See what a branch would bring in, or what it is missing, before you merge it.
+Pick a compare ref and a base — branch, tag or raw SHA, with a swap button — and
+the comparison opens in the centre pane, in place of the graph, with the commits
+unique to each side.
 
-![Comparing two branches: what is unique to each side, and the combined diff](../screenshots/branch-compare.webp)
+| Mode | Shows |
+|------|-------|
+| **All changes** | Everything the compare ref adds since it left the base, as one combined diff. |
+| **By commit** | One commit at a time. Click a commit in either list to see only its changes — from *All changes* too. |
 
-Reachable from the sidebar (compare with the current branch), the Tools menu, or
+The changed files are listed on the left with their added and removed lines, and
+only the file you pick is drawn, so a huge comparison scrolls like a small one.
+**Create PR…** hands the commits to a new pull request; <kbd>Esc</kbd> or the
+close button goes back to the graph.
+
+Limits: a merge commit is shown against its first parent, and a binary file is
+listed without a text diff. While the conflict resolver or the commit editor is
+open, close it first — the comparison would open behind it.
+
+![Comparing two branches: the commits unique to each side, the files, and one file's diff](../screenshots/branch-compare.webp)
+
+![The same comparison by commit: one commit's files and diff](../screenshots/branch-compare-commit.webp)
+
+Reachable from the sidebar (compare with the current branch), by dropping one
+branch on another, the Tools menu, the conflict and teammate radars, or
 <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset

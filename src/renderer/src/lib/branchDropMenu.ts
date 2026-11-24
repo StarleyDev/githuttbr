@@ -2,6 +2,7 @@ import type { MenuItem } from '../stores/ui'
 import { useUIStore } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { gitApi } from '../infrastructure/api'
+import { openBranchCompare } from './branchCompare'
 import {
   branchDropActions,
   fastForwardCandidate,
@@ -159,7 +160,7 @@ function dropItem(repoPath: string, source: DropRef, target: DropRef, action: Br
     case 'compare':
       return {
         label,
-        onClick: () => ui.openModal({ kind: 'branch-compare', repoPath, branchA: source.name, branchB: target.name })
+        onClick: () => openBranchCompare({ repoPath, branchA: source.name, branchB: target.name })
       }
   }
 }

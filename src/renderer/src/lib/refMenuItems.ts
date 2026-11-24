@@ -2,6 +2,7 @@ import type { MenuItem } from '../stores/ui'
 import { useUIStore } from '../stores/ui'
 import { repoActions } from '../stores/repo'
 import { refIntegrationActions } from './refMenu'
+import { openBranchCompare } from './branchCompare'
 import { t, interp } from '../i18n'
 
 /**
@@ -28,10 +29,7 @@ export function refIntegrationItems(repoPath: string, ref: string, current: stri
       default:
         return {
           ...base,
-          onClick: () =>
-            useUIStore
-              .getState()
-              .openModal({ kind: 'branch-compare', repoPath, branchA: ref, branchB: current || 'HEAD' })
+          onClick: () => openBranchCompare({ repoPath, branchA: ref, branchB: current || 'HEAD' })
         }
     }
   })

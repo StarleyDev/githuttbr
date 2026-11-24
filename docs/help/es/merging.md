@@ -75,15 +75,33 @@ la topología registrada. Si hay conflicto, aterrizas en
 
 ## Comparar dos refs cualesquiera
 
-Elige una ref base y una de comparación — rama, etiqueta o SHA en crudo, con un
-botón para intercambiarlas — y obtienes los contadores de adelanto/retraso, los
-commits exclusivos de cada lado, el diff combinado completo y un traspaso en un
-clic para **abrir una PR**.
+Mira lo que traería una rama, o lo que le falta, antes de fusionarla. Elige una
+ref de comparación y una base — rama, tag o SHA, con un botón para
+intercambiarlas — y la comparación se abre en el panel central, en lugar del
+grafo, con los commits exclusivos de cada lado.
 
-![Comparar dos ramas: lo exclusivo de cada lado y el diff combinado](../../screenshots/branch-compare.webp)
+| Modo | Muestra |
+|------|-------|
+| **Todos los cambios** | Todo lo que la ref de comparación añade desde que salió de la base, en un diff combinado. |
+| **Por commit** | Un commit cada vez. Haz clic en un commit de cualquiera de las listas para ver solo sus cambios — también desde *Todos los cambios*. |
 
-Se llega desde la barra lateral (comparar con la rama actual), desde el menú
-Herramientas o con <kbd>⌘K</kbd>.
+Los archivos cambiados se listan a la izquierda con las líneas añadidas y
+eliminadas, y solo se dibuja el archivo elegido, así que una comparación enorme
+se desplaza como una pequeña. **Crear PR…** lleva los commits a un nuevo pull
+request; <kbd>Esc</kbd> o el botón de cerrar vuelve al grafo.
+
+Límites: un commit de merge se muestra contra su primer padre, y un archivo
+binario aparece en la lista sin diff de texto. Si el resolvedor de conflictos o
+el editor de commits está abierto, ciérralo antes — la comparación se abriría
+detrás.
+
+![Comparando dos ramas: los commits exclusivos de cada lado, los archivos y el diff de un archivo](../../screenshots/branch-compare.webp)
+
+![La misma comparación por commit: los archivos y el diff de un commit](../../screenshots/branch-compare-commit.webp)
+
+Disponible desde la barra lateral (comparar con la rama actual), soltando una
+rama sobre otra, el menú Herramientas, los radares de conflictos y de
+compañeros, o <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 

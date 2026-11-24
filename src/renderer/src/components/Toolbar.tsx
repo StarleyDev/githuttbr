@@ -58,6 +58,7 @@ import {
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
+import { openBranchCompare } from '../lib/branchCompare'
 import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
 import { useT, useUiLanguage, interp } from '../i18n'
@@ -282,7 +283,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             repo.branches.locals.find((b) => /^(main|master)$/.test(b.name) && b.name !== cur)?.name ??
             repo.branches.locals.find((b) => b.name !== cur)?.name ??
             cur
-          openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
+          openBranchCompare({ repoPath: path, branchA: cur, branchB: base })
         }
       },
       {

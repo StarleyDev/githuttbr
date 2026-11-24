@@ -77,15 +77,33 @@ résolveur](conflicts.md).
 
 ## Comparer deux références quelconques
 
-Choisissez une base et une référence à comparer — branche, étiquette ou SHA brut,
-avec un bouton d'échange — et vous obtenez les compteurs d'avance/retard, les
-commits propres à chaque côté, le diff combiné complet, et un passage de relais
-en un clic vers **ouvrir une pull request**.
+Voyez ce qu’une branche apporterait, ou ce qui lui manque, avant de la
+fusionner. Choisissez une ref à comparer et une base — branche, tag ou SHA brut,
+avec un bouton pour les échanger — et la comparaison s’ouvre dans le panneau
+central, à la place du graphe, avec les commits propres à chaque côté.
 
-![Comparaison de deux branches : ce qui est propre à chaque côté, et le diff combiné](../../screenshots/branch-compare.webp)
+| Mode | Affiche |
+|------|-------|
+| **Toutes les modifications** | Tout ce que la ref comparée ajoute depuis qu’elle a quitté la base, en un diff combiné. |
+| **Par commit** | Un commit à la fois. Cliquez sur un commit de l’une ou l’autre liste pour ne voir que ses modifications — y compris depuis *Toutes les modifications*. |
 
-Accessible depuis la barre latérale (comparer avec la branche courante), depuis
-le menu Outils, ou par <kbd>⌘K</kbd>.
+Les fichiers modifiés sont listés à gauche avec leurs lignes ajoutées et
+supprimées, et seul le fichier choisi est affiché : une énorme comparaison
+défile comme une petite. **Créer une PR…** transmet les commits à une nouvelle
+pull request ; <kbd>Échap</kbd> ou le bouton de fermeture revient au graphe.
+
+Limites : un commit de merge est montré par rapport à son premier parent, et un
+fichier binaire est listé sans diff texte. Si le résolveur de conflits ou
+l’éditeur de commit est ouvert, fermez-le d’abord — la comparaison s’ouvrirait
+derrière.
+
+![Comparaison de deux branches : les commits propres à chaque côté, les fichiers et le diff d’un fichier](../../screenshots/branch-compare.webp)
+
+![La même comparaison par commit : les fichiers et le diff d’un commit](../../screenshots/branch-compare-commit.webp)
+
+Accessible depuis la barre latérale (comparer avec la branche courante), en
+déposant une branche sur une autre, le menu Outils, les radars de conflits et de
+coéquipiers, ou <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, réinitialisation
 

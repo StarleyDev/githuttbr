@@ -56,6 +56,7 @@ import {
   ListTodo
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
+import { openBranchCompare } from '../lib/branchCompare'
 import { useProblemsStore } from '../stores/problems'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -309,7 +310,7 @@ export function CommandPalette(): React.JSX.Element {
         const cur = repo.branches.current || 'HEAD'
         const base = repo.branches.locals.find((bb) => /^(main|master)$/.test(bb.name) && bb.name !== cur)?.name
           ?? repo.branches.locals.find((bb) => bb.name !== cur)?.name ?? cur
-        ui.openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
+        openBranchCompare({ repoPath: path, branchA: cur, branchB: base })
       }) },
       { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics repo settings', icon: <BarChart3 size={15} />, run: act(() => ui.openModal({ kind: 'repo-settings', repoPath: path, tab: 'insights' })) },
       { id: 'wiki', title: t('cmd.wiki'), group: 'Actions', keywords: 'wiki docs documentation deepwiki overview architecture ai generated', icon: <BookOpen size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'wiki', repoPath: path })) },

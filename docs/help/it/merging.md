@@ -75,15 +75,32 @@ topologia resti registrata. Se va in conflitto, atterri
 
 ## Confrontare due ref qualsiasi
 
-Scegli una base e un ref da confrontare — branch, tag o SHA grezzo, con un
-pulsante di scambio — e ottieni i conteggi avanti/indietro, i commit esclusivi di
-ciascun lato, il diff combinato completo e un passaggio in un clic ad **aprire
-una PR**.
+Guarda cosa porterebbe un branch, o cosa gli manca, prima di farne il merge.
+Scegli una ref da confrontare e una base — branch, tag o SHA grezzo, con un
+pulsante per scambiarle — e il confronto si apre nel pannello centrale, al posto
+del grafo, con i commit esclusivi di ciascun lato.
 
-![Il confronto fra due branch: cosa è esclusivo di ciascun lato, e il diff combinato](../../screenshots/branch-compare.webp)
+| Modalità | Mostra |
+|------|-------|
+| **Tutte le modifiche** | Tutto ciò che la ref confrontata aggiunge da quando ha lasciato la base, in un unico diff combinato. |
+| **Per commit** | Un commit alla volta. Fai clic su un commit di una delle due liste per vederne solo le modifiche — anche da *Tutte le modifiche*. |
 
-Ci arrivi dalla barra laterale (confronto con il branch corrente), dal menu
-Strumenti o con <kbd>⌘K</kbd>.
+I file modificati sono elencati a sinistra con le righe aggiunte e rimosse, e
+viene disegnato solo il file scelto, così un confronto enorme scorre come uno
+piccolo. **Crea PR…** passa i commit a una nuova pull request; <kbd>Esc</kbd> o
+il pulsante di chiusura torna al grafo.
+
+Limiti: un commit di merge è mostrato rispetto al primo genitore, e un file
+binario compare nell’elenco senza diff testuale. Se il risolutore di conflitti o
+l’editor dei commit è aperto, chiudilo prima — il confronto si aprirebbe dietro.
+
+![Confronto tra due branch: i commit esclusivi di ciascun lato, i file e il diff di un file](../../screenshots/branch-compare.webp)
+
+![Lo stesso confronto per commit: i file e il diff di un commit](../../screenshots/branch-compare-commit.webp)
+
+Raggiungibile dalla barra laterale (confronta con il branch corrente),
+trascinando un branch su un altro, dal menu Strumenti, dai radar dei conflitti e
+dei colleghi, o con <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 

@@ -72,15 +72,33 @@ wilt vastleggen. Conflicteert het, dan land je in [de oplosser](conflicts.md).
 
 ## Twee willekeurige refs vergelijken
 
-Kies een basis en een vergelijkingsref — branch, tag of kale SHA, met een
-wisselknop — en je krijgt tellingen voor voor/achter, de commits die uniek zijn
-voor elke kant, de volledige gecombineerde diff, en met één klik een overdracht
-naar **een PR openen**.
+Zie wat een branch zou meebrengen, of wat hij mist, voordat je hem merget. Kies
+een vergelijkingsref en een basis — branch, tag of ruwe SHA, met een wisselknop
+— en de vergelijking opent in het middenpaneel, in plaats van de graaf, met de
+commits die alleen aan elke kant staan.
 
-![Twee branches vergelijken: wat uniek is aan elke kant, en de gecombineerde diff](../../screenshots/branch-compare.webp)
+| Modus | Toont |
+|------|-------|
+| **Alle wijzigingen** | Alles wat de vergelijkingsref toevoegt sinds hij de basis verliet, als één gecombineerde diff. |
+| **Per commit** | Eén commit tegelijk. Klik op een commit in een van beide lijsten om alleen zijn wijzigingen te zien — ook vanuit *Alle wijzigingen*. |
 
-Bereikbaar vanuit de zijbalk (vergelijken met de huidige branch), het Tools-menu,
-of <kbd>⌘K</kbd>.
+De gewijzigde bestanden staan links met hun toegevoegde en verwijderde regels,
+en alleen het gekozen bestand wordt getekend, zodat een enorme vergelijking
+scrolt als een kleine. **PR maken…** geeft de commits door aan een nieuwe pull
+request; <kbd>Esc</kbd> of de sluitknop gaat terug naar de graaf.
+
+Beperkingen: een mergecommit wordt getoond tegenover zijn eerste ouder, en een
+binair bestand staat in de lijst zonder tekstdiff. Staat de conflictoplosser of
+de commit-editor open, sluit die dan eerst — de vergelijking zou erachter
+openen.
+
+![Twee branches vergelijken: de commits die alleen aan elke kant staan, de bestanden en de diff van één bestand](../../screenshots/branch-compare.webp)
+
+![Dezelfde vergelijking per commit: de bestanden en de diff van één commit](../../screenshots/branch-compare-commit.webp)
+
+Bereikbaar via de zijbalk (vergelijken met de huidige branch), door een branch
+op een andere te slepen, het menu Gereedschap, de conflict- en teamradar, of
+<kbd>⌘K</kbd>.
 
 ## Cherry-picken, reverten, resetten
 

@@ -75,15 +75,33 @@ Topologie festgehalten haben willst. Gibt es Konflikte, landest du
 
 ## Beliebige zwei Refs vergleichen
 
-Wähle eine Basis und eine Vergleichs-Ref — Branch, Tag oder rohe SHA, mit einem
-Tauschknopf — und du bekommst Ahead/Behind-Zähler, die Commits, die nur auf
-einer Seite existieren, das vollständige kombinierte Diff und eine
-Ein-Klick-Übergabe zum **PR öffnen**.
+Sieh dir an, was ein Branch mitbringen würde oder was ihm fehlt, bevor du ihn
+mergst. Wähle eine Vergleichs-Ref und eine Basis — Branch, Tag oder rohe SHA,
+mit einem Tausch-Button — und der Vergleich öffnet sich im mittleren Bereich
+anstelle des Graphen, mit den Commits, die nur auf einer Seite liegen.
 
-![Zwei Branches vergleichen: was jeder Seite eigen ist, und das kombinierte Diff](../../screenshots/branch-compare.webp)
+| Modus | Zeigt |
+|------|-------|
+| **Alle Änderungen** | Alles, was die Vergleichs-Ref hinzufügt, seit sie die Basis verlassen hat, als ein kombinierter Diff. |
+| **Pro Commit** | Ein Commit nach dem anderen. Klicke auf einen Commit in einer der beiden Listen, um nur seine Änderungen zu sehen — auch aus *Alle Änderungen* heraus. |
 
-Erreichbar aus der Seitenleiste (Vergleich mit dem aktuellen Branch), dem Menü
-Werkzeuge oder über <kbd>⌘K</kbd>.
+Die geänderten Dateien stehen links mit ihren hinzugefügten und entfernten
+Zeilen, und nur die gewählte Datei wird gezeichnet — ein riesiger Vergleich
+scrollt wie ein kleiner. **PR erstellen…** übergibt die Commits an einen neuen
+Pull Request; <kbd>Esc</kbd> oder der Schließen-Button führt zurück zum Graphen.
+
+Grenzen: Ein Merge-Commit wird gegen seinen ersten Elternteil gezeigt, und eine
+Binärdatei erscheint ohne Text-Diff in der Liste. Ist der Konfliktlöser oder der
+Commit-Editor offen, schließe ihn zuerst — der Vergleich würde dahinter
+aufgehen.
+
+![Vergleich zweier Branches: die Commits jeder Seite, die Dateien und der Diff einer Datei](../../screenshots/branch-compare.webp)
+
+![Derselbe Vergleich pro Commit: die Dateien und der Diff eines Commits](../../screenshots/branch-compare-commit.webp)
+
+Erreichbar über die Seitenleiste (mit dem aktuellen Branch vergleichen), durch
+Ziehen eines Branches auf einen anderen, das Werkzeuge-Menü, das Konflikt- und
+das Teamradar oder <kbd>⌘K</kbd>.
 
 ## Cherry-Pick, Revert, Reset
 

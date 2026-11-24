@@ -66,6 +66,30 @@ async function openSections(page, titles) {
 }
 
 /**
+ * Open the branch comparison in `mode` ('all' | 'commit').
+ *
+ * The combined diff is computed as branchB...branchA, so the branch that is
+ * ahead has to go first — with main first the view reads "No differences" and
+ * the shot teaches nothing. `branches` is a BranchesPayload, not an array: the
+ * locals carry the names.
+ */
+async function openCompareShot(page, repoPath, mode) {
+  await page.evaluate(
+    ({ p, mode }) => {
+      const s = window.__shot
+      const names = (s.repo.getState().repos[p]?.branches?.locals ?? []).map((b) => b.name)
+      const branchB = names.find((n) => n === 'main') ?? names[0]
+      const branchA = names.find((n) => n !== branchB) ?? names[1]
+      if (branchA && branchB) {
+        s.ui.getState().setCompareView({ repoPath: p, branchA, branchB, mode, commit: '', file: '' })
+      }
+    },
+    { p: repoPath, mode }
+  )
+  await page.waitForTimeout(1200)
+}
+
+/**
  * Seed a repository's todo list through the settings store.
  *
  * Written straight into `repoTodos` rather than through `addTodo` so the ages
@@ -2433,26 +2457,23 @@ export const shots = [
     }
   },
   {
-    // Branch comparison — ahead/behind plus the commits on each side. Branch
-    // names come from the loaded repo so the shot survives scenario edits.
+    // Branch comparison, all changes — the commits unique to each side, the
+    // file list and one file's diff, in the centre pane. Branch names come from
+    // the loaded repo so the shot survives scenario edits.
     out: 'branch-compare',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page, repoPaths) => {
-      const repo = repoPaths['octopus-merge']
-      await page.evaluate((p) => {
-        const s = window.__shot
-        // branches is a BranchesPayload ({ current, locals, remotes, tags }),
-        // not an array — the locals carry the names.
-        const names = (s.repo.getState().repos[p]?.branches?.locals ?? []).map((b) => b.name)
-        // The combined diff is computed as branchB...branchA, so the branch that
-        // is ahead has to go first — with main first the panel reads "No
-        // differences" and the shot teaches nothing.
-        const branchB = names.find((n) => n === 'main') ?? names[0]
-        const branchA = names.find((n) => n !== branchB) ?? names[1]
-        if (branchA && branchB) s.ui.getState().openModal({ kind: 'branch-compare', repoPath: p, branchA, branchB })
-      }, repo)
-      await page.waitForTimeout(1200)
+      await openCompareShot(page, repoPaths['octopus-merge'], 'all')
+    }
+  },
+  {
+    // The same comparison by commit: one commit's files and diff.
+    out: 'branch-compare-commit',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      await openCompareShot(page, repoPaths['octopus-merge'], 'commit')
     }
   },
   {

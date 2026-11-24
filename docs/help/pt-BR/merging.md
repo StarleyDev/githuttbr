@@ -76,14 +76,32 @@ topologia registrada. Se conflitar, você cai n[o resolvedor](conflicts.md).
 
 ## Compare duas refs quaisquer
 
-Escolha uma base e uma ref de comparação — branch, tag ou SHA cru, com um botão de
-troca — e você recebe as contagens à frente/atrás, os commits exclusivos de cada
-lado, o diff combinado completo, e um repasse em um clique para **abrir um PR**.
+Veja o que uma branch traria, ou o que falta nela, antes de fazer o merge.
+Escolha uma ref de comparação e uma base — branch, tag ou SHA cru, com um botão
+de troca — e a comparação abre no painel central, no lugar do grafo, com os
+commits exclusivos de cada lado.
 
-![Comparando duas branches: o que é exclusivo de cada lado, e o diff combinado](../../screenshots/branch-compare.webp)
+| Modo | Mostra |
+|------|-------|
+| **Todas as alterações** | Tudo o que a ref de comparação acrescenta desde que saiu da base, num diff combinado. |
+| **Por commit** | Um commit por vez. Clique num commit de qualquer uma das listas para ver só as alterações dele — também a partir de *Todas as alterações*. |
 
-Acessível pela barra lateral (comparar com a branch atual), pelo menu Ferramentas,
-ou por <kbd>⌘K</kbd>.
+Os arquivos alterados ficam listados à esquerda, com as linhas adicionadas e
+removidas, e só o arquivo escolhido é desenhado, então uma comparação enorme
+rola como uma pequena. **Criar PR…** leva os commits para um novo pull request;
+<kbd>Esc</kbd> ou o botão de fechar volta para o grafo.
+
+Limites: um commit de merge é mostrado contra o primeiro pai, e um arquivo
+binário aparece na lista sem diff de texto. Com o resolvedor de conflitos ou o
+editor de commit aberto, feche-o antes — a comparação abriria atrás dele.
+
+![Comparando duas branches: os commits exclusivos de cada lado, os arquivos e o diff de um arquivo](../../screenshots/branch-compare.webp)
+
+![A mesma comparação por commit: os arquivos e o diff de um commit](../../screenshots/branch-compare-commit.webp)
+
+Acessível pela barra lateral (comparar com a branch atual), soltando uma branch
+sobre outra, pelo menu Ferramentas, pelos radares de conflito e de colegas, ou
+por <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 

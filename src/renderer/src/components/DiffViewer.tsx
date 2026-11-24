@@ -458,6 +458,8 @@ export function DiffViewer({
       e.stopPropagation()
       openFind()
     } else if (e.key === 'Escape' && findOpen) {
+      // Handled: a view that closes on Escape (the branch comparison) leaves it alone.
+      e.preventDefault()
       closeFind()
     }
   }

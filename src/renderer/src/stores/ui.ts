@@ -175,7 +175,6 @@ export type ModalSpec =
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
   | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
-  | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'teammate-radar'; repoPath: string }
   | {
@@ -319,6 +318,25 @@ export interface CommitEditViewState {
   draft?: CommitEditDraft
 }
 
+/** How the branch comparison lists changes: everything at once, or one commit. */
+export type CompareMode = 'all' | 'commit'
+
+/** Comparing two refs, open in the centre pane in place of the graph. Every
+ *  choice lives here, not in the component, so switching repository tabs (which
+ *  unmounts the pane) comes back to the same commit and file. */
+export interface CompareViewState {
+  repoPath: string
+  /** The ref being compared… */
+  branchA: string
+  /** …against this base. */
+  branchB: string
+  mode: CompareMode
+  /** The commit shown in 'commit' mode; '' picks the first one. */
+  commit: string
+  /** The file picked in the list; '' picks the first one. */
+  file: string
+}
+
 /** Active content-search term, mirrored from the commit panel so the center
  *  file/diff view can highlight matches. null = nothing to highlight. */
 export interface FileSearchState {
@@ -449,6 +467,7 @@ interface UIState {
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
   commitEditView: CommitEditViewState | null
+  compareView: CompareViewState | null
   /** File whose "why this conflicts" strip is open. Lives here rather than in
    *  the resolver so a background refresh, which remounts it, does not close it. */
   conflictWhy: string | null
@@ -508,6 +527,9 @@ interface UIState {
   setCommitEditView(view: CommitEditViewState | null): void
   /** Store the open commit editor's draft; ignored if that editor was closed meanwhile. */
   saveCommitEditDraft(repoPath: string, sha: string, draft: CommitEditDraft): void
+  setCompareView(view: CompareViewState | null): void
+  /** Change the open comparison; ignored if it was closed or belongs to another repository. */
+  updateCompareView(repoPath: string, patch: Partial<Omit<CompareViewState, 'repoPath'>>): void
   setConflictWhy(file: string | null): void
   setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
@@ -558,6 +580,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   fileView: null,
   conflictView: null,
   commitEditView: null,
+  compareView: null,
   conflictWhy: null,
   fileSearch: null,
   scrollToHash: null,
@@ -640,11 +663,14 @@ export const useUIStore = create<UIState>((set, get) => ({
   requestComposerIntent: (composerIntent) => set({ composerIntent }),
   consumeComposerIntent: () => set({ composerIntent: null }),
   setFileView: (fileView) =>
-    set({
+    set((s) => ({
       // Stamp each line-targeted open so clicking the same search hit twice
       // scrolls again instead of being deduped away by identical state.
-      fileView: fileView?.line != null ? { ...fileView, revealSeq: ++revealSeq } : fileView
-    }),
+      fileView: fileView?.line != null ? { ...fileView, revealSeq: ++revealSeq } : fileView,
+      // The comparison sits above the file viewer and holds no work: a file
+      // opened in its repository leaves it, or the file would open out of sight.
+      ...(fileView && s.compareView?.repoPath === fileView.repoPath ? { compareView: null } : {})
+    })),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),
   setCommitEditView: (commitEditView) => set({ commitEditView }),
@@ -654,6 +680,9 @@ export const useUIStore = create<UIState>((set, get) => ({
         ? { commitEditView: { ...s.commitEditView, draft } }
         : {}
     ),
+  setCompareView: (compareView) => set({ compareView }),
+  updateCompareView: (repoPath, patch) =>
+    set((s) => (s.compareView && s.compareView.repoPath === repoPath ? { compareView: { ...s.compareView, ...patch } } : {})),
   setConflictWhy: (conflictWhy) => set({ conflictWhy }),
   setFileSearch: (fileSearch) => set({ fileSearch }),
   requestScrollTo: (scrollToHash) => set({ scrollToHash }),

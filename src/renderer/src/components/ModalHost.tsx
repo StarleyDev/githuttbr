@@ -27,7 +27,6 @@ import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from '../lib/repo
 import { planWorktreeGroup, worktreeGroupName } from '../lib/worktrees'
 import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
-import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
 import { TeammateRadarModal } from './TeammateRadarModal'
 import { ResetToCommitModal } from './ResetToCommitModal'
@@ -2431,7 +2430,6 @@ export function ModalHost(): React.JSX.Element {
                   : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'
                   : modal.kind === 'interactive-rebase' ||
-                      modal.kind === 'branch-compare' ||
                       modal.kind === 'conflict-radar' ||
                       modal.kind === 'range-diff' ||
                       modal.kind === 'time-machine' ||
@@ -2493,9 +2491,6 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
               {modal.kind === 'interactive-rebase' && (
                 <InteractiveRebase repoPath={modal.repoPath} base={modal.base} baseSubject={modal.baseSubject} />
-              )}
-              {modal.kind === 'branch-compare' && (
-                <BranchComparison repoPath={modal.repoPath} branchA={modal.branchA} branchB={modal.branchB} />
               )}
               {modal.kind === 'keychain-consent' && (
                 <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />

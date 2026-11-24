@@ -11296,37 +11296,16 @@ input[type='range']:focus-visible {
   margin: 4px 0 12px;
 }
 
-/* ── Branch comparison (feature 12) ── */
+/* ── Branch comparison: a centre-pane view (was a modal) ── */
 .modal-tall { width: 820px; max-width: calc(100vw - 48px); }
-.bc-root { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-.bc-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 10px;
-}
-.bc-header-top { display: flex; align-items: center; gap: 10px; }
-.bc-header h3 { margin: 0; font-size: 14px; flex: 1; }
-.bc-labels { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.bc-branch-a, .bc-branch-b {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  max-width: 42%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.bc-branch-a { background: var(--accent-dim, rgba(99,102,241,.15)); color: var(--accent); }
-.bc-branch-b { background: var(--bg-3); color: var(--text-1); }
-.bc-vs { font-size: 11px; color: var(--text-3); flex: 0 0 auto; }
+.compare-header { flex-wrap: wrap; row-gap: 6px; }
+.compare-title { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-shrink: 0; }
+.compare-title svg { color: var(--accent, #6366f1); }
+.bc-labels { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
 .bc-ref-input {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 42%;
+  max-width: 320px;
 }
 /* The class sits on the picker wrapper; the text styling belongs to its input. */
 .bc-ref-input .refpick-input {
@@ -11336,6 +11315,84 @@ input[type='range']:focus-visible {
 }
 .bc-swap { flex: 0 0 auto; padding: 4px; color: var(--text-2); }
 .bc-swap:hover { color: var(--accent); }
+.bc-loading { display: flex; justify-content: center; padding: 40px; }
+.bc-badge { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; flex-shrink: 0; }
+.bc-badge.ahead { background: rgba(99,102,241,.15); color: var(--accent); }
+.bc-badge.behind { background: rgba(248,113,113,.12); color: var(--red, #f87171); }
+.bc-sha { font-size: 11px; color: var(--text-2); flex-shrink: 0; }
+.bc-msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-0); }
+.bc-date { font-size: 11px; color: var(--text-3); flex-shrink: 0; }
+.bc-empty { padding: 12px; font-size: 12px; color: var(--text-3); text-align: center; }
+
+/* Every list scrolls on its own and the diff shows one file at a time: a big
+   comparison as one block of diff is what could not be scrolled. */
+.compare-body { display: flex; flex: 1; min-height: 0; }
+.compare-side {
+  width: clamp(260px, 28%, 400px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-inline-end: 1px solid var(--border);
+  background: var(--bg-1);
+}
+.compare-modes { display: flex; gap: 2px; margin: 10px 10px 8px; padding: 2px; border-radius: 7px; background: var(--bg-2); }
+.compare-mode {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.compare-mode:hover { color: var(--text-0); }
+.compare-mode.active { background: var(--bg-0); color: var(--text-0); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.compare-commits { flex: 0 1 auto; max-height: 42%; overflow-y: auto; border-bottom: 1px solid var(--border); }
+.compare-group + .compare-group { border-top: 1px solid var(--border-soft); }
+.compare-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  background: var(--bg-1);
+}
+.compare-group-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compare-commit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  text-align: start;
+  cursor: pointer;
+}
+.compare-commit:hover { background: var(--bg-2); }
+.compare-commit.active { background: var(--bg-3); box-shadow: inset 2px 0 0 var(--accent, #6366f1); }
+.compare-files { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.compare-files-title { display: flex; align-items: center; gap: 6px; padding: 8px 10px 2px; font-size: 11.5px; font-weight: 600; color: var(--text-1); }
+.compare-files-count { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); }
+.compare-files-caption { padding: 0 10px 6px; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compare-files-list { flex: 1; min-height: 0; overflow-y: auto; }
+.compare-file-stat { flex-shrink: 0; font-family: var(--mono, monospace); font-size: 10.5px; }
+.compare-file-stat .add { color: var(--green, #46a758); }
+.compare-file-stat .del { color: var(--red, #e5484d); }
+.compare-diff { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.compare-diff-path { display: flex; align-items: baseline; gap: 8px; padding: 6px 14px; border-bottom: 1px solid var(--border-soft); font-size: 12px; flex-shrink: 0; }
+.compare-diff-file { font-family: var(--mono, monospace); color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compare-diff-from { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.compare-diff-scroll { flex: 1; min-height: 0; overflow: auto; }
 
 .stash-partial-toolbar { display: flex; align-items: center; margin: 8px 0 4px; }
 .stash-partial-all { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); cursor: pointer; }

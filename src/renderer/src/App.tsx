@@ -21,6 +21,7 @@ import { Sidebar } from './components/Sidebar'
 import { GraphView } from './components/GraphView'
 import { FileViewer } from './components/FileViewer'
 import { CommitEditView } from './components/CommitEditView'
+import { BranchCompareView } from './components/BranchCompareView'
 import { ConflictResolver } from './components/ConflictResolver'
 import { CommitDetails } from './components/CommitDetails'
 import { StashDetails } from './components/StashDetails'
@@ -534,6 +535,7 @@ export default function App(): React.JSX.Element {
   const problemsOpenByRepo = useUIStore((s) => s.problemsOpenByRepo)
   const fileView = useUIStore((s) => s.fileView)
   const commitEditView = useUIStore((s) => s.commitEditView)
+  const compareView = useUIStore((s) => s.compareView)
   const conflictView = useUIStore((s) => s.conflictView)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -1178,6 +1180,8 @@ export default function App(): React.JSX.Element {
                   <ConflictResolver key={conflictView.file} view={conflictView} />
                 ) : commitEditView && commitEditView.repoPath === repo.path ? (
                   <CommitEditView key={commitEditView.sha} view={commitEditView} />
+                ) : compareView && compareView.repoPath === repo.path ? (
+                  <BranchCompareView view={compareView} />
                 ) : fileView && fileView.repoPath === repo.path ? (
                   <FileViewer key={`${fileView.file}`} view={fileView} />
                 ) : (

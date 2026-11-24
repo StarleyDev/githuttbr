@@ -74,14 +74,32 @@ zapisaną topologię. Jeśli wejdzie w konflikt, lądujesz
 
 ## Porównanie dowolnych dwóch referencji
 
-Wybierz bazę i referencję do porównania — gałąź, tag albo surowy SHA, z
-przyciskiem zamiany miejscami — a dostaniesz liczniki przed/za, commity unikalne
-dla każdej ze stron, pełny zbiorczy diff i przekazanie jednym kliknięciem do
-**otwarcia PR-a**.
+Zobacz, co gałąź by wniosła albo czego jej brakuje, zanim ją scalisz. Wybierz
+ref do porównania i bazę — gałąź, tag lub surowy SHA, z przyciskiem zamiany — a
+porównanie otworzy się w środkowym panelu, w miejscu grafu, z commitami, które
+są tylko po jednej stronie.
 
-![Porównanie dwóch gałęzi: co jest unikalne dla każdej strony i zbiorczy diff](../../screenshots/branch-compare.webp)
+| Tryb | Pokazuje |
+|------|-------|
+| **Wszystkie zmiany** | Wszystko, co porównywany ref dodaje od chwili odejścia od bazy, jako jeden połączony diff. |
+| **Według commitu** | Jeden commit naraz. Kliknij commit na dowolnej z list, aby zobaczyć tylko jego zmiany — także z poziomu *Wszystkie zmiany*. |
 
-Dostępne z panelu bocznego (porównanie z bieżącą gałęzią), z menu Narzędzia albo
+Zmienione pliki są wypisane po lewej z liczbą dodanych i usuniętych linii, a
+rysowany jest tylko wybrany plik, więc ogromne porównanie przewija się jak małe.
+**Utwórz PR…** przekazuje commity do nowego pull requesta; <kbd>Esc</kbd> lub
+przycisk zamknięcia wraca do grafu.
+
+Ograniczenia: commit scalający jest pokazywany względem pierwszego rodzica, a
+plik binarny jest na liście bez diffu tekstowego. Gdy otwarty jest rozwiązywacz
+konfliktów lub edytor commitu, najpierw go zamknij — porównanie otworzyłoby się
+pod nim.
+
+![Porównanie dwóch gałęzi: commity unikalne dla każdej strony, pliki i diff jednego pliku](../../screenshots/branch-compare.webp)
+
+![To samo porównanie według commitu: pliki i diff jednego commitu](../../screenshots/branch-compare-commit.webp)
+
+Dostępne z paska bocznego (porównaj z bieżącą gałęzią), przez upuszczenie jednej
+gałęzi na drugą, z menu Narzędzia, z radarów konfliktów i współpracowników lub
 przez <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset

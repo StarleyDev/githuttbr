@@ -75,6 +75,7 @@ git actually is.
 | **[Diffs & previews](docs/help/diffs.md)** | Split or unified, word-level highlights, code that only moved marked as moved, image diffs. |
 | **[Semantic diff](docs/help/semantic-diff.md)** | What changed symbol by symbol — `startServer` → `bootServer` instead of a red/green wall, parsed with tree-sitter. |
 | **[What changed since](docs/help/range-diff.md)** | Someone force-pushed the branch you reviewed: `git range-diff` pairs the old and new commits, the old ones read from the reflog. |
+| **[Compare any two refs](docs/help/merging.md#compare-any-two-refs)** | Branch, tag or SHA against a base, in the centre pane: everything at once or one commit at a time, a file list beside the diff so a huge comparison still scrolls, and Create PR from there. |
 | **[Commit notes](docs/help/notes.md)** | Annotate a commit that is already pushed, without rewriting it. |
 | **[Signed commits](docs/help/signing.md)** | GPG, SSH or X.509 signing per repository, with a verification badge on every commit. |
 | **[Time machine](docs/help/time-machine.md)** | Drag a slider and watch the repository itself change, commit by commit — HEAD never moves. |

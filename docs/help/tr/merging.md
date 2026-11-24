@@ -74,14 +74,32 @@ istediğinizde bir merge commit'i zorlayın. Çakışma çıkarsa
 
 ## Herhangi iki ref'i karşılaştırma
 
-Bir temel ve bir karşılaştırma ref'i seçin — dal, etiket ya da ham SHA, yer
-değiştirme düğmesiyle birlikte — karşılığında önde/geride sayıları, her tarafa
-özgü commit'ler, tam birleşik diff ve tek tıkla **PR açma**ya devir alırsınız.
+Bir dalı birleştirmeden önce neler getireceğini ya da nesinin eksik olduğunu
+görün. Karşılaştırılacak bir ref ve bir taban seçin — dal, etiket ya da ham SHA,
+değiştirme düğmesiyle — karşılaştırma grafiğin yerine orta panelde, her iki
+tarafa özgü commit'lerle açılır.
 
-![İki dalın karşılaştırılması: her tarafa özgü olan ve birleşik diff](../../screenshots/branch-compare.webp)
+| Mod | Gösterir |
+|------|-------|
+| **Tüm değişiklikler** | Karşılaştırılan ref'in tabandan ayrıldığından beri eklediği her şey, tek bir birleşik diff olarak. |
+| **Commit bazında** | Bir seferde tek commit. Yalnızca değişikliklerini görmek için iki listeden birindeki bir commit'e tıklayın — *Tüm değişiklikler* modundayken de. |
 
-Kenar çubuğundan (geçerli dalla karşılaştır), Araçlar menüsünden ya da
-<kbd>⌘K</kbd> ile erişilebilir.
+Değişen dosyalar solda eklenen ve silinen satırlarıyla listelenir ve yalnızca
+seçtiğiniz dosya çizilir; böylece devasa bir karşılaştırma küçük bir
+karşılaştırma gibi kayar. **PR oluştur…** commit'leri yeni bir pull request'e
+aktarır; <kbd>Esc</kbd> ya da kapatma düğmesi grafiğe döner.
+
+Sınırlar: bir merge commit'i ilk ebeveynine göre gösterilir ve ikili bir dosya
+listede metin farkı olmadan yer alır. Çakışma çözücü ya da commit düzenleyici
+açıksa önce onu kapatın — karşılaştırma onun arkasında açılırdı.
+
+![İki dalı karşılaştırma: her tarafa özgü commit'ler, dosyalar ve bir dosyanın farkı](../../screenshots/branch-compare.webp)
+
+![Aynı karşılaştırma commit bazında: bir commit'in dosyaları ve farkı](../../screenshots/branch-compare-commit.webp)
+
+Kenar çubuğundan (geçerli dalla karşılaştır), bir dalı diğerinin üzerine
+bırakarak, Araçlar menüsünden, çakışma ve takım radarlarından ya da
+<kbd>⌘K</kbd> ile erişilir.
 
 ## Cherry-pick, revert, reset
 
