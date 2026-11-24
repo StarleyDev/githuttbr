@@ -84,6 +84,7 @@
       "insights": "insights",
       "vault": "vault",
       "wiki": "repo-wiki",
+      "ci-runs": "ci-runs",
       "issue": "hosting",
       "pr": "hosting",
       "milestone": "hosting",
@@ -183,6 +184,7 @@
       "licenses": "licenses",
       "teammate-radar": "teammate-radar",
       "local-ci": "local-ci",
+      "ci-runs": "ci-runs",
       "run-tests": "problems"
     },
     "exempt": {

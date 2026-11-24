@@ -53,7 +53,8 @@ import {
   Lock,
   MessageSquare,
   Users,
-  FlaskConical
+  FlaskConical,
+  Workflow
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { withTone, type IconTone } from '../lib/iconTone'
@@ -281,6 +282,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           label: t('localCi.open'),
           icon: <FlaskConical size={15} />,
           onClick: () => openModal({ kind: 'local-ci', repoPath: path })
+        },
+        {
+          label: t('ciRuns.open'),
+          icon: <Workflow size={15} />,
+          onClick: () => useSettingsStore.getState().openPageTab({ type: 'ci-runs', repoPath: path })
         },
         {
           label: t('tools.compareRefs'),

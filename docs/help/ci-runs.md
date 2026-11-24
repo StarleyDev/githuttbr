@@ -1,0 +1,117 @@
+---
+title: CI runs
+category: Sync & many repos
+order: 59
+summary: Follow GitHub Actions, GitLab pipelines, Azure Pipelines and Forgejo Actions from the app — each job, its steps and its log, with re-run and cancel.
+keywords: ci runs actions workflow pipeline build github actions gitlab pipelines azure pipelines forgejo actions jobs steps logs rerun re-run cancel dispatch workflow_dispatch badge status graph
+---
+
+# CI runs
+
+You pushed, and now you wait: switch to the browser, find the repository, open
+Actions, find your run, open the job that went red, scroll to the end of the
+log. **CI runs** puts that loop next to the code. One page lists the remote's
+runs, newest first; a click opens a run's jobs, each job's steps and its log;
+and the buttons to run it again or stop it are on the row.
+
+It talks to the host's own API with the token you already gave Gitcito. Nothing
+runs on your machine — for that, see [Local CI](local-ci.md).
+
+![The CI runs page: a failed run opened on its jobs, with the failing step and the log](../screenshots/ci-runs.webp)
+
+## Opening it
+
+**Tools → CI runs…**, or *CI runs* in the command palette (⌘K). The page rides
+on the repository's tab, like the wiki and insights, and reads the remote
+called `origin` — or the first remote, when there is no `origin`.
+
+## What the page shows
+
+| Part | What it is |
+|---|---|
+| **A run row** | The commit's title (or the workflow's name), the branch, the workflow, the run number, what started it (push, pull request, schedule, manual…), who started it and the commit. On the right: where it stands, how long it took — or has been going — and how long ago it started |
+| **All branches / current branch** | Every run on the remote, or only the branch you have checked out |
+| **Filter** | Narrows the loaded runs by title, workflow, branch, author, commit or event |
+| **Jobs** | Open a run to list its jobs, grouped by stage where the host has stages (GitLab, Azure). A job that failed opens its steps on its own: the failing step is the news |
+| **Steps** | Each step of a job, with its state and duration — GitHub, Azure and Forgejo report them; GitLab has no steps |
+| **Log** | The 📜 button on a finished job shows the end of its log, colours kept. Only the last 512 KB are fetched — where a failure is — and the page says when the start was left out |
+
+While anything on the page is queued or running, the list asks the host again
+every 15 seconds, and the open run's jobs with it; durations tick every second.
+When two minutes of answers bring nothing new — a run waiting for a deployment
+approval, say — it slows to once a minute, and speeds up again as soon as
+something moves. A list where everything has finished asks nothing until you
+press refresh, and nothing is asked while the window is hidden.
+
+A run the host sends without a title — every GitLab pipeline, a scheduled Azure
+build — is named after its commit's subject when the commit is in the graph,
+read from your local repository at no cost; otherwise after its number.
+
+## Re-running, cancelling, starting
+
+| Button | Shows when | What happens |
+|---|---|---|
+| **Re-run failed** | The run failed or was cancelled | Only the jobs that did not pass run again |
+| **Re-run** (↻) | The run finished, on GitHub | Every job runs again |
+| **Cancel** (⊘) | The run is queued or running | Asks first: the jobs in progress are interrupted and their work is lost |
+| **Run workflow** | The host can start one by hand | Pick the workflow and a branch; it starts as if that branch had been pushed, and shows up in the list a few seconds later |
+
+What each host allows:
+
+| Host | List & jobs | Steps | Log | Re-run all | Re-run failed | Cancel | Start by hand |
+|---|---|---|---|---|---|---|---|
+| **GitHub** (and Enterprise Server) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ — the workflow needs a `workflow_dispatch` trigger |
+| **GitLab** (and self-managed) | ✓ — pipelines, jobs by stage | — | ✓ | — | ✓ (*Retry*) | ✓ | ✓ — runs `.gitlab-ci.yml` on the branch |
+| **Azure DevOps** | ✓ — builds, jobs by stage | ✓ (tasks) | ✓ | — | ✓ | ✓ | ✓ — any build definition of the repository |
+| **Forgejo / Gitea** | ✓ on servers with the Actions runs API | ✓ | ✓ when the server serves it to a token | — | — | — | — |
+| **Bitbucket** | — | | | | | | |
+
+## Badges in the graph
+
+The same CI shows up as a small badge beside each commit in the graph: green,
+red or a clock while it runs. Hover it for the jobs; click it for the host's
+page. The badges come from:
+
+| Host | Source |
+|---|---|
+| GitHub | The commit's check runs — any CI that reports to GitHub, not only Actions |
+| GitLab | The commit's statuses, which include every pipeline job. A manual job (a deploy, say) does not leave the badge stuck on the clock |
+| Azure DevOps | The repository's 100 most recent builds, matched by commit |
+| Forgejo / Gitea | The commit's combined status — Forgejo Actions and any external CI |
+| Bitbucket Data Center | The commit's build statuses |
+
+Every answer is remembered — including "no CI here" — and a commit is asked
+about again only when its answer may have changed: every 45 seconds while it
+runs, every 10 minutes once it finished, and less and less often for a commit
+that never had CI. That keeps a busy graph inside the host's hourly allowance.
+
+## Limits
+
+- **The log is the end, and only once a job finishes.** GitHub and Forgejo
+  hand out a job's log after it is done; while it runs, the page shows its
+  steps moving, not its output. GitLab and Azure serve a running job's log so
+  far — reopen it to read more.
+- **The token needs CI access.** A GitHub fine-grained token needs *Actions:
+  read* to list and *Actions: write* to re-run, cancel or start; a classic one
+  needs `repo`. A GitLab token needs `read_api` to list and `api` for the
+  buttons. An Azure token needs *Build: read* (and *Build: read & execute* for
+  the buttons); without it the page and the badges stay empty rather than
+  failing.
+- **Azure badges only reach back 100 builds.** An older commit has no badge,
+  though the CI runs page still lists its build.
+- **Azure's re-run is "retry failed".** It works on YAML pipelines with stages;
+  a classic pipeline may refuse it, and the page shows the host's answer.
+- **Starting a workflow does not ask for its inputs.** A GitHub workflow or a
+  GitLab pipeline with required inputs without a default is refused by the host,
+  with its own message.
+- **Forgejo is read-only, and only on recent servers.** Older Forgejo and Gitea
+  servers have no API to list runs; the page says the host is not supported,
+  and the graph badges still work through commit statuses. A repository the
+  token cannot see shows as an access error, not as "not supported".
+- **Bitbucket has no runs page.** On Data Center, CI is an outside system
+  (Jenkins, Bamboo…) that only reports a status — that status is the graph
+  badge. bitbucket.org Pipelines is not supported.
+- **One remote.** The page reads `origin`; runs on a fork's other remote are
+  not listed.
+
+**See also:** [Local CI](local-ci.md) · [Hosting & pull requests](hosting.md)

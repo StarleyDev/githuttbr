@@ -13,7 +13,7 @@ import type { PageContent, TabState } from '../../../shared/types'
 /** Page kinds that ride on their repository's tab. Everything else stands alone.
  *  A pull request rides too — on the repo's tab, or its chip inside a group —
  *  unless it is explicitly opened in a tab of its own. */
-export const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights', 'pr'])
+export const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights', 'ci-runs', 'pr'])
 
 /** Two attached pages are "the same" when they address the same thing: one wiki
  *  per repo, one DevTools per launch session. */

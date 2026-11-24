@@ -6,19 +6,23 @@ import { logTail } from '../lib/ciLog'
 import { interp, useT } from '../i18n'
 
 /**
- * A CI job's log under its check row, read by the app (Forgejo Actions). When
- * the server will not hand it to the token, says so and offers the browser.
+ * A CI job's log under its check row, read by the app (Forgejo Actions, Azure
+ * Pipelines, and every job on the CI runs page). When the server will not hand
+ * it to the token, says so and offers the browser. `loadLog` replaces the PR
+ * check lookup by link — the runs page knows the job by its id instead.
  */
 export function CheckLogPanel({
   repoPath,
   remoteUrl,
   tokens,
-  url
+  url,
+  loadLog
 }: {
   repoPath: string
   remoteUrl: string
   tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }
   url: string
+  loadLog?: () => Promise<string | null>
 }): React.JSX.Element {
   const t = useT()
   const [log, setLog] = useState<string | null | undefined>(undefined)
@@ -26,14 +30,13 @@ export function CheckLogPanel({
 
   useEffect(() => {
     let live = true
-    hostingApi
-      .prCheckLog(repoPath, remoteUrl, tokens, url)
+    ;(loadLog ? loadLog() : hostingApi.prCheckLog(repoPath, remoteUrl, tokens, url))
       .then((text) => live && setLog(text))
       .catch(() => live && setLog(null))
     return () => {
       live = false
     }
-  }, [repoPath, remoteUrl, tokens, url])
+  }, [repoPath, remoteUrl, tokens, url, loadLog])
 
   const tail = useMemo(() => (log ? logTail(log) : null), [log])
   // The failure is at the bottom: start there.

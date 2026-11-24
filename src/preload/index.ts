@@ -347,6 +347,18 @@ const api = {
       body: string
     ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReplyReviewComment', repoPath, remoteUrl, tokens, number, inReplyTo, body),
+    ciRuns: (repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciRuns', repoPath, remoteUrl, tokens, branch),
+    ciRunJobs: (repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciRunJobs', repoPath, remoteUrl, tokens, runId),
+    ciJobLog: (repoPath: string, remoteUrl: string, tokens: unknown, runId: string, jobId: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciJobLog', repoPath, remoteUrl, tokens, runId, jobId),
+    ciRunAction: (repoPath: string, remoteUrl: string, tokens: unknown, runId: string, action: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciRunAction', repoPath, remoteUrl, tokens, runId, action),
+    ciWorkflows: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciWorkflows', repoPath, remoteUrl, tokens),
+    ciDispatch: (repoPath: string, remoteUrl: string, tokens: unknown, workflowId: string, ref: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciDispatch', repoPath, remoteUrl, tokens, workflowId, ref),
     prCheckLog: (repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prCheckLog', repoPath, remoteUrl, tokens, url),
     prChecks: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

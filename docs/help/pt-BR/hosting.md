@@ -88,7 +88,7 @@ A coluna principal tem três seções:
 |---|---|
 | **Conversa** | A descrição, os comentários e as threads de revisão inline (`file:line`, com respostas). Depois a caixa de comentário com comentar / aprovar / pedir mudanças, e a caixa de merge (merge, squash ou rebase) |
 | **Arquivos** | Cada arquivo alterado e, ao lado da lista, o diff do selecionado, com destaque de sintaxe e mudança por palavra (arquivos com cara de segredo mascarados quando a opção está ligada). Um checklist ✓ de "visto" lembra o seu progresso. Um arquivo sem diff enviado pelo host (binário, ou grande demais) tem link para vê-lo no host |
-| **Checks** | Execuções de CI (GitHub) ou jobs de pipeline (GitLab), com aprovado/falhou/pendente e links para os logs |
+| **Checks** | Execuções de CI (GitHub) ou jobs de pipeline (GitLab), com aprovado/falhou/pendente e links para os logs. Todas as execuções do repositório — não só as deste pull request — estão na página [Execuções de CI](ci-runs.md) |
 
 A barra lateral mostra:
 

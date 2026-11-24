@@ -273,6 +273,12 @@ interface PreloadApi {
       inReplyTo: number | string,
       body: string
     ): Promise<unknown>
+    ciRuns(repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown>
+    ciRunJobs(repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown>
+    ciJobLog(repoPath: string, remoteUrl: string, tokens: unknown, runId: string, jobId: string): Promise<unknown>
+    ciRunAction(repoPath: string, remoteUrl: string, tokens: unknown, runId: string, action: string): Promise<unknown>
+    ciWorkflows(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
+    ciDispatch(repoPath: string, remoteUrl: string, tokens: unknown, workflowId: string, ref: string): Promise<unknown>
     prCheckLog(repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
     prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>

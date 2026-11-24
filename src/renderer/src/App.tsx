@@ -52,6 +52,7 @@ import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
 import { WikiPageView } from './components/WikiPageView'
+import { CiRunsPage } from './components/CiRunsPage'
 import { VaultPage } from './components/VaultPage'
 import { RepositoriesPage } from './components/RepositoriesPage'
 import { ReleasePage } from './components/ReleasePage'
@@ -246,6 +247,8 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
       return <InsightsPage repoPath={page.repoPath} />
     case 'wiki':
       return <WikiPageView repoPath={page.repoPath} />
+    case 'ci-runs':
+      return <CiRunsPage repoPath={page.repoPath} />
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
     case 'pr':
@@ -282,6 +285,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <InsightsPage repoPath={tab.page.repoPath} />
     case 'wiki':
       return <WikiPageView repoPath={tab.page.repoPath} />
+    case 'ci-runs':
+      return <CiRunsPage repoPath={tab.page.repoPath} />
     case 'vault':
       return <VaultPage />
     case 'repositories':

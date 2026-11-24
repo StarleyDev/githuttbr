@@ -871,9 +871,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     if (repo.remotes.length) void repoActions.refreshRemoteTags(repo.path)
   }, [repo.path, repo.remotes])
 
-  // CI badges for the visible commits (GitHub only). The minute poll lets a
-  // running check settle on screen; main remembers every answer (including
-  // "no checks") and decides which commits are worth asking GitHub about again.
+  // CI badges for the visible commits (GitHub, GitLab, Azure DevOps, Forgejo,
+  // Bitbucket Data Center). The minute poll lets a running check settle on
+  // screen; main remembers every answer (including "no checks") and decides
+  // which commits are worth asking the host about again.
   // Skipped while the window is hidden (nobody is watching the badges) and
   // caught up the moment it shows again.
   useEffect(() => {

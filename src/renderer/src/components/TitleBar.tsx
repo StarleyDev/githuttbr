@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup, Workflow } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { colorMenuItems } from './colorMenu'
 import { useSettingsStore } from '../stores/settings'
@@ -58,6 +58,8 @@ function pageTabIcon(type: string): React.JSX.Element {
       return <BarChart3 size={13} />
     case 'wiki':
       return <BookOpen size={13} />
+    case 'ci-runs':
+      return <Workflow size={13} />
     case 'vault':
       return <KeyRound size={13} />
     case 'repositories':

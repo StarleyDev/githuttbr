@@ -13,7 +13,7 @@ import {
   rateLimitPauseUntil,
   rememberCiEntry
 } from '../src/main/ciCache'
-import { fetchCiStatuses } from '../src/main/hosting'
+import { cachedCiStatuses, fetchCiStatuses } from '../src/main/hosting'
 
 const REMOTE = 'https://github.com/acme/widget.git'
 const SHAS = ['a1', 'b2', 'c3']
@@ -260,5 +260,40 @@ describe('fetchCiStatuses', () => {
     vi.setSystemTime(CI_SETTLED_RECHECK_MS)
     const after = await fetchCiStatuses(REMOTE, ['a1'], 'token-keep')
     expect(after.a1?.state).toBe('success')
+  })
+})
+
+// The cache every host's badges go through (GitLab, Azure and Forgejo resolve
+// their token in main, so they are exercised here with a fake lookup).
+describe('cachedCiStatuses', () => {
+  afterEach(() => vi.useRealTimers())
+
+  const found = { kind: 'found', status: { state: 'success', jobs: [{ name: 'build', state: 'success' }] } } as const
+
+  it('keeps two repositories apart under one credential', async () => {
+    vi.useFakeTimers({ now: 0 })
+    const lookup = vi.fn(async () => found)
+    await cachedCiStatuses('token-scopes', 'gitlab|https://gl.example/api/v4/projects/a', ['a1'], lookup)
+    const other = await cachedCiStatuses('token-scopes', 'gitlab|https://gl.example/api/v4/projects/b', ['a1'], lookup)
+    expect(lookup).toHaveBeenCalledTimes(2)
+    expect(other.a1?.state).toBe('success')
+  })
+
+  it('treats a lookup that throws as failed, not as a crash', async () => {
+    vi.useFakeTimers({ now: 0 })
+    const lookup = vi.fn(async () => {
+      throw new Error('boom')
+    })
+    expect(await cachedCiStatuses('token-throws', 'azure|o/p/r', ['a1', 'b2'], lookup)).toEqual({})
+    expect(lookup).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not ask again about a commit without CI on the next poll', async () => {
+    vi.useFakeTimers({ now: 0 })
+    const lookup = vi.fn(async () => ({ kind: 'none' }) as const)
+    await cachedCiStatuses('token-forgejo', 'forgejo|https://fj.example/api/v1/repos/a/b', ['a1'], lookup)
+    vi.setSystemTime(60_000)
+    await cachedCiStatuses('token-forgejo', 'forgejo|https://fj.example/api/v1/repos/a/b', ['a1'], lookup)
+    expect(lookup).toHaveBeenCalledTimes(1)
   })
 })

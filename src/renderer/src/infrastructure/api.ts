@@ -1112,6 +1112,18 @@ export const hostingApi = {
     body: string
   ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
+  ciRuns: (repoPath: string, remoteUrl: string, tokens: PrTokens, branch?: string) =>
+    window.api.hosting.ciRuns(repoPath, remoteUrl, tokens, branch) as Promise<import('../../../shared/types').CiRunList>,
+  ciRunJobs: (repoPath: string, remoteUrl: string, tokens: PrTokens, runId: string) =>
+    window.api.hosting.ciRunJobs(repoPath, remoteUrl, tokens, runId) as Promise<import('../../../shared/types').CiRunJob[]>,
+  ciJobLog: (repoPath: string, remoteUrl: string, tokens: PrTokens, runId: string, jobId: string) =>
+    window.api.hosting.ciJobLog(repoPath, remoteUrl, tokens, runId, jobId) as Promise<string | null>,
+  ciRunAction: (repoPath: string, remoteUrl: string, tokens: PrTokens, runId: string, action: import('../../../shared/types').CiRunAction) =>
+    window.api.hosting.ciRunAction(repoPath, remoteUrl, tokens, runId, action) as Promise<void>,
+  ciWorkflows: (repoPath: string, remoteUrl: string, tokens: PrTokens) =>
+    window.api.hosting.ciWorkflows(repoPath, remoteUrl, tokens) as Promise<import('../../../shared/types').CiWorkflow[]>,
+  ciDispatch: (repoPath: string, remoteUrl: string, tokens: PrTokens, workflowId: string, ref: string) =>
+    window.api.hosting.ciDispatch(repoPath, remoteUrl, tokens, workflowId, ref) as Promise<void>,
   prCheckLog: (repoPath: string, remoteUrl: string, tokens: PrTokens, url: string) =>
     window.api.hosting.prCheckLog(repoPath, remoteUrl, tokens, url) as Promise<string | null>,
   prChecks: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>

@@ -13,6 +13,11 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { countChecks } from './ciSummary'
+import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
+import { githubCiRuns } from './ciRunsGithub'
+import { gitlabCiRuns, gitlabCommitCiLookup } from './ciRunsGitlab'
+import { azureCiLookupBatch, azureCiRuns } from './ciRunsAzure'
+import { forgejoCiRuns, forgejoCommitCiLookup } from './ciRunsForgejo'
 import {
   activeProfileAuth,
   allProfileAuth,
@@ -131,6 +136,8 @@ import {
 } from './ciCache'
 import type {
   CiJob,
+  CiRunAction,
+  CiRunList,
   CiState,
   CiStatus,
   AccountLink,
@@ -1710,7 +1717,7 @@ interface GhUser {
 async function azRepoOf(
   remoteUrl: string,
   sent: string | undefined
-): Promise<{ ado: Ado; optional: Ado; text: AdoText; repo: AzureRepo }> {
+): Promise<{ ado: Ado; optional: Ado; text: AdoText; repo: AzureRepo; token: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
   const auth = await remoteApiToken(remoteUrl, 'azure', sent)
@@ -1721,7 +1728,8 @@ async function azRepoOf(
   // the retry would drop a working git credential from the helper over it.
   const optional: Ado = (url, init) => adoJson(url, auth.token, init)
   const text: AdoText = (url, max) => adoTail(url, auth.token, max)
-  return { ado, optional, text, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+  // The token itself only keys the CI badge cache (by fingerprint); nothing else reads it here.
+  return { ado, optional, text, token: auth.token, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
 }
 
 /**
@@ -2665,20 +2673,23 @@ async function ghJson<T>(url: string, token: string, init?: RequestInit): Promis
       ...(init?.headers as Record<string, string>)
     }
   })
-  if (!res.ok) {
-    const msg = (await res.json().catch(() => null)) as { message?: string } | null
-    // Surface when the rate limit resets so the user knows how long to wait.
-    if (res.status === 403 || res.status === 429) {
-      const remaining = res.headers.get('x-ratelimit-remaining')
-      const reset = res.headers.get('x-ratelimit-reset')
-      if (remaining === '0' && reset) {
-        const at = new Date(+reset * 1000).toLocaleTimeString()
-        throw new Error(`GitHub rate limit exceeded — resets at ${at}.`)
-      }
-    }
-    throw new Error(msg?.message ? `GitHub: ${msg.message}` : `GitHub API error (${res.status})`)
-  }
+  if (!res.ok) throw await ghError(res)
   return res.json() as Promise<T>
+}
+
+/** GitHub's refusal as an Error: its own message, or when the rate limit resets. */
+async function ghError(res: Response): Promise<Error> {
+  const msg = (await res.json().catch(() => null)) as { message?: string } | null
+  // Surface when the rate limit resets so the user knows how long to wait.
+  if (res.status === 403 || res.status === 429) {
+    const remaining = res.headers.get('x-ratelimit-remaining')
+    const reset = res.headers.get('x-ratelimit-reset')
+    if (remaining === '0' && reset) {
+      const at = new Date(+reset * 1000).toLocaleTimeString()
+      return new Error(`GitHub rate limit exceeded — resets at ${at}.`)
+    }
+  }
+  return new Error(msg?.message ? `GitHub: ${msg.message}` : `GitHub API error (${res.status})`)
 }
 
 /** Accounts a new repo can be created under: the authenticated user plus their orgs/groups. */
@@ -3097,8 +3108,10 @@ interface CiAccount {
   pausedUntil: number
 }
 const ciAccounts = new Map<string, CiAccount>()
-// A refreshed CLI token is a new credential; the old ones' answers go.
-const CI_MAX_ACCOUNTS = 4
+// A refreshed CLI token is a new credential; the old ones' answers go. Eight:
+// GitHub, GitLab, Azure and Forgejo each hold one, and a second profile on any
+// of them would otherwise evict another's answers on every repository switch.
+const CI_MAX_ACCOUNTS = 8
 // Few at a time: a burst of 40 trips GitHub's secondary limit, and a limit
 // answer halts the rest of the batch instead of 40 doomed requests.
 const CI_LOOKUP_CONCURRENCY = 6
@@ -3175,13 +3188,56 @@ export async function fetchCiStatuses(
     const bbsAuth = await remoteApiToken(remoteUrl, 'bitbucket', undefined).catch(() => null)
     return bbsAuth ? bbsCiStatuses(bbsRepo, bbsAuth.token, shas).catch(() => ({})) : {}
   }
-  if (!parsed || parsed.provider !== 'github') return {}
+  if (!parsed) return {}
+  // Every host below is quiet the same way: no credential is "no badges", never an error.
+  if (parsed.provider === 'gitlab') {
+    const gl = await glProjectOf(remoteUrl, undefined).catch(() => null)
+    if (!gl) return {}
+    return cachedCiStatuses(gl.auth.token, `gitlab|${gl.base}`, shas, (sha) =>
+      gitlabCommitCiLookup((url, init) => glJson(url, gl.auth, init), gl.base, sha)
+    )
+  }
+  if (parsed.provider === 'forgejo') {
+    const fj = await fjRepoOf(remoteUrl, undefined).catch(() => null)
+    if (!fj) return {}
+    const repoApi = `${fj.base}/api/v1/repos/${encodeURIComponent(fj.owner)}/${encodeURIComponent(fj.repo)}`
+    return cachedCiStatuses(fj.token, `forgejo|${repoApi}`, shas, (sha) =>
+      forgejoCommitCiLookup((url, init) => fjJson(url, fj.token, init), repoApi, sha)
+    )
+  }
+  if (parsed.provider === 'azure') {
+    const az = await azRepoOf(remoteUrl, undefined).catch(() => null)
+    if (!az) return {}
+    // One build listing answers every commit of this call; a new one per call keeps it fresh.
+    const lookup = azureCiLookupBatch({ org: az.repo.org, project: az.repo.project, repoName: az.repo.repo, optional: az.optional })
+    const scope = `azure|${az.repo.org}/${az.repo.project}/${az.repo.repo}`
+    return cachedCiStatuses(az.token, scope, shas, lookup)
+  }
+  if (parsed.provider !== 'github') return {}
   const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) return {}
-  const account = ciAccountFor(auth.token)
   const apiBase = ghEndpointsOf(parsed).apiBase
   // The server is part of the key: the same owner/repo on github.com and on a GHES are two repositories.
-  const keyOf = (sha: string): string => `${parsed.base ?? ''}|${parsed.owner}/${parsed.repo}@${sha}`
+  return cachedCiStatuses(auth.token, `${parsed.base ?? ''}|${parsed.owner}/${parsed.repo}`, shas, (sha, account) =>
+    lookUpCiStatus(apiBase, parsed.owner, parsed.repo, sha, auth.token, account)
+  )
+}
+
+/**
+ * The badges for `shas`, asking the host only about the commits whose last
+ * answer has gone stale (see ciCache.ts). `scope` names the repository on its
+ * server; the account — one per credential — holds the answers, the requests
+ * in flight and any rate-limit pause. Shared by every host so each one gets the
+ * same backoff for commits without CI. Exported for tests.
+ */
+export async function cachedCiStatuses(
+  token: string,
+  scope: string,
+  shas: string[],
+  lookup: (sha: string, account: CiAccount) => Promise<CiLookup>
+): Promise<Record<string, CiStatus>> {
+  const account = ciAccountFor(token)
+  const keyOf = (sha: string): string => `${scope}@${sha}`
 
   const wanted = [...new Set(shas.slice(0, 40))]
   const now = Date.now()
@@ -3207,8 +3263,8 @@ export async function fetchCiStatuses(
     while (queue.length && Date.now() >= account.pausedUntil) {
       const job = queue.shift()!
       try {
-        const lookup = await lookUpCiStatus(apiBase, parsed.owner, parsed.repo, job.sha, auth.token, account)
-        rememberCiEntry(account.cache, job.key, nextCiEntry(account.cache.get(job.key), lookup, Date.now()))
+        const answer = await lookup(job.sha, account).catch((): CiLookup => ({ kind: 'failed' }))
+        rememberCiEntry(account.cache, job.key, nextCiEntry(account.cache.get(job.key), answer, Date.now()))
       } finally {
         release(job)
       }
@@ -3361,6 +3417,110 @@ export async function hostingAccess(repoPath: string | undefined, remoteUrl: str
   return answer(await peekActiveProfileAuth(parsed.provider, remoteUrl))
 }
 
+// ── CI runs ─────────────────────────────────────────────────────────────────
+// The runs page's adapter for a remote. Each host's adapter lives in its own
+// ciRuns*.ts and is handed authenticated requests from here, so none of them
+// knows how a token is found.
+
+/**
+ * A GitHub job log. The endpoint answers with a redirect to a signed download on
+ * another host; the token must not follow it there, so the redirect is read and
+ * the download fetched without it.
+ */
+async function githubLogTail(url: string, token: string, max: number): Promise<string | null> {
+  const res = await fetch(url, {
+    redirect: 'manual',
+    headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}` }
+  }).catch(() => null)
+  if (!res) return null
+  const location = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null
+  const body = location ? await fetch(location).catch(() => null) : res
+  if (!body || !body.ok) return null
+  return readTail(body, max)
+}
+
+/** A GitHub request answered with no body worth reading (201/202/204). */
+async function ghSend(url: string, token: string, init: RequestInit): Promise<void> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      ...(init.body ? { 'Content-Type': 'application/json' } : {})
+    }
+  })
+  if (!res.ok) throw await ghError(res)
+}
+
+/** The runs adapter for a remote, or null when its host has no CI runs API this app speaks. */
+async function ciRunsAdapterFor(remoteUrl: string, tokens: HostTokens): Promise<CiRunsAdapter | null> {
+  const provider = parseRemoteUrl(remoteUrl)?.provider
+  if (provider === 'github') {
+    const { api, token } = await ghRepoOf(remoteUrl, tokens.github)
+    return githubCiRuns({
+      api,
+      json: (url, init) => ghJson(url, token, init),
+      sendRequest: (url, init) => ghSend(url, token, init),
+      logTail: (url, max) => githubLogTail(url, token, max)
+    })
+  }
+  if (provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    return gitlabCiRuns({
+      base,
+      json: (url, init) => glJson(url, auth, init),
+      sendRequest: async (url, init) => {
+        await glJson<unknown>(url, auth, init)
+      },
+      text: (url, max) => gitlabTextTail(url, auth, max)
+    })
+  }
+  if (provider === 'azure') {
+    const { ado, optional, text, repo } = await azRepoOf(remoteUrl, tokens.azure)
+    return azureCiRuns({ org: repo.org, project: repo.project, repoName: repo.repo, ado, optional, text })
+  }
+  if (provider === 'forgejo') {
+    const { base, owner, repo, token } = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoCiRuns({
+      base,
+      owner,
+      repo,
+      json: (url, init) => fjJson(url, token, init),
+      logTail: (target) => forgejoJobLog(base, token, target)
+    })
+  }
+  return null
+}
+
+/** A GitLab job trace, keeping only its last `max` bytes as it streams. Null when refused. */
+async function gitlabTextTail(url: string, auth: { token: string; cred?: GitCredential }, max: number): Promise<string | null> {
+  const res = await fetch(url, { redirect: 'error', headers: { ...gitlabAuth(auth), Accept: 'text/plain' } }).catch(() => null)
+  if (!res || !res.ok || (res.headers.get('content-type') ?? '').includes('text/html')) return null
+  return readTail(res, max)
+}
+
+/** Throws when the remote has no runs API: every call below needs one. */
+async function requireCiRuns(remoteUrl: string, tokens: HostTokens): Promise<CiRunsAdapter> {
+  const adapter = await ciRunsAdapterFor(remoteUrl, tokens)
+  if (!adapter) throw new Error('This remote has no CI runs the app can read.')
+  return adapter
+}
+
+async function listCiRuns(remoteUrl: string, tokens: HostTokens, branch?: string): Promise<CiRunList> {
+  const adapter = await ciRunsAdapterFor(remoteUrl, tokens)
+  if (!adapter) return { supported: false, runs: [], capabilities: NO_CI_CAPABILITIES }
+  const wanted = typeof branch === 'string' && branch ? branch : undefined
+  try {
+    return { supported: true, runs: await adapter.listRuns(wanted), capabilities: adapter.capabilities }
+  } catch (e) {
+    // A server too old for the runs API is "not supported", not an error to toast.
+    if ((e as { unsupported?: boolean }).unsupported) return { supported: false, runs: [], capabilities: NO_CI_CAPABILITIES }
+    throw e
+  }
+}
+
+const CI_RUN_ACTIONS: readonly CiRunAction[] = ['rerun', 'rerun-failed', 'cancel']
+
 /**
  * Register a handler for a call that acts on one repository's remote. Its first
  * IPC argument is that repository's path — the same convention as the git
@@ -3464,6 +3624,27 @@ export function registerHostingHandlers(): void {
   handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
     pullRequestCheckLog(remoteUrl, tokens, url)
   )
+  handleForRepo('hosting:ciRuns', (remoteUrl: string, tokens: HostTokens, branch?: string) =>
+    listCiRuns(remoteUrl, tokens, branch)
+  )
+  handleForRepo('hosting:ciRunJobs', async (remoteUrl: string, tokens: HostTokens, runId: string) =>
+    (await requireCiRuns(remoteUrl, tokens)).listJobs(String(runId))
+  )
+  handleForRepo('hosting:ciJobLog', async (remoteUrl: string, tokens: HostTokens, runId: string, jobId: string) =>
+    (await requireCiRuns(remoteUrl, tokens)).getJobLog(String(runId), String(jobId))
+  )
+  handleForRepo('hosting:ciRunAction', async (remoteUrl: string, tokens: HostTokens, runId: string, action: CiRunAction) => {
+    if (!CI_RUN_ACTIONS.includes(action)) throw new Error(`Unknown CI run action: ${String(action)}`)
+    const adapter = await requireCiRuns(remoteUrl, tokens)
+    await adapter.runAction(String(runId), action)
+  })
+  handleForRepo('hosting:ciWorkflows', async (remoteUrl: string, tokens: HostTokens) =>
+    (await requireCiRuns(remoteUrl, tokens)).listWorkflows()
+  )
+  handleForRepo('hosting:ciDispatch', async (remoteUrl: string, tokens: HostTokens, workflowId: string, ref: string) => {
+    if (typeof ref !== 'string' || !ref.trim()) throw new Error('A branch is required to start a workflow.')
+    await (await requireCiRuns(remoteUrl, tokens)).dispatchWorkflow(String(workflowId), ref.trim())
+  })
   handleForRepo('hosting:prChecks', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestChecks(remoteUrl, tokens, number)
   )

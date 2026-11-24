@@ -106,6 +106,7 @@ git actually is.
 | **[Merge options](docs/help/merge-options.md)** | `-X ours`, whitespace-blind merges, squash, `-s subtree` — and the commits behind a conflict. |
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — guided bisect, or hand the search to `git bisect run`, and one-click removal of the stale `.lock` file a crashed git left behind. |
 | **[Local CI](docs/help/local-ci.md)** | Run the repo's GitHub Actions on your machine with [act](https://nektosact.com) before pushing — including against a commit or range you're not on, via throwaway worktrees, with the run cost stated up front. |
+| **[CI runs](docs/help/ci-runs.md)** | Follow GitHub Actions, GitLab pipelines, Azure Pipelines and Forgejo Actions without leaving the app — jobs, steps and the end of each log, with re-run, cancel and *run workflow* — plus CI badges on every host's commits in the graph. |
 | **[Remove a file from history](docs/help/history-purge.md)** | A leaked key or a 400 MB blob out of every commit — measured first, backed up, undoable. |
 | **[File attributes](docs/help/attributes.md)** | `.gitattributes` with a UI: line endings, `merge=union`, `export-ignore`, readable diffs for Word, Excel, JSON and the UTF-16 `.strings` git calls binary (converter included), and clean/smudge filters gated behind a dry run. |
 | **[Replace & graft](docs/help/replace.md)** | Shorten a clone's history without rewriting a byte — reversible, and honest about what it hides. |

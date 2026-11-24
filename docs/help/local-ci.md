@@ -12,6 +12,8 @@ The push–wait–red-cross–fix–push loop wastes ten minutes per round trip.
 [act](https://nektosact.com) the same workflows run in Docker containers on
 your machine, and Gitcito drives them: pick a workflow, press Run, watch the
 same log CI would print — before anything leaves your machine.
+To follow the runs the host itself started after you pushed, see
+[CI runs](ci-runs.md).
 
 ![Local CI](../screenshots/local-ci.webp)
 

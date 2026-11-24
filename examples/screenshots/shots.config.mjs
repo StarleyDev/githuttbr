@@ -781,6 +781,80 @@ export const shots = [
     }
   },
   {
+    // The CI runs page with a failed run opened on its jobs: the failing job's
+    // steps and the end of its log. Every host answer is faked in main — no
+    // network, no account.
+    out: 'ci-runs',
+    repos: ['pr-ready-branch'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const m of ['ciRuns', 'ciRunJobs', 'ciJobLog']) ipcMain.removeHandler('hosting:' + m)
+        const now = Date.now()
+        const min = 60_000
+        const run = (id, over) => ({
+          id: String(id), name: 'CI', title: '', number: id, branch: 'main', sha: 'a1b2c3d4e5f6a7b8c9d0',
+          event: 'push', actor: 'sam', phase: 'completed', outcome: 'success', url: 'https://github.com/example/pr-ready-branch/actions',
+          workflowId: '7', ...over
+        })
+        const runs = [
+          run(148, { title: 'Add password reset form', branch: 'feature/password-reset', event: 'pull_request', phase: 'running', outcome: null,
+            createdAt: now - 3 * min, startedAt: now - 2.6 * min, sha: 'f00dbabe1234' }),
+          run(147, { title: 'Validate email before sign-up', branch: 'feature/signup-email', event: 'pull_request', outcome: 'failure',
+            createdAt: now - 26 * min, startedAt: now - 25.8 * min, finishedAt: now - 21.4 * min, sha: 'c0ffee98a7b6' }),
+          run(146, { title: 'Bump test runner', actor: 'alex', createdAt: now - 2 * 60 * min, startedAt: now - 119 * min, finishedAt: now - 114 * min, sha: 'beadfeed4321' }),
+          run(31, { name: 'Release', title: 'Release 2.4.0', branch: 'v2.4.0', event: 'release', number: 31, createdAt: now - 5 * 60 * min,
+            startedAt: now - 299 * min, finishedAt: now - 291 * min, sha: 'deadc0de5678' }),
+          run(145, { title: 'Nightly', name: 'Nightly', event: 'schedule', actor: null, outcome: 'cancelled', createdAt: now - 14 * 60 * min,
+            startedAt: now - 839 * min, finishedAt: now - 836 * min, sha: '0ddba11cafe0' })
+        ]
+        ipcMain.handle('hosting:ciRuns', () => ({
+          supported: true, runs, capabilities: { rerun: true, rerunFailed: true, cancel: true, dispatch: true }
+        }))
+        const step = (name, outcome, from, to) => ({ name, phase: 'completed', outcome, startedAt: now - from * 1000, finishedAt: now - to * 1000 })
+        ipcMain.handle('hosting:ciRunJobs', () => [
+          { id: '9001', name: 'lint', phase: 'completed', outcome: 'success', startedAt: now - 1548e3, finishedAt: now - 1490e3, url: '', hasLog: true,
+            steps: [step('Set up job', 'success', 1548, 1546), step('Run npm run lint', 'success', 1546, 1490)] },
+          { id: '9002', name: 'test (node 20)', phase: 'completed', outcome: 'failure', startedAt: now - 1548e3, finishedAt: now - 1284e3, url: '', hasLog: true,
+            steps: [
+              step('Set up job', 'success', 1548, 1545), step('Checkout', 'success', 1545, 1541),
+              step('Install dependencies', 'success', 1541, 1470), step('Run tests', 'failure', 1470, 1286),
+              { name: 'Upload coverage', phase: 'completed', outcome: 'skipped' }
+            ] },
+          { id: '9003', name: 'build', phase: 'completed', outcome: 'skipped', url: '', hasLog: false, steps: [] }
+        ])
+        ipcMain.handle('hosting:ciJobLog', () => [
+          '\u001b[36m> app@1.0.0 test\u001b[0m',
+          '\u001b[36m> vitest run\u001b[0m',
+          '',
+          ' \u001b[32m✓\u001b[0m test/session.test.ts (12 tests) 41ms',
+          ' \u001b[32m✓\u001b[0m test/password.test.ts (8 tests) 22ms',
+          ' \u001b[31m✗\u001b[0m test/signup.test.ts (6 tests | 1 failed) 35ms',
+          '   \u001b[31m× rejects an address without a domain\u001b[0m',
+          '',
+          '\u001b[31mAssertionError: expected true to be false\u001b[0m',
+          ' ❯ test/signup.test.ts:48:31',
+          '     46|   it(\'rejects an address without a domain\', () => {',
+          '     47|     const result = validateEmail(\'sam@\')',
+          '  \u001b[31m   48|     expect(result.valid).toBe(false)\u001b[0m',
+          '',
+          ' Test Files  \u001b[31m1 failed\u001b[0m | \u001b[32m2 passed\u001b[0m (3)',
+          '      Tests  \u001b[31m1 failed\u001b[0m | \u001b[32m25 passed\u001b[0m (26)',
+          '\u001b[31mError: Process completed with exit code 1.\u001b[0m'
+        ].join('\n'))
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({ type: 'ci-runs', repoPath }), repos['pr-ready-branch'])
+      const failed = page.locator('.ci-run', { hasText: 'Validate email before sign-up' })
+      await failed.waitFor()
+      await failed.locator('.ci-run-toggle').click()
+      const job = page.locator('.ci-job', { hasText: 'test (node 20)' })
+      await job.waitFor()
+      await job.locator('.prd-check-logs').first().click()
+      await page.locator('.prp-check-log pre').waitFor()
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     out: 'pull-request-page',
     repos: ['octopus-merge'],
     drive: async (page, repos, app) => {

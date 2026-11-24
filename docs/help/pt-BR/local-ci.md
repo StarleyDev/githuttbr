@@ -12,7 +12,8 @@ O ciclo push–espera–xis vermelho–correção–push desperdiça dez minutos
 rodada. Com [act](https://nektosact.com), os mesmos workflows rodam em
 contêineres Docker na sua máquina, e o Gitcito os comanda: escolha um workflow,
 pressione Executar e veja o mesmo log que a CI imprimiria — antes de qualquer
-coisa sair da sua máquina.
+coisa sair da sua máquina. Para acompanhar as execuções que o próprio serviço
+disparou depois do push, veja [Execuções de CI](ci-runs.md).
 
 ![CI local](../../screenshots/local-ci.webp)
 

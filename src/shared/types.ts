@@ -1064,6 +1064,99 @@ export interface CiStatus {
   jobs: CiJob[]
 }
 
+// ── CI runs ──────────────────────────────────────────────────────────────────
+// One vocabulary for GitHub Actions runs, GitLab pipelines, Azure Pipelines
+// builds and Forgejo Actions runs, so the page never branches on the host.
+
+/** Where a run, job or step is in its life. */
+export type CiRunPhase = 'queued' | 'running' | 'completed'
+
+/**
+ * How a finished run, job or step ended. `manual` is a GitLab job waiting for
+ * someone to press play; `unknown` is anything a host reports that maps to none
+ * of the others.
+ */
+export type CiRunOutcome = 'success' | 'failure' | 'cancelled' | 'skipped' | 'manual' | 'unknown'
+
+/** A run of a workflow / pipeline / build definition. Ids are strings: Azure's are numbers, GitLab's too, but nothing here does arithmetic on them. */
+export interface CiRun {
+  id: string
+  /** The workflow, pipeline or build definition's name. */
+  name: string
+  /** What the run is about: the commit subject, or the host's display title. */
+  title: string
+  /** The run number the host shows (#123), when it has one apart from the id. */
+  number?: number
+  branch: string | null
+  sha: string
+  /** What started it, in the host's words: push, pull_request, schedule, manual… */
+  event: string | null
+  actor: string | null
+  phase: CiRunPhase
+  /** Null while it is not finished. */
+  outcome: CiRunOutcome | null
+  /** Epoch milliseconds. */
+  createdAt: number
+  startedAt?: number
+  finishedAt?: number
+  /** The run on the host's own site. */
+  url: string
+  /** The definition this run belongs to, for "run again on another branch". */
+  workflowId?: string
+}
+
+export interface CiRunStep {
+  name: string
+  phase: CiRunPhase
+  outcome: CiRunOutcome | null
+  startedAt?: number
+  finishedAt?: number
+}
+
+export interface CiRunJob {
+  id: string
+  name: string
+  /** GitLab's stage or Azure's stage: jobs are grouped under it when present. */
+  stage?: string
+  phase: CiRunPhase
+  outcome: CiRunOutcome | null
+  startedAt?: number
+  finishedAt?: number
+  url: string
+  /** GitHub and Azure report the steps of a job; GitLab and Forgejo do not. */
+  steps: CiRunStep[]
+  /** The app can fetch this job's log itself. */
+  hasLog: boolean
+}
+
+/** What a host lets the app do with runs. Decided per host, not per run. */
+export interface CiRunCapabilities {
+  /** Run every job again. */
+  rerun: boolean
+  /** Run only the jobs that failed. */
+  rerunFailed: boolean
+  cancel: boolean
+  /** Start a workflow / pipeline on a branch. */
+  dispatch: boolean
+}
+
+export interface CiRunList {
+  /** False when the remote's host has no CI runs API this app speaks (Bitbucket, an old Forgejo). */
+  supported: boolean
+  runs: CiRun[]
+  capabilities: CiRunCapabilities
+}
+
+/** A workflow / pipeline definition that can be started by hand. */
+export interface CiWorkflow {
+  id: string
+  name: string
+  /** The file it lives in, when the host says (`.github/workflows/ci.yml`). */
+  path?: string
+}
+
+export type CiRunAction = 'rerun' | 'rerun-failed' | 'cancel'
+
 export interface BranchCompareResult {
   aheadCommits: GraphCommit[]
   behindCommits: GraphCommit[]
@@ -3227,6 +3320,7 @@ export type PageContent =
   | { type: 'notifications' }
   | { type: 'insights'; repoPath: string }
   | { type: 'wiki'; repoPath: string }
+  | { type: 'ci-runs'; repoPath: string }
   | { type: 'vault' }
   | { type: 'repositories' }
   | { type: 'help'; page?: string }

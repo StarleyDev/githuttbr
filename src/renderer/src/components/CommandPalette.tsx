@@ -53,7 +53,8 @@ import {
   Users,
   FlaskConical,
   TriangleAlert,
-  ListTodo
+  ListTodo,
+  Workflow
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { openBranchCompare } from '../lib/branchCompare'
@@ -313,6 +314,7 @@ export function CommandPalette(): React.JSX.Element {
         openBranchCompare({ repoPath: path, branchA: cur, branchB: base })
       }) },
       { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics repo settings', icon: <BarChart3 size={15} />, run: act(() => ui.openModal({ kind: 'repo-settings', repoPath: path, tab: 'insights' })) },
+      { id: 'ci-runs', title: t('ciRuns.open'), group: 'Actions', keywords: 'ci runs actions workflow pipeline build github gitlab azure forgejo rerun cancel jobs logs', icon: <Workflow size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'ci-runs', repoPath: path })) },
       { id: 'wiki', title: t('cmd.wiki'), group: 'Actions', keywords: 'wiki docs documentation deepwiki overview architecture ai generated', icon: <BookOpen size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'wiki', repoPath: path })) },
       { id: 'changelog-gen', title: t('cmd.changelogGen'), group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
       { id: 'vault', title: t('cmd.vault'), group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault' })) },
