@@ -3167,6 +3167,11 @@ export interface RegistryRepo {
   /** Folder absent at the last existence check. Stored rather than computed:
    *  stat-ing 200 paths belongs on page load, never in a render. */
   missing: boolean
+  /** The scan folders, as configured, whose last scan found this repository.
+   *  Not derivable from `path`: a repository reached through a link inside a
+   *  folder is stored by its real path, which can sit anywhere on disk.
+   *  Absent until a scan finds it. */
+  foundUnder?: string[]
 }
 
 /** A folder Gitcito scans for repositories. A preference, not an index. */

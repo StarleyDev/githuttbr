@@ -170,6 +170,20 @@ export async function scanRoots(rootList: RepoScanRoot[]): Promise<RepoScanResul
     const found = new Set<string>()
     let added = 0
 
+    // Which folder found a repository is rebuilt for every folder scanned now:
+    // a link removed since the last scan must take its repository out of that
+    // folder's list. Folders not in this scan keep what they recorded.
+    const scanned = new Set(rootList.filter((r) => isPlausibleRepoPath(r.path)).map((r) => r.path))
+    for (const repo of repos) {
+      if (!repo.foundUnder) continue
+      const kept = repo.foundUnder.filter((p) => !scanned.has(p))
+      if (kept.length > 0) repo.foundUnder = kept
+      else delete repo.foundUnder
+    }
+    const noteFoundUnder = (repo: RegistryRepo, root: string): void => {
+      if (!repo.foundUnder?.includes(root)) repo.foundUnder = [...(repo.foundUnder ?? []), root]
+    }
+
     for (const root of rootList) {
       if (!isPlausibleRepoPath(root.path)) continue
       for (const repoPath of await scanForRepos(root.path, root.depth)) {
@@ -179,6 +193,7 @@ export async function scanRoots(rootList: RepoScanRoot[]): Promise<RepoScanResul
         const existing = byPath.get(repoPath)
         if (existing) {
           existing.missing = false
+          noteFoundUnder(existing, root.path)
           continue
         }
         const [branch, owner] = await Promise.all([readHeadBranch(repoPath), readOriginOwner(repoPath)])
@@ -189,7 +204,8 @@ export async function scanRoots(rootList: RepoScanRoot[]): Promise<RepoScanResul
           branch,
           source: 'scanned',
           lastOpenedAt: 0,
-          missing: false
+          missing: false,
+          foundUnder: [root.path]
         }
         repos.push(entry)
         byPath.set(repoPath, entry)

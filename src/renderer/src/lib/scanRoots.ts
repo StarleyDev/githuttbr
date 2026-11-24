@@ -45,6 +45,15 @@ export interface ScanRootGroup {
   repos: RegistryRepo[]
 }
 
+/** Whether `repo` belongs to the scanned folder `root`: below it on disk, or
+ *  found by a scan of it — a repository reached through a link in the folder
+ *  is stored by its real path, which need not be below the folder at all. */
+function belongsTo(root: string, repo: RegistryRepo): boolean {
+  if (isWithin(root, repo.path)) return true
+  const key = folderKey(root)
+  return repo.foundUnder?.some((f) => folderKey(f) === key) ?? false
+}
+
 /** The indexed repositories under each scanned folder, in the folders' order.
  *  A repository under two overlapping folders is listed once, under the deeper
  *  one — the folder that describes it best. Missing folders are left out: the
@@ -55,7 +64,7 @@ export function groupByScanRoot(roots: RepoScanRoot[], repos: RegistryRepo[]): S
     if (repo.missing) continue
     let best: ScanRootGroup | undefined
     for (const g of groups) {
-      if (!isWithin(g.root.path, repo.path)) continue
+      if (!belongsTo(g.root.path, repo)) continue
       if (!best || folderKey(g.root.path).length > folderKey(best.root.path).length) best = g
     }
     best?.repos.push(repo)

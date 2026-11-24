@@ -14,7 +14,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeFile, mkdir, rm, chmod } from 'node:fs/promises'
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 
@@ -752,8 +752,23 @@ export const shots = [
     out: 'scanned-repos',
     repos: ['octopus-merge'],
     themes: ['light'],
-    drive: async (page, repos) => {
-      const root = repos['octopus-merge'].replace(/[\\/][^\\/]+$/, '')
+    drive: async (page) => {
+      // Real folders, not the demo root: that one is links into the playground,
+      // and a scan lists a linked repository by its real path — the machine's.
+      const root = join(tmpdir(), 'githuttbr-demo-workspace')
+      rmSync(root, { recursive: true, force: true })
+      for (const [name, branch] of [
+        ['api', 'main'],
+        ['billing-service', 'develop'],
+        ['design-system', 'main'],
+        ['docs', 'main'],
+        ['infra', 'main'],
+        ['mobile-app', 'release/2.4'],
+        ['web', 'main']
+      ]) {
+        mkdirSync(join(root, name), { recursive: true })
+        execFileSync('git', ['init', '-q', '-b', branch, join(root, name)])
+      }
       await page.evaluate((path) => {
         window.__shot.settings.getState().update((s) => ({ ...s, repoScanRoots: [{ path, depth: 1 }] }))
         window.__shot.ui.getState().openModal({ kind: 'scanned-repos' })

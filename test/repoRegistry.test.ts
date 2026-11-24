@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
-import { rmSync, mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs'
+import { rmSync, mkdtempSync, mkdirSync, writeFileSync, existsSync, symlinkSync, realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -130,6 +130,33 @@ describe('repoRegistry', () => {
     expect(entry?.source).toBe('scanned')
     expect(entry?.lastOpenedAt).toBe(0)
     expect(entry?.branch).toBe('develop')
+  })
+
+  it('records which folder found a repository, link or not, and forgets a removed link', async () => {
+    const elsewhere = mkdtempSync(join(tmpdir(), 'githuttbr-real-'))
+    const parent = mkdtempSync(join(tmpdir(), 'githuttbr-scanroot-'))
+    dirs.push(elsewhere, parent)
+    const real = join(elsewhere, 'linked')
+    mkdirSync(join(real, '.git'), { recursive: true })
+    writeFileSync(join(real, '.git', 'HEAD'), 'ref: refs/heads/main\n')
+    mkdirSync(join(parent, 'plain', '.git'), { recursive: true })
+    writeFileSync(join(parent, 'plain', '.git', 'HEAD'), 'ref: refs/heads/main\n')
+    symlinkSync(real, join(parent, 'link'))
+
+    await scanRoots([{ path: parent, depth: 1 }])
+    const byName = (name: string, repos: Awaited<ReturnType<typeof listRepos>>) =>
+      repos.find((r) => r.name === name)
+    let repos = await listRepos()
+    expect(byName('linked', repos)?.path).toBe(realpathSync(real))
+    expect(byName('linked', repos)?.foundUnder).toEqual([parent])
+    expect(byName('plain', repos)?.foundUnder).toEqual([parent])
+
+    // The link is gone: the repository stays indexed, but no longer under the folder.
+    rmSync(join(parent, 'link'))
+    await scanRoots([{ path: parent, depth: 1 }])
+    repos = await listRepos()
+    expect(byName('linked', repos)?.foundUnder).toBeUndefined()
+    expect(byName('plain', repos)?.foundUnder).toEqual([parent])
   })
 
   it('counts only what a scan added, not the registry it returns', async () => {

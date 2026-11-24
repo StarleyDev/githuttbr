@@ -85,4 +85,18 @@ describe('groupByScanRoot', () => {
     const groups = groupByScanRoot([{ path: '/w', depth: 3 }, { path: '/empty', depth: 3 }], [repo('/w/gone', true)])
     expect(groups.map((g) => g.repos.length)).toEqual([0, 0])
   })
+
+  it('lists a repository reached through a link under the folder that found it', () => {
+    // Stored by its real path, outside the folder: only the scan knows it belongs.
+    const linked = { ...repo('/elsewhere/real/api'), foundUnder: ['/w/links/'] }
+    const groups = groupByScanRoot(
+      [
+        { path: '/w/links', depth: 1 },
+        { path: '/w/other', depth: 1 }
+      ],
+      [linked, repo('/w/links/plain')]
+    )
+    expect(groups[0].repos.map((r) => r.name)).toEqual(['api', 'plain'])
+    expect(groups[1].repos).toEqual([])
+  })
 })
