@@ -747,6 +747,25 @@ export const shots = [
     }
   },
   {
+    // The Scanned repositories dialog over the playground: the folder editor
+    // closed, one repository greyed as already open, two ticked to open.
+    out: 'scanned-repos',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, repos) => {
+      const root = repos['octopus-merge'].replace(/[\\/][^\\/]+$/, '')
+      await page.evaluate((path) => {
+        window.__shot.settings.getState().update((s) => ({ ...s, repoScanRoots: [{ path, depth: 1 }] }))
+        window.__shot.ui.getState().openModal({ kind: 'scanned-repos' })
+      }, root)
+      const rows = page.locator('.scanned-row:not(.scanned-taken)')
+      await rows.nth(1).waitFor()
+      await rows.nth(0).click()
+      await rows.nth(2).click()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     out: 'pull-request-page',
     repos: ['octopus-merge'],
     drive: async (page, repos, app) => {

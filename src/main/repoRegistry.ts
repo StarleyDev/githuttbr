@@ -14,6 +14,10 @@ import { writePrivateFile } from './privateFile'
 
 interface RegistryData {
   repos: RegistryRepo[]
+  /** Paths the user chose to Forget. A scan skips them — otherwise the next
+   *  scan of their folder, which the Scanned repositories dialog runs on every
+   *  open, would quietly undo the Forget. Opening one again clears it. */
+  forgotten?: string[]
 }
 
 /**
@@ -48,19 +52,30 @@ function serialize<T>(work: () => Promise<T>): Promise<T> {
   return next
 }
 
-async function load(): Promise<RegistryRepo[]> {
+async function loadData(): Promise<Required<RegistryData>> {
   try {
     const raw = await readFile(registryFilePath(), 'utf-8')
     const data = JSON.parse(raw) as RegistryData
-    return Array.isArray(data.repos) ? data.repos : []
+    return {
+      repos: Array.isArray(data.repos) ? data.repos : [],
+      forgotten: Array.isArray(data.forgotten) ? data.forgotten.filter((p) => typeof p === 'string') : []
+    }
   } catch {
-    return []
+    return { repos: [], forgotten: [] }
   }
 }
 
-async function save(repos: RegistryRepo[]): Promise<void> {
+async function load(): Promise<RegistryRepo[]> {
+  return (await loadData()).repos
+}
+
+/** Write the repos. `forgotten` is kept as it is on disk unless given — only
+ *  Forget and a re-open change it. Every caller runs inside `serialize`, so
+ *  the read here cannot race another write. */
+async function save(repos: RegistryRepo[], forgotten?: string[]): Promise<void> {
+  const keep = forgotten ?? (await loadData()).forgotten
   await mkdir(app.getPath('userData'), { recursive: true })
-  const data: RegistryData = { repos }
+  const data: RegistryData = keep.length > 0 ? { repos, forgotten: keep } : { repos }
   await writePrivateFile(registryFilePath(), JSON.stringify(data, null, 2))
 }
 
@@ -87,7 +102,7 @@ export async function rememberRepo(repoPath: string): Promise<RegistryRepo[]> {
   if (!isPlausibleRepoPath(repoPath)) return serialize(load)
   const path = repoPath.trim()
   return serialize(async () => {
-    const repos = await load()
+    const { repos, forgotten } = await loadData()
     const now = Math.floor(Date.now() / 1000)
     const [branch, owner] = await Promise.all([readHeadBranch(path), readOriginOwner(path)])
     const existing = repos.find((r) => r.path === path)
@@ -108,7 +123,8 @@ export async function rememberRepo(repoPath: string): Promise<RegistryRepo[]> {
         missing: !existsSync(path)
       })
     }
-    await save(repos)
+    // Opening a forgotten repository is the user taking the Forget back.
+    await save(repos, forgotten.filter((p) => p !== path))
     return repos
   })
 }
@@ -116,8 +132,10 @@ export async function rememberRepo(repoPath: string): Promise<RegistryRepo[]> {
 /** Drop an entry from the index. Never touches the folder on disk. */
 export async function forgetRepo(repoPath: string): Promise<RegistryRepo[]> {
   return serialize(async () => {
-    const repos = (await load()).filter((r) => r.path !== repoPath)
-    await save(repos)
+    const data = await loadData()
+    const repos = data.repos.filter((r) => r.path !== repoPath)
+    const forgotten = data.forgotten.includes(repoPath) ? data.forgotten : [...data.forgotten, repoPath]
+    await save(repos, forgotten)
     return repos
   })
 }
@@ -145,22 +163,28 @@ export async function refreshRepos(paths: string[]): Promise<RegistryRepo[]> {
  *  never demotes a repo the user has actually opened. */
 export async function scanRoots(rootList: RepoScanRoot[]): Promise<RepoScanResult> {
   return serialize(async () => {
-    const repos = await load()
+    const { repos, forgotten } = await loadData()
+    const skip = new Set(forgotten)
     const byPath = new Map(repos.map((r) => [r.path, r]))
+    // A Set, not a counter: two roots that overlap reach the same repository twice.
+    const found = new Set<string>()
     let added = 0
 
     for (const root of rootList) {
       if (!isPlausibleRepoPath(root.path)) continue
-      for (const found of await scanForRepos(root.path, root.depth)) {
-        const existing = byPath.get(found)
+      for (const repoPath of await scanForRepos(root.path, root.depth)) {
+        // Forgotten on purpose: neither listed nor counted.
+        if (skip.has(repoPath)) continue
+        found.add(repoPath)
+        const existing = byPath.get(repoPath)
         if (existing) {
           existing.missing = false
           continue
         }
-        const [branch, owner] = await Promise.all([readHeadBranch(found), readOriginOwner(found)])
+        const [branch, owner] = await Promise.all([readHeadBranch(repoPath), readOriginOwner(repoPath)])
         const entry: RegistryRepo = {
-          path: found,
-          name: basename(found),
+          path: repoPath,
+          name: basename(repoPath),
           owner,
           branch,
           source: 'scanned',
@@ -168,13 +192,13 @@ export async function scanRoots(rootList: RepoScanRoot[]): Promise<RepoScanResul
           missing: false
         }
         repos.push(entry)
-        byPath.set(found, entry)
+        byPath.set(repoPath, entry)
         added += 1
       }
     }
 
     await save(repos)
-    return { repos, added }
+    return { repos, found: found.size, added }
   })
 }
 

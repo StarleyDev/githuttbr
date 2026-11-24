@@ -121,7 +121,7 @@ git actually is.
 
 | | |
 |---|---|
-| **[Repositories](docs/help/repositories.md)** | Every repository GitHuttBr has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. |
+| **[Repositories](docs/help/repositories.md)** | Every repository GitHuttBr has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. [Scanned repositories](docs/help/repositories.md#scanned-repositories) in the Open window opens several from those folders at once. |
 | **[Mission control](docs/help/mission-control.md)** | Every repository of the workspace on one screen, worst first — blocked, then to sync, then dirty — with a fetch for just the stale ones. |
 | **[Clone many at once](docs/help/cloning.md#several-repositories-at-once)** | Tick several repositories in a host tab, or select all shown, and clone them into one folder — a few at a time, in a corner tray that keeps going after the dialog closes, each with its own cancel. |
 | **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. Switching is instant even next to a huge `node_modules`: the file watcher follows only what git tracks, and a bar under the toolbar shows while the repository you switched to catches up. |

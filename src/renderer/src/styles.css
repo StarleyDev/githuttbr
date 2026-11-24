@@ -6906,9 +6906,26 @@ body.col-resizing .node-ava {
   justify-content: center;
 }
 
-.launcher-create-group {
-  width: 100%;
+/* Scanned repositories and Create group, side by side; one alone (a group's
+   launcher has no Create group) takes the whole row. Where they do not fit —
+   the narrower welcome card, a long translation — they wrap to a row each
+   rather than clip the label. */
+.launcher-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.launcher-secondary .btn {
+  flex: 1 1 auto;
   justify-content: center;
+  white-space: nowrap;
+}
+
+/* Open repository and Scanned repositories: 20% wider than a plain dialog,
+   so paths in the lists read further before they are cut. */
+.modal.modal-launcher {
+  width: 504px;
 }
 
 .launcher-list {
@@ -18572,4 +18589,155 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .ghes-add input {
   flex: 1;
   min-width: 0;
+}
+
+/* Scanned folders editor — Settings → Data and the Scanned repositories dialog */
+.scan-roots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.scan-roots-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.scan-roots-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.scan-roots-depth {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+.scan-roots-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Scanned repositories dialog */
+.scanned-manage {
+  margin: 10px 0 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.scanned-manage-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-0);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.scanned-filter {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.scanned-list {
+  /* No scroller of its own: the dialog body already scrolls, and a list that
+     scrolled inside it showed two bars once the folder editor was open. */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scanned-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 10px 4px;
+  font-size: 11px;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.scanned-group-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.scanned-group-count {
+  flex: 0 0 auto;
+  color: var(--text-2);
+}
+.scanned-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+.scanned-row:hover {
+  background: var(--bg-3);
+}
+.scanned-row input {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.scanned-row.scanned-taken {
+  cursor: default;
+  opacity: 0.6;
+}
+.scanned-row.scanned-taken:hover {
+  background: none;
+}
+.scanned-row-icon {
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+.scanned-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.scanned-row-info strong {
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scanned-row-info span {
+  color: var(--text-2);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scanned-row-branch,
+.scanned-row-note {
+  flex: 0 0 auto;
+  max-width: 30%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.scanned-empty {
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: var(--text-2);
 }

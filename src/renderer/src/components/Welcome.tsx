@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { FolderGit2, Download, Plus, X, Pencil, GripVertical } from 'lucide-react'
+import { FolderGit2, FolderSearch, Download, Plus, X, Pencil, GripVertical } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
@@ -127,6 +127,7 @@ export function LauncherPanel({
   onClone,
   onCreate,
   onCreateGroup,
+  onScanned,
   onReorder,
   items,
   listTitle,
@@ -137,6 +138,8 @@ export function LauncherPanel({
   onClone: () => void
   onCreate: () => void
   onCreateGroup?: () => void
+  /** The repositories found in the scanned folders. */
+  onScanned?: () => void
   onReorder?: (fromPath: string, toPath: string) => void
   items: LauncherItem[]
   listTitle?: string
@@ -179,10 +182,19 @@ export function LauncherPanel({
           <Plus size={14} /> {t('common.create')}
         </button>
       </div>
-      {onCreateGroup && (
-        <button className="btn ghost launcher-create-group" onClick={onCreateGroup}>
-          <Plus size={14} /> {t('launcher.createGroup')}
-        </button>
+      {(onScanned || onCreateGroup) && (
+        <div className="launcher-secondary">
+          {onScanned && (
+            <button className="btn ghost" onClick={onScanned}>
+              <FolderSearch size={14} /> {t('launcher.scanned')}
+            </button>
+          )}
+          {onCreateGroup && (
+            <button className="btn ghost" onClick={onCreateGroup}>
+              <Plus size={14} /> {t('launcher.createGroup')}
+            </button>
+          )}
+        </div>
       )}
       {(items.length > 0 || emptyMessage !== undefined) && (
         <>
@@ -197,7 +209,7 @@ export function LauncherPanel({
         </>
       )}
       {recentItems && recentItems.length > 0 && (
-        <ItemList items={recentItems} title="RECENT" {...listProps} />
+        <ItemList items={recentItems} title={t('welcome.recent').toUpperCase()} {...listProps} />
       )}
     </div>
   )
@@ -249,6 +261,7 @@ export function Welcome(): React.JSX.Element {
           onClone={cloneRepo}
           onCreate={createRepo}
           onCreateGroup={createGroup}
+          onScanned={() => openModal({ kind: 'scanned-repos' })}
           items={recentItems}
           listTitle={recentItems.length > 0 ? t('welcome.recent').toUpperCase() : undefined}
         />

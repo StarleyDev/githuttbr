@@ -3177,10 +3177,13 @@ export interface RepoScanRoot {
   depth: number
 }
 
-/** What a scan produced. `added` is counted where the merge happens, because a
- *  caller cannot reconstruct it from the registry it is handed. */
+/** What a scan produced. Both counts are taken where the merge happens, because
+ *  a caller cannot reconstruct them from the registry it is handed. `found` is
+ *  every repository under the roots; `added` only the ones not indexed before —
+ *  reporting `added` alone reads as "found nothing" on a second scan. */
 export interface RepoScanResult {
   repos: RegistryRepo[]
+  found: number
   added: number
 }
 

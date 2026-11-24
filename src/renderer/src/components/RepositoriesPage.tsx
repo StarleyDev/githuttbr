@@ -36,6 +36,7 @@ import { tabRepos, type RepoPulse } from '../../../shared/types'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { openRepositoryDialog } from '../appCommands'
 import { planWorkspaces } from '../lib/workspacePlan'
+import { addScanRoot } from '../scanRootActions'
 
 /** Section headings live here as keys, not strings: a module-level constant
  *  holding translated text freezes at whatever language was active on import. */
@@ -83,7 +84,6 @@ export function RepositoriesPage(): React.JSX.Element {
   const openModal = useUIStore((s) => s.openModal)
   const updateSettings = useSettingsStore((s) => s.update)
   const scanning = useReposStore((s) => s.scanning)
-  const scan = useReposStore((s) => s.scan)
   const toast = useUIStore((s) => s.toast)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const setRepoSectionColor = useSettingsStore((s) => s.setRepoSectionColor)
@@ -133,12 +133,8 @@ export function RepositoriesPage(): React.JSX.Element {
   }
 
   const runAddScanRoot = async (): Promise<void> => {
-    const chosen = await shellApi.selectDirectory()
+    const chosen = await addScanRoot()
     if (!chosen) return
-    const roots = [...settings.repoScanRoots, { path: chosen, depth: 3 }]
-    updateSettings((s) => ({ ...s, repoScanRoots: roots }))
-    const found = await scan(roots)
-    toast('success', interp(t('repos.scanFound'), { n: found }))
 
     // Offer the folder tree as workspaces. Read from the store rather than the
     // `entries` in scope: `scan` has just replaced the registry, and this

@@ -81,6 +81,7 @@ import { GitlabServerSelect } from './GitlabServerSelect'
 import { GITLAB_COM, preferredGitlabBase } from '../../../shared/gitlabInstance'
 import { defaultOptionIndex, isPickInput, normalizeOptions } from '../lib/launchInputs'
 import { AIAccountsNotice } from './AIAccountsNotice'
+import { ScannedReposModal } from './ScannedReposModal'
 
 /**
  * After a scan, offer the folder tree as workspaces. Up-to-date rows stay
@@ -2355,6 +2356,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
         onClone={cloneRepo}
         onCreate={createRepo}
         onCreateGroup={spec.groupId ? undefined : createGroup}
+        onScanned={() => openModal({ kind: 'scanned-repos', groupId: spec.groupId })}
         onReorder={spec.groupId ? (from, to) => reorderReposInGroup(spec.groupId!, from, to) : undefined}
         items={items}
         listTitle={listTitle}
@@ -2464,6 +2466,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-wide modal-settings'
                   : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'
+                  : modal.kind === 'launcher' || modal.kind === 'scanned-repos'
+                  ? 'modal-launcher'
                   : modal.kind === 'interactive-rebase' ||
                       modal.kind === 'conflict-radar' ||
                       modal.kind === 'range-diff' ||
@@ -2524,6 +2528,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'work-item-branch' && <WorkItemBranchModal spec={modal} />}
               {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} initialThemeTab={modal.themeTab} />}
               {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
+              {modal.kind === 'scanned-repos' && <ScannedReposModal spec={modal} />}
               {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
               {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
               {modal.kind === 'interactive-rebase' && (

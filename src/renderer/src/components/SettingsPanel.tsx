@@ -69,7 +69,6 @@ import {
 } from 'lucide-react'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
-import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { parseSettingsImport } from '../lib/settingsImport'
@@ -126,6 +125,7 @@ import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
 import { LanguagePicker } from './LanguagePicker'
 import { NumberField } from './NumberField'
+import { ScanRootsEditor } from './ScanRootsEditor'
 import { ShortcutEditor } from './CheatsheetModal'
 import { AUTHOR_NAME, AUTHOR_URL, PRODUCT_NAME } from '../../../shared/brand'
 import { SETTINGS_PAGE_KEYS, type SettingsEntry, type SettingsPageId } from '../lib/settingsSearch'
@@ -4089,40 +4089,10 @@ function ShortcutsPage(): React.JSX.Element {
   )
 }
 
-/** Folders Gitcito walks looking for repositories. Preferences, not a live
- *  view — "Scan now" is explicit because a scan spawns a process per
- *  candidate folder and nobody wants that running unasked. */
+/** Folders Gitcito walks looking for repositories. The editor itself is shared
+ *  with the Scanned repositories dialog. */
 function ScanRootsSection(): React.JSX.Element {
   const t = useT()
-  const settings = useSettingsStore((s) => s.settings)
-  const update = useSettingsStore((s) => s.update)
-  const toast = useUIStore((s) => s.toast)
-  const scanning = useReposStore((s) => s.scanning)
-  const scan = useReposStore((s) => s.scan)
-  const roots = settings.repoScanRoots
-
-  const setDepth = (path: string, depth: number): void => {
-    update((s) => ({
-      ...s,
-      repoScanRoots: s.repoScanRoots.map((r) => (r.path === path ? { ...r, depth } : r))
-    }))
-  }
-
-  const removeRoot = (path: string): void => {
-    update((s) => ({ ...s, repoScanRoots: s.repoScanRoots.filter((r) => r.path !== path) }))
-  }
-
-  const addRoot = async (): Promise<void> => {
-    const chosen = await shellApi.selectDirectory()
-    if (!chosen) return
-    update((s) => ({ ...s, repoScanRoots: [...s.repoScanRoots, { path: chosen, depth: 3 }] }))
-  }
-
-  const runScan = async (): Promise<void> => {
-    const found = await scan(useSettingsStore.getState().settings.repoScanRoots)
-    toast('success', interp(t('repos.scanFound'), { n: found }))
-  }
-
   return (
     <div style={{ marginTop: 28 }}>
       <h4 className="settings-section-title">
@@ -4130,49 +4100,7 @@ function ScanRootsSection(): React.JSX.Element {
         {t('repos.scanRoots')}
       </h4>
       <p className="settings-hint">{t('repos.scanRootsHint')}</p>
-
-      {roots.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-          {roots.map((root) => (
-            <div key={root.path} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span
-                className="settings-hint"
-                style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                title={root.path}
-              >
-                {root.path}
-              </span>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, flex: '0 0 auto' }}>
-                {t('repos.scanDepth')}
-                <NumberField
-                  min={1}
-                  max={10}
-                  value={root.depth}
-                  onChange={(n) => setDepth(root.path, n)}
-                  style={{ maxWidth: 50 }}
-                />
-              </label>
-              <button
-                className="btn ghost small"
-                title={t('repos.removeScanRoot')}
-                onClick={() => removeRoot(root.path)}
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-        <button className="btn ghost small" onClick={() => void addRoot()}>
-          <Plus size={13} />
-          {t('repos.addScanRoot')}
-        </button>
-        <button className="btn ghost small" onClick={() => void runScan()} disabled={scanning || roots.length === 0}>
-          {scanning ? t('repos.scanning') : t('repos.scanNow')}
-        </button>
-      </div>
+      <ScanRootsEditor />
     </div>
   )
 }

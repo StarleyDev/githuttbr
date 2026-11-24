@@ -23,6 +23,10 @@ repository until you ask for it.
   the others still open. The macOS picker cannot grey out open repositories in
   advance: Electron does not expose the panel's per-folder hook, so the check
   happens after you click Open.
+- **Scanned repositories**, under the three buttons, lists every repository
+  in the folders you told Gitcito to scan — tick several and open them at once,
+  or double-click one. It is also where you add or remove those folders. See
+  [Repositories](repositories.md#scanned-repositories).
 - **Clone** one from a URL or straight from your host — see [cloning](cloning.md)
   for the options that make a huge repository quick to clone.
 - From a terminal, `gitcito .` opens the current folder in the running app —

@@ -67,7 +67,8 @@
       "reset-to-commit": "merging",
       "local-ci": "local-ci",
       "stack-submit": "stacks",
-      "scan-workspaces": "repositories"
+      "scan-workspaces": "repositories",
+      "scanned-repos": "repositories"
     },
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",

@@ -86,7 +86,8 @@ reopen them. It covers open tabs only, and it happens on the first visit of
 each session rather than once ever — so a repository you **Forget** stays
 forgotten unless you open it again.
 
-Scan folders are configured in Settings:
+Scan folders are configured in Settings → Data, or in the **Scanned
+repositories** dialog below:
 
 - **Depth** is how many directory levels the scan descends below the root
   (default 3, capped at 10).
@@ -94,9 +95,51 @@ Scan folders are configured in Settings:
   inside a repo is not indexed as its own row.
 - It never enters dot-directories, and skips `node_modules` and similar
   dependency folders.
+- It **follows symlinked folders**, and walks each real folder once — a link
+  back up the tree cannot loop, and two links to one repository list it once.
+  A repository found through a link is listed by its **real path**, so it is
+  the same entry (and the same tab) as when you open it from the picker.
 - It **reads folder names only**: finding a `.git` directory is what makes
   something a repository here. Name, owner and branch come from files inside
   `.git` (`HEAD`, the config), never by running `git`.
+- It runs **when you ask**: adding a folder, **Scan now**, or opening the
+  Scanned repositories dialog. A repository cloned into a scan folder later
+  appears on the next of those, or as soon as you open it.
+- The result names **every repository found and how many were new**. A second
+  scan of the same folders reports them all again, with "0 new" — they were
+  already on this page.
+- A folder can be added **once**. Picking one already in the list says so and
+  changes nothing; a trailing slash or, on Windows, a different case is still
+  the same folder.
+
+
+## Scanned repositories
+
+This page answers "where is that repository?" across everything Gitcito knows.
+When you only want to **open** something from your project folders, the
+**Open repository** window — and the welcome screen — has a shorter path:
+**Scanned repositories**.
+
+![The Scanned repositories dialog: the scanned folders collapsed at the top, a
+filter, then the folder's repositories with a checkbox and their branch, two
+ticked and the Open button counting them](../screenshots/scanned-repos.webp)
+
+- The repositories are **grouped by scanned folder**, sorted by name, with a
+  filter for name or path.
+- **Tick several** and press **Open**, or **double-click** one. From a group's
+  launcher the button reads **Add to group**, and you return to the group.
+- A repository already open in a tab — or already in that group — is listed
+  but greyed out, so the folder count still adds up.
+- Opening the dialog **scans the folders again** first, so a fresh clone is
+  there without a trip to Settings.
+- **Scanned folders** at the top is the same editor as in Settings: add a
+  folder, remove one, change its depth. It starts open when there is no folder
+  yet, since an empty list is otherwise a dead end.
+
+Its limits: a repository under two overlapping folders is listed once, under
+the deeper folder. A folder that has since disappeared is left out — it cannot
+be opened. Removing a scanned folder hides its repositories here, but does not
+**Forget** them on this page.
 
 ## Rows
 
@@ -278,8 +321,9 @@ standing cost.
 - **Section colours are cosmetic.** They do not filter, sort, group or sync
   anywhere, and a colour set on a workspace's section is not that workspace's
   colour.
-- **Forget removes the entry from the list — never from disk.** If the folder
-  is still there, scanning the same root (or opening it again) brings it right
-  back.
+- **Forget removes the entry from the list — never from disk.** It also
+  sticks: later scans of its folder skip it, including the one the Scanned
+  repositories dialog runs when it opens. Opening the repository again is what
+  brings it back.
 
 **See also:** [Mission control](mission-control.md) · [Workspaces, tabs & groups](workspaces.md)

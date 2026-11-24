@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { RegistryRepo, RepoScanRoot } from '../../../shared/types'
 import { reposApi } from '../infrastructure/api'
+import type { ScanCounts } from '../lib/scanRoots'
 
 // The registry, as the Repositories page sees it. Loaded on mount and after any
 // mutation; nothing subscribes to it in the background, because nothing outside
@@ -14,8 +15,8 @@ interface ReposState {
   seeded: boolean
   /** `seed` are paths worth indexing if the registry has never heard of them. */
   load: (seed?: string[]) => Promise<void>
-  /** Resolves with how many entries the scan added. */
-  scan: (roots: RepoScanRoot[]) => Promise<number>
+  /** Resolves with how many repositories the roots hold, and how many were new. */
+  scan: (roots: RepoScanRoot[]) => Promise<ScanCounts>
   forget: (path: string) => Promise<void>
   locate: (oldPath: string, newPath: string) => Promise<void>
 }
@@ -57,7 +58,7 @@ export const useReposStore = create<ReposState>((set, get) => ({
     try {
       const result = await reposApi.scan(roots)
       set({ entries: result.repos })
-      return result.added
+      return { found: result.found, added: result.added }
     } finally {
       set({ scanning: false })
     }

@@ -71,6 +71,27 @@ describe('repoRegistry', () => {
     expect(existsSync(dir)).toBe(true)
   })
 
+  it('keeps a forgotten repo out of later scans until it is opened again', async () => {
+    const parent = mkdtempSync(join(tmpdir(), 'githuttbr-scanroot-'))
+    dirs.push(parent)
+    const dir = join(parent, 'gamma')
+    mkdirSync(join(dir, '.git'), { recursive: true })
+    writeFileSync(join(dir, '.git', 'HEAD'), 'ref: refs/heads/main\n')
+
+    await scanRoots([{ path: parent, depth: 2 }])
+    await forgetRepo(dir)
+    // The Scanned repositories dialog scans on every open: a Forget must hold.
+    const again = await scanRoots([{ path: parent, depth: 2 }])
+    expect(again.repos.some((r) => r.path === dir)).toBe(false)
+    expect(again.found).toBe(0)
+
+    // Opening it is taking the Forget back; the next scan sees it again.
+    await rememberRepo(dir)
+    await forgetRepo(join(parent, 'unrelated'))
+    const reopened = await scanRoots([{ path: parent, depth: 2 }])
+    expect(reopened.found).toBe(1)
+  })
+
   it('rejects a path that is not safe', async () => {
     await rememberRepo('')
     expect(await listRepos()).toEqual([])
@@ -126,6 +147,15 @@ describe('repoRegistry', () => {
 
     const again = await scanRoots([{ path: parent, depth: 2 }])
     expect(again.added).toBe(0)
+    // A second scan still finds both: "0 found" was what made it look broken.
+    expect(again.found).toBe(2)
+
+    // Overlapping roots reach the same repositories twice; each counts once.
+    const overlap = await scanRoots([
+      { path: parent, depth: 2 },
+      { path: join(parent, 'one'), depth: 1 }
+    ])
+    expect(overlap.found).toBe(2)
   })
 
   it('files a padded path under its trimmed spelling', async () => {

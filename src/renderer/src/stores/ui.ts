@@ -178,6 +178,9 @@ export type ModalSpec =
   | { kind: 'work-item-branch'; path: string; remoteUrl: string }
   | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
+  /** The repositories the scanned folders hold, to open — or, with `groupId`,
+   *  to add to that group. Also where the scanned folders are managed. */
+  | { kind: 'scanned-repos'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
   | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
