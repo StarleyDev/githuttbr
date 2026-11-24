@@ -1,5 +1,13 @@
 
 
+## [4.43.0](https://github.com/StarleyDev/githuttbr/compare/v4.42.0...v4.43.0) (2026-11-24)
+
+
+### Features
+
+* **repos:** list scanned repositories from the Open repository window ([6127790](https://github.com/StarleyDev/githuttbr/commit/6127790dd8d3420d55ad2f46e959bdb427b6ee6f))
+* **themes:** color toolbar, sidebar, menu and settings icons by what they do ([26580e1](https://github.com/StarleyDev/githuttbr/commit/26580e12869b7ab41535152d9a213329fdc72b2d))
+
 ## [4.42.0](https://github.com/StarleyDev/githuttbr/compare/v4.41.0...v4.42.0) (2026-11-24)
 
 
