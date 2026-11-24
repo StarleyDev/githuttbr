@@ -13,11 +13,11 @@ export const ja = {
   'foot.reportIssue': '問題を報告',
   'foot.sponsor': 'スポンサー',
 
-  'meta.title': 'GitHuttBr — git のすべてを見せる UI',
+  'meta.title': 'GitHuttBr — git のすべてを、ありのままに',
   'meta.description':
     '完全に vibe-coded な Git クライアント。無料。グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS — さらに、git にできるとは知らなかったことをいくつか。',
 
-  'hero.title': 'git のすべてを、<br /><em>そのまま見せてくれる UI</em>',
+  'hero.title': 'git のすべてを、<br /><em>ありのままに</em>',
   'hero.lede':
     'グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS。<br />ふつうのことを、きちんと — さらに、git にできるとは知らなかったことをいくつか。',
   'hero.download': 'お使いのプラットフォーム用をダウンロード',
@@ -45,14 +45,13 @@ export const ja = {
   'ordinary.themes': '組み込みテーマ、ライトとダーク、さらに AI 生成のもの',
   'ordinary.languages':
     'ハンドブック込みで全体を翻訳 — アラビア語とヘブライ語はレイアウトが反転します',
-  'ordinary.conflictAlt': 'コンフリクトリゾルバ',
 
   'download.title': 'ダウンロード',
   'download.sub':
     '最新リリースは <strong>v{version}</strong> です。すべてのビルドは CI から公開されます。',
   'download.cli':
     'または <code>githuttbr .</code> でターミナルからリポジトリを開けます — <a href="{cli}">コマンドライン</a>を参照してください。',
-  'download.macNote': 'Apple silicon &amp; Intel · 署名と公証済み',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'インストーラー（x64）',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '{os} 版をダウンロード',
@@ -121,5 +120,36 @@ export const ja = {
     '`githuttbr .` はリポジトリを開き、`githuttbr blame src/api.ts -l 84` はその行で開きます。`githuttbr doctor` はウィンドウをまったく開かず、リポジトリの要件を検査して CI が読める終了コードを返します。',
   'feature.hosting.title': 'どのサーバーでもプルリクエスト',
   'feature.hosting.body':
-    'GitHub、GitLab、Bitbucket、Azure DevOps、Forgejo で作成・レビュー・マージ。社内の GitHub Enterprise、GitLab、Bitbucket Data Center サーバーにも対応し、レビュアー・担当者・ラベルはリポジトリから選べます。'
+    'GitHub、GitLab、Bitbucket、Azure DevOps、Forgejo で作成・レビュー・マージ。社内の GitHub Enterprise、GitLab、Bitbucket Data Center サーバーにも対応し、レビュアー・担当者・ラベルはリポジトリから選べます。',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': '言語',
+  'stat.platforms': 'プラットフォーム — macOS・Windows・Linux',
+  'stat.languages': '言語に対応（ハンドブックも）',
+  'stat.pages': 'ページのハンドブックをアプリに内蔵',
+  'stat.servers': '間に入る私たちのサーバー',
+  'showcase.more': 'ハンドブックで詳しく読む',
+  'more.title': 'ほかにも — すでに実装され、文書化され、アプリに入っています',
+  'hosts.title': 'あなたのホストで使えます',
+  'hosts.beta': 'ベータ',
+  'ai.compatible': '互換エンドポイントなら何でも',
+  'sec.keychain.title': 'キーチェーンの前に必ず確認',
+  'sec.keychain.body': 'トークンは OS のキーチェーンで暗号化され、アプリはそれに触れる前に確認します。断っても、そのまま動き続けます。',
+  'sec.server.title': '1 つのトークンに 1 つのサーバー',
+  'sec.server.body': 'github.com、Enterprise、GitLab、Data Center のトークンは、保存したサーバーにしか送られません。',
+  'sec.plain.title': 'git がトークンを平文で見ることはない',
+  'sec.plain.body':
+    'トークンは操作ごとのプライベートなエンドポイントを通って git に渡ります。<code>.git/config</code> でも、コマンドラインでも、環境変数でもありません。',
+  'sec.confirm.title': '破壊的な操作は必ず確認',
+  'sec.confirm.body': 'force push、変更の破棄、hard reset。確認画面は何が失われるかを正確に伝え、その前にスナップショットを取ります。',
+  'themes.title': 'テーマ、ショートカット、プロフィール — そしてカピバラ',
+  'themes.body':
+    'ライトとダークのテーマ、AI が生成したものも。アイデンティティごとのプロフィールを、リポジトリ単位で割り当てられます。<code>launch.json</code> から実行・デバッグし、<code>tsc</code>、ESLint、Clippy の結果を下部のパネルで確認できます。',
+  'honest.title': '正直なお断り',
+  'honest.body':
+    'GitHuttBr はまだ若いアプリです。いちばん実績があるのは <strong>GitHub</strong> です。GitHub Enterprise Server、セルフマネージドの GitLab、Bitbucket Data Center は<strong>ベータ</strong>で、模擬サーバーでは試験済みですが、本物のサーバーではまだです。壊れたら——まあ、<em>私の環境では動いています</em>。Issue と PR は大歓迎です。💜',
+  'download.yours': 'あなたのシステム',
+  'download.macHint':
+    'まだ署名されていません。初回は<strong>システム設定 → プライバシーとセキュリティ → このまま開く</strong>を選んでください。Mac では新しいバージョンを毎回手動でダウンロードします。',
+  'download.autoUpdate': '新しいリリースのたびに自動で更新されます。'
 }

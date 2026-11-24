@@ -13,11 +13,11 @@ export const ar = {
   'foot.reportIssue': 'الإبلاغ عن مشكلة',
   'foot.sponsor': 'الرعاية',
 
-  'meta.title': 'GitHuttBr — كل ما في git، مع واجهة تُظهره لك',
+  'meta.title': 'GitHuttBr — git كاملًا، أمام عينيك',
   'meta.description':
     'عميل Git مكتوب بالكامل بأسلوب vibe coding. مجاني. رسم الالتزامات، والتحضير سطرًا سطرًا، وإعادة الأساس، وأشجار العمل، والوحدات الفرعية، وLFS — إضافة إلى أمور قليلة لم تكن تعلم أن git قادر عليها.',
 
-  'hero.title': 'كل ما في git،<br /><em>مع واجهة تُظهره لك</em>',
+  'hero.title': 'git كاملًا،<br /><em>أمام عينيك</em>',
   'hero.lede':
     'رسم الالتزامات، والتحضير سطرًا سطرًا، وإعادة الأساس، وأشجار العمل، والوحدات الفرعية، وLFS.<br />الأمور العادية، منجزة كما ينبغي — وأمور قليلة لم تكن تعلم أن git قادر عليها.',
   'hero.download': 'نزّله لمنصّتك',
@@ -44,13 +44,12 @@ export const ar = {
   'ordinary.ai': 'ذكاء اصطناعي اختياري يستشهد بالأسطر التي قرأها',
   'ordinary.themes': 'سمات مدمجة، فاتحة وداكنة، وأخرى يولّدها الذكاء الاصطناعي',
   'ordinary.languages': 'مترجَم بالكامل، والدليل معه — والعربية والعبرية تعكسان التخطيط',
-  'ordinary.conflictAlt': 'محلّل التعارضات',
 
   'download.title': 'التنزيل',
   'download.sub': 'أحدث إصدار: <strong>v{version}</strong>. وكل بناء يُنشر من CI.',
   'download.cli':
     'أو افتح مستودعًا من طرفيتك بالأمر <code>githuttbr .</code> — انظر <a href="{cli}">سطر الأوامر</a>.',
-  'download.macNote': 'معالجات Apple &amp; Intel · موقّع وموثّق',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'مثبّت (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'التنزيل لنظام {os}',
@@ -119,5 +118,39 @@ export const ar = {
     'الأمر `githuttbr .` يفتح المستودع، و`githuttbr blame src/api.ts -l 84` يفتحه عند ذلك السطر تحديدًا، أما `githuttbr doctor` فلا يفتح نافذة إطلاقًا: يفحص ما يشترطه المستودع ويخرج برمز تقرؤه أدوات التكامل المستمر لديك.',
   'feature.hosting.title': 'طلبات الدمج على أي خادم',
   'feature.hosting.body':
-    'أنشئ طلبات الدمج وراجعها وادمجها على GitHub وGitLab وBitbucket وAzure DevOps وForgejo — وعلى خوادم شركتك أيضًا: GitHub Enterprise وGitLab وBitbucket Data Center — مع اختيار المراجعين والمكلّفين والتسميات من المستودع نفسه.'
+    'أنشئ طلبات الدمج وراجعها وادمجها على GitHub وGitLab وBitbucket وAzure DevOps وForgejo — وعلى خوادم شركتك أيضًا: GitHub Enterprise وGitLab وBitbucket Data Center — مع اختيار المراجعين والمكلّفين والتسميات من المستودع نفسه.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'اللغة',
+  'stat.platforms': 'منصات — macOS وWindows وLinux',
+  'stat.languages': 'لغة، والدليل معها',
+  'stat.pages': 'صفحة من الدليل داخل التطبيق',
+  'stat.servers': 'خوادم لنا في المنتصف',
+  'showcase.more': 'اقرأ صفحة الدليل',
+  'more.title': 'والمزيد — مبني وموثّق وموجود في التطبيق اليوم',
+  'hosts.title': 'يعمل مع منصة الاستضافة التي تستخدمها',
+  'hosts.beta': 'تجريبي',
+  'ai.compatible': 'أي نقطة نهاية متوافقة',
+  'sec.keychain.title': 'يسألك قبل سلسلة المفاتيح',
+  'sec.keychain.body':
+    'تُشفَّر الرموز بسلسلة مفاتيح النظام، ويسألك التطبيق قبل أن يلمسها. ارفض وسيواصل العمل.',
+  'sec.server.title': 'رمز واحد، خادم واحد',
+  'sec.server.body':
+    'لا يُرسَل رمز github.com أو Enterprise أو GitLab أو Data Center إلا إلى الخادم الذي حُفظ له.',
+  'sec.plain.title': 'لا يرى git الرمز نصًا صريحًا أبدًا',
+  'sec.plain.body':
+    'يصل الرمز إلى git عبر نقطة نهاية خاصة لكل عملية — لا عبر <code>.git/config</code>، ولا سطر الأوامر، ولا متغيرات البيئة.',
+  'sec.confirm.title': 'كل ما هو مُدمِّر يطلب التأكيد',
+  'sec.confirm.body':
+    'الدفع القسري، تجاهل التغييرات، إعادة التعيين الكاملة: يذكر التأكيد بالضبط ما سيُفقد، وتُلتقط لقطة قبل ذلك.',
+  'themes.title': 'سمات واختصارات وملفات تعريف — وكابيبارا',
+  'themes.body':
+    'سمات فاتحة وداكنة، ومنها ما يولّده الذكاء الاصطناعي. ملف تعريف لكل هوية، مربوط بكل مستودع. شغّل وصحّح الأخطاء من <code>launch.json</code>، وشاهد ما يقوله <code>tsc</code> أو ESLint أو Clippy في لوحة أسفل الشاشة.',
+  'honest.title': 'تنبيه صريح',
+  'honest.body':
+    'GitHuttBr ما زال حديثًا. <strong>GitHub</strong> هو المسار الأكثر اختبارًا. أما GitHub Enterprise Server وGitLab المُدار ذاتيًا وBitbucket Data Center فما زالت <strong>تجريبية</strong> — اختُبرت على خوادم محاكاة، لا على خوادم حقيقية بعد. إن تعطّل شيء: حسنًا، <em>إنه يعمل على جهازي</em>. البلاغات وطلبات الدمج مرحّب بها. 💜',
+  'download.yours': 'نظامك',
+  'download.macHint':
+    'غير موقّع بعد: في المرة الأولى افتح <strong>إعدادات النظام ← الخصوصية والأمن ← الفتح على أي حال</strong>. على Mac تُنزَّل كل نسخة جديدة يدويًا.',
+  'download.autoUpdate': 'يحدّث نفسه مع كل إصدار جديد.'
 }

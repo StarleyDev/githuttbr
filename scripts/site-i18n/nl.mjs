@@ -14,11 +14,11 @@ export const nl = {
   'foot.reportIssue': 'Een probleem melden',
   'foot.sponsor': 'Sponsoren',
 
-  'meta.title': 'GitHuttBr — heel git, met een UI die het je laat zien',
+  'meta.title': 'GitHuttBr — alles van git, gewoon in beeld',
   'meta.description':
     'Een volledig vibe-coded Git-client. Gratis. Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS — plus een paar dingen waarvan je niet wist dat git ze kon.',
 
-  'hero.title': 'Heel git,<br /><em>met een UI die het je laat zien</em>',
+  'hero.title': 'Alles van git,<br /><em>gewoon in beeld</em>',
   'hero.lede':
     'Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS.<br />De gewone dingen, netjes gedaan — plus een paar waarvan je niet wist dat git ze kon.',
   'hero.download': 'Download voor jouw platform',
@@ -47,14 +47,13 @@ export const nl = {
   'ordinary.themes': 'Ingebouwde thema’s, licht en donker, plus AI-gegenereerde',
   'ordinary.languages':
     'Overal vertaald, handboek inbegrepen — Arabisch en Hebreeuws spiegelen de indeling',
-  'ordinary.conflictAlt': 'De conflictoplosser',
 
   'download.title': 'Downloaden',
   'download.sub':
     'Nieuwste release: <strong>v{version}</strong>. Elke build wordt vanuit CI gepubliceerd.',
   'download.cli':
     'Of open een repository vanuit je terminal met <code>githuttbr .</code> — zie <a href="{cli}">de commandoregel</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel · ondertekend en genotariseerd',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'Installatieprogramma (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Download voor {os}',
@@ -123,5 +122,39 @@ export const nl = {
     '`githuttbr .` opent een repository, `githuttbr blame src/api.ts -l 84` opent hem op die regel, en `githuttbr doctor` opent helemaal geen venster — het controleert wat de repository vereist en eindigt met een code die je CI kan lezen.',
   'feature.hosting.title': 'Pull requests op elke server',
   'feature.hosting.body':
-    'Maak, review en merge op GitHub, GitLab, Bitbucket, Azure DevOps en Forgejo — ook op de eigen servers van je bedrijf: GitHub Enterprise, GitLab en Bitbucket Data Center — met reviewers, toegewezenen en labels gekozen uit de repository.'
+    'Maak, review en merge op GitHub, GitLab, Bitbucket, Azure DevOps en Forgejo — ook op de eigen servers van je bedrijf: GitHub Enterprise, GitLab en Bitbucket Data Center — met reviewers, toegewezenen en labels gekozen uit de repository.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'Taal',
+  'stat.platforms': 'platforms — macOS, Windows en Linux',
+  'stat.languages': 'talen, handboek inbegrepen',
+  'stat.pages': 'handboekpagina’s in de app',
+  'stat.servers': 'servers van ons ertussen',
+  'showcase.more': 'Lees de handboekpagina',
+  'more.title': 'En meer — gebouwd, gedocumenteerd en vandaag al in de app',
+  'hosts.title': 'Werkt met jouw host',
+  'hosts.beta': 'bèta',
+  'ai.compatible': 'elk compatibel endpoint',
+  'sec.keychain.title': 'Eerst vragen, dan de sleutelhanger',
+  'sec.keychain.body':
+    'Tokens worden versleuteld met de sleutelhanger van je systeem, en de app vraagt het voordat hij die aanraakt. Zeg nee en alles blijft werken.',
+  'sec.server.title': 'Eén token, één server',
+  'sec.server.body':
+    'Een token voor github.com, Enterprise, GitLab of Data Center gaat alleen naar de server waarvoor het is opgeslagen.',
+  'sec.plain.title': 'git ziet het token nooit als platte tekst',
+  'sec.plain.body':
+    'Het bereikt git via een privé-endpoint per bewerking — niet via <code>.git/config</code>, niet via de opdrachtregel, niet via de omgeving.',
+  'sec.confirm.title': 'Destructief betekent bevestigd',
+  'sec.confirm.body':
+    'Force push, verwerpen, hard reset: de bevestiging zegt precies wat er verloren gaat, en vooraf wordt een snapshot gemaakt.',
+  'themes.title': 'Thema’s, sneltoetsen, profielen — en een capibara',
+  'themes.body':
+    'Lichte en donkere thema’s, ook door AI gemaakte. Een profiel per identiteit, gekoppeld per repository. Start en debug vanuit je <code>launch.json</code> en zie in een paneel onderin wat <code>tsc</code>, ESLint of Clippy zeggen.',
+  'honest.title': 'Een eerlijke waarschuwing',
+  'honest.body':
+    'GitHuttBr is jong. <strong>GitHub</strong> is de best geteste route. GitHub Enterprise Server, self-managed GitLab en Bitbucket Data Center zijn <strong>bèta</strong> — getest tegen gesimuleerde servers, nog niet tegen echte. Gaat het stuk: tja, <em>op mijn machine werkt het</em>. Issues en PR’s welkom. 💜',
+  'download.yours': 'Jouw systeem',
+  'download.macHint':
+    'Nog niet ondertekend: open de eerste keer <strong>Systeeminstellingen → Privacy en beveiliging → Toch openen</strong>. Op een Mac download je elke nieuwe versie met de hand.',
+  'download.autoUpdate': 'Werkt zichzelf bij met elke nieuwe release.'
 }

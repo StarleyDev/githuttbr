@@ -13,11 +13,11 @@ export const ko = {
   'foot.reportIssue': '문제 신고',
   'foot.sponsor': '후원',
 
-  'meta.title': 'GitHuttBr — git 전체를 보여 주는 UI',
+  'meta.title': 'GitHuttBr — git의 모든 것을, 한눈에',
   'meta.description':
     '온전히 vibe-coding으로 만든 Git 클라이언트. 무료예요. 그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS — 그리고 git이 할 줄은 몰랐던 몇 가지까지.',
 
-  'hero.title': 'git 전체를,<br /><em>그대로 보여 주는 UI</em>',
+  'hero.title': 'git의 모든 것을,<br /><em>한눈에</em>',
   'hero.lede':
     '그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS.<br />평범한 것들을 제대로 — 그리고 git이 할 줄은 몰랐던 몇 가지까지.',
   'hero.download': '내 플랫폼용 다운로드',
@@ -44,13 +44,12 @@ export const ko = {
   'ordinary.ai': '읽은 줄을 인용하는 선택형 AI',
   'ordinary.themes': '밝고 어두운 기본 테마, 그리고 AI가 만든 테마',
   'ordinary.languages': '안내서까지 전부 번역 — 아랍어와 히브리어는 화면을 좌우로 뒤집어요',
-  'ordinary.conflictAlt': '충돌 해결기',
 
   'download.title': '다운로드',
   'download.sub': '최신 릴리스는 <strong>v{version}</strong> 이에요. 모든 빌드는 CI에서 게시돼요.',
   'download.cli':
     '또는 터미널에서 <code>githuttbr .</code> 로 저장소를 열 수 있어요 — <a href="{cli}">명령줄</a> 을 보세요.',
-  'download.macNote': 'Apple silicon &amp; Intel · 서명 및 공증 완료',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': '설치 프로그램 (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '{os}용 다운로드',
@@ -119,5 +118,36 @@ export const ko = {
     '`githuttbr .`는 저장소를 열고, `githuttbr blame src/api.ts -l 84`는 해당 줄에서 엽니다. `githuttbr doctor`는 창을 전혀 열지 않고 저장소의 요구 사항을 검사한 뒤 CI가 읽을 수 있는 종료 코드를 반환합니다.',
   'feature.hosting.title': '어떤 서버에서든 풀 리퀘스트',
   'feature.hosting.body':
-    'GitHub, GitLab, Bitbucket, Azure DevOps, Forgejo에서 만들고 리뷰하고 병합하세요. 회사 자체의 GitHub Enterprise, GitLab, Bitbucket Data Center 서버에서도 되며, 리뷰어·담당자·라벨은 저장소에서 바로 고릅니다.'
+    'GitHub, GitLab, Bitbucket, Azure DevOps, Forgejo에서 만들고 리뷰하고 병합하세요. 회사 자체의 GitHub Enterprise, GitLab, Bitbucket Data Center 서버에서도 되며, 리뷰어·담당자·라벨은 저장소에서 바로 고릅니다.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': '언어',
+  'stat.platforms': '개 플랫폼 — macOS, Windows, Linux',
+  'stat.languages': '개 언어, 핸드북까지',
+  'stat.pages': '쪽 분량의 핸드북이 앱 안에',
+  'stat.servers': '중간에 끼는 우리 서버',
+  'showcase.more': '핸드북 페이지 읽기',
+  'more.title': '그리고 더 — 이미 만들어지고, 문서화되어, 오늘 앱에 들어 있습니다',
+  'hosts.title': '사용하는 호스트와 함께 작동합니다',
+  'hosts.beta': '베타',
+  'ai.compatible': '호환되는 모든 엔드포인트',
+  'sec.keychain.title': '키체인 전에 먼저 묻습니다',
+  'sec.keychain.body': '토큰은 OS 키체인으로 암호화되며, 앱은 키체인을 사용하기 전에 먼저 묻습니다. 거절해도 앱은 계속 작동합니다.',
+  'sec.server.title': '토큰 하나, 서버 하나',
+  'sec.server.body': 'github.com, Enterprise, GitLab, Data Center 토큰은 저장할 때 지정한 서버로만 전송됩니다.',
+  'sec.plain.title': 'git은 토큰을 평문으로 보지 않습니다',
+  'sec.plain.body':
+    '토큰은 작업마다 따로 열리는 비공개 엔드포인트로 git에 전달됩니다. <code>.git/config</code>도, 명령줄도, 환경 변수도 거치지 않습니다.',
+  'sec.confirm.title': '파괴적인 작업은 반드시 확인',
+  'sec.confirm.body': '강제 푸시, 변경 취소, 하드 리셋: 확인 창은 무엇을 잃는지 정확히 알려 주고, 그 전에 스냅샷을 남깁니다.',
+  'themes.title': '테마, 단축키, 프로필 — 그리고 카피바라',
+  'themes.body':
+    '라이트·다크 테마와 AI로 만든 테마까지. 신원마다 프로필을 두고 저장소별로 연결합니다. <code>launch.json</code>에서 실행하고 디버그하며, <code>tsc</code>, ESLint, Clippy의 결과를 하단 패널에서 확인하세요.',
+  'honest.title': '솔직한 안내',
+  'honest.body':
+    'GitHuttBr는 아직 젊습니다. 가장 많이 검증된 경로는 <strong>GitHub</strong>입니다. GitHub Enterprise Server, 자체 관리형 GitLab, Bitbucket Data Center는 <strong>베타</strong>로, 모의 서버에서는 테스트했지만 실제 서버에서는 아직입니다. 문제가 생기면 — 글쎄요, <em>제 컴퓨터에서는 잘 됩니다</em>. 이슈와 PR 환영합니다. 💜',
+  'download.yours': '내 시스템',
+  'download.macHint':
+    '아직 서명되지 않았습니다. 처음 실행할 때 <strong>시스템 설정 → 개인정보 보호 및 보안 → 그래도 열기</strong>를 누르세요. Mac에서는 새 버전을 매번 직접 내려받아야 합니다.',
+  'download.autoUpdate': '새 릴리스가 나올 때마다 스스로 업데이트됩니다.'
 }

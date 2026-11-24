@@ -29,7 +29,9 @@ const SHOTS_DIR = join(ROOT, 'docs/screenshots')
 const OUT = join(ROOT, 'dist-site')
 
 const REPO = 'StarleyDev/githuttbr'
-const SITE_URL = 'https://starleydev.github.io/githuttbr'
+// Served by Cloudflare Pages on the project's own domain. Canonical and hreflang
+// URLs, and the share card, are absolute, so they follow this constant.
+const SITE_URL = 'https://git.huttbr.com'
 // The project this fork is built from. Its handbook pages link to it for
 // feedback; on the fork's site that feedback belongs to the fork instead.
 const UPSTREAM_REPO = 'MyAppDesk/gitcito'
@@ -169,9 +171,17 @@ function alternatesFor(id) {
 
 const head = (title, description, depth, opts = {}) => {
   const base = '../'.repeat(depth)
-  const { lang = 'en', dir = 'ltr', alternates = '' } = opts
+  const { lang = 'en', dir = 'ltr', alternates = '', bodyClass = '' } = opts
+  // The landing page is always dark — it is the app's own look, the one the
+  // screenshots are taken in. The handbook follows the reader's system theme.
+  const dark = bodyClass === 'home'
+  const theme = dark
+    ? '<meta name="color-scheme" content="dark" />\n<meta name="theme-color" content="#0d1020" />'
+    : '<meta name="color-scheme" content="light dark" />\n' +
+      '<meta name="theme-color" content="#fafafc" media="(prefers-color-scheme: light)" />\n' +
+      '<meta name="theme-color" content="#0d1020" media="(prefers-color-scheme: dark)" />'
   return `<!doctype html>
-<html lang="${lang}" dir="${dir}">
+<html lang="${lang}" dir="${dir}"${dark ? ' class="dark"' : ''}>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -181,13 +191,11 @@ const head = (title, description, depth, opts = {}) => {
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="${SITE_URL}/assets/og-image.jpg" />
-<meta name="color-scheme" content="light dark" />
-<meta name="theme-color" content="#fafafc" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#0c0d16" media="(prefers-color-scheme: dark)" />
+${theme}
 <link rel="icon" href="${base}assets/githuttbr-mark.png" />
 <link rel="stylesheet" href="${base}styles.css" />
 ${alternates}</head>
-<body>`
+<body${bodyClass ? ` class="${bodyClass}"` : ''}>`
 }
 
 /**
@@ -195,7 +203,7 @@ ${alternates}</head>
  * own root — an English reader clicking the logo should not land in Japanese,
  * and a Japanese reader should not land in English.
  */
-const nav = (depth, locale = 'en') => {
+const nav = (depth, locale = 'en', extra = '') => {
   const base = '../'.repeat(depth)
   const t = strings(locale)
   const home = locale === 'en' ? `${base}index.html` : `${base}${locale}/index.html`
@@ -214,6 +222,7 @@ const nav = (depth, locale = 'en') => {
       <a class="nav-extra" href="${ROADMAP_URL}">${t('nav.roadmap')}</a>
       <a class="nav-extra" href="https://github.com/${REPO}">${t('nav.github')}</a>
       <a class="nav-extra" href="${SPONSOR}">${t('nav.sponsor')}</a>
+${extra}
       <a class="btn small primary" href="${LATEST}">${t('nav.download')}</a>
     </nav>
   </div>
@@ -288,30 +297,103 @@ function enhanceProse(html) {
 
 // ── Landing ─────────────────────────────────────────────────────────────────
 
-// The landing page's headline cards, in display order. Each id is a handbook
-// page; the card's title and body live in `site-i18n/` as `feature.<id>.*`.
-const FEATURES = [
-  { icon: '🔀', id: 'hosting' },
-  { icon: '🛡️', id: 'recovery' },
-  { icon: '✏️', id: 'commit-edit' },
-  { icon: '🔑', id: 'ai' },
-  { icon: '💬', id: 'repo-chat' },
-  { icon: '🎛️', id: 'mission-control' },
-  { icon: '⌨️', id: 'cli' },
-  { icon: '🌍', id: 'languages' },
-  { icon: '🔐', id: 'security' }
+// The showcase: the features big enough for a row of their own, each beside its
+// screenshot. Title and body are the same `feature.<id>.*` copy the cards use, and
+// each id is the handbook page the row links to.
+const SHOWCASE = [
+  { id: 'conflict-radar', shot: 'conflict-radar.webp' },
+  { id: 'semantic-diff', shot: 'semantic-diff.webp' },
+  { id: 'time-machine', shot: 'clip-time-machine.webp' },
+  { id: 'hosting', shot: 'pull-request-page.webp' },
+  { id: 'mission-control', shot: 'mission-control.webp' }
 ]
 
-// The OS names are proper nouns and stay; only the note beside each is copy.
-const DOWNLOADS = [
-  { os: 'macOS', noteKey: 'download.macNote', match: 'mac' },
-  { os: 'Windows', noteKey: 'download.winNote', match: 'win' },
-  { os: 'Linux', noteKey: 'download.linuxNote', match: 'linux' }
+// The landing page's smaller cards, in display order — what the showcase above
+// does not already cover. Each id is a handbook page; the card's title and body
+// live in `site-i18n/` as `feature.<id>.*`.
+const FEATURES = [
+  { icon: '🛡️', id: 'recovery' },
+  { icon: '✏️', id: 'commit-edit' },
+  { icon: '🧲', id: 'absorb' },
+  { icon: '🔁', id: 'range-diff' },
+  { icon: '👀', id: 'pr-preview' },
+  { icon: '🎞️', id: 'timelapse' },
+  { icon: '📎', id: 'attributes' },
+  { icon: '⌨️', id: 'cli' },
+  { icon: '🌍', id: 'languages' }
 ]
+
+// Hosts by their own names. `beta` marks the ones tested only against simulated
+// servers — the same three the README's disclaimer names.
+const HOSTS = [
+  { name: 'GitHub' },
+  { name: 'GitLab' },
+  { name: 'Forgejo · Gitea · Codeberg' },
+  { name: 'Azure DevOps' },
+  { name: 'Bitbucket' },
+  { name: 'GitHub Enterprise Server', beta: true },
+  { name: 'GitLab self-managed', beta: true },
+  { name: 'Bitbucket Data Center', beta: true }
+]
+
+const AI_PROVIDERS = ['OpenAI', 'Anthropic', 'Gemini', 'OpenRouter', 'Groq', 'Mistral', 'Ollama']
+
+// One card per platform. `asset` is a fragment of the installer's file name in
+// the latest release (the names carry the version, so they cannot be written
+// here); the inline script swaps each link for the real file. Until it runs, or
+// if GitHub's API does not answer, every button leads to the release page.
+// Button labels are product and format names; only the notes beside them are copy.
+const DOWNLOADS = [
+  {
+    os: 'mac',
+    name: 'macOS',
+    icon: 'apple',
+    noteKey: 'download.macNote',
+    hintKey: 'download.macHint',
+    files: [
+      { label: 'Apple silicon', ext: '.dmg', asset: 'arm64.dmg' },
+      { label: 'Intel', ext: '.dmg', asset: 'x64.dmg', ghost: true }
+    ]
+  },
+  {
+    os: 'win',
+    name: 'Windows',
+    icon: 'windows',
+    noteKey: 'download.autoUpdate',
+    files: [{ labelKey: 'download.winNote', ext: '.exe', asset: 'Setup' }]
+  },
+  {
+    os: 'linux',
+    name: 'Linux',
+    icon: 'linux',
+    noteKey: 'download.linuxNote',
+    hintKey: 'download.autoUpdate',
+    files: [
+      { label: 'AppImage', ext: 'x86_64', asset: '.AppImage' },
+      { label: 'Debian / Ubuntu', ext: '.deb', asset: '.deb', ghost: true }
+    ]
+  }
+]
+
+// Inline SVG so the page needs no icon font and no request for one.
+const ICONS = {
+  github:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>',
+  download:
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>',
+  check:
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></svg>',
+  apple:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.6c-.02-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.79-3.33-1.81-1.42-.14-2.77.84-3.5.84-.72 0-1.83-.82-3.01-.8-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.21.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.6-.75 3-.75s1.79.75 3.01.73c1.25-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.54 1.26-2.6-.03-.01-2.42-.93-2.45-3.71ZM14.06 5.84c.64-.77 1.07-1.85.95-2.92-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.78-.97 2.83 1.02.08 2.07-.52 2.71-1.29Z"/></svg>',
+  windows:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.1 10.4 4v7.2H3V5.1Zm0 13.8L10.4 20v-7.1H3v6Zm8.3 1.2L21 21.5v-8.6h-9.7v7.2Zm0-16.2v7.3H21V2.5l-9.7 1.4Z"/></svg>',
+  linux:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.5 2c-2.3 0-3.6 1.9-3.6 4.4 0 1.3.3 2.2-.4 3.4-.9 1.4-2.8 3.6-2.9 6.4-.1.8 0 1.5.3 2.1-.7.5-1.6.9-1.5 1.7.1.9 1.6.7 2.6 1.2 1 .4 1.8.9 2.6.6.6-.2.9-.7 1-1.2.7.1 1.5.1 2.3.1s1.6 0 2.3-.1c.2.6.6 1 1.2 1.2.8.2 1.6-.3 2.5-.8.9-.4 2.3-.4 2.4-1.2.1-.7-.6-1.1-1.2-1.6.4-.7.5-1.5.4-2.4-.3-2.6-2.1-4.5-2.9-5.9-.7-1.2-.4-2.1-.4-3.4C15.9 3.9 14.8 2 12.5 2Z"/></svg>'
+}
 
 // A feature card shows the handbook page's own screenshot. The file is named
 // after the page id, bar the one case where the page covers more than its shot.
-const CARD_SHOT = { security: 'secret-masking', recovery: 'snapshots', ai: 'settings-ai', cli: 'cli-edit', hosting: 'create-pr' }
+const CARD_SHOT = { recovery: 'snapshots', cli: 'cli-edit' }
 
 /** The card's screenshot, or null when there is none to show. */
 function cardShot(id) {
@@ -319,24 +401,70 @@ function cardShot(id) {
   return existsSync(join(SHOTS_DIR, name)) ? name : null
 }
 
+/** The language menu in the landing page's header: every locale, by its own name. */
+function languageMenu(locale, base) {
+  const t = strings(locale)
+  const links = siteLocales
+    .map((loc) => {
+      const href = loc === 'en' ? `${base}index.html` : `${base}${loc}/index.html`
+      const current = loc === locale ? ' aria-current="true"' : ''
+      return `          <a${current} href="${href}" lang="${loc}" hreflang="${loc}">${esc(LOCALE_NAMES[loc] ?? loc)}</a>`
+    })
+    .join('\n')
+  // The summary shows the language code rather than its name: sixteen endonyms
+  // differ wildly in width, and the header has no room to spare on a phone.
+  return `    <details class="nav-lang">
+      <summary aria-label="${esc(t('nav.language'))}" title="${esc(t('nav.language'))}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        <span>${esc(locale.split('-')[0].toUpperCase())}</span>
+      </summary>
+      <div class="nav-lang-list">
+${links}
+      </div>
+    </details>`
+}
+
 function landing(locale = 'en') {
   const t = strings(locale)
   const forOs = t('download.forOs').split('{os}')
   const depth = locale === 'en' ? 0 : 1
   const base = '../'.repeat(depth)
-  // The handbook a card links to is the one in the reader's language.
+  // The handbook a link points at is the one in the reader's language.
   const helpDir = locale === 'en' ? `${base}help/` : `${base}help/${locale}/`
   const pageList = locale === 'en' ? pages : (localeSets.get(locale) ?? pages)
+
+  const img = (name, alt, extra = 'loading="lazy" decoding="async"') =>
+    `<img src="${base}assets/${name}"${dims(name)} alt="${esc(alt)}" ${extra} />`
+
+  // The counts are read from the build, never typed: a hand-written number is a
+  // fact nobody remembers to update (see the docs test that forbids them).
+  const stats = [
+    [3, 'stat.platforms'],
+    [siteLocales.length, 'stat.languages'],
+    [pages.length, 'stat.pages'],
+    [0, 'stat.servers']
+  ]
+    .map(([n, key]) => `        <div class="stat"><b>${n}</b><span>${t(key)}</span></div>`)
+    .join('\n')
+
+  const showcase = SHOWCASE.map(
+    (s, i) => `      <div class="feature${i % 2 ? ' flip' : ''} reveal">
+        <div class="feature-copy">
+          <h3>${t(`feature.${s.id}.title`)}</h3>
+          <p>${t(`feature.${s.id}.body`)}</p>
+          <a class="more" href="${helpDir}${s.id}.html">${t('showcase.more')}</a>
+        </div>
+        <figure class="shot">${img(s.shot, t(`feature.${s.id}.title`))}</figure>
+      </div>`
+  ).join('\n')
 
   const cards = FEATURES.map((f) => {
     const shot = cardShot(f.id)
     const title = t(`feature.${f.id}.title`)
     // The title's link stretches over the whole card (see `.card h3 a::after`),
     // so the screenshot needs no second link to the same page.
-    const figure = shot
-      ? `\n      <div class="card-shot"><img src="${base}assets/${shot}"${dims(shot)} alt="${esc(title)}" loading="lazy" decoding="async" /></div>`
-      : ''
-    return `    <article class="card">${figure}
+    const figure = shot ? `\n      <div class="card-shot">${img(shot, title)}</div>` : ''
+    return `    <article class="card reveal">${figure}
       <div class="card-body">
         <span class="card-icon" aria-hidden="true">${f.icon}</span>
         <h3><a href="${helpDir}${f.id}.html">${title}</a></h3>
@@ -345,12 +473,36 @@ function landing(locale = 'en') {
     </article>`
   }).join('\n')
 
-  const downloads = DOWNLOADS.map(
-    (d) => `      <a class="dl" href="${LATEST}" data-os="${d.match}">
-        <strong>${d.os}</strong>
-        <span>${t(d.noteKey)}</span>
-      </a>`
+  const hosts = HOSTS.map(
+    (h) => `        <span class="chip">${esc(h.name)}${h.beta ? `<small>${t('hosts.beta')}</small>` : ''}</span>`
   ).join('\n')
+
+  const providers = [...AI_PROVIDERS.map(esc), t('ai.compatible')]
+    .map((p) => `<span>${p}</span>`)
+    .join('')
+
+  const checks = ['keychain', 'server', 'plain', 'confirm']
+    .map(
+      (k) => `        <li>${ICONS.check}<div><b>${t(`sec.${k}.title`)}</b><span>${t(`sec.${k}.body`)}</span></div></li>`
+    )
+    .join('\n')
+
+  const downloads = DOWNLOADS.map((d) => {
+    const files = d.files
+      .map(
+        (f) =>
+          `          <a class="btn ${f.ghost ? 'ghost' : 'primary'} dl-file" href="${LATEST}" data-asset="${f.asset}">` +
+          `${f.labelKey ? t(f.labelKey) : esc(f.label)} <small>${esc(f.ext)}</small></a>`
+      )
+      .join('\n')
+    return `      <div class="dl" data-os="${d.os}" data-badge="${esc(t('download.yours'))}">
+        <div class="dl-os">${ICONS[d.icon]}<h3>${d.name}</h3></div>
+        <p>${t(d.noteKey)}</p>
+        <div class="dl-files">
+${files}
+        </div>${d.hintKey ? `\n        <p class="dl-hint">${t(d.hintKey)}</p>` : ''}
+      </div>`
+  }).join('\n')
 
   const handbook = sectionsOf(pageList)
     .map(
@@ -361,11 +513,7 @@ function landing(locale = 'en') {
     )
     .join('\n')
 
-  const ordinary = (keys) =>
-    keys.map((k) => `        <li>${t(`ordinary.${k}`)}</li>`).join('\n')
-
-  const shotImg = (name, alt) =>
-    `<img src="${base}assets/${name}"${dims(name)} alt="${esc(alt)}" loading="lazy" decoding="async" />`
+  const ordinary = (keys) => keys.map((k) => `        <li>${t(`ordinary.${k}`)}</li>`).join('\n')
 
   const switcher = siteLocales
     .map((loc) => {
@@ -378,28 +526,32 @@ function landing(locale = 'en') {
   return `${head(t('meta.title'), t('meta.description'), depth, {
     lang: locale,
     dir: RTL_LOCALES.has(locale) ? 'rtl' : 'ltr',
-    alternates: alternatesForHome()
+    alternates: alternatesForHome(),
+    bodyClass: 'home'
   })}
-${nav(depth, locale)}
+<script>document.documentElement.classList.add('js')</script>
+${nav(depth, locale, languageMenu(locale, base))}
 <main>
   <section class="hero">
     <div class="wrap hero-copy">
-      <img class="hero-mark" src="${base}assets/githuttbr-mark.png" alt="" width="72" height="72" />
+      <img class="hero-mascot" src="${base}assets/githuttbr-mark.png" alt="" width="148" height="148" />
+      <p class="pill"><span class="dot" aria-hidden="true"></span>${t('hero.terms', { version: pkg.version })}</p>
       <h1>${t('hero.title')}</h1>
       <p class="lede">${t('hero.lede')}</p>
       <div class="cta">
-        <a class="btn primary large" href="${LATEST}" id="download">${t('hero.download')}</a>
-        <a class="btn ghost large" href="${helpDir}getting-started.html">${t('nav.handbook')}</a>
+        <a class="btn primary large" href="${LATEST}" id="download">${ICONS.download}<span>${t('hero.download')}</span></a>
+        <a class="btn ghost large" href="https://github.com/${REPO}">${ICONS.github}<span>${t('hero.source')}</span></a>
       </div>
-      <p class="version">${t('hero.terms', { version: pkg.version })} · <a href="https://github.com/${REPO}">${t('hero.source')}</a></p>
     </div>
-    <figure class="frame hero-shot">
-      <!-- The app ships both themes; the page shows the one the reader is in. -->
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset="${base}assets/graph-light.webp" />
-        <img src="${base}assets/graph-dark.webp"${dims('graph-dark.webp')} alt="${esc(t('hero.graphAlt'))}" fetchpriority="high" decoding="async" />
-      </picture>
+    <figure class="window hero-shot reveal">
+      <div class="window-bar" aria-hidden="true"><i></i><i></i><i></i><span>GitHuttBr — octopus-merge · main</span></div>
+      ${img('graph-dark.webp', t('hero.graphAlt'), 'fetchpriority="high" decoding="async"')}
     </figure>
+    <div class="wrap">
+      <div class="stats reveal">
+${stats}
+      </div>
+    </div>
   </section>
 
   <section class="section">
@@ -416,7 +568,6 @@ ${ordinary(['graph', 'staging', 'conflicts', 'rebase', 'stacks', 'recovery'])}
 ${ordinary(['prs', 'terminal', 'launch', 'ai', 'themes', 'languages'])}
         </ul>
       </div>
-      <figure class="frame">${shotImg('conflict-resolver.webp', t('ordinary.conflictAlt'))}</figure>
     </div>
   </section>
 
@@ -426,22 +577,84 @@ ${ordinary(['prs', 'terminal', 'launch', 'ai', 'themes', 'languages'])}
         <h2>${t('features.title')}</h2>
         <p class="sub">${t('features.sub')}</p>
       </header>
+${showcase}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <header class="section-head center">
+        <h2>${t('more.title')}</h2>
+      </header>
       <div class="grid">
 ${cards}
+      </div>
+      <header class="section-head center hosts-head">
+        <h2>${t('hosts.title')}</h2>
+      </header>
+      <div class="chips reveal">
+${hosts}
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="wrap split">
+      <div>
+        <h2 class="split-title">${t('feature.repo-chat.title')}</h2>
+        <p class="sub">${t('feature.repo-chat.body')}</p>
+        <p class="sub">${t('feature.ai.body')}</p>
+        <div class="providers">${providers}</div>
+        <a class="more" href="${helpDir}repo-chat.html">${t('showcase.more')}</a>
+      </div>
+      <figure class="shot reveal">${img('repo-chat.webp', t('feature.repo-chat.title'))}</figure>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap split">
+      <div>
+        <h2 class="split-title">${t('feature.security.title')}</h2>
+        <p class="sub">${t('feature.security.body')}</p>
+        <pre class="terminal reveal" dir="ltr"><span>$</span> githuttbr .
+<span>$</span> githuttbr ~/code/api -n "API"
+<span>$</span> githuttbr blame src/api.ts -l 84
+<span>$</span> githuttbr doctor</pre>
+        <a class="more" href="${helpDir}security.html">${t('showcase.more')}</a>
+      </div>
+      <ul class="checks">
+${checks}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="wrap split middle">
+      <figure class="shot reveal">${img('clip-themes.webp', t('themes.title'))}</figure>
+      <div>
+        <h2 class="split-title">${t('themes.title')}</h2>
+        <p class="sub">${t('themes.body')}</p>
       </div>
     </div>
   </section>
 
   <section class="section" id="get">
     <div class="wrap">
-      <header class="section-head">
+      <div class="honest reveal">
+        <img src="${base}assets/githuttbr-mark.png" alt="" width="52" height="52" />
+        <div>
+          <h3>${t('honest.title')}</h3>
+          <p>${t('honest.body')}</p>
+        </div>
+      </div>
+      <header class="section-head center">
         <h2>${t('download.title')}</h2>
         <p class="sub">${t('download.sub', { version: pkg.version })}</p>
       </header>
       <div class="downloads">
 ${downloads}
       </div>
-      <p class="sub small">${t('download.cli', { cli: `${helpDir}cli.html` })}</p>
+      <p class="sub small center">${t('download.cli', { cli: `${helpDir}cli.html` })}</p>
     </div>
   </section>
 
@@ -460,6 +673,7 @@ ${handbook}
   <section class="section">
     <div class="wrap">
       <div class="sponsor">
+        <img src="${base}assets/githuttbr-mark.png" alt="" width="104" height="104" />
         <h2>${t('sponsor.title')}</h2>
         <p class="sub">${t('sponsor.body')}</p>
         <p><a class="btn primary" href="${SPONSOR}">${t('sponsor.cta')}</a></p>
@@ -469,20 +683,55 @@ ${handbook}
 </main>
 ${footer(locale, switcher, depth)}
 <script>
-  // Point the main button at the file for whoever is reading, and highlight
-  // their platform in the download list. Everything still resolves to the
-  // latest release page if this never runs.
   (function () {
-    var ua = navigator.userAgent
-    var os = /Mac/i.test(ua) ? 'mac' : /Win/i.test(ua) ? 'win' : /Linux|X11/i.test(ua) ? 'linux' : null
-    if (!os) return
-    var label = { mac: 'macOS', win: 'Windows', linux: 'Linux' }[os]
-    var btn = document.getElementById('download')
-    // Split around {os} instead of interpolating, so a language that puts the
-    // platform first ("macOS 版をダウンロード") still reads correctly.
-    if (btn) btn.textContent = ${JSON.stringify(forOs[0])} + label + ${JSON.stringify(forOs[1] ?? '')}
-    var card = document.querySelector('.dl[data-os="' + os + '"]')
-    if (card) card.classList.add('yours')
+    // Point the main button at the file for whoever is reading, and pick out
+    // their platform in the download list. Everything still resolves to the
+    // latest release page if this never runs.
+    var ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.userAgent
+    var os = /Mac/i.test(ua) ? 'mac' : /Win/i.test(ua) ? 'win' : /Linux|X11/i.test(ua) && !/Android/i.test(navigator.userAgent) ? 'linux' : null
+    var btn = document.querySelector('#download span')
+    if (os && btn) {
+      var label = { mac: 'macOS', win: 'Windows', linux: 'Linux' }[os]
+      // Split around {os} instead of interpolating, so a language that puts the
+      // platform first ("macOS 版をダウンロード") still reads correctly.
+      btn.textContent = ${JSON.stringify(forOs[0])} + label + ${JSON.stringify(forOs[1] ?? '')}
+      var card = document.querySelector('.dl[data-os="' + os + '"]')
+      if (card) card.classList.add('yours')
+    }
+
+    // Installer names carry the version, so the build cannot know them for a
+    // release that is still being published. Ask GitHub once; on any failure the
+    // links stay on the release page, which always works.
+    fetch('https://api.github.com/repos/${REPO}/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json() })
+      .then(function (rel) {
+        var files = (rel.assets || []).filter(function (a) { return !/\\.(blockmap|yml)$/.test(a.name) })
+        document.querySelectorAll('[data-asset]').forEach(function (link) {
+          var hit = files.find(function (a) { return a.name.indexOf(link.getAttribute('data-asset')) !== -1 })
+          // Only ever a file on github.com: a download button must not become
+          // a link to anywhere else, whatever the response holds.
+          if (hit && /^https:\\/\\/github\\.com\\//.test(hit.browser_download_url)) link.href = hit.browser_download_url
+        })
+        var first = os && document.querySelector('.dl[data-os="' + os + '"] [data-asset]')
+        if (first && /\\/download\\//.test(first.href)) document.getElementById('download').href = first.href
+      })
+      .catch(function () {})
+
+    // Fade sections in as they scroll into view. Without JS (or with reduced
+    // motion) they are simply there — the .js class gates the hidden state.
+    var els = document.querySelectorAll('.reveal')
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } })
+      }, { rootMargin: '0px 0px -60px 0px' })
+      els.forEach(function (el) { io.observe(el) })
+    } else {
+      els.forEach(function (el) { el.classList.add('in') })
+    }
+
+    // The language menu closes when you click anywhere else, like a real menu.
+    var menu = document.querySelector('.nav-lang')
+    document.addEventListener('click', function (e) { if (menu && menu.open && !menu.contains(e.target)) menu.open = false })
   })()
 </script>
 `
@@ -585,6 +834,27 @@ ${footer(locale, '', depth)}
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
+// The dark palette, defined once: the handbook takes it from the reader's system
+// theme, the landing page always (`html.dark`). Navy, indigo and cyan are the
+// app's own dark theme, so the screenshots sit in a page of the same colour.
+const DARK = `
+    --accent: #6366f1;
+    --accent-ink: #a5b4fc;
+    --accent-2: #22d3ee;
+    --bg: #0d1020;
+    --surface: #161a36;
+    --surface-2: #121630;
+    --line: #262b52;
+    --line-strong: #353b6e;
+    --ink: #e7e9f6;
+    --ink-2: #aeb2d4;
+    --ink-3: #8287ad;
+    --tint: color-mix(in oklab, var(--accent) 14%, var(--surface));
+    --glow: color-mix(in oklab, var(--accent) 45%, transparent);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -10px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.3), 0 40px 120px -30px rgb(99 102 241 / 0.45);`
+
 const STYLES = `/* Plain modern CSS — custom properties, native nesting, color-mix(), logical
    properties. No preprocessor, so fixing a colour is editing this string. */
 
@@ -595,10 +865,13 @@ const STYLES = `/* Plain modern CSS — custom properties, native nesting, color
 
   /* The app's own accent (src/renderer/src/styles.css), and a deeper ink of it
      for text so links clear WCAG AA on white. */
-  --accent: #6c5ce7;
-  --accent-ink: #5343d0;
-  --accent-2: #0ea5b7;
+  --accent: #6366f1;
+  --accent-ink: #4f46e5;
+  --accent-2: #0891b2;
   --on-accent: #fff;
+  /* The mascot's warm orange — for the odd label that should not read as a link. */
+  --capy: #f59e4b;
+  --ok: #34d399;
 
   --bg: #fafafc;
   --surface: #ffffff;
@@ -639,24 +912,11 @@ const STYLES = `/* Plain modern CSS — custom properties, native nesting, color
 
 /* Dark is a second palette, not an inversion: lifted surfaces, softer ink. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --accent: #7c6cf0;
-    --accent-ink: #b3a9ff;
-    --accent-2: #4fd1e0;
-    --bg: #0c0d16;
-    --surface: #13141f;
-    --surface-2: #1a1b29;
-    --line: #262838;
-    --line-strong: #33364a;
-    --ink: #ececf4;
-    --ink-2: #b4b6c8;
-    --ink-3: #8c8fa6;
-    --tint: color-mix(in oklab, var(--accent) 12%, var(--surface));
-    --glow: color-mix(in oklab, var(--accent) 30%, transparent);
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -10px rgb(0 0 0 / 0.6);
-    --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.3), 0 40px 90px -30px rgb(0 0 0 / 0.85);
+  :root {${DARK}
   }
+}
+:root.dark {
+  color-scheme: dark;${DARK}
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
@@ -740,6 +1000,7 @@ code {
   transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 
   &:hover { text-decoration: none; }
+  svg { width: 18px; height: 18px; flex: none; }
   &.small { min-height: 34px; padding: 6px 14px; font-size: 0.875rem; }
   &.large { min-height: 48px; padding: 12px 24px; font-size: 1rem; }
 
@@ -814,6 +1075,57 @@ code {
   .nav .nav-extra { display: none; }
 }
 
+/* The landing page's language menu: a globe and the current code, opening onto
+   every locale by its own name. A <details>, so it works without JS. */
+.nav-lang {
+  position: relative;
+  margin-inline-start: 4px;
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    font: 600 0.75rem var(--mono);
+    cursor: pointer;
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+    &:hover { color: var(--ink); background: var(--surface-2); }
+    svg { width: 16px; height: 16px; }
+  }
+  &[open] summary { color: var(--ink); border-color: var(--line-strong); }
+}
+.nav-lang-list {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 30;
+  display: grid;
+  min-width: 200px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+
+  a {
+    padding: 7px 12px !important;
+    border-radius: 8px !important;
+    color: var(--ink-2);
+    font-size: 0.875rem !important;
+    unicode-bidi: isolate;
+    &[aria-current] { color: var(--accent-ink); background: var(--tint); font-weight: 600; }
+  }
+}
+
+/* The landing page is dark whatever the system says, overscroll included. */
+:root.dark { background: var(--bg); }
+
 /* ── Hero ───────────────────────────────────────────────────────────────── */
 
 .hero {
@@ -840,10 +1152,27 @@ code {
 
 .hero-copy { max-width: 1040px; }
 
-.hero-mark {
-  margin: 0 auto 28px;
-  border-radius: 18px;
-  box-shadow: var(--shadow-md);
+/* The capybara floats a little. It is the one moving thing above the fold. */
+.hero-mascot {
+  margin: 0 auto 18px;
+  filter: drop-shadow(0 14px 30px color-mix(in oklab, var(--accent) 45%, transparent));
+  animation: bob 5s ease-in-out infinite;
+}
+@keyframes bob { 50% { transform: translateY(-8px) rotate(-2deg); } }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent-ink);
+  font-size: var(--step--1);
+  font-weight: 500;
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
 }
 
 .hero h1 {
@@ -880,25 +1209,54 @@ code {
   a:hover { color: var(--ink); }
 }
 
-/* A screenshot in a frame: a hairline, a lifted shadow, a rounded corner. */
-.frame {
+/* The hero screenshot sits in a window: three dots and a title, so a reader sees
+   an app before reading a word about it. */
+.window {
   margin: 0;
-  padding: 6px;
-  border-radius: var(--radius-lg);
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  overflow: hidden;
+  border-radius: var(--radius);
   border: 1px solid var(--line);
+  background: var(--surface);
   box-shadow: var(--shadow-lg);
-
-  img {
-    width: 100%;
-    border-radius: calc(var(--radius-lg) - 6px);
-    border: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
-  }
+  img { width: 100%; }
+}
+.window-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: color-mix(in oklab, var(--surface-2) 70%, black);
+  border-block-end: 1px solid var(--line);
+  /* Traffic lights read left to right in every script. */
+  direction: ltr;
+  i { width: 11px; height: 11px; border-radius: 50%; }
+  i:nth-child(1) { background: #f87171; }
+  i:nth-child(2) { background: #fbbf24; }
+  i:nth-child(3) { background: #34d399; }
+  span { margin-inline-start: 10px; color: var(--ink-3); font: 0.75rem var(--mono); white-space: nowrap; overflow: hidden; }
 }
 
 .hero-shot {
   width: min(100% - 2 * var(--gutter), var(--wrap) - 2 * var(--gutter));
-  margin: clamp(40px, 6vw, 72px) auto 0;
+  margin: clamp(40px, 6vw, 64px) auto 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin-block-start: 48px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--line);
+  @media (min-width: 760px) { grid-template-columns: repeat(4, 1fr); }
+}
+.stat {
+  padding: 22px 16px;
+  background: var(--surface-2);
+  b { display: block; font-size: var(--step-3); font-weight: 700; color: var(--ink); line-height: 1.2; }
+  span { color: var(--ink-2); font-size: var(--step--1); }
 }
 
 /* ── Sections ───────────────────────────────────────────────────────────── */
@@ -919,7 +1277,9 @@ code {
   margin-block-end: clamp(32px, 4vw, 48px);
 
   h2 { margin: 0 0 12px; font-size: var(--step-3); }
+  &.center { margin-inline: auto; text-align: center; }
 }
+.center { text-align: center; }
 
 .sub {
   margin: 0;
@@ -1067,49 +1427,202 @@ code {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 22px 24px;
-  padding-inline-end: 56px;
+  gap: 10px;
+  padding: 26px 22px;
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
-  color: var(--ink);
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 
-  strong { font-size: var(--step-1); font-weight: 650; }
-  span { color: var(--ink-3); font-size: var(--step--1); }
+  h3 { margin: 0; font-size: var(--step-2); }
+  p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
 
-  /* A download arrow, masked so it takes the text colour. */
-  &::after {
-    content: "";
-    position: absolute;
-    inset-inline-end: 22px;
-    inset-block-start: 50%;
-    width: 20px;
-    height: 20px;
-    margin-block-start: -10px;
-    background: var(--ink-3);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 3v10m-4-4 4 4 4-4M4 16h12' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 3v10m-4-4 4 4 4-4M4 16h12' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-  }
-
-  &:hover {
-    text-decoration: none;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
-    &::after { background: var(--accent-ink); }
-  }
-
-  /* The reader's own platform, picked out by the inline script. */
+  /* The reader's own platform, picked out by the inline script. The badge text
+     is translated copy carried in data-badge. */
   &.yours {
-    background: var(--tint);
-    border-color: color-mix(in oklab, var(--accent) 60%, var(--line));
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent), var(--shadow-sm);
-    &::after { background: var(--accent-ink); }
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 20px 50px -20px var(--glow);
+    &::after {
+      content: attr(data-badge);
+      position: absolute;
+      inset-block-start: -11px;
+      inset-inline-end: 16px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--on-accent);
+      font: 600 0.6875rem var(--mono);
+    }
   }
 }
+.dl-os {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  svg { width: 28px; height: 28px; color: var(--ink); flex: none; }
+}
+.dl-files { display: grid; gap: 8px; margin-block-start: 6px; }
+.dl-file {
+  justify-content: space-between;
+  width: 100%;
+  border-radius: 10px;
+  small { font: 500 0.75rem var(--mono); opacity: 0.7; }
+}
+.dl-hint {
+  margin-block-start: auto !important;
+  padding-block-start: 8px;
+  color: var(--ink-3) !important;
+}
+
+/* ── Showcase ───────────────────────────────────────────────────────────── */
+
+.feature {
+  display: grid;
+  gap: 28px;
+  align-items: center;
+  margin-block-end: clamp(56px, 7vw, 88px);
+  &:last-child { margin-block-end: 0; }
+  > * { min-width: 0; }
+
+  h3 { margin: 0 0 12px; font-size: var(--step-2); }
+  p { margin: 0 0 14px; color: var(--ink-2); }
+
+  @media (min-width: 900px) {
+    grid-template-columns: 5fr 7fr;
+    gap: 56px;
+    &.flip { grid-template-columns: 7fr 5fr; }
+    &.flip .feature-copy { order: 2; }
+  }
+}
+
+/* A screenshot on its own: a hairline and a lifted shadow. */
+.shot {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  img { width: 100%; }
+}
+
+/* "Read the handbook page" — an arrow that turns round in a right-to-left page. */
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  &::after { content: "→"; transition: transform 0.15s; }
+  &:hover::after { transform: translateX(3px); }
+}
+[dir="rtl"] .more::after { content: "←"; }
+[dir="rtl"] .more:hover::after { transform: translateX(-3px); }
+
+/* ── Hosts, providers ───────────────────────────────────────────────────── */
+
+.hosts-head { margin-block-start: clamp(56px, 7vw, 88px); }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  small { margin-inline-start: 6px; color: var(--capy); font-weight: 500; }
+}
+
+.providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 20px;
+  span {
+    padding: 4px 10px;
+    border-radius: 7px;
+    border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+    color: var(--accent-ink);
+    font: 500 0.8125rem var(--mono);
+  }
+}
+
+/* ── Two-column sections ────────────────────────────────────────────────── */
+
+.split {
+  display: grid;
+  gap: 40px;
+  /* Grid items default to min-width:auto, so a <pre> would widen the column. */
+  > * { min-width: 0; }
+  .sub + .sub { margin-block-start: 14px; }
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+    &.middle { align-items: center; }
+  }
+}
+.split-title { margin: 0 0 16px; font-size: var(--step-3); }
+
+.terminal {
+  margin: 24px 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg) 70%, black);
+  color: var(--ink);
+  font: 0.875rem / 1.8 var(--mono);
+  text-align: left;
+  span { color: var(--ok); }
+}
+
+.checks {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  li {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  svg { width: 22px; height: 22px; margin-block-start: 2px; color: var(--ok); }
+  b { display: block; margin-block-end: 2px; color: var(--ink); font-weight: 600; }
+  span { color: var(--ink-2); font-size: 0.9375rem; }
+}
+
+.honest {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 18px;
+  margin-block-end: clamp(56px, 7vw, 88px);
+  padding: 24px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--capy) 40%, transparent);
+  background: color-mix(in oklab, var(--capy) 7%, transparent);
+  > * { min-width: 0; }
+  h3 { margin: 0 0 8px; font-size: var(--step-1); }
+  p { margin: 0; color: var(--ink-2); font-size: 0.9375rem; }
+}
+
+/* Sections fade in as they scroll into view — only when the script is there to
+   reveal them, so a page without JS is never left blank. */
+.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.js .reveal.in { opacity: 1; transform: none; }
 
 /* ── Handbook index ─────────────────────────────────────────────────────── */
 
@@ -1154,6 +1667,7 @@ code {
   h2 { margin: 0 0 12px; font-size: var(--step-3); }
   .sub { max-width: 620px; margin-inline: auto; }
   p:last-child { margin: 28px 0 0; }
+  img { margin: 0 auto 16px; }
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
@@ -1535,10 +2049,7 @@ code {
 
 @media (max-width: 639px) {
   .cta .btn { flex: 1 1 100%; }
-  .hero-shot { padding: 4px; border-radius: 14px; }
-  .hero-shot img { border-radius: 10px; }
-  .frame { padding: 4px; border-radius: 14px; }
-  .frame img { border-radius: 10px; }
+  .hero-mascot { width: 116px; height: 116px; }
   .foot-inner { flex-direction: column; align-items: flex-start; }
 }
 
@@ -1551,7 +2062,9 @@ code {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-  .card:hover, .dl:hover, .btn:hover { transform: none; }
+  .card:hover, .btn:hover { transform: none; }
+  .hero-mascot { animation: none; }
+  .js .reveal { opacity: 1; transform: none; }
   .card:hover .card-shot img { transform: none; }
 }
 `

@@ -13,11 +13,11 @@ export const zhCN = {
   'foot.reportIssue': '报告问题',
   'foot.sponsor': '赞助',
 
-  'meta.title': 'GitHuttBr——git 的全部，配上一个让你看得见的界面',
+  'meta.title': 'GitHuttBr — git 的全部，一目了然',
   'meta.description':
     '一个完全由 vibe coding 写成的 Git 客户端。免费。提交图、逐行暂存、变基、工作树、子模块、LFS——外加几件你不知道 git 还能做的事。',
 
-  'hero.title': 'git 的全部，<br /><em>配上一个让你看得见的界面</em>',
+  'hero.title': 'git 的全部，<br /><em>一目了然</em>',
   'hero.lede':
     '提交图、逐行暂存、变基、工作树、子模块、LFS。<br />那些寻常的事，都做到位了——外加几件你不知道 git 还能做的事。',
   'hero.download': '下载适合你平台的版本',
@@ -44,13 +44,12 @@ export const zhCN = {
   'ordinary.ai': '可选的 AI，会引用它读过的行',
   'ordinary.themes': '内置主题，浅色与深色，外加 AI 生成的主题',
   'ordinary.languages': '全面翻译，手册也在内——阿拉伯语和希伯来语会镜像整个布局',
-  'ordinary.conflictAlt': '冲突解决器',
 
   'download.title': '下载',
   'download.sub': '最新版本：<strong>v{version}</strong>。每一个构建都由 CI 发布。',
   'download.cli':
     '也可以在终端里用 <code>githuttbr .</code> 打开一个仓库——见<a href="{cli}">命令行</a>。',
-  'download.macNote': 'Apple 芯片 &amp; Intel · 已签名并公证',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': '安装程序（x64）',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '下载适用于 {os} 的版本',
@@ -119,5 +118,34 @@ export const zhCN = {
     '`githuttbr .` 打开仓库，`githuttbr blame src/api.ts -l 84` 直接定位到那一行，而 `githuttbr doctor` 根本不打开窗口——它检查仓库的要求，并以 CI 能读懂的退出码结束。',
   'feature.hosting.title': '在任何服务器上处理拉取请求',
   'feature.hosting.body':
-    '在 GitHub、GitLab、Bitbucket、Azure DevOps 和 Forgejo 上创建、审查和合并——公司自建的 GitHub Enterprise、GitLab 和 Bitbucket Data Center 服务器同样支持——审查者、负责人和标签直接从仓库中选择。'
+    '在 GitHub、GitLab、Bitbucket、Azure DevOps 和 Forgejo 上创建、审查和合并——公司自建的 GitHub Enterprise、GitLab 和 Bitbucket Data Center 服务器同样支持——审查者、负责人和标签直接从仓库中选择。',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': '语言',
+  'stat.platforms': '个平台 — macOS、Windows 和 Linux',
+  'stat.languages': '种语言，手册也包括在内',
+  'stat.pages': '页手册，内置于应用',
+  'stat.servers': '台我们的服务器夹在中间',
+  'showcase.more': '阅读手册页面',
+  'more.title': '还有更多——已经实现、已有文档，今天就在应用里',
+  'hosts.title': '适配你的托管平台',
+  'hosts.beta': '测试版',
+  'ai.compatible': '任何兼容的端点',
+  'sec.keychain.title': '先询问，再动钥匙串',
+  'sec.keychain.body': '令牌由系统钥匙串加密，应用在使用它之前会先询问你。拒绝也没关系，应用照常工作。',
+  'sec.server.title': '一个令牌，一台服务器',
+  'sec.server.body': 'github.com、Enterprise、GitLab 或 Data Center 的令牌只会发送到保存它时对应的服务器。',
+  'sec.plain.title': 'git 永远看不到明文令牌',
+  'sec.plain.body': '令牌经由每次操作独立的私有端点交给 git——不经过 <code>.git/config</code>，不经过命令行，也不经过环境变量。',
+  'sec.confirm.title': '破坏性操作必须确认',
+  'sec.confirm.body': '强制推送、丢弃更改、硬重置：确认框会准确说明会丢失什么，并且事先拍一张快照。',
+  'themes.title': '主题、快捷键、配置档——还有一只水豚',
+  'themes.body':
+    '浅色和深色主题，也包括 AI 生成的主题。每个身份一个配置档，按仓库绑定。从你的 <code>launch.json</code> 运行和调试，并在底部面板中查看 <code>tsc</code>、ESLint 或 Clippy 的结果。',
+  'honest.title': '坦诚说明',
+  'honest.body':
+    'GitHuttBr 还很年轻。<strong>GitHub</strong> 是经过最多实战检验的路径。GitHub Enterprise Server、自管 GitLab 和 Bitbucket Data Center 仍处于<strong>测试版</strong>——已在模拟服务器上测试，尚未在真实服务器上测试。如果出了问题：嗯，<em>在我的机器上是好的</em>。欢迎提 Issue 和 PR。💜',
+  'download.yours': '你的系统',
+  'download.macHint': '尚未签名：首次打开时，请前往<strong>系统设置 → 隐私与安全性 → 仍要打开</strong>。在 Mac 上，每个新版本都需要手动下载。',
+  'download.autoUpdate': '每次发布新版本都会自动更新。'
 }

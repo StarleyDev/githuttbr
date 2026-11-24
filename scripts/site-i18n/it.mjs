@@ -13,11 +13,11 @@ export const it = {
   'foot.reportIssue': 'Segnala un problema',
   'foot.sponsor': 'Sostieni',
 
-  'meta.title': 'GitHuttBr — tutto git, con un’interfaccia che te lo mostra',
+  'meta.title': 'GitHuttBr — tutto git, sotto gli occhi',
   'meta.description':
     'Un client Git interamente vibe-coded. Gratis. Grafo, staging riga per riga, rebase, worktree, sottomoduli, LFS — più alcune cose che non sapevi che git potesse fare.',
 
-  'hero.title': 'Tutto git,<br /><em>con un’interfaccia che te lo mostra</em>',
+  'hero.title': 'Tutto git,<br /><em>sotto gli occhi</em>',
   'hero.lede':
     'Grafo, staging riga per riga, rebase, worktree, sottomoduli, LFS.<br />Le cose ordinarie, fatte come si deve — più alcune che non sapevi che git potesse fare.',
   'hero.download': 'Scarica per la tua piattaforma',
@@ -44,14 +44,13 @@ export const it = {
   'ordinary.ai': 'AI opzionale che cita le righe che ha letto',
   'ordinary.themes': 'Temi integrati, chiaro e scuro, più quelli generati dall’AI',
   'ordinary.languages': 'Tutto tradotto, manuale incluso — arabo ed ebraico rispecchiano il layout',
-  'ordinary.conflictAlt': 'Il risolutore di conflitti',
 
   'download.title': 'Download',
   'download.sub':
     'Ultima versione: <strong>v{version}</strong>. Ogni build è pubblicata dalla CI.',
   'download.cli':
     'Oppure apri un repository dal terminale con <code>githuttbr .</code> — vedi <a href="{cli}">la riga di comando</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel · firmato e notarizzato',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'Installer (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Scarica per {os}',
@@ -120,5 +119,39 @@ export const it = {
     '`githuttbr .` apre un repository, `githuttbr blame src/api.ts -l 84` lo apre su quella riga, e `githuttbr doctor` non apre alcuna finestra: verifica ciò che il repository richiede ed esce con un codice che la tua CI sa leggere.',
   'feature.hosting.title': 'Pull request su ogni server',
   'feature.hosting.body':
-    'Crea, revisiona e unisci su GitHub, GitLab, Bitbucket, Azure DevOps e Forgejo — anche sui server della tua azienda: GitHub Enterprise, GitLab e Bitbucket Data Center — con revisori, assegnatari ed etichette scelti dal repository.'
+    'Crea, revisiona e unisci su GitHub, GitLab, Bitbucket, Azure DevOps e Forgejo — anche sui server della tua azienda: GitHub Enterprise, GitLab e Bitbucket Data Center — con revisori, assegnatari ed etichette scelti dal repository.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'Lingua',
+  'stat.platforms': 'piattaforme — macOS, Windows e Linux',
+  'stat.languages': 'lingue, manuale compreso',
+  'stat.pages': 'pagine di manuale dentro l’app',
+  'stat.servers': 'server nostri nel mezzo',
+  'showcase.more': 'Leggi la pagina del manuale',
+  'more.title': 'E altro — costruito, documentato e nell’app oggi',
+  'hosts.title': 'Funziona con il tuo host',
+  'hosts.beta': 'beta',
+  'ai.compatible': 'qualsiasi endpoint compatibile',
+  'sec.keychain.title': 'Chiede prima del portachiavi',
+  'sec.keychain.body':
+    'I token sono cifrati con il portachiavi del sistema, e l’app chiede prima di toccarlo. Rispondi no e continua a funzionare.',
+  'sec.server.title': 'Un token, un server',
+  'sec.server.body':
+    'Un token di github.com, Enterprise, GitLab o Data Center viene inviato solo al server per cui è stato salvato.',
+  'sec.plain.title': 'git non vede mai il token in chiaro',
+  'sec.plain.body':
+    'Arriva a git da un endpoint privato, uno per operazione — non da <code>.git/config</code>, non dalla riga di comando, non dall’ambiente.',
+  'sec.confirm.title': 'Distruttivo vuol dire confermato',
+  'sec.confirm.body':
+    'Force push, scarta modifiche, reset hard: la conferma dice esattamente cosa si perde, e prima viene fatto uno snapshot.',
+  'themes.title': 'Temi, scorciatoie, profili — e un capibara',
+  'themes.body':
+    'Temi chiari e scuri, anche generati dall’IA. Un profilo per identità, associato per repository. Avvia e fai debug dal tuo <code>launch.json</code> e guarda cosa dicono <code>tsc</code>, ESLint o Clippy in un pannello in basso.',
+  'honest.title': 'Un avviso onesto',
+  'honest.body':
+    'GitHuttBr è giovane. <strong>GitHub</strong> è la strada più collaudata. GitHub Enterprise Server, GitLab self-managed e Bitbucket Data Center sono in <strong>beta</strong> — testati contro server simulati, non ancora contro server reali. Se si rompe: be’, <em>sulla mia macchina funziona</em>. Issue e PR benvenute. 💜',
+  'download.yours': 'Il tuo sistema',
+  'download.macHint':
+    'Non ancora firmato: la prima volta apri <strong>Impostazioni di Sistema → Privacy e sicurezza → Apri comunque</strong>. Su Mac ogni nuova versione si scarica a mano.',
+  'download.autoUpdate': 'Si aggiorna da solo a ogni nuova release.'
 }

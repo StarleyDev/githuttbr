@@ -13,11 +13,11 @@ export const he = {
   'foot.reportIssue': 'דיווח על תקלה',
   'foot.sponsor': 'חסות',
 
-  'meta.title': 'GitHuttBr — כל מה שיש ב־git, עם ממשק שמראה לכם אותו',
+  'meta.title': 'GitHuttBr — כל git, גלוי לעין',
   'meta.description':
     'לקוח Git שנכתב כולו בסגנון vibe coding. חינם. גרף קומיטים, סטייג׳ עד רמת השורה, ריבייס, עצי עבודה, תת־מודולים, LFS — ועוד כמה דברים שלא ידעתם ש־git מסוגל להם.',
 
-  'hero.title': 'כל מה שיש ב־git,<br /><em>עם ממשק שמראה לכם אותו</em>',
+  'hero.title': 'כל git,<br /><em>גלוי לעין</em>',
   'hero.lede':
     'גרף קומיטים, סטייג׳ עד רמת השורה, ריבייס, עצי עבודה, תת־מודולים, LFS.<br />הדברים הרגילים, עשויים כמו שצריך — ועוד כמה שלא ידעתם ש־git מסוגל להם.',
   'hero.download': 'הורדה לפלטפורמה שלכם',
@@ -44,13 +44,12 @@ export const he = {
   'ordinary.ai': 'עוזר AI אופציונלי שמצטט את השורות שקרא',
   'ordinary.themes': 'ערכות נושא מובנות, בהירות וכהות, ועוד כאלה שנוצרות בעזרת AI',
   'ordinary.languages': 'מתורגם לכל אורכו, כולל המדריך — ערבית ועברית משקפות את הפריסה',
-  'ordinary.conflictAlt': 'פותר ההתנגשויות',
 
   'download.title': 'הורדה',
   'download.sub': 'הגרסה האחרונה: <strong>v{version}</strong>. כל בנייה מתפרסמת מתוך CI.',
   'download.cli':
     'או פתחו מאגר מהטרמינל עם <code>githuttbr .</code> — ראו <a href="{cli}">שורת הפקודה</a>.',
-  'download.macNote': 'מעבדי Apple &amp; Intel · חתום ומאושר נוטריונית',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'מתקין (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'הורדה עבור {os}',
@@ -119,5 +118,38 @@ export const he = {
     '\u200f`githuttbr .` פותח מאגר, \u200f`githuttbr blame src/api.ts -l 84` פותח אותו בדיוק באותה שורה, ו-`githuttbr doctor` אינו פותח חלון כלל — הוא בודק מה המאגר דורש ומסיים בקוד יציאה שה-CI שלך יודע לקרוא.',
   'feature.hosting.title': 'בקשות מיזוג בכל שרת',
   'feature.hosting.body':
-    'צרו, סקרו ומזגו ב-GitHub, ‏GitLab, ‏Bitbucket, ‏Azure DevOps ו-Forgejo — וגם בשרתים של החברה שלכם: GitHub Enterprise, ‏GitLab ו-Bitbucket Data Center — עם סוקרים, אחראים ותוויות שנבחרים מתוך המאגר.'
+    'צרו, סקרו ומזגו ב-GitHub, ‏GitLab, ‏Bitbucket, ‏Azure DevOps ו-Forgejo — וגם בשרתים של החברה שלכם: GitHub Enterprise, ‏GitLab ו-Bitbucket Data Center — עם סוקרים, אחראים ותוויות שנבחרים מתוך המאגר.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'שפה',
+  'stat.platforms': 'פלטפורמות — macOS, Windows ו־Linux',
+  'stat.languages': 'שפות, כולל המדריך',
+  'stat.pages': 'עמודי מדריך בתוך האפליקציה',
+  'stat.servers': 'שרתים שלנו באמצע',
+  'showcase.more': 'לקריאת עמוד המדריך',
+  'more.title': 'ועוד — בנוי, מתועד ונמצא באפליקציה כבר היום',
+  'hosts.title': 'עובד עם האחסון שלכם',
+  'hosts.beta': 'בטא',
+  'ai.compatible': 'כל נקודת קצה תואמת',
+  'sec.keychain.title': 'שואל לפני מחזיק המפתחות',
+  'sec.keychain.body':
+    'האסימונים מוצפנים במחזיק המפתחות של המערכת, והאפליקציה שואלת לפני שהיא נוגעת בו. סרבו — והיא תמשיך לעבוד.',
+  'sec.server.title': 'אסימון אחד, שרת אחד',
+  'sec.server.body': 'אסימון של github.com, Enterprise, GitLab או Data Center נשלח רק לשרת שעבורו נשמר.',
+  'sec.plain.title': 'git אף פעם לא רואה את האסימון כטקסט גלוי',
+  'sec.plain.body':
+    'האסימון מגיע ל־git דרך נקודת קצה פרטית לכל פעולה — לא דרך <code>.git/config</code>, לא דרך שורת הפקודה ולא דרך משתני הסביבה.',
+  'sec.confirm.title': 'הרסני פירושו מאושר',
+  'sec.confirm.body':
+    'דחיפה בכוח, ביטול שינויים, איפוס קשיח: האישור אומר בדיוק מה יאבד, ולפני כן נשמרת תמונת מצב.',
+  'themes.title': 'ערכות נושא, קיצורים, פרופילים — וקפיברה',
+  'themes.body':
+    'ערכות נושא בהירות וכהות, כולל כאלה שנוצרו בבינה מלאכותית. פרופיל לכל זהות, משויך לכל מאגר. הריצו ונפו שגיאות מתוך <code>launch.json</code>, וראו מה <code>tsc</code>, ESLint או Clippy אומרים בלוח בתחתית.',
+  'honest.title': 'הסתייגות כנה',
+  'honest.body':
+    'GitHuttBr עדיין צעיר. <strong>GitHub</strong> הוא הנתיב הבדוק ביותר. GitHub Enterprise Server, GitLab בניהול עצמי ו־Bitbucket Data Center נמצאים ב<strong>בטא</strong> — נבדקו מול שרתים מדומים, עוד לא מול אמיתיים. אם משהו נשבר: ובכן, <em>אצלי זה עובד</em>. Issues ו־PRs יתקבלו בברכה. 💜',
+  'download.yours': 'המערכת שלכם',
+  'download.macHint':
+    'עדיין לא חתום: בפעם הראשונה פתחו את <strong>הגדרות המערכת ← פרטיות ואבטחה ← לפתוח בכל זאת</strong>. ב־Mac כל גרסה חדשה מורידים ידנית.',
+  'download.autoUpdate': 'מתעדכן מעצמו בכל גרסה חדשה.'
 }

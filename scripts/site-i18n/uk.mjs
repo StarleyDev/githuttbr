@@ -13,11 +13,11 @@ export const uk = {
   'foot.reportIssue': 'Повідомити про проблему',
   'foot.sponsor': 'Підтримати',
 
-  'meta.title': 'GitHuttBr — увесь git, з інтерфейсом, який його показує',
+  'meta.title': 'GitHuttBr — увесь git як на долоні',
   'meta.description':
     'Git-клієнт, повністю створений у vibe-coding. Безкоштовний. Граф, індексація по рядках, ребейз, робочі дерева, підмодулі, LFS — плюс кілька речей, яких ви від git не чекали.',
 
-  'hero.title': 'Увесь git,<br /><em>з інтерфейсом, який його показує</em>',
+  'hero.title': 'Увесь git<br /><em>як на долоні</em>',
   'hero.lede':
     'Граф, індексація по рядках, ребейз, робочі дерева, підмодулі, LFS.<br />Звичайні речі, зроблені як слід — плюс кілька, яких ви від git не чекали.',
   'hero.download': 'Завантажити для вашої платформи',
@@ -45,13 +45,12 @@ export const uk = {
   'ordinary.themes': 'Вбудовані теми, світлі й темні, плюс згенеровані ШІ',
   'ordinary.languages':
     'Перекладено все, разом із довідником — арабська та іврит дзеркалять компонування',
-  'ordinary.conflictAlt': 'Розв’язувач конфліктів',
 
   'download.title': 'Завантаження',
   'download.sub': 'Останній випуск: <strong>v{version}</strong>. Кожну збірку публікує CI.',
   'download.cli':
     'Або відкрийте репозиторій із термінала командою <code>githuttbr .</code> — див. <a href="{cli}">командний рядок</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel · підписано й нотаризовано',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'Інсталятор (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Завантажити для {os}',
@@ -120,5 +119,39 @@ export const uk = {
     '`githuttbr .` відкриває репозиторій, `githuttbr blame src/api.ts -l 84` відкриває його на потрібному рядку, а `githuttbr doctor` не відкриває вікна взагалі — він перевіряє вимоги репозиторію й завершується кодом, зрозумілим вашому CI.',
   'feature.hosting.title': 'Pull request\'и на будь-якому сервері',
   'feature.hosting.body':
-    'Створюйте, переглядайте та зливайте на GitHub, GitLab, Bitbucket, Azure DevOps і Forgejo — і на власних серверах компанії: GitHub Enterprise, GitLab і Bitbucket Data Center — з рецензентами, виконавцями та мітками, вибраними з репозиторію.'
+    'Створюйте, переглядайте та зливайте на GitHub, GitLab, Bitbucket, Azure DevOps і Forgejo — і на власних серверах компанії: GitHub Enterprise, GitLab і Bitbucket Data Center — з рецензентами, виконавцями та мітками, вибраними з репозиторію.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'Мова',
+  'stat.platforms': 'платформи — macOS, Windows і Linux',
+  'stat.languages': 'мов, разом із довідником',
+  'stat.pages': 'сторінки довідника в застосунку',
+  'stat.servers': 'наших серверів посередині',
+  'showcase.more': 'Читати сторінку довідника',
+  'more.title': 'І це ще не все — зроблено, описано і вже в застосунку',
+  'hosts.title': 'Працює з вашим хостингом',
+  'hosts.beta': 'бета',
+  'ai.compatible': 'будь-який сумісний ендпоінт',
+  'sec.keychain.title': 'Спершу запитання, потім в’язка ключів',
+  'sec.keychain.body':
+    'Токени шифруються системною в’язкою ключів, і застосунок питає, перш ніж до неї звернутися. Відмовте — і він працюватиме далі.',
+  'sec.server.title': 'Один токен — один сервер',
+  'sec.server.body':
+    'Токен github.com, Enterprise, GitLab чи Data Center надсилається лише на той сервер, для якого його збережено.',
+  'sec.plain.title': 'git ніколи не бачить токен відкритим текстом',
+  'sec.plain.body':
+    'Токен потрапляє в git через приватний ендпоінт, окремий для кожної операції — не через <code>.git/config</code>, не через командний рядок і не через оточення.',
+  'sec.confirm.title': 'Руйнівне — лише з підтвердженням',
+  'sec.confirm.body':
+    'Force push, скасування змін, жорсткий reset: підтвердження каже, що саме буде втрачено, а перед цим робиться знімок.',
+  'themes.title': 'Теми, гарячі клавіші, профілі — і капібара',
+  'themes.body':
+    'Світлі й темні теми, зокрема створені ШІ. Профіль для кожної особи, прив’язаний до репозиторію. Запускайте й налагоджуйте з <code>launch.json</code> і дивіться, що кажуть <code>tsc</code>, ESLint чи Clippy, у панелі внизу.',
+  'honest.title': 'Чесне попередження',
+  'honest.body':
+    'GitHuttBr ще молодий. <strong>GitHub</strong> — найперевіреніший шлях. GitHub Enterprise Server, самостійно розміщений GitLab і Bitbucket Data Center — у <strong>бета</strong>: перевірені на імітованих серверах, але ще не на справжніх. Якщо зламається — що ж, <em>у мене все працює</em>. Issues і PR вітаються. 💜',
+  'download.yours': 'Ваша система',
+  'download.macHint':
+    'Поки без підпису: першого разу відкрийте <strong>Системні параметри → Приватність і безпека → Усе одно відкрити</strong>. На Mac кожну нову версію треба завантажувати вручну.',
+  'download.autoUpdate': 'Оновлюється сам із кожним новим релізом.'
 }

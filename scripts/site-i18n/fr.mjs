@@ -14,11 +14,11 @@ export const fr = {
   'foot.reportIssue': 'Signaler un problème',
   'foot.sponsor': 'Soutenir',
 
-  'meta.title': 'GitHuttBr — tout git, avec une interface qui vous le montre',
+  'meta.title': 'GitHuttBr — tout git, sous vos yeux',
   'meta.description':
     'Un client Git entièrement vibe-codé. Gratuit. Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS — plus quelques choses dont vous ne soupçonniez pas git capable.',
 
-  'hero.title': 'Tout git,<br /><em>avec une interface qui vous le montre</em>',
+  'hero.title': 'Tout git,<br /><em>sous vos yeux</em>',
   'hero.lede':
     'Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS.<br />Les choses ordinaires, faites correctement — plus quelques-unes dont vous ne soupçonniez pas git capable.',
   'hero.download': 'Télécharger pour votre plateforme',
@@ -49,14 +49,13 @@ export const fr = {
   'ordinary.themes': 'Thèmes intégrés, clairs et sombres, plus ceux générés par l’IA',
   'ordinary.languages':
     'Traduit de bout en bout, manuel compris — l’arabe et l’hébreu inversent la mise en page',
-  'ordinary.conflictAlt': 'Le résolveur de conflits',
 
   'download.title': 'Téléchargement',
   'download.sub':
     'Dernière version : <strong>v{version}</strong>. Chaque build est publié depuis la CI.',
   'download.cli':
     'Ou ouvrez un dépôt depuis votre terminal avec <code>githuttbr .</code> — voir <a href="{cli}">la ligne de commande</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel · signé et notarisé',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'Programme d’installation (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Télécharger pour {os}',
@@ -126,5 +125,39 @@ export const fr = {
     '`githuttbr .` ouvre un dépôt, `githuttbr blame src/api.ts -l 84` l’ouvre à cette ligne, et `githuttbr doctor` n’ouvre aucune fenêtre : il vérifie ce que le dépôt exige et sort avec un code que votre CI sait lire.',
   'feature.hosting.title': 'Des pull requests sur tous les serveurs',
   'feature.hosting.body':
-    'Créez, relisez et fusionnez sur GitHub, GitLab, Bitbucket, Azure DevOps et Forgejo — y compris les serveurs de votre entreprise : GitHub Enterprise, GitLab et Bitbucket Data Center — avec relecteurs, assignés et labels choisis dans le dépôt.'
+    'Créez, relisez et fusionnez sur GitHub, GitLab, Bitbucket, Azure DevOps et Forgejo — y compris les serveurs de votre entreprise : GitHub Enterprise, GitLab et Bitbucket Data Center — avec relecteurs, assignés et labels choisis dans le dépôt.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'Langue',
+  'stat.platforms': 'plateformes — macOS, Windows et Linux',
+  'stat.languages': 'langues, manuel compris',
+  'stat.pages': 'pages de manuel dans l’app',
+  'stat.servers': 'serveurs à nous entre les deux',
+  'showcase.more': 'Lire la page du manuel',
+  'more.title': 'Et plus encore — construit, documenté et dans l’app aujourd’hui',
+  'hosts.title': 'Fonctionne avec votre hébergeur',
+  'hosts.beta': 'bêta',
+  'ai.compatible': 'tout endpoint compatible',
+  'sec.keychain.title': 'Une question avant le trousseau',
+  'sec.keychain.body':
+    'Les jetons sont chiffrés par le trousseau du système, et l’app demande avant d’y toucher. Refusez, elle continue de fonctionner.',
+  'sec.server.title': 'Un jeton, un serveur',
+  'sec.server.body':
+    'Un jeton github.com, Enterprise, GitLab ou Data Center n’est envoyé qu’au serveur pour lequel il a été enregistré.',
+  'sec.plain.title': 'git ne voit jamais le jeton en clair',
+  'sec.plain.body':
+    'Il arrive à git par un point d’accès privé, propre à chaque opération — ni <code>.git/config</code>, ni la ligne de commande, ni l’environnement.',
+  'sec.confirm.title': 'Destructif veut dire confirmé',
+  'sec.confirm.body':
+    'Force push, abandon des modifications, reset hard : la confirmation dit exactement ce qui sera perdu, et un instantané est pris avant.',
+  'themes.title': 'Thèmes, raccourcis, profils — et un capybara',
+  'themes.body':
+    'Thèmes clairs et sombres, y compris générés par IA. Un profil par identité, associé par dépôt. Lancez et déboguez depuis votre <code>launch.json</code>, et voyez ce que disent <code>tsc</code>, ESLint ou Clippy dans un panneau en bas.',
+  'honest.title': 'Un avertissement honnête',
+  'honest.body':
+    'GitHuttBr est jeune. <strong>GitHub</strong> est le chemin le plus éprouvé. GitHub Enterprise Server, GitLab auto-géré et Bitbucket Data Center sont en <strong>bêta</strong> — testés contre des serveurs simulés, pas encore contre de vrais. Si ça casse : eh bien, <em>ça marche sur ma machine</em>. Issues et PR bienvenues. 💜',
+  'download.yours': 'Votre système',
+  'download.macHint':
+    'Pas encore signé : la première fois, ouvrez <strong>Réglages Système → Confidentialité et sécurité → Ouvrir quand même</strong>. Sur Mac, chaque nouvelle version se télécharge à la main.',
+  'download.autoUpdate': 'Se met à jour tout seul à chaque nouvelle version.'
 }

@@ -35,11 +35,11 @@ export const en = {
   'foot.reportIssue': 'Report an issue',
   'foot.sponsor': 'Sponsor',
 
-  'meta.title': 'GitHuttBr — the whole of git, with a UI that shows it to you',
+  'meta.title': 'GitHuttBr — the whole of git, in plain sight',
   'meta.description':
     'A fully vibe-coded Git client. Free. Graph, staging by line, rebase, worktrees, submodules, LFS — plus a few things you did not know git could do.',
 
-  'hero.title': 'The whole of git,<br /><em>with a UI that shows it to you</em>',
+  'hero.title': 'The whole of git,<br /><em>in plain sight</em>',
   'hero.lede':
     'Graph, staging by line, rebase, worktrees, submodules, LFS.<br />The ordinary things, done properly — plus a few you did not know git could do.',
   'hero.download': 'Download for your platform',
@@ -66,13 +66,12 @@ export const en = {
   'ordinary.ai': 'Optional AI that cites the lines it read',
   'ordinary.themes': 'Built-in themes, light and dark, plus AI-generated ones',
   'ordinary.languages': 'Translated throughout, handbook included — Arabic and Hebrew mirror the layout',
-  'ordinary.conflictAlt': 'The conflict resolver',
 
   'download.title': 'Download',
   'download.sub': 'Latest release: <strong>v{version}</strong>. Every build is published from CI.',
   'download.cli':
     'Or open a repository from your terminal with <code>githuttbr .</code> — see <a href="{cli}">the command line</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel · signed and notarised',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'Installer (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Download for {os}',
@@ -141,5 +140,39 @@ export const en = {
     '`githuttbr .` opens a repository, `githuttbr blame src/api.ts -l 84` opens it at that line, and `githuttbr doctor` never opens a window at all — it checks what the repository requires and exits with a code your CI can read.',
   'feature.hosting.title': 'Pull requests on every server',
   'feature.hosting.body':
-    'Create, review and merge on GitHub, GitLab, Bitbucket, Azure DevOps and Forgejo — your company\'s own GitHub Enterprise, GitLab and Bitbucket Data Center servers too — with reviewers, assignees and labels picked from the repository.'
+    'Create, review and merge on GitHub, GitLab, Bitbucket, Azure DevOps and Forgejo — your company\'s own GitHub Enterprise, GitLab and Bitbucket Data Center servers too — with reviewers, assignees and labels picked from the repository.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'Language',
+  'stat.platforms': 'platforms — macOS, Windows and Linux',
+  'stat.languages': 'languages, handbook included',
+  'stat.pages': 'handbook pages inside the app',
+  'stat.servers': 'servers of ours in between',
+  'showcase.more': 'Read the handbook page',
+  'more.title': 'And more — built, documented and in the app today',
+  'hosts.title': 'Works with your host',
+  'hosts.beta': 'beta',
+  'ai.compatible': 'any compatible endpoint',
+  'sec.keychain.title': 'Asked before the keychain',
+  'sec.keychain.body':
+    'Tokens are encrypted with your OS keychain, and the app asks before it touches it. Say no and it keeps working.',
+  'sec.server.title': 'One token, one server',
+  'sec.server.body':
+    'A github.com, Enterprise, GitLab or Data Center token is only ever sent to the server it was saved for.',
+  'sec.plain.title': 'Git never sees the token in plain text',
+  'sec.plain.body':
+    'It reaches git through a private, per-operation endpoint — not <code>.git/config</code>, not the command line, not the environment.',
+  'sec.confirm.title': 'Destructive means confirmed',
+  'sec.confirm.body':
+    'Force push, discard, hard reset: the confirmation says exactly what is lost, and a snapshot is taken first.',
+  'themes.title': 'Themes, shortcuts, profiles — and a capybara',
+  'themes.body':
+    'Light and dark themes, AI-generated ones included. A profile per identity, bound per repository. Run and debug from your <code>launch.json</code>, and see what <code>tsc</code>, ESLint or Clippy say in a dock at the bottom.',
+  'honest.title': 'An honest disclaimer',
+  'honest.body':
+    'GitHuttBr is young. <strong>GitHub</strong> is the battle-tested path. GitHub Enterprise Server, self-managed GitLab and Bitbucket Data Center are <strong>beta</strong> — tested against simulated servers, not yet against real ones. If it breaks: well, <em>it works on my machine</em>. Issues and PRs welcome. 💜',
+  'download.yours': 'Your system',
+  'download.macHint':
+    'Not signed yet: the first time, open <strong>System Settings → Privacy &amp; Security → Open Anyway</strong>. On a Mac, each new version is downloaded by hand.',
+  'download.autoUpdate': 'Updates itself from each new release.'
 }

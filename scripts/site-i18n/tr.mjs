@@ -14,11 +14,11 @@ export const tr = {
   'foot.reportIssue': 'Sorun bildir',
   'foot.sponsor': 'Destek ol',
 
-  'meta.title': 'GitHuttBr — git’in tamamı, onu size gösteren bir arayüzle',
+  'meta.title': 'GitHuttBr — Git’in tamamı, gözünüzün önünde',
   'meta.description':
     'Baştan sona vibe coding ile yazılmış bir Git istemcisi. Ücretsiz. Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS — artı git’in yapabildiğini bilmediğiniz birkaç şey.',
 
-  'hero.title': 'Git’in tamamı,<br /><em>onu size gösteren bir arayüzle</em>',
+  'hero.title': 'Git’in tamamı,<br /><em>gözünüzün önünde</em>',
   'hero.lede':
     'Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS.<br />Sıradan şeyler, düzgünce yapılmış — artı git’in yapabildiğini bilmediğiniz birkaçı.',
   'hero.download': 'Platformunuz için indirin',
@@ -45,13 +45,12 @@ export const tr = {
   'ordinary.ai': 'Okuduğu satırları kaynak gösteren isteğe bağlı yapay zekâ',
   'ordinary.themes': 'Yerleşik temalar, açık ve koyu, artı yapay zekâ ile üretilenler',
   'ordinary.languages': 'Baştan sona çevrilmiş, el kitabı dahil — Arapça ve İbranice yerleşimi aynalar',
-  'ordinary.conflictAlt': 'Çakışma çözücü',
 
   'download.title': 'İndir',
   'download.sub': 'Son sürüm: <strong>v{version}</strong>. Her yapı CI üzerinden yayımlanır.',
   'download.cli':
     'Ya da bir depoyu terminalinizden <code>githuttbr .</code> ile açın — bkz. <a href="{cli}">komut satırı</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel · imzalı ve noterlenmiş',
+  'download.macNote': 'Apple silicon &amp; Intel',
   'download.winNote': 'Kurulum dosyası (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '{os} için indir',
@@ -120,5 +119,39 @@ export const tr = {
     '`githuttbr .` bir depoyu açar, `githuttbr blame src/api.ts -l 84` onu tam o satırda açar, `githuttbr doctor` ise hiç pencere açmaz — deponun neyi gerektirdiğini denetler ve CI’nizin okuyabileceği bir çıkış koduyla biter.',
   'feature.hosting.title': 'Her sunucuda pull request',
   'feature.hosting.body':
-    'GitHub, GitLab, Bitbucket, Azure DevOps ve Forgejo\'da oluşturun, inceleyin ve birleştirin — şirketinizin kendi GitHub Enterprise, GitLab ve Bitbucket Data Center sunucularında da — gözden geçirenler, atananlar ve etiketler doğrudan depodan seçilir.'
+    'GitHub, GitLab, Bitbucket, Azure DevOps ve Forgejo\'da oluşturun, inceleyin ve birleştirin — şirketinizin kendi GitHub Enterprise, GitLab ve Bitbucket Data Center sunucularında da — gözden geçirenler, atananlar ve etiketler doğrudan depodan seçilir.',
+
+  // The landing page: stats, showcase, security, disclaimer, downloads.
+  'nav.language': 'Dil',
+  'stat.platforms': 'platform — macOS, Windows ve Linux',
+  'stat.languages': 'dil, el kitabı dahil',
+  'stat.pages': 'el kitabı sayfası, uygulamanın içinde',
+  'stat.servers': 'arada bizim sunucumuz',
+  'showcase.more': 'El kitabı sayfasını oku',
+  'more.title': 'Ve dahası — bugünden yapılmış, belgelenmiş ve uygulamada',
+  'hosts.title': 'Sunucunuzla çalışır',
+  'hosts.beta': 'beta',
+  'ai.compatible': 'uyumlu her uç nokta',
+  'sec.keychain.title': 'Anahtar zincirinden önce sorar',
+  'sec.keychain.body':
+    'Token’lar işletim sisteminin anahtar zinciriyle şifrelenir ve uygulama ona dokunmadan önce sorar. Hayır derseniz çalışmaya devam eder.',
+  'sec.server.title': 'Bir token, bir sunucu',
+  'sec.server.body':
+    'github.com, Enterprise, GitLab veya Data Center token’ı yalnızca kaydedildiği sunucuya gönderilir.',
+  'sec.plain.title': 'git token’ı asla açık metin olarak görmez',
+  'sec.plain.body':
+    'Token git’e her işlem için ayrı, özel bir uç noktadan ulaşır — <code>.git/config</code> üzerinden değil, komut satırından değil, ortam değişkenlerinden değil.',
+  'sec.confirm.title': 'Yıkıcı işlem onay ister',
+  'sec.confirm.body':
+    'Force push, değişiklikleri atma, hard reset: onay tam olarak neyin kaybolacağını söyler ve öncesinde bir anlık görüntü alınır.',
+  'themes.title': 'Temalar, kısayollar, profiller — ve bir kapibara',
+  'themes.body':
+    'Açık ve koyu temalar, yapay zekâyla üretilenler dahil. Her kimlik için bir profil, depoya göre bağlanır. <code>launch.json</code> dosyanızdan çalıştırıp hata ayıklayın; <code>tsc</code>, ESLint veya Clippy’nin ne dediğini alttaki panelde görün.',
+  'honest.title': 'Dürüst bir uyarı',
+  'honest.body':
+    'GitHuttBr genç. En çok denenmiş yol <strong>GitHub</strong>. GitHub Enterprise Server, kendi barındırdığınız GitLab ve Bitbucket Data Center <strong>beta</strong> aşamasında — simüle edilmiş sunuculara karşı test edildi, henüz gerçeklerine karşı değil. Bozulursa: eh, <em>benim makinemde çalışıyor</em>. Issue ve PR’lara açığız. 💜',
+  'download.yours': 'Sizin sisteminiz',
+  'download.macHint':
+    'Henüz imzalı değil: ilk seferde <strong>Sistem Ayarları → Gizlilik ve Güvenlik → Yine de Aç</strong> yolunu izleyin. Mac’te her yeni sürüm elle indirilir.',
+  'download.autoUpdate': 'Her yeni sürümde kendini günceller.'
 }
