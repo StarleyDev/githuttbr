@@ -1,5 +1,21 @@
 
 
+## [4.41.0](https://github.com/StarleyDev/githuttbr/compare/v4.40.3...v4.41.0) (2026-11-24)
+
+
+### Features
+
+* **commit-edit:** open the editor in the centre pane, with the code editor ([cc50920](https://github.com/StarleyDev/githuttbr/commit/cc50920451055b87800cdf547d094f266e1bdce9))
+* **compare:** open branch comparison in the centre pane, all at once or by commit ([bfbb418](https://github.com/StarleyDev/githuttbr/commit/bfbb4180ae9a21df9d5c660caefd7b7d30fb1f2d))
+* **settings:** search every settings page from the header ([09636af](https://github.com/StarleyDev/githuttbr/commit/09636af720376805c27ba08741036804bdf46505))
+* **site:** redesign the landing page and serve it from git.huttbr.com ([545faf7](https://github.com/StarleyDev/githuttbr/commit/545faf7c0851ab1fecd828dcc455a55ae66b65d8))
+
+
+### Bug Fixes
+
+* **compare:** keep the comparison fast, current and in sight ([1f43b99](https://github.com/StarleyDev/githuttbr/commit/1f43b99a431422d5112a5589561de9cea5c0795f))
+* keep the commit editor and settings search fast and their reveal reliable ([42f2845](https://github.com/StarleyDev/githuttbr/commit/42f28455d59209a8de52e8be6b6b54b323833a3e))
+
 ## [4.40.3](https://github.com/StarleyDev/githuttbr/compare/v4.40.2...v4.40.3) (2026-11-24)
 
 
