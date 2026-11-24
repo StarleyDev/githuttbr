@@ -1,5 +1,17 @@
 
 
+## [4.44.0](https://github.com/StarleyDev/githuttbr/compare/v4.43.0...v4.44.0) (2026-11-24)
+
+
+### Features
+
+* **ci:** follow CI runs from GitHub, GitLab, Azure DevOps and Forgejo ([a43a14e](https://github.com/StarleyDev/githuttbr/commit/a43a14eebfaef6a6f150f0258484079aff4c5593))
+
+
+### Bug Fixes
+
+* **repos:** list repositories reached through a link under their scanned folder ([3db2c73](https://github.com/StarleyDev/githuttbr/commit/3db2c732317fb50d61b1ceb0630523a1e816cadd))
+
 ## [4.43.0](https://github.com/StarleyDev/githuttbr/compare/v4.42.0...v4.43.0) (2026-11-24)
 
 
