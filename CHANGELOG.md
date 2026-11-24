@@ -1,5 +1,12 @@
 
 
+## [4.40.3](https://github.com/StarleyDev/githuttbr/compare/v4.40.2...v4.40.3) (2026-11-24)
+
+
+### Bug Fixes
+
+* **release:** read the macos upload list without mapfile ([0bfb5ea](https://github.com/StarleyDev/githuttbr/commit/0bfb5ea1384068453a94b07b776c710daffd70c0))
+
 ## [4.40.2](https://github.com/StarleyDev/githuttbr/compare/v4.40.1...v4.40.2) (2026-11-23)
 
 
