@@ -1,5 +1,13 @@
 
 
+## [4.42.0](https://github.com/StarleyDev/githuttbr/compare/v4.41.0...v4.42.0) (2026-11-24)
+
+
+### Features
+
+* **settings:** protect a settings export with an optional password ([54738c0](https://github.com/StarleyDev/githuttbr/commit/54738c01553e29202c04037c67c872f5d0a204b3))
+* **ui:** keep a dialog's title and close button fixed while its content scrolls ([8e2c0e9](https://github.com/StarleyDev/githuttbr/commit/8e2c0e95d9a8a5f809ff11e4ad08028b5590f333))
+
 ## [4.41.0](https://github.com/StarleyDev/githuttbr/compare/v4.40.3...v4.41.0) (2026-11-24)
 
 
