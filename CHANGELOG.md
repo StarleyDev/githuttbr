@@ -1,5 +1,12 @@
 
 
+## [4.45.0](https://github.com/StarleyDev/githuttbr/compare/v4.44.0...v4.45.0) (2026-11-24)
+
+
+### Features
+
+* **license:** ship GitHuttBr under the Apache 2.0 license ([7ad585b](https://github.com/StarleyDev/githuttbr/commit/7ad585b056412c0e9076c6b72c20d931a85d94c9))
+
 ## [4.44.0](https://github.com/StarleyDev/githuttbr/compare/v4.43.0...v4.44.0) (2026-11-24)
 
 
