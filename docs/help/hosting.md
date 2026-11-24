@@ -250,7 +250,7 @@ The main column has three sections:
 
 | Section | What it holds |
 |---|---|
-| **Conversation** | The description, comments and inline review threads (`file:line`, with replies). Then the comment box with comment / approve / request changes, and the merge box (merge, squash or rebase) |
+| **Conversation** | The description, comments and inline review threads (`file:line`, with replies). Only the conversation scrolls: the comment box with comment / approve / request changes, and the merge box (merge, squash or rebase), stay fixed at the bottom, so a long pull request never pushes them out of reach |
 | **Files** | Every changed file, and the selected one's diff beside the list, with syntax highlighting and word-level changes (secret-looking files masked when that setting is on). A ✓ "viewed" checklist remembers your progress. A file the host sends no diff for (a binary, or one too large) links to it on the host |
 | **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab), with pass/fail/pending and links to the logs. Every run of the repository — not only this pull request's — is on the [CI runs](ci-runs.md) page |
 

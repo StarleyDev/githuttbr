@@ -18511,11 +18511,15 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-muted { color: var(--text-3); font-style: italic; }
 .prp-pad { padding: 8px 2px; }
 
-.prp-composer { margin-top: 6px; }
-.prp-composer-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+/* Review and merge stay in view below the scrolling conversation. The comment
+   box can still be dragged taller, but never past a third of the window, so
+   the conversation it answers keeps the room. */
+.prp-footer { flex: none; padding: 12px 6px 0 0; border-top: 1px solid var(--border); }
+.prp-footer .prd-input { max-height: 33vh; margin-bottom: 0; }
+.prp-composer-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .prp-merge {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  margin-top: 16px; padding: 12px 14px; border-radius: 8px;
+  margin-top: 10px; padding: 10px 14px; border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--ok, #2ea043) 45%, var(--border));
   background: color-mix(in srgb, var(--ok, #2ea043) 8%, var(--bg-2));
 }
