@@ -604,6 +604,19 @@ export const shots = [
     }
   },
   {
+    // Settings search: one word typed, matches from several pages at once,
+    // and the sidebar dimming the pages that hold none.
+    out: 'settings-search',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' }))
+      await page.waitForTimeout(400)
+      await page.locator('.settings-search input').fill('terminal')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Settings → Themes → Graph tab: lane palette, line corners, density,
     // thickness, with the live mini-graph preview.
     out: 'settings-graph',

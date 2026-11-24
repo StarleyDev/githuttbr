@@ -191,6 +191,8 @@ you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.
 own name, with a mirrored layout for Arabic and Hebrew ·
 [screen-reader and keyboard accessibility](docs/help/accessibility.md) ·
 [rebindable shortcuts](docs/help/keyboard.md) ·
+[settings search](docs/help/themes.md#finding-a-setting) — type part of a setting's
+name and land on it, in your language or in English ·
 [a native macOS menu bar](docs/help/menu-bar.md) that shows the keys you actually
 bound · [profiles](docs/help/profiles.md)
 for separate identities and accounts, each linking its own ·

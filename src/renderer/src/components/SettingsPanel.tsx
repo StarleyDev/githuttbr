@@ -127,32 +127,31 @@ import { LanguagePicker } from './LanguagePicker'
 import { NumberField } from './NumberField'
 import { ShortcutEditor } from './CheatsheetModal'
 import { AUTHOR_NAME, AUTHOR_URL, PRODUCT_NAME } from '../../../shared/brand'
+import { SETTINGS_PAGE_KEYS, type SettingsEntry, type SettingsPageId } from '../lib/settingsSearch'
+import {
+  SettingsSearchField,
+  SettingsSearchResults,
+  revealSettingRow,
+  useSettingReveal,
+  useSettingsSearch
+} from './SettingsSearch'
 
-type SettingsPage =
-  | 'profile'
-  | 'layout'
-  | 'workspaces'
-  | 'integrations'
-  | 'ai'
-  | 'themes'
-  | 'general'
-  | 'security'
-  | 'shortcuts'
-  | 'data'
-  | 'environment'
+type SettingsPage = SettingsPageId
 
-const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
-  { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
-  { id: 'layout', key: 'settings.layout', icon: <PanelBottom size={13} /> },
-  { id: 'profile', key: 'settings.profile', icon: <UserCircle2 size={13} /> },
-  { id: 'workspaces', key: 'settings.workspaces', icon: <LayoutGrid size={13} /> },
-  { id: 'integrations', key: 'settings.integrations', icon: <Plug size={13} /> },
-  { id: 'ai', key: 'settings.ai', icon: <Bot size={13} /> },
-  { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> },
-  { id: 'security', key: 'settings.security', icon: <ShieldCheck size={13} /> },
-  { id: 'shortcuts', key: 'settings.shortcuts', icon: <KeyboardIcon size={13} /> },
-  { id: 'data', key: 'settings.data', icon: <HardDrive size={13} /> },
-  { id: 'environment', key: 'settings.environment', icon: <Stethoscope size={13} /> }
+// Labels live in SETTINGS_PAGE_KEYS, shared with the search, so a page's name
+// in the sidebar and in the results can never differ.
+const PAGES: { id: SettingsPage; icon: React.ReactNode }[] = [
+  { id: 'general', icon: <Settings2 size={13} /> },
+  { id: 'layout', icon: <PanelBottom size={13} /> },
+  { id: 'profile', icon: <UserCircle2 size={13} /> },
+  { id: 'workspaces', icon: <LayoutGrid size={13} /> },
+  { id: 'integrations', icon: <Plug size={13} /> },
+  { id: 'ai', icon: <Bot size={13} /> },
+  { id: 'themes', icon: <Palette size={13} /> },
+  { id: 'security', icon: <ShieldCheck size={13} /> },
+  { id: 'shortcuts', icon: <KeyboardIcon size={13} /> },
+  { id: 'data', icon: <HardDrive size={13} /> },
+  { id: 'environment', icon: <Stethoscope size={13} /> }
 ]
 
 const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
@@ -2076,13 +2075,15 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
               <Sparkles size={14} />
             </button>
           )}
-          <div className="theme-font-size-inline">
+          <div className="theme-font-size-inline" data-setting="settings.codeFontSize">
             <span>{settings.codeFontSize}px</span>
             <input
               type="range"
               min={10}
               max={20}
               value={settings.codeFontSize}
+              aria-label={t('settings.codeFontSize')}
+              title={t('settings.codeFontSize')}
               onChange={(e) => update((s) => ({ ...s, codeFontSize: Number(e.target.value) }))}
             />
           </div>
@@ -2179,7 +2180,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
       <div className="theme-section-header" style={{ marginTop: 22 }}>
         <h4><Terminal size={14} /> {t('settings.terminalTheme')}</h4>
         <div className="theme-section-actions">
-          <div className="theme-font-size-inline">
+          <div className="theme-font-size-inline" data-setting="settings.terminalFontSize">
             <span>{settings.terminalFontSize}px</span>
             <input
               type="range"
@@ -2187,7 +2188,8 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
               max={24}
               step={0.5}
               value={settings.terminalFontSize}
-              aria-label={t('settings.terminalTheme')}
+              aria-label={t('settings.terminalFontSize')}
+              title={t('settings.terminalFontSize')}
               onChange={(e) => update((s) => ({ ...s, terminalFontSize: Number(e.target.value) }))}
             />
           </div>
@@ -4543,6 +4545,13 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   const closeModal = useUIStore((s) => s.closeModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
   const [page, setPage] = useState<SettingsPage>(initialPage ?? readLastPage())
+  // A search result on the Graph tab has to reopen Themes on that tab; the
+  // nonce remounts the page, since its tab is only read on mount.
+  const [themeTab, setThemeTab] = useState(initialThemeTab)
+  const [themeNonce, setThemeNonce] = useState(0)
+  const search = useSettingsSearch()
+  const { pending: revealing, requestReveal, clearReveal } = useSettingReveal()
+  const formRef = useRef<HTMLDivElement>(null)
   const [version, setVersion] = useState('')
   const updateStatus = useUpdatesStore((s) => s.status)
   const updateInfo = useUpdatesStore((s) => s.info)
@@ -4556,6 +4565,26 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   useEffect(() => {
     localStorage.setItem(LAST_PAGE_KEY, page)
   }, [page])
+
+  const pickSetting = (entry: SettingsEntry): void => {
+    search.setQuery('')
+    setPage(entry.page)
+    if (entry.tab) {
+      setThemeTab(entry.tab)
+      setThemeNonce((n) => n + 1)
+    }
+    requestReveal(entry)
+  }
+
+  // Runs after the picked page has rendered (the search results are gone by then).
+  useEffect(() => {
+    if (!revealing || search.active || !formRef.current) return
+    const stop = revealSettingRow(formRef.current, revealing.key, t(revealing.key))
+    clearReveal()
+    return stop
+    // `t` is a new function every render; the entry is what this waits on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealing, search.active, page, themeNonce, clearReveal])
 
   // Tokens are left encrypted at start-up, so this dialog is where they get
   // decrypted — but only when access was already granted and explained. If it
@@ -4592,7 +4621,10 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
 
   return (
     <div className="settings">
-      <h3>{t('settings.title')}</h3>
+      <div className="settings-head">
+        <h3>{t('settings.title')}</h3>
+        <SettingsSearchField search={search} onPickFirst={() => pickSetting(search.matches[0])} />
+      </div>
       <div className="settings-body">
         <aside className="settings-profiles">
           <div className="settings-side-scroll">
@@ -4650,16 +4682,25 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
             <div className="settings-side-header pages">
               <span>{t('settings.sectionsHeader')}</span>
             </div>
-            {PAGES.map((p) => (
-              <button
-                key={p.id}
-                className={`profile-item ${page === p.id ? 'selected' : ''}`}
-                onClick={() => setPage(p.id)}
-              >
-                {p.icon}
-                <span>{t(p.key)}</span>
-              </button>
-            ))}
+            {PAGES.map((p) => {
+              // While searching, a page shows how many matches it holds, and
+              // one with none steps back — clicking it still opens it.
+              const hits = search.active ? (search.counts[p.id] ?? 0) : null
+              return (
+                <button
+                  key={p.id}
+                  className={`profile-item ${!search.active && page === p.id ? 'selected' : ''} ${hits === 0 ? 'dim' : ''}`}
+                  onClick={() => {
+                    search.setQuery('')
+                    setPage(p.id)
+                  }}
+                >
+                  {p.icon}
+                  <span>{t(SETTINGS_PAGE_KEYS[p.id])}</span>
+                  {hits !== null && hits > 0 && <span className="settings-search-count">{hits}</span>}
+                </button>
+              )
+            })}
           </div>
 
           <div className="settings-footer">
@@ -4709,20 +4750,21 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
           </div>
         </aside>
 
-        <div className="settings-form">
-          {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
-          {page === 'workspaces' && <WorkspacesPage />}
-          {page === 'integrations' && (
+        <div className="settings-form" ref={formRef}>
+          {search.active && <SettingsSearchResults search={search} onPick={pickSetting} />}
+          {!search.active && page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
+          {!search.active && page === 'workspaces' && <WorkspacesPage />}
+          {!search.active && page === 'integrations' && (
             <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
           )}
-          {page === 'ai' && <AIPage profile={profile} edit={edit} />}
-          {page === 'themes' && <ThemesPage initialTab={initialThemeTab} />}
-          {page === 'general' && <GeneralPage />}
-          {page === 'layout' && <LayoutPage />}
-          {page === 'security' && <SecurityPage />}
-          {page === 'shortcuts' && <ShortcutsPage />}
-          {page === 'data' && <DataPage />}
-          {page === 'environment' && <EnvironmentPage />}
+          {!search.active && page === 'ai' && <AIPage profile={profile} edit={edit} />}
+          {!search.active && page === 'themes' && <ThemesPage key={themeNonce} initialTab={themeTab} />}
+          {!search.active && page === 'general' && <GeneralPage />}
+          {!search.active && page === 'layout' && <LayoutPage />}
+          {!search.active && page === 'security' && <SecurityPage />}
+          {!search.active && page === 'shortcuts' && <ShortcutsPage />}
+          {!search.active && page === 'data' && <DataPage />}
+          {!search.active && page === 'environment' && <EnvironmentPage />}
         </div>
       </div>
     </div>

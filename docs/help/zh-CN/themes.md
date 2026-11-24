@@ -3,7 +3,7 @@ title: 主题与外观
 category: 个性化
 order: 100
 summary: 内置主题，明暗双版，外加自定义主题和 AI 生成的主题。
-keywords: theme 主题 themes dark 深色 light 浅色 appearance 外观 colors 配色 font size 字号 graph 提交图 palette 调色板
+keywords: theme 主题 themes dark 深色 light 浅色 appearance 外观 colors 配色 font size 字号 graph 提交图 palette 调色板 搜索 设置 查找 search settings
 ---
 
 # 主题与外观
@@ -20,6 +20,29 @@ Contrast 和 Daltonic——每一套都有浅色和深色两个变体。
   迷你提交图预览。
 
 ![主题设置](../../screenshots/settings-themes.webp)
+
+## 查找设置
+
+设置分成了许多页面，想找的选项很少恰好在你猜的地方：你知道它存在，却不知道在
+哪一页。设置标题栏里、关闭按钮旁边的搜索框，会一次搜遍所有页面。
+
+![在设置中搜索“terminal”](../../screenshots/settings-search.webp)
+
+一边输入，右侧就会按页面分组列出匹配的设置——每一项都带有名称、一行说明和它所在
+的页面。侧边栏会把没有匹配的页面调暗，并在有匹配的页面上显示数量。
+
+- 匹配的对象是设置的名称、说明和页面名称。不区分大小写，也忽略重音符号；输入的
+  每个词都必须出现，所以输入“终端 字体”就会缩小到终端的字体设置。
+- 搜索同时使用界面语言和英语：即使应用是中文界面，输入“token”或“font”也能找到
+  对应的设置。
+- 点击某个结果，或者按 **Enter** 选中第一个，就会打开它所在的页面（在主题页上还会
+  切到正确的标签——主题或提交图），滚动到该设置并短暂高亮。
+- **Esc** 清空搜索；再按一次 **Esc** 关闭设置。
+
+它搜索的是名称和说明，不是你设置的值。集成页里按主机划分的服务器列表（GitHub
+Enterprise Server、自托管 GitLab、Bitbucket Data Center）只会打开集成页面，主机
+的标签需要你自己选。单个键盘快捷键没有编入索引——搜索能找到快捷键页面，那里的
+编辑器会列出它们。
 
 ## 布局
 
