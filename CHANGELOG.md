@@ -6,6 +6,7 @@
 ### Features
 
 * **ci:** follow CI runs from GitHub, GitLab, Azure DevOps and Forgejo ([a43a14e](https://github.com/StarleyDev/githuttbr/commit/a43a14eebfaef6a6f150f0258484079aff4c5593))
+* **pr:** keep the review and merge actions fixed below the PR conversation ([6a6d73b](https://github.com/StarleyDev/githuttbr/commit/6a6d73bc69141a51cf10630e09221072cb345c0b))
 
 
 ### Bug Fixes
