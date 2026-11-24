@@ -607,7 +607,8 @@ export const shots = [
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      // Repository chat is a writing preference, so it lives on the Profile page.
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
       await page.waitForTimeout(400)
       await page.evaluate(() => {
         // The section has no id of its own — its heading is the only handle.
@@ -2663,6 +2664,22 @@ export const shots = [
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
       await page.waitForTimeout(600)
+    }
+  },
+  {
+    // A profile's AI as one line — general or its own, what answers, and the
+    // way to the AI page — above its writing preferences.
+    out: 'settings-profile-ai',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
+      await page.waitForTimeout(400)
+      await page.evaluate(() => {
+        document.querySelector('.settings-ai-mode')?.scrollIntoView({ block: 'start' })
+        document.querySelector('.settings-form')?.scrollBy(0, -60)
+      })
+      await page.waitForTimeout(400)
     }
   },
   {

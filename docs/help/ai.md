@@ -21,22 +21,30 @@ again. The page lists each profile and whether it follows this **general AI**.
 
 A profile can use **its own AI** instead — a work profile that must go through
 the company's account, for cost or data policy. On that profile's **Profile**
-page, choose **Use its own AI in this profile**: it starts as a copy of the
-general AI, and its accounts and keys from then on are its alone. **Back to the
-general AI** removes them, after a confirmation, and leaves the general AI as it
-was.
+page, under *AI of this profile*, switch **General** to **Own**: it starts as a
+copy of the general AI, and its providers and keys from then on are its alone.
+Switching back to **General** removes them, after a confirmation, and leaves the
+general AI as it was.
+
+Every AI is set up on this one page. The **Editing** bar at the top picks whose:
+the general AI, or a profile's own (*Own AI of Work*). **Set up its own AI** on
+the Profile page, or **Edit its own AI** in the list of profiles, opens the page
+on that one. The Profile page itself only shows which AI the profile uses and
+what answers — it never hosts the editor.
+
+![A profile's AI on its Profile page: General or Own, what answers, and the way to set it up](../screenshots/settings-profile-ai.webp)
 
 How the AI **writes** stays per profile either way: commit message style,
 explanation style, conflict and branch naming styles, custom instructions,
 co-author line and repository chat. They are on the **Profile** page, under
-*AI preferences of this profile*, so a work profile can write `ticket` commits
+*AI writing preferences*, so a work profile can write `ticket` commits
 while a personal one writes `conventional` ones, both on the same AI.
 
 Upgrading from a version where each profile had its own AI loses nothing: the
 AI of the profile in use becomes the general AI, and any other profile whose AI
 was different keeps it as its own.
 
-## Accounts
+## Providers
 
 An **account** is one way of reaching a model: a provider, where to reach it,
 and how it authenticates. You can configure several and they coexist — a work
@@ -101,9 +109,9 @@ answering blind. Features that have no repository (theme generation) run it from
 
 If the command is not on your `PATH`, type its full path on the account.
 
-### Which account answers what
+### Model per task
 
-Under **Which account answers what**, each feature — commit messages, chat,
+Under **Model per task**, each feature — commit messages, chat,
 explain, PR review, conflict resolution, wiki, themes — can point at its own
 account and model. Leave a row on the default to follow the default account.
 Cheap model for commit messages, strong one for chat, is the common setup.

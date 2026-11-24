@@ -74,7 +74,7 @@ touch an excluded path are dropped from that diff, not the whole commit.
 
 ## Settings
 
-**Settings → Profile → AI preferences of this profile → Repository chat** (each profile has its own):
+**Settings → Profile → AI writing preferences → Repository chat** (each profile has its own):
 
 | Setting | Does |
 |---|---|
@@ -85,8 +85,8 @@ touch an excluded path are dropped from that diff, not the whole commit.
 | **Let chat propose remote actions** | Off by default. On adds fetch, pull, push, opening a pull request and submitting a stack to what chat may propose — see [Actions that leave the machine](#actions-that-leave-the-machine) |
 | **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
 
-Which account and model answers chat is set under **Which account answers what**
-on the same page — see [AI features](ai.md#which-account-answers-what).
+Which provider and model answers chat is set on the **AI** page, under **Model
+per task** — see [AI features](ai.md#model-per-task).
 Questions are cheaper than reviews, so a smaller model is often enough.
 
 With AI switched off entirely, chat disappears with it — there is no panel

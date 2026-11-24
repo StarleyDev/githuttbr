@@ -17,10 +17,14 @@ import { aiApi } from '../infrastructure/api'
 export function useModelCatalogs(ai: AIConfig): {
   catalogs: Record<string, ModelCatalog>
   loading: string[]
+  /** Accounts whose list request has finished, answered or failed. A picker
+   *  waits for this before judging a saved model against the list. */
+  settled: string[]
   refresh: (accountId: string) => Promise<ModelCatalog | null>
 } {
   const [catalogs, setCatalogs] = useState<Record<string, ModelCatalog>>({})
   const [loading, setLoading] = useState<string[]>([])
+  const [settled, setSettled] = useState<string[]>([])
   const requested = useRef<Set<string>>(new Set())
   const latest = useRef(ai)
   latest.current = ai
@@ -34,6 +38,7 @@ export function useModelCatalogs(ai: AIConfig): {
       return catalog
     } finally {
       setLoading((ids) => ids.filter((id) => id !== accountId))
+      setSettled((ids) => (ids.includes(accountId) ? ids : [...ids, accountId]))
     }
   }
 
@@ -49,5 +54,5 @@ export function useModelCatalogs(ai: AIConfig): {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids])
 
-  return { catalogs, loading, refresh: (accountId) => load(accountId, true) }
+  return { catalogs, loading, settled, refresh: (accountId) => load(accountId, true) }
 }

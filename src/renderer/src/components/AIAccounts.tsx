@@ -70,6 +70,7 @@ function ModelSelect({
   models,
   allModels,
   emptyLabel,
+  settled = true,
   onChange
 }: {
   value: string
@@ -79,6 +80,10 @@ function ModelSelect({
   allModels?: string[]
   /** Shown as the first option when an empty value is meaningful. */
   emptyLabel?: string
+  /** Whether the provider's list has arrived (or failed). Until then only the
+   *  bundled list is known, and a saved model missing from it is no proof the
+   *  model was typed by hand. */
+  settled?: boolean
   onChange: (value: string) => void
 }): React.JSX.Element {
   const t = useT()
@@ -88,8 +93,22 @@ function ModelSelect({
   // like the picker forgot what is selected.
   const shown = showAll || (value !== '' && !models.includes(value) && full.includes(value)) ? full : models
   const known = value === '' || shown.includes(value)
-  const [custom, setCustom] = useState(!known)
+  // List or typed field is decided once, against the provider's list rather
+  // than the bundled one — deciding on mount turned every newer model into a
+  // typed field. Decided, it holds: typing a listed name must not swap the
+  // field out from under the cursor.
+  const [mode, setMode] = useState<'auto' | 'list' | 'custom'>('auto')
+  // Focus only when the person asked for the field. A field that focuses
+  // itself on mount scrolls Settings to it every time the page opens.
+  const [focusField, setFocusField] = useState(false)
+  useEffect(() => {
+    if (mode === 'auto' && settled) setMode(known ? 'list' : 'custom')
+  }, [mode, settled, known])
+  const custom = mode === 'custom'
   const hasMore = full.length > models.length
+  // Waiting for the list: keep the saved model on screen as an option, so the
+  // select neither shows another row nor drops it.
+  const options = !known && value !== '' && mode === 'auto' ? [...shown, value] : shown
 
   if (custom) {
     return (
@@ -98,7 +117,7 @@ function ModelSelect({
           value={value}
           placeholder={placeholder}
           spellCheck={false}
-          autoFocus
+          autoFocus={focusField}
           onChange={(e) => onChange(e.target.value)}
         />
         <button
@@ -106,7 +125,8 @@ function ModelSelect({
           className="btn ghost small"
           title={t('settings.useModelList')}
           onClick={() => {
-            setCustom(false)
+            setMode('list')
+            setFocusField(false)
             // Dropping back to the list with an unlisted model selected would
             // silently show the wrong row, so the value goes back to empty.
             if (!full.includes(value)) onChange('')
@@ -123,7 +143,8 @@ function ModelSelect({
       value={value}
       onChange={(e) => {
         if (e.target.value === CUSTOM) {
-          setCustom(true)
+          setMode('custom')
+          setFocusField(true)
           return
         }
         if (e.target.value === SHOW_ALL) {
@@ -134,7 +155,7 @@ function ModelSelect({
       }}
     >
       {emptyLabel !== undefined && <option value="">{emptyLabel}</option>}
-      {shown.map((m) => (
+      {options.map((m) => (
         <option key={m} value={m}>
           {m}
         </option>
@@ -174,6 +195,7 @@ function AccountCard({
   account,
   catalog,
   loading,
+  settled,
   clis,
   onEdit,
   onDelete,
@@ -184,6 +206,8 @@ function AccountCard({
   account: AIAccount
   catalog: ModelCatalog | undefined
   loading: boolean
+  /** The provider's list request for this account has finished. */
+  settled: boolean
   clis: DetectedCli[]
   onEdit: (next: AIAccount) => void
   onDelete: () => void
@@ -327,6 +351,7 @@ function AccountCard({
             placeholder={preset.defaultModel || 'model-name'}
             models={models}
             allModels={catalog?.allModels}
+            settled={settled}
             emptyLabel={account.provider === 'cli' ? t('settings.cliDefaultModel') : undefined}
             onChange={(model) => onEdit({ ...account, model })}
           />
@@ -376,7 +401,7 @@ export function AIAccountsEditor({
   const [setup, setSetup] = useState(false)
   const [clis, setClis] = useState<DetectedCli[]>([])
   const accounts = ai.accounts ?? []
-  const { catalogs, loading, refresh } = useModelCatalogs(ai)
+  const { catalogs, loading, settled, refresh } = useModelCatalogs(ai)
   // Only one account is edited at a time — a column of expanded cards turns
   // into a scroll the moment a second provider exists.
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -470,6 +495,7 @@ export function AIAccountsEditor({
           account={editing}
           catalog={catalogs[editing.id]}
           loading={loading.includes(editing.id)}
+          settled={settled.includes(editing.id)}
           clis={clis}
           onEdit={editAccount}
           onDelete={() => {
@@ -513,6 +539,7 @@ export function AIAccountsEditor({
                 placeholder={modelFor(ai, feature)}
                 models={models}
                 allModels={catalogs[resolvedId]?.allModels}
+                settled={settled.includes(resolvedId)}
                 emptyLabel={interp(t('settings.accountDefaultModel'), { model: modelFor(ai, feature) })}
                 onChange={(model) => {
                   const next = { ...(ai.assignments ?? {}) }

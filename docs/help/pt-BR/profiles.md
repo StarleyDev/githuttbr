@@ -39,7 +39,7 @@ nome. Criar e apagar ficam na mesma barra; apagar pede confirmação.
 Um perfil não precisa de IA própria: uma [IA geral](ai.md#uma-ia-para-todos-os-perfis)
 atende todos os perfis, e um perfil só usa uma própria quando precisa. O que
 cada perfil sempre guarda é como a IA escreve para ele — estilo de commit,
-instruções personalizadas e o resto de *Preferências de IA deste perfil*.
+instruções personalizadas e o resto de *Preferências de escrita da IA*.
 
 ## Cada perfil com as suas contas
 

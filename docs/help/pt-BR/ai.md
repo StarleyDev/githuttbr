@@ -21,15 +21,23 @@ conta de novo. A página lista cada perfil e se ele segue esta **IA geral**.
 
 Um perfil pode usar **uma IA própria** — um perfil de trabalho que precisa
 passar pela conta da empresa, por custo ou política de dados. Na página
-**Perfil** dele, escolha **Usar uma IA própria neste perfil**: ela começa como
-uma cópia da IA geral, e as contas e chaves dali em diante são só dele.
-**Voltar para a IA geral** apaga essas contas, depois de uma confirmação, e não
-mexe na IA geral.
+**Perfil** dele, em *IA deste perfil*, troque **Geral** por **Própria**: ela
+começa como uma cópia da IA geral, e os provedores e chaves dali em diante são
+só dele. Voltar para **Geral** apaga esses provedores, depois de uma
+confirmação, e não mexe na IA geral.
+
+Toda IA é configurada nesta página. A barra **Editando** no topo escolhe de
+quem: a IA geral ou a própria de um perfil (*IA própria de Trabalho*).
+**Configurar a IA própria**, na página Perfil, ou **Editar a IA própria**, na
+lista de perfis, abre a página já nela. A página Perfil só mostra qual IA o
+perfil usa e o que responde; o editor nunca fica lá.
+
+![A IA de um perfil na página Perfil: Geral ou Própria, o que responde e o caminho para configurar](../../screenshots/settings-profile-ai.webp)
 
 O jeito como a IA **escreve** continua por perfil nos dois casos: estilo da
 mensagem de commit, estilo das explicações, estilos de conflito e de nome de
 branch, instruções personalizadas, linha de coautor e chat do repositório. Eles
-ficam na página **Perfil**, em *Preferências de IA deste perfil*, então um
+ficam na página **Perfil**, em *Preferências de escrita da IA*, então um
 perfil de trabalho pode fazer commits no estilo `ticket` e um pessoal no
 `conventional`, os dois com a mesma IA.
 
@@ -37,7 +45,7 @@ Quem atualiza de uma versão em que cada perfil tinha a sua IA não perde nada:
 a IA do perfil em uso vira a IA geral, e qualquer outro perfil com uma IA
 diferente fica com ela como própria.
 
-## Contas
+## Provedores
 
 Uma **conta** é um jeito de alcançar um modelo: um provedor, onde encontrá-lo e
 como ele se autentica. Você pode configurar várias e elas convivem — uma chave
@@ -87,9 +95,9 @@ de branch pode ser interpretado como comando.
 
 Se o comando não estiver no seu `PATH`, digite o caminho completo na conta.
 
-### Qual conta responde o quê
+### Modelo por tarefa
 
-Em **Qual conta responde o quê**, cada recurso — mensagens de commit, chat,
+Em **Modelo por tarefa**, cada recurso — mensagens de commit, chat,
 explicar, revisão de PR, resolução de conflitos, wiki, temas — pode apontar para
 a própria conta e o próprio modelo. Deixe uma linha no padrão para seguir a
 conta padrão. Modelo barato para mensagens de commit e um forte para o chat é a

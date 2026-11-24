@@ -73,7 +73,7 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 
 ## Configurações
 
-**Configurações → Perfil → Preferências de IA deste perfil → Chat do repositório** (cada perfil tem as suas):
+**Configurações → Perfil → Preferências de escrita da IA → Chat do repositório** (cada perfil tem as suas):
 
 | Configuração | O que faz |
 |---|---|

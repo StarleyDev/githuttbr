@@ -39,7 +39,7 @@ in the same bar; deleting asks first.
 A profile does not need its own AI: one [general AI](ai.md#one-ai-for-every-profile)
 serves every profile, and a profile opts into its own only when it must. What a
 profile always keeps is how the AI writes for it — commit style, custom
-instructions and the rest of *AI preferences of this profile*.
+instructions and the rest of *AI writing preferences*.
 
 ## Each profile, its own accounts
 

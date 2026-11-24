@@ -128,7 +128,7 @@ import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
 import { repoActions } from '../stores/repo'
 import { useT, interp, loadLocale, type TranslationKey } from '../i18n'
-import { resolveAI } from '../../../shared/aiAccounts'
+import { accountLabel, resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
 import { LanguagePicker } from './LanguagePicker'
 import { NumberField } from './NumberField'
@@ -340,7 +340,15 @@ function SigningControls({ repo }: {
   )
 }
 
-function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
+function ProfilePage({
+  profile,
+  edit,
+  onConfigureAI
+}: {
+  profile: Profile
+  edit: (p: Partial<Profile>) => void
+  onConfigureAI: (scope: AIScope) => void
+}): React.JSX.Element {
   const { activeRepo } = useSettingsStore()
   const toast = useUIStore((s) => s.toast)
   const t = useT()
@@ -411,7 +419,7 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
         <span className="settings-hint">{t('settings.commitStyleHint')}</span>
       </label>
 
-      <ProfileAISection profile={profile} />
+      <ProfileAISection profile={profile} onConfigure={onConfigureAI} />
     </>
   )
 }
@@ -899,48 +907,110 @@ function LocalCiSection(): React.JSX.Element {
   )
 }
 
+/** Which AI the AI page edits: the general one, or one profile's own. */
+export type AIScope = 'general' | { profileId: string }
+
 /**
- * The general AI: one engine for every profile that does not use its own. The
- * list under it shows which profiles follow it, so an exception never hides.
+ * The one place an AI is set up — providers, models per task, on/off. The bar
+ * on top says whose AI is on screen: the general one every profile follows by
+ * default, or a profile's own. Keeping both here means the Profile page never
+ * hosts this editor, so switching profiles there cannot jump the page.
  */
-function GeneralAIPage({ onOpenProfile }: { onOpenProfile: (id: string) => void }): React.JSX.Element {
+function AISettingsPage({
+  scope,
+  onScope
+}: {
+  scope: AIScope
+  onScope: (scope: AIScope) => void
+}): React.JSX.Element {
   const t = useT()
   const generalAI = useSettingsStore((s) => s.settings.ai)
   const profiles = useSettingsStore((s) => s.settings.profiles)
+  const activeId = useSettingsStore((s) => s.settings.activeProfileId)
   const saveGeneralAI = useSettingsStore((s) => s.saveGeneralAI)
+  const saveAIFor = useSettingsStore((s) => s.saveAIFor)
+  const selectId = useId()
+  // A profile that went back to the general AI has no own AI left to edit.
+  const ownProfile =
+    scope === 'general' ? undefined : profiles.find((p) => p.id === scope.profileId && p.ownAI === true)
+  const owners = profiles.filter((p) => p.ownAI === true)
+
   return (
     <>
-      <p className="settings-hint">{t('settings.aiGeneralHint')}</p>
-      <AIPage ai={generalAI} onChange={saveGeneralAI} parts="engine" />
+      <div className="settings-ai-scope">
+        <label htmlFor={selectId}>{t('settings.aiEditing')}</label>
+        <select
+          id={selectId}
+          value={ownProfile ? ownProfile.id : ''}
+          onChange={(e) => onScope(e.target.value ? { profileId: e.target.value } : 'general')}
+        >
+          <option value="">{t('settings.aiScopeGeneral')}</option>
+          {owners.map((p) => (
+            <option key={p.id} value={p.id}>
+              {interp(t('settings.aiScopeOwn'), { profile: p.name })}
+            </option>
+          ))}
+        </select>
+        <span className="settings-hint">
+          {ownProfile
+            ? interp(t('settings.aiScopeOwnHint'), { profile: ownProfile.name })
+            : t('settings.aiScopeGeneralHint')}
+        </span>
+      </div>
 
-      <h4>
-        <UserCircle2 size={14} /> {t('settings.aiByProfile')}
-      </h4>
-      <ul className="settings-ai-profiles">
-        {profiles.map((p) => (
-          <li key={p.id}>
-            <UserCircle2 size={14} />
-            <span className="settings-ai-profile-name">{p.name}</span>
-            <span className={`settings-ai-profile-mode ${p.ownAI ? 'own' : ''}`}>
-              {p.ownAI ? t('settings.aiOwnShort') : t('settings.aiUsesGeneral')}
-            </span>
-            <button className="btn ghost tiny" onClick={() => onOpenProfile(p.id)}>
-              {t('settings.aiOpenProfile')}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <span className="settings-hint">{t('settings.aiByProfileHint')}</span>
+      {ownProfile ? (
+        <AIPage
+          key={ownProfile.id}
+          ai={ownProfile.ai}
+          onChange={(next) => saveAIFor(ownProfile.id, next)}
+          parts="engine"
+        />
+      ) : (
+        <AIPage key="general" ai={generalAI} onChange={saveGeneralAI} parts="engine" />
+      )}
+
+      {!ownProfile && (
+        <>
+          <h4>
+            <UserCircle2 size={14} /> {t('settings.aiByProfile')}
+          </h4>
+          <ul className="settings-ai-profiles">
+            {profiles.map((p) => (
+              <li key={p.id}>
+                <UserCircle2 size={14} />
+                <span className="settings-ai-profile-name">
+                  {p.id === activeId ? interp(t('settings.profileOptionInUse'), { name: p.name }) : p.name}
+                </span>
+                <span className={`settings-ai-profile-mode ${p.ownAI ? 'own' : ''}`}>
+                  {p.ownAI ? t('settings.aiOwnShort') : t('settings.aiUsesGeneral')}
+                </span>
+                {p.ownAI && (
+                  <button className="btn ghost tiny" onClick={() => onScope({ profileId: p.id })}>
+                    {t('settings.aiEditOwn')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          <span className="settings-hint">{t('settings.aiByProfileHint')}</span>
+        </>
+      )}
     </>
   )
 }
 
 /**
- * A profile's AI: the general one or its own, then how the AI writes for this
- * profile. Leaving its own AI drops that profile's accounts and keys, so it
- * asks first.
+ * A profile's AI, as one line: general or its own, what answers, and a way to
+ * set it up on the AI page. Then how the AI writes for this profile. Leaving
+ * its own AI drops that profile's accounts and keys, so it asks first.
  */
-function ProfileAISection({ profile }: { profile: Profile }): React.JSX.Element {
+function ProfileAISection({
+  profile,
+  onConfigure
+}: {
+  profile: Profile
+  onConfigure: (scope: AIScope) => void
+}): React.JSX.Element {
   const t = useT()
   const ai = useSettingsStore((s) => s.aiOfProfile(profile.id))
   const saveAIFor = useSettingsStore((s) => s.saveAIFor)
@@ -949,6 +1019,8 @@ function ProfileAISection({ profile }: { profile: Profile }): React.JSX.Element 
   // exist once the keychain is unlocked; before that the copy would have none.
   const unlocked = useSettingsStore((s) => s.unlocked)
   const own = profile.ownAI === true
+  const resolved = resolveAI(ai)
+  const account = (ai.accounts ?? []).find((a) => a.id === resolved.accountId)
 
   const backToGeneral = (): void =>
     useUIStore.getState().openDialog({
@@ -965,26 +1037,39 @@ function ProfileAISection({ profile }: { profile: Profile }): React.JSX.Element 
       <h4>
         <Bot size={14} /> {t('settings.profileAiTitle')}
       </h4>
-      <div className={`settings-ai-mode ${own ? 'own' : ''}`} data-setting="settings.useOwnAi">
-        <span className="settings-hint">
-          {own ? interp(t('settings.profileAiOwn'), { profile: profile.name }) : t('settings.profileAiGeneral')}
-        </span>
-        {own ? (
-          <button className="btn ghost small" onClick={backToGeneral}>
-            {t('settings.backToGeneralAi')}
-          </button>
-        ) : (
+      <div className="settings-ai-mode" data-setting="settings.useOwnAi">
+        <div className="theme-mode-switch" role="group" aria-label={t('settings.profileAiTitle')}>
           <button
-            className="btn ghost small"
-            disabled={!unlocked}
-            title={unlocked ? undefined : t('settings.useOwnAiLocked')}
-            onClick={() => setProfileOwnAI(profile.id, true)}
+            type="button"
+            className={`theme-mode-btn ${own ? '' : 'active'}`}
+            aria-pressed={!own}
+            onClick={() => own && backToGeneral()}
           >
-            {t('settings.useOwnAi')}
+            {t('settings.aiSourceGeneral')}
           </button>
-        )}
+          <button
+            type="button"
+            className={`theme-mode-btn ${own ? 'active' : ''}`}
+            aria-pressed={own}
+            disabled={!own && !unlocked}
+            title={!own && !unlocked ? t('settings.useOwnAiLocked') : t('settings.useOwnAi')}
+            onClick={() => !own && setProfileOwnAI(profile.id, true)}
+          >
+            {t('settings.aiSourceOwn')}
+          </button>
+        </div>
+        {/* i18n-ignore account name and model id, user data */}
+        <span className="settings-ai-summary">{ai.enabled === false ? t('settings.aiOff') : `${account ? accountLabel(account) : resolved.provider} · ${resolved.model}`}</span>
+        <button
+          className="btn ghost small"
+          onClick={() => onConfigure(own ? { profileId: profile.id } : 'general')}
+        >
+          {t(own ? 'settings.configureOwnAi' : 'settings.configureGeneralAi')}
+        </button>
       </div>
-      {own && <AIPage ai={ai} onChange={(next) => saveAIFor(profile.id, next)} parts="engine" />}
+      <span className="settings-hint">
+        {own ? interp(t('settings.profileAiOwn'), { profile: profile.name }) : t('settings.profileAiGeneral')}
+      </span>
 
       <h4>
         <SlidersHorizontal size={14} /> {t('settings.profileAiPrefs')}
@@ -4799,6 +4884,8 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   // nonce remounts the page, since its tab is only read on mount.
   const [themeTab, setThemeTab] = useState(initialThemeTab)
   const [themeNonce, setThemeNonce] = useState(0)
+  // Whose AI the AI page edits; the Profile page's "Set up" lands it on the right one.
+  const [aiScope, setAiScope] = useState<AIScope>('general')
   const search = useSettingsSearch()
   const { pending: revealing, requestReveal, clearReveal } = useSettingReveal()
   const formRef = useRef<HTMLDivElement>(null)
@@ -5003,18 +5090,22 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
                 <Globe size={13} /> {t('settings.appScopeNote')}
               </p>
             )}
-            {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
+            {page === 'profile' && (
+              <ProfilePage
+                profile={profile}
+                edit={edit}
+                onConfigureAI={(scope) => {
+                  setAiScope(scope)
+                  setPage('ai')
+                }}
+              />
+            )}
             {page === 'workspaces' && <WorkspacesPage />}
             {page === 'integrations' && (
               <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
             )}
             {page === 'ai' && (
-              <GeneralAIPage
-                onOpenProfile={(id) => {
-                  setSelectedId(id)
-                  setPage('profile')
-                }}
-              />
+              <AISettingsPage scope={aiScope} onScope={setAiScope} />
             )}
             {page === 'themes' && <ThemesPage key={themeNonce} initialTab={themeTab} />}
             {page === 'general' && <GeneralPage />}
