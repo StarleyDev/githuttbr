@@ -2,8 +2,8 @@
 title: Themes & appearance
 category: Make it yours
 order: 100
-summary: Built-in themes, light and dark, plus custom and AI-generated ones.
-keywords: theme themes dark light appearance colors font size graph palette search settings find preference filter
+summary: Built-in themes, light and dark, plus custom and AI-generated ones, and colored icons.
+keywords: theme themes dark light appearance colors colours font size graph palette search settings find preference filter icon icons icon colors tint monochrome
 ---
 
 # Themes & appearance
@@ -16,10 +16,53 @@ Midnight, Contrast and Daltonic — each with a light and a dark variant.
 - **Light, dark, or follow the OS**, switched live.
 - **Custom themes**, and **AI-generated** ones from a prompt.
 - Adjustable **code font size**.
+- **Icon colors** for the toolbar and the sidebar sections — see below.
 - A separate **graph style**: lane palette, corner style, row density and line
   thickness, with a live mini-graph preview.
 
 ![Theme settings](../screenshots/settings-themes.webp)
+
+## Icon colors
+
+A row of grey icons makes Fetch, Push and Stash look alike until you read their
+labels. **Icon colors**, under Appearance on the Theme tab, colors each icon by
+what it does, so the eye finds the action before the word:
+
+| Role | Icons | Theme color it takes |
+|---|---|---|
+| Receiving | Fetch, Pull, Remotes, Worktrees | the theme's cyan slot |
+| Sending, finishing | Push, Todos, Issues, Releases | green |
+| Refs | Branch, Local, Tags, Pull requests, Milestones, Submodules | the accent |
+| Set aside | Stash, Pop, Stashes, Bookmarks, Pinned | the theme's orange slot |
+
+Undo, Redo, Tools and Settings stay grey: they are utilities, and leaving them
+plain is what lets the colored ones stand out.
+
+Lists that group many entries color a whole group at once, so a group reads as
+one family:
+
+- **Tools menu** — time travel (Reflog, Snapshots, Time machine, Bisect) in
+  orange; the branch tools (Absorb, the radars, Local CI, comparisons) in the
+  accent; and one color per group: Inspect cyan, Branches & history the accent,
+  Files & patches green, Repository orange, Secrets & sharing red.
+- **Settings pages** — Layout, Workspaces and AI in the accent; Profile and
+  Environment green; Integrations and Data cyan; Themes orange; Security red.
+  General and Shortcuts stay grey.
+
+| Option | What you see |
+|---|---|
+| **Monochrome** | Every icon grey, as before this option existed |
+| **Soft tint** (default) | The color mixed into the grey; the whole color on hover |
+| **Full color** | The color itself, on a small chip of the same hue |
+
+The colors come from the theme — a theme that repaints its green or its accent
+repaints the icons with it, custom and AI-generated themes included.
+
+Limits: only the toolbar's main buttons, the sidebar section headers, the Tools
+menu and the Settings pages are colored; other menus, the rows inside a section
+and the commit graph are not. A hovered menu row keeps its usual look, icon
+included. Color
+is never the only clue — every icon keeps its label.
 
 ## Finding a setting
 

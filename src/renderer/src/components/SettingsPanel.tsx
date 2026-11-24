@@ -30,6 +30,9 @@ import {
   Keyboard as KeyboardIcon,
   ExternalLink,
   Sun,
+  Archive,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Moon,
   Monitor,
   Sparkles,
@@ -73,6 +76,7 @@ import { useUIStore } from '../stores/ui'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { parseSettingsImport } from '../lib/settingsImport'
 import { unlockSettingsImport } from '../lib/settingsPassword'
+import type { IconTone } from '../lib/iconTone'
 import { Avatar } from './Avatar'
 import { PosixShellPicker } from './PosixShellPicker'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
@@ -100,7 +104,8 @@ import type {
   CodeTheme,
   CodeThemeColors,
   TerminalThemeColors,
-  ThemeMode
+  ThemeMode,
+  IconColorMode
 } from '../../../shared/types'
 import {
   APP_THEMES,
@@ -141,18 +146,19 @@ type SettingsPage = SettingsPageId
 
 // Labels live in SETTINGS_PAGE_KEYS, shared with the search, so a page's name
 // in the sidebar and in the results can never differ.
-const PAGES: { id: SettingsPage; icon: React.ReactNode }[] = [
+// `tone`: the page's colour under Settings → Themes → Icon colours; none stays grey.
+const PAGES: { id: SettingsPage; icon: React.ReactNode; tone?: IconTone }[] = [
   { id: 'general', icon: <Settings2 size={13} /> },
-  { id: 'layout', icon: <PanelBottom size={13} /> },
-  { id: 'profile', icon: <UserCircle2 size={13} /> },
-  { id: 'workspaces', icon: <LayoutGrid size={13} /> },
-  { id: 'integrations', icon: <Plug size={13} /> },
-  { id: 'ai', icon: <Bot size={13} /> },
-  { id: 'themes', icon: <Palette size={13} /> },
-  { id: 'security', icon: <ShieldCheck size={13} /> },
+  { id: 'layout', icon: <PanelBottom size={13} />, tone: 'ref' },
+  { id: 'profile', icon: <UserCircle2 size={13} />, tone: 'outgoing' },
+  { id: 'workspaces', icon: <LayoutGrid size={13} />, tone: 'ref' },
+  { id: 'integrations', icon: <Plug size={13} />, tone: 'incoming' },
+  { id: 'ai', icon: <Bot size={13} />, tone: 'ref' },
+  { id: 'themes', icon: <Palette size={13} />, tone: 'shelf' },
+  { id: 'security', icon: <ShieldCheck size={13} />, tone: 'guard' },
   { id: 'shortcuts', icon: <KeyboardIcon size={13} /> },
-  { id: 'data', icon: <HardDrive size={13} /> },
-  { id: 'environment', icon: <Stethoscope size={13} /> }
+  { id: 'data', icon: <HardDrive size={13} />, tone: 'incoming' },
+  { id: 'environment', icon: <Stethoscope size={13} />, tone: 'outgoing' }
 ]
 
 const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
@@ -1865,6 +1871,11 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
     { id: 'dark', key: 'settings.modeDark', icon: <Moon size={13} /> },
     { id: 'auto', key: 'settings.modeAuto', icon: <Monitor size={13} /> }
   ]
+  const ICON_COLOR_OPTIONS: { id: IconColorMode; key: TranslationKey }[] = [
+    { id: 'mono', key: 'settings.iconColorsMono' },
+    { id: 'soft', key: 'settings.iconColorsSoft' },
+    { id: 'full', key: 'settings.iconColorsFull' }
+  ]
 
   const saveAppTheme = (): void => {
     const theme: AppTheme = {
@@ -1949,6 +1960,30 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
           >
             {m.icon}
             <span>{t(m.key)}</span>
+          </button>
+        ))}
+      </div>
+
+      <h4 style={{ marginTop: 20 }}>
+        <Palette size={14} /> {t('settings.iconColors')}
+      </h4>
+      <p className="settings-hint">{t('settings.iconColorsHint')}</p>
+      <div className="theme-mode-switch" data-setting="settings.iconColors">
+        {ICON_COLOR_OPTIONS.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            className={`theme-mode-btn ${(settings.iconColors ?? 'soft') === o.id ? 'active' : ''}`}
+            aria-pressed={(settings.iconColors ?? 'soft') === o.id}
+            onClick={() => update((s) => ({ ...s, iconColors: o.id }))}
+          >
+            {/* The same three roles the toolbar shows, drawn in this option's style. */}
+            <span className="icon-color-preview" data-preview={o.id} aria-hidden="true">
+              <ArrowDownToLine size={13} data-tone="incoming" />
+              <ArrowUpFromLine size={13} data-tone="outgoing" />
+              <Archive size={13} data-tone="shelf" />
+            </span>
+            <span>{t(o.key)}</span>
           </button>
         ))}
       </div>
@@ -4706,6 +4741,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
                 <button
                   key={p.id}
                   className={`profile-item ${!search.active && page === p.id ? 'selected' : ''} ${hits === 0 ? 'dim' : ''}`}
+                  data-tone={p.tone}
                   onClick={() => {
                     search.setQuery('')
                     setPage(p.id)

@@ -1877,6 +1877,11 @@ export const tr: Dict = {
 
   'settings.appearance': 'Görünüm',
   'settings.appearanceHint': 'Açık, koyu ya da işletim sistemini izle.',
+  'settings.iconColors': 'Simge renkleri',
+  'settings.iconColorsHint': 'Simgeleri işlevlerine göre renklendirir (alma, gönderme, dallar ve etiketler, kenara ayrılanlar): araç çubuğunda, kenar çubuğunda, Araçlar menüsünde ve bu sayfalarda. Renkler temadan gelir.',
+  'settings.iconColorsMono': 'Tek renk',
+  'settings.iconColorsSoft': 'Yumuşak ton',
+  'settings.iconColorsFull': 'Tam renk',
   'settings.modeLight': 'Açık',
   'settings.modeDark': 'Koyu',
   'settings.modeAuto': 'Otomatik',

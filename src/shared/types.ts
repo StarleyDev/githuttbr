@@ -3401,6 +3401,7 @@ export interface AppSettings {
   codeThemeId: string
   themeMode: ThemeMode
   codeFontSize: number
+  iconColors: IconColorMode
   customAppThemes: AppTheme[]
   customCodeThemes: CodeTheme[]
   language: Language
@@ -3602,6 +3603,11 @@ export type Language =
 
 /** App appearance: a fixed mode or follow the operating system. */
 export type ThemeMode = 'light' | 'dark' | 'auto'
+
+/** How the toolbar and sidebar-section icons are coloured (Settings → Themes):
+ *  all grey, a tint mixed into the grey, or the theme's colour in full. */
+export type IconColorMode = 'mono' | 'soft' | 'full'
+export const ICON_COLOR_MODES: readonly IconColorMode[] = ['mono', 'soft', 'full']
 
 export type GraphColumnId =
   | 'branch'
@@ -3939,6 +3945,7 @@ export function defaultSettings(): AppSettings {
     codeThemeId: 'gitcito',
     themeMode: 'auto',
     codeFontSize: 12,
+    iconColors: 'soft',
     customAppThemes: [],
     customCodeThemes: [],
     language: 'en',

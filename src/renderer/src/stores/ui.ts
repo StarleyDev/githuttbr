@@ -1,3 +1,4 @@
+import type { IconTone } from '../lib/iconTone'
 import { create } from 'zustand'
 import { explainGitError } from '../lib/gitErrorHint'
 import type { DropRef } from '../lib/branchDrop'
@@ -40,6 +41,8 @@ export interface MenuItem {
   onClick?: () => void
   /** Nested items — renders a flyout submenu on hover instead of a click action. */
   submenu?: MenuItem[]
+  /** The icon's role for Settings → Themes → Icon colours; none stays grey. */
+  tone?: IconTone
   /** Draws the row as Finder-style colour dots instead of a label: one click picks a colour. */
   swatches?: MenuSwatches
 }

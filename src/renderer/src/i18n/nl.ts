@@ -1899,6 +1899,11 @@ export const nl: Dict = {
   // Instellingen — themapagina
   'settings.appearance': 'Weergave',
   'settings.appearanceHint': 'Licht, donker, of het besturingssysteem volgen.',
+  'settings.iconColors': 'Pictogramkleuren',
+  'settings.iconColorsHint': 'Kleurt pictogrammen naar wat ze doen (ontvangen, verzenden, branches en tags, dingen die apart zijn gezet) in de werkbalk, de zijbalk, het menu Gereedschap en deze pagina’s. De kleuren komen uit het thema.',
+  'settings.iconColorsMono': 'Monochroom',
+  'settings.iconColorsSoft': 'Zachte tint',
+  'settings.iconColorsFull': 'Volle kleur',
   'settings.modeLight': 'Licht',
   'settings.modeDark': 'Donker',
   'settings.modeAuto': 'Automatisch',

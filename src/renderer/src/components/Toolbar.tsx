@@ -56,6 +56,7 @@ import {
   FlaskConical
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
+import { withTone, type IconTone } from '../lib/iconTone'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { openBranchCompare } from '../lib/branchCompare'
@@ -89,6 +90,8 @@ type BarItem =
       badge?: number
       /** Fetch alone hangs its age label under the button. */
       age?: boolean
+      /** The icon's role for Settings → Themes → Icon colours; none stays grey. */
+      tone?: IconTone
     }
 
 /** Gap between bar items, and the width the "More" button needs for itself. */
@@ -252,77 +255,86 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     // The dropdown mirrors the command palette: everything reachable by ⌘K that
     // belongs to a repository is here too, with the rarely-used two thirds
     // folded into groups so the list stays readable.
+    // Each block and group of the menu takes one tone (Settings → Themes → Icon
+    // colours): going back in time, working across branches, then one per group.
     return [
-      { label: t('tools.reflog'), icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
-      { label: t('tools.snapshots'), icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
-      { label: t('timeMachine.open'), icon: <Clock size={15} />, onClick: () => openModal({ kind: 'time-machine', repoPath: path }) },
-      { label: t('tools.bisect'), icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
+      ...withTone<MenuItem>('shelf', [
+        { label: t('tools.reflog'), icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
+        { label: t('tools.snapshots'), icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
+        { label: t('timeMachine.open'), icon: <Clock size={15} />, onClick: () => openModal({ kind: 'time-machine', repoPath: path }) },
+        { label: t('tools.bisect'), icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) }
+      ]),
       { separator: true },
-      { label: t('absorb.open'), icon: <Magnet size={15} />, onClick: () => openModal({ kind: 'absorb', repoPath: path }) },
-      {
-        label: t('radar.open'),
-        icon: <Radar size={15} />,
-        onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })
-      },
-      {
-        label: t('teamRadar.open'),
-        icon: <Users size={15} />,
-        onClick: () => openModal({ kind: 'teammate-radar', repoPath: path })
-      },
-      {
-        label: t('localCi.open'),
-        icon: <FlaskConical size={15} />,
-        onClick: () => openModal({ kind: 'local-ci', repoPath: path })
-      },
-      {
-        label: t('tools.compareRefs'),
-        icon: <ArrowLeftRight size={15} />,
-        onClick: () => {
-          const cur = repo.branches.current || 'HEAD'
-          const base =
-            repo.branches.locals.find((b) => /^(main|master)$/.test(b.name) && b.name !== cur)?.name ??
-            repo.branches.locals.find((b) => b.name !== cur)?.name ??
-            cur
-          openBranchCompare({ repoPath: path, branchA: cur, branchB: base })
-        }
-      },
-      {
-        label: t('rangeDiff.open'),
-        icon: <History size={15} />,
-        onClick: () =>
-          openModal({ kind: 'range-diff', repoPath: path, branch: repo.branches.current || 'HEAD' })
-      },
-      ...(notesMenu().length
-        ? [{ label: t('notes.title'), icon: <StickyNote size={15} />, submenu: notesMenu() }]
-        : []),
+      ...withTone<MenuItem>('ref', [
+        { label: t('absorb.open'), icon: <Magnet size={15} />, onClick: () => openModal({ kind: 'absorb', repoPath: path }) },
+        {
+          label: t('radar.open'),
+          icon: <Radar size={15} />,
+          onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })
+        },
+        {
+          label: t('teamRadar.open'),
+          icon: <Users size={15} />,
+          onClick: () => openModal({ kind: 'teammate-radar', repoPath: path })
+        },
+        {
+          label: t('localCi.open'),
+          icon: <FlaskConical size={15} />,
+          onClick: () => openModal({ kind: 'local-ci', repoPath: path })
+        },
+        {
+          label: t('tools.compareRefs'),
+          icon: <ArrowLeftRight size={15} />,
+          onClick: () => {
+            const cur = repo.branches.current || 'HEAD'
+            const base =
+              repo.branches.locals.find((b) => /^(main|master)$/.test(b.name) && b.name !== cur)?.name ??
+              repo.branches.locals.find((b) => b.name !== cur)?.name ??
+              cur
+            openBranchCompare({ repoPath: path, branchA: cur, branchB: base })
+          }
+        },
+        {
+          label: t('rangeDiff.open'),
+          icon: <History size={15} />,
+          onClick: () =>
+            openModal({ kind: 'range-diff', repoPath: path, branch: repo.branches.current || 'HEAD' })
+        },
+        ...(notesMenu().length
+          ? [{ label: t('notes.title'), icon: <StickyNote size={15} />, submenu: notesMenu() }]
+          : [])
+      ]),
       { separator: true },
       {
         label: t('tools.groupInspect'),
         icon: <Search size={15} />,
-        submenu: [
+        tone: 'incoming',
+        submenu: withTone<MenuItem>('incoming', [
           { label: t('cmd.objects'), icon: <ObjectsIcon size={15} />, onClick: () => openModal({ kind: 'objects', repoPath: path }) },
           { label: t('cmd.codeSearch'), icon: <Search size={15} />, onClick: () => openModal({ kind: 'code-search', repoPath: path }) },
           { label: t('cmd.insights'), icon: <BarChart3 size={15} />, onClick: () => openModal({ kind: 'repo-settings', repoPath: path, tab: 'insights' }) },
           { label: t('timelapse.open'), icon: <Film size={15} />, onClick: () => openModal({ kind: 'timelapse', repoPath: path }) },
           { label: t('prPreview.open'), icon: <GitPullRequestArrow size={15} />, onClick: () => openModal({ kind: 'pr-preview', repoPath: path }) }
-        ]
+        ])
       },
       {
         label: t('tools.groupHistory'),
         icon: <GitMerge size={15} />,
-        submenu: [
+        tone: 'ref',
+        submenu: withTone<MenuItem>('ref', [
           { label: t('cmd.mergeOptions'), icon: <GitMerge size={15} />, onClick: () => openModal({ kind: 'merge-options', repoPath: path }) },
           { label: t('tools.stack'), icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
           { label: t('cmd.gitflow'), icon: <GitBranch size={15} />, onClick: () => openModal({ kind: 'gitflow', repoPath: path }) },
           { label: t('cmd.subtree'), icon: <FolderInput size={15} />, onClick: () => openModal({ kind: 'subtree', repoPath: path }) },
           { label: t('cmd.historyPurge'), icon: <Eraser size={15} />, onClick: () => openModal({ kind: 'history-purge', repoPath: path }) },
           { label: t('cmd.replace'), icon: <GitGraph size={15} />, onClick: () => openModal({ kind: 'replace', repoPath: path }) }
-        ]
+        ])
       },
       {
         label: t('tools.groupFiles'),
         icon: <FileCog size={15} />,
-        submenu: [
+        tone: 'outgoing',
+        submenu: withTone<MenuItem>('outgoing', [
           { label: t('cmd.attributes'), icon: <FileCog size={15} />, onClick: () => openModal({ kind: 'attributes', repoPath: path }) },
           { label: t('tools.hooks'), icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
           { label: t('tools.lfs'), icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
@@ -330,29 +342,31 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           { label: t('cmd.clean'), icon: <Trash2 size={15} />, onClick: () => openModal({ kind: 'clean', repoPath: path }) },
           { label: t('tools.applyPatch'), icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
           { label: t('tools.applyPatchAm'), icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
-        ]
+        ])
       },
       {
         label: t('tools.groupRepo'),
         icon: <HardDrive size={15} />,
-        submenu: [
+        tone: 'shelf',
+        submenu: withTone<MenuItem>('shelf', [
           { label: t('cmd.maintenance'), icon: <HardDrive size={15} />, onClick: () => openModal({ kind: 'maintenance', repoPath: path }) },
           { label: t('cmd.bundle'), icon: <Package size={15} />, onClick: () => openModal({ kind: 'export', repoPath: path, tab: 'bundle' }) },
           { label: t('cmd.archive'), icon: <Archive size={15} />, onClick: () => openModal({ kind: 'export', repoPath: path, tab: 'archive' }) },
           { label: t('tools.changelog'), icon: <FileText size={15} />, onClick: () => openModal({ kind: 'changelog-gen', repoPath: path }) },
           { label: t('tools.wiki'), icon: <BookOpen size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'wiki', repoPath: path }) }
-        ]
+        ])
       },
       {
         label: t('tools.groupSecurity'),
         icon: <KeyRound size={15} />,
-        submenu: [
+        tone: 'guard',
+        submenu: withTone<MenuItem>('guard', [
           { label: t('tools.vault'), icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
           { label: t('cmd.credentials'), icon: <KeyRound size={15} />, onClick: () => openModal({ kind: 'credentials', repoPath: path }) },
           { label: t('cmd.sshKeys'), icon: <KeyRound size={15} />, onClick: () => openModal({ kind: 'settings', page: 'security' }) },
           { label: t('cmd.secureExport'), icon: <Lock size={15} />, onClick: () => openModal({ kind: 'secure-share', repoPath: path, initialMode: 'export' }) },
           { label: t('cmd.secureImport'), icon: <Lock size={15} />, onClick: () => openModal({ kind: 'secure-share', repoPath: path, initialMode: 'import' }) }
-        ]
+        ])
       }
     ]
   }
@@ -385,7 +399,8 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       menuIcon: <Download size={15} />,
       disabled: inflight,
       run: () => void repoActions.fetchAll(path),
-      age: true
+      age: true,
+      tone: 'incoming'
     },
     {
       id: 'pull',
@@ -395,6 +410,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       menuIcon: <ArrowDownToLine size={15} />,
       disabled: inflight,
       run: () => void repoActions.pull(path, 'default'),
+      tone: 'incoming',
       menu: pullItems,
       badge: current?.behind
     },
@@ -406,6 +422,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       menuIcon: <ArrowUpFromLine size={15} />,
       disabled: inflight,
       run: () => void repoActions.push(path),
+      tone: 'outgoing',
       menu: pushItems,
       badge: current?.ahead
     },
@@ -415,7 +432,8 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       title: t('toolbar.branchTitle'),
       icon: <GitBranchPlus size={17} />,
       menuIcon: <GitBranchPlus size={15} />,
-      run: () => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })
+      run: () => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current }),
+      tone: 'ref'
     },
     {
       id: 'stash',
@@ -425,6 +443,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       menuIcon: <Archive size={15} />,
       disabled: inflight,
       run: stashPrompt,
+      tone: 'shelf',
       menu: stashItems
     },
     {
@@ -434,7 +453,8 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       icon: <ArchiveRestore size={17} />,
       menuIcon: <ArchiveRestore size={15} />,
       disabled: repo.stashes.length === 0 || inflight,
-      run: () => void repoActions.stashPop(path, 0)
+      run: () => void repoActions.stashPop(path, 0),
+      tone: 'shelf'
     },
     {
       id: 'tools',
@@ -516,8 +536,8 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       e,
       hidden.map((it) =>
         it.menu
-          ? { label: it.label, icon: it.menuIcon, submenu: it.menu() }
-          : { label: it.label, icon: it.menuIcon, disabled: it.disabled, onClick: it.run }
+          ? { label: it.label, icon: it.menuIcon, tone: it.tone, submenu: it.menu() }
+          : { label: it.label, icon: it.menuIcon, tone: it.tone, disabled: it.disabled, onClick: it.run }
       )
     )
 
@@ -526,6 +546,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     const button = (
       <button
         className={`tool-btn${item.menu ? ' split' : ''}`}
+        data-tone={item.tone}
         title={item.title}
         disabled={item.disabled}
         onClick={(e) => (item.run ? item.run() : item.menu && openAt(e, item.menu()))}

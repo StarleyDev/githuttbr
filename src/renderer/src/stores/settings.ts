@@ -5,6 +5,7 @@ import { migrateAIConfig, needsAccountsNotice, resolveAI } from '../../../shared
 import {
   defaultProfile,
   defaultSettings,
+  ICON_COLOR_MODES,
   defaultGraphStyle,
   type AIConfig,
   type AIFeature,
@@ -485,6 +486,8 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.appThemeId = LEGACY_APP_THEME_IDS[settings.appThemeId] ?? settings.appThemeId
   settings.codeThemeId = LEGACY_CODE_THEME_IDS[settings.codeThemeId] ?? settings.codeThemeId
   settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
+  // An unknown value (a hand-edited file, a newer build's mode) falls back to the default.
+  settings.iconColors = ICON_COLOR_MODES.includes(settings.iconColors) ? settings.iconColors : sd.iconColors
   settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
   settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
   settings.terminalFontFamily = settings.terminalFontFamily ?? sd.terminalFontFamily

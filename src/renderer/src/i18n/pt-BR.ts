@@ -1899,6 +1899,11 @@ export const ptBR: Dict = {
   // Configurações — página de temas
   'settings.appearance': 'Aparência',
   'settings.appearanceHint': 'Claro, escuro, ou seguir o sistema operacional.',
+  'settings.iconColors': 'Cores dos ícones',
+  'settings.iconColorsHint': 'Colore os ícones pelo que fazem (receber, enviar, branches e tags, itens guardados) na barra de ferramentas, na lateral, no menu Ferramentas e nestas páginas. As cores vêm do tema.',
+  'settings.iconColorsMono': 'Monocromático',
+  'settings.iconColorsSoft': 'Tom suave',
+  'settings.iconColorsFull': 'Cor plena',
   'settings.modeLight': 'Claro',
   'settings.modeDark': 'Escuro',
   'settings.modeAuto': 'Automático',

@@ -1898,6 +1898,11 @@ export const zhCN: Dict = {
   // Settings — themes page
   'settings.appearance': '外观',
   'settings.appearanceHint': '浅色、深色，或跟随操作系统。',
+  'settings.iconColors': '图标颜色',
+  'settings.iconColorsHint': '按用途为图标着色（接收、发送、分支和标签、暂存的内容），作用于工具栏、侧边栏、工具 菜单和这些设置页面。颜色取自主题。',
+  'settings.iconColorsMono': '单色',
+  'settings.iconColorsSoft': '柔和色调',
+  'settings.iconColorsFull': '全彩',
   'settings.modeLight': '浅色',
   'settings.modeDark': '深色',
   'settings.modeAuto': '自动',

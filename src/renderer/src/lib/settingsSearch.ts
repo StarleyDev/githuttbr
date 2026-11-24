@@ -139,6 +139,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
 
   // Themes — the Theme tab
   e('themes', 'settings.appearance', undefined, 'theme'),
+  e('themes', 'settings.iconColors', 'settings.iconColorsHint', 'theme'),
   e('themes', 'settings.appTheme', undefined, 'theme'),
   e('themes', 'settings.codeTheme', undefined, 'theme'),
   e('themes', 'settings.codeFontSize', undefined, 'theme'),

@@ -1898,6 +1898,11 @@ export const he: Dict = {
   // Settings — themes page
   'settings.appearance': 'מראה',
   'settings.appearanceHint': 'בהיר, כהה, או לפי מערכת ההפעלה.',
+  'settings.iconColors': 'צבעי סמלים',
+  'settings.iconColorsHint': 'צובע סמלים לפי תפקידם (קבלה, שליחה, ענפים ותגיות, דברים שהונחו בצד) בסרגל הכלים, בסרגל הצד, בתפריט כלים ובדפים האלה. הצבעים נלקחים מערכת הנושא.',
+  'settings.iconColorsMono': 'מונוכרום',
+  'settings.iconColorsSoft': 'גוון רך',
+  'settings.iconColorsFull': 'צבע מלא',
   'settings.modeLight': 'בהיר',
   'settings.modeDark': 'כהה',
   'settings.modeAuto': 'אוטומטי',

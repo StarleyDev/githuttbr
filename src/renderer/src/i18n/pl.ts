@@ -1898,6 +1898,11 @@ export const pl: Dict = {
   // Ustawienia — strona motywów
   'settings.appearance': 'Wygląd',
   'settings.appearanceHint': 'Jasny, ciemny albo zgodny z systemem operacyjnym.',
+  'settings.iconColors': 'Kolory ikon',
+  'settings.iconColorsHint': 'Koloruje ikony według tego, co robią (pobieranie, wysyłanie, gałęzie i tagi, rzeczy odłożone na później) na pasku narzędzi, w panelu bocznym, w menu Narzędzia i na tych stronach. Kolory pochodzą z motywu.',
+  'settings.iconColorsMono': 'Monochromatyczne',
+  'settings.iconColorsSoft': 'Delikatny odcień',
+  'settings.iconColorsFull': 'Pełny kolor',
   'settings.modeLight': 'Jasny',
   'settings.modeDark': 'Ciemny',
   'settings.modeAuto': 'Auto',

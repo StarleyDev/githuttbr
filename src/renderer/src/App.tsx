@@ -803,6 +803,12 @@ export default function App(): React.JSX.Element {
     applyDirection(settings.language ?? 'en')
   }, [settings.language])
 
+  // Icon colours ride an attribute on the root: the CSS picks the hue from each
+  // icon's role (`data-tone`), so nothing re-renders when the mode changes.
+  useEffect(() => {
+    document.documentElement.dataset.iconColors = settings.iconColors ?? 'soft'
+  }, [settings.iconColors])
+
   // Apply selected app + code themes whenever they change. When the appearance
   // mode is "auto" we also react to live OS light/dark changes.
   useEffect(() => {

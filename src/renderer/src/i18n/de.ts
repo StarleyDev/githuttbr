@@ -1898,6 +1898,11 @@ export const de: Dict = {
   // Settings — themes page
   'settings.appearance': 'Erscheinungsbild',
   'settings.appearanceHint': 'Hell, dunkel oder dem Betriebssystem folgen.',
+  'settings.iconColors': 'Symbolfarben',
+  'settings.iconColorsHint': 'Färbt Symbole nach ihrer Funktion (empfangen, senden, Branches und Tags, Zurückgelegtes) in der Werkzeugleiste, der Seitenleiste, im Menü „Werkzeuge“ und auf diesen Seiten. Die Farben kommen aus dem Theme.',
+  'settings.iconColorsMono': 'Einfarbig',
+  'settings.iconColorsSoft': 'Sanfter Ton',
+  'settings.iconColorsFull': 'Volle Farbe',
   'settings.modeLight': 'Hell',
   'settings.modeDark': 'Dunkel',
   'settings.modeAuto': 'Automatisch',

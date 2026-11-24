@@ -3,7 +3,7 @@ title: Temas e aparência
 category: Deixe do seu jeito
 order: 100
 summary: Temas nativos, claros e escuros, mais os personalizados e os gerados por IA.
-keywords: tema temas theme themes escuro dark claro light aparência cores tamanho da fonte grafo graph paleta buscar pesquisar configurações encontrar search settings
+keywords: tema temas theme themes escuro dark claro light aparência cores tamanho da fonte grafo graph paleta buscar pesquisar configurações encontrar search settings ícone ícones cores dos ícones icon colors tom monocromático
 ---
 
 # Temas e aparência
@@ -16,10 +16,54 @@ Contrast e Daltonic — cada um com uma variante clara e uma escura.
 - **Claro, escuro, ou seguir o sistema**, trocado ao vivo.
 - **Temas personalizados**, e temas **gerados por IA** a partir de um prompt.
 - **Tamanho da fonte de código** ajustável.
+- **Cores dos ícones** da barra de ferramentas e das seções da lateral (veja abaixo).
 - Um **estilo de grafo** à parte: paleta de faixas, estilo de canto, densidade das
   linhas e espessura dos traços, com uma pré-visualização ao vivo em mini-grafo.
 
 ![Configurações de tema](../../screenshots/settings-themes.webp)
+
+## Cores dos ícones
+
+Uma fileira de ícones cinza deixa Fetch, Push e Stash parecidos até você ler o
+nome. **Cores dos ícones**, abaixo de Aparência na aba Tema, colore cada ícone
+pelo que ele faz, e o olho acha a ação antes da palavra:
+
+| Papel | Ícones | Cor do tema |
+|---|---|---|
+| Receber | Fetch, Pull, Remotes, Worktrees | o espaço ciano do tema |
+| Enviar, concluir | Push, Todos, Issues, Releases | verde |
+| Refs | Branch, Locais, Tags, Pull requests, Milestones, Submodules | o destaque (accent) |
+| Guardar | Stash, Pop, Stashes, Bookmarks, Fixada | o espaço laranja do tema |
+
+Desfazer, Refazer, Ferramentas e Configurações ficam cinza: são utilitários, e deixá-los neutros
+é o que faz os coloridos se destacarem.
+
+Listas que agrupam muitas entradas colorem um grupo inteiro de uma vez, para o
+grupo se ler como uma família:
+
+- **Menu Ferramentas**: a volta no tempo (Reflog, Snapshots, Time machine, Bisect) em
+  laranja; as ferramentas de branch (Absorb, os radares, Local CI, comparações)
+  no destaque; e uma cor por grupo: Inspecionar ciano, Branches e histórico no
+  destaque, Arquivos e patches verde, Repositório laranja, Segredos e
+  compartilhamento vermelho.
+- **Páginas das Configurações**: Layout, Workspaces e IA no destaque; Perfil e
+  Ambiente verde; Integrações e Dados ciano; Temas laranja; Segurança vermelho.
+  Geral e Atalhos ficam cinza.
+
+| Opção | O que aparece |
+|---|---|
+| **Monocromático** | Todos os ícones cinza, como antes desta opção |
+| **Tom suave** (padrão) | A cor misturada ao cinza; a cor inteira ao passar o mouse |
+| **Cor plena** | A própria cor, sobre um fundo pequeno do mesmo tom |
+
+As cores vêm do tema: um tema que muda o verde ou o destaque muda os ícones
+junto, inclusive os temas personalizados e os gerados por IA.
+
+Limites: só os botões principais da barra, os cabeçalhos das seções da lateral,
+o menu Ferramentas e as páginas das Configurações ganham cor; os outros menus, as
+linhas dentro das seções e o grafo não. Uma linha de menu sob o mouse mantém o
+visual de sempre, ícone incluído. A cor nunca é a
+única pista: todo ícone mantém o nome.
 
 ## Encontrar uma configuração
 

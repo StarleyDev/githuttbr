@@ -1895,6 +1895,11 @@ export const en = {
   // Settings — themes page
   'settings.appearance': 'Appearance',
   'settings.appearanceHint': 'Light, dark, or follow the operating system.',
+  'settings.iconColors': 'Icon colors',
+  'settings.iconColorsHint': 'Color icons by what they do — receiving, sending, branches and tags, things set aside — in the toolbar, the sidebar, the Tools menu and these pages. The colors come from the theme.',
+  'settings.iconColorsMono': 'Monochrome',
+  'settings.iconColorsSoft': 'Soft tint',
+  'settings.iconColorsFull': 'Full color',
   'settings.modeLight': 'Light',
   'settings.modeDark': 'Dark',
   'settings.modeAuto': 'Auto',

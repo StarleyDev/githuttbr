@@ -1898,6 +1898,11 @@ export const ru: Dict = {
   // Настройки — страница тем
   'settings.appearance': 'Внешний вид',
   'settings.appearanceHint': 'Светлая, тёмная или как в операционной системе.',
+  'settings.iconColors': 'Цвета значков',
+  'settings.iconColorsHint': 'Окрашивает значки по назначению (получение, отправка, ветки и теги, отложенное) на панели инструментов, в боковой панели, в меню Инструменты и на этих страницах. Цвета берутся из темы.',
+  'settings.iconColorsMono': 'Монохромные',
+  'settings.iconColorsSoft': 'Мягкий оттенок',
+  'settings.iconColorsFull': 'Полный цвет',
   'settings.modeLight': 'Светлая',
   'settings.modeDark': 'Тёмная',
   'settings.modeAuto': 'Авто',

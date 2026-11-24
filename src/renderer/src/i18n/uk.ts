@@ -1898,6 +1898,11 @@ export const uk: Dict = {
   // Налаштування — сторінка тем
   'settings.appearance': 'Вигляд',
   'settings.appearanceHint': 'Світла, темна або за операційною системою.',
+  'settings.iconColors': 'Кольори значків',
+  'settings.iconColorsHint': 'Фарбує значки за призначенням (отримання, надсилання, гілки й теги, відкладене) на панелі інструментів, у бічній панелі, у меню Інструменти і на цих сторінках. Кольори беруться з теми.',
+  'settings.iconColorsMono': 'Монохромні',
+  'settings.iconColorsSoft': 'Мʼякий відтінок',
+  'settings.iconColorsFull': 'Повний колір',
   'settings.modeLight': 'Світла',
   'settings.modeDark': 'Темна',
   'settings.modeAuto': 'Авто',

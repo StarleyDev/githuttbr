@@ -1674,6 +1674,61 @@ textarea:focus {
   }
 }
 
+/* Icon colours (Settings → Themes). An icon names its role with `data-tone`
+   (lib/iconTone.ts); the role picks a slot every theme fills, so each theme
+   repaints its icons. Only an item's own glyph takes it — the toolbar's
+   leading icon, a sidebar section's, a Settings page's, a menu row's — never
+   the split arrow, grip or chevron. `mono` sets
+   nothing and leaves every icon grey, as the app always was. */
+[data-tone='incoming'] { --tone: var(--purple); }
+[data-tone='outgoing'] { --tone: var(--green); }
+[data-tone='ref'] { --tone: var(--accent); }
+[data-tone='shelf'] { --tone: var(--yellow); }
+[data-tone='guard'] { --tone: var(--red); }
+/* Soft: the hue mixed into the grey the icon already had; whole on hover. */
+:root[data-icon-colors='soft'] .tool-btn[data-tone] > svg:first-child,
+:root[data-icon-colors='soft'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='soft'] .profile-item[data-tone] > svg {
+  color: color-mix(in srgb, var(--tone) 72%, currentColor);
+}
+/* A menu icon is dimmer than its label, so it mixes into its own grey. */
+:root[data-icon-colors='soft'] .menu-item[data-tone] > .menu-item-icon {
+  color: color-mix(in srgb, var(--tone) 72%, var(--text-2));
+}
+:root[data-icon-colors='soft'] .tool-btn[data-tone]:hover:not(:disabled) > svg:first-child,
+:root[data-icon-colors='soft'] .sb-header[data-tone]:hover > svg,
+:root[data-icon-colors='soft'] .profile-item[data-tone]:hover > svg,
+:root[data-icon-colors='soft'] .profile-item[data-tone].selected > svg {
+  color: var(--tone);
+}
+/* A hovered menu row turns solid accent with dark text, and a danger row is red
+   throughout: there the icon follows the row, as it always did, chip and all. */
+:root[data-icon-colors] .menu-item[data-tone]:hover:not(:disabled) > .menu-item-icon,
+:root[data-icon-colors] .menu-item[data-tone]:hover:not(:disabled) > .menu-item-icon > svg,
+:root[data-icon-colors] .menu-item.danger[data-tone] > .menu-item-icon,
+:root[data-icon-colors] .menu-item.danger[data-tone] > .menu-item-icon > svg {
+  color: inherit;
+  background: none;
+  box-shadow: none;
+}
+/* Full: the hue itself, on a chip of the same hue. The chip is a background
+   plus a spread shadow, so it adds no size and nothing around it moves. */
+:root[data-icon-colors='full'] .tool-btn[data-tone] > svg:first-child,
+:root[data-icon-colors='full'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='full'] .profile-item[data-tone] > svg,
+:root[data-icon-colors='full'] .menu-item[data-tone] > .menu-item-icon > svg {
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 14%, transparent);
+  border-radius: 4px;
+}
+:root[data-icon-colors='full'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='full'] .profile-item[data-tone] > svg,
+:root[data-icon-colors='full'] .menu-item[data-tone] > .menu-item-icon > svg {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone) 14%, transparent);
+  border-radius: 3px;
+}
+
 .sb-header {
   display: flex;
   align-items: center;
@@ -9813,6 +9868,26 @@ input.is-invalid {
 .theme-mode-btn.active {
   background: var(--accent);
   color: #fff;
+}
+/* Settings → Themes → Icon colours: each option previews itself. The icons
+   sit on the panel's own ground so they read on the selected (accent) button. */
+.icon-color-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: var(--bg-1);
+  color: var(--text-1);
+}
+.icon-color-preview[data-preview='soft'] [data-tone] {
+  color: color-mix(in srgb, var(--tone) 72%, currentColor);
+}
+.icon-color-preview[data-preview='full'] [data-tone] {
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone) 14%, transparent);
+  border-radius: 3px;
 }
 
 /* A plain dropdown for graph options with too many words to fit a segmented

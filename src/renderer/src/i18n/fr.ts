@@ -1877,6 +1877,11 @@ export const fr: Dict = {
 
   'settings.appearance': 'Apparence',
   'settings.appearanceHint': 'Clair, sombre, ou suivre le système d’exploitation.',
+  'settings.iconColors': 'Couleurs des icônes',
+  'settings.iconColorsHint': 'Colore les icônes selon leur rôle (recevoir, envoyer, branches et tags, éléments mis de côté) dans la barre d’outils, la barre latérale, le menu Outils et ces pages. Les couleurs viennent du thème.',
+  'settings.iconColorsMono': 'Monochrome',
+  'settings.iconColorsSoft': 'Teinte douce',
+  'settings.iconColorsFull': 'Couleur pleine',
   'settings.modeLight': 'Clair',
   'settings.modeDark': 'Sombre',
   'settings.modeAuto': 'Auto',

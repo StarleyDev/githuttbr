@@ -1898,6 +1898,11 @@ export const ar: Dict = {
   // Settings — themes page
   'settings.appearance': 'المظهر',
   'settings.appearanceHint': 'فاتح أو داكن أو تابع لنظام التشغيل.',
+  'settings.iconColors': 'ألوان الأيقونات',
+  'settings.iconColorsHint': 'تلوّن الأيقونات حسب وظيفتها (الاستلام، والإرسال، والفروع والوسوم، وما وُضع جانبًا) في شريط الأدوات والشريط الجانبي وقائمة الأدوات وهذه الصفحات. تأتي الألوان من السمة.',
+  'settings.iconColorsMono': 'أحادي اللون',
+  'settings.iconColorsSoft': 'لون خفيف',
+  'settings.iconColorsFull': 'لون كامل',
   'settings.modeLight': 'فاتح',
   'settings.modeDark': 'داكن',
   'settings.modeAuto': 'تلقائي',

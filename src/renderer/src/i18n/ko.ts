@@ -1898,6 +1898,11 @@ export const ko: Dict = {
   // 설정 — 테마 페이지
   'settings.appearance': '모양',
   'settings.appearanceHint': '밝게, 어둡게, 또는 운영체제 설정을 따릅니다.',
+  'settings.iconColors': '아이콘 색상',
+  'settings.iconColorsHint': '아이콘을 역할에 따라 색으로 구분합니다(받기, 보내기, 브랜치와 태그, 보관한 항목). 도구 모음, 사이드바, 도구 메뉴, 이 설정 페이지에 적용됩니다. 색상은 테마에서 가져옵니다.',
+  'settings.iconColorsMono': '단색',
+  'settings.iconColorsSoft': '부드러운 색조',
+  'settings.iconColorsFull': '선명한 색상',
   'settings.modeLight': '밝게',
   'settings.modeDark': '어둡게',
   'settings.modeAuto': '자동',

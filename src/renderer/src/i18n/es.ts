@@ -1894,6 +1894,11 @@ export const es: Dict = {
 
   'settings.appearance': 'Apariencia',
   'settings.appearanceHint': 'Claro, oscuro o seguir el sistema operativo.',
+  'settings.iconColors': 'Colores de los iconos',
+  'settings.iconColorsHint': 'Colorea los iconos según lo que hacen (recibir, enviar, ramas y etiquetas, cosas guardadas para después) en la barra de herramientas, la barra lateral, el menú Herramientas y estas páginas. Los colores vienen del tema.',
+  'settings.iconColorsMono': 'Monocromo',
+  'settings.iconColorsSoft': 'Tono suave',
+  'settings.iconColorsFull': 'Color pleno',
   'settings.modeLight': 'Claro',
   'settings.modeDark': 'Oscuro',
   'settings.modeAuto': 'Auto',

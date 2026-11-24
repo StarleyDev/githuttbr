@@ -90,6 +90,7 @@ function MenuRow({ item, close }: { item: MenuItem; close: () => void }): React.
     return (
       <button
         className={`menu-item ${item.danger ? 'danger' : ''}`}
+        data-tone={item.tone}
         role="menuitem"
         disabled={item.disabled}
         title={item.title}
@@ -127,6 +128,7 @@ function MenuRow({ item, close }: { item: MenuItem; close: () => void }): React.
       <button
         ref={rowRef}
         className={`menu-item ${item.danger ? 'danger' : ''}`}
+        data-tone={item.tone}
         role="menuitem"
         aria-haspopup="menu"
         aria-expanded={!!pos}

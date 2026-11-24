@@ -1877,6 +1877,11 @@ export const ja: Dict = {
 
   'settings.appearance': '外観',
   'settings.appearanceHint': 'ライト、ダーク、または OS に合わせる。',
+  'settings.iconColors': 'アイコンの色',
+  'settings.iconColorsHint': 'アイコンを役割ごとに色分けします（受信、送信、ブランチとタグ、取り置き）。対象はツールバー、サイドバー、ツール メニュー、この設定画面です。色はテーマから取られます。',
+  'settings.iconColorsMono': 'モノクロ',
+  'settings.iconColorsSoft': 'ソフト',
+  'settings.iconColorsFull': 'フルカラー',
   'settings.modeLight': 'ライト',
   'settings.modeDark': 'ダーク',
   'settings.modeAuto': '自動',

@@ -95,6 +95,7 @@ import { TodoStatusIcon, TODO_STATUS_LABEL } from './TodoStatusIcon'
 import { canonicalRepoPath } from '../lib/repoAlias'
 import { gitlabServerBases } from '../../../shared/gitlabInstance'
 import { defaultSettings } from '../../../shared/types'
+import type { IconTone } from '../lib/iconTone'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark, CiState, CiCounts } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
@@ -176,6 +177,8 @@ function folderTitle(display: string): React.ReactNode {
 interface SectionProps {
   title: React.ReactNode
   icon: React.ReactNode
+  /** The icon's role for Settings → Themes → Icon colours; none stays grey. */
+  tone?: IconTone
   /** When set, shown instead of `icon` while the section is open. Prefix
    *  folders swap Folder → FolderOpen; top-level sections keep one glyph. */
   openIcon?: React.ReactNode
@@ -214,6 +217,7 @@ interface SectionProps {
 function Section({
   title,
   icon,
+  tone,
   openIcon,
   className,
   count,
@@ -254,6 +258,7 @@ function Section({
     >
       <div
         className="sb-header"
+        data-tone={tone}
         role="button"
         tabIndex={0}
         aria-expanded={open}
@@ -2173,6 +2178,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.local')}
         icon={<GitBranch size={13} />}
+        tone="ref"
         count={locals.length}
         {...dragProps('local')}
         {...persistOpen('local', openUnlessHuge(locals.length))}
@@ -2206,7 +2212,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {() => (
           <>
             {pinnedLocals.length > 0 && (
-              <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} count={pinnedLocals.length} {...persistOpen('pinned')}>
+              <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} tone="shelf" count={pinnedLocals.length} {...persistOpen('pinned')}>
                 {() => pinnedLocals.map((b) => branchItem(b, b.name))}
               </Section>
             )}
@@ -2221,6 +2227,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.remotes')}
         icon={<Cloud size={13} />}
+        tone="incoming"
         count={repo.remotes.length}
         {...dragProps('remotes')}
         {...persistOpen('remotes', false)}
@@ -2297,6 +2304,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.pullRequests')}
         icon={<GitPullRequest size={13} />}
+        tone="ref"
         count={repo.prs.length + repo.upstreamPrs.length}
         {...dragProps('prs')}
         {...persistOpen('prs', false)}
@@ -2399,6 +2407,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.issues')}
         icon={<CircleDot size={13} />}
+        tone="outgoing"
         count={repo.issues.length}
         {...dragProps('issues')}
         {...persistOpen('issues', false)}
@@ -2485,6 +2494,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.milestones')}
         icon={<Milestone size={13} />}
+        tone="ref"
         count={repo.milestones.filter((m) => m.state === 'open').length}
         {...dragProps('milestones')}
         {...persistOpen('milestones', false)}
@@ -2559,6 +2569,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.tags')}
         icon={<Tag size={13} />}
+        tone="ref"
         count={tags.length}
         {...dragProps('tags')}
         {...persistOpen('tags', false)}
@@ -2597,6 +2608,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         <Section
           title={t('sidebar.releases')}
           icon={<Rocket size={13} />}
+          tone="outgoing"
           count={releases.length}
           {...dragProps('releases')}
           {...persistOpen('releases', false)}
@@ -2680,6 +2692,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.todos')}
         icon={<CheckSquare size={13} />}
+        tone="outgoing"
         count={todoCounts.open}
         {...dragProps('todos')}
         {...persistOpen('todos', false)}
@@ -2712,6 +2725,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.bookmarks')}
         icon={<BookmarkIcon size={13} />}
+        tone="shelf"
         count={bookmarks.length}
         {...dragProps('bookmarks')}
         {...persistOpen('bookmarks', false)}
@@ -2742,7 +2756,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       </Section>
     ),
     stashes: (
-      <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} count={repo.stashes.length} {...dragProps('stashes')} {...persistOpen('stashes', false)}>
+      <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} tone="shelf" count={repo.stashes.length} {...dragProps('stashes')} {...persistOpen('stashes', false)}>
         {repo.stashes.length === 0 && <div className="sb-empty">{t('sidebar.noStashes')}</div>}
         {repo.stashes.map((s) => (
           <div
@@ -2772,6 +2786,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.worktrees')}
         icon={<FolderGit2 size={13} />}
+        tone="incoming"
         count={repo.worktrees.length}
         {...dragProps('worktrees')}
         {...persistOpen('worktrees', false)}
@@ -2846,6 +2861,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.submodules')}
         icon={<Boxes size={13} />}
+        tone="ref"
         count={repo.submodules.length}
         {...dragProps('submodules')}
         {...persistOpen('submodules', false)}
