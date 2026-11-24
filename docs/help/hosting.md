@@ -179,8 +179,8 @@ How each one is set:
 Works on **GitHub, GitLab, Bitbucket and Azure DevOps**. Open PRs/MRs for all
 four are listed in the sidebar.
 
-Start one from branch-compare, the graph, the `+` in the PR panel, or from an
-issue (which fills in `Closes #N`).
+Start one from [the branch comparison](merging.md#compare-any-two-refs), the
+graph, the `+` in the PR panel, or from an issue (which fills in `Closes #N`).
 
 Branch-compare offers **Create PR** only when the profile the repository uses
 has something to sign in with on that host — a token, or a linked sign-in. Right

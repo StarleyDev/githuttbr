@@ -11390,6 +11390,18 @@ input[type='range']:focus-visible {
 .compare-files-count { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); }
 .compare-files-caption { padding: 0 10px 6px; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .compare-files-list { flex: 1; min-height: 0; overflow-y: auto; }
+/* A button, so the list is reachable by Tab; it keeps the shared row's look. */
+.compare-file {
+  width: 100%;
+  border-inline: none;
+  border-bottom: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  text-align: start;
+}
+.compare-error { color: var(--red, #e5484d); white-space: pre-wrap; text-align: start; }
 .compare-file-stat { flex-shrink: 0; font-family: var(--mono, monospace); font-size: 10.5px; }
 .compare-file-stat .add { color: var(--green, #46a758); }
 .compare-file-stat .del { color: var(--red, #e5484d); }

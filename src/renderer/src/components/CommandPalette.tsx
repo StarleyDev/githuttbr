@@ -383,7 +383,7 @@ export function CommandPalette(): React.JSX.Element {
         run: act(() => {
           useUIStore.getState().setFileView(null)
           useRepoStore.getState().select(path, { type: 'commit', hash: c.hash })
-          useUIStore.getState().requestScrollTo(c.hash)
+          useUIStore.getState().requestScrollTo(c.hash, path)
         })
       })
     }

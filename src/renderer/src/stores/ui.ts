@@ -532,7 +532,10 @@ interface UIState {
   updateCompareView(repoPath: string, patch: Partial<Omit<CompareViewState, 'repoPath'>>): void
   setConflictWhy(file: string | null): void
   setFileSearch(search: FileSearchState | null): void
-  requestScrollTo(hash: string | null): void
+  /** Scroll the graph to a commit. With `repoPath`, a branch comparison open in
+   *  that repository closes first: it covers the graph, so the jump would land
+   *  out of sight. */
+  requestScrollTo(hash: string | null, repoPath?: string): void
   setLayout(partial: Partial<PanelLayout>): void
   /** Reset all persisted panel sizes (widths/heights/collapse) to defaults. */
   resetLayout(): void
@@ -685,7 +688,11 @@ export const useUIStore = create<UIState>((set, get) => ({
     set((s) => (s.compareView && s.compareView.repoPath === repoPath ? { compareView: { ...s.compareView, ...patch } } : {})),
   setConflictWhy: (conflictWhy) => set({ conflictWhy }),
   setFileSearch: (fileSearch) => set({ fileSearch }),
-  requestScrollTo: (scrollToHash) => set({ scrollToHash }),
+  requestScrollTo: (scrollToHash, repoPath) =>
+    set((s) => ({
+      scrollToHash,
+      ...(scrollToHash && repoPath && s.compareView?.repoPath === repoPath ? { compareView: null } : {})
+    })),
   setLayout: (partial) => {
     const layout = { ...get().layout, ...partial }
     set({ layout })

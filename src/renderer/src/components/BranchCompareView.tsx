@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeftRight, GitCompare, Loader2, X } from 'lucide-react'
 import type { BranchCompareResult, GraphCommit, HostingAccess } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
@@ -20,8 +20,23 @@ function timeAgo(unix: number): string {
   return interp(tNow('time.daysAgo'), { n: Math.floor(d / 86400) })
 }
 
-/** Compare any two refs — formerly the `BranchComparison` modal. */
-export function BranchCompareView({ view }: { view: CompareViewState }): React.JSX.Element {
+/** Typing a ref waits this long before comparing, so a half-typed name does not
+ *  spawn git and flash "No differences" on every keystroke. */
+const REF_TYPING_DELAY_MS = 300
+
+/**
+ * Compare any two refs — formerly the `BranchComparison` modal.
+ *
+ * The app selects only which repository the comparison belongs to; the view
+ * reads its own state here. Every click and keystroke in it writes to the
+ * store, and selecting the whole object in App re-rendered the entire app.
+ */
+export function BranchCompareView({ repoPath }: { repoPath: string }): React.JSX.Element | null {
+  const view = useUIStore((s) => (s.compareView?.repoPath === repoPath ? s.compareView : null))
+  return view ? <CompareContent view={view} /> : null
+}
+
+function CompareContent({ view }: { view: CompareViewState }): React.JSX.Element {
   const { repoPath, branchA: a, branchB: b, mode } = view
   const t = useT()
   const toast = useUIStore((s) => s.toast)
@@ -32,8 +47,12 @@ export function BranchCompareView({ view }: { view: CompareViewState }): React.J
 
   const [result, setResult] = useState<BranchCompareResult | null>(null)
   const [loading, setLoading] = useState(true)
-  // Diffs of single commits, fetched on first pick; keyed by hash.
+  // Diffs of single commits, fetched on first pick; keyed by hash. A commit's
+  // diff never changes, so the cache outlives ref changes and refreshes.
   const [commitDiffs, setCommitDiffs] = useState<Record<string, string>>({})
+  // A failed fetch, so the pane says why instead of spinning; picking the
+  // commit again retries.
+  const [commitErrors, setCommitErrors] = useState<Record<string, string>>({})
 
   const update = useCallback(
     (patch: Partial<Omit<CompareViewState, 'repoPath'>>) => updateCompareView(repoPath, patch),
@@ -83,19 +102,30 @@ export function BranchCompareView({ view }: { view: CompareViewState }): React.J
     return out
   }, [repo?.branches])
 
+  // A refresh that moved any ref (fetch, pull, commit, checkout) replaces the
+  // branches slice; comparing again then keeps the view current.
+  const branches = repo?.branches
+  // The first comparison runs at once; later ones (typing, a refresh) wait a
+  // beat, which also folds a burst of keystrokes into one run.
+  const firstRun = useRef(true)
   useEffect(() => {
     if (!a.trim() || !b.trim()) return
     let live = true
-    setLoading(true)
-    gitApi
-      .compareBranches(repoPath, a.trim(), b.trim())
-      .then((r) => live && setResult(r))
-      .catch((err) => live && toast('error', err instanceof Error ? err.message : String(err)))
-      .finally(() => live && setLoading(false))
+    const run = (): void => {
+      setLoading(true)
+      gitApi
+        .compareBranches(repoPath, a.trim(), b.trim())
+        .then((r) => live && setResult(r))
+        .catch((err) => live && toast('error', err instanceof Error ? err.message : String(err)))
+        .finally(() => live && setLoading(false))
+    }
+    const timer = setTimeout(run, firstRun.current ? 0 : REF_TYPING_DELAY_MS)
+    firstRun.current = false
     return () => {
       live = false
+      clearTimeout(timer)
     }
-  }, [repoPath, a, b, toast])
+  }, [repoPath, a, b, branches, toast])
 
   // In 'commit' mode an unpicked commit means the first one unique to A (or to
   // B when A has none), so the mode is never empty while either side has one.
@@ -105,17 +135,19 @@ export function BranchCompareView({ view }: { view: CompareViewState }): React.J
     mode === 'commit' ? [...ahead, ...behind].find((c) => c.hash === view.commit) ?? ahead[0] ?? behind[0] : undefined
 
   useEffect(() => {
-    if (!commit || commitDiffs[commit.hash] !== undefined) return
+    if (!commit || commitDiffs[commit.hash] !== undefined || commitErrors[commit.hash] !== undefined) return
     let live = true
+    const { hash } = commit
     gitApi
-      .commitDiff(repoPath, commit.hash)
-      .then((d) => live && setCommitDiffs((m) => ({ ...m, [commit.hash]: d })))
-      .catch((err) => live && toast('error', err instanceof Error ? err.message : String(err)))
+      .commitDiff(repoPath, hash)
+      .then((d) => live && setCommitDiffs((m) => ({ ...m, [hash]: d })))
+      .catch((err) => live && setCommitErrors((m) => ({ ...m, [hash]: err instanceof Error ? err.message : String(err) })))
     return () => {
       live = false
     }
-  }, [repoPath, commit, commitDiffs, toast])
+  }, [repoPath, commit, commitDiffs, commitErrors])
 
+  const commitError = mode === 'commit' && commit ? commitErrors[commit.hash] : undefined
   const diff = mode === 'all' ? result?.diff : commit ? commitDiffs[commit.hash] : ''
   const files = useMemo(() => splitDiffByFile(diff ?? ''), [diff])
   const file = files.find((f) => f.path === view.file) ?? files[0]
@@ -124,7 +156,13 @@ export function BranchCompareView({ view }: { view: CompareViewState }): React.J
   const setMode = (next: CompareMode): void => update({ mode: next, file: '' })
   // A click on a commit shows that commit, whichever mode was on: that keeps
   // "all changes" one click away from any single commit, and back.
-  const pickCommit = (c: GraphCommit): void => update({ mode: 'commit', commit: c.hash, file: '' })
+  const pickCommit = (c: GraphCommit): void => {
+    // Picking a commit whose diff failed tries it again.
+    if (commitErrors[c.hash] !== undefined) {
+      setCommitErrors(({ [c.hash]: _failed, ...rest }) => rest)
+    }
+    update({ mode: 'commit', commit: c.hash, file: '' })
+  }
 
   const openPR = (): void => {
     if (!origin) {
@@ -261,9 +299,10 @@ export function BranchCompareView({ view }: { view: CompareViewState }): React.J
               </div>
               <div className="compare-files-list">
                 {files.map((f) => (
-                  <div
+                  <button
+                    type="button"
                     key={f.path}
-                    className={`snapshot-file-row ${file?.path === f.path ? 'active' : ''}`}
+                    className={`snapshot-file-row compare-file ${file?.path === f.path ? 'active' : ''}`}
                     title={f.oldPath ? `${f.path}\n${interp(t('compare.renamedFrom'), { path: f.oldPath })}` : f.path}
                     onClick={() => update({ file: f.path })}
                   >
@@ -274,14 +313,16 @@ export function BranchCompareView({ view }: { view: CompareViewState }): React.J
                         <span className="add">+{f.additions}</span> <span className="del">−{f.deletions}</span>
                       </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           </aside>
 
           <div className="compare-diff">
-            {diff === undefined ? (
+            {commitError !== undefined ? (
+              <div className="bc-empty compare-error">{commitError}</div>
+            ) : diff === undefined ? (
               <div className="bc-loading">
                 <Loader2 size={20} className="spin" />
               </div>

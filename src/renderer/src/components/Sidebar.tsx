@@ -754,7 +754,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const commit = repo.commits.find((c) => c.hash.startsWith(sha) || sha.startsWith(c.hash))
     const hash = commit?.hash ?? sha
     select(path, { type: 'commit', hash })
-    requestScrollTo(hash)
+    requestScrollTo(hash, path)
   }
 
   const locals = useMemo(

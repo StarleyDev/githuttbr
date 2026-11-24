@@ -538,7 +538,9 @@ export default function App(): React.JSX.Element {
   // keystroke, and the whole app must not re-render with it.
   const commitEditRepo = useUIStore((s) => s.commitEditView?.repoPath ?? null)
   const commitEditSha = useUIStore((s) => s.commitEditView?.sha ?? null)
-  const compareView = useUIStore((s) => s.compareView)
+  // Only which repository: the comparison writes its mode, commit and file to
+  // the store on every click, and the whole app must not re-render for that.
+  const compareRepo = useUIStore((s) => s.compareView?.repoPath ?? null)
   const conflictView = useUIStore((s) => s.conflictView)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -1183,8 +1185,8 @@ export default function App(): React.JSX.Element {
                   <ConflictResolver key={conflictView.file} view={conflictView} />
                 ) : commitEditSha && commitEditRepo === repo.path ? (
                   <CommitEditView key={commitEditSha} repoPath={repo.path} sha={commitEditSha} />
-                ) : compareView && compareView.repoPath === repo.path ? (
-                  <BranchCompareView view={compareView} />
+                ) : compareRepo === repo.path ? (
+                  <BranchCompareView repoPath={repo.path} />
                 ) : fileView && fileView.repoPath === repo.path ? (
                   <FileViewer key={`${fileView.file}`} view={fileView} />
                 ) : (

@@ -75,6 +75,22 @@ describe('splitDiffByFile', () => {
     expect(unquoteGitPath('plain.txt')).toBe('plain.txt')
   })
 
+  it('names a file with spaces from its header when no ---/+++ line does', () => {
+    const diff = [
+      'diff --git a/my logo.png b/my logo.png',
+      'new file mode 100644',
+      'index 0000000..7777777',
+      'Binary files /dev/null and b/my logo.png differ',
+      'diff --git a/run me.sh b/run me.sh',
+      'old mode 100644',
+      'new mode 100755'
+    ].join('\n')
+    expect(splitDiffByFile(diff)).toMatchObject([
+      { path: 'my logo.png', status: 'A', binary: true },
+      { path: 'run me.sh', status: 'M', binary: false, additions: 0, deletions: 0 }
+    ])
+  })
+
   it('returns nothing for an empty diff', () => {
     expect(splitDiffByFile('')).toEqual([])
   })
@@ -162,6 +178,20 @@ describe('openBranchCompare', () => {
     expect(useUIStore.getState().compareView).not.toBeNull()
     useUIStore.getState().setFileView({ repoPath: '/repo', file: 'a.ts', source: { type: 'tree' }, mode: 'file' })
     expect(useUIStore.getState().compareView).toBeNull()
+  })
+
+  it('gives way to a jump to a commit in the graph it covers', () => {
+    openBranchCompare(target)
+    // No repository named (an internal reset): nothing to close.
+    useUIStore.getState().requestScrollTo('abc')
+    expect(useUIStore.getState().compareView).not.toBeNull()
+    useUIStore.getState().requestScrollTo('abc', '/other')
+    expect(useUIStore.getState().compareView).not.toBeNull()
+    useUIStore.getState().requestScrollTo(null, '/repo')
+    expect(useUIStore.getState().compareView).not.toBeNull()
+    useUIStore.getState().requestScrollTo('abc', '/repo')
+    expect(useUIStore.getState().compareView).toBeNull()
+    expect(useUIStore.getState().scrollToHash).toBe('abc')
   })
 
   it('updates only the comparison of that repository', () => {
