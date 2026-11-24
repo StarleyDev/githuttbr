@@ -2728,6 +2728,10 @@ export const fr: Dict = {
   'commitEdit.conflictHint':
     'La cascade entre en conflit — résolvez-le en modifiant autrement, ou utilisez plutôt un rebase interactif.',
   'commitEdit.apply': 'Réécrire l’historique',
+  'commitEdit.discardTitle': 'Abandonner vos modifications ?',
+  'commitEdit.discardConfirm':
+    'Vos modifications de {sha} n’ont pas été appliquées. Fermer l’éditeur et les perdre ?',
+  'commitEdit.discard': 'Abandonner les modifications',
   'commitEdit.applyTitle': 'Réécrire l’historique ?',
   'commitEdit.applyConfirm':
     'Réécrire {sha} et rejouer les {n} commits au-dessus ? Chaque commit réécrit reçoit un nouveau hash. Vos modifications non validées sont conservées, et l’annulation restaure l’ancienne chaîne.',

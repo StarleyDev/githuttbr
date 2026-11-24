@@ -4,6 +4,7 @@ import type { CodeSearchHit, CommitBranchInfo, FileEntry, GraphCommit, RemoteInf
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { openCommitEdit } from './CommitEditView'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions } from '../stores/repo'
 import { FileListView } from './FileListView'
@@ -371,7 +372,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             className="icon-btn commit-edit-btn"
             type="button"
             onClick={() =>
-              openModal({ kind: 'commit-edit', repoPath: repo.path, sha: commit.hash, subject: commit.subject })
+              openCommitEdit({ repoPath: repo.path, sha: commit.hash, subject: commit.subject })
             }
             title={t('commit.editCommit')}
           >

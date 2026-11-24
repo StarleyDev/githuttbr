@@ -2766,6 +2766,10 @@ export const es: Dict = {
   'commitEdit.conflictHint':
     'La cascada tiene conflictos — resuélvelos editando de otra forma, o usa mejor un rebase interactivo.',
   'commitEdit.apply': 'Reescribir historial',
+  'commitEdit.discardTitle': '¿Descartar tus cambios?',
+  'commitEdit.discardConfirm':
+    'Tus cambios en {sha} aún no se han aplicado. ¿Cerrar el editor y perderlos?',
+  'commitEdit.discard': 'Descartar cambios',
   'commitEdit.applyTitle': '¿Reescribir el historial?',
   'commitEdit.applyConfirm':
     '¿Reescribir {sha} y volver a aplicar los {n} commits de encima? Cada commit reescrito recibe un hash nuevo. Tus cambios no commiteados se conservan, y deshacer restaura la cadena antigua.',

@@ -1653,13 +1653,13 @@ export const shots = [
       await page.evaluate((p) => {
         const commits = window.__shot.repo.getState().repos[p].commits
         const c = commits.find((x) => x.subject.toLowerCase().includes('readme')) ?? commits[Math.floor(commits.length / 2)]
-        window.__shot.ui.getState().openModal({ kind: 'commit-edit', repoPath: p, sha: c.hash, subject: c.subject })
+        window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
       }, repo)
       await page.waitForTimeout(900)
       await page.locator('.commitedit-files .snapshot-file-row').first().click()
       await page.waitForTimeout(500)
-      await page.locator('.commitedit-textarea').fill(
-        (await page.locator('.commitedit-textarea').inputValue()) + '\nEdited three weeks later.\n'
+      await page.locator('.commitedit-editor .code-editor-area').fill(
+        (await page.locator('.commitedit-editor .code-editor-area').inputValue()) + '\nEdited three weeks later.\n'
       )
       await page.locator('.commitedit-cascade-head button').first().click()
       await page.waitForTimeout(1500)
@@ -1678,7 +1678,7 @@ export const shots = [
       await page.evaluate((p) => {
         const commits = window.__shot.repo.getState().repos[p].commits
         const c = commits[commits.length - 1] // the root — every merge sits above it
-        window.__shot.ui.getState().openModal({ kind: 'commit-edit', repoPath: p, sha: c.hash, subject: c.subject })
+        window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
       }, repo)
       await page.waitForTimeout(900)
       // Preview arms only once something changed — a reword is enough.

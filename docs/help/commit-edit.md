@@ -18,7 +18,15 @@ commit details panel opens the same editor.
 ## What it does
 
 Pick any commit that is an ancestor of `HEAD` — linear history or not. The
-modal shows its files and message; edit either. Two things happen from there:
+editor shows its files and message; edit either.
+
+Editing a file means reading it, so the editor does not squeeze into a dialog:
+it opens in the centre pane, in place of the commit graph — where the conflict
+resolver and the file viewer open — and takes the full width and height of the
+window. **Esc** or **×** in its header closes it. Your edits survive switching to
+another repository tab and back, and closing with unsaved edits asks first.
+
+Two things happen from there:
 
 1. **Preview cascade** replays every commit above the edited one *in memory*
    (a chain of `merge-tree` cherry-picks — no checkout, no working tree, no
@@ -44,7 +52,7 @@ so resolutions someone made by hand survive the rewrite verbatim. No rerere, no
 re-merging, no worktree: the same in-memory plumbing as the rest of the
 cascade, and both parent pointers are preserved. A side branch that also
 contains the edited commit is rewritten and re-pointed; one that does not keeps
-its identity untouched. The banner in the modal says how many merges the range
+its identity untouched. The banner in the editor says how many merges the range
 carries, and merge steps show a merge icon in the preview.
 
 The honest caveat: a replayed merge is only as good as its recorded result. If
@@ -64,7 +72,7 @@ with an [interactive rebase](rebase.md).
   branch has no path to your current branch to replay.
 - Binary files and files over 2 MB are shown but not editable.
 - A commit that is already on a remote can be edited, but your next push will
-  have to be a **force push** — the modal warns before you commit to that.
+  have to be a **force push** — the editor warns before you commit to that.
 - Deleted files in the commit can't be edited (there is no content to edit).
 
 **See also:** [Interactive rebase](rebase.md) · [Recovery & snapshots](recovery.md) · [Absorb](absorb.md)

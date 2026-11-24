@@ -30,7 +30,6 @@ import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
 import { TeammateRadarModal } from './TeammateRadarModal'
-import { CommitEditModal } from './CommitEditModal'
 import { ResetToCommitModal } from './ResetToCommitModal'
 import { WorkItemBranchModal } from './WorkItemBranchModal'
 import { RemoteAuthModal } from './RemoteAuthModal'
@@ -2456,7 +2455,6 @@ export function ModalHost(): React.JSX.Element {
                       modal.kind === 'snapshots' ||
                       modal.kind === 'todos' ||
                       modal.kind === 'teammate-radar' ||
-                      modal.kind === 'commit-edit' ||
                       modal.kind === 'local-ci' ||
                       modal.kind === 'cli-edit' ||
                       modal.kind === 'stack'
@@ -2555,9 +2553,6 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
               {modal.kind === 'todos' && <TodosModal repoPath={modal.repoPath} focusId={modal.focusId} />}
               {modal.kind === 'teammate-radar' && <TeammateRadarModal repoPath={modal.repoPath} />}
-              {modal.kind === 'commit-edit' && (
-                <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
-              )}
               {modal.kind === 'reset-to-commit' && <ResetToCommitModal spec={modal} />}
               {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} rev={modal.rev} />}
               {modal.kind === 'secure-share' && (

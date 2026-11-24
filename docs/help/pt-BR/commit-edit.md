@@ -4,6 +4,7 @@ category: Branches e cirurgia
 order: 46
 summary: Reescreva os arquivos ou a mensagem de um commit histórico no lugar — com a cascata em prévia antes.
 keywords: editar commit edit reescrever rewrite história history amend passado reword corrigir erro de digitação typo cascata cascade replay rebase no lugar cirurgia
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Edite qualquer commit
@@ -19,7 +20,15 @@ editor.
 ## O que ele faz
 
 Escolha qualquer commit que seja ancestral do `HEAD` — com história linear ou
-não. O modal mostra os arquivos e a mensagem dele; edite qualquer um dos dois.
+não. O editor mostra os arquivos e a mensagem dele; edite qualquer um dos dois.
+
+Editar um arquivo é ler o arquivo, então o editor não se espreme num diálogo:
+ele abre no painel central, no lugar do grafo de commits — onde abrem o
+resolvedor de conflitos e o visualizador de arquivos — e ocupa toda a largura e
+altura da janela. **Esc** ou o **×** no cabeçalho fecha o editor. Suas edições
+sobrevivem a trocar de aba de repositório e voltar, e fechar com edições não
+salvas pede confirmação antes.
+
 A partir daí acontecem duas coisas:
 
 1. **Prévia da cascata** reaplica cada commit acima do editado *em memória*
@@ -47,7 +56,7 @@ reescrito, então resoluções que alguém fez à mão sobrevivem à reescrita a
 da letra. Sem rerere, sem re-merge, sem worktree: o mesmo plumbing em memória
 do resto da cascata, e os dois ponteiros de pai são preservados. Uma branch
 lateral que também contém o commit editado é reescrita e reapontada; uma que
-não contém mantém sua identidade intocada. O banner do modal diz quantos
+não contém mantém sua identidade intocada. O banner do editor diz quantos
 merges o intervalo carrega, e os passos de merge mostram um ícone de merge na
 prévia.
 
@@ -71,7 +80,7 @@ ou encare o conflito de frente com um [rebase interativo](rebase.md).
 - Arquivos binários e arquivos com mais de 2 MB são mostrados, mas não são
   editáveis.
 - Um commit que já está num remote pode ser editado, mas o seu próximo push terá
-  que ser um **force push** — o modal avisa antes de você se comprometer com
+  que ser um **force push** — o editor avisa antes de você se comprometer com
   isso.
 - Arquivos deletados no commit não podem ser editados (não há conteúdo para
   editar).

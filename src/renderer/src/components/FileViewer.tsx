@@ -20,6 +20,7 @@ import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { Eye, EyeOff, Bookmark as BookmarkIcon } from 'lucide-react'
 import { ImageDiff } from './ImageDiff'
+import { CodeEditor } from './CodeEditor'
 import { PreviewPane } from './PreviewPane'
 import { GutterMark, ChangeGutterPopup } from './ChangeGutter'
 import { FileMinimap } from './FileMinimap'
@@ -135,8 +136,6 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const fileSearch = useUIStore((s) => s.fileSearch)
   const searchRe = useMemo(() => (fileSearch ? buildQueryRegExp(fileSearch, true) : null), [fileSearch])
   const bodyRef = useRef<HTMLDivElement>(null)
-  const editorRef = useRef<HTMLTextAreaElement>(null)
-  const preRef = useRef<HTMLPreElement>(null)
 
   // ─── In-file find (Ctrl/Cmd+F) — layers on top of the right-panel filter ───
   const [findOpen, setFindOpen] = useState(false)
@@ -418,18 +417,6 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     }
   }
 
-  // Syntax-highlighted backdrop for the editor. A trailing newline keeps the
-  // last (possibly empty) line rendered so the textarea and backdrop align.
-  const editorHtml = useMemo(
-    () => draft.split('\n').map((l) => highlightLine(l, lang) || '&nbsp;').join('\n') + '\n',
-    [draft, lang]
-  )
-  const syncEditorScroll = (): void => {
-    if (preRef.current && editorRef.current) {
-      preRef.current.scrollTop = editorRef.current.scrollTop
-      preRef.current.scrollLeft = editorRef.current.scrollLeft
-    }
-  }
 
   // Enter edit mode — switch to File view first (the editor only lives there).
   const startEditing = (): void => {
@@ -1061,34 +1048,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         )}
 
         {!error && content !== null && imageUrl === null && mode === 'file' && editing && (
-          <div className="code-editor">
-            <pre
-              ref={preRef}
-              className="code-editor-pre hljs"
-              aria-hidden="true"
-              dangerouslySetInnerHTML={{ __html: editorHtml }}
-            />
-            <textarea
-              ref={editorRef}
-              className="code-editor-area"
-              value={draft}
-              spellCheck={false}
-              autoFocus
-              onScroll={syncEditorScroll}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                // Insert a real tab instead of moving focus.
-                if (e.key === 'Tab') {
-                  e.preventDefault()
-                  const ta = e.currentTarget
-                  const { selectionStart: s, selectionEnd: en } = ta
-                  const next = draft.slice(0, s) + '  ' + draft.slice(en)
-                  setDraft(next)
-                  requestAnimationFrame(() => ta.setSelectionRange(s + 2, s + 2))
-                }
-              }}
-            />
-          </div>
+          <CodeEditor value={draft} onChange={setDraft} lang={lang} autoFocus />
         )}
 
         {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (() => {

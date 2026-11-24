@@ -13926,6 +13926,28 @@ mark.find-hit.active {
   background: transparent;
   caret-color: var(--text-0);
 }
+/* Line numbers, in the same colour as the read-only view's. The gutter scrolls
+   with the text but never sideways, and the text column starts after it. */
+.code-editor.with-lines .code-editor-pre,
+.code-editor.with-lines .code-editor-area { inset: 0 0 0 var(--code-gutter); }
+.code-editor-gutter {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--code-gutter);
+  margin: 0;
+  padding: 8px 12px 8px 0;
+  overflow: hidden;
+  text-align: end;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: var(--code-font-size, 12px);
+  line-height: 1.55;
+  white-space: pre;
+  color: var(--text-3, var(--text-2));
+  background: var(--bg-1);
+  border-inline-end: 1px solid var(--border-soft);
+  user-select: none;
+  pointer-events: none;
+}
 .fv-chip.working { background: rgba(108, 92, 231, 0.16); color: var(--accent); }
 .fv-chip.working.dirty { background: rgba(255, 122, 26, 0.18); color: var(--yellow); }
 .fv-save-btn { display: inline-flex; align-items: center; gap: 4px; }
@@ -15788,6 +15810,16 @@ button.insights-row:hover { background: var(--bg-2); }
 
 /* ─── Commit editing ───────────────────────────────────────────────────── */
 .commitedit { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 8px; }
+/* The commit editor lives in the centre pane, like the file viewer and the
+   conflict resolver: the files and the editor take every pixel the message and
+   the cascade bar leave, however few files the commit has. */
+.commitedit-view .commitedit { padding: 12px 16px 14px; overflow: hidden; }
+.commitedit-title { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; font-size: 13px; }
+.commitedit-title svg { flex-shrink: 0; color: var(--accent, #6366f1); }
+.commitedit-title .commitedit-sha,
+.commitedit-title .commitedit-subject { margin-left: 0; }
+.commitedit-title .commitedit-subject { max-width: none; flex: 1; min-width: 0; }
+.commitedit-empty { padding: 10px; }
 .commitedit-sha {
   font-family: var(--mono, monospace);
   font-size: 12px;
@@ -15825,39 +15857,31 @@ button.insights-row:hover { background: var(--bg-2); }
   width: 100%;
   resize: vertical;
   font-family: var(--mono, monospace);
-  font-size: 12px;
+  /* Same setting as the editor below it, so raising the code font size does
+     not leave the message the one small thing on the screen. */
+  font-size: var(--code-font-size, 12px);
+  line-height: 1.55;
   background: var(--bg-0);
   color: var(--text-0);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   padding: 8px 10px;
 }
-.commitedit-split { display: flex; gap: 10px; flex: 1; min-height: 160px; }
+/* min-height keeps the editor usable in a short window; flex: 1 does the rest. */
+.commitedit-split { display: flex; gap: 10px; flex: 1; min-height: 200px; }
 .commitedit-files {
-  width: 260px;
+  width: clamp(220px, 24%, 340px);
   flex-shrink: 0;
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   overflow-y: auto;
 }
 .commitedit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent, #6366f1); flex-shrink: 0; }
-.commitedit-editor { flex: 1; min-width: 0; display: flex; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
-.commitedit-textarea {
-  flex: 1;
-  resize: none;
-  border: none;
-  outline: none;
-  font-family: var(--mono, monospace);
-  font-size: 12px;
-  line-height: 1.5;
-  background: var(--bg-0);
-  color: var(--text-0);
-  padding: 10px;
-  white-space: pre;
-}
+.commitedit-editor { position: relative; flex: 1; min-width: 0; display: flex; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
+/* The editor itself is the shared CodeEditor (see .code-editor); it fills this box. */
 .commitedit-cascade { border-top: 1px solid var(--border-soft); padding-top: 8px; }
 .commitedit-cascade-head { display: flex; align-items: center; gap: 10px; }
-.commitedit-steps { margin-top: 8px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.commitedit-steps { margin-top: 8px; max-height: min(30vh, 220px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
 .commitedit-step { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 4px; color: var(--text-1); }
 .commitedit-step.clean svg { color: var(--green, #46a758); }
 .commitedit-step.conflict { color: var(--red, #e5484d); }

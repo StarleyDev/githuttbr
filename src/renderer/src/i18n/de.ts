@@ -2772,6 +2772,10 @@ export const de: Dict = {
   'commitEdit.conflictHint':
     'Die Kaskade hat Konflikte — löse sie, indem du anders editierst, oder nutze stattdessen einen interaktiven Rebase.',
   'commitEdit.apply': 'Historie umschreiben',
+  'commitEdit.discardTitle': 'Änderungen verwerfen?',
+  'commitEdit.discardConfirm':
+    'Deine Änderungen an {sha} wurden noch nicht angewendet. Editor schließen und sie verlieren?',
+  'commitEdit.discard': 'Änderungen verwerfen',
   'commitEdit.applyTitle': 'Historie umschreiben?',
   'commitEdit.applyConfirm':
     '{sha} umschreiben und die {n} Commits darüber neu anwenden? Jeder umgeschriebene Commit bekommt einen neuen Hash. Deine nicht committeten Änderungen werden übernommen, und Rückgängig stellt die alte Kette wieder her.',

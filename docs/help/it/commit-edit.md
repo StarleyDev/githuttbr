@@ -4,6 +4,7 @@ category: Branch e chirurgia
 order: 46
 summary: Riscrivi i file o il messaggio di un commit storico sul posto — con la cascata in anteprima prima.
 keywords: modifica commit edit riscrivi rewrite storia history amend passato reword correggi refuso typo cascata cascade replay rebase sul posto chirurgia
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Modifica qualsiasi commit
@@ -19,8 +20,17 @@ lo stesso editor.
 ## Cosa fa
 
 Scegli un commit qualsiasi che sia un antenato di `HEAD` — storia lineare o no.
-La modale mostra i suoi file e il messaggio; modifica l'uno o l'altro. Da lì
-succedono due cose:
+L'editor mostra i suoi file e il messaggio; modifica l'uno o l'altro.
+
+Modificare un file significa leggerlo, quindi l'editor non si stringe in una
+finestra di dialogo: si apre nel pannello centrale, al posto del grafo dei
+commit — dove si aprono il risolutore dei conflitti e il visualizzatore di file
+— e occupa tutta la larghezza e l'altezza della finestra. **Esc** o la **×**
+nella sua intestazione lo chiudono. Le tue modifiche sopravvivono al passaggio a
+un'altra scheda di repository e ritorno, e chiudere con modifiche non salvate
+chiede prima conferma.
+
+Da lì succedono due cose:
 
 1. **Anteprima della cascata** riapplica ogni commit sopra quello modificato
    *in memoria* (una catena di cherry-pick via `merge-tree` — nessun checkout,
@@ -48,7 +58,7 @@ per parola. Niente rerere, niente nuovo merge, niente working tree: lo stesso
 plumbing in memoria del resto della cascata, e i puntatori a entrambi i genitori
 sono preservati. Un branch laterale che contiene anch'esso il commit modificato
 viene riscritto e ripuntato; uno che non lo contiene mantiene la sua identità
-intatta. Il banner nella modale dice quanti merge contiene l'intervallo, e i
+intatta. Il banner nell'editor dice quanti merge contiene l'intervallo, e i
 passi di merge mostrano un'icona di merge nell'anteprima.
 
 L'avvertenza onesta: un merge riapplicato vale quanto il suo risultato
@@ -70,7 +80,7 @@ affronti il conflitto di petto con un [rebase interattivo](rebase.md).
   branch attuale su cui essere riapplicato.
 - I file binari e i file oltre 2 MB vengono mostrati ma non sono modificabili.
 - Un commit già presente su un remote può essere modificato, ma il prossimo push
-  dovrà essere un **force push** — la modale ti avvisa prima che tu ti ci
+  dovrà essere un **force push** — l'editor ti avvisa prima che tu ti ci
   impegni.
 - I file eliminati nel commit non si possono modificare (non c'è contenuto da
   modificare).

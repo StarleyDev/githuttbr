@@ -4,6 +4,7 @@ category: Dallanma ve cerrahi
 order: 46
 summary: Geçmiş bir commit'in dosyalarını veya mesajını yerinde yeniden yazın — zincirleme etki önce önizlenir.
 keywords: commit düzenleme geçmişi yeniden yazma eski commit mesaj düzeltme yazım hatası zincirleme yeniden oynatma yerinde rebase cerrahi edit commit rewrite history amend past reword fix typo cascade replay rebase in place surgery
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Herhangi bir commit'i düzenleyin
@@ -18,7 +19,16 @@ Commit ayrıntıları panelindeki kalem düğmesi de aynı düzenleyiciyi açar.
 ## Ne yapar
 
 `HEAD`'in atası olan herhangi bir commit'i seçin — geçmiş doğrusal olsun ya da
-olmasın. Pencere dosyalarını ve mesajını gösterir; ikisinden birini düzenleyin.
+olmasın. Düzenleyici dosyalarını ve mesajını gösterir; ikisinden birini
+düzenleyin.
+
+Bir dosyayı düzenlemek onu okumak demektir; bu yüzden düzenleyici bir iletişim
+kutusuna sıkıştırılmaz: commit grafiğinin yerine, orta bölmede açılır — çakışma
+çözücünün ve dosya görüntüleyicinin açıldığı yerde — ve pencerenin tüm
+genişliğini ve yüksekliğini kullanır. **Esc** ya da başlığındaki **×** onu
+kapatır. Başka bir depo sekmesine geçip geri döndüğünüzde düzenlemeleriniz
+kaybolmaz; kaydedilmemiş düzenlemelerle kapatmak ise önce onay ister.
+
 Oradan itibaren iki şey olur:
 
 1. **Zincirleme önizleme**, düzenlenen commit'in üzerindeki her commit'i
@@ -49,7 +59,7 @@ yeniden yazmayı harfi harfine atlatır. rerere yok, yeniden merge yok, çalış
 ağacı yok: zincirin geri kalanıyla aynı bellek içi plumbing komutları, üstelik
 her iki ebeveyn işaretçisi de korunur. Düzenlenen commit'i kendisi de içeren
 bir yan dal yeniden yazılır ve yeniden yönlendirilir; içermeyen dalın
-kimliğine ise hiç dokunulmaz. Penceredeki şerit aralığın kaç merge taşıdığını
+kimliğine ise hiç dokunulmaz. Düzenleyicideki şerit aralığın kaç merge taşıdığını
 söyler ve merge adımları önizlemede bir merge simgesi gösterir.
 
 Dürüst uyarı: yeniden oynatılan bir merge ancak kaydedilmiş sonucu kadar
@@ -70,7 +80,7 @@ reddeder — hiçbir şey asla yarım uygulanmaz. Ya farklı düzenleyin ya da
   commit'in, yeniden oynatılabileceği şu anki dalınıza giden bir yolu yoktur.
 - İkili dosyalar ve 2 MB'ın üzerindeki dosyalar gösterilir ama düzenlenemez.
 - Zaten bir uzak depoda olan bir commit düzenlenebilir, ancak bir sonraki
-  push'unuz bir **force push** olmak zorundadır — pencere buna karar vermeden
+  push'unuz bir **force push** olmak zorundadır — düzenleyici buna karar vermeden
   önce sizi uyarır.
 - Commit'te silinmiş dosyalar düzenlenemez (düzenlenecek içerik yoktur).
 

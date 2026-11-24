@@ -4,6 +4,7 @@ category: Gałęzie i operacje na historii
 order: 46
 summary: Przepisz pliki lub wiadomość historycznego commita w miejscu — z podglądem kaskady, zanim cokolwiek się zmieni.
 keywords: edytuj commit przepisz historię popraw literówkę zmień wiadomość kaskada odtwarzanie rebase w miejscu chirurgia edit commit rewrite history amend past reword fix typo cascade replay
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Edytuj dowolny commit
@@ -19,8 +20,16 @@ edytor.
 ## Co robi
 
 Wybierz dowolny commit będący przodkiem `HEAD` — historia liniowa czy nie.
-Modal pokazuje jego pliki i wiadomość; edytuj jedno lub drugie. Dalej dzieją
-się dwie rzeczy:
+Edytor pokazuje jego pliki i wiadomość; edytuj jedno lub drugie.
+
+Edytowanie pliku oznacza jego czytanie, więc edytor nie wciska się w okno
+dialogowe: otwiera się w środkowym panelu, w miejscu grafu commitów — tam, gdzie
+otwierają się rozwiązywanie konfliktów i przeglądarka plików — i zajmuje całą
+szerokość i wysokość okna. **Esc** albo **×** w jego nagłówku go zamyka. Twoje
+zmiany przetrwają przełączenie na inną kartę repozytorium i powrót, a zamknięcie
+z niezapisanymi zmianami najpierw pyta o potwierdzenie.
+
+Dalej dzieją się dwie rzeczy:
 
 1. **Podgląd kaskady** odtwarza każdy commit powyżej edytowanego *w pamięci*
    (łańcuch cherry-picków przez `merge-tree` — bez checkoutu, bez drzewa
@@ -48,7 +57,7 @@ bez ponownego merge'owania, bez drzewa roboczego: to samo plumbing w pamięci
 co reszta kaskady, a oba wskaźniki na rodziców są zachowane. Gałąź boczna,
 która również zawiera edytowany commit, jest przepisywana i przekierowywana;
 ta, która go nie zawiera, zachowuje swoją tożsamość nietkniętą. Baner w
-modalu mówi, ile merge'ów niesie zakres, a kroki merge pokazują w podglądzie
+edytorze mówi, ile merge'ów niesie zakres, a kroki merge pokazują w podglądzie
 ikonę merge.
 
 Uczciwe zastrzeżenie: odtworzony merge jest tylko tak dobry jak jego zapisany
@@ -70,7 +79,7 @@ zmierz się z konfliktem wprost przez [rebase interaktywny](rebase.md).
   odtworzyć.
 - Pliki binarne i pliki powyżej 2 MB są pokazywane, ale nieedytowalne.
 - Commit, który jest już na zdalnym repozytorium, można edytować, ale następny
-  push będzie musiał być **force pushem** — modal ostrzega, zanim się na to
+  push będzie musiał być **force pushem** — edytor ostrzega, zanim się na to
   zdecydujesz.
 - Plików usuniętych w commicie nie da się edytować (nie ma treści do edycji).
 

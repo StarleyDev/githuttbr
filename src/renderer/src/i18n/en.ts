@@ -2766,6 +2766,10 @@ export const en = {
   'commitEdit.noDescendants': 'Nothing above this commit — only itself is rewritten.',
   'commitEdit.conflictHint': 'The cascade conflicts — resolve by editing differently, or use an interactive rebase instead.',
   'commitEdit.apply': 'Rewrite history',
+  'commitEdit.discardTitle': 'Discard your edits?',
+  'commitEdit.discardConfirm':
+    'Your edits to {sha} have not been applied. Close the editor and lose them?',
+  'commitEdit.discard': 'Discard edits',
   'commitEdit.applyTitle': 'Rewrite history?',
   'commitEdit.applyConfirm': 'Rewrite {sha} and replay the {n} commits above it? Every rewritten commit gets a new hash. Your uncommitted changes are carried over, and undo restores the old chain.',
   'commitEdit.applyConfirmPushed': 'Rewrite {sha} and replay the {n} commits above it? Every rewritten commit gets a new hash — and this commit is already on the remote, so the next push must be a force push. Undo restores the old chain.',

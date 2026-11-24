@@ -9,6 +9,7 @@ import { layoutGraph } from '../graph/layout'
 import { edgePath, spurPath, colorForPalette, findGraphPalette, DENSITY_ROW_H, LINE_WIDTH_PX } from '../graph/style'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { draggingCommit, draggingRef, useUIStore, type MenuItem } from '../stores/ui'
+import { openCommitEdit } from './CommitEditView'
 import { commitDropActions } from '../lib/commitDrop'
 import { openCommitDropMenu } from '../lib/commitDropMenu'
 import { useSettingsStore } from '../stores/settings'
@@ -1258,7 +1259,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     { separator: true },
     {
       label: t('commit.editCommit'),
-      onClick: () => openModal({ kind: 'commit-edit', repoPath: repo.path, sha: c.hash, subject: c.subject })
+      onClick: () => openCommitEdit({ repoPath: repo.path, sha: c.hash, subject: c.subject })
     },
     {
       label: t('commit.interactiveRebase'),

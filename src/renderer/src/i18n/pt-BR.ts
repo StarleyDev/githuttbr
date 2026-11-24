@@ -2773,6 +2773,10 @@ export const ptBR: Dict = {
   'commitEdit.conflictHint':
     'A cascata dá conflito — resolva editando de outro jeito, ou use um rebase interativo no lugar.',
   'commitEdit.apply': 'Reescrever o histórico',
+  'commitEdit.discardTitle': 'Descartar suas edições?',
+  'commitEdit.discardConfirm':
+    'Suas edições em {sha} ainda não foram aplicadas. Fechar o editor e perdê-las?',
+  'commitEdit.discard': 'Descartar edições',
   'commitEdit.applyTitle': 'Reescrever o histórico?',
   'commitEdit.applyConfirm':
     'Reescrever {sha} e reaplicar os {n} commits acima dele? Cada commit reescrito ganha um hash novo. Suas mudanças não comitadas são levadas junto, e o desfazer restaura a cadeia antiga.',

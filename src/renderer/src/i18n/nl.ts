@@ -2773,6 +2773,10 @@ export const nl: Dict = {
   'commitEdit.conflictHint':
     'De cascade geeft conflicten — los het op door anders te bewerken, of gebruik in plaats daarvan een interactieve rebase.',
   'commitEdit.apply': 'Geschiedenis herschrijven',
+  'commitEdit.discardTitle': 'Je wijzigingen verwerpen?',
+  'commitEdit.discardConfirm':
+    'Je wijzigingen aan {sha} zijn nog niet toegepast. De editor sluiten en ze kwijtraken?',
+  'commitEdit.discard': 'Wijzigingen verwerpen',
   'commitEdit.applyTitle': 'Geschiedenis herschrijven?',
   'commitEdit.applyConfirm':
     '{sha} herschrijven en de {n} commits erboven opnieuw toepassen? Elke herschreven commit krijgt een nieuwe hash. Je niet-gecommitte wijzigingen gaan mee, en ongedaan maken herstelt de oude keten.',

@@ -2767,6 +2767,10 @@ export const zhCN: Dict = {
   'commitEdit.noDescendants': '这个提交上方没有别的提交——只会改写它自己。',
   'commitEdit.conflictHint': '级联重放出现冲突——换一种改法来解决，或者改用交互式变基。',
   'commitEdit.apply': '改写历史',
+  'commitEdit.discardTitle': '放弃你的编辑？',
+  'commitEdit.discardConfirm':
+    '对 {sha} 的编辑尚未应用。关闭编辑器并丢弃它们？',
+  'commitEdit.discard': '放弃编辑',
   'commitEdit.applyTitle': '改写历史？',
   'commitEdit.applyConfirm': '改写 {sha} 并重放它上方的 {n} 个提交？每个被改写的提交都会得到新的哈希。你未提交的改动会被保留，撤销可以恢复原来的提交链。',
   'commitEdit.applyConfirmPushed': '改写 {sha} 并重放它上方的 {n} 个提交？每个被改写的提交都会得到新的哈希——而且这个提交已经在远程上，下一次推送必须是强制推送。撤销可以恢复原来的提交链。',

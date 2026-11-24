@@ -2767,6 +2767,10 @@ export const ko: Dict = {
   'commitEdit.noDescendants': '이 커밋 위에는 아무것도 없습니다 — 이 커밋만 다시 씁니다.',
   'commitEdit.conflictHint': '연쇄 적용에서 충돌이 납니다 — 다르게 편집해서 해결하거나, 대신 대화형 리베이스를 사용하세요.',
   'commitEdit.apply': '히스토리 다시 쓰기',
+  'commitEdit.discardTitle': '편집 내용을 버릴까요?',
+  'commitEdit.discardConfirm':
+    '{sha}에 대한 편집이 아직 적용되지 않았습니다. 편집기를 닫고 버릴까요?',
+  'commitEdit.discard': '편집 버리기',
   'commitEdit.applyTitle': '히스토리를 다시 쓸까요?',
   'commitEdit.applyConfirm': '{sha}를 다시 쓰고 그 위의 커밋 {n}개를 다시 적용할까요? 다시 쓰인 커밋은 모두 새 해시를 받습니다. 커밋되지 않은 변경은 그대로 이어지고, 실행 취소로 이전 체인을 되돌릴 수 있습니다.',
   'commitEdit.applyConfirmPushed': '{sha}를 다시 쓰고 그 위의 커밋 {n}개를 다시 적용할까요? 다시 쓰인 커밋은 모두 새 해시를 받습니다 — 게다가 이 커밋은 이미 원격에 있으므로 다음 푸시는 강제 푸시가 되어야 합니다. 실행 취소로 이전 체인을 되돌릴 수 있습니다.',

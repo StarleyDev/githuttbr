@@ -2723,6 +2723,10 @@ export const tr: Dict = {
   'commitEdit.noDescendants': 'Bu commit’in üstünde bir şey yok — yalnızca kendisi yeniden yazılır.',
   'commitEdit.conflictHint': 'Zincir çakışıyor — farklı bir düzenlemeyle çözün ya da bunun yerine etkileşimli rebase kullanın.',
   'commitEdit.apply': 'Geçmişi yeniden yaz',
+  'commitEdit.discardTitle': 'Düzenlemeler atılsın mı?',
+  'commitEdit.discardConfirm':
+    '{sha} üzerindeki düzenlemeleriniz henüz uygulanmadı. Düzenleyici kapatılıp bunlar kaybedilsin mi?',
+  'commitEdit.discard': 'Düzenlemeleri at',
   'commitEdit.applyTitle': 'Geçmiş yeniden yazılsın mı?',
   'commitEdit.applyConfirm': '{sha} yeniden yazılıp üstündeki {n} commit yeniden uygulansın mı? Yeniden yazılan her commit yeni bir hash alır. Commit’lenmemiş değişiklikleriniz taşınır ve geri alma eski zinciri geri getirir.',
   'commitEdit.applyConfirmPushed': '{sha} yeniden yazılıp üstündeki {n} commit yeniden uygulansın mı? Yeniden yazılan her commit yeni bir hash alır — ve bu commit zaten uzak sunucuda, bu yüzden bir sonraki push force push olmak zorunda. Geri alma eski zinciri geri getirir.',

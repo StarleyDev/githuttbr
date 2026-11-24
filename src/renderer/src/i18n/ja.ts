@@ -2723,6 +2723,10 @@ export const ja: Dict = {
   'commitEdit.noDescendants': 'このコミットの上には何もありません — 書き換えられるのはこのコミットだけです。',
   'commitEdit.conflictHint': 'カスケードがコンフリクトします — 編集内容を変えて解消するか、代わりに対話的リベースを使ってください。',
   'commitEdit.apply': '履歴を書き換える',
+  'commitEdit.discardTitle': '編集を破棄しますか？',
+  'commitEdit.discardConfirm':
+    '{sha} への編集はまだ適用されていません。エディターを閉じて破棄しますか？',
+  'commitEdit.discard': '編集を破棄',
   'commitEdit.applyTitle': '履歴を書き換えますか？',
   'commitEdit.applyConfirm': '{sha} を書き換え、その上の {n} 件のコミットを再適用しますか？ 書き換えられたコミットはすべて新しいハッシュになります。未コミットの変更は引き継がれ、取り消しで元のチェーンに戻せます。',
   'commitEdit.applyConfirmPushed': '{sha} を書き換え、その上の {n} 件のコミットを再適用しますか？ 書き換えられたコミットはすべて新しいハッシュになります — さらに、このコミットはすでにリモートにあるため、次のプッシュは強制プッシュになります。取り消しで元のチェーンに戻せます。',

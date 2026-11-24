@@ -4,6 +4,7 @@ category: Branches & ingrepen
 order: 46
 summary: Herschrijf de bestanden of het bericht van een historische commit ter plekke — met de cascade eerst als preview.
 keywords: commit bewerken edit herschrijven rewrite geschiedenis history amend verleden reword typfout typo fix cascade replay rebase ter plekke ingreep surgery
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Elke commit bewerken
@@ -18,9 +19,18 @@ editor.
 
 ## Wat het doet
 
-Kies eender welke commit die een voorouder van `HEAD` is — lineaire
-geschiedenis of niet. De modal toont zijn bestanden en bericht; bewerk een van
-beide. Vanaf daar gebeuren twee dingen:
+Kies eender welke commit die een voorouder van `HEAD` is — lineaire geschiedenis
+of niet. De editor toont zijn bestanden en bericht; bewerk een van beide.
+
+Een bestand bewerken betekent het lezen, dus de editor perst zich niet in een
+dialoogvenster: hij opent in het middelste paneel, in plaats van de
+commitgrafiek — waar ook de conflictoplosser en de bestandsviewer openen — en
+neemt de volle breedte en hoogte van het venster in. **Esc** of **×** in zijn
+kopbalk sluit hem. Je bewerkingen blijven bewaard als je naar een ander
+repositorytabblad gaat en terugkomt, en sluiten met niet-opgeslagen bewerkingen
+vraagt eerst om bevestiging.
+
+Vanaf daar gebeuren twee dingen:
 
 1. **Preview van de cascade** speelt elke commit boven de bewerkte *in het
    geheugen* opnieuw af (een keten van `merge-tree`-cherry-picks — geen checkout,
@@ -48,7 +58,7 @@ die iemand met de hand maakte het herschrijven woordelijk overleven. Geen
 rerere, geen opnieuw mergen, geen worktree: dezelfde in-memory plumbing als de
 rest van de cascade, en beide ouderpointers blijven behouden. Een zijbranch
 die de bewerkte commit ook bevat wordt herschreven en opnieuw gericht; een die
-dat niet doet behoudt zijn identiteit onaangeroerd. De banner in de modal zegt
+dat niet doet behoudt zijn identiteit onaangeroerd. De banner in de editor zegt
 hoeveel merges het bereik bevat, en mergestappen tonen een merge-icoon in de
 preview.
 
@@ -73,7 +83,7 @@ anders, of ga het conflict frontaal aan met een
 - Binaire bestanden en bestanden groter dan 2 MB worden getoond maar zijn niet
   te bewerken.
 - Een commit die al op een remote staat kan worden bewerkt, maar je volgende
-  push moet dan een **force push** zijn — de modal waarschuwt voordat je je
+  push moet dan een **force push** zijn — de editor waarschuwt voordat je je
   daaraan vastlegt.
 - Verwijderde bestanden in de commit zijn niet te bewerken (er is geen inhoud om
   te bewerken).

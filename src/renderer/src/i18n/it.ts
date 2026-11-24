@@ -2729,6 +2729,10 @@ export const it: Dict = {
   'commitEdit.conflictHint':
     'La cascata va in conflitto — risolvi modificando in modo diverso, oppure usa un rebase interattivo.',
   'commitEdit.apply': 'Riscrivi la cronologia',
+  'commitEdit.discardTitle': 'Scartare le modifiche?',
+  'commitEdit.discardConfirm':
+    'Le modifiche a {sha} non sono ancora state applicate. Chiudere l’editor e perderle?',
+  'commitEdit.discard': 'Scarta modifiche',
   'commitEdit.applyTitle': 'Riscrivere la cronologia?',
   'commitEdit.applyConfirm':
     'Riscrivere {sha} e riapplicare i {n} commit sopra di lui? Ogni commit riscritto prende un hash nuovo. Le tue modifiche non committate vengono portate avanti, e un annulla ripristina la vecchia catena.',

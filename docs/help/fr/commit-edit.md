@@ -4,6 +4,7 @@ category: Branches et chirurgie
 order: 46
 summary: Réécrire les fichiers ou le message d'un commit historique sur place — avec la cascade prévisualisée d'abord.
 keywords: modifier commit edit réécrire historique rewrite history amend passé reword corriger faute typo cascade replay rebase in place chirurgie surgery
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Modifier n'importe quel commit
@@ -19,8 +20,18 @@ détails du commit ouvre le même éditeur.
 ## Ce que ça fait
 
 Choisissez n'importe quel commit qui est un ancêtre de `HEAD` — historique
-linéaire ou non. La fenêtre montre ses fichiers et son message ; modifiez
-l'un ou l'autre. Deux choses se passent ensuite :
+linéaire ou non. L'éditeur montre ses fichiers et son message ; modifiez l'un ou
+l'autre.
+
+Modifier un fichier, c'est le lire : l'éditeur ne se tasse donc pas dans une
+boîte de dialogue. Il s'ouvre dans le panneau central, à la place du graphe des
+commits — là où s'ouvrent le résolveur de conflits et la visionneuse de fichiers
+— et occupe toute la largeur et toute la hauteur de la fenêtre. **Échap** ou le
+**×** de son en-tête le ferme. Vos modifications survivent au passage à un autre
+onglet de dépôt et au retour, et fermer avec des modifications non enregistrées
+demande d'abord confirmation.
+
+Deux choses se passent ensuite :
 
 1. **Prévisualiser la cascade** rejoue chaque commit au-dessus de celui
    modifié *en mémoire* (une chaîne de cherry-picks `merge-tree` — pas de
@@ -51,7 +62,7 @@ merge, pas d'arbre de travail : la même plomberie en mémoire que le reste de
 la cascade, et les deux pointeurs de parents sont préservés. Une branche
 latérale qui contient elle aussi le commit modifié est réécrite et
 repointée ; une qui ne le contient pas garde son identité intacte. La
-bannière de la fenêtre indique combien de merges la plage contient, et les
+bannière de l'éditeur indique combien de merges la plage contient, et les
 étapes de merge affichent une icône de merge dans l'aperçu.
 
 La mise en garde honnête : un merge rejoué ne vaut que ce que vaut son
@@ -75,7 +86,7 @@ autrement, soit vous affrontez le conflit de face avec un
 - Les fichiers binaires et les fichiers de plus de 2 Mo sont affichés mais pas
   modifiables.
 - Un commit déjà présent sur un distant peut être modifié, mais votre prochain
-  push devra être un **push forcé** — la fenêtre vous prévient avant que vous
+  push devra être un **push forcé** — l'éditeur vous prévient avant que vous
   ne vous y engagiez.
 - Les fichiers supprimés dans le commit ne peuvent pas être modifiés (il n'y a
   pas de contenu à modifier).

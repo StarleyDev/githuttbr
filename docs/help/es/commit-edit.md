@@ -4,6 +4,7 @@ category: Ramas y cirugía
 order: 46
 summary: Reescribe los archivos o el mensaje de un commit histórico en el sitio — con la cascada previsualizada primero.
 keywords: editar commit edit reescribir historia rewrite history amend pasado reword corregir errata typo cascada cascade replay rebase in place cirugía surgery
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Edita cualquier commit
@@ -19,7 +20,15 @@ mismo editor.
 ## Qué hace
 
 Elige cualquier commit que sea ancestro de `HEAD` — con historia lineal o sin
-ella. El modal muestra sus archivos y su mensaje; edita cualquiera de los dos.
+ella. El editor muestra sus archivos y su mensaje; edita cualquiera de los dos.
+
+Editar un archivo implica leerlo, así que el editor no se encoge en un diálogo:
+se abre en el panel central, en lugar del grafo de commits — donde se abren el
+resolvedor de conflictos y el visor de archivos — y ocupa todo el ancho y el
+alto de la ventana. **Esc** o la **×** de su cabecera lo cierran. Tus ediciones
+sobreviven a cambiar a otra pestaña de repositorio y volver, y cerrar con
+ediciones sin guardar pide confirmación primero.
+
 A partir de ahí pasan dos cosas:
 
 1. **Previsualizar la cascada** reproduce cada commit por encima del editado
@@ -48,7 +57,7 @@ a la reescritura al pie de la letra. Sin rerere, sin volver a mergear, sin
 worktree: el mismo plumbing en memoria que el resto de la cascada, y los dos
 punteros a los padres se conservan. Una rama lateral que también contiene el
 commit editado se reescribe y se reapunta; una que no lo contiene conserva su
-identidad intacta. El banner del modal dice cuántos merges lleva el rango, y
+identidad intacta. El banner del editor dice cuántos merges lleva el rango, y
 los pasos de merge muestran un icono de merge en la previsualización.
 
 La advertencia honesta: un merge reproducido solo es tan bueno como su
@@ -71,7 +80,7 @@ editas de otra forma, o afrontas el conflicto de cara con un
 - Los archivos binarios y los que superan 2 MB se muestran pero no se pueden
   editar.
 - Un commit que ya está en un remoto se puede editar, pero tu siguiente push
-  tendrá que ser un **force push** — el modal avisa antes de que te
+  tendrá que ser un **force push** — el editor avisa antes de que te
   comprometas a eso.
 - Los archivos eliminados en el commit no se pueden editar (no hay contenido
   que editar).

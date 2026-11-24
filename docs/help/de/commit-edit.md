@@ -4,6 +4,7 @@ category: Branches & Eingriffe
 order: 46
 summary: Dateien oder Nachricht eines historischen Commits an Ort und Stelle umschreiben — die Kaskade wird vorher als Vorschau gezeigt.
 keywords: commit bearbeiten edit historie umschreiben rewrite history amend vergangenheit reword tippfehler typo korrigieren kaskade cascade replay rebase in place eingriff surgery
+source: a4939d2924a07f92eec156b1ed9631c46ea58850
 ---
 
 # Beliebige Commits bearbeiten
@@ -19,8 +20,18 @@ bearbeiten**, Text ändern, fertig. Der Stift-Button im Commit-Details-Panel
 ## Was es tut
 
 Wähle einen beliebigen Commit, der ein Vorfahre von `HEAD` ist — lineare
-Historie oder nicht. Der Dialog zeigt seine Dateien und seine Nachricht;
-bearbeite eines von beidem. Von dort aus passieren zwei Dinge:
+Historie oder nicht. Der Editor zeigt seine Dateien und seine Nachricht;
+bearbeite eines von beidem.
+
+Eine Datei zu bearbeiten heißt, sie zu lesen — deshalb quetscht sich der Editor
+nicht in einen Dialog: Er öffnet sich im mittleren Bereich anstelle des
+Commit-Graphen, dort, wo auch die Konfliktlösung und der Dateibetrachter
+aufgehen, und nimmt die volle Breite und Höhe des Fensters ein. **Esc** oder
+**×** in seiner Kopfzeile schließt ihn. Deine Änderungen überstehen den Wechsel
+zu einem anderen Repository-Tab und zurück, und wer mit ungespeicherten
+Änderungen schließt, wird vorher gefragt.
+
+Von dort aus passieren zwei Dinge:
 
 1. **Kaskaden-Vorschau** spielt jeden Commit oberhalb des bearbeiteten *im
    Speicher* nach (eine Kette von `merge-tree`-Cherry-Picks — kein Checkout,
@@ -50,7 +61,7 @@ wortwörtlich überleben. Kein rerere, kein erneutes Mergen, kein Worktree:
 dasselbe In-Memory-Plumbing wie im Rest der Kaskade, und beide Eltern-Zeiger
 bleiben erhalten. Ein Seiten-Branch, der den bearbeiteten Commit ebenfalls
 enthält, wird umgeschrieben und neu ausgerichtet; einer, der ihn nicht
-enthält, behält seine Identität unangetastet. Das Banner im Dialog sagt, wie
+enthält, behält seine Identität unangetastet. Das Banner im Editor sagt, wie
 viele Merges der Bereich enthält, und Merge-Schritte zeigen in der Vorschau
 ein Merge-Symbol.
 
@@ -75,7 +86,7 @@ Entweder bearbeite anders, oder stelle dich dem Konflikt direkt mit einem
 - Binärdateien und Dateien über 2 MB werden angezeigt, sind aber nicht
   editierbar.
 - Ein Commit, der schon auf einem Remote liegt, lässt sich bearbeiten, aber
-  dein nächster Push muss ein **Force-Push** sein — der Dialog warnt, bevor du
+  dein nächster Push muss ein **Force-Push** sein — der Editor warnt, bevor du
   dich darauf einlässt.
 - Im Commit gelöschte Dateien lassen sich nicht bearbeiten (es gibt keinen
   Inhalt zum Bearbeiten).

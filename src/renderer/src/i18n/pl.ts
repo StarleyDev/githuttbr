@@ -2767,6 +2767,10 @@ export const pl: Dict = {
   'commitEdit.noDescendants': 'Nic powyżej tego commita — przepisany zostaje tylko on sam.',
   'commitEdit.conflictHint': 'Kaskada konfliktuje — rozwiąż to inną edycją albo użyj zamiast tego interaktywnego rebase.',
   'commitEdit.apply': 'Przepisz historię',
+  'commitEdit.discardTitle': 'Odrzucić zmiany?',
+  'commitEdit.discardConfirm':
+    'Zmiany w {sha} nie zostały jeszcze zastosowane. Zamknąć edytor i je utracić?',
+  'commitEdit.discard': 'Odrzuć zmiany',
   'commitEdit.applyTitle': 'Przepisać historię?',
   'commitEdit.applyConfirm': 'Przepisać {sha} i odtworzyć {n} commitów powyżej? Każdy przepisany commit dostaje nowy hasz. Twoje niezacommitowane zmiany zostają przeniesione, a cofnięcie przywraca stary łańcuch.',
   'commitEdit.applyConfirmPushed': 'Przepisać {sha} i odtworzyć {n} commitów powyżej? Każdy przepisany commit dostaje nowy hasz — a ten commit jest już na remote, więc następny push trzeba będzie wymusić. Cofnięcie przywraca stary łańcuch.',

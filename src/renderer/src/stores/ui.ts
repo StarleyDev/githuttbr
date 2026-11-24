@@ -178,7 +178,6 @@ export type ModalSpec =
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'teammate-radar'; repoPath: string }
-  | { kind: 'commit-edit'; repoPath: string; sha: string; subject: string }
   | {
       kind: 'reset-to-commit'
       repoPath: string
@@ -290,6 +289,34 @@ export interface FileViewState {
 export interface ConflictViewState {
   repoPath: string
   file: string
+}
+
+/** One file in the commit editor: its content at the commit, and the draft. */
+export interface CommitEditFileDraft {
+  original: string
+  draft: string
+  binary: boolean
+  tooLarge: boolean
+  missing: boolean
+}
+
+/** The commit editor's work in progress. Kept in the store rather than in the
+ *  component because switching repository tabs unmounts the centre pane — and
+ *  that must not throw an edit away. */
+export interface CommitEditDraft {
+  /** null until the commit's own message has loaded. */
+  message: string | null
+  files: Record<string, CommitEditFileDraft>
+  selFile: string
+  dirty: boolean
+}
+
+/** Editing a past commit, open in the centre pane in place of the graph. */
+export interface CommitEditViewState {
+  repoPath: string
+  sha: string
+  subject: string
+  draft?: CommitEditDraft
 }
 
 /** Active content-search term, mirrored from the commit panel so the center
@@ -421,6 +448,7 @@ interface UIState {
   composerIntent: { path: string; summary: string; description: string; amend: boolean } | null
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
+  commitEditView: CommitEditViewState | null
   /** File whose "why this conflicts" strip is open. Lives here rather than in
    *  the resolver so a background refresh, which remounts it, does not close it. */
   conflictWhy: string | null
@@ -477,6 +505,9 @@ interface UIState {
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
+  setCommitEditView(view: CommitEditViewState | null): void
+  /** Store the open commit editor's draft; ignored if that editor was closed meanwhile. */
+  saveCommitEditDraft(repoPath: string, sha: string, draft: CommitEditDraft): void
   setConflictWhy(file: string | null): void
   setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
@@ -526,6 +557,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   composerIntent: null,
   fileView: null,
   conflictView: null,
+  commitEditView: null,
   conflictWhy: null,
   fileSearch: null,
   scrollToHash: null,
@@ -615,6 +647,13 @@ export const useUIStore = create<UIState>((set, get) => ({
     }),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),
+  setCommitEditView: (commitEditView) => set({ commitEditView }),
+  saveCommitEditDraft: (repoPath, sha, draft) =>
+    set((s) =>
+      s.commitEditView && s.commitEditView.repoPath === repoPath && s.commitEditView.sha === sha
+        ? { commitEditView: { ...s.commitEditView, draft } }
+        : {}
+    ),
   setConflictWhy: (conflictWhy) => set({ conflictWhy }),
   setFileSearch: (fileSearch) => set({ fileSearch }),
   requestScrollTo: (scrollToHash) => set({ scrollToHash }),
