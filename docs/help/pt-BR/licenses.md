@@ -52,7 +52,8 @@ Dois limites que vale saber:
 - **O identificador é o que o pacote afirma.** O Gitcito o mostra; não o audita.
   Se o manifesto de um pacote estiver errado, esta página erra junto.
 
-A licença do próprio Gitcito é MIT, e o selo no canto superior direito a abre no
-GitHub.
+A licença do próprio Gitcito é Apache 2.0, e o selo no canto superior direito a abre no
+GitHub. O código herdado do Gitcito original veio sob a licença MIT, e o aviso dela
+acompanha o app no `NOTICE`, como a MIT exige.
 
 **Veja também:** [Idiomas e da direita para a esquerda](languages.md) · [Temas e aparência](themes.md)

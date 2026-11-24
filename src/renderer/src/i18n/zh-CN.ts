@@ -1846,7 +1846,7 @@ export const zhCN: Dict = {
   'licenses.title': '开源许可证',
   'licenses.count': '{count} 个软件包',
   'licenses.lead': 'Gitcito 附带这些第三方软件包。选择一个即可阅读它发布时所依据的许可证。',
-  'licenses.own': 'Gitcito 采用 MIT 许可证',
+  'licenses.own': 'Gitcito 采用 Apache 2.0 许可证',
   'licenses.ownTitle': '在 GitHub 上打开 Gitcito 自身的许可证',
   'licenses.filter': '按名称或许可证筛选…',
   'licenses.showText': '显示许可证全文',

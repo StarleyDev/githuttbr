@@ -7,7 +7,7 @@ export const ru = {
   'nav.download': 'Скачать',
 
   'foot.license':
-    'Лицензия MIT · Автор: <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> · с 💜',
+    'Лицензия Apache 2.0 · Автор: <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> · с 💜',
   'foot.credit': 'Форк {upstream} от MyAppDesk, под лицензией MIT.',
   'foot.source': 'Исходники',
   'foot.roadmap': 'Дорожная карта',

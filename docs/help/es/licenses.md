@@ -54,7 +54,7 @@ Dos límites que conviene conocer:
 - **El identificador es lo que el paquete afirma.** Gitcito lo muestra; no lo
   audita. Si el manifiesto de un paquete está mal, esta página se equivoca con él.
 
-La licencia del propio Gitcito es MIT, y la insignia de la esquina superior
+La licencia del propio Gitcito es Apache 2.0, y la insignia de la esquina superior
 derecha la abre en GitHub.
 
 **Ver también:** [Idiomas y escritura de derecha a izquierda](languages.md) · [Temas y apariencia](themes.md)

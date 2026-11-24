@@ -1846,7 +1846,7 @@ export const ko: Dict = {
   'licenses.title': '오픈 소스 라이선스',
   'licenses.count': '패키지 {count}개',
   'licenses.lead': 'Gitcito는 이 서드파티 패키지들을 포함합니다. 패키지를 선택하면 배포된 라이선스 전문을 볼 수 있습니다.',
-  'licenses.own': 'Gitcito는 MIT 라이선스',
+  'licenses.own': 'Gitcito는 Apache 2.0 라이선스',
   'licenses.ownTitle': 'Gitcito 자체 라이선스를 GitHub에서 열기',
   'licenses.filter': '이름 또는 라이선스로 검색…',
   'licenses.showText': '라이선스 전문 보기',

@@ -6,7 +6,7 @@ export const ko = {
   'nav.sponsor': '후원',
   'nav.download': '다운로드',
 
-  'foot.license': 'MIT 라이선스 · <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a>가 💜 를 담아 만들었어요',
+  'foot.license': 'Apache 2.0 라이선스 · <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a>가 💜 를 담아 만들었어요',
   'foot.credit': 'MyAppDesk의 {upstream}를 포크한 프로젝트이며 MIT 라이선스를 따릅니다.',
   'foot.source': '소스',
   'foot.roadmap': '로드맵',

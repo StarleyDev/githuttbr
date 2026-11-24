@@ -7,7 +7,7 @@ export const nl = {
   'nav.download': 'Downloaden',
 
   'foot.license':
-    'MIT-gelicentieerd · Gemaakt door <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> met 💜',
+    'Gelicentieerd onder Apache 2.0 · Gemaakt door <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> met 💜',
   'foot.credit': 'Een fork van {upstream} door MyAppDesk, onder de MIT-licentie.',
   'foot.source': 'Broncode',
   'foot.roadmap': 'Roadmap',

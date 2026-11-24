@@ -51,7 +51,8 @@ Two limits worth knowing:
 - **The identifier is what the package claims.** Gitcito reports it; it does
   not audit it. If a package's manifest is wrong, this page is wrong with it.
 
-Gitcito's own license is MIT, and the badge in the top-right corner opens it on
-GitHub.
+Gitcito's own license is Apache 2.0, and the badge in the top-right corner opens it on
+GitHub. The code inherited from the original Gitcito came under the MIT license, and
+its notice travels with the app in `NOTICE`, as the MIT license requires.
 
 **See also:** [Languages & right-to-left](languages.md) · [Themes & appearance](themes.md)

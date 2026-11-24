@@ -8,6 +8,8 @@
 # (src/shared/brand.ts, src/shared/appRepo.ts, package.json name/author/publish),
 # the README's top, LICENSE, and version/CHANGELOG. Keep this repository's side
 # for those. test/appRepo.test.ts fails if the updater would point upstream.
+# LICENSE here is Apache 2.0; upstream's is MIT, and its notice lives in NOTICE.
+# Keeping our LICENSE must not drop a change to that notice: copy it into NOTICE.
 set -euo pipefail
 
 UPSTREAM_URL=https://github.com/MyAppDesk/gitcito.git
@@ -42,6 +44,7 @@ if ! git merge --no-edit myappdesk/main; then
   echo
   echo "For brand files (brand.ts, appRepo.ts, package.json name/author/publish, README top, LICENSE)"
   echo "and version/CHANGELOG, keep this repository's side:  git checkout --ours <file>"
+  echo "If upstream changed its MIT LICENSE, copy that notice into NOTICE before keeping ours."
   echo "Resolve the rest, then: git add -A && git commit --no-edit && scripts/sync-upstream.sh"
   exit 1
 fi

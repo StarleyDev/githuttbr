@@ -1846,7 +1846,7 @@ export const he: Dict = {
   'licenses.title': 'רישיונות קוד פתוח',
   'licenses.count': '{count} חבילות',
   'licenses.lead': 'Gitcito כולל את חבילות הצד השלישי האלה. בחר חבילה כדי לקרוא את הרישיון שלפיו פורסמה.',
-  'licenses.own': 'Gitcito ברישיון MIT',
+  'licenses.own': 'Gitcito ברישיון Apache 2.0',
   'licenses.ownTitle': 'פתיחת הרישיון של Gitcito עצמו ב-GitHub',
   'licenses.filter': 'סינון לפי שם או רישיון…',
   'licenses.showText': 'הצגת נוסח הרישיון',

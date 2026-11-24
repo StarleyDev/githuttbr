@@ -5,7 +5,7 @@
   "version": "4.44.0",
   "description": "A lightweight Git client built with Electron, React and clean architecture",
   "main": "out/main/index.js",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "homepage": "https://github.com/StarleyDev/githuttbr",
   "author": {
     "name": "Starley - Mestre Jedi",
@@ -66,6 +66,14 @@
       {
         "from": "resources/tree-sitter",
         "to": "tree-sitter"
+      },
+      {
+        "from": "LICENSE",
+        "to": "LICENSE"
+      },
+      {
+        "from": "NOTICE",
+        "to": "NOTICE"
       }
     ],
     "publish": {

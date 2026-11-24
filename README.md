@@ -9,7 +9,7 @@
 _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS — with a UI that shows you git instead of hiding it._
 
 [![Release](https://img.shields.io/github/v/release/StarleyDev/githuttbr?style=flat-square&color=6366f1)](https://github.com/StarleyDev/githuttbr/releases)
-[![License](https://img.shields.io/badge/license-MIT-6366f1?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-6366f1?style=flat-square)](LICENSE)
 ![Platforms](https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-6366f1?style=flat-square)
 
 <img src="docs/screenshots/graph-dark.webp" alt="GitHuttBr's commit graph" width="820" />
@@ -291,12 +291,12 @@ If GitHuttBr saves you an afternoon of `git reflog`, consider
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ## Origin
 
 GitHuttBr is a fork of **[Gitcito](https://github.com/MyAppDesk/gitcito)** by MyAppDesk,
-released under the MIT licence; [LICENSE](LICENSE) keeps its original copyright notice.
+released under the MIT licence; [NOTICE](NOTICE) keeps its original copyright and permission notice.
 Thanks to its author for the foundation this project grew from.
 
 Once a day the **Upstream watch** workflow compares this repository's `main` with the
@@ -309,7 +309,7 @@ npx release-it patch --ci         # then cut a release
 ```
 
 Conflicts, when there are any, are in the files that make this build its own —
-the brand, the README, LICENSE, the version. Keep this repository's side.
+the brand, the README, LICENSE and NOTICE, the version. Keep this repository's side.
 
 ---
 

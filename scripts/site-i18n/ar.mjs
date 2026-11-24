@@ -6,7 +6,7 @@ export const ar = {
   'nav.sponsor': 'الرعاية',
   'nav.download': 'التنزيل',
 
-  'foot.license': 'رخصة MIT · صُنع بـ 💜 على يد <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a>',
+  'foot.license': 'رخصة Apache 2.0 · صُنع بـ 💜 على يد <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a>',
   'foot.credit': 'نسخة متفرعة من {upstream} من MyAppDesk، بموجب ترخيص MIT.',
   'foot.source': 'الشيفرة المصدرية',
   'foot.roadmap': 'خارطة الطريق',

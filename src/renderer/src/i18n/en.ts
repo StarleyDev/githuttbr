@@ -1843,7 +1843,7 @@ export const en = {
   'licenses.title': 'Open-source licenses',
   'licenses.count': '{count} packages',
   'licenses.lead': 'Gitcito ships these third-party packages. Select one to read the license it was published under.',
-  'licenses.own': 'Gitcito is MIT',
+  'licenses.own': 'Gitcito is Apache 2.0',
   'licenses.ownTitle': 'Open Gitcito’s own license on GitHub',
   'licenses.filter': 'Filter by name or license…',
   'licenses.showText': 'Show license text',

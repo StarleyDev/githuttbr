@@ -1846,7 +1846,7 @@ export const pl: Dict = {
   'licenses.title': 'Licencje open source',
   'licenses.count': 'Pakiety: {count}',
   'licenses.lead': 'Gitcito dostarcza te pakiety innych firm. Wybierz jeden, aby przeczytać licencję, na jakiej go opublikowano.',
-  'licenses.own': 'Gitcito jest na licencji MIT',
+  'licenses.own': 'Gitcito jest na licencji Apache 2.0',
   'licenses.ownTitle': 'Otwórz licencję samego Gitcito na GitHubie',
   'licenses.filter': 'Filtruj po nazwie lub licencji…',
   'licenses.showText': 'Pokaż tekst licencji',

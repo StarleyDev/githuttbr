@@ -51,6 +51,6 @@ Zwei Grenzen, die man kennen sollte:
 - **Der Bezeichner ist, was das Paket behauptet.** Gitcito zeigt ihn an, prüft
   ihn aber nicht. Ist das Manifest eines Pakets falsch, irrt diese Seite mit.
 
-Gitcitos eigene Lizenz ist MIT; das Badge oben rechts öffnet sie auf GitHub.
+Gitcitos eigene Lizenz ist Apache 2.0; das Badge oben rechts öffnet sie auf GitHub.
 
 **Siehe auch:** [Sprachen & Rechts-nach-links](languages.md) · [Themes & Erscheinungsbild](themes.md)

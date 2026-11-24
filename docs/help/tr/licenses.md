@@ -50,6 +50,6 @@ Bilinmesi gereken iki sınır:
 - **Tanımlayıcı, paketin iddia ettiğidir.** Gitcito onu bildirir; denetlemez. Bir
   paketin bildirimi yanlışsa, bu sayfa da onunla birlikte yanlıştır.
 
-Gitcito’nun kendi lisansı MIT’dir ve sağ üst köşedeki rozet onu GitHub’da açar.
+Gitcito’nun kendi lisansı Apache 2.0’dır ve sağ üst köşedeki rozet onu GitHub’da açar.
 
 **Ayrıca bakınız:** [Diller ve sağdan sola](languages.md) · [Temalar ve görünüm](themes.md)

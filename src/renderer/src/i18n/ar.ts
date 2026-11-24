@@ -1846,7 +1846,7 @@ export const ar: Dict = {
   'licenses.title': 'تراخيص المصدر المفتوح',
   'licenses.count': '{count} حزمة',
   'licenses.lead': 'يتضمن Gitcito حزم الطرف الثالث هذه. اختر حزمة لقراءة الترخيص الذي نُشرت بموجبه.',
-  'licenses.own': 'Gitcito بترخيص MIT',
+  'licenses.own': 'Gitcito بترخيص Apache 2.0',
   'licenses.ownTitle': 'فتح ترخيص Gitcito نفسه على GitHub',
   'licenses.filter': 'تصفية بالاسم أو الترخيص…',
   'licenses.showText': 'إظهار نص الترخيص',

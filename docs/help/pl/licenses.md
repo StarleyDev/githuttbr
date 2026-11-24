@@ -51,7 +51,7 @@ Dwa ograniczenia, które warto znać:
 - **Identyfikator to to, co deklaruje pakiet.** Gitcito go pokazuje, ale nie
   weryfikuje. Jeśli manifest pakietu jest błędny, ta strona myli się razem z nim.
 
-Licencja samego Gitcito to MIT, a etykieta w prawym górnym rogu otwiera ją na
+Licencja samego Gitcito to Apache 2.0, a etykieta w prawym górnym rogu otwiera ją na
 GitHubie.
 
 **Zobacz też:** [Języki i pisanie od prawej do lewej](languages.md) · [Motywy i wygląd](themes.md)

@@ -52,6 +52,6 @@ Due limiti da conoscere:
   lo verifica. Se il manifest di un pacchetto è sbagliato, questa pagina sbaglia
   con lui.
 
-La licenza di Gitcito è MIT, e il badge in alto a destra la apre su GitHub.
+La licenza di Gitcito è Apache 2.0, e il badge in alto a destra la apre su GitHub.
 
 **Vedi anche:** [Lingue e scrittura da destra a sinistra](languages.md) · [Temi e aspetto](themes.md)

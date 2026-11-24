@@ -1826,7 +1826,7 @@ export const ja: Dict = {
   'licenses.title': 'オープンソースライセンス',
   'licenses.count': '{count} 個のパッケージ',
   'licenses.lead': 'Gitcito はこれらのサードパーティ製パッケージを同梱しています。パッケージを選ぶと、公開時のライセンス本文を読めます。',
-  'licenses.own': 'Gitcito は MIT ライセンス',
+  'licenses.own': 'Gitcito は Apache 2.0 ライセンス',
   'licenses.ownTitle': 'Gitcito 自身のライセンスを GitHub で開く',
   'licenses.filter': '名前またはライセンスで絞り込み…',
   'licenses.showText': 'ライセンス本文を表示',

@@ -6,7 +6,7 @@ export const ja = {
   'nav.sponsor': 'スポンサー',
   'nav.download': 'ダウンロード',
 
-  'foot.license': 'MIT ライセンス · <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> が 💜 を込めて作りました',
+  'foot.license': 'Apache 2.0 ライセンス · <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> が 💜 を込めて作りました',
   'foot.credit': 'MyAppDesk による {upstream} のフォーク（MIT ライセンス）。',
   'foot.source': 'ソース',
   'foot.roadmap': 'ロードマップ',

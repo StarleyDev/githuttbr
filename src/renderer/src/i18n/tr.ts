@@ -1826,7 +1826,7 @@ export const tr: Dict = {
   'licenses.title': 'Açık kaynak lisansları',
   'licenses.count': '{count} paket',
   'licenses.lead': 'Gitcito bu üçüncü taraf paketleri içerir. Yayımlandığı lisansı okumak için birini seç.',
-  'licenses.own': 'Gitcito MIT lisanslıdır',
+  'licenses.own': 'Gitcito Apache 2.0 lisanslıdır',
   'licenses.ownTitle': 'Gitcito’nun kendi lisansını GitHub’da aç',
   'licenses.filter': 'Ada veya lisansa göre süz…',
   'licenses.showText': 'Lisans metnini göster',

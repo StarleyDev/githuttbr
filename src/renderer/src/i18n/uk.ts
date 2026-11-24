@@ -1846,7 +1846,7 @@ export const uk: Dict = {
   'licenses.title': 'Ліцензії відкритого коду',
   'licenses.count': 'Пакунків: {count}',
   'licenses.lead': 'Gitcito постачається з цими сторонніми пакунками. Виберіть пакунок, щоб прочитати ліцензію, за якою його опубліковано.',
-  'licenses.own': 'Gitcito має ліцензію MIT',
+  'licenses.own': 'Gitcito має ліцензію Apache 2.0',
   'licenses.ownTitle': 'Відкрити власну ліцензію Gitcito на GitHub',
   'licenses.filter': 'Фільтр за назвою або ліцензією…',
   'licenses.showText': 'Показати текст ліцензії',
