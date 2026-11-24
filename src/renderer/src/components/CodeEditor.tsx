@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { highlightLine } from '../lib/highlight'
+import { HUGE_LINES, escapeHtml, highlightLine } from '../lib/highlight'
 
 /**
  * A plain-text editor with the file viewer's look: a syntax-highlighted
@@ -13,7 +13,8 @@ export function CodeEditor({
   lang,
   lineNumbers = false,
   disabled = false,
-  autoFocus = false
+  autoFocus = false,
+  label
 }: {
   value: string
   onChange: (next: string) => void
@@ -22,18 +23,22 @@ export function CodeEditor({
   lineNumbers?: boolean
   disabled?: boolean
   autoFocus?: boolean
+  /** What screen readers announce for the text area — the file's name. */
+  label?: string
 }): React.JSX.Element {
   const areaRef = useRef<HTMLTextAreaElement>(null)
   const preRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLPreElement>(null)
 
-  const lineCount = useMemo(() => value.split('\n').length, [value])
+  const lines = useMemo(() => value.split('\n'), [value])
+  const lineCount = lines.length
   // A trailing newline keeps the last (possibly empty) line rendered, so the
-  // textarea and the backdrop stay aligned to the last row.
-  const html = useMemo(
-    () => value.split('\n').map((l) => highlightLine(l, lang) || '&nbsp;').join('\n') + '\n',
-    [value, lang]
-  )
+  // textarea and the backdrop stay aligned to the last row. A huge file is
+  // shown uncoloured: highlighting it again on every keystroke freezes typing.
+  const html = useMemo(() => {
+    const paint = lines.length > HUGE_LINES ? escapeHtml : (l: string) => highlightLine(l, lang)
+    return lines.map((l) => paint(l) || '&nbsp;').join('\n') + '\n'
+  }, [lines, lang])
   const gutter = useMemo(
     () => (lineNumbers ? Array.from({ length: lineCount }, (_, i) => i + 1).join('\n') + '\n' : ''),
     [lineNumbers, lineCount]
@@ -66,6 +71,7 @@ export function CodeEditor({
       <textarea
         ref={areaRef}
         className="code-editor-area"
+        aria-label={label}
         value={value}
         disabled={disabled}
         spellCheck={false}

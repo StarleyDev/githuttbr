@@ -103,7 +103,7 @@ export function SettingsSearchResults({
   }
 
   return (
-    <div className="settings-search-results" role="list">
+    <div className="settings-search-results">
       {groups.map((g) => (
         <section key={g.page} className="settings-search-group">
           <h4 className="settings-section-title">{t(SETTINGS_PAGE_KEYS[g.page])}</h4>
@@ -111,7 +111,6 @@ export function SettingsSearchResults({
             <button
               key={`${entry.page}:${entry.key}`}
               type="button"
-              role="listitem"
               className="settings-search-hit"
               onClick={() => onPick(entry)}
             >

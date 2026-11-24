@@ -4577,14 +4577,19 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   }
 
   // Runs after the picked page has rendered (the search results are gone by then).
+  // The canceller lives in a ref, not in the effect's cleanup: clearReveal()
+  // re-renders straight away, and a cleanup would cancel the frames still
+  // looking for a row that renders late, along with the timer that unflashes it.
+  const stopRevealRef = useRef<(() => void) | null>(null)
   useEffect(() => {
     if (!revealing || search.active || !formRef.current) return
-    const stop = revealSettingRow(formRef.current, revealing.key, t(revealing.key))
+    stopRevealRef.current?.()
+    stopRevealRef.current = revealSettingRow(formRef.current, revealing.key, t(revealing.key))
     clearReveal()
-    return stop
     // `t` is a new function every render; the entry is what this waits on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealing, search.active, page, themeNonce, clearReveal])
+  useEffect(() => () => stopRevealRef.current?.(), [])
 
   // Tokens are left encrypted at start-up, so this dialog is where they get
   // decrypted — but only when access was already granted and explained. If it
@@ -4752,19 +4757,23 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
 
         <div className="settings-form" ref={formRef}>
           {search.active && <SettingsSearchResults search={search} onPick={pickSetting} />}
-          {!search.active && page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
-          {!search.active && page === 'workspaces' && <WorkspacesPage />}
-          {!search.active && page === 'integrations' && (
-            <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
-          )}
-          {!search.active && page === 'ai' && <AIPage profile={profile} edit={edit} />}
-          {!search.active && page === 'themes' && <ThemesPage key={themeNonce} initialTab={themeTab} />}
-          {!search.active && page === 'general' && <GeneralPage />}
-          {!search.active && page === 'layout' && <LayoutPage />}
-          {!search.active && page === 'security' && <SecurityPage />}
-          {!search.active && page === 'shortcuts' && <ShortcutsPage />}
-          {!search.active && page === 'data' && <DataPage />}
-          {!search.active && page === 'environment' && <EnvironmentPage />}
+          {/* Hidden, not unmounted, while searching: a theme being edited or an AI
+              account half filled in survives a look at the results. */}
+          <div className="settings-page-host" hidden={search.active}>
+            {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
+            {page === 'workspaces' && <WorkspacesPage />}
+            {page === 'integrations' && (
+              <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
+            )}
+            {page === 'ai' && <AIPage profile={profile} edit={edit} />}
+            {page === 'themes' && <ThemesPage key={themeNonce} initialTab={themeTab} />}
+            {page === 'general' && <GeneralPage />}
+            {page === 'layout' && <LayoutPage />}
+            {page === 'security' && <SecurityPage />}
+            {page === 'shortcuts' && <ShortcutsPage />}
+            {page === 'data' && <DataPage />}
+            {page === 'environment' && <EnvironmentPage />}
+          </div>
         </div>
       </div>
     </div>

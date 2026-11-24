@@ -87,6 +87,11 @@ export function fileExt(name: string): string {
 }
 
 /** HTML-escape the three characters that matter inside a text node. */
+/** Past this many lines a file is "huge": the viewer drops its minimap and the
+ *  editor its colours. Re-highlighting 45k lines costs ~770 ms per keystroke;
+ *  5k lines stay near 100 ms. */
+export const HUGE_LINES = 5000
+
 export function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

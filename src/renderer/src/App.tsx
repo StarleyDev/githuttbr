@@ -534,7 +534,10 @@ export default function App(): React.JSX.Element {
   const terminalOpenByRepo = useUIStore((s) => s.terminalOpenByRepo)
   const problemsOpenByRepo = useUIStore((s) => s.problemsOpenByRepo)
   const fileView = useUIStore((s) => s.fileView)
-  const commitEditView = useUIStore((s) => s.commitEditView)
+  // The open commit editor by identity only — its draft is saved on every
+  // keystroke, and the whole app must not re-render with it.
+  const commitEditRepo = useUIStore((s) => s.commitEditView?.repoPath ?? null)
+  const commitEditSha = useUIStore((s) => s.commitEditView?.sha ?? null)
   const compareView = useUIStore((s) => s.compareView)
   const conflictView = useUIStore((s) => s.conflictView)
   const layout = useUIStore((s) => s.layout)
@@ -1178,8 +1181,8 @@ export default function App(): React.JSX.Element {
                 <DebugToolbar repoPath={repo.path} />
                 {conflictView && conflictView.repoPath === repo.path ? (
                   <ConflictResolver key={conflictView.file} view={conflictView} />
-                ) : commitEditView && commitEditView.repoPath === repo.path ? (
-                  <CommitEditView key={commitEditView.sha} view={commitEditView} />
+                ) : commitEditSha && commitEditRepo === repo.path ? (
+                  <CommitEditView key={commitEditSha} repoPath={repo.path} sha={commitEditSha} />
                 ) : compareView && compareView.repoPath === repo.path ? (
                   <BranchCompareView view={compareView} />
                 ) : fileView && fileView.repoPath === repo.path ? (

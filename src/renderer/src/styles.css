@@ -7033,6 +7033,11 @@ body.col-resizing .node-ava {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
 }
+/* The open page stays mounted under the results. `contents` keeps the page's
+   blocks direct flex children of .settings-form, so its spacing is unchanged —
+   and since `contents` would beat the hidden attribute, that is spelled out. */
+.settings-page-host { display: contents; }
+.settings-page-host[hidden] { display: none; }
 .settings-search-results { display: flex; flex-direction: column; gap: 18px; }
 .settings-search-group { display: flex; flex-direction: column; gap: 2px; }
 .settings-search-group .settings-section-title { margin: 0 0 4px; }

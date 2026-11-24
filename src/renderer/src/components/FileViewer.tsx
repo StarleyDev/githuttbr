@@ -15,7 +15,7 @@ import { DiffViewer, type HunkAction } from './DiffViewer'
 import { useFollowWipFile } from './useFollowWipFile'
 import { SemanticSummary } from './SemanticSummary'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
-import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
+import { HUGE_LINES, fileExt, guessLanguage, highlightLine } from '../lib/highlight'
 import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { Eye, EyeOff, Bookmark as BookmarkIcon } from 'lucide-react'
@@ -43,7 +43,6 @@ const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', '
 /** Above this many lines the view gets `is-huge`, letting the browser skip
  *  layout/paint for offscreen rows (`content-visibility: auto`). The DOM stays
  *  complete, so find, reveal-line and text selection behave exactly as before. */
-const HUGE_LINES = 5000
 
 /** Each hunk action's labels: its @@ button, the selection bar's button, and
  *  the line menu's row for one line. Keys, so a language switch is picked up. */
@@ -1048,7 +1047,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         )}
 
         {!error && content !== null && imageUrl === null && mode === 'file' && editing && (
-          <CodeEditor value={draft} onChange={setDraft} lang={lang} autoFocus />
+          <CodeEditor value={draft} onChange={setDraft} lang={lang} label={file} autoFocus />
         )}
 
         {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (() => {

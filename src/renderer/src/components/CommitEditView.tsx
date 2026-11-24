@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2, Radar, Sparkles, SquarePen, Upload, X } from 'lucide-react'
 import type { CommitEditInfo, CommitEditPreview, FileEntry } from '../../../shared/types'
 import { gitApi, aiApi } from '../infrastructure/api'
-import { useUIStore, type CommitEditFileDraft, type CommitEditViewState } from '../stores/ui'
+import { useUIStore, type CommitEditDraft, type CommitEditFileDraft, type CommitEditViewState } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { t as tNow, useT, interp } from '../i18n'
@@ -42,17 +42,21 @@ export function openCommitEdit(target: CommitEditTarget): void {
 }
 
 /** Edit a past commit's files or message in place — formerly `CommitEditModal`. */
-export function CommitEditView({ view }: { view: CommitEditViewState }): React.JSX.Element {
-  const { repoPath, sha, subject } = view
+export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: string }): React.JSX.Element {
   const t = useT()
+  const subject = useUIStore((s) => (s.commitEditView?.sha === sha ? s.commitEditView.subject : ''))
   const toast = useUIStore((s) => s.toast)
   const openModal = useUIStore((s) => s.openModal)
   const setCommitEditView = useUIStore((s) => s.setCommitEditView)
   const saveCommitEditDraft = useUIStore((s) => s.saveCommitEditDraft)
 
   // A draft left by an earlier mount (the user switched tabs and came back)
-  // wins over what the commit itself holds.
-  const saved = view.draft
+  // wins over what the commit itself holds. Read once: the store copy is
+  // written on every keystroke, and subscribing to it would re-render on each.
+  const [saved] = useState<CommitEditDraft | undefined>(() => {
+    const open = useUIStore.getState().commitEditView
+    return open && open.repoPath === repoPath && open.sha === sha ? open.draft : undefined
+  })
   const [info, setInfo] = useState<CommitEditInfo | null>(null)
   const [files, setFiles] = useState<FileEntry[]>([])
   const [drafts, setDrafts] = useState<Record<string, CommitEditFileDraft>>(saved?.files ?? {})
@@ -136,8 +140,9 @@ export function CommitEditView({ view }: { view: CommitEditViewState }): React.J
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      // A dialog on top (the apply or discard confirm) owns Escape.
-      if (e.key === 'Escape' && !useUIStore.getState().modal) closeCommitEdit()
+      // A dialog on top (the apply or discard confirm) owns Escape, and so does
+      // anything that already handled this press (a menu, a find box).
+      if (e.key === 'Escape' && !e.defaultPrevented && !useUIStore.getState().modal) closeCommitEdit()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -297,6 +302,7 @@ export function CommitEditView({ view }: { view: CommitEditViewState }): React.J
                 onChange={(next) => setDraft(selFile, next)}
                 lang={guessLanguage(selFile)}
                 lineNumbers
+                label={selFile}
                 disabled={!editable}
               />
             )}
