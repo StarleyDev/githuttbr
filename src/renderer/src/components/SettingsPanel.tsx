@@ -2431,10 +2431,12 @@ function ThemeDialog({
         <button className="modal-close" onClick={onClose}>
           <X size={15} />
         </button>
-        <div className="modal-title-row" style={{ marginBottom: 14 }}>
-          {title}
+        <div className="modal-scroll">
+          <div className="modal-title-row" style={{ marginBottom: 14 }}>
+            {title}
+          </div>
+          {children}
         </div>
-        {children}
       </div>
     </div>,
     document.body

@@ -5733,12 +5733,48 @@ body.col-resizing .node-ava {
   width: 420px;
   max-width: calc(100vw - 60px);
   max-height: calc(100vh - 80px);
-  overflow-y: auto;
+  /* A frame, not a scroller: the close button and the title stay where they
+     are while .modal-scroll scrolls. The top padding stays here, so the scroller
+     starts under it and nothing slides into the gap above the title. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 22px;
+  padding: 22px 0 0;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+.modal-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 22px 22px;
+}
+/* Dialogs built for a fixed header — a root that fills the height, with a
+   list that scrolls on its own — get the body's height, so only that list
+   moves. Settings is one, and so are the radar, time machine, range-diff and
+   local CI. A new dialog of that shape adds its root here. */
+.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci)) {
+  display: flex;
+  flex-direction: column;
+}
+.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci) { min-height: 0; }
+/* Everything else scrolls as a whole, with its title pinned on top. The gap
+   under it is padding, not margin, so scrolled content does not show through. */
+.modal-scroll > h3:first-child,
+.modal-scroll > :only-child > h3:first-child,
+.modal-scroll > .modal-title-row:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg-2);
+}
+.modal-scroll > h3:first-child,
+.modal-scroll > :only-child > h3:first-child {
+  margin-bottom: 0;
+  padding-bottom: 14px;
 }
 
 .modal-wide {
@@ -6558,6 +6594,8 @@ body.col-resizing .node-ava {
   position: absolute;
   top: 14px;
   inset-inline-end: 14px;
+  /* Above the pinned title, which paints its own background over this corner. */
+  z-index: 4;
   display: flex;
   padding: 5px;
   border-radius: 6px;
@@ -7104,7 +7142,6 @@ body.col-resizing .node-ava {
   flex-direction: column;
   overflow: hidden;
 }
-.modal-settings > .settings,
 .modal-settings .settings {
   display: flex;
   flex-direction: column;

@@ -2472,6 +2472,8 @@ export function ModalHost(): React.JSX.Element {
               <button className="modal-close" onClick={closeModal} aria-label={t('common.close')} title={t('common.close')}>
                 <X size={15} />
               </button>
+              {/* The frame holds still with the close button; this scrolls (see .modal-scroll). */}
+              <div className="modal-scroll">
               <ErrorBoundary key={modal.kind} label={t('modal.dialogError')} onReset={closeModal}>
               {modal.kind === 'input' && <InputModal spec={modal} />}
               {modal.kind === 'launch-input' && <LaunchInputModal spec={modal} />}
@@ -2567,6 +2569,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'create-pr' && <CreatePRModal spec={modal} />}
               {modal.kind === 'ignore' && <IgnoreModal spec={modal} />}
               </ErrorBoundary>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -2599,8 +2602,10 @@ export function ModalHost(): React.JSX.Element {
               tabIndex={-1}
               onKeyDown={(e) => trapTabIn(e, stackedRef.current)}
             >
-              {dialog.kind === 'confirm' && <ConfirmModal spec={dialog} onClose={closeDialog} />}
-              {dialog.kind === 'input' && <InputModal spec={dialog} onClose={closeDialog} />}
+              <div className="modal-scroll">
+                {dialog.kind === 'confirm' && <ConfirmModal spec={dialog} onClose={closeDialog} />}
+                {dialog.kind === 'input' && <InputModal spec={dialog} onClose={closeDialog} />}
+              </div>
             </motion.div>
           </motion.div>
         )}
