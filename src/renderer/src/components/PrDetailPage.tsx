@@ -354,56 +354,6 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </article>
               ))}
               {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
-
-              <section className="prp-composer">
-                <textarea
-                  className="prd-input"
-                  placeholder={t('prDetail.commentPlaceholder')}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                />
-                <div className="prp-composer-actions">
-                  <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-                    <MessageSquare size={13} /> {t('prDetail.comment')}
-                  </button>
-                  <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
-                    <Check size={13} /> {t('prDetail.approve')}
-                  </button>
-                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-                    <X size={13} /> {t('prDetail.requestChanges')}
-                  </button>
-                </div>
-              </section>
-
-              {canMerge && (
-                <section className={`prp-merge ${mergeBlocked ? 'is-blocked' : ''}`}>
-                  <div className="prp-merge-text">
-                    <GitMerge size={16} />
-                    <span>
-                      {pr.mergeable === false
-                        ? t('prDetail.notMergeable')
-                        : blockers.length
-                          ? t('prPage.mergeBlocked')
-                          : refused
-                          ? t('prPage.mergeRefusedShort')
-                          : pr.mergeable === true
-                          ? t('prPage.mergeable')
-                          : t('prPage.mergeUnknown')}
-                    </span>
-                  </div>
-                  <div className="prd-merge">
-                    <select value={mergeMethod} onChange={(e) => setMergeMethod(e.target.value as PrMergeMethod)}>
-                      <option value="merge">{t('prDetail.mergeCommit')}</option>
-                      <option value="squash">{t('prDetail.squash')}</option>
-                      {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
-                      {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
-                    </select>
-                    <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
-                      {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
-                    </button>
-                  </div>
-                </section>
-              )}
             </>
           ) : section === 'files' ? (
             files === null ? (
@@ -457,6 +407,62 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             </div>
           )}
         </div>
+
+        {/* Fixed under the scrolling conversation, like the title above it: a long
+            PR must not hide the review and merge actions at the bottom. */}
+        {!loading && !error && pr && section === 'conversation' && (
+          <footer className="prp-footer">
+            <section className="prp-composer">
+              <textarea
+                className="prd-input"
+                placeholder={t('prDetail.commentPlaceholder')}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+              <div className="prp-composer-actions">
+                <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
+                  <MessageSquare size={13} /> {t('prDetail.comment')}
+                </button>
+                <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
+                  <Check size={13} /> {t('prDetail.approve')}
+                </button>
+                <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
+                  <X size={13} /> {t('prDetail.requestChanges')}
+                </button>
+              </div>
+            </section>
+
+            {canMerge && (
+              <section className={`prp-merge ${mergeBlocked ? 'is-blocked' : ''}`}>
+                <div className="prp-merge-text">
+                  <GitMerge size={16} />
+                  <span>
+                    {pr.mergeable === false
+                      ? t('prDetail.notMergeable')
+                      : blockers.length
+                        ? t('prPage.mergeBlocked')
+                        : refused
+                        ? t('prPage.mergeRefusedShort')
+                        : pr.mergeable === true
+                        ? t('prPage.mergeable')
+                        : t('prPage.mergeUnknown')}
+                  </span>
+                </div>
+                <div className="prd-merge">
+                  <select value={mergeMethod} onChange={(e) => setMergeMethod(e.target.value as PrMergeMethod)}>
+                    <option value="merge">{t('prDetail.mergeCommit')}</option>
+                    <option value="squash">{t('prDetail.squash')}</option>
+                    {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
+                    {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
+                  </select>
+                  <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
+                    {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
+                  </button>
+                </div>
+              </section>
+            )}
+          </footer>
+        )}
       </div>
 
       <aside className="prp-side">
