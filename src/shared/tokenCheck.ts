@@ -72,6 +72,10 @@ const field = (o: object, key: string): unknown => (o as Record<string, unknown>
 
 /** Whether an error (or one of its causes) is a request that never got an HTTP answer. */
 function isNetworkFailure(err: unknown): boolean {
+  // `redirect: 'error'` refusing a redirect also surfaces as "fetch failed", but
+  // the server did answer — with a redirect, which is a misconfigured address,
+  // not an unreachable one.
+  if (hasCauseMessage(err, 'unexpected redirect')) return false
   let e: unknown = err
   for (let depth = 0; depth < 5 && e && typeof e === 'object'; depth++) {
     const code = field(e, 'code')
@@ -82,6 +86,16 @@ function isNetworkFailure(err: unknown): boolean {
     if (typeof name === 'string' && NETWORK_NAMES.has(name)) return true
     // undici's fetch: every transport failure is this TypeError, the reason on `cause`.
     if (name === 'TypeError' && field(e, 'message') === 'fetch failed') return true
+    e = field(e, 'cause')
+  }
+  return false
+}
+
+/** Whether an error, or one of its causes, carries exactly this message. */
+function hasCauseMessage(err: unknown, message: string): boolean {
+  let e: unknown = err
+  for (let depth = 0; depth < 5 && e && typeof e === 'object'; depth++) {
+    if (field(e, 'message') === message) return true
     e = field(e, 'cause')
   }
   return false

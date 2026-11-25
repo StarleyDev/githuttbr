@@ -3036,7 +3036,11 @@ async function checkToken(
   try {
     return { ok: true, account: await fetchConnectedAccount(provider, token, org, interactive, link, issuer) }
   } catch (err) {
-    return { ok: false, failure: tokenCheckFailure(err) }
+    const failure = tokenCheckFailure(err)
+    // The message goes to the renderer and on screen: a token undici echoed back
+    // (an invalid header value names it) must not be in it.
+    const secret = token?.trim()
+    return { ok: false, failure: secret ? { ...failure, message: failure.message.split(secret).join('•••') } : failure }
   }
 }
 

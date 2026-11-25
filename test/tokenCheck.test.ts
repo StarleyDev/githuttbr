@@ -70,6 +70,12 @@ describe('tokenCheckFaultOf', () => {
     expect(tokenCheckFaultOf(new TypeError('fetch failed'))).toEqual({ network: true })
   })
 
+  it('a redirect refused by `redirect: "error"` is an answer, not an unreachable server', () => {
+    const redirected = new TypeError('fetch failed', { cause: new Error('unexpected redirect') })
+    expect(tokenCheckFaultOf(redirected)).toEqual({ network: false })
+    expect(tokenCheckFailure(redirected).kind).toBe('error')
+  })
+
   it('a setting that is missing, or a reply that is not JSON, is not a network failure', () => {
     expect(tokenCheckFaultOf(new Error('No Forgejo address is saved in this profile'))).toEqual({ network: false })
     expect(tokenCheckFaultOf(new SyntaxError('Unexpected token <'))).toEqual({ network: false })
