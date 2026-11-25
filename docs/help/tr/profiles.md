@@ -18,6 +18,31 @@ olduğunda işe yarar.
 
 ![Bir profil: bir yanda git kimliği, diğer yanda entegrasyon token'ları](../../screenshots/settings-profiles.webp)
 
+## Profili düzenlemek, profili kullanmak
+
+Ayarlar sayfalarını ikiye ayırır. **Bu profil**, profille birlikte değişen
+sayfaları tutar — **Profil** ve **Entegrasyonlar**. **Uygulama** geri kalan her
+şeyi tutar; bunlar her profilde geçerlidir ve sayfanın başında bunu söyler.
+
+İki profil sayfası bir çubukla açılır: *Düzenlenen profil* ve bir seçici. Seçici
+hangi profili **düzenlediğinizi** belirler; uygulamanın **kullandığı** profili
+değiştirmez. İkisi farklı olduğunda kehribar renkli bir şerit bunu söyler —
+*İş profilini düzenliyorsunuz. Uygulama Kişisel profilini kullanıyor* — ve geçiş
+için **Bu profili kullan** sunar. Bir hesabın en kolay yanlış profile bağlandığı
+an budur; bu yüzden Entegrasyonlar sayfası da her kartta ve düğmenin kendisinde
+profilin adını verir: **İş profiline bağla**, onay da bunu tekrarlar. Yeni ve
+silme aynı çubuktadır; silmeden önce sorar.
+
+![Uygulama başka bir profili kullanırken Work profilini düzenlemek: kehribar şerit ve Work adını taşıyan bağlama düğmesi](../../screenshots/settings-profile-band.webp)
+
+## Yapay zekâ ortaktır
+
+Bir profilin kendi yapay zekâsına ihtiyacı yoktur: tek bir
+[genel yapay zekâ](ai.md#her-profil-için-tek-yapay-zekâ) her profile hizmet eder
+ve bir profil yalnızca gerektiğinde kendi yapay zekâsına geçer. Bir profilin her
+zaman koruduğu şey, yapay zekânın onun için nasıl yazdığıdır — commit stili, özel
+talimatlar ve *Yapay zekânın yazım tercihleri* bölümünün geri kalanı.
+
 ## Her profilin kendi hesapları
 
 Bir profil, belirtecin yanı sıra makinede zaten bulunan bir oturumu — git'in

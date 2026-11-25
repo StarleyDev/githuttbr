@@ -88,9 +88,9 @@ La colonne principale a trois sections :
 
 | Section | Contenu |
 |---|---|
-| **Conversation** | La description, les commentaires et les fils de relecture en ligne (`fichier:ligne`, avec réponses). Puis la zone de commentaire avec commenter / approuver / demander des changements, et la zone de merge (merge, squash ou rebase) |
+| **Conversation** | La description, les commentaires et les fils de relecture en ligne (`fichier:ligne`, avec réponses). Seule la conversation défile : la zone de commentaire avec commenter / approuver / demander des changements, et la zone de merge (merge, squash ou rebase), restent fixées en bas, si bien qu’une longue pull request ne les met jamais hors de portée |
 | **Fichiers** | Chaque fichier modifié, et le diff du fichier choisi à côté de la liste, avec coloration syntaxique et changements au niveau du mot (fichiers d’allure secrète masqués si ce réglage est actif). Une liste ✓ « vu » retient votre avancée. Un fichier dont l’hôte n’envoie pas de diff (binaire, ou trop gros) renvoie vers l’hôte |
-| **Checks** | Check-runs CI (GitHub) ou jobs de pipeline (GitLab), avec réussi/échoué/en cours et des liens vers les journaux |
+| **Checks** | Check-runs CI (GitHub) ou jobs de pipeline (GitLab), avec réussi/échoué/en cours et des liens vers les journaux. Toutes les exécutions du dépôt — pas seulement celles de cette pull request — sont sur la page [Exécutions CI](ci-runs.md) |
 
 La barre latérale montre :
 
@@ -290,8 +290,8 @@ trousseau de votre système. Gitcito peut aussi emprunter ce que votre
 vous vous êtes déjà authentifié ne demande souvent aucune configuration. Voir
 [Sécurité et secrets](security.md).
 
-Chaque profil **lie son propre compte**. Dans Réglages → Intégrations, **Se
-connecter avec git** cherche une connexion déjà présente sur la machine — le
+Chaque profil **lie son propre compte**. Dans Réglages → Intégrations, **Lier au
+profil** cherche une connexion déjà présente sur la machine — le
 credential helper de git, puis le compte actif de **GitHub CLI**, puis la fenêtre
 de connexion du helper — et lie ce compte au profil. Rien n'est partagé
 implicitement : un nouveau profil commence déconnecté, et un compte déjà lié à

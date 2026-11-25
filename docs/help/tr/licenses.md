@@ -51,5 +51,7 @@ Bilinmesi gereken iki sınır:
   paketin bildirimi yanlışsa, bu sayfa da onunla birlikte yanlıştır.
 
 Gitcito’nun kendi lisansı Apache 2.0’dır ve sağ üst köşedeki rozet onu GitHub’da açar.
+Özgün Gitcito’dan devralınan kod MIT lisansıyla geldi ve onun bildirimi, MIT
+lisansının gerektirdiği gibi, uygulamayla birlikte `NOTICE` içinde gelir.
 
 **Ayrıca bakınız:** [Diller ve sağdan sola](languages.md) · [Temalar ve görünüm](themes.md)

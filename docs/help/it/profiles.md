@@ -17,6 +17,31 @@ quando hai due account GitHub.
 
 ![Un profilo: da un lato l'identità git, dall'altro i suoi token di integrazione](../../screenshots/settings-profiles.webp)
 
+## Modificare un profilo, usare un profilo
+
+Le Impostazioni dividono le loro pagine in due. **Questo profilo** raccoglie le
+pagine che cambiano con il profilo — **Profilo** e **Integrazioni**. **App**
+raccoglie tutto il resto, che vale in qualsiasi profilo e lo dice in cima alla
+pagina.
+
+Le due pagine del profilo si aprono con una barra: *Modifica del profilo* e un
+selettore. Il selettore sceglie quale profilo stai **modificando**; non cambia
+quello che l'app sta **usando**. Quando sono diversi, una fascia ambra lo dice —
+*Stai modificando Lavoro. L'app sta usando Personale* — con **Usa questo profilo**
+per passare all'altro. È il momento in cui è più facile collegare un account al
+profilo sbagliato, per questo la pagina Integrazioni nomina il profilo anche su
+ogni scheda e sul pulsante stesso: **Collega al profilo Lavoro**, e la conferma lo
+ripete. Nuovo ed elimina sono nella stessa barra; eliminare chiede prima.
+
+![Modifica del profilo Lavoro mentre l'app ne usa un altro: la fascia ambra e il pulsante di collegamento che nomina Lavoro](../../screenshots/settings-profile-band.webp)
+
+## L'IA è condivisa
+
+Un profilo non ha bisogno di un'IA propria: una sola [IA generale](ai.md#una-sola-ia-per-tutti-i-profili)
+serve tutti i profili, e un profilo sceglie la propria solo quando deve. Ciò che
+un profilo conserva sempre è come l'IA scrive per lui — lo stile dei commit, le
+istruzioni personalizzate e il resto delle *Preferenze di scrittura dell'IA*.
+
 ## Ogni profilo, i suoi account
 
 Oltre a un token, un profilo può **collegare** un accesso già presente sulla

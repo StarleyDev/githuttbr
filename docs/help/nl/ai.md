@@ -13,7 +13,40 @@ gaat niets ergens naartoe tot je om iets specifieks vraagt.
 
 ![AI-instellingen](../../screenshots/settings-ai.webp)
 
-## Accounts
+## Eén AI voor elk profiel
+
+De AI stel je één keer in, onder **Instellingen → AI**, en elk [profiel](profiles.md)
+gebruikt hem: een profiel dat je later aanmaakt, heeft de AI al, zonder dat je
+opnieuw een account toevoegt. De pagina toont elk profiel en of het deze
+**algemene AI** volgt.
+
+Een profiel kan in plaats daarvan **een eigen AI** gebruiken — een werkprofiel dat
+via het account van het bedrijf moet, om kosten of om databeleid. Zet op de pagina
+**Profiel** van dat profiel, onder *AI van dit profiel*, **Algemeen** op **Eigen**:
+hij begint als kopie van de algemene AI, en zijn providers en sleutels zijn vanaf
+dan alleen van hem. Terug naar **Algemeen** verwijdert ze, na een bevestiging, en
+laat de algemene AI zoals hij was.
+
+Elke AI stel je op deze ene pagina in. De balk **Bewerken** bovenaan kiest welke:
+de algemene AI, of de eigen AI van een profiel (*Eigen AI van Werk*). **Eigen AI
+instellen** op de pagina Profiel, of **Eigen AI bewerken** in de lijst met
+profielen, opent de pagina op die AI. De pagina Profiel toont alleen welke AI het
+profiel gebruikt en wat er antwoordt — de editor staat er nooit op.
+
+![De AI van een profiel op zijn pagina Profiel: Algemeen of Eigen, wat er antwoordt, en de weg om hem in te stellen](../../screenshots/settings-profile-ai.webp)
+
+Hoe de AI **schrijft** blijft in beide gevallen per profiel: stijl van
+commitberichten, stijl van uitleg, stijlen voor conflictoplossing en branchnamen,
+eigen instructies, co-auteurregel en repository-chat. Ze staan op de pagina
+**Profiel**, onder *Schrijfvoorkeuren van de AI*, zodat een werkprofiel
+`ticket`-commits kan schrijven terwijl een persoonlijk profiel `conventional`
+schrijft, allebei met dezelfde AI.
+
+Upgraden vanaf een versie waarin elk profiel zijn eigen AI had, kost niets: de AI
+van het profiel dat in gebruik is, wordt de algemene AI, en elk ander profiel met
+een afwijkende AI houdt die als eigen AI.
+
+## Providers
 
 Een **account** is één manier om een model te bereiken: een aanbieder, waar je
 die bereikt en hoe die zich authenticeert. Je kunt er meerdere instellen en ze
@@ -29,7 +62,7 @@ op te lijken. Gemini wordt bereikt via Googles OpenAI-compatibele endpoint.
 
 ### Een abonnement in plaats van een API-sleutel
 
-Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt.
+Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt. Het eerste account van de algemene AI wordt de standaard.
 
 Klik na de installatie van de CLI op Verbinden om de aanmeldpagina van de aanbieder te openen. Je kunt een lopende verbinding annuleren.
 
@@ -55,9 +88,9 @@ diff of een branchnaam als commando gelezen kan worden.
 
 Staat het commando niet in je `PATH`, typ dan het volledige pad op het account.
 
-### Welk account beantwoordt wat
+### Model per taak
 
-Onder **Welk account beantwoordt wat** kan elke functie — commitberichten, chat,
+Onder **Model per taak** kan elke functie — commitberichten, chat,
 uitleggen, PR-review, conflictoplossing, wiki, thema's — naar een eigen account
 en model wijzen. Laat een rij op de standaard staan om het standaardaccount te
 volgen. Een goedkoop model voor commitberichten en een sterk model voor chat is
@@ -127,5 +160,9 @@ maskeerregels voor geheimen vallen evenmin.
   start per verzoek een hele sessie.
 - Sleutels worden per account in je systeemsleutelhanger bewaard. Een account
   verwijderen verwijdert de sleutel ervan.
+- Teruggaan naar een versie van vóór de algemene AI kost de sleutels van de
+  algemene AI: die versie weet niet waar ze bewaard worden en laat ze vallen bij
+  het opslaan. De accounts blijven; typ de sleutels opnieuw in. De eigen AI van
+  een profiel blijft buiten schot.
 
 **Zie ook:** [Repo-wiki](repo-wiki.md) · [Beveiliging & geheimen](security.md)

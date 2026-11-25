@@ -74,7 +74,7 @@ Commit.
 
 ## Einstellungen
 
-**Einstellungen → KI → Repository-Chat**:
+**Einstellungen → Profil → Schreibstil der KI → Repository-Chat** (jedes Profil hat seine eigenen):
 
 | Einstellung | Wirkung |
 |---|---|
@@ -88,6 +88,9 @@ Commit.
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
 anbietet, was niemand beantworten kann.
+
+Welcher Anbieter und welches Modell im Chat antworten, wird auf der Seite **KI**
+unter **Modell je Aufgabe** festgelegt — siehe [KI-Funktionen](ai.md#modell-je-aufgabe).
 
 Das Chat-Modell lässt sich auch in der Kopfzeile des Panels umstellen, neben dem
 Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
@@ -212,7 +215,7 @@ offen: Ein Remote kann ein lokaler Schnappschuss nicht zurückholen.
 
 ### Freigabemodi
 
-Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → KI →
+Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → Profil →
 Repository-Chat**) entscheidet, wie eine Karte läuft:
 
 | Modus | Führt aus |

@@ -84,7 +84,7 @@ Verschwendung für die mehreren Hundert, die ein scrollender Graph zeichnet.
 ## Das Bild deines Profils
 
 Der Avatar in der Titelleiste und in der Profilliste gehört dir – also kannst du ihn wählen.
-**Einstellungen → Profil → Avatar** bietet vier Quellen:
+**Einstellungen → Profil → Avatar** bietet fünf Quellen:
 
 | Quelle | Was er zeigt |
 |---|---|
@@ -92,9 +92,40 @@ Der Avatar in der Titelleiste und in der Profilliste gehört dir – also kannst
 | **Aus der Integration** | Das Bild des GitHub- oder GitLab-Kontos, das dieses Profil unter Integrationen verbunden hat. Deaktiviert, solange keins verbunden ist. |
 | **Symbol** | Eines von 24 Symbolen auf einer Farbe deiner Wahl. |
 | **Bild** | Eine Datei deiner Wahl – PNG oder JPEG. Sie wird auf 256 px verkleinert und auf diesem Computer im Datenordner von Gitcito abgelegt, nicht in der Einstellungsdatei. |
+| **Aus einem Repository** | Ein Symbol oder Logo aus einem der Repositorys des Profils — das der App oder der Firma —, wie ein Bild ins Profil kopiert. |
 
 Das Bild wandert mit **Einstellungen → Daten → Einstellungen exportieren** und kommt beim Import
 zurück; wird das Profil gelöscht, wird es mitgelöscht.
+
+### Ein Symbol aus einem Repository
+
+Ein Arbeitsprofil hat oft schon ein fertiges Bild: das App- oder Firmensymbol in
+seinem Repository. **Aus einem Repository** listet die wahrscheinlichsten aus den
+Repositorys, die **an das Profil gebunden** sind (oder, wenn keins gebunden ist,
+aus dem gerade geöffneten):
+
+- zuerst das App-Symbol selbst (`icon.png`, `Resources/icon.png`);
+- ein iOS-`AppIcon.appiconset` in seiner **größten** Größe, ein Android-Launcher-Symbol
+  (`mipmap-*/ic_launcher.png`) in seiner **höchsten** Dichte;
+- dann Logos und andere Bilder mit Symbol-Namen.
+
+Unter der Liste wird gezählt und erklärt, was weggelassen wurde: Bilder in
+Abhängigkeits- und Build-Ordnern (`node_modules`, `Pods`, `build`…), die
+kleineren Größen bereits gelisteter Symbole und Launcher-Symbole, die Vektor-XML
+sind. Eins auszuwählen kopiert es ins Profil, auf 256 px verkleinert — das
+Repository zu verschieben, umzubenennen oder zu löschen, berührt den Avatar nicht.
+
+Solange ein Profil auf **Automatisch** steht, bietet die Seite einmal das
+wahrscheinlichste Symbol an: *Das Symbol von my-app verwenden?* — **Verwenden**,
+**Anderes wählen** oder **Nicht jetzt**, womit die Frage für dieses Profil
+aufhört. Nichts ändert sich, bis du wählst.
+
+![Ein Profilbild aus den App-Symbolen eines Mobil-Repositorys wählen](../../screenshots/profile-avatar-repo.webp)
+
+Was es nicht kann: Es bietet nur Bilder an, die das Repository als Dateien
+enthält (PNG, JPEG, WebP, SVG und ähnliche), keine beim Build erzeugten Symbole;
+und es hält nicht mit dem Repository Schritt — ein neues Symbol dort wird wieder
+von Hand gewählt.
 
 **Ein Commit trägt nie ein Bild.** Er enthält einen Namen und eine E-Mail, sonst
 nichts. GitHub und GitLab zeigen dein Kontobild bei einem Commit, dessen E-Mail zu

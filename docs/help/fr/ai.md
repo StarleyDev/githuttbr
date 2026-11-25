@@ -14,7 +14,42 @@ pas quelque chose de précis.
 
 ![Les réglages d'IA](../../screenshots/settings-ai.webp)
 
-## Comptes
+## Une IA pour tous les profils
+
+L'IA se configure une fois, dans **Paramètres → IA**, et tous les [profils](profiles.md)
+l'utilisent : un profil créé plus tard a déjà l'IA, sans compte à rajouter. La
+page liste chaque profil et indique s'il suit cette **IA générale**.
+
+Un profil peut utiliser **sa propre IA** à la place — un profil professionnel qui
+doit passer par le compte de l'entreprise, pour des raisons de coût ou de
+politique de données. Sur la page **Profil** de ce profil, sous *IA de ce
+profil*, passez de **Générale** à **Propre** : elle part d'une copie de l'IA
+générale, et ses fournisseurs et clés n'appartiennent ensuite qu'à elle. Revenir
+à **Générale** les supprime, après confirmation, et laisse l'IA générale telle
+qu'elle était.
+
+Toutes les IA se configurent sur cette seule page. La barre **Modification de**
+en haut choisit laquelle : l'IA générale, ou celle d'un profil (*IA propre de
+Travail*). **Configurer l'IA propre** sur la page Profil, ou **Modifier son IA
+propre** dans la liste des profils, ouvre la page sur celle-là. La page Profil
+montre seulement quelle IA le profil utilise et ce qui répond — elle n'héberge
+jamais l'éditeur.
+
+![L'IA d'un profil sur sa page Profil : Générale ou Propre, ce qui répond, et le moyen de la configurer](../../screenshots/settings-profile-ai.webp)
+
+La façon dont l'IA **écrit** reste propre à chaque profil dans les deux cas :
+style des messages de commit, style des explications, styles de résolution de
+conflits et de nommage des branches, instructions personnalisées, ligne de
+co-auteur et discussion du dépôt. Elles sont sur la page **Profil**, sous
+*Préférences d'écriture de l'IA*, si bien qu'un profil professionnel peut écrire
+des commits `ticket` pendant qu'un profil personnel écrit des `conventional`,
+tous deux avec la même IA.
+
+La mise à jour depuis une version où chaque profil avait sa propre IA ne fait
+rien perdre : l'IA du profil en cours d'utilisation devient l'IA générale, et
+tout autre profil dont l'IA était différente la garde comme IA propre.
+
+## Fournisseurs
 
 Un **compte** est une façon d'atteindre un modèle : un fournisseur, où le
 joindre, et comment il s'authentifie. Vous pouvez en configurer plusieurs et ils
@@ -32,7 +67,7 @@ Google.
 
 ### Utiliser un abonnement plutôt qu'une clé d'API
 
-Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte.
+Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte. Le premier compte de l'IA générale devient le compte par défaut.
 
 Après avoir installé la CLI, cliquez sur Connecter pour ouvrir la page de connexion du fournisseur. Vous pouvez annuler la connexion en cours.
 
@@ -60,9 +95,9 @@ nom de branche ne peut être interprété comme une commande.
 Si la commande n'est pas dans votre `PATH`, saisissez son chemin complet sur le
 compte.
 
-### Quel compte répond à quoi
+### Modèle par tâche
 
-Sous **Quel compte répond à quoi**, chaque fonction — messages de commit, chat,
+Sous **Modèle par tâche**, chaque fonction — messages de commit, chat,
 expliquer, revue de PR, résolution de conflits, wiki, thèmes — peut viser son
 propre compte et son propre modèle. Laissez une ligne sur la valeur par défaut
 pour suivre le compte par défaut. Un modèle économique pour les messages de
@@ -136,5 +171,9 @@ par les règles de masquage des secrets non plus.
   démarre une session entière à chaque requête.
 - Les clés sont stockées par compte dans le trousseau de votre système.
   Supprimer un compte supprime sa clé.
+- Revenir à une version antérieure à l'IA générale perd les clés de l'IA
+  générale : cette version ne sait pas où elles sont conservées et les abandonne
+  en enregistrant. Les comptes restent ; saisissez à nouveau les clés. L'IA
+  propre d'un profil n'est pas touchée.
 
 **Voir aussi :** [Wiki du dépôt](repo-wiki.md) · [Sécurité et secrets](security.md)

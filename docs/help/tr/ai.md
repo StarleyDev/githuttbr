@@ -14,7 +14,42 @@ hiçbir şey gönderilmez.
 
 ![Yapay zekâ ayarları](../../screenshots/settings-ai.webp)
 
-## Hesaplar
+## Her profil için tek yapay zekâ
+
+Yapay zekâ bir kez, **Ayarlar → Yapay zekâ** içinde kurulur ve her
+[profil](profiles.md) onu kullanır: sonradan oluşturduğunuz bir profilde yapay
+zekâ zaten vardır, yeniden hesap eklemeniz gerekmez. Sayfa her profili ve bu
+**genel yapay zekâyı** izleyip izlemediğini listeler.
+
+Bir profil bunun yerine **kendi yapay zekâsını** kullanabilir — maliyet ya da veri
+politikası nedeniyle şirketin hesabından geçmesi gereken bir iş profili gibi. O
+profilin **Profil** sayfasında, *Bu profilin yapay zekâsı* altında **Genel**'i
+**Kendi** olarak değiştirin: genel yapay zekânın bir kopyası olarak başlar ve o
+andan itibaren sağlayıcıları ve anahtarları yalnızca onundur. Yeniden **Genel**'e
+geçmek, bir onaydan sonra onları kaldırır ve genel yapay zekâyı olduğu gibi
+bırakır.
+
+Her yapay zekâ bu tek sayfada kurulur. Üstteki **Düzenlenen** çubuğu hangisini
+seçer: genel yapay zekâyı ya da bir profilin kendisininkini (*İş profilinin kendi
+yapay zekâsı*). Profil sayfasındaki **Kendi yapay zekâsını ayarla** ya da profil
+listesindeki **Kendi yapay zekâsını düzenle**, sayfayı doğrudan onda açar. Profil
+sayfasının kendisi yalnızca profilin hangi yapay zekâyı kullandığını ve neyin
+cevap verdiğini gösterir — düzenleyici asla orada değildir.
+
+![Bir profilin yapay zekâsı, Profil sayfasında: Genel ya da Kendi, neyin cevap verdiği ve nasıl kurulacağı](../../screenshots/settings-profile-ai.webp)
+
+Yapay zekânın nasıl **yazdığı** her iki durumda da profile özgü kalır: commit
+mesajı stili, açıklama stili, çakışma ve dal adlandırma stilleri, özel
+talimatlar, ortak yazar satırı ve depo sohbeti. Bunlar **Profil** sayfasında,
+*Yapay zekânın yazım tercihleri* altındadır; böylece bir iş profili `ticket`
+commit'leri yazarken kişisel profil `conventional` olanları yazar, ikisi de aynı
+yapay zekâyla.
+
+Her profilin kendi yapay zekâsı olan bir sürümden yükseltmek hiçbir şey
+kaybettirmez: kullanımdaki profilin yapay zekâsı genel yapay zekâ olur ve yapay
+zekâsı farklı olan diğer her profil onu kendisininki olarak korur.
+
+## Sağlayıcılar
 
 **Hesap**, bir modele ulaşmanın bir yoludur: bir sağlayıcı, ona nereden
 erişileceği ve nasıl kimlik doğruladığı. Birden çok hesap kurabilirsin ve bir
@@ -31,7 +66,7 @@ ulaşılır.
 
 ### API anahtarı yerine abonelik kullanmak
 
-İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin.
+İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin. Genel yapay zekânın ilk hesabı varsayılan olur.
 
 CLI kurulduktan sonra sağlayıcının oturum açma sayfasını açmak için Bağlan düğmesine basın. Bekleyen bağlantıyı iptal edebilirsiniz.
 
@@ -57,9 +92,9 @@ adındaki hiçbir şey komut olarak yorumlanamaz.
 
 Komut `PATH` üzerinde değilse tam yolunu hesaba yaz.
 
-### Hangi hesap neye cevap versin
+### Göreve göre model
 
-**Hangi hesap neye cevap versin** başlığı altında her özellik — commit mesajları,
+**Göreve göre model** başlığı altında her özellik — commit mesajları,
 sohbet, kodu açıklama, PR incelemesi, çakışma çözümü, wiki, temalar — kendi
 hesabını ve modelini gösterebilir. Varsayılan hesabı izlemesi için satırı
 varsayılanda bırak. Commit mesajlarına ucuz, sohbete güçlü bir model en yaygın
@@ -129,5 +164,9 @@ kapsadığı dosyalar da gönderilmez.
   baştan bir oturum başlatır.
 - Anahtarlar hesap başına işletim sisteminin anahtarlığında saklanır. Bir hesabı
   silmek anahtarını da siler.
+- Genel yapay zekâdan önceki bir sürüme dönmek, genel yapay zekânın anahtarlarını
+  kaybettirir: o sürüm anahtarların nerede tutulduğunu bilmez ve kaydederken
+  onları atar. Hesaplar kalır; anahtarları yeniden yazın. Bir profilin kendi
+  yapay zekâsı bundan etkilenmez.
 
 **Ayrıca bakınız:** [Depo wiki'si](repo-wiki.md) · [Güvenlik ve sırlar](security.md)

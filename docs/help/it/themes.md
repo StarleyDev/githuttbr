@@ -2,8 +2,8 @@
 title: Temi e aspetto
 category: Personalizzazione
 order: 100
-summary: Temi integrati, chiari e scuri, più quelli personalizzati e quelli generati dall'AI.
-keywords: tema temi theme scuro chiaro aspetto colori dimensione del carattere grafo palette cercare impostazioni trovare search settings
+summary: Temi integrati, chiari e scuri, più quelli personalizzati e quelli generati dall'AI, e icone colorate.
+keywords: tema temi theme scuro chiaro aspetto colori dimensione del carattere grafo palette cercare impostazioni trovare search settings icona icone colori delle icone tinta monocromatico icon icons icon colors tint monochrome
 ---
 
 # Temi e aspetto
@@ -16,11 +16,58 @@ Midnight, Contrast e Daltonic — ciascuno con una variante chiara e una scura.
 - **Chiaro, scuro o segui il sistema operativo**, con cambio dal vivo.
 - **Temi personalizzati**, e temi **generati dall'AI** a partire da un prompt.
 - **Dimensione del carattere del codice** regolabile.
+- **Colori delle icone** per la barra degli strumenti e le sezioni della barra
+  laterale — vedi sotto.
 - Uno **stile del grafo** a parte: palette delle corsie, stile degli angoli,
   densità delle righe e spessore delle linee, con un mini-grafo di anteprima dal
   vivo.
 
 ![Le impostazioni dei temi](../../screenshots/settings-themes.webp)
+
+## Colori delle icone
+
+Una fila di icone grigie rende simili Fetch, Push e Stash finché non se ne leggono
+le etichette. **Colori delle icone**, sotto Aspetto nella scheda Tema, colora ogni
+icona in base a ciò che fa, così l'occhio trova l'azione prima della parola:
+
+| Ruolo | Icone | Colore del tema che prende |
+|---|---|---|
+| Ricevere | Fetch, Pull, Remoti, Worktree | lo slot ciano del tema |
+| Inviare, concludere | Push, Attività, Issue, Release | verde |
+| Ref | Branch, Locali, Tag, Pull request, Milestone, Sottomoduli | l'accento |
+| Mettere da parte | Stash, Pop, Stash, Segnalibri, Fissati | lo slot arancione del tema |
+
+Annulla, Ripeti, Strumenti e Impostazioni restano grigi: sono utilità, e lasciarli
+neutri è ciò che fa risaltare quelli colorati.
+
+Gli elenchi che raggruppano molte voci colorano un intero gruppo in una volta,
+così un gruppo si legge come una famiglia:
+
+- **Menu Strumenti** — il viaggio nel tempo (Reflog, Istantanee WIP, Macchina del
+  tempo, Bisect) in arancione; gli strumenti dei branch (Absorb, i radar, la CI
+  locale, i confronti) nell'accento; e un colore per gruppo: Ispeziona ciano,
+  Branch e cronologia l'accento, File e patch verde, Repository arancione,
+  Segreti e condivisione rosso.
+- **Pagine delle Impostazioni** — Disposizione, Spazi di lavoro e IA nell'accento;
+  Profilo e Ambiente verde; Integrazioni e Dati ciano; Temi arancione; Sicurezza
+  rosso. Generali e Scorciatoie restano grigie.
+
+| Opzione | Cosa vedi |
+|---|---|
+| **Monocromatico** | Tutte le icone grigie, come prima che esistesse questa opzione |
+| **Tinta tenue** (predefinita) | Il colore mescolato al grigio; il colore pieno al passaggio del mouse |
+| **Colore pieno** | Il colore stesso, su una piccola pastiglia della stessa tinta |
+
+I colori vengono dal tema: un tema che ridipinge il suo verde o il suo accento
+ridipinge con esso le icone, compresi i temi personalizzati e quelli generati
+dall'AI.
+
+Limiti: sono colorati solo i pulsanti principali della barra degli strumenti, le
+intestazioni delle sezioni della barra laterale, il menu Strumenti e le pagine
+delle Impostazioni; gli altri menu, le righe dentro una sezione e il grafo dei
+commit no. Una riga di menu sotto il mouse mantiene il suo aspetto abituale,
+icona compresa. Il colore non è mai l'unico indizio: ogni icona mantiene la sua
+etichetta.
 
 ## Trovare un'impostazione
 

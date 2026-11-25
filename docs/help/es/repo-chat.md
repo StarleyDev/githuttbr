@@ -73,7 +73,7 @@ entero.
 
 ## Ajustes
 
-**Ajustes → IA → Chat del repositorio**:
+**Ajustes → Perfil → Preferencias de escritura de la IA → Chat del repositorio** (cada perfil tiene las suyas):
 
 | Ajuste | Qué hace |
 |---|---|
@@ -87,6 +87,9 @@ entero.
 
 Con la IA desactivada por completo, el chat desaparece con ella: no queda un
 panel ofreciendo respuestas que nadie puede dar.
+
+Qué proveedor y qué modelo responden al chat se elige en la página **IA**, en
+**Modelo por tarea** — consulta [Funciones de IA](ai.md#modelo-por-tarea).
 
 El modelo del chat también se cambia desde la cabecera del propio panel, junto
 al nombre del proveedor: es el mismo ajuste, sin abrir los Ajustes.
@@ -209,7 +212,7 @@ una instantánea local pueda retirar.
 ### Modos de aprobación
 
 El desplegable con el escudo bajo el cuadro de texto (también en **Ajustes →
-IA → Chat del repositorio**) decide cómo se ejecuta una tarjeta:
+Perfil → Chat del repositorio**) decide cómo se ejecuta una tarjeta:
 
 | Modo | Ejecuta |
 |---|---|

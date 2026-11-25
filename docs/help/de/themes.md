@@ -2,8 +2,8 @@
 title: Themes & Erscheinungsbild
 category: Anpassen
 order: 100
-summary: Eingebaute Themes, hell und dunkel, dazu eigene und KI-generierte.
-keywords: theme themes dunkel hell dark light erscheinungsbild farben schriftgröße graph palette suchen einstellungen finden search settings
+summary: Eingebaute Themes, hell und dunkel, dazu eigene und KI-generierte, und farbige Symbole.
+keywords: theme themes dunkel hell dark light erscheinungsbild farben schriftgröße graph palette suchen einstellungen finden search settings symbol symbole symbolfarben ton einfarbig icon icons icon colors tint monochrome
 ---
 
 # Themes & Erscheinungsbild
@@ -17,10 +17,57 @@ Variante.
 - **Hell, dunkel oder dem Betriebssystem folgen**, live umgeschaltet.
 - **Eigene Themes** und **KI-generierte** aus einem Prompt.
 - Anpassbare **Code-Schriftgröße**.
+- **Symbolfarben** für die Werkzeugleiste und die Abschnitte der Seitenleiste —
+  siehe unten.
 - Ein eigener **Graph-Stil**: Spurenpalette, Eckenstil, Zeilendichte und
   Linienstärke, mit einer Live-Vorschau als Mini-Graph.
 
 ![Theme-Einstellungen](../../screenshots/settings-themes.webp)
+
+## Symbolfarben
+
+Eine Reihe grauer Symbole lässt Abrufen, Push und Stash gleich aussehen, bis man
+ihre Beschriftung liest. **Symbolfarben**, unter Erscheinungsbild im Reiter
+Theme, färbt jedes Symbol nach dem, was es tut, damit das Auge die Aktion vor dem
+Wort findet:
+
+| Rolle | Symbole | Theme-Farbe, die es annimmt |
+|---|---|---|
+| Empfangen | Abrufen, Pull, Remotes, Worktrees | der Cyan-Platz des Themes |
+| Senden, abschließen | Push, Aufgaben, Issues, Releases | Grün |
+| Refs | Branch, Lokal, Tags, Pull Requests, Meilensteine, Submodule | die Akzentfarbe |
+| Beiseitelegen | Stash, Pop, Stashes, Lesezeichen, Angeheftet | der Orange-Platz des Themes |
+
+Rückgängig, Wiederholen, Werkzeuge und Einstellungen bleiben grau: Sie sind
+Hilfsmittel, und dass sie schlicht bleiben, lässt die farbigen hervortreten.
+
+Listen, die viele Einträge gruppieren, färben eine ganze Gruppe auf einmal, damit
+sich eine Gruppe als eine Familie liest:
+
+- **Werkzeuge-Menü** — die Zeitreise (Reflog, WIP-Schnappschüsse, Zeitmaschine,
+  Bisect) in Orange; die Branch-Werkzeuge (Absorb, die Radare, lokale CI,
+  Vergleiche) in der Akzentfarbe; und eine Farbe je Gruppe: Untersuchen Cyan,
+  Branches & Historie die Akzentfarbe, Dateien & Patches Grün, Repository
+  Orange, Geheimnisse & Teilen Rot.
+- **Einstellungsseiten** — Layout, Arbeitsbereiche und KI in der Akzentfarbe;
+  Profil und Umgebung Grün; Integrationen und Daten Cyan; Themes Orange;
+  Sicherheit Rot. Allgemein und Tastenkürzel bleiben grau.
+
+| Option | Was du siehst |
+|---|---|
+| **Einfarbig** | Jedes Symbol grau, wie vor dieser Option |
+| **Sanfter Ton** (Standard) | Die Farbe ins Grau gemischt; beim Darüberfahren die volle Farbe |
+| **Volle Farbe** | Die Farbe selbst, auf einem kleinen Chip im selben Farbton |
+
+Die Farben kommen aus dem Theme — ein Theme, das sein Grün oder seinen Akzent
+umfärbt, färbt die Symbole mit, eigene und KI-generierte Themes eingeschlossen.
+
+Grenzen: Gefärbt werden nur die Hauptknöpfe der Werkzeugleiste, die
+Abschnittsköpfe der Seitenleiste, das Werkzeuge-Menü und die Einstellungsseiten;
+andere Menüs, die Zeilen innerhalb eines Abschnitts und der Commit-Graph nicht.
+Eine Menüzeile unter dem Mauszeiger behält ihr gewohntes Aussehen, Symbol
+eingeschlossen. Farbe ist nie der einzige Hinweis — jedes Symbol behält seine
+Beschriftung.
 
 ## Eine Einstellung finden
 

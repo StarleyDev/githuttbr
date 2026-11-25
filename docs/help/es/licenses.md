@@ -55,6 +55,7 @@ Dos límites que conviene conocer:
   audita. Si el manifiesto de un paquete está mal, esta página se equivoca con él.
 
 La licencia del propio Gitcito es Apache 2.0, y la insignia de la esquina superior
-derecha la abre en GitHub.
+derecha la abre en GitHub. El código heredado del Gitcito original llegó bajo la
+licencia MIT, y su aviso viaja con la app en `NOTICE`, como exige la licencia MIT.
 
 **Ver también:** [Idiomas y escritura de derecha a izquierda](languages.md) · [Temas y apariencia](themes.md)

@@ -52,6 +52,7 @@ Dwa ograniczenia, które warto znać:
   weryfikuje. Jeśli manifest pakietu jest błędny, ta strona myli się razem z nim.
 
 Licencja samego Gitcito to Apache 2.0, a etykieta w prawym górnym rogu otwiera ją na
-GitHubie.
+GitHubie. Kod odziedziczony po oryginalnym Gitcito przyszedł na licencji MIT, a jego
+nota podróżuje z aplikacją w `NOTICE`, jak wymaga licencja MIT.
 
 **Zobacz też:** [Języki i pisanie od prawej do lewej](languages.md) · [Motywy i wygląd](themes.md)

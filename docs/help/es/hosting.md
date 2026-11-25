@@ -88,9 +88,9 @@ La columna principal tiene tres secciones:
 
 | Sección | Qué contiene |
 |---|---|
-| **Conversación** | La descripción, los comentarios y los hilos de revisión en línea (`archivo:línea`, con respuestas). Después, el cuadro de comentario con comentar / aprobar / pedir cambios, y el cuadro de merge (merge, squash o rebase) |
+| **Conversación** | La descripción, los comentarios y los hilos de revisión en línea (`archivo:línea`, con respuestas). Solo la conversación se desplaza: el cuadro de comentario con comentar / aprobar / pedir cambios y el cuadro de merge (merge, squash o rebase) quedan fijos abajo, así que un pull request largo nunca los deja fuera de alcance |
 | **Archivos** | Cada archivo cambiado, y el diff del seleccionado junto a la lista, con resaltado de sintaxis y cambios a nivel de palabra (los archivos que parecen secretos se enmascaran si ese ajuste está activo). Una lista ✓ de "visto" recuerda tu avance. Un archivo del que el host no envía diff (binario o demasiado grande) enlaza al host |
-| **Checks** | Check-runs de CI (GitHub) o jobs de pipeline (GitLab), con pasa/falla/en curso y enlaces a los logs |
+| **Checks** | Check-runs de CI (GitHub) o jobs de pipeline (GitLab), con pasa/falla/en curso y enlaces a los logs. Todas las ejecuciones del repositorio — no solo las de este pull request — están en la página [Ejecuciones de CI](ci-runs.md) |
 
 La barra lateral muestra:
 
@@ -285,8 +285,8 @@ de credenciales de git**, así que una organización para la que ya te has
 autenticado a menudo no necesita configuración ninguna. Mira [Seguridad y
 secretos](security.md).
 
-Cada perfil **vincula su propia cuenta**. En Ajustes → Integraciones, **Iniciar
-sesión con git** busca un inicio de sesión que ya esté en el equipo — el
+Cada perfil **vincula su propia cuenta**. En Ajustes → Integraciones, **Vincular al
+perfil** busca un inicio de sesión que ya esté en el equipo — el
 credential helper de git, luego la cuenta activa de **GitHub CLI**, luego la
 ventana de inicio de sesión del propio helper — y vincula esa cuenta al perfil.
 Nada se comparte implícitamente: un perfil nuevo empieza desconectado, y se

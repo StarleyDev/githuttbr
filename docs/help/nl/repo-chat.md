@@ -72,7 +72,7 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 
 ## Instellingen
 
-**Instellingen → AI → Repository-chat**:
+**Instellingen → Profiel → Schrijfvoorkeuren van de AI → Repository-chat** (elk profiel heeft de zijne):
 
 | Instelling | Doet |
 |---|---|
@@ -86,6 +86,9 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
 aanbiedt dat niemand kan geven.
+
+Welke provider en welk model de chat beantwoorden, stel je in op de pagina **AI**,
+onder **Model per taak** — zie [AI-functies](ai.md#model-per-taak).
 
 Het chatmodel is ook te wisselen in de koptekst van het paneel zelf, naast de
 naam van de provider — dezelfde instelling, zonder Instellingen te openen.
@@ -207,7 +210,7 @@ momentopname niet terughalen.
 
 ### Goedkeuringsmodi
 
-Het schildmenu onder het invoerveld (ook in **Instellingen → AI →
+Het schildmenu onder het invoerveld (ook in **Instellingen → Profiel →
 Repository-chat**) bepaalt hoe een kaart loopt:
 
 | Modus | Voert uit |

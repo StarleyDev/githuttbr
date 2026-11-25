@@ -2,8 +2,8 @@
 title: Thèmes et apparence
 category: Personnalisation
 order: 100
-summary: Thèmes intégrés, clairs et sombres, plus des thèmes personnalisés et générés par l'IA.
-keywords: thème thèmes theme themes sombre dark clair light apparence appearance couleurs colors taille de police font size graphe graph palette rechercher paramètres réglages trouver search settings
+summary: Thèmes intégrés, clairs et sombres, plus des thèmes personnalisés et générés par l'IA, et des icônes en couleur.
+keywords: thème thèmes theme themes sombre dark clair light apparence appearance couleurs colors taille de police font size graphe graph palette rechercher paramètres réglages trouver search settings icône icônes couleurs des icônes teinte monochrome icon icons icon colors tint
 ---
 
 # Thèmes et apparence
@@ -18,11 +18,58 @@ sombre.
 - Des **thèmes personnalisés**, et des thèmes **générés par l'IA** à partir d'une
   consigne.
 - Une **taille de police de code** ajustable.
+- Des **couleurs d’icônes** pour la barre d’outils et les sections de la barre
+  latérale — voir plus bas.
 - Un **style de graphe** distinct : palette de couloirs, style des angles,
   densité des lignes et épaisseur des traits, avec un aperçu en direct sous forme
   de mini-graphe.
 
 ![Les réglages de thème](../../screenshots/settings-themes.webp)
+
+## Couleurs des icônes
+
+Une rangée d’icônes grises fait se ressembler Récupérer, Pousser et Remiser
+jusqu’à ce qu’on lise leurs libellés. **Couleurs des icônes**, sous Apparence
+dans l’onglet Thème, colore chaque icône selon ce qu’elle fait, pour que l’œil
+trouve l’action avant le mot :
+
+| Rôle | Icônes | Couleur du thème qu’elle prend |
+|---|---|---|
+| Recevoir | Récupérer, Tirer, Distants, Arbres de travail | l’emplacement cyan du thème |
+| Envoyer, terminer | Pousser, Tâches, Tickets, Versions | vert |
+| Références | Branche, Locales, Étiquettes, Pull requests, Jalons, Sous-modules | l’accent |
+| Mettre de côté | Remiser, Dépiler, Remisages, Signets, Épinglée | l’emplacement orange du thème |
+
+Annuler, Rétablir, Outils et Paramètres restent gris : ce sont des utilitaires,
+et les laisser neutres est ce qui fait ressortir les icônes colorées.
+
+Les listes qui regroupent beaucoup d’entrées colorent un groupe entier à la fois,
+pour qu’un groupe se lise comme une famille :
+
+- **Menu Outils** — le voyage dans le temps (Reflog, Instantanés de travail,
+  Machine à remonter le temps, Bisect) en orange ; les outils de branche
+  (Absorb, les radars, la CI locale, les comparaisons) dans l’accent ; et une
+  couleur par groupe : Inspecter cyan, Branches et historique l’accent, Fichiers
+  et patchs vert, Dépôt orange, Secrets et partage rouge.
+- **Pages des Paramètres** — Disposition, Espaces de travail et IA dans l’accent ;
+  Profil et Environnement vert ; Intégrations et Données cyan ; Thèmes orange ;
+  Sécurité rouge. Général et Raccourcis restent gris.
+
+| Option | Ce que vous voyez |
+|---|---|
+| **Monochrome** | Toutes les icônes grises, comme avant que cette option existe |
+| **Teinte douce** (par défaut) | La couleur mêlée au gris ; la couleur entière au survol |
+| **Couleur pleine** | La couleur elle-même, sur une petite pastille de la même teinte |
+
+Les couleurs viennent du thème : un thème qui repeint son vert ou son accent
+repeint les icônes avec, thèmes personnalisés et générés par l’IA compris.
+
+Limites : seuls les boutons principaux de la barre d’outils, les en-têtes des
+sections de la barre latérale, le menu Outils et les pages des Paramètres sont
+colorés ; les autres menus, les lignes à l’intérieur d’une section et le graphe
+des commits ne le sont pas. Une ligne de menu survolée garde son aspect habituel,
+icône comprise. La couleur n’est jamais le seul indice : chaque icône garde son
+libellé.
 
 ## Trouver un réglage
 

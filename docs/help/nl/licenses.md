@@ -53,6 +53,8 @@ Twee grenzen om te kennen:
   niet.
 
 De eigen licentie van Gitcito is Apache 2.0, en het label rechtsboven opent haar op
-GitHub.
+GitHub. De code die van het oorspronkelijke Gitcito is overgenomen, kwam onder de
+MIT-licentie, en de vermelding daarvan reist met de app mee in `NOTICE`, zoals de
+MIT-licentie vereist.
 
 **Zie ook:** [Talen & rechts-naar-links](languages.md) · [Thema's & uiterlijk](themes.md)

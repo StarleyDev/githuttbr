@@ -78,7 +78,7 @@ które graf rysuje podczas przewijania.
 ## Obraz Twojego profilu
 
 Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybrać.
-**Ustawienia → Profil → Awatar** oferuje cztery źródła:
+**Ustawienia → Profil → Awatar** oferuje pięć źródeł:
 
 | Źródło | Co pokazuje |
 |---|---|
@@ -86,9 +86,39 @@ Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybra�
 | **Z integracji** | Zdjęcie konta GitHub lub GitLab połączonego z tym profilem w Integracjach. Wyłączone, dopóki takiego nie ma. |
 | **Ikona** | Jeden z 24 symboli na wybranym kolorze. |
 | **Obraz** | Wybrany plik — PNG lub JPEG. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych Gitcito, a nie w pliku ustawień. |
+| **Z repozytorium** | Ikona lub logo znalezione w jednym z repozytoriów profilu — aplikacji albo firmy — skopiowane do profilu jak obraz. |
 
 Obraz trafia do **Ustawienia → Dane → Eksportuj ustawienia** i wraca przy imporcie; usunięcie
 profilu go usuwa.
+
+### Ikona z repozytorium
+
+Profil służbowy często ma gotowy obrazek: ikonę aplikacji albo firmy leżącą w jego
+repozytorium. **Z repozytorium** wymienia najbardziej prawdopodobne z repozytoriów
+**powiązanych z profilem** (a gdy żadne nie jest powiązane, z tego, które jest
+teraz otwarte):
+
+- najpierw samą ikonę aplikacji (`icon.png`, `Resources/icon.png`);
+- `AppIcon.appiconset` z iOS w **największym** rozmiarze, ikonę launchera Androida
+  (`mipmap-*/ic_launcher.png`) w **najwyższej** gęstości;
+- potem loga i inne obrazy z nazwą wskazującą na ikonę.
+
+Pod listą jest policzone i wyjaśnione, co pominięto: obrazy w folderach zależności
+i buildu (`node_modules`, `Pods`, `build`…), mniejsze rozmiary ikon już
+wymienionych i ikony launchera zapisane jako wektorowy XML. Wybranie jednej
+kopiuje ją do profilu, zmniejszoną do 256 px — przeniesienie, zmiana nazwy albo
+usunięcie repozytorium nie rusza awatara.
+
+Gdy profil jest ustawiony na **Automatyczny**, strona raz proponuje najbardziej
+prawdopodobną ikonę: *Użyć ikony z my-app?* — **Użyj**, **Wybierz inną** albo
+**Nie teraz**, po czym przestaje pytać dla tego profilu. Nic się nie zmienia,
+dopóki nie wybierzesz.
+
+![Wybór obrazka profilu spośród ikon aplikacji z repozytorium mobilnego](../../screenshots/profile-avatar-repo.webp)
+
+Czego nie potrafi: proponuje tylko obrazy, które repozytorium przechowuje jako
+pliki (PNG, JPEG, WebP, SVG i podobne), a nie ikony generowane podczas buildu;
+i nie śledzi repozytorium — nową ikonę trzeba tam znowu wybrać ręcznie.
 
 **Commit nigdy nie zawiera obrazu.** Ma tylko imię i e-mail. GitHub i GitLab pokazują
 zdjęcie Twojego konta przy commicie, którego e-mail należy do Twojego konta. Jeśli

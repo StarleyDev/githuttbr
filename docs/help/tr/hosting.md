@@ -86,9 +86,9 @@ Ana sütunun üç bölümü vardır:
 
 | Bölüm | İçeriği |
 |---|---|
-| **Konuşma** | Açıklama, yorumlar ve satır içi inceleme dizileri (`dosya:satır`, yanıtlarıyla). Ardından yorum / onay / değişiklik iste seçenekli yorum kutusu ve birleştirme kutusu (merge, squash veya rebase) |
+| **Konuşma** | Açıklama, yorumlar ve satır içi inceleme dizileri (`dosya:satır`, yanıtlarıyla). Yalnızca konuşma kayar: yorum / onay / değişiklik iste seçenekli yorum kutusu ve birleştirme kutusu (merge, squash veya rebase) altta sabit kalır, böylece uzun bir pull request onları asla erişilemez hâle getirmez |
 | **Dosyalar** | Değişen her dosya ve seçilenin diff’i listenin yanında; sözdizimi vurgulama ve kelime düzeyinde değişikliklerle (o ayar açıkken gizli görünen dosyalar maskelenir). ✓ “görüldü” listesi ilerlemenizi hatırlar. Sunucunun diff göndermediği bir dosya (ikili ya da çok büyük) sunucuya bağlantı verir |
-| **Kontroller** | CI check-run’ları (GitHub) veya pipeline işleri (GitLab); geçti/başarısız/bekliyor durumu ve günlük bağlantılarıyla |
+| **Kontroller** | CI check-run’ları (GitHub) veya pipeline işleri (GitLab); geçti/başarısız/bekliyor durumu ve günlük bağlantılarıyla. Deponun tüm çalıştırmaları — yalnızca bu pull request’inkiler değil — [CI çalıştırmaları](ci-runs.md) sayfasındadır |
 
 Kenar çubuğu şunları gösterir:
 
@@ -278,8 +278,8 @@ zaten tuttuğu bilgileri ödünç alabilir; böylece hâlihazırda kimlik
 doğruladığınız bir kuruluş çoğu zaman hiçbir kuruluma ihtiyaç duymaz.
 [Güvenlik ve sırlar](security.md) sayfasına bakın.
 
-Her profil **kendi hesabını bağlar**. Ayarlar → Entegrasyonlar'da **git ile
-oturum aç**, makinede zaten bulunan bir oturumu arar — git'in credential
+Her profil **kendi hesabını bağlar**. Ayarlar → Entegrasyonlar'da **Profile
+bağla**, makinede zaten bulunan bir oturumu arar — git'in credential
 helper'ı, ardından **GitHub CLI**'ın etkin hesabı, ardından helper'ın kendi
 oturum açma penceresi — ve o hesabı profile bağlar. Hiçbir şey örtük olarak
 paylaşılmaz: yeni bir profil bağlantısız başlar ve başka bir profilin zaten

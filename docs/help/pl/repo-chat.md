@@ -72,7 +72,7 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 
 ## Ustawienia
 
-**Ustawienia → AI → Czat repozytorium**:
+**Ustawienia → Profil → Preferencje pisania AI → Czat repozytorium** (każdy profil ma własne):
 
 | Ustawienie | Działanie |
 |---|---|
@@ -86,6 +86,9 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 
 Gdy AI jest wyłączone w całości, czat znika razem z nim — żaden panel nie
 proponuje odpowiedzi, której nic nie może udzielić.
+
+To, który dostawca i model odpowiada w czacie, ustawia się na stronie **AI**,
+w sekcji **Model dla zadania** — zobacz [Funkcje AI](ai.md#model-dla-zadania).
 
 Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy dostawcy
 — to to samo ustawienie, bez otwierania Ustawień.
@@ -204,7 +207,7 @@ nie cofnie.
 
 ### Tryby zatwierdzania
 
-Lista z tarczą pod polem wiadomości (także w **Ustawienia → AI → Czat
+Lista z tarczą pod polem wiadomości (także w **Ustawienia → Profil → Czat
 repozytorium**) decyduje, jak karta zostanie uruchomiona:
 
 | Tryb | Uruchamia |

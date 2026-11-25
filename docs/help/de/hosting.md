@@ -89,9 +89,9 @@ Die Hauptspalte hat drei Bereiche:
 
 | Bereich | Was er enthält |
 |---|---|
-| **Unterhaltung** | Beschreibung, Kommentare und Inline-Review-Threads (`datei:zeile`, mit Antworten). Darunter das Kommentarfeld mit kommentieren / freigeben / Änderungen anfordern und die Merge-Box (Merge, Squash oder Rebase) |
+| **Unterhaltung** | Beschreibung, Kommentare und Inline-Review-Threads (`datei:zeile`, mit Antworten). Nur die Unterhaltung scrollt: Das Kommentarfeld mit kommentieren / freigeben / Änderungen anfordern und die Merge-Box (Merge, Squash oder Rebase) bleiben unten fest, sodass ein langer Pull Request sie nie außer Reichweite schiebt |
 | **Dateien** | Jede geänderte Datei und der Diff der gewählten neben der Liste, mit Syntax-Hervorhebung und Änderungen auf Wortebene (geheim aussehende Dateien maskiert, wenn diese Einstellung an ist). Eine ✓-„Gesehen“-Liste merkt sich deinen Fortschritt. Eine Datei, für die der Host keinen Diff schickt (binär oder zu groß), verlinkt auf den Host |
-| **Checks** | CI-Check-Runs (GitHub) oder Pipeline-Jobs (GitLab), mit bestanden/fehlgeschlagen/läuft und Links zu den Logs |
+| **Checks** | CI-Check-Runs (GitHub) oder Pipeline-Jobs (GitLab), mit bestanden/fehlgeschlagen/läuft und Links zu den Logs. Jeder Lauf des Repositorys — nicht nur die dieses Pull Requests — steht auf der Seite [CI-Läufe](ci-runs.md) |
 
 Die Seitenleiste zeigt:
 
@@ -294,7 +294,7 @@ dich bereits authentifiziert hast, braucht deshalb oft gar keine Einrichtung.
 Siehe [Sicherheit & Secrets](security.md).
 
 Jedes Profil **verknüpft sein eigenes Konto**. Unter Einstellungen →
-Integrationen sucht **Mit git anmelden** nach einer Anmeldung, die schon auf dem
+Integrationen sucht **Mit dem Profil verknüpfen** nach einer Anmeldung, die schon auf dem
 Rechner liegt — im Credential Helper von git, dann im aktiven Konto der **GitHub
 CLI**, dann im Anmeldefenster des Helpers — und verknüpft dieses Konto mit dem
 Profil. Nichts wird stillschweigend geteilt: Ein neues Profil startet getrennt,

@@ -84,7 +84,7 @@ plusieurs centaines qu’un graphe dessine au défilement.
 ## L’image de votre profil
 
 L’avatar de la barre de titre et de la liste des profils est le vôtre : vous pouvez donc le choisir.
-**Paramètres → Profil → Avatar** propose quatre sources :
+**Paramètres → Profil → Avatar** propose cinq sources :
 
 | Source | Ce qui s’affiche |
 |---|---|
@@ -92,9 +92,40 @@ L’avatar de la barre de titre et de la liste des profils est le vôtre : vous 
 | **De l’intégration** | La photo du compte GitHub ou GitLab connecté à ce profil dans Intégrations. Désactivé tant qu’il n’y en a pas. |
 | **Icône** | L’un des 24 symboles, sur la couleur de votre choix. |
 | **Image** | Un fichier que vous choisissez — PNG ou JPEG. Réduit à 256 px et conservé sur cet ordinateur, dans le dossier de données de Gitcito, pas dans le fichier de réglages. |
+| **Depuis un dépôt** | Une icône ou un logo trouvé dans l’un des dépôts du profil — celui de l’app ou de l’entreprise —, copié dans le profil comme une image. |
 
 L’image suit **Paramètres → Données → Exporter les paramètres** et revient à l’import ; supprimer le
 profil la supprime.
+
+### Une icône depuis un dépôt
+
+Un profil professionnel a souvent une image toute prête : l’icône de l’app ou de
+l’entreprise, rangée dans son dépôt. **Depuis un dépôt** liste les plus probables
+parmi les dépôts **liés au profil** (ou, s’il n’y en a aucun, celui qui est
+ouvert) :
+
+- d’abord l’icône de l’app elle-même (`icon.png`, `Resources/icon.png`) ;
+- un `AppIcon.appiconset` iOS dans sa **plus grande** taille, une icône de
+  lanceur Android (`mipmap-*/ic_launcher.png`) dans sa densité **la plus haute** ;
+- puis les logos et les autres images dont le nom évoque une icône.
+
+Sous la liste, ce qui a été écarté est compté et expliqué : les images des
+dossiers de dépendances et de build (`node_modules`, `Pods`, `build`…), les
+tailles plus petites des icônes déjà listées, et les icônes de lanceur en XML
+vectoriel. En choisir une la copie dans le profil, réduite à 256 px — déplacer,
+renommer ou supprimer le dépôt ne touche pas l’avatar.
+
+Tant qu’un profil est sur **Automatique**, la page propose une fois l’icône la
+plus probable : *Utiliser l’icône de my-app ?* — **Utiliser**, **En choisir une
+autre** ou **Pas maintenant**, qui cesse de demander pour ce profil. Rien ne
+change tant que vous n’avez pas choisi.
+
+![Choisir une image de profil parmi les icônes d’app d’un dépôt mobile](../../screenshots/profile-avatar-repo.webp)
+
+Ce qu’elle ne sait pas faire : elle ne propose que des images que le dépôt
+contient sous forme de fichiers (PNG, JPEG, WebP, SVG et autres), pas des icônes
+générées au build ; et elle ne suit pas le dépôt — une nouvelle icône s’y choisit
+à nouveau à la main.
 
 **Un commit ne porte jamais d’image.** Il contient un nom et un e-mail, rien de plus.
 GitHub et GitLab affichent la photo de votre compte sur un commit dont l’e-mail

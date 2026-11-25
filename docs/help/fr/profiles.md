@@ -17,6 +17,33 @@ quand vous avez deux comptes GitHub.
 
 ![Un profil : l'identité git d'un côté, ses jetons d'intégration de l'autre](../../screenshots/settings-profiles.webp)
 
+## Modifier un profil, utiliser un profil
+
+Les Paramètres répartissent leurs pages en deux. **Ce profil** regroupe les pages
+qui changent avec le profil — **Profil** et **Intégrations**. **Application**
+regroupe tout le reste, qui s'applique dans n'importe quel profil et l'indique en
+haut de la page.
+
+Les deux pages du profil s'ouvrent sur une barre : *Modification du profil* et un
+sélecteur. Le sélecteur choisit le profil que vous **modifiez** ; il ne change pas
+celui que l'application **utilise**. Quand ils diffèrent, un bandeau ambre le dit
+— *Vous modifiez Travail. L'application utilise Personnel* — avec **Utiliser ce
+profil** pour basculer. C'est le moment où l'on lie le plus facilement un compte
+au mauvais profil, alors la page Intégrations nomme aussi le profil sur chaque
+carte et sur le bouton lui-même : **Lier au profil Travail**, et la confirmation
+le répète. Nouveau et supprimer sont dans la même barre ; supprimer demande
+d'abord.
+
+![Modification du profil Travail pendant que l'application en utilise un autre : le bandeau ambre, et le bouton de liaison qui nomme Travail](../../screenshots/settings-profile-band.webp)
+
+## L'IA est partagée
+
+Un profil n'a pas besoin de sa propre IA : une [IA générale](ai.md#une-ia-pour-tous-les-profils)
+sert tous les profils, et un profil n'opte pour la sienne que lorsqu'il le faut.
+Ce qu'un profil garde toujours, c'est la façon dont l'IA écrit pour lui — le
+style de commit, les instructions personnalisées et le reste des *Préférences
+d'écriture de l'IA*.
+
 ## Chaque profil, ses propres comptes
 
 En plus d'un jeton, un profil peut **lier** une connexion déjà présente sur la

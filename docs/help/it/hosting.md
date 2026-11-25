@@ -87,9 +87,9 @@ La colonna principale ha tre sezioni:
 
 | Sezione | Cosa contiene |
 |---|---|
-| **Conversazione** | La descrizione, i commenti e i thread di revisione in linea (`file:riga`, con risposte). Poi la casella dei commenti con commenta / approva / chiedi modifiche, e il riquadro di merge (merge, squash o rebase) |
+| **Conversazione** | La descrizione, i commenti e i thread di revisione in linea (`file:riga`, con risposte). Scorre solo la conversazione: la casella dei commenti con commenta / approva / chiedi modifiche e il riquadro di merge (merge, squash o rebase) restano fissi in basso, così una pull request lunga non li spinge mai fuori portata |
 | **File** | Ogni file modificato, e il diff di quello selezionato accanto all’elenco, con evidenziazione della sintassi e modifiche a livello di parola (file dall’aria segreta mascherati se l’impostazione è attiva). Una lista ✓ “visto” ricorda i tuoi progressi. Un file per cui l’host non invia il diff (binario o troppo grande) rimanda all’host |
-| **Check** | Check-run di CI (GitHub) o job di pipeline (GitLab), con superato/fallito/in corso e link ai log |
+| **Check** | Check-run di CI (GitHub) o job di pipeline (GitLab), con superato/fallito/in corso e link ai log. Tutte le esecuzioni del repository — non solo quelle di questa pull request — sono nella pagina [Esecuzioni CI](ci-runs.md) |
 
 La barra laterale mostra:
 
@@ -285,7 +285,7 @@ ti sei già autenticato spesso non richiede alcuna configurazione. Vedi
 [Sicurezza e segreti](security.md).
 
 Ogni profilo **collega il proprio account**. In Impostazioni → Integrazioni,
-**Accedi con git** cerca un accesso già presente sulla macchina — il credential
+**Collega al profilo** cerca un accesso già presente sulla macchina — il credential
 helper di git, poi l'account attivo di **GitHub CLI**, poi la finestra di
 accesso dell'helper — e collega quell'account al profilo. Nulla è condiviso
 implicitamente: un nuovo profilo parte disconnesso, e un account che un altro

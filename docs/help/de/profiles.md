@@ -18,6 +18,32 @@ oder wenn du zwei GitHub-Konten hast.
 
 ![Ein Profil: Git-Identität auf der einen Seite, die Integrations-Tokens auf der anderen](../../screenshots/settings-profiles.webp)
 
+## Ein Profil bearbeiten, ein Profil verwenden
+
+Die Einstellungen teilen ihre Seiten in zwei Teile. **Dieses Profil** enthält die
+Seiten, die sich mit dem Profil ändern — **Profil** und **Integrationen**.
+**App** enthält alles andere, das in jedem Profil gilt und das oben auf der Seite
+auch sagt.
+
+Die beiden Profilseiten beginnen mit einer Leiste: *Profil bearbeiten* und einer
+Auswahl. Die Auswahl bestimmt, welches Profil du **bearbeitest**; sie ändert
+nicht das, das die App **verwendet**. Weichen beide ab, sagt es ein bernsteinfarbenes
+Band — *Du bearbeitest Arbeit. Die App verwendet Privat* — mit **Dieses Profil
+verwenden** zum Wechseln. Das ist der Moment, in dem ein Konto am leichtesten mit
+dem falschen Profil verknüpft wird, deshalb nennt die Seite Integrationen das
+Profil auch auf jeder Karte und auf dem Knopf selbst: **Mit dem Profil Arbeit
+verknüpfen**, und die Bestätigung wiederholt es. Neu und Löschen sind in derselben
+Leiste; Löschen fragt vorher.
+
+![Das Profil Arbeit bearbeiten, während die App ein anderes verwendet: das bernsteinfarbene Band und der Verknüpfen-Knopf, der Arbeit nennt](../../screenshots/settings-profile-band.webp)
+
+## Die KI wird geteilt
+
+Ein Profil braucht keine eigene KI: Eine [allgemeine KI](ai.md#eine-ki-für-alle-profile)
+bedient jedes Profil, und ein Profil entscheidet sich nur dann für eine eigene,
+wenn es muss. Was ein Profil immer behält, ist, wie die KI für es schreibt —
+Commit-Stil, eigene Anweisungen und der Rest von *Schreibstil der KI*.
+
 ## Jedes Profil, seine eigenen Konten
 
 Neben einem Token kann ein Profil eine Anmeldung **verknüpfen**, die schon auf

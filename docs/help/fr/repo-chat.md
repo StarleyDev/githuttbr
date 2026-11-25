@@ -74,7 +74,7 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 
 ## Réglages
 
-**Réglages → IA → Discussion du dépôt** :
+**Paramètres → Profil → Préférences d’écriture de l’IA → Discussion du dépôt** (chaque profil a les siennes) :
 
 | Réglage | Effet |
 |---|---|
@@ -88,6 +88,9 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
 panneau proposant une réponse que rien ne peut produire.
+
+Le fournisseur et le modèle qui répondent à la discussion se choisissent sur la
+page **IA**, sous **Modèle par tâche** — voir [Fonctions IA](ai.md#modèle-par-tâche).
 
 Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
 du nom du fournisseur : même réglage, sans ouvrir les Réglages.
@@ -211,7 +214,7 @@ quelque chose qu'un instantané local peut reprendre.
 
 ### Modes d’approbation
 
-Le menu au bouclier sous le champ de saisie (aussi dans **Réglages → IA →
+Le menu au bouclier sous le champ de saisie (aussi dans **Paramètres → Profil →
 Discussion du dépôt**) décide de la façon dont une carte s’exécute :
 
 | Mode | Exécute |

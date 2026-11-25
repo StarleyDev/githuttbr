@@ -13,7 +13,41 @@ Es wird nichts irgendwohin geschickt, bevor du nicht konkret etwas anforderst.
 
 ![KI-Einstellungen](../../screenshots/settings-ai.webp)
 
-## Konten
+## Eine KI für alle Profile
+
+Die KI wird einmal eingerichtet, unter **Einstellungen → KI**, und jedes
+[Profil](profiles.md) nutzt sie: Ein Profil, das du später anlegst, hat die KI
+schon, ohne dass ein Konto erneut hinzugefügt werden muss. Die Seite listet jedes
+Profil und ob es dieser **allgemeinen KI** folgt.
+
+Ein Profil kann stattdessen **seine eigene KI** verwenden — ein Arbeitsprofil,
+das aus Kosten- oder Datenschutzgründen über das Konto der Firma laufen muss. Auf
+der Seite **Profil** dieses Profils, unter *KI dieses Profils*, stellst du
+**Allgemein** auf **Eigene** um: Sie beginnt als Kopie der allgemeinen KI, und
+ihre Anbieter und Schlüssel gehören von da an nur ihr. Zurück auf **Allgemein**
+entfernt sie nach einer Bestätigung und lässt die allgemeine KI, wie sie war.
+
+Jede KI wird auf dieser einen Seite eingerichtet. Die Leiste **Bearbeitet wird**
+oben wählt, welche: die allgemeine KI oder die eigene eines Profils (*Eigene KI
+von Arbeit*). **Eigene KI einrichten** auf der Profilseite oder **Eigene KI
+bearbeiten** in der Profilliste öffnet die Seite auf genau dieser. Die
+Profilseite selbst zeigt nur, welche KI das Profil verwendet und was antwortet —
+den Editor enthält sie nie.
+
+![Die KI eines Profils auf seiner Profilseite: Allgemein oder Eigene, was antwortet, und der Weg, sie einzurichten](../../screenshots/settings-profile-ai.webp)
+
+Wie die KI **schreibt**, bleibt in beiden Fällen pro Profil: Stil der
+Commit-Nachrichten, Stil der Erklärungen, Stile für Konfliktlösung und
+Branch-Namen, eigene Anweisungen, Co-Autor-Zeile und Repository-Chat. Das steht
+auf der Seite **Profil** unter *Schreibstil der KI*, sodass ein Arbeitsprofil
+`ticket`-Commits schreiben kann, während ein privates `conventional`-Commits
+schreibt, beide mit derselben KI.
+
+Ein Upgrade von einer Version, in der jedes Profil seine eigene KI hatte, verliert
+nichts: Die KI des verwendeten Profils wird zur allgemeinen KI, und jedes andere
+Profil, dessen KI anders war, behält sie als eigene.
+
+## Anbieter
 
 Ein **Konto** ist ein Weg zu einem Modell: ein Anbieter, wo er erreichbar ist
 und wie er sich authentifiziert. Du kannst mehrere einrichten, und sie bestehen
@@ -30,7 +64,7 @@ scheinen. Gemini wird über Googles OpenAI-kompatiblen Endpunkt angesprochen.
 
 ### Ein Abo statt eines API-Schlüssels nutzen
 
-Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu.
+Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu. Das erste Konto der allgemeinen KI wird zum Standard.
 
 Klicke nach der CLI-Installation auf Verbinden, um die Anmeldeseite des Anbieters zu öffnen. Eine laufende Verbindung kannst du abbrechen.
 
@@ -57,9 +91,9 @@ einem Branch-Namen kann also als Befehl gelesen werden.
 Liegt der Befehl nicht in deinem `PATH`, trage seinen vollständigen Pfad am
 Konto ein.
 
-### Welches Konto beantwortet was
+### Modell je Aufgabe
 
-Unter **Welches Konto beantwortet was** kann jede Funktion — Commit-Nachrichten,
+Unter **Modell je Aufgabe** kann jede Funktion — Commit-Nachrichten,
 Chat, Erklären, PR-Review, Konfliktlösung, Wiki, Themes — auf ein eigenes Konto
 und Modell zeigen. Lass eine Zeile auf dem Standard, um dem Standardkonto zu
 folgen. Ein günstiges Modell für Commit-Nachrichten und ein starkes für den Chat
@@ -134,5 +168,9 @@ unter die Regeln zur Secret-Maskierung fallen.
   pro Anfrage eine ganze Sitzung.
 - Schlüssel werden pro Konto im Schlüsselbund deines Systems abgelegt. Ein Konto
   zu löschen löscht seinen Schlüssel.
+- Der Wechsel zurück zu einer Version vor der allgemeinen KI verliert die
+  Schlüssel der allgemeinen KI: Diese Version weiß nicht, wo sie liegen, und
+  verwirft sie beim Speichern. Die Konten bleiben; gib die Schlüssel neu ein. Die
+  eigene KI eines Profils ist nicht betroffen.
 
 **Siehe auch:** [Repo-Wiki](repo-wiki.md) · [Sicherheit & Secrets](security.md)

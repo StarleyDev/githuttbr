@@ -14,7 +14,40 @@ concreto.
 
 ![Ajustes de IA](../../screenshots/settings-ai.webp)
 
-## Cuentas
+## Una IA para todos los perfiles
+
+La IA se configura una vez, en **Ajustes → IA**, y todos los [perfiles](profiles.md)
+la usan: un perfil que crees después ya tiene la IA, sin volver a añadir ninguna
+cuenta. La página lista cada perfil y si sigue esta **IA general**.
+
+Un perfil puede usar **su propia IA** en su lugar — un perfil de trabajo que debe
+pasar por la cuenta de la empresa, por coste o por política de datos. En la
+página **Perfil** de ese perfil, en *IA de este perfil*, cambia **General** a
+**Propia**: empieza como una copia de la IA general, y sus proveedores y claves
+pasan a ser solo suyos. Volver a **General** los elimina, tras una confirmación,
+y deja la IA general como estaba.
+
+Todas las IA se configuran en esta misma página. La barra **Editando** de arriba
+elige cuál: la IA general, o la propia de un perfil (*IA propia de Trabajo*).
+**Configurar la IA propia** en la página Perfil, o **Editar su IA propia** en la
+lista de perfiles, abre la página en esa. La página Perfil solo muestra qué IA usa
+el perfil y qué responde — nunca aloja el editor.
+
+![La IA de un perfil en su página Perfil: General o Propia, qué responde y cómo configurarla](../../screenshots/settings-profile-ai.webp)
+
+Cómo **escribe** la IA sigue siendo de cada perfil en ambos casos: el estilo del
+mensaje de commit, el estilo de las explicaciones, los estilos de resolución de
+conflictos y de nombres de rama, las instrucciones personalizadas, la línea de
+coautor y el chat del repositorio. Están en la página **Perfil**, en
+*Preferencias de escritura de la IA*, así que un perfil de trabajo puede escribir
+commits `ticket` mientras uno personal escribe `conventional`, los dos con la
+misma IA.
+
+Actualizar desde una versión en la que cada perfil tenía su propia IA no pierde
+nada: la IA del perfil en uso pasa a ser la IA general, y cualquier otro perfil
+cuya IA fuera distinta la conserva como propia.
+
+## Proveedores
 
 Una **cuenta** es una forma de llegar a un modelo: un proveedor, dónde
 alcanzarlo y cómo se autentica. Puedes configurar varias y conviven — una clave
@@ -31,7 +64,7 @@ aparentarlo. A Gemini se llega por el endpoint compatible con OpenAI de Google.
 
 ### Usar una suscripción en vez de una clave de API
 
-Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta.
+Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general pasa a ser la predeterminada.
 
 Una vez instalada la CLI, pulsa Conectar para abrir la página de inicio de sesión del proveedor. Puedes cancelar la conexión pendiente.
 
@@ -57,9 +90,9 @@ de una rama puede interpretarse como un comando.
 
 Si el comando no está en tu `PATH`, escribe su ruta completa en la cuenta.
 
-### Qué cuenta responde a qué
+### Modelo por tarea
 
-En **Qué cuenta responde a qué**, cada función — mensajes de commit, chat,
+En **Modelo por tarea**, cada función — mensajes de commit, chat,
 explicar, revisión de PR, resolución de conflictos, wiki, temas — puede apuntar
 a su propia cuenta y modelo. Deja una fila en la predeterminada para seguir a la
 cuenta predeterminada. Modelo barato para los mensajes de commit y uno potente
@@ -133,5 +166,9 @@ archivos que cubren las reglas de enmascarado de secretos.
   binario arranca una sesión entera por petición.
 - Las claves se guardan por cuenta en el llavero de tu sistema. Borrar una
   cuenta borra su clave.
+- Volver a una versión anterior a la IA general pierde las claves de la IA
+  general: esa versión no sabe dónde se guardan y las descarta al guardar. Las
+  cuentas se mantienen; vuelve a escribir las claves. La IA propia de un perfil
+  no se ve afectada.
 
 **Ver también:** [Wiki del repositorio](repo-wiki.md) · [Seguridad y secretos](security.md)

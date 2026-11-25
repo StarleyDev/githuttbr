@@ -72,7 +72,7 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 
 ## Impostazioni
 
-**Impostazioni → IA → Chat del repository**:
+**Impostazioni → Profilo → Preferenze di scrittura dell’IA → Chat del repository** (ogni profilo ha le sue):
 
 | Impostazione | Effetto |
 |---|---|
@@ -86,6 +86,9 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 
 Con l’IA spenta del tutto la chat sparisce con lei: nessun pannello che offre
 risposte che nessuno può dare.
+
+Quale fornitore e quale modello rispondono alla chat si imposta nella pagina
+**IA**, sotto **Modello per attività** — vedi [Funzioni AI](ai.md#modello-per-attività).
 
 Il modello della chat si cambia anche dall’intestazione del pannello, accanto al
 nome del provider: è la stessa impostazione, senza aprire le Impostazioni.
@@ -208,7 +211,7 @@ snapshot locale possa ritirare.
 
 ### Modalità di approvazione
 
-Il menu con lo scudo sotto il campo di testo (anche in **Impostazioni → IA →
+Il menu con lo scudo sotto il campo di testo (anche in **Impostazioni → Profilo →
 Chat del repository**) decide come viene eseguita una scheda:
 
 | Modalità | Esegue |

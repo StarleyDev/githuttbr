@@ -2,8 +2,8 @@
 title: Temas y apariencia
 category: Hazlo tuyo
 order: 100
-summary: Temas incluidos, claro y oscuro, más los personalizados y los generados por IA.
-keywords: tema temas theme themes oscuro claro dark light apariencia colores fuente tamano grafo graph paleta palette buscar ajustes encontrar preferencia search settings
+summary: Temas incluidos, claro y oscuro, más los personalizados y los generados por IA, y los iconos de colores.
+keywords: tema temas theme themes oscuro claro dark light apariencia colores fuente tamano grafo graph paleta palette buscar ajustes encontrar preferencia search settings icono iconos colores de los iconos tinte monocromo icon icons icon colors tint monochrome
 ---
 
 # Temas y apariencia
@@ -17,11 +17,58 @@ oscura.
 - **Claro, oscuro o seguir al sistema**, con el cambio en vivo.
 - **Temas personalizados**, y otros **generados por IA** a partir de un prompt.
 - **Tamaño de la fuente del código** ajustable.
+- **Colores de los iconos** para la barra de herramientas y las secciones de la barra
+  lateral — ver más abajo.
 - Un **estilo de grafo** aparte: paleta de carriles, estilo de las esquinas,
   densidad de filas y grosor de línea, con una vista previa en miniatura del
   grafo en vivo.
 
 ![Ajustes de temas](../../screenshots/settings-themes.webp)
+
+## Colores de los iconos
+
+Una fila de iconos grises hace que Fetch, Push y Stash se parezcan hasta que lees
+sus etiquetas. **Colores de los iconos**, en Apariencia de la pestaña Tema,
+colorea cada icono según lo que hace, para que la vista encuentre la acción antes
+que la palabra:
+
+| Papel | Iconos | Color del tema que toma |
+|---|---|---|
+| Recibir | Fetch, Pull, Remotos, Worktrees | la ranura cian del tema |
+| Enviar, terminar | Push, Tareas, Incidencias, Releases | verde |
+| Referencias | Rama, Locales, Etiquetas, Pull requests, Hitos, Submódulos | el acento |
+| Apartar | Stash, Pop, Stashes, Marcadores, Fijadas | la ranura naranja del tema |
+
+Deshacer, Rehacer, Herramientas y Ajustes se quedan en gris: son utilidades, y
+dejarlas sin color es lo que hace destacar a las que sí lo tienen.
+
+Las listas que agrupan muchas entradas colorean un grupo entero a la vez, para
+que un grupo se lea como una familia:
+
+- **Menú Herramientas** — el viaje en el tiempo (Reflog, Instantáneas, Máquina
+  del tiempo, Bisect) en naranja; las herramientas de ramas (Absorb, los radares,
+  CI local, las comparaciones) en el acento; y un color por grupo: Inspeccionar
+  cian, Ramas e historial el acento, Archivos y parches verde, Repositorio
+  naranja, Secretos y compartir rojo.
+- **Páginas de Ajustes** — Diseño, Espacios e IA en el acento; Perfil y Entorno
+  verde; Integraciones y Datos cian; Temas naranja; Seguridad rojo. General y
+  Atajos se quedan en gris.
+
+| Opción | Qué ves |
+|---|---|
+| **Monocromo** | Todos los iconos grises, como antes de que existiera esta opción |
+| **Tono suave** (predeterminado) | El color mezclado con el gris; el color entero al pasar el ratón |
+| **Color pleno** | El propio color, sobre una pequeña pastilla del mismo tono |
+
+Los colores salen del tema: un tema que repinta su verde o su acento repinta los
+iconos con él, incluidos los temas personalizados y los generados por IA.
+
+Límites: solo se colorean los botones principales de la barra de herramientas,
+las cabeceras de las secciones de la barra lateral, el menú Herramientas y las
+páginas de Ajustes; los demás menús, las filas dentro de una sección y el grafo
+de commits no. Una fila de menú bajo el ratón conserva su aspecto habitual,
+icono incluido. El color nunca es la única pista: cada icono conserva su
+etiqueta.
 
 ## Encontrar un ajuste
 

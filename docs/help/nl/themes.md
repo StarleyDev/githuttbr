@@ -2,8 +2,8 @@
 title: Thema's & uiterlijk
 category: Naar eigen smaak
 order: 100
-summary: Ingebouwde thema's, licht en donker, plus eigen en door AI gegenereerde thema's.
-keywords: thema thema's theme themes donker dark licht light uiterlijk kleuren lettergrootte grafiek palet zoeken instellingen vinden search settings
+summary: Ingebouwde thema's, licht en donker, plus eigen en door AI gegenereerde thema's, en gekleurde pictogrammen.
+keywords: thema thema's theme themes donker dark licht light uiterlijk kleuren lettergrootte grafiek palet zoeken instellingen vinden search settings pictogram pictogrammen pictogramkleuren tint monochroom icon icons icon colors monochrome
 ---
 
 # Thema's & uiterlijk
@@ -16,10 +16,57 @@ Midnight, Contrast en Daltonic — elk met een lichte en een donkere variant.
 - **Licht, donker, of het besturingssysteem volgen**, live omgeschakeld.
 - **Eigen thema's**, en door **AI gegenereerde** thema's uit een prompt.
 - Instelbare **lettergrootte voor code**.
+- **Pictogramkleuren** voor de werkbalk en de secties van de zijbalk — zie
+  hieronder.
 - Een aparte **grafiekstijl**: baanpalet, hoekstijl, rijdichtheid en lijndikte,
   met een live minigrafiek als voorbeeld.
 
 ![Thema-instellingen](../../screenshots/settings-themes.webp)
+
+## Pictogramkleuren
+
+Een rij grijze pictogrammen laat Fetchen, Pushen en Stashen op elkaar lijken tot
+je hun labels leest. **Pictogramkleuren**, onder Weergave op het tabblad Thema,
+kleurt elk pictogram naar wat het doet, zodat het oog de actie vindt vóór het
+woord:
+
+| Rol | Pictogrammen | Themakleur die het krijgt |
+|---|---|---|
+| Ontvangen | Fetchen, Pullen, Remotes, Worktrees | het cyaanvak van het thema |
+| Verzenden, afronden | Pushen, Taken, Issues, Releases | groen |
+| Refs | Branch, Lokaal, Tags, Pull requests, Mijlpalen, Submodules | het accent |
+| Opzijleggen | Stashen, Poppen, Stashes, Bladwijzers, Vastgezet | het oranjevak van het thema |
+
+Ongedaan maken, Opnieuw uitvoeren, Gereedschap en Instellingen blijven grijs: het
+zijn hulpmiddelen, en ze kaal laten is wat de gekleurde laat opvallen.
+
+Lijsten die veel items groeperen, kleuren een hele groep tegelijk, zodat een groep
+als één familie leest:
+
+- **Menu Gereedschap** — tijdreizen (Reflog, WIP-momentopnamen, Tijdmachine,
+  Bisect) in oranje; de branchgereedschappen (Absorb, de radars, lokale CI,
+  vergelijkingen) in het accent; en één kleur per groep: Inspecteren cyaan,
+  Branches & geschiedenis het accent, Bestanden & patches groen, Repository
+  oranje, Geheimen & delen rood.
+- **Instellingenpagina's** — Indeling, Werkruimtes en AI in het accent; Profiel en
+  Omgeving groen; Integraties en Gegevens cyaan; Thema’s oranje; Beveiliging rood.
+  Algemeen en Sneltoetsen blijven grijs.
+
+| Optie | Wat je ziet |
+|---|---|
+| **Monochroom** | Elk pictogram grijs, zoals voordat deze optie bestond |
+| **Zachte tint** (standaard) | De kleur door het grijs gemengd; de volle kleur bij aanwijzen |
+| **Volle kleur** | De kleur zelf, op een klein vlakje in dezelfde tint |
+
+De kleuren komen uit het thema — een thema dat zijn groen of zijn accent
+overschildert, schildert de pictogrammen mee, eigen en door AI gegenereerde
+thema's inbegrepen.
+
+Grenzen: alleen de hoofdknoppen van de werkbalk, de koppen van de zijbalksecties,
+het menu Gereedschap en de instellingenpagina's krijgen kleur; andere menu's, de
+rijen binnen een sectie en de commitgrafiek niet. Een menuregel onder de muis
+houdt zijn gewone uiterlijk, pictogram inbegrepen. Kleur is nooit de enige
+aanwijzing — elk pictogram houdt zijn label.
 
 ## Een instelling vinden
 

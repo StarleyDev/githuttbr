@@ -82,7 +82,7 @@ un grafo disegna mentre scorre.
 ## L’immagine del tuo profilo
 
 L’avatar nella barra del titolo e nell’elenco dei profili è tuo, quindi puoi sceglierlo.
-**Impostazioni → Profilo → Avatar** offre quattro fonti:
+**Impostazioni → Profilo → Avatar** offre cinque fonti:
 
 | Fonte | Cosa mostra |
 |---|---|
@@ -90,9 +90,39 @@ L’avatar nella barra del titolo e nell’elenco dei profili è tuo, quindi puo
 | **Dall’integrazione** | L’immagine dell’account GitHub o GitLab collegato a questo profilo in Integrazioni. Disattivato finché non ce n’è uno. |
 | **Icona** | Uno di 24 simboli sul colore che scegli. |
 | **Immagine** | Un file che scegli — PNG o JPEG. Viene ridotto a 256 px e conservato su questo computer, nella cartella dati di Gitcito, non nel file delle impostazioni. |
+| **Da un repository** | Un’icona o un logo trovato in uno dei repository del profilo — quello dell’app o dell’azienda —, copiato nel profilo come un’immagine. |
 
 L’immagine viaggia con **Impostazioni → Dati → Esporta le impostazioni** e torna all’importazione;
 eliminare il profilo la elimina.
+
+### Un’icona da un repository
+
+Un profilo di lavoro ha spesso un’immagine già pronta: l’icona dell’app o
+dell’azienda, nel suo repository. **Da un repository** elenca le più probabili
+dai repository **associati al profilo** (o, se non ce n’è nessuno, da quello
+aperto ora):
+
+- prima l’icona dell’app vera e propria (`icon.png`, `Resources/icon.png`);
+- un `AppIcon.appiconset` iOS nella sua dimensione **più grande**, un’icona di
+  avvio Android (`mipmap-*/ic_launcher.png`) nella sua densità **più alta**;
+- poi i loghi e le altre immagini con un nome da icona.
+
+Sotto l’elenco, ciò che è stato escluso viene contato e spiegato: le immagini
+nelle cartelle di dipendenze e di build (`node_modules`, `Pods`, `build`…), le
+dimensioni più piccole delle icone già elencate e le icone di avvio in XML
+vettoriale. Sceglierne una la copia nel profilo, ridotta a 256 px — spostare,
+rinominare o eliminare il repository non tocca l’avatar.
+
+Finché un profilo è su **Automatico**, la pagina propone una volta l’icona più
+probabile: *Usare l’icona di my-app?* — **Usa**, **Scegline un’altra** o **Non
+ora**, che smette di chiedere per quel profilo. Non cambia nulla finché non
+scegli.
+
+![Scegliere l’immagine del profilo tra le icone dell’app di un repository mobile](../../screenshots/profile-avatar-repo.webp)
+
+Cosa non sa fare: propone solo immagini che il repository contiene come file
+(PNG, JPEG, WebP, SVG e simili), non icone generate durante la build; e non segue
+il repository — una nuova icona lì si sceglie di nuovo a mano.
 
 **Un commit non contiene mai un’immagine.** Contiene un nome e un’email, nient’altro.
 GitHub e GitLab mostrano la foto del tuo account su un commit la cui email appartiene

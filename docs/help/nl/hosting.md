@@ -89,9 +89,9 @@ De hoofdkolom heeft drie onderdelen:
 
 | Onderdeel | Wat erin staat |
 |---|---|
-| **Gesprek** | De beschrijving, opmerkingen en inline reviewdraden (`bestand:regel`, met antwoorden). Daarna het opmerkingenveld met reageren / goedkeuren / wijzigingen vragen, en het mergevak (merge, squash of rebase) |
+| **Gesprek** | De beschrijving, opmerkingen en inline reviewdraden (`bestand:regel`, met antwoorden). Alleen het gesprek scrolt: het opmerkingenveld met reageren / goedkeuren / wijzigingen vragen en het mergevak (merge, squash of rebase) blijven vast onderaan staan, zodat een lange pull request ze nooit buiten bereik duwt |
 | **Bestanden** | Elk gewijzigd bestand, en de diff van het gekozen bestand naast de lijst, met syntaxkleuring en wijzigingen op woordniveau (geheim ogende bestanden gemaskeerd als die instelling aan staat). Een ✓-„bekeken”-lijst onthoudt je voortgang. Een bestand waarvoor de host geen diff stuurt (binair of te groot) linkt naar de host |
-| **Checks** | CI-check-runs (GitHub) of pipelinejobs (GitLab), met geslaagd/mislukt/bezig en links naar de logs |
+| **Checks** | CI-check-runs (GitHub) of pipelinejobs (GitLab), met geslaagd/mislukt/bezig en links naar de logs. Elke run van de repository — niet alleen die van deze pull request — staat op de pagina [CI-runs](ci-runs.md) |
 
 De zijbalk toont:
 
@@ -286,7 +286,7 @@ bent vergt vaak helemaal geen instelwerk. Zie
 [Beveiliging & geheimen](security.md).
 
 Elk profiel **koppelt zijn eigen account**. In Instellingen → Integraties zoekt
-**Inloggen met git** een login die al op de machine staat — in de credential
+**Koppelen aan het profiel** een login die al op de machine staat — in de credential
 helper van git, dan het actieve account van de **GitHub CLI**, dan het
 aanmeldvenster van de helper — en koppelt dat account aan het profiel. Niets
 wordt stilzwijgend gedeeld: een nieuw profiel begint ontkoppeld, en een account

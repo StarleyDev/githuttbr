@@ -81,7 +81,7 @@ voor de honderden die een scrollende graaf tekent.
 ## De afbeelding van je profiel
 
 De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
-**Instellingen → Profiel → Avatar** biedt vier bronnen:
+**Instellingen → Profiel → Avatar** biedt vijf bronnen:
 
 | Bron | Wat hij toont |
 |---|---|
@@ -89,9 +89,41 @@ De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
 | **Uit de integratie** | De foto van het GitHub- of GitLab-account dat dit profiel in Integraties heeft gekoppeld. Uitgeschakeld tot er een is. |
 | **Pictogram** | Een van 24 symbolen op een kleur naar keuze. |
 | **Afbeelding** | Een bestand dat je kiest — PNG of JPEG. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van Gitcito, niet in het instellingenbestand. |
+| **Uit een repository** | Een pictogram of logo uit een van de repository's van het profiel — dat van de app of van het bedrijf —, net als een afbeelding in het profiel gekopieerd. |
 
 De afbeelding gaat mee met **Instellingen → Gegevens → Instellingen exporteren** en komt terug bij
 importeren; het profiel verwijderen verwijdert haar.
+
+### Een pictogram uit een repository
+
+Een werkprofiel heeft vaak al een kant-en-klare afbeelding: het app- of
+bedrijfspictogram in zijn repository. **Uit een repository** toont de
+waarschijnlijkste uit de repository's die **aan het profiel gebonden** zijn (of,
+als er geen gebonden is, uit de repository die nu open is):
+
+- eerst het app-pictogram zelf (`icon.png`, `Resources/icon.png`);
+- een iOS-`AppIcon.appiconset` in zijn **grootste** formaat, een
+  Android-launcherpictogram (`mipmap-*/ic_launcher.png`) in zijn **hoogste**
+  dichtheid;
+- daarna logo's en andere afbeeldingen met een pictogramnaam.
+
+Onder de lijst wordt geteld en uitgelegd wat is weggelaten: afbeeldingen in
+afhankelijkheids- en buildmappen (`node_modules`, `Pods`, `build`…), de kleinere
+formaten van pictogrammen die al in de lijst staan, en launcherpictogrammen die
+vector-XML zijn. Er een kiezen kopieert hem in het profiel, verkleind tot 256 px —
+de repository verplaatsen, hernoemen of verwijderen raakt de avatar niet.
+
+Zolang een profiel op **Automatisch** staat, biedt de pagina één keer het
+waarschijnlijkste pictogram aan: *Het pictogram van my-app gebruiken?* —
+**Gebruiken**, **Een ander kiezen** of **Niet nu**, waarna het voor dat profiel
+niet meer vraagt. Er verandert niets tot je kiest.
+
+![Een profielafbeelding kiezen uit de app-pictogrammen van een mobiele repository](../../screenshots/profile-avatar-repo.webp)
+
+Wat het niet kan: het biedt alleen afbeeldingen aan die de repository als
+bestanden bevat (PNG, JPEG, WebP, SVG en dergelijke), geen pictogrammen die bij
+het bouwen ontstaan; en het houdt de repository niet bij — een nieuw pictogram
+daar kies je opnieuw met de hand.
 
 **Een commit bevat nooit een afbeelding.** Alleen een naam en een e-mailadres. GitHub
 en GitLab tonen je accountfoto bij een commit waarvan het e-mailadres bij je account

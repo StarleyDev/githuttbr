@@ -52,5 +52,7 @@ Zwei Grenzen, die man kennen sollte:
   ihn aber nicht. Ist das Manifest eines Pakets falsch, irrt diese Seite mit.
 
 Gitcitos eigene Lizenz ist Apache 2.0; das Badge oben rechts öffnet sie auf GitHub.
+Der vom ursprünglichen Gitcito übernommene Code kam unter der MIT-Lizenz, und
+sein Hinweis reist in `NOTICE` mit der App, wie es die MIT-Lizenz verlangt.
 
 **Siehe auch:** [Sprachen & Rechts-nach-links](languages.md) · [Themes & Erscheinungsbild](themes.md)

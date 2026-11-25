@@ -86,9 +86,9 @@ Kolumna główna ma trzy sekcje:
 
 | Sekcja | Co zawiera |
 |---|---|
-| **Rozmowa** | Opis, komentarze i wątki recenzji w kodzie (`plik:wiersz`, z odpowiedziami). Potem pole komentarza z komentuj / zatwierdź / poproś o zmiany oraz pole scalania (merge, squash lub rebase) |
+| **Rozmowa** | Opis, komentarze i wątki recenzji w kodzie (`plik:wiersz`, z odpowiedziami). Przewija się tylko rozmowa: pole komentarza z komentuj / zatwierdź / poproś o zmiany oraz pole scalania (merge, squash lub rebase) zostają przypięte na dole, więc długi pull request nigdy nie wypycha ich poza zasięg |
 | **Pliki** | Każdy zmieniony plik i diff wybranego obok listy, z podświetlaniem składni i zmianami na poziomie słów (pliki wyglądające na sekrety zamaskowane, gdy to ustawienie jest włączone). Lista ✓ „obejrzane” pamięta postęp. Plik, dla którego host nie wysyła diffu (binarny lub za duży), linkuje do hosta |
-| **Checki** | Check-runy CI (GitHub) lub joby pipeline’u (GitLab), ze stanem zaliczone/nieudane/w toku i linkami do logów |
+| **Checki** | Check-runy CI (GitHub) lub joby pipeline’u (GitLab), ze stanem zaliczone/nieudane/w toku i linkami do logów. Wszystkie uruchomienia repozytorium — nie tylko tego pull requesta — są na stronie [Uruchomienia CI](ci-runs.md) |
 
 Panel boczny pokazuje:
 
@@ -278,7 +278,7 @@ uwierzytelniłeś, często nie wymaga w ogóle żadnej konfiguracji. Zobacz
 [Bezpieczeństwo i sekrety](security.md).
 
 Każdy profil **wiąże własne konto**. W Ustawienia → Integracje przycisk
-**Zaloguj się przez gita** szuka logowania, które już jest na komputerze — w
+**Połącz z profilem** szuka logowania, które już jest na komputerze — w
 credential helperze gita, potem aktywne konto **GitHub CLI**, potem okno
 logowania samego helpera — i wiąże to konto z profilem. Nic nie jest dzielone
 niejawnie: nowy profil zaczyna niepołączony, a konto powiązane już z innym

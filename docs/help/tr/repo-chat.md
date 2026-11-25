@@ -69,17 +69,20 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 
 ## Ayarlar
 
-**Ayarlar → Yapay zekâ → Depo sohbeti**:
+**Ayarlar → Profil → Yapay zekânın yazım tercihleri → Depo sohbeti** (her profilin kendine ait):
 
 | Ayar | Ne yapar |
 |---|---|
 | **Depo hakkında soru sorun** | Kapalıyken sekmeyi, araç çubuğu düğmesini ve kısayol hedefini kaldırır. Diğer yapay zekâ özellikleri çalışmaya devam eder |
-| **Sohbet modeli** | Yalnızca sohbete özel model. Boşsa profilinki kullanılır — soru sormak incelemeden ucuzdur, küçüğü çoğu zaman yeter |
 | **Yalnızca işlenmiş içerik** | Çalışma ağacı yerine son commit üzerinden yanıtlar: işlenmemiş düzenlemeler makineden hiç çıkmaz |
 | **Sohbette dosya ve Git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
 | **Dosyalar için salt okunur kip** | Açıkken dosya oluşturma, düzenleme, değiştirme ve silmeyi engeller; Git eylemleri kullanılabilir kalır. Varsayılan olarak açıktır |
 | **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
 | **Sohbet uzak eylemler önerebilsin** | Varsayılan olarak kapalı. Açıkken getirme, çekme, gönderme, pull request açma ve yığın gönderme eklenir |
+
+Sohbete hangi sağlayıcının ve modelin cevap vereceği **Yapay zekâ** sayfasında,
+**Göreve göre model** altında ayarlanır — bkz. [Yapay zekâ özellikleri](ai.md#göreve-göre-model).
+Soru sormak incelemeden ucuzdur, bu yüzden küçük bir model çoğu zaman yeter.
 
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
 yanıtlayamayacağı bir şeyi öneren panel kalmaz.
@@ -200,7 +203,7 @@ alamaz.
 
 ### Onay modları
 
-Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Yapay zekâ → Depo
+Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Profil → Depo
 sohbeti** içinde) bir kartın nasıl çalışacağına karar verir:
 
 | Mod | Çalıştırdığı |

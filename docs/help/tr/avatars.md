@@ -77,7 +77,7 @@ birkaç yüz tane için ise savurganlıktır.
 ## Profilinizin resmi
 
 Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçebilirsiniz.
-**Ayarlar → Profil → Avatar** dört kaynak sunar:
+**Ayarlar → Profil → Avatar** beş kaynak sunar:
 
 | Kaynak | Ne gösterir |
 |---|---|
@@ -85,9 +85,37 @@ Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçeb
 | **Entegrasyondan** | Bu profilin Entegrasyonlar’da bağlı olduğu GitHub veya GitLab hesabının resmi. Bağlı hesap yoksa devre dışıdır. |
 | **Simge** | Seçtiğiniz bir renk üzerinde 24 simgeden biri. |
 | **Görsel** | Seçtiğiniz bir dosya — PNG veya JPEG. 256 px’e küçültülür ve ayarlar dosyasında değil, Gitcito’nun veri klasöründe, bu bilgisayarda saklanır. |
+| **Bir depodan** | Profilin depolarından birinde bulunan bir simge ya da logo — uygulamanın ya da şirketin — görsel gibi profile kopyalanır. |
 
 Görsel **Ayarlar → Veri → Ayarları dışa aktar** ile birlikte gider ve içe aktarınca geri
 gelir; profili silmek onu da siler.
+
+### Bir depodan simge
+
+Bir iş profilinin çoğu zaman hazır bir resmi vardır: deposunda duran uygulama ya
+da şirket simgesi. **Bir depodan**, **profile bağlı** depolardan (hiçbiri bağlı
+değilse şu an açık olandan) en olası olanları listeler:
+
+- önce uygulama simgesinin kendisi (`icon.png`, `Resources/icon.png`);
+- iOS `AppIcon.appiconset` **en büyük** boyutuyla, Android başlatıcı simgesi
+  (`mipmap-*/ic_launcher.png`) **en yüksek** yoğunluğuyla;
+- ardından logolar ve adında icon geçen diğer görseller.
+
+Listenin altında dışarıda kalanlar sayılır ve açıklanır: bağımlılık ve derleme
+klasörlerindeki görseller (`node_modules`, `Pods`, `build`…), zaten listelenmiş
+simgelerin daha küçük boyutları ve vektör XML olan başlatıcı simgeleri. Birini
+seçmek onu 256 px'e küçülterek profile kopyalar — depoyu taşımak, yeniden
+adlandırmak ya da silmek avatara dokunmaz.
+
+Bir profil **Otomatik** üzerindeyken sayfa en olası simgeyi bir kez önerir:
+*my-app simgesi kullanılsın mı?* — **Kullan**, **Başkasını seç** ya da o profil
+için sormayı bırakan **Şimdi değil**. Siz seçene kadar hiçbir şey değişmez.
+
+![Bir mobil deponun uygulama simgelerinden profil resmi seçmek](../../screenshots/profile-avatar-repo.webp)
+
+Yapamadıkları: yalnızca deponun dosya olarak tuttuğu görselleri (PNG, JPEG, WebP,
+SVG ve benzeri) önerir, derleme sırasında üretilen simgeleri değil; ve depoyu
+takip etmez — oradaki yeni bir simge yeniden elle seçilir.
 
 **Bir commit asla görsel taşımaz.** Yalnızca bir ad ve bir e-posta içerir. GitHub ve
 GitLab, e-postası hesabınıza ait olan bir commit’te hesap resminizi gösterir. Gerçek

@@ -2,8 +2,8 @@
 title: Motywy i wygląd
 category: Dostosuj do siebie
 order: 100
-summary: Wbudowane motywy, jasne i ciemne, plus własne i generowane przez AI.
-keywords: motyw motywy ciemny jasny wygląd kolory rozmiar czcionki paleta grafu theme themes dark light appearance colors font size graph palette szukaj wyszukiwanie ustawienia znajdź search settings
+summary: Wbudowane motywy, jasne i ciemne, plus własne i generowane przez AI, oraz kolorowe ikony.
+keywords: motyw motywy ciemny jasny wygląd kolory rozmiar czcionki paleta grafu theme themes dark light appearance colors font size graph palette szukaj wyszukiwanie ustawienia znajdź search settings ikona ikony kolory ikon odcień monochromatyczne icon icons icon colors tint monochrome
 ---
 
 # Motywy i wygląd
@@ -16,10 +16,54 @@ Monokai, Midnight, Contrast i Daltonic — każdy w wariancie jasnym i ciemnym.
 - **Jasny, ciemny albo za systemem**, przełączane na żywo.
 - **Własne motywy** oraz te **generowane przez AI** z promptu.
 - Regulowany **rozmiar czcionki kodu**.
+- **Kolory ikon** na pasku narzędzi i w sekcjach paska bocznego — zobacz niżej.
 - Osobny **styl grafu**: paleta torów, styl narożników, gęstość wierszy
   i grubość linii, z podglądem mini-grafu na żywo.
 
 ![Ustawienia motywów](../../screenshots/settings-themes.webp)
+
+## Kolory ikon
+
+Rząd szarych ikon sprawia, że Fetch, Push i Stash wyglądają podobnie, dopóki nie
+przeczytasz ich etykiet. **Kolory ikon**, w sekcji Wygląd na karcie Motyw,
+kolorują każdą ikonę według tego, co robi, żeby oko znalazło akcję przed słowem:
+
+| Rola | Ikony | Kolor motywu, który przyjmuje |
+|---|---|---|
+| Pobieranie | Fetch, Pull, Zdalne, Worktree | miejsce na cyjan w motywie |
+| Wysyłanie, kończenie | Push, Zadania, Zgłoszenia, Wydania | zielony |
+| Referencje | Branch, Lokalne, Tagi, Pull requesty, Kamienie milowe, Submoduły | akcent |
+| Odkładanie na bok | Stash, Pop, Stashe, Zakładki, Przypięty | miejsce na pomarańczowy w motywie |
+
+Cofnij, Ponów, Narzędzia i Ustawienia zostają szare: to narzędzia pomocnicze,
+a pozostawienie ich bez koloru sprawia, że kolorowe się wyróżniają.
+
+Listy, które grupują wiele pozycji, kolorują całą grupę naraz, żeby grupa czytała
+się jak jedna rodzina:
+
+- **Menu Narzędzia** — podróż w czasie (Reflog, Migawki WIP, Wehikuł czasu,
+  Bisect) na pomarańczowo; narzędzia branchy (Absorb, radary, lokalne CI,
+  porównania) w akcencie; i jeden kolor na grupę: Podejrzyj cyjan, Branche
+  i historia akcent, Pliki i patche zielony, Repozytorium pomarańczowy, Sekrety
+  i udostępnianie czerwony.
+- **Strony Ustawień** — Układ, Przestrzenie robocze i AI w akcencie; Profil
+  i Środowisko zielone; Integracje i Dane cyjan; Motywy pomarańczowe;
+  Bezpieczeństwo czerwone. Ogólne i Skróty zostają szare.
+
+| Opcja | Co widać |
+|---|---|
+| **Monochromatyczne** | Każda ikona szara, jak przed pojawieniem się tej opcji |
+| **Delikatny odcień** (domyślnie) | Kolor zmieszany z szarością; pełny kolor po najechaniu |
+| **Pełny kolor** | Sam kolor, na małym tle w tym samym odcieniu |
+
+Kolory pochodzą z motywu — motyw, który przemalowuje swój zielony albo akcent,
+przemalowuje razem z nim ikony, także motywy własne i generowane przez AI.
+
+Ograniczenia: kolor dostają tylko główne przyciski paska narzędzi, nagłówki
+sekcji paska bocznego, menu Narzędzia i strony Ustawień; inne menu, wiersze
+wewnątrz sekcji i graf commitów nie. Wiersz menu pod kursorem zachowuje zwykły
+wygląd, razem z ikoną. Kolor nigdy nie jest jedyną wskazówką — każda ikona
+zachowuje etykietę.
 
 ## Znajdowanie ustawienia
 

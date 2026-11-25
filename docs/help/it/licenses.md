@@ -53,5 +53,7 @@ Due limiti da conoscere:
   con lui.
 
 La licenza di Gitcito è Apache 2.0, e il badge in alto a destra la apre su GitHub.
+Il codice ereditato dal Gitcito originale è arrivato sotto licenza MIT, e la sua
+nota viaggia con l'app in `NOTICE`, come richiede la licenza MIT.
 
 **Vedi anche:** [Lingue e scrittura da destra a sinistra](languages.md) · [Temi e aspetto](themes.md)

@@ -13,7 +13,39 @@ Niente viene inviato da nessuna parte finché non chiedi qualcosa di preciso.
 
 ![Impostazioni AI](../../screenshots/settings-ai.webp)
 
-## Account
+## Una sola IA per tutti i profili
+
+L'IA si configura una volta, in **Impostazioni → IA**, e ogni [profilo](profiles.md)
+la usa: un profilo creato in seguito ha già l'IA, senza account da aggiungere di
+nuovo. La pagina elenca ogni profilo e se segue questa **IA generale**.
+
+Un profilo può usare invece **la propria IA** — un profilo di lavoro che deve
+passare dall'account dell'azienda, per costi o per politiche sui dati. Nella
+pagina **Profilo** di quel profilo, sotto *IA di questo profilo*, passa da
+**Generale** a **Propria**: parte come copia dell'IA generale, e da lì in poi i
+suoi fornitori e le sue chiavi sono solo suoi. Tornare a **Generale** li rimuove,
+dopo una conferma, e lascia l'IA generale com'era.
+
+Ogni IA si configura in questa sola pagina. La barra **Modifica di** in alto
+sceglie quale: l'IA generale, o quella propria di un profilo (*IA propria di
+Lavoro*). **Configura l'IA propria** nella pagina Profilo, o **Modifica la sua
+IA** nell'elenco dei profili, apre la pagina su quella. La pagina Profilo mostra
+soltanto quale IA usa il profilo e chi risponde — non ospita mai l'editor.
+
+![L'IA di un profilo nella sua pagina Profilo: Generale o Propria, chi risponde e come configurarla](../../screenshots/settings-profile-ai.webp)
+
+Come l'IA **scrive** resta per profilo in entrambi i casi: stile dei messaggi di
+commit, stile delle spiegazioni, stili di risoluzione dei conflitti e di nomi dei
+branch, istruzioni personalizzate, riga del coautore e chat del repository. Si
+trovano nella pagina **Profilo**, sotto *Preferenze di scrittura dell'IA*, così un
+profilo di lavoro può scrivere commit `ticket` mentre uno personale scrive
+`conventional`, entrambi con la stessa IA.
+
+Aggiornare da una versione in cui ogni profilo aveva la propria IA non fa perdere
+nulla: l'IA del profilo in uso diventa l'IA generale, e ogni altro profilo con
+un'IA diversa la conserva come propria.
+
+## Fornitori
 
 Un **account** è un modo di raggiungere un modello: un provider, dove
 contattarlo e come si autentica. Puoi configurarne diversi e convivono — una
@@ -31,7 +63,7 @@ Google.
 
 ### Usare un abbonamento al posto di una chiave API
 
-Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account.
+Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account. Il primo account dell'IA generale diventa quello predefinito.
 
 Dopo aver installato la CLI, premi Connetti per aprire la pagina di accesso del fornitore. Puoi annullare la connessione in corso.
 
@@ -57,9 +89,9 @@ ramo può essere interpretato come un comando.
 
 Se il comando non è nel tuo `PATH`, scrivi il percorso completo nell'account.
 
-### Quale account risponde a cosa
+### Modello per attività
 
-In **Quale account risponde a cosa**, ogni funzione — messaggi di commit, chat,
+In **Modello per attività**, ogni funzione — messaggi di commit, chat,
 spiegazione, revisione PR, risoluzione dei conflitti, wiki, temi — può puntare
 al proprio account e modello. Lascia una riga sul valore predefinito per seguire
 l'account predefinito. Modello economico per i messaggi di commit e uno potente
@@ -131,5 +163,9 @@ nemmeno i file coperti dalle regole di mascheramento dei segreti.
   avvia un'intera sessione a ogni richiesta.
 - Le chiavi sono conservate per account nel portachiavi del sistema. Eliminare
   un account ne elimina la chiave.
+- Tornare a una versione precedente all'IA generale fa perdere le chiavi dell'IA
+  generale: quella versione non sa dove sono conservate e le scarta al
+  salvataggio. Gli account restano; digita di nuovo le chiavi. L'IA propria di un
+  profilo non è toccata.
 
 **Vedi anche:** [Wiki del repository](repo-wiki.md) · [Sicurezza e segreti](security.md)

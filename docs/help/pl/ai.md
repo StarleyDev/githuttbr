@@ -14,7 +14,38 @@ poprosisz.
 
 ![Ustawienia AI](../../screenshots/settings-ai.webp)
 
-## Konta
+## Jedna AI dla wszystkich profili
+
+AI konfiguruje się raz, w **Ustawienia → AI**, i każdy [profil](profiles.md) jej
+używa: profil utworzony później już ma AI, bez ponownego dodawania konta. Strona
+wymienia każdy profil i to, czy korzysta z tej **ogólnej AI**.
+
+Profil może zamiast tego używać **własnej AI** — profil służbowy, który musi
+przechodzić przez konto firmy ze względu na koszty albo politykę danych. Na
+stronie **Profil** tego profilu, w sekcji *AI tego profilu*, przełącz **Ogólna**
+na **Własna**: zaczyna jako kopia ogólnej AI, a jej dostawcy i klucze od tej
+pory należą tylko do niej. Powrót do **Ogólna** usuwa je, po potwierdzeniu,
+i zostawia ogólną AI bez zmian.
+
+Każdą AI konfiguruje się na tej jednej stronie. Pasek **Edytujesz** na górze
+wybiera którą: ogólną AI albo własną AI profilu (*Własna AI profilu Praca*).
+**Skonfiguruj własną AI** na stronie Profil albo **Edytuj własną AI** na liście
+profili otwiera stronę na tej właśnie AI. Sama strona Profil pokazuje tylko,
+której AI profil używa i co odpowiada — nigdy nie zawiera edytora.
+
+![AI profilu na jego stronie Profil: Ogólna albo Własna, co odpowiada i jak ją skonfigurować](../../screenshots/settings-profile-ai.webp)
+
+Sposób, w jaki AI **pisze**, w obu przypadkach zostaje osobny dla każdego
+profilu: styl opisów commitów, styl wyjaśnień, style rozwiązywania konfliktów
+i nazywania branchy, własne instrukcje, wiersz współautora i czat repozytorium.
+Są na stronie **Profil**, w sekcji *Preferencje pisania AI*, więc profil służbowy
+może pisać commity `ticket`, a prywatny `conventional`, oba na tej samej AI.
+
+Aktualizacja z wersji, w której każdy profil miał własną AI, niczego nie gubi:
+AI używanego profilu staje się ogólną AI, a każdy inny profil, którego AI była
+inna, zachowuje ją jako własną.
+
+## Dostawcy
 
 **Konto** to jeden sposób dotarcia do modelu: dostawca, adres, pod którym się z
 nim łączysz, i sposób uwierzytelnienia. Można skonfigurować kilka i działają
@@ -31,7 +62,7 @@ osiągane przez zgodny z OpenAI endpoint Google.
 
 ### Subskrypcja zamiast klucza API
 
-Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto.
+Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI staje się domyślnym.
 
 Po zainstalowaniu CLI kliknij Połącz, aby otworzyć stronę logowania dostawcy. Możesz anulować trwające łączenie.
 
@@ -57,9 +88,9 @@ może zostać wzięte za polecenie.
 
 Jeśli polecenia nie ma w `PATH`, wpisz jego pełną ścieżkę przy koncie.
 
-### Które konto za co odpowiada
+### Model dla zadania
 
-W sekcji **Które konto za co odpowiada** każda funkcja — opisy commitów, czat,
+W sekcji **Model dla zadania** każda funkcja — opisy commitów, czat,
 wyjaśnianie kodu, recenzja PR, rozwiązywanie konfliktów, wiki, motywy — może
 wskazywać własne konto i model. Zostaw wiersz na wartości domyślnej, aby szedł
 za kontem domyślnym. Tani model do opisów commitów i mocny do czatu to typowy
@@ -131,5 +162,8 @@ regułami maskowania sekretów.
   uruchamia całą sesję na każde zapytanie.
 - Klucze są przechowywane osobno dla każdego konta w pęku kluczy systemu.
   Usunięcie konta usuwa jego klucz.
+- Powrót do wersji sprzed ogólnej AI gubi klucze ogólnej AI: tamta wersja nie
+  wie, gdzie są przechowywane, i porzuca je przy zapisie. Konta zostają; wpisz
+  klucze ponownie. Własnej AI profilu to nie dotyczy.
 
 **Zobacz też:** [Wiki repozytorium](repo-wiki.md) · [Bezpieczeństwo i sekrety](security.md)

@@ -17,6 +17,30 @@ twee GitHub-accounts hebt.
 
 ![Een profiel: git-identiteit aan de ene kant, de integratietokens aan de andere](../../screenshots/settings-profiles.webp)
 
+## Een profiel bewerken, een profiel gebruiken
+
+Instellingen verdeelt zijn pagina's in tweeën. **Dit profiel** bevat de pagina's
+die met het profiel meeveranderen — **Profiel** en **Integraties**. **App** bevat
+al het andere, dat in elk profiel geldt en dat bovenaan de pagina ook zegt.
+
+De twee profielpagina's openen met een balk: *Profiel bewerken* en een kiezer. De
+kiezer bepaalt welk profiel je **bewerkt**; hij verandert niet welk profiel de app
+**gebruikt**. Verschillen ze, dan zegt een amberkleurige band dat — *Je bewerkt
+Werk. De app gebruikt Privé* — met **Dit profiel gebruiken** om te wisselen. Dat is
+het moment waarop een account het makkelijkst aan het verkeerde profiel wordt
+gekoppeld, dus de pagina Integraties noemt het profiel ook op elke kaart en op de
+knop zelf: **Koppelen aan het profiel Werk**, en de bevestiging herhaalt het.
+Nieuw en verwijderen staan in dezelfde balk; verwijderen vraagt eerst.
+
+![Het profiel Werk bewerken terwijl de app een ander gebruikt: de amberkleurige band en de koppelknop die Werk noemt](../../screenshots/settings-profile-band.webp)
+
+## De AI wordt gedeeld
+
+Een profiel heeft geen eigen AI nodig: één [algemene AI](ai.md#één-ai-voor-elk-profiel)
+bedient elk profiel, en een profiel kiest alleen voor een eigen AI als het moet.
+Wat een profiel altijd houdt, is hoe de AI voor hem schrijft — commitstijl, eigen
+instructies en de rest van *Schrijfvoorkeuren van de AI*.
+
 ## Elk profiel zijn eigen accounts
 
 Naast een token kan een profiel een login **koppelen** die al op de machine

@@ -54,6 +54,7 @@ Deux limites à connaître :
   l’audite pas. Si le manifeste d’un paquet est faux, cette page l’est aussi.
 
 La licence de Gitcito lui-même est Apache 2.0, et le badge en haut à droite l’ouvre sur
-GitHub.
+GitHub. Le code hérité du Gitcito d’origine est arrivé sous licence MIT, et sa
+mention accompagne l’app dans `NOTICE`, comme l’exige la licence MIT.
 
 **Voir aussi :** [Langues et droite-à-gauche](languages.md) · [Thèmes et apparence](themes.md)
