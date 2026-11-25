@@ -1,5 +1,11 @@
 
 
+## [4.52.1](https://github.com/StarleyDev/githuttbr/compare/v4.52.0...v4.52.1) (2026-11-25)
+
+### Bug Fixes
+
+* **keychain:** bring back tokens saved before v4.52.0 ([f34a58d](https://github.com/StarleyDev/githuttbr/commit/f34a58d9c861c638ef6267023198bd7b558a88c2))
+
 ## [4.52.0](https://github.com/StarleyDev/githuttbr/compare/v4.51.0...v4.52.0) (2026-11-25)
 
 ### Features
