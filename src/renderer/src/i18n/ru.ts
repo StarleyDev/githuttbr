@@ -4430,6 +4430,7 @@ export const ru: Dict = {
   'settingsImport.partMachineHint': 'Терминал, внешний редактор, приложения по умолчанию и путь к CLI ИИ.',
   'settingsImport.credentialsLabel': 'Учётные данные в файле:',
   'settingsImport.credentialsReplaceHint': 'Замена удаляет все сохранённые учётные данные, которых нет в файле.',
+  'settingsImport.credentialsWeakKeychain': 'Связка ключей не запущена, поэтому токены из этого файла хранятся только до закрытия Gitcito. Установите или разблокируйте связку ключей, чтобы сохранить их.',
   'settingsImport.reposNoneExist': 'Ни один путь из этого файла не существует на этом компьютере (проверено: {count}). Отметьте, чтобы импортировать их с переводом путей.',
   'settingsImport.reposAllExist': 'Все пути из этого файла существуют на этом компьютере (проверено: {count}).',
   'settingsImport.reposSomeExist': 'Пути из этого файла, которые есть на этом компьютере: {found} из {count}.',

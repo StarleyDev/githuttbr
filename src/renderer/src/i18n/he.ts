@@ -4433,6 +4433,7 @@ export const he: Dict = {
   'settingsImport.partMachineHint': 'מסוף, עורך חיצוני, אפליקציות ברירת מחדל והנתיב של כלי ה-CLI של הבינה המלאכותית.',
   'settingsImport.credentialsLabel': 'פרטי ההתחברות בקובץ:',
   'settingsImport.credentialsReplaceHint': 'החלפה מוחקת כל פרט התחברות שמור שאינו בקובץ.',
+  'settingsImport.credentialsWeakKeychain': 'אין מחזיק מפתחות פעיל, ולכן האסימונים מהקובץ הזה נשמרים רק עד שתסגור את Gitcito. התקן או בטל את נעילת מחזיק המפתחות כדי לשמור אותם.',
   'settingsImport.reposNoneExist': 'אף נתיב מהקובץ הזה לא קיים במחשב הזה (נבדקו: {count}). סמנו כדי לייבא אותם בתרגום הנתיבים.',
   'settingsImport.reposAllExist': 'כל הנתיבים בקובץ הזה קיימים במחשב הזה (נבדקו: {count}).',
   'settingsImport.reposSomeExist': 'נתיבים מהקובץ הזה שקיימים במחשב הזה: {found} מתוך {count}.',

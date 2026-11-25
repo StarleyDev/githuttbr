@@ -4437,6 +4437,7 @@ export const en = {
   'settingsImport.partMachineHint': 'Terminal, external editor, default apps and the path of the AI CLIs.',
   'settingsImport.credentialsLabel': 'Credentials in the file:',
   'settingsImport.credentialsReplaceHint': 'Replacing deletes every saved credential the file does not have.',
+  'settingsImport.credentialsWeakKeychain': 'No keyring is running, so the tokens in this file are kept only until you quit Gitcito. Install or unlock a keyring to store them.',
   'settingsImport.reposNoneExist': 'None of this file\'s paths exist on this computer ({count} checked). Check this part to import them by translating the paths.',
   'settingsImport.reposAllExist': 'Every path in this file exists on this computer ({count} checked).',
   'settingsImport.reposSomeExist': 'Paths in this file that exist on this computer: {found} of {count}.',

@@ -69,7 +69,8 @@ Para nada novo cair num armazenamento que qualquer um desembaralha, um token
 digitado sem chaveiro rodando fica guardado **só até você fechar o app**. O campo
 do token avisa — *Guardado só até você fechar o Gitcito: nenhum chaveiro está
 rodando…* — sem botão de tentar de novo, porque tentar de novo não resolve; só um
-chaveiro resolve. Os tokens salvos antes continuam legíveis — você nunca perde o
+chaveiro resolve. Importar um arquivo de configurações com credenciais avisa o
+mesmo antes de importá-las. Os tokens salvos antes continuam legíveis — você nunca perde o
 acesso a eles — e apagar ou trocar um ainda remove o valor antigo do disco. Dois
 limites: a chave da IA geral não é movida para o espaço compartilhado (cada perfil
 continua lendo a sua), e o Cofre continua salvando no armazenamento básico, porque

@@ -102,7 +102,8 @@ Settings → Security says so under the keychain status — *No keyring is runni
 So that nothing new lands in a store anyone could unscramble, a token you type
 while no keyring runs is kept **only until you quit**. The token field says so —
 *Saved only until you quit Gitcito: no keyring is running…* — with no button to
-retry, because retrying cannot help; only a keyring can. Tokens saved before stay
+retry, because retrying cannot help; only a keyring can. Importing a settings file
+with credentials says the same before it imports them. Tokens saved before stay
 readable — you are never locked out of them — and clearing or replacing one still
 removes the old value from disk. Two limits: the general AI key is not moved to its
 shared slot (each profile keeps reading its own), and the Vault still saves to the

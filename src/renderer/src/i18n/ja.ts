@@ -4370,6 +4370,7 @@ export const ja: Dict = {
   'settingsImport.partMachineHint': 'ターミナル、外部エディター、既定のアプリ、AI CLI のパス。',
   'settingsImport.credentialsLabel': 'ファイル内の認証情報:',
   'settingsImport.credentialsReplaceHint': '置き換えると、ファイルにない保存済みの認証情報はすべて削除されます。',
+  'settingsImport.credentialsWeakKeychain': 'キーリングが動作していないため、このファイルのトークンは Gitcito を終了するまでしか保持されません。保存するにはキーリングをインストールまたはロック解除してください。',
   'settingsImport.reposNoneExist': 'このファイルのパスはどれもこのコンピューターにありません ({count} 件を確認)。パスを変換してインポートするにはチェックしてください。',
   'settingsImport.reposAllExist': 'このファイルのパスはすべてこのコンピューターにあります ({count} 件を確認)。',
   'settingsImport.reposSomeExist': 'このファイルのパスのうち、このコンピューターにあるもの: {count} 件中 {found} 件。',

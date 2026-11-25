@@ -21,7 +21,7 @@ import {
   type ProfileMergePlan,
   type ProfileRowAction
 } from '../lib/settingsImport'
-import { fsApi, infoApi, vaultApi, profileAvatarApi, SettingsSaveRefused } from '../infrastructure/api'
+import { fsApi, infoApi, keychainApi, vaultApi, profileAvatarApi, SettingsSaveRefused } from '../infrastructure/api'
 import { hasSettingsSecrets } from '../../../shared/secrets'
 import type { AppSettings } from '../../../shared/types'
 
@@ -144,6 +144,21 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
 
   // Never leave the host locked behind us, however this closes.
   useEffect(() => () => setCloseLocked(false), [setCloseLocked])
+
+  // Linux with no keyring running: the file's tokens will be kept for this
+  // session only (main/settings.ts, commitToWeakStore) — said before importing.
+  const [weakKeychain, setWeakKeychain] = useState(false)
+  useEffect(() => {
+    if (!hasSecrets) return
+    let alive = true
+    void keychainApi
+      .status()
+      .then((s) => alive && setWeakKeychain(s.weakBackend))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [hasSecrets])
 
   useEffect(() => {
     let alive = true
@@ -651,6 +666,12 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
               {secrets === 'replace' && chosen.profiles && (
                 <span className="import-secrets-warn">{t('settingsImport.credentialsReplaceHint')}</span>
               )}
+            </div>
+          )}
+          {hasSecrets && weakKeychain && chosen.profiles && (
+            <div className="import-why">
+              <AlertTriangle size={13} aria-hidden="true" />
+              <span>{t('settingsImport.credentialsWeakKeychain')}</span>
             </div>
           )}
           {part('prefs')}

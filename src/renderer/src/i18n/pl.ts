@@ -4430,6 +4430,7 @@ export const pl: Dict = {
   'settingsImport.partMachineHint': 'Terminal, zewnętrzny edytor, domyślne aplikacje i ścieżka CLI AI.',
   'settingsImport.credentialsLabel': 'Dane logowania w pliku:',
   'settingsImport.credentialsReplaceHint': 'Zastąpienie usuwa każde zapisane dane logowania, których nie ma w pliku.',
+  'settingsImport.credentialsWeakKeychain': 'Nie działa żaden pęk kluczy, więc tokeny z tego pliku są przechowywane tylko do zamknięcia Gitcito. Zainstaluj lub odblokuj pęk kluczy, aby je zapisać.',
   'settingsImport.reposNoneExist': 'Żadna ścieżka z tego pliku nie istnieje na tym komputerze (sprawdzono: {count}). Zaznacz, aby je zaimportować, tłumacząc ścieżki.',
   'settingsImport.reposAllExist': 'Wszystkie ścieżki z tego pliku istnieją na tym komputerze (sprawdzono: {count}).',
   'settingsImport.reposSomeExist': 'Ścieżki z tego pliku istniejące na tym komputerze: {found} z {count}.',

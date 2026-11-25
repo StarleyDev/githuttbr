@@ -4433,6 +4433,7 @@ export const es: Dict = {
   'settingsImport.partMachineHint': 'Terminal, editor externo, apps predeterminadas y la ruta de las CLI de IA.',
   'settingsImport.credentialsLabel': 'Credenciales del archivo:',
   'settingsImport.credentialsReplaceHint': 'Reemplazar borra toda credencial guardada que el archivo no tenga.',
+  'settingsImport.credentialsWeakKeychain': 'No hay ningún llavero en ejecución, así que los tokens de este archivo se conservan solo hasta que cierres Gitcito. Instala o desbloquea un llavero para guardarlos.',
   'settingsImport.reposNoneExist': 'Ninguna ruta de este archivo existe en este equipo ({count} comprobadas). Marca esta parte para importarlas traduciendo las rutas.',
   'settingsImport.reposAllExist': 'Todas las rutas de este archivo existen en este equipo ({count} comprobadas).',
   'settingsImport.reposSomeExist': 'Rutas de este archivo que existen en este equipo: {found} de {count}.',

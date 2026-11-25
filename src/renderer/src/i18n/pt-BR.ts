@@ -4439,6 +4439,7 @@ export const ptBR: Dict = {
   'settingsImport.partMachineHint': 'Terminal, editor externo, apps padrão e o caminho das CLIs de IA.',
   'settingsImport.credentialsLabel': 'Credenciais do arquivo:',
   'settingsImport.credentialsReplaceHint': 'Substituir apaga toda credencial salva que o arquivo não tem.',
+  'settingsImport.credentialsWeakKeychain': 'Nenhum chaveiro está rodando, então os tokens deste arquivo ficam guardados só até você fechar o Gitcito. Instale ou desbloqueie um chaveiro para guardá-los.',
   'settingsImport.reposNoneExist': 'Nenhum caminho deste arquivo existe neste computador ({count} conferidos). Marque para importar traduzindo os caminhos.',
   'settingsImport.reposAllExist': 'Todos os caminhos deste arquivo existem neste computador ({count} conferidos).',
   'settingsImport.reposSomeExist': 'Caminhos deste arquivo que existem neste computador: {found} de {count}.',

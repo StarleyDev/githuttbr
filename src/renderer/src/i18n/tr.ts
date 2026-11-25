@@ -4373,6 +4373,7 @@ export const tr: Dict = {
   'settingsImport.partMachineHint': 'Terminal, harici düzenleyici, varsayılan uygulamalar ve yapay zekâ CLI’larının yolu.',
   'settingsImport.credentialsLabel': 'Dosyadaki kimlik bilgileri:',
   'settingsImport.credentialsReplaceHint': 'Değiştirmek, dosyada olmayan tüm kayıtlı kimlik bilgilerini siler.',
+  'settingsImport.credentialsWeakKeychain': 'Çalışan bir anahtarlık yok, bu yüzden bu dosyadaki belirteçler yalnızca Gitcito\'yu kapatana kadar saklanır. Kaydetmek için bir anahtarlık kurun veya kilidini açın.',
   'settingsImport.reposNoneExist': 'Bu dosyadaki yolların hiçbiri bu bilgisayarda yok ({count} denetlendi). Yolları çevirerek içe aktarmak için işaretleyin.',
   'settingsImport.reposAllExist': 'Bu dosyadaki tüm yollar bu bilgisayarda var ({count} denetlendi).',
   'settingsImport.reposSomeExist': 'Bu dosyadaki yollardan bu bilgisayarda olanlar: {found} / {count}.',

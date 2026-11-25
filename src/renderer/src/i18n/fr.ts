@@ -4378,6 +4378,7 @@ export const fr: Dict = {
   'settingsImport.partMachineHint': 'Terminal, éditeur externe, apps par défaut et le chemin des CLI d\'IA.',
   'settingsImport.credentialsLabel': 'Identifiants du fichier :',
   'settingsImport.credentialsReplaceHint': 'Remplacer supprime tout identifiant enregistré absent du fichier.',
+  'settingsImport.credentialsWeakKeychain': 'Aucun trousseau n’est actif : les jetons de ce fichier ne sont conservés que jusqu’à la fermeture de Gitcito. Installez ou déverrouillez un trousseau pour les enregistrer.',
   'settingsImport.reposNoneExist': 'Aucun chemin de ce fichier n\'existe sur cet ordinateur ({count} vérifiés). Cochez pour les importer en traduisant les chemins.',
   'settingsImport.reposAllExist': 'Tous les chemins de ce fichier existent sur cet ordinateur ({count} vérifiés).',
   'settingsImport.reposSomeExist': 'Chemins de ce fichier présents sur cet ordinateur : {found} sur {count}.',

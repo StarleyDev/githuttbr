@@ -4379,6 +4379,7 @@ export const it: Dict = {
   'settingsImport.partMachineHint': 'Terminale, editor esterno, app predefinite e il percorso delle CLI di IA.',
   'settingsImport.credentialsLabel': 'Credenziali nel file:',
   'settingsImport.credentialsReplaceHint': 'Sostituire elimina ogni credenziale salvata che il file non contiene.',
+  'settingsImport.credentialsWeakKeychain': 'Nessun portachiavi è in esecuzione, quindi i token di questo file vengono conservati solo fino alla chiusura di Gitcito. Installa o sblocca un portachiavi per salvarli.',
   'settingsImport.reposNoneExist': 'Nessun percorso di questo file esiste su questo computer ({count} verificati). Selezionalo per importarli traducendo i percorsi.',
   'settingsImport.reposAllExist': 'Tutti i percorsi di questo file esistono su questo computer ({count} verificati).',
   'settingsImport.reposSomeExist': 'Percorsi di questo file presenti su questo computer: {found} su {count}.',

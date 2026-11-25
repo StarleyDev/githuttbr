@@ -4430,6 +4430,7 @@ export const ko: Dict = {
   'settingsImport.partMachineHint': '터미널, 외부 편집기, 기본 앱 및 AI CLI 경로.',
   'settingsImport.credentialsLabel': '파일의 자격 증명:',
   'settingsImport.credentialsReplaceHint': '바꾸면 파일에 없는 저장된 자격 증명이 모두 삭제됩니다.',
+  'settingsImport.credentialsWeakKeychain': '실행 중인 키링이 없어 이 파일의 토큰은 Gitcito를 종료할 때까지만 보관됩니다. 저장하려면 키링을 설치하거나 잠금 해제하세요.',
   'settingsImport.reposNoneExist': '이 파일의 경로가 이 컴퓨터에 하나도 없습니다({count}개 확인). 경로를 변환해 가져오려면 선택하세요.',
   'settingsImport.reposAllExist': '이 파일의 모든 경로가 이 컴퓨터에 있습니다({count}개 확인).',
   'settingsImport.reposSomeExist': '이 파일의 경로 중 이 컴퓨터에 있는 것: {count}개 중 {found}개.',

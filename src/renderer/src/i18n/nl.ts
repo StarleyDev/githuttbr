@@ -4438,6 +4438,7 @@ export const nl: Dict = {
   'settingsImport.partMachineHint': 'Terminal, externe editor, standaardapps en het pad van de AI-CLI’s.',
   'settingsImport.credentialsLabel': 'Inloggegevens in het bestand:',
   'settingsImport.credentialsReplaceHint': 'Vervangen verwijdert alle opgeslagen inloggegevens die niet in het bestand staan.',
+  'settingsImport.credentialsWeakKeychain': 'Er draait geen sleutelhanger, dus de tokens uit dit bestand worden alleen bewaard tot je Gitcito afsluit. Installeer of ontgrendel een sleutelhanger om ze op te slaan.',
   'settingsImport.reposNoneExist': 'Geen enkel pad uit dit bestand bestaat op deze computer ({count} gecontroleerd). Vink aan om ze te importeren door de paden te vertalen.',
   'settingsImport.reposAllExist': 'Alle paden uit dit bestand bestaan op deze computer ({count} gecontroleerd).',
   'settingsImport.reposSomeExist': 'Paden uit dit bestand die op deze computer bestaan: {found} van {count}.',

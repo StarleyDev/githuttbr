@@ -4433,6 +4433,7 @@ export const ar: Dict = {
   'settingsImport.partMachineHint': 'الطرفية والمحرر الخارجي والتطبيقات الافتراضية ومسار أدوات سطر أوامر الذكاء الاصطناعي.',
   'settingsImport.credentialsLabel': 'بيانات الاعتماد في الملف:',
   'settingsImport.credentialsReplaceHint': 'الاستبدال يحذف كل بيانات اعتماد محفوظة غير موجودة في الملف.',
+  'settingsImport.credentialsWeakKeychain': 'لا توجد سلسلة مفاتيح قيد التشغيل، لذا تُحفظ الرموز الموجودة في هذا الملف فقط حتى تغلق Gitcito. ثبّت سلسلة مفاتيح أو افتح قفلها لحفظها.',
   'settingsImport.reposNoneExist': 'لا يوجد أي من مسارات هذا الملف على هذا الحاسوب (تم التحقق من {count}). حدّد هذا الجزء لاستيرادها بترجمة المسارات.',
   'settingsImport.reposAllExist': 'كل مسارات هذا الملف موجودة على هذا الحاسوب (تم التحقق من {count}).',
   'settingsImport.reposSomeExist': 'مسارات هذا الملف الموجودة على هذا الحاسوب: {found} من {count}.',

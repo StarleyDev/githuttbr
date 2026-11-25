@@ -4438,6 +4438,7 @@ export const de: Dict = {
   'settingsImport.partMachineHint': 'Terminal, externer Editor, Standard-Apps und der Pfad der KI-CLIs.',
   'settingsImport.credentialsLabel': 'Zugangsdaten in der Datei:',
   'settingsImport.credentialsReplaceHint': 'Ersetzen löscht alle gespeicherten Zugangsdaten, die die Datei nicht enthält.',
+  'settingsImport.credentialsWeakKeychain': 'Es läuft kein Schlüsselbund, daher werden die Tokens aus dieser Datei nur bis zum Beenden von Gitcito behalten. Installiere oder entsperre einen Schlüsselbund, um sie zu speichern.',
   'settingsImport.reposNoneExist': 'Keiner der Pfade dieser Datei existiert auf diesem Computer ({count} geprüft). Anhaken, um sie mit übersetzten Pfaden zu importieren.',
   'settingsImport.reposAllExist': 'Alle Pfade dieser Datei existieren auf diesem Computer ({count} geprüft).',
   'settingsImport.reposSomeExist': 'Pfade dieser Datei, die auf diesem Computer existieren: {found} von {count}.',

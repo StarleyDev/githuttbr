@@ -4430,6 +4430,7 @@ export const zhCN: Dict = {
   'settingsImport.partMachineHint': '终端、外部编辑器、默认应用和 AI CLI 的路径。',
   'settingsImport.credentialsLabel': '文件中的凭据：',
   'settingsImport.credentialsReplaceHint': '替换会删除文件中没有的所有已保存凭据。',
+  'settingsImport.credentialsWeakKeychain': '没有正在运行的钥匙串，因此此文件中的令牌只保留到你退出 Gitcito 为止。请安装或解锁钥匙串以保存它们。',
   'settingsImport.reposNoneExist': '此文件中的路径在这台电脑上都不存在（已检查 {count} 条）。勾选后可通过转换路径导入。',
   'settingsImport.reposAllExist': '此文件中的所有路径在这台电脑上都存在（已检查 {count} 条）。',
   'settingsImport.reposSomeExist': '此文件中在这台电脑上存在的路径：{count} 条中的 {found} 条。',

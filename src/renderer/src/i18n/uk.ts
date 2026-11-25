@@ -4430,6 +4430,7 @@ export const uk: Dict = {
   'settingsImport.partMachineHint': 'Термінал, зовнішній редактор, типові застосунки та шлях до CLI ШІ.',
   'settingsImport.credentialsLabel': 'Облікові дані у файлі:',
   'settingsImport.credentialsReplaceHint': 'Заміна видаляє всі збережені облікові дані, яких немає у файлі.',
+  'settingsImport.credentialsWeakKeychain': 'Зв’язка ключів не запущена, тому токени з цього файлу зберігаються лише до закриття Gitcito. Встановіть або розблокуйте зв’язку ключів, щоб зберегти їх.',
   'settingsImport.reposNoneExist': 'Жоден шлях із цього файлу не існує на цьому комп’ютері (перевірено: {count}). Позначте, щоб імпортувати їх із перекладом шляхів.',
   'settingsImport.reposAllExist': 'Усі шляхи з цього файлу існують на цьому комп’ютері (перевірено: {count}).',
   'settingsImport.reposSomeExist': 'Шляхи з цього файлу, що є на цьому комп’ютері: {found} з {count}.',
