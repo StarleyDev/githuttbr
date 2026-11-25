@@ -19112,12 +19112,12 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* ── Pull request page ───────────────────────────────────────────────────────
    A PR as a tab: conversation / files / checks on the left, everything about
    the PR on the right. Shares the issue page's field styles (.issue-field…). */
-/* Same frame as the pull requests list: a centred 1380px column with margins on both sides, so
+/* Same frame as the pull requests list: a centred 1420px column with margins on both sides, so
    moving between the list and a PR does not make the content jump to the window edges. Done with
    padding rather than max-width so the page background still fills the whole tab. */
 .prp-page {
   display: flex; gap: 20px; height: 100%; overflow: hidden; box-sizing: border-box;
-  background: var(--bg-1); padding: 24px max(32px, calc((100% - 1380px) / 2 + 32px));
+  background: var(--bg-1); padding: 24px max(32px, calc((100% - 1420px) / 2 + 32px));
 }
 .prp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 .prp-head { display: flex; align-items: center; gap: 10px; }
@@ -19538,7 +19538,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .ci-dispatch-row select, .ci-dispatch-row input { min-width: 180px; }
 
 /* ── Pull requests page ───────────────────────────────────────────────────── */
-.prl-page .changelog-inner { max-width: 1380px; }
+.prl-page .changelog-inner { max-width: 1420px; }
 .prl-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .prl-header-actions { display: flex; gap: 6px; }
 .prl-header-actions .btn { display: inline-flex; align-items: center; gap: 5px; }
