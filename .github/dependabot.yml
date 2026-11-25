@@ -29,6 +29,18 @@ updates:
       xterm:
         patterns: ['@xterm/*']
         update-types: [minor, patch]
+      # The semantic diff's WASM runtime (a dependency) and its grammars
+      # (devDependencies whose .wasm ships) share an ABI and a module format:
+      # every grammar must load in the installed web-tree-sitter, and 0.25
+      # stranded all older builds at once. One PR for the set, and
+      # test/semanticGrammars.test.ts loads every grammar against the runtime
+      # in it. The cooldown is per dependency, so a runtime and the grammar
+      # releases built for it may still arrive in different weeks: a red PR
+      # means a grammar fell behind the runtime (or vendor/tree-sitter-swift
+      # needs the rebuild its README describes). Fix that; do not merge it red.
+      tree-sitter:
+        patterns: ['web-tree-sitter', 'tree-sitter-*', '@tree-sitter-grammars/*']
+        update-types: [minor, patch]
       # Tooling: one PR for every minor/patch devDependency bump.
       dev-minor-patch:
         dependency-type: development
@@ -56,11 +68,6 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: electron-vite
         update-types: ['version-update:semver-major']
-      # A 0.x package whose next "minor" breaks us: web-tree-sitter 0.25+ cannot
-      # load the grammars in resources/tree-sitter (built with the old dylink
-      # format) until they are rebuilt. Patches still come.
-      - dependency-name: web-tree-sitter
-        update-types: ['version-update:semver-minor', 'version-update:semver-major']
       # An xterm major is a migration like Electron's, done by hand: the 5 -> 6
       # move needed fixes no test caught (Alt+arrow word jumps, the scroll
       # position after a resize). Its addons are 0.x, so an addon "minor" is
