@@ -181,6 +181,10 @@ Limites:
 ## Forgejo
 
 Defina o endereço da instância antes de inserir o token. Alterar o endereço remove a credencial anterior.
+O campo do token fica bloqueado até o endereço acima dele ser um endereço https válido, e diz isso
+logo abaixo do campo; o que está errado no endereço aparece em vermelho abaixo do próprio endereço.
+
+![Um endereço do Forgejo que não é https, e o campo do token abaixo dizendo por que está bloqueado](../../screenshots/forgejo-address-needed.webp)
 
 ![Configurações de integração do Forgejo](../../screenshots/forgejo-integration.webp)
 
@@ -297,6 +301,35 @@ A página mostra se a conexão é o token do perfil, o vínculo com o helper do 
 ou o vínculo com o GitHub CLI, e **Desconectar** desfaz isso só para este perfil:
 um token é apagado (continua válido no serviço até você revogá-lo lá), um vínculo
 é removido (o login continua no gh ou no helper).
+
+### Verificando um token
+
+Todo token que você digita — na aba de um serviço ou na linha de um servidor
+(GitHub Enterprise Server, GitLab self-managed, Bitbucket Data Center) — é
+verificado perguntando ao serviço a quem ele pertence. A resposta é uma de três,
+e cada uma quer dizer uma coisa diferente:
+
+| O que aparece | O que aconteceu | O que fazer |
+|---------------|-----------------|-------------|
+| A conta, com a foto | O serviço aceitou o token | Nada |
+| **Vermelho** — *… recusou este token* | O serviço respondeu e recusou (401 ou 403): o token está errado, expirou ou não tem um escopo de que precisa | Crie um token novo e cole por cima do antigo |
+| **Âmbar** — *Não foi possível acessar … para verificar este token* | Sem veredito: sem rede, falha de DNS, TLS ou proxy, tempo esgotado, o servidor respondeu 5xx ou o serviço limitou a taxa de requisições | **Tentar de novo** quando a rede ou o servidor voltar |
+
+![O aviso âmbar quando não foi possível acessar o servidor para verificar um token](../../screenshots/token-check-unreachable.webp)
+
+**Um token recusado continua salvo.** A verificação nunca apaga o que você
+digitou: um token pode ser recusado por um motivo passageiro (uma sessão de SSO
+a reautorizar, um escopo acrescentado no serviço um minuto depois), e apagá-lo
+perderia o token de vez. Até você substituí-lo, tudo o que o usa — fetch, push,
+a lista de pull requests — falha do mesmo jeito. O aviso âmbar não diz nada
+sobre o token; ele pode muito bem estar correto.
+
+Os limites: a verificação lê só a conta (e, quando o serviço oferece, as
+organizações dela). Um token que entra mas não tem o escopo de que uma ação
+posterior precisa — criar um pull request, ler o CI — só é descoberto por essa
+ação. O GitHub também responde a um limite de taxa com 403; o app distingue isso
+de uma recusa pelos cabeçalhos de limite do GitHub, então um limite sem eles
+apareceria como recusa.
 
 A API do serviço — pull requests, issues, CI — e o fetch, pull e push do próprio
 git por https usam o token ou a conta vinculada do perfil. A credencial chega ao

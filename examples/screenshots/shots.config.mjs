@@ -1184,6 +1184,34 @@ export const shots = [
     }
   },
   {
+    // A Forgejo address that is not https: the reason in red under it, and the
+    // token field below shut with a line saying why.
+    out: 'forgejo-address-needed',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.getByRole('button', { name: 'Forgejo', exact: true }).click()
+      await page.locator('input[aria-required="true"]').fill('http://forge.example.org')
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The amber "could not check" note: a token typed for a Forgejo whose address
+    // can never resolve (`.invalid`, RFC 6761), so the check fails on DNS — the
+    // same picture offline or on. A refusal needs a live server, so it is not shot.
+    out: 'token-check-unreachable',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.getByRole('button', { name: 'Forgejo', exact: true }).click()
+      await page.locator('input[aria-required="true"]').fill('https://forge.example.invalid')
+      // Main honours an address only once the profile holding it is saved.
+      await page.waitForTimeout(1500)
+      await page.locator('input[type="password"]').first().fill('0123456789abcdef0123456789abcdef01234567')
+      await page.locator('.token-check-unreachable').waitFor({ timeout: 15000 })
+    }
+  },
+  {
     // GitHub Enterprise Server list on the GitHub tab: one fake server added
     // (no token, so nothing is ever asked of it), and a plain-http address
     // typed to show the refusal. `.example.corp` resolves nowhere.
