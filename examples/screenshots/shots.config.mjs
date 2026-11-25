@@ -878,6 +878,57 @@ export const shots = [
     }
   },
   {
+    // The pull requests page, searched for "pix": the matches highlighted, an
+    // author marked "you", a red CI and a draft. Every host answer is faked in
+    // main — a fictional GitHub repository, no network, no account.
+    out: 'pull-requests',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['octopus-merge']
+      await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
+      await run('git', ['-C', repo, 'remote', 'add', 'origin', 'https://github.com/example/payments.git'])
+    },
+    drive: async (page, repos, app) => {
+      await fakePullRequestHost(app)
+      const repo = repos['octopus-merge']
+      await page.evaluate(async (p) => {
+        await window.__shot.repo.getState().refreshPRs(p, { silent: true })
+        window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p })
+      }, repo)
+      await page.locator('.prl-row', { hasText: 'Pix' }).first().waitFor()
+      await page.fill('.prl-field-search input', 'pix')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // A pull request opened from that filtered list: ‹ 1 of 4 › in its header,
+    // the filters it came from, and the keys that step through them.
+    out: 'pull-request-nav',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['octopus-merge']
+      await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
+      await run('git', ['-C', repo, 'remote', 'add', 'origin', 'https://github.com/example/payments.git'])
+    },
+    drive: async (page, repos, app) => {
+      await fakePullRequestHost(app)
+      const repo = repos['octopus-merge']
+      await page.evaluate(async (p) => {
+        await window.__shot.repo.getState().refreshPRs(p, { silent: true })
+        window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p })
+      }, repo)
+      await page.locator('.prl-row', { hasText: 'Pix' }).first().waitFor()
+      await page.fill('.prl-field-search input', 'pix')
+      await page.waitForTimeout(300)
+      await page.locator('.prl-list .prl-row').first().click()
+      await page.locator('.prn-pos').waitFor()
+      await page.locator('.prp-head h2').waitFor()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // A Data Center pull request a merge check vetoes: the veto in the server's
     // own words beside the reviewers, and Merge off. Faked detail — no server.
     out: 'bitbucket-merge-blocked',
@@ -4084,3 +4135,62 @@ export const clips = [
     }
   }
 ]
+
+/**
+ * A fictional GitHub repository's pull requests, answered by main without a
+ * network: the open list (signed in as "you"), the merged/closed one, and any
+ * PR's detail. Used by the pull requests page's shots.
+ */
+async function fakePullRequestHost(app) {
+  await app.evaluate(({ ipcMain }) => {
+    const channels = ['listPRs', 'listFinishedPRs', 'prDetail', 'prChecks', 'prFiles', 'ciStatuses']
+    for (const m of channels) ipcMain.removeHandler('hosting:' + m)
+    const now = Date.now()
+    const h = 3600_000
+    const counts = (passed, failed = 0, pending = 0) => ({ passed, failed, pending, skipped: 0, cancelled: 0, unknown: 0 })
+    const pr = (id, author, head, base, title, ago, extra = {}) => ({
+      id, title, author, sourceBranch: head, targetBranch: base, isDraft: false, state: 'open',
+      url: `https://github.com/example/payments/pull/${id}`, headSha: `c0ffee${id}`,
+      updatedAt: new Date(now - ago).toISOString(), requestedReviewers: [], ...extra
+    })
+    const prs = [
+      pr(482, 'you', 'feat/pix-qr', 'main', 'Pix payments with a dynamic QR code', 2 * h,
+        { ci: 'success', ciCounts: counts(6), requestedReviewers: ['ana'] }),
+      pr(479, 'ana', 'fix/pix-timeout', 'main', 'Retry Pix confirmations that time out', 5 * h,
+        { ci: 'failure', ciCounts: counts(4, 1), requestedReviewers: ['you', 'bruno'], awaitingYou: true }),
+      pr(477, 'bruno', 'chore/deps', 'main', 'Bump the HTTP client to 5.2', 9 * h, { ci: 'success', ciCounts: counts(6) }),
+      pr(474, 'carla', 'feat/boleto-pdf', 'release/sprint-42', 'Boleto PDF with the new layout', 26 * h,
+        { ci: 'pending', ciCounts: counts(3, 0, 2), requestedReviewers: ['you'], awaitingYou: true }),
+      pr(469, 'you', 'fix/pix-refund', 'release/sprint-42', 'Partial refunds for Pix', 3 * 24 * h,
+        { isDraft: true, ci: 'failure', ciCounts: counts(5, 1) }),
+      pr(466, 'ana', 'feat/webhooks', 'main', 'Sign outgoing webhooks', 4 * 24 * h, { ci: 'success', ciCounts: counts(6) }),
+      pr(461, 'dev-bot', 'docs/pix-faq', 'main', 'Document the Pix error codes', 6 * 24 * h,
+        { ci: 'success', ciCounts: counts(2) }),
+      pr(458, 'bruno', 'feat/card-tokens', 'main', 'Store card tokens per merchant', 8 * 24 * h,
+        { isDraft: true, ci: 'success', ciCounts: counts(6) })
+    ]
+    ipcMain.handle('hosting:listPRs', () => ({ provider: 'github', prs, me: 'you' }))
+    ipcMain.handle('hosting:listFinishedPRs', () => ({
+      provider: 'github', truncated: false,
+      prs: [
+        pr(455, 'ana', 'feat/pix-keys', 'main', 'Register Pix keys', 10 * 24 * h, { state: 'merged' }),
+        pr(451, 'carla', 'spike/crypto', 'main', 'Spike: crypto payouts', 12 * 24 * h, { state: 'closed' })
+      ]
+    }))
+    ipcMain.handle('hosting:ciStatuses', () => ({}))
+    ipcMain.handle('hosting:prDetail', (_e, _repo, _remote, _tokens, number) => {
+      const p = prs.find((x) => x.id === number) ?? prs[0]
+      return {
+        number: p.id, title: p.title, author: p.author, source: p.sourceBranch, target: p.targetBranch,
+        body: 'Generates a dynamic QR code per charge and confirms the payment through the webhook.',
+        state: 'open', draft: p.isDraft, merged: false, mergeable: true, url: p.url,
+        comments: [], reviews: [{ author: 'ana', state: 'APPROVED' }], reviewThreads: [],
+        requestedReviewers: [{ login: 'bruno' }], labels: [{ name: 'payments', color: '84c5dd' }],
+        commits: 4, changedFiles: 9, additions: 312, deletions: 40,
+        createdAt: new Date(now - 2 * 24 * h).toISOString(), updatedAt: p.updatedAt
+      }
+    })
+    ipcMain.handle('hosting:prChecks', () => [])
+    ipcMain.handle('hosting:prFiles', () => [])
+  })
+}

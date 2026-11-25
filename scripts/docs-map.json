@@ -87,6 +87,7 @@
       "vault": "vault",
       "wiki": "repo-wiki",
       "ci-runs": "ci-runs",
+      "pull-requests": "pull-requests",
       "issue": "hosting",
       "pr": "hosting",
       "milestone": "hosting",
@@ -187,6 +188,7 @@
       "teammate-radar": "teammate-radar",
       "local-ci": "local-ci",
       "ci-runs": "ci-runs",
+      "pull-requests": "pull-requests",
       "run-tests": "problems"
     },
     "exempt": {
