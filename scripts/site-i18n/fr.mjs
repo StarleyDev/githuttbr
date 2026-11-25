@@ -55,7 +55,7 @@ export const fr = {
     'Dernière version : <strong>v{version}</strong>. Chaque build est publié depuis la CI.',
   'download.cli':
     'Ou ouvrez un dépôt depuis votre terminal avec <code>githuttbr .</code> — voir <a href="{cli}">la ligne de commande</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Programme d’installation (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Télécharger pour {os}',

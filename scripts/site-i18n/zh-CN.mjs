@@ -49,7 +49,7 @@ export const zhCN = {
   'download.sub': '最新版本：<strong>v{version}</strong>。每一个构建都由 CI 发布。',
   'download.cli':
     '也可以在终端里用 <code>githuttbr .</code> 打开一个仓库——见<a href="{cli}">命令行</a>。',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': '安装程序（x64）',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '下载适用于 {os} 的版本',

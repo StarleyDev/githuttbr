@@ -49,7 +49,7 @@ export const he = {
   'download.sub': 'הגרסה האחרונה: <strong>v{version}</strong>. כל בנייה מתפרסמת מתוך CI.',
   'download.cli':
     'או פתחו מאגר מהטרמינל עם <code>githuttbr .</code> — ראו <a href="{cli}">שורת הפקודה</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'מתקין (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'הורדה עבור {os}',

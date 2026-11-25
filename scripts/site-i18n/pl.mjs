@@ -51,7 +51,7 @@ export const pl = {
   'download.sub': 'Najnowsze wydanie: <strong>v{version}</strong>. Każda kompilacja jest publikowana z CI.',
   'download.cli':
     'Albo otwórz repozytorium z terminala poleceniem <code>githuttbr .</code> — zobacz <a href="{cli}">wiersz poleceń</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Instalator (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Pobierz na {os}',

@@ -50,7 +50,7 @@ export const ptBR = {
     'Versão mais recente: <strong>v{version}</strong>. Todo build é publicado pela CI.',
   'download.cli':
     'Ou abra um repositório pelo seu terminal com <code>githuttbr .</code> — veja <a href="{cli}">a linha de comando</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Instalador (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Baixar para {os}',

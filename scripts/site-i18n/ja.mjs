@@ -51,7 +51,7 @@ export const ja = {
     '最新リリースは <strong>v{version}</strong> です。すべてのビルドは CI から公開されます。',
   'download.cli':
     'または <code>githuttbr .</code> でターミナルからリポジトリを開けます — <a href="{cli}">コマンドライン</a>を参照してください。',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'インストーラー（x64）',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '{os} 版をダウンロード',

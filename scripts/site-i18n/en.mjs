@@ -71,7 +71,7 @@ export const en = {
   'download.sub': 'Latest release: <strong>v{version}</strong>. Every build is published from CI.',
   'download.cli':
     'Or open a repository from your terminal with <code>githuttbr .</code> — see <a href="{cli}">the command line</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Installer (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Download for {os}',

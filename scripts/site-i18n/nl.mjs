@@ -53,7 +53,7 @@ export const nl = {
     'Nieuwste release: <strong>v{version}</strong>. Elke build wordt vanuit CI gepubliceerd.',
   'download.cli':
     'Of open een repository vanuit je terminal met <code>githuttbr .</code> — zie <a href="{cli}">de commandoregel</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Installatieprogramma (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Download voor {os}',

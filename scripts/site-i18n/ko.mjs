@@ -49,7 +49,7 @@ export const ko = {
   'download.sub': '최신 릴리스는 <strong>v{version}</strong> 이에요. 모든 빌드는 CI에서 게시돼요.',
   'download.cli':
     '또는 터미널에서 <code>githuttbr .</code> 로 저장소를 열 수 있어요 — <a href="{cli}">명령줄</a> 을 보세요.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': '설치 프로그램 (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '{os}용 다운로드',

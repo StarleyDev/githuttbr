@@ -49,7 +49,7 @@ export const ar = {
   'download.sub': 'أحدث إصدار: <strong>v{version}</strong>. وكل بناء يُنشر من CI.',
   'download.cli':
     'أو افتح مستودعًا من طرفيتك بالأمر <code>githuttbr .</code> — انظر <a href="{cli}">سطر الأوامر</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'مثبّت (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'التنزيل لنظام {os}',

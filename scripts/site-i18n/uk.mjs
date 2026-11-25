@@ -50,7 +50,7 @@ export const uk = {
   'download.sub': 'Останній випуск: <strong>v{version}</strong>. Кожну збірку публікує CI.',
   'download.cli':
     'Або відкрийте репозиторій із термінала командою <code>githuttbr .</code> — див. <a href="{cli}">командний рядок</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Інсталятор (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Завантажити для {os}',

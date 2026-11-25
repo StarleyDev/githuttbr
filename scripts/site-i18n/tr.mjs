@@ -50,7 +50,7 @@ export const tr = {
   'download.sub': 'Son sürüm: <strong>v{version}</strong>. Her yapı CI üzerinden yayımlanır.',
   'download.cli':
     'Ya da bir depoyu terminalinizden <code>githuttbr .</code> ile açın — bkz. <a href="{cli}">komut satırı</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Kurulum dosyası (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': '{os} için indir',

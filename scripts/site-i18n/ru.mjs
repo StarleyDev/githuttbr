@@ -51,7 +51,7 @@ export const ru = {
   'download.sub': 'Последний выпуск: <strong>v{version}</strong>. Каждая сборка публикуется из CI.',
   'download.cli':
     'Или откройте репозиторий из терминала командой <code>githuttbr .</code> — см. <a href="{cli}">командную строку</a>.',
-  'download.macNote': 'Apple silicon &amp; Intel',
+  'download.macNote': 'macOS 13+ · Apple silicon &amp; Intel',
   'download.winNote': 'Установщик (x64)',
   'download.linuxNote': 'AppImage · deb',
   'download.forOs': 'Скачать для {os}',
