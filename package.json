@@ -55,6 +55,7 @@
     "files": [
       "out/**/*",
       "resources/**",
+      "!resources/tree-sitter/**",
       "package.json"
     ],
     "directories": {
