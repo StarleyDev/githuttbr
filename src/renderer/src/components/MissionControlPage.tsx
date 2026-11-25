@@ -76,6 +76,9 @@ const LEVEL_ICON: Record<PulseLevel, typeof CircleCheck> = {
 
 const SORTS: PulseSort[] = ['urgency', 'name', 'activity']
 
+/** Which bulk button a running fetch or pull belongs to (see `run`). */
+type BulkBusy = '*all' | '*stale' | '*selFetch' | '*selPull'
+
 /** A fortnight of commits as a tiny line — drawn inline, so it costs no library. */
 function Sparkline({ values }: { values: number[] }): React.JSX.Element | null {
   const points = sparklinePoints(values, 54, 14)
@@ -245,9 +248,11 @@ export function MissionControlPage(): React.JSX.Element {
   )
 
   const run = useCallback(
-    async (paths: string[], op: 'fetch' | 'pull'): Promise<void> => {
+    // `busyKey` names the button that started a bulk run, so the spinner lands on it and not on
+    // every bulk button at once; a single row is keyed by its path.
+    async (paths: string[], op: 'fetch' | 'pull', busyKey?: BulkBusy): Promise<void> => {
       if (!paths.length) return
-      setBusy(paths.length === 1 ? paths[0] : '*')
+      setBusy(busyKey ?? (paths.length === 1 ? paths[0] : '*'))
       try {
         if (paths.length > 1) {
           await repoActions.batch(paths, op)
@@ -373,18 +378,19 @@ export function MissionControlPage(): React.JSX.Element {
         <button
           className="btn ghost small"
           disabled={busy !== null}
-          onClick={() => void run(bulkTargets(ordered).fetchable, 'fetch')}
+          onClick={() => void run(bulkTargets(ordered).fetchable, 'fetch', '*all')}
         >
-          {busy === '*' ? <Loader2 size={13} className="spin" /> : <Download size={13} />} {t('mission.fetchAll')}
+          {busy === '*all' ? <Loader2 size={13} className="spin" /> : <Download size={13} />} {t('mission.fetchAll')}
         </button>
         {stale.length > 0 && (
           <button
             className="btn ghost small mc-fetch-stale"
             disabled={busy !== null}
             title={t('mission.fetchStaleHint')}
-            onClick={() => void run(stale, 'fetch')}
+            onClick={() => void run(stale, 'fetch', '*stale')}
           >
-            <Download size={13} /> {interp(t('mission.fetchStaleButton'), { n: String(stale.length) })}
+            {busy === '*stale' ? <Loader2 size={13} className="spin" /> : <Download size={13} />}{' '}
+            {interp(t('mission.fetchStaleButton'), { n: String(stale.length) })}
           </button>
         )}
         <button className="btn ghost small" disabled={loading} onClick={() => void refresh()}>
@@ -413,15 +419,17 @@ export function MissionControlPage(): React.JSX.Element {
       {selected.size > 0 && (
         <div className="mc-bulk">
           <span className="mc-bulk-count">{interp(t('mission.selected'), { n: String(selected.size) })}</span>
-          <button className="btn ghost small" disabled={busy !== null} onClick={() => void run(bulk.fetchable, 'fetch')}>
-            <Download size={12} /> {t('mission.fetchSelected')}
+          <button className="btn ghost small" disabled={busy !== null} onClick={() => void run(bulk.fetchable, 'fetch', '*selFetch')}>
+            {busy === '*selFetch' ? <Loader2 size={12} className="spin" /> : <Download size={12} />}{' '}
+            {t('mission.fetchSelected')}
           </button>
           <button
             className="btn ghost small"
             disabled={busy !== null || bulk.pullable.length === 0}
-            onClick={() => void run(bulk.pullable, 'pull')}
+            onClick={() => void run(bulk.pullable, 'pull', '*selPull')}
           >
-            <ArrowDownToLine size={12} /> {interp(t('mission.pullSelected'), { n: String(bulk.pullable.length) })}
+            {busy === '*selPull' ? <Loader2 size={12} className="spin" /> : <ArrowDownToLine size={12} />}{' '}
+            {interp(t('mission.pullSelected'), { n: String(bulk.pullable.length) })}
           </button>
           <button className="btn ghost small" onClick={() => setSelected(new Set())}>
             {t('mission.clearSelection')}
