@@ -74,6 +74,7 @@ import type {
   PrPreviewResult,
   PrRefProbe,
   PullRequest,
+  FinishedPullRequests,
   PrDetail,
   PrReviewEvent,
   PrMergeMethod,
@@ -1112,7 +1113,15 @@ export const hostingApi = {
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string, profileId?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org, profileId) as Promise<RemoteRepo>,
   listPRs: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
-    window.api.hosting.listPRs(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
+    window.api.hosting.listPRs(repoPath, remoteUrl, tokens) as Promise<{
+      provider: HostingProvider
+      prs: PullRequest[]
+      /** Who this repository's calls sign in as on the host; null when unknown. */
+      me?: string | null
+    }>,
+  /** Merged and closed PRs, newest activity first, bounded (see FinishedPullRequests). */
+  listFinishedPRs: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
+    window.api.hosting.listFinishedPRs(repoPath, remoteUrl, tokens) as Promise<FinishedPullRequests>,
   listReleases: (repoPath: string, remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listReleases(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
   ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string) =>

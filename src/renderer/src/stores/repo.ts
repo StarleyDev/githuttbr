@@ -89,6 +89,9 @@ export interface RepoData {
   submodules: SubmoduleInfo[]
   prs: PullRequest[]
   prProvider: HostingProvider
+  /** Your account on the PR host, as this repository's calls sign in — the PR
+   *  list's "Me". Null when the token cannot say, or before the first list. */
+  prViewer: string | null
   /** In a fork checkout, your open PRs on the parent (the `upstream` remote). */
   upstreamPrs: PullRequest[]
   issues: IssueInfo[]
@@ -148,6 +151,7 @@ const emptyRepo = (path: string): RepoData => ({
   submodules: [],
   prs: [],
   prProvider: null,
+  prViewer: null,
   upstreamPrs: [],
   issues: [],
   milestones: [],
@@ -807,14 +811,14 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     // Whose review requests these are: main lists them as this account.
     const account = effectiveProfileId(useSettingsStore.getState().settings, path)
     try {
-      const { provider, prs } = await hostingApi.listPRs(path, origin.url, {
+      const { provider, prs, me } = await hostingApi.listPRs(path, origin.url, {
         github: profile.githubToken || undefined,
         azure: profile.azureToken || undefined,
         gitlab: profile.gitlabToken || undefined,
         bitbucket: profile.bitbucketToken || undefined,
         forgejo: profile.forgejoToken || undefined
       })
-      get().patch(path, { prs, prProvider: provider })
+      get().patch(path, { prs, prProvider: provider, prViewer: me ?? null })
       announceReviewRequests(path, origin.url, provider, prs, account)
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))

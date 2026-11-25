@@ -467,7 +467,10 @@ describe('mapping the documented shapes', () => {
       state: 'open',
       headSha: 'sha7',
       // Only the reviewer who has not answered yet.
-      requestedReviewers: ['jdoe']
+      requestedReviewers: ['jdoe'],
+      // The list page's "updated" column and its search.
+      updatedAt: new Date(1700000500000).toISOString(),
+      body: 'Does a thing.'
     })
   })
 
@@ -1170,9 +1173,12 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('bitbucket.org is unchanged: its own API, the Cloud token', async () => {
     await call('hosting:listPRs', UNBOUND, 'https://bitbucket.org/team/app.git', tokens)
-    expect(calls).toHaveLength(1)
-    expect(calls[0].url).toBe('https://api.bitbucket.org/2.0/repositories/team/app/pullrequests?state=OPEN&pagelen=30')
-    expect(calls[0].auth).toBe(`Bearer ${CLOUD_TOKEN}`)
+    // The list, then who the token is — the PR list page's "Me" — both as the Cloud account.
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://api.bitbucket.org/2.0/repositories/team/app/pullrequests?state=OPEN&pagelen=30',
+      'https://api.bitbucket.org/2.0/user'
+    ])
+    for (const c of calls) expect(c.auth).toBe(`Bearer ${CLOUD_TOKEN}`)
   })
 
   it('Settings checks a saved server with the token typed for it', async () => {

@@ -51,6 +51,7 @@ import {
   forgejoCompareUrl,
   listForgejoOwners,
   listForgejoPulls,
+  listForgejoClosedPulls,
   listForgejoRepos,
   listForgejoIssues,
   forgejoIssueDetail,
@@ -104,7 +105,8 @@ import {
   bbsWhoAmI,
   createBbsPull,
   describeBbsAccount,
-  listBbsPulls
+  listBbsPulls,
+  listBbsPullsIn
 } from './bitbucketServer'
 import { noreplyEmail } from '../shared/profileAvatar'
 import { cleanPrMeta, prMetaSupport } from '../shared/prMeta'
@@ -137,6 +139,7 @@ import {
   rememberCiEntry
 } from './ciCache'
 import type {
+  FinishedPullRequests,
   CiJob,
   CiRunAction,
   CiRunList,
@@ -831,6 +834,18 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
     else if (parsed.provider === 'gitlab') login = (await glJson<{ username: string }>(`${glApi(parsed.base)}/user`, auth)).username
     else if (parsed.provider === 'forgejo' && parsed.base) login = (await fjJson<{ login: string }>(`${parsed.base}/api/v1/user`, token)).login
     else if (parsed.provider === 'bitbucket' && parsed.base) login = (await bbsWhoAmI(parsed.base, token))?.name ?? null
+    // bitbucket.org and Azure DevOps name a PR's author by display name, so
+    // "you" is the display name too — the only thing the list can be matched on.
+    else if (parsed.provider === 'bitbucket') {
+      const res = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: bitbucketAuthFor(auth) } })
+      if (res.ok) login = ((await res.json()) as { display_name?: string | null }).display_name ?? null
+    } else if (parsed.provider === 'azure') {
+      const me = await adoJson<{ authenticatedUser?: { providerDisplayName?: string } }>(
+        `https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`,
+        token
+      )
+      login = me.authenticatedUser?.providerDisplayName ?? null
+    }
   } catch {
     // A token without user scope cannot say who it is: no marks, no error.
   }
@@ -838,17 +853,23 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
   return login
 }
 
-/** The open PRs of a remote, with the ones waiting on your review marked. */
+/**
+ * The open PRs of a remote, with the ones waiting on your review marked, and
+ * who "you" are on that host — the account this repository's calls run as, so
+ * the PR list's "Me" is the bound profile's, not whichever profile is active.
+ * Null when the token cannot say (no user scope) or there is no token.
+ */
 async function listPullRequests(
   remoteUrl: string,
   tokens: HostTokens
-): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
+): Promise<{ provider: HostingProvider; prs: PullRequest[]; me: string | null }> {
   const result = await listPullRequestsOf(remoteUrl, tokens)
   const parsed = parseRemoteUrl(remoteUrl)
-  if (!parsed || !result.prs.some((p) => p.requestedReviewers?.length)) return result
+  if (!parsed) return { ...result, me: null }
   const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens).catch(() => null)
-  if (!auth) return result
-  return { ...result, prs: markAwaitingYou(result.prs, await myLogin(parsed, auth.token, auth)) }
+  if (!auth) return { ...result, me: null }
+  const me = await myLogin(parsed, auth.token, auth)
+  return { ...result, prs: markAwaitingYou(result.prs, me), me }
 }
 
 async function listPullRequestsOf(
@@ -878,7 +899,7 @@ async function listPullRequestsOf(
       draft?: boolean
       work_in_progress?: boolean
       reviewers?: Array<{ username: string }>
-    }>
+    } & GlListFields>
     return {
       provider: 'gitlab',
       prs: data.map((p) => ({
@@ -889,7 +910,8 @@ async function listPullRequestsOf(
         targetBranch: p.target_branch,
         url: p.web_url,
         isDraft: !!(p.draft || p.work_in_progress),
-        requestedReviewers: (p.reviewers ?? []).map((r) => r.username)
+        requestedReviewers: (p.reviewers ?? []).map((r) => r.username),
+        ...glListExtras(p)
       }))
     }
   }
@@ -915,28 +937,8 @@ async function listPullRequestsOf(
       { headers: { Authorization: bitbucketAuthFor(auth) } }
     )
     if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
-    const data = (await res.json()) as {
-      values: Array<{
-        id: number
-        title: string
-        author: { display_name: string }
-        source: { branch: { name: string } }
-        destination: { branch: { name: string } }
-        links: { html: { href: string } }
-      }>
-    }
-    return {
-      provider: 'bitbucket',
-      prs: data.values.map((p) => ({
-        id: p.id,
-        title: p.title,
-        author: p.author?.display_name ?? 'unknown',
-        sourceBranch: p.source?.branch?.name ?? '',
-        targetBranch: p.destination?.branch?.name ?? '',
-        url: p.links.html.href,
-        isDraft: false
-      }))
-    }
+    const data = (await res.json()) as { values: BbCloudPull[] }
+    return { provider: 'bitbucket', prs: data.values.map(mapBbCloudPull) }
   }
 
   if (parsed.provider === 'github') {
@@ -962,7 +964,7 @@ async function listPullRequestsOf(
       // server without them, which is the same as "this one is on its own".
       stack?: { number: number } | null
       requested_reviewers?: Array<{ login: string }>
-    }>
+    } & GhListFields>
     const prs: PullRequest[] = data.map((p) => ({
       id: p.number,
       title: p.title,
@@ -975,7 +977,8 @@ async function listPullRequestsOf(
       state: 'open',
       headSha: p.head.sha,
       headRepo: p.head.repo?.full_name,
-      requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login)
+      requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login),
+      ...ghListExtras(p)
     }))
     if (!auth) return { provider: 'github', prs }
 
@@ -1023,35 +1026,243 @@ async function listPullRequestsOf(
   // Azure DevOps
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
-  type AzPull = {
-    pullRequestId: number
-    title: string
-    isDraft: boolean
-    createdBy: { displayName: string }
-    sourceRefName: string
-    targetRefName: string
-  }
   // Unpaged, the API stops at about a hundred; $top/$skip walk the rest.
   const prs = await withAzureRetry(remoteUrl, auth, (token) =>
     allPages((page) =>
-      adoJson<{ value: AzPull[] }>(
+      adoJson<{ value: AzListPull[] }>(
         `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests` +
           `?searchCriteria.status=active&$top=100&$skip=${(page - 1) * 100}&api-version=7.1`,
         token
       ).then((d) => d.value)
     )
   )
+  return { provider: 'azure', prs: prs.map((p) => mapAzListPull(p, base, parsed.repo)) }
+}
+
+// ── List rows, shared by the open list and the merged/closed one ────────────
+
+/** What the PR list page reads beyond the sidebar's fields, per host. */
+type GhListFields = { updated_at?: string; body?: string | null; user: { login: string; avatar_url?: string } }
+type GlListFields = { updated_at?: string; description?: string | null; sha?: string; author: { username: string; avatar_url?: string } }
+
+/** An https picture only: anything else is never handed to an <img>. */
+const httpsOnly = (url: string | undefined | null): string | undefined =>
+  url && /^https:\/\//i.test(url) ? url : undefined
+
+function ghListExtras(p: GhListFields): Partial<PullRequest> {
+  return {
+    ...(p.updated_at ? { updatedAt: p.updated_at } : {}),
+    ...(p.body ? { body: p.body } : {}),
+    ...(httpsOnly(p.user.avatar_url) ? { authorAvatar: httpsOnly(p.user.avatar_url) } : {})
+  }
+}
+
+function glListExtras(p: GlListFields): Partial<PullRequest> {
+  return {
+    ...(p.updated_at ? { updatedAt: p.updated_at } : {}),
+    ...(p.description ? { body: p.description } : {}),
+    ...(p.sha ? { headSha: p.sha } : {}),
+    ...(httpsOnly(p.author?.avatar_url) ? { authorAvatar: httpsOnly(p.author.avatar_url) } : {})
+  }
+}
+
+interface BbCloudPull {
+  id: number
+  title: string
+  state?: 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED'
+  draft?: boolean
+  description?: string
+  updated_on?: string
+  author: { display_name: string; links?: { avatar?: { href?: string } } }
+  source: { branch: { name: string } }
+  destination: { branch: { name: string } }
+  links: { html: { href: string } }
+}
+
+export function mapBbCloudPull(p: BbCloudPull): PullRequest {
+  return {
+    id: p.id,
+    title: p.title,
+    author: p.author?.display_name ?? 'unknown',
+    sourceBranch: p.source?.branch?.name ?? '',
+    targetBranch: p.destination?.branch?.name ?? '',
+    url: p.links.html.href,
+    isDraft: !!p.draft,
+    ...(p.state === 'MERGED' ? { state: 'merged' } : p.state === 'DECLINED' || p.state === 'SUPERSEDED' ? { state: 'closed' } : {}),
+    ...(p.updated_on ? { updatedAt: p.updated_on } : {}),
+    ...(p.description ? { body: p.description } : {}),
+    ...(httpsOnly(p.author?.links?.avatar?.href) ? { authorAvatar: httpsOnly(p.author.links?.avatar?.href) } : {})
+  }
+}
+
+interface AzListPull {
+  pullRequestId: number
+  title: string
+  isDraft: boolean
+  status?: 'active' | 'abandoned' | 'completed'
+  description?: string
+  creationDate?: string
+  closedDate?: string
+  createdBy: { displayName: string }
+  sourceRefName: string
+  targetRefName: string
+  lastMergeSourceCommit?: { commitId?: string }
+  reviewers?: Array<{ displayName?: string; vote?: number; isContainer?: boolean }>
+}
+
+export function mapAzListPull(p: AzListPull, base: string, repo: string): PullRequest {
+  // No vote yet is "still asked to review"; a team (container) is not a person.
+  const pending = (p.reviewers ?? []).filter((r) => !r.isContainer && !r.vote && r.displayName)
+  // Azure's list has no last-activity time: closed when it ended, else opened.
+  const at = p.closedDate || p.creationDate
+  return {
+    id: p.pullRequestId,
+    title: p.title,
+    author: p.createdBy.displayName,
+    sourceBranch: p.sourceRefName.replace('refs/heads/', ''),
+    targetBranch: p.targetRefName.replace('refs/heads/', ''),
+    url: `${base}/_git/${encodeURIComponent(repo)}/pullrequest/${p.pullRequestId}`,
+    isDraft: p.isDraft,
+    ...(p.status === 'completed' ? { state: 'merged' } : p.status === 'abandoned' ? { state: 'closed' } : {}),
+    ...(p.lastMergeSourceCommit?.commitId ? { headSha: p.lastMergeSourceCommit.commitId } : {}),
+    ...(at ? { updatedAt: at } : {}),
+    ...(p.description ? { body: p.description } : {}),
+    ...(pending.length ? { requestedReviewers: pending.map((r) => r.displayName as string) } : {})
+  }
+}
+
+/** How many merged/closed PRs the list page reads — per state where the host splits them. */
+export const FINISHED_PR_LIMIT = 100
+
+/**
+ * The merged and closed pull requests of a remote, the most recently active
+ * first — read only when the list page opens those tabs. Bounded: no host is
+ * walked past FINISHED_PR_LIMIT per state, and `truncated` says so. No checks
+ * are read for them: a finished PR's CI no longer decides anything, and it
+ * would cost a request per row.
+ */
+async function listFinishedPullRequests(remoteUrl: string, tokens: HostTokens): Promise<FinishedPullRequests> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed) return { provider: null, prs: [], truncated: false }
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
+  const none = { provider: parsed.provider, prs: [], truncated: false }
+  const N = FINISHED_PR_LIMIT
+
+  if (parsed.provider === 'gitlab') {
+    if (!auth) return none
+    const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
+    type GlRow = { iid: number; title: string; source_branch: string; target_branch: string; web_url: string; draft?: boolean } & GlListFields
+    const read = async (state: 'merged' | 'closed'): Promise<PullRequest[]> => {
+      const data = await glJson<GlRow[]>(
+        `${glApi(parsed.base)}/projects/${pid}/merge_requests?state=${state}&order_by=updated_at&sort=desc&per_page=${N}`,
+        auth
+      )
+      return data.map((p) => ({
+        id: p.iid,
+        title: p.title,
+        author: p.author?.username ?? 'unknown',
+        sourceBranch: p.source_branch,
+        targetBranch: p.target_branch,
+        url: p.web_url,
+        isDraft: !!p.draft,
+        state,
+        ...glListExtras(p)
+      }))
+    }
+    const [merged, closed] = await Promise.all([read('merged'), read('closed')])
+    return { provider: 'gitlab', prs: [...merged, ...closed], truncated: merged.length >= N || closed.length >= N }
+  }
+
+  if (parsed.provider === 'forgejo') {
+    if (!auth || !parsed.base) return none
+    const prs = await listForgejoClosedPulls(parsed.base, parsed.owner, parsed.repo, auth.token, N)
+    return { provider: 'forgejo', prs, truncated: prs.length >= N }
+  }
+
+  const bbsRepo = parsed.provider === 'bitbucket' && parsed.base ? bitbucketServerRepoOf(remoteUrl, [parsed.base]) : null
+  if (bbsRepo) {
+    if (!auth) return none
+    const [merged, closed] = await Promise.all([
+      listBbsPullsIn(bbsRepo, auth.token, 'MERGED', N),
+      listBbsPullsIn(bbsRepo, auth.token, 'DECLINED', N)
+    ])
+    return { provider: 'bitbucket', prs: [...merged, ...closed], truncated: merged.length >= N || closed.length >= N }
+  }
+
+  if (parsed.provider === 'bitbucket') {
+    refuseUnreadableDataCenter(remoteUrl)
+    if (!auth) return none
+    // Bitbucket caps a page at 50: two pages make the hundred.
+    const url =
+      `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests` +
+      `?state=MERGED&state=DECLINED&state=SUPERSEDED&sort=-updated_on&pagelen=50`
+    const rows: BbCloudPull[] = []
+    let next: string | undefined = url
+    while (next && rows.length < N) {
+      const res = await fetch(next, { headers: { Authorization: bitbucketAuthFor(auth) } })
+      if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
+      const page = (await res.json()) as { values?: BbCloudPull[]; next?: string }
+      rows.push(...(page.values ?? []))
+      // Only ever follow Bitbucket's own next link.
+      next = page.next?.startsWith('https://api.bitbucket.org/') ? page.next : undefined
+    }
+    return { provider: 'bitbucket', prs: rows.slice(0, N).map(mapBbCloudPull), truncated: !!next || rows.length > N }
+  }
+
+  if (parsed.provider === 'github') {
+    const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
+    if (auth) headers['Authorization'] = `Bearer ${auth.token}`
+    const ep = ghEndpointsOf(parsed)
+    // `closed` is merged and closed alike; `merged_at` tells them apart.
+    const res = await fetch(
+      `${ep.apiBase}/repos/${parsed.owner}/${parsed.repo}/pulls?state=closed&sort=updated&direction=desc&per_page=${N}`,
+      { headers }
+    )
+    if (!res.ok) {
+      throw await githubRepoError(res.status, `${parsed.owner}/${parsed.repo}`, !!auth, remoteUrl, await githubFailure(res))
+    }
+    type GhRow = {
+      number: number
+      title: string
+      draft?: boolean
+      html_url: string
+      merged_at?: string | null
+      head: { ref: string; sha?: string; repo?: { full_name: string } | null }
+      base: { ref: string }
+    } & GhListFields
+    const data = (await res.json()) as GhRow[]
+    const prs: PullRequest[] = data.map((p) => ({
+      id: p.number,
+      title: p.title,
+      author: p.user.login,
+      sourceBranch: p.head.ref,
+      targetBranch: p.base.ref,
+      url: p.html_url,
+      isDraft: !!p.draft,
+      state: p.merged_at ? 'merged' : 'closed',
+      ...(p.head.sha ? { headSha: p.head.sha } : {}),
+      ...(p.head.repo?.full_name ? { headRepo: p.head.repo.full_name } : {}),
+      ...ghListExtras(p)
+    }))
+    return { provider: 'github', prs, truncated: data.length >= N }
+  }
+
+  // Azure DevOps: completed is merged, abandoned is closed.
+  if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
+  const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
+  const read = (status: 'completed' | 'abandoned'): Promise<AzListPull[]> =>
+    withAzureRetry(remoteUrl, auth, (token) =>
+      adoJson<{ value: AzListPull[] }>(
+        `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests` +
+          `?searchCriteria.status=${status}&$top=${N}&api-version=7.1`,
+        token
+      ).then((d) => d.value ?? [])
+    )
+  const [merged, closed] = await Promise.all([read('completed'), read('abandoned')])
   return {
     provider: 'azure',
-    prs: prs.map((p) => ({
-      id: p.pullRequestId,
-      title: p.title,
-      author: p.createdBy.displayName,
-      sourceBranch: p.sourceRefName.replace('refs/heads/', ''),
-      targetBranch: p.targetRefName.replace('refs/heads/', ''),
-      url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${p.pullRequestId}`,
-      isDraft: p.isDraft
-    }))
+    prs: [...merged, ...closed].map((p) => mapAzListPull(p, base, parsed.repo)),
+    truncated: merged.length >= N || closed.length >= N
   }
 }
 
@@ -3624,6 +3835,9 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo('hosting:listPRs', (remoteUrl: string, tokens: HostTokens) =>
     listPullRequests(remoteUrl, tokens)
+  )
+  handleForRepo('hosting:listFinishedPRs', (remoteUrl: string, tokens: HostTokens) =>
+    listFinishedPullRequests(remoteUrl, tokens)
   )
   handleForRepo('hosting:listReleases', (remoteUrl: string, tokens: { github?: string }) =>
     listReleases(remoteUrl, tokens)

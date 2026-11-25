@@ -615,6 +615,24 @@ export interface PullRequest {
   requestedReviewers?: string[]
   /** You are one of those reviewers — the sidebar marks the row. */
   awaitingYou?: boolean
+  /** ISO time of the last activity, when the host's list says (Azure DevOps
+   *  lists none — there it is when the PR was opened). */
+  updatedAt?: string
+  /** The description, when the list carries it — searched by the PR list page. */
+  body?: string
+  /** The author's picture, when the host's list names one (https only is drawn). */
+  authorAvatar?: string
+}
+
+/**
+ * The merged and closed pull requests of a remote, newest activity first — the
+ * PR list page's second and third tabs. One call, a bounded window: `truncated`
+ * says the host had more than was read.
+ */
+export interface FinishedPullRequests {
+  provider: HostingProvider
+  prs: PullRequest[]
+  truncated: boolean
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'forgejo' | null

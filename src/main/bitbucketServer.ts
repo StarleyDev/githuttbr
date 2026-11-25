@@ -253,7 +253,9 @@ export function mapBbsPull(pr: BbsPull, repo: BitbucketServerRepo): PullRequest 
     state: pr.state === 'MERGED' ? 'merged' : pr.state === 'DECLINED' ? 'closed' : 'open',
     ...(pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : {}),
     ...(head && head !== base ? { headRepo: head } : {}),
-    requestedReviewers: pendingReviewers(pr).map((r) => who(r.user))
+    requestedReviewers: pendingReviewers(pr).map((r) => who(r.user)),
+    ...(pr.updatedDate ? { updatedAt: new Date(pr.updatedDate).toISOString() } : {}),
+    ...(pr.description ? { body: pr.description } : {})
   }
 }
 
@@ -433,6 +435,17 @@ export async function listBbsPulls(repo: BitbucketServerRepo, token: string): Pr
     pr.ciCounts = countChecks(status)
   }
   return prs
+}
+
+/** Merged or declined pull requests, newest first, up to `limit` — no build statuses. */
+export async function listBbsPullsIn(
+  repo: BitbucketServerRepo,
+  token: string,
+  state: 'MERGED' | 'DECLINED',
+  limit: number
+): Promise<PullRequest[]> {
+  const pulls = await bbsPages<BbsPull>(`${bbsRepoApi(repo)}/pull-requests?state=${state}&order=NEWEST`, token, 50, Math.ceil(limit / 50))
+  return pulls.slice(0, limit).map((p) => mapBbsPull(p, repo))
 }
 
 async function mergeability(repo: BitbucketServerRepo, token: string, id: number): Promise<BbsMergeability | null> {
