@@ -262,6 +262,9 @@ A few of the guards, each with its section in that page:
 | **[A keychain prompt you dismiss wipes nothing](docs/help/security.md#when-the-saved-tokens-cannot-be-read)** | Unreadable saved tokens are left untouched — retry, or start a new store with the old one kept as a backup. |
 | **[A damaged settings file is never overwritten](docs/help/security.md#the-settings-file)** | Settings are written atomically; a file that cannot be parsed stops the app with *Try again* or *move it aside*, instead of silently resetting to defaults. |
 | **[AppImage paths that outlive the app](docs/help/security.md#the-appimage-and-paths-that-outlive-it)** | The AppImage refuses to write its temporary mount path into the `githuttbr` shim or a diff converter, and flags stale ones it finds. |
+| **[Export only what the other machine needs](docs/help/security.md#choosing-what-to-export)** | Pick the parts a settings file carries — a full backup, profiles for another computer, or preferences for the team — with credentials only when you opt in. |
+| **[Import without losing what is only here](docs/help/security.md#choosing-what-to-import)** | Profiles merge with yours instead of replacing them, repository paths are translated between machines, and anything that would be deleted is named and confirmed first. |
+| **[No keyring, no weak storage](docs/help/security.md#linux-without-a-keyring)** | On Linux without GNOME Keyring or KWallet, new tokens stay in memory instead of a store anyone could unscramble — and the app says so. |
 
 Team sharing works the same way: [secure share](docs/help/secure-share.md) packs
 secrets, commit notes, and whole workspace layouts into one encrypted file a
