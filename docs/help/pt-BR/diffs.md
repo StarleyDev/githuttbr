@@ -27,6 +27,9 @@ correndo atrás dela — o custo é que uma linha que ocupa três fileiras de um
 deixa de ficar de frente para a correspondente. Cada opção lembra o estado entre
 arquivos e sessões.
 
+![Uma linha de HTML minificado no diff unificado com a quebra de linhas ligada,
+dobrada dentro do painel](../../screenshots/diff-wrap.webp)
+
 As marcas por palavra continuam leves em linhas muito longas, como HTML
 minificado ou um script empacotado: o que as duas linhas têm em comum no começo
 e no fim é casado primeiro, então a edição de uma palavra numa linha de 100.000

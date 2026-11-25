@@ -56,6 +56,9 @@ guardado.
 
 Enquanto ele estiver desligado, o campo de token em Integrações avisa — *Guardado só até você fechar o Gitcito: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
 
+![O campo de token em Integrações com o chaveiro desligado: guardado só até
+fechar, com o botão Ativar](../../screenshots/token-keychain-notice.webp)
+
 ### Linux sem chaveiro
 
 No Linux, o chaveiro é um serviço de segredos — GNOME Keyring ou KWallet. Quando

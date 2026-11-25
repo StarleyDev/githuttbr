@@ -93,6 +93,9 @@ O avatar da barra de título e da lista de perfis é seu, então você pode esco
 A imagem vai junto em **Configurações → Dados → Exportar configurações** e volta na importação;
 apagar o perfil apaga a imagem.
 
+![Configurações → Perfil → Avatar em Ícone: um foguete sobre fundo azul, com a
+grade de ícones e as cores](../../screenshots/profile-avatar.webp)
+
 ### Um ícone do repositório
 
 Um perfil de trabalho costuma ter uma imagem pronta: o ícone do app ou da empresa,
