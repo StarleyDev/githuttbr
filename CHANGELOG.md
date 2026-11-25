@@ -1,5 +1,11 @@
 
 
+## [4.51.0](https://github.com/StarleyDev/githuttbr/compare/v4.50.0...v4.51.0) (2026-11-25)
+
+### Features
+
+* **updates:** roll back to an earlier version from Settings (beta) ([1920a73](https://github.com/StarleyDev/githuttbr/commit/1920a733717ec5bba34f813e92ed7cba73c05847))
+
 ## [4.50.0](https://github.com/StarleyDev/githuttbr/compare/v4.49.0...v4.50.0) (2026-11-25)
 
 ### Features
