@@ -177,7 +177,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "simple-git": "^4.1.0",
-    "three": "^0.185.1",
+    "three": "^0.187.0",
     "web-tree-sitter": "^0.24.7",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "^4.5.5"
@@ -195,7 +195,7 @@
     "@types/node": "^22.20.7",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@types/three": "^0.185.0",
+    "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^6.3.0",
     "electron": "^45.5.0",
     "electron-builder": "^26.18.1",
