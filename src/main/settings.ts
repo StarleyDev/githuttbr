@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { readFile, readdir, mkdir, realpath, rename, rm, stat } from 'fs/promises'
 import { copyPrivateFile, updatePrivateFile, writePrivateFile } from './privateFile'
 import { openSettingsExport, sealSettingsExport } from './settingsEncryption'
+import { restoredSettings, withUnknownKeys } from '../shared/settingsFormat'
 import type { SettingsDecryptResult } from '../shared/settingsEncryption'
 import {
   defaultAIConfig,
@@ -427,9 +428,37 @@ function withoutStaleKeys<T extends object>(settings: T): T {
   return out as T
 }
 
-/** The settings file as written: no secrets, and nothing main once kept there for itself. */
-function settingsFileJson(settings: AppSettings): string {
-  return JSON.stringify(withoutStaleKeys(stripSettingsSecrets(settings)), null, 2)
+/**
+ * The settings file as written: no secrets, nothing main once kept there for
+ * itself — and every key a newer build wrote that this one does not know,
+ * kept as it was on disk (`withUnknownKeys`), so going back a version never
+ * drops what the newer one saved.
+ */
+function settingsFileJson(settings: AppSettings, onDisk: Record<string, unknown> | null): string {
+  return fileJson(stripSettingsSecrets(settings), onDisk)
+}
+
+function fileJson(settings: AppSettings, onDisk: Record<string, unknown> | null): string {
+  return JSON.stringify(withoutStaleKeys(withUnknownKeys(settings, onDisk)), null, 2)
+}
+
+/** A settings file's text as an object; null for anything else. */
+function parseRaw(raw: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+/** The settings file as an object, read once — no retries, no broken-file bookkeeping. Null when absent or unparseable. */
+async function settingsOnDisk(): Promise<Record<string, unknown> | null> {
+  try {
+    return parseRaw(await readFile(settingsPath(), 'utf-8'))
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -445,19 +474,14 @@ async function savedFileJson(
   after: (onDisk: SecretStore) => SecretStore,
   store: SecretStore | null
 ): Promise<string> {
+  // A file that cannot be read or parsed has no tokens and no unknown keys to keep.
+  const parsed = await settingsOnDisk()
   let onDisk: SecretStore = {}
-  try {
-    // Read once, without the retries and broken-file bookkeeping of a load: a
-    // file that cannot be read or parsed has no tokens to keep.
-    const parsed: unknown = JSON.parse(await readFile(settingsPath(), 'utf-8'))
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const clean = scrubServerUrls(withoutStaleKeys(parsed as Partial<AppSettings>))
-      onDisk = extractSecrets(migrateGitlabSettings({ ...defaultSettings(), ...clean }))
-    }
-  } catch {
-    // Nothing on disk to keep.
+  if (parsed) {
+    const clean = scrubServerUrls(withoutStaleKeys(parsed as Partial<AppSettings>))
+    onDisk = extractSecrets(migrateGitlabSettings({ ...defaultSettings(), ...clean }))
   }
-  if (Object.keys(onDisk).length === 0) return settingsFileJson(settings)
+  if (Object.keys(onDisk).length === 0) return settingsFileJson(settings, parsed)
   const survives = secretView(after(onDisk))
   const stored = secretView(store ?? {})
   const drop = new Map<string, string>()
@@ -465,10 +489,10 @@ async function savedFileJson(
     if (survives.get(slot) !== value || stored.get(slot) === value) drop.set(slot, value)
   }
   const keep = withoutSlots(onDisk, drop)
-  if (Object.keys(keep).length === 0) return settingsFileJson(settings)
+  if (Object.keys(keep).length === 0) return settingsFileJson(settings, parsed)
   // No seed: the keep-list is plaintext found in the file, and must neither
   // spread a profile's key onto the general AI nor decide any profile's `ownAI`.
-  return JSON.stringify(withoutStaleKeys(applySecrets(stripSettingsSecrets(settings), keep, { seed: false })), null, 2)
+  return fileJson(applySecrets(stripSettingsSecrets(settings), keep, { seed: false }), parsed)
 }
 
 /**
@@ -671,7 +695,7 @@ async function readWithSecrets(
         } else {
           // Rewrite the JSON without them.
           await saveSecrets(merged)
-          if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
+          if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings, parseRaw(raw)))
           setSecretCache(merged)
         }
       } else {
@@ -685,7 +709,7 @@ async function readWithSecrets(
       if (hasSettingsSecrets(settings) && (await canEncrypt()) && !(await isKeychainWeak())) {
         const merged = plaintextMerged(secretCache, settings)
         await saveSecrets(merged)
-        if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
+        if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings, parseRaw(raw)))
         setSecretCache(merged)
       }
     }
@@ -727,7 +751,7 @@ async function settleGeneralAILocked(): Promise<void> {
   const store = pruneSecrets(settled.store, secretOwnerIds(settled.settings), settled.settings.profiles)
   await saveSecrets(store)
   setSecretCache(store)
-  await rewriteIfUnchanged(raw, settingsFileJson(settled.settings))
+  await rewriteIfUnchanged(raw, settingsFileJson(settled.settings, parseRaw(raw)))
 }
 
 /**
@@ -1284,6 +1308,50 @@ async function writeSettings(
   pendingClears = new Map()
   await writePrivateFile(settingsPath(), await savedFileJson(settings, over, merged))
   holds()
+}
+
+/**
+ * The settings file as it is now, for a copy kept before a version switch:
+ * read in the settings queue, so no save lands half-way through it, and
+ * without a credential — tokens and keys are in the keychain store, which a
+ * version switch leaves alone. Null when there is no file or it does not parse.
+ */
+export function settingsForBackup(): Promise<Record<string, unknown> | null> {
+  return exclusive(async () => {
+    const parsed = await settingsOnDisk()
+    if (!parsed) return null
+    const clean = withUnknownKeys(stripSettingsSecrets(parsed as unknown as AppSettings), null) as unknown as Record<string, unknown>
+    // The copy says which format wrote it, not which one copied it.
+    if (typeof parsed.settingsFormat === 'number') clean.settingsFormat = parsed.settingsFormat
+    else delete clean.settingsFormat
+    return clean
+  })
+}
+
+/** The settings file as it is now, parsed — for comparing it with a copy. */
+export function settingsNow(): Promise<Record<string, unknown> | null> {
+  return exclusive(settingsOnDisk)
+}
+
+/**
+ * Writes a copy back as the settings file (Settings → About → Restore). What
+ * is open now — tabs, workspaces — and the app's own bookkeeping stay as they
+ * are (`restoredSettings`); keys this build does not know are kept as usual.
+ * The keychain store is not touched: a profile in the copy gets its tokens back
+ * by id. Refused while the file on disk is one that could not be parsed, or
+ * before a renderer has been served the settings at all (as a save would be).
+ */
+export function restoreSettingsFrom(copy: Record<string, unknown>): Promise<'ok' | 'not-loaded'> {
+  return exclusive(async () => {
+    if (!settingsServed || settingsBroken) return 'not-loaded' as const
+    const now = (await settingsOnDisk()) ?? {}
+    // A copy is written without credentials; one edited by hand to hold some
+    // gets them stripped here, as any save would.
+    const clean = stripSettingsSecrets(copy as unknown as AppSettings) as unknown as Record<string, unknown>
+    const next = restoredSettings(clean, now)
+    await writePrivateFile(settingsPath(), fileJson(next as unknown as AppSettings, now))
+    return 'ok' as const
+  })
 }
 
 /**

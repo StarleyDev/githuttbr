@@ -93,6 +93,10 @@ const PART_OF_KEY: Record<keyof AppSettings, ImportPart> = {
   repoTodos: 'repos',
   repoBookmarks: 'repos',
   lastClonePath: 'repos',
+  // This install's own record of itself: never taken from a file (`pickParts`
+  // drops them); classed here only so the map stays complete.
+  settingsFormat: 'machine',
+  versionRollback: 'machine',
   // Programs on this computer: an executable path from another OS launches nothing.
   terminalShell: 'machine',
   terminalPoshTheme: 'machine',
@@ -462,11 +466,17 @@ export function dropMissingRepos(incoming: Partial<AppSettings>, existing: Reado
  * before parts existed. A partial pick drops keys no part claims.
  */
 export function pickParts(incoming: Partial<AppSettings>, parts: readonly ImportPart[]): Partial<AppSettings> {
-  if (IMPORT_PARTS.every((p) => parts.includes(p))) return { ...incoming }
   const out: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(incoming)) {
-    if (parts.some((p) => isPart(key, p))) out[key] = value
+  if (IMPORT_PARTS.every((p) => parts.includes(p))) Object.assign(out, incoming)
+  else {
+    for (const [key, value] of Object.entries(incoming)) {
+      if (parts.some((p) => isPart(key, p))) out[key] = value
+    }
   }
+  // Another install's rollback would hide this one's updates and show its banner;
+  // the format is stamped by main on every save.
+  delete out.versionRollback
+  delete out.settingsFormat
   return out as Partial<AppSettings>
 }
 

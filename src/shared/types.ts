@@ -3688,6 +3688,73 @@ export interface AppSettings {
   /** Version the user chose to skip via "don't show again". The new-version
    *  banner stays hidden for exactly this version; a later one shows again. */
   skippedUpdateVersion?: string
+  /** The settings format of the build that last wrote the file (see
+   *  `shared/settingsFormat.ts`). Stamped by main on every save. */
+  settingsFormat?: number
+  /** The last time the user went back to an earlier version. Its `from` is never
+   *  offered as an update again — only versions newer than it are. */
+  versionRollback?: VersionRollback
+}
+
+/** A switch to an earlier version, recorded by the build that left and read by the one it lands on. */
+export interface VersionRollback {
+  /** The version left — never offered again. */
+  from: string
+  /** The version gone back to. */
+  to: string
+  /** ISO time of the switch. */
+  at: string
+  /** The settings backup taken just before (a file name in settings-backups/). */
+  backup?: string
+  /** Open the target's release notes once it starts. */
+  showNotes?: boolean
+  /** The "you went back" banner was closed. */
+  noticeDismissed?: boolean
+}
+
+/** One settings copy kept in userData/settings-backups/. */
+export interface SettingsBackup {
+  /** The file name; also the id the restore and reveal calls take. */
+  name: string
+  /** The version that made it. */
+  version: string
+  /** The version the app was switching to. */
+  target: string
+  reason: 'rollback' | 'update' | 'restore'
+  /** ISO time. */
+  createdAt: string
+}
+
+/** A published version offered under Settings → About → Previous versions. */
+export interface RollbackRelease {
+  version: string
+  publishedAt: string
+  /** One line from the release notes, or empty. */
+  summary: string
+  url: string
+}
+
+export type RollbackReleasesReply =
+  | { ok: true; releases: RollbackRelease[] }
+  | { ok: false; reason: 'offline' | 'rate-limited' | 'failed' }
+
+/** Whether this install can switch versions in place, and if not, why. */
+export interface RollbackSupport {
+  supported: boolean
+  /** `dev`: an unpackaged run. `platform`: a package kind the updater cannot replace (rpm, snap, a tarball…). */
+  reason?: 'dev' | 'platform'
+  kind: 'appimage' | 'deb' | 'nsis' | 'mac' | 'other'
+}
+
+/** A version switch in progress, mirrored from electron-updater like `UpdateState`. */
+export interface RollbackState {
+  status: 'idle' | 'checking' | 'downloading' | 'downloaded' | 'error'
+  target: string | null
+  percent: number
+  /** A message, or a code the renderer words: `missing-platform`, `backup-failed`. */
+  error: string | null
+  /** The settings copy taken before the download started. */
+  backup: string | null
 }
 
 /**
