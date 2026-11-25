@@ -73,7 +73,11 @@ export const usePrListStore = create<PrListState>((set, get) => ({
     const cur = get().finished[repoPath]
     if (cur && cur.remoteUrl === remoteUrl && (cur.status === 'loading' || (cur.status === 'ready' && !force))) return
     const keep = cur?.remoteUrl === remoteUrl ? cur.data : undefined
-    set((s) => ({ finished: { ...s.finished, [repoPath]: { status: 'loading', remoteUrl, data: keep } } }))
+    const loading: FinishedLoad = { status: 'loading', remoteUrl, data: keep }
+    set((s) => ({ finished: { ...s.finished, [repoPath]: loading } }))
+    // Only the request that is still the current one may write its answer: a
+    // forgetFinished (a merge) or a newer load in between wins.
+    const current = (): boolean => get().finished[repoPath] === loading
     const profile = useSettingsStore.getState().activeProfile()
     try {
       const data = await hostingApi.listFinishedPRs(repoPath, origin.url, {
@@ -83,9 +87,11 @@ export const usePrListStore = create<PrListState>((set, get) => ({
         bitbucket: profile.bitbucketToken || undefined,
         forgejo: profile.forgejoToken || undefined
       })
+      if (!current()) return
       set((s) => ({ finished: { ...s.finished, [repoPath]: { status: 'ready', remoteUrl, data } } }))
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err)
+      if (!current()) return
       set((s) => ({ finished: { ...s.finished, [repoPath]: { status: 'error', remoteUrl, error, data: keep } } }))
     }
   }

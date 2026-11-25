@@ -49,13 +49,19 @@ export function PrNavBar({ page }: { page: PrPage }): React.JSX.Element {
   const prevRef = useRef<HTMLButtonElement>(null)
   const nextRef = useRef<HTMLButtonElement>(null)
   const [announce, setAnnounce] = useState('')
+  // Kept on a ref: a development double-run of the effect must not lose it.
+  const arrival = useRef<-1 | 1 | null | undefined>(undefined)
   useEffect(() => {
-    const dir = takePendingFocus()
+    if (arrival.current === undefined) arrival.current = takePendingFocus()
+    const dir = arrival.current
     if (!dir || !pos) return
     const first = dir < 0 ? prevRef.current : nextRef.current
     const target = first && !first.disabled ? first : dir < 0 ? nextRef.current : prevRef.current
     target?.focus()
-    setAnnounce(interp(t('prNav.position'), { k: pos.index + 1, n: pos.total }))
+    // A live region filled in the same frame it mounts is often not read: wait a beat.
+    const text = interp(t('prNav.position'), { k: pos.index + 1, n: pos.total })
+    const timer = window.setTimeout(() => setAnnounce(text), 100)
+    return () => window.clearTimeout(timer)
     // Only on arrival.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

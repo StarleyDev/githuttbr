@@ -5119,9 +5119,9 @@ export const uk: Dict = {
   'prNav.fromTab': "у списку: {tab}",
   'prNav.fromOpen': "серед відкритих pull requests",
   'prNav.keysHint': "{prev} / {next} — перехід",
-  'prNav.draftTitle': "Залишити цей pull request?",
+  'prNav.draftTitle': "Піти з цього pull request?",
   'prNav.draftMessage': "Ненадісланий коментар до #{n} буде втрачено.",
-  'prNav.draftConfirm': "Залишити",
+  'prNav.draftConfirm': "Піти",
   'sc.prPrevious': "Попередній pull request",
   'sc.prNext': "Наступний pull request",
 }

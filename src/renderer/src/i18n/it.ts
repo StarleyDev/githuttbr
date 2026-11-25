@@ -5068,9 +5068,9 @@ export const it: Dict = {
   'prNav.fromTab': "nella lista: {tab}",
   'prNav.fromOpen': "tra le pull request aperte",
   'prNav.keysHint': "{prev} / {next} per spostarti",
-  'prNav.draftTitle': "Lasciare questa pull request?",
+  'prNav.draftTitle': "Uscire da questa pull request?",
   'prNav.draftMessage': "Il tuo commento non inviato su #{n} andrà perso.",
-  'prNav.draftConfirm': "Lascia",
+  'prNav.draftConfirm': "Esci",
   'sc.prPrevious': "Pull request precedente",
   'sc.prNext': "Pull request successiva",
 }
