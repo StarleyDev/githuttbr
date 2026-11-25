@@ -605,6 +605,9 @@ export const zhCN: Dict = {
     'Gitcito 无法读取你的保险库：钥匙串已锁定、访问被拒绝，或由另一份 Gitcito 保存。它未被改动；在能够读取之前，无法添加或删除任何内容。请解锁钥匙串后重试。',
   'vault.replaceStore': '新建保险库',
   'vault.replaceStoreTitle': '新建保险库？',
+  'vault.keychainUnavailable':
+    '目前无法打开保险库：系统钥匙串不可用——它已关闭、其询问被忽略，或没有响应。保险库中的内容均未导出或导入。请在 设置 → 安全 中开启钥匙串，或将其解锁，然后重试。',
+  'vault.replaceError': '无法替换保险库：{error}',
   'vault.replaced': '已新建一个空的保险库。旧文件作为备份保留在旁边。',
   'vault.replaceFailed':
     '保险库未被替换：钥匙串不可用，或者保险库其实可以读取。',

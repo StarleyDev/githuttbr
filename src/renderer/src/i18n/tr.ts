@@ -595,6 +595,9 @@ export const tr: Dict = {
     'Gitcito kasanızı okuyamadı — anahtarlık kilitliydi, erişim reddedildi ya da başka bir Gitcito kopyası onu kaydetti. Kasaya dokunulmadı; okunabilene kadar hiçbir şey eklenemez veya kaldırılamaz. Anahtarlığın kilidini açıp yeniden deneyin.',
   'vault.replaceStore': 'Yeni kasa oluştur',
   'vault.replaceStoreTitle': 'Yeni kasa oluşturulsun mu?',
+  'vault.keychainUnavailable':
+    'Kasa şu anda açılamıyor: sistem anahtarlığı kullanılamıyor — kapalı, sorusu geçildi ya da yanıt vermedi. Kasadan hiçbir şey dışa veya içe aktarılmadı. Anahtarlığı Ayarlar → Güvenlik bölümünden açın ya da kilidini açın ve yeniden deneyin.',
+  'vault.replaceError': 'Kasa değiştirilemedi: {error}',
   'vault.replaced': 'Yeni ve boş bir kasa oluşturuldu. Eski dosya yanında yedek olarak tutuluyor.',
   'vault.replaceFailed':
     'Kasa değiştirilmedi: anahtarlık kullanılamıyor ya da kasa aslında okunabiliyor.',

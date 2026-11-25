@@ -595,6 +595,9 @@ export const fr: Dict = {
     'Gitcito n’a pas pu lire votre coffre : le trousseau était verrouillé, l’accès a été refusé, ou une autre copie de Gitcito l’a enregistré. Il n’a pas été modifié, et rien ne peut y être ajouté ni retiré tant qu’il ne peut pas être lu. Déverrouillez le trousseau et réessayez.',
   'vault.replaceStore': 'Créer un nouveau coffre',
   'vault.replaceStoreTitle': 'Créer un nouveau coffre ?',
+  'vault.keychainUnavailable':
+    'Le coffre ne peut pas être ouvert pour l’instant : le trousseau du système est indisponible — il est désactivé, sa question a été ignorée, ou il n’a pas répondu. Rien du coffre n’a été exporté ni importé. Activez le trousseau dans Réglages → Sécurité, ou déverrouillez-le, puis réessayez.',
+  'vault.replaceError': 'Le coffre n’a pas pu être remplacé : {error}',
   'vault.replaced': 'Un nouveau coffre vide a été créé. L’ancien fichier est conservé à côté comme sauvegarde.',
   'vault.replaceFailed':
     'Le coffre n’a pas été remplacé : le trousseau n’est pas disponible, ou le coffre peut finalement être lu.',

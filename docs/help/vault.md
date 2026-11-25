@@ -32,10 +32,23 @@ If the keychain is locked, you turned its prompt away, or the vault was saved by
 another copy of Gitcito (a development build, a re-signed one), the page says
 *Gitcito could not read your vault* — and **leaves it untouched**. Nothing can be
 added or removed meanwhile: saving would replace every secret in it with the one
-you just typed. An import or a [secure share](secure-share.md) bundle that would
-merge into it is refused the same way, and says so — before any file of the
-bundle is written. An export that would carry it (a settings backup, a secure
-share bundle) stops and says so, rather than carrying an empty vault.
+you just typed.
+
+### Imports and exports never drop it silently
+
+The same holds when the vault cannot be opened at all — the keychain is off, you
+turned its question away, or (on Linux) it did not answer in time: the vault is
+then *unavailable*, and the message says so instead.
+
+| Flow | What happens when the vault is unreadable or unavailable |
+|------|------|
+| Settings → Export | Stops before writing the file, and says why: a backup without the vault would look complete. |
+| Settings → Import | The other parts are imported — settings and repository notes before the vault, profile pictures after it — and the vault is skipped and reported at the end. |
+| Onboarding import | The rest is imported; the vault is reported afterwards. |
+| [Secure share](secure-share.md) export | Refused, with the reason. |
+| Secure share import | Refused **before any file of the bundle is written**, so the files never land without their secrets. |
+
+Each message offers to open the Vault page, where you can retry or start a new vault.
 
 | Button | What it does |
 |--------|--------------|

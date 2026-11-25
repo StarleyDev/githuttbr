@@ -23,7 +23,7 @@ import {
 } from '../lib/settingsImport'
 import { fsApi, infoApi, keychainApi, vaultApi, profileAvatarApi, SettingsSaveRefused } from '../infrastructure/api'
 import { hasSettingsSecrets } from '../../../shared/secrets'
-import { toastVaultUnreadable } from './VaultUnreadableNotice'
+import { toastVaultRefused, vaultRefusalOf, type VaultRefusal } from './VaultUnreadableNotice'
 import type { AppSettings } from '../../../shared/types'
 
 type Spec = Extract<ModalSpec, { kind: 'settings-import' }>
@@ -48,9 +48,6 @@ const PART_COPY: Record<ImportPart, { title: TranslationKey; hint: TranslationKe
   repos: { title: 'settingsImport.partRepos', hint: 'settingsImport.partReposHint' },
   machine: { title: 'settingsImport.partMachine', hint: 'settingsImport.partMachineHint' }
 }
-
-/** The local vault could not be read, so the vault step merged nothing. */
-class VaultImportRefused extends Error {}
 
 const STEP_LABEL: Record<Step, TranslationKey> = {
   settings: 'settingsImport.stepSettings',
@@ -132,8 +129,6 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
   const [confirmingReplace, setConfirmingReplace] = useState(false)
   const [busy, setBusy] = useState(false)
   const [failedStep, setFailedStep] = useState<Step | null>(null)
-  /** Why the vault step stopped, when it was the vault refusing (see VaultImportRefused). */
-  const [vaultRefused, setVaultRefused] = useState(false)
   // Once the settings are written the choices are spent: a retry finishes the
   // same plan rather than applying a different one over half of this.
   const plan = useRef<{
@@ -310,7 +305,6 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
     const extras = bundleExtrasFor(chosenParts)
     setBusy(true)
     setFailedStep(null)
-    setVaultRefused(false)
     setCloseLocked(true)
     let step: Step = 'settings'
     try {
@@ -331,14 +325,18 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
         done.current.add('info')
       }
       step = 'vault'
+      // The vault refusing (unreadable, or no keychain) does not stop the
+      // import: the remaining steps still run, and the vault is reported at the end.
+      let vaultSkipped: VaultRefusal | null = null
       if (!done.current.has('vault')) {
         // The vault rides with the profiles, but its per-repository entries are
         // keyed by path: they follow the translation like the repositories do.
         if (bundle?.vault && extras.vault) {
           const reply = await vaultApi.importAll(remap ? remapVaultExport(bundle.vault, remap.from, remap.to) : bundle.vault)
-          if (reply.unreadable) throw new VaultImportRefused()
+          vaultSkipped = vaultRefusalOf(reply)
         }
-        done.current.add('vault')
+        // Skipped is not done: a "Continue" after a later step fails tries it again.
+        if (!vaultSkipped) done.current.add('vault')
       }
       step = 'avatars'
       if (!done.current.has('avatars')) {
@@ -374,14 +372,10 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
       setCloseLocked(false)
       close()
       toast('success', interp(tNow('settingsImport.done'), { parts: list }))
+      // Its own reason, and the page where the vault can be retried or replaced.
+      if (vaultSkipped) toastVaultRefused(vaultSkipped)
     } catch (err) {
       setFailedStep(step)
-      if (err instanceof VaultImportRefused) {
-        // Its own reason, and the page where the vault can be retried or replaced.
-        setVaultRefused(true)
-        toastVaultUnreadable()
-        return
-      }
       const refused = err instanceof SettingsSaveRefused ? err.reason : null
       toast(
         'error',
@@ -736,12 +730,6 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
       {failedStep && failedStep !== 'settings' && (
         <p className="import-failed" role="alert">
           {interp(t('settingsImport.stepFailed'), { step: t(STEP_LABEL[failedStep]) })}
-          {vaultRefused && failedStep === 'vault' && (
-            <>
-              {' '}
-              {t('vault.unreadable')}
-            </>
-          )}
         </p>
       )}
       {blocked && !started && <p className="import-blocked">{t(blocked)}</p>}

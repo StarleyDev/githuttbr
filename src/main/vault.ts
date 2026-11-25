@@ -45,6 +45,19 @@ export class VaultUnreadableError extends Error {
 }
 
 /**
+ * The vault could not be opened at all: the keychain is off, its question was
+ * turned away ("not now"), or it did not answer in time (keychain.ts). Distinct
+ * from unreadable — the file may be perfectly fine — but just as fatal to an
+ * export or an import, which would otherwise carry or merge nothing, silently.
+ */
+export class VaultUnavailableError extends Error {
+  constructor() {
+    super('The vault could not be opened: the OS keychain is unavailable.')
+    this.name = 'VaultUnavailableError'
+  }
+}
+
+/**
  * Vault reads and writes run one at a time: each write derives the next vault
  * from the one it read, and two interleaved (an upsert and an import) lost one
  * of them. A read may write too, when it re-encrypts (`load`).
@@ -191,11 +204,14 @@ function mergeEntries(base: VaultEntry[], incoming: VaultEntry[]): VaultEntry[] 
   return [...byId.values()]
 }
 
-/** Whole vault, for backup/transfer. Empty when OS encryption is unavailable;
- *  `unreadable` when the vault could not be read — an empty answer that must
- *  not stand in for the vault in a backup. */
+/** Whole vault, for backup/transfer. `unreadable` when the vault could not be
+ *  read, `unavailable` when it exists but the keychain cannot open it: either
+ *  way the answer is empty, and must not stand in for the vault in a backup.
+ *  No vault on disk and no keychain is simply an empty vault. */
 async function exportAll(): Promise<VaultExportReply> {
-  if (!(await ensureKeychain('vault'))) return { repos: {}, global: [] }
+  if (!(await ensureKeychain('vault'))) {
+    return existsSync(filePath()) ? { repos: {}, global: [], unavailable: true } : { repos: {}, global: [] }
+  }
   return exclusive(async () => {
     const data = await load()
     if (vaultUnreadable) return { repos: {}, global: [], unreadable: true }
@@ -203,12 +219,19 @@ async function exportAll(): Promise<VaultExportReply> {
   })
 }
 
-/** Merge an imported vault into the local one (incoming wins per id). No-op if
- *  OS encryption is unavailable (we can't safely persist secrets). Answers
- *  `unreadable` — merging nothing — when the local vault could not be read:
- *  a reply rather than a rejection, so the renderer can tell it from a failure. */
+/** Whether an incoming vault carries any entry at all. */
+function hasEntries(incoming: VaultExport): boolean {
+  return (incoming.global?.length ?? 0) > 0 || Object.values(incoming.repos ?? {}).some((e) => e.length > 0)
+}
+
+/** Merge an imported vault into the local one (incoming wins per id). Answers
+ *  `unavailable` when there is something to merge and the keychain cannot take
+ *  it, `unreadable` when the local vault could not be read — merging nothing
+ *  either way. A reply rather than a rejection, so the renderer can tell it
+ *  from a failure and say which. */
 async function importAll(incoming: VaultExport): Promise<VaultImportReply> {
-  if (!incoming || !(await ensureKeychain('vault'))) return {}
+  if (!incoming || !hasEntries(incoming)) return {}
+  if (!(await ensureKeychain('vault'))) return { unavailable: true }
   return exclusive(async () => {
     const data = await load()
     if (vaultUnreadable) return { unreadable: true }
@@ -221,12 +244,16 @@ async function importAll(incoming: VaultExport): Promise<VaultImportReply> {
   })
 }
 
-/** Global vault secrets as portable bundle entries (no id/updatedAt). Empty when
- *  OS encryption is unavailable. Used by secure-share to pack a vault section.
- *  Rejects (`VaultUnreadableError`) when the vault could not be read: a bundle
- *  asked to carry the vault never silently carries nothing. */
+/** Global vault secrets as portable bundle entries (no id/updatedAt). Empty
+ *  when there is no vault. Used by secure-share to pack a vault section.
+ *  Rejects — `VaultUnavailableError` when a vault exists but the keychain
+ *  cannot open it, `VaultUnreadableError` when it could not be read — so a
+ *  bundle asked to carry the vault never silently carries nothing. */
 export async function exportGlobalEntries(): Promise<BundleVaultEntry[]> {
-  if (!(await canUseKeychain())) return []
+  if (!(await canUseKeychain())) {
+    if (existsSync(filePath())) throw new VaultUnavailableError()
+    return []
+  }
   return exclusive(async () => {
     const data = await load()
     if (vaultUnreadable) throw new VaultUnreadableError()
@@ -235,26 +262,30 @@ export async function exportGlobalEntries(): Promise<BundleVaultEntry[]> {
 }
 
 /**
- * Whether the vault on disk exists and cannot be read — asked the way an
- * import into it would ask: consent adopted, the keychain requested. Run
- * before anything else of a bundle is written, so the vault step cannot be
- * the first to find out after the files already landed.
+ * Whether entries could be merged into the vault now — asked the way the
+ * import would ask: consent adopted, the keychain requested. Run before
+ * anything else of a bundle is written, so the vault step cannot be the first
+ * to find out after the files already landed. `unavailable`: the keychain
+ * cannot take them (whether or not a vault exists, they would be dropped);
+ * `unreadable`: the vault on disk could not be read.
  */
-export async function checkVaultUnreadable(): Promise<boolean> {
-  if (!existsSync(filePath())) return false
+export async function checkVaultWritable(): Promise<'ok' | 'unavailable' | 'unreadable'> {
   await adoptExistingConsent([filePath()])
-  if (!(await ensureKeychain('vault'))) return false
+  if (!(await ensureKeychain('vault'))) return 'unavailable'
+  if (!existsSync(filePath())) return 'ok'
   return exclusive(async () => {
     await load()
-    return vaultUnreadable
+    return vaultUnreadable ? 'unreadable' : 'ok'
   })
 }
 
 /** Merge bundle vault entries into the global vault, matching by key (incoming
- *  value/note win). Returns how many were written; 0 if encryption unavailable.
- *  Rejects (`VaultUnreadableError`) when the local vault could not be read. */
+ *  value/note win). Returns how many were written. Rejects
+ *  (`VaultUnavailableError`) when the keychain cannot take them, and
+ *  (`VaultUnreadableError`) when the local vault could not be read. */
 export async function importGlobalEntries(entries: BundleVaultEntry[]): Promise<number> {
-  if (entries.length === 0 || !(await ensureKeychain('vault'))) return 0
+  if (entries.length === 0) return 0
+  if (!(await ensureKeychain('vault'))) throw new VaultUnavailableError()
   return exclusive(async () => {
     const data = await load()
     const now = Date.now()

@@ -94,7 +94,7 @@ describe('a vault this session cannot read', () => {
     const vault = await start()
     expect(await call('vault:importAll', { repos: {}, global: [entry] })).toEqual({ unreadable: true })
     await expect(vault.importGlobalEntries([{ key: 'K', value: 'v' }])).rejects.toBeInstanceOf(vault.VaultUnreadableError)
-    expect(await vault.checkVaultUnreadable()).toBe(true)
+    expect(await vault.checkVaultWritable()).toBe('unreadable')
     expect(readFileSync(vaultFile(), 'utf8')).toBe(before)
   })
 
@@ -111,7 +111,7 @@ describe('a vault this session cannot read', () => {
     expect(await call('vault:exportAll')).toEqual({ repos: {}, global: [entry] })
     expect(await vault.exportGlobalEntries()).toEqual([{ key: 'API_KEY', value: 'S3CRET' }])
     expect(await call('vault:importAll', { repos: { '/r': [{ ...entry, id: 'e2' }] }, global: [] })).toEqual({})
-    expect(await vault.checkVaultUnreadable()).toBe(false)
+    expect(await vault.checkVaultWritable()).toBe('ok')
   })
 
   it('the pre-check adopts the consent an existing vault implies, like the import would', async () => {
@@ -119,9 +119,10 @@ describe('a vault this session cannot read', () => {
     // Consent never recorded, but explained: an install from before the gate that saw the dialog.
     writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'unset', explained: true }))
     const vault = await start()
-    // No window to ask in (tests): adopted, unexplained, so the answer is "no" — and the import then skips the vault too.
-    expect(await vault.checkVaultUnreadable()).toBe(false)
-    expect(await vault.importGlobalEntries([{ key: 'K', value: 'v' }])).toBe(0)
+    // No window to ask in (tests): adopted, unexplained, so the answer is "no" —
+    // said as unavailable, before anything is written, and the import refuses the same way.
+    expect(await vault.checkVaultWritable()).toBe('unavailable')
+    await expect(vault.importGlobalEntries([{ key: 'K', value: 'v' }])).rejects.toBeInstanceOf(vault.VaultUnavailableError)
     expect(JSON.parse(readFileSync(join(dir, 'githuttbr-keychain.json'), 'utf8'))).toMatchObject({ consent: 'granted' })
   })
 
@@ -158,6 +159,34 @@ describe('a vault this session cannot read', () => {
     expect(await call('vault:replaceUnreadable')).toBe(false)
     expect(backups()).toEqual([])
     expect(((await call('vault:list', '')) as VaultListResult).global).toHaveLength(1)
+  })
+})
+
+describe('a vault the keychain cannot open (declined, dismissed, or timed out)', () => {
+  const declined = (): void =>
+    writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+
+  it('is refused by every export and import, never dropped silently', async () => {
+    writeVault({ repos: {}, global: [entry] })
+    declined()
+    const before = readFileSync(vaultFile(), 'utf8')
+    const vault = await start()
+    expect(await call('vault:exportAll')).toEqual({ repos: {}, global: [], unavailable: true })
+    await expect(vault.exportGlobalEntries()).rejects.toBeInstanceOf(vault.VaultUnavailableError)
+    expect(await call('vault:importAll', { repos: {}, global: [entry] })).toEqual({ unavailable: true })
+    expect(await vault.checkVaultWritable()).toBe('unavailable')
+    await expect(vault.importGlobalEntries([{ key: 'K', value: 'v' }])).rejects.toBeInstanceOf(vault.VaultUnavailableError)
+    expect(readFileSync(vaultFile(), 'utf8')).toBe(before)
+  })
+
+  it('with no vault on disk, an export is simply empty and an empty import is a no-op', async () => {
+    declined()
+    const vault = await start()
+    expect(await call('vault:exportAll')).toEqual({ repos: {}, global: [] })
+    expect(await vault.exportGlobalEntries()).toEqual([])
+    expect(await call('vault:importAll', { repos: {}, global: [] })).toEqual({})
+    // Entries to merge, and nowhere to keep them: still refused.
+    expect(await call('vault:importAll', { repos: {}, global: [entry] })).toEqual({ unavailable: true })
   })
 })
 

@@ -153,13 +153,14 @@ export function SecureWorkspaceModal({
       'unsupported-version': t('share.errVersion'),
       'read-failed': t('share.errRead'),
       'write-failed': t('share.errWrite'),
-      'vault-unreadable': t('vault.unreadable')
+      'vault-unreadable': t('vault.unreadable'),
+      'vault-unavailable': t('vault.keychainUnavailable')
     })[code]
 
   // ── Export ─────────────────────────────────────────────────────────────────
   const [vaultCount, setVaultCount] = useState<number | null>(null)
-  // Exists but cannot be read: 0 entries would read as "the vault is empty".
-  const [vaultUnreadable, setVaultUnreadable] = useState(false)
+  // Cannot be read, or the keychain cannot open it: 0 entries would read as "the vault is empty".
+  const [vaultRefused, setVaultRefused] = useState<'unreadable' | 'unavailable' | null>(null)
   const [includeVault, setIncludeVault] = useState(false)
   const [repoState, setRepoState] = useState<Record<string, RepoExportState>>({})
   // Per-workspace "include the tab structure itself" and per-repo "include
@@ -172,7 +173,7 @@ export function SecureWorkspaceModal({
   useEffect(() => {
     void vaultApi.list('').then((d) => {
       const n = d.available ? d.global.length : 0
-      setVaultUnreadable(!!d.unreadable)
+      setVaultRefused(d.unreadable ? 'unreadable' : !d.available ? 'unavailable' : null)
       setVaultCount(n)
       setIncludeVault(n > 0)
     })
@@ -609,9 +610,9 @@ export function SecureWorkspaceModal({
                 {vaultCount ?? 0} {t('wshare.secrets')}
               </span>
             </button>
-            {vaultUnreadable && (
+            {vaultRefused && (
               <p className="settings-hint" role="alert">
-                {t('vault.unreadable')}
+                {t(vaultRefused === 'unreadable' ? 'vault.unreadable' : 'vault.keychainUnavailable')}
               </p>
             )}
 

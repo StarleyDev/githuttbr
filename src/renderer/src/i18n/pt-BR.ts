@@ -606,6 +606,9 @@ export const ptBR: Dict = {
     'O Gitcito não conseguiu ler o seu cofre — o chaveiro estava bloqueado, o acesso foi negado ou outra cópia do Gitcito o salvou. Ele não foi alterado, e nada pode ser adicionado ou removido até que possa ser lido. Desbloqueie o chaveiro e tente de novo.',
   'vault.replaceStore': 'Criar um novo cofre',
   'vault.replaceStoreTitle': 'Criar um novo cofre?',
+  'vault.keychainUnavailable':
+    'O Cofre não pode ser aberto agora: o chaveiro do sistema está indisponível — está desligado, a pergunta dele foi dispensada ou ele não respondeu. Nada do Cofre foi exportado nem importado. Ligue o chaveiro em Configurações → Segurança, ou desbloqueie-o, e tente de novo.',
+  'vault.replaceError': 'Não foi possível substituir o cofre: {error}',
   'vault.replaced': 'Um novo cofre vazio foi criado. O arquivo antigo ficou ao lado como backup.',
   'vault.replaceFailed':
     'O cofre não foi substituído: o chaveiro não está disponível, ou o cofre afinal pode ser lido.',

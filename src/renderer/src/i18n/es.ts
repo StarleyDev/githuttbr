@@ -600,6 +600,9 @@ export const es: Dict = {
     'Gitcito no pudo leer tu bóveda: el llavero estaba bloqueado, se denegó el acceso u otra copia de Gitcito la guardó. No se ha modificado, y no se puede añadir ni quitar nada hasta que pueda leerse. Desbloquea el llavero y vuelve a intentarlo.',
   'vault.replaceStore': 'Crear una bóveda nueva',
   'vault.replaceStoreTitle': '¿Crear una bóveda nueva?',
+  'vault.keychainUnavailable':
+    'La bóveda no se puede abrir ahora: el llavero del sistema no está disponible — está desactivado, se descartó su pregunta o no respondió. No se exportó ni importó nada de la bóveda. Activa el llavero en Ajustes → Seguridad, o desbloquéalo, y vuelve a intentarlo.',
+  'vault.replaceError': 'No se pudo reemplazar la bóveda: {error}',
   'vault.replaced': 'Se creó una bóveda nueva y vacía. El archivo antiguo se conserva a su lado como copia de seguridad.',
   'vault.replaceFailed':
     'La bóveda no se reemplazó: el llavero no está disponible, o la bóveda sí puede leerse.',

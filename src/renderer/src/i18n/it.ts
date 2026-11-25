@@ -596,6 +596,9 @@ export const it: Dict = {
     'Gitcito non è riuscito a leggere la tua cassaforte: il portachiavi era bloccato, l’accesso è stato negato o un’altra copia di Gitcito l’ha salvata. Non è stata modificata, e non si può aggiungere né rimuovere nulla finché non è leggibile. Sblocca il portachiavi e riprova.',
   'vault.replaceStore': 'Crea una nuova cassaforte',
   'vault.replaceStoreTitle': 'Creare una nuova cassaforte?',
+  'vault.keychainUnavailable':
+    'La cassaforte non può essere aperta ora: il portachiavi di sistema non è disponibile — è disattivato, la sua richiesta è stata ignorata o non ha risposto. Nulla della cassaforte è stato esportato o importato. Attiva il portachiavi in Impostazioni → Sicurezza, oppure sbloccalo, e riprova.',
+  'vault.replaceError': 'Impossibile sostituire la cassaforte: {error}',
   'vault.replaced': 'È stata creata una nuova cassaforte vuota. Il vecchio file resta accanto come backup.',
   'vault.replaceFailed':
     'La cassaforte non è stata sostituita: il portachiavi non è disponibile, oppure la cassaforte è leggibile.',

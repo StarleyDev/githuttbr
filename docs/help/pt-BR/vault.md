@@ -34,11 +34,23 @@ Se o chaveiro está bloqueado, você recusou o pedido dele, ou o cofre foi salvo
 por outra cópia do Gitcito (um build de desenvolvimento, um reassinado), a página
 diz *O Gitcito não conseguiu ler o seu cofre* — e **não mexe nele**. Nada pode
 ser adicionado ou removido enquanto isso: salvar trocaria todos os segredos dele
-pelo que você acabou de digitar. Uma importação ou um bundle do
-[compartilhamento seguro](secure-share.md) que entraria nele é recusado do mesmo
-jeito, e avisa — antes de gravar qualquer arquivo do bundle. Uma exportação que o
-levaria (um backup das configurações, um bundle do compartilhamento seguro) para
-e avisa, em vez de levar um cofre vazio.
+pelo que você acabou de digitar.
+
+### Importações e exportações nunca o deixam de fora em silêncio
+
+O mesmo vale quando o cofre nem pode ser aberto — o chaveiro está desligado, você
+dispensou a pergunta dele, ou (no Linux) ele não respondeu a tempo: o cofre fica
+*indisponível*, e a mensagem diz isso.
+
+| Fluxo | O que acontece com o cofre ilegível ou indisponível |
+|-------|------|
+| Configurações → Exportar | Para antes de gravar o arquivo e diz por quê: um backup sem o cofre pareceria completo. |
+| Configurações → Importar | As outras partes são importadas — configurações e notas dos repositórios antes do cofre, fotos de perfil depois — e o cofre é pulado e avisado no fim. |
+| Importação no onboarding | O resto é importado; o cofre é avisado em seguida. |
+| Exportação do [compartilhamento seguro](secure-share.md) | Recusada, com o motivo. |
+| Importação do compartilhamento seguro | Recusada **antes de gravar qualquer arquivo do bundle**, para os arquivos nunca chegarem sem os segredos deles. |
+
+Cada mensagem oferece abrir a página do Cofre, onde dá para tentar de novo ou criar um novo cofre.
 
 | Botão | O que faz |
 |-------|-----------|

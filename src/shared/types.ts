@@ -2324,12 +2324,16 @@ export interface VaultExport {
  *  be read — then it is empty, and must not be exported as the vault. */
 export interface VaultExportReply extends VaultExport {
   unreadable?: boolean
+  /** A vault exists, but the OS keychain is off or did not answer: it could not be opened. */
+  unavailable?: boolean
 }
 
 /** `vault:importAll`'s answer: `unreadable` when the local vault could not be
  *  read, so nothing was merged into it. */
 export interface VaultImportReply {
   unreadable?: boolean
+  /** There were entries to merge, and the OS keychain could not take them. */
+  unavailable?: boolean
 }
 
 /** Whole-info payload for backup/transfer (all repos). */
@@ -2446,6 +2450,7 @@ export type SecureShareError =
   | 'read-failed'
   | 'write-failed'
   | 'vault-unreadable' // the local vault could not be read, so nothing was merged into it
+  | 'vault-unavailable' // the OS keychain could not open the vault, so it was neither packed nor merged
 
 /** A non-private, per-repo info field (App ID, website, social links…). Stored
  *  in plaintext — unlike the vault, this is reference metadata, not secrets. */

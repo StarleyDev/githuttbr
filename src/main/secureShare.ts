@@ -17,7 +17,7 @@ import {
   type BundleSection,
   type BundleVaultEntry
 } from './secureBundle'
-import { exportGlobalEntries, importGlobalEntries, checkVaultUnreadable, VaultUnreadableError } from './vault'
+import { exportGlobalEntries, importGlobalEntries, checkVaultWritable, VaultUnavailableError, VaultUnreadableError } from './vault'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
@@ -264,6 +264,7 @@ export async function exportSectionsV2(
         entries = await exportGlobalEntries()
       } catch (e) {
         if (e instanceof VaultUnreadableError) return { error: 'vault-unreadable' }
+        if (e instanceof VaultUnavailableError) return { error: 'vault-unavailable' }
         throw e
       }
       if (entries.length > 0) sections.push({ kind: 'vault', entries })
@@ -448,9 +449,12 @@ export async function applyV2(
   } catch (e) {
     return { error: errCode(e) }
   }
-  // Checked before anything is written: a vault that cannot be read refuses
-  // the merge, and the files of the same bundle should not land without it.
-  if (plan.some((s) => s.kind === 'vault') && (await checkVaultUnreadable())) return { error: 'vault-unreadable' }
+  // Checked before anything is written: a vault that cannot be opened or read
+  // refuses the merge, and the files of the same bundle should not land without it.
+  if (plan.some((s) => s.kind === 'vault' && s.keys.length > 0)) {
+    const vault = await checkVaultWritable()
+    if (vault !== 'ok') return { error: vault === 'unavailable' ? 'vault-unavailable' : 'vault-unreadable' }
+  }
   let filesWritten = 0
   let secretsWritten = 0
   let notesWritten = 0
@@ -466,6 +470,7 @@ export async function applyV2(
         secretsWritten += await importGlobalEntries(picked)
       } catch (e) {
         if (e instanceof VaultUnreadableError) return { error: 'vault-unreadable' }
+        if (e instanceof VaultUnavailableError) return { error: 'vault-unavailable' }
         throw e
       }
     } else if (step.kind === 'notes') {
