@@ -153,11 +153,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // The anchor is the ONLY source of truth for where the user is reading. It
   // moves on exactly two inputs: a scroll event with a real gesture behind it
   // (within the lastUserScrollAt window), or output-following (y reaches
-  // baseY). Every other scroll event — DOM scrollTop clamps during resize,
-  // reflow corrections, scrollback trims, our own restores — carries no user
-  // intent and must never touch it. buf.viewportY is explicitly NOT trusted:
-  // xterm collapses it to 0 the moment the DOM offset is clamped, which is
-  // precisely when an anchor is needed.
+  // baseY). Every other scroll event — writes landing on a freshly reflowed
+  // buffer, scrollback trims, our own restores — carries no user intent and
+  // must never touch it. buf.viewportY is explicitly NOT trusted: a resize
+  // moves it without any event, and a refresh against a stale scrollable
+  // element can pull it to whatever row the element still shows — precisely
+  // when an anchor is needed.
   //
   // A parked line is tracked by an xterm Marker, not the raw index: markers
   // follow the content through reflow wraps and scrollback trims on their
@@ -173,14 +174,16 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // clamp artefact" — without it typing while parked gets yanked back and the
   // terminal feels frozen.
   let lastUserInputAt = 0
-  // Extended on every fitSafely. A resize that shrinks the scroll range — a
-  // taller panel, or a wider one reflowing to fewer wrapped rows — clamps
-  // ydisp and fires a scroll event reading exactly baseY. (Under xterm 5 the
-  // DOM scrollTop clamp did it too; xterm 6 suppresses that one, the buffer
-  // reflow still does.) A fixed window after the last fit is not enough: a slow
-  // drag spaces fits further apart than the window, and an in-between clamp
-  // event then passes as a real output-follow and poisons the anchor to
-  // 'bottom'. A rolling deadline stays open for the whole drag instead.
+  // Extended on every fitSafely. Under xterm 5 the resize itself fired clamp
+  // events reading baseY; xterm 6 fires none (the reflow moves ydisp
+  // silently and the dimension clamp is suppressed). The window still earns
+  // its keep: until resyncViewport's frame runs, the scrollable element sits
+  // on its pre-resize offset, and every scroll call we could make in answer
+  // to an event — a write landing on the reflowed buffer — is relative to
+  // that stale offset and lands somewhere wrong. Holding still until the
+  // resync has run is cheaper than being wrong. A fixed window after the
+  // first fit is not enough: a slow drag spaces fits further apart than the
+  // window, so it rolls forward from each fit instead.
   let resizeQuietUntil = 0
   // Opt-in scroll forensics for the resize-autoscroll hunt: launch with
   // GITHUTTBR_SCROLL_DEBUG=1 and every decision the listener makes is streamed
@@ -242,10 +245,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   }
   // The xterm viewport element lives for the whole terminal lifetime —
   // resolve it once lazily instead of querying on every pointer event. Since
-  // xterm 6 it no longer scrolls (a VS Code scrollable element owns the
-  // scroll position and keeps it in step with ydisp itself, so the old
-  // DOM-scrollTop/ydisp desync repairs are gone); it still spans the
-  // terminal, which is what the edge-zone test below measures.
+  // xterm 6 it no longer scrolls — a VS Code scrollable element owns the
+  // scroll position, and keeps it in step with ydisp except after a resize
+  // (see resyncViewport) — but it still spans the terminal, which is what
+  // the edge-zone test below measures.
   let vpEl: HTMLElement | null = null
   const viewportEl = (): HTMLElement | null => {
     if (!vpEl || !vpEl.isConnected) vpEl = container.querySelector('.xterm-viewport')
@@ -297,8 +300,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     true
   )
   // Every programmatic scroll we perform fires xterm's onScroll
-  // SYNCHRONOUSLY — BufferService.scrollLines emits inline, so a scroll call
-  // inside the scroll listener re-enters it before returning. Without a
+  // SYNCHRONOUSLY — with smoothScrollDuration at its default 0 the scrollable
+  // element moves at once and its handler scrolls the buffer, which emits
+  // inline — so a scroll call inside the scroll listener re-enters it before
+  // returning. Without a
   // guard, restore → emit → listener → restore → emit … is unbounded
   // recursion that wedges the renderer (the "terminal froze" report).
   // Scroll events raised by our own restores carry no user intent, so the
@@ -413,6 +418,62 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }, Date.now() < resizeQuietUntil ? 120 : 50)
   }
 
+  // xterm 6 keeps two scroll positions: the buffer's ydisp (what is painted)
+  // and the scrollable element's scrollTop (what the wheel, the scrollbar and
+  // every scrollLines/scrollToLine/scrollToBottom call move — relative to
+  // scrollTop, not ydisp). A resize reflows the buffer and moves ydisp
+  // without a scroll event, and the refresh that follows only re-applies
+  // scrollTop when ydisp changed since the last scroll the element itself
+  // produced — so once the user has scrolled once, it keeps the old offset.
+  // Idle after a resize, the next wheel tick then lands relative to that
+  // stale offset: the jump of dozens of lines. Output heals it (a write's
+  // scroll event re-applies the absolute ydisp), which is why it shows up
+  // only with the terminal quiet.
+  //
+  // Repair it once the refresh has set the new scroll dimensions. The frame
+  // callback is requested after fit.fit() queued xterm's refresh callback,
+  // so it runs after it in the same frame. A -1/+1 nudge makes the buffer
+  // adopt the element's row (at least one of the two moves is never clamped,
+  // so the element always reports a row), and from there the relative
+  // restore lands where the anchor says. The public scrollToBottom ignores
+  // xterm's internal absolute flag, so the nudge is how this stays on public
+  // API. Our own scroll events, as everywhere, are swallowed by the depth guard.
+  let resyncRaf = 0
+  let resyncTimer = 0
+  const resyncViewportNow = (): void => {
+    if (!container.isConnected || container.clientHeight === 0) return
+    // The alternate screen has no scrollback: ydisp is 0 on both sides.
+    if (term.buffer.active.type !== 'normal') return
+    // A live gesture moves the element and the buffer adopts its row, so the
+    // two are already in step — and the gesture owns the anchor. Retry once
+    // the hand lets go, in case the gesture never actually scrolled (a click
+    // on the scrollbar that did not move it).
+    const gestureLeft = 500 - (Date.now() - lastUserScrollAt)
+    if (scrollbarDrag || gestureLeft > 0) {
+      if (!resyncTimer) {
+        resyncTimer = window.setTimeout(() => {
+          resyncTimer = 0
+          resyncViewportNow()
+        }, Math.max(20, gestureLeft))
+      }
+      return
+    }
+    withSelfScroll(() => {
+      term.scrollLines(-1)
+      term.scrollLines(1)
+    })
+    if (anchor.kind === 'bottom') withSelfScroll(() => term.scrollToBottom())
+    else restoreLine(anchorTarget())
+    sdbg(`resync a=${anchor.kind}${domState()}`)
+  }
+  const resyncViewport = (): void => {
+    if (resyncRaf) return
+    resyncRaf = requestAnimationFrame(() => {
+      resyncRaf = 0
+      resyncViewportNow()
+    })
+  }
+
   // Write-activity counter folded into the event log — separates scroll
   // events driven by output bursts from ones driven by DOM clamps/reflows.
   let writeCount = 0
@@ -501,18 +562,18 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
     // A real gesture somewhere above the bottom — including the very top,
     // which collapses cannot fake because gestures are timestamped.
-    // scrollbarDrag stands in for the timestamp during native scrollbar
-    // drags: Chrome swallows pointermove while the compositor owns the
-    // drag, so the 500ms window alone would expire mid-drag and snap-back
-    // would fight the user's hand.
+    // scrollbarDrag stands in for the timestamp during a scrollbar drag:
+    // a hand that holds the slider still sends no pointermove, so the 500ms
+    // window alone would expire mid-drag and snap-back would fight it.
     if (scrollbarDrag || Date.now() - lastUserScrollAt <= 500) {
       sdbg(`  -> park y=${y}`)
       parkAt(y)
       return
     }
-    // No gesture, not the bottom: a DOM clamp, a reflow clamp, a trim
-    // adjustment, or one of our own restores. The anchor stays (the marker
-    // already followed any trim). Both anchor kinds restore immediately —
+    // No gesture, not the bottom: a write landing on a reflowed buffer, a
+    // trim adjustment, a refresh re-applying the scrollable element's offset.
+    // The anchor stays (the marker already followed any trim). Both anchor
+    // kinds restore immediately —
     // every 50ms of deferral is a visible "drift then snap" bounce, and for
     // a parked anchor each deferred window is another write that can drag
     // the viewport to the bottom before userScrolling is re-armed.
@@ -525,6 +586,8 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (anchorMarkerTimer) window.clearTimeout(anchorMarkerTimer)
     if (snapBackTimer) window.clearTimeout(snapBackTimer)
     if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
+    if (resyncRaf) cancelAnimationFrame(resyncRaf)
+    if (resyncTimer) window.clearTimeout(resyncTimer)
   })
 
   // Debounce pty resize notifications. A drag produces one fit per step and
@@ -635,13 +698,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // to it collapses the terminal into a degenerate resize that reflows
         // the scrollback and throws the scroll position away — the visible bug
         // when switching terminal groups or repo tabs. Snapshot the anchor
-        // instead — the DOM offset can collapse while hidden and xterm may
-        // rewrite viewportY from it before we get to run again.
+        // instead — a refresh while hidden can re-apply the scrollable
+        // element's offset and rewrite viewportY before we get to run again.
         if (!container.isConnected || container.clientWidth === 0 || container.clientHeight === 0) {
           handle.suspend()
           return
         }
-        // A snapshot taken at suspend time becomes the new anchor — the DOM
+        // A snapshot taken at suspend time becomes the new anchor — xterm
         // may already have rewritten the offset behind our back.
         if (handle.suspendViewportY != null) {
           if (handle.suspendAtBottom) {
@@ -650,26 +713,26 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
             parkAt(handle.suspendViewportY)
           }
           handle.suspendViewportY = null
-          // The reattach settle lasts longer than a drag step: the viewport's
-          // scrollHeight re-computes across several frames while clamped
-          // scroll events keep arriving. Hold the quiet window open for the
-          // whole settle or each clamp looks like a bottom-follow.
+          // A reattach settles over more than one frame (layout, the char
+          // measure, the refresh that sizes the scrollable element), longer
+          // than a drag step; hold the quiet window open for all of it.
           resizeQuietUntil = Date.now() + 400
         }
         const before = `${term.cols}x${term.rows}`
         fit.fit()
-        // Reflow shifts buffer lines on resize and a reattached viewport may
-        // have lost its DOM offset entirely; put the scroll position back —
-        // pinned to the bottom when it was already following output, parked
-        // on the marker-tracked line otherwise.
+        // Reflow shifts buffer lines on resize; put the buffer's scroll
+        // position back now so the next frame paints the right rows — pinned
+        // to the bottom when it was already following output, parked on the
+        // marker-tracked line otherwise. This only fixes ydisp: the scrollable
+        // element is still on its pre-resize size and offset until the
+        // refresh, so resyncViewport repeats the restore against it after.
         restoreAnchor()
+        resyncViewport()
         sdbg(`fit ${before}->${term.cols}x${term.rows} a=${anchor.kind}${domState()}`)
-        // The clamp events the fit just caused are delivered asynchronously
-        // (the viewport's scroll event follows the scrollArea's style change
-        // on a later frame) — and a drag produces a fit per step, so roll
-        // the quiet window forward from each fit rather than timing it from
-        // the first.
-        resizeQuietUntil = Date.now() + 250
+        // A drag produces a fit per step, so roll the quiet window forward
+        // from each fit rather than timing it from the first — never shorter
+        // than a reattach window opened just above.
+        resizeQuietUntil = Math.max(resizeQuietUntil, Date.now() + 250)
       } catch {
         /* element not visible / zero-size */
       }
