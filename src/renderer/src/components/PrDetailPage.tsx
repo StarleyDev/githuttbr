@@ -216,6 +216,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const repoRemotes = useRepoStore((s) => s.repos[repoPath]?.remotes)
   const branchRemote = useMemo(() => remoteForPrUrl(repoRemotes ?? [], remoteUrl), [repoRemotes, remoteUrl])
   const currentBranch = useRepoStore((s) => s.repos[repoPath]?.branches.current)
+  // A PR page restored before its repository was read has no remotes to match
+  // yet: that is "not loaded", not "no remote", and a click loads it first.
+  const repoLoaded = useRepoStore((s) => !!s.repos[repoPath])
+  const canGo = !!branchRemote || !repoLoaded
   // Why a "go to branch" control does nothing, or what it does. Shared by the
   // header buttons and the Branches field so the two never disagree.
   const branchGoTitle = (name: string, inFork: boolean, key: TranslationKey): string =>
@@ -223,9 +227,17 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       ? t('prPage.forkBranchHint')
       : branchRemote
         ? interp(t(key), { branch: name })
-        : interp(t('prPage.noRemoteForBranch'), { url: remoteUrl })
-  const goToBranch = (name: string): void => {
-    if (branchRemote) void repoActions.checkoutPrBranch(repoPath, name, branchRemote)
+        : !repoLoaded
+          ? interp(t('prPage.checkoutAfterLoad'), { branch: name })
+          : interp(t('prPage.noRemoteForBranch'), { url: remoteUrl })
+  const goToBranch = async (name: string): Promise<void> => {
+    if (!useRepoStore.getState().repos[repoPath]) await useRepoStore.getState().ensure(repoPath)
+    const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
+    if (!remote) {
+      toast('info', interp(t('prPage.noRemoteForBranch'), { url: remoteUrl }))
+      return
+    }
+    await repoActions.checkoutPrBranch(repoPath, name, remote)
   }
 
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
@@ -290,14 +302,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               <>
                 <BranchGoButton
                   title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
-                  usable={!pr.sourceRepo && !!branchRemote}
-                  onGo={() => goToBranch(pr.source)}
+                  usable={!pr.sourceRepo && canGo}
+                  onGo={() => void goToBranch(pr.source)}
                   icon={<GitBranch size={14} />}
                 />
                 <BranchGoButton
                   title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
-                  usable={!!branchRemote}
-                  onGo={() => goToBranch(pr.target)}
+                  usable={canGo}
+                  onGo={() => void goToBranch(pr.target)}
                   icon={<Target size={14} />}
                 />
               </>
@@ -612,8 +624,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   <PrBranchName
                     name={pr.source}
                     title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.checkoutBranch')}
-                    usable={!!branchRemote}
-                    onGo={() => goToBranch(pr.source)}
+                    usable={canGo}
+                    onGo={() => void goToBranch(pr.source)}
                     // A fork's branch shares only its name with anything here.
                     isCurrent={!pr.sourceRepo && currentBranch === pr.source}
                     inFork={!!pr.sourceRepo}
@@ -622,8 +634,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   <PrBranchName
                     name={pr.target}
                     title={branchGoTitle(pr.target, false, 'prPage.checkoutBranch')}
-                    usable={!!branchRemote}
-                    onGo={() => goToBranch(pr.target)}
+                    usable={canGo}
+                    onGo={() => void goToBranch(pr.target)}
                     isCurrent={currentBranch === pr.target}
                     inFork={false}
                   />

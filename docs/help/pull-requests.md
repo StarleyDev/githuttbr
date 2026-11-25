@@ -123,6 +123,9 @@ you:
 - **The branch you are already on** is marked *current* instead. Nothing is
   checked out.
 - **The copy button** beside each name puts it on the clipboard.
+- **Undo** (⌘Z) goes back to the branch you were on and deletes the local
+  branch the checkout created — unless you have committed on it since, in which
+  case it is left alone.
 
 The header has the same two moves as buttons: **Go to source branch** and
 **Go to target branch**. They work on the branch you are already on too —

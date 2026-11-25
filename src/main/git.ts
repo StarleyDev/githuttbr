@@ -3611,7 +3611,8 @@ export const gitService = {
       return { diverged: false, aheadOnly: false, ahead, behind }
     } else {
       await git.checkout(['-b', localName, '--track', fullName])
-      return { diverged: false, aheadOnly: false, ahead: 0, behind: 0 }
+      const createdAt = (await runGit(repoPath, ['rev-parse', 'HEAD'])).trim()
+      return { diverged: false, aheadOnly: false, ahead: 0, behind: 0, createdAt }
     }
   },
 
@@ -3661,6 +3662,20 @@ export const gitService = {
 
   async deleteBranch(repoPath: string, name: string, force = false): Promise<void> {
     await gitFor(repoPath).branch([force ? '-D' : '-d', name])
+  },
+
+  /**
+   * Delete a branch only while it still points at `sha` — the undo of a
+   * checkout that created it. A commit made on it since is the user's work, so
+   * a moved branch is left in place (false) instead of force-deleted. Not an
+   * error: the undo it belongs to has still done its part, the checkout back.
+   */
+  async deleteBranchIfAt(repoPath: string, name: string, sha: string): Promise<boolean> {
+    assertNotOption(name, 'the branch name')
+    const tip = (await runGit(repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${name}^{commit}`]).catch(() => '')).trim()
+    if (!tip || tip !== sha) return false
+    await runGit(repoPath, ['branch', '-D', '--', name])
+    return true
   },
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {

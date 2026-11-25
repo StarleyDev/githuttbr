@@ -243,6 +243,7 @@ export const gitApi = {
   createBranch: (path: string, name: string, at?: string, checkout?: boolean) =>
     call<void>('createBranch', path, name, at, checkout),
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),
+  deleteBranchIfAt: (path: string, name: string, sha: string) => call<boolean>('deleteBranchIfAt', path, name, sha),
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
   stackInfo: (path: string, leaf?: string) => call<StackInfo>('stackInfo', path, leaf),

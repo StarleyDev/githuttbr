@@ -1194,6 +1194,7 @@ async function runCheckoutRemoteInner(
     if (ok === true) onLanded?.()
   }
   let checkedOut = false
+  const prev = useRepoStore.getState().repos[path]?.branches.current
   const ui = useUIStore.getState()
   ui.beginInflight()
   ui.setBusy(interp(t('busy.checkingOut'), { name: localName }))
@@ -1228,6 +1229,21 @@ async function runCheckoutRemoteInner(
       return false
     }
     toast('success', interp(t('act.checkedOut'), { ref: localName }))
+    // Back to where HEAD was, and drop the branch this created — only while it
+    // is still where it was made, so nothing committed on it since is lost.
+    // An existing branch that was fast-forwarded keeps its new tip.
+    const createdAt = res.createdAt
+    pushUndo(path, {
+      label: interp(t('undoLabel.checkout'), { ref: localName }),
+      undo: async () => {
+        await gitApi.checkout(path, prev || '-')
+        if (createdAt && !(await gitApi.deleteBranchIfAt(path, localName, createdAt)))
+          toast('info', interp(t('undo.branchKept'), { branch: localName }), { repoPath: path })
+      },
+      redo: async () => {
+        await gitApi.checkoutRemote(path, fullName, localName)
+      }
+    })
     checkedOut = true
     return true
   } catch (err) {
@@ -1270,23 +1286,28 @@ function runFetchAndCheckoutPrBranch(
     ui.beginInflight()
     ui.setBusy(interp(t('busy.fetchingBranch'), { branch: name, remote }), 'fetch')
     muteWatcher(path)
-    let found: boolean
+    // One inflight span over the fetch and the checkout, so the app never reads
+    // as idle in the gap between them.
     try {
-      found = await gitApi.fetchRemoteBranch(path, remote, name)
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err), { repoPath: path })
-      return false
+      let found: boolean
+      try {
+        found = await gitApi.fetchRemoteBranch(path, remote, name)
+      } catch (err) {
+        toast('error', err instanceof Error ? err.message : String(err), { repoPath: path })
+        return false
+      } finally {
+        useUIStore.getState().setBusy(null)
+      }
+      if (!found) {
+        // Merged pull requests often take their branch with them.
+        toast('info', interp(t('act.prBranchGone'), { branch: name, remote }), { repoPath: path })
+        return false
+      }
+      // Already fetched just now, so no second fetch inside checkoutRemote.
+      return await runCheckoutRemoteInner(path, `${remote}/${name}`, name, undefined, onLanded)
     } finally {
-      useUIStore.getState().setBusy(null)
       useUIStore.getState().endInflight()
     }
-    if (!found) {
-      // Merged pull requests often take their branch with them.
-      toast('info', interp(t('act.prBranchGone'), { branch: name, remote }), { repoPath: path })
-      return false
-    }
-    // Already fetched just now, so no second fetch inside checkoutRemote.
-    return runCheckoutRemoteInner(path, `${remote}/${name}`, name, undefined, onLanded)
   })
 }
 

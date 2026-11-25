@@ -49,10 +49,33 @@ describe('fetching one branch of a remote (PR branch links)', () => {
     // One branch, not the remote's whole namespace: main was not fetched.
     expect(git('for-each-ref', '--format=%(refname)', 'refs/remotes/review')).toBe('refs/remotes/review/feature/review-me')
 
-    await gitService.checkoutRemote(repo, 'review/feature/review-me', 'feature/review-me')
+    const res = await gitService.checkoutRemote(repo, 'review/feature/review-me', 'feature/review-me')
+    expect(res.createdAt).toBe(remoteSha)
     expect(git('symbolic-ref', '--short', 'HEAD')).toBe('feature/review-me')
     expect(git('rev-parse', 'HEAD')).toBe(remoteSha)
     expect(git('rev-parse', '--abbrev-ref', 'feature/review-me@{u}')).toBe('review/feature/review-me')
+  })
+
+  it('undo deletes the branch the checkout created, but only while it has not moved', async () => {
+    await gitService.fetchRemoteBranch(repo, 'review', 'feature/review-me')
+    const { createdAt } = await gitService.checkoutRemote(repo, 'review/feature/review-me', 'feature/review-me')
+    expect(createdAt).toBeTruthy()
+
+    // A commit made on it since is the user's work: refused, branch kept.
+    git('commit', '-q', '--allow-empty', '-m', 'work on the PR')
+    git('checkout', '-q', 'main')
+    expect(await gitService.deleteBranchIfAt(repo, 'feature/review-me', createdAt!)).toBe(false)
+    expect(git('branch', '--list', 'feature/review-me')).toContain('feature/review-me')
+
+    // Back at the tip it was created at: deleted, tracking config with it.
+    git('branch', '-f', 'feature/review-me', createdAt!)
+    expect(await gitService.deleteBranchIfAt(repo, 'feature/review-me', createdAt!)).toBe(true)
+    expect(git('branch', '--list', 'feature/review-me')).toBe('')
+    expect(() => git('config', '--get', 'branch.feature/review-me.remote')).toThrow()
+    // An existing branch is not "created": no createdAt, nothing for undo to delete.
+    git('branch', 'feature/review-me', createdAt!)
+    const again = await gitService.checkoutRemote(repo, 'review/feature/review-me', 'feature/review-me')
+    expect(again.createdAt).toBeUndefined()
   })
 
   it('returns false when the remote has no such branch', async () => {

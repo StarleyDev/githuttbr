@@ -91,6 +91,9 @@ export interface CheckoutRemoteResult {
   aheadOnly: boolean
   ahead: number
   behind: number
+  /** The tip of the local branch this call created, absent when it already existed.
+   *  Undo deletes the branch only while it still points there. */
+  createdAt?: string
 }
 
 /** Which of git's reset modes to use when moving a branch onto another tip. */
