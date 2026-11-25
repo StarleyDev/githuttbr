@@ -221,6 +221,15 @@ export interface Symbol {
   line: number
 }
 
+/** C/C++: the function_declarator in a declarator chain (`*f(int)`, `&f()`…), if any. */
+function functionDeclaratorOf(node: TsNode): TsNode | null {
+  let decl = node.childForFieldName('declarator')
+  while (decl && decl.type !== 'function_declarator') {
+    decl = decl.childForFieldName('declarator') ?? decl.namedChildren.find((c) => /declarator$/.test(c.type)) ?? null
+  }
+  return decl
+}
+
 /**
  * The declaration's name. Most grammars expose a `name` field; C-family ones
  * bury it inside a declarator, so fall back to the first identifier-ish node
@@ -229,6 +238,9 @@ export interface Symbol {
 function nameOf(node: TsNode): string {
   const named = node.childForFieldName?.('name')
   if (named) return named.text
+  // `int *f(int a)`: the name sits in a function_declarator under a pointer one.
+  const fnName = functionDeclaratorOf(node)?.childForFieldName('declarator')
+  if (fnName) return fnName.text
   const declarator = node.childForFieldName?.('declarator')
   if (declarator) {
     const inner = declarator.childForFieldName?.('declarator')
@@ -241,26 +253,88 @@ function nameOf(node: TsNode): string {
   return ''
 }
 
-function signatureOf(node: TsNode): string {
-  const params =
-    node.childForFieldName?.('parameters') ??
-    node.childForFieldName?.('parameter_list') ??
-    node.childForFieldName?.('type_parameters')
-  const ret = node.childForFieldName?.('return_type') ?? node.childForFieldName?.('result')
-  const sig = (params?.text ?? '') + (ret ? `: ${ret.text}` : '')
-  return sig.replace(/\s+/g, ' ').trim()
-}
+/** Parameter-list node types, for grammars that give the list no field name. */
+const PARAM_LIST = /^(function_value_parameters|parameters|parameter_list|formal_parameters)$/
 
-function bodyOf(node: TsNode): string {
-  let body = node.childForFieldName?.('body') ?? node.childForFieldName?.('value')
-  // Some grammars (Kotlin, Zig…) expose no `body` field; take the block-ish
-  // child instead, so a pure rename doesn't read as a rewritten body.
+/** The block a declaration's body lives in, by field or — Kotlin, Zig… — by type. */
+function bodyNodeOf(node: TsNode): TsNode | null {
+  // `const f = (a) => …`: the declarator's value is the whole function, so a
+  // parameter change would also read as a body change — use the function's body.
+  if (node.type === 'variable_declarator') {
+    const value = node.childForFieldName('value')
+    return value ? bodyNodeOf(value) : null
+  }
+  let body = node.childForFieldName('body') ?? node.childForFieldName('value')
   if (!body) {
-    for (const child of node.namedChildren ?? []) {
+    for (const child of node.namedChildren) {
       if (/(body|block|statements)$/.test(child.type)) body = child
     }
   }
-  return (body?.text ?? node.text ?? '').replace(/\s+/g, ' ').trim()
+  return body
+}
+
+/** Source text of `node` from `from` (inclusive) up to its body, or to its end. */
+function headerFrom(node: TsNode, from: TsNode): string {
+  const body = bodyNodeOf(node)
+  const end = body && body.startIndex >= from.startIndex ? body.startIndex : node.endIndex
+  return node.text.slice(from.startIndex - node.startIndex, end - node.startIndex)
+}
+
+/**
+ * Parameters plus return type — what a caller depends on. Grammars disagree on
+ * where those live, so this tries, in order: the C-family function_declarator
+ * inside the declarator chain; `parameters` fields (all of them — Scala gives
+ * each clause, type parameters included, its own); and for grammars with no
+ * field (Kotlin, Zig, Swift) the header text from the parameter list to the
+ * body, which carries the return type along with it.
+ */
+function signatureOf(node: TsNode): string {
+  const clean = (sig: string): string => sig.replace(/\s+/g, ' ').trim()
+
+  // `const f = (a: string): number => …` — the signature is the function's.
+  if (node.type === 'variable_declarator') {
+    const value = node.childForFieldName('value')
+    return value ? signatureOf(value) : ''
+  }
+
+  // TS wraps a return type in its `: ` annotation; the other grammars do not.
+  const typeText = (t: TsNode): string => t.text.replace(/^:\s*/, '')
+
+  // C/C++: `int *f(int a) const` nests the parameters under the declarator.
+  const decl = functionDeclaratorOf(node)
+  if (decl) {
+    const name = decl.childForFieldName('declarator')
+    const tail = name ? decl.text.slice(name.endIndex - decl.startIndex) : decl.text
+    const ret = node.childForFieldName('type')
+    return clean(tail + (ret ? `: ${typeText(ret)}` : ''))
+  }
+
+  const fields = node.childrenForFieldName('parameters')
+  const params = fields.length
+    ? fields.map((f) => f.text).join('')
+    : (node.childForFieldName('parameter_list') ?? node.childForFieldName('parameter'))?.text
+  if (params !== undefined) {
+    // Java names its return type `type`, C# `returns`, Rust/TS/Python `return_type`, Go `result`.
+    const ret =
+      node.childForFieldName('return_type') ??
+      node.childForFieldName('result') ??
+      node.childForFieldName('returns') ??
+      (fields.length ? node.childForFieldName('type') : null)
+    return clean(params + (ret ? `: ${typeText(ret)}` : ''))
+  }
+
+  // No field: Kotlin's function_value_parameters, Zig's parameters, or Swift's
+  // bare `(` followed by one `parameter` child each.
+  const start = node.children.find((c) => PARAM_LIST.test(c.type) || c.type === '(')
+  if (start) return clean(headerFrom(node, start))
+  const typeParams = node.childForFieldName('type_parameters')
+  return clean(typeParams?.text ?? '')
+}
+
+function bodyOf(node: TsNode): string {
+  // A grammar with no body at all still gets its whole text, so a pure rename
+  // doesn't read as a rewritten body.
+  return (bodyNodeOf(node)?.text ?? node.text ?? '').replace(/\s+/g, ' ').trim()
 }
 
 /** Walks the tree collecting every declaration the language spec cares about. */
@@ -469,9 +543,11 @@ export async function parseSymbols(path: string, text: string): Promise<Symbol[]
     // null only when parsing is cancelled or times out, neither of which we set.
     const tree = parser.parse(text)
     if (!tree) return null
-    const symbols = collectSymbols(tree.rootNode, spec)
-    tree.delete()
-    return symbols
+    try {
+      return collectSymbols(tree.rootNode, spec)
+    } finally {
+      tree.delete()
+    }
   } finally {
     parser.delete()
   }
