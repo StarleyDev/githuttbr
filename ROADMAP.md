@@ -79,14 +79,6 @@ a device but does not behave like one is not worth shipping.
 Not features, but they decide when features can ship. Electron supports its
 three newest majors, so staying current is a schedule, not a choice.
 
-### The semantic diff's grammars, rebuilt
-The semantic diff parses with web-tree-sitter 0.24 and 18 prebuilt grammars.
-Newer web-tree-sitter releases cannot load those grammars — they were built in
-an older WebAssembly format — so upgrading means building the grammars here
-with tree-sitter's own CLI instead of taking a prebuilt bundle. More work up
-front; in exchange, a grammar can be updated or added without waiting on a
-third-party package.
-
 ### Larger dependency moves, when there is a reason
 React 19, zustand 5, framer-motion and lucide's 1.x icon names each touch most
 of the renderer and none fixes a problem today. They wait for a feature that
