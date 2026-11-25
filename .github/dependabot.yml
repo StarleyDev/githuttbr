@@ -1,0 +1,69 @@
+version: 2
+
+# Weekly, on Monday morning (UTC), so a week's worth of bumps arrives as a
+# handful of grouped PRs instead of a trickle. Every PR goes through Checks.
+# Security updates are not affected by the schedule, the groups or the cooldown:
+# GitHub opens those as soon as an advisory lands (enable "Dependabot security
+# updates" in Settings → Code security).
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+    open-pull-requests-limit: 5
+    # A release a few days old is the one most likely to be yanked or to carry
+    # a compromised publish; let it age before it reaches the lockfile.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    commit-message:
+      prefix: 'build'
+      include: scope
+    groups:
+      # Tooling: one PR for every minor/patch devDependency bump.
+      dev-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+        exclude-patterns: ['electron', 'electron-builder', 'electron-vite']
+      # What ships inside the app: kept apart from tooling so a runtime change
+      # is never buried in a dozen linter bumps.
+      prod-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+      # Electron is the runtime the app ships, so even its minor/patch bumps
+      # get their own PR (and their own changelog read).
+      electron:
+        patterns: ['electron', 'electron-builder', 'electron-vite']
+        update-types: [minor, patch]
+    ignore:
+      # Majors of the runtime and the packager are migrations, not bumps: a new
+      # Electron major moves Chromium and Node, can break node-pty's native
+      # rebuild and the sandbox, and an electron-builder or electron-vite major
+      # changes the build and publish config the release pipeline depends on.
+      # They are done by hand, on a branch, with a test release.
+      - dependency-name: electron
+        update-types: ['version-update:semver-major']
+      - dependency-name: electron-builder
+        update-types: ['version-update:semver-major']
+      - dependency-name: electron-vite
+        update-types: ['version-update:semver-major']
+
+  # Keeps the SHA pins in .github/workflows current: Dependabot rewrites both
+  # the SHA and the trailing `# vX.Y.Z` comment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: 'ci'
+      include: scope
+    groups:
+      actions:
+        patterns: ['*']

@@ -16,10 +16,10 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
+# Read-only by default. Only deploy can publish: the build job runs npm ci and
+# the site generator, and does not need a token that can push to Pages.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Never let two deploys race; let a newer one wait rather than cancel, so a
 # release deploy is not dropped by a docs push landing at the same moment.
@@ -64,6 +64,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # deploy-pages publishes the artifact and proves who it is with an OIDC token.
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
