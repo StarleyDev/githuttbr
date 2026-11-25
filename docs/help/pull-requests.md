@@ -109,12 +109,25 @@ stack, shows only the way back to the list.
 ## Limits
 
 - **Open pull requests are the sidebar's list.** GitHub, GitLab and
-  bitbucket.org read the first 30; a repository with more shows only those.
-  Azure DevOps, Bitbucket Data Center and Forgejo read them all.
-- **Merged and closed are the 100 most recently active of each** (GitHub: of
-  both together). The tab says when the host has more; its website lists them
-  all. Their checks are not read — a finished pull request's CI decides nothing,
-  and it would cost a request per row.
+  bitbucket.org read the first 30; a repository with more shows only those, and
+  the Open count reads **30+**. Azure DevOps, Bitbucket Data Center and Forgejo
+  read them all.
+- **Merged and closed are bounded**, and the tab shows **+** when the host has
+  more (its website lists them all):
+
+  | Host | What is read |
+  |---|---|
+  | GitHub, bitbucket.org, Forgejo | The 100 most recently updated, merged and closed **together** |
+  | GitLab | The 100 most recently updated of each |
+  | Bitbucket Data Center | 100 of each in the server's *newest* order — its API does not say whether that means opened or updated |
+  | Azure DevOps | 100 of each among those that ended in the **last year**; its API names no order, so past a hundred which ones is the server's choice |
+
+  Their checks are not read — a finished pull request's CI decides nothing, and
+  it would cost a request per row — so **CI failing** does not apply on those
+  tabs (its chip is hidden there).
+- **No account**: without a token that reaches the host, Merged and Closed say
+  so instead of showing an empty list (GitHub can still read a public
+  repository).
 - **Checks**: GitHub and Bitbucket Data Center carry them in the list. GitLab,
   Azure DevOps and Forgejo are asked once per head when the page opens, through
   the same cache as the graph's CI badges. bitbucket.org has none.

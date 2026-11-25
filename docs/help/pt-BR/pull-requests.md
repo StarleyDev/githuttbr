@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — e ‹ › para percorrer a lista filtrada de dentro de um PR.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação
-source: b44a68b542915dbac197b918b6b89d1e7de48c21
+source: dbf2ca10587e49fe3143a8eb6b858a8de55c0a14
 ---
 
 # Página de pull requests
@@ -112,12 +112,25 @@ nível mesclado de uma pilha, mostra só o caminho de volta para a lista.
 ## Limites
 
 - **Os pull requests abertos são a lista da barra lateral.** GitHub, GitLab e
-  bitbucket.org leem os 30 primeiros; um repositório com mais mostra só esses.
-  Azure DevOps, Bitbucket Data Center e Forgejo leem todos.
-- **Mesclados e fechados são os 100 com atividade mais recente de cada** (no
-  GitHub, dos dois juntos). A aba avisa quando o host tem mais; o site dele lista
-  todos. Os checks deles não são lidos — o CI de um pull request encerrado não
-  decide mais nada, e custaria uma requisição por linha.
+  bitbucket.org leem os 30 primeiros; um repositório com mais mostra só esses,
+  e a contagem de Abertos fica **30+**. Azure DevOps, Bitbucket Data Center e
+  Forgejo leem todos.
+- **Mesclados e fechados têm limite**, e a aba mostra **+** quando o host tem
+  mais (o site dele lista todos):
+
+  | Host | O que é lido |
+  |---|---|
+  | GitHub, bitbucket.org, Forgejo | Os 100 atualizados mais recentemente, mesclados e fechados **juntos** |
+  | GitLab | Os 100 atualizados mais recentemente de cada |
+  | Bitbucket Data Center | 100 de cada na ordem *newest* do servidor — a API dele não diz se é por abertura ou atualização |
+  | Azure DevOps | 100 de cada entre os encerrados no **último ano**; a API não define ordem, então, passando de cem, quais vêm é escolha do servidor |
+
+  Os checks deles não são lidos — o CI de um pull request encerrado não decide
+  mais nada, e custaria uma requisição por linha —, então **CI falhando** não
+  vale nessas abas (o chip some lá).
+- **Sem conta**: sem um token que alcance o host, Mesclados e Fechados avisam
+  isso em vez de mostrar uma lista vazia (o GitHub ainda lê um repositório
+  público).
 - **Checks**: GitHub e Bitbucket Data Center já os trazem na lista. GitLab,
   Azure DevOps e Forgejo são consultados uma vez por head quando a página abre,
   pelo mesmo cache dos selos de CI do grafo. bitbucket.org não tem.
