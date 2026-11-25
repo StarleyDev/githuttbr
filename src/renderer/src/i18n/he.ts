@@ -1742,6 +1742,10 @@ export const he: Dict = {
   'settings.integrationsHint':
     'רשות. בלי טוקן, השתמשו ב־„Sign in with git” כדי לקשר חשבון לפרופיל הזה. Gitcito לא שואל כניסות אחרות במחשב הזה. ארגוני Azure DevOps שזקוקים לחשבונות שונים לוקחים כל אחד פרופיל משלו, או טוקן משלו.',
   'settings.loadingAccount': 'טוען את החשבון…',
+  'settings.tokenRefused': '{provider} דחה את האסימון הזה — הוא שגוי, פג תוקפו או שחסרות לו ההרשאות הנדרשות. הוא נשמר, אבל לא יעבוד עד שתחליפו אותו.',
+  'settings.tokenUnreachable': 'לא ניתן היה להתחבר אל {server} כדי לבדוק את האסימון כרגע — הוא נשמר וייתכן שהוא תקין.',
+  'settings.tokenCheckRetry': 'ניסיון חוזר',
+  'settings.tokenNeedsAddress': 'הזינו למעלה כתובת שרת תקינה כדי להוסיף אסימון.',
   'settings.signInWithGit': 'התחברות באמצעות git',
   'settings.connectedViaToken': 'מחובר באמצעות אסימון הגישה האישי שלמטה.',
   'settings.connectedViaGit': 'מחובר דרך ה-credential helper של git.',

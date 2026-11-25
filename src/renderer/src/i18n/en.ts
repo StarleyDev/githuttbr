@@ -1736,6 +1736,10 @@ export const en = {
   'settings.integrationsHint':
     'Optional. Without a token, use Sign in with git to link an account to this profile. Gitcito does not borrow other logins on this machine. Azure DevOps organizations that need different accounts take one profile each, or a token each.',
   'settings.loadingAccount': 'Loading account…',
+  'settings.tokenRefused': '{provider} refused this token — it is wrong, expired, or lacks the scopes. It is saved but will not work until you replace it.',
+  'settings.tokenUnreachable': "Couldn't reach {server} to check this token right now — it is saved and may be fine.",
+  'settings.tokenCheckRetry': 'Retry',
+  'settings.tokenNeedsAddress': 'Enter a valid server address above to add a token.',
   'settings.signInWithGit': 'Sign in with git',
   'settings.connectedViaToken': 'Connected with the personal access token below.',
   'settings.connectedViaGit': "Connected through git's credential helper.",

@@ -7101,6 +7101,31 @@ body.col-resizing .node-ava {
   font-size: 11.5px;
   color: var(--red, #e5484d);
 }
+/* A token check's verdict: red when the server refused the token, amber when
+   nothing could be learned about it (offline, 5xx, rate limit). */
+.token-check {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+}
+.token-check-refused {
+  color: var(--red, #e5484d);
+  background: color-mix(in srgb, var(--red, #e5484d) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red, #e5484d) 30%, transparent);
+}
+.token-check-unreachable {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+}
+.token-check-detail {
+  color: var(--text-2);
+  font-size: 11px;
+}
 
 .modal-actions {
   display: flex;

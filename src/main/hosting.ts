@@ -12,6 +12,8 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
+import { atServer, HttpStatusError } from './httpStatusError'
+import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
 import { githubCiRuns } from './ciRunsGithub'
@@ -2681,15 +2683,23 @@ async function ghJson<T>(url: string, token: string, init?: RequestInit): Promis
 async function ghError(res: Response): Promise<Error> {
   const msg = (await res.json().catch(() => null)) as { message?: string } | null
   // Surface when the rate limit resets so the user knows how long to wait.
+  // A spent primary limit says `remaining: 0`; a secondary one says only `retry-after`.
+  const throttled =
+    (res.status === 403 || res.status === 429) &&
+    (res.headers.get('x-ratelimit-remaining') === '0' || res.headers.has('retry-after'))
   if (res.status === 403 || res.status === 429) {
     const remaining = res.headers.get('x-ratelimit-remaining')
     const reset = res.headers.get('x-ratelimit-reset')
     if (remaining === '0' && reset) {
       const at = new Date(+reset * 1000).toLocaleTimeString()
-      return new Error(`GitHub rate limit exceeded — resets at ${at}.`)
+      return new HttpStatusError(`GitHub rate limit exceeded — resets at ${at}.`, res.status, true)
     }
   }
-  return new Error(msg?.message ? `GitHub: ${msg.message}` : `GitHub API error (${res.status})`)
+  return new HttpStatusError(
+    msg?.message ? `GitHub: ${msg.message}` : `GitHub API error (${res.status})`,
+    res.status,
+    throttled
+  )
 }
 
 /** Accounts a new repo can be created under: the authenticated user plus their orgs/groups. */
@@ -2773,6 +2783,27 @@ function azureAuthError(status: number, org?: string): string {
   return `Azure DevOps API error (${status})`
 }
 
+/**
+ * Settings → Integrations' check of a token: the account, or why there is none —
+ * a refusal, a server that could not be reached, or anything else — as a typed
+ * result. Electron hands a thrown error to the renderer as its message alone,
+ * which would leave the renderer guessing from English.
+ */
+async function checkToken(
+  provider: RepoHost,
+  token: string,
+  org?: string,
+  interactive = false,
+  link?: AccountLink,
+  issuer?: string
+): Promise<TokenCheckResult> {
+  try {
+    return { ok: true, account: await fetchConnectedAccount(provider, token, org, interactive, link, issuer) }
+  } catch (err) {
+    return { ok: false, failure: tokenCheckFailure(err) }
+  }
+}
+
 /** Resolve the authenticated user behind a stored token, for display in Settings → Integrations. */
 async function fetchConnectedAccount(
   provider: RepoHost,
@@ -2791,8 +2822,10 @@ async function fetchConnectedAccount(
     // Main cannot tell a token just typed from a saved one the renderer holds
     // and sent here, so one the app already has is not sent to a new host.
     if (await isHeldSecret(token)) throw new Error(HELD_TOKEN_TO_UNSAVED_SERVER)
-    if (provider === 'bitbucket') return { source: 'token', ...(await describeBbsAccount(unsaved, token.trim())) }
-    return describeAccount(provider, { token: token.trim(), source: 'token' }, unsaved)
+    if (provider === 'bitbucket') {
+      return { source: 'token', ...(await describeBbsAccount(unsaved, token.trim()).catch(atServer(unsaved))) }
+    }
+    return describeAccount(provider, { token: token.trim(), source: 'token' }, unsaved).catch(atServer(unsaved))
   }
   // Only an explicit "sign in" may open the helper's login window. Merely opening
   // the Settings page must not prompt for four providers at once.
@@ -2807,12 +2840,16 @@ async function fetchConnectedAccount(
   // A Data Center likewise: its own token, sent only to the base it was saved under.
   if (provider === 'bitbucket' && base !== BITBUCKET_CLOUD) {
     if (!token.trim()) return null
-    return { source: 'token', ...(await describeBbsAccount(base, token.trim())) }
+    return { source: 'token', ...(await describeBbsAccount(base, token.trim()).catch(atServer(base))) }
   }
   if ((provider === 'gitlab' || provider === 'forgejo') && token && !tokenMatchesInstance(provider, base, issuer)) return null
   const auth = await apiToken(base, { token, link }, { interactive })
   if (!auth) throw await noCredential(provider, base)
-  const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' || provider === 'github' ? base : org)
+  const account = await describeAccount(
+    provider,
+    auth,
+    provider === 'gitlab' || provider === 'forgejo' || provider === 'github' ? base : org
+  ).catch(atServer(base))
   if (link || auth.source === 'token') return account
   // A sign-in found a machine login: hand back the link for the profile to keep.
   // gh is asked by account name, which is the GitHub login; git by the username
@@ -2896,7 +2933,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
     // again would refuse a server that is being checked before it is saved.
     const api = glApi(org)
     const userRes = await fetch(`${api}/user`, { headers, redirect: 'error' })
-    if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
+    if (!userRes.ok) throw new HttpStatusError(`GitLab API error (${userRes.status})`, userRes.status)
     const user = (await userRes.json()) as {
       id: number
       username: string
@@ -2926,7 +2963,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
   if (provider === 'bitbucket') {
     const bbAuth = bitbucketAuthFor(auth)
     const userRes = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: bbAuth } })
-    if (!userRes.ok) throw new Error(`Bitbucket API error (${userRes.status})`)
+    if (!userRes.ok) throw new HttpStatusError(`Bitbucket API error (${userRes.status})`, userRes.status)
     const user = (await userRes.json()) as {
       username: string
       display_name: string | null
@@ -2971,7 +3008,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
         }
       }>(`${base}/_apis/connectionData?api-version=7.1-preview`, t)
     ).catch((err) => {
-      throw err instanceof AzureAuthError ? new Error(azureAuthError(err.status, orgName)) : err
+      throw err instanceof AzureAuthError ? new HttpStatusError(azureAuthError(err.status, orgName), err.status) : err
     })
     const user = data.authenticatedUser
     const email = user?.properties?.Account?.$value
@@ -2989,7 +3026,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
     'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1',
     auth.token
   ).catch((err) => {
-    throw err instanceof AzureAuthError ? new Error(azureAuthError(err.status)) : err
+    throw err instanceof AzureAuthError ? new HttpStatusError(azureAuthError(err.status), err.status) : err
   })
   return {
     source: auth.source,
@@ -3554,7 +3591,7 @@ export function registerHostingHandlers(): void {
   ipcMain.handle(
     'hosting:whoAmI',
     (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: unknown, issuer?: string) =>
-      fetchConnectedAccount(provider, token, org, interactive, validAccountLink(link), issuer)
+      checkToken(provider, token, org, interactive, validAccountLink(link), issuer)
   )
   ipcMain.handle(
     'hosting:createRepo',

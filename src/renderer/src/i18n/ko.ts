@@ -1742,6 +1742,10 @@ export const ko: Dict = {
   'settings.integrationsHint':
     '선택 사항입니다. 토큰이 없으면 “Sign in with git”으로 이 프로필에 계정을 연결하세요. Gitcito는 이 컴퓨터의 다른 로그인을 빌려 쓰지 않습니다. 서로 다른 계정이 필요한 Azure DevOps 조직은 프로필을 따로 쓰거나 토큰을 각각 사용합니다.',
   'settings.loadingAccount': '계정을 불러오는 중…',
+  'settings.tokenRefused': '{provider}에서 이 토큰을 거부했습니다. 토큰이 잘못되었거나 만료되었거나 필요한 범위가 없습니다. 저장은 되어 있지만 교체하기 전까지는 작동하지 않습니다.',
+  'settings.tokenUnreachable': '지금은 {server}에 연결할 수 없어 이 토큰을 확인하지 못했습니다. 토큰은 저장되어 있으며 문제가 없을 수 있습니다.',
+  'settings.tokenCheckRetry': '다시 시도',
+  'settings.tokenNeedsAddress': '토큰을 추가하려면 위에 올바른 서버 주소를 입력하세요.',
   'settings.signInWithGit': 'git으로 로그인',
   'settings.connectedViaToken': '아래 개인 액세스 토큰으로 연결되어 있습니다.',
   'settings.connectedViaGit': 'git의 credential helper를 통해 연결되어 있습니다.',

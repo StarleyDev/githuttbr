@@ -1742,6 +1742,10 @@ export const ar: Dict = {
   'settings.integrationsHint':
     'اختياري. بدون رمز، استخدم «Sign in with git» لربط حساب بهذا الملف الشخصي. لا يستعير Gitcito عمليات تسجيل دخول أخرى على هذا الجهاز. مؤسسات Azure DevOps التي تحتاج إلى حسابات مختلفة تأخذ كل واحدة ملفًا شخصيًا أو رمزًا خاصًا بها.',
   'settings.loadingAccount': 'جارٍ تحميل الحساب…',
+  'settings.tokenRefused': 'رفض {provider} هذا الرمز — فهو خاطئ أو منتهي الصلاحية أو يفتقد الصلاحيات المطلوبة. لا يزال محفوظًا لكنه لن يعمل حتى تستبدله.',
+  'settings.tokenUnreachable': 'تعذّر الوصول إلى {server} للتحقق من هذا الرمز الآن — الرمز محفوظ وقد يكون سليمًا.',
+  'settings.tokenCheckRetry': 'إعادة المحاولة',
+  'settings.tokenNeedsAddress': 'أدخل عنوان خادم صالحًا في الأعلى لإضافة رمز.',
   'settings.signInWithGit': 'تسجيل الدخول عبر git',
   'settings.connectedViaToken': 'متصل باستخدام رمز الوصول الشخصي أدناه.',
   'settings.connectedViaGit': 'متصل عبر credential helper الخاص بـ git.',

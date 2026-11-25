@@ -1742,6 +1742,10 @@ export const ru: Dict = {
   'settings.integrationsHint':
     'Необязательно. Без токена используйте «Sign in with git», чтобы привязать к профилю аккаунт. Gitcito не берёт другие входы на этом компьютере. Организации Azure DevOps, которым нужны разные аккаунты, используют по отдельному профилю или по отдельному токену.',
   'settings.loadingAccount': 'Загрузка учётной записи…',
+  'settings.tokenRefused': '{provider} отклонил этот токен — он неверный, истёк или не имеет нужных прав. Он сохранён, но не будет работать, пока вы его не замените.',
+  'settings.tokenUnreachable': 'Сейчас не удалось связаться с {server}, чтобы проверить этот токен, — он сохранён и, возможно, в порядке.',
+  'settings.tokenCheckRetry': 'Повторить',
+  'settings.tokenNeedsAddress': 'Укажите выше корректный адрес сервера, чтобы добавить токен.',
   'settings.signInWithGit': 'Войти через git',
   'settings.connectedViaToken': 'Подключено с помощью личного токена доступа ниже.',
   'settings.connectedViaGit': 'Подключено через credential helper git.',

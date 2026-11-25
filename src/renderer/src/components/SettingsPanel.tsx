@@ -78,6 +78,8 @@ import type { IconTone } from '../lib/iconTone'
 import { Avatar } from './Avatar'
 import { PosixShellPicker } from './PosixShellPicker'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
+import { TokenCheckNotice } from './TokenCheckNotice'
+import type { TokenCheckFailure } from '../../../shared/tokenCheck'
 import { GithubEnterpriseSettings } from './GithubEnterpriseSettings'
 import { BitbucketServerSettings } from './BitbucketServerSettings'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
@@ -504,6 +506,9 @@ export function IntegrationsPage({
   // drop a user name or a query the user then never sees refused.
   const forgejoUrlProblem = forgejoUrl.trim() ? instanceUrlProblem(forgejoUrl) : null
   const forgejoUrlInvalid = !!forgejoUrlProblem
+  // A scoped token belongs to one server: with no valid address there is nowhere to send it yet.
+  const tokenNeedsAddress = !!scoped && !tokenInstance(scoped, address)
+  const forgejoUrlId = useId()
   // Azure scopes by organization, Forgejo by instance; this tab's GitLab is gitlab.com.
   const whoAmIOrg =
     active.id === 'azure'
@@ -517,6 +522,11 @@ export function IntegrationsPage({
 
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
   const [accountError, setAccountError] = useState<string | null>(null)
+  // Why the host gave no account — refused, unreachable or another error — kept
+  // apart from accountError, which holds this page's own messages.
+  const [checkFailure, setCheckFailure] = useState<TokenCheckFailure | null>(null)
+  // Bumped by Retry: re-runs the silent check through the effect, so a tab switch still cancels it.
+  const [checkRun, setCheckRun] = useState(0)
   const [loadingAccount, setLoadingAccount] = useState(false)
 
   // Connected means "an account resolved" for this profile: its token, or its
@@ -564,6 +574,7 @@ export function IntegrationsPage({
       const announce = interactive || (tokenEdit.current?.tab === active.id && tokenEdit.current.token === token)
       setAccount(null)
       setAccountError(null)
+      setCheckFailure(null)
       if (active.id === 'azure' && !whoAmIOrg) {
         setLoadingAccount(false)
         setAccountError(azureOrgRequired)
@@ -575,9 +586,15 @@ export function IntegrationsPage({
       void hostingApi
         // Signing in is always a fresh look for a login: reusing the current link
         // would ask again for an account that may be gone, with no way to pick another.
-        .whoAmI(active.id, token, whoAmIOrg, interactive, interactive ? undefined : latest.current.link, issuer)
-        .then(async (info) => {
+        .checkToken(active.id, token, whoAmIOrg, interactive, interactive ? undefined : latest.current.link, issuer)
+        .then(async (result) => {
           if (!alive) return
+          if (!result.ok) {
+            // A refused token stays saved: replacing it is the user's call, never the check's.
+            setCheckFailure(result.failure)
+            return
+          }
+          const info = result.account
           const { edit, profile, label, t } = latest.current
           if (info?.link) {
             // A sign-in found a login on this machine. It becomes this profile's
@@ -604,7 +621,7 @@ export function IntegrationsPage({
           }
         })
         .catch((err: Error) => {
-          if (alive) setAccountError(err.message)
+          if (alive) setCheckFailure({ kind: 'error', message: err.message })
         })
         .finally(() => {
           if (alive) setLoadingAccount(false)
@@ -618,7 +635,7 @@ export function IntegrationsPage({
   )
 
   // Silent on mount — opening Settings must never pop four sign-in windows.
-  useEffect(() => check(false), [check])
+  useEffect(() => check(false), [check, checkRun])
 
   return (
     <>
@@ -678,6 +695,9 @@ export function IntegrationsPage({
         {loadingAccount && <span className="settings-hint">{t('settings.loadingAccount')}</span>}
         {!loadingAccount && accountError && (
           <span className="connected-account-error">{readableError(accountError, t, interp)}</span>
+        )}
+        {!loadingAccount && checkFailure && (
+          <TokenCheckNotice failure={checkFailure} provider={active.label} onRetry={() => setCheckRun((n) => n + 1)} />
         )}
         {/* A link whose account is gone (gh logged out, the helper lost it, an
             imported profile): still shown, with its way out — otherwise the only
@@ -757,13 +777,41 @@ export function IntegrationsPage({
         )}
       </div>
 
+      {/* The address comes first: the token field below stays shut until it is valid,
+          and says so — a disabled field with no reason reads as broken. */}
+      {active.id === 'forgejo' && (
+        <label>
+          {t('settings.forgejoUrl')} *
+          <input
+            id={forgejoUrlId}
+            type="text"
+            value={forgejoUrl}
+            placeholder={t('settings.forgejoUrlPlaceholder')}
+            required
+            aria-required="true"
+            aria-invalid={forgejoUrlInvalid}
+            aria-describedby={`${forgejoUrlId}-hint`}
+            onChange={(e) => edit(editInstance(profile, 'forgejo', e.target.value))}
+          />
+          {forgejoUrlProblem ? (
+            <span id={`${forgejoUrlId}-hint`} className="connected-account-error" role="alert">
+              {t(FORGEJO_URL_PROBLEM[forgejoUrlProblem])}
+            </span>
+          ) : (
+            <span id={`${forgejoUrlId}-hint`} className="settings-hint">
+              {t('settings.forgejoUrlHint')}
+            </span>
+          )}
+        </label>
+      )}
       <label>
         {active.kind === 'app' ? t('settings.appPassword') : t('settings.pat')}
         <input
           type="password"
           value={token}
           placeholder={'placeholderKey' in active ? t(active.placeholderKey) : active.placeholder}
-          disabled={!!scoped && !tokenInstance(scoped, address)}
+          disabled={tokenNeedsAddress}
+          aria-describedby={tokenNeedsAddress ? `${forgejoUrlId}-needs ${forgejoUrlId}-hint` : undefined}
           onChange={(e) => {
             tokenEdit.current = { tab: active.id, token: e.target.value }
             edit({
@@ -772,6 +820,13 @@ export function IntegrationsPage({
             } as Partial<Profile>)
           }}
         />
+        {tokenNeedsAddress && (
+          <span id={`${forgejoUrlId}-needs`} className="settings-hint">
+            <button className="link-inline" type="button" onClick={() => document.getElementById(forgejoUrlId)?.focus()}>
+              {t('settings.tokenNeedsAddress')}
+            </button>
+          </span>
+        )}
         <span className="settings-hint">{interp(t('settings.tokenForProfile'), { profile: profile.name })}</span>
         {active.id === 'gitlab' && <span className="settings-hint">{t('settings.gitlabComHint')}</span>}
       </label>
@@ -788,23 +843,6 @@ export function IntegrationsPage({
             onChange={(e) => edit({ azureOrg: e.target.value })}
           />
           <span className="settings-hint">{t('settings.azureOrgHint')}</span>
-        </label>
-      )}
-      {active.id === 'forgejo' && (
-        <label>
-          {t('settings.forgejoUrl')} *
-          <input
-            type="text"
-            value={forgejoUrl}
-            placeholder={t('settings.forgejoUrlPlaceholder')}
-            required
-            aria-required="true"
-            aria-invalid={forgejoUrlInvalid}
-            onChange={(e) => edit(editInstance(profile, 'forgejo', e.target.value))}
-          />
-          <span className="settings-hint">
-            {t(forgejoUrlProblem ? FORGEJO_URL_PROBLEM[forgejoUrlProblem] : 'settings.forgejoUrlHint')}
-          </span>
         </label>
       )}
       <button

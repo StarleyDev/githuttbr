@@ -1743,6 +1743,10 @@ export const nl: Dict = {
   'settings.integrationsHint':
     'Optioneel. Zonder token koppel je met „Sign in with git” een account aan dit profiel. Gitcito leent geen andere logins van deze computer. Azure DevOps-organisaties die andere accounts nodig hebben, nemen elk een eigen profiel of een eigen token.',
   'settings.loadingAccount': 'Account laden…',
+  'settings.tokenRefused': '{provider} heeft dit token geweigerd — het is onjuist, verlopen of mist de benodigde scopes. Het blijft opgeslagen, maar werkt pas als je het vervangt.',
+  'settings.tokenUnreachable': 'Kon {server} nu niet bereiken om dit token te controleren — het is opgeslagen en is misschien in orde.',
+  'settings.tokenCheckRetry': 'Opnieuw proberen',
+  'settings.tokenNeedsAddress': 'Vul hierboven een geldig serveradres in om een token toe te voegen.',
   'settings.signInWithGit': 'Inloggen met git',
   'settings.connectedViaToken': 'Verbonden met het persoonlijke toegangstoken hieronder.',
   'settings.connectedViaGit': 'Verbonden via de credential helper van git.',

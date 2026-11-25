@@ -1723,6 +1723,10 @@ export const fr: Dict = {
   'settings.integrationsHint':
     'Facultatif. Sans jeton, utilisez « Sign in with git » pour lier un compte à ce profil. Gitcito n’emprunte pas les autres connexions de cet ordinateur. Les organisations Azure DevOps qui exigent des comptes différents prennent chacune un profil, ou chacune un jeton.',
   'settings.loadingAccount': 'Chargement du compte…',
+  'settings.tokenRefused': "{provider} a refusé ce jeton : il est incorrect, expiré ou n'a pas les portées nécessaires. Il reste enregistré, mais ne fonctionnera pas tant que vous ne l'aurez pas remplacé.",
+  'settings.tokenUnreachable': "Impossible de joindre {server} pour vérifier ce jeton pour l'instant — il est enregistré et est peut-être valide.",
+  'settings.tokenCheckRetry': 'Réessayer',
+  'settings.tokenNeedsAddress': 'Saisissez ci-dessus une adresse de serveur valide pour ajouter un jeton.',
   'settings.signInWithGit': 'Se connecter avec git',
   'settings.connectedViaToken': "Connecté avec le jeton d'accès personnel ci-dessous.",
   'settings.connectedViaGit': 'Connecté via le credential helper de git.',

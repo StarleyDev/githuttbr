@@ -1742,6 +1742,10 @@ export const zhCN: Dict = {
   'settings.integrationsHint':
     '可选。没有令牌时，请用“Sign in with git”为此配置文件关联一个账户。Gitcito 不会借用这台电脑上的其他登录。需要不同账户的 Azure DevOps 组织，请各用一个配置文件，或各用一个令牌。',
   'settings.loadingAccount': '正在加载账户…',
+  'settings.tokenRefused': '{provider} 拒绝了此令牌——令牌有误、已过期或缺少所需的权限范围。令牌仍已保存，但在你替换之前无法使用。',
+  'settings.tokenUnreachable': '暂时无法连接 {server} 来检查此令牌——令牌已保存，可能并无问题。',
+  'settings.tokenCheckRetry': '重试',
+  'settings.tokenNeedsAddress': '请先在上方输入有效的服务器地址，再添加令牌。',
   'settings.signInWithGit': '用 git 登录',
   'settings.connectedViaToken': '已通过下方的个人访问令牌连接。',
   'settings.connectedViaGit': '已通过 git 的 credential helper 连接。',

@@ -24,6 +24,7 @@ import {
   isReviewableRemote,
   repoHasIssueTracker
 } from '../src/renderer/src/lib/hosting'
+import type { TokenCheckResult } from '../src/shared/tokenCheck'
 
 // GitHub Enterprise Server: one resolver for every GitHub URL, and a token that
 // only ever reaches the server it was saved for. The call-site tests run the
@@ -297,6 +298,12 @@ describe('every formerly hardcoded call site uses the resolver', () => {
   })
 
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  // Settings' check answers a typed result (shared/tokenCheck.ts); these tests want the account or a throw.
+  const whoAmI = async (...args: unknown[]): Promise<unknown> => {
+    const r = (await call('hosting:whoAmI', ...args)) as TokenCheckResult
+    if (!r.ok) throw new Error(r.failure.message)
+    return r.account
+  }
   // A repository-scoped call's first argument is the repository; '' is none (the active profile).
   const UNBOUND = ''
   const REMOTE = 'https://github.example.corp/team/app.git'
@@ -372,7 +379,7 @@ describe('every formerly hardcoded call site uses the resolver', () => {
     const SAVED = [COM_TOKEN, GHES_TOKEN, GHES_B_TOKEN]
 
     it('asks that server, with exactly the token the call carries', async () => {
-      await call('hosting:whoAmI', 'github', ` ${TYPED} `, 'GHE.New.Example/', false)
+      await whoAmI('github', ` ${TYPED} `, 'GHE.New.Example/', false)
       expect(calls.map((c) => c.url)).toContain(`${NEW}/api/v3/user`)
       for (const c of calls) {
         expect(c.url.startsWith(`${NEW}/api/v3/`)).toBe(true)
@@ -381,22 +388,22 @@ describe('every formerly hardcoded call site uses the resolver', () => {
     })
 
     it('without a token of its own it is refused, and nothing is sent', async () => {
-      await expect(call('hosting:whoAmI', 'github', '', NEW, true)).rejects.toThrow(/not saved/)
-      await expect(call('hosting:whoAmI', 'github', '   ', NEW, false, { source: 'gh', login: 'me' })).rejects.toThrow(
+      await expect(whoAmI('github', '', NEW, true)).rejects.toThrow(/not saved/)
+      await expect(whoAmI('github', '   ', NEW, false, { source: 'gh', login: 'me' })).rejects.toThrow(
         /not saved/
       )
       expect(calls).toHaveLength(0)
     })
 
     it('a link or sign-in request alongside the token changes nothing: only that token goes', async () => {
-      await call('hosting:whoAmI', 'github', TYPED, NEW, true, { source: 'gh', login: 'me' })
+      await whoAmI('github', TYPED, NEW, true, { source: 'gh', login: 'me' })
       expect(calls.length).toBeGreaterThan(0)
       for (const c of calls) expect(c.auth).toBe(`Bearer ${TYPED}`)
     })
 
     it('an address Settings would refuse is refused here too', async () => {
       for (const bad of ['http://ghe.new.example', 'https://me:pw@ghe.new.example', 'https://ghe.new.example/x', 'https://x.ghe.com']) {
-        await expect(call('hosting:whoAmI', 'github', TYPED, bad, false)).rejects.toThrow(/not saved/)
+        await expect(whoAmI('github', TYPED, bad, false)).rejects.toThrow(/not saved/)
       }
       expect(calls).toHaveLength(0)
     })
@@ -407,8 +414,8 @@ describe('every formerly hardcoded call site uses the resolver', () => {
     })
 
     it('no saved token ever reaches the new server', async () => {
-      await call('hosting:whoAmI', 'github', TYPED, NEW, false).catch(() => undefined)
-      await call('hosting:whoAmI', 'github', '', NEW, true).catch(() => undefined)
+      await whoAmI('github', TYPED, NEW, false).catch(() => undefined)
+      await whoAmI('github', '', NEW, true).catch(() => undefined)
       for (const c of calls) for (const t of SAVED) expect(c.auth).not.toContain(t)
     })
 
@@ -417,14 +424,60 @@ describe('every formerly hardcoded call site uses the resolver', () => {
     it('a token the app already holds is not sent to the new server', async () => {
       const { HELD_TOKEN_TO_UNSAVED_SERVER } = await import('../src/main/hosting')
       for (const saved of SAVED) {
-        await expect(call('hosting:whoAmI', 'github', ` ${saved} `, NEW, false)).rejects.toThrow(HELD_TOKEN_TO_UNSAVED_SERVER)
+        await expect(whoAmI('github', ` ${saved} `, NEW, false)).rejects.toThrow(HELD_TOKEN_TO_UNSAVED_SERVER)
       }
       expect(calls).toHaveLength(0)
     })
 
     it('a saved server still resolves the normal way', async () => {
-      await call('hosting:whoAmI', 'github', GHES_TOKEN, GHES, false)
+      await whoAmI('github', GHES_TOKEN, GHES, false)
       expectOnlyGhes()
+    })
+  })
+
+  // Settings tells a refused token from a server it could not ask (shared/tokenCheck.ts).
+  describe('the check says why there is no account', () => {
+    const answering = async (reply: () => Promise<Response>, ...args: unknown[]): Promise<TokenCheckResult> => {
+      const stub = vi.mocked(globalThis.fetch)
+      const normal = stub.getMockImplementation()
+      stub.mockImplementation(reply)
+      try {
+        return (await call('hosting:whoAmI', ...args)) as TokenCheckResult
+      } finally {
+        stub.mockImplementation(normal!)
+      }
+    }
+    const status =
+      (s: number, headers: Record<string, string> = {}) =>
+      async (): Promise<Response> =>
+        new Response('{}', { status: s, headers })
+
+    it('GitHub Enterprise Server: 401 refused the token, a 502 could not check it', async () => {
+      expect(await answering(status(401), 'github', GHES_TOKEN, GHES, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'refused', server: 'github.example.corp' }
+      })
+      expect(await answering(status(502), 'github', GHES_TOKEN, GHES, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable', server: 'github.example.corp' }
+      })
+    })
+
+    it('github.com: bad credentials are a refusal, a spent rate limit is not', async () => {
+      expect(await answering(status(401), 'github', COM_TOKEN, undefined, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'refused', server: 'github.com' }
+      })
+      // GitHub throttles with a 403 — primary limit (remaining: 0) and secondary (retry-after).
+      const spent = status(403, { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1700000000' })
+      expect(await answering(spent, 'github', COM_TOKEN, undefined, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable' }
+      })
+      expect(await answering(status(403, { 'retry-after': '60' }), 'github', COM_TOKEN, undefined, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable' }
+      })
     })
   })
 

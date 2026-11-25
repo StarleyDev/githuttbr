@@ -19,6 +19,7 @@ import type {
   RemoteOwner,
   RemoteRepo
 } from '../shared/types'
+import { HttpStatusError } from './httpStatusError'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -43,7 +44,7 @@ async function fjResponse(url: string, token: string, init?: RequestInit): Promi
   if (!res.ok) {
     const d = (await res.json().catch(() => null)) as { message?: unknown } | null
     const msg = typeof d?.message === 'string' ? d.message.trim() : ''
-    throw new Error(msg ? `Forgejo: ${msg}` : `Forgejo API error (${res.status})`)
+    throw new HttpStatusError(msg ? `Forgejo: ${msg}` : `Forgejo API error (${res.status})`, res.status)
   }
   return res
 }

@@ -1723,6 +1723,10 @@ export const tr: Dict = {
   'settings.integrationsHint':
     'İsteğe bağlı. Belirteç olmadan, bu profile bir hesap bağlamak için “Sign in with git” kullanın. Gitcito bu bilgisayardaki başka oturumları ödünç almaz. Farklı hesap gerektiren Azure DevOps kuruluşları her biri için ayrı bir profil ya da ayrı bir belirteç kullanır.',
   'settings.loadingAccount': 'Hesap yükleniyor…',
+  'settings.tokenRefused': "{provider} bu token'ı reddetti — yanlış, süresi dolmuş veya gerekli kapsamlara sahip değil. Kayıtlı kalır, ancak siz değiştirene kadar çalışmaz.",
+  'settings.tokenUnreachable': "Bu token'ı kontrol etmek için şu anda {server} sunucusuna ulaşılamadı — token kayıtlı ve sorunsuz olabilir.",
+  'settings.tokenCheckRetry': 'Yeniden dene',
+  'settings.tokenNeedsAddress': 'Token eklemek için yukarıya geçerli bir sunucu adresi girin.',
   'settings.signInWithGit': 'Git ile oturum aç',
   'settings.connectedViaToken': 'Aşağıdaki kişisel erişim belirteciyle bağlı.',
   'settings.connectedViaGit': "git'in credential helper'ı üzerinden bağlı.",

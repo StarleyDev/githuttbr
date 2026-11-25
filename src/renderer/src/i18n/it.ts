@@ -1724,6 +1724,10 @@ export const it: Dict = {
   'settings.integrationsHint':
     'Facoltativo. Senza un token, usa «Sign in with git» per collegare un account a questo profilo. Gitcito non prende in prestito altri accessi di questo computer. Le organizzazioni Azure DevOps che richiedono account diversi usano un profilo ciascuna, o un token ciascuna.',
   'settings.loadingAccount': 'Caricamento dell’account…',
+  'settings.tokenRefused': '{provider} ha rifiutato questo token: è errato, scaduto o non ha gli ambiti necessari. Resta salvato, ma non funzionerà finché non lo sostituisci.',
+  'settings.tokenUnreachable': 'Impossibile raggiungere {server} per verificare questo token in questo momento: è salvato e potrebbe essere valido.',
+  'settings.tokenCheckRetry': 'Riprova',
+  'settings.tokenNeedsAddress': 'Inserisci sopra un indirizzo del server valido per aggiungere un token.',
   'settings.signInWithGit': 'Accedi con git',
   'settings.connectedViaToken': 'Connesso con il token di accesso personale qui sotto.',
   'settings.connectedViaGit': 'Connesso tramite il credential helper di git.',

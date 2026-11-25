@@ -1742,6 +1742,10 @@ export const de: Dict = {
   'settings.integrationsHint':
     'Optional. Ohne Token verknüpfst du mit „Sign in with git“ ein Konto mit diesem Profil. Gitcito übernimmt keine anderen Anmeldungen dieses Rechners. Azure-DevOps-Organisationen, die verschiedene Konten brauchen, nehmen je ein Profil oder je ein Token.',
   'settings.loadingAccount': 'Konto wird geladen…',
+  'settings.tokenRefused': '{provider} hat dieses Token abgelehnt – es ist falsch, abgelaufen oder hat nicht die nötigen Scopes. Es bleibt gespeichert, funktioniert aber erst, wenn du es ersetzt.',
+  'settings.tokenUnreachable': '{server} war gerade nicht erreichbar, um dieses Token zu prüfen – es ist gespeichert und womöglich in Ordnung.',
+  'settings.tokenCheckRetry': 'Erneut versuchen',
+  'settings.tokenNeedsAddress': 'Gib oben eine gültige Serveradresse ein, um ein Token hinzuzufügen.',
   'settings.signInWithGit': 'Mit git anmelden',
   'settings.connectedViaToken': 'Verbunden mit dem persönlichen Zugriffstoken unten.',
   'settings.connectedViaGit': 'Verbunden über den Credential Helper von git.',

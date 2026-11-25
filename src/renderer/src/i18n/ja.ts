@@ -1723,6 +1723,10 @@ export const ja: Dict = {
   'settings.integrationsHint':
     '任意です。トークンがない場合は「Sign in with git」でこのプロファイルにアカウントを紐付けてください。Gitcito はこのマシン上の他のログインを借用しません。別々のアカウントが必要な Azure DevOps の組織は、プロファイルを分けるか、それぞれトークンを使います。',
   'settings.loadingAccount': 'アカウントを読み込み中…',
+  'settings.tokenRefused': '{provider} がこのトークンを拒否しました。トークンが間違っているか、期限切れか、必要なスコープがありません。保存はされていますが、置き換えるまで機能しません。',
+  'settings.tokenUnreachable': '現在 {server} に接続できず、このトークンを確認できませんでした。トークンは保存されており、問題ない可能性があります。',
+  'settings.tokenCheckRetry': '再試行',
+  'settings.tokenNeedsAddress': 'トークンを追加するには、上に有効なサーバーのアドレスを入力してください。',
   'settings.signInWithGit': 'Git でサインイン',
   'settings.connectedViaToken': '下の個人用アクセストークンで接続しています。',
   'settings.connectedViaGit': 'Git の credential helper 経由で接続しています。',

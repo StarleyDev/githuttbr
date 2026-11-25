@@ -23,6 +23,7 @@ import {
 } from '../src/shared/secrets'
 import { defaultProfile, defaultSettings, type Profile } from '../src/shared/types'
 import { PRODUCT_NAME } from '../src/shared/brand'
+import type { TokenCheckResult } from '../src/shared/tokenCheck'
 
 // Self-managed GitLab as a list of servers per profile, each with its own
 // token — gitlab.com keeps the profile's `gitlabToken`. The call-site tests run
@@ -225,6 +226,12 @@ describe('each GitLab gets only its own token', () => {
   })
 
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  // Settings' check answers a typed result (shared/tokenCheck.ts); these tests want the account or a throw.
+  const whoAmI = async (...args: unknown[]): Promise<unknown> => {
+    const r = (await call('hosting:whoAmI', ...args)) as TokenCheckResult
+    if (!r.ok) throw new Error(r.failure.message)
+    return r.account
+  }
   // A repository-scoped call's first argument is the repository; '' is none (the active profile).
   const UNBOUND = ''
   // What the renderer sends: whatever is in its gitlab slot. Main must ignore it.
@@ -281,7 +288,7 @@ describe('each GitLab gets only its own token', () => {
   })
 
   it('a row in Settings asks its own server with its own token', async () => {
-    const who = (await call('hosting:whoAmI', 'gitlab', A_TOKEN, A, false, undefined, A)) as { login: string }
+    const who = (await whoAmI('gitlab', A_TOKEN, A, false, undefined, A)) as { login: string }
     expect(who.login).toBe('me')
     expectOnly(A, A_TOKEN)
   })
@@ -293,27 +300,27 @@ describe('each GitLab gets only its own token', () => {
     const TYPED = 'typed-token'
 
     it('asks that server, with exactly the token the call carries', async () => {
-      const who = (await call('hosting:whoAmI', 'gitlab', TYPED, `${NEW}/`, false, undefined, NEW)) as { login: string }
+      const who = (await whoAmI('gitlab', TYPED, `${NEW}/`, false, undefined, NEW)) as { login: string }
       expect(who.login).toBe('me')
       expectOnly(NEW, TYPED)
     })
 
     it('a stale issuer does not matter: the token was typed for this row', async () => {
-      await call('hosting:whoAmI', 'gitlab', TYPED, NEW, false, undefined, undefined)
+      await whoAmI('gitlab', TYPED, NEW, false, undefined, undefined)
       expectOnly(NEW, TYPED)
     })
 
     it('without a token of its own it is refused, and nothing is sent — not even with a link', async () => {
-      await expect(call('hosting:whoAmI', 'gitlab', '', NEW, false, { source: 'git', login: 'me' })).rejects.toThrow(
+      await expect(whoAmI('gitlab', '', NEW, false, { source: 'git', login: 'me' })).rejects.toThrow(
         /not saved/
       )
-      await expect(call('hosting:whoAmI', 'gitlab', '', NEW, true)).rejects.toThrow(/not saved/)
+      await expect(whoAmI('gitlab', '', NEW, true)).rejects.toThrow(/not saved/)
       expect(calls).toHaveLength(0)
     })
 
     it('an address Settings would refuse is refused here too', async () => {
       for (const bad of ['http://gitlab.new.example', 'https://me:pw@gitlab.new.example', 'https://gitlab.new.example/?a=1']) {
-        await expect(call('hosting:whoAmI', 'gitlab', TYPED, bad, false)).rejects.toThrow(/not saved/)
+        await expect(whoAmI('gitlab', TYPED, bad, false)).rejects.toThrow(/not saved/)
       }
       expect(calls).toHaveLength(0)
     })
@@ -324,17 +331,83 @@ describe('each GitLab gets only its own token', () => {
     })
 
     it('no saved token ever reaches the new server', async () => {
-      await call('hosting:whoAmI', 'gitlab', TYPED, NEW, false, { source: 'git', login: 'me' }, NEW)
-      await call('hosting:whoAmI', 'gitlab', '', NEW, true).catch(() => undefined)
+      await whoAmI('gitlab', TYPED, NEW, false, { source: 'git', login: 'me' }, NEW)
+      await whoAmI('gitlab', '', NEW, true).catch(() => undefined)
       for (const c of calls) expect(ALL_TOKENS).not.toContain(c.token)
     })
 
     it('a saved server and gitlab.com still resolve the normal way', async () => {
-      await call('hosting:whoAmI', 'gitlab', A_TOKEN, A, false, undefined, A)
+      await whoAmI('gitlab', A_TOKEN, A, false, undefined, A)
       expectOnly(A, A_TOKEN)
       calls.length = 0
-      await call('hosting:whoAmI', 'gitlab', COM_TOKEN, GITLAB_COM, false, undefined, GITLAB_COM)
+      await whoAmI('gitlab', COM_TOKEN, GITLAB_COM, false, undefined, GITLAB_COM)
       expectOnly(GITLAB_COM, COM_TOKEN)
+    })
+  })
+
+  // Settings tells a refused token from a server it could not ask (shared/tokenCheck.ts).
+  describe('the check says why there is no account', () => {
+    const answering = async (reply: () => Promise<Response>, ...args: unknown[]): Promise<TokenCheckResult> => {
+      const stub = vi.mocked(globalThis.fetch)
+      const normal = stub.getMockImplementation()
+      stub.mockImplementation(reply)
+      try {
+        return (await call('hosting:whoAmI', ...args)) as TokenCheckResult
+      } finally {
+        stub.mockImplementation(normal!)
+      }
+    }
+    const status =
+      (s: number) =>
+      async (): Promise<Response> =>
+        new Response('{}', { status: s })
+
+    it('a self-managed server that answers 401 refused the token — named, and nothing is cleared', async () => {
+      const r = await answering(status(401), 'gitlab', A_TOKEN, A, false, undefined, A)
+      expect(r).toEqual({
+        ok: false,
+        failure: { kind: 'refused', message: 'GitLab API error (401)', server: new URL(A).host }
+      })
+    })
+
+    it('gitlab.com: 403 is a refusal, 429 and 503 are "could not check"', async () => {
+      const args = ['gitlab', COM_TOKEN, GITLAB_COM, false, undefined, GITLAB_COM]
+      expect(await answering(status(403), ...args)).toMatchObject({ ok: false, failure: { kind: 'refused' } })
+      expect(await answering(status(429), ...args)).toMatchObject({ ok: false, failure: { kind: 'unreachable' } })
+      expect(await answering(status(503), ...args)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable', server: 'gitlab.com' }
+      })
+    })
+
+    it('a server that cannot be resolved is "could not check", with the reason fetch hid', async () => {
+      const offline = async (): Promise<Response> => {
+        throw new TypeError('fetch failed', {
+          cause: Object.assign(new Error('getaddrinfo ENOTFOUND gitlab.example.corp'), { code: 'ENOTFOUND' })
+        })
+      }
+      expect(await answering(offline, 'gitlab', A_TOKEN, A, false, undefined, A)).toEqual({
+        ok: false,
+        failure: { kind: 'unreachable', message: 'getaddrinfo ENOTFOUND gitlab.example.corp', server: new URL(A).host }
+      })
+    })
+
+    it('an address that cannot be saved is neither — a plain error, as before', async () => {
+      const r = await answering(status(200), 'gitlab', 'typed-token', 'http://gitlab.insecure.example', false)
+      expect(r).toMatchObject({ ok: false, failure: { kind: 'error' } })
+    })
+
+    it('Azure DevOps: its sign-in page for a bad PAT is a refusal; a 500 is not', async () => {
+      const signIn = async (): Promise<Response> =>
+        new Response('<html>sign in</html>', { status: 203, headers: { 'content-type': 'text/html' } })
+      expect(await answering(signIn, 'azure', 'bad-pat', 'example-org', false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'refused', server: 'dev.azure.com' }
+      })
+      expect(await answering(status(500), 'azure', 'pat', 'example-org', false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable', server: 'dev.azure.com' }
+      })
     })
   })
 

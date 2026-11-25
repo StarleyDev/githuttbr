@@ -1,4 +1,5 @@
 import type { SettingsDecryptResult } from '../../../shared/settingsEncryption'
+import type { TokenCheckResult } from '../../../shared/tokenCheck'
 import type {
   LaunchInput,
   LaunchInputResolution,
@@ -1088,9 +1089,26 @@ export const hostingApi = {
   /** Name of another profile already holding this account (link or token), else null. */
   accountOwner: (provider: RepoHost, login: string, found: AccountLink, exceptProfileId: string) =>
     window.api.hosting.accountOwner(provider, login, found, exceptProfileId) as Promise<string | null>,
-  /** Null when the profile has neither a token nor a link and no sign-in was asked for. */
-  whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink, issuer?: string) =>
-    window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer) as Promise<ConnectedAccount | null>,
+  /**
+   * The account behind a token, or why there is none — refused, unreachable, or
+   * another error — as main classified it (shared/tokenCheck.ts). The account is
+   * null when the profile has neither a token nor a link and no sign-in was asked for.
+   */
+  checkToken: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink, issuer?: string) =>
+    window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer) as Promise<TokenCheckResult>,
+  /** `checkToken` for a caller that only wants the account: a failure rejects with its message. */
+  whoAmI: async (
+    provider: RepoHost,
+    token: string,
+    org?: string,
+    interactive?: boolean,
+    link?: AccountLink,
+    issuer?: string
+  ): Promise<ConnectedAccount | null> => {
+    const result = (await window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer)) as TokenCheckResult
+    if (!result.ok) throw new Error(result.failure.message)
+    return result.account
+  },
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string, profileId?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org, profileId) as Promise<RemoteRepo>,
   listPRs: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
