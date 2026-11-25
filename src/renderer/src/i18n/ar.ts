@@ -640,7 +640,7 @@ export const ar: Dict = {
   'vault.pasteEnvTitle': 'إضافة أسرار دفعة واحدة من ملف .env ملصوق',
   'vault.pastePlaceholder': 'الصق هنا محتوى .env — سطر KEY=value لكل مدخل. تُتجاهل الأسطر الفارغة والتعليقات التي تبدأ بـ #.',
   'vault.import': 'استيراد',
-  'vault.envImported': 'سرًّا مستوردًا',
+  'vault.envImported': 'استُورد {count} من الأسرار',
   'vault.envNone': 'لم يُعثر على أسطر KEY=value صالحة',
   'share.title': 'مشاركة آمنة',
   'share.exportTab': 'تصدير',

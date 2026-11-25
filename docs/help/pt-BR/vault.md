@@ -36,6 +36,11 @@ diz *O Gitcito não conseguiu ler o seu cofre* — e **não mexe nele**. Nada po
 ser adicionado ou removido enquanto isso: salvar trocaria todos os segredos dele
 pelo que você acabou de digitar.
 
+| Botão | O que faz |
+|-------|-----------|
+| **Tentar de novo** | Lê o cofre de novo — desbloqueie o chaveiro antes. |
+| **Criar um novo cofre** | Pergunta antes. O Gitcito deixa de esperar pelo cofre antigo e cria um vazio. O arquivo antigo fica ao lado como backup, com o nome `githuttbr-vault.enc.bak-<data>`, um por substituição, e o Gitcito nunca o apaga. Para um cofre perdido de vez, não para um pedido que você recusou. |
+
 ### Importações e exportações nunca o deixam de fora em silêncio
 
 O mesmo vale quando o cofre nem pode ser aberto — o chaveiro está desligado, você
@@ -48,14 +53,10 @@ dispensou a pergunta dele, ou (no Linux) ele não respondeu a tempo: o cofre fic
 | Configurações → Importar | As outras partes são importadas — configurações e notas dos repositórios antes do cofre, fotos de perfil depois — e o cofre é pulado e avisado no fim. |
 | Importação no onboarding | O resto é importado; o cofre é avisado em seguida. |
 | Exportação do [compartilhamento seguro](secure-share.md) | Recusada, com o motivo. |
-| Importação do compartilhamento seguro | Recusada **antes de gravar qualquer arquivo do bundle**, para os arquivos nunca chegarem sem os segredos deles. |
+| Importação do compartilhamento seguro | Recusada **antes de gravar qualquer arquivo do bundle**: o cofre é conferido primeiro e mesclado antes dos arquivos, para os arquivos nunca chegarem sem os segredos deles. |
 
-Cada mensagem oferece abrir a página do Cofre, onde dá para tentar de novo ou criar um novo cofre.
-
-| Botão | O que faz |
-|-------|-----------|
-| **Tentar de novo** | Lê o cofre de novo — desbloqueie o chaveiro antes. |
-| **Criar um novo cofre** | Pergunta antes. O Gitcito deixa de esperar pelo cofre antigo e cria um vazio. O arquivo antigo fica ao lado como backup, com o nome `githuttbr-vault.enc.bak-<data>`, um por substituição, e o Gitcito nunca o apaga. Para um cofre perdido de vez, não para um pedido que você recusou. |
+As mensagens de exportação e importação oferecem abrir a página do Cofre, onde dá para tentar de novo ou criar um novo cofre.
+O compartilhamento seguro mostra o motivo na própria janela — ao exportar, também embaixo da linha do cofre.
 
 ## Levando de uma máquina para outra
 

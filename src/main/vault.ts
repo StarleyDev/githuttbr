@@ -86,9 +86,10 @@ async function load(): Promise<VaultData> {
   }
   // Read with a key safeStorage is retiring: written back under the current
   // one. Not into a weak store, which would only re-seal it with the fixed
-  // password. A failure leaves the readable file as it was.
+  // password — nor when the seal comes back `v10` anyway (`sealSecret` refuses
+  // it, as for the token store). A failure leaves the readable file as it was.
   if (reEncrypt && !(await isKeychainWeak())) {
-    await writeVault(data).catch((err) =>
+    await writeVault(data, { allowWeak: false }).catch((err) =>
       console.warn('[vault] not re-encrypted, retrying on next read:', (err as Error).message)
     )
   }
@@ -101,13 +102,13 @@ async function save(data: VaultData): Promise<void> {
   await writeVault(data)
 }
 
-async function writeVault(data: VaultData): Promise<void> {
+async function writeVault(data: VaultData, opts: { allowWeak?: boolean } = {}): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  // `allowWeak`: on Linux without a keyring the vault still saves to the
-  // fixed-password store, because it has no session-only mode (see the
+  // `allowWeak` by default: on Linux without a keyring the vault still saves to
+  // the fixed-password store, because it has no session-only mode (see the
   // handbook's security page). Sealing through `sealSecret` still tells the
   // token store the session is weak.
-  const enc = await sealSecret(JSON.stringify(data), { allowWeak: true })
+  const enc = await sealSecret(JSON.stringify(data), { allowWeak: opts.allowWeak ?? true })
   await writePrivateFile(filePath(), enc.toString('base64'))
 }
 
@@ -155,7 +156,8 @@ async function list(repoPath: string): Promise<VaultListResult> {
   await adoptExistingConsent([filePath()])
   // Opening the vault is an explicit ask for the thing the keychain protects,
   // so this is the right moment to explain and request access.
-  if (!(await ensureKeychain('vault'))) return closed()
+  // `onDisk`: whether closing it hides an existing vault, or there is none to hide.
+  if (!(await ensureKeychain('vault'))) return { ...closed(), onDisk: existsSync(filePath()) }
   return exclusive(async () => listed(await load(), repoPath))
 }
 

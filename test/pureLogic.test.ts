@@ -8257,3 +8257,32 @@ describe('repoParentAndName', () => {
     expect(repoParentAndName('proj')).toEqual({ parent: '', repoName: 'proj' })
   })
 })
+
+// ─── Vault refusals (src/renderer/src/lib/vaultRefusal.ts) ─────────────────
+
+import { vaultRefusalKey, vaultRefusalOf, vaultWriteRefusal } from '../src/renderer/src/lib/vaultRefusal'
+
+describe('vaultWriteRefusal', () => {
+  it('a saved write is no refusal', () => {
+    expect(vaultWriteRefusal({ available: true })).toBeNull()
+    expect(vaultWriteRefusal(null)).toBeNull()
+  })
+  it('an unreadable vault refuses, even though it reports available', () => {
+    expect(vaultWriteRefusal({ available: true, unreadable: true })).toBe('unreadable')
+  })
+  it('a keychain that would not open the vault refuses too — a timeout is not "saved"', () => {
+    expect(vaultWriteRefusal({ available: false })).toBe('unavailable')
+  })
+})
+
+describe('vaultRefusalOf / vaultRefusalKey', () => {
+  it('reads the reply, unreadable first', () => {
+    expect(vaultRefusalOf({})).toBeNull()
+    expect(vaultRefusalOf({ unavailable: true })).toBe('unavailable')
+    expect(vaultRefusalOf({ unreadable: true, unavailable: true })).toBe('unreadable')
+  })
+  it('names the file for unreadable and the keychain for unavailable', () => {
+    expect(vaultRefusalKey('unreadable')).toBe('vault.unreadable')
+    expect(vaultRefusalKey('unavailable')).toBe('vault.keychainUnavailable')
+  })
+})

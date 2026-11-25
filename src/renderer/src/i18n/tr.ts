@@ -630,7 +630,7 @@ export const tr: Dict = {
   'vault.pasteEnvTitle': 'Yapıştırılan bir .env dosyasından toplu sır ekle',
   'vault.pastePlaceholder': '.env içeriğini buraya yapıştırın — her satırda ANAHTAR=değer. Boş satırlar ve # yorumları yok sayılır.',
   'vault.import': 'İçe aktar',
-  'vault.envImported': 'sır içe aktarıldı',
+  'vault.envImported': '{count} sır içe aktarıldı',
   'vault.envNone': 'Geçerli ANAHTAR=değer satırı bulunamadı',
   'share.title': 'Güvenli paylaşım',
   'share.exportTab': 'Dışa aktar',

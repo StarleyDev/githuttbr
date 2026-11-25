@@ -641,7 +641,7 @@ export const nl: Dict = {
   'vault.pasteEnvTitle': 'Geheimen in bulk toevoegen vanuit een geplakte .env',
   'vault.pastePlaceholder': 'Plak hier de inhoud van je .env — KEY=waarde per regel. Lege regels en #-commentaar worden genegeerd.',
   'vault.import': 'Importeren',
-  'vault.envImported': 'geheimen geïmporteerd',
+  'vault.envImported': '{count} geheimen geïmporteerd',
   'vault.envNone': 'Geen geldige KEY=waarde-regels gevonden',
   'share.title': 'Veilig delen',
   'share.exportTab': 'Exporteren',

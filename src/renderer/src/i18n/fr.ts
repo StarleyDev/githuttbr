@@ -630,7 +630,7 @@ export const fr: Dict = {
   'vault.pasteEnvTitle': 'Ajouter des secrets en masse depuis un .env collé',
   'vault.pastePlaceholder': 'Collez ici le contenu d’un .env — CLÉ=valeur par ligne. Les lignes vides et les commentaires # sont ignorés.',
   'vault.import': 'Importer',
-  'vault.envImported': 'secrets importés',
+  'vault.envImported': '{count} secrets importés',
   'vault.envNone': 'Aucune ligne CLÉ=valeur valide trouvée',
   'share.title': 'Partage sécurisé',
   'share.exportTab': 'Exporter',

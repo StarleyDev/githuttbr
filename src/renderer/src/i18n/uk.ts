@@ -640,7 +640,7 @@ export const uk: Dict = {
   'vault.pasteEnvTitle': 'Масово додати секрети зі вставленого .env',
   'vault.pastePlaceholder': 'Вставте сюди вміст .env — по KEY=value на рядок. Порожні рядки та коментарі з # ігноруються.',
   'vault.import': 'Імпортувати',
-  'vault.envImported': 'секретів імпортовано',
+  'vault.envImported': 'Імпортовано секретів: {count}',
   'vault.envNone': 'Не знайдено жодного правильного рядка KEY=value',
   'share.title': 'Безпечний обмін',
   'share.exportTab': 'Експорт',

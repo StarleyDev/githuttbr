@@ -631,7 +631,7 @@ export const it: Dict = {
   'vault.pasteEnvTitle': 'Aggiungi in blocco i segreti da un .env incollato',
   'vault.pastePlaceholder': 'Incolla qui il contenuto del .env — CHIAVE=valore per riga. Le righe vuote e i commenti con # vengono ignorati.',
   'vault.import': 'Importa',
-  'vault.envImported': 'segreti importati',
+  'vault.envImported': '{count} segreti importati',
   'vault.envNone': 'Nessuna riga CHIAVE=valore valida trovata',
   'share.title': 'Condivisione sicura',
   'share.exportTab': 'Esporta',

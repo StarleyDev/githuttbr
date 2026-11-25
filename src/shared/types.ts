@@ -2310,6 +2310,8 @@ export interface VaultListResult {
   available: boolean // OS encryption (safeStorage) usable on this machine
   /** The vault file exists but could not be read: shown empty, and every write is refused. */
   unreadable?: boolean
+  /** With `available: false` from listing: whether a vault file exists that the keychain could not open. */
+  onDisk?: boolean
   repo: VaultEntry[]
   global: VaultEntry[]
 }

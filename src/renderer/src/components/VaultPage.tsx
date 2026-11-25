@@ -18,10 +18,11 @@ import {
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
 import { VaultUnreadableNotice, vaultWriteRefused } from './VaultUnreadableNotice'
+import { vaultWriteRefusal } from '../lib/vaultRefusal'
 import { useUIStore } from '../stores/ui'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
 import { parseDotenv } from '../lib/dotenv'
-import { useT } from '../i18n'
+import { interp, useT } from '../i18n'
 
 function EntryRow({
   entry,
@@ -123,19 +124,21 @@ export function VaultPage(): React.JSX.Element {
     for (const p of parsed) {
       const existing = entries.find((e) => e.key === p.key)
       result = await vaultApi.upsert('global', '', { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
-      if (result.unreadable) break
+      // The first refusal answers for the rest: they would be refused the same way.
+      if (vaultWriteRefusal(result)) break
     }
     // Refused: the pasted text stays open, as the draft does above.
     if (vaultWriteRefused(result)) return
     if (result) setData(result)
     setPasteText(null)
-    toast('success', `${parsed.length} ${t('vault.envImported')}`)
+    toast('success', interp(t('vault.envImported'), { count: parsed.length }))
   }
 
   const del = async (id: string): Promise<void> => {
     const result = await vaultApi.remove('global', '', id)
+    // Refused: the list stays as it was, and the toast says why.
+    if (vaultWriteRefused(result)) return
     setData(result)
-    vaultWriteRefused(result)
   }
 
   const entries = data?.global ?? []

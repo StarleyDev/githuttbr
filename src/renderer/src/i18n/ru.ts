@@ -640,7 +640,7 @@ export const ru: Dict = {
   'vault.pasteEnvTitle': 'Массово добавить секреты из вставленного .env',
   'vault.pastePlaceholder': 'Вставьте сюда содержимое .env — по КЛЮЧ=значение в строке. Пустые строки и комментарии с # игнорируются.',
   'vault.import': 'Импортировать',
-  'vault.envImported': 'секретов импортировано',
+  'vault.envImported': 'Импортировано секретов: {count}',
   'vault.envNone': 'Подходящих строк КЛЮЧ=значение не найдено',
   'share.title': 'Безопасная передача',
   'share.exportTab': 'Экспорт',

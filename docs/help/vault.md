@@ -34,6 +34,11 @@ another copy of Gitcito (a development build, a re-signed one), the page says
 added or removed meanwhile: saving would replace every secret in it with the one
 you just typed.
 
+| Button | What it does |
+|--------|--------------|
+| **Retry** | Reads the vault again — unlock the keychain first. |
+| **Start a new vault** | Asks first. Gitcito stops waiting for the old vault and starts an empty one. The old file stays beside it as a backup named `githuttbr-vault.enc.bak-<date>`, one per replacement, and Gitcito never deletes it. For a vault that is gone for good, not a prompt you dismissed. |
+
 ### Imports and exports never drop it silently
 
 The same holds when the vault cannot be opened at all — the keychain is off, you
@@ -46,14 +51,10 @@ then *unavailable*, and the message says so instead.
 | Settings → Import | The other parts are imported — settings and repository notes before the vault, profile pictures after it — and the vault is skipped and reported at the end. |
 | Onboarding import | The rest is imported; the vault is reported afterwards. |
 | [Secure share](secure-share.md) export | Refused, with the reason. |
-| Secure share import | Refused **before any file of the bundle is written**, so the files never land without their secrets. |
+| Secure share import | Refused **before any file of the bundle is written**: the vault is checked first and merged before the files, so the files never land without their secrets. |
 
-Each message offers to open the Vault page, where you can retry or start a new vault.
-
-| Button | What it does |
-|--------|--------------|
-| **Retry** | Reads the vault again — unlock the keychain first. |
-| **Start a new vault** | Asks first. Gitcito stops waiting for the old vault and starts an empty one. The old file stays beside it as a backup named `githuttbr-vault.enc.bak-<date>`, one per replacement, and Gitcito never deletes it. For a vault that is gone for good, not a prompt you dismissed. |
+The export and import messages offer to open the Vault page, where you can retry or start a new vault.
+Secure share shows the reason in its own dialog — when exporting, also under the vault's row.
 
 ## Moving it between machines
 

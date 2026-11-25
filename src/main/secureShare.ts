@@ -459,7 +459,10 @@ export async function applyV2(
   let secretsWritten = 0
   let notesWritten = 0
   let notesSkipped = 0
-  for (const step of plan) {
+  // The vault step first: if the keychain refuses it after the check above
+  // (a timeout in between), it still refuses before any file is written.
+  const ordered = [...plan.filter((s) => s.kind === 'vault'), ...plan.filter((s) => s.kind !== 'vault')]
+  for (const step of ordered) {
     const section = sections[step.sectionIndex]
     if (!section) return { error: 'invalid' }
     if (step.kind === 'vault') {

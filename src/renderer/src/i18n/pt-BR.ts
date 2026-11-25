@@ -641,7 +641,7 @@ export const ptBR: Dict = {
   'vault.pasteEnvTitle': 'Adicionar segredos em lote a partir de um .env colado',
   'vault.pastePlaceholder': 'Cole aqui o conteúdo do .env — CHAVE=valor por linha. Linhas em branco e comentários com # são ignorados.',
   'vault.import': 'Importar',
-  'vault.envImported': 'segredos importados',
+  'vault.envImported': '{count} segredos importados',
   'vault.envNone': 'Nenhuma linha CHAVE=valor válida encontrada',
   'share.title': 'Compartilhamento seguro',
   'share.exportTab': 'Exportar',

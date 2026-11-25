@@ -4,6 +4,7 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { t as tNow, useT, interp } from '../i18n'
 import { withoutIpcPrefix } from '../lib/gitErrorHint'
+import { vaultRefusalKey, vaultRefusalOf, vaultWriteRefusal, type VaultRefusal } from '../lib/vaultRefusal'
 
 /**
  * The vault file exists but could not be read (`VaultListResult.unreadable`).
@@ -58,24 +59,23 @@ export function VaultUnreadableNotice({ onReload }: { onReload: () => void }): R
   )
 }
 
-/** After a write: the vault turned out unreadable, so nothing was saved — say so. */
-export function vaultWriteRefused(result: { unreadable?: boolean } | null | undefined): boolean {
-  if (!result?.unreadable) return false
-  useUIStore.getState().toast('error', tNow('vault.unreadable'))
+/**
+ * After a write: nothing was saved — the vault could not be read, or the
+ * keychain would not open it (`vaultWriteRefusal`). Says why; the caller keeps
+ * what was typed on screen.
+ */
+export function vaultWriteRefused(result: { available: boolean; unreadable?: boolean } | null | undefined): boolean {
+  const reason = vaultWriteRefusal(result)
+  if (!reason) return false
+  useUIStore.getState().toast('error', vaultRefusalText(reason))
   return true
 }
 
-/** Why the vault took no part in an import or an export. */
-export type VaultRefusal = 'unreadable' | 'unavailable'
-
-/** Which refusal a vault reply carries, if any. */
-export function vaultRefusalOf(reply: { unreadable?: boolean; unavailable?: boolean }): VaultRefusal | null {
-  return reply.unreadable ? 'unreadable' : reply.unavailable ? 'unavailable' : null
-}
+export { vaultRefusalOf, type VaultRefusal }
 
 /** The message for a refusal: unreadable is the file, unavailable the keychain. */
 export function vaultRefusalText(reason: VaultRefusal): string {
-  return tNow(reason === 'unreadable' ? 'vault.unreadable' : 'vault.keychainUnavailable')
+  return tNow(vaultRefusalKey(reason))
 }
 
 /**

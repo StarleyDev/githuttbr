@@ -630,7 +630,7 @@ export const ja: Dict = {
   'vault.pasteEnvTitle': '貼り付けた .env からシークレットを一括追加します',
   'vault.pastePlaceholder': '.env の内容をここに貼り付けてください — 1 行に KEY=value。空行と # で始まるコメントは無視されます。',
   'vault.import': 'インポート',
-  'vault.envImported': '件のシークレットをインポートしました',
+  'vault.envImported': '{count} 件のシークレットをインポートしました',
   'vault.envNone': '有効な KEY=value の行が見つかりません',
   'share.title': '安全な共有',
   'share.exportTab': 'エクスポート',

@@ -640,7 +640,7 @@ export const he: Dict = {
   'vault.pasteEnvTitle': 'הוספה מרוכזת של סודות מתוך .env מודבק',
   'vault.pastePlaceholder': 'הדביקו כאן את תוכן ה־.env — KEY=value בכל שורה. שורות ריקות והערות שמתחילות ב־# מתעלמים מהן.',
   'vault.import': 'ייבוא',
-  'vault.envImported': 'סודות יובאו',
+  'vault.envImported': 'יובאו {count} סודות',
   'vault.envNone': 'לא נמצאו שורות KEY=value תקינות',
   'share.title': 'שיתוף מאובטח',
   'share.exportTab': 'ייצוא',

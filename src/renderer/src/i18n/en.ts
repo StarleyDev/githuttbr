@@ -633,7 +633,7 @@ export const en = {
   'vault.pasteEnvTitle': 'Bulk-add secrets from a pasted .env',
   'vault.pastePlaceholder': 'Paste .env contents here — KEY=value per line. Blank lines and # comments are ignored.',
   'vault.import': 'Import',
-  'vault.envImported': 'secrets imported',
+  'vault.envImported': '{count} secrets imported',
   'vault.envNone': 'No valid KEY=value lines found',
   'share.title': 'Secure share',
   'share.exportTab': 'Export',

@@ -640,7 +640,7 @@ export const zhCN: Dict = {
   'vault.pasteEnvTitle': '从粘贴的 .env 批量添加密钥',
   'vault.pastePlaceholder': '把 .env 内容粘贴到这里——每行一个 KEY=value。空行和 # 注释会被忽略。',
   'vault.import': '导入',
-  'vault.envImported': '个密钥已导入',
+  'vault.envImported': '已导入 {count} 个密钥',
   'vault.envNone': '未找到有效的 KEY=value 行',
   'share.title': '安全分享',
   'share.exportTab': '导出',

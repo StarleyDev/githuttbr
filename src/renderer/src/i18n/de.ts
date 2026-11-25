@@ -640,7 +640,7 @@ export const de: Dict = {
   'vault.pasteEnvTitle': 'Geheimnisse aus einer eingefügten .env sammelweise anlegen',
   'vault.pastePlaceholder': 'Hier den .env-Inhalt einfügen — pro Zeile KEY=Wert. Leerzeilen und #-Kommentare werden ignoriert.',
   'vault.import': 'Importieren',
-  'vault.envImported': 'Geheimnisse importiert',
+  'vault.envImported': '{count} Geheimnisse importiert',
   'vault.envNone': 'Keine gültigen KEY=Wert-Zeilen gefunden',
   'share.title': 'Sicheres Teilen',
   'share.exportTab': 'Export',

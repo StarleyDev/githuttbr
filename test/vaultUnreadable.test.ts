@@ -11,7 +11,7 @@ import type { VaultListResult } from '../src/shared/types'
 
 const dir = mkdtempSync(join(tmpdir(), 'githuttbr-vault-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
-const keyring = { backend: 'gnome_libsecret', prefix: 'v11' }
+const keyring = { backend: 'gnome_libsecret', prefix: 'v11', failProbe: false }
 
 vi.mock('electron', () => ({
   app: { getPath: () => dir, isPackaged: false },
@@ -20,7 +20,11 @@ vi.mock('electron', () => ({
   safeStorage: {
     isAsyncEncryptionAvailable: async () => true,
     getSelectedStorageBackend: () => keyring.backend,
-    encryptStringAsync: async (s: string) => Buffer.from(`${keyring.prefix}enc:${s}`),
+    encryptStringAsync: async (s: string) => {
+      // The throwaway probe (an empty string) fails; real seals go through.
+      if (keyring.failProbe && s === '') throw new Error('probe refused')
+      return Buffer.from(`${keyring.prefix}enc:${s}`)
+    },
     // `old` stands for a key safeStorage is retiring: readable, but asks to be re-sealed.
     decryptStringAsync: async (b: Buffer) => {
       const m = /^(v10|v11|old)enc:/.exec(b.toString())
@@ -65,6 +69,7 @@ beforeEach(() => {
   onPlatform('linux')
   keyring.backend = 'gnome_libsecret'
   keyring.prefix = 'v11'
+  keyring.failProbe = false
   for (const f of readdirSync(dir)) rmSync(join(dir, f), { force: true })
   writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'granted', explained: true }))
 })
@@ -166,6 +171,22 @@ describe('a vault the keychain cannot open (declined, dismissed, or timed out)',
   const declined = (): void =>
     writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
 
+  it('a write is answered unavailable, the listing says a vault is there, and nothing is written', async () => {
+    writeVault({ repos: {}, global: [entry] })
+    declined()
+    const before = readFileSync(vaultFile(), 'utf8')
+    await start()
+    expect(await call('vault:list', '')).toEqual({ available: false, onDisk: true, repo: [], global: [] })
+    expect(((await call('vault:upsert', 'global', '', { key: 'K', value: 'v' })) as VaultListResult).available).toBe(false)
+    expect(readFileSync(vaultFile(), 'utf8')).toBe(before)
+  })
+
+  it('the listing says no vault is there when there is none', async () => {
+    declined()
+    await start()
+    expect(await call('vault:list', '')).toEqual({ available: false, onDisk: false, repo: [], global: [] })
+  })
+
   it('is refused by every export and import, never dropped silently', async () => {
     writeVault({ repos: {}, global: [entry] })
     declined()
@@ -196,6 +217,16 @@ describe('a vault read with a retiring key (shouldReEncrypt)', () => {
     await start()
     expect(((await call('vault:list', '')) as VaultListResult).global).toHaveLength(1)
     expect(vaultText().startsWith('v11enc:')).toBe(true)
+  })
+
+  it('is not re-sealed when the seal comes back v10 although the probe said nothing', async () => {
+    writeVault({ repos: {}, global: [entry] }, 'old')
+    keyring.prefix = 'v10'
+    keyring.failProbe = true
+    const before = readFileSync(vaultFile(), 'utf8')
+    await start()
+    expect(((await call('vault:list', '')) as VaultListResult).global).toHaveLength(1)
+    expect(readFileSync(vaultFile(), 'utf8')).toBe(before)
   })
 
   it('is left as it is when the store is weak', async () => {

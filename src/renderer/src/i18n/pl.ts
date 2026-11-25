@@ -640,7 +640,7 @@ export const pl: Dict = {
   'vault.pasteEnvTitle': 'Dodaj hurtem sekrety z wklejonego .env',
   'vault.pastePlaceholder': 'Wklej tu zawartość .env — KLUCZ=wartość w każdej linii. Puste linie i komentarze # są pomijane.',
   'vault.import': 'Importuj',
-  'vault.envImported': 'sekretów zaimportowano',
+  'vault.envImported': 'Zaimportowano sekretów: {count}',
   'vault.envNone': 'Nie znaleziono poprawnych linii KLUCZ=wartość',
   'share.title': 'Bezpieczne udostępnianie',
   'share.exportTab': 'Eksport',

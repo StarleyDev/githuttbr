@@ -173,7 +173,7 @@ export function SecureWorkspaceModal({
   useEffect(() => {
     void vaultApi.list('').then((d) => {
       const n = d.available ? d.global.length : 0
-      setVaultRefused(d.unreadable ? 'unreadable' : !d.available ? 'unavailable' : null)
+      setVaultRefused(d.unreadable ? 'unreadable' : !d.available && d.onDisk ? 'unavailable' : null)
       setVaultCount(n)
       setIncludeVault(n > 0)
     })

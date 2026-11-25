@@ -640,7 +640,7 @@ export const ko: Dict = {
   'vault.pasteEnvTitle': '붙여 넣은 .env에서 비밀을 한 번에 추가',
   'vault.pastePlaceholder': '.env 내용을 여기에 붙여 넣으세요 — 한 줄에 KEY=value 하나씩. 빈 줄과 # 주석은 무시됩니다.',
   'vault.import': '가져오기',
-  'vault.envImported': '개의 비밀을 가져왔습니다',
+  'vault.envImported': '{count}개의 비밀을 가져왔습니다',
   'vault.envNone': '올바른 KEY=value 줄을 찾지 못했습니다',
   'share.title': '안전한 공유',
   'share.exportTab': '내보내기',
