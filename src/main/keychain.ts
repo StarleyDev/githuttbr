@@ -16,12 +16,12 @@ import { existsSync } from 'fs'
  * The answer lives in its own tiny file rather than in the settings JSON, so
  * reading it can never depend on the very code path it is meant to gate.
  *
- * Only safeStorage's asynchronous calls are used (Electron 45 deprecated the
- * synchronous ones; 46 removes them). They read what the synchronous calls
- * wrote. The first one, whichever it is, is what asks the OS for the key — so
- * nothing calls them before consent, and every caller runs after the app is
- * ready (IPC handlers, operations the user started). How they answer before
- * `ready` is not relied on anywhere.
+ * This module is also the only place that encrypts or decrypts with
+ * safeStorage (`sealSecret`, `openSecret`): which key a secret is sealed with
+ * is decided here and nowhere else. The first safeStorage call, whichever it
+ * is, is what asks the OS for the key — so nothing calls one before consent,
+ * and every caller runs after the app is ready (IPC handlers, operations the
+ * user started). How they answer before `ready` is not relied on anywhere.
  */
 import type { KeychainConsent, KeychainReason } from '../shared/types'
 import { writePrivateFile } from './privateFile'
@@ -145,14 +145,38 @@ export class WeakKeychainError extends Error {
   }
 }
 
+/*
+ * Why the deprecated synchronous calls come first (`sealSecret`, `openSecret`).
+ *
+ * On Linux the asynchronous API may take a different key from the synchronous
+ * one. Under KDE with Electron 45 it gets its key through the XDG secret portal
+ * (`Local State` → `os_crypt.portal`), while the synchronous calls used the
+ * KWallet "Safe Storage" key — and both tag their ciphertext `v11`, so the
+ * prefix cannot tell them apart. v4.52.0 moved to the asynchronous calls and
+ * every token store written by v4.51 or earlier failed to decrypt: closed
+ * safely (unreadable, never overwritten), but every token looked gone.
+ *
+ * So the secret stores stay on the key their existing data uses: the
+ * synchronous one, which every earlier version — and v4.51, the rollback
+ * target — reads. A secret only the asynchronous key opens (written by v4.52.0)
+ * is still read, and handed back for re-sealing under the synchronous key.
+ *
+ * Electron 45 deprecated the synchronous calls and 46 removes them. When they
+ * are absent both functions fall through to the asynchronous ones, which then
+ * read nothing written under the old key on such a desktop: moving every store
+ * to the asynchronous key needs a planned migration before upgrading to
+ * Electron 46 (notes/backlog.md, section 7).
+ */
+
 /**
- * The one way the secret stores encrypt. A Linux `v10` result is never handed
- * back for writing unless the caller says a weak store may take it
- * (`allowWeak`: a write that only removes, or the vault, which has no
- * session-only mode) — and either way the session now counts as weak.
+ * The one way the secret stores encrypt — with the synchronous key while
+ * Electron has it (see above). A Linux `v10` result is never handed back for
+ * writing unless the caller says a weak store may take it (`allowWeak`: a
+ * write that only removes, or the vault, which has no session-only mode) — and
+ * either way the session now counts as weak.
  */
 export async function sealSecret(plain: string, opts: { allowWeak?: boolean } = {}): Promise<Buffer> {
-  const sealed = await safeStorage.encryptStringAsync(plain)
+  const sealed = await sealWithKeyInUse(plain)
   if (isWeakCiphertext(sealed)) {
     weakCiphertextSeen = true
     if (!opts.allowWeak) throw new WeakKeychainError()
@@ -160,6 +184,49 @@ export async function sealSecret(plain: string, opts: { allowWeak?: boolean } = 
     strongCiphertextSeen = true
   }
   return sealed
+}
+
+/**
+ * The synchronous call while it exists; the asynchronous one only on an
+ * Electron without it. One narrow exception: the synchronous call refuses the
+ * fixed `basic_text` password, which the asynchronous one accepts. A `v10` is
+ * that password whichever call produced it — no key to diverge — so it is
+ * taken (and judged by `sealSecret` like any other); anything else from the
+ * asynchronous call would be the other key, and the synchronous error stands.
+ */
+async function sealWithKeyInUse(plain: string): Promise<Buffer> {
+  if (typeof safeStorage.encryptString !== 'function') return safeStorage.encryptStringAsync(plain)
+  try {
+    return safeStorage.encryptString(plain)
+  } catch (syncErr) {
+    const sealed = await safeStorage.encryptStringAsync(plain).catch(() => null)
+    if (sealed && isWeakCiphertext(sealed)) return sealed
+    throw syncErr
+  }
+}
+
+/**
+ * The one way the secret stores decrypt (see the note above `sealSecret`).
+ * The synchronous key first: everything written through v4.51, and everything
+ * written since this fix. Then the asynchronous one: a store v4.52.0 wrote
+ * with the other key. `reseal` asks the caller to write the secret back
+ * through `sealSecret` — under the synchronous key, readable again by the
+ * rollback target — and also carries safeStorage's own `shouldReEncrypt`.
+ * Callers keep their own rule against re-sealing into a weak store. Throws
+ * only when neither key opens it.
+ */
+export async function openSecret(sealed: Buffer): Promise<{ plain: string; reseal: boolean }> {
+  const hasSync = typeof safeStorage.decryptString === 'function'
+  if (hasSync) {
+    try {
+      return { plain: safeStorage.decryptString(sealed), reseal: false }
+    } catch {
+      // Not the synchronous key's — or not a secret at all. The asynchronous key decides.
+    }
+  }
+  const { result, shouldReEncrypt } = await safeStorage.decryptStringAsync(sealed)
+  // Opened only by the asynchronous key while the synchronous one exists: v4.52.0's store.
+  return { plain: result, reseal: hasSync || shouldReEncrypt === true }
 }
 
 /**
@@ -190,8 +257,8 @@ async function weakCiphertext(): Promise<boolean> {
  * and removable — but a token typed now is kept for the session only, as when
  * the keychain is off: writing it there would only look like protection.
  * `canUseKeychain` comes first: nothing touches safeStorage before consent.
- * `getSelectedStorageBackend` is the one safeStorage call that stays
- * synchronous — Electron 45 did not deprecate it.
+ * `getSelectedStorageBackend` is synchronous and not deprecated by Electron
+ * 45; it chooses no key.
  */
 export async function isKeychainWeak(): Promise<boolean> {
   if (!(await canUseKeychain())) return false

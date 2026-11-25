@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, readdir, mkdir, realpath, rename, rm, stat } from 'fs/promises'
@@ -68,6 +68,7 @@ import {
   onKeychainDeclined,
   onKeychainEnabled,
   onSessionOnlyProbe,
+  openSecret,
   sealSecret,
   WeakKeychainError
 } from './keychain'
@@ -276,12 +277,12 @@ async function loadSecrets(explicit: boolean): Promise<SecretStore | null> {
   let store: SecretStore
   let reEncrypt: boolean
   try {
-    const { result, shouldReEncrypt } = await safeStorage.decryptStringAsync(Buffer.from(b64, 'base64'))
-    const parsed: unknown = JSON.parse(result)
+    const { plain, reseal } = await openSecret(Buffer.from(b64, 'base64'))
+    const parsed: unknown = JSON.parse(plain)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return markUnreadable()
     secretsUnreadable = false
     store = parsed as SecretStore
-    reEncrypt = shouldReEncrypt === true
+    reEncrypt = reseal
   } catch {
     return markUnreadable()
   }
@@ -290,9 +291,10 @@ async function loadSecrets(explicit: boolean): Promise<SecretStore | null> {
 }
 
 /**
- * safeStorage read the store with a key it is retiring (`shouldReEncrypt`):
- * the same tokens are written back under the current one, so the store does
- * not depend on the old key for longer than one read. Every caller of
+ * The store was read with a key it should not stay on (`openSecret`'s
+ * `reseal`: v4.52.0's asynchronous key, or one safeStorage is retiring): the
+ * same tokens are written back under the key in use, so the store does not
+ * depend on the other key for longer than one read. Every caller of
  * `loadSecrets` runs inside `exclusive`, so this lands in the queue like any
  * save. A weak store takes nothing — not even the tokens it already holds,
  * re-sealed — and backups are never re-encrypted (`retireBackups`). A failure
@@ -375,8 +377,8 @@ async function retireBackups(written: SecretStore): Promise<void> {
     let covered = false
     try {
       // Read only: a backup is never re-encrypted, or the build that wrote it could no longer read it.
-      const { result } = await safeStorage.decryptStringAsync(Buffer.from(await readFile(path, 'utf-8'), 'base64'))
-      const parsed: unknown = JSON.parse(result)
+      const { plain } = await openSecret(Buffer.from(await readFile(path, 'utf-8'), 'base64'))
+      const parsed: unknown = JSON.parse(plain)
       covered = !!parsed && typeof parsed === 'object' && isSubsetStore(parsed as SecretStore, written)
     } catch {
       // Another build's — or not a store at all.

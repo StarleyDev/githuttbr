@@ -4,8 +4,11 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 
 // Electron 45 deprecated safeStorage's synchronous calls and 46 removes them.
-// The main process uses only the asynchronous ones; this fake has nothing else,
-// so a synchronous call left anywhere would fail here instead of in a user's app.
+// The secret stores still encrypt and decrypt with the synchronous key while it
+// exists (see keychain.ts and keychainLegacyKey.test.ts), so those calls live
+// in keychain.ts alone, each behind a check that it exists. This fake is the
+// Electron 46 shape — asynchronous calls only — so a synchronous call made
+// without that check would fail here instead of in a user's app.
 
 const dir = mkdtempSync(join(tmpdir(), 'githuttbr-safestorage-async-'))
 const keyring = { available: true as boolean | 'reject', probes: 0 }
@@ -19,6 +22,12 @@ vi.mock('electron', () => ({
       keyring.probes++
       if (keyring.available === 'reject') throw new Error('safeStorage cannot be used before app is ready')
       return keyring.available
+    },
+    encryptStringAsync: async (s: string) => Buffer.from(`async:${s}`),
+    decryptStringAsync: async (b: Buffer) => {
+      const s = b.toString()
+      if (!s.startsWith('async:')) throw new Error('Error while decrypting the ciphertext')
+      return { result: s.slice('async:'.length), shouldReEncrypt: s === 'async:retiring' }
     }
   }
 }))
@@ -67,16 +76,57 @@ describe('the keychain gate on the asynchronous safeStorage API', () => {
   })
 })
 
-describe('no synchronous safeStorage call is left in the main process', () => {
+describe('sealing and opening on an Electron with asynchronous calls only', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    consent('granted')
+  })
+
+  it('seals and opens through the asynchronous calls', async () => {
+    const { sealSecret, openSecret } = await import('../src/main/keychain')
+    const sealed = await sealSecret('token')
+    expect(sealed.toString()).toBe('async:token')
+    expect(await openSecret(sealed)).toEqual({ plain: 'token', reseal: false })
+  })
+
+  it('asks for a re-seal only when safeStorage says the key is retiring', async () => {
+    const { openSecret } = await import('../src/main/keychain')
+    expect(await openSecret(Buffer.from('async:retiring'))).toEqual({ plain: 'retiring', reseal: true })
+  })
+
+  it('throws when the asynchronous key cannot open it', async () => {
+    const { openSecret } = await import('../src/main/keychain')
+    await expect(openSecret(Buffer.from('other:token'))).rejects.toThrow()
+  })
+})
+
+describe('synchronous safeStorage calls stay in keychain.ts', () => {
   const sources = (root: string): string[] =>
     readdirSync(root).flatMap((name) => {
       const path = join(root, name)
       return statSync(path).isDirectory() ? sources(path) : /\.tsx?$/.test(name) ? [path] : []
     })
 
-  it('uses only the asynchronous encrypt, decrypt and availability calls', () => {
+  it('no other file in the main process encrypts, decrypts or asks availability synchronously', () => {
     const sync = /safeStorage\.(isEncryptionAvailable|encryptString|decryptString)\s*\(/
-    const offenders = sources(join(__dirname, '..', 'src')).filter((path) => sync.test(readFileSync(path, 'utf8')))
+    const main = join(__dirname, '..', 'src', 'main')
+    const offenders = sources(main).filter(
+      (path) => path !== join(main, 'keychain.ts') && sync.test(readFileSync(path, 'utf8'))
+    )
+    expect(offenders).toEqual([])
+  })
+
+  it('keychain.ts never asks availability synchronously: availability does not choose the key', () => {
+    const source = readFileSync(join(__dirname, '..', 'src', 'main', 'keychain.ts'), 'utf8')
+    expect(source).not.toMatch(/safeStorage\.isEncryptionAvailable\s*\(/)
+  })
+
+  it('no other module encrypts or decrypts through safeStorage at all', () => {
+    const crypt = /safeStorage\.(encryptString|decryptString)(Async)?\s*\(/
+    const main = join(__dirname, '..', 'src', 'main')
+    const offenders = sources(main).filter(
+      (path) => path !== join(main, 'keychain.ts') && crypt.test(readFileSync(path, 'utf8'))
+    )
     expect(offenders).toEqual([])
   })
 })
