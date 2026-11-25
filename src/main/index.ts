@@ -35,6 +35,7 @@ import { registerInfoHandlers } from './info'
 import { registerPathExistenceHandlers } from './pathExistence'
 import { registerEnvironmentHandlers } from './environment'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
+import { registerSettingsBackupHandlers } from './settingsBackups'
 import { guardStdio } from './stdioGuard'
 import { fixPath, shellPathReady } from './fix-path'
 import { stripEditorGitAskpass } from './editorEnv'
@@ -530,6 +531,7 @@ app.whenReady().then(() => {
   registerPathExistenceHandlers()
   registerEnvironmentHandlers()
   registerUpdaterHandlers()
+  registerSettingsBackupHandlers()
   registerCliHandlers()
   // Once, after the first start on a settings folder copied from Gitcito.
   ipcMain.handle('app:takeMigrationNotice', () => takeMigrationNotice(app.getPath('userData')))

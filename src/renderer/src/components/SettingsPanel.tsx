@@ -66,7 +66,8 @@ import {
   Map as MapIcon,
   Image as ImageIcon,
   Stethoscope,
-  Globe
+  Globe,
+  Info
 } from 'lucide-react'
 import { Github, Gitlab } from './BrandIcons'
 import { highlightCode } from '../lib/highlight'
@@ -123,6 +124,7 @@ import { ansiToSpans } from '../lib/ansi'
 import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, gitlabTokenUrl, instanceUrlProblem } from '../../../shared/gitlabInstance'
 import { GitlabServersSettings } from './GitlabServersSettings'
 import { EnvironmentPage } from './EnvironmentSettings'
+import { AboutSettingsPage } from './AboutSettingsPage'
 import { readableError } from '../lib/gitErrorHint'
 import { repoActions } from '../stores/repo'
 import { useT, interp, loadLocale, type TranslationKey } from '../i18n'
@@ -161,7 +163,8 @@ const PAGES: { id: SettingsPage; icon: React.ReactNode; tone?: IconTone; scope: 
   { id: 'security', icon: <ShieldCheck size={13} />, tone: 'guard', scope: 'app' },
   { id: 'shortcuts', icon: <KeyboardIcon size={13} />, scope: 'app' },
   { id: 'data', icon: <HardDrive size={13} />, tone: 'incoming', scope: 'app' },
-  { id: 'environment', icon: <Stethoscope size={13} />, tone: 'outgoing', scope: 'app' }
+  { id: 'environment', icon: <Stethoscope size={13} />, tone: 'outgoing', scope: 'app' },
+  { id: 'about', icon: <Info size={13} />, scope: 'app' }
 ]
 const PROFILE_PAGES = PAGES.filter((p) => p.scope === 'profile')
 const APP_PAGES = PAGES.filter((p) => p.scope === 'app')
@@ -4749,7 +4752,8 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   const revealUpdate = useUpdatesStore((s) => s.reveal)
   const pendingUpdate = hasPendingUpdate(
     { status: updateStatus, info: updateInfo } as never,
-    settings.skippedUpdateVersion
+    settings.skippedUpdateVersion,
+    settings.versionRollback
   )
   const t = useT()
 
@@ -4969,6 +4973,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
             {page === 'shortcuts' && <ShortcutsPage />}
             {page === 'data' && <DataPage />}
             {page === 'environment' && <EnvironmentPage />}
+            {page === 'about' && <AboutSettingsPage />}
           </div>
         </div>
       </div>

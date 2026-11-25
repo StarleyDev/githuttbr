@@ -16,6 +16,7 @@ import { useTerminalsStore } from '../stores/terminals'
 import { useRepoChatStore } from '../stores/chat'
 import { useProblemsStore } from '../stores/problems'
 import { useClonesStore } from '../stores/clones'
+import { useRollbackStore } from '../stores/rollback'
 
 export interface ShotBridge {
   settings: typeof useSettingsStore
@@ -33,6 +34,8 @@ export interface ShotBridge {
   /** Background clones, so a shot can show the tray mid-clone instead of
    *  racing a real one that a local playground repo finishes in a blink. */
   clones: typeof useClonesStore
+  /** Settings → About: the version shown, previous versions, a switch in progress. */
+  rollback: typeof useRollbackStore
   repoActions: typeof repoActions
   /** True once the bridge has attached; the driver polls for this. */
   ready: true
@@ -59,5 +62,5 @@ export function installShotBridge(): void {
       tick()
     })
 
-  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, terminals: useTerminalsStore, chat: useRepoChatStore, problems: useProblemsStore, clones: useClonesStore, repoActions, ready: true, waitForRepo }
+  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, terminals: useTerminalsStore, chat: useRepoChatStore, problems: useProblemsStore, clones: useClonesStore, rollback: useRollbackStore, repoActions, ready: true, waitForRepo }
 }

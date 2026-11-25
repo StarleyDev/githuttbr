@@ -1,6 +1,7 @@
 import type { SettingsDecryptResult } from '../../../shared/settingsEncryption'
 import type { TokenCheckResult } from '../../../shared/tokenCheck'
 import type {
+  RollbackState,
   LaunchInput,
   LaunchInputResolution,
   SecretsState,
@@ -759,6 +760,27 @@ export const settingsApi = {
   exportFile: (data: unknown, password?: string) => window.api.settings.exportFile(data, password),
   decryptImport: (raw: unknown, password: string) =>
     window.api.settings.decryptImport(raw, password) as Promise<SettingsDecryptResult>
+}
+
+/** Settings → About: earlier versions, the switch to one, and the settings copies taken on the way. */
+export const rollbackApi = {
+  releases: () => window.api.rollback.releases(),
+  support: () => window.api.rollback.support(),
+  getState: () => window.api.rollback.getState(),
+  start: (version: string) => window.api.rollback.start(version),
+  /** Quits and installs the downloaded version. Only after the switch is recorded and flushed. */
+  install: () => window.api.rollback.install(),
+  cancel: () => window.api.rollback.cancel(),
+  onEvent: (cb: (state: RollbackState) => void) => window.api.rollback.onEvent(cb),
+  appVersion: () => window.api.appVersion()
+}
+
+export const settingsBackupsApi = {
+  list: () => window.api.settingsBackups.list(),
+  restore: (name: string) => window.api.settingsBackups.restore(name),
+  changedSince: (name: string) => window.api.settingsBackups.changedSince(name),
+  /** Shows the copy in the file manager; without a name, the folder. */
+  reveal: (name?: string) => window.api.settingsBackups.reveal(name)
 }
 
 export interface ArtifactRequest {
