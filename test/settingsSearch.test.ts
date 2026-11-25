@@ -91,7 +91,8 @@ describe('settings index', () => {
       'GithubEnterpriseSettings.tsx',
       'GitlabServersSettings.tsx',
       'BitbucketServerSettings.tsx',
-      'ProfileAvatarSettings.tsx'
+      'ProfileAvatarSettings.tsx',
+      'AboutSettingsPage.tsx'
     ]
     // Only what a Settings page actually renders: SettingsPanel.tsx also hosts
     // sections the per-repository settings dialog uses, which this search does
@@ -113,7 +114,8 @@ describe('settings index', () => {
       'SecurityPage',
       'ShortcutsPage',
       'DataPage',
-      'EnvironmentPage'
+      'EnvironmentPage',
+      'AboutSettingsPage'
     ]
     const rendered = new Set<string>()
     const stack = [...pageRoots]

@@ -39,6 +39,9 @@ import { RepoSwitcher } from './components/RepoSwitcher'
 import { Toasts } from './components/Toasts'
 import { CloneTray } from './components/CloneTray'
 import { UpdateBanner } from './components/UpdateBanner'
+import { RollbackNotices } from './components/RollbackNotices'
+import { isNewerVersion } from '../../shared/version'
+import { useRollbackStore } from './stores/rollback'
 import { RepoCosmos } from './components/cosmos/RepoCosmos'
 import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
@@ -565,7 +568,8 @@ export default function App(): React.JSX.Element {
   const revealUpdate = useUpdatesStore((s) => s.reveal)
   const pendingUpdate = hasPendingUpdate(
     { status: updateStatus, info: updateInfo } as never,
-    settings.skippedUpdateVersion
+    settings.skippedUpdateVersion,
+    settings.versionRollback
   )
 
   // The settings could not be loaded. Main refuses to answer with defaults —
@@ -792,9 +796,18 @@ export default function App(): React.JSX.Element {
       if (cancelled) return
       const store = useSettingsStore.getState()
       const seen = store.settings.lastSeenVersion
+      // A version switch first, while the last version seen is still on record:
+      // going back is recorded (the banner, the version left kept out of the
+      // updates) and updating past it may ask about the settings copy.
+      void useRollbackStore.getState().onStartup(v)
       if (seen === v) return
+      const back = seen !== undefined && isNewerVersion(seen, v)
       store.update((s) => ({ ...s, lastSeenVersion: v }))
-      if (seen !== undefined && store.settings.autoOpenChangelog) {
+      // After going back, the notes open only when the switch asked for them.
+      const notes = back
+        ? useSettingsStore.getState().settings.versionRollback?.showNotes === true
+        : store.settings.autoOpenChangelog
+      if (seen !== undefined && notes) {
         store.openPageTab({ type: 'changelog' })
       }
     })
@@ -1492,6 +1505,7 @@ export default function App(): React.JSX.Element {
       <Toasts />
       <CloneTray />
       <UpdateBanner />
+      <RollbackNotices />
       <RepoCosmos />
     </div>
   )

@@ -25,6 +25,7 @@ export type SettingsPageId =
   | 'shortcuts'
   | 'data'
   | 'environment'
+  | 'about'
 
 /** Each page's name in the sidebar. Searched too: "terminal" finds the Layout
  *  page's terminal settings, but "layout" should find the page itself. */
@@ -39,7 +40,8 @@ export const SETTINGS_PAGE_KEYS: Record<SettingsPageId, TranslationKey> = {
   security: 'settings.security',
   shortcuts: 'settings.shortcuts',
   data: 'settings.data',
-  environment: 'settings.environment'
+  environment: 'settings.environment',
+  about: 'settings.about'
 }
 
 export interface SettingsEntry {
@@ -184,7 +186,13 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('data', 'settings.cachedReposTitle'),
 
   // Environment
-  e('environment', 'settings.environment')
+  e('environment', 'settings.environment'),
+
+  // About — the version, going back to an earlier one, the settings copies
+  e('about', 'settings.about'),
+  e('about', 'about.installed', 'about.checkUpdates'),
+  e('about', 'rollback.title', 'rollback.intro'),
+  e('about', 'backups.title', 'backups.hint')
 ]
 
 /** Lower-case, accents off, whitespace collapsed — so typing "configuracao"

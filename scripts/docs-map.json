@@ -43,6 +43,7 @@
       "keychain-consent": "security",
       "settings-import": "security",
       "settings-export": "security",
+      "version-rollback": "rollback",
       "launcher": "getting-started",
       "maintenance": "maintenance",
       "merge-options": "merge-options",

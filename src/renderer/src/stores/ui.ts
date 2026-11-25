@@ -75,7 +75,11 @@ export interface ContextMenuState {
 /** The modal kinds that can also be stacked over another modal (see `dialog`). */
 export type DialogSpec = Extract<
   ModalSpec,
-  { kind: 'confirm' } | { kind: 'input' } | { kind: 'settings-import' } | { kind: 'settings-export' }
+  | { kind: 'confirm' }
+  | { kind: 'input' }
+  | { kind: 'settings-import' }
+  | { kind: 'settings-export' }
+  | { kind: 'version-rollback' }
 >
 
 /** Whether a modal spec is a question that can be stacked over another modal.
@@ -86,7 +90,8 @@ export function isDialogSpec(modal: ModalSpec): modal is DialogSpec {
     modal.kind === 'confirm' ||
     modal.kind === 'input' ||
     modal.kind === 'settings-import' ||
-    modal.kind === 'settings-export'
+    modal.kind === 'settings-export' ||
+    modal.kind === 'version-rollback'
   )
 }
 
@@ -204,12 +209,19 @@ export type ModalSpec =
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void; back?: LauncherBackTarget }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string; initialName?: string }
   | { kind: 'work-item-branch'; path: string; remoteUrl: string }
-  | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment'; themeTab?: 'theme' | 'graph' }
+  | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment' | 'about'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   /** A picked, unlocked settings export: choose its parts before applying. */
   | { kind: 'settings-import'; settings: Partial<AppSettings>; bundle: SettingsBundle | null }
   /** Choose the parts of this machine's settings an export file carries. */
   | { kind: 'settings-export' }
+  /** Settings → About → Previous versions: the confirmation before going back to `target`. */
+  | {
+      kind: 'version-rollback'
+      target: string
+      current: string
+      kindOfInstall: import('../../../shared/types').RollbackSupport['kind']
+    }
   /** The repositories the scanned folders hold, to open — or, with `groupId`,
    *  to add to that group. Also where the scanned folders are managed. */
   /** `from: 'launcher'` when opened from Open repository: it offers a way back

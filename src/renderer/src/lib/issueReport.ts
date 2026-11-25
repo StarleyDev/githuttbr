@@ -222,3 +222,17 @@ export function reportIssueUrl(message: string): string {
   const params = new URLSearchParams({ title: issueTitle(message), body })
   return `${ISSUES_NEW_URL}?${params.toString()}`
 }
+
+/**
+ * A report after going back a version: both versions in the title and the
+ * body, so the issue says which release broke and which one works, before the
+ * user has typed a word. The text is for the maintainers, so it is English.
+ */
+export function rollbackIssueUrl(from: string, to: string): string {
+  // i18n-ignore issue text for the maintainers, English like reportIssueUrl
+  const title = `Problem in v${from} (went back to v${to})`
+  const body =
+    `**Version with the problem:** v${from}\n**Went back to:** v${to}\n\n` +
+    '**What went wrong in the newer version**\n\n<!-- What did you see? What did you expect? -->\n'
+  return `${ISSUES_NEW_URL}?${new URLSearchParams({ title, body }).toString()}`
+}
