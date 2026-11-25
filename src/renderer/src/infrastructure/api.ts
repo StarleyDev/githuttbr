@@ -200,6 +200,7 @@ import type {
 } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 import type { MenuSpec } from '../../../shared/menu'
+import type { EditMenuLabels } from '../../../shared/editMenu'
 import type { CliOpenPayload } from '../../../shared/cli'
 import type { TranslationKey } from '../i18n'
 
@@ -1287,6 +1288,11 @@ export const cliApi = {
 export const menuApi = {
   set: (spec: MenuSpec) => window.api.menu.set(spec),
   onCommand: (cb: (id: string) => void) => window.api.menu.onCommand(cb)
+}
+
+// Translated labels for the native right-click menu on text fields.
+export const editMenuApi = {
+  setLabels: (labels: EditMenuLabels) => window.api.editMenu.setLabels(labels)
 }
 
 export const launchApi = {

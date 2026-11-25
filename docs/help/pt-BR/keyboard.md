@@ -47,6 +47,10 @@ quando era o último. Em todo o resto, essas duas teclas continuam sendo das
 | [Central de controle](mission-control.md) | <kbd>↑</kbd><kbd>↓</kbd>, <kbd>Enter</kbd> para abrir, <kbd>f</kbd>/<kbd>p</kbd> para fetch/pull, <kbd>/</kbd> para filtrar |
 | Caixa de mensagem do commit | <kbd>↑</kbd> <kbd>↓</kbd> traz de volta suas mensagens recentes |
 
+Clique com o botão direito em qualquer campo de texto para Recortar, Copiar, Colar
+e Selecionar tudo, ou num texto selecionado em outro lugar para copiá-lo. O
+[terminal](terminal.md) mantém o seu próprio clique direito.
+
 ## Remapeando
 
 **Configurações → Atalhos**. Os atalhos centrais de navegação (paleta, ir para

@@ -508,6 +508,12 @@ const api = {
     }
   },
 
+  // Labels for the native right-click menu on text (Cut, Copy, Paste, Select
+  // all), already translated; main keeps the latest set.
+  editMenu: {
+    setLabels: (labels: unknown): Promise<void> => ipcRenderer.invoke('editMenu:setLabels', labels)
+  },
+
   window: {
     reportUiCrash: (message: string): void => ipcRenderer.send('window:ui-crashed', message),
     minimize: (): void => ipcRenderer.send('window:minimize'),

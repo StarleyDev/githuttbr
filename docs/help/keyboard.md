@@ -48,6 +48,9 @@ the panel when it was the last. Everywhere else those two keys still belong to
 | [Mission control](mission-control.md) | <kbd>↑</kbd><kbd>↓</kbd>, <kbd>Enter</kbd> to open, <kbd>f</kbd>/<kbd>p</kbd> to fetch/pull, <kbd>/</kbd> to filter |
 | Commit message box | <kbd>↑</kbd> <kbd>↓</kbd> recalls your recent messages |
 
+Right-click any text field for Cut, Copy, Paste and Select all, or selected text
+elsewhere to copy it. The [terminal](terminal.md) keeps its own right-click.
+
 ## Rebinding
 
 **Settings → Shortcuts**. The core navigation shortcuts (palette, go to

@@ -330,6 +330,9 @@ interface PreloadApi {
     set(spec: unknown): Promise<void>
     onCommand(cb: (id: string) => void): () => void
   }
+  editMenu: {
+    setLabels(labels: unknown): Promise<void>
+  }
   window: {
     /** Tells the main process the whole UI threw, so it can log and reload. */
     reportUiCrash(message: string): void

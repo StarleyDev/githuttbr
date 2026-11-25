@@ -25,6 +25,7 @@ import { appendTrailers, configTrailers, doctorSummary, effectiveProtected, isPr
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
 import { planRepositoryPick } from '../src/renderer/src/lib/repositoryPick'
 import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
+import { buildEditMenuItems, EDIT_MENU_FALLBACK_LABELS, parseEditMenuLabels } from '../src/shared/editMenu'
 import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -8284,5 +8285,37 @@ describe('vaultRefusalOf / vaultRefusalKey', () => {
   it('names the file for unreadable and the keychain for unavailable', () => {
     expect(vaultRefusalKey('unreadable')).toBe('vault.unreadable')
     expect(vaultRefusalKey('unavailable')).toBe('vault.keychainUnavailable')
+  })
+})
+
+describe('edit context menu', () => {
+  const labels = { cut: 'Recortar', copy: 'Copiar', paste: 'Colar', selectAll: 'Selecionar tudo' }
+  const flags = { canCut: false, canCopy: false, canPaste: true, canSelectAll: true }
+
+  it('offers all four edits in a text field, enabled from the edit flags', () => {
+    const items = buildEditMenuItems({ isEditable: true, selectionText: '', editFlags: flags }, labels)
+    expect(items).toEqual([
+      { role: 'cut', label: 'Recortar', enabled: false },
+      { role: 'copy', label: 'Copiar', enabled: false },
+      { role: 'paste', label: 'Colar', enabled: true },
+      { role: 'selectAll', label: 'Selecionar tudo', enabled: true }
+    ])
+  })
+
+  it('offers only Copy for selected text outside a field', () => {
+    const items = buildEditMenuItems({ isEditable: false, selectionText: 'feature/login', editFlags: flags }, labels)
+    expect(items).toEqual([{ role: 'copy', label: 'Copiar', enabled: true }])
+  })
+
+  it('offers nothing on plain UI with no selection', () => {
+    expect(buildEditMenuItems({ isEditable: false, selectionText: '', editFlags: flags }, labels)).toEqual([])
+  })
+
+  it('accepts only a complete label set from the bridge', () => {
+    expect(parseEditMenuLabels(labels)).toEqual(labels)
+    expect(parseEditMenuLabels({ ...labels, paste: '' })).toBeNull()
+    expect(parseEditMenuLabels({ cut: 'Cut' })).toBeNull()
+    expect(parseEditMenuLabels(null)).toBeNull()
+    expect(parseEditMenuLabels(EDIT_MENU_FALLBACK_LABELS)).toEqual(EDIT_MENU_FALLBACK_LABELS)
   })
 })
