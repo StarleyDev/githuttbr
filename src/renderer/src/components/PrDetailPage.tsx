@@ -262,435 +262,437 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
 
   return (
-    <div className="prp-page">
-      <div className="prp-main">
-        <PrNavBar page={page} />
-        <header className="prp-head">
-          {status && (
-            <span className={`prp-state prp-${status}`}>
-              <StatusIcon status={status} /> {t(STATUS_KEY[status])}
-            </span>
-          )}
-          <h2>
-            {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
-          </h2>
-          <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
-            <RefreshCw size={14} />
-          </button>
-          {aiEnabled && pr && (
-            <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
-              <Sparkles size={14} />
+    <div className="prp-frame">
+      <div className="prp-page">
+        <div className="prp-main">
+          <PrNavBar page={page} />
+          <header className="prp-head">
+            {status && (
+              <span className={`prp-state prp-${status}`}>
+                <StatusIcon status={status} /> {t(STATUS_KEY[status])}
+              </span>
+            )}
+            <h2>
+              {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
+            </h2>
+            <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
+              <RefreshCw size={14} />
             </button>
-          )}
-          <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
-            <GitPullRequestArrow size={14} />
-          </button>
-          {pr && (
-            <>
-              <BranchGoButton
-                title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
-                usable={!pr.sourceRepo && !!branchRemote}
-                onGo={() => goToBranch(pr.source)}
-                icon={<GitBranch size={14} />}
-              />
-              <BranchGoButton
-                title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
-                usable={!!branchRemote}
-                onGo={() => goToBranch(pr.target)}
-                icon={<Target size={14} />}
-              />
-            </>
-          )}
-          {pr && (
-            <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
-              <ExternalLink size={14} />
+            {aiEnabled && pr && (
+              <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
+                <Sparkles size={14} />
+              </button>
+            )}
+            <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
+              <GitPullRequestArrow size={14} />
             </button>
-          )}
-        </header>
-        {pr && (
-          <div className="prp-sub">
-            {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
-              author: pr.author,
-              source: pr.source,
-              target: pr.target
-            })}
-          </div>
-        )}
-
-        <nav className="prp-tabs" role="tablist">
-          <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
-          <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
-          <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
-        </nav>
-
-        <div className="prp-body">
-          {loading ? (
-            <div className="prd-empty">
-              <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
+            {pr && (
+              <>
+                <BranchGoButton
+                  title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
+                  usable={!pr.sourceRepo && !!branchRemote}
+                  onGo={() => goToBranch(pr.source)}
+                  icon={<GitBranch size={14} />}
+                />
+                <BranchGoButton
+                  title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
+                  usable={!!branchRemote}
+                  onGo={() => goToBranch(pr.target)}
+                  icon={<Target size={14} />}
+                />
+              </>
+            )}
+            {pr && (
+              <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
+                <ExternalLink size={14} />
+              </button>
+            )}
+          </header>
+          {pr && (
+            <div className="prp-sub">
+              {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
+                author: pr.author,
+                source: pr.source,
+                target: pr.target
+              })}
             </div>
-          ) : error ? (
-            <div className="prd-error">{readableError(error, t, interp)}</div>
-          ) : !pr ? null : section === 'conversation' ? (
-            <>
-              <article className="prp-card">
-                <div className="prp-card-head">
-                  <Avatar login={pr.author} avatars={pr.avatars} />
-                  <strong>{pr.author}</strong>
-                  <span>{fmtDate(pr.createdAt)}</span>
-                </div>
-                <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
-                  {pr.body.trim() ? autolink(pr.body, web) : t('prPage.noDescription')}
-                </div>
-              </article>
+          )}
 
-              {pr.comments.map((c, i) => (
-                <article key={i} className="prp-card">
-                  <div className="prp-card-head">
-                    <Avatar login={c.author} avatars={pr.avatars} />
-                    <strong>{c.author}</strong>
-                    <span>{fmtDate(c.createdAt)}</span>
-                  </div>
-                  <div className="prp-card-body">{autolink(c.body, web)}</div>
-                </article>
-              ))}
+          <nav className="prp-tabs" role="tablist">
+            <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
+            <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
+            <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
+          </nav>
 
-              {pr.reviewThreads.length > 0 && (
-                <div className="prd-section-title">
-                  {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
-                </div>
-              )}
-              {pr.reviewThreads.map((th) => (
-                <article key={th.rootId} className="prp-card prp-thread">
-                  <div className="prd-thread-loc" title={th.path}>
-                    {th.path}
-                    {th.line != null ? `:${th.line}` : ''}
-                  </div>
-                  {th.diffHunk && <pre className="prd-thread-hunk">{th.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
-                  {th.comments.map((c) => (
-                    <div key={c.id} className="prp-thread-comment">
-                      <div className="prp-card-head">
-                        <Avatar login={c.author} avatars={pr.avatars} />
-                        <strong>{c.author}</strong>
-                        <span>{fmtDate(c.createdAt)}</span>
-                      </div>
-                      <div className="prp-card-body">{autolink(c.body, web)}</div>
-                    </div>
-                  ))}
-                  {canReplyInThread && (
-                    <div className="prd-thread-reply">
-                      <input
-                        className="prd-reply-input"
-                        placeholder={t('prDetail.replyPlaceholder')}
-                        value={replies[th.rootId] ?? ''}
-                        onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') replyToThread(th.rootId)
-                        }}
-                      />
-                      <button
-                        className="btn ghost tiny"
-                        onClick={() => replyToThread(th.rootId)}
-                        disabled={busy || !(replies[th.rootId] ?? '').trim()}
-                      >
-                        {t('prDetail.reply')}
-                      </button>
-                    </div>
-                  )}
-                </article>
-              ))}
-              {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
-            </>
-          ) : section === 'files' ? (
-            files === null ? (
+          <div className="prp-body">
+            {loading ? (
               <div className="prd-empty">
                 <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
               </div>
-            ) : files.length === 0 ? (
-              <p className="prp-muted prp-pad">{t('prPage.noFiles')}</p>
-            ) : (
-              <FilesSection
-                files={files}
-                viewed={viewed}
-                onToggleViewed={toggleViewed}
-                repoPath={repoPath}
-                prUrl={pr.url}
-              />
-            )
-          ) : checks === null ? (
-            <div className="prd-empty">
-              <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
-            </div>
-          ) : checks.length === 0 ? (
-            <p className="prp-muted prp-pad">{t('prPage.noChecks')}</p>
-          ) : (
-            <div className="prd-checks prp-checks">
-              {checks.map((c, i) => (
-                <div key={i} className="prp-check-item">
-                  <div className="prd-check">
-                    <span className={`prd-check-dot ${checkState(c)}`} />
-                    <span className="prd-check-name">{c.name}</span>
-                    <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
-                    {c.hasLog && (
-                      <button
-                        className="prd-check-logs"
-                        title={openLog === c.url ? t('prPage.hideLog') : t('prPage.showLog')}
-                        aria-expanded={openLog === c.url}
-                        onClick={() => setOpenLog(openLog === c.url ? null : c.url)}
-                      >
-                        <ScrollText size={12} />
-                      </button>
-                    )}
-                    {c.url && (
-                      <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
-                        <ExternalLink size={12} />
-                      </button>
-                    )}
+            ) : error ? (
+              <div className="prd-error">{readableError(error, t, interp)}</div>
+            ) : !pr ? null : section === 'conversation' ? (
+              <>
+                <article className="prp-card">
+                  <div className="prp-card-head">
+                    <Avatar login={pr.author} avatars={pr.avatars} />
+                    <strong>{pr.author}</strong>
+                    <span>{fmtDate(pr.createdAt)}</span>
                   </div>
-                  {openLog === c.url && <CheckLogPanel repoPath={repoPath} remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                  <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
+                    {pr.body.trim() ? autolink(pr.body, web) : t('prPage.noDescription')}
+                  </div>
+                </article>
 
-        {/* Fixed under the scrolling conversation, like the title above it: a long
-            PR must not hide the review and merge actions at the bottom. */}
-        {!loading && !error && pr && section === 'conversation' && (
-          <footer className="prp-footer">
-            <section className="prp-composer">
-              <textarea
-                className="prd-input"
-                placeholder={t('prDetail.commentPlaceholder')}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-              <div className="prp-composer-actions">
-                <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-                  <MessageSquare size={13} /> {t('prDetail.comment')}
-                </button>
-                <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
-                  <Check size={13} /> {t('prDetail.approve')}
-                </button>
-                <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-                  <X size={13} /> {t('prDetail.requestChanges')}
-                </button>
+                {pr.comments.map((c, i) => (
+                  <article key={i} className="prp-card">
+                    <div className="prp-card-head">
+                      <Avatar login={c.author} avatars={pr.avatars} />
+                      <strong>{c.author}</strong>
+                      <span>{fmtDate(c.createdAt)}</span>
+                    </div>
+                    <div className="prp-card-body">{autolink(c.body, web)}</div>
+                  </article>
+                ))}
+
+                {pr.reviewThreads.length > 0 && (
+                  <div className="prd-section-title">
+                    {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
+                  </div>
+                )}
+                {pr.reviewThreads.map((th) => (
+                  <article key={th.rootId} className="prp-card prp-thread">
+                    <div className="prd-thread-loc" title={th.path}>
+                      {th.path}
+                      {th.line != null ? `:${th.line}` : ''}
+                    </div>
+                    {th.diffHunk && <pre className="prd-thread-hunk">{th.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
+                    {th.comments.map((c) => (
+                      <div key={c.id} className="prp-thread-comment">
+                        <div className="prp-card-head">
+                          <Avatar login={c.author} avatars={pr.avatars} />
+                          <strong>{c.author}</strong>
+                          <span>{fmtDate(c.createdAt)}</span>
+                        </div>
+                        <div className="prp-card-body">{autolink(c.body, web)}</div>
+                      </div>
+                    ))}
+                    {canReplyInThread && (
+                      <div className="prd-thread-reply">
+                        <input
+                          className="prd-reply-input"
+                          placeholder={t('prDetail.replyPlaceholder')}
+                          value={replies[th.rootId] ?? ''}
+                          onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') replyToThread(th.rootId)
+                          }}
+                        />
+                        <button
+                          className="btn ghost tiny"
+                          onClick={() => replyToThread(th.rootId)}
+                          disabled={busy || !(replies[th.rootId] ?? '').trim()}
+                        >
+                          {t('prDetail.reply')}
+                        </button>
+                      </div>
+                    )}
+                  </article>
+                ))}
+                {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
+              </>
+            ) : section === 'files' ? (
+              files === null ? (
+                <div className="prd-empty">
+                  <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
+                </div>
+              ) : files.length === 0 ? (
+                <p className="prp-muted prp-pad">{t('prPage.noFiles')}</p>
+              ) : (
+                <FilesSection
+                  files={files}
+                  viewed={viewed}
+                  onToggleViewed={toggleViewed}
+                  repoPath={repoPath}
+                  prUrl={pr.url}
+                />
+              )
+            ) : checks === null ? (
+              <div className="prd-empty">
+                <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
               </div>
-            </section>
+            ) : checks.length === 0 ? (
+              <p className="prp-muted prp-pad">{t('prPage.noChecks')}</p>
+            ) : (
+              <div className="prd-checks prp-checks">
+                {checks.map((c, i) => (
+                  <div key={i} className="prp-check-item">
+                    <div className="prd-check">
+                      <span className={`prd-check-dot ${checkState(c)}`} />
+                      <span className="prd-check-name">{c.name}</span>
+                      <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
+                      {c.hasLog && (
+                        <button
+                          className="prd-check-logs"
+                          title={openLog === c.url ? t('prPage.hideLog') : t('prPage.showLog')}
+                          aria-expanded={openLog === c.url}
+                          onClick={() => setOpenLog(openLog === c.url ? null : c.url)}
+                        >
+                          <ScrollText size={12} />
+                        </button>
+                      )}
+                      {c.url && (
+                        <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
+                          <ExternalLink size={12} />
+                        </button>
+                      )}
+                    </div>
+                    {openLog === c.url && <CheckLogPanel repoPath={repoPath} remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-            {canMerge && (
-              <section className={`prp-merge ${mergeBlocked ? 'is-blocked' : ''}`}>
-                <div className="prp-merge-text">
-                  <GitMerge size={16} />
-                  <span>
-                    {pr.mergeable === false
-                      ? t('prDetail.notMergeable')
-                      : blockers.length
-                        ? t('prPage.mergeBlocked')
-                        : refused
-                        ? t('prPage.mergeRefusedShort')
-                        : pr.mergeable === true
-                        ? t('prPage.mergeable')
-                        : t('prPage.mergeUnknown')}
-                  </span>
-                </div>
-                <div className="prd-merge">
-                  <select value={mergeMethod} onChange={(e) => setMergeMethod(e.target.value as PrMergeMethod)}>
-                    <option value="merge">{t('prDetail.mergeCommit')}</option>
-                    <option value="squash">{t('prDetail.squash')}</option>
-                    {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
-                    {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
-                  </select>
-                  <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
-                    {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
+          {/* Fixed under the scrolling conversation, like the title above it: a long
+              PR must not hide the review and merge actions at the bottom. */}
+          {!loading && !error && pr && section === 'conversation' && (
+            <footer className="prp-footer">
+              <section className="prp-composer">
+                <textarea
+                  className="prd-input"
+                  placeholder={t('prDetail.commentPlaceholder')}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+                <div className="prp-composer-actions">
+                  <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
+                    <MessageSquare size={13} /> {t('prDetail.comment')}
+                  </button>
+                  <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
+                    <Check size={13} /> {t('prDetail.approve')}
+                  </button>
+                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
+                    <X size={13} /> {t('prDetail.requestChanges')}
                   </button>
                 </div>
               </section>
-            )}
-          </footer>
-        )}
-      </div>
 
-      <aside className="prp-side">
-        {pr && (
-          <>
-            <Field icon={<User size={12} />} label={t('prPage.author')}>
-              <span className="prp-person">
-                <Avatar login={pr.author} avatars={pr.avatars} />
-                {pr.author}
-              </span>
-              {pr.createdAt && <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>}
-            </Field>
-
-            <Field icon={<GitPullRequest size={12} />} label={t('prPage.status')}>
-              <div>{status && t(STATUS_KEY[status])}</div>
-              {pr.merged && pr.mergedAt && (
-                <div className="prp-side-note">
-                  {pr.mergedBy
-                    ? interp(t('prPage.mergedByOn'), { who: pr.mergedBy, date: fmtDate(pr.mergedAt) })
-                    : interp(t('prPage.mergedOn'), { date: fmtDate(pr.mergedAt) })}
-                </div>
-              )}
-              {!pr.merged && pr.state === 'closed' && pr.closedAt && (
-                <div className="prp-side-note">{interp(t('prPage.closedOn'), { date: fmtDate(pr.closedAt) })}</div>
-              )}
-              {canMerge && pr.mergeable === false && <div className="prp-side-note prp-warn">{t('prPage.conflicts')}</div>}
-              {/* The vetoes are the server's own copy (its merge checks), shown as it words them. */}
-              {canMerge &&
-                blockers.map((b, i) => (
-                  <div key={i} className="prp-side-note prp-warn">
-                    {b}
+              {canMerge && (
+                <section className={`prp-merge ${mergeBlocked ? 'is-blocked' : ''}`}>
+                  <div className="prp-merge-text">
+                    <GitMerge size={16} />
+                    <span>
+                      {pr.mergeable === false
+                        ? t('prDetail.notMergeable')
+                        : blockers.length
+                          ? t('prPage.mergeBlocked')
+                          : refused
+                          ? t('prPage.mergeRefusedShort')
+                          : pr.mergeable === true
+                          ? t('prPage.mergeable')
+                          : t('prPage.mergeUnknown')}
+                    </span>
                   </div>
-                ))}
-              {canMerge && refused && <div className="prp-side-note prp-warn">{t('prPage.mergeRefused')}</div>}
-            </Field>
-
-            <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>
-              {reviewers.length === 0 ? (
-                <span className="issue-none">{t('prPage.noReviewers')}</span>
-              ) : (
-                <ul className="prp-list">
-                  {reviewers.map((r) => (
-                    <li key={r.login} className="prp-person" title={t(REVIEW_KEY[r.state])}>
-                      {r.team ? <Users size={14} className="prp-team" /> : <Avatar login={r.login} avatars={pr.avatars} />}
-                      <span className="prp-person-name">{r.login}</span>
-                      <ReviewIcon state={r.state} />
-                    </li>
-                  ))}
-                </ul>
+                  <div className="prd-merge">
+                    <select value={mergeMethod} onChange={(e) => setMergeMethod(e.target.value as PrMergeMethod)}>
+                      <option value="merge">{t('prDetail.mergeCommit')}</option>
+                      <option value="squash">{t('prDetail.squash')}</option>
+                      {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
+                      {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
+                    </select>
+                    <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
+                      {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
+                    </button>
+                  </div>
+                </section>
               )}
-            </Field>
+            </footer>
+          )}
+        </div>
 
-            {pr.assignees !== undefined && (
-              <Field icon={<User size={12} />} label={t('prPage.assignees')}>
-                {pr.assignees.length === 0 ? (
-                  <span className="issue-none">{t('common.none')}</span>
+        <aside className="prp-side">
+          {pr && (
+            <>
+              <Field icon={<User size={12} />} label={t('prPage.author')}>
+                <span className="prp-person">
+                  <Avatar login={pr.author} avatars={pr.avatars} />
+                  {pr.author}
+                </span>
+                {pr.createdAt && <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>}
+              </Field>
+
+              <Field icon={<GitPullRequest size={12} />} label={t('prPage.status')}>
+                <div>{status && t(STATUS_KEY[status])}</div>
+                {pr.merged && pr.mergedAt && (
+                  <div className="prp-side-note">
+                    {pr.mergedBy
+                      ? interp(t('prPage.mergedByOn'), { who: pr.mergedBy, date: fmtDate(pr.mergedAt) })
+                      : interp(t('prPage.mergedOn'), { date: fmtDate(pr.mergedAt) })}
+                  </div>
+                )}
+                {!pr.merged && pr.state === 'closed' && pr.closedAt && (
+                  <div className="prp-side-note">{interp(t('prPage.closedOn'), { date: fmtDate(pr.closedAt) })}</div>
+                )}
+                {canMerge && pr.mergeable === false && <div className="prp-side-note prp-warn">{t('prPage.conflicts')}</div>}
+                {/* The vetoes are the server's own copy (its merge checks), shown as it words them. */}
+                {canMerge &&
+                  blockers.map((b, i) => (
+                    <div key={i} className="prp-side-note prp-warn">
+                      {b}
+                    </div>
+                  ))}
+                {canMerge && refused && <div className="prp-side-note prp-warn">{t('prPage.mergeRefused')}</div>}
+              </Field>
+
+              <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>
+                {reviewers.length === 0 ? (
+                  <span className="issue-none">{t('prPage.noReviewers')}</span>
                 ) : (
                   <ul className="prp-list">
-                    {pr.assignees.map((a) => (
-                      <li key={a.login} className="prp-person">
-                        <Avatar login={a.login} avatars={pr.avatars} />
-                        <span className="prp-person-name">{a.login}</span>
+                    {reviewers.map((r) => (
+                      <li key={r.login} className="prp-person" title={t(REVIEW_KEY[r.state])}>
+                        {r.team ? <Users size={14} className="prp-team" /> : <Avatar login={r.login} avatars={pr.avatars} />}
+                        <span className="prp-person-name">{r.login}</span>
+                        <ReviewIcon state={r.state} />
                       </li>
                     ))}
                   </ul>
                 )}
               </Field>
-            )}
 
-            {pr.labels !== undefined && (
-              <Field icon={<Tag size={12} />} label={t('prPage.labels')}>
-                {pr.labels.length === 0 ? (
-                  <span className="issue-none">{t('common.none')}</span>
-                ) : (
-                  <span className="issue-labels">
-                    {pr.labels.map((l) => {
-                      const bg = labelColor(l.color)
-                      return (
-                        <span
-                          key={l.name}
-                          className="issue-label"
-                          style={bg ? { background: bg, color: labelTextColor(bg) } : undefined}
-                        >
-                          {l.name}
-                        </span>
-                      )
-                    })}
-                  </span>
+              {pr.assignees !== undefined && (
+                <Field icon={<User size={12} />} label={t('prPage.assignees')}>
+                  {pr.assignees.length === 0 ? (
+                    <span className="issue-none">{t('common.none')}</span>
+                  ) : (
+                    <ul className="prp-list">
+                      {pr.assignees.map((a) => (
+                        <li key={a.login} className="prp-person">
+                          <Avatar login={a.login} avatars={pr.avatars} />
+                          <span className="prp-person-name">{a.login}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Field>
+              )}
+
+              {pr.labels !== undefined && (
+                <Field icon={<Tag size={12} />} label={t('prPage.labels')}>
+                  {pr.labels.length === 0 ? (
+                    <span className="issue-none">{t('common.none')}</span>
+                  ) : (
+                    <span className="issue-labels">
+                      {pr.labels.map((l) => {
+                        const bg = labelColor(l.color)
+                        return (
+                          <span
+                            key={l.name}
+                            className="issue-label"
+                            style={bg ? { background: bg, color: labelTextColor(bg) } : undefined}
+                          >
+                            {l.name}
+                          </span>
+                        )
+                      })}
+                    </span>
+                  )}
+                </Field>
+              )}
+
+              {pr.milestone !== undefined && (
+                <Field icon={<Milestone size={12} />} label={t('prPage.milestone')}>
+                  {pr.milestone ?? <span className="issue-none">{t('common.none')}</span>}
+                </Field>
+              )}
+
+              <Field icon={<GitBranch size={12} />} label={t('prPage.branches')}>
+                <div className="prp-branches">
+                  <PrBranchName
+                    name={pr.source}
+                    title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.checkoutBranch')}
+                    usable={!!branchRemote}
+                    onGo={() => goToBranch(pr.source)}
+                    // A fork's branch shares only its name with anything here.
+                    isCurrent={!pr.sourceRepo && currentBranch === pr.source}
+                    inFork={!!pr.sourceRepo}
+                  />
+                  <span className="prp-arrow">→</span>
+                  <PrBranchName
+                    name={pr.target}
+                    title={branchGoTitle(pr.target, false, 'prPage.checkoutBranch')}
+                    usable={!!branchRemote}
+                    onGo={() => goToBranch(pr.target)}
+                    isCurrent={currentBranch === pr.target}
+                    inFork={false}
+                  />
+                </div>
+                {pr.sourceRepo && (
+                  <>
+                    <div className="prp-side-note">{interp(t('prPage.fromFork'), { repo: pr.sourceRepo })}</div>
+                    <div className="prp-side-note">
+                      {t('prPage.forkBranchHint')}{' '}
+                      <button type="button" className="prp-link" onClick={previewLocally}>
+                        {t('prPreview.open')}
+                      </button>
+                    </div>
+                  </>
                 )}
               </Field>
-            )}
 
-            {pr.milestone !== undefined && (
-              <Field icon={<Milestone size={12} />} label={t('prPage.milestone')}>
-                {pr.milestone ?? <span className="issue-none">{t('common.none')}</span>}
-              </Field>
-            )}
-
-            <Field icon={<GitBranch size={12} />} label={t('prPage.branches')}>
-              <div className="prp-branches">
-                <PrBranchName
-                  name={pr.source}
-                  title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.checkoutBranch')}
-                  usable={!!branchRemote}
-                  onGo={() => goToBranch(pr.source)}
-                  // A fork's branch shares only its name with anything here.
-                  isCurrent={!pr.sourceRepo && currentBranch === pr.source}
-                  inFork={!!pr.sourceRepo}
-                />
-                <span className="prp-arrow">→</span>
-                <PrBranchName
-                  name={pr.target}
-                  title={branchGoTitle(pr.target, false, 'prPage.checkoutBranch')}
-                  usable={!!branchRemote}
-                  onGo={() => goToBranch(pr.target)}
-                  isCurrent={currentBranch === pr.target}
-                  inFork={false}
-                />
-              </div>
-              {pr.sourceRepo && (
-                <>
-                  <div className="prp-side-note">{interp(t('prPage.fromFork'), { repo: pr.sourceRepo })}</div>
-                  <div className="prp-side-note">
-                    {t('prPage.forkBranchHint')}{' '}
-                    <button type="button" className="prp-link" onClick={previewLocally}>
-                      {t('prPreview.open')}
-                    </button>
-                  </div>
-                </>
+              {pr.workItems && pr.workItems.length > 0 && (
+                <Field icon={<ClipboardList size={12} />} label={t('prPage.workItems')}>
+                  <ul className="prp-work-items">
+                    {pr.workItems.map((w) => (
+                      <li key={w.id}>
+                        <button className="prp-link prp-work-item" title={w.url} onClick={() => void shellApi.openExternal(w.url)}>
+                          <span className="prp-work-item-id">{`AB#${w.id}` /* i18n-ignore work item reference */}</span>
+                          <span className="prp-work-item-title">{w.title}</span>
+                        </button>
+                        {(w.type || w.state) && (
+                          <div className="prp-side-note">{[w.type, w.state].filter(Boolean).join(' · ')}</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </Field>
               )}
-            </Field>
 
-            {pr.workItems && pr.workItems.length > 0 && (
-              <Field icon={<ClipboardList size={12} />} label={t('prPage.workItems')}>
-                <ul className="prp-work-items">
-                  {pr.workItems.map((w) => (
-                    <li key={w.id}>
-                      <button className="prp-link prp-work-item" title={w.url} onClick={() => void shellApi.openExternal(w.url)}>
-                        <span className="prp-work-item-id">{`AB#${w.id}` /* i18n-ignore work item reference */}</span>
-                        <span className="prp-work-item-title">{w.title}</span>
-                      </button>
-                      {(w.type || w.state) && (
-                        <div className="prp-side-note">{[w.type, w.state].filter(Boolean).join(' · ')}</div>
-                      )}
-                    </li>
+              <Field icon={<FileDiff size={12} />} label={t('prPage.changes')}>
+                <ChangeSummary pr={pr} files={files} />
+              </Field>
+
+              {counts && checks && checks.length > 0 && (
+                <Field icon={<CircleDot size={12} />} label={t('prDetail.checks')}>
+                  <button className="prp-link" onClick={() => setSection('checks')}>
+                    {interp(t('prPage.checksSummary'), {
+                      pass: String(counts.pass),
+                      fail: String(counts.fail),
+                      pending: String(counts.pending)
+                    })}
+                  </button>
+                </Field>
+              )}
+
+              <Field icon={<Users size={12} />} label={t('prPage.participants')}>
+                <div className="prp-faces">
+                  {people.map((p) => (
+                    <Avatar key={p} login={p} avatars={pr.avatars} size={22} title={p} />
                   ))}
-                </ul>
+                </div>
               </Field>
-            )}
 
-            <Field icon={<FileDiff size={12} />} label={t('prPage.changes')}>
-              <ChangeSummary pr={pr} files={files} />
-            </Field>
-
-            {counts && checks && checks.length > 0 && (
-              <Field icon={<CircleDot size={12} />} label={t('prDetail.checks')}>
-                <button className="prp-link" onClick={() => setSection('checks')}>
-                  {interp(t('prPage.checksSummary'), {
-                    pass: String(counts.pass),
-                    fail: String(counts.fail),
-                    pending: String(counts.pending)
-                  })}
-                </button>
-              </Field>
-            )}
-
-            <Field icon={<Users size={12} />} label={t('prPage.participants')}>
-              <div className="prp-faces">
-                {people.map((p) => (
-                  <Avatar key={p} login={p} avatars={pr.avatars} size={22} title={p} />
-                ))}
-              </div>
-            </Field>
-
-            {pr.updatedAt && (
-              <Field icon={<CalendarDays size={12} />} label={t('prPage.activity')}>
-                <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>
-                <div className="prp-side-note">{interp(t('prPage.updatedOn'), { date: fmtDate(pr.updatedAt) })}</div>
-              </Field>
-            )}
-          </>
-        )}
-      </aside>
+              {pr.updatedAt && (
+                <Field icon={<CalendarDays size={12} />} label={t('prPage.activity')}>
+                  <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>
+                  <div className="prp-side-note">{interp(t('prPage.updatedOn'), { date: fmtDate(pr.updatedAt) })}</div>
+                </Field>
+              )}
+            </>
+          )}
+        </aside>
+      </div>
     </div>
   )
 }
