@@ -13,6 +13,7 @@ import {
 } from '../shared/rollback'
 import { readSettings } from './settings'
 import { backupSettings } from './settingsBackups'
+import { cancelPlan, downloadLanded, switchEnded } from './rollbackDecisions'
 import { githubPublicGet } from './credentials'
 import { APP_RELEASES_API, APP_REPO } from '../shared/appRepo'
 import { GITHUB_COM, GITHUB_COM_ENDPOINTS } from '../shared/githubEnterprise'
@@ -200,13 +201,14 @@ function wireAutoUpdater(): void {
     })
   })
   autoUpdater.on('update-downloaded', (info) => {
-    if (draining) return
-    if (rollback) return setRollback({ status: 'downloaded', percent: 100 })
+    // A cancelled switch's download can still land (see rollbackDecisions.ts).
+    const landed = downloadLanded(draining ? 'abandoned' : rollback ? 'rollback' : 'update')
+    if (landed.abandoned !== null) abandonedDownload = landed.abandoned
+    autoUpdater.autoInstallOnAppQuit = landed.autoInstallOnAppQuit
+    if (landed.route === 'drop') return
+    if (landed.route === 'rollback') return setRollback({ status: 'downloaded', percent: 100 })
     // A version switch is coming: copy the settings first (quitting installs it too).
     void backupSettings(info.version, 'update')
-    // This download replaces an abandoned rollback's: installing on quit is safe again.
-    abandonedDownload = false
-    autoUpdater.autoInstallOnAppQuit = true
     setState({
       status: 'downloaded',
       progress: null,
@@ -378,12 +380,11 @@ function restoreFeed(): void {
 }
 
 function endRollback(final: Partial<RollbackState>): void {
-  // A finished download left on disk would install on quit. One cut short
-  // (cancelled mid-transfer) leaves nothing to install.
-  if (rollback && rollbackState.status === 'downloaded') abandonedDownload = true
+  const ended = switchEnded(rollback ? rollbackState.status : 'idle', abandonedDownload)
+  abandonedDownload = ended.abandoned
   rollback = null
   restoreFeed()
-  autoUpdater.autoInstallOnAppQuit = !abandonedDownload
+  autoUpdater.autoInstallOnAppQuit = ended.autoInstallOnAppQuit
   setRollback(final)
 }
 
@@ -397,12 +398,12 @@ let draining = false
 function cancelRollback(): void {
   const idle: RollbackState = { status: 'idle', target: null, percent: 0, error: null, backup: null }
   if (!rollback) return setRollback(idle)
-  const inFlight = rollbackState.status === 'checking' || rollbackState.status === 'downloading'
-  if (inFlight) draining = true
+  const plan = cancelPlan(rollbackState.status)
+  if (plan.drain) draining = true
   rollback.cancel.cancel()
   endRollback(idle)
   // What the normal feed offers is offered again — at once, or once the transfer has settled.
-  if (!inFlight) void runCheck(true).catch(() => {})
+  if (plan.recheckNow) void runCheck(true).catch(() => {})
 }
 
 /**
@@ -416,39 +417,45 @@ function cancelRollback(): void {
  */
 async function startRollback(version: string): Promise<void> {
   if (!rollbackSupport().supported) return
-  if (rollback || state.status === 'downloading') return
-  if (rollbackState.status === 'checking' || rollbackState.status === 'downloading') return
+  if (rollback || draining || state.status === 'downloading') return
   // Only a version the list would offer: older than this one, and safe to land on.
   if (!isRollbackSafe(version) || compareVersions(version, app.getVersion()) >= 0) return
-  // The copy first: a switch without one is not started at all.
+  // The switch exists from the first moment, so a cancel during the settings
+  // copy is seen: every step below checks it is still the switch running.
+  const mine = { target: version, cancel: new CancellationToken() }
+  rollback = mine
   setRollback({ status: 'checking', target: version, percent: 0, error: null, backup: null })
-  const backup = await backupSettings(version, 'rollback')
-  if (!backup) {
-    setRollback({ status: 'error', error: 'backup-failed' })
-    return
-  }
-  wireAutoUpdater()
-  // The update banner steps aside: a staged update is replaced by this download,
-  // and an offer made from the normal feed means nothing until it is back.
-  setState({ status: 'idle', info: null, progress: null, error: null, staged: null })
-  rollback = { target: version, cancel: new CancellationToken() }
-  // Until the user's switch is recorded, quitting installs nothing.
-  autoUpdater.autoInstallOnAppQuit = false
-  autoUpdater.allowDowngrade = true
-  autoUpdater.setFeedURL({ provider: 'generic', url: releaseDownloadUrl(REPO, version), useMultipleRangeRequest: false })
-  setRollback({ backup: backup.name })
   try {
+    // The copy first: a switch without one is not started at all.
+    const backup = await backupSettings(version, 'rollback')
+    if (rollback !== mine) return
+    if (!backup) return endRollback({ status: 'error', error: 'backup-failed' })
+    wireAutoUpdater()
+    // The update banner steps aside: a staged update is replaced by this download,
+    // and an offer made from the normal feed means nothing until it is back.
+    setState({ status: 'idle', info: null, progress: null, error: null, staged: null })
+    // Until the user's switch is recorded, quitting installs nothing.
+    autoUpdater.autoInstallOnAppQuit = false
+    autoUpdater.allowDowngrade = true
+    autoUpdater.setFeedURL({ provider: 'generic', url: releaseDownloadUrl(REPO, version), useMultipleRangeRequest: false })
+    setRollback({ backup: backup.name })
     const result = await autoUpdater.checkForUpdates()
+    if (rollback !== mine) return
     if (!result || result.updateInfo.version !== version || !result.isUpdateAvailable) {
       throw new Error(`v${version} could not be found in its release.`)
     }
-    await autoUpdater.downloadUpdate(rollback.cancel)
-    // Cancelled meanwhile: `cancelRollback` has already put everything back.
-    if (!rollback) return
+    await autoUpdater.downloadUpdate(mine.cancel)
+    if (rollback !== mine) {
+      // Cancelled after the last byte: the file is staged anyway. Never installed on quit.
+      const landed = downloadLanded('abandoned')
+      abandonedDownload = landed.abandoned ?? abandonedDownload
+      autoUpdater.autoInstallOnAppQuit = landed.autoInstallOnAppQuit
+      return
+    }
     // Some versions of the updater resolve before the event; either way it is on disk.
     if (rollbackState.status !== 'downloaded') setRollback({ status: 'downloaded', percent: 100 })
   } catch (err) {
-    if (rollback) {
+    if (rollback === mine) {
       const error = isMissingChannelFile(err) ? 'missing-platform' : ((err as Error)?.message ?? String(err))
       endRollback({ status: 'error', error })
     }
