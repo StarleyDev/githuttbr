@@ -1938,6 +1938,7 @@ export const it: Dict = {
   'rollback.recordFailed': 'Non è stato possibile registrare il cambio nelle impostazioni, quindi non è stato installato nulla.',
   'rollback.restored': 'Impostazioni ripristinate dalla copia.',
   'rollback.restoreFailed': 'Impossibile ripristinare la copia. Le impostazioni non sono cambiate.',
+  'rollback.restoreBackupFailed': 'Non è stato possibile copiare prima le impostazioni, quindi la copia non è stata ripristinata. Controlla che la cartella delle impostazioni sia scrivibile.',
   'rollback.confirmTitle': 'Tornare alla v{version}?',
   'rollback.confirmLead': 'Sei sulla v{current}. Gitcito scarica la v{version} e si riavvia con quella.',
   'rollback.stepBackup': 'Salva una copia delle impostazioni attuali. Al prossimo aggiornamento potrai ripristinarla.',

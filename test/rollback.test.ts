@@ -230,6 +230,13 @@ describe('settings format: unknown keys survive, credentials do not', () => {
     expect(holdsSecret('password', 'hunter2')).toBe(true)
     expect(holdsSecret('servers', [{ url: 'https://h?private_token=x' }])).toBe(true)
     expect(holdsSecret('servers', [{ url: 'https://h/path' }])).toBe(false)
+    expect(holdsSecret('docs', 'https://example.com/help#install')).toBe(false)
+    expect(holdsSecret('docs', 'https://example.com/help?ref=settings&page=2')).toBe(false)
+    expect(holdsSecret('mirror', 'https://u:pw@example.com/repo')).toBe(true)
+    expect(holdsSecret('upload', 'https://s3.example/b?X-Amz-Signature=abc')).toBe(true)
+    expect(holdsSecret('feed', 'https://h/feed?access_token=abc')).toBe(true)
+    // An enum-like value under a credential name is dropped too: conservative by design.
+    expect(holdsSecret('auth', 'oauth')).toBe(true)
   })
 
   it('names only keys added by a format the target predates', () => {
@@ -247,20 +254,32 @@ describe('comparing and restoring a copy', () => {
     expect(changedSettingsKeys(copy, { ...copy })).toEqual([])
   })
 
-  it('ignores key order, fields only one side has, and list entries only one side knows', () => {
+  it('ignores key order, fields only now has, and column ids an older build does not know', () => {
     const before = {
-      graphColumns: { graph: true, author: false, deployment: true },
+      graphColumns: { graph: true, author: false },
       graphColumnOrder: ['graph', 'deployment', 'author', 'date'],
-      profiles: [{ id: 'p', name: 'Me', newerField: 1 }]
+      profiles: [{ id: 'p', name: 'Me' }],
+      favouriteRepos: ['/a', '/b']
     }
     const after = {
-      graphColumns: { author: false, graph: true },
+      graphColumns: { author: false, graph: true, addedLater: true },
       graphColumnOrder: ['graph', 'author', 'date'],
-      profiles: [{ name: 'Me', id: 'p', olderDefault: '' }]
+      profiles: [{ name: 'Me', id: 'p', olderDefault: '' }],
+      favouriteRepos: ['/a', '/b']
     }
     expect(changedSettingsKeys(before, after)).toEqual([])
     expect(changedSettingsKeys(before, { ...after, graphColumnOrder: ['author', 'graph', 'date'] })).toEqual(['graphColumnOrder'])
     expect(changedSettingsKeys(before, { ...after, profiles: [{ id: 'p', name: 'Other' }] })).toEqual(['profiles'])
+  })
+
+  it('counts what was removed: an entry, a field, a whole key', () => {
+    const before = { favouriteRepos: ['/a', '/b'], shortcuts: { push: 'mod+p', pull: 'mod+l' }, repoAliases: { '/a': 'A' } }
+    expect(changedSettingsKeys(before, { ...before, favouriteRepos: ['/a'] })).toEqual(['favouriteRepos'])
+    expect(changedSettingsKeys(before, { ...before, favouriteRepos: ['/a', '/b', '/c'] })).toEqual(['favouriteRepos'])
+    expect(changedSettingsKeys(before, { ...before, shortcuts: { push: 'mod+p' } })).toEqual(['shortcuts'])
+    const { repoAliases: _gone, ...withoutAliases } = before
+    void _gone
+    expect(changedSettingsKeys(before, withoutAliases)).toEqual(['repoAliases'])
   })
 
   it('restores the copy’s preferences and keeps the session as it is now', () => {
@@ -290,5 +309,34 @@ describe('comparing and restoring a copy', () => {
     expect(out.profiles[0].name).toBe('Old name')
     expect(out.profiles[0].githubEnterprise?.map((h) => h.url)).toEqual(['https://ghe.one', 'https://ghe.two'])
     expect(out.activeProfileId).toBe('a')
+  })
+
+  it('matches servers by address however spelled, and keeps AI accounts created since', () => {
+    const old = {
+      ai: { accounts: [{ id: 'g1', label: 'old' }] },
+      profiles: [{ id: 'a', gitlabServers: [{ url: 'https://GL.example/', token: '' }], ai: { accounts: [{ id: 'x', label: 'old' }] } }]
+    }
+    const now = {
+      ai: { accounts: [{ id: 'g1', label: 'new' }, { id: 'g2', label: 'later' }] },
+      profiles: [
+        {
+          id: 'a',
+          gitlabServers: [{ url: 'https://gl.example', token: '' }, { url: 'https://gl2.example', token: '' }],
+          ai: { accounts: [{ id: 'x', label: 'new' }, { id: 'y', label: 'later' }] }
+        }
+      ]
+    }
+    const out = restoredSettings(old, now) as {
+      ai: { accounts: { id: string; label: string }[] }
+      profiles: { gitlabServers: { url: string }[]; ai: { accounts: { id: string; label: string }[] } }[]
+    }
+    expect(out.profiles[0].gitlabServers.map((h) => h.url)).toEqual(['https://GL.example/', 'https://gl2.example'])
+    expect(out.profiles[0].ai.accounts).toEqual([{ id: 'x', label: 'old' }, { id: 'y', label: 'later' }])
+    expect(out.ai.accounts).toEqual([{ id: 'g1', label: 'old' }, { id: 'g2', label: 'later' }])
+  })
+
+  it('keeps today’s profiles when the copy has none', () => {
+    const now = { profiles: [{ id: 'a' }], activeProfileId: 'a' }
+    expect(restoredSettings({ language: 'en' }, now)).toMatchObject({ profiles: [{ id: 'a' }], activeProfileId: 'a' })
   })
 })

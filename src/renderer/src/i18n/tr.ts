@@ -1937,6 +1937,7 @@ export const tr: Dict = {
   'rollback.recordFailed': 'Geçiş ayarlara kaydedilemedi, bu yüzden hiçbir şey yüklenmedi.',
   'rollback.restored': 'Ayarlar kopyadan geri yüklendi.',
   'rollback.restoreFailed': 'Kopya geri yüklenemedi. Ayarlarınız değişmedi.',
+  'rollback.restoreBackupFailed': 'Ayarlar önce kopyalanamadığı için kopya geri yüklenmedi. Ayarlar klasörüne yazılabildiğini kontrol edin.',
   'rollback.confirmTitle': 'v{version} sürümüne dönülsün mü?',
   'rollback.confirmLead': 'Şu an v{current} kullanıyorsunuz. Gitcito v{version} sürümünü indirir ve onunla yeniden başlar.',
   'rollback.stepBackup': 'Şu anki ayarlarınızın bir kopyasını alır. Yeniden güncellediğinizde geri yükleyebilirsiniz.',

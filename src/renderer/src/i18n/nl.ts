@@ -1958,6 +1958,7 @@ export const nl: Dict = {
   'rollback.recordFailed': 'De wissel kon niet in je instellingen worden vastgelegd, dus er is niets geïnstalleerd.',
   'rollback.restored': 'Instellingen hersteld uit de kopie.',
   'rollback.restoreFailed': 'De kopie kon niet worden hersteld. Je instellingen zijn niet veranderd.',
+  'rollback.restoreBackupFailed': 'De instellingen konden niet eerst worden gekopieerd, dus de kopie is niet hersteld. Controleer of er in de instellingenmap geschreven kan worden.',
   'rollback.confirmTitle': 'Terug naar v{version}?',
   'rollback.confirmLead': 'Je gebruikt v{current}. Gitcito downloadt v{version} en start daarin opnieuw.',
   'rollback.stepBackup': 'Bewaart een kopie van je huidige instellingen. Bij de volgende update kun je die terugzetten.',

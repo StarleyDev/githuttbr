@@ -40,10 +40,21 @@ const profileWith = (over: Partial<Profile>): Profile => ({ ...defaultSettings()
 const settingsWith = (over: Record<string, unknown> = {}): AppSettings =>
   ({ ...defaultSettings(), onboardingCompleted: true, profiles: [profileWith({})], ...over }) as AppSettings
 
-async function restart(file: Record<string, unknown>): Promise<typeof import('../src/main/settingsBackups')> {
+const storeFile = (): string => join(dir, 'githuttbr-secrets.enc')
+const writeStore = (s: Record<string, unknown>): void =>
+  writeFileSync(storeFile(), Buffer.from(`enc:${JSON.stringify(s)}`).toString('base64'))
+const storeJson = (): Record<string, Record<string, unknown>> =>
+  JSON.parse(Buffer.from(readFileSync(storeFile(), 'utf8'), 'base64').toString().slice(4)) as Record<string, Record<string, unknown>>
+
+async function restart(
+  file: Record<string, unknown>,
+  consent: 'granted' | 'declined' = 'declined',
+  store?: Record<string, unknown>
+): Promise<typeof import('../src/main/settingsBackups')> {
   for (const f of readdirSync(dir)) rmSync(join(dir, f), { force: true, recursive: true })
-  // Declined: no keychain in play, tokens stay in memory — the copies must hold none either way.
-  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent: 'declined', explained: true }))
+  // Declined by default: no keychain in play, tokens stay in memory — the copies must hold none either way.
+  writeFileSync(join(dir, 'githuttbr-keychain.json'), JSON.stringify({ consent, explained: true }))
+  if (store) writeStore(store)
   writeFileSync(settingsFile(), JSON.stringify(file))
   vi.resetModules()
   handlers.clear()
@@ -144,6 +155,35 @@ describe('settings copies', () => {
     for (const b of await backups.listSettingsBackups()) {
       expect(readFileSync(join(backupDir(), b.name), 'utf8')).not.toContain('ghp_plain')
     }
+  })
+
+  it('restore, then save, without pruning the keychain slots of a profile created since', async () => {
+    const backups = await restart(settingsWith(), 'granted', { p: { githubToken: 'ghp_p' } })
+    const made = await backups.backupSettings('4.51.0', 'rollback')
+    const s = (await call('settings:unlock')) as AppSettings
+    const later = { ...profileWith({ githubToken: 'ghp_later' }), id: 'later', name: 'Added later' }
+    await call('settings:set', { ...s, profiles: [...s.profiles, later] })
+    expect(storeJson().later?.githubToken).toBe('ghp_later')
+    expect(await handlers.get('settingsBackups:restore')!({}, made!.name)).toBe('ok')
+    // The renderer reloads what main now holds, and saves it back.
+    const after = (await call('settings:unlock')) as AppSettings
+    expect(after.profiles.map((p) => p.id)).toEqual(['p', 'later'])
+    await call('settings:set', { ...after, codeFontSize: 18 })
+    expect(storeJson().p?.githubToken).toBe('ghp_p')
+    expect(storeJson().later?.githubToken).toBe('ghp_later')
+    expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_')
+  })
+
+  it('restore without losing a token held only for this session', async () => {
+    const backups = await restart(settingsWith())
+    const made = await backups.backupSettings('4.51.0', 'rollback')
+    const s = (await call('settings:get')) as AppSettings
+    // Keychain declined: the typed token lives in memory only.
+    await call('settings:set', { ...s, profiles: [profileWith({ githubToken: 'ghp_session' })] })
+    expect(readFileSync(settingsFile(), 'utf8')).not.toContain('ghp_session')
+    expect(await handlers.get('settingsBackups:restore')!({}, made!.name)).toBe('ok')
+    const after = (await call('settings:get')) as AppSettings
+    expect(after.profiles.find((p) => p.id === 'p')?.githubToken).toBe('ghp_session')
   })
 
   it('never count a token-only difference as a changed setting', async () => {

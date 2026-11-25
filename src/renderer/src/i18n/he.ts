@@ -1957,6 +1957,7 @@ export const he: Dict = {
   'rollback.recordFailed': 'לא ניתן היה לרשום את ההחלפה בהגדרות, ולכן דבר לא הותקן.',
   'rollback.restored': 'ההגדרות שוחזרו מהעותק.',
   'rollback.restoreFailed': 'לא ניתן לשחזר את העותק. ההגדרות שלכם לא השתנו.',
+  'rollback.restoreBackupFailed': 'לא ניתן היה להעתיק קודם את ההגדרות, ולכן העותק לא שוחזר. ודאו שאפשר לכתוב לתיקיית ההגדרות.',
   'rollback.confirmTitle': 'לחזור ל-v{version}?',
   'rollback.confirmLead': 'אתם על v{current}. Gitcito יוריד את v{version} ויופעל מחדש בגרסה זו.',
   'rollback.stepBackup': 'שומר עותק של ההגדרות הנוכחיות. בעדכון הבא תוכלו לשחזר אותו.',

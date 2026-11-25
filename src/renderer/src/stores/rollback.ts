@@ -113,7 +113,8 @@ export const useRollbackStore = create<RollbackStoreState>((set, get) => ({
     await settings.flush()
     const result = await settingsBackupsApi.restore(name).catch(() => 'missing' as const)
     if (result !== 'ok') {
-      useUIStore.getState().toast('error', t('rollback.restoreFailed'))
+      // No copy of now, no restore: said as such, since "try again" may not help.
+      useUIStore.getState().toast('error', t(result === 'backup-failed' ? 'rollback.restoreBackupFailed' : 'rollback.restoreFailed'))
       return false
     }
     await settings.load({ unlock: settings.unlocked }).catch(reportLoadFailure)

@@ -1954,6 +1954,7 @@ export const en = {
   'rollback.recordFailed': 'The switch could not be recorded in your settings, so nothing was installed.',
   'rollback.restored': 'Settings restored from the copy.',
   'rollback.restoreFailed': 'The copy could not be restored. Your settings were not changed.',
+  'rollback.restoreBackupFailed': 'The settings could not be copied first, so the copy was not restored. Check that the settings folder can be written to.',
   'rollback.confirmTitle': 'Go back to v{version}?',
   'rollback.confirmLead': 'You are on v{current}. Gitcito downloads v{version} and restarts in it.',
   'rollback.stepBackup': 'Keeps a copy of your settings as they are now. When you update again, you can restore it.',

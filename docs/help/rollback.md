@@ -68,8 +68,8 @@ each one and where it was going.
   restore can itself be undone, and is refused if that copy cannot be made —
   and writes the chosen copy back. It brings back preferences, profiles and
   repository settings. Open tabs and workspaces stay as they are, and so do
-  profiles and servers added since the copy: their tokens are filed under them,
-  and dropping them would lose those tokens for good.
+  profiles, servers and AI accounts added since the copy: their tokens and keys
+  are filed under them, and dropping them would lose those for good.
 - **Show in folder** opens the copy in your file manager. It is plain JSON.
 
 The newest five are kept. The copy a pending rollback still needs is kept even
@@ -82,9 +82,10 @@ token still sits in the settings file itself (the keychain declined, Linux
 without a keyring), a restore writes it back onto its profile untouched.
 
 When Gitcito asks whether to restore after an update, it compares the copy
-with the settings now, ignoring tokens, key order, and fields only one side
-has (an older version fills a profile with its own defaults; that is not your
-change).
+with the settings now, ignoring tokens, key order, and fields only the current
+settings have (an older version fills a profile with its own defaults; that is
+not your change). Something removed — a shortcut, an alias, a favourite — does
+count.
 
 ## Why a newer version's settings survive
 
@@ -97,11 +98,12 @@ raised whenever a release adds settings an earlier one would not know.
 
 One exception, on purpose: an unknown key that holds something shaped like a
 credential — text under a name ending in `token`, `secret`, `password`,
-`apiKey` and the like, or an address with a password or token in it, at any
-depth — is **dropped whole**, not kept. No version writes a credential into the
+`apiKey` and the like, or an address with a user and password in it or a
+`?token=`-style parameter, at any depth — is **dropped whole**, not kept. No version writes a credential into the
 settings file — they go to the keychain — so such a key could only be a
 mistake, and a mistake is better lost than kept in plain text. A flag such as
-`showTokenUsage: true` is not a credential and is kept.
+`showTokenUsage: true` is not a credential and is kept; a plain word under such
+a name (`auth: "oauth"`) is dropped all the same — the rule errs on the safe side.
 
 ## Limits
 

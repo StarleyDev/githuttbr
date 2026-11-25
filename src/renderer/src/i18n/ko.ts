@@ -1957,6 +1957,7 @@ export const ko: Dict = {
   'rollback.recordFailed': '버전 전환을 설정에 기록하지 못해 아무것도 설치하지 않았습니다.',
   'rollback.restored': '사본에서 설정을 복원했습니다.',
   'rollback.restoreFailed': '사본을 복원하지 못했습니다. 설정은 바뀌지 않았습니다.',
+  'rollback.restoreBackupFailed': '설정을 먼저 복사하지 못해 사본을 복원하지 않았습니다. 설정 폴더에 쓸 수 있는지 확인하세요.',
   'rollback.confirmTitle': 'v{version}(으)로 되돌릴까요?',
   'rollback.confirmLead': '지금은 v{current}입니다. Gitcito가 v{version}을(를) 내려받고 그 버전으로 다시 시작합니다.',
   'rollback.stepBackup': '현재 설정의 사본을 보관합니다. 다시 업데이트할 때 복원할 수 있습니다.',

@@ -1954,6 +1954,7 @@ export const es: Dict = {
   'rollback.recordFailed': 'No se pudo registrar el cambio en la configuración, así que no se instaló nada.',
   'rollback.restored': 'Configuración restaurada desde la copia.',
   'rollback.restoreFailed': 'No se pudo restaurar la copia. Tu configuración no cambió.',
+  'rollback.restoreBackupFailed': 'No se pudo copiar antes la configuración, así que la copia no se restauró. Comprueba que se pueda escribir en la carpeta de configuración.',
   'rollback.confirmTitle': '¿Volver a la v{version}?',
   'rollback.confirmLead': 'Estás en la v{current}. Gitcito descarga la v{version} y se reinicia en ella.',
   'rollback.stepBackup': 'Guarda una copia de tu configuración actual. Cuando vuelvas a actualizar, podrás restaurarla.',

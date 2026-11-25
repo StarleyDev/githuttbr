@@ -1957,6 +1957,7 @@ export const zhCN: Dict = {
   'rollback.recordFailed': '未能在设置中记录此次切换，因此没有安装任何内容。',
   'rollback.restored': '已从副本恢复设置。',
   'rollback.restoreFailed': '无法恢复副本。你的设置没有改变。',
+  'rollback.restoreBackupFailed': '未能先复制设置，因此没有恢复副本。请检查设置文件夹是否可写。',
   'rollback.confirmTitle': '回退到 v{version}？',
   'rollback.confirmLead': '你当前使用的是 v{current}。Gitcito 会下载 v{version} 并以该版本重启。',
   'rollback.stepBackup': '保存一份当前设置的副本。下次更新时可以恢复它。',

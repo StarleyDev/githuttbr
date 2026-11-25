@@ -169,9 +169,11 @@ const KNOWN_PROFILE_KEYS: ReadonlySet<string> = new Set(Object.keys(KNOWN_PROFIL
 
 /**
  * A key named like a credential: anchored to the end of the name, so
- * `githubToken`, `clientSecret` and `sessionCookie` match while `tokenColors`,
- * `maxTokens` or `cookieConsent` do not. Only a string value under such a name
- * counts (`holdsSecret`): `password: true` is a flag, not a password.
+ * `githubToken`, `clientSecret` and `sessionCookie` match while `tokenColors`
+ * or `cookieConsent` do not. A plural matches too (`maxTokens`), which is why
+ * only a non-empty string under such a name counts (`holdsSecret`):
+ * `maxTokens: 4096` and `password: true` are kept. An enum-like string under
+ * such a name (`auth: 'oauth'`) does drop its key — accepted: conservative.
  */
 const SECRET_SHAPED =
   /(?:token|secret|passw(?:or)?d|passphrase|api[-_]?key|private[-_]?key|access[-_]?key|signing[-_]?key|ssh[-_]?key|credentials?|bearer|cookie|jwt|auth|(?:^|[-_])pat|Pat|PAT)s?$/i
@@ -186,9 +188,28 @@ export function isSecretShapedKey(key: string): boolean {
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
-/** An address carrying a credential: a userinfo, or a query or fragment that could hold a token. */
+/** Query parameter names that carry a credential besides the credential-shaped ones. */
+const SECRET_PARAMS = /^(?:key|sig|signature|code|x-amz-[a-z-]+|access_token|id_token)$/i
+
+/**
+ * An address carrying a credential: a user or password before the host, or a
+ * query parameter whose *name* is a credential's (`?token=`, `?api_key=`,
+ * `?sig=`). A fragment, or an ordinary query (`?ref=docs`), is not one.
+ */
 function isCredentialUrl(value: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:\/\//i.test(value.trim()) && serverUrlWithoutSecrets(value) !== value
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) return false
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    // Unparseable: only a userinfo-looking part counts.
+    return /^[a-z][a-z0-9+.-]*:\/\/[^/?#\s]*@/i.test(value)
+  }
+  if (url.username || url.password) return true
+  for (const name of url.searchParams.keys()) {
+    if (isSecretShapedKey(name) || SECRET_PARAMS.test(name)) return true
+  }
+  return false
 }
 
 /**
@@ -290,36 +311,45 @@ export const SESSION_KEYS: readonly string[] = [
 const SESSION = new Set(SESSION_KEYS)
 
 /**
- * Whether two values say the same thing, as far as a user could have changed
- * it: key order is ignored, and so is a field only one side has — an older
- * build rewrites a profile over its own defaults, and a newer one adds its
- * own, neither of which is the user's doing. A list of plain values compares
- * the entries both sides know, in order (an older build drops ids it does not
- * know, as the graph columns do); any other list compares entry by entry.
+ * Lists of ids an older build filters to the ids it knows, as the graph
+ * columns and the sidebar sections do: an entry only one side has is not the
+ * user's change there, only the order of the ones both know is.
  */
-function sameSetting(a: unknown, b: unknown): boolean {
-  if (Array.isArray(a) && Array.isArray(b)) {
+const ID_ORDER_LISTS = new Set(['graphColumnOrder', 'sidebarOrder', 'sidebarHidden'])
+
+/**
+ * Whether the settings now still say what the backup said, as far as a user
+ * could have changed it. Key order is ignored, and so is a field only `now`
+ * has — an older build rewrites a profile over its own defaults, which is not
+ * the user's doing. A field or list entry only the backup has *is* a change:
+ * an older build keeps every key it does not know, so one gone was removed
+ * (a shortcut, an alias, a favourite). Lists of plain values compare as sets
+ * of entries, in order; `orderOnly` lists only by the entries both know.
+ */
+function sameSetting(backup: unknown, now: unknown, orderOnly = false): boolean {
+  if (Array.isArray(backup) && Array.isArray(now)) {
     const plain = (x: unknown): boolean => x === null || typeof x !== 'object'
-    if (a.every(plain) && b.every(plain)) {
-      const inA = new Set(a)
-      const inB = new Set(b)
-      const sa = a.filter((x) => inB.has(x))
-      const sb = b.filter((x) => inA.has(x))
-      return sa.length === sb.length && sa.every((x, i) => x === sb[i])
+    if (backup.every(plain) && now.every(plain)) {
+      const inBackup = new Set(backup)
+      const inNow = new Set(now)
+      if (!orderOnly && backup.some((x) => !inNow.has(x))) return false
+      const a = backup.filter((x) => inNow.has(x))
+      const b = now.filter((x) => inBackup.has(x))
+      return orderOnly ? a.every((x, i) => x === b[i]) : a.length === now.length && a.every((x, i) => x === b[i])
     }
-    return a.length === b.length && a.every((x, i) => sameSetting(x, b[i]))
+    return backup.length === now.length && backup.every((x, i) => sameSetting(x, now[i]))
   }
-  if (isPlainObject(a) && isPlainObject(b)) {
-    return Object.keys(a).every((k) => !(k in b) || sameSetting(a[k], b[k]))
+  if (isPlainObject(backup) && isPlainObject(now)) {
+    return Object.keys(backup).every((k) => k in now && sameSetting(backup[k], now[k]))
   }
-  return a === b
+  return backup === now
 }
 
 /**
  * The top-level keys whose value differs between a backup and the settings now
  * (`sameSetting`), session keys aside. A key only `now` has is not counted: a
  * newer build adds its defaults on first start, and that is not a change the
- * user made. Both sides must come without credentials (`stripSettingsSecrets`):
+ * user made. A key only the backup has is. Both sides must come without credentials (`stripSettingsSecrets`):
  * a token is never a setting that "changed".
  *
  * What it cannot tell: a value the older version did not recognise in a key it
@@ -328,8 +358,9 @@ function sameSetting(a: unknown, b: unknown): boolean {
 export function changedSettingsKeys(backup: Record<string, unknown>, now: Record<string, unknown>): string[] {
   const changed: string[] = []
   for (const key of Object.keys(backup)) {
-    if (SESSION.has(key) || !(key in now)) continue
-    if (!sameSetting(backup[key], now[key])) changed.push(key)
+    if (SESSION.has(key)) continue
+    // Gone altogether counts: nothing this build or an older one does removes a key.
+    if (!(key in now) || !sameSetting(backup[key], now[key], ID_ORDER_LISTS.has(key))) changed.push(key)
   }
   return changed.sort()
 }
@@ -337,14 +368,37 @@ export function changedSettingsKeys(backup: Record<string, unknown>, now: Record
 /** A profile's server lists, matched by address. */
 const SERVER_LISTS = ['githubEnterprise', 'gitlabServers', 'bitbucketServers'] as const
 
+/** A server address as two spellings of the same server compare: no credential, case or trailing slash. */
+function serverKey(url: unknown): string {
+  return typeof url === 'string' ? serverUrlWithoutSecrets(url.trim()).replace(/\/+$/, '').toLowerCase() : ''
+}
+
+/** `copy`'s list with the entries only `now` has appended, matched by `keyOf`. */
+function withAdded(copy: unknown, now: unknown, keyOf: (x: Record<string, unknown>) => unknown): unknown {
+  const mine = Array.isArray(copy) ? copy : []
+  const theirs = Array.isArray(now) ? now : []
+  const known = new Set(mine.filter(isPlainObject).map(keyOf))
+  const added = theirs.filter((x) => isPlainObject(x) && !known.has(keyOf(x)))
+  return added.length ? [...mine, ...added] : copy
+}
+
+/** An AI config from the copy, keeping the accounts created since (their keys are filed by account id). */
+function withAddedAccounts(copy: unknown, now: unknown): unknown {
+  if (!isPlainObject(copy) || !isPlainObject(now)) return copy
+  const accounts = withAdded(copy.accounts, now.accounts, (a) => a.id)
+  return accounts === copy.accounts ? copy : { ...copy, accounts }
+}
+
 /**
  * A copy's profiles over today's: the copy's values win for every profile it
- * has, but a profile created since, and a server a profile gained since, are
- * kept — their tokens are filed under them in the keychain store, and the next
- * save would prune a token whose profile or server is gone, for good.
+ * has, but a profile, a server or an AI account created since is kept — their
+ * tokens and keys are filed under them in the keychain store, and the next
+ * save would prune a token whose owner is gone, for good.
  */
 function mergedProfiles(copy: unknown, now: unknown): unknown {
-  if (!Array.isArray(copy) || !Array.isArray(now)) return copy
+  if (!Array.isArray(now)) return copy
+  // A copy without profiles (hand-edited, partial) restores none: today's stay.
+  if (!Array.isArray(copy)) return now
   const nowById = new Map(now.filter(isPlainObject).map((p) => [p.id, p]))
   const out = copy.map((p) => {
     if (!isPlainObject(p)) return p
@@ -352,12 +406,11 @@ function mergedProfiles(copy: unknown, now: unknown): unknown {
     if (!current) return p
     const merged: Record<string, unknown> = { ...p }
     for (const list of SERVER_LISTS) {
-      const mine = Array.isArray(p[list]) ? (p[list] as unknown[]) : []
-      const theirs = Array.isArray(current[list]) ? (current[list] as unknown[]) : []
-      const urls = new Set(mine.filter(isPlainObject).map((h) => h.url))
-      const added = theirs.filter((h) => isPlainObject(h) && !urls.has(h.url))
-      if (added.length) merged[list] = [...mine, ...added]
+      const kept = withAdded(p[list], current[list], (h) => serverKey(h.url))
+      if (kept !== p[list] && Array.isArray(kept)) merged[list] = kept
     }
+    const ai = withAddedAccounts(p.ai, current.ai)
+    if (ai !== p.ai) merged.ai = ai
     return merged
   })
   const ids = new Set(copy.filter(isPlainObject).map((p) => p.id))
@@ -375,7 +428,9 @@ export function restoredSettings(
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(backup)) if (!SESSION.has(k)) out[k] = v
   for (const k of SESSION_KEYS) if (k in now) out[k] = now[k]
-  if ('profiles' in out) out.profiles = mergedProfiles(out.profiles, now.profiles)
+  if ('profiles' in out || 'profiles' in now) out.profiles = mergedProfiles(out.profiles, now.profiles)
+  // The general AI's accounts created since keep their keys, as a profile's do.
+  if ('ai' in out) out.ai = withAddedAccounts(out.ai, now.ai)
   // The profile in use must still exist; one created since may be it.
   const ids = Array.isArray(out.profiles) ? out.profiles.filter(isPlainObject).map((p) => p.id) : []
   if (!ids.includes(out.activeProfileId) && ids.includes(now.activeProfileId)) out.activeProfileId = now.activeProfileId

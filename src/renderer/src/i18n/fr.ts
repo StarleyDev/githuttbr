@@ -1937,6 +1937,7 @@ export const fr: Dict = {
   'rollback.recordFailed': 'Le changement n’a pas pu être noté dans les réglages, donc rien n’a été installé.',
   'rollback.restored': 'Réglages restaurés depuis la copie.',
   'rollback.restoreFailed': 'La copie n’a pas pu être restaurée. Vos réglages n’ont pas changé.',
+  'rollback.restoreBackupFailed': 'Les réglages n’ont pas pu être copiés d’abord, la copie n’a donc pas été restaurée. Vérifiez que le dossier des réglages est accessible en écriture.',
   'rollback.confirmTitle': 'Revenir à la v{version} ?',
   'rollback.confirmLead': 'Vous êtes sur la v{current}. Gitcito télécharge la v{version} et redémarre dessus.',
   'rollback.stepBackup': 'Garde une copie de vos réglages actuels. À la prochaine mise à jour, vous pourrez la restaurer.',

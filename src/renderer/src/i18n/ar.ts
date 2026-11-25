@@ -1957,6 +1957,7 @@ export const ar: Dict = {
   'rollback.recordFailed': 'تعذّر تسجيل التبديل في الإعدادات، لذا لم يُثبَّت شيء.',
   'rollback.restored': 'استُعيدت الإعدادات من النسخة.',
   'rollback.restoreFailed': 'تعذّرت استعادة النسخة. لم تتغيّر إعداداتك.',
+  'rollback.restoreBackupFailed': 'تعذّر نسخ الإعدادات أولًا، لذا لم تُستعَد النسخة. تحقّق من إمكانية الكتابة في مجلد الإعدادات.',
   'rollback.confirmTitle': 'الرجوع إلى v{version}؟',
   'rollback.confirmLead': 'أنت على v{current}. سينزّل Gitcito الإصدار v{version} ويعيد التشغيل عليه.',
   'rollback.stepBackup': 'يحتفظ بنسخة من إعداداتك الحالية. عند التحديث مرة أخرى يمكنك استعادتها.',

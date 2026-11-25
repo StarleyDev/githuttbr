@@ -1957,6 +1957,7 @@ export const de: Dict = {
   'rollback.recordFailed': 'Der Wechsel konnte nicht in den Einstellungen vermerkt werden, daher wurde nichts installiert.',
   'rollback.restored': 'Einstellungen aus der Kopie wiederhergestellt.',
   'rollback.restoreFailed': 'Die Kopie konnte nicht wiederhergestellt werden. Ihre Einstellungen bleiben unverändert.',
+  'rollback.restoreBackupFailed': 'Die Einstellungen konnten vorher nicht kopiert werden, daher wurde die Kopie nicht wiederhergestellt. Prüfen Sie, ob der Einstellungsordner beschreibbar ist.',
   'rollback.confirmTitle': 'Zu v{version} zurückkehren?',
   'rollback.confirmLead': 'Sie nutzen v{current}. Gitcito lädt v{version} herunter und startet damit neu.',
   'rollback.stepBackup': 'Legt eine Kopie Ihrer aktuellen Einstellungen an. Beim nächsten Update können Sie sie wiederherstellen.',

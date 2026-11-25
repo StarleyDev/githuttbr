@@ -1937,6 +1937,7 @@ export const ja: Dict = {
   'rollback.recordFailed': '切り替えを設定に記録できなかったため、何もインストールしていません。',
   'rollback.restored': 'コピーから設定を復元しました。',
   'rollback.restoreFailed': 'コピーを復元できませんでした。設定は変更されていません。',
+  'rollback.restoreBackupFailed': '先に設定をコピーできなかったため、コピーは復元していません。設定フォルダーに書き込めるか確認してください。',
   'rollback.confirmTitle': 'v{version} に戻しますか?',
   'rollback.confirmLead': '現在は v{current} です。Gitcito が v{version} をダウンロードし、そのバージョンで再起動します。',
   'rollback.stepBackup': '現在の設定のコピーを取っておきます。次にアップデートしたときに復元できます。',

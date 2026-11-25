@@ -1958,6 +1958,7 @@ export const ptBR: Dict = {
   'rollback.recordFailed': 'Não foi possível registrar a troca nas configurações, então nada foi instalado.',
   'rollback.restored': 'Configurações restauradas da cópia.',
   'rollback.restoreFailed': 'Não foi possível restaurar a cópia. Suas configurações não foram alteradas.',
+  'rollback.restoreBackupFailed': 'Não foi possível copiar as configurações antes, então a cópia não foi restaurada. Confira se a pasta de configurações aceita gravação.',
   'rollback.confirmTitle': 'Voltar para a v{version}?',
   'rollback.confirmLead': 'Você está na v{current}. O Gitcito baixa a v{version} e reinicia nela.',
   'rollback.stepBackup': 'Guarda uma cópia das configurações de agora. Ao atualizar de novo, você pode restaurá-la.',
