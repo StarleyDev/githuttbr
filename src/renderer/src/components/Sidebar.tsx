@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { repoParentAndName } from '../lib/branchMenu'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronRight,
@@ -1321,9 +1322,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   const addWorktree = (): void => {
-    const segs = path.split(/[/\\]/).filter(Boolean)
-    const repoName = segs[segs.length - 1]
-    const parent = segs.slice(0, -1).join('/')
+    const { parent, repoName } = repoParentAndName(path)
     // Follow the repo's own convention: when worktrees already live under a
     // sibling "<repo>.worktrees" folder, keep suggesting inside it (branch
     // slashes become nested dirs, e.g. ui/redesign). Otherwise the

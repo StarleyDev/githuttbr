@@ -1,4 +1,5 @@
 import gitcitoLaunch from '../assets/gitcito-launch.png'
+import { resolveWorktreeDir } from '../lib/branchMenu'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput, FolderPlus } from 'lucide-react'
@@ -1240,14 +1241,9 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
   const invalid = !finalDir || (!creatingNew && baseBusy) || branchClash || dirUsed
 
   // openRepoTab needs an absolute path — resolve ../ against the repo parent.
+  // A declaration, not a const: `dirUsed` above calls it during the same render.
   function resolvedDir(d: string): string {
-    if (/^([a-zA-Z]:[\\/]|\\\\|\/)/.test(d)) return d
-    const out: string[] = []
-    for (const seg of `${parent}/${d}`.split(/[\\/]+/)) {
-      if (seg === '..') out.pop()
-      else if (seg && seg !== '.') out.push(seg)
-    }
-    return out.join('/')
+    return resolveWorktreeDir(parent, d)
   }
 
   const browse = async (): Promise<void> => {

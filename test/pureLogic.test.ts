@@ -150,7 +150,9 @@ import { refIntegrationActions } from '../src/renderer/src/lib/refMenu'
 import {
   branchContextActionIds,
   branchMergeWouldChange,
-  branchWorktreePlan
+  branchWorktreePlan,
+  repoParentAndName,
+  resolveWorktreeDir
 } from '../src/renderer/src/lib/branchMenu'
 import {
   ATTR_PRESETS,
@@ -8111,5 +8113,43 @@ describe('applyTerminalCenterDefault', () => {
   it('never moves a placement chosen after the switch ran', () => {
     const s = { terminalPlacement: 'bottom' as const, terminalCenterApplied: true }
     expect(applyTerminalCenterDefault(s)).toBe(s)
+  })
+})
+
+describe('resolveWorktreeDir', () => {
+  // The add-worktree dialog's folder, made absolute for the tab it opens. Git
+  // resolves `../x` itself; the tab needs the absolute form, root included.
+  it('keeps the leading slash on Linux and macOS', () => {
+    expect(resolveWorktreeDir('/home/dev/src', '../proj--feat')).toBe('/home/dev/proj--feat')
+    expect(resolveWorktreeDir('/home/dev/src', 'proj--feat')).toBe('/home/dev/src/proj--feat')
+    expect(resolveWorktreeDir('/home/dev/src', './a/../b')).toBe('/home/dev/src/b')
+  })
+  it('keeps the drive and a network share on Windows', () => {
+    expect(resolveWorktreeDir('C:\\src', '..\\proj--feat')).toBe('C:/proj--feat')
+    expect(resolveWorktreeDir('C:/src', 'proj--feat')).toBe('C:/src/proj--feat')
+    expect(resolveWorktreeDir('\\\\server\\share\\src', '../proj--feat')).toBe('//server/share/proj--feat')
+  })
+  it('leaves an absolute folder as typed, and never climbs above the root', () => {
+    expect(resolveWorktreeDir('/home/dev/src', '/tmp/wt')).toBe('/tmp/wt')
+    expect(resolveWorktreeDir('D:\\x', 'C:\\wt')).toBe('C:\\wt')
+    expect(resolveWorktreeDir('/a', '../../../x')).toBe('/x')
+  })
+})
+
+describe('repoParentAndName', () => {
+  // Where the add-worktree dialog suggests a new worktree. Losing the root made
+  // it suggest `home/…`, which git created nested inside the repository.
+  it('keeps the root of an absolute path', () => {
+    expect(repoParentAndName('/home/dev/src/proj')).toEqual({ parent: '/home/dev/src', repoName: 'proj' })
+    expect(repoParentAndName('/home/dev/src/proj/')).toEqual({ parent: '/home/dev/src', repoName: 'proj' })
+    expect(repoParentAndName('/proj')).toEqual({ parent: '/', repoName: 'proj' })
+  })
+  it('keeps the drive and the network share on Windows', () => {
+    expect(repoParentAndName('C:\\src\\proj')).toEqual({ parent: 'C:/src', repoName: 'proj' })
+    expect(repoParentAndName('C:\\proj')).toEqual({ parent: 'C:/', repoName: 'proj' })
+    expect(repoParentAndName('\\\\server\\share\\proj')).toEqual({ parent: '//server/share', repoName: 'proj' })
+  })
+  it('a bare name has no parent rather than a truncated one', () => {
+    expect(repoParentAndName('proj')).toEqual({ parent: '', repoName: 'proj' })
   })
 })

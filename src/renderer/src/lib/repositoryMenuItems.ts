@@ -1,4 +1,5 @@
 import type { MenuItem } from '../stores/ui'
+import { repoParentAndName } from './branchMenu'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore, repoActions } from '../stores/repo'
@@ -76,9 +77,7 @@ function showWorktrees(path: string): void {
 function promptNewWorktree(path: string): void {
   const repo = useRepoStore.getState().repos[path]
   if (!repo) return
-  const segs = path.split(/[/\\]/).filter(Boolean)
-  const repoName = segs[segs.length - 1]
-  const parent = segs.slice(0, -1).join('/')
+  const { parent, repoName } = repoParentAndName(path)
   const wtParent = `${parent}/${repoName}.worktrees`
   const nested = repo.worktrees.some((w) => w.path.replace(/\\/g, '/').startsWith(`${wtParent}/`))
   useUIStore.getState().openModal({
