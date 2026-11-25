@@ -18,9 +18,10 @@ import { existsSync } from 'fs'
  *
  * Only safeStorage's asynchronous calls are used (Electron 45 deprecated the
  * synchronous ones; 46 removes them). They read what the synchronous calls
- * wrote, and they too answer "unavailable" — or reject — before the app is
- * ready, so the gate behaves the same. The first one, whichever it is, is
- * what asks the OS for the key.
+ * wrote. The first one, whichever it is, is what asks the OS for the key — so
+ * nothing calls them before consent, and every caller runs after the app is
+ * ready (IPC handlers, operations the user started). How they answer before
+ * `ready` is not relied on anywhere.
  */
 import type { KeychainConsent, KeychainReason } from '../shared/types'
 import { writePrivateFile } from './privateFile'
@@ -91,11 +92,91 @@ export async function adoptExistingConsent(paths: string[]): Promise<void> {
  * Not treated as "unavailable": that would lock users already on it out of
  * what they stored. It is reported, so Settings can say so, and nothing new is
  * written to it (`isKeychainWeak`).
+ *
+ * Verified on Electron 45.5 (Linux), which is why two signals are checked:
+ *
+ * - The backend is known before any other safeStorage call: `basic_text`
+ *   under `--password-store=basic`, the keyring's name (`kwallet6`, …) with
+ *   one. So a backend still `unknown` when we ask is not "probably fine" —
+ *   it is a backend we cannot vouch for, and counts as weak.
+ * - `isAsyncEncryptionAvailable()` answers true under `basic_text` (the old
+ *   synchronous `isEncryptionAvailable()` answered false). Availability says
+ *   nothing about strength.
+ * - Chromium tags each ciphertext with the key it used: `v10` is the fixed
+ *   password, `v11` the keyring's key. A `v10` from `encryptStringAsync` is a
+ *   weak store whatever the backend claims (`sealSecret`).
+ *
+ * The prefixes are Linux's: macOS and Windows tag ciphertext differently, and
+ * none of this applies there.
  */
 function weakStorageBackend(): boolean {
   if (process.platform !== 'linux') return false
   try {
-    return safeStorage.getSelectedStorageBackend() === 'basic_text'
+    const backend = safeStorage.getSelectedStorageBackend()
+    return backend === 'basic_text' || backend === 'unknown'
+  } catch {
+    // Synchronous and keyring-free, so a throw means an Electron without the
+    // call. The ciphertext check below still catches a fixed-password store.
+    return false
+  }
+}
+
+/** Chromium's tag for ciphertext sealed with the fixed `basic_text` password (Linux only). */
+const WEAK_CIPHERTEXT_PREFIX = 'v10'
+
+function isWeakCiphertext(sealed: Buffer): boolean {
+  return process.platform === 'linux' && sealed.subarray(0, 3).toString('latin1') === WEAK_CIPHERTEXT_PREFIX
+}
+
+/**
+ * Seen this session: safeStorage sealed something with the fixed password.
+ * Never cleared — the backend does not change while the app runs, and a
+ * keyring that appears later needs a restart anyway.
+ */
+let weakCiphertextSeen = false
+/** Whether a probe already found the keyring's own key (`v11`) this session. */
+let strongCiphertextSeen = false
+
+/** A secret store write refused because safeStorage sealed it with the fixed password. */
+export class WeakKeychainError extends Error {
+  constructor() {
+    super('The OS keychain is using a fixed password; nothing new was written to it.')
+    this.name = 'WeakKeychainError'
+  }
+}
+
+/**
+ * The one way the secret stores encrypt. A Linux `v10` result is never handed
+ * back for writing unless the caller says a weak store may take it
+ * (`allowWeak`: a write that only removes, or the vault, which has no
+ * session-only mode) — and either way the session now counts as weak.
+ */
+export async function sealSecret(plain: string, opts: { allowWeak?: boolean } = {}): Promise<Buffer> {
+  const sealed = await safeStorage.encryptStringAsync(plain)
+  if (isWeakCiphertext(sealed)) {
+    weakCiphertextSeen = true
+    if (!opts.allowWeak) throw new WeakKeychainError()
+  } else if (process.platform === 'linux') {
+    strongCiphertextSeen = true
+  }
+  return sealed
+}
+
+/**
+ * Linux only: what the key in use really is, read from a throwaway ciphertext
+ * once per session. Asked only where the caller is about to encrypt anyway
+ * (see isKeychainWeak's callers), so it raises no prompt of its own. A probe
+ * that fails proves nothing either way and is tried again next time: the write
+ * that follows fails the same way, loudly, and a `v10` one is still refused by
+ * `sealSecret` itself — so nothing weak is written either way.
+ */
+async function weakCiphertext(): Promise<boolean> {
+  if (process.platform !== 'linux') return false
+  if (weakCiphertextSeen) return true
+  if (strongCiphertextSeen) return false
+  try {
+    await sealSecret('', { allowWeak: true })
+    return weakCiphertextSeen
   } catch {
     return false
   }
@@ -103,27 +184,63 @@ function weakStorageBackend(): boolean {
 
 /**
  * True when the keychain may be read but must not take anything new: consent
- * given, encryption reported available, and the backend is `basic_text`
- * (see weakStorageBackend). What the store already holds stays readable — and
- * removable — but a token typed now is kept for the session only, as when the
- * keychain is off: writing it there would only look like protection.
- * `canUseKeychain` comes first: it is what initialises safeStorage, and the
- * backend reads as `unknown` before the app is ready. `getSelectedStorageBackend`
- * is the one safeStorage call that stays synchronous — Electron 45 did not
- * deprecate it.
+ * given, encryption reported available, and the store is the fixed-password
+ * one (see weakStorageBackend). What the store already holds stays readable —
+ * and removable — but a token typed now is kept for the session only, as when
+ * the keychain is off: writing it there would only look like protection.
+ * `canUseKeychain` comes first: nothing touches safeStorage before consent.
+ * `getSelectedStorageBackend` is the one safeStorage call that stays
+ * synchronous — Electron 45 did not deprecate it.
  */
 export async function isKeychainWeak(): Promise<boolean> {
-  return (await canUseKeychain()) && weakStorageBackend()
+  if (!(await canUseKeychain())) return false
+  return weakStorageBackend() || (await weakCiphertext())
+}
+
+/**
+ * How long `isAsyncEncryptionAvailable` may take. On Linux it is a D-Bus round
+ * trip to the secret service, and a hung one never answers: the settings queue
+ * waits on this, so an unanswered question would hold every save behind it.
+ */
+export const AVAILABILITY_TIMEOUT_MS = 10_000
+
+/**
+ * The question in flight, shared: a hung D-Bus collects one call, not one per
+ * caller. When it does answer, late, the answer is simply the next caller's —
+ * a caller that timed out already said "unavailable" and changed nothing, so
+ * there is no state for the late answer to contradict.
+ */
+let availabilityCall: Promise<boolean> | null = null
+
+async function asyncEncryptionAvailable(): Promise<boolean> {
+  if (!availabilityCall) {
+    const call = Promise.resolve()
+      .then(() => safeStorage.isAsyncEncryptionAvailable())
+      .then(
+        (ok) => ok === true,
+        () => false
+      )
+      .finally(() => {
+        if (availabilityCall === call) availabilityCall = null
+      })
+    availabilityCall = call
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined
+  // Timed out: unavailable, so tokens stay session-only — never a write.
+  const timeout = new Promise<boolean>((resolve) => {
+    timer = setTimeout(() => resolve(false), AVAILABILITY_TIMEOUT_MS)
+  })
+  try {
+    return await Promise.race([availabilityCall, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 /** True when the keychain may be used right now, without asking anything. */
 export async function canUseKeychain(): Promise<boolean> {
   if ((await getConsent()) !== 'granted') return false
-  try {
-    return await safeStorage.isAsyncEncryptionAvailable()
-  } catch {
-    return false
-  }
+  return asyncEncryptionAvailable()
 }
 
 /**
@@ -234,11 +351,7 @@ export async function ensureKeychain(reason: KeychainReason): Promise<boolean> {
   if (!(await askUser(reason, consent === 'granted'))) return false
   // First real safeStorage call — the OS prompt now arrives right after our own
   // explanation, which is the whole point.
-  try {
-    return await safeStorage.isAsyncEncryptionAvailable()
-  } catch {
-    return false
-  }
+  return asyncEncryptionAvailable()
 }
 
 /**
@@ -283,7 +396,8 @@ export function registerKeychainHandlers(): void {
       explained,
       available: consent === 'granted' ? await canUseKeychain() : null,
       // Only once consent is given: asking safeStorage is what can raise the OS prompt.
-      weakBackend: consent === 'granted' ? weakStorageBackend() : false,
+      // The ciphertext signal only as already seen: a probe here would encrypt for a status line.
+      weakBackend: consent === 'granted' ? weakStorageBackend() || weakCiphertextSeen : false,
       sessionOnly: sessionOnlyProbe()
     }
   })

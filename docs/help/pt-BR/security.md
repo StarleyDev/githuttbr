@@ -77,6 +77,12 @@ continua lendo a sua), e o Cofre continua salvando no armazenamento básico, por
 não tem modo só de sessão. Instale ou desbloqueie um chaveiro e reinicie o Gitcito
 para voltar a guardar tokens novos.
 
+O Gitcito não confia só no que o sistema diz sobre o armazenamento que recebeu.
+Ele o trata como básico quando o sistema diz que é, quando não sabe dizer qual
+é, e quando o que ele criptografa volta marcado com a senha fixa — diga o
+sistema o que disser. Assim, um chaveiro que cai para o básico em silêncio
+continua mantendo tokens novos fora do disco.
+
 ## Importando configurações
 
 **Configurações → Dados → Importar configurações** traz perfis, preferências e

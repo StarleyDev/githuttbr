@@ -110,6 +110,12 @@ shared slot (each profile keeps reading its own), and the Vault still saves to t
 basic store, because it has no session-only mode. Install or unlock a keyring and
 restart Gitcito to store new tokens again.
 
+Gitcito does not take the system's word for which store it got. It counts the
+store as basic when the system names it as such, when it cannot name it at all,
+and when what it encrypts comes back marked with the fixed password — whatever
+the system said. So a keyring that silently falls back still keeps new tokens
+off the disk.
+
 ### When the saved tokens cannot be read
 
 If you dismiss the system's keychain prompt, the keyring is locked, or the token

@@ -66,7 +66,8 @@ import {
   noteSettingsServed,
   onKeychainDeclined,
   onKeychainEnabled,
-  onSessionOnlyProbe
+  onSessionOnlyProbe,
+  sealSecret
 } from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'githuttbr-settings.json')
@@ -187,7 +188,8 @@ async function commitToWeakStore(target: SecretStore): Promise<SecretStore> {
   const onDisk = await loadSecrets(false)
   if (!onDisk) throw new Error('The token store could not be read; it was left untouched.')
   const kept = withoutSlots(onDisk, clearedSlots(onDisk, target))
-  if (clearedSlots(onDisk, kept).size > 0) await saveSecrets(kept)
+  // Only removals: the one write a fixed-password store still takes.
+  if (clearedSlots(onDisk, kept).size > 0) await saveSecrets(kept, { removalOnly: true })
   setSecretCache(kept)
   sessionSecrets = withCredentialsOnly(withoutSlots(target, secretView(kept)))
   pendingClears = new Map()
@@ -269,16 +271,37 @@ async function loadSecrets(explicit: boolean): Promise<SecretStore | null> {
     }
     return markUnreadable()
   }
+  let store: SecretStore
+  let reEncrypt: boolean
   try {
-    // `shouldReEncrypt` (a rotated key) is left to the next save, which encrypts
-    // the whole store anew: a read writes nothing, and a weak store takes nothing.
-    const { result } = await safeStorage.decryptStringAsync(Buffer.from(b64, 'base64'))
+    const { result, shouldReEncrypt } = await safeStorage.decryptStringAsync(Buffer.from(b64, 'base64'))
     const parsed: unknown = JSON.parse(result)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return markUnreadable()
     secretsUnreadable = false
-    return parsed as SecretStore
+    store = parsed as SecretStore
+    reEncrypt = shouldReEncrypt === true
   } catch {
     return markUnreadable()
+  }
+  if (reEncrypt) await reEncryptSecrets(store)
+  return store
+}
+
+/**
+ * safeStorage read the store with a key it is retiring (`shouldReEncrypt`):
+ * the same tokens are written back under the current one, so the store does
+ * not depend on the old key for longer than one read. Every caller of
+ * `loadSecrets` runs inside `exclusive`, so this lands in the queue like any
+ * save. A weak store takes nothing — not even the tokens it already holds,
+ * re-sealed — and backups are never re-encrypted (`retireBackups`). A failure
+ * leaves the readable store as it was; the next read tries again.
+ */
+async function reEncryptSecrets(store: SecretStore): Promise<void> {
+  try {
+    if (await isKeychainWeak()) return
+    await writeSecretsFile(store)
+  } catch (err) {
+    console.warn('[settings] token store not re-encrypted, retrying on next read:', (err as Error).message)
   }
 }
 
@@ -297,13 +320,23 @@ const backupPath = (): string => `${secretsPath()}.bak`
 /** How long a backup that is not already part of the store is kept. */
 const BACKUP_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
-/** Writes the store — never over one this session could not read (see `secretsUnreadable`). */
-async function saveSecrets(store: SecretStore): Promise<void> {
+/**
+ * Writes the store — never over one this session could not read (see
+ * `secretsUnreadable`). `removalOnly`: the write takes slots out and adds
+ * nothing, so a fixed-password store may take it (`commitToWeakStore`); any
+ * other write refuses one (`sealSecret`).
+ */
+async function saveSecrets(store: SecretStore, opts: { removalOnly?: boolean } = {}): Promise<void> {
   if (secretsUnreadable) throw new Error('The token store could not be read; it was left untouched.')
-  await mkdir(app.getPath('userData'), { recursive: true })
-  const enc = await safeStorage.encryptStringAsync(JSON.stringify(store))
-  await writePrivateFile(secretsPath(), enc.toString('base64'))
+  await writeSecretsFile(store, opts)
   await retireBackups(store)
+}
+
+/** The encrypted write itself, with no backup bookkeeping. */
+async function writeSecretsFile(store: SecretStore, opts: { removalOnly?: boolean } = {}): Promise<void> {
+  await mkdir(app.getPath('userData'), { recursive: true })
+  const enc = await sealSecret(JSON.stringify(store), { allowWeak: opts.removalOnly === true })
+  await writePrivateFile(secretsPath(), enc.toString('base64'))
 }
 
 /**
@@ -1309,8 +1342,8 @@ async function replaceUnreadableStore(): Promise<boolean> {
     const weak = await isKeychainWeak()
     const fresh = weak ? {} : pruneSecrets(sessionSecrets, secretOwnerIds(current), current.profiles)
     // Written without retiring backups: the one just made must outlive this call.
-    const enc = await safeStorage.encryptStringAsync(JSON.stringify(fresh))
-    await writePrivateFile(secretsPath(), enc.toString('base64'))
+    // An empty weak store holds nothing new, so the fixed password may seal it.
+    await writeSecretsFile(fresh, { removalOnly: weak })
     secretsUnreadable = false
     setSecretCache(fresh)
     if (!weak) sessionSecrets = {}
