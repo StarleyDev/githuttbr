@@ -435,6 +435,9 @@ interface SettingsState {
   openPageTab(page: PageContent, opts?: { ownTab?: boolean }): void
   /** Show one of a repo tab's attached pages, or the repository itself (null). */
   setRepoPage(tabId: string, index: number | null): void
+  /** Bring a repository's own view (the graph) to the front, opening its tab
+   *  if none holds it. Attached pages stay open behind it. */
+  showRepoView(path: string): void
   /** Detach a page from a repo tab. */
   closeRepoPage(tabId: string, index: number): void
   /** Replace an existing page tab's content in place (e.g. prev/next release). */
@@ -1090,6 +1093,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         t.id === tabId && (t.kind === 'repo' || t.kind === 'group') ? { ...t, activePage: index } : t
       )
     })),
+
+  showRepoView: (path) => {
+    const open = focusOpenRepo(get().settings.tabs, path)
+    if (!open) return get().openRepoTab({ path, name: path.split(/[\\/]/).filter(Boolean).pop() ?? path })
+    leaveMission()
+    get().update((s) => ({
+      ...s,
+      activeTabId: open.activeTabId,
+      tabs: open.tabs.map((t) =>
+        t.id === open.activeTabId && (t.kind === 'repo' || t.kind === 'group') ? { ...t, activePage: null } : t
+      )
+    }))
+  },
 
   closeRepoPage: (tabId, index) =>
     get().update((s) => ({

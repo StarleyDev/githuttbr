@@ -24,7 +24,9 @@ import {
   CalendarDays,
   Sparkles,
   ClipboardList,
-  ScrollText
+  Copy,
+  ScrollText,
+  Target
 } from 'lucide-react'
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
@@ -34,8 +36,8 @@ import { PrNavBar } from './PrNavBar'
 import { forgetFinished, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { useRepoStore } from '../stores/repo'
-import { prRemoteIdentity } from '../lib/hosting'
+import { repoActions, useRepoStore } from '../stores/repo'
+import { remoteForPrUrl } from '../lib/prBranchGo'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import {
   checkCounts,
@@ -206,10 +208,24 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // Hand the preview modal the remote this PR's repository is actually behind —
   // matching on URL, since a repo may have several remotes configured.
   const previewLocally = (): void => {
-    const remotes = useRepoStore.getState().repos[repoPath]?.remotes ?? []
-    const stripped = (u: string): string => u.replace(/\.git$/, '').replace(/\/+$/, '')
-    const remote = remotes.find((r) => stripped(prRemoteIdentity(r.url)) === stripped(remoteUrl))?.name
+    const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
     useUIStore.getState().openModal({ kind: 'pr-preview', repoPath, number, remote })
+  }
+  // The same match, live, for the branch links: a remote added while the page
+  // is open makes them usable without a reload.
+  const repoRemotes = useRepoStore((s) => s.repos[repoPath]?.remotes)
+  const branchRemote = useMemo(() => remoteForPrUrl(repoRemotes ?? [], remoteUrl), [repoRemotes, remoteUrl])
+  const currentBranch = useRepoStore((s) => s.repos[repoPath]?.branches.current)
+  // Why a "go to branch" control does nothing, or what it does. Shared by the
+  // header buttons and the Branches field so the two never disagree.
+  const branchGoTitle = (name: string, inFork: boolean, key: TranslationKey): string =>
+    inFork
+      ? t('prPage.forkBranchHint')
+      : branchRemote
+        ? interp(t(key), { branch: name })
+        : interp(t('prPage.noRemoteForBranch'), { url: remoteUrl })
+  const goToBranch = (name: string): void => {
+    if (branchRemote) void repoActions.checkoutPrBranch(repoPath, name, branchRemote)
   }
 
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
@@ -269,6 +285,22 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
             <GitPullRequestArrow size={14} />
           </button>
+          {pr && (
+            <>
+              <BranchGoButton
+                title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
+                usable={!pr.sourceRepo && !!branchRemote}
+                onGo={() => goToBranch(pr.source)}
+                icon={<GitBranch size={14} />}
+              />
+              <BranchGoButton
+                title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
+                usable={!!branchRemote}
+                onGo={() => goToBranch(pr.target)}
+                icon={<Target size={14} />}
+              />
+            </>
+          )}
           {pr && (
             <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
               <ExternalLink size={14} />
@@ -576,11 +608,36 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
             <Field icon={<GitBranch size={12} />} label={t('prPage.branches')}>
               <div className="prp-branches">
-                <code title={pr.source}>{pr.source}</code>
+                <PrBranchName
+                  name={pr.source}
+                  title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.checkoutBranch')}
+                  usable={!!branchRemote}
+                  onGo={() => goToBranch(pr.source)}
+                  // A fork's branch shares only its name with anything here.
+                  isCurrent={!pr.sourceRepo && currentBranch === pr.source}
+                  inFork={!!pr.sourceRepo}
+                />
                 <span className="prp-arrow">→</span>
-                <code title={pr.target}>{pr.target}</code>
+                <PrBranchName
+                  name={pr.target}
+                  title={branchGoTitle(pr.target, false, 'prPage.checkoutBranch')}
+                  usable={!!branchRemote}
+                  onGo={() => goToBranch(pr.target)}
+                  isCurrent={currentBranch === pr.target}
+                  inFork={false}
+                />
               </div>
-              {pr.sourceRepo && <div className="prp-side-note">{interp(t('prPage.fromFork'), { repo: pr.sourceRepo })}</div>}
+              {pr.sourceRepo && (
+                <>
+                  <div className="prp-side-note">{interp(t('prPage.fromFork'), { repo: pr.sourceRepo })}</div>
+                  <div className="prp-side-note">
+                    {t('prPage.forkBranchHint')}{' '}
+                    <button type="button" className="prp-link" onClick={previewLocally}>
+                      {t('prPreview.open')}
+                    </button>
+                  </div>
+                </>
+              )}
             </Field>
 
             {pr.workItems && pr.workItems.length > 0 && (
@@ -657,6 +714,101 @@ function SectionTab({
     <button role="tab" aria-selected={active === id} className={`prp-tab ${active === id ? 'active' : ''}`} onClick={() => onPick(id)}>
       {icon} {label}
       {count !== undefined && count > 0 && <span className="prp-tab-count">{count}</span>}
+    </button>
+  )
+}
+
+/**
+ * One end of a pull request: the branch name as a link that checks it out —
+ * fetching it first when it exists only on the server — and a copy button.
+ * The branch already checked out is marked instead of linked, and a fork's
+ * source branch is not linked at all: it lives in another repository.
+ */
+function PrBranchName({
+  name,
+  title,
+  usable,
+  onGo,
+  isCurrent,
+  inFork
+}: {
+  name: string
+  title: string
+  usable: boolean
+  onGo: () => void
+  isCurrent: boolean
+  inFork: boolean
+}): React.JSX.Element {
+  const t = useT()
+  const toast = useUIStore((s) => s.toast)
+  const copyName = (): void => {
+    void navigator.clipboard.writeText(name)
+    toast('success', t('prPage.branchCopied'))
+  }
+  let label: React.ReactNode
+  if (isCurrent) {
+    label = (
+      <>
+        <code title={name}>{name}</code>
+        <span className="prp-branch-current">{t('prPage.currentBranch')}</span>
+      </>
+    )
+  } else if (inFork) {
+    label = <code title={name}>{name}</code>
+  } else {
+    // aria-disabled rather than disabled: a disabled button shows no tooltip,
+    // and the tooltip is the only place that says why it does nothing.
+    label = (
+      <button
+        type="button"
+        className="prp-branch-go"
+        aria-disabled={!usable}
+        title={title}
+        aria-label={title}
+        onClick={() => usable && onGo()}
+      >
+        <code>{name}</code>
+      </button>
+    )
+  }
+  return (
+    <span className="prp-branch">
+      {label}
+      <button
+        type="button"
+        className="icon-btn prp-branch-copy"
+        title={t('sidebar.copyBranchName')}
+        aria-label={t('sidebar.copyBranchName')}
+        onClick={copyName}
+      >
+        <Copy size={11} />
+      </button>
+    </span>
+  )
+}
+
+/** A header shortcut to one of the PR's branches; same rules as the field's links. */
+function BranchGoButton({
+  title,
+  usable,
+  onGo,
+  icon
+}: {
+  title: string
+  usable: boolean
+  onGo: () => void
+  icon: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      className="icon-btn prp-branch-head-go"
+      aria-disabled={!usable}
+      title={title}
+      aria-label={title}
+      onClick={() => usable && onGo()}
+    >
+      {icon}
     </button>
   )
 }

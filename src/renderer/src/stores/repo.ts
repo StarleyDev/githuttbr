@@ -44,6 +44,7 @@ import type { LocalCiVerdict } from '../../../shared/localCi'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
+import { planBranchCheckout } from '../lib/prBranchGo'
 import { isSecretFile } from '../lib/secrets'
 import { isProtectedBranch } from '../lib/repoConfig'
 import { partitionBySecrets, tallyPushResults, type SecretFlag } from '../lib/pushBranches'
@@ -1170,16 +1171,29 @@ async function runPushInner(path: string, branch: string, force: boolean, isCurr
 // Check out a remote branch as a local one. When the local branch already
 // exists and has diverged from the remote, a fast-forward is impossible, so we
 // surface a dialog letting the user rebase / merge / reset instead of failing.
-function runCheckoutRemote(path: string, fullName: string, localName: string, remote?: string): Promise<boolean> {
-  return enqueue(path, () => runCheckoutRemoteInner(path, fullName, localName, remote))
+// `onLanded` runs once the branch is checked out — here, or after the user
+// settles the ahead/diverged dialog — and never when nothing was checked out.
+function runCheckoutRemote(
+  path: string,
+  fullName: string,
+  localName: string,
+  remote?: string,
+  onLanded?: () => void
+): Promise<boolean> {
+  return enqueue(path, () => runCheckoutRemoteInner(path, fullName, localName, remote, onLanded))
 }
 
 async function runCheckoutRemoteInner(
   path: string,
   fullName: string,
   localName: string,
-  remote?: string
+  remote?: string,
+  onLanded?: () => void
 ): Promise<boolean> {
+  const landed = (ok: boolean | void): void => {
+    if (ok === true) onLanded?.()
+  }
+  let checkedOut = false
   const ui = useUIStore.getState()
   ui.beginInflight()
   ui.setBusy(interp(t('busy.checkingOut'), { name: localName }))
@@ -1195,9 +1209,9 @@ async function runCheckoutRemoteInner(
         localName,
         fullName,
         ahead: res.ahead,
-        onKeepLocal: () => void repoActions.checkout(path, localName),
+        onKeepLocal: () => void repoActions.checkout(path, localName).then(landed),
         onReset: (strategy, backup) =>
-          void runResolveDivergedCheckout(path, fullName, localName, strategy, backup)
+          void runResolveDivergedCheckout(path, fullName, localName, strategy, backup).then(landed)
       })
       return false
     }
@@ -1209,11 +1223,12 @@ async function runCheckoutRemoteInner(
         ahead: res.ahead,
         behind: res.behind,
         onResolve: (strategy, backup) =>
-          void runResolveDivergedCheckout(path, fullName, localName, strategy, backup)
+          void runResolveDivergedCheckout(path, fullName, localName, strategy, backup).then(landed)
       })
       return false
     }
     toast('success', interp(t('act.checkedOut'), { ref: localName }))
+    checkedOut = true
     return true
   } catch (err) {
     toast('error', err instanceof Error ? err.message : String(err))
@@ -1223,7 +1238,56 @@ async function runCheckoutRemoteInner(
     ui2.setBusy(null)
     await useRepoStore.getState().refresh(path)
     ui2.endInflight()
+    // After the refresh, so whatever follows sees the branch it landed on.
+    if (checkedOut) onLanded?.()
   }
+}
+
+// After a PR branch is checked out: the repository's graph, at the branch tip.
+// Runs after the refresh, so the branch and its commit are in the lists.
+function showBranchInRepo(path: string, name: string): void {
+  useSettingsStore.getState().showRepoView(path)
+  const repo = useRepoStore.getState().repos[path]
+  const sha = repo?.branches.locals.find((b) => b.name === name)?.sha
+  if (!repo || !sha) return
+  const hash = repo.commits.find((c) => c.hash.startsWith(sha) || sha.startsWith(c.hash))?.hash ?? sha
+  useRepoStore.getState().select(path, { type: 'commit', hash })
+  useUIStore.getState().requestScrollTo(hash, path)
+}
+
+// A pull request's branch that only exists on the server: fetch that one
+// branch (a repository with thousands of them is never fetched in full), then
+// check it out as a tracking branch — in one queue slot, so nothing runs
+// between the fetch and the checkout.
+function runFetchAndCheckoutPrBranch(
+  path: string,
+  remote: string,
+  name: string,
+  onLanded: () => void
+): Promise<boolean> {
+  return enqueue(path, async () => {
+    const ui = useUIStore.getState()
+    ui.beginInflight()
+    ui.setBusy(interp(t('busy.fetchingBranch'), { branch: name, remote }), 'fetch')
+    muteWatcher(path)
+    let found: boolean
+    try {
+      found = await gitApi.fetchRemoteBranch(path, remote, name)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err), { repoPath: path })
+      return false
+    } finally {
+      useUIStore.getState().setBusy(null)
+      useUIStore.getState().endInflight()
+    }
+    if (!found) {
+      // Merged pull requests often take their branch with them.
+      toast('info', interp(t('act.prBranchGone'), { branch: name, remote }), { repoPath: path })
+      return false
+    }
+    // Already fetched just now, so no second fetch inside checkoutRemote.
+    return runCheckoutRemoteInner(path, `${remote}/${name}`, name, undefined, onLanded)
+  })
 }
 
 function runResolveDivergedCheckout(
@@ -1413,6 +1477,36 @@ export const repoActions = {
 
   checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
     runCheckoutRemote(path, fullName, localName, remote),
+
+  /**
+   * Go to a pull request's source or target branch: switch to it when it is
+   * local, track it when it was fetched, fetch just that branch when it was
+   * not. No confirm — a checkout loses nothing, and git refuses on its own when
+   * local changes would be overwritten.
+   */
+  checkoutPrBranch: async (path: string, name: string, remote: string): Promise<void> => {
+    // Planned on click, from the one branch asked for: nothing is looked up
+    // while the page merely shows the PR.
+    const branches = useRepoStore.getState().repos[path]?.branches ?? { current: '', locals: [], remotes: [] }
+    const plan = planBranchCheckout(branches, name, remote)
+    const land = (): void => showBranchInRepo(path, name)
+    switch (plan.kind) {
+      case 'current':
+        toast('info', interp(t('act.alreadyOnBranch'), { branch: name }), { repoPath: path })
+        land()
+        return
+      case 'local':
+        // `checkout` opens the worktree that already has the branch, and then
+        // resolves with nothing — that tab is the destination.
+        if ((await repoActions.checkout(path, name)) === true) land()
+        return
+      case 'remote':
+        await runCheckoutRemote(path, plan.fullName, name, remote, land)
+        return
+      case 'fetch':
+        await runFetchAndCheckoutPrBranch(path, remote, name, land)
+    }
+  },
 
   createBranch: (path: string, name: string, at?: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
