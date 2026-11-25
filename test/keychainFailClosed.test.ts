@@ -247,15 +247,21 @@ describe('a hung availability check', () => {
     vi.useRealTimers()
   })
 
-  /** Advances the fake clock until `promise` settles; real I/O gets its turns in between. */
+  /**
+   * Settles `promise` under the fake clock. Real I/O (the consent file, the
+   * settings file) gets a turn each round, and the clock jumps only to a timer
+   * that already exists — so however many turns a loaded suite needs before the
+   * 10 s cut is armed, the cut is never skipped past nor waited on forever. No
+   * cap on the rounds: a promise that never settles is the test timeout's to report.
+   */
   async function settle<T>(promise: Promise<T>): Promise<T> {
     let done = false
     void promise.finally(() => {
       done = true
     })
-    for (let i = 0; i < 40 && !done; i++) {
+    while (!done) {
       await new Promise((r) => setImmediate(r))
-      await vi.advanceTimersByTimeAsync(1000)
+      if (!done && vi.getTimerCount() > 0) await vi.advanceTimersToNextTimerAsync()
     }
     return promise
   }
@@ -368,7 +374,11 @@ describe('a hung availability check', () => {
     expect(await kc.canUseKeychain()).toBe(true)
     keyring.hang = true
     const p = ((await call('settings:get')) as AppSettings).profiles[0]
-    await settle(call('settings:set', settingsWith({ ...p, githubToken: 'TYPED-WHILE-HUNG' })))
+    const before = keyring.availableCalls
+    const save = call('settings:set', settingsWith({ ...p, githubToken: 'TYPED-WHILE-HUNG' }))
+    // The 10 s cut is armed in the same turn the question is asked.
+    await untilAsked(before + 1)
+    await settle(save)
 
     expect(existsSync(storeFile())).toBe(false)
     expect(readFileSync(settingsFile(), 'utf8')).not.toContain('TYPED-WHILE-HUNG')
