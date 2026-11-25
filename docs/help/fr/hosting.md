@@ -151,7 +151,7 @@ connexion révoquée et n’abandonne jamais l’identifiant qu’utilise git.
 ## GitLab auto-hébergé
 
 Un GitLab d’entreprise a sa propre adresse. Indiquez-la à un profil dans
-**Réglages → Intégrations → GitLab → Adresse GitLab**, par exemple
+**Paramètres → Intégrations → GitLab → Adresse du serveur**, par exemple
 `git.example.org`, ou `https://example.net/gitlab` s’il est servi sous un chemin.
 Dès lors, les remotes de cet hôte sont GitLab : les merge requests se listent,
 s’ouvrent, se relisent et se fusionnent, le navigateur de clonage et *Créer un
@@ -185,11 +185,11 @@ Limites :
 
 Définissez l’adresse de l’instance avant de saisir son jeton. Changer l’adresse efface la connexion précédente.
 
-![Réglages de l’intégration Forgejo](../../screenshots/forgejo-integration.webp)
+![Paramètres de l’intégration Forgejo](../../screenshots/forgejo-integration.webp)
 
 Forgejo — et Gitea, qui partage son API — tourne toujours à une adresse choisie
 par son propriétaire : votre propre serveur, ou un serveur public comme
-codeberg.org. Indiquez cette adresse à un profil dans **Réglages → Intégrations →
+codeberg.org. Indiquez cette adresse à un profil dans **Paramètres → Intégrations →
 Forgejo**, avec un jeton d’accès. **Créer un jeton** ouvre la page des jetons de ce
 serveur. Donnez au jeton les droits de lecture et d’écriture sur *repository*, *issue* et
 *notification*, et de lecture sur *user* et *organization*. Les droits d’un jeton
@@ -262,7 +262,7 @@ sur Forgejo, par exemple) ne marque rien.
 
 ![Pull requests en attente de votre revue, marquées d’un œil](../../screenshots/pr-awaiting-review.webp)
 
-Avec **Réglages → Notifications système** activé, une pull request GitLab ou
+Avec **Paramètres → Notifications du bureau** activé, une pull request GitLab ou
 Forgejo qui *commence* à vous attendre en déclenche une ; un clic ouvre la page de
 la PR. Le premier regard sur un dépôt note seulement ce qui attend déjà : ouvrir
 l’app ne rejoue donc pas l’arriéré. Les demandes de relecture GitHub sont
@@ -290,7 +290,7 @@ trousseau de votre système. Gitcito peut aussi emprunter ce que votre
 vous vous êtes déjà authentifié ne demande souvent aucune configuration. Voir
 [Sécurité et secrets](security.md).
 
-Chaque profil **lie son propre compte**. Dans Réglages → Intégrations, **Lier au
+Chaque profil **lie son propre compte**. Dans Paramètres → Intégrations, **Lier au
 profil** cherche une connexion déjà présente sur la machine — le
 credential helper de git, puis le compte actif de **GitHub CLI**, puis la fenêtre
 de connexion du helper — et lie ce compte au profil. Rien n'est partagé

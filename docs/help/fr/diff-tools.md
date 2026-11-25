@@ -1,12 +1,12 @@
 ---
-title: Outils de diff et de fusion externes
+title: Outils externes de diff et de fusion
 category: Branches et chirurgie
 order: 43
 summary: Confier un fichier à Kaleidoscope, Beyond Compare, Meld ou ce que vous utilisez déjà — Gitcito lit la propre liste d'outils de git.
 keywords: difftool mergetool externe external diff fusion merge kaleidoscope beyond compare meld kdiff3 p4merge araxis opendiff filemerge vimdiff winmerge diff.tool merge.tool orig sauvegarde backup
 ---
 
-# Outils de diff et de fusion externes
+# Outils externes de diff et de fusion
 
 La [visionneuse de diff](diffs.md) et le [résolveur à trois
 panneaux](conflicts.md) de Gitcito suffisent la plupart des jours. Certains
@@ -14,7 +14,7 @@ jours, non : un fichier généré de 4 000 lignes, une fusion où il faut voir q
 colonnes en même temps, ou tout simplement l'outil que vous utilisez depuis dix
 ans et que vous lisez plus vite que n'importe quel autre.
 
-**Réglages → Général → Outils de diff et de fusion externes.**
+**Paramètres → Général → Outils externes de diff et de fusion.**
 
 ## C'est la liste de git, pas la nôtre
 
@@ -71,7 +71,7 @@ et rien ne change.
 
 `git mergetool` laisse par défaut une sauvegarde `<file>.orig` à côté du fichier
 résolu — c'est le comportement de git, pas celui de Gitcito. La bascule dans les
-réglages écrit `mergetool.keepBackup` ; désactivez-la et un fichier résolu ne
+paramètres écrit `mergetool.keepBackup` ; désactivez-la et un fichier résolu ne
 laisse plus rien derrière lui.
 
 ## Limites

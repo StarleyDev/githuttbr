@@ -24,7 +24,7 @@ sombre.
   densité des lignes et épaisseur des traits, avec un aperçu en direct sous forme
   de mini-graphe.
 
-![Les réglages de thème](../../screenshots/settings-themes.webp)
+![Les paramètres de thème](../../screenshots/settings-themes.webp)
 
 ## Couleurs des icônes
 
@@ -80,14 +80,14 @@ cherche dans toutes les pages à la fois.
 
 ![Recherche de « terminal » dans les paramètres](../../screenshots/settings-search.webp)
 
-À mesure que vous tapez, la partie droite liste les réglages correspondants,
+À mesure que vous tapez, la partie droite liste les paramètres correspondants,
 regroupés par page — chacun avec son nom, sa description d'une ligne et la page
 où il se trouve. La barre latérale estompe les pages sans résultat et affiche un
 compteur sur celles qui en ont.
 
 - La recherche porte sur le nom du réglage, sa description et le nom de la
   page. Majuscules et accents sont ignorés, et chaque mot tapé doit apparaître :
-  « police terminal » ne garde que les réglages de police du terminal.
+  « police terminal » ne garde que les paramètres de police du terminal.
 - Elle cherche dans la langue de l'interface et en anglais en même temps : avec
   l'application en français, taper « token » ou « font » trouve toujours le
   réglage.

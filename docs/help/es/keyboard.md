@@ -18,7 +18,7 @@ Pulsa <kbd>?</kbd> en cualquier sitio para ver la chuleta.
 |---|---|
 | <kbd>⌘K</kbd> | [Paleta de comandos](search.md) — ramas, commits, archivos, acciones |
 | <kbd>⌘⇧F</kbd> | [Búsqueda en el código](search.md) por todo el árbol de trabajo |
-| <kbd>⌘⇧V</kbd> | [Caja fuerte](vault.md) |
+| <kbd>⌘⇧V</kbd> | [Bóveda](vault.md) |
 | <kbd>⌘O</kbd> / <kbd>Ctrl+O</kbd> | Abrir un repositorio |
 | <kbd>⌘,</kbd> / <kbd>Ctrl+,</kbd> | Abrir los ajustes |
 | <kbd>⌘F</kbd> | Buscar dentro del archivo o el diff que estás leyendo |
@@ -41,7 +41,7 @@ Pulsa <kbd>?</kbd> en cualquier sitio para ver la chuleta.
 ## Reasignar
 
 **Ajustes → Atajos**. Los atajos de navegación principales (paleta, búsqueda en
-el código, caja fuerte, abrir repositorio, ajustes) se pueden reasignar, con
+el código, bóveda, abrir repositorio, ajustes) se pueden reasignar, con
 detección de conflictos y un botón de reinicio por atajo.
 
 Los atajos fijos de arriba no se pueden reasignar, y además se rechazan como

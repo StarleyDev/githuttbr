@@ -1,17 +1,17 @@
 ---
-title: Caja fuerte
+title: Bóveda
 category: Seguridad
 order: 71
 summary: Un almacén local y cifrado para los secretos que un repo necesita — nunca commiteados.
-keywords: caja fuerte vault secretos secrets env llavero keychain cifrado encrypted local por repositorio global copiar copy
+keywords: bóveda caja fuerte vault secretos secrets env llavero keychain cifrado encrypted local por repositorio global copiar copy
 ---
 
-# Caja fuerte
+# Bóveda
 
 Los valores del `.env` que un proyecto necesita tienen que vivir en algún sitio.
-La caja fuerte es ese sitio, sin que acaben dentro del repositorio.
+La bóveda es ese sitio, sin que acaben dentro del repositorio.
 
-![La caja fuerte](../../screenshots/vault.webp)
+![La bóveda](../../screenshots/vault.webp)
 
 - **Cifrada en reposo** con el llavero de tu sistema operativo.
 - **Dos ámbitos**: entradas asociadas a un repositorio, y un conjunto **global**
@@ -30,7 +30,7 @@ portapapeles.
 
 ## Llevarla de una máquina a otra
 
-[Compartir seguro](secure-share.md) puede empaquetar la caja fuerte en un
+[Compartir seguro](secure-share.md) puede empaquetar la bóveda en un
 paquete cifrado — y solo cuando pides explícitamente que se incluyan los
 secretos.
 

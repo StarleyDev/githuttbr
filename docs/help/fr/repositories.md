@@ -4,6 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 52
 summary: Tous les dépôts que Gitcito connaît, ouverts ou non, dans une liste consultable.
 keywords: dépôts registre tous les dépôts favoris étoilés récents parcourir dossier explorer trouver ouvrir gérer gestion de dépôts couleur section teinte surligner espaces de travail depuis dossiers arbre générer import groupé repositories registry favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Dépôts
@@ -29,7 +30,7 @@ liste.
 |---|---|
 | Dépôts ouverts | Chaque onglet de l'espace de travail actif en ce moment |
 | Favoris | Dépôts étoilés, dans tous les espaces de travail |
-| Récents | Tout ce que vous avez ouvert, le plus récent d'abord. **Sans plafond**, contrairement à la liste de 8 entrées du lanceur |
+| Dépôts récents | Tout ce que vous avez ouvert, le plus récent d'abord. **Sans plafond**, contrairement à la liste de 8 entrées du lanceur |
 | Une par espace de travail enregistré | Les onglets de cet espace, pour y sauter sans y basculer d'abord |
 | Tous les dépôts | Chaque dépôt que le registre connaît, ouvert ou non |
 
@@ -71,7 +72,7 @@ Trois choses à savoir :
   enregistrées.
 - La couleur est **locale à cette page**. Teindre ici la section d'un espace
   ne dit rien de cet espace ailleurs dans Gitcito. La couleur de son onglet
-  est un réglage à part.
+  est un paramètre à part.
 - La couleur est **diluée** à un faible pourcentage de la surface plutôt
   qu'appliquée à pleine force, pour qu'un choix saturé reste un fond lisible
   en thème clair comme en thème sombre. Une couleur très pâle aura donc l'air
@@ -90,10 +91,11 @@ Ouvrir cette page indexe aussi ce que vous avez **ouvert dans un onglet**,
 c'est ainsi que les dépôts restaurés au démarrage reçoivent une ligne sans
 que vous ayez à les rouvrir. Ça ne couvre que les onglets ouverts, et ça se
 produit à la première visite de chaque session, pas une fois pour toutes. Un
-dépôt auquel vous faites **Forget** reste oublié, sauf si vous l'ouvrez à
+dépôt que vous **Oubliez** reste oublié, sauf si vous l'ouvrez à
 nouveau.
 
-Les dossiers à parcourir se règlent dans les Paramètres :
+Les dossiers à parcourir se règlent dans Paramètres → Données, ou dans la
+boîte de dialogue **Dépôts analysés** ci-dessous :
 
 - **Profondeur** est le nombre de niveaux de répertoires que le parcours
   descend sous la racine (3 par défaut, plafonné à 10).
@@ -101,9 +103,24 @@ Les dossiers à parcourir se règlent dans les Paramètres :
   dans un dépôt n'est pas indexé comme une ligne à part.
 - Il n'entre jamais dans les répertoires qui commencent par un point, et
   ignore `node_modules` et les dossiers de dépendances du même genre.
+- Il **suit les dossiers liés par symlink**, et parcourt chaque dossier réel
+  une seule fois — un lien qui remonte dans l'arborescence ne peut pas faire de
+  boucle, et deux liens vers un même dépôt ne le listent qu'une fois. Un dépôt
+  trouvé à travers un lien est listé sous son **chemin réel**, c'est donc la
+  même entrée (et le même onglet) que lorsque vous l'ouvrez depuis le sélecteur.
 - Il **ne lit que les noms de dossiers** : trouver un répertoire `.git` est
   ce qui fait d'une chose un dépôt ici. Nom, propriétaire et branche viennent
   de fichiers dans `.git` (`HEAD`, la config), jamais en lançant `git`.
+- Il s'exécute **quand vous le demandez** : en ajoutant un dossier, avec
+  **Parcourir maintenant**, ou en ouvrant la boîte de dialogue Dépôts analysés.
+  Un dépôt cloné plus tard dans un dossier parcouru apparaît à la prochaine de
+  ces occasions, ou dès que vous l'ouvrez.
+- Le résultat nomme **chaque dépôt trouvé et combien étaient nouveaux**. Un
+  second parcours des mêmes dossiers les annonce tous de nouveau, avec
+  « 0 nouveau » — ils étaient déjà sur cette page.
+- Un dossier ne peut être ajouté **qu'une fois**. En choisir un déjà dans la
+  liste le signale et ne change rien ; une barre oblique finale ou, sous
+  Windows, une casse différente désignent toujours le même dossier.
 
 ## Dépôts analysés
 
@@ -112,7 +129,8 @@ Quand vous voulez seulement **ouvrir** quelque chose de vos dossiers de projets,
 la fenêtre **Ouvrir un dépôt** — et l'écran d'accueil — offre un chemin plus
 court : **Dépôts analysés**.
 
-![La boîte de dialogue Dépôts analysés : les dossiers analysés repliés en haut, un filtre, puis les dépôts du dossier avec une case à cocher et leur branche, deux cochés et le bouton Ouvrir qui les compte](../../screenshots/scanned-repos.webp)
+![La boîte de dialogue Dépôts analysés : les dossiers analysés repliés en haut, un filtre,
+ puis les dépôts du dossier avec une case à cocher et leur branche, deux cochés et le bouton Ouvrir qui les compte](../../screenshots/scanned-repos.webp)
 
 - Les dépôts sont **regroupés par dossier analysé**, triés par nom, avec un
   filtre par nom ou par chemin.
@@ -154,11 +172,37 @@ dans Gitcito, étendu de deux entrées propres à cette page :
 | Action | Ce qu'elle fait |
 |---|---|
 | Étoile / retirer l'étoile | Ajoute ou retire le dépôt des Favoris |
-| Locate… | Réoriente un dossier déplacé ou renommé. L'alias, le profil et l'étoile suivent. Si la destination avait déjà ses propres réglages, **c'est la destination qui l'emporte** |
-| Forget | Retire l'entrée de cette liste. **Ne touche jamais le dossier sur le disque** |
+| Localiser… | Réoriente un dossier déplacé ou renommé. L'alias, le profil associé, l'étoile et tous les onglets qui l'affichent suivent. Si la destination avait déjà ses propres paramètres, **c'est la destination qui l'emporte** |
+| Oublier | Retire l'entrée de cette liste. **Ne touche jamais le dossier sur le disque** |
 
 Un dépôt dont le dossier n'existe plus s'affiche comme **introuvable**, avec
-**Locate…** et **Forget** en ligne à la place des actions habituelles.
+**Localiser…** et **Oublier** en ligne à la place des actions habituelles.
+
+### Quand le dossier d'un onglet ouvert disparaît
+
+Les onglets sont restaurés au lancement à partir des chemins qu'ils avaient
+quand vous avez quitté. Si un dossier a depuis été déplacé, supprimé, ou se
+trouve sur un disque qui n'est pas branché, chaque lecture que Gitcito faisait
+dessus échouait avec sa propre notification d'erreur. Désormais le dossier est
+vérifié d'abord, et l'onglet affiche **Dossier du dépôt introuvable** avec le
+chemin enregistré au lieu de l'espace de travail habituel :
+
+![Un onglet restauré dont le dossier manque : la carte Dossier du dépôt
+introuvable avec le chemin enregistré et ses boutons Localiser… et Réessayer](../../screenshots/missing-repository.webp)
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Localiser… | Choisissez le nouvel emplacement du dossier. Il doit s'agir d'un dépôt Git ; l'onglet, l'alias, le profil associé et l'étoile y sont déplacés |
+| Réessayer | Vérifie de nouveau le même chemin — pour un disque ou un partage réseau qui est revenu |
+
+L'onglet est **conservé** jusqu'à ce que vous le reconnectiez ou le fermiez
+vous-même : un disque externe absent est généralement temporaire, et perdre
+l'onglet pour cela serait pire qu'un espace réservé discret. Tant que le dossier
+manque, le fetch automatique en arrière-plan l'ignore.
+
+Limites : Gitcito ne cherche pas où un dossier est parti — Localiser… vous le
+demande. Un dossier qui existe mais n'est plus un dépôt affiche à la place
+l'invite habituelle **Ce n'est pas un dépôt Git**.
 
 L'étoile est un interrupteur de favori, pas une case de sélection groupée. Le
 travail par lots se fait ici par section, pas par sélection. Voir plus bas.
@@ -243,8 +287,8 @@ Le chevron à côté de **pull** choisit ce que tirer signifie :
 
 | Mode | Ce qu'il fait |
 |---|---|
-| Pull (fast-forward si possible) | Le défaut de Git. Fast-forward quand il peut, fusion quand il ne peut pas |
-| Pull (fast-forward uniquement) | Refuse plutôt que de créer un commit de fusion |
+| Pull (avance rapide si possible) | Le défaut de Git. Fast-forward quand il peut, fusion quand il ne peut pas |
+| Pull (avance rapide uniquement) | Refuse plutôt que de créer un commit de fusion |
 | Pull (rebase) | Rejoue vos commits locaux au-dessus de l'amont |
 
 Ce choix est une **préférence globale unique**, pas une par section : il
@@ -293,7 +337,7 @@ un coût permanent.
   pas de sens, et n'indexe que.
 - **Fermer tous rouvre un onglet à la fois, jusqu'à dix.** Fermer plus de dix
   dépôts d'un coup veut dire que les plus anciens ne peuvent pas être
-  rouverts depuis la pile, même s'ils sont tous encore dans **Récents**.
+  rouverts depuis la pile, même s'ils sont tous encore dans **Dépôts récents**.
 - **Le pull n'est pas filtré par ce qui est en retard.** Il tire chaque dépôt
   de la section, parce que savoir lesquels sont en retard impliquerait de
   faire fetch d'abord. Tirer un dépôt déjà à jour est un no-op, ça coûte du
@@ -304,8 +348,9 @@ un coût permanent.
 - **Les couleurs de section sont cosmétiques.** Elles ne filtrent, ne
   trient, ne groupent ni ne synchronisent nulle part, et une couleur posée
   sur la section d'un espace n'est pas la couleur de cet espace.
-- **Forget retire l'entrée de la liste, jamais du disque.** Si le dossier
-  est encore là, parcourir la même racine (ou le rouvrir) le ramène tout de
-  suite.
+- **Oublier retire l'entrée de la liste, jamais du disque.** Et c'est
+  durable : les parcours suivants de son dossier l'ignorent, y compris celui
+  que lance la boîte de dialogue Dépôts analysés à son ouverture. C'est en
+  rouvrant le dépôt qu'on le fait revenir.
 
 **Voir aussi :** [Centre de contrôle](mission-control.md) · [Espaces de travail, onglets et groupes](workspaces.md)

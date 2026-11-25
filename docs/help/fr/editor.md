@@ -19,10 +19,10 @@ ligne.
 
 ## En choisir un
 
-**Réglages → Général → Éditeur externe.** La liste déroulante énumère les
+**Paramètres → Général → Éditeur externe.** La liste déroulante énumère les
 éditeurs que Gitcito trouve sur cette machine — il cherche d'abord la commande de
 chaque éditeur, puis, sur macOS, le bundle d'application dans `/Applications` et
-`~/Applications`. Le balayage a lieu chaque fois que vous ouvrez les réglages :
+`~/Applications`. Le balayage a lieu chaque fois que vous ouvrez les paramètres :
 un éditeur installé il y a cinq minutes apparaît donc sans redémarrage.
 
 Reconnus d'origine :

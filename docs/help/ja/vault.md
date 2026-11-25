@@ -1,17 +1,17 @@
 ---
-title: 金庫
+title: 保管庫
 category: セキュリティ
 order: 71
 summary: リポジトリが必要とする秘密情報を、ローカルで暗号化して置いておく場所 — コミットはされません。
-keywords: 金庫 vault 秘密情報 secrets env キーチェーン keychain 暗号化 encrypted ローカル local リポジトリごと per-repo グローバル global コピー copy
+keywords: 保管庫 金庫 vault 秘密情報 secrets env キーチェーン keychain 暗号化 encrypted ローカル local リポジトリごと per-repo グローバル global コピー copy
 ---
 
-# 金庫
+# 保管庫
 
-プロジェクトが必要とする `.env` の値は、どこかに置かれなければなりません。金庫はその
+プロジェクトが必要とする `.env` の値は、どこかに置かれなければなりません。保管庫はその
 「どこか」であり、しかもそれがリポジトリに紛れ込むことはありません。
 
-![金庫](../../screenshots/vault.webp)
+![保管庫](../../screenshots/vault.webp)
 
 - OS のキーチェーンで **保存時に暗号化** されます。
 - **2 つのスコープ**: リポジトリに紐づく項目と、どこからでも参照できる **グローバル**
@@ -29,7 +29,7 @@ keywords: 金庫 vault 秘密情報 secrets env キーチェーン keychain 暗�
 
 ## マシン間で移す
 
-[セキュア共有](secure-share.md) は金庫を暗号化されたバンドルに詰められます — そして
+[セキュア共有](secure-share.md) は保管庫を暗号化されたバンドルに詰められます — そして
 それは、秘密情報を含めるようあなたが明示的に頼んだときだけです。
 
 **関連項目:** [セキュリティと秘密情報](security.md) · [セキュア共有](secure-share.md)

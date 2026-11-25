@@ -12,7 +12,7 @@ Certaines pannes ne viennent pas du dépôt du tout, mais de la machine : un git
 trop ancien pour la connexion par profil, un terminal retombé en silence en mode
 basique, une connexion de la CLI GitHub incapable de pousser des fichiers de
 workflow. Chacune réapparaît plus tard sous forme d’erreur vague, au milieu d’autre
-chose. **Réglages → Environnement** (aussi *Settings: Environment* dans la palette
+chose. **Paramètres → Environnement** (aussi *Settings: Environment* dans la palette
 de commandes) les vérifie d’avance.
 
 Le [docteur du dépôt](repo-settings.md) répond à une autre question : si *ce dépôt*
@@ -20,7 +20,7 @@ peut être construit ici, d’après ce que demande son `.gitcito.json`. La
 vérification de l’environnement concerne l’app elle-même et est la même pour tous
 les dépôts.
 
-![Vérifications de l’environnement dans les Réglages](../../screenshots/settings-environment.webp)
+![Vérifications de l’environnement dans les Paramètres](../../screenshots/settings-environment.webp)
 
 ## Ce qui est vérifié
 
@@ -50,7 +50,7 @@ Ensuite, cliquez sur **Vérifier à nouveau**.
 - Elle vérifie ce que l’app voit depuis son propre processus. Un profil de shell
   qui modifie le `PATH` seulement dans votre terminal peut faire diverger les deux.
 - La ligne de la CLI GitHub reflète la connexion propre à `gh`, pas les comptes
-  connectés dans **Réglages → Intégrations**. Ce sont des identités distinctes. Un
+  connectés dans **Paramètres → Intégrations**. Ce sont des identités distinctes. Un
   scope `workflow` manquant là-bas se manifeste plutôt par un push refusé.
 - Elle signale ce qui est installé. Elle n’installe ni ne met à jour quoi que ce
   soit.

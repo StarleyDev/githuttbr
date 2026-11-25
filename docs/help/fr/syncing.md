@@ -41,7 +41,7 @@ réponse reflète donc la récupération qui vient d'avoir lieu.
 Les push forcés utilisent toujours `--force-with-lease` — la variante sûre, qui
 refuse si le distant a bougé depuis votre dernier regard. Pousser en force une
 **branche protégée** demande confirmation (la liste se trouve dans la roue dentée
-des réglages du dépôt).
+des paramètres du dépôt).
 
 ![La confirmation qu'exige une branche protégée avant un push forcé](../../screenshots/force-push-guard.webp)
 
@@ -119,7 +119,7 @@ ni votre copie de travail. C'est le bouton à utiliser quand vous voulez *voir* 
 que les autres ont fait sans déplacer votre propre travail.
 
 Il y a aussi une **récupération automatique** en arrière-plan à l'intervalle que
-vous fixez (Réglages → Général). Survolez le bouton Récupérer et l'ancienneté
+vous fixez (Paramètres → Général). Survolez le bouton Récupérer et l'ancienneté
 apparaît en dessous — *il y a 4 min* — en ambre dès qu'une récupération dépasse
 quinze minutes. Elle ne prend jamais de place dans la barre d'outils, car elle
 répond à une question qu'on ne se pose qu'en tendant la main vers le bouton. Elle

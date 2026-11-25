@@ -4,6 +4,7 @@ category: Sincronizar y muchos repos
 order: 52
 summary: Todos los repositorios que Gitcito conoce, abiertos o no, en una lista buscable.
 keywords: repositorios registro todos los repos favoritos destacados recientes escanear carpeta explorar buscar abrir gestionar gestión de repositorios color sección tinte resaltar espacios de trabajo desde carpetas árbol generar importación masiva repositories registry favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Repositorios
@@ -29,7 +30,7 @@ lista única.
 |---|---|
 | Repositorios abiertos | Cada pestaña del espacio de trabajo activo ahora mismo |
 | Favoritos | Repositorios con estrella, en todos los espacios de trabajo |
-| Recientes | Todo lo que has abierto, lo más nuevo primero. **Sin tope**, a diferencia de la lista de 8 entradas del lanzador |
+| Repositorios recientes | Todo lo que has abierto, lo más nuevo primero. **Sin tope**, a diferencia de la lista de 8 entradas del lanzador |
 | Una por espacio de trabajo guardado | Las pestañas de ese espacio, para saltar a otro sin cambiarte a él antes |
 | Todos los repositorios | Cada repositorio que el registro conoce, abierto o no |
 
@@ -84,10 +85,11 @@ disco en un sitio del que nunca le hablaste.
 Abrir esta página también indexa lo que tienes **abierto en una pestaña**, y
 así los repositorios restaurados al arrancar reciben una fila sin que tengas
 que reabrirlos. Solo cubre pestañas abiertas, y ocurre en la primera visita de
-cada sesión, no una sola vez para siempre. Un repositorio al que hagas
-**Forget** sigue olvidado salvo que lo abras otra vez.
+cada sesión, no una sola vez para siempre. Un repositorio que **Olvidas**
+sigue olvidado salvo que lo abras otra vez.
 
-Las carpetas de escaneo se configuran en Ajustes:
+Las carpetas de escaneo se configuran en Ajustes → Datos, o en el diálogo
+**Repositorios escaneados** de más abajo:
 
 - **Profundidad** es cuántos niveles de directorio baja el escaneo bajo la raíz
   (por defecto 3, tope 10).
@@ -95,9 +97,24 @@ Las carpetas de escaneo se configuran en Ajustes:
   submódulo dentro de un repo no se indexa como fila propia.
 - Nunca entra en directorios que empiezan por punto, y se salta `node_modules`
   y carpetas de dependencias parecidas.
+- **Sigue las carpetas enlazadas con symlinks**, y recorre cada carpeta real
+  una sola vez — un enlace que vuelve hacia arriba en el árbol no puede crear un
+  bucle, y dos enlaces a un mismo repositorio lo listan una vez. Un repositorio
+  encontrado a través de un enlace se lista por su **ruta real**, así que es la
+  misma entrada (y la misma pestaña) que cuando lo abres desde el selector.
 - **Solo lee nombres de carpeta**: encontrar un directorio `.git` es lo que
   convierte algo en repositorio aquí. Nombre, dueño y rama salen de archivos
   dentro de `.git` (`HEAD`, la config), nunca ejecutando `git`.
+- Se ejecuta **cuando lo pides**: al añadir una carpeta, con **Escanear ahora**
+  o al abrir el diálogo Repositorios escaneados. Un repositorio clonado más tarde
+  en una carpeta de escaneo aparece en la siguiente de esas ocasiones, o en
+  cuanto lo abres.
+- El resultado nombra **cada repositorio encontrado y cuántos eran nuevos**. Un
+  segundo escaneo de las mismas carpetas los vuelve a nombrar todos, con «0
+  nuevos» — ya estaban en esta página.
+- Una carpeta solo se puede añadir **una vez**. Elegir una que ya está en la
+  lista lo dice y no cambia nada; una barra final o, en Windows, otras
+  mayúsculas siguen siendo la misma carpeta.
 
 ## Repositorios escaneados
 
@@ -106,7 +123,8 @@ conoce. Cuando solo quieres **abrir** algo de tus carpetas de proyectos, la
 ventana **Abrir repositorio** — y la pantalla de bienvenida — tiene un camino
 más corto: **Repositorios escaneados**.
 
-![El diálogo Repositorios escaneados: las carpetas escaneadas contraídas arriba, un filtro y luego los repositorios de la carpeta con una casilla y su rama, dos marcados y el botón Abrir contándolos](../../screenshots/scanned-repos.webp)
+![El diálogo Repositorios escaneados: las carpetas escaneadas contraídas arriba, un filtro y luego
+ los repositorios de la carpeta con una casilla y su rama, dos marcados y el botón Abrir contándolos](../../screenshots/scanned-repos.webp)
 
 - Los repositorios se **agrupan por carpeta escaneada**, ordenados por nombre,
   con un filtro por nombre o ruta.
@@ -146,11 +164,37 @@ Gitcito, ampliado con dos entradas propias de esta página:
 | Acción | Qué hace |
 |---|---|
 | Estrella / quitar estrella | Añade o quita el repositorio de Favoritos |
-| Locate… | Reapunta una carpeta movida o renombrada. El alias, el perfil y la estrella se conservan. Si el destino ya tenía sus propios ajustes, **gana el destino** |
-| Forget | Quita la entrada de esta lista. **Nunca toca la carpeta en disco** |
+| Ubicar… | Reapunta una carpeta movida o renombrada. El alias, el perfil vinculado, la estrella y cualquier pestaña que lo muestre se conservan. Si el destino ya tenía sus propios ajustes, **gana el destino** |
+| Olvidar | Quita la entrada de esta lista. **Nunca toca la carpeta en disco** |
 
 Un repositorio cuya carpeta ya no existe se muestra como **ausente**, con
-**Locate…** y **Forget** en línea en lugar de las acciones habituales.
+**Ubicar…** y **Olvidar** en línea en lugar de las acciones habituales.
+
+### Cuando falta la carpeta de una pestaña abierta
+
+Las pestañas se restauran al arrancar a partir de las rutas que tenían cuando
+cerraste. Si desde entonces una carpeta se ha movido, se ha borrado o está en un
+disco que no está conectado, cada lectura que Gitcito hacía sobre ella fallaba
+con su propio aviso de error. Ahora se comprueba primero la carpeta, y la
+pestaña muestra **No se encontró la carpeta del repositorio** con la ruta
+guardada en lugar del espacio de trabajo habitual:
+
+![Una pestaña restaurada cuya carpeta falta: la tarjeta No se encontró la
+carpeta del repositorio con la ruta guardada y sus botones Ubicar… y Reintentar](../../screenshots/missing-repository.webp)
+
+| Botón | Qué hace |
+|---|---|
+| Ubicar… | Elige la nueva ubicación de la carpeta. Tiene que ser un repositorio Git; la pestaña, el alias, el perfil vinculado y la estrella pasan a ella |
+| Reintentar | Vuelve a comprobar la misma ruta — para un disco o una carpeta de red que ha vuelto |
+
+La pestaña se **conserva** hasta que la reconectas o la cierras tú: que falte un
+disco externo suele ser temporal, y perder la pestaña por ello sería peor que un
+marcador discreto. Mientras falta la carpeta, el fetch automático en segundo
+plano se la salta.
+
+Límites: Gitcito no busca adónde fue una carpeta — Ubicar… te lo pregunta. Una
+carpeta que existe pero ya no es un repositorio muestra en su lugar el aviso
+habitual **No es un repositorio Git**.
 
 La estrella es un interruptor de favorito, no una casilla de selección masiva.
 El trabajo por lotes aquí es por sección, no por selección. Véase más abajo.
@@ -231,8 +275,8 @@ La flecha junto a **pull** elige qué significa hacer pull:
 
 | Modo | Qué hace |
 |---|---|
-| Pull (fast-forward si es posible) | El valor por defecto de Git. Hace fast-forward cuando puede, merge cuando no |
-| Pull (solo fast-forward) | Rechaza en vez de crear un commit de merge |
+| Pull (avance rápido si es posible) | El valor por defecto de Git. Hace fast-forward cuando puede, merge cuando no |
+| Pull (solo avance rápido) | Rechaza en vez de crear un commit de merge |
 | Pull (rebase) | Reescribe tus commits locales encima del upstream |
 
 Esa elección es una **preferencia global única**, no una por sección: describe
@@ -280,7 +324,7 @@ permanente.
   solo indexa.
 - **Cerrar todas reabre una pestaña cada vez, hasta diez.** Cerrar más de
   diez repositorios de golpe significa que los más antiguos no se pueden
-  reabrir desde la pila, aunque siguen todos en **Recientes**.
+  reabrir desde la pila, aunque siguen todos en **Repositorios recientes**.
 - **El pull no se filtra por los que van detrás.** Hace pull de cada
   repositorio de la sección, porque saber cuáles van detrás implicaría hacer
   fetch primero. Hacer pull de un repositorio al día es un no-op, así que
@@ -292,8 +336,9 @@ permanente.
 - **Los colores de sección son cosméticos.** No filtran, ordenan, agrupan ni
   sincronizan en ningún sitio, y el color de la sección de un espacio no es
   el color de ese espacio.
-- **Forget quita la entrada de la lista, nunca del disco.** Si la carpeta
-  sigue ahí, escanear la misma raíz (o abrirla otra vez) la devuelve al
-  momento.
+- **Olvidar quita la entrada de la lista, nunca del disco.** Y es duradero:
+  los escaneos posteriores de su carpeta se la saltan, incluido el que ejecuta
+  el diálogo Repositorios escaneados al abrirse. Lo que la devuelve es volver a
+  abrir el repositorio.
 
 **Ver también:** [Centro de control](mission-control.md) · [Espacios de trabajo, pestañas y grupos](workspaces.md)

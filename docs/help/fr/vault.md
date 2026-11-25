@@ -23,7 +23,7 @@ coffre est ce quelque part, sans qu'elles finissent dans le dépôt.
 
 ## S'en servir
 
-Ouvrez-le avec <kbd>⌘⇧V</kbd>, depuis le menu Outils, depuis les réglages, ou
+Ouvrez-le avec <kbd>⌘⇧V</kbd>, depuis le menu Outils, depuis les paramètres, ou
 depuis la palette de commandes. Passez d'un dépôt connu à l'autre, révélez ou
 copiez une valeur, ou faites **Copier comme .env** d'un jeu entier directement
 dans le presse-papiers.

@@ -12,7 +12,7 @@ keywords: palette de commandes command palette recherche search grep recherche d
 
 Sautez, en recherche approximative, vers une **branche** (elle est extraite), un
 **commit** (le graphe défile jusqu'à lui), un **fichier de la copie de travail**,
-ou une **action** — fetch, pull, push, remisage, terminal, reflog, réglages, et
+ou une **action** — fetch, pull, push, remisage, terminal, reflog, paramètres, et
 chaque fonctionnalité de ce manuel.
 
 Elle apprend : ce que vous avez utilisé récemment remonte en premier, et ce que

@@ -14,7 +14,7 @@ fichier `.gitcito` chiffré à la place : les fonctions d'équipe de Gitcito n'o
 **aucun backend**, le fichier *est* donc le transport. Envoyez-le comme vous
 envoyez déjà vos fichiers ; le mot de passe voyage séparément.
 
-![Export des réglages d'un dépôt sous forme de bundle chiffré](../../screenshots/secure-share.webp)
+![Export des paramètres d'un dépôt sous forme de bundle chiffré](../../screenshots/secure-share.webp)
 
 ![Le même export pour un espace de travail entier](../../screenshots/secure-workspace.webp)
 
@@ -28,8 +28,8 @@ envoyez déjà vos fichiers ; le mot de passe voyage séparément.
 | **Notes de commit** | Le `refs/notes/commits` d'un dépôt, appliqué à l'import sans besoin d'accès en écriture à un quelconque distant |
 
 Les secrets ne sont inclus que si vous **cochez la case**. Un bundle sans cette
-case ne contient aucun identifiant. Les réglages de l'application ne voyagent
-pas dans un bundle — ils ont leur propre export en JSON brut dans les Réglages.
+case ne contient aucun identifiant. Les paramètres de l'application ne voyagent
+pas dans un bundle — ils ont leur propre export en JSON brut dans les Paramètres.
 
 ## Importer
 

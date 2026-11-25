@@ -149,7 +149,7 @@ fois. `rerere` — *reuse recorded resolution* — est la réponse de git : il
 mémorise comment vous avez tranché un conflit et rejoue cette réponse la
 prochaine fois que le conflit identique se présente.
 
-**Réglages → Général → Mémoriser les résolutions de conflits.** Cela écrit
+**Paramètres → Général → Mémoriser les résolutions de conflits.** Cela écrit
 `rerere.enabled` dans votre configuration git globale : la ligne de commande se
 comporte donc de la même façon.
 
@@ -172,7 +172,7 @@ Deux choses à savoir :
   marquer comme résolu** dans la liste, est ce qui le déplace.
 - **rerere ne comprend pas tous les conflits.** Les conflits ajout/ajout et
   suppression/modification n'obtiennent pas de préimage : ils reviennent donc
-  toujours bruts. Le compteur dans les réglages indique combien il en détient
+  toujours bruts. Le compteur dans les paramètres indique combien il en détient
   réellement, et **Tout oublier** le vide.
 
 **Voir aussi :** [Radar de conflits](conflict-radar.md) · [Fusion et rebase](merging.md)

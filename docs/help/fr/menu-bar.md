@@ -22,11 +22,11 @@ menu est une fonction dont les utilisateurs de Windows et de Linux sont privés.
 
 | Menu | Contient |
 |---|---|
-| **Gitcito** | À propos, recherche de mises à jour, [Réglages](repo-settings.md), les entrées standard masquer et quitter |
+| **Gitcito** | À propos, recherche de mises à jour, [Paramètres](repo-settings.md), les entrées standard masquer et quitter |
 | **Fichier** | Nouvel onglet, ouvrir ou [cloner](cloning.md) un dépôt, ouvrir un élément récent, fermer et rouvrir des onglets |
 | **Édition** | Couper, copier, coller, annuler — l'édition de texte que votre clavier fait déjà — plus la [recherche dans le code](search.md) |
 | **Affichage** | Palette de commandes, bascules de la barre latérale et du panneau, le [terminal](terminal.md), [mission control](mission-control.md), le [coffre](vault.md), le zoom |
-| **Dépôt** | Fetch, pull, push, valider, remiser, nouvelle branche, [pull request](hosting.md), annuler, afficher dans le Finder, réglages du dépôt |
+| **Dépôt** | Fetch, pull, push, valider, remiser, nouvelle branche, [pull request](hosting.md), annuler, afficher dans le Finder, paramètres du dépôt |
 | **Fenêtre** | Réduire, zoom, tout ramener au premier plan |
 | **Aide** | Ce manuel, l'aide-mémoire, les nouveautés, les licences, signaler un problème |
 
@@ -37,7 +37,7 @@ lisible de ce que l'application vous laissera faire à cet instant.
 ## Des raccourcis affichés, pas confisqués
 
 Les touches indiquées à côté de chaque entrée sont celles que vous avez
-réellement associées. Réassignez <kbd>⌘K</kbd> dans les Réglages et le menu
+réellement associées. Réassignez <kbd>⌘K</kbd> dans les Paramètres et le menu
 Affichage le dira.
 
 Cela fonctionne parce que le menu *affiche* ces combinaisons sans les réclamer :

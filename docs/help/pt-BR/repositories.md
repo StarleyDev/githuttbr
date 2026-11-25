@@ -85,7 +85,7 @@ Abrir esta página também indexa o que você tem **aberto numa aba**, e é
 assim que repositórios restaurados na inicialização ganham uma linha sem
 você reabri-los. Cobre só abas abertas, e acontece na primeira visita de
 cada sessão, não uma vez para sempre. Um repositório em que você der
-**Forget** continua esquecido, a menos que você o abra de novo.
+**Esquecer** continua esquecido, a menos que você o abra de novo.
 
 Pastas de varredura se configuram em Configurações:
 
@@ -98,6 +98,38 @@ Pastas de varredura se configuram em Configurações:
 - **Só lê nomes de pasta**: achar um diretório `.git` é o que torna algo um
   repositório aqui. Nome, dono e branch vêm de arquivos dentro de `.git`
   (`HEAD`, o config), nunca rodando `git`.
+
+## Repositórios escaneados
+
+Esta página responde "onde está aquele repositório?" em tudo que o Gitcito
+conhece. Quando você só quer **abrir** algo das suas pastas de projeto, a janela
+**Abrir repositório** — e a tela de boas-vindas — tem um caminho mais curto:
+**Repositórios escaneados**.
+
+![A janela Repositórios escaneados: as pastas varridas recolhidas no topo, um
+filtro, depois os repositórios da pasta com uma caixa de seleção e o branch de
+cada um, dois marcados e o botão Abrir contando os dois](../../screenshots/scanned-repos.webp)
+
+- Os repositórios ficam **agrupados por pasta varrida**, em ordem de nome, com
+  um filtro por nome ou caminho.
+- **Marque vários** e aperte **Abrir**, ou dê um **duplo clique** em um. A
+  partir de um grupo — o lançador dele, ou a página com que um grupo novo abre —
+  o botão vira **Adicionar ao grupo**, e você volta para onde estava.
+- Aberta a partir de **Abrir repositório**, a janela tem uma seta **Voltar** ao
+  lado do título — como **Clonar** e **Criar** —, então um clique errado volta
+  para Abrir repositório sem fechar nada.
+- Um repositório já aberto numa aba — ou já naquele grupo — aparece na lista,
+  mas apagado, para a contagem da pasta continuar batendo.
+- Abrir a janela **varre as pastas de novo** antes, então um clone recém-feito
+  já aparece sem passar pelas Configurações.
+- **Pastas varridas**, no topo, é o mesmo editor das Configurações: adicione uma
+  pasta, remova outra, mude a profundidade. Ele já vem aberto quando ainda não
+  há nenhuma pasta, porque uma lista vazia seria um beco sem saída.
+
+Limites: um repositório dentro de duas pastas sobrepostas aparece uma vez só, na
+pasta mais funda. Uma pasta que sumiu desde a varredura fica de fora — não dá
+para abri-la. Remover uma pasta varrida esconde os repositórios dela aqui, mas
+não os **Esquece** nesta página.
 
 ## Linhas
 
@@ -115,11 +147,36 @@ Gitcito, estendido com duas entradas específicas desta página:
 | Ação | O que faz |
 |---|---|
 | Estrela / tirar estrela | Coloca ou tira o repositório dos Favoritos |
-| Locate… | Reaponta uma pasta movida ou renomeada. Alias, perfil e estrela seguem. Se o destino já tinha os próprios ajustes, **o destino ganha** |
-| Forget | Tira a entrada desta lista. **Nunca toca a pasta no disco** |
+| Localizar… | Reaponta uma pasta movida ou renomeada. Alias, perfil e estrela seguem. Se o destino já tinha os próprios ajustes, **o destino ganha** |
+| Esquecer | Tira a entrada desta lista. **Nunca toca a pasta no disco** |
 
 Um repositório cuja pasta não existe mais aparece como **ausente**, com
-**Locate…** e **Forget** na linha no lugar das ações usuais.
+**Localizar…** e **Esquecer** na linha no lugar das ações usuais.
+
+### Quando a pasta de uma aba aberta some
+
+As abas são restauradas na abertura do app com os caminhos que tinham quando
+você fechou. Se uma pasta foi movida, apagada ou está num disco que não está
+conectado, cada leitura que o Gitcito fazia nela falhava com um aviso de erro
+próprio. Agora a pasta é conferida antes, e a aba mostra **Pasta do repositório
+não encontrada** com o caminho salvo, no lugar do workspace de sempre:
+
+![Uma aba restaurada cuja pasta sumiu: o cartão Pasta do repositório não
+encontrada com o caminho salvo e os botões Localizar… e Tentar de novo](../../screenshots/missing-repository.webp)
+
+| Botão | O que faz |
+|---|---|
+| Localizar… | Escolhe o novo lugar da pasta. Precisa ser um repositório Git; a aba, o alias, o vínculo com o perfil e a estrela vão junto |
+| Tentar de novo | Confere o mesmo caminho de novo — para um disco ou compartilhamento de rede que voltou |
+
+A aba **continua** até você reconectá-la ou fechá-la: um disco externo ausente
+costuma ser temporário, e perder a aba por isso seria pior que um aviso discreto
+no lugar dela. Enquanto a pasta estiver ausente, o fetch automático em segundo
+plano pula esse repositório.
+
+Limites: o Gitcito não procura para onde a pasta foi — Localizar… pergunta a
+você. Uma pasta que existe mas não é mais um repositório mostra a tela de sempre,
+**Não é um repositório Git**.
 
 A estrela é um interruptor de favorito, não uma caixa de seleção em massa.
 O trabalho em lote aqui é por seção, não por seleção. Veja abaixo.
@@ -258,7 +315,7 @@ um custo permanente.
 - **Cores de seção são cosméticas.** Não filtram, ordenam, agrupam nem
   sincronizam em lugar nenhum, e a cor na seção de um workspace não é a
   cor daquele workspace.
-- **Forget tira a entrada da lista, nunca do disco.** Se a pasta ainda
+- **Esquecer tira a entrada da lista, nunca do disco.** Se a pasta ainda
   está lá, varrer a mesma raiz (ou abrir de novo) traz de volta na hora.
 
 **Veja também:** [Central de controle](mission-control.md) · [Workspaces, abas e grupos](workspaces.md)

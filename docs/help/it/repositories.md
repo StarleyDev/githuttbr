@@ -4,6 +4,7 @@ category: Sincronizzazione e più repo
 order: 52
 summary: Ogni repository che Gitcito conosce, aperto o no, in un elenco ricercabile.
 keywords: repository registro tutti i repo preferiti stellati recenti scansione cartella sfogliare trovare aprire gestire gestione repository colore sezione tinta evidenziare aree di lavoro da cartelle albero generare importazione massiva repositories registry favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Repository
@@ -29,7 +30,7 @@ unico elenco.
 |---|---|
 | Repository aperti | Ogni scheda dell'area di lavoro attiva in questo momento |
 | Preferiti | Repository con stella, in tutte le aree di lavoro |
-| Recenti | Tutto ciò che hai aperto, il più nuovo per primo. **Senza tetto**, a differenza dell'elenco da 8 voci del launcher |
+| Repository recenti | Tutto ciò che hai aperto, il più nuovo per primo. **Senza tetto**, a differenza dell'elenco da 8 voci del launcher |
 | Una per area di lavoro salvata | Le schede di quell'area, così puoi saltare in un'altra senza prima passare a quella |
 | Tutti i repository | Ogni repository che il registro conosce, aperto o no |
 
@@ -88,10 +89,11 @@ Gitcito.
 Aprire questa pagina indicizza anche ciò che hai **aperto in una scheda**,
 ed è così che i repository ripristinati all'avvio ottengono una riga senza
 che tu debba riaprirli. Copre solo le schede aperte, e succede alla prima
-visita di ogni sessione, non una volta per sempre. Un repository a cui fai
-**Forget** resta dimenticato, a meno che non lo apri di nuovo.
+visita di ogni sessione, non una volta per sempre. Un repository che
+**Dimentichi** resta dimenticato, a meno che non lo apri di nuovo.
 
-Le cartelle da scansionare si configurano in Impostazioni:
+Le cartelle da scansionare si configurano in Impostazioni → Dati, o nella
+finestra **Repository scansionati** più sotto:
 
 - **Profondità** è quanti livelli di directory la scansione scende sotto la
   radice (predefinito 3, tetto 10).
@@ -99,9 +101,24 @@ Le cartelle da scansionare si configurano in Impostazioni:
   un sottomodulo dentro un repo non viene indicizzato come riga propria.
 - Non entra mai nelle directory che iniziano con un punto, e salta
   `node_modules` e cartelle di dipendenze simili.
+- **Segue le cartelle collegate con symlink**, e percorre ogni cartella reale
+  una volta sola — un link che risale l'albero non può creare un ciclo, e due
+  link allo stesso repository lo elencano una volta. Un repository trovato
+  tramite un link è elencato col suo **percorso reale**, quindi è la stessa voce
+  (e la stessa scheda) di quando lo apri dal selettore.
 - **Legge solo i nomi delle cartelle**: trovare una directory `.git` è ciò
   che rende qualcosa un repository qui. Nome, proprietario e branch arrivano
   da file dentro `.git` (`HEAD`, la config), mai eseguendo `git`.
+- Parte **quando lo chiedi**: aggiungendo una cartella, con **Scansiona ora**
+  o aprendo la finestra Repository scansionati. Un repository clonato più tardi
+  in una cartella scansionata compare alla prossima di queste occasioni, o
+  appena lo apri.
+- Il risultato nomina **ogni repository trovato e quanti erano nuovi**. Una
+  seconda scansione delle stesse cartelle li riporta tutti di nuovo, con
+  «0 nuovi» — erano già in questa pagina.
+- Una cartella si può aggiungere **una sola volta**. Sceglierne una già
+  nell'elenco lo segnala e non cambia nulla; una barra finale o, su Windows,
+  maiuscole diverse indicano comunque la stessa cartella.
 
 ## Repository scansionati
 
@@ -110,7 +127,8 @@ conosce. Quando vuoi solo **aprire** qualcosa dalle tue cartelle di progetto,
 la finestra **Apri un repository** — e la schermata di benvenuto — ha una
 strada più corta: **Repository scansionati**.
 
-![La finestra Repository scansionati: le cartelle scansionate compresse in alto, un filtro, poi i repository della cartella con una casella e il loro branch, due spuntati e il pulsante Apri che li conta](../../screenshots/scanned-repos.webp)
+![La finestra Repository scansionati: le cartelle scansionate compresse in alto, un filtro,
+ poi i repository della cartella con una casella e il loro branch, due spuntati e il pulsante Apri che li conta](../../screenshots/scanned-repos.webp)
 
 - I repository sono **raggruppati per cartella scansionata**, ordinati per
   nome, con un filtro per nome o percorso.
@@ -151,11 +169,37 @@ Gitcito, esteso con due voci specifiche di questa pagina:
 | Azione | Cosa fa |
 |---|---|
 | Stella / togli stella | Aggiunge o toglie il repository dai Preferiti |
-| Locate… | Ripunta una cartella spostata o rinominata. Alias, profilo e stella restano. Se la destinazione aveva già le sue impostazioni, **vince la destinazione** |
-| Forget | Toglie la voce da questo elenco. **Non tocca mai la cartella su disco** |
+| Individua… | Ripunta una cartella spostata o rinominata. Alias, profilo associato, stella e ogni scheda che la mostra restano. Se la destinazione aveva già le sue impostazioni, **vince la destinazione** |
+| Dimentica | Toglie la voce da questo elenco. **Non tocca mai la cartella su disco** |
 
 Un repository la cui cartella non esiste più si mostra come **mancante**,
-con **Locate…** e **Forget** in linea al posto delle azioni abituali.
+con **Individua…** e **Dimentica** in linea al posto delle azioni abituali.
+
+### Quando manca la cartella di una scheda aperta
+
+Le schede vengono ripristinate all'avvio dai percorsi che avevano quando hai
+chiuso. Se nel frattempo una cartella è stata spostata, eliminata, o sta su un
+disco non collegato, ogni lettura che Gitcito faceva su di essa falliva con una
+propria notifica di errore. Ora la cartella viene controllata prima, e la scheda
+mostra **Cartella del repository non trovata** con il percorso salvato al posto
+della solita area di lavoro:
+
+![Una scheda ripristinata la cui cartella manca: la scheda Cartella del
+repository non trovata con il percorso salvato e i pulsanti Individua… e Riprova](../../screenshots/missing-repository.webp)
+
+| Pulsante | Cosa fa |
+|---|---|
+| Individua… | Scegli la nuova posizione della cartella. Deve essere un repository Git; la scheda, l'alias, il profilo associato e la stella passano lì |
+| Riprova | Controlla di nuovo lo stesso percorso — per un disco o una condivisione di rete tornati disponibili |
+
+La scheda viene **mantenuta** finché non la ricolleghi o la chiudi tu: un disco
+esterno mancante di solito è temporaneo, e perdere la scheda per questo sarebbe
+peggio di un segnaposto discreto. Finché la cartella manca, il fetch automatico
+in background la salta.
+
+Limiti: Gitcito non cerca dove è finita una cartella — Individua… lo chiede a
+te. Una cartella che esiste ma non è più un repository mostra invece il solito
+avviso **Non è un repository Git**.
 
 La stella è un interruttore dei preferiti, non una casella di selezione
 multipla. Il lavoro a lotti qui è per sezione, non per selezione. Vedi sotto.
@@ -289,7 +333,7 @@ voluto, non un costo permanente.
   senso, e si limita a indicizzare.
 - **Chiudi tutte riapre una scheda alla volta, fino a dieci.** Chiudere più
   di dieci repository in un colpo significa che i più vecchi non si possono
-  riaprire dalla pila, anche se sono tutti ancora in **Recenti**.
+  riaprire dalla pila, anche se sono tutti ancora in **Repository recenti**.
 - **Il pull non è filtrato da chi è indietro.** Fa pull di ogni repository
   della sezione, perché sapere quali sono indietro vorrebbe dire fare fetch
   prima. Fare pull di un repository già aggiornato è un no-op, costa tempo,
@@ -300,7 +344,9 @@ voluto, non un costo permanente.
 - **I colori di sezione sono cosmetici.** Non filtrano, ordinano,
   raggruppano né sincronizzano da nessuna parte, e un colore sulla sezione
   di un'area non è il colore di quell'area.
-- **Forget toglie la voce dall'elenco, mai dal disco.** Se la cartella c'è
-  ancora, scansionare la stessa radice (o riaprirla) la riporta subito.
+- **Dimentica toglie la voce dall'elenco, mai dal disco.** E dura: le
+  scansioni successive della sua cartella la saltano, compresa quella che la
+  finestra Repository scansionati esegue all'apertura. Riaprire il repository è
+  ciò che lo riporta indietro.
 
 **Vedi anche:** [Mission control](mission-control.md) · [Aree di lavoro, schede e gruppi](workspaces.md)

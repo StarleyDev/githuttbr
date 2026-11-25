@@ -22,7 +22,7 @@ contraseña viaja por separado.
 
 | Sección | Contenido |
 |---|---|
-| **Caja fuerte** | Los secretos de la caja fuerte global (las entradas por repositorio se quedan donde están) |
+| **Bóveda** | Los secretos de la bóveda global (las entradas por repositorio se quedan donde están) |
 | **Archivos del repositorio** | Archivos de configuración y de secretos sin seguimiento, rematerializados en las mismas rutas relativas al importar |
 | **Estructura del espacio de trabajo** | La disposición de pestañas en sí — grupos, colores, orden — con los repositorios referenciados por URL del remoto, nunca por tus rutas locales |
 | **Notas de commit** | El `refs/notes/commits` de un repositorio, aplicado al importar sin necesitar acceso de escritura a ningún remoto |
@@ -46,6 +46,6 @@ que aterrizaría — nuevas, idénticas, distintas o ancladas a commits que no
 tienes — y las notas distintas solo se reemplazan cuando marcas
 **sobrescribir**; no hay fusión de notas divergentes.
 
-**Ver también:** [Caja fuerte](vault.md) · [Seguridad y secretos](security.md) ·
+**Ver también:** [Bóveda](vault.md) · [Seguridad y secretos](security.md) ·
 [Notas de commit](notes.md) ·
 [Espacios de trabajo, pestañas y grupos](workspaces.md)

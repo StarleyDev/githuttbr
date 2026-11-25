@@ -4,6 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 52
 summary: Gitcito'nun bildiği her depo, açık olsun olmasın, tek aranabilir listede.
 keywords: depolar kayıt tüm depolar favoriler yıldız son tarama klasör göz at bul aç yönet depo yönetimi renk bölüm ton vurgu çalışma alanları klasörlerden ağaç üret toplu içe aktarma repositories registry favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Depolar
@@ -26,7 +27,7 @@ sorusuna tam bir yanıttır, tek bir listenin dilimi değil.
 |---|---|
 | Açık depolar | Etkin çalışma alanındaki her sekme, şu anda |
 | Favoriler | Yıldızlı depolar, her çalışma alanında |
-| Son | Açtığınız her şey, en yenisi önce. **Tavansız**, başlatıcıdaki 8 girdilik listenin aksine |
+| Son depolar | Açtığınız her şey, en yenisi önce. **Tavansız**, başlatıcıdaki 8 girdilik listenin aksine |
 | Kayıtlı her çalışma alanı için bir tane | O alanın sekmeleri, önce o alana geçmeden atlayabilmeniz için |
 | Tüm depolar | Kaydın bildiği her depo, açık olsun olmasın |
 
@@ -79,9 +80,10 @@ bir yerde durduğu için hiçbir şey dizine alınmaz.
 Bu sayfayı açmak, şu anda **bir sekmede açık** olanı da dizinler, böylece
 başlangıçta geri yüklenen depolar, yeniden açmadan bir satır alır. Yalnızca
 açık sekmeleri kapsar ve her oturumun ilk ziyaretinde olur, bir kez değil.
-**Forget** yaptığınız bir depo, yeniden açmadığınız sürece unutulmuş kalır.
+**Unuttuğunuz** bir depo, yeniden açmadığınız sürece unutulmuş kalır.
 
-Tarama klasörleri Ayarlar'da yapılandırılır:
+Tarama klasörleri Ayarlar → Veri'de ya da aşağıdaki **Taranan depolar**
+penceresinde yapılandırılır:
 
 - **Derinlik**, taramanın kökün altına kaç dizin düzeyi indiğidir (varsayılan
   3, tavan 10).
@@ -89,9 +91,22 @@ Tarama klasörleri Ayarlar'da yapılandırılır:
   veya bir alt modül kendi satırı olarak dizine alınmaz.
 - Nokta ile başlayan dizinlere asla girmez, `node_modules` ve benzeri
   bağımlılık klasörlerini atlar.
+- **Sembolik bağlantılı klasörleri izler** ve her gerçek klasörü yalnızca bir
+  kez dolaşır — ağaçta yukarıya dönen bir bağlantı döngü oluşturamaz, aynı depoya
+  giden iki bağlantı onu bir kez listeler. Bir bağlantı üzerinden bulunan depo
+  **gerçek yoluyla** listelenir; yani seçiciden açtığınızdakiyle aynı girdi (ve
+  aynı sekme) olur.
 - **Yalnızca klasör adlarını okur**: bir `.git` dizini bulmak, bir şeyi
   burada depo yapar. Ad, sahip ve dal `.git` içindeki dosyalardan gelir
   (`HEAD`, yapılandırma), asla `git` çalıştırarak değil.
+- **Siz istediğinizde** çalışır: bir klasör eklerken, **Şimdi tara** ile ya da
+  Taranan depolar penceresini açarken. Bir tarama klasörüne sonradan klonlanan
+  bir depo, bunların bir sonrakinde ya da onu açtığınız anda görünür.
+- Sonuç **bulunan her depoyu ve kaçının yeni olduğunu** söyler. Aynı klasörlerin
+  ikinci taraması hepsini «0 yeni» ile yeniden bildirir — zaten bu sayfadaydılar.
+- Bir klasör **yalnızca bir kez** eklenebilir. Listede zaten olan birini seçmek
+  bunu söyler ve hiçbir şeyi değiştirmez; sondaki bir eğik çizgi ya da Windows'ta
+  farklı büyük/küçük harf yine aynı klasördür.
 
 ## Taranan depolar
 
@@ -100,7 +115,8 @@ yanıtlar. Proje klasörlerinizden yalnızca bir şey **açmak** istediğinizde
 **Depo aç** penceresinin — ve karşılama ekranının — daha kısa bir yolu vardır:
 **Taranan depolar**.
 
-![Taranan depolar penceresi: üstte daraltılmış taranan klasörler, bir filtre, ardından klasörün depoları onay kutusu ve dallarıyla; ikisi işaretli ve Aç düğmesi onları sayıyor](../../screenshots/scanned-repos.webp)
+![Taranan depolar penceresi: üstte daraltılmış taranan klasörler, bir filtre,
+ ardından klasörün depoları onay kutusu ve dallarıyla; ikisi işaretli ve Aç düğmesi onları sayıyor](../../screenshots/scanned-repos.webp)
 
 - Depolar **taranan klasöre göre gruplanır**, ada göre sıralanır; ad ya da yol
   için bir filtre vardır.
@@ -139,11 +155,36 @@ genişletilmiştir:
 | Eylem | Ne yapar |
 |---|---|
 | Yıldız / yıldızı kaldır | Depoyu Favoriler'e ekler veya çıkarır |
-| Locate… | Taşınmış veya yeniden adlandırılmış bir klasörü yeniden işaretler. Takma ad, profil ve yıldız kalır. Hedefte zaten kendi ayarları varsa **hedef kazanır** |
-| Forget | Girdiyi bu listeden kaldırır. **Diskteki klasöre asla dokunmaz** |
+| Konumunu bul… | Taşınmış veya yeniden adlandırılmış bir klasörü yeniden işaretler. Takma ad, profil bağlaması, yıldız ve onu gösteren tüm sekmeler taşınır. Hedefte zaten kendi ayarları varsa **hedef kazanır** |
+| Unut | Girdiyi bu listeden kaldırır. **Diskteki klasöre asla dokunmaz** |
 
 Klasörü artık yok olan bir depo **eksik** görünür, alışılmış satır
-eylemlerinin yerine satır içi **Locate…** ve **Forget** ile.
+eylemlerinin yerine satır içi **Konumunu bul…** ve **Unut** ile.
+
+### Açık bir sekmenin klasörü kaybolduğunda
+
+Sekmeler açılışta, çıktığınız sırada sahip oldukları yollardan geri yüklenir.
+Bir klasör o zamandan beri taşınmış, silinmiş ya da takılı olmayan bir sürücüde
+duruyorsa, Gitcito'nun ondan yaptığı her okuma eskiden kendi hata bildirimiyle
+başarısız olurdu. Artık önce klasör denetlenir ve sekme, alışılmış çalışma alanı
+yerine kayıtlı yolla birlikte **Depo klasörü bulunamadı** gösterir:
+
+![Klasörü eksik olan, geri yüklenmiş bir sekme: kayıtlı yolu ve Konumunu bul…
+ile Yeniden dene düğmeleriyle Depo klasörü bulunamadı kartı](../../screenshots/missing-repository.webp)
+
+| Düğme | Ne yapar |
+|---|---|
+| Konumunu bul… | Klasörün yeni konumunu seçin. Bir Git deposu olmalıdır; sekme, takma ad, profil bağlaması ve yıldız oraya taşınır |
+| Yeniden dene | Aynı yolu yeniden denetler — geri gelen bir sürücü ya da ağ paylaşımı için |
+
+Sekme, siz onu yeniden bağlayana ya da kendiniz kapatana kadar **korunur**:
+eksik bir harici sürücü genellikle geçicidir ve bunun için sekmeyi kaybetmek
+sessiz bir yer tutucudan daha kötü olurdu. Klasör eksikken otomatik arka plan
+fetch'i onu atlar.
+
+Sınırlar: Gitcito bir klasörün nereye gittiğini aramaz — Konumunu bul… size
+sorar. Var olan ama artık depo olmayan bir klasör, bunun yerine alışılmış
+**Bir Git deposu değil** uyarısını gösterir.
 
 Yıldız bir favori anahtarıdır, toplu seçim kutusu değil. Toplu iş burada
 seçime göre değil bölüme göredir. Aşağıya bakın.
@@ -272,7 +313,7 @@ kararıdır.
   yalnızca dizinler.
 - **Tümünü kapat sekmeleri tek tek, en fazla on tane yeniden açar.** Bir
   seferde ondan fazla depoyu kapatmak, en eskilerin yığından geri
-  getirilemeyeceği anlamına gelir, hepsi hâlâ **Son** içindedir.
+  getirilemeyeceği anlamına gelir, hepsi hâlâ **Son depolar** içindedir.
 - **Pull, geride kalanlara göre süzülmez.** Bölümdeki her depoya pull yapar,
   çünkü hangilerinin geride olduğunu bilmek önce fetch demektir. Güncel bir
   depoya pull yapmak bir no-op'tur, bu zaman harcar, güvenlik değil.
@@ -282,7 +323,8 @@ kararıdır.
 - **Bölüm renkleri kozmetiktir.** Hiçbir yerde süzgeçlemez, sıralamaz,
   gruplamaz veya eşitlemez, bir çalışma alanının bölümüne konan renk o
   alanın rengi değildir.
-- **Forget girdiyi listeden kaldırır, diskten asla.** Klasör hâlâ oradaysa,
-  aynı kökü taramak (veya yeniden açmak) onu hemen geri getirir.
+- **Unut girdiyi listeden kaldırır, diskten asla.** Ve kalıcıdır: klasörünün
+  sonraki taramaları onu atlar, Taranan depolar penceresinin açılırken yaptığı
+  tarama da dahil. Onu geri getiren, depoyu yeniden açmaktır.
 
 **Ayrıca bakınız:** [Komuta merkezi](mission-control.md) · [Çalışma alanları, sekmeler ve gruplar](workspaces.md)

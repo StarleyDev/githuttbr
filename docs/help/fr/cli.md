@@ -158,7 +158,7 @@ Ajoutez `--local` pour n’agir que sur un dépôt, et défaites-le avec
   exception, et ses réparations forment une liste fixe qu’un fichier de
   configuration ne peut pas étendre.
 - **`repos` est en lecture seule.** L’application en cours possède son fichier de
-  réglages ; la CLI le lit et ne l’écrit jamais.
+  paramètres ; la CLI le lit et ne l’écrit jamais.
 - **Un verbe que l’application installée ne connaît pas est ignoré**, pas
   refusé : un shim plus récent face à une application plus ancienne ouvre quand
   même le dépôt.

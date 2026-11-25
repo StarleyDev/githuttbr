@@ -10,7 +10,7 @@ keywords: difftool mergetool external 外部 diff 差异 merge 合并 kaleidosco
 
 Gitcito 的[差异查看器](diffs.md)和[三栏解决器](conflicts.md)应付得了大多数日子。有些日子它们应付不来：一个 4000 行的生成文件、一次需要同时看四栏的合并，或者干脆就是那个你用了十年、读起来比任何新工具都快的老伙计。
 
-**设置 → 通用 → 外部差异与合并工具。**
+**设置 → 常规 → 外部差异与合并工具。**
 
 ## 这是 git 的清单，不是我们的
 

@@ -66,7 +66,7 @@ odur. Yüz yalnızca *bir şey var* der, bir bakışta.
 ### Hareket
 
 Başlık çubuğundaki avatar kendiliğinden nefes alır ve göz kırpar. Şuradan kapatın:
-**Ayarlar → Temalar → Graf → Profil avatarını canlandır** — ifade yine depoyu izler,
+**Ayarlar → Temalar → Grafik → Profil avatarını canlandır** — ifade yine depoyu izler,
 yalnızca hareket etmeyi bırakır. Sisteminiz azaltılmış hareket istediğinde hareket
 otomatik olarak da atlanır.
 
@@ -129,7 +129,7 @@ Gravatar fotoğrafı gibi ifade taşımaz: depoya tepki veren yüz otomatik olan
 
 ## Sorguyu kapatmak
 
-**Ayarlar → Temalar → Graf → Avatarları göster.**
+**Ayarlar → Temalar → Grafik → Avatarları göster.**
 
 Kapalı şu anlama gelir:
 

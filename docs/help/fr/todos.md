@@ -20,7 +20,7 @@ Les tâches sont cette liste, attachée au dépôt où vous vous trouvez.
 
 ## Où elles vivent
 
-Nulle part dans votre dépôt. Une tâche est rangée avec les réglages de Gitcito,
+Nulle part dans votre dépôt. Une tâche est rangée avec les paramètres de Gitcito,
 indexée par le chemin du dépôt, ce qui a trois conséquences utiles à connaître :
 
 - **Rien n'est committé.** Aucun fichier n'apparaît dans `git status` : une
@@ -101,7 +101,7 @@ La même vue porte le champ de filtre, l'interrupteur **Afficher les tâches
 terminées** et **Effacer les terminées**, qui supprime définitivement les tâches
 cochées, après confirmation.
 
-Cet interrupteur est le même que **Réglages → Apparence → Masquer les tâches terminées** : en le désactivant, les tâches cochées disparaissent de cette liste comme de la section de la barre latérale. Rien n'est supprimé, et les compteurs continuent de les compter. Le masquage est activé par défaut : au départ, vous ne voyez que les tâches en cours.
+Cet interrupteur est le même que **Paramètres → Apparence → Masquer les tâches terminées** : en le désactivant, les tâches cochées disparaissent de cette liste comme de la section de la barre latérale. Rien n'est supprimé, et les compteurs continuent de les compter. Le masquage est activé par défaut : au départ, vous ne voyez que les tâches en cours.
 
 ## Ce qu'elles ne font délibérément pas
 
@@ -114,5 +114,5 @@ Cet interrupteur est le même que **Réglages → Apparence → Masquer les tâc
 - **La suppression est définitive.** Aucune entrée d'annulation pour une tâche
   supprimée : git ne l'avait jamais enregistrée.
 
-**Voir aussi :** [Réglages par dépôt](repo-settings.md) ·
+**Voir aussi :** [Paramètres par dépôt](repo-settings.md) ·
 [Centre de contrôle](mission-control.md)

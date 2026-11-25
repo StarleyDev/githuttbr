@@ -24,7 +24,7 @@ una función que quienes usan Windows y Linux no tienen.
 | **Gitcito** | Acerca de, comprobación de actualizaciones, [Ajustes](repo-settings.md), y los elementos estándar de ocultar y salir |
 | **Archivo** | Nueva pestaña, abrir o [clonar](cloning.md) un repositorio, abrir reciente, cerrar y reabrir pestañas |
 | **Editar** | Cortar, copiar, pegar, deshacer — la edición de texto que tu teclado ya hace — más la [búsqueda en el código](search.md) |
-| **Ver** | Paleta de comandos, los interruptores de la barra lateral y del panel, la [terminal](terminal.md), [mission control](mission-control.md), la [caja fuerte](vault.md), el zoom |
+| **Ver** | Paleta de comandos, los interruptores de la barra lateral y del panel, la [terminal](terminal.md), [mission control](mission-control.md), la [bóveda](vault.md), el zoom |
 | **Repositorio** | Fetch, pull, push, confirmar, stash, nueva rama, [pull request](hosting.md), deshacer, mostrar en el Finder, ajustes del repositorio |
 | **Ventana** | Minimizar, zoom, traer todo al frente |
 | **Ayuda** | Este manual, la chuleta, novedades, licencias, informar de un problema |

@@ -18,7 +18,7 @@ pertenecen a **este** repositorio, no a la aplicación.
 | **General** | Ramas protegidas (un multiselector de ramas, guardado en la config de git), la imagen de la pestaña, firma |
 | **Config** | Las [reglas que este repositorio trae consigo](repo-config.md) en `.gitcito.json`, y el doctor que las comprueba |
 | **Info** | Notas y campos libres sobre este repositorio, guardados en local |
-| **Caja fuerte** | Las entradas de la [caja fuerte](vault.md) de este repositorio |
+| **Bóveda** | Las entradas de la [bóveda](vault.md) de este repositorio |
 | **Métricas** | El [panel de historial](insights.md) |
 | **Analíticas** | Lo que has hecho en este repositorio, contado en local |
 | **Historial** · **Logs** | El registro de operaciones: cada comando de git que Gitcito ejecutó, con su salida |

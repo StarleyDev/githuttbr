@@ -20,7 +20,7 @@ Appuyez sur <kbd>?</kbd> n'importe où pour l'antisèche.
 | <kbd>⌘⇧F</kbd> | [Recherche dans le code](search.md) à travers la copie de travail |
 | <kbd>⌘⇧V</kbd> | [Coffre](vault.md) |
 | <kbd>⌘O</kbd> / <kbd>Ctrl+O</kbd> | Ouvrir un dépôt |
-| <kbd>⌘,</kbd> / <kbd>Ctrl+,</kbd> | Ouvrir les réglages |
+| <kbd>⌘,</kbd> / <kbd>Ctrl+,</kbd> | Ouvrir les paramètres |
 | <kbd>⌘F</kbd> | Chercher dans le fichier ou le diff que vous lisez |
 | <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | Ouvrir le sélecteur de dépôt ou de groupe pour un nouvel onglet |
 | <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Fermer l'onglet actif — ou la fenêtre, une fois qu'il n'en reste plus |
@@ -40,8 +40,8 @@ Appuyez sur <kbd>?</kbd> n'importe où pour l'antisèche.
 
 ## Réassigner
 
-**Réglages → Raccourcis**. Les raccourcis de navigation principaux (palette,
-recherche dans le code, coffre, ouvrir un dépôt, réglages) sont réassignables,
+**Paramètres → Raccourcis**. Les raccourcis de navigation principaux (palette,
+recherche dans le code, coffre, ouvrir un dépôt, paramètres) sont réassignables,
 avec détection des conflits et une réinitialisation par raccourci.
 
 Les raccourcis fixes ci-dessus ne sont pas réassignables, et ils sont aussi
@@ -51,6 +51,6 @@ refusés comme _cible_ : l'application répond à <kbd>⌘T</kbd>, <kbd>⌘W</kb
 raccourci associé à l'un d'eux semblerait donc défini sans jamais se déclencher.
 Choisissez-en un et l'éditeur vous le dit au lieu de l'accepter.
 
-![Les raccourcis réassignables dans les réglages](../../screenshots/settings-shortcuts.webp)
+![Les raccourcis réassignables dans les paramètres](../../screenshots/settings-shortcuts.webp)
 
 **Voir aussi :** [Palette de commandes et recherche](search.md)

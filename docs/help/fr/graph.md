@@ -36,7 +36,7 @@ dépôt d'une centaine.
 ## Lui faire montrer ce que vous voulez
 
 - La **focalisation du graphe** décide de la quantité d'historique dessinée —
-  Réglages → Thèmes → **Graphe**, ou le menu engrenage de l'en-tête du graphe.
+  Paramètres → Thèmes → **Graphe**, ou le menu engrenage de l'en-tête du graphe.
   *Tout* dessine l'ensemble ; *Historique linéaire* (premier parent) ne laisse
   que le tronc ; *Masquer les branches fusionnées* garde le tronc plus les
   branches encore non fusionnées ; *Mode solo* garde votre branche, vos branches
@@ -57,11 +57,11 @@ dépôt d'une centaine.
 
 - **Colonnes** : afficher, masquer, redimensionner et réordonner les colonnes
   branche, message, auteur, date, SHA, signature et déploiement.
-- **Style** : Réglages → Thèmes → **Graphe** — palette de couloirs (8 intégrées,
+- **Style** : Paramètres → Thèmes → **Graphe** — palette de couloirs (8 intégrées,
   personnalisée, ou générée par l'IA), style des angles, densité des lignes et
   épaisseur des traits, avec un aperçu en direct sous forme de mini-graphe.
 
-![Les réglages de style du graphe avec aperçu en direct](../../screenshots/settings-graph.webp)
+![Les paramètres de style du graphe avec aperçu en direct](../../screenshots/settings-graph.webp)
 
 ## Où s'assoient les remises
 

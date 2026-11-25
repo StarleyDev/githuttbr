@@ -13,7 +13,7 @@ Gitcito, pas du système — un développeur sur un macOS en anglais qui préfè
 le japonais le règle ici, et un développeur sur un système en hébreu qui préfère
 l'application en anglais n'est pas contredit.
 
-**Réglages → Général → Langue.**
+**Paramètres → Général → Langue.**
 
 ![Le sélecteur de langue](../../screenshots/languages.webp)
 

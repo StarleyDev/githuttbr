@@ -39,7 +39,7 @@ ouvre le lanceur.
 | **Voir sur GitHub** | Origin s'il pointe vers github.com, sinon le premier distant GitHub analysable. Désactivé quand aucun ne peut être déduit. |
 | **Ouvrir dans le terminal** | Ouvre le terminal de Gitcito avec ce dépôt comme répertoire de travail. |
 | **Afficher dans le Finder / l’Explorateur de fichiers** | Met le dossier du dépôt en évidence dans le gestionnaire de fichiers de la plateforme. |
-| **Ouvrir dans l’éditeur externe** | L'éditeur configuré dans les réglages. Visible mais désactivé tant qu'aucun n'est défini. |
+| **Ouvrir dans l’éditeur externe** | L'éditeur configuré dans les paramètres. Visible mais désactivé tant qu'aucun n'est défini. |
 | **Retirer…** | Ferme l'onglet ou enlève la pastille du groupe. Utilise le même avertissement de travail non validé que le bouton **×**. Cela ne supprime jamais de fichiers du disque. |
 
 Un chemin manquant ou invalide laisse la copie, l'alias et le retrait

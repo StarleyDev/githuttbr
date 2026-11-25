@@ -10,7 +10,7 @@ keywords: analyses insights stats statistiques agitation churn contributeurs con
 
 Un tableau de bord construit à partir de votre historique Git — aucun service,
 aucun compte, juste `git log` lu localement. Ouvrez-le depuis la roue dentée des
-réglages du dépôt, à côté des outils de la barre d'outils.
+paramètres du dépôt, à côté des outils de la barre d'outils.
 
 ![Le tableau de bord d'analyses](../../screenshots/insights.webp)
 

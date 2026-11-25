@@ -3,7 +3,8 @@ title: Sécurité et secrets
 category: Sécurité
 order: 70
 summary: Le masquage, les garde-fous, le trousseau — et ce que Gitcito refuse de faire.
-keywords: sécurité security secrets masquage masking trousseau keychain safeStorage jetons tokens branche protégée protected branch gros fichier large file garde-fou guard confidentialité privacy
+keywords: sécurité security secrets masquage masking trousseau keychain safeStorage jetons tokens branche protégée protected branch gros fichier large file garde-fou guard confidentialité privacy illisible sauvegarde parties traduire chemins autre ordinateur nouvelle machine fusionner profils remplacer profils choisir quoi exporter sauvegarde complète pour l'équipe manifeste mot de passe chiffrement appimage apparmor sandbox signaler un problème
+source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
 ---
 
 # Sécurité et secrets
@@ -11,7 +12,7 @@ keywords: sécurité security secrets masquage masking trousseau keychain safeSt
 Gitcito n'a **aucun backend**. Les seuls appels réseau vont vers votre hébergeur
 Git et, si vous l'activez, vers votre fournisseur d'IA.
 
-![Les réglages de sécurité](../../screenshots/settings-security.webp)
+![Les paramètres de sécurité](../../screenshots/settings-security.webp)
 
 ## Masquage des secrets
 
@@ -35,15 +36,36 @@ comme des secrets.
 |---|---|
 | **Fichier secret** | Vous validez quelque chose qui ressemble à un identifiant — avec un *Ignorer et ne plus suivre* en un clic |
 | **Gros fichier** | Vous validez un blob surdimensionné (seuil dans Paramètres → Sécurité) |
-| **Bruit de compilation** | Committer `xcuserdata/`, `DerivedData/` ou un `.DS_Store` — avec le même *Ignorer et cesser de suivre* en un clic |
+| **Bruit de compilation** | Committer `xcuserdata/`, `DerivedData/` ou un `.DS_Store` — avec le même *Ignorer et ne plus suivre* en un clic |
 | **Branche protégée** | Vous validez directement sur `main`/`master`, ou vous en poussez une en force |
 | **Secrets suivis** | Vous poussez un dépôt qui *suit* un fichier secret — averti une fois par session |
+
+## L'AppImage et les chemins qui lui survivent
+
+Une AppImage s'exécute depuis un dossier sous `/tmp` (`/tmp/.mount_…`) qui
+n'existe que tant que l'application est ouverte, change de nom à chaque
+lancement et se trouve dans un répertoire où tout utilisateur local peut écrire.
+Jusqu'à la 4.37.1, l'AppImage pouvait écrire un chemin à l'intérieur de ce
+dossier à deux endroits qui lui survivent : le lien `gitcito` dans le `PATH`
+([CLI](cli.md)) et le réglage `diff.<name>.textconv` d'un dépôt
+([attributs](attributes.md)). Une fois l'application fermée, un autre
+utilisateur de la même machine pouvait recréer le dossier avec un programme à
+lui, que votre prochain `gitcito` ou `git diff` exécuterait.
+
+Gitcito refuse désormais les deux sous une AppImage, signale au démarrage un
+lien `gitcito` périmé (avec une commande de la palette pour le supprimer) et
+marque un convertisseur périmé dans la boîte de dialogue des attributs avec un
+bouton **Supprimer**. Il ne voit que le dépôt que vous avez ouvert ; pour
+trouver des convertisseurs périmés ailleurs, lancez
+`git config --get-regexp 'diff\..*\.textconv'` dans chaque dépôt (et avec
+`--global`) et supprimez toute entrée sous `/tmp/.mount_`. Une machine à un seul
+utilisateur n'est pas exposée, mais ces entrées périmées restent du poids mort.
 
 ## Le trousseau du système
 
 Les jetons et les entrées du [coffre](vault.md) sont chiffrés avec le trousseau
 de votre système (le `safeStorage` d'Electron), jamais avec une clé rangée dans
-le fichier de réglages.
+le fichier de paramètres.
 
 **Rien ne touche au trousseau tant que vous ne l'avez pas dit.** Avant même que
 la boîte de dialogue d'autorisation du système ne puisse apparaître, Gitcito
@@ -59,6 +81,28 @@ réellement besoin d'être stocké.
 
 Tant qu’il est désactivé, le champ du jeton dans Intégrations le signale — *Conservé seulement jusqu’à la fermeture de Gitcito : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
 
+Un jeton que vous **supprimez** pendant que le trousseau est désactivé disparaît
+aussitôt — il n'est plus envoyé avec rien —, mais seulement **pour cette
+session** : le stockage chiffré ne peut pas être écrit tant que le trousseau est
+désactivé, et l'effacement est gardé en mémoire, jamais dans un fichier.
+Réactivez le trousseau avant de quitter et la copie enregistrée est alors
+supprimée ; quittez d'abord et l'ancien jeton revient au lancement suivant.
+D'ici là, l'avertissement reste affiché pour cette raison. Pour supprimer
+définitivement un jeton enregistré en une seule étape, videz-le pendant que le
+trousseau est activé.
+
+Un champ vide n'efface que ce que Gitcito vous a montré. Avec le trousseau
+désactivé dès le départ, les jetons enregistrés ne sont jamais déchiffrés ni
+affichés — les champs sont vides —, donc seul un jeton que vous saisissez là
+puis videz à nouveau est supprimé ; celui enregistré en dessous est toujours là
+une fois le trousseau activé.
+
+Si la fenêtre se recharge ou plante pendant que l'explication du trousseau est
+à l'écran, la question compte comme sans réponse — pas comme un non — et elle
+est reposée la prochaine fois qu'un jeton doit être stocké. Rien n'attend une
+question à laquelle plus personne ne peut répondre : les paramètres se chargent
+de nouveau normalement.
+
 ### Linux sans trousseau
 
 Sous Linux, le trousseau est un service de secrets — GNOME Keyring ou KWallet.
@@ -73,13 +117,30 @@ débrouiller, un jeton saisi alors qu'aucun trousseau ne tourne n'est conservé
 **que jusqu'à ce que vous quittiez l'application**. Le champ du jeton le dit —
 *Conservé seulement jusqu'à la fermeture de Gitcito : aucun trousseau n'est
 actif…* — sans bouton pour réessayer, car réessayer n'y changerait rien ; seul
-un trousseau le peut. Les jetons enregistrés auparavant restent lisibles — vous
+un trousseau le peut. Importer un fichier de paramètres contenant des
+identifiants le signale de la même façon avant de les importer. Les jetons enregistrés auparavant restent lisibles — vous
 n'en perdez jamais l'accès — et effacer ou remplacer l'un d'eux supprime
 toujours l'ancienne valeur du disque. Deux limites : la clé de l'IA générale
 n'est pas déplacée vers son emplacement partagé (chaque profil continue de lire
 la sienne), et le coffre enregistre toujours dans le stockage basique, car il
 n'a pas de mode limité à la session. Installez ou déverrouillez un trousseau et
 redémarrez Gitcito pour enregistrer à nouveau de nouveaux jetons.
+
+### Quand les jetons enregistrés ne peuvent pas être lus
+
+Si vous fermez l'invite du trousseau du système, que le trousseau est verrouillé
+ou que le stockage des jetons a été écrit par une autre copie de Gitcito (une
+version de développement, une version re-signée), Gitcito **ne peut pas lire
+vos jetons enregistrés — et n'y touche pas**. Paramètres → Sécurité indique
+*Gitcito n'a pas pu lire vos jetons enregistrés*, et un jeton saisi entre-temps
+n'est conservé que pour la session (le champ le dit aussi). Il n'est jamais écrit
+par-dessus le stockage qu'il n'a pas pu lire : cela remplacerait chaque jeton
+enregistré par celui que vous venez de saisir.
+
+| Bouton | Ce qu'il fait |
+|--------|--------------|
+| **Réessayer** | Relit le stockage — le système peut maintenant demander le trousseau. Dès qu'il est lisible, les jetons saisis entre-temps le rejoignent. |
+| **Créer un nouveau coffre à jetons** | Demande d'abord. Gitcito cesse d'attendre l'ancien stockage et en commence un nouveau avec les seuls jetons de cette session. L'ancien fichier reste à côté comme sauvegarde pendant 30 jours, puis il est supprimé. Pour un stockage perdu pour de bon, pas pour une invite que vous avez fermée. |
 
 ## Importer des paramètres
 
@@ -88,6 +149,64 @@ machine à l'autre. L'export par défaut ne contient **aucun jeton ni aucune cl�
 d'API**, et importer un tel fichier ne touche jamais à ceux que vous avez
 enregistrés — un jeton vide dans le fichier signifie « absent de ce fichier »,
 pas « supprimer le mien ».
+
+### Choisir ce qu'on exporte
+
+Une sauvegarde et un fichier pour un collègue ne sont pas le même fichier. Une
+sauvegarde veut tout ; un fichier pour un autre ordinateur ne devrait pas
+contenir de dossiers qui n'y existent pas ; un fichier pour l'équipe ne devrait
+contenir ni vos comptes ni vos chemins. **Exporter les paramètres** ouvre donc
+une boîte de dialogue avec les mêmes quatre parties que propose l'import (le
+tableau plus bas), chacune avec sa taille sur cet ordinateur, et n'écrit que
+celles que vous cochez. Une partie laissée de côté n'est pas du tout dans le
+fichier — l'importer plus tard laisse cette partie de l'autre machine
+exactement comme elle est.
+
+![Paramètres → Données → Exporter : « Autre ordinateur » choisi, la note verte indiquant que le fichier ne contient aucun chemin de cette machine, et le manifeste de ce qui part](../../screenshots/settings-export.webp)
+
+Trois raccourcis au-dessus des parties cochent les combinaisons habituelles.
+Modifier une case à la main allume le raccourci qui correspond, ou aucun :
+
+| Raccourci | Parties | Pour |
+|----------|-------|-----|
+| **Sauvegarde complète** | Les quatre | Restaurer cet ordinateur, ou une copie de celui-ci — le même fichier qu'écrivait Exporter avant d'avoir des parties |
+| **Autre ordinateur** | Profils et comptes, Préférences de l'app | Votre identité et vos goûts sur une nouvelle machine, sans les dossiers ni les programmes de celle-ci |
+| **Pour l'équipe** | Préférences de l'app | Un thème, des raccourcis et une configuration du graphe partagés — rien de personnel, aucun chemin |
+
+Sous les parties, une note indique si le fichier nomme des dossiers ou des
+programmes de cet ordinateur : ambre avec **Dépôts** ou **Programmes** cochés
+(l'import sur une autre machine traduit ces chemins ou écarte ceux qu'il ne
+trouve pas), verte sans eux. **Profils et comptes** sans **Programmes** écarte
+aussi le chemin des CLI d'IA, qui sont stockés avec les profils mais nomment des
+binaires de cette machine.
+
+**Les identifiants seulement avec les profils, et seulement si vous le
+demandez.** Les jetons et les clés API appartiennent aux profils, donc
+**Inclure les clés API, les jetons et les secrets du coffre-fort** n'est
+disponible qu'avec **Profils et comptes** coché ; décochez la partie et l'option
+est effacée avec elle. Avec les identifiants cochés, la boîte de dialogue
+recommande **Protéger par un mot de passe** (plus bas), et les exporter sans
+chiffrement demande une confirmation de plus.
+
+Un encadré en bas liste ce que contiendra le fichier avant que vous appuyiez sur
+**Exporter…** : combien de profils (avec ou sans identifiants), les images de
+profil, les préférences, les chemins des dépôts et des programmes, si les notes
+et wikis des dépôts et le coffre en font partie, quelles parties sont écartées,
+et si le fichier est chiffré. Ce qui voyage avec quelle partie :
+
+| Extra | Va avec | Condition |
+|-------|-----------|-----------|
+| Images de profil | Profils et comptes | Images choisies comme image |
+| Secrets du coffre | Profils et comptes | Seulement avec l'option des identifiants |
+| Notes et wikis des dépôts | Dépôts et espaces de travail | Toujours avec la partie |
+
+Limites : les parties sont l'unité entière — impossible de choisir des profils,
+des dépôts ou des préférences isolés. **Programmes** sans **Profils** emporte le
+terminal, l'éditeur et les applications par défaut, mais pas les chemins des
+CLI d'IA (ils vivent dans les profils). Le manifeste compte des entrées ; il
+n'affiche pas les chemins eux-mêmes. Et un fichier sans une partie ne peut pas
+la rendre : restaurer un fichier **Pour l'équipe** ne restaure que les
+préférences.
 
 ### Choisir ce qu'on importe
 
@@ -104,7 +223,7 @@ laisse tout tel quel.
 
 | Partie | Ce qu'elle contient |
 |------|-----------------|
-| **Profils et comptes** | Profils, identité Git, liens d'intégration, les réglages généraux d'IA et les images de profil — ainsi que les identifiants et le [coffre](vault.md), quand le fichier les contient |
+| **Profils et comptes** | Profils, identité Git, liens d'intégration, les paramètres généraux d'IA et les images de profil — ainsi que les identifiants et le [coffre](vault.md), quand le fichier les contient |
 | **Préférences de l'app** | Thème, langue, raccourcis, disposition, les couleurs du graphe et des icônes |
 | **Dépôts et espaces de travail** | Onglets, espaces de travail, favoris, surnoms, images d'onglet, le profil utilisé par chaque dépôt, dossiers analysés, ainsi que les notes et wikis de chaque dépôt |
 | **Programmes de cet ordinateur** | Terminal, éditeur externe, applications par défaut et le chemin des CLI d'IA |
@@ -129,7 +248,8 @@ premier profil de chaque installation. Quand aucun id ne correspond, c'est le
 nom qui compte (sans tenir compte de la casse ni des espaces autour), et le
 profil garde **l'id de cet ordinateur** : les dépôts qui lui sont liés, le
 profil actif, ses identifiants enregistrés et son image restent rattachés. Le
-profil actif ne change pas.
+profil actif ne change pas, et l'**IA générale** non plus : le moteur et le
+modèle avec lesquels cet ordinateur répond restent les siens.
 
 **Tout remplacer** est toujours là, pour une sauvegarde que vous voulez
 retrouver exactement telle qu'elle était : seuls les profils du fichier
@@ -137,7 +257,7 @@ restent, et ceux que seul cet ordinateur possède sont listés barrés comme
 **Supprimé**. Appuyer sur **Importer** demande alors une nouvelle fois, en les
 nommant — ils partent avec leurs identifiants enregistrés et leur image, et
 c'est irréversible. Avec **Tout remplacer**, le profil actif du fichier devient
-le profil actif.
+le profil actif, et l'IA générale du fichier remplace celle de cet ordinateur.
 
 Limites : la correspondance se fait uniquement par id ou par nom exact — un
 profil renommé d'un côté compte comme nouveau, et vous vous retrouvez avec les
@@ -231,16 +351,296 @@ moment-là laisse la boîte de dialogue telle quelle.
 indisponible, les anciens jetons resteraient dans le stockage chiffré et
 reviendraient au prochain lancement ; Gitcito refuse donc : il le dit, et rien
 n'est importé. Même chose tant que les jetons enregistrés ne peuvent pas être
-lus : ils reviendraient dès qu'ils pourraient l'être. **Ajouter aux miens**
+lus (voir plus haut) : ils reviendraient dès qu'ils pourraient l'être. **Ajouter aux miens**
 fonctionne toujours, en gardant les jetons du fichier pour la session.
 
 **La limite :** les identifiants appartiennent à un profil. Un profil que
 l'import supprime emporte ses jetons enregistrés, quel que soit votre choix.
 
+### Protéger un export par un mot de passe
+
+Un export avec les identifiants cochés vaut les jetons eux-mêmes pour quiconque
+trouve le fichier — un dossier synchronisé, une clé USB oubliée, une pièce
+jointe. **Protéger par un mot de passe**, dans la boîte de dialogue d'export,
+chiffre le fichier avec le même chiffrement que le [partage
+sécurisé](secure-share.md) (une clé dérivée par scrypt et AES-256-GCM), si bien
+que rien de son contenu — pas même le fait qu'il contienne des identifiants — ne
+peut être lu sans le mot de passe.
+
+C'est facultatif, avec ou sans la case des identifiants, et le mot de passe n'a
+pas de longueur minimale. Vous le saisissez deux fois et cochez que vous
+comprenez qu'il ne peut pas être récupéré ; l'import du fichier le demande —
+dans une boîte de dialogue des Paramètres, dans l'étape de bienvenue au premier
+lancement — et un mot de passe erroné est redemandé.
+
+![Paramètres → Données → Exporter : un fichier protégé par un mot de passe, l'avertissement d'absence de récupération accepté](../../screenshots/settings-export-password.webp)
+
+| | Sans mot de passe | Avec mot de passe |
+|---|---|---|
+| **Qui peut le lire** | Quiconque a le fichier | Seulement qui a le mot de passe |
+| **Un octet modifié** | Lu tel quel | Refusé, comme un mauvais mot de passe |
+| **S'ouvre dans** | N'importe quelle version | Les versions qui connaissent le format chiffré |
+
+**Il n'y a pas de récupération.** Le mot de passe n'est conservé nulle part — ni
+dans le fichier, ni sur cette machine — et il n'y a aucun serveur à qui le
+demander. Oubliez-le et le fichier est perdu ; exportez de nouveau depuis une
+machine qui a encore les paramètres.
+
+Limites : une version plus ancienne ne peut pas ouvrir un export chiffré, et
+elle ne le sait pas non plus — elle annonce les paramètres comme importés et ne
+change rien. Importez un fichier protégé avec une version qui demande son mot de
+passe. Un mot de passe court reste faible face à quelqu'un qui a le fichier et
+le temps de deviner ; la clé scrypt rend chaque essai lent, pas impossible. Le
+mot de passe protège le fichier, pas l'application en cours d'exécution : les
+identifiants sont déchiffrés en mémoire pendant qu'ils sont rassemblés pour
+l'export, comme ils l'ont toujours été.
+
+## Le fichier de paramètres
+
+Le fichier de paramètres et le stockage chiffré des jetons sont écrits d'un
+bloc : dans un nouveau fichier à côté, lisible par son seul propriétaire, puis
+substitué, si bien qu'un plantage ou deux enregistrements simultanés ne laissent
+jamais un demi-fichier. Si le fichier de paramètres est un lien symbolique vers
+ailleurs (un dépôt de dotfiles), l'écriture va vers la cible du lien et le lien
+reste. Gitcito ne remplace jamais le lien. Un lien qui pointe vers un fichier
+qui n'existe pas encore est écrit à travers, ce qui crée ce fichier — tant que
+son dossier existe. Quand le dossier a disparu lui aussi, l'enregistrement
+échoue, avec un seul message qui le dit : le lien et ce vers quoi il pointe
+restent intacts, et les modifications faites entre-temps ne durent que jusqu'à
+la fermeture de Gitcito. Restaurez le dossier, ou faites pointer le lien vers un
+endroit qui existe, et l'enregistrement suivant passe.
+
+Les jetons en clair qu'une ancienne version a laissés dans le fichier de
+paramètres ne sont jamais perdus lors d'un enregistrement : ils restent dans le
+fichier jusqu'à ce que Gitcito les charge dans le stockage chiffré (ouvrir les
+Paramètres le fait), sauf si vous en effacez un vous-même.
+
+Seules deux choses l'écrivent : un enregistrement de vos paramètres, et
+Gitcito qui les charge (au démarrage, ou à l'ouverture des Paramètres) — c'est
+là qu'un ancien jeton en clair passe dans le stockage chiffré, ou que l'adresse
+d'un serveur contenant un mot de passe est nettoyée. Une consultation que
+personne n'a demandée — un fetch qui résout son jeton, un appel d'IA qui cherche
+sa clé, une image de profil — ne fait que lire, et ne peut donc jamais tomber
+par-dessus un enregistrement. Un enregistrement est aussi refusé tant que les
+paramètres n'ont pas été chargés au moins une fois : avant cela, l'application
+ne détient que les valeurs par défaut.
+
+**Le coût sur une ancienne installation** qui a encore des jetons en clair dans
+son fichier de paramètres : tant que les Paramètres n'ont pas été ouverts une
+fois (ou que l'application n'a pas redémarré et ne les a pas chargés), chaque
+consultation qui a besoin d'un jeton déchiffre de nouveau le stockage, et les
+images de profil qui ont besoin d'un jeton enregistré attendent. Une
+consultation ne déplace rien, donc un jeton que vous effacez entre-temps reste
+effacé.
+
+Un fichier qui existe mais ne peut pas être analysé (une modification à la main
+qui a mal tourné, un disque endommagé) n'est **jamais** remplacé par les valeurs
+par défaut : Gitcito indique que le fichier est endommagé et ne va pas plus loin
+— aucun raccourci ni commande de menu ne peut enregistrer par-dessus depuis cet
+écran.
+
+![L'écran de démarrage pour un fichier de paramètres endommagé, avec Réessayer et Mettre le fichier endommagé de côté et repartir de zéro](../../screenshots/settings-damaged.webp)
+
+Vous pouvez corriger `gitcito-settings.json` dans son dossier de données et
+appuyer sur **Réessayer**, ou appuyer sur **Mettre le fichier endommagé de côté
+et repartir de zéro** : le fichier est renommé en
+`gitcito-settings.json.corrupt-<date>` (jamais supprimé, vous pouvez donc
+encore en récupérer quelque chose), une copie du stockage chiffré des jetons est
+gardée à côté, et Gitcito démarre comme au premier lancement, avec une note
+indiquant où est passé le fichier. Pour un fichier de paramètres en lien
+symbolique, c'est la cible du lien qui est renommée, si bien que la copie
+endommagée reste dans vos dotfiles, à côté du nouveau fichier de paramètres que
+le premier enregistrement écrit alors à travers le lien. La copie est faite en
+premier : si elle ne peut pas être écrite, rien n'est déplacé, et l'écran le dit
+et montre le dossier de données à vérifier, car repartir de zéro sans la copie
+laisserait le premier jeton enregistré supprimer les jetons des anciens profils.
+Corrigez ce qui empêche d'écrire dans le dossier (permissions, disque plein) et
+appuyez sur **Réessayer**.
+
+Si le fichier s'abîme pendant que Gitcito tourne (modifié à la main en
+dessous), les enregistrements s'arrêtent et Gitcito le dit une fois : les
+paramètres ne peuvent plus être enregistrés jusqu'au redémarrage, et les
+modifications faites entre-temps sont perdues.
+
+Un fichier présent mais qu'on ne peut pas *lire* pendant un instant — un autre
+programme, comme un antivirus, le tient ouvert — est réessayé pendant environ
+deux secondes. S'il échoue encore, ou si le chargement échoue pour une autre
+raison, Gitcito indique qu'il n'a pas pu démarrer, que le fichier n'a pas été
+modifié, et propose **Réessayer** ; il ne dit pas que le fichier est endommagé.
+
+### Limites connues
+
+Elles demandent des conditions inhabituelles, et sont listées pour que personne
+n'en soit surpris :
+
+- **Une très ancienne installation avec des jetons encore dans le fichier de
+  paramètres.** Si le trousseau est désactivé après le déverrouillage des jetons
+  enregistrés, ou refusé alors qu'une clé d'IA est encore stockée dans l'ancien
+  format en clair, cette copie en clair peut être perdue au prochain
+  enregistrement et le jeton disparaît après un redémarrage. Ouvrez les
+  Paramètres une fois avec le trousseau activé après la mise à jour depuis une
+  telle version, et les jetons passent pour de bon dans le stockage chiffré.
+- **Un enregistrement et un rechargement raté qui se croisent dans la même
+  fenêtre.** Un jeton saisi dans un enregistrement qui double un rechargement
+  qui échoue ensuite ne peut pas être effacé depuis cette fenêtre tant que les
+  Paramètres ne se rechargent pas ; rouvrez les Paramètres et effacez-le.
+- **Un fichier de paramètres en lien symbolique dont le dossier manque.** Le
+  stockage des jetons est écrit avant que le fichier de paramètres échoue, si
+  bien que les deux sont désynchronisés jusqu'au retour du dossier.
+  Restaurez-le (montez le disque, clonez les dotfiles) et enregistrez de
+  nouveau.
+
+## Le jeton d'un profil pendant que Git s'exécute
+
+Quand un [profil](profiles.md) authentifie un clone, un fetch, un pull ou un
+push avec son jeton, le jeton ne va dans aucun des endroits où un autre
+programme pourrait le lire : ni dans `.git/config`, ni sur la ligne de commande
+(tout utilisateur local peut lire la liste des processus), ni dans
+l'**environnement** de la commande git — dont héritent chaque hook, filtre et
+processus LFS que git lance, ainsi que chaque paquet npm qu'exécute un script
+husky ou lefthook.
+
+À la place, pour chaque opération, Gitcito ouvre un point d'accès privé à lui —
+un socket dans un dossier où seul votre utilisateur peut entrer (un tube nommé
+au nom aléatoire sous Windows) — et enregistre un assistant d'identification
+pour ce seul serveur. Quand git demande un identifiant, l'assistant se connecte,
+prouve qu'il appartient à cette opération avec un code aléatoire créé pour elle
+seule, indique sur quel hôte et quel dépôt git l'interroge, et reçoit
+l'identifiant. Le point d'accès répond à chaque demande de l'opération — git
+peut demander plusieurs fois, pour LFS, après une redirection, pour chaque
+processus qu'il lance — et il est fermé et supprimé quand git se termine. Un
+hook qui affiche son environnement trouve le code, pas le jeton.
+
+Ce qu'il ne peut toujours pas faire :
+
+- **Un hook peut encore demander, pendant que l'opération tourne.** Ce code est
+  dans l'environnement de git, parce que l'assistant est un programme que git
+  lance et que git donne à chaque programme qu'il lance le même environnement.
+  Un hook écrit pour parler le protocole de l'assistant peut utiliser le code
+  pour demander l'identifiant jusqu'à ce que git se termine — c'est exactement
+  ainsi que le hook `pre-push` de git-lfs en obtient un. C'est une ouverture bien
+  plus petite qu'un jeton posé dans une variable — rien ne le lit par accident,
+  un dump ou un rapport de plantage ne montre qu'un code inutile une fois git
+  terminé —, mais c'est une ouverture.
+- **Il ne répond que pour le serveur pour lequel il a été ouvert.** Le point
+  d'accès refuse tout autre hôte, une requête `http` en clair, un chemin hors de
+  la base du serveur, et un serveur imbriqué sous celle-ci (un Data Center sur
+  `/bitbucket` à côté d'un GitLab à la racine) — même avec le bon code. Un push
+  vers plusieurs URL reçoit un point d'accès par serveur, chacun ne détenant que
+  l'identifiant de ce serveur. Sous un serveur qui en contient un autre, un
+  chemin que le proxy du serveur imbriqué pourrait router vers lui-même est
+  refusé aussi : tout `;` dedans (Tomcat ignore les `;params`), un segment qui se
+  termine par un point, et le nom de la base imbriquée avec une autre casse ou
+  comme préfixe (`/Bitbucket/`, `/bitbucketx/`) — si bien qu'un groupe du serveur
+  extérieur dont le nom commence par le chemin du serveur imbriqué n'obtient pas
+  son jeton non plus.
+- **Une exclusion ne survit pas à une redirection côté serveur.** La
+  vérification porte sur le chemin que git demande. Si le serveur extérieur
+  redirige lui-même une requête vers le chemin du serveur imbriqué, ou si un
+  proxy la réécrit là après que git a envoyé son identifiant, aucun client ne
+  peut le voir.
+- **Un identifiant hérité via `git -c` est mis de côté.** Un assistant
+  d'identification (ou un `include` qui pourrait en ajouter un) transmis dans
+  `GIT_CONFIG_PARAMETERS` — l'application lancée depuis un alias git, ou par un
+  autre git — est retiré pour l'opération : on ne lui propose jamais le jeton du
+  profil à stocker, et on ne l'interroge pas au nom de personne. Toutes les autres
+  options `-c` héritées sont conservées.
+- **L'adresse d'un serveur doit être écrite comme git la lit.** Gitcito nomme le
+  serveur selon les règles d'URL standard, git selon les siennes : un nom
+  internationalisé (`bücher.example`), une forme numérique abrégée (`127.1`,
+  `0x7f.0.0.1`), une adresse IPv6 compressée ou mappée, ou un caractère encodé
+  dans l'hôte désignent un serveur différent pour chacun. Avec un profil en jeu,
+  une telle adresse est refusée avec un message au lieu d'être laissée à
+  l'identification propre de la machine. La casse et un port par défaut
+  explicite (`:443`) ne posent pas de problème.
+- **Git antérieur à 2.26** ne faisait correspondre une entrée d'identifiants
+  qu'à l'adresse exacte, pas à tout ce qui se trouve sous la base d'un serveur.
+  En interrogeant au nom de personne, l'application désactive alors les
+  assistants pour tout l'hôte le temps de cette seule commande ; se connecter
+  avec un jeton exige de toute façon git 2.31.
+- **N'exécutez pas de hooks auxquels vous ne faites pas confiance**, même avec
+  un profil connecté. Un dépôt que vous venez de cloner peut livrer des hooks via
+  des outils comme husky, qui les installent lors de `npm install` ; git exécute
+  ce qui se trouve dans `.git/hooks`, depuis Gitcito comme depuis un terminal, et
+  un hook peut faire bien pire que lire un jeton.
+- **Réduisez la portée du jeton.** Un jeton qui ne peut écrire que dans les
+  dépôts sur lesquels vous travaillez vaut bien moins pour quiconque s'en empare.
+- **Les remotes SSH ne sont pas concernés** — aucun jeton n'intervient ; c'est
+  l'[agent SSH](ssh-keys.md) qui répond.
+
 ## Partager sans risque
 
-Le [partage sécurisé](secure-share.md) exporte les réglages, les entrées du
+Le [partage sécurisé](secure-share.md) exporte les paramètres, les entrées du
 coffre ou des espaces de travail entiers sous forme de **bundle chiffré** — les
 secrets ne sont inclus que si vous cochez la case.
+
+## Signaler un problème
+
+**Signaler un problème** sur une erreur ouvre une issue GitHub pré-remplie — et
+l'ouvrir envoie déjà le texte à GitHub, avant que vous choisissiez de la
+publier. Le message est donc nettoyé d'abord : un identifiant écrit dans une
+URL, les jetons, votre dossier personnel (et avec lui votre nom d'utilisateur),
+les serveurs privés et les chemins de dépôts, le nom du profil auquel un dépôt
+est lié, les adresses e-mail et IP sont remplacés. Les hôtes publics comme
+`github.com` restent, de même que les noms de fichiers et le message de git
+lui-même.
+
+**La limite :** un nom de serveur isolé dans une phrase est reconnu à sa forme
+— avec des points, en minuscules. Un hôte d'un seul mot (`gitserver`) n'est
+détecté que dans les messages écrits par Gitcito lui-même, et un serveur sous un
+domaine de premier niveau qui s'écrit comme une extension de fichier (`.sh`,
+`.md`) est gardé comme nom de fichier. Relisez l'issue avant de la publier
+malgré tout : le nettoyage reconnaît des formes connues, pas tout ce qui est
+privé.
+
+## Ce qui reste sur le disque
+
+Le fichier de paramètres, le journal des opérations, le cache des avatars et le
+stockage chiffré des jetons ne sont lisibles que par votre compte (sous macOS et
+Linux). L'adresse d'un serveur enregistrée avec un `user:password@` ou un
+`?token=` — depuis un import ou une ancienne version — perd cette partie
+lorsqu'elle est lue, importée ou enregistrée. Le cache des avatars de commits ne
+stocke aucune adresse e-mail, seulement des hachages salés propres à chaque
+installation.
+
+Chacun de ces fichiers est écrit d'un bloc : dans un nouveau fichier à côté,
+puis substitué, si bien qu'un plantage ou deux enregistrements simultanés ne
+laissent jamais un demi-fichier — que Gitcito devrait sinon traiter comme
+illisible. Une sauvegarde du stockage des jetons n'est supprimée plus tôt que
+lorsque chaque jeton qu'elle contient est aussi dans le stockage actuel ; toute
+autre sauvegarde est gardée 30 jours.
+
+## Paquets Linux : le sandbox et AppArmor
+
+Le sandbox de Chromium a besoin des espaces de noms utilisateur non privilégiés.
+Ubuntu 24.04 et suivants les refusent à tout programme sans profil AppArmor qui
+les autorise, et les deux paquets Linux gèrent cela différemment :
+
+| Paquet | Ce qui se passe |
+|---------|--------------|
+| `.deb` | Installe `/etc/apparmor.d/gitcito`, un profil pour `/opt/GitHuttBr/gitcito` qui autorise les espaces de noms utilisateur. L'application tourne dans le sandbox. |
+| AppImage | N'a pas de profil. Son lanceur essaie `unshare -Ur true`, et en cas d'échec démarre l'application avec `--no-sandbox` — sous Ubuntu 24.04+, c'est à chaque lancement. Gitcito écrit un avertissement dans sa sortie console quand cela arrive. |
+
+Pour exécuter l'AppImage dans le sandbox, installez plutôt le `.deb`, ou donnez
+à l'AppImage son propre profil AppArmor qui autorise `userns` (ou, pour toute la
+machine, `sysctl kernel.apparmor_restrict_unprivileged_userns=0`, qui désactive
+la restriction pour tout).
+
+**La limite du profil du `.deb`.** Il est `flags=(unconfined)` avec `userns`
+autorisé, et il s'attache au chemin de l'exécutable. Le même exécutable tourne
+aussi comme simple Node lorsqu'il est lancé avec `ELECTRON_RUN_AS_NODE=1` —
+c'est ainsi que fonctionnent la commande `gitcito`, le convertisseur de diff
+fourni et l'assistant d'identification de Gitcito, si bien que cet interrupteur
+ne peut pas être désactivé sans les casser. Ensemble, cela signifie que
+n'importe quel programme local peut utiliser l'exécutable de Gitcito comme un
+interpréteur Node autorisé à créer des espaces de noms utilisateur — le même
+genre de brèche que les contournements connus de la restriction d'Ubuntu via
+d'autres programmes dotés d'un profil. Cela ne donne à personne plus que les
+droits de son propre compte ; cela affaiblit une couche de durcissement du noyau
+qu'Ubuntu ajoute par-dessus. AppArmor ne sait pas distinguer les deux modes d'un
+même exécutable, donc un profil plus étroit n'est pas possible tant que la CLI le
+partage ; un binaire auxiliaire séparé pour la CLI est sur la feuille de route.
+Les administrateurs qui préfèrent s'en passer peuvent ajouter une règle de refus
+dans `/etc/apparmor.d/local/gitcito`, au prix du sandbox.
 
 **Voir aussi :** [Coffre](vault.md) · [Partage sécurisé](secure-share.md)

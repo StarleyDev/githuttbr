@@ -10,7 +10,7 @@ keywords: commit valider message compositeur composer conventional gitmoji ticke
 
 ## Styles de message
 
-Choisissez-en un dans les réglages ; le compositeur s'y adapte.
+Choisissez-en un dans les paramètres ; le compositeur s'y adapte.
 
 | Style | Ce que ça donne |
 |---|---|

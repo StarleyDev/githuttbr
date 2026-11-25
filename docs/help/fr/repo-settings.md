@@ -1,17 +1,17 @@
 ---
-title: Réglages par dépôt
+title: Paramètres par dépôt
 category: Outils de l'espace de travail
 order: 94
 summary: Branches protégées, informations, statistiques d'usage, historique et journal des opérations.
-keywords: réglages du dépôt repo settings branches protégées protected branches analytics journal des opérations operation log historique history info roue dentée gear image de l’onglet tab image icône logo
+keywords: paramètres du dépôt réglages du dépôt repo settings branches protégées protected branches analytics journal des opérations operation log historique history info roue dentée gear image de l’onglet tab image icône logo
 ---
 
-# Réglages par dépôt
+# Paramètres par dépôt
 
-La roue dentée à côté des outils de la barre d'outils ouvre les réglages qui
+La roue dentée à côté des outils de la barre d'outils ouvre les paramètres qui
 appartiennent à **ce** dépôt, pas à l'application.
 
-![Les réglages par dépôt](../../screenshots/repo-settings.webp)
+![Les paramètres par dépôt](../../screenshots/repo-settings.webp)
 
 | Onglet | Ce qu'il contient |
 |---|---|
@@ -61,9 +61,9 @@ Les limites à connaître :
   un onglet vide serait impossible à identifier.
 - Si le chemin est **cassé** — fichier supprimé, renommé, qui n’est pas une
   image ou trop lourd —, l’onglet revient discrètement au nom, et cet onglet de
-  réglages affiche un avertissement sous le chemin. Rien d’autre ne se plaint.
+  paramètres affiche un avertissement sous le chemin. Rien d’autre ne se plaint.
 - L’image est lue une fois par session. Si vous remplacez le fichier sous le
-  même nom, rouvrez cet onglet de réglages pour la recharger.
+  même nom, rouvrez cet onglet de paramètres pour la recharger.
 - Le réglage vit dans les paramètres de Gitcito sur cette machine, pas dans le
   dépôt : vos coéquipiers n’en héritent pas.
 

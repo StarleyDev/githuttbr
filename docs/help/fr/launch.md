@@ -43,7 +43,7 @@ vous choisissez dans le terminal intégré.
 Une barre d'outils flottante vous donne **pause / reprise, redémarrage, arrêt**,
 et permet de passer d'une session en cours à l'autre.
 
-Activez-le dans **Réglages → Général → Activer launch.json**. Le bouton
+Activez-le dans **Paramètres → Général → Activer launch.json**. Le bouton
 **LANCER** apparaît à côté des onglets Git / Fichiers.
 
 Un membre d’un compound s’affiche comme *compound › membre*, et le redémarrer

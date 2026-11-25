@@ -10,7 +10,7 @@ keywords: branche branch branches créer create extraire checkout renommer renam
 
 Une seule barre latérale, réordonnable et cherchable, contient les **branches,
 les distants, les étiquettes, les remisages, les arbres de travail et les
-sous-modules**. Chaque section peut être masquée ou déplacée (Réglages →
+sous-modules**. Chaque section peut être masquée ou déplacée (Paramètres →
 Disposition), et le champ de filtre s'applique à toutes.
 Les sections et dossiers laissés ouverts ou repliés sont mémorisés par dépôt,
 même après un redémarrage.

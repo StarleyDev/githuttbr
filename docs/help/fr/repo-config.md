@@ -167,6 +167,6 @@ l'onglet Config, avec la raison. Seule exception : un JSON invalide ou une
 - **Il ne peut rien affaiblir.** Toutes les protections de Gitcito restent les
   vôtres.
 
-**Voir aussi :** [Réglages par dépôt](repo-settings.md) ·
+**Voir aussi :** [Paramètres par dépôt](repo-settings.md) ·
 [La ligne de commande](cli.md) · [Committer](committing.md) ·
 [Hooks et .gitignore](hooks.md)

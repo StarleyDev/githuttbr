@@ -12,7 +12,7 @@ Chaque fonction d'IA est **optionnelle** et désactivée tant que vous n'avez pa
 configuré de fournisseur. Rien n'est envoyé nulle part tant que vous ne demandez
 pas quelque chose de précis.
 
-![Les réglages d'IA](../../screenshots/settings-ai.webp)
+![Les paramètres d'IA](../../screenshots/settings-ai.webp)
 
 ## Une IA pour tous les profils
 
@@ -165,7 +165,7 @@ par les règles de masquage des secrets non plus.
   nom : un modèle de chat au nom inhabituel peut être écarté. Saisissez-le
   vous-même.
 - Un compte CLI ne peut pas rapporter la consommation de jetons si la CLI ne le
-  fait pas ; les chiffres d'usage et de coût dans les réglages sous-estimeront
+  fait pas ; les chiffres d'usage et de coût dans les paramètres sous-estimeront
   donc ces appels.
 - Les réponses via CLI sont plus lentes qu'un appel direct à l'API : le binaire
   démarre une session entière à chaque requête.

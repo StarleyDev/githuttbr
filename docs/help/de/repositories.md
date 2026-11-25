@@ -4,6 +4,7 @@ category: Sync & viele Repos
 order: 52
 summary: Jedes Repository, das Gitcito kennt, offen oder nicht, in einer durchsuchbaren Liste.
 keywords: repositories registry alle repos favoriten markiert zuletzt scan ordner durchsuchen finden öffnen verwalten repository-verwaltung farbe abschnitt tint hervorheben workspaces aus ordnern baum erzeugen massenimport favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Repositories
@@ -29,7 +30,7 @@ einer einzigen Liste.
 |---|---|
 | Offene Repositories | Jeder Tab im aktiven Workspace gerade jetzt |
 | Favoriten | Markierte Repositories, über jeden Workspace hinweg |
-| Zuletzt geöffnet | Alles, was du geöffnet hast, das Neueste zuerst. **Ohne Obergrenze**, anders als die 8-Einträge-Liste im Launcher |
+| Zuletzt geöffnete Repositories | Alles, was du geöffnet hast, das Neueste zuerst. **Ohne Obergrenze**, anders als die 8-Einträge-Liste im Launcher |
 | Einer pro gespeichertem Workspace | Die Tabs dieses Workspace, damit du in einen anderen springen kannst, ohne zuerst dorthin zu wechseln |
 | Alle Repositories | Jedes Repository, das die Registry kennt, offen oder nicht |
 
@@ -89,9 +90,10 @@ Diese Seite zu öffnen indexiert außerdem, was du gerade **in einem Tab offen**
 hast. So bekommen Repositories, die beim Start wiederhergestellt werden, eine
 Zeile, ohne dass du sie neu öffnen musst. Es betrifft nur offene Tabs, und es
 passiert beim ersten Besuch jeder Sitzung, nicht ein für alle Mal. Ein
-Repository, das du **Forget** hast, bleibt vergessen, bis du es wieder öffnest.
+Repository, das du **vergessen** hast, bleibt vergessen, bis du es wieder öffnest.
 
-Scan-Ordner werden in den Einstellungen konfiguriert:
+Scan-Ordner werden unter Einstellungen → Daten konfiguriert, oder im Dialog
+**Gescannte Repositories** weiter unten:
 
 - **Tiefe** ist, wie viele Verzeichnisebenen der Scan unter der Wurzel
   hinabsteigt (Standard 3, gedeckelt bei 10).
@@ -99,9 +101,24 @@ Scan-Ordner werden in den Einstellungen konfiguriert:
   ein Submodul in einem Repo wird nicht als eigene Zeile indexiert.
 - Er betritt nie Punkt-Verzeichnisse und überspringt `node_modules` und
   ähnliche Dependency-Ordner.
+- Er **folgt per Symlink verknüpften Ordnern** und durchläuft jeden echten
+  Ordner nur einmal — ein Link zurück nach oben im Baum kann keine Schleife
+  bilden, und zwei Links auf ein Repository führen es nur einmal auf. Ein über
+  einen Link gefundenes Repository wird unter seinem **echten Pfad** geführt,
+  ist also derselbe Eintrag (und derselbe Tab) wie beim Öffnen über die Auswahl.
 - Er **liest nur Ordnernamen**: ein `.git`-Verzeichnis zu finden macht etwas
   hier zum Repository. Name, Owner und Branch kommen aus Dateien in `.git`
   (`HEAD`, die Config), nie indem `git` ausgeführt wird.
+- Er läuft, **wenn du darum bittest**: beim Hinzufügen eines Ordners, mit
+  **Jetzt scannen** oder beim Öffnen des Dialogs Gescannte Repositories. Ein
+  Repository, das später in einen Scan-Ordner geklont wird, erscheint beim
+  nächsten dieser Anlässe, oder sobald du es öffnest.
+- Das Ergebnis nennt **jedes gefundene Repository und wie viele davon neu
+  waren**. Ein zweiter Scan derselben Ordner meldet sie alle erneut, mit
+  „0 neu“ — sie standen schon auf dieser Seite.
+- Ein Ordner kann **nur einmal** hinzugefügt werden. Einen bereits gelisteten
+  zu wählen sagt das und ändert nichts; ein abschließender Schrägstrich oder
+  unter Windows eine andere Groß-/Kleinschreibung ist trotzdem derselbe Ordner.
 
 ## Gescannte Repositories
 
@@ -110,7 +127,8 @@ kennt. Wenn du nur etwas aus deinen Projektordnern **öffnen** willst, hat das
 Fenster **Repository öffnen** — und der Willkommensbildschirm — einen kürzeren
 Weg: **Gescannte Repositories**.
 
-![Der Dialog Gescannte Repositories: oben die eingeklappten gescannten Ordner, ein Filter, dann die Repositories des Ordners mit Kontrollkästchen und Branch, zwei angehakt und die Schaltfläche Öffnen, die sie zählt](../../screenshots/scanned-repos.webp)
+![Der Dialog Gescannte Repositories: oben die eingeklappten gescannten Ordner, ein Filter,
+ dann die Repositories des Ordners mit Kontrollkästchen und Branch, zwei angehakt und die Schaltfläche Öffnen, die sie zählt](../../screenshots/scanned-repos.webp)
 
 - Die Repositories sind **nach gescanntem Ordner gruppiert**, nach Namen
   sortiert, mit einem Filter für Name oder Pfad.
@@ -154,11 +172,37 @@ nur diese Seite hat:
 | Aktion | Was sie tut |
 |---|---|
 | Stern / Stern weg | Fügt das Repository zu Favoriten hinzu oder nimmt es heraus |
-| Locate… | Zeigt einen verschobenen oder umbenannten Ordner neu. Alias, Profilbindung und Stern bleiben. Hatte das Ziel schon eigene Einstellungen, **gewinnt das Ziel** |
-| Forget | Entfernt den Eintrag aus dieser Liste. **Rührt den Ordner auf der Platte nie an** |
+| Orten… | Zeigt einen verschobenen oder umbenannten Ordner neu. Alias, Profilbindung, Stern und alle Tabs, die ihn zeigen, bleiben erhalten. Hatte das Ziel schon eigene Einstellungen, **gewinnt das Ziel** |
+| Vergessen | Entfernt den Eintrag aus dieser Liste. **Rührt den Ordner auf der Platte nie an** |
 
 Ein Repository, dessen Ordner nicht mehr existiert, steht als **fehlt** da,
-mit **Locate…** und **Forget** inline statt der üblichen Zeilenaktionen.
+mit **Orten…** und **Vergessen** inline statt der üblichen Zeilenaktionen.
+
+### Wenn der Ordner eines offenen Tabs fehlt
+
+Tabs werden beim Start aus den Pfaden wiederhergestellt, die sie beim Beenden
+hatten. Wurde ein Ordner seitdem verschoben, gelöscht oder liegt er auf einem
+Laufwerk, das nicht angeschlossen ist, schlug früher jeder Lesezugriff von
+Gitcito darauf mit einer eigenen Fehlermeldung fehl. Jetzt wird zuerst der
+Ordner geprüft, und der Tab zeigt **Repository-Ordner nicht gefunden** mit dem
+gespeicherten Pfad statt des üblichen Arbeitsbereichs:
+
+![Ein wiederhergestellter Tab, dessen Ordner fehlt: die Karte
+Repository-Ordner nicht gefunden mit dem gespeicherten Pfad und den Schaltflächen Orten… und Erneut versuchen](../../screenshots/missing-repository.webp)
+
+| Schaltfläche | Was sie tut |
+|---|---|
+| Orten… | Wähle den neuen Ort des Ordners. Er muss ein Git-Repository sein; Tab, Alias, Profilbindung und Stern ziehen dorthin um |
+| Erneut versuchen | Prüft denselben Pfad noch einmal — für ein Laufwerk oder eine Netzwerkfreigabe, die wieder da ist |
+
+Der Tab **bleibt**, bis du ihn neu verbindest oder selbst schließt: Ein
+fehlendes externes Laufwerk ist meist vorübergehend, und den Tab dafür zu
+verlieren wäre schlimmer als ein stiller Platzhalter. Solange der Ordner fehlt,
+überspringt ihn der automatische Hintergrund-Fetch.
+
+Grenzen: Gitcito sucht nicht, wohin ein Ordner verschwunden ist — Orten… fragt
+dich. Ein Ordner, der existiert, aber kein Repository mehr ist, zeigt
+stattdessen die übliche Meldung **Kein Git-Repository**.
 
 Der Stern ist ein Favoriten-Schalter, keine Mehrfachauswahl. Stapelarbeit läuft
 hier pro Abschnitt, nicht pro Auswahl. Siehe unten.
@@ -243,8 +287,8 @@ Das Caret neben **pull** wählt, was Pullen bedeutet:
 
 | Modus | Was er tut |
 |---|---|
-| Pull (fast-forward wenn möglich) | Gits Vorgabe. Fast-forward, wenn es geht, Merge, wenn nicht |
-| Pull (nur fast-forward) | Lehnt ab, statt einen Merge-Commit zu erzeugen |
+| Pull (Fast-Forward wenn möglich) | Gits Vorgabe. Fast-forward, wenn es geht, Merge, wenn nicht |
+| Pull (nur Fast-Forward) | Lehnt ab, statt einen Merge-Commit zu erzeugen |
 | Pull (rebase) | Spielt deine lokalen Commits auf dem Upstream neu auf |
 
 Diese Wahl ist eine **einzige globale Vorgabe**, keine pro Abschnitt: sie
@@ -294,7 +338,7 @@ kein Dauerpreis.
 - **Alle schließen öffnet Tabs einzeln wieder, bis zu zehn.** Mehr als zehn
   Repositories auf einmal zu schließen heißt, die ältesten lassen sich vom
   Stapel nicht wieder öffnen. Sie stehen aber alle noch unter **Zuletzt
-  geöffnet**.
+  geöffnete Repositories**.
 - **Pull filtert nicht danach, was hinterherhinkt.** Es pullt jedes
   Repository im Abschnitt, weil zu wissen, welche hinterherhinken, zuerst
   einen Fetch bedeuten würde. Ein aktuelles Repository zu pullen ist ein
@@ -306,8 +350,9 @@ kein Dauerpreis.
 - **Abschnittsfarben sind kosmetisch.** Sie filtern, sortieren, gruppieren
   oder synchronisieren nirgendwo, und eine Farbe auf dem Abschnitt eines
   Workspace ist nicht die Farbe dieses Workspace.
-- **Forget entfernt den Eintrag aus der Liste, nie von der Platte.** Liegt
-  der Ordner noch da, bringt ein Scan derselben Wurzel (oder erneutes Öffnen)
-  ihn sofort zurück.
+- **Vergessen entfernt den Eintrag aus der Liste, nie von der Platte.** Und
+  es hält an: Spätere Scans seines Ordners überspringen ihn, auch der, den der
+  Dialog Gescannte Repositories beim Öffnen ausführt. Erst das erneute Öffnen
+  des Repositorys bringt ihn zurück.
 
 **Siehe auch:** [Missionskontrolle](mission-control.md) · [Workspaces, Tabs & Gruppen](workspaces.md)

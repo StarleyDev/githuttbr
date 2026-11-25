@@ -22,7 +22,7 @@ keywords: secure share export import bundle encrypted workspace transfer machine
 
 | セクション | 中身 |
 |---|---|
-| **金庫** | グローバルな金庫のシークレット（リポジトリごとの金庫エントリは動きません） |
+| **保管庫** | グローバルな保管庫のシークレット（リポジトリごとの保管庫エントリは動きません） |
 | **リポジトリファイル** | 未追跡の設定ファイルとシークレットファイル。インポート時に同じ相対パスへ再作成されます |
 | **ワークスペース構成** | タブレイアウトそのもの — グループ、色、並び順。リポジトリはリモート URL で参照され、あなたのローカルパスは決して使われません |
 | **コミットノート** | リポジトリの `refs/notes/commits`。インポート時に適用され、どのリモートへの書き込み権限も要りません |
@@ -45,5 +45,5 @@ keywords: secure share export import bundle encrypted workspace transfer machine
 換えられるのは、**上書き** にチェックを入れたときだけです。分岐したノートのマージは
 ありません。
 
-**関連項目:** [金庫](vault.md) · [セキュリティと秘密情報](security.md) ·
+**関連項目:** [保管庫](vault.md) · [セキュリティと秘密情報](security.md) ·
 [コミットノート](notes.md) · [ワークスペース、タブ、グループ](workspaces.md)

@@ -60,8 +60,8 @@ Cette page dit ce que cela signifie concrètement — et où sont les limites.
   éprouvés sur le terrain — les retours sont bienvenus en
   [issues](https://github.com/MyAppDesk/gitcito/issues).
 
-## Réglages associés
+## Paramètres associés
 
 **La réduction des animations** est respectée depuis le réglage du système —
 les animations se réduisent à des transitions instantanées. Le contraste peut
-être ajusté thème par thème dans [Réglages → Apparence](themes.md).
+être ajusté thème par thème dans [Paramètres → Apparence](themes.md).

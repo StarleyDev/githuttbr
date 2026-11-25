@@ -72,7 +72,7 @@ une, et effacer la conversation les retire toutes. Huit au maximum.
 Un commit épinglé apporte son message et jusqu’à douze blocs de diff. Les blocs
 touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 
-## Réglages
+## Paramètres
 
 **Paramètres → Profil → Préférences d’écriture de l’IA → Discussion du dépôt** (chaque profil a les siennes) :
 
@@ -93,14 +93,14 @@ Le fournisseur et le modèle qui répondent à la discussion se choisissent sur 
 page **IA**, sous **Modèle par tâche** — voir [Fonctions IA](ai.md#modèle-par-tâche).
 
 Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
-du nom du fournisseur : même réglage, sans ouvrir les Réglages.
+du nom du fournisseur : même réglage, sans ouvrir les Paramètres.
 
 Le bouton baguette à côté du titre du panneau ouvre l’**assistant de
 configuration IA** — un parcours guidé qui génère des fichiers de configuration
 d’assistant (instructions, agents, hooks) pour ce dépôt. Voir
 [Fonctions d’IA](ai.md).
 
-![Réglages de la discussion du dépôt](../../screenshots/settings-repo-chat.webp)
+![Paramètres de la discussion du dépôt](../../screenshots/settings-repo-chat.webp)
 
 ## Travailler avec les messages
 

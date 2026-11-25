@@ -4,6 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 52
 summary: Elke repository die Gitcito kent, open of niet, in één doorzoekbare lijst.
 keywords: repositories register alle repos favorieten ster recent scannen map bladeren vinden openen beheren repositorybeheer kleur sectie tint markeren workspaces uit mappen boom genereren bulkimport registry favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Repositories
@@ -28,7 +29,7 @@ is een volledig antwoord op haar eigen vraag, geen plakje van één lijst.
 |---|---|
 | Open repositories | Elk tabblad in de actieve workspace op dit moment |
 | Favorieten | Gesterde repositories, over elke workspace heen |
-| Recente | Alles wat je hebt geopend, nieuwste eerst. **Zonder limiet**, in tegenstelling tot de lijst van 8 in de launcher |
+| Recente repositories | Alles wat je hebt geopend, nieuwste eerst. **Zonder limiet**, in tegenstelling tot de lijst van 8 in de launcher |
 | Eén per opgeslagen workspace | De tabbladen van die workspace, zodat je naar een andere kunt springen zonder eerst over te schakelen |
 | Alle repositories | Elke repository die het register kent, open of niet |
 
@@ -88,10 +89,11 @@ Deze pagina openen indexeert ook wat je nu **in een tabblad open** hebt,
 zo krijgen repositories die bij het opstarten worden hersteld een rij
 zonder dat je ze opnieuw hoeft te openen. Het dekt alleen open tabbladen,
 en het gebeurt bij het eerste bezoek van elke sessie, niet één keer voor
-altijd. Een repository die je **Forget** blijft vergeten, tenzij je hem
+altijd. Een repository die je **vergeet**, blijft vergeten, tenzij je hem
 opnieuw opent.
 
-Scanmappen stel je in bij Instellingen:
+Scanmappen stel je in bij Instellingen → Gegevens, of in het venster
+**Gescande repositories** hieronder:
 
 - **Diepte** is hoeveel mapniveaus de scan onder de wortel afdaalt
   (standaard 3, maximum 10).
@@ -99,9 +101,24 @@ Scanmappen stel je in bij Instellingen:
   submodule in een repo wordt niet als eigen rij geïndexeerd.
 - Het gaat nooit puntmappen in, en slaat `node_modules` en vergelijkbare
   dependency-mappen over.
+- Het **volgt mappen die via een symlink gekoppeld zijn**, en loopt elke echte
+  map maar één keer door — een link terug omhoog in de boom kan geen lus maken,
+  en twee links naar één repository tonen hem één keer. Een repository die via
+  een link is gevonden, staat er onder zijn **echte pad**, dus het is hetzelfde
+  item (en hetzelfde tabblad) als wanneer je hem via de kiezer opent.
 - Het **leest alleen mapnamen**: een `.git`-map vinden is wat iets hier
   tot repository maakt. Naam, eigenaar en branch komen uit bestanden in
   `.git` (`HEAD`, de config), nooit door `git` te draaien.
+- Het draait **als je erom vraagt**: bij het toevoegen van een map, met
+  **Nu scannen**, of bij het openen van het venster Gescande repositories. Een
+  repository die later in een scanmap wordt gekloond, verschijnt bij de
+  volgende van die momenten, of zodra je hem opent.
+- Het resultaat noemt **elke gevonden repository en hoeveel er nieuw waren**.
+  Een tweede scan van dezelfde mappen meldt ze allemaal opnieuw, met „0
+  nieuw” — ze stonden al op deze pagina.
+- Een map kan **maar één keer** worden toegevoegd. Er een kiezen die al in de
+  lijst staat, meldt dat en verandert niets; een slash aan het eind of, op
+  Windows, andere hoofdletters is nog steeds dezelfde map.
 
 ## Gescande repositories
 
@@ -110,7 +127,8 @@ Wil je alleen iets uit je projectmappen **openen**, dan heeft het venster
 **Repository openen** — en het welkomstscherm — een kortere weg: **Gescande
 repositories**.
 
-![Het venster Gescande repositories: de gescande mappen ingeklapt bovenaan, een filter, dan de repositories van de map met een vinkje en hun branch, twee aangevinkt en de knop Openen die ze telt](../../screenshots/scanned-repos.webp)
+![Het venster Gescande repositories: de gescande mappen ingeklapt bovenaan, een filter,
+ dan de repositories van de map met een vinkje en hun branch, twee aangevinkt en de knop Openen die ze telt](../../screenshots/scanned-repos.webp)
 
 - De repositories zijn **gegroepeerd per gescande map**, op naam gesorteerd,
   met een filter op naam of pad.
@@ -151,11 +169,37 @@ uitgebreid met twee items die alleen deze pagina heeft:
 | Actie | Wat het doet |
 |---|---|
 | Ster / ster weg | Zet de repository in Favorieten of haalt hem eruit |
-| Locate… | Wijst een verplaatste of hernoemde map opnieuw. Alias, profielbinding en ster blijven. Had de bestemming al eigen instellingen, **wint de bestemming** |
-| Forget | Haalt het item uit deze lijst. **Raakt de map op schijf nooit aan** |
+| Lokaliseren… | Wijst een verplaatste of hernoemde map opnieuw. Alias, profielbinding, ster en alle tabbladen die hem tonen gaan mee. Had de bestemming al eigen instellingen, **wint de bestemming** |
+| Vergeten | Haalt het item uit deze lijst. **Raakt de map op schijf nooit aan** |
 
 Een repository waarvan de map niet meer bestaat toont als **ontbreekt**,
-met **Locate…** en **Forget** inline in plaats van de gewone rij-acties.
+met **Lokaliseren…** en **Vergeten** inline in plaats van de gewone rij-acties.
+
+### Als de map van een open tabblad ontbreekt
+
+Tabbladen worden bij het starten hersteld vanaf de paden die ze hadden toen je
+afsloot. Is een map sindsdien verplaatst, verwijderd, of staat hij op een schijf
+die niet is aangesloten, dan mislukte vroeger elke leesactie van Gitcito daarop
+met een eigen foutmelding. Nu wordt eerst de map gecontroleerd, en toont het
+tabblad **Repositorymap niet gevonden** met het opgeslagen pad in plaats van de
+gewone werkruimte:
+
+![Een hersteld tabblad waarvan de map ontbreekt: de kaart Repositorymap niet
+gevonden met het opgeslagen pad en de knoppen Lokaliseren… en Opnieuw proberen](../../screenshots/missing-repository.webp)
+
+| Knop | Wat hij doet |
+|---|---|
+| Lokaliseren… | Kies de nieuwe locatie van de map. Het moet een Git-repository zijn; tabblad, alias, profielbinding en ster verhuizen ernaartoe |
+| Opnieuw proberen | Controleert hetzelfde pad opnieuw — voor een schijf of netwerkshare die terug is |
+
+Het tabblad **blijft** tot je het opnieuw koppelt of zelf sluit: een
+ontbrekende externe schijf is meestal tijdelijk, en het tabblad daarvoor
+kwijtraken zou erger zijn dan een stille plaatsaanduiding. Zolang de map
+ontbreekt, slaat de automatische achtergrond-fetch hem over.
+
+Grenzen: Gitcito zoekt niet waar een map naartoe is gegaan — Lokaliseren… vraagt
+het jou. Een map die bestaat maar geen repository meer is, toont in plaats
+daarvan de gebruikelijke melding **Geen Git-repository**.
 
 De ster is een favorietenschakelaar, geen meerkeuzevakje. Batchwerk loopt
 hier per sectie, niet per selectie. Zie hieronder.
@@ -286,7 +330,7 @@ staande kostenpost.
   heeft, en indexeert alleen.
 - **Alles sluiten opent tabbladen één voor één opnieuw, tot tien.** Meer
   dan tien repositories in één keer sluiten betekent dat de oudste niet
-  van de stapel terugkomen, hoewel ze allemaal nog in **Recente** staan.
+  van de stapel terugkomen, hoewel ze allemaal nog in **Recente repositories** staan.
 - **Pull filtert niet op wat achterloopt.** Het pullt elke repository in
   de sectie, omdat weten welke achterlopen eerst een fetch zou betekenen.
   Een actuele repository pullen is een no-op, dat kost tijd, geen
@@ -298,8 +342,9 @@ staande kostenpost.
 - **Sectiekleuren zijn cosmetisch.** Ze filteren, sorteren, groeperen of
   synchroniseren nergens, en een kleur op de sectie van een workspace is
   niet de kleur van die workspace.
-- **Forget haalt het item uit de lijst, nooit van schijf.** Als de map er
-  nog is, brengt dezelfde wortel scannen (of hem opnieuw openen) hem meteen
-  terug.
+- **Vergeten haalt het item uit de lijst, nooit van schijf.** En het blijft
+  zo: latere scans van zijn map slaan hem over, ook de scan die het venster
+  Gescande repositories bij het openen uitvoert. Alleen de repository opnieuw
+  openen brengt hem terug.
 
 **Zie ook:** [Mission control](mission-control.md) · [Workspaces, tabbladen & groepen](workspaces.md)

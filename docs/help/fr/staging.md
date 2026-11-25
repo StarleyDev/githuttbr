@@ -66,7 +66,7 @@ dossiers copient toujours le chemin du dossier.
 Gitcito vérifie quelques points et demande une fois, jamais en silence :
 
 - un fichier qui ressemble à un **secret** (`.env`, `*.pem`, `id_rsa`…),
-- un blob **très volumineux** (seuil dans Réglages → Sécurité),
+- un blob **très volumineux** (seuil dans Paramètres → Sécurité),
 - un commit **directement sur une branche protégée** (`main`/`master` par
   défaut).
 

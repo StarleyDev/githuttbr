@@ -99,10 +99,10 @@ le terminal change quelque chose.
 
 ## Shell, thème et Oh My Posh
 
-Sous Windows, Réglages → Disposition choisit le shell lancé par chaque nouveau
+Sous Windows, Paramètres → Disposition choisit le shell lancé par chaque nouveau
 terminal — PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL ou un
 exécutable personnalisé. L’apparence du terminal (thème, taille et famille de
-police) se règle dans Réglages → Thèmes → Thème du terminal et s’applique en
+police) se règle dans Paramètres → Thèmes → Thème du terminal et s’applique en
 direct à toutes les sessions.
 
 Si [Oh My Posh](https://ohmyposh.dev) est installé, la section liste aussi chaque

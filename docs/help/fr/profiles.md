@@ -47,7 +47,7 @@ d'écriture de l'IA*.
 ## Chaque profil, ses propres comptes
 
 En plus d'un jeton, un profil peut **lier** une connexion déjà présente sur la
-machine — du credential helper de git ou de GitHub CLI — dans Réglages →
+machine — du credential helper de git ou de GitHub CLI — dans Paramètres →
 Intégrations. Un lien appartient à un seul profil : un nouveau profil commence
 déconnecté, et un compte qu'un autre profil détient déjà est refusé, si bien que
 deux profils peuvent tenir deux comptes GitHub (ou Azure DevOps) côte à côte.
@@ -60,6 +60,6 @@ plan s'authentifie toujours avec le bon compte — même pendant que vous regard
 un dépôt qui appartient à l'autre.
 
 Les jetons vivent dans le [trousseau de votre système](security.md), jamais dans
-le fichier de réglages.
+le fichier de paramètres.
 
 **Voir aussi :** [Sécurité et secrets](security.md) · [Hébergement](hosting.md)

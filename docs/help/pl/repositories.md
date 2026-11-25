@@ -4,6 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 52
 summary: Każde repozytorium, które Gitcito zna, otwarte albo nie, na jednej przeszukiwalnej liście.
 keywords: repozytoria rejestr wszystkie repozytoria ulubione gwiazdka ostatnie skan folder przeglądaj znajdź otwórz zarządzaj zarządzanie repozytoriami kolor sekcja odcień podświetlenie przestrzenie z folderów drzewo generuj import masowy repositories registry favourites starred recent scan folder workspaces
+source: 3f162d07855277e85ece82a631244e36f6028d36
 ---
 
 # Repozytoria
@@ -28,7 +29,7 @@ sekcja jest pełną odpowiedzią na własne pytanie, nie wycinkiem jednej listy.
 |---|---|
 | Otwarte repozytoria | Każda karta aktywnej przestrzeni roboczej w tej chwili |
 | Ulubione | Repozytoria z gwiazdką, we wszystkich przestrzeniach |
-| Ostatnie | Wszystko, co otwierałeś, najnowsze na górze. **Bez limitu**, w odróżnieniu od 8-elementowej listy w launcherze |
+| Ostatnie repozytoria | Wszystko, co otwierałeś, najnowsze na górze. **Bez limitu**, w odróżnieniu od 8-elementowej listy w launcherze |
 | Jedna na zapisaną przestrzeń | Karty tej przestrzeni, żebyś mógł wskoczyć do innej, nie przełączając się najpierw |
 | Wszystkie repozytoria | Każde repozytorium, które rejestr zna, otwarte albo nie |
 
@@ -84,10 +85,11 @@ leży na dysku w miejscu, o którym nigdy mu nie wspomniałeś.
 Otwarcie tej strony indeksuje też to, co masz **otwarte w karcie**, i tak
 repozytoria przywrócone przy starcie dostają wiersz bez ponownego otwierania.
 Obejmuje tylko otwarte karty i dzieje się przy pierwszej wizycie każdej
-sesji, nie raz na zawsze. Repozytorium, któremu dasz **Forget**, zostaje
+sesji, nie raz na zawsze. Repozytorium, które **zapomnisz**, zostaje
 zapomniane, dopóki nie otworzysz go znowu.
 
-Foldery do skanowania ustawia się w Ustawieniach:
+Foldery do skanowania ustawia się w Ustawienia → Dane albo w oknie
+**Zeskanowane repozytoria** opisanym niżej:
 
 - **Głębokość** to, ile poziomów katalogów skan schodzi poniżej korzenia
   (domyślnie 3, limit 10).
@@ -95,9 +97,24 @@ Foldery do skanowania ustawia się w Ustawieniach:
   submodule w repo nie jest indeksowany jako własny wiersz.
 - Nigdy nie wchodzi do katalogów zaczynających się od kropki i pomija
   `node_modules` oraz podobne foldery zależności.
+- **Podąża za folderami podlinkowanymi dowiązaniem symbolicznym** i przechodzi
+  każdy prawdziwy folder tylko raz — link wskazujący w górę drzewa nie zrobi
+  pętli, a dwa linki do jednego repozytorium pokażą je raz. Repozytorium
+  znalezione przez link jest wymienione pod swoją **prawdziwą ścieżką**, więc to
+  ten sam wpis (i ta sama karta) co po otwarciu go z okna wyboru.
 - **Czyta tylko nazwy folderów**: znalezienie katalogu `.git` czyni coś
   repozytorium tutaj. Nazwa, właściciel i gałąź biorą się z plików w `.git`
   (`HEAD`, config), nigdy przez uruchomienie `git`.
+- Działa, **kiedy o to poprosisz**: przy dodaniu folderu, przez **Skanuj
+  teraz** albo przy otwarciu okna Zeskanowane repozytoria. Repozytorium
+  sklonowane później do skanowanego folderu pojawia się przy następnej z tych
+  okazji albo od razu, gdy je otworzysz.
+- Wynik wymienia **każde znalezione repozytorium i ile z nich było nowych**.
+  Drugi skan tych samych folderów znowu podaje je wszystkie, z „0 nowych” — już
+  były na tej stronie.
+- Folder można dodać **tylko raz**. Wybranie folderu, który już jest na liście,
+  mówi o tym i niczego nie zmienia; ukośnik na końcu albo, na Windows, inna
+  wielkość liter to nadal ten sam folder.
 
 ## Zeskanowane repozytoria
 
@@ -106,7 +123,8 @@ co zna Gitcito. Gdy chcesz tylko **otworzyć** coś ze swoich katalogów z
 projektami, okno **Otwórz repozytorium** — i ekran powitalny — ma krótszą
 drogę: **Zeskanowane repozytoria**.
 
-![Okno Zeskanowane repozytoria: zwinięte skanowane foldery u góry, filtr, a pod nim repozytoria z folderu z polem wyboru i gałęzią, dwa zaznaczone i przycisk Otwórz, który je liczy](../../screenshots/scanned-repos.webp)
+![Okno Zeskanowane repozytoria: zwinięte skanowane foldery u góry, filtr,
+ a pod nim repozytoria z folderu z polem wyboru i gałęzią, dwa zaznaczone i przycisk Otwórz, który je liczy](../../screenshots/scanned-repos.webp)
 
 - Repozytoria są **pogrupowane według skanowanego folderu**, posortowane po
   nazwie, z filtrem po nazwie lub ścieżce.
@@ -145,11 +163,37 @@ w Gitcito, rozszerzone o dwa wpisy właściwe tej stronie:
 | Akcja | Co robi |
 |---|---|
 | Gwiazdka / zdejmij gwiazdkę | Dodaje repozytorium do Ulubionych albo je z nich wyjmuje |
-| Locate… | Ponownie wskazuje przeniesiony lub przemianowany folder. Alias, profil i gwiazdka zostają. Jeśli cel miał już własne ustawienia, **wygrywa cel** |
-| Forget | Usuwa wpis z tej listy. **Nigdy nie rusza folderu na dysku** |
+| Zlokalizuj… | Ponownie wskazuje przeniesiony lub przemianowany folder. Alias, przypięty profil, gwiazdka i wszystkie karty, które go pokazują, przechodzą razem z nim. Jeśli cel miał już własne ustawienia, **wygrywa cel** |
+| Zapomnij | Usuwa wpis z tej listy. **Nigdy nie rusza folderu na dysku** |
 
 Repozytorium, którego folder już nie istnieje, pokazuje się jako
-**brakuje**, z **Locate…** i **Forget** w linii zamiast zwykłych akcji.
+**brakuje**, z **Zlokalizuj…** i **Zapomnij** w linii zamiast zwykłych akcji.
+
+### Gdy brakuje folderu otwartej karty
+
+Karty są przywracane przy starcie ze ścieżek, które miały, gdy zamknąłeś
+aplikację. Jeśli folder został od tego czasu przeniesiony, usunięty albo leży na
+dysku, który nie jest podłączony, każdy odczyt Gitcito z niego kończył się
+dawniej osobnym powiadomieniem o błędzie. Teraz folder jest najpierw sprawdzany,
+a karta pokazuje **Nie znaleziono folderu repozytorium** z zapisaną ścieżką
+zamiast zwykłego obszaru roboczego:
+
+![Przywrócona karta, której folderu brakuje: karta Nie znaleziono folderu
+repozytorium z zapisaną ścieżką i przyciskami Zlokalizuj… i Spróbuj ponownie](../../screenshots/missing-repository.webp)
+
+| Przycisk | Co robi |
+|---|---|
+| Zlokalizuj… | Wskaż nowe położenie folderu. Musi to być repozytorium Gita; karta, alias, przypięty profil i gwiazdka przechodzą do niego |
+| Spróbuj ponownie | Sprawdza tę samą ścieżkę jeszcze raz — dla dysku albo udziału sieciowego, który wrócił |
+
+Karta **zostaje**, dopóki jej nie podłączysz ponownie albo sam nie zamkniesz:
+brak zewnętrznego dysku jest zwykle chwilowy, a utrata karty z tego powodu
+byłaby gorsza niż cichy zastępnik. Dopóki folderu brakuje, automatyczny fetch w
+tle go pomija.
+
+Ograniczenia: Gitcito nie szuka, gdzie podział się folder — Zlokalizuj… pyta
+ciebie. Folder, który istnieje, ale nie jest już repozytorium, pokazuje zamiast
+tego zwykły komunikat **To nie jest repozytorium Gita**.
 
 Gwiazdka to przełącznik ulubionych, nie pole wielokrotnego wyboru. Praca
 zbiorcza idzie tu per sekcja, nie per zaznaczenie. Patrz niżej.
@@ -279,7 +323,7 @@ stały koszt.
   indeksuje.
 - **Zamknij wszystkie otwiera karty po jednej, do dziesięciu.** Zamknięcie
   więcej niż dziesięciu repozytoriów naraz znaczy, że najstarszych nie
-  otworzysz ze stosu, choć wszystkie nadal są w **Ostatnich**.
+  otworzysz ze stosu, choć wszystkie nadal są w **Ostatnich repozytoriach**.
 - **Pull nie filtruje po tym, co jest w tyle.** Robi pull każdego
   repozytorium w sekcji, bo wiedzieć, które są w tyle, znaczyłoby najpierw
   zrobić fetch. Pull aktualnego repozytorium to no-op, kosztuje czas, nie
@@ -290,8 +334,9 @@ stały koszt.
 - **Kolory sekcji są kosmetyczne.** Nie filtrują, nie sortują, nie grupują
   ani nie synchronizują nigdzie, a kolor na sekcji przestrzeni nie jest
   kolorem tej przestrzeni.
-- **Forget usuwa wpis z listy, nigdy z dysku.** Jeśli folder nadal tam
-  jest, skan tego samego korzenia (albo ponowne otwarcie) wraca z nim od
-  razu.
+- **Zapomnij usuwa wpis z listy, nigdy z dysku.** I to na stałe: późniejsze
+  skany jego folderu go pomijają, łącznie z tym, który okno Zeskanowane
+  repozytoria uruchamia przy otwarciu. Przywraca go dopiero ponowne otwarcie
+  repozytorium.
 
 **Zobacz też:** [Centrum dowodzenia](mission-control.md) · [Przestrzenie, karty i grupy](workspaces.md)
