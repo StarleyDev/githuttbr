@@ -222,6 +222,8 @@ export const gitApi = {
   editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
     call<void>('editRemote', path, oldName, newName, url, pushUrl),
   fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
+  fetchRemoteBranch: (path: string, remote: string, branch: string) =>
+    call<boolean>('fetchRemoteBranch', path, remote, branch),
   resolvePrRef: (path: string, remote: string, number: number) =>
     call<PrRefProbe | null>('resolvePrRef', path, remote, number),
   previewRef: (path: string, remote: string, ref: string, mode: PrPreviewMode, localBranch?: string) =>

@@ -248,6 +248,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   pull: 'pull',
   fetchAll: 'fetch',
   fetchRemote: 'fetch',
+  fetchRemoteBranch: 'fetch',
   amendCommitMessage: 'amend',
   createBranch: 'branchCreate',
   gitflowStart: 'branchCreate',
@@ -1449,6 +1450,36 @@ export function assertNotOption(value: string | undefined, what: string): void {
   if (typeof value === 'string' && /^\s*-/.test(value)) {
     throw new Error(`Refusing ${what} "${value}": it starts with "-", so git would read it as an option.`)
   }
+}
+
+/**
+ * The shape a branch name from outside (a hosting API) must have before it goes
+ * into a refspec. Checked in JS first, so a hostile name is refused without
+ * running anything: `-` would be an option, `:` and `+` rewrite the refspec,
+ * `..`, whitespace and `@{` are rejected by git anyway but `@{-1}` would be
+ * *expanded* by `check-ref-format --branch` inside a repository.
+ */
+export function isPlainBranchName(name: string): boolean {
+  if (!name || name.length > 255) return false
+  if (name.startsWith('-') || name.startsWith('+') || name.startsWith('/') || name.endsWith('/')) return false
+  if (/[\s:\x00-\x1f\x7f~^?*[\\]/.test(name)) return false
+  if (name.includes('..') || name.includes('@{') || name.includes('//')) return false
+  if (name === '@' || name === 'HEAD' || name.endsWith('.lock') || name.endsWith('.')) return false
+  return true
+}
+
+/**
+ * Refuse a remote/branch pair that is not a configured remote and a valid
+ * branch name. git's own `check-ref-format --branch` has the last word, and
+ * must hand the name back unchanged — a rewritten name is not the one asked for.
+ */
+async function assertSafeRemoteBranch(repoPath: string, remote: string, branch: string): Promise<void> {
+  if (!isPlainBranchName(branch)) throw new Error(`Refusing the branch name "${branch}": it is not a plain branch name.`)
+  assertNotOption(remote, 'the remote')
+  const normalized = await runGit(repoPath, ['check-ref-format', '--branch', branch]).catch(() => '')
+  if (normalized.trim() !== branch) throw new Error(`Refusing the branch name "${branch}": git does not accept it.`)
+  const remotes = (await runGit(repoPath, ['remote'])).split('\n').map((s) => s.trim())
+  if (!remotes.includes(remote)) throw new Error(`Refusing the remote "${remote}": it is not configured in this repository.`)
 }
 
 /**
@@ -3415,6 +3446,33 @@ export const gitService = {
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
     await withRemoteAuth(repoPath, name, 'fetch', () => runGit(repoPath, ['fetch', '--prune', '--', name]))
+  },
+
+  /**
+   * Fetch one branch of `remote` into its remote-tracking ref, so a branch
+   * that exists only on the server (a pull request's head, in a repository
+   * with thousands of branches nobody fetches in full) can be checked out.
+   *
+   * The name comes from a hosting API, not from the user, so it is validated
+   * before it is spliced into a refspec: a `:` or a leading `+` would rewrite
+   * which ref gets written, and a leading `-` would be read as an option.
+   * `--no-tags` for the same reason as `previewRef`.
+   *
+   * Returns false when the remote has no such branch — the usual fate of a
+   * merged pull request's head. Any other failure throws.
+   */
+  async fetchRemoteBranch(repoPath: string, remote: string, branch: string): Promise<boolean> {
+    await assertSafeRemoteBranch(repoPath, remote, branch)
+    const refspec = `+refs/heads/${branch}:refs/remotes/${remote}/${branch}`
+    try {
+      await withRemoteAuth(repoPath, remote, 'fetch', () =>
+        runGit(repoPath, ['fetch', '--no-tags', '--', remote, refspec])
+      )
+      return true
+    } catch (err) {
+      if (/couldn't find remote ref/i.test(err instanceof Error ? err.message : String(err))) return false
+      throw err
+    }
   },
 
   // ─── Previewing someone else's work ────────────────────────────────────────
