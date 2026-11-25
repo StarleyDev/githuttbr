@@ -1,5 +1,11 @@
 
 
+## [4.52.0](https://github.com/StarleyDev/githuttbr/compare/v4.51.0...v4.52.0) (2026-11-25)
+
+### Features
+
+* **platform:** a pull requests page, clearer token checks, and Electron 45 APIs ([f0bfceb](https://github.com/StarleyDev/githuttbr/commit/f0bfceb223b020b85af1b607b7d210377dc8539f))
+
 ## [4.51.0](https://github.com/StarleyDev/githuttbr/compare/v4.50.0...v4.51.0) (2026-11-25)
 
 ### Features
