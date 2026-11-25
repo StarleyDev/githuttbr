@@ -8,7 +8,9 @@
 // and with it everything the branch brought — v4.44.0 shipped without its PR
 // review footer that way. Fix: reword the merge with the feature's message
 // (`git commit --amend` right after merging) or rebase the branch and
-// fast-forward instead.
+// fast-forward instead. A reworded merge only counts because the changelog
+// also reads merge commits (`gitRawCommitsOpts.merges: null`): the generator's
+// default, `--no-merges`, would drop it however it is worded.
 //
 // Blocks in every mode: a wrong changelog is published with the release, and
 // the release notes are cut from it.
