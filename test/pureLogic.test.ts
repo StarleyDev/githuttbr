@@ -8311,6 +8311,33 @@ describe('edit context menu', () => {
     expect(buildEditMenuItems({ isEditable: false, selectionText: '', editFlags: flags }, labels)).toEqual([])
   })
 
+  it('puts up to five spelling suggestions first in a field, then a separator', () => {
+    const suggestions = ['commit', 'comet', 'commute', 'comma', 'commits', 'comity']
+    const items = buildEditMenuItems(
+      { isEditable: true, selectionText: '', editFlags: flags, dictionarySuggestions: suggestions },
+      labels
+    )
+    expect(items.slice(0, 6)).toEqual([
+      { suggestion: 'commit' },
+      { suggestion: 'comet' },
+      { suggestion: 'commute' },
+      { suggestion: 'comma' },
+      { suggestion: 'commits' },
+      { separator: true }
+    ])
+    expect(items.slice(6).map((i) => ('role' in i ? i.role : null))).toEqual(['cut', 'copy', 'paste', 'selectAll'])
+    // No suggestions, no separator; and never outside a field.
+    expect(buildEditMenuItems({ isEditable: true, selectionText: '', editFlags: flags, dictionarySuggestions: [] }, labels)).toHaveLength(4)
+    expect(
+      buildEditMenuItems({ isEditable: false, selectionText: 'x', editFlags: flags, dictionarySuggestions: ['y'] }, labels)
+    ).toEqual([{ role: 'copy', label: 'Copiar', enabled: true }])
+  })
+
+  it('caps each label from the bridge at 64 characters', () => {
+    const long = 'x'.repeat(500)
+    expect(parseEditMenuLabels({ ...labels, cut: long })?.cut).toHaveLength(64)
+  })
+
   it('accepts only a complete label set from the bridge', () => {
     expect(parseEditMenuLabels(labels)).toEqual(labels)
     expect(parseEditMenuLabels({ ...labels, paste: '' })).toBeNull()

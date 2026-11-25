@@ -28,7 +28,16 @@ export function registerEditMenuHandlers(): void {
       const items = buildEditMenuItems(params, labels)
       if (items.length === 0) return
       // Roles run the edit natively, against whatever element was clicked.
-      const menu = Menu.buildFromTemplate(items.map((i) => ({ role: i.role, label: i.label, enabled: i.enabled })))
+      // A suggestion replaces the misspelled word in place.
+      const menu = Menu.buildFromTemplate(
+        items.map((i) =>
+          'separator' in i
+            ? { type: 'separator' as const }
+            : 'suggestion' in i
+              ? { label: i.suggestion, click: () => contents.replaceMisspelling(i.suggestion) }
+              : { role: i.role, label: i.label, enabled: i.enabled }
+        )
+      )
       menu.popup({ window: BrowserWindow.fromWebContents(contents) ?? undefined })
     })
   })

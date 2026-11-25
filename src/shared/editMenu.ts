@@ -35,13 +35,20 @@ export interface EditMenuParams {
   isEditable: boolean
   selectionText: string
   editFlags: { canCut: boolean; canCopy: boolean; canPaste: boolean; canSelectAll: boolean }
+  /** The spellchecker's replacements for the word under the cursor, when it is misspelled. */
+  dictionarySuggestions?: string[]
 }
 
-export interface EditMenuItem {
-  role: 'cut' | 'copy' | 'paste' | 'selectAll'
-  label: string
-  enabled: boolean
-}
+export type EditMenuItem =
+  | { role: 'cut' | 'copy' | 'paste' | 'selectAll'; label: string; enabled: boolean }
+  /** Replace the misspelled word with this one (`replaceMisspelling`). */
+  | { suggestion: string }
+  | { separator: true }
+
+/** More than a handful of suggestions buries Cut/Copy/Paste. */
+const MAX_SUGGESTIONS = 5
+/** A label is a word or two; anything longer is not a label set worth showing. */
+const MAX_LABEL_LENGTH = 64
 
 /**
  * The items for one right-click, or an empty list when there is nothing to
@@ -50,7 +57,10 @@ export interface EditMenuItem {
 export function buildEditMenuItems(params: EditMenuParams, labels: EditMenuLabels): EditMenuItem[] {
   const f = params.editFlags
   if (params.isEditable) {
+    const words = (params.dictionarySuggestions ?? []).filter((w) => w.length > 0).slice(0, MAX_SUGGESTIONS)
     return [
+      ...words.map((suggestion): EditMenuItem => ({ suggestion })),
+      ...(words.length ? [{ separator: true } as const] : []),
       { role: 'cut', label: labels.cut, enabled: f.canCut },
       { role: 'copy', label: labels.copy, enabled: f.canCopy },
       { role: 'paste', label: labels.paste, enabled: f.canPaste },
@@ -63,12 +73,14 @@ export function buildEditMenuItems(params: EditMenuParams, labels: EditMenuLabel
 
 /**
  * Accept a label set from the bridge only when every field is a non-empty
- * string; anything else keeps whatever was there before.
+ * string; anything else keeps whatever was there before. Each label is capped
+ * at 64 characters, so a bad set cannot stretch the menu across the screen.
  */
 export function parseEditMenuLabels(value: unknown): EditMenuLabels | null {
   if (!value || typeof value !== 'object') return null
   const v = value as Record<string, unknown>
   const ok = (x: unknown): x is string => typeof x === 'string' && x.length > 0
   if (!ok(v.cut) || !ok(v.copy) || !ok(v.paste) || !ok(v.selectAll)) return null
-  return { cut: v.cut, copy: v.copy, paste: v.paste, selectAll: v.selectAll }
+  const cap = (x: string): string => x.slice(0, MAX_LABEL_LENGTH)
+  return { cut: cap(v.cut), copy: cap(v.copy), paste: cap(v.paste), selectAll: cap(v.selectAll) }
 }
