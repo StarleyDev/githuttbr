@@ -669,6 +669,14 @@ function memoEffectiveAI(settings: AppSettings, profile: Profile): AIConfig {
   return result
 }
 
+/**
+ * What `activeProfile()` returns while the settings hold no profile. Built once:
+ * components select `s.activeProfile()`, and zustand 5 compares a selector's
+ * result by identity, so a fresh profile per call would re-render forever. One
+ * object also keeps `memoEffectiveAI` hitting for it, so `activeAI()` is stable.
+ */
+let fallbackProfile: Profile | null = null
+
 /** Session-only stack of recently closed tabs, for reopen (⌘⇧T). */
 const closedTabStack: { tab: TabState; idx: number }[] = []
 
@@ -825,7 +833,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   activeProfile: () => {
     const { settings } = get()
-    return settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0] ?? defaultProfile()
+    return (
+      settings.profiles.find((p) => p.id === settings.activeProfileId) ??
+      settings.profiles[0] ??
+      (fallbackProfile ??= defaultProfile())
+    )
   },
 
   activeAI: () => memoEffectiveAI(get().settings, get().activeProfile()),

@@ -100,6 +100,7 @@ import type { IconTone } from '../lib/iconTone'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark, CiState, CiCounts } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
+import { NO_ITEMS } from '../lib/stableEmpty'
 
 /** The Forgejo servers the profiles point at, read when a menu is built. */
 const forgejoInstances = (): string[] =>
@@ -364,7 +365,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   // ─── Launch configs (.vscode/launch.json) ───
   const enableLaunchJson = useSettingsStore((s) => s.settings.enableLaunchJson)
-  const launchGroups = useLaunchStore((s) => s.groupsByRepo[repo.path] ?? [])
+  const launchGroups = useLaunchStore((s) => s.groupsByRepo[repo.path] ?? NO_ITEMS)
   const discoverLaunch = useLaunchStore((s) => s.discover)
   const runLaunch = useLaunchStore((s) => s.run)
   useEffect(() => {

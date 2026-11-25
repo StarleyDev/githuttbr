@@ -23,6 +23,7 @@ import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
 import { tabRepos } from '../../../shared/types'
+import { NO_ITEMS } from '../lib/stableEmpty'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
@@ -92,7 +93,7 @@ export function SecureWorkspaceModal({
   const toast = useUIStore((s) => s.toast)
   const closeModal = useUIStore((s) => s.closeModal)
   const repoMap = useRepoStore((s) => s.repos)
-  const workspaces = useSettingsStore((s) => s.settings.workspaces ?? [])
+  const workspaces = useSettingsStore((s) => s.settings.workspaces ?? NO_ITEMS)
   const [mode, setMode] = useState<'export' | 'import'>(initialMode ?? 'export')
   const [busy, setBusy] = useState(false)
 
