@@ -1,11 +1,11 @@
-import { app, ipcMain, safeStorage } from 'electron'
+import { app, ipcMain } from 'electron'
 import { join } from 'path'
 import { readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { randomUUID } from 'node:crypto'
 import type { VaultEntry, VaultListResult, VaultExport, VaultExportReply, VaultImportReply } from '../shared/types'
 import type { BundleVaultEntry } from './secureBundle'
-import { adoptExistingConsent, canUseKeychain, ensureKeychain, isKeychainWeak, sealSecret } from './keychain'
+import { adoptExistingConsent, canUseKeychain, ensureKeychain, isKeychainWeak, openSecret, sealSecret } from './keychain'
 import { copyPrivateFile, writePrivateFile } from './privateFile'
 
 // A small local secrets store, encrypted at rest with the OS keychain via
@@ -75,17 +75,17 @@ async function load(): Promise<VaultData> {
   let reEncrypt: boolean
   try {
     const b64 = await readFile(filePath(), 'utf-8')
-    const { result: plain, shouldReEncrypt } = await safeStorage.decryptStringAsync(Buffer.from(b64, 'base64'))
+    const { plain, reseal } = await openSecret(Buffer.from(b64, 'base64'))
     data = { ...empty(), ...(JSON.parse(plain) as VaultData) }
     vaultUnreadable = false
-    reEncrypt = shouldReEncrypt === true
+    reEncrypt = reseal
   } catch {
     // Missing is an empty vault; present but unreadable is not (`vaultUnreadable`).
     vaultUnreadable = existsSync(filePath())
     return empty()
   }
-  // Read with a key safeStorage is retiring: written back under the current
-  // one. Not into a weak store, which would only re-seal it with the fixed
+  // Read with a key it should not stay on (`openSecret`'s `reseal`): written
+  // back under the key in use. Not into a weak store, which would only re-seal it with the fixed
   // password — nor when the seal comes back `v10` anyway (`sealSecret` refuses
   // it, as for the token store). A failure leaves the readable file as it was.
   if (reEncrypt && !(await isKeychainWeak())) {
