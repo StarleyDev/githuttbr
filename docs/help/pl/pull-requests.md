@@ -4,7 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI — oraz ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR.
 keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Strona pull requestów
@@ -126,6 +126,9 @@ najwolniejsza część. Na stronie pull requesta pole **Gałęzie** robi to za c
 - **Gałąź, na której już jesteś**, jest zamiast tego oznaczona jako *bieżąca*.
   Nic nie jest wyciągane.
 - **Przycisk kopiowania** obok każdej nazwy kopiuje ją do schowka.
+- **Cofnij** (⌘Z) wraca na gałąź, na której byłeś, i usuwa gałąź lokalną
+  utworzoną przez checkout — chyba że od tego czasu coś na niej zacommitowałeś;
+  wtedy zostaje nietknięta.
 
 Nagłówek ma te same dwa ruchy jako przyciski: **Przejdź do gałęzi źródłowej** i
 **Przejdź do gałęzi docelowej**. Działają też dla gałęzi, na której już jesteś —

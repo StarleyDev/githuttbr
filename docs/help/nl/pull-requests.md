@@ -4,7 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI — en ‹ › om vanuit een PR door de gefilterde lijst te lopen.
 keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Pull-requestspagina
@@ -132,6 +132,9 @@ voor je:
 - **De branch waar je al op staat** is in plaats daarvan gemarkeerd als
   *huidig*. Er wordt niets uitgecheckt.
 - **De kopieerknop** naast elke naam zet hem op het klembord.
+- **Ongedaan maken** (⌘Z) gaat terug naar de branch waar je op stond en
+  verwijdert de lokale branch die de checkout aanmaakte — tenzij je er sindsdien
+  op hebt gecommit; dan blijft hij staan.
 
 De kop heeft dezelfde twee stappen als knoppen: **Naar de bronbranch** en **Naar
 de doelbranch**. Ze werken ook op de branch waar je al op staat — dan brengen ze

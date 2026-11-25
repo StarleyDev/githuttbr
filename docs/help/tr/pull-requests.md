@@ -4,7 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş — ve bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›.
 keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Pull request sayfası
@@ -124,6 +124,9 @@ yapar:
 - **Zaten üzerinde olduğunuz dal** bunun yerine *geçerli* olarak işaretlenir.
   Hiçbir şey checkout edilmez.
 - Her adın yanındaki **kopyala düğmesi** onu panoya koyar.
+- **Geri al** (⌘Z) bulunduğunuz dala geri döner ve checkout’un oluşturduğu yerel
+  dalı siler — ancak o zamandan beri üzerine commit yaptıysanız dala
+  dokunulmaz.
 
 Başlıkta aynı iki hareket düğme olarak vardır: **Kaynak dala git** ve **Hedef
 dala git**. Zaten üzerinde olduğunuz dalda da çalışırlar — sizi yalnızca depoya

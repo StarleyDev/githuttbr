@@ -4,7 +4,7 @@ category: Sincronizzazione e più repo
 order: 57
 summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI — e ‹ › per scorrere la lista filtrata da dentro una PR.
 keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Pagina delle pull request
@@ -129,6 +129,9 @@ parte lenta. Sulla pagina di una pull request, il campo **Branch** lo fa per te:
 - **Il branch su cui sei già** è segnato come *attuale*. Non viene fatto nessun
   checkout.
 - **Il pulsante copia** accanto a ogni nome lo mette negli appunti.
+- **Annulla** (⌘Z) torna al branch su cui eri ed elimina il branch locale creato
+  dal checkout — a meno che tu non ci abbia fatto commit nel frattempo, nel qual
+  caso viene lasciato com’è.
 
 L’intestazione offre le stesse due mosse come pulsanti: **Vai al branch di
 origine** e **Vai al branch di destinazione**. Funzionano anche sul branch su cui

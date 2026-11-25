@@ -4,7 +4,7 @@ category: Sync & viele Repos
 order: 57
 summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI — und ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen.
 keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Pull-Request-Seite
@@ -135,6 +135,9 @@ erledigt das Feld **Branches** das für dich:
 - **Der Branch, auf dem du schon bist**, ist stattdessen als *aktuell* markiert.
   Es wird nichts ausgecheckt.
 - **Der Kopieren-Button** neben jedem Namen legt ihn in die Zwischenablage.
+- **Rückgängig** (⌘Z) bringt dich zurück auf den Branch, auf dem du warst, und
+  löscht den lokalen Branch, den der Checkout angelegt hat — es sei denn, du hast
+  seitdem darauf committet; dann bleibt er unangetastet.
 
 Der Kopf hat dieselben zwei Schritte als Buttons: **Zum Quell-Branch wechseln**
 und **Zum Ziel-Branch wechseln**. Sie funktionieren auch auf dem Branch, auf dem

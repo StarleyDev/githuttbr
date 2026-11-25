@@ -4,7 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 57
 summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI — et ‹ › pour parcourir la liste filtrée depuis une PR.
 keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Page des pull requests
@@ -137,6 +137,9 @@ des branches est la partie lente. Sur la page d’une pull request, le champ
 - **La branche sur laquelle vous êtes déjà** est marquée *actuelle* à la place.
   Rien n’est extrait.
 - **Le bouton copier** à côté de chaque nom le met dans le presse-papiers.
+- **Annuler** (⌘Z) vous ramène sur la branche où vous étiez et supprime la
+  branche locale créée par le checkout — sauf si vous y avez commité depuis,
+  auquel cas elle est laissée telle quelle.
 
 L’en-tête propose les deux mêmes gestes en boutons : **Aller à la branche
 source** et **Aller à la branche cible**. Ils fonctionnent aussi sur la branche

@@ -4,7 +4,7 @@ category: Sincronizar y muchos repos
 order: 57
 summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI — y ‹ › para recorrer la lista filtrada desde dentro de una PR.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch
-source: ced0be4a5d7da5b8c32b15d7fcc8846b79ee9506
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Página de pull requests
@@ -129,6 +129,9 @@ parte lenta. En la página de una pull request, el campo **Ramas** lo hace por t
 - **La rama en la que ya estás** aparece marcada como *actual*. No se hace
   checkout de nada.
 - **El botón de copiar** junto a cada nombre lo pone en el portapapeles.
+- **Deshacer** (⌘Z) vuelve a la rama en la que estabas y borra la rama local que
+  creó el checkout — salvo que hayas hecho commit en ella desde entonces, en cuyo
+  caso se deja tal cual.
 
 La cabecera tiene los mismos dos pasos como botones: **Ir a la rama de origen** e
 **Ir a la rama de destino**. Funcionan también con la rama en la que ya estás —
