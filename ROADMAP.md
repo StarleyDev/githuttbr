@@ -95,11 +95,6 @@ with tree-sitter's own CLI instead of taking a prebuilt bundle. More work up
 front; in exchange, a grammar can be updated or added without waiting on a
 third-party package.
 
-### xterm.js 6
-The integrated terminal is on xterm.js 5. Version 6 and its addons move
-together (the fit addon measures the scrollbar differently), so they are one
-change, tested against resizing, links and the shell-integration marks.
-
 ### Larger dependency moves, when there is a reason
 React 19, zustand 5, framer-motion and lucide's 1.x icon names each touch most
 of the renderer and none fixes a problem today. They wait for a feature that

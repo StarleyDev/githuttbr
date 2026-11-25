@@ -169,11 +169,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // clamp artefact" — without it typing while parked gets yanked back and the
   // terminal feels frozen.
   let lastUserInputAt = 0
-  // Extended on every fitSafely. xterm maps ydisp proportionally to the DOM
-  // scroll range (scrollTop / max * baseY), so a resize that shrinks the
-  // range — a taller panel, or a wider one reflowing to fewer wrapped rows —
-  // clamps scrollTop to the new max and fires a scroll event reading
-  // exactly baseY. A fixed window after the last fit is not enough: a slow
+  // Extended on every fitSafely. A resize that shrinks the scroll range — a
+  // taller panel, or a wider one reflowing to fewer wrapped rows — clamps
+  // ydisp and fires a scroll event reading exactly baseY. (Under xterm 5 the
+  // DOM scrollTop clamp did it too; xterm 6 suppresses that one, the buffer
+  // reflow still does.) A fixed window after the last fit is not enough: a slow
   // drag spaces fits further apart than the window, and an in-between clamp
   // event then passes as a real output-follow and poisons the anchor to
   // 'bottom'. A rolling deadline stays open for the whole drag instead.
@@ -236,74 +236,34 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       refreshAnchorMarker()
     }, 400)
   }
-  // If the DOM offset and the buffer disagree, the scroll delta xterm
-  // computes from scrollTop is garbage — reconcile before its own handlers
-  // (wheel deltas, scrollbar drags) can read the stale value. Safe to write:
-  // the scroll event it triggers resolves to a ~0-line scrollLines.
   // The xterm viewport element lives for the whole terminal lifetime —
-  // resolve it once lazily instead of querying on every scroll/wheel event.
+  // resolve it once lazily instead of querying on every pointer event. Since
+  // xterm 6 it no longer scrolls (a VS Code scrollable element owns the
+  // scroll position and keeps it in step with ydisp itself, so the old
+  // DOM-scrollTop/ydisp desync repairs are gone); it still spans the
+  // terminal, which is what the edge-zone test below measures.
   let vpEl: HTMLElement | null = null
   const viewportEl = (): HTMLElement | null => {
     if (!vpEl || !vpEl.isConnected) vpEl = container.querySelector('.xterm-viewport')
     return vpEl
   }
-  const reconcileScrollTop = (): void => {
-    const vp = viewportEl()
-    if (!(vp instanceof HTMLElement)) return
-    const buf = term.buffer.active
-    const max = vp.scrollHeight - vp.clientHeight
-    if (max <= 0 || buf.baseY <= 0) return
-    const expected = Math.round((buf.viewportY / buf.baseY) * max)
-    // Only repair a STRUCTURAL collapse — an offset pinned to an edge while
-    // the buffer sits elsewhere — never a mere disagreement. The compositor
-    // applies each wheel tick before xterm's scroll event for it is
-    // processed, so the DOM legitimately leads the buffer mid-gesture; a
-    // "helpful" write then stomps the in-flight delta and snaps the viewport
-    // back — the scrolls-down-jumps-up bug. A gesture delta is small and
-    // mid-range; it can never look like stuck-at-edge.
-    const collapsed =
-      (vp.scrollTop <= 2 && expected > 10) || (vp.scrollTop >= max - 2 && expected < max - 10)
-    if (collapsed) vp.scrollTop = expected
-  }
-  // Only reconcile at the START of a gesture. Mid-gesture the DOM scrollTop
-  // legitimately leads the buffer — the browser has already applied the
-  // user's tick but xterm's scroll event for it is still queued — and
-  // "reconciling" then stomps the in-flight delta, which is exactly the
-  // scroll-down-then-jumps-up race. A gap this long means nothing can be in
-  // flight, so a disagreement there is a real collapse worth fixing.
-  let lastGestureAt = 0
-  const gestureStarted = (): boolean => {
-    const now = Date.now()
-    const fresh = now - lastGestureAt > 200
-    lastGestureAt = now
-    markUserScroll()
-    return fresh
-  }
-  container.addEventListener(
-    'wheel',
-    () => {
-      if (gestureStarted()) reconcileScrollTop()
-    },
-    true
-  )
+  // Capture phase: runs before xterm's own wheel handler applies the delta.
+  container.addEventListener('wheel', markUserScroll, true)
   // A scrollbar drag is a scroll gesture; a plain click (focus the pane,
   // place the cursor, start a selection) is not — but marking it as one
   // opened the intent window for coincidental trim/clamp events to poison
-  // the anchor. Only the pointer landing on the viewport's own scrollbar
-  // track (target === the scroll element itself, near its right edge) and
-  // moves while that drag is held count.
+  // the anchor. Only the pointer landing on xterm's scrollbar (track or
+  // slider of the scrollable element's vertical bar) and moves while that
+  // drag is held count.
   let scrollbarDrag = false
-  const isScrollbarHit = (e: PointerEvent): boolean => {
-    const vp = viewportEl()
-    if (!(vp instanceof HTMLElement) || e.target !== vp) return false
-    return e.clientX >= vp.getBoundingClientRect().right - 20
-  }
+  const isScrollbarHit = (e: PointerEvent): boolean =>
+    e.target instanceof Element && e.target.closest('.xterm-scrollable-element > .scrollbar') !== null
   container.addEventListener(
     'pointerdown',
     (e) => {
       if (!isScrollbarHit(e)) return
       scrollbarDrag = true
-      if (gestureStarted()) reconcileScrollTop()
+      markUserScroll()
     },
     true
   )
@@ -332,27 +292,6 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     },
     true
   )
-  // The rendered rows follow buffer.ydisp, but wheel/scrollbar deltas are
-  // computed from the DOM scrollTop — and xterm only syncs scrollTop from
-  // ydisp on a later animation frame. A scrollTop left behind at 0 (detach,
-  // clamp) turns the user's first wheel tick into `amount = 0 - ydisp` and
-  // the viewport jumps to the top while the content looked right. Write the
-  // offset back synchronously: a scroll event from it computes amount ~= 0,
-  // which is a no-op — so this can never fight xterm.
-  const syncDomScrollTop = (line?: number): void => {
-    const vp = viewportEl()
-    if (!(vp instanceof HTMLElement)) return
-    const buf = term.buffer.active
-    const y = line ?? buf.viewportY
-    const max = vp.scrollHeight - vp.clientHeight
-    if (max <= 0 || buf.baseY <= 0) return
-    const st = Math.round((Math.min(y, buf.baseY) / buf.baseY) * max)
-    if (Math.abs(vp.scrollTop - st) > 2) {
-      sdbg(`dom st ${vp.scrollTop}->${st} max=${max}`)
-      vp.scrollTop = st
-    }
-  }
-
   // Every programmatic scroll we perform fires xterm's onScroll
   // SYNCHRONOUSLY — BufferService.scrollLines emits inline, so a scroll call
   // inside the scroll listener re-enters it before returning. Without a
@@ -384,7 +323,6 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         term.scrollToLine(target)
       }
     })
-    syncDomScrollTop(target)
   }
 
   // Where the anchor wants the viewport, against the NORMAL buffer — the
@@ -456,7 +394,6 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
     const buf = term.buffer.normal
     if (buf.viewportY !== anchorTarget()) restoreAnchor()
-    syncDomScrollTop()
   }
   const scheduleSnapBack = (): void => {
     if (Date.now() < resizeQuietUntil && !snapBackRaf) {
@@ -479,12 +416,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   term.onWriteParsed(() => {
     writeCount++
   })
-  const domState = (): string => {
-    const vp = viewportEl()
-    if (!(vp instanceof HTMLElement)) return ' st=?'
-    const max = vp.scrollHeight - vp.clientHeight
-    return ` st=${vp.scrollTop}/${max} ch=${vp.clientHeight}`
-  }
+  const domState = (): string => ` vy=${term.buffer.active.viewportY} ch=${container.clientHeight}`
   const scrollListener = term.onScroll((y) => {
     // Our own scroll calls emit synchronously and carry no user intent.
     if (selfScrollDepth > 0) return
@@ -714,11 +646,6 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
             parkAt(handle.suspendViewportY)
           }
           handle.suspendViewportY = null
-          // Pin the DOM offset to the target NOW — the fit below reflows and
-          // its clamps otherwise paint transient top/bottom positions until
-          // the snap-back lands, which reads as the terminal scrolling on
-          // its own after a tab switch.
-          syncDomScrollTop(anchorTarget())
           // The reattach settle lasts longer than a drag step: the viewport's
           // scrollHeight re-computes across several frames while clamped
           // scroll events keep arriving. Hold the quiet window open for the
@@ -732,7 +659,6 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // pinned to the bottom when it was already following output, parked
         // on the marker-tracked line otherwise.
         restoreAnchor()
-        syncDomScrollTop()
         sdbg(`fit ${before}->${term.cols}x${term.rows} a=${anchor.kind}${domState()}`)
         // The clamp events the fit just caused are delivered asynchronously
         // (the viewport's scroll event follows the scrollArea's style change

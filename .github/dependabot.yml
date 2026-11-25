@@ -49,17 +49,12 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: electron-vite
         update-types: ['version-update:semver-major']
-      # 0.x packages whose next "minor" breaks us. web-tree-sitter 0.25+ cannot
+      # A 0.x package whose next "minor" breaks us: web-tree-sitter 0.25+ cannot
       # load the grammars in resources/tree-sitter (built with the old dylink
-      # format) until they are rebuilt; @xterm/addon-fit 0.11 belongs to xterm 6
-      # and mis-measures the scrollbar on the xterm 5 we ship; addon-web-links
-      # 0.12 is xterm 6's too (no xterm peer any more). They move with xterm 6.
-      # Patches still come.
+      # format) until they are rebuilt. Patches still come. (The @xterm addons
+      # used to sit here too; they moved to xterm 6 together with xterm itself
+      # and now take ordinary bumps — keep their minors in step with xterm's.)
       - dependency-name: web-tree-sitter
-        update-types: ['version-update:semver-minor', 'version-update:semver-major']
-      - dependency-name: '@xterm/addon-fit'
-        update-types: ['version-update:semver-minor', 'version-update:semver-major']
-      - dependency-name: '@xterm/addon-web-links'
         update-types: ['version-update:semver-minor', 'version-update:semver-major']
 
   # Keeps the SHA pins in .github/workflows current: Dependabot rewrites both
