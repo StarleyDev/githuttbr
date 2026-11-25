@@ -82,7 +82,7 @@ Em dia com a v4.52.0: Electron 45, React 19, zustand 5, framer-motion 14, lucide
 
 | | Item | Notas |
 |---|---|---|
-| 🟠 | **Electron 46** (sai por volta de 2026-12-15) | O `safeStorage` já é assíncrono, então a parte que quebraria está pronta. Recompilar o `node-pty` (`npm run check:native`) |
+| 🔴 | **Electron 46 remove as chamadas síncronas do `safeStorage`** (sai por volta de 2026-12-15) | A v4.52.1 voltou a cifrar e decifrar com a chave síncrona (`openSecret`/`sealSecret` em `src/main/keychain.ts`): no Linux/KDE a API assíncrona do Electron 45 pega a chave pelo portal de segredos do XDG, diferente da chave "Safe Storage" do KWallet que a síncrona usava, e a v4.52.0 deixou todos os tokens salvos até a v4.51 ilegíveis. Os dois produzem `v11`, então o prefixo não distingue. Antes de subir para o 46, planejar a migração de cada store (tokens, backups, cofre) para a chave assíncrona, mantendo um backup na chave legada para o rollback, e testar no Linux KDE (portal de segredos), GNOME, macOS e Windows com dados reais da versão anterior. Os testes com mocks não pegaram isso na v4.52.0: o fake usava uma chave só. Também recompilar o `node-pty` (`npm run check:native`) |
 | 🟡 | **TypeScript 7** | Esperar o ecossistema (electron-vite, vitest) |
 | 🟡 | **`@tree-sitter-grammars/tree-sitter-kotlin`** declara `npm-check-updates` como dependência por engano | Só registrado |
 
