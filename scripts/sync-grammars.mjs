@@ -33,27 +33,35 @@ for (const f of readdirSync(OUT)) if (!keep.has(f)) rmSync(join(OUT, f))
 
 let bytes = 0
 let copied = 0
-const missing = []
-const copy = (from, to) => {
-  if (!existsSync(from)) {
-    missing.push(from.slice(ROOT.length + 1))
-    return
+const absent = []
+const broken = []
+const rel = (p) => p.slice(ROOT.length + 1)
+
+for (const [from, to] of [
+  [RUNTIME, join(OUT, RUNTIME_FILE)],
+  ...GRAMMARS.map((g) => [join(ROOT, grammarSource(g), g.file), join(OUT, `tree-sitter-${g.language}.wasm`)])
+]) {
+  if (existsSync(from)) {
+    // Always copy: a size check would keep a stale grammar whose new build
+    // happened to come out the same length.
+    copyFileSync(from, to)
+    bytes += statSync(to).size
+    copied++
+    continue
   }
-  // Always copy: a size check would keep a stale grammar whose new build
-  // happened to come out the same length.
-  copyFileSync(from, to)
-  bytes += statSync(to).size
-  copied++
+  // Never leave an older copy behind to be shipped as if it were current.
+  rmSync(to, { force: true })
+  // A package that is not installed at all is a production install
+  // (`--omit=dev`): that language falls back to line diffs. A package that is
+  // installed without the file means it renamed or dropped its .wasm — an
+  // upgrade that has to be looked at, not shipped without the language.
+  if (existsSync(join(dirname(from), 'package.json'))) broken.push(rel(from))
+  else absent.push(rel(dirname(from)))
 }
 
-copy(RUNTIME, join(OUT, RUNTIME_FILE))
-for (const g of GRAMMARS) {
-  copy(join(ROOT, grammarSource(g), g.file), join(OUT, `tree-sitter-${g.language}.wasm`))
-}
-
-if (missing.length) {
-  // A production install (`--omit=dev`) has no grammar packages; those
-  // languages fall back to line diffs.
-  console.warn(`[grammars] ${missing.length} missing: ${missing.join(', ')}`)
+if (absent.length) console.warn(`[grammars] not installed: ${[...new Set(absent)].join(', ')}`)
+if (broken.length) {
+  console.error(`[grammars] installed but missing its .wasm: ${broken.join(', ')} — see scripts/grammars.mjs`)
+  process.exit(1)
 }
 console.log(`[grammars] ${copied} files, ${(bytes / 1024 / 1024).toFixed(1)} MB → resources/tree-sitter`)
