@@ -8,8 +8,9 @@ keeps contributors and CI free of a WASM toolchain.
 | | |
 |---|---|
 | Source | npm `tree-sitter-swift@0.7.1` (its tarball carries the generated `src/parser.c`) |
+| Tarball integrity | `sha512-pneKVTuGamaBsqqqfB9BvNQjktzh/0IVPR54jLB5Fq/JTDQwYHd0Wo6pVyZ5jAYpbztzq+rJ/rpL9ruxTmSoKw==` |
 | Built with | `tree-sitter-cli@0.27.2` (`tree-sitter build --wasm`, wasi-sdk 34, binaryen 132) |
-| Loaded by | `web-tree-sitter` 0.27 — grammar ABI 14/15 |
+| Loaded by | `web-tree-sitter` 0.27 — grammar ABI 14 |
 | Size | 3.3 MB |
 | SHA-256 | `24a6afb13db61ffd7d53dd848bbf684ec1c3aacea685a0857dcd1db673d28c7e` |
 | Licence | MIT, `LICENSE` beside this file; `package.json` here is provenance for `gen-licenses` |
@@ -22,7 +23,10 @@ the same inputs give the same SHA-256.
 
 ```bash
 tmp=$(mktemp -d) && cd "$tmp"
-npm pack tree-sitter-swift@0.7.1 && tar xzf tree-sitter-swift-0.7.1.tgz
+npm pack tree-sitter-swift@0.7.1
+# Must print the tarball integrity above; anything else is not the audited source.
+echo "sha512-$(openssl dgst -sha512 -binary tree-sitter-swift-0.7.1.tgz | base64 | tr -d '\n')"
+tar xzf tree-sitter-swift-0.7.1.tgz
 npx --yes tree-sitter-cli@0.27.2 build --wasm -o tree-sitter-swift.wasm package
 cp tree-sitter-swift.wasm <repo>/vendor/tree-sitter-swift/
 ```
