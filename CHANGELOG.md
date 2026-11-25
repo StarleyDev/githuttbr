@@ -1,5 +1,20 @@
 
 
+## [4.50.0](https://github.com/StarleyDev/githuttbr/compare/v4.49.0...v4.50.0) (2026-11-25)
+
+### Features
+
+* **platform:** move to Electron 45 — macOS 13 Ventura or later is required ([41f66ff](https://github.com/StarleyDev/githuttbr/commit/41f66ff8dcd3df52d5c9ee5dea1b08e29cdcac1a))
+* **settings:** warn before importing credentials on Linux without a keyring ([0a227cf](https://github.com/StarleyDev/githuttbr/commit/0a227cf193424a5b63a11884f65d54c6da384018))
+* **worktrees:** tell a worktree tab apart from its main repository ([85ffa3f](https://github.com/StarleyDev/githuttbr/commit/85ffa3f0fec3e6e855a94b3d2a5ec827159b12f0))
+
+### Bug Fixes
+
+* **docs:** read handbook images whose alt text wraps onto several lines ([011e362](https://github.com/StarleyDev/githuttbr/commit/011e362da34ceb44ab1c32e6a13d69e20eeb49fb))
+* **i18n:** name Settings and the Vault in French and Spanish as the app does ([75d299b](https://github.com/StarleyDev/githuttbr/commit/75d299b3ea01e983e523bdbc1c6006389a9f683d))
+* **release:** keep merge commits in the changelog ([3d1a0eb](https://github.com/StarleyDev/githuttbr/commit/3d1a0ebc89a5e26822794e4a5dd62d086d17e9f8))
+* **worktrees:** suggest and open new worktrees at an absolute path ([f32ced4](https://github.com/StarleyDev/githuttbr/commit/f32ced43bb257d01f6bd7c3060935197af22aeeb))
+
 ## [4.49.0](https://github.com/StarleyDev/githuttbr/compare/v4.48.0...v4.49.0) (2026-11-25)
 
 
