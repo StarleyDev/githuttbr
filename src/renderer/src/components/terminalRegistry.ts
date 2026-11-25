@@ -9,6 +9,7 @@ import { createTermSuggest, type TermSuggest } from './termSuggest'
 import { registry, terminalPrefs, type TermHandle } from './terminalState'
 import { t, interp } from '../i18n'
 import { altArrowSequence, claimKeyEvent } from '../lib/terminalShortcuts'
+import { fitNeedsResync, planViewportResync } from '../lib/terminalScroll'
 
 export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
   const existing = registry.get(panelId)
@@ -271,6 +272,19 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     },
     true
   )
+  // A drag released outside the container sends its pointerup elsewhere;
+  // without this the flag stays set until the pointer comes back, and
+  // everything that waits for the drag to end (snap-back, the resize
+  // resync) keeps waiting.
+  const endScrollbarDrag = (): void => {
+    scrollbarDrag = false
+  }
+  window.addEventListener('pointerup', endScrollbarDrag, true)
+  window.addEventListener('pointercancel', endScrollbarDrag, true)
+  cleanups.push(() => {
+    window.removeEventListener('pointerup', endScrollbarDrag, true)
+    window.removeEventListener('pointercancel', endScrollbarDrag, true)
+  })
   container.addEventListener(
     'pointermove',
     (e) => {
@@ -429,37 +443,47 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   //
   // Repair it once the refresh has set the new scroll dimensions. The frame
   // callback is requested after fit.fit() queued xterm's refresh callback,
-  // so it runs after it in the same frame. A -1/+1 nudge makes the buffer
-  // adopt the element's row (at least one of the two moves is never clamped,
-  // so the element always reports a row), and from there the relative
-  // restore lands where the anchor says. The public scrollToBottom ignores
-  // xterm's internal absolute flag, so the nudge is how this stays on public
-  // API. Our own scroll events, as everywhere, are swallowed by the depth guard.
+  // so it runs after it in the same frame. Then a -1/+1 nudge: each move
+  // that changes the element's (validated) scrollTop makes it emit a scroll,
+  // and xterm's handler scrolls the buffer by the difference between the
+  // element's row and ydisp — so after the pair, ydisp is the element's row
+  // and the relative restore that follows lands where the anchor says. With
+  // no scrollback both moves clamp and nothing is emitted, but then both
+  // sides are at row 0 already. The public scrollToBottom drops xterm's
+  // internal "absolute" flag, so the nudge is how this stays on public API.
+  // Our own scroll events, as everywhere, are swallowed by the depth guard.
   let resyncRaf = 0
   let resyncTimer = 0
+  let resyncRetries = 0
   const resyncViewportNow = (): void => {
-    if (!container.isConnected || container.clientHeight === 0) return
-    // The alternate screen has no scrollback: ydisp is 0 on both sides.
-    if (term.buffer.active.type !== 'normal') return
-    // A live gesture moves the element and the buffer adopts its row, so the
-    // two are already in step — and the gesture owns the anchor. Retry once
-    // the hand lets go, in case the gesture never actually scrolled (a click
-    // on the scrollbar that did not move it).
-    const gestureLeft = 500 - (Date.now() - lastUserScrollAt)
-    if (scrollbarDrag || gestureLeft > 0) {
+    const plan = planViewportResync({
+      visible: container.isConnected && container.clientHeight > 0,
+      bufferType: term.buffer.active.type,
+      scrollbarDrag,
+      msSinceGesture: Date.now() - lastUserScrollAt,
+      anchorKind: anchor.kind,
+      retries: resyncRetries
+    })
+    if (plan.action === 'defer') {
+      // A gesture owns the viewport and keeps the two in step itself; retry
+      // once it lets go, in case it never actually scrolled (a click on the
+      // scrollbar that did not move it).
       if (!resyncTimer) {
+        resyncRetries++
         resyncTimer = window.setTimeout(() => {
           resyncTimer = 0
           resyncViewportNow()
-        }, Math.max(20, gestureLeft))
+        }, plan.delayMs)
       }
       return
     }
+    resyncRetries = 0
+    if (plan.action === 'skip') return
     withSelfScroll(() => {
       term.scrollLines(-1)
       term.scrollLines(1)
     })
-    if (anchor.kind === 'bottom') withSelfScroll(() => term.scrollToBottom())
+    if (plan.to === 'bottom') withSelfScroll(() => term.scrollToBottom())
     else restoreLine(anchorTarget())
     sdbg(`resync a=${anchor.kind}${domState()}`)
   }
@@ -703,6 +727,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         }
         // A snapshot taken at suspend time becomes the new anchor — xterm
         // may already have rewritten the offset behind our back.
+        const reattached = handle.suspendViewportY != null
         if (handle.suspendViewportY != null) {
           if (handle.suspendAtBottom) {
             anchor = { kind: 'bottom' }
@@ -715,17 +740,18 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
           // than a drag step; hold the quiet window open for all of it.
           resizeQuietUntil = Date.now() + 400
         }
-        const before = `${term.cols}x${term.rows}`
+        const before = { cols: term.cols, rows: term.rows }
         fit.fit()
-        // Reflow shifts buffer lines on resize; put the buffer's scroll
-        // position back now so the next frame paints the right rows — pinned
-        // to the bottom when it was already following output, parked on the
-        // marker-tracked line otherwise. This only fixes ydisp: the scrollable
-        // element is still on its pre-resize size and offset until the
-        // refresh, so resyncViewport repeats the restore against it after.
+        // Reflow shifts buffer lines on resize; put the scroll position back
+        // — pinned to the bottom when it was already following output,
+        // parked on the marker-tracked line otherwise. Best effort only: the
+        // scroll calls run against the scrollable element's pre-resize offset
+        // and size (the refresh that updates them has not run yet), so they
+        // can land on the wrong row or clamp, and the next frame may paint
+        // that. resyncViewport corrects it on the frame after the refresh.
         restoreAnchor()
-        resyncViewport()
-        sdbg(`fit ${before}->${term.cols}x${term.rows} a=${anchor.kind}${domState()}`)
+        if (fitNeedsResync(before, { cols: term.cols, rows: term.rows }, reattached)) resyncViewport()
+        sdbg(`fit ${before.cols}x${before.rows}->${term.cols}x${term.rows} a=${anchor.kind}${domState()}`)
         // A drag produces a fit per step, so roll the quiet window forward
         // from each fit rather than timing it from the first — never shorter
         // than a reattach window opened just above.

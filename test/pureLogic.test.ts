@@ -96,6 +96,13 @@ import {
   terminalCloseTarget,
   terminalShortcutFromEvent
 } from '../src/renderer/src/lib/terminalShortcuts'
+import {
+  GESTURE_WINDOW_MS,
+  RESYNC_MAX_RETRIES,
+  fitNeedsResync,
+  planViewportResync,
+  type ResyncInput
+} from '../src/renderer/src/lib/terminalScroll'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
 import { applyTerminalCenterDefault, claimTerminalAutoOpen } from '../src/renderer/src/lib/terminalAutoOpen'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
@@ -928,6 +935,43 @@ describe('keyboard shortcuts', () => {
     expect(altArrowSequence(composing, false)).toBeNull()
     const process = { ...ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), keyCode: 229 }
     expect(altArrowSequence(process, false)).toBeNull()
+  })
+
+  it('plans the post-resize scroll resync', () => {
+    const base: ResyncInput = {
+      visible: true,
+      bufferType: 'normal',
+      scrollbarDrag: false,
+      msSinceGesture: 10_000,
+      anchorKind: 'bottom',
+      retries: 0
+    }
+    expect(planViewportResync(base)).toEqual({ action: 'restore', to: 'bottom' })
+    expect(planViewportResync({ ...base, anchorKind: 'line' })).toEqual({ action: 'restore', to: 'line' })
+    // Hidden host, alternate screen: nothing to put in step.
+    expect(planViewportResync({ ...base, visible: false })).toEqual({ action: 'skip' })
+    expect(planViewportResync({ ...base, bufferType: 'alternate' })).toEqual({ action: 'skip' })
+    // A live gesture defers until its window closes, never sooner than 20ms.
+    expect(planViewportResync({ ...base, msSinceGesture: 100 })).toEqual({
+      action: 'defer',
+      delayMs: GESTURE_WINDOW_MS - 100
+    })
+    expect(planViewportResync({ ...base, msSinceGesture: GESTURE_WINDOW_MS - 1 })).toEqual({
+      action: 'defer',
+      delayMs: 20
+    })
+    expect(planViewportResync({ ...base, scrollbarDrag: true })).toEqual({ action: 'defer', delayMs: 20 })
+    // A drag flag nobody clears stops being polled.
+    expect(planViewportResync({ ...base, scrollbarDrag: true, retries: RESYNC_MAX_RETRIES })).toEqual({
+      action: 'skip'
+    })
+  })
+
+  it('resyncs only after a fit that changed the size or reattached', () => {
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 80, rows: 24 }, false)).toBe(false)
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 60, rows: 24 }, false)).toBe(true)
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 80, rows: 30 }, false)).toBe(true)
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 80, rows: 24 }, true)).toBe(true)
   })
 
   it('claims a terminal key from the window listeners as well as the browser', () => {
