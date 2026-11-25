@@ -249,10 +249,11 @@ export function MissionControlPage(): React.JSX.Element {
 
   const run = useCallback(
     // `busyKey` names the button that started a bulk run, so the spinner lands on it and not on
-    // every bulk button at once; a single row is keyed by its path.
+    // every bulk button at once; a single row is keyed by its op and path, so its fetch and its
+    // pull each spin their own button.
     async (paths: string[], op: 'fetch' | 'pull', busyKey?: BulkBusy): Promise<void> => {
       if (!paths.length) return
-      setBusy(busyKey ?? (paths.length === 1 ? paths[0] : '*'))
+      setBusy(busyKey ?? (paths.length === 1 ? `${op}:${paths[0]}` : '*'))
       try {
         if (paths.length > 1) {
           await repoActions.batch(paths, op)
@@ -563,7 +564,7 @@ export function MissionControlPage(): React.JSX.Element {
                         void run([p.path], 'fetch')
                       }}
                     >
-                      {busy === p.path ? <Loader2 size={12} className="spin" /> : <Download size={12} />}
+                      {busy === `fetch:${p.path}` ? <Loader2 size={12} className="spin" /> : <Download size={12} />}
                     </button>
                     <button
                       className="btn ghost small"
@@ -574,7 +575,7 @@ export function MissionControlPage(): React.JSX.Element {
                         void run([p.path], 'pull')
                       }}
                     >
-                      <ArrowDownToLine size={12} />
+                      {busy === `pull:${p.path}` ? <Loader2 size={12} className="spin" /> : <ArrowDownToLine size={12} />}
                     </button>
                     <button
                       className="btn ghost small"
