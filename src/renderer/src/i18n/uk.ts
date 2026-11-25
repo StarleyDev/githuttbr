@@ -279,6 +279,8 @@ export const uk: Dict = {
   'common.delete': 'Видалити',
   'common.create': 'Створити',
   'common.close': 'Закрити',
+  'common.clearSearch': 'Очистити пошук',
+  'common.showList': 'Показати список',
   'a11y.tabStrip': 'Відкриті вкладки',
   'a11y.closeTab': 'Закрити {name}',
   'a11y.windowMinimize': 'Згорнути вікно',

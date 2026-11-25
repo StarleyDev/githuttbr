@@ -279,6 +279,8 @@ export const ko: Dict = {
   'common.delete': '삭제',
   'common.create': '만들기',
   'common.close': '닫기',
+  'common.clearSearch': '검색 지우기',
+  'common.showList': '목록 표시',
   'a11y.tabStrip': '열린 탭',
   'a11y.closeTab': '{name} 닫기',
   'a11y.windowMinimize': '창 최소화',

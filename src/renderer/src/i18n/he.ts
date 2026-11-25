@@ -279,6 +279,8 @@ export const he: Dict = {
   'common.delete': 'מחיקה',
   'common.create': 'יצירה',
   'common.close': 'סגירה',
+  'common.clearSearch': 'ניקוי החיפוש',
+  'common.showList': 'הצגת הרשימה',
   'a11y.tabStrip': 'כרטיסיות פתוחות',
   'a11y.closeTab': 'סגירת {name}',
   'a11y.windowMinimize': 'מזעור החלון',

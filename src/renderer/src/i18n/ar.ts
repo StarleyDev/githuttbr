@@ -279,6 +279,8 @@ export const ar: Dict = {
   'common.delete': 'حذف',
   'common.create': 'إنشاء',
   'common.close': 'إغلاق',
+  'common.clearSearch': 'مسح البحث',
+  'common.showList': 'عرض القائمة',
   'a11y.tabStrip': 'علامات التبويب المفتوحة',
   'a11y.closeTab': 'إغلاق {name}',
   'a11y.windowMinimize': 'تصغير النافذة',

@@ -279,6 +279,8 @@ export const ru: Dict = {
   'common.delete': 'Удалить',
   'common.create': 'Создать',
   'common.close': 'Закрыть',
+  'common.clearSearch': 'Очистить поиск',
+  'common.showList': 'Показать список',
   'a11y.tabStrip': 'Открытые вкладки',
   'a11y.closeTab': 'Закрыть {name}',
   'a11y.windowMinimize': 'Свернуть окно',

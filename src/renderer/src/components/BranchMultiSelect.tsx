@@ -45,7 +45,12 @@ export function BranchMultiSelect({
         {value.map((b) => (
           <span key={b} className="bms-chip">
             {b}
-            <button className="bms-chip-x" onClick={(e) => { e.stopPropagation(); remove(b) }}>
+            <button
+              className="bms-chip-x"
+              title={t('common.remove')}
+              aria-label={t('common.remove')}
+              onClick={(e) => { e.stopPropagation(); remove(b) }}
+            >
               <X size={11} />
             </button>
           </span>

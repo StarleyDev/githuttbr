@@ -280,6 +280,8 @@ export const en = {
   'common.delete': 'Delete',
   'common.create': 'Create',
   'common.close': 'Close',
+  'common.clearSearch': 'Clear search',
+  'common.showList': 'Show the list',
   'a11y.tabStrip': 'Open tabs',
   'a11y.closeTab': 'Close {name}',
   'a11y.windowMinimize': 'Minimize window',

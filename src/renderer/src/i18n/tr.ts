@@ -277,6 +277,8 @@ export const tr: Dict = {
   'common.delete': 'Sil',
   'common.create': 'Oluştur',
   'common.close': 'Kapat',
+  'common.clearSearch': 'Aramayı temizle',
+  'common.showList': 'Listeyi göster',
   'a11y.tabStrip': 'Açık sekmeler',
   'a11y.closeTab': '{name} sekmesini kapat',
   'a11y.windowMinimize': 'Pencereyi simge durumuna küçült',

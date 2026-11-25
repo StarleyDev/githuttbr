@@ -279,6 +279,8 @@ export const pl: Dict = {
   'common.delete': 'Usuń',
   'common.create': 'Utwórz',
   'common.close': 'Zamknij',
+  'common.clearSearch': 'Wyczyść wyszukiwanie',
+  'common.showList': 'Pokaż listę',
   'a11y.tabStrip': 'Otwarte karty',
   'a11y.closeTab': 'Zamknij {name}',
   'a11y.windowMinimize': 'Minimalizuj okno',

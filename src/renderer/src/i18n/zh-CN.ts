@@ -279,6 +279,8 @@ export const zhCN: Dict = {
   'common.delete': '删除',
   'common.create': '创建',
   'common.close': '关闭',
+  'common.clearSearch': '清除搜索',
+  'common.showList': '显示列表',
   'a11y.tabStrip': '打开的标签页',
   'a11y.closeTab': '关闭 {name}',
   'a11y.windowMinimize': '最小化窗口',

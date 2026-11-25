@@ -2657,6 +2657,7 @@ function ThemeDialog({
   onClose: () => void
   children: ReactNode
 }): React.ReactElement {
+  const t = useT()
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose()
@@ -2674,7 +2675,7 @@ function ThemeDialog({
       }}
     >
       <div className="modal">
-        <button className="modal-close" onClick={onClose}>
+        <button className="modal-close" title={t('common.close')} aria-label={t('common.close')} onClick={onClose}>
           <X size={15} />
         </button>
         <div className="modal-scroll">

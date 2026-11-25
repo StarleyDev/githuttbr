@@ -279,6 +279,8 @@ export const ptBR: Dict = {
   'common.delete': 'Excluir',
   'common.create': 'Criar',
   'common.close': 'Fechar',
+  'common.clearSearch': 'Limpar busca',
+  'common.showList': 'Mostrar a lista',
   'a11y.tabStrip': 'Abas abertas',
   'a11y.closeTab': 'Fechar {name}',
   'a11y.windowMinimize': 'Minimizar a janela',

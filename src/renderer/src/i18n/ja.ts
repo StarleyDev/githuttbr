@@ -277,6 +277,8 @@ export const ja: Dict = {
   'common.delete': '削除',
   'common.create': '作成',
   'common.close': '閉じる',
+  'common.clearSearch': '検索をクリア',
+  'common.showList': 'リストを表示',
   'a11y.tabStrip': '開いているタブ',
   'a11y.closeTab': '{name} を閉じる',
   'a11y.windowMinimize': 'ウィンドウを最小化',
