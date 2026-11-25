@@ -2,7 +2,8 @@
   "hooks": {
     "before:init": [
       "node scripts/clear-git-lock.mjs",
-      "node scripts/check-screenshots.mjs"
+      "node scripts/check-screenshots.mjs",
+      "node scripts/check-release-merges.mjs"
     ],
     "after:git:release": [
       "git push origin v${version}"
