@@ -1683,6 +1683,31 @@ interface GlNote {
   } | null
 }
 
+/**
+ * The repository a GitHub pull request's head lives in, when that is not the
+ * base repository — or null. A deleted fork reports `head.repo` as null, but
+ * its `head.label` (`owner:branch`) still names the owner, which is enough to
+ * know the branch is not here.
+ */
+export function githubForkSource(
+  head: { label?: string; repo?: { full_name: string } | null },
+  base: { repo?: { full_name: string } | null },
+  baseOwner: string
+): string | null {
+  const baseRepo = base.repo?.full_name
+  const headRepo = head.repo?.full_name
+  if (headRepo) return baseRepo && headRepo !== baseRepo ? headRepo : null
+  const colon = head.label?.indexOf(':') ?? -1
+  const headOwner = colon > 0 ? head.label!.slice(0, colon) : ''
+  const owner = baseRepo?.split('/')[0] || baseOwner
+  return headOwner && headOwner.toLowerCase() !== owner.toLowerCase() ? headOwner : null
+}
+
+/** True when a GitLab merge request comes from another project (a fork). */
+export function isGitlabForkMr(mr: { source_project_id?: number; project_id?: number }): boolean {
+  return mr.source_project_id !== undefined && mr.project_id !== undefined && mr.source_project_id !== mr.project_id
+}
+
 async function glMergeRequestDetail(remoteUrl: string, token: string | undefined, number: number): Promise<PrDetail> {
   const { base, auth } = await glProjectOf(remoteUrl, token)
   const mrUrl = `${base}/merge_requests/${number}`
@@ -1761,6 +1786,17 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
+  // A fork's path costs one more request, made only for a fork. Unreadable (a
+  // private fork) leaves the project's id, which still says "not this one".
+  const sourceRepo = isGitlabForkMr(mr)
+    ? await glJson<{ path_with_namespace?: string }>(
+        `${base.replace(/\/projects\/[^/]+$/, '/projects')}/${mr.source_project_id}`,
+        auth
+      )
+        .then((p) => p.path_with_namespace || `projects/${mr.source_project_id}`)
+        .catch(() => `projects/${mr.source_project_id}`)
+    : null
+
   const changed = Number.parseInt(mr.changes_count ?? '', 10)
   return {
     createdAt: mr.created_at,
@@ -1780,7 +1816,7 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
     milestone: mr.milestone?.title ?? null,
     ...(Number.isFinite(changed) ? { changedFiles: changed } : {}),
     ...(commits ? { commits: commits.length, ...(commits.length >= 100 ? { commitsCapped: true } : {}) } : {}),
-    sourceRepo: null,
+    sourceRepo,
     avatars,
     number: mr.iid,
     title: mr.title,
@@ -2035,7 +2071,7 @@ async function pullRequestDetail(
       title: string
       body: string | null
       user: GhUser
-      head: { ref: string; repo: { full_name: string } | null }
+      head: { ref: string; label?: string; repo: { full_name: string } | null }
       base: { ref: string; repo: { full_name: string } | null }
       draft: boolean
       state: string
@@ -2103,8 +2139,6 @@ async function pullRequestDetail(
   reviews.forEach((r) => seen(r.user))
   reviewComments.forEach((c) => seen(c.user))
 
-  const baseRepo = pr.base.repo?.full_name
-  const headRepo = pr.head.repo?.full_name
   return {
     createdAt: pr.created_at,
     updatedAt: pr.updated_at,
@@ -2122,8 +2156,8 @@ async function pullRequestDetail(
     ...(pr.deletions !== undefined ? { deletions: pr.deletions } : {}),
     ...(pr.changed_files !== undefined ? { changedFiles: pr.changed_files } : {}),
     ...(pr.commits !== undefined ? { commits: pr.commits } : {}),
-    // A fork's head lives in another repository; a deleted fork reports null.
-    sourceRepo: headRepo && baseRepo && headRepo !== baseRepo ? headRepo : null,
+    // A fork's head lives in another repository, even once the fork is deleted.
+    sourceRepo: githubForkSource(pr.head, pr.base, owner),
     avatars,
     number: pr.number,
     title: pr.title,
