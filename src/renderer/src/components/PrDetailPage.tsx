@@ -29,6 +29,8 @@ import {
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { CheckLogPanel } from './CheckLogPanel'
+import { HostUserAvatar as Avatar } from './HostUserAvatar'
+import { PrNavBar } from './PrNavBar'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
@@ -236,6 +238,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   return (
     <div className="prp-page">
       <div className="prp-main">
+        <PrNavBar page={page} />
         <header className="prp-head">
           {status && (
             <span className={`prp-state prp-${status}`}>
@@ -656,33 +659,6 @@ function Field({ icon, label, children }: { icon: React.ReactNode; label: string
       </div>
       <div className="issue-field-val">{children}</div>
     </div>
-  )
-}
-
-/** A face when the host gave one, the initial otherwise. */
-function Avatar({
-  login,
-  avatars,
-  size = 18,
-  title
-}: {
-  login: string
-  avatars?: Record<string, string>
-  size?: number
-  title?: string
-}): React.JSX.Element {
-  const [failed, setFailed] = useState(false)
-  // Only an https picture is drawn; anything else falls back to the initial.
-  const raw = avatars?.[login]
-  const url = raw && /^https:\/\//i.test(raw) ? raw : undefined
-  const style = { width: size, height: size, fontSize: Math.round(size * 0.5) }
-  if (url && !failed) {
-    return <img className="prp-avatar" src={url} alt="" style={style} title={title} onError={() => setFailed(true)} draggable={false} />
-  }
-  return (
-    <span className="prp-avatar prp-avatar-fallback" style={style} title={title}>
-      {login.charAt(0).toUpperCase()}
-    </span>
   )
 }
 

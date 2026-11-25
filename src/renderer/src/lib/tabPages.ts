@@ -13,7 +13,7 @@ import type { PageContent, TabState } from '../../../shared/types'
 /** Page kinds that ride on their repository's tab. Everything else stands alone.
  *  A pull request rides too — on the repo's tab, or its chip inside a group —
  *  unless it is explicitly opened in a tab of its own. */
-export const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights', 'ci-runs', 'pr'])
+export const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights', 'ci-runs', 'pr', 'pull-requests'])
 
 /** Two attached pages are "the same" when they address the same thing: one wiki
  *  per repo, one DevTools per launch session. */
@@ -88,4 +88,26 @@ export function pagesForRepo(
   return (pages ?? [])
     .map((page, index) => ({ page, index }))
     .filter(({ page }) => 'repoPath' in page && page.repoPath === repoPath)
+}
+
+/**
+ * One page swapped for another where it stands — the PR detail's ‹ › moving to
+ * the next pull request without leaving a trail of PR icons. If the new page is
+ * already open on the same tab, the old one closes and the existing one shows,
+ * so the same PR is never on a tab twice. Null when `from` is not on this list.
+ */
+export function planReplace(
+  pages: PageContent[],
+  activePage: number | null | undefined,
+  from: PageContent,
+  to: PageContent
+): { pages: PageContent[]; activePage: number | null } | null {
+  const at = pages.findIndex((p) => samePage(p, from))
+  if (at < 0) return null
+  const dup = pages.findIndex((p, i) => i !== at && samePage(p, to))
+  if (dup < 0) return { pages: pages.map((p, i) => (i === at ? to : p)), activePage: activePage === at ? at : (activePage ?? null) }
+  const next = pages.filter((_, i) => i !== at).map((p) => (samePage(p, to) ? to : p))
+  const shift = (i: number): number => (i > at ? i - 1 : i)
+  // The one being looked at moves on to the PR it was replaced by.
+  return { pages: next, activePage: activePage === at ? shift(dup) : activePage == null ? null : shift(activePage) }
 }

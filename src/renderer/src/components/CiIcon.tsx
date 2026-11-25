@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
-import type { CiState } from '../../../shared/types'
-import type { TranslationKey } from '../i18n'
+import type { CiCounts, CiState } from '../../../shared/types'
+import { interp, type TranslationKey } from '../i18n'
+import { ciCountParts } from '../lib/ciCounts'
 
 /** What each rolled-up check state is called. */
 export const CI_STATE_KEY: Record<CiState, TranslationKey> = {
@@ -20,4 +21,12 @@ export function ciIcon(state: CiState, size: number, cls = ''): React.JSX.Elemen
   if (state === 'failure') return <XCircle size={size} className={`${cls} ci-failure`} />
   if (state === 'pending') return <Clock size={size} className={`${cls} ci-pending ci-pulse`} />
   return <MinusCircle size={size} className={`${cls} ci-neutral`} />
+}
+
+/** A PR row's checks on hover: the rolled-up state, then the counts main read. */
+export function ciTitle(state: CiState, counts: CiCounts | undefined, t: (key: TranslationKey) => string): string {
+  const parts = ciCountParts(counts).map((p) => interp(t(p.key), p.vars))
+  return parts.length
+    ? interp(t('ci.stateWithCounts'), { state: t(CI_STATE_KEY[state]), counts: parts.join(' · ') })
+    : t(CI_STATE_KEY[state])
 }

@@ -44,7 +44,8 @@ import {
   Folder,
   FolderOpen,
   Eraser,
-  Eye
+  Eye,
+  List
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -57,8 +58,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
-import { ciIcon, CI_STATE_KEY } from './CiIcon'
-import { ciCountParts } from '../lib/ciCounts'
+import { ciIcon, ciTitle } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
 import {
   bitbucketServerBasesOf,
@@ -97,7 +97,7 @@ import { canonicalRepoPath } from '../lib/repoAlias'
 import { gitlabServerBases } from '../../../shared/gitlabInstance'
 import { defaultSettings } from '../../../shared/types'
 import type { IconTone } from '../lib/iconTone'
-import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark, CiState, CiCounts } from '../../../shared/types'
+import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 import { NO_ITEMS } from '../lib/stableEmpty'
@@ -151,12 +151,6 @@ const UNMATCHED_HINT: Record<UnmatchedRemoteReason, TranslationKey> = {
   ssh: 'sidebar.prsServerUnmatched',
   sharedBase: 'sidebar.prsServerSharedBase',
   other: 'sidebar.prsServerUnmatchedOther'
-}
-
-/** A PR row's checks on hover: the rolled-up state, then the counts main read. */
-function ciTitle(state: CiState, counts: CiCounts | undefined, t: (key: TranslationKey) => string): string {
-  const parts = ciCountParts(counts).map((p) => interp(t(p.key), p.vars))
-  return parts.length ? interp(t('ci.stateWithCounts'), { state: t(CI_STATE_KEY[state]), counts: parts.join(' · ') }) : t(CI_STATE_KEY[state])
 }
 
 /** Collapsed runs (`dependabot/npm_and_yarn`) mute the empty prefixes so the
@@ -2309,6 +2303,21 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {...persistOpen('prs', false)}
         actions={
           <>
+            {/* The whole list, filterable, as a page — the sidebar's rows say too little to triage nineteen. */}
+            <span
+              className="icon-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('prList.seeAll')}
+              onKeyDown={keyActivate}
+              title={t('prList.seeAll')}
+              onClick={(e) => {
+                e.stopPropagation()
+                openPageTab({ type: 'pull-requests', repoPath: path })
+              }}
+            >
+              <List size={12} />
+            </span>
             <span
               className="icon-btn"
               role="button"

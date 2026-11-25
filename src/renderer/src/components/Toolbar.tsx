@@ -54,7 +54,8 @@ import {
   MessageSquare,
   Users,
   FlaskConical,
-  Workflow
+  Workflow,
+  GitPullRequest
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { withTone, type IconTone } from '../lib/iconTone'
@@ -282,6 +283,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           label: t('localCi.open'),
           icon: <FlaskConical size={15} />,
           onClick: () => openModal({ kind: 'local-ci', repoPath: path })
+        },
+        {
+          label: t('prList.open'),
+          icon: <GitPullRequest size={15} />,
+          onClick: () => useSettingsStore.getState().openPageTab({ type: 'pull-requests', repoPath: path })
         },
         {
           label: t('ciRuns.open'),

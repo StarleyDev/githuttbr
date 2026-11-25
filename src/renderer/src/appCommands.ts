@@ -16,6 +16,7 @@ import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { useUpdatesStore } from './stores/updates'
+import { activePrPage, stepPr } from './stores/prList'
 import { shellApi } from './infrastructure/api'
 import { chooseRepositories } from './openRepositories'
 import { openInEditor } from './lib/editorOpen'
@@ -150,6 +151,14 @@ export function runAppCommand(id: string): boolean {
     case 'mission-control':
       ui.setMissionOpen(true)
       return true
+    // The PR page's ‹ ›. Nothing to step (no PR page, the end of the list, a
+    // dialog over it) leaves the key alone.
+    case 'pr-previous':
+    case 'pr-next': {
+      const page = activePrPage()
+      if (!page || ui.modal) return false
+      return stepPr(page, id === 'pr-previous' ? -1 : 1)
+    }
     case 'vault':
       st.openPageTab({ type: 'vault' })
       return true

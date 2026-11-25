@@ -3389,7 +3389,10 @@ export type PageContent =
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }
   // `title` is what the list knew when it was opened — the tab's label until the
   // page has loaded the real one.
-  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string }
+  // `via: 'list'` — opened from the pull requests page, so its ‹ › walk the
+  // filtered list it came from rather than the repository's open PRs.
+  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list' }
+  | { type: 'pull-requests'; repoPath: string }
 
 /** One dependency's licence, collected at build time by scripts/gen-licenses.mjs.
  *  `text` is null when the package ships an SPDX id but no licence file. */
