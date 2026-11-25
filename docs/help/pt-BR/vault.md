@@ -36,7 +36,9 @@ diz *O Gitcito não conseguiu ler o seu cofre* — e **não mexe nele**. Nada po
 ser adicionado ou removido enquanto isso: salvar trocaria todos os segredos dele
 pelo que você acabou de digitar. Uma importação ou um bundle do
 [compartilhamento seguro](secure-share.md) que entraria nele é recusado do mesmo
-jeito, e avisa.
+jeito, e avisa — antes de gravar qualquer arquivo do bundle. Uma exportação que o
+levaria (um backup das configurações, um bundle do compartilhamento seguro) para
+e avisa, em vez de levar um cofre vazio.
 
 | Botão | O que faz |
 |-------|-----------|

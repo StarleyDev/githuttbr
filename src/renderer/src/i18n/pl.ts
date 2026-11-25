@@ -605,6 +605,9 @@ export const pl: Dict = {
     'Gitcito nie mógł odczytać Twojego sejfu — pęk kluczy był zablokowany, odmówiono dostępu albo zapisała go inna kopia Gitcito. Pozostał nietknięty i nie można niczego dodać ani usunąć, dopóki nie da się go odczytać. Odblokuj pęk kluczy i spróbuj ponownie.',
   'vault.replaceStore': 'Utwórz nowy sejf',
   'vault.replaceStoreTitle': 'Utworzyć nowy sejf?',
+  'vault.replaced': 'Utworzono nowy, pusty sejf. Stary plik pozostał obok jako kopia zapasowa.',
+  'vault.replaceFailed':
+    'Sejf nie został zastąpiony: pęk kluczy jest niedostępny albo sejf jednak da się odczytać.',
   'vault.replaceStoreMessage':
     'Gitcito przestaje czekać na sejf, którego nie może odczytać, i tworzy pusty. Stary plik zostaje obok jako kopia zapasowa i nigdy nie jest usuwany. Zrób to tylko wtedy, gdy te sekrety przepadły na dobre — na przykład zapisała je inna kopia Gitcito.',
   'vault.hideAll': 'Ukryj wszystko',

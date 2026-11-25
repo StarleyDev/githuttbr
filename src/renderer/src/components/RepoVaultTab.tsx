@@ -101,9 +101,10 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
       value: draft.value,
       note: draft.note.trim() || undefined
     })
-    setData(result)
-    // Refused: the draft stays open, so what was typed is not lost.
+    // Refused: the page stays as it was, draft open and visible, so what was
+    // typed is not lost; the toast says why. The next load shows the notice.
     if (vaultWriteRefused(result)) return
+    setData(result)
     setDraft(null)
     toast('success', t('vault.saved'))
   }
@@ -122,8 +123,9 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
       result = await vaultApi.upsert('repo', repoPath, { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
       if (result.unreadable) break
     }
-    if (result) setData(result)
+    // Refused: the pasted text stays open, as the draft does above.
     if (vaultWriteRefused(result)) return
+    if (result) setData(result)
     setPasteText(null)
     toast('success', `${parsed.length} ${t('vault.envImported')}`)
   }

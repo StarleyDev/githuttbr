@@ -14,6 +14,7 @@ import {
   type ExportPreset
 } from '../lib/settingsExport'
 import { settingsApi, infoApi, vaultApi, profileAvatarApi } from '../infrastructure/api'
+import { toastVaultUnreadable } from './VaultUnreadableNotice'
 import { withoutAISecretsSeed } from '../../../shared/aiScope'
 import { hasStoredImage } from '../../../shared/profileAvatar'
 import { stripSettingsSecrets } from '../../../shared/secrets'
@@ -128,7 +129,15 @@ export function ExportSettingsDialog({ onClose }: { onClose?: () => void }): Rea
         settings: exportSettingsFor(base, parts)
       }
       if (manifest.info) bundle.info = await infoApi.exportAll()
-      if (manifest.vault) bundle.vault = await vaultApi.exportAll()
+      if (manifest.vault) {
+        // An unreadable vault answers empty: a backup must not carry that as the vault.
+        const { unreadable, repos, global } = await vaultApi.exportAll()
+        if (unreadable) {
+          toastVaultUnreadable()
+          return
+        }
+        bundle.vault = { repos, global }
+      }
       // Pictures live outside settings (one PNG per profile); they go with Profiles.
       if (manifest.avatarCount > 0) {
         const avatars = await profileAvatarApi.exportAll(avatarIds)

@@ -19,6 +19,7 @@ import {
 } from '../../../shared/types'
 import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
 import { infoApi, profileAvatarApi, settingsApi, shellApi, vaultApi } from '../infrastructure/api'
+import { toastVaultUnreadable } from './VaultUnreadableNotice'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { withAIPatch } from '../../../shared/aiScope'
 import {
@@ -543,7 +544,9 @@ export function OnboardingWizard(): React.JSX.Element {
     try {
       // The side stores first: once onboardingCompleted lands, this wizard unmounts.
       if (bundle?.info) await infoApi.importAll(bundle.info)
-      if (keepSecrets && bundle?.vault) await vaultApi.importAll(bundle.vault)
+      // An unreadable vault refuses the merge: the rest of the import still
+      // goes in, and the vault's refusal is said on its own (below).
+      const vaultRefused = keepSecrets && bundle?.vault ? !!(await vaultApi.importAll(bundle.vault)).unreadable : false
       if (bundle?.avatars) {
         // Same id moves the import applies to the profiles (a file `default`
         // named differently from ours gets its own id): pictures follow them.
@@ -557,6 +560,7 @@ export function OnboardingWizard(): React.JSX.Element {
       }
       await importSettings({ ...toApply, onboardingCompleted: true })
       toast('success', t('onboarding.imported'))
+      if (vaultRefused) toastVaultUnreadable()
     } catch {
       toast('error', t('onboarding.importFailed'))
     }

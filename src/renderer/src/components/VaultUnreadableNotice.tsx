@@ -1,6 +1,7 @@
 import { ShieldAlert } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 import { t as tNow, useT } from '../i18n'
 
 /**
@@ -24,6 +25,11 @@ export function VaultUnreadableNotice({ onReload }: { onReload: () => void }): R
         void vaultApi
           .replaceUnreadable()
           .catch(() => false)
+          .then((replaced) => {
+            const ui = useUIStore.getState()
+            if (replaced) ui.toast('success', tNow('vault.replaced'))
+            else ui.toast('error', tNow('vault.replaceFailed'))
+          })
           .finally(onReload)
     })
 
@@ -46,4 +52,22 @@ export function vaultWriteRefused(result: { unreadable?: boolean } | null | unde
   if (!result?.unreadable) return false
   useUIStore.getState().toast('error', tNow('vault.unreadable'))
   return true
+}
+
+/**
+ * From a flow outside the Vault page (an import, an export): the vault could
+ * not be read. Says why, and offers the page where it can be retried or
+ * replaced.
+ */
+export function toastVaultUnreadable(): void {
+  const ui = useUIStore.getState()
+  ui.toast('error', tNow('vault.unreadable'), {
+    action: {
+      label: tNow('cmd.vault'),
+      run: () => {
+        ui.closeModal()
+        useSettingsStore.getState().openPageTab({ type: 'vault' })
+      }
+    }
+  })
 }

@@ -14,9 +14,10 @@ import {
   BundleError,
   type BundleFile,
   type BundleNote,
-  type BundleSection
+  type BundleSection,
+  type BundleVaultEntry
 } from './secureBundle'
-import { exportGlobalEntries, importGlobalEntries, isVaultUnreadable, VaultUnreadableError } from './vault'
+import { exportGlobalEntries, importGlobalEntries, checkVaultUnreadable, VaultUnreadableError } from './vault'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
@@ -258,7 +259,13 @@ export async function exportSectionsV2(
   const sections: BundleSection[] = []
   for (const spec of specs) {
     if (spec.kind === 'vault') {
-      const entries = await exportGlobalEntries()
+      let entries: BundleVaultEntry[]
+      try {
+        entries = await exportGlobalEntries()
+      } catch (e) {
+        if (e instanceof VaultUnreadableError) return { error: 'vault-unreadable' }
+        throw e
+      }
       if (entries.length > 0) sections.push({ kind: 'vault', entries })
       continue
     }
@@ -443,7 +450,7 @@ export async function applyV2(
   }
   // Checked before anything is written: a vault that cannot be read refuses
   // the merge, and the files of the same bundle should not land without it.
-  if (plan.some((s) => s.kind === 'vault') && (await isVaultUnreadable())) return { error: 'vault-unreadable' }
+  if (plan.some((s) => s.kind === 'vault') && (await checkVaultUnreadable())) return { error: 'vault-unreadable' }
   let filesWritten = 0
   let secretsWritten = 0
   let notesWritten = 0

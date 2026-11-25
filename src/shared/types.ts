@@ -2320,6 +2320,18 @@ export interface VaultExport {
   global: VaultEntry[]
 }
 
+/** `vault:exportAll`'s answer: `unreadable` when the vault exists and could not
+ *  be read — then it is empty, and must not be exported as the vault. */
+export interface VaultExportReply extends VaultExport {
+  unreadable?: boolean
+}
+
+/** `vault:importAll`'s answer: `unreadable` when the local vault could not be
+ *  read, so nothing was merged into it. */
+export interface VaultImportReply {
+  unreadable?: boolean
+}
+
 /** Whole-info payload for backup/transfer (all repos). */
 export interface InfoExport {
   repos: Record<string, InfoEntry[]>

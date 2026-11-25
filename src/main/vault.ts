@@ -3,7 +3,7 @@ import { join } from 'path'
 import { readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { randomUUID } from 'node:crypto'
-import type { VaultEntry, VaultListResult, VaultExport } from '../shared/types'
+import type { VaultEntry, VaultListResult, VaultExport, VaultExportReply, VaultImportReply } from '../shared/types'
 import type { BundleVaultEntry } from './secureBundle'
 import { adoptExistingConsent, canUseKeychain, ensureKeychain, isKeychainWeak, sealSecret } from './keychain'
 import { copyPrivateFile, writePrivateFile } from './privateFile'
@@ -191,44 +191,59 @@ function mergeEntries(base: VaultEntry[], incoming: VaultEntry[]): VaultEntry[] 
   return [...byId.values()]
 }
 
-/** Whole vault, for backup/transfer. Empty when OS encryption is unavailable. */
-async function exportAll(): Promise<VaultExport> {
+/** Whole vault, for backup/transfer. Empty when OS encryption is unavailable;
+ *  `unreadable` when the vault could not be read — an empty answer that must
+ *  not stand in for the vault in a backup. */
+async function exportAll(): Promise<VaultExportReply> {
   if (!(await ensureKeychain('vault'))) return { repos: {}, global: [] }
   return exclusive(async () => {
     const data = await load()
+    if (vaultUnreadable) return { repos: {}, global: [], unreadable: true }
     return { repos: data.repos, global: data.global }
   })
 }
 
 /** Merge an imported vault into the local one (incoming wins per id). No-op if
- *  OS encryption is unavailable (we can't safely persist secrets). Rejects
- *  (`VaultUnreadableError`) when the local vault could not be read: the import
- *  step fails visibly instead of replacing it. */
-async function importAll(incoming: VaultExport): Promise<void> {
-  if (!incoming || !(await ensureKeychain('vault'))) return
-  await exclusive(async () => {
+ *  OS encryption is unavailable (we can't safely persist secrets). Answers
+ *  `unreadable` — merging nothing — when the local vault could not be read:
+ *  a reply rather than a rejection, so the renderer can tell it from a failure. */
+async function importAll(incoming: VaultExport): Promise<VaultImportReply> {
+  if (!incoming || !(await ensureKeychain('vault'))) return {}
+  return exclusive(async () => {
     const data = await load()
+    if (vaultUnreadable) return { unreadable: true }
     data.global = mergeEntries(data.global, incoming.global ?? [])
     for (const [path, entries] of Object.entries(incoming.repos ?? {})) {
       data.repos[path] = mergeEntries(data.repos[path] ?? [], entries)
     }
     await save(data)
+    return {}
   })
 }
 
 /** Global vault secrets as portable bundle entries (no id/updatedAt). Empty when
- *  OS encryption is unavailable. Used by secure-share to pack a vault section. */
+ *  OS encryption is unavailable. Used by secure-share to pack a vault section.
+ *  Rejects (`VaultUnreadableError`) when the vault could not be read: a bundle
+ *  asked to carry the vault never silently carries nothing. */
 export async function exportGlobalEntries(): Promise<BundleVaultEntry[]> {
   if (!(await canUseKeychain())) return []
   return exclusive(async () => {
     const data = await load()
+    if (vaultUnreadable) throw new VaultUnreadableError()
     return data.global.map((e) => ({ key: e.key, value: e.value, ...(e.note ? { note: e.note } : {}) }))
   })
 }
 
-/** Whether the vault on disk exists and cannot be read now. Never asks for consent. */
-export async function isVaultUnreadable(): Promise<boolean> {
-  if (!existsSync(filePath()) || !(await canUseKeychain())) return false
+/**
+ * Whether the vault on disk exists and cannot be read — asked the way an
+ * import into it would ask: consent adopted, the keychain requested. Run
+ * before anything else of a bundle is written, so the vault step cannot be
+ * the first to find out after the files already landed.
+ */
+export async function checkVaultUnreadable(): Promise<boolean> {
+  if (!existsSync(filePath())) return false
+  await adoptExistingConsent([filePath()])
+  if (!(await ensureKeychain('vault'))) return false
   return exclusive(async () => {
     await load()
     return vaultUnreadable

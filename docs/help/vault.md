@@ -33,7 +33,9 @@ another copy of Gitcito (a development build, a re-signed one), the page says
 *Gitcito could not read your vault* — and **leaves it untouched**. Nothing can be
 added or removed meanwhile: saving would replace every secret in it with the one
 you just typed. An import or a [secure share](secure-share.md) bundle that would
-merge into it is refused the same way, and says so.
+merge into it is refused the same way, and says so — before any file of the
+bundle is written. An export that would carry it (a settings backup, a secure
+share bundle) stops and says so, rather than carrying an empty vault.
 
 | Button | What it does |
 |--------|--------------|

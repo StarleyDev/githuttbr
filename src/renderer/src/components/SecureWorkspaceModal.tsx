@@ -158,6 +158,8 @@ export function SecureWorkspaceModal({
 
   // ── Export ─────────────────────────────────────────────────────────────────
   const [vaultCount, setVaultCount] = useState<number | null>(null)
+  // Exists but cannot be read: 0 entries would read as "the vault is empty".
+  const [vaultUnreadable, setVaultUnreadable] = useState(false)
   const [includeVault, setIncludeVault] = useState(false)
   const [repoState, setRepoState] = useState<Record<string, RepoExportState>>({})
   // Per-workspace "include the tab structure itself" and per-repo "include
@@ -170,6 +172,7 @@ export function SecureWorkspaceModal({
   useEffect(() => {
     void vaultApi.list('').then((d) => {
       const n = d.available ? d.global.length : 0
+      setVaultUnreadable(!!d.unreadable)
       setVaultCount(n)
       setIncludeVault(n > 0)
     })
@@ -606,6 +609,11 @@ export function SecureWorkspaceModal({
                 {vaultCount ?? 0} {t('wshare.secrets')}
               </span>
             </button>
+            {vaultUnreadable && (
+              <p className="settings-hint" role="alert">
+                {t('vault.unreadable')}
+              </p>
+            )}
 
             {/* Workspaces, each with its repos; a group checkbox selects/clears
                 the whole workspace at once. */}

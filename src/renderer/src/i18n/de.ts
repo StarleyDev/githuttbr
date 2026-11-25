@@ -605,6 +605,9 @@ export const de: Dict = {
     'Gitcito konnte deinen Tresor nicht lesen – der Schlüsselbund war gesperrt, der Zugriff wurde verweigert oder eine andere Gitcito-Kopie hat ihn gespeichert. Er ist unverändert, und es kann nichts hinzugefügt oder entfernt werden, bis er lesbar ist. Entsperre den Schlüsselbund und versuche es erneut.',
   'vault.replaceStore': 'Neuen Tresor anlegen',
   'vault.replaceStoreTitle': 'Neuen Tresor anlegen?',
+  'vault.replaced': 'Ein neuer, leerer Tresor wurde angelegt. Die alte Datei bleibt daneben als Sicherung erhalten.',
+  'vault.replaceFailed':
+    'Der Tresor wurde nicht ersetzt: Der Schlüsselbund ist nicht verfügbar, oder der Tresor ist doch lesbar.',
   'vault.replaceStoreMessage':
     'Gitcito wartet nicht länger auf den Tresor, den es nicht lesen kann, und legt einen leeren an. Die alte Datei bleibt daneben als Sicherung erhalten und wird nie gelöscht. Tu das nur, wenn diese Geheimnisse endgültig verloren sind – etwa weil eine andere Gitcito-Kopie sie gespeichert hat.',
   'vault.hideAll': 'Alle verbergen',

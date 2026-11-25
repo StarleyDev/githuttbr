@@ -598,6 +598,9 @@ export const en = {
     'Gitcito could not read your vault — the keychain was locked, access was denied, or another copy of Gitcito saved it. It is untouched, and nothing can be added or removed until it can be read. Unlock the keychain and retry.',
   'vault.replaceStore': 'Start a new vault',
   'vault.replaceStoreTitle': 'Start a new vault?',
+  'vault.replaced': 'A new, empty vault was started. The old file is kept beside it as a backup.',
+  'vault.replaceFailed':
+    'The vault was not replaced: the keychain is not available, or the vault can be read after all.',
   'vault.replaceStoreMessage':
     'Gitcito stops waiting for the vault it cannot read and starts an empty one. The old file is kept beside it as a backup and never deleted. Only do this if those secrets are gone for good — for example, another copy of Gitcito saved them.',
   'vault.hideAll': 'Hide all',

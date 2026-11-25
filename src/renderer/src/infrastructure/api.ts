@@ -153,6 +153,8 @@ import type {
   VaultEntry,
   VaultListResult,
   VaultExport,
+  VaultExportReply,
+  VaultImportReply,
   InfoEntry,
   InfoExport,
   SecureShareCandidate,
@@ -881,8 +883,8 @@ export const vaultApi = {
     window.api.vault.upsert(scope, repoPath, entry) as Promise<VaultListResult>,
   remove: (scope: 'repo' | 'global', repoPath: string, id: string) =>
     window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>,
-  exportAll: () => window.api.vault.exportAll() as Promise<VaultExport>,
-  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>,
+  exportAll: () => window.api.vault.exportAll() as Promise<VaultExportReply>,
+  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<VaultImportReply>,
   replaceUnreadable: () => window.api.vault.replaceUnreadable() as Promise<boolean>
 }
 

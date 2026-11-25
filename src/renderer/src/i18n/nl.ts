@@ -606,6 +606,9 @@ export const nl: Dict = {
     'Gitcito kon je kluis niet lezen — de sleutelhanger was vergrendeld, toegang werd geweigerd of een andere kopie van Gitcito heeft hem opgeslagen. Hij is niet gewijzigd, en er kan niets worden toegevoegd of verwijderd tot hij leesbaar is. Ontgrendel de sleutelhanger en probeer het opnieuw.',
   'vault.replaceStore': 'Nieuwe kluis starten',
   'vault.replaceStoreTitle': 'Nieuwe kluis starten?',
+  'vault.replaced': 'Er is een nieuwe, lege kluis gestart. Het oude bestand blijft ernaast staan als back-up.',
+  'vault.replaceFailed':
+    'De kluis is niet vervangen: de sleutelhanger is niet beschikbaar, of de kluis is toch leesbaar.',
   'vault.replaceStoreMessage':
     'Gitcito wacht niet langer op de kluis die het niet kan lezen en start een lege. Het oude bestand blijft ernaast staan als back-up en wordt nooit verwijderd. Doe dit alleen als die geheimen definitief weg zijn — bijvoorbeeld omdat een andere kopie van Gitcito ze heeft opgeslagen.',
   'vault.hideAll': 'Alles verbergen',
