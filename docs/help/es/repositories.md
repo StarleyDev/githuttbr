@@ -99,6 +99,37 @@ Las carpetas de escaneo se configuran en Ajustes:
   convierte algo en repositorio aquí. Nombre, dueño y rama salen de archivos
   dentro de `.git` (`HEAD`, la config), nunca ejecutando `git`.
 
+## Repositorios escaneados
+
+Esta página responde a «¿dónde está ese repositorio?» entre todo lo que Gitcito
+conoce. Cuando solo quieres **abrir** algo de tus carpetas de proyectos, la
+ventana **Abrir repositorio** — y la pantalla de bienvenida — tiene un camino
+más corto: **Repositorios escaneados**.
+
+![El diálogo Repositorios escaneados: las carpetas escaneadas contraídas arriba, un filtro y luego los repositorios de la carpeta con una casilla y su rama, dos marcados y el botón Abrir contándolos](../../screenshots/scanned-repos.webp)
+
+- Los repositorios se **agrupan por carpeta escaneada**, ordenados por nombre,
+  con un filtro por nombre o ruta.
+- **Marca varios** y pulsa **Abrir**, o haz **doble clic** en uno. Desde un
+  grupo — su lanzador, o la página con la que se abre un grupo nuevo — el botón
+  dice **Añadir al grupo**, y vuelves a donde estabas.
+- Abierto desde **Abrir repositorio**, el diálogo tiene una flecha **Atrás**
+  junto al título — igual que **Clonar** y **Crear** — para que un clic
+  equivocado vuelva a Abrir repositorio sin cerrar nada.
+- Un repositorio que ya está abierto en una pestaña — o que ya está en ese
+  grupo — aparece en la lista pero atenuado, para que la cuenta de la carpeta
+  siga cuadrando.
+- Abrir el diálogo **vuelve a escanear las carpetas** primero, así que un clon
+  recién hecho ya está ahí sin pasar por Ajustes.
+- **Carpetas escaneadas**, arriba, es el mismo editor que en Ajustes: añade una
+  carpeta, quita una, cambia su profundidad. Empieza desplegado cuando aún no hay
+  ninguna carpeta, porque una lista vacía sería si no un callejón sin salida.
+
+Sus límites: un repositorio bajo dos carpetas que se solapan aparece una sola
+vez, bajo la carpeta más profunda. Una carpeta que ha desaparecido desde
+entonces se omite — no se puede abrir. Quitar una carpeta escaneada oculta aquí
+sus repositorios, pero no los **Olvida** en esta página.
+
 ## Filas
 
 Las filas van en columnas: estrella, nombre (respeta el alias si lo has

@@ -4,6 +4,7 @@ category: Empieza aquí
 order: 1
 summary: Abre un repositorio, lee el grafo, haz tu primer commit.
 keywords: intro primeros pasos abrir clonar clone pestañas tabs grafo graph commit empezar inicio
+source: 173f891f9f1c5c53ea40cf344baf821e3188344d
 ---
 
 # Primeros pasos
@@ -15,15 +16,31 @@ repositorio hasta que se lo pidas.
 
 ## Abrir un repositorio
 
+![Abrir repositorio: abrir, clonar o crear, y debajo los repositorios escaneados y los recientes](../../screenshots/open-repository.webp)
+
 - **Arrastra una carpeta** sobre la ventana, o usa **Abrir repositorio** en la
-  pantalla de bienvenida.
+  pantalla de bienvenida. El selector admite varias carpetas a la vez: haz
+  ⌘-clic o Mayús-clic para seleccionarlas, y cada una se abre en su propia
+  pestaña (o se une al grupo desde el que lo abriste). En una selección de
+  varias, un repositorio que ya está abierto, o una carpeta que no es un
+  repositorio Git, se omite y se nombra en un mensaje, para que las demás se
+  abran igualmente. El selector de macOS no puede atenuar de antemano los
+  repositorios abiertos: Electron no expone el gancho por carpeta del panel,
+  así que la comprobación ocurre después de pulsar Abrir.
+- **Repositorios escaneados**, debajo de los tres botones, lista todos los
+  repositorios de las carpetas que le pediste a Gitcito que escanee — marca
+  varios y ábrelos de una vez, o haz doble clic en uno. También es donde añades
+  o quitas esas carpetas. Mira [Repositorios](repositories.md#repositorios-escaneados).
+- **¿Pulsaste el que no era?** Clonar, Crear, Crear grupo y Repositorios
+  escaneados, abiertos desde Abrir repositorio, tienen una flecha **Atrás** junto
+  al título que vuelve a él.
 - **Clona** uno desde una URL o directamente desde tu hosting — mira
   [clonar](cloning.md) para las opciones que hacen que un repositorio enorme se
   clone rápido.
 - Desde un terminal, `gitcito .` abre la carpeta actual en la app que ya está
   en marcha — mira [la línea de comandos](cli.md).
-- Una carpeta que todavía no es un repositorio Git también se abre, y te ofrece
-  inicializarla.
+- Una sola carpeta que todavía no es un repositorio Git también se abre, y te
+  ofrece inicializarla.
 
 ## Los tres paneles
 

@@ -103,6 +103,37 @@ Le cartelle da scansionare si configurano in Impostazioni:
   che rende qualcosa un repository qui. Nome, proprietario e branch arrivano
   da file dentro `.git` (`HEAD`, la config), mai eseguendo `git`.
 
+## Repository scansionati
+
+Questa pagina risponde a «dov'è quel repository?» fra tutto ciò che Gitcito
+conosce. Quando vuoi solo **aprire** qualcosa dalle tue cartelle di progetto,
+la finestra **Apri un repository** — e la schermata di benvenuto — ha una
+strada più corta: **Repository scansionati**.
+
+![La finestra Repository scansionati: le cartelle scansionate compresse in alto, un filtro, poi i repository della cartella con una casella e il loro branch, due spuntati e il pulsante Apri che li conta](../../screenshots/scanned-repos.webp)
+
+- I repository sono **raggruppati per cartella scansionata**, ordinati per
+  nome, con un filtro per nome o percorso.
+- **Spuntane diversi** e premi **Apri**, oppure fai **doppio clic** su uno. Da
+  un gruppo — il suo launcher, o la pagina con cui si apre un gruppo nuovo — il
+  pulsante diventa **Aggiungi al gruppo**, e torni da dove eri partito.
+- Aperta da **Apri un repository**, la finestra ha una freccia **Indietro**
+  accanto al titolo — come **Clona** e **Crea** — così un clic sbagliato torna
+  ad Apri un repository senza chiudere nulla.
+- Un repository già aperto in una scheda — o già in quel gruppo — è elencato ma
+  ingrigito, così il conteggio della cartella torna comunque.
+- Aprire la finestra **scansiona di nuovo le cartelle** prima di tutto, così un
+  clone appena fatto c'è già senza passare dalle Impostazioni.
+- **Cartelle scansionate**, in alto, è lo stesso editor delle Impostazioni:
+  aggiungi una cartella, togline una, cambiane la profondità. Parte aperto
+  quando non c'è ancora nessuna cartella, perché altrimenti una lista vuota
+  sarebbe un vicolo cieco.
+
+I suoi limiti: un repository sotto due cartelle che si sovrappongono è elencato
+una sola volta, sotto la cartella più profonda. Una cartella che nel frattempo
+è sparita viene omessa — non si può aprire. Togliere una cartella scansionata
+nasconde qui i suoi repository, ma non li **Dimentica** in questa pagina.
+
 ## Le righe
 
 Le righe sono disposte a colonne: stella, nome (tiene conto dell'alias se

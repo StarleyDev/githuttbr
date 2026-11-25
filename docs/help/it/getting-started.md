@@ -4,6 +4,7 @@ category: Per iniziare
 order: 1
 summary: Apri un repository, leggi il grafo, fai il tuo primo commit.
 keywords: introduzione primi passi apri clone schede tabs grafo graph commit
+source: 173f891f9f1c5c53ea40cf344baf821e3188344d
 ---
 
 # Primi passi
@@ -15,15 +16,31 @@ scritto niente finché non lo chiedi tu.
 
 ## Aprire un repository
 
-- **Trascina una cartella** sulla finestra, oppure usa **Apri repository** nella
-  schermata di benvenuto.
+![Apri un repository: apri, clona o crea, poi i repository scansionati e i recenti](../../screenshots/open-repository.webp)
+
+- **Trascina una cartella** sulla finestra, oppure usa **Apri un repository**
+  nella schermata di benvenuto. Il selettore accetta più cartelle insieme:
+  selezionale con ⌘-clic o Maiusc-clic, e ognuna si apre nella sua scheda (o
+  entra nel gruppo da cui l'hai aperto). In una selezione di più cartelle, un
+  repository già aperto, o una cartella che non è un repository Git, viene
+  saltato e nominato in un messaggio, così le altre si aprono comunque. Il
+  selettore di macOS non può ingrigire in anticipo i repository aperti:
+  Electron non espone l'hook per cartella del pannello, quindi il controllo
+  avviene dopo il clic su Apri.
+- **Repository scansionati**, sotto i tre pulsanti, elenca tutti i repository
+  nelle cartelle che hai chiesto a Gitcito di scansionare — spuntane diversi e
+  aprili in un colpo solo, oppure fai doppio clic su uno. È anche il posto dove
+  aggiungi o togli quelle cartelle. Vedi [Repository](repositories.md#repository-scansionati).
+- **Hai cliccato quello sbagliato?** Clona, Crea, Crea gruppo e Repository
+  scansionati, aperti da Apri un repository, hanno una freccia **Indietro**
+  accanto al titolo che riporta lì.
 - **Clonane** uno da un URL o direttamente dal tuo host — vedi
   [clonare](cloning.md) per le opzioni che rendono rapido il clone di un
   repository enorme.
 - Da terminale, `gitcito .` apre la cartella corrente nell'app già in esecuzione
   — vedi [la riga di comando](cli.md).
-- Una cartella che non è ancora un repository Git si apre lo stesso, e ti propone
-  di inizializzarla.
+- Una singola cartella che non è ancora un repository Git si apre lo stesso, e
+  ti propone di inizializzarla.
 
 ## I tre pannelli
 

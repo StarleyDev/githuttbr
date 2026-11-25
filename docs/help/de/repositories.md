@@ -103,6 +103,40 @@ Scan-Ordner werden in den Einstellungen konfiguriert:
   hier zum Repository. Name, Owner und Branch kommen aus Dateien in `.git`
   (`HEAD`, die Config), nie indem `git` ausgeführt wird.
 
+## Gescannte Repositories
+
+Diese Seite beantwortet „Wo ist dieses Repository?“ über alles, was Gitcito
+kennt. Wenn du nur etwas aus deinen Projektordnern **öffnen** willst, hat das
+Fenster **Repository öffnen** — und der Willkommensbildschirm — einen kürzeren
+Weg: **Gescannte Repositories**.
+
+![Der Dialog Gescannte Repositories: oben die eingeklappten gescannten Ordner, ein Filter, dann die Repositories des Ordners mit Kontrollkästchen und Branch, zwei angehakt und die Schaltfläche Öffnen, die sie zählt](../../screenshots/scanned-repos.webp)
+
+- Die Repositories sind **nach gescanntem Ordner gruppiert**, nach Namen
+  sortiert, mit einem Filter für Name oder Pfad.
+- **Hake mehrere an** und drücke **Öffnen**, oder **doppelklicke** auf eines.
+  Aus einer Gruppe heraus — ihrem Launcher oder der Seite, mit der sich eine
+  neue Gruppe öffnet — heißt die Schaltfläche **Zur Gruppe hinzufügen**, und du
+  kehrst dorthin zurück, woher du kamst.
+- Aus **Repository öffnen** aufgerufen, hat der Dialog neben seinem Titel einen
+  **Zurück**-Pfeil — wie auch **Klonen** und **Erstellen** —, sodass ein
+  Fehlklick zu Repository öffnen zurückführt, ohne etwas zu schließen.
+- Ein Repository, das schon in einem Tab offen ist — oder schon in dieser
+  Gruppe —, wird aufgeführt, aber ausgegraut, damit die Zahl des Ordners
+  weiterhin stimmt.
+- Beim Öffnen **scannt der Dialog die Ordner zuerst erneut**, sodass ein
+  frischer Klon da ist, ohne Umweg über die Einstellungen.
+- **Gescannte Ordner** oben ist derselbe Editor wie in den Einstellungen:
+  Ordner hinzufügen, einen entfernen, seine Tiefe ändern. Er ist anfangs
+  aufgeklappt, wenn es noch keinen Ordner gibt, denn eine leere Liste wäre
+  sonst eine Sackgasse.
+
+Seine Grenzen: Ein Repository unter zwei sich überlappenden Ordnern erscheint
+nur einmal, unter dem tieferen Ordner. Ein inzwischen verschwundener Ordner
+wird ausgelassen — er lässt sich nicht öffnen. Einen gescannten Ordner zu
+entfernen blendet seine Repositories hier aus, **vergisst** sie auf dieser
+Seite aber nicht.
+
 ## Zeilen
 
 Zeilen sind in Spalten gelegt: Stern, Name (alias-bewusst, wenn du ihn

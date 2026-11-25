@@ -105,6 +105,38 @@ Les dossiers à parcourir se règlent dans les Paramètres :
   ce qui fait d'une chose un dépôt ici. Nom, propriétaire et branche viennent
   de fichiers dans `.git` (`HEAD`, la config), jamais en lançant `git`.
 
+## Dépôts analysés
+
+Cette page répond à « où est ce dépôt ? » parmi tout ce que Gitcito connaît.
+Quand vous voulez seulement **ouvrir** quelque chose de vos dossiers de projets,
+la fenêtre **Ouvrir un dépôt** — et l'écran d'accueil — offre un chemin plus
+court : **Dépôts analysés**.
+
+![La boîte de dialogue Dépôts analysés : les dossiers analysés repliés en haut, un filtre, puis les dépôts du dossier avec une case à cocher et leur branche, deux cochés et le bouton Ouvrir qui les compte](../../screenshots/scanned-repos.webp)
+
+- Les dépôts sont **regroupés par dossier analysé**, triés par nom, avec un
+  filtre par nom ou par chemin.
+- **Cochez-en plusieurs** et appuyez sur **Ouvrir**, ou **double-cliquez** sur
+  l'un d'eux. Depuis un groupe — son lanceur, ou la page sur laquelle s'ouvre un
+  nouveau groupe — le bouton devient **Ajouter au groupe**, et vous revenez là
+  d'où vous veniez.
+- Ouverte depuis **Ouvrir un dépôt**, la boîte de dialogue a une flèche
+  **Retour** à côté de son titre — comme **Cloner** et **Créer** — pour qu'un
+  mauvais clic ramène à Ouvrir un dépôt sans rien fermer.
+- Un dépôt déjà ouvert dans un onglet — ou déjà dans ce groupe — est listé mais
+  grisé, pour que le compte du dossier reste juste.
+- Ouvrir la boîte de dialogue **analyse d'abord les dossiers à nouveau**, donc
+  un clone tout frais y figure sans passer par les Paramètres.
+- **Dossiers analysés**, en haut, est le même éditeur que dans les Paramètres :
+  ajoutez un dossier, retirez-en un, changez sa profondeur. Il est déplié au
+  départ quand il n'y a encore aucun dossier, car une liste vide serait sinon
+  une impasse.
+
+Ses limites : un dépôt situé sous deux dossiers qui se chevauchent n'est listé
+qu'une fois, sous le dossier le plus profond. Un dossier qui a disparu depuis
+est omis — il ne peut pas être ouvert. Retirer un dossier analysé masque ici ses
+dépôts, mais ne les **Oublie** pas sur cette page.
+
 ## Les lignes
 
 Les lignes sont posées en colonnes : étoile, nom (tient compte de l'alias si

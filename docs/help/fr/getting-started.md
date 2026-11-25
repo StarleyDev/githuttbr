@@ -4,6 +4,7 @@ category: Pour commencer
 order: 1
 summary: Ouvrir un dépôt, lire le graphe, faire son premier commit.
 keywords: intro premiers pas débuter ouvrir cloner clone onglets tabs graphe graph commit valider
+source: 173f891f9f1c5c53ea40cf344baf821e3188344d
 ---
 
 # Premiers pas
@@ -15,14 +16,30 @@ votre dépôt tant que vous ne le demandez pas.
 
 ## Ouvrir un dépôt
 
+![Ouvrir un dépôt : ouvrir, cloner ou créer, puis les dépôts analysés et récents](../../screenshots/open-repository.webp)
+
 - **Glissez un dossier** sur la fenêtre, ou utilisez **Ouvrir un dépôt** depuis
-  l'écran d'accueil.
+  l'écran d'accueil. Le sélecteur accepte plusieurs dossiers à la fois :
+  ⌘-clic ou Maj-clic pour les sélectionner, et chacun s'ouvre dans son propre
+  onglet (ou rejoint le groupe depuis lequel vous l'avez ouvert). Dans une
+  sélection de plusieurs dossiers, un dépôt déjà ouvert, ou un dossier qui n'est
+  pas un dépôt Git, est ignoré et signalé dans un message, pour que les autres
+  s'ouvrent quand même. Le sélecteur de macOS ne peut pas griser à l'avance les
+  dépôts ouverts : Electron n'expose pas le crochet par dossier du panneau, donc
+  la vérification a lieu après le clic sur Ouvrir.
+- **Dépôts analysés**, sous les trois boutons, liste tous les dépôts des
+  dossiers que vous avez demandé à Gitcito d'analyser — cochez-en plusieurs et
+  ouvrez-les d'un coup, ou double-cliquez sur l'un d'eux. C'est aussi là que
+  vous ajoutez ou retirez ces dossiers. Voir [Dépôts](repositories.md#dépôts-analysés).
+- **Mauvais bouton ?** Cloner, Créer, Créer un groupe et Dépôts analysés,
+  ouverts depuis Ouvrir un dépôt, ont une flèche **Retour** à côté de leur titre
+  qui y ramène.
 - **Clonez-en un** depuis une URL ou directement depuis votre hébergeur — voir
   [le clonage](cloning.md) pour les options qui rendent rapide le clonage d'un
   dépôt énorme.
 - Depuis un terminal, `gitcito .` ouvre le dossier courant dans l'application
   déjà lancée — voir [la ligne de commande](cli.md).
-- Un dossier qui n'est pas encore un dépôt Git s'ouvre quand même, en vous
+- Un dossier seul qui n'est pas encore un dépôt Git s'ouvre quand même, en vous
   proposant de l'initialiser.
 
 ## Les trois panneaux

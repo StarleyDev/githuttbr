@@ -93,6 +93,36 @@ Tarama klasörleri Ayarlar'da yapılandırılır:
   burada depo yapar. Ad, sahip ve dal `.git` içindeki dosyalardan gelir
   (`HEAD`, yapılandırma), asla `git` çalıştırarak değil.
 
+## Taranan depolar
+
+Bu sayfa, Gitcito'nun bildiği her şey içinde "o depo nerede?" sorusunu
+yanıtlar. Proje klasörlerinizden yalnızca bir şey **açmak** istediğinizde
+**Depo aç** penceresinin — ve karşılama ekranının — daha kısa bir yolu vardır:
+**Taranan depolar**.
+
+![Taranan depolar penceresi: üstte daraltılmış taranan klasörler, bir filtre, ardından klasörün depoları onay kutusu ve dallarıyla; ikisi işaretli ve Aç düğmesi onları sayıyor](../../screenshots/scanned-repos.webp)
+
+- Depolar **taranan klasöre göre gruplanır**, ada göre sıralanır; ad ya da yol
+  için bir filtre vardır.
+- **Birkaçını işaretleyip** **Aç**'a basın ya da birine **çift tıklayın**. Bir
+  gruptan — grubun başlatıcısından ya da yeni bir grubun açıldığı sayfadan —
+  düğme **Gruba ekle** olur ve geldiğiniz yere dönersiniz.
+- **Depo aç**'tan açıldığında pencerenin başlığının yanında bir **Geri** oku
+  vardır — **Klonla** ve **Oluştur**'da olduğu gibi — böylece yanlış bir tık
+  hiçbir şeyi kapatmadan Depo aç'a geri döner.
+- Bir sekmede zaten açık olan — ya da zaten o grupta bulunan — bir depo
+  listelenir ama soluk gösterilir, böylece klasörün sayısı yine tutar.
+- Pencereyi açmak **önce klasörleri yeniden tarar**, böylece yeni yapılmış bir
+  klon Ayarlar'a uğramadan orada olur.
+- Üstteki **Taranan klasörler**, Ayarlar'dakiyle aynı düzenleyicidir: bir klasör
+  ekleyin, birini kaldırın, derinliğini değiştirin. Henüz hiç klasör yokken açık
+  başlar, çünkü aksi halde boş bir liste çıkmaz sokak olurdu.
+
+Sınırları: iç içe geçen iki klasörün altındaki bir depo yalnızca bir kez, daha
+derindeki klasörün altında listelenir. O zamandan beri kaybolmuş bir klasör
+dışarıda bırakılır — açılamaz. Taranan bir klasörü kaldırmak depolarını burada
+gizler, ama onları bu sayfada **Unut**maz.
+
 ## Satırlar
 
 Satırlar sütunlara dizilir: yıldız, ad (yeniden adlandırdıysanız takma adı

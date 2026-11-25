@@ -4,6 +4,7 @@ category: Zacznij tutaj
 order: 1
 summary: Otwórz repozytorium, przeczytaj graf, zrób pierwszego commita.
 keywords: wprowadzenie start pierwsze kroki otwórz sklonuj karty graf commit intro open clone tabs graph
+source: 173f891f9f1c5c53ea40cf344baf821e3188344d
 ---
 
 # Pierwsze kroki
@@ -15,15 +16,31 @@ twojego repozytorium, dopóki o to nie poprosisz.
 
 ## Otwórz repozytorium
 
+![Otwórz repozytorium: otwórz, sklonuj lub utwórz, a pod spodem zeskanowane i ostatnie repozytoria](../../screenshots/open-repository.webp)
+
 - **Przeciągnij katalog** na okno albo użyj **Otwórz repozytorium** na ekranie
-  powitalnym.
+  powitalnym. Okno wyboru przyjmuje kilka katalogów naraz: zaznacz je
+  ⌘-kliknięciem lub Shift-kliknięciem, a każdy otworzy się we własnej karcie
+  (albo dołączy do grupy, z której je otworzyłeś). Przy zaznaczeniu kilku
+  katalogów repozytorium, które jest już otwarte, albo katalog, który nie jest
+  repozytorium Gita, zostaje pominięty i wymieniony w komunikacie, żeby
+  pozostałe i tak się otworzyły. Okno wyboru w macOS nie potrafi z góry
+  wyszarzyć otwartych repozytoriów: Electron nie udostępnia haka panelu dla
+  poszczególnych katalogów, więc sprawdzenie następuje po kliknięciu Otwórz.
+- **Zeskanowane repozytoria**, pod trzema przyciskami, wymieniają każde
+  repozytorium w katalogach, które Gitcito ma skanować — zaznacz kilka i otwórz
+  je naraz albo kliknij dwukrotnie jedno. Tam też dodajesz i usuwasz te
+  katalogi. Zobacz [Repozytoria](repositories.md#zeskanowane-repozytoria).
+- **Kliknąłeś nie to?** Sklonuj, Utwórz, Utwórz grupę i Zeskanowane
+  repozytoria, otwarte z Otwórz repozytorium, mają obok tytułu strzałkę
+  **Wstecz**, która do niego wraca.
 - **Sklonuj** je z adresu URL lub prosto z hostingu — zobacz
   [klonowanie](cloning.md), żeby poznać opcje, dzięki którym ogromne
   repozytorium klonuje się szybko.
 - Z terminala `gitcito .` otwiera bieżący katalog w działającej aplikacji —
   zobacz [wiersz poleceń](cli.md).
-- Katalog, który nie jest jeszcze repozytorium Gita, też się otworzy — aplikacja
-  zaproponuje jego zainicjowanie.
+- Pojedynczy katalog, który nie jest jeszcze repozytorium Gita, też się otworzy —
+  aplikacja zaproponuje jego zainicjowanie.
 
 ## Trzy panele
 

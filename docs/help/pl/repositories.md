@@ -99,6 +99,36 @@ Foldery do skanowania ustawia się w Ustawieniach:
   repozytorium tutaj. Nazwa, właściciel i gałąź biorą się z plików w `.git`
   (`HEAD`, config), nigdy przez uruchomienie `git`.
 
+## Zeskanowane repozytoria
+
+Ta strona odpowiada na pytanie „gdzie jest to repozytorium?” wśród wszystkiego,
+co zna Gitcito. Gdy chcesz tylko **otworzyć** coś ze swoich katalogów z
+projektami, okno **Otwórz repozytorium** — i ekran powitalny — ma krótszą
+drogę: **Zeskanowane repozytoria**.
+
+![Okno Zeskanowane repozytoria: zwinięte skanowane foldery u góry, filtr, a pod nim repozytoria z folderu z polem wyboru i gałęzią, dwa zaznaczone i przycisk Otwórz, który je liczy](../../screenshots/scanned-repos.webp)
+
+- Repozytoria są **pogrupowane według skanowanego folderu**, posortowane po
+  nazwie, z filtrem po nazwie lub ścieżce.
+- **Zaznacz kilka** i naciśnij **Otwórz** albo **kliknij dwukrotnie** jedno. Z
+  grupy — jej launchera albo strony, na której otwiera się nowa grupa — przycisk
+  brzmi **Dodaj do grupy** i wracasz tam, skąd przyszedłeś.
+- Otwarte z **Otwórz repozytorium** okno ma obok tytułu strzałkę **Wstecz** —
+  podobnie jak **Sklonuj** i **Utwórz** — więc pomyłka wraca do Otwórz
+  repozytorium, niczego nie zamykając.
+- Repozytorium już otwarte w karcie — albo już w tej grupie — jest na liście,
+  ale wyszarzone, żeby liczba w folderze nadal się zgadzała.
+- Otwarcie okna **najpierw ponownie skanuje foldery**, więc świeży klon jest
+  tam bez wycieczki do Ustawień.
+- **Skanowane foldery** u góry to ten sam edytor co w Ustawieniach: dodaj
+  folder, usuń jakiś, zmień jego głębokość. Jest rozwinięty na start, gdy nie ma
+  jeszcze żadnego folderu, bo pusta lista byłaby inaczej ślepym zaułkiem.
+
+Ograniczenia: repozytorium pod dwoma nachodzącymi na siebie folderami pojawia
+się raz, pod głębszym folderem. Folder, który w międzyczasie zniknął, jest
+pomijany — nie da się go otworzyć. Usunięcie skanowanego folderu ukrywa tu jego
+repozytoria, ale ich nie **Zapomina** na tej stronie.
+
 ## Wiersze
 
 Wiersze leżą w kolumnach: gwiazdka, nazwa (uwzględnia alias, jeśli

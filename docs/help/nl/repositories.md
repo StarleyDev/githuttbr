@@ -103,6 +103,37 @@ Scanmappen stel je in bij Instellingen:
   tot repository maakt. Naam, eigenaar en branch komen uit bestanden in
   `.git` (`HEAD`, de config), nooit door `git` te draaien.
 
+## Gescande repositories
+
+Deze pagina beantwoordt „waar is die repository?” over alles wat Gitcito kent.
+Wil je alleen iets uit je projectmappen **openen**, dan heeft het venster
+**Repository openen** — en het welkomstscherm — een kortere weg: **Gescande
+repositories**.
+
+![Het venster Gescande repositories: de gescande mappen ingeklapt bovenaan, een filter, dan de repositories van de map met een vinkje en hun branch, twee aangevinkt en de knop Openen die ze telt](../../screenshots/scanned-repos.webp)
+
+- De repositories zijn **gegroepeerd per gescande map**, op naam gesorteerd,
+  met een filter op naam of pad.
+- **Vink er meerdere aan** en druk op **Openen**, of **dubbelklik** op één.
+  Vanuit een groep — de launcher, of de pagina waarmee een nieuwe groep opent —
+  heet de knop **Aan groep toevoegen**, en keer je terug naar waar je vandaan
+  kwam.
+- Geopend vanuit **Repository openen** heeft het venster een **Terug**-pijl naast
+  de titel — net als **Klonen** en **Aanmaken** — zodat een misklik teruggaat
+  naar Repository openen zonder iets te sluiten.
+- Een repository die al in een tabblad open is — of al in die groep zit — staat
+  in de lijst maar is grijs, zodat het aantal van de map blijft kloppen.
+- Het venster openen **scant de mappen eerst opnieuw**, dus een verse kloon
+  staat er zonder omweg via Instellingen.
+- **Gescande mappen** bovenaan is dezelfde editor als in Instellingen: voeg een
+  map toe, haal er een weg, wijzig de diepte. Hij staat open als er nog geen map
+  is, want een lege lijst is anders een doodlopende weg.
+
+De beperkingen: een repository onder twee overlappende mappen staat er één keer
+in, onder de diepere map. Een map die inmiddels verdwenen is wordt weggelaten —
+die kan niet geopend worden. Een gescande map weghalen verbergt hier de
+repositories ervan, maar **vergeet** ze niet op deze pagina.
+
 ## Rijen
 
 Rijen liggen in kolommen: ster, naam (houdt rekening met het alias als je
