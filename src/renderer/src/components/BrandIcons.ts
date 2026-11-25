@@ -4,6 +4,9 @@ import { createLucideIcon, type LucideIcon } from 'lucide-react'
 // the app draws (lucide-react 0.453.0, ISC), rebuilt with lucide's own factory
 // so they keep the same props, stroke and class names as the icons around them
 // — and GitHub and GitLab stay apart, which a generic glyph would not.
+//
+// The paths are derived from Feather (MIT, © 2013-2022 Cole Bemis) via Lucide
+// (ISC, © 2022 Lucide Contributors).
 
 export const Github: LucideIcon = createLucideIcon('Github', [
   [
