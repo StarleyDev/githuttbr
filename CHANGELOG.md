@@ -1,5 +1,11 @@
 
 
+## [4.53.0](https://github.com/StarleyDev/githuttbr/compare/v4.52.1...v4.53.0) (2026-11-25)
+
+### Features
+
+* **pr:** go to a pull request's branches, and right-click in text fields ([a679cc4](https://github.com/StarleyDev/githuttbr/commit/a679cc498f04576137aae0e06cb78c0a8baae31f))
+
 ## [4.52.1](https://github.com/StarleyDev/githuttbr/compare/v4.52.0...v4.52.1) (2026-11-25)
 
 ### Bug Fixes
