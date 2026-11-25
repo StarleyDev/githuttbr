@@ -12,7 +12,10 @@ export default defineConfig({
     // Each test runs real git against the playground repos.
     testTimeout: 20_000,
     // First run may regenerate the whole playground (~a few seconds).
-    hookTimeout: 180_000
+    hookTimeout: 180_000,
+    // Vitest 5 turned this on by default. Off keeps a mock's call history across
+    // tests in a file, as every test here was written against.
+    clearMocks: false
   },
   resolve: {
     alias: {
