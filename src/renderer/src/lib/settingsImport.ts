@@ -3,6 +3,7 @@ import type {
   AppSettings,
   InfoExport,
   PageContent,
+  Profile,
   RepoFolder,
   RepoRef,
   SettingsBundle,
@@ -11,6 +12,9 @@ import type {
   Workspace
 } from '../../../shared/types'
 import { scrubServerUrls } from '../../../shared/secrets'
+import { normalizeGithubEnterpriseUrl } from '../../../shared/githubEnterprise'
+import { normalizeGitlabServerUrl } from '../../../shared/gitlabInstance'
+import { normalizeBitbucketServerUrl } from '../../../shared/bitbucketServer'
 import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
 import { canonicalRepoPath } from './repoAlias'
 import { pruneFolders } from './repoFolders'
@@ -477,6 +481,10 @@ export interface ImportSummary {
   /** The machine-specific values present (shell path, editor path, open-app
    *  path, AI cliPath/cliCwd…), human-readable, deduped. */
   machinePaths: string[]
+  /** Whether the file carries anything for each part. A file exported with
+   *  only some parts (the export dialog's presets) lacks the others: offering
+   *  them would be a checkbox that imports nothing. */
+  present: Record<ImportPart, boolean>
 }
 
 function collectTabPaths(tabs: TabState[] | undefined, add: (path: string) => void): void {
@@ -544,7 +552,16 @@ export function summarizeImport(incoming: Partial<AppSettings>): ImportSummary {
   let prefCount = 0
   for (const [key, value] of Object.entries(incoming)) if (value !== undefined && isPart(key, 'prefs')) prefCount++
 
-  return { profileCount: incoming.profiles?.length ?? 0, prefCount, repoPaths, machinePaths }
+  const present = Object.fromEntries(IMPORT_PARTS.map((part) => [part, false])) as Record<ImportPart, boolean>
+  for (const [key, value] of Object.entries(incoming)) {
+    if (value !== undefined && Object.prototype.hasOwnProperty.call(PART_OF_KEY, key)) {
+      present[PART_OF_KEY[key as keyof AppSettings]] = true
+    }
+  }
+  // AI program paths live inside the profiles, not under a 'machine' key.
+  if (machinePaths.length > 0) present.machine = true
+
+  return { profileCount: incoming.profiles?.length ?? 0, prefCount, repoPaths, machinePaths, present }
 }
 
 // ── AI CLI paths: 'machine' values living inside the 'profiles' part ──
@@ -765,4 +782,344 @@ export function mergeRepoPart(current: AppSettings, chosen: Partial<AppSettings>
     out.activeTabId = active?.activeTabId ?? null
   }
   return out
+}
+
+// ── Merging the 'profiles' part into this machine's ──
+//
+// The file's profiles are another machine's list. Replacing ours with it loses
+// a profile that only exists here (accounts added on one computer, a work
+// profile only the other has), so the dialog merges by default. Profile ids
+// are random per machine except the first ('default'), so a profile the user
+// made on both sides matches by name when no id does — and then keeps OUR id:
+// repository bindings, the active profile, the keychain entries and the
+// picture on this machine are all filed under it.
+
+/** How the 'profiles' part lands: added to ours, or standing for the whole list. */
+export type ProfileImportMode = 'merge' | 'replace'
+
+/** What importing does to one profile, for the dialog to list. */
+export type ProfileRowAction = 'update' | 'new' | 'keep' | 'remove'
+
+export interface ProfileMergeRow {
+  /** The id the profile has after the import (ours for a matched one). */
+  id: string
+  name: string
+  action: ProfileRowAction
+}
+
+export interface ProfileMergePlan {
+  /** The file's profiles first, in its order; then ours it does not have. */
+  rows: ProfileMergeRow[]
+  /** File id → our id, only where a name match made them differ. */
+  idMap: Record<string, string>
+  /** Our profile ids the import removes ('replace' only). */
+  removedIds: string[]
+}
+
+type ProfileLike = Pick<Profile, 'id' | 'name'>
+
+/** The first profile of every install (`defaultProfile()` in shared/types). */
+const DEFAULT_PROFILE_ID = 'default'
+
+const nameKey = (name: unknown): string => (typeof name === 'string' ? name.trim().toLowerCase() : '')
+
+/** The file's profiles with a usable id, one per id — a hand-edited file with
+ *  a repeated id would otherwise have two profiles fight over one keychain entry. */
+function uniqueIncoming<P extends ProfileLike>(incoming: readonly P[] | undefined): P[] {
+  const seen = new Set<string>()
+  const out: P[] = []
+  for (const p of incoming ?? []) {
+    if (!p || typeof p.id !== 'string' || !p.id || seen.has(p.id)) continue
+    seen.add(p.id)
+    out.push(p)
+  }
+  return out
+}
+
+/**
+ * Pair the file's profiles with ours, one-to-one: by id first, then — among
+ * those left on both sides — by name, trimmed and case-insensitive. A random
+ * id shared by both sides is the same profile even when renamed on one. Not
+ * `default`: every install's first profile has that id, named whatever its
+ * owner typed, so two `default`s pair by id only when their names agree.
+ * Returns file id → our id for every pair.
+ */
+export function matchProfiles(current: readonly ProfileLike[], incoming: readonly ProfileLike[]): Map<string, string> {
+  const theirs = uniqueIncoming(incoming)
+  const byId = new Map(current.map((p) => [p.id, p]))
+  const pairs = new Map<string, string>()
+  const taken = new Set<string>()
+  const pair = (fileId: string, ourId: string): void => {
+    pairs.set(fileId, ourId)
+    taken.add(ourId)
+  }
+  for (const p of theirs) {
+    const mine = byId.get(p.id)
+    if (!mine) continue
+    const a = nameKey(p.name)
+    const b = nameKey(mine.name)
+    if (p.id !== DEFAULT_PROFILE_ID || !a || !b || a === b) pair(p.id, p.id)
+  }
+  for (const p of theirs) {
+    if (pairs.has(p.id)) continue
+    const key = nameKey(p.name)
+    if (!key) continue
+    const mine = current.find((c) => !taken.has(c.id) && nameKey(c.name) === key)
+    if (mine) pair(p.id, mine.id)
+  }
+  return pairs
+}
+
+/** What an import of `incoming` would do to `current`, row by row. */
+export function planProfileMerge(
+  current: readonly ProfileLike[],
+  incoming: readonly ProfileLike[],
+  mode: ProfileImportMode = 'merge'
+): ProfileMergePlan {
+  const pairs = matchProfiles(current, incoming)
+  const theirs = uniqueIncoming(incoming)
+  const idMap: Record<string, string> = {}
+  const rows: ProfileMergeRow[] = []
+  // A new profile whose id one of ours already has (two different `default`s)
+  // needs its own: deterministic, so the dialog's plan and the store's agree.
+  const used = new Set([...current.map((p) => p.id), ...theirs.map((p) => p.id)])
+  const freshId = (id: string): string => {
+    let n = 1
+    let next = `${id}-imported`
+    while (used.has(next)) next = `${id}-imported-${++n}`
+    used.add(next)
+    return next
+  }
+  const ours = new Set(current.map((p) => p.id))
+  for (const p of theirs) {
+    const mine = pairs.get(p.id)
+    if (mine && mine !== p.id) idMap[p.id] = mine
+    if (!mine && ours.has(p.id)) idMap[p.id] = freshId(p.id)
+    rows.push({ id: mine ?? idMap[p.id] ?? p.id, name: p.name, action: mine ? 'update' : 'new' })
+  }
+  const matched = new Set(pairs.values())
+  const removedIds: string[] = []
+  for (const p of current) {
+    if (matched.has(p.id)) continue
+    rows.push({ id: p.id, name: p.name, action: mode === 'merge' ? 'keep' : 'remove' })
+    if (mode === 'replace') removedIds.push(p.id)
+  }
+  return { rows, idMap, removedIds }
+}
+
+/**
+ * Under 'replace', a matched profile takes the file's copy whole: the servers
+ * and AI accounts only ours has go — and main prunes their saved tokens and
+ * keys. Names of our profiles that would lose any, so the dialog can say so
+ * before it happens (a replace that removes no profile still deletes these).
+ */
+export function profilesLosingOnReplace(
+  current: readonly Profile[],
+  incoming: readonly Profile[],
+  idMap: Readonly<Record<string, string>>
+): string[] {
+  const names: string[] = []
+  for (const theirs of uniqueIncoming(incoming)) {
+    const id = hasKey(idMap, theirs.id) ? idMap[theirs.id] : theirs.id
+    const ours = current.find((p) => p.id === id)
+    if (!ours) continue
+    const lost = (
+      mine: { url: string }[] | undefined,
+      file: { url: string }[] | undefined,
+      normalize: (raw: string | undefined) => string | null
+    ): boolean => {
+      const key = (u: string): string => normalize(u) ?? u.trim().toLowerCase()
+      const kept = new Set((file ?? []).map((h) => key(h.url)))
+      return (mine ?? []).some((h) => !kept.has(key(h.url)))
+    }
+    const fileAccounts = new Set((theirs.ai?.accounts ?? []).map((a) => a.id))
+    if (
+      lost(ours.githubEnterprise, theirs.githubEnterprise, normalizeGithubEnterpriseUrl) ||
+      lost(ours.gitlabServers, theirs.gitlabServers, normalizeGitlabServerUrl) ||
+      lost(ours.bitbucketServers, theirs.bitbucketServers, normalizeBitbucketServerUrl) ||
+      (ours.ai?.accounts ?? []).some((a) => !fileAccounts.has(a.id))
+    ) {
+      names.push(ours.name || ours.id)
+    }
+  }
+  return names
+}
+
+// Own keys only: a profile id like `constructor` must not read the prototype.
+const hasKey = (record: object, key: string): boolean => Object.prototype.hasOwnProperty.call(record, key)
+
+/** `id` through the map, unchanged when it has no entry. */
+const mapId = (idMap: Readonly<Record<string, string>>, id: string): string => (hasKey(idMap, id) ? idMap[id] : id)
+
+/**
+ * A record keyed by profile id (the bundle's pictures) with the file's ids
+ * moved to ours. An entry already under our id wins over a moved one.
+ */
+export function remapProfileKeyed<V>(
+  record: Record<string, V> | undefined,
+  idMap: Readonly<Record<string, string>>
+): Record<string, V> | undefined {
+  if (!record) return record
+  const out: Record<string, V> = {}
+  for (const [id, value] of Object.entries(record)) if (!hasKey(idMap, id)) out[id] = value
+  for (const [id, value] of Object.entries(record)) {
+    if (!hasKey(idMap, id) || hasKey(out, idMap[id])) continue
+    out[idMap[id]] = value
+  }
+  return out
+}
+
+/**
+ * The chosen keys with every reference to a file profile id moved to ours:
+ * the profiles themselves, the active profile, the keychain seed
+ * (`aiSecretsFrom`) and the repository bindings. Credentials ride on the
+ * profiles and main files them by the id it is sent (`extractSecrets`), so
+ * moving the id here is what puts a name-matched profile's tokens and keys
+ * under our entry instead of a stray one. Pure.
+ */
+export function remapProfileIds(
+  chosen: Partial<AppSettings>,
+  idMap: Readonly<Record<string, string>>
+): Partial<AppSettings> {
+  if (Object.keys(idMap).length === 0) return chosen
+  const out: Partial<AppSettings> = { ...chosen }
+  if (chosen.profiles) out.profiles = chosen.profiles.map((p) => (p && hasKey(idMap, p.id) ? { ...p, id: idMap[p.id] } : p))
+  if (chosen.activeProfileId) out.activeProfileId = mapId(idMap, chosen.activeProfileId)
+  if (chosen.aiSecretsFrom) out.aiSecretsFrom = mapId(idMap, chosen.aiSecretsFrom)
+  if (chosen.repoProfiles) {
+    out.repoProfiles = Object.fromEntries(Object.entries(chosen.repoProfiles).map(([path, id]) => [path, mapId(idMap, id)]))
+  }
+  return out
+}
+
+/** Servers of one kind from both sides, keyed by URL: the file's entry wins on
+ *  the same server, ours stays when the file does not list it. */
+function unionServers<T extends { url: string; token: string }>(
+  ours: T[] | undefined,
+  theirs: T[] | undefined,
+  normalize: (raw: string | undefined) => string | null
+): T[] | undefined {
+  if (!ours?.length) return theirs
+  if (!theirs?.length) return ours
+  // The same canonical form main files the token under: `ghe.corp` and
+  // `https://ghe.corp/` are one server, not two.
+  const key = (u: string): string => normalize(u) ?? u.trim().replace(/\/+$/, '').toLowerCase()
+  const byUrl = new Map(ours.map((h) => [key(h.url), h]))
+  const fromFile = new Set(theirs.map((h) => key(h.url)))
+  // Same server, file exported without credentials: keep the token we hold for it.
+  const merged = theirs.map((h) => {
+    const mine = byUrl.get(key(h.url))
+    return !h.token && mine?.token ? { ...h, token: mine.token } : h
+  })
+  return [...merged, ...ours.filter((h) => !fromFile.has(key(h.url)))]
+}
+
+/**
+ * A matched profile's AI under 'merge': the file's settings, plus the accounts
+ * only this machine has — dropping one would orphan its key in the keychain
+ * with no way back to it from the UI.
+ */
+function mergeAIAccounts(ours: AIConfig | undefined, theirs: AIConfig | undefined): AIConfig {
+  if (!theirs) return ours as AIConfig
+  if (!ours?.accounts?.length) return theirs
+  const fromFile = new Set((theirs.accounts ?? []).map((a) => a.id))
+  const onlyHere = ours.accounts.filter((a) => !fromFile.has(a.id))
+  return onlyHere.length ? { ...theirs, accounts: [...(theirs.accounts ?? []), ...onlyHere] } : theirs
+}
+
+const SCALAR_TOKENS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken', 'forgejoToken'] as const
+
+/**
+ * A matched profile under 'merge': the file's data over ours, field by field.
+ * Taking the file's copy whole would drop a server only this machine has — and
+ * `pruneSecrets` would then delete its token. So server lists are a union, a
+ * token the file carries blank (exported without credentials) keeps ours, and
+ * the machine's own logins (`links`) stay ours — they name this computer's
+ * credential helper, not the other one's.
+ */
+export function mergeProfileFields(ours: Profile, theirs: Profile): Profile {
+  const merged: Profile = {
+    ...theirs,
+    githubEnterprise: unionServers(ours.githubEnterprise, theirs.githubEnterprise, normalizeGithubEnterpriseUrl),
+    gitlabServers: unionServers(ours.gitlabServers, theirs.gitlabServers, normalizeGitlabServerUrl),
+    bitbucketServers: unionServers(ours.bitbucketServers, theirs.bitbucketServers, normalizeBitbucketServerUrl),
+    links: ours.links || theirs.links ? { ...theirs.links, ...ours.links } : undefined,
+    ai: mergeAIAccounts(ours.ai, theirs.ai)
+  }
+  // A token is only worth keeping for the instance it was issued for: our
+  // Forgejo token must never ride along to a different Forgejo URL, nor our
+  // GitLab token to another issuer. (Main also refuses a mismatched issuer when
+  // it restores a held token — `tokenMatchesInstance`.) An Azure PAT with a
+  // different organization is left blank here so the profile shows what the
+  // file says; main may still restore the held PAT, which only ever goes to
+  // dev.azure.com.
+  const sameTarget: Record<(typeof SCALAR_TOKENS)[number], boolean> = {
+    githubToken: true,
+    bitbucketToken: true,
+    azureToken: (ours.azureOrg ?? '') === (theirs.azureOrg ?? ''),
+    gitlabToken: (ours.gitlabTokenIssuer ?? '') === (theirs.gitlabTokenIssuer ?? ''),
+    forgejoToken:
+      (ours.forgejoUrl ?? '') === (theirs.forgejoUrl ?? '') &&
+      (ours.forgejoTokenIssuer ?? '') === (theirs.forgejoTokenIssuer ?? '')
+  }
+  for (const k of SCALAR_TOKENS) {
+    if (!merged[k] && ours[k] && sameTarget[k]) merged[k] = ours[k]
+  }
+  // Never add an optional key the profile did not have on either side.
+  for (const k of ['githubEnterprise', 'gitlabServers', 'bitbucketServers', 'links'] as const) {
+    if (merged[k] === undefined) delete merged[k]
+  }
+  return merged
+}
+
+/**
+ * The profile list after an import, with `incoming` already on our ids
+ * (`remapProfileIds`). 'merge': ours in our order, each one the file also has
+ * replaced by the file's copy, then the file's new ones. 'replace': exactly
+ * the file's list.
+ */
+export function mergeProfiles(current: Profile[], incoming: Profile[], mode: ProfileImportMode): Profile[] {
+  const theirs = uniqueIncoming(incoming)
+  if (mode === 'replace') return theirs
+  const byId = new Map(theirs.map((p) => [p.id, p]))
+  const kept = current.map((p) => {
+    const match = byId.get(p.id)
+    return match ? mergeProfileFields(p, match) : p
+  })
+  const ours = new Set(current.map((p) => p.id))
+  return [...kept, ...theirs.filter((p) => !ours.has(p.id))]
+}
+
+/**
+ * Which profile is active after the import. 'merge' keeps ours when it is
+ * still there — merging should not change who this machine commits as —
+ * else the file's, else the first. 'replace' lets the file decide, as a
+ * restore always did: the file's when it is in the list, else ours, else the first.
+ */
+export function activeProfileAfterImport(
+  profiles: readonly ProfileLike[],
+  ours: string,
+  theirs: string | undefined,
+  mode: ProfileImportMode
+): string {
+  const has = (id: string | undefined): id is string => !!id && profiles.some((p) => p.id === id)
+  const order = mode === 'merge' ? [ours, theirs] : [theirs, ours]
+  return order.find(has) ?? profiles[0]?.id ?? ours
+}
+
+/**
+ * The 'profiles' part of `chosen` (already on our ids) applied to `current`:
+ * the `profiles` and `activeProfileId` keys to write over it.
+ */
+export function mergeProfilePart(
+  current: AppSettings,
+  chosen: Partial<AppSettings>,
+  mode: ProfileImportMode
+): Partial<AppSettings> {
+  if (!chosen.profiles) return {}
+  const profiles = mergeProfiles(current.profiles, chosen.profiles, mode)
+  return {
+    profiles,
+    activeProfileId: activeProfileAfterImport(profiles, current.activeProfileId, chosen.activeProfileId, mode)
+  }
 }

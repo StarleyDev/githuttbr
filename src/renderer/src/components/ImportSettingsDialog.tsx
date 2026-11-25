@@ -8,12 +8,18 @@ import {
   IMPORT_PARTS,
   bundleExtrasFor,
   bundleRepoPaths,
+  planProfileMerge,
+  profilesLosingOnReplace,
   remapInfoExport,
+  remapProfileKeyed,
   remapVaultExport,
   remapPath,
   suggestRemap,
   summarizeImport,
-  type ImportPart
+  type ImportPart,
+  type ProfileImportMode,
+  type ProfileMergePlan,
+  type ProfileRowAction
 } from '../lib/settingsImport'
 import { fsApi, infoApi, vaultApi, profileAvatarApi, SettingsSaveRefused } from '../infrastructure/api'
 import { hasSettingsSecrets } from '../../../shared/secrets'
@@ -66,6 +72,22 @@ const isAbsolutePath = (p: string): boolean => /^(\/|[A-Za-z]:[\\/]|\\\\)/.test(
 
 const countTrue = (list: readonly boolean[] | null | undefined): number => list?.filter(Boolean).length ?? 0
 
+const ROW_TAG: Record<ProfileRowAction, TranslationKey> = {
+  update: 'settingsImport.profileUpdate',
+  new: 'settingsImport.profileNew',
+  keep: 'settingsImport.profileKeep',
+  remove: 'settingsImport.profileRemove'
+}
+
+/** Profile names as one list in the UI language ("A, B and C"). */
+function listNames(names: string[]): string {
+  try {
+    return new Intl.ListFormat(useSettingsStore.getState().settings.language, { type: 'conjunction' }).format(names)
+  } catch {
+    return names.join(', ')
+  }
+}
+
 /**
  * Settings → Data → Import, after the file is picked and unlocked: which parts
  * of it to apply, and how its repository paths map onto this computer. Stacked
@@ -81,6 +103,7 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
 
   const summary = useMemo(() => summarizeImport(spec.settings), [spec.settings])
   const repoPaths = summary.repoPaths
+  const present = summary.present
   const total = repoPaths.length
   // Info and vault entries can name repositories no tab does; they are checked
   // and translated too, or the import would drop them as missing.
@@ -94,12 +117,28 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [secrets, setSecrets] = useState<'merge' | 'replace'>('merge')
+  // Merging is the default: a profile that only exists here is never lost
+  // unless the user asks for the file's list instead.
+  const [profileMode, setProfileMode] = useState<ProfileImportMode>('merge')
+  const currentProfiles = useSettingsStore((s) => s.settings.profiles)
+  const livePlan = useMemo(
+    () => planProfileMerge(currentProfiles, spec.settings.profiles ?? [], profileMode),
+    [currentProfiles, spec.settings.profiles, profileMode]
+  )
   const [confirmingReplace, setConfirmingReplace] = useState(false)
   const [busy, setBusy] = useState(false)
   const [failedStep, setFailedStep] = useState<Step | null>(null)
   // Once the settings are written the choices are spent: a retry finishes the
   // same plan rather than applying a different one over half of this.
-  const plan = useRef<{ parts: ImportPart[]; remap?: Remap; replaceSecrets: boolean; folders: number } | null>(null)
+  const plan = useRef<{
+    parts: ImportPart[]
+    remap?: Remap
+    replaceSecrets: boolean
+    folders: number
+    profileMode: ProfileImportMode
+    /** Taken before the settings are written: afterwards every profile matches. */
+    profiles: ProfileMergePlan
+  } | null>(null)
   const done = useRef(new Set<Step>())
   const [started, setStarted] = useState(false)
 
@@ -119,7 +158,12 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
         if (!alive) return
         // Unknown machine: nothing path-bound is ticked until a check succeeds.
         setCheck('failed')
-        setChosen((c) => ({ profiles: c?.profiles ?? true, prefs: c?.prefs ?? true, repos: false, machine: false }))
+        setChosen((c) => ({
+          profiles: (c?.profiles ?? true) && present.profiles,
+          prefs: (c?.prefs ?? true) && present.prefs,
+          repos: false,
+          machine: false
+        }))
         return
       }
       if (!alive) return
@@ -137,16 +181,16 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
         setTo(hint?.to ?? '')
       }
       setChosen((c) => ({
-        profiles: c?.profiles ?? true,
-        prefs: c?.prefs ?? true,
-        repos: total === 0 || sameByRepos,
-        machine: sameByRepos || sameByPrograms
+        profiles: (c?.profiles ?? true) && present.profiles,
+        prefs: (c?.prefs ?? true) && present.prefs,
+        repos: (total === 0 || sameByRepos) && present.repos,
+        machine: (sameByRepos || sameByPrograms) && present.machine
       }))
     })()
     return () => {
       alive = false
     }
-  }, [repoPaths, extraPaths, machineAbs, total, attempt])
+  }, [repoPaths, extraPaths, machineAbs, total, attempt, present])
 
   const checked = check && check !== 'failed' ? check : null
   const checkFailed = check === 'failed'
@@ -233,11 +277,14 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
           parts.includes('repos') && allExists
             ? { from: remapOn ? fromPrefix : '', to: remapOn ? toPrefix : '', existing }
             : undefined,
-        replaceSecrets: hasSecrets && parts.includes('profiles') && secrets === 'replace',
-        folders: foldersIncluded
+        // Merging keeps this machine's profiles, so it keeps their credentials too.
+        replaceSecrets: hasSecrets && parts.includes('profiles') && profileMode === 'replace' && secrets === 'replace',
+        folders: foldersIncluded,
+        profileMode,
+        profiles: livePlan
       }
     }
-    const { parts: chosenParts, remap, replaceSecrets, folders } = plan.current
+    const { parts: chosenParts, remap, replaceSecrets, folders, profiles, profileMode: mode } = plan.current
     const bundle = spec.bundle
     const extras = bundleExtrasFor(chosenParts)
     setBusy(true)
@@ -248,7 +295,9 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
       if (!done.current.has('settings')) {
         // Through the store's normalizer, not a bare spread: that is what makes
         // the import take effect now rather than on the next launch.
-        await useSettingsStore.getState().importSettings(spec.settings, { replaceSecrets, parts: chosenParts, remap })
+        await useSettingsStore
+          .getState()
+          .importSettings(spec.settings, { replaceSecrets, parts: chosenParts, remap, profiles: mode })
         done.current.add('settings')
         setStarted(true)
       }
@@ -270,9 +319,20 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
       }
       step = 'avatars'
       if (!done.current.has('avatars')) {
-        if (bundle?.avatars && extras.avatars) {
-          await profileAvatarApi.importAll(bundle.avatars)
-          useProfileAvatarsStore.getState().reloadProfileImages()
+        if (extras.avatars) {
+          // A picture follows its profile onto our id when the two matched by
+          // name, as the profile's credentials did in the settings step.
+          const avatars = remapProfileKeyed(bundle?.avatars, profiles.idMap)
+          if (avatars) await profileAvatarApi.importAll(avatars)
+          // A profile the replace removed takes its picture along, as deleting
+          // it in Settings does. Best effort: a stray file is only disk.
+          for (const id of profiles.removedIds) {
+            await useProfileAvatarsStore
+              .getState()
+              .removeProfileImage(id)
+              .catch(() => undefined)
+          }
+          if (avatars || profiles.removedIds.length) useProfileAvatarsStore.getState().reloadProfileImages()
         }
         done.current.add('avatars')
       }
@@ -312,10 +372,26 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
     }
   }
 
+  // Replacing deletes: this machine's profiles the file lacks, and — when the
+  // user also asked — the credentials the file does not carry. One
+  // confirmation names both.
+  // A file without profiles leaves ours alone in either mode (`mergeProfilePart`).
+  const replacingProfiles = !!chosen?.profiles && profileMode === 'replace' && summary.profileCount > 0
+  const removedNames = replacingProfiles
+    ? livePlan.rows.filter((r) => r.action === 'remove').map((r) => r.name || r.id)
+    : []
+  // Matched profiles take the file's copy whole: servers and AI accounts only
+  // ours have go with their saved credentials — a deletion like any other.
+  const losingNames = replacingProfiles
+    ? profilesLosingOnReplace(currentProfiles, spec.settings.profiles ?? [], livePlan.idMap)
+    : []
+  // Same condition as the plan's `replaceSecrets`: whatever it deletes is confirmed.
+  const replacingSecrets = !!chosen?.profiles && profileMode === 'replace' && hasSecrets && secrets === 'replace'
+
   const onImport = (): void => {
     if (!canImport) return
-    // Replacing deletes credentials: say what is lost and ask, before anything.
-    if (!started && hasSecrets && !!chosen?.profiles && secrets === 'replace') {
+    // Replacing deletes: say what is lost and ask, before anything.
+    if (!started && (removedNames.length > 0 || losingNames.length > 0 || replacingSecrets)) {
       setConfirmingReplace(true)
       return
     }
@@ -447,14 +523,81 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
     )
   }
 
+  const profilesBox = (): React.ReactNode => {
+    if (!chosen?.profiles || summary.profileCount === 0) return null
+    const shown = plan.current?.profiles ?? livePlan
+    const mode = plan.current?.profileMode ?? profileMode
+    const kept = shown.rows.filter((r) => r.action === 'keep').map((r) => r.name || r.id)
+    const removed = shown.rows.filter((r) => r.action === 'remove').map((r) => r.name || r.id)
+    return (
+      <div className="import-profiles">
+        <div className="import-profiles-mode">
+          <span>{t('settingsImport.profilesModeLabel')}</span>
+          <span className="import-mini-seg" role="group" aria-label={t('settingsImport.profilesModeLabel')}>
+            <button type="button" aria-pressed={mode === 'merge'} disabled={locked} onClick={() => setProfileMode('merge')}>
+              {t('settingsImport.profilesMerge')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === 'replace'}
+              disabled={locked}
+              onClick={() => setProfileMode('replace')}
+            >
+              {t('settingsImport.profilesReplace')}
+            </button>
+          </span>
+        </div>
+        <ul className="import-profile-list">
+          {shown.rows.map((row) => (
+            <li key={`${row.action}:${row.id}`} className={row.action === 'remove' ? 'removed' : ''}>
+              <span className="import-profile-name">
+                <b>{row.name || row.id}</b>
+                {(row.action === 'keep' || row.action === 'remove') && <span>{t('settingsImport.profileOnlyHere')}</span>}
+              </span>
+              <span className={`import-tag ${row.action}`}>{t(ROW_TAG[row.action])}</span>
+            </li>
+          ))}
+        </ul>
+        {mode === 'merge' ? (
+          <div className="import-why good">
+            <Check size={13} aria-hidden="true" />
+            <span>
+              {kept.length
+                ? interp(t('settingsImport.profilesMergeNoteKept'), { names: listNames(kept) })
+                : t('settingsImport.profilesMergeNote')}{' '}
+              {t('settingsImport.profilesMergeKeepsAI')}
+            </span>
+          </div>
+        ) : removed.length ? (
+          <div className="import-why">
+            <AlertTriangle size={13} aria-hidden="true" />
+            <span>{interp(t('settingsImport.profilesReplaceNote'), { names: listNames(removed) })}</span>
+          </div>
+        ) : losingNames.length ? (
+          <div className="import-why">
+            <AlertTriangle size={13} aria-hidden="true" />
+            <span>{interp(t('settingsImport.profilesReplaceLossMessage'), { names: listNames(losingNames) })}</span>
+          </div>
+        ) : (
+          <div className="import-why good">
+            <Check size={13} aria-hidden="true" />
+            <span>{t('settingsImport.profilesReplaceNoteNone')}</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const part = (id: ImportPart, extra?: React.ReactNode): React.ReactNode => {
     const on = !!chosen?.[id]
+    // Exported without this part (a preset): nothing to import, so not offered.
+    const absent = !present[id]
     return (
-      <div className={`import-part ${on ? 'on' : ''}`} key={id}>
+      <div className={`import-part ${on ? 'on' : ''} ${absent ? 'absent' : ''}`} key={id}>
         <label className="import-part-head">
-          <input type="checkbox" checked={on} disabled={!chosen || locked} onChange={() => toggle(id)} />
+          <input type="checkbox" checked={on} disabled={!chosen || locked || absent} onChange={() => toggle(id)} />
           <b>{t(PART_COPY[id].title)}</b>
-          <span className="import-count">{counts[id]}</span>
+          <span className="import-count">{absent ? t('settingsImport.partAbsent') : counts[id]}</span>
           <span className="import-what">{t(PART_COPY[id].hint)}</span>
         </label>
         {extra}
@@ -483,8 +626,8 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
         </p>
       ) : (
         <div className="import-body">
-          {part('profiles')}
-          {hasSecrets && (
+          {part('profiles', profilesBox())}
+          {hasSecrets && profileMode === 'replace' && (
             <div className={`import-secrets ${chosen.profiles ? '' : 'off'}`}>
               <span>{t('settingsImport.credentialsLabel')}</span>
               <span className="import-mini-seg" role="group" aria-label={t('settingsImport.credentialsLabel')}>
@@ -524,8 +667,20 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
 
       {confirmingReplace && (
         <div className="import-confirm" role="alertdialog" aria-labelledby="import-confirm-title">
-          <b id="import-confirm-title">{t('settingsImport.replaceConfirmTitle')}</b>
-          <span>{t('settingsImport.replaceConfirmMessage')}</span>
+          <b id="import-confirm-title">
+            {t(
+              removedNames.length || losingNames.length
+                ? 'settingsImport.profilesReplaceConfirmTitle'
+                : 'settingsImport.replaceConfirmTitle'
+            )}
+          </b>
+          {removedNames.length > 0 && (
+            <span>{interp(t('settingsImport.profilesReplaceConfirmMessage'), { names: listNames(removedNames) })}</span>
+          )}
+          {losingNames.length > 0 && (
+            <span>{interp(t('settingsImport.profilesReplaceLossMessage'), { names: listNames(losingNames) })}</span>
+          )}
+          {replacingSecrets && <span>{t('settingsImport.replaceConfirmMessage')}</span>}
           <div className="import-confirm-actions">
             <button className="btn ghost small" onClick={() => setConfirmingReplace(false)} autoFocus>
               {t('common.cancel')}

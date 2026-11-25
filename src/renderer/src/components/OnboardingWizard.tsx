@@ -21,7 +21,12 @@ import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
 import { infoApi, profileAvatarApi, settingsApi, shellApi, vaultApi } from '../infrastructure/api'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { withAIPatch } from '../../../shared/aiScope'
-import { parseSettingsImport, type ParsedSettingsImport } from '../lib/settingsImport'
+import {
+  parseSettingsImport,
+  planProfileMerge,
+  remapProfileKeyed,
+  type ParsedSettingsImport
+} from '../lib/settingsImport'
 import { settingsDecryptMessageKey } from '../lib/settingsPassword'
 import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
@@ -540,7 +545,14 @@ export function OnboardingWizard(): React.JSX.Element {
       if (bundle?.info) await infoApi.importAll(bundle.info)
       if (keepSecrets && bundle?.vault) await vaultApi.importAll(bundle.vault)
       if (bundle?.avatars) {
-        await profileAvatarApi.importAll(bundle.avatars)
+        // Same id moves the import applies to the profiles (a file `default`
+        // named differently from ours gets its own id): pictures follow them.
+        const { idMap } = planProfileMerge(
+          useSettingsStore.getState().settings.profiles,
+          toApply.profiles ?? [],
+          'replace'
+        )
+        await profileAvatarApi.importAll(remapProfileKeyed(bundle.avatars, idMap) ?? {})
         useProfileAvatarsStore.getState().reloadProfileImages()
       }
       await importSettings({ ...toApply, onboardingCompleted: true })

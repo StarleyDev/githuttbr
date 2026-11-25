@@ -6,6 +6,7 @@ import {
   type AIConfig,
   type AppSettings,
   type GroupTab,
+  type Profile,
   type RepoTab,
   type TabState
 } from '../src/shared/types'
@@ -35,12 +36,21 @@ import {
   bundleExtrasFor,
   bundleRepoPaths,
   dropMissingRepos,
+  activeProfileAfterImport,
   keepMachineAIPaths,
+  matchProfiles,
+  mergeProfileFields,
+  mergeProfilePart,
+  mergeProfiles,
   mergeRepoPart,
   partOfKey,
   pickParts,
+  planProfileMerge,
+  profilesLosingOnReplace,
   remapInfoExport,
   remapPath,
+  remapProfileIds,
+  remapProfileKeyed,
   remapRepoPaths,
   remapVaultExport,
   suggestRemap,
@@ -49,6 +59,7 @@ import {
 } from '../src/renderer/src/lib/settingsImport'
 import { useSettingsStore } from '../src/renderer/src/stores/settings'
 import { isProbeablePath } from '../src/main/pathExistence'
+import { settingsApi } from '../src/renderer/src/infrastructure/api'
 
 const W = '/home/dev/Workspace'
 
@@ -178,7 +189,13 @@ describe('summarizeImport', () => {
   })
 
   it('is empty for an empty file', () => {
-    expect(summarizeImport({})).toEqual({ profileCount: 0, prefCount: 0, repoPaths: [], machinePaths: [] })
+    expect(summarizeImport({})).toEqual({
+      profileCount: 0,
+      prefCount: 0,
+      repoPaths: [],
+      machinePaths: [],
+      present: { profiles: false, prefs: false, repos: false, machine: false }
+    })
   })
 })
 
@@ -579,5 +596,290 @@ describe('isProbeablePath', () => {
   it('takes single-slash absolute paths on POSIX only', () => {
     expect(isProbeablePath('/home/dev', 'linux')).toBe(true)
     for (const p of ['//host/share', 'rel/x', '', 'C:\\x', '/a\0b', 42]) expect(isProbeablePath(p, 'darwin')).toBe(false)
+  })
+})
+
+describe('merging the profiles part', () => {
+  const prof = (id: string, name: string, extra: Partial<Profile> = {}): Profile => ({
+    ...defaultProfile(),
+    id,
+    name,
+    ...extra
+  })
+  // This machine (a Mac): the shared default, a work profile made here, a Mac-only one.
+  const mine = (): Profile[] => [prof('default', 'Personal'), prof('mac-work', 'Work'), prof('mac-only', 'Freelance (Mac)')]
+  // The file (from Linux): the shared default, the same work profile under its own id, a new one.
+  const theirs = (): Profile[] => [
+    prof('default', 'Personal', { gitEmail: 'me@linux.example' }),
+    prof('linux-work', ' work ', { gitEmail: 'work@linux.example', gitlabToken: 'glpat-from-linux' }),
+    prof('client', 'Client X')
+  ]
+
+  it('matches by id first, then by trimmed case-insensitive name, one-to-one', () => {
+    const pairs = matchProfiles(mine(), theirs())
+    expect([...pairs]).toEqual([
+      ['default', 'default'],
+      ['linux-work', 'mac-work']
+    ])
+    // Two file profiles named like one of ours: only the first takes it.
+    const twice = matchProfiles([prof('a', 'Work')], [prof('x', 'work'), prof('y', 'WORK')])
+    expect([...twice]).toEqual([['x', 'a']])
+    // An id match is never stolen by a name match.
+    expect([...matchProfiles([prof('a', 'Work')], [prof('z', 'Work'), prof('a', 'Other')])]).toEqual([['a', 'a']])
+  })
+
+  it('plans update / new / keep under merge, and remove under replace', () => {
+    const merge = planProfileMerge(mine(), theirs(), 'merge')
+    expect(merge.rows.map((r) => [r.id, r.action])).toEqual([
+      ['default', 'update'],
+      ['mac-work', 'update'],
+      ['client', 'new'],
+      ['mac-only', 'keep']
+    ])
+    expect(merge.idMap).toEqual({ 'linux-work': 'mac-work' })
+    expect(merge.removedIds).toEqual([])
+    const replace = planProfileMerge(mine(), theirs(), 'replace')
+    expect(replace.rows.at(-1)).toEqual({ id: 'mac-only', name: 'Freelance (Mac)', action: 'remove' })
+    expect(replace.removedIds).toEqual(['mac-only'])
+  })
+
+  it('merge: matched take the file’s data on our id, new appended, ours kept', () => {
+    const { idMap } = planProfileMerge(mine(), theirs())
+    const remapped = remapProfileIds({ profiles: theirs() }, idMap)
+    const out = mergeProfiles(mine(), remapped.profiles!, 'merge')
+    expect(out.map((p) => p.id)).toEqual(['default', 'mac-work', 'mac-only', 'client'])
+    expect(out[0].gitEmail).toBe('me@linux.example')
+    expect(out[1].gitEmail).toBe('work@linux.example')
+    // The credential rides on the profile under OUR id: main files it there.
+    expect(out[1].gitlabToken).toBe('glpat-from-linux')
+    expect(out[2].name).toBe('Freelance (Mac)')
+  })
+
+  it('replace: exactly the file’s list (name-matched ones still on our id)', () => {
+    const { idMap } = planProfileMerge(mine(), theirs(), 'replace')
+    const out = mergeProfiles(mine(), remapProfileIds({ profiles: theirs() }, idMap).profiles!, 'replace')
+    expect(out.map((p) => p.id)).toEqual(['default', 'mac-work', 'client'])
+  })
+
+  it('moves every file id reference to ours: active profile, keychain seed, bindings, avatars', () => {
+    const idMap = { 'linux-work': 'mac-work' }
+    const out = remapProfileIds(
+      {
+        profiles: theirs(),
+        activeProfileId: 'linux-work',
+        aiSecretsFrom: 'linux-work',
+        repoProfiles: { '/r/a': 'linux-work', '/r/b': 'client' }
+      },
+      idMap
+    )
+    expect(out.activeProfileId).toBe('mac-work')
+    expect(out.aiSecretsFrom).toBe('mac-work')
+    expect(out.repoProfiles).toEqual({ '/r/a': 'mac-work', '/r/b': 'client' })
+    expect(remapProfileKeyed({ 'linux-work': 'data:a', client: 'data:c' }, idMap)).toEqual({
+      client: 'data:c',
+      'mac-work': 'data:a'
+    })
+    expect(remapProfileKeyed(undefined, idMap)).toBeUndefined()
+    // Prototype names are plain ids, never a hit in the map.
+    expect(remapProfileIds({ activeProfileId: 'constructor' }, idMap).activeProfileId).toBe('constructor')
+  })
+
+  it('activeProfileId: merge keeps ours, replace lets the file decide, else the first', () => {
+    const list = [prof('a', 'A'), prof('b', 'B')]
+    expect(activeProfileAfterImport(list, 'a', 'b', 'merge')).toBe('a')
+    expect(activeProfileAfterImport(list, 'gone', 'b', 'merge')).toBe('b')
+    expect(activeProfileAfterImport(list, 'gone', 'gone2', 'merge')).toBe('a')
+    expect(activeProfileAfterImport(list, 'a', 'b', 'replace')).toBe('b')
+    expect(activeProfileAfterImport(list, 'a', 'gone', 'replace')).toBe('a')
+    const current = { ...defaultSettings(), profiles: mine(), activeProfileId: 'mac-only' }
+    expect(mergeProfilePart(current, { profiles: theirs(), activeProfileId: 'client' }, 'merge').activeProfileId).toBe(
+      'mac-only'
+    )
+    expect(mergeProfilePart(current, { profiles: theirs(), activeProfileId: 'client' }, 'replace').activeProfileId).toBe(
+      'client'
+    )
+    expect(mergeProfilePart(current, { activeProfileId: 'client' }, 'merge')).toEqual({})
+  })
+
+  describe('field by field on a matched profile', () => {
+    it('keeps a server only this machine has, and its token', () => {
+      const ours = prof('w', 'Work', {
+        gitlabServers: [{ url: 'https://gitlab.mac.example', token: 'glpat-mac' }],
+        githubEnterprise: [{ url: 'https://ghe.shared.example', token: 'ghp-held' }]
+      })
+      const file = prof('w', 'Work', {
+        githubEnterprise: [{ url: 'https://ghe.shared.example/', token: '' }, { url: 'https://ghe.new.example', token: 't' }]
+      })
+      const out = mergeProfileFields(ours, file)
+      expect(out.gitlabServers).toEqual([{ url: 'https://gitlab.mac.example', token: 'glpat-mac' }])
+      // Same server (trailing slash aside) exported blank: our token stays.
+      expect(out.githubEnterprise).toEqual([
+        { url: 'https://ghe.shared.example/', token: 'ghp-held' },
+        { url: 'https://ghe.new.example', token: 't' }
+      ])
+      // And the whole mergeProfiles path uses it.
+      expect(mergeProfiles([ours], [file], 'merge')[0].gitlabServers).toHaveLength(1)
+      expect(mergeProfiles([ours], [file], 'replace')[0].gitlabServers).toBeUndefined()
+    })
+
+    it('a blank token keeps ours only for the same instance', () => {
+      const ours = prof('w', 'Work', {
+        githubToken: 'ghp-mine',
+        forgejoToken: 'fj-mine',
+        forgejoUrl: 'https://codeberg.org'
+      })
+      const sameForge = mergeProfileFields(ours, prof('w', 'Work', { forgejoUrl: 'https://codeberg.org', forgejoToken: '' }))
+      expect(sameForge.githubToken).toBe('ghp-mine')
+      expect(sameForge.forgejoToken).toBe('fj-mine')
+      // Another Forgejo: our token must never be sent there.
+      const otherForge = mergeProfileFields(ours, prof('w', 'Work', { forgejoUrl: 'https://git.other.example', forgejoToken: '' }))
+      expect(otherForge.forgejoToken).toBe('')
+      // A token the file carries wins.
+      expect(mergeProfileFields(ours, prof('w', 'Work', { githubToken: 'ghp-file' })).githubToken).toBe('ghp-file')
+    })
+
+    it('keeps this machine’s logins and adds no optional keys', () => {
+      const ours = prof('w', 'Work', { links: { github: { source: 'gh', login: 'mac-login' } } })
+      const out = mergeProfileFields(ours, prof('w', 'Work', { links: { github: { source: 'git', login: 'linux-login' } } }))
+      expect(out.links?.github?.login).toBe('mac-login')
+      const bare = mergeProfileFields(prof('w', 'Work'), prof('w', 'Work'))
+      for (const k of ['githubEnterprise', 'gitlabServers', 'bitbucketServers', 'links']) expect(k in bare).toBe(false)
+    })
+  })
+
+  describe('two installs’ first profiles', () => {
+    // Both machines' first profile has id `default`, named at onboarding.
+    const a = (): Profile[] => [prof('default', 'Personal'), prof('a-work', 'Work')]
+    const b = (): Profile[] => [prof('default', 'Work', { githubToken: 'ghp-work' }), prof('zz9', 'Personal')]
+
+    it('pairs by name, not by the shared `default` id', () => {
+      expect([...matchProfiles(a(), b())]).toEqual([
+        ['default', 'a-work'],
+        ['zz9', 'default']
+      ])
+      const plan = planProfileMerge(a(), b())
+      expect(plan.rows.map((r) => [r.id, r.name, r.action])).toEqual([
+        ['a-work', 'Work', 'update'],
+        ['default', 'Personal', 'update']
+      ])
+      expect(plan.idMap).toEqual({ default: 'a-work', zz9: 'default' })
+    })
+
+    it('two different `default`s with no name match stay two profiles', () => {
+      const plan = planProfileMerge([prof('default', 'Personal')], [prof('default', 'Client')])
+      expect(plan.rows.map((r) => [r.id, r.action])).toEqual([
+        ['default-imported', 'new'],
+        ['default', 'keep']
+      ])
+      // Deterministic, so the dialog's frozen plan and the store's agree.
+      expect(planProfileMerge([prof('default', 'Personal')], [prof('default', 'Client')]).idMap).toEqual(plan.idMap)
+      const merged = mergeProfiles(
+        [prof('default', 'Personal')],
+        remapProfileIds({ profiles: [prof('default', 'Client')] }, plan.idMap).profiles!,
+        'merge'
+      )
+      expect(merged.map((p) => [p.id, p.name])).toEqual([
+        ['default', 'Personal'],
+        ['default-imported', 'Client']
+      ])
+    })
+
+    it('a renamed profile with a random shared id is still one profile', () => {
+      expect([...matchProfiles([prof('r1', 'Work')], [prof('r1', 'Job')])]).toEqual([['r1', 'r1']])
+    })
+  })
+
+  describe('what a matched profile keeps under merge, and loses under replace', () => {
+    const account = (id: string): Profile['ai']['accounts'][number] => ({
+      ...defaultProfile().ai.accounts[0],
+      id,
+      apiKey: `key-${id}`
+    })
+    const withAI = (ids: string[], extra: Partial<Profile> = {}): Profile =>
+      prof('w', 'Work', { ai: { ...defaultProfile().ai, accounts: ids.map(account) }, ...extra })
+
+    it('merge adds the AI accounts only this machine has', () => {
+      const out = mergeProfileFields(withAI(['mine', 'both']), withAI(['both', 'theirs']))
+      expect(out.ai.accounts.map((a) => a.id)).toEqual(['both', 'theirs', 'mine'])
+    })
+
+    it('one server in two spellings is one server', () => {
+      const out = mergeProfileFields(
+        prof('w', 'Work', { githubEnterprise: [{ url: 'https://ghe.corp.example', token: 'held' }] }),
+        prof('w', 'Work', { githubEnterprise: [{ url: 'ghe.corp.example/', token: '' }] })
+      )
+      expect(out.githubEnterprise).toEqual([{ url: 'ghe.corp.example/', token: 'held' }])
+    })
+
+    it('replace names the profiles that would lose a server or an AI account', () => {
+      const ours = [withAI(['mine'], { gitlabServers: [{ url: 'https://gitlab.mac.example', token: 't' }] })]
+      expect(profilesLosingOnReplace(ours, [withAI(['mine'])], {})).toEqual(['Work'])
+      expect(profilesLosingOnReplace(ours, [withAI([], { gitlabServers: ours[0].gitlabServers })], {})).toEqual(['Work'])
+      expect(
+        profilesLosingOnReplace(ours, [withAI(['mine'], { gitlabServers: [{ url: 'gitlab.mac.example', token: '' }] })], {})
+      ).toEqual([])
+    })
+  })
+
+  describe('through the store', () => {
+    beforeEach(async () => {
+      onDisk = {
+        ...defaultSettings(),
+        onboardingCompleted: true,
+        language: 'en',
+        profiles: mine(),
+        activeProfileId: 'mac-only',
+        repoProfiles: { '/Users/dev/site': 'mac-only' }
+      }
+      await useSettingsStore.getState().load()
+      vi.mocked(settingsApi.set).mockClear()
+    })
+
+    it('merge keeps the Mac-only profile and sends the matched one under our id', async () => {
+      await useSettingsStore
+        .getState()
+        .importSettings({ profiles: theirs(), activeProfileId: 'linux-work' }, { parts: ['profiles'], profiles: 'merge', replaceSecrets: true })
+      const s = useSettingsStore.getState().settings
+      expect(s.profiles.map((p) => p.id)).toEqual(['default', 'mac-work', 'mac-only', 'client'])
+      expect(s.activeProfileId).toBe('mac-only')
+      expect(s.repoProfiles).toEqual({ '/Users/dev/site': 'mac-only' })
+      const [sent, , options] = vi.mocked(settingsApi.set).mock.calls.at(-1)!
+      expect(sent.profiles.find((p) => p.id === 'mac-work')!.gitlabToken).toBe('glpat-from-linux')
+      expect(sent.profiles.some((p) => p.id === 'linux-work')).toBe(false)
+      // Merging profiles never replaces credentials wholesale.
+      expect(options).toEqual({ import: 'merge' })
+    })
+
+    it('merge keeps this computer’s general AI; replace takes the file’s', async () => {
+      const ours = useSettingsStore.getState().settings.ai
+      const fileAI = { ...ours, enabled: !ours.enabled }
+      await useSettingsStore
+        .getState()
+        .importSettings({ profiles: theirs(), ai: fileAI }, { parts: ['profiles'], profiles: 'merge' })
+      expect(useSettingsStore.getState().settings.ai.enabled).toBe(ours.enabled)
+      await useSettingsStore
+        .getState()
+        .importSettings({ profiles: theirs(), ai: fileAI }, { parts: ['profiles'], profiles: 'replace' })
+      expect(useSettingsStore.getState().settings.ai.enabled).toBe(fileAI.enabled)
+    })
+
+    it('merge keeps our keychain seed; replace drops bindings to removed profiles', async () => {
+      useSettingsStore.setState((st) => ({ settings: { ...st.settings, aiSecretsFrom: 'mac-work' } }))
+      await useSettingsStore.getState().importSettings({ profiles: theirs() }, { parts: ['profiles'], profiles: 'merge' })
+      expect(useSettingsStore.getState().settings.aiSecretsFrom).toBe('mac-work')
+      await useSettingsStore.getState().importSettings({ profiles: theirs() }, { parts: ['profiles'], profiles: 'replace' })
+      // 'mac-only' is gone, and so is the binding that named it.
+      expect(useSettingsStore.getState().settings.repoProfiles).toEqual({})
+    })
+
+    it('replace (the default) takes the file’s list and may replace credentials', async () => {
+      await useSettingsStore
+        .getState()
+        .importSettings({ profiles: theirs(), activeProfileId: 'client' }, { parts: ['profiles'], replaceSecrets: true })
+      const s = useSettingsStore.getState().settings
+      expect(s.profiles.map((p) => p.id)).toEqual(['default', 'mac-work', 'client'])
+      expect(s.activeProfileId).toBe('client')
+      expect(vi.mocked(settingsApi.set).mock.calls.at(-1)![2]).toEqual({ import: 'replace' })
+    })
   })
 })

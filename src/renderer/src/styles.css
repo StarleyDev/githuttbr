@@ -5883,6 +5883,9 @@ body.col-resizing .node-ava {
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
+.import-part.absent {
+  opacity: 0.55;
+}
 .import-part.on {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   background: color-mix(in srgb, var(--accent) 6%, var(--bg-2));
@@ -6085,6 +6088,88 @@ body.col-resizing .node-ava {
   font-size: 11.5px;
   color: var(--warn);
 }
+.import-profiles {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  margin-inline-start: 26px;
+}
+.import-profiles .import-why {
+  margin: 0;
+}
+.import-profiles-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-1);
+}
+.import-profile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.import-profile-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.import-profile-list li + li {
+  border-top: 1px solid var(--border);
+}
+.import-profile-name {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.import-profile-name b,
+.import-profile-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.import-profile-name span {
+  font-size: 11px;
+  color: var(--text-2);
+}
+/* Removed reads as removed even without colour: struck through and faded. */
+.import-profile-list li.removed {
+  opacity: 0.7;
+}
+.import-profile-list li.removed b {
+  text-decoration: line-through;
+}
+.import-tag {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.import-tag.update {
+  color: var(--text-0);
+  background: var(--accent-soft);
+}
+.import-tag.new {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.import-tag.keep {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+.import-tag.remove {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+}
 .import-foot {
   flex-wrap: wrap;
   align-items: center;
@@ -6138,6 +6223,91 @@ body.col-resizing .node-ava {
 }
 .import-failed {
   color: var(--danger);
+}
+
+/* ─── Settings export: the same parts, chosen before the file is written ─── */
+/* It reuses the import dialog's frame and part cards (`.import-*`); only what
+   the import has no counterpart for lives here. */
+.export-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.export-preset {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-1);
+  cursor: pointer;
+}
+.export-preset[aria-pressed='true'] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-2));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.export-preset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* The notes sit under the four parts, not inside one: no indent. */
+.export-dialog .export-note {
+  margin: 0;
+}
+.export-opt {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  border-radius: var(--radius);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.export-opt input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+.export-opt > span {
+  display: grid;
+  gap: 1px;
+}
+.export-opt small {
+  font-size: 12px;
+  color: var(--text-2);
+}
+/* Disabled, with its reason still readable. */
+.export-opt.off {
+  cursor: default;
+}
+.export-opt.off b {
+  color: var(--text-2);
+}
+.export-password {
+  margin-top: 0;
+  padding-inline-start: 12px;
+}
+.export-manifest {
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: var(--text-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg-3);
+  border: 1px dashed var(--border);
+}
+.export-manifest-title {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.export-manifest ul {
+  margin: 0;
+  padding-inline-start: 16px;
 }
 
 .modal h3 {

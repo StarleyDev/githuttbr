@@ -72,11 +72,15 @@ import {
   dropMissingRepos,
   IMPORT_PARTS,
   keepMachineAIPaths,
+  mergeProfilePart,
   mergeRepoPart,
   pickParts,
+  planProfileMerge,
+  remapProfileIds,
   remapRepoPaths,
   takeMachineAIPaths,
-  type ImportPart
+  type ImportPart,
+  type ProfileImportMode
 } from '../lib/settingsImport'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
@@ -319,6 +323,12 @@ interface SettingsState {
    * before); keys of the other parts keep their current values. `remap`
    * translates the 'repos' part onto this machine and keeps only the
    * repositories in `existing` (see lib/settingsImport.ts).
+   *
+   * `profiles` says how the 'profiles' part lands: 'merge' adds the file's
+   * profiles to ours (matched by id, then by name, keeping our id), 'replace'
+   * (the default, what onboarding's restore wants) makes the file's list the
+   * whole list. Under 'merge' credentials always merge too: replacing them
+   * wholesale would clear the keys of the profiles the merge just kept.
    */
   importSettings(
     incoming: Partial<AppSettings>,
@@ -326,6 +336,7 @@ interface SettingsState {
       replaceSecrets?: boolean
       parts?: readonly ImportPart[]
       remap?: { from: string; to: string; existing: string[] }
+      profiles?: ProfileImportMode
     }
   ): Promise<void>
 
@@ -719,8 +730,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const parts = opts?.parts ?? IMPORT_PARTS
     const withProfiles = parts.includes('profiles')
     const withMachine = parts.includes('machine')
+    const profileMode: ProfileImportMode = opts?.profiles ?? 'replace'
     // Only the chosen parts; the rest of `current` stays exactly as it is.
     let chosen = pickParts(incoming, parts)
+    // A file profile matched to one of ours by name takes our id first, so
+    // everything after — CLI paths, bindings, the keychain entries main files
+    // by profile id — lands on the profile this machine already has.
+    if (withProfiles && chosen.profiles) {
+      chosen = remapProfileIds(chosen, planProfileMerge(current.profiles, chosen.profiles, profileMode).idMap)
+    }
     if (opts?.remap && parts.includes('repos')) {
       const { from, to, existing } = opts.remap
       chosen = dropMissingRepos(remapRepoPaths(chosen, from, to), new Set(existing))
@@ -730,7 +748,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // machine's paths (by account id); machine without profiles takes the
     // file's paths onto our own accounts of the same id.
     if (withProfiles && !withMachine) chosen = { ...chosen, ...keepMachineAIPaths(chosen, current) }
-    const merged: AppSettings = { ...current, ...chosen }
+    const merged: AppSettings = { ...current, ...chosen, ...mergeProfilePart(current, chosen, profileMode) }
     // The repositories part is merged, not replaced: a file from another
     // machine adds its repositories and leaves the ones only this one has —
     // including when none of the file's exist here. A pre-workspaces export's
@@ -760,12 +778,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // it from those profiles (`ensureGeneralAI`), not keep ours — that would
     // put every imported profile on an engine none of them had.
     if (chosen.profiles && !chosen.ai) delete (merged as Partial<AppSettings>).ai
+    // Merging keeps this machine's general AI: which engine and model answer
+    // here was chosen here, and a file from another computer adds profiles,
+    // not a new default for all of them. 'replace' takes the file's, as a restore.
+    if (withProfiles && profileMode === 'merge') merged.ai = current.ai
     // Our keychain seed names our profiles; with the file's profiles or general
     // AI in place it would hand our key to an account of theirs that merely
     // shares its id. The file's own seed (an older export) is the only one kept.
-    if (chosen.profiles || chosen.ai) {
+    // Merging keeps our profiles and our general AI, so our seed still names
+    // the right key — dropping it would strand the general AI without one
+    // where it is never settled (Linux on basic storage).
+    if ((chosen.profiles || chosen.ai) && !(withProfiles && profileMode === 'merge')) {
       if (chosen.aiSecretsFrom) merged.aiSecretsFrom = chosen.aiSecretsFrom
       else delete merged.aiSecretsFrom
+    }
+    // A replace that removed profiles leaves no binding pointing at one, as
+    // deleting a profile in Settings does.
+    if (withProfiles && profileMode === 'replace' && chosen.profiles && merged.repoProfiles) {
+      const ids = new Set(merged.profiles.map((p) => p.id))
+      merged.repoProfiles = Object.fromEntries(Object.entries(merged.repoProfiles).filter(([, id]) => ids.has(id)))
     }
     const { settings, noticeAccounts } = normalizeSettings(merged)
     if (noticeAccounts) pendingAccountsNotice = true
@@ -779,7 +810,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       // Replacing is about the file's credentials, which ride on its profiles:
       // with those left out, "replace" could only clear ours.
-      await send({ import: opts?.replaceSecrets && withProfiles ? 'replace' : 'merge' })
+      // Merging profiles merges their credentials too, whatever was asked.
+      await send({ import: opts?.replaceSecrets && withProfiles && profileMode === 'replace' ? 'replace' : 'merge' })
     } finally {
       // Read back what main kept: a merge leaves credentials the file did not
       // carry, which this state shows as blanks until it is replaced — and a

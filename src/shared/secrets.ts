@@ -115,20 +115,26 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
     ...settings,
     // A raw import may predate the general AI: never add the field to it.
     ...(settings.ai ? { ai: withoutAIKeys(settings.ai) } : {}),
-    profiles: (settings.profiles ?? []).map(migrateGitlabProfile).map((p) => ({
-      ...p,
-      githubToken: '',
-      azureToken: '',
-      gitlabToken: '',
-      bitbucketToken: '',
-      // Optional field: blank it where it exists, never add it to an older profile.
-      ...(p.forgejoToken !== undefined ? { forgejoToken: '' } : {}),
-      // The servers stay (they are not secret); their tokens go.
-      ...(p.githubEnterprise ? { githubEnterprise: p.githubEnterprise.map((h) => ({ ...h, token: '' })) } : {}),
-      ...(p.gitlabServers ? { gitlabServers: p.gitlabServers.map((h) => ({ ...h, token: '' })) } : {}),
-      ...(p.bitbucketServers ? { bitbucketServers: p.bitbucketServers.map((h) => ({ ...h, token: '' })) } : {}),
-      ai: p.ai ? withoutAIKeys(p.ai) : p.ai
-    }))
+    // A partial export (no profiles part) must stay without the key, not gain
+    // an empty list that would replace ours on import.
+    ...(settings.profiles
+      ? {
+          profiles: settings.profiles.map(migrateGitlabProfile).map((p) => ({
+            ...p,
+            githubToken: '',
+            azureToken: '',
+            gitlabToken: '',
+            bitbucketToken: '',
+            // Optional field: blank it where it exists, never add it to an older profile.
+            ...(p.forgejoToken !== undefined ? { forgejoToken: '' } : {}),
+            // The servers stay (they are not secret); their tokens go.
+            ...(p.githubEnterprise ? { githubEnterprise: p.githubEnterprise.map((h) => ({ ...h, token: '' })) } : {}),
+            ...(p.gitlabServers ? { gitlabServers: p.gitlabServers.map((h) => ({ ...h, token: '' })) } : {}),
+            ...(p.bitbucketServers ? { bitbucketServers: p.bitbucketServers.map((h) => ({ ...h, token: '' })) } : {}),
+            ai: p.ai ? withoutAIKeys(p.ai) : p.ai
+          }))
+        }
+      : {})
   }
 }
 
