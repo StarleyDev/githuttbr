@@ -19,6 +19,7 @@ import { SubscriptionSetup } from './SubscriptionSetup'
 import { useModelCatalogs } from './useModelCatalogs'
 import { useUIStore } from '../stores/ui'
 import { interp, useT, type TranslationKey } from '../i18n'
+import { modelPickerView, type ModelPickerMode } from '../lib/modelPicker'
 
 /**
  * The AI accounts editor.
@@ -89,26 +90,15 @@ function ModelSelect({
   const t = useT()
   const [showAll, setShowAll] = useState(false)
   const full = allModels ?? models
-  // A value that only exists in the full list expands it rather than looking
-  // like the picker forgot what is selected.
-  const shown = showAll || (value !== '' && !models.includes(value) && full.includes(value)) ? full : models
-  const known = value === '' || shown.includes(value)
-  // List or typed field is decided once, against the provider's list rather
-  // than the bundled one — deciding on mount turned every newer model into a
-  // typed field. Decided, it holds: typing a listed name must not swap the
-  // field out from under the cursor.
-  const [mode, setMode] = useState<'auto' | 'list' | 'custom'>('auto')
+  const [mode, setMode] = useState<ModelPickerMode>('auto')
   // Focus only when the person asked for the field. A field that focuses
   // itself on mount scrolls Settings to it every time the page opens.
   const [focusField, setFocusField] = useState(false)
+  const { options, next, hasMore } = modelPickerView({ value, models, allModels, showAll, mode, settled })
   useEffect(() => {
-    if (mode === 'auto' && settled) setMode(known ? 'list' : 'custom')
-  }, [mode, settled, known])
+    if (next !== mode) setMode(next)
+  }, [next, mode])
   const custom = mode === 'custom'
-  const hasMore = full.length > models.length
-  // Waiting for the list: keep the saved model on screen as an option, so the
-  // select neither shows another row nor drops it.
-  const options = !known && value !== '' && mode === 'auto' ? [...shown, value] : shown
 
   if (custom) {
     return (

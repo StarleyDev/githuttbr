@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Scale, Search, ExternalLink, ChevronRight } from 'lucide-react'
 import { dependencyLicenses } from '../licenses'
 import { useT, interp } from '../i18n'
 import { APP_REPO_URL } from '../../../shared/appRepo'
 
-const REPO_LICENSE = `${APP_REPO_URL}/blob/main/LICENSE`
+/** The license of the version installed, not of main: a version released under
+ *  one license stays under it, and main may have moved on (MIT → Apache 2.0). */
+const licenseUrl = (version: string | null): string =>
+  `${APP_REPO_URL}/blob/${version ? `v${version}` : 'main'}/LICENSE`
 
 /** The "Licenses" page tab: every third-party package this build ships, with
  *  the licence text it was published under. The list is generated at build
@@ -15,6 +18,10 @@ export function LicensesPage(): React.JSX.Element {
   const t = useT()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<string | null>(null)
+  const [version, setVersion] = useState<string | null>(null)
+  useEffect(() => {
+    void window.api.appVersion().then((v) => setVersion(typeof v === 'string' && v ? v : null))
+  }, [])
 
   const all = useMemo(() => dependencyLicenses(), [])
 
@@ -44,7 +51,7 @@ export function LicensesPage(): React.JSX.Element {
             className="licenses-own"
             type="button"
             title={t('licenses.ownTitle')}
-            onClick={() => void window.api.openExternal(REPO_LICENSE)}
+            onClick={() => void window.api.openExternal(licenseUrl(version))}
           >
             <ExternalLink size={12} />
             <span>{t('licenses.own')}</span>

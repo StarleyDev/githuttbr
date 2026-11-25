@@ -341,7 +341,9 @@ interface SettingsState {
   saveAIFor(profileId: string, partial: Partial<AIConfig>): void
   setActiveProfile(id: string): void
   saveProfile(profile: Profile): void
-  addProfile(name: string): void
+  /** Create a profile and return its id. It becomes the one in use unless
+   *  `activate` is false — Settings creates one to edit, not to switch to. */
+  addProfile(name: string, opts?: { activate?: boolean }): string
   deleteProfile(id: string): void
   /** Bind a repo path to a profile (or clear with null). Drives auto-switch
    *  when that repo becomes active. */
@@ -760,13 +762,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       profiles: s.profiles.map((p) => (p.id === profile.id ? profile : p))
     })),
 
-  addProfile: (name) =>
-    get().update((s) => {
-      // No `ownAI`: a new profile answers with the general AI, so accounts and
-      // keys set up once are not set up again per profile.
-      const profile: Profile = { ...defaultProfile(), id: uid(), name }
-      return { ...s, profiles: [...s.profiles, profile], activeProfileId: profile.id }
-    }),
+  addProfile: (name, opts) => {
+    // No `ownAI`: a new profile answers with the general AI, so accounts and
+    // keys set up once are not set up again per profile.
+    const profile: Profile = { ...defaultProfile(), id: uid(), name }
+    const activate = opts?.activate !== false
+    get().update((s) => ({
+      ...s,
+      profiles: [...s.profiles, profile],
+      activeProfileId: activate ? profile.id : s.activeProfileId
+    }))
+    return profile.id
+  },
 
   deleteProfile: (id) => {
     // Its stored picture goes too: nothing would ever read that file again.

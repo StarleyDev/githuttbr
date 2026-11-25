@@ -3968,7 +3968,11 @@ function EditorCard(): React.JSX.Element {
 }
 
 function KeychainCard(): React.JSX.Element {
-  const [status, setStatus] = useState<{ consent: KeychainConsent; available: boolean | null } | null>(null)
+  const [status, setStatus] = useState<{
+    consent: KeychainConsent
+    available: boolean | null
+    weakBackend: boolean
+  } | null>(null)
   const [unreadable, setUnreadable] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const load = useSettingsStore((s) => s.load)
@@ -4049,6 +4053,12 @@ function KeychainCard(): React.JSX.Element {
           </button>
         )}
       </div>
+      {consent === 'granted' && status?.weakBackend && (
+        <div className="kc-status" role="alert">
+          <span className="kc-dot declined" />
+          <span className="settings-hint kc-status-text">{t('keychain.weakBackend')}</span>
+        </div>
+      )}
       {unreadable && (
         <div className="kc-status" role="alert">
           <span className="kc-dot declined" />
@@ -4961,8 +4971,9 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
       submitLabel: t('settings.newProfile'),
       allowEmpty: true,
       onSubmit: (name) => {
-        addProfile(name.trim() || fallback)
-        setSelectedId(useSettingsStore.getState().settings.activeProfileId)
+        // Created to be edited, not switched to: the app keeps the profile in
+        // use, and the bar shows the new one with its "not in use" band.
+        setSelectedId(addProfile(name.trim() || fallback, { activate: false }))
       }
     })
   }

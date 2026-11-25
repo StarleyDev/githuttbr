@@ -659,7 +659,12 @@ async function readWithSecrets(
     if (mode === 'queued') await persistPendingLocked().catch(() => undefined)
     // Only when the read above saw the seed: settling re-reads the file, and a
     // settled install has nothing to settle.
-    if (mode === 'queued' && plain.settings.aiSecretsFrom) await settleGeneralAILocked().catch(() => undefined)
+    // A failure leaves the marker in place and the next unlock tries again — no
+    // key is lost — but it is logged, or a settle that never succeeds is invisible.
+    if (mode === 'queued' && plain.settings.aiSecretsFrom)
+      await settleGeneralAILocked().catch((err) =>
+        console.warn('[settings] general AI keys not settled yet, retrying on next unlock:', (err as Error).message)
+      )
     const after = await readPlain(mode)
     // Plaintext the move above could not strip is still on screen (`readPlain`).
     const applied = mergeSecretStores(after.applied, inMemorySecrets())

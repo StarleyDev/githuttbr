@@ -78,6 +78,22 @@ export async function adoptExistingConsent(paths: string[]): Promise<void> {
   if (paths.some((p) => existsSync(p))) await writeFileState({ consent: 'granted', explained: false })
 }
 
+/**
+ * Linux without a secret service (GNOME Keyring, KWallet): Electron still says
+ * encryption is available, but falls back to `basic_text` — a password fixed
+ * in Chromium's source, so anyone who can read the file can read the tokens.
+ * Not treated as "unavailable": that would lock users already on it out of
+ * what they stored. It is reported instead, so Settings can say so.
+ */
+function weakStorageBackend(): boolean {
+  if (process.platform !== 'linux') return false
+  try {
+    return safeStorage.getSelectedStorageBackend() === 'basic_text'
+  } catch {
+    return false
+  }
+}
+
 /** True when the keychain may be used right now, without asking anything. */
 export async function canUseKeychain(): Promise<boolean> {
   if ((await getConsent()) !== 'granted') return false
@@ -244,6 +260,8 @@ export function registerKeychainHandlers(): void {
       consent,
       explained,
       available: consent === 'granted' ? await canUseKeychain() : null,
+      // Only once consent is given: asking safeStorage is what can raise the OS prompt.
+      weakBackend: consent === 'granted' ? weakStorageBackend() : false,
       sessionOnly: sessionOnlyProbe()
     }
   })

@@ -1190,6 +1190,8 @@ export const keychainApi = {
       consent: KeychainConsent
       explained: boolean
       available: boolean | null
+      /** Linux's basic_text fallback: "encrypted" with a fixed, public password. */
+      weakBackend: boolean
       /** Some token is held in memory only and will not survive a quit. */
       sessionOnly: boolean
     }>,

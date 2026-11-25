@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
   chatAnswerSchema,
@@ -157,10 +161,16 @@ describe('repository chat grounding', () => {
   })
 
   it('honours ignore rules even for paths checked as tracked context', async () => {
-    const ignored = await gitService.ignoredTrackedFiles(process.cwd(), [
+    // A repository of its own, not this checkout: in a worktree node_modules is a
+    // symlink, and git refuses a pathspec "beyond a symbolic link".
+    const repo = mkdtempSync(join(tmpdir(), 'githuttbr-ignore-'))
+    execFileSync('git', ['init', '-q', repo])
+    writeFileSync(join(repo, '.gitignore'), 'node_modules/\n')
+    const ignored = await gitService.ignoredTrackedFiles(repo, [
       'node_modules/example.js',
       'src/main/index.ts'
     ])
+    rmSync(repo, { recursive: true, force: true })
     expect(ignored).toEqual(['node_modules/example.js'])
   })
 

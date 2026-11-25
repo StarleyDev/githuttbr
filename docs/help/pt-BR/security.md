@@ -56,6 +56,16 @@ guardado.
 
 Enquanto ele estiver desligado, o campo de token em Integrações avisa — *Guardado só até você fechar o Gitcito: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
 
+### Linux sem chaveiro
+
+No Linux, o chaveiro é um serviço de segredos — GNOME Keyring ou KWallet. Quando
+nenhum está rodando, o sistema ainda "criptografa", mas com uma senha fixa, igual
+em todas as máquinas: os tokens e as chaves ficam embaralhados, não protegidos.
+Configurações → Segurança avisa isso embaixo do status do chaveiro — *Nenhum
+chaveiro está rodando…* — para a palavra *chaveiro* nunca prometer uma proteção
+que não existe. Instale ou desbloqueie um chaveiro e reinicie o Gitcito. O que foi
+guardado nesse meio-tempo continua legível: o aviso não tira seu acesso.
+
 ## Compartilhando com segurança
 
 O [compartilhamento seguro](secure-share.md) exporta configurações, entradas do

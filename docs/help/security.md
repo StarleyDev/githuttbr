@@ -91,6 +91,16 @@ the question counts as unanswered — not as a no — and is asked again the nex
 time a token needs storing. Nothing waits on a question nobody can answer any
 more: the settings load again normally.
 
+### Linux without a keyring
+
+On Linux the keychain is a secret service — GNOME Keyring or KWallet. When none
+is running, the system still "encrypts", but with a fixed password that is the
+same on every machine: the tokens and keys are scrambled, not protected.
+Settings → Security says so under the keychain status — *No keyring is running…*
+— so the word *keychain* never stands for protection that is not there. Install
+or unlock a keyring and restart Gitcito. What was saved meanwhile stays readable:
+the warning does not lock you out of it.
+
 ### When the saved tokens cannot be read
 
 If you dismiss the system's keychain prompt, the keyring is locked, or the token
