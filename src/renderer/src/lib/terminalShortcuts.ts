@@ -52,28 +52,62 @@ export function terminalCloseTarget(
   }
 }
 
+type ArrowDirection = 'Left' | 'Right' | 'Up' | 'Down'
+
+const ARROWS: Record<string, ArrowDirection> = {
+  ArrowLeft: 'Left',
+  ArrowRight: 'Right',
+  ArrowUp: 'Up',
+  ArrowDown: 'Down'
+}
+const arrowDirection = (name: string): ArrowDirection | null =>
+  Object.hasOwn(ARROWS, name) ? ARROWS[name] : null
+
 /**
  * What Alt+arrow sends to the shell. xterm 5 rewrote Alt+←/→ into word jumps
  * itself (ESC b / ESC f on macOS, Ctrl+arrow elsewhere) and Alt+↑/↓ into
  * Ctrl+arrow off macOS; xterm 6 dropped that and sends plain CSI 1;3 X, which
  * zsh, bash and PSReadLine leave unbound by default. Keep the old bytes so
  * word movement keeps working. Null means "let xterm handle the key".
+ *
+ * Only the normal buffer — the shell prompt — is rewritten. Full-screen
+ * programs on the alternate screen (vim, tmux, less) bind CSI 1;3 X
+ * themselves, so they get xterm's own sequence. The key is read before the
+ * code so a numpad arrow (NumLock off: key ArrowLeft, code Numpad4) counts
+ * too; an IME composition is never touched.
  */
 export function altArrowSequence(
-  event: Pick<KeyboardEvent, 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
-  isMac: boolean
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'isComposing' | 'keyCode'
+  >,
+  isMac: boolean,
+  bufferType: 'normal' | 'alternate'
 ): string | null {
   if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null
-  switch (event.code) {
-    case 'ArrowLeft':
+  if (event.isComposing || event.keyCode === 229) return null
+  if (bufferType !== 'normal') return null
+  switch (arrowDirection(event.key) ?? arrowDirection(event.code)) {
+    case 'Left':
       return isMac ? '\x1bb' : '\x1b[1;5D'
-    case 'ArrowRight':
+    case 'Right':
       return isMac ? '\x1bf' : '\x1b[1;5C'
-    case 'ArrowUp':
+    case 'Up':
       return isMac ? null : '\x1b[1;5A'
-    case 'ArrowDown':
+    case 'Down':
       return isMac ? null : '\x1b[1;5B'
     default:
       return null
   }
+}
+
+/**
+ * Take a key away from everything else in the window. preventDefault alone
+ * leaves the keydown bubbling to window listeners — the conflict resolver's
+ * Alt+↑/↓ hunk jump, the custom shortcut table — so a key the terminal
+ * answered would fire a second action outside it. xterm 5 stopped both.
+ */
+export function claimKeyEvent(event: Pick<Event, 'preventDefault' | 'stopPropagation'>): void {
+  event.preventDefault()
+  event.stopPropagation()
 }

@@ -8,7 +8,7 @@ import { useSettingsStore } from '../stores/settings'
 import { createTermSuggest, type TermSuggest } from './termSuggest'
 import { registry, terminalPrefs, type TermHandle } from './terminalState'
 import { t, interp } from '../i18n'
-import { altArrowSequence } from '../lib/terminalShortcuts'
+import { altArrowSequence, claimKeyEvent } from '../lib/terminalShortcuts'
 
 export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
   const existing = registry.get(panelId)
@@ -95,10 +95,14 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
     // Alt+arrow word jumps: xterm 6 no longer rewrites them (see altArrowSequence).
     // term.input goes through onData, so the suggestion list and
-    // scrollOnUserInput see it exactly like a typed key.
-    const wordJump = e.type === 'keydown' ? altArrowSequence(e, window.api.platform === 'darwin') : null
+    // scrollOnUserInput see it exactly like a typed key. Claimed, not just
+    // prevented: the conflict resolver binds Alt+↑/↓ on window.
+    const wordJump =
+      e.type === 'keydown'
+        ? altArrowSequence(e, window.api.platform === 'darwin', term.buffer.active.type)
+        : null
     if (wordJump) {
-      e.preventDefault()
+      claimKeyEvent(e)
       term.input(wordJump)
       return false
     }

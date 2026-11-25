@@ -39,8 +39,9 @@ prompt, seus aliases.
 | <kbd>Ctrl+Shift+C</kbd> | Copia a seleção; um <kbd>Ctrl+C</kbd> sozinho também copia enquanto há seleção, e continua sendo SIGINT quando não há |
 | <kbd>Ctrl+V</kbd> / <kbd>Ctrl+Shift+V</kbd> / <kbd>Shift+Ins</kbd> | Cola da área de transferência |
 | Clique direito | Copia a seleção, ou cola quando nada está selecionado |
+| <kbd>⌥←</kbd> / <kbd>⌥→</kbd>, <kbd>Alt+←</kbd> / <kbd>Alt+→</kbd> | Pula uma palavra para trás ou para a frente no prompt — enviado como as teclas de movimento por palavra que o shell já entende. Programas de tela cheia (vim, tmux, less) recebem o Alt+seta puro, que é o que eles usam |
 
-As duas primeiras valem só no terminal, de propósito: fora dele, continuam
+Novo e fechar terminal valem só no terminal, de propósito: fora dele, continuam
 abrindo e fechando [abas de workspace](workspaces.md). No macOS, Copiar/Colar do
 menu Editar funcionam do mesmo jeito.
 
