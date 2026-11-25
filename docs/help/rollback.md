@@ -15,7 +15,8 @@ by hand, and hoping the older build would read the settings the newer one wrote.
 
 **Settings → About → Previous versions** does it from inside the app: pick a
 version, confirm, and Gitcito copies your settings, downloads that version,
-restarts in it, and stops offering the version you left.
+restarts in it, and stops offering the version you left. **Cancel** stops it
+while it is still downloading; nothing is installed.
 
 ![Settings → About, with the previous versions and the settings copies](../screenshots/settings-rollback.webp)
 
@@ -24,7 +25,7 @@ restarts in it, and stops offering the version you left.
 | Step | What it does |
 |------|--------------|
 | **Copy the settings** | A copy of the settings file goes into `settings-backups/`, beside the settings. Without it nothing else happens. |
-| **Download and install** | The updater downloads the version from its own release, signed and checksummed like any update, and restarts into it. |
+| **Download and install** | The updater downloads the version from its own release — checked against the checksum that release published, like any update — and restarts into it. |
 | **Skip the version you left** | That version, and anything older, is never offered as an update again. The next update offered is one released *after* it — the one with the fix. |
 
 ![The confirmation before going back](../screenshots/rollback-confirm.webp)
@@ -64,9 +65,11 @@ install). Settings → About lists them, newest first, with the version that mad
 each one and where it was going.
 
 - **Restore** asks first, then copies the settings as they are now — so a
-  restore can itself be undone — and writes the chosen copy back. Open tabs and
-  workspaces stay as they are; the copy brings back preferences, profiles and
-  repository settings.
+  restore can itself be undone, and is refused if that copy cannot be made —
+  and writes the chosen copy back. It brings back preferences, profiles and
+  repository settings. Open tabs and workspaces stay as they are, and so do
+  profiles and servers added since the copy: their tokens are filed under them,
+  and dropping them would lose those tokens for good.
 - **Show in folder** opens the copy in your file manager. It is plain JSON.
 
 The newest five are kept. The copy a pending rollback still needs is kept even
@@ -74,20 +77,31 @@ when it is older.
 
 **No copy holds a token or key.** Tokens and AI keys live in the system keychain
 store, which a version switch never touches; a restored profile gets its tokens
-back because they are filed under the profile, not in the settings.
+back because they are filed under the profile, not in the settings. Where a
+token still sits in the settings file itself (the keychain declined, Linux
+without a keyring), a restore writes it back onto its profile untouched.
+
+When Gitcito asks whether to restore after an update, it compares the copy
+with the settings now, ignoring tokens, key order, and fields only one side
+has (an older version fills a profile with its own defaults; that is not your
+change).
 
 ## Why a newer version's settings survive
 
-Every settings key a version does not know is kept as it is when that version
-saves, and written back unchanged — so going back and then forward again loses
-nothing. The settings file also records a format number (`settingsFormat`),
+Every top-level settings key a version does not know — and every field it does
+not know on a profile — is kept as it is when that version saves, and written
+back unchanged, so going back and then forward again loses no setting. (A
+*value* it does not know inside a setting it does is another matter; see
+[Limits](#limits).) The settings file also records a format number (`settingsFormat`),
 raised whenever a release adds settings an earlier one would not know.
 
-One exception, on purpose: an unknown key whose name looks like a credential
-(`token`, `secret`, `password`, `apiKey`, …) is **dropped**, not kept. No
-version writes a credential into the settings file — they go to the keychain —
-so such a key could only be a mistake, and a mistake is better lost than kept
-in plain text.
+One exception, on purpose: an unknown key that holds something shaped like a
+credential — text under a name ending in `token`, `secret`, `password`,
+`apiKey` and the like, or an address with a password or token in it, at any
+depth — is **dropped whole**, not kept. No version writes a credential into the
+settings file — they go to the keychain — so such a key could only be a
+mistake, and a mistake is better lost than kept in plain text. A flag such as
+`showTokenUsage: true` is not a credential and is kept.
 
 ## Limits
 
@@ -101,6 +115,12 @@ in plain text.
   so and points at the Releases page instead.
 - **A release without your system's files** (a macOS build not uploaded yet)
   cannot be installed in place; the error says so.
+- **macOS only installs a signed build.** Squirrel.Mac, which replaces the app,
+  refuses a build not signed like the one running; a release published without
+  a signature has to be downloaded from the Releases page.
+- **Checksums, not signatures, elsewhere.** On Linux and Windows the download is
+  checked against the checksum its release published, exactly as an update is;
+  the builds themselves are not code-signed.
 - **Saved tokens.** If the way the keychain store is written changed between the
   two versions, the older one may not read your saved tokens. They show as
   unreadable — [nothing is deleted](security.md#when-the-saved-tokens-cannot-be-read).
@@ -108,6 +128,7 @@ in plain text.
 - **Settings an older version does not know have no effect there.** They come
   back to life when you update. A value an older version does not recognise in
   a setting it *does* know (a new theme, a new column) falls back to its default
-  there, as it always has.
+  there, as it always has — and after updating, that reset counts as a change
+  when Gitcito asks whether to restore the copy.
 - **The list needs GitHub.** It is read from the public releases, without a
   token. Offline or rate-limited, it says so; the Releases page still works.

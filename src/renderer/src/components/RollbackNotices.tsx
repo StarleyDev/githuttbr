@@ -5,6 +5,7 @@ import { useT, interp } from '../i18n'
 import { useRollbackStore } from '../stores/rollback'
 import { useSettingsStore } from '../stores/settings'
 import { rollbackIssueUrl } from '../lib/issueReport'
+import { shellApi } from '../infrastructure/api'
 
 /**
  * What a version switch leaves on screen afterwards (see docs/help/rollback.md):
@@ -38,7 +39,7 @@ export function RollbackNotices(): React.JSX.Element {
           <button
             className="btn ghost small"
             type="button"
-            onClick={() => void window.api.openExternal(rollbackIssueUrl(record.from, record.to))}
+            onClick={() => void shellApi.openExternal(rollbackIssueUrl(record.from, record.to))}
           >
             <Bug size={12} /> {t('rollback.report')}
           </button>

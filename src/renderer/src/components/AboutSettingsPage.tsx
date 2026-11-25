@@ -5,7 +5,7 @@ import { useRollbackStore } from '../stores/rollback'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
-import { settingsBackupsApi } from '../infrastructure/api'
+import { settingsBackupsApi, shellApi } from '../infrastructure/api'
 import { timeAgo } from '../lib/timeAgo'
 import { BACKUPS_KEPT, LAST_UNSAFE_ROLLBACK_VERSION, isRollbackSafe } from '../../../shared/rollback'
 import { APP_REPO_URL } from '../../../shared/appRepo'
@@ -51,6 +51,7 @@ export function AboutSettingsPage(): React.JSX.Element {
   const loadReleases = useRollbackStore((s) => s.loadReleases)
   const loadBackups = useRollbackStore((s) => s.loadBackups)
   const restoreBackup = useRollbackStore((s) => s.restoreBackup)
+  const cancelSwitch = useRollbackStore((s) => s.cancel)
   const updateStatus = useUpdatesStore((s) => s.status)
   const updateInfo = useUpdatesStore((s) => s.info)
   const checkUpdates = useUpdatesStore((s) => s.check)
@@ -68,7 +69,7 @@ export function AboutSettingsPage(): React.JSX.Element {
   const pending = hasPendingUpdate({ status: updateStatus, info: updateInfo } as never, skipped, versionRollback)
   const switching = progress.status === 'checking' || progress.status === 'downloading' || progress.status === 'downloaded'
   const blocked = support && !support.supported
-  const openReleases = (): void => void window.api.openExternal(RELEASES_URL)
+  const openReleases = (): void => void shellApi.openExternal(RELEASES_URL)
   const listed = releases.status === 'ok' ? releases.releases : []
 
   const confirmRestore = (b: SettingsBackup): void =>
@@ -153,6 +154,11 @@ export function AboutSettingsPage(): React.JSX.Element {
               <span style={{ width: `${Math.round(progress.percent)}%` }} />
             </span>
           )}
+          {(progress.status === 'checking' || progress.status === 'downloading') && (
+            <button className="btn ghost small" type="button" onClick={() => void cancelSwitch()}>
+              {t('common.cancel')}
+            </button>
+          )}
           {progress.status === 'error' && progress.error === 'missing-platform' && (
             <button className="btn ghost small" type="button" onClick={openReleases}>
               <ExternalLink size={12} /> {t('rollback.openReleases')}
@@ -192,7 +198,7 @@ export function AboutSettingsPage(): React.JSX.Element {
                   <button
                     className="btn ghost small"
                     type="button"
-                    onClick={() => void window.api.openExternal(r.url || RELEASES_URL)}
+                    onClick={() => void shellApi.openExternal(r.url || RELEASES_URL)}
                   >
                     {t('rollback.notes')}
                   </button>

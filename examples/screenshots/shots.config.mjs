@@ -150,7 +150,6 @@ async function seedTodos(page, repoPath) {
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
  */
 
-/** @type {Shot[]} */
 /**
  * Made-up releases and settings copies for the Settings → About shots, served
  * from main in place of GitHub's list and this machine's backup folder.
@@ -183,6 +182,7 @@ async function fakeRollbackData(app) {
   })
 }
 
+/** @type {Shot[]} */
 export const shots = [
   {
     out: 'repo-groups',

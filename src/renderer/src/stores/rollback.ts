@@ -43,6 +43,8 @@ interface RollbackStoreState {
   loadBackups(): Promise<void>
   /** Confirmed: copy the settings, download `target`, then record and restart. */
   start(target: string, showNotes: boolean): Promise<void>
+  /** Stops a switch still checking or downloading. Nothing is installed. */
+  cancel(): Promise<void>
   /** Writes a copy back over the settings, then reloads them. */
   restoreBackup(name: string): Promise<boolean>
   /** Start-up: what a version change since the last run means (see `versionChange`). */
@@ -99,6 +101,11 @@ export const useRollbackStore = create<RollbackStoreState>((set, get) => ({
     await useSettingsStore.getState().flush()
     set({ pending: { target, showNotes } })
     await rollbackApi.start(target)
+  },
+
+  cancel: async () => {
+    set({ pending: null })
+    await rollbackApi.cancel()
   },
 
   restoreBackup: async (name) => {

@@ -1,10 +1,16 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import { autoUpdater, CancellationToken } from 'electron-updater'
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import type { UpdateState, UpdateInfo, RollbackReleasesReply, RollbackState, RollbackSupport } from '../shared/types'
-import { isNewerVersion } from '../shared/version'
-import { isOfferedAfterRollback, previousVersions, releaseDownloadUrl, type GithubReleaseJson } from '../shared/rollback'
+import { compareVersions, isNewerVersion } from '../shared/version'
+import {
+  isOfferedAfterRollback,
+  isRollbackSafe,
+  previousVersions,
+  releaseDownloadUrl,
+  type GithubReleaseJson
+} from '../shared/rollback'
 import { readSettings } from './settings'
 import { backupSettings } from './settingsBackups'
 import { githubPublicGet } from './credentials'
@@ -143,13 +149,14 @@ function wireAutoUpdater(): void {
   autoUpdater.autoInstallOnAppQuit = true
 
   autoUpdater.on('checking-for-update', () => {
+    if (draining) return
     if (rollback) return setRollback({ status: 'checking' })
     if (silentDepth > 0) return
     setState({ status: 'checking', error: null })
   })
   autoUpdater.on('update-available', (info) => {
     // A rollback's own check: `startRollback` reads its result, nothing to offer.
-    if (rollback) return
+    if (rollback || draining) return
     void offer(info)
   })
   const offer = async (info: { version: string; releaseNotes?: unknown; releaseDate?: string }): Promise<void> => {
@@ -174,15 +181,15 @@ function wireAutoUpdater(): void {
     })
   }
   autoUpdater.on('update-not-available', () => {
-    if (rollback) return
+    if (rollback || draining) return
     // A staged build is still installable even if the feed now says we're current.
     if (state.status === 'downloaded') return
     setState({ status: 'not-available' })
   })
-  autoUpdater.on('download-progress', (p) =>
-    rollback
-      ? setRollback({ status: 'downloading', percent: p.percent })
-      : setState({
+  autoUpdater.on('download-progress', (p) => {
+    if (draining) return
+    if (rollback) return setRollback({ status: 'downloading', percent: p.percent })
+    setState({
       status: 'downloading',
       progress: {
         percent: p.percent,
@@ -191,11 +198,15 @@ function wireAutoUpdater(): void {
         total: p.total
       }
     })
-  )
+  })
   autoUpdater.on('update-downloaded', (info) => {
+    if (draining) return
     if (rollback) return setRollback({ status: 'downloaded', percent: 100 })
     // A version switch is coming: copy the settings first (quitting installs it too).
     void backupSettings(info.version, 'update')
+    // This download replaces an abandoned rollback's: installing on quit is safe again.
+    abandonedDownload = false
+    autoUpdater.autoInstallOnAppQuit = true
     setState({
       status: 'downloaded',
       progress: null,
@@ -209,7 +220,7 @@ function wireAutoUpdater(): void {
     })
   })
   autoUpdater.on('error', (err) => {
-    if (rollback) return
+    if (rollback || draining) return
     // A failed background re-check must not bury an update already on disk.
     if (state.status === 'downloaded') return
     setFailed(err, 'Update check failed.')
@@ -238,6 +249,9 @@ export function registerUpdaterHandlers(): void {
   })
 
   ipcMain.handle('update:download', async () => {
+    // The feed points at the older release while a version switch runs: a
+    // check now would be the switch's, and leave it unable to install.
+    if (rollback) return
     // Unsupported (dev): open the release page; the renderer also handles this,
     // but guard here in case it calls through anyway.
     if (!app.isPackaged) {
@@ -281,7 +295,7 @@ export function registerUpdaterHandlers(): void {
     if (!rollback || rollbackState.status !== 'downloaded') return
     setImmediate(() => autoUpdater.quitAndInstall())
   })
-  ipcMain.handle('rollback:cancel', () => endRollback({ status: 'idle', target: null, percent: 0, error: null, backup: null }))
+  ipcMain.handle('rollback:cancel', () => cancelRollback())
 }
 
 // ── Going back to an earlier version ─────────────────────────────────────
@@ -292,7 +306,7 @@ export function registerUpdaterHandlers(): void {
  * download folder, and downgrades are allowed — all undone by `endRollback`,
  * and by any restart, since none of it is persisted.
  */
-let rollback: { target: string } | null = null
+let rollback: { target: string; cancel: CancellationToken } | null = null
 const rollbackState: RollbackState = { status: 'idle', target: null, percent: 0, error: null, backup: null }
 
 /** A rollback download left behind (an error after it, a cancel): quitting must not install it. */
@@ -308,7 +322,8 @@ function setRollback(patch: Partial<RollbackState>): void {
 /**
  * Whether this install can replace itself with an older version. The updater
  * does it for the AppImage, the .deb (asking for the administrator password,
- * as an update does), the Windows installer and the signed macOS build. An
+ * as an update does), the Windows installer and the macOS app (Squirrel.Mac,
+ * which only installs a build signed like the running one). An
  * unpackaged run and any other package (rpm, a tarball, a distribution's own)
  * cannot: the caller opens the Releases page instead.
  */
@@ -363,6 +378,8 @@ function restoreFeed(): void {
 }
 
 function endRollback(final: Partial<RollbackState>): void {
+  // A finished download left on disk would install on quit. One cut short
+  // (cancelled mid-transfer) leaves nothing to install.
   if (rollback && rollbackState.status === 'downloaded') abandonedDownload = true
   rollback = null
   restoreFeed()
@@ -371,16 +388,38 @@ function endRollback(final: Partial<RollbackState>): void {
 }
 
 /**
+ * Set from a cancel until the cancelled transfer has settled: its last events
+ * belong to neither the switch nor the normal update, and are dropped.
+ */
+let draining = false
+
+/** The user stopped a switch before it installed. */
+function cancelRollback(): void {
+  const idle: RollbackState = { status: 'idle', target: null, percent: 0, error: null, backup: null }
+  if (!rollback) return setRollback(idle)
+  const inFlight = rollbackState.status === 'checking' || rollbackState.status === 'downloading'
+  if (inFlight) draining = true
+  rollback.cancel.cancel()
+  endRollback(idle)
+  // What the normal feed offers is offered again — at once, or once the transfer has settled.
+  if (!inFlight) void runCheck(true).catch(() => {})
+}
+
+/**
  * Downloads `version` from its own release folder, over the installed one.
  * Every release carries latest.yml / latest-mac.yml / latest-linux.yml beside
  * its installers, so a generic feed on that folder is the release as the
- * updater would have seen it then — signed, with its checksums. The install
+ * updater would have seen it then, each download checked against the sha512
+ * in that yml as an update's is. Signature checks are whatever the platform's
+ * updater does for an update, no more. The install
  * is a separate step (`rollback:install`).
  */
 async function startRollback(version: string): Promise<void> {
   if (!rollbackSupport().supported) return
   if (rollback || state.status === 'downloading') return
   if (rollbackState.status === 'checking' || rollbackState.status === 'downloading') return
+  // Only a version the list would offer: older than this one, and safe to land on.
+  if (!isRollbackSafe(version) || compareVersions(version, app.getVersion()) >= 0) return
   // The copy first: a switch without one is not started at all.
   setRollback({ status: 'checking', target: version, percent: 0, error: null, backup: null })
   const backup = await backupSettings(version, 'rollback')
@@ -389,7 +428,10 @@ async function startRollback(version: string): Promise<void> {
     return
   }
   wireAutoUpdater()
-  rollback = { target: version }
+  // The update banner steps aside: a staged update is replaced by this download,
+  // and an offer made from the normal feed means nothing until it is back.
+  setState({ status: 'idle', info: null, progress: null, error: null, staged: null })
+  rollback = { target: version, cancel: new CancellationToken() }
   // Until the user's switch is recorded, quitting installs nothing.
   autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.allowDowngrade = true
@@ -400,14 +442,20 @@ async function startRollback(version: string): Promise<void> {
     if (!result || result.updateInfo.version !== version || !result.isUpdateAvailable) {
       throw new Error(`v${version} could not be found in its release.`)
     }
-    // A staged update is replaced by this download: the restart installs the older version.
-    if (state.staged) setState({ staged: null, status: 'idle', info: null })
-    await autoUpdater.downloadUpdate()
+    await autoUpdater.downloadUpdate(rollback.cancel)
+    // Cancelled meanwhile: `cancelRollback` has already put everything back.
+    if (!rollback) return
     // Some versions of the updater resolve before the event; either way it is on disk.
     if (rollbackState.status !== 'downloaded') setRollback({ status: 'downloaded', percent: 100 })
   } catch (err) {
-    const error = isMissingChannelFile(err) ? 'missing-platform' : ((err as Error)?.message ?? String(err))
-    endRollback({ status: 'error', error })
+    if (rollback) {
+      const error = isMissingChannelFile(err) ? 'missing-platform' : ((err as Error)?.message ?? String(err))
+      endRollback({ status: 'error', error })
+    }
+  } finally {
+    draining = false
+    // Ended (an error, a cancel): the normal feed is back, so is what it offers.
+    if (!rollback) void runCheck(true).catch(() => {})
   }
 }
 
