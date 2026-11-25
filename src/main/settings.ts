@@ -215,7 +215,7 @@ let secretsUnreadable = false
 
 /**
  * A real unlock attempt this session found the keyring unusable: consent was
- * granted and explained, and `isEncryptionAvailable` said no (a Linux desktop
+ * granted and explained, and `isAsyncEncryptionAvailable` said no (a Linux desktop
  * without Secret Service). The stored tokens are out of reach until the
  * keychain is turned on, so a peek stops waiting for them. Set only by
  * `readSettingsWithSecrets` — never by a peek, which must not touch
@@ -270,7 +270,10 @@ async function loadSecrets(explicit: boolean): Promise<SecretStore | null> {
     return markUnreadable()
   }
   try {
-    const parsed: unknown = JSON.parse(safeStorage.decryptString(Buffer.from(b64, 'base64')))
+    // `shouldReEncrypt` (a rotated key) is left to the next save, which encrypts
+    // the whole store anew: a read writes nothing, and a weak store takes nothing.
+    const { result } = await safeStorage.decryptStringAsync(Buffer.from(b64, 'base64'))
+    const parsed: unknown = JSON.parse(result)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return markUnreadable()
     secretsUnreadable = false
     return parsed as SecretStore
@@ -298,7 +301,7 @@ const BACKUP_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 async function saveSecrets(store: SecretStore): Promise<void> {
   if (secretsUnreadable) throw new Error('The token store could not be read; it was left untouched.')
   await mkdir(app.getPath('userData'), { recursive: true })
-  const enc = safeStorage.encryptString(JSON.stringify(store))
+  const enc = await safeStorage.encryptStringAsync(JSON.stringify(store))
   await writePrivateFile(secretsPath(), enc.toString('base64'))
   await retireBackups(store)
 }
@@ -319,7 +322,9 @@ async function retireBackups(written: SecretStore): Promise<void> {
     const path = join(dir, name)
     let covered = false
     try {
-      const parsed: unknown = JSON.parse(safeStorage.decryptString(Buffer.from(await readFile(path, 'utf-8'), 'base64')))
+      // Read only: a backup is never re-encrypted, or the build that wrote it could no longer read it.
+      const { result } = await safeStorage.decryptStringAsync(Buffer.from(await readFile(path, 'utf-8'), 'base64'))
+      const parsed: unknown = JSON.parse(result)
       covered = !!parsed && typeof parsed === 'object' && isSubsetStore(parsed as SecretStore, written)
     } catch {
       // Another build's — or not a store at all.
@@ -743,7 +748,7 @@ async function settleGeneralAILocked(): Promise<void> {
  *   store may hold a token; a peek cannot know whether a PAT is in there, so it
  *   must not let a link stand in.
  *
- * Never calls safeStorage, not even `isEncryptionAvailable`: on macOS the first
+ * Never calls safeStorage, not even `isAsyncEncryptionAvailable`: on macOS the first
  * real safeStorage call is what brings up the keychain prompt (see keychain.ts).
  */
 async function peekView(): Promise<'unlocked' | 'plain' | 'locked'> {
@@ -1304,7 +1309,7 @@ async function replaceUnreadableStore(): Promise<boolean> {
     const weak = await isKeychainWeak()
     const fresh = weak ? {} : pruneSecrets(sessionSecrets, secretOwnerIds(current), current.profiles)
     // Written without retiring backups: the one just made must outlive this call.
-    const enc = safeStorage.encryptString(JSON.stringify(fresh))
+    const enc = await safeStorage.encryptStringAsync(JSON.stringify(fresh))
     await writePrivateFile(secretsPath(), enc.toString('base64'))
     secretsUnreadable = false
     setSecretCache(fresh)

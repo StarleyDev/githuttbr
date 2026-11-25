@@ -29,7 +29,8 @@ let vaultUnreadable = false
 async function load(): Promise<VaultData> {
   try {
     const b64 = await readFile(filePath(), 'utf-8')
-    const plain = safeStorage.decryptString(Buffer.from(b64, 'base64'))
+    // `shouldReEncrypt` (a rotated key) needs nothing here: every save encrypts the whole vault anew.
+    const { result: plain } = await safeStorage.decryptStringAsync(Buffer.from(b64, 'base64'))
     vaultUnreadable = false
     return { ...empty(), ...(JSON.parse(plain) as VaultData) }
   } catch {
@@ -46,7 +47,7 @@ async function save(data: VaultData): Promise<void> {
     await copyPrivateFile(filePath(), `${filePath()}.bak`).catch(() => {})
     vaultUnreadable = false
   }
-  const enc = safeStorage.encryptString(JSON.stringify(data))
+  const enc = await safeStorage.encryptStringAsync(JSON.stringify(data))
   await writePrivateFile(filePath(), enc.toString('base64'))
 }
 

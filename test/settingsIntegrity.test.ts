@@ -22,9 +22,9 @@ vi.mock('electron', () => ({
   shell: {},
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => keyring.available,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (b: Buffer) => {
+    isAsyncEncryptionAvailable: async () => keyring.available,
+    encryptStringAsync: async (s: string) => Buffer.from(`enc:${s}`),
+    decryptStringAsync: async (b: Buffer) => {
       // The user dismisses (or the OS denies) the keychain prompt.
       if (keyring.failNext > 0) {
         keyring.failNext--
@@ -32,7 +32,7 @@ vi.mock('electron', () => ({
       }
       const s = b.toString()
       if (!s.startsWith('enc:')) throw new Error('not ours')
-      return s.slice(4)
+      return { result: s.slice(4), shouldReEncrypt: false }
     }
   }
 }))

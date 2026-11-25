@@ -40,11 +40,11 @@ vi.mock('electron', () => ({
   shell: { openExternal: (url: string) => opened.push(url) },
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: () => {
+    isAsyncEncryptionAvailable: async () => false,
+    encryptStringAsync: async () => {
       throw new Error('stubbed')
     },
-    decryptString: () => {
+    decryptStringAsync: async () => {
       throw new Error('stubbed')
     }
   }

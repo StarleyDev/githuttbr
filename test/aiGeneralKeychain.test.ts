@@ -20,12 +20,12 @@ vi.mock('electron', () => ({
   shell: {},
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (b: Buffer) => {
+    isAsyncEncryptionAvailable: async () => true,
+    encryptStringAsync: async (s: string) => Buffer.from(`enc:${s}`),
+    decryptStringAsync: async (b: Buffer) => {
       const s = b.toString()
       if (!s.startsWith('enc:')) throw new Error('not ours')
-      return s.slice(4)
+      return { result: s.slice(4), shouldReEncrypt: false }
     }
   }
 }))

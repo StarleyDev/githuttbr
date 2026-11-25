@@ -15,6 +15,12 @@ import { existsSync } from 'fs'
  *
  * The answer lives in its own tiny file rather than in the settings JSON, so
  * reading it can never depend on the very code path it is meant to gate.
+ *
+ * Only safeStorage's asynchronous calls are used (Electron 45 deprecated the
+ * synchronous ones; 46 removes them). They read what the synchronous calls
+ * wrote, and they too answer "unavailable" — or reject — before the app is
+ * ready, so the gate behaves the same. The first one, whichever it is, is
+ * what asks the OS for the key.
  */
 import type { KeychainConsent, KeychainReason } from '../shared/types'
 import { writePrivateFile } from './privateFile'
@@ -102,7 +108,9 @@ function weakStorageBackend(): boolean {
  * removable — but a token typed now is kept for the session only, as when the
  * keychain is off: writing it there would only look like protection.
  * `canUseKeychain` comes first: it is what initialises safeStorage, and the
- * backend reads as `unknown` before that.
+ * backend reads as `unknown` before the app is ready. `getSelectedStorageBackend`
+ * is the one safeStorage call that stays synchronous — Electron 45 did not
+ * deprecate it.
  */
 export async function isKeychainWeak(): Promise<boolean> {
   return (await canUseKeychain()) && weakStorageBackend()
@@ -112,7 +120,7 @@ export async function isKeychainWeak(): Promise<boolean> {
 export async function canUseKeychain(): Promise<boolean> {
   if ((await getConsent()) !== 'granted') return false
   try {
-    return safeStorage.isEncryptionAvailable()
+    return await safeStorage.isAsyncEncryptionAvailable()
   } catch {
     return false
   }
@@ -227,7 +235,7 @@ export async function ensureKeychain(reason: KeychainReason): Promise<boolean> {
   // First real safeStorage call — the OS prompt now arrives right after our own
   // explanation, which is the whole point.
   try {
-    return safeStorage.isEncryptionAvailable()
+    return await safeStorage.isAsyncEncryptionAvailable()
   } catch {
     return false
   }

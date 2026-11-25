@@ -24,7 +24,7 @@ vi.mock('electron', () => ({
   net: {},
   session: {},
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
-  safeStorage: { isEncryptionAvailable: () => false }
+  safeStorage: { isAsyncEncryptionAvailable: async () => false }
 }))
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
