@@ -35,6 +35,8 @@ O **Gitmoji + Convencional** mantém tipo e emoji em sincronia. Escolha um tipo 
 o emoji acompanha; troque o tipo e ele troca junto, a menos que você tenha
 escolhido o emoji à mão (🚑️ num `fix`, por exemplo). Esse nunca é sobrescrito.
 
+![O seletor de gitmoji ao lado do campo de assunto, com busca por fix](../../screenshots/gitmoji-picker.webp)
+
 | Tipo | Emoji | Tipo | Emoji |
 |---|---|---|---|
 | `feat` | ✨ | `test` | ✅ |

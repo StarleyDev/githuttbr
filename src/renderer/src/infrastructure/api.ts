@@ -200,6 +200,7 @@ import type {
 } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 import type { MenuSpec } from '../../../shared/menu'
+import type { EditMenuLabels } from '../../../shared/editMenu'
 import type { CliOpenPayload } from '../../../shared/cli'
 import type { TranslationKey } from '../i18n'
 
@@ -222,6 +223,8 @@ export const gitApi = {
   editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
     call<void>('editRemote', path, oldName, newName, url, pushUrl),
   fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
+  fetchRemoteBranch: (path: string, remote: string, branch: string) =>
+    call<boolean>('fetchRemoteBranch', path, remote, branch),
   resolvePrRef: (path: string, remote: string, number: number) =>
     call<PrRefProbe | null>('resolvePrRef', path, remote, number),
   previewRef: (path: string, remote: string, ref: string, mode: PrPreviewMode, localBranch?: string) =>
@@ -240,6 +243,7 @@ export const gitApi = {
   createBranch: (path: string, name: string, at?: string, checkout?: boolean) =>
     call<void>('createBranch', path, name, at, checkout),
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),
+  deleteBranchIfAt: (path: string, name: string, sha: string) => call<boolean>('deleteBranchIfAt', path, name, sha),
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
   stackInfo: (path: string, leaf?: string) => call<StackInfo>('stackInfo', path, leaf),
@@ -1285,6 +1289,11 @@ export const cliApi = {
 export const menuApi = {
   set: (spec: MenuSpec) => window.api.menu.set(spec),
   onCommand: (cb: (id: string) => void) => window.api.menu.onCommand(cb)
+}
+
+// Translated labels for the native right-click menu on text fields.
+export const editMenuApi = {
+  setLabels: (labels: EditMenuLabels) => window.api.editMenu.setLabels(labels)
 }
 
 export const launchApi = {

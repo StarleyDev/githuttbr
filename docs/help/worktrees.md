@@ -57,6 +57,9 @@ answers them before you have to ask.
 | 🔒 | Locked — hover it for the reason given when it was locked |
 | **missing**, name struck through | The folder is gone; git only has its record left |
 
+![The Worktrees section: one worktree with uncommitted work and commits ahead,
+one missing, one locked, and the eraser in the header](../screenshots/worktree-care.webp)
+
 The counts are read when the section opens, when that worktree's commit moves
 and when the window regains focus — not on every refresh, because each one is a
 `git status` inside another folder.

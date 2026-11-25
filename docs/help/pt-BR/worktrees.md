@@ -59,6 +59,9 @@ linha vinculada responde antes de você precisar perguntar.
 | 🔒 | Travado — passe o mouse para ver o motivo dado ao travar |
 | **ausente**, nome riscado | A pasta sumiu; o git só tem o registro dela |
 
+![A seção Worktrees: um worktree com trabalho não commitado e commits à frente,
+um ausente, um travado, e a borracha no cabeçalho](../../screenshots/worktree-care.webp)
+
 As contagens são lidas quando a seção abre, quando o commit daquele worktree
 muda e quando a janela recupera o foco — não a cada atualização, porque cada uma
 é um `git status` dentro de outra pasta.

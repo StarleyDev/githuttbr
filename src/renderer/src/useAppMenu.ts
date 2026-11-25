@@ -15,7 +15,7 @@ import { useRepoStore } from './stores/repo'
 import { useT, useUiLanguage } from './i18n'
 import { buildMenuSpec } from './lib/appMenu'
 import { effectiveBindings } from './lib/shortcuts'
-import { menuApi } from './infrastructure/api'
+import { editMenuApi, menuApi } from './infrastructure/api'
 import { runAppCommand } from './appCommands'
 import { PRODUCT_NAME } from '../../shared/brand'
 
@@ -63,6 +63,17 @@ export function useAppMenu(): void {
     // that actually matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, shortcuts, recentRepos, editorName, hasTabs, hasRepo, canUndo])
+
+  // The right-click menu on text runs on every platform, unlike the menu bar.
+  useEffect(() => {
+    void editMenuApi.setLabels({
+      cut: t('menu.cut'),
+      copy: t('menu.copy'),
+      paste: t('menu.paste'),
+      selectAll: t('menu.selectAll')
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
 
   useEffect(() => menuApi.onCommand((id) => void runAppCommand(id)), [])
 }

@@ -174,6 +174,9 @@ The avatar in the title bar and the profile list is yours, so you can choose it.
 An image travels with **Settings → Data → Export settings** and comes back on import;
 deleting the profile deletes it.
 
+![Settings → Profile → Avatar on Icon: a rocket on a blue background, with the
+icon grid and the colours](../screenshots/profile-avatar.webp)
+
 ### An icon from a repository
 
 A work profile often has a ready-made picture: the app or company icon sitting in

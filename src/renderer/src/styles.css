@@ -19115,6 +19115,10 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* Same frame as the pull requests list: a centred 1420px column with margins on both sides, so
    moving between the list and a PR does not make the content jump to the window edges. Done with
    padding rather than max-width so the page background still fills the whole tab. */
+/* The page's own width, not the window's, decides when the sidebar stacks: with the repository
+   sidebar open a wide window can still leave the conversation a sliver. A container query cannot
+   look at the element it styles, hence the frame around .prp-page. */
+.prp-frame { container-type: inline-size; flex: 1; min-height: 0; height: 100%; overflow: hidden; }
 .prp-page {
   display: flex; gap: 20px; height: 100%; overflow: hidden; box-sizing: border-box;
   background: var(--bg-1); padding: 24px max(32px, calc((100% - 1420px) / 2 + 32px));
@@ -19221,6 +19225,19 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   padding: 2px 6px; border-radius: 4px; background: var(--bg-3); color: var(--text-1);
 }
 .prp-arrow { color: var(--text-3); }
+.prp-branch { display: inline-flex; align-items: center; gap: 2px; min-width: 0; max-width: 100%; }
+.prp-branch-go { background: none; border: none; padding: 0; min-width: 0; max-width: 100%; cursor: pointer; font: inherit; }
+.prp-branch-go code { display: block; color: var(--accent); }
+.prp-branch-go:hover code { text-decoration: underline; }
+.prp-branch-go[aria-disabled='true'] { cursor: default; }
+.prp-branch-go[aria-disabled='true'] code { color: var(--text-2); text-decoration: none; }
+.prp-branch-current {
+  margin-inline-start: 4px; padding: 0 5px; border-radius: 8px; font-size: 10.5px;
+  color: var(--accent); border: 1px solid var(--accent);
+}
+.prp-branch-copy { padding: 2px; opacity: 0.6; }
+.prp-branch-head-go[aria-disabled='true'] { opacity: 0.4; cursor: default; }
+.prp-branch-copy:hover { opacity: 1; }
 .prp-changes { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
 .prp-commits { display: flex; align-items: center; gap: 5px; color: var(--text-2); }
 .prp-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--bg-3); margin-top: 2px; }
@@ -19250,8 +19267,9 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 }
 .prp-check-log-note { margin-bottom: 4px; }
 
-/* Narrow windows: the sidebar moves under the conversation instead of squeezing it. */
-@media (max-width: 860px) {
+/* Narrow page: the sidebar moves under the conversation instead of squeezing it. 760px is where
+   the conversation would drop below ~400px next to the 270px sidebar, its gap and the padding. */
+@container (max-width: 760px) {
   .prp-page { flex-direction: column; overflow-y: auto; padding: 18px 16px; }
   .prp-main { overflow: visible; }
   .prp-body { overflow: visible; }

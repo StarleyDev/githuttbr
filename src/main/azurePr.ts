@@ -64,6 +64,8 @@ interface AzPr {
   labels?: Array<{ name: string; active?: boolean }>
   lastMergeSourceCommit?: { commitId: string }
   repository?: { project?: { id?: string } }
+  /** Set when the source branch lives in a fork of this repository. */
+  forkSource?: { name?: string; repository?: { id?: string; name?: string; project?: { name?: string } } }
 }
 
 interface AzComment {
@@ -96,6 +98,14 @@ export function azureVoteState(vote: number | undefined): PrReview['state'] | nu
 }
 
 const MERGEABLE: Record<string, boolean> = { succeeded: true, conflicts: false, failure: false, rejectedByPolicy: false }
+
+/** The fork a pull request's source branch lives in, named `project/repo` when Azure says. */
+export function azureForkSource(pr: Pick<AzPr, 'forkSource'>): string | null {
+  const repo = pr.forkSource?.repository
+  if (!pr.forkSource) return null
+  if (repo?.name) return repo.project?.name ? `${repo.project.name}/${repo.name}` : repo.name
+  return repo?.id ?? pr.forkSource.name ?? 'fork'
+}
 
 export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetail {
   const comments: PrDetail['comments'] = []
@@ -147,7 +157,7 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
       .filter((rv) => !rv.vote)
       .map((rv) => ({ login: nameOf(rv), ...(rv.isContainer ? { team: true } : {}) })),
     labels: (pr.labels ?? []).filter((l) => l.active !== false).map((l) => ({ name: l.name })),
-    sourceRepo: null
+    sourceRepo: azureForkSource(pr)
   }
 }
 

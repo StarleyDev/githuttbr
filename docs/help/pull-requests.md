@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — and ‹ › to walk the filtered list from inside a PR.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch
 ---
 
 # Pull requests page
@@ -105,6 +105,52 @@ A pull request opened **from anywhere else** — the sidebar, a notification —
 walks the repository's open pull requests in the page's default order (Open,
 no filters). One that is not on that list either, such as a merged level of a
 stack, shows only the way back to the list.
+
+## Going to a pull request's branch
+
+To work on a pull request you need its branch checked out — and in a
+repository with thousands of branches, finding it in the branch list by name
+is the slow part. On a pull request's page, the **Branches** field does it for
+you:
+
+- **The branch name is a link.** A click checks that branch out and takes you
+  to the repository's graph, at the branch's tip. The pull request's page stays
+  open on the tab.
+- **A branch that only exists on the server** is fetched first — that one
+  branch, not the whole remote — and checked out as a local branch that tracks
+  it. A branch you already have locally is switched to as it is — it is not
+  updated, so pull when you want the pull request's latest commits.
+- **The branch you are already on** is marked *current* instead. Nothing is
+  checked out.
+- **The copy button** beside each name puts it on the clipboard.
+- **Undo** (⌘Z) goes back to the branch you were on and deletes the local
+  branch the checkout created — unless you have committed on it since, in which
+  case it is left alone.
+
+The header has the same two moves as buttons: **Go to source branch** and
+**Go to target branch**. They work on the branch you are already on too —
+they just take you to the repository.
+
+Nothing is looked up until you click: opening a pull request does not read or
+fetch any branch.
+
+What it does not do:
+
+- **A fork's source branch** lives in another repository, so it has no link
+  (the copy button stays). **Preview pull request locally…**, offered right
+  under it, is the way to run it here. The target branch still links.
+- **No matching remote.** The branch is looked for on the remote whose URL is
+  the pull request's repository. When no configured remote points there, the
+  link does nothing and its tooltip says why.
+- **A deleted branch.** A merged pull request has often taken its branch with
+  it; the fetch then says the branch no longer exists on the remote, and you
+  stay on the pull request.
+- **Local changes.** Checking out is not destructive, so there is no confirm —
+  and git refuses the checkout when your uncommitted changes would be
+  overwritten. The error says which files; commit or stash them and click again.
+- **This window.** The checkout happens in this repository's working tree. When
+  the branch is already checked out in another [worktree](worktrees.md), that
+  worktree's tab opens instead.
 
 ## Limits
 

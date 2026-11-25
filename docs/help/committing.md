@@ -35,6 +35,8 @@ users type) or by meaning in your own language.
 and its emoji follows; change the type and it changes too — unless you chose
 the emoji yourself (🚑️ on a `fix`, say), which is never overwritten.
 
+![The gitmoji picker beside the subject field, searched for fix](../screenshots/gitmoji-picker.webp)
+
 | Type | Emoji | Type | Emoji |
 |---|---|---|---|
 | `feat` | ✨ | `test` | ✅ |

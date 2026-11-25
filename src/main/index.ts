@@ -44,6 +44,7 @@ import { APP_NAME, DEV_USER_DATA_DIR, FILE_PREFIX, LEGACY_APP_NAME, SETTINGS_FIL
 import { migrateLegacyData, takeMigrationNotice } from './legacyMigration'
 import { registerEditorHandlers } from './editor'
 import { registerMenuHandlers } from './menu'
+import { registerEditMenuHandlers } from './editMenu'
 import { registerSshHandlers } from './ssh'
 import { registerDiffToolHandlers } from './difftool'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
@@ -539,6 +540,7 @@ app.whenReady().then(() => {
   registerSshHandlers()
   registerDiffToolHandlers()
   registerMenuHandlers()
+  registerEditMenuHandlers()
   registerRendererRecoveryHandlers()
 
   createWindow()

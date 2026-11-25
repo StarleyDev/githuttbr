@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — e ‹ › para percorrer a lista filtrada de dentro de um PR.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação
-source: dbf2ca10587e49fe3143a8eb6b858a8de55c0a14
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch
+source: 652fe566e0d021496e698b305175c701c5bf2e4e
 ---
 
 # Página de pull requests
@@ -108,6 +108,54 @@ Um pull request aberto **de qualquer outro lugar** — a barra lateral, uma
 notificação — percorre os pull requests abertos do repositório na ordem padrão
 da página (Abertos, sem filtros). Um que também não está nessa lista, como um
 nível mesclado de uma pilha, mostra só o caminho de volta para a lista.
+
+## Ir para a branch de um pull request
+
+Para trabalhar num pull request é preciso ter a branch dele em checkout — e
+num repositório com milhares de branches, achá-la pelo nome na lista é a parte
+lenta. Na página de um pull request, o campo **Branches** faz isso por você:
+
+- **O nome da branch é um link.** Um clique faz o checkout da branch e leva
+  você ao grafo do repositório, na ponta dela. A página do pull request
+  continua aberta na aba.
+- **Uma branch que só existe no servidor** é buscada antes — só essa branch,
+  não o remote inteiro — e vira uma branch local que a acompanha. Uma branch
+  que você já tem localmente é trocada como está — não é atualizada, então
+  faça pull quando quiser os commits mais recentes do pull request.
+- **A branch em que você já está** aparece marcada como *atual*. Nada é
+  trocado.
+- **O botão de copiar** ao lado de cada nome põe o nome na área de
+  transferência.
+- **Desfazer** (⌘Z) volta para a branch em que você estava e apaga a branch
+  local que o checkout criou — a não ser que você tenha feito commit nela
+  desde então; nesse caso ela fica.
+
+O cabeçalho tem os mesmos dois caminhos como botões: **Ir para a branch de
+origem** e **Ir para a branch de destino**. Eles funcionam também na branch em
+que você já está — só levam ao repositório.
+
+Nada é consultado antes do clique: abrir um pull request não lê nem busca
+nenhuma branch.
+
+O que não faz:
+
+- **A branch de origem de um fork** fica em outro repositório, então não tem
+  link (o botão de copiar fica). **Pré-visualizar o pull request
+  localmente…**, oferecido logo abaixo, é o caminho para rodá-la aqui. A
+  branch de destino continua com link.
+- **Nenhum remote correspondente.** A branch é procurada no remote cuja URL é
+  a do repositório do pull request. Quando nenhum remote configurado aponta
+  para lá, o link não faz nada e a dica diz por quê.
+- **Uma branch apagada.** Um pull request mesclado muitas vezes levou a branch
+  junto; a busca então diz que a branch não existe mais no remote, e você
+  continua no pull request.
+- **Alterações locais.** O checkout não é destrutivo, então não há
+  confirmação — e o git recusa o checkout quando as suas alterações não
+  commitadas seriam sobrescritas. O erro diz quais arquivos; faça commit ou
+  stash e clique de novo.
+- **Esta janela.** O checkout acontece na working tree deste repositório.
+  Quando a branch já está em checkout em outra [worktree](worktrees.md), a aba
+  dessa worktree é aberta no lugar.
 
 ## Limites
 
