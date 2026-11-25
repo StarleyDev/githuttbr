@@ -29,7 +29,8 @@
       "preset": "conventionalcommits",
       "infile": "CHANGELOG.md",
       "gitRawCommitsOpts": {
-        "firstParent": true
+        "firstParent": true,
+        "merges": null
       }
     }
   }

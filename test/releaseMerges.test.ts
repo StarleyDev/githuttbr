@@ -21,3 +21,14 @@ describe('findHiddenMerges', () => {
     expect(findHiddenMerges(log)).toEqual([])
   })
 })
+
+describe('the changelog config the guard relies on', () => {
+  // Without `merges: null` the generator runs `git log --no-merges`: with
+  // first-parent on, a merge reworded as `feat:` would still vanish.
+  it('reads first-parent history and keeps merge commits', async () => {
+    const { readFileSync } = await import('node:fs')
+    const config = JSON.parse(readFileSync('.release-it.json', 'utf8'))
+    const opts = config.plugins['@release-it/conventional-changelog'].gitRawCommitsOpts
+    expect(opts).toEqual({ firstParent: true, merges: null })
+  })
+})
