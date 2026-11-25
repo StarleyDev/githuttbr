@@ -1,5 +1,14 @@
 
 
+## [4.47.0](https://github.com/StarleyDev/githuttbr/compare/v4.46.0...v4.47.0) (2026-11-25)
+
+
+### Features
+
+* **avatars:** use an icon from the profile's repositories as its picture ([c184ea8](https://github.com/StarleyDev/githuttbr/commit/c184ea8b3ffe6daf3d66c71e2753eba9fe1016d4))
+* **settings:** create profiles without switching, name AI providers, flag a weak Linux keychain ([b3674e2](https://github.com/StarleyDev/githuttbr/commit/b3674e2898e1ffb18df5ab8d1d106181deb0bc52))
+* **settings:** set up every AI on the AI page, and stop the model picker jumping ([6fcd2e5](https://github.com/StarleyDev/githuttbr/commit/6fcd2e573dfd4449526dac981d2b5d6ccc831606))
+
 ## [4.46.0](https://github.com/StarleyDev/githuttbr/compare/v4.45.0...v4.46.0) (2026-11-24)
 
 
