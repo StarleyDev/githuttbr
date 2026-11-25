@@ -4310,6 +4310,8 @@ export const uk: Dict = {
   'titlebar.closeTab': 'Закрити вкладку',
   'titlebar.closeThisRepo': 'Закрити цей репозиторій',
   'titlebar.closeOthers': 'Закрити інші',
+  'titlebar.worktreeOf': 'Робоче дерево репозиторію {repo}',
+  'titlebar.openMainRepo': 'Відкрити {repo}, основний репозиторій',
   'titlebar.closeOthersNone': 'Інших відкритих вкладок немає',
   'titlebar.closeOthersTitle': 'Закрити інші вкладки',
   'titlebar.closeOthersConfirm': 'Закрити інші вкладки ({count})? На диску нічого не змінюється.',

@@ -4317,6 +4317,8 @@ export const en = {
   'titlebar.closeTab': 'Close tab',
   'titlebar.closeThisRepo': 'Close this repo',
   'titlebar.closeOthers': 'Close others',
+  'titlebar.worktreeOf': 'Worktree of {repo}',
+  'titlebar.openMainRepo': 'Open {repo}, the main repository',
   'titlebar.closeOthersNone': 'No other tabs are open',
   'titlebar.closeOthersTitle': 'Close other tabs',
   'titlebar.closeOthersConfirm': 'Close the {count} other tabs? Nothing on disk is affected.',

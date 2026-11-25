@@ -4258,6 +4258,8 @@ export const fr: Dict = {
   'titlebar.closeTab': 'Fermer l’onglet',
   'titlebar.closeThisRepo': 'Fermer ce dépôt',
   'titlebar.closeOthers': 'Fermer les autres',
+  'titlebar.worktreeOf': 'Arbre de travail de {repo}',
+  'titlebar.openMainRepo': 'Ouvrir {repo}, le dépôt principal',
   'titlebar.closeOthersNone': 'Aucun autre onglet n’est ouvert',
   'titlebar.closeOthersTitle': 'Fermer les autres onglets',
   'titlebar.closeOthersConfirm': 'Fermer les {count} autres onglets ? Rien sur le disque n’est modifié.',

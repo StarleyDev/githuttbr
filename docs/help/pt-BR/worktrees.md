@@ -104,6 +104,24 @@ eles são — uma opção em Configurações → Layout mantém o nome completo
 `raiz · branch`, se você preferir. A oferta só junta worktrees com a mesma raiz —
 nunca mistura repositórios sem relação.
 
+**Reconhecendo a aba de um worktree.** Um worktree vinculado é um segundo
+checkout de um repositório, e a aba dele seria idêntica à do próprio
+repositório. Por isso a aba de um worktree mostra uma **bifurcação** verde no
+lugar do ícone de pasta — numa aba com imagem, uma bifurcação pequena no canto da
+imagem — e o tooltip diz *Worktree de …* com a pasta onde ele está. Com o botão
+direito, **Abrir …, o repositório principal** foca a aba que já mostra o checkout
+principal, ou o abre — dentro do grupo do worktree, quando ele está num. Vale como
+quer que o worktree tenha sido aberto: pela família, por **Abrir repositório** ou
+pelos repositórios escaneados, e os worktrees de um submódulo apontam para o
+submódulo. Limites: a marca diz onde o checkout está, não qual é a branch; os
+worktrees de um repositório bare não são marcados, porque não há checkout
+principal para abrir; e um repositório principal aberto por uma pasta com link
+simbólico não é reconhecido como já aberto, então o menu o abre de novo pelo
+caminho real.
+
+![A aba de um worktree com a bifurcação verde ao lado da aba do repositório
+principal, com o menu aberto em Abrir submodules-worktrees, o repositório principal](../../screenshots/worktree-tab.webp)
+
 ![As seções de worktree e submódulo da barra lateral, as duas povoadas](../../screenshots/worktrees.webp)
 
 ## Submódulos

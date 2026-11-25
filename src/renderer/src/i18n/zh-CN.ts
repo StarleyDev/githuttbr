@@ -4310,6 +4310,8 @@ export const zhCN: Dict = {
   'titlebar.closeTab': '关闭标签页',
   'titlebar.closeThisRepo': '关闭此仓库',
   'titlebar.closeOthers': '关闭其他',
+  'titlebar.worktreeOf': '{repo} 的工作树',
+  'titlebar.openMainRepo': '打开主仓库 {repo}',
   'titlebar.closeOthersNone': '没有其他打开的标签页',
   'titlebar.closeOthersTitle': '关闭其他标签页',
   'titlebar.closeOthersConfirm': '关闭其他 {count} 个标签页？磁盘不受影响。',

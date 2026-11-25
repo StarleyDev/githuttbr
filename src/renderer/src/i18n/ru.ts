@@ -4310,6 +4310,8 @@ export const ru: Dict = {
   'titlebar.closeTab': 'Закрыть вкладку',
   'titlebar.closeThisRepo': 'Закрыть этот репозиторий',
   'titlebar.closeOthers': 'Закрыть остальные',
+  'titlebar.worktreeOf': 'Рабочее дерево репозитория {repo}',
+  'titlebar.openMainRepo': 'Открыть {repo}, основной репозиторий',
   'titlebar.closeOthersNone': 'Других открытых вкладок нет',
   'titlebar.closeOthersTitle': 'Закрыть остальные вкладки',
   'titlebar.closeOthersConfirm': 'Закрыть остальные вкладки ({count})? На диске ничего не меняется.',

@@ -102,6 +102,23 @@ repository they belong to — a Settings → Layout toggle keeps the full
 `root · branch` name if you prefer. The offer only ever joins worktrees that
 share the same root — it never merges unrelated repositories.
 
+**Telling a worktree tab apart.** A linked worktree is a second checkout of a
+repository, and its tab would otherwise look exactly like the repository's own.
+So a worktree tab shows a green **fork** instead of the folder icon — on an
+image tab, a small fork on the picture's corner — and its tooltip says
+*Worktree of …* with the folder it lives in. Right-click it for **Open …, the
+main repository**, which focuses the tab that already has the main checkout, or
+opens it — inside the worktree's group when the worktree sits in one. This works
+however the worktree was opened: from its family, from **Open repository**, or
+from the scanned list, and a submodule's worktrees point at the submodule.
+Limits: the mark is about where the checkout lives, not about its branch; the
+worktrees of a bare repository are not marked, since there is no main checkout
+to open; and a main repository open through a symlinked folder is not recognised
+as already open, so the menu opens it a second time under its real path.
+
+![A worktree tab with the green fork icon beside the main repository's tab, its
+menu open on Open submodules-worktrees, the main repository](../screenshots/worktree-tab.webp)
+
 ![The sidebar's worktree and submodule sections, both populated](../screenshots/worktrees.webp)
 
 ## Submodules

@@ -7689,12 +7689,37 @@ export const gitService = {
    *  root's path; a non-repository returns null. One `rev-parse`, used by the
    *  header to offer grouping worktrees that share a root. */
   async worktreeRoot(repoPath: string): Promise<string | null> {
-    const common = await gitFor(repoPath)
-      .raw(['rev-parse', '--path-format=absolute', '--git-common-dir'])
+    const out = await gitFor(repoPath)
+      .raw(['rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'])
       .catch(() => '')
-    const dir = common.trim()
-    if (!dir) return null
-    return dirname(dir)
+    const [gitDir, common] = out.trim().split('\n').map((l) => l.trim())
+    if (!gitDir || !common) return null
+    // Not a linked worktree: the repository is its own root. Answered as the
+    // path asked about, not git's resolved one — callers compare the two, and
+    // a repository opened through a symlinked folder must not look like a
+    // worktree of its own real path. Both dirs come back resolved alike, so
+    // comparing them is safe where comparing them to `repoPath` is not.
+    if (gitDir === common) return repoPath
+    // A linked worktree: the main checkout is git's first worktree entry, not
+    // `dirname(common)` — that is `.git/modules` for a submodule's worktree and
+    // the bare repository's parent for a bare one. A bare repository has no
+    // main checkout to point at, so it answers null rather than a folder that
+    // is not a repository.
+    const list = await gitFor(repoPath)
+      .raw(['worktree', 'list', '--porcelain'])
+      .catch(() => '')
+    const first = list.split('\n\n')[0]?.split('\n') ?? []
+    const main = first.find((l) => l.startsWith('worktree '))?.slice('worktree '.length).trim()
+    if (!main || first.includes('bare')) return null
+    // A submodule's first entry is its git dir (`.git/modules/x`): its working
+    // folder is `core.worktree`, relative to that dir. None means no checkout.
+    if (main === common) {
+      const wt = await gitFor(repoPath)
+        .raw(['config', '--file', join(common, 'config'), '--get', 'core.worktree'])
+        .catch(() => '')
+      return wt.trim() ? resolvePath(common, wt.trim()) : null
+    }
+    return main
   },
 
   async worktreeAdd(

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { execFileSync } from 'child_process'
-import { existsSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { gitService } from '../src/main/git'
@@ -40,6 +40,42 @@ describe('worktree management', () => {
     expect(await find(wt)).toMatchObject({ locked: true, lockReason: 'on a usb drive' })
     await gitService.worktreeUnlock(repo, wt)
     expect(await find(wt)).toMatchObject({ locked: false, lockReason: null })
+  })
+
+  it('worktreeRoot names the main checkout only for a linked worktree, symlinks included', async () => {
+    const wt = join(dir, 'feat')
+    await gitService.worktreeAdd(repo, wt, 'feat', true)
+    expect(await gitService.worktreeRoot(wt)).toBe(repo)
+    // The repository itself is its own root, answered as the path asked —
+    // opened through a symlink it must not look like a worktree of its real path.
+    expect(await gitService.worktreeRoot(repo)).toBe(repo)
+    const link = join(dir, 'linked-repo')
+    symlinkSync(repo, link, 'dir')
+    expect(await gitService.worktreeRoot(link)).toBe(link)
+    const plain = join(dir, 'not-a-repo')
+    mkdirSync(plain)
+    expect(await gitService.worktreeRoot(plain)).toBeNull()
+  })
+
+  it('worktreeRoot of a submodule worktree is the submodule, and a bare repository has none', async () => {
+    // Submodule: its git dir lives in the superproject's .git/modules.
+    const sup = join(dir, 'sup')
+    execFileSync('git', ['init', '-q', '-b', 'main', sup])
+    git(sup, 'config', 'user.name', 'T')
+    git(sup, 'config', 'user.email', 't@example.com')
+    git(sup, '-c', 'protocol.file.allow=always', 'submodule', 'add', '-q', repo, 'sm')
+    git(sup, 'commit', '-q', '-m', 'sm')
+    const sm = join(sup, 'sm')
+    expect(await gitService.worktreeRoot(sm)).toBe(sm)
+    const smWt = join(dir, 'sm-feat')
+    git(sm, 'worktree', 'add', '-q', '-b', 'sm-feat', smWt)
+    expect(await gitService.worktreeRoot(smWt)).toBe(sm)
+    // Bare: no main checkout to open, so no root at all.
+    const bare = join(dir, 'bare.git')
+    execFileSync('git', ['clone', '-q', '--bare', repo, bare])
+    const bareWt = join(dir, 'bare-wt')
+    git(bare, 'worktree', 'add', '-q', '-b', 'bare-feat', bareWt)
+    expect(await gitService.worktreeRoot(bareWt)).toBeNull()
   })
 
   it('marks a deleted folder as prunable and forgets it on prune, sparing locked ones', async () => {

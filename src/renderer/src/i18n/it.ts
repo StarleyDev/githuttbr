@@ -4259,6 +4259,8 @@ export const it: Dict = {
   'titlebar.closeTab': 'Chiudi la scheda',
   'titlebar.closeThisRepo': 'Chiudi questo repository',
   'titlebar.closeOthers': 'Chiudi le altre',
+  'titlebar.worktreeOf': 'Worktree di {repo}',
+  'titlebar.openMainRepo': 'Apri {repo}, il repository principale',
   'titlebar.closeOthersNone': 'Nessun’altra scheda aperta',
   'titlebar.closeOthersTitle': 'Chiudi le altre schede',
   'titlebar.closeOthersConfirm': 'Chiudere le altre {count} schede? Nulla sul disco viene toccato.',

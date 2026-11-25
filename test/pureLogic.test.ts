@@ -7882,6 +7882,21 @@ describe('focusOpenRepo', () => {
   it('finds a standalone repo tab', () => {
     expect(focusOpenRepo(tabs, '/r/a')?.activeTabId).toBe('a')
   })
+  it("matches a path spelled differently — git's `C:/x` against a stored `C:\\x`", () => {
+    const win: TabState[] = [
+      {
+        id: 'w',
+        kind: 'group',
+        name: 'w',
+        repos: [{ path: 'C:\\src\\main', name: 'main' }, { path: 'C:\\src\\wt', name: 'wt' }],
+        activeRepoPath: 'C:\\src\\wt'
+      }
+    ]
+    const open = focusOpenRepo(win, 'c:/src/main/')
+    expect(open?.activeTabId).toBe('w')
+    // The group keeps the spelling it stored, not the one asked for.
+    expect((open?.tabs[0] as { activeRepoPath: string }).activeRepoPath).toBe('C:\\src\\main')
+  })
   it('finds a repo inside a group and makes it the group\'s active repo', () => {
     const open = focusOpenRepo(tabs, '/r/c')
     expect(open?.activeTabId).toBe('g')

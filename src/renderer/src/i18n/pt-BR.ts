@@ -4319,6 +4319,8 @@ export const ptBR: Dict = {
   'titlebar.closeTab': 'Fechar aba',
   'titlebar.closeThisRepo': 'Fechar este repositório',
   'titlebar.closeOthers': 'Fechar as outras',
+  'titlebar.worktreeOf': 'Worktree de {repo}',
+  'titlebar.openMainRepo': 'Abrir {repo}, o repositório principal',
   'titlebar.closeOthersNone': 'Nenhuma outra aba aberta',
   'titlebar.closeOthersTitle': 'Fechar outras abas',
   'titlebar.closeOthersConfirm': 'Fechar as outras {count} abas? Nada no disco é afetado.',

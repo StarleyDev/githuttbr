@@ -4310,6 +4310,8 @@ export const pl: Dict = {
   'titlebar.closeTab': 'Zamknij kartę',
   'titlebar.closeThisRepo': 'Zamknij to repozytorium',
   'titlebar.closeOthers': 'Zamknij pozostałe',
+  'titlebar.worktreeOf': 'Worktree repozytorium {repo}',
+  'titlebar.openMainRepo': 'Otwórz {repo}, główne repozytorium',
   'titlebar.closeOthersNone': 'Brak innych otwartych kart',
   'titlebar.closeOthersTitle': 'Zamknij pozostałe karty',
   'titlebar.closeOthersConfirm': 'Zamknąć pozostałe karty ({count})? Nic na dysku się nie zmienia.',

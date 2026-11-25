@@ -2991,6 +2991,28 @@ export const shots = [
     }
   },
   {
+    // A linked worktree opened as its own tab beside the main repository: the
+    // fork icon tells the two apart, and the tab's menu offers the main one.
+    // Opened without a worktreeRoot tag, as Open repository would, so the
+    // shot also proves the icon comes from git, not from how it was opened.
+    out: 'worktree-tab',
+    repos: ['submodules-worktrees'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['submodules-worktrees']
+      await page.evaluate(
+        (p) =>
+          window.__shot.settings
+            .getState()
+            .openRepoTab({ path: `${p}.wt-release`, name: 'submodules-worktrees · release/1.x' }),
+        repo
+      )
+      await page.waitForTimeout(1200)
+      await page.locator('.tab', { hasText: 'release/1.x' }).first().click({ button: 'right' })
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // Worktree care — uncommitted work and commits ahead, a lock, a missing
     // folder with the "forget" eraser in the header. Each row's counts come
     // from a git status inside that worktree, so give them time to land.

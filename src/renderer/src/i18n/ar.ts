@@ -4313,6 +4313,8 @@ export const ar: Dict = {
   'titlebar.closeTab': 'إغلاق التبويب',
   'titlebar.closeThisRepo': 'إغلاق هذا المستودع',
   'titlebar.closeOthers': 'إغلاق البقية',
+  'titlebar.worktreeOf': 'شجرة عمل {repo}',
+  'titlebar.openMainRepo': 'فتح {repo}، المستودع الرئيسي',
   'titlebar.closeOthersNone': 'لا تبويبات أخرى مفتوحة',
   'titlebar.closeOthersTitle': 'إغلاق التبويبات الأخرى',
   'titlebar.closeOthersConfirm': 'إغلاق التبويبات الأخرى ({count})؟ لا يتأثر شيء على القرص.',

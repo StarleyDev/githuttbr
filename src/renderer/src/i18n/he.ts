@@ -4313,6 +4313,8 @@ export const he: Dict = {
   'titlebar.closeTab': 'סגירת לשונית',
   'titlebar.closeThisRepo': 'סגירת המאגר הזה',
   'titlebar.closeOthers': 'סגירת האחרות',
+  'titlebar.worktreeOf': 'עץ העבודה של {repo}',
+  'titlebar.openMainRepo': 'פתח את {repo}, המאגר הראשי',
   'titlebar.closeOthersNone': 'אין לשוניות אחרות פתוחות',
   'titlebar.closeOthersTitle': 'סגירת הלשוניות האחרות',
   'titlebar.closeOthersConfirm': 'לסגור את {count} הלשוניות האחרות? שום דבר בדיסק לא משתנה.',

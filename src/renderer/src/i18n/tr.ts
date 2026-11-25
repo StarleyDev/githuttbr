@@ -4253,6 +4253,8 @@ export const tr: Dict = {
   'titlebar.closeTab': 'Sekmeyi kapat',
   'titlebar.closeThisRepo': 'Bu depoyu kapat',
   'titlebar.closeOthers': 'Diğerlerini kapat',
+  'titlebar.worktreeOf': '{repo} deposunun worktree’i',
+  'titlebar.openMainRepo': 'Ana depoyu ({repo}) aç',
   'titlebar.closeOthersNone': 'Açık başka sekme yok',
   'titlebar.closeOthersTitle': 'Diğer sekmeleri kapat',
   'titlebar.closeOthersConfirm': 'Diğer {count} sekme kapatılsın mı? Diskte hiçbir şey değişmez.',

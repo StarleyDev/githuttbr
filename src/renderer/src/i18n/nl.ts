@@ -4318,6 +4318,8 @@ export const nl: Dict = {
   'titlebar.closeTab': 'Tabblad sluiten',
   'titlebar.closeThisRepo': 'Deze repo sluiten',
   'titlebar.closeOthers': 'Andere sluiten',
+  'titlebar.worktreeOf': 'Worktree van {repo}',
+  'titlebar.openMainRepo': '{repo} openen, de hoofdrepository',
   'titlebar.closeOthersNone': 'Er zijn geen andere tabbladen open',
   'titlebar.closeOthersTitle': 'Andere tabbladen sluiten',
   'titlebar.closeOthersConfirm': 'De {count} andere tabbladen sluiten? Niets op schijf wordt geraakt.',

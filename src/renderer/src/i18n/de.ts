@@ -4318,6 +4318,8 @@ export const de: Dict = {
   'titlebar.closeTab': 'Tab schließen',
   'titlebar.closeThisRepo': 'Dieses Repo schließen',
   'titlebar.closeOthers': 'Andere schließen',
+  'titlebar.worktreeOf': 'Worktree von {repo}',
+  'titlebar.openMainRepo': '{repo} öffnen, das Hauptrepository',
   'titlebar.closeOthersNone': 'Keine anderen Tabs geöffnet',
   'titlebar.closeOthersTitle': 'Andere Tabs schließen',
   'titlebar.closeOthersConfirm': 'Die {count} anderen Tabs schließen? Nichts auf der Festplatte ändert sich.',

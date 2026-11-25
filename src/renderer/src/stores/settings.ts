@@ -959,14 +959,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       repo.worktreeRoot === undefined &&
       !resolvedNonWorktrees.has(canonicalRepoPath(repo.path))
     ) {
-      void gitApi.worktreeRoot(repo.path).then((root) => {
-        if (root && canonicalRepoPath(root) !== canonicalRepoPath(repo.path)) {
-          get().openWorktreeRepo(repo, root)
-        } else {
+      void gitApi.worktreeRoot(repo.path).then(
+        (root) => {
+          if (root && canonicalRepoPath(root) !== canonicalRepoPath(repo.path)) {
+            get().openWorktreeRepo(repo, root)
+          } else {
+            resolvedNonWorktrees.add(canonicalRepoPath(repo.path))
+            get().openRepoTab(repo)
+          }
+        },
+        // git could not answer (the folder is gone): open the tab anyway, so the
+        // missing-folder card can say so — not nothing at all.
+        () => {
           resolvedNonWorktrees.add(canonicalRepoPath(repo.path))
           get().openRepoTab(repo)
         }
-      })
+      )
       return
     }
     leaveMission()
@@ -1152,10 +1160,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   addRepoToGroup: (tabId, repo) => {
     get().update((s) => {
       // Already open in another tab or group: don't list it twice, show it.
-      const elsewhere = s.tabs.find(
-        (t) => t.id !== tabId && t.kind !== 'page' && t.repos.some((r) => r.path === repo.path)
-      )
+      // Canonical paths, so `C:/x` from git and `C:\x` from a dialog are one.
+      const key = canonicalRepoPath(repo.path)
+      const has = (t: TabState): boolean => t.kind !== 'page' && t.repos.some((r) => canonicalRepoPath(r.path) === key)
+      const elsewhere = s.tabs.find((t) => t.id !== tabId && has(t))
       if (elsewhere) return { ...s, ...focusOpenRepo(s.tabs, repo.path) }
+      const here = s.tabs.find((t) => t.id === tabId)
+      if (here && has(here)) return { ...s, ...focusOpenRepo(s.tabs, repo.path) }
       const named = { ...repo, name: repoDisplayName(repo.path, s.repoAliases, repo.name) }
       return {
         ...s,

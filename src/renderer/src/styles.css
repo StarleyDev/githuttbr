@@ -345,6 +345,24 @@ textarea:focus {
   min-width: 0;
 }
 
+/* A linked worktree: the fork replaces the folder icon, in the theme's green so
+   it reads apart from the accent-coloured repository icons around it. On an
+   image tab it is a small badge on the picture's lower corner, clear of the
+   working-tree dot on the upper one. */
+.tab-worktree-icon {
+  flex: none;
+  color: var(--green);
+}
+.tab-worktree-badge {
+  position: absolute;
+  bottom: -3px;
+  inset-inline-end: -3px;
+  padding: 1px;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--bg-0);
+}
+
 /* Stacked on the image's top-right corner, ringed in the tab's background so
    it reads as a badge rather than a stray pixel. */
 .tab-status.stacked {

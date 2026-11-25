@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { FolderGit2 } from 'lucide-react'
+import { FolderGit2, GitFork } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { lookupRepoImage, tabLabelParts } from '../lib/repoImage'
 import type { TabStatus } from '../lib/tabClose'
+import { canonicalRepoName, repoDisplayName } from '../lib/repoAlias'
+import { interp, useT } from '../i18n'
+import { useWorktreeRoot } from './worktreeRoot'
 
 // One read per repository and path for the life of the window: every tab strip
 // re-render would otherwise ship the image across IPC again. The settings
@@ -54,23 +57,36 @@ export function useRepoImage(repoPath: string | undefined): string | null {
 /** Icon-and-name of a repository tab, following the "repository tabs show"
  *  setting. The name moves into the image's tooltip when it is hidden. Owns the
  *  working-tree dot too: beside the name it trails the label, but on an
- *  image-only tab it sits on the image's corner so the tab stays icon-sized. */
+ *  image-only tab it sits on the image's corner so the tab stays icon-sized.
+ *  A linked worktree swaps the folder icon for a fork — a tab that is "the
+ *  repository" and one that is a second checkout of it otherwise look alike. */
 export function RepoTabLabel({
   repoPath,
   name,
   className,
   title,
   status,
-  statusTitle
+  statusTitle,
+  worktreeRoot
 }: {
   repoPath: string | undefined
   name: string
+  /** The ref's stored main-worktree folder, when it has one. */
+  worktreeRoot?: string
   className: string
   title?: string
   status?: TabStatus
   statusTitle?: string
 }): React.JSX.Element {
+  const t = useT()
   const mode = useSettingsStore((s) => s.settings.tabRepoLabel)
+  const aliases = useSettingsStore((s) => s.settings.repoAliases)
+  const mainRoot = useWorktreeRoot(repoPath, worktreeRoot)
+  // The main repository by the name its own tab shows (an alias wins).
+  const worktreeOf = mainRoot
+    ? interp(t('titlebar.worktreeOf'), { repo: repoDisplayName(mainRoot, aliases, canonicalRepoName(mainRoot)) })
+    : undefined
+  const worktreeTitle = worktreeOf ? `${worktreeOf}\n${repoPath ?? ''}` : undefined
   const url = useRepoImage(repoPath)
   const show = tabLabelParts(mode, url !== null)
   const solo = show.image && !show.name && url !== null
@@ -84,17 +100,20 @@ export function RepoTabLabel({
           <img
             className={`tab-repo-image ${solo ? 'solo' : ''}`}
             src={url}
-            alt={show.name ? '' : name}
-            title={show.name ? undefined : (title ?? name)}
+            alt={show.name ? '' : worktreeOf ? `${name} — ${worktreeOf}` : name}
+            title={show.name ? undefined : (title ?? worktreeTitle ?? name)}
             draggable={false}
           />
+          {mainRoot && <GitFork size={9} className="tab-worktree-badge" aria-hidden="true" />}
           {solo && dot}
         </span>
+      ) : mainRoot ? (
+        <GitFork size={13} className="tab-worktree-icon" role="img" aria-label={worktreeOf} />
       ) : (
         <FolderGit2 size={13} />
       )}
       {show.name && (
-        <span className={className} title={title}>
+        <span className={className} title={title ?? worktreeTitle}>
           {name}
         </span>
       )}

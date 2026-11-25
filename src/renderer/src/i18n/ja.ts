@@ -4250,6 +4250,8 @@ export const ja: Dict = {
   'titlebar.closeTab': 'タブを閉じる',
   'titlebar.closeThisRepo': 'このリポジトリを閉じる',
   'titlebar.closeOthers': '他を閉じる',
+  'titlebar.worktreeOf': '{repo} のワークツリー',
+  'titlebar.openMainRepo': 'メインのリポジトリ {repo} を開く',
   'titlebar.closeOthersNone': '他に開いているタブはありません',
   'titlebar.closeOthersTitle': '他のタブを閉じる',
   'titlebar.closeOthersConfirm': '他の {count} 個のタブを閉じますか？ディスク上は変わりません。',

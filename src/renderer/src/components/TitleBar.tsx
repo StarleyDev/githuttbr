@@ -22,7 +22,8 @@ import { RepoTabLabel } from './RepoTabLabel'
 import { tabLabel, pageTabLabel } from '../lib/tabLabel'
 import { pagesForRepo } from '../lib/tabPages'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
-import { lookupRepoAlias, repoDisplayName } from '../lib/repoAlias'
+import { canonicalRepoName, lookupRepoAlias, repoDisplayName } from '../lib/repoAlias'
+import { knownWorktreeRoot } from './worktreeRoot'
 import { worktreeLeafLabel } from '../lib/worktrees'
 import {
   confirmRemoveRepoFromGroup,
@@ -655,6 +656,29 @@ export function TitleBar(): React.JSX.Element {
     }
   }
 
+  // A linked worktree's tab offers its main repository: opened, or focused
+  // when a tab already has it. Answers from the tab icon's lookup, so the menu
+  // stays synchronous; nothing is offered before that lookup has finished.
+  // Inside a group (the worktree's family), the main repository joins that
+  // group rather than opening as a loose tab.
+  const openMainRepoItem = (ref: RepoRef | undefined, groupTabId?: string): MenuItem[] => {
+    const root = ref ? knownWorktreeRoot(ref.path, ref.worktreeRoot) : null
+    if (!root) return []
+    const name = repoDisplayName(root, settings.repoAliases, canonicalRepoName(root))
+    return [
+      {
+        label: interp(t('titlebar.openMainRepo'), { repo: name }),
+        icon: <FolderGit2 size={15} />,
+        onClick: () => {
+          const store = useSettingsStore.getState()
+          if (groupTabId) store.addRepoToGroup(groupTabId, { path: root, name })
+          else store.openRepoTab({ path: root, name })
+        }
+      },
+      { separator: true }
+    ]
+  }
+
   const tabMenu = (tab: TabState): MenuItem[] => {
     if (tab.kind === 'page') {
       const move = moveToWorkspaceItem(tab)
@@ -664,7 +688,7 @@ export function TitleBar(): React.JSX.Element {
       ]
     }
     if (tab.kind === 'repo' && tab.repos[0]) {
-      const extras: MenuItem[] = [addToGroupItem(tab.id)]
+      const extras: MenuItem[] = [...openMainRepoItem(tab.repos[0]), addToGroupItem(tab.id)]
       const move = moveToWorkspaceItem(tab)
       if (move) extras.push(move, { separator: true })
       // A tab closes rather than "removes": nothing leaves the disk, and the
@@ -868,6 +892,10 @@ export function TitleBar(): React.JSX.Element {
       repoPath,
       () => confirmRemoveRepo(groupTab.id, repoPath),
       [
+        ...openMainRepoItem(
+          groupTab.repos.find((r) => r.path === repoPath),
+          groupTab.id
+        ),
         filing,
         { separator: true },
         {
@@ -980,6 +1008,7 @@ export function TitleBar(): React.JSX.Element {
         <RepoTabLabel
           repoPath={repo.path}
           name={chipLabel}
+          worktreeRoot={repo.worktreeRoot}
           className={`tab-name ${isActiveRepo && tab.activePage != null ? 'tab-name-back' : ''}`}
           title={isActiveRepo && tab.activePage != null ? t('titlebar.backToRepo') : undefined}
           status={rs}
@@ -1146,6 +1175,7 @@ export function TitleBar(): React.JSX.Element {
                 <RepoTabLabel
                   repoPath={tab.repos[0]?.path}
                   name={tab.name}
+                  worktreeRoot={tab.repos[0]?.worktreeRoot}
                   className={`tab-name ${tab.activePage != null ? 'tab-name-back' : ''}`}
                   title={tab.activePage != null ? t('titlebar.backToRepo') : undefined}
                   status={status}

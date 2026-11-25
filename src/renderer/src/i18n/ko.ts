@@ -4310,6 +4310,8 @@ export const ko: Dict = {
   'titlebar.closeTab': '탭 닫기',
   'titlebar.closeThisRepo': '이 저장소 닫기',
   'titlebar.closeOthers': '다른 탭 닫기',
+  'titlebar.worktreeOf': '{repo}의 워크트리',
+  'titlebar.openMainRepo': '기본 저장소 {repo} 열기',
   'titlebar.closeOthersNone': '열려 있는 다른 탭이 없습니다',
   'titlebar.closeOthersTitle': '다른 탭 닫기',
   'titlebar.closeOthersConfirm': '다른 탭 {count}개를 닫을까요? 디스크는 그대로입니다.',

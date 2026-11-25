@@ -4313,6 +4313,8 @@ export const es: Dict = {
   'titlebar.closeTab': 'Cerrar pestaña',
   'titlebar.closeThisRepo': 'Cerrar este repositorio',
   'titlebar.closeOthers': 'Cerrar las demás',
+  'titlebar.worktreeOf': 'Worktree de {repo}',
+  'titlebar.openMainRepo': 'Abrir {repo}, el repositorio principal',
   'titlebar.closeOthersNone': 'No hay otras pestañas abiertas',
   'titlebar.closeOthersTitle': 'Cerrar las demás pestañas',
   'titlebar.closeOthersConfirm': '¿Cerrar las otras {count} pestañas? Nada en disco se ve afectado.',
