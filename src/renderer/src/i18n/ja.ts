@@ -591,6 +591,12 @@ export const ja: Dict = {
   'vault.unavailable':
     'このマシンでは OS の暗号化が使えないため、保管庫は無効です。（Linux ではキーチェーン / libsecret が必要です。）',
   'vault.unlocking': 'ロックを解除しています…',
+  'vault.unreadable':
+    'Gitcito は保管庫を読み取れませんでした。キーチェーンがロックされていた、アクセスが拒否された、または別の Gitcito が保存した可能性があります。保管庫は変更されておらず、読み取れるようになるまで追加も削除もできません。キーチェーンのロックを解除して再試行してください。',
+  'vault.replaceStore': '新しい保管庫を作成',
+  'vault.replaceStoreTitle': '新しい保管庫を作成しますか？',
+  'vault.replaceStoreMessage':
+    'Gitcito は読み取れない保管庫を待つのをやめ、空の保管庫を作成します。古いファイルはバックアップとして隣に残り、削除されることはありません。それらのシークレットが完全に失われた場合（たとえば別の Gitcito が保存した場合）にのみ実行してください。',
   'vault.hideAll': 'すべて隠す',
   'vault.revealAll': 'すべて表示',
   'vault.global': 'グローバル',

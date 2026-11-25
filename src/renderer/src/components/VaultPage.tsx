@@ -17,6 +17,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
+import { VaultUnreadableNotice, vaultWriteRefused } from './VaultUnreadableNotice'
 import { useUIStore } from '../stores/ui'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
 import { parseDotenv } from '../lib/dotenv'
@@ -98,13 +99,14 @@ export function VaultPage(): React.JSX.Element {
 
   const saveDraft = async (): Promise<void> => {
     if (!draft || !draft.key.trim()) return
-    setData(
-      await vaultApi.upsert('global', '', {
-        key: draft.key.trim(),
-        value: draft.value,
-        note: draft.note.trim() || undefined
-      })
-    )
+    const result = await vaultApi.upsert('global', '', {
+      key: draft.key.trim(),
+      value: draft.value,
+      note: draft.note.trim() || undefined
+    })
+    setData(result)
+    // Refused: the draft stays open, so what was typed is not lost.
+    if (vaultWriteRefused(result)) return
     setDraft(null)
     toast('success', t('vault.saved'))
   }
@@ -120,13 +122,19 @@ export function VaultPage(): React.JSX.Element {
     for (const p of parsed) {
       const existing = entries.find((e) => e.key === p.key)
       result = await vaultApi.upsert('global', '', { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
+      if (result.unreadable) break
     }
     if (result) setData(result)
+    if (vaultWriteRefused(result)) return
     setPasteText(null)
     toast('success', `${parsed.length} ${t('vault.envImported')}`)
   }
 
-  const del = async (id: string): Promise<void> => setData(await vaultApi.remove('global', '', id))
+  const del = async (id: string): Promise<void> => {
+    const result = await vaultApi.remove('global', '', id)
+    setData(result)
+    vaultWriteRefused(result)
+  }
 
   const entries = data?.global ?? []
 
@@ -160,6 +168,8 @@ export function VaultPage(): React.JSX.Element {
             <ShieldAlert size={16} />
             <span>{t('vault.unavailable')}</span>
           </div>
+        ) : data.unreadable ? (
+          <VaultUnreadableNotice onReload={() => void reload()} />
         ) : (
           <section className="vault-section">
             <div className="vault-section-head">

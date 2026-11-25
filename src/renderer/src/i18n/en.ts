@@ -594,6 +594,12 @@ export const en = {
   'vault.unavailable':
     'OS encryption isn’t available on this machine, so the vault is disabled. (On Linux this needs a keychain / libsecret.)',
   'vault.unlocking': 'Unlocking…',
+  'vault.unreadable':
+    'Gitcito could not read your vault — the keychain was locked, access was denied, or another copy of Gitcito saved it. It is untouched, and nothing can be added or removed until it can be read. Unlock the keychain and retry.',
+  'vault.replaceStore': 'Start a new vault',
+  'vault.replaceStoreTitle': 'Start a new vault?',
+  'vault.replaceStoreMessage':
+    'Gitcito stops waiting for the vault it cannot read and starts an empty one. The old file is kept beside it as a backup and never deleted. Only do this if those secrets are gone for good — for example, another copy of Gitcito saved them.',
   'vault.hideAll': 'Hide all',
   'vault.revealAll': 'Reveal all',
   'vault.global': 'Global',

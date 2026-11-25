@@ -601,6 +601,12 @@ export const ko: Dict = {
   'vault.unavailable':
     '이 기기에서는 OS 암호화를 쓸 수 없어 금고가 비활성화되었습니다. (리눅스에서는 키체인 / libsecret이 필요합니다.)',
   'vault.unlocking': '잠금 해제 중…',
+  'vault.unreadable':
+    'Gitcito가 볼트를 읽지 못했습니다. 키체인이 잠겨 있었거나, 접근이 거부되었거나, 다른 Gitcito 사본이 저장했을 수 있습니다. 볼트는 변경되지 않았으며, 읽을 수 있을 때까지 아무것도 추가하거나 제거할 수 없습니다. 키체인 잠금을 해제하고 다시 시도하세요.',
+  'vault.replaceStore': '새 볼트 만들기',
+  'vault.replaceStoreTitle': '새 볼트를 만들까요?',
+  'vault.replaceStoreMessage':
+    'Gitcito는 읽을 수 없는 볼트를 더 이상 기다리지 않고 빈 볼트를 만듭니다. 이전 파일은 백업으로 옆에 보관되며 삭제되지 않습니다. 해당 시크릿이 영구적으로 사라진 경우(예: 다른 Gitcito 사본이 저장한 경우)에만 실행하세요.',
   'vault.hideAll': '모두 숨기기',
   'vault.revealAll': '모두 보기',
   'vault.global': '전역',

@@ -596,6 +596,12 @@ export const es: Dict = {
   'vault.unavailable':
     'El cifrado del sistema no está disponible en esta máquina, así que la bóveda está deshabilitada. (En Linux requiere un llavero / libsecret.)',
   'vault.unlocking': 'Desbloqueando…',
+  'vault.unreadable':
+    'Gitcito no pudo leer tu bóveda: el llavero estaba bloqueado, se denegó el acceso u otra copia de Gitcito la guardó. No se ha modificado, y no se puede añadir ni quitar nada hasta que pueda leerse. Desbloquea el llavero y vuelve a intentarlo.',
+  'vault.replaceStore': 'Crear una bóveda nueva',
+  'vault.replaceStoreTitle': '¿Crear una bóveda nueva?',
+  'vault.replaceStoreMessage':
+    'Gitcito deja de esperar la bóveda que no puede leer y crea una vacía. El archivo antiguo se conserva a su lado como copia de seguridad y nunca se borra. Hazlo solo si esos secretos se han perdido para siempre; por ejemplo, si otra copia de Gitcito los guardó.',
   'vault.hideAll': 'Ocultar todo',
   'vault.revealAll': 'Revelar todo',
   'vault.global': 'Global',

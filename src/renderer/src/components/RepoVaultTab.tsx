@@ -14,6 +14,7 @@ import {
   Lock
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
+import { VaultUnreadableNotice, vaultWriteRefused } from './VaultUnreadableNotice'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { parseDotenv } from '../lib/dotenv'
@@ -95,13 +96,14 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
 
   const saveDraft = async (): Promise<void> => {
     if (!draft || !draft.key.trim()) return
-    setData(
-      await vaultApi.upsert('repo', repoPath, {
-        key: draft.key.trim(),
-        value: draft.value,
-        note: draft.note.trim() || undefined
-      })
-    )
+    const result = await vaultApi.upsert('repo', repoPath, {
+      key: draft.key.trim(),
+      value: draft.value,
+      note: draft.note.trim() || undefined
+    })
+    setData(result)
+    // Refused: the draft stays open, so what was typed is not lost.
+    if (vaultWriteRefused(result)) return
     setDraft(null)
     toast('success', t('vault.saved'))
   }
@@ -118,13 +120,19 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
     for (const p of parsed) {
       const existing = existingEntries.find((e) => e.key === p.key)
       result = await vaultApi.upsert('repo', repoPath, { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
+      if (result.unreadable) break
     }
     if (result) setData(result)
+    if (vaultWriteRefused(result)) return
     setPasteText(null)
     toast('success', `${parsed.length} ${t('vault.envImported')}`)
   }
 
-  const del = async (id: string): Promise<void> => setData(await vaultApi.remove('repo', repoPath, id))
+  const del = async (id: string): Promise<void> => {
+    const result = await vaultApi.remove('repo', repoPath, id)
+    setData(result)
+    vaultWriteRefused(result)
+  }
 
   const openGlobal = (): void => {
     useSettingsStore.getState().openPageTab({ type: 'vault' })
@@ -156,6 +164,8 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
           <ShieldAlert size={16} />
           <span>{t('vault.unavailable')}</span>
         </div>
+      ) : data.unreadable ? (
+        <VaultUnreadableNotice onReload={() => void reload()} />
       ) : (
         <>
           <div className="vault-toolbar">

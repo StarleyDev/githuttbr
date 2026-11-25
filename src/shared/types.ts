@@ -2308,6 +2308,8 @@ export interface VaultEntry {
 /** Vault contents for a repo: its own entries plus the cross-repo global ones. */
 export interface VaultListResult {
   available: boolean // OS encryption (safeStorage) usable on this machine
+  /** The vault file exists but could not be read: shown empty, and every write is refused. */
+  unreadable?: boolean
   repo: VaultEntry[]
   global: VaultEntry[]
 }
@@ -2431,6 +2433,7 @@ export type SecureShareError =
   | 'unsupported-version' // bundle written by a newer githuttbr
   | 'read-failed'
   | 'write-failed'
+  | 'vault-unreadable' // the local vault could not be read, so nothing was merged into it
 
 /** A non-private, per-repo info field (App ID, website, social links…). Stored
  *  in plaintext — unlike the vault, this is reference metadata, not secrets. */

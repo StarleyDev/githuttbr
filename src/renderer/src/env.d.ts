@@ -202,6 +202,7 @@ interface PreloadApi {
     remove(scope: string, repoPath: string, id: string): Promise<unknown>
     exportAll(): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
+    replaceUnreadable(): Promise<unknown>
   }
   repos: {
     list(): Promise<unknown>

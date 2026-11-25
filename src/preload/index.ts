@@ -245,7 +245,8 @@ const api = {
     remove: (scope: string, repoPath: string, id: string): Promise<unknown> =>
       ipcRenderer.invoke('vault:remove', scope, repoPath, id),
     exportAll: (): Promise<unknown> => ipcRenderer.invoke('vault:exportAll'),
-    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data)
+    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data),
+    replaceUnreadable: (): Promise<unknown> => ipcRenderer.invoke('vault:replaceUnreadable')
   },
   repos: {
     list: (): Promise<unknown> => ipcRenderer.invoke('repos:list'),

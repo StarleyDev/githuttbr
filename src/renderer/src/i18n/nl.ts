@@ -602,6 +602,12 @@ export const nl: Dict = {
   'vault.unavailable':
     'Versleuteling door het besturingssysteem is niet beschikbaar op deze machine, dus de kluis staat uit. (Op Linux is hiervoor een keychain / libsecret nodig.)',
   'vault.unlocking': 'Ontgrendelen…',
+  'vault.unreadable':
+    'Gitcito kon je kluis niet lezen — de sleutelhanger was vergrendeld, toegang werd geweigerd of een andere kopie van Gitcito heeft hem opgeslagen. Hij is niet gewijzigd, en er kan niets worden toegevoegd of verwijderd tot hij leesbaar is. Ontgrendel de sleutelhanger en probeer het opnieuw.',
+  'vault.replaceStore': 'Nieuwe kluis starten',
+  'vault.replaceStoreTitle': 'Nieuwe kluis starten?',
+  'vault.replaceStoreMessage':
+    'Gitcito wacht niet langer op de kluis die het niet kan lezen en start een lege. Het oude bestand blijft ernaast staan als back-up en wordt nooit verwijderd. Doe dit alleen als die geheimen definitief weg zijn — bijvoorbeeld omdat een andere kopie van Gitcito ze heeft opgeslagen.',
   'vault.hideAll': 'Alles verbergen',
   'vault.revealAll': 'Alles onthullen',
   'vault.global': 'Globaal',

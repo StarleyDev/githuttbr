@@ -882,7 +882,8 @@ export const vaultApi = {
   remove: (scope: 'repo' | 'global', repoPath: string, id: string) =>
     window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>,
   exportAll: () => window.api.vault.exportAll() as Promise<VaultExport>,
-  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>
+  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>,
+  replaceUnreadable: () => window.api.vault.replaceUnreadable() as Promise<boolean>
 }
 
 export const reposApi = {

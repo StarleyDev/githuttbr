@@ -591,6 +591,12 @@ export const tr: Dict = {
   'vault.unavailable':
     'Bu makinede işletim sistemi şifrelemesi kullanılamıyor, bu yüzden kasa devre dışı. (Linux’ta bunun için bir anahtarlık / libsecret gerekir.)',
   'vault.unlocking': 'Kilit açılıyor…',
+  'vault.unreadable':
+    'Gitcito kasanızı okuyamadı — anahtarlık kilitliydi, erişim reddedildi ya da başka bir Gitcito kopyası onu kaydetti. Kasaya dokunulmadı; okunabilene kadar hiçbir şey eklenemez veya kaldırılamaz. Anahtarlığın kilidini açıp yeniden deneyin.',
+  'vault.replaceStore': 'Yeni kasa oluştur',
+  'vault.replaceStoreTitle': 'Yeni kasa oluşturulsun mu?',
+  'vault.replaceStoreMessage':
+    'Gitcito okuyamadığı kasayı beklemeyi bırakır ve boş bir kasa oluşturur. Eski dosya yanında yedek olarak tutulur ve asla silinmez. Bunu yalnızca o sırlar kalıcı olarak kaybolduysa yapın — örneğin onları başka bir Gitcito kopyası kaydettiyse.',
   'vault.hideAll': 'Tümünü gizle',
   'vault.revealAll': 'Tümünü göster',
   'vault.global': 'Genel',

@@ -601,6 +601,12 @@ export const pl: Dict = {
   'vault.unavailable':
     'Szyfrowanie systemowe nie jest dostępne na tej maszynie, więc sejf jest wyłączony. (Na Linuksie wymaga pęku kluczy / libsecret.)',
   'vault.unlocking': 'Odblokowywanie…',
+  'vault.unreadable':
+    'Gitcito nie mógł odczytać Twojego sejfu — pęk kluczy był zablokowany, odmówiono dostępu albo zapisała go inna kopia Gitcito. Pozostał nietknięty i nie można niczego dodać ani usunąć, dopóki nie da się go odczytać. Odblokuj pęk kluczy i spróbuj ponownie.',
+  'vault.replaceStore': 'Utwórz nowy sejf',
+  'vault.replaceStoreTitle': 'Utworzyć nowy sejf?',
+  'vault.replaceStoreMessage':
+    'Gitcito przestaje czekać na sejf, którego nie może odczytać, i tworzy pusty. Stary plik zostaje obok jako kopia zapasowa i nigdy nie jest usuwany. Zrób to tylko wtedy, gdy te sekrety przepadły na dobre — na przykład zapisała je inna kopia Gitcito.',
   'vault.hideAll': 'Ukryj wszystko',
   'vault.revealAll': 'Odsłoń wszystko',
   'vault.global': 'Globalne',

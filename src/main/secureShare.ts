@@ -16,7 +16,7 @@ import {
   type BundleNote,
   type BundleSection
 } from './secureBundle'
-import { exportGlobalEntries, importGlobalEntries } from './vault'
+import { exportGlobalEntries, importGlobalEntries, isVaultUnreadable, VaultUnreadableError } from './vault'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
@@ -441,6 +441,9 @@ export async function applyV2(
   } catch (e) {
     return { error: errCode(e) }
   }
+  // Checked before anything is written: a vault that cannot be read refuses
+  // the merge, and the files of the same bundle should not land without it.
+  if (plan.some((s) => s.kind === 'vault') && (await isVaultUnreadable())) return { error: 'vault-unreadable' }
   let filesWritten = 0
   let secretsWritten = 0
   let notesWritten = 0
@@ -452,7 +455,12 @@ export async function applyV2(
       if (section.kind !== 'vault') return { error: 'invalid' }
       const wanted = new Set(step.keys)
       const picked = section.entries.filter((e) => wanted.has(e.key))
-      secretsWritten += await importGlobalEntries(picked)
+      try {
+        secretsWritten += await importGlobalEntries(picked)
+      } catch (e) {
+        if (e instanceof VaultUnreadableError) return { error: 'vault-unreadable' }
+        throw e
+      }
     } else if (step.kind === 'notes') {
       if (section.kind !== 'notes') return { error: 'invalid' }
       for (const n of section.notes) {

@@ -601,6 +601,12 @@ export const de: Dict = {
   'vault.unavailable':
     'Auf dieser Maschine steht keine Systemverschlüsselung zur Verfügung, deshalb ist der Tresor deaktiviert. (Unter Linux braucht das einen Schlüsselbund / libsecret.)',
   'vault.unlocking': 'Wird entsperrt…',
+  'vault.unreadable':
+    'Gitcito konnte deinen Tresor nicht lesen – der Schlüsselbund war gesperrt, der Zugriff wurde verweigert oder eine andere Gitcito-Kopie hat ihn gespeichert. Er ist unverändert, und es kann nichts hinzugefügt oder entfernt werden, bis er lesbar ist. Entsperre den Schlüsselbund und versuche es erneut.',
+  'vault.replaceStore': 'Neuen Tresor anlegen',
+  'vault.replaceStoreTitle': 'Neuen Tresor anlegen?',
+  'vault.replaceStoreMessage':
+    'Gitcito wartet nicht länger auf den Tresor, den es nicht lesen kann, und legt einen leeren an. Die alte Datei bleibt daneben als Sicherung erhalten und wird nie gelöscht. Tu das nur, wenn diese Geheimnisse endgültig verloren sind – etwa weil eine andere Gitcito-Kopie sie gespeichert hat.',
   'vault.hideAll': 'Alle verbergen',
   'vault.revealAll': 'Alle anzeigen',
   'vault.global': 'Global',

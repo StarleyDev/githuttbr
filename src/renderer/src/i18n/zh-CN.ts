@@ -601,6 +601,12 @@ export const zhCN: Dict = {
   'vault.unavailable':
     '这台机器不支持系统级加密，因此保险库被禁用。（在 Linux 上这需要钥匙串 / libsecret。）',
   'vault.unlocking': '正在解锁…',
+  'vault.unreadable':
+    'Gitcito 无法读取你的保险库：钥匙串已锁定、访问被拒绝，或由另一份 Gitcito 保存。它未被改动；在能够读取之前，无法添加或删除任何内容。请解锁钥匙串后重试。',
+  'vault.replaceStore': '新建保险库',
+  'vault.replaceStoreTitle': '新建保险库？',
+  'vault.replaceStoreMessage':
+    'Gitcito 将不再等待无法读取的保险库，并新建一个空的保险库。旧文件会作为备份保留在旁边，永不删除。只有在这些密钥已彻底丢失时才这样做——例如它们是由另一份 Gitcito 保存的。',
   'vault.hideAll': '全部隐藏',
   'vault.revealAll': '全部显示',
   'vault.global': '全局',

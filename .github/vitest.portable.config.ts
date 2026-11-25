@@ -31,7 +31,9 @@ export default {
       // drive letters and separators are exactly what this job is for.
       'test/settingsImport.test.ts',
       'test/settingsExport.test.ts',
-      'test/keychainWeakBackend.test.ts'
+      'test/keychainWeakBackend.test.ts',
+      'test/keychainFailClosed.test.ts',
+      'test/vaultUnreadable.test.ts'
     ]
   }
 }
