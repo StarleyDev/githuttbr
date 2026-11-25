@@ -79,11 +79,6 @@ a device but does not behave like one is not worth shipping.
 Not features, but they decide when features can ship. Electron supports its
 three newest majors, so staying current is a schedule, not a choice.
 
-### Larger dependency moves, when there is a reason
-React 19, zustand 5, framer-motion and lucide's 1.x icon names each touch most
-of the renderer and none fixes a problem today. They wait for a feature that
-needs them or a security reason, rather than being done for the version number.
-
 ---
 
 ## Deliberately not doing
