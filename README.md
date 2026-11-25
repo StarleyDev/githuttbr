@@ -37,6 +37,8 @@ On Linux and Windows the app then updates itself from those releases.
 Coming from 4.38 or earlier? Settings come along on their own; tokens and a few terminal
 settings do not — see **[Upgrading from 4.38](docs/help/upgrading.md)**.
 
+macOS needs **13 Ventura or later** (Electron no longer supports macOS 12).
+
 The macOS build is **not signed**, so macOS blocks it the first time ("Apple could not
 verify…"). Open it once, then go to **System Settings → Privacy & Security** and click
 **Open Anyway** (since macOS 15, right-click → Open no longer does it). Or, in a terminal:
