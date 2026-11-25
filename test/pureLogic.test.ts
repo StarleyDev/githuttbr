@@ -129,7 +129,6 @@ import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { stepRange } from '../src/renderer/src/lib/rangeSelect'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import {
-  planStackSubmit,
   buildStackSection,
   mergeStackSection,
   STACK_SECTION_START,

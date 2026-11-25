@@ -103,7 +103,8 @@ suite('refresh cost', () => {
         ].join('\n')
       )
     },
-    { timeout: 600_000 }
+    // A timeout number is the only third argument Vitest 4+ still accepts.
+    600_000
   )
 })
 

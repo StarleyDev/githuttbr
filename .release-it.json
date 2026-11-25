@@ -28,6 +28,7 @@
     "@release-it/conventional-changelog": {
       "preset": "conventionalcommits",
       "infile": "CHANGELOG.md",
+      "header": "",
       "gitRawCommitsOpts": {
         "firstParent": true,
         "merges": null
