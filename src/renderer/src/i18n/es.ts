@@ -1859,7 +1859,7 @@ export const es: Dict = {
     'Muestra las novedades en una pestaña automáticamente cuando gitcito se actualiza a una nueva versión.',
   'settings.security': 'Seguridad',
   'settings.shortcuts': 'Atajos',
-  'settings.vault': 'Baúl',
+  'settings.vault': 'Bóveda',
   'settings.maskSecrets': 'Ocultar valores secretos',
   'settings.maskSecretsHint':
     'Oculta los valores en archivos .env / clave / credenciales (KEY=••••••) en el diff, el visor y el blame. Solo visual — usa el ojo para revelar. Nunca cambia el archivo ni lo que preparas.',
@@ -1878,7 +1878,7 @@ export const es: Dict = {
   'settings.analyzerOff': 'Desactivados — ocultar los analizadores',
   'settings.launchEnabledHint':
     'Muestra un selector de ejecución en la barra lateral cuando el repo tiene un .vscode/launch.json. Ejecuta configuraciones (con su preLaunchTask) en la terminal integrada. Desactivado → la interfaz de ejecución se oculta por completo.',
-  'settings.openVault': 'Abrir baúl',
+  'settings.openVault': 'Abrir bóveda',
   'settings.openVaultHint':
     'Un almacén local de secretos cifrado con el llavero del sistema — por repo y global. Nunca se sincroniza ni se commitea. También con ⌘⇧V.',
   'settings.largeFileWarn': 'Avisar antes de commitear archivos mayores de (MB)',
