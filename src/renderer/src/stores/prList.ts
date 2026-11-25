@@ -18,6 +18,8 @@ import {
 import { enterpriseBasesOf, prRemoteIdentity } from '../lib/hosting'
 import { useRepoStore } from './repo'
 import { useSettingsStore } from './settings'
+import { useUIStore } from './ui'
+import { interp, t } from '../i18n'
 
 export interface PrListView {
   tab: PrListTab
@@ -124,13 +126,54 @@ export function stepPr(page: PrPage, dir: -1 | 1): boolean {
   const pos = currentPrNav(page).position
   const target = pos ? (dir < 0 ? pos.prev : pos.next) : null
   if (!target) return false
-  useSettingsStore.getState().replaceOpenPage(page, {
-    ...page,
-    remoteUrl: target.remoteUrl,
-    number: target.number,
-    title: target.title
-  })
+  const go = (): void => {
+    // The page remounts on the new PR: its strip takes the focus back (PrNavBar).
+    pendingFocus = dir
+    useSettingsStore.getState().replaceOpenPage(page, {
+      ...page,
+      remoteUrl: target.remoteUrl,
+      number: target.number,
+      title: target.title
+    })
+  }
+  // Moving on unmounts the page, and an unsent comment with it: ask first.
+  if (unsentDraft?.()) {
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prNav.draftTitle'),
+      message: interp(t('prNav.draftMessage'), { n: page.number }),
+      danger: true,
+      confirmLabel: t('prNav.draftConfirm'),
+      onConfirm: go
+    })
+    return true
+  }
+  go()
   return true
+}
+
+/** Whether the open PR page holds text nobody sent — registered by PrDetailPage. */
+let unsentDraft: (() => boolean) | null = null
+export function registerPrDraft(check: (() => boolean) | null): void {
+  unsentDraft = check
+}
+
+/** Which arrow moved us, so the new page's strip can put the focus back on it. */
+let pendingFocus: -1 | 1 | null = null
+export function takePendingFocus(): -1 | 1 | null {
+  const dir = pendingFocus
+  pendingFocus = null
+  return dir
+}
+
+/** Merged or closed lists are stale once a PR is merged or closed from the app. */
+export function forgetFinished(repoPath: string): void {
+  usePrListStore.setState((s) => {
+    if (!s.finished[repoPath]) return s
+    const finished = { ...s.finished }
+    delete finished[repoPath]
+    return { finished }
+  })
 }
 
 /** The PR page the active tab is showing, if any — for Alt+← / Alt+→. */

@@ -19612,3 +19612,5 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* Previous/next and "back" point the other way when the page reads right to left. */
 :root[dir='rtl'] .prn-step svg,
 :root[dir='rtl'] .prn-back svg { transform: scaleX(-1); }
+/* Read aloud, never drawn: the position after ‹ ›. */
+.prn-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

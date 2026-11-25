@@ -1,4 +1,4 @@
-import type { PullRequest, RemoteInfo } from '../../../shared/types'
+import type { HostingProvider, PullRequest, RemoteInfo } from '../../../shared/types'
 import type { TranslationKey } from '../i18n'
 import { forkUpstream, prRemoteIdentity } from './hosting'
 
@@ -160,6 +160,21 @@ export function filterPrList(items: PrListItem[], tab: PrListTab, f: PrListFilte
     .map((x) => x.it)
 }
 
+/** The page size of the open list on the hosts that read only one page (see
+ *  main's listPullRequestsOf). Azure DevOps, Data Center and Forgejo read all. */
+export const OPEN_PAGE = 30
+
+/** The open list may be cut short: a one-page host answered a full page. */
+export function openListCapped(
+  provider: HostingProvider,
+  remoteUrl: string | undefined,
+  prs: PullRequest[]
+): boolean {
+  const onePage =
+    provider === 'github' || provider === 'gitlab' || (provider === 'bitbucket' && /bitbucket\.org[:/]/i.test(remoteUrl ?? ''))
+  return onePage && prs.filter((p) => (p.state ?? 'open') === 'open').length >= OPEN_PAGE
+}
+
 /** How many PRs each tab holds. A tab not read yet (merged/closed) is null. */
 export function tabCounts(open: PullRequest[], finished: PullRequest[] | null): Record<PrListTab, number | null> {
   return {
@@ -215,12 +230,19 @@ export function filterSummary(f: PrListFilters): { key: TranslationKey; vars: Re
   return out
 }
 
-/** A filter that names "me" means nothing when the account is unknown: drop it
- *  rather than show an empty list nobody can explain. */
-export function effectiveFilters(f: PrListFilters, me: string | null | undefined): PrListFilters {
-  if (me) return f
-  if (f.author !== ME && f.reviewer !== ME) return f
-  return { ...f, author: f.author === ME ? '' : f.author, reviewer: f.reviewer === ME ? '' : f.reviewer }
+/** The filters that apply here. One the page cannot show is dropped rather
+ *  than left to empty the list with no visible way out: "me" while the account
+ *  is unknown, and "CI failing" on Merged/Closed, whose checks are not read
+ *  (its chip is hidden there). */
+export function effectiveFilters(f: PrListFilters, me: string | null | undefined, tab: PrListTab = 'open'): PrListFilters {
+  const dropCi = f.ciFailing && (tab === 'merged' || tab === 'closed')
+  const dropMe = !me && (f.author === ME || f.reviewer === ME)
+  if (!dropCi && !dropMe) return f
+  return {
+    ...f,
+    ...(dropMe ? { author: f.author === ME ? '' : f.author, reviewer: f.reviewer === ME ? '' : f.reviewer } : {}),
+    ...(dropCi ? { ciFailing: false } : {})
+  }
 }
 
 // ── ‹ › in the PR detail header ─────────────────────────────────────────────

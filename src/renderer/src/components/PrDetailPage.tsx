@@ -31,6 +31,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
+import { forgetFinished, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
@@ -152,12 +153,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     void load().finally(() => setLoading(false))
   }, [load])
 
+  // ‹ › and Alt+arrows ask before leaving text nobody sent.
+  useEffect(() => {
+    const check = (): boolean => !!comment.trim() || Object.values(replies).some((r) => r.trim())
+    registerPrDraft(check)
+    return () => registerPrDraft(null)
+  }, [comment, replies])
+
   const act = async (fn: () => Promise<void>, ok: string): Promise<void> => {
     setBusy(true)
     try {
       await fn()
       await load()
       void useRepoStore.getState().refreshPRs(repoPath, { silent: true })
+      // A merge (or close) moves it between the list page's tabs.
+      forgetFinished(repoPath)
       toast('success', ok)
     } catch (err) {
       // The explanation in the user's language when there is one, else the host's own words.

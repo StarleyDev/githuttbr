@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PageContent } from '../../../shared/types'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
-import { stepPr, usePrListStore } from '../stores/prList'
+import { stepPr, takePendingFocus, usePrListStore } from '../stores/prList'
 import { interp, useT, type TranslationKey } from '../i18n'
 import { filterSummary, hasActiveFilters, prListItems, resolvePrNav } from '../lib/prList'
 import { enterpriseBasesOf } from '../lib/hosting'
@@ -44,6 +44,21 @@ export function PrNavBar({ page }: { page: PrPage }): React.JSX.Element {
   }, [custom])
 
   const pos = nav.position
+  // Arrived here by ‹ ›: the arrow keeps the focus (the page remounted under
+  // it), and the new place is said aloud — set after mount, so it is announced.
+  const prevRef = useRef<HTMLButtonElement>(null)
+  const nextRef = useRef<HTMLButtonElement>(null)
+  const [announce, setAnnounce] = useState('')
+  useEffect(() => {
+    const dir = takePendingFocus()
+    if (!dir || !pos) return
+    const first = dir < 0 ? prevRef.current : nextRef.current
+    const target = first && !first.disabled ? first : dir < 0 ? nextRef.current : prevRef.current
+    target?.focus()
+    setAnnounce(interp(t('prNav.position'), { k: pos.index + 1, n: pos.total }))
+    // Only on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const where = nav.fromList
     ? hasActiveFilters(nav.fromList.filters)
       ? interp(t('prNav.fromFiltered'), {
@@ -68,6 +83,7 @@ export function PrNavBar({ page }: { page: PrPage }): React.JSX.Element {
           <span className="prn-sep" aria-hidden="true" />
           <div className="prn-steps">
             <button
+              ref={prevRef}
               className="prn-step"
               disabled={!pos.prev}
               onClick={() => stepPr(page, -1)}
@@ -82,6 +98,7 @@ export function PrNavBar({ page }: { page: PrPage }): React.JSX.Element {
             </button>
             <span className="prn-pos">{interp(t('prNav.position'), { k: pos.index + 1, n: pos.total })}</span>
             <button
+              ref={nextRef}
               className="prn-step"
               disabled={!pos.next}
               onClick={() => stepPr(page, 1)}
@@ -96,6 +113,9 @@ export function PrNavBar({ page }: { page: PrPage }): React.JSX.Element {
             </button>
           </div>
           <span className="prn-where">{where}</span>
+          <span className="prn-live" aria-live="polite">
+            {announce}
+          </span>
           <span className="prn-keys">{interp(t('prNav.keysHint'), { prev: keys.prev, next: keys.next })}</span>
         </>
       )}

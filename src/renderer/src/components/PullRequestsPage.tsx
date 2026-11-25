@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft, Loader2, Plus, RefreshCw } from 'lucide-react'
 import type { CiStatus, HostingProvider, PullRequest } from '../../../shared/types'
 import { countChecks } from '../../../shared/ciSummary'
@@ -17,6 +17,7 @@ import {
   filterPrList,
   filterSummary,
   hasActiveFilters,
+  openListCapped,
   highlightParts,
   isMine,
   prInTab,
@@ -91,41 +92,65 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
 
   const openItems = useMemo(() => prListItems(prs, upstreamPrs, remotes, enterprise), [prs, upstreamPrs, remotes, enterprise])
   const finishedItems = useMemo<PrListItem[]>(
-    () => (finished?.data && origin ? finished.data.prs.map((pr) => ({ pr, remoteUrl: prRemoteIdentity(origin.url) })) : []),
+    () => {
+      // A list read for another origin (the remote was changed since) is not this one's.
+      const remoteUrl = origin ? prRemoteIdentity(origin.url) : ''
+      if (!finished?.data || !origin || finished.remoteUrl !== remoteUrl) return []
+      return finished.data.prs.map((pr) => ({ pr, remoteUrl }))
+    },
     [finished, origin]
   )
 
   // The checks of heads the list came without (GitLab, Azure DevOps, Forgejo
-  // carry none): asked once per head, through the cache the graph's badges use.
-  const [ci, setCi] = useState<Record<string, CiStatus>>({})
+  // carry none), asked through the cache the graph's badges use. Tied to the
+  // list they were read for: a new list — Refresh, or the periodic PR refresh —
+  // starts over, so a "running" head is asked again (main's cache keeps that
+  // cheap). A head the host said nothing about is simply not shown: "no checks"
+  // and "rate-limited" look the same from here, so neither is remembered.
+  const [ci, setCi] = useState<{ of: PullRequest[]; map: Record<string, CiStatus> }>({ of: NO_ITEMS, map: {} })
+  const asked = useRef<{ of: PullRequest[]; shas: Set<string> }>({ of: NO_ITEMS, shas: new Set() })
+  const ciMap = ci.of === prs ? ci.map : NO_CI_MAP
+  const ciMapRef = useRef(ciMap)
+  ciMapRef.current = ciMap
   useEffect(() => {
     // GitHub and Bitbucket Data Center lists already carry their checks.
     if (!origin || (provider !== 'gitlab' && provider !== 'azure' && provider !== 'forgejo')) return
-    const shas = openItems
-      .filter((it) => !it.upstream && !it.pr.ci && it.pr.headSha && !(it.pr.headSha in ci))
-      .map((it) => it.pr.headSha as string)
+    if (asked.current.of !== prs) asked.current = { of: prs, shas: new Set() }
+    const seen = asked.current.shas
+    const shas = [
+      ...new Set(
+        openItems
+          .filter((it) => !it.upstream && !it.pr.ci && it.pr.headSha && !seen.has(it.pr.headSha))
+          .map((it) => it.pr.headSha as string)
+      )
+    ]
     if (!shas.length) return
+    for (const sha of shas) seen.add(sha)
     let alive = true
-    void hostingApi
-      .ciStatuses(repoPath, origin.url, shas, githubToken ?? '')
-      .then((found) => {
-        // A head the host had nothing for is remembered too, so it is not asked again.
-        if (alive) setCi((cur) => ({ ...cur, ...Object.fromEntries(shas.map((s) => [s, found[s] ?? NO_CI])) }))
-      })
-      .catch(() => undefined)
+    void (async () => {
+      // Main answers at most CI_BATCH heads per call; more would be dropped unasked.
+      for (let i = 0; i < shas.length && alive; i += CI_BATCH) {
+        const found = await hostingApi
+          .ciStatuses(repoPath, origin.url, shas.slice(i, i + CI_BATCH), githubToken ?? '')
+          .catch(() => ({}) as Record<string, CiStatus>)
+        if (!alive || !Object.keys(found).length) continue
+        setCi((cur) => ({ of: prs, map: { ...(cur.of === prs ? cur.map : {}), ...found } }))
+      }
+    })()
     return () => {
       alive = false
+      // Unmounted or re-run mid-way: what was not answered may be asked again.
+      if (asked.current.of === prs) for (const sha of shas) if (!(sha in ciMapRef.current)) seen.delete(sha)
     }
-  }, [openItems, origin, repoPath, githubToken, ci, provider])
-
+  }, [openItems, origin, repoPath, githubToken, provider, prs])
   const withCi = useMemo<PrListItem[]>(
     () =>
       openItems.map((it) => {
-        const status = it.pr.headSha && !it.pr.ci ? ci[it.pr.headSha] : undefined
-        if (!status || status === NO_CI) return it
+        const status = it.pr.headSha && !it.pr.ci ? ciMap[it.pr.headSha] : undefined
+        if (!status) return it
         return { ...it, pr: { ...it.pr, ci: status.state, ciCounts: countChecks(status) } }
       }),
-    [openItems, ci]
+    [openItems, ciMap]
   )
 
   const tab = view.tab
@@ -136,12 +161,14 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
 
   const items = finishedTab ? finishedItems : withCi
   const inTab = useMemo(() => items.filter((it) => prInTab(it.pr, tab)), [items, tab])
-  const filters = useMemo(() => effectiveFilters(view.filters, me), [view.filters, me])
+  const filters = useMemo(() => effectiveFilters(view.filters, me, view.tab), [view.filters, me, view.tab])
   const rows = useMemo(() => filterPrList(items, tab, filters, me), [items, tab, filters, me])
   const counts = useMemo(
     () => tabCounts(openItems.map((it) => it.pr), finished?.data ? finished.data.prs : null),
     [openItems, finished]
   )
+  // GitHub, GitLab and bitbucket.org lists stop at their first page: a full one may hide more.
+  const openCapped = useMemo(() => openListCapped(provider, origin?.url, prs), [provider, origin, prs])
   const tabPrs = useMemo(() => inTab.map((it) => it.pr), [inTab])
   const authors = useMemo(() => authorOptions(tabPrs, me), [tabPrs, me])
   const reviewers = useMemo(() => reviewerOptions(tabPrs, me), [tabPrs, me])
@@ -227,7 +254,9 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
                   {counts[id] !== null && (
                     <span className="prl-tab-count">
                       {counts[id]}
-                      {(id === 'merged' || id === 'closed') && finished?.data?.truncated ? '+' : ''}
+                      {((id === 'merged' || id === 'closed') && finished?.data?.truncated) || (id === 'open' && openCapped)
+                        ? '+'
+                        : ''}
                     </span>
                   )}
                 </button>
@@ -383,8 +412,9 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
   )
 }
 
-/** Marks "this head has no checks" in the per-page cache, so it is not asked twice. */
-const NO_CI: CiStatus = Object.freeze({ state: 'neutral', jobs: [] }) as CiStatus
+/** How many heads one ciStatuses call answers — main reads no more per call. */
+const CI_BATCH = 40
+const NO_CI_MAP: Record<string, CiStatus> = Object.freeze({}) as Record<string, CiStatus>
 
 function PrRow({
   item,
@@ -452,9 +482,10 @@ function CiShort({ pr }: { pr: PullRequest }): React.JSX.Element | null {
   const t = useT()
   const c = pr.ciCounts
   if (!c) return null
-  const total = c.passed + c.failed + c.pending + c.skipped + c.cancelled + c.unknown
-  if (pr.ci === 'failure') return <span className="ci-failure">{interp(t('prList.ciFailed'), { n: c.failed })}</span>
-  if (pr.ci === 'pending') return <span>{interp(t('prList.ciRunning'), { n: c.pending })}</span>
+  // Skipped and cancelled checks are not owed: 4 of 6 with 2 skipped is all green.
+  const total = c.passed + c.failed + c.pending + c.unknown
+  if (pr.ci === 'failure') return <span className="ci-failure">{interp(t('ci.countFailed'), { n: c.failed })}</span>
+  if (pr.ci === 'pending') return <span>{interp(t('ci.countPending'), { n: c.pending })}</span>
   return <span>{interp(t('prList.ciPassed'), { n: c.passed, total })}</span>
 }
 

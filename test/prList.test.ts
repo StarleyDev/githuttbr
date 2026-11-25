@@ -60,14 +60,14 @@ describe('pull request list — search', () => {
     title: 'Pagamento via Pix com QR dinâmico',
     body: 'Adds the dynamic QR flow',
     sourceBranch: 'feat/pix-qr',
-    targetBranch: 'release/sprint-42'
+    targetBranch: 'release/2.4'
   })
 
   it('matches title, description, branches and the number; every word must match', () => {
     expect(matchesQuery(p, 'pix')).toBe(true)
     expect(matchesQuery(p, 'PIX qr')).toBe(true)
     expect(matchesQuery(p, 'dynamic')).toBe(true) // description
-    expect(matchesQuery(p, 'sprint-42')).toBe(true) // target branch
+    expect(matchesQuery(p, 'release/2.4')).toBe(true) // target branch
     expect(matchesQuery(p, '#482')).toBe(true)
     expect(matchesQuery(p, '482')).toBe(true)
     expect(matchesQuery(p, 'pix boleto')).toBe(false)
@@ -106,6 +106,17 @@ describe('pull request list — who is "me"', () => {
     const f = filters({ author: ME, reviewer: ME, query: 'x' })
     expect(effectiveFilters(f, null)).toEqual(filters({ query: 'x' }))
     expect(effectiveFilters(f, 'octocat')).toBe(f)
+  })
+
+  it('drops "CI failing" on Merged/Closed, whose checks are not read and whose chip is hidden', () => {
+    const f = filters({ ciFailing: true, query: 'x' })
+    expect(effectiveFilters(f, 'octocat', 'merged')).toEqual(filters({ query: 'x' }))
+    expect(effectiveFilters(f, 'octocat', 'closed').ciFailing).toBe(false)
+    expect(effectiveFilters(f, 'octocat', 'open')).toBe(f)
+    expect(effectiveFilters(f, 'octocat', 'drafts')).toBe(f)
+    const merged = [item(pr(1, { state: 'merged' }))]
+    expect(filterPrList(merged, 'merged', effectiveFilters(f, null, 'merged'), null)).toEqual([])
+    expect(filterPrList(merged, 'merged', effectiveFilters(filters({ ciFailing: true }), null, 'merged'), null)).toHaveLength(1)
   })
 })
 
