@@ -901,36 +901,33 @@ describe('keyboard shortcuts', () => {
   it('keeps the xterm 5 word-jump bytes for Alt+arrow', () => {
     const alt = (key: string, extra: Parameters<typeof ev>[1] = {}): KeyboardEvent =>
       ev(key, { alt: true, code: key, ...extra })
-    expect(altArrowSequence(alt('ArrowLeft'), true, 'normal')).toBe('\x1bb')
-    expect(altArrowSequence(alt('ArrowRight'), true, 'normal')).toBe('\x1bf')
-    expect(altArrowSequence(alt('ArrowUp'), true, 'normal')).toBeNull()
-    expect(altArrowSequence(alt('ArrowLeft'), false, 'normal')).toBe('\x1b[1;5D')
-    expect(altArrowSequence(alt('ArrowRight'), false, 'normal')).toBe('\x1b[1;5C')
-    expect(altArrowSequence(alt('ArrowUp'), false, 'normal')).toBe('\x1b[1;5A')
-    expect(altArrowSequence(alt('ArrowDown'), false, 'normal')).toBe('\x1b[1;5B')
+    expect(altArrowSequence(alt('ArrowLeft'), true)).toBe('\x1bb')
+    expect(altArrowSequence(alt('ArrowRight'), true)).toBe('\x1bf')
+    expect(altArrowSequence(alt('ArrowUp'), true)).toBeNull()
+    expect(altArrowSequence(alt('ArrowLeft'), false)).toBe('\x1b[1;5D')
+    expect(altArrowSequence(alt('ArrowRight'), false)).toBe('\x1b[1;5C')
+    expect(altArrowSequence(alt('ArrowUp'), false)).toBe('\x1b[1;5A')
+    expect(altArrowSequence(alt('ArrowDown'), false)).toBe('\x1b[1;5B')
     // Any other modifier on top is a different chord — xterm encodes it itself.
-    expect(altArrowSequence(alt('ArrowLeft', { shift: true }), false, 'normal')).toBeNull()
-    expect(altArrowSequence(alt('ArrowLeft', { ctrl: true }), true, 'normal')).toBeNull()
-    expect(altArrowSequence(ev('ArrowLeft', { code: 'ArrowLeft' }), true, 'normal')).toBeNull()
-    expect(altArrowSequence(ev('b', { alt: true, code: 'KeyB' }), false, 'normal')).toBeNull()
+    expect(altArrowSequence(alt('ArrowLeft', { shift: true }), false)).toBeNull()
+    expect(altArrowSequence(alt('ArrowLeft', { ctrl: true }), true)).toBeNull()
+    expect(altArrowSequence(ev('ArrowLeft', { code: 'ArrowLeft' }), true)).toBeNull()
+    expect(altArrowSequence(ev('b', { alt: true, code: 'KeyB' }), false)).toBeNull()
   })
 
-  it('reads numpad arrows by key and leaves IME and full-screen programs alone', () => {
+  it('reads numpad arrows by key and leaves an IME composition alone', () => {
     // NumLock off: the numpad reports an arrow key on a Numpad code.
-    expect(altArrowSequence(ev('ArrowLeft', { alt: true, code: 'Numpad4' }), false, 'normal')).toBe('\x1b[1;5D')
-    expect(altArrowSequence(ev('ArrowRight', { alt: true, code: 'Numpad6' }), true, 'normal')).toBe('\x1bf')
+    expect(altArrowSequence(ev('ArrowLeft', { alt: true, code: 'Numpad4' }), false)).toBe('\x1b[1;5D')
+    expect(altArrowSequence(ev('ArrowRight', { alt: true, code: 'Numpad6' }), true)).toBe('\x1bf')
     // NumLock on: a digit, not an arrow.
-    expect(altArrowSequence(ev('4', { alt: true, code: 'Numpad4' }), false, 'normal')).toBeNull()
+    expect(altArrowSequence(ev('4', { alt: true, code: 'Numpad4' }), false)).toBeNull()
     // A layout that leaves key empty still counts by its physical code.
-    expect(altArrowSequence(ev('', { alt: true, code: 'ArrowDown' }), false, 'normal')).toBe('\x1b[1;5B')
+    expect(altArrowSequence(ev('', { alt: true, code: 'ArrowDown' }), false)).toBe('\x1b[1;5B')
     // An IME composition owns the key, whichever way the browser reports it.
     const composing = { ...ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), isComposing: true }
-    expect(altArrowSequence(composing, false, 'normal')).toBeNull()
+    expect(altArrowSequence(composing, false)).toBeNull()
     const process = { ...ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), keyCode: 229 }
-    expect(altArrowSequence(process, false, 'normal')).toBeNull()
-    // vim, tmux and less bind xterm's own CSI 1;3 X on the alternate screen.
-    expect(altArrowSequence(ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), false, 'alternate')).toBeNull()
-    expect(altArrowSequence(ev('ArrowUp', { alt: true, code: 'ArrowUp' }), false, 'alternate')).toBeNull()
+    expect(altArrowSequence(process, false)).toBeNull()
   })
 
   it('claims a terminal key from the window listeners as well as the browser', () => {

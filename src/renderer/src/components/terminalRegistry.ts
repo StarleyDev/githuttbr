@@ -97,10 +97,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // term.input goes through onData, so the suggestion list and
     // scrollOnUserInput see it exactly like a typed key. Claimed, not just
     // prevented: the conflict resolver binds Alt+↑/↓ on window.
-    const wordJump =
-      e.type === 'keydown'
-        ? altArrowSequence(e, window.api.platform === 'darwin', term.buffer.active.type)
-        : null
+    const wordJump = e.type === 'keydown' ? altArrowSequence(e, window.api.platform === 'darwin') : null
     if (wordJump) {
       claimKeyEvent(e)
       term.input(wordJump)

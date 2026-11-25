@@ -70,23 +70,23 @@ const arrowDirection = (name: string): ArrowDirection | null =>
  * zsh, bash and PSReadLine leave unbound by default. Keep the old bytes so
  * word movement keeps working. Null means "let xterm handle the key".
  *
- * Only the normal buffer — the shell prompt — is rewritten. Full-screen
- * programs on the alternate screen (vim, tmux, less) bind CSI 1;3 X
- * themselves, so they get xterm's own sequence. The key is read before the
- * code so a numpad arrow (NumLock off: key ArrowLeft, code Numpad4) counts
- * too; an IME composition is never touched.
+ * Rewritten in every buffer, exactly as xterm 5 did. The alternate screen is
+ * not "programs that bind CSI 1;3 X": tmux lives there with no M-arrow
+ * binding by default and forwards the bytes to the shell in its pane, which
+ * prints `;3D`; vim maps the old CSI 1;5 D (<C-Left>, word back) and leaves
+ * <M-Left> unmapped. The key is read before the code so a numpad arrow
+ * (NumLock off: key ArrowLeft, code Numpad4) counts too; an IME composition
+ * is never touched.
  */
 export function altArrowSequence(
   event: Pick<
     KeyboardEvent,
     'key' | 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'isComposing' | 'keyCode'
   >,
-  isMac: boolean,
-  bufferType: 'normal' | 'alternate'
+  isMac: boolean
 ): string | null {
   if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null
   if (event.isComposing || event.keyCode === 229) return null
-  if (bufferType !== 'normal') return null
   switch (arrowDirection(event.key) ?? arrowDirection(event.code)) {
     case 'Left':
       return isMac ? '\x1bb' : '\x1b[1;5D'
