@@ -8,6 +8,7 @@ import { useSettingsStore } from '../stores/settings'
 import { createTermSuggest, type TermSuggest } from './termSuggest'
 import { registry, terminalPrefs, type TermHandle } from './terminalState'
 import { t, interp } from '../i18n'
+import { altArrowSequence } from '../lib/terminalShortcuts'
 
 export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
   const existing = registry.get(panelId)
@@ -91,6 +92,15 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         `key ${e.code} ctrl=${e.ctrlKey} shift=${e.shiftKey} ` +
           `appCK=${term.modes.applicationCursorKeysMode}`
       )
+    }
+    // Alt+arrow word jumps: xterm 6 no longer rewrites them (see altArrowSequence).
+    // term.input goes through onData, so the suggestion list and
+    // scrollOnUserInput see it exactly like a typed key.
+    const wordJump = e.type === 'keydown' ? altArrowSequence(e, window.api.platform === 'darwin') : null
+    if (wordJump) {
+      e.preventDefault()
+      term.input(wordJump)
+      return false
     }
     if (e.type !== 'keydown' || e.metaKey || e.altKey) return true
     if (e.ctrlKey && e.code === 'KeyC') {

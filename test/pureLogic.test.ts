@@ -90,7 +90,7 @@ import type {
   Workspace
 } from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
-import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
+import { altArrowSequence, terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
 import { applyTerminalCenterDefault, claimTerminalAutoOpen } from '../src/renderer/src/lib/terminalAutoOpen'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
@@ -891,6 +891,21 @@ describe('keyboard shortcuts', () => {
     expect(terminalShortcutFromEvent(ev('W', { ctrl: true }), true)).toBe('close')
     expect(terminalShortcutFromEvent(ev('t', { meta: true }), false)).toBeNull()
     expect(terminalShortcutFromEvent(ev('w', { ctrl: true, shift: true }), true)).toBeNull()
+  })
+
+  it('keeps the xterm 5 word-jump bytes for Alt+arrow', () => {
+    expect(altArrowSequence(ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), true)).toBe('\x1bb')
+    expect(altArrowSequence(ev('ArrowRight', { alt: true, code: 'ArrowRight' }), true)).toBe('\x1bf')
+    expect(altArrowSequence(ev('ArrowUp', { alt: true, code: 'ArrowUp' }), true)).toBeNull()
+    expect(altArrowSequence(ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), false)).toBe('\x1b[1;5D')
+    expect(altArrowSequence(ev('ArrowRight', { alt: true, code: 'ArrowRight' }), false)).toBe('\x1b[1;5C')
+    expect(altArrowSequence(ev('ArrowUp', { alt: true, code: 'ArrowUp' }), false)).toBe('\x1b[1;5A')
+    expect(altArrowSequence(ev('ArrowDown', { alt: true, code: 'ArrowDown' }), false)).toBe('\x1b[1;5B')
+    // Any other modifier on top is a different chord — xterm encodes it itself.
+    expect(altArrowSequence(ev('ArrowLeft', { alt: true, shift: true, code: 'ArrowLeft' }), false)).toBeNull()
+    expect(altArrowSequence(ev('ArrowLeft', { alt: true, ctrl: true, code: 'ArrowLeft' }), true)).toBeNull()
+    expect(altArrowSequence(ev('ArrowLeft', { code: 'ArrowLeft' }), true)).toBeNull()
+    expect(altArrowSequence(ev('b', { alt: true, code: 'KeyB' }), false)).toBeNull()
   })
 
   it('closes the focused terminal and identifies the last remaining panel', () => {

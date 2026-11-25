@@ -51,3 +51,29 @@ export function terminalCloseTarget(
     hidePanel: terminalCount === 1
   }
 }
+
+/**
+ * What Alt+arrow sends to the shell. xterm 5 rewrote Alt+←/→ into word jumps
+ * itself (ESC b / ESC f on macOS, Ctrl+arrow elsewhere) and Alt+↑/↓ into
+ * Ctrl+arrow off macOS; xterm 6 dropped that and sends plain CSI 1;3 X, which
+ * zsh, bash and PSReadLine leave unbound by default. Keep the old bytes so
+ * word movement keeps working. Null means "let xterm handle the key".
+ */
+export function altArrowSequence(
+  event: Pick<KeyboardEvent, 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
+  isMac: boolean
+): string | null {
+  if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null
+  switch (event.code) {
+    case 'ArrowLeft':
+      return isMac ? '\x1bb' : '\x1b[1;5D'
+    case 'ArrowRight':
+      return isMac ? '\x1bf' : '\x1b[1;5C'
+    case 'ArrowUp':
+      return isMac ? null : '\x1b[1;5A'
+    case 'ArrowDown':
+      return isMac ? null : '\x1b[1;5B'
+    default:
+      return null
+  }
+}
