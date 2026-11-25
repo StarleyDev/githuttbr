@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Rocket, Github, Tag as TagIcon, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Rocket, Tag as TagIcon, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Github } from './BrandIcons'
 import { renderMarkdown } from '../preview/markdown'
 import { usePendingHighlight } from '../preview/pendingHighlight'
 import { shellApi } from '../infrastructure/api'

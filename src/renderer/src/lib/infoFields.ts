@@ -3,19 +3,11 @@ import {
   Package,
   Globe,
   BookOpen,
-  Github,
-  Instagram,
-  Twitter,
-  Linkedin,
-  Facebook,
-  Youtube,
   MessageCircle,
-  Slack,
   Mail,
   Phone,
   Apple,
   Play,
-  Figma,
   FileText,
   Server,
   Scale,
@@ -24,6 +16,7 @@ import {
   Tag,
   Link as LinkIcon
 } from 'lucide-react'
+import { Facebook, Figma, Github, Instagram, Linkedin, Slack, Twitter, Youtube } from '../components/BrandIcons'
 import type { TranslationKey } from '../i18n'
 
 export type FieldKind = 'text' | 'url' | 'email' | 'phone'

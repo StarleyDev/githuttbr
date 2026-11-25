@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Sparkles,
-  Github,
   RefreshCw,
   Download,
   ArrowUpCircle,
@@ -11,6 +10,7 @@ import {
   ChevronRight,
   Scale
 } from 'lucide-react'
+import { Github } from './BrandIcons'
 import { renderMarkdown } from '../preview/markdown'
 import { usePendingHighlight } from '../preview/pendingHighlight'
 import { bundledChangelog } from '../changelog'

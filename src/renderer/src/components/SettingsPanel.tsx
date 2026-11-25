@@ -11,9 +11,7 @@ import {
   UserCircle2,
   Unplug,
   Bot,
-  Github,
   Cloud,
-  Gitlab,
   GitFork,
   Server,
   BadgeCheck,
@@ -70,6 +68,7 @@ import {
   Stethoscope,
   Globe
 } from 'lucide-react'
+import { Github, Gitlab } from './BrandIcons'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
