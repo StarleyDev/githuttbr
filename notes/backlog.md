@@ -21,6 +21,7 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 | | Item | Notas |
 |---|---|---|
 | 🟠 | **Instalador menor**: mover para `devDependencies` as bibliotecas usadas só pela interface (o Vite já as embute no bundle) | Estimativa: 50–70 MB a menos. Depois de mover, conferir o `app.asar` (nada da interface deve faltar), o `check:native` e um teste do AppImage e do .deb. Ver [`decisions.md`](decisions.md) |
+| 🟡 | **Detalhe do PR apertado em larguras médias.** A media query de 860px olha a janela, não o painel. Com a barra lateral aberta, entre ~860 e ~1000px de painel, sobram ~200px para a conversa (`.prp-side` fixo em 270px) | Trocar por `container-type: inline-size` no pai e `@container`. Já acontecia antes da v4.52 |
 | 🟡 | **5 screenshots gerados e não usados** por nenhuma página: `diff-wrap`, `gitmoji-picker`, `profile-avatar`, `token-keychain-notice`, `worktree-care` | Cada um tem entrada no `examples/screenshots/shots.config.mjs`. Usar numa página do manual ou tirar a entrada |
 
 ---
