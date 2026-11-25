@@ -83,7 +83,8 @@ export async function adoptExistingConsent(paths: string[]): Promise<void> {
  * encryption is available, but falls back to `basic_text` — a password fixed
  * in Chromium's source, so anyone who can read the file can read the tokens.
  * Not treated as "unavailable": that would lock users already on it out of
- * what they stored. It is reported instead, so Settings can say so.
+ * what they stored. It is reported, so Settings can say so, and nothing new is
+ * written to it (`isKeychainWeak`).
  */
 function weakStorageBackend(): boolean {
   if (process.platform !== 'linux') return false
@@ -92,6 +93,19 @@ function weakStorageBackend(): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * True when the keychain may be read but must not take anything new: consent
+ * given, encryption reported available, and the backend is `basic_text`
+ * (see weakStorageBackend). What the store already holds stays readable — and
+ * removable — but a token typed now is kept for the session only, as when the
+ * keychain is off: writing it there would only look like protection.
+ * `canUseKeychain` comes first: it is what initialises safeStorage, and the
+ * backend reads as `unknown` before that.
+ */
+export async function isKeychainWeak(): Promise<boolean> {
+  return (await canUseKeychain()) && weakStorageBackend()
 }
 
 /** True when the keychain may be used right now, without asking anything. */

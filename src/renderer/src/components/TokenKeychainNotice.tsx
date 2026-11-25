@@ -13,7 +13,9 @@ import type { KeychainConsent } from '../../../shared/types'
  * was the Security page, so a token simply "did not save". Turning the keychain
  * on from here also writes the token already typed (main/settings.ts,
  * persistSessionSecrets), so nothing has to be pasted again. The notice stays
- * up until that move has really happened, even with the keychain on.
+ * up until that move has really happened, even with the keychain on. On Linux
+ * with no keyring running, new tokens stay session-only for good: said so, and
+ * no button pretends a retry would help.
  */
 export function TokenKeychainNotice(): React.JSX.Element | null {
   const t = useT()
@@ -23,6 +25,7 @@ export function TokenKeychainNotice(): React.JSX.Element | null {
     consent: KeychainConsent
     available: boolean | null
     sessionOnly: boolean
+    weakBackend: boolean
   } | null>(null)
   const [unreadable, setUnreadable] = useState(false)
   const [enabling, setEnabling] = useState(false)
@@ -60,21 +63,28 @@ export function TokenKeychainNotice(): React.JSX.Element | null {
   // Keychain on and usable, but an earlier move of the typed tokens failed.
   const notMoved = status.consent === 'granted' && status.available === true && status.sessionOnly
   if (status.consent !== 'declined' && !noKeyring && !notMoved) return null
+  // Linux with no keyring running: the system's basic storage is a fixed
+  // password, so new tokens deliberately stay in memory (main/settings.ts,
+  // commitToWeakStore). Retrying cannot change that — only a keyring can.
+  // An unreadable store still wins: Retry may read it (a dismissed prompt).
+  const weak = notMoved && status.weakBackend && !unreadable
 
   // Not moved because the saved store could not be read (a dismissed keychain
   // prompt, a locked keyring): retrying reads it again, then moves them.
   const message = noKeyring
     ? 'keychain.tokenNoKeyring'
-    : notMoved
-      ? unreadable
-        ? 'keychain.tokenStoreUnreadable'
-        : 'keychain.tokenNotMoved'
-      : 'keychain.tokenSessionOnly'
+    : weak
+      ? 'keychain.tokenWeakBackend'
+      : notMoved
+        ? unreadable
+          ? 'keychain.tokenStoreUnreadable'
+          : 'keychain.tokenNotMoved'
+        : 'keychain.tokenSessionOnly'
   return (
     <div className="token-keychain-notice" role="note">
       <KeyRound size={13} />
       <span>{t(message)}</span>
-      {!noKeyring && (
+      {!noKeyring && !weak && (
         <button type="button" className="btn ghost small" disabled={enabling} onClick={() => void enable()}>
           {enabling && <Loader2 size={12} className="spin" />}
           {t(notMoved ? 'modal.retry' : 'keychain.enable')}
