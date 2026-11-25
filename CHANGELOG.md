@@ -1,5 +1,12 @@
 
 
+## [4.48.0](https://github.com/StarleyDev/githuttbr/compare/v4.47.0...v4.48.0) (2026-11-25)
+
+
+### Features
+
+* **settings:** import only the parts you choose, translating repository paths between machines ([4a510b5](https://github.com/StarleyDev/githuttbr/commit/4a510b573db9397b8467b1ae494e307c34c1964c))
+
 ## [4.47.0](https://github.com/StarleyDev/githuttbr/compare/v4.46.0...v4.47.0) (2026-11-25)
 
 
