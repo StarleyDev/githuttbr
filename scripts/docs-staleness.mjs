@@ -64,9 +64,18 @@ export function outline(markdown) {
   const images = []
   let tableRows = 0
   let fence = null
+  // Images are matched over the prose between headings rather than per line: a
+  // long alt text wraps, and a per-line match would miss the image entirely.
+  // A fence breaks the run so an image cannot span into or out of code.
+  let prose = []
+  const flushImages = () => {
+    for (const m of prose.join('\n').matchAll(IMAGE)) images.push(m[1])
+    prose = []
+  }
   for (const line of body.split('\n')) {
     const fenceMatch = /^\s*(```|~~~)/.exec(line)
     if (fenceMatch) {
+      flushImages()
       if (fence === null) fence = fenceMatch[1]
       else if (fenceMatch[1] === fence) fence = null
       continue
@@ -74,15 +83,17 @@ export function outline(markdown) {
     if (fence !== null) continue
     const heading = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line)
     if (heading) {
+      flushImages()
       sections.push({ level: heading[1].length, text: heading[2], markers: new Set() })
       continue
     }
     const current = sections[sections.length - 1]
     for (const m of line.matchAll(MARKERS)) current.markers.add(m[1] ?? m[2] ?? m[3])
-    for (const m of line.matchAll(IMAGE)) images.push(m[1])
+    prose.push(line)
     // The separator row (`|---|---|`) is layout, not content.
     if (/^\s*\|/.test(line) && !/^\s*\|[\s:|-]+\|\s*$/.test(line)) tableRows++
   }
+  flushImages()
   return { sections: sections.filter((s) => s.level > 0), images, tableRows }
 }
 

@@ -151,6 +151,14 @@ describe('translation staleness', () => {
     expect(outline(en).tableRows).toBe(2)
   })
 
+  it('reads an image whose alt text wraps onto several lines', () => {
+    const wrapped = '# Page\n![A long alt that\nwraps onto a second line\nand a third](../screenshots/scanned-repos.webp)\n'
+    expect(outline(wrapped).images).toEqual(['scanned-repos.webp'])
+    // A fence still breaks the run: nothing inside code counts as an image.
+    const fenced = '# Page\n![alt\n```\n](x.webp)\n```\n'
+    expect(outline(fenced).images).toEqual([])
+  })
+
   it('names the missing section, not the one after it', () => {
     // Levels alone would pair "Several at once" with "Avanzado" and blame
     // "Advanced"; the shared code spans put the gap where it really is.
