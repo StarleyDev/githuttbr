@@ -33,10 +33,15 @@ const FORGEJO = 'https://git.example.corp'
 const AZURE = 'https://dev.azure.com/acme/proj/_git/app'
 const GITHUB = 'https://github.com/team/app.git'
 const BB_CLOUD = 'https://bitbucket.org/team/app.git'
+const BBS = 'https://bitbucket.example.corp'
+/** A repository bound to a profile that holds no token for anything. */
+const BOUND_TO_EMPTY = '/repos/bound-to-empty'
 
 /** URL prefix → [status, body]. The first matching prefix answers. */
 let routes: Array<[string, number, unknown]> = []
 const calls: string[] = []
+/** When set, the next request throws this instead of answering. */
+let throwNext: Error | null = null
 
 const call = (channel: string, remote: string): Promise<unknown> =>
   Promise.resolve(handlers.get(channel)!({}, '', remote, { github: 'gh-token', bitbucket: 'bb-token' }))
@@ -83,9 +88,12 @@ describe('pull requests page — main', () => {
             forgejoTokenIssuer: FORGEJO,
             azureToken: 'az-token',
             azureOrg: 'acme',
-            bitbucketToken: 'bb-token'
-          }
-        ]
+            bitbucketToken: 'bb-token',
+            bitbucketServers: [{ url: BBS, token: 'bbs-token', username: 'work' }]
+          },
+          { ...defaultSettings().profiles[0], id: 'empty', name: 'Empty' }
+        ],
+        repoProfiles: { [BOUND_TO_EMPTY]: 'empty' }
       })
     )
     const { readSettings } = await import('../src/main/settings')
@@ -97,6 +105,11 @@ describe('pull requests page — main', () => {
       vi.fn(async (input: string | URL) => {
         const url = String(input)
         calls.push(url)
+        if (throwNext) {
+          const err = throwNext
+          throwNext = null
+          throw err
+        }
         const hit = routes.find(([prefix]) => url.startsWith(prefix))
         const [, status, body] = hit ?? ['', 200, {}]
         return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -234,6 +247,32 @@ describe('pull requests page — main', () => {
     })
   })
 
+  describe('without an account', () => {
+    it('Merged/Closed say there is no credential instead of answering an empty list', async () => {
+      for (const remote of [`${GITLAB}/team/app.git`, `${FORGEJO}/team/app.git`, `${BBS}/scm/proj/app.git`, BB_CLOUD]) {
+        const err = await Promise.resolve()
+          .then(() => handlers.get('hosting:listFinishedPRs')!({}, BOUND_TO_EMPTY, remote, {}))
+          .then(
+            () => null,
+            (e: Error) => e
+          )
+        expect(err?.message, remote).toContain('the profile "Empty" this repository is bound to')
+      }
+      expect(calls).toEqual([])
+    })
+  })
+
+  describe('a token check never shows the token', () => {
+    it('redacts a token undici echoed back in its error (a newline makes the header invalid)', async () => {
+      const token = 'ghp_secret\nvalue'
+      throwNext = new TypeError(`Headers.append: "Bearer ${token}" is an invalid header value.`)
+      const r = (await handlers.get('hosting:whoAmI')!({}, 'github', token)) as { ok: boolean; failure?: { message: string } }
+      expect(r.ok).toBe(false)
+      expect(r.failure?.message).not.toContain('ghp_secret')
+      expect(r.failure?.message).toContain('•••')
+    })
+  })
+
   describe('who "me" is', () => {
     it('Azure DevOps: the connection data’s display name', async () => {
       routes = [
@@ -274,8 +313,20 @@ describe('pull requests page — main', () => {
     it('tells a refusal from a failure, whichever client threw', () => {
       expect(hosting.isAuthRefusal(Object.assign(new Error('x'), { status: 401 }))).toBe(true)
       expect(hosting.isAuthRefusal(Object.assign(new Error('x'), { status: 500 }))).toBe(false)
-      expect(hosting.isAuthRefusal(new Error('GitLab API error (403)'))).toBe(true)
       expect(hosting.isAuthRefusal(new Error('fetch failed'))).toBe(false)
+    })
+
+    it('a real GitLab 401 is a refusal, by its status', async () => {
+      routes = [[`${GITLAB}/api/v4/user`, 401, { message: '401 Unauthorized' }]]
+      const err = await hosting.glJson(`${GITLAB}/api/v4/user`, { token: 'gl-token' }).then(
+        () => null,
+        (e: unknown) => e
+      )
+      expect(err).toMatchObject({ status: 401 })
+      expect(hosting.isAuthRefusal(err)).toBe(true)
+      routes = [[`${GITLAB}/api/v4/user`, 502, {}]]
+      const down = await hosting.glJson(`${GITLAB}/api/v4/user`, { token: 'gl-token' }).catch((e: unknown) => e)
+      expect(hosting.isAuthRefusal(down)).toBe(false)
     })
   })
 })

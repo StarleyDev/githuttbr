@@ -860,11 +860,10 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
   return login
 }
 
-/** A 401/403 from the host, whichever client threw it — GitLab's names the status only in its message. */
+/** A 401/403 from the host. Every client myLogin uses sets `status` on what it throws. */
 export function isAuthRefusal(err: unknown): boolean {
   const status = (err as { status?: unknown } | null)?.status
-  if (typeof status === 'number') return status === 401 || status === 403
-  return /\b40[13]\b/.test(err instanceof Error ? err.message : String(err))
+  return status === 401 || status === 403
 }
 
 /** Forget who the tokens are — for tests, which reuse one module across cases. */
@@ -1644,7 +1643,8 @@ export async function glJson<T>(
     const d = (await res.json().catch(() => null)) as { message?: unknown; error?: unknown } | null
     const raw = d?.message ?? d?.error
     const msg = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw.join('; ') : ''
-    throw new Error(msg ? `GitLab: ${msg}` : `GitLab API error (${res.status})`)
+    // The status rides on the error, so a 401/403 is told from a 5xx without reading words.
+    throw new HttpStatusError(msg ? `GitLab: ${msg}` : `GitLab API error (${res.status})`, res.status)
   }
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
