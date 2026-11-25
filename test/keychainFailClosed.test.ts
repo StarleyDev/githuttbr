@@ -20,7 +20,9 @@ const keyring = {
   backend: 'gnome_libsecret',
   prefix: 'v11',
   hang: false,
-  availableCalls: 0
+  availableCalls: 0,
+  // The throwaway probe (an empty string) fails; real writes go through.
+  failProbe: false
 }
 let releaseHang: ((ok: boolean) => void) | null = null
 
@@ -39,7 +41,10 @@ vi.mock('electron', () => ({
       })
     },
     getSelectedStorageBackend: () => keyring.backend,
-    encryptStringAsync: async (s: string) => Buffer.from(`${keyring.prefix}enc:${s}`),
+    encryptStringAsync: async (s: string) => {
+      if (keyring.failProbe && s === '') throw new Error('probe refused')
+      return Buffer.from(`${keyring.prefix}enc:${s}`)
+    },
     // `old` stands for a key safeStorage is retiring: readable, but asks to be re-sealed.
     decryptStringAsync: async (b: Buffer) => {
       const m = /^(v10|v11|old)enc:/.exec(b.toString())
@@ -107,6 +112,7 @@ beforeEach(() => {
   keyring.prefix = 'v11'
   keyring.hang = false
   keyring.availableCalls = 0
+  keyring.failProbe = false
   releaseHang = null
 })
 
@@ -184,6 +190,39 @@ describe('a keyring that claims to be real but seals with the fixed password', (
   })
 })
 
+describe('a probe that failed, then a v10 write', () => {
+  it('keeps a new token for the session only instead of failing the save', async () => {
+    await start({ p: { azureToken: 'OLD-AZ' } }, 'v10')
+    keyring.prefix = 'v10'
+    keyring.failProbe = true
+    const before = readFileSync(storeFile(), 'utf8')
+    const p = await unlock()
+    await call('settings:set', settingsWith({ ...p, githubToken: 'NEW-GH' }))
+    expect(readFileSync(storeFile(), 'utf8')).toBe(before)
+    expect(await status()).toMatchObject({ weakBackend: true, sessionOnly: true })
+    expect((await unlock()).githubToken).toBe('NEW-GH')
+  })
+
+  it('leaves plaintext tokens in the settings file on unlock rather than failing it', async () => {
+    reset({ p: { azureToken: 'OLD-AZ' } }, 'v10')
+    writeFileSync(settingsFile(), JSON.stringify(settingsWith(profile({ githubToken: 'PLAIN-GH' }))))
+    vi.resetModules()
+    handlers.clear()
+    const mod = await import('../src/main/settings')
+    const kc = await import('../src/main/keychain')
+    mod.registerSettingsHandlers()
+    kc.registerKeychainHandlers()
+    await handlers.get('settings:get')!({ sender: { id: 99 } })
+    keyring.prefix = 'v10'
+    keyring.failProbe = true
+    const before = readFileSync(storeFile(), 'utf8')
+    const p = await unlock()
+    expect(p.githubToken).toBe('PLAIN-GH')
+    expect(p.azureToken).toBe('OLD-AZ')
+    expect(readFileSync(storeFile(), 'utf8')).toBe(before)
+  })
+})
+
 describe('a hung availability check', () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -202,36 +241,109 @@ describe('a hung availability check', () => {
     return promise
   }
 
-  it('answers "unavailable" after the timeout, asks D-Bus once, and takes a late answer next time', async () => {
+  const FAKE = { toFake: ['setTimeout', 'clearTimeout', 'Date'] as ('setTimeout' | 'clearTimeout' | 'Date')[] }
+
+  /** Lets real I/O (the consent file) run until `n` availability questions have been asked. */
+  async function untilAsked(n: number): Promise<void> {
+    for (let i = 0; i < 200 && keyring.availableCalls < n; i++) await new Promise((r) => setImmediate(r))
+    for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r))
+  }
+
+  /** Whether `promise` is still pending. */
+  async function pending(promise: Promise<unknown>): Promise<boolean> {
+    let done = false
+    void promise.finally(() => {
+      done = true
+    })
+    for (let i = 0; i < 5; i++) await Promise.resolve()
+    return !done
+  }
+
+  it('gives the session’s first question — maybe a keyring password prompt — two minutes, not 10 s', async () => {
     reset()
     const kc = await keychain()
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.useFakeTimers(FAKE)
     keyring.hang = true
+    const first = kc.canUseKeychain()
+    await untilAsked(1)
+    await vi.advanceTimersByTimeAsync(kc.AVAILABILITY_TIMEOUT_MS * 2)
+    expect(await pending(first)).toBe(true)
+    await vi.advanceTimersByTimeAsync(kc.PROMPT_TIMEOUT_MS)
+    expect(await first).toBe(false)
+  })
 
-    let answered = false
-    const first = kc.canUseKeychain().finally(() => {
-      answered = true
-    })
+  it('never cuts the question on macOS or Windows', async () => {
+    for (const platform of ['darwin', 'win32'] as const) {
+      reset()
+      onPlatform(platform)
+      const kc = await keychain()
+      vi.useFakeTimers(FAKE)
+      keyring.hang = true
+      keyring.availableCalls = 0
+      const answer = kc.canUseKeychain()
+      await untilAsked(1)
+      await vi.advanceTimersByTimeAsync(kc.PROMPT_TIMEOUT_MS * 2)
+      expect(await pending(answer)).toBe(true)
+      releaseHang!(true)
+      expect(await answer).toBe(true)
+      vi.useRealTimers()
+    }
+  })
+
+  it('once answered, cuts a hung question at 10 s, asks D-Bus once, remembers it, then asks afresh', async () => {
+    reset()
+    const kc = await keychain()
+    vi.useFakeTimers(FAKE)
+    expect(await kc.canUseKeychain()).toBe(true)
+    keyring.hang = true
+    keyring.availableCalls = 0
+
+    const first = kc.canUseKeychain()
     const second = kc.canUseKeychain()
-    // The consent file is real I/O: wait until both are actually waiting on D-Bus.
-    for (let i = 0; i < 100 && keyring.availableCalls === 0; i++) await new Promise((r) => setImmediate(r))
-    for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r))
+    await untilAsked(1)
     await vi.advanceTimersByTimeAsync(kc.AVAILABILITY_TIMEOUT_MS - 1)
-    expect(answered).toBe(false)
+    expect(await pending(first)).toBe(true)
     await vi.advanceTimersByTimeAsync(1)
     expect(await first).toBe(false)
-    expect(await settle(second)).toBe(false)
+    expect(await second).toBe(false)
     expect(keyring.availableCalls).toBe(1)
 
-    // The late answer arrives: it is the next caller's, and nothing else moved.
+    // Just timed out: answered at once, without asking or waiting again.
+    const third = kc.canUseKeychain()
+    for (let i = 0; i < 20; i++) await new Promise((r) => setImmediate(r))
+    expect(await pending(third)).toBe(false)
+    expect(await third).toBe(false)
+    expect(keyring.availableCalls).toBe(1)
+
+    // Past the memory: the hung question is dropped and a fresh one asked.
+    keyring.hang = false
+    await vi.advanceTimersByTimeAsync(kc.RECENT_TIMEOUT_MS)
+    expect(await kc.canUseKeychain()).toBe(true)
+    expect(keyring.availableCalls).toBe(2)
+  })
+
+  it('takes a late answer as the next caller’s', async () => {
+    reset()
+    const kc = await keychain()
+    vi.useFakeTimers(FAKE)
+    expect(await kc.canUseKeychain()).toBe(true)
+    keyring.hang = true
+    const cut = kc.canUseKeychain()
+    await untilAsked(2)
+    await vi.advanceTimersByTimeAsync(kc.AVAILABILITY_TIMEOUT_MS)
+    expect(await cut).toBe(false)
+    // The hung question answers after all; once the memory has passed, it is not asked again needlessly.
     releaseHang!(true)
     keyring.hang = false
+    await vi.advanceTimersByTimeAsync(kc.RECENT_TIMEOUT_MS)
     expect(await kc.canUseKeychain()).toBe(true)
   })
 
   it('does not hold the settings queue: a token save lands session-only, and the next read answers', async () => {
     await start()
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const kc = await import('../src/main/keychain')
+    vi.useFakeTimers(FAKE)
+    expect(await kc.canUseKeychain()).toBe(true)
     keyring.hang = true
     const p = ((await call('settings:get')) as AppSettings).profiles[0]
     await settle(call('settings:set', settingsWith({ ...p, githubToken: 'TYPED-WHILE-HUNG' })))
@@ -259,12 +371,16 @@ describe('a store read with a retiring key (shouldReEncrypt)', () => {
     expect(readFileSync(storeFile(), 'utf8')).toBe(before)
   })
 
-  it('never re-seals a backup', async () => {
-    await start({ p: { azureToken: 'OLD-AZ' } }, 'old')
+  it('never re-seals a backup, even one read with a retiring key while backups are tidied', async () => {
+    await start({ p: { azureToken: 'OLD-AZ' } })
+    // Holds a token the store does not, so tidying keeps it — after reading it.
     const backup = join(dir, 'githuttbr-secrets.enc.bak')
-    writeStore({ p: { azureToken: 'OLDER-AZ' } }, 'old', backup)
+    writeStore({ p: { azureToken: 'OLD-AZ', githubToken: 'ONLY-IN-BACKUP' } }, 'old', backup)
     const before = readFileSync(backup, 'utf8')
-    await unlock()
+    const p = await unlock()
+    // A token save rewrites the store, and `retireBackups` decrypts every backup.
+    await call('settings:set', settingsWith({ ...p, bitbucketToken: 'NEW-BB' }))
+    expect(storeText()).toContain('NEW-BB')
     expect(readFileSync(backup, 'utf8')).toBe(before)
   })
 })

@@ -166,9 +166,10 @@ export async function sealSecret(plain: string, opts: { allowWeak?: boolean } = 
  * Linux only: what the key in use really is, read from a throwaway ciphertext
  * once per session. Asked only where the caller is about to encrypt anyway
  * (see isKeychainWeak's callers), so it raises no prompt of its own. A probe
- * that fails proves nothing either way and is tried again next time: the write
- * that follows fails the same way, loudly, and a `v10` one is still refused by
- * `sealSecret` itself — so nothing weak is written either way.
+ * that fails proves nothing either way and is tried again next time. A broken
+ * keyring then fails the write that follows, loudly; a `v10` one is refused by
+ * `sealSecret` itself, and the settings module takes its weak branch on that
+ * refusal (`saveSecretsUnlessWeak`) — so nothing new lands in a weak store.
  */
 async function weakCiphertext(): Promise<boolean> {
   if (process.platform !== 'linux') return false
@@ -198,40 +199,80 @@ export async function isKeychainWeak(): Promise<boolean> {
 }
 
 /**
- * How long `isAsyncEncryptionAvailable` may take. On Linux it is a D-Bus round
- * trip to the secret service, and a hung one never answers: the settings queue
- * waits on this, so an unanswered question would hold every save behind it.
+ * How long `isAsyncEncryptionAvailable` may take — on Linux only. There it is a
+ * D-Bus round trip to the secret service, and a hung one never answers: the
+ * settings queue waits on this, so an unanswered question would hold every
+ * save behind it. On macOS and Windows the call is local and is never cut.
+ *
+ * The session's first answer may be the keyring asking for its password (a
+ * locked GNOME Keyring or KWallet), and so may the one right after our own
+ * explainer: a person reading a dialog gets `PROMPT_TIMEOUT_MS`, not 10 s.
  */
 export const AVAILABILITY_TIMEOUT_MS = 10_000
+export const PROMPT_TIMEOUT_MS = 120_000
+/**
+ * After a timeout, while that question is still unanswered, callers are told
+ * "unavailable" at once rather than each waiting out its own 10 s
+ * (`keychain:status`, the vault page, a save's weak check). Past this, the hung
+ * question is dropped and a fresh one is asked: the service may be back.
+ */
+export const RECENT_TIMEOUT_MS = 30_000
 
 /**
  * The question in flight, shared: a hung D-Bus collects one call, not one per
- * caller. When it does answer, late, the answer is simply the next caller's —
- * a caller that timed out already said "unavailable" and changed nothing, so
- * there is no state for the late answer to contradict.
+ * caller. `timedOutAt` is when a caller last gave up on it.
  */
-let availabilityCall: Promise<boolean> | null = null
+let availabilityCall: { answer: Promise<boolean>; timedOutAt: number | null } | null = null
+/** Whether safeStorage has answered at all this session (see PROMPT_TIMEOUT_MS). */
+let answeredOnce = false
 
-async function asyncEncryptionAvailable(): Promise<boolean> {
+/**
+ * A caller that times out answers "unavailable": tokens stay session-only, the
+ * vault stays closed, nothing is written. That answer is not undone when the
+ * late one arrives — the settings module may have noted the keyring as
+ * unusable for peeks (`keyringUnavailable`) — but the late answer is the next
+ * caller's, and the next unlock that succeeds installs the decrypted store,
+ * which outranks that note. Nothing is ever written on the strength of a
+ * timeout.
+ */
+async function asyncEncryptionAvailable(opts: { mayPrompt?: boolean } = {}): Promise<boolean> {
+  const linux = process.platform === 'linux'
+  const now = Date.now()
+  if (availabilityCall?.timedOutAt != null) {
+    if (now - availabilityCall.timedOutAt < RECENT_TIMEOUT_MS) return false
+    availabilityCall = null
+  }
   if (!availabilityCall) {
-    const call = Promise.resolve()
+    const entry: { answer: Promise<boolean>; timedOutAt: number | null } = {
+      answer: Promise.resolve(false),
+      timedOutAt: null
+    }
+    entry.answer = Promise.resolve()
       .then(() => safeStorage.isAsyncEncryptionAvailable())
       .then(
-        (ok) => ok === true,
+        (ok) => {
+          answeredOnce = true
+          return ok === true
+        },
         () => false
       )
       .finally(() => {
-        if (availabilityCall === call) availabilityCall = null
+        if (availabilityCall === entry) availabilityCall = null
       })
-    availabilityCall = call
+    availabilityCall = entry
   }
+  const entry = availabilityCall
+  if (!linux) return entry.answer
+  const limit = opts.mayPrompt || !answeredOnce ? PROMPT_TIMEOUT_MS : AVAILABILITY_TIMEOUT_MS
   let timer: ReturnType<typeof setTimeout> | undefined
-  // Timed out: unavailable, so tokens stay session-only — never a write.
-  const timeout = new Promise<boolean>((resolve) => {
-    timer = setTimeout(() => resolve(false), AVAILABILITY_TIMEOUT_MS)
+  const timeout = new Promise<'timeout'>((resolve) => {
+    timer = setTimeout(() => resolve('timeout'), limit)
   })
   try {
-    return await Promise.race([availabilityCall, timeout])
+    const result = await Promise.race([entry.answer, timeout])
+    if (result !== 'timeout') return result
+    entry.timedOutAt = Date.now()
+    return false
   } finally {
     clearTimeout(timer)
   }
@@ -350,8 +391,8 @@ export async function ensureKeychain(reason: KeychainReason): Promise<boolean> {
   if (consent === 'granted' && explained) return canUseKeychain()
   if (!(await askUser(reason, consent === 'granted'))) return false
   // First real safeStorage call — the OS prompt now arrives right after our own
-  // explanation, which is the whole point.
-  return asyncEncryptionAvailable()
+  // explanation, which is the whole point. Someone is reading it: the long deadline.
+  return asyncEncryptionAvailable({ mayPrompt: true })
 }
 
 /**

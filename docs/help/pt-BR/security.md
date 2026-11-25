@@ -83,6 +83,16 @@ Ele o trata como básico quando o sistema diz que é, quando não sabe dizer qua
 sistema o que disser. Assim, um chaveiro que cai para o básico em silêncio
 continua mantendo tokens novos fora do disco.
 
+Um chaveiro que para de responder não é esperado para sempre. No Linux, depois
+que o chaveiro respondeu uma vez na sessão, uma pergunta sem resposta por 10
+segundos conta como *sem chaveiro*: um token salvo fica só até você fechar o
+app, e o Cofre fica fechado. A primeira pergunta da sessão — a que pode abrir o
+pedido de senha do próprio chaveiro — e a que vem logo depois da explicação do
+Gitcito têm dois minutos, para que ler uma janela nunca seja interrompido. Por
+meio minuto depois de um desses limites a resposta continua *sem chaveiro* sem
+perguntar de novo; depois o Gitcito pergunta outra vez. macOS e Windows
+respondem localmente e nunca têm limite de tempo.
+
 ## Importando configurações
 
 **Configurações → Dados → Importar configurações** traz perfis, preferências e

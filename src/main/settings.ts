@@ -67,7 +67,8 @@ import {
   onKeychainDeclined,
   onKeychainEnabled,
   onSessionOnlyProbe,
-  sealSecret
+  sealSecret,
+  WeakKeychainError
 } from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'githuttbr-settings.json')
@@ -330,6 +331,23 @@ async function saveSecrets(store: SecretStore, opts: { removalOnly?: boolean } =
   if (secretsUnreadable) throw new Error('The token store could not be read; it was left untouched.')
   await writeSecretsFile(store, opts)
   await retireBackups(store)
+}
+
+/**
+ * `saveSecrets` for a write that adds tokens, after `isKeychainWeak` said the
+ * store is not weak. False when safeStorage sealed it with the fixed password
+ * anyway (`WeakKeychainError` — a probe that failed earlier proved nothing):
+ * nothing was written, the session now counts as weak, and the caller takes
+ * its weak branch, so the tokens go session-only instead of the save failing.
+ */
+async function saveSecretsUnlessWeak(store: SecretStore): Promise<boolean> {
+  try {
+    await saveSecrets(store)
+    return true
+  } catch (err) {
+    if (err instanceof WeakKeychainError) return false
+    throw err
+  }
 }
 
 /** The encrypted write itself, with no backup bookkeeping. */
@@ -702,13 +720,12 @@ async function readWithSecrets(
           const applied = mergeSecretStores(merged, sessionSecrets)
           return { settings: withMigratedAI(applySecrets(settings, applied)), applied }
         }
-        if (await isKeychainWeak()) {
+        if ((await isKeychainWeak()) || !(await saveSecretsUnlessWeak(merged))) {
           // Not moved into a weak store: they stay in the file, where they
           // already were, and the store is installed as it is on disk.
           setSecretCache(stored)
         } else {
           // Rewrite the JSON without them.
-          await saveSecrets(merged)
           if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
           setSecretCache(merged)
         }
@@ -722,9 +739,10 @@ async function readWithSecrets(
       const { settings, raw } = await readStoredSettings(mode)
       if (hasSettingsSecrets(settings) && (await canEncrypt()) && !(await isKeychainWeak())) {
         const merged = plaintextMerged(secretCache, settings)
-        await saveSecrets(merged)
-        if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
-        setSecretCache(merged)
+        if (await saveSecretsUnlessWeak(merged)) {
+          if (raw !== null) await rewriteIfUnchanged(raw, settingsFileJson(settings))
+          setSecretCache(merged)
+        }
       }
     }
     // Tokens typed while the store was out of reach, and clears made while it
@@ -763,7 +781,7 @@ async function settleGeneralAILocked(): Promise<void> {
   if (!(await canEncrypt()) || (await isKeychainWeak())) return
   const settled = settleGeneralAI(settings, secretCache, defaultAIConfig())
   const store = pruneSecrets(settled.store, secretOwnerIds(settled.settings), settled.settings.profiles)
-  await saveSecrets(store)
+  if (!(await saveSecretsUnlessWeak(store))) return
   setSecretCache(store)
   await rewriteIfUnchanged(raw, settingsFileJson(settled.settings))
 }
@@ -1130,11 +1148,10 @@ async function persistPendingLocked(): Promise<void> {
   const ids = secretOwnerIds(current)
   const merged = pruneSecrets(mergeSecretStores(withoutSlots(stored, pendingClears), sessionSecrets), ids, profiles)
   // A weak store takes the clears, and the tokens stay in memory.
-  if (await isKeychainWeak()) {
+  if ((await isKeychainWeak()) || !(await saveSecretsUnlessWeak(merged))) {
     await commitToWeakStore(merged)
     return
   }
-  await saveSecrets(merged)
   setSecretCache(merged)
   sessionSecrets = {}
   pendingClears = new Map()
@@ -1266,9 +1283,12 @@ async function writeSettings(
         if (await isKeychainWeak()) {
           await commitToWeakStore(mergeSecretStores(next, sessionSecrets))
         } else if (await canEncrypt()) {
-          await saveSecrets(next)
-          setSecretCache(next)
-          pendingClears = new Map()
+          if (await saveSecretsUnlessWeak(next)) {
+            setSecretCache(next)
+            pendingClears = new Map()
+          } else {
+            await commitToWeakStore(mergeSecretStores(next, sessionSecrets))
+          }
         } else if (changed) {
           applyInMemory(next)
         }
@@ -1309,14 +1329,13 @@ async function writeSettings(
   // Secrets first: if the keychain write fails, the JSON on disk still holds the
   // previous values instead of being stripped with nowhere to read them from.
   const merged = over(mergeSecretStores(withoutSlots(stored, pendingClears), sessionSecrets))
-  if (await isKeychainWeak()) {
+  if ((await isKeychainWeak()) || !(await saveSecretsUnlessWeak(merged))) {
     // Clears and replacements leave the file; the new tokens stay for the session.
     const kept = await commitToWeakStore(merged)
     await writePrivateFile(settingsPath(), await savedFileJson(settings, over, kept))
     holds()
     return
   }
-  await saveSecrets(merged)
   setSecretCache(merged)
   sessionSecrets = {}
   pendingClears = new Map()

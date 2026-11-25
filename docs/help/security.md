@@ -116,6 +116,15 @@ and when what it encrypts comes back marked with the fixed password — whatever
 the system said. So a keyring that silently falls back still keeps new tokens
 off the disk.
 
+A keyring that stops answering is not waited on forever. On Linux, once the
+keyring has answered once this session, a question it leaves unanswered for 10
+seconds counts as *no keyring*: a token you save is kept until you quit, and the
+Vault stays closed. The first question of a session — the one that may bring up
+the keyring's own password prompt — and the one right after Gitcito's
+explanation get two minutes, so reading a dialog is never cut short. For half a
+minute after such a timeout the answer stays *no keyring* without asking again;
+then Gitcito asks afresh. macOS and Windows answer locally and are never timed out.
+
 ### When the saved tokens cannot be read
 
 If you dismiss the system's keychain prompt, the keyring is locked, or the token
