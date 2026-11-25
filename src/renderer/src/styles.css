@@ -19118,7 +19118,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* The page's own width, not the window's, decides when the sidebar stacks: with the repository
    sidebar open a wide window can still leave the conversation a sliver. A container query cannot
    look at the element it styles, hence the frame around .prp-page. */
-.prp-frame { container-type: inline-size; height: 100%; }
+.prp-frame { container-type: inline-size; flex: 1; min-height: 0; height: 100%; overflow: hidden; }
 .prp-page {
   display: flex; gap: 20px; height: 100%; overflow: hidden; box-sizing: border-box;
   background: var(--bg-1); padding: 24px max(32px, calc((100% - 1420px) / 2 + 32px));
