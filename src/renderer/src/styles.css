@@ -19112,7 +19112,13 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* ── Pull request page ───────────────────────────────────────────────────────
    A PR as a tab: conversation / files / checks on the left, everything about
    the PR on the right. Shares the issue page's field styles (.issue-field…). */
-.prp-page { display: flex; gap: 20px; height: 100%; overflow: hidden; padding: 18px 22px; }
+/* Same frame as the pull requests list: a centred 1180px column with margins on both sides, so
+   moving between the list and a PR does not make the content jump to the window edges. Done with
+   padding rather than max-width so the page background still fills the whole tab. */
+.prp-page {
+  display: flex; gap: 20px; height: 100%; overflow: hidden; box-sizing: border-box;
+  background: var(--bg-1); padding: 24px max(32px, calc((100% - 1180px) / 2 + 32px));
+}
 .prp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 .prp-head { display: flex; align-items: center; gap: 10px; }
 .prp-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 19px; line-height: 1.3; overflow-wrap: anywhere; }
@@ -19246,7 +19252,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 
 /* Narrow windows: the sidebar moves under the conversation instead of squeezing it. */
 @media (max-width: 860px) {
-  .prp-page { flex-direction: column; overflow-y: auto; }
+  .prp-page { flex-direction: column; overflow-y: auto; padding: 18px 16px; }
   .prp-main { overflow: visible; }
   .prp-body { overflow: visible; }
   .prp-side { flex: none; border-inline-start: none; padding-inline-start: 0; border-top: 1px solid var(--border); }
