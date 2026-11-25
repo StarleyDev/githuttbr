@@ -19510,3 +19510,293 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   .ci-run-head { flex-wrap: wrap; }
   .ci-run-actions { padding: 0 10px 8px 32px; }
 }
+
+/* ── Settings → About: version, previous versions, settings copies ───────── */
+.about-version-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-2);
+}
+.about-version-card > div:first-child {
+  flex: 1;
+}
+.about-version-label {
+  font-size: 11px;
+  color: var(--text-2);
+}
+.about-version-number {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-0);
+}
+.about-version-state {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+.about-version-state.pending {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.rollback-list {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.rollback-list > .settings-hint {
+  padding: 10px 12px;
+  margin: 0;
+}
+.rollback-row,
+.backup-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 12px;
+}
+.rollback-row:last-child,
+.backup-row:last-child {
+  border-bottom: none;
+}
+.rollback-version {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--text-0);
+  min-width: 64px;
+}
+.rollback-when {
+  color: var(--text-3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.rollback-summary,
+.backup-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rollback-unsafe,
+.rollback-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-2);
+  background: var(--bg-2);
+}
+.rollback-unsafe > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--yellow);
+}
+.rollback-unsafe > span,
+.rollback-empty > span {
+  flex: 1;
+}
+.rollback-releases-btn {
+  margin: 8px 12px;
+  align-self: flex-start;
+}
+.rollback-blocked {
+  margin: 8px 0 0;
+}
+.rollback-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-1);
+  background: var(--accent-soft);
+}
+.rollback-progress.error {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+.rollback-progress > span:first-of-type {
+  flex: 1;
+}
+.rollback-progress-bar {
+  width: 120px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.rollback-progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease-out;
+}
+
+/* The confirmation, stacked over Settings. */
+.rollback-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+}
+.rollback-confirm h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.rollback-confirm-lead {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 13px;
+}
+.rollback-steps {
+  margin: 0;
+  padding-inline-start: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+.rollback-note {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-2);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.rollback-note > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--yellow);
+}
+.rollback-note p {
+  margin: 2px 0 0;
+}
+.rollback-notes-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-1);
+}
+
+/* After going back: a band across the top of the window. */
+.rollback-band {
+  position: fixed;
+  top: 44px;
+  inset-inline: 50% auto;
+  transform: translateX(-50%);
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 10px 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  color: var(--text-1);
+}
+[dir='rtl'] .rollback-band {
+  transform: translateX(50%);
+}
+.rollback-band > svg {
+  color: var(--accent);
+  flex: none;
+}
+.rollback-band-close {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.rollback-band-close:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+.rollback-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* A feature still settling in: a small amber pill beside its heading. */
+.beta-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 8px;
+  padding: 1.5px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent);
+}
+/* Going back is a last resort, and temporary: said in amber before the list. */
+.rollback-last-resort {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--yellow) 10%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--yellow) 25%, transparent);
+}
+.rollback-last-resort > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--yellow);
+}
+.rollback-last-resort strong {
+  color: var(--text-0);
+}
+.rollback-last-resort p {
+  margin: 2px 0 0;
+}
+.rollback-more {
+  margin: 0 0 18px;
+}
+.rollback-last-resort .rollback-report-btn {
+  margin-top: 8px;
+}

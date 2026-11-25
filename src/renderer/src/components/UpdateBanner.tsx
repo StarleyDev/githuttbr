@@ -3,6 +3,7 @@ import { Sparkles, Download, X, RotateCw, CheckCircle2 } from 'lucide-react'
 import { useUpdatesStore } from '../stores/updates'
 import { useSettingsStore } from '../stores/settings'
 import { isNewerVersion } from '../../../shared/version'
+import { isOfferedAfterRollback } from '../../../shared/rollback'
 import { useT, interp } from '../i18n'
 
 /** Floating "new version available" card, bottom-right above the status bar.
@@ -21,10 +22,12 @@ export function UpdateBanner(): React.JSX.Element {
   const dismissBanner = useUpdatesStore((s) => s.dismiss)
   const skip = useUpdatesStore((s) => s.skip)
   const skippedVersion = useSettingsStore((s) => s.settings.skippedUpdateVersion)
+  const versionRollback = useSettingsStore((s) => s.settings.versionRollback)
   const openChangelog = useSettingsStore((s) => s.openPageTab)
 
   const active = status === 'available' || status === 'downloading' || status === 'downloaded'
-  const show = active && !dismissed && !!info && info.version !== skippedVersion
+  const show =
+    active && !dismissed && !!info && info.version !== skippedVersion && isOfferedAfterRollback(info.version, versionRollback)
 
   const pct = progress ? Math.round(progress.percent) : 0
 

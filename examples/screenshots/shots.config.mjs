@@ -150,6 +150,38 @@ async function seedTodos(page, repoPath) {
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
  */
 
+/**
+ * Made-up releases and settings copies for the Settings → About shots, served
+ * from main in place of GitHub's list and this machine's backup folder.
+ * Dates are relative to now, so "3d ago" stays true whenever the shot is taken.
+ */
+async function fakeRollbackData(app) {
+  await app.evaluate(({ ipcMain }) => {
+    const ago = (days) => new Date(Date.now() - days * 86400000).toISOString()
+    const stamp = (iso) => iso.replace(/[-:.]/g, '')
+    ipcMain.removeHandler('rollback:releases')
+    ipcMain.removeHandler('settingsBackups:list')
+    ipcMain.handle('rollback:releases', () => ({
+      ok: true,
+      releases: [
+        { version: '4.51.2', publishedAt: ago(3), summary: 'Keep the branch list where it was after a fetch', url: '' },
+        { version: '4.51.1', publishedAt: ago(9), summary: 'Faster graph on repositories with many tags', url: '' },
+        { version: '4.51.0', publishedAt: ago(16), summary: 'Settings copies before every update', url: '' },
+        { version: '4.50.0', publishedAt: ago(30), summary: 'Electron 45', url: '' }
+      ]
+    }))
+    const copy = (version, target, reason, days) => {
+      const createdAt = ago(days)
+      return { name: `settings-${version}-to-${target}-${reason}-${stamp(createdAt)}.json`, version, target, reason, createdAt }
+    }
+    ipcMain.handle('settingsBackups:list', () => [
+      copy('4.51.2', '4.52.0', 'update', 2),
+      copy('4.51.1', '4.51.2', 'update', 3),
+      copy('4.51.0', '4.51.1', 'update', 9)
+    ])
+  })
+}
+
 /** @type {Shot[]} */
 export const shots = [
   {
@@ -1096,6 +1128,46 @@ export const shots = [
       })
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'environment' }))
       await page.locator('.env-check-row').nth(4).waitFor()
+    }
+  },
+  {
+    // Settings → About: previous versions and the settings copies. Every
+    // version, date and copy is made up — the real list is GitHub's, the real
+    // copies are this machine's — and the app is told it is an AppImage so the
+    // buttons show as they do in an installed build.
+    out: 'settings-rollback',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, _repos, app) => {
+      await fakeRollbackData(app)
+      await page.evaluate(() => {
+        window.__shot.rollback.setState({ appVersion: '4.52.0', support: { supported: true, kind: 'appimage' } })
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'about' })
+      })
+      await page.locator('.rollback-row').nth(2).waitFor()
+      await page.locator('.backup-row').nth(1).waitFor()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // The confirmation before going back, stacked over Settings → About.
+    out: 'rollback-confirm',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, _repos, app) => {
+      await fakeRollbackData(app)
+      await page.evaluate(() => {
+        window.__shot.rollback.setState({ appVersion: '4.52.0', support: { supported: true, kind: 'appimage' } })
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'about' })
+      })
+      await page.locator('.rollback-row').first().waitFor()
+      await page.evaluate(() =>
+        window.__shot.ui
+          .getState()
+          .openDialog({ kind: 'version-rollback', target: '4.51.2', current: '4.52.0', kindOfInstall: 'appimage' })
+      )
+      await page.locator('.rollback-confirm').waitFor()
+      await page.waitForTimeout(400)
     }
   },
   {

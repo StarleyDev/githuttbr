@@ -539,6 +539,27 @@ const api = {
     }
   },
 
+  rollback: {
+    releases: (): Promise<unknown> => ipcRenderer.invoke('rollback:releases'),
+    support: (): Promise<unknown> => ipcRenderer.invoke('rollback:support'),
+    getState: (): Promise<unknown> => ipcRenderer.invoke('rollback:getState'),
+    start: (version: string): Promise<void> => ipcRenderer.invoke('rollback:start', version),
+    install: (): void => ipcRenderer.send('rollback:install'),
+    cancel: (): Promise<void> => ipcRenderer.invoke('rollback:cancel'),
+    onEvent: (cb: (state: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, state: unknown): void => cb(state)
+      ipcRenderer.on('rollback:event', listener)
+      return () => ipcRenderer.removeListener('rollback:event', listener)
+    }
+  },
+
+  settingsBackups: {
+    list: (): Promise<unknown> => ipcRenderer.invoke('settingsBackups:list'),
+    restore: (name: string): Promise<unknown> => ipcRenderer.invoke('settingsBackups:restore', name),
+    changedSince: (name: string): Promise<unknown> => ipcRenderer.invoke('settingsBackups:changedSince', name),
+    reveal: (name?: string): Promise<void> => ipcRenderer.invoke('settingsBackups:reveal', name)
+  },
+
   cli: {
     isInstalled: (): Promise<boolean> => ipcRenderer.invoke('cli:isInstalled'),
     install: (): Promise<CliInstallResult> => ipcRenderer.invoke('cli:install'),

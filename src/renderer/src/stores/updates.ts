@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { UpdateState } from '../../../shared/types'
 import { useSettingsStore } from './settings'
+import type { VersionRollback } from '../../../shared/types'
+import { isOfferedAfterRollback } from '../../../shared/rollback'
 
 interface UpdatesState extends UpdateState {
   /** Session-only: user dismissed the banner with "Later". Resets on relaunch. */
@@ -71,9 +73,10 @@ export const useUpdatesStore = create<UpdatesState>((set, get) => ({
 }))
 
 /** Whether a new version is ready to surface (available or downloaded) and not
- *  the one the user permanently skipped. Pass the persisted skipped version. */
-export function hasPendingUpdate(s: UpdatesState, skippedVersion?: string): boolean {
+ *  the one the user permanently skipped, nor one a rollback left (or older).
+ *  Main already holds those back; this covers a state it reported before. */
+export function hasPendingUpdate(s: UpdatesState, skippedVersion?: string, rollback?: VersionRollback): boolean {
   if (s.status !== 'available' && s.status !== 'downloading' && s.status !== 'downloaded') return false
   if (!s.info) return false
-  return s.info.version !== skippedVersion
+  return s.info.version !== skippedVersion && isOfferedAfterRollback(s.info.version, rollback)
 }

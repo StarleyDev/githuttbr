@@ -43,6 +43,7 @@ import { CliEditModal } from './CliEditModal'
 import { TimeMachineModal } from './TimeMachineModal'
 import { ImportSettingsDialog } from './ImportSettingsDialog'
 import { ExportSettingsDialog } from './ExportSettingsDialog'
+import { RollbackConfirmDialog } from './RollbackConfirmDialog'
 import { TimelapseModal } from './TimelapseModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
@@ -2541,6 +2542,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
               {modal.kind === 'settings-import' && <ImportSettingsDialog spec={modal} />}
               {modal.kind === 'settings-export' && <ExportSettingsDialog />}
+              {modal.kind === 'version-rollback' && <RollbackConfirmDialog spec={modal} />}
               {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
               {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
               {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
@@ -2664,7 +2666,7 @@ export function ModalHost(): React.JSX.Element {
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               ref={stackedRef}
               // A confirm is an alert; a name prompt is an ordinary dialog.
-              role={dialog.kind === 'confirm' ? 'alertdialog' : 'dialog'}
+              role={dialog.kind === 'confirm' || dialog.kind === 'version-rollback' ? 'alertdialog' : 'dialog'}
               aria-modal="true"
               tabIndex={-1}
               onKeyDown={(e) => trapTabIn(e, stackedRef.current)}
@@ -2674,6 +2676,7 @@ export function ModalHost(): React.JSX.Element {
                 {dialog.kind === 'input' && <InputModal spec={dialog} onClose={closeDialog} />}
                 {dialog.kind === 'settings-import' && <ImportSettingsDialog spec={dialog} onClose={closeDialog} />}
                 {dialog.kind === 'settings-export' && <ExportSettingsDialog onClose={closeDialog} />}
+                {dialog.kind === 'version-rollback' && <RollbackConfirmDialog spec={dialog} onClose={closeDialog} />}
               </div>
             </motion.div>
           </motion.div>

@@ -350,6 +350,21 @@ interface PreloadApi {
     install(): void
     onEvent(cb: (state: import('../../shared/types').UpdateState) => void): () => void
   }
+  rollback: {
+    releases(): Promise<import('../../shared/types').RollbackReleasesReply>
+    support(): Promise<import('../../shared/types').RollbackSupport>
+    getState(): Promise<import('../../shared/types').RollbackState>
+    start(version: string): Promise<void>
+    install(): void
+    cancel(): Promise<void>
+    onEvent(cb: (state: import('../../shared/types').RollbackState) => void): () => void
+  }
+  settingsBackups: {
+    list(): Promise<import('../../shared/types').SettingsBackup[]>
+    restore(name: string): Promise<'ok' | 'missing' | 'not-loaded' | 'backup-failed'>
+    changedSince(name: string): Promise<string[] | null>
+    reveal(name?: string): Promise<void>
+  }
   cli: {
     isInstalled(): Promise<boolean>
     install(): Promise<import('../../shared/cli').CliInstallResult>
