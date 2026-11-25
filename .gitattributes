@@ -1,0 +1,18 @@
+# Text files are stored and checked out with LF on every platform. The i18n and
+# docs guards compare text byte for byte, and a Windows checkout with the
+# default core.autocrlf would otherwise turn every file CRLF and fail them.
+* text=auto eol=lf
+
+# Binary assets: never touched by line-ending conversion or textual diffs.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.zip binary
+*.gz binary
