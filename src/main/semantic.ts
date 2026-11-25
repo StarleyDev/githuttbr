@@ -8,19 +8,22 @@
  * /green wall into "renamed start() → boot(), added a `retries` parameter".
  *
  * Grammars are WASM (web-tree-sitter), loaded lazily from resources/tree-sitter
- * and cached for the app's lifetime. A file whose language has no grammar
- * simply reports `language: null` and the UI keeps its line diff.
+ * — scripts/sync-grammars.mjs puts them there — and cached for the app's
+ * lifetime. A file whose language has no grammar simply reports
+ * `language: null` and the UI keeps its line diff.
  */
 import { app } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { readFile } from 'fs/promises'
 import type { SemanticChange, SemanticDiff, SemanticSymbolKind } from '../shared/types'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// web-tree-sitter ships CommonJS with an emscripten runtime; it is required
-// lazily so a missing grammar folder can never break app start-up.
-type TsNode = any
-type TsParser = any
+// Types only: the module itself is required lazily (getTreeSitter), so a
+// missing grammar folder or a broken runtime can never break app start-up.
+import type * as TreeSitter from 'web-tree-sitter'
+
+type TsNode = TreeSitter.Node
+type TsModule = typeof TreeSitter
 
 /** Which declaration node types matter, and what to call them in the UI. */
 interface LangSpec {
@@ -134,8 +137,8 @@ const LANGS: Record<string, LangSpec> = {
     grammar: 'kotlin',
     nodes: { function_declaration: 'function', class_declaration: 'class', object_declaration: 'class' }
   },
-  // No Dart: the published tree-sitter-dart WASM targets a newer grammar ABI
-  // than web-tree-sitter 0.24 accepts, so it would only ever fail to load.
+  // No Dart: the WASM in tree-sitter-dart@1.0.0 uses the pre-0.25 module format,
+  // which web-tree-sitter 0.27 refuses — it would need a vendored build like Swift.
   scala: {
     grammar: 'scala',
     nodes: {
@@ -145,10 +148,9 @@ const LANGS: Record<string, LangSpec> = {
       trait_definition: 'interface'
     }
   },
-  lua: {
-    grammar: 'lua',
-    nodes: { function_definition_statement: 'function', local_function_definition_statement: 'function' }
-  },
+  // tree-sitter-grammars' Lua: `function f()` and `local function f()` are both
+  // a function_declaration (the old Azganoth grammar split them in two).
+  lua: { grammar: 'lua', nodes: { function_declaration: 'function' } },
   sh: { grammar: 'bash', nodes: { function_definition: 'function' } },
   bash: { grammar: 'bash', nodes: { function_definition: 'function' } },
   zig: { grammar: 'zig', nodes: { function_declaration: 'function' } }
@@ -166,34 +168,37 @@ function grammarDir(): string {
     : join(__dirname, '../../resources/tree-sitter')
 }
 
-let parserInit: Promise<TsParser> | null = null
-const languages = new Map<string, Promise<unknown | null>>()
+let treeSitterInit: Promise<TsModule> | null = null
+const languages = new Map<string, Promise<TreeSitter.Language | null>>()
 
-/** The web-tree-sitter module, initialised once with our WASM runtime. */
-async function getParserClass(): Promise<TsParser> {
-  if (!parserInit) {
-    parserInit = (async () => {
+/** The web-tree-sitter module (`{ Parser, Language }`), initialised once with our WASM runtime. */
+async function getTreeSitter(): Promise<TsModule> {
+  if (!treeSitterInit) {
+    treeSitterInit = (async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const Parser = require('web-tree-sitter')
-      const runtime = join(grammarDir(), 'tree-sitter.wasm')
-      await Parser.init({ locateFile: () => runtime })
-      return Parser
+      const treeSitter: TsModule = require('web-tree-sitter')
+      // 0.25 renamed the runtime from tree-sitter.wasm; sync-grammars copies it.
+      const runtime = join(grammarDir(), 'web-tree-sitter.wasm')
+      await treeSitter.Parser.init({ locateFile: () => runtime })
+      return treeSitter
     })().catch((err) => {
-      parserInit = null
+      treeSitterInit = null
       throw err
     })
   }
-  return parserInit
+  return treeSitterInit
 }
 
-async function loadLanguage(grammar: string): Promise<unknown | null> {
+async function loadLanguage(grammar: string): Promise<TreeSitter.Language | null> {
   let pending = languages.get(grammar)
   if (!pending) {
     pending = (async () => {
       const file = join(grammarDir(), `tree-sitter-${grammar}.wasm`)
       if (!existsSync(file)) return null
-      const Parser = await getParserClass()
-      return await Parser.Language.load(file)
+      const { Language } = await getTreeSitter()
+      // Bytes, not a path: the read stays ours, instead of the runtime choosing
+      // between fs and fetch and dynamically importing fs/promises to do it.
+      return await Language.load(await readFile(file))
     })().catch(() => null)
     languages.set(grammar, pending)
   }
@@ -457,16 +462,18 @@ export async function parseSymbols(path: string, text: string): Promise<Symbol[]
   if (!spec) return null
   const language = await loadLanguage(spec.grammar)
   if (!language) return null
-  const Parser = await getParserClass()
+  const { Parser } = await getTreeSitter()
   const parser = new Parser()
   try {
     parser.setLanguage(language)
+    // null only when parsing is cancelled or times out, neither of which we set.
     const tree = parser.parse(text)
+    if (!tree) return null
     const symbols = collectSymbols(tree.rootNode, spec)
-    tree.delete?.()
+    tree.delete()
     return symbols
   } finally {
-    parser.delete?.()
+    parser.delete()
   }
 }
 

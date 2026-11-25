@@ -1,0 +1,11 @@
+{
+  "name": "tree-sitter-swift",
+  "version": "0.7.1",
+  "private": true,
+  "description": "Provenance of the vendored tree-sitter-swift.wasm (see README.md). Not installed by npm.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alex-pinkus/tree-sitter-swift.git"
+  }
+}

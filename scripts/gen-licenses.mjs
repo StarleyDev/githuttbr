@@ -9,7 +9,8 @@
  *
  * Scope is the production tree (every lockfile entry not flagged `dev`, the set
  * `npm ls --omit=dev --all` shows) plus Electron, which ships as the runtime
- * even though npm files it under devDeps.
+ * even though npm files it under devDeps, and the tree-sitter grammars, whose
+ * .wasm ships in resources/tree-sitter although their packages are devDeps.
  *
  * Run by `npm run build`; the result is committed so typecheck and tests work
  * on a fresh clone without a generate step.
@@ -112,7 +113,7 @@ function entryFor(dir) {
   }
 }
 
-function main() {
+async function main() {
   const lock = readJson(join(ROOT, 'package-lock.json'))
   const manifest = readJson(join(ROOT, 'package.json'))
   const packages = productionPackages(lock)
@@ -146,6 +147,15 @@ function main() {
   const e = entryFor(electron)
   entries.set(`${e.name}@${e.version}`, e)
 
+  // Imported here, not at the top: the broken-install test runs a lone copy of
+  // this script, which must still reach the `missing` failure above.
+  const { GRAMMARS, grammarSource } = await import('./grammars.mjs')
+  for (const dir of new Set(GRAMMARS.map((g) => join(ROOT, grammarSource(g))))) {
+    if (!existsSync(join(dir, 'package.json'))) fail(`${dir.slice(ROOT.length + 1)} is not installed — run npm ci`)
+    const g = entryFor(dir)
+    entries.set(`${g.name}@${g.version}`, g)
+  }
+
   const list = [...entries.values()].sort((a, b) => a.name.localeCompare(b.name))
   writeFileSync(OUT, `${JSON.stringify(list, null, 2)}\n`)
 
@@ -153,4 +163,4 @@ function main() {
   console.log(`licenses: ${list.length} packages (${withText} with full text) → ${OUT.replace(`${ROOT}/`, '')}`)
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main()
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main()
