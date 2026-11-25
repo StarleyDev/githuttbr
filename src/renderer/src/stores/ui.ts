@@ -73,13 +73,21 @@ export interface ContextMenuState {
 }
 
 /** The modal kinds that can also be stacked over another modal (see `dialog`). */
-export type DialogSpec = Extract<ModalSpec, { kind: 'confirm' } | { kind: 'input' } | { kind: 'settings-import' }>
+export type DialogSpec = Extract<
+  ModalSpec,
+  { kind: 'confirm' } | { kind: 'input' } | { kind: 'settings-import' } | { kind: 'settings-export' }
+>
 
 /** Whether a modal spec is a question that can be stacked over another modal.
- *  The import dialog is one too: it is asked from Settings → Data, and opening
- *  it in the modal slot would close Settings under it. */
+ *  The import and export dialogs are too: they are asked from Settings → Data,
+ *  and opening them in the modal slot would close Settings under them. */
 export function isDialogSpec(modal: ModalSpec): modal is DialogSpec {
-  return modal.kind === 'confirm' || modal.kind === 'input' || modal.kind === 'settings-import'
+  return (
+    modal.kind === 'confirm' ||
+    modal.kind === 'input' ||
+    modal.kind === 'settings-import' ||
+    modal.kind === 'settings-export'
+  )
 }
 
 /** Where a dialog opened from Open repository goes back to: that window, for
@@ -200,6 +208,8 @@ export type ModalSpec =
   | { kind: 'launcher'; groupId?: string }
   /** A picked, unlocked settings export: choose its parts before applying. */
   | { kind: 'settings-import'; settings: Partial<AppSettings>; bundle: SettingsBundle | null }
+  /** Choose the parts of this machine's settings an export file carries. */
+  | { kind: 'settings-export' }
   /** The repositories the scanned folders hold, to open — or, with `groupId`,
    *  to add to that group. Also where the scanned folders are managed. */
   /** `from: 'launcher'` when opened from Open repository: it offers a way back

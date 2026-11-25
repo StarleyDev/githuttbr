@@ -3,7 +3,7 @@ title: Security & secrets
 category: Security
 order: 70
 summary: Masking, guards, the keychain — and what Gitcito refuses to do.
-keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable backup parts translate paths remap another computer new machine
+keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable backup parts translate paths remap another computer new machine merge profiles replace profiles choose what to export full backup another computer for the team manifest
 ---
 
 # Security & secrets
@@ -97,9 +97,17 @@ On Linux the keychain is a secret service — GNOME Keyring or KWallet. When non
 is running, the system still "encrypts", but with a fixed password that is the
 same on every machine: the tokens and keys are scrambled, not protected.
 Settings → Security says so under the keychain status — *No keyring is running…*
-— so the word *keychain* never stands for protection that is not there. Install
-or unlock a keyring and restart Gitcito. What was saved meanwhile stays readable:
-the warning does not lock you out of it.
+— so the word *keychain* never stands for protection that is not there.
+
+So that nothing new lands in a store anyone could unscramble, a token you type
+while no keyring runs is kept **only until you quit**. The token field says so —
+*Saved only until you quit Gitcito: no keyring is running…* — with no button to
+retry, because retrying cannot help; only a keyring can. Tokens saved before stay
+readable — you are never locked out of them — and clearing or replacing one still
+removes the old value from disk. Two limits: the general AI key is not moved to its
+shared slot (each profile keeps reading its own), and the Vault still saves to the
+basic store, because it has no session-only mode. Install or unlock a keyring and
+restart Gitcito to store new tokens again.
 
 ### When the saved tokens cannot be read
 
@@ -123,6 +131,59 @@ machines. The default export carries **no tokens or API keys**, and importing
 such a file never touches the ones you have saved — a blank token in the file
 means "not in this file", not "remove mine".
 
+### Choosing what to export
+
+A backup and a file for a colleague are not the same file. A backup wants
+everything; a file for another computer should not carry folders that do not
+exist there; a file for the team should carry neither your accounts nor your
+paths. So **Export settings** opens a dialog with the same four parts the import
+offers (the table below), each with its size on this computer, and writes only
+the ones you tick. A part left out is not in the file at all — importing it
+later leaves that part of the other machine exactly as it is.
+
+![Settings → Data → Export: "Another computer" picked, the green note saying the file carries no path of this machine, and the manifest of what goes in](../screenshots/settings-export.webp)
+
+Three shortcuts above the parts tick the usual combinations. Changing a
+checkbox by hand lights the shortcut that matches, or none:
+
+| Shortcut | Parts | For |
+|----------|-------|-----|
+| **Full backup** | All four | Restoring this computer, or a copy of it — the same file Export wrote before it had parts |
+| **Another computer** | Profiles and accounts, App preferences | Your identity and taste on a new machine, without this one's folders and programs |
+| **For the team** | App preferences | A shared theme, shortcuts and graph setup — nothing personal, no paths |
+
+Under the parts, a note says whether the file names folders or programs of this
+computer: amber with **Repositories** or **Programs** ticked (the import on
+another machine translates those paths or leaves out the ones it cannot find),
+green without them. **Profiles and accounts** without **Programs** also leaves
+out the path of the AI CLIs, which are stored with the profiles but name
+binaries of this machine.
+
+**Credentials only with Profiles, and only when you ask.** Tokens and API keys
+belong to profiles, so **Include API keys, tokens & Vault secrets** is available
+only with **Profiles and accounts** ticked; untick the part and the opt-in is
+cleared with it. With credentials ticked, the dialog recommends **Protect with
+a password** (below), and exporting them unencrypted asks once more.
+
+A box at the bottom lists what the file will contain before you press
+**Export…**: how many profiles (with or without credentials), profile pictures,
+preferences, repository and program paths, whether the repository notes and
+wikis and the vault go in, which parts are left out, and whether the file is
+encrypted. What travels with which part:
+
+| Extra | Goes with | Condition |
+|-------|-----------|-----------|
+| Profile pictures | Profiles and accounts | Pictures chosen as an image |
+| Vault secrets | Profiles and accounts | Only with the credentials opt-in |
+| Repository notes and wikis | Repositories and workspaces | Always with the part |
+
+Limits: the parts are the whole unit — there is no picking single profiles,
+single repositories or single preferences. **Programs** without **Profiles**
+carries the terminal, editor and default apps, but not the AI CLI paths (they
+live inside the profiles). The manifest counts entries; it does not show the
+paths themselves. And a file without a part cannot give it back: restoring a
+**For the team** file restores preferences only.
+
 ### Choosing what to import
 
 A settings file holds two kinds of thing: what follows *you* (profiles, theme,
@@ -144,6 +205,41 @@ as it was.
 
 Each part shows how many entries the file has for it. A part left unticked
 stays exactly as it is on this machine.
+
+**Profiles merge with yours.** A file from another computer rarely has every
+profile this one has — an account added on the Linux laptop, a client profile
+that only exists on the Mac. So **Profiles and accounts** adds the file's
+profiles to yours instead of replacing the list. Before you import, the part
+lists every profile and what happens to it:
+
+| Tag | Meaning |
+|-----|---------|
+| **Update** | The profile is in both: the file's identity, AI and picture replace yours, and its servers are added to yours |
+| **New** | Only the file has it: added after yours |
+| **Keeps** | Only this computer has it: left exactly as it is |
+
+Two profiles are "the same" when they share an id — the first profile on every
+install does. When no id matches, the name does (ignoring case and surrounding
+spaces), and the profile keeps **this computer's id**: the repositories bound
+to it, the active profile, its saved credentials and its picture all stay
+attached. Which profile is active does not change, and neither does the
+**general AI**: the engine and model this computer answers with stay its own.
+
+**Replace all** is still there, for a backup you want back exactly as it was:
+only the file's profiles remain, and the ones only this computer has are listed
+struck through as **Removed**. Pressing **Import** then asks once more, naming
+them — they go with their saved credentials and picture, and that cannot be
+undone. With **Replace all** the file's active profile becomes the active one,
+and the file's general AI replaces this computer's.
+
+Limits: matching is by id or exact name only — a profile renamed on one side
+counts as new, and you end up with both. A matched profile takes the file's
+fields, with three exceptions so that nothing only this computer has is lost:
+its GitHub Enterprise, GitLab and Bitbucket servers are **added** to yours
+(the file's entry wins on a server both have); a token the file carries blank
+keeps yours — but only for the same instance, so a token is never sent to a
+different Forgejo, GitLab issuer or Azure organization; and the logins borrowed
+from this machine's credential helper stay this machine's.
 
 **The defaults are a guess from your disk.** Before the dialog shows, Gitcito
 checks whether the repository folders in the file exist here. If none do, the
@@ -197,8 +293,11 @@ earlier steps again.
 
 ### Credentials in the file
 
-A file exported with the opt-in carries credentials, and only such a file shows
-the choice, right under **Profiles and accounts**:
+A file exported with the opt-in carries credentials. Merging profiles always
+**adds** them: the file's are filed under the matching profile, replacing any
+for the same account, and every other saved credential stays — clearing them
+would contradict keeping your profiles. With profiles on **Replace all**, such
+a file also shows the choice, right under **Profiles and accounts**:
 
 | Choice | Your saved credentials |
 |--------|------------------------|
@@ -225,7 +324,7 @@ takes its saved tokens with it, whichever you choose.
 
 An export with the credentials ticked is as good as the tokens themselves to
 whoever finds the file — a synced folder, a forgotten USB stick, an attachment.
-**Protect with a password**, under the export button, encrypts the file with the
+**Protect with a password**, in the export dialog, encrypts the file with the
 same cipher as [Secure share](secure-share.md) (a scrypt-derived key and
 AES-256-GCM), so nothing in it — not even whether it carries credentials — can
 be read without the password.
@@ -235,7 +334,7 @@ minimum length. You type it twice and tick that you understand it cannot be
 recovered; importing the file asks for it — in a dialog in Settings, inside the
 welcome step on first run — and a wrong one asks again.
 
-![Settings → Data: an export protected with a password, the no-recovery warning acknowledged](../screenshots/settings-export-password.webp)
+![Settings → Data → Export: a file protected with a password, the no-recovery warning acknowledged](../screenshots/settings-export-password.webp)
 
 | | Without a password | With a password |
 |---|---|---|

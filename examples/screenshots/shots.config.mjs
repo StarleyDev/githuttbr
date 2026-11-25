@@ -1139,16 +1139,20 @@ export const shots = [
     }
   },
   {
-    // Settings → Data: an export protected with a password — both fields
-    // filled, the no-recovery warning acknowledged, Export enabled.
+    // Settings → Data → Export: a file protected with a password — both fields
+    // filled, the no-recovery warning acknowledged, Export enabled. The
+    // password lives in the export dialog, stacked over Settings.
     out: 'settings-export-password',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'data' }))
-      const protect = page.locator('.settings-toggle-card', { hasText: 'Protect with a password' })
+      await page.evaluate(() => {
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'data' })
+        window.__shot.ui.getState().openDialog({ kind: 'settings-export' })
+      })
+      const protect = page.locator('.export-opt', { hasText: 'Protect with a password' })
       await protect.waitFor()
-      await protect.click()
+      await protect.locator('input').check()
       const fields = page.locator('.settings-export-password input[type="password"]')
       await fields.nth(0).fill('correct horse battery staple')
       await fields.nth(1).fill('correct horse battery staple')
@@ -2696,7 +2700,9 @@ export const shots = [
           profiles: [
             { id: 'p-work', name: 'Work' },
             { id: 'p-personal', name: 'Personal' },
-            { id: 'p-oss', name: 'Open source' }
+            { id: 'p-oss', name: 'Open source' },
+            // Same name as the demo's own profile, under another id: shows "Update".
+            { id: 'p-octo-linux', name: 'Octocat' }
           ],
           activeProfileId: 'p-work',
           theme: 'githuttbr',
@@ -2722,6 +2728,27 @@ export const shots = [
       await to.waitFor()
       await to.fill('/tmp/githuttbr-demo')
       await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Settings → Data → Export: the same four parts as the import, chosen
+    // before the file is written. "Another computer" ticks Profiles and
+    // Preferences — the green note says the file names no path of this
+    // machine — and the manifest lists what goes in and what is left out.
+    // Counts come from the capture's own settings; the dialog shows no path.
+    out: 'settings-export',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'data' })
+        window.__shot.ui.getState().openDialog({ kind: 'settings-export' })
+      })
+      const preset = page.locator('.export-preset').nth(1)
+      await preset.waitFor()
+      await preset.click()
+      await page.locator('.export-manifest').waitFor()
+      await page.waitForTimeout(300)
     }
   },
   {

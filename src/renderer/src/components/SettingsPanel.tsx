@@ -38,7 +38,6 @@ import {
   Sparkles,
   Download,
   Upload,
-  AlertTriangle,
   HardDrive,
   Database,
   Activity,
@@ -84,17 +83,15 @@ import { GithubEnterpriseSettings } from './GithubEnterpriseSettings'
 import { BitbucketServerSettings } from './BitbucketServerSettings'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
 import type { AnalyzerMode } from '../../../shared/types'
 import type { LocalCiStatus } from '../../../shared/localCi'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
-import { personalOf, withoutAISecretsSeed } from '../../../shared/aiScope'
-import { hasStoredImage } from '../../../shared/profileAvatar'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
-import { stripSettingsSecrets } from '../../../shared/secrets'
+import { personalOf } from '../../../shared/aiScope'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
@@ -2695,59 +2692,8 @@ function ThemeDialog({
 
 function DataManagementSection(): React.JSX.Element {
   const t = useT()
-  const settings = useSettingsStore((s) => s.settings)
   const toast = useUIStore((s) => s.toast)
-  const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [exportIncludeSecrets, setExportIncludeSecrets] = useState(false)
-  const [showExportWarn, setShowExportWarn] = useState(false)
-  // Optional password protection. Held only here, sent once with the export,
-  // and cleared after it — never saved anywhere.
-  const [protect, setProtect] = useState(false)
-  const [password, setPassword] = useState('')
-  const [passwordAgain, setPasswordAgain] = useState('')
-  const [noRecoveryAck, setNoRecoveryAck] = useState(false)
-  const passwordsDiffer = passwordAgain.length > 0 && password !== passwordAgain
-  const protectReady = !protect || (password.length > 0 && password === passwordAgain && noRecoveryAck)
-  const clearPassword = (): void => {
-    setPassword('')
-    setPasswordAgain('')
-    setNoRecoveryAck(false)
-  }
-
-  const doExport = async (): Promise<void> => {
-    setExporting(true)
-    try {
-      // Bundle everything except the machine-local analytics/usage ledger (it
-      // lives in its own store and is never part of settings). Secrets — profile
-      // API tokens AND the vault — only go in when the user opts in.
-      const bundle: SettingsBundle = {
-        __githuttbr: 'settings-export',
-        version: 1,
-        // The keychain seed names this machine's profiles: never exported.
-        settings: withoutAISecretsSeed(exportIncludeSecrets ? settings : stripSettingsSecrets(settings)),
-        info: await infoApi.exportAll()
-      }
-      if (exportIncludeSecrets) bundle.vault = await vaultApi.exportAll()
-      // Pictures live outside settings (one PNG per profile); ship the ones in use.
-      const withImage = settings.profiles.filter((p) => hasStoredImage(p.avatar)).map((p) => p.id)
-      if (withImage.length) {
-        const avatars = await profileAvatarApi.exportAll(withImage)
-        if (Object.keys(avatars).length) bundle.avatars = avatars
-      }
-      const sealed = protect && password.length > 0
-      const ok = await settingsApi.exportFile(bundle, sealed ? password : undefined)
-      if (ok) {
-        toast('success', t(sealed ? 'settings.exportedEncrypted' : 'settings.exported'))
-        clearPassword()
-        setProtect(false)
-      }
-    } catch {
-      toast('error', t('settings.exportFailed'))
-    } finally {
-      setExporting(false)
-    }
-  }
 
   const doImport = async (): Promise<void> => {
     setImporting(true)
@@ -2784,113 +2730,13 @@ function DataManagementSection(): React.JSX.Element {
           {importing ? <Loader2 size={13} className="spin" /> : <Upload size={13} />}
           {t('settings.importSettings')}
         </button>
-        <button
-          className="btn ghost small"
-          onClick={() => {
-            // Encrypted, the file is no longer readable by whoever finds it.
-            if (exportIncludeSecrets && !protect) setShowExportWarn(true)
-            else void doExport()
-          }}
-          disabled={exporting || !protectReady}
-        >
-          {exporting ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+        {/* The parts, the credentials opt-in and the password are chosen in the
+            export dialog, stacked over Settings like the import one. */}
+        <button className="btn ghost small" onClick={() => useUIStore.getState().openModal({ kind: 'settings-export' })}>
+          <Download size={13} />
           {t('settings.exportSettings')}
         </button>
       </div>
-      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-        <input
-          type="checkbox"
-          checked={exportIncludeSecrets}
-          onChange={(e) => {
-            setExportIncludeSecrets(e.target.checked)
-            if (!e.target.checked) setShowExportWarn(false)
-          }}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.includeSecrets')}</strong>
-          <span className="settings-hint">{t('settings.includeSecretsHint')}</span>
-        </span>
-      </label>
-      <label className="settings-toggle-card" style={{ marginTop: 8 }}>
-        <input
-          type="checkbox"
-          checked={protect}
-          onChange={(e) => {
-            setProtect(e.target.checked)
-            if (e.target.checked) setShowExportWarn(false)
-            else clearPassword()
-          }}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.exportProtect')}</strong>
-          <span className="settings-hint">{t('settings.exportProtectHint')}</span>
-        </span>
-      </label>
-      {protect && (
-        <div className="settings-export-password">
-          <label className="settings-field">
-            <span className="settings-field-label">{t('settings.exportPassword')}</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              spellCheck={false}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          <label className="settings-field">
-            <span className="settings-field-label">{t('settings.exportPasswordConfirm')}</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              spellCheck={false}
-              value={passwordAgain}
-              aria-invalid={passwordsDiffer}
-              onChange={(e) => setPasswordAgain(e.target.value)}
-            />
-          </label>
-          {passwordsDiffer && (
-            <p className="settings-export-password-error" role="alert">
-              {t('settings.exportPasswordMismatch')}
-            </p>
-          )}
-          <div className="settings-export-norecovery">
-            <AlertTriangle size={14} aria-hidden="true" />
-            <div>
-              <strong>{t('settings.exportNoRecovery')}</strong>
-              <label className="settings-export-ack">
-                <input type="checkbox" checked={noRecoveryAck} onChange={(e) => setNoRecoveryAck(e.target.checked)} />
-                {t('settings.exportNoRecoveryAck')}
-              </label>
-            </div>
-          </div>
-        </div>
-      )}
-      {showExportWarn && (
-        <div style={{
-          display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 10,
-          background: 'color-mix(in srgb, var(--yellow) 10%, var(--bg-3))',
-          border: '1px solid color-mix(in srgb, var(--yellow) 25%, transparent)',
-          borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--text-1)'
-        }}>
-          <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} color="var(--yellow)" />
-          <div>
-            <strong>{t('settings.exportWarnTitle')}</strong>
-            <br />
-            {t('settings.exportWarnBody')}
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <button className="btn danger small" onClick={() => { setShowExportWarn(false); void doExport() }}>{t('settings.exportAnyway')}</button>
-              <button className="btn ghost small" onClick={() => { setShowExportWarn(false); setExportIncludeSecrets(false) }}>{t('common.cancel')}</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

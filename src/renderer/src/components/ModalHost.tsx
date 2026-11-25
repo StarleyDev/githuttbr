@@ -41,6 +41,7 @@ import { AbsorbModal } from './AbsorbModal'
 import { CliEditModal } from './CliEditModal'
 import { TimeMachineModal } from './TimeMachineModal'
 import { ImportSettingsDialog } from './ImportSettingsDialog'
+import { ExportSettingsDialog } from './ExportSettingsDialog'
 import { TimelapseModal } from './TimelapseModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
@@ -2479,7 +2480,7 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-create-pr'
                   : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
-                  : modal.kind === 'settings-import'
+                  : modal.kind === 'settings-import' || modal.kind === 'settings-export'
                   ? 'modal-settings-import'
                   : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'
@@ -2543,6 +2544,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
               {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
               {modal.kind === 'settings-import' && <ImportSettingsDialog spec={modal} />}
+              {modal.kind === 'settings-export' && <ExportSettingsDialog />}
               {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
               {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
               {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
@@ -2655,7 +2657,11 @@ export function ModalHost(): React.JSX.Element {
             }}
           >
             <motion.div
-              className={dialog.kind === 'settings-import' ? 'modal modal-settings-import' : 'modal'}
+              className={
+                dialog.kind === 'settings-import' || dialog.kind === 'settings-export'
+                  ? 'modal modal-settings-import'
+                  : 'modal'
+              }
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 6 }}
@@ -2671,6 +2677,7 @@ export function ModalHost(): React.JSX.Element {
                 {dialog.kind === 'confirm' && <ConfirmModal spec={dialog} onClose={closeDialog} />}
                 {dialog.kind === 'input' && <InputModal spec={dialog} onClose={closeDialog} />}
                 {dialog.kind === 'settings-import' && <ImportSettingsDialog spec={dialog} onClose={closeDialog} />}
+                {dialog.kind === 'settings-export' && <ExportSettingsDialog onClose={closeDialog} />}
               </div>
             </motion.div>
           </motion.div>

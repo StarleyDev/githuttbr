@@ -2130,7 +2130,9 @@ export interface SettingsBundle {
    *  this shape. */
   __githuttbr: 'settings-export'
   version: 1
-  settings: AppSettings
+  /** Only the parts chosen at export time: a part left out is absent, and the
+   *  import reads a missing key as "leave this machine's value alone". */
+  settings: Partial<AppSettings>
   info?: InfoExport
   vault?: VaultExport
   /** Profile pictures chosen as an image, by profile id, as PNG data URLs. */
