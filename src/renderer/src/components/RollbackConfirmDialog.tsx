@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { AlertTriangle, KeyRound, Undo2 } from 'lucide-react'
+import { AlertTriangle, Bug, KeyRound, Undo2 } from 'lucide-react'
 import { useT, interp } from '../i18n'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRollbackStore } from '../stores/rollback'
 import { keysUnknownTo } from '../../../shared/settingsFormat'
+import { rollbackIssueUrl } from '../lib/issueReport'
+import { shellApi } from '../infrastructure/api'
 
 type Spec = Extract<ModalSpec, { kind: 'version-rollback' }>
 
@@ -29,7 +31,23 @@ export function RollbackConfirmDialog({ spec, onClose }: { spec: Spec; onClose?:
     <div className="rollback-confirm">
       <h3>
         <Undo2 size={16} /> {interp(t('rollback.confirmTitle'), { version: target })}
+        <span className="beta-badge">{t('rollback.beta')}</span>
       </h3>
+      <div className="rollback-last-resort" role="note">
+        <AlertTriangle size={15} />
+        <div>
+          <strong>{t('rollback.lastResortTitle')}</strong>
+          <p>{t('rollback.lastResortText')}</p>
+          <p>{t('rollback.reportFirst')}</p>
+          <button
+            className="btn ghost small rollback-report-btn"
+            type="button"
+            onClick={() => void shellApi.openExternal(rollbackIssueUrl(current, target))}
+          >
+            <Bug size={12} /> {t('rollback.report')}
+          </button>
+        </div>
+      </div>
       <p className="rollback-confirm-lead">{interp(t('rollback.confirmLead'), { current, version: target })}</p>
 
       <ol className="rollback-steps">

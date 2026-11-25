@@ -2,8 +2,8 @@
 title: Going back to an earlier version
 category: Recovery & safety
 order: 62
-summary: An update broke something? Roll back to an earlier version from Settings → About, with your settings copied first.
-keywords: rollback roll back downgrade previous version older version revert update broke undo update skip version settings backup copy restore about releases appimage deb
+summary: Beta. An update broke something? As a last resort, go back to one of the three previous versions from Settings → About, with your settings copied first.
+keywords: beta last resort temporary report bug issue rollback roll back downgrade previous version older version revert update broke undo update skip version settings backup copy restore about releases appimage deb
 ---
 
 # Going back to an earlier version
@@ -17,6 +17,35 @@ by hand, and hoping the older build would read the settings the newer one wrote.
 version, confirm, and Gitcito copies your settings, downloads that version,
 restarts in it, and stops offering the version you left. **Cancel** stops it
 while it is still downloading; nothing is installed.
+
+> **Beta.** Going back is new, and marked so in Settings and in the
+> confirmation.
+
+## A last resort, and only for a while
+
+Go back only when the version you are on has an error or a problem you cannot
+work around. An earlier version is a stopgap, not a place to stay: it misses
+the fixes and features that came after it, and the version you left is not
+offered again — so update as soon as a fixed version is out.
+
+Before that, **report the bug**. Both the warning above the list and the
+confirmation have a **Report the problem** button that opens a GitHub issue
+already filled in with the version you are on (and, in the confirmation, the
+version you are going back to). A rollback without a report leaves the bug in
+place for the next update too.
+
+## Which versions are offered
+
+Only the **three most recent** earlier versions, newest first — published
+releases, never a pre-release, never one older than 4.50.0 (see
+[Limits](#limits)), and never the version a previous rollback left. A problem in
+the latest release is fixed by the next one; going further back than a few
+versions trades one problem for many others.
+
+Anything older is a download away: **Need another version? Open the Releases
+page** under the list opens the repository's Releases page, where every version
+is kept. The app checks the same rule again before it installs anything, so a
+version outside these three is refused even if asked for.
 
 ![Settings → About, with the previous versions and the settings copies](../screenshots/settings-rollback.webp)
 
@@ -132,5 +161,7 @@ a name (`auth: "oauth"`) is dropped all the same — the rule errs on the safe s
   a setting it *does* know (a new theme, a new column) falls back to its default
   there, as it always has — and after updating, that reset counts as a change
   when Gitcito asks whether to restore the copy.
+- **Three versions, no more.** An older version is installed by hand from the
+  Releases page, without the settings copy, the skipped version or the banner.
 - **The list needs GitHub.** It is read from the public releases, without a
   token. Offline or rate-limited, it says so; the Releases page still works.

@@ -19752,3 +19752,51 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   text-transform: uppercase;
   color: var(--text-3);
 }
+
+/* A feature still settling in: a small amber pill beside its heading. */
+.beta-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 8px;
+  padding: 1.5px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent);
+}
+/* Going back is a last resort, and temporary: said in amber before the list. */
+.rollback-last-resort {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--yellow) 10%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--yellow) 25%, transparent);
+}
+.rollback-last-resort > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--yellow);
+}
+.rollback-last-resort strong {
+  color: var(--text-0);
+}
+.rollback-last-resort p {
+  margin: 2px 0 0;
+}
+.rollback-more {
+  margin: 0 0 18px;
+}
+.rollback-last-resort .rollback-report-btn {
+  margin-top: 8px;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, ExternalLink, FolderOpen, History, Info, Loader2, RefreshCw, RotateCcw, Undo2 } from 'lucide-react'
+import { AlertTriangle, Bug, ExternalLink, FolderOpen, History, Info, Loader2, RefreshCw, RotateCcw, Undo2 } from 'lucide-react'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { useRollbackStore } from '../stores/rollback'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
@@ -7,7 +7,14 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { settingsBackupsApi, shellApi } from '../infrastructure/api'
 import { timeAgo } from '../lib/timeAgo'
-import { BACKUPS_KEPT, LAST_UNSAFE_ROLLBACK_VERSION, isRollbackSafe } from '../../../shared/rollback'
+import { rollbackIssueUrl } from '../lib/issueReport'
+import {
+  BACKUPS_KEPT,
+  LAST_UNSAFE_ROLLBACK_VERSION,
+  ROLLBACK_CHOICES,
+  isRollbackSafe,
+  rollbackChoices
+} from '../../../shared/rollback'
 import { APP_REPO_URL } from '../../../shared/appRepo'
 import type { SettingsBackup } from '../../../shared/types'
 
@@ -71,6 +78,10 @@ export function AboutSettingsPage(): React.JSX.Element {
   const blocked = support && !support.supported
   const openReleases = (): void => void shellApi.openExternal(RELEASES_URL)
   const listed = releases.status === 'ok' ? releases.releases : []
+  // Only the most recent few (`rollbackChoices`, the rule main enforces too); the rest is on the Releases page.
+  const choices = appVersion ? rollbackChoices(listed, appVersion, versionRollback) : []
+  // Fewer than the usual few because older ones are refused: say why.
+  const unsafeCut = choices.length < ROLLBACK_CHOICES && listed.some((r) => !isRollbackSafe(r.version))
 
   const confirmRestore = (b: SettingsBackup): void =>
     openDialog({
@@ -93,7 +104,9 @@ export function AboutSettingsPage(): React.JSX.Element {
         ? t('rollback.errorMissingPlatform')
         : progress.error === 'backup-failed'
           ? t('rollback.errorBackup')
-          : (progress.error ?? '')
+          : progress.error === 'not-offered'
+            ? t('rollback.errorNotOffered')
+            : (progress.error ?? '')
     return interp(t('rollback.error'), { version, error })
   }
 
@@ -134,8 +147,27 @@ export function AboutSettingsPage(): React.JSX.Element {
       <h4 className="settings-section-title" data-setting="rollback.title">
         <History size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
         {t('rollback.title')}
+        <span className="beta-badge">{t('rollback.beta')}</span>
       </h4>
       <p className="settings-hint">{t('rollback.intro')}</p>
+
+      <div className="rollback-last-resort" role="note">
+        <AlertTriangle size={15} />
+        <div>
+          <strong>{t('rollback.lastResortTitle')}</strong>
+          <p>{t('rollback.lastResortText')}</p>
+          <p>{t('rollback.reportFirst')}</p>
+          {appVersion && (
+            <button
+              className="btn ghost small rollback-report-btn"
+              type="button"
+              onClick={() => void shellApi.openExternal(rollbackIssueUrl(appVersion))}
+            >
+              <Bug size={12} /> {t('rollback.report')}
+            </button>
+          )}
+        </div>
+      </div>
 
       {blocked && (
         <p className="settings-hint warn rollback-blocked">
@@ -182,49 +214,44 @@ export function AboutSettingsPage(): React.JSX.Element {
               <ExternalLink size={12} /> {t('rollback.openReleases')}
             </button>
           </div>
-        ) : listed.length === 0 ? (
+        ) : choices.length === 0 ? (
           <p className="settings-hint">{t('rollback.none')}</p>
         ) : (
           <>
-            {listed
-              .filter((r) => isRollbackSafe(r.version))
-              .map((r) => (
-                <div className="rollback-row" key={r.version}>
-                  <span className="rollback-version">v{r.version}</span>
-                  <span className="rollback-when">{ago(r.publishedAt)}</span>
-                  <span className="rollback-summary" title={r.summary}>
-                    {r.summary}
-                  </span>
-                  <button
-                    className="btn ghost small"
-                    type="button"
-                    onClick={() => void shellApi.openExternal(r.url || RELEASES_URL)}
-                  >
-                    {t('rollback.notes')}
-                  </button>
-                  <button
-                    className="btn small"
-                    type="button"
-                    disabled={!!blocked || switching || !appVersion}
-                    title={blocked ? t(support?.reason === 'dev' ? 'rollback.devDisabled' : 'rollback.platformDisabled') : undefined}
-                    onClick={() =>
-                      openDialog({ kind: 'version-rollback', target: r.version, current: appVersion, kindOfInstall: support?.kind ?? 'other' })
-                    }
-                  >
-                    <Undo2 size={12} /> {t('rollback.goBack')}
-                  </button>
-                </div>
-              ))}
-            {listed.some((r) => !isRollbackSafe(r.version)) && (
-              <div className="rollback-unsafe">
-                <AlertTriangle size={13} />
-                <span>{interp(t('rollback.unsafe'), { version: LAST_UNSAFE_ROLLBACK_VERSION })}</span>
-                <button className="btn ghost small" type="button" onClick={openReleases}>
-                  <ExternalLink size={12} /> {t('rollback.openReleases')}
+            {choices.map((r) => (
+              <div className="rollback-row" key={r.version}>
+                <span className="rollback-version">v{r.version}</span>
+                <span className="rollback-when">{ago(r.publishedAt)}</span>
+                <span className="rollback-summary" title={r.summary}>
+                  {r.summary}
+                </span>
+                <button
+                  className="btn ghost small"
+                  type="button"
+                  onClick={() => void shellApi.openExternal(r.url || RELEASES_URL)}
+                >
+                  {t('rollback.notes')}
+                </button>
+                <button
+                  className="btn small"
+                  type="button"
+                  disabled={!!blocked || switching || !appVersion}
+                  title={blocked ? t(support?.reason === 'dev' ? 'rollback.devDisabled' : 'rollback.platformDisabled') : undefined}
+                  onClick={() =>
+                    openDialog({ kind: 'version-rollback', target: r.version, current: appVersion, kindOfInstall: support?.kind ?? 'other' })
+                  }
+                >
+                  <Undo2 size={12} /> {t('rollback.goBack')}
                 </button>
               </div>
-            )}
+            ))}
           </>
+        )}
+        {releases.status === 'ok' && unsafeCut && (
+          <div className="rollback-unsafe">
+            <AlertTriangle size={13} />
+            <span>{interp(t('rollback.unsafe'), { version: LAST_UNSAFE_ROLLBACK_VERSION })}</span>
+          </div>
         )}
         {blocked && (
           <button className="btn ghost small rollback-releases-btn" type="button" onClick={openReleases}>
@@ -232,6 +259,14 @@ export function AboutSettingsPage(): React.JSX.Element {
           </button>
         )}
       </div>
+      {releases.status === 'ok' && !blocked && (
+        <p className="settings-hint rollback-more">
+          {t('rollback.moreVersions')}{' '}
+          <button className="link-btn" type="button" onClick={openReleases}>
+            {t('rollback.openReleases')}
+          </button>
+        </p>
+      )}
 
       <h4 className="settings-section-title" data-setting="backups.title">
         <RotateCcw size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />

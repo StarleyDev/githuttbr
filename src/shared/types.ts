@@ -3751,7 +3751,7 @@ export interface RollbackState {
   status: 'idle' | 'checking' | 'downloading' | 'downloaded' | 'error'
   target: string | null
   percent: number
-  /** A message, or a code the renderer words: `missing-platform`, `backup-failed`. */
+  /** A message, or a code the renderer words: `missing-platform`, `backup-failed`, `not-offered`. */
   error: string | null
   /** The settings copy taken before the download started. */
   backup: string | null

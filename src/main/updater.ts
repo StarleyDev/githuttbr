@@ -8,6 +8,7 @@ import {
   isOfferedAfterRollback,
   isRollbackSafe,
   previousVersions,
+  rollbackChoices,
   releaseDownloadUrl,
   type GithubReleaseJson
 } from '../shared/rollback'
@@ -372,6 +373,14 @@ async function listPreviousVersions(): Promise<RollbackReleasesReply> {
   }
 }
 
+/** Whether `version` is among the versions a rollback may go to now (`rollbackChoices`). */
+async function isOfferedTarget(version: string): Promise<boolean> {
+  const reply = await listPreviousVersions()
+  if (!reply.ok) return false
+  const settings = await readSettings().catch(() => null)
+  return rollbackChoices(reply.releases, app.getVersion(), settings?.versionRollback).some((r) => r.version === version)
+}
+
 /** Points the updater back at the normal feed — what app-update.yml names, `build.publish` in package.json. */
 function restoreFeed(): void {
   const [owner, repo] = REPO.split('/')
@@ -426,6 +435,13 @@ async function startRollback(version: string): Promise<void> {
   rollback = mine
   setRollback({ status: 'checking', target: version, percent: 0, error: null, backup: null })
   try {
+    // Only one of the versions Settings offers, checked here again against a
+    // fresh list: a renderer is not trusted to have applied the rule.
+    if (!(await isOfferedTarget(version))) {
+      if (rollback === mine) endRollback({ status: 'error', error: 'not-offered' })
+      return
+    }
+    if (rollback !== mine) return
     // The copy first: a switch without one is not started at all.
     const backup = await backupSettings(version, 'rollback')
     if (rollback !== mine) return

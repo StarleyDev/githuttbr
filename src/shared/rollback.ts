@@ -80,6 +80,39 @@ export function previousVersions(releases: GithubReleaseJson[], current: string)
   return out.sort((a, b) => compareVersions(b.version, a.version))
 }
 
+/**
+ * How many earlier versions are offered. Going back is a last resort for a
+ * release that broke something, and the fix is the next release: the most
+ * recent few cover that. Anything older is on the Releases page.
+ */
+export const ROLLBACK_CHOICES = 3
+
+/**
+ * The versions a rollback may go to, newest first: the `ROLLBACK_CHOICES`
+ * most recent published ones older than `current` that are safe to land on
+ * (`isRollbackSafe`), never a pre-release, and never the version a pending
+ * rollback left (`rollback.from`) — that is the one known to be broken. The
+ * same rule decides the list in Settings and what main accepts.
+ */
+export function rollbackChoices(
+  releases: RollbackRelease[],
+  current: string,
+  rollback?: VersionRollback,
+  limit = ROLLBACK_CHOICES
+): RollbackRelease[] {
+  const seen = new Set<string>()
+  return releases
+    .filter((r) => {
+      const v = r.version.replace(/^v/i, '')
+      if (!/^\d+\.\d+\.\d+$/.test(v) || seen.has(v)) return false
+      seen.add(v)
+      if (compareVersions(v, current) >= 0 || !isRollbackSafe(v)) return false
+      return !(rollback?.from && compareVersions(v, rollback.from) === 0)
+    })
+    .sort((a, b) => compareVersions(b.version, a.version))
+    .slice(0, limit)
+}
+
 /** Where a release's update files live: every release carries its own latest*.yml beside the installers. */
 export function releaseDownloadUrl(repo: string, version: string): string {
   return `https://github.com/${repo}/releases/download/v${version.replace(/^v/i, '')}/`

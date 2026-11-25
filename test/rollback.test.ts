@@ -10,7 +10,9 @@ import {
   parseBackupFileName,
   previousVersions,
   releaseDownloadUrl,
+  ROLLBACK_CHOICES,
   releaseSummary,
+  rollbackChoices,
   rollbackOnArrival,
   sortBackups,
   versionChange
@@ -25,7 +27,8 @@ import {
   unknownSettingsKeys,
   withUnknownKeys
 } from '../src/shared/settingsFormat'
-import { defaultSettings, type SettingsBackup } from '../src/shared/types'
+import { defaultSettings, type RollbackRelease, type SettingsBackup } from '../src/shared/types'
+import { rollbackIssueUrl } from '../src/renderer/src/lib/issueReport'
 
 // Going back a version (Settings → About): which versions qualify, which
 // updates stay hidden after, how the settings copies are named and kept, and
@@ -71,6 +74,49 @@ describe('rollback eligibility', () => {
   it('points the updater at the release’s own download folder', () => {
     expect(releaseDownloadUrl('owner/app', 'v4.51.0')).toBe('https://github.com/owner/app/releases/download/v4.51.0/')
     expect(releaseDownloadUrl('owner/app', '4.51.0')).toBe('https://github.com/owner/app/releases/download/v4.51.0/')
+  })
+})
+
+describe('which versions may be rolled back to', () => {
+  const rel = (version: string): RollbackRelease => ({ version, publishedAt: '', summary: '', url: '' })
+  const versions = (list: RollbackRelease[]): string[] => list.map((r) => r.version)
+
+  it(`offers only the ${ROLLBACK_CHOICES} most recent versions older than the running one`, () => {
+    const list = ['4.56.0', '4.55.0', '4.54.1', '4.54.0', '4.53.0', '4.52.0', '4.51.0'].map(rel)
+    expect(versions(rollbackChoices(list, '4.54.1'))).toEqual(['4.54.0', '4.53.0', '4.52.0'])
+    // Unsorted input, the same answer.
+    expect(versions(rollbackChoices([...list].reverse(), '4.54.1'))).toEqual(['4.54.0', '4.53.0', '4.52.0'])
+  })
+
+  it('offers fewer when fewer are safe, and none of the unsafe ones', () => {
+    const list = ['4.52.0', '4.51.0', LAST_UNSAFE_ROLLBACK_VERSION, '4.49.0'].map(rel)
+    expect(versions(rollbackChoices(list, '4.53.0'))).toEqual(['4.52.0', '4.51.0'])
+    expect(rollbackChoices(list, '4.51.0')).toEqual([])
+  })
+
+  it('never offers a pre-release or a duplicate', () => {
+    const list = ['4.53.0-rc.1', '4.52.0', 'v4.52.0', '4.51.0'].map(rel)
+    expect(versions(rollbackChoices(list, '4.54.0'))).toEqual(['4.52.0', '4.51.0'])
+  })
+
+  it('never offers the version a rollback left — the broken one', () => {
+    const list = ['4.55.0', '4.54.0', '4.53.0', '4.52.0', '4.51.0'].map(rel)
+    const left = { from: '4.54.0', to: '4.53.0', at: '' }
+    // Updated past the rollback, the record not yet cleared: 4.54.0 is skipped, the next one takes its place.
+    expect(versions(rollbackChoices(list, '4.55.0', left))).toEqual(['4.53.0', '4.52.0', '4.51.0'])
+    // Still on the version gone back to: only older ones, as always.
+    expect(versions(rollbackChoices(list, '4.53.0', left))).toEqual(['4.52.0', '4.51.0'])
+  })
+})
+
+describe('the pre-filled report', () => {
+  it('names the version with the problem, and the one gone back to when there is one', () => {
+    const before = new URL(rollbackIssueUrl('4.52.0'))
+    expect(before.searchParams.get('title')).toBe('Problem in v4.52.0')
+    expect(before.searchParams.get('body')).not.toContain('Going back to')
+    const going = new URL(rollbackIssueUrl('4.52.0', '4.51.2'))
+    expect(going.searchParams.get('title')).toBe('Problem in v4.52.0 (went back to v4.51.2)')
+    expect(going.searchParams.get('body')).toContain('**Going back to:** v4.51.2')
   })
 })
 
