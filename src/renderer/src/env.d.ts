@@ -241,6 +241,10 @@ interface PreloadApi {
     exportAll(): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
   }
+  fs: {
+    pathsExist(paths: string[]): Promise<unknown>
+    homeDir(): Promise<unknown>
+  }
   env: {
     check(): Promise<unknown>
     checkNetwork(): Promise<unknown>

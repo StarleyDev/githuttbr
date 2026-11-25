@@ -5811,11 +5811,11 @@ body.col-resizing .node-ava {
    list that scrolls on its own — get the body's height, so only that list
    moves. Settings is one, and so are the radar, time machine, range-diff and
    local CI. A new dialog of that shape adds its root here. */
-.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci)) {
+.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root)) {
   display: flex;
   flex-direction: column;
 }
-.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci) { min-height: 0; }
+.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) { min-height: 0; }
 /* Everything else scrolls as a whole, with its title pinned on top. The gap
    under it is padding, not margin, so scrolled content does not show through. */
 .modal-scroll > h3:first-child,
@@ -5851,6 +5851,293 @@ body.col-resizing .node-ava {
    two checkboxes breathe without wrapping. */
 .modal-create-pr {
   width: 440px;
+}
+
+/* ─── Settings import: choose the parts, translate the paths ───────────── */
+
+/* Wide enough for two path prefixes side by side. */
+.modal-settings-import {
+  width: 620px;
+}
+.import-dialog h3 {
+  margin-bottom: 4px;
+}
+.import-from {
+  font-size: 12px;
+  color: var(--text-1);
+  margin-bottom: 12px;
+}
+.import-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.import-body {
+  display: grid;
+  gap: 8px;
+}
+.import-part {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.import-part.on {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-2));
+}
+.import-part-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: start;
+  cursor: pointer;
+}
+.import-part-head input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+.import-part-head b {
+  font-size: 13px;
+}
+.import-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.import-what {
+  grid-column: 2 / -1;
+  font-size: 12px;
+  color: var(--text-1);
+}
+.import-why {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 8px;
+  margin-inline-start: 26px;
+  padding: 7px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 10%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+}
+.import-why > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warn);
+}
+.import-why.good {
+  background: color-mix(in srgb, var(--green) 10%, var(--bg-3));
+  border-color: color-mix(in srgb, var(--green) 35%, transparent);
+}
+.import-why.good > svg {
+  color: var(--green);
+}
+/* Each path a chip of its own: a path may contain spaces ("Visual Studio
+   Code.app"), so a plain space between two of them would blur where one ends. */
+.import-why code {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  margin: 2px 6px 0 0;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--bg-0, #fff) 60%, transparent);
+  overflow-wrap: anywhere;
+}
+.import-remap {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  margin-inline-start: 26px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+}
+.import-remap-title {
+  font-size: 12px;
+  font-weight: 700;
+}
+.import-remap-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+.import-remap-row label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.import-remap-input {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.import-remap-arrow {
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+:root[dir='rtl'] .import-remap-arrow {
+  transform: scaleX(-1);
+}
+.import-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.import-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--bg-4);
+  overflow: hidden;
+}
+.import-bar span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  transition: width 0.25s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .import-bar span {
+    transition: none;
+  }
+}
+.import-repos {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.import-repos li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+.import-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.import-dot.ok {
+  background: var(--green);
+}
+.import-repo-path {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.import-more {
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.import-secrets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-1);
+  border-radius: var(--radius);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+}
+.import-secrets.off {
+  opacity: 0.55;
+}
+.import-mini-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.import-mini-seg button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: var(--text-1);
+}
+.import-mini-seg button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--text-0);
+}
+.import-secrets-warn {
+  flex-basis: 100%;
+  font-size: 11.5px;
+  color: var(--warn);
+}
+.import-foot {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.import-summary {
+  flex: 1 1 220px;
+  font-size: 12px;
+  color: var(--text-1);
+}
+/* An unknown disk is not a verdict: neutral, with a way to ask again. */
+.import-check-failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-1);
+  border-radius: var(--radius);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+}
+.import-check-failed > span {
+  flex: 1 1 240px;
+}
+.import-confirm {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger) 8%, var(--bg-2));
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+.import-confirm b {
+  font-size: 13px;
+  color: var(--danger);
+}
+.import-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.import-blocked,
+.import-failed {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--warn);
+}
+.import-failed {
+  color: var(--danger);
 }
 
 .modal h3 {
@@ -6854,6 +7141,17 @@ body.col-resizing .node-ava {
   width: 100%;
 }
 
+/* Open repository: the welcome art, smaller — the list below is the point. */
+.launcher-art {
+  display: block;
+  margin: 0 auto 6px;
+  width: 140px;
+  max-width: 45%;
+  height: auto;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.launcher-art + h3 { text-align: center; }
 .welcome-art {
   display: block;
   margin: 0 auto;
@@ -8889,6 +9187,12 @@ body.col-resizing .node-ava {
   color: var(--text-2);
   line-height: 1.5;
   margin-top: 4px;
+}
+/* A hint right under a section title explains what follows, so it sits as a
+   line of its own with room before the control — not glued to the select. */
+.settings-form h4 + .settings-hint {
+  display: block;
+  margin: -2px 0 8px;
 }
 
 /* NumberField: a typed value outside the bounds is flagged, not clamped, until the field is left. */
@@ -18831,6 +19135,11 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 }
 
 /* Scanned repositories dialog */
+/* Back to Open repository, in the title row. The arrow points the way the
+   reading direction goes back, so it mirrors in right-to-left languages. */
+.scanned-title { display: flex; align-items: center; gap: 6px; }
+.launcher-back { margin-inline-start: -6px; }
+:root[dir='rtl'] .launcher-back svg { transform: scaleX(-1); }
 .scanned-manage {
   margin: 10px 0 12px;
   padding: 8px 10px;
@@ -18854,14 +19163,25 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   width: 100%;
   margin-bottom: 8px;
 }
+.scanned-root { display: flex; flex-direction: column; min-height: 0; }
+/* The only scroller: the title, the folders and the filter stay above it and
+   Cancel / Open below, so a long folder never hides the buttons. The dialog
+   body itself does not scroll (see .modal-scroll:has above). */
 .scanned-list {
-  /* No scroller of its own: the dialog body already scrolls, and a list that
-     scrolled inside it showed two bars once the folder editor was open. */
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .scanned-group-head {
+  /* Pinned while its folder's repositories scroll under it. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-2);
   display: flex;
   align-items: baseline;
   gap: 10px;

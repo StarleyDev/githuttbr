@@ -74,7 +74,6 @@ import {
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
-import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { parseSettingsImport } from '../lib/settingsImport'
 import { unlockSettingsImport } from '../lib/settingsPassword'
 import type { IconTone } from '../lib/iconTone'
@@ -85,7 +84,7 @@ import { GithubEnterpriseSettings } from './GithubEnterpriseSettings'
 import { BitbucketServerSettings } from './BitbucketServerSettings'
 import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi, SettingsSaveRefused } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
 import type { AnalyzerMode } from '../../../shared/types'
 import type { LocalCiStatus } from '../../../shared/localCi'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
@@ -95,7 +94,7 @@ import type { RerereStatus } from '../../../shared/types'
 import { personalOf, withoutAISecretsSeed } from '../../../shared/aiScope'
 import { hasStoredImage } from '../../../shared/profileAvatar'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
-import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
+import { stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
@@ -1142,6 +1141,7 @@ export function AIPage({
       </label>
 
       <h4><MessageSquare size={14} /> {t('settings.explainStyle')}</h4>
+      <span className="settings-hint">{t('settings.explainStyleHint')}</span>
       <label>
         <select
           value={ai.explainStyle ?? 'normal'}
@@ -1154,7 +1154,6 @@ export function AIPage({
           ))}
         </select>
       </label>
-      <span className="settings-hint">{t('settings.explainStyleHint')}</span>
 
       <label className="settings-toggle-card" style={{ marginTop: 12 }}>
         <input
@@ -1174,6 +1173,7 @@ export function AIPage({
       {ai.hoverExplain !== false && (
         <>
           <h4><Keyboard size={14} /> {t('settings.hoverExplainKey')}</h4>
+          <span className="settings-hint">{t('settings.hoverExplainKeyHint')}</span>
           <label>
             <select
               value={ai.hoverExplainKey ?? 'shift'}
@@ -1186,7 +1186,6 @@ export function AIPage({
               ))}
             </select>
           </label>
-          <span className="settings-hint">{t('settings.hoverExplainKeyHint')}</span>
         </>
       )}
 
@@ -1290,6 +1289,7 @@ export function AIPage({
       )}
 
       <h4><GitMerge size={14} /> {t('settings.conflictStyle')}</h4>
+      <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
       <label>
         <select
           value={ai.conflictStyle ?? 'clean'}
@@ -1302,9 +1302,9 @@ export function AIPage({
           ))}
         </select>
       </label>
-      <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
 
       <h4><GitBranch size={14} /> {t('settings.branchNamingStyle')}</h4>
+      <span className="settings-hint">{t('settings.branchNamingStyleHint')}</span>
       <label>
         <select
           value={ai.branchNamingStyle ?? 'prefix/description'}
@@ -1317,7 +1317,6 @@ export function AIPage({
           ))}
         </select>
       </label>
-      <span className="settings-hint">{t('settings.branchNamingStyleHint')}</span>
 
       <details className="settings-advanced">
         <summary>
@@ -2763,49 +2762,9 @@ function DataManagementSection(): React.JSX.Element {
         toast('error', t('settings.importFailed'))
         return
       }
-      const { settings: incomingSettings, bundle } = parsed
-      const apply = async (replaceSecrets: boolean): Promise<void> => {
-        try {
-          // Through the store's normalizer, not a bare spread: that is what makes the
-          // import take effect now rather than on the next launch.
-          await useSettingsStore.getState().importSettings(incomingSettings, { replaceSecrets })
-          if (bundle?.info) await infoApi.importAll(bundle.info)
-          if (bundle?.vault) await vaultApi.importAll(bundle.vault)
-          if (bundle?.avatars) {
-            await profileAvatarApi.importAll(bundle.avatars)
-            useProfileAvatarsStore.getState().reloadProfileImages()
-          }
-          toast('success', t('settings.imported'))
-        } catch (err) {
-          const refused = err instanceof SettingsSaveRefused ? err.reason : null
-          toast(
-            'error',
-            refused === 'keychain-required'
-              ? t('settings.importReplaceNeedsKeychain')
-              : refused === 'store-unreadable'
-                ? t('settings.importReplaceStoreUnreadable')
-                : t('settings.importFailed')
-          )
-        }
-      }
-
-      // A file without credentials (the default export) never clears the saved
-      // ones. One with credentials asks: add them, or make them the only ones.
-      if (!hasSettingsSecrets(incomingSettings as AppSettings)) {
-        await apply(false)
-        return
-      }
-      useUIStore.getState().openDialog({
-        kind: 'confirm',
-        title: t('settings.importSecretsTitle'),
-        message: t('settings.importSecretsMessage'),
-        confirmLabel: t('settings.importSecretsMerge'),
-        autoFocusConfirm: true,
-        onConfirm: () => void apply(false),
-        secondaryLabel: t('settings.importSecretsReplace'),
-        secondaryDanger: true,
-        onSecondary: () => void apply(true)
-      })
+      // Nothing is applied yet: the dialog picks the parts, translates the
+      // repository paths and asks about the file's credentials, if it has any.
+      useUIStore.getState().openModal({ kind: 'settings-import', settings: parsed.settings, bundle: parsed.bundle })
     } catch {
       toast('error', t('settings.importFailed'))
     } finally {
@@ -3615,6 +3574,7 @@ function GeneralPage(): React.JSX.Element {
       </label>
 
       <h4><ScanSearch size={14} /> {t('settings.analyzerMode')}</h4>
+      <span className="settings-hint">{t('settings.analyzerModeHint')}</span>
       <label>
         <select
           value={settings.analyzerMode ?? 'onOpen'}
@@ -3625,7 +3585,6 @@ function GeneralPage(): React.JSX.Element {
           <option value="off">{t('settings.analyzerOff')}</option>
         </select>
       </label>
-      <span className="settings-hint">{t('settings.analyzerModeHint')}</span>
 
       <h4 className="settings-section-title">
         <Repeat2 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />

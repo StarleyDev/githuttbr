@@ -772,7 +772,7 @@ export const shots = [
       }
       await page.evaluate((path) => {
         window.__shot.settings.getState().update((s) => ({ ...s, repoScanRoots: [{ path, depth: 1 }] }))
-        window.__shot.ui.getState().openModal({ kind: 'scanned-repos' })
+        window.__shot.ui.getState().openModal({ kind: 'scanned-repos', from: 'launcher' })
       }, root)
       const rows = page.locator('.scanned-row:not(.scanned-taken)')
       await rows.nth(1).waitFor()
@@ -2664,6 +2664,64 @@ export const shots = [
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
       await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Open repository, greeted by the same art as a new workspace.
+    out: 'open-repository',
+    repos: ['octopus-merge'],
+    recents: ['stacked-branches', 'absorb', 'conflict-radar'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'launcher' }))
+      await page.locator('.launcher-art').waitFor()
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Importing a settings file from another machine: profiles and preferences
+    // come, repositories only through a path translation. The file is a made-up
+    // Mac export; its paths are translated onto the capture's demo folder of
+    // playground links, so no path of this machine is shown.
+    out: 'settings-import',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      const from = '/Users/dev/Workspace'
+      const names = ['octopus-merge', 'stacked-branches', 'absorb', 'attributes', 'bisect-bug', 'branch-grouping', 'legacy-billing', 'old-prototype']
+      const repos = names.map((name) => ({ path: `${from}/${name}`, name }))
+      await page.evaluate(({ repos, from }) => {
+        const tab = { id: 'imp-tab', kind: 'repos', name: 'Work', repos, activeRepoPath: repos[0].path }
+        const settings = {
+          profiles: [
+            { id: 'p-work', name: 'Work' },
+            { id: 'p-personal', name: 'Personal' },
+            { id: 'p-oss', name: 'Open source' }
+          ],
+          activeProfileId: 'p-work',
+          theme: 'githuttbr',
+          language: 'en',
+          tabs: [tab],
+          activeTabId: 'imp-tab',
+          recentRepos: repos,
+          favouriteRepos: [repos[0].path, repos[1].path],
+          repoAliases: { [repos[0].path]: 'mobile-app' },
+          repoScanRoots: [{ path: from, depth: 2 }],
+          terminalShell: '/bin/zsh',
+          defaultOpenApp: { name: 'Code', path: '/Applications/Visual Studio Code.app' }
+        }
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'data' })
+        window.__shot.ui.getState().openDialog({ kind: 'settings-import', settings, bundle: null })
+      }, { repos, from })
+      const parts = page.locator('.import-part input[type="checkbox"]')
+      await parts.nth(2).waitFor()
+      await page.waitForTimeout(600)
+      if (!(await parts.nth(2).isChecked())) await parts.nth(2).click()
+      // "In the file" is editable too; "On this computer" is the second field.
+      const to = page.locator('.import-remap-input').nth(1)
+      await to.waitFor()
+      await to.fill('/tmp/githuttbr-demo')
+      await page.waitForTimeout(900)
     }
   },
   {

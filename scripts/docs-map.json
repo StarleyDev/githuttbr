@@ -41,6 +41,7 @@
       "ignore": "hooks",
       "interactive-rebase": "rebase",
       "keychain-consent": "security",
+      "settings-import": "security",
       "launcher": "getting-started",
       "maintenance": "maintenance",
       "merge-options": "merge-options",

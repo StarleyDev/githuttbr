@@ -3,7 +3,7 @@ title: Segurança e segredos
 category: Segurança
 order: 70
 summary: Mascaramento, proteções, o keychain — e o que o Gitcito se recusa a fazer.
-keywords: segurança security segredos secrets mascaramento masking keychain safeStorage tokens branch protegida arquivo grande proteção guard privacidade
+keywords: segurança security segredos secrets mascaramento masking keychain safeStorage tokens branch protegida arquivo grande proteção guard privacidade importar exportar configurações partes traduzir caminhos outro computador
 ---
 
 # Segurança e segredos
@@ -65,6 +65,102 @@ Configurações → Segurança avisa isso embaixo do status do chaveiro — *Nen
 chaveiro está rodando…* — para a palavra *chaveiro* nunca prometer uma proteção
 que não existe. Instale ou desbloqueie um chaveiro e reinicie o Gitcito. O que foi
 guardado nesse meio-tempo continua legível: o aviso não tira seu acesso.
+
+## Importando configurações
+
+**Configurações → Dados → Importar configurações** traz perfis, preferências e
+repositórios de outra máquina. A exportação padrão **não leva tokens nem chaves
+de API**, e importar um arquivo assim nunca mexe nos que você já salvou.
+
+### Escolhendo o que importar
+
+Um arquivo de configurações guarda dois tipos de coisa: o que acompanha *você*
+(perfis, tema, atalhos) e o que só faz sentido na máquina que o gravou (as
+pastas dos seus repositórios, o caminho do seu terminal). Aplicar tudo num
+computador novo enche a barra lateral de abas apontando para o nada. Por isso,
+depois de escolher o arquivo (e digitar a senha, se ele tiver), um diálogo
+pergunta quais partes trazer. Nada é aplicado antes de **Importar**;
+**Cancelar** deixa tudo como estava.
+
+![Configurações → Dados → Importar: quatro partes, os repositórios desmarcados porque nenhuma pasta existe aqui, e a tradução de caminhos aberta](../../screenshots/settings-import.webp)
+
+| Parte | O que leva |
+|-------|------------|
+| **Perfis e contas** | Perfis, identidade git, vínculos de integração, a IA geral e as imagens dos perfis — e as credenciais e o [cofre](vault.md), quando o arquivo tem |
+| **Preferências do app** | Tema, idioma, atalhos, layout, o grafo e as cores dos ícones |
+| **Repositórios e workspaces** | Abas, workspaces, favoritos, apelidos, imagens das abas, o perfil de cada repositório, pastas escaneadas e as notas e wikis de cada repositório |
+| **Programas deste computador** | Terminal, editor externo, apps padrão e o caminho das CLIs de IA |
+
+Cada parte mostra quantos itens o arquivo tem dela. Uma parte desmarcada fica
+exatamente como está nesta máquina.
+
+**Os padrões são um palpite a partir do seu disco.** Antes de o diálogo
+aparecer, o Gitcito confere se as pastas dos repositórios do arquivo existem
+aqui. Se nenhuma existe, o arquivo veio de outro computador: **Repositórios** e
+**Programas** começam desmarcados, cada um com o motivo — os caminhos dos
+programas são listados, para você ver que são de outro lugar. Se existem, é o
+mesmo computador (um backup restaurado, por exemplo): tudo começa marcado e uma
+nota verde diz isso. Um arquivo sem nenhum repositório é julgado pelos caminhos
+dos programas: **Programas** só começa marcado quando todos eles existem aqui.
+
+Quando a própria conferência falha, nada é presumido: **Repositórios** e
+**Programas** começam desmarcados e sem veredito, um botão **Conferir de novo**
+pergunta ao disco outra vez, e **Repositórios** não pode ser importado até uma
+conferência dar certo. As outras partes podem.
+
+**Traduzindo caminhos.** Marque **Repositórios** num arquivo cujas pastas não
+existem e abre a caixa **Traduzir caminhos**. À esquerda, a pasta que os
+repositórios do arquivo têm em comum (`/home/voce/code`); à direita, onde essa
+pasta fica neste computador, já preenchida a partir da sua pasta pessoal
+(`/Users/voce/code`). Os dois campos são editáveis — o palpite pode errar, e
+quando o Gitcito não acha uma pasta em comum deixa os dois vazios para você
+digitar. Uma barra conta, enquanto você digita, quantos repositórios passam a
+ter pasta aqui, com alguns deles listados — verde encontrado, vermelho ainda
+faltando. A troca leva junto o apelido, a imagem da aba e o perfil de cada
+repositório, e também as notas, wikis e entradas do cofre, sem refazer nada à
+mão.
+
+O rodapé resume — *Importar 3 de 4 partes · 31 pastas* (pastas escaneadas e a
+última pasta de clone também contam, por isso diz pastas, não repositórios) — e
+**Importar** fica desligado até ao menos uma parte estar marcada.
+
+**Importar também fica desligado quando a tradução não acha nada.** Com
+**Repositórios** marcado e nenhuma pasta encontrada no novo prefixo, importar
+deixaria seus repositórios vazios; corrija os caminhos ou desmarque a parte.
+
+Limites da tradução:
+
+- É **um prefixo trocado por outro**. Repositórios sob outra pasta no arquivo,
+  ou organizados de outro jeito aqui, não são encontrados; não há mapeamento por
+  repositório.
+- Com uma tradução valendo, **só entram os repositórios que passam a ter
+  pasta**. Os outros ficam de fora — não viram abas quebradas — e o diálogo diz
+  quantos são.
+- Programas nunca são traduzidos: `/usr/bin/code` não tem equivalente confiável
+  em outro sistema. Deixe essa parte desmarcada e escolha-os em Configurações.
+- Apagar qualquer um dos prefixos importa os caminhos como estão no arquivo.
+
+**Durante a importação** o diálogo não pode ser fechado. Se uma etapa posterior
+falhar — as notas dos repositórios, o cofre, as imagens dos perfis — o diálogo
+continua aberto, diz qual etapa foi, e **Continuar importação** retoma dali sem
+gravar de novo as etapas anteriores.
+
+### Credenciais no arquivo
+
+Um arquivo exportado com a opção de incluir segredos traz credenciais, e só um
+arquivo assim mostra a escolha, logo abaixo de **Perfis e contas**:
+
+| Escolha | Suas credenciais salvas |
+|---------|-------------------------|
+| **Adicionar às minhas** | As do arquivo entram, substituindo as da mesma conta; todas as outras ficam |
+| **Substituir tudo** | Viram exatamente as do arquivo — todo token e chave de API salvos que o arquivo não tem são apagados |
+
+A escolha vale junto com os perfis: com **Perfis e contas** desmarcado, nenhuma
+credencial é importada nem removida. **Substituir tudo** pergunta mais uma vez
+ao apertar **Importar**, dizendo que todo token e chave de API salvos que o
+arquivo não tem serão apagados; **Cancelar** ali deixa o diálogo como estava.
+**Substituir tudo** precisa do keychain do sistema; sem ele, o Gitcito recusa e
+nada é importado.
 
 ## Compartilhando com segurança
 

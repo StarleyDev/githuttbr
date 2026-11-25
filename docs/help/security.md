@@ -3,7 +3,7 @@ title: Security & secrets
 category: Security
 order: 70
 summary: Masking, guards, the keychain — and what Gitcito refuses to do.
-keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable backup
+keywords: security secrets masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable backup parts translate paths remap another computer new machine
 ---
 
 # Security & secrets
@@ -123,13 +123,93 @@ machines. The default export carries **no tokens or API keys**, and importing
 such a file never touches the ones you have saved — a blank token in the file
 means "not in this file", not "remove mine".
 
-A file exported with the opt-in carries credentials, so importing it asks:
+### Choosing what to import
+
+A settings file holds two kinds of thing: what follows *you* (profiles, theme,
+shortcuts) and what only makes sense on the machine that wrote it (the folders
+your repositories live in, the path of your terminal). Applying all of it on a
+new computer fills the sidebar with tabs pointing nowhere. So after you pick the
+file (and type its password, if it has one), a dialog asks which parts to bring
+in. Nothing is applied until you press **Import**; **Cancel** leaves everything
+as it was.
+
+![Settings → Data → Import: four parts, the repositories unticked because none of their folders exist here, and the path translation open](../screenshots/settings-import.webp)
+
+| Part | What it carries |
+|------|-----------------|
+| **Profiles and accounts** | Profiles, git identity, integration links, the general AI settings and profile pictures — and the credentials and [vault](vault.md), when the file has them |
+| **App preferences** | Theme, language, shortcuts, layout, the graph and icon colours |
+| **Repositories and workspaces** | Tabs, workspaces, favourites, nicknames, tab pictures, which profile each repository uses, scanned folders, and the per-repository notes and wikis |
+| **Programs on this computer** | Terminal, external editor, default apps and the path of the AI CLIs |
+
+Each part shows how many entries the file has for it. A part left unticked
+stays exactly as it is on this machine.
+
+**The defaults are a guess from your disk.** Before the dialog shows, Gitcito
+checks whether the repository folders in the file exist here. If none do, the
+file comes from another computer: **Repositories** and **Programs** start
+unticked, each with the reason — the programs' paths are listed, so you can see
+they belong elsewhere. If they do exist, it is the same computer (a backup
+restored, say), everything starts ticked and a green note says so. A file
+with no repositories at all is judged by its program paths instead: **Programs**
+starts ticked only when every one of them exists here.
+
+When the check itself fails, nothing is guessed: **Repositories** and
+**Programs** start unticked with no verdict, a **Check again** button asks the
+disk once more, and **Repositories** cannot be imported until a check succeeds.
+The other parts can.
+
+**Translating paths.** Tick **Repositories** on a file whose folders are
+missing and a **Translate paths** box opens. On the left, the folder the file's
+repositories have in common (`/home/you/code`); on the right, where that folder
+is on this computer, pre-filled from your home folder (`/Users/you/code`). Both
+are editable — the guess can be wrong, and when Gitcito finds no common folder
+it leaves both empty for you to type. A bar counts, as you type, how many
+repositories now have a folder here, with a few of them listed — green found,
+red still missing. The swap carries the repository's nickname, tab picture and
+profile with it, and its notes, wikis and vault entries, so nothing has to be
+set again by hand.
+
+The footer sums it up — *Import 3 of 4 parts · 31 folders* (scan roots and the
+last clone folder count too, so it says folders, not repositories) — and
+**Import** stays off until at least one part is ticked.
+
+**Import also stays off when a translation finds nothing.** With
+**Repositories** ticked and not one folder found under the new prefix, importing
+would leave your repositories empty; fix the paths or untick the part.
+
+Limits of the translation:
+
+- It is **one prefix swapped for another**. Repositories under a different
+  folder in the file, or laid out differently here, are not found; there is no
+  per-repository mapping.
+- With a translation in effect, **only the repositories that then have a folder
+  are imported**. The rest are left out — not added as broken tabs — and the
+  dialog tells you how many.
+- Programs are never translated: `/usr/bin/code` has no reliable counterpart on
+  another system. Leave that part unticked and pick them in Settings.
+- Clearing either prefix imports the paths as the file has them.
+
+**While it imports** the dialog cannot be dismissed. If a later step fails —
+the repository notes, the vault, the profile pictures — the dialog stays open,
+names the step, and **Continue import** resumes there without writing the
+earlier steps again.
+
+### Credentials in the file
+
+A file exported with the opt-in carries credentials, and only such a file shows
+the choice, right under **Profiles and accounts**:
 
 | Choice | Your saved credentials |
 |--------|------------------------|
 | **Add to mine** | The file's are added, replacing any for the same account; all the others are kept |
 | **Replace all** | Become exactly the file's — every saved token and API key the file does not have is deleted |
-| **Cancel** | Nothing is imported |
+
+The choice applies with the profiles: with **Profiles and accounts** unticked,
+no credential is imported or removed. A file exported without the opt-in has
+none to offer, whatever you tick. **Replace all** asks once more when you press
+**Import**, saying that every saved token and API key the file does not have
+will be deleted; **Cancel** there leaves the dialog as it was.
 
 **Replace all needs the keychain.** With the keychain off or unavailable, the
 old tokens would stay in the encrypted store and come back on the next launch,

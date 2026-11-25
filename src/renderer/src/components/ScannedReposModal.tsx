@@ -9,6 +9,7 @@ import { isRepositoryOpen } from '../openRepositories'
 import { canonicalRepoPath } from '../lib/repoAlias'
 import type { GroupTab, RegistryRepo } from '../../../shared/types'
 import { ScanRootsEditor } from './ScanRootsEditor'
+import { LauncherBack } from './LauncherBack'
 
 /**
  * Everything the scanned folders hold, grouped by folder, to open in one go —
@@ -76,8 +77,10 @@ export function ScannedReposModal({
     const st = useSettingsStore.getState()
     if (spec.groupId) {
       for (const ref of refs) st.addRepoToGroup(spec.groupId, ref)
-      // Back to the group's launcher, which shows what was just added.
-      openModal({ kind: 'launcher', groupId: spec.groupId })
+      // Back where it was opened from, which shows what was just added: the
+      // group's launcher, or the group's own page behind this dialog.
+      if (spec.from === 'launcher') openModal({ kind: 'launcher', groupId: spec.groupId })
+      else closeModal()
       return
     }
     closeModal()
@@ -92,8 +95,11 @@ export function ScannedReposModal({
   const pickedCount = [...picked].filter((p) => !isAlreadyOpen(p)).length
 
   return (
-    <>
-      <h3>
+    <div className="scanned-root">
+      <h3 className="modal-title-row scanned-title">
+        {/* A mis-click on "Scanned repositories" should not mean closing and
+            reopening Open repository: this goes straight back to it. */}
+        {spec.from === 'launcher' && <LauncherBack target={{ groupId: spec.groupId }} />}
         <FolderSearch size={17} /> {t('scanned.title')}
       </h3>
       <p className="modal-hint">
@@ -180,6 +186,6 @@ export function ScannedReposModal({
           {interp(t(spec.groupId ? 'scanned.addToGroup' : 'scanned.open'), { n: pickedCount })}
         </button>
       </div>
-    </>
+    </div>
   )
 }

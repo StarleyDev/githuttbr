@@ -15,6 +15,8 @@ repository until you ask for it.
 
 ## Open a repository
 
+![Open repository: open, clone or create, then the scanned and recent repositories](../screenshots/open-repository.webp)
+
 - **Drag a folder** onto the window, or use **Open repository** on the welcome
   screen. The picker takes several folders at once: ⌘-click or Shift-click to
   select them, and each opens in its own tab (or joins the group you opened it
@@ -27,6 +29,8 @@ repository until you ask for it.
   in the folders you told Gitcito to scan — tick several and open them at once,
   or double-click one. It is also where you add or remove those folders. See
   [Repositories](repositories.md#scanned-repositories).
+- **Clicked the wrong one?** Clone, Create, Create group and Scanned
+  repositories, opened from Open repository, have a **Back** arrow beside their title that returns to it.
 - **Clone** one from a URL or straight from your host — see [cloning](cloning.md)
   for the options that make a huge repository quick to clone.
 - From a terminal, `gitcito .` opens the current folder in the running app —

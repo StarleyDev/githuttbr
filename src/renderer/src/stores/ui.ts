@@ -3,7 +3,15 @@ import { create } from 'zustand'
 import { explainGitError } from '../lib/gitErrorHint'
 import type { DropRef } from '../lib/branchDrop'
 import type { ReactNode } from 'react'
-import type { CiState, DivergedStrategy, KeychainReason, RepoRef, ResetStrategy } from '../../../shared/types'
+import type {
+  AppSettings,
+  CiState,
+  DivergedStrategy,
+  KeychainReason,
+  RepoRef,
+  ResetStrategy,
+  SettingsBundle
+} from '../../../shared/types'
 import type { WorktreeGroupPlan } from '../lib/worktrees'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { touchMru } from '../lib/repoSwitcher'
@@ -65,11 +73,20 @@ export interface ContextMenuState {
 }
 
 /** The modal kinds that can also be stacked over another modal (see `dialog`). */
-export type DialogSpec = Extract<ModalSpec, { kind: 'confirm' } | { kind: 'input' }>
+export type DialogSpec = Extract<ModalSpec, { kind: 'confirm' } | { kind: 'input' } | { kind: 'settings-import' }>
 
-/** Whether a modal spec is a question that can be stacked over another modal. */
+/** Whether a modal spec is a question that can be stacked over another modal.
+ *  The import dialog is one too: it is asked from Settings → Data, and opening
+ *  it in the modal slot would close Settings under it. */
 export function isDialogSpec(modal: ModalSpec): modal is DialogSpec {
-  return modal.kind === 'confirm' || modal.kind === 'input'
+  return modal.kind === 'confirm' || modal.kind === 'input' || modal.kind === 'settings-import'
+}
+
+/** Where a dialog opened from Open repository goes back to: that window, for
+ *  the same group. A mis-click on Clone or Create should not mean closing and
+ *  reopening it. */
+export interface LauncherBackTarget {
+  groupId?: string
 }
 
 export type ModalSpec =
@@ -176,15 +193,19 @@ export type ModalSpec =
       onKeepLocal: () => void
       onReset: (strategy: ResetStrategy, backup: boolean) => void
     }
-  | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
+  | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void; back?: LauncherBackTarget }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string; initialName?: string }
   | { kind: 'work-item-branch'; path: string; remoteUrl: string }
   | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
+  /** A picked, unlocked settings export: choose its parts before applying. */
+  | { kind: 'settings-import'; settings: Partial<AppSettings>; bundle: SettingsBundle | null }
   /** The repositories the scanned folders hold, to open — or, with `groupId`,
    *  to add to that group. Also where the scanned folders are managed. */
-  | { kind: 'scanned-repos'; groupId?: string }
-  | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
+  /** `from: 'launcher'` when opened from Open repository: it offers a way back
+   *  there, and returns there after adding to a group. */
+  | { kind: 'scanned-repos'; groupId?: string; from?: 'launcher' }
+  | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void; back?: LauncherBackTarget }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
   | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
@@ -200,7 +221,7 @@ export type ModalSpec =
     }
   | { kind: 'local-ci'; repoPath: string; rev?: string }
   /** Name a new group and pick its colour in one go. */
-  | { kind: 'new-group'; onCreate: (name: string, color: string) => void }
+  | { kind: 'new-group'; onCreate: (name: string, color: string) => void; back?: LauncherBackTarget }
   /** Offer to group an opening worktree with its family: the root's standalone
    *  tab ('convert' — asks for a group name) or the group the family already
    *  lives in ('add' — just confirms). */
@@ -412,6 +433,10 @@ interface UIState {
    *  deleting a profile — where `openModal` would replace the very screen the
    *  user is working in, and every bit of its state with it. */
   dialog: DialogSpec | null
+  /** While set, Esc, a backdrop click and ✕ do not close the modal or the
+   *  stacked dialog — for one in the middle of a write it must see through
+   *  (the settings import). The dialog closes itself when it is done. */
+  closeLocked: boolean
   toasts: Toast[]
   /** Cmd/Ctrl+K command palette — fuzzy jump to branches, commits, files, actions. */
   commandPaletteOpen: boolean
@@ -500,6 +525,7 @@ interface UIState {
   closeModal(): void
   openDialog(dialog: DialogSpec): void
   closeDialog(): void
+  setCloseLocked(locked: boolean): void
   setCommandPalette(open: boolean): void
   setMissionOpen(open: boolean): void
   toggleCommandPalette(): void
@@ -562,6 +588,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   contextMenu: null,
   modal: null,
   dialog: null,
+  closeLocked: false,
   toasts: [],
   commandPaletteOpen: false,
   repoSwitcherOpen: false,
@@ -618,6 +645,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   closeModal: () => set({ modal: null, dialog: null }),
   openDialog: (dialog) => set({ dialog }),
   closeDialog: () => set({ dialog: null }),
+  setCloseLocked: (closeLocked) => set({ closeLocked }),
   setCommandPalette: (commandPaletteOpen) => set({ commandPaletteOpen }),
   setMissionOpen: (missionOpen) => set({ missionOpen }),
   toggleCommandPalette: () => set({ commandPaletteOpen: !get().commandPaletteOpen }),

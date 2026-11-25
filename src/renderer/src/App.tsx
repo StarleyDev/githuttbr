@@ -228,6 +228,7 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
           onOpen={() => void openRepo()}
           onClone={cloneRepo}
           onCreate={createRepo}
+          onScanned={() => openModal({ kind: 'scanned-repos', groupId: tab.id })}
           onReorder={(from, to) => reorderReposInGroup(tab.id, from, to)}
           items={items}
           listTitle={tab.repos.length > 0 ? t('launcher.listRepositories') : undefined}

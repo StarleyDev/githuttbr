@@ -15,8 +15,13 @@ repositório até você pedir.
 
 ## Abrir um repositório
 
+![Abrir repositório: abrir, clonar ou criar, e depois os repositórios escaneados e recentes](../../screenshots/open-repository.webp)
+
 - **Arraste uma pasta** para a janela, ou use **Abrir repositório** na tela de
   boas-vindas.
+- **Clicou no botão errado?** Clonar, Criar, Criar grupo e Repositórios
+  escaneados, abertos a partir de Abrir repositório, têm uma seta **Voltar** ao lado do título que volta
+  para ele.
 - **Clone** um a partir de uma URL ou direto do seu host — veja
   [clonagem](cloning.md) para as opções que deixam um repositório gigante rápido
   de clonar.

@@ -942,6 +942,13 @@ export const envApi = {
   checkNetwork: () => window.api.env.checkNetwork() as Promise<EnvCheck[]>
 }
 
+/** Existence only — main never reveals what a path holds. Used by the
+ *  selective settings import to keep the repositories present on this machine. */
+export const fsApi = {
+  pathsExist: (paths: string[]) => window.api.fs.pathsExist(paths) as Promise<boolean[]>,
+  homeDir: () => window.api.fs.homeDir() as Promise<string>
+}
+
 export const infoApi = {
   list: (repoPath: string) => window.api.info.list(repoPath) as Promise<InfoEntry[]>,
   upsert: (repoPath: string, entry: Partial<InfoEntry>) =>

@@ -297,6 +297,10 @@ const api = {
     exportAll: (): Promise<unknown> => ipcRenderer.invoke('info:exportAll'),
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('info:importAll', data)
   },
+  fs: {
+    pathsExist: (paths: string[]): Promise<unknown> => ipcRenderer.invoke('fs:pathsExist', paths),
+    homeDir: (): Promise<unknown> => ipcRenderer.invoke('fs:homeDir')
+  },
 
   env: {
     check: (): Promise<unknown> => ipcRenderer.invoke('env:check'),

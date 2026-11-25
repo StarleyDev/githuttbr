@@ -1,7 +1,9 @@
+import gitcitoLaunch from '../assets/gitcito-launch.png'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput, FolderPlus } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
+import { LauncherBack } from './LauncherBack'
 import { useClonesStore } from '../stores/clones'
 import { cloneFolderName, cloneFolderNames } from '../lib/cloneBatch'
 import { bindBeforeOpen, bindingAfterAddRemote, effectiveProfileId } from '../lib/repoProfile'
@@ -38,6 +40,7 @@ import { RangeDiffModal } from './RangeDiffModal'
 import { AbsorbModal } from './AbsorbModal'
 import { CliEditModal } from './CliEditModal'
 import { TimeMachineModal } from './TimeMachineModal'
+import { ImportSettingsDialog } from './ImportSettingsDialog'
 import { TimelapseModal } from './TimelapseModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
@@ -229,7 +232,10 @@ function NewGroupModal({ spec }: { spec: Extract<ModalSpec, { kind: 'new-group' 
 
   return (
     <>
-      <h3>{t('welcome.newGroup')}</h3>
+      <h3 className="modal-title-row">
+        {spec.back && <LauncherBack target={spec.back} />}
+        <FolderPlus size={17} /> {t('welcome.newGroup')}
+      </h3>
       <label className="modal-label">{t('welcome.groupName')}</label>
       <input
         autoFocus
@@ -1767,6 +1773,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   return (
     <>
       <h3 className="modal-title-row">
+        {spec.back && <LauncherBack target={spec.back} />}
         <FolderGit2 size={17} /> {t('clone.title')}
       </h3>
 
@@ -2217,6 +2224,7 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
   return (
     <>
       <h3 className="modal-title-row">
+        {spec.back && <LauncherBack target={spec.back} />}
         <FolderGit2 size={17} /> {t('modal.createRepository')}
       </h3>
       <label className="modal-label">{t('modal.createIn')}</label>
@@ -2287,6 +2295,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     closeModal()
     openModal({
       kind: 'clone',
+      back: { groupId: spec.groupId },
       onClone: (repo) => {
         if (spec.groupId) addRepoToGroup(spec.groupId, repo)
         else openRepoTab(repo)
@@ -2298,6 +2307,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     closeModal()
     openModal({
       kind: 'create-repo',
+      back: { groupId: spec.groupId },
       onCreate: (repo) => {
         if (spec.groupId) addRepoToGroup(spec.groupId, repo)
         else openRepoTab(repo)
@@ -2307,7 +2317,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
 
   const createGroup = (): void => {
     closeModal()
-    openModal({ kind: 'new-group', onCreate: (name, color) => createGroupTab(name, color) })
+    openModal({ kind: 'new-group', back: {}, onCreate: (name, color) => createGroupTab(name, color) })
   }
 
   const items: LauncherItem[] = spec.groupId && groupTab
@@ -2346,6 +2356,9 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
 
   return (
     <>
+      {/* The same welcome art as a new workspace: opening a repository is the
+          other way into the app, and it should greet you the same way. */}
+      <img className="launcher-art" src={gitcitoLaunch} alt="" draggable={false} />
       <h3>
         {spec.groupId
           ? interp(t('launcher.manageGroup'), { name: groupTab?.name ?? t('launcher.groupFallback') })
@@ -2356,7 +2369,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
         onClone={cloneRepo}
         onCreate={createRepo}
         onCreateGroup={spec.groupId ? undefined : createGroup}
-        onScanned={() => openModal({ kind: 'scanned-repos', groupId: spec.groupId })}
+        onScanned={() => openModal({ kind: 'scanned-repos', groupId: spec.groupId, from: 'launcher' })}
         onReorder={spec.groupId ? (from, to) => reorderReposInGroup(spec.groupId!, from, to) : undefined}
         items={items}
         listTitle={listTitle}
@@ -2396,6 +2409,8 @@ export function ModalHost(): React.JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return
+      // A dialog in the middle of a write (the settings import) closes itself.
+      if (useUIStore.getState().closeLocked) return
       // Esc answers the question on top, not the screen it was asked over.
       if (useUIStore.getState().dialog) closeDialog()
       else closeModal()
@@ -2451,7 +2466,7 @@ export function ModalHost(): React.JSX.Element {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onMouseDown={(e) => {
-              if (e.target === e.currentTarget) closeModal()
+              if (e.target === e.currentTarget && !useUIStore.getState().closeLocked) closeModal()
             }}
           >
             <motion.div
@@ -2464,6 +2479,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-create-pr'
                   : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
+                  : modal.kind === 'settings-import'
+                  ? 'modal-settings-import'
                   : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'
                   : modal.kind === 'launcher' || modal.kind === 'scanned-repos'
@@ -2508,7 +2525,14 @@ export function ModalHost(): React.JSX.Element {
               tabIndex={-1}
               onKeyDown={trapTab}
             >
-              <button className="modal-close" onClick={closeModal} aria-label={t('common.close')} title={t('common.close')}>
+              <button
+                className="modal-close"
+                onClick={() => {
+                  if (!useUIStore.getState().closeLocked) closeModal()
+                }}
+                aria-label={t('common.close')}
+                title={t('common.close')}
+              >
                 <X size={15} />
               </button>
               {/* The frame holds still with the close button; this scrolls (see .modal-scroll). */}
@@ -2518,6 +2542,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'launch-input' && <LaunchInputModal spec={modal} />}
               {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
               {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
+              {modal.kind === 'settings-import' && <ImportSettingsDialog spec={modal} />}
               {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
               {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
               {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
@@ -2626,11 +2651,11 @@ export function ModalHost(): React.JSX.Element {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12 }}
             onMouseDown={(e) => {
-              if (e.target === e.currentTarget) closeDialog()
+              if (e.target === e.currentTarget && !useUIStore.getState().closeLocked) closeDialog()
             }}
           >
             <motion.div
-              className="modal"
+              className={dialog.kind === 'settings-import' ? 'modal modal-settings-import' : 'modal'}
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 6 }}
@@ -2645,6 +2670,7 @@ export function ModalHost(): React.JSX.Element {
               <div className="modal-scroll">
                 {dialog.kind === 'confirm' && <ConfirmModal spec={dialog} onClose={closeDialog} />}
                 {dialog.kind === 'input' && <InputModal spec={dialog} onClose={closeDialog} />}
+                {dialog.kind === 'settings-import' && <ImportSettingsDialog spec={dialog} onClose={closeDialog} />}
               </div>
             </motion.div>
           </motion.div>

@@ -57,7 +57,9 @@ The way back is an export made by 4.38 itself, which can still open them:
 
 1. In 4.38, **Settings → Data → Export settings**, with **Include API keys,
    tokens & Vault secrets** ticked.
-2. Here, **Settings → Data → Import settings**, and choose **Add to mine**.
+2. Here, **Settings → Data → Import settings**: keep **Profiles and accounts**
+   ticked and its credentials on **Add to mine** (see
+   [choosing what to import](security.md#choosing-what-to-import)).
 
 Without 4.38 at hand, type the tokens and keys again; the vault refills as you
 add to it. Either way you are asked about the keychain once more, since your

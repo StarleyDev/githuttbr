@@ -32,6 +32,7 @@ import { registerRepoRegistryHandlers } from './repoRegistry'
 import { registerKeychainHandlers } from './keychain'
 import { registerSecureShareHandlers } from './secureShare'
 import { registerInfoHandlers } from './info'
+import { registerPathExistenceHandlers } from './pathExistence'
 import { registerEnvironmentHandlers } from './environment'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { guardStdio } from './stdioGuard'
@@ -526,6 +527,7 @@ app.whenReady().then(() => {
   registerKeychainHandlers()
   registerSecureShareHandlers()
   registerInfoHandlers()
+  registerPathExistenceHandlers()
   registerEnvironmentHandlers()
   registerUpdaterHandlers()
   registerCliHandlers()

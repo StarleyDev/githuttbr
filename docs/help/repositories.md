@@ -126,8 +126,12 @@ ticked and the Open button counting them](../screenshots/scanned-repos.webp)
 
 - The repositories are **grouped by scanned folder**, sorted by name, with a
   filter for name or path.
-- **Tick several** and press **Open**, or **double-click** one. From a group's
-  launcher the button reads **Add to group**, and you return to the group.
+- **Tick several** and press **Open**, or **double-click** one. From a group —
+  its launcher, or the page a new group opens on — the button reads **Add to
+  group**, and you return to where you came from.
+- Opened from **Open repository**, the dialog has a **Back** arrow beside its
+  title — as do **Clone** and **Create** — so a mis-click goes back to Open
+  repository without closing anything.
 - A repository already open in a tab — or already in that group — is listed
   but greyed out, so the folder count still adds up.
 - Opening the dialog **scans the folders again** first, so a fresh clone is
