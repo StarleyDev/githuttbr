@@ -1,5 +1,19 @@
 
 
+## [4.49.0](https://github.com/StarleyDev/githuttbr/compare/v4.48.0...v4.49.0) (2026-11-25)
+
+
+### Features
+
+* **security:** keep new tokens session-only on Linux without a keyring ([8b4666d](https://github.com/StarleyDev/githuttbr/commit/8b4666defcd82b1917b5e63a14e0b6c9468779bf))
+* **settings:** choose what an exported settings file carries ([2db1f38](https://github.com/StarleyDev/githuttbr/commit/2db1f38d5e9a4dae36ad6b8465b3482ed34b82f9))
+* **settings:** merge imported profiles with yours instead of replacing them ([b65858c](https://github.com/StarleyDev/githuttbr/commit/b65858ce5304bdc312890857b84d082175ccda41))
+
+
+### Bug Fixes
+
+* **i18n:** proofread recent Spanish, French and German strings ([c5286c5](https://github.com/StarleyDev/githuttbr/commit/c5286c5dd7377b073911e140a68a35f70018499d))
+
 ## [4.48.0](https://github.com/StarleyDev/githuttbr/compare/v4.47.0...v4.48.0) (2026-11-25)
 
 
