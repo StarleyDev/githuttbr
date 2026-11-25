@@ -223,6 +223,25 @@ describe('a probe that failed, then a v10 write', () => {
   })
 })
 
+describe('starting a new token store over an unreadable one', () => {
+  it('finishes as a weak store when the new seal turns out v10, after the backup', async () => {
+    await start()
+    // A store another app identity wrote: present, not readable with this key.
+    writeFileSync(storeFile(), Buffer.from('foreign:theirs').toString('base64'))
+    const original = readFileSync(storeFile(), 'utf8')
+    keyring.prefix = 'v10'
+    keyring.failProbe = true
+    const p = await unlock()
+    await call('settings:set', settingsWith({ ...p, githubToken: 'TYPED-NOW' }))
+    expect(await call('settings:replaceUnreadableStore')).toBe(true)
+
+    expect(readFileSync(join(dir, 'githuttbr-secrets.enc.bak'), 'utf8')).toBe(original)
+    expect(storeText()).toBe('v10enc:{}')
+    expect(await status()).toMatchObject({ weakBackend: true, sessionOnly: true })
+    expect((await unlock()).githubToken).toBe('TYPED-NOW')
+  })
+})
+
 describe('a hung availability check', () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -245,7 +264,9 @@ describe('a hung availability check', () => {
 
   /** Lets real I/O (the consent file) run until `n` availability questions have been asked. */
   async function untilAsked(n: number): Promise<void> {
-    for (let i = 0; i < 200 && keyring.availableCalls < n; i++) await new Promise((r) => setImmediate(r))
+    // Under a loaded suite the consent file can take many turns: wait on the count, not a fixed few.
+    for (let i = 0; i < 20_000 && keyring.availableCalls < n; i++) await new Promise((r) => setImmediate(r))
+    expect(keyring.availableCalls).toBeGreaterThanOrEqual(n)
     for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r))
   }
 

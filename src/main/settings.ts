@@ -1358,11 +1358,20 @@ async function replaceUnreadableStore(): Promise<boolean> {
     await copyPrivateFile(secretsPath(), target)
     const current = await readSettings()
     // A weak store starts empty: the session's tokens stay in memory (`commitToWeakStore`).
-    const weak = await isKeychainWeak()
-    const fresh = weak ? {} : pruneSecrets(sessionSecrets, secretOwnerIds(current), current.profiles)
+    let weak = await isKeychainWeak()
+    let fresh: SecretStore = weak ? {} : pruneSecrets(sessionSecrets, secretOwnerIds(current), current.profiles)
     // Written without retiring backups: the one just made must outlive this call.
     // An empty weak store holds nothing new, so the fixed password may seal it.
-    await writeSecretsFile(fresh, { removalOnly: weak })
+    try {
+      await writeSecretsFile(fresh, { removalOnly: weak })
+    } catch (err) {
+      // Sealed with the fixed password after all (as in `saveSecretsUnlessWeak`):
+      // the backup is made, so finish as a weak store — empty, tokens kept in memory.
+      if (!(err instanceof WeakKeychainError)) throw err
+      weak = true
+      fresh = {}
+      await writeSecretsFile(fresh, { removalOnly: true })
+    }
     secretsUnreadable = false
     setSecretCache(fresh)
     if (!weak) sessionSecrets = {}
