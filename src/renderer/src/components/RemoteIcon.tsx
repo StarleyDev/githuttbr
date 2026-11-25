@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Github, Gitlab, Cloud, Server } from 'lucide-react'
+import { Cloud, Server } from 'lucide-react'
+import { Github, Gitlab } from './BrandIcons'
 
 function parseRemoteOwner(url: string): { host: string; owner: string } | null {
   const u = url.trim()

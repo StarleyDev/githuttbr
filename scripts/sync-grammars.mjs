@@ -1,74 +1,67 @@
 #!/usr/bin/env node
 /**
- * Copies the tree-sitter WASM grammars the semantic diff needs out of
- * node_modules and into resources/tree-sitter/, which electron-builder ships
- * as extraResources.
+ * Copies the tree-sitter WASM runtime and the grammars the semantic diff needs
+ * into resources/tree-sitter/, which electron-builder ships as extraResources.
  *
- * The grammars are generated artefacts (~25 MB), so they are gitignored and
- * rebuilt from the lockfile on install rather than committed. Only the
- * languages listed here are copied — tree-sitter-wasms ships 49 MB of them and
- * most (TLA+, SystemRDL, ObjC…) are not worth the download.
+ * The runtime is web-tree-sitter's own web-tree-sitter.wasm. Each grammar comes
+ * from its official npm package's prebuilt .wasm, or from vendor/ when the
+ * package publishes none (scripts/grammars.mjs says which). The folder is
+ * gitignored and rebuilt from the lockfile on every install.
  */
 import { existsSync, mkdirSync, copyFileSync, statSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { GRAMMARS, grammarSource } from './grammars.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(ROOT, 'resources', 'tree-sitter')
-const GRAMMAR_DIR = join(ROOT, 'node_modules', 'tree-sitter-wasms', 'out')
-const RUNTIME = join(ROOT, 'node_modules', 'web-tree-sitter', 'tree-sitter.wasm')
+const RUNTIME_FILE = 'web-tree-sitter.wasm'
+const RUNTIME = join(ROOT, 'node_modules', 'web-tree-sitter', RUNTIME_FILE)
 
-/** Languages the semantic diff can parse. Keep in sync with src/main/semantic.ts. */
-const LANGUAGES = [
-  'bash',
-  'c',
-  'c_sharp',
-  'cpp',
-  'go',
-  'java',
-  'javascript',
-  'kotlin',
-  'lua',
-  'php',
-  'python',
-  'ruby',
-  'rust',
-  'scala',
-  'swift',
-  'tsx',
-  'typescript',
-  'zig'
-]
-
-if (!existsSync(GRAMMAR_DIR) || !existsSync(RUNTIME)) {
-  // A production install without devDependencies has no grammars to copy;
-  // that is fine — the app degrades to line diffs.
-  console.log('[grammars] tree-sitter packages not installed, skipping')
+if (!existsSync(RUNTIME)) {
+  // Nothing to parse with; the app degrades to line diffs.
+  console.log('[grammars] web-tree-sitter not installed, skipping')
   process.exit(0)
 }
 
 mkdirSync(OUT, { recursive: true })
 
-// Drop grammars from an earlier list so the folder mirrors LANGUAGES exactly.
-const keep = new Set(['tree-sitter.wasm', ...LANGUAGES.map((l) => `tree-sitter-${l}.wasm`)])
+// Drop files from an earlier layout (the 0.24 runtime's tree-sitter.wasm, a
+// language since removed) so the folder mirrors GRAMMARS exactly.
+const keep = new Set([RUNTIME_FILE, ...GRAMMARS.map((g) => `tree-sitter-${g.language}.wasm`)])
 for (const f of readdirSync(OUT)) if (!keep.has(f)) rmSync(join(OUT, f))
 
 let bytes = 0
 let copied = 0
-const copy = (from, to) => {
-  if (!existsSync(from)) {
-    console.warn(`[grammars] missing ${from}`)
-    return
+const absent = []
+const broken = []
+const rel = (p) => p.slice(ROOT.length + 1)
+
+for (const [from, to] of [
+  [RUNTIME, join(OUT, RUNTIME_FILE)],
+  ...GRAMMARS.map((g) => [join(ROOT, grammarSource(g), g.file), join(OUT, `tree-sitter-${g.language}.wasm`)])
+]) {
+  if (existsSync(from)) {
+    // Always copy: a size check would keep a stale grammar whose new build
+    // happened to come out the same length.
+    copyFileSync(from, to)
+    bytes += statSync(to).size
+    copied++
+    continue
   }
-  // Skip rewriting identical files so repeated installs stay fast.
-  if (!existsSync(to) || statSync(from).size !== statSync(to).size) copyFileSync(from, to)
-  bytes += statSync(to).size
-  copied++
+  // Never leave an older copy behind to be shipped as if it were current.
+  rmSync(to, { force: true })
+  // A package that is not installed at all is a production install
+  // (`--omit=dev`): that language falls back to line diffs. A package that is
+  // installed without the file means it renamed or dropped its .wasm — an
+  // upgrade that has to be looked at, not shipped without the language.
+  if (existsSync(join(dirname(from), 'package.json'))) broken.push(rel(from))
+  else absent.push(rel(dirname(from)))
 }
 
-copy(RUNTIME, join(OUT, 'tree-sitter.wasm'))
-for (const lang of LANGUAGES) {
-  copy(join(GRAMMAR_DIR, `tree-sitter-${lang}.wasm`), join(OUT, `tree-sitter-${lang}.wasm`))
+if (absent.length) console.warn(`[grammars] not installed: ${[...new Set(absent)].join(', ')}`)
+if (broken.length) {
+  console.error(`[grammars] installed but missing its .wasm: ${broken.join(', ')} — see scripts/grammars.mjs`)
+  process.exit(1)
 }
-
 console.log(`[grammars] ${copied} files, ${(bytes / 1024 / 1024).toFixed(1)} MB → resources/tree-sitter`)

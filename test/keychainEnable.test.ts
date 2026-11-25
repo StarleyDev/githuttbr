@@ -19,12 +19,12 @@ vi.mock('electron', () => ({
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   // Reversible and obviously fake: enough to see what reaches the file.
   safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => {
+    isAsyncEncryptionAvailable: async () => true,
+    encryptStringAsync: async (s: string) => {
       if (keyring.broken) throw new Error('keyring refused the write')
       return Buffer.from(`enc:${s}`)
     },
-    decryptString: (b: Buffer) => b.toString().replace(/^enc:/, '')
+    decryptStringAsync: async (b: Buffer) => ({ result: b.toString().replace(/^enc:/, ''), shouldReEncrypt: false })
   }
 }))
 

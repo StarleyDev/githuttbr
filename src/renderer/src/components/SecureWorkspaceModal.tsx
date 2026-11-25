@@ -23,6 +23,7 @@ import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
 import { tabRepos } from '../../../shared/types'
+import { NO_ITEMS } from '../lib/stableEmpty'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
@@ -92,7 +93,7 @@ export function SecureWorkspaceModal({
   const toast = useUIStore((s) => s.toast)
   const closeModal = useUIStore((s) => s.closeModal)
   const repoMap = useRepoStore((s) => s.repos)
-  const workspaces = useSettingsStore((s) => s.settings.workspaces ?? [])
+  const workspaces = useSettingsStore((s) => s.settings.workspaces ?? NO_ITEMS)
   const [mode, setMode] = useState<'export' | 'import'>(initialMode ?? 'export')
   const [busy, setBusy] = useState(false)
 
@@ -152,11 +153,15 @@ export function SecureWorkspaceModal({
       'bad-password': t('share.errBadPassword'),
       'unsupported-version': t('share.errVersion'),
       'read-failed': t('share.errRead'),
-      'write-failed': t('share.errWrite')
+      'write-failed': t('share.errWrite'),
+      'vault-unreadable': t('vault.unreadable'),
+      'vault-unavailable': t('vault.keychainUnavailable')
     })[code]
 
   // ── Export ─────────────────────────────────────────────────────────────────
   const [vaultCount, setVaultCount] = useState<number | null>(null)
+  // Cannot be read, or the keychain cannot open it: 0 entries would read as "the vault is empty".
+  const [vaultRefused, setVaultRefused] = useState<'unreadable' | 'unavailable' | null>(null)
   const [includeVault, setIncludeVault] = useState(false)
   const [repoState, setRepoState] = useState<Record<string, RepoExportState>>({})
   // Per-workspace "include the tab structure itself" and per-repo "include
@@ -169,6 +174,7 @@ export function SecureWorkspaceModal({
   useEffect(() => {
     void vaultApi.list('').then((d) => {
       const n = d.available ? d.global.length : 0
+      setVaultRefused(d.unreadable ? 'unreadable' : !d.available && d.onDisk ? 'unavailable' : null)
       setVaultCount(n)
       setIncludeVault(n > 0)
     })
@@ -605,6 +611,11 @@ export function SecureWorkspaceModal({
                 {vaultCount ?? 0} {t('wshare.secrets')}
               </span>
             </button>
+            {vaultRefused && (
+              <p className="settings-hint" role="alert">
+                {t(vaultRefused === 'unreadable' ? 'vault.unreadable' : 'vault.keychainUnavailable')}
+              </p>
+            )}
 
             {/* Workspaces, each with its repos; a group checkbox selects/clears
                 the whole workspace at once. */}

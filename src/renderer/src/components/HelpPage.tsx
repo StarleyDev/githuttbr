@@ -121,7 +121,12 @@ export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.E
             }}
           />
           {query && (
-            <button className="help-search-clear" onClick={() => setQuery('')}>
+            <button
+              className="help-search-clear"
+              title={t('common.clearSearch')}
+              aria-label={t('common.clearSearch')}
+              onClick={() => setQuery('')}
+            >
               <X size={12} />
             </button>
           )}

@@ -56,6 +56,7 @@ import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
 import { WikiPageView } from './components/WikiPageView'
 import { CiRunsPage } from './components/CiRunsPage'
+import { PullRequestsPage } from './components/PullRequestsPage'
 import { VaultPage } from './components/VaultPage'
 import { RepositoriesPage } from './components/RepositoriesPage'
 import { ReleasePage } from './components/ReleasePage'
@@ -66,7 +67,7 @@ import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import { RepoChatPanel } from './components/RepoChatPanel'
 import gitcitoLaunch from './assets/gitcito-launch.png'
-import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent } from './lib/shortcuts'
+import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent, TEXT_KEEPS } from './lib/shortcuts'
 import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
 import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
@@ -253,6 +254,8 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
       return <WikiPageView repoPath={page.repoPath} />
     case 'ci-runs':
       return <CiRunsPage repoPath={page.repoPath} />
+    case 'pull-requests':
+      return <PullRequestsPage repoPath={page.repoPath} />
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
     case 'pr':
@@ -291,6 +294,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <WikiPageView repoPath={tab.page.repoPath} />
     case 'ci-runs':
       return <CiRunsPage repoPath={tab.page.repoPath} />
+    case 'pull-requests':
+      return <PullRequestsPage repoPath={tab.page.repoPath} />
     case 'vault':
       return <VaultPage />
     case 'repositories':
@@ -764,7 +769,7 @@ export default function App(): React.JSX.Element {
       // so both entry points go through the same table. A command that reports
       // it did nothing (no repository open) leaves the key event alone.
       const id = matchShortcut(e, effectiveBindings(st.settings.shortcuts))
-      if (!id) return
+      if (!id || (typing && TEXT_KEEPS.has(id))) return
       if (runAppCommand(id)) e.preventDefault()
     }
     window.addEventListener('keydown', onKey)

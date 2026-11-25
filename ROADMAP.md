@@ -79,32 +79,6 @@ a device but does not behave like one is not worth shipping.
 Not features, but they decide when features can ship. Electron supports its
 three newest majors, so staying current is a schedule, not a choice.
 
-### Keychain calls on the asynchronous API — before Electron 46
-GitHuttBr moved to Electron 45 in v4.50. Its synchronous `safeStorage` calls —
-the ones that encrypt tokens, AI keys and the Vault — are deprecated there and
-removed in Electron 46, so moving them to the asynchronous API has to land
-before that upgrade. It touches the most sensitive path in the app (reading,
-writing and migrating every saved secret), so it ships on its own, with tests
-for the unreadable-store and no-keyring cases, not folded into a version bump.
-
-### The semantic diff's grammars, rebuilt
-The semantic diff parses with web-tree-sitter 0.24 and 18 prebuilt grammars.
-Newer web-tree-sitter releases cannot load those grammars — they were built in
-an older WebAssembly format — so upgrading means building the grammars here
-with tree-sitter's own CLI instead of taking a prebuilt bundle. More work up
-front; in exchange, a grammar can be updated or added without waiting on a
-third-party package.
-
-### xterm.js 6
-The integrated terminal is on xterm.js 5. Version 6 and its addons move
-together (the fit addon measures the scrollbar differently), so they are one
-change, tested against resizing, links and the shell-integration marks.
-
-### Larger dependency moves, when there is a reason
-React 19, zustand 5, framer-motion and lucide's 1.x icon names each touch most
-of the renderer and none fixes a problem today. They wait for a feature that
-needs them or a security reason, rather than being done for the version number.
-
 ---
 
 ## Deliberately not doing

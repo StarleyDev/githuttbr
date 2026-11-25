@@ -37,6 +37,7 @@ import {
 } from '../src/main/bitbucketServer'
 import { isReviewableRemote } from '../src/renderer/src/lib/hosting'
 import { blanksOnly } from './credentialConfig'
+import type { TokenCheckResult } from '../src/shared/tokenCheck'
 
 // Bitbucket Data Center: one resolver for every Data Center URL, a token that
 // only ever reaches the server it was saved for, and call sites checked through
@@ -54,11 +55,11 @@ vi.mock('electron', () => ({
   shell: { openExternal: (url: string) => opened.push(url) },
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: () => {
+    isAsyncEncryptionAvailable: async () => false,
+    encryptStringAsync: async () => {
       throw new Error('stubbed')
     },
-    decryptString: () => {
+    decryptStringAsync: async () => {
       throw new Error('stubbed')
     }
   }
@@ -466,7 +467,10 @@ describe('mapping the documented shapes', () => {
       state: 'open',
       headSha: 'sha7',
       // Only the reviewer who has not answered yet.
-      requestedReviewers: ['jdoe']
+      requestedReviewers: ['jdoe'],
+      // The list page's "updated" column and its search.
+      updatedAt: new Date(1700000500000).toISOString(),
+      body: 'Does a thing.'
     })
   })
 
@@ -838,6 +842,12 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   const call = (channel: string, ...args: unknown[]): Promise<unknown> => Promise.resolve(handlers.get(channel)!({}, ...args))
+  // Settings' check answers a typed result (shared/tokenCheck.ts); these tests want the account or a throw.
+  const whoAmI = async (...args: unknown[]): Promise<unknown> => {
+    const r = (await call('hosting:whoAmI', ...args)) as TokenCheckResult
+    if (!r.ok) throw new Error(r.failure.message)
+    return r.account
+  }
   // A repository-scoped call's first argument is the repository; '' is none (the active profile).
   const UNBOUND = ''
   const REMOTE = 'https://bitbucket.example.corp/bitbucket/scm/proj/app.git'
@@ -979,7 +989,7 @@ describe('call sites, through the real IPC handlers', () => {
   it('checks a typed token against a Data Center no profile names yet — that token only, nothing saved', async () => {
     const NEW = 'https://bbs.unsaved.example/bitbucket'
     // The onboarding wizard's row: the server is not saved, the token is the one just typed.
-    await call('hosting:whoAmI', 'bitbucket', 'typed-token', NEW, false).catch(() => null)
+    await whoAmI('bitbucket', 'typed-token', NEW, false).catch(() => null)
     expect(calls.length).toBeGreaterThan(0)
     for (const c of calls) {
       expect(c.url.startsWith(`${NEW}/`)).toBe(true)
@@ -987,11 +997,11 @@ describe('call sites, through the real IPC handlers', () => {
     }
     // No token in the call: simply not connected, and nothing is sent — never a saved one.
     calls.length = 0
-    expect(await call('hosting:whoAmI', 'bitbucket', '', NEW, false)).toBeNull()
+    expect(await whoAmI('bitbucket', '', NEW, false)).toBeNull()
     expect(calls).toHaveLength(0)
     // An address Settings would refuse is refused here too.
     for (const bad of ['http://bbs.unsaved.example', 'https://jdoe:pw@bbs.unsaved.example']) {
-      await expect(call('hosting:whoAmI', 'bitbucket', 'typed-token', bad, false)).rejects.toThrow()
+      await expect(whoAmI('bitbucket', 'typed-token', bad, false)).rejects.toThrow()
     }
     expect(calls).toHaveLength(0)
     // Saved tokens never leave for the new host.
@@ -1001,25 +1011,25 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('a user search that is not allowed still links a plain user name — once the server confirms the slug', async () => {
     userSearch = false
-    const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
+    const who = (await whoAmI('bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
     expect(who).toMatchObject({ login: 'jdoe', profileUrl: `${BBS}/users/jdoe` })
     expect(calls.filter((c) => c.url === `${API}/users/jdoe`)).toHaveLength(1)
     // A plain name the server does not know as a slug: no link, rather than a 404.
     calls.length = 0
     ausername = 'ghost'
-    const ghost = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { profileUrl?: string }
+    const ghost = (await whoAmI('bitbucket', BBS_TOKEN, BBS, false)) as { profileUrl?: string }
     expect(ghost.profileUrl).toBeUndefined()
     expect(calls.filter((c) => c.url === `${API}/users/ghost`)).toHaveLength(1)
     // An email-style name is not tried as a slug at all.
     calls.length = 0
     ausername = 'jdoe@corp.com'
-    const email = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { profileUrl?: string }
+    const email = (await whoAmI('bitbucket', BBS_TOKEN, BBS, false)) as { profileUrl?: string }
     expect(email.profileUrl).toBeUndefined()
     expect(calls.some((c) => /\/users\/[^?]+$/.test(c.url))).toBe(false)
   })
 
   it('a found user is not looked up again by slug', async () => {
-    await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)
+    await whoAmI('bitbucket', BBS_TOKEN, BBS, false)
     expect(calls.some((c) => c.url === `${API}/users/jdoe`)).toBe(false)
   })
 
@@ -1066,7 +1076,7 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('Settings links an email-style account to its slug’s page', async () => {
     ausername = 'jdoe@corp.com'
-    const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
+    const who = (await whoAmI('bitbucket', BBS_TOKEN, BBS, false)) as { login: string; profileUrl?: string }
     expect(who).toMatchObject({ login: 'jdoe@corp.com', profileUrl: `${BBS}/users/jdoe_corp.com` })
   })
 
@@ -1163,20 +1173,63 @@ describe('call sites, through the real IPC handlers', () => {
 
   it('bitbucket.org is unchanged: its own API, the Cloud token', async () => {
     await call('hosting:listPRs', UNBOUND, 'https://bitbucket.org/team/app.git', tokens)
-    expect(calls).toHaveLength(1)
-    expect(calls[0].url).toBe('https://api.bitbucket.org/2.0/repositories/team/app/pullrequests?state=OPEN&pagelen=30')
-    expect(calls[0].auth).toBe(`Bearer ${CLOUD_TOKEN}`)
+    // The list, then who the token is — the PR list page's "Me" — both as the Cloud account.
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://api.bitbucket.org/2.0/repositories/team/app/pullrequests?state=OPEN&pagelen=30',
+      'https://api.bitbucket.org/2.0/user'
+    ])
+    for (const c of calls) expect(c.auth).toBe(`Bearer ${CLOUD_TOKEN}`)
   })
 
   it('Settings checks a saved server with the token typed for it', async () => {
-    const who = (await call('hosting:whoAmI', 'bitbucket', BBS_TOKEN, BBS, false)) as { login: string; name: string }
+    const who = (await whoAmI('bitbucket', BBS_TOKEN, BBS, false)) as { login: string; name: string }
     expect(who).toMatchObject({ login: 'jdoe', name: 'Jane Doe', source: 'token' })
     expectOnlyServerA()
     // A server no profile names is checked only with the token the call carries
     // (see the unsaved-server case below); without one nothing is sent.
     calls.length = 0
-    expect(await call('hosting:whoAmI', 'bitbucket', '', 'https://evil.example', false)).toBeNull()
+    expect(await whoAmI('bitbucket', '', 'https://evil.example', false)).toBeNull()
     expect(calls).toHaveLength(0)
+  })
+
+  // Settings tells a refused token from a server it could not ask (shared/tokenCheck.ts).
+  describe('the check says why there is no account', () => {
+    const answering = async (reply: () => Promise<Response>, ...args: unknown[]): Promise<TokenCheckResult> => {
+      const stub = vi.mocked(globalThis.fetch)
+      const normal = stub.getMockImplementation()
+      stub.mockImplementation(reply)
+      try {
+        return (await call('hosting:whoAmI', ...args)) as TokenCheckResult
+      } finally {
+        stub.mockImplementation(normal!)
+      }
+    }
+    const status =
+      (s: number, headers: Record<string, string> = {}) =>
+      async (): Promise<Response> =>
+        new Response('{}', { status: s, headers })
+
+    it('Bitbucket Data Center: 401 refused the token, a 503 could not check it', async () => {
+      expect(await answering(status(401), 'bitbucket', BBS_TOKEN, BBS, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'refused', server: 'bitbucket.example.corp' }
+      })
+      expect(await answering(status(503), 'bitbucket', BBS_TOKEN, BBS, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable', server: 'bitbucket.example.corp' }
+      })
+    })
+
+    it('bitbucket.org: 401 refused the app password, a 429 could not check it', async () => {
+      expect(await answering(status(401), 'bitbucket', CLOUD_TOKEN, undefined, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'refused', server: 'bitbucket.org' }
+      })
+      expect(await answering(status(429), 'bitbucket', CLOUD_TOKEN, undefined, false)).toMatchObject({
+        ok: false,
+        failure: { kind: 'unreachable', server: 'bitbucket.org' }
+      })
+    })
   })
 
   it('never sends a Data Center token to bitbucket.org for Cloud-only browsing', async () => {

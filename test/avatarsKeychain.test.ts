@@ -30,11 +30,11 @@ vi.mock('electron', () => ({
     ]
   },
   safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (b: Buffer) => {
+    isAsyncEncryptionAvailable: async () => true,
+    encryptStringAsync: async (s: string) => Buffer.from(`enc:${s}`),
+    decryptStringAsync: async (b: Buffer) => {
       keyring.decrypts++
-      return b.toString().replace(/^enc:/, '')
+      return { result: b.toString().replace(/^enc:/, ''), shouldReEncrypt: false }
     }
   }
 }))

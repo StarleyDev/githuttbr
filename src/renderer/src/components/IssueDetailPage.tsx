@@ -20,6 +20,7 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { useRepoStore } from '../stores/repo'
+import { NO_ITEMS } from '../lib/stableEmpty'
 
 type IssuePage = Extract<PageContent, { type: 'issue' }>
 
@@ -36,7 +37,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   const openModal = useUIStore((s) => s.openModal)
   const profile = useSettingsStore((s) => s.activeProfile())
   const openPageTab = useSettingsStore((s) => s.openPageTab)
-  const milestones = useRepoStore((s) => s.repos[repoPath]?.milestones ?? [])
+  const milestones = useRepoStore((s) => s.repos[repoPath]?.milestones ?? NO_ITEMS)
   const tokens = { github: profile.githubToken || undefined }
 
   const [detail, setDetail] = useState<IssueDetail | null>(null)

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Boxes, Loader2, Plus, Trash2, Download, Trash, FileDown, AlertTriangle, MoreVertical } from 'lucide-react'
+import { Boxes, Loader2, Plus, CircleMinus, Download, Trash, FileDown, AlertTriangle, MoreVertical } from 'lucide-react'
 import type { LfsInfo, LfsFile } from '../../../shared/types'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -118,7 +118,7 @@ export function LfsModal({ repoPath }: { repoPath: string }): React.JSX.Element 
                     onClick={() => void run(() => gitApi.lfsUntrack(repoPath, p), interp(t('lfs.untracked'), { pattern: p }))}
                     disabled={busy}
                   >
-                    <Trash2 size={14} />
+                    <CircleMinus size={14} />
                   </button>
                 </div>
               ))}

@@ -90,7 +90,19 @@ import type {
   Workspace
 } from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
-import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
+import {
+  altArrowSequence,
+  claimKeyEvent,
+  terminalCloseTarget,
+  terminalShortcutFromEvent
+} from '../src/renderer/src/lib/terminalShortcuts'
+import {
+  GESTURE_WINDOW_MS,
+  RESYNC_MAX_RETRIES,
+  fitNeedsResync,
+  planViewportResync,
+  type ResyncInput
+} from '../src/renderer/src/lib/terminalScroll'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
 import { applyTerminalCenterDefault, claimTerminalAutoOpen } from '../src/renderer/src/lib/terminalAutoOpen'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
@@ -891,6 +903,84 @@ describe('keyboard shortcuts', () => {
     expect(terminalShortcutFromEvent(ev('W', { ctrl: true }), true)).toBe('close')
     expect(terminalShortcutFromEvent(ev('t', { meta: true }), false)).toBeNull()
     expect(terminalShortcutFromEvent(ev('w', { ctrl: true, shift: true }), true)).toBeNull()
+  })
+
+  it('keeps the xterm 5 word-jump bytes for Alt+arrow', () => {
+    const alt = (key: string, extra: Parameters<typeof ev>[1] = {}): KeyboardEvent =>
+      ev(key, { alt: true, code: key, ...extra })
+    expect(altArrowSequence(alt('ArrowLeft'), true)).toBe('\x1bb')
+    expect(altArrowSequence(alt('ArrowRight'), true)).toBe('\x1bf')
+    expect(altArrowSequence(alt('ArrowUp'), true)).toBeNull()
+    expect(altArrowSequence(alt('ArrowLeft'), false)).toBe('\x1b[1;5D')
+    expect(altArrowSequence(alt('ArrowRight'), false)).toBe('\x1b[1;5C')
+    expect(altArrowSequence(alt('ArrowUp'), false)).toBe('\x1b[1;5A')
+    expect(altArrowSequence(alt('ArrowDown'), false)).toBe('\x1b[1;5B')
+    // Any other modifier on top is a different chord — xterm encodes it itself.
+    expect(altArrowSequence(alt('ArrowLeft', { shift: true }), false)).toBeNull()
+    expect(altArrowSequence(alt('ArrowLeft', { ctrl: true }), true)).toBeNull()
+    expect(altArrowSequence(ev('ArrowLeft', { code: 'ArrowLeft' }), true)).toBeNull()
+    expect(altArrowSequence(ev('b', { alt: true, code: 'KeyB' }), false)).toBeNull()
+  })
+
+  it('reads numpad arrows by key and leaves an IME composition alone', () => {
+    // NumLock off: the numpad reports an arrow key on a Numpad code.
+    expect(altArrowSequence(ev('ArrowLeft', { alt: true, code: 'Numpad4' }), false)).toBe('\x1b[1;5D')
+    expect(altArrowSequence(ev('ArrowRight', { alt: true, code: 'Numpad6' }), true)).toBe('\x1bf')
+    // NumLock on: a digit, not an arrow.
+    expect(altArrowSequence(ev('4', { alt: true, code: 'Numpad4' }), false)).toBeNull()
+    // A layout that leaves key empty still counts by its physical code.
+    expect(altArrowSequence(ev('', { alt: true, code: 'ArrowDown' }), false)).toBe('\x1b[1;5B')
+    // An IME composition owns the key, whichever way the browser reports it.
+    const composing = { ...ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), isComposing: true }
+    expect(altArrowSequence(composing, false)).toBeNull()
+    const process = { ...ev('ArrowLeft', { alt: true, code: 'ArrowLeft' }), keyCode: 229 }
+    expect(altArrowSequence(process, false)).toBeNull()
+  })
+
+  it('plans the post-resize scroll resync', () => {
+    const base: ResyncInput = {
+      visible: true,
+      bufferType: 'normal',
+      scrollbarDrag: false,
+      msSinceGesture: 10_000,
+      anchorKind: 'bottom',
+      retries: 0
+    }
+    expect(planViewportResync(base)).toEqual({ action: 'restore', to: 'bottom' })
+    expect(planViewportResync({ ...base, anchorKind: 'line' })).toEqual({ action: 'restore', to: 'line' })
+    // Hidden host, alternate screen: nothing to put in step.
+    expect(planViewportResync({ ...base, visible: false })).toEqual({ action: 'skip' })
+    expect(planViewportResync({ ...base, bufferType: 'alternate' })).toEqual({ action: 'skip' })
+    // A live gesture defers until its window closes, never sooner than 20ms.
+    expect(planViewportResync({ ...base, msSinceGesture: 100 })).toEqual({
+      action: 'defer',
+      delayMs: GESTURE_WINDOW_MS - 100
+    })
+    expect(planViewportResync({ ...base, msSinceGesture: GESTURE_WINDOW_MS - 1 })).toEqual({
+      action: 'defer',
+      delayMs: 20
+    })
+    expect(planViewportResync({ ...base, scrollbarDrag: true })).toEqual({ action: 'defer', delayMs: 20 })
+    // A drag flag nobody clears stops being polled.
+    expect(planViewportResync({ ...base, scrollbarDrag: true, retries: RESYNC_MAX_RETRIES })).toEqual({
+      action: 'skip'
+    })
+  })
+
+  it('resyncs only after a fit that changed the size or reattached', () => {
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 80, rows: 24 }, false)).toBe(false)
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 60, rows: 24 }, false)).toBe(true)
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 80, rows: 30 }, false)).toBe(true)
+    expect(fitNeedsResync({ cols: 80, rows: 24 }, { cols: 80, rows: 24 }, true)).toBe(true)
+  })
+
+  it('claims a terminal key from the window listeners as well as the browser', () => {
+    const calls: string[] = []
+    claimKeyEvent({
+      preventDefault: () => calls.push('preventDefault'),
+      stopPropagation: () => calls.push('stopPropagation')
+    })
+    expect(calls).toEqual(['preventDefault', 'stopPropagation'])
   })
 
   it('closes the focused terminal and identifies the last remaining panel', () => {
@@ -8165,5 +8255,34 @@ describe('repoParentAndName', () => {
   })
   it('a bare name has no parent rather than a truncated one', () => {
     expect(repoParentAndName('proj')).toEqual({ parent: '', repoName: 'proj' })
+  })
+})
+
+// ─── Vault refusals (src/renderer/src/lib/vaultRefusal.ts) ─────────────────
+
+import { vaultRefusalKey, vaultRefusalOf, vaultWriteRefusal } from '../src/renderer/src/lib/vaultRefusal'
+
+describe('vaultWriteRefusal', () => {
+  it('a saved write is no refusal', () => {
+    expect(vaultWriteRefusal({ available: true })).toBeNull()
+    expect(vaultWriteRefusal(null)).toBeNull()
+  })
+  it('an unreadable vault refuses, even though it reports available', () => {
+    expect(vaultWriteRefusal({ available: true, unreadable: true })).toBe('unreadable')
+  })
+  it('a keychain that would not open the vault refuses too — a timeout is not "saved"', () => {
+    expect(vaultWriteRefusal({ available: false })).toBe('unavailable')
+  })
+})
+
+describe('vaultRefusalOf / vaultRefusalKey', () => {
+  it('reads the reply, unreadable first', () => {
+    expect(vaultRefusalOf({})).toBeNull()
+    expect(vaultRefusalOf({ unavailable: true })).toBe('unavailable')
+    expect(vaultRefusalOf({ unreadable: true, unavailable: true })).toBe('unreadable')
+  })
+  it('names the file for unreadable and the keychain for unavailable', () => {
+    expect(vaultRefusalKey('unreadable')).toBe('vault.unreadable')
+    expect(vaultRefusalKey('unavailable')).toBe('vault.keychainUnavailable')
   })
 })

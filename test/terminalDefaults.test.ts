@@ -19,9 +19,9 @@ vi.mock('electron', () => ({
   shell: {},
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: (s: string) => Buffer.from(s),
-    decryptString: (b: Buffer) => b.toString()
+    isAsyncEncryptionAvailable: async () => false,
+    encryptStringAsync: async (s: string) => Buffer.from(s),
+    decryptStringAsync: async (b: Buffer) => ({ result: b.toString(), shouldReEncrypt: false })
   }
 }))
 

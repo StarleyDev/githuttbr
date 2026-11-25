@@ -14,10 +14,12 @@ import {
   Lock
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
+import { VaultUnreadableNotice, vaultWriteRefused } from './VaultUnreadableNotice'
+import { vaultWriteRefusal } from '../lib/vaultRefusal'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { parseDotenv } from '../lib/dotenv'
-import { useT } from '../i18n'
+import { interp, useT } from '../i18n'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
 
 function EntryRow({
@@ -95,13 +97,15 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
 
   const saveDraft = async (): Promise<void> => {
     if (!draft || !draft.key.trim()) return
-    setData(
-      await vaultApi.upsert('repo', repoPath, {
-        key: draft.key.trim(),
-        value: draft.value,
-        note: draft.note.trim() || undefined
-      })
-    )
+    const result = await vaultApi.upsert('repo', repoPath, {
+      key: draft.key.trim(),
+      value: draft.value,
+      note: draft.note.trim() || undefined
+    })
+    // Refused: the page stays as it was, draft open and visible, so what was
+    // typed is not lost; the toast says why. The next load shows the notice.
+    if (vaultWriteRefused(result)) return
+    setData(result)
     setDraft(null)
     toast('success', t('vault.saved'))
   }
@@ -118,13 +122,22 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
     for (const p of parsed) {
       const existing = existingEntries.find((e) => e.key === p.key)
       result = await vaultApi.upsert('repo', repoPath, { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
+      // The first refusal answers for the rest: they would be refused the same way.
+      if (vaultWriteRefusal(result)) break
     }
+    // Refused: the pasted text stays open, as the draft does above.
+    if (vaultWriteRefused(result)) return
     if (result) setData(result)
     setPasteText(null)
-    toast('success', `${parsed.length} ${t('vault.envImported')}`)
+    toast('success', interp(t('vault.envImported'), { count: parsed.length }))
   }
 
-  const del = async (id: string): Promise<void> => setData(await vaultApi.remove('repo', repoPath, id))
+  const del = async (id: string): Promise<void> => {
+    const result = await vaultApi.remove('repo', repoPath, id)
+    // Refused: the list stays as it was, and the toast says why.
+    if (vaultWriteRefused(result)) return
+    setData(result)
+  }
 
   const openGlobal = (): void => {
     useSettingsStore.getState().openPageTab({ type: 'vault' })
@@ -156,6 +169,8 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
           <ShieldAlert size={16} />
           <span>{t('vault.unavailable')}</span>
         </div>
+      ) : data.unreadable ? (
+        <VaultUnreadableNotice onReload={() => void reload()} />
       ) : (
         <>
           <div className="vault-toolbar">

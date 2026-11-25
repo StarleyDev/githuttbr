@@ -76,7 +76,12 @@ export function RepoCosmos(): React.JSX.Element | null {
               </button>
             ))}
           </div>
-          <button className="btn ghost small cosmos-close" onClick={closeCosmos}>
+          <button
+            className="btn ghost small cosmos-close"
+            title={t('common.close')}
+            aria-label={t('common.close')}
+            onClick={closeCosmos}
+          >
             <X size={16} />
           </button>
         </div>

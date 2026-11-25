@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Cloud, GitBranch, Tag } from 'lucide-react'
+import { useT } from '../i18n'
 
 export type RefKind = 'local' | 'remote' | 'tag'
 
@@ -34,6 +35,7 @@ export function RefPicker({
   /** Fired when the user settles on a value (picked a row or pressed Enter). */
   onCommit?: (v: string) => void
 }): React.JSX.Element {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [cursor, setCursor] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -157,6 +159,8 @@ export function RefPicker({
         type="button"
         className="refpick-toggle"
         tabIndex={-1}
+        title={t('common.showList')}
+        aria-label={t('common.showList')}
         onClick={() => {
           setQuery(null)
           setCursor(0)

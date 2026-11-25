@@ -615,6 +615,24 @@ export interface PullRequest {
   requestedReviewers?: string[]
   /** You are one of those reviewers — the sidebar marks the row. */
   awaitingYou?: boolean
+  /** ISO time of the last activity, when the host's list says (Azure DevOps
+   *  lists none — there it is when the PR was opened). */
+  updatedAt?: string
+  /** The description, when the list carries it — searched by the PR list page. */
+  body?: string
+  /** The author's picture, when the host's list names one (https only is drawn). */
+  authorAvatar?: string
+}
+
+/**
+ * The merged and closed pull requests of a remote, newest activity first — the
+ * PR list page's second and third tabs. One call, a bounded window: `truncated`
+ * says the host had more than was read.
+ */
+export interface FinishedPullRequests {
+  provider: HostingProvider
+  prs: PullRequest[]
+  truncated: boolean
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'forgejo' | null
@@ -2308,6 +2326,10 @@ export interface VaultEntry {
 /** Vault contents for a repo: its own entries plus the cross-repo global ones. */
 export interface VaultListResult {
   available: boolean // OS encryption (safeStorage) usable on this machine
+  /** The vault file exists but could not be read: shown empty, and every write is refused. */
+  unreadable?: boolean
+  /** With `available: false` from listing: whether a vault file exists that the keychain could not open. */
+  onDisk?: boolean
   repo: VaultEntry[]
   global: VaultEntry[]
 }
@@ -2316,6 +2338,22 @@ export interface VaultListResult {
 export interface VaultExport {
   repos: Record<string, VaultEntry[]>
   global: VaultEntry[]
+}
+
+/** `vault:exportAll`'s answer: `unreadable` when the vault exists and could not
+ *  be read — then it is empty, and must not be exported as the vault. */
+export interface VaultExportReply extends VaultExport {
+  unreadable?: boolean
+  /** A vault exists, but the OS keychain is off or did not answer: it could not be opened. */
+  unavailable?: boolean
+}
+
+/** `vault:importAll`'s answer: `unreadable` when the local vault could not be
+ *  read, so nothing was merged into it. */
+export interface VaultImportReply {
+  unreadable?: boolean
+  /** There were entries to merge, and the OS keychain could not take them. */
+  unavailable?: boolean
 }
 
 /** Whole-info payload for backup/transfer (all repos). */
@@ -2431,6 +2469,8 @@ export type SecureShareError =
   | 'unsupported-version' // bundle written by a newer githuttbr
   | 'read-failed'
   | 'write-failed'
+  | 'vault-unreadable' // the local vault could not be read, so nothing was merged into it
+  | 'vault-unavailable' // the OS keychain could not open the vault, so it was neither packed nor merged
 
 /** A non-private, per-repo info field (App ID, website, social links…). Stored
  *  in plaintext — unlike the vault, this is reference metadata, not secrets. */
@@ -3349,7 +3389,10 @@ export type PageContent =
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }
   // `title` is what the list knew when it was opened — the tab's label until the
   // page has loaded the real one.
-  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string }
+  // `via: 'list'` — opened from the pull requests page, so its ‹ › walk the
+  // filtered list it came from rather than the repository's open PRs.
+  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list' }
+  | { type: 'pull-requests'; repoPath: string }
 
 /** One dependency's licence, collected at build time by scripts/gen-licenses.mjs.
  *  `text` is null when the package ships an SPDX id but no licence file. */

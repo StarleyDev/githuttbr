@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import {
-  Bot, Github, MousePointer2, Wind, Terminal, Code2, GitCommit,
+  Bot, MousePointer2, Wind, Terminal, Code2, GitCommit,
   Loader2, ChevronRight, ChevronLeft, Check, FileText, Wand2,
   Sparkles, Plus, X, Server, MessageSquare, Zap, SlidersHorizontal,
   HelpCircle, FolderOpen
 } from 'lucide-react'
+import { Github } from './BrandIcons'
 import { marked } from 'marked'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -575,7 +576,13 @@ export function AIConfigWizard({
                 <div key={a.path} className="wizard-artifact-row wizard-artifact-custom">
                   <span className="wizard-artifact-path">{a.path}</span>
                   <span className="wizard-artifact-desc">{a.description}</span>
-                  <button type="button" className="wizard-artifact-remove" onClick={() => setCustomArtifacts((p) => p.filter((x) => x.path !== a.path))}>
+                  <button
+                    type="button"
+                    className="wizard-artifact-remove"
+                    title={t('common.remove')}
+                    aria-label={t('common.remove')}
+                    onClick={() => setCustomArtifacts((p) => p.filter((x) => x.path !== a.path))}
+                  >
                     <X size={11} />
                   </button>
                 </div>

@@ -3,7 +3,8 @@ import { ExternalLink, Plus, Server, Trash2, Unplug } from 'lucide-react'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { readableError } from '../lib/gitErrorHint'
+import type { TokenCheckFailure } from '../../../shared/tokenCheck'
+import { TokenCheckNotice } from './TokenCheckNotice'
 import {
   gitlabServerUrlProblem,
   gitlabTokenUrl,
@@ -168,7 +169,9 @@ function GitlabServerRow({
   const t = useT()
   const name = serverName(server.url)
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [failure, setFailure] = useState<TokenCheckFailure | null>(null)
+  // Bumped by Retry, to run the check again for the same token.
+  const [checkRun, setCheckRun] = useState(0)
   const linkKey = server.link ? `${server.link.source}:${server.link.login}` : ''
 
   // Asked only with this server's own credential, never interactively: opening
@@ -177,13 +180,18 @@ function GitlabServerRow({
   useEffect(() => {
     let alive = true
     setAccount(null)
-    setError(null)
+    setFailure(null)
     if (!server.token.trim() && !server.link) return
     const timer = setTimeout(() => {
       void hostingApi
-        .whoAmI('gitlab', server.token, server.url, false, server.link, server.url)
-        .then((info) => alive && setAccount(info))
-        .catch((err: Error) => alive && setError(err.message))
+        .checkToken('gitlab', server.token, server.url, false, server.link, server.url)
+        .then((result) => {
+          if (!alive) return
+          if (result.ok) setAccount(result.account)
+          // Refused or not, the token stays in its field: replacing it is the user's call.
+          else setFailure(result.failure)
+        })
+        .catch((err: Error) => alive && setFailure({ kind: 'error', message: err.message }))
     }, 400)
     return () => {
       alive = false
@@ -191,7 +199,7 @@ function GitlabServerRow({
     }
     // linkKey stands for the link: a new object with the same account is no reason to re-check.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [server.url, server.token, linkKey])
+  }, [server.url, server.token, linkKey, checkRun])
 
   return (
     <div className="ghes-row">
@@ -222,7 +230,7 @@ function GitlabServerRow({
         <input type="password" value={server.token} placeholder="glpat-…" onChange={(e) => onToken(e.target.value)} />
         <span className="settings-hint">{interp(t('settings.gitlabServerTokenHint'), { host: name })}</span>
       </label>
-      {error && <span className="connected-account-error">{readableError(error, t, interp)}</span>}
+      {failure && <TokenCheckNotice failure={failure} provider={name} onRetry={() => setCheckRun((n) => n + 1)} />}
       <button className="link-btn" type="button" onClick={() => void shellApi.openExternal(gitlabTokenUrl(server.url))}>
         <ExternalLink size={12} /> {interp(t('settings.gitlabServerCreateToken'), { host: name })}
       </button>

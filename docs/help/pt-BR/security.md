@@ -77,6 +77,27 @@ continua lendo a sua), e o Cofre continua salvando no armazenamento básico, por
 não tem modo só de sessão. Instale ou desbloqueie um chaveiro e reinicie o Gitcito
 para voltar a guardar tokens novos.
 
+O Gitcito não confia só no que o sistema diz sobre o armazenamento que recebeu.
+Ele o trata como básico quando o sistema diz que é, quando não sabe dizer qual
+é, e quando o que ele criptografa volta marcado com a senha fixa — diga o
+sistema o que disser. Assim, um chaveiro que cai para o básico em silêncio
+continua mantendo tokens novos fora do disco.
+
+Um chaveiro que para de responder não é esperado para sempre. No Linux, depois
+que o chaveiro respondeu uma vez na sessão, uma pergunta sem resposta por 10
+segundos conta como *sem chaveiro*: um token salvo fica só até você fechar o
+app, e o Cofre fica fechado. A primeira pergunta da sessão — a que pode abrir o
+pedido de senha do próprio chaveiro — e a que vem logo depois da explicação do
+Gitcito têm dois minutos, para que ler uma janela nunca seja interrompido. Por
+meio minuto depois de um desses limites a resposta continua *sem chaveiro* sem
+perguntar de novo; depois o Gitcito pergunta outra vez. macOS e Windows
+respondem localmente e nunca têm limite de tempo.
+
+O limite vale só para essa pergunta — *há um chaveiro aí?* Um chaveiro que
+responde a ela e depois trava ao criptografar ou descriptografar continua sendo
+esperado: salvar as configurações, e o Cofre, ficam ocupados até ele responder
+ou o Gitcito ser reiniciado.
+
 ## Importando configurações
 
 **Configurações → Dados → Importar configurações** traz perfis, preferências e

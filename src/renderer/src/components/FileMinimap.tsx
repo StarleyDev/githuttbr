@@ -22,7 +22,7 @@ export function FileMinimap({
 }: {
   lines: string[]
   gutterByLine: Map<number, GutterChange>
-  scrollRef: React.RefObject<HTMLDivElement>
+  scrollRef: React.RefObject<HTMLDivElement | null>
 }): React.JSX.Element | null {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)

@@ -22,6 +22,25 @@ updates:
       prefix: 'build'
       include: scope
     groups:
+      # xterm and its addons in one PR, apart from the generic prod group.
+      # Only what is safe to take as a bump reaches it — xterm minors and
+      # patches, addon patches; the moves across xterm lines are ignored below.
+      # Listed first because a dependency joins the first group it matches.
+      xterm:
+        patterns: ['@xterm/*']
+        update-types: [minor, patch]
+      # The semantic diff's WASM runtime (a dependency) and its grammars
+      # (devDependencies whose .wasm ships) share an ABI and a module format:
+      # every grammar must load in the installed web-tree-sitter, and 0.25
+      # stranded all older builds at once. One PR for the set, and
+      # test/semanticGrammars.test.ts loads every grammar against the runtime
+      # in it. The cooldown is per dependency, so a runtime and the grammar
+      # releases built for it may still arrive in different weeks: a red PR
+      # means a grammar fell behind the runtime (or vendor/tree-sitter-swift
+      # needs the rebuild its README describes). Fix that; do not merge it red.
+      tree-sitter:
+        patterns: ['web-tree-sitter', 'tree-sitter-*', '@tree-sitter-grammars/*']
+        update-types: [minor, patch]
       # Tooling: one PR for every minor/patch devDependency bump.
       dev-minor-patch:
         dependency-type: development
@@ -49,17 +68,18 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: electron-vite
         update-types: ['version-update:semver-major']
-      # 0.x packages whose next "minor" breaks us. web-tree-sitter 0.25+ cannot
-      # load the grammars in resources/tree-sitter (built with the old dylink
-      # format) until they are rebuilt; @xterm/addon-fit 0.11 belongs to xterm 6
-      # and mis-measures the scrollbar on the xterm 5 we ship; addon-web-links
-      # 0.12 is xterm 6's too (no xterm peer any more). They move with xterm 6.
-      # Patches still come.
-      - dependency-name: web-tree-sitter
-        update-types: ['version-update:semver-minor', 'version-update:semver-major']
-      - dependency-name: '@xterm/addon-fit'
-        update-types: ['version-update:semver-minor', 'version-update:semver-major']
-      - dependency-name: '@xterm/addon-web-links'
+      # An xterm major is a migration like Electron's, done by hand: the 5 -> 6
+      # move needed fixes no test caught (Alt+arrow word jumps, the scroll
+      # position after a resize). Its addons are 0.x, so an addon "minor" is
+      # the release built for the next xterm line (0.11/0.12 declare no xterm
+      # peer, so nothing stops it installing against the old one). Grouping
+      # alone does not keep them together: the cooldown is per dependency and
+      # per update type (14 days for majors, 7 otherwise), so addons for a new
+      # xterm could arrive a week before xterm itself. Ignore both; they move
+      # together on a migration branch.
+      - dependency-name: '@xterm/xterm'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@xterm/addon-*'
         update-types: ['version-update:semver-minor', 'version-update:semver-major']
 
   # Keeps the SHA pins in .github/workflows current: Dependabot rewrites both

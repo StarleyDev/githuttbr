@@ -7,6 +7,11 @@ npm install
 npm run dev
 ```
 
+The semantic diff's grammars are npm packages that also carry a native Node
+binding, which their install step only picks from `prebuilds/` — Linux, macOS
+and Windows on x64 and arm64. Anywhere else (musl/Alpine, ia32, ppc64, s390x)
+that step needs a C toolchain, although the app uses only their `.wasm`.
+
 ## Commit messages
 
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).

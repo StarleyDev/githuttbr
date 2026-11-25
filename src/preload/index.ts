@@ -245,7 +245,8 @@ const api = {
     remove: (scope: string, repoPath: string, id: string): Promise<unknown> =>
       ipcRenderer.invoke('vault:remove', scope, repoPath, id),
     exportAll: (): Promise<unknown> => ipcRenderer.invoke('vault:exportAll'),
-    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data)
+    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data),
+    replaceUnreadable: (): Promise<unknown> => ipcRenderer.invoke('vault:replaceUnreadable')
   },
   repos: {
     list: (): Promise<unknown> => ipcRenderer.invoke('repos:list'),
@@ -325,6 +326,8 @@ const api = {
       ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org, profileId),
     listPRs: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listPRs', repoPath, remoteUrl, tokens),
+    listFinishedPRs: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listFinishedPRs', repoPath, remoteUrl, tokens),
     listReleases: (repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listReleases', repoPath, remoteUrl, tokens),
     ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string): Promise<unknown> =>

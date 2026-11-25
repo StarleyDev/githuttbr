@@ -37,6 +37,8 @@ export function pageTabLabel(page: PageContent, t: (key: TranslationKey) => stri
       return interp(t('tab.wiki'), { repo: basename(page.repoPath) })
     case 'ci-runs':
       return interp(t('tab.ciRuns'), { repo: basename(page.repoPath) })
+    case 'pull-requests':
+      return interp(t('tab.pullRequests'), { repo: basename(page.repoPath) })
     case 'issue':
       return `#${page.issue.number} ${page.issue.title}`
     case 'milestone':

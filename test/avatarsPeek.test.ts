@@ -49,14 +49,14 @@ const electronFor = (userData: string): Record<string, unknown> => ({
     ]
   },
   safeStorage: {
-    isEncryptionAvailable: () => {
+    isAsyncEncryptionAvailable: async () => {
       keyring.probes++
       return keyring.available
     },
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (b: Buffer) => {
+    encryptStringAsync: async (s: string) => Buffer.from(`enc:${s}`),
+    decryptStringAsync: async (b: Buffer) => {
       keyring.decrypts++
-      return b.toString().replace(/^enc:/, '')
+      return { result: b.toString().replace(/^enc:/, ''), shouldReEncrypt: false }
     }
   }
 })

@@ -19,6 +19,7 @@ import type {
   RemoteOwner,
   RemoteRepo
 } from '../shared/types'
+import { HttpStatusError } from './httpStatusError'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -43,7 +44,7 @@ async function fjResponse(url: string, token: string, init?: RequestInit): Promi
   if (!res.ok) {
     const d = (await res.json().catch(() => null)) as { message?: unknown } | null
     const msg = typeof d?.message === 'string' ? d.message.trim() : ''
-    throw new Error(msg ? `Forgejo: ${msg}` : `Forgejo API error (${res.status})`)
+    throw new HttpStatusError(msg ? `Forgejo: ${msg}` : `Forgejo API error (${res.status})`, res.status)
   }
   return res
 }
@@ -96,10 +97,14 @@ interface FjPull {
   title: string
   draft?: boolean
   html_url: string
-  user?: { login?: string }
   head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null }
   base?: { ref?: string }
   requested_reviewers?: Array<{ login?: string }> | null
+  state?: string
+  merged?: boolean
+  updated_at?: string
+  body?: string | null
+  user?: { login?: string; avatar_url?: string }
 }
 
 /** Forgejo marks a draft with a title prefix on older versions, `draft` on newer ones. */
@@ -116,7 +121,11 @@ export function mapForgejoPull(p: FjPull): PullRequest {
     isDraft: !!p.draft || WIP.test(p.title),
     ...(p.head?.sha ? { headSha: p.head.sha } : {}),
     ...(p.head?.repo?.full_name ? { headRepo: p.head.repo.full_name } : {}),
-    requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login ?? '').filter(Boolean)
+    requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login ?? '').filter(Boolean),
+    ...(p.state === 'closed' ? { state: p.merged ? 'merged' : 'closed' } : {}),
+    ...(p.updated_at ? { updatedAt: p.updated_at } : {}),
+    ...(p.body ? { body: p.body } : {}),
+    ...(p.user?.avatar_url && /^https:\/\//i.test(p.user.avatar_url) ? { authorAvatar: p.user.avatar_url } : {})
   }
 }
 
@@ -126,6 +135,22 @@ export async function listForgejoPulls(base: string, owner: string, repo: string
     token
   )
   return data.map(mapForgejoPull)
+}
+
+/** Merged and closed pull requests, most recently active first, up to `limit` (pages of 50). */
+export async function listForgejoClosedPulls(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  limit: number
+): Promise<PullRequest[]> {
+  const data = await fjList<FjPull>(
+    `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls?state=closed&sort=recentupdate`,
+    token,
+    Math.ceil(limit / 50)
+  )
+  return data.slice(0, limit).map(mapForgejoPull)
 }
 
 export async function createForgejoPull(

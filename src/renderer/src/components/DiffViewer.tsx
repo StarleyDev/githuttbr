@@ -249,7 +249,7 @@ export function DiffViewer({
   const leftColRef = useRef<HTMLDivElement>(null)
   const rightColRef = useRef<HTMLDivElement>(null)
   const syncingScroll = useRef(false)
-  const syncScroll = (from: React.RefObject<HTMLDivElement>, to: React.RefObject<HTMLDivElement>): void => {
+  const syncScroll = (from: React.RefObject<HTMLDivElement | null>, to: React.RefObject<HTMLDivElement | null>): void => {
     if (syncingScroll.current || !from.current || !to.current) return
     const sameTop = !linkScroll || to.current.scrollTop === from.current.scrollTop
     const sameLeft = !linkScroll || to.current.scrollLeft === from.current.scrollLeft

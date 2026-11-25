@@ -34,6 +34,7 @@ import { fetchedOnlyHashes } from '../lib/graphCommitState'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
 import { refIntegrationItems } from '../lib/refMenuItems'
+import { NO_ITEMS } from '../lib/stableEmpty'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 const LANE_W = 24
@@ -484,8 +485,12 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const relativeDates = useSettingsStore((s) => s.settings.relativeDates ?? true)
   const autoLoadOnScroll = useSettingsStore((s) => s.settings.autoLoadOnScroll ?? true)
-  const baseColumns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
-  const baseColumnOrder = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
+  // The defaults are built outside the selectors: zustand 5 compares a selector's
+  // result by identity, so a fresh default object per call would re-render forever.
+  const storedColumns = useSettingsStore((s) => s.settings.graphColumns)
+  const storedColumnOrder = useSettingsStore((s) => s.settings.graphColumnOrder)
+  const baseColumns = useMemo(() => storedColumns ?? defaultGraphColumns(), [storedColumns])
+  const baseColumnOrder = useMemo(() => storedColumnOrder ?? defaultGraphColumnOrder(), [storedColumnOrder])
   const repoLayout = useSettingsStore((s) => s.settings.repoLayouts?.[repo.path])
   // Graph columns are per-repository: a repo's own override wins, otherwise the
   // global defaults apply.
@@ -502,8 +507,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     () => (isGitHub ? columnOrderRaw : columnOrderRaw.filter((id) => id !== 'deployment')),
     [columnOrderRaw, isGitHub]
   )
-  const graphStyle = useSettingsStore((s) => s.settings.graphStyle ?? defaultGraphStyle())
-  const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? [])
+  const storedGraphStyle = useSettingsStore((s) => s.settings.graphStyle)
+  const graphStyle = useMemo(() => storedGraphStyle ?? defaultGraphStyle(), [storedGraphStyle])
+  const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? NO_ITEMS)
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const updateSettings = useSettingsStore((s) => s.update)
   const t = useT()

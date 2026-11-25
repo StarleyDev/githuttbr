@@ -26,11 +26,11 @@ vi.mock('electron', () => ({
   shell: { openExternal: () => undefined },
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: () => {
+    isAsyncEncryptionAvailable: async () => false,
+    encryptStringAsync: async () => {
       throw new Error('stubbed')
     },
-    decryptString: () => {
+    decryptStringAsync: async () => {
       throw new Error('stubbed')
     }
   }
@@ -72,7 +72,8 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prComment', 1, 'Thanks!'],
   ['hosting:prReview', 1, 'APPROVE', ''],
   ['hosting:prMerge', 1, 'merge'],
-  ['hosting:listPRs']
+  ['hosting:listPRs'],
+  ['hosting:listFinishedPRs']
 ]
 const ISSUE_OPS: Provider['ops'] = [
   ['hosting:listIssues'],

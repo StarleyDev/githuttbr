@@ -110,6 +110,25 @@ shared slot (each profile keeps reading its own), and the Vault still saves to t
 basic store, because it has no session-only mode. Install or unlock a keyring and
 restart Gitcito to store new tokens again.
 
+Gitcito does not take the system's word for which store it got. It counts the
+store as basic when the system names it as such, when it cannot name it at all,
+and when what it encrypts comes back marked with the fixed password — whatever
+the system said. So a keyring that silently falls back still keeps new tokens
+off the disk.
+
+A keyring that stops answering is not waited on forever. On Linux, once the
+keyring has answered once this session, a question it leaves unanswered for 10
+seconds counts as *no keyring*: a token you save is kept until you quit, and the
+Vault stays closed. The first question of a session — the one that may bring up
+the keyring's own password prompt — and the one right after Gitcito's
+explanation get two minutes, so reading a dialog is never cut short. For half a
+minute after such a timeout the answer stays *no keyring* without asking again;
+then Gitcito asks afresh. macOS and Windows answer locally and are never timed out.
+
+The limit covers that one question — *is a keyring there?* A keyring that
+answers it and then hangs while encrypting or decrypting is still waited on:
+saving settings, and the Vault, stay busy until it answers or Gitcito restarts.
+
 ### When the saved tokens cannot be read
 
 If you dismiss the system's keychain prompt, the keyring is locked, or the token

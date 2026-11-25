@@ -202,6 +202,7 @@ interface PreloadApi {
     remove(scope: string, repoPath: string, id: string): Promise<unknown>
     exportAll(): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
+    replaceUnreadable(): Promise<unknown>
   }
   repos: {
     list(): Promise<unknown>
@@ -261,6 +262,7 @@ interface PreloadApi {
     whoAmI(provider: string, token: string, org?: string, interactive?: boolean, link?: unknown, issuer?: string): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string, profileId?: string): Promise<unknown>
     listPRs(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
+    listFinishedPRs(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     listReleases(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     ciStatuses(repoPath: string, remoteUrl: string, shas: string[], token: string): Promise<unknown>
     canAct(repoPath: string, remoteUrl: string): Promise<unknown>

@@ -16,3 +16,4 @@
 *.ttf binary
 *.zip binary
 *.gz binary
+*.wasm binary

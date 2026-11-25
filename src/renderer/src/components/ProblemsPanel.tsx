@@ -9,6 +9,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 import { baseName, countBySeverity, dirName, filterProblems, groupByFile } from '../lib/problems'
+import { NO_ITEMS } from '../lib/stableEmpty'
 
 /** Severity glyphs, the same three the counter in the status bar uses. */
 export function severityIcon(severity: ProblemSeverity, size = 13): React.JSX.Element {
@@ -89,7 +90,7 @@ function AnalyzerView({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
   const result = useProblemsStore((s) => s.resultByRepo[repoPath])
   const running = useProblemsStore((s) => s.runningByRepo[repoPath] === true)
-  const available = useProblemsStore((s) => s.availableByRepo[repoPath] ?? [])
+  const available = useProblemsStore((s) => s.availableByRepo[repoPath] ?? NO_ITEMS)
   const severities = useProblemsStore((s) => s.severities)
   const changedOnly = useProblemsStore((s) => s.changedOnly)
   const query = useProblemsStore((s) => s.query)

@@ -32,7 +32,7 @@ import { emojifyGitmoji } from '../../../shared/gitmoji'
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /** Live pixel size of an element, so ratio-based splits can drive ResizeHandle. */
-function useBoxSize(ref: React.RefObject<HTMLElement>): { w: number; h: number } {
+function useBoxSize(ref: React.RefObject<HTMLElement | null>): { w: number; h: number } {
   const [box, setBox] = useState({ w: 0, h: 0 })
   useEffect(() => {
     const el = ref.current
@@ -829,7 +829,7 @@ function SideFile({
   activeHunk: number
   allPicked: boolean
   somePicked: boolean
-  bodyRef: React.RefObject<HTMLDivElement>
+  bodyRef: React.RefObject<HTMLDivElement | null>
   onBodyScroll: (el: HTMLElement) => void
   style?: React.CSSProperties
   onToggleLine: (hunkIdx: number, side: Side, lineIdx: number) => void

@@ -21,10 +21,11 @@ vi.mock('electron', () => ({
   dialog: {},
   shell: { showItemInFolder: () => undefined, openPath: async () => '' },
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
+  // The async API, as the app calls it since Electron 45; the store format is unchanged.
   safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (b: Buffer) => b.toString().slice(4)
+    isAsyncEncryptionAvailable: async () => true,
+    encryptStringAsync: async (s: string) => Buffer.from(`enc:${s}`),
+    decryptStringAsync: async (b: Buffer) => ({ result: b.toString().slice(4), shouldReEncrypt: false })
   }
 }))
 

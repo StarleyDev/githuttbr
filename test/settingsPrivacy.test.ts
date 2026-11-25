@@ -22,14 +22,14 @@ vi.mock('electron', () => ({
   shell: {},
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
   safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
+    isAsyncEncryptionAvailable: async () => true,
+    encryptStringAsync: async (s: string) => Buffer.from(`enc:${s}`),
     // Only what this "build" wrote decrypts — anything else is another identity's.
-    decryptString: (b: Buffer) => {
+    decryptStringAsync: async (b: Buffer) => {
       keyring.decrypts++
       const s = b.toString()
       if (!s.startsWith('enc:')) throw new Error('not ours')
-      return s.slice(4)
+      return { result: s.slice(4), shouldReEncrypt: false }
     }
   }
 }))

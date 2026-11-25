@@ -41,11 +41,11 @@ export const BrowserWindow = {
 }
 
 export const safeStorage = {
-  isEncryptionAvailable: (): boolean => false,
-  encryptString: (): never => {
+  isAsyncEncryptionAvailable: async (): Promise<boolean> => false,
+  encryptStringAsync: async (): Promise<never> => {
     throw new Error('safeStorage stubbed')
   },
-  decryptString: (): never => {
+  decryptStringAsync: async (): Promise<never> => {
     throw new Error('safeStorage stubbed')
   }
 }

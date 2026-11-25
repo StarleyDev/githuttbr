@@ -27,11 +27,16 @@ export default {
       'test/diff.test.ts',
       'test/lineDiff.test.ts',
       'test/movedLines.test.ts',
+      // The tree-sitter grammars reach resources/tree-sitter through the
+      // postinstall hook on every OS; this loads each one with the runtime.
+      'test/semanticGrammars.test.ts',
       // Settings import/export translate paths between machines — Windows
       // drive letters and separators are exactly what this job is for.
       'test/settingsImport.test.ts',
       'test/settingsExport.test.ts',
-      'test/keychainWeakBackend.test.ts'
+      'test/keychainWeakBackend.test.ts',
+      'test/keychainFailClosed.test.ts',
+      'test/vaultUnreadable.test.ts'
     ]
   }
 }

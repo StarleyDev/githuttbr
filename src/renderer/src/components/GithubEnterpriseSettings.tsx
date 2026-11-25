@@ -3,7 +3,8 @@ import { ExternalLink, Plus, Server, Trash2 } from 'lucide-react'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { readableError } from '../lib/gitErrorHint'
+import type { TokenCheckFailure } from '../../../shared/tokenCheck'
+import { TokenCheckNotice } from './TokenCheckNotice'
 import {
   githubEnterpriseUrlProblem,
   githubTokenUrl,
@@ -140,26 +141,33 @@ function GithubEnterpriseRow({
   const t = useT()
   const name = hostName(host.url)
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [failure, setFailure] = useState<TokenCheckFailure | null>(null)
+  // Bumped by Retry, to run the check again for the same token.
+  const [checkRun, setCheckRun] = useState(0)
 
   // Asked only with this server's own token, never interactively: opening
   // Settings must not pop a sign-in window for every server in the list.
   useEffect(() => {
     let alive = true
     setAccount(null)
-    setError(null)
+    setFailure(null)
     if (!host.token.trim()) return
     const timer = setTimeout(() => {
       void hostingApi
-        .whoAmI('github', host.token, host.url, false)
-        .then((info) => alive && setAccount(info))
-        .catch((err: Error) => alive && setError(err.message))
+        .checkToken('github', host.token, host.url, false)
+        .then((result) => {
+          if (!alive) return
+          if (result.ok) setAccount(result.account)
+          // Refused or not, the token stays in its field: replacing it is the user's call.
+          else setFailure(result.failure)
+        })
+        .catch((err: Error) => alive && setFailure({ kind: 'error', message: err.message }))
     }, 400)
     return () => {
       alive = false
       clearTimeout(timer)
     }
-  }, [host.url, host.token])
+  }, [host.url, host.token, checkRun])
 
   return (
     <div className="ghes-row">
@@ -182,7 +190,7 @@ function GithubEnterpriseRow({
         <input type="password" value={host.token} onChange={(e) => onToken(e.target.value)} />
         <span className="settings-hint">{interp(t('settings.ghesTokenHint'), { host: name })}</span>
       </label>
-      {error && <span className="connected-account-error">{readableError(error, t, interp)}</span>}
+      {failure && <TokenCheckNotice failure={failure} provider={name} onRetry={() => setCheckRun((n) => n + 1)} />}
       <button className="link-btn" type="button" onClick={() => void shellApi.openExternal(githubTokenUrl(host.url))}>
         <ExternalLink size={12} /> {interp(t('settings.ghesCreateToken'), { host: name })}
       </button>

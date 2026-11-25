@@ -606,6 +606,10 @@ Limits:
 ## Forgejo
 
 Set the instance address before entering its token. Changing the address clears the previous sign-in.
+The token field stays closed until the address above it is a valid https address, and says so
+under the field; what is wrong with the address is shown in red under the address itself.
+
+![A Forgejo address that is not https, and the token field below it saying why it is closed](../screenshots/forgejo-address-needed.webp)
 
 ![Forgejo integration settings](../screenshots/forgejo-integration.webp)
 
@@ -720,6 +724,34 @@ The page says whether the connection is the profile's token, its link to git's
 helper or its link to the GitHub CLI, and **Disconnect** undoes it for this
 profile only: a token is cleared (it stays valid on the host until you revoke
 it there), a link is dropped (the login stays in gh or the helper).
+
+### Checking a token
+
+Every token you type — on a provider's tab or on a server row (GitHub
+Enterprise Server, self-managed GitLab, Bitbucket Data Center) — is checked by
+asking the host who it belongs to. The answer is one of three, and they mean
+different things:
+
+| What you see | What happened | What to do |
+|--------------|---------------|------------|
+| The account, with its picture | The host accepted the token | Nothing |
+| **Red** — *… refused this token* | The host answered and turned it down (401 or 403): the token is wrong, expired, or lacks a scope it needs | Create a new token and paste it over the old one |
+| **Amber** — *Couldn't reach … to check this token* | No verdict: offline, DNS, TLS or a proxy failed, the request timed out, the server answered 5xx, or the host rate-limited the check | **Retry** when the network or the server is back |
+
+![The amber note when the server could not be reached to check a token](../screenshots/token-check-unreachable.webp)
+
+**A refused token stays saved.** The check never deletes what you typed: a
+token can be refused for a reason that passes (an SSO session to re-authorize,
+a scope added on the host a minute later), and clearing it would lose the
+token for good. Until you replace it, anything that uses it — fetch, push, the
+pull request list — fails the same way. An amber note says nothing about the
+token at all; it may well be fine.
+
+The limits: the check reads only the account (and, where the host offers it,
+its organizations). A token that signs in but lacks a scope a later action
+needs — creating a pull request, reading CI — is only found out by that action.
+GitHub answers a rate limit with a 403 as well; the app tells it from a refusal
+by GitHub's rate-limit headers, so a limit without them would read as refused.
 
 The host's API — pull requests, issues, CI — and git's own fetch, pull and
 push over https both use the profile's token or linked account: the profile

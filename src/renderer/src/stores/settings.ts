@@ -53,7 +53,7 @@ import { planWorktreeGroup } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
 import { prRemoteIdentity } from '../lib/hosting'
-import { planAttach, planClose } from '../lib/tabPages'
+import { planAttach, planClose, planReplace, samePage } from '../lib/tabPages'
 import {
   clearDoneTodos,
   createTodo,
@@ -439,6 +439,9 @@ interface SettingsState {
   closeRepoPage(tabId: string, index: number): void
   /** Replace an existing page tab's content in place (e.g. prev/next release). */
   navigatePageTab(tabId: string, page: PageContent): void
+  /** Swap an open page for another wherever it is — attached to a repository's
+   *  tab or a tab of its own — keeping it the one shown (the PR detail's ‹ ›). */
+  replaceOpenPage(from: PageContent, to: PageContent): void
   createGroupTab(name: string, color?: string): void
   addRepoToGroup(tabId: string, repo: RepoRef): void
   removeRepoFromGroup(tabId: string, path: string): void
@@ -669,6 +672,14 @@ function memoEffectiveAI(settings: AppSettings, profile: Profile): AIConfig {
   return result
 }
 
+/**
+ * What `activeProfile()` returns while the settings hold no profile. Built once:
+ * components select `s.activeProfile()`, and zustand 5 compares a selector's
+ * result by identity, so a fresh profile per call would re-render forever. One
+ * object also keeps `memoEffectiveAI` hitting for it, so `activeAI()` is stable.
+ */
+let fallbackProfile: Profile | null = null
+
 /** Session-only stack of recently closed tabs, for reopen (⌘⇧T). */
 const closedTabStack: { tab: TabState; idx: number }[] = []
 
@@ -825,7 +836,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   activeProfile: () => {
     const { settings } = get()
-    return settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0] ?? defaultProfile()
+    return (
+      settings.profiles.find((p) => p.id === settings.activeProfileId) ??
+      settings.profiles[0] ??
+      (fallbackProfile ??= defaultProfile())
+    )
   },
 
   activeAI: () => memoEffectiveAI(get().settings, get().activeProfile()),
@@ -1128,6 +1143,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           // A wiki belongs to one repo, so each repo gets its own tab.
           (page.type !== 'wiki' || (t.page.type === 'wiki' && t.page.repoPath === page.repoPath)) &&
           (page.type !== 'ci-runs' || (t.page.type === 'ci-runs' && t.page.repoPath === page.repoPath)) &&
+          (page.type !== 'pull-requests' ||
+            (t.page.type === 'pull-requests' && t.page.repoPath === page.repoPath)) &&
           // DevTools belongs to one launch session, not to the repo: two apps
           // running at once are two DevTools.
           (page.type !== 'devtools' || (t.page.type === 'devtools' && t.page.launchId === page.launchId))
@@ -1139,6 +1156,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
     })
   },
+
+  replaceOpenPage: (from, to) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) => {
+        if (t.kind === 'page') return samePage(t.page, from) ? { ...t, page: to } : t
+        const plan = planReplace(t.pages ?? [], t.activePage, from, to)
+        return plan ? { ...t, ...plan } : t
+      })
+    })),
 
   navigatePageTab: (tabId, page) =>
     get().update((s) => ({

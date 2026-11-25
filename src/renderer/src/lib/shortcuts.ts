@@ -62,8 +62,27 @@ export const SHORTCUTS: ShortcutDef[] = [
     labelKey: 'sc.toggleRightPanel',
     categoryKey: 'sc.cat.navigation',
     defaultCombo: 'mod+alt+b'
+  },
+  // On a pull request's page: the previous / next one of the list it came from.
+  // Alt+arrows, because the terminal claims them only while it has the focus,
+  // and a text field keeps them (word jump) — see TEXT_KEEPS.
+  {
+    id: 'pr-previous',
+    labelKey: 'sc.prPrevious',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'alt+ArrowLeft'
+  },
+  {
+    id: 'pr-next',
+    labelKey: 'sc.prNext',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'alt+ArrowRight'
   }
 ]
+
+/** Shortcuts that stand aside while the caret is in a text field, which has its
+ *  own use for the same keys (Option+← moves by word on macOS). */
+export const TEXT_KEEPS = new Set(['pr-previous', 'pr-next'])
 
 /** Fixed (non-rebindable) shortcuts, shown in the cheatsheet for reference. */
 export const FIXED_SHORTCUTS: {
@@ -144,6 +163,8 @@ export function tabActionFromEvent(e: KeyboardEvent): 'new' | 'close' | null {
   return null
 }
 
+const ARROWS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' }
+
 /** Pretty-print a combo for display, e.g. "mod+shift+f" → "⌘⇧F" (mac) / "Ctrl+Shift+F". */
 export function formatCombo(combo: string): string {
   const mac = isMac()
@@ -154,6 +175,7 @@ export function formatCombo(combo: string): string {
       if (p === 'ctrl') return mac ? '⌃' : 'Ctrl'
       if (p === 'shift') return mac ? '⇧' : 'Shift'
       if (p === 'alt') return mac ? '⌥' : 'Alt'
+      if (p in ARROWS) return ARROWS[p]
       if (p.length === 1) return p.toUpperCase()
       return p
     })

@@ -8,19 +8,22 @@
  * /green wall into "renamed start() → boot(), added a `retries` parameter".
  *
  * Grammars are WASM (web-tree-sitter), loaded lazily from resources/tree-sitter
- * and cached for the app's lifetime. A file whose language has no grammar
- * simply reports `language: null` and the UI keeps its line diff.
+ * — scripts/sync-grammars.mjs puts them there — and cached for the app's
+ * lifetime. A file whose language has no grammar simply reports
+ * `language: null` and the UI keeps its line diff.
  */
 import { app } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { readFile } from 'fs/promises'
 import type { SemanticChange, SemanticDiff, SemanticSymbolKind } from '../shared/types'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// web-tree-sitter ships CommonJS with an emscripten runtime; it is required
-// lazily so a missing grammar folder can never break app start-up.
-type TsNode = any
-type TsParser = any
+// Types only: the module itself is required lazily (getTreeSitter), so a
+// missing grammar folder or a broken runtime can never break app start-up.
+import type * as TreeSitter from 'web-tree-sitter'
+
+type TsNode = TreeSitter.Node
+type TsModule = typeof TreeSitter
 
 /** Which declaration node types matter, and what to call them in the UI. */
 interface LangSpec {
@@ -134,8 +137,8 @@ const LANGS: Record<string, LangSpec> = {
     grammar: 'kotlin',
     nodes: { function_declaration: 'function', class_declaration: 'class', object_declaration: 'class' }
   },
-  // No Dart: the published tree-sitter-dart WASM targets a newer grammar ABI
-  // than web-tree-sitter 0.24 accepts, so it would only ever fail to load.
+  // No Dart: the WASM in tree-sitter-dart@1.0.0 uses the pre-0.25 module format,
+  // which web-tree-sitter 0.27 refuses — it would need a vendored build like Swift.
   scala: {
     grammar: 'scala',
     nodes: {
@@ -145,10 +148,9 @@ const LANGS: Record<string, LangSpec> = {
       trait_definition: 'interface'
     }
   },
-  lua: {
-    grammar: 'lua',
-    nodes: { function_definition_statement: 'function', local_function_definition_statement: 'function' }
-  },
+  // tree-sitter-grammars' Lua: `function f()` and `local function f()` are both
+  // a function_declaration (the old Azganoth grammar split them in two).
+  lua: { grammar: 'lua', nodes: { function_declaration: 'function' } },
   sh: { grammar: 'bash', nodes: { function_definition: 'function' } },
   bash: { grammar: 'bash', nodes: { function_definition: 'function' } },
   zig: { grammar: 'zig', nodes: { function_declaration: 'function' } }
@@ -166,34 +168,37 @@ function grammarDir(): string {
     : join(__dirname, '../../resources/tree-sitter')
 }
 
-let parserInit: Promise<TsParser> | null = null
-const languages = new Map<string, Promise<unknown | null>>()
+let treeSitterInit: Promise<TsModule> | null = null
+const languages = new Map<string, Promise<TreeSitter.Language | null>>()
 
-/** The web-tree-sitter module, initialised once with our WASM runtime. */
-async function getParserClass(): Promise<TsParser> {
-  if (!parserInit) {
-    parserInit = (async () => {
+/** The web-tree-sitter module (`{ Parser, Language }`), initialised once with our WASM runtime. */
+async function getTreeSitter(): Promise<TsModule> {
+  if (!treeSitterInit) {
+    treeSitterInit = (async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const Parser = require('web-tree-sitter')
-      const runtime = join(grammarDir(), 'tree-sitter.wasm')
-      await Parser.init({ locateFile: () => runtime })
-      return Parser
+      const treeSitter: TsModule = require('web-tree-sitter')
+      // 0.25 renamed the runtime from tree-sitter.wasm; sync-grammars copies it.
+      const runtime = join(grammarDir(), 'web-tree-sitter.wasm')
+      await treeSitter.Parser.init({ locateFile: () => runtime })
+      return treeSitter
     })().catch((err) => {
-      parserInit = null
+      treeSitterInit = null
       throw err
     })
   }
-  return parserInit
+  return treeSitterInit
 }
 
-async function loadLanguage(grammar: string): Promise<unknown | null> {
+async function loadLanguage(grammar: string): Promise<TreeSitter.Language | null> {
   let pending = languages.get(grammar)
   if (!pending) {
     pending = (async () => {
       const file = join(grammarDir(), `tree-sitter-${grammar}.wasm`)
       if (!existsSync(file)) return null
-      const Parser = await getParserClass()
-      return await Parser.Language.load(file)
+      const { Language } = await getTreeSitter()
+      // Bytes, not a path: the read stays ours, instead of the runtime choosing
+      // between fs and fetch and dynamically importing fs/promises to do it.
+      return await Language.load(await readFile(file))
     })().catch(() => null)
     languages.set(grammar, pending)
   }
@@ -216,6 +221,15 @@ export interface Symbol {
   line: number
 }
 
+/** C/C++: the function_declarator in a declarator chain (`*f(int)`, `&f()`…), if any. */
+function functionDeclaratorOf(node: TsNode): TsNode | null {
+  let decl = node.childForFieldName('declarator')
+  while (decl && decl.type !== 'function_declarator') {
+    decl = decl.childForFieldName('declarator') ?? decl.namedChildren.find((c) => /declarator$/.test(c.type)) ?? null
+  }
+  return decl
+}
+
 /**
  * The declaration's name. Most grammars expose a `name` field; C-family ones
  * bury it inside a declarator, so fall back to the first identifier-ish node
@@ -224,6 +238,9 @@ export interface Symbol {
 function nameOf(node: TsNode): string {
   const named = node.childForFieldName?.('name')
   if (named) return named.text
+  // `int *f(int a)`: the name sits in a function_declarator under a pointer one.
+  const fnName = functionDeclaratorOf(node)?.childForFieldName('declarator')
+  if (fnName) return fnName.text
   const declarator = node.childForFieldName?.('declarator')
   if (declarator) {
     const inner = declarator.childForFieldName?.('declarator')
@@ -236,26 +253,88 @@ function nameOf(node: TsNode): string {
   return ''
 }
 
-function signatureOf(node: TsNode): string {
-  const params =
-    node.childForFieldName?.('parameters') ??
-    node.childForFieldName?.('parameter_list') ??
-    node.childForFieldName?.('type_parameters')
-  const ret = node.childForFieldName?.('return_type') ?? node.childForFieldName?.('result')
-  const sig = (params?.text ?? '') + (ret ? `: ${ret.text}` : '')
-  return sig.replace(/\s+/g, ' ').trim()
-}
+/** Parameter-list node types, for grammars that give the list no field name. */
+const PARAM_LIST = /^(function_value_parameters|parameters|parameter_list|formal_parameters)$/
 
-function bodyOf(node: TsNode): string {
-  let body = node.childForFieldName?.('body') ?? node.childForFieldName?.('value')
-  // Some grammars (Kotlin, Zig…) expose no `body` field; take the block-ish
-  // child instead, so a pure rename doesn't read as a rewritten body.
+/** The block a declaration's body lives in, by field or — Kotlin, Zig… — by type. */
+function bodyNodeOf(node: TsNode): TsNode | null {
+  // `const f = (a) => …`: the declarator's value is the whole function, so a
+  // parameter change would also read as a body change — use the function's body.
+  if (node.type === 'variable_declarator') {
+    const value = node.childForFieldName('value')
+    return value ? bodyNodeOf(value) : null
+  }
+  let body = node.childForFieldName('body') ?? node.childForFieldName('value')
   if (!body) {
-    for (const child of node.namedChildren ?? []) {
+    for (const child of node.namedChildren) {
       if (/(body|block|statements)$/.test(child.type)) body = child
     }
   }
-  return (body?.text ?? node.text ?? '').replace(/\s+/g, ' ').trim()
+  return body
+}
+
+/** Source text of `node` from `from` (inclusive) up to its body, or to its end. */
+function headerFrom(node: TsNode, from: TsNode): string {
+  const body = bodyNodeOf(node)
+  const end = body && body.startIndex >= from.startIndex ? body.startIndex : node.endIndex
+  return node.text.slice(from.startIndex - node.startIndex, end - node.startIndex)
+}
+
+/**
+ * Parameters plus return type — what a caller depends on. Grammars disagree on
+ * where those live, so this tries, in order: the C-family function_declarator
+ * inside the declarator chain; `parameters` fields (all of them — Scala gives
+ * each clause, type parameters included, its own); and for grammars with no
+ * field (Kotlin, Zig, Swift) the header text from the parameter list to the
+ * body, which carries the return type along with it.
+ */
+function signatureOf(node: TsNode): string {
+  const clean = (sig: string): string => sig.replace(/\s+/g, ' ').trim()
+
+  // `const f = (a: string): number => …` — the signature is the function's.
+  if (node.type === 'variable_declarator') {
+    const value = node.childForFieldName('value')
+    return value ? signatureOf(value) : ''
+  }
+
+  // TS wraps a return type in its `: ` annotation; the other grammars do not.
+  const typeText = (t: TsNode): string => t.text.replace(/^:\s*/, '')
+
+  // C/C++: `int *f(int a) const` nests the parameters under the declarator.
+  const decl = functionDeclaratorOf(node)
+  if (decl) {
+    const name = decl.childForFieldName('declarator')
+    const tail = name ? decl.text.slice(name.endIndex - decl.startIndex) : decl.text
+    const ret = node.childForFieldName('type')
+    return clean(tail + (ret ? `: ${typeText(ret)}` : ''))
+  }
+
+  const fields = node.childrenForFieldName('parameters')
+  const params = fields.length
+    ? fields.map((f) => f.text).join('')
+    : (node.childForFieldName('parameter_list') ?? node.childForFieldName('parameter'))?.text
+  if (params !== undefined) {
+    // Java names its return type `type`, C# `returns`, Rust/TS/Python `return_type`, Go `result`.
+    const ret =
+      node.childForFieldName('return_type') ??
+      node.childForFieldName('result') ??
+      node.childForFieldName('returns') ??
+      (fields.length ? node.childForFieldName('type') : null)
+    return clean(params + (ret ? `: ${typeText(ret)}` : ''))
+  }
+
+  // No field: Kotlin's function_value_parameters, Zig's parameters, or Swift's
+  // bare `(` followed by one `parameter` child each.
+  const start = node.children.find((c) => PARAM_LIST.test(c.type) || c.type === '(')
+  if (start) return clean(headerFrom(node, start))
+  const typeParams = node.childForFieldName('type_parameters')
+  return clean(typeParams?.text ?? '')
+}
+
+function bodyOf(node: TsNode): string {
+  // A grammar with no body at all still gets its whole text, so a pure rename
+  // doesn't read as a rewritten body.
+  return (bodyNodeOf(node)?.text ?? node.text ?? '').replace(/\s+/g, ' ').trim()
 }
 
 /** Walks the tree collecting every declaration the language spec cares about. */
@@ -457,16 +536,20 @@ export async function parseSymbols(path: string, text: string): Promise<Symbol[]
   if (!spec) return null
   const language = await loadLanguage(spec.grammar)
   if (!language) return null
-  const Parser = await getParserClass()
+  const { Parser } = await getTreeSitter()
   const parser = new Parser()
   try {
     parser.setLanguage(language)
+    // null only when parsing is cancelled or times out, neither of which we set.
     const tree = parser.parse(text)
-    const symbols = collectSymbols(tree.rootNode, spec)
-    tree.delete?.()
-    return symbols
+    if (!tree) return null
+    try {
+      return collectSymbols(tree.rootNode, spec)
+    } finally {
+      tree.delete()
+    }
   } finally {
-    parser.delete?.()
+    parser.delete()
   }
 }
 

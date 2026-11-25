@@ -55,7 +55,9 @@ export function SecureShareModal({
       'bad-password': t('share.errBadPassword'),
       'unsupported-version': t('share.errVersion'),
       'read-failed': t('share.errRead'),
-      'write-failed': t('share.errWrite')
+      'write-failed': t('share.errWrite'),
+      'vault-unreadable': t('vault.unreadable'),
+      'vault-unavailable': t('vault.keychainUnavailable')
     })[code]
 
   // ── Export state ──────────────────────────────────────────────────────────

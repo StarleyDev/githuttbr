@@ -14,9 +14,10 @@ import {
   BundleError,
   type BundleFile,
   type BundleNote,
-  type BundleSection
+  type BundleSection,
+  type BundleVaultEntry
 } from './secureBundle'
-import { exportGlobalEntries, importGlobalEntries } from './vault'
+import { exportGlobalEntries, importGlobalEntries, checkVaultWritable, VaultUnavailableError, VaultUnreadableError } from './vault'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
@@ -258,7 +259,14 @@ export async function exportSectionsV2(
   const sections: BundleSection[] = []
   for (const spec of specs) {
     if (spec.kind === 'vault') {
-      const entries = await exportGlobalEntries()
+      let entries: BundleVaultEntry[]
+      try {
+        entries = await exportGlobalEntries()
+      } catch (e) {
+        if (e instanceof VaultUnreadableError) return { error: 'vault-unreadable' }
+        if (e instanceof VaultUnavailableError) return { error: 'vault-unavailable' }
+        throw e
+      }
       if (entries.length > 0) sections.push({ kind: 'vault', entries })
       continue
     }
@@ -441,18 +449,33 @@ export async function applyV2(
   } catch (e) {
     return { error: errCode(e) }
   }
+  // Checked before anything is written: a vault that cannot be opened or read
+  // refuses the merge, and the files of the same bundle should not land without it.
+  if (plan.some((s) => s.kind === 'vault' && s.keys.length > 0)) {
+    const vault = await checkVaultWritable()
+    if (vault !== 'ok') return { error: vault === 'unavailable' ? 'vault-unavailable' : 'vault-unreadable' }
+  }
   let filesWritten = 0
   let secretsWritten = 0
   let notesWritten = 0
   let notesSkipped = 0
-  for (const step of plan) {
+  // The vault step first: if the keychain refuses it after the check above
+  // (a timeout in between), it still refuses before any file is written.
+  const ordered = [...plan.filter((s) => s.kind === 'vault'), ...plan.filter((s) => s.kind !== 'vault')]
+  for (const step of ordered) {
     const section = sections[step.sectionIndex]
     if (!section) return { error: 'invalid' }
     if (step.kind === 'vault') {
       if (section.kind !== 'vault') return { error: 'invalid' }
       const wanted = new Set(step.keys)
       const picked = section.entries.filter((e) => wanted.has(e.key))
-      secretsWritten += await importGlobalEntries(picked)
+      try {
+        secretsWritten += await importGlobalEntries(picked)
+      } catch (e) {
+        if (e instanceof VaultUnreadableError) return { error: 'vault-unreadable' }
+        if (e instanceof VaultUnavailableError) return { error: 'vault-unavailable' }
+        throw e
+      }
     } else if (step.kind === 'notes') {
       if (section.kind !== 'notes') return { error: 'invalid' }
       for (const n of section.notes) {

@@ -1,4 +1,5 @@
 import type { SettingsDecryptResult } from '../../../shared/settingsEncryption'
+import type { TokenCheckResult } from '../../../shared/tokenCheck'
 import type {
   RollbackState,
   LaunchInput,
@@ -74,6 +75,7 @@ import type {
   PrPreviewResult,
   PrRefProbe,
   PullRequest,
+  FinishedPullRequests,
   PrDetail,
   PrReviewEvent,
   PrMergeMethod,
@@ -154,6 +156,8 @@ import type {
   VaultEntry,
   VaultListResult,
   VaultExport,
+  VaultExportReply,
+  VaultImportReply,
   InfoEntry,
   InfoExport,
   SecureShareCandidate,
@@ -903,8 +907,9 @@ export const vaultApi = {
     window.api.vault.upsert(scope, repoPath, entry) as Promise<VaultListResult>,
   remove: (scope: 'repo' | 'global', repoPath: string, id: string) =>
     window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>,
-  exportAll: () => window.api.vault.exportAll() as Promise<VaultExport>,
-  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>
+  exportAll: () => window.api.vault.exportAll() as Promise<VaultExportReply>,
+  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<VaultImportReply>,
+  replaceUnreadable: () => window.api.vault.replaceUnreadable() as Promise<boolean>
 }
 
 export const reposApi = {
@@ -1107,13 +1112,38 @@ export const hostingApi = {
   /** Name of another profile already holding this account (link or token), else null. */
   accountOwner: (provider: RepoHost, login: string, found: AccountLink, exceptProfileId: string) =>
     window.api.hosting.accountOwner(provider, login, found, exceptProfileId) as Promise<string | null>,
-  /** Null when the profile has neither a token nor a link and no sign-in was asked for. */
-  whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink, issuer?: string) =>
-    window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer) as Promise<ConnectedAccount | null>,
+  /**
+   * The account behind a token, or why there is none — refused, unreachable, or
+   * another error — as main classified it (shared/tokenCheck.ts). The account is
+   * null when the profile has neither a token nor a link and no sign-in was asked for.
+   */
+  checkToken: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink, issuer?: string) =>
+    window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer) as Promise<TokenCheckResult>,
+  /** `checkToken` for a caller that only wants the account: a failure rejects with its message. */
+  whoAmI: async (
+    provider: RepoHost,
+    token: string,
+    org?: string,
+    interactive?: boolean,
+    link?: AccountLink,
+    issuer?: string
+  ): Promise<ConnectedAccount | null> => {
+    const result = (await window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer)) as TokenCheckResult
+    if (!result.ok) throw new Error(result.failure.message)
+    return result.account
+  },
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string, profileId?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org, profileId) as Promise<RemoteRepo>,
   listPRs: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
-    window.api.hosting.listPRs(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
+    window.api.hosting.listPRs(repoPath, remoteUrl, tokens) as Promise<{
+      provider: HostingProvider
+      prs: PullRequest[]
+      /** Who this repository's calls sign in as on the host; null when unknown. */
+      me?: string | null
+    }>,
+  /** Merged and closed PRs, newest activity first, bounded (see FinishedPullRequests). */
+  listFinishedPRs: (repoPath: string, remoteUrl: string, tokens: HostTokens) =>
+    window.api.hosting.listFinishedPRs(repoPath, remoteUrl, tokens) as Promise<FinishedPullRequests>,
   listReleases: (repoPath: string, remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listReleases(repoPath, remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
   ciStatuses: (repoPath: string, remoteUrl: string, shas: string[], token: string) =>

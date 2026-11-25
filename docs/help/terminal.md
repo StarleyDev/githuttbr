@@ -52,8 +52,10 @@ your aliases.
 | <kbd>Ctrl+Shift+C</kbd> | Copy the selection; a bare <kbd>Ctrl+C</kbd> copies too while a selection exists and stays SIGINT when there is none |
 | <kbd>Ctrl+V</kbd> / <kbd>Ctrl+Shift+V</kbd> / <kbd>Shift+Ins</kbd> | Paste from the clipboard |
 | Right-click | Copy the selection, or paste when nothing is selected |
+| <kbd>⌥←</kbd> / <kbd>⌥→</kbd>, <kbd>Alt+←</kbd> / <kbd>Alt+→</kbd> | Jump a word back or forward at the prompt — sent as the word-movement keys the shell already understands. The same bytes reach full-screen programs: a shell inside tmux jumps words, and outside macOS vim reads them as <kbd>Ctrl+←</kbd> / <kbd>Ctrl+→</kbd>, a word move |
+| <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> (Windows, Linux) | Sent as <kbd>Ctrl+↑</kbd> / <kbd>Ctrl+↓</kbd>, which is what the shell or program sees. On macOS <kbd>⌥↑</kbd> / <kbd>⌥↓</kbd> go through unchanged |
 
-The last two are scoped to the terminal on purpose: away from it, they still
+New and close terminal are scoped to the terminal on purpose: away from it, they still
 open and close [workspace tabs](workspaces.md). On macOS the Edit menu's
 Copy/Paste work the same way.
 

@@ -23,6 +23,7 @@ import {
 } from '../lib/settingsImport'
 import { fsApi, infoApi, keychainApi, vaultApi, profileAvatarApi, SettingsSaveRefused } from '../infrastructure/api'
 import { hasSettingsSecrets } from '../../../shared/secrets'
+import { toastVaultRefused, vaultRefusalOf, type VaultRefusal } from './VaultUnreadableNotice'
 import type { AppSettings } from '../../../shared/types'
 
 type Spec = Extract<ModalSpec, { kind: 'settings-import' }>
@@ -324,13 +325,18 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
         done.current.add('info')
       }
       step = 'vault'
+      // The vault refusing (unreadable, or no keychain) does not stop the
+      // import: the remaining steps still run, and the vault is reported at the end.
+      let vaultSkipped: VaultRefusal | null = null
       if (!done.current.has('vault')) {
         // The vault rides with the profiles, but its per-repository entries are
         // keyed by path: they follow the translation like the repositories do.
         if (bundle?.vault && extras.vault) {
-          await vaultApi.importAll(remap ? remapVaultExport(bundle.vault, remap.from, remap.to) : bundle.vault)
+          const reply = await vaultApi.importAll(remap ? remapVaultExport(bundle.vault, remap.from, remap.to) : bundle.vault)
+          vaultSkipped = vaultRefusalOf(reply)
         }
-        done.current.add('vault')
+        // Skipped is not done: a "Continue" after a later step fails tries it again.
+        if (!vaultSkipped) done.current.add('vault')
       }
       step = 'avatars'
       if (!done.current.has('avatars')) {
@@ -366,6 +372,8 @@ export function ImportSettingsDialog({ spec, onClose }: { spec: Spec; onClose?: 
       setCloseLocked(false)
       close()
       toast('success', interp(tNow('settingsImport.done'), { parts: list }))
+      // Its own reason, and the page where the vault can be retried or replaced.
+      if (vaultSkipped) toastVaultRefused(vaultSkipped)
     } catch (err) {
       setFailedStep(step)
       const refused = err instanceof SettingsSaveRefused ? err.reason : null

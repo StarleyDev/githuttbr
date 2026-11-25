@@ -26,6 +26,36 @@ Open with <kbd>⌘⇧V</kbd>, from the tools menu, from Settings, or the command
 palette. Switch between any known repository, reveal or copy a value, or **Copy
 as .env** a whole set straight to the clipboard.
 
+## When the vault cannot be read
+
+If the keychain is locked, you turned its prompt away, or the vault was saved by
+another copy of Gitcito (a development build, a re-signed one), the page says
+*Gitcito could not read your vault* — and **leaves it untouched**. Nothing can be
+added or removed meanwhile: saving would replace every secret in it with the one
+you just typed.
+
+| Button | What it does |
+|--------|--------------|
+| **Retry** | Reads the vault again — unlock the keychain first. |
+| **Start a new vault** | Asks first. Gitcito stops waiting for the old vault and starts an empty one. The old file stays beside it as a backup named `githuttbr-vault.enc.bak-<date>`, one per replacement, and Gitcito never deletes it. For a vault that is gone for good, not a prompt you dismissed. |
+
+### Imports and exports never drop it silently
+
+The same holds when the vault cannot be opened at all — the keychain is off, you
+turned its question away, or (on Linux) it did not answer in time: the vault is
+then *unavailable*, and the message says so instead.
+
+| Flow | What happens when the vault is unreadable or unavailable |
+|------|------|
+| Settings → Export | Stops before writing the file, and says why: a backup without the vault would look complete. |
+| Settings → Import | The other parts are imported — settings and repository notes before the vault, profile pictures after it — and the vault is skipped and reported at the end. |
+| Onboarding import | The rest is imported; the vault is reported afterwards. |
+| [Secure share](secure-share.md) export | Refused, with the reason. |
+| Secure share import | Refused **before any file of the bundle is written**: the vault is checked first and merged before the files, so the files never land without their secrets. |
+
+The export and import messages offer to open the Vault page, where you can retry or start a new vault.
+Secure share shows the reason in its own dialog — when exporting, also under the vault's row.
+
 ## Moving it between machines
 
 [Secure share](secure-share.md) can pack the vault into an encrypted bundle —
