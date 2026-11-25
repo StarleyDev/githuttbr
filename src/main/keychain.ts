@@ -230,10 +230,11 @@ let answeredOnce = false
  * A caller that times out answers "unavailable": tokens stay session-only, the
  * vault stays closed, nothing is written. That answer is not undone when the
  * late one arrives — the settings module may have noted the keyring as
- * unusable for peeks (`keyringUnavailable`) — but the late answer is the next
- * caller's, and the next unlock that succeeds installs the decrypted store,
- * which outranks that note. Nothing is ever written on the strength of a
- * timeout.
+ * unusable for peeks (`keyringUnavailable`) — and the late answer itself is
+ * kept by nobody: it clears the question in flight, and with it the memory of
+ * the timeout, so the next caller asks afresh. The next unlock that succeeds
+ * installs the decrypted store, which outranks that note. Nothing is ever
+ * written on the strength of a timeout.
  */
 async function asyncEncryptionAvailable(opts: { mayPrompt?: boolean } = {}): Promise<boolean> {
   const linux = process.platform === 'linux'

@@ -79,14 +79,6 @@ a device but does not behave like one is not worth shipping.
 Not features, but they decide when features can ship. Electron supports its
 three newest majors, so staying current is a schedule, not a choice.
 
-### Keychain calls on the asynchronous API — before Electron 46
-GitHuttBr moved to Electron 45 in v4.50. Its synchronous `safeStorage` calls —
-the ones that encrypt tokens, AI keys and the Vault — are deprecated there and
-removed in Electron 46, so moving them to the asynchronous API has to land
-before that upgrade. It touches the most sensitive path in the app (reading,
-writing and migrating every saved secret), so it ships on its own, with tests
-for the unreadable-store and no-keyring cases, not folded into a version bump.
-
 ### The semantic diff's grammars, rebuilt
 The semantic diff parses with web-tree-sitter 0.24 and 18 prebuilt grammars.
 Newer web-tree-sitter releases cannot load those grammars — they were built in

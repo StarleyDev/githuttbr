@@ -343,7 +343,7 @@ describe('a hung availability check', () => {
     expect(keyring.availableCalls).toBe(2)
   })
 
-  it('takes a late answer as the next caller’s', async () => {
+  it('a late answer ends the memory of the timeout: the next caller asks afresh, at once', async () => {
     reset()
     const kc = await keychain()
     vi.useFakeTimers(FAKE)
@@ -353,11 +353,12 @@ describe('a hung availability check', () => {
     await untilAsked(2)
     await vi.advanceTimersByTimeAsync(kc.AVAILABILITY_TIMEOUT_MS)
     expect(await cut).toBe(false)
-    // The hung question answers after all; once the memory has passed, it is not asked again needlessly.
+    // The hung question answers after all, well inside the 30 s memory.
     releaseHang!(true)
     keyring.hang = false
-    await vi.advanceTimersByTimeAsync(kc.RECENT_TIMEOUT_MS)
+    for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r))
     expect(await kc.canUseKeychain()).toBe(true)
+    expect(keyring.availableCalls).toBe(3)
   })
 
   it('does not hold the settings queue: a token save lands session-only, and the next read answers', async () => {

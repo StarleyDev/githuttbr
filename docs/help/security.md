@@ -125,6 +125,10 @@ explanation get two minutes, so reading a dialog is never cut short. For half a
 minute after such a timeout the answer stays *no keyring* without asking again;
 then Gitcito asks afresh. macOS and Windows answer locally and are never timed out.
 
+The limit covers that one question — *is a keyring there?* A keyring that
+answers it and then hangs while encrypting or decrypting is still waited on:
+saving settings, and the Vault, stay busy until it answers or Gitcito restarts.
+
 ### When the saved tokens cannot be read
 
 If you dismiss the system's keychain prompt, the keyring is locked, or the token

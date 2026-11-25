@@ -93,6 +93,11 @@ meio minuto depois de um desses limites a resposta continua *sem chaveiro* sem
 perguntar de novo; depois o Gitcito pergunta outra vez. macOS e Windows
 respondem localmente e nunca têm limite de tempo.
 
+O limite vale só para essa pergunta — *há um chaveiro aí?* Um chaveiro que
+responde a ela e depois trava ao criptografar ou descriptografar continua sendo
+esperado: salvar as configurações, e o Cofre, ficam ocupados até ele responder
+ou o Gitcito ser reiniciado.
+
 ## Importando configurações
 
 **Configurações → Dados → Importar configurações** traz perfis, preferências e
