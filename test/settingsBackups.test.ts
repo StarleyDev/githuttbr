@@ -83,7 +83,8 @@ describe('a save from this build', () => {
     await call('settings:set', { ...s, codeFontSize: 16 })
     const text = readFileSync(settingsFile(), 'utf8')
     for (const secret of ['fht_secret', 'srv_secret', 'nh_secret']) expect(text).not.toContain(secret)
-    expect(onDisk().futureServers).toEqual([{ url: 'https://srv' }])
+    // Dropped whole, never kept as half an object.
+    expect(onDisk().futureServers).toBeUndefined()
     expect((onDisk().profiles as Record<string, unknown>[])[0].newHostUrl).toBe('https://nh')
   })
 })
@@ -126,6 +127,30 @@ describe('settings copies', () => {
     expect(file.language).toBe('de')
     expect((file.tabs as { id: string }[])[0].id).toBe('t1')
     expect((await backups.listSettingsBackups()).some((b) => b.reason === 'restore')).toBe(true)
+  })
+
+  it('restore without losing a token still in the file, nor a profile added since', async () => {
+    const backups = await restart({ ...settingsWith({ language: 'de' }), profiles: [profileWith({ githubToken: 'ghp_plain' })] })
+    const made = await backups.backupSettings('4.51.0', 'rollback')
+    const s = (await call('settings:get')) as AppSettings
+    const added = { ...profileWith({}), id: 'later', name: 'Added later' }
+    await call('settings:set', { ...s, language: 'fr', profiles: [...s.profiles, added] })
+    expect(await handlers.get('settingsBackups:restore')!({}, made!.name)).toBe('ok')
+    const file = onDisk() as unknown as AppSettings
+    expect(file.language).toBe('de')
+    expect(file.profiles.find((p) => p.id === 'p')?.githubToken).toBe('ghp_plain')
+    expect(file.profiles.map((p) => p.id)).toEqual(['p', 'later'])
+    // The copy of now, taken first, holds no token either.
+    for (const b of await backups.listSettingsBackups()) {
+      expect(readFileSync(join(backupDir(), b.name), 'utf8')).not.toContain('ghp_plain')
+    }
+  })
+
+  it('never count a token-only difference as a changed setting', async () => {
+    const backups = await restart(settingsWith())
+    const made = await backups.backupSettings('4.51.0', 'rollback')
+    writeFileSync(settingsFile(), JSON.stringify({ ...settingsWith(), profiles: [profileWith({ githubToken: 'ghp_new' })] }))
+    expect(await handlers.get('settingsBackups:changedSince')!({}, made!.name)).toEqual([])
   })
 
   it('refuse a name that is not one of theirs', async () => {

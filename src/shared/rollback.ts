@@ -134,7 +134,22 @@ export function isPastRollback(record: VersionRollback | undefined, current: str
 
 // ── Settings copies ────────────────────────────────────────────────────────
 
-const BACKUP_RE = /^settings-(\d+\.\d+\.\d+)-to-(\d+\.\d+\.\d+)-(rollback|update|restore)-(\d{8}T\d{6}(?:\d{3})?Z)\.json$/
+// A version is `1.2.3` or `1.2.3-rc.1`: the pre-release part never holds a `-`
+// (`fileVersion`), so `-to-` and the reason always split the name the same way.
+const VERSION = String.raw`\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?`
+const BACKUP_RE = new RegExp(
+  String.raw`^settings-(${VERSION})-to-(${VERSION})-(rollback|update|restore)-(\d{8}T\d{6}(?:\d{3})?Z)\.json$`
+)
+
+/** A version as a file name can hold it: no leading `v`, no build metadata, dots for a `-` inside a pre-release. */
+function fileVersion(version: string): string {
+  // Build metadata (`+build.7`) does not order versions: it goes.
+  const v = version.trim().replace(/^v/i, '').replace(/\+.*$/, '')
+  const cut = v.indexOf('-')
+  const core = cut < 0 ? v : v.slice(0, cut)
+  const pre = cut < 0 ? '' : v.slice(cut + 1).replace(/[^0-9A-Za-z.]+/g, '.')
+  return pre ? `${core}-${pre}` : core
+}
 
 /** `2026-11-25T10:04:05.120Z` → `20261125T100405120Z`: sortable, and valid in every file system. */
 function stamp(iso: string): string {
@@ -153,7 +168,7 @@ export function backupFileName(
   reason: SettingsBackup['reason'],
   createdAt: string
 ): string {
-  return `settings-${version}-to-${target}-${reason}-${stamp(createdAt)}.json`
+  return `settings-${fileVersion(version)}-to-${fileVersion(target)}-${reason}-${stamp(createdAt)}.json`
 }
 
 /** A backup's details read back from its name, or null for any other file in the folder. */

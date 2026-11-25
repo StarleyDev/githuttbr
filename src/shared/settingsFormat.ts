@@ -6,17 +6,26 @@
  * settings it does not know: a key a newer build added has to survive an older
  * build's save, untouched, so it is still there after updating again. This
  * module is that promise, in one place for main (which writes the file) and the
- * renderer (which builds what is saved).
+ * renderer (which builds what is saved). It covers top-level keys and a
+ * profile's own fields; a field a newer build adds deeper inside a known
+ * object (a theme, an AI account) lives or dies with that object's own code.
  *
  * The rule for secrets: a build never writes a credential into the settings
  * file — tokens and keys live in the keychain store (`main/keychain.ts`). So an
- * unknown key that looks like a credential is never carried: an older build
- * drops it rather than keep a newer build's secret in plain text. A future
+ * unknown key that holds something credential-shaped (`holdsSecret`) is never
+ * carried: an older build drops the whole key rather than keep a newer build's
+ * secret in plain text, or keep half an object it cannot vouch for. A future
  * build adding a credential field must store it in the keychain, as every
  * existing one does; if it did not, an older build would delete it on save.
+ *
+ * Retiring a key needs care too: a newer build that stops writing a key leaves
+ * it on disk, and since it no longer knows it, it would carry it forever. Keep
+ * a retired key listed here and delete it explicitly (as main does with
+ * `pendingSecretClears`) — a removal list, not just a deleted line.
  */
 import type { AppSettings, Profile } from './types'
 import { isNewerVersion } from './version'
+import { serverUrlWithoutSecrets } from './serverAddress'
 
 /**
  * Bumped by a change that adds settings keys an earlier build would not know.
@@ -159,27 +168,39 @@ export const KNOWN_SETTINGS_KEYS: ReadonlySet<string> = new Set(Object.keys(KNOW
 const KNOWN_PROFILE_KEYS: ReadonlySet<string> = new Set(Object.keys(KNOWN_PROFILE))
 
 /**
- * A key named like a credential. Deliberately wide: losing an unknown
- * preference costs a re-tick, keeping a secret in plain text costs the secret.
+ * A key named like a credential: anchored to the end of the name, so
+ * `githubToken`, `clientSecret` and `sessionCookie` match while `tokenColors`,
+ * `maxTokens` or `cookieConsent` do not. Only a string value under such a name
+ * counts (`holdsSecret`): `password: true` is a flag, not a password.
  */
-const SECRET_SHAPED = /token|secret|passw(?:or)?d|passphrase|api[-_]?key|private[-_]?key|credential|bearer|cookie/i
+const SECRET_SHAPED =
+  /(?:token|secret|passw(?:or)?d|passphrase|api[-_]?key|private[-_]?key|access[-_]?key|signing[-_]?key|ssh[-_]?key|credentials?|bearer|cookie|jwt|auth|(?:^|[-_])pat|Pat|PAT)s?$/i
+const PAT_ONLY = /pat$/i
 
 export function isSecretShapedKey(key: string): boolean {
+  // `pat` only as its own word (`githubPat`, `pat`, `repo_pat`) — never `compat`.
+  if (PAT_ONLY.test(key) && !/(?:^|[-_])pat$|Pat$|PAT$/.test(key)) return false
   return SECRET_SHAPED.test(key)
 }
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
-/** A value with every credential-shaped key removed, at any depth. */
-export function withoutSecretShaped(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutSecretShaped)
-  if (!isPlainObject(value)) return value
-  const out: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(value)) {
-    if (!isSecretShapedKey(k)) out[k] = withoutSecretShaped(v)
-  }
-  return out
+/** An address carrying a credential: a userinfo, or a query or fragment that could hold a token. */
+function isCredentialUrl(value: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(value.trim()) && serverUrlWithoutSecrets(value) !== value
+}
+
+/**
+ * Whether a value, under the name `key`, holds anything credential-shaped: a
+ * non-empty string under a credential name, or an address with a credential
+ * in it — at any depth.
+ */
+export function holdsSecret(key: string, value: unknown): boolean {
+  if (typeof value === 'string') return (isSecretShapedKey(key) && value.trim() !== '') || isCredentialUrl(value)
+  if (Array.isArray(value)) return value.some((v) => holdsSecret(key, v))
+  if (isPlainObject(value)) return Object.entries(value).some(([k, v]) => holdsSecret(k, v))
+  return false
 }
 
 /** The keys of a settings object this build does not know. */
@@ -187,15 +208,14 @@ export function unknownSettingsKeys(settings: object): string[] {
   return Object.keys(settings).filter((k) => !KNOWN_SETTINGS_KEYS.has(k))
 }
 
-/** A profile's unknown fields cleaned of credentials; the known ones as they are. */
+/** A profile without the unknown fields that hold a secret; everything else as it is. */
 function cleanProfile(profile: unknown): unknown {
   if (!isPlainObject(profile)) return profile
   let out: Record<string, unknown> | null = null
   for (const [k, v] of Object.entries(profile)) {
-    if (KNOWN_PROFILE_KEYS.has(k)) continue
+    if (KNOWN_PROFILE_KEYS.has(k) || !holdsSecret(k, v)) continue
     out ??= { ...profile }
-    if (isSecretShapedKey(k)) delete out[k]
-    else out[k] = withoutSecretShaped(v)
+    delete out[k]
   }
   return out ?? profile
 }
@@ -207,9 +227,9 @@ function cleanProfile(profile: unknown): unknown {
  * - a key on disk this build does not know, and the save does not carry, is
  *   written back unchanged — a renderer that never received it (an import, a
  *   window loaded before) cannot drop it;
- * - an unknown key, carried or kept, is cleaned of anything credential-shaped,
- *   and dropped outright when its own name is;
- * - a profile's unknown fields get the same cleaning;
+ * - an unknown key, carried or kept, that holds a secret (`holdsSecret`) is
+ *   dropped whole; any other is written exactly as it was;
+ * - a profile's unknown fields get the same rule;
  * - the file is stamped with this build's `SETTINGS_FORMAT`.
  *
  * Known keys are never touched: their secrets are main's business
@@ -223,8 +243,7 @@ export function withUnknownKeys<T extends object>(outgoing: T, onDisk: Record<st
     }
   }
   for (const key of unknownSettingsKeys(out)) {
-    if (isSecretShapedKey(key)) delete out[key]
-    else out[key] = withoutSecretShaped(out[key])
+    if (holdsSecret(key, out[key])) delete out[key]
   }
   if (Array.isArray(out.profiles)) out.profiles = out.profiles.map(cleanProfile)
   out.settingsFormat = SETTINGS_FORMAT
@@ -271,20 +290,84 @@ export const SESSION_KEYS: readonly string[] = [
 const SESSION = new Set(SESSION_KEYS)
 
 /**
- * The top-level keys whose value differs between a backup and the settings now,
- * session keys aside. A key only `now` has is not counted: a newer build adds
- * its defaults on first start, and that is not a change the user made.
+ * Whether two values say the same thing, as far as a user could have changed
+ * it: key order is ignored, and so is a field only one side has — an older
+ * build rewrites a profile over its own defaults, and a newer one adds its
+ * own, neither of which is the user's doing. A list of plain values compares
+ * the entries both sides know, in order (an older build drops ids it does not
+ * know, as the graph columns do); any other list compares entry by entry.
+ */
+function sameSetting(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    const plain = (x: unknown): boolean => x === null || typeof x !== 'object'
+    if (a.every(plain) && b.every(plain)) {
+      const inA = new Set(a)
+      const inB = new Set(b)
+      const sa = a.filter((x) => inB.has(x))
+      const sb = b.filter((x) => inA.has(x))
+      return sa.length === sb.length && sa.every((x, i) => x === sb[i])
+    }
+    return a.length === b.length && a.every((x, i) => sameSetting(x, b[i]))
+  }
+  if (isPlainObject(a) && isPlainObject(b)) {
+    return Object.keys(a).every((k) => !(k in b) || sameSetting(a[k], b[k]))
+  }
+  return a === b
+}
+
+/**
+ * The top-level keys whose value differs between a backup and the settings now
+ * (`sameSetting`), session keys aside. A key only `now` has is not counted: a
+ * newer build adds its defaults on first start, and that is not a change the
+ * user made. Both sides must come without credentials (`stripSettingsSecrets`):
+ * a token is never a setting that "changed".
+ *
+ * What it cannot tell: a value the older version did not recognise in a key it
+ * knows (a newer theme id) and reset to its default reads as a change.
  */
 export function changedSettingsKeys(backup: Record<string, unknown>, now: Record<string, unknown>): string[] {
   const changed: string[] = []
   for (const key of Object.keys(backup)) {
-    if (SESSION.has(key)) continue
-    if (JSON.stringify(backup[key]) !== JSON.stringify(now[key])) changed.push(key)
+    if (SESSION.has(key) || !(key in now)) continue
+    if (!sameSetting(backup[key], now[key])) changed.push(key)
   }
   return changed.sort()
 }
 
-/** A backup to restore over the settings now: its values, with the session keys kept from `now`. */
+/** A profile's server lists, matched by address. */
+const SERVER_LISTS = ['githubEnterprise', 'gitlabServers', 'bitbucketServers'] as const
+
+/**
+ * A copy's profiles over today's: the copy's values win for every profile it
+ * has, but a profile created since, and a server a profile gained since, are
+ * kept — their tokens are filed under them in the keychain store, and the next
+ * save would prune a token whose profile or server is gone, for good.
+ */
+function mergedProfiles(copy: unknown, now: unknown): unknown {
+  if (!Array.isArray(copy) || !Array.isArray(now)) return copy
+  const nowById = new Map(now.filter(isPlainObject).map((p) => [p.id, p]))
+  const out = copy.map((p) => {
+    if (!isPlainObject(p)) return p
+    const current = nowById.get(p.id)
+    if (!current) return p
+    const merged: Record<string, unknown> = { ...p }
+    for (const list of SERVER_LISTS) {
+      const mine = Array.isArray(p[list]) ? (p[list] as unknown[]) : []
+      const theirs = Array.isArray(current[list]) ? (current[list] as unknown[]) : []
+      const urls = new Set(mine.filter(isPlainObject).map((h) => h.url))
+      const added = theirs.filter((h) => isPlainObject(h) && !urls.has(h.url))
+      if (added.length) merged[list] = [...mine, ...added]
+    }
+    return merged
+  })
+  const ids = new Set(copy.filter(isPlainObject).map((p) => p.id))
+  return [...out, ...now.filter((p) => isPlainObject(p) && !ids.has(p.id))]
+}
+
+/**
+ * A backup to restore over the settings now: its values, with the session keys
+ * kept from `now`, and the profiles and servers added since kept too (`mergedProfiles`).
+ */
 export function restoredSettings(
   backup: Record<string, unknown>,
   now: Record<string, unknown>
@@ -292,5 +375,9 @@ export function restoredSettings(
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(backup)) if (!SESSION.has(k)) out[k] = v
   for (const k of SESSION_KEYS) if (k in now) out[k] = now[k]
+  if ('profiles' in out) out.profiles = mergedProfiles(out.profiles, now.profiles)
+  // The profile in use must still exist; one created since may be it.
+  const ids = Array.isArray(out.profiles) ? out.profiles.filter(isPlainObject).map((p) => p.id) : []
+  if (!ids.includes(out.activeProfileId) && ids.includes(now.activeProfileId)) out.activeProfileId = now.activeProfileId
   return out
 }

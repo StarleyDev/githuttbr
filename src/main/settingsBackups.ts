@@ -49,6 +49,8 @@ export async function backupSettings(target: string, reason: SettingsBackup['rea
     }
     const createdAt = new Date().toISOString()
     const name = backupFileName(version, target, reason, createdAt)
+    // Never a file the list could not show, restore or prune.
+    if (!parseBackupFileName(name)) return null
     // Owner-only and atomic, like the settings file itself.
     await writePrivateFile(join(backupDir(), name), JSON.stringify(data, null, 2))
     await pruneSettingsBackups()
@@ -78,13 +80,16 @@ async function readSettingsBackup(name: unknown): Promise<Record<string, unknown
   }
 }
 
-export type RestoreBackupResult = 'ok' | 'missing' | 'not-loaded'
+export type RestoreBackupResult = 'ok' | 'missing' | 'not-loaded' | 'backup-failed'
 
-/** Restores a copy — after copying the settings as they are, so a restore is itself undoable. */
+/**
+ * Restores a copy — after copying the settings as they are, so a restore is
+ * itself undoable. No copy of now, no restore: the promise would be false.
+ */
 async function restoreSettingsBackup(name: unknown): Promise<RestoreBackupResult> {
   const copy = await readSettingsBackup(name)
   if (!copy) return 'missing'
-  await backupSettings(app.getVersion(), 'restore')
+  if (!(await backupSettings(app.getVersion(), 'restore'))) return 'backup-failed'
   return restoreSettingsFrom(copy)
 }
 

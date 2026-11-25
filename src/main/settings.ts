@@ -1320,7 +1320,11 @@ export function settingsForBackup(): Promise<Record<string, unknown> | null> {
   return exclusive(async () => {
     const parsed = await settingsOnDisk()
     if (!parsed) return null
-    const clean = withUnknownKeys(stripSettingsSecrets(parsed as unknown as AppSettings), null) as unknown as Record<string, unknown>
+    // A server address with a credential in it is cleaned too, as on every read.
+    const clean = withUnknownKeys(
+      stripSettingsSecrets(scrubServerUrls(parsed) as unknown as AppSettings),
+      null
+    ) as unknown as Record<string, unknown>
     // The copy says which format wrote it, not which one copied it.
     if (typeof parsed.settingsFormat === 'number') clean.settingsFormat = parsed.settingsFormat
     else delete clean.settingsFormat
@@ -1328,28 +1332,41 @@ export function settingsForBackup(): Promise<Record<string, unknown> | null> {
   })
 }
 
-/** The settings file as it is now, parsed — for comparing it with a copy. */
+/** The settings file as it is now, without a credential — for comparing it with a copy, which has none either. */
 export function settingsNow(): Promise<Record<string, unknown> | null> {
-  return exclusive(settingsOnDisk)
+  return exclusive(async () => {
+    const parsed = await settingsOnDisk()
+    return parsed
+      ? (stripSettingsSecrets(scrubServerUrls(parsed) as unknown as AppSettings) as unknown as Record<string, unknown>)
+      : null
+  })
 }
 
 /**
  * Writes a copy back as the settings file (Settings → About → Restore). What
  * is open now — tabs, workspaces — and the app's own bookkeeping stay as they
- * are (`restoredSettings`); keys this build does not know are kept as usual.
- * The keychain store is not touched: a profile in the copy gets its tokens back
- * by id. Refused while the file on disk is one that could not be parsed, or
- * before a renderer has been served the settings at all (as a save would be).
+ * are, and so do profiles and servers added since the copy (`restoredSettings`);
+ * keys this build does not know are kept as usual.
+ *
+ * Credentials are never taken from the copy (it has none) and never lost: the
+ * keychain store is not touched, and a token still in the file in plain text
+ * (the keychain declined, a weak Linux store, a file from an older build) is
+ * written back onto its profile, as a save does (`savedFileJson`). Refused
+ * while the file on disk is one that could not be parsed, or before a renderer
+ * has been served the settings at all (as a save would be).
  */
 export function restoreSettingsFrom(copy: Record<string, unknown>): Promise<'ok' | 'not-loaded'> {
   return exclusive(async () => {
     if (!settingsServed || settingsBroken) return 'not-loaded' as const
     const now = (await settingsOnDisk()) ?? {}
-    // A copy is written without credentials; one edited by hand to hold some
-    // gets them stripped here, as any save would.
-    const clean = stripSettingsSecrets(copy as unknown as AppSettings) as unknown as Record<string, unknown>
-    const next = restoredSettings(clean, now)
-    await writePrivateFile(settingsPath(), fileJson(next as unknown as AppSettings, now))
+    // A copy edited by hand to hold credentials gets them stripped, as any save would.
+    const clean = stripSettingsSecrets(scrubServerUrls(copy) as unknown as AppSettings) as unknown as Record<string, unknown>
+    const next = restoredSettings(clean, now) as unknown as AppSettings
+    const held = extractSecrets(
+      migrateGitlabSettings({ ...defaultSettings(), ...scrubServerUrls(withoutStaleKeys(now as Partial<AppSettings>)) })
+    )
+    const written = Object.keys(held).length > 0 ? applySecrets(next, held, { seed: false }) : next
+    await writePrivateFile(settingsPath(), fileJson(written, now))
     return 'ok' as const
   })
 }

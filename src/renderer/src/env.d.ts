@@ -361,7 +361,7 @@ interface PreloadApi {
   }
   settingsBackups: {
     list(): Promise<import('../../shared/types').SettingsBackup[]>
-    restore(name: string): Promise<'ok' | 'missing' | 'not-loaded'>
+    restore(name: string): Promise<'ok' | 'missing' | 'not-loaded' | 'backup-failed'>
     changedSince(name: string): Promise<string[] | null>
     reveal(name?: string): Promise<void>
   }

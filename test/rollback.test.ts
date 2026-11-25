@@ -18,6 +18,7 @@ import {
 import {
   SETTINGS_FORMAT,
   changedSettingsKeys,
+  holdsSecret,
   isSecretShapedKey,
   keysUnknownTo,
   restoredSettings,
@@ -130,6 +131,11 @@ describe('settings copies', () => {
     })
   })
 
+  it('names a pre-release version so it can be read back', () => {
+    const name = backupFileName('v4.52.0-rc.1', '4.51.0-beta-2+build.7', 'update', '2026-11-25T10:04:05.120Z')
+    expect(parseBackupFileName(name)).toMatchObject({ version: '4.52.0-rc.1', target: '4.51.0-beta.2', reason: 'update' })
+  })
+
   it('ignores any other file, and never accepts a path', () => {
     expect(parseBackupFileName('notes.txt')).toBeNull()
     expect(parseBackupFileName('../settings-4.52.0-to-4.51.0-rollback-20261125T100405120Z.json')).toBeNull()
@@ -169,30 +175,61 @@ describe('settings format: unknown keys survive, credentials do not', () => {
     expect((out as Record<string, unknown>).graphCompactMode).toBe(false)
   })
 
-  it('never carries a credential-shaped unknown key, at any depth, nor in a profile', () => {
+  it('drops a whole unknown key that holds a credential, at any depth, and such a profile field', () => {
     const onDisk = {
       ...base,
       futureHostToken: 'ghp_secret',
-      futureServers: [{ url: 'https://h', token: 'x', apiKey: 'y', label: 'h' }],
+      futureServers: [{ url: 'https://h', token: 'x', label: 'h' }],
+      futureMirror: 'https://user:pw@mirror.example/repo',
       profiles: [{ ...base.profiles[0], newHostToken: 'tok', newHostUrl: 'https://n', newHost: { password: 'p', user: 'u' } }]
     }
     const out = withUnknownKeys({ ...base, profiles: onDisk.profiles }, onDisk) as Record<string, unknown>
     const text = JSON.stringify(out)
     expect(out.futureHostToken).toBeUndefined()
-    expect(out.futureServers).toEqual([{ url: 'https://h', label: 'h' }])
-    for (const secret of ['ghp_secret', '"tok"', '"p"', '"x"', '"y"']) expect(text).not.toContain(secret)
+    // Never half an object: the whole key goes.
+    expect(out.futureServers).toBeUndefined()
+    expect(out.futureMirror).toBeUndefined()
+    for (const secret of ['ghp_secret', '"tok"', '"p"', '"x"', 'pw@']) expect(text).not.toContain(secret)
     const profile = (out.profiles as Record<string, unknown>[])[0]
     expect(profile.newHostUrl).toBe('https://n')
-    expect(profile.newHost).toEqual({ user: 'u' })
+    expect(profile.newHost).toBeUndefined()
+    expect(profile.newHostToken).toBeUndefined()
     // Known fields are main's business: left exactly as they came.
     expect(profile.githubToken).toBe(base.profiles[0].githubToken)
   })
 
-  it('recognises credential names, not ordinary ones', () => {
-    for (const k of ['githubToken', 'clientSecret', 'password', 'api_key', 'privateKey', 'sessionCookie']) {
-      expect(isSecretShapedKey(k)).toBe(true)
+  it('keeps harmless keys that only sound like credentials, unchanged', () => {
+    const onDisk = {
+      ...base,
+      tokenColors: { keyword: '#f00' },
+      maxTokens: 4096,
+      showTokenUsage: true,
+      cookieConsent: 'yes',
+      emptyToken: '',
+      launch: { password: true, label: 'Ask' },
+      mirror: 'https://mirror.example/repo'
     }
-    for (const k of ['graphCompactMode', 'sortKey', 'hotkeys', 'authorColors']) expect(isSecretShapedKey(k)).toBe(false)
+    const out = withUnknownKeys({ ...base }, onDisk) as Record<string, unknown>
+    for (const k of ['tokenColors', 'maxTokens', 'showTokenUsage', 'cookieConsent', 'emptyToken', 'launch', 'mirror']) {
+      expect(out[k]).toEqual((onDisk as Record<string, unknown>)[k])
+    }
+  })
+
+  it('recognises credential names by their ending, not ordinary ones', () => {
+    for (const k of ['githubToken', 'clientSecret', 'password', 'api_key', 'privateKey', 'sessionCookie', 'githubPat', 'pat', 'basicAuth', 'jwt', 'accessKey', 'sshKey', 'signingKey']) {
+      expect(isSecretShapedKey(k), k).toBe(true)
+    }
+    // `maxTokens` is a credential name by its ending; its number is what keeps it (see below).
+    for (const k of ['graphCompactMode', 'sortKey', 'hotkeys', 'authorColors', 'tokenColors', 'cookieConsent', 'compat', 'path']) {
+      expect(isSecretShapedKey(k), k).toBe(false)
+    }
+  })
+
+  it('finds a credential in a value only when it is one', () => {
+    expect(holdsSecret('password', true)).toBe(false)
+    expect(holdsSecret('password', 'hunter2')).toBe(true)
+    expect(holdsSecret('servers', [{ url: 'https://h?private_token=x' }])).toBe(true)
+    expect(holdsSecret('servers', [{ url: 'https://h/path' }])).toBe(false)
   })
 
   it('names only keys added by a format the target predates', () => {
@@ -210,6 +247,22 @@ describe('comparing and restoring a copy', () => {
     expect(changedSettingsKeys(copy, { ...copy })).toEqual([])
   })
 
+  it('ignores key order, fields only one side has, and list entries only one side knows', () => {
+    const before = {
+      graphColumns: { graph: true, author: false, deployment: true },
+      graphColumnOrder: ['graph', 'deployment', 'author', 'date'],
+      profiles: [{ id: 'p', name: 'Me', newerField: 1 }]
+    }
+    const after = {
+      graphColumns: { author: false, graph: true },
+      graphColumnOrder: ['graph', 'author', 'date'],
+      profiles: [{ name: 'Me', id: 'p', olderDefault: '' }]
+    }
+    expect(changedSettingsKeys(before, after)).toEqual([])
+    expect(changedSettingsKeys(before, { ...after, graphColumnOrder: ['author', 'graph', 'date'] })).toEqual(['graphColumnOrder'])
+    expect(changedSettingsKeys(before, { ...after, profiles: [{ id: 'p', name: 'Other' }] })).toEqual(['profiles'])
+  })
+
   it('restores the copy’s preferences and keeps the session as it is now', () => {
     const now = { language: 'de', codeFontSize: 15, tabs: [{ id: 'b' }], lastSeenVersion: '4.53.0' }
     expect(restoredSettings(copy, now)).toEqual({
@@ -218,5 +271,24 @@ describe('comparing and restoring a copy', () => {
       tabs: [{ id: 'b' }],
       lastSeenVersion: '4.53.0'
     })
+  })
+
+  it('keeps profiles and servers added since the copy, whose tokens are filed under them', () => {
+    const old = {
+      activeProfileId: 'a',
+      profiles: [{ id: 'a', name: 'Old name', githubEnterprise: [{ url: 'https://ghe.one', token: '' }] }]
+    }
+    const now = {
+      activeProfileId: 'b',
+      profiles: [
+        { id: 'a', name: 'New name', githubEnterprise: [{ url: 'https://ghe.one', token: '' }, { url: 'https://ghe.two', token: '' }] },
+        { id: 'b', name: 'Added later' }
+      ]
+    }
+    const out = restoredSettings(old, now) as { activeProfileId: string; profiles: { id: string; name: string; githubEnterprise?: { url: string }[] }[] }
+    expect(out.profiles.map((p) => p.id)).toEqual(['a', 'b'])
+    expect(out.profiles[0].name).toBe('Old name')
+    expect(out.profiles[0].githubEnterprise?.map((h) => h.url)).toEqual(['https://ghe.one', 'https://ghe.two'])
+    expect(out.activeProfileId).toBe('a')
   })
 })
