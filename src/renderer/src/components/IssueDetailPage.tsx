@@ -15,7 +15,15 @@ import {
 import { useT, interp, type TranslationKey } from '../i18n'
 import { readableError } from '../lib/gitErrorHint'
 import type { IssueDetail, LinkedPr, PageContent, PrCommentHandle } from '../../../shared/types'
-import { isCommentGone, isMyComment, type CommentEditDraft } from '../lib/commentEdit'
+import {
+  getCommentKey,
+  getCommentKeys,
+  isCommentGone,
+  isMyComment,
+  pruneEditDrafts,
+  type CommentEditDraft
+} from '../lib/commentEdit'
+import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 import { EditableComment } from './EditableComment'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -56,10 +64,15 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   )
   const getReferences = useRepoReferenceGetter(repoPath)
 
+  // Your own comments being edited, by comment key: kept against the comments the page shows.
+  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
+
   const load = useCallback(async (): Promise<void> => {
     setError(null)
     try {
-      setDetail(await hostingApi.issueDetail(repoPath, remoteUrl, tokens, issue.number))
+      const next = await hostingApi.issueDetail(repoPath, remoteUrl, tokens, issue.number)
+      pruneEditDrafts(editDrafts.current, getCommentKeys({ comments: next.comments, reviewThreads: [] }))
+      setDetail(next)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
@@ -88,14 +101,19 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   }
 
   // Your own comments, as on the PR page: the same calls, with the issue's number.
-  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
-  const readAgainIfGone = (err: unknown): never => {
-    if (isCommentGone(err instanceof Error ? err.message : String(err))) void load()
+  const readAgainIfGone = (handle: PrCommentHandle) => (err: unknown): never => {
+    if (isCommentGone(err instanceof Error ? err.message : String(err))) {
+      delete editDrafts.current[getCommentKey(handle)]
+      void load()
+    }
     throw err
   }
   const saveCommentEdit = (handle: PrCommentHandle, text: string): Promise<boolean> =>
     act(
-      () => hostingApi.prEditComment(repoPath, remoteUrl, tokens, issue.number, handle, text.trim()).catch(readAgainIfGone),
+      () =>
+        hostingApi
+          .prEditComment(repoPath, remoteUrl, tokens, issue.number, handle, stripOuterNewlines(text))
+          .catch(readAgainIfGone(handle)),
       t('prComment.saved')
     )
   const askDeleteComment = (handle: PrCommentHandle): void =>
@@ -107,7 +125,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
       confirmLabel: t('prComment.delete'),
       onConfirm: () =>
         void act(
-          () => hostingApi.prDeleteComment(repoPath, remoteUrl, tokens, issue.number, handle).catch(readAgainIfGone),
+          () => hostingApi.prDeleteComment(repoPath, remoteUrl, tokens, issue.number, handle).catch(readAgainIfGone(handle)),
           t('prComment.deleted')
         )
     })
@@ -188,7 +206,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
                   handle={c.handle}
                   body={c.body}
                   edited={c.edited}
-                  mine={isMyComment(c.author, detail.viewer, c.handle)}
+                  mine={isMyComment(c, detail)}
                   headClassName="issue-comment-head"
                   bodyClassName="issue-comment-body"
                   head={

@@ -1,4 +1,4 @@
-import type { HostingProvider, PrCommentHandle, PrDetail } from '../../../shared/types'
+import type { HostingProvider, PrCommentHandle, PrDetail, PrReviewThread } from '../../../shared/types'
 import type { TranslationKey } from '../i18n'
 
 /**
@@ -13,14 +13,56 @@ export interface CommentEditDraft {
   original: string
 }
 
+/** Who the page's viewer is, as the PR or issue detail carries it. */
+export interface CommentViewer {
+  viewer?: string | null
+  viewerId?: string | null
+  /** Authors are display names two people can share: only ids may match. */
+  viewerById?: boolean
+}
+
+const sameText = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
+
 /**
- * The viewer wrote this comment, and the host gave a way to reach it. Logins
- * compare case-insensitively, as hosts treat them; an unknown viewer owns nothing.
- * The host still decides: this only chooses whether to offer the actions.
+ * The viewer wrote this comment, and the host gave a way to reach it. Ids
+ * decide when both sides have one; on a host that names authors by display
+ * name (Azure DevOps), a missing id offers nothing rather than guess. Logins
+ * compare case-insensitively, as hosts treat them; an unknown viewer owns
+ * nothing. The host still decides: this only chooses whether to offer actions.
  */
-export function isMyComment(author: string, viewer: string | null | undefined, handle: PrCommentHandle | undefined): boolean {
-  if (!handle || !viewer || !author) return false
-  return author.toLowerCase() === viewer.toLowerCase()
+export function isMyComment(
+  comment: { author: string; authorId?: string; handle?: PrCommentHandle },
+  who: CommentViewer | null | undefined
+): boolean {
+  if (!comment.handle || !who) return false
+  if (comment.authorId && who.viewerId) return sameText(comment.authorId, who.viewerId)
+  if (who.viewerById) return false
+  return !!who.viewer && !!comment.author && sameText(comment.author, who.viewer)
+}
+
+/**
+ * GitHub: the thread's first comment is gone (deleted), so its replies point
+ * at a comment that no longer exists, and the reply endpoint takes no reply to
+ * a reply — the app cannot answer this thread.
+ */
+export function isThreadRootMissing(provider: HostingProvider | undefined, thread: PrReviewThread): boolean {
+  return provider === 'github' && !thread.comments.some((c) => c.id === thread.rootId)
+}
+
+/** Every comment key a PR page shows — what the open edits are kept against. */
+export function getCommentKeys(pr: Pick<PrDetail, 'comments' | 'reviewThreads'>): Set<string> {
+  const keys = new Set<string>()
+  for (const c of pr.comments) if (c.handle) keys.add(getCommentKey(c.handle))
+  for (const th of pr.reviewThreads) for (const c of th.comments) if (c.handle) keys.add(getCommentKey(c.handle))
+  return keys
+}
+
+/**
+ * Drop the edits of comments the page no longer shows — deleted meanwhile —
+ * so an orphaned draft does not make the page ask "leave unsent text?" forever.
+ */
+export function pruneEditDrafts(drafts: Record<string, CommentEditDraft>, keys: Set<string>): void {
+  for (const k of Object.keys(drafts)) if (!keys.has(k)) delete drafts[k]
 }
 
 /** One key per comment, stable across reloads: two hosts' ids never meet on one page. */
@@ -74,7 +116,7 @@ export function withCommentBody(pr: PrDetail, handle: PrCommentHandle, body: str
   }
 }
 
-/** The host says the comment is not there any more: the page should read it again. */
+/** The host did not find the comment (deleted, or out of this token's sight): the page should read it again. */
 export function isCommentGone(message: string): boolean {
   return /Comment change \[gone\]:/.test(message)
 }

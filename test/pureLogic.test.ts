@@ -8,14 +8,17 @@ import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../src/renderer/s
 import { getAnchorLine, getAnchorSide, isValidLineAnchor } from '../src/shared/prLineAnchor'
 import {
   getCommentKey,
+  getCommentKeys,
   getDeleteConfirmKey,
   hasUnsavedEdit,
   isCommentGone,
   isEditChanged,
   isMyComment,
+  isThreadRootMissing,
+  pruneEditDrafts,
   withCommentBody
 } from '../src/renderer/src/lib/commentEdit'
-import { isEditedAfter, isValidCommentHandle } from '../src/shared/prCommentHandle'
+import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../src/shared/prCommentHandle'
 import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
@@ -8438,22 +8441,65 @@ describe('a pull request diff line ↔ its comment anchor', () => {
 describe('editing and deleting your own comments (lib/commentEdit)', () => {
   const H = { id: 7, kind: 'conversation' as const }
 
+  const by = (author: string, extra: Record<string, unknown> = {}): { author: string; handle: typeof H } => ({
+    author,
+    handle: H,
+    ...extra
+  })
+
   it('a comment is yours when its author is the viewer, ignoring case', () => {
-    expect(isMyComment('Ana', 'ana', H)).toBe(true)
-    expect(isMyComment('ana.lima', 'ANA.LIMA', H)).toBe(true)
-    expect(isMyComment('bruno', 'ana', H)).toBe(false)
+    expect(isMyComment(by('Ana'), { viewer: 'ana' })).toBe(true)
+    expect(isMyComment(by('ana.lima'), { viewer: 'ANA.LIMA' })).toBe(true)
+    expect(isMyComment(by('bruno'), { viewer: 'ana' })).toBe(false)
   })
 
   it('an unknown viewer owns nothing, and a comment with no handle cannot be changed', () => {
-    expect(isMyComment('ana', null, H)).toBe(false)
-    expect(isMyComment('ana', undefined, H)).toBe(false)
-    expect(isMyComment('ana', '', H)).toBe(false)
-    expect(isMyComment('ana', 'ana', undefined)).toBe(false)
-    expect(isMyComment('', '', H)).toBe(false)
+    expect(isMyComment(by('ana'), { viewer: null })).toBe(false)
+    expect(isMyComment(by('ana'), {})).toBe(false)
+    expect(isMyComment(by('ana'), { viewer: '' })).toBe(false)
+    expect(isMyComment(by('ana'), null)).toBe(false)
+    expect(isMyComment({ author: 'ana' }, { viewer: 'ana' })).toBe(false)
+    expect(isMyComment(by(''), { viewer: '' })).toBe(false)
   })
 
-  it('a display name (Azure DevOps, bitbucket.org) is matched the same way', () => {
-    expect(isMyComment('Ana Lima', 'ana lima', { id: 2, kind: 'review', threadId: 9 })).toBe(true)
+  it('a display-name host matches on the account id only: two "Ana Souza" are not one', () => {
+    const me = { viewer: 'Ana Souza', viewerId: 'id-ana-1', viewerById: true }
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-1' }), me)).toBe(true)
+    expect(isMyComment(by('Ana Souza', { authorId: 'ID-ANA-1' }), me)).toBe(true)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2' }), me)).toBe(false)
+    // An id missing on either side offers nothing, rather than guess by name.
+    expect(isMyComment(by('Ana Souza'), me)).toBe(false)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-1' }), { viewer: 'Ana Souza', viewerById: true })).toBe(false)
+  })
+
+  it('ids decide when both sides carry one, even on a login host', () => {
+    expect(isMyComment(by('ana', { authorId: '7' }), { viewer: 'ana', viewerId: '8' })).toBe(false)
+  })
+
+  it('a GitHub thread whose first comment is gone cannot be replied to from the app', () => {
+    const th = (ids: number[], rootId: number): never =>
+      ({ path: 'a.ts', line: 1, diffHunk: '', rootId, comments: ids.map((id) => ({ id, author: 'a', body: '', createdAt: '' })) }) as never
+    expect(isThreadRootMissing('github', th([10, 11], 10))).toBe(false)
+    expect(isThreadRootMissing('github', th([11, 12], 10))).toBe(true)
+    // Other hosts' thread ids are not comment ids.
+    expect(isThreadRootMissing('azure', th([1, 2], 9))).toBe(false)
+    expect(isThreadRootMissing('gitlab', th([1], 3))).toBe(false)
+  })
+
+  it('edits of comments no longer on the page are dropped', () => {
+    const drafts = {
+      [getCommentKey(H)]: { text: 'x', original: 'y' },
+      [getCommentKey({ id: 99, kind: 'conversation' })]: { text: 'gone', original: 'was' }
+    }
+    const keys = getCommentKeys({ comments: [{ author: 'a', body: '', createdAt: '', handle: H }], reviewThreads: [] })
+    pruneEditDrafts(drafts, keys)
+    expect(Object.keys(drafts)).toEqual([getCommentKey(H)])
+  })
+
+  it('an edited body loses only the blank lines around it', () => {
+    expect(stripOuterNewlines('\n\n    code\nbreak  \nend\n\n')).toBe('    code\nbreak  \nend')
+    expect(stripOuterNewlines('  \r\n  indented')).toBe('  indented')
+    expect(stripOuterNewlines('plain')).toBe('plain')
   })
 
   it('keys tell a thread comment from a conversation one with the same id', () => {
@@ -8511,6 +8557,7 @@ describe('editing and deleting your own comments (lib/commentEdit)', () => {
     expect(isValidCommentHandle({ id: 1, kind: 'note' })).toBe(false)
     expect(isValidCommentHandle({ id: 1, kind: 'review', threadId: 0 })).toBe(false)
     expect(isValidCommentHandle({ id: 1, kind: 'review', version: 1.5 })).toBe(false)
+    expect(isValidCommentHandle({ id: 2 ** 53, kind: 'review' })).toBe(false)
     expect(isValidCommentHandle(null)).toBe(false)
   })
 
