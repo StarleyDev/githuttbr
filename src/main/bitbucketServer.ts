@@ -3,7 +3,8 @@ import { bbsReviewerIds, collectPickerOptions, createWithoutRejectedReviewers, P
 import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
-import { finishPrCommits } from '../shared/prCommits'
+import { finishPrCommits, type RawPrCommit } from '../shared/prCommits'
+import { finishPrUpdates, toUpdateCommits, type PrUpdateDraft } from '../shared/prUpdates'
 import { isEditedAfter } from '../shared/prCommentHandle'
 import {
   bitbucketServerEndpoints,
@@ -11,6 +12,7 @@ import {
   type BitbucketServerRepo
 } from '../shared/bitbucketServer'
 import type {
+  PrUpdateList,
   CiJob,
   CiState,
   CiStatus,
@@ -956,4 +958,162 @@ export async function bbsPullCommits(repo: BitbucketServerRepo, token: string, i
     true,
     partial
   )
+}
+
+const toRawCommit = (c: BbsCommit): RawPrCommit => ({
+  sha: c.id!,
+  message: c.message,
+  authorName: c.author?.displayName || c.author?.name,
+  authorLogin: c.author?.slug,
+  authoredAt: c.authorTimestamp,
+  parentShas: c.parents ? c.parents.flatMap((p) => (p.id ? [p.id] : [])) : null
+})
+const knownCommits = (list: BbsCommit[] | undefined): BbsCommit[] => (list ?? []).filter((c) => typeof c.id === 'string')
+
+interface BbsCommitSet {
+  commits?: BbsCommit[]
+  total?: number
+}
+
+interface BbsRescopeActivity {
+  id?: number
+  createdDate?: number
+  user?: BbsUser
+  action?: string
+  fromHash?: string
+  previousFromHash?: string
+  added?: BbsCommitSet
+  removed?: BbsCommitSet
+}
+
+/**
+ * A pull request's updates from its activity: the OPENED entry, and each
+ * RESCOPED one that moved the source branch — a rescope also records the
+ * target branch moving, which is no push to the pull request and is skipped.
+ * A rescope names the commits it added and removed (with their totals, which
+ * may exceed the list); one that removed any rewrote the branch. What was
+ * there at the opening is what no rescope added: the commits still listed,
+ * and those a later rescope removed.
+ */
+export async function bbsPullUpdates(repo: BitbucketServerRepo, token: string, id: number): Promise<PrUpdateList> {
+  const r = bbsRepoApi(repo)
+  let partial = false
+  const [activities, current] = await Promise.all([
+    bbsPages<BbsRescopeActivity>(`${r}/pull-requests/${id}/activities`, token, 100, 10, () => {
+      partial = true
+    }),
+    bbsPages<BbsCommit>(`${r}/pull-requests/${id}/commits`, token, 50, 6, () => {
+      partial = true
+    })
+  ])
+  // Newest first as the server lists them; oldest first here, ties by id.
+  const ordered = [...activities].sort((a, b) => (a.createdDate ?? 0) - (b.createdDate ?? 0) || (a.id ?? 0) - (b.id ?? 0))
+  const opened = ordered.find((a) => a.action === 'OPENED')
+  const rescopes = ordered.filter((a) => a.action === 'RESCOPED' && !!a.fromHash && a.fromHash !== a.previousFromHash)
+  const addedLater = new Set(rescopes.flatMap((a) => knownCommits(a.added?.commits).map((c) => c.id!)))
+  const original = new Map<string, BbsCommit>()
+  for (const c of knownCommits(current)) if (!addedLater.has(c.id!)) original.set(c.id!, c)
+  for (const a of rescopes) {
+    for (const c of knownCommits(a.removed?.commits)) if (!addedLater.has(c.id!) && !original.has(c.id!)) original.set(c.id!, c)
+  }
+  const iso = (ms: number | undefined): string => (typeof ms === 'number' ? new Date(ms).toISOString() : '')
+  const who = (u: BbsUser | undefined): { pusher?: string } => {
+    const name = u?.displayName || u?.name
+    return name ? { pusher: name } : {}
+  }
+  const first = toUpdateCommits([...original.values()].map(toRawCommit), true)
+  // The head at the opening is what the first push moved the branch from.
+  const openedHead = rescopes[0]?.previousFromHash ?? (knownCommits(current)[0]?.id || undefined)
+  const drafts: PrUpdateDraft[] = [
+    {
+      id: opened?.id !== undefined ? `activity:${opened.id}` : 'opened',
+      kind: 'opened',
+      createdAt: iso(opened?.createdDate),
+      ...who(opened?.user),
+      ...(openedHead ? { headSha: openedHead } : {}),
+      added: first
+    },
+    ...rescopes.map((a): PrUpdateDraft => {
+      const added = knownCommits(a.added?.commits)
+      const removed = knownCommits(a.removed?.commits)
+      const short = (a.added?.total ?? added.length) > added.length || (a.removed?.total ?? removed.length) > removed.length
+      return {
+        id: `activity:${a.id ?? a.fromHash}`,
+        kind: (a.removed?.total ?? removed.length) > 0 ? 'rewrite' : 'push',
+        createdAt: iso(a.createdDate),
+        ...who(a.user),
+        headSha: a.fromHash!,
+        ...(a.previousFromHash ? { fromSha: a.previousFromHash } : {}),
+        added: toUpdateCommits(added.map(toRawCommit), true),
+        removed: toUpdateCommits(removed.map(toRawCommit), true),
+        ...(short ? { commitsTruncated: true } : {})
+      }
+    })
+  ]
+  const { updates, truncated } = finishPrUpdates(drafts)
+  return { updates, truncated: truncated || partial, grouping: 'native' }
+}
+
+interface BbsDiffSegment {
+  type?: 'ADDED' | 'REMOVED' | 'CONTEXT'
+  lines?: Array<{ line?: string }>
+}
+interface BbsDiffHunk {
+  sourceLine?: number
+  sourceSpan?: number
+  destinationLine?: number
+  destinationSpan?: number
+  segments?: BbsDiffSegment[]
+}
+export interface BbsDiff {
+  source?: { toString?: string } | null
+  destination?: { toString?: string } | null
+  hunks?: BbsDiffHunk[]
+}
+
+/** The server's structured diff as the unified text the viewer draws, a file each. */
+export function bbsDiffsToFiles(diffs: readonly BbsDiff[]): PrFile[] {
+  const files: PrFile[] = []
+  for (const d of diffs) {
+    // `toString` is a field of the server's path object here, not the method.
+    const src = typeof d.source?.toString === 'string' ? d.source.toString : undefined
+    const dst = typeof d.destination?.toString === 'string' ? d.destination.toString : undefined
+    const name = dst ?? src
+    if (!name) continue
+    const status = !src ? 'added' : !dst ? 'removed' : src !== dst ? 'renamed' : 'modified'
+    let additions = 0
+    let deletions = 0
+    const out: string[] = []
+    for (const h of d.hunks ?? []) {
+      out.push(`@@ -${h.sourceLine ?? 0},${h.sourceSpan ?? 0} +${h.destinationLine ?? 0},${h.destinationSpan ?? 0} @@`)
+      for (const s of h.segments ?? []) {
+        const mark = s.type === 'ADDED' ? '+' : s.type === 'REMOVED' ? '-' : ' '
+        for (const l of s.lines ?? []) {
+          out.push(`${mark}${l.line ?? ''}`)
+          if (mark === '+') additions++
+          else if (mark === '-') deletions++
+        }
+      }
+    }
+    files.push({
+      filename: name,
+      status,
+      additions,
+      deletions,
+      ...(out.length ? { patch: out.join('\n') } : {}),
+      ...(status === 'renamed' && src ? { previousFilename: src } : {})
+    })
+  }
+  return files
+}
+
+/**
+ * What one push changed: the diff from the previous head to this one. The
+ * server's compare reads "what `from` has that `to` lacks", so the new head is
+ * its `from`.
+ */
+export async function bbsCompareFiles(repo: BitbucketServerRepo, token: string, fromSha: string, toSha: string): Promise<PrFile[]> {
+  const url = `${bbsRepoApi(repo)}/compare/diff?from=${enc(toSha)}&to=${enc(fromSha)}&contextLines=3`
+  const res = await bbsJson<{ diffs?: BbsDiff[] }>(url, token)
+  return bbsDiffsToFiles(res?.diffs ?? [])
 }

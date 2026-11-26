@@ -22,6 +22,7 @@ import {
 } from './repoConfig'
 import type {
   BlameLine,
+  PrFile,
   DoctorCheck,
   DoctorFix,
   RepoConfig,
@@ -175,6 +176,7 @@ import type {
 } from '../shared/types'
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
+import { splitUnifiedDiff } from './forgejo'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
@@ -4804,6 +4806,25 @@ export const gitService = {
       if (type === 'commit') found.add(sha.toLowerCase())
     }
     return wanted.filter((s) => found.has(s.toLowerCase()))
+  },
+
+  /**
+   * The files changed between two commits, each with its patch — what one
+   * push to a pull request did, for its Updates tab. The two trees directly
+   * (`from to`, not the merge base), renames detected. Only full hex ids, as
+   * getLocalCommits; no external diff or textconv, so the patch is git's own
+   * and a repository's config cannot run a program from here.
+   */
+  async getCommitRangeFiles(repoPath: string, from: unknown, to: unknown): Promise<PrFile[]> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    if (!isFullSha(from) || !isFullSha(to)) throw new Error('Two full commit ids are compared.')
+    const out = await runGit(
+      repoPath,
+      ['diff', '--no-color', '--no-ext-diff', '--no-textconv', '-M', from, to, '--'],
+      { GIT_NO_LAZY_FETCH: '1' },
+      64 << 20
+    )
+    return splitUnifiedDiff(out)
   },
 
   /**
@@ -9719,6 +9740,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remo
 
 const READ_METHODS = new Set<string>([
   'getLocalCommits',
+  'getCommitRangeFiles',
   'isAncestor',
   'isRepository',
   'directoryExists',

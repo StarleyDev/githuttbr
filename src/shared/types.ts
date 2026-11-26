@@ -855,6 +855,65 @@ export interface PrCommitList {
   kept: 'oldest' | 'newest'
 }
 
+/**
+ * What kind of push made an update: the one that opened the pull request, a
+ * push that only added commits, or one that rewrote history (a force push or a
+ * rebase) — earlier commits may be gone from the branch.
+ */
+export type PrUpdateKind = 'opened' | 'push' | 'rewrite'
+
+/**
+ * One update of a pull request — a push to its source branch, as Azure DevOps
+ * calls an iteration and GitLab a diff version.
+ */
+export interface PrUpdate {
+  /** The host's own id for it (iteration, version, activity), else its head sha.
+   *  What "seen" remembers. */
+  id: string
+  /** 1 for the push that opened the PR, counting up, oldest first. */
+  index: number
+  kind: PrUpdateKind
+  /** ISO date of the push; empty when the host does not say. */
+  createdAt: string
+  /** Who pushed, when the host says. */
+  pusher?: string
+  /** The source branch's head after this push, when known. */
+  headSha?: string
+  /** What "the changes in this update" are read against: the previous update's
+   *  head (a force push's own "before" where the host names it), or the merge
+   *  base for the first update. Absent when nobody can tell. */
+  fromSha?: string
+  /** Azure DevOps: the iteration number, for `$compareTo`. */
+  iteration?: number
+  /** The commits this push brought, oldest first. */
+  added: PrCommit[]
+  /** The commits it took off the branch, when the host reports them. */
+  removed: PrCommit[]
+  /** The host counted more commits than it listed. */
+  commitsTruncated?: boolean
+}
+
+/**
+ * How a host's updates were told apart: `native` from the host's own record of
+ * pushes, `approximate` reconstructed from commit and force-push dates (GitHub
+ * keeps no record of a plain push), `single` when the host records none and
+ * every commit sits in one update, `unsupported` when the host has no way.
+ */
+export type PrUpdateGrouping = 'native' | 'approximate' | 'single' | 'unsupported'
+
+/** A pull request's updates, oldest first. `truncated` when a cap stopped the reading. */
+export interface PrUpdateList {
+  updates: PrUpdate[]
+  truncated: boolean
+  grouping: PrUpdateGrouping
+}
+
+/** One end of an update's comparison: a commit, and Azure's iteration of it. */
+export interface PrUpdateEnd {
+  sha: string
+  iteration?: number
+}
+
 /** Full detail for one pull request (conversation + review state). */
 export interface PrDetail {
   number: number
