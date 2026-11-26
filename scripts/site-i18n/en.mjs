@@ -29,7 +29,6 @@ export const en = {
   'nav.download': 'Download',
 
   'foot.license': 'Apache 2.0 licensed · Made by <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> with 💜',
-  'foot.credit': 'A fork of {upstream} by MyAppDesk, under the MIT licence.',
   'foot.source': 'Source',
   'foot.roadmap': 'Roadmap',
   'foot.reportIssue': 'Report an issue',

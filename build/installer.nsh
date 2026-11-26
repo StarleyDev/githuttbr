@@ -1,24 +1,24 @@
 ; GitHuttBr's additions to electron-builder's NSIS installer (build.nsis.include).
 ;
-; Up to 4.58 the app shipped with appId com.gitcito.desktop, the identity it
-; inherited from Gitcito. electron-builder derives the Windows uninstall GUID
+; Up to 4.58 the app shipped with the appId it inherited when it started.
+; electron-builder derives the Windows uninstall GUID
 ; from the appId, so the move to com.huttbr.git gives the installer a new GUID
 ; and its own "remove the previous version" step no longer sees the old
 ; install. Left alone, an upgrade would leave two GitHuttBr entries side by
 ; side. This takes the old one out, before any new file is written.
 ;
-; The old GUID is also the one a real Gitcito install uses, so the entry is
+; The old GUID is also the one another app still uses, so the entry is
 ; removed only when its DisplayName says it is GitHuttBr ("GitHuttBr 4.58.0",
 ; or "Git HuttBr 4.38.0" from the builds before the 4.39 rename). An entry named
-; Gitcito, or anything else, is never touched.
+; anything else is never touched.
 ;
 ; The same script runs for a manual install and for the auto-updater, which
 ; starts this installer with /S --updated.
 
 ; electron-builder: UUID.v5(appId, "50e065bc-3134-11e6-9bab-38c9862bdaf3")
 ; (app-builder-lib/out/targets/nsis/NsisTarget.js, ELECTRON_BUILDER_NS_UUID),
-; computed for the old appId "com.gitcito.desktop". test/nsisUpgrade.test.ts
-; recomputes it with the installed electron-builder.
+; computed for the old appId (pinned in test/nsisUpgrade.test.ts, which
+; recomputes it with the installed electron-builder).
 !define GITHUTTBR_OLD_GUID "2e01bc5f-df2b-5b7a-af33-faa365521d92"
 !define GITHUTTBR_OLD_UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${GITHUTTBR_OLD_GUID}"
 !define GITHUTTBR_OLD_INSTALL_KEY "Software\${GITHUTTBR_OLD_GUID}"

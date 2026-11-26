@@ -17,19 +17,15 @@ const MARKER = 'upstream-name'
 /** Whole files, each with the reason it has to name the other app. */
 const ALLOWED_FILES: Record<string, string> = {
   NOTICE: 'legal attribution, kept with every copy',
-  'CHANGELOG.md': 'release history, never rewritten',
   'test/noUpstreamName.test.ts': 'this guard',
   'test/upstreamIgnored.test.ts': "plants the other app's data and proves it is ignored",
   'test/nsisUpgrade.test.ts': 'pins the old appId the Windows upgrade looks for',
-  'build/installer.nsh': 'the old appId GUID, and the rule never to touch that app',
-  'src/main/legacyShims.ts': "recognises this app's own pre-4.39 converter by its old file name",
   'test/legacyShims.test.ts': "this app's old converter paths, and the other app's",
   'test/legacyTextconv.test.ts': "this app's old converter paths, and the other app's",
   'test/cliConfig.test.ts': "proves the CLI ignores the other app's repository config and editor",
   'test/simpleGitAllowConfig.test.ts': "proves the other app's config keys are not reachable",
   'test/repoConfig.test.ts': "proves the other app's repository config is not read",
-  'test/packagingHardening.test.ts': 'proves the packages no longer claim the other app',
-  'docs/help/upgrading.md': 'the page about updating across the identity change and living beside that app'
+  'test/packagingHardening.test.ts': 'proves the packages no longer claim the other app'
 }
 
 function trackedTextFiles(): string[] {

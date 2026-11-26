@@ -7,7 +7,6 @@ export const it = {
   'nav.download': 'Download',
 
   'foot.license': 'Licenza Apache 2.0 · Fatto da <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> con 💜',
-  'foot.credit': 'Un fork di {upstream} di MyAppDesk, con licenza MIT.',
   'foot.source': 'Codice sorgente',
   'foot.roadmap': 'Roadmap',
   'foot.reportIssue': 'Segnala un problema',

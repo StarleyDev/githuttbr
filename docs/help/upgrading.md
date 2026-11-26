@@ -1,99 +1,73 @@
 ---
-title: Upgrading, and living beside Gitcito
+title: Upgrading to 4.59
 category: Start here
 order: 9
-summary: What changes when you update across 4.59, the release that gave GitHuttBr its own identity, and why it now installs next to Gitcito instead of over it.
-keywords: upgrade update 4.58 4.59 identity app id bundle id com.huttbr.git installer uninstall coexist side by side gitcito keychain safe storage prompt data folder settings deb rpm appimage diff driver textconv
+summary: What changes when you update across 4.59, the release that gave GitHuttBr its own app identifier, and what to do if the update does not install by itself.
+keywords: upgrade update 4.58 4.59 identity identifier app id bundle id com.huttbr.git installer uninstall reinstall download keychain safe storage prompt data folder settings deb rpm appimage
 ---
 
-# Upgrading, and living beside Gitcito
+# Upgrading to 4.59
 
-GitHuttBr began as a fork of <code>Gitcito</code>, and until 4.58 it still
-carried that app's identity: the same package id, the same Windows installer
-GUID, the same macOS bundle id. On a machine that also had the real
-<code>Gitcito</code>, installing GitHuttBr replaced it on Windows, removed
-it on Linux and collided with it on macOS. It also copied
-<code>Gitcito</code>'s settings on its first start, and kept reading what
-<code>Gitcito</code> leaves in your repositories.
+Every desktop app has an identifier the system knows it by: Windows names its
+installed-programs entry after it, macOS checks it before installing an update,
+and Linux packages declare it. Until 4.58 GitHuttBr still carried an identifier
+it inherited when it started. From 4.59 it has its own, **`com.huttbr.git`**,
+the reverse form of its domain, git.huttbr.com.
 
-From 4.59 GitHuttBr is its own app. Its identity is **`com.huttbr.git`**, the
-reverse form of its domain, git.huttbr.com. The two apps install side by side,
-keep separate settings and leave each other's data alone.
+**Your data does not move.** Settings, profiles, tokens and the vault stay in
+the same data folder (`GitHuttBr`, in `~/.config` on Linux,
+`~/Library/Application Support` on macOS, `%APPDATA%` on Windows), and the
+keychain entry keeps its name (*GitHuttBr Safe Storage*). Your repositories are
+not touched.
 
-## Updating an existing GitHuttBr
-
-Your settings, profiles, tokens and vault stay where they are: the data folder
-(`GitHuttBr`, in `~/.config` on Linux, `~/Library/Application Support` on macOS,
-`%APPDATA%` on Windows) and the keychain entry (*GitHuttBr Safe Storage*) keep
-their names.
+## What happens on each system
 
 | Platform | What happens |
 |----------|--------------|
-| **Windows** | The new installer has a new GUID, so its own "remove the previous version" step cannot see the old install. A step of its own looks for the old entry (per user and per machine) and, **only when it is named GitHuttBr**, runs its uninstaller silently, keeping your data, before installing. An entry named <code>Gitcito</code> is never touched. The auto-updater runs the same installer, so an update from inside the app works the same way. |
-| **macOS** | Expect to install **this one version by hand**. The macOS updater only installs a build whose signature matches the running app's, and the bundle id is part of that match, so 4.58 will most likely refuse the update to `com.huttbr.git`: download the new build from the [releases page](https://github.com/StarleyDev/githuttbr/releases) and drag it over the old `GitHuttBr.app`. Updates after that are automatic again. On the first start the keychain item *GitHuttBr Safe Storage* still belongs to the old identity, so macOS may ask for your login password to allow access: choose **Always Allow**, or the saved tokens cannot be decrypted. |
-| **Linux** | The `.deb` package and the AppImage are still called `githuttbr`, so an update is an ordinary upgrade. |
+| **Windows** | The new installer removes the previous GitHuttBr install before copying its files, keeping your data, so **one** GitHuttBr is left in **Settings → Apps**. The automatic update runs the same installer. Only an entry named GitHuttBr is removed; no other app is touched. |
+| **macOS** | Install **this one version by hand**. macOS only installs an update whose identifier matches the running app's, so any version before 4.59 cannot update to it by itself. Download it from [git.huttbr.com](https://git.huttbr.com) and drag it over the old `GitHuttBr.app`. Updates after that are automatic again. |
+| **Linux** | The `.deb` package and the AppImage keep the name `githuttbr`, so the update is an ordinary upgrade. |
 
-## Next to Gitcito
+## If the update fails
 
-The packages no longer claim to replace <code>Gitcito</code>: the `.deb` and
-`.rpm` declare no `replaces`, `conflicts` or `provides`, the Windows installer
-and the macOS bundle have their own ids, and both apps can be installed and
-running at once.
+1. Download the new version from [git.huttbr.com](https://git.huttbr.com) and
+   install it by hand.
+2. If that install fails too, uninstall the current GitHuttBr first, then
+   install the new one. Uninstalling keeps your data folder, so settings and
+   tokens are still there afterwards.
+3. On Windows, if **Settings → Apps** ever shows two GitHuttBr entries, remove
+   the older one: your data is kept.
 
-GitHuttBr does not read, rewrite or delete anything <code>Gitcito</code>
-owns:
+## Older repository data
 
-| <code>Gitcito</code>'s data | What GitHuttBr does |
-|----------------|---------------------|
-| Its settings folder | Nothing. It is no longer copied on the first start. |
-| <code>.gitcito.json</code> in a repository | Not read. Only `.githuttbr.json` is the [repository config](repo-config.md). |
-| WIP snapshots and purge backups under <code>refs/gitcito/</code> | Not listed, restored, pruned or deleted. |
-| Stack parents, protected branches, subtrees (<code>gitcito.*</code> config keys) | Not read, and not unset when you change your own. |
-| Local-CI verdicts under <code>refs/notes/gitcito-ci</code> | Not read. |
-| Its stack markers in a pull request body | Left as they are; GitHuttBr adds its own section. |
-| Its terminal command, its `core.editor` setting, its diff converter | Not flagged, fixed or removed by `githuttbr doctor` or the diff-driver list. |
-| Its environment variables and launch-config block | Not set, not read. |
+Up to 4.38 GitHuttBr kept a few things inside repositories under its earlier
+names: stack parents, protected branches, remembered subtrees, WIP snapshots,
+purge backups, local-CI verdicts and the repository config file. From 4.59
+those old names are no longer read, so that data has to be recreated. For the
+repository config, rename the file to `.githuttbr.json` (see
+[repository config](repo-config.md)).
 
-## What older GitHuttBr data no longer counts
+Three things from older versions still work, because each can only be this
+app's own:
 
-The same names were used by GitHuttBr itself up to 4.58. Inside a repository
-there is no telling the two apps' data apart, so what only carries the old name
-there is now treated as <code>Gitcito</code>'s: **repository data written by
-4.38 or older** under the old names (stack parents, protected branches,
-remembered subtrees, snapshots, purge backups, local-CI verdicts, the
-repository config file) is no longer read. Recreate what you still need; for
-the repository config, rename the file to `.githuttbr.json`.
-
-Three things still work, because each can only be this app's own:
-
-- **A secure bundle made by 4.58 or older** still opens. Bundles are files you
-  pick, and they now carry the GitHuttBr format name; a 4.58 or older build
-  cannot open a bundle made by this one.
+- **A secure bundle made by 4.58 or older** still opens. Bundles made by 4.59
+  cannot be opened by 4.58 or older.
 - **A settings export made by 4.38 or older** still imports, tokens included.
-  An export is also a file you pick.
-- Up to 4.38 the bundled converter for Word, Excel, JSON and `.strings` was
-  written into git config as a path ending in <code>gitcito-textconv</code>
-  inside the GitHuttBr install folder. Such an entry, and only one inside a
-  folder named after GitHuttBr, is still repointed at the current converter
-  when the app starts or opens the repository, with an **Undo** (see
-  [diff drivers](attributes.md)). The same file name inside
-  <code>Gitcito</code>'s own install is left alone.
+- **The bundled converter for Word, Excel, JSON and `.strings`**, when an old
+  version wrote its earlier path into git config, is repointed at the current
+  one, with an **Undo** (see [diff drivers](attributes.md)).
 
 ## Limits
 
-- **The Windows and macOS upgrade has not been tested on a real machine yet.**
-  The installer step is checked against electron-builder's own scripts, and the
-  GUID it looks for is recomputed in the test suite, but NSIS does not run here.
-  Until it has been tried, an update that leaves two GitHuttBr entries in
-  **Settings → Apps** is the failure to expect; removing the older one by hand
-  is safe, and keeps your data.
-- On Windows the old entry is found only when its name starts with GitHuttBr
-  (or *Git HuttBr*, the spelling up to 4.38). An entry renamed by hand is left.
-- A per-machine install upgraded by an administrator other than you looks for
-  your old per-user install under the administrator's account, not yours.
-- On macOS both the refused update and the keychain question are what Apple's
-  rules lead us to expect, not something already seen on a real Mac. If 4.58
-  does install the update by itself, nothing is lost: the by-hand step is simply
-  not needed.
-- On macOS the keychain question is the system's, not the app's: denying it
-  leaves the tokens unreadable until you allow it in Keychain Access.
+- **macOS keychain:** the system may ask once for your login password so
+  GitHuttBr can read its saved tokens. Choose **Always Allow**; denying leaves
+  the tokens unreadable until you allow it in Keychain Access. On a test Mac
+  updated by hand from 4.52 the question did not appear at all.
+- **Windows:** the previous install is found only when its entry name starts
+  with GitHuttBr (or *Git HuttBr*, the spelling up to 4.38). An entry renamed by
+  hand is left in place.
+- **Windows, per machine:** an install upgraded by an administrator other than
+  you looks for the old per-user install under the administrator's account,
+  not yours.
+- **Pinned taskbar icon:** on Windows the pin may stop grouping with the app
+  after the update. Unpin it and pin it again.

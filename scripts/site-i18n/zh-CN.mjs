@@ -7,7 +7,6 @@ export const zhCN = {
   'nav.download': '下载',
 
   'foot.license': 'Apache 2.0 许可 · 由 <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> 用 💜 打造',
-  'foot.credit': 'MyAppDesk 的 {upstream} 的分支项目，采用 MIT 许可证。',
   'foot.source': '源码',
   'foot.roadmap': '路线图',
   'foot.reportIssue': '报告问题',

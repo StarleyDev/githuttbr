@@ -1978,7 +1978,7 @@ export interface RepoChatReply {
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 // This build credits its author: the GitHub noreply address ties the trailer
 // to the account without exposing a real e-mail.
-export const MYAPPDESK_COAUTHOR = 'Starley - Mestre Jedi <9012499+StarleyDev@users.noreply.github.com>'
+export const APP_COAUTHOR = 'Starley - Mestre Jedi <9012499+StarleyDev@users.noreply.github.com>'
 
 /** Error-message marker thrown by `fileContent`/`fileDataUrl` when a file
  *  exceeds the in-memory size cap. The byte count follows the colon; the

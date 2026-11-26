@@ -292,13 +292,6 @@ If GitHuttBr saves you an afternoon of `git reflog`, consider
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
-
-## Origin
-
-GitHuttBr is derived from **[Gitcito](https://github.com/MyAppDesk/gitcito)** by MyAppDesk, <!-- upstream-name: credit -->
-released under the MIT licence; [NOTICE](NOTICE) keeps its original copyright and permission notice.
-Thanks to its author for the foundation this project grew from.
-
 ---
 
 <div align="center">

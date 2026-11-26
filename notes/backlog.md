@@ -91,6 +91,6 @@ Em dia com a v4.52.0: Electron 45, React 19, zustand 5, framer-motion 14, lucide
 
 ## 8. Testar a nova identidade (4.59, `com.huttbr.git`) numa máquina real
 
-1. **Windows:** instalar a 4.58 (appId antigo), depois o instalador novo. Conferir que sobra **uma** entrada "GitHuttBr" em Aplicativos e que `%APPDATA%\GitHuttBr` (tokens) continua. Repetir com o auto-updater. Repetir com um Gitcito instalado ao lado: a entrada dele não pode sumir. <!-- upstream-name: o app original -->
+1. **Windows:** instalar a 4.58 (appId antigo), depois o instalador novo. Conferir que sobra **uma** entrada "GitHuttBr" em Aplicativos e que `%APPDATA%\GitHuttBr` (tokens) continua. Repetir com o auto-updater. Repetir com o app original instalado ao lado: a entrada dele não pode sumir. <!-- upstream-name: o app original -->
 2. **macOS:** confirmar se o updater da 4.58 recusa o update (designated requirement inclui o bundle id) e se o chaveiro pede a senha para *GitHuttBr Safe Storage*. Ajustar `docs/help/upgrading.md` com o que acontecer de fato.
-3. **Linux:** instalar o `.deb` com o pacote `gitcito` instalado: os dois têm que coexistir. <!-- upstream-name: o pacote original -->
+3. **Linux:** instalar o `.deb` com o pacote do app original instalado: os dois têm que coexistir.

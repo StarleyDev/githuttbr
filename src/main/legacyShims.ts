@@ -2,20 +2,20 @@
  * The one setting outside the app that still names a converter this app no
  * longer ships.
  *
- * Builds up to 4.38 shipped their converter as `gitcito-textconv` and wrote its
+ * Builds up to 4.38 shipped their converter under an earlier file name and wrote its
  * absolute path into `diff.<name>.textconv` (in a repository's config, and
  * sometimes the global one). 4.39 renamed it `githuttbr-textconv`. Those entries
  * are repointed at the current converter, but only when the path is this
- * app's own install: upstream Gitcito ships a converter under the same file
+ * app's own install: another app ships a converter under the same file
  * name and writes the same kind of entry, and that one is never touched, not
  * even flagged. Ours is recognised by the install directory, which was always
  * named after this app ("Git HuttBr", "GitHuttBr", "githuttbr", or the
- * `.app` bundle) and never after Gitcito. Pure: everything is decided from
+ * `.app` bundle) and never after the other app. Pure: everything is decided from
  * strings, so the decisions are tested on their own (test/legacyShims.test.ts).
  */
 
 /** The bundled converter's file name before 4.39 (with or without a Windows extension). */
-const OLD_TEXTCONV = /^gitcito-textconv(\.(cmd|bat|exe))?$/i
+const OLD_TEXTCONV = /^gitcito-textconv(\.(cmd|bat|exe))?$/i // upstream-name: this app's own pre-4.39 file name
 
 /** A directory of this app's own install, in any of the spellings it has had,
  *  escaped (`Git\ HuttBr`) or not, on either separator. */
@@ -44,7 +44,7 @@ function programName(program: string): string {
  * old file name inside a directory of this app's install. Deliberately not
  * "the path is gone": that also fires on MSYS paths (`/c/Program Files/…`) and
  * escaped Windows paths this process cannot resolve, and a false "stale"
- * invites the user to delete a converter that works. Upstream Gitcito's
+ * invites the user to delete a converter that works. The other app's
  * converter, which has the same file name, is never a match.
  */
 export function isStaleTextconv(textconv: string): boolean {

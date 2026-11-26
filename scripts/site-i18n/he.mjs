@@ -7,7 +7,6 @@ export const he = {
   'nav.download': 'הורדה',
 
   'foot.license': 'ברישיון Apache 2.0 · נוצר עם 💜 על ידי <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a>',
-  'foot.credit': 'פיצול (fork) של {upstream} מאת MyAppDesk, ברישיון MIT.',
   'foot.source': 'קוד מקור',
   'foot.roadmap': 'מפת דרכים',
   'foot.reportIssue': 'דיווח על תקלה',
