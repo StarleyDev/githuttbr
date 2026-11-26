@@ -404,20 +404,37 @@ about it:
 The cards are on the pull request page (description, comments, review threads,
 and the full message of a commit in the **Commits** tab), the issue page, and
 the subject in the commit details panel. In the **Commits** tab on Azure DevOps,
-each `AB#123` in a commit's subject also shows its title beside it, in grey.
+each work item in a commit's subject (`AB#123`, or `#123`, the same item there)
+also shows its title beside it, in grey. On Azure DevOps, `!123` links to that
+pull request, without a card.
 
 | Reference | Host | Read from |
 |---|---|---|
 | `AB#123`, and `#123` in an Azure repository | Azure DevOps | Work items, up to 200 in one request |
-| `#123` | GitHub, GitHub Enterprise Server | Issues (which answers for pull requests too), one request each |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (which answers for pull requests too), one request each, one at a time |
 | `#123` / `!123` | GitLab | Issues / merge requests, one request per kind |
-| `#123` | Forgejo | Issues (pull requests too), one request each |
+| `#123` | Forgejo | Issues (pull requests too), one request each, two at a time |
 
-Nothing is asked until a card opens. Then the reference you are on and every
-other one on the page not yet known go in one call, so the next card is
-usually instant. Answers are kept for five minutes while the app runs (a
-reference that could not be read, for one), never on disk. The call is made as
-the profile the repository is [bound to](profiles.md).
+A `#123` counts only as a word of its own: `org/repo#123` (another
+repository), `&#39;`, a colour like `#123abc` and a link's `#issuecomment-…`
+are left alone.
+
+Nothing is asked until a card opens. Then the reference you are on and the
+ones nearest it on the page that are not yet known go in one call, so the next
+card is usually instant. Answers are kept in memory while the app runs, never
+on disk, for five minutes; after that they are still shown and read again on
+the next hover. They are kept per profile: the call is made as the profile the
+repository is [bound to](profiles.md), and another profile may see other items.
+
+What it costs:
+
+- **GitHub and Forgejo** have no way to read several issues in one request, so
+  each card costs one. A hover asks for at most **10** — the one you are on and
+  its neighbours — and on GitHub one after another, as GitHub asks of apps.
+  The first answer that says *slow down* (a 429, or a 403) stops the rest, and
+  those references are not asked for again for five minutes.
+- **Azure DevOps** reads up to 200 work items in one request, and GitLab one
+  request per kind, so there the whole page goes at once.
 
 What it does not do:
 
@@ -425,13 +442,14 @@ What it does not do:
   opens the browser as before.
 - **Not found, or no access.** A deleted issue, a work item in a project this
   account cannot see, or an Azure token without the *Work Items (Read)* scope
-  all read the same: the card says it cannot be read, and the link still works.
+  read the same: the card says so, and the link still works. A host that is
+  throttling, unreachable, or has no account in this profile gets its own
+  message.
 - **`AB#123` outside Azure DevOps** — in a GitHub repository connected to Azure
   Boards — is not linked, so it has no card: the app does not know which
   organization it belongs to.
-- **A bare `#123` in the Commits tab's subjects** gets no title beside it: on
-  Azure it is as often a pull request number (*Merged PR 123*) as a work item.
-  Its title is one hover away in the commit's message.
+- **Merged state on older GitHub Enterprise Servers** that do not send when a
+  pull request was merged: it reads as closed.
 - **The graph's** commit rows do not show cards.
 
 ## Limits
