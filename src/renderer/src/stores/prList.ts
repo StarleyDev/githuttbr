@@ -18,8 +18,6 @@ import {
 import { enterpriseBasesOf, prRemoteIdentity } from '../lib/hosting'
 import { useRepoStore } from './repo'
 import { useSettingsStore } from './settings'
-import { useUIStore } from './ui'
-import { interp, t } from '../i18n'
 
 export interface PrListView {
   tab: PrListTab
@@ -142,18 +140,8 @@ export function stepPr(page: PrPage, dir: -1 | 1): boolean {
       title: target.title
     })
   }
-  // Moving on unmounts the page, and an unsent comment with it: ask first.
-  if (unsentDraft?.()) {
-    useUIStore.getState().openModal({
-      kind: 'confirm',
-      title: t('prNav.draftTitle'),
-      message: interp(t('prNav.draftMessage'), { n: page.number }),
-      danger: true,
-      confirmLabel: t('prNav.draftConfirm'),
-      onConfirm: go
-    })
-    return true
-  }
+  // Moving on unmounts the page, but its unsent text stays with this PR
+  // (lib/prViewState.ts) and is back in its boxes on the way back: no question.
   go()
   return true
 }

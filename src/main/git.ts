@@ -8339,6 +8339,31 @@ export const gitService = {
     return url === null ? { status: 'missing' } : { status: 'ok', dataUrl: url }
   },
 
+  /**
+   * What each repository-relative path is in the working tree — 'file', 'dir',
+   * or null when it is not there (or resolves outside the repository, a
+   * symlink included). For a pull request's file actions: open in the editor
+   * or reveal only what exists here. One answer per path, never a listing.
+   */
+  async getWorkTreePathKinds(repoPath: string, paths: unknown): Promise<Array<'file' | 'dir' | null>> {
+    if (!Array.isArray(paths)) return []
+    const root = await realpath(repoPath).catch(() => null)
+    if (!root) return paths.map(() => null)
+    return Promise.all(
+      paths.slice(0, 200).map(async (p): Promise<'file' | 'dir' | null> => {
+        if (!isSafeRepoFilePath(p)) return null
+        try {
+          const target = await realpath(join(repoPath, p))
+          if (target !== root && !target.startsWith(root + sep)) return null
+          const info = await stat(target)
+          return info.isDirectory() ? 'dir' : info.isFile() ? 'file' : null
+        } catch {
+          return null
+        }
+      })
+    )
+  },
+
   async blameFile(repoPath: string, file: string, ref?: string): Promise<BlameLine[]> {
     const args = ['blame', '--line-porcelain']
     if (ref) args.push(ref)
@@ -10047,6 +10072,7 @@ const READ_METHODS = new Set<string>([
   'repoImage',
   'imageDiff',
   'getImageBlob',
+  'getWorkTreePathKinds',
   'blameFile',
   'fileHistory',
   'worktrees',

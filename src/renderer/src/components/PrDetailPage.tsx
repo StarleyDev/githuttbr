@@ -25,6 +25,7 @@ import {
   Sparkles,
   ClipboardList,
   Copy,
+  MoreHorizontal,
   ScrollText,
   Target,
   History
@@ -71,6 +72,17 @@ import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
 import { getPrFilesUrl, PrImagePreview, type PrImageSource } from './PrImagePreview'
 import { createPrImageCache } from '../lib/prImageCache'
+import {
+  clampScrollTop,
+  collectOrphanDrafts,
+  getPrViewKey,
+  prViewStates,
+  type OrphanDraft,
+  type PrViewState
+} from '../lib/prViewState'
+import '../stores/prView'
+import { PrOrphanDrafts } from './PrOrphanDrafts'
+import { copyPrPath, openPrPathMenu } from './prFileActions'
 import { getImageMime, isPreviewableImage, type PrDiffCommits } from '../../../shared/prImage'
 import { getThreadCountsByPath } from '../lib/prFileThreads'
 import { usePrViewed } from './usePrViewed'
@@ -93,7 +105,6 @@ import {
   isCommentGone,
   isMyComment,
   isThreadRootMissing,
-  pruneEditDrafts,
   withCommentBody,
   type CommentEditDraft
 } from '../lib/commentEdit'
@@ -101,6 +112,7 @@ import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'commits' | 'updates' | 'files' | 'checks'
+const SECTIONS: readonly Section[] = ['conversation', 'commits', 'updates', 'files', 'checks']
 
 /** No review threads: an update's own diff takes no line comments. */
 const NO_THREADS: PrReviewThread[] = []
@@ -144,8 +156,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [filesRevision, setFilesRevision] = useState<PrDiffRevision | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [section, setSection] = useState<Section>('conversation')
-  const [comment, setComment] = useState('')
+  // Where this PR's page was when it was last left, and its unsent text
+  // (lib/prViewState.ts). The boxes below write into it as they change.
+  const [view] = useState(() => prViewStates.getOrCreateViewState(getPrViewKey(repoPath, remoteUrl, number)))
+  const [section, setSection] = useState<Section>(() => (SECTIONS.includes(view.section as Section) ? (view.section as Section) : 'conversation'))
+  const [comment, setComment] = useState(view.comment)
   const [busy, setBusy] = useState(false)
   const [mergeMethod, setMergeMethod] = useState<PrMergeMethod>('merge')
   // Per-thread reply drafts, keyed by the thread root id (GitHub comment id or
@@ -153,13 +168,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // only remember it — for the unsent-draft check, and for the same thread's box
   // in the other tab — so a keystroke re-renders one box, not the whole page
   // (and with it every highlighted line of the diff).
-  const replyDrafts = useRef<Record<string, string>>({})
+  const replyDrafts = useRef<Record<string, string>>(view.replyDrafts)
   // Edits of your own comments in progress, by comment key — same reasoning.
-  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
+  const editDrafts = useRef<Record<string, CommentEditDraft>>(view.editDrafts)
   // The comment being written on one line of the Files tab's diff. One at a
   // time, kept while another file is looked at, so nothing typed is lost.
-  const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(null)
-  const lineDraftText = useRef('')
+  const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(view.lineDraft)
+  // The page's remembered state holds this ref, so the composer's keystrokes land there directly.
+  const lineDraftText = view.lineText
+  // Unsent texts whose place a refresh found gone: shown until copied or discarded.
+  const [orphans, setOrphans] = useState<OrphanDraft[]>(view.orphans)
+  useEffect(() => {
+    view.section = section
+    view.comment = comment
+    view.lineDraft = lineDraft
+  }, [view, section, comment, lineDraft])
 
   // "Viewed" ticks, per file version: a push that changes a ticked file un-ticks it.
   const { viewed, changed: changedSinceViewed, setFilesViewed } = usePrViewed(remoteUrl, number, files)
@@ -214,13 +237,24 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     try {
       const detail = await hostingApi.prDetail(repoPath, remoteUrl, tokens, number)
       // An edit of a comment that is gone now has nothing left to save.
-      pruneEditDrafts(editDrafts.current, getCommentKeys(detail))
+      // A reply or an edit whose thread or comment is gone keeps its text, as a notice.
+      const moved = collectOrphanDrafts(view, {
+        threadIds: new Set(detail.reviewThreads.map((th) => String(th.rootId))),
+        commentKeys: getCommentKeys(detail),
+        filePaths: null
+      })
+      if (moved) setOrphans([...view.orphans])
       setPr(detail)
       // Checks and files fill in after the conversation: the page is usable first.
       void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
       void hostingApi
         .prFiles(repoPath, remoteUrl, tokens, number)
         .then((list) => {
+          // A line comment on a file the diff no longer lists keeps its text, as a notice.
+          if (collectOrphanDrafts(view, { threadIds: null, commentKeys: null, filePaths: new Set(list.files.map((f) => f.filename)) })) {
+            setOrphans([...view.orphans])
+            setLineDraft(null)
+          }
           setFiles(list.files)
           setFilesRevision(list.revision)
         })
@@ -231,7 +265,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [repoPath, remoteUrl, number, tokens])
+  }, [repoPath, remoteUrl, number, tokens, view])
 
   useEffect(() => {
     setLoading(true)
@@ -508,7 +542,35 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const updates = usePrUpdates(repoPath, remoteUrl, tokens, number, refreshes)
   const updatesSeen = usePrUpdatesSeen(remoteUrl, number, updates.list, section === 'updates')
   // One update's own changes, shown in the Files tab instead of the whole PR's.
-  const [updateView, setUpdateView] = useState<UpdateDiffView | null>(null)
+  const [updateView, setUpdateView] = useState<UpdateDiffView | null>(() => (view.updateView as UpdateDiffView | null) ?? null)
+  useEffect(() => {
+    view.updateView = updateView
+  }, [view, updateView])
+
+  // The page body's scroll, per tab: written as it scrolls, put back once the
+  // tab's content is there (after a remount, or on coming back to the tab).
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const restoreScroll = useRef<Section | null>(section)
+  useEffect(() => {
+    restoreScroll.current = section
+  }, [section])
+  const sectionReady =
+    !loading &&
+    !!pr &&
+    (section === 'conversation' ||
+      (section === 'commits' && !!commits.list) ||
+      (section === 'updates' && !!updates.list) ||
+      (section === 'files' && !!files) ||
+      (section === 'checks' && !!checks))
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el || !sectionReady || restoreScroll.current !== section) return
+    restoreScroll.current = null
+    const saved = view.scroll[section] ?? 0
+    requestAnimationFrame(() => {
+      el.scrollTop = clampScrollTop(saved, el.scrollHeight, el.clientHeight)
+    })
+  }, [sectionReady, section, view])
   const updateDiff = usePrUpdateDiff(repoPath, remoteUrl, tokens, number, updateView)
   // In an update's own diff an image compares the update's two heads, not the merge base.
   const updateImageSource = useMemo<PrImageSource | null>(() => {
@@ -600,7 +662,23 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             </nav>
           </div>
 
-          <div className="prp-body">
+          <div
+            className="prp-body"
+            ref={bodyRef}
+            onScroll={(e) => {
+              // Not while a tab waits to be put back: its first frames are another tab's height.
+              if (restoreScroll.current === null) view.scroll[section] = e.currentTarget.scrollTop
+            }}
+          >
+            {orphans.length > 0 && (
+              <PrOrphanDrafts
+                orphans={orphans}
+                onDismiss={(id) => {
+                  view.orphans = view.orphans.filter((o) => o.id !== id)
+                  setOrphans(view.orphans)
+                }}
+              />
+            )}
             {loading ? (
               <div className="prd-empty">
                 <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
@@ -707,6 +785,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       getReferences={getReferences}
                       lineCommentsOff
                       imageSource={updateImageSource}
+                      view={view}
+                      prSource={pr.source}
                     />
                   )}
                 </>
@@ -736,6 +816,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   mentions={mentions}
                   getReferences={getReferences}
                   imageSource={imageSource}
+                  view={view}
+                  prSource={pr.source}
                 />
               )
             ) : checks === null ? (
@@ -1478,7 +1560,9 @@ function FilesSection({
   mentions,
   getReferences,
   lineCommentsOff = false,
-  imageSource
+  imageSource,
+  view,
+  prSource
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -1502,14 +1586,50 @@ function FilesSection({
   lineCommentsOff?: boolean
   /** Where an image file's two versions are read, for the preview in place of a diff. */
   imageSource: PrImageSource | null
+  /** The page's remembered place: the file open, and how far the list and the diff were scrolled. */
+  view: PrViewState
+  /** The PR's source branch — the file actions say when the working copy is on another. */
+  prSource: string
 }): React.JSX.Element {
   const t = useT()
   // The file list's speech-bubble counts; only recomputed when the threads change.
   const threadCounts = useMemo(() => getThreadCountsByPath(threads), [threads])
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
-  const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
+  const [selected, setSelected] = useState<string>(() =>
+    view.selectedFile && files.some((f) => f.filename === view.selectedFile) ? view.selectedFile : (files[0]?.filename ?? '')
+  )
   const file = files.find((f) => f.filename === selected) ?? files[0]
   const diffRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (file) view.selectedFile = file.filename
+  }, [view, file])
+  // The diff's scroll, for the file it belongs to: put back once its lines are drawn.
+  const diffScroller = (): HTMLElement | null => {
+    const last = diffRef.current?.lastElementChild
+    return last instanceof HTMLElement && !last.classList.contains('prp-file-diff-head') ? last : null
+  }
+  useEffect(() => {
+    const saved = view.diffScroll
+    if (!file || !saved || saved.file !== file.filename || saved.top <= 0) return
+    requestAnimationFrame(() => {
+      const el = diffScroller()
+      if (el) el.scrollTop = clampScrollTop(saved.top, el.scrollHeight, el.clientHeight)
+    })
+    // Once per file opened; the scroll listener below keeps it current.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file?.filename])
+  useEffect(() => {
+    const root = diffRef.current
+    if (!root || !file) return
+    // Captured: the scroller is a child the diff viewer owns, swapped per file.
+    const onScroll = (e: Event): void => {
+      const el = e.target as HTMLElement
+      if (el === diffScroller()) view.diffScroll = { file: file.filename, top: el.scrollTop }
+    }
+    root.addEventListener('scroll', onScroll, { capture: true, passive: true })
+    return () => root.removeEventListener('scroll', onScroll, { capture: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, file?.filename])
   const imageFile = !!file && isPreviewableImage(file.filename)
   const isSvg = imageFile && getImageMime(file.filename) === 'image/svg+xml'
 
@@ -1604,6 +1724,14 @@ function FilesSection({
         prKey={prUrl}
         onSelectFile={setSelected}
         onSetFilesViewed={onSetFilesViewed}
+        onRowContextMenu={(x, y, row) => {
+          const f = row.isDir ? undefined : files.find((it) => it.filename === row.path)
+          openPrPathMenu(x, y, repoPath, { ...row, oldPath: f?.previousFilename, status: f?.status }, prSource)
+        }}
+        initialScroll={view.fileListScroll}
+        onListScroll={(top) => {
+          view.fileListScroll = top
+        }}
       />
 
       <div className="prp-file-diff" ref={diffRef}>
@@ -1614,6 +1742,33 @@ function FilesSection({
               {file.previousFilename && (
                 <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
               )}
+              <button
+                type="button"
+                className="icon-btn prp-branch-copy"
+                title={t('fileTree.copyPath')}
+                aria-label={interp(t('prFiles.copyPathOf'), { path: file.filename })}
+                onClick={() => copyPrPath(file.filename)}
+              >
+                <Copy size={12} />
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                title={t('prFiles.moreActions')}
+                aria-label={t('prFiles.moreActions')}
+                aria-haspopup="menu"
+                onClick={(e) => {
+                  const r = e.currentTarget.getBoundingClientRect()
+                  openPrPathMenu(r.left, r.bottom + 2, repoPath, {
+                    path: file.filename,
+                    isDir: false,
+                    oldPath: file.previousFilename,
+                    status: file.status
+                  }, prSource)
+                }}
+              >
+                <MoreHorizontal size={13} />
+              </button>
               <label className="prp-viewed-toggle">
                 <input type="checkbox" checked={viewed.has(file.filename)} onChange={() => onToggleViewed(file.filename)} />
                 {t('prPage.markViewed')}

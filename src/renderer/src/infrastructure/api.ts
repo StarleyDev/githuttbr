@@ -623,6 +623,9 @@ export const gitApi = {
   fileDataUrl: (path: string, file: string, ref?: string, force?: boolean) =>
     call<string>('fileDataUrl', path, file, ref, force),
   repoImage: (path: string, file: string) => call<string | null>('repoImage', path, file),
+  /** 'file' / 'dir' / null per repository-relative path in the working tree. */
+  getWorkTreePathKinds: (path: string, paths: string[]) =>
+    call<Array<'file' | 'dir' | null>>('getWorkTreePathKinds', path, paths),
   /** One image at a full commit id, capped — a pull request's Files tab, read here first. */
   getImageBlob: (path: string, sha: string, file: string) =>
     call<import('../../../shared/prImage').PrImageContent>('getImageBlob', path, sha, file),
