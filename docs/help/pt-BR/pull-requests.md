@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: 5d8ca35d8c73168e8e189192d000e2189aba83f4
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Página de pull requests
@@ -261,15 +261,16 @@ do próprio Azure DevOps.
 Ela lista cada push para o pull request, **do mais recente para o mais
 antigo**:
 
-- **Atualização 1 — aberto** é o push com que o pull request foi aberto; cada
-  push seguinte é o próximo número.
+- **Atualização 1 — abertura** é o push com que o pull request foi aberto;
+  cada push seguinte é o próximo número.
 - Cada uma mostra **quando**, **quem enviou** (quando o host informa) e os
   **commits que adicionou** — SHA curto, assunto, autor. Quando o host informa
   commits que um push tirou da branch, eles aparecem em **Commits removidos**,
   riscados.
 - Um force push ou rebase é marcado como **histórico reescrito**: commits que
   você leu podem ter sumido, e os listados podem ser cópias novas de trabalho
-  antigo.
+  antigo. No Azure DevOps, um push que mudou a branch de destino do pull
+  request é marcado como **destino alterado**.
 
 ![A aba Atualizações: pushes do mais recente para o mais antigo, um force push marcado como "histórico reescrito", um marcado como Nova](../../screenshots/pr-updates.webp)
 
@@ -285,12 +286,28 @@ request inteiro.
 
 ![A aba Arquivos mostrando as mudanças de uma atualização, com a faixa acima da árvore de arquivos](../../screenshots/pr-update-diff.webp)
 
-O diff é lido **deste clone** quando ele tem os dois commits — `git diff` entre
-os dois heads, rápido e sem perguntar nada ao host. Quando falta algum, o host
-é consultado (as mudanças da iteração com `$compareTo` no Azure DevOps, o
-compare do GitLab, o compare do Bitbucket Data Center, o compare do GitHub).
-Quando nenhum dos dois consegue, a faixa avisa e oferece buscar a branch (ou,
-num fork, o head do pull request) para comparar aqui.
+O diff é sempre feito **neste clone** quando dá: `git diff` entre os dois
+heads, exato e sem perguntar nada ao host. Quando falta algum head, o app
+primeiro busca os dois **pelo id do commit** no remoto do pull request —
+nenhuma branch, tag ou ref é gravada; um head substituído por um force push
+não está mais em branch nenhuma, mas a maioria dos hosts ainda o entrega pelo
+id — e compara aqui. Só quando essa busca falha o host é consultado:
+
+| Host | A comparação do host |
+|---|---|
+| Azure DevOps | As mudanças da iteração com `$compareTo` — entre os dois pushes |
+| GitLab | O compare do repositório, direto de um head ao outro |
+| Bitbucket Data Center | O compare do repositório — **a partir da base comum** dos dois heads |
+| GitHub | A API de compare (`base...head`) — **a partir da base comum** dos dois heads |
+| Forgejo / Gitea | Nenhuma: a API deles não tem diff entre dois commits |
+
+A partir da base comum, o diff de uma reescrita não é o que o push fez: o que
+ele removeu não aparece, e mudanças que a branch de destino recebeu nesse meio
+tempo podem parecer do pull request. A faixa avisa — *Comparado a partir da
+base comum: o que este push removeu não aparece* — quando uma atualização com
+histórico reescrito foi comparada assim. Quando nada funciona, a faixa avisa e
+oferece buscar a branch (ou, num fork, o head do pull request) para comparar
+aqui.
 
 Comentários de linha pertencem ao diff do pull request inteiro, então não há
 **+** nas linhas enquanto uma atualização está na tela; a faixa avisa. Marcar
@@ -301,10 +318,13 @@ um arquivo como visto funciona como sempre — marca o arquivo no pull request.
 As atualizações enviadas desde a última vez que você abriu a aba levam o selo
 **Nova**, e a própria aba diz quantas são: *Atualizações 5 · 2 nova(s)*. Abrir a
 aba marca todas como vistas (os selos ficam enquanto você está nela, para você
-ver quais eram novas); quando um Atualizar traz mais com a aba aberta,
+ver quais eram novas); quando **Atualizar** traz mais com a aba aberta,
 **Marcar como visto** limpa os selos. Abrir só a página do pull request não
 marca nada. Na primeira vez que você abre a aba Atualizações de um pull
 request, nada é novo — não há visita anterior para comparar.
+
+As atualizações são lidas junto com a página, para essa contagem, e de novo
+no **Atualizar** — não depois de cada comentário ou revisão que você envia.
 
 O que já foi visto fica só neste computador, por repositório e pull request,
 nunca vai para o host.
@@ -316,37 +336,48 @@ nunca vai para o host.
 | Azure DevOps | As **iterações** do pull request — o registro do próprio Azure de cada push | Sim | Não (não informa) | Sim: `forcePush` / `rebase` |
 | GitLab | As **versões de diff** do merge request; os commits de cada versão saem do head dela | Não (as versões não nomeiam ninguém) | Sim | Sim: um head anterior que não é mais alcançado |
 | Bitbucket Data Center | A atividade do pull request: **OPENED** e cada **RESCOPED** que moveu a branch de origem | Sim | Sim, com os totais do host | Sim: um rescope que removeu commits |
-| GitHub | **Remontadas** a partir dos commits e force pushes da timeline — veja abaixo | Só em force push | Não | Sim: um evento de force push |
-| Forgejo / Gitea | As entradas de **push** da timeline | Sim | Não | Sim: uma entrada de force push |
+| GitHub | **Deduzidas** a partir dos commits e force pushes da timeline — veja abaixo | Só em force push | Não | Sim: um evento de force push |
+| Forgejo / Gitea | As entradas de **push** da timeline, a primeira gravada junto com o próprio pull request | Sim | Não | Sim: uma entrada de force push |
 | bitbucket.org | Não disponível | — | — | — |
 
-**O GitHub não registra pushes comuns** — só force pushes. O app remonta as
-atualizações com o que tem: a abertura e cada force push começam uma
-atualização, e um commit criado depois que uma atualização começou só pode ter
-sido enviado depois, então ele começa a próxima. Vários pushes comuns seguidos
-aparecem, portanto, como **uma** atualização, e a aba avisa que o agrupamento
-é aproximado. Os heads de antes e depois de um force push são exatos, então o
-**Ver as mudanças** dele também é.
+**O GitHub não registra pushes comuns** — só force pushes —, então as
+atualizações são **deduzidas pelos horários dos commits**. Uma atualização é
+uma sequência de commits que se apoiam um no outro, entre force pushes; um
+commit que não se apoia no anterior, ou que vem mais de dez minutos depois
+dele, começa a próxima. Um commit criado depois que o pull request foi aberto
+não pode ter estado na abertura. Assim, um push com commits feitos com uma
+hora de diferença aparece **dividido** em dois, e dois pushes com poucos
+minutos de diferença aparecem como **um**; a aba avisa que o agrupamento é
+aproximado. Os commits novos de um rebase, que a timeline pode listar logo
+antes do force push, contam como desse force push. Os heads de antes e depois
+de um force push são exatos, então o **Ver as mudanças** dele também é.
 
 ### Limites
 
-- **Tetos.** São listadas as 100 atualizações mais recentes; a timeline do
-  GitHub é lida até 500 itens, a atividade do Bitbucket Data Center até 1.000,
-  as versões e os commits do GitLab até 300 cada. Passado um teto, a aba avisa
-  que a lista está incompleta.
+- **Tetos.** São listadas as 100 atualizações mais recentes. A timeline do
+  GitHub é lida a partir do fim mais recente, até 500 itens; a atividade do
+  Bitbucket Data Center (também da mais recente) até 1.000; as versões e os
+  commits do GitLab até 300 cada; a timeline do Forgejo até 500 entradas, as
+  mais recentes quando é maior. Quando um teto corta a **abertura**, os
+  números deixam de ser os do host: a aba avisa e conta para trás a partir da
+  última (*Última atualização*, *Atualização, 2 antes da última*).
 - **Azure DevOps** não informa commits removidos; um force push ou rebase é
   marcado no lugar. Uma iteração cuja lista de commits o Azure corta é lida à
   parte (até 500 commits), e a atualização avisa quando ainda está parcial.
 - **GitLab** não diz quem enviou. Uma versão cujo head foi reescrito é lida à
-  parte para achar os commits dela — nas dez versões assim mais recentes.
+  parte para achar os commits dela — nas dez versões assim mais recentes —,
+  uma vez por sessão: versões nunca mudam.
 - **Forgejo e Gitea** não listam commits de um force push — só os dois heads,
-  que é o que **Ver as mudanças** compara. A API deles não tem diff entre dois
-  commits, então essa comparação precisa dos dois commits neste clone (a faixa
-  oferece a busca). Um servidor sem a API de timeline mostra todos os commits
-  numa só atualização.
-- **O compare do GitHub** faz o diff a partir da base comum dos dois heads.
-  Depois de um rebase sobre um destino mais novo, isso pode mostrar mais do que
-  o push mudou; a comparação local não tem esse problema.
+  que é o que **Ver as mudanças** compara — e, depois de um force push, nada
+  diz o que a abertura tinha, então ela fica vazia, a menos que o servidor
+  tenha registrado o push da própria abertura. A API deles não tem diff entre
+  dois commits, então essa comparação precisa dos dois commits neste clone. Um
+  servidor sem a API de timeline mostra todos os commits numa só atualização.
+- **Buscar pelo id** precisa de um host que entregue um commit pelo id. O
+  GitHub entrega qualquer commit que ainda guarda; outro host, ou um servidor
+  git simples, pode recusar um para o qual nenhuma branch aponta — aí a
+  comparação do host é usada. Os commits buscados ficam neste clone sem ref, e o git os descarta
+  com o tempo.
 - **O compare do Bitbucket Data Center** lê o diff estruturado do servidor e o
   desenha como unificado; arquivos muito grandes podem vir cortados.
 - Um head reescrito pode ter **sumido do host** de vez (Azure e GitLab guardam;

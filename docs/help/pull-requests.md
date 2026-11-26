@@ -258,7 +258,9 @@ It lists each push to the pull request, **newest first**:
   commits a push took off the branch, they are listed under **Commits
   removed**, struck through.
 - A force push or a rebase is marked **history rewritten**: commits you had
-  read may be gone, and the ones listed may be new copies of old work.
+  read may be gone, and the ones listed may be new copies of old work. On
+  Azure DevOps, a push that moved the pull request to another target branch is
+  marked **target changed**.
 
 ![The Updates tab: pushes newest first, a force push marked "history rewritten", one marked New](../screenshots/pr-updates.webp)
 
@@ -267,18 +269,33 @@ It lists each push to the pull request, **newest first**:
 **View changes in this update** opens the Files tab on that push alone: the
 diff from the previous update's head to this one — or, for Update 1, from the
 target branch it was opened against, where the host names that point (Azure
-DevOps, GitLab). The same file tree and viewer, with a
-banner — *Showing changes in Update 3 (vs Update 2)* — and **Show all
-changes** to go back to the whole pull request.
+DevOps, GitLab). The same file tree and viewer, with a banner — *Showing
+changes in Update 3 (vs Update 2)* — and **Show all changes** to go back to
+the whole pull request.
 
 ![The Files tab showing one update's changes, with the banner above the file tree](../screenshots/pr-update-diff.webp)
 
-The diff is read from **this clone** when it has both commits — `git diff`
-between the two heads, fast and without asking the host. When either is
-missing, the host is asked (Azure DevOps' iteration changes with
-`$compareTo`, GitLab's compare, Bitbucket Data Center's compare, GitHub's
-compare). When neither works, the banner says so and offers to fetch the
-branch (or, from a fork, the pull request's head) and compare here.
+The diff is always made **in this clone** when it can be: `git diff` between
+the two heads, exact and without asking the host. When either head is
+missing, the app first fetches both **by their commit ids** from the pull
+request's remote — no branch, no tag, no ref is written; a head a force push
+replaced is on no branch any more, but most hosts still serve it by id — and
+compares here. Only when that fetch fails is the host asked:
+
+| Host | The host's comparison |
+|---|---|
+| Azure DevOps | The iteration's changes with `$compareTo` — between the two pushes |
+| GitLab | The repository compare, straight from one head to the other |
+| Bitbucket Data Center | The repository compare — **from the common base** of the two heads |
+| GitHub | The compare API (`base...head`) — **from the common base** of the two heads |
+| Forgejo / Gitea | None: their API has no two-commit diff |
+
+From the common base, a rewrite's diff is not what the push did: what it
+removed is not shown, and changes the target branch received since can read
+as the pull request's. The banner says so — *Compared from the common base:
+what this push removed is not shown* — when a history-rewritten update was
+compared that way. When nothing works, the banner says so and offers to fetch
+the branch (or, from a fork, the pull request's head) and compare here.
 
 Line comments belong to the whole pull request's diff, so there is no **+**
 on a line while one update is shown; the banner says so. Ticking a file as
@@ -289,10 +306,13 @@ viewed works as usual — it marks the file in the pull request.
 Updates pushed since you last opened the tab carry a **New** badge, and the
 tab itself says how many: *Updates 5 · 2 new*. Opening the tab marks them
 seen (the badges stay while you are on it, so you can see which were new);
-when a refresh brings more while the tab is open, **Mark as seen** clears
+when **Refresh** brings more while the tab is open, **Mark as seen** clears
 them. Opening the pull request page alone marks nothing. The first time you
 open a pull request's Updates tab, nothing is new — there is no earlier visit
 to compare with.
+
+The updates are read with the page, for that count, and again on **Refresh** —
+not after each comment or review you post.
 
 What has been seen is kept on this computer only, per repository and pull
 request, never sent to the host.
@@ -304,36 +324,46 @@ request, never sent to the host.
 | Azure DevOps | The pull request's **iterations** — Azure's own record of each push | Yes | No (not reported) | Yes: `forcePush` / `rebase` |
 | GitLab | The merge request's **diff versions**; each version's commits worked out from its head | No (versions name nobody) | Yes | Yes: an earlier head no longer reached |
 | Bitbucket Data Center | The pull request's activity: **OPENED** and each **RESCOPED** that moved the source branch | Yes | Yes, with the host's totals | Yes: a rescope that removed commits |
-| GitHub | **Rebuilt** from the timeline's commits and force pushes — see below | Force pushes only | No | Yes: a force-push event |
-| Forgejo / Gitea | The timeline's **push** entries | Yes | No | Yes: a force-push entry |
+| GitHub | **Inferred** from the timeline's commits and force pushes — see below | Force pushes only | No | Yes: a force-push event |
+| Forgejo / Gitea | The timeline's **push** entries, the first written with the pull request itself | Yes | No | Yes: a force-push entry |
 | bitbucket.org | Not available | — | — | — |
 
-**GitHub keeps no record of an ordinary push** — only of force pushes. The
-app rebuilds the updates from what it has: the opening and each force push
-start an update, and a commit committed after an update began must have been
-pushed later, so it starts the next one. Several plain pushes in a row
-therefore show as **one** update, and the tab says the grouping is
-approximate. A force push's own before and after heads are exact, so its
-**View changes** is too.
+**GitHub keeps no record of an ordinary push** — only of force pushes — so
+the updates are **inferred from commit times**. An update is a run of commits
+that build on one another, between force pushes; a commit that does not build
+on the one before it, or comes more than ten minutes after it, starts the
+next. A commit committed after the pull request was opened cannot have been in
+the opening. So one push of commits made an hour apart shows **split** in two,
+and two pushes a few minutes apart show as **one**; the tab says the grouping
+is approximate. A rebase's new commits, which the timeline may list just
+before its force push, count as that force push's. A force push's own before
+and after heads are exact, so its **View changes** is too.
 
 ### Limits
 
-- **Caps.** The 100 most recent updates are listed; GitHub's timeline is read
-  up to 500 items, Bitbucket Data Center's activity up to 1,000, GitLab's
-  versions and commits up to 300 each. Past a cap, the tab says the list stops
-  short.
+- **Caps.** The 100 most recent updates are listed. GitHub's timeline is read
+  from its newest end, up to 500 items; Bitbucket Data Center's activity (also
+  newest first) up to 1,000; GitLab's versions and commits up to 300 each;
+  Forgejo's timeline up to 500 entries, the newest ones when it is longer. When a
+  cap cuts off the **opening**, the numbers are no longer the host's: the tab
+  says so and counts back from the latest (*Latest update*, *Update, 2 before
+  the latest*).
 - **Azure DevOps** reports no removed commits; a force push or rebase is
   marked instead. An iteration whose commit list Azure cuts short is read on
   its own (up to 500 commits), and the update says when it is still partial.
 - **GitLab** names no pusher. A version whose head was rewritten away is read
-  on its own to find its commits — for the ten most recent such versions.
+  on its own to find its commits — for the ten most recent such versions —
+  once per session: versions never change.
 - **Forgejo and Gitea** list no commits for a force push — only its two heads,
-  which is what **View changes** compares. Their API has no two-commit diff, so
-  that comparison needs both commits in this clone (the banner offers the
-  fetch). A server without the timeline API shows every commit in one update.
-- **GitHub's compare** diffs from the merge base of the two heads. After a
-  rebase onto a newer target, that can show more than the push itself changed;
-  a local comparison does not have this problem.
+  which is what **View changes** compares — and after a force push nothing
+  says what the opening held, so it is left empty unless the server recorded
+  the opening's own push. Their API has no two-commit diff, so that comparison
+  needs both commits in this clone. A server without the timeline API shows
+  every commit in one update.
+- **Fetching by id** needs a host that serves a commit by its id. GitHub does
+  for any commit it still holds; another host, or a plain git server, may
+  refuse one no branch points at — the host's comparison is used then. Fetched commits sit in this
+  clone without a ref, and git collects them in time.
 - **Bitbucket Data Center's compare** reads the server's structured diff and
   draws it as a unified one; very large files may come back truncated.
 - A rewritten head can be **gone from the host** for good (Azure and GitLab

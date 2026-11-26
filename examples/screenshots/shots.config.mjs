@@ -1263,7 +1263,7 @@ export const shots = [
         ipcMain.handle('hosting:prChecks', () => [])
         ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
         ipcMain.handle('hosting:prListUpdates', () => fake.updates)
-        ipcMain.handle('hosting:prUpdateFiles', () => fake.files)
+        ipcMain.handle('hosting:prUpdateFiles', () => ({ files: fake.files, fromMergeBase: false }))
       }, PR_UPDATES_FAKE)
       await page.evaluate(({ repoPath, remoteUrl }) => {
         localStorage.setItem(
@@ -1296,7 +1296,7 @@ export const shots = [
         ipcMain.handle('hosting:prChecks', () => [])
         ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
         ipcMain.handle('hosting:prListUpdates', () => fake.updates)
-        ipcMain.handle('hosting:prUpdateFiles', () => fake.files)
+        ipcMain.handle('hosting:prUpdateFiles', () => ({ files: fake.files, fromMergeBase: false }))
       }, PR_UPDATES_FAKE)
       await page.evaluate(({ repoPath, remoteUrl }) => {
         window.__shot.settings.getState().openPageTab({ type: 'pr', repoPath, remoteUrl, number: 118, title: 'Cache the catalog index' })
