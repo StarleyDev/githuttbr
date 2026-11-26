@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CircleDot, Loader2 } from 'lucide-react'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { useT } from '../i18n'
+import { collectMentionNames } from '../lib/markdownEdit'
+import { MarkdownEditor, useRepoReferences } from './MarkdownEditor'
 
 export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; remoteUrl: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -16,6 +18,12 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
   const [busy, setBusy] = useState(false)
 
   const tokens = { github: profile.githubToken || undefined }
+  // A new issue has no conversation yet: an @ offers the authors of the
+  // repository's loaded PRs and issues, a # those PRs and issues.
+  const prs = useRepoStore((s) => s.repos[repoPath]?.prs)
+  const issues = useRepoStore((s) => s.repos[repoPath]?.issues)
+  const mentions = useMemo(() => collectMentionNames(prs?.map((p) => p.author), issues?.map((i) => i.author)), [prs, issues])
+  const references = useRepoReferences(repoPath)
 
   const submit = async (): Promise<void> => {
     if (!title.trim()) return
@@ -51,12 +59,16 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
         }}
       />
       <label className="modal-label">{t('issue.descriptionLabel')}</label>
-      <textarea
-        className="pr-body"
+      <MarkdownEditor
+        inputClassName="pr-body"
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={setBody}
         placeholder={t('issue.descriptionPlaceholder')}
-        spellCheck
+        ariaLabel={t('issue.descriptionLabel')}
+        mentions={mentions}
+        references={references}
+        // A dialog would cover the handbook page the hint opens.
+        helpLink={false}
       />
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} disabled={busy}>

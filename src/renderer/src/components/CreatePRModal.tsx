@@ -10,6 +10,8 @@ import { interp, useT, type TranslationKey } from '../i18n'
 import { readOpenAfterCreate, writeOpenAfterCreate } from '../lib/prCreated'
 import { prBaseHint, prBaseRemote } from '../lib/prBase'
 import { announcePrCreated } from '../stores/prCreated'
+import { collectMentionNames } from '../lib/markdownEdit'
+import { MarkdownEditor, useRepoReferences } from './MarkdownEditor'
 import {
   createPickerCache,
   freeEntry,
@@ -215,6 +217,19 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     [meta]
   )
   const labelRows = useMemo(() => (meta?.labels ?? []).map(labelItem), [meta])
+  // An @ in the description offers the people the reviewer and assignee pickers
+  // already read, then the authors of the loaded PRs; a # those PRs and issues.
+  const repoPrs = repo?.prs
+  const mentions = useMemo(
+    () =>
+      collectMentionNames(
+        meta?.reviewers.map((p) => p.login),
+        meta?.assignees.map((p) => p.login),
+        repoPrs?.map((p) => p.author)
+      ),
+    [meta, repoPrs]
+  )
+  const references = useRepoReferences(spec.repoPath)
 
   const submit = async (): Promise<void> => {
     if (!valid) return
@@ -290,15 +305,19 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
           </button>
         )}
       </div>
-      <textarea
-        className="pr-body"
+      <MarkdownEditor
+        inputClassName="pr-body"
         value={body}
-        onChange={(e) => {
+        onChange={(v) => {
           bodyTouched.current = true
-          setBody(e.target.value)
+          setBody(v)
         }}
         placeholder={t('createPR.descriptionPlaceholder')}
-        spellCheck
+        ariaLabel={t('createPR.descriptionLabel')}
+        mentions={mentions}
+        references={references}
+        // A dialog would cover the handbook page the hint opens.
+        helpLink={false}
       />
 
       {remoteUrl && metaState === 'loading' && (
