@@ -834,11 +834,49 @@ export interface PrFile {
   status: string
   additions: number
   deletions: number
-  /** The file's unified diff hunks. Absent when the host sends none — a binary
-   *  file, or one too large for the API to include. */
+  /** The file's unified diff hunks. Absent when there is none to show —
+   *  `noPatchReason` then says why. */
   patch?: string
   /** The path before a rename. */
   previousFilename?: string
+  /** Why `patch` is absent, set by the main process. Absent on a file with a patch. */
+  noPatchReason?: PrNoPatchReason
+  /** What went wrong, when `noPatchReason` is `failed` — the error's own words, no token. */
+  noPatchError?: string
+  /** Where the file's diff can be read later — on demand, or again after a failure. */
+  diffSource?: PrFileDiffSource
+}
+
+/**
+ * Why a pull request file has no diff on screen:
+ * - `binary` — its bytes are not text (checked on the bytes, not the host's flag);
+ * - `tooLarge` — the change is too big to diff or draw here;
+ * - `notLoaded` — not read yet; it is read when the file is opened;
+ * - `failed` — reading it failed (`noPatchError` says how), worth trying again;
+ * - `hostOmitted` — the host's API left the diff out and this clone has neither commit;
+ * - `noChanges` — a rename or a mode change: nothing in the content changed.
+ */
+export type PrNoPatchReason = 'binary' | 'tooLarge' | 'notLoaded' | 'failed' | 'hostOmitted' | 'noChanges'
+
+/**
+ * The two commits a pull request file's diff is between, and the pull request
+ * they belong to — what `hosting:prFileDiff` needs to read one file again.
+ * The diff starts at the merge base of `baseSha` and `headSha` (the merge base
+ * itself, or the target branch's tip), or at `baseSha` itself when `straight`
+ * — one update's own changes, head against previous head.
+ */
+export interface PrFileDiffSource {
+  remoteUrl: string
+  number: number
+  baseSha: string
+  headSha: string
+  straight?: boolean
+}
+
+/** One file to read again, and where from. */
+export interface PrFileDiffRequest {
+  file: Pick<PrFile, 'filename' | 'status' | 'previousFilename'>
+  source: PrFileDiffSource
 }
 
 /**

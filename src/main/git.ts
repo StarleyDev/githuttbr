@@ -178,6 +178,8 @@ import type {
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
 import { splitUnifiedDiff } from './forgejo'
+import { decodeFileBytes } from '../shared/prFileText'
+import { diffFileVersions } from '../shared/prFileDiff'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
@@ -1521,6 +1523,120 @@ async function assertSafeRemoteBranch(repoPath: string, remote: string, branch: 
   const normalized = await runGit(repoPath, ['check-ref-format', '--branch', branch]).catch(() => '')
   if (normalized.trim() !== branch) throw new Error(`Refusing the branch name "${branch}": git does not accept it.`)
   await assertConfiguredRemote(repoPath, remote)
+}
+
+/** A file changing more lines than this is listed, not diffed — see getCommitRangeFiles. */
+export const RANGE_FILE_LINE_CAP = 20_000
+/** The whole range's diff output, with every over-cap file already left out. */
+const RANGE_DIFF_MAX_BUFFER = 512 << 20
+/** Files git calls binary that are read again as bytes, and how big each may be. */
+const RANGE_BINARY_REREADS = 50
+const RANGE_BLOB_MAX_BYTES = 2 << 20
+
+type NumstatEntry = { path: string; oldPath?: string; additions: number; deletions: number; binary: boolean }
+
+/**
+ * `git diff --numstat -z`: `added<TAB>deleted<TAB>path<NUL>`, or for a rename
+ * `added<TAB>deleted<TAB><NUL>old<NUL>new<NUL>`; `-` and `-` for a binary file.
+ */
+export function parseNumstatZ(out: string): NumstatEntry[] {
+  const parts = out.split('\0')
+  const entries: NumstatEntry[] = []
+  for (let i = 0; i < parts.length; i++) {
+    const m = /^(-|\d+)\t(-|\d+)\t([\s\S]*)$/.exec(parts[i])
+    if (!m) continue
+    const binary = m[1] === '-' && m[2] === '-'
+    const base = { additions: binary ? 0 : Number(m[1]), deletions: binary ? 0 : Number(m[2]), binary }
+    if (m[3]) entries.push({ path: m[3], ...base })
+    else if (i + 2 < parts.length) {
+      entries.push({ path: parts[i + 2], oldPath: parts[i + 1], ...base })
+      i += 2
+    }
+  }
+  return entries
+}
+
+/** The over-cap files of a range, with their counts and status but no patch. */
+async function largeRangeFiles(repoPath: string, from: string, to: string, large: NumstatEntry[]): Promise<PrFile[]> {
+  const spec = large.flatMap((c) => (c.oldPath ? [c.oldPath, c.path] : [c.path])).map((p) => `:(top,literal)${p}`)
+  const raw = await runGit(repoPath, ['diff', '--name-status', '-z', '--no-ext-diff', '-M', from, to, '--', ...spec], {
+    GIT_NO_LAZY_FETCH: '1'
+  }).catch(() => '')
+  const statusOf = new Map<string, string>()
+  const parts = raw.split('\0')
+  for (let i = 0; i < parts.length; i++) {
+    const code = parts[i][0]
+    if (!code) continue
+    if (code === 'R' || code === 'C') {
+      statusOf.set(parts[i + 2], 'renamed')
+      i += 2
+    } else {
+      statusOf.set(parts[i + 1], code === 'A' ? 'added' : code === 'D' ? 'removed' : 'modified')
+      i += 1
+    }
+  }
+  return large.map((c) => ({
+    filename: c.path,
+    status: c.oldPath ? 'renamed' : (statusOf.get(c.path) ?? 'modified'),
+    additions: c.additions,
+    deletions: c.deletions,
+    noPatchReason: 'tooLarge' as const,
+    ...(c.oldPath ? { previousFilename: c.oldPath } : {})
+  }))
+}
+
+/** One blob's bytes, or null when it is not here or is over RANGE_BLOB_MAX_BYTES. */
+async function readBlobBytes(repoPath: string, rev: string, path: string): Promise<Uint8Array | null> {
+  try {
+    const { stdout } = await pexecFile('git', ['-C', repoPath, 'cat-file', 'blob', `${rev}:${path}`], {
+      env: { ...noPromptEnv(), GIT_NO_LAZY_FETCH: '1' },
+      encoding: 'buffer',
+      maxBuffer: RANGE_BLOB_MAX_BYTES
+    })
+    return new Uint8Array(stdout)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * git calls a file binary on a NUL byte in its first 8000 — which every UTF-16
+ * file has. Read the first RANGE_BINARY_REREADS such files as bytes and diff
+ * the ones that are text after all, in place.
+ */
+async function rereadBinaryAsText(repoPath: string, from: string, to: string, files: PrFile[]): Promise<void> {
+  const binary = files.filter((f) => f.noPatchReason === 'binary').slice(0, RANGE_BINARY_REREADS)
+  const EMPTY = { kind: 'text', text: '' } as const
+  for (const f of binary) {
+    const [before, after] = await Promise.all([
+      f.status === 'added' ? new Uint8Array() : readBlobBytes(repoPath, from, f.previousFilename ?? f.filename),
+      f.status === 'removed' ? new Uint8Array() : readBlobBytes(repoPath, to, f.filename)
+    ])
+    if (!before || !after) continue
+    const result = diffFileVersions(
+      before.length ? decodeFileBytes(before) : EMPTY,
+      after.length ? decodeFileBytes(after) : EMPTY
+    )
+    if (!result.patch) continue
+    delete f.noPatchReason
+    Object.assign(f, result)
+  }
+}
+
+/**
+ * A gitService call made from elsewhere in the main process (the pull request
+ * Files tab's local-first read), under the same per-repository read/write lock
+ * the IPC dispatcher takes — a fetch here must not run beside a commit there.
+ */
+export async function withRepoLock<T>(repoPath: string, method: string, op: () => Promise<T>): Promise<T> {
+  const isWrite = !gitMethodIsRead(method)
+  if (isWrite) await shellPathReady()
+  const release = await lockFor(repoPath).acquire(isWrite)
+  try {
+    return await withLockRetry(op)
+  } finally {
+    release()
+  }
 }
 
 /** Where fetchPrHead keeps fork pull request heads: `<prefix><remote>/<number>`. */
@@ -4956,21 +5072,58 @@ export const gitService = {
 
   /**
    * The files changed between two commits, each with its patch — what one
-   * push to a pull request did, for its Updates tab. The two trees directly
-   * (`from to`, not the merge base), renames detected. Only full hex ids, as
+   * push to a pull request did, for its Updates tab, and a whole pull request
+   * (merge base → head) for its Files tab. The two trees directly (`from to`,
+   * not the merge base), renames detected. Only full hex ids, as
    * getLocalCommits; no external diff or textconv, so the patch is git's own
    * and a repository's config cannot run a program from here.
+   *
+   * No cap on the number of files. A file over RANGE_FILE_LINE_CAP changed
+   * lines is listed with its counts and `tooLarge` instead of its patch — a
+   * generated lockfile must not hold the rest up or fill the output buffer.
+   * A file git calls binary is read again as bytes (decodeFileBytes): UTF-16
+   * text is binary to git and plain text to a reviewer. `paths` limits it to
+   * those files (a renamed file's two paths) — one file read again on demand.
    */
-  async getCommitRangeFiles(repoPath: string, from: unknown, to: unknown): Promise<PrFile[]> {
+  async getCommitRangeFiles(repoPath: string, from: unknown, to: unknown, paths?: unknown): Promise<PrFile[]> {
     const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
     if (!isFullSha(from) || !isFullSha(to)) throw new Error('Two full commit ids are compared.')
+    const only: unknown[] = Array.isArray(paths) ? paths : []
+    if (only.length > 1000 || !only.every((p) => typeof p === 'string' && p !== '' && !p.includes('\0'))) {
+      throw new Error('Refusing those paths.')
+    }
+    const spec = (only as string[]).map((p) => `:(top,literal)${p}`)
+    const env = { GIT_NO_LAZY_FETCH: '1' }
+    const plain = ['--no-color', '--no-ext-diff', '--no-textconv', '-M']
+    const counts = parseNumstatZ(
+      await runGit(repoPath, ['diff', '--numstat', '-z', ...plain, from, to, '--', ...spec], env, 64 << 20)
+    )
+    const large = counts.filter((c) => !c.binary && c.additions + c.deletions > RANGE_FILE_LINE_CAP)
+    const skip = large.flatMap((c) => (c.oldPath ? [c.oldPath, c.path] : [c.path]))
     const out = await runGit(
       repoPath,
-      ['diff', ...DIFF_PREFIXES, '--no-color', '--no-ext-diff', '--no-textconv', '-M', from, to, '--'],
-      { GIT_NO_LAZY_FETCH: '1' },
-      64 << 20
+      ['diff', ...DIFF_PREFIXES, ...plain, from, to, '--', ...spec, ...skip.map((p) => `:(top,exclude,literal)${p}`)],
+      env,
+      RANGE_DIFF_MAX_BUFFER
     )
-    return splitUnifiedDiff(out)
+    const files = splitUnifiedDiff(out)
+    if (large.length) files.push(...(await largeRangeFiles(repoPath, from, to, large)))
+    await rereadBinaryAsText(repoPath, from, to, files)
+    // In git's own order, which the numstat kept: the large ones were appended.
+    const order = new Map(counts.map((c, i) => [c.path, i]))
+    return files.sort((a, b) => (order.get(a.filename) ?? 0) - (order.get(b.filename) ?? 0))
+  },
+
+  /**
+   * The best common ancestor of two commits — where a pull request's diff
+   * starts, as every host computes it. Null when either commit is not here or
+   * they share no history. Full ids only; no lazy fetch.
+   */
+  async getMergeBase(repoPath: string, a: unknown, b: unknown): Promise<string | null> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    if (!isFullSha(a) || !isFullSha(b)) throw new Error('Two full commit ids are compared.')
+    const out = (await runGit(repoPath, ['merge-base', a, b], { GIT_NO_LAZY_FETCH: '1' }).catch(() => '')).trim()
+    return isFullSha(out) ? out : null
   },
 
   /**
@@ -9919,6 +10072,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remo
 const READ_METHODS = new Set<string>([
   'getLocalCommits',
   'getCommitRangeFiles',
+  'getMergeBase',
   'isAncestor',
   'isRepository',
   'directoryExists',

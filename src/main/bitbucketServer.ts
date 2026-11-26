@@ -548,13 +548,20 @@ export function mergeBbsChanges(changes: BbsChange[], diffFiles: PrFile[]): PrFi
 
 export async function bbsPullFiles(repo: BitbucketServerRepo, token: string, id: number): Promise<PrFile[]> {
   const r = bbsRepoApi(repo)
+  let diffError = ''
   const [changes, raw] = await Promise.all([
     bbsPages<BbsChange>(`${r}/pull-requests/${id}/changes`, token, 500, 10).catch(() => [] as BbsChange[]),
     bbsResponse(`${r}/pull-requests/${id}.diff`, token, { headers: { Accept: 'text/plain' } })
       .then((res) => res.text())
-      .catch(() => '')
+      .catch((err: unknown) => {
+        diffError = err instanceof Error ? err.message : String(err)
+        return ''
+      })
   ])
-  return mergeBbsChanges(changes, raw ? splitUnifiedDiff(raw) : [])
+  const files = mergeBbsChanges(changes, raw ? splitUnifiedDiff(raw) : [])
+  // The list came, the diff did not: every file says why, instead of "no diff".
+  if (!diffError) return files
+  return files.map((f) => (f.patch ? f : { ...f, noPatchReason: 'failed' as const, noPatchError: diffError }))
 }
 
 /** Build statuses of a commit, newest first. Empty when the server has no build-status resource. */
@@ -660,6 +667,18 @@ export async function bbsDeleteComment(repo: BitbucketServerRepo, token: string,
 const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> = { add: 'ADDED', del: 'REMOVED', ctx: 'CONTEXT' }
 
 /** The pull request's source head, as the Files tab's diff was read at. */
+/**
+ * The two commits a pull request's effective diff is between: the source
+ * branch's head and the target branch's tip, whose merge base the server diffs
+ * from. Null when either is missing.
+ */
+export async function bbsPullEnds(repo: BitbucketServerRepo, token: string, id: number): Promise<{ base: string; head: string } | null> {
+  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
+  const head = pr.fromRef?.latestCommit
+  const base = pr.toRef?.latestCommit
+  return head && base ? { base, head } : null
+}
+
 export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffRevision | null> {
   const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
   return pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : null

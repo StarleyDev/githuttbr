@@ -55,6 +55,7 @@ import {
   forgejoCommentOnLine,
   forgejoDeleteComment,
   forgejoEditComment,
+  forgejoPullEnds,
   forgejoPullRevision,
   forgejoMerge,
   forgejoPullChecks,
@@ -121,6 +122,7 @@ import {
   bbsCommentOnLine,
   bbsDeleteComment,
   bbsEditComment,
+  bbsPullEnds,
   bbsPullRevision,
   bbsMerge,
   bbsPullChecks,
@@ -194,6 +196,8 @@ import type {
   PrUpdateList,
   PrCheck,
   PrFile,
+  PrFileDiffRequest,
+  PrFileDiffSource,
   IssueInfo,
   IssueDetail,
   LinkedPr,
@@ -219,9 +223,11 @@ import {
   azurePrChecks,
   azureBuildLog,
   azurePrDetail,
+  azureFileDiff,
   azurePrFiles,
   azurePrIterationFiles,
   azurePrUpdates,
+  parseRetryAfter,
   azureReply,
   azureCommentOnLine,
   azureDeleteComment,
@@ -230,10 +236,13 @@ import {
   azureReview,
   azureWorkItem,
   type Ado,
+  type AdoBytes,
   type AdoPage,
   type AdoText,
   type AzureRepo
 } from './azurePr'
+import { readPrFileFromClone, readPrFilesFromClone, type PrDiffEnds } from './prLocalFiles'
+import { withNoPatchReasons } from '../shared/prFileDiff'
 import {
   azureReferenceSummaries,
   forgejoReferenceSummaries,
@@ -387,7 +396,7 @@ export async function adoJson<T>(url: string, token: string, init?: RequestInit,
     } catch {
       /* not JSON — keep the status-only message */
     }
-    throw new AzureAuthError(res.status, message)
+    throw new AzureAuthError(res.status, message, parseRetryAfter(res.headers.get('retry-after')))
   }
   // A sign-in page (203 + HTML), or an empty body from a 204.
   const trimmed = body.trim()
@@ -403,10 +412,63 @@ export async function adoJson<T>(url: string, token: string, init?: RequestInit,
 /** An Azure DevOps failure carrying the status, so callers can retry or re-auth. */
 class AzureAuthError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** How long a throttled (429) or unavailable (503) server asked to be left alone. */
+  retryAfterMs: number | null
+  constructor(status: number, message: string, retryAfterMs: number | null = null) {
     super(message ? `Azure DevOps: ${message}` : azureAuthError(status))
     this.status = status
+    this.retryAfterMs = retryAfterMs
   }
+}
+
+/**
+ * An Azure DevOps file's raw bytes (`$format=octetStream`), read up to `max`:
+ * past it, `tooLarge` and the rest of the body is not read. A refusal throws
+ * an AzureAuthError carrying its status and Retry-After, so the caller can
+ * retry a throttle; a sign-in page (HTML) is a 401 like adoJson's.
+ */
+export async function adoBytes(url: string, token: string, max: number): Promise<Uint8Array | 'tooLarge'> {
+  const res = await fetch(url, {
+    redirect: 'error',
+    headers: { Authorization: azureAuth(token), Accept: 'application/octet-stream' }
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    let message = ''
+    try {
+      message = (JSON.parse(body) as { message?: string }).message ?? ''
+    } catch {
+      /* not JSON — the status says it */
+    }
+    throw new AzureAuthError(res.status, message, parseRetryAfter(res.headers.get('retry-after')))
+  }
+  if ((res.headers.get('content-type') ?? '').includes('text/html')) throw new AzureAuthError(401, '')
+  const declared = Number(res.headers.get('content-length'))
+  if (Number.isFinite(declared) && declared > max) {
+    await res.body?.cancel().catch(() => undefined)
+    return 'tooLarge'
+  }
+  if (!res.body) return new Uint8Array()
+  const parts: Uint8Array[] = []
+  let size = 0
+  const reader = res.body.getReader()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.length
+    if (size > max) {
+      await reader.cancel().catch(() => undefined)
+      return 'tooLarge'
+    }
+    parts.push(value)
+  }
+  const out = new Uint8Array(size)
+  let at = 0
+  for (const p of parts) {
+    out.set(p, at)
+    at += p.length
+  }
+  return out
 }
 
 /** Whether a failure means "this credential is no good" rather than "this request was". */
@@ -1994,15 +2056,21 @@ type GlDiff = {
   renamed_file: boolean
   deleted_file: boolean
   diff: string
+  /** Over the instance's diff limits: GitLab sends no diff and sets this. */
+  too_large?: boolean
 }
 
 function glDiffToFile(d: GlDiff): PrFile {
+  // GitLab sends an empty diff for files over its limits, and a hunk-less
+  // "Binary files … differ" for binaries: neither is a patch to draw.
+  const hasHunk = /^@@ /m.test(d.diff || '')
+  const reason = hasHunk ? null : /^Binary files .* differ$/m.test(d.diff || '') ? 'binary' : d.too_large ? 'hostOmitted' : null
   return {
     filename: d.new_path || d.old_path,
     status: d.new_file ? 'added' : d.deleted_file ? 'removed' : d.renamed_file ? 'renamed' : 'modified',
-    ...diffLineCounts(d.diff || ''),
-    // GitLab sends an empty diff for binaries and for files over its size limit.
-    ...(d.diff ? { patch: d.diff } : {}),
+    ...diffLineCounts(hasHunk ? d.diff : ''),
+    ...(hasHunk ? { patch: d.diff } : {}),
+    ...(reason ? { noPatchReason: reason } : {}),
     ...(d.renamed_file && d.old_path !== d.new_path ? { previousFilename: d.old_path } : {})
   }
 }
@@ -2099,7 +2167,7 @@ interface GhUser {
 async function azRepoOf(
   remoteUrl: string,
   sent: string | undefined
-): Promise<{ ado: Ado; adoPage: AdoPage; optional: Ado; text: AdoText; repo: AzureRepo; token: string }> {
+): Promise<{ ado: Ado; adoPage: AdoPage; optional: Ado; text: AdoText; bytes: AdoBytes; repo: AzureRepo; token: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
   const auth = await remoteApiToken(remoteUrl, 'azure', sent)
@@ -2117,8 +2185,18 @@ async function azRepoOf(
   // the retry would drop a working git credential from the helper over it.
   const optional: Ado = (url, init) => adoJson(url, auth.token, init)
   const text: AdoText = (url, max) => adoTail(url, auth.token, max)
+  // A file's bytes are read with the same token and credential retry as `ado`.
+  const bytes: AdoBytes = (url, max) => withAzureRetry(remoteUrl, auth, (token) => adoBytes(url, token, max))
   // The token itself only keys the CI badge cache (by fingerprint); nothing else reads it here.
-  return { ado, adoPage, optional, text, token: auth.token, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+  return {
+    ado,
+    adoPage,
+    optional,
+    text,
+    bytes,
+    token: auth.token,
+    repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo }
+  }
 }
 
 /**
@@ -2420,17 +2498,121 @@ async function pullRequestRevision(remoteUrl: string, tokens: HostTokens, number
 }
 
 /**
- * The changed files and the revision they were read at. The revision is read
- * before and after the files: when the two differ, a push landed in between and
- * nobody can say which one the diff shows — null then, and a line comment
- * checks the head when it is posted instead.
+ * The two commits the pull request's diff is between, as its host defines
+ * them. The revision's base is the merge base where the host names one (Azure,
+ * GitLab, Forgejo); GitHub and Data Center name only the target branch, whose
+ * merge base with the head is taken locally. Null when the host does not say.
+ */
+async function pullRequestDiffEnds(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  revision: PrDiffRevision
+): Promise<PrDiffEnds | null> {
+  if (revision.baseSha) return { base: revision.baseSha, head: revision.headSha, baseIsMergeBase: true }
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    const ends = await bbsPullEnds(b.repo, b.token, number)
+    return ends ? { ...ends, baseIsMergeBase: false } : null
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullEnds(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parsed?.provider !== 'github') return null
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const pr = await ghJson<{ head?: { sha?: string }; base?: { sha?: string } }>(`${api}/pulls/${number}`, token)
+  return pr.head?.sha && pr.base?.sha ? { base: pr.base.sha, head: pr.head.sha, baseIsMergeBase: false } : null
+}
+
+/**
+ * The changed files and the revision they were read at.
+ *
+ * This clone first (prLocalFiles.ts): `git diff` from the merge base to the
+ * head is exact and complete on every host, and the line numbers are the ones
+ * the host's own diff has — the same two commits — so line comments anchor
+ * where they should. The commits are fetched by id when they are not here.
+ * Only when that fails is the host's API asked, and every file it leaves
+ * without a patch says why (`noPatchReason`) and, where it can be read again,
+ * from where (`diffSource`).
+ *
+ * The revision is read before and after the files: when the two differ, a
+ * push landed in between and nobody can say which one the diff shows — null
+ * then, and a line comment checks the head when it is posted instead.
  */
 async function pullRequestFileList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrFileList> {
+  const repoPath = hostingRepo.getStore()
   const revision = (): Promise<PrDiffRevision | null> => pullRequestRevision(remoteUrl, tokens, number).catch(() => null)
   const before = await revision()
-  const files = await pullRequestFiles(remoteUrl, tokens, number)
+  const ends = before?.headSha ? await pullRequestDiffEnds(remoteUrl, tokens, number, before).catch(() => null) : null
+  const local = ends && repoPath ? await readPrFilesFromClone(repoPath, remoteUrl, ends) : null
+  const source: PrFileDiffSource | null = ends ? { remoteUrl, number, baseSha: local?.mergeBase ?? ends.base, headSha: ends.head } : null
+  const files = local
+    ? withNoPatchReasons(local.files, 'noChanges', source)
+    : withNoPatchReasons(await pullRequestFiles(remoteUrl, tokens, number), 'hostOmitted', source)
   const after = before ? await revision() : null
-  return { files, revision: before && after && isSameRevision(before, after) ? after : null }
+  const same = !!before && !!after && isSameRevision(before, after) && (!ends || ends.head === after.headSha)
+  return { files, revision: same ? after : null }
+}
+
+/** A PR file request off the IPC boundary, or an error when it is not one. */
+function validFileDiffRequest(value: unknown): PrFileDiffRequest {
+  const v = value as { file?: Record<string, unknown>; source?: Record<string, unknown> } | null
+  const f = v?.file
+  const s = v?.source
+  const ok =
+    !!f &&
+    !!s &&
+    typeof f.filename === 'string' &&
+    f.filename !== '' &&
+    !f.filename.includes('\0') &&
+    ['added', 'modified', 'removed', 'renamed', 'copied', 'changed'].includes(f.status as string) &&
+    (f.previousFilename === undefined || (typeof f.previousFilename === 'string' && !f.previousFilename.includes('\0'))) &&
+    typeof s.remoteUrl === 'string' &&
+    Number.isSafeInteger(s.number) &&
+    isFullSha(s.baseSha) &&
+    isFullSha(s.headSha)
+  if (!ok) throw new Error('Refusing that file request.')
+  return {
+    file: {
+      filename: f.filename as string,
+      status: f.status as string,
+      ...(typeof f.previousFilename === 'string' && f.previousFilename ? { previousFilename: f.previousFilename } : {})
+    },
+    source: {
+      remoteUrl: s.remoteUrl as string,
+      number: s.number as number,
+      baseSha: s.baseSha as string,
+      headSha: s.headSha as string,
+      ...(s.straight === true ? { straight: true } : {})
+    }
+  }
+}
+
+/**
+ * One pull request file's diff, read on demand: a file the list left
+ * `notLoaded`, one that `failed`, one the host's API omitted. This clone first
+ * — fetching the two commits by id when they are missing — then, on Azure
+ * DevOps, the file's two versions from the API. Always answers with the file:
+ * when there is still no patch, its reason says why.
+ */
+async function pullRequestFileDiff(remoteUrl: string, tokens: HostTokens, request: unknown): Promise<PrFile> {
+  const { file, source } = validFileDiffRequest(request)
+  // The request names its pull request; it is read for this one only.
+  if (source.remoteUrl !== remoteUrl) throw new Error('Refusing that file request.')
+  const repoPath = hostingRepo.getStore()
+  const paths = file.previousFilename && file.previousFilename !== file.filename ? [file.filename, file.previousFilename] : [file.filename]
+  const ends = { base: source.baseSha, head: source.headSha, straight: !!source.straight }
+  const local = repoPath ? await readPrFileFromClone(repoPath, remoteUrl, ends, paths) : null
+  if (local) return withNoPatchReasons([local], 'noChanges', source)[0]
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    const read = await azureFileDiff(a.bytes, a.repo, file, source.baseSha, source.headSha)
+    return withNoPatchReasons([read], 'failed', source)[0]
+  }
+  // Other hosts send a PR's diff whole or not at all: without the commits here, nothing more to read.
+  return { ...file, additions: 0, deletions: 0, noPatchReason: 'hostOmitted', diffSource: source }
 }
 
 /** Changed files in a PR (for the file-by-file review checklist). */
@@ -2450,7 +2632,7 @@ async function pullRequestFiles(
   }
   if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    return azurePrFiles(a.ado, a.repo, number)
+    return azurePrFiles(a.ado, a.bytes, a.repo, number)
   }
   const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
   type GhFile = {
@@ -2854,6 +3036,21 @@ async function pullRequestUpdateFiles(
 ): Promise<PrUpdateFiles | null> {
   const from = validUpdateEnd(fromEnd)
   const to = validUpdateEnd(toEnd)
+  const res = await hostUpdateFiles(remoteUrl, tokens, number, from, to)
+  if (!res) return null
+  // A file the host left out can be read again between the same two commits —
+  // only when the list itself is between them, not from their merge base.
+  const source = res.fromMergeBase ? null : { remoteUrl, number, baseSha: from.sha, headSha: to.sha, straight: true }
+  return { ...res, files: withNoPatchReasons(res.files, 'hostOmitted', source) }
+}
+
+async function hostUpdateFiles(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  from: PrUpdateEnd,
+  to: PrUpdateEnd
+): Promise<PrUpdateFiles | null> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (parsed?.provider === 'gitlab') {
     const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
@@ -2868,7 +3065,14 @@ async function pullRequestUpdateFiles(
   if (parsed?.provider === 'azure') {
     if (from.iteration === undefined || to.iteration === undefined) return null
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    const files = await azurePrIterationFiles(a.ado, a.repo, number, { iteration: from.iteration, sha: from.sha }, { iteration: to.iteration, sha: to.sha })
+    const files = await azurePrIterationFiles(
+      a.ado,
+      a.bytes,
+      a.repo,
+      number,
+      { iteration: from.iteration, sha: from.sha },
+      { iteration: to.iteration, sha: to.sha }
+    )
     return { files, fromMergeBase: false }
   }
   if (parsed?.provider === 'github') {
@@ -4971,6 +5175,9 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestFileList(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:prFileDiff', (remoteUrl: string, tokens: HostTokens, request: unknown) =>
+    pullRequestFileDiff(remoteUrl, tokens, request)
   )
   handleForRepo('hosting:prListCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestCommitList(remoteUrl, tokens, number)

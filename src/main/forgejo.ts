@@ -14,6 +14,7 @@ import type {
   PrCommitList,
   PrDetail,
   PrFile,
+  PrNoPatchReason,
   PrDiffRevision,
   PrLineAnchor,
   PrMergeMethod,
@@ -414,11 +415,16 @@ export function splitUnifiedDiff(diff: string): PrFile[] {
       status,
       additions,
       deletions,
-      ...(patch ? { patch } : {}),
+      ...(patch ? { patch } : { noPatchReason: noHunkReason(head) }),
       ...(status === 'renamed' ? { previousFilename: oldPath } : {})
     })
   }
   return files
+}
+
+/** Why a file of a unified diff has no hunk: git said binary, or only its name or mode changed. */
+function noHunkReason(header: string): PrNoPatchReason {
+  return /^(Binary files .* differ|GIT binary patch)$/m.test(header) ? 'binary' : 'noChanges'
 }
 
 interface FjDetail extends FjPull {
@@ -770,6 +776,21 @@ export async function forgejoCommentOnLine(
 }
 
 /** The pull's head commit and merge base, as the Files tab's diff was read at. */
+/** The two commits a pull request's diff is between: its merge base (or the target's tip) and its head. */
+export async function forgejoPullEnds(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number
+): Promise<{ base: string; head: string; baseIsMergeBase: boolean } | null> {
+  const pr = await fjJson<FjPull & { base?: { sha?: string } }>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
+  const head = pr.head?.sha
+  if (!head) return null
+  if (pr.merge_base) return { base: pr.merge_base, head, baseIsMergeBase: true }
+  return pr.base?.sha ? { base: pr.base.sha, head, baseIsMergeBase: false } : null
+}
+
 export async function forgejoPullRevision(base: string, owner: string, repo: string, token: string, number: number): Promise<PrDiffRevision | null> {
   const pr = await fjJson<FjPull>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
   if (!pr.head?.sha) return null
