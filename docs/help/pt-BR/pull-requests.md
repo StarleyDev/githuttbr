@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Página de pull requests
@@ -867,8 +867,12 @@ O que não faz:
   de 20 segundos, ou quando a transferência fica abaixo de 1 KB/s por 15, e
   nunca pede senha: o prompt do git fica desligado e o Git Credential Manager é
   avisado para não abrir a janela de login, então um remote que precisaria de
-  uma cai na API. Um remote ssh usa as suas configurações de ssh como estão. Um
-  clone raso ou parcial sem os objetos cai na API do host.
+  uma cai na API. Um remote ssh usa as suas configurações de ssh como estão,
+  exceto que a janela de senha do próprio ssh não é aberta. Quando outra
+  operação git segura o repositório (um push longo) por mais de cinco segundos,
+  a busca é pulada dessa vez e a API é usada. O que você mudar na árvore de
+  trabalho enquanto ela roda não se perde: o repositório atualiza quando ela
+  termina. Um clone raso ou parcial sem os objetos cai na API do host.
 - **Acima dos limites**, o arquivo aparece com as contagens e sem diff: 20.000
   linhas alteradas ou 8 MB de diff lidos do clone, 4 MB por versão lida do
   Azure DevOps. Uma leitura guarda cerca de 150.000 linhas ou 48 MB de diffs;
