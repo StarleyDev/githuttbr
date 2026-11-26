@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash } from 'node:crypto'
-import { ipcMain, shell } from 'electron'
+import { ipcMain } from 'electron'
+import { openExternalUrl } from './externalLinks'
 import {
   apiToken,
   forgetCredential,
@@ -4105,7 +4106,7 @@ export function registerHostingHandlers(): void {
   // No credential: a browser page.
   ipcMain.handle('hosting:openCreatePR', (_e, remoteUrl: string, source: string, target: string) => {
     const url = createPullRequestUrl(remoteUrl, source, target)
-    if (url) shell.openExternal(url)
+    if (url) openExternalUrl(url, 'hosting:openCreatePR')
     return url != null
   })
   // The account's own inbox: the active profile's.

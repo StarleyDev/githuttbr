@@ -3,11 +3,14 @@
 import './hardenEnv'
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname, resolve, sep } from 'path'
+import { pathToFileURL } from 'url'
 import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'fs'
 import { writeFile, readFile, rename, mkdir, chmod, unlink } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
+import { getUrlScheme, isAppNavigation } from '../shared/externalUrl'
+import { openExternalUrl } from './externalLinks'
 import { abortAllClones, registerGitHandlers, repointGlobalLegacyTextconvs } from './git'
 import { readSettings, registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
@@ -198,9 +201,22 @@ function createWindow(): void {
   win.once('ready-to-show', () => showMainWindow(win))
   attachRendererRecovery(win)
   win.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    openExternalUrl(details.url, 'window-open')
     return { action: 'deny' }
   })
+
+  // The window never leaves the app. A link the renderer did not catch, a
+  // dropped file or a redirect would otherwise replace it with a page that
+  // keeps the preload — and with it the bridge to git, files and the keychain.
+  const appUrl = process.env['ELECTRON_RENDERER_URL'] || pathToFileURL(join(__dirname, '../renderer/index.html')).href
+  const keepOnApp = (event: Electron.Event<{ isMainFrame?: boolean }>, url: string): void => {
+    // A frame inside the page (a PDF preview) is not the window leaving.
+    if (event.isMainFrame === false || isAppNavigation(url, appUrl)) return
+    event.preventDefault()
+    console.warn(`[navigation] blocked a ${getUrlScheme(url)} navigation away from the app`)
+  }
+  win.webContents.on('will-navigate', keepOnApp)
+  win.webContents.on('will-redirect', keepOnApp)
 
   // ── The <webview> leash ───────────────────────────────────────────────────
   // Only a dev tool served on this machine may be embedded, and it is embedded
@@ -237,7 +253,7 @@ app.whenReady().then(() => {
   app.on('web-contents-created', (_e, contents) => {
     if (contents.getType() !== 'webview') return
     contents.setWindowOpenHandler((details) => {
-      void shell.openExternal(details.url)
+      openExternalUrl(details.url, 'devtools-webview')
       return { action: 'deny' }
     })
     contents.on('will-navigate', (event, url) => {
@@ -264,8 +280,10 @@ app.whenReady().then(() => {
     return res.canceled ? [] : res.filePaths
   })
 
-  ipcMain.handle('shell:openExternal', (_e, url: string) => {
-    if (/^https?:\/\//.test(url)) shell.openExternal(url)
+  // http(s) and mailto only — see shared/externalUrl.ts. A folder or a file
+  // goes through shell:openPath / shell:showItemInFolder instead.
+  ipcMain.handle('shell:openExternal', (_e, url: unknown) => {
+    openExternalUrl(url, 'shell:openExternal')
   })
 
   // Save a generated patch to a user-chosen file. Returns the path, or null if cancelled.
