@@ -52,6 +52,14 @@ così un gruppo si legge come una famiglia:
   Profilo e Ambiente verde; Integrazioni e Dati ciano; Temi arancione; Sicurezza
   rosso. Generali e Scorciatoie restano grigie.
 
+Una fila di pulsanti con sola icona fa il contrario — ogni pulsante ha il suo colore,
+così si distinguono. Nella [pagina delle pull request](pull-requests.md) i pulsanti
+dell’intestazione sono: aggiorna blu, revisione IA il colore d’accento, anteprima in
+locale turchese, vai al branch di origine verde e vai al branch di destinazione
+arancione (apri nel browser resta grigio), e sui tuoi commenti **Modifica** prende
+l’accento ed **Elimina** il rosso — lì e nella pagina della issue. Il blu e il
+turchese sono miscele dei colori del tema, quindi lo seguono anch’essi.
+
 | Opzione | Cosa vedi |
 |---|---|
 | **Monocromatico** | Tutte le icone grigie, come prima che esistesse questa opzione |
@@ -63,11 +71,11 @@ ridipinge con esso le icone, compresi i temi personalizzati e quelli generati
 dall'AI.
 
 Limiti: sono colorati solo i pulsanti principali della barra degli strumenti, le
-intestazioni delle sezioni della barra laterale, il menu Strumenti e le pagine
-delle Impostazioni; gli altri menu, le righe dentro una sezione e il grafo dei
-commit no. Una riga di menu sotto il mouse mantiene il suo aspetto abituale,
-icona compresa. Il colore non è mai l'unico indizio: ogni icona mantiene la sua
-etichetta.
+intestazioni delle sezioni della barra laterale, il menu Strumenti, le pagine delle
+Impostazioni e i pulsanti delle pagine di pull request e issue; gli altri menu, le
+righe dentro una sezione e il grafo dei commit no. Una riga di menu sotto il mouse
+mantiene il suo aspetto abituale, icona compresa. Il colore non è mai l'unico
+indizio: ogni icona mantiene la sua etichetta.
 
 ## Trovare un'impostazione
 

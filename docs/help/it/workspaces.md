@@ -53,8 +53,10 @@ Per aggiungere un repository che il gruppo non contiene ancora, fai clic sul **+
 
 Alcune pagine non stanno da sole: il [wiki](repo-wiki.md) di un repository, i
 suoi [insight](insights.md), i [dev tool](devtools.md) che una sessione di
-avvio ha annunciato. Non occupano una scheda — compaiono come piccole icone sul
-repository stesso.
+avvio ha annunciato. Non occupano una scheda — compaiono come piccoli chip sul
+repository stesso: un’icona e una parola che dice quale pagina è (*CI*, *PR*,
+*Wiki*, *#482* per una pull request, il tag di una release). Il nome completo è nel
+tooltip, e un tag o un titolo lungo viene accorciato con i puntini di sospensione.
 
 - **Clicca un’icona** per mostrare quella pagina. **Clicca di nuovo — o clicca
   il nome del repository** — per tornare al repository. Finché una pagina è

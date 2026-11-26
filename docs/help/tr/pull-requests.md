@@ -3,8 +3,8 @@ title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri ve diff’inin bir satırına yorumlar.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Pull request sayfası
@@ -130,7 +130,7 @@ yapar:
 
 Başlıkta aynı iki hareket düğme olarak vardır: **Kaynak dala git** ve **Hedef
 dala git**. Zaten üzerinde olduğunuz dalda da çalışırlar — sizi yalnızca depoya
-götürürler.
+götürürler. [Simge renkleri](themes.md#simge-renkleri) açıkken başlıktaki her düğmenin kendi rengi olur: yenile mavi, yapay zekâ incelemesi mor, önizleme turkuaz, kaynak dal yeşil, hedef dal turuncu (tarayıcıda aç gri kalır).
 
 Siz tıklayana kadar hiçbir şeye bakılmaz: bir pull request’i açmak hiçbir dalı
 okumaz ya da fetch etmez.
@@ -232,7 +232,7 @@ temizler; işaretler yalnızca bu bilgisayarda tutulur, sunucuya asla gönderilm
 işaret dosyanın diff sürümünü hatırlar: bir push görülmüş bir dosyayı değiştirdiğinde
 dosya sarı bir noktayla (*Gördüğünüzden beri değişti*) yeniden görülmemiş sayılır.
 Diff’i olmayan bir dosya (ikili, çok büyük) yalnızca durumu ve satır sayılarıyla
-karşılaştırılır. Bir klasörü katlamak için ona tıklayın ya da üzerindeyken ←/→ tuşuna
+karşılaştırılır. İnceleme konuşmaları olan bir dosyanın yanında konuşma balonu içinde bir sayı görünür (klasörler kendilerininkini toplar), böylece yorumlu dosyalar uzun bir listede göze çarpar; eskimiş konuşmalar da sayılır. Bir klasörü katlamak için ona tıklayın ya da üzerindeyken ←/→ tuşuna
 basın; ↑/↓ (veya j/k) ekrandaki dosyalarda ilerler ve her diff’i açar. Katlanmış
 klasörler uygulama kapanana kadar pull request başına hatırlanır ve birinin içinde
 açılan bir dosya ona giden yolu açar. Ağaç, sunucunun dosyaları listelediği sıraya
@@ -388,6 +388,72 @@ Yapmadıkları:
   yapabilse de yorumlarını düzenleyecek bir sayfa henüz yoktur.
 - Pull request’in **açıklaması** ve incelemelerinin özetleri yorum değildir ve
   burada düzenlenmez.
+
+## Bir `#123` ya da `AB#123` neyle ilgili
+
+*fixes AB#4821* diyen bir commit ya da *bkz. #312* diyen bir yorum size bir numara
+söyler, neyle ilgili olduğunu değil. Bunu öğrenmek onu açmak demekti. Artık **bir
+referansın üzerine gelmek** — ya da Tab ile ona gitmek — sunucunun onun hakkında
+söylediklerini içeren küçük bir kart açar:
+
+- türü için bir simge ve referansın yazıldığı hâli;
+- **başlığı**;
+- **durumu** (açık, kapalı, birleştirilmiş — Azure DevOps’ta work item’ın kendi
+  durumu, örneğin *Active* ya da *Resolved*);
+- Azure DevOps’ta **work item türü** (Bug, User Story, Task…).
+
+![Bir yorumdaki work item referansının kartı: türü, başlığı ve durumu](../../screenshots/reference-card.webp)
+
+Kartlar pull request sayfasında (açıklama, yorumlar, inceleme konuşmaları ve
+**Commit’ler** sekmesindeki bir commit’in tam mesajı), issue sayfasında ve commit
+ayrıntıları panelindeki konuda bulunur. Azure DevOps’ta **Commit’ler** sekmesinde,
+bir commit’in konusundaki her work item (`AB#123`, ya da orada aynı öğe olan `#123`)
+yanında başlığını da gri olarak gösterir. Azure DevOps’ta `!123` kartsız olarak o
+pull request’e bağlanır.
+
+| Referans | Sunucu | Okunduğu yer |
+|---|---|---|
+| `AB#123`, ve bir Azure deposunda `#123` | Azure DevOps | Work item’lar, tek istekte 200’e kadar |
+| `#123` | GitHub, GitHub Enterprise Server | Issue’lar (pull request’ler için de yanıt verir), her biri için bir istek, birer birer |
+| `#123` / `!123` | GitLab | Issue’lar / merge request’ler, tür başına bir istek |
+| `#123` | Forgejo | Issue’lar (pull request’ler de), her biri için bir istek, ikişer ikişer |
+
+Bir `#123` yalnızca kendi başına bir kelime olarak sayılır: `org/repo#123` (başka bir
+depo), `&#39;`, `#123abc` gibi bir renk ve bir bağlantının `#issuecomment-…` kısmı
+olduğu gibi bırakılır.
+
+Bir kart açılana kadar hiçbir şey sorulmaz. Sonra üzerinde olduğunuz referans ve
+sayfada ona en yakın, henüz bilinmeyenler tek çağrıda gider, böylece sonraki kart
+genellikle anında gelir. Yanıtlar uygulama çalıştığı sürece bellekte tutulur, asla
+diskte değil, beş dakika boyunca; ondan sonra gösterilmeye devam eder ve bir sonraki
+üzerine gelişte yeniden okunur. Profil başına tutulurlar: çağrı deponun
+[bağlı](profiles.md) olduğu profil olarak yapılır ve başka bir profil başka öğeler
+görebilir.
+
+Maliyeti:
+
+- **GitHub ve Forgejo** birden çok issue’yu tek istekte okuyamaz, bu yüzden her kart
+  bir istek tutar. Bir üzerine gelme en fazla **10** tane ister — üzerinde olduğunuz
+  ve komşuları — ve GitHub’da, GitHub’ın uygulamalardan istediği gibi, birbiri
+  ardına. *Yavaşla* diyen ilk yanıt (429 ya da 403) gerisini durdurur ve bu
+  referanslar beş dakika boyunca yeniden sorulmaz.
+- **Azure DevOps** tek istekte 200’e kadar work item okur, GitLab ise tür başına bir
+  istek yapar; bu yüzden orada tüm sayfa bir kerede gider.
+
+Yapmadıkları:
+
+- **Bitbucket**’ta kart yoktur: uygulama orada issue okumaz ve bağlantı eskisi gibi
+  tarayıcıyı açar.
+- **Bulunamadı ya da erişim yok.** Silinmiş bir issue, bu hesabın göremediği bir
+  projedeki bir work item ya da *Work Items (Read)* kapsamı olmayan bir Azure token’ı
+  aynı görünür: kart bunu söyler ve bağlantı yine çalışır. İstekleri kısan,
+  erişilemeyen ya da bu profilde hesabı olmayan bir sunucu kendi mesajını alır.
+- **Azure DevOps dışındaki `AB#123`** — Azure Boards’a bağlı bir GitHub deposunda —
+  bağlantıya dönüşmez, bu yüzden kartı yoktur: uygulama hangi kuruluşa ait olduğunu
+  bilmez.
+- Bir pull request’in ne zaman birleştirildiğini göndermeyen **eski GitHub Enterprise
+  Server’larda birleştirilmiş durumu**: kapalı olarak görünür.
+- **Grafiğin** commit satırları kart göstermez.
 
 ## Sınırlar
 

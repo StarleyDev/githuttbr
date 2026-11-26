@@ -3,8 +3,8 @@ title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity oraz komentarze do wiersza jego diffa.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Strona pull requestów
@@ -132,7 +132,7 @@ najwolniejsza część. Na stronie pull requesta pole **Gałęzie** robi to za c
 
 Nagłówek ma te same dwa ruchy jako przyciski: **Przejdź do gałęzi źródłowej** i
 **Przejdź do gałęzi docelowej**. Działają też dla gałęzi, na której już jesteś —
-po prostu przenoszą cię do repozytorium.
+po prostu przenoszą cię do repozytorium. Z włączonymi [kolorami ikon](themes.md#kolory-ikon) każdy przycisk w nagłówku ma własny: odśwież niebieski, recenzja AI fioletowy, podgląd turkusowy, gałąź źródłowa zielony, gałąź docelowa pomarańczowy (otwórz w przeglądarce zostaje szary).
 
 Nic nie jest sprawdzane, dopóki nie klikniesz: otwarcie pull requesta nie czyta
 ani nie pobiera żadnej gałęzi.
@@ -235,7 +235,7 @@ oznacza jako przejrzany każdy plik w środku albo czyści wszystkie; zaznaczeni
 trzymane tylko na tym komputerze i nigdy nie trafiają na hosting. Zaznaczenie
 pamięta wersję diffa pliku: gdy push zmieni przejrzany plik, znów jest on
 nieprzejrzany, z żółtą kropką (*Zmieniony od czasu przejrzenia*). Plik bez diffa
-(binarny, zbyt duży) jest porównywany tylko po stanie i liczbie wierszy. Kliknij
+(binarny, zbyt duży) jest porównywany tylko po stanie i liczbie wierszy. Plik z rozmowami recenzji pokazuje obok liczbę w dymku (foldery sumują swoje), więc pliki z komentarzami wyróżniają się na długiej liście; nieaktualne rozmowy też się liczą. Kliknij
 folder albo naciśnij na nim ←/→, żeby go zwinąć; ↑/↓ (lub j/k) przechodzą przez pliki
 na ekranie i otwierają każdy diff. Zwinięte foldery są pamiętane dla każdego pull
 requesta do zamknięcia aplikacji, a plik otwarty w jednym z nich rozwija drogę do
@@ -395,6 +395,70 @@ Czego to nie robi:
   wywołanie.
 - **Opis** pull requesta i podsumowania jego recenzji nie są komentarzami i nie są tu
   edytowane.
+
+## Czego dotyczy `#123` lub `AB#123`
+
+Commit z napisem *fixes AB#4821* albo komentarz *zob. #312* podaje ci numer, a nie
+to, czego dotyczył. Żeby się dowiedzieć, trzeba było go otworzyć. Teraz
+**wskazanie odwołania** — albo dojście do niego Tabem — otwiera małą kartę z tym, co
+mówi o nim hosting:
+
+- ikonę jego rodzaju i odwołanie tak, jak je zapisano;
+- jego **tytuł**;
+- jego **stan** (otwarty, zamknięty, scalony — na Azure DevOps własny stan work
+  itemu, np. *Active* albo *Resolved*);
+- na Azure DevOps **typ work itemu** (Bug, User Story, Task…).
+
+![Karta odwołania do work itemu w komentarzu: typ, tytuł i stan](../../screenshots/reference-card.webp)
+
+Karty są na stronie pull requesta (opis, komentarze, wątki recenzji i pełny opis
+commita w zakładce **Commity**), na stronie issue i w temacie w panelu szczegółów
+commita. W zakładce **Commity** na Azure DevOps każdy work item w temacie commita
+(`AB#123` albo `#123`, tam to ten sam element) pokazuje też obok swój tytuł, na
+szaro. Na Azure DevOps `!123` prowadzi do tego pull requesta, bez karty.
+
+| Odwołanie | Hosting | Czytane z |
+|---|---|---|
+| `AB#123`, oraz `#123` w repozytorium Azure | Azure DevOps | Work itemy, do 200 w jednym zapytaniu |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (które odpowiadają też za pull requesty), jedno zapytanie na każde, po jednym naraz |
+| `#123` / `!123` | GitLab | Issues / merge requesty, jedno zapytanie na rodzaj |
+| `#123` | Forgejo | Issues (także pull requesty), jedno zapytanie na każde, po dwa naraz |
+
+`#123` liczy się tylko jako osobne słowo: `org/repo#123` (inne repozytorium),
+`&#39;`, kolor taki jak `#123abc` i `#issuecomment-…` w linku zostają nietknięte.
+
+Nic nie jest pobierane, dopóki karta się nie otworzy. Wtedy odwołanie, na którym
+jesteś, i najbliższe mu na stronie, jeszcze nieznane, idą jednym wywołaniem, więc
+następna karta zwykle jest natychmiast. Odpowiedzi są trzymane w pamięci, dopóki
+aplikacja działa, nigdy na dysku, przez pięć minut; potem dalej są pokazywane i
+czytane ponownie przy następnym najechaniu. Są trzymane osobno dla każdego profilu:
+wywołanie idzie jako profil, z którym repozytorium jest [powiązane](profiles.md), a
+inny profil może widzieć inne elementy.
+
+Ile to kosztuje:
+
+- **GitHub i Forgejo** nie potrafią czytać kilku issues w jednym zapytaniu, więc
+  każda karta kosztuje jedno. Najechanie prosi o najwyżej **10** — to, na którym
+  jesteś, i sąsiednie — a na GitHubie jedno po drugim, jak GitHub wymaga od
+  aplikacji. Pierwsza odpowiedź mówiąca *zwolnij* (429 albo 403) zatrzymuje resztę, a
+  o te odwołania nie pyta się ponownie przez pięć minut.
+- **Azure DevOps** czyta do 200 work itemów w jednym zapytaniu, a GitLab jedno
+  zapytanie na rodzaj, więc tam cała strona idzie naraz.
+
+Czego to nie robi:
+
+- **Bitbucket** nie ma karty: aplikacja nie czyta tam issues, a link jak dotąd
+  otwiera przeglądarkę.
+- **Nie znaleziono albo brak dostępu.** Usunięte issue, work item w projekcie,
+  którego to konto nie widzi, albo token Azure bez zakresu *Work Items (Read)*
+  wyglądają tak samo: karta to mówi, a link nadal działa. Hosting, który ogranicza
+  ruch, jest nieosiągalny albo nie ma konta w tym profilu, dostaje własny komunikat.
+- **`AB#123` poza Azure DevOps** — w repozytorium GitHuba połączonym z Azure Boards —
+  nie jest linkiem, więc nie ma karty: aplikacja nie wie, do jakiej organizacji
+  należy.
+- **Stan scalony na starszych GitHub Enterprise Server**, które nie podają, kiedy
+  pull request scalono: wygląda jak zamknięty.
+- Wiersze commitów **w grafie** nie pokazują kart.
 
 ## Ograniczenia
 

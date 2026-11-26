@@ -52,6 +52,15 @@ als één familie leest:
   Omgeving groen; Integraties en Gegevens cyaan; Thema’s oranje; Beveiliging rood.
   Algemeen en Sneltoetsen blijven grijs.
 
+Een rij pictogramknoppen zonder label doet het omgekeerde — elke knop krijgt een
+eigen kleur, zodat je ze uit elkaar houdt. Op de
+[pull-requestspagina](pull-requests.md) zijn de knoppen in de kop: vernieuwen
+blauw, AI-review de accentkleur, lokaal bekijken turquoise, naar de bronbranch
+groen en naar de doelbranch oranje (in de browser openen blijft grijs), en bij je
+eigen reacties krijgt **Bewerken** de accentkleur en **Verwijderen** rood — daar en
+op de issuepagina. Blauw en turquoise zijn mengsels van de themakleuren, dus ook die
+volgen het thema.
+
 | Optie | Wat je ziet |
 |---|---|
 | **Monochroom** | Elk pictogram grijs, zoals voordat deze optie bestond |
@@ -63,10 +72,11 @@ overschildert, schildert de pictogrammen mee, eigen en door AI gegenereerde
 thema's inbegrepen.
 
 Grenzen: alleen de hoofdknoppen van de werkbalk, de koppen van de zijbalksecties,
-het menu Gereedschap en de instellingenpagina's krijgen kleur; andere menu's, de
-rijen binnen een sectie en de commitgrafiek niet. Een menuregel onder de muis
-houdt zijn gewone uiterlijk, pictogram inbegrepen. Kleur is nooit de enige
-aanwijzing — elk pictogram houdt zijn label.
+het menu Gereedschap, de instellingenpagina's en de knoppen van de pull-request- en
+issuepagina krijgen kleur; andere menu's, de rijen binnen een sectie en de
+commitgrafiek niet. Een menuregel onder de muis houdt zijn gewone uiterlijk,
+pictogram inbegrepen. Kleur is nooit de enige aanwijzing — elk pictogram houdt zijn
+label.
 
 ## Een instelling vinden
 

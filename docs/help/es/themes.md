@@ -54,6 +54,15 @@ que un grupo se lea como una familia:
   verde; Integraciones y Datos cian; Temas naranja; Seguridad rojo. General y
   Atajos se quedan en gris.
 
+Una fila de botones con icono y sin etiqueta hace lo contrario — cada botón recibe
+su propio color, para poder distinguirlos. En la [página de pull
+requests](pull-requests.md), los botones de la cabecera se ven así: actualizar
+azul, revisión con IA el color de acento, previsualizar en local turquesa, ir a la
+rama de origen verde e ir a la rama de destino naranja (abrir en el navegador sigue
+gris), y en tus propios comentarios **Editar** toma el acento y **Eliminar** el
+rojo — allí y en la página de la issue. El azul y el turquesa son mezclas de los
+colores del tema, así que también lo siguen.
+
 | Opción | Qué ves |
 |---|---|
 | **Monocromo** | Todos los iconos grises, como antes de que existiera esta opción |
@@ -64,11 +73,11 @@ Los colores salen del tema: un tema que repinta su verde o su acento repinta los
 iconos con él, incluidos los temas personalizados y los generados por IA.
 
 Límites: solo se colorean los botones principales de la barra de herramientas,
-las cabeceras de las secciones de la barra lateral, el menú Herramientas y las
-páginas de Ajustes; los demás menús, las filas dentro de una sección y el grafo
-de commits no. Una fila de menú bajo el ratón conserva su aspecto habitual,
-icono incluido. El color nunca es la única pista: cada icono conserva su
-etiqueta.
+las cabeceras de las secciones de la barra lateral, el menú Herramientas, las
+páginas de Ajustes y los botones de las páginas de pull request e issue; los demás
+menús, las filas dentro de una sección y el grafo de commits no. Una fila de menú
+bajo el ratón conserva su aspecto habitual, icono incluido. El color nunca es la
+única pista: cada icono conserva su etiqueta.
 
 ## Encontrar un ajuste
 

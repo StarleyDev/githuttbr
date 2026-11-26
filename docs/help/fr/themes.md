@@ -55,6 +55,15 @@ pour qu’un groupe se lise comme une famille :
   Profil et Environnement vert ; Intégrations et Données cyan ; Thèmes orange ;
   Sécurité rouge. Général et Raccourcis restent gris.
 
+Une rangée de boutons à icône sans libellé fait l’inverse — chaque bouton a sa
+propre couleur, pour qu’on puisse les distinguer. Sur la [page des pull
+requests](pull-requests.md), les boutons de l’en-tête sont : actualiser en bleu,
+relecture IA dans la couleur d’accent, aperçu en local en turquoise, aller à la
+branche source en vert et aller à la branche cible en orange (ouvrir dans le
+navigateur reste gris), et sur vos propres commentaires **Modifier** prend l’accent
+et **Supprimer** le rouge — là et sur la page de l’issue. Le bleu et le turquoise
+sont des mélanges des couleurs du thème, ils le suivent donc aussi.
+
 | Option | Ce que vous voyez |
 |---|---|
 | **Monochrome** | Toutes les icônes grises, comme avant que cette option existe |
@@ -65,11 +74,11 @@ Les couleurs viennent du thème : un thème qui repeint son vert ou son accent
 repeint les icônes avec, thèmes personnalisés et générés par l’IA compris.
 
 Limites : seuls les boutons principaux de la barre d’outils, les en-têtes des
-sections de la barre latérale, le menu Outils et les pages des Paramètres sont
-colorés ; les autres menus, les lignes à l’intérieur d’une section et le graphe
-des commits ne le sont pas. Une ligne de menu survolée garde son aspect habituel,
-icône comprise. La couleur n’est jamais le seul indice : chaque icône garde son
-libellé.
+sections de la barre latérale, le menu Outils, les pages des Paramètres et les
+boutons des pages de pull request et d’issue sont colorés ; les autres menus, les
+lignes à l’intérieur d’une section et le graphe des commits ne le sont pas. Une
+ligne de menu survolée garde son aspect habituel, icône comprise. La couleur n’est
+jamais le seul indice : chaque icône garde son libellé.
 
 ## Trouver un réglage
 

@@ -50,6 +50,14 @@ się jak jedna rodzina:
   i Środowisko zielone; Integracje i Dane cyjan; Motywy pomarańczowe;
   Bezpieczeństwo czerwone. Ogólne i Skróty zostają szare.
 
+Rząd przycisków z samą ikoną robi odwrotnie — każdy przycisk dostaje własny kolor,
+żeby dało się je odróżnić. Na [stronie pull requestów](pull-requests.md) przyciski
+nagłówka są: odśwież niebieski, recenzja AI w kolorze akcentu, podgląd lokalny
+turkusowy, przejście do gałęzi źródłowej zielony i do docelowej pomarańczowy
+(otwórz w przeglądarce zostaje szary), a przy twoich komentarzach **Edytuj** bierze
+akcent, a **Usuń** czerwień — tam i na stronie issue. Niebieski i turkusowy to
+mieszanki kolorów motywu, więc też za nim podążają.
+
 | Opcja | Co widać |
 |---|---|
 | **Monochromatyczne** | Każda ikona szara, jak przed pojawieniem się tej opcji |
@@ -60,10 +68,10 @@ Kolory pochodzą z motywu — motyw, który przemalowuje swój zielony albo akce
 przemalowuje razem z nim ikony, także motywy własne i generowane przez AI.
 
 Ograniczenia: kolor dostają tylko główne przyciski paska narzędzi, nagłówki
-sekcji paska bocznego, menu Narzędzia i strony Ustawień; inne menu, wiersze
-wewnątrz sekcji i graf commitów nie. Wiersz menu pod kursorem zachowuje zwykły
-wygląd, razem z ikoną. Kolor nigdy nie jest jedyną wskazówką — każda ikona
-zachowuje etykietę.
+sekcji paska bocznego, menu Narzędzia, strony Ustawień oraz przyciski stron pull
+requesta i issue; inne menu, wiersze wewnątrz sekcji i graf commitów nie. Wiersz
+menu pod kursorem zachowuje zwykły wygląd, razem z ikoną. Kolor nigdy nie jest
+jedyną wskazówką — każda ikona zachowuje etykietę.
 
 ## Znajdowanie ustawienia
 

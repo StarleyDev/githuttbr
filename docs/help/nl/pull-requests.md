@@ -3,8 +3,8 @@ title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, en reacties op een regel van zijn diff.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Pull-requestspagina
@@ -138,7 +138,7 @@ voor je:
 
 De kop heeft dezelfde twee stappen als knoppen: **Naar de bronbranch** en **Naar
 de doelbranch**. Ze werken ook op de branch waar je al op staat — dan brengen ze
-je gewoon naar de repository.
+je gewoon naar de repository. Met [pictogramkleuren](themes.md#pictogramkleuren) aan heeft elke knop in de kop zijn eigen kleur: vernieuwen blauw, AI-review violet, voorbeeld turquoise, bronbranch groen, doelbranch oranje (in de browser openen blijft grijs).
 
 Er wordt niets opgezocht tot je klikt: een pull request openen leest of fetcht
 geen enkele branch.
@@ -246,7 +246,7 @@ allemaal; vinkjes blijven alleen op deze computer en gaan nooit naar de host. Ee
 vinkje onthoudt de versie van de diff van het bestand: als een push een bekeken
 bestand wijzigt, geldt het weer als niet bekeken, met een gele stip (*Gewijzigd sinds
 je het bekeek*). Een bestand zonder diff (binair, te groot) wordt alleen op status en
-regelaantallen vergeleken. Klik op een map, of druk erop op ←/→, om hem in te klappen;
+regelaantallen vergeleken. Een bestand met reviewgesprekken toont ernaast een aantal in een tekstballon (mappen tellen het hunne op), zodat de bestanden met reacties opvallen in een lange lijst; verouderde gesprekken tellen mee. Klik op een map, of druk erop op ←/→, om hem in te klappen;
 ↑/↓ (of j/k) lopen door de bestanden op het scherm en openen elke diff. Ingeklapte
 mappen worden per pull request onthouden tot de app sluit, en een bestand dat erin
 wordt geopend, klapt de weg ernaartoe uit. De boom is op naam gesorteerd, niet in de
@@ -407,6 +407,73 @@ Wat het niet doet:
   om hun reacties te bewerken, hoewel de app de aanroep kan doen.
 - **De beschrijving** van de pull request en de samenvattingen van zijn reviews zijn
   geen reacties, en worden hier niet bewerkt.
+
+## Waar een `#123` of `AB#123` over gaat
+
+Een commit die *fixes AB#4821* zegt, of een reactie die *zie #312* zegt, geeft je
+een nummer, niet waar het over ging. Dat uitzoeken betekende het openen. Nu opent
+**wijzen naar een verwijzing** — of er met Tab heen gaan — een kleine kaart met wat
+de host erover zegt:
+
+- een pictogram voor de soort, en de verwijzing zoals ze geschreven is;
+- de **titel**;
+- de **status** (open, gesloten, gemerged — op Azure DevOps de eigen status van het
+  work item, zoals *Active* of *Resolved*);
+- op Azure DevOps het **type work item** (Bug, User Story, Task…).
+
+![De kaart bij een verwijzing naar een work item in een reactie: type, titel en status](../../screenshots/reference-card.webp)
+
+De kaarten staan op de pull-requestspagina (beschrijving, reacties, reviewthreads
+en het volledige bericht van een commit in het tabblad **Commits**), op de
+issuepagina en in het onderwerp in het commitdetailpaneel. In het tabblad
+**Commits** op Azure DevOps toont elk work item in het onderwerp van een commit
+(`AB#123`, of `#123`, daar hetzelfde item) ook zijn titel ernaast, in grijs. Op
+Azure DevOps linkt `!123` naar die pull request, zonder kaart.
+
+| Verwijzing | Host | Gelezen uit |
+|---|---|---|
+| `AB#123`, en `#123` in een Azure-repository | Azure DevOps | Work items, tot 200 in één verzoek |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (die ook voor pull requests antwoorden), één verzoek per stuk, één tegelijk |
+| `#123` / `!123` | GitLab | Issues / merge requests, één verzoek per soort |
+| `#123` | Forgejo | Issues (ook pull requests), één verzoek per stuk, twee tegelijk |
+
+Een `#123` telt alleen als eigen woord: `org/repo#123` (een andere repository),
+`&#39;`, een kleur als `#123abc` en de `#issuecomment-…` van een link blijven
+ongemoeid.
+
+Er wordt niets gevraagd tot een kaart opengaat. Dan gaan de verwijzing waar je op
+staat en de nog onbekende die er op de pagina het dichtst bij staan in één aanroep,
+zodat de volgende kaart meestal meteen klaar is. Antwoorden blijven in het geheugen
+zolang de app draait, nooit op schijf, vijf minuten lang; daarna worden ze nog
+getoond en bij de volgende hover opnieuw gelezen. Ze worden per profiel bewaard: de
+aanroep gebeurt als het profiel waaraan de repository is [gekoppeld](profiles.md),
+en een ander profiel ziet misschien andere items.
+
+Wat het kost:
+
+- **GitHub en Forgejo** kunnen niet meerdere issues in één verzoek lezen, dus elke
+  kaart kost er één. Een hover vraagt er hoogstens **10** op — die waar je op staat
+  en de buren — en op GitHub na elkaar, zoals GitHub van apps vraagt. Het eerste
+  antwoord dat *langzamer* zegt (een 429 of een 403) stopt de rest, en die
+  verwijzingen worden vijf minuten niet opnieuw opgevraagd.
+- **Azure DevOps** leest tot 200 work items in één verzoek, en GitLab één verzoek
+  per soort, dus daar gaat de hele pagina in één keer.
+
+Wat het niet doet:
+
+- **Bitbucket** heeft geen kaart: de app leest daar geen issues, en de link opent
+  zoals voorheen de browser.
+- **Niet gevonden, of geen toegang.** Een verwijderd issue, een work item in een
+  project dat dit account niet kan zien, of een Azure-token zonder de scope *Work
+  Items (Read)* zien er hetzelfde uit: de kaart zegt het, en de link werkt nog
+  steeds. Een host die afremt, onbereikbaar is of geen account in dit profiel heeft,
+  krijgt een eigen melding.
+- **`AB#123` buiten Azure DevOps** — in een GitHub-repository die met Azure Boards is
+  verbonden — wordt niet gelinkt en heeft dus geen kaart: de app weet niet bij welke
+  organisatie het hoort.
+- **De gemergede status op oudere GitHub Enterprise Servers** die niet meesturen
+  wanneer een pull request gemerged is: die leest als gesloten.
+- De commitrijen **van de graaf** tonen geen kaarten.
 
 ## Beperkingen
 

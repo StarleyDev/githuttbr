@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronizar y muchos repos
 order: 57
 summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits y comentarios en una línea de su diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Página de pull requests
@@ -135,7 +135,7 @@ parte lenta. En la página de una pull request, el campo **Ramas** lo hace por t
 
 La cabecera tiene los mismos dos pasos como botones: **Ir a la rama de origen** e
 **Ir a la rama de destino**. Funcionan también con la rama en la que ya estás —
-simplemente te llevan al repositorio.
+simplemente te llevan al repositorio. Con los [colores de los iconos](themes.md#colores-de-los-iconos) activados, cada botón de la cabecera tiene el suyo: actualizar azul, revisión con IA violeta, vista previa turquesa, rama de origen verde, rama de destino naranja (abrir en el navegador sigue gris).
 
 No se consulta nada hasta que haces clic: abrir una pull request no lee ni trae
 ninguna rama.
@@ -240,7 +240,7 @@ de dentro, o los desmarca todos; las marcas se guardan solo en este equipo, nunc
 envían al host. Una marca recuerda la versión del diff del archivo: cuando un push
 cambia un archivo visto, vuelve a aparecer como no visto, con un punto amarillo
 (*Cambió desde que lo viste*). Un archivo sin diff (binario, demasiado grande) se
-compara solo por su estado y sus recuentos de líneas. Haz clic en una carpeta, o
+compara solo por su estado y sus recuentos de líneas. Un archivo con conversaciones de revisión muestra a su lado un número en un bocadillo (las carpetas suman los suyos), para que los que tienen comentarios destaquen en una lista larga; las conversaciones obsoletas también cuentan. Haz clic en una carpeta, o
 pulsa ←/→ sobre ella, para plegarla; ↑/↓ (o j/k) recorren los archivos en pantalla y
 abren cada diff. Las carpetas plegadas se recuerdan por pull request hasta que se
 cierra la app, y un archivo abierto dentro de una despliega el camino hasta él. El
@@ -402,6 +402,72 @@ Lo que no hace:
   página donde editar sus comentarios, aunque la app pueda hacer la llamada.
 - **La descripción** de la pull request y los resúmenes de sus revisiones no son
   comentarios, y no se editan aquí.
+
+## De qué trata un `#123` o `AB#123`
+
+Un commit que dice *fixes AB#4821* o un comentario que dice *ver #312* te da un
+número, no de qué se trataba. Averiguarlo significaba abrirlo. Ahora, **señalar una
+referencia** — o llegar a ella con Tab — abre una pequeña tarjeta con lo que el host
+dice de ella:
+
+- un icono de su tipo, y la referencia tal como está escrita;
+- su **título**;
+- su **estado** (abierta, cerrada, fusionada — en Azure DevOps, el estado propio del
+  work item, como *Active* o *Resolved*);
+- en Azure DevOps, el **tipo de work item** (Bug, User Story, Task…).
+
+![La tarjeta sobre una referencia a un work item en un comentario: su tipo, título y estado](../../screenshots/reference-card.webp)
+
+Las tarjetas están en la página de la pull request (descripción, comentarios, hilos
+de revisión y el mensaje completo de un commit en la pestaña **Commits**), en la
+página de la issue y en el asunto del panel de detalles del commit. En la pestaña
+**Commits** en Azure DevOps, cada work item del asunto de un commit (`AB#123`, o
+`#123`, el mismo elemento allí) muestra además su título al lado, en gris. En Azure
+DevOps, `!123` enlaza a esa pull request, sin tarjeta.
+
+| Referencia | Host | Se lee de |
+|---|---|---|
+| `AB#123`, y `#123` en un repositorio de Azure | Azure DevOps | Work items, hasta 200 en una petición |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (que también responde por las pull requests), una petición por cada una, de una en una |
+| `#123` / `!123` | GitLab | Issues / merge requests, una petición por tipo |
+| `#123` | Forgejo | Issues (también pull requests), una petición por cada una, de dos en dos |
+
+Un `#123` solo cuenta como palabra propia: `org/repo#123` (otro repositorio),
+`&#39;`, un color como `#123abc` y el `#issuecomment-…` de un enlace se dejan como
+están.
+
+No se pregunta nada hasta que se abre una tarjeta. Entonces la referencia en la que
+estás y las más cercanas de la página que aún no se conocen van en una sola llamada,
+así que la siguiente tarjeta suele ser instantánea. Las respuestas se guardan en
+memoria mientras la app está abierta, nunca en disco, durante cinco minutos; después
+se siguen mostrando y se vuelven a leer al pasar el ratón de nuevo. Se guardan por
+perfil: la llamada se hace como el perfil al que el repositorio está
+[vinculado](profiles.md), y otro perfil puede ver otros elementos.
+
+Lo que cuesta:
+
+- **GitHub y Forgejo** no pueden leer varias issues en una petición, así que cada
+  tarjeta cuesta una. Pasar el ratón pide como mucho **10** — la que señalas y sus
+  vecinas — y en GitHub una tras otra, como GitHub pide a las apps. La primera
+  respuesta que dice *más despacio* (un 429 o un 403) detiene el resto, y esas
+  referencias no se vuelven a pedir durante cinco minutos.
+- **Azure DevOps** lee hasta 200 work items en una petición, y GitLab una petición
+  por tipo, así que ahí va toda la página de una vez.
+
+Lo que no hace:
+
+- **Bitbucket** no tiene tarjeta: la app no lee issues allí, y el enlace abre el
+  navegador como antes.
+- **No encontrada, o sin acceso.** Una issue borrada, un work item de un proyecto que
+  esta cuenta no puede ver, o un token de Azure sin el scope *Work Items (Read)* se
+  ven igual: la tarjeta lo dice, y el enlace sigue funcionando. Un host que limita
+  peticiones, no responde o no tiene cuenta en este perfil tiene su propio mensaje.
+- **`AB#123` fuera de Azure DevOps** — en un repositorio de GitHub conectado a Azure
+  Boards — no se enlaza, así que no tiene tarjeta: la app no sabe a qué organización
+  pertenece.
+- **El estado fusionada en GitHub Enterprise Servers antiguos** que no envían cuándo
+  se fusionó una pull request: se ve como cerrada.
+- Las filas de commits **del grafo** no muestran tarjetas.
 
 ## Límites
 

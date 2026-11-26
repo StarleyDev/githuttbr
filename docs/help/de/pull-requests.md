@@ -3,8 +3,8 @@ title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
 summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits und Kommentare zu einer Zeile seines Diffs.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Pull-Request-Seite
@@ -141,7 +141,7 @@ erledigt das Feld **Branches** das für dich:
 
 Der Kopf hat dieselben zwei Schritte als Buttons: **Zum Quell-Branch wechseln**
 und **Zum Ziel-Branch wechseln**. Sie funktionieren auch auf dem Branch, auf dem
-du schon bist — sie bringen dich dann einfach zum Repository.
+du schon bist — sie bringen dich dann einfach zum Repository. Mit eingeschalteten [Symbolfarben](themes.md#symbolfarben) hat jeder Button im Kopf seine eigene: Aktualisieren blau, KI-Review violett, Vorschau türkis, Quell-Branch grün, Ziel-Branch orange (Im Browser öffnen bleibt grau).
 
 Nichts wird nachgeschlagen, bevor du klickst: einen Pull Request zu öffnen liest
 oder fetcht keinen Branch.
@@ -249,7 +249,7 @@ oder entfernt alle Häkchen; die Häkchen bleiben nur auf diesem Computer und ge
 nie an den Host. Ein Häkchen merkt sich die Fassung des Diffs der Datei: ändert ein
 Push eine gesehene Datei, gilt sie wieder als nicht gesehen, mit einem gelben Punkt
 (*Geändert, seit du es gesehen hast*). Eine Datei ohne Diff (binär, zu groß) wird nur
-nach Status und Zeilenzahlen verglichen. Klick auf einen Ordner oder drück ←/→ darauf,
+nach Status und Zeilenzahlen verglichen. Eine Datei mit Review-Unterhaltungen zeigt daneben eine Zahl in einer Sprechblase (Ordner zählen ihre zusammen), sodass die kommentierten in einer langen Liste hervorstechen; veraltete Unterhaltungen zählen mit. Klick auf einen Ordner oder drück ←/→ darauf,
 um ihn einzuklappen; ↑/↓ (oder j/k) gehen durch die Dateien auf dem Bildschirm und
 öffnen jeden Diff. Eingeklappte Ordner werden pro Pull Request gemerkt, bis die App
 beendet wird, und eine Datei, die darin geöffnet wird, klappt den Weg zu ihr auf. Der
@@ -416,6 +416,73 @@ Was es nicht tut:
   machen kann.
 - **Die Beschreibung** des Pull Requests und die Zusammenfassungen seiner Reviews
   sind keine Kommentare und werden hier nicht bearbeitet.
+
+## Worum es bei einem `#123` oder `AB#123` geht
+
+Ein Commit, der *fixes AB#4821* sagt, oder ein Kommentar mit *siehe #312* nennt
+dir eine Nummer, nicht, worum es ging. Um das herauszufinden, musstest du es
+öffnen. Jetzt öffnet das **Zeigen auf einen Verweis** — oder das Hinspringen mit
+Tab — eine kleine Karte mit dem, was der Host darüber sagt:
+
+- ein Symbol für seine Art und der Verweis, wie er geschrieben steht;
+- sein **Titel**;
+- sein **Status** (offen, geschlossen, gemergt — auf Azure DevOps der eigene Status
+  des Work Items, etwa *Active* oder *Resolved*);
+- auf Azure DevOps der **Work-Item-Typ** (Bug, User Story, Task…).
+
+![Die Karte an einem Work-Item-Verweis in einem Kommentar: Typ, Titel und Status](../../screenshots/reference-card.webp)
+
+Die Karten gibt es auf der Pull-Request-Seite (Beschreibung, Kommentare,
+Review-Threads und die vollständige Nachricht eines Commits im Tab **Commits**), auf
+der Issue-Seite und im Betreff im Commit-Detailbereich. Im Tab **Commits** auf Azure
+DevOps zeigt jedes Work Item im Betreff eines Commits (`AB#123`, oder `#123`, dort
+dasselbe Item) außerdem seinen Titel daneben, in Grau. Auf Azure DevOps verlinkt
+`!123` auf diesen Pull Request, ohne Karte.
+
+| Verweis | Host | Gelesen aus |
+|---|---|---|
+| `AB#123`, und `#123` in einem Azure-Repository | Azure DevOps | Work Items, bis zu 200 in einer Anfrage |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (die auch für Pull Requests antworten), eine Anfrage pro Stück, eine nach der anderen |
+| `#123` / `!123` | GitLab | Issues / Merge Requests, eine Anfrage pro Art |
+| `#123` | Forgejo | Issues (auch Pull Requests), eine Anfrage pro Stück, zwei gleichzeitig |
+
+Ein `#123` zählt nur als eigenes Wort: `org/repo#123` (ein anderes Repository),
+`&#39;`, eine Farbe wie `#123abc` und das `#issuecomment-…` eines Links bleiben
+unberührt.
+
+Nichts wird abgefragt, bevor sich eine Karte öffnet. Dann gehen der Verweis, auf dem
+du bist, und die noch unbekannten ihm nächstgelegenen auf der Seite in einem Aufruf
+raus, sodass die nächste Karte meist sofort da ist. Antworten werden im Speicher
+gehalten, solange die App läuft, nie auf der Festplatte, fünf Minuten lang; danach
+werden sie weiter angezeigt und beim nächsten Hover neu gelesen. Sie werden pro
+Profil gehalten: Der Aufruf geschieht als das Profil, an das das Repository
+[gebunden](profiles.md) ist, und ein anderes Profil sieht womöglich andere Items.
+
+Was es kostet:
+
+- **GitHub und Forgejo** können nicht mehrere Issues in einer Anfrage lesen, also
+  kostet jede Karte eine. Ein Hover fragt höchstens **10** an — die, auf der du bist,
+  und ihre Nachbarn — und auf GitHub nacheinander, wie GitHub es von Apps verlangt.
+  Die erste Antwort, die *langsamer* sagt (ein 429 oder ein 403), stoppt den Rest, und
+  diese Verweise werden fünf Minuten lang nicht erneut abgefragt.
+- **Azure DevOps** liest bis zu 200 Work Items in einer Anfrage und GitLab eine
+  Anfrage pro Art, also geht dort die ganze Seite auf einmal.
+
+Was es nicht tut:
+
+- **Bitbucket** hat keine Karte: Die App liest dort keine Issues, und der Link öffnet
+  wie bisher den Browser.
+- **Nicht gefunden oder kein Zugriff.** Ein gelöschtes Issue, ein Work Item in einem
+  Projekt, das dieses Konto nicht sehen kann, oder ein Azure-Token ohne den Scope
+  *Work Items (Read)* sehen gleich aus: Die Karte sagt es, und der Link funktioniert
+  trotzdem. Ein Host, der drosselt, nicht erreichbar ist oder in diesem Profil kein
+  Konto hat, bekommt eine eigene Meldung.
+- **`AB#123` außerhalb von Azure DevOps** — in einem GitHub-Repository, das mit Azure
+  Boards verbunden ist — wird nicht verlinkt und hat daher keine Karte: Die App weiß
+  nicht, zu welcher Organisation es gehört.
+- **Gemergter Status auf älteren GitHub Enterprise Servern**, die nicht mitschicken,
+  wann ein Pull Request gemergt wurde: Er erscheint als geschlossen.
+- Die Commit-Zeilen **des Graphen** zeigen keine Karten.
 
 ## Grenzen
 

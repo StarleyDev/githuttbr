@@ -54,7 +54,9 @@ Grupta henüz olmayan bir depoyu eklemek için grup adının yanındaki **+** d�
 Bazı sayfalar başlı başına bir şey değildir: bir deponun [wiki](repo-wiki.md)
 sayfası, [içgörüleri](insights.md), bir başlatma oturumunun duyurduğu
 [geliştirme araçları](devtools.md). Sekme işgal etmezler — deponun kendisinde
-küçük simgeler olarak belirirler.
+küçük çipler olarak belirirler: bir simge ve hangi sayfa olduğunu söyleyen bir
+kelime (*CI*, *PR’lar*, *Wiki*, bir pull request için *#482*, bir sürümün etiketi).
+Tam ad ipucundadır ve uzun bir etiket ya da başlık üç noktayla kısaltılır.
 
 - **Bir simgeye tıkla**, o sayfa görünsün. **Tekrar tıkla — ya da deponun adına
   tıkla** — depoya dönersin. Bir sayfa açıkken ad, işaretçi imleci ve üstüne

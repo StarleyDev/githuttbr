@@ -53,6 +53,15 @@ sich eine Gruppe als eine Familie liest:
   Profil und Umgebung Grün; Integrationen und Daten Cyan; Themes Orange;
   Sicherheit Rot. Allgemein und Tastenkürzel bleiben grau.
 
+Eine Reihe von Symbolknöpfen ohne Beschriftung macht es umgekehrt — jeder Knopf
+bekommt seine eigene Farbe, damit man sie auseinanderhalten kann. Auf der
+[Pull-Request-Seite](pull-requests.md) sind die Knöpfe im Kopf so gefärbt:
+Aktualisieren blau, KI-Review in der Akzentfarbe, lokale Vorschau türkis, zum
+Quell-Branch grün und zum Ziel-Branch orange (Im Browser öffnen bleibt grau), und
+bei deinen eigenen Kommentaren nimmt **Bearbeiten** die Akzentfarbe an und
+**Löschen** Rot — dort und auf der Issue-Seite. Blau und Türkis sind Mischungen aus
+den Farben des Themes, folgen ihm also ebenfalls.
+
 | Option | Was du siehst |
 |---|---|
 | **Einfarbig** | Jedes Symbol grau, wie vor dieser Option |
@@ -63,11 +72,11 @@ Die Farben kommen aus dem Theme — ein Theme, das sein Grün oder seinen Akzent
 umfärbt, färbt die Symbole mit, eigene und KI-generierte Themes eingeschlossen.
 
 Grenzen: Gefärbt werden nur die Hauptknöpfe der Werkzeugleiste, die
-Abschnittsköpfe der Seitenleiste, das Werkzeuge-Menü und die Einstellungsseiten;
-andere Menüs, die Zeilen innerhalb eines Abschnitts und der Commit-Graph nicht.
-Eine Menüzeile unter dem Mauszeiger behält ihr gewohntes Aussehen, Symbol
-eingeschlossen. Farbe ist nie der einzige Hinweis — jedes Symbol behält seine
-Beschriftung.
+Abschnittsköpfe der Seitenleiste, das Werkzeuge-Menü, die Einstellungsseiten und
+die Knöpfe der Pull-Request- und der Issue-Seite; andere Menüs, die Zeilen
+innerhalb eines Abschnitts und der Commit-Graph nicht. Eine Menüzeile unter dem
+Mauszeiger behält ihr gewohntes Aussehen, Symbol eingeschlossen. Farbe ist nie der
+einzige Hinweis — jedes Symbol behält seine Beschriftung.
 
 ## Eine Einstellung finden
 

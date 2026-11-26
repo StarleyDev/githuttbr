@@ -3,8 +3,8 @@ title: Page des pull requests
 category: Synchronisation et multi-dépôts
 order: 57
 summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, et des commentaires sur une ligne de son diff.
-keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo référence titre carte au survol work item AB# numéro d’issue infobulle reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Page des pull requests
@@ -143,7 +143,7 @@ des branches est la partie lente. Sur la page d’une pull request, le champ
 
 L’en-tête propose les deux mêmes gestes en boutons : **Aller à la branche
 source** et **Aller à la branche cible**. Ils fonctionnent aussi sur la branche
-où vous êtes déjà — ils vous emmènent simplement au dépôt.
+où vous êtes déjà — ils vous emmènent simplement au dépôt. Avec les [couleurs des icônes](themes.md#couleurs-des-icônes) activées, chaque bouton de l’en-tête a la sienne : actualiser en bleu, relecture IA en violet, aperçu en turquoise, branche source en vert, branche cible en orange (ouvrir dans le navigateur reste gris).
 
 Rien n’est consulté avant votre clic : ouvrir une pull request ne lit ni ne
 récupère aucune branche.
@@ -252,7 +252,7 @@ restent sur cet ordinateur seulement, jamais envoyées à l’hébergeur. Une co
 retient la version du diff du fichier : quand un push modifie un fichier vu, il
 redevient non vu, avec un point jaune (*Modifié depuis que vous l’avez vu*). Un
 fichier sans diff (binaire, trop gros) n’est comparé que par son état et ses nombres
-de lignes. Cliquez sur un dossier, ou appuyez sur ←/→ dessus, pour le replier ; ↑/↓
+de lignes. Un fichier qui a des conversations de relecture affiche à côté un nombre dans une bulle (les dossiers additionnent les leurs), pour que ceux qui portent des commentaires ressortent dans une longue liste ; les conversations obsolètes comptent aussi. Cliquez sur un dossier, ou appuyez sur ←/→ dessus, pour le replier ; ↑/↓
 (ou j/k) parcourent les fichiers à l’écran et ouvrent chaque diff. Les dossiers
 repliés sont retenus par pull request jusqu’à la fermeture de l’application, et un
 fichier ouvert à l’intérieur déplie le chemin jusqu’à lui. L’arbre est trié par nom,
@@ -420,6 +420,72 @@ Ce que cela ne fait pas :
   l’appel.
 - **La description** de la pull request et les résumés de ses relectures ne sont pas
   des commentaires, et ne se modifient pas ici.
+
+## De quoi parle un `#123` ou un `AB#123`
+
+Un commit qui dit *fixes AB#4821* ou un commentaire qui dit *voir #312* vous donne
+un numéro, pas ce dont il s’agissait. Pour le savoir, il fallait l’ouvrir.
+Désormais, **pointer une référence** — ou l’atteindre avec Tab — ouvre une petite
+carte avec ce que l’hébergeur en dit :
+
+- une icône pour sa nature, et la référence telle qu’elle est écrite ;
+- son **titre** ;
+- son **état** (ouverte, fermée, fusionnée — sur Azure DevOps, l’état propre du work
+  item, comme *Active* ou *Resolved*) ;
+- sur Azure DevOps, le **type de work item** (Bug, User Story, Task…).
+
+![La carte d’une référence à un work item dans un commentaire : son type, son titre et son état](../../screenshots/reference-card.webp)
+
+Les cartes se trouvent sur la page de la pull request (description, commentaires,
+fils de relecture, et le message complet d’un commit dans l’onglet **Commits**), sur
+la page de l’issue, et dans l’objet du panneau de détails du commit. Dans l’onglet
+**Commits** sur Azure DevOps, chaque work item de l’objet d’un commit (`AB#123`, ou
+`#123`, le même élément là-bas) affiche aussi son titre à côté, en gris. Sur Azure
+DevOps, `!123` renvoie vers cette pull request, sans carte.
+
+| Référence | Hébergeur | Lue depuis |
+|---|---|---|
+| `AB#123`, et `#123` dans un dépôt Azure | Azure DevOps | Les work items, jusqu’à 200 en une requête |
+| `#123` | GitHub, GitHub Enterprise Server | Les issues (qui répondent aussi pour les pull requests), une requête chacune, une à la fois |
+| `#123` / `!123` | GitLab | Issues / merge requests, une requête par nature |
+| `#123` | Forgejo | Les issues (pull requests comprises), une requête chacune, deux à la fois |
+
+Un `#123` ne compte que comme mot à part entière : `org/repo#123` (un autre dépôt),
+`&#39;`, une couleur comme `#123abc` et le `#issuecomment-…` d’un lien sont laissés
+tels quels.
+
+Rien n’est demandé avant qu’une carte s’ouvre. Alors la référence où vous êtes et
+les plus proches sur la page qui ne sont pas encore connues partent en un seul
+appel, si bien que la carte suivante est en général immédiate. Les réponses sont
+gardées en mémoire tant que l’application tourne, jamais sur disque, pendant cinq
+minutes ; ensuite elles restent affichées et sont relues au prochain survol. Elles
+sont gardées par profil : l’appel se fait sous le profil auquel le dépôt est
+[lié](profiles.md), et un autre profil peut voir d’autres éléments.
+
+Ce que cela coûte :
+
+- **GitHub et Forgejo** ne savent pas lire plusieurs issues en une requête, donc
+  chaque carte en coûte une. Un survol en demande au plus **10** — celle où vous êtes
+  et ses voisines — et sur GitHub l’une après l’autre, comme GitHub le demande aux
+  applications. La première réponse qui dit *ralentissez* (un 429, ou un 403) arrête
+  le reste, et ces références ne sont pas redemandées pendant cinq minutes.
+- **Azure DevOps** lit jusqu’à 200 work items en une requête, et GitLab une requête
+  par nature, donc là toute la page part d’un coup.
+
+Ce que cela ne fait pas :
+
+- **Bitbucket** n’a pas de carte : l’application n’y lit aucune issue, et le lien
+  ouvre le navigateur comme avant.
+- **Introuvable, ou pas d’accès.** Une issue supprimée, un work item d’un projet que
+  ce compte ne peut pas voir, ou un jeton Azure sans le scope *Work Items (Read)* se
+  lisent pareil : la carte le dit, et le lien marche toujours. Un hébergeur qui
+  limite le débit, injoignable, ou sans compte dans ce profil a son propre message.
+- **`AB#123` hors d’Azure DevOps** — dans un dépôt GitHub relié à Azure Boards —
+  n’est pas un lien, il n’a donc pas de carte : l’application ne sait pas à quelle
+  organisation il appartient.
+- **L’état fusionné sur les anciens GitHub Enterprise Server** qui n’envoient pas la
+  date de fusion d’une pull request : elle apparaît fermée.
+- Les lignes de commit **du graphe** n’affichent pas de cartes.
 
 ## Limites
 
