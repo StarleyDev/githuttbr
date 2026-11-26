@@ -2,9 +2,9 @@
 title: Page des pull requests
 category: Synchronisation et multi-dépôts
 order: 57
-summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, et des commentaires sur une ligne de son diff.
-keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo référence titre carte au survol work item AB# numéro d’issue infobulle reference title hover card issue number fork commits de la pr refs/pull head commentaires rendus images pixel espion image bloquée cliquer pour charger tâche tableau bloc rendered comments images blocked image
-source: a4156cb9fd737c311bc0441169b7a3d933dad274
+summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, ses mises à jour (chaque push, ce qu’il a changé, ce qui est nouveau depuis votre dernière visite), et des commentaires sur une ligne de son diff.
+keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo référence titre carte au survol work item AB# numéro d’issue infobulle reference title hover card issue number fork commits de la pr refs/pull head commentaires rendus images pixel espion image bloquée cliquer pour charger tâche tableau bloc rendered comments images blocked image mises à jour itérations pushs force push rebase historique réécrit versions du diff ce qui a changé depuis la dernière visite badge nouveau marquer comme vu comparer mise à jour updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Page des pull requests
@@ -172,8 +172,7 @@ Ce que cela ne fait pas :
 
 La barre latérale disait combien de commits compte une pull request, jamais
 lesquels. Relire un commit à la fois — la façon dont la plupart des pull requests
-sont censées être lues — vous renvoyait au navigateur. L’onglet **Commits**, entre
-Conversation et Fichiers, les liste :
+sont censées être lues — vous renvoyait au navigateur. L’onglet **Commits**, entre Conversation et Mises à jour, les liste :
 
 - **Les plus anciens d’abord**, dans l’ordre où ils s’appliquent, regroupés sous le
   jour où ils ont été écrits. Un commit rebasé hors de l’ordre des dates commence
@@ -258,6 +257,146 @@ Ce que cela ne fait pas :
 - Les pull requests de **bitbucket.org** s’ouvrent dans le navigateur —
   l’application n’a pas encore de page pour elles —, donc cet onglet n’y est pas
   atteint, même si l’application sait lire la liste.
+
+## Mises à jour
+
+Une pull request relue le lundi a bougé le jeudi. L’onglet Commits montre où elle en
+est maintenant, pas ce qui s’est passé depuis : quels commits sont arrivés avec quel
+push, si quelqu’un a fait un force push et réécrit ce que vous aviez déjà lu, et à
+quoi ressemble le code *par rapport à la version que vous avez vue*. L’onglet
+**Mises à jour**, entre Commits et Fichiers, y répond — comme le fait l’onglet
+Updates d’Azure DevOps lui-même.
+
+Il liste chaque push dans la pull request, **le plus récent d’abord** :
+
+- **Mise à jour 1 — ouverture** est le push avec lequel la pull request a été
+  ouverte ; chaque push suivant prend le numéro suivant.
+- Chacune montre **quand**, **qui a poussé** (quand l’hébergeur le dit), et les
+  **commits ajoutés** — SHA court, objet, auteur. Quand l’hébergeur signale des
+  commits qu’un push a retirés de la branche, ils sont listés sous **Commits
+  retirés**, barrés.
+- Un force push ou un rebase est marqué **historique réécrit** : des commits que
+  vous aviez lus ont pu disparaître, et ceux listés peuvent être de nouvelles copies
+  d’un travail ancien. Sur Azure DevOps, un push qui a déplacé la pull request vers
+  une autre branche cible est marqué **cible changée**.
+
+![L’onglet Mises à jour : les pushs du plus récent au plus ancien, un force push marqué « historique réécrit », un autre marqué Nouveau](../../screenshots/pr-updates.webp)
+
+### Ce qui a changé dans une mise à jour
+
+**Voir les changements de cette mise à jour** ouvre l’onglet Fichiers sur ce seul
+push : le diff entre la tête de la mise à jour précédente et celle-ci — ou, pour la
+Mise à jour 1, depuis la branche cible contre laquelle elle a été ouverte, quand
+l’hébergeur nomme ce point (Azure DevOps, GitLab). Le même arbre de fichiers et la
+même visionneuse, avec un bandeau — *Changements de Mise à jour 3 (par rapport à
+Mise à jour 2)* — et **Afficher tous les changements** pour revenir à la pull request
+entière.
+
+![L’onglet Fichiers montrant les changements d’une mise à jour, avec le bandeau au-dessus de l’arbre des fichiers](../../screenshots/pr-update-diff.webp)
+
+Le diff est toujours fait **dans ce clone** quand c’est possible : `git diff` entre
+les deux têtes, exact et sans demander à l’hébergeur. Quand l’une des têtes manque,
+l’application récupère d’abord les deux **par leur id de commit** depuis le distant
+de la pull request — aucune branche, aucun tag, aucune référence n’est écrite ; une
+tête remplacée par un force push n’est plus sur aucune branche, mais la plupart des
+hébergeurs la servent encore par son id — et compare ici. Ce n’est que si ce fetch
+échoue que l’hébergeur est sollicité :
+
+| Hébergeur | La comparaison de l’hébergeur |
+|---|---|
+| Azure DevOps | Les changements de l’itération avec `$compareTo` — entre les deux pushs |
+| GitLab | La comparaison du dépôt, directement d’une tête à l’autre |
+| Bitbucket Data Center | La comparaison du dépôt — **depuis la base commune** des deux têtes |
+| GitHub | L’API de comparaison (`base...head`) — **depuis la base commune** des deux têtes |
+| Forgejo / Gitea | Aucune : leur API n’a pas de diff entre deux commits |
+
+Depuis la base commune, le diff d’une réécriture n’est pas ce que le push a fait :
+ce qu’il a retiré n’apparaît pas, et des changements reçus depuis par la branche
+cible peuvent passer pour ceux de la pull request. Le bandeau le dit — *Comparé
+depuis la base commune : ce que ce push a retiré n’apparaît pas.* — quand une mise à
+jour à l’historique réécrit a été comparée ainsi. Quand rien ne marche, le bandeau le
+dit et propose de récupérer la branche (ou, depuis un fork, la tête de la pull
+request) pour comparer ici.
+
+Les commentaires de ligne appartiennent au diff de la pull request entière, donc il
+n’y a pas de **+** sur une ligne pendant qu’une seule mise à jour est affichée ; le
+bandeau le dit. Cocher un fichier comme vu marche comme d’habitude — cela marque le
+fichier dans la pull request.
+
+### Nouveau depuis votre dernière visite
+
+Les mises à jour poussées depuis votre dernière ouverture de l’onglet portent un
+badge **Nouveau**, et l’onglet lui-même dit combien : *Mises à jour 5 · 2
+nouvelle(s)*. Ouvrir l’onglet les marque comme vues (les badges restent tant que vous
+y êtes, pour que vous voyiez lesquelles étaient nouvelles) ; quand **Actualiser** en
+apporte d’autres pendant que l’onglet est ouvert, **Marquer comme vu** les efface.
+Ouvrir seulement la page de la pull request ne marque rien. La première fois que vous
+ouvrez l’onglet Mises à jour d’une pull request, rien n’est nouveau — il n’y a pas de
+visite précédente pour comparer.
+
+Les mises à jour sont lues avec la page, pour ce compte, et à nouveau à chaque
+**Actualiser** — pas après chaque commentaire ou relecture que vous publiez.
+
+Ce qui a été vu est gardé sur cet ordinateur seulement, par dépôt et par pull
+request, jamais envoyé à l’hébergeur.
+
+### Selon l’hébergeur
+
+| Hébergeur | D’où viennent les mises à jour | Auteur du push | Commits retirés | Réécriture détectée |
+|---|---|---|---|---|
+| Azure DevOps | Les **itérations** de la pull request — l’enregistrement propre à Azure de chaque push | Oui | Non (non signalés) | Oui : `forcePush` / `rebase` |
+| GitLab | Les **versions du diff** de la merge request ; les commits de chaque version déduits de sa tête | Non (les versions ne nomment personne) | Oui | Oui : une tête antérieure qui n’est plus atteinte |
+| Bitbucket Data Center | L’activité de la pull request : **OPENED** et chaque **RESCOPED** qui a déplacé la branche source | Oui | Oui, avec les totaux de l’hébergeur | Oui : un rescope qui a retiré des commits |
+| GitHub | **Déduites** des commits et des force pushs de la chronologie — voir ci-dessous | Force pushs seulement | Non | Oui : un événement de force push |
+| Forgejo / Gitea | Les entrées **push** de la chronologie, la première écrite avec la pull request elle-même | Oui | Non | Oui : une entrée de force push |
+| bitbucket.org | Non disponible | — | — | — |
+
+**GitHub ne garde aucune trace d’un push ordinaire** — seulement des force pushs —,
+donc les mises à jour sont **déduites des heures des commits**. Une mise à jour est
+une suite de commits qui s’appuient les uns sur les autres, entre deux force pushs ;
+un commit qui ne s’appuie pas sur le précédent, ou qui arrive plus de dix minutes
+après lui, commence la suivante. Un commit créé après l’ouverture de la pull request
+ne peut pas avoir fait partie de l’ouverture. Ainsi, un push de commits faits à une
+heure d’écart apparaît **coupé** en deux, et deux pushs à quelques minutes d’écart
+n’en font **qu’un** ; l’onglet dit que le regroupement est approximatif. Les nouveaux
+commits d’un rebase, que la chronologie peut lister juste avant son force push,
+comptent pour ce force push. Les têtes avant et après un force push sont exactes,
+donc son **Voir les changements** l’est aussi.
+
+### Limites
+
+- **Plafonds.** Les 100 mises à jour les plus récentes sont listées. La chronologie
+  de GitHub est lue depuis son extrémité la plus récente, jusqu’à 500 éléments ;
+  l’activité de Bitbucket Data Center (elle aussi du plus récent au plus ancien)
+  jusqu’à 1 000 ; les versions et commits de GitLab jusqu’à 300 chacun ; la
+  chronologie de Forgejo jusqu’à 500 entrées, les plus récentes si elle est plus
+  longue. Quand un plafond coupe l’**ouverture**, les numéros ne sont plus ceux de
+  l’hébergeur : l’onglet le dit et compte à rebours depuis la dernière (*Dernière
+  mise à jour*, *Mise à jour, 2 avant la dernière*).
+- **Azure DevOps** ne signale aucun commit retiré ; un force push ou un rebase est
+  marqué à la place. Une itération dont Azure tronque la liste de commits est lue à
+  part (jusqu’à 500 commits), et la mise à jour dit quand elle reste partielle.
+- **GitLab** ne nomme pas l’auteur du push. Une version dont la tête a été réécrite
+  est lue à part pour trouver ses commits — pour les dix plus récentes de ces
+  versions —, une fois par session : les versions ne changent jamais.
+- **Forgejo et Gitea** ne listent aucun commit pour un force push — seulement ses
+  deux têtes, que compare **Voir les changements** —, et après un force push rien ne
+  dit ce que contenait l’ouverture, qui reste donc vide sauf si le serveur a
+  enregistré le push de l’ouverture elle-même. Leur API n’a pas de diff entre deux
+  commits, donc cette comparaison a besoin des deux commits dans ce clone. Un serveur
+  sans l’API de chronologie montre tous les commits dans une seule mise à jour.
+- **Récupérer par id** demande un hébergeur qui sert un commit par son id. GitHub le
+  fait pour tout commit qu’il détient encore ; un autre hébergeur, ou un simple
+  serveur git, peut refuser un commit sur lequel aucune branche ne pointe — la
+  comparaison de l’hébergeur est alors utilisée. Les commits récupérés restent dans
+  ce clone sans référence, et git les ramasse avec le temps.
+- **La comparaison de Bitbucket Data Center** lit le diff structuré du serveur et le
+  dessine en diff unifié ; de très gros fichiers peuvent revenir tronqués.
+- Une tête réécrite peut avoir **disparu de l’hébergeur** pour de bon (Azure et
+  GitLab la gardent ; d’autres peuvent la ramasser). Alors aucun des deux côtés ne
+  peut comparer, et le bandeau le dit.
+- Les pull requests de **bitbucket.org** s’ouvrent dans le navigateur et n’ont pas
+  d’onglet Mises à jour.
 
 ## Lire les fichiers
 

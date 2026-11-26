@@ -2,9 +2,9 @@
 title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
-summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits und Kommentare zu einer Zeile seines Diffs.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image
-source: a4156cb9fd737c311bc0441169b7a3d933dad274
+summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits, seine Updates (jeder Push, was er geändert hat, was seit deinem letzten Besuch neu ist) und Kommentare zu einer Zeile seines Diffs.
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image updates iterationen pushes force-push rebase verlauf umgeschrieben diff-versionen was hat sich geändert seit dem letzten besuch neu-badge als gesehen markieren update vergleichen iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Pull-Request-Seite
@@ -170,8 +170,7 @@ Was es nicht tut:
 
 Die Seitenleiste sagte, wie viele Commits ein Pull Request hat, nie welche. Einen
 Commit nach dem anderen zu reviewen — so, wie die meisten Pull Requests gelesen
-werden sollen — schickte dich in den Browser. Der Tab **Commits**, zwischen
-Unterhaltung und Dateien, listet sie:
+werden sollen — schickte dich in den Browser. Der Tab **Commits**, zwischen Unterhaltung und Updates, listet sie:
 
 - **Älteste zuerst**, in der Reihenfolge, in der sie angewendet werden, gruppiert
   nach dem Tag, an dem sie geschrieben wurden. Ein Commit, der außer der
@@ -256,6 +255,144 @@ Was es nicht tut:
 - **bitbucket.org**-Pull-Requests öffnen sich im Browser — die App hat noch keine
   Seite für sie —, also wird dieser Tab dort nicht erreicht, obwohl die App die
   Liste lesen kann.
+
+## Updates
+
+Ein Pull Request, den du am Montag reviewt hast, hat sich bis Donnerstag
+weiterbewegt. Der Tab Commits zeigt, wo er jetzt steht, nicht, was seitdem
+passiert ist: welche Commits mit welchem Push kamen, ob jemand force-gepusht und
+umgeschrieben hat, was du schon gelesen hattest, und wie der Code *im Vergleich zu
+der Fassung, die du gesehen hast,* aussieht. Der Tab **Updates**, zwischen Commits
+und Dateien, beantwortet das — so wie der eigene Updates-Tab von Azure DevOps.
+
+Er listet jeden Push in den Pull Request, **neueste zuerst**:
+
+- **Update 1 — eröffnet** ist der Push, mit dem der Pull Request eröffnet wurde;
+  jeder spätere Push bekommt die nächste Nummer.
+- Jedes zeigt, **wann**, **wer gepusht hat** (wo der Host das sagt), und die
+  **hinzugefügten Commits** — kurzer SHA, Betreff, Autor. Wo der Host Commits
+  meldet, die ein Push vom Branch genommen hat, stehen sie unter **Entfernte
+  Commits**, durchgestrichen.
+- Ein Force-Push oder Rebase ist als **Verlauf umgeschrieben** markiert: Commits,
+  die du gelesen hattest, können weg sein, und die gelisteten können neue Kopien
+  alter Arbeit sein. Auf Azure DevOps ist ein Push, der den Pull Request auf einen
+  anderen Ziel-Branch verschoben hat, als **Ziel geändert** markiert.
+
+![Der Tab Updates: Pushes, neueste zuerst, ein Force-Push als „Verlauf umgeschrieben“ markiert, einer als Neu](../../screenshots/pr-updates.webp)
+
+### Was sich in einem Update geändert hat
+
+**Änderungen dieses Updates anzeigen** öffnet den Tab Dateien nur für diesen Push:
+den Diff vom Head des vorigen Updates zu diesem — oder, bei Update 1, vom
+Ziel-Branch, gegen den er eröffnet wurde, wo der Host diesen Punkt nennt (Azure
+DevOps, GitLab). Derselbe Dateibaum und Viewer, mit einem Banner — *Änderungen in
+Update 3 (gegenüber Update 2)* — und **Alle Änderungen anzeigen**, um zum ganzen
+Pull Request zurückzukehren.
+
+![Der Tab Dateien mit den Änderungen eines Updates, mit dem Banner über dem Dateibaum](../../screenshots/pr-update-diff.webp)
+
+Der Diff wird immer **in diesem Klon** erstellt, wenn es geht: `git diff` zwischen
+den beiden Heads, exakt und ohne den Host zu fragen. Fehlt einer der Heads, fetcht
+die App zuerst beide **über ihre Commit-IDs** vom Remote des Pull Requests — es wird
+kein Branch, kein Tag, keine Ref geschrieben; ein Head, den ein Force-Push ersetzt
+hat, liegt auf keinem Branch mehr, aber die meisten Hosts liefern ihn noch über die
+ID aus — und vergleicht hier. Erst wenn dieser Fetch fehlschlägt, wird der Host
+gefragt:
+
+| Host | Der Vergleich des Hosts |
+|---|---|
+| Azure DevOps | Die Änderungen der Iteration mit `$compareTo` — zwischen den beiden Pushes |
+| GitLab | Der Repository-Vergleich, direkt von einem Head zum anderen |
+| Bitbucket Data Center | Der Repository-Vergleich — **ab der gemeinsamen Basis** der beiden Heads |
+| GitHub | Die Compare-API (`base...head`) — **ab der gemeinsamen Basis** der beiden Heads |
+| Forgejo / Gitea | Keiner: ihre API hat keinen Diff zwischen zwei Commits |
+
+Ab der gemeinsamen Basis ist der Diff eines Umschreibens nicht das, was der Push
+getan hat: Was er entfernt hat, wird nicht gezeigt, und Änderungen, die der
+Ziel-Branch seitdem bekommen hat, können wie die des Pull Requests aussehen. Das
+Banner sagt das — *Ab der gemeinsamen Basis verglichen: was dieser Push entfernt
+hat, wird nicht gezeigt.* —, wenn ein Update mit umgeschriebenem Verlauf so
+verglichen wurde. Klappt nichts, sagt das Banner das und bietet an, den Branch (oder,
+aus einem Fork, den Head des Pull Requests) zu fetchen und hier zu vergleichen.
+
+Zeilenkommentare gehören zum Diff des ganzen Pull Requests, also gibt es kein **+**
+an einer Zeile, solange ein einzelnes Update angezeigt wird; das Banner sagt das.
+Eine Datei als gesehen anzuhaken funktioniert wie gewohnt — es markiert die Datei im
+Pull Request.
+
+### Neu seit deinem letzten Besuch
+
+Updates, die seit deinem letzten Öffnen des Tabs gepusht wurden, tragen ein Badge
+**Neu**, und der Tab selbst sagt, wie viele: *Updates 5 · 2 neu*. Den Tab zu öffnen
+markiert sie als gesehen (die Badges bleiben, solange du darauf bist, damit du
+siehst, welche neu waren); bringt **Aktualisieren** weitere, während der Tab offen
+ist, entfernt **Als gesehen markieren** sie. Nur die Pull-Request-Seite zu öffnen
+markiert nichts. Beim ersten Öffnen des Updates-Tabs eines Pull Requests ist nichts
+neu — es gibt keinen früheren Besuch zum Vergleichen.
+
+Die Updates werden mit der Seite gelesen, für diese Zahl, und erneut bei
+**Aktualisieren** — nicht nach jedem Kommentar oder Review, den du sendest.
+
+Was gesehen wurde, wird nur auf diesem Computer gespeichert, pro Repository und Pull
+Request, nie an den Host gesendet.
+
+### Je nach Host
+
+| Host | Woher die Updates kommen | Pusher | Entfernte Commits | Umschreiben erkannt |
+|---|---|---|---|---|
+| Azure DevOps | Die **Iterationen** des Pull Requests — Azures eigene Aufzeichnung jedes Pushs | Ja | Nein (nicht gemeldet) | Ja: `forcePush` / `rebase` |
+| GitLab | Die **Diff-Versionen** des Merge Requests; die Commits jeder Version aus ihrem Head ermittelt | Nein (Versionen nennen niemanden) | Ja | Ja: ein früherer Head ist nicht mehr erreichbar |
+| Bitbucket Data Center | Die Aktivität des Pull Requests: **OPENED** und jedes **RESCOPED**, das den Quell-Branch bewegt hat | Ja | Ja, mit den Summen des Hosts | Ja: ein Rescope, der Commits entfernt hat |
+| GitHub | **Abgeleitet** aus den Commits und Force-Pushes der Timeline — siehe unten | Nur Force-Pushes | Nein | Ja: ein Force-Push-Ereignis |
+| Forgejo / Gitea | Die **Push**-Einträge der Timeline, der erste mit dem Pull Request selbst geschrieben | Ja | Nein | Ja: ein Force-Push-Eintrag |
+| bitbucket.org | Nicht verfügbar | — | — | — |
+
+**GitHub zeichnet keinen gewöhnlichen Push auf** — nur Force-Pushes —, also werden
+die Updates **aus den Commit-Zeiten abgeleitet**. Ein Update ist eine Folge von
+Commits, die aufeinander aufbauen, zwischen Force-Pushes; ein Commit, der nicht auf
+dem vorigen aufbaut oder mehr als zehn Minuten nach ihm kommt, beginnt das nächste.
+Ein Commit, der nach dem Eröffnen des Pull Requests committet wurde, kann nicht in
+der Eröffnung gewesen sein. Ein Push mit Commits, die eine Stunde auseinanderliegen,
+erscheint also **zweigeteilt**, und zwei Pushes, die ein paar Minuten auseinander
+liegen, erscheinen als **einer**; der Tab sagt, dass die Gruppierung ungefähr ist.
+Die neuen Commits eines Rebase, die die Timeline womöglich direkt vor seinem
+Force-Push listet, zählen zu diesem Force-Push. Die Heads vor und nach einem
+Force-Push sind exakt, also auch sein **Änderungen anzeigen**.
+
+### Grenzen
+
+- **Obergrenzen.** Die 100 neuesten Updates werden gelistet. GitHubs Timeline wird
+  vom neuesten Ende her gelesen, bis zu 500 Einträge; die Aktivität von Bitbucket
+  Data Center (ebenfalls neueste zuerst) bis zu 1.000; GitLabs Versionen und Commits
+  bis zu 300 jeweils; Forgejos Timeline bis zu 500 Einträge, die neuesten, wenn sie
+  länger ist. Schneidet eine Grenze die **Eröffnung** ab, sind die Nummern nicht mehr
+  die des Hosts: Der Tab sagt das und zählt vom neuesten zurück (*Neuestes Update*,
+  *Update, 2 vor dem neuesten*).
+- **Azure DevOps** meldet keine entfernten Commits; stattdessen wird ein Force-Push
+  oder Rebase markiert. Eine Iteration, deren Commit-Liste Azure kürzt, wird einzeln
+  gelesen (bis zu 500 Commits), und das Update sagt, wenn sie noch unvollständig ist.
+- **GitLab** nennt keinen Pusher. Eine Version, deren Head weg-umgeschrieben wurde,
+  wird einzeln gelesen, um ihre Commits zu finden — für die zehn neuesten solchen
+  Versionen —, einmal pro Sitzung: Versionen ändern sich nie.
+- **Forgejo und Gitea** listen für einen Force-Push keine Commits — nur seine beiden
+  Heads, und genau die vergleicht **Änderungen anzeigen** —, und nach einem
+  Force-Push sagt nichts, was die Eröffnung enthielt, also bleibt sie leer, sofern
+  der Server nicht den Push der Eröffnung selbst aufgezeichnet hat. Ihre API hat
+  keinen Diff zwischen zwei Commits, also braucht dieser Vergleich beide Commits in
+  diesem Klon. Ein Server ohne Timeline-API zeigt jeden Commit in einem Update.
+- **Fetchen über die ID** braucht einen Host, der einen Commit über seine ID
+  ausliefert. GitHub tut das für jeden Commit, den es noch hat; ein anderer Host
+  oder ein einfacher Git-Server kann einen ablehnen, auf den kein Branch zeigt —
+  dann wird der Vergleich des Hosts benutzt. Gefetchte Commits liegen ohne Ref in
+  diesem Klon, und git räumt sie mit der Zeit auf.
+- **Der Vergleich von Bitbucket Data Center** liest den strukturierten Diff des
+  Servers und zeichnet ihn als Unified Diff; sehr große Dateien können gekürzt
+  zurückkommen.
+- Ein umgeschriebener Head kann endgültig **vom Host verschwunden** sein (Azure und
+  GitLab behalten ihn; andere räumen ihn womöglich auf). Dann kann keine Seite
+  vergleichen, und das Banner sagt das.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser und haben keinen Tab
+  Updates.
 
 ## Die Dateien lesen
 
