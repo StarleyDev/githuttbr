@@ -3,7 +3,7 @@ title: Segurança e segredos
 category: Segurança
 order: 70
 summary: Mascaramento, proteções, o keychain — e o que o Gitcito se recusa a fazer.
-keywords: segurança security segredos secrets mascaramento masking keychain safeStorage tokens branch protegida arquivo grande proteção guard privacidade importar exportar configurações partes traduzir caminhos outro computador mesclar perfis substituir perfis escolher o que exportar backup completo outro computador para o time manifesto
+keywords: segurança security imagens nos comentários pixel de rastreamento endereço ip imagens de terceiros clique para carregar segredos secrets mascaramento masking keychain safeStorage tokens branch protegida arquivo grande proteção guard privacidade importar exportar configurações partes traduzir caminhos outro computador mesclar perfis substituir perfis escolher o que exportar backup completo outro computador para o time manifesto
 ---
 
 # Segurança e segredos
@@ -37,6 +37,37 @@ tratados como templates, não como segredos.
 | **Lixo de build** | Commitar `xcuserdata/`, `DerivedData/` ou um `.DS_Store` — com o mesmo *Ignorar e parar de rastrear* de um clique |
 | **Branch protegida** | Ao commitar direto na `main`/`master`, ou dar force push numa delas |
 | **Segredos rastreados** | Ao dar push num repositório que *rastreia* um arquivo de segredo — avisado uma vez por sessão |
+
+## Imagens nos comentários
+
+Comentários de pull requests e issues são escritos por outras pessoas, e uma
+imagem num deles é um pedido que a sua máquina faz ao site que o autor
+escolheu. Esse site fica sabendo o seu IP e quando você leu o comentário — um
+pixel de rastreamento não precisa de nada além do direito de comentar.
+
+Por isso o app carrega sozinho só as imagens do próprio host: no github.com os
+anexos, `*.githubusercontent.com` (que inclui o proxy que o GitHub põe na
+frente de toda imagem de fora na renderização dele) e os assets; em qualquer
+outro host, o próprio endereço web, por https. Toda outra imagem mostra um aviso
+com o domínio dela, e só é pedida quando você clica — aquela imagem, uma vez. O
+pedido nunca manda `Referer`.
+
+| Configuração | O que faz |
+|---|---|
+| **Carregar imagens de outros sites nos comentários** (desligada por padrão) | Imagens de qualquer site carregam sem clique, como no site do host |
+
+Os limites:
+
+- **O host continua vendo você.** Uma imagem do próprio host — e, no GitHub,
+  qualquer imagem pelo proxy dele — é um pedido ao host, que já sabe que esta
+  conta está lendo o pull request.
+- **Só as páginas de pull request e de issue.** Imagens num arquivo Markdown do
+  repositório, numa nota de release ou na wiki são conteúdo do seu próprio
+  repositório e carregam como antes.
+- **Um link não é uma imagem.** Clicar num link de um comentário abre o link no
+  seu navegador, como qualquer link do app.
+
+Como o resto de um comentário é restringido está em [Pull requests](pull-requests.md#como-os-comentários-aparecem).
 
 ## O keychain do sistema
 

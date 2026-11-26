@@ -13,6 +13,7 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 | ⏳ | **Rollback de verdade** (v4.51.0) | Num build empacotado, voltar da v4.52 para a v4.51: deve aparecer o aviso "Você voltou…", a v4.52 não deve mais ser oferecida e, ao atualizar de novo, deve vir a pergunta "restaurar ou manter". Os ajustes desconhecidos devem ser preservados |
 | ⏳ | **Azure Pipelines**: validação de build como check e log do build | Testar num PR do Azure com validação de build que falhou e um token com *Build: Read* |
 | 🟡 | **Ícone `.icns` no macOS**, montado por script | Conferir no Finder e no Dock |
+| ⏳ | **Comentários renderizados** (Markdown, imagens de terceiros sob clique) | Conferir num PR real do GitHub (`body_html`: anexo privado, imagem via camo, bloco de código, `#123` com cartão) e num MR do GitLab com `/uploads/` |
 
 ---
 
@@ -34,7 +35,6 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 | | Item | Notas |
 |---|---|---|
 | 🟠 | **Endurecer a release.** Sem assinatura, quem controlar a conta ou o workflow distribui código para todos pela atualização automática | Fixar as actions por SHA (hoje `@v4`); fuses do Electron (integridade do asar, `RunAsNode` desligado). O painel de testes usa o `RunAsNode` como plano B, então o fuse tem custo. As tags `v*` já estão protegidas |
-| 🟡 | **Imagens remotas em PRs e issues** revelam IP e horário a terceiros (`img-src https:`) | Proxy ou carregar sob demanda |
 | 🟡 | **Cofre no `basic_text`** continua gravando no armazenamento básico | Um modo só de sessão exigiria estado novo na tela |
 | 🟡 | **`echarts`/`uuid` via `pptx-preview`** (moderadas) | Risco residual: XSS só com `.pptx` com gráfico, mitigado pelo CSP. A correção exige major dentro do `pptx-preview` |
 | 🟡 | **`sandbox: false` no renderer** | Um XSS no renderer teria acesso à ponte do app. Mudança grande, para longo prazo |
