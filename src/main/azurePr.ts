@@ -1,5 +1,7 @@
 import type {
   PrCheck,
+  PrComment,
+  PrCommentHandle,
   PrCommitList,
   PrDetail,
   PrFile,
@@ -14,6 +16,7 @@ import type {
 import { unifiedDiff } from '../shared/lineDiff'
 import { getAnchorLine, getAnchorSide, LINE_COMMENT_STALE } from '../shared/prLineAnchor'
 import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
+import { isEditedAfter } from '../shared/prCommentHandle'
 
 /**
  * Azure DevOps pull requests on the PR page. Every call goes through `ado`,
@@ -80,8 +83,23 @@ interface AzComment {
   content?: string
   author?: AzIdentity
   publishedDate?: string
+  /** When the text last changed; `lastUpdatedDate` also moves for a like. */
+  lastContentUpdatedDate?: string
   commentType?: string
   isDeleted?: boolean
+}
+
+/** A comment as the page shows it: its thread and id, to edit or delete it in place. */
+function mapAzureComment(th: AzThread, c: AzComment, kind: 'conversation' | 'review'): PrComment {
+  return {
+    author: nameOf(c.author),
+    body: c.content ?? '',
+    createdAt: c.publishedDate ?? '',
+    handle: { id: c.id, kind, threadId: th.id },
+    // Display names repeat; the identity id is what tells two "Ana Souza" apart.
+    ...(c.author?.id ? { authorId: c.author.id } : {}),
+    ...(isEditedAfter(c.publishedDate, c.lastContentUpdatedDate) ? { edited: true } : {})
+  }
 }
 
 interface AzThread {
@@ -129,11 +147,14 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
         line: ctx.rightFileStart?.line ?? ctx.leftFileStart?.line ?? null,
         diffHunk: '',
         rootId: th.id,
-        comments: notes.map((c) => ({ id: c.id, author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })),
+        comments: notes.map((c) => ({ id: c.id, ...mapAzureComment(th, c, 'review') })),
         ...(ctx.rightFileStart?.line ? { side: 'new' as const } : ctx.leftFileStart?.line ? { side: 'old' as const } : {})
       })
     } else {
-      for (const c of notes) comments.push({ author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })
+      // A conversation thread's first comment, with others after it, is one that was answered.
+      notes.forEach((c, i) =>
+        comments.push({ ...mapAzureComment(th, c, 'conversation'), ...(i === 0 && notes.length > 1 ? { hasReplies: true } : {}) })
+      )
     }
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -550,6 +571,25 @@ export async function azureReply(ado: Ado, r: AzureRepo, id: number, threadId: n
     method: 'POST',
     body: JSON.stringify({ content: body, parentCommentId: 1, commentType: 1 })
   })
+}
+
+const commentUrl = (r: AzureRepo, id: number, handle: PrCommentHandle): string => {
+  if (!handle.threadId) throw new Error('An Azure DevOps comment is reached through its thread, and none was given.')
+  return `${repoApi(r)}/pullrequests/${id}/threads/${handle.threadId}/comments/${handle.id}?${V}`
+}
+
+/** Replace a comment's text (Pull Request Thread Comments - Update). */
+export async function azureEditComment(ado: Ado, r: AzureRepo, id: number, handle: PrCommentHandle, body: string): Promise<void> {
+  await ado(commentUrl(r, id, handle), { method: 'PATCH', body: JSON.stringify({ content: body }) })
+}
+
+/**
+ * Delete a comment (Pull Request Thread Comments - Delete). Azure marks it
+ * `isDeleted` rather than removing it: the thread and its replies stay, and
+ * the page hides the deleted comment.
+ */
+export async function azureDeleteComment(ado: Ado, r: AzureRepo, id: number, handle: PrCommentHandle): Promise<void> {
+  await ado(commentUrl(r, id, handle), { method: 'DELETE' })
 }
 
 /** Approve = 10; request changes = -5 ("waiting for author"), which is what it asks for. */

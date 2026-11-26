@@ -58,7 +58,7 @@ describe('Azure DevOps PR mapping', () => {
         line: 12,
         diffHunk: '',
         rootId: 3,
-        comments: [{ id: 1, author: 'Bob', body: 'rename this', createdAt: '2026-01-03' }],
+        comments: [{ id: 1, author: 'Bob', body: 'rename this', createdAt: '2026-01-03', handle: { id: 1, kind: 'review', threadId: 3 } }],
         side: 'new'
       }
     ])

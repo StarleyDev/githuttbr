@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo
 ---
 
 # Pull requests page
@@ -314,6 +314,72 @@ formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and
 A reply box shows its tools once you click into it, and sends with
 ⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
 has the details and the limits.
+
+## Editing and deleting your comments
+
+A typo in a comment already sent, or a remark that no longer applies, used to
+mean a trip to the browser. Your own comments now carry **Edit** (the pencil)
+and **Delete** (the bin) at the end of their header: conversation comments,
+review-thread comments and replies, in both the Conversation and Files tabs.
+The issue page has them too, for its comments on GitHub and Forgejo.
+
+![Your own comment, marked edited, with Edit and Delete at the end of its header](../screenshots/comment-editor.webp)
+
+"Yours" is decided by the page itself, which asks the host who this
+repository's calls sign in as each time it loads (its bound profile, not
+whichever profile is active). Most hosts name an author by login, compared
+without regard to case. Azure DevOps names authors by display name, which two
+people can share, so there the comment's author id must match the account's id;
+when either id is missing, no comment shows the actions. When the app cannot
+tell who you are (a token without user scope, or the host did not answer), no
+comment shows them either; **Refresh** asks again. The host still decides: an
+account it does not let change a comment is refused, and the message says so.
+
+- **Edit** opens the comment in place, in the same Markdown editor, with its
+  text as written. **Save** (or ⌘/Ctrl+Enter) sends it; **Cancel** or **Esc**
+  closes it, asking first when you changed something. Only the blank lines
+  around the text are dropped: indented code and a trailing two-space line
+  break stay as typed. The new text shows at once and the page reads the pull
+  request again. On the pull request page, an edit nobody saved counts as
+  unsent text: **‹ ›** ask before leaving it. The issue page has no such
+  arrows, and nothing there asks before its tab closes.
+- **Delete** always asks first, and the question says what happens: the server
+  removes the comment for everyone, and it cannot be undone. There is no undo
+  entry, since nothing can bring it back.
+
+Deleting the **first comment of a thread** that has replies (a review thread,
+or a conversation comment others answered) differs per host, and the confirm
+names which. Two of these are not written down by the host, and say so:
+
+| Host | First comment of a thread with replies |
+|---|---|
+| GitHub | The replies should stay; GitHub's documentation does not say. Replying to that thread from the app is no longer possible: its replies point at a comment that is gone, and the API takes no reply to a reply. The thread then offers **Reply on GitHub** instead |
+| GitLab | Only that note goes; the thread and its replies stay |
+| Azure DevOps | Should be marked deleted and hidden, with the thread and its replies kept; Azure's documentation does not say |
+| Bitbucket Data Center | Refused: Data Center does not delete a comment that has replies. Delete the replies first, or edit it instead |
+
+Some hosts mark a comment **edited**. Only Azure DevOps keeps a date for the
+text alone; on GitHub, Bitbucket Data Center and Forgejo the app compares when
+the comment was created and last updated, so the mark is an approximation there
+(anything else that touches the comment may set it). GitLab's date also moves
+when a thread is resolved, so it is not used.
+
+What it does not do:
+
+- **Forgejo review comments** (comments on a line) cannot be edited through its
+  API, and only some versions can delete one, so they show neither action:
+  change them on the website. Conversation comments work as elsewhere.
+- **Someone changed it meanwhile.** Bitbucket Data Center checks the comment's
+  version: an edit or a delete of a comment changed since the page loaded is
+  refused, and **Refresh** shows the current one. The other hosts take the last
+  write.
+- **Not found**: when the host does not find the comment, the message says it
+  may have been deleted, or that this account cannot see it, and the page reads
+  the pull request again. An edit open on a comment that is gone is dropped.
+- **bitbucket.org** pull requests open in the browser, so there is no page to
+  edit their comments on yet, although the app can make the call.
+- **The description** of the pull request and its reviews' summaries are not
+  comments, and are not edited here.
 
 ## Limits
 

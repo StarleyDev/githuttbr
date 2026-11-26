@@ -1166,6 +1166,7 @@ export const shots = [
   {
     // The comment editor on a PR's conversation: Write / Preview, the
     // formatting toolbar, and the @mention list open on a name being typed.
+    // The viewer is sam, so sam's own (edited) comment shows Edit and Delete.
     // Faked detail — a fictional GitHub repository and people, no network.
     out: 'comment-editor',
     repos: ['octopus-merge'],
@@ -1177,9 +1178,14 @@ export const shots = [
           number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
           body: 'Search filenames across open repositories from the command palette.',
           state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          viewer: 'sam',
           comments: [
-            { author: 'alex', body: 'Works well here. Could the limit be a setting?', createdAt: '2026-11-20T10:00:00Z' },
-            { author: 'alba', body: 'Agreed — 50 is a lot on a small screen.', createdAt: '2026-11-20T11:30:00Z' }
+            { author: 'alex', body: 'Works well here. Could the limit be a setting?', createdAt: '2026-11-20T10:00:00Z',
+              handle: { id: 501, kind: 'conversation' } },
+            { author: 'sam', body: 'The limit is 50 for now; the palette shows one screen.', createdAt: '2026-11-20T10:40:00Z',
+              handle: { id: 502, kind: 'conversation' }, edited: true },
+            { author: 'alba', body: 'Agreed — 50 is a lot on a small screen.', createdAt: '2026-11-20T11:30:00Z',
+              handle: { id: 503, kind: 'conversation' } }
           ],
           reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'kalani' }],
           commits: 3, changedFiles: 2, additions: 84, deletions: 12

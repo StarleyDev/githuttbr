@@ -31,6 +31,7 @@ import {
 import type {
   PageContent,
   PrCheck,
+  PrCommentHandle,
   PrDetail,
   PrFile,
   PrDiffRevision,
@@ -72,6 +73,20 @@ import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComm
 import { getAnchorLine } from '../../../shared/prLineAnchor'
 import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
+import { EditableComment } from './EditableComment'
+import {
+  getCommentKey,
+  getCommentKeys,
+  getDeleteConfirmKey,
+  hasUnsavedEdit,
+  isCommentGone,
+  isMyComment,
+  isThreadRootMissing,
+  pruneEditDrafts,
+  withCommentBody,
+  type CommentEditDraft
+} from '../lib/commentEdit'
+import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'commits' | 'files' | 'checks'
@@ -125,6 +140,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // in the other tab — so a keystroke re-renders one box, not the whole page
   // (and with it every highlighted line of the diff).
   const replyDrafts = useRef<Record<string, string>>({})
+  // Edits of your own comments in progress, by comment key — same reasoning.
+  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
   // The comment being written on one line of the Files tab's diff. One at a
   // time, kept while another file is looked at, so nothing typed is lost.
   const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(null)
@@ -152,7 +169,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     setError(null)
     setReloads((n) => n + 1)
     try {
-      setPr(await hostingApi.prDetail(repoPath, remoteUrl, tokens, number))
+      const detail = await hostingApi.prDetail(repoPath, remoteUrl, tokens, number)
+      // An edit of a comment that is gone now has nothing left to save.
+      pruneEditDrafts(editDrafts.current, getCommentKeys(detail))
+      setPr(detail)
       // Checks and files fill in after the conversation: the page is usable first.
       void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
       void hostingApi
@@ -178,7 +198,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // ‹ › and Alt+arrows ask before leaving text nobody sent.
   useEffect(() => {
     const check = (): boolean =>
-      !!comment.trim() || Object.values(replyDrafts.current).some((r) => r.trim()) || !!lineDraftText.current.trim()
+      !!comment.trim() ||
+      Object.values(replyDrafts.current).some((r) => r.trim()) ||
+      !!lineDraftText.current.trim() ||
+      hasUnsavedEdit(editDrafts.current)
     registerPrDraft(check)
     return () => registerPrDraft(null)
   }, [comment])
@@ -258,6 +281,38 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     return ok
   }
 
+  // Your own comments: the host still decides, the page only offers. "You" is
+  // only ever the viewer this PR's own read named — never the list's, which may
+  // be another profile's, or stale. A 404 means the comment is not there (or
+  // not visible to this token): its edit is dropped and the page reads the PR again.
+  const readAgainIfGone = (handle: PrCommentHandle) => (err: unknown): never => {
+    if (isCommentGone(err instanceof Error ? err.message : String(err))) {
+      delete editDrafts.current[getCommentKey(handle)]
+      void load()
+    }
+    throw err
+  }
+  const saveCommentEdit = (handle: PrCommentHandle, text: string): Promise<boolean> =>
+    act(async () => {
+      const body = stripOuterNewlines(text)
+      await hostingApi.prEditComment(repoPath, remoteUrl, tokens, number, handle, body).catch(readAgainIfGone(handle))
+      setPr((cur) => (cur ? withCommentBody(cur, handle, body) : cur))
+    }, t('prComment.saved'))
+  const askDeleteComment = (handle: PrCommentHandle, firstWithReplies: boolean): void => {
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prComment.deleteTitle'),
+      message: t(getDeleteConfirmKey(provider, firstWithReplies)),
+      danger: true,
+      confirmLabel: t('prComment.delete'),
+      onConfirm: () =>
+        void act(
+          () => hostingApi.prDeleteComment(repoPath, remoteUrl, tokens, number, handle).catch(readAgainIfGone(handle)),
+          t('prComment.deleted')
+        )
+    })
+  }
+
   // Who an @ offers and what a # offers: only what this page and the repository's
   // lists already hold — no request of their own.
   const mentions = useMemo(
@@ -278,6 +333,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // (and the diff under them) are not rebuilt for an unrelated re-render.
   const replyRef = useRef(replyToThread)
   replyRef.current = replyToThread
+  const changeRef = useRef({ save: saveCommentEdit, remove: askDeleteComment })
+  changeRef.current = { save: saveCommentEdit, remove: askDeleteComment }
   const web = remoteWebUrl(remoteUrl)
   const threadCard = useCallback(
     (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
@@ -289,14 +346,18 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           web={web}
           withLocation={withLocation}
           canReply={canReplyInThread}
+          rootMissing={isThreadRootMissing(provider, th)}
           drafts={replyDrafts}
+          editDrafts={editDrafts}
           onReply={(text) => replyRef.current(th.rootId, text)}
+          onSaveEdit={(handle, text) => changeRef.current.save(handle, text)}
+          onDelete={(handle, firstWithReplies) => changeRef.current.remove(handle, firstWithReplies)}
           busy={busy}
           mentions={mentions}
           getReferences={getReferences}
         />
       ) : null,
-    [pr, web, canReplyInThread, busy, mentions, getReferences]
+    [pr, web, canReplyInThread, provider, busy, mentions, getReferences]
   )
   const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
@@ -457,13 +518,30 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </article>
 
                 {pr.comments.map((c, i) => (
-                  <article key={i} className="prp-card">
-                    <div className="prp-card-head">
-                      <Avatar login={c.author} avatars={pr.avatars} />
-                      <strong>{c.author}</strong>
-                      <span>{fmtDate(c.createdAt)}</span>
-                    </div>
-                    <div className="prp-card-body">{autolink(c.body, web)}</div>
+                  <article key={c.handle ? `${c.handle.threadId ?? ''}:${c.handle.id}` : i} className="prp-card">
+                    <EditableComment
+                      handle={c.handle}
+                      body={c.body}
+                      edited={c.edited}
+                      mine={isMyComment(c, pr)}
+                      headClassName="prp-card-head"
+                      bodyClassName="prp-card-body"
+                      head={
+                        <>
+                          <Avatar login={c.author} avatars={pr.avatars} />
+                          <strong>{c.author}</strong>
+                          <span>{fmtDate(c.createdAt)}</span>
+                        </>
+                      }
+                      rendered={autolink(c.body, web)}
+                      drafts={editDrafts}
+                      busy={busy}
+                      mentions={mentions}
+                      getReferences={getReferences}
+                      hasUnsentText={hasUnsentPrDraft}
+                      onSave={saveCommentEdit}
+                      onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
+                    />
                   </article>
                 ))}
 
@@ -806,8 +884,12 @@ function ReviewThreadCard({
   web,
   withLocation,
   canReply,
+  rootMissing,
   drafts,
+  editDrafts,
   onReply,
+  onSaveEdit,
+  onDelete,
   busy,
   mentions,
   getReferences
@@ -817,8 +899,14 @@ function ReviewThreadCard({
   web: string | undefined
   withLocation: boolean
   canReply: boolean
+  /** GitHub: the thread's first comment was deleted, so the app cannot reply here. */
+  rootMissing: boolean
   drafts: React.RefObject<Record<string, string>>
+  editDrafts: React.RefObject<Record<string, CommentEditDraft>>
   onReply: (text: string) => Promise<boolean>
+  onSaveEdit: (handle: PrCommentHandle, text: string) => Promise<boolean>
+  /** `firstWithReplies`: the thread's first comment, with others under it — the confirm says what each host does then. */
+  onDelete: (handle: PrCommentHandle, firstWithReplies: boolean) => void
   busy: boolean
   mentions: string[]
   getReferences: () => MarkdownReference[]
@@ -843,17 +931,42 @@ function ReviewThreadCard({
         </div>
       )}
       {withLocation && thread.diffHunk && <pre className="prd-thread-hunk">{thread.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
-      {thread.comments.map((c) => (
+      {thread.comments.map((c, i) => (
         <div key={c.id} className="prp-thread-comment">
-          <div className="prp-card-head">
-            <Avatar login={c.author} avatars={pr.avatars} />
-            <strong>{c.author}</strong>
-            <span>{fmtDate(c.createdAt)}</span>
-          </div>
-          <div className="prp-card-body">{autolink(c.body, web)}</div>
+          <EditableComment
+            handle={c.handle}
+            body={c.body}
+            edited={c.edited}
+            mine={isMyComment(c, pr)}
+            headClassName="prp-card-head"
+            bodyClassName="prp-card-body"
+            head={
+              <>
+                <Avatar login={c.author} avatars={pr.avatars} />
+                <strong>{c.author}</strong>
+                <span>{fmtDate(c.createdAt)}</span>
+              </>
+            }
+            rendered={autolink(c.body, web)}
+            drafts={editDrafts}
+            busy={busy}
+            mentions={mentions}
+            getReferences={getReferences}
+            hasUnsentText={hasUnsentPrDraft}
+            onSave={onSaveEdit}
+            onDelete={(handle) => onDelete(handle, i === 0 && thread.comments.length > 1)}
+          />
         </div>
       ))}
-      {canReply && (
+      {canReply && rootMissing && (
+        <div className="prd-thread-reply prd-thread-orphan">
+          <span>{t('prComment.rootDeletedHint')}</span>
+          <button type="button" className="btn ghost tiny" onClick={() => void shellApi.openExternal(pr.url)}>
+            <ExternalLink size={12} /> {t('prComment.replyOnGithub')}
+          </button>
+        </div>
+      )}
+      {canReply && !rootMissing && (
         <div className="prd-thread-reply">
           {/* A textarea now, so Enter is a new line (or the next list item) and
               ⌘/Ctrl+Enter sends — the same keys as every other comment box. */}

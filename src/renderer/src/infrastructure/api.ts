@@ -1201,6 +1201,23 @@ export const hostingApi = {
     /** The revision the Files tab's diff was read at; null when the host did not say. */
     revision: import('../../../shared/types').PrDiffRevision | null
   ) => window.api.hosting.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, body, revision) as Promise<void>,
+  /** Replace the text of one of the PR's (or issue's) comments, reached through its handle. */
+  prEditComment: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    handle: import('../../../shared/types').PrCommentHandle,
+    body: string
+  ) => window.api.hosting.prEditComment(repoPath, remoteUrl, tokens, number, handle, body) as Promise<void>,
+  /** Delete one of the PR's (or issue's) comments on the host. It cannot be restored. */
+  prDeleteComment: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    handle: import('../../../shared/types').PrCommentHandle
+  ) => window.api.hosting.prDeleteComment(repoPath, remoteUrl, tokens, number, handle) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
   ciRuns: (repoPath: string, remoteUrl: string, tokens: PrTokens, branch?: string) =>
     window.api.hosting.ciRuns(repoPath, remoteUrl, tokens, branch) as Promise<import('../../../shared/types').CiRunList>,

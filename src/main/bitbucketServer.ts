@@ -4,6 +4,7 @@ import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 import { finishPrCommits } from '../shared/prCommits'
+import { isEditedAfter } from '../shared/prCommentHandle'
 import {
   bitbucketServerEndpoints,
   bitbucketServerPullRequestUrl,
@@ -18,6 +19,7 @@ import type {
   CreatePrResult,
   PrCheck,
   PrComment,
+  PrCommentHandle,
   PrCommitList,
   PrDetail,
   PrFile,
@@ -194,6 +196,9 @@ interface BbsComment {
   text?: string
   author?: BbsUser
   createdDate?: number
+  updatedDate?: number
+  /** What an edit or a delete must name: the server refuses a stale one. */
+  version?: number
   comments?: BbsComment[]
 }
 
@@ -313,12 +318,16 @@ function flatten(c: BbsComment): BbsComment[] {
   return [c, ...(c.comments ?? []).flatMap(flatten)]
 }
 
-const toComment = (c: BbsComment): PrReviewComment => ({
-  id: c.id,
+/** A comment's text, and the version an edit or a delete must name. */
+const commentOf = (c: BbsComment, kind: 'conversation' | 'review'): PrComment => ({
   author: who(c.author),
   body: c.text ?? '',
-  createdAt: iso(c.createdDate) ?? ''
+  createdAt: iso(c.createdDate) ?? '',
+  handle: { id: c.id, kind, ...(typeof c.version === 'number' ? { version: c.version } : {}) },
+  ...(isEditedAfter(c.createdDate, c.updatedDate) ? { edited: true } : {})
 })
+
+const toComment = (c: BbsComment): PrReviewComment => ({ id: c.id, ...commentOf(c, 'review') })
 
 /** Activities → the conversation, the line threads and the review verdicts. */
 export function mapBbsActivities(activities: BbsActivity[]): { comments: PrComment[]; reviewThreads: PrReviewThread[] } {
@@ -347,7 +356,8 @@ export function mapBbsActivities(activities: BbsActivity[]): { comments: PrComme
               : {})
       })
     } else {
-      for (const c of all) comments.push({ author: who(c.author), body: c.text ?? '', createdAt: iso(c.createdDate) ?? '' })
+      // Data Center refuses to delete an answered comment: the confirm says so up front.
+      for (const c of all) comments.push({ ...commentOf(c, 'conversation'), ...(c.comments?.length ? { hasReplies: true } : {}) })
     }
   }
   return { comments, reviewThreads }
@@ -612,6 +622,37 @@ export async function bbsComment(repo: BitbucketServerRepo, token: string, id: n
     method: 'POST',
     body: JSON.stringify(parentId !== undefined ? { text, parent: { id: parentId } } : { text })
   })
+}
+
+const commentUrl = (repo: BitbucketServerRepo, id: number, handle: PrCommentHandle): string =>
+  `${bbsRepoApi(repo)}/pull-requests/${id}/comments/${handle.id}`
+
+/** The version the page read: Data Center refuses an edit or a delete without it. */
+function versionOf(handle: PrCommentHandle): number {
+  if (typeof handle.version !== 'number') throw new Error("Bitbucket Data Center needs the comment's version; refresh the page.")
+  return handle.version
+}
+
+/**
+ * Replace a comment's text. Only its author may. A 409 means someone changed
+ * it since the page read it: the version no longer matches.
+ */
+export async function bbsEditComment(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number,
+  handle: PrCommentHandle,
+  text: string
+): Promise<void> {
+  await bbsJson(commentUrl(repo, id, handle), token, { method: 'PUT', body: JSON.stringify({ text, version: versionOf(handle) }) })
+}
+
+/**
+ * Delete a comment. A 409 means it changed since it was read, or that it has
+ * replies: Data Center does not delete a comment someone answered.
+ */
+export async function bbsDeleteComment(repo: BitbucketServerRepo, token: string, id: number, handle: PrCommentHandle): Promise<void> {
+  await bbsJson(`${commentUrl(repo, id, handle)}?version=${versionOf(handle)}`, token, { method: 'DELETE' })
 }
 
 const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> = { add: 'ADDED', del: 'REMOVED', ctx: 'CONTEXT' }

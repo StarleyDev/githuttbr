@@ -19246,6 +19246,21 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-thread .prp-card-body { padding: 2px 0 8px; }
 .prp-thread-comment + .prp-thread-comment { border-top: 1px solid var(--border); }
 .prp-muted { color: var(--text-3); font-style: italic; }
+
+/* Your own comment: Edit and Delete at the end of its header, the edit in place of its text. */
+.comment-edited { font-size: 11px; color: var(--text-3); }
+.prd-thread-orphan { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); }
+.comment-actions { display: inline-flex; gap: 2px; margin-inline-start: auto; }
+.comment-actions .icon-btn { padding: 2px 4px; }
+.comment-edit { padding: 8px 12px; }
+.prp-thread .comment-edit, .issue-comment .comment-edit { padding: 4px 0 8px; }
+.comment-edit .prd-input { min-height: 72px; margin-bottom: 6px; }
+.comment-edit-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.comment-edit-hint { margin-inline-start: auto; font-size: 11px; color: var(--text-3); }
+/* With the extras, the author stays left and the date, mark and actions sit together on the right. */
+.issue-comment-head:has(.comment-actions, .comment-edited) { justify-content: flex-start; align-items: center; gap: 8px; }
+.issue-comment-head:has(.comment-actions, .comment-edited) > span:first-of-type { margin-inline-start: auto; }
+.issue-comment-head .comment-actions { margin-inline-start: 0; }
 .prp-pad { padding: 8px 2px; }
 
 /* Review and merge stay in view below the scrolling conversation. The comment
