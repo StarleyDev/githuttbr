@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
   SplitSquareHorizontal,
   Columns2,
@@ -11,6 +11,7 @@ import {
   Link2,
   Unlink2,
   CornerDownLeft,
+  Plus,
   X
 } from 'lucide-react'
 import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSearchBar'
@@ -97,6 +98,30 @@ const HUGE_LINES = 5000
 const MOVE_ARROW: Record<MovedMark['dir'], string> = { up: '↑', down: '↓' }
 const NO_MOVES = new Map<number, MovedMark>()
 
+/**
+ * A row drawn under a line in the split view's column mode, reporting its
+ * height: the other column holds an empty block that tall, so the two sides
+ * stay row-for-row even though only one of them carries the content.
+ */
+function MeasuredExtra({ onHeight, children }: { onHeight: (h: number) => void; children: React.ReactNode }): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+  const report = useRef(onHeight)
+  report.current = onHeight
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => report.current(el.offsetHeight))
+    ro.observe(el)
+    report.current(el.offsetHeight)
+    return () => ro.disconnect()
+  }, [])
+  return (
+    <div ref={ref} className="diff-line-extra">
+      {children}
+    </div>
+  )
+}
+
 export function DiffViewer({
   diff,
   file = '',
@@ -107,7 +132,9 @@ export function DiffViewer({
   repoPath,
   onToggleIgnoreWs,
   hunkActions = [],
-  busy = false
+  busy = false,
+  onCommentLine,
+  lineExtras
 }: {
   diff: string
   /** Path of the file being diffed — labels the hover-explain card. */
@@ -127,6 +154,12 @@ export function DiffViewer({
   /** A change is still landing: the actions stay in place but are off, so a
    *  second press cannot act on lines that are already gone. */
   busy?: boolean
+  /** Offer a comment on any line — a "+" in its gutter, a click on the row, a
+   *  menu entry. Called with the line's index into `parseDiff(diff)`. */
+  onCommentLine?: (idx: number) => void
+  /** Blocks drawn under given lines, keyed by index into `parseDiff(diff)` —
+   *  a pull request's review threads and its comment composer. */
+  lineExtras?: Map<number, React.ReactNode>
 }): React.JSX.Element {
   const t = useT()
   const lines = useMemo(() => parseDiff(diff), [diff])
@@ -262,6 +295,60 @@ export function DiffViewer({
     requestAnimationFrame(() => (syncingScroll.current = false))
   }
 
+  // ── Line comments (a pull request's diff) ──
+  // Column-mode split view: how tall each line's block is, for its spacer.
+  const [extraHeights, setExtraHeights] = useState<Record<number, number>>({})
+  const setExtraHeight = (idx: number, h: number): void =>
+    setExtraHeights((cur) => (cur[idx] === h ? cur : { ...cur, [idx]: h }))
+  // Named by the number its own gutter shows: old for a deletion, new otherwise.
+  const commentLabel = (idx: number): string => {
+    const l = lines[idx]
+    return interp(t('diff.commentOnLine'), { line: String((l.kind === 'del' ? l.oldNo : l.newNo) ?? '') })
+  }
+  const commentButton = (idx: number): React.JSX.Element | null =>
+    onCommentLine ? (
+      <button
+        type="button"
+        className="diff-comment-btn"
+        title={commentLabel(idx)}
+        aria-label={commentLabel(idx)}
+        onClick={(e) => {
+          e.stopPropagation()
+          onCommentLine(idx)
+        }}
+      >
+        <Plus size={11} />
+      </button>
+    ) : null
+  // A click on the row opens the composer as well — unless it ended a text
+  // selection, which is someone copying, not commenting.
+  const commentOnClick = (idx: number): (() => void) | undefined =>
+    onCommentLine
+      ? () => {
+          const sel = window.getSelection()
+          if (sel && !sel.isCollapsed && viewerRef.current?.contains(sel.anchorNode)) return
+          onCommentLine(idx)
+        }
+      : undefined
+  // The lines of a split row that have a block under them, each once (a
+  // context line is the same line on both sides).
+  const rowExtras = (r: SplitRow): number[] =>
+    lineExtras
+      ? [...new Set([r.left?.idx, r.right?.idx].filter((x): x is number => x !== undefined && lineExtras.has(x)))]
+      : []
+  // Column mode: the block goes in its line's column — a deletion's on the
+  // left, the rest on the right — and the other column keeps its place.
+  const colExtras = (r: SplitRow, side: 'left' | 'right'): React.JSX.Element[] =>
+    rowExtras(r).map((idx) =>
+      (lines[idx].kind === 'del' ? 'left' : 'right') === side ? (
+        <MeasuredExtra key={`x${idx}`} onHeight={(h) => setExtraHeight(idx, h)}>
+          {lineExtras?.get(idx)}
+        </MeasuredExtra>
+      ) : (
+        <div key={`x${idx}`} className="diff-line-extra-spacer" style={{ height: extraHeights[idx] ?? 0 }} />
+      )
+    )
+
   // A line the file ends on without a newline: a quiet mark on the line itself.
   const noEolMark = (
     <span className="diff-noeol" title={t('diff.noEolTitle')}>
@@ -283,11 +370,12 @@ export function DiffViewer({
         key={key}
         className={`diff-split-cell ${c ? c.kind : 'empty'}${c ? movedClass(c.idx) : ''} ${
           selectable ? 'selectable' : ''
-        } ${c && selected.has(c.idx) ? 'line-selected' : ''}`}
-        onClick={selectable ? () => toggleLines(idxs) : undefined}
-        onContextMenu={c ? (e) => openLineMenu(e, idxs, c.text) : undefined}
+        } ${c && onCommentLine ? 'commentable' : ''} ${c && selected.has(c.idx) ? 'line-selected' : ''}`}
+        onClick={selectable ? () => toggleLines(idxs) : c ? commentOnClick(c.idx) : undefined}
+        onContextMenu={c ? (e) => openLineMenu(e, idxs, c.text, c.idx) : undefined}
         title={selectable ? t('diff.selectLineTitle') : undefined}
       >
+        {c && commentButton(c.idx)}
         {m ? (
           <span className="diff-gutter" data-move={MOVE_ARROW[m.dir]} title={movedTitle(m)}>
             {c?.no ?? ''}
@@ -370,11 +458,15 @@ export function DiffViewer({
   // Right-click on a line: act on that line — or on the selection, when the
   // line is part of one — on its whole hunk, or copy it. `idxs` is what the row
   // stands for: one line, or a split row's edited pair.
-  const openLineMenu = (e: React.MouseEvent, idxs: number[], text: string): void => {
+  const openLineMenu = (e: React.MouseEvent, idxs: number[], text: string, commentIdx = idxs[0]): void => {
     const first = lines[idxs[0]]
     if (!first) return
     e.preventDefault()
     const items: MenuItem[] = []
+    if (onCommentLine) {
+      items.push({ label: commentLabel(commentIdx), onClick: () => onCommentLine(commentIdx) })
+      items.push({ separator: true })
+    }
     // While the last action is still landing the rows stay, greyed, saying why.
     const busyRow = busy ? { disabled: true, title: t('diff.busyRow') } : {}
     if (hunkData && hasHunkActions) {
@@ -598,10 +690,17 @@ export function DiffViewer({
               r.hunk !== undefined ? (
                 splitHunk(r, i)
               ) : (
-                <div key={i} className="diff-split-row">
-                  {splitCell(r.left, `${i}l`)}
-                  {splitCell(r.right, `${i}r`)}
-                </div>
+                <Fragment key={i}>
+                  <div className="diff-split-row">
+                    {splitCell(r.left, `${i}l`)}
+                    {splitCell(r.right, `${i}r`)}
+                  </div>
+                  {rowExtras(r).map((idx) => (
+                    <div key={`x${idx}`} className="diff-line-extra">
+                      {lineExtras?.get(idx)}
+                    </div>
+                  ))}
+                </Fragment>
               )
             )}
           </div>
@@ -617,12 +716,30 @@ export function DiffViewer({
                   row fills it — a row sized to its own text would leave its
                   background behind as soon as you scrolled past it. */}
               <div className="diff-split-inner">
-                {splitRows.map((r, i) => (r.hunk !== undefined ? splitHunk(r, i, 'left') : splitCell(r.left, `${i}l`)))}
+                {splitRows.map((r, i) =>
+                  r.hunk !== undefined ? (
+                    splitHunk(r, i, 'left')
+                  ) : (
+                    <Fragment key={i}>
+                      {splitCell(r.left, `${i}l`)}
+                      {colExtras(r, 'left')}
+                    </Fragment>
+                  )
+                )}
               </div>
             </div>
             <div className="diff-split-col" ref={rightColRef} onScroll={() => syncScroll(rightColRef, leftColRef)}>
               <div className="diff-split-inner">
-                {splitRows.map((r, i) => (r.hunk !== undefined ? splitHunk(r, i, 'right') : splitCell(r.right, `${i}r`)))}
+                {splitRows.map((r, i) =>
+                  r.hunk !== undefined ? (
+                    splitHunk(r, i, 'right')
+                  ) : (
+                    <Fragment key={i}>
+                      {splitCell(r.right, `${i}r`)}
+                      {colExtras(r, 'right')}
+                    </Fragment>
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -642,29 +759,35 @@ export function DiffViewer({
           )
         }
         const selectable = hasHunkActions && (l.kind === 'add' || l.kind === 'del')
+        const extra = lineExtras?.get(i)
         return (
-          <div
-            key={i}
-            className={`diff-line ${l.kind} ${selectable ? 'selectable' : ''} ${selected.has(i) ? 'line-selected' : ''}${movedClass(i)}`}
-            onClick={selectable ? () => toggleLine(i) : undefined}
-            onContextMenu={(e) => openLineMenu(e, [i], l.text)}
-            title={selectable ? t('diff.selectLineTitle') : undefined}
-          >
-            <span className="diff-gutter">{l.oldNo ?? ''}</span>
-            <span className="diff-gutter">{l.newNo ?? ''}</span>
-            {moved.has(i) ? (
-              <span className="diff-sign diff-move-sign" title={movedTitle(moved.get(i)!)}>
-                {MOVE_ARROW[moved.get(i)!.dir]}
-              </span>
-            ) : (
-              <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
-            )}
-            <span
-              className="diff-text"
-              dangerouslySetInnerHTML={{ __html: cellHtml(l.text, i, l.kind as 'add' | 'del' | 'ctx') }}
-            />
-            {l.noEol && noEolMark}
-          </div>
+          <Fragment key={i}>
+            <div
+              className={`diff-line ${l.kind} ${selectable ? 'selectable' : ''} ${onCommentLine ? 'commentable' : ''} ${
+                selected.has(i) ? 'line-selected' : ''
+              }${movedClass(i)}`}
+              onClick={selectable ? () => toggleLine(i) : commentOnClick(i)}
+              onContextMenu={(e) => openLineMenu(e, [i], l.text)}
+              title={selectable ? t('diff.selectLineTitle') : undefined}
+            >
+              {commentButton(i)}
+              <span className="diff-gutter">{l.oldNo ?? ''}</span>
+              <span className="diff-gutter">{l.newNo ?? ''}</span>
+              {moved.has(i) ? (
+                <span className="diff-sign diff-move-sign" title={movedTitle(moved.get(i)!)}>
+                  {MOVE_ARROW[moved.get(i)!.dir]}
+                </span>
+              ) : (
+                <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
+              )}
+              <span
+                className="diff-text"
+                dangerouslySetInnerHTML={{ __html: cellHtml(l.text, i, l.kind as 'add' | 'del' | 'ctx') }}
+              />
+              {l.noEol && noEolMark}
+            </div>
+            {extra && <div className="diff-line-extra">{extra}</div>}
+          </Fragment>
         )
       })}
         </>

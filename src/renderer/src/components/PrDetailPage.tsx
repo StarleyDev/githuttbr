@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   GitPullRequest,
   GitPullRequestArrow,
@@ -28,7 +28,16 @@ import {
   ScrollText,
   Target
 } from 'lucide-react'
-import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
+import type {
+  PageContent,
+  PrCheck,
+  PrDetail,
+  PrFile,
+  PrLineAnchor,
+  PrMergeMethod,
+  PrReviewEvent,
+  PrReviewThread
+} from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
@@ -54,6 +63,9 @@ import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { readableError } from '../lib/gitErrorHint'
+import { parseDiff } from '../lib/diff'
+import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComment'
+import { getAnchorLine } from '../../../shared/prLineAnchor'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'files' | 'checks'
@@ -102,6 +114,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // Per-thread reply drafts, keyed by the thread root id (GitHub comment id or
   // GitLab discussion id).
   const [replies, setReplies] = useState<Record<number | string, string>>({})
+  // The comment being written on one line of the Files tab's diff. One at a
+  // time, kept while another file is looked at, so nothing typed is lost.
+  const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor; text: string } | null>(null)
 
   // "Viewed" ticks are local and kept per repo + PR: GitHub's own viewed state
   // has no simple REST call. Same key as the modal used, so ticks carry over.
@@ -157,10 +172,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   // ‹ › and Alt+arrows ask before leaving text nobody sent.
   useEffect(() => {
-    const check = (): boolean => !!comment.trim() || Object.values(replies).some((r) => r.trim())
+    const check = (): boolean =>
+      !!comment.trim() || Object.values(replies).some((r) => r.trim()) || !!lineDraft?.text.trim()
     registerPrDraft(check)
     return () => registerPrDraft(null)
-  }, [comment, replies])
+  }, [comment, replies, lineDraft])
 
   const act = async (fn: () => Promise<void>, ok: string): Promise<void> => {
     setBusy(true)
@@ -204,6 +220,45 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       t('prDetail.replyPosted')
     )
   }
+
+  // A click on a line opens its composer — unless a comment already typed on
+  // another line would be dropped by it: that one has to be posted or
+  // cancelled first, and the toast says where it is.
+  const openLineDraft = (anchor: PrLineAnchor): void => {
+    if (lineDraft && isSameAnchor(lineDraft.anchor, anchor)) return
+    if (lineDraft?.text.trim()) {
+      toast('info', interp(t('prPage.lineCommentPending'), { path: lineDraft.anchor.path, line: String(getAnchorLine(lineDraft.anchor)) }))
+      return
+    }
+    setLineDraft({ anchor, text: '' })
+  }
+  const postLineDraft = (): void => {
+    if (!lineDraft || !lineDraft.text.trim()) return
+    const { anchor, text } = lineDraft
+    void act(
+      () =>
+        hostingApi
+          .prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, text.trim())
+          .then(() => setLineDraft((d) => (d && isSameAnchor(d.anchor, anchor) ? null : d))),
+      t('prPage.lineCommentPosted')
+    )
+  }
+
+  // One review thread — in the conversation, and under its line in the Files tab.
+  const threadCard = (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
+    pr ? (
+      <ReviewThreadCard
+        key={th.rootId}
+        thread={th}
+        pr={pr}
+        web={web}
+        withLocation={withLocation}
+        reply={canReplyInThread ? (replies[th.rootId] ?? '') : null}
+        onReplyChange={(v) => setReplies((r) => ({ ...r, [th.rootId]: v }))}
+        onReply={() => replyToThread(th.rootId)}
+        busy={busy}
+      />
+    ) : null
 
   // Hand the preview modal the remote this PR's repository is actually behind —
   // matching on URL, since a repo may have several remotes configured.
@@ -372,45 +427,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
                   </div>
                 )}
-                {pr.reviewThreads.map((th) => (
-                  <article key={th.rootId} className="prp-card prp-thread">
-                    <div className="prd-thread-loc" title={th.path}>
-                      {th.path}
-                      {th.line != null ? `:${th.line}` : ''}
-                    </div>
-                    {th.diffHunk && <pre className="prd-thread-hunk">{th.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
-                    {th.comments.map((c) => (
-                      <div key={c.id} className="prp-thread-comment">
-                        <div className="prp-card-head">
-                          <Avatar login={c.author} avatars={pr.avatars} />
-                          <strong>{c.author}</strong>
-                          <span>{fmtDate(c.createdAt)}</span>
-                        </div>
-                        <div className="prp-card-body">{autolink(c.body, web)}</div>
-                      </div>
-                    ))}
-                    {canReplyInThread && (
-                      <div className="prd-thread-reply">
-                        <input
-                          className="prd-reply-input"
-                          placeholder={t('prDetail.replyPlaceholder')}
-                          value={replies[th.rootId] ?? ''}
-                          onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') replyToThread(th.rootId)
-                          }}
-                        />
-                        <button
-                          className="btn ghost tiny"
-                          onClick={() => replyToThread(th.rootId)}
-                          disabled={busy || !(replies[th.rootId] ?? '').trim()}
-                        >
-                          {t('prDetail.reply')}
-                        </button>
-                      </div>
-                    )}
-                  </article>
-                ))}
+                {pr.reviewThreads.map((th) => threadCard(th, true))}
                 {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
               </>
             ) : section === 'files' ? (
@@ -427,6 +444,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   onToggleViewed={toggleViewed}
                   repoPath={repoPath}
                   prUrl={pr.url}
+                  threads={pr.reviewThreads}
+                  renderThread={(th) => threadCard(th, false)}
+                  lineDraft={lineDraft}
+                  onOpenLineDraft={openLineDraft}
+                  onChangeLineDraft={(text) => setLineDraft((d) => (d ? { ...d, text } : d))}
+                  onCancelLineDraft={() => setLineDraft(null)}
+                  onPostLineDraft={postLineDraft}
+                  busy={busy}
                 />
               )
             ) : checks === null ? (
@@ -709,6 +734,148 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   )
 }
 
+/**
+ * One inline review thread: where it is (in the conversation; under its line
+ * in the Files tab that is plain to see), its comments, and the reply box —
+ * `reply` is null where the host has no API to reply inside a thread.
+ */
+function ReviewThreadCard({
+  thread,
+  pr,
+  web,
+  withLocation,
+  reply,
+  onReplyChange,
+  onReply,
+  busy
+}: {
+  thread: PrReviewThread
+  pr: PrDetail
+  web: string | undefined
+  withLocation: boolean
+  reply: string | null
+  onReplyChange: (v: string) => void
+  onReply: () => void
+  busy: boolean
+}): React.JSX.Element {
+  const t = useT()
+  return (
+    <article className="prp-card prp-thread">
+      {withLocation && (
+        <div className="prd-thread-loc" title={thread.path}>
+          {thread.path}
+          {thread.line != null ? `:${thread.line}` : ''}
+        </div>
+      )}
+      {withLocation && thread.diffHunk && <pre className="prd-thread-hunk">{thread.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
+      {thread.comments.map((c) => (
+        <div key={c.id} className="prp-thread-comment">
+          <div className="prp-card-head">
+            <Avatar login={c.author} avatars={pr.avatars} />
+            <strong>{c.author}</strong>
+            <span>{fmtDate(c.createdAt)}</span>
+          </div>
+          <div className="prp-card-body">{autolink(c.body, web)}</div>
+        </div>
+      ))}
+      {reply !== null && (
+        <div className="prd-thread-reply">
+          <input
+            className="prd-reply-input"
+            placeholder={t('prDetail.replyPlaceholder')}
+            aria-label={t('prDetail.replyPlaceholder')}
+            value={reply}
+            onChange={(e) => onReplyChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onReply()
+            }}
+          />
+          <button className="btn ghost tiny" onClick={onReply} disabled={busy || !reply.trim()}>
+            {t('prDetail.reply')}
+          </button>
+        </div>
+      )}
+    </article>
+  )
+}
+
+/**
+ * The box under a diff line for a new review comment. It takes the focus when
+ * it opens and gives it back to the diff when it closes; Escape cancels and
+ * ⌘/Ctrl+Enter posts, as everywhere else a comment is written in the app.
+ */
+function LineCommentComposer({
+  anchor,
+  text,
+  busy,
+  onChange,
+  onCancel,
+  onPost
+}: {
+  anchor: PrLineAnchor
+  text: string
+  busy: boolean
+  onChange: (text: string) => void
+  onCancel: () => void
+  onPost: () => void
+}): React.JSX.Element {
+  const t = useT()
+  const ref = useRef<HTMLTextAreaElement>(null)
+  // Where the focus was before: the "+" or the row that opened this.
+  const opener = useRef<Element | null>(null)
+  useEffect(() => {
+    opener.current = document.activeElement
+    ref.current?.focus()
+    return () => {
+      // Back to the diff, not to the top of the page, once the box is gone.
+      const back = opener.current
+      if (back instanceof HTMLElement && back.isConnected) back.focus()
+    }
+  }, [])
+  const line = String(getAnchorLine(anchor))
+  const where = interp(t(anchor.kind === 'del' ? 'prPage.lineCommentOld' : 'prPage.lineCommentNew'), { line })
+  return (
+    <div
+      className="prp-line-composer"
+      role="group"
+      aria-label={interp(t('prPage.lineCommentLabel'), { path: anchor.path, line })}
+      // A click inside must not reach the diff row, which would reopen the box.
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="prp-line-composer-loc">
+        <code>{anchor.path}</code> · {where}
+      </div>
+      <textarea
+        ref={ref}
+        className="prd-input"
+        placeholder={t('prPage.lineCommentPlaceholder')}
+        aria-label={interp(t('prPage.lineCommentLabel'), { path: anchor.path, line })}
+        value={text}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            onCancel()
+          } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            onPost()
+          }
+        }}
+      />
+      <div className="prp-line-composer-actions">
+        <button type="button" className="btn primary tiny" onClick={onPost} disabled={busy || !text.trim()}>
+          {busy ? <Loader2 size={12} className="spin" /> : <MessageSquare size={12} />} {t('prPage.lineCommentPost')}
+        </button>
+        <button type="button" className="btn ghost tiny" onClick={onCancel}>
+          {t('common.cancel')}
+        </button>
+        <span className="prp-line-composer-hint">{t('prPage.lineCommentHint')}</span>
+      </div>
+    </div>
+  )
+}
+
 function SectionTab({
   id,
   active,
@@ -902,18 +1069,72 @@ function FilesSection({
   viewed,
   onToggleViewed,
   repoPath,
-  prUrl
+  prUrl,
+  threads,
+  renderThread,
+  lineDraft,
+  onOpenLineDraft,
+  onChangeLineDraft,
+  onCancelLineDraft,
+  onPostLineDraft,
+  busy
 }: {
   files: PrFile[]
   viewed: Set<string>
   onToggleViewed: (f: string) => void
   repoPath: string
   prUrl: string
+  threads: PrReviewThread[]
+  renderThread: (th: PrReviewThread) => React.ReactNode
+  lineDraft: { anchor: PrLineAnchor; text: string } | null
+  onOpenLineDraft: (anchor: PrLineAnchor) => void
+  onChangeLineDraft: (text: string) => void
+  onCancelLineDraft: () => void
+  onPostLineDraft: () => void
+  busy: boolean
 }): React.JSX.Element {
   const t = useT()
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
   const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
   const file = files.find((f) => f.filename === selected) ?? files[0]
+
+  // The same parse the viewer draws, so an index here is a line there.
+  const lines = useMemo(() => (file?.patch ? parseDiff(file.patch) : []), [file?.patch])
+  const threadsByLine = useMemo(() => (file ? getThreadsByLine(threads, file, lines) : new Map<number, PrReviewThread[]>()), [threads, file, lines])
+  const draftHere = !!file && !!lineDraft && lineDraft.anchor.path === file.filename
+  const draftIdx = draftHere
+    ? lines.findIndex((l) => {
+        const a = getLineAnchor(l, file)
+        return !!a && isSameAnchor(a, lineDraft.anchor)
+      })
+    : -1
+  const composer = lineDraft ? (
+    <LineCommentComposer
+      anchor={lineDraft.anchor}
+      text={lineDraft.text}
+      busy={busy}
+      onChange={onChangeLineDraft}
+      onCancel={onCancelLineDraft}
+      onPost={onPostLineDraft}
+    />
+  ) : null
+  const lineExtras = new Map<number, React.ReactNode>()
+  for (const [idx, ths] of threadsByLine) {
+    lineExtras.set(idx, <div className="prp-line-threads">{ths.map((th) => renderThread(th))}</div>)
+  }
+  if (draftIdx >= 0) {
+    lineExtras.set(
+      draftIdx,
+      <>
+        {lineExtras.get(draftIdx)}
+        {composer}
+      </>
+    )
+  }
+  const commentOnLine = (idx: number): void => {
+    const anchor = file && lines[idx] ? getLineAnchor(lines[idx], file) : null
+    if (anchor) onOpenLineDraft(anchor)
+  }
 
   return (
     <div className="prp-files-split">
@@ -969,6 +1190,8 @@ function FilesSection({
                 {t('prPage.markViewed')}
               </label>
             </div>
+            {/* A draft whose line is gone from a refreshed diff stays, above it. */}
+            {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
             {file.patch ? (
               <DiffViewer
                 // A fresh viewer per file: its scroll and selection belong to one diff.
@@ -980,6 +1203,8 @@ function FilesSection({
                 // show KEY=•••• while the setting is on.
                 maskValues={maskSecrets && isSecretFile(file.filename)}
                 repoPath={repoPath}
+                onCommentLine={commentOnLine}
+                lineExtras={lineExtras}
               />
             ) : (
               <div className="prp-no-patch">

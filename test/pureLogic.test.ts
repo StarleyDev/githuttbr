@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
 import { parseDiff } from '../src/renderer/src/lib/diff'
+import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../src/renderer/src/lib/prLineComment'
+import { getAnchorLine, getAnchorSide, isValidLineAnchor } from '../src/shared/prLineAnchor'
 import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
@@ -8344,5 +8346,78 @@ describe('edit context menu', () => {
     expect(parseEditMenuLabels({ cut: 'Cut' })).toBeNull()
     expect(parseEditMenuLabels(null)).toBeNull()
     expect(parseEditMenuLabels(EDIT_MENU_FALLBACK_LABELS)).toEqual(EDIT_MENU_FALLBACK_LABELS)
+  })
+})
+
+describe('a pull request diff line ↔ its comment anchor', () => {
+  const patch = ['@@ -10,4 +10,4 @@', ' keep', '-gone', '+added', ' tail'].join('\n')
+  const lines = parseDiff(patch)
+  const file = { filename: 'src/app.ts' }
+  const at = (text: string): number => lines.findIndex((l) => l.text === text && l.kind !== 'hunk')
+
+  it('an added line is the new side, by its new number only', () => {
+    const a = getLineAnchor(lines[at('added')], file)
+    expect(a).toEqual({ path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 11 })
+    expect(getAnchorSide(a!)).toBe('new')
+    expect(getAnchorLine(a!)).toBe(11)
+  })
+
+  it('a deleted line is the old side, by its old number only', () => {
+    const a = getLineAnchor(lines[at('gone')], file)
+    expect(a).toEqual({ path: 'src/app.ts', kind: 'del', oldLine: 11, newLine: null })
+    expect(getAnchorSide(a!)).toBe('old')
+    expect(getAnchorLine(a!)).toBe(11)
+  })
+
+  it('a context line carries both numbers and counts on the new side', () => {
+    const a = getLineAnchor(lines[at('tail')], file)
+    expect(a).toEqual({ path: 'src/app.ts', kind: 'ctx', oldLine: 12, newLine: 12 })
+    expect(getAnchorSide(a!)).toBe('new')
+  })
+
+  it('a hunk header is no line to comment on; a rename keeps the old path', () => {
+    expect(getLineAnchor(lines[0], file)).toBeNull()
+    expect(getLineAnchor(lines[at('gone')], { filename: 'b.ts', previousFilename: 'a.ts' })).toMatchObject({ path: 'b.ts', oldPath: 'a.ts' })
+    expect(getLineAnchor(lines[at('gone')], { filename: 'b.ts', previousFilename: 'b.ts' })).not.toHaveProperty('oldPath')
+  })
+
+  it('every anchor it makes passes the boundary check; malformed ones do not', () => {
+    for (const l of lines) {
+      const a = getLineAnchor(l, file)
+      if (a) expect(isValidLineAnchor(a)).toBe(true)
+    }
+    expect(isValidLineAnchor({ path: 'a', kind: 'add', oldLine: 2, newLine: 2 })).toBe(false)
+    expect(isValidLineAnchor({ path: 'a', kind: 'ctx', oldLine: 2, newLine: null })).toBe(false)
+    expect(isValidLineAnchor({ path: 'a', kind: 'del', oldLine: 0, newLine: null })).toBe(false)
+    expect(isValidLineAnchor({ path: ' ', kind: 'del', oldLine: 3, newLine: null })).toBe(false)
+    expect(isValidLineAnchor({ path: 'a', kind: 'meta', oldLine: 3, newLine: 3 })).toBe(false)
+    expect(isValidLineAnchor(null)).toBe(false)
+  })
+
+  it('the same line is the same anchor, whatever else differs', () => {
+    const a = getLineAnchor(lines[at('added')], file)!
+    expect(isSameAnchor(a, { ...a })).toBe(true)
+    expect(isSameAnchor(a, getLineAnchor(lines[at('gone')], file)!)).toBe(false)
+  })
+
+  it('threads land on their line by side: old by the old number, new by the new', () => {
+    const thread = (line: number, side?: 'old' | 'new', path = 'src/app.ts'): Parameters<typeof getThreadsByLine>[0][number] => ({
+      path,
+      line,
+      side,
+      diffHunk: '',
+      rootId: `${path}:${side}:${line}`,
+      comments: []
+    })
+    const map = getThreadsByLine(
+      [thread(11, 'old'), thread(11, 'new'), thread(12, 'new'), thread(12), thread(11, 'new', 'other.ts'), thread(99, 'new')],
+      file,
+      lines
+    )
+    expect(map.get(at('gone'))?.map((t) => t.rootId)).toEqual(['src/app.ts:old:11'])
+    expect(map.get(at('added'))?.map((t) => t.rootId)).toEqual(['src/app.ts:new:11'])
+    // Line 12 on the new side is the context line; the side-less thread is left to the conversation.
+    expect(map.get(at('tail'))?.map((t) => t.rootId)).toEqual(['src/app.ts:new:12'])
+    expect([...map.keys()].sort()).toEqual([at('gone'), at('added'), at('tail')].sort())
   })
 })

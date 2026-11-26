@@ -360,6 +360,54 @@ describe('a comment on one line of a pull request — main', () => {
     })
   })
 
+  describe('the threads a host returns say which side their line is on', () => {
+    it('Data Center: FROM is old, TO new; an orphaned anchor is not placed', async () => {
+      const { mapBbsActivities } = await import('../src/main/bitbucketServer')
+      const act = (id: number, anchor: Record<string, unknown>): Record<string, unknown> => ({
+        id,
+        action: 'COMMENTED',
+        createdDate: id,
+        comment: { id, text: 'x', author: { name: 'ana' } },
+        commentAnchor: { path: 'src/app.ts', line: 4, ...anchor }
+      })
+      const { reviewThreads } = mapBbsActivities([
+        act(1, { fileType: 'FROM' }),
+        act(2, { fileType: 'TO' }),
+        act(3, { fileType: 'TO', orphaned: true })
+      ] as never)
+      expect(reviewThreads.map((t) => t.side)).toEqual(['old', 'new', undefined])
+    })
+
+    it('Azure DevOps: a right-file position is new, a left-file one old', async () => {
+      const { mapAzurePr } = await import('../src/main/azurePr')
+      const th = (id: number, ctx: Record<string, unknown>): Record<string, unknown> => ({
+        id,
+        comments: [{ id: 1, content: 'x', commentType: 'text' }],
+        threadContext: { filePath: '/src/app.ts', ...ctx }
+      })
+      const pr = mapAzurePr(
+        { org: 'acme', project: 'proj', repo: 'app' },
+        { pullRequestId: 7, title: 'T', status: 'active' } as never,
+        [th(1, { rightFileStart: { line: 3 } }), th(2, { leftFileStart: { line: 5 } })] as never
+      )
+      expect(pr.reviewThreads.map((t) => [t.line, t.side])).toEqual([
+        [3, 'new'],
+        [5, 'old']
+      ])
+    })
+  })
+
+  describe('what the toast says', () => {
+    it('refused and outside-the-diff get their own explanation, through the IPC wrapper', async () => {
+      const { explainGitError } = await import('../src/renderer/src/lib/gitErrorHint')
+      const wrap = (m: string): string => `Error invoking remote method 'hosting:prCommentOnLine': Error: ${m}`
+      expect(explainGitError(wrap('Line comment [refused]: GitHub: Resource not accessible by integration'))?.key).toBe(
+        'gitError.lineCommentRefused'
+      )
+      expect(explainGitError(wrap('Line comment [outsideDiff]: GitLab: 400 Bad request'))?.key).toBe('gitError.lineCommentOutsideDiff')
+    })
+  })
+
   describe('what is refused before anything is sent', () => {
     it('an anchor without numbers for its kind, or an empty comment', async () => {
       await failure(post(GITHUB, { path: 'a.ts', kind: 'add', oldLine: 3, newLine: 3 }))

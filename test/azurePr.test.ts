@@ -53,7 +53,14 @@ describe('Azure DevOps PR mapping', () => {
     })
     expect(pr.comments.map((c) => c.body)).toEqual(['Looks good'])
     expect(pr.reviewThreads).toEqual([
-      { path: 'src/a.ts', line: 12, diffHunk: '', rootId: 3, comments: [{ id: 1, author: 'Bob', body: 'rename this', createdAt: '2026-01-03' }] }
+      {
+        path: 'src/a.ts',
+        line: 12,
+        diffHunk: '',
+        rootId: 3,
+        comments: [{ id: 1, author: 'Bob', body: 'rename this', createdAt: '2026-01-03' }],
+        side: 'new'
+      }
     ])
   })
 
