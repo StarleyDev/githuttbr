@@ -234,6 +234,19 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
     })
   }
 
+  // The PR page's "you" (whose comments get Edit and Delete) is asked as the
+  // bound profile too: never the active one's account.
+  it('the PR page asks who "you" are as the bound profile', async () => {
+    const { forgetLogins } = await import('../src/main/hosting')
+    forgetLogins()
+    const github = PROVIDERS[0]
+    await invoke(BOUND, github, ['hosting:prDetail', 1])
+    const who = calls.filter((c) => c.url === 'https://api.github.com/user')
+    expect(who).toHaveLength(1)
+    expect(who[0].credentials).toContain(PERSONAL.com)
+    expect(who[0].credentials).not.toContain('work-')
+  })
+
   // Bound to a profile with nothing for the host: nothing is sent, and the
   // error names that profile — "this profile" would point at the active one.
   it('a bound profile with no credential sends nothing and says which profile it is', async () => {

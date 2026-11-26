@@ -126,12 +126,13 @@ describe('editing and deleting a pull request comment — main', () => {
       ])
     })
 
-    it('a review comment goes through the pull comments endpoint', async () => {
-      await edit(GITHUB, REVIEW, '  Trimmed.  ')
+    it('a review comment goes through the pull comments endpoint, its Markdown kept as typed', async () => {
+      // Blank lines around it go; indented code and a two-space line break stay.
+      await edit(GITHUB, REVIEW, '\n\n    const limit = 50\nsee above  \nthanks\n\n')
       routes = [['DELETE', `${API}/pulls/comments/42`, 204, null]]
       await remove(GITHUB, REVIEW)
       expect(writes()).toEqual([
-        { url: `${API}/pulls/comments/42`, method: 'PATCH', body: { body: 'Trimmed.' } },
+        { url: `${API}/pulls/comments/42`, method: 'PATCH', body: { body: '    const limit = 50\nsee above  \nthanks' } },
         { url: `${API}/pulls/comments/42`, method: 'DELETE', body: undefined }
       ])
     })
@@ -305,6 +306,47 @@ describe('editing and deleting a pull request comment — main', () => {
     })
   })
 
+  describe('who "you" are on the page (withViewer)', () => {
+    const read = Promise.resolve({ number: 7 })
+    afterEach(async () => (await import('../src/main/hosting')).forgetLogins())
+
+    it('GitHub: the login the token signs in as, matched by login', async () => {
+      const { withViewer, forgetLogins } = await import('../src/main/hosting')
+      forgetLogins()
+      routes = [['GET', 'https://api.github.com/user', 200, { login: 'ana' }]]
+      expect(await withViewer(GITHUB, {}, read)).toEqual({ number: 7, viewer: 'ana', viewerId: null, viewerById: false })
+    })
+
+    it('a failing "who am I" leaves nobody, and the detail still answers', async () => {
+      const { withViewer, forgetLogins } = await import('../src/main/hosting')
+      forgetLogins()
+      routes = [['GET', 'https://api.github.com/user', 500, { message: 'boom' }]]
+      expect(await withViewer(GITHUB, {}, read)).toEqual({ number: 7, viewer: null, viewerId: null, viewerById: false })
+    })
+
+    it('a failing read fails the call', async () => {
+      const { withViewer, forgetLogins } = await import('../src/main/hosting')
+      forgetLogins()
+      await failure(withViewer(GITHUB, {}, Promise.reject(new Error('no PR'))))
+    })
+
+    it('Azure DevOps: the identity id, and matching by id only', async () => {
+      const { withViewer, forgetLogins } = await import('../src/main/hosting')
+      forgetLogins()
+      routes = [
+        ['GET', 'https://dev.azure.com/acme/_apis/connectionData', 200, { authenticatedUser: { id: 'id-ana-1', providerDisplayName: 'Ana Souza' } }]
+      ]
+      expect(await withViewer(AZURE, {}, read)).toEqual({ number: 7, viewer: 'Ana Souza', viewerId: 'id-ana-1', viewerById: true })
+    })
+
+    it('bitbucket.org: the account uuid, and matching by id only', async () => {
+      const { withViewer, forgetLogins } = await import('../src/main/hosting')
+      forgetLogins()
+      routes = [['GET', 'https://api.bitbucket.org/2.0/user', 200, { display_name: 'Ana Souza', uuid: '{a1b2}' }]]
+      expect(await withViewer(BB_CLOUD, {}, read)).toEqual({ number: 7, viewer: 'Ana Souza', viewerId: '{a1b2}', viewerById: true })
+    })
+  })
+
   describe('what the mappers hand the page', () => {
     it('GitHub: a conversation handle, and "edited" when updated_at is past created_at', async () => {
       const { mapGhIssueComment } = await import('../src/main/hosting')
@@ -334,18 +376,46 @@ describe('editing and deleting a pull request comment — main', () => {
                 id: 2,
                 content: 'kept',
                 commentType: 'text',
+                author: { id: 'id-ana-1', displayName: 'Ana Souza' },
                 publishedDate: '2026-01-01T10:00:00Z',
                 lastContentUpdatedDate: '2026-01-02T10:00:00Z'
               }
             ]
           },
-          { id: 10, comments: [{ id: 1, content: 'line', commentType: 'text' }], threadContext: { filePath: '/a.ts', rightFileStart: { line: 2 } } }
+          { id: 10, comments: [{ id: 1, content: 'line', commentType: 'text' }], threadContext: { filePath: '/a.ts', rightFileStart: { line: 2 } } },
+          {
+            id: 11,
+            comments: [
+              { id: 1, content: 'question', commentType: 'text', publishedDate: '2026-01-03T10:00:00Z' },
+              { id: 2, content: 'answer', commentType: 'text', publishedDate: '2026-01-03T11:00:00Z' }
+            ]
+          }
         ] as never
       )
-      expect(pr.comments).toHaveLength(1)
+      expect(pr.comments).toHaveLength(3)
       expect(pr.comments[0].handle).toEqual({ id: 2, kind: 'conversation', threadId: 9 })
       expect(pr.comments[0].edited).toBe(true)
+      expect(pr.comments[0].authorId).toBe('id-ana-1')
+      expect(pr.comments[0].hasReplies).toBeUndefined()
+      // The first comment of a conversation thread with replies is marked answered.
+      expect(pr.comments.slice(1).map((c) => !!c.hasReplies)).toEqual([true, false])
       expect(pr.reviewThreads[0].comments[0].handle).toEqual({ id: 1, kind: 'review', threadId: 10 })
+    })
+
+    it('Data Center: a conversation comment with nested replies is marked answered', async () => {
+      const { mapBbsActivities } = await import('../src/main/bitbucketServer')
+      const { comments } = mapBbsActivities([
+        {
+          id: 1,
+          action: 'COMMENTED',
+          createdDate: 1,
+          comment: { id: 11, version: 0, text: 'a', author: { name: 'ana' }, comments: [{ id: 12, version: 0, text: 'b', author: { name: 'bo' } }] }
+        }
+      ] as never)
+      expect(comments.map((c) => [c.handle?.id, !!c.hasReplies])).toEqual([
+        [11, true],
+        [12, false]
+      ])
     })
 
     it('Data Center: the version is carried, conversation and review alike', async () => {

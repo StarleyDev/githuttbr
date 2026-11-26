@@ -1,6 +1,15 @@
 import type { PrCommentHandle } from './types'
 
-const isId = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0
+const isId = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
+
+/**
+ * An edited comment's text as sent: the blank lines around it dropped, and
+ * nothing else — leading spaces open an indented code block and two trailing
+ * spaces are a line break, so trimming would change what the comment says.
+ */
+export function stripOuterNewlines(text: string): string {
+  return text.replace(/^(?:[ \t]*\r?\n)+/, '').replace(/(?:\r?\n[ \t]*)+$/, '')
+}
 
 /** A handle the renderer sent is the shape main expects: it builds a URL from it. */
 export function isValidCommentHandle(v: unknown): v is PrCommentHandle {
@@ -9,7 +18,7 @@ export function isValidCommentHandle(v: unknown): v is PrCommentHandle {
   if (!isId(h.id)) return false
   if (h.kind !== 'conversation' && h.kind !== 'review') return false
   if (h.threadId !== undefined && !isId(h.threadId)) return false
-  if (h.version !== undefined && !(typeof h.version === 'number' && Number.isInteger(h.version) && h.version >= 0)) return false
+  if (h.version !== undefined && !(typeof h.version === 'number' && Number.isSafeInteger(h.version) && h.version >= 0)) return false
   return true
 }
 

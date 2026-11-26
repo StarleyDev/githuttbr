@@ -356,7 +356,8 @@ export function mapBbsActivities(activities: BbsActivity[]): { comments: PrComme
               : {})
       })
     } else {
-      for (const c of all) comments.push(commentOf(c, 'conversation'))
+      // Data Center refuses to delete an answered comment: the confirm says so up front.
+      for (const c of all) comments.push({ ...commentOf(c, 'conversation'), ...(c.comments?.length ? { hasReplies: true } : {}) })
     }
   }
   return { comments, reviewThreads }

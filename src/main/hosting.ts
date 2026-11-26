@@ -24,7 +24,7 @@ import {
 } from '../shared/prLineAnchor'
 import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
 import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
-import { isEditedAfter, isValidCommentHandle } from '../shared/prCommentHandle'
+import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../shared/prCommentHandle'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
 import { githubCiRuns } from './ciRunsGithub'
@@ -856,14 +856,24 @@ export function markAwaitingYou(prs: PullRequest[], login: string | null): PullR
 }
 
 /** Who a token signs in as, per host — remembered for a while, keyed by a hash of the token (never the token). */
-const loginCache = new Map<string, { login: string | null; at: number }>()
+const loginCache = new Map<string, { login: string | null; id: string | null; at: number }>()
 const LOGIN_TTL_MS = 10 * 60_000
 
 async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<string | null> {
+  return (await myAccount(parsed, token, auth))?.login ?? null
+}
+
+/**
+ * Who a token signs in as: the login the host names authors by and, where that
+ * is a display name two people can share (Azure DevOps, bitbucket.org), the
+ * account's own id — what "your comment" must be matched on there.
+ */
+async function myAccount(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<{ login: string | null; id: string | null } | null> {
   const key = `${parsed.provider}|${parsed.base ?? ''}|${createHash('sha256').update(token).digest('hex').slice(0, 16)}`
   const hit = loginCache.get(key)
-  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return hit.login
+  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return { login: hit.login, id: hit.id }
   let login: string | null = null
+  let id: string | null = null
   // Only the host's own "no" is worth remembering: a token without user scope
   // stays that way. A network error or a 5xx is asked again next time.
   let refused = false
@@ -876,23 +886,28 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
     // "you" is the display name too — the only thing the list can be matched on.
     else if (parsed.provider === 'bitbucket') {
       const res = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: bitbucketAuthFor(auth) } })
-      if (res.ok) login = ((await res.json()) as { display_name?: string | null }).display_name ?? null
-      else refused = res.status === 401 || res.status === 403
+      if (res.ok) {
+        const me = (await res.json()) as { display_name?: string | null; uuid?: string | null }
+        login = me.display_name ?? null
+        id = me.uuid ?? null
+      } else refused = res.status === 401 || res.status === 403
       if (!res.ok && !refused) return null
     } else if (parsed.provider === 'azure') {
-      const me = await adoJson<{ authenticatedUser?: { providerDisplayName?: string } }>(
+      const me = await adoJson<{ authenticatedUser?: { id?: string; providerDisplayName?: string } }>(
         `https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`,
         token
       )
       login = me.authenticatedUser?.providerDisplayName ?? null
+      // The identity id: what a comment's `author.id` (an IdentityRef) names.
+      id = me.authenticatedUser?.id ?? null
     }
   } catch (err) {
     // A token without user scope cannot say who it is: no marks, no error.
     refused = isAuthRefusal(err)
     if (!refused) return null
   }
-  loginCache.set(key, { login, at: Date.now() })
-  return login
+  loginCache.set(key, { login, id, at: Date.now() })
+  return { login, id }
 }
 
 /** A 401/403 from the host. Every client myLogin uses sets `status` on what it throws. */
@@ -1831,13 +1846,16 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
         }))
       })
     } else {
-      for (const n of notes)
+      notes.forEach((n, i) =>
         comments.push({
           author: n.author?.username ?? 'unknown',
           body: n.body,
           createdAt: n.created_at,
-          handle: { id: n.id, kind: 'conversation' }
+          handle: { id: n.id, kind: 'conversation' },
+          // A discussion's first note, with replies after it.
+          ...(i === 0 && notes.length > 1 ? { hasReplies: true } : {})
         })
+      )
     }
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -2849,7 +2867,8 @@ async function editPrComment(
   body: unknown
 ): Promise<void> {
   if (typeof body !== 'string' || !body.trim()) throw new Error('An edited comment needs some text.')
-  return changePrComment(remoteUrl, tokens, number, handle, body.trim())
+  // Only the blank lines around it go: indented code and a trailing two-space break are Markdown.
+  return changePrComment(remoteUrl, tokens, number, handle, stripOuterNewlines(body))
 }
 
 async function deletePrComment(remoteUrl: string, tokens: HostTokens, number: number, handle: unknown): Promise<void> {
@@ -2860,22 +2879,42 @@ async function deletePrComment(remoteUrl: string, tokens: HostTokens, number: nu
  * Who this repository's calls sign in as, for the PR and issue pages' "your
  * comment". Never fails the page: null when the token cannot say.
  */
-async function withViewer<T extends object>(remoteUrl: string, tokens: HostTokens, read: Promise<T>): Promise<T & { viewer: string | null }> {
-  // Both settle before the call answers: a failed read must not leave the
-  // viewer's request running past it, under a profile scope already left.
-  const [detail, viewer] = await Promise.allSettled([read, viewerOf(remoteUrl, tokens)])
-  if (detail.status === 'rejected') throw detail.reason
-  return { ...detail.value, viewer: viewer.status === 'fulfilled' ? viewer.value : null }
+/** Who the page's viewer is, as `PrDetail.viewer*` carries it. */
+export interface PageViewer {
+  viewer: string | null
+  viewerId: string | null
+  viewerById: boolean
 }
 
-async function viewerOf(remoteUrl: string, tokens: HostTokens): Promise<string | null> {
+const NO_VIEWER: PageViewer = { viewer: null, viewerId: null, viewerById: false }
+
+/**
+ * A detail read with its viewer. Both settle before the call answers: a failed
+ * read must not leave the viewer's request running past it, under a profile
+ * scope already left. Exported for tests.
+ */
+export async function withViewer<T extends object>(remoteUrl: string, tokens: HostTokens, read: Promise<T>): Promise<T & PageViewer> {
+  const [detail, viewer] = await Promise.allSettled([read, viewerOf(remoteUrl, tokens)])
+  if (detail.status === 'rejected') throw detail.reason
+  return { ...detail.value, ...(viewer.status === 'fulfilled' ? viewer.value : NO_VIEWER) }
+}
+
+/**
+ * Who this repository's calls sign in as, for the PR and issue pages' "your
+ * comment". Azure DevOps and bitbucket.org name authors by display name, which
+ * two people can share: there "yours" is matched on the account id only
+ * (`viewerById`). Never fails the page: nobody, when the token cannot say.
+ */
+async function viewerOf(remoteUrl: string, tokens: HostTokens): Promise<PageViewer> {
   try {
     const parsed = parseRemoteUrl(remoteUrl)
-    if (!parsed) return null
+    if (!parsed) return NO_VIEWER
+    const viewerById = parsed.provider === 'azure' || (parsed.provider === 'bitbucket' && !parsed.base)
     const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
-    return auth ? await myLogin(parsed, auth.token, auth) : null
+    const me = auth ? await myAccount(parsed, auth.token, auth) : null
+    return { viewer: me?.login ?? null, viewerId: me?.id ?? null, viewerById }
   } catch {
-    return null
+    return NO_VIEWER
   }
 }
 

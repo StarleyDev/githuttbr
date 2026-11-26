@@ -96,6 +96,8 @@ function mapAzureComment(th: AzThread, c: AzComment, kind: 'conversation' | 'rev
     body: c.content ?? '',
     createdAt: c.publishedDate ?? '',
     handle: { id: c.id, kind, threadId: th.id },
+    // Display names repeat; the identity id is what tells two "Ana Souza" apart.
+    ...(c.author?.id ? { authorId: c.author.id } : {}),
     ...(isEditedAfter(c.publishedDate, c.lastContentUpdatedDate) ? { edited: true } : {})
   }
 }
@@ -149,7 +151,10 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
         ...(ctx.rightFileStart?.line ? { side: 'new' as const } : ctx.leftFileStart?.line ? { side: 'old' as const } : {})
       })
     } else {
-      for (const c of notes) comments.push(mapAzureComment(th, c, 'conversation'))
+      // A conversation thread's first comment, with others after it, is one that was answered.
+      notes.forEach((c, i) =>
+        comments.push({ ...mapAzureComment(th, c, 'conversation'), ...(i === 0 && notes.length > 1 ? { hasReplies: true } : {}) })
+      )
     }
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))

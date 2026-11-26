@@ -703,6 +703,10 @@ export interface PrComment {
   handle?: PrCommentHandle
   /** The host says the text was changed after it was posted. */
   edited?: boolean
+  /** The author's account id, where `author` is a display name (Azure DevOps). */
+  authorId?: string
+  /** Others answered it, in the host's own thread (Data Center, Azure DevOps, GitLab). */
+  hasReplies?: boolean
 }
 
 /** A submitted review on a pull request. */
@@ -720,6 +724,8 @@ export interface PrReviewComment {
   handle?: PrCommentHandle
   /** The host says the text was changed after it was posted. */
   edited?: boolean
+  /** The author's account id, where `author` is a display name (Azure DevOps). */
+  authorId?: string
 }
 
 /** An inline review thread anchored to a file/line in the PR diff. */
@@ -887,6 +893,10 @@ export interface PrDetail {
    * authors: what "your comment" is matched on. Null when the token cannot say.
    */
   viewer?: string | null
+  /** The viewer's account id, where the host has one worth matching on (Azure DevOps, bitbucket.org). */
+  viewerId?: string | null
+  /** Authors are display names two people can share: "yours" is matched on `viewerId` only. */
+  viewerById?: boolean
 }
 
 /** A work item a pull request is linked to. */
@@ -976,6 +986,8 @@ export interface IssueDetail {
   projectFields: ProjectFieldGroup[]
   /** Who the page's calls sign in as; see `PrDetail.viewer`. */
   viewer?: string | null
+  viewerId?: string | null
+  viewerById?: boolean
 }
 
 export type PrReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
