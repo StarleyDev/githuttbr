@@ -10,6 +10,7 @@ import type {
   PrCheck,
   PrDetail,
   PrFile,
+  PrDiffRevision,
   PrLineAnchor,
   PrMergeMethod,
   PrReview,
@@ -101,6 +102,7 @@ interface FjPull {
   html_url: string
   head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null }
   base?: { ref?: string }
+  merge_base?: string
   requested_reviewers?: Array<{ login?: string }> | null
   state?: string
   merged?: boolean
@@ -489,7 +491,9 @@ export async function forgejoPullDetail(
     for (const c of lineComments) {
       reviewThreads.push({
         path: c.path,
-        line: c.line ?? c.position ?? c.original_position ?? null,
+        // Gitea sends both, the unused one as 0 (an unsigned field, never omitted):
+        // `||`, not `??`, or an old-side comment reads as line 0.
+        line: c.line || c.position || c.original_position || null,
         diffHunk: c.diff_hunk ?? '',
         rootId: c.id,
         comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }],
@@ -689,13 +693,27 @@ export async function forgejoCommentOnLine(
   token: string,
   number: number,
   anchor: PrLineAnchor,
-  body: string
+  body: string,
+  read: PrDiffRevision | null
 ): Promise<void> {
   const position = getAnchorSide(anchor) === 'old' ? 'old_position' : 'new_position'
   await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/reviews`, token, {
     method: 'POST',
-    body: JSON.stringify({ event: 'COMMENT', body: '', comments: [{ path: anchor.path, body, [position]: getAnchorLine(anchor) }] })
+    body: JSON.stringify({
+      event: 'COMMENT',
+      body: '',
+      // The commit the diff was read at, so the comment is placed against it.
+      ...(read ? { commit_id: read.headSha } : {}),
+      comments: [{ path: anchor.path, body, [position]: getAnchorLine(anchor) }]
+    })
   })
+}
+
+/** The pull's head commit and merge base, as the Files tab's diff was read at. */
+export async function forgejoPullRevision(base: string, owner: string, repo: string, token: string, number: number): Promise<PrDiffRevision | null> {
+  const pr = await fjJson<FjPull>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
+  if (!pr.head?.sha) return null
+  return { headSha: pr.head.sha, ...(pr.merge_base ? { baseSha: pr.merge_base } : {}) }
 }
 
 export async function forgejoMerge(

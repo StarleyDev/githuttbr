@@ -25,8 +25,9 @@ export function getLineAnchor(line: DiffLine, file: Pick<PrFile, 'filename' | 'p
 
 /**
  * The threads drawn under each line of one file's diff, by line index. A thread
- * is placed only when its host said which side its line counts on: a deleted
- * line matches by its old number, an added or unchanged one by its new number.
+ * is placed only when its host said which side its line counts on: on the old
+ * side it matches a deleted or unchanged line by its old number, on the new
+ * side an added or unchanged line by its new number.
  * A thread on a line outside the hunks shown (or outdated) is left out — it is
  * still in the Conversation tab.
  */
@@ -41,7 +42,8 @@ export function getThreadsByLine(
   const oldAt = new Map<number, number>()
   const newAt = new Map<number, number>()
   lines.forEach((l, i) => {
-    if (l.kind === 'del' && l.oldNo != null) oldAt.set(l.oldNo, i)
+    // A context line is in both files: a host may anchor a thread on it by its old number.
+    if ((l.kind === 'del' || l.kind === 'ctx') && l.oldNo != null) oldAt.set(l.oldNo, i)
     if ((l.kind === 'add' || l.kind === 'ctx') && l.newNo != null) newAt.set(l.newNo, i)
   })
   for (const th of onFile) {

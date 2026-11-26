@@ -1183,8 +1183,10 @@ export const hostingApi = {
     tokens: PrTokens,
     number: number,
     anchor: import('../../../shared/types').PrLineAnchor,
-    body: string
-  ) => window.api.hosting.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, body) as Promise<void>,
+    body: string,
+    /** The revision the Files tab's diff was read at; null when the host did not say. */
+    revision: import('../../../shared/types').PrDiffRevision | null
+  ) => window.api.hosting.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, body, revision) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
   ciRuns: (repoPath: string, remoteUrl: string, tokens: PrTokens, branch?: string) =>
     window.api.hosting.ciRuns(repoPath, remoteUrl, tokens, branch) as Promise<import('../../../shared/types').CiRunList>,
@@ -1203,7 +1205,7 @@ export const hostingApi = {
   prChecks: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prChecks(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
   prFiles: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
-    window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
+    window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFileList>,
   prReview: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, event: PrReviewEvent, body: string) =>
     window.api.hosting.prReview(repoPath, remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, method: PrMergeMethod) =>

@@ -757,6 +757,26 @@ export interface PrFile {
   previousFilename?: string
 }
 
+/**
+ * Which version of a pull request a diff was read at: the head commit (and
+ * merge base, where the host names it), plus Azure DevOps's iteration. A line
+ * comment carries it, so a push after the diff loaded is caught instead of the
+ * comment landing on whatever line now has that number.
+ */
+export interface PrDiffRevision {
+  headSha: string
+  baseSha?: string
+  /** Azure DevOps: the iteration the diff is the last of. */
+  iteration?: number
+}
+
+/** A pull request's changed files and the revision they were read at — null
+ *  when the host did not say, or the PR moved while they were being read. */
+export interface PrFileList {
+  files: PrFile[]
+  revision: PrDiffRevision | null
+}
+
 /** Full detail for one pull request (conversation + review state). */
 export interface PrDetail {
   number: number

@@ -13,7 +13,14 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
-import { getAnchorLine, getAnchorSide, isValidLineAnchor } from '../shared/prLineAnchor'
+import {
+  getAnchorLine,
+  getAnchorSide,
+  isSameRevision,
+  isValidLineAnchor,
+  LINE_COMMENT_STALE,
+  validRevision
+} from '../shared/prLineAnchor'
 import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
@@ -41,6 +48,7 @@ import {
   createForgejoRepo,
   forgejoComment,
   forgejoCommentOnLine,
+  forgejoPullRevision,
   forgejoMerge,
   forgejoPullChecks,
   forgejoJobLog,
@@ -99,6 +107,7 @@ import {
   bbsCiStatuses,
   bbsComment,
   bbsCommentOnLine,
+  bbsPullRevision,
   bbsMerge,
   bbsPullChecks,
   bbsPullDetail,
@@ -161,6 +170,8 @@ import type {
   PrReview,
   PrReviewThread,
   PrLineAnchor,
+  PrDiffRevision,
+  PrFileList,
   PrCheck,
   PrFile,
   IssueInfo,
@@ -188,6 +199,7 @@ import {
   azurePrFiles,
   azureReply,
   azureCommentOnLine,
+  azurePrRevision,
   azureReview,
   azureWorkItem,
   type Ado,
@@ -1685,6 +1697,8 @@ interface GlNote {
     old_path?: string | null
     new_line?: number | null
     old_line?: number | null
+    /** The MR head the note was written against. */
+    head_sha?: string | null
   } | null
 }
 
@@ -1742,6 +1756,7 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
       changes_count?: string | null
       source_project_id?: number
       project_id?: number
+      diff_refs?: { head_sha?: string } | null
     }>(`${mrUrl}?with_labels_details=true`, auth),
     allPages((page) =>
       glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100&page=${page}`, auth)
@@ -1778,7 +1793,15 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
         diffHunk: '',
         rootId: d.id,
         // An unchanged line carries both numbers; it is drawn on the new side.
-        ...(pos.new_line != null ? { side: 'new' as const } : pos.old_line != null ? { side: 'old' as const } : {}),
+        // Only on the current diff: a note written against an older head counts
+        // its line in that version, so it stays in the conversation.
+        ...(pos.head_sha && pos.head_sha === mr.diff_refs?.head_sha
+          ? pos.new_line != null
+            ? { side: 'new' as const }
+            : pos.old_line != null
+              ? { side: 'old' as const }
+              : {}
+          : {}),
         comments: notes.map((n) => ({
           id: n.id,
           author: n.author?.username ?? 'unknown',
@@ -2237,6 +2260,50 @@ async function pullRequestChecks(
   }))
 }
 
+/**
+ * The revision a pull request is at, as its Files tab would read it: head (and
+ * merge base) commits, or Azure's last iteration. Null on a host without one.
+ */
+async function pullRequestRevision(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrDiffRevision | null> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    const mr = await glJson<{ diff_refs?: { base_sha?: string; head_sha?: string } | null }>(`${base}/merge_requests/${number}`, auth)
+    const refs = mr.diff_refs
+    return refs?.head_sha ? { headSha: refs.head_sha, ...(refs.base_sha ? { baseSha: refs.base_sha } : {}) } : null
+  }
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullRevision(b.repo, b.token, number)
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullRevision(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parsed?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrRevision(a.ado, a.repo, number)
+  }
+  if (parsed?.provider !== 'github') return null
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const pr = await ghJson<{ head?: { sha?: string } }>(`${api}/pulls/${number}`, token)
+  return pr.head?.sha ? { headSha: pr.head.sha } : null
+}
+
+/**
+ * The changed files and the revision they were read at. The revision is read
+ * before and after the files: when the two differ, a push landed in between and
+ * nobody can say which one the diff shows — null then, and a line comment
+ * checks the head when it is posted instead.
+ */
+async function pullRequestFileList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrFileList> {
+  const revision = (): Promise<PrDiffRevision | null> => pullRequestRevision(remoteUrl, tokens, number).catch(() => null)
+  const before = await revision()
+  const files = await pullRequestFiles(remoteUrl, tokens, number)
+  const after = before ? await revision() : null
+  return { files, revision: before && after && isSameRevision(before, after) ? after : null }
+}
+
 /** Changed files in a PR (for the file-by-file review checklist). */
 async function pullRequestFiles(
   remoteUrl: string,
@@ -2363,7 +2430,8 @@ async function glCommentOnLine(
   token: string | undefined,
   number: number,
   anchor: PrLineAnchor,
-  body: string
+  body: string,
+  read: PrDiffRevision | null
 ): Promise<void> {
   const { base, auth } = await glProjectOf(remoteUrl, token)
   const mrUrl = `${base}/merge_requests/${number}`
@@ -2372,6 +2440,8 @@ async function glCommentOnLine(
   if (!refs?.base_sha || !refs.head_sha || !refs.start_sha) {
     throw new Error('GitLab did not say which commits this merge request compares — refresh it and try again.')
   }
+  // The position names today's refs: they must be the ones the diff was read at.
+  if (read && !isSameRevision(read, { headSha: refs.head_sha, baseSha: refs.base_sha })) throw new Error(LINE_COMMENT_STALE)
   // An added line has only new_line, a removed one only old_line, and an
   // unchanged line both — GitLab rejects a context line given just one.
   const lines = {
@@ -2405,25 +2475,34 @@ async function commentOnPrLine(
   tokens: HostTokens,
   number: number,
   anchor: unknown,
-  body: unknown
+  body: unknown,
+  read: PrDiffRevision | null = null
 ): Promise<void> {
   if (!isValidLineAnchor(anchor)) throw new Error('A line comment needs a file and a line of its diff.')
   if (typeof body !== 'string' || !body.trim()) throw new Error('A line comment needs some text.')
   const text = body.trim()
   try {
-    if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return await glCommentOnLine(remoteUrl, tokens.gitlab, number, anchor, text)
+    if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return await glCommentOnLine(remoteUrl, tokens.gitlab, number, anchor, text, read)
+    // Data Center and Forgejo anchor to the PR as it is now: refused when that is
+    // no longer the revision the line was read at.
+    const refuseMoved = async (): Promise<void> => {
+      const now = read ? await pullRequestRevision(remoteUrl, tokens, number) : null
+      if (read && now && !isSameRevision(read, now)) throw new Error(LINE_COMMENT_STALE)
+    }
     if (isBbs(remoteUrl)) {
       const b = await bbsRepoOf(remoteUrl)
+      await refuseMoved()
       return await bbsCommentOnLine(b.repo, b.token, number, anchor, text)
     }
     const parsed = parseRemoteUrl(remoteUrl)
     if (parsed?.provider === 'forgejo') {
       const f = await fjRepoOf(remoteUrl, tokens.forgejo)
-      return await forgejoCommentOnLine(f.base, f.owner, f.repo, f.token, number, anchor, text)
+      await refuseMoved()
+      return await forgejoCommentOnLine(f.base, f.owner, f.repo, f.token, number, anchor, text, read)
     }
     if (parsed?.provider === 'azure') {
       const a = await azRepoOf(remoteUrl, tokens.azure)
-      return await azureCommentOnLine(a.ado, a.repo, number, anchor, text)
+      return await azureCommentOnLine(a.ado, a.repo, number, anchor, text, read)
     }
     if (parsed?.provider === 'bitbucket') {
       refuseUnreadableDataCenter(remoteUrl)
@@ -2432,13 +2511,15 @@ async function commentOnPrLine(
       return await bbCloudCommentOnLine(parsed.owner, parsed.repo, auth, number, anchor, text)
     }
     const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
-    // The comment names the commit it was written against: the PR's head now.
-    const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
+    // The comment names the commit its line was read at, so GitHub places it in
+    // that version — and marks it outdated if the line has changed since. Only
+    // when the diff's commit is unknown is the head asked for now.
+    const commitId = read?.headSha ?? (await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)).head.sha
     await ghJson(`${api}/pulls/${number}/comments`, token, {
       method: 'POST',
       body: JSON.stringify({
         body: text,
-        commit_id: pr.head.sha,
+        commit_id: commitId,
         path: anchor.path,
         line: getAnchorLine(anchor),
         side: getAnchorSide(anchor) === 'old' ? 'LEFT' : 'RIGHT'
@@ -4083,11 +4164,11 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo(
     'hosting:prCommentOnLine',
-    (remoteUrl: string, tokens: HostTokens, number: number, anchor: unknown, body: unknown) =>
-      commentOnPrLine(remoteUrl, tokens, number, anchor, body)
+    (remoteUrl: string, tokens: HostTokens, number: number, anchor: unknown, body: unknown, revision: unknown) =>
+      commentOnPrLine(remoteUrl, tokens, number, anchor, body, validRevision(revision))
   )
   handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestFiles(remoteUrl, tokens, number)
+    pullRequestFileList(remoteUrl, tokens, number)
   )
   handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
     pullRequestCheckLog(remoteUrl, tokens, url)

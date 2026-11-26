@@ -28,6 +28,7 @@ import type {
   PrReviewEvent,
   PrReviewThread,
   PullRequest,
+  PrDiffRevision,
   PrLineAnchor
 } from '../shared/types'
 
@@ -612,6 +613,12 @@ export async function bbsComment(repo: BitbucketServerRepo, token: string, id: n
 }
 
 const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> = { add: 'ADDED', del: 'REMOVED', ctx: 'CONTEXT' }
+
+/** The pull request's source head, as the Files tab's diff was read at. */
+export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffRevision | null> {
+  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
+  return pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : null
+}
 
 /**
  * A comment on one line of the pull request's effective diff (the one its

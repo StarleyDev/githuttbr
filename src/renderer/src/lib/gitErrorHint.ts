@@ -35,6 +35,10 @@ const RULES: Rule[] = [
     hint: () => ({ key: 'gitError.lineCommentRefused' })
   },
   {
+    test: /Line comment \[stale\]:/,
+    hint: () => ({ key: 'gitError.lineCommentStale' })
+  },
+  {
     test: /Line comment \[outsideDiff\]:/,
     hint: () => ({ key: 'gitError.lineCommentOutsideDiff' })
   },

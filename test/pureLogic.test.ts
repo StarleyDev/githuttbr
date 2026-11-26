@@ -8418,6 +8418,9 @@ describe('a pull request diff line ↔ its comment anchor', () => {
     expect(map.get(at('added'))?.map((t) => t.rootId)).toEqual(['src/app.ts:new:11'])
     // Line 12 on the new side is the context line; the side-less thread is left to the conversation.
     expect(map.get(at('tail'))?.map((t) => t.rootId)).toEqual(['src/app.ts:new:12'])
+    // A context line is in both files: an old-side thread finds it by its old number.
+    const keep = getThreadsByLine([thread(10, 'old')], file, lines)
+    expect(keep.get(at('keep'))?.map((t) => t.rootId)).toEqual(['src/app.ts:old:10'])
     expect([...map.keys()].sort()).toEqual([at('gone'), at('added'), at('tail')].sort())
   })
 })

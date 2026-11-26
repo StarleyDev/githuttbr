@@ -1,4 +1,4 @@
-import type { PrLineAnchor, PrLineSide } from './types'
+import type { PrDiffRevision, PrLineAnchor, PrLineSide } from './types'
 
 /**
  * The rules every host agrees on for a line comment, kept in one place so main
@@ -32,4 +32,30 @@ export function isValidLineAnchor(value: unknown): value is PrLineAnchor {
   if (a.kind === 'del') return isLine(a.oldLine) && a.newLine == null
   if (a.kind === 'ctx') return isLine(a.oldLine) && isLine(a.newLine)
   return false
+}
+
+/** What main throws when the pull request moved after its diff was read. */
+export const LINE_COMMENT_STALE = 'Line comment [stale]: the pull request changed since this diff was loaded.'
+
+/**
+ * Whether a pull request is still at the revision a diff was read at. Azure
+ * DevOps is compared by iteration (a push makes a new one); every other host by
+ * head commit, and by merge base where both sides name one.
+ */
+export function isSameRevision(read: PrDiffRevision, now: PrDiffRevision): boolean {
+  if (read.iteration !== undefined && now.iteration !== undefined) return read.iteration === now.iteration
+  if (read.headSha !== now.headSha) return false
+  return !read.baseSha || !now.baseSha || read.baseSha === now.baseSha
+}
+
+/** A revision off the IPC boundary, or null when it is not one. */
+export function validRevision(value: unknown): PrDiffRevision | null {
+  if (!value || typeof value !== 'object') return null
+  const r = value as Record<string, unknown>
+  if (typeof r.headSha !== 'string' || !r.headSha) return null
+  return {
+    headSha: r.headSha,
+    ...(typeof r.baseSha === 'string' && r.baseSha ? { baseSha: r.baseSha } : {}),
+    ...(typeof r.iteration === 'number' && Number.isInteger(r.iteration) ? { iteration: r.iteration } : {})
+  }
 }

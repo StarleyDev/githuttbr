@@ -901,7 +901,7 @@ export const shots = [
           labels: [{ name: 'enhancement', color: '84c5dd' }], commits: 3, changedFiles: 2, additions: 84, deletions: 12
         }))
         ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
         type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
@@ -978,7 +978,7 @@ export const shots = [
           reviewThreads: [], requestedReviewers: [{ login: 'jordan' }], commits: 2, changedFiles: 3, additions: 41, deletions: 6
         }))
         ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
         type: 'pr', repoPath, remoteUrl: 'https://bitbucket.example.corp/bitbucket/scm/plat/hooks.git', number: 118,
@@ -1011,7 +1011,7 @@ export const shots = [
           commits: 3, changedFiles: 1, additions: 8, deletions: 2
         }))
         ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => [{
+        ipcMain.handle('hosting:prFiles', () => ({ revision: { headSha: 'c0ffee42' }, files: [{
           filename: 'src/search.ts', status: 'modified', additions: 8, deletions: 2,
           patch: [
             '@@ -1,5 +1,11 @@',
@@ -1029,7 +1029,7 @@ export const shots = [
             '+',
             '+export const SEARCH_LIMIT = 50'
           ].join('\n')
-        }])
+        }] }))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
         type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
@@ -1063,7 +1063,7 @@ export const shots = [
           { name: 'ci / lint', status: 'completed', conclusion: 'success', url: job(0), hasLog: true },
           { name: 'ci / test', status: 'completed', conclusion: 'failure', url: job(1), hasLog: true }
         ])
-        ipcMain.handle('hosting:prFiles', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
         const R = '\u001b[31m', G = '\u001b[32m', D = '\u001b[2m', X = '\u001b[0m'
         ipcMain.handle('hosting:prCheckLog', () => [
           `${D}Run npm test${X}`,
@@ -4319,6 +4319,6 @@ async function fakePullRequestHost(app) {
       }
     })
     ipcMain.handle('hosting:prChecks', () => [])
-    ipcMain.handle('hosting:prFiles', () => [])
+    ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
   })
 }

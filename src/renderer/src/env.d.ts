@@ -286,7 +286,8 @@ interface PreloadApi {
       tokens: unknown,
       number: number,
       anchor: unknown,
-      body: string
+      body: string,
+      revision: unknown
     ): Promise<unknown>
     ciRuns(repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown>
     ciRunJobs(repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown>

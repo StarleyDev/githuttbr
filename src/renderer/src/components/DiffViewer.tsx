@@ -97,6 +97,9 @@ const HUGE_LINES = 5000
 
 const MOVE_ARROW: Record<MovedMark['dir'], string> = { up: '↑', down: '↓' }
 const NO_MOVES = new Map<number, MovedMark>()
+// One shared empty list: a fresh `[]` default per render would make every
+// memo keyed on the layers (the highlighted lines) start over each time.
+const NO_LAYERS: HighlightLayer[] = []
 
 /**
  * A row drawn under a line in the split view's column mode, reporting its
@@ -126,7 +129,7 @@ export function DiffViewer({
   diff,
   file = '',
   lang = '',
-  highlightLayers = [],
+  highlightLayers = NO_LAYERS,
   maskValues = false,
   ignoreWs = false,
   repoPath,
@@ -264,11 +267,18 @@ export function DiffViewer({
     [highlightLayers, findRe]
   )
 
+  // Each line's highlighted HTML, worked out once per diff, language and search:
+  // a re-render for anything else (a comment typed under a line, a block's
+  // height measured) must not run the highlighter over every line again.
+  const highlighted = useMemo(
+    () => lines.map((l) => (l.kind === 'add' || l.kind === 'del' || l.kind === 'ctx' ? highlightHtml(highlightLine(maskValues ? maskSecretLine(l.text) : l.text, lang), layers) : '')),
+    [lines, lang, layers, maskValues]
+  )
+
   // Render one cell's HTML: syntax highlight → search layers → word marks (or
-  // secret mask). Shared by unified and split views.
-  const cellHtml = (text: string, idx: number, kind: 'add' | 'del' | 'ctx'): string => {
-    const t = maskValues ? maskSecretLine(text) : text
-    let html = highlightHtml(highlightLine(t, lang), layers)
+  // secret mask). Shared by unified and split views; `idx` is the line's index.
+  const cellHtml = (idx: number, kind: 'add' | 'del' | 'ctx'): string => {
+    let html = highlighted[idx] ?? ''
     // A moved line's word marks would compare it with whatever line happened to
     // sit opposite, which is not what it moved from.
     const wr = !maskValues && wordDiffOn && kind !== 'ctx' && !moved.has(idx) ? wordRanges.get(idx) : undefined
@@ -305,10 +315,14 @@ export function DiffViewer({
     const l = lines[idx]
     return interp(t('diff.commentOnLine'), { line: String((l.kind === 'del' ? l.oldNo : l.newNo) ?? '') })
   }
+  // Out of the tab order: a long diff would be thousands of stops. The line's
+  // click and its menu entry (the context-menu key) reach the same composer.
   const commentButton = (idx: number): React.JSX.Element | null =>
     onCommentLine ? (
       <button
         type="button"
+        tabIndex={-1}
+        data-line-idx={idx}
         className="diff-comment-btn"
         title={commentLabel(idx)}
         aria-label={commentLabel(idx)}
@@ -322,12 +336,20 @@ export function DiffViewer({
     ) : null
   // A click on the row opens the composer as well — unless it ended a text
   // selection, which is someone copying, not commenting.
-  const commentOnClick = (idx: number): (() => void) | undefined =>
+  // The composer opens a moment after the click, so the second click of a
+  // double click (selecting a word — reading, not commenting) can call it off.
+  const pendingComment = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(pendingComment.current), [])
+  const commentOnClick = (idx: number): ((e: React.MouseEvent) => void) | undefined =>
     onCommentLine
-      ? () => {
-          const sel = window.getSelection()
-          if (sel && !sel.isCollapsed && viewerRef.current?.contains(sel.anchorNode)) return
-          onCommentLine(idx)
+      ? (e) => {
+          window.clearTimeout(pendingComment.current)
+          if (e.detail > 1) return
+          pendingComment.current = window.setTimeout(() => {
+            const sel = window.getSelection()
+            if (sel && !sel.isCollapsed && viewerRef.current?.contains(sel.anchorNode)) return
+            onCommentLine(idx)
+          }, 250)
         }
       : undefined
   // The lines of a split row that have a block under them, each once (a
@@ -384,7 +406,7 @@ export function DiffViewer({
           <span className="diff-gutter">{c?.no ?? ''}</span>
         )}
         {c ? (
-          <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(c.text, c.idx, c.kind) }} />
+          <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(c.idx, c.kind) }} />
         ) : (
           <span className="diff-text" />
         )}
@@ -782,7 +804,7 @@ export function DiffViewer({
               )}
               <span
                 className="diff-text"
-                dangerouslySetInnerHTML={{ __html: cellHtml(l.text, i, l.kind as 'add' | 'del' | 'ctx') }}
+                dangerouslySetInnerHTML={{ __html: cellHtml(i, l.kind as 'add' | 'del' | 'ctx') }}
               />
               {l.noEol && noEolMark}
             </div>

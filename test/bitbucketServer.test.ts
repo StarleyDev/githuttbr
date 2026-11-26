@@ -900,7 +900,7 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('lists the changed files with their hunks', async () => {
-    const files = (await call('hosting:prFiles', UNBOUND, REMOTE, tokens, 1)) as Array<{ filename: string; patch?: string }>
+    const { files } = (await call('hosting:prFiles', UNBOUND, REMOTE, tokens, 1)) as { files: Array<{ filename: string; patch?: string }> }
     expect(files.map((f) => f.filename)).toEqual(['src/a.ts', 'src/b.ts'])
     expect(files[0].patch).toContain('+three')
     expectOnlyServerA()

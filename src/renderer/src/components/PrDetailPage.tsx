@@ -33,6 +33,7 @@ import type {
   PrCheck,
   PrDetail,
   PrFile,
+  PrDiffRevision,
   PrLineAnchor,
   PrMergeMethod,
   PrReviewEvent,
@@ -105,6 +106,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // The check whose log is open, by its link: a refresh may reorder the list.
   const [openLog, setOpenLog] = useState<string | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
+  // The revision those files' diff was read at: a line comment carries it.
+  const [filesRevision, setFilesRevision] = useState<PrDiffRevision | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [section, setSection] = useState<Section>('conversation')
@@ -112,11 +115,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [busy, setBusy] = useState(false)
   const [mergeMethod, setMergeMethod] = useState<PrMergeMethod>('merge')
   // Per-thread reply drafts, keyed by the thread root id (GitHub comment id or
-  // GitLab discussion id).
-  const [replies, setReplies] = useState<Record<number | string, string>>({})
+  // GitLab discussion id). Text being typed lives in the box itself; these refs
+  // only remember it — for the unsent-draft check, and for the same thread's box
+  // in the other tab — so a keystroke re-renders one box, not the whole page
+  // (and with it every highlighted line of the diff).
+  const replyDrafts = useRef<Record<string, string>>({})
   // The comment being written on one line of the Files tab's diff. One at a
   // time, kept while another file is looked at, so nothing typed is lost.
-  const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor; text: string } | null>(null)
+  const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(null)
+  const lineDraftText = useRef('')
 
   // "Viewed" ticks are local and kept per repo + PR: GitHub's own viewed state
   // has no simple REST call. Same key as the modal used, so ticks carry over.
@@ -159,7 +166,16 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       setPr(await hostingApi.prDetail(repoPath, remoteUrl, tokens, number))
       // Checks and files fill in after the conversation: the page is usable first.
       void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
-      void hostingApi.prFiles(repoPath, remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
+      void hostingApi
+        .prFiles(repoPath, remoteUrl, tokens, number)
+        .then((list) => {
+          setFiles(list.files)
+          setFilesRevision(list.revision)
+        })
+        .catch(() => {
+          setFiles([])
+          setFilesRevision(null)
+        })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
@@ -173,12 +189,13 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // ‹ › and Alt+arrows ask before leaving text nobody sent.
   useEffect(() => {
     const check = (): boolean =>
-      !!comment.trim() || Object.values(replies).some((r) => r.trim()) || !!lineDraft?.text.trim()
+      !!comment.trim() || Object.values(replyDrafts.current).some((r) => r.trim()) || !!lineDraftText.current.trim()
     registerPrDraft(check)
     return () => registerPrDraft(null)
-  }, [comment, replies, lineDraft])
+  }, [comment])
 
-  const act = async (fn: () => Promise<void>, ok: string): Promise<void> => {
+  /** Run a write, refresh, toast. True when it went through. */
+  const act = async (fn: () => Promise<void>, ok: string): Promise<boolean> => {
     setBusy(true)
     try {
       await fn()
@@ -187,9 +204,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       // A merge (or close) moves it between the list page's tabs.
       forgetFinished(repoPath)
       toast('success', ok)
+      return true
     } catch (err) {
       // The explanation in the user's language when there is one, else the host's own words.
       toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
+      return false
     } finally {
       setBusy(false)
     }
@@ -209,16 +228,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     )
   const merge = (): void =>
     void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
-  const replyToThread = (rootId: number | string): void => {
-    const body = (replies[rootId] ?? '').trim()
-    if (!body) return
-    void act(
-      () =>
-        hostingApi
-          .prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body)
-          .then(() => setReplies((r) => ({ ...r, [rootId]: '' }))),
+  const replyToThread = async (rootId: number | string, text: string): Promise<boolean> => {
+    const body = text.trim()
+    if (!body) return false
+    const ok = await act(
+      () => hostingApi.prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body),
       t('prDetail.replyPosted')
     )
+    if (ok) replyDrafts.current[String(rootId)] = ''
+    return ok
   }
 
   // A click on a line opens its composer — unless a comment already typed on
@@ -226,39 +244,55 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // cancelled first, and the toast says where it is.
   const openLineDraft = (anchor: PrLineAnchor): void => {
     if (lineDraft && isSameAnchor(lineDraft.anchor, anchor)) return
-    if (lineDraft?.text.trim()) {
+    if (lineDraft && lineDraftText.current.trim()) {
       toast('info', interp(t('prPage.lineCommentPending'), { path: lineDraft.anchor.path, line: String(getAnchorLine(lineDraft.anchor)) }))
       return
     }
-    setLineDraft({ anchor, text: '' })
+    lineDraftText.current = ''
+    setLineDraft({ anchor })
   }
-  const postLineDraft = (): void => {
-    if (!lineDraft || !lineDraft.text.trim()) return
-    const { anchor, text } = lineDraft
-    void act(
-      () =>
-        hostingApi
-          .prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, text.trim())
-          .then(() => setLineDraft((d) => (d && isSameAnchor(d.anchor, anchor) ? null : d))),
+  const cancelLineDraft = (): void => {
+    lineDraftText.current = ''
+    setLineDraft(null)
+  }
+  const postLineDraft = async (text: string): Promise<boolean> => {
+    if (!lineDraft || !text.trim()) return false
+    const { anchor } = lineDraft
+    const ok = await act(
+      () => hostingApi.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, text.trim(), filesRevision),
       t('prPage.lineCommentPosted')
     )
+    if (ok) {
+      lineDraftText.current = ''
+      setLineDraft((d) => (d && isSameAnchor(d.anchor, anchor) ? null : d))
+    }
+    return ok
   }
 
-  // One review thread — in the conversation, and under its line in the Files tab.
-  const threadCard = (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
-    pr ? (
-      <ReviewThreadCard
-        key={th.rootId}
-        thread={th}
-        pr={pr}
-        web={web}
-        withLocation={withLocation}
-        reply={canReplyInThread ? (replies[th.rootId] ?? '') : null}
-        onReplyChange={(v) => setReplies((r) => ({ ...r, [th.rootId]: v }))}
-        onReply={() => replyToThread(th.rootId)}
-        busy={busy}
-      />
-    ) : null
+  // One review thread — in the conversation, and under its line in the Files
+  // tab. Stable while nothing it shows changes, so the Files tab's line blocks
+  // (and the diff under them) are not rebuilt for an unrelated re-render.
+  const replyRef = useRef(replyToThread)
+  replyRef.current = replyToThread
+  const web = remoteWebUrl(remoteUrl)
+  const threadCard = useCallback(
+    (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
+      pr ? (
+        <ReviewThreadCard
+          key={th.rootId}
+          thread={th}
+          pr={pr}
+          web={web}
+          withLocation={withLocation}
+          canReply={canReplyInThread}
+          drafts={replyDrafts}
+          onReply={(text) => replyRef.current(th.rootId, text)}
+          busy={busy}
+        />
+      ) : null,
+    [pr, web, canReplyInThread, busy]
+  )
+  const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
   // Hand the preview modal the remote this PR's repository is actually behind —
   // matching on URL, since a repo may have several remotes configured.
@@ -316,7 +350,6 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     })
   }
 
-  const web = remoteWebUrl(remoteUrl)
   const status = pr ? prStatus(pr) : null
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
   // A merge-check veto blocks the merge without being a conflict (Bitbucket Data Center).
@@ -445,11 +478,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   repoPath={repoPath}
                   prUrl={pr.url}
                   threads={pr.reviewThreads}
-                  renderThread={(th) => threadCard(th, false)}
+                  renderThread={renderFileThread}
                   lineDraft={lineDraft}
+                  lineDraftText={lineDraftText}
                   onOpenLineDraft={openLineDraft}
-                  onChangeLineDraft={(text) => setLineDraft((d) => (d ? { ...d, text } : d))}
-                  onCancelLineDraft={() => setLineDraft(null)}
+                  onCancelLineDraft={cancelLineDraft}
                   onPostLineDraft={postLineDraft}
                   busy={busy}
                 />
@@ -737,15 +770,16 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 /**
  * One inline review thread: where it is (in the conversation; under its line
  * in the Files tab that is plain to see), its comments, and the reply box —
- * `reply` is null where the host has no API to reply inside a thread.
+ * absent where the host has no API to reply inside a thread. The reply being
+ * typed is this box's own state; `drafts` only remembers it for the page.
  */
 function ReviewThreadCard({
   thread,
   pr,
   web,
   withLocation,
-  reply,
-  onReplyChange,
+  canReply,
+  drafts,
   onReply,
   busy
 }: {
@@ -753,12 +787,22 @@ function ReviewThreadCard({
   pr: PrDetail
   web: string | undefined
   withLocation: boolean
-  reply: string | null
-  onReplyChange: (v: string) => void
-  onReply: () => void
+  canReply: boolean
+  drafts: React.RefObject<Record<string, string>>
+  onReply: (text: string) => Promise<boolean>
   busy: boolean
 }): React.JSX.Element {
   const t = useT()
+  const key = String(thread.rootId)
+  const [reply, setReply] = useState(() => drafts.current[key] ?? '')
+  const changeReply = (v: string): void => {
+    setReply(v)
+    drafts.current[key] = v
+  }
+  const send = (): void => {
+    if (!reply.trim()) return
+    void onReply(reply).then((ok) => ok && setReply(''))
+  }
   return (
     <article className="prp-card prp-thread">
       {withLocation && (
@@ -778,19 +822,19 @@ function ReviewThreadCard({
           <div className="prp-card-body">{autolink(c.body, web)}</div>
         </div>
       ))}
-      {reply !== null && (
+      {canReply && (
         <div className="prd-thread-reply">
           <input
             className="prd-reply-input"
             placeholder={t('prDetail.replyPlaceholder')}
             aria-label={t('prDetail.replyPlaceholder')}
             value={reply}
-            onChange={(e) => onReplyChange(e.target.value)}
+            onChange={(e) => changeReply(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') onReply()
+              if (e.key === 'Enter') send()
             }}
           />
-          <button className="btn ghost tiny" onClick={onReply} disabled={busy || !reply.trim()}>
+          <button className="btn ghost tiny" onClick={send} disabled={busy || !reply.trim()}>
             {t('prDetail.reply')}
           </button>
         </div>
@@ -801,44 +845,51 @@ function ReviewThreadCard({
 
 /**
  * The box under a diff line for a new review comment. It takes the focus when
- * it opens and gives it back to the diff when it closes; Escape cancels and
- * ⌘/Ctrl+Enter posts, as everywhere else a comment is written in the app.
+ * it opens; Escape cancels (asking first when something was typed) and
+ * ⌘/Ctrl+Enter posts. The text is this box's own state — a keystroke
+ * re-renders the box, not the diff around it — and `draft` remembers it for
+ * the page (the unsent-draft check, and coming back from another file).
  */
 function LineCommentComposer({
   anchor,
-  text,
+  draft,
   busy,
-  onChange,
   onCancel,
   onPost
 }: {
   anchor: PrLineAnchor
-  text: string
+  draft: React.RefObject<string>
   busy: boolean
-  onChange: (text: string) => void
   onCancel: () => void
-  onPost: () => void
+  onPost: (text: string) => void
 }): React.JSX.Element {
   const t = useT()
   const ref = useRef<HTMLTextAreaElement>(null)
-  // Where the focus was before: the "+" or the row that opened this.
-  const opener = useRef<Element | null>(null)
-  useEffect(() => {
-    opener.current = document.activeElement
-    ref.current?.focus()
-    return () => {
-      // Back to the diff, not to the top of the page, once the box is gone.
-      const back = opener.current
-      if (back instanceof HTMLElement && back.isConnected) back.focus()
-    }
-  }, [])
+  const [text, setText] = useState(() => draft.current)
+  useEffect(() => ref.current?.focus(), [])
+  const change = (v: string): void => {
+    setText(v)
+    draft.current = v
+  }
+  const escape = (): void => {
+    if (!text.trim()) return onCancel()
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prPage.lineCommentDiscardTitle'),
+      message: t('prPage.lineCommentDiscardMessage'),
+      danger: true,
+      confirmLabel: t('prPage.lineCommentDiscard'),
+      onConfirm: onCancel
+    })
+  }
   const line = String(getAnchorLine(anchor))
   const where = interp(t(anchor.kind === 'del' ? 'prPage.lineCommentOld' : 'prPage.lineCommentNew'), { line })
+  const label = interp(t('prPage.lineCommentLabel'), { path: anchor.path, line })
   return (
     <div
       className="prp-line-composer"
       role="group"
-      aria-label={interp(t('prPage.lineCommentLabel'), { path: anchor.path, line })}
+      aria-label={label}
       // A click inside must not reach the diff row, which would reopen the box.
       onClick={(e) => e.stopPropagation()}
     >
@@ -849,22 +900,22 @@ function LineCommentComposer({
         ref={ref}
         className="prd-input"
         placeholder={t('prPage.lineCommentPlaceholder')}
-        aria-label={interp(t('prPage.lineCommentLabel'), { path: anchor.path, line })}
+        aria-label={label}
         value={text}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => change(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             e.preventDefault()
             e.stopPropagation()
-            onCancel()
+            escape()
           } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
             e.preventDefault()
-            onPost()
+            if (text.trim() && !busy) onPost(text)
           }
         }}
       />
       <div className="prp-line-composer-actions">
-        <button type="button" className="btn primary tiny" onClick={onPost} disabled={busy || !text.trim()}>
+        <button type="button" className="btn primary tiny" onClick={() => onPost(text)} disabled={busy || !text.trim()}>
           {busy ? <Loader2 size={12} className="spin" /> : <MessageSquare size={12} />} {t('prPage.lineCommentPost')}
         </button>
         <button type="button" className="btn ghost tiny" onClick={onCancel}>
@@ -1073,8 +1124,8 @@ function FilesSection({
   threads,
   renderThread,
   lineDraft,
+  lineDraftText,
   onOpenLineDraft,
-  onChangeLineDraft,
   onCancelLineDraft,
   onPostLineDraft,
   busy
@@ -1086,55 +1137,96 @@ function FilesSection({
   prUrl: string
   threads: PrReviewThread[]
   renderThread: (th: PrReviewThread) => React.ReactNode
-  lineDraft: { anchor: PrLineAnchor; text: string } | null
+  lineDraft: { anchor: PrLineAnchor } | null
+  lineDraftText: React.RefObject<string>
   onOpenLineDraft: (anchor: PrLineAnchor) => void
-  onChangeLineDraft: (text: string) => void
   onCancelLineDraft: () => void
-  onPostLineDraft: () => void
+  onPostLineDraft: (text: string) => Promise<boolean>
   busy: boolean
 }): React.JSX.Element {
   const t = useT()
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
   const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
   const file = files.find((f) => f.filename === selected) ?? files[0]
+  const diffRef = useRef<HTMLDivElement>(null)
 
   // The same parse the viewer draws, so an index here is a line there.
   const lines = useMemo(() => (file?.patch ? parseDiff(file.patch) : []), [file?.patch])
-  const threadsByLine = useMemo(() => (file ? getThreadsByLine(threads, file, lines) : new Map<number, PrReviewThread[]>()), [threads, file, lines])
+  const threadsByLine = useMemo(
+    () => (file ? getThreadsByLine(threads, file, lines) : new Map<number, PrReviewThread[]>()),
+    [threads, file, lines]
+  )
   const draftHere = !!file && !!lineDraft && lineDraft.anchor.path === file.filename
-  const draftIdx = draftHere
-    ? lines.findIndex((l) => {
-        const a = getLineAnchor(l, file)
-        return !!a && isSameAnchor(a, lineDraft.anchor)
-      })
-    : -1
-  const composer = lineDraft ? (
-    <LineCommentComposer
-      anchor={lineDraft.anchor}
-      text={lineDraft.text}
-      busy={busy}
-      onChange={onChangeLineDraft}
-      onCancel={onCancelLineDraft}
-      onPost={onPostLineDraft}
-    />
-  ) : null
-  const lineExtras = new Map<number, React.ReactNode>()
-  for (const [idx, ths] of threadsByLine) {
-    lineExtras.set(idx, <div className="prp-line-threads">{ths.map((th) => renderThread(th))}</div>)
-  }
-  if (draftIdx >= 0) {
-    lineExtras.set(
-      draftIdx,
-      <>
-        {lineExtras.get(draftIdx)}
-        {composer}
-      </>
-    )
-  }
-  const commentOnLine = (idx: number): void => {
-    const anchor = file && lines[idx] ? getLineAnchor(lines[idx], file) : null
-    if (anchor) onOpenLineDraft(anchor)
-  }
+  const draftIdx = useMemo(
+    () =>
+      file && lineDraft && lineDraft.anchor.path === file.filename
+        ? lines.findIndex((l) => {
+            const a = getLineAnchor(l, file)
+            return !!a && isSameAnchor(a, lineDraft.anchor)
+          })
+        : -1,
+    [file, lineDraft, lines]
+  )
+
+  // The page's handlers change every render; the blocks under the lines must
+  // not, or the diff would be rebuilt for nothing. The latest ones ride a ref.
+  const handlers = useRef({ onCancelLineDraft, onPostLineDraft, onOpenLineDraft })
+  handlers.current = { onCancelLineDraft, onPostLineDraft, onOpenLineDraft }
+  // Closing the box puts the focus back on its line's "+" (or the diff), so a
+  // keyboard user is where they were — not at the top of the page.
+  const refocusLine = useCallback((idx: number): void => {
+    requestAnimationFrame(() => {
+      const root = diffRef.current
+      const target =
+        root?.querySelector<HTMLElement>(`.diff-comment-btn[data-line-idx="${idx}"]`) ??
+        root?.querySelector<HTMLElement>('.diff-viewer')
+      target?.focus()
+    })
+  }, [])
+  const composer = useMemo(
+    () =>
+      lineDraft ? (
+        <LineCommentComposer
+          key={`${lineDraft.anchor.path}:${lineDraft.anchor.kind}:${lineDraft.anchor.oldLine}:${lineDraft.anchor.newLine}`}
+          anchor={lineDraft.anchor}
+          draft={lineDraftText}
+          busy={busy}
+          onCancel={() => {
+            handlers.current.onCancelLineDraft()
+            if (draftIdx >= 0) refocusLine(draftIdx)
+          }}
+          onPost={(text) =>
+            void handlers.current.onPostLineDraft(text).then((ok) => {
+              if (ok && draftIdx >= 0) refocusLine(draftIdx)
+            })
+          }
+        />
+      ) : null,
+    [lineDraft, lineDraftText, busy, draftIdx, refocusLine]
+  )
+  const lineExtras = useMemo(() => {
+    const map = new Map<number, React.ReactNode>()
+    for (const [idx, ths] of threadsByLine) {
+      map.set(idx, <div className="prp-line-threads">{ths.map((th) => renderThread(th))}</div>)
+    }
+    if (draftIdx >= 0) {
+      map.set(
+        draftIdx,
+        <>
+          {map.get(draftIdx)}
+          {composer}
+        </>
+      )
+    }
+    return map
+  }, [threadsByLine, renderThread, draftIdx, composer])
+  const commentOnLine = useCallback(
+    (idx: number): void => {
+      const anchor = file && lines[idx] ? getLineAnchor(lines[idx], file) : null
+      if (anchor) handlers.current.onOpenLineDraft(anchor)
+    },
+    [file, lines]
+  )
 
   return (
     <div className="prp-files-split">
@@ -1177,7 +1269,7 @@ function FilesSection({
         ))}
       </div>
 
-      <div className="prp-file-diff">
+      <div className="prp-file-diff" ref={diffRef}>
         {file && (
           <>
             <div className="prp-file-diff-head">
