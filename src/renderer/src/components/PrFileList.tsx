@@ -17,6 +17,7 @@ import {
 import { ViewToggle } from './CommitComposer'
 import { useT, interp } from '../i18n'
 import { sumThreadCounts } from '../lib/prFileThreads'
+import { hasKnownLineCounts } from '../lib/prNoPatch'
 
 type PrTreeNode = FileTreeNode<PrFile>
 
@@ -115,9 +116,16 @@ const FileRow = memo(function FileRow({
         </span>
       )}
       <ThreadBadge count={threadCount} />
-      <span className="prd-file-stat">
-        <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
-      </span>
+      {/* With no patch and no count from the host, "+0 −0" would read as "nothing changed". */}
+      {hasKnownLineCounts(file) ? (
+        <span className="prd-file-stat">
+          <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
+        </span>
+      ) : (
+        <span className="prd-file-stat" title={t('prPage.countsUnknown')} aria-label={t('prPage.countsUnknown')}>
+          —
+        </span>
+      )}
     </div>
   )
 })

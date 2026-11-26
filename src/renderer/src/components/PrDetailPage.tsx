@@ -69,6 +69,7 @@ import {
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
+import { PrNoPatchNotice } from './PrNoPatchNotice'
 import { getThreadCountsByPath } from '../lib/prFileThreads'
 import { usePrViewed } from './usePrViewed'
 import { guessLanguage } from '../lib/highlight'
@@ -1595,7 +1596,7 @@ function FilesSection({
               />
             ) : (
               <div className="prp-no-patch">
-                <p>{t('prPage.noPatch')}</p>
+                <PrNoPatchNotice key={file.filename} file={file} repoPath={repoPath} />
                 <button className="btn ghost small" // GitHub lists a PR's files at /files, GitLab an MR's at /diffs.
                   onClick={() => void shellApi.openExternal(`${prUrl}${prUrl.includes('/-/merge_requests/') ? '/diffs' : '/files'}`)}>
                   <ExternalLink size={13} /> {t('common.openInBrowser')}

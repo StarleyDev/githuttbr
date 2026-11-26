@@ -1265,6 +1265,9 @@ export const hostingApi = {
     window.api.hosting.prChecks(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
   prFiles: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFileList>,
+  /** One file's diff read on demand — this clone first, then the host. Always the file back, with a reason when still no patch. */
+  prFileDiff: (repoPath: string, remoteUrl: string, tokens: PrTokens, request: import('../../../shared/types').PrFileDiffRequest) =>
+    window.api.hosting.prFileDiff(repoPath, remoteUrl, tokens, request) as Promise<import('../../../shared/types').PrFile>,
   prListCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prListCommits(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCommitList>,
   prListUpdates: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
