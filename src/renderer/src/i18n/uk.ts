@@ -3451,6 +3451,8 @@ export const uk: Dict = {
   'prPage.lineCommentDiscardMessage': 'Коментар до цього рядка не надіслано. Видалений коментар не можна повернути.',
   'prPage.lineCommentDiscard': 'Видалити',
   'prPage.noPatch': 'Хост не надіслав diff цього файлу — він двійковий або завеликий.',
+  'prImage.unavailable': 'Не вдалося завантажити зображення: отримайте гілку pull request або відкрийте його на хості.',
+  'prImage.tooLarge': 'Зображення завелике для попереднього перегляду ({size}).',
   'prPage.renamedFrom': 'перейменовано з {path}',
   'prPage.noReviewers': "Ще немає рев'ю",
   'prPage.openedOn': 'Відкрито {date}',

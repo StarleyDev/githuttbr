@@ -69,6 +69,9 @@ import {
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
+import { getPrFilesUrl, PrImagePreview, type PrImageSource } from './PrImagePreview'
+import { createPrImageCache } from '../lib/prImageCache'
+import { getImageMime, isPreviewableImage, type PrDiffCommits } from '../../../shared/prImage'
 import { getThreadCountsByPath } from '../lib/prFileThreads'
 import { usePrViewed } from './usePrViewed'
 import { guessLanguage } from '../lib/highlight'
@@ -171,6 +174,32 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     }),
     [profile.githubToken, profile.gitlabToken, profile.forgejoToken, profile.azureToken]
   )
+  // Images the Files tab has read, for this page's life (one page per pull request).
+  const [imageCache] = useState(() => createPrImageCache())
+  const prUrl = pr?.url ?? ''
+  const prSource = pr?.source ?? ''
+  const prSourceRepo = pr?.sourceRepo ?? null
+  // Where the Files tab's images come from. Rebuilt when the files are re-read,
+  // so a push is picked up; the merge base is asked of the host once per build,
+  // and not at all where the files' revision already names it.
+  const imageSource = useMemo<PrImageSource>(() => {
+    let commits: Promise<PrDiffCommits | null> | null = null
+    const revision = filesRevision
+    return {
+      repoPath,
+      remoteUrl,
+      tokens,
+      pr: { number, url: prUrl, source: prSource, sourceRepo: prSourceRepo },
+      cache: imageCache,
+      getCommits: () => {
+        if (revision?.baseSha) return Promise.resolve({ baseSha: revision.baseSha, headSha: revision.headSha })
+        commits ??= hostingApi.prDiffCommits(repoPath, remoteUrl, tokens, number).catch(() => null)
+        return commits
+      }
+    }
+    // `files`: a re-read of the list is when the head may have moved.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repoPath, remoteUrl, tokens, number, prUrl, prSource, prSourceRepo, imageCache, filesRevision, files])
   // Forgejo has no API to reply inside an existing line thread.
   const canReplyInThread = provider !== 'forgejo'
 
@@ -481,6 +510,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // One update's own changes, shown in the Files tab instead of the whole PR's.
   const [updateView, setUpdateView] = useState<UpdateDiffView | null>(null)
   const updateDiff = usePrUpdateDiff(repoPath, remoteUrl, tokens, number, updateView)
+  // In an update's own diff an image compares the update's two heads, not the merge base.
+  const updateImageSource = useMemo<PrImageSource | null>(() => {
+    if (!updateView) return null
+    const ends: PrDiffCommits = { baseSha: updateView.compare.from.sha, headSha: updateView.compare.to.sha }
+    return { ...imageSource, getCommits: () => Promise.resolve(ends) }
+  }, [updateView, imageSource])
 
   const content = (
     <div className="prp-frame">
@@ -671,6 +706,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       mentions={mentions}
                       getReferences={getReferences}
                       lineCommentsOff
+                      imageSource={updateImageSource}
                     />
                   )}
                 </>
@@ -699,6 +735,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   busy={busy}
                   mentions={mentions}
                   getReferences={getReferences}
+                  imageSource={imageSource}
                 />
               )
             ) : checks === null ? (
@@ -1440,7 +1477,8 @@ function FilesSection({
   busy,
   mentions,
   getReferences,
-  lineCommentsOff = false
+  lineCommentsOff = false,
+  imageSource
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -1462,6 +1500,8 @@ function FilesSection({
   getReferences: () => MarkdownReference[]
   /** An update's own diff: its lines are not the PR's, so no "+" to comment on them. */
   lineCommentsOff?: boolean
+  /** Where an image file's two versions are read, for the preview in place of a diff. */
+  imageSource: PrImageSource | null
 }): React.JSX.Element {
   const t = useT()
   // The file list's speech-bubble counts; only recomputed when the threads change.
@@ -1470,6 +1510,8 @@ function FilesSection({
   const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
   const file = files.find((f) => f.filename === selected) ?? files[0]
   const diffRef = useRef<HTMLDivElement>(null)
+  const imageFile = !!file && isPreviewableImage(file.filename)
+  const isSvg = imageFile && getImageMime(file.filename) === 'image/svg+xml'
 
   // The same parse the viewer draws, so an index here is a line there.
   const lines = useMemo(() => (file?.patch ? parseDiff(file.patch) : []), [file?.patch])
@@ -1579,7 +1621,13 @@ function FilesSection({
             </div>
             {/* A draft whose line is gone from a refreshed diff stays, above it. */}
             {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
-            {file.patch ? (
+            {imageFile && imageSource && (
+              // A fresh preview per file, like the viewer below.
+              <PrImagePreview key={`image:${file.filename}`} source={imageSource} file={file} />
+            )}
+            {/* An image's patch is "Binary files differ", or nothing; an SVG's is
+                real text, so its diff (and its line comments) stays under the picture. */}
+            {imageFile && imageSource && !isSvg ? null : file.patch ? (
               <DiffViewer
                 // A fresh viewer per file: its scroll and selection belong to one diff.
                 key={file.filename}
@@ -1593,11 +1641,10 @@ function FilesSection({
                 onCommentLine={lineCommentsOff ? undefined : commentOnLine}
                 lineExtras={lineExtras}
               />
-            ) : (
+            ) : isSvg && imageSource ? null : (
               <div className="prp-no-patch">
                 <p>{t('prPage.noPatch')}</p>
-                <button className="btn ghost small" // GitHub lists a PR's files at /files, GitLab an MR's at /diffs.
-                  onClick={() => void shellApi.openExternal(`${prUrl}${prUrl.includes('/-/merge_requests/') ? '/diffs' : '/files'}`)}>
+                <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(prUrl))}>
                   <ExternalLink size={13} /> {t('common.openInBrowser')}
                 </button>
               </div>

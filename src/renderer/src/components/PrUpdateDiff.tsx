@@ -8,7 +8,7 @@ import { remoteForPrUrl } from '../lib/prBranchGo'
 import { canFetchPrHead } from '../lib/prCommits'
 import { getUpdateTitle, type UpdateCompare, type UpdateNumbering } from '../lib/prUpdates'
 import { readableError } from '../lib/gitErrorHint'
-import { useT, interp } from '../i18n'
+import { useT, interp, t } from '../i18n'
 
 type Tokens = Parameters<typeof hostingApi.prUpdateFiles>[2]
 
@@ -79,6 +79,28 @@ export function usePrUpdateDiff(
 }
 
 /**
+ * The same fetch as the Commits tab's: the pull request's branch, or a fork's
+ * PR head into `refs/githuttbr/pr/…`. True when it ran and brought the commits.
+ * Shared by the update banner and the image preview's "fetch" offer.
+ */
+export async function fetchPrCommitsHere(
+  repoPath: string,
+  remoteUrl: string,
+  pr: Pick<PrDetail, 'number' | 'source' | 'sourceRepo'>,
+  toast: (kind: 'info', text: string) => void
+): Promise<boolean> {
+  if (!useRepoStore.getState().repos[repoPath]) await useRepoStore.getState().ensure(repoPath)
+  const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
+  if (!remote) {
+    toast('info', interp(t('prPage.commitNoRemote'), { url: remoteUrl }))
+    return false
+  }
+  return pr.sourceRepo
+    ? repoActions.fetchPrHead(repoPath, remote, pr.number)
+    : repoActions.fetchPrBranch(repoPath, remote, pr.source)
+}
+
+/**
  * Above the Files tab while it shows one update: which update, against what,
  * the way back to the whole pull request — and, when the two heads could not
  * be compared, an offer to fetch the branch so this clone can.
@@ -118,20 +140,10 @@ export function PrUpdateDiffBanner({
   const inFork = !!pr.sourceRepo
   const canFetch = !inFork || canFetchPrHead(remoteUrl)
 
-  // The same fetch as the Commits tab's: the branch, or a fork's PR head.
   const fetchCommits = async (): Promise<void> => {
-    if (!useRepoStore.getState().repos[repoPath]) await useRepoStore.getState().ensure(repoPath)
-    const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
-    if (!remote) {
-      toast('info', interp(t('prPage.commitNoRemote'), { url: remoteUrl }))
-      return
-    }
     setFetching(true)
     try {
-      const fetched = inFork
-        ? await repoActions.fetchPrHead(repoPath, remote, pr.number)
-        : await repoActions.fetchPrBranch(repoPath, remote, pr.source)
-      if (fetched) onRetry()
+      if (await fetchPrCommitsHere(repoPath, remoteUrl, pr, toast)) onRetry()
     } finally {
       setFetching(false)
     }

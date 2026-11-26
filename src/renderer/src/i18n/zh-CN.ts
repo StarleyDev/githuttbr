@@ -3451,6 +3451,8 @@ export const zhCN: Dict = {
   'prPage.lineCommentDiscardMessage': '这一行上输入的评论尚未发布。放弃后无法撤销。',
   'prPage.lineCommentDiscard': '放弃',
   'prPage.noPatch': '主机没有发送此文件的差异——它是二进制文件，或太大无法包含。',
+  'prImage.unavailable': '无法加载此图片：请获取该拉取请求的分支，或在主机上打开。',
+  'prImage.tooLarge': '此图片太大，无法预览（{size}）。',
   'prPage.renamedFrom': '重命名自 {path}',
   'prPage.noReviewers': '还没有评审',
   'prPage.openedOn': '创建于 {date}',

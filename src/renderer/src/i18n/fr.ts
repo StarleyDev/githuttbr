@@ -3401,6 +3401,8 @@ export const fr: Dict = {
   'prPage.lineCommentDiscardMessage': 'Le commentaire saisi sur cette ligne n’a pas été publié. L’abandonner est définitif.',
   'prPage.lineCommentDiscard': 'Abandonner',
   'prPage.noPatch': "L'hôte n'a pas envoyé le diff de ce fichier : il est binaire ou trop volumineux pour être inclus.",
+  'prImage.unavailable': "Impossible de charger cette image : récupérez la branche de la pull request, ou ouvrez-la sur l'hôte.",
+  'prImage.tooLarge': 'Cette image est trop volumineuse pour être prévisualisée ({size}).',
   'prPage.renamedFrom': 'renommé depuis {path}',
   'prPage.noReviewers': 'Pas encore de revue',
   'prPage.openedOn': 'Ouverte le {date}',

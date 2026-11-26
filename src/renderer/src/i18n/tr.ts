@@ -3397,6 +3397,8 @@ export const tr: Dict = {
   'prPage.lineCommentDiscardMessage': 'Bu satıra yazılan yorum gönderilmedi. Silme işlemi geri alınamaz.',
   'prPage.lineCommentDiscard': 'Sil',
   'prPage.noPatch': "Sunucu bu dosyanın diff'ini göndermedi — dosya ikili ya da çok büyük.",
+  'prImage.unavailable': "Bu görsel yüklenemiyor: pull request'in dalını çekin ya da sunucuda açın.",
+  'prImage.tooLarge': 'Bu görsel önizleme için çok büyük ({size}).',
   'prPage.renamedFrom': '{path} adından değiştirildi',
   'prPage.noReviewers': 'Henüz inceleme yok',
   'prPage.openedOn': '{date} tarihinde açıldı',

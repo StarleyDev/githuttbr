@@ -277,6 +277,9 @@ async function fjText(url: string, token: string): Promise<string> {
 const repoApi = (base: string, owner: string, repo: string): string =>
   `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
 
+/** A repository's REST root on a Forgejo instance — what a raw file URL hangs off. */
+export const forgejoRepoApi = repoApi
+
 // git's default `a/`·`b/` prefixes, or the `src://`·`dst://` ones Bitbucket Data Center
 // runs `git diff` with (its KB, "Understanding diff view in Bitbucket Server"). Always
 // as a pair: a `src://` path may itself contain " b/".

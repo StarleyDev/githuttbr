@@ -71,6 +71,9 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prListCommits', 1],
   ['hosting:prListUpdates', 1],
   ['hosting:prChecks', 1],
+  // The Files tab's image preview: the commits it compares, and one image's bytes.
+  ['hosting:prDiffCommits', 1],
+  ['hosting:prFileContent', 'c'.repeat(40), 'assets/logo.png'],
   ['hosting:prComment', 1, 'Thanks!'],
   ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],
   // One handle every host accepts: Azure reads the thread, Data Center the version.

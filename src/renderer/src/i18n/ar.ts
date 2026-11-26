@@ -3454,6 +3454,8 @@ export const ar: Dict = {
   'prPage.lineCommentDiscardMessage': 'لم يُنشر التعليق المكتوب على هذا السطر. لا يمكن التراجع عن تجاهله.',
   'prPage.lineCommentDiscard': 'تجاهل',
   'prPage.noPatch': 'لم يرسل الخادم الفرق لهذا الملف — فهو ثنائي أو أكبر من أن يُضمَّن.',
+  'prImage.unavailable': 'تعذّر تحميل هذه الصورة: اجلب فرع طلب الدمج، أو افتحه على الخادم.',
+  'prImage.tooLarge': 'هذه الصورة أكبر من أن تُعايَن ({size}).',
   'prPage.renamedFrom': 'أُعيدت تسميته من {path}',
   'prPage.noReviewers': 'لا توجد مراجعات بعد',
   'prPage.openedOn': 'فُتح في {date}',

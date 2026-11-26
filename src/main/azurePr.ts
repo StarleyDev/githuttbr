@@ -47,6 +47,8 @@ export interface AzureRepo {
 const V = 'api-version=7.1'
 const repoApi = (r: AzureRepo): string =>
   `https://dev.azure.com/${encodeURIComponent(r.org)}/${encodeURIComponent(r.project)}/_apis/git/repositories/${encodeURIComponent(r.repo)}`
+/** A repository's REST root in its organization — what a file read hangs off. */
+export const azureRepoApi = repoApi
 const branchOf = (ref: string | undefined): string => (ref ?? '').replace(/^refs\/heads\//, '')
 
 interface AzIdentity {

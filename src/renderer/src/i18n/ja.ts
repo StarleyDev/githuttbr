@@ -3394,6 +3394,8 @@ export const ja: Dict = {
   'prPage.lineCommentDiscardMessage': 'この行に入力したコメントはまだ投稿されていません。破棄すると元に戻せません。',
   'prPage.lineCommentDiscard': '破棄',
   'prPage.noPatch': 'ホストはこのファイルの差分を送りませんでした。バイナリか、含めるには大きすぎます。',
+  'prImage.unavailable': 'この画像を読み込めません。プルリクエストのブランチを取得するか、ホストで開いてください。',
+  'prImage.tooLarge': 'この画像は大きすぎてプレビューできません（{size}）。',
   'prPage.renamedFrom': '{path} から名前変更',
   'prPage.noReviewers': 'まだレビューはありません',
   'prPage.openedOn': '{date} にオープン',

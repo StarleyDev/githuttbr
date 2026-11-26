@@ -3454,6 +3454,8 @@ export const he: Dict = {
   'prPage.lineCommentDiscardMessage': 'התגובה שנכתבה על השורה הזו לא פורסמה. אי אפשר לשחזר אותה אחרי הביטול.',
   'prPage.lineCommentDiscard': 'ביטול התגובה',
   'prPage.noPatch': 'השרת לא שלח diff לקובץ הזה — הוא בינארי או גדול מדי.',
+  'prImage.unavailable': 'לא ניתן לטעון את התמונה: משכו את הענף של בקשת המיזוג, או פתחו אותה בשרת.',
+  'prImage.tooLarge': 'התמונה גדולה מדי לתצוגה מקדימה ({size}).',
   'prPage.renamedFrom': 'שונה שמו מ-{path}',
   'prPage.noReviewers': 'עדיין אין סקירות',
   'prPage.openedOn': 'נפתח ב-{date}',

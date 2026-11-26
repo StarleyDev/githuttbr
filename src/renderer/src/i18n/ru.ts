@@ -3451,6 +3451,8 @@ export const ru: Dict = {
   'prPage.lineCommentDiscardMessage': 'Комментарий к этой строке не отправлен. Удалённый комментарий нельзя вернуть.',
   'prPage.lineCommentDiscard': 'Удалить',
   'prPage.noPatch': 'Хост не прислал diff этого файла — он двоичный или слишком большой.',
+  'prImage.unavailable': 'Не удалось загрузить изображение: получите ветку pull request или откройте его на хосте.',
+  'prImage.tooLarge': 'Изображение слишком большое для предпросмотра ({size}).',
   'prPage.renamedFrom': 'переименован из {path}',
   'prPage.noReviewers': 'Пока нет ревью',
   'prPage.openedOn': 'Открыт {date}',

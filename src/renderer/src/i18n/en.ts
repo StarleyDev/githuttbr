@@ -3450,6 +3450,8 @@ export const en = {
   'prPage.lineCommentDiscardMessage': 'The comment typed on this line has not been posted. Discarding it cannot be undone.',
   'prPage.lineCommentDiscard': 'Discard',
   'prPage.noPatch': 'The host sent no diff for this file — it is binary, or too large to include.',
+  'prImage.unavailable': "Can't load this image: fetch the pull request's branch, or open it on the host.",
+  'prImage.tooLarge': 'This image is too large to preview ({size}).',
   'prPage.renamedFrom': 'renamed from {path}',
   'prPage.noReviewers': 'No reviews yet',
   'prPage.openedOn': 'Opened {date}',

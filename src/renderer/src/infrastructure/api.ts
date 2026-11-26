@@ -623,6 +623,9 @@ export const gitApi = {
   fileDataUrl: (path: string, file: string, ref?: string, force?: boolean) =>
     call<string>('fileDataUrl', path, file, ref, force),
   repoImage: (path: string, file: string) => call<string | null>('repoImage', path, file),
+  /** One image at a full commit id, capped — a pull request's Files tab, read here first. */
+  getImageBlob: (path: string, sha: string, file: string) =>
+    call<import('../../../shared/prImage').PrImageContent>('getImageBlob', path, sha, file),
   imageDiff: (path: string, file: string, beforeRef: string | null, afterRef?: string) =>
     call<{ before: string | null; after: string | null }>('imageDiff', path, file, beforeRef, afterRef),
   blameFile: (path: string, file: string, ref?: string) => call<BlameLine[]>('blameFile', path, file, ref),
@@ -1259,6 +1262,16 @@ export const hostingApi = {
     window.api.hosting.ciWorkflows(repoPath, remoteUrl, tokens) as Promise<import('../../../shared/types').CiWorkflow[]>,
   ciDispatch: (repoPath: string, remoteUrl: string, tokens: PrTokens, workflowId: string, ref: string) =>
     window.api.hosting.ciDispatch(repoPath, remoteUrl, tokens, workflowId, ref) as Promise<void>,
+  /** The merge base and head a pull request's Files tab compares — what its image preview reads at. */
+  prDiffCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prDiffCommits(repoPath, remoteUrl, tokens, number) as Promise<
+      import('../../../shared/prImage').PrDiffCommits | null
+    >,
+  /** One image at one commit, from the host — when this clone lacks the commit. */
+  prFileContent: (repoPath: string, remoteUrl: string, tokens: PrTokens, sha: string, path: string) =>
+    window.api.hosting.prFileContent(repoPath, remoteUrl, tokens, sha, path) as Promise<
+      import('../../../shared/prImage').PrImageContent
+    >,
   prCheckLog: (repoPath: string, remoteUrl: string, tokens: PrTokens, url: string) =>
     window.api.hosting.prCheckLog(repoPath, remoteUrl, tokens, url) as Promise<string | null>,
   prChecks: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>

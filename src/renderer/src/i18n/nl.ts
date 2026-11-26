@@ -3459,6 +3459,8 @@ export const nl: Dict = {
   'prPage.lineCommentDiscardMessage': 'De reactie op deze regel is niet geplaatst. Verwerpen kan niet ongedaan worden gemaakt.',
   'prPage.lineCommentDiscard': 'Verwerpen',
   'prPage.noPatch': 'De host stuurde geen diff voor dit bestand — het is binair of te groot om mee te sturen.',
+  'prImage.unavailable': 'Deze afbeelding kan niet worden geladen: haal de branch van de pull request op, of open hem op de host.',
+  'prImage.tooLarge': 'Deze afbeelding is te groot voor een voorbeeld ({size}).',
   'prPage.renamedFrom': 'hernoemd van {path}',
   'prPage.noReviewers': 'Nog geen reviews',
   'prPage.openedOn': 'Geopend op {date}',

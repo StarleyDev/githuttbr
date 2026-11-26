@@ -3452,6 +3452,8 @@ export const es: Dict = {
   'prPage.lineCommentDiscardMessage': 'El comentario escrito en esta línea no se ha publicado. Descartarlo no se puede deshacer.',
   'prPage.lineCommentDiscard': 'Descartar',
   'prPage.noPatch': 'El host no envió el diff de este archivo: es binario o demasiado grande para incluirlo.',
+  'prImage.unavailable': 'No se puede cargar esta imagen: trae la rama del pull request o ábrela en el host.',
+  'prImage.tooLarge': 'Esta imagen es demasiado grande para previsualizarla ({size}).',
   'prPage.renamedFrom': 'renombrado desde {path}',
   'prPage.noReviewers': 'Aún sin revisiones',
   'prPage.openedOn': 'Abierto el {date}',

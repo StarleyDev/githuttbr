@@ -15,11 +15,12 @@ import { DiffViewer, type HunkAction } from './DiffViewer'
 import { useFollowWipFile } from './useFollowWipFile'
 import { SemanticSummary } from './SemanticSummary'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
-import { HUGE_LINES, fileExt, guessLanguage, highlightLine } from '../lib/highlight'
+import { HUGE_LINES, guessLanguage, highlightLine } from '../lib/highlight'
 import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { Eye, EyeOff, Bookmark as BookmarkIcon } from 'lucide-react'
 import { ImageDiff } from './ImageDiff'
+import { isPreviewableImage } from '../../../shared/prImage'
 import { CodeEditor } from './CodeEditor'
 import { PreviewPane } from './PreviewPane'
 import { GutterMark, ChangeGutterPopup } from './ChangeGutter'
@@ -38,8 +39,6 @@ const MODES: { id: FileViewMode; labelKey: TranslationKey }[] = [
   { id: 'history', labelKey: 'fileViewer.modeHistory' }
 ]
 
-const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg', 'avif'])
-
 /** Above this many lines the view gets `is-huge`, letting the browser skip
  *  layout/paint for offscreen rows (`content-visibility: auto`). The DOM stays
  *  complete, so find, reveal-line and text selection behave exactly as before. */
@@ -54,8 +53,9 @@ const HUNK_LABELS = {
   apply: { hunk: 'hunk.apply', lines: 'hunk.applyLines', line: 'hunk.applyLine' }
 } as const satisfies Record<HunkActionKind, { hunk: TranslationKey; lines: TranslationKey; line: TranslationKey }>
 
+// One list of image types with the pull request Files tab (shared/prImage.ts).
 function isImage(name: string): boolean {
-  return IMAGE_EXTS.has(fileExt(name))
+  return isPreviewableImage(name)
 }
 
 function shaColor(sha: string): string {

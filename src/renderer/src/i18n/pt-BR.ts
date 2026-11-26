@@ -3459,6 +3459,8 @@ export const ptBR: Dict = {
   'prPage.lineCommentDiscardMessage': 'O comentário digitado nesta linha não foi enviado. Descartá-lo não pode ser desfeito.',
   'prPage.lineCommentDiscard': 'Descartar',
   'prPage.noPatch': 'O host não mandou o diff deste arquivo — ele é binário ou grande demais para ser incluído.',
+  'prImage.unavailable': 'Não foi possível carregar esta imagem: busque a branch do pull request ou abra-a no host.',
+  'prImage.tooLarge': 'Esta imagem é grande demais para pré-visualizar ({size}).',
   'prPage.renamedFrom': 'renomeado de {path}',
   'prPage.noReviewers': 'Nenhuma revisão ainda',
   'prPage.openedOn': 'Aberto em {date}',

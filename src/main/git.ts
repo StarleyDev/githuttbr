@@ -176,6 +176,13 @@ import type {
   RemoteUrlCredentials
 } from '../shared/types'
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
+import {
+  getImageMime,
+  isFullCommitSha,
+  isSafeRepoFilePath,
+  PR_IMAGE_MAX_BYTES,
+  type PrImageContent
+} from '../shared/prImage'
 import { prRefCandidates } from '../shared/prRefs'
 import { splitUnifiedDiff } from './forgejo'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
@@ -8309,6 +8316,29 @@ export const gitService = {
     return { before, after }
   },
 
+  /**
+   * One image at one commit, for a pull request's Files tab — the same bytes
+   * and data URL the commit view's image diff reads, with its size cap. Only a
+   * full commit id and a path that stays inside the repository reach git. The
+   * size is asked first with lazy fetching off, so a commit or blob this clone
+   * lacks (a partial clone included) is "missing", and the renderer asks the
+   * host instead of git quietly going to the network.
+   */
+  async getImageBlob(repoPath: string, sha: unknown, file: unknown): Promise<PrImageContent> {
+    if (!isFullCommitSha(sha)) throw new Error('A file is read at a full commit id.')
+    if (!isSafeRepoFilePath(file) || !getImageMime(file)) throw new Error('Not an image path inside the repository.')
+    let size: number
+    try {
+      size = Number((await runGit(repoPath, ['cat-file', '-s', `${sha}:${file}`], { GIT_NO_LAZY_FETCH: '1' })).trim())
+    } catch {
+      return { status: 'missing' }
+    }
+    if (!Number.isFinite(size)) return { status: 'missing' }
+    if (size > PR_IMAGE_MAX_BYTES) return { status: 'tooLarge', size }
+    const url = await readFileDataUrl(repoPath, file, sha)
+    return url === null ? { status: 'missing' } : { status: 'ok', dataUrl: url }
+  },
+
   async blameFile(repoPath: string, file: string, ref?: string): Promise<BlameLine[]> {
     const args = ['blame', '--line-porcelain']
     if (ref) args.push(ref)
@@ -10016,6 +10046,7 @@ const READ_METHODS = new Set<string>([
   'fileDataUrl',
   'repoImage',
   'imageDiff',
+  'getImageBlob',
   'blameFile',
   'fileHistory',
   'worktrees',

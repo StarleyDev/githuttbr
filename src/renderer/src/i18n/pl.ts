@@ -3451,6 +3451,8 @@ export const pl: Dict = {
   'prPage.lineCommentDiscardMessage': 'Komentarz wpisany do tego wiersza nie został wysłany. Odrzucenia nie można cofnąć.',
   'prPage.lineCommentDiscard': 'Odrzuć',
   'prPage.noPatch': 'Host nie przesłał diffu tego pliku — jest binarny albo zbyt duży.',
+  'prImage.unavailable': 'Nie można wczytać tego obrazu: pobierz gałąź pull requesta albo otwórz go na hoście.',
+  'prImage.tooLarge': 'Ten obraz jest zbyt duży, by go podejrzeć ({size}).',
   'prPage.renamedFrom': 'zmieniono nazwę z {path}',
   'prPage.noReviewers': 'Brak recenzji',
   'prPage.openedOn': 'Otwarty {date}',

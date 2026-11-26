@@ -3458,6 +3458,8 @@ export const de: Dict = {
   'prPage.lineCommentDiscardMessage': 'Der zu dieser Zeile geschriebene Kommentar wurde nicht gesendet. Das Verwerfen lässt sich nicht rückgängig machen.',
   'prPage.lineCommentDiscard': 'Verwerfen',
   'prPage.noPatch': 'Der Host hat für diese Datei keinen Diff gesendet – sie ist binär oder zu groß.',
+  'prImage.unavailable': 'Dieses Bild lässt sich nicht laden: Hol den Branch des Pull Requests oder öffne ihn auf dem Host.',
+  'prImage.tooLarge': 'Dieses Bild ist zu groß für eine Vorschau ({size}).',
   'prPage.renamedFrom': 'umbenannt von {path}',
   'prPage.noReviewers': 'Noch keine Reviews',
   'prPage.openedOn': 'Geöffnet am {date}',

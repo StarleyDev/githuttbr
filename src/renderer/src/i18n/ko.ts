@@ -3451,6 +3451,8 @@ export const ko: Dict = {
   'prPage.lineCommentDiscardMessage': '이 줄에 입력한 댓글은 아직 게시되지 않았습니다. 버리면 되돌릴 수 없습니다.',
   'prPage.lineCommentDiscard': '버리기',
   'prPage.noPatch': '호스트가 이 파일의 diff를 보내지 않았습니다. 바이너리이거나 너무 큽니다.',
+  'prImage.unavailable': '이 이미지를 불러올 수 없습니다. 풀 리퀘스트의 브랜치를 가져오거나 호스트에서 여세요.',
+  'prImage.tooLarge': '이 이미지는 미리 보기에 너무 큽니다({size}).',
   'prPage.renamedFrom': '{path}에서 이름 변경',
   'prPage.noReviewers': '아직 리뷰가 없습니다',
   'prPage.openedOn': '{date}에 열림',
