@@ -1,5 +1,11 @@
 
 
+## [4.54.0](https://github.com/StarleyDev/githuttbr/compare/v4.53.0...v4.54.0) (2026-11-26)
+
+### Features
+
+* **pr:** review pull requests in the app, and clean up local branches ([3894593](https://github.com/StarleyDev/githuttbr/commit/3894593569ed2c30c62973209b9f5ac9ce01de43)), references [#123](https://github.com/StarleyDev/githuttbr/issues/123) [AB#123](https://github.com/AB/issues/123)
+
 ## [4.53.0](https://github.com/StarleyDev/githuttbr/compare/v4.52.1...v4.53.0) (2026-11-25)
 
 ### Features
