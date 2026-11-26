@@ -5865,6 +5865,11 @@ body.col-resizing .node-ava {
   width: 504px;
 }
 
+/* Wide enough for a long PR branch name plus its reason chips on one line. */
+.modal-branch-cleanup {
+  width: 600px;
+}
+
 /* 20px over the default 420px: the reviewer, assignee and label chips and the
    two checkboxes breathe without wrapping. */
 .modal-create-pr {
@@ -19926,5 +19931,90 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   margin: 0 0 18px;
 }
 .rollback-last-resort .rollback-report-btn {
+  margin-top: 8px;
+}
+
+/* Branch cleanup — the push dialog's checkbox rows, with reason chips. */
+.branch-cleanup-fetch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 8px;
+  font-size: 12px;
+}
+.branch-cleanup-fetch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.branch-cleanup-fetch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.branch-cleanup-main {
+  margin: 0 0 6px;
+}
+.branch-cleanup-stale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.branch-cleanup-months {
+  width: 72px;
+  flex-shrink: 0;
+}
+.branch-cleanup-select-actions {
+  display: inline-flex;
+  gap: 12px;
+}
+.branch-cleanup-list {
+  max-height: 320px;
+}
+.branch-cleanup-row {
+  cursor: pointer;
+}
+.branch-cleanup-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.cleanup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.badge.cleanup-gone {
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
+}
+.badge.cleanup-merged {
+  background: rgba(63, 208, 164, 0.15);
+  color: var(--green);
+}
+.badge.cleanup-stale,
+.badge.cleanup-tip {
+  background: var(--bg-3);
+  color: var(--text-2);
+}
+.badge.cleanup-unique {
+  background: color-mix(in srgb, var(--yellow) 15%, transparent);
+  color: var(--yellow);
+}
+.branch-cleanup-age {
+  width: 64px;
+  flex-shrink: 0;
+  text-align: end;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.branch-cleanup-excluded {
+  display: block;
   margin-top: 8px;
 }

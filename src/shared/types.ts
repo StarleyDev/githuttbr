@@ -2714,6 +2714,83 @@ export interface PushBranchesResult {
 }
 
 /**
+ * One local branch the cleanup dialog may offer for deletion. The current
+ * branch, branches checked out in a worktree, the default branch and protected
+ * branches never appear here — they are listed in `excluded` instead.
+ */
+export interface BranchCleanupCandidate {
+  name: string
+  sha: string
+  /** The configured upstream, short form (`origin/feature`), or null. */
+  upstream: string | null
+  /** The upstream is configured but its remote-tracking ref is gone (`[gone]`). */
+  gone: boolean
+  /** Reachable from the default branch (remote-tracking, or local when that is all there is). */
+  merged: boolean
+  /** The tip is exactly the default branch's tip: a branch nobody committed on yet. */
+  atMainTip: boolean
+  /** Committer date of the tip, epoch milliseconds. */
+  lastCommitAt: number
+  /** Commits reachable from this branch and from no remote-tracking ref and not from the default branch. */
+  uniqueCommits: number
+  /** `uniqueCommits` stopped counting at the cap: the real number is at least this. */
+  uniqueCapped: boolean
+}
+
+/** Why a local branch is never offered for cleanup. */
+export type BranchCleanupExclusion = 'current' | 'worktree' | 'default' | 'protected'
+
+export interface BranchCleanupScan {
+  /** The default branch's name (`main`), or null when none could be found. */
+  mainBranch: string | null
+  /** What "merged" was measured against: `origin/main`, or `main` without a remote copy. */
+  mainRef: string | null
+  candidates: BranchCleanupCandidate[]
+  excluded: { name: string; reason: BranchCleanupExclusion }[]
+  /** When the repository last fetched (FETCH_HEAD's mtime), or null. */
+  lastFetchAt: number | null
+}
+
+/** One branch the user chose to delete, with the tip the dialog showed. */
+export interface BranchDeleteRequest {
+  name: string
+  /** The tip the dialog listed. A branch that moved since is refused, not deleted. */
+  sha: string
+  /** The user explicitly confirmed losing commits that exist only on this branch. */
+  force: boolean
+}
+
+/** Why the main process refused to delete a requested branch. */
+export type BranchDeleteRefusal = 'missing' | 'moved' | 'unique' | BranchCleanupExclusion
+
+export interface BranchDeleteResult {
+  name: string
+  sha: string
+  status: 'deleted' | 'refused' | 'failed'
+  refusal?: BranchDeleteRefusal
+  /** git's message when `status` is `failed`. */
+  error?: string
+  /** `branch.<name>.remote` as it was before the delete, for the undo. */
+  upstreamRemote?: string
+  /** `branch.<name>.merge` as it was before the delete, for the undo. */
+  upstreamMerge?: string
+}
+
+/** What the undo of a cleanup recreates: the branch at its sha, and its tracking config. */
+export interface BranchRestoreRequest {
+  name: string
+  sha: string
+  upstreamRemote?: string
+  upstreamMerge?: string
+}
+
+export interface BranchRestoreResult {
+  name: string
+  status: 'restored' | 'exists' | 'failed'
+  error?: string
+}
+
+/**
  * A directory in this repository whose contents came from another repository via
  * `git subtree`. Unlike a submodule there is no `.gitmodules` to read: git
  * records only a `git-subtree-dir:` trailer on the commit that did the import,

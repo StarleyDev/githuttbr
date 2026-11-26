@@ -64,6 +64,11 @@ import type {
   RemoteAuthCheck,
   PushRemoteResult,
   BranchPushState,
+  BranchCleanupScan,
+  BranchDeleteRequest,
+  BranchDeleteResult,
+  BranchRestoreRequest,
+  BranchRestoreResult,
   PushBranchesResult,
   RepoStatus,
   RerereStatus,
@@ -244,6 +249,11 @@ export const gitApi = {
     call<void>('createBranch', path, name, at, checkout),
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),
   deleteBranchIfAt: (path: string, name: string, sha: string) => call<boolean>('deleteBranchIfAt', path, name, sha),
+  getBranchCleanupCandidates: (path: string) => call<BranchCleanupScan>('getBranchCleanupCandidates', path),
+  deleteLocalBranches: (path: string, requests: BranchDeleteRequest[]) =>
+    call<BranchDeleteResult[]>('deleteLocalBranches', path, requests),
+  restoreLocalBranches: (path: string, requests: BranchRestoreRequest[]) =>
+    call<BranchRestoreResult[]>('restoreLocalBranches', path, requests),
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
   stackInfo: (path: string, leaf?: string) => call<StackInfo>('stackInfo', path, leaf),

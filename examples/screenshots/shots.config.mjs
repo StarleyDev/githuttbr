@@ -3345,6 +3345,23 @@ export const shots = [
     }
   },
   {
+    // Clean up local branches…: gone and merged PR branches ticked, the
+    // squash-merged and unpushed ones held back with their "only here" chip,
+    // and the stale filter on so the old spike shows up, unticked.
+    out: 'branch-cleanup',
+    repos: ['branch-cleanup'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['branch-cleanup']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(600)
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'branch-cleanup', repoPath: p }), repo)
+      await page.locator('.branch-cleanup-row').first().waitFor()
+      await page.locator('.branch-cleanup-include-stale').check()
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // A force-push that would rewrite what the remote has: the guard fires
     // before anything leaves the machine.
     out: 'force-push-guard',

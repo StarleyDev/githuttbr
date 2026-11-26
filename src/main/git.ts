@@ -101,6 +101,13 @@ import type {
   BranchPushResult,
   PushBranchesResult,
   UpstreamPushTarget,
+  BranchCleanupCandidate,
+  BranchCleanupExclusion,
+  BranchCleanupScan,
+  BranchDeleteRequest,
+  BranchDeleteResult,
+  BranchRestoreRequest,
+  BranchRestoreResult,
   RerereStatus,
   SubtreeInfo,
   CleanEntry,
@@ -168,6 +175,8 @@ import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
+import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
+import { branchMatches } from '../shared/repoConfig'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import {
   classifyPushState,
@@ -255,6 +264,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   gitflowFinish: 'merge',
   deleteBranch: 'branchDelete',
   deleteRemoteBranch: 'branchDelete',
+  deleteLocalBranches: 'branchDelete',
   merge: 'merge',
   mergeInto: 'merge',
   rebase: 'rebase',
@@ -2254,6 +2264,33 @@ async function remoteDefaultBranch(repoPath: string, remote: string): Promise<st
   return ref.startsWith(prefix) ? ref.slice(prefix.length) : null
 }
 
+/**
+ * The default branch the branch cleanup measures against, and the refs that
+ * stand for it. The remote's copy comes first: a local main nobody pulled for
+ * a month would otherwise hide every merge since. The local one still counts
+ * too, so a merge made here and not pushed yet is not mistaken for lost work.
+ */
+async function cleanupMainRefs(
+  repoPath: string,
+  localNames: Set<string>,
+  remoteRefs: Set<string>,
+  remotes: string[]
+): Promise<{ mainBranch: string | null; mainRef: string | null; refs: string[] }> {
+  const remote = remotes.includes('origin') ? 'origin' : (remotes[0] ?? null)
+  const fromRemote = remote ? await remoteDefaultBranch(repoPath, remote) : null
+  const mainBranch =
+    fromRemote ??
+    ['main', 'master'].find((n) => localNames.has(n) || (remote && remoteRefs.has(`refs/remotes/${remote}/${n}`))) ??
+    null
+  if (!mainBranch) return { mainBranch: null, mainRef: null, refs: [] }
+  const remoteRef = remote ? `refs/remotes/${remote}/${mainBranch}` : null
+  const refs: string[] = []
+  if (remoteRef && remoteRefs.has(remoteRef)) refs.push(remoteRef)
+  if (localNames.has(mainBranch)) refs.push(`refs/heads/${mainBranch}`)
+  const mainRef = refs.length ? refs[0].replace(/^refs\/(remotes|heads)\//, '') : null
+  return { mainBranch, mainRef, refs }
+}
+
 /** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
 async function upstreamRemote(repoPath: string): Promise<string> {
   try {
@@ -3676,6 +3713,203 @@ export const gitService = {
     if (!tip || tip !== sha) return false
     await runGit(repoPath, ['branch', '-D', '--', name])
     return true
+  },
+
+  // ─── Branch cleanup ────────────────────────────────────────────────────
+  // Local branches whose work already lives somewhere else: the upstream was
+  // deleted on the server (a merged PR), or the default branch contains them.
+  // Built for repositories with thousands of branches, so the cost is a fixed
+  // handful of git calls, never one per branch.
+
+  /**
+   * Every local branch the cleanup may offer, with what it knows about each.
+   * Classification (which reasons apply, what is pre-selected) is the
+   * renderer's, in lib/branchCleanup — this only reports facts.
+   */
+  async getBranchCleanupCandidates(repoPath: string): Promise<BranchCleanupScan> {
+    const fmt = [
+      '%(refname:lstrip=2)',
+      '%(objectname)',
+      '%(HEAD)',
+      '%(upstream:lstrip=2)',
+      '%(upstream:track)',
+      '%(committerdate:unix)'
+    ].join('%00')
+    const big = 64 * 1024 * 1024
+    const [refsOut, remoteRefsOut, remotesOut, worktrees, localProtected, config, lastFetchAt] = await Promise.all([
+      runGit(repoPath, ['for-each-ref', `--format=${fmt}`, 'refs/heads'], undefined, big),
+      runGit(repoPath, ['for-each-ref', '--format=%(refname)', 'refs/remotes'], undefined, big).catch(() => ''),
+      runGit(repoPath, ['remote']).catch(() => ''),
+      gitService.worktrees(repoPath),
+      gitService.protectedBranches(repoPath).catch(() => ['main', 'master']),
+      readRepoConfig(repoPath).catch(() => null),
+      gitService.lastFetchAt(repoPath)
+    ])
+    const rows = refsOut
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [name, sha, head, upstream, track, date] = line.split('\0')
+        return { name, sha, isCurrent: head === '*', upstream: upstream || null, track: track ?? '', date: +date * 1000 }
+      })
+    const localNames = new Set(rows.map((r) => r.name))
+    const remoteRefs = new Set(remoteRefsOut.split('\n').filter(Boolean))
+    const remotes = remotesOut.split('\n').map((s) => s.trim()).filter(Boolean)
+    const main = await cleanupMainRefs(repoPath, localNames, remoteRefs, remotes)
+
+    // Merged into either copy of the default branch, one for-each-ref each.
+    // The unique-commit walk is one rev-list: every local branch, minus every
+    // remote-tracking ref and the local default branch.
+    const notMain = main.mainBranch && localNames.has(main.mainBranch) ? [`refs/heads/${main.mainBranch}`] : []
+    const [mergedOuts, uniqueOut, mainTips] = await Promise.all([
+      Promise.all(
+        main.refs.map((ref) =>
+          runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)', `--merged=${ref}`, 'refs/heads'], undefined, big)
+        )
+      ),
+      runGit(repoPath, ['rev-list', '--parents', '--branches', '--not', '--remotes', ...notMain, '--'], undefined, 256 * 1024 * 1024),
+      Promise.all(main.refs.map((ref) => runGit(repoPath, ['rev-parse', '--verify', '-q', ref]).then((s) => s.trim(), () => '')))
+    ])
+    const merged = new Set(mergedOuts.flatMap((out) => out.split('\n').filter(Boolean)))
+    const unique = parseRevListParents(uniqueOut)
+    const tips = new Set(mainTips.filter(Boolean))
+
+    const inWorktree = new Set(worktrees.filter((w) => w.branch && !w.isCurrent).map((w) => w.branch as string))
+    const protectedPatterns = [...new Set([...localProtected, ...(config?.config?.protect ?? [])])]
+    const exclusionOf = (name: string, isCurrent: boolean): BranchCleanupExclusion | null => {
+      if (isCurrent) return 'current'
+      if (inWorktree.has(name)) return 'worktree'
+      if (name === main.mainBranch) return 'default'
+      if (protectedPatterns.some((p) => branchMatches(p, name))) return 'protected'
+      return null
+    }
+
+    const candidates: BranchCleanupCandidate[] = []
+    const excluded: BranchCleanupScan['excluded'] = []
+    for (const r of rows) {
+      const reason = exclusionOf(r.name, r.isCurrent)
+      if (reason) {
+        excluded.push({ name: r.name, reason })
+        continue
+      }
+      const { count, capped } = countUniqueCommits(unique, r.sha)
+      candidates.push({
+        name: r.name,
+        sha: r.sha,
+        upstream: r.upstream,
+        gone: parseUpstreamTrack(r.track).gone,
+        merged: merged.has(r.name),
+        atMainTip: tips.has(r.sha),
+        lastCommitAt: r.date,
+        uniqueCommits: count,
+        uniqueCapped: capped
+      })
+    }
+    return { mainBranch: main.mainBranch, mainRef: main.mainRef, candidates, excluded, lastFetchAt }
+  },
+
+  /**
+   * Delete the branches the cleanup dialog chose, and report each one.
+   *
+   * Nothing from the renderer is taken on trust: the scan runs again under the
+   * write lock, and a branch is refused when it no longer exists, moved since
+   * the dialog listed it, became current, sits in a worktree, is the default
+   * or protected — or has commits that exist nowhere else and the user did not
+   * explicitly accept losing them.
+   *
+   * The deletion itself is `git branch -D`, after that check. `-d` would test
+   * "merged" against HEAD or the upstream, and a branch whose upstream is gone
+   * has only HEAD left — so `-d` would refuse every merged branch while you
+   * stand on anything but main, and say nothing about the remotes. The check
+   * above is the one this feature promises.
+   */
+  async deleteLocalBranches(repoPath: string, requests: BranchDeleteRequest[]): Promise<BranchDeleteResult[]> {
+    if (!requests.length) return []
+    const scan = await gitService.getBranchCleanupCandidates(repoPath)
+    const byName = new Map(scan.candidates.map((c) => [c.name, c]))
+    const excludedBy = new Map(scan.excluded.map((e) => [e.name, e.reason]))
+    const tracking = parseBranchTrackingConfig(
+      await runGit(repoPath, ['config', '--get-regexp', '^branch\\..*\\.(remote|merge)$']).catch(() => '')
+    )
+
+    const results: BranchDeleteResult[] = []
+    const allowed: BranchDeleteResult[] = []
+    const seen = new Set<string>()
+    for (const req of requests) {
+      if (seen.has(req.name)) continue
+      seen.add(req.name)
+      const refuse = (refusal: BranchDeleteResult['refusal']): void => {
+        results.push({ name: req.name, sha: req.sha, status: 'refused', refusal })
+      }
+      const excludedReason = excludedBy.get(req.name)
+      const found = byName.get(req.name)
+      if (excludedReason) refuse(excludedReason)
+      else if (!found) refuse('missing')
+      else if (found.sha !== req.sha) refuse('moved')
+      else if (found.uniqueCommits > 0 && !req.force) refuse('unique')
+      else {
+        const t = tracking.get(req.name)
+        const entry: BranchDeleteResult = { name: req.name, sha: found.sha, status: 'deleted' }
+        if (t?.remote) entry.upstreamRemote = t.remote
+        if (t?.merge) entry.upstreamMerge = t.merge
+        allowed.push(entry)
+        results.push(entry)
+      }
+    }
+
+    // In batches: one spawn per hundred branches, not one per branch. git
+    // carries on past a branch it cannot delete, so a failed batch is read
+    // back from the refs rather than trusted from the exit code.
+    const failures: string[] = []
+    for (let i = 0; i < allowed.length; i += 100) {
+      const names = allowed.slice(i, i + 100).map((e) => e.name)
+      await runGit(repoPath, ['branch', '-D', '--', ...names]).catch((err: unknown) => {
+        failures.push(err instanceof Error ? err.message : String(err))
+      })
+    }
+    if (failures.length) {
+      const left = new Set(
+        (await runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads'])).split('\n').filter(Boolean)
+      )
+      for (const e of allowed) {
+        if (!left.has(e.name)) continue
+        e.status = 'failed'
+        e.error = failures.join('\n')
+        delete e.upstreamRemote
+        delete e.upstreamMerge
+      }
+    }
+    return results
+  },
+
+  /**
+   * The undo of a cleanup: recreate each branch at its exact sha and put its
+   * tracking config back. A name that exists again by now is left alone —
+   * whatever is there was made after the delete, and is not ours to replace.
+   */
+  async restoreLocalBranches(repoPath: string, requests: BranchRestoreRequest[]): Promise<BranchRestoreResult[]> {
+    const existing = new Set(
+      (await runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads'])).split('\n').filter(Boolean)
+    )
+    const results: BranchRestoreResult[] = []
+    for (const req of requests) {
+      if (existing.has(req.name)) {
+        results.push({ name: req.name, status: 'exists' })
+        continue
+      }
+      try {
+        assertNotOption(req.name, 'the branch name')
+        if (!isObjectId(req.sha)) throw new Error(`Refusing "${req.sha}": it is not a commit id.`)
+        await runGit(repoPath, ['branch', '--no-track', '--', req.name, req.sha])
+        if (req.upstreamRemote) await runGit(repoPath, ['config', '--', `branch.${req.name}.remote`, req.upstreamRemote])
+        if (req.upstreamMerge) await runGit(repoPath, ['config', '--', `branch.${req.name}.merge`, req.upstreamMerge])
+        existing.add(req.name)
+        results.push({ name: req.name, status: 'restored' })
+      } catch (err) {
+        results.push({ name: req.name, status: 'failed', error: err instanceof Error ? err.message : String(err) })
+      }
+    }
+    return results
   },
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
@@ -9304,6 +9538,8 @@ const READ_METHODS = new Set<string>([
   // The multi-branch push dialog's reads: refs and history, nothing written.
   'branchPushStates',
   'outgoingFiles',
+  // The branch cleanup's scan: refs, config and history, nothing written.
+  'getBranchCleanupCandidates',
   'commitsTouchingPath',
   'protectedBranches',
   'repoConfig',

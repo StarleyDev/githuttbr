@@ -36,6 +36,8 @@ import type {
   MaintenanceTask,
   MergeOptions,
   PushBranchesResult,
+  BranchDeleteRequest,
+  BranchDeleteResult,
   TabState
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
@@ -48,6 +50,7 @@ import { planBranchCheckout } from '../lib/prBranchGo'
 import { isSecretFile } from '../lib/secrets'
 import { isProtectedBranch } from '../lib/repoConfig'
 import { partitionBySecrets, tallyPushResults, type SecretFlag } from '../lib/pushBranches'
+import { getRestoreRequests, tallyDeleteResults } from '../lib/branchCleanup'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
@@ -1563,6 +1566,55 @@ export const repoActions = {
       undefined,
       ['log', 'branches']
     ),
+
+  /**
+   * The branch cleanup's delete: one queued operation and one undo entry for
+   * the whole batch, however many branches it holds. The main process checks
+   * every name again and reports each; the undo recreates exactly the ones it
+   * deleted, at the sha they had, with their tracking config.
+   * Resolves to the per-branch results, or null when the call itself failed.
+   */
+  deleteLocalBranches: async (path: string, requests: BranchDeleteRequest[]): Promise<BranchDeleteResult[] | null> => {
+    if (!requests.length) return null
+    let results: BranchDeleteResult[] = []
+    const entry: UndoEntry = {
+      label: interp(t('undoLabel.branchCleanup'), { count: requests.length }),
+      undo: async () => {
+        const restored = await gitApi.restoreLocalBranches(path, getRestoreRequests(results))
+        const failed = restored.filter((r) => r.status === 'failed')
+        if (failed.length) {
+          throw new Error(
+            interp(t('branchCleanup.restoreFailed'), { branches: failed.map((r) => `${r.name}: ${r.error ?? ''}`).join('\n') })
+          )
+        }
+      },
+      redo: async () => {
+        const again = getRestoreRequests(results).map((r) => ({ name: r.name, sha: r.sha, force: true }))
+        await gitApi.deleteLocalBranches(path, again)
+      }
+    }
+    const ok = await useRepoStore.getState().run(
+      path,
+      interp(t('act.branchCleanup'), { count: requests.length }),
+      async () => {
+        results = await gitApi.deleteLocalBranches(path, requests)
+        const { deleted } = tallyDeleteResults(results)
+        // Nothing deleted means nothing to undo: fail the operation instead.
+        if (!deleted) throw new Error(t('branchCleanup.nothingDeleted'))
+        entry.label = interp(t('undoLabel.branchCleanup'), { count: deleted })
+      },
+      entry,
+      null,
+      undefined,
+      ['log', 'branches']
+    )
+    const { refused, failed } = tallyDeleteResults(results)
+    if (ok && refused + failed > 0) {
+      const kept = results.filter((r) => r.status !== 'deleted').map((r) => r.name)
+      toast('info', interp(t('branchCleanup.someKept'), { count: kept.length, branches: kept.slice(0, 10).join(', ') }))
+    }
+    return results.length ? results : ok ? [] : null
+  },
 
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     useRepoStore
