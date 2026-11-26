@@ -357,6 +357,15 @@ const api = {
       body: string
     ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReplyReviewComment', repoPath, remoteUrl, tokens, number, inReplyTo, body),
+    prReplyReviewThread: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      commentId: number,
+      body: string
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prReplyReviewThread', repoPath, remoteUrl, tokens, number, commentId, body),
     prCommentOnLine: (
       repoPath: string,
       remoteUrl: string,

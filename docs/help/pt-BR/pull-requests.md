@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
-keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
-source: 729c0829d4ded79d157edea6c162fa638d7b41e0
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
+source: 4be4a4f8a11caabadd31b5e39bd10ec22fa20fbd
 ---
 
 # Página de pull requests
@@ -190,6 +190,16 @@ commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
   [ir para a branch](#ir-para-a-branch-de-um-pull-request), sem o checkout.
   Quando o commit veio junto, ele abre; quando não veio (um force push o
   reescreveu depois), o aviso diz isso.
+- **Buscar os commits do pull request**, num pull request vindo de um
+  **fork**. A branch dele fica em outro repositório, mas a maioria dos hosts
+  espelha a ponta do pull request no repositório de destino, numa ref própria —
+  `refs/pull/N/head` (GitHub, GitHub Enterprise Server, Forgejo),
+  `refs/merge-requests/N/head` (GitLab), `refs/pull-requests/N/from`
+  (Bitbucket Data Center). O app busca só essa ref, sem tags, para uma ref
+  própria, `refs/githuttbr/pr/<remote>/N`, e o commit abre como qualquer
+  outro: o grafo desenha essa ponta como uma faixa sem rótulo. Buscar de novo
+  move a ref para a ponta do momento. Se um force push deixou o commit de fora,
+  o aviso diz isso.
 - **Abrir no navegador**, para quando buscar não é uma opção.
 
 A lista é lida na primeira vez que você abre a aba, não junto com a página, e
@@ -210,10 +220,20 @@ O que não faz:
   | GitHub | Os **primeiros** 250 (o limite do próprio GitHub) |
   | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Os **250 mais recentes** |
   | Forgejo | A ponta que o servidor listar primeiro; a ordem dele não é documentada |
-- **A branch de um fork** não pode ser buscada daqui — fica em outro
-  repositório —, então um commit que só existe no fork oferece apenas o
-  navegador. **Pré-visualizar o pull request localmente…** é o caminho para
-  trazê-lo.
+- **A ponta de um fork onde o host não a espelha.** O Azure DevOps publica só
+  o resultado do merge, nunca a ponta do próprio pull request, e o
+  bitbucket.org não publica nenhum dos dois: ali a linha oferece só o
+  navegador. Num outro host que não a espelhe, a busca diz isso.
+  **Pré-visualizar o pull request localmente…** traz o resultado do merge do
+  Azure, se é disso que você precisa.
+- **As pontas buscadas ficam.** `refs/githuttbr/pr/…` não é uma branch: não
+  há o que fazer checkout nem push, uma busca com limpeza (prune) não mexe
+  nela, e o git guarda os commits. Nada a remove, também — nem fechar a página
+  nem [Limpar branches locais](branch-cleanup.md). Para tirá-las, apague as refs
+  à mão: `git for-each-ref refs/githuttbr/pr` lista, e `git update-ref -d <ref>`
+  apaga uma.
+- **Um remoto com `/` no nome** não cabe como uma parte do nome dessa ref, então
+  a busca é recusada ali.
 - **Uma branch apagada.** Um pull request mesclado muitas vezes levou a branch
   junto: a busca diz isso. O bitbucket.org não lista commit nenhum depois que a
   branch de origem some.
@@ -350,8 +370,12 @@ página de issue também tem, para os comentários dela no GitHub e no Forgejo.
 com que conta as chamadas deste repositório entram (o perfil vinculado a ele, não
 o perfil ativo). A maioria dos hosts identifica o autor pelo login, comparado sem
 diferenciar maiúsculas. O Azure DevOps identifica autores pelo nome de exibição,
-que duas pessoas podem ter igual, então ali o id do autor precisa bater com o id
-da conta; quando falta um dos ids, nenhum comentário mostra as ações. Quando o
+que duas pessoas podem ter igual, então ali o app nunca compara nomes: um
+comentário é seu quando o id do autor bate com o id da conta, **ou** quando o
+nome único do autor (o nome da conta, em geral um e-mail) bate com o da conta,
+sem diferenciar maiúsculas. Os dois são únicos por pessoa; o segundo cobre um id
+de autor diferente do que a conexão informa. Quando nenhum dos dois pode ser
+comparado, nenhum comentário mostra as ações. Quando o
 app não consegue saber quem é você (um token sem escopo de usuário, ou o host não
 respondeu), nenhum comentário as mostra também; **Atualizar** pergunta de novo.
 Quem decide continua sendo o host: uma conta que ele não deixa alterar um
@@ -376,7 +400,7 @@ confirmação diz isso:
 
 | Host | Primeiro comentário de uma thread com respostas |
 |---|---|
-| GitHub | As respostas devem ficar; a documentação do GitHub não diz. Responder a essa thread pelo app deixa de ser possível: as respostas apontam para um comentário que não existe mais, e a API não aceita resposta a uma resposta. A thread passa a oferecer **Responder no GitHub** |
+| GitHub | As respostas devem ficar; a documentação do GitHub não diz. A thread continua com a caixa de resposta: sem o primeiro comentário, a resposta vai para a própria thread pela API GraphQL do GitHub, encontrada por uma resposta que ainda está nela. Se isso falhar (um Enterprise Server antigo, um token que o GraphQL recusa, uma thread em que o GitHub diz que esta conta não pode responder), a thread oferece **Responder no GitHub**. Enquanto você tem uma revisão em andamento no GitHub, ele pode colocar a resposta nela: o aviso diz isso, e ninguém vê a resposta até você enviar essa revisão lá |
 | GitLab | Só essa nota sai; a thread e as respostas ficam |
 | Azure DevOps | Deve ser marcado como excluído e sumir, com a thread e as respostas mantidas; a documentação do Azure não diz |
 | Bitbucket Data Center | Recusado: o Data Center não exclui um comentário que tem respostas. Exclua as respostas antes, ou edite o comentário |
@@ -432,7 +456,7 @@ ali é o mesmo item) também mostra o título ao lado, em cinza. No Azure DevOps
 | Referência | Host | Lido de |
 |---|---|---|
 | `AB#123`, e `#123` num repositório do Azure | Azure DevOps | Itens de trabalho, até 200 numa requisição |
-| `#123` | GitHub, GitHub Enterprise Server | Issues (que respondem também por pull requests), uma requisição cada, uma por vez |
+| `#123` | GitHub, GitHub Enterprise Server | Issues e pull requests, até 50 numa requisição GraphQL; uma requisição REST cada quando o GraphQL falha |
 | `#123` / `!123` | GitLab | Issues / merge requests, uma requisição por tipo |
 | `#123` | Forgejo | Issues (pull requests também), uma requisição cada, duas por vez |
 
@@ -449,12 +473,20 @@ perfil: a chamada é feita com o perfil ao qual o repositório está
 
 O que custa:
 
-- **GitHub e Forgejo** não têm como ler várias issues numa requisição, então
-  cada cartão custa uma. Um passar de mouse pede no máximo **10** — a
-  referência em que você está e as vizinhas — e, no GitHub, uma depois da
-  outra, como o GitHub pede aos apps. A primeira resposta que diz *mais
-  devagar* (um 429, ou um 403) interrompe o resto, e essas referências não são
-  pedidas de novo por cinco minutos.
+- **GitHub** lê até **50** numa requisição, pela API GraphQL — a referência
+  em que você está e as vizinhas mais próximas. Quando o GraphQL falha por
+  outro motivo que não o limite de requisições (um Enterprise Server antigo, um
+  token que ele recusa), o app volta para a API REST, que lê uma issue por
+  requisição: aí só as **10** primeiras são pedidas, uma depois da outra, como o
+  GitHub pede aos apps; as outras ficam sem resposta, e um próximo passar de
+  mouse as pede.
+- **Forgejo** não tem como ler várias issues numa requisição, então cada cartão
+  custa uma: um passar de mouse pede no máximo **10**, duas por vez.
+- No GitHub e no Forgejo, a primeira resposta que diz *mais devagar* (um 429,
+  um 403, o erro de limite do próprio GraphQL, um limite secundário, ou uma
+  resposta que gastou a última requisição do limite) interrompe o resto — o GitHub
+  não volta para o REST nesse caso — e essas referências não são pedidas de novo
+  por cinco minutos.
 - **Azure DevOps** lê até 200 itens de trabalho numa requisição, e o GitLab
   uma por tipo, então ali a página inteira vai de uma vez.
 

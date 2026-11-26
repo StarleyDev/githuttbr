@@ -281,6 +281,14 @@ interface PreloadApi {
       inReplyTo: number | string,
       body: string
     ): Promise<unknown>
+    prReplyReviewThread(
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      commentId: number,
+      body: string
+    ): Promise<unknown>
     prCommentOnLine(
       repoPath: string,
       remoteUrl: string,

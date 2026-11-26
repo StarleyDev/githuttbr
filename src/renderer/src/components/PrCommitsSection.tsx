@@ -9,7 +9,7 @@ import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { useUIStore } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteForPrUrl } from '../lib/prBranchGo'
-import { getPrCommitWebUrl, groupCommitsByDay } from '../lib/prCommits'
+import { canFetchPrHead, getPrCommitWebUrl, groupCommitsByDay } from '../lib/prCommits'
 import { timeAgo } from '../lib/timeAgo'
 import { readableError } from '../lib/gitErrorHint'
 import { useT, interp } from '../i18n'
@@ -132,7 +132,8 @@ export function PrCommitsSection({
   }
 
   // Fetch the source branch, then open the commit if it came with it. A fork's
-  // branch is not on any remote here; the notice offers only the host then.
+  // branch is not on any remote here: the pull request's head is fetched
+  // instead, from the ref the target repository mirrors it under.
   const fetchAndOpen = async (c: PrCommit): Promise<void> => {
     if (!useRepoStore.getState().repos[repoPath]) await useRepoStore.getState().ensure(repoPath)
     const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
@@ -142,13 +143,16 @@ export function PrCommitsSection({
     }
     setFetching(true)
     try {
-      if (!(await repoActions.fetchPrBranch(repoPath, remote, pr.source))) return
+      const fetched = pr.sourceRepo
+        ? await repoActions.fetchPrHead(repoPath, remote, pr.number)
+        : await repoActions.fetchPrBranch(repoPath, remote, pr.source)
+      if (!fetched) return
       const found = await readLocal()
       setLocal(found)
       if (found.has(c.sha)) {
         setMissing(null)
         await repoActions.showCommitInRepo(repoPath, c.sha)
-      } else toast('info', t('prPage.commitStillMissing'))
+      } else toast('info', pr.sourceRepo ? t('prPage.commitStillMissingFork') : t('prPage.commitStillMissing'))
     } finally {
       setFetching(false)
     }
@@ -195,7 +199,8 @@ export function PrCommitsSection({
                 now={now}
                 isLocal={local ? local.has(c.sha) : null}
                 showMissing={missing === c.sha}
-                canFetch={!pr.sourceRepo}
+                inFork={!!pr.sourceRepo}
+                canFetch={!pr.sourceRepo || canFetchPrHead(remoteUrl)}
                 fetching={fetching}
                 onOpen={() => void openCommit(c)}
                 onFetch={() => void fetchAndOpen(c)}
@@ -223,6 +228,7 @@ function PrCommitRow({
   now,
   isLocal,
   showMissing,
+  inFork,
   canFetch,
   fetching,
   onOpen,
@@ -240,7 +246,9 @@ function PrCommitRow({
   /** Null while it is not known yet. */
   isLocal: boolean | null
   showMissing: boolean
-  /** The branch can be fetched from here — not a fork's. */
+  /** The branch lives in a fork: the pull request's head is fetched instead of the branch. */
+  inFork: boolean
+  /** Something can be fetched here: false for a fork on a host that mirrors no head. */
   canFetch: boolean
   fetching: boolean
   onOpen: () => void
@@ -305,10 +313,11 @@ function PrCommitRow({
       {expanded && c.body && <pre className="prp-commit-body">{autolink(c.body, repoWeb, undefined, linkOptions)}</pre>}
       {showMissing && (
         <div className="prp-commit-missing" role="status">
-          <span>{canFetch ? t('prPage.commitNotHere') : t('prPage.commitInFork')}</span>
+          <span>{inFork ? t(canFetch ? 'prPage.commitInFork' : 'prPage.commitInForkNoHead') : t('prPage.commitNotHere')}</span>
           {canFetch && (
             <button type="button" className="btn ghost tiny" onClick={onFetch} disabled={fetching}>
-              {fetching ? <Loader2 size={12} className="spin" /> : <DownloadCloud size={12} />} {t('prPage.commitFetchBranch')}
+              {fetching ? <Loader2 size={12} className="spin" /> : <DownloadCloud size={12} />}{' '}
+              {inFork ? t('prPage.commitFetchPrHead') : t('prPage.commitFetchBranch')}
             </button>
           )}
           {web && (

@@ -705,6 +705,8 @@ export interface PrComment {
   edited?: boolean
   /** The author's account id, where `author` is a display name (Azure DevOps). */
   authorId?: string
+  /** The author's unique account name (Azure DevOps `uniqueName`): "yours" also matches on it. */
+  authorUniqueName?: string
   /** Others answered it, in the host's own thread (Data Center, Azure DevOps, GitLab). */
   hasReplies?: boolean
 }
@@ -726,6 +728,8 @@ export interface PrReviewComment {
   edited?: boolean
   /** The author's account id, where `author` is a display name (Azure DevOps). */
   authorId?: string
+  /** The author's unique account name (Azure DevOps `uniqueName`): "yours" also matches on it. */
+  authorUniqueName?: string
 }
 
 /** An inline review thread anchored to a file/line in the PR diff. */
@@ -895,6 +899,8 @@ export interface PrDetail {
   viewer?: string | null
   /** The viewer's account id, where the host has one worth matching on (Azure DevOps, bitbucket.org). */
   viewerId?: string | null
+  /** The viewer's unique account name (Azure DevOps), matched against `authorUniqueName`. */
+  viewerUniqueName?: string | null
   /** Authors are display names two people can share: "yours" is matched on `viewerId` only. */
   viewerById?: boolean
 }
@@ -933,9 +939,11 @@ export interface ReferenceSummary extends ReferenceQuery {
   /**
    * Why it is not available: the host has no such item or will not show it to
    * this account (`notFound`), the host is throttling (`rateLimited`), or the
-   * host was not asked or not reached — no account, no API, offline (`unreachable`).
+   * host was not reached — no account, no API, offline (`unreachable`). `notAsked`:
+   * left out of this request (a capped fallback) — the renderer keeps no answer for
+   * it, so the next hover asks.
    */
-  reason?: 'notFound' | 'rateLimited' | 'unreachable'
+  reason?: 'notFound' | 'rateLimited' | 'unreachable' | 'notAsked'
   kind?: 'issue' | 'pr' | 'mr' | 'workItem'
   title?: string
   /** GitHub, GitLab and Forgejo, normalized. */
@@ -1023,6 +1031,7 @@ export interface IssueDetail {
   /** Who the page's calls sign in as; see `PrDetail.viewer`. */
   viewer?: string | null
   viewerId?: string | null
+  viewerUniqueName?: string | null
   viewerById?: boolean
 }
 

@@ -244,15 +244,40 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     )
   const merge = (): void =>
     void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
-  const replyToThread = async (rootId: number | string, text: string): Promise<boolean> => {
+  /**
+   * Reply in a review thread. True once the host took the reply — even when
+   * reading the page again fails after it — so the card never offers the
+   * host's page (and a second copy) for a reply that went through.
+   */
+  const replyToThread = async (thread: PrReviewThread, text: string): Promise<boolean> => {
     const body = text.trim()
     if (!body) return false
-    const ok = await act(
-      () => hostingApi.prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body),
-      t('prDetail.replyPosted')
-    )
-    if (ok) replyDrafts.current[String(rootId)] = ''
-    return ok
+    // GitHub: with the first comment gone, REST has nothing to reply to — the
+    // reply goes to the thread itself (GraphQL), found through a comment still in it.
+    const survivor = isThreadRootMissing(provider, thread) ? thread.comments[0] : undefined
+    setBusy(true)
+    let pending = false
+    try {
+      if (survivor) pending = (await hostingApi.prReplyReviewThread(repoPath, remoteUrl, tokens, number, survivor.id, body)).pending
+      else await hostingApi.prReplyReviewComment(repoPath, remoteUrl, tokens, number, thread.rootId, body)
+    } catch (err) {
+      toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
+      setBusy(false)
+      return false
+    }
+    replyDrafts.current[String(thread.rootId)] = ''
+    // A reply filed under the viewer's pending review is not posted: nobody sees it yet.
+    if (pending) toast('info', t('prComment.replyPendingReview'))
+    else toast('success', t('prDetail.replyPosted'))
+    try {
+      await load()
+      void useRepoStore.getState().refreshPRs(repoPath, { silent: true })
+    } catch {
+      /* the reply is in; the page shows its own read error */
+    } finally {
+      setBusy(false)
+    }
+    return true
   }
 
   // A click on a line opens its composer — unless a comment already typed on
@@ -357,7 +382,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           rootMissing={isThreadRootMissing(provider, th)}
           drafts={replyDrafts}
           editDrafts={editDrafts}
-          onReply={(text) => replyRef.current(th.rootId, text)}
+          onReply={(text) => replyRef.current(th, text)}
           onSaveEdit={(handle, text) => changeRef.current.save(handle, text)}
           onDelete={(handle, firstWithReplies) => changeRef.current.remove(handle, firstWithReplies)}
           busy={busy}
@@ -921,7 +946,7 @@ function ReviewThreadCard({
   linkOptions: AutolinkOptions
   withLocation: boolean
   canReply: boolean
-  /** GitHub: the thread's first comment was deleted, so the app cannot reply here. */
+  /** GitHub: the thread's first comment was deleted — the reply goes through GraphQL, and the host's page is the fallback. */
   rootMissing: boolean
   drafts: React.RefObject<Record<string, string>>
   editDrafts: React.RefObject<Record<string, CommentEditDraft>>
@@ -936,13 +961,19 @@ function ReviewThreadCard({
   const t = useT()
   const key = String(thread.rootId)
   const [reply, setReply] = useState(() => drafts.current[key] ?? '')
+  // A thread without its first comment is answered by another route; when that
+  // fails, the host's own page is offered next to the box.
+  const [replyFailed, setReplyFailed] = useState(false)
   const changeReply = (v: string): void => {
     setReply(v)
     drafts.current[key] = v
   }
   const send = (): void => {
     if (!reply.trim()) return
-    void onReply(reply).then((ok) => ok && setReply(''))
+    void onReply(reply).then((ok) => {
+      if (ok) setReply('')
+      else if (rootMissing) setReplyFailed(true)
+    })
   }
   return (
     <article className="prp-card prp-thread">
@@ -980,15 +1011,15 @@ function ReviewThreadCard({
           />
         </div>
       ))}
-      {canReply && rootMissing && (
+      {canReply && rootMissing && replyFailed && (
         <div className="prd-thread-reply prd-thread-orphan">
-          <span>{t('prComment.rootDeletedHint')}</span>
+          <span>{t('prComment.rootDeletedReplyFailed')}</span>
           <button type="button" className="btn ghost tiny" onClick={() => void shellApi.openExternal(pr.url)}>
             <ExternalLink size={12} /> {t('prComment.replyOnGithub')}
           </button>
         </div>
       )}
-      {canReply && !rootMissing && (
+      {canReply && (
         <div className="prd-thread-reply">
           {/* A textarea now, so Enter is a new line (or the next list item) and
               ⌘/Ctrl+Enter sends — the same keys as every other comment box. */}
