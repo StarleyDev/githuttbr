@@ -284,6 +284,50 @@ describe('AI JSON validation', () => {
     expect(aiErrorMessage(500, 'y'.repeat(5000)).length).toBeLessThan(1600)
   })
 
+  it('falls back to prompt-only JSON when Gemini finds the schema too complex', async () => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+        bodies.push(body)
+        if (bodies.length === 1) {
+          // Google's OpenAI-compatible surface answers with an array.
+          return new Response(
+            JSON.stringify([
+              {
+                error: {
+                  code: 400,
+                  message:
+                    'The specified schema produces a constraint that has too many states for serving. Typical causes of this error are schemas with lots of text (for example, very long property or enum names).',
+                  status: 'INVALID_ARGUMENT'
+                }
+              }
+            ]),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          )
+        }
+        return new Response('{"choices":[{"message":{"content":"{\\"value\\":\\"x\\"}"}}]}', {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+
+    const cfg = migrateAIConfig({ provider: 'google', apiKey: 'test-key', model: 'gemini-2.5-flash' })
+    const value = await chatCompleteJson<{ value: string }>(cfg, [{ role: 'user', content: 'Return JSON.' }], 'test', {
+      name: 'gemini_schema_test',
+      schema: { type: 'object' },
+      validate: () => [],
+      maxTokens: 1024
+    })
+
+    expect(value).toEqual({ value: 'x' })
+    expect(bodies).toHaveLength(2)
+    expect(bodies[0].response_format).toBeDefined()
+    expect(bodies[1].response_format).toBeUndefined()
+  })
+
   it('falls back to prompt-only JSON when native structured validation is exhausted', async () => {
     const bodies: Record<string, unknown>[] = []
     vi.stubGlobal(

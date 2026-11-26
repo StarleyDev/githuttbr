@@ -263,7 +263,11 @@ export class InvalidAIResponse extends Error {
 /** True when native json_schema was rejected or exhausted its own validation retries. */
 function rejectsJsonSchema(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
-  const rejectedFormat = /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg)
+  // Gemini words it as "The specified schema produces a constraint that has too
+  // many states for serving" — no response_format or json_schema in sight — when
+  // a union-heavy schema (the chat's actions) is too complex for it to compile.
+  const rejectedFormat =
+    /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured|\bschema\b/i.test(msg)
   const exhaustedValidation =
     /structured_output_validation_error|failed to produce a schema-valid structured response/i.test(msg)
   return rejectedFormat || exhaustedValidation
