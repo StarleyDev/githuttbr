@@ -117,7 +117,6 @@ jobs:
 
       - name: Extract changelog for this version
         run: |
-          # No pipefail: head closing the pipe early must not fail the step.
           set -eu
           # [[ =~ ]] tests the whole string; grep would pass a multi-line value
           # on one matching line. The optional suffix keeps tags like
@@ -128,16 +127,11 @@ jobs:
           fi
           VERSION="${TAG#v}"
           # Write to a file (not a shell arg) so notes containing quotes,
-          # backticks or $() never get re-interpreted by the shell.
-          # A notice for this one version (.github/release-notices/<version>.md)
-          # goes on top: the update banner of the version users still run shows
-          # these notes, so it is the only place to warn them before they update.
-          NOTICE=".github/release-notices/${VERSION}.md"
-          {
-            if [ -f "$NOTICE" ]; then cat "$NOTICE"; echo; fi
-            awk "/^## \[${VERSION}\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
-              | sed '/^$/d' | head -100
-          } > release-notes.md
+          # backticks or $() never get re-interpreted by the shell. Standing
+          # notices (.github/release-notices/*.md, each with a from/until range)
+          # go on top: an old install jumps straight to the newest release, and
+          # its update banner shows these notes.
+          node scripts/release-notes.mjs "$VERSION" > release-notes.md
 
       # Both jobs reporting success is not proof: check that latest.yml and
       # latest-linux.yml are attached and that every file they name is too.
