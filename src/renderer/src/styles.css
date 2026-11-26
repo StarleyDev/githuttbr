@@ -20208,7 +20208,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .mde-input { display: block; }
 .mde-preview { overflow: auto; white-space: normal; }
 .mde-preview-empty { color: var(--text-3); font-style: italic; font-size: 12.5px; }
-.mde-hint { display: flex; justify-content: flex-end; margin-top: 3px; font-size: 11px; color: var(--text-3); }
+.mde-hint { display: flex; justify-content: flex-start; margin-top: 3px; font-size: 11px; color: var(--text-3); }
 .mde-hint .mde-hint-link { font-size: 11px; color: var(--text-3); }
 .mde-hint .mde-hint-link:hover { color: var(--accent); }
 /* A thread's reply box: just the field until it is used. */
