@@ -45,7 +45,8 @@ import {
   FolderOpen,
   Eraser,
   Eye,
-  List
+  List,
+  KeyRound
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -1362,6 +1363,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const remoteMgmtMenu = (remoteName: string, url?: string): MenuItem[] => {
     const web = webUrl(url)
+    const savedPassword = repo.remotes.find((r) => r.name === remoteName)?.urlCredentials === 'password'
     return [
       { label: t('sidebar.addRemote'), onClick: () => addRemote() },
       { label: interp(t('sidebar.fetchRemote'), { remote: remoteName }), onClick: () => void repoActions.fetchRemote(path, remoteName) },
@@ -1376,6 +1378,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         onClick: () => void repoActions.pushAllTags(path, remoteName)
       },
       { label: t('remoteAuth.menu'), onClick: () => openModal({ kind: 'remoteAuth', path, remote: remoteName }) },
+      ...(savedPassword
+        ? [
+            {
+              label: t('urlCred.removeAction'),
+              icon: <KeyRound size={13} />,
+              onClick: (): void => repoActions.confirmRemoveRemoteUrlCredentials(path, remoteName)
+            }
+          ]
+        : []),
       {
         label: interp(t('sidebar.editRemote'), { remote: remoteName }),
         onClick: () =>
@@ -2261,21 +2272,42 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, remoteMgmtMenu(remote.name, remote.url))
               }}
-              actions={webUrl(remote.url) ? (
-                <span
-                  className="icon-btn"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
-                  onKeyDown={keyActivate}
-                  title={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    void shellApi.openExternal(webUrl(remote.url)!)
-                  }}
-                >
-                  <ExternalLink size={12} />
-                </span>
+              actions={remote.urlCredentials === 'password' || webUrl(remote.url) ? (
+                <>
+                  {remote.urlCredentials === 'password' && (
+                    // Quiet but visible: a password in the URL beats the profile's token.
+                    <span
+                      className="icon-btn remote-url-cred"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={interp(t('urlCred.chipTitle'), { remote: remote.name })}
+                      onKeyDown={keyActivate}
+                      title={interp(t('urlCred.chipTitle'), { remote: remote.name })}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        repoActions.confirmRemoveRemoteUrlCredentials(path, remote.name)
+                      }}
+                    >
+                      <KeyRound size={12} />
+                    </span>
+                  )}
+                  {webUrl(remote.url) && (
+                    <span
+                      className="icon-btn"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
+                      onKeyDown={keyActivate}
+                      title={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void shellApi.openExternal(webUrl(remote.url)!)
+                      }}
+                    >
+                      <ExternalLink size={12} />
+                    </span>
+                  )}
+                </>
               ) : undefined}
             >
               {() => (

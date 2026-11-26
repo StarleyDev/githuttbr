@@ -62,6 +62,7 @@ import type {
   RebaseStep,
   RemoteInfo,
   RemoteAuthCheck,
+  RemoteUrlCredentials,
   PushRemoteResult,
   BranchPushState,
   BranchCleanupScan,
@@ -225,6 +226,8 @@ export const gitApi = {
   stashes: (path: string) => call<StashInfo[]>('stashes', path),
   remotes: (path: string) => call<RemoteInfo[]>('remotes', path),
   remoteAuthChecks: (path: string) => call<RemoteAuthCheck[]>('remoteAuthChecks', path),
+  getRemoteUrlCredentials: (path: string) => call<RemoteUrlCredentials[]>('getRemoteUrlCredentials', path),
+  removeRemoteUrlCredentials: (path: string, remote: string) => call<void>('removeRemoteUrlCredentials', path, remote),
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     call<void>('addRemote', path, name, url, pushUrl),
   removeRemote: (path: string, name: string) => call<void>('removeRemote', path, name),

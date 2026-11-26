@@ -20576,3 +20576,8 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .ref-card-icon.ref-state-closed { color: var(--ref-state); }
 /* A title beside its `AB#12` in a list (the PR's Commits tab): there, but quiet. */
 .ref-inline-title { margin-inline-start: 6px; color: var(--text-2); font-weight: 400; }
+
+/* A remote whose URL holds a saved password: the sidebar's quiet warning chip. */
+.icon-btn.remote-url-cred {
+  color: var(--warn);
+}

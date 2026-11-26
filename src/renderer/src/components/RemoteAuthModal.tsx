@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { KeyRound, CheckCircle2, AlertTriangle, XCircle, Loader2, RefreshCw } from 'lucide-react'
 import type { RemoteAuthCheck } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
+import { repoActions } from '../stores/repo'
 import { remoteAuthFindings, remoteAuthSourceKey, remoteAuthStatus } from '../lib/remoteAuth'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useT, interp } from '../i18n'
@@ -50,7 +51,7 @@ export function RemoteAuthModal({ spec }: { spec: Extract<ModalSpec, { kind: 're
         ) : checks.length === 0 ? (
           <p className="settings-hint">{t('remoteAuth.empty')}</p>
         ) : (
-          checks.map((c, i) => <RemoteAuthCard key={JSON.stringify([c.remote, c.url, i])} check={c} />)
+          checks.map((c, i) => <RemoteAuthCard key={JSON.stringify([c.remote, c.url, i])} check={c} path={spec.path} />)
         )}
       </div>
       <div className="modal-actions">
@@ -65,7 +66,7 @@ export function RemoteAuthModal({ spec }: { spec: Extract<ModalSpec, { kind: 're
   )
 }
 
-function RemoteAuthCard({ check }: { check: RemoteAuthCheck }): React.JSX.Element {
+function RemoteAuthCard({ check, path }: { check: RemoteAuthCheck; path: string }): React.JSX.Element {
   const t = useT()
   const status = remoteAuthStatus(check)
   const Icon = ICONS[status]
@@ -100,6 +101,16 @@ function RemoteAuthCard({ check }: { check: RemoteAuthCheck }): React.JSX.Elemen
           )
         })}
       </ul>
+      {check.source === 'embedded' && (
+        // The confirmation replaces this dialog; it says what changes and what does not come back.
+        <button
+          className="btn ghost small"
+          type="button"
+          onClick={() => repoActions.confirmRemoveRemoteUrlCredentials(path, check.remote)}
+        >
+          <KeyRound size={12} /> {t('urlCred.removeAction')}
+        </button>
+      )}
     </section>
   )
 }

@@ -26,6 +26,9 @@ export interface Toast {
   repoPath?: string
   /** One next step, drawn as a link under the message. `label` is already translated. */
   action?: ToastAction
+  /** What the error means here, already translated — read in place of the generic
+   *  explanation, with git's own text moved to the details. */
+  explanation?: string
 }
 
 export interface ToastAction {
@@ -36,6 +39,7 @@ export interface ToastAction {
 export interface ToastOpts {
   repoPath?: string
   action?: ToastAction
+  explanation?: string
 }
 
 export interface MenuItem {
@@ -682,11 +686,15 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   toast: (kind, message, opts) => {
     const id = ++toastId
-    const extra = { ...(opts?.repoPath ? { repoPath: opts.repoPath } : {}), ...(opts?.action ? { action: opts.action } : {}) }
+    const extra = {
+      ...(opts?.repoPath ? { repoPath: opts.repoPath } : {}),
+      ...(opts?.action ? { action: opts.action } : {}),
+      ...(opts?.explanation ? { explanation: opts.explanation } : {})
+    }
     set({ toasts: [...get().toasts, { id, kind, message, ...extra }] })
     // An explained error carries a next step to read and act on: it stays longer.
     // So does a toast with a button — it has to stay long enough to be reached.
-    const ms = kind === 'error' ? (explainGitError(message) ? 15000 : 7000) : opts?.action ? 8000 : 3500
+    const ms = kind === 'error' ? (opts?.explanation || explainGitError(message) ? 15000 : 7000) : opts?.action ? 8000 : 3500
     setTimeout(() => get().dismissToast(id), ms)
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),

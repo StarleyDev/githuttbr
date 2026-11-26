@@ -43,7 +43,7 @@ import type {
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
 import type { LocalCiVerdict } from '../../../shared/localCi'
-import { useUIStore } from './ui'
+import { useUIStore, type ToastOpts } from './ui'
 import { useSettingsStore } from './settings'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { planBranchCheckout } from '../lib/prBranchGo'
@@ -53,6 +53,7 @@ import { partitionBySecrets, tallyPushResults, type SecretFlag } from '../lib/pu
 import { getDeletedShaList, getRestoreRequests, tallyDeleteResults } from '../lib/branchCleanup'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
+import { isAuthFailureMessage, remoteToBlameForAuthFailure } from '../lib/remoteUrlCredentials'
 import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
 import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { effectiveProfileId } from '../lib/repoProfile'
@@ -218,7 +219,7 @@ interface RepoStoreState {
  */
 export type RunLabel = string | { busy: string; done: () => string }
 
-const toast = (kind: 'success' | 'error' | 'info', msg: string, opts?: { repoPath?: string }): void =>
+const toast = (kind: 'success' | 'error' | 'info', msg: string, opts?: ToastOpts): void =>
   useUIStore.getState().toast(kind, msg, opts)
 
 /** How a pull reconciles: git's default, refuse-unless-ff, or rebase. */
@@ -312,6 +313,43 @@ function promptUpstreamRepair(message: string, path: string, mode: PullMode): bo
           // Linking alone leaves the branch behind; finish the pull the user asked for.
           if (await repoActions.setUpstream(path, s.branch, s.remote)) await repoActions.pull(path, mode)
         })()
+    })
+  })()
+  return true
+}
+
+/**
+ * A fetch, pull or push refused for its credential, on a remote whose URL holds
+ * a password. Git sends that password and never asks a helper, so the
+ * profile's token is never tried — and a revoked one fails forever while every
+ * other repository on the profile works. Say so, and offer to take it out.
+ *
+ * `shown` is the toast's own text when it is not the raw error (a per-remote
+ * push failure). Returns true when the error is handled here: the caller
+ * suppresses its own toast, which this shows — explained or not — once the
+ * remotes are read.
+ */
+function promptRemoteUrlCredentialRepair(
+  message: string,
+  path: string,
+  retry: () => void,
+  opts: { remote?: string; shown?: string } = {}
+): boolean {
+  if (!isAuthFailureMessage(message)) return false
+  void (async () => {
+    const creds = await gitApi.getRemoteUrlCredentials(path).catch(() => [])
+    const remote = remoteToBlameForAuthFailure(message, creds, opts.remote)
+    if (!remote) {
+      toast('error', opts.shown ?? message, { repoPath: path })
+      return
+    }
+    toast('error', opts.shown ?? message, {
+      repoPath: path,
+      explanation: interp(t('urlCred.authExplanation'), { remote }),
+      action: {
+        label: t('urlCred.removeAction'),
+        run: () => repoActions.confirmRemoveRemoteUrlCredentials(path, remote, retry)
+      }
     })
   })()
   return true
@@ -915,8 +953,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         if (onError?.(message)) return false
         // Generic, because any write can lose to a leftover lock: offer the
         // repair and re-run the very operation that failed.
-        if (promptLockRepair(message, path, () => void get().run(path, label, fn, undoEntry, op, onError, refetch)))
-          return false
+        const rerun = (): void => void get().run(path, label, fn, undoEntry, op, onError, refetch)
+        if (promptLockRepair(message, path, rerun)) return false
+        if (op && promptRemoteUrlCredentialRepair(message, path, rerun)) return false
         if (isConflictErrorMessage(message)) toast('info', conflictHint(message))
         else toast('error', message, { repoPath: path })
         return false
@@ -1938,6 +1977,44 @@ export const repoActions = {
   removeRemote: (path: string, name: string) =>
     useRepoStore.getState().run(path, interp(t('act.removedRemote'), { name }), () => gitApi.removeRemote(path, name)),
 
+  /**
+   * Ask before taking the password out of `remote`'s URLs: the dialog says what
+   * changes, where the credential comes from afterwards, and that the old token
+   * should be revoked. `retry` re-runs the operation that failed on it, if any.
+   */
+  confirmRemoveRemoteUrlCredentials: (path: string, remote: string, retry?: () => void): void =>
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      danger: true,
+      title: interp(t('urlCred.confirmTitle'), { remote }),
+      message: `${interp(t('urlCred.confirmMessage'), { remote })}\n\n${t('urlCred.confirmNoUndo')}\n\n${t('urlCred.confirmRevoke')}`,
+      confirmLabel: t('urlCred.confirmOk'),
+      onConfirm: () => void repoActions.removeRemoteUrlCredentials(path, remote, retry)
+    }),
+
+  /**
+   * Take the password out of `remote`'s fetch and push URLs.
+   *
+   * No undo entry, on purpose: undoing would write the plain-text secret back
+   * into .git/config — the one thing this exists to stop. The confirmation is
+   * the safety net instead, and it says so.
+   */
+  removeRemoteUrlCredentials: async (path: string, remote: string, retry?: () => void): Promise<boolean> => {
+    const ok = await useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('urlCred.removed'), { remote }),
+        () => gitApi.removeRemoteUrlCredentials(path, remote),
+        undefined,
+        null,
+        undefined,
+        ['remotes']
+      )
+    if (ok && retry) toast('info', t('urlCred.retryPrompt'), { action: { label: t('urlCred.retry'), run: retry } })
+    return ok
+  },
+
   editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
     useRepoStore
       .getState()
@@ -2386,7 +2463,11 @@ export const repoActions = {
       // Each failure names its own remote: "it did not work" is useless when
       // half of them did.
       for (const failure of failed) {
-        toast('error', interp(t('act.pushRemoteFailed'), { remote: failure.remote, error: failure.error }))
+        const shown = interp(t('act.pushRemoteFailed'), { remote: failure.remote, error: failure.error })
+        const retry = (): void => void repoActions.pushToRemotes(path, [failure.remote], opts)
+        if (!promptRemoteUrlCredentialRepair(failure.error, path, retry, { remote: failure.remote, shown })) {
+          toast('error', shown)
+        }
       }
       return failed.length === 0
     } catch (err) {
