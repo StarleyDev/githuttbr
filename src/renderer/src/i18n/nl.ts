@@ -3399,6 +3399,8 @@ export const nl: Dict = {
   'prPage.noFiles': 'Geen gewijzigde bestanden.',
   'prPage.markViewed': 'Bekeken',
   'prPage.markFolderViewed': 'Alle bestanden in {folder} als bekeken markeren',
+  'prPage.unmarkFolderViewed': 'Alle bestanden in {folder} als niet bekeken markeren',
+  'prPage.changedSinceViewed': 'Gewijzigd sinds je het bekeek',
   'prPage.folderViewed': '{viewed} van {total} bestanden bekeken',
   'prPage.filesTree': 'Gewijzigde bestanden',
   'prPage.lineCommentPlaceholder': 'Laat een reactie achter op deze regel…',

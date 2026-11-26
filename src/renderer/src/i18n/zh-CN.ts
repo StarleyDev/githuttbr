@@ -3391,6 +3391,8 @@ export const zhCN: Dict = {
   'prPage.noFiles': '没有更改的文件。',
   'prPage.markViewed': '已查看',
   'prPage.markFolderViewed': '将 {folder} 中的所有文件标记为已查看',
+  'prPage.unmarkFolderViewed': '将 {folder} 中的所有文件标记为未查看',
+  'prPage.changedSinceViewed': '查看后已更改',
   'prPage.folderViewed': '已查看 {viewed}/{total} 个文件',
   'prPage.filesTree': '更改的文件',
   'prPage.lineCommentPlaceholder': '在这一行留下评论…',

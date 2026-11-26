@@ -126,12 +126,39 @@ export function getFolderTotals<T>(
   return out
 }
 
-/** A copy of `set` with `paths` added (`on`) or removed. */
-export function setPathsMembership(set: Set<string>, paths: string[], on: boolean): Set<string> {
-  const next = new Set(set)
-  for (const p of paths) {
-    if (on) next.add(p)
-    else next.delete(p)
+/** The index of the next file row after `from` in direction `dir`, skipping
+ *  folders; -1 when there is none. `from` may be a folder row (↓ from a folder
+ *  enters its first file), or -1 for no anchor: Down enters at the top and Up
+ *  at the bottom, like `stepPath`. */
+export function getNextTreeFileIndex<T>(rows: FileTreeRow<T>[], from: number, dir: 1 | -1): number {
+  let i = from === -1 ? (dir === 1 ? 0 : rows.length - 1) : from + dir
+  for (; i >= 0 && i < rows.length; i += dir) if (rows[i].node.file !== undefined) return i
+  return -1
+}
+
+/** The index of the folder row holding row `index` — the nearest row above it
+ *  one level up — or -1 at the top level. */
+export function getParentRowIndex<T>(rows: FileTreeRow<T>[], index: number): number {
+  const level = rows[index]?.level ?? 1
+  for (let i = index - 1; i >= 0; i--) if (rows[i].level === level - 1) return i
+  return -1
+}
+
+/** Remember a list's collapsed folders under `key` in an in-memory map: an
+ *  empty set is forgotten, a saved one becomes the newest, and past `cap`
+ *  entries the oldest goes, so a long session does not hoard every PR seen. */
+export function saveCollapsedFolders(
+  memory: Map<string, Set<string>>,
+  key: string,
+  collapsed: Set<string>,
+  cap: number
+): void {
+  memory.delete(key)
+  if (collapsed.size === 0) return
+  memory.set(key, collapsed)
+  while (memory.size > cap) {
+    const oldest = memory.keys().next().value
+    if (oldest === undefined) break
+    memory.delete(oldest)
   }
-  return next
 }

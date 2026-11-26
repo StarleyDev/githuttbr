@@ -3391,6 +3391,8 @@ export const pl: Dict = {
   'prPage.noFiles': 'Brak zmienionych plików.',
   'prPage.markViewed': 'Przejrzane',
   'prPage.markFolderViewed': 'Oznacz wszystkie pliki w {folder} jako przejrzane',
+  'prPage.unmarkFolderViewed': 'Oznacz wszystkie pliki w {folder} jako nieprzejrzane',
+  'prPage.changedSinceViewed': 'Zmieniony od czasu przejrzenia',
   'prPage.folderViewed': 'Przejrzano {viewed} z {total} plików',
   'prPage.filesTree': 'Zmienione pliki',
   'prPage.lineCommentPlaceholder': 'Zostaw komentarz do tego wiersza…',

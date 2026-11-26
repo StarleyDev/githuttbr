@@ -3390,6 +3390,8 @@ export const en = {
   'prPage.noFiles': 'No changed files.',
   'prPage.markViewed': 'Viewed',
   'prPage.markFolderViewed': 'Mark every file in {folder} as viewed',
+  'prPage.unmarkFolderViewed': 'Mark every file in {folder} as not viewed',
+  'prPage.changedSinceViewed': 'Changed since you viewed it',
   'prPage.folderViewed': '{viewed} of {total} files viewed',
   'prPage.filesTree': 'Changed files',
   'prPage.lineCommentPlaceholder': 'Leave a comment on this line…',

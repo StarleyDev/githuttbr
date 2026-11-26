@@ -3334,6 +3334,8 @@ export const ja: Dict = {
   'prPage.noFiles': '変更されたファイルはありません。',
   'prPage.markViewed': '確認済み',
   'prPage.markFolderViewed': '{folder} 内のすべてのファイルを確認済みにする',
+  'prPage.unmarkFolderViewed': '{folder} 内のすべてのファイルを未確認にする',
+  'prPage.changedSinceViewed': '確認後に変更されました',
   'prPage.folderViewed': '{total} ファイル中 {viewed} 件を確認済み',
   'prPage.filesTree': '変更されたファイル',
   'prPage.lineCommentPlaceholder': 'この行にコメントを書く…',

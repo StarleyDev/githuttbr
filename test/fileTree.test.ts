@@ -4,8 +4,10 @@ import {
   collectTreeFiles,
   expandFolderAncestors,
   getFolderTotals,
+  getNextTreeFileIndex,
+  getParentRowIndex,
   getVisibleTreeRows,
-  setPathsMembership,
+  saveCollapsedFolders,
   type FileTreeNode
 } from '../src/renderer/src/lib/fileTree'
 import { visiblePaths } from '../src/renderer/src/lib/fileNav'
@@ -129,11 +131,41 @@ describe('expandFolderAncestors', () => {
   })
 })
 
-describe('setPathsMembership', () => {
-  it('adds or removes many paths and leaves the input untouched', () => {
-    const viewed = new Set(['a', 'b'])
-    expect([...setPathsMembership(viewed, ['b', 'c'], true)].sort()).toEqual(['a', 'b', 'c'])
-    expect([...setPathsMembership(viewed, ['a', 'x'], false)]).toEqual(['b'])
-    expect([...viewed]).toEqual(['a', 'b'])
+describe('tree keyboard steps', () => {
+  // docs/help(0) pt-BR(1) pull-requests.md(2) pull-requests.md(3) src(4, folded) README.md(5)
+  const rows = getVisibleTreeRows(buildFileTree(FILES, (x) => x.path), new Set(['src']))
+
+  it('steps from a folder into its first file, skipping folders on the way', () => {
+    expect(getNextTreeFileIndex(rows, 0, 1)).toBe(2)
+    expect(getNextTreeFileIndex(rows, 3, 1)).toBe(5)
+    expect(getNextTreeFileIndex(rows, 4, -1)).toBe(3)
+    expect(getNextTreeFileIndex(rows, 2, -1)).toBe(-1)
+    expect(getNextTreeFileIndex(rows, 5, 1)).toBe(-1)
+  })
+
+  it('enters at the top or the bottom with no anchor', () => {
+    expect(getNextTreeFileIndex(rows, -1, 1)).toBe(2)
+    expect(getNextTreeFileIndex(rows, -1, -1)).toBe(5)
+  })
+
+  it('climbs from a row to the folder holding it', () => {
+    expect(getParentRowIndex(rows, 2)).toBe(1)
+    expect(getParentRowIndex(rows, 3)).toBe(0)
+    expect(getParentRowIndex(rows, 1)).toBe(0)
+    expect(getParentRowIndex(rows, 5)).toBe(-1)
+  })
+})
+
+describe('saveCollapsedFolders', () => {
+  it('forgets an empty set and keeps only the newest entries', () => {
+    const memory = new Map<string, Set<string>>()
+    saveCollapsedFolders(memory, 'pr1', new Set(['src']), 2)
+    saveCollapsedFolders(memory, 'pr2', new Set(['docs']), 2)
+    // Saving pr1 again makes it the newest, so pr2 is the one dropped next.
+    saveCollapsedFolders(memory, 'pr1', new Set(['src', 'lib']), 2)
+    saveCollapsedFolders(memory, 'pr3', new Set(['a']), 2)
+    expect([...memory.keys()]).toEqual(['pr1', 'pr3'])
+    saveCollapsedFolders(memory, 'pr3', new Set(), 2)
+    expect([...memory.keys()]).toEqual(['pr1'])
   })
 })

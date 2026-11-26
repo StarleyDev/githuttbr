@@ -259,7 +259,10 @@ const PLAIN_CLICK = {
 export function FileListView(props: FileListProps): React.JSX.Element {
   const view = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const tree = useMemo(() => (view === 'tree' ? buildFileTree(props.files, (f) => f.path) : []), [view, props.files])
+  const tree = useMemo(
+    () => (view === 'tree' ? buildFileTree(props.files, (f) => f.path) : []),
+    [view, props.files]
+  )
   const listRef = useRef<HTMLDivElement>(null)
   // Fallback cursor for lists whose selection lives elsewhere (the conflicted
   // list opens the resolver, so `current` never points into it).

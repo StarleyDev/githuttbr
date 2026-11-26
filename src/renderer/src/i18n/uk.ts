@@ -3391,6 +3391,8 @@ export const uk: Dict = {
   'prPage.noFiles': 'Немає змінених файлів.',
   'prPage.markViewed': 'Переглянуто',
   'prPage.markFolderViewed': 'Позначити всі файли в {folder} як переглянуті',
+  'prPage.unmarkFolderViewed': 'Позначити всі файли в {folder} як непереглянуті',
+  'prPage.changedSinceViewed': 'Змінено відтоді, як ви переглянули',
   'prPage.folderViewed': 'Переглянуто файлів: {viewed} з {total}',
   'prPage.filesTree': 'Змінені файли',
   'prPage.lineCommentPlaceholder': 'Залиште коментар до цього рядка…',

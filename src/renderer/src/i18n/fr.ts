@@ -3341,6 +3341,8 @@ export const fr: Dict = {
   'prPage.noFiles': 'Aucun fichier modifié.',
   'prPage.markViewed': 'Vu',
   'prPage.markFolderViewed': 'Marquer tous les fichiers de {folder} comme vus',
+  'prPage.unmarkFolderViewed': 'Marquer tous les fichiers de {folder} comme non vus',
+  'prPage.changedSinceViewed': 'Modifié depuis que vous l’avez vu',
   'prPage.folderViewed': '{viewed} fichiers vus sur {total}',
   'prPage.filesTree': 'Fichiers modifiés',
   'prPage.lineCommentPlaceholder': 'Laissez un commentaire sur cette ligne…',

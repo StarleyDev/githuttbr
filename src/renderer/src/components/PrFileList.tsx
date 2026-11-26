@@ -1,13 +1,15 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleDot, Folder, FolderOpen } from 'lucide-react'
 import type { PrFile } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
-import { stepPath } from '../lib/fileNav'
 import {
   buildFileTree,
   expandFolderAncestors,
   getFolderTotals,
+  getNextTreeFileIndex,
+  getParentRowIndex,
   getVisibleTreeRows,
+  saveCollapsedFolders,
   type FileTreeNode,
   type FileTreeRow,
   type FolderTotals
@@ -19,8 +21,9 @@ type PrTreeNode = FileTreeNode<PrFile>
 
 // Folders collapsed per pull request, kept in memory while the app runs: the
 // Files tab unmounts on every tab switch, and coming back should not reopen
-// every folder the reviewer had already folded away.
+// every folder the reviewer had already folded away. Capped, see saveCollapsedFolders.
 const collapsedByPr = new Map<string, Set<string>>()
+const COLLAPSED_PRS_KEPT = 50
 
 function getStatusLetter(status: string): string {
   return status === 'added' ? 'A' : status === 'removed' ? 'D' : status === 'renamed' ? 'R' : 'M'
@@ -34,16 +37,21 @@ const FileRow = memo(function FileRow({
   file,
   label,
   level,
+  index,
   isSelected,
   isViewed,
+  isChanged,
   onSelectFile,
   onSetFilesViewed
 }: {
   file: PrFile
   label: string
   level: number
+  index: number
   isSelected: boolean
   isViewed: boolean
+  /** Ticked once, then changed by a push: not viewed any more. */
+  isChanged: boolean
   onSelectFile: (filename: string) => void
   onSetFilesViewed: (filenames: string[], viewed: boolean) => void
 }): React.JSX.Element {
@@ -52,6 +60,7 @@ const FileRow = memo(function FileRow({
     <div
       className={`prd-file prp-file-row ${isSelected ? 'selected' : ''} ${isViewed ? 'viewed' : ''}`}
       data-file-path={file.filename}
+      data-row-index={index}
       role="treeitem"
       aria-level={level}
       aria-selected={isSelected}
@@ -79,6 +88,15 @@ const FileRow = memo(function FileRow({
       <span className="prd-file-name" title={file.filename}>
         {label}
       </span>
+      {isChanged && (
+        <span
+          className="prp-file-changed"
+          title={t('prPage.changedSinceViewed')}
+          aria-label={t('prPage.changedSinceViewed')}
+        >
+          <CircleDot size={10} aria-hidden="true" />
+        </span>
+      )}
       <span className="prd-file-stat">
         <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
       </span>
@@ -89,6 +107,7 @@ const FileRow = memo(function FileRow({
 const FolderRow = memo(function FolderRow({
   node,
   level,
+  index,
   isCollapsed,
   totals,
   viewedCount,
@@ -97,15 +116,19 @@ const FolderRow = memo(function FolderRow({
 }: {
   node: PrTreeNode
   level: number
+  index: number
   isCollapsed: boolean
   totals: FolderTotals<PrFile>
   viewedCount: number
-  onToggleFolder: (path: string, open?: boolean) => void
+  onToggleFolder: (path: string) => void
   onSetFilesViewed: (filenames: string[], viewed: boolean) => void
 }): React.JSX.Element {
   const t = useT()
   const total = totals.files.length
   const allViewed = viewedCount === total
+  const checkLabel = interp(t(allViewed ? 'prPage.unmarkFolderViewed' : 'prPage.markFolderViewed'), {
+    folder: node.name
+  })
   // A partly viewed folder shows the mixed state; ticking it finishes the job.
   const checkRef = useCallback(
     (el: HTMLInputElement | null) => {
@@ -116,6 +139,7 @@ const FolderRow = memo(function FolderRow({
   return (
     <div
       className={`prd-file prp-file-row prp-folder-row ${allViewed ? 'viewed' : ''}`}
+      data-row-index={index}
       role="treeitem"
       aria-level={level}
       aria-expanded={!isCollapsed}
@@ -127,12 +151,6 @@ const FolderRow = memo(function FolderRow({
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onToggleFolder(node.path)
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-          // The tree pattern: Left folds, Right unfolds — the list's Up/Down
-          // stay for moving between files.
-          e.preventDefault()
-          e.stopPropagation()
-          onToggleFolder(node.path, e.key === 'ArrowRight')
         }
       }}
     >
@@ -140,19 +158,23 @@ const FolderRow = memo(function FolderRow({
         type="checkbox"
         ref={checkRef}
         checked={allViewed}
-        title={interp(t('prPage.markFolderViewed'), { folder: node.name })}
-        aria-label={interp(t('prPage.markFolderViewed'), { folder: node.name })}
+        title={checkLabel}
+        aria-label={checkLabel}
         onClick={(e) => e.stopPropagation()}
         onChange={() => onSetFilesViewed(totals.files.map((f) => f.filename), !allViewed)}
       />
       {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
       {isCollapsed ? <Folder size={13} /> : <FolderOpen size={13} />}
       <span className="prd-file-name prp-folder-name">{node.name}</span>
-      <span className="prp-folder-viewed" title={interp(t('prPage.folderViewed'), { viewed: viewedCount, total })}>
+      <span
+        className="prp-folder-viewed"
+        title={interp(t('prPage.folderViewed'), { viewed: viewedCount, total })}
+      >
         {viewedCount}/{total}
       </span>
       <span className="prd-file-stat">
-        <span className="ins-add">+{totals.additions}</span> <span className="ins-del">−{totals.deletions}</span>
+        <span className="ins-add">+{totals.additions}</span>{' '}
+        <span className="ins-del">−{totals.deletions}</span>
       </span>
     </div>
   )
@@ -166,6 +188,7 @@ const FolderRow = memo(function FolderRow({
 export const PrFileList = memo(function PrFileList({
   files,
   viewed,
+  changedSinceViewed,
   selected,
   prKey,
   onSelectFile,
@@ -173,6 +196,8 @@ export const PrFileList = memo(function PrFileList({
 }: {
   files: PrFile[]
   viewed: Set<string>
+  /** Ticked once, changed by a push since. */
+  changedSinceViewed: Set<string>
   /** The filename whose diff is open. */
   selected: string
   /** Identifies the pull request, to remember its collapsed folders. */
@@ -185,21 +210,26 @@ export const PrFileList = memo(function PrFileList({
   const listRef = useRef<HTMLDivElement>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(() => collapsedByPr.get(prKey) ?? new Set())
   useEffect(() => {
-    collapsedByPr.set(prKey, collapsed)
+    saveCollapsedFolders(collapsedByPr, prKey, collapsed, COLLAPSED_PRS_KEPT)
   }, [prKey, collapsed])
 
   const tree = useMemo(() => (view === 'tree' ? buildFileTree(files, (f) => f.filename) : []), [view, files])
   const totals = useMemo(() => getFolderTotals(tree, (f) => f), [tree])
   const viewedByFolder = useMemo(() => {
     const out = new Map<string, number>()
-    for (const [path, sum] of totals) out.set(path, sum.files.reduce((n, f) => n + (viewed.has(f.filename) ? 1 : 0), 0))
+    for (const [path, sum] of totals) {
+      out.set(path, sum.files.reduce((n, f) => n + (viewed.has(f.filename) ? 1 : 0), 0))
+    }
     return out
   }, [totals, viewed])
   const rows = useMemo<FileTreeRow<PrFile>[]>(
     () =>
       view === 'tree'
         ? getVisibleTreeRows(tree, collapsed)
-        : files.map((f) => ({ node: { name: f.filename, path: f.filename, children: [], file: f }, level: 1 })),
+        : files.map((f) => ({
+            node: { name: f.filename, path: f.filename, children: [], file: f },
+            level: 1
+          })),
     [view, tree, collapsed, files]
   )
 
@@ -210,55 +240,85 @@ export const PrFileList = memo(function PrFileList({
   }, [selected])
 
   const toggleFolder = useCallback(
-    (path: string, open?: boolean) =>
+    (path: string) =>
       setCollapsed((cur) => {
-        const isOpen = !cur.has(path)
-        if (open !== undefined && open === isOpen) return cur
         const next = new Set(cur)
-        if (isOpen) next.add(path)
-        else next.delete(path)
+        if (next.has(path)) next.delete(path)
+        else next.add(path)
         return next
       }),
     []
   )
+  // Only files count, and only those still in the pull request.
+  const viewedCount = useMemo(
+    () => files.reduce((n, f) => n + (viewed.has(f.filename) ? 1 : 0), 0),
+    [files, viewed]
+  )
 
-  // Up/Down (and j/k) walk the visible files like the other file lists do,
-  // and take the focus along so Enter and Space act on the row in view.
-  const onKeyDown = (e: React.KeyboardEvent): void => {
-    const tag = (e.target as HTMLElement).tagName
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
-    const dir = e.key === 'ArrowDown' || e.key === 'j' ? 1 : e.key === 'ArrowUp' || e.key === 'k' ? -1 : 0
-    if (!dir) return
-    e.preventDefault()
-    const order = rows.flatMap((r) => (r.node.file ? [r.node.file.filename] : []))
-    const next = stepPath(order, selected, dir)
-    if (!next) return
-    onSelectFile(next)
+  const focusRow = (index: number): void => {
     requestAnimationFrame(() => {
-      const el = listRef.current?.querySelector<HTMLElement>(`[data-file-path="${CSS.escape(next)}"]`)
+      const el = listRef.current?.querySelector<HTMLElement>(`[data-row-index="${index}"]`)
       el?.focus({ preventScroll: true })
       el?.scrollIntoView({ block: 'nearest' })
     })
+  }
+
+  // The tree pattern, shaped like the other file lists: Up/Down (and j/k) walk
+  // the visible files from the focused row — a folder or a file's checkbox
+  // included — opening each and taking the focus along; Left folds a folder or
+  // climbs to the parent, Right unfolds.
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    const target = e.target as HTMLElement
+    const typing =
+      target.tagName === 'TEXTAREA' ||
+      (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'checkbox')
+    if (typing || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+    const rowEl = target.closest<HTMLElement>('[data-row-index]')
+    const at = rowEl
+      ? Number(rowEl.dataset.rowIndex)
+      : rows.findIndex((r) => r.node.file?.filename === selected)
+    const row = rows[at]
+    const dir = e.key === 'ArrowDown' || e.key === 'j' ? 1 : e.key === 'ArrowUp' || e.key === 'k' ? -1 : 0
+    if (dir) {
+      e.preventDefault()
+      const next = getNextTreeFileIndex(rows, at, dir)
+      const file = rows[next]?.node.file
+      if (!file) return
+      onSelectFile(file.filename)
+      focusRow(next)
+    } else if (e.key === 'ArrowLeft' && row) {
+      e.preventDefault()
+      if (!row.node.file && !collapsed.has(row.node.path)) toggleFolder(row.node.path)
+      else {
+        const parent = getParentRowIndex(rows, at)
+        if (parent >= 0) focusRow(parent)
+      }
+    } else if (e.key === 'ArrowRight' && row && !row.node.file && collapsed.has(row.node.path)) {
+      e.preventDefault()
+      toggleFolder(row.node.path)
+    }
   }
 
   return (
     <div className="prp-file-list">
       <div className="prp-file-list-head">
         <span className="prd-section-title">
-          {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
+          {interp(t('prDetail.filesViewed'), { n: `${viewedCount}/${files.length}` })}
         </span>
         <ViewToggle />
       </div>
       <div role="tree" aria-label={t('prPage.filesTree')} ref={listRef} onKeyDown={onKeyDown}>
-        {rows.map(({ node, level }) =>
+        {rows.map(({ node, level }, index) =>
           node.file ? (
             <FileRow
               key={`f-${node.path}`}
               file={node.file}
               label={view === 'tree' ? node.name : node.file.filename}
               level={level}
+              index={index}
               isSelected={node.file.filename === selected}
               isViewed={viewed.has(node.file.filename)}
+              isChanged={changedSinceViewed.has(node.file.filename)}
               onSelectFile={onSelectFile}
               onSetFilesViewed={onSetFilesViewed}
             />
@@ -267,6 +327,7 @@ export const PrFileList = memo(function PrFileList({
               key={`d-${node.path}`}
               node={node}
               level={level}
+              index={index}
               isCollapsed={collapsed.has(node.path)}
               totals={totals.get(node.path) ?? NO_TOTALS}
               viewedCount={viewedByFolder.get(node.path) ?? 0}
