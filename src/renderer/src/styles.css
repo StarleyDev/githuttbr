@@ -19197,16 +19197,15 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* ── Pull request page ───────────────────────────────────────────────────────
    A PR as a tab: conversation / files / checks on the left, everything about
    the PR on the right. Shares the issue page's field styles (.issue-field…). */
-/* Same frame as the pull requests list: a centred 1420px column with margins on both sides, so
-   moving between the list and a PR does not make the content jump to the window edges. Done with
-   padding rather than max-width so the page background still fills the whole tab. */
+/* The PR page uses the whole tab: reviewing files side by side needs the width, and a centred
+   column left the diff cramped between empty margins. The list page keeps its centred column. */
 /* The page's own width, not the window's, decides when the sidebar stacks: with the repository
    sidebar open a wide window can still leave the conversation a sliver. A container query cannot
    look at the element it styles, hence the frame around .prp-page. */
 .prp-frame { container-type: inline-size; flex: 1; min-height: 0; height: 100%; overflow: hidden; }
 .prp-page {
   display: flex; gap: 20px; height: 100%; overflow: hidden; box-sizing: border-box;
-  background: var(--bg-1); padding: 24px max(32px, calc((100% - 1420px) / 2 + 32px));
+  background: var(--bg-1); padding: 20px 24px;
 }
 .prp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 .prp-head { display: flex; align-items: center; gap: 10px; }
