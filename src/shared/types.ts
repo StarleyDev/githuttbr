@@ -674,11 +674,35 @@ export interface PrPreviewResult {
   conflicts: string[]
 }
 
+/**
+ * Where a comment lives on its host, so it can be edited or deleted. Absent on a
+ * comment the host offers no API to change (a Forgejo review comment).
+ */
+export interface PrCommentHandle {
+  /** The host's own comment id (GitLab: the note id). */
+  id: number
+  /**
+   * Which endpoint the comment is reached through, where the host has two:
+   * GitHub and Forgejo keep conversation comments with the issue, and review
+   * comments with the pull request. The hosts with one endpoint ignore it.
+   */
+  kind: PrCommentKind
+  /** Azure DevOps: the thread the comment belongs to. */
+  threadId?: number
+  /** Bitbucket Data Center: the comment's version, which an edit or a delete must name. */
+  version?: number
+}
+
+export type PrCommentKind = 'conversation' | 'review'
+
 /** A comment on a pull request's conversation. */
 export interface PrComment {
   author: string
   body: string
   createdAt: string
+  handle?: PrCommentHandle
+  /** The host says the text was changed after it was posted. */
+  edited?: boolean
 }
 
 /** A submitted review on a pull request. */
@@ -693,6 +717,9 @@ export interface PrReviewComment {
   author: string
   body: string
   createdAt: string
+  handle?: PrCommentHandle
+  /** The host says the text was changed after it was posted. */
+  edited?: boolean
 }
 
 /** An inline review thread anchored to a file/line in the PR diff. */
@@ -855,6 +882,11 @@ export interface PrDetail {
   avatars?: Record<string, string>
   /** Work items linked to the PR (Azure Boards). */
   workItems?: PrWorkItem[]
+  /**
+   * Who this page's calls sign in as, named the way the host names comment
+   * authors: what "your comment" is matched on. Null when the token cannot say.
+   */
+  viewer?: string | null
 }
 
 /** A work item a pull request is linked to. */
@@ -942,6 +974,8 @@ export interface IssueDetail {
   linkedPrs: LinkedPr[]
   linkedPrsStatus: LinkedPrsStatus
   projectFields: ProjectFieldGroup[]
+  /** Who the page's calls sign in as; see `PrDetail.viewer`. */
+  viewer?: string | null
 }
 
 export type PrReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'

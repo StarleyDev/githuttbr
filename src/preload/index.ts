@@ -365,6 +365,16 @@ const api = {
       revision: unknown
     ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prCommentOnLine', repoPath, remoteUrl, tokens, number, anchor, body, revision),
+    prEditComment: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      handle: unknown,
+      body: string
+    ): Promise<unknown> => ipcRenderer.invoke('hosting:prEditComment', repoPath, remoteUrl, tokens, number, handle, body),
+    prDeleteComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, handle: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prDeleteComment', repoPath, remoteUrl, tokens, number, handle),
     ciRuns: (repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciRuns', repoPath, remoteUrl, tokens, branch),
     ciRunJobs: (repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown> =>

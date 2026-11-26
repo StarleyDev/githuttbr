@@ -289,6 +289,8 @@ interface PreloadApi {
       body: string,
       revision: unknown
     ): Promise<unknown>
+    prEditComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, handle: unknown, body: string): Promise<unknown>
+    prDeleteComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, handle: unknown): Promise<unknown>
     ciRuns(repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown>
     ciRunJobs(repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown>
     ciJobLog(repoPath: string, remoteUrl: string, tokens: unknown, runId: string, jobId: string): Promise<unknown>

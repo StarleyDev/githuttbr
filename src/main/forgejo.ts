@@ -8,6 +8,8 @@ import type {
   IssueInfo,
   MilestoneInfo,
   PrCheck,
+  PrComment,
+  PrCommentHandle,
   PrCommitList,
   PrDetail,
   PrFile,
@@ -25,6 +27,7 @@ import type {
 import { HttpStatusError } from './httpStatusError'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
+import { isEditedAfter } from '../shared/prCommentHandle'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -440,6 +443,30 @@ interface FjReview {
   submitted_at?: string
 }
 
+/** A conversation comment on an issue or pull request. */
+interface FjIssueComment {
+  id: number
+  user?: FjUser | null
+  body?: string
+  created_at?: string
+  updated_at?: string
+}
+
+/**
+ * A conversation comment, with what edits and deletes it. Review (line)
+ * comments get no handle: the API has no call to edit one, and only some
+ * Forgejo versions can delete one, so the page offers neither.
+ */
+export function mapForgejoComment(c: FjIssueComment): PrComment {
+  return {
+    author: c.user?.login ?? 'unknown',
+    body: c.body ?? '',
+    createdAt: c.created_at ?? '',
+    handle: { id: c.id, kind: 'conversation' },
+    ...(isEditedAfter(c.created_at, c.updated_at) ? { edited: true } : {})
+  }
+}
+
 interface FjReviewComment {
   id: number
   body: string
@@ -478,7 +505,7 @@ export async function forgejoPullDetail(
   const r = repoApi(base, owner, repo)
   const [pr, comments, reviews] = await Promise.all([
     fjJson<FjDetail>(`${r}/pulls/${number}`, token),
-    fjJson<Array<{ user: FjUser | null; body: string; created_at: string }>>(
+    fjJson<FjIssueComment[]>(
       `${r}/issues/${number}/comments?limit=50`,
       token
     ).catch(() => []),
@@ -527,7 +554,7 @@ export async function forgejoPullDetail(
     merged: !!pr.merged,
     mergeable: pr.state === 'open' ? !!pr.mergeable : null,
     url: pr.html_url,
-    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    comments: comments.map(mapForgejoComment),
     reviews: reviews.flatMap((rv) => {
       const state = mapForgejoReviewState(rv)
       return state ? [{ author: rv.user?.login ?? 'unknown', state }] : []
@@ -665,6 +692,29 @@ export async function forgejoComment(base: string, owner: string, repo: string, 
   await fjJson(`${repoApi(base, owner, repo)}/issues/${number}/comments`, token, { method: 'POST', body: JSON.stringify({ body }) })
 }
 
+function issueCommentUrl(base: string, owner: string, repo: string, handle: PrCommentHandle): string {
+  // Refused here rather than sent: /issues/comments/{id} would act on some other comment type.
+  if (handle.kind !== 'conversation') throw new Error('Forgejo cannot edit or delete a review comment through its API.')
+  return `${repoApi(base, owner, repo)}/issues/comments/${handle.id}`
+}
+
+/** Replace a conversation comment's text (issueEditComment). */
+export async function forgejoEditComment(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  handle: PrCommentHandle,
+  body: string
+): Promise<void> {
+  await fjJson(issueCommentUrl(base, owner, repo, handle), token, { method: 'PATCH', body: JSON.stringify({ body }) })
+}
+
+/** Delete a conversation comment (issueDeleteComment). */
+export async function forgejoDeleteComment(base: string, owner: string, repo: string, token: string, handle: PrCommentHandle): Promise<void> {
+  await fjJson(issueCommentUrl(base, owner, repo, handle), token, { method: 'DELETE' })
+}
+
 const REVIEW_EVENT: Record<PrReviewEvent, string> = { APPROVE: 'APPROVED', REQUEST_CHANGES: 'REQUEST_CHANGES', COMMENT: 'COMMENT' }
 
 export async function forgejoReview(
@@ -780,7 +830,7 @@ export async function forgejoIssueDetail(
   const at = `${api(base)}/repos/${repoPath(owner, repo)}/issues/${number}`
   const [i, comments] = await Promise.all([
     fjJson<FjIssue>(at, token),
-    fjList<{ user?: { login?: string } | null; body?: string; created_at?: string }>(`${at}/comments`, token)
+    fjList<FjIssueComment>(`${at}/comments`, token)
   ])
   return {
     ...mapForgejoIssue(i),
@@ -789,7 +839,7 @@ export async function forgejoIssueDetail(
     assignees: (i.assignees ?? []).map((a) => a.login ?? '').filter(Boolean),
     milestone: i.milestone?.title ?? null,
     createdAt: i.created_at ?? '',
-    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body ?? '', createdAt: c.created_at ?? '' })),
+    comments: comments.map(mapForgejoComment),
     // GitHub-only: closing pull requests and Projects v2 fields. Forgejo's API has no
     // issue → closing-PR lookup, so the page hides the section rather than claim "none".
     linkedPrs: [],

@@ -72,6 +72,9 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prChecks', 1],
   ['hosting:prComment', 1, 'Thanks!'],
   ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],
+  // One handle every host accepts: Azure reads the thread, Data Center the version.
+  ['hosting:prEditComment', 1, { id: 3, kind: 'conversation', threadId: 2, version: 0 }, 'Edited.'],
+  ['hosting:prDeleteComment', 1, { id: 3, kind: 'conversation', threadId: 2, version: 0 }],
   ['hosting:prReview', 1, 'APPROVE', ''],
   ['hosting:prMerge', 1, 'merge'],
   ['hosting:listPRs'],
