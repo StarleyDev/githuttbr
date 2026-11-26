@@ -1046,6 +1046,41 @@ export const shots = [
     }
   },
   {
+    // The comment editor on a PR's conversation: Write / Preview, the
+    // formatting toolbar, and the @mention list open on a name being typed.
+    // Faked detail — a fictional GitHub repository and people, no network.
+    out: 'comment-editor',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+          body: 'Search filenames across open repositories from the command palette.',
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          comments: [
+            { author: 'alex', body: 'Works well here. Could the limit be a setting?', createdAt: '2026-11-20T10:00:00Z' },
+            { author: 'alba', body: 'Agreed — 50 is a lot on a small screen.', createdAt: '2026-11-20T11:30:00Z' }
+          ],
+          reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'kalani' }],
+          commits: 3, changedFiles: 2, additions: 84, deletions: 12
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
+      }), repos['octopus-merge'])
+      const box = page.locator('.prp-composer textarea')
+      await box.waitFor()
+      await box.click()
+      await box.pressSequentially('Thanks both. **Making it a setting** in the next commit, @al')
+      await page.locator('.mde-ac [role="option"]').first().waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // The Checks tab with a Forgejo Actions job's log open under its row.
     out: 'pr-check-log',
     repos: ['octopus-merge'],

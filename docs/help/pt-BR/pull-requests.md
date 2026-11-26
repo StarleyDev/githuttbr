@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, e comentários numa linha do diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código editor markdown barra de formatação visualizar menção
+source: fe3c25821686f979aef2133380d0819c26a68923
 ---
 
 # Página de pull requests
@@ -229,6 +229,17 @@ O que não faz:
   site.
 - **Um arquivo sem diff** (binário, ou grande demais para o host incluir) não
   tem linhas para comentar.
+
+## Escrever comentários
+
+Toda caixa da página — o comentário no fim, a resposta dentro de uma thread, o
+comentário numa linha — é o mesmo editor de Markdown: abas **Escrever /
+Visualizar**, uma barra de formatação com os atalhos do GitHub, listas que
+continuam no Enter e sugestões de **@** / **#** a partir das pessoas e dos pull
+requests que já estão na tela. A caixa de resposta mostra as ferramentas quando
+você clica nela, e envia com ⌘/Ctrl+Enter, já que o Enter agora começa uma
+linha nova. [Escrever comentários](writing-comments.md) tem os detalhes e os
+limites.
 
 ## Limites
 
