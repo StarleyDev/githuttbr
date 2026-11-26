@@ -31,6 +31,7 @@ import {
 import type {
   PageContent,
   PrCheck,
+  PrCommentHandle,
   PrDetail,
   PrFile,
   PrDiffRevision,
@@ -70,6 +71,15 @@ import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComm
 import { getAnchorLine } from '../../../shared/prLineAnchor'
 import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
+import { EditableComment } from './EditableComment'
+import {
+  getDeleteConfirmKey,
+  hasUnsavedEdit,
+  isCommentGone,
+  isMyComment,
+  withCommentBody,
+  type CommentEditDraft
+} from '../lib/commentEdit'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'commits' | 'files' | 'checks'
@@ -123,6 +133,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // in the other tab — so a keystroke re-renders one box, not the whole page
   // (and with it every highlighted line of the diff).
   const replyDrafts = useRef<Record<string, string>>({})
+  // Edits of your own comments in progress, by comment key — same reasoning.
+  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
   // The comment being written on one line of the Files tab's diff. One at a
   // time, kept while another file is looked at, so nothing typed is lost.
   const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(null)
@@ -195,7 +207,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // ‹ › and Alt+arrows ask before leaving text nobody sent.
   useEffect(() => {
     const check = (): boolean =>
-      !!comment.trim() || Object.values(replyDrafts.current).some((r) => r.trim()) || !!lineDraftText.current.trim()
+      !!comment.trim() ||
+      Object.values(replyDrafts.current).some((r) => r.trim()) ||
+      !!lineDraftText.current.trim() ||
+      hasUnsavedEdit(editDrafts.current)
     registerPrDraft(check)
     return () => registerPrDraft(null)
   }, [comment])
@@ -275,6 +290,34 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     return ok
   }
 
+  // Your own comments: the host still decides, the page only offers. A 404
+  // means it went meanwhile, so the page reads the PR again.
+  const listViewer = useRepoStore((s) => s.repos[repoPath]?.prViewer ?? null)
+  const viewer = pr?.viewer ?? listViewer
+  const readAgainIfGone = (err: unknown): never => {
+    if (isCommentGone(err instanceof Error ? err.message : String(err))) void load()
+    throw err
+  }
+  const saveCommentEdit = (handle: PrCommentHandle, text: string): Promise<boolean> =>
+    act(async () => {
+      await hostingApi.prEditComment(repoPath, remoteUrl, tokens, number, handle, text.trim()).catch(readAgainIfGone)
+      setPr((cur) => (cur ? withCommentBody(cur, handle, text.trim()) : cur))
+    }, t('prComment.saved'))
+  const askDeleteComment = (handle: PrCommentHandle, firstWithReplies: boolean): void => {
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prComment.deleteTitle'),
+      message: t(getDeleteConfirmKey(provider, firstWithReplies)),
+      danger: true,
+      confirmLabel: t('prComment.delete'),
+      onConfirm: () =>
+        void act(
+          () => hostingApi.prDeleteComment(repoPath, remoteUrl, tokens, number, handle).catch(readAgainIfGone),
+          t('prComment.deleted')
+        )
+    })
+  }
+
   // Who an @ offers and what a # offers: only what this page and the repository's
   // lists already hold — no request of their own.
   const mentions = useMemo(
@@ -295,6 +338,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // (and the diff under them) are not rebuilt for an unrelated re-render.
   const replyRef = useRef(replyToThread)
   replyRef.current = replyToThread
+  const changeRef = useRef({ save: saveCommentEdit, remove: askDeleteComment })
+  changeRef.current = { save: saveCommentEdit, remove: askDeleteComment }
   const web = remoteWebUrl(remoteUrl)
   const threadCard = useCallback(
     (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
@@ -307,13 +352,17 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           withLocation={withLocation}
           canReply={canReplyInThread}
           drafts={replyDrafts}
+          editDrafts={editDrafts}
+          viewer={viewer}
           onReply={(text) => replyRef.current(th.rootId, text)}
+          onSaveEdit={(handle, text) => changeRef.current.save(handle, text)}
+          onDelete={(handle, firstWithReplies) => changeRef.current.remove(handle, firstWithReplies)}
           busy={busy}
           mentions={mentions}
           getReferences={getReferences}
         />
       ) : null,
-    [pr, web, canReplyInThread, busy, mentions, getReferences]
+    [pr, web, canReplyInThread, viewer, busy, mentions, getReferences]
   )
   const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
@@ -474,13 +523,30 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </article>
 
                 {pr.comments.map((c, i) => (
-                  <article key={i} className="prp-card">
-                    <div className="prp-card-head">
-                      <Avatar login={c.author} avatars={pr.avatars} />
-                      <strong>{c.author}</strong>
-                      <span>{fmtDate(c.createdAt)}</span>
-                    </div>
-                    <div className="prp-card-body">{autolink(c.body, web)}</div>
+                  <article key={c.handle ? `${c.handle.threadId ?? ''}:${c.handle.id}` : i} className="prp-card">
+                    <EditableComment
+                      handle={c.handle}
+                      body={c.body}
+                      edited={c.edited}
+                      mine={isMyComment(c.author, viewer, c.handle)}
+                      headClassName="prp-card-head"
+                      bodyClassName="prp-card-body"
+                      head={
+                        <>
+                          <Avatar login={c.author} avatars={pr.avatars} />
+                          <strong>{c.author}</strong>
+                          <span>{fmtDate(c.createdAt)}</span>
+                        </>
+                      }
+                      rendered={autolink(c.body, web)}
+                      drafts={editDrafts}
+                      busy={busy}
+                      mentions={mentions}
+                      getReferences={getReferences}
+                      hasUnsentText={hasUnsentPrDraft}
+                      onSave={saveCommentEdit}
+                      onDelete={(handle) => askDeleteComment(handle, false)}
+                    />
                   </article>
                 ))}
 
@@ -822,7 +888,11 @@ function ReviewThreadCard({
   withLocation,
   canReply,
   drafts,
+  editDrafts,
+  viewer,
   onReply,
+  onSaveEdit,
+  onDelete,
   busy,
   mentions,
   getReferences
@@ -833,7 +903,12 @@ function ReviewThreadCard({
   withLocation: boolean
   canReply: boolean
   drafts: React.RefObject<Record<string, string>>
+  editDrafts: React.RefObject<Record<string, CommentEditDraft>>
+  viewer: string | null
   onReply: (text: string) => Promise<boolean>
+  onSaveEdit: (handle: PrCommentHandle, text: string) => Promise<boolean>
+  /** `firstWithReplies`: the thread's first comment, with others under it — the confirm says what each host does then. */
+  onDelete: (handle: PrCommentHandle, firstWithReplies: boolean) => void
   busy: boolean
   mentions: string[]
   getReferences: () => MarkdownReference[]
@@ -858,14 +933,31 @@ function ReviewThreadCard({
         </div>
       )}
       {withLocation && thread.diffHunk && <pre className="prd-thread-hunk">{thread.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
-      {thread.comments.map((c) => (
+      {thread.comments.map((c, i) => (
         <div key={c.id} className="prp-thread-comment">
-          <div className="prp-card-head">
-            <Avatar login={c.author} avatars={pr.avatars} />
-            <strong>{c.author}</strong>
-            <span>{fmtDate(c.createdAt)}</span>
-          </div>
-          <div className="prp-card-body">{autolink(c.body, web)}</div>
+          <EditableComment
+            handle={c.handle}
+            body={c.body}
+            edited={c.edited}
+            mine={isMyComment(c.author, viewer, c.handle)}
+            headClassName="prp-card-head"
+            bodyClassName="prp-card-body"
+            head={
+              <>
+                <Avatar login={c.author} avatars={pr.avatars} />
+                <strong>{c.author}</strong>
+                <span>{fmtDate(c.createdAt)}</span>
+              </>
+            }
+            rendered={autolink(c.body, web)}
+            drafts={editDrafts}
+            busy={busy}
+            mentions={mentions}
+            getReferences={getReferences}
+            hasUnsentText={hasUnsentPrDraft}
+            onSave={onSaveEdit}
+            onDelete={(handle) => onDelete(handle, i === 0 && thread.comments.length > 1)}
+          />
         </div>
       ))}
       {canReply && (

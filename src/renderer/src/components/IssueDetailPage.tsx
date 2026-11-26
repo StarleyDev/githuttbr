@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CircleDot,
   CheckCircle2,
@@ -14,7 +14,9 @@ import {
 } from 'lucide-react'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { readableError } from '../lib/gitErrorHint'
-import type { IssueDetail, LinkedPr, PageContent } from '../../../shared/types'
+import type { IssueDetail, LinkedPr, PageContent, PrCommentHandle } from '../../../shared/types'
+import { isCommentGone, isMyComment, type CommentEditDraft } from '../lib/commentEdit'
+import { EditableComment } from './EditableComment'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -68,19 +70,47 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
     void load().finally(() => setLoading(false))
   }, [load])
 
-  const act = async (fn: () => Promise<void>, ok: string): Promise<void> => {
+  const act = async (fn: () => Promise<void>, ok: string): Promise<boolean> => {
     setBusy(true)
     try {
       await fn()
       await load()
       void useRepoStore.getState().refreshIssues(repoPath, { silent: true })
       toast('success', ok)
+      return true
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
+      // The explanation in the user's language when there is one, else the host's own words.
+      toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
+      return false
     } finally {
       setBusy(false)
     }
   }
+
+  // Your own comments, as on the PR page: the same calls, with the issue's number.
+  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
+  const readAgainIfGone = (err: unknown): never => {
+    if (isCommentGone(err instanceof Error ? err.message : String(err))) void load()
+    throw err
+  }
+  const saveCommentEdit = (handle: PrCommentHandle, text: string): Promise<boolean> =>
+    act(
+      () => hostingApi.prEditComment(repoPath, remoteUrl, tokens, issue.number, handle, text.trim()).catch(readAgainIfGone),
+      t('prComment.saved')
+    )
+  const askDeleteComment = (handle: PrCommentHandle): void =>
+    openModal({
+      kind: 'confirm',
+      title: t('prComment.deleteTitle'),
+      message: t('prComment.deleteMessage'),
+      danger: true,
+      confirmLabel: t('prComment.delete'),
+      onConfirm: () =>
+        void act(
+          () => hostingApi.prDeleteComment(repoPath, remoteUrl, tokens, issue.number, handle).catch(readAgainIfGone),
+          t('prComment.deleted')
+        )
+    })
 
   const postComment = (): void => {
     if (!comment.trim()) return
@@ -153,12 +183,28 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
               {detail.comments.length > 0 && <span className="issue-count">{detail.comments.length}</span>}
             </div>
             {detail.comments.map((c, i) => (
-              <div key={i} className="issue-comment">
-                <div className="issue-comment-head">
-                  <strong>{c.author}</strong>
-                  <span>{new Date(c.createdAt).toLocaleString()}</span>
-                </div>
-                <div className="issue-comment-body">{autolink(c.body, remoteWebUrl(remoteUrl))}</div>
+              <div key={c.handle?.id ?? i} className="issue-comment">
+                <EditableComment
+                  handle={c.handle}
+                  body={c.body}
+                  edited={c.edited}
+                  mine={isMyComment(c.author, detail.viewer, c.handle)}
+                  headClassName="issue-comment-head"
+                  bodyClassName="issue-comment-body"
+                  head={
+                    <>
+                      <strong>{c.author}</strong>
+                      <span>{new Date(c.createdAt).toLocaleString()}</span>
+                    </>
+                  }
+                  rendered={autolink(c.body, remoteWebUrl(remoteUrl))}
+                  drafts={editDrafts}
+                  busy={busy}
+                  mentions={mentions}
+                  getReferences={getReferences}
+                  onSave={saveCommentEdit}
+                  onDelete={askDeleteComment}
+                />
               </div>
             ))}
 

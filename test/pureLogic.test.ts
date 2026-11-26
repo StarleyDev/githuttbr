@@ -6,6 +6,16 @@ import { parseRemoteUrl } from '../src/main/hosting'
 import { parseDiff } from '../src/renderer/src/lib/diff'
 import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../src/renderer/src/lib/prLineComment'
 import { getAnchorLine, getAnchorSide, isValidLineAnchor } from '../src/shared/prLineAnchor'
+import {
+  getCommentKey,
+  getDeleteConfirmKey,
+  hasUnsavedEdit,
+  isCommentGone,
+  isEditChanged,
+  isMyComment,
+  withCommentBody
+} from '../src/renderer/src/lib/commentEdit'
+import { isEditedAfter, isValidCommentHandle } from '../src/shared/prCommentHandle'
 import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
@@ -8422,5 +8432,93 @@ describe('a pull request diff line ↔ its comment anchor', () => {
     const keep = getThreadsByLine([thread(10, 'old')], file, lines)
     expect(keep.get(at('keep'))?.map((t) => t.rootId)).toEqual(['src/app.ts:old:10'])
     expect([...map.keys()].sort()).toEqual([at('gone'), at('added'), at('tail')].sort())
+  })
+})
+
+describe('editing and deleting your own comments (lib/commentEdit)', () => {
+  const H = { id: 7, kind: 'conversation' as const }
+
+  it('a comment is yours when its author is the viewer, ignoring case', () => {
+    expect(isMyComment('Ana', 'ana', H)).toBe(true)
+    expect(isMyComment('ana.lima', 'ANA.LIMA', H)).toBe(true)
+    expect(isMyComment('bruno', 'ana', H)).toBe(false)
+  })
+
+  it('an unknown viewer owns nothing, and a comment with no handle cannot be changed', () => {
+    expect(isMyComment('ana', null, H)).toBe(false)
+    expect(isMyComment('ana', undefined, H)).toBe(false)
+    expect(isMyComment('ana', '', H)).toBe(false)
+    expect(isMyComment('ana', 'ana', undefined)).toBe(false)
+    expect(isMyComment('', '', H)).toBe(false)
+  })
+
+  it('a display name (Azure DevOps, bitbucket.org) is matched the same way', () => {
+    expect(isMyComment('Ana Lima', 'ana lima', { id: 2, kind: 'review', threadId: 9 })).toBe(true)
+  })
+
+  it('keys tell a thread comment from a conversation one with the same id', () => {
+    expect(getCommentKey({ id: 2, kind: 'review', threadId: 9 })).not.toBe(getCommentKey({ id: 2, kind: 'conversation', threadId: 9 }))
+    expect(getCommentKey({ id: 2, kind: 'review', threadId: 9 })).not.toBe(getCommentKey({ id: 2, kind: 'review', threadId: 10 }))
+  })
+
+  it('an unsaved edit counts only when it changed the text', () => {
+    expect(isEditChanged({ text: 'a', original: 'a' })).toBe(false)
+    expect(isEditChanged({ text: 'a  ', original: 'a' })).toBe(false)
+    expect(isEditChanged({ text: 'b', original: 'a' })).toBe(true)
+    expect(isEditChanged(undefined)).toBe(false)
+    expect(hasUnsavedEdit({})).toBe(false)
+    expect(hasUnsavedEdit({ x: { text: 'a', original: 'a' }, y: { text: 'c', original: 'a' } })).toBe(true)
+  })
+
+  it('the delete confirm names what the host does to a thread’s first comment', () => {
+    expect(getDeleteConfirmKey('github', false)).toBe('prComment.deleteMessage')
+    expect(getDeleteConfirmKey('github', true)).toBe('prComment.deleteFirstGithub')
+    expect(getDeleteConfirmKey('gitlab', true)).toBe('prComment.deleteFirstGitlab')
+    expect(getDeleteConfirmKey('azure', true)).toBe('prComment.deleteFirstAzure')
+    expect(getDeleteConfirmKey('bitbucket', true)).toBe('prComment.deleteFirstBitbucket')
+    expect(getDeleteConfirmKey('forgejo', true)).toBe('prComment.deleteMessage')
+    expect(getDeleteConfirmKey(undefined, true)).toBe('prComment.deleteMessage')
+  })
+
+  it('a saved edit replaces that one comment’s text and marks it edited', () => {
+    const pr = {
+      comments: [
+        { author: 'ana', body: 'old', createdAt: '', handle: H },
+        { author: 'ana', body: 'other', createdAt: '', handle: { id: 8, kind: 'conversation' as const } }
+      ],
+      reviewThreads: [
+        { path: 'a.ts', line: 1, diffHunk: '', rootId: 1, comments: [{ id: 7, author: 'ana', body: 'line', createdAt: '', handle: { id: 7, kind: 'review' as const } }] }
+      ]
+    } as never
+    const next = withCommentBody(pr, H, 'new')
+    expect(next.comments.map((c) => [c.body, !!c.edited])).toEqual([
+      ['new', true],
+      ['other', false]
+    ])
+    // Same id, other kind: untouched.
+    expect(next.reviewThreads[0].comments[0].body).toBe('line')
+  })
+
+  it('a "gone" refusal asks the page to read the PR again', () => {
+    expect(isCommentGone("Error invoking remote method 'hosting:prDeleteComment': Error: Comment change [gone]: GitHub: Not Found")).toBe(true)
+    expect(isCommentGone('Comment change [notAllowed]: GitHub: Forbidden')).toBe(false)
+  })
+
+  it('a handle from the renderer is checked before a URL is built from it', () => {
+    expect(isValidCommentHandle({ id: 1, kind: 'conversation' })).toBe(true)
+    expect(isValidCommentHandle({ id: 1, kind: 'review', threadId: 3, version: 0 })).toBe(true)
+    expect(isValidCommentHandle({ id: '1', kind: 'review' })).toBe(false)
+    expect(isValidCommentHandle({ id: 1, kind: 'note' })).toBe(false)
+    expect(isValidCommentHandle({ id: 1, kind: 'review', threadId: 0 })).toBe(false)
+    expect(isValidCommentHandle({ id: 1, kind: 'review', version: 1.5 })).toBe(false)
+    expect(isValidCommentHandle(null)).toBe(false)
+  })
+
+  it('"edited" needs the update more than a second past the creation', () => {
+    expect(isEditedAfter('2026-01-01T10:00:00Z', '2026-01-01T10:00:01Z')).toBe(false)
+    expect(isEditedAfter('2026-01-01T10:00:00Z', '2026-01-01T10:00:02Z')).toBe(true)
+    expect(isEditedAfter(1000, 5000)).toBe(true)
+    expect(isEditedAfter(undefined, '2026-01-01T10:00:02Z')).toBe(false)
+    expect(isEditedAfter('nonsense', '2026-01-01T10:00:02Z')).toBe(false)
   })
 })
