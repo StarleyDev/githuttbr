@@ -5,6 +5,9 @@
       "node scripts/check-screenshots.mjs",
       "node scripts/check-release-merges.mjs"
     ],
+    "before:git:release": [
+      "node scripts/enrich-changelog.mjs"
+    ],
     "after:git:release": [
       "git push origin v${version}"
     ]
