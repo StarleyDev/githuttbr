@@ -1205,6 +1205,57 @@ export const shots = [
     }
   },
   {
+    // The card a work item reference opens on hover: its type, title and
+    // state. An Azure DevOps pull request whose comments name work items; the
+    // detail and the titles are faked in main — a fictional organization and
+    // people, no network.
+    out: 'reference-card',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'getReferenceSummaries']) {
+          ipcMain.removeHandler('hosting:' + method)
+        }
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 318, title: 'Round invoice totals per line', author: 'Sam Rivera', source: 'feature/4821-rounding',
+          target: 'main', body: 'Implements AB#4821. Totals now round per line, then sum.',
+          state: 'open', draft: false, merged: false, mergeable: true,
+          url: 'https://dev.azure.com/example-org/billing/_git/invoices/pullrequest/318',
+          comments: [
+            { author: 'Alex Chen', body: 'Does this also close AB#4790, or is that a separate fix?',
+              createdAt: '2026-11-20T10:00:00Z', handle: { id: 7, kind: 'conversation', threadId: 3 } }
+          ],
+          reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'Alba Ortiz' }],
+          commits: 2, changedFiles: 4, additions: 52, deletions: 18
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        const items = {
+          4821: { title: 'Invoice totals are off by a cent on multi-line orders', type: 'Bug', state: 'Active' },
+          4790: { title: 'Show tax per line on the invoice PDF', type: 'User Story', state: 'Resolved' }
+        }
+        ipcMain.handle('hosting:getReferenceSummaries', (_e, _repo, _remote, _tokens, queries) =>
+          queries.map((q) => {
+            const w = items[q.id]
+            return w
+              ? { ...q, available: true, kind: 'workItem', title: w.title, stateName: w.state, workItemType: w.type }
+              : { ...q, available: false }
+          })
+        )
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://dev.azure.com/example-org/billing/_git/invoices', number: 318,
+        title: 'Round invoice totals per line'
+      }), repos['octopus-merge'])
+      const ref = page.locator('.prp-card-body .ref-link', { hasText: 'AB#4790' })
+      await ref.waitFor()
+      await ref.hover()
+      await page.locator('.ref-card .ref-card-title').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // The Checks tab with a Forgejo Actions job's log open under its row.
     out: 'pr-check-log',
     repos: ['octopus-merge'],

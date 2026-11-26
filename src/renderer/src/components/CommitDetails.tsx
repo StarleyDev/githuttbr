@@ -27,6 +27,8 @@ import { openWithMenuItems } from '../lib/openWith'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { ChangeSummary } from './ChangeSummary'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
+import { getReferenceHost } from '../lib/references'
+import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
   const origin = remotes.find((r) => r.name === 'origin')?.url ?? remotes[0]?.url
@@ -208,6 +210,9 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyToken])
 
+  const refRemote = repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url
+  const refHost = getReferenceHost(refRemote, repo.prProvider)
+
   if (!commit) return <div className="panel-empty">{t('commitPanel.notFound')}</div>
 
   const currentFile =
@@ -379,13 +384,17 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             <FilePenLine size={13} />
           </button>
         </div>
-        <p className="commit-subject">
-          {autolink(
-            emojifyGitmoji(commit.subject),
-            remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url),
-            repo.config?.config?.links?.tickets
-          )}
-        </p>
+        {/* `#12` / `!12` / `AB#12` in the subject get a hover card with the title. */}
+        <ReferenceScope repoPath={repo.path} remoteUrl={refRemote} host={refHost}>
+          <p className="commit-subject">
+            {autolink(
+              emojifyGitmoji(commit.subject),
+              remoteWebUrl(refRemote),
+              repo.config?.config?.links?.tickets,
+              getReferenceAutolinkOptions(refHost)
+            )}
+          </p>
+        </ReferenceScope>
 
         {/* Full-bleed like the subject above it, and absent entirely when there
             is nothing to show — an empty box on every commit is noise. */}

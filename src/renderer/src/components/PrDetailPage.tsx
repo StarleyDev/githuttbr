@@ -50,7 +50,10 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteForPrUrl } from '../lib/prBranchGo'
-import { autolink, remoteWebUrl } from '../lib/autolink'
+import { autolink, remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
+import { getReferenceHost } from '../lib/references'
+import type { IconTone } from '../lib/iconTone'
+import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 import {
   checkCounts,
   checkState,
@@ -337,6 +340,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const changeRef = useRef({ save: saveCommentEdit, remove: askDeleteComment })
   changeRef.current = { save: saveCommentEdit, remove: askDeleteComment }
   const web = remoteWebUrl(remoteUrl)
+  // `#12` / `!12` / `AB#12` get a hover card with the title (components/ReferenceLink.tsx).
+  const refHost = useMemo(() => getReferenceHost(remoteUrl, provider), [remoteUrl, provider])
+  const linkOptions = getReferenceAutolinkOptions(refHost)
   const threadCard = useCallback(
     (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
       pr ? (
@@ -345,6 +351,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           thread={th}
           pr={pr}
           web={web}
+          linkOptions={linkOptions}
           withLocation={withLocation}
           canReply={canReplyInThread}
           rootMissing={isThreadRootMissing(provider, th)}
@@ -358,7 +365,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           getReferences={getReferences}
         />
       ) : null,
-    [pr, web, canReplyInThread, provider, busy, mentions, getReferences]
+    [pr, web, linkOptions, canReplyInThread, provider, busy, mentions, getReferences]
   )
   const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
@@ -434,7 +441,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
     : (commits.list?.commits.length ?? pr?.commits)
 
-  return (
+  const content = (
     <div className="prp-frame">
       <div className="prp-page">
         <div className="prp-main">
@@ -450,15 +457,16 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               <h2>
                 {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
               </h2>
-              <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
+              {/* Each action its own hue (Settings → Themes → Icon colours, lib/iconTone.ts). */}
+              <button className="icon-btn" data-tone="refresh" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
                 <RefreshCw size={14} />
               </button>
               {aiEnabled && pr && (
-                <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
+                <button className="icon-btn" data-tone="ai" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
                   <Sparkles size={14} />
                 </button>
               )}
-              <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
+              <button className="icon-btn" data-tone="preview" title={t('prPreview.open')} onClick={previewLocally}>
                 <GitPullRequestArrow size={14} />
               </button>
               {pr && (
@@ -468,16 +476,19 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     usable={!pr.sourceRepo && canGo}
                     onGo={() => void goToBranch(pr.source)}
                     icon={<GitBranch size={14} />}
+                    tone="source"
                   />
                   <BranchGoButton
                     title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
                     usable={canGo}
                     onGo={() => void goToBranch(pr.target)}
                     icon={<Target size={14} />}
+                    tone="target"
                   />
                 </>
               )}
               {pr && (
+                // No tone: leaving the app is not one of the page's own actions, so it stays grey.
                 <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
                   <ExternalLink size={14} />
                 </button>
@@ -517,7 +528,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     <span>{fmtDate(pr.createdAt)}</span>
                   </div>
                   <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
-                    {pr.body.trim() ? autolink(pr.body, web) : t('prPage.noDescription')}
+                    {pr.body.trim() ? autolink(pr.body, web, undefined, linkOptions) : t('prPage.noDescription')}
                   </div>
                 </article>
 
@@ -537,7 +548,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                           <span>{fmtDate(c.createdAt)}</span>
                         </>
                       }
-                      rendered={autolink(c.body, web)}
+                      rendered={autolink(c.body, web, undefined, linkOptions)}
                       drafts={editDrafts}
                       busy={busy}
                       mentions={mentions}
@@ -874,6 +885,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       </div>
     </div>
   )
+  return (
+    <ReferenceScope repoPath={repoPath} remoteUrl={remoteUrl} host={refHost}>
+      {content}
+    </ReferenceScope>
+  )
 }
 
 /**
@@ -886,6 +902,7 @@ function ReviewThreadCard({
   thread,
   pr,
   web,
+  linkOptions,
   withLocation,
   canReply,
   rootMissing,
@@ -901,6 +918,7 @@ function ReviewThreadCard({
   thread: PrReviewThread
   pr: PrDetail
   web: string | undefined
+  linkOptions: AutolinkOptions
   withLocation: boolean
   canReply: boolean
   /** GitHub: the thread's first comment was deleted, so the app cannot reply here. */
@@ -951,7 +969,7 @@ function ReviewThreadCard({
                 <span>{fmtDate(c.createdAt)}</span>
               </>
             }
-            rendered={autolink(c.body, web)}
+            rendered={autolink(c.body, web, undefined, linkOptions)}
             drafts={editDrafts}
             busy={busy}
             mentions={mentions}
@@ -1189,17 +1207,20 @@ function BranchGoButton({
   title,
   usable,
   onGo,
-  icon
+  icon,
+  tone
 }: {
   title: string
   usable: boolean
   onGo: () => void
   icon: React.ReactNode
+  tone: IconTone
 }): React.JSX.Element {
   return (
     <button
       type="button"
       className="icon-btn prp-branch-head-go"
+      data-tone={tone}
       aria-disabled={!usable}
       title={title}
       aria-label={title}

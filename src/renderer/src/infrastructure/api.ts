@@ -83,6 +83,8 @@ import type {
   PullRequest,
   FinishedPullRequests,
   PrDetail,
+  ReferenceQuery,
+  ReferenceSummary,
   PrReviewEvent,
   PrMergeMethod,
   IssueInfo,
@@ -1180,6 +1182,9 @@ export const hostingApi = {
     window.api.hosting.prDetail(repoPath, remoteUrl, tokens, number) as Promise<PrDetail>,
   workItem: (repoPath: string, remoteUrl: string, tokens: { azure?: string }, id: number) =>
     window.api.hosting.workItem(repoPath, remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
+  /** Titles for `#12` / `!12` / `AB#12` references, one entry per query; never throws for a missing id. */
+  getReferenceSummaries: (repoPath: string, remoteUrl: string, tokens: PrTokens, queries: ReferenceQuery[]) =>
+    window.api.hosting.getReferenceSummaries(repoPath, remoteUrl, tokens, queries) as Promise<ReferenceSummary[]>,
   prComment: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, body: string) =>
     window.api.hosting.prComment(repoPath, remoteUrl, tokens, number, body) as Promise<void>,
   prReplyReviewComment: (

@@ -13,9 +13,30 @@
  * Menus and lists that group many entries (the Tools menu, the Settings pages)
  * give a whole group one tone, so a group reads as one family.
  *
+ * A page whose header is a row of icon buttons (the pull request page) gives
+ * each action its own tone instead, so they can be told apart at a glance:
+ *
+ * - `refresh` — read again (blue: `--accent` mixed with `--purple`).
+ * - `ai` — ask the model (`--accent`).
+ * - `preview` — try it locally (teal: `--green` mixed with `--purple`).
+ * - `source` / `target` — a PR's two branches (`--green` / `--yellow`).
+ * - `edit` / `delete` — your own comment (`--accent` / `--red`).
+ *
  * An icon with no tone stays grey in every mode.
  */
-export type IconTone = 'incoming' | 'outgoing' | 'ref' | 'shelf' | 'guard'
+export type IconTone =
+  | 'incoming'
+  | 'outgoing'
+  | 'ref'
+  | 'shelf'
+  | 'guard'
+  | 'refresh'
+  | 'ai'
+  | 'preview'
+  | 'source'
+  | 'target'
+  | 'edit'
+  | 'delete'
 
 /** Give every entry of a menu group — submenus included — the group's tone,
  *  unless an entry names its own. */

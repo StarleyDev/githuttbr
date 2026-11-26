@@ -29,6 +29,8 @@ import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { autolink, remoteWebUrl } from '../lib/autolink'
+import { getReferenceHost } from '../lib/references'
+import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 import { useRepoStore } from '../stores/repo'
 import { NO_ITEMS } from '../lib/stableEmpty'
 import { collectMentionNames } from '../lib/markdownEdit'
@@ -50,6 +52,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   const profile = useSettingsStore((s) => s.activeProfile())
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const milestones = useRepoStore((s) => s.repos[repoPath]?.milestones ?? NO_ITEMS)
+  const provider = useRepoStore((s) => s.repos[repoPath]?.prProvider)
   const tokens = { github: profile.githubToken || undefined }
 
   const [detail, setDetail] = useState<IssueDetail | null>(null)
@@ -138,6 +141,10 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
     const next = detail?.state === 'open' ? 'closed' : 'open'
     void act(() => hostingApi.setIssueState(repoPath, remoteUrl, tokens, issue.number, next), next === 'closed' ? t('issue.closedToast') : t('issue.reopenedToast'))
   }
+  // `#12` / `!12` / `AB#12` in the text get a hover card with the title.
+  const refHost = getReferenceHost(remoteUrl, provider)
+  const linkOptions = getReferenceAutolinkOptions(refHost)
+
   const createBranch = (): void => {
     openModal({
       kind: 'create-branch',
@@ -160,7 +167,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
     })
   }
 
-  return (
+  const content = (
     <div className="issue-page">
       <div className="issue-main">
         <div className="issue-head">
@@ -191,7 +198,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
               })}
             </div>
             {detail.body.trim() ? (
-              <div className="issue-body">{autolink(detail.body, remoteWebUrl(remoteUrl))}</div>
+              <div className="issue-body">{autolink(detail.body, remoteWebUrl(remoteUrl), undefined, linkOptions)}</div>
             ) : (
               <div className="issue-body issue-body-empty">{t('issue.noDescription')}</div>
             )}
@@ -215,7 +222,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
                       <span>{new Date(c.createdAt).toLocaleString()}</span>
                     </>
                   }
-                  rendered={autolink(c.body, remoteWebUrl(remoteUrl))}
+                  rendered={autolink(c.body, remoteWebUrl(remoteUrl), undefined, linkOptions)}
                   drafts={editDrafts}
                   busy={busy}
                   mentions={mentions}
@@ -365,5 +372,10 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
         ))}
       </aside>
     </div>
+  )
+  return (
+    <ReferenceScope repoPath={repoPath} remoteUrl={remoteUrl} host={refHost}>
+      {content}
+    </ReferenceScope>
   )
 }

@@ -144,6 +144,19 @@ import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } fr
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
+import {
+  getReferenceHost,
+  orderByNearness,
+  pickReferenceBatch,
+  ReferenceCache,
+  REFERENCE_RATE_LIMITED_TTL_MS,
+  REFERENCE_REQUEST_MAX,
+  REFERENCE_TTL_MS,
+  REFERENCE_UNAVAILABLE_TTL_MS,
+  splitWorkItemMentions,
+  unavailableSummaries
+} from '../src/renderer/src/lib/references'
+import type { ReferenceQuery, ReferenceSummary } from '../src/shared/types'
 import { githubCommitUrl, parseGitHubRemote, githubRemote, forkUpstream, prsFromFork } from '../src/renderer/src/lib/hosting'
 import {
   commitMenuCapabilities,
@@ -1152,11 +1165,138 @@ describe('autolink', () => {
     expect(hrefs(autolink('fix #12 and AB#34', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/12'])
   })
 
+  it('links `!123` to the merge request only on GitLab', () => {
+    const hrefs = (out: unknown): string[] =>
+      (Array.isArray(out) ? out : [out])
+        .filter((n): n is { props: { href: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+        .map((n) => n.props.href)
+    const gl = 'https://gitlab.example.corp/team/app'
+    expect(hrefs(autolink('see !7 and #8', gl, undefined, { gitlab: true }))).toEqual([
+      `${gl}/-/merge_requests/7`,
+      `${gl}/issues/8`
+    ])
+    // Elsewhere, and glued to a word ("done!7"), it stays text.
+    expect(hrefs(autolink('see !7 and #8', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/8'])
+    expect(hrefs(autolink('done!7', gl, undefined, { gitlab: true }))).toEqual([])
+  })
+
+  it('hands each reference link to renderReference, an Azure `#12` as `AB#12`', () => {
+    const seen: string[] = []
+    autolink('fix #12, AB#34 by @ana', 'https://dev.azure.com/example-org/proj/_git/app', undefined, {
+      renderReference: (q, link) => {
+        seen.push(`${q.sigil}${q.id} ${link.text} ${link.href}`)
+        return null
+      }
+    })
+    expect(seen).toEqual([
+      'AB#12 #12 https://dev.azure.com/example-org/_workitems/edit/12',
+      'AB#34 AB#34 https://dev.azure.com/example-org/_workitems/edit/34'
+    ])
+  })
+
   it('builds host-specific file permalinks', () => {
     expect(filePermalink('git@github.com:o/r.git', 'abc123', 'src/a.ts')).toBe('https://github.com/o/r/blob/abc123/src/a.ts')
     expect(filePermalink('https://gitlab.com/g/s/r.git', 'abc', 'x.ts')).toBe('https://gitlab.com/g/s/r/-/blob/abc/x.ts')
     expect(filePermalink('git@bitbucket.org:o/r.git', 'abc', 'x.ts')).toBe('https://bitbucket.org/o/r/src/abc/x.ts')
     expect(filePermalink(undefined, 'abc', 'x.ts')).toBeUndefined()
+  })
+})
+
+describe('references: what counts as one', () => {
+  const texts = (out: unknown): string[] =>
+    (Array.isArray(out) ? out : [out])
+      .filter((n): n is { props: { children: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+      .map((n) => n.props.children)
+  const gh = 'https://github.com/o/r'
+  it('links a #12 standing on its own, in punctuation too', () => {
+    expect(texts(autolink('fix #12, (#13) and #14.', gh))).toEqual(['#12', '#13', '#14'])
+  })
+  it('leaves another repository’s org/repo#12 alone', () => {
+    expect(texts(autolink('see org/repo#12', gh))).toEqual([])
+  })
+  it('leaves HTML entities, hex colours and glued numbers alone', () => {
+    expect(texts(autolink('it&#39;s #123abc and #12ab, #fff, x#12, #12-x', gh))).toEqual([])
+  })
+  it('leaves URL fragments alone', () => {
+    expect(texts(autolink('https://github.com/o/r/pull/3#issuecomment-123 and page#12', gh))).toEqual([])
+  })
+  it('links AB#12 only as a word of its own', () => {
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    expect(texts(autolink('AB#12, xAB#13, AB#14x', azure))).toEqual(['AB#12'])
+  })
+  it('links an Azure `!12` to the pull request, with no card', () => {
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    const seen: string[] = []
+    const out = autolink('see !12', azure, undefined, {
+      renderReference: (q) => {
+        seen.push(`${q.sigil}${q.id}`)
+        return null
+      }
+    })
+    expect(seen).toEqual([])
+    const hrefs = (Array.isArray(out) ? out : [out]).filter((n) => n && typeof n === 'object') as Array<{ props: { href: string } }>
+    expect(hrefs.map((n) => n.props.href)).toEqual([`${azure}/pullrequest/12`])
+  })
+  it('splits an Azure subject around AB#12 and #12, with the same boundaries', () => {
+    expect(splitWorkItemMentions('AB#12 fix rounding (#3), org/repo#4, &#39;')).toEqual([
+      { text: 'AB#12', id: 12 },
+      { text: ' fix rounding (' },
+      { text: '#3', id: 3 },
+      { text: '), org/repo#4, &#39;' }
+    ])
+    expect(splitWorkItemMentions('no refs')).toEqual([{ text: 'no refs' }])
+  })
+  it('tells the host from the provider, or the URL when the PR list has not run', () => {
+    expect(getReferenceHost('git@ssh.dev.azure.com:v3/example-org/proj/app', 'azure')).toEqual({ azure: true, gitlab: false })
+    expect(getReferenceHost('https://dev.azure.com/example-org/proj/_git/app', null)).toEqual({ azure: true, gitlab: false })
+    expect(getReferenceHost('https://gitlab.example.corp/team/app.git', null)).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('https://git.example.corp/team/app.git', 'gitlab')).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('https://bitbucket.org/team/app.git', null)).toBeNull()
+    expect(getReferenceHost(undefined, 'github')).toBeNull()
+  })
+})
+
+describe('references: cache and batching', () => {
+  const ok = (id: number): ReferenceSummary => ({ sigil: '#', id, available: true, kind: 'issue', title: `Issue ${id}`, state: 'open' })
+  it('keeps an answer per scope and reference; past its TTL it is stale, not gone', () => {
+    let now = 1_000
+    const cache = new ReferenceCache(() => now)
+    cache.saveSummaries('repo-a', [ok(1)])
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })?.title).toBe('Issue 1')
+    expect(cache.getSummary('repo-b', { sigil: '#', id: 1 })).toBeUndefined()
+    expect(cache.getSummary('repo-a', { sigil: '!', id: 1 })).toBeUndefined()
+    now += REFERENCE_TTL_MS - 1
+    expect(cache.isFresh('repo-a', { sigil: '#', id: 1 })).toBe(true)
+    now += 1
+    expect(cache.isFresh('repo-a', { sigil: '#', id: 1 })).toBe(false)
+    // Still served: an inline title does not vanish while the re-read is on its way.
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })?.title).toBe('Issue 1')
+  })
+  it('asks again sooner after "not found", and later after "rate limited"', () => {
+    let now = 0
+    const cache = new ReferenceCache(() => now)
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 9 }], 'notFound'))
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 8 }], 'rateLimited'))
+    now = REFERENCE_UNAVAILABLE_TTL_MS
+    expect(cache.isFresh('r', { sigil: '#', id: 9 })).toBe(false)
+    expect(cache.isFresh('r', { sigil: '#', id: 8 })).toBe(true)
+    now = REFERENCE_RATE_LIMITED_TTL_MS
+    expect(cache.isFresh('r', { sigil: '#', id: 8 })).toBe(false)
+    expect(REFERENCE_RATE_LIMITED_TTL_MS).toBeGreaterThan(REFERENCE_UNAVAILABLE_TTL_MS)
+  })
+  it('batches the hovered reference first, then the unknown ones on screen, up to the cap', () => {
+    const known = new Set(['#2'])
+    const isKnown = (q: ReferenceQuery): boolean => known.has(`${q.sigil}${q.id}`)
+    const visible = [1, 2, 3, 4, 3].map((id) => ({ sigil: '#' as const, id }))
+    expect(pickReferenceBatch({ sigil: '#', id: 4 }, visible, isKnown).map((q) => q.id)).toEqual([4, 1, 3])
+    expect(pickReferenceBatch(null, visible, isKnown, 2).map((q) => q.id)).toEqual([1, 3])
+    expect(pickReferenceBatch({ sigil: '#', id: 2 }, [], isKnown)).toEqual([])
+    expect(REFERENCE_REQUEST_MAX).toBe(10)
+  })
+  it('orders the neighbours of the hovered one nearest first', () => {
+    expect(orderByNearness(['a', 'b', 'c', 'd', 'e'], 2)).toEqual(['d', 'b', 'e', 'a'])
+    expect(orderByNearness(['a', 'b', 'c'], 0)).toEqual(['b', 'c'])
+    expect(orderByNearness(['a', 'b'], -1)).toEqual(['a', 'b'])
   })
 })
 

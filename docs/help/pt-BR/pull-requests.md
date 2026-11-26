@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
-source: 637a1d17bf6af468baba0f97eb880ec0b0ad6033
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Página de pull requests
@@ -132,7 +132,10 @@ lenta. Na página de um pull request, o campo **Branches** faz isso por você:
 
 O cabeçalho tem os mesmos dois caminhos como botões: **Ir para a branch de
 origem** e **Ir para a branch de destino**. Eles funcionam também na branch em
-que você já está — só levam ao repositório.
+que você já está — só levam ao repositório. Com as [cores dos
+ícones](themes.md) ligadas, cada botão do cabeçalho tem a sua:
+atualizar azul, revisão com IA violeta, pré-visualizar verde-azulado, branch de
+origem verde, branch de destino laranja (abrir no navegador fica cinza).
 
 Nada é consultado antes do clique: abrir um pull request não lê nem busca
 nenhuma branch.
@@ -403,6 +406,73 @@ O que não faz:
   página para editar os comentários deles, embora o app saiba fazer a chamada.
 - **A descrição** do pull request e os resumos das revisões não são
   comentários, e não são editados aqui.
+
+## Do que trata um `#123` ou `AB#123`
+
+Um commit que diz *fixes AB#4821* ou um comentário que diz *veja #312* informa
+um número, não do que se trata. Para saber, era preciso abrir. Agora, **ao
+apontar para uma referência** — ou chegar nela com Tab — abre um pequeno
+cartão com o que o host diz sobre ela:
+
+- um ícone do tipo, e a referência como foi escrita;
+- o **título**;
+- o **estado** (aberto, fechado, mesclado — no Azure DevOps, o estado do
+  próprio item de trabalho, como *Active* ou *Resolved*);
+- no Azure DevOps, o **tipo do item de trabalho** (Bug, User Story, Task…).
+
+![O cartão de uma referência a item de trabalho num comentário: tipo, título e estado](../../screenshots/reference-card.webp)
+
+Os cartões estão na página do pull request (descrição, comentários, threads de
+revisão e a mensagem completa de um commit na aba **Commits**), na página da
+issue e no assunto do painel de detalhes do commit. Na aba **Commits** no Azure
+DevOps, cada item de trabalho no assunto de um commit (`AB#123`, ou `#123`, que
+ali é o mesmo item) também mostra o título ao lado, em cinza. No Azure DevOps,
+`!123` vira link para aquele pull request, sem cartão.
+
+| Referência | Host | Lido de |
+|---|---|---|
+| `AB#123`, e `#123` num repositório do Azure | Azure DevOps | Itens de trabalho, até 200 numa requisição |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (que respondem também por pull requests), uma requisição cada, uma por vez |
+| `#123` / `!123` | GitLab | Issues / merge requests, uma requisição por tipo |
+| `#123` | Forgejo | Issues (pull requests também), uma requisição cada, duas por vez |
+
+Um `#123` só conta como palavra própria: `org/repo#123` (outro repositório),
+`&#39;`, uma cor como `#123abc` e o `#issuecomment-…` de um link ficam de fora.
+
+Nada é consultado antes de um cartão abrir. Aí a referência em que você está e
+as mais próximas dela na página, ainda não conhecidas, vão numa só chamada,
+então o próximo cartão costuma aparecer na hora. As respostas ficam na memória
+enquanto o app roda, nunca em disco, por cinco minutos; depois disso continuam
+aparecendo e são lidas de novo no próximo passar de mouse. Ficam guardadas por
+perfil: a chamada é feita com o perfil ao qual o repositório está
+[vinculado](profiles.md), e outro perfil pode ver outros itens.
+
+O que custa:
+
+- **GitHub e Forgejo** não têm como ler várias issues numa requisição, então
+  cada cartão custa uma. Um passar de mouse pede no máximo **10** — a
+  referência em que você está e as vizinhas — e, no GitHub, uma depois da
+  outra, como o GitHub pede aos apps. A primeira resposta que diz *mais
+  devagar* (um 429, ou um 403) interrompe o resto, e essas referências não são
+  pedidas de novo por cinco minutos.
+- **Azure DevOps** lê até 200 itens de trabalho numa requisição, e o GitLab
+  uma por tipo, então ali a página inteira vai de uma vez.
+
+O que não faz:
+
+- **Bitbucket** não tem cartão: o app não lê issues lá, e o link abre o
+  navegador como antes.
+- **Não encontrado, ou sem acesso.** Uma issue excluída, um item de trabalho
+  num projeto que esta conta não vê, ou um token do Azure sem o escopo *Work
+  Items (Read)* aparecem do mesmo jeito: o cartão diz isso, e o link continua
+  funcionando. Um host limitando as requisições, fora do ar ou sem conta neste
+  perfil tem a sua própria mensagem.
+- **`AB#123` fora do Azure DevOps** — num repositório do GitHub ligado ao Azure
+  Boards — não vira link, então não tem cartão: o app não sabe a que
+  organização ele pertence.
+- **Estado mesclado em GitHub Enterprise Servers antigos**, que não informam
+  quando um pull request foi mesclado: aparece como fechado.
+- **As linhas de commit do grafo** não mostram cartões.
 
 ## Limites
 

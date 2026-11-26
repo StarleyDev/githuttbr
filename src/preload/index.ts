@@ -344,6 +344,8 @@ const api = {
       ipcRenderer.invoke('hosting:prDetail', repoPath, remoteUrl, tokens, number),
     workItem: (repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:workItem', repoPath, remoteUrl, tokens, id),
+    getReferenceSummaries: (repoPath: string, remoteUrl: string, tokens: unknown, queries: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:getReferenceSummaries', repoPath, remoteUrl, tokens, queries),
     prComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prComment', repoPath, remoteUrl, tokens, number, body),
     prReplyReviewComment: (
