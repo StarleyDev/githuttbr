@@ -1,5 +1,11 @@
 
 
+## [4.56.0](https://github.com/StarleyDev/githuttbr/compare/v4.55.0...v4.56.0) (2026-11-26)
+
+### Features
+
+* **pr:** an Updates tab that shows each push to a pull request ([f2e4cc8](https://github.com/StarleyDev/githuttbr/commit/f2e4cc80826d8763a98b36002fd15be29ac3e91a))
+
 ## [4.55.0](https://github.com/StarleyDev/githuttbr/compare/v4.54.0...v4.55.0) (2026-11-26)
 
 ### Features
