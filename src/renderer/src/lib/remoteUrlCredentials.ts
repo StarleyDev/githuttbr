@@ -1,5 +1,6 @@
 import { redactUrlUserinfo } from '../../../shared/redact'
 import type { RemoteUrlCredentials } from '../../../shared/types'
+import type { TranslationKey } from '../i18n'
 
 /**
  * A network operation refused for its credential — the replies git and the
@@ -57,4 +58,37 @@ export function remoteToBlameForAuthFailure(
   }
   if (remote) return withPassword.some((c) => c.remote === remote) ? remote : null
   return withPassword.length === 1 ? withPassword[0].remote : null
+}
+
+/** The host of a clean `scheme://host[:port]/…` URL — the part a profile's token is saved for. */
+function hostOfCleanUrl(url: string): string | null {
+  return /^(?:[A-Za-z0-9+.-]+::)?[A-Za-z][A-Za-z0-9+.-]*:\/\/([^/?#\\@]+)/.exec(url)?.[1] ?? null
+}
+
+export interface RemovalConfirmLine {
+  key: TranslationKey
+  vars?: Record<string, string>
+}
+
+/**
+ * What the removal's confirmation says, in order, and whether it offers to add
+ * a token first. A password in the URL is what signs in today; without a
+ * profile token (or a helper answer) for its host, removing it leaves fetch and
+ * push failing — so that comes first, with the way out next to Remove.
+ */
+export function removalConfirmPlan(
+  creds: RemoteUrlCredentials[],
+  remote: string,
+  hasCredential: boolean
+): { lines: RemovalConfirmLine[]; addTokenFirst: boolean } {
+  const url = creds.find((c) => c.remote === remote)?.urls.find((u) => u.kind === 'password' && !u.ambiguous)?.url
+  const host = (url && hostOfCleanUrl(url)) || remote
+  const lines: RemovalConfirmLine[] = [
+    { key: 'urlCred.confirmMessage', vars: { remote } },
+    { key: 'urlCred.confirmUsername' },
+    { key: 'urlCred.confirmNoUndo' },
+    { key: 'urlCred.confirmRevoke' }
+  ]
+  if (!hasCredential) lines.unshift({ key: 'urlCred.noProfileToken', vars: { host } })
+  return { lines, addTokenFirst: !hasCredential }
 }

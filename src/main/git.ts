@@ -186,8 +186,10 @@ import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import {
   parseRemoteUrlConfig,
   remoteUrlCredentialsFrom,
+  hasAmbiguousPassword,
+  passwordRewrites,
+  readUrlUserinfo,
   urlWithoutPassword,
-  urlsWithoutPasswords,
   type ConfiguredRemoteUrls
 } from '../shared/remoteUrlCredentials'
 import {
@@ -207,7 +209,7 @@ import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fi
 import { recordLog } from './log'
 import { activeProfileAuth, asProfileIdArg, boundProfileName, isProfileId, namedProfileAuth, readSettings } from './settings'
 import { boundNoCredentialMessage } from './hosting'
-import { apiToken, knownServers, providerOfRemote, resolveRemote } from './credentials'
+import { apiToken, credentialFor, knownServers, providerOfRemote, resolveRemote } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
 import { bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
@@ -581,6 +583,22 @@ function encodeSubtreeKey(prefix: string): string {
 
 function decodeSubtreeKey(key: string): string {
   return key.replace(/%2F/g, '/')
+}
+
+/**
+ * The remembered URL of `prefix` when `shown` is that URL as the renderer got
+ * it (without its password, `subtrees`), else `shown` itself — so pulling or
+ * pushing a subtree from the list keeps working with the credential it had,
+ * without the password ever crossing to the renderer.
+ */
+async function rememberedSubtreeUrl(repoPath: string, prefix: string, shown: string): Promise<string> {
+  const key = encodeSubtreeKey(prefix)
+  for (const ns of [APP_ID, LEGACY_APP_ID]) {
+    const saved = (await runGit(repoPath, ['config', '--get', `${ns}.subtree.${key}.url`]).catch(() => '')).trim()
+    if (saved && saved !== shown && urlWithoutPassword(saved) === shown) return saved
+    if (saved) return shown
+  }
+  return shown
 }
 
 /** Remember where a subtree came from — git itself keeps no such record. */
@@ -3562,13 +3580,18 @@ export const gitService = {
       git.getRemotes(true),
       gitService.getRemoteUrlCredentials(repoPath).catch(() => [] as RemoteUrlCredentials[])
     ])
-    const kinds = new Map(creds.map((c) => [c.remote, c.kind]))
+    const byName = new Map(creds.map((c) => [c.remote, c]))
     // The renderer shows, copies and links this URL, and an old clone can hold
     // `user:token@` in it: the password never leaves main. The user name stays,
-    // so editing the remote keeps it (`editRemote` puts the password back).
+    // so editing the remote keeps it (`editRemote` leaves an unchanged URL alone).
     return rs.map((r) => {
-      const kind = kinds.get(r.name)
-      return { name: r.name, url: urlWithoutPassword(r.refs.fetch || r.refs.push), ...(kind ? { urlCredentials: kind } : {}) }
+      const c = byName.get(r.name)
+      return {
+        name: r.name,
+        url: urlWithoutPassword(r.refs.fetch || r.refs.push),
+        ...(c ? { urlCredentials: c.kind } : {}),
+        ...(c?.urls.some((u) => u.ambiguous) ? { urlCredentialsAmbiguous: true as const } : {})
+      }
     })
   },
 
@@ -3594,24 +3617,43 @@ export const gitService = {
     assertNotOption(remote, 'the remote name')
     const urls = (await configuredRemoteUrls(repoPath)).get(remote)
     if (!urls) throw new Error(`No remote named "${remote}" is configured in this repository.`)
-    const fetch = urlsWithoutPasswords(urls.fetch)
-    const push = urlsWithoutPasswords(urls.push)
-    if (!fetch && !push) return
-    // Only clean values reach an argument list: the old URL is never named,
-    // so no secret shows up in a process listing either.
-    for (const [values, pushRole] of [[fetch, false], [push, true]] as const) {
-      if (!values) continue
-      for (const v of values) assertNotOption(v, 'the URL')
-      const flag = pushRole ? ['--push'] : []
-      if (values.length === 1) {
-        await runGit(repoPath, ['remote', 'set-url', ...flag, remote, values[0]])
-        continue
-      }
-      // Several URLs: replace them all with the first, then add the rest in order.
-      const key = `remote.${remote}.${pushRole ? 'pushurl' : 'url'}`
-      await runGit(repoPath, ['config', '--local', '--replace-all', key, values[0]])
-      for (const v of values.slice(1)) await runGit(repoPath, ['config', '--local', '--add', key, v])
+    // Where the host starts is not certain: cutting at the wrong `@` would move
+    // the remote to another server, with no undo. Left to the user to edit.
+    if (hasAmbiguousPassword([...urls.fetch, ...urls.push])) {
+      throw new Error(`The URL of the remote "${remote}" is ambiguous about its host. Edit the remote by hand.`)
     }
+    // One `--replace-all` per address, matching only the values with a password
+    // in front of it: each step rewrites in place, so a failure midway loses no
+    // URL and keeps their order. Only clean values and patterns built around the
+    // userinfo reach the argument list — never the old URL or the secret.
+    for (const [list, variable] of [[urls.fetch, 'url'], [urls.push, 'pushurl']] as const) {
+      for (const { pattern, value } of passwordRewrites(list)) {
+        assertNotOption(value, 'the URL')
+        await runGit(repoPath, ['config', '--local', '--replace-all', `remote.${remote}.${variable}`, value, pattern])
+      }
+    }
+  },
+
+  /**
+   * Whether `remote` would still have a credential once the password left its
+   * URL: the repository profile's token or linked account for that host, else —
+   * for a repository not bound to a profile — an answer from git's own helper,
+   * asked silently. Only a yes or no crosses to the renderer, for the removal's
+   * confirmation to warn that fetch and push would fail.
+   */
+  async remoteHasProfileCredential(repoPath: string, remote: string): Promise<boolean> {
+    assertNotOption(remote, 'the remote name')
+    const urls = (await configuredRemoteUrls(repoPath)).get(remote)
+    const first = [...(urls?.fetch ?? []), ...(urls?.push ?? [])]
+      .map((u) => readUrlUserinfo(u))
+      .find((r) => r.kind === 'password' && !r.ambiguous)
+    // Asked with the address alone: the password in the URL must not answer for itself.
+    const url = first?.clean
+    if (!url || !/^https?:\/\//i.test(url)) return false
+    const { cred, bound } = await remoteCredential(repoPath, url).catch(() => ({ cred: null, bound: false }))
+    if (cred) return true
+    if (bound) return false
+    return !!(await credentialFor(url, { repoPath }).catch(() => null))
   },
 
   /** Per remote: which credential a push would use, whose account it is, and what it may do. */
@@ -3645,26 +3687,39 @@ export const gitService = {
     url: string,
     pushUrl?: string
   ): Promise<void> {
-    for (const [v, what] of [[newName, 'the remote name'], [url, 'the URL'], [pushUrl, 'the push URL']] as const) {
+    for (const [v, what] of [[oldName, 'the remote name'], [newName, 'the remote name'], [url, 'the URL'], [pushUrl, 'the push URL']] as const) {
       assertNotOption(v, what)
     }
-    const git = gitFor(repoPath)
-    // The dialog only ever saw the URLs without their password (`remotes`). Saved
-    // back unchanged, they mean "keep it": restore the configured URL rather than
-    // dropping the password as a side effect of a rename. Taking it out is
-    // `removeRemoteUrlCredentials`, behind its own confirmation.
-    const [currentUrl, currentPush] = await Promise.all([
+    // The dialog only ever saw the URLs without their password (`remotes`), and
+    // after any `insteadOf` rewrite. Saved back as shown, a URL means "keep it":
+    // it is not written at all — `git remote rename` carries the URLs over — so
+    // neither the configured secret nor one an `insteadOf` rule adds is copied
+    // into .git/config or an argument list. A URL the user did edit is written
+    // as typed: changing the host or path drops a saved password with it.
+    // Taking a password out alone is `removeRemoteUrlCredentials`.
+    const configured = (await configuredRemoteUrls(repoPath)).get(oldName) ?? { fetch: [], push: [] }
+    const [effectiveUrl, effectivePush] = await Promise.all([
       getRemoteUrl(repoPath, oldName),
       pushUrls(repoPath, oldName).catch(() => [] as string[])
     ])
-    if (url && currentUrl && url !== currentUrl && url === urlWithoutPassword(currentUrl)) url = currentUrl
-    if (pushUrl) pushUrl = currentPush.find((p) => p !== pushUrl && urlWithoutPassword(p) === pushUrl) ?? pushUrl
-    if (newName && newName !== oldName) await git.remote(['rename', oldName, newName])
+    const shownAs = (value: string, candidates: string[]): boolean =>
+      candidates.some((c) => c === value || urlWithoutPassword(c) === value)
+    const fetchChanged = !!url && !shownAs(url, [...configured.fetch.slice(0, 1), effectiveUrl].filter(Boolean))
+    const pushChanged = !!pushUrl && !shownAs(pushUrl, [...configured.push, ...effectivePush])
+    if (newName && newName !== oldName) await runGit(repoPath, ['remote', 'rename', oldName, newName])
     const name = newName || oldName
-    if (url) await git.remote(['set-url', name, url])
-    // An empty pushUrl resets the push URL to mirror the fetch URL.
-    if (pushUrl && pushUrl !== url) await git.remote(['set-url', '--push', name, pushUrl])
-    else await git.remote(['set-url', '--push', name, url || pushUrl || '']).catch(() => undefined)
+    if (fetchChanged) {
+      await runGit(repoPath, ['remote', 'set-url', name, url])
+      // A push URL that only mirrored the old fetch URL follows it.
+      const mirror = configured.push.length === 1 && configured.push[0] === configured.fetch[0]
+      if (mirror && !pushChanged) await runGit(repoPath, ['remote', 'set-url', '--push', name, url])
+    }
+    // An empty push URL means the dialog's field was left alone: a distinct push
+    // URL already configured stays as it is.
+    if (pushChanged && pushUrl) {
+      if (pushUrl === (fetchChanged ? url : effectiveUrl) && !configured.push.length) return
+      await runGit(repoPath, ['remote', 'set-url', '--push', name, pushUrl])
+    }
   },
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
@@ -5543,7 +5598,9 @@ export const gitService = {
     const hosts = new Set<string>()
     for (const line of remotes.split('\n')) {
       const url = line.split(/\s+/)[1] ?? ''
-      const host = /^https?:\/\/(?:[^@/]*@)?([^/]+)/.exec(url)?.[1]
+      // Through the shared reader, whose ambiguous cases are redacted greedily:
+      // a first-`@` match would hand `token@host` to the renderer.
+      const host = /^https?:\/\/(?:[^/?#\\]*@)?([^/?#\\@]+)/.exec(readUrlUserinfo(url).ambiguous ? '' : urlWithoutPassword(url))?.[1]
       if (host) hosts.add(host)
     }
 
@@ -6623,7 +6680,9 @@ export const gitService = {
     for (const [prefix, lastSplit] of found) {
       out.push({
         prefix,
-        url: meta.get(prefix)?.url ?? '',
+        // The renderer shows and sends this back; a password in it stays in main
+        // (`rememberedSubtreeUrl` restores it when the same address comes back).
+        url: urlWithoutPassword(meta.get(prefix)?.url ?? ''),
         ref: meta.get(prefix)?.ref ?? '',
         present: existsSync(join(repoPath, prefix)),
         lastSplit
@@ -6650,6 +6709,7 @@ export const gitService = {
   /** Pull upstream changes into an existing subtree. */
   async subtreePull(repoPath: string, prefix: string, url: string, ref: string, squash = true): Promise<void> {
     if (!url.trim() || !ref.trim()) throw new Error('This subtree has no remembered repository — enter one.')
+    url = await rememberedSubtreeUrl(repoPath, prefix, url.trim())
     await runSubtree(repoPath, ['pull', `--prefix=${prefix}`, ...(squash ? ['--squash'] : []), url.trim(), ref.trim()])
     await rememberSubtree(repoPath, prefix, url.trim(), ref.trim())
   },
@@ -6657,6 +6717,7 @@ export const gitService = {
   /** Send local changes under `prefix` back to the source repository. */
   async subtreePush(repoPath: string, prefix: string, url: string, ref: string): Promise<void> {
     if (!url.trim() || !ref.trim()) throw new Error('This subtree has no remembered repository — enter one.')
+    url = await rememberedSubtreeUrl(repoPath, prefix, url.trim())
     await runSubtree(repoPath, ['push', `--prefix=${prefix}`, url.trim(), ref.trim()])
   },
 
@@ -9873,6 +9934,8 @@ const READ_METHODS = new Set<string>([
   'remotes',
   // Reads .git/config and returns only which URLs carry credentials, never them.
   'getRemoteUrlCredentials',
+  // Resolves the profile's credential and may ask git's helper; returns a boolean only.
+  'remoteHasProfileCredential',
   'remoteAuthChecks',
   'stackInfo',
   'stackLeaves',

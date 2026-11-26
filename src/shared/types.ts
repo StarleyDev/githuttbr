@@ -592,6 +592,9 @@ export interface RemoteInfo {
   /** What the remote's fetch or push URLs carry in their userinfo, worst first.
    *  Absent when none carries anything. */
   urlCredentials?: UrlCredentialKind
+  /** A password is there but its URL is ambiguous about the host, so it is not
+   *  offered for automatic removal (shared/remoteUrlCredentials.ts). */
+  urlCredentialsAmbiguous?: true
 }
 
 /** One of a remote's configured URLs that carries a user name or a password. */
@@ -599,8 +602,11 @@ export interface RemoteUrlCredentialUrl {
   /** `fetch` for `remote.<name>.url`, `push` for `remote.<name>.pushurl`. */
   role: 'fetch' | 'push'
   kind: UrlCredentialKind
-  /** The URL as the fix writes it — the userinfo removed (an ssh user name kept). */
+  /** The URL as the fix writes it — the userinfo removed (an ssh user name kept).
+   *  For an ambiguous one, the URL redacted greedily: it is not rewritten. */
   url: string
+  /** Readers disagree on where its host starts: never rewritten automatically. */
+  ambiguous?: true
 }
 
 /**
@@ -611,6 +617,8 @@ export interface RemoteUrlCredentials {
   remote: string
   /** The worst of `urls`: a password outranks a user name. */
   kind: UrlCredentialKind
+  /** A password is there and every URL holding one can be cleaned safely. */
+  removable: boolean
   urls: RemoteUrlCredentialUrl[]
 }
 

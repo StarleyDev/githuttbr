@@ -53,7 +53,7 @@ import { partitionBySecrets, tallyPushResults, type SecretFlag } from '../lib/pu
 import { getDeletedShaList, getRestoreRequests, tallyDeleteResults } from '../lib/branchCleanup'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
-import { isAuthFailureMessage, remoteToBlameForAuthFailure } from '../lib/remoteUrlCredentials'
+import { isAuthFailureMessage, removalConfirmPlan, remoteToBlameForAuthFailure } from '../lib/remoteUrlCredentials'
 import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
 import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { effectiveProfileId } from '../lib/repoProfile'
@@ -329,6 +329,12 @@ function promptUpstreamRepair(message: string, path: string, mode: PullMode): bo
  * suppresses its own toast, which this shows — explained or not — once the
  * remotes are read.
  */
+/** The Edit remote dialog for `remote`, with the URL as main let the renderer see it. */
+function openEditRemote(path: string, remote: string): void {
+  const url = useRepoStore.getState().repos[path]?.remotes.find((r) => r.name === remote)?.url ?? ''
+  useUIStore.getState().openModal({ kind: 'editRemote', path, name: remote, url })
+}
+
 function promptRemoteUrlCredentialRepair(
   message: string,
   path: string,
@@ -343,13 +349,14 @@ function promptRemoteUrlCredentialRepair(
       toast('error', opts.shown ?? message, { repoPath: path })
       return
     }
+    // An ambiguous URL is never rewritten for the user: the next step is editing it.
+    const removable = creds.find((c) => c.remote === remote)?.removable ?? false
     toast('error', opts.shown ?? message, {
       repoPath: path,
       explanation: interp(t('urlCred.authExplanation'), { remote }),
-      action: {
-        label: t('urlCred.removeAction'),
-        run: () => repoActions.confirmRemoveRemoteUrlCredentials(path, remote, retry)
-      }
+      action: removable
+        ? { label: t('urlCred.removeAction'), run: () => repoActions.confirmRemoveRemoteUrlCredentials(path, remote, retry) }
+        : { label: t('urlCred.editAction'), run: () => openEditRemote(path, remote) }
     })
   })()
   return true
@@ -1982,15 +1989,31 @@ export const repoActions = {
    * changes, where the credential comes from afterwards, and that the old token
    * should be revoked. `retry` re-runs the operation that failed on it, if any.
    */
-  confirmRemoveRemoteUrlCredentials: (path: string, remote: string, retry?: () => void): void =>
-    useUIStore.getState().openModal({
-      kind: 'confirm',
-      danger: true,
-      title: interp(t('urlCred.confirmTitle'), { remote }),
-      message: `${interp(t('urlCred.confirmMessage'), { remote })}\n\n${t('urlCred.confirmNoUndo')}\n\n${t('urlCred.confirmRevoke')}`,
-      confirmLabel: t('urlCred.confirmOk'),
-      onConfirm: () => void repoActions.removeRemoteUrlCredentials(path, remote, retry)
-    }),
+  confirmRemoveRemoteUrlCredentials: (path: string, remote: string, retry?: () => void): void => {
+    void (async () => {
+      // Whether anything would answer once the URL's password is gone — only a
+      // yes or no comes back. Unknown counts as no: the warning is the safe side.
+      const [creds, hasCredential] = await Promise.all([
+        gitApi.getRemoteUrlCredentials(path).catch(() => []),
+        gitApi.remoteHasProfileCredential(path, remote).catch(() => false)
+      ])
+      const plan = removalConfirmPlan(creds, remote, hasCredential)
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        danger: true,
+        title: interp(t('urlCred.confirmTitle'), { remote }),
+        message: plan.lines.map((l) => interp(t(l.key), l.vars ?? {})).join('\n\n'),
+        confirmLabel: t('urlCred.confirmOk'),
+        onConfirm: () => void repoActions.removeRemoteUrlCredentials(path, remote, retry),
+        ...(plan.addTokenFirst
+          ? {
+              secondaryLabel: t('urlCred.addTokenFirst'),
+              onSecondary: () => useUIStore.getState().openModal({ kind: 'settings', page: 'integrations' })
+            }
+          : {})
+      })
+    })()
+  },
 
   /**
    * Take the password out of `remote`'s fetch and push URLs.

@@ -212,6 +212,11 @@ const RULES: Rule[] = [
     }
   },
   {
+    // git.ts removeRemoteUrlCredentials — main has no language.
+    test: /The URL of the remote "(.+?)" is ambiguous about its host\. Edit the remote by hand\./,
+    hint: (m) => ({ key: 'gitError.remoteUrlAmbiguous', vars: { remote: m[1] } })
+  },
+  {
     test: /Bitbucket Data Center: this repository does not allow (\w+) merges/,
     hint: (m) => ({ key: 'gitError.bbsMethodNotAllowed', vars: { method: m[1] } })
   }

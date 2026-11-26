@@ -1363,7 +1363,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const remoteMgmtMenu = (remoteName: string, url?: string): MenuItem[] => {
     const web = webUrl(url)
-    const savedPassword = repo.remotes.find((r) => r.name === remoteName)?.urlCredentials === 'password'
+    const info = repo.remotes.find((r) => r.name === remoteName)
+    // An ambiguous URL is never rewritten automatically (shared/remoteUrlCredentials.ts).
+    const savedPassword = info?.urlCredentials === 'password' && !info.urlCredentialsAmbiguous
     return [
       { label: t('sidebar.addRemote'), onClick: () => addRemote() },
       { label: interp(t('sidebar.fetchRemote'), { remote: remoteName }), onClick: () => void repoActions.fetchRemote(path, remoteName) },
@@ -2280,12 +2282,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                       className="icon-btn remote-url-cred"
                       role="button"
                       tabIndex={0}
-                      aria-label={interp(t('urlCred.chipTitle'), { remote: remote.name })}
+                      aria-label={interp(t(remote.urlCredentialsAmbiguous ? 'urlCred.chipAmbiguous' : 'urlCred.chipTitle'), { remote: remote.name })}
                       onKeyDown={keyActivate}
-                      title={interp(t('urlCred.chipTitle'), { remote: remote.name })}
+                      title={interp(t(remote.urlCredentialsAmbiguous ? 'urlCred.chipAmbiguous' : 'urlCred.chipTitle'), { remote: remote.name })}
                       onClick={(e) => {
                         e.stopPropagation()
-                        repoActions.confirmRemoveRemoteUrlCredentials(path, remote.name)
+                        if (remote.urlCredentialsAmbiguous) {
+                          openModal({ kind: 'editRemote', path, name: remote.name, url: remote.url })
+                        } else repoActions.confirmRemoveRemoteUrlCredentials(path, remote.name)
                       }}
                     >
                       <KeyRound size={12} />

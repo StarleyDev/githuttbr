@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { KeyRound, CheckCircle2, AlertTriangle, XCircle, Loader2, RefreshCw } from 'lucide-react'
 import type { RemoteAuthCheck } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
-import { repoActions } from '../stores/repo'
+import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteAuthFindings, remoteAuthSourceKey, remoteAuthStatus } from '../lib/remoteAuth'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useT, interp } from '../i18n'
@@ -71,6 +71,10 @@ function RemoteAuthCard({ check, path }: { check: RemoteAuthCheck; path: string 
   const status = remoteAuthStatus(check)
   const Icon = ICONS[status]
   const profile = check.profile ?? ''
+  // Only when main can clean every URL of this remote: an ambiguous one is edited by hand.
+  const removable = useRepoStore(
+    (s) => !s.repos[path]?.remotes.find((r) => r.name === check.remote)?.urlCredentialsAmbiguous
+  )
   return (
     <section className={`remote-auth-card is-${status}`}>
       <header className="remote-auth-head">
@@ -101,7 +105,7 @@ function RemoteAuthCard({ check, path }: { check: RemoteAuthCheck; path: string 
           )
         })}
       </ul>
-      {check.source === 'embedded' && (
+      {check.source === 'embedded' && removable && (
         // The confirmation replaces this dialog; it says what changes and what does not come back.
         <button
           className="btn ghost small"

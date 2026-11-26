@@ -15,20 +15,43 @@
  */
 
 import type { RemoteUrlCredentialUrl, RemoteUrlCredentials, UrlCredentialKind } from './types'
+import { redactUrlUserinfo } from './redact'
 
 export type { UrlCredentialKind }
 
 export interface UrlUserinfo {
   /** Null when the URL carries nothing in its userinfo, or cannot (scp-like, a path). */
   kind: UrlCredentialKind | null
+  /**
+   * A password is there, but where the host starts depends on who reads the
+   * URL: an `@` after a `?` or `#` in the authority, or a password holding an
+   * unencoded `/`. Cutting at the wrong `@` would move the remote to another
+   * host, so such a URL is never rewritten automatically — only redacted for
+   * display, greedily.
+   */
+  ambiguous: boolean
   /** The URL the fix writes: no userinfo at all — except over ssh, where the
    *  user name is how ssh logs in, so only a password goes. Equal to the input
-   *  when `kind` is null. */
+   *  when `kind` is null or the reading is ambiguous: never show it then. */
   clean: string
-  /** The URL with only the password removed — what is safe to show or send to
-   *  the renderer. Equal to the input when there is no password. */
+  /** The URL with the password removed — what is safe to show or send to the
+   *  renderer. Equal to the input when there is no password. */
   withoutPassword: string
+  /**
+   * For a password that can be removed: a `git config` value pattern (POSIX
+   * ERE) matching this URL whatever its userinfo holds — built from the parts
+   * around the userinfo only, so the secret never reaches an argument list.
+   */
+  valuePattern?: string
 }
+
+/** `text` with every POSIX ERE metacharacter escaped. */
+function ereEscape(text: string): string {
+  return text.replace(/[\\^$.|?*+()[\]{}]/g, '\\$&')
+}
+
+/** A remote helper's prefix (`gcrypt::`, `persistent-https::`): kept as written, the URL after it read. */
+const TRANSPORT = /^[A-Za-z0-9+.-]+::/
 
 const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//
 
@@ -36,35 +59,56 @@ const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//
 const SSH_SCHEMES = new Set(['ssh', 'git+ssh', 'ssh+git'])
 
 /**
- * A `user:secret/…@` authority — a password holding an unencoded `/`. Git ends
- * the authority at that `/` and reads no userinfo, so the request fails on a
- * nonsense host; the secret is still in `.git/config` in plain text, so it is
- * reported. A port (`host:8080/…@…`) has only digits after the `:` and is not.
+ * A `…:secret/…@` userinfo — a password holding an unencoded `/`, possibly
+ * after a user name with an unencoded `@` (`me@corp.example:ab/cd@host/`). Git
+ * and curl end the authority at that `/`, so they read another host; the
+ * secret is still in `.git/config`. A port (`host:8080/…@…`) has only digits
+ * after its `:` and is not one.
  */
-const PASSWORD_WITH_SLASH = /^[^/@:]*:(?!\d*\/)[^/@]*\/[^@]*@/
+const PASSWORD_WITH_SLASH = /^[^/?#\\]*:(?!\d*[/?#\\])[^/?#\\@]*\/[^@]*@/
 
-function unchanged(url: string): UrlUserinfo {
-  return { kind: null, clean: url, withoutPassword: url }
-}
+/** `host`, `host:port`, `[v6]` or `[v6]:port` — nothing a password could be. */
+const HOST_PORT = /^(?:\[[^\]]*\]|[^:[\]]*)(?::\d*)?$/
+
+const unchanged = (url: string): UrlUserinfo => ({ kind: null, ambiguous: false, clean: url, withoutPassword: url })
+
+/** A password is there but the host is not certain: report it, redact greedily, rewrite nothing. */
+const ambiguousPassword = (url: string): UrlUserinfo => ({
+  kind: 'password',
+  ambiguous: true,
+  clean: url,
+  withoutPassword: redactUrlUserinfo(url, '***')
+})
 
 /** Read the userinfo of `url`. */
 export function readUrlUserinfo(url: string): UrlUserinfo {
-  const scheme = SCHEME.exec(url)
+  const transport = TRANSPORT.exec(url)?.[0] ?? ''
+  const address = url.slice(transport.length)
+  const scheme = SCHEME.exec(address)
   // scp-like `user@host:path` and local paths have no userinfo to speak of.
   if (!scheme) return unchanged(url)
-  const prefix = scheme[0]
-  const body = url.slice(prefix.length)
+  const prefix = transport + scheme[0]
+  const body = address.slice(scheme[0].length)
+
+  // Everything before the first `/`. The path is never read for a userinfo.
   const slash = body.indexOf('/')
-  const authority = slash < 0 ? body : body.slice(0, slash)
-
-  let at = authority.lastIndexOf('@')
-  if (at < 0) {
-    // The match ends on the first `@` past the slash: the one closing the userinfo.
-    const slashed = PASSWORD_WITH_SLASH.exec(body)
-    if (!slashed) return unchanged(url)
-    at = slashed[0].length - 1
+  const head = slash < 0 ? body : body.slice(0, slash)
+  // The authority ends at the first `?`, `#` or `\` too, as git and curl end it.
+  // A bracketed IPv6 host holds none of those, and its colons are no password.
+  const end = head.search(/[?#\\]/)
+  const authority = end < 0 ? head : head.slice(0, end)
+  if (end >= 0 && head.slice(end).includes('@')) {
+    // An `@` past a `?` or `#`: readers disagree on where the host starts.
+    return /:[^@]+@/.test(head) ? ambiguousPassword(url) : unchanged(url)
   }
+  // A host that reads as one — `name[:port]` or a bracketed IPv6 `[…][:port]` —
+  // after the userinfo settles it; an `@` further on is the path's. Otherwise a
+  // `:` before the first `/` with an `@` past it is a password with a slash in it.
+  const hostPort = authority.slice(authority.lastIndexOf('@') + 1)
+  if (!HOST_PORT.test(hostPort) && PASSWORD_WITH_SLASH.test(body)) return ambiguousPassword(url)
 
+  const at = authority.lastIndexOf('@')
+  if (at < 0) return unchanged(url)
   const userinfo = body.slice(0, at)
   const rest = body.slice(at + 1)
   const colon = userinfo.indexOf(':')
@@ -74,14 +118,21 @@ export function readUrlUserinfo(url: string): UrlUserinfo {
   const withUser = user ? `${prefix}${user}@${rest}` : `${prefix}${rest}`
 
   if (password) {
-    return { kind: 'password', clean: ssh ? withUser : `${prefix}${rest}`, withoutPassword: withUser }
+    return {
+      kind: 'password',
+      ambiguous: false,
+      clean: ssh ? withUser : `${prefix}${rest}`,
+      withoutPassword: withUser,
+      // Any `user:secret@` in front of this very address, and nothing else.
+      valuePattern: `^${ereEscape(prefix)}[^/]*:[^/]*@${ereEscape(rest)}$`
+    }
   }
   // `user:@host` holds an empty password: nothing secret, the same as `user@`.
-  if (user && !ssh) return { kind: 'username', clean: `${prefix}${rest}`, withoutPassword: url }
+  if (user && !ssh) return { kind: 'username', ambiguous: false, clean: `${prefix}${rest}`, withoutPassword: url }
   return unchanged(url)
 }
 
-/** `url` with any password removed and everything else as written. */
+/** `url` with any password removed — greedily when the reading is ambiguous. */
 export function urlWithoutPassword(url: string): string {
   return readUrlUserinfo(url).withoutPassword
 }
@@ -130,8 +181,8 @@ export function parseRemoteUrlConfig(out: string): Map<string, ConfiguredRemoteU
 }
 
 /**
- * The remotes whose URLs carry a user name or a password, each URL in its
- * clean form. Remotes with nothing in their URLs are left out.
+ * The remotes whose URLs carry a user name or a password, each URL in a form
+ * safe to show. Remotes with nothing in their URLs are left out.
  */
 export function remoteUrlCredentialsFrom(config: Map<string, ConfiguredRemoteUrls>): RemoteUrlCredentials[] {
   const out: RemoteUrlCredentials[] = []
@@ -139,29 +190,38 @@ export function remoteUrlCredentialsFrom(config: Map<string, ConfiguredRemoteUrl
     const urls: RemoteUrlCredentialUrl[] = []
     for (const [role, list] of [['fetch', fetch], ['push', push]] as const) {
       for (const raw of list) {
-        const { kind, clean } = readUrlUserinfo(raw)
-        if (kind) urls.push({ role, kind, url: clean })
+        const r = readUrlUserinfo(raw)
+        if (!r.kind) continue
+        // An ambiguous `clean` is the raw URL: only its greedy redaction may leave.
+        urls.push(r.ambiguous ? { role, kind: r.kind, url: r.withoutPassword, ambiguous: true } : { role, kind: r.kind, url: r.clean })
       }
     }
     if (!urls.length) continue
     const kind = urls.reduce<UrlCredentialKind | null>((k, u) => worseCredentialKind(k, u.kind), null) ?? 'username'
-    out.push({ remote, kind, urls })
+    const removable = kind === 'password' && !urls.some((u) => u.ambiguous)
+    out.push({ remote, kind, removable, urls })
   }
   return out
 }
 
+/** Whether any of `urls` holds a password whose host cannot be told for certain. */
+export function hasAmbiguousPassword(urls: string[]): boolean {
+  return urls.some((u) => readUrlUserinfo(u).ambiguous)
+}
+
 /**
- * The `git config` values to write so `urls` carries no password: each value
- * with a password replaced by its clean form, the others kept as written.
- * Null when nothing in `urls` has a password — there is nothing to rewrite.
+ * The `git config --replace-all <key> <value> <pattern>` steps that take every
+ * password out of `urls`: one per distinct address, each matching only the
+ * values that hold a password in front of it. Each step rewrites its lines in
+ * place, so the other URLs and their order survive whichever step fails, and
+ * neither the old value nor the secret is ever named. Empty when there is no
+ * password; an ambiguous value is skipped — callers refuse those first.
  */
-export function urlsWithoutPasswords(urls: string[]): string[] | null {
-  let changed = false
-  const next = urls.map((u) => {
+export function passwordRewrites(urls: string[]): Array<{ pattern: string; value: string }> {
+  const steps = new Map<string, string>()
+  for (const u of urls) {
     const r = readUrlUserinfo(u)
-    if (r.kind !== 'password') return u
-    changed = true
-    return r.clean
-  })
-  return changed ? next : null
+    if (r.kind === 'password' && !r.ambiguous && r.valuePattern) steps.set(r.valuePattern, r.clean)
+  }
+  return [...steps].map(([pattern, value]) => ({ pattern, value }))
 }
