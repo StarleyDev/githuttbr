@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleDot, Folder, FolderOpen, MessageSquare } from 'lucide-react'
 import type { PrFile } from '../../../shared/types'
+import { restoreScrollTop } from '../lib/scrollRestore'
 import { useSettingsStore } from '../stores/settings'
 import {
   buildFileTree,
@@ -246,10 +247,8 @@ export const PrFileList = memo(function PrFileList({
   // Back where it was: once, after the rows are drawn; a shorter list clamps.
   useEffect(() => {
     const el = scrollRef.current
-    if (!el || initialScroll <= 0) return
-    requestAnimationFrame(() => {
-      el.scrollTop = Math.max(0, Math.min(initialScroll, el.scrollHeight - el.clientHeight))
-    })
+    if (!el) return
+    return restoreScrollTop(el, initialScroll)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [collapsed, setCollapsed] = useState<Set<string>>(() => collapsedByPr.get(prKey) ?? new Set())

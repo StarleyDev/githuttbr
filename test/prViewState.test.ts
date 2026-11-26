@@ -50,6 +50,32 @@ describe('PR view state', () => {
     expect(states.getViewKeys()).toEqual(['c', 'e', 'f'])
   })
 
+  it('a state let go past the cap hands its drafts over, tagged with its PR, once', () => {
+    const states = createPrViewStates(1)
+    const k1 = getPrViewKey('/a', 'r', 11)
+    const s1 = states.getOrCreateViewState(k1)
+    s1.comment = 'half a review'
+    s1.replyDrafts.t9 = 'a reply'
+    states.getOrCreateViewState(getPrViewKey('/a', 'r', 12))
+    expect(states.getViewKeys()).toEqual([getPrViewKey('/a', 'r', 12)])
+    const taken = states.takeEvictedDrafts()
+    expect(taken.map((o) => [o.kind, o.text, o.pr])).toEqual([
+      ['comment', 'half a review', 11],
+      ['reply', 'a reply', 11]
+    ])
+    expect(new Set(taken.map((o) => o.id)).size).toBe(2)
+    expect(states.takeEvictedDrafts()).toEqual([])
+  })
+
+  it('a peek does not count as a use', () => {
+    const states = createPrViewStates(2)
+    states.getOrCreateViewState('a')
+    states.getOrCreateViewState('b')
+    states.peekViewState('a')
+    states.getOrCreateViewState('c')
+    expect(states.getViewKeys()).toEqual(['b', 'c'])
+  })
+
   it('a removed state is no longer the one a mounted page writes into', () => {
     const states = createPrViewStates()
     const s = states.getOrCreateViewState('k')
@@ -98,6 +124,12 @@ describe('PR view state', () => {
       ['line', 'rename this']
     ])
     expect(s.orphans[2]).toMatchObject({ path: 'src/gone.ts', line: 12 })
+    // The same line orphaned twice: two notices, two ids.
+    s.lineDraft = { anchor: { path: 'src/gone.ts', kind: 'add', oldLine: null, newLine: 12 } }
+    s.lineText.current = 'again'
+    collectOrphanDrafts(s, { threadIds: null, commentKeys: null, filePaths: new Set() })
+    expect(new Set(s.orphans.map((o) => o.id)).size).toBe(s.orphans.length)
+    s.orphans.pop()
     // A line draft on a file still listed stays where it is (the diff shows it above the lines).
     s.lineDraft = { anchor: { path: 'src/kept.ts', kind: 'del', oldLine: 3, newLine: null } }
     s.lineText.current = 'why?'

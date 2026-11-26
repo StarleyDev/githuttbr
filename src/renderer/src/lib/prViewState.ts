@@ -12,11 +12,19 @@ import { hasUnsavedEdit, isEditChanged, type CommentEditDraft } from './commentE
 /** A text that lost its place — its comment deleted, its thread or file gone. */
 export interface OrphanDraft {
   id: string
-  kind: 'reply' | 'edit' | 'line'
+  kind: 'comment' | 'reply' | 'edit' | 'line'
   text: string
   /** The file and line a line comment was written on. */
   path?: string
   line?: number | null
+  /** Set when the text comes from another pull request's page (its state was let go). */
+  pr?: number
+}
+
+let orphanSeq = 0
+/** An id no other orphan shares, even the same thread's or line's a second time. */
+function orphanId(kind: OrphanDraft['kind'], detail: string): string {
+  return `${kind}:${detail}:${Date.now()}:${++orphanSeq}`
 }
 
 export interface PrViewState {
@@ -77,19 +85,52 @@ export function hasUnsentDrafts(s: PrViewState): boolean {
   )
 }
 
+/** Every unsent text of a state, as orphans tagged with its pull request. */
+export function getDraftsAsOrphans(s: PrViewState, pr?: number): OrphanDraft[] {
+  const out: OrphanDraft[] = []
+  const add = (o: Omit<OrphanDraft, 'id' | 'pr'>, detail: string): void => {
+    out.push({ ...o, id: orphanId(o.kind, detail), ...(pr !== undefined ? { pr } : {}) })
+  }
+  if (s.comment.trim()) add({ kind: 'comment', text: s.comment }, 'main')
+  for (const [id, text] of Object.entries(s.replyDrafts)) if (text.trim()) add({ kind: 'reply', text }, id)
+  for (const [key, d] of Object.entries(s.editDrafts)) if (isEditChanged(d)) add({ kind: 'edit', text: d.text }, key)
+  if (s.lineDraft && s.lineText.current.trim()) {
+    const a = s.lineDraft.anchor
+    add({ kind: 'line', text: s.lineText.current, path: a.path, line: a.newLine ?? a.oldLine }, `${a.path}:${a.kind}`)
+  }
+  for (const o of s.orphans) out.push({ ...o, ...(pr !== undefined && o.pr === undefined ? { pr } : {}) })
+  return out
+}
+
+/** The pull request number a state key names. */
+function prNumberOf(key: string): number | undefined {
+  try {
+    const n = (JSON.parse(key) as unknown[])[2]
+    return typeof n === 'number' ? n : undefined
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * The states, least recently used first. Past the cap the oldest goes — but
  * one holding unsent text only when every state does: a draft is never the
- * first thing dropped.
+ * first thing dropped. And when it is dropped, its text is not: it moves to
+ * `takeEvictedDrafts`, which the next pull request page to open shows.
  */
 export function createPrViewStates(max = PR_VIEW_STATES_KEPT): {
   getViewState: (key: string) => PrViewState | undefined
+  /** The state without counting as a use — for watchers, not for the page. */
+  peekViewState: (key: string) => PrViewState | undefined
   getOrCreateViewState: (key: string) => PrViewState
+  /** Drafts of states let go past the cap, handed over once. */
+  takeEvictedDrafts: () => OrphanDraft[]
   hasViewState: (key: string, state: PrViewState) => boolean
   removeViewState: (key: string) => void
   getViewKeys: () => string[]
 } {
   const map = new Map<string, PrViewState>()
+  let evicted: OrphanDraft[] = []
   const touch = (key: string, s: PrViewState): void => {
     map.delete(key)
     map.set(key, s)
@@ -109,6 +150,8 @@ export function createPrViewStates(max = PR_VIEW_STATES_KEPT): {
       }
       const gone = victim ?? oldest
       if (gone === undefined) return
+      const state = map.get(gone)!
+      if (hasUnsentDrafts(state)) evicted.push(...getDraftsAsOrphans(state, prNumberOf(gone)))
       map.delete(gone)
     }
   }
@@ -117,6 +160,12 @@ export function createPrViewStates(max = PR_VIEW_STATES_KEPT): {
       const s = map.get(key)
       if (s) touch(key, s)
       return s
+    },
+    peekViewState: (key) => map.get(key),
+    takeEvictedDrafts: () => {
+      const out = evicted
+      evicted = []
+      return out
     },
     getOrCreateViewState: (key) => {
       const s = map.get(key) ?? createPrViewState()
@@ -155,7 +204,7 @@ export function collectOrphanDrafts(
       if (alive.threadIds.has(id)) continue
       delete s.replyDrafts[id]
       if (text.trim()) {
-        s.orphans.push({ id: `reply:${id}`, kind: 'reply', text })
+        s.orphans.push({ id: orphanId('reply', id), kind: 'reply', text })
         moved = true
       }
     }
@@ -165,7 +214,7 @@ export function collectOrphanDrafts(
       if (alive.commentKeys.has(key)) continue
       delete s.editDrafts[key]
       if (isEditChanged(draft)) {
-        s.orphans.push({ id: `edit:${key}`, kind: 'edit', text: draft.text })
+        s.orphans.push({ id: orphanId('edit', key), kind: 'edit', text: draft.text })
         moved = true
       }
     }
@@ -174,7 +223,7 @@ export function collectOrphanDrafts(
     const { anchor } = s.lineDraft
     if (s.lineText.current.trim()) {
       s.orphans.push({
-        id: `line:${anchor.path}:${anchor.oldLine}:${anchor.newLine}`,
+        id: orphanId('line', `${anchor.path}:${anchor.kind}:${anchor.oldLine}:${anchor.newLine}`),
         kind: 'line',
         text: s.lineText.current,
         path: anchor.path,

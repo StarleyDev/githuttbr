@@ -21,7 +21,8 @@ let open = getOpenPrPages(useSettingsStore.getState().settings.tabs)
 useSettingsStore.subscribe((s) => {
   const next = getOpenPrPages(s.settings.tabs)
   const closed = getClosedPrViewKeys(open, next, (key) => {
-    const state = prViewStates.getViewState(key)
+    // A peek: watching the tabs must not count as a use and reorder the LRU.
+    const state = prViewStates.peekViewState(key)
     return !!state && hasUnsentDrafts(state)
   })
   open = next
@@ -34,7 +35,7 @@ useSettingsStore.subscribe((s) => {
  */
 export function requestClosePrPage(page: PrPage, close: () => void): void {
   const key = getPrViewKey(page.repoPath, page.remoteUrl, page.number)
-  const state = prViewStates.getViewState(key)
+  const state = prViewStates.peekViewState(key)
   if (!state || !hasUnsentDrafts(state)) {
     prViewStates.removeViewState(key)
     close()

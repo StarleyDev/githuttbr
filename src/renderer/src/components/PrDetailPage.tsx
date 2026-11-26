@@ -49,7 +49,7 @@ import { PrNavBar } from './PrNavBar'
 import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
 import { PrUpdatesSection, usePrUpdates, usePrUpdatesSeen } from './PrUpdatesSection'
 import { PrUpdateDiffBanner, usePrUpdateDiff, type UpdateDiffView } from './PrUpdateDiff'
-import { forgetFinished, hasUnsentPrDraft, registerPrDraft } from '../stores/prList'
+import { forgetFinished } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
@@ -72,8 +72,8 @@ import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
 import { getPrFilesUrl, PrImagePreview, type PrImageSource } from './PrImagePreview'
 import { createPrImageCache } from '../lib/prImageCache'
+import { restoreScrollTop } from '../lib/scrollRestore'
 import {
-  clampScrollTop,
   collectOrphanDrafts,
   getPrViewKey,
   prViewStates,
@@ -113,6 +113,12 @@ import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'commits' | 'updates' | 'files' | 'checks'
 const SECTIONS: readonly Section[] = ['conversation', 'commits', 'updates', 'files', 'checks']
+/**
+ * The comment boxes' "leave for the guide?" question. Nothing typed on this
+ * page is lost by leaving it — every box's text stays with the PR until the PR
+ * is closed (lib/prViewState.ts) — so there is nothing to ask.
+ */
+const NEVER_LOST = (): boolean => false
 
 /** No review threads: an update's own diff takes no line comments. */
 const NO_THREADS: PrReviewThread[] = []
@@ -158,7 +164,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   // Where this PR's page was when it was last left, and its unsent text
   // (lib/prViewState.ts). The boxes below write into it as they change.
-  const [view] = useState(() => prViewStates.getOrCreateViewState(getPrViewKey(repoPath, remoteUrl, number)))
+  const [view] = useState(() => {
+    const state = prViewStates.getOrCreateViewState(getPrViewKey(repoPath, remoteUrl, number))
+    // Text from pull requests let go past the cap lands here, on the next page opened.
+    state.orphans.push(...prViewStates.takeEvictedDrafts())
+    return state
+  })
   const [section, setSection] = useState<Section>(() => (SECTIONS.includes(view.section as Section) ? (view.section as Section) : 'conversation'))
   const [comment, setComment] = useState(view.comment)
   const [busy, setBusy] = useState(false)
@@ -203,11 +214,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const prSource = pr?.source ?? ''
   const prSourceRepo = pr?.sourceRepo ?? null
   // Where the Files tab's images come from. Rebuilt when the files are re-read,
-  // so a push is picked up; the merge base is asked of the host once per build,
-  // and not at all where the files' revision already names it.
+  // so a push is picked up. The merge base is asked of the host once per head
+  // (a refresh that finds the same head asks nothing), and not at all where the
+  // files' revision already names it.
+  const commitsByHead = useRef(new Map<string, Promise<PrDiffCommits | null>>())
+  const revHead = filesRevision?.headSha ?? null
+  const revBase = filesRevision?.baseSha ?? null
   const imageSource = useMemo<PrImageSource>(() => {
-    let commits: Promise<PrDiffCommits | null> | null = null
-    const revision = filesRevision
+    let unkeyed: Promise<PrDiffCommits | null> | null = null
+    const ask = (): Promise<PrDiffCommits | null> => hostingApi.prDiffCommits(repoPath, remoteUrl, tokens, number).catch(() => null)
     return {
       repoPath,
       remoteUrl,
@@ -215,14 +230,22 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       pr: { number, url: prUrl, source: prSource, sourceRepo: prSourceRepo },
       cache: imageCache,
       getCommits: () => {
-        if (revision?.baseSha) return Promise.resolve({ baseSha: revision.baseSha, headSha: revision.headSha })
-        commits ??= hostingApi.prDiffCommits(repoPath, remoteUrl, tokens, number).catch(() => null)
-        return commits
+        if (revHead && revBase) return Promise.resolve({ baseSha: revBase, headSha: revHead })
+        if (!revHead) return (unkeyed ??= ask())
+        const known = commitsByHead.current.get(revHead)
+        if (known) return known
+        const asked = ask().then((c) => {
+          // A failed ask is not remembered: the next look tries again.
+          if (!c) commitsByHead.current.delete(revHead)
+          return c
+        })
+        commitsByHead.current.set(revHead, asked)
+        return asked
       }
     }
-    // `files`: a re-read of the list is when the head may have moved.
+    // Without a revision, a re-read of the files is the only sign the head may have moved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repoPath, remoteUrl, tokens, number, prUrl, prSource, prSourceRepo, imageCache, filesRevision, files])
+  }, [repoPath, remoteUrl, tokens, number, prUrl, prSource, prSourceRepo, imageCache, revHead, revBase, revHead ? null : files])
   // Forgejo has no API to reply inside an existing line thread.
   const canReplyInThread = provider !== 'forgejo'
 
@@ -272,16 +295,6 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     void load().finally(() => setLoading(false))
   }, [load])
 
-  // ‹ › and Alt+arrows ask before leaving text nobody sent.
-  useEffect(() => {
-    const check = (): boolean =>
-      !!comment.trim() ||
-      Object.values(replyDrafts.current).some((r) => r.trim()) ||
-      !!lineDraftText.current.trim() ||
-      hasUnsavedEdit(editDrafts.current)
-    registerPrDraft(check)
-    return () => registerPrDraft(null)
-  }, [comment])
 
   /** Run a write, refresh, toast. True when it went through. */
   const act = async (fn: () => Promise<void>, ok: string): Promise<boolean> => {
@@ -562,14 +575,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       (section === 'updates' && !!updates.list) ||
       (section === 'files' && !!files) ||
       (section === 'checks' && !!checks))
+  // A tab whose data failed never becomes ready: stop waiting, so its scroll is recorded again.
+  const sectionFailed =
+    !loading &&
+    (!!error ||
+      !pr ||
+      (section === 'commits' && !!commits.error && !commits.list) ||
+      (section === 'updates' && !!updates.error && !updates.list))
+  useEffect(() => {
+    if (sectionFailed && restoreScroll.current === section) restoreScroll.current = null
+  }, [sectionFailed, section])
   useEffect(() => {
     const el = bodyRef.current
     if (!el || !sectionReady || restoreScroll.current !== section) return
     restoreScroll.current = null
-    const saved = view.scroll[section] ?? 0
-    requestAnimationFrame(() => {
-      el.scrollTop = clampScrollTop(saved, el.scrollHeight, el.clientHeight)
-    })
+    return restoreScrollTop(el, view.scroll[section] ?? 0)
   }, [sectionReady, section, view])
   const updateDiff = usePrUpdateDiff(repoPath, remoteUrl, tokens, number, updateView)
   // In an update's own diff an image compares the update's two heads, not the merge base.
@@ -723,7 +743,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       busy={busy}
                       mentions={mentions}
                       getReferences={getReferences}
-                      hasUnsentText={hasUnsentPrDraft}
+                      hasUnsentText={NEVER_LOST}
                       onSave={saveCommentEdit}
                       onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
                     />
@@ -869,7 +889,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   mentions={mentions}
                   getReferences={getReferences}
                   // Leaving for the guide unmounts the page: every box on it counts.
-                  hasUnsentText={hasUnsentPrDraft}
+                  hasUnsentText={NEVER_LOST}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       e.preventDefault()
@@ -1204,7 +1224,7 @@ function ReviewThreadCard({
             busy={busy}
             mentions={mentions}
             getReferences={getReferences}
-            hasUnsentText={hasUnsentPrDraft}
+            hasUnsentText={NEVER_LOST}
             onSave={onSaveEdit}
             onDelete={(handle) => onDelete(handle, i === 0 && thread.comments.length > 1)}
           />
@@ -1231,7 +1251,7 @@ function ReviewThreadCard({
             mentions={mentions}
             getReferences={getReferences}
             // Leaving for the guide unmounts the page: every box on it counts.
-            hasUnsentText={hasUnsentPrDraft}
+            hasUnsentText={NEVER_LOST}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
@@ -1314,7 +1334,7 @@ function LineCommentComposer({
         mentions={mentions}
         getReferences={getReferences}
         // Leaving for the guide unmounts the page: every box on it counts.
-        hasUnsentText={hasUnsentPrDraft}
+        hasUnsentText={NEVER_LOST}
         // Escape reaches this only when no @/# list is open: the list closes first.
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -1611,10 +1631,16 @@ function FilesSection({
   useEffect(() => {
     const saved = view.diffScroll
     if (!file || !saved || saved.file !== file.filename || saved.top <= 0) return
-    requestAnimationFrame(() => {
+    let cancel = (): void => undefined
+    // The viewer mounts a frame later than this effect: find it then, and follow it as it grows.
+    const first = requestAnimationFrame(() => {
       const el = diffScroller()
-      if (el) el.scrollTop = clampScrollTop(saved.top, el.scrollHeight, el.clientHeight)
+      if (el) cancel = restoreScrollTop(el, saved.top)
     })
+    return () => {
+      cancelAnimationFrame(first)
+      cancel()
+    }
     // Once per file opened; the scroll listener below keeps it current.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file?.filename])

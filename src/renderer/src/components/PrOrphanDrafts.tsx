@@ -18,12 +18,16 @@ export function PrOrphanDrafts({
 }): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
+  const what = (o: OrphanDraft): string =>
+    o.kind === 'comment'
+      ? t('prView.orphanComment')
+      : o.kind === 'reply'
+        ? t('prView.orphanReply')
+        : o.kind === 'edit'
+          ? t('prView.orphanEdit')
+          : interp(t('prView.orphanLine'), { path: o.path ?? '', line: String(o.line ?? '') })
   const where = (o: OrphanDraft): string =>
-    o.kind === 'reply'
-      ? t('prView.orphanReply')
-      : o.kind === 'edit'
-        ? t('prView.orphanEdit')
-        : interp(t('prView.orphanLine'), { path: o.path ?? '', line: String(o.line ?? '') })
+    o.pr === undefined ? what(o) : interp(t('prView.orphanFromPr'), { n: o.pr, what: what(o) })
   return (
     <section className="prp-card prp-orphans" role="status">
       <h3 className="prp-orphans-title">
