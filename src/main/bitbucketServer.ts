@@ -685,6 +685,31 @@ export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, 
 }
 
 /**
+ * The two commits a pull request's Files tab compares: its effective diff's
+ * base and the source head. The changes resource names both ends of that diff
+ * (`fromHash`/`toHash`); the one that is not the head is the base. A server
+ * that names neither falls back to the target branch's tip — close, but not
+ * the merge base when the target moved on.
+ */
+export async function bbsPullDiffCommits(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number
+): Promise<{ baseSha: string | null; headSha: string; baseApproximate?: boolean } | null> {
+  const r = bbsRepoApi(repo)
+  const pr = await bbsJson<BbsPull>(`${r}/pull-requests/${id}`, token)
+  const head = pr.fromRef?.latestCommit
+  if (!head) return null
+  const ends = await bbsJson<{ fromHash?: string; toHash?: string }>(`${r}/pull-requests/${id}/changes?limit=1`, token).catch(
+    () => null
+  )
+  const end = [ends?.fromHash, ends?.toHash].find((h) => !!h && h !== head)
+  if (end) return { baseSha: end, headSha: head }
+  const tip = pr.toRef?.latestCommit ?? null
+  return { baseSha: tip, headSha: head, ...(tip ? { baseApproximate: true } : {}) }
+}
+
+/**
  * A comment on one line of the pull request's effective diff (the one its
  * Diff tab shows). A removed line counts in the source file (FROM), added and
  * context lines in the destination (TO); `srcPath` names a renamed file's old path.

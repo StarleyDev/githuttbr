@@ -398,6 +398,10 @@ const api = {
       ipcRenderer.invoke('hosting:ciWorkflows', repoPath, remoteUrl, tokens),
     ciDispatch: (repoPath: string, remoteUrl: string, tokens: unknown, workflowId: string, ref: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciDispatch', repoPath, remoteUrl, tokens, workflowId, ref),
+    prDiffCommits: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prDiffCommits', repoPath, remoteUrl, tokens, number),
+    prFileContent: (repoPath: string, remoteUrl: string, tokens: unknown, sha: string, path: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prFileContent', repoPath, remoteUrl, tokens, sha, path),
     prCheckLog: (repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prCheckLog', repoPath, remoteUrl, tokens, url),
     prChecks: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

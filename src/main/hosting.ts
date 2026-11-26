@@ -57,6 +57,7 @@ import {
   forgejoEditComment,
   forgejoPullEnds,
   forgejoPullRevision,
+  forgejoRepoApi,
   forgejoMerge,
   forgejoPullChecks,
   forgejoJobLog,
@@ -113,6 +114,14 @@ import {
   type BitbucketServerRepo
 } from '../shared/bitbucketServer'
 import { knownBitbucketServerInstances } from './bitbucketServerInstances'
+import { fetchFileBytes, fetchGithubFile, hostFileUrls } from './prFileContent'
+import {
+  getImageMime,
+  isFullCommitSha,
+  isSafeRepoFilePath,
+  type PrDiffCommits,
+  type PrImageContent
+} from '../shared/prImage'
 import {
   bbsPullCommits,
   bbsPullUpdates,
@@ -124,6 +133,8 @@ import {
   bbsEditComment,
   bbsPullEnds,
   bbsPullRevision,
+  bbsPullDiffCommits,
+  bbsRepoApi,
   bbsMerge,
   bbsPullChecks,
   bbsPullDetail,
@@ -233,6 +244,7 @@ import {
   azureDeleteComment,
   azureEditComment,
   azurePrRevision,
+  azureRepoApi,
   azureReview,
   azureWorkItem,
   type Ado,
@@ -2495,6 +2507,97 @@ async function pullRequestRevision(remoteUrl: string, tokens: HostTokens, number
   const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const pr = await ghJson<{ head?: { sha?: string } }>(`${api}/pulls/${number}`, token)
   return pr.head?.sha ? { headSha: pr.head.sha } : null
+}
+
+/**
+ * The two commits a pull request's Files tab compares — its merge base and its
+ * head — for the image preview, which reads each side of an image at one of
+ * them. GitLab, Forgejo and Azure name the merge base on the pull request (the
+ * revision above); GitHub is asked for it through a compare of the base tip
+ * and the head; Data Center through the changes resource's ends.
+ */
+async function pullRequestDiffCommits(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrDiffCommits | null> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullDiffCommits(b.repo, b.token, number)
+  }
+  if (parsed?.provider === 'github') {
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    const pr = await ghJson<{ head?: { sha?: string }; base?: { sha?: string } }>(`${api}/pulls/${number}`, token)
+    const head = pr.head?.sha
+    if (!head) return null
+    const tip = pr.base?.sha
+    // One commit per page: the merge base is all this needs, not the commit list.
+    const cmp = tip
+      ? await ghJson<{ merge_base_commit?: { sha?: string } }>(`${api}/compare/${tip}...${head}?per_page=1&page=1`, token).catch(
+          () => null
+        )
+      : null
+    const mergeBase = cmp?.merge_base_commit?.sha
+    return mergeBase
+      ? { baseSha: mergeBase, headSha: head }
+      : { baseSha: tip ?? null, headSha: head, ...(tip ? { baseApproximate: true } : {}) }
+  }
+  const rev = await pullRequestRevision(remoteUrl, tokens, number)
+  return rev?.headSha ? { baseSha: rev.baseSha ?? null, headSha: rev.headSha } : null
+}
+
+/**
+ * One file's bytes at one commit, from the host — the image preview's fallback
+ * when this clone lacks the commit. Only full commit ids, paths that cannot
+ * climb out of the repository, and image types we preview reach a URL. The
+ * token never leaves main; the renderer gets a data URL, or "too large", or
+ * "missing". bitbucket.org has no pull request page, so no reader here.
+ */
+async function pullRequestFileContent(
+  remoteUrl: string,
+  tokens: HostTokens,
+  sha: unknown,
+  path: unknown
+): Promise<PrImageContent> {
+  if (!isFullCommitSha(sha)) throw new Error('A file is read at a full commit id.')
+  if (!isSafeRepoFilePath(path)) throw new Error('Not a file path inside the repository.')
+  const mime = getImageMime(path)
+  if (!mime) throw new Error('Only image files are read here.')
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    // `manual`: an LFS object may sit behind one redirect to object storage, followed without the token.
+    return fetchFileBytes(hostFileUrls.gitlabRaw(base, path, sha), { redirect: 'manual', headers: gitlabAuth(auth) }, mime, 'GitLab')
+  }
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return fetchFileBytes(
+      hostFileUrls.bitbucketServerRaw(bbsRepoApi(b.repo), path, sha),
+      { redirect: 'error', headers: { Authorization: `Bearer ${b.token}` } },
+      mime,
+      'Bitbucket Data Center'
+    )
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return fetchFileBytes(
+      hostFileUrls.forgejoMedia(forgejoRepoApi(f.base, f.owner, f.repo), path, sha),
+      { redirect: 'manual', headers: { Authorization: `token ${f.token}` } },
+      mime,
+      'Forgejo'
+    )
+  }
+  if (parsed?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return fetchFileBytes(
+      hostFileUrls.azureItem(azureRepoApi(a.repo), path, sha),
+      { redirect: 'error', headers: { Authorization: azureAuth(a.token), Accept: 'application/octet-stream' } },
+      mime,
+      'Azure DevOps'
+    )
+  }
+  if (parsed?.provider === 'github') {
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    return fetchGithubFile(api, token, path, sha, mime)
+  }
+  throw new Error('This host cannot serve a pull request file here.')
 }
 
 /**
@@ -5189,6 +5292,12 @@ export function registerHostingHandlers(): void {
     'hosting:prUpdateFiles',
     (remoteUrl: string, tokens: HostTokens, number: number, from: unknown, to: unknown) =>
       pullRequestUpdateFiles(remoteUrl, tokens, number, from, to)
+  )
+  handleForRepo('hosting:prDiffCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestDiffCommits(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:prFileContent', (remoteUrl: string, tokens: HostTokens, sha: unknown, path: unknown) =>
+    pullRequestFileContent(remoteUrl, tokens, sha, path)
   )
   handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
     pullRequestCheckLog(remoteUrl, tokens, url)

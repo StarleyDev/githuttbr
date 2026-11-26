@@ -394,6 +394,44 @@ the order the host lists the files.
 
 ![The Files tab in Tree view: folders with their summed changes and viewed counts, one folded](../screenshots/pr-files-tree.webp)
 
+**Images.** A picture the pull request adds, removes or changes (png, jpg,
+gif, webp, bmp, ico, avif, svg) has no text diff to read, so the tab shows the
+image instead — the same view as a commit's: the new one, the old one, or
+before and after side by side and as a slider. A renamed image compares its
+old path at the base with its new one at the head; in an update's own diff,
+the update's two heads. The bytes come from this clone when it has the commits,
+which is free and fast, and otherwise from the host with the repository's
+profile. Limits: an image over 32 MB is not previewed; line comments do not
+apply to a picture (an SVG keeps its text diff, and its comments, under it);
+an image kept in **Git LFS** is read from the host, since a clone holds only
+its pointer — GitLab, Azure DevOps and Forgejo resolve it, while GitHub's API
+gives the pointer alone, so there the tab sends you to the host; where the host
+does not name the merge base (it falls back to the target branch's tip), a note
+says the "before" may include later changes on the target; and when neither the
+clone nor the host can give the bytes, the tab says so and offers to fetch the
+pull request's branch or to open it on the host.
+
+![An image the pull request changed, before and after side by side](../screenshots/pr-image-diff.webp)
+
+**Paths and your editor.** The bar above the diff has a copy button for the
+file's path and a **⋯** menu; right-click a file or folder in the list for the
+same menu. It copies the path, a renamed file's old path, or the folder's;
+and it opens the file in your [editor](editor.md) (or another app) or shows it
+in the file manager. Those two act on **your working copy**, not on the pull
+request's version: they are only live for a file that exists in it (a file the
+PR deletes, or one your branch does not have, says why), and when the checked
+out branch is not the PR's, the menu says which branch you would be opening.
+
+**Coming back.** Leave a pull request for the repository, another tab or the
+next PR, and it is where you left it when you return: the same tab, the same
+file open, the same scroll, and every text you had not sent — the comment, a
+reply, a line comment, an edit. This lasts until you close the pull request or
+quit the app; it is kept in memory only, for the 50 most recent pull requests
+(past that the oldest place is let go, and any text it held moves to the next
+pull request page you open). Closing a PR with unsent text asks first. If a refresh finds the place of a draft gone — the conversation it
+answered, the comment it edited, the file it was on — the text is not dropped:
+it waits at the top of the page to be copied or discarded.
+
 ### Where the diff comes from
 
 A review is only as good as the diff it reads. A host's API is not a good
@@ -479,9 +517,10 @@ anything else stays in the Conversation tab, rather than on a guessed line:
 A comment on a line outside the hunks shown is in the Conversation tab only, on
 every host.
 
-A comment typed and not sent counts as unsent text: **‹ ›** and Alt+arrows ask
-before leaving it, as they do for the main comment box. Looking at another file
-keeps it; to start one on another line, post or cancel the first.
+A comment typed and not sent stays with the pull request, like the main comment
+box's text: **‹ ›**, Alt+arrows or another tab leave it where it is, and it is
+back on its line when you return (see *Coming back* above). Looking at another
+file keeps it; to start one on another line, post or cancel the first.
 
 What it does not do:
 
@@ -616,9 +655,10 @@ account it does not let change a comment is refused, and the message says so.
   closes it, asking first when you changed something. Only the blank lines
   around the text are dropped: indented code and a trailing two-space line
   break stay as typed. The new text shows at once and the page reads the pull
-  request again. On the pull request page, an edit nobody saved counts as
-  unsent text: **‹ ›** ask before leaving it. The issue page has no such
-  arrows, and nothing there asks before its tab closes.
+  request again. On the pull request page, an edit nobody saved stays with the
+  pull request when you move on with **‹ ›** or switch tabs, and closing the
+  pull request asks first. The issue page keeps nothing: nothing there asks
+  before its tab closes.
 - **Delete** always asks first, and the question says what happens: the server
   removes the comment for everyone, and it cannot be undone. There is no undo
   entry, since nothing can bring it back.

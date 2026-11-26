@@ -19531,6 +19531,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-no-patch { padding: 16px; color: var(--text-2); font-size: 13px; }
 .prp-no-patch-notice { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 10px; }
 .prp-no-patch-notice p { margin: 0; }
+.prp-image-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Commits: one list per day, a row per commit, opening it in the repository. */
 .prp-commit-cap { margin: 0 0 10px; }
 .prp-commit-day + .prp-commit-day { margin-top: 14px; }
@@ -20583,3 +20584,13 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .icon-btn.remote-url-cred {
   color: var(--warn);
 }
+
+/* Unsent text whose place is gone (PrOrphanDrafts): copy it or discard it. */
+.prp-orphans { border-color: var(--warning, #d29922); }
+.prp-orphans-title { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; }
+.prp-orphan + .prp-orphan { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.prp-orphan-text { margin: 4px 0 6px; max-height: 160px; overflow: auto; white-space: pre-wrap; font-size: 12px; }
+.prp-orphan-actions { display: flex; gap: 6px; }
+.prp-file-diff-head .icon-btn { flex: none; }
+/* An SVG shows its picture above its text diff: the picture gets a share, the diff scrolls. */
+.prp-file-diff > .image-diff:not(:last-child) { flex: none; max-height: 45%; overflow: auto; }
