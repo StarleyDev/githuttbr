@@ -1886,6 +1886,10 @@ export const nl: Dict = {
   'settings.maskSecrets': 'Geheime waarden maskeren',
   'settings.maskSecretsHint':
     'Verbergt waarden in .env-, sleutel- en inloggegevensbestanden (KEY=••••••) in de diff-, bestands- en blame-weergave. Alleen visueel — gebruik het oogje om ze te onthullen. Verandert nooit het bestand of wat je staget.',
+  'settings.commentImagesFromOtherSites': 'Afbeeldingen van andere sites in reacties laden',
+  'settings.commentImagesFromOtherSitesHint':
+    'Afbeeldingen in reacties op pull requests en issues die van een andere site dan de host komen, laden zonder klik. Uit: elke afbeelding toont een plaatshouder tot je klikt — het opvragen ervan vertelt die site je IP-adres en wanneer je de reactie las.',
+  'remoteImage.blocked': 'Afbeelding van {domain} — klik om te laden',
   'settings.launchEnabled': 'launch.json inschakelen',
   'settings.fileViewer': 'Bestandsviewer',
   'settings.fileViewerIntro': 'Hoe de bestandsweergave (working-tree-bestanden) niet-gecommitte wijzigingen toont.',

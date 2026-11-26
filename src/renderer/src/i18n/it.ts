@@ -1866,6 +1866,10 @@ export const it: Dict = {
   'settings.maskSecrets': 'Maschera i valori segreti',
   'settings.maskSecretsHint':
     'Nasconde i valori nei file .env / di chiavi / di credenziali (CHIAVE=••••••) nelle viste diff, file e blame. Solo visivo — usa l’occhio per mostrarli. Non cambia mai il file né quello che metti in staging.',
+  'settings.commentImagesFromOtherSites': 'Carica le immagini di altri siti nei commenti',
+  'settings.commentImagesFromOtherSitesHint':
+    'Le immagini nei commenti di pull request e issue che provengono da un sito diverso dall’host si caricano senza clic. Disattivato, ognuna mostra un segnaposto finché non fai clic: richiedere l’immagine rivela a quel sito il tuo IP e quando hai letto il commento.',
+  'remoteImage.blocked': 'Immagine da {domain} — fai clic per caricarla',
   'settings.launchEnabled': 'Attiva launch.json',
   'settings.fileViewer': 'Visualizzatore file',
   'settings.fileViewerIntro': 'Come la vista File (file dell’albero di lavoro) mostra le modifiche non salvate.',

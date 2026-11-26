@@ -50,7 +50,7 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteForPrUrl } from '../lib/prBranchGo'
-import { autolink, remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
+import { remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
 import { getReferenceHost } from '../lib/references'
 import type { IconTone } from '../lib/iconTone'
 import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
@@ -78,6 +78,7 @@ import { getAnchorLine } from '../../../shared/prLineAnchor'
 import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
 import { EditableComment } from './EditableComment'
+import { RemoteMarkdown } from './RemoteMarkdown'
 import {
   getCommentKey,
   getCommentKeys,
@@ -528,7 +529,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     <span>{fmtDate(pr.createdAt)}</span>
                   </div>
                   <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
-                    {pr.body.trim() ? autolink(pr.body, web, undefined, linkOptions) : t('prPage.noDescription')}
+                    {pr.body.trim() ? (
+                      <RemoteMarkdown body={pr.body} bodyHtml={pr.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />
+                    ) : (
+                      t('prPage.noDescription')
+                    )}
                   </div>
                 </article>
 
@@ -548,7 +553,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                           <span>{fmtDate(c.createdAt)}</span>
                         </>
                       }
-                      rendered={autolink(c.body, web, undefined, linkOptions)}
+                      rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
                       drafts={editDrafts}
                       busy={busy}
                       mentions={mentions}
@@ -969,7 +974,7 @@ function ReviewThreadCard({
                 <span>{fmtDate(c.createdAt)}</span>
               </>
             }
-            rendered={autolink(c.body, web, undefined, linkOptions)}
+            rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
             drafts={editDrafts}
             busy={busy}
             mentions={mentions}

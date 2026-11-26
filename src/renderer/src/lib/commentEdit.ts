@@ -105,12 +105,18 @@ const sameHandle = (a: PrCommentHandle | undefined, b: PrCommentHandle): boolean
 
 /** The page's PR with one comment's text replaced — shown at once, before the refetch answers. */
 export function withCommentBody(pr: PrDetail, handle: PrCommentHandle, body: string): PrDetail {
+  // The host's rendering is of the old text: drop it, so the new text renders
+  // locally until the page reads the pull request again.
+  const edit = <C extends { body: string; bodyHtml?: string; edited?: boolean }>(c: C): C => {
+    const { bodyHtml: _stale, ...rest } = c
+    return { ...rest, body, edited: true } as C
+  }
   return {
     ...pr,
-    comments: pr.comments.map((c) => (sameHandle(c.handle, handle) ? { ...c, body, edited: true } : c)),
+    comments: pr.comments.map((c) => (sameHandle(c.handle, handle) ? edit(c) : c)),
     reviewThreads: pr.reviewThreads.map((th) =>
       th.comments.some((c) => sameHandle(c.handle, handle))
-        ? { ...th, comments: th.comments.map((c) => (sameHandle(c.handle, handle) ? { ...c, body, edited: true } : c)) }
+        ? { ...th, comments: th.comments.map((c) => (sameHandle(c.handle, handle) ? edit(c) : c)) }
         : th
     )
   }

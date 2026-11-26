@@ -1885,6 +1885,10 @@ export const he: Dict = {
   'settings.maskSecrets': 'הסתרת ערכים סודיים',
   'settings.maskSecretsHint':
     'הסתרת ערכים בקבצי .env / מפתחות / אישורים (KEY=••••••) בתצוגות הדיף, הקובץ וה־blame. תצוגה בלבד — השתמשו בסמל העין כדי לחשוף. אף פעם לא משנה את הקובץ או את מה שעולה לסטייג׳.',
+  'settings.commentImagesFromOtherSites': 'טעינת תמונות מאתרים אחרים בתגובות',
+  'settings.commentImagesFromOtherSitesHint':
+    'תמונות בתגובות על בקשות משיכה ו-issues שמגיעות מאתר שאינו אתר האחסון נטענות בלי לחיצה. כשהאפשרות כבויה, כל תמונה מציגה מציין מקום עד שלוחצים: בקשת התמונה חושפת לאותו אתר את כתובת ה-IP שלך ומתי קראת את התגובה.',
+  'remoteImage.blocked': 'תמונה מ-{domain} — לחצו לטעינה',
   'settings.launchEnabled': 'הפעלת launch.json',
   'settings.fileViewer': 'מציג קבצים',
   'settings.fileViewerIntro': 'איך תצוגת הקובץ (קבצי עץ העבודה) מציגה שינויים לא מחויבים.',

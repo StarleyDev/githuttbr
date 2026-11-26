@@ -699,6 +699,12 @@ export type PrCommentKind = 'conversation' | 'review'
 export interface PrComment {
   author: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   createdAt: string
   handle?: PrCommentHandle
   /** The host says the text was changed after it was posted. */
@@ -720,6 +726,12 @@ export interface PrReviewComment {
   id: number
   author: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   createdAt: string
   handle?: PrCommentHandle
   /** The host says the text was changed after it was posted. */
@@ -844,6 +856,12 @@ export interface PrDetail {
   number: number
   title: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   author: string
   source: string
   target: string
@@ -1009,6 +1027,12 @@ export interface IssueDetail {
   number: number
   title: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   author: string
   state: 'open' | 'closed'
   url: string
@@ -3921,6 +3945,10 @@ export interface AppSettings {
   worktreeCopyIgnored: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
+  /** Images in pull request and issue comments from a site other than the host's
+   *  own load without a click. Off: each shows a placeholder until clicked, so a
+   *  stranger's comment cannot learn this machine's IP and when it was read. */
+  commentImagesFromOtherSites: boolean
   /** File view (working-tree files only): a colored bar next to lines changed
    *  since HEAD/the index, click to see the change. */
   showChangeGutter: boolean
@@ -4484,6 +4512,7 @@ export function defaultSettings(): AppSettings {
     worktreeShortLabels: true,
     worktreeCopyIgnored: false,
     maskSecrets: true,
+    commentImagesFromOtherSites: false,
     showChangeGutter: true,
     showMinimap: true,
     enableLaunchJson: true,

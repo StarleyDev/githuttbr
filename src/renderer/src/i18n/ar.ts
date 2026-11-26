@@ -1885,6 +1885,10 @@ export const ar: Dict = {
   'settings.maskSecrets': 'إخفاء قيم الأسرار',
   'settings.maskSecretsHint':
     'أخفِ القيم في ملفات .env والمفاتيح وبيانات الاعتماد (KEY=••••••) في عروض الفروق والملف والمسؤولية. للعرض فقط — استخدم زر العين للكشف. ولا يغيّر هذا الملف ولا ما تحضّره أبدًا.',
+  'settings.commentImagesFromOtherSites': 'تحميل الصور من مواقع أخرى في التعليقات',
+  'settings.commentImagesFromOtherSitesHint':
+    'تُحمَّل الصور في تعليقات طلبات السحب والمشكلات القادمة من موقع غير موقع الاستضافة دون نقر. عند الإيقاف تظهر لكل صورة علامة بديلة حتى تنقر عليها: طلب الصورة يكشف لذلك الموقع عنوان IP الخاص بك ووقت قراءتك للتعليق.',
+  'remoteImage.blocked': 'صورة من {domain} — انقر للتحميل',
   'settings.launchEnabled': 'تفعيل launch.json',
   'settings.fileViewer': 'عارض الملفات',
   'settings.fileViewerIntro': 'كيف تعرض واجهة الملف (ملفات شجرة العمل) التغييرات غير الملتزم بها.',

@@ -1881,6 +1881,10 @@ export const es: Dict = {
   'settings.maskSecrets': 'Ocultar valores secretos',
   'settings.maskSecretsHint':
     'Oculta los valores en archivos .env / clave / credenciales (KEY=••••••) en el diff, el visor y el blame. Solo visual — usa el ojo para revelar. Nunca cambia el archivo ni lo que preparas.',
+  'settings.commentImagesFromOtherSites': 'Cargar imágenes de otros sitios en los comentarios',
+  'settings.commentImagesFromOtherSitesHint':
+    'Las imágenes de los comentarios de pull requests e issues que vienen de un sitio distinto del host se cargan sin clic. Desactivado, cada una muestra un marcador hasta que haces clic: pedir la imagen le revela a ese sitio tu IP y cuándo leíste el comentario.',
+  'remoteImage.blocked': 'Imagen de {domain}: haz clic para cargarla',
   'settings.launchEnabled': 'Habilitar launch.json',
   'settings.fileViewer': 'Visor de archivos',
   'settings.fileViewerIntro': 'Cómo la vista de archivo (archivos del árbol de trabajo) muestra los cambios sin confirmar.',

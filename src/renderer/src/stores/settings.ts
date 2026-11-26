@@ -599,6 +599,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
   settings.wipSnapshotMinutes = settings.wipSnapshotMinutes ?? sd.wipSnapshotMinutes
   settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
+  settings.commentImagesFromOtherSites = settings.commentImagesFromOtherSites ?? sd.commentImagesFromOtherSites
   settings.shortcuts = settings.shortcuts ?? sd.shortcuts
   settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
   settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose

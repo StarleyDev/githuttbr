@@ -1885,6 +1885,10 @@ export const ko: Dict = {
   'settings.maskSecrets': '비밀 값 가리기',
   'settings.maskSecretsHint':
     '.env / 키 / 자격 증명 파일의 값을 diff, 파일, blame 화면에서 가립니다 (KEY=••••••). 표시만 바꿀 뿐이며, 눈 아이콘으로 드러낼 수 있습니다. 파일이나 스테이징 내용은 절대 바뀌지 않습니다.',
+  'settings.commentImagesFromOtherSites': '댓글에서 다른 사이트의 이미지 불러오기',
+  'settings.commentImagesFromOtherSitesHint':
+    '풀 리퀘스트와 이슈 댓글에서 호스트가 아닌 사이트의 이미지를 클릭 없이 불러옵니다. 끄면 클릭할 때까지 자리 표시자를 보여 줍니다. 이미지를 요청하면 그 사이트가 내 IP 주소와 댓글을 읽은 시각을 알게 됩니다.',
+  'remoteImage.blocked': '{domain}의 이미지 — 클릭하여 불러오기',
   'settings.launchEnabled': 'launch.json 사용',
   'settings.fileViewer': '파일 뷰어',
   'settings.fileViewerIntro': '파일 보기(작업 트리 파일)가 커밋되지 않은 변경 사항을 표시하는 방식입니다.',

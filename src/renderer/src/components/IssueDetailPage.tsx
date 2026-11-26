@@ -25,10 +25,11 @@ import {
 } from '../lib/commentEdit'
 import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 import { EditableComment } from './EditableComment'
+import { RemoteMarkdown } from './RemoteMarkdown'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { autolink, remoteWebUrl } from '../lib/autolink'
+import { remoteWebUrl } from '../lib/autolink'
 import { getReferenceHost } from '../lib/references'
 import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 import { useRepoStore } from '../stores/repo'
@@ -198,7 +199,9 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
               })}
             </div>
             {detail.body.trim() ? (
-              <div className="issue-body">{autolink(detail.body, remoteWebUrl(remoteUrl), undefined, linkOptions)}</div>
+              <div className="issue-body">
+                <RemoteMarkdown body={detail.body} bodyHtml={detail.bodyHtml} repoWebUrl={remoteWebUrl(remoteUrl)} linkOptions={linkOptions} />
+              </div>
             ) : (
               <div className="issue-body issue-body-empty">{t('issue.noDescription')}</div>
             )}
@@ -222,7 +225,9 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
                       <span>{new Date(c.createdAt).toLocaleString()}</span>
                     </>
                   }
-                  rendered={autolink(c.body, remoteWebUrl(remoteUrl), undefined, linkOptions)}
+                  rendered={
+                    <RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={remoteWebUrl(remoteUrl)} linkOptions={linkOptions} />
+                  }
                   drafts={editDrafts}
                   busy={busy}
                   mentions={mentions}
