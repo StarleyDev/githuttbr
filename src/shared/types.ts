@@ -834,11 +834,50 @@ export interface PrFile {
   status: string
   additions: number
   deletions: number
-  /** The file's unified diff hunks. Absent when the host sends none — a binary
-   *  file, or one too large for the API to include. */
+  /** The file's unified diff hunks. Absent when there is none to show —
+   *  `noPatchReason` then says why. */
   patch?: string
   /** The path before a rename. */
   previousFilename?: string
+  /** Why `patch` is absent, set by the main process. Absent on a file with a patch. */
+  noPatchReason?: PrNoPatchReason
+  /** What went wrong, when `noPatchReason` is `failed` — the error's own words, no token. */
+  noPatchError?: string
+  /** Where the file's diff can be read later — on demand, or again after a failure. */
+  diffSource?: PrFileDiffSource
+}
+
+/**
+ * Why a pull request file has no diff on screen:
+ * - `binary` — its bytes are not text (checked on the bytes, not the host's flag);
+ * - `tooLarge` — the change is too big to diff or draw here;
+ * - `notLoaded` — not read yet; it is read when the file is opened;
+ * - `failed` — reading it failed (`noPatchError` says how), worth trying again;
+ * - `hostOmitted` — the host's API left the diff out and this clone has neither commit;
+ * - `noChanges` — a rename or a mode change: nothing in the content changed;
+ * - `encodingChanged` — the same text, saved in another encoding (a BOM added or dropped).
+ */
+export type PrNoPatchReason = 'binary' | 'tooLarge' | 'notLoaded' | 'failed' | 'hostOmitted' | 'noChanges' | 'encodingChanged'
+
+/**
+ * The two commits a pull request file's diff is between, and the pull request
+ * they belong to — what `hosting:prFileDiff` needs to read one file again.
+ * The diff starts at the merge base of `baseSha` and `headSha` (the merge base
+ * itself, or the target branch's tip), or at `baseSha` itself when `straight`
+ * — one update's own changes, head against previous head.
+ */
+export interface PrFileDiffSource {
+  remoteUrl: string
+  number: number
+  baseSha: string
+  headSha: string
+  straight?: boolean
+}
+
+/** One file to read again, and where from. */
+export interface PrFileDiffRequest {
+  file: Pick<PrFile, 'filename' | 'status' | 'previousFilename'>
+  source: PrFileDiffSource
 }
 
 /**
@@ -859,6 +898,34 @@ export interface PrDiffRevision {
 export interface PrFileList {
   files: PrFile[]
   revision: PrDiffRevision | null
+  /** The two commits the files were diffed between, resolved — what the image preview reads too. */
+  commits?: PrDiffCommits | null
+  /** The host listed fewer files than the pull request has (its own cap was reached). */
+  truncated?: boolean
+}
+
+/** When the Files tab may fetch the pull request's missing commits (main/prLocalFiles.ts). */
+export type PrFilesFetchMode = 'none' | 'once' | 'refresh'
+
+/** Sent while the Files tab fetches the pull request's commits, for its hint. */
+export interface PrFilesFetching {
+  repoPath: string
+  remoteUrl: string
+  number: number
+  fetching: boolean
+}
+
+/**
+ * The two commits a pull request's diff compares. `baseKind` says what
+ * `baseSha` is: the merge base (what every host's own diff starts from), or
+ * the target branch's tip when nothing could name the merge base — then a
+ * change landed on the target since the branch was cut shows too, and the UI
+ * says so. Null `baseSha` when the host would not say at all.
+ */
+export interface PrDiffCommits {
+  headSha: string
+  baseSha: string | null
+  baseKind: 'mergeBase' | 'targetTip'
 }
 
 /** One commit of a pull request, as its host lists it. */

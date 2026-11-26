@@ -5,6 +5,7 @@ import { homedir } from 'os'
 import { delimiter, join } from 'path'
 import { EDITOR_PRESETS, editorLaunch } from '../shared/editors'
 import type { DetectedEditor, EditorSetting, EditorTarget } from '../shared/editors'
+import { desktopEntryDirs, findDesktopEditors, isBundleOfProduct, nodeDesktopFs, nodeProductFs } from './desktopEntries'
 
 /**
  * Finding and launching the user's external editor.
@@ -70,14 +71,24 @@ function winExe(relative: string): string | null {
  */
 export function detectEditors(): DetectedEditor[] {
   const found: DetectedEditor[] = []
+  // Linux: an editor unpacked outside PATH is still in the application menu.
+  // Read only when some preset is missing from PATH, and never run.
+  let menu: Map<string, string> | null = null
+  const fromMenu = (id: string): string | undefined => {
+    if (process.platform !== 'linux') return undefined
+    menu ??= findDesktopEditors(EDITOR_PRESETS, desktopEntryDirs(), nodeDesktopFs)
+    return menu.get(id)
+  }
   for (const preset of EDITOR_PRESETS) {
-    const cli = preset.bins.map(onPath).find(Boolean)
+    const cli = preset.bins.map(onPath).find(Boolean) ?? (preset.desktop ? fromMenu(preset.id) : undefined)
     if (cli) {
       found.push({ id: preset.id, name: preset.name, command: cli, source: 'cli' })
       continue
     }
     if (process.platform === 'darwin') {
-      const bundle = preset.macApps.map(macApp).find(Boolean)
+      const bundle = preset.macApps
+        .map(macApp)
+        .find((b): b is string => !!b && (!preset.macProduct || isBundleOfProduct(b, preset.macProduct, nodeProductFs)))
       if (bundle) {
         found.push({ id: preset.id, name: preset.name, command: bundle, source: 'app' })
         continue

@@ -17,6 +17,7 @@ import {
 } from './repositoryMenu'
 import { t, interp } from '../i18n'
 import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } from './tabClose'
+import { requestClosePrPage } from '../stores/prView'
 
 function platformOf(): RepoMenuPlatform {
   const p = window.api.platform
@@ -191,6 +192,11 @@ export function requestCloseTab(tabId: string): void {
   const settingsStore = useSettingsStore.getState()
   const tab = settingsStore.settings.tabs.find((candidate) => candidate.id === tabId)
   if (!tab) return
+  // A pull request page asks about its unsent text, and forgets its place once closed.
+  if (tab.kind === 'page' && tab.page.type === 'pr') {
+    requestClosePrPage(tab.page, () => settingsStore.closeTab(tab.id))
+    return
+  }
 
   const status =
     tab.kind === 'page' ? null : tabCloseStatus(tab.repos, useRepoStore.getState().repos)

@@ -15,7 +15,8 @@ import type {
   PrReviewThread,
   PrWorkItem
 } from '../shared/types'
-import { unifiedDiff } from '../shared/lineDiff'
+import { decodeFileBytes, type FileBytesVerdict } from '../shared/prFileText'
+import { diffFileVersions } from '../shared/prFileDiff'
 import { getAnchorLine, getAnchorSide, LINE_COMMENT_STALE } from '../shared/prLineAnchor'
 import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
 import { finishPrUpdates, keepFirstListing, toUpdateCommits, type PrUpdateDraft } from '../shared/prUpdates'
@@ -27,8 +28,9 @@ import { isEditedAfter } from '../shared/prCommentHandle'
  * never sees how auth works, and nothing here imports hosting.
  *
  * One gap the other hosts do not have: Azure lists a PR's changed files but
- * sends no patch. Each file's two versions are fetched and diffed here
- * (shared/lineDiff.ts); a binary or huge file links to the host instead.
+ * sends no patch. Each file's two versions are fetched as bytes and diffed
+ * here (shared/prFileDiff.ts); a binary or huge file links to the host
+ * instead. The Files tab asks this clone first (prLocalFiles.ts).
  */
 
 export type Ado = <T>(url: string, init?: RequestInit) => Promise<T>
@@ -47,6 +49,8 @@ export interface AzureRepo {
 const V = 'api-version=7.1'
 const repoApi = (r: AzureRepo): string =>
   `https://dev.azure.com/${encodeURIComponent(r.org)}/${encodeURIComponent(r.project)}/_apis/git/repositories/${encodeURIComponent(r.repo)}`
+/** A repository's REST root in its organization — what a file read hangs off. */
+export const azureRepoApi = repoApi
 const branchOf = (ref: string | undefined): string => (ref ?? '').replace(/^refs\/heads\//, '')
 
 interface AzIdentity {
@@ -424,9 +428,85 @@ export async function azureBuildLog(ado: Ado, text: AdoText, r: AzureRepo, link:
 }
 
 /** Files fetched and diffed at most this many at a time — Azure rate-limits bursts. */
-const FILE_CONCURRENCY = 6
-/** Beyond this many files the rest are listed without a diff. */
-const MAX_DIFFED_FILES = 200
+const FILE_CONCURRENCY = 3
+/**
+ * Files diffed while the list loads; the rest are `notLoaded` and read when one
+ * is opened (`azureFileDiff`). There is no cap on the files listed or diffed:
+ * a PR of 279 files used to stop at 200 and show the last 79 as "binary".
+ * The Files tab reads this clone first (prLocalFiles.ts) — this is the fallback.
+ */
+export const AZURE_EAGER_FILES = 100
+/** A version bigger than this is not diffed here (`tooLarge`): the page links to Azure. */
+export const AZURE_MAX_FILE_BYTES = 4 << 20
+
+/**
+ * A file's raw bytes at a commit — the items API asked with
+ * `Accept: application/octet-stream`. The JSON form decodes the content as
+ * text on Azure's side and flags what it cannot as binary, which a non-ASCII
+ * or UTF-16 text file then was. `tooLarge` when it is over `max` bytes.
+ */
+export type AdoBytes = (url: string, max: number) => Promise<Uint8Array | 'tooLarge'>
+
+/** Statuses a throttled or briefly unwell Azure answers with: worth one more try. */
+const RETRY_STATUSES = new Set([429, 502, 503, 504])
+const RETRY_ATTEMPTS = 4
+/** No single wait longer than this, whatever Retry-After says. */
+const RETRY_MAX_WAIT_MS = 20_000
+/** All of one list's eager reads share this much time; the files left after it are `notLoaded`. */
+export const AZURE_FILES_DEADLINE_MS = 60_000
+
+/** A `Retry-After` header — seconds, or an HTTP date — as milliseconds from `now`. Null when absent or unreadable. */
+export function parseRetryAfter(header: string | null | undefined, now = Date.now()): number | null {
+  if (!header) return null
+  const s = header.trim()
+  if (/^\d+$/.test(s)) return Number(s) * 1000
+  const at = Date.parse(s)
+  return Number.isNaN(at) ? null : Math.max(0, at - now)
+}
+
+const sleepFor = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * What every worker reading one pull request's files shares: a circuit
+ * breaker — one 429 holds them all until its Retry-After, instead of three
+ * workers each hammering a server that said "slow down" — and the clock.
+ */
+export class AzureThrottle {
+  private pausedUntil = 0
+  constructor(
+    readonly sleep: (ms: number) => Promise<void> = sleepFor,
+    readonly now: () => number = Date.now
+  ) {}
+
+  /** Wait out a pause another worker's throttle set. */
+  async waitTurn(): Promise<void> {
+    for (let wait = this.pausedUntil - this.now(); wait > 0; wait = this.pausedUntil - this.now()) await this.sleep(wait)
+  }
+
+  /** Hold every worker for `ms`. */
+  pause(ms: number): void {
+    this.pausedUntil = Math.max(this.pausedUntil, this.now() + Math.min(ms, RETRY_MAX_WAIT_MS))
+  }
+}
+
+/**
+ * Run an Azure call, trying again on a throttle (429) or a passing outage
+ * (502–504): after the server's `Retry-After` when it sends one, else after a
+ * doubling backoff — through `throttle`, so the wait holds every worker
+ * sharing it. The last failure is rethrown — never turned into "no diff".
+ */
+export async function withThrottleRetry<T>(run: () => Promise<T>, throttle: AzureThrottle = new AzureThrottle()): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    await throttle.waitTurn()
+    try {
+      return await run()
+    } catch (err) {
+      const e = err as { status?: number; retryAfterMs?: number | null }
+      if (attempt >= RETRY_ATTEMPTS || typeof e.status !== 'number' || !RETRY_STATUSES.has(e.status)) throw err
+      throttle.pause(e.retryAfterMs ?? 500 * 2 ** (attempt - 1))
+    }
+  }
+}
 
 interface AzChange {
   changeType?: string
@@ -444,15 +524,53 @@ export function azureChangeStatus(changeType: string | undefined): string {
   return 'modified'
 }
 
-export async function azurePrFiles(ado: Ado, r: AzureRepo, id: number): Promise<PrFile[]> {
+type AzIterationChanges = { changeEntries?: AzChange[]; nextSkip?: number; nextTop?: number }
+
+/** Pages of 2000 read at most — a pull request of 20,000 files is past reviewing in an app. */
+const AZURE_CHANGE_PAGES = 10
+
+/** Every change of an iteration (Azure pages them past 2000 with `nextSkip`/`nextTop`), and whether the cap cut it. */
+async function getAzureIterationChanges(
+  ado: Ado,
+  pageUrl: (skip: number) => string,
+  throttle: AzureThrottle
+): Promise<{ changes: AzChange[]; truncated: boolean }> {
+  const changes: AzChange[] = []
+  let skip = 0
+  for (let page = 0; page < AZURE_CHANGE_PAGES; page++) {
+    const url = pageUrl(skip)
+    const res = await withThrottleRetry(() => ado<AzIterationChanges>(url), throttle)
+    changes.push(...(res.changeEntries ?? []))
+    if (!res.nextTop || !res.nextSkip) return { changes, truncated: false }
+    skip = res.nextSkip
+  }
+  return { changes, truncated: true }
+}
+
+export async function azurePrFiles(
+  ado: Ado,
+  bytes: AdoBytes,
+  r: AzureRepo,
+  id: number,
+  throttle: AzureThrottle = new AzureThrottle()
+): Promise<{ files: PrFile[]; truncated: boolean }> {
   const base = `${repoApi(r)}/pullrequests/${id}`
-  const its = await ado<{ value?: Array<{ id: number; sourceRefCommit?: { commitId: string }; commonRefCommit?: { commitId: string } }> }>(
-    `${base}/iterations?${V}`
+  const its = await withThrottleRetry(
+    () =>
+      ado<{ value?: Array<{ id: number; sourceRefCommit?: { commitId: string }; commonRefCommit?: { commitId: string } }> }>(
+        `${base}/iterations?${V}`
+      ),
+    throttle
   )
   const last = (its.value ?? [])[(its.value ?? []).length - 1]
-  if (!last) return []
-  const changes = await ado<{ changeEntries?: AzChange[] }>(`${base}/iterations/${last.id}/changes?$top=2000&${V}`)
-  return diffAzureChanges(ado, r, changes.changeEntries ?? [], last.commonRefCommit?.commitId, last.sourceRefCommit?.commitId)
+  if (!last) return { files: [], truncated: false }
+  const { changes, truncated } = await getAzureIterationChanges(
+    ado,
+    (skip) => `${base}/iterations/${last.id}/changes?$top=2000${skip ? `&$skip=${skip}` : ''}&${V}`,
+    throttle
+  )
+  const files = await diffAzureChanges(bytes, r, changes, last.commonRefCommit?.commitId, last.sourceRefCommit?.commitId, throttle)
+  return { files, truncated }
 }
 
 /**
@@ -462,69 +580,109 @@ export async function azurePrFiles(ado: Ado, r: AzureRepo, id: number): Promise<
  */
 export async function azurePrIterationFiles(
   ado: Ado,
+  bytes: AdoBytes,
   r: AzureRepo,
   id: number,
   from: { iteration: number; sha: string },
   to: { iteration: number; sha: string }
 ): Promise<PrFile[]> {
-  const url = `${repoApi(r)}/pullrequests/${id}/iterations/${to.iteration}/changes?$top=2000&$compareTo=${from.iteration}&${V}`
-  const changes = await ado<{ changeEntries?: AzChange[] }>(url)
-  return diffAzureChanges(ado, r, changes.changeEntries ?? [], from.sha, to.sha)
+  const throttle = new AzureThrottle()
+  const base = `${repoApi(r)}/pullrequests/${id}/iterations/${to.iteration}/changes`
+  const { changes } = await getAzureIterationChanges(
+    ado,
+    (skip) => `${base}?$top=2000${skip ? `&$skip=${skip}` : ''}&$compareTo=${from.iteration}&${V}`,
+    throttle
+  )
+  return diffAzureChanges(bytes, r, changes, from.sha, to.sha, throttle)
 }
 
-/** Each changed file diffed between its version at `before` and at `after`. */
+/** A file's bytes at a commit, raw — see AdoBytes. */
+function getAzureItemBytes(
+  bytes: AdoBytes,
+  r: AzureRepo,
+  path: string,
+  commit: string,
+  throttle: AzureThrottle
+): Promise<Uint8Array | 'tooLarge'> {
+  const url =
+    `${repoApi(r)}/items?path=${encodeURIComponent(path)}&versionDescriptor.version=${encodeURIComponent(commit)}` +
+    `&versionDescriptor.versionType=commit&download=false&${V}`
+  return withThrottleRetry(() => bytes(url, AZURE_MAX_FILE_BYTES), throttle)
+}
+
+/** A changed file as the list shows it before its diff is read. */
+function toAzurePrFile(c: AzChange): PrFile {
+  const path = c.item!.path!
+  const status = azureChangeStatus(c.changeType)
+  return {
+    filename: path.replace(/^\//, ''),
+    status,
+    additions: 0,
+    deletions: 0,
+    ...(status === 'renamed' && c.originalPath ? { previousFilename: c.originalPath.replace(/^\//, '') } : {})
+  }
+}
+
+/**
+ * One file's diff between `before` and `after`, from its raw bytes: text or
+ * binary is decided here (decodeFileBytes), not by Azure. A read that still
+ * fails after its retries is `failed` with the reason — never "binary".
+ */
+export async function azureFileDiff(
+  bytes: AdoBytes,
+  r: AzureRepo,
+  file: Pick<PrFile, 'filename' | 'status' | 'previousFilename'>,
+  before: string | undefined,
+  after: string | undefined,
+  throttle: AzureThrottle = new AzureThrottle()
+): Promise<PrFile> {
+  const shown: PrFile = {
+    filename: file.filename,
+    status: file.status,
+    additions: 0,
+    deletions: 0,
+    ...(file.previousFilename ? { previousFilename: file.previousFilename } : {})
+  }
+  if (!before || !after) return { ...shown, noPatchReason: 'failed', noPatchError: 'Azure DevOps named no commit for this version.' }
+  const EMPTY: FileBytesVerdict = { kind: 'text', text: '' }
+  try {
+    const [old, now] = await Promise.all([
+      file.status === 'added' ? null : getAzureItemBytes(bytes, r, `/${file.previousFilename ?? file.filename}`, before, throttle),
+      file.status === 'removed' ? null : getAzureItemBytes(bytes, r, `/${file.filename}`, after, throttle)
+    ])
+    if (old === 'tooLarge' || now === 'tooLarge') return { ...shown, noPatchReason: 'tooLarge' }
+    return { ...shown, ...diffFileVersions(old ? decodeFileBytes(old) : EMPTY, now ? decodeFileBytes(now) : EMPTY) }
+  } catch (err) {
+    return { ...shown, noPatchReason: 'failed', noPatchError: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/**
+ * Each changed file diffed between its version at `before` and at `after` —
+ * the first AZURE_EAGER_FILES now, a few at a time, within one shared
+ * AZURE_FILES_DEADLINE_MS; the others `notLoaded`, read when one is opened.
+ */
 async function diffAzureChanges(
-  ado: Ado,
+  bytes: AdoBytes,
   r: AzureRepo,
   changeEntries: AzChange[],
   before: string | undefined,
-  after: string | undefined
+  after: string | undefined,
+  throttle: AzureThrottle
 ): Promise<PrFile[]> {
   const entries = changeEntries.filter((c) => c.item?.path && !c.item.isFolder && c.item.gitObjectType !== 'tree')
-
-  const content = async (path: string, commit: string | undefined): Promise<string | null> => {
-    if (!commit) return null
-    const res = await ado<{ content?: string; contentMetadata?: { isBinary?: boolean } }>(
-      `${repoApi(r)}/items?path=${encodeURIComponent(path)}&versionDescriptor.version=${commit}&versionDescriptor.versionType=commit&includeContent=true&${V}`
-    ).catch(() => null)
-    if (!res || res.contentMetadata?.isBinary) return null
-    return res.content ?? ''
-  }
-
-  const files: PrFile[] = new Array(entries.length)
+  const files: PrFile[] = entries.map((c) => ({ ...toAzurePrFile(c), noPatchReason: 'notLoaded' as const }))
+  const eager = Math.min(AZURE_EAGER_FILES, files.length)
+  const deadline = throttle.now() + AZURE_FILES_DEADLINE_MS
   let next = 0
   const worker = async (): Promise<void> => {
-    while (next < entries.length) {
+    // Past the deadline the file stays `notLoaded`: a slow Azure costs the list a minute, not ten.
+    while (next < eager && throttle.now() < deadline) {
       const i = next++
-      const c = entries[i]
-      const path = c.item!.path!
-      const status = azureChangeStatus(c.changeType)
-      const oldPath = c.originalPath ?? path
-      const file: PrFile = {
-        filename: path.replace(/^\//, ''),
-        status,
-        additions: 0,
-        deletions: 0,
-        ...(status === 'renamed' && c.originalPath ? { previousFilename: c.originalPath.replace(/^\//, '') } : {})
-      }
-      if (i < MAX_DIFFED_FILES) {
-        const [old, now] = await Promise.all([
-          status === 'added' ? '' : content(oldPath, before),
-          status === 'removed' ? '' : content(path, after)
-        ])
-        const patch = old !== null && now !== null ? unifiedDiff(old, now) : null
-        if (patch) {
-          file.patch = patch
-          for (const line of patch.split('\n')) {
-            if (line.startsWith('+')) file.additions++
-            else if (line.startsWith('-')) file.deletions++
-          }
-        }
-      }
-      files[i] = file
+      files[i] = await azureFileDiff(bytes, r, files[i], before, after, throttle)
     }
   }
-  await Promise.all(Array.from({ length: Math.min(FILE_CONCURRENCY, entries.length) }, worker))
+  await Promise.all(Array.from({ length: Math.min(FILE_CONCURRENCY, eager) }, worker))
   return files
 }
 

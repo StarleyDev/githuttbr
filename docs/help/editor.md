@@ -3,7 +3,7 @@ title: External editor
 category: Workspace tools
 order: 95
 summary: Send a repository, a file, or one line of code to the editor you actually write in.
-keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv
+keywords: editor vscode code cursor windsurf devin desktop zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv
 ---
 
 # External editor
@@ -30,10 +30,26 @@ Recognised out of the box:
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (never a bare `devin`, which is another tool) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains IDEs | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**On Linux, an editor outside PATH.** An editor unpacked into a folder of
+your choosing is often not on PATH, but it is in the application menu. Gitcito
+also reads the menu's `.desktop` entries — in the XDG data folders
+(`~/.local/share`, then `/usr/local/share` and `/usr/share`, or whatever
+`XDG_DATA_HOME` and `XDG_DATA_DIRS` say) and in Flatpak's and Snap's exports —
+and recognises an editor by its name or by the program its `Exec=` line starts.
+An entry marked hidden or not to be displayed, or whose `TryExec=` program is
+missing, does not count. For a VS Code build such as
+Devin Desktop it prefers the command in `bin/` beside that program, since only
+that one can jump to a line. The entries are read as text and nothing in them
+is run; an entry that needs extra arguments to start the editor (a Flatpak
+`flatpak run …`) is skipped, so such an install still needs its command on
+PATH. On macOS, a `Devin.app` counts only when its `product.json` names Devin
+Desktop, so an unrelated app of the same name is never the one opened.
 
 ## The limit worth knowing
 

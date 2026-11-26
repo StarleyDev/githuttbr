@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { requestClosePrPage } from '../stores/prView'
 import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup, Workflow } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { colorMenuItems } from './colorMenu'
@@ -956,7 +957,8 @@ export function TitleBar(): React.JSX.Element {
           aria-label={interp(t('a11y.closeTab'), { name: pageTabLabel(page, t) })}
           onClick={(e) => {
             e.stopPropagation()
-            closeRepoPage(tabId, index)
+            if (page.type === 'pr') requestClosePrPage(page, () => closeRepoPage(tabId, index))
+            else closeRepoPage(tabId, index)
           }}
         >
           <X size={9} />

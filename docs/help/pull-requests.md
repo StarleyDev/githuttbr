@@ -394,6 +394,100 @@ the order the host lists the files.
 
 ![The Files tab in Tree view: folders with their summed changes and viewed counts, one folded](../screenshots/pr-files-tree.webp)
 
+**Images.** A picture the pull request adds, removes or changes (png, jpg,
+gif, webp, bmp, ico, avif, svg) has no text diff to read, so the tab shows the
+image instead — the same view as a commit's: the new one, the old one, or
+before and after side by side and as a slider. A renamed image compares its
+old path at the base with its new one at the head; in an update's own diff,
+the update's two heads. The bytes come from this clone when it has the commits,
+which is free and fast, and otherwise from the host with the repository's
+profile. Limits: an image over 32 MB is not previewed; line comments do not
+apply to a picture (an SVG keeps its text diff, and its comments, under it);
+an image kept in **Git LFS** is read from the host, since a clone holds only
+its pointer — GitLab, Azure DevOps and Forgejo resolve it, while GitHub's API
+gives the pointer alone, so there the tab sends you to the host; where the host
+does not name the merge base (it falls back to the target branch's tip), a note
+says the "before" may include later changes on the target; and when neither the
+clone nor the host can give the bytes, the tab says so and offers to fetch the
+pull request's branch or to open it on the host.
+
+![An image the pull request changed, before and after side by side](../screenshots/pr-image-diff.webp)
+
+**Paths and your editor.** The bar above the diff has a copy button for the
+file's path and a **⋯** menu; right-click a file or folder in the list for the
+same menu. It copies the path, a renamed file's old path, or the folder's;
+and it opens the file in your [editor](editor.md) (or another app) or shows it
+in the file manager. Those two act on **your working copy**, not on the pull
+request's version: they are only live for a file that exists in it (a file the
+PR deletes, or one your branch does not have, says why), and when the checked
+out branch is not the PR's, the menu says which branch you would be opening.
+
+**Coming back.** Leave a pull request for the repository, another tab or the
+next PR, and it is where you left it when you return: the same tab, the same
+file open, the same scroll, and every text you had not sent — the comment, a
+reply, a line comment, an edit. This lasts until you close the pull request or
+quit the app; it is kept in memory only, for the 50 most recent pull requests
+(past that the oldest place is let go, and any text it held moves to the next
+pull request page you open). Closing a PR with unsent text asks first. If a refresh finds the place of a draft gone — the conversation it
+answered, the comment it edited, the file it was on — the text is not dropped:
+it waits at the top of the page to be copied or discarded.
+
+### Where the diff comes from
+
+A review is only as good as the diff it reads. A host's API is not a good
+source for it: Azure DevOps sends no diff at all, only the list of files, and
+each one has to be fetched twice and compared; GitHub stops at 3000 files and
+leaves out the patch of a large one; GitLab marks a big diff *too large* and
+sends nothing. So the Files tab reads **this clone first**, on every host:
+
+1. It asks the host for the pull request's two commits — where it starts and
+   its head. Azure DevOps, GitLab and Forgejo name the merge base; Bitbucket
+   Data Center names the base of the diff its line comments anchor to; GitHub
+   names only the target branch, whose merge base with the head is then worked
+   out here (or, without the commits, by GitHub's compare). The image preview
+   uses the same two commits.
+2. When both are here, `git diff` between them gives every file, with no cap
+   on how many. These are the same two commits the host's own page compares,
+   so a line number here is the line number there and a line comment lands
+   where you put it.
+3. When they are not here, they are fetched **by their ids** from the pull
+   request's remote — objects only, no branch is created or moved — once, when
+   the page opens (and again on Refresh), with *Fetching the pull request's
+   commits…* above the list meanwhile. A server that will not hand out a
+   commit by id (some Azure DevOps and plain git servers) is skipped quietly.
+4. Only then is the host's API used, and a file it gives no diff for says why
+   instead of pretending to be empty (below).
+
+A file read later — opened while *not loaded yet*, or after **Try again** —
+joins the list like the others: the same viewer, and line comments on it.
+
+On Azure DevOps the API path reads the first hundred files when the tab opens,
+three at a time and within a minute in all, and the rest when you open each
+one. A throttled request pauses every read until the wait the server asks for;
+one that still fails says so, with the reason. Whether a file is text is
+decided from its bytes, not from Azure's own *binary* flag — which it also sets
+on UTF-16 files and on some text that is not ASCII. When the host lists fewer
+files than the pull request has (GitHub stops at 3000), a line above the list
+says so.
+
+### When a file shows no diff
+
+| What it says | Why | What you can do |
+|---|---|---|
+| **Binary** | Its bytes are not text: an image, an archive. UTF-16 and legacy single-byte text are recognised as text. | Open it on the host. |
+| **Too large to show** | More than 20,000 changed lines or 8 MB of diff, or a version over 4 MB. Its **+/−** is still counted when the clone read it. | Open it on the host. |
+| **Not loaded yet** | Past what one read keeps (about 150,000 lines of diffs), or, from Azure DevOps' API, past the first hundred files or the minute. | It loads when you open it; **Load the diff** if it did not. |
+| **Couldn't load** | The read failed — the reason is shown under it. | **Try again**. |
+| **The host left it out** | The host's API sent no diff and this clone does not have the pull request's commits. | **Fetch the pull request to see it locally** — the commits by id, or a fork's pull request head — then it is diffed here. |
+| **Only the name or mode changed** | A rename or a permission change: the content is the same. | Nothing to review in the content. |
+| **Encoding changed** | The same text saved another way: a byte-order mark added or removed, UTF-16 turned into UTF-8. | Check the change is meant — some tools care. |
+
+In the list, a file whose diff was not read — not loaded yet, couldn't load,
+left out by the host — shows **—** instead of **+0 −0**, which would read as
+"nothing changed". A binary file and a pure rename show their real **+0 −0**,
+and when the host counts the lines anyway (GitHub does, even for a patch it
+leaves out), the counts are shown.
+
 ## Commenting on a line
 
 Replying to a review thread was possible here; starting one was not, so a real
@@ -436,9 +530,10 @@ anything else stays in the Conversation tab, rather than on a guessed line:
 A comment on a line outside the hunks shown is in the Conversation tab only, on
 every host.
 
-A comment typed and not sent counts as unsent text: **‹ ›** and Alt+arrows ask
-before leaving it, as they do for the main comment box. Looking at another file
-keeps it; to start one on another line, post or cancel the first.
+A comment typed and not sent stays with the pull request, like the main comment
+box's text: **‹ ›**, Alt+arrows or another tab leave it where it is, and it is
+back on its line when you return (see *Coming back* above). Looking at another
+file keeps it; to start one on another line, post or cancel the first.
 
 What it does not do:
 
@@ -573,9 +668,10 @@ account it does not let change a comment is refused, and the message says so.
   closes it, asking first when you changed something. Only the blank lines
   around the text are dropped: indented code and a trailing two-space line
   break stay as typed. The new text shows at once and the page reads the pull
-  request again. On the pull request page, an edit nobody saved counts as
-  unsent text: **‹ ›** ask before leaving it. The issue page has no such
-  arrows, and nothing there asks before its tab closes.
+  request again. On the pull request page, an edit nobody saved stays with the
+  pull request when you move on with **‹ ›** or switch tabs, and closing the
+  pull request asks first. The issue page keeps nothing: nothing there asks
+  before its tab closes.
 - **Delete** always asks first, and the question says what happens: the server
   removes the comment for everyone, and it cannot be undone. There is no undo
   entry, since nothing can bring it back.
@@ -724,3 +820,26 @@ What it does not do:
   its list has no last-activity time.
 - The walk is remembered while the app runs; after a restart, a pull request
   opened from the list walks the open pull requests instead.
+- **Reading the files may fetch — once.** When the pull request's commits are
+  not in this clone, the page fetches them by id from its remote when it opens,
+  and again on **Refresh** — never after a comment, a review or a merge, and at
+  most once per pull request version per session (a failed attempt waits for
+  Refresh). It writes objects only: no branch, and not `FETCH_HEAD`, so the
+  toolbar's "fetched … ago" does not move. It gives up after 20 seconds, or
+  when the transfer crawls under 1 KB/s for 15, and never asks for a password:
+  git's prompt is off and Git Credential Manager is told not to open its
+  sign-in window, so a remote that needs one falls back to the API. An ssh
+  remote uses your own ssh settings as they are. A shallow or partial clone
+  that lacks the objects falls back to the host's API.
+- **Over the caps**, a file is listed with its counts and no diff: 20,000
+  changed lines or 8 MB of diff read from the clone, 4 MB per version read
+  from Azure DevOps. One read keeps about 150,000 lines or 48 MB of diffs; the
+  files after that are **not loaded yet** and are read when opened.
+- **UTF-16 files** that git calls binary are read again as text, up to 50 per
+  pull request and 2 MB per version; past that they show as binary.
+- **Renames** are detected as `git diff -M` detects them (50% similar by
+  default), which can differ a little from the host's own pairing.
+- **Azure DevOps through the API** reads its first hundred files within one
+  minute in all; the files left when the minute is up are **not loaded yet**.
+  A throttled answer pauses every read until the server's Retry-After. A pull
+  request of more than 20,000 changes is listed up to there, and the tab says so.

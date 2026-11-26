@@ -457,7 +457,7 @@ describe('a pull request’s updates — main', () => {
       expect(asked[0]).toBe(`https://api.github.com/repos/team/app/compare/${sha('a1')}...${sha('b2')}?per_page=1&page=1`)
       // Three dots: from the merge base, which the banner says for a rewrite.
       expect(res?.fromMergeBase).toBe(true)
-      expect(res?.files).toEqual([{ filename: 'b.ts', status: 'renamed', additions: 0, deletions: 0, previousFilename: 'a.ts' }])
+      expect(res?.files).toEqual([{ filename: 'b.ts', status: 'renamed', additions: 0, deletions: 0, previousFilename: 'a.ts', noPatchReason: 'noChanges' }])
     })
 
     it('refuses anything but a full commit id before it reaches a URL', async () => {
