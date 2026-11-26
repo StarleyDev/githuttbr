@@ -2,9 +2,9 @@
 title: Page des pull requests
 category: Synchronisation et multi-dépôts
 order: 57
-summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, et des commentaires sur une ligne de son diff.
-keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, et des commentaires sur une ligne de son diff.
+keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Page des pull requests
@@ -168,6 +168,77 @@ Ce que cela ne fait pas :
   Quand la branche est déjà extraite dans un autre [arbre de
   travail](worktrees.md), c’est l’onglet de cet arbre de travail qui s’ouvre.
 
+## Commits
+
+La barre latérale disait combien de commits compte une pull request, jamais
+lesquels. Relire un commit à la fois — la façon dont la plupart des pull requests
+sont censées être lues — vous renvoyait au navigateur. L’onglet **Commits**, entre
+Conversation et Fichiers, les liste :
+
+- **Les plus anciens d’abord**, dans l’ordre où ils s’appliquent, regroupés sous le
+  jour où ils ont été écrits. Un commit rebasé hors de l’ordre des dates commence
+  un jour à lui plutôt que d’être déplacé.
+- Chaque ligne montre l’image de l’auteur (quand l’hébergeur en fournit une),
+  l’objet, l’auteur, depuis quand, et le SHA court. Un badge **merge** marque un
+  commit à deux parents, quand l’hébergeur le dit.
+- **▸** à côté d’un commit qui a plus qu’un objet affiche le reste de son message.
+- **Copier** met le SHA complet dans le presse-papiers ; **Ouvrir dans le
+  navigateur** ouvre le commit sur l’hébergeur — dans la pull request quand
+  l’hébergeur a une telle page (GitHub, GitLab, Bitbucket Data Center), sinon sur
+  la page de commit du dépôt.
+
+![L’onglet Commits : les commits d’une pull request regroupés par jour, l’un avec son message complet ouvert](../../screenshots/pr-commits.webp)
+
+**Cliquez sur une ligne** — ou atteignez-la avec Tab et appuyez sur Entrée — pour
+ouvrir le commit dans l’application, comme le ferait un clic dans le graphe : la
+vue du dépôt, ce commit sélectionné, ses détails ouverts. Cela marche quand ce
+clone **a** le commit. Quand il ne l’a pas, la ligne le dit au lieu d’échouer en
+silence, et propose :
+
+- **Récupérer la branche de la PR pour le voir** — le même fetch d’une seule
+  branche que pour [aller à la branche](#aller-à-la-branche-dune-pull-request), sans le checkout. Si le
+  commit est venu avec, il s’ouvre ; sinon (un force push l’a réécrit depuis), la
+  notification le dit.
+- **Ouvrir dans le navigateur**, quand récupérer la branche n’est pas possible.
+
+La liste est lue la première fois que vous ouvrez l’onglet, pas avec la page, puis
+à chaque **Actualiser**. Tant qu’elle n’est pas là, le compteur de l’onglet est
+celui que l’hébergeur a donné pour la pull request. Les pull requests fusionnées
+et fermées listent leurs commits de la même façon.
+
+Ce que cela ne fait pas :
+
+- **250 commits au plus.** GitHub lui-même n’en liste pas plus de 250 pour une
+  pull request ; l’application s’arrête au même nombre sur tous les hébergeurs, et
+  indique *l’hébergeur en a d’autres* quand c’est le cas, avec un lien vers la pull
+  request sur l’hébergeur. Lesquels 250 dépend de l’ordre dans lequel l’hébergeur
+  les liste — l’application garde les premiers listés, et la ligne au-dessus de la
+  liste dit lesquels :
+
+  | Hébergeur | Une pull request plus longue montre |
+  |---|---|
+  | GitHub | Les **250 premiers** (la limite de GitHub lui-même) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Les **250 plus récents** |
+  | Forgejo | Le bout que le serveur liste en premier ; son ordre n’est pas documenté |
+- **La branche d’un fork** ne peut pas être récupérée d’ici — elle vit dans un autre
+  dépôt —, donc un commit présent seulement dans le fork ne propose que le
+  navigateur. **Prévisualiser la pull request en local…** est le moyen de le faire
+  venir.
+- **Une branche supprimée.** Une pull request fusionnée a souvent emporté sa
+  branche : le fetch le dit. bitbucket.org ne liste plus aucun commit une fois la
+  branche source disparue.
+- **Fusions squash.** Les commits d’une pull request fusionnée en squash n’ont
+  jamais atteint la branche cible, donc une fois sa branche supprimée ils ne sont
+  plus que sur l’hébergeur.
+- **Les auteurs** sont nommés comme leurs commits les nomment. GitLab, Azure DevOps
+  et Bitbucket Data Center ne donnent pas d’image sans une connexion qu’une image ne
+  peut pas envoyer, donc ces lignes affichent l’initiale.
+- **Les messages longs sur Azure DevOps** peuvent être tronqués : la liste d’Azure
+  coupe le message d’un commit, et l’application montre ce qu’elle reçoit.
+- Les pull requests de **bitbucket.org** s’ouvrent dans le navigateur —
+  l’application n’a pas encore de page pour elles —, donc cet onglet n’y est pas
+  atteint, même si l’application sait lire la liste.
+
 ## Commenter une ligne
 
 On pouvait déjà répondre ici à un fil de relecture, mais pas en ouvrir un, si bien
@@ -242,6 +313,17 @@ Ce que cela ne fait pas :
   sur le site.
 - **Un fichier sans diff** (binaire, ou trop gros pour que l’hébergeur l’inclue) n’a
   aucune ligne à commenter.
+
+## Écrire des commentaires
+
+Chaque zone de la page — le commentaire en bas, une réponse dans un fil, un
+commentaire sur une ligne — est le même éditeur Markdown : onglets **Écrire /
+Aperçu**, une barre de mise en forme avec les raccourcis de GitHub, des listes qui
+continuent avec Entrée, et la complétion **@** / **#** à partir des personnes et
+des pull requests déjà à l’écran. Une zone de réponse montre ses outils dès que
+vous cliquez dedans, et envoie avec ⌘/Ctrl+Entrée, puisque Entrée commence
+désormais une nouvelle ligne. [Écrire des commentaires](writing-comments.md)
+donne le détail et les limites.
 
 ## Limites
 

@@ -2,9 +2,9 @@
 title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
-summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, und Kommentare zu einer Zeile seines Diffs.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits und Kommentare zu einer Zeile seines Diffs.
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Pull-Request-Seite
@@ -166,6 +166,77 @@ Was es nicht tut:
   Repositorys. Wenn der Branch schon in einem anderen [Worktree](worktrees.md)
   ausgecheckt ist, öffnet sich stattdessen der Tab dieses Worktrees.
 
+## Commits
+
+Die Seitenleiste sagte, wie viele Commits ein Pull Request hat, nie welche. Einen
+Commit nach dem anderen zu reviewen — so, wie die meisten Pull Requests gelesen
+werden sollen — schickte dich in den Browser. Der Tab **Commits**, zwischen
+Unterhaltung und Dateien, listet sie:
+
+- **Älteste zuerst**, in der Reihenfolge, in der sie angewendet werden, gruppiert
+  nach dem Tag, an dem sie geschrieben wurden. Ein Commit, der außer der
+  Datumsreihenfolge hineingerebased wurde, beginnt einen eigenen Tag, statt
+  verschoben zu werden.
+- Jede Zeile hat das Bild des Autors (wo der Host eins liefert), den Betreff, den
+  Autor, wie lange es her ist, und den kurzen SHA. Ein **Merge**-Badge markiert
+  einen Commit mit zwei Eltern, wo der Host das sagt.
+- **▸** neben einem Commit mit mehr als einem Betreff zeigt den Rest seiner
+  Nachricht.
+- **Kopieren** legt den vollständigen SHA in die Zwischenablage; **Im Browser
+  öffnen** öffnet den Commit auf dem Host — innerhalb des Pull Requests, wo der
+  Host eine solche Seite hat (GitHub, GitLab, Bitbucket Data Center), sonst auf der
+  Commit-Seite des Repositorys.
+
+![Der Tab Commits: die Commits eines Pull Requests nach Tag gruppiert, einer mit geöffneter vollständiger Nachricht](../../screenshots/pr-commits.webp)
+
+**Klick auf eine Zeile** — oder springe mit Tab hin und drück Enter —, um den
+Commit in der App zu öffnen, wie ein Klick im Graphen: die Ansicht des
+Repositorys, dieser Commit ausgewählt, seine Details offen. Das klappt, wenn dieser
+Klon den Commit **hat**. Hat er ihn nicht, sagt die Zeile das, statt still zu
+scheitern, und bietet an:
+
+- **PR-Branch abrufen, um ihn zu sehen** — derselbe Fetch eines einzelnen Branches
+  wie beim [Wechsel zum Branch](#zum-branch-eines-pull-requests-wechseln), ohne den Checkout. Kam der Commit
+  mit, öffnet er sich; kam er nicht (ein Force-Push hat ihn seitdem umgeschrieben),
+  sagt der Toast das.
+- **Im Browser öffnen**, für den Fall, dass Fetchen keine Option ist.
+
+Die Liste wird gelesen, wenn du den Tab zum ersten Mal öffnest, nicht mit der
+Seite, und erneut bei jedem **Aktualisieren**. Bis sie da ist, ist die Zahl im Tab
+die, die der Host für den Pull Request angegeben hat. Gemergte und geschlossene
+Pull Requests listen ihre Commits genauso.
+
+Was es nicht tut:
+
+- **Höchstens 250 Commits.** GitHub selbst listet für einen Pull Request nicht mehr
+  als 250; die App hört auf jedem Host bei derselben Zahl auf und sagt *der Host
+  hat mehr*, wenn das so ist, mit einem Link zum Pull Request auf dem Host. Welche
+  250 es sind, hängt von der Reihenfolge ab, in der der Host sie listet — die App
+  behält die zuerst gelisteten, und die Zeile über der Liste sagt, welche:
+
+  | Host | Ein längerer Pull Request zeigt |
+  |---|---|
+  | GitHub | Die **ersten** 250 (GitHubs eigene Grenze) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Die **250 neuesten** |
+  | Forgejo | Das Ende, das der Server zuerst listet; seine Reihenfolge ist nicht dokumentiert |
+- **Der Branch eines Forks** lässt sich von hier nicht fetchen — er liegt in einem
+  anderen Repository —, also bietet ein Commit, der nur im Fork ist, allein den
+  Browser an. **Pull Request lokal ansehen…** ist der Weg, ihn hereinzuholen.
+- **Ein gelöschter Branch.** Ein gemergter Pull Request hat seinen Branch oft
+  mitgenommen: der Fetch sagt das. bitbucket.org listet gar keine Commits mehr,
+  sobald der Quell-Branch weg ist.
+- **Squash-Merges.** Die Commits eines per Squash gemergten Pull Requests haben den
+  Ziel-Branch nie erreicht, also gibt es sie nach dem Löschen seines Branches nur
+  noch auf dem Host.
+- **Autoren** werden so genannt, wie ihre Commits sie nennen. GitLab, Azure DevOps
+  und Bitbucket Data Center liefern kein Bild ohne eine Anmeldung, die ein Bild
+  nicht mitschicken kann, also zeigen diese Zeilen die Initiale.
+- **Lange Nachrichten auf Azure DevOps** können gekürzt sein: Azures Liste schneidet
+  die Nachricht eines Commits ab, und die App zeigt, was es sendet.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser — die App hat noch keine
+  Seite für sie —, also wird dieser Tab dort nicht erreicht, obwohl die App die
+  Liste lesen kann.
+
 ## Eine Zeile kommentieren
 
 Auf einen Review-Thread antworten ging hier schon; einen beginnen nicht, also
@@ -239,6 +310,17 @@ Was es nicht tut:
   geschrieben.
 - **Eine Datei ohne Diff** (binär oder zu groß, als dass der Host sie mitliefert)
   hat keine Zeilen zum Kommentieren.
+
+## Kommentare schreiben
+
+Jedes Feld auf der Seite — der Kommentar unten, eine Antwort in einem Thread, ein
+Kommentar zu einer Zeile — ist derselbe Markdown-Editor: Tabs **Schreiben /
+Vorschau**, eine Formatierungsleiste mit GitHubs Tastenkürzeln, Listen, die bei
+Enter weitergehen, und Vervollständigung mit **@** / **#** aus den Personen und
+Pull Requests, die schon auf dem Bildschirm sind. Ein Antwortfeld zeigt seine
+Werkzeuge, sobald du hineinklickst, und sendet mit ⌘/Ctrl+Enter, da Enter jetzt
+eine neue Zeile beginnt. [Kommentare schreiben](writing-comments.md) hat die
+Details und die Grenzen.
 
 ## Grenzen
 

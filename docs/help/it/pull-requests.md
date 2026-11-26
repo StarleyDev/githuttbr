@@ -2,9 +2,9 @@
 title: Pagina delle pull request
 category: Sincronizzazione e più repo
 order: 57
-summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, e commenti su una riga del suo diff.
-keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit e commenti su una riga del suo diff.
+keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Pagina delle pull request
@@ -160,6 +160,75 @@ Cosa non fa:
   repository. Quando il branch è già in checkout in un altro
   [worktree](worktrees.md), si apre invece la scheda di quel worktree.
 
+## Commit
+
+La barra laterale diceva quanti commit ha una pull request, mai quali. Revisionare
+un commit alla volta — come la maggior parte delle pull request è pensata per
+essere letta — ti mandava nel browser. La scheda **Commit**, tra Conversazione e
+File, li elenca:
+
+- **Dal più vecchio**, nell’ordine in cui si applicano, raggruppati sotto il giorno
+  in cui sono stati scritti. Un commit portato dentro con un rebase fuori
+  dall’ordine delle date apre un giorno tutto suo invece di essere spostato.
+- Ogni riga ha l’immagine dell’autore (dove l’host la fornisce), l’oggetto,
+  l’autore, quanto tempo fa e lo SHA breve. Un badge **merge** segna un commit con
+  due genitori, dove l’host lo dice.
+- **▸** accanto a un commit che ha più dell’oggetto mostra il resto del messaggio.
+- **Copia** mette lo SHA completo negli appunti; **Apri nel browser** apre il commit
+  sull’host — dentro la pull request dove l’host ha una pagina del genere (GitHub,
+  GitLab, Bitbucket Data Center), altrimenti sulla pagina del commit del
+  repository.
+
+![La scheda Commit: i commit di una pull request raggruppati per giorno, uno con il messaggio completo aperto](../../screenshots/pr-commits.webp)
+
+**Fai clic su una riga** — o raggiungila con Tab e premi Invio — per aprire il
+commit nell’app, come farebbe un clic nel grafo: la vista del repository, quel
+commit selezionato, i suoi dettagli aperti. Funziona quando questo clone **ha** il
+commit. Quando non ce l’ha, la riga lo dice invece di fallire in silenzio, e
+offre:
+
+- **Scarica il branch della PR per vederlo** — lo stesso fetch di un solo branch di
+  [andare al branch](#andare-al-branch-di-una-pull-request), senza il checkout. Se il commit è arrivato con
+  lui, si apre; se no (un force push l’ha riscritto nel frattempo), la notifica lo
+  dice.
+- **Apri nel browser**, per quando scaricare non è un’opzione.
+
+L’elenco viene letto la prima volta che apri la scheda, non con la pagina, e di
+nuovo a ogni **Aggiorna**. Finché non arriva, il conteggio della scheda è quello
+che l’host ha dato per la pull request. Le pull request unite e chiuse elencano i
+loro commit allo stesso modo.
+
+Cosa non fa:
+
+- **Al massimo 250 commit.** GitHub stesso non ne elenca più di 250 per una pull
+  request; l’app si ferma allo stesso numero su ogni host, e dice *l’host ne ha
+  altri* quando è così, con un link alla pull request sull’host. Quali 250 dipende
+  dall’ordine in cui l’host li elenca — l’app tiene i primi elencati, e la riga
+  sopra l’elenco dice quali:
+
+  | Host | Una pull request più lunga mostra |
+  |---|---|
+  | GitHub | I **primi** 250 (il limite di GitHub stesso) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | I **250 più recenti** |
+  | Forgejo | L’estremo che il server elenca per primo; il suo ordine non è documentato |
+- **Il branch di un fork** non si può scaricare da qui — sta in un altro repository
+  —, quindi un commit presente solo nel fork offre soltanto il browser. **Prova la
+  pull request in locale…** è il modo per portarlo qui.
+- **Un branch eliminato.** Una pull request unita spesso si è portata via il suo
+  branch: il fetch lo dice. bitbucket.org non elenca più alcun commit una volta
+  sparito il branch di origine.
+- **Merge squash.** I commit di una pull request unita con squash non hanno mai
+  raggiunto il branch di destinazione, quindi dopo l’eliminazione del suo branch
+  stanno solo sull’host.
+- **Gli autori** sono nominati come li nominano i loro commit. GitLab, Azure DevOps
+  e Bitbucket Data Center non danno immagini senza un accesso che un’immagine non
+  può inviare, quindi quelle righe mostrano l’iniziale.
+- **I messaggi lunghi su Azure DevOps** possono essere tagliati: l’elenco di Azure
+  tronca il messaggio di un commit, e l’app mostra ciò che invia.
+- Le pull request di **bitbucket.org** si aprono nel browser — l’app non ha ancora
+  una pagina per loro —, quindi lì questa scheda non si raggiunge, anche se l’app
+  sa leggere l’elenco.
+
 ## Commentare una riga
 
 Qui si poteva già rispondere a un thread di revisione, ma non aprirne uno, quindi una
@@ -232,6 +301,16 @@ Cosa non fa:
   una pagina per loro —, quindi lì un commento di riga si fa ancora sul sito.
 - **Un file senza diff** (binario, o troppo grande perché l’host lo includa) non ha
   righe da commentare.
+
+## Scrivere commenti
+
+Ogni riquadro della pagina — il commento in fondo, una risposta in un thread, un
+commento su una riga — è lo stesso editor Markdown: schede **Scrivi / Anteprima**,
+una barra di formattazione con le scorciatoie di GitHub, elenchi che continuano con
+Invio e completamento con **@** / **#** dalle persone e dalle pull request già sullo
+schermo. Un riquadro di risposta mostra i suoi strumenti appena ci fai clic dentro,
+e invia con ⌘/Ctrl+Invio, perché ora Invio inizia una nuova riga.
+[Scrivere commenti](writing-comments.md) ha i dettagli e i limiti.
 
 ## Limiti
 

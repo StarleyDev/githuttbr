@@ -2,9 +2,9 @@
 title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
-summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ › ve diff’inin bir satırına yorumlar.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri ve diff’inin bir satırına yorumlar.
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Pull request sayfası
@@ -154,6 +154,72 @@ Yapmadıkları:
   başka bir [çalışma ağacında](worktrees.md) checkout edilmişse, bunun yerine o
   çalışma ağacının sekmesi açılır.
 
+## Commit’ler
+
+Kenar çubuğu bir pull request’te kaç commit olduğunu söylüyordu, hangileri
+olduğunu hiç söylemiyordu. Her seferinde bir commit incelemek — çoğu pull
+request’in okunması gereken biçim — sizi tarayıcıya gönderiyordu. Konuşma ile
+Dosyalar arasındaki **Commit’ler** sekmesi onları listeler:
+
+- **Önce en eskiler**, uygulandıkları sırayla, yazıldıkları günün altında
+  gruplanmış. Tarih sırasının dışında rebase ile gelen bir commit taşınmak yerine
+  kendine ait bir gün başlatır.
+- Her satırda yazarın resmi (sunucu veriyorsa), konu, yazar, ne kadar önce olduğu
+  ve kısa SHA vardır. **birleştirme** rozeti, sunucu söylüyorsa iki ebeveynli bir
+  commit’i işaretler.
+- Konudan fazlası olan bir commit’in yanındaki **▸**, mesajının geri kalanını
+  gösterir.
+- **Kopyala** tam SHA’yı panoya koyar; **Tarayıcıda aç** commit’i sunucuda açar —
+  sunucunun böyle bir sayfası varsa pull request’in içinde (GitHub, GitLab,
+  Bitbucket Data Center), yoksa deponun commit sayfasında.
+
+![Commit’ler sekmesi: bir pull request’in commit’leri güne göre gruplanmış, birinin tam mesajı açık](../../screenshots/pr-commits.webp)
+
+Commit’i uygulamada açmak için **bir satıra tıklayın** — ya da Tab ile ona gelip
+Enter’a basın —; grafikte bir tıklamanın yapacağı gibi: deponun görünümü, o commit
+seçili, ayrıntıları açık. Bu, bu klonda commit **varsa** çalışır. Yoksa satır,
+sessizce başarısız olmak yerine bunu söyler ve şunları sunar:
+
+- **Görmek için PR dalını getir** — [dala gitmek](#bir-pull-requestin-dalına-gitmek) ile aynı tek dallık
+  fetch, checkout olmadan. Commit onunla geldiyse açılır; gelmediyse (o zamandan
+  beri bir force push onu yeniden yazdıysa) bildirim bunu söyler.
+- **Tarayıcıda aç**, fetch bir seçenek olmadığında.
+
+Liste sayfayla birlikte değil, sekmeyi ilk açtığınızda okunur, ve her **Yenile**’de
+yeniden. Gelene kadar sekmedeki sayı, sunucunun pull request için verdiği sayıdır.
+Birleştirilmiş ve kapalı pull request’ler commit’lerini aynı şekilde listeler.
+
+Yapmadıkları:
+
+- **En fazla 250 commit.** GitHub’ın kendisi bir pull request için 250’den fazlasını
+  listelemez; uygulama her sunucuda aynı sayıda durur ve öyleyse *barındırıcıda daha
+  fazlası var* der, pull request’in sunucudaki bağlantısıyla birlikte. Hangi 250
+  olduğu, sunucunun onları listeleme sırasına bağlıdır — uygulama önce listelenenleri
+  tutar ve listenin üstündeki satır hangileri olduğunu söyler:
+
+  | Sunucu | Daha uzun bir pull request gösterir |
+  |---|---|
+  | GitHub | **İlk** 250 (GitHub’ın kendi sınırı) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | **En yeni 250** |
+  | Forgejo | Sunucu hangi ucu önce listelerse; sırası belgelenmemiştir |
+- **Bir fork’un dalı** buradan getirilemez — başka bir depodadır —, bu yüzden
+  yalnızca fork’ta olan bir commit yalnızca tarayıcıyı sunar. **Pull request’i
+  yerelde önizle…** onu getirmenin yoludur.
+- **Silinmiş bir dal.** Birleştirilmiş bir pull request çoğu zaman dalını da
+  götürmüştür: fetch bunu söyler. bitbucket.org, kaynak dal gidince hiç commit
+  listelemez.
+- **Squash birleştirmeleri.** Squash ile birleştirilmiş bir pull request’in
+  commit’leri hiçbir zaman hedef dala ulaşmamıştır, bu yüzden dalı silindikten sonra
+  yalnızca sunucuda bulunurlar.
+- **Yazarlar**, commit’lerinin onları adlandırdığı gibi adlandırılır. GitLab, Azure
+  DevOps ve Bitbucket Data Center, bir resmin gönderemeyeceği bir oturum açma
+  olmadan resim vermez, bu yüzden bu satırlar baş harfi gösterir.
+- **Azure DevOps’taki uzun mesajlar** kısalmış olabilir: Azure’un listesi bir
+  commit’in mesajını keser ve uygulama ne gönderiyorsa onu gösterir.
+- **bitbucket.org** pull request’leri tarayıcıda açılır — uygulamanın onlar için
+  henüz bir sayfası yok —, bu yüzden uygulama listeyi okuyabilse de orada bu
+  sekmeye ulaşılmaz.
+
 ## Bir satıra yorum yapmak
 
 Burada bir inceleme konuşmasına yanıt vermek mümkündü, ama yenisini başlatmak değil;
@@ -223,6 +289,16 @@ Yapmadıkları:
   henüz bir sayfası yok —, bu yüzden orada satır yorumu hâlâ web sitesinde yapılır.
 - **Diff’i olmayan bir dosyada** (ikili ya da sunucunun eklemeyeceği kadar büyük)
   yorum yapılacak satır yoktur.
+
+## Yorum yazmak
+
+Sayfadaki her kutu — alttaki yorum, bir konuşmadaki yanıt, bir satıra yorum —
+aynı Markdown düzenleyicisidir: **Yaz / Önizleme** sekmeleri, GitHub’ın
+kısayollarıyla bir biçimlendirme çubuğu, Enter’da devam eden listeler ve ekranda
+zaten olan kişiler ve pull request’lerden **@** / **#** tamamlama. Bir yanıt kutusu
+içine tıkladığınızda araçlarını gösterir ve Enter artık yeni bir satır başlattığı
+için ⌘/Ctrl+Enter ile gönderir. Ayrıntılar ve sınırlar
+[Yorum yazmak](writing-comments.md) sayfasında.
 
 ## Sınırlar
 

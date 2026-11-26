@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronizar y muchos repos
 order: 57
-summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, y comentarios en una línea de su diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits y comentarios en una línea de su diff.
+keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Página de pull requests
@@ -160,6 +160,74 @@ Lo que no hace:
   repositorio. Cuando la rama ya está en checkout en otro
   [worktree](worktrees.md), se abre en su lugar la pestaña de ese worktree.
 
+## Commits
+
+La barra lateral decía cuántos commits tiene una pull request, nunca cuáles.
+Revisar un commit cada vez — como se supone que se leen la mayoría de las pull
+requests — te mandaba al navegador. La pestaña **Commits**, entre Conversación y
+Archivos, los lista:
+
+- **Los más antiguos primero**, en el orden en que se aplican, agrupados bajo el
+  día en que se escribieron. Un commit rebasado fuera del orden de fechas empieza
+  un día propio en lugar de moverse.
+- Cada fila tiene la foto del autor (cuando el host la da), el asunto, el autor,
+  hace cuánto y el SHA corto. Una insignia **merge** marca un commit con dos
+  padres, cuando el host lo indica.
+- **▸** junto a un commit con algo más que el asunto muestra el resto de su
+  mensaje.
+- **Copiar** pone el SHA completo en el portapapeles; **Abrir en el navegador**
+  abre el commit en el host — dentro de la pull request cuando el host tiene esa
+  página (GitHub, GitLab, Bitbucket Data Center), si no en la página de commits
+  del repositorio.
+
+![La pestaña Commits: los commits de una pull request agrupados por día, uno con su mensaje completo abierto](../../screenshots/pr-commits.webp)
+
+**Haz clic en una fila** — o llega a ella con Tab y pulsa Enter — para abrir el
+commit en la app, como lo haría un clic en el grafo: la vista del repositorio,
+ese commit seleccionado, sus detalles abiertos. Eso funciona cuando este clon
+**tiene** el commit. Cuando no, la fila lo dice en lugar de fallar en silencio, y
+ofrece:
+
+- **Traer la rama del PR para verlo** — el mismo fetch de una sola rama que
+  [ir a la rama](#ir-a-la-rama-de-una-pull-request), sin el checkout. Si el commit llegó con ella, se
+  abre; si no (un force push lo reescribió desde entonces), el aviso lo dice.
+- **Abrir en el navegador**, para cuando traer la rama no es una opción.
+
+La lista se lee la primera vez que abres la pestaña, no con la página, y de nuevo
+con cada **Actualizar**. Hasta que llega, el número de la pestaña es el que el
+host dio para la pull request. Las pull requests fusionadas y cerradas listan sus
+commits igual.
+
+Lo que no hace:
+
+- **Como mucho 250 commits.** El propio GitHub no lista más de 250 para una pull
+  request; la app se detiene en el mismo número en todos los hosts, y dice *el
+  host tiene más* cuando es así, con un enlace a la pull request en el host. Qué
+  250 son depende del orden en que el host los lista — la app se queda con los
+  primeros listados, y la línea sobre la lista dice cuáles:
+
+  | Host | Una pull request más larga muestra |
+  |---|---|
+  | GitHub | Los **primeros** 250 (el límite del propio GitHub) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Los **250 más recientes** |
+  | Forgejo | El extremo que el servidor liste primero; su orden no está documentado |
+- **La rama de un fork** no se puede traer desde aquí — vive en otro repositorio —,
+  así que un commit que solo está en el fork ofrece únicamente el navegador.
+  **Previsualizar pull request en local…** es la forma de traerlo.
+- **Una rama borrada.** Una pull request fusionada a menudo se llevó su rama: el
+  fetch lo dice. bitbucket.org no lista ningún commit en cuanto la rama de origen
+  desaparece.
+- **Fusiones squash.** Los commits de una pull request fusionada con squash nunca
+  llegaron a la rama de destino, así que tras borrar su rama solo están en el host.
+- **Los autores** se nombran como los nombran sus commits. GitLab, Azure DevOps y
+  Bitbucket Data Center no dan foto sin un inicio de sesión que una imagen no puede
+  enviar, así que esas filas muestran la inicial.
+- **Los mensajes largos en Azure DevOps** pueden salir recortados: la lista de Azure
+  trunca el mensaje de un commit, y la app muestra lo que envía.
+- Las pull requests de **bitbucket.org** se abren en el navegador — la app aún no
+  tiene página para ellas —, así que ahí no se llega a esta pestaña, aunque la app
+  puede leer la lista.
+
 ## Comentar una línea
 
 Aquí ya se podía responder a un hilo de revisión, pero no empezar uno, así que una
@@ -230,6 +298,17 @@ Lo que no hace:
   la web.
 - **Un archivo sin diff** (binario, o demasiado grande para que el host lo incluya)
   no tiene líneas que comentar.
+
+## Escribir comentarios
+
+Cada cuadro de la página — el comentario de abajo, una respuesta dentro de un
+hilo, un comentario en una línea — es el mismo editor de Markdown: pestañas
+**Escribir / Vista previa**, una barra de formato con los atajos de GitHub, listas
+que continúan con Enter y autocompletado con **@** / **#** a partir de las
+personas y pull requests que ya están en pantalla. Un cuadro de respuesta muestra
+sus herramientas en cuanto haces clic en él, y envía con ⌘/Ctrl+Enter, ya que
+Enter ahora empieza una línea nueva. [Escribir comentarios](writing-comments.md)
+tiene los detalles y los límites.
 
 ## Límites
 

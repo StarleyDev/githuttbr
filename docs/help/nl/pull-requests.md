@@ -2,9 +2,9 @@
 title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
-summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, en reacties op een regel van zijn diff.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, en reacties op een regel van zijn diff.
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Pull-requestspagina
@@ -163,6 +163,77 @@ Wat het niet doet:
   branch al is uitgecheckt in een andere [worktree](worktrees.md), opent in
   plaats daarvan het tabblad van die worktree.
 
+## Commits
+
+De zijbalk zei hoeveel commits een pull request heeft, nooit welke. Eén commit
+tegelijk reviewen — zoals de meeste pull requests bedoeld zijn om gelezen te worden
+— stuurde je naar de browser. Het tabblad **Commits**, tussen Gesprek en
+Bestanden, toont ze:
+
+- **Oudste eerst**, in de volgorde waarin ze worden toegepast, gegroepeerd onder de
+  dag waarop ze zijn geschreven. Een commit die buiten de datumvolgorde is
+  ingerebased, begint een eigen dag in plaats van te worden verplaatst.
+- Elke rij heeft de afbeelding van de auteur (waar de host er een geeft), het
+  onderwerp, de auteur, hoe lang geleden, en de korte SHA. Een **merge**-badge
+  markeert een commit met twee ouders, waar de host dat zegt.
+- **▸** naast een commit met meer dan een onderwerp toont de rest van zijn
+  bericht.
+- **Kopiëren** zet de volledige SHA op het klembord; **In de browser openen** opent
+  de commit op de host — binnen de pull request waar de host zo'n pagina heeft
+  (GitHub, GitLab, Bitbucket Data Center), anders op de commitpagina van de
+  repository.
+
+![Het tabblad Commits: de commits van een pull request gegroepeerd per dag, één met het volledige bericht open](../../screenshots/pr-commits.webp)
+
+**Klik op een rij** — of ga er met Tab heen en druk op Enter — om de commit in de
+app te openen, zoals een klik in de graaf zou doen: de weergave van de repository,
+die commit geselecteerd, zijn details open. Dat werkt als deze clone de commit
+**heeft**. Heeft hij hem niet, dan zegt de rij dat in plaats van stil te falen, en
+biedt aan:
+
+- **PR-branch ophalen om hem te zien** — dezelfde fetch van één branch als bij
+  [naar de branch gaan](#naar-de-branch-van-een-pull-request), zonder de checkout. Kwam de commit mee, dan
+  opent hij; kwam hij niet mee (een force push heeft hem sindsdien herschreven),
+  dan zegt de melding dat.
+- **In de browser openen**, voor als fetchen geen optie is.
+
+De lijst wordt gelezen wanneer je het tabblad voor het eerst opent, niet met de
+pagina, en opnieuw bij elke **Vernieuwen**. Tot hij binnen is, is het aantal op het
+tabblad het aantal dat de host voor de pull request gaf. Gemergede en gesloten pull
+requests tonen hun commits op dezelfde manier.
+
+Wat het niet doet:
+
+- **Hoogstens 250 commits.** GitHub zelf toont er voor een pull request niet meer
+  dan 250; de app stopt op elke host bij hetzelfde aantal, en zegt *de host heeft er
+  meer* als dat zo is, met een link naar de pull request op de host. Welke 250 het
+  zijn, hangt af van de volgorde waarin de host ze toont — de app houdt de eerst
+  getoonde, en de regel boven de lijst zegt welke:
+
+  | Host | Een langere pull request toont |
+  |---|---|
+  | GitHub | De **eerste** 250 (de eigen grens van GitHub) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | De **250 nieuwste** |
+  | Forgejo | Het eind dat de server eerst toont; zijn volgorde is niet gedocumenteerd |
+- **De branch van een fork** is van hieruit niet op te halen — hij staat in een
+  andere repository —, dus een commit die alleen in de fork staat, biedt alleen de
+  browser aan. **Pull request lokaal bekijken…** is de manier om hem binnen te
+  halen.
+- **Een verwijderde branch.** Een gemergede pull request heeft zijn branch vaak
+  meegenomen: de fetch zegt dat. bitbucket.org toont helemaal geen commits meer
+  zodra de bronbranch weg is.
+- **Squash-merges.** De commits van een met squash gemergede pull request hebben de
+  doelbranch nooit bereikt, dus na het verwijderen van zijn branch staan ze alleen
+  nog op de host.
+- **Auteurs** worden genoemd zoals hun commits ze noemen. GitLab, Azure DevOps en
+  Bitbucket Data Center geven geen afbeelding zonder een aanmelding die een
+  afbeelding niet kan meesturen, dus die rijen tonen de initiaal.
+- **Lange berichten op Azure DevOps** kunnen ingekort zijn: de lijst van Azure kapt
+  het bericht van een commit af, en de app toont wat het stuurt.
+- Pull requests op **bitbucket.org** openen in de browser — de app heeft er nog
+  geen pagina voor —, dus dit tabblad wordt daar niet bereikt, hoewel de app de
+  lijst wel kan lezen.
+
 ## Reageren op een regel
 
 Antwoorden op een reviewthread kon hier al; er een beginnen niet, dus een echte
@@ -234,6 +305,16 @@ Wat het niet doet:
   pagina voor —, dus daar plaats je een regelreactie nog steeds op de website.
 - **Een bestand zonder diff** (binair, of te groot voor de host om mee te sturen)
   heeft geen regels om op te reageren.
+
+## Reacties schrijven
+
+Elk vak op de pagina — de reactie onderaan, een antwoord in een thread, een reactie
+op een regel — is dezelfde Markdown-editor: tabbladen **Schrijven / Voorbeeld**,
+een opmaakbalk met de sneltoetsen van GitHub, lijsten die doorgaan bij Enter, en
+aanvulling met **@** / **#** uit de mensen en pull requests die al op het scherm
+staan. Een antwoordvak toont zijn gereedschap zodra je erin klikt, en verstuurt met
+⌘/Ctrl+Enter, omdat Enter nu een nieuwe regel begint.
+[Reacties schrijven](writing-comments.md) heeft de details en de beperkingen.
 
 ## Beperkingen
 

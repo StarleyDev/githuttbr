@@ -2,9 +2,9 @@
 title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
-summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, oraz komentarze do wiersza jego diffa.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity oraz komentarze do wiersza jego diffa.
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Strona pull requestów
@@ -156,6 +156,74 @@ Czego to nie robi:
   gałąź jest już wyciągnięta w innym [worktree](worktrees.md), zamiast tego
   otwiera się karta tego worktree.
 
+## Commity
+
+Panel boczny mówił, ile commitów ma pull request, nigdy które. Recenzowanie po
+jednym commicie — tak, jak większość pull requestów powinna być czytana —
+odsyłało cię do przeglądarki. Zakładka **Commity**, między Rozmową a Plikami, je
+wymienia:
+
+- **Najstarsze najpierw**, w kolejności, w jakiej się nakładają, pogrupowane pod
+  dniem, w którym je napisano. Commit wciągnięty rebase’em poza kolejnością dat
+  zaczyna własny dzień, zamiast zostać przesunięty.
+- Każdy wiersz ma obrazek autora (jeśli hosting go podaje), temat, autora, jak
+  dawno temu i krótki SHA. Plakietka **merge** oznacza commit z dwoma rodzicami,
+  jeśli hosting to podaje.
+- **▸** obok commita, który ma coś więcej niż temat, pokazuje resztę jego opisu.
+- **Kopiuj** umieszcza pełny SHA w schowku; **Otwórz w przeglądarce** otwiera
+  commit na hostingu — w pull requeście, jeśli hosting ma taką stronę (GitHub,
+  GitLab, Bitbucket Data Center), a w przeciwnym razie na stronie commita w
+  repozytorium.
+
+![Zakładka Commity: commity pull requesta pogrupowane według dni, jeden z otwartym pełnym opisem](../../screenshots/pr-commits.webp)
+
+**Kliknij wiersz** — albo dojdź do niego Tabem i naciśnij Enter — żeby otworzyć
+commit w aplikacji, jak zrobiłoby to kliknięcie w grafie: widok repozytorium, ten
+commit zaznaczony, jego szczegóły otwarte. To działa, gdy ten klon **ma** commit.
+Gdy go nie ma, wiersz to mówi, zamiast po cichu zawieść, i proponuje:
+
+- **Pobierz gałąź PR, aby go zobaczyć** — ten sam fetch jednej gałęzi co przy
+  [przejściu do gałęzi](#przejście-do-gałęzi-pull-requesta), bez checkoutu. Jeśli commit przyszedł razem z
+  nią, otwiera się; jeśli nie (force push go od tego czasu przepisał), mówi to
+  powiadomienie.
+- **Otwórz w przeglądarce**, gdy pobieranie nie wchodzi w grę.
+
+Lista jest wczytywana przy pierwszym otwarciu zakładki, nie razem ze stroną, i
+ponownie przy każdym **Odśwież**. Dopóki nie dotrze, licznik zakładki to ten, który
+hosting podał dla pull requesta. Scalone i zamknięte pull requesty wymieniają swoje
+commity tak samo.
+
+Czego to nie robi:
+
+- **Najwyżej 250 commitów.** Sam GitHub nie wymienia ich dla pull requesta więcej
+  niż 250; aplikacja zatrzymuje się na tej samej liczbie na każdym hostingu i mówi
+  *host ma ich więcej*, gdy tak jest, z linkiem do pull requesta na hostingu. Które
+  250 to będą, zależy od kolejności, w jakiej hosting je wymienia — aplikacja
+  zostawia pierwsze wymienione, a linijka nad listą mówi które:
+
+  | Hosting | Dłuższy pull request pokazuje |
+  |---|---|
+  | GitHub | **Pierwsze** 250 (własny limit GitHuba) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | **250 najnowszych** |
+  | Forgejo | Ten koniec, który serwer wymienia najpierw; jego kolejność nie jest udokumentowana |
+- **Gałęzi forka** nie da się stąd pobrać — jest w innym repozytorium —, więc
+  commit obecny tylko w forku proponuje wyłącznie przeglądarkę. **Podejrzyj pull
+  requesta lokalnie…** to sposób, żeby go ściągnąć.
+- **Usunięta gałąź.** Scalony pull request często zabrał ze sobą swoją gałąź: fetch
+  to mówi. bitbucket.org nie wymienia żadnych commitów, gdy gałęzi źródłowej już nie
+  ma.
+- **Scalenia squash.** Commity pull requesta scalonego przez squash nigdy nie
+  trafiły do gałęzi docelowej, więc po usunięciu jego gałęzi są już tylko na
+  hostingu.
+- **Autorzy** są nazywani tak, jak nazywają ich commity. GitLab, Azure DevOps i
+  Bitbucket Data Center nie dają obrazka bez logowania, którego obrazek nie może
+  wysłać, więc te wiersze pokazują inicjał.
+- **Długie opisy na Azure DevOps** mogą być przycięte: lista Azure obcina opis
+  commita, a aplikacja pokazuje to, co dostaje.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce — aplikacja nie ma
+  jeszcze dla nich strony —, więc do tej zakładki się tam nie dochodzi, choć
+  aplikacja potrafi odczytać listę.
+
 ## Komentowanie wiersza
 
 Odpowiadać na wątek recenzji dało się tu już wcześniej; zaczynać nowego nie, więc
@@ -227,6 +295,16 @@ Czego to nie robi:
   stronie.
 - **Plik bez diffa** (binarny albo zbyt duży, by hosting go dołączył) nie ma
   wierszy do skomentowania.
+
+## Pisanie komentarzy
+
+Każde pole na stronie — komentarz na dole, odpowiedź w wątku, komentarz do wiersza
+— to ten sam edytor Markdown: zakładki **Pisz / Podgląd**, pasek formatowania ze
+skrótami GitHuba, listy, które ciągną się po Enterze, i podpowiadanie po **@** /
+**#** spośród osób i pull requestów, które są już na ekranie. Pole odpowiedzi
+pokazuje swoje narzędzia, gdy w nie klikniesz, i wysyła przez ⌘/Ctrl+Enter, bo
+Enter zaczyna teraz nowy wiersz. [Pisanie komentarzy](writing-comments.md) opisuje
+szczegóły i ograniczenia.
 
 ## Ograniczenia
 
