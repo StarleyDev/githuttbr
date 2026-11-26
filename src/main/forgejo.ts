@@ -14,6 +14,8 @@ import type {
   PrCommitList,
   PrDetail,
   PrFile,
+  PrNoPatchReason,
+  PrDiffCommits,
   PrDiffRevision,
   PrLineAnchor,
   PrMergeMethod,
@@ -277,6 +279,9 @@ async function fjText(url: string, token: string): Promise<string> {
 const repoApi = (base: string, owner: string, repo: string): string =>
   `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
 
+/** A repository's REST root on a Forgejo instance — what a raw file URL hangs off. */
+export const forgejoRepoApi = repoApi
+
 // git's default `a/`·`b/` prefixes, or the `src://`·`dst://` ones Bitbucket Data Center
 // runs `git diff` with (its KB, "Understanding diff view in Bitbucket Server"). Always
 // as a pair: a `src://` path may itself contain " b/".
@@ -414,11 +419,16 @@ export function splitUnifiedDiff(diff: string): PrFile[] {
       status,
       additions,
       deletions,
-      ...(patch ? { patch } : {}),
+      ...(patch ? { patch } : { noPatchReason: noHunkReason(head) }),
       ...(status === 'renamed' ? { previousFilename: oldPath } : {})
     })
   }
   return files
+}
+
+/** Why a file of a unified diff has no hunk: git said binary, or only its name or mode changed. */
+function noHunkReason(header: string): PrNoPatchReason {
+  return /^(Binary files .* differ|GIT binary patch)$/m.test(header) ? 'binary' : 'noChanges'
 }
 
 interface FjDetail extends FjPull {
@@ -767,6 +777,21 @@ export async function forgejoCommentOnLine(
       comments: [{ path: anchor.path, body, [position]: getAnchorLine(anchor) }]
     })
   })
+}
+
+/** The two commits a pull request's diff is between: its merge base (or, unnamed, the target's tip) and its head. */
+export async function forgejoPullDiffCommits(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number
+): Promise<PrDiffCommits | null> {
+  const pr = await fjJson<FjPull & { base?: { sha?: string } }>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
+  const head = pr.head?.sha
+  if (!head) return null
+  if (pr.merge_base) return { headSha: head, baseSha: pr.merge_base, baseKind: 'mergeBase' }
+  return { headSha: head, baseSha: pr.base?.sha ?? null, baseKind: 'targetTip' }
 }
 
 /** The pull's head commit and merge base, as the Files tab's diff was read at. */

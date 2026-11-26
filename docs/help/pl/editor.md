@@ -3,7 +3,8 @@ title: Zewnętrzny edytor
 category: Narzędzia środowiska pracy
 order: 95
 summary: Wyślij repozytorium, plik albo jedną linię kodu do edytora, w którym naprawdę piszesz.
-keywords: edytor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode otwórz w edytorze linia kolumna własne polecenie argv
+keywords: edytor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode otwórz w edytorze linia kolumna własne polecenie argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Zewnętrzny edytor
@@ -31,10 +32,25 @@ Rozpoznawane z pudełka:
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (nigdy samo `devin`, które jest innym narzędziem) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | IDE JetBrains | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Na Linuksie: edytor spoza PATH.** Edytor rozpakowany do wybranego przez ciebie
+folderu często nie jest w PATH, ale jest w menu aplikacji. Gitcito czyta też wpisy
+`.desktop` menu — w folderach danych XDG (`~/.local/share`, potem `/usr/local/share` i
+`/usr/share`, albo to, co mówią `XDG_DATA_HOME` i `XDG_DATA_DIRS`) oraz w eksportach
+Flatpaka i Snapa — i rozpoznaje edytor po nazwie albo po programie, który uruchamia
+jego wiersz `Exec=`. Wpis oznaczony jako ukryty albo do niewyświetlania, lub taki,
+którego programu `TryExec=` brakuje, się nie liczy. Dla kompilacji VS Code takiej jak
+Devin Desktop woli polecenie w `bin/` obok tego programu, bo tylko ono potrafi
+przeskoczyć do wiersza. Wpisy są czytane jako tekst i nic z nich nie jest uruchamiane;
+wpis, który potrzebuje dodatkowych argumentów, by uruchomić edytor (Flatpakowe
+`flatpak run …`), jest pomijany, więc taka instalacja nadal potrzebuje swojego
+polecenia w PATH. Na macOS `Devin.app` liczy się tylko wtedy, gdy jej `product.json`
+wskazuje Devin Desktop, więc nigdy nie otworzy się obca aplikacja o tej samej nazwie.
 
 ## Ograniczenie warte wiedzy
 

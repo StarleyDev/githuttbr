@@ -3,7 +3,7 @@ import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
 import { isGuardedEnvKey } from '@simple-git/argv-parser'
 import { basename, dirname, isAbsolute, join, relative, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat, utimes } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -176,8 +176,20 @@ import type {
   RemoteUrlCredentials
 } from '../shared/types'
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
+import {
+  getImageMime,
+  isFullCommitSha,
+  isLfsPointer,
+  isSafeRepoFilePath,
+  LFS_POINTER_MAX_BYTES,
+  PR_IMAGE_MAX_BYTES,
+  type PrImageContent
+} from '../shared/prImage'
 import { prRefCandidates } from '../shared/prRefs'
 import { splitUnifiedDiff } from './forgejo'
+import { decodeFileBytes, decodeTextBytes } from '../shared/prFileText'
+import { DiffChunkSplitter } from './diffStream'
+import { diffFileVersions } from '../shared/prFileDiff'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
@@ -1521,6 +1533,343 @@ async function assertSafeRemoteBranch(repoPath: string, remote: string, branch: 
   const normalized = await runGit(repoPath, ['check-ref-format', '--branch', branch]).catch(() => '')
   if (normalized.trim() !== branch) throw new Error(`Refusing the branch name "${branch}": git does not accept it.`)
   await assertConfiguredRemote(repoPath, remote)
+}
+
+/** A file changing more lines than this is listed, not diffed — see getCommitRangeFiles. */
+export const RANGE_FILE_LINE_CAP = 20_000
+/** One file's piece of the diff past this is `tooLarge`: a minified bundle is one line of megabytes. */
+export const RANGE_FILE_MAX_BYTES = 8 << 20
+/** Patches kept in one range read; the files after are `notLoaded`, read when opened. */
+export const RANGE_BUDGET_LINES = 150_000
+export const RANGE_BUDGET_BYTES = 48 << 20
+/** A hard ceiling on what one streamed diff may hold, whatever the budget says. */
+const RANGE_DIFF_MAX_BUFFER = 128 << 20
+
+/**
+ * Run git and hand its stdout to `splitter` as it arrives, stopping git once
+ * the splitter's budget is spent. Rejects on a failure git reports (exit code
+ * not 0, unless it was stopped here) with its stderr, redacted.
+ */
+function streamGit(repoPath: string, args: string[], extraEnv: NodeJS.ProcessEnv, splitter: DiffChunkSplitter): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', ['-C', repoPath, ...args], { env: { ...noPromptEnv(), ...extraEnv } })
+    let stopped = false
+    let total = 0
+    let stderr = ''
+    child.stdout.on('data', (d: Buffer) => {
+      if (stopped) return
+      total += d.length
+      if (!splitter.push(d)) {
+        stopped = true
+        child.kill()
+      } else if (total > RANGE_DIFF_MAX_BUFFER) {
+        // The ceiling cut a file mid-way: it is `tooLarge`, not left to be read (and cut) again.
+        splitter.endOversized()
+        stopped = true
+        child.kill()
+      }
+    })
+    child.stderr.on('data', (d: Buffer) => {
+      if (stderr.length < 8192) stderr += d.toString()
+    })
+    child.on('error', (err) => reject(err))
+    child.on('close', (code) => {
+      if (stopped) return resolve()
+      if (code !== 0) return reject(new Error(redactCredentials(stderr.trim() || `git exited with ${code}`)))
+      splitter.end()
+      resolve()
+    })
+  })
+}
+
+/** Where a file's piece of a diff stops being its header: the first hunk, or git's binary line. */
+const DIFF_BODY_START = /\n(@@ |Binary files |GIT binary patch)/
+
+/**
+ * One file's piece of `git diff`, as text: the header (paths, modes) always as
+ * UTF-8 — git writes paths that way, quoted or not — and the hunks as UTF-8,
+ * else Windows-1252 (decodeTextBytes). Decoding the whole piece as 1252 for a
+ * Latin-1 file would turn an accented name into mojibake, and the file would
+ * be listed twice: once under each name.
+ */
+export function decodeDiffChunk(bytes: Uint8Array): string {
+  const head = Buffer.from(bytes.buffer, bytes.byteOffset, Math.min(bytes.length, 64 * 1024)).toString('latin1')
+  const m = DIFF_BODY_START.exec(head)
+  const cut = m ? m.index + 1 : bytes.length
+  return new TextDecoder('utf-8').decode(bytes.subarray(0, cut)) + decodeTextBytes(bytes.subarray(cut))
+}
+/** Files git calls binary that are read again as bytes, and how big each may be. */
+const RANGE_BINARY_REREADS = 50
+const RANGE_BLOB_MAX_BYTES = 2 << 20
+
+type NumstatEntry = { path: string; oldPath?: string; additions: number; deletions: number; binary: boolean }
+
+/**
+ * `git diff --numstat -z`: `added<TAB>deleted<TAB>path<NUL>`, or for a rename
+ * `added<TAB>deleted<TAB><NUL>old<NUL>new<NUL>`; `-` and `-` for a binary file.
+ */
+export function parseNumstatZ(out: string): NumstatEntry[] {
+  const parts = out.split('\0')
+  const entries: NumstatEntry[] = []
+  for (let i = 0; i < parts.length; i++) {
+    const m = /^(-|\d+)\t(-|\d+)\t([\s\S]*)$/.exec(parts[i])
+    if (!m) continue
+    const binary = m[1] === '-' && m[2] === '-'
+    const base = { additions: binary ? 0 : Number(m[1]), deletions: binary ? 0 : Number(m[2]), binary }
+    if (m[3]) entries.push({ path: m[3], ...base })
+    else if (i + 2 < parts.length) {
+      entries.push({ path: parts[i + 2], oldPath: parts[i + 1], ...base })
+      i += 2
+    }
+  }
+  return entries
+}
+
+/**
+ * The files of a range the budgeted read did not reach, with their counts and
+ * status but no patch — `notLoaded`, each read on demand. Their status comes
+ * from one `--name-status` of the whole range (no per-file argv, which on
+ * Windows would run out of command line long before ten thousand files).
+ */
+async function getUnreadRangeFiles(repoPath: string, from: string, to: string, unread: NumstatEntry[]): Promise<PrFile[]> {
+  const raw = await runGit(repoPath, ['diff', '--name-status', '-z', '--no-ext-diff', '-M', from, to, '--'], { GIT_NO_LAZY_FETCH: '1' }, 64 << 20).catch(
+    () => ''
+  )
+  const statusOf = new Map<string, string>()
+  const parts = raw.split('\0')
+  for (let i = 0; i < parts.length; i++) {
+    const code = parts[i][0]
+    if (!code) continue
+    if (code === 'R' || code === 'C') {
+      statusOf.set(parts[i + 2], 'renamed')
+      i += 2
+    } else {
+      statusOf.set(parts[i + 1], code === 'A' ? 'added' : code === 'D' ? 'removed' : 'modified')
+      i += 1
+    }
+  }
+  return unread.map((c) => ({
+    filename: c.path,
+    status: c.oldPath ? 'renamed' : (statusOf.get(c.path) ?? 'modified'),
+    additions: c.additions,
+    deletions: c.deletions,
+    // Over the line cap, reading it alone would not help; the rest just were not reached.
+    noPatchReason: !c.binary && c.additions + c.deletions > RANGE_FILE_LINE_CAP ? ('tooLarge' as const) : ('notLoaded' as const),
+    ...(c.oldPath ? { previousFilename: c.oldPath } : {})
+  }))
+}
+
+/** One blob's bytes, or null when it is not here or is over RANGE_BLOB_MAX_BYTES. */
+async function readBlobBytes(repoPath: string, rev: string, path: string): Promise<Uint8Array | null> {
+  try {
+    const { stdout } = await pexecFile('git', ['-C', repoPath, 'cat-file', 'blob', `${rev}:${path}`], {
+      env: { ...noPromptEnv(), GIT_NO_LAZY_FETCH: '1' },
+      encoding: 'buffer',
+      maxBuffer: RANGE_BLOB_MAX_BYTES
+    })
+    return new Uint8Array(stdout)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * git calls a file binary on a NUL byte in its first 8000 — which every UTF-16
+ * file has. Read the first RANGE_BINARY_REREADS such files as bytes and diff
+ * the ones that are text after all, in place.
+ */
+async function rereadBinaryAsText(repoPath: string, from: string, to: string, files: PrFile[]): Promise<void> {
+  const binary = files.filter((f) => f.noPatchReason === 'binary').slice(0, RANGE_BINARY_REREADS)
+  const EMPTY = { kind: 'text', text: '' } as const
+  for (const f of binary) {
+    const [before, after] = await Promise.all([
+      f.status === 'added' ? new Uint8Array() : readBlobBytes(repoPath, from, f.previousFilename ?? f.filename),
+      f.status === 'removed' ? new Uint8Array() : readBlobBytes(repoPath, to, f.filename)
+    ])
+    if (!before || !after) continue
+    const result = diffFileVersions(
+      before.length ? decodeFileBytes(before) : EMPTY,
+      after.length ? decodeFileBytes(after) : EMPTY
+    )
+    if (!result.patch) continue
+    delete f.noPatchReason
+    Object.assign(f, result)
+  }
+}
+
+/**
+ * A gitService call made from elsewhere in the main process (the pull request
+ * Files tab's local-first read), under the same per-repository read/write lock
+ * the IPC dispatcher takes — a fetch here must not run beside a commit there.
+ *
+ * Not re-entrant: RwLock has no owner, so an `op` that took the same repo's
+ * lock again would wait on itself for ever. A nested call throws instead.
+ */
+export async function withRepoLock<T>(repoPath: string, method: string, op: () => Promise<T>): Promise<T> {
+  if (heldRepoLocks.getStore()?.has(repoPath)) throw new Error(`withRepoLock is not re-entrant (${method} inside a held lock).`)
+  const isWrite = !gitMethodIsRead(method)
+  if (isWrite) await shellPathReady()
+  const release = await lockFor(repoPath).acquire(isWrite)
+  const held = new Set(heldRepoLocks.getStore() ?? [])
+  held.add(repoPath)
+  try {
+    return await heldRepoLocks.run(held, () => withLockRetry(op))
+  } finally {
+    release()
+  }
+}
+
+/**
+ * withRepoLock that waits at most `waitMs` for the lock: `{ ran: false }`
+ * when another call held it that long (a long push, a rebase) — the caller
+ * does something else rather than queue the page behind it.
+ */
+export async function withRepoLockWithin<T>(
+  repoPath: string,
+  method: string,
+  waitMs: number,
+  op: () => Promise<T>
+): Promise<{ ran: true; value: T } | { ran: false }> {
+  if (heldRepoLocks.getStore()?.has(repoPath)) throw new Error(`withRepoLock is not re-entrant (${method} inside a held lock).`)
+  const isWrite = !gitMethodIsRead(method)
+  if (isWrite) await shellPathReady()
+  const release = await lockFor(repoPath).acquireWithin(isWrite, waitMs)
+  if (!release) return { ran: false }
+  const held = new Set(heldRepoLocks.getStore() ?? [])
+  held.add(repoPath)
+  try {
+    return { ran: true, value: await heldRepoLocks.run(held, () => withLockRetry(op)) }
+  } finally {
+    release()
+  }
+}
+
+/** The repositories whose lock this async call chain holds through withRepoLock. */
+const heldRepoLocks = new AsyncLocalStorage<Set<string>>()
+
+/** Full hex ids (at most four) and a configured remote — all fetchCommitsById lets reach git. */
+async function checkFetchById(repoPath: string, remote: string, shas: unknown): Promise<string[]> {
+  const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+  const wanted = Array.isArray(shas) ? [...new Set(shas)] : []
+  if (!wanted.length || wanted.length > 4 || !wanted.every(isFullSha)) throw new Error('Commits are fetched by their full ids.')
+  await assertConfiguredRemote(repoPath, remote)
+  return wanted as string[]
+}
+
+/** How long the Files tab's background fetch by id may take before the host's API is asked instead. */
+export const QUIET_FETCH_TIMEOUT_MS = 20_000
+
+/**
+ * fetchCommitsById for a fetch nobody clicked — the pull request Files tab
+ * bringing its two commits here. It must never hang the page or ask anything:
+ * - a 20 s ceiling, and git gives up on a transfer under 1 KB/s for 15 s;
+ * - no prompt: GIT_TERMINAL_PROMPT=0 (noPromptEnv) and GCM_INTERACTIVE=never,
+ *   so Git Credential Manager fails instead of opening its sign-in window.
+ *   An ssh remote keeps the user's own ssh command untouched — the app builds
+ *   none — so its ConnectTimeout is theirs; the 20 s ceiling still holds;
+ * - `--no-write-fetch-head`: FETCH_HEAD's time is what "fetched 2 min ago"
+ *   reads, and this was not a fetch the user made. A git older than 2.29 has
+ *   no such flag; FETCH_HEAD is then put back as it was.
+ * True when every commit is here afterwards.
+ */
+export async function fetchCommitsByIdQuietly(
+  repoPath: string,
+  remote: string,
+  shas: string[],
+  timeoutMs = QUIET_FETCH_TIMEOUT_MS
+): Promise<boolean> {
+  const wanted = await checkFetchById(repoPath, remote, shas)
+  // SSH_ASKPASS_REQUIRE=never: OpenSSH never pops its own passphrase dialog; the ssh command itself is untouched.
+  const env = { GCM_INTERACTIVE: 'never', GIT_TERMINAL_PROMPT: '0', SSH_ASKPASS_REQUIRE: 'never' }
+  const slow = ['-c', 'http.lowSpeedLimit=1000', '-c', 'http.lowSpeedTime=15']
+  // One attempt, whatever happens: the flag is chosen by version, never by retrying after a failure.
+  const modern = await gitHasNoWriteFetchHead()
+  const args = [...slow, 'fetch', '--no-tags', ...(modern ? ['--no-write-fetch-head'] : []), '--', remote, ...wanted]
+  const run = (): Promise<BoundedGitResult> =>
+    withRemoteAuth(repoPath, remote, 'fetch', () => runGitBounded(repoPath, args, env, timeoutMs))
+  let result: BoundedGitResult
+  if (modern) result = await run()
+  else {
+    // An old git writes FETCH_HEAD: give it back its content and time afterwards.
+    const rel = (await runGit(repoPath, ['rev-parse', '--git-path', 'FETCH_HEAD']).catch(() => '')).trim()
+    const file = rel ? (isAbsolute(rel) ? rel : join(repoPath, rel)) : ''
+    const before = file ? await stat(file).then(async (s) => ({ s, body: await readFile(file) }), () => null) : null
+    try {
+      result = await run()
+    } finally {
+      if (file && before) await writeFile(file, before.body).then(() => utimes(file, before.s.atime, before.s.mtime), () => undefined)
+      else if (file) await rm(file, { force: true }).catch(() => undefined)
+    }
+  }
+  quietFetchObserver?.(result)
+  if (result.code !== 0) return false
+  return (await gitService.getLocalCommits(repoPath, wanted)).length === wanted.length
+}
+
+/** What one bounded git run ended with. `killed`: the timeout stopped it. */
+export interface BoundedGitResult {
+  code: number | null
+  killed: boolean
+  stderr: string
+}
+
+/** Told of every quiet fetch's outcome — for the tests, which count attempts. */
+let quietFetchObserver: ((r: BoundedGitResult) => void) | null = null
+export function observeQuietFetches(fn: ((r: BoundedGitResult) => void) | null): void {
+  quietFetchObserver = fn
+}
+
+let noWriteFetchHeadProbe: Promise<boolean> | null = null
+
+/** Whether the installed git has `fetch --no-write-fetch-head` (2.29+). Asked once; an unreadable answer is "no". */
+export function gitHasNoWriteFetchHead(): Promise<boolean> {
+  noWriteFetchHeadProbe ??= pexecFile('git', ['--version']).then(
+    ({ stdout }) => {
+      const m = /(\d+)\.(\d+)/.exec(String(stdout))
+      return !!m && (Number(m[1]) > 2 || (Number(m[1]) === 2 && Number(m[2]) >= 29))
+    },
+    () => false
+  )
+  return noWriteFetchHeadProbe
+}
+
+/**
+ * git with a hard deadline that takes its helpers with it. A fetch over https
+ * runs `git-remote-https` as a child of git; killing git alone (as execFile's
+ * timeout does) can leave that helper holding the connection. On POSIX the run
+ * gets its own process group and the whole group is killed; on Windows only git
+ * is, and the helper is bounded by `http.lowSpeedTime` instead. Never rejects:
+ * the caller reads `code`, `killed` and `stderr`.
+ */
+function runGitBounded(repoPath: string, args: string[], extraEnv: NodeJS.ProcessEnv, timeoutMs: number): Promise<BoundedGitResult> {
+  return new Promise((resolve) => {
+    const posix = process.platform !== 'win32'
+    const child = spawn('git', ['-C', repoPath, ...args], {
+      env: { ...noPromptEnv(), ...(remoteAuthEnv.getStore() ?? {}), ...extraEnv },
+      detached: posix,
+      stdio: ['ignore', 'ignore', 'pipe']
+    })
+    let stderr = ''
+    let killed = false
+    child.stderr?.on('data', (d: Buffer) => {
+      if (stderr.length < 8192) stderr += d.toString()
+    })
+    const timer = setTimeout(() => {
+      killed = true
+      try {
+        if (posix && child.pid) process.kill(-child.pid, 'SIGKILL')
+        else child.kill('SIGKILL')
+      } catch {
+        child.kill('SIGKILL')
+      }
+    }, timeoutMs)
+    const done = (code: number | null): void => {
+      clearTimeout(timer)
+      resolve({ code: killed ? null : code, killed, stderr: redactCredentials(stderr.trim()) })
+    }
+    child.on('error', () => done(-1))
+    child.on('close', (code) => done(code))
+  })
 }
 
 /** Where fetchPrHead keeps fork pull request heads: `<prefix><remote>/<number>`. */
@@ -4956,21 +5305,76 @@ export const gitService = {
 
   /**
    * The files changed between two commits, each with its patch — what one
-   * push to a pull request did, for its Updates tab. The two trees directly
-   * (`from to`, not the merge base), renames detected. Only full hex ids, as
+   * push to a pull request did, for its Updates tab, and a whole pull request
+   * (merge base → head) for its Files tab. The two trees directly (`from to`,
+   * not the merge base), renames detected. Only full hex ids, as
    * getLocalCommits; no external diff or textconv, so the patch is git's own
    * and a repository's config cannot run a program from here.
+   *
+   * No cap on the number of files, and a bounded read. `--numstat` first
+   * lists every file with its counts; the patches then stream in as bytes,
+   * cut per file (DiffChunkSplitter) and decoded per file (UTF-8, else
+   * Windows-1252), until RANGE_BUDGET_LINES / RANGE_BUDGET_BYTES worth are
+   * kept — the files past that are `notLoaded`, read one by one on demand
+   * through `paths`. A file over RANGE_FILE_LINE_CAP changed lines or
+   * RANGE_FILE_MAX_BYTES is `tooLarge` with its counts. A file git calls
+   * binary is read again as bytes (decodeFileBytes): UTF-16 text is binary to
+   * git and plain text to a reviewer. `paths` limits it to those files (a
+   * renamed file's two paths).
    */
-  async getCommitRangeFiles(repoPath: string, from: unknown, to: unknown): Promise<PrFile[]> {
+  async getCommitRangeFiles(repoPath: string, from: unknown, to: unknown, paths?: unknown): Promise<PrFile[]> {
     const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
     if (!isFullSha(from) || !isFullSha(to)) throw new Error('Two full commit ids are compared.')
-    const out = await runGit(
-      repoPath,
-      ['diff', ...DIFF_PREFIXES, '--no-color', '--no-ext-diff', '--no-textconv', '-M', from, to, '--'],
-      { GIT_NO_LAZY_FETCH: '1' },
-      64 << 20
+    const only: unknown[] = Array.isArray(paths) ? paths : []
+    if (only.length > 1000 || !only.every((p) => typeof p === 'string' && p !== '' && !p.includes('\0'))) {
+      throw new Error('Refusing those paths.')
+    }
+    const spec = (only as string[]).map((p) => `:(top,literal)${p}`)
+    const env = { GIT_NO_LAZY_FETCH: '1' }
+    const plain = ['--no-color', '--no-ext-diff', '--no-textconv', '-M']
+    const counts = parseNumstatZ(
+      await runGit(repoPath, ['-c', 'core.quotePath=true', 'diff', '--numstat', '-z', ...plain, from, to, '--', ...spec], env, 64 << 20)
     )
-    return splitUnifiedDiff(out)
+    const splitter = new DiffChunkSplitter({
+      fileMaxBytes: RANGE_FILE_MAX_BYTES,
+      headerBytes: 4096,
+      budgetBytes: RANGE_BUDGET_BYTES,
+      budgetLines: RANGE_BUDGET_LINES
+    })
+    await streamGit(repoPath, ['-c', 'core.quotePath=true', 'diff', ...DIFF_PREFIXES, ...plain, from, to, '--', ...spec], env, splitter)
+    const byPath = new Map(counts.map((c) => [c.path, c]))
+    const files: PrFile[] = []
+    for (const chunk of splitter.chunks) {
+      const [file] = splitUnifiedDiff(decodeDiffChunk(chunk.bytes))
+      if (!file) continue
+      const c = byPath.get(file.filename)
+      const over = chunk.oversized || (!!c && !c.binary && c.additions + c.deletions > RANGE_FILE_LINE_CAP)
+      if (!over) files.push(file)
+      else {
+        delete file.patch
+        files.push({ ...file, additions: c?.additions ?? 0, deletions: c?.deletions ?? 0, noPatchReason: 'tooLarge' })
+      }
+    }
+    // Past the budget: listed from the numstat, read when opened.
+    const seen = new Set(files.map((f) => f.filename))
+    const unseen = counts.filter((c) => !seen.has(c.path))
+    if (unseen.length) files.push(...(await getUnreadRangeFiles(repoPath, from, to, unseen)))
+    await rereadBinaryAsText(repoPath, from, to, files)
+    // In git's own order, which the numstat kept: the unread ones were appended.
+    const order = new Map(counts.map((c, i) => [c.path, i]))
+    return files.sort((a, b) => (order.get(a.filename) ?? 0) - (order.get(b.filename) ?? 0))
+  },
+
+  /**
+   * The best common ancestor of two commits — where a pull request's diff
+   * starts, as every host computes it. Null when either commit is not here or
+   * they share no history. Full ids only; no lazy fetch.
+   */
+  async getMergeBase(repoPath: string, a: unknown, b: unknown): Promise<string | null> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    if (!isFullSha(a) || !isFullSha(b)) throw new Error('Two full commit ids are compared.')
+    const out = (await runGit(repoPath, ['merge-base', a, b], { GIT_NO_LAZY_FETCH: '1' }).catch(() => '')).trim()
+    return isFullSha(out) ? out : null
   },
 
   /**
@@ -4983,10 +5387,7 @@ export const gitService = {
    * afterwards; false when the server would not give them.
    */
   async fetchCommitsById(repoPath: string, remote: string, shas: unknown): Promise<boolean> {
-    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
-    const wanted = Array.isArray(shas) ? [...new Set(shas)] : []
-    if (!wanted.length || wanted.length > 4 || !wanted.every(isFullSha)) throw new Error('Commits are fetched by their full ids.')
-    await assertConfiguredRemote(repoPath, remote)
+    const wanted = await checkFetchById(repoPath, remote, shas)
     try {
       await withRemoteAuth(repoPath, remote, 'fetch', () =>
         runGit(repoPath, ['fetch', '--no-tags', '--', remote, ...wanted])
@@ -8309,6 +8710,60 @@ export const gitService = {
     return { before, after }
   },
 
+  /**
+   * One image at one commit, for a pull request's Files tab — the same bytes
+   * and data URL the commit view's image diff reads, with its size cap. Only a
+   * full commit id and a path that stays inside the repository reach git. The
+   * size is asked first with lazy fetching off, so a commit or blob this clone
+   * lacks (a partial clone included) is "missing", and the renderer asks the
+   * host instead of git quietly going to the network.
+   */
+  async getImageBlob(repoPath: string, sha: unknown, file: unknown): Promise<PrImageContent> {
+    if (!isFullCommitSha(sha)) throw new Error('A file is read at a full commit id.')
+    if (!isSafeRepoFilePath(file) || !getImageMime(file)) throw new Error('Not an image path inside the repository.')
+    let size: number
+    try {
+      size = Number((await runGit(repoPath, ['cat-file', '-s', `${sha}:${file}`], { GIT_NO_LAZY_FETCH: '1' })).trim())
+    } catch {
+      return { status: 'missing' }
+    }
+    if (!Number.isFinite(size)) return { status: 'missing' }
+    if (size > PR_IMAGE_MAX_BYTES) return { status: 'tooLarge', size }
+    const url = await readFileDataUrl(repoPath, file, sha)
+    if (url === null) return { status: 'missing' }
+    // An LFS pointer is not the picture: "missing" here, so the host — which
+    // resolves LFS on GitLab, Azure and Forgejo — is asked instead.
+    if (size < LFS_POINTER_MAX_BYTES && isLfsPointer(Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'))) {
+      return { status: 'missing' }
+    }
+    return { status: 'ok', dataUrl: url }
+  },
+
+  /**
+   * What each repository-relative path is in the working tree — 'file', 'dir',
+   * or null when it is not there (or resolves outside the repository, a
+   * symlink included). For a pull request's file actions: open in the editor
+   * or reveal only what exists here. One answer per path, never a listing.
+   */
+  async getWorkTreePathKinds(repoPath: string, paths: unknown): Promise<Array<'file' | 'dir' | null>> {
+    if (!Array.isArray(paths)) return []
+    const root = await realpath(repoPath).catch(() => null)
+    if (!root) return paths.map(() => null)
+    return Promise.all(
+      paths.slice(0, 200).map(async (p): Promise<'file' | 'dir' | null> => {
+        if (!isSafeRepoFilePath(p)) return null
+        try {
+          const target = await realpath(join(repoPath, p))
+          if (target !== root && !target.startsWith(root + sep)) return null
+          const info = await stat(target)
+          return info.isDirectory() ? 'dir' : info.isFile() ? 'file' : null
+        } catch {
+          return null
+        }
+      })
+    )
+  },
+
   async blameFile(repoPath: string, file: string, ref?: string): Promise<BlameLine[]> {
     const args = ['blame', '--line-porcelain']
     if (ref) args.push(ref)
@@ -9876,6 +10331,33 @@ class RwLock {
     } else {
       await new Promise<void>((resolve) => this.waiters.push({ write, resolve }))
     }
+    return this.releaser(write)
+  }
+
+  /**
+   * acquire, giving up after `waitMs` in the queue: null then, and the place in
+   * the queue is left — a waiter taken out before it is granted can never be.
+   */
+  async acquireWithin(write: boolean, waitMs: number): Promise<(() => void) | null> {
+    if (this.waiters.length === 0 && this.canRun(write)) {
+      this.enter(write)
+      return this.releaser(write)
+    }
+    const granted = await new Promise<boolean>((resolve) => {
+      const waiter = { write, resolve: (): void => (clearTimeout(timer), resolve(true)) }
+      const timer = setTimeout(() => {
+        const at = this.waiters.indexOf(waiter)
+        if (at >= 0) this.waiters.splice(at, 1)
+        // Whoever queued behind it may run now.
+        this.pump()
+        resolve(false)
+      }, waitMs)
+      this.waiters.push(waiter)
+    })
+    return granted ? this.releaser(write) : null
+  }
+
+  private releaser(write: boolean): () => void {
     let released = false
     return () => {
       if (released) return
@@ -9919,6 +10401,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remo
 const READ_METHODS = new Set<string>([
   'getLocalCommits',
   'getCommitRangeFiles',
+  'getMergeBase',
   'isAncestor',
   'isRepository',
   'directoryExists',
@@ -10016,6 +10499,8 @@ const READ_METHODS = new Set<string>([
   'fileDataUrl',
   'repoImage',
   'imageDiff',
+  'getImageBlob',
+  'getWorkTreePathKinds',
   'blameFile',
   'fileHistory',
   'worktrees',

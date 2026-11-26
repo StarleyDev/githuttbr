@@ -3,7 +3,8 @@ title: 외부 편집기
 category: 작업 공간 도구
 order: 95
 summary: 저장소, 파일, 또는 코드 한 줄을 실제로 코드를 쓰는 편집기로 보내요.
-keywords: 편집기 editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode 외부 편집기로 열기 open in editor 줄 line 열 column 사용자 지정 명령 custom command argv
+keywords: 편집기 editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode 외부 편집기로 열기 open in editor 줄 line 열 column 사용자 지정 명령 custom command argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # 외부 편집기
@@ -29,10 +30,23 @@ Gitcito에 편집기를 한 번 지정해 두면 그 틈이 사라져요. 파일
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop`(그냥 `devin`은 다른 도구이므로 쓰지 않습니다) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains IDE | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Linux에서 PATH에 없는 편집기.** 원하는 폴더에 압축을 푼 편집기는 PATH에는 없어도 앱 메뉴에는
+있는 경우가 많습니다. Gitcito는 메뉴의 `.desktop` 항목도 읽습니다. XDG 데이터 폴더
+(`~/.local/share`, 그다음 `/usr/local/share`와 `/usr/share`, 또는 `XDG_DATA_HOME`과
+`XDG_DATA_DIRS`가 가리키는 곳)와 Flatpak·Snap 내보내기에서 읽으며, 이름이나 `Exec=` 줄이
+실행하는 프로그램으로 편집기를 알아봅니다. 숨김 또는 표시 안 함으로 표시된 항목, `TryExec=`
+프로그램이 없는 항목은 세지 않습니다. Devin Desktop 같은 VS Code 빌드는 그 프로그램 옆의
+`bin/`에 있는 명령을 우선합니다. 줄로 이동할 수 있는 것은 그 명령뿐이기 때문입니다. 항목은
+텍스트로 읽기만 하고 그 안의 어떤 것도 실행하지 않습니다. 편집기를 시작하는 데 추가 인수가
+필요한 항목(Flatpak의 `flatpak run …`)은 건너뛰므로, 그런 설치에는 여전히 PATH에 자체 명령이
+필요합니다. macOS에서는 `Devin.app`의 `product.json`이 Devin Desktop을 가리킬 때만 세므로,
+이름이 같은 다른 앱이 열리는 일은 없습니다.
 
 ## 알아 둘 만한 한계
 

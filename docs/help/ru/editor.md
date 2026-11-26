@@ -3,7 +3,8 @@ title: Внешний редактор
 category: Рабочие инструменты
 order: 95
 summary: Отправьте репозиторий, файл или одну строку кода в тот редактор, в котором вы действительно пишете.
-keywords: редактор editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode открыть в редакторе строка колонка своя команда argv
+keywords: редактор editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode открыть в редакторе строка колонка своя команда argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Внешний редактор
@@ -30,10 +31,25 @@ Git-клиент — это место, где вы читаете код; чи�
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (никогда не просто `devin` — это другой инструмент) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains IDE | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**В Linux — редактор вне PATH.** Редактор, распакованный в выбранную вами папку, часто
+не лежит в PATH, но есть в меню приложений. Gitcito также читает записи `.desktop`
+меню — в папках данных XDG (`~/.local/share`, затем `/usr/local/share` и `/usr/share`,
+или то, что указывают `XDG_DATA_HOME` и `XDG_DATA_DIRS`) и в экспортах Flatpak и Snap,
+— и распознаёт редактор по имени или по программе, которую запускает его строка
+`Exec=`. Запись, помеченная скрытой или не для показа, или чья программа `TryExec=`
+отсутствует, не считается. Для сборки VS Code вроде Devin Desktop предпочитается
+команда в `bin/` рядом с этой программой, так как только она умеет переходить к
+строке. Записи читаются как текст, и ничего из них не запускается; запись, которой для
+запуска редактора нужны дополнительные аргументы (`flatpak run …` у Flatpak),
+пропускается, так что такой установке всё равно нужна своя команда в PATH. В macOS
+`Devin.app` учитывается, только если её `product.json` называет Devin Desktop, поэтому
+посторонняя программа с тем же именем никогда не откроется.
 
 ## Ограничение, о котором стоит знать
 

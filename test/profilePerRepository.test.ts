@@ -71,6 +71,9 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prListCommits', 1],
   ['hosting:prListUpdates', 1],
   ['hosting:prChecks', 1],
+  // The Files tab's image preview: the commits it compares, and one image's bytes.
+  ['hosting:prDiffCommits', 1],
+  ['hosting:prFileContent', 'c'.repeat(40), 'assets/logo.png'],
   ['hosting:prComment', 1, 'Thanks!'],
   ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],
   // One handle every host accepts: Azure reads the thread, Data Center the version.
@@ -134,7 +137,8 @@ const PROVIDERS: Provider[] = [
     name: 'Azure DevOps',
     remote: 'https://dev.azure.com/acme/proj/_git/app',
     slot: 'azure',
-    ops: [...PR_OPS, UPDATE_FILES, PICKER, ['hosting:workItem', 7], ['hosting:getReferenceSummaries', [{ sigil: 'AB#', id: 7 }]]]
+    // One file's diff on demand: only Azure reads it from the host (the others have it whole or not at all).
+    ops: [...PR_OPS, UPDATE_FILES, PICKER, ['hosting:workItem', 7], ['hosting:getReferenceSummaries', [{ sigil: 'AB#', id: 7 }]], ['hosting:prFileDiff-own']]
   }
 ]
 
@@ -183,6 +187,11 @@ function invoke(repoPath: string, provider: Provider, [channel, ...args]: Provid
       .catch(() => undefined) // the fake answers {} — what matters is who asked
   // A fresh commit each time: CI answers are cached per account, and a cached one sends nothing.
   if (channel === 'hosting:ciStatuses-github') return run('hosting:ciStatuses', [`c0ffee${++ciSha}`], WORK.com)
+  // The request names its own pull request's remote, which main checks.
+  if (channel === 'hosting:prFileDiff-own') {
+    const source = { remoteUrl: provider.remote, number: 1, baseSha: 'a'.repeat(40), headSha: 'b'.repeat(40) }
+    return run('hosting:prFileDiff', sent, { file: { filename: 'src/app.ts', status: 'modified' }, source })
+  }
   return run(channel, sent, ...args)
 }
 

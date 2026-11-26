@@ -4,7 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 57
 summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, ses mises à jour (chaque push, ce qu’il a changé, ce qui est nouveau depuis votre dernière visite), et des commentaires sur une ligne de son diff.
 keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo référence titre carte au survol work item AB# numéro d’issue infobulle reference title hover card issue number fork commits de la pr refs/pull head commentaires rendus images pixel espion image bloquée cliquer pour charger tâche tableau bloc rendered comments images blocked image mises à jour itérations pushs force push rebase historique réécrit versions du diff ce qui a changé depuis la dernière visite badge nouveau marquer comme vu comparer mise à jour updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Page des pull requests
@@ -419,6 +419,108 @@ pas dans l’ordre où l’hébergeur liste les fichiers.
 
 ![L’onglet Fichiers en vue arbre : des dossiers avec leurs modifications cumulées et leurs comptes de fichiers vus, l’un replié](../../screenshots/pr-files-tree.webp)
 
+**Images.** Une image que la pull request ajoute, retire ou modifie (png, jpg, gif,
+webp, bmp, ico, avif, svg) n’a pas de diff texte à lire, donc l’onglet montre l’image
+à la place — la même vue que pour un commit : la nouvelle, l’ancienne, ou avant et
+après côte à côte et avec un curseur. Une image renommée compare son ancien chemin à la
+base avec le nouveau à la tête ; dans le diff d’une seule mise à jour, les deux têtes
+de la mise à jour. Les octets viennent de ce clone quand il a les commits, ce qui est
+gratuit et rapide, sinon de l’hébergeur avec le profil du dépôt. Limites : une image
+de plus de 32 Mo n’est pas prévisualisée ; les commentaires de ligne ne s’appliquent
+pas à une image (un SVG garde son diff texte, et ses commentaires, en dessous) ; une
+image stockée dans **Git LFS** est lue depuis l’hébergeur, puisqu’un clone n’en a que
+le pointeur — GitLab, Azure DevOps et Forgejo le résolvent, tandis que l’API de GitHub
+ne donne que le pointeur, donc là l’onglet vous envoie vers l’hébergeur ; quand
+l’hébergeur ne nomme pas la base de fusion (il se rabat sur la pointe de la branche
+cible), une note dit que l’« avant » peut inclure des changements ultérieurs sur la
+cible ; et quand ni le clone ni l’hébergeur ne peuvent fournir les octets, l’onglet le
+dit et propose de récupérer la branche de la pull request ou de l’ouvrir sur
+l’hébergeur.
+
+![Une image modifiée par la pull request, avant et après côte à côte](../../screenshots/pr-image-diff.webp)
+
+**Les chemins et votre éditeur.** La barre au-dessus du diff a un bouton pour copier le
+chemin du fichier et un menu **⋯** ; un clic droit sur un fichier ou un dossier de la
+liste ouvre le même menu. Il copie le chemin, l’ancien chemin d’un fichier renommé ou
+celui du dossier ; et il ouvre le fichier dans votre [éditeur](editor.md) (ou une
+autre application) ou l’affiche dans le gestionnaire de fichiers. Ces deux-là agissent
+sur **votre copie de travail**, pas sur la version de la pull request : ils ne sont
+actifs que pour un fichier qui y existe (un fichier que la PR supprime, ou que votre
+branche n’a pas, dit pourquoi), et quand la branche extraite n’est pas celle de la PR,
+le menu dit quelle branche vous ouvririez.
+
+**Revenir.** Quittez une pull request pour le dépôt, un autre onglet ou la PR suivante,
+et elle est telle que vous l’avez laissée à votre retour : le même onglet, le même
+fichier ouvert, le même défilement, et tout texte non envoyé — le commentaire, une
+réponse, un commentaire de ligne, une modification. Cela dure jusqu’à ce que vous
+fermiez la pull request ou quittiez l’application ; c’est gardé en mémoire seulement,
+pour les 50 pull requests les plus récentes (au-delà, l’endroit le plus ancien est
+abandonné, et tout texte qu’il contenait passe à la prochaine page de pull request que
+vous ouvrez). Fermer une PR avec du texte non envoyé demande d’abord. Si une
+actualisation trouve que la place d’un brouillon a disparu — la conversation à laquelle
+il répondait, le commentaire qu’il modifiait, le fichier où il se trouvait —, le texte
+n’est pas perdu : il attend en haut de la page d’être copié ou abandonné.
+
+### D’où vient le diff
+
+Une relecture ne vaut que ce que vaut le diff qu’elle lit. L’API d’un hébergeur n’en
+est pas une bonne source : Azure DevOps n’envoie aucun diff, seulement la liste des
+fichiers, et chacun doit être récupéré deux fois et comparé ; GitHub s’arrête à 3000
+fichiers et omet le patch d’un gros fichier ; GitLab marque un gros diff comme *trop
+gros* et n’envoie rien. L’onglet Fichiers lit donc **d’abord ce clone**, sur tous les
+hébergeurs :
+
+1. Il demande à l’hébergeur les deux commits de la pull request — où elle commence et
+   sa tête. Azure DevOps, GitLab et Forgejo nomment la base de fusion ; Bitbucket Data
+   Center nomme la base du diff auquel ses commentaires de ligne s’ancrent ; GitHub ne
+   nomme que la branche cible, dont la base de fusion avec la tête est alors calculée
+   ici (ou, sans les commits, par la comparaison de GitHub). L’aperçu d’images utilise
+   les mêmes deux commits.
+2. Quand les deux sont ici, `git diff` entre eux donne tous les fichiers, sans plafond
+   de nombre. Ce sont les mêmes deux commits que compare la page de l’hébergeur
+   lui-même, donc un numéro de ligne ici est le numéro de ligne là-bas et un
+   commentaire de ligne arrive là où vous le placez.
+3. Quand ils ne sont pas ici, ils sont récupérés **par leurs ids** depuis le distant de
+   la pull request — des objets seulement, aucune branche n’est créée ni déplacée —,
+   une fois, à l’ouverture de la page (et à nouveau avec Actualiser), avec
+   *Récupération des commits de la pull request…* au-dessus de la liste pendant ce
+   temps. Un serveur qui ne délivre pas un commit par son id (certains Azure DevOps et
+   serveurs git simples) est ignoré en silence.
+4. Ce n’est qu’ensuite que l’API de l’hébergeur est utilisée, et un fichier pour lequel
+   elle ne donne pas de diff dit pourquoi au lieu de faire comme s’il était vide
+   (ci-dessous).
+
+Un fichier lu plus tard — ouvert alors qu’il n’était *pas encore chargé*, ou après
+**Réessayer** — rejoint la liste comme les autres : la même visionneuse, et des
+commentaires de ligne dessus.
+
+Sur Azure DevOps, la voie de l’API lit les cent premiers fichiers à l’ouverture de
+l’onglet, trois à la fois et en une minute au total, et le reste quand vous ouvrez
+chacun. Une requête limitée met toutes les lectures en pause jusqu’au délai que demande
+le serveur ; une qui échoue quand même le dit, avec la raison. Qu’un fichier soit du
+texte se décide d’après ses octets, pas d’après le drapeau *binary* d’Azure — qu’il
+pose aussi sur les fichiers UTF-16 et sur certains textes non ASCII. Quand l’hébergeur
+liste moins de fichiers que n’en a la pull request (GitHub s’arrête à 3000), une ligne
+au-dessus de la liste le dit.
+
+### Quand un fichier n’affiche pas de diff
+
+| Ce qu’il dit | Pourquoi | Ce que vous pouvez faire |
+|---|---|---|
+| **Binaire** | Ses octets ne sont pas du texte : une image, une archive. L’UTF-16 et l’ancien texte à un octet sont reconnus comme du texte. | L’ouvrir sur l’hébergeur. |
+| **Trop gros pour être affiché** | Plus de 20 000 lignes modifiées ou 8 Mo de diff, ou une version de plus de 4 Mo. Son **+/−** est quand même compté quand le clone l’a lu. | L’ouvrir sur l’hébergeur. |
+| **Pas encore chargé** | Au-delà de ce que garde une lecture (environ 150 000 lignes de diff), ou, par l’API d’Azure DevOps, au-delà des cent premiers fichiers ou de la minute. | Il se charge quand vous l’ouvrez ; **Charger le diff** sinon. |
+| **Chargement impossible** | La lecture a échoué — la raison est affichée en dessous. | **Réessayer**. |
+| **L’hébergeur l’a omis** | L’API de l’hébergeur n’a envoyé aucun diff et ce clone n’a pas les commits de la pull request. | **Récupérer la pull request pour la voir en local** — les commits par id, ou la tête de la pull request d’un fork —, puis le diff est fait ici. |
+| **Seul le nom ou le mode a changé** | Un renommage ou un changement de droits : le contenu est le même. | Rien à relire dans le contenu. |
+| **L’encodage a changé** | Le même texte enregistré autrement : une marque d’ordre des octets ajoutée ou retirée, de l’UTF-16 passé en UTF-8. | Vérifier que le changement est voulu — certains outils y sont sensibles. |
+
+Dans la liste, un fichier dont le diff n’a pas été lu — pas encore chargé, chargement
+impossible, omis par l’hébergeur — affiche **—** au lieu de **+0 −0**, qui se lirait
+comme « rien n’a changé ». Un fichier binaire et un simple renommage affichent leur
+vrai **+0 −0**, et quand l’hébergeur compte quand même les lignes (GitHub le fait, même
+pour un patch qu’il omet), les comptes sont affichés.
+
 ## Commenter une ligne
 
 On pouvait déjà répondre ici à un fil de relecture, mais pas en ouvrir un, si bien
@@ -464,10 +566,11 @@ devinée :
 Un commentaire sur une ligne hors des hunks affichés n’est que dans l’onglet
 Conversation, sur tous les hébergeurs.
 
-Un commentaire saisi et non envoyé compte comme du texte non envoyé : **‹ ›** et
-Alt+flèches demandent avant de le quitter, comme pour la zone de commentaire
-principale. Regarder un autre fichier le conserve ; pour en commencer un sur une
-autre ligne, publiez ou annulez le premier.
+Un commentaire saisi et non envoyé reste avec la pull request, comme le texte de la
+zone de commentaire principale : **‹ ›**, Alt+flèches ou un autre onglet le laissent où
+il est, et il est de retour sur sa ligne quand vous revenez (voir *Revenir* plus haut).
+Regarder un autre fichier le conserve ; pour en commencer un sur une autre ligne,
+publiez ou annulez le premier.
 
 Ce que cela ne fait pas :
 
@@ -612,10 +715,10 @@ commentaire est refusé, et le message le dit.
   **Annuler** ou **Échap** le ferme, en demandant d’abord si vous avez changé quelque
   chose. Seules les lignes vides autour du texte sont retirées : le code indenté et
   un saut de ligne final de deux espaces restent tels quels. Le nouveau texte
-  s’affiche aussitôt et la page relit la pull request. Sur la page de la pull
-  request, une modification non enregistrée compte comme du texte non envoyé :
-  **‹ ›** demandent avant de la quitter. La page de l’issue n’a pas ces flèches, et
-  rien n’y demande avant la fermeture de son onglet.
+  s’affiche aussitôt et la page relit la pull request. Sur la page de la pull request, une modification non enregistrée reste avec la pull
+  request quand vous avancez avec **‹ ›** ou changez d’onglet, et fermer la pull request
+  demande d’abord. La page de l’issue ne garde rien : rien n’y demande avant la fermeture
+  de son onglet.
 - **Supprimer** demande toujours d’abord, et la question dit ce qui se passe : le
   serveur retire le commentaire pour tout le monde, et c’est irréversible. Il n’y a
   pas d’entrée d’annulation, puisque rien ne peut le faire revenir.
@@ -772,3 +875,31 @@ Ce que cela ne fait pas :
 - Le parcours est mémorisé tant que l’application tourne ; après un redémarrage,
   une pull request ouverte depuis la liste parcourt plutôt les pull requests
   ouvertes.
+- **Lire les fichiers peut lancer un fetch — une fois.** Quand les commits de la pull
+  request ne sont pas dans ce clone, la page les récupère par id depuis son distant à
+  l’ouverture, et à nouveau avec **Actualiser** — jamais après un commentaire, une
+  relecture ou une fusion, et au plus une fois par version de la pull request et par
+  session (une tentative échouée attend Actualiser). Il n’écrit que des objets : aucune
+  branche, et pas `FETCH_HEAD`, donc le « récupéré il y a … » de la barre d’outils ne
+  bouge pas. Il abandonne après 20 secondes, ou quand le transfert rampe sous 1 Ko/s
+  pendant 15, et ne demande jamais de mot de passe : l’invite de git est coupée et Git
+  Credential Manager reçoit la consigne de ne pas ouvrir sa fenêtre de connexion, donc
+  un distant qui en a besoin se rabat sur l’API. Un distant ssh utilise vos propres
+  réglages ssh tels qu’ils sont, sauf que la fenêtre de phrase secrète de ssh lui-même
+  n’est pas ouverte. Quand une autre opération git tient le dépôt (un long push) plus
+  de cinq secondes, le fetch est sauté cette fois-là et l’API est utilisée. Les
+  modifications que vous faites dans l’arbre de travail pendant qu’il tourne ne sont
+  pas perdues : le dépôt se rafraîchit une fois qu’il a fini. Un clone superficiel ou
+  partiel auquel il manque les objets se rabat sur l’API de l’hébergeur.
+- **Au-delà des plafonds**, un fichier est listé avec ses comptes et sans diff : 20 000
+  lignes modifiées ou 8 Mo de diff lus depuis le clone, 4 Mo par version lue depuis
+  Azure DevOps. Une lecture garde environ 150 000 lignes ou 48 Mo de diffs ; les
+  fichiers suivants sont **pas encore chargés** et sont lus à l’ouverture.
+- **Les fichiers UTF-16** que git dit binaires sont relus comme du texte, jusqu’à 50
+  par pull request et 2 Mo par version ; au-delà, ils apparaissent comme binaires.
+- **Les renommages** sont détectés comme `git diff -M` les détecte (50 % de similarité
+  par défaut), ce qui peut différer un peu de l’appariement de l’hébergeur lui-même.
+- **Azure DevOps par l’API** lit ses cent premiers fichiers en une minute au total ;
+  les fichiers restants quand la minute est écoulée sont **pas encore chargés**. Une
+  réponse limitée met toutes les lectures en pause jusqu’au Retry-After du serveur. Une
+  pull request de plus de 20 000 changements est listée jusque-là, et l’onglet le dit.

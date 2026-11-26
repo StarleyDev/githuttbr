@@ -4,7 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, zijn updates (elke push, wat die veranderde, wat nieuw is sinds je laatste bezoek), en reacties op een regel van zijn diff.
 keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image updates iteraties pushes force push rebase geschiedenis herschreven diffversies wat is er veranderd sinds het laatste bezoek nieuw-badge markeren als gezien update vergelijken iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Pull-requestspagina
@@ -407,6 +407,105 @@ volgorde waarin de host de bestanden toont.
 
 ![Het tabblad Bestanden in boomweergave: mappen met hun opgetelde wijzigingen en bekeken-aantallen, één ingeklapt](../../screenshots/pr-files-tree.webp)
 
+**Afbeeldingen.** Een afbeelding die de pull request toevoegt, verwijdert of wijzigt
+(png, jpg, gif, webp, bmp, ico, avif, svg) heeft geen tekstdiff om te lezen, dus het
+tabblad toont in plaats daarvan de afbeelding — dezelfde weergave als bij een commit:
+de nieuwe, de oude, of voor en na naast elkaar en als schuifregelaar. Een hernoemde
+afbeelding vergelijkt haar oude pad op de basis met het nieuwe op de head; in de diff
+van één update de twee heads van de update. De bytes komen uit deze clone als die de
+commits heeft — gratis en snel —, en anders van de host met het profiel van de
+repository. Beperkingen: een afbeelding boven 32 MB krijgt geen voorbeeld;
+regelreacties gelden niet voor een afbeelding (een SVG houdt zijn tekstdiff, en de
+reacties, eronder); een afbeelding in **Git LFS** wordt van de host gelezen, omdat een
+clone alleen de pointer heeft — GitLab, Azure DevOps en Forgejo lossen die op, terwijl
+de API van GitHub alleen de pointer geeft, dus daar stuurt het tabblad je naar de host;
+waar de host de merge-basis niet noemt (hij valt terug op de top van de doelbranch),
+zegt een notitie dat het „voor” latere wijzigingen op het doel kan bevatten; en als
+noch de clone noch de host de bytes kan geven, zegt het tabblad dat en biedt aan de
+branch van de pull request te fetchen of hem op de host te openen.
+
+![Een afbeelding die de pull request wijzigde, voor en na naast elkaar](../../screenshots/pr-image-diff.webp)
+
+**Paden en je editor.** De balk boven de diff heeft een kopieerknop voor het pad van
+het bestand en een menu **⋯**; rechtsklikken op een bestand of map in de lijst opent
+hetzelfde menu. Het kopieert het pad, het oude pad van een hernoemd bestand of dat van
+de map; en het opent het bestand in je [editor](editor.md) (of een andere app) of toont
+het in de bestandsbeheerder. Die twee werken op **je werkkopie**, niet op de versie van
+de pull request: ze zijn alleen actief voor een bestand dat daarin bestaat (een bestand
+dat de PR verwijdert, of een dat je branch niet heeft, zegt waarom), en als de
+uitgecheckte branch niet die van de PR is, zegt het menu welke branch je zou openen.
+
+**Terugkomen.** Verlaat een pull request voor de repository, een ander tabblad of de
+volgende PR, en hij staat zoals je hem liet wanneer je terugkomt: hetzelfde tabblad,
+hetzelfde geopende bestand, dezelfde scrollpositie, en alle tekst die je nog niet had
+verstuurd — de reactie, een antwoord, een regelreactie, een bewerking. Dit duurt tot je
+de pull request sluit of de app afsluit; het wordt alleen in het geheugen bewaard, voor
+de 50 meest recente pull requests (daarboven wordt de oudste plek losgelaten, en tekst
+die daar stond, verhuist naar de volgende pull-requestspagina die je opent). Een PR met
+onverzonden tekst sluiten vraagt het eerst. Als een vernieuwing ontdekt dat de plek van
+een concept weg is — het gesprek waarop het antwoordde, de reactie die het bewerkte, het
+bestand waar het bij hoorde —, gaat de tekst niet verloren: hij wacht bovenaan de pagina
+om gekopieerd of weggegooid te worden.
+
+### Waar de diff vandaan komt
+
+Een review is zo goed als de diff die hij leest. De API van een host is daar geen goede
+bron voor: Azure DevOps stuurt helemaal geen diff, alleen de lijst met bestanden, en
+elk bestand moet twee keer worden opgehaald en vergeleken; GitHub stopt bij 3000
+bestanden en laat de patch van een groot bestand weg; GitLab markeert een grote diff als
+*te groot* en stuurt niets. Daarom leest het tabblad Bestanden **eerst deze clone**, op
+elke host:
+
+1. Het vraagt de host om de twee commits van de pull request — waar hij begint en zijn
+   head. Azure DevOps, GitLab en Forgejo noemen de merge-basis; Bitbucket Data Center
+   noemt de basis van de diff waaraan zijn regelreacties zijn verankerd; GitHub noemt
+   alleen de doelbranch, waarvan de merge-basis met de head dan hier wordt bepaald (of,
+   zonder de commits, met de compare van GitHub). Het afbeeldingsvoorbeeld gebruikt
+   dezelfde twee commits.
+2. Als beide hier zijn, geeft `git diff` ertussen elk bestand, zonder limiet op het
+   aantal. Het zijn dezelfde twee commits die de eigen pagina van de host vergelijkt,
+   dus een regelnummer hier is het regelnummer daar en een regelreactie belandt waar je
+   hem plaatst.
+3. Als ze hier niet zijn, worden ze **op hun id** van de remote van de pull request
+   gefetcht — alleen objecten, er wordt geen branch gemaakt of verplaatst —, één keer,
+   wanneer de pagina opent (en opnieuw bij Vernieuwen), met *De commits van de pull
+   request worden opgehaald…* boven de lijst in de tussentijd. Een server die geen
+   commit op id uitlevert (sommige Azure DevOps- en eenvoudige git-servers), wordt
+   stilletjes overgeslagen.
+4. Pas dan wordt de API van de host gebruikt, en een bestand waarvoor die geen diff
+   geeft, zegt waarom in plaats van te doen alsof het leeg is (hieronder).
+
+Een bestand dat later wordt gelezen — geopend terwijl het *nog niet geladen* was, of na
+**Opnieuw proberen** — voegt zich in de lijst zoals de andere: dezelfde viewer, en
+regelreacties erop.
+
+Op Azure DevOps leest de API-route bij het openen van het tabblad de eerste honderd
+bestanden, drie tegelijk en in totaal binnen een minuut, en de rest wanneer je elk
+bestand opent. Een afgeremd verzoek pauzeert elke leesactie tot de wachttijd die de
+server vraagt; een die toch mislukt, zegt dat, met de reden. Of een bestand tekst is,
+wordt bepaald aan de hand van zijn bytes, niet van Azures eigen vlag *binary* — die het
+ook zet op UTF-16-bestanden en op sommige tekst die geen ASCII is. Als de host minder
+bestanden toont dan de pull request heeft (GitHub stopt bij 3000), zegt een regel boven
+de lijst dat.
+
+### Als een bestand geen diff toont
+
+| Wat het zegt | Waarom | Wat je kunt doen |
+|---|---|---|
+| **Binair** | De bytes zijn geen tekst: een afbeelding, een archief. UTF-16 en oude één-bytetekst worden als tekst herkend. | Openen op de host. |
+| **Te groot om te tonen** | Meer dan 20.000 gewijzigde regels of 8 MB diff, of een versie boven 4 MB. De **+/−** wordt toch geteld als de clone het las. | Openen op de host. |
+| **Nog niet geladen** | Voorbij wat één leesactie bewaart (zo’n 150.000 regels diff), of, via de API van Azure DevOps, voorbij de eerste honderd bestanden of de minuut. | Het laadt wanneer je het opent; **Diff laden** als dat niet gebeurde. |
+| **Kon niet laden** | Het lezen mislukte — de reden staat eronder. | **Opnieuw proberen**. |
+| **De host liet het weg** | De API van de host stuurde geen diff en deze clone heeft de commits van de pull request niet. | **Pull request ophalen om hem lokaal te zien** — de commits op id, of de head van de pull request van een fork —, dan wordt hier vergeleken. |
+| **Alleen de naam of modus veranderde** | Een hernoeming of een rechtenwijziging: de inhoud is dezelfde. | Niets te reviewen in de inhoud. |
+| **Codering veranderd** | Dezelfde tekst anders opgeslagen: een byte-ordermarkering toegevoegd of verwijderd, UTF-16 omgezet naar UTF-8. | Controleren of de wijziging bedoeld is — sommige tools letten erop. |
+
+In de lijst toont een bestand waarvan de diff niet is gelezen — nog niet geladen, kon
+niet laden, door de host weggelaten — **—** in plaats van **+0 −0**, wat zou lezen als
+„niets veranderd”. Een binair bestand en een pure hernoeming tonen hun echte **+0 −0**,
+en als de host de regels toch telt (GitHub doet dat, zelfs voor een patch die het
+weglaat), worden de aantallen getoond.
+
 ## Reageren op een regel
 
 Antwoorden op een reviewthread kon hier al; er een beginnen niet, dus een echte
@@ -450,10 +549,11 @@ andere blijft in het tabblad Gesprek, in plaats van bij een gegokte regel:
 Een reactie op een regel buiten de getoonde hunks staat op elke host alleen in het
 tabblad Gesprek.
 
-Een getypte, niet verstuurde reactie telt als onverzonden tekst: **‹ ›** en
-Alt+pijlen vragen het eerst voordat ze hem verlaten, net als bij het hoofdvak voor
-reacties. Een ander bestand bekijken houdt hem vast; om er een op een andere regel te
-beginnen, plaats of annuleer je eerst de eerste.
+Een getypte, niet verstuurde reactie blijft bij de pull request, net als de tekst van
+het hoofdreactievak: **‹ ›**, Alt+pijlen of een ander tabblad laten hem waar hij is, en
+hij staat weer bij zijn regel als je terugkomt (zie *Terugkomen* hierboven). Een ander
+bestand bekijken houdt hem vast; om er een op een andere regel te beginnen, plaats of
+annuleer je eerst de eerste.
 
 Wat het niet doet:
 
@@ -594,10 +694,10 @@ wordt geweigerd, en de melding zegt dat.
   **Annuleren** of **Esc** sluit hem, met eerst een vraag als je iets veranderde.
   Alleen de lege regels rond de tekst vallen weg: ingesprongen code en een regeleinde
   van twee spaties aan het eind blijven zoals getypt. De nieuwe tekst verschijnt
-  meteen en de pagina leest de pull request opnieuw. Op de pull-requestspagina telt
-  een niet-opgeslagen bewerking als onverzonden tekst: **‹ ›** vragen het eerst
-  voordat ze haar verlaten. De issuepagina heeft zulke pijlen niet, en daar vraagt
-  niets iets voordat haar tabblad sluit.
+  meteen en de pagina leest de pull request opnieuw. Op de pull-requestspagina blijft een niet-opgeslagen bewerking bij de pull request als
+  je verder gaat met **‹ ›** of van tabblad wisselt, en de pull request sluiten vraagt het
+  eerst. De issuepagina houdt niets vast: daar vraagt niets iets voordat haar tabblad
+  sluit.
 - **Verwijderen** vraagt het altijd eerst, en de vraag zegt wat er gebeurt: de server
   verwijdert de reactie voor iedereen, en dat kan niet ongedaan worden gemaakt. Er is
   geen ongedaan-maakitem, omdat niets haar kan terugbrengen.
@@ -753,3 +853,32 @@ Wat het niet doet:
 - Het doorlopen wordt onthouden zolang de app draait; na een herstart loopt een
   pull request die uit de lijst is geopend in plaats daarvan door de open pull
   requests.
+- **Het lezen van de bestanden kan fetchen — één keer.** Als de commits van de pull
+  request niet in deze clone staan, haalt de pagina ze bij het openen op id op van haar
+  remote, en opnieuw bij **Vernieuwen** — nooit na een reactie, een review of een merge,
+  en hoogstens één keer per versie van de pull request per sessie (een mislukte poging
+  wacht op Vernieuwen). Hij schrijft alleen objecten: geen branch, en niet `FETCH_HEAD`,
+  dus het „… geleden gefetcht” van de werkbalk verandert niet. Hij geeft op na 20
+  seconden, of als de overdracht 15 seconden lang onder 1 KB/s kruipt, en vraagt nooit
+  om een wachtwoord: de prompt van git staat uit en Git Credential Manager krijgt te
+  horen dat hij zijn aanmeldvenster niet mag openen, dus een remote die er een nodig
+  heeft, valt terug op de API. Een ssh-remote gebruikt je eigen ssh-instellingen zoals
+  ze zijn, behalve dat het wachtzinvenster van ssh zelf niet wordt geopend. Houdt een
+  andere git-bewerking de repository (een lange push) langer dan vijf seconden vast, dan
+  wordt de fetch die keer overgeslagen en wordt de API gebruikt. Wijzigingen die je
+  ondertussen in de werkmap maakt, gaan niet verloren: de repository ververst zodra hij
+  klaar is. Een ondiepe of gedeeltelijke clone die de objecten mist, valt terug op de
+  API van de host.
+- **Boven de limieten** wordt een bestand getoond met zijn aantallen en zonder diff:
+  20.000 gewijzigde regels of 8 MB diff gelezen uit de clone, 4 MB per versie gelezen
+  van Azure DevOps. Eén leesactie bewaart zo’n 150.000 regels of 48 MB aan diffs; de
+  bestanden daarna zijn **nog niet geladen** en worden gelezen als je ze opent.
+- **UTF-16-bestanden** die git binair noemt, worden opnieuw als tekst gelezen, tot 50
+  per pull request en 2 MB per versie; daarboven verschijnen ze als binair.
+- **Hernoemingen** worden herkend zoals `git diff -M` ze herkent (standaard 50%
+  gelijkenis), wat een beetje kan afwijken van de eigen koppeling van de host.
+- **Azure DevOps via de API** leest zijn eerste honderd bestanden binnen in totaal één
+  minuut; de bestanden die over zijn als de minuut om is, zijn **nog niet geladen**.
+  Een afgeremd antwoord pauzeert elke leesactie tot de Retry-After van de server. Een
+  pull request met meer dan 20.000 wijzigingen wordt tot daar getoond, en het tabblad
+  zegt dat.

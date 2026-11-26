@@ -306,9 +306,13 @@ interface PreloadApi {
     ciRunAction(repoPath: string, remoteUrl: string, tokens: unknown, runId: string, action: string): Promise<unknown>
     ciWorkflows(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     ciDispatch(repoPath: string, remoteUrl: string, tokens: unknown, workflowId: string, ref: string): Promise<unknown>
+    prDiffCommits(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prFileContent(repoPath: string, remoteUrl: string, tokens: unknown, sha: string, path: string): Promise<unknown>
     prCheckLog(repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
     prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
-    prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number, fetchMode?: unknown): Promise<unknown>
+    onPrFilesFetching(cb: (p: unknown) => void): () => void
+    prFileDiff(repoPath: string, remoteUrl: string, tokens: unknown, request: unknown): Promise<unknown>
     prListCommits(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prListUpdates(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prUpdateFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number, from: unknown, to: unknown): Promise<unknown>

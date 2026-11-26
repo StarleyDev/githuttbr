@@ -5,30 +5,55 @@
 ### Features
 
 * **remotes:** spot a password saved in a remote URL and offer to remove it ([cddfb21](https://github.com/StarleyDev/githuttbr/commit/cddfb21d1acb07ac2c06488d853fd0826e10d2df))
+  - A password or token saved in a remote URL wins over the profile's token, and an old one fails every fetch and push with "Invalid username or token". On that failure the app now says why and offers to remove it from the URL; the sidebar marks such a remote with a key.
+  - Removal asks first, says what changes, warns when the profile has no token for that host (with a way to add one first), and has no undo on purpose: undoing would write the secret back in plain text.
+  - The password no longer reaches the window: copying a remote URL, the edit dialog, web links, the workspace export, the sign-in status, subtree URLs and the repository owner all saw it before.
+  - Renaming a remote keeps its URLs as they are, never copying a password from a global insteadOf rule or overwriting a separate push URL.
 
 ## [4.56.0](https://github.com/StarleyDev/githuttbr/compare/v4.55.0...v4.56.0) (2026-11-26)
 
 ### Features
 
 * **pr:** an Updates tab that shows each push to a pull request ([f2e4cc8](https://github.com/StarleyDev/githuttbr/commit/f2e4cc80826d8763a98b36002fd15be29ac3e91a))
+  - The pull request page has an Updates tab: every push, newest first, with its date, who pushed and the commits it added or removed; a force push or rebase is marked as history rewritten, and a retarget on Azure as such.
+  - "View changes in this update" shows only what that push changed, compared here from its two heads (fetched by id when missing), and says so when it has to fall back to the host's comparison from the common base.
+  - Updates that arrived since your last visit carry a New badge.
+  - Azure, GitLab and Bitbucket Data Center report pushes natively; on GitHub and Forgejo they are inferred from the commits, and the tab says so.
+  - Every diff the app reads now forces the a/ and b/ prefixes, so a global diff.noprefix no longer hides added and binary files.
 
 ## [4.55.0](https://github.com/StarleyDev/githuttbr/compare/v4.54.0...v4.55.0) (2026-11-26)
 
 ### Features
 
 * **pr:** show comments formatted, and close the pull request gaps ([6c37fda](https://github.com/StarleyDev/githuttbr/commit/6c37fdac17e7dcf35450b625adc346ef254a310b))
+  - Pull request and issue comments render as Markdown through a strict profile: no scripts, styles or forms, web and mail links only. Images from other sites wait for a click (a setting in Security can load them always), GitHub comments use GitHub's own HTML, and a very long or deeply nested comment falls back to plain text instead of stalling the window.
+  - The editor's Preview matches what the comment will look like once posted.
+  - Replying works on a GitHub review thread whose first comment was deleted, and warns when the reply lands in a pending review.
+  - A fork pull request's commits can be fetched into a private ref the graph shows, never into a branch name.
+  - On Azure, your comments are recognised by account id or sign-in name.
+  - Page headers no longer slide up before they pin.
+  - The handbook pages for workspaces, branch cleanup, pull requests and security are current in every language.
 
 ## [4.54.0](https://github.com/StarleyDev/githuttbr/compare/v4.53.0...v4.54.0) (2026-11-26)
 
 ### Features
 
 * **pr:** review pull requests in the app, and clean up local branches ([3894593](https://github.com/StarleyDev/githuttbr/commit/3894593569ed2c30c62973209b9f5ac9ce01de43))
+  - Pull requests: comment on a line of the diff, edit and delete your own comments, a Commits tab, the files as a tree with viewed marks that reset when a push changes a file, a count of conversations per file, and cards with the title of #⁠123 / AB#⁠123 references. The page uses the whole tab.
+  - Every comment box is a Markdown editor: toolbar, shortcuts, Write/Preview, @mentions and #references, buttons on the right.
+  - Tools → Clean up local branches: gone, merged and squash-merged branches, never one whose commits exist nowhere else without a red confirm; undoable.
+  - Page headers and dialog buttons stay in view while the body scrolls; page chips carry a word; PR icons follow the icon colours setting.
+  - The window never navigates away from the app, and only web and mail links open outside it.
 
 ## [4.53.0](https://github.com/StarleyDev/githuttbr/compare/v4.52.1...v4.53.0) (2026-11-25)
 
 ### Features
 
 * **pr:** go to a pull request's branches, and right-click in text fields ([a679cc4](https://github.com/StarleyDev/githuttbr/commit/a679cc498f04576137aae0e06cb78c0a8baae31f))
+  - From a pull request, "Go to source branch" and "Go to target branch" (header buttons and links in the Branches field) check the branch out and open the repository on it. A branch that only exists on the server is fetched alone, never the whole remote. A copy button sits next to each name, fork pull requests are recognised on GitLab, Azure and GitHub, and the checkout can be undone.
+  - Text fields get a right-click menu: cut, copy, paste, select all and spelling suggestions.
+  - The PR page stacks its sidebar by the panel's width and keeps the merge bar in view; Mission Control spins the button that is actually running.
+  - The pull requests handbook page is now in 14 more languages.
 
 ## [4.52.1](https://github.com/StarleyDev/githuttbr/compare/v4.52.0...v4.52.1) (2026-11-25)
 
@@ -41,6 +66,10 @@
 ### Features
 
 * **platform:** a pull requests page, clearer token checks, and Electron 45 APIs ([f0bfceb](https://github.com/StarleyDev/githuttbr/commit/f0bfceb223b020b85af1b607b7d210377dc8539f))
+  - Pull requests page: open, draft, merged and closed PRs with search, author, reviewer and target-branch filters, CI status, and ‹ › / Alt+←/→ to step through the filtered list from a PR's detail.
+  - Token checks tell a refused token from a server that could not be reached, and the server address now comes before the token.
+  - The keychain uses Electron's async safeStorage and refuses a basic_text store on Linux; the vault keeps drafts and stops exports when it cannot write.
+  - xterm.js 6, web-tree-sitter 0.27 with official grammars (signature changes in 18 languages), React 19, zustand 5, framer-motion 14, lucide 1.x.
 
 ## [4.51.0](https://github.com/StarleyDev/githuttbr/compare/v4.50.0...v4.51.0) (2026-11-25)
 
@@ -83,6 +112,10 @@
 ### Features
 
 * **settings:** import only the parts you choose, translating repository paths between machines ([4a510b5](https://github.com/StarleyDev/githuttbr/commit/4a510b573db9397b8467b1ae494e307c34c1964c))
+  - Open repository greets with the same art as a new workspace, and its Clone, Create, Create group and Scanned repositories dialogs have a Back arrow to it.
+  - Scanned repositories keeps its header and buttons fixed while only the list scrolls; a new group's page offers it too.
+  - Settings hints sit between a section title and its control.
+  - "Git" is capitalised where it names the program, in every language.
 
 ## [4.47.0](https://github.com/StarleyDev/githuttbr/compare/v4.46.0...v4.47.0) (2026-11-25)
 
@@ -91,6 +124,12 @@
 
 * **avatars:** use an icon from the profile's repositories as its picture ([c184ea8](https://github.com/StarleyDev/githuttbr/commit/c184ea8b3ffe6daf3d66c71e2753eba9fe1016d4))
 * **settings:** create profiles without switching, name AI providers, flag a weak Linux keychain ([b3674e2](https://github.com/StarleyDev/githuttbr/commit/b3674e2898e1ffb18df5ab8d1d106181deb0bc52))
+  - Settings → Profile → "New profile" creates the profile to edit it, not to switch to it: the app keeps the profile in use and the bar shows the new one. The title-bar switcher still switches, as before.
+  - The AI page's "Providers" section says provider throughout ("Add provider", "Default provider"…), not account.
+  - Settings → Security warns when Linux has no keyring and Electron falls back to basic_text, where tokens are scrambled with a fixed password. It only warns: nothing already saved becomes unreadable.
+  - The license badge opens the license of the installed version's tag, not main's.
+  - A failed settle of the general AI's keys is logged (it retries on the next unlock).
+  - The model picker's list-or-typed decision moves into lib/modelPicker with tests, and the repository-chat ignore test runs in a repository of its own, so it passes in a worktree too.
 * **settings:** set up every AI on the AI page, and stop the model picker jumping ([6fcd2e5](https://github.com/StarleyDev/githuttbr/commit/6fcd2e573dfd4449526dac981d2b5d6ccc831606))
 
 ## [4.46.0](https://github.com/StarleyDev/githuttbr/compare/v4.45.0...v4.46.0) (2026-11-24)
@@ -99,6 +138,12 @@
 ### Features
 
 * **settings:** split profile and app settings, and share one AI across profiles ([42ae873](https://github.com/StarleyDev/githuttbr/commit/42ae873a0fcf1228892e935f9f800baad20db95a))
+  - The sidebar is two groups: "This profile" (Profile, Integrations) and "App" (the rest, each saying it applies in any profile).
+  - A profile bar on the profile pages picks the profile being edited without changing the one in use; an amber band says when they differ, with "Use this profile". New and delete live there, delete confirms.
+  - Integrations names the profile on each card, on the link button ("Link to the profile Work") and in the success toast.
+  - One general AI serves every profile (AppSettings.ai). A profile may use its own (Profile.ownAI) from its Profile page; going back confirms and removes its accounts. How the AI writes (commit style, instructions, repository chat...) stays per profile.
+  - Migration keeps everyone's setup: the in-use profile's AI becomes the general AI, a profile with a different AI keeps it as its own. Keys move to a "@general-ai" keychain entry, settled in the main process on the first unlock so no copy is left behind and none is lost.
+  - Section titles in Settings carry the accent and a rule to the edge.
 
 
 ### Bug Fixes
@@ -140,6 +185,10 @@
 
 * **settings:** protect a settings export with an optional password ([54738c0](https://github.com/StarleyDev/githuttbr/commit/54738c01553e29202c04037c67c872f5d0a204b3))
 * **ui:** keep a dialog's title and close button fixed while its content scrolls ([8e2c0e9](https://github.com/StarleyDev/githuttbr/commit/8e2c0e95d9a8a5f809ff11e4ad08028b5590f333))
+  - Dialogs built for a fixed header — a root that fills the height with a list that scrolls on its own — finally get that height: the conflict and teammate radars, the time machine, range-diff and local CI (and Settings, which already worked this way). Only their list moves now.
+  - Every other dialog scrolls as a whole with its title pinned: an <h3> or .modal-title-row at the top sticks, its gap below turned from margin into padding so the resting layout is unchanged.
+  - Dialogs rendered as a fragment (title, label, input) stay in normal flow, so inputs and buttons do not stretch.
+  - The close button sits above the pinned title; the stacked dialog and the theme dialog get the same frame.
 
 ## [4.41.0](https://github.com/StarleyDev/githuttbr/compare/v4.40.3...v4.41.0) (2026-11-24)
 
@@ -147,15 +196,50 @@
 ### Features
 
 * **commit-edit:** open the editor in the centre pane, with the code editor ([cc50920](https://github.com/StarleyDev/githuttbr/commit/cc50920451055b87800cdf547d094f266e1bdce9))
+  - Esc or the header's close button leaves; with unapplied edits it asks first. Clicking outside can no longer throw an edit away, as it could in the modal.
+  - The draft lives in the ui store, so switching repository tabs (which unmounts the pane) keeps it; opening another commit over unapplied edits asks before replacing them.
+  - The file editor is the file viewer's own editor, extracted as CodeEditor: syntax colours, plus line numbers here. FileViewer uses it unchanged.
+  - The commit message follows the code font size setting, like the editor.
+  - Handbook page updated in all 16 languages, docs-map entry removed (it is no longer a modal), both screenshots recaptured.
 * **compare:** open branch comparison in the centre pane, all at once or by commit ([bfbb418](https://github.com/StarleyDev/githuttbr/commit/bfbb4180ae9a21df9d5c660caefd7b7d30fb1f2d))
+  - Two modes, one click apart: All changes (the combined diff, as before) and By commit (one commit's diff). Clicking any commit shows just that commit.
+  - The changed files are listed beside the diff with added/removed counts, split from the diff by lib/diffFiles (renames, binaries, quoted paths).
+  - Refs, mode, commit and file live in the ui store, so switching repository tabs comes back to the same place.
+  - Every entry point (toolbar, palette, ref menu, branch drop, conflict and teammate radars) goes through lib/branchCompare. It refuses while the conflict resolver or commit editor is open in that repository, since the comparison would open behind it; opening a file there closes it instead.
+  - Escape closes the view, except an Escape the diff's find box handled.
+  - The "commits in / not in" sentence was built by concatenation; it is one interpolated key now. Handbook section rewritten in every language, a by-commit screenshot added, docs-map entry dropped (no longer a modal).
 * **settings:** search every settings page from the header ([09636af](https://github.com/StarleyDev/githuttbr/commit/09636af720376805c27ba08741036804bdf46505))
+  - Results are grouped by page, with each setting's description; the sidebar counts the matches per page and dims the pages that have none.
+  - It matches the label, the description and the page name, ignores case and accents, needs every word typed, and reads the interface language and English together — a Portuguese reader typing "font" still finds it.
+  - A result (or Enter for the first) opens its page — and the right Themes tab — scrolls to the setting and flashes it. Esc clears the search first.
+  - Only the open page is ever rendered, so the search runs over an index in lib/settingsSearch.ts; a test walks the components each page renders and fails when a labelled setting is missing from it.
+  - The code and terminal font-size sliders get a name (aria-label/title): they had none, and the terminal one announced itself as "Terminal theme".
+  - Handbook section in all 16 languages, a screenshot, and a README line.
 * **site:** redesign the landing page and serve it from git.huttbr.com ([545faf7](https://github.com/StarleyDev/githuttbr/commit/545faf7c0851ab1fecd828dcc455a55ae66b65d8))
+  - Hero with the mascot, the graph in a window frame and a stats strip whose counts come from the build (locales, handbook pages), never typed.
+  - A showcase row per headline feature beside its screenshot, reusing the already-translated feature.<id>.* copy; the cards keep the rest.
+  - Hosts, repository chat with the AI providers, security, themes, an honest disclaimer, and a download card per platform with a button per installer, resolved from the latest release and limited to github.com URLs.
+  - A language menu in the header, alongside the footer switcher.
+  - 25 new site keys in all 16 locales; the macOS note no longer claims the build is signed and notarised, which this fork's build is not.
+  - SITE_URL now points at https://git.huttbr.com (Cloudflare).
+  - The share card is recaptured: it still showed the app as Gitcito.
 
 
 ### Bug Fixes
 
 * **compare:** keep the comparison fast, current and in sight ([1f43b99](https://github.com/StarleyDev/githuttbr/commit/1f43b99a431422d5112a5589561de9cea5c0795f))
+  - App selected the whole compareView, which the view rewrites on every click and keystroke, so the whole app re-rendered; it now selects the repository only and the view reads its own state.
+  - Jumping to a commit in the graph (sidebar branch, palette, code search) closes a comparison open in that repository: it covers the graph, so the jump landed out of sight.
+  - Typing a ref compares once, 300 ms after the last keystroke, instead of on every key; the first comparison still runs at once. A refresh that moved a ref (fetch, pull, commit) compares again.
+  - A commit whose diff fails to load says why instead of spinning forever; picking it again retries.
+  - File rows are buttons, so the list is reachable by Tab.
+  - hosting.md links the branch comparison instead of naming the old modal.
 * keep the commit editor and settings search fast and their reveal reliable ([42f2845](https://github.com/StarleyDev/githuttbr/commit/42f28455d59209a8de52e8be6b6b54b323833a3e))
+  - The app re-rendered on every keystroke in the commit editor: App selected the whole commitEditView, which the draft mirror replaces each time. It now selects the repo path and sha only, and the editor reads its saved draft once, on mount.
+  - The code editor re-highlighted every line per keystroke — ~770 ms for a 1.75 MB file, which the commit editor accepts up to 2 MB. Past HUGE_LINES (5000, now shared from lib/highlight with the file viewer) it shows the text uncoloured.
+  - Settings search: the reveal's canceller ran as the effect cleanup, which the clearReveal re-render triggered at once — a row rendering late was never scrolled to, and the flash was never removed. It lives in a ref now.
+  - Searching no longer unmounts the open page; it is hidden, so unsaved local state (a theme being edited) survives a look at the results.
+  - Results are announced as buttons again (listitem role removed); the code editor's text area is labelled with the file name; the commit editor ignores an Escape something else already handled.
 
 ## [4.40.3](https://github.com/StarleyDev/githuttbr/compare/v4.40.2...v4.40.3) (2026-11-24)
 
@@ -209,6 +293,8 @@
 ### Bug Fixes
 
 * **pr:** prefill a new pull request from the remote base, not the local branch ([eb30f86](https://github.com/StarleyDev/githuttbr/commit/eb30f862bc64c3e00d3a5370352952157a9bae3b))
+  - refreshPrBase (write, exclusive lock): a quiet, non-interactive `git fetch --no-tags <remote> <target>` with a 10 s timeout; never throws, returns whether the ref was refreshed.
+  - prComparison (read): compares against refs/remotes/<remote>/<target>, falling back to the local target when the remote has no such branch; `log --no-merges base..source` and `diff base...source`.
 * **updater:** treat a release without this platform's update file as no update ([97d4137](https://github.com/StarleyDev/githuttbr/commit/97d413776935caf4db25b4304d7fa292044e3667))
 
 
@@ -274,6 +360,11 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * match remotes on their encoded path and exact cloud hosts; resolve a provider by its full server address ([26204dc](https://github.com/StarleyDev/githuttbr/commit/26204dc519ad6de9e5ccc8806a64314391bf9331), [46e8288](https://github.com/StarleyDev/githuttbr/commit/46e828845b02bce3d9d056e1e0fee4a9f2b468ee), [b663d07](https://github.com/StarleyDev/githuttbr/commit/b663d0732ec39a89b649927ad78f5ae115477925))
 * keep private servers, profile names and stale tokens out of reports and files ([acd6e34](https://github.com/StarleyDev/githuttbr/commit/acd6e34e7cefb95e024bf28d33671dcd87bbf211), [00a9218](https://github.com/StarleyDev/githuttbr/commit/00a92181d18439b83a72e6c6fb10a7428696a56c))
 * harden appimage paths, packaged cli shims and mac notarization ([ca5020c](https://github.com/StarleyDev/githuttbr/commit/ca5020c33544778779c3862aac875899060cbaba))
+  - AppImage: never persist a path under the per-launch /tmp mount. "Install 'gitcito' command" refuses with a translated reason; the bundled textconv is offered disabled and setDiffDriver refuses a mount path. Stale links and textconv entries an older AppImage wrote are flagged, with a removal action.
+  - Packaged shims: after-pack writes cli/app-binary with the real executable per platform; gitcito and gitcito-textconv run it with ELECTRON_RUN_AS_NODE and fail closed instead of falling back to a node on PATH. macOS opens the bundle the shim lives in, not an app looked up by name.
+  - macOS privileged install: every path is single-quoted for the root shell.
+  - Warn on stderr when the app runs with --no-sandbox; document the AppImage sandbox behaviour and the .deb AppArmor/RunAsNode limitation.
+  - Release workflow: fail a signed mac build whose notarization secrets are empty.
 * stop saved tokens and ai keys from being silently wiped; atomic settings writes and safe recovery from a damaged settings file ([c74cb3a](https://github.com/StarleyDev/githuttbr/commit/c74cb3a2428bd1e440cf011d573c4b6bc12a7283), [da849a0](https://github.com/StarleyDev/githuttbr/commit/da849a021abfe80231a74094a1ed1cbc20b214f6), [c320269](https://github.com/StarleyDev/githuttbr/commit/c32026937f89318b83d6c717d093faf7ad6f9076), [20198b0](https://github.com/StarleyDev/githuttbr/commit/20198b0d8297f2717658d6b6d4900ce9d9ff0542), [a5f682d](https://github.com/StarleyDev/githuttbr/commit/a5f682df81540154b99c2147f25550173dfaa216), [0d60b44](https://github.com/StarleyDev/githuttbr/commit/0d60b4485de103422b8f41450b32b0cc9f04ea6d))
 * keep avatar lookups off the keychain and stop caching 404s as misses ([b49a885](https://github.com/StarleyDev/githuttbr/commit/b49a8854e2436df0a6652078e777227bbc015e3d), [d09f66b](https://github.com/StarleyDev/githuttbr/commit/d09f66b81b76f63dba0564faa180588dc053fb31), [be2597c](https://github.com/StarleyDev/githuttbr/commit/be2597c4cfeec2417d2b551510767dab5450a0b9))
 
@@ -295,10 +386,37 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * catch appimage mount paths anywhere on a textconv line ([c7bb0b0](https://github.com/StarleyDev/githuttbr/commit/c7bb0b0bc40efd520f55235c3b355db1981e2711))
 * docs guard sees wrapped palette entries, map the cli commands ([9ca94d5](https://github.com/StarleyDev/githuttbr/commit/9ca94d51b604d8413ea216af17d0a4473ce7dc1a))
 * keep background reads read-only and explain a refused move-aside ([c3fffa2](https://github.com/StarleyDev/githuttbr/commit/c3fffa29f2349435b03e818200c189d0677f82bc))
+  - remove the persisted tombstones (pendingSecretClears, loadPendingClears, flushTombstones, forgetPendingClears). Clears made with the keychain off hold for the session and reach the store when the keychain is turned on in that session; a stale list in the file is dropped, never obeyed
+  - readers outside the settings queue (profileAuth, allProfileAuth, activeProfileAiKey) never write; the plaintext-token migration runs only from the queued settings:unlock
+  - the keychain question settles only on a main-frame, cross-document navigation, not on the PDF preview's iframe loading
+  - a move-aside refused because the token store could not be copied answers { refused: 'secrets-copy', dir } and the boot screen explains it
 * refuse appimage mount paths for cli and textconv ([67cc87b](https://github.com/StarleyDev/githuttbr/commit/67cc87b5e0223252fe2a0b1ee1cf54086f6818ac))
+  - cli: install refuses with a translated reason under an AppImage; a stale gitcito link into a mount is warned about once per launch and removable from the palette (re-read before unlink, never escalated).
+  - attributes: bundled converters are disabled under an AppImage, setDiffDriver refuses a mount path, and an existing stale driver is flagged with a Remove button (no undo).
+  - handbook: cli, attributes and security notes, including how to find stale textconv entries in other repositories.
 * settle abandoned keychain asks and keep keychain-off clears for the session ([905b2f1](https://github.com/StarleyDev/githuttbr/commit/905b2f13612459575972c71a5080b00f93640306))
+  - a consent question whose page reloads, crashes or is destroyed settles as unanswered, so settings:get is never stuck behind it
+  - clears made with the keychain off persist as slot ids (pendingSecretClears) and reach the store at the next load or write, surviving a restart
+  - the keychain-enable move bumps the generation on arrival, not in the queue
+  - moving a damaged settings file aside copies the secrets first, or refuses
+  - a failed directory fsync after the rename never fails the write
+  - a fresh store (keychain usable, or first created by a save) counts as served
+  - separate retry budgets for busy reads and parse failures
+  - textconv globs into /tmp or before a mount name count as ephemeral
+  - a refused save on a damaged file is toasted once, in every locale
+  - a failed read-back after an import no longer hides why the import failed
 * stop settings imports and saves from wiping saved tokens ([4c22542](https://github.com/StarleyDev/githuttbr/commit/4c225420b04337ed325fdbabd0855a920d5ee6f6))
+  - Importing a tokenless export (the default) with Settings unlocked cleared every token and AI key. An import now merges; a file carrying credentials asks Add to mine / Replace all / Cancel, and only Replace all overwrites.
+  - A debounced save scheduled before settings:unlock but landing after it was read as "clear everything". get/unlock replies carry a generation, saves echo it, and only a save from the latest reply can clear; persist sends the state at fire time and a pending save is flushed before a load.
+  - The settings JSON and the token store were written in place: torn reads, interleaved writes, and a half-written file read as defaults. Writes are now atomic (owner-only temp file, fsync, rename) and serialized per path; a file that exists but cannot be parsed is retried, then an error, and the window says so instead of spinning.
 * stop settings saves from overwriting unreadable files or reviving tokens ([ff6e9ad](https://github.com/StarleyDev/githuttbr/commit/ff6e9adc3793a0af8e0417f47a678863514bf455))
+  - refuse every settings save until a get/unlock has answered, and while the file is known unparseable; the renderer store also ignores changes until it has loaded, so the boot error screen can no longer save defaults
+  - pass the load failure kind (parse, io, other) through ipc; only a parse error is called damaged, every error offers a retry, and a damaged file can be renamed aside (never deleted) to start fresh; locked files retry ~2 s
+  - refuse "replace all" imports while the keychain is off instead of reporting success and keeping the old tokens
+  - decide whether a save may clear credentials when it arrives, take the reply generation before reading, serialize settings reads and writes, and make reloads wait for saves in flight
+  - with the keychain off, a cleared token is gone for the session and its stored copy is deleted when the keychain is turned on
+  - only a reply carrying the decrypted store lets a blank mean a clear, and moving session tokens into the store starts a new generation
+  - write through a symlinked settings file and fsync the directory after the rename
 
 ## [4.37.1](https://github.com/StarleyDev/githuttbr/compare/v4.37.0...v4.37.1) (2026-11-23)
 
@@ -308,6 +426,12 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * bump electron to 43.8.12 and audit it in ci ([3084669](https://github.com/StarleyDev/githuttbr/commit/3084669d1f45228ac435877ef475153871b1b47d))
 * drop cwd-relative search path entries before main spawns anything ([00da47b](https://github.com/StarleyDev/githuttbr/commit/00da47b3a670fd83a00eb8406df499d502743b28))
 * harden git argument, credential redaction and clone paths ([c34c7c1](https://github.com/StarleyDev/githuttbr/commit/c34c7c1bdabe7a7e864cc98abaa3db2a564319d7))
+  - remoteBranches runs `ls-remote --heads -- <url>` from a neutral cwd and refuses option-shaped URLs; every network call (fetch, push, ls-remote, subtree, submodule, remote add/edit, bundle fetch) now puts `--` before its positionals, and withRemoteAuth refuses an option-shaped remote
+  - one shared redaction helper (shared/redact.ts) takes URL userinfo up to the last `@`, so a token holding `/` no longer leaks; it also masks bare GitHub, GitLab, Atlassian and Bitbucket DC token shapes. Used by the op log, toasts, the repo-chat result and bug reports
+  - Forgejo job-log and Azure build-log URLs refuse `..` segments and are checked again after normalisation, so the token stays on its instance
+  - the multi-branch push secret guard holds a branch whose outgoing files could not be listed instead of treating it as clean
+  - clone refuses folder names that escape the parent, name a Windows device or read as an option; the batch dialog sanitises server names
+  - the handbook states that a profile token reaches repository hooks
 * ignore --shot in packaged builds ([216b753](https://github.com/StarleyDev/githuttbr/commit/216b7538fe0f0fe28c42bb4162d2901c44e8c6b0))
 * set electron fuses and drop dyld entitlements on macos ([bacc2cc](https://github.com/StarleyDev/githuttbr/commit/bacc2cce5f2d0977a52fd654a43069e9d0ec764b))
 
@@ -437,6 +561,9 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Bug Fixes
 
 * keep only a Forgejo job log's tail in memory, and keep its panel on its check ([b78b6e8](https://github.com/StarleyDev/gitcito/commit/b78b6e803512407001a7ccd6beaed4714f33c140))
+  - The whole log was read into the main process and only then cut to its last 512 KB, so a job that printed hundreds of megabytes allocated all of it. readTail streams the body and keeps just the tail, trimmed to a whole line.
+  - The open log was tracked by position in the checks list, so a refresh that reordered the list showed another check's log. It is tracked by the check's link now.
+  - The GitHub notifications doc comment sat above forgejoInbox; it is back on the function it describes.
 * no burst of review notifications after a profile switch ([362957e](https://github.com/StarleyDev/gitcito/commit/362957eaa24ddaad74128a46cfa99369b5db4b74))
 * tell a cancelled test run apart from the next one ([7c5149f](https://github.com/StarleyDev/gitcito/commit/7c5149ff9b59d846d38e24d4d7e0ab0b58fe9210))
 * translate the notification reasons ([acd023a](https://github.com/StarleyDev/gitcito/commit/acd023a839852f4915f1bb29918157d151684867))
@@ -452,6 +579,12 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Bug Fixes
 
 * run tests without a shell, and make a stopped run look stopped ([72b5d45](https://github.com/StarleyDev/gitcito/commit/72b5d45677ea255484048849b949eee5cde1c98e))
+  - Windows ran the runner's .cmd shim through a shell, which concatenates arguments unescaped: a space in the user's temp path broke every run, and an & in a repository folder's name executed a command. The runner's own JS entry (its package.json bin) now runs through Node directly — the Node on PATH, else Electron's as Node — with no shell anywhere.
+  - A cancelled run came back as "the runner finished without a report" and replaced the last result; it now reports itself cancelled and is dropped.
+  - No runner installed: an untranslated English error toast from the palette. The store re-detects before running and the panel's translated text explains; main returns 'unavailable' instead of throwing.
+  - The error chip and the Problems command open the dock on Problems, not on whichever tab was used last.
+  - A test at the root no longer takes its failing line from another file of the same name in a subfolder.
+  - The runner is re-detected when the window regains focus; rows key by position; the report goes to a private mkdtemp directory; a timeout says so; the Tests section is translated into every locale.
 
 ## [4.30.0](https://github.com/StarleyDev/gitcito/compare/v4.29.0...v4.30.0) (2026-11-20)
 
@@ -460,6 +593,10 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 
 * a desktop notification when a pull request starts waiting for your review ([da21fa3](https://github.com/StarleyDev/gitcito/commit/da21fa3098df8cf0c09ac566ba8d2176c86846a9))
 * issues, milestones, releases and notifications on Forgejo ([88dade2](https://github.com/StarleyDev/gitcito/commit/88dade2155acfdaf39e6d10cc69831c2a13b8946))
+  - issues: list, detail with comments, close/reopen, create;
+  - milestones: list (their page is /owner/repo/milestone/<id>, which the API does not send) and the issues in each;
+  - releases: the most recent, a draft counted as unpublished;
+  - notifications: the active profile's Forgejo inbox joins GitHub's, newest first, its ids prefixed fj: so marking one read goes back to Forgejo.
 * read a Forgejo Actions job's log in the PR page's Checks tab ([8d7dce1](https://github.com/StarleyDev/gitcito/commit/8d7dce1d50a77cb462c5f18203ec73d460b08d86))
 
 ## [4.29.0](https://github.com/StarleyDev/gitcito/compare/v4.28.0...v4.29.0) (2026-11-20)
@@ -539,7 +676,19 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * explain missing token scopes, and unwrap errors in Integrations ([9dccc0c](https://github.com/StarleyDev/gitcito/commit/9dccc0cbdb1e8eaa3b83cba5e3ef263cf23ff7bd))
 * keep git's messages in English whatever the system locale ([92bd7f9](https://github.com/StarleyDev/gitcito/commit/92bd7f9a6fbe0325dfb7299e7abb65764415fc0e))
 * keep GitLab and Forgejo tokens on their own instance in every path ([56378e3](https://github.com/StarleyDev/gitcito/commit/56378e34651eeb1e55e2aa5a6ad3388b6d7ee999))
+  - Clone and the clone dialog's ls-remote checked the instance for GitLab only: with two profiles on two Forgejo servers, the active profile's token could be sent to the other server. Forgejo gets the same check.
+  - tokenForProvider took the instance from the renderer's `org` but the token from the active profile; it now refuses an instance that is not the active profile's.
+  - The onboarding wizard reuses the Integrations page but dropped the GitLab address and the Forgejo address and token. It also stripped an import's secrets with a hand-kept list that missed the Forgejo token and AI account keys; it now uses the shared strip and detection.
+  - Remove the unused activeProfileToken, which bypassed the instance rule.
+  - Forgejo compare links keep slashes in branch names.
+  - Read settings at startup so the instance registry is filled for runs without a window.
 * list every file of a large PR, and tidy the PR page ([2ac5e6b](https://github.com/StarleyDev/gitcito/commit/2ac5e6b259e85cbef9ee3bba80396634834ff231))
+  - GitHub caps per_page at 100, so `?per_page=300` listed only the first 100 files of a larger PR while the sidebar counted all of them. GitLab's diffs had the same cut. Both now follow the pages (up to 30).
+  - The header read "wants to merge" on merged and closed PRs; it now says what happened.
+  - A GitLab MR with 100+ commits showed "100 commits"; it shows "100+".
+  - Avatars are drawn only from https URLs.
+  - Remove the six translation keys only the old modal used.
+  - README: the PR line describes the page.
 * match hosting providers at a host boundary, and surface GitLab owner errors ([09e2aee](https://github.com/StarleyDev/gitcito/commit/09e2aee3a055c4048241c995098a74e48d7b2118))
 * resolve the remote sign-in check per GitLab/Forgejo instance ([f99ded7](https://github.com/StarleyDev/gitcito/commit/f99ded7c71c011322b180b1ccacc2e6993ea91ab))
 * restore a brace lost when merging the stylesheet ([9bc8194](https://github.com/StarleyDev/gitcito/commit/9bc81949f0b7546032f5c7c2c13ece27815d1c5e))
@@ -553,26 +702,56 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 
 * **diff:** wrap long lines in the unified view too ([b9c033f](https://github.com/MyAppDesk/gitcito/commit/b9c033f467851e8546bd743bde087ed379a0c8a9))
 * **graph:** offer what GitKraken does when a branch is dropped on another ([813b5cb](https://github.com/MyAppDesk/gitcito/commit/813b5cb737a5e95f9a5c9bc6aa4c168418c73aca))
+  - Fast-forward {target} to {source}, first when it applies: the target is a local branch behind the source and not the one checked out (merge already fast-forwards that one). Moves the ref without a checkout; undoable.
+  - Interactive rebase {source} onto {target}…, when the source is checked out.
+  - Push {source} to {target's remote branch}: `local:remote` refspec, never forced, behind the same secret and checklist guards as any push.
+  - Reset {source} to {target}…, when the source is checked out, through the graph's own reset dialog (modes explained, dirty tree warned, confirmed).
+  - Create pull request — or, when the source is not on the remote yet, push it first and then open the form.
 * **profiles:** choose the profile picture — account, icon or your own image ([a27215b](https://github.com/MyAppDesk/gitcito/commit/a27215b42eb75e8a13d0929fd832bbe1c453c5e7))
+  - Settings → Profile → Avatar offers four sources: automatic (Gravatar or the generated face, as before), the connected GitHub/GitLab account's picture, an icon on a colour, or an image file
+  - An image is decoded and re-encoded through nativeImage, scaled to 256 px and stored as userData/avatars/<profile id>.png — not in the settings JSON. It travels with the settings export, comes back on import, and is deleted with its profile
+  - Everything read from a settings file is validated: profile ids that could leave the avatars folder, non-PNG or oversized data URLs, unknown icons, non-hex colours and non-https account pictures are refused
+  - "Use my GitHub/GitLab noreply email" under the git identity, built from the account id the integration now returns — the address that makes a host show your picture on commits without publishing your real one
+  - The title-bar switcher and profile list draw the chosen picture, falling back to the automatic avatar when it cannot be shown
+  - Handbook section in every locale and a screenshot entry
 * **toolbar:** show a loading signal while a switched-to repository refreshes ([54f1737](https://github.com/MyAppDesk/gitcito/commit/54f1737dd9e7c404fbacbc2cc7a70fe70d0903a3))
 * **worktrees:** lock, move, repair and forget worktrees, and show what each one holds ([41eb3e2](https://github.com/MyAppDesk/gitcito/commit/41eb3e2cbe981fc3dd04d80f1414a687aff4ae87))
+  - Each linked worktree row shows uncommitted files (●N) and commits ahead/behind its upstream, read by a `git status` inside that worktree when the section opens, its HEAD moves or the window regains focus — never on the refresh tick
+  - Lock with a reason (shown on the lock), unlock; locked worktrees cannot be moved or removed from the menu
+  - A worktree whose folder is gone is marked missing: reconnect it with `git worktree repair`, or forget missing ones with `git worktree prune` (eraser in the section header)
+  - Move a worktree, refused while it is locked or open in a tab, since tabs and layouts are keyed by path
+  - Remove asks git first: a clean worktree gets the plain confirm and an undo; one with uncommitted changes gets "Discard and remove", with no undo. Both say that ignored files (.env) are deleted too — undo cannot restore them
+  - Undo for add, remove (clean only), lock, unlock and move
+  - New worktree-care playground scenario and screenshot entry; handbook section in every locale
 
 
 ### Bug Fixes
 
 * **changelog:** show the installed build's notes when GitHub has not published it yet ([687a11f](https://github.com/MyAppDesk/gitcito/commit/687a11ffed3004fad67a5070edb9b1fdcb201b39))
 * **drag:** drop a branch across panels, and without a no-drop cursor on Wayland ([b92fe4c](https://github.com/MyAppDesk/gitcito/commit/b92fe4cc81d4ca643f5a4895a28c708e17fd2191))
+  - The graph and the sidebar each held the dragged ref in their own state, and a drop target cannot read the drag's payload before the drop. A ref picked up in the sidebar was invisible to a graph badge and the other way round, though the handbook promises any combination. The dragged ref now lives in the UI store and is read at event time, never from a render closure — a target rendered before the drag began would otherwise still see nothing dragged. Not subscribed either, so a drag no longer re-renders the graph.
+  - The drag declared the 'link' effect, the only one in the app to do so. Wayland's drag-and-drop has copy, move and ask but no link, so it mapped to no action and the compositor showed the no-drop cursor over every target. It is 'move' now, like every other drag in the app.
 * **git:** send an Azure DevOps PAT with a username, so git uses it ([d433f3d](https://github.com/MyAppDesk/gitcito/commit/d433f3dac4d9b45c1ed9a69125307b5c8a2132e9))
 * **graph:** confirm pushes from a branch drop, skip fast-forward onto a busy worktree ([bdaa8df](https://github.com/MyAppDesk/gitcito/commit/bdaa8dff2baeedd214a6362c5d8893e021c04c5e))
 * **graph:** move the HEAD badge on checkout again ([a993c7a](https://github.com/MyAppDesk/gitcito/commit/a993c7a219c490aff18c432cda772b32401a4c64))
 * keep the clone token out of argv and .git/config ([47029cf](https://github.com/MyAppDesk/gitcito/commit/47029cfebdbb155c4694818feb01d65a8eb35259))
 * **keychain:** report a failed token move instead of claiming success ([8b7e2c0](https://github.com/MyAppDesk/gitcito/commit/8b7e2c004a490572916b99bbc898ae13a73e1bb0))
 * **profiles:** harden picture import and translate the picker ([3d3b877](https://github.com/MyAppDesk/gitcito/commit/3d3b8772c743c2b6c7f47876e50d863018f4a337))
+  - Translate the file dialog title and filter label; the renderer passes them to main as IPC args, like dialog:selectDirectory.
+  - Refuse a picked file over AVATAR_MAX_BYTES before reading it, and refuse any picked or imported image whose PNG IHDR / JPEG SOF header declares more than 4096 px per side or 16M px, before nativeImage decodes it.
+  - Restrict an account picture URL to the avatar hosts the GitHub and GitLab lookups return; anything else from a settings file is dropped.
+  - Offer only PNG and JPEG, the formats nativeImage decodes, in the filter, the hint and the handbook.
+  - Ignore a picture load that resolves after a pick or remove for that profile.
 * **screenshots:** wait for the shot bridge by polling, not by animation frame ([1fe0540](https://github.com/MyAppDesk/gitcito/commit/1fe054076fd31d2159c104b5d06ce7db27eabeef))
 * **settings:** say when a token will not survive a restart, and keep it once the keychain is on ([9f9f064](https://github.com/MyAppDesk/gitcito/commit/9f9f0647c27cc2eaa1cc275d63e4a500b641f98b))
+  - Under the token field in Integrations, while the keychain is off: "Saved only until you quit Gitcito: the OS keychain is off", with an Enable button. Without a keyring at all, it says that instead, with no button.
+  - Turning the keychain on now writes the tokens already typed in the session to the encrypted store (persistSessionSecrets, run from keychain:set). Before, they stayed in memory until another setting happened to be saved, and quitting first lost them again.
 * **tabs:** reach a group's own page from the group, to add repositories to it ([0948806](https://github.com/MyAppDesk/gitcito/commit/0948806106f4bcc454b50fa533633d390c56f637))
 * **ui:** ask over a window instead of closing it ([175d20f](https://github.com/MyAppDesk/gitcito/commit/175d20f3ec65bdb6dec57b93c87f8730c7f7fca0)), closes [#83](https://github.com/MyAppDesk/gitcito/issues/83)
 * **watcher:** keep the switch marker through A-B-A and narrow checkout refetch ([f4d769e](https://github.com/MyAppDesk/gitcito/commit/f4d769efe60ce8db96e260086430f60167117676))
+  - repoSwitch: clear the loading marker only from the latest switch (sequence counter), so the first A refresh cannot clear the second A's marker.
+  - checkout: restore a narrowed refetch list that includes 'log' (the HEAD -> decoration comes from %D) plus worktrees, submodules and config, instead of refreshing every slice.
+  - watcher (Linux): re-sync the tracked-directory watches after .git changes, so directories a checkout or pull adds get watched and removed ones are released.
 * **worktrees:** relativise the gitdir pointer from the realpath ([861338c](https://github.com/MyAppDesk/gitcito/commit/861338ca06717eee4f4cf81b91621a5679a87f58))
 * **worktrees:** warn before removing a detached worktree, fix tests on macOS ([71ac7ca](https://github.com/MyAppDesk/gitcito/commit/71ac7caaec4c3f2752a05e98cc8d56881893cfa9))
 
@@ -587,6 +766,10 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Features
 
 * **tabs:** compact image-only tabs and clearer tab strip ([d934f15](https://github.com/MyAppDesk/gitcito/commit/d934f15360b794a30c7b5e71ea1dde911e026a5f))
+  - Image-only repo tabs hug the picture; the status dot stacks on its corner
+  - Close button slides open on hover instead of popping in
+  - Inactive tabs get a faint fill so the strip reads as tabs
+  - Fit mode: icon tabs and groups no longer pad to or clip at the 84px floor
 
 
 ### Bug Fixes
@@ -618,10 +801,19 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Features
 
 * **composer:** full gitmoji catalogue, picker and Gitmoji + Conventional style ([#81](https://github.com/MyAppDesk/gitcito/issues/81)) ([e05a946a](https://github.com/MyAppDesk/gitcito/commit/e05a946ada2d1e977c432c9549f791079582f911))
+  - All 75 gitmoji in a searchable picker beside the subject, with a combined "emoji + type(scope):" style whose emoji follows the Conventional type; :shortcode: subjects render as emoji across the history views
+  - hosting: resolve the PAT in main from the profile the repo is bound to, and surface GitHub’s own error reason (rate limit, missing permission)
+  - git: keep the whole graph when a broken gpg.format kills the signed log
+  - git: read and push remote tags without a terminal prompt
+  - main: stop EPIPE crashes when writing to a child process’s stdin
+  - main: strip the editor’s GIT_ASKPASS hand-off when launched from its terminal
 
 ### Bug Fixes
 
 * **terminal:** reschedule dropped snap-backs, debounce anchor markers, pin reattach offset ([#80](https://github.com/MyAppDesk/gitcito/issues/80)) ([0a30d824](https://github.com/MyAppDesk/gitcito/commit/0a30d824740836f975efb81b70fd4cfa5c88e9b0))
+  - snapBackNow returned silently inside the gesture window, dropping the only scheduled restore; re-arm just past the window so the correction still lands
+  - parkAt registered + disposed an xterm Marker per wheel tick; anchor.y carries the position instantly and the marker refreshes once the gesture settles
+  - on reattach, pin the DOM offset to the anchor target before fit() reflows so clamps no longer paint transient positions
 
 
 ## [4.22.1](https://github.com/MyAppDesk/gitcito/compare/v4.22.0...v4.22.1) (2026-11-10)
@@ -630,6 +822,9 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Performance Improvements
 
 * **terminal:** batch pty IPC and stop scroll-restore reentrancy freezes ([#79](https://github.com/MyAppDesk/gitcito/issues/79)) ([0409e84d](https://github.com/MyAppDesk/gitcito/commit/0409e84de98bf1093eef531dbe1d16eb8e6e039d))
+  - node-pty chunks were forwarded one IPC message each; under pwsh/PSReadLine/oh-my-posh repaints that floods the channel. Batch to 8ms/64KB frames for both terminal and launch ptys (ptyBatch.ts).
+  - xterm onScroll fires synchronously, so scroll restoration inside the listener re-entered it without bound -> renderer wedged. Guard programmatic scrolls behind selfScrollDepth; the listener ignores self-raised events.
+  - Cache .xterm-viewport (no per-event querySelector), gate forensic sequence capture behind GITCITO_SCROLL_DEBUG, keep a bare trailing ESC in pendingTail, and debounce applyTerminalPrefs refits (font slider dragged N terminals x M reflows).
 
 ## [4.22.0](https://github.com/MyAppDesk/gitcito/compare/v4.21.1...v4.22.0) (2026-11-07)
 
@@ -694,6 +889,10 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 
 * **ai:** support Devin CLI as a local agent backend ([e388ce6](https://github.com/MyAppDesk/gitcito/commit/e388ce6f634d160a88eb95f4bcc15fc92ac9ae4f))
 * **terminal:** add clipboard copy/paste on Windows and Linux ([236f361](https://github.com/MyAppDesk/gitcito/commit/236f3615691303e0e91399468e9f878314d48264))
+  - Ctrl+C copies while a selection exists, still SIGINT otherwise
+  - Ctrl+Shift+C / Ctrl+Insert copy the selection
+  - Ctrl+Shift+V / Shift+Insert paste from the clipboard
+  - Right-click copies the selection, or pastes when there is none
 
 
 ### Bug Fixes
@@ -708,7 +907,14 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Bug Fixes
 
 * **hosting:** stop re-asking GitHub for CI on every graph poll ([222dae2](https://github.com/MyAppDesk/gitcito/commit/222dae21535ab397cabfaf35fff07a4824532481))
+  - Remember every CI answer, including commits with no checks, instead of re-asking each minute
+  - Re-ask running checks each minute, finished ones every 10 minutes, no-check commits with backoff
+  - Pause lookups when GitHub signals a rate limit; share lookups between overlapping calls
+  - Skip the badge poll while the window is hidden
 * **updates:** sign GitHub release calls in and keep the last list ([e7b67ce](https://github.com/MyAppDesk/gitcito/commit/e7b67ce32a8b37a530ff9fd328cf61e7f664a1cc))
+  - What's New and the update check use the GitHub CLI login, so they get 5,000 calls an hour
+  - A refused or offline fetch shows the last release list instead of an empty page
+  - Scripted test and screenshot launches no longer call GitHub at all
 
 ## [4.17.0](https://github.com/MyAppDesk/gitcito/compare/v4.16.0...v4.17.0) (2026-10-31)
 
@@ -766,12 +972,22 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * **diff:** mark code that only moved within a file ([#55](https://github.com/MyAppDesk/gitcito/issues/55)) ([5314e4d](https://github.com/MyAppDesk/gitcito/commit/5314e4df27e4d6df0bff973bab0e2d6c08397f4d))
 * make file discards undoable and remove new files on discard all ([#54](https://github.com/MyAppDesk/gitcito/issues/54)) ([3d43aba](https://github.com/MyAppDesk/gitcito/commit/3d43abae112b5cd57639f8845b897a89318c9b38))
 * unstage, discard, revert and apply by hunk or line, with undo ([#56](https://github.com/MyAppDesk/gitcito/issues/56)) ([5ce4a21](https://github.com/MyAppDesk/gitcito/commit/5ce4a219670d5b5830fc3974b58a71e36e8e6a67))
+  - unstaged changes: Stage and Discard
+  - staged changes: Unstage
+  - a commit: Revert (into the working tree, no commit made)
+  - a stash: Apply (the stash is kept)
 
 
 ### Bug Fixes
 
 * keep an open file in step with git changes made outside the app ([#53](https://github.com/MyAppDesk/gitcito/issues/53)) ([2560faf](https://github.com/MyAppDesk/gitcito/commit/2560fafff2b1e10c0b48ed347e266335001b71f0))
 * keep the files search responsive while typing ([#52](https://github.com/MyAppDesk/gitcito/issues/52)) ([c8ca607](https://github.com/MyAppDesk/gitcito/commit/c8ca607fdb60a6af3af8100053d54d318018bd71))
+  - Drain git grep's stderr so a full pipe cannot block git while it holds the repository's read lock.
+  - Search tracked files that match .gitignore again (--no-exclude-standard; the pathspecs already name the files).
+  - Split pathspecs into runs under the Windows command-line limit instead of grepping the whole tree.
+  - Report git grep failures instead of returning no results.
+  - Stop a superseded search before the new one waits for the lock.
+  - Keep the regex path inside the repository.
 
 ## [4.12.0](https://github.com/MyAppDesk/gitcito/compare/v4.11.1...v4.12.0) (2026-10-11)
 
@@ -786,6 +1002,10 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Bug Fixes
 
 * **credentials:** stop stacking Keychain prompts from background polling ([#43](https://github.com/MyAppDesk/gitcito/issues/43)) ([55e1fc5](https://github.com/MyAppDesk/gitcito/commit/55e1fc5f6d04437d88dbfc6f4b25b0a4b147862d))
+  - Background callers share one in-flight lookup per cache key.
+  - A background lookup that times out blocks its key: polling stops asking until an interactive lookup (the user connecting on purpose) succeeds.
+  - clearCredentialCache also drops in-flight lookups and blocks; a lookup still running when it is called no longer writes back into the fresh cache.
+  - forgetCredential drops the in-flight lookup so a retry cannot rejoin it.
 * keep tabs for moved or missing repository folders ([#45](https://github.com/MyAppDesk/gitcito/issues/45)) ([04a5e56](https://github.com/MyAppDesk/gitcito/commit/04a5e56c526e78eb2d863259be29bcdd1fd7a3ab))
 * keep the toolbar picker chevron clear of long names ([#47](https://github.com/MyAppDesk/gitcito/issues/47)) ([cf39cdb](https://github.com/MyAppDesk/gitcito/commit/cf39cdbdbac7889ae6967e5d7e52630624da910d))
 * let bounded number fields be typed into ([#46](https://github.com/MyAppDesk/gitcito/issues/46)) ([1dff977](https://github.com/MyAppDesk/gitcito/commit/1dff977b732a04327e87c58483e469e8c3622115))
@@ -883,6 +1103,11 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Features
 
 * improve desktop setup and sync feedback ([#38](https://github.com/MyAppDesk/gitcito/issues/38)) ([9bc58cb](https://github.com/MyAppDesk/gitcito/commit/9bc58cbd9f2df4719b3c66eee54be71fada7524e))
+  - Add the missing `.remote-connect-actions` rule. The repository listing's error state referenced a class that was never defined, so its Retry and Connect links stacked with no gap inside the column-flex parent.
+  - Drop the `.remote-connect*` rules and the `modal.getToken`, `menu.minimize`, `menu.zoomWindow` and `menu.front` keys, orphaned in all 17 locales when the connect panel and the hand-built Window submenu were removed.
+  - Do not report a `gh auth status` timeout as a signed-out CLI. Recent `gh` validates the token over the network, so an offline or slow link kills the probe on our own timeout and says nothing about the login. Give it its own verdict and its own message.
+  - Cache that verdict for 30s and de-duplicate it while in flight: one Settings page can miss a credential for four providers at once, and each miss used to spawn its own `gh`. Cleared alongside the credential cache.
+  - Document the fetched-but-not-pulled translucency in graph.md, in every handbook locale.
 
 ## [4.2.0](https://github.com/MyAppDesk/gitcito/compare/v4.1.0...v4.2.0) (2026-08-27)
 
@@ -890,6 +1115,16 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Features
 
 * add Xcode and iOS project support ([5bc1f2d](https://github.com/MyAppDesk/gitcito/commit/5bc1f2da3b8dee6e6769d48709ab36fe4a1f9d05))
+  - .xcodeproj, .xcworkspace, .framework and friends render as one item and open through Launch Services; the chevron still descends for the one case that needs it. .xcassets and .lproj stay ordinary folders — people edit inside them.
+  - project.pbxproj is merged by object identity instead of by line. The parser preserves source spans and the merge splices raw text, so untouched bytes stay untouched: tabs, section banners and key order all survive. Independent additions union; a build setting both sides moved is reported by name and left as ours, never guessed.
+  - Lockfiles (16 managers) get take-a-side plus the command that regenerates them, rather than a three-pane merge of a graph nobody solved.
+  - .plist and .entitlements render as a key/value outline. Binary plists are named rather than decoded, and <data> shows a byte count — a provisioning profile in a shared pane tells everyone too much.
+  - project.pbxproj renders as targets, group tree and build settings per configuration.
+  - The bundled textconv converter now reads .strings, which git calls binary because UTF-16 is full of NUL bytes. It decides by byte-order mark, so a modern UTF-8 file passes through instead of becoming mojibake.
+  - .xcstrings joins the json driver — a String Catalog is JSON.
+  - Apple signing material (.mobileprovision, .provisionprofile, .p8) is masked and guarded. A .cer is not: a certificate is public by design.
+  - Committing xcuserdata/, DerivedData/ or a .DS_Store warns, with the existing one-click Ignore & untrack. The pattern written is the folder, not one developer inside it. Secrets keep their exact path.
+  - The guard's consequences sentence was hardcoded English; it is now translated, along with the reasons each file was flagged.
 
 ## [4.1.0](https://github.com/MyAppDesk/gitcito/compare/v4.0.1...v4.1.0) (2026-08-26)
 
@@ -897,6 +1132,10 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Bug Fixes
 
 * Make DeepWiki generation robust with self-hosted models ([#37](https://github.com/MyAppDesk/gitcito/issues/37)) ([2361b36](https://github.com/MyAppDesk/gitcito/commit/2361b3656a8e80d764d75c75e76f0793bc9704b3))
+  - Add repair functions for malformed JSON output (mismatched closers, flattened sections).
+  - Support max_completion_tokens for OpenAI reasoning models.
+  - Sanitize token counts for Anthropic requests.
+  - Implement sanitization for wiki plans to remove unknown paths and pages.
 
 ## [4.0.1](https://github.com/MyAppDesk/gitcito/compare/v4.0.0...v4.0.1) (2026-08-26)
 
@@ -918,6 +1157,11 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * bookmark from the gutter, and embed more than Flutter's DevTools ([0505e6c](https://github.com/MyAppDesk/gitcito/commit/0505e6cf61d4e1d3b202131116c004f0e219939d))
 * bookmarks that survive the line moving ([7e222b9](https://github.com/MyAppDesk/gitcito/commit/7e222b9bd793f71b9939135796e02750bfc11de3))
 * chat can propose history, remote and stacked-PR actions ([e410e10](https://github.com/MyAppDesk/gitcito/commit/e410e101268defc5131504d59d4f2c4467ce951c))
+  - `submitStackCore` is extracted from `repoActions.submitStack`, because a chat plan already holds the per-repo lock and calling the queued version from inside it would wait on itself.
+  - Push guards (protected branch, credential-looking files, the repo's pre-push checklist) run as a preflight through `pushPreflight` — they are dialogs, and a dialog cannot be answered from inside the queue.
+  - A plan is approved as a batch, so it is undone as one: HEAD and a guard snapshot are recorded before the first action that can change anything, and the finished card offers Undo plan.
+  - An answer may return `needMore` — paths, literal searches, or commit hashes — instead of guessing, and the question is put again with what those turn up. Two extra rounds at most; the last must answer.
+  - `.gitcito.json` is this app's own schema, so it is supplied rather than guessed: "protect the release branches" becomes a file action against real keys instead of plausible ones the loader rejects.
 * choose when the code analyzers may run ([c3f2289](https://github.com/MyAppDesk/gitcito/commit/c3f2289d9a1e8c2a29db7d1e10c3f37c3a717b25))
 * embed Flutter DevTools in a tab ([9a57af8](https://github.com/MyAppDesk/gitcito/commit/9a57af8d871230234292ea9e4817d1ce346e50c6))
 * fold the action bar into a More menu when the window narrows ([e59df5e](https://github.com/MyAppDesk/gitcito/commit/e59df5e21770f6a2d20bf3df2cf5a45990c4749b))
@@ -988,6 +1232,8 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * offer to push the branch a stack lands on ([6e3460f](https://github.com/MyAppDesk/gitcito/commit/6e3460f24cf8b045e390257b6ee08a76937ee963))
 * read a pull-request stack the way GitHub draws it ([0964cc3](https://github.com/MyAppDesk/gitcito/commit/0964cc36e8785f1e3e6177316b6bce7f73ac3a81))
 * rebuild the stack modal around pickers, arrows and mid-stack levels ([cc197cd](https://github.com/MyAppDesk/gitcito/commit/cc197cd11c8c1efa131f2b7bd4184ea628d1be56))
+  - stackReorder re-links the chain to an order and replays it. Each level's own boundary is snapshotted before the links change, since the old merge-base is unrecoverable afterwards and it is what decides which commits belong to the level.
+  - stackInsert adds a level above any parent, re-pointing whatever sat there at the new branch — `gh stack add`, including in the middle of a stack. Nothing is replayed: the branch is created at its parent's tip.
 * register the chain as a native GitHub stack ([145afa5](https://github.com/MyAppDesk/gitcito/commit/145afa54bfc3eeb048d103097bf58ad56f63f5de))
 * show which way a stacked pull request flows ([db8883d](https://github.com/MyAppDesk/gitcito/commit/db8883d842f72a14702692f6ef8bdef261ec0aac))
 
@@ -1209,6 +1455,9 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 * crop a screenshot to a selector, and shoot the avatar mood ([b0cb14d](https://github.com/MyAppDesk/gitcito/commit/b0cb14dde4a72a11a530ef1e669070c0afa51675))
 * draw generated avatars as blobatars with repo-state expressions ([e0526bf](https://github.com/MyAppDesk/gitcito/commit/e0526bfd1cd5966101527dec2ee09866c851ed73))
 * fit the split diff to its pane, with wrap and linked-scroll toggles ([5911be2](https://github.com/MyAppDesk/gitcito/commit/5911be2f1607b69d21d9e973664b63cf35094495))
+  - git's extended headers (`new file mode`, renames, mode changes, binary markers) parse as meta instead of as an unprefixed context line numbered 0
+  - the stage-hunk button anchors to the hunk bar in split view — `.diff-split-hunk` was not positioned, so it escaped to the scroll container and floated mid-diff
+  - the split-diff screenshot clicked the first toggle, which is Whitespace; it has been photographing a unified diff
 
 
 ### Bug Fixes
@@ -1228,6 +1477,29 @@ Export your settings **with tokens** (Settings → Data) before installing. Sett
 ### Features
 
 * add grounded repository chat and workspace shortcuts ([#9](https://github.com/MyAppDesk/gitcito/issues/9)) ([be3ef11](https://github.com/MyAppDesk/gitcito/commit/be3ef1185bce132c05aea5cc173087b6df364e50))
+  - Implement Ctrl+` toggle for the integrated terminal across platforms
+  - Add Ctrl+T and Ctrl+W shortcuts for new and close terminal actions
+  - Create terminalShortcuts.ts to handle shortcut detection and close logic
+  - Update shortcuts.ts to include terminal shortcuts in fixed and reserved lists
+  - Add unit tests for terminal shortcut routing and close target resolution
+  - Introduce repoChat.ts module to handle repository-specific AI chat requests
+  - Implement context selection logic to choose relevant paths and search queries
+  - Add evidence collection to gather diffs, file content, and grep hits
+  - Register new IPC handlers in main process entry point
+  - Add ignoredTrackedFiles method to gitService for privacy boundary enforcement
+  - Introduce rightPanelDetailsState to manage panel availability
+  - Allow Details tab to open for dirty repos without explicit selection
+  - Add click handler to auto-select WIP state when opening panel
+  - Add unit tests for new state logic
+  - Implement keyboard shortcuts for toggling the left sidebar and right panel
+  - Add logic in App.tsx to handle toggle actions based on repo state
+  - Introduce rightPanelToggleAction helper to determine panel behavior
+  - Add translations for new shortcuts in all supported languages
+  - Fix comboFromEvent to handle AltGraph and recover intended keys on macOS
+  - context chips above the composer: suggestions from the open file and the selected commit, drag from the Files tab or the commit graph, drop from Finder/Explorer, or "+" to browse
+  - pinned items keep every privacy rule: secret-looking files, binaries and oversized reads come back as skipped, with the reason shown in the panel
+  - settings: enable/disable chat on its own, a chat-only model, and a committed-content-only mode that keeps working-tree edits on the machine
+  - with AI or chat off, the tab, the toolbar button and the shortcut target disappear rather than offering an answer nothing can give
 
 ## [3.6.0](https://github.com/MyAppDesk/gitcito/compare/v3.5.0...v3.6.0) (2026-08-15)
 

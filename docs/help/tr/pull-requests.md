@@ -4,7 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri, güncellemeleri (her push, neyi değiştirdiği, son ziyaretinizden beri ne yeni) ve diff’inin bir satırına yorumlar.
 keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image güncellemeler yinelemeler push’lar force push rebase geçmiş yeniden yazıldı diff sürümleri son ziyaretten beri ne değişti yeni rozeti görüldü olarak işaretle güncellemeyi karşılaştır updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Pull request sayfası
@@ -390,6 +390,101 @@ göre değil, ada göre sıralanır.
 
 ![Ağaç görünümünde Dosyalar sekmesi: toplam değişiklikleri ve görülen sayılarıyla klasörler, biri katlanmış](../../screenshots/pr-files-tree.webp)
 
+**Görseller.** Bir pull request’in eklediği, sildiği veya değiştirdiği bir resmin (png,
+jpg, gif, webp, bmp, ico, avif, svg) okunacak bir metin diff’i yoktur, bu yüzden sekme
+onun yerine resmi gösterir — bir commit için olan görünümün aynısı: yeni, eski ya da
+önce ve sonra yan yana ve bir kaydırıcıyla. Yeniden adlandırılmış bir resim, tabandaki
+eski yolu head’deki yeni yolla karşılaştırır; tek bir güncellemenin diff’inde o
+güncellemenin iki head’i karşılaştırılır. Baytlar, commit’ler bu klonda varsa
+buradan gelir — ücretsiz ve hızlıdır —, yoksa deposunun profiliyle barındırıcıdan.
+Sınırlar: 32 MB üzerindeki bir resmin önizlemesi yoktur; satır yorumları bir resme
+uygulanmaz (bir SVG, metin diff’ini ve yorumlarını altında tutar); **Git LFS** içinde
+tutulan bir resim barındırıcıdan okunur, çünkü klonda yalnızca işaretçisi vardır —
+GitLab, Azure DevOps ve Forgejo onu çözer, GitHub’ın API’si yalnızca işaretçiyi verir,
+bu yüzden orada sekme seni barındırıcıya gönderir; barındırıcının birleştirme tabanını
+bildirmediği yerde (o zaman hedef dalın ucuna geri döner), bir not “önce”nin hedef
+daldaki sonraki değişiklikleri içerebileceğini söyler; ve ne klon ne de barındırıcı
+baytları veremediğinde sekme bunu söyler ve pull request’in dalını getirmeyi ya da onu
+barındırıcıda açmayı önerir.
+
+![Bir pull request’in değiştirdiği resim, önce ve sonra yan yana](../../screenshots/pr-image-diff.webp)
+
+**Yollar ve düzenleyicin.** Diff’in üstündeki çubukta dosyanın yolunu kopyalamak için bir
+düğme ve bir **⋯** menüsü vardır; listede bir dosyaya veya klasöre sağ tıklamak aynı
+menüyü açar. Menü yolu, yeniden adlandırılmış bir dosyanın eski yolunu ya da klasörün
+yolunu kopyalar; dosyayı [düzenleyicinde](editor.md) (veya başka bir uygulamada) açar ya
+da dosya yöneticisinde gösterir. Bu son ikisi pull request’in sürümüne değil, **çalışma
+kopyana** etki eder: yalnızca orada var olan bir dosya için etkindir (PR’ın sildiği ya
+da dalının içermediği bir dosya nedenini söyler), ve çıkış yapılmış dal PR’ın dalı
+olmadığında menü hangi dalı açacağını söyler.
+
+**Geri dönmek.** Bir pull request’i depo, başka bir sekme ya da sonraki PR için bırak;
+geri döndüğünde onu bıraktığın gibi bulursun: aynı sekme, aynı açık dosya, aynı kaydırma
+ve gönderilmemiş her metin — yorum, yanıt, satır yorumu, düzenleme. Bu, pull request’i
+kapatana ya da uygulamadan çıkana kadar sürer; yalnızca bellekte, son 50 pull request
+için tutulur (bunun ötesinde en eski yer bırakılır ve içindeki metin açtığın sonraki
+pull request sayfasına geçer). Gönderilmemiş metni olan bir PR’ı kapatmak önce sorar.
+Bir yenileme taslağın yerinin artık olmadığını bulursa — yanıtladığı tartışma,
+düzenlediği yorum, ait olduğu dosya —, metin kaybolmaz: kopyalaman ya da atman için
+sayfanın üstünde bekler.
+
+### Diff nereden geliyor
+
+Bir inceleme, okuduğu diff kadar iyidir. Barındırıcının API’si bunun için iyi bir kaynak
+değildir: Azure DevOps hiç diff göndermez, yalnızca bir dosya listesi gönderir ve her
+birinin iki kez indirilip karşılaştırılması gerekir; GitHub 3000 dosyada durur ve büyük
+bir dosyanın yamasını atlar; GitLab büyük bir diff’i *çok büyük* olarak işaretler ve
+hiçbir şey göndermez. Bu yüzden Dosyalar sekmesi her barındırıcıda **önce bu klonu
+okur**:
+
+1. Barındırıcıya pull request’in iki commit’ini sorar — nerede başladığını ve head’ini.
+   Azure DevOps, GitLab ve Forgejo birleştirme tabanını bildirir; Bitbucket Data Center,
+   satır yorumlarının bağlandığı diff’in tabanını bildirir; GitHub yalnızca hedef dalı
+   bildirir, o zaman onun head ile birleştirme tabanı burada hesaplanır (ya da
+   commit’ler yoksa GitHub’ın karşılaştırmasıyla). Resim önizlemesi aynı iki commit’i
+   kullanır.
+2. İkisi de buradaysa aralarındaki bir `git diff` her dosyayı verir, sayılarına bir sınır
+   olmadan. Bunlar barındırıcının kendi sayfasının karşılaştırdığı iki commit’in
+   aynısıdır, bu yüzden buradaki bir satır numarası oradaki satır numarasıdır ve bir
+   satır yorumu koyduğun yere düşer.
+3. Burada değillerse pull request’in uzak deposundan **id ile** getirilirler — yalnızca
+   nesneler, hiçbir dal oluşturulmaz ya da taşınmaz —, bir kez, sayfa açıldığında (ve
+   Yenile’de yine), bu arada listenin üstünde *Pull request’in commit’leri
+   getiriliyor…* görünür. Bir commit’i id ile vermeyen bir sunucu (bazı Azure DevOps’lar
+   ve düz git sunucuları) sessizce atlanır.
+4. Ancak o zaman barındırıcının API’si kullanılır ve onun diff vermediği bir dosya boş
+   gibi davranmak yerine nedenini söyler (aşağıda).
+
+Sonradan okunan bir dosya — *henüz yüklenmemişken* açılan ya da **Yeniden dene**’den
+sonra — diğerleri gibi listeye katılır: aynı görüntüleyici ve üzerinde satır yorumları.
+
+Azure DevOps’ta API yolu sekme açıldığında ilk yüz dosyayı okur, aynı anda üçer ve
+toplamda bir dakika içinde; kalanları her birini açtığında okur. Kısıtlanan bir istek,
+sunucunun istediği bekleme süresince tüm okumaları duraklatır; yine de başarısız olan
+biri bunu nedeniyle birlikte söyler. Bir dosyanın metin olup olmadığına baytlarından
+karar verilir, Azure’un *binary* bayrağından değil — Azure onu UTF-16 dosyalarına ve
+ASCII olmayan metnin bir kısmına da koyar. Barındırıcı pull request’in içerdiğinden
+daha az dosya listelediğinde (GitHub 3000’de durur), listenin üstündeki bir satır bunu
+söyler.
+
+### Bir dosya diff göstermediğinde
+
+| Ne diyor | Neden | Ne yapabilirsin |
+|---|---|---|
+| **İkili** | Baytları metin değil: bir resim, bir arşiv. UTF-16 ve eski tek baytlık metin metin olarak tanınır. | Barındırıcıda aç. |
+| **Gösterilemeyecek kadar büyük** | 20.000’den fazla değişen satır ya da 8 MB diff, veya 4 MB’ı aşan bir sürüm. Klon onu okuduysa **+/−** değeri yine de sayılır. | Barındırıcıda aç. |
+| **Henüz yüklenmedi** | Tek bir okumanın tuttuğunun ötesinde (yaklaşık 150.000 diff satırı) ya da Azure DevOps’un API’siyle ilk yüz dosyanın veya dakikanın ötesinde. | Açtığında yüklenir; yüklenmezse **Diff’i yükle**. |
+| **Yüklenemedi** | Okuma başarısız oldu — nedeni altında gösterilir. | **Yeniden dene**. |
+| **Barındırıcı onu atladı** | Barındırıcının API’si diff göndermedi ve bu klonda pull request’in commit’leri yok. | **Yerelde görmek için pull request’i getir** — id ile commit’ler ya da bir fork’tan pull request’in head’i —, sonra diff burada oluşturulur. |
+| **Yalnızca adı ya da kipi değişti** | Bir yeniden adlandırma ya da izin değişikliği: içerik aynı. | İçerikte incelenecek bir şey yok. |
+| **Kodlaması değişti** | Aynı metin farklı kaydedilmiş: bir bayt sırası işareti eklenmiş ya da kaldırılmış, UTF-16 UTF-8’e çevrilmiş. | Değişikliğin kasıtlı olduğunu kontrol et — bazı araçlar bunu önemser. |
+
+Listede diff’i okunmamış bir dosya — henüz yüklenmedi, yüklenemedi, barındırıcı atladı
+— **+0 −0** yerine **—** gösterir; o, “hiçbir şey değişmedi” diye okunurdu. İkili bir
+dosya ve salt bir yeniden adlandırma gerçek **+0 −0** değerlerini gösterir ve
+barındırıcı satırları yine de saydığında (GitHub atladığı bir yama için bile sayar), o
+sayılar gösterilir.
+
 ## Bir satıra yorum yapmak
 
 Burada bir inceleme konuşmasına yanıt vermek mümkündü, ama yenisini başlatmak değil;
@@ -433,10 +528,11 @@ Konuşma sekmesinde kalır:
 Gösterilen hunk’ların dışındaki bir satıra yapılan yorum, her sunucuda yalnızca
 Konuşma sekmesindedir.
 
-Yazılmış ama gönderilmemiş bir yorum gönderilmemiş metin sayılır: **‹ ›** ve
-Alt+oklar, ana yorum kutusunda olduğu gibi, ondan ayrılmadan önce sorar. Başka bir
-dosyaya bakmak onu korur; başka bir satırda yorum başlatmak için önce ilkini
-gönderin ya da vazgeçin.
+Yazılmış ama gönderilmemiş bir yorum, ana yorum kutusundaki metin gibi pull request’le
+kalır: **‹ ›**, Alt+oklar ya da başka bir sekme onu olduğu yerde bırakır ve geri
+döndüğünde kendi satırında yeniden durur (yukarıdaki *Geri dönmek*’e bak). Başka bir
+dosyaya göz atmak onu korur; başka bir satırda yorum başlatmak için önce ilkini gönder ya
+da iptal et.
 
 Yapmadıkları:
 
@@ -569,10 +665,9 @@ vermediği bir hesap reddedilir ve mesaj bunu söyler.
   **Kaydet** (ya da ⌘/Ctrl+Enter) gönderir; **Vazgeç** ya da **Esc** kapatır, bir şey
   değiştirdiyseniz önce sorar. Yalnızca metnin etrafındaki boş satırlar atılır:
   girintili kod ve sondaki iki boşluklu satır sonu yazıldığı gibi kalır. Yeni metin
-  hemen görünür ve sayfa pull request’i yeniden okur. Pull request sayfasında
-  kaydedilmemiş bir düzenleme gönderilmemiş metin sayılır: **‹ ›** ondan ayrılmadan
-  önce sorar. Issue sayfasında bu oklar yoktur ve orada sekmesi kapanmadan önce
-  hiçbir şey sormaz.
+  hemen görünür ve sayfa pull request’i yeniden okur. Pull request sayfasında kaydedilmemiş bir düzenleme, **‹ ›** ile ilerlediğinde ya da
+  sekme değiştirdiğinde pull request’le kalır ve pull request’i kapatmak önce sorar. Bir
+  issue sayfası hiçbir şey tutmaz: orada sekmesini kapatmadan önce hiçbir şey sormaz.
 - **Sil** her zaman önce sorar ve soru ne olacağını söyler: sunucu yorumu herkes için
   kaldırır ve bu geri alınamaz. Hiçbir şey onu geri getiremeyeceği için geri alma
   kaydı yoktur.
@@ -724,3 +819,29 @@ Yapmadıkları:
   zamandır: listesinde son etkinlik zamanı yoktur.
 - Gezinme uygulama çalıştığı sürece hatırlanır; yeniden başlatmadan sonra
   listeden açılan bir pull request bunun yerine açık pull request’lerde ilerler.
+- **Dosyaları okumak bir kez fetch yapabilir.** Pull request’in commit’leri bu klonda
+  olmadığında sayfa onları açılışta ve **Yenile**’de yine uzak deposundan id ile getirir
+  — asla bir yorumdan, incelemeden ya da birleştirmeden sonra değil ve bir oturumda pull
+  request’in her sürümü için en fazla bir kez (başarısız bir deneme Yenile’yi bekler).
+  Yalnızca nesne yazar: dal yok, `FETCH_HEAD` yok, bu yüzden araç çubuğundaki “… önce
+  getirildi” değişmez. 20 saniye sonra ya da aktarım 15 saniye boyunca 1 KB/s’nin
+  altında süründüğünde vazgeçer ve asla parola sormaz: git’in istemi kapalıdır ve Git
+  Credential Manager’a oturum açma penceresi açmaması söylenir, bu yüzden buna ihtiyaç
+  duyacak bir uzak depo API’ye geri döner. Bir ssh uzak deposu kendi ssh ayarlarını
+  olduğu gibi kullanır; tek fark, ssh’in kendi parola cümlesi penceresinin
+  açılmamasıdır. Başka bir git işlemi depoyu (uzun bir push) beş saniyeden uzun süre
+  tuttuğunda, fetch o seferlik atlanır ve API kullanılır. O sürerken çalışma ağacında
+  yaptığın değişiklikler kaybolmaz: bitince depo yenilenir. Nesneleri eksik olan sığ ya
+  da kısmi bir klon barındırıcının API’sine geri döner.
+- **Sınırların üstünde** bir dosya sayılarıyla ve diff’siz listelenir: klondan okunan bir
+  diff’in 20.000 değişen satırı ya da 8 MB’ı, Azure DevOps’tan okunan sürüm başına 4 MB.
+  Tek bir okuma yaklaşık 150.000 satır ya da 48 MB diff tutar; ondan sonraki dosyalar
+  **henüz yüklenmedi** olur ve açıldıklarında okunur.
+- git’in ikili dediği **UTF-16 dosyaları** metin olarak yeniden okunur, pull request başına
+  50’ye ve sürüm başına 2 MB’a kadar; bunun ötesinde ikili olarak görünürler.
+- **Yeniden adlandırmalar** `git diff -M`’nin bulduğu gibi bulunur (varsayılan %50
+  benzerlik), bu da barındırıcının kendi eşleştirmesinden biraz farklı olabilir.
+- **API üzerinden Azure DevOps**, ilk yüz dosyasını toplamda bir dakika içinde okur;
+  dakika dolduğunda kalan dosyalar **henüz yüklenmedi** olur. Kısıtlanan bir yanıt, tüm
+  okumaları sunucunun Retry-After süresi kadar duraklatır. 20.000’den fazla değişikliği
+  olan bir pull request o noktaya kadar listelenir ve sekme bunu söyler.

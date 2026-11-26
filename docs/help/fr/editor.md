@@ -3,7 +3,8 @@ title: Éditeur externe
 category: Outils de l'espace de travail
 order: 95
 summary: Envoyer un dépôt, un fichier ou une seule ligne de code vers l'éditeur dans lequel vous écrivez vraiment.
-keywords: éditeur editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode ouvrir dans l'éditeur ligne line colonne column commande personnalisée custom argv
+keywords: éditeur editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode ouvrir dans l'éditeur ligne line colonne column commande personnalisée custom argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Éditeur externe
@@ -32,10 +33,26 @@ Reconnus d'origine :
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (jamais un simple `devin`, qui est un autre outil) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | IDE JetBrains | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Sous Linux, un éditeur hors du PATH.** Un éditeur décompressé dans un dossier de
+votre choix n’est souvent pas dans le PATH, mais il est dans le menu des applications.
+Gitcito lit aussi les entrées `.desktop` du menu — dans les dossiers de données XDG
+(`~/.local/share`, puis `/usr/local/share` et `/usr/share`, ou ce que disent
+`XDG_DATA_HOME` et `XDG_DATA_DIRS`) et dans les exports de Flatpak et de Snap — et
+reconnaît un éditeur à son nom ou au programme que lance sa ligne `Exec=`. Une entrée
+marquée cachée ou à ne pas afficher, ou dont le programme `TryExec=` manque, ne compte
+pas. Pour une version de VS Code comme Devin Desktop, il préfère la commande de `bin/`
+à côté de ce programme, puisque seule celle-là peut sauter à une ligne. Les entrées
+sont lues comme du texte et rien n’y est exécuté ; une entrée qui a besoin d’arguments
+supplémentaires pour lancer l’éditeur (un `flatpak run …` de Flatpak) est ignorée, donc
+une telle installation a toujours besoin de sa commande dans le PATH. Sous macOS, un
+`Devin.app` ne compte que si son `product.json` nomme Devin Desktop, de sorte qu’une
+application sans rapport portant le même nom n’est jamais celle qui s’ouvre.
 
 ## La limite qu'il vaut mieux connaître
 

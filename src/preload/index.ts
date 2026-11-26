@@ -398,12 +398,23 @@ const api = {
       ipcRenderer.invoke('hosting:ciWorkflows', repoPath, remoteUrl, tokens),
     ciDispatch: (repoPath: string, remoteUrl: string, tokens: unknown, workflowId: string, ref: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciDispatch', repoPath, remoteUrl, tokens, workflowId, ref),
+    prDiffCommits: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prDiffCommits', repoPath, remoteUrl, tokens, number),
+    prFileContent: (repoPath: string, remoteUrl: string, tokens: unknown, sha: string, path: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prFileContent', repoPath, remoteUrl, tokens, sha, path),
     prCheckLog: (repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prCheckLog', repoPath, remoteUrl, tokens, url),
     prChecks: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prChecks', repoPath, remoteUrl, tokens, number),
-    prFiles: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:prFiles', repoPath, remoteUrl, tokens, number),
+    prFiles: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, fetchMode?: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prFiles', repoPath, remoteUrl, tokens, number, fetchMode),
+    onPrFilesFetching: (cb: (p: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, p: unknown): void => cb(p)
+      ipcRenderer.on('hosting:prFilesFetching', listener)
+      return () => ipcRenderer.removeListener('hosting:prFilesFetching', listener)
+    },
+    prFileDiff: (repoPath: string, remoteUrl: string, tokens: unknown, request: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prFileDiff', repoPath, remoteUrl, tokens, request),
     prListCommits: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prListCommits', repoPath, remoteUrl, tokens, number),
     prListUpdates: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

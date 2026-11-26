@@ -3,7 +3,8 @@ title: Harici düzenleyici
 category: Çalışma alanı araçları
 order: 95
 summary: Bir depoyu, bir dosyayı ya da tek bir kod satırını gerçekten yazdığınız düzenleyiciye gönderin.
-keywords: düzenleyici editör editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode düzenleyicide aç satır sütun özel komut argv
+keywords: düzenleyici editör editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode düzenleyicide aç satır sütun özel komut argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Harici düzenleyici
@@ -30,10 +31,25 @@ Kutudan çıktığı gibi tanınanlar:
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (asla yalın bir `devin` değil, o başka bir araçtır) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains IDE'leri | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Linux’ta PATH dışındaki bir düzenleyici.** Seçtiğin bir klasöre açılmış bir
+düzenleyici çoğu zaman PATH’te değildir ama uygulama menüsündedir. Gitcito menünün
+`.desktop` girdilerini de okur — XDG veri klasörlerinde (`~/.local/share`, sonra
+`/usr/local/share` ve `/usr/share`, ya da `XDG_DATA_HOME` ve `XDG_DATA_DIRS` ne
+diyorsa) ve Flatpak ile Snap dışa aktarımlarında — ve bir düzenleyiciyi adından ya da
+`Exec=` satırının başlattığı programdan tanır. Gizli ya da gösterilmeyecek diye
+işaretlenmiş ya da `TryExec=` programı eksik olan bir girdi sayılmaz. Devin Desktop gibi
+bir VS Code derlemesi için o programın yanındaki `bin/` içindeki komut tercih edilir,
+çünkü yalnızca o bir satıra atlayabilir. Girdiler metin olarak okunur ve onlardan hiçbir
+şey çalıştırılmaz; düzenleyiciyi başlatmak için ek argümanlar gereken bir girdi
+(Flatpak’in `flatpak run …`’ı) atlanır, bu yüzden böyle bir kurulumun hâlâ PATH’te kendi
+komutuna ihtiyacı vardır. macOS’ta bir `Devin.app` yalnızca `product.json`’ı Devin
+Desktop’ı adlandırıyorsa sayılır, böylece aynı adlı yabancı bir uygulama asla açılmaz.
 
 ## Bilmeye değer sınır
 

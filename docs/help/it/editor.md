@@ -3,7 +3,8 @@ title: Editor esterno
 category: Strumenti dell'area di lavoro
 order: 95
 summary: Manda un repository, un file o una singola riga di codice all'editor in cui scrivi davvero.
-keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode apri nell'editor riga colonna comando personalizzato argv
+keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode apri nell'editor riga colonna comando personalizzato argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Editor esterno
@@ -30,10 +31,26 @@ Riconosciuti in partenza:
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (mai un semplice `devin`, che è un altro strumento) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | IDE JetBrains | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Su Linux, un editor fuori dal PATH.** Un editor scompattato in una cartella a tua
+scelta spesso non è nel PATH, ma è nel menu delle applicazioni. Gitcito legge anche le
+voci `.desktop` del menu — nelle cartelle dati XDG (`~/.local/share`, poi
+`/usr/local/share` e `/usr/share`, o quello che dicono `XDG_DATA_HOME` e
+`XDG_DATA_DIRS`) e negli export di Flatpak e Snap — e riconosce un editor dal nome o dal
+programma che avvia la sua riga `Exec=`. Una voce segnata come nascosta o da non
+mostrare, o il cui programma `TryExec=` manca, non conta. Per una build di VS Code come
+Devin Desktop preferisce il comando in `bin/` accanto a quel programma, perché solo
+quello può saltare a una riga. Le voci vengono lette come testo e nulla al loro interno
+viene eseguito; una voce che ha bisogno di argomenti aggiuntivi per avviare l’editor
+(un `flatpak run …` di Flatpak) viene saltata, quindi un’installazione così ha ancora
+bisogno del suo comando nel PATH. Su macOS, una `Devin.app` conta solo quando il suo
+`product.json` indica Devin Desktop, così non viene mai aperta un’app estranea con lo
+stesso nome.
 
 ## Il limite da conoscere
 

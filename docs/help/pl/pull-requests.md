@@ -4,7 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity, jego aktualizacje (każdy push, co zmienił, co nowego od ostatniej wizyty) oraz komentarze do wiersza jego diffa.
 keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image aktualizacje iteracje pushe force push rebase historia przepisana wersje diffa co się zmieniło od ostatniej wizyty plakietka nowa oznacz jako przejrzane porównaj aktualizację updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Strona pull requestów
@@ -392,6 +392,100 @@ wymienia pliki.
 
 ![Zakładka Pliki w widoku drzewa: foldery z zsumowanymi zmianami i liczbą przejrzanych plików, jeden zwinięty](../../screenshots/pr-files-tree.webp)
 
+**Obrazy.** Obraz, który pull request dodaje, usuwa lub zmienia (png, jpg, gif,
+webp, bmp, ico, avif, svg), nie ma diffa tekstowego do czytania, więc zakładka
+pokazuje zamiast niego obraz — ten sam widok co dla commita: nowy, stary albo przed i
+po obok siebie oraz jako suwak. Obraz o zmienionej nazwie porównuje starą ścieżkę w
+bazie z nową w headzie; w diffie jednej aktualizacji — dwa heady tej aktualizacji.
+Bajty pochodzą z tego klonu, gdy ma on commity, co jest darmowe i szybkie, a w
+przeciwnym razie z hostingu, z profilem repozytorium. Ograniczenia: obraz powyżej 32
+MB nie ma podglądu; komentarze do wierszy nie dotyczą obrazu (SVG zachowuje swój diff
+tekstowy i jego komentarze pod spodem); obraz trzymany w **Git LFS** jest czytany z
+hostingu, bo klon ma tylko jego wskaźnik — GitLab, Azure DevOps i Forgejo go
+rozwiązują, a API GitHuba daje sam wskaźnik, więc tam zakładka odsyła cię na hosting;
+gdy hosting nie podaje bazy scalenia (sięga wtedy po czubek gałęzi docelowej), notatka
+mówi, że „przed” może zawierać późniejsze zmiany w gałęzi docelowej; a gdy ani klon,
+ani hosting nie mogą dać bajtów, zakładka to mówi i proponuje pobrać gałąź pull
+requesta albo otworzyć go na hostingu.
+
+![Obraz zmieniony przez pull request, przed i po obok siebie](../../screenshots/pr-image-diff.webp)
+
+**Ścieżki i twój edytor.** Pasek nad diffem ma przycisk kopiowania ścieżki pliku i
+menu **⋯**; kliknięcie prawym przyciskiem pliku lub folderu na liście otwiera to samo
+menu. Kopiuje ono ścieżkę, starą ścieżkę pliku o zmienionej nazwie albo ścieżkę
+folderu; otwiera też plik w twoim [edytorze](editor.md) (lub innej aplikacji) albo
+pokazuje go w menedżerze plików. Te dwie akcje działają na **twojej kopii roboczej**, a
+nie na wersji z pull requesta: są aktywne tylko dla pliku, który w niej istnieje
+(plik, który PR usuwa, albo którego twoja gałąź nie ma, mówi dlaczego), a gdy
+wyciągnięta gałąź nie jest gałęzią PR, menu mówi, którą gałąź byś otworzył.
+
+**Powrót.** Zostaw pull request dla repozytorium, innej karty albo następnego PR, a
+po powrocie będzie tam, gdzie go zostawiłeś: ta sama zakładka, ten sam otwarty plik,
+to samo przewinięcie i każdy niewysłany tekst — komentarz, odpowiedź, komentarz do
+wiersza, edycja. Trwa to, dopóki nie zamkniesz pull requesta albo nie wyjdziesz z
+aplikacji; jest trzymane tylko w pamięci, dla 50 ostatnich pull requestów (powyżej
+tego najstarsze miejsce jest porzucane, a tekst, który w nim był, przechodzi na
+następną stronę pull requesta, którą otworzysz). Zamknięcie PR z niewysłanym tekstem
+najpierw pyta. Jeśli odświeżenie wykaże, że miejsca szkicu już nie ma — rozmowy, na
+którą odpowiadał, komentarza, który edytował, pliku, przy którym był —, tekst nie
+przepada: czeka na górze strony, aż go skopiujesz albo odrzucisz.
+
+### Skąd pochodzi diff
+
+Recenzja jest tak dobra, jak diff, który czyta. API hostingu nie jest do tego dobrym
+źródłem: Azure DevOps nie wysyła żadnego diffa, tylko listę plików, i każdy trzeba
+pobrać dwa razy i porównać; GitHub zatrzymuje się na 3000 plików i pomija patch
+dużego pliku; GitLab oznacza duży diff jako *zbyt duży* i nic nie wysyła. Dlatego
+zakładka Pliki czyta **najpierw ten klon**, na każdym hostingu:
+
+1. Pyta hosting o dwa commity pull requesta — gdzie się zaczyna i jego head. Azure
+   DevOps, GitLab i Forgejo podają bazę scalenia; Bitbucket Data Center podaje bazę
+   diffa, do którego kotwiczą się jego komentarze do wierszy; GitHub podaje tylko
+   gałąź docelową, której bazę scalenia z headem wylicza się wtedy tutaj (albo, bez
+   commitów, przez porównanie GitHuba). Podgląd obrazów używa tych samych dwóch
+   commitów.
+2. Gdy oba są tutaj, `git diff` między nimi daje każdy plik, bez limitu ich liczby. To
+   te same dwa commity, które porównuje strona samego hostingu, więc numer wiersza tu
+   jest numerem wiersza tam, a komentarz do wiersza trafia tam, gdzie go umieścisz.
+3. Gdy ich tu nie ma, są pobierane **po identyfikatorach** ze zdalnego repozytorium
+   pull requesta — tylko obiekty, żadna gałąź nie jest tworzona ani przesuwana —, raz,
+   przy otwarciu strony (i ponownie przy Odśwież), z *Pobieranie commitów pull
+   requesta…* nad listą w międzyczasie. Serwer, który nie wydaje commita po
+   identyfikatorze (niektóre Azure DevOps i zwykłe serwery git), jest po cichu
+   pomijany.
+4. Dopiero wtedy używane jest API hostingu, a plik, dla którego nie daje ono diffa,
+   mówi dlaczego, zamiast udawać pusty (niżej).
+
+Plik wczytany później — otwarty, gdy był *jeszcze niewczytany*, albo po **Spróbuj
+ponownie** — dołącza do listy jak pozostałe: ta sama przeglądarka i komentarze do
+wierszy na nim.
+
+W Azure DevOps droga przez API czyta pierwsze sto plików przy otwarciu zakładki, po
+trzy naraz i w sumie w ciągu minuty, a resztę, gdy otwierasz każdy z nich. Ograniczone
+zapytanie wstrzymuje wszystkie odczyty do czasu, o który prosi serwer; to, które mimo
+to zawiedzie, mówi o tym, z powodem. To, czy plik jest tekstem, ustala się na podstawie
+jego bajtów, a nie flagi *binary* Azure — którą ustawia też dla plików UTF-16 i dla
+części tekstu spoza ASCII. Gdy hosting wymienia mniej plików, niż ma pull request
+(GitHub zatrzymuje się na 3000), mówi to linijka nad listą.
+
+### Gdy plik nie pokazuje diffa
+
+| Co mówi | Dlaczego | Co możesz zrobić |
+|---|---|---|
+| **Binarny** | Jego bajty nie są tekstem: obraz, archiwum. UTF-16 i stary tekst jednobajtowy są rozpoznawane jako tekst. | Otworzyć go na hostingu. |
+| **Zbyt duży, by go pokazać** | Ponad 20 000 zmienionych wierszy lub 8 MB diffa, albo wersja powyżej 4 MB. Jego **+/−** jest mimo to liczone, gdy klon go odczytał. | Otworzyć go na hostingu. |
+| **Jeszcze niewczytany** | Poza tym, co zachowuje jeden odczyt (około 150 000 wierszy diffów), albo, przez API Azure DevOps, poza pierwszymi stu plikami lub minutą. | Wczytuje się, gdy go otworzysz; **Wczytaj diff**, jeśli nie. |
+| **Nie udało się wczytać** | Odczyt zawiódł — powód jest pokazany pod spodem. | **Spróbuj ponownie**. |
+| **Hosting go pominął** | API hostingu nie wysłało diffa, a ten klon nie ma commitów pull requesta. | **Pobierz pull request, by zobaczyć go lokalnie** — commity po identyfikatorze albo head pull requesta z forka —, potem diff powstaje tutaj. |
+| **Zmieniła się tylko nazwa lub tryb** | Zmiana nazwy lub uprawnień: zawartość jest ta sama. | Nie ma czego recenzować w zawartości. |
+| **Zmieniło się kodowanie** | Ten sam tekst zapisany inaczej: dodany lub usunięty znacznik kolejności bajtów, UTF-16 zamienione na UTF-8. | Sprawdzić, czy zmiana jest zamierzona — niektóre narzędzia na to reagują. |
+
+Na liście plik, którego diff nie został odczytany — jeszcze niewczytany, nie udało się
+wczytać, pominięty przez hosting — pokazuje **—** zamiast **+0 −0**, co czytałoby się
+jak „nic się nie zmieniło”. Plik binarny i sama zmiana nazwy pokazują swoje prawdziwe
+**+0 −0**, a gdy hosting i tak liczy wiersze (GitHub to robi, nawet dla patcha, który
+pomija), liczby są pokazywane.
+
 ## Komentowanie wiersza
 
 Odpowiadać na wątek recenzji dało się tu już wcześniej; zaczynać nowego nie, więc
@@ -434,10 +528,10 @@ inne zostaje w zakładce Rozmowa, zamiast lądować na zgadniętym wierszu:
 Komentarz do wiersza spoza pokazanych hunków jest na każdym hostingu tylko w
 zakładce Rozmowa.
 
-Komentarz wpisany i niewysłany liczy się jako niewysłany tekst: **‹ ›** i
-Alt+strzałki pytają, zanim go opuszczą, tak jak przy głównym polu komentarza.
-Przejrzenie innego pliku go zachowuje; żeby zacząć komentarz w innym wierszu, wyślij
-lub anuluj pierwszy.
+Komentarz wpisany i niewysłany zostaje przy pull requeście, tak jak tekst głównego pola
+komentarza: **‹ ›**, Alt+strzałki albo inna karta zostawiają go tam, gdzie jest, i wraca
+do swojego wiersza, gdy wrócisz (zob. *Powrót* wyżej). Przejrzenie innego pliku go
+zachowuje; żeby zacząć komentarz w innym wierszu, wyślij lub anuluj pierwszy.
 
 Czego to nie robi:
 
@@ -573,9 +667,10 @@ komentarza, zostaje odrzucone, a komunikat to mówi.
   **Esc** go zamyka, pytając najpierw, jeśli coś zmieniłeś. Usuwane są tylko puste
   wiersze wokół tekstu: wcięty kod i końcowe złamanie wiersza z dwóch spacji
   zostają, jak je wpisano. Nowy tekst pojawia się od razu, a strona ponownie czyta
-  pull request. Na stronie pull requesta niezapisana edycja liczy się jako niewysłany
-  tekst: **‹ ›** pytają, zanim ją opuszczą. Strona issue nie ma takich strzałek i
-  nic tam nie pyta przed zamknięciem jej karty.
+  pull request. Na stronie pull requesta niezapisana edycja zostaje przy pull requeście, gdy
+  przechodzisz dalej przez **‹ ›** albo zmieniasz kartę, a zamknięcie pull requesta
+  najpierw pyta. Strona issue niczego nie zachowuje: nic tam nie pyta przed zamknięciem
+  jej karty.
 - **Usuń** zawsze najpierw pyta, a pytanie mówi, co się stanie: serwer usuwa
   komentarz dla wszystkich i nie da się tego cofnąć. Nie ma wpisu cofania, bo nic go
   nie przywróci.
@@ -727,3 +822,30 @@ Czego to nie robi:
 - Przechodzenie jest pamiętane, dopóki aplikacja działa; po ponownym
   uruchomieniu pull request otwarty z listy przechodzi zamiast tego przez otwarte
   pull requesty.
+- **Czytanie plików może zrobić fetch — raz.** Gdy commitów pull requesta nie ma w tym
+  klonie, strona pobiera je po identyfikatorze z jego zdalnego repozytorium przy
+  otwarciu i ponownie przy **Odśwież** — nigdy po komentarzu, recenzji czy scaleniu, i
+  najwyżej raz na wersję pull requesta w sesji (nieudana próba czeka na Odśwież).
+  Zapisuje tylko obiekty: żadnej gałęzi i nie `FETCH_HEAD`, więc „pobrano … temu” na
+  pasku narzędzi się nie zmienia. Poddaje się po 20 sekundach albo gdy transfer pełznie
+  poniżej 1 KB/s przez 15, i nigdy nie pyta o hasło: monit gita jest wyłączony, a Git
+  Credential Manager dostaje polecenie, by nie otwierał okna logowania, więc zdalne
+  repozytorium, które by go potrzebowało, przechodzi na API. Zdalne repozytorium ssh
+  używa twoich ustawień ssh takich, jakie są, z tym że okno hasła klucza samego ssh nie
+  jest otwierane. Gdy inna operacja git trzyma repozytorium (długi push) dłużej niż pięć
+  sekund, fetch jest tym razem pomijany i używane jest API. Zmiany, które w tym czasie
+  robisz w kopii roboczej, nie przepadają: repozytorium odświeża się, gdy fetch się
+  skończy. Płytki lub częściowy klon, któremu brakuje obiektów, przechodzi na API
+  hostingu.
+- **Powyżej limitów** plik jest wymieniany z liczbami i bez diffa: 20 000 zmienionych
+  wierszy lub 8 MB diffa odczytanego z klonu, 4 MB na wersję odczytaną z Azure DevOps.
+  Jeden odczyt zachowuje około 150 000 wierszy lub 48 MB diffów; pliki po nich są
+  **jeszcze niewczytane** i są czytane przy otwarciu.
+- **Pliki UTF-16**, które git nazywa binarnymi, są czytane ponownie jako tekst, do 50
+  na pull request i 2 MB na wersję; powyżej tego pokazują się jako binarne.
+- **Zmiany nazw** są wykrywane tak, jak wykrywa je `git diff -M` (domyślnie 50%
+  podobieństwa), co może trochę różnić się od dopasowania samego hostingu.
+- **Azure DevOps przez API** czyta swoje pierwsze sto plików w sumie w ciągu minuty;
+  pliki pozostałe po upływie minuty są **jeszcze niewczytane**. Ograniczona odpowiedź
+  wstrzymuje wszystkie odczyty do Retry-After serwera. Pull request z ponad 20 000
+  zmian jest wymieniany do tego miejsca, a zakładka to mówi.

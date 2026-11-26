@@ -14,7 +14,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeFile, mkdir, rm, chmod } from 'node:fs/promises'
-import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 
@@ -1192,6 +1192,54 @@ export const shots = [
       await page.locator('.prp-tab').nth(3).click()
       await page.locator('.prp-folder-row', { hasText: 'docs/guide' }).click()
       await page.locator('.prp-file-row', { hasText: 'index.ts' }).click()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The Files tab previewing an image the pull request changed: the commit
+    // view's before/after, side by side. Faked detail, files, commits and image
+    // bytes — two small fictional icons from ./assets; the shas exist nowhere,
+    // so the bytes come through the host path, as they would for a fresh clone.
+    out: 'pr-image-diff',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      const dataUrl = (name) => `data:image/png;base64,${readFileSync(join(ASSETS, name)).toString('base64')}`
+      const images = { before: dataUrl('pr-image-before.png'), after: dataUrl('pr-image-after.png') }
+      await app.evaluate(({ ipcMain }, images) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prDiffCommits', 'prFileContent']) ipcMain.removeHandler('hosting:' + method)
+        const base = 'b'.repeat(40)
+        const head = 'c'.repeat(40)
+        const files = [
+          { filename: 'assets/icons/search.png', status: 'modified', additions: 0, deletions: 0 },
+          { filename: 'src/search/index.ts', status: 'modified', additions: 5, deletions: 2, patch: '@@ -1 +1 @@\n-a\n+b' },
+          { filename: 'src/palette/SearchResults.tsx', status: 'modified', additions: 12, deletions: 4, patch: '@@ -1 +1 @@\n-a\n+b' }
+        ]
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Refresh the search icon', author: 'sam', source: 'search-icon', target: 'main',
+          body: 'A brighter icon for the command palette search.',
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          comments: [], reviews: [], reviewThreads: [],
+          commits: 1, changedFiles: files.length, additions: 17, deletions: 6
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ revision: { headSha: head }, files }))
+        ipcMain.handle('hosting:prDiffCommits', () => ({ baseSha: base, headSha: head }))
+        ipcMain.handle('hosting:prFileContent', (_e, _repo, _remote, _tokens, sha) => ({
+          status: 'ok',
+          dataUrl: sha === base ? images.before : images.after
+        }))
+      }, images)
+      await page.evaluate((repoPath) => {
+        window.__shot.settings.getState().update((s) => ({ ...s, fileListView: 'path' }))
+        window.__shot.settings.getState().openPageTab({
+          type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Refresh the search icon'
+        })
+      }, repos['octopus-merge'])
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-tab').nth(3).click()
+      await page.locator('.prp-file-row', { hasText: 'search.png' }).click()
+      await page.locator('.imgd-side img').nth(1).waitFor()
       await page.waitForTimeout(300)
     }
   },

@@ -3,7 +3,8 @@ title: المحرر الخارجي
 category: أدوات مساحة العمل
 order: 95
 summary: أرسل مستودعًا أو ملفًا أو سطرًا واحدًا من الشيفرة إلى المحرر الذي تكتب فيه فعلًا.
-keywords: محرر خارجي editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode فتح في المحرر سطر عمود أمر مخصص argv
+keywords: محرر خارجي editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode فتح في المحرر سطر عمود أمر مخصص argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # المحرر الخارجي
@@ -29,10 +30,22 @@ keywords: محرر خارجي editor vscode code cursor windsurf zed sublime jet
 | Visual Studio Code | `code`، `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (لا `devin` وحده أبدًا، فهو أداة أخرى) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | بيئات JetBrains | `idea`، `webstorm`، `pycharm`، `rustrover`، `goland`، `clion`، `rider`، `phpstorm` |
 | Xcode | `xed` |
+
+**على Linux: محرر خارج PATH.** المحرر الذي فُكّ ضغطه في مجلد تختاره كثيرًا ما لا يكون في
+PATH، لكنه في قائمة التطبيقات. يقرأ Gitcito أيضًا مدخلات `.desktop` في القائمة — في مجلدات
+بيانات XDG (`~/.local/share`، ثم `/usr/local/share` و`/usr/share`، أو ما يقوله
+`XDG_DATA_HOME` و`XDG_DATA_DIRS`) وفي صادرات Flatpak وSnap — ويتعرّف على المحرر من اسمه أو
+من البرنامج الذي يشغّله سطر `Exec=` فيه. والمدخل المعلَّم مخفيًا أو بعدم العرض، أو الذي
+يغيب برنامج `TryExec=` الخاص به، لا يُحتسب. ولبناء من VS Code مثل Devin Desktop يُفضَّل
+الأمر الموجود في `bin/` بجانب ذلك البرنامج، لأنه وحده يستطيع القفز إلى سطر. تُقرأ المدخلات
+كنص ولا يُشغَّل منها شيء؛ والمدخل الذي يحتاج وسائط إضافية لتشغيل المحرر (`flatpak run …` في
+Flatpak) يُتخطّى، فيظل هذا التثبيت يحتاج أمره في PATH. وعلى macOS لا تُحتسب `Devin.app` إلا
+إذا كان `product.json` الخاص بها يسمّي Devin Desktop، فلا يُفتح أبدًا تطبيق غريب بالاسم نفسه.
 
 ## الحد الذي يستحق المعرفة
 

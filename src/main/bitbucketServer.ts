@@ -34,6 +34,7 @@ import type {
   PrReviewEvent,
   PrReviewThread,
   PullRequest,
+  PrDiffCommits,
   PrDiffRevision,
   PrLineAnchor
 } from '../shared/types'
@@ -548,13 +549,20 @@ export function mergeBbsChanges(changes: BbsChange[], diffFiles: PrFile[]): PrFi
 
 export async function bbsPullFiles(repo: BitbucketServerRepo, token: string, id: number): Promise<PrFile[]> {
   const r = bbsRepoApi(repo)
+  let diffError = ''
   const [changes, raw] = await Promise.all([
     bbsPages<BbsChange>(`${r}/pull-requests/${id}/changes`, token, 500, 10).catch(() => [] as BbsChange[]),
     bbsResponse(`${r}/pull-requests/${id}.diff`, token, { headers: { Accept: 'text/plain' } })
       .then((res) => res.text())
-      .catch(() => '')
+      .catch((err: unknown) => {
+        diffError = err instanceof Error ? err.message : String(err)
+        return ''
+      })
   ])
-  return mergeBbsChanges(changes, raw ? splitUnifiedDiff(raw) : [])
+  const files = mergeBbsChanges(changes, raw ? splitUnifiedDiff(raw) : [])
+  // The list came, the diff did not: every file says why, instead of "no diff".
+  if (!diffError) return files
+  return files.map((f) => (f.patch ? f : { ...f, noPatchReason: 'failed' as const, noPatchError: diffError }))
 }
 
 /** Build statuses of a commit, newest first. Empty when the server has no build-status resource. */
@@ -663,6 +671,27 @@ const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> =
 export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffRevision | null> {
   const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
   return pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : null
+}
+
+/**
+ * The two commits a pull request's Files tab compares: its effective diff's
+ * base and the source head. The changes resource names both ends of that diff
+ * (`fromHash`/`toHash`); the one that is not the head is the base. A server
+ * that names neither falls back to the target branch's tip — close, but not
+ * the merge base when the target moved on. This is the diff Data Center's line
+ * comments anchor to, so the Files tab diffs the same two commits.
+ */
+export async function bbsPullDiffCommits(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffCommits | null> {
+  const r = bbsRepoApi(repo)
+  const pr = await bbsJson<BbsPull>(`${r}/pull-requests/${id}`, token)
+  const head = pr.fromRef?.latestCommit
+  if (!head) return null
+  const ends = await bbsJson<{ fromHash?: string; toHash?: string }>(`${r}/pull-requests/${id}/changes?limit=1`, token).catch(
+    () => null
+  )
+  const end = [ends?.fromHash, ends?.toHash].find((h) => !!h && h !== head)
+  if (end) return { baseSha: end, headSha: head, baseKind: 'mergeBase' }
+  return { baseSha: pr.toRef?.latestCommit ?? null, headSha: head, baseKind: 'targetTip' }
 }
 
 /**

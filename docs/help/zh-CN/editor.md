@@ -3,7 +3,8 @@ title: 外部编辑器
 category: 工作区工具
 order: 95
 summary: 把一个仓库、一个文件，或者某一行代码，送到你真正写代码的那个编辑器里。
-keywords: 编辑器 editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode 在编辑器中打开 open in editor 行 line 列 column 自定义命令 custom command argv
+keywords: 编辑器 editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode 在编辑器中打开 open in editor 行 line 列 column 自定义命令 custom command argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # 外部编辑器
@@ -23,10 +24,21 @@ Git 客户端是你读代码的地方，很少是你修代码的地方。从在�
 | Visual Studio Code | `code`、`code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop`（绝不是单独的 `devin`，那是另一个工具） |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains IDEs | `idea`、`webstorm`、`pycharm`、`rustrover`、`goland`、`clion`、`rider`、`phpstorm` |
 | Xcode | `xed` |
+
+**在 Linux 上：不在 PATH 中的编辑器。** 解压到你自选文件夹的编辑器往往不在 PATH 中，但在
+应用菜单里。Gitcito 也会读取菜单的 `.desktop` 条目——位于 XDG 数据文件夹（`~/.local/share`，
+然后是 `/usr/local/share` 和 `/usr/share`，或者 `XDG_DATA_HOME` 和 `XDG_DATA_DIRS` 指定的
+位置）以及 Flatpak 和 Snap 的导出目录中——并通过名称或其 `Exec=` 行启动的程序识别编辑器。
+标为隐藏或不显示的条目，或者其 `TryExec=` 程序缺失的条目，不计入。对于 Devin Desktop 这样的
+VS Code 构建，优先使用该程序旁边 `bin/` 中的命令，因为只有它能跳转到某一行。条目只作为文本
+读取，不会从中运行任何东西；需要额外参数才能启动编辑器的条目（Flatpak 的 `flatpak run …`）
+会被跳过，所以这类安装仍需要 PATH 中有自己的命令。在 macOS 上，只有当 `Devin.app` 的
+`product.json` 写明是 Devin Desktop 时才计入，因此绝不会打开同名的其他应用。
 
 ## 值得知道的那条限制
 

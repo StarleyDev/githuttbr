@@ -31,6 +31,22 @@ native shim) for those three would let the fuse go off and the profile cover
 only the browser. The cost is a second binary to sign, notarize and keep in
 step with the app on three platforms.
 
+### Reviewing a pull request like on the host
+The pull request page now covers most of a review: line comments, editing and
+deleting your own, rendered comments, the files as a tree, updates per push and
+image diffs. What is still missing:
+
+- **A review in one go.** Comments on several lines held as a pending review and
+  sent together with Approve or Request changes, and comments on a range of
+  lines. Every host has the idea; each spells it differently, and GitHub,
+  GitLab and Azure disagree on when a pending comment becomes visible.
+- **Images and files in a comment.** Pasting a screenshot into a comment needs
+  each host's upload API. GitHub has no public one for comment attachments,
+  so this would work on GitLab, Azure and Forgejo and not on the host most
+  people use — which is why it has waited.
+- **bitbucket.org.** It has pull request lists and checks in the app, but no
+  pull request page: the API calls exist, the page does not.
+
 ### Issue trackers beyond GitHub
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.
@@ -78,6 +94,22 @@ a device but does not behave like one is not worth shipping.
 
 Not features, but they decide when features can ship. Electron supports its
 three newest majors, so staying current is a schedule, not a choice.
+
+### Electron 46, and the keychain key it changes
+Electron 46 removes the synchronous `safeStorage` calls the token store and the
+vault are read and written with. The asynchronous ones can take a different
+key on Linux — under KDE they go through the secret portal — so the move is a
+migration, not a rename: re-seal every store under the new key, keep a copy
+under the old one for a rollback, and prove it on real data from the previous
+release on KDE, GNOME, macOS and Windows. Mocked tests did not catch the key
+change in v4.52.0; they will not catch this one either.
+
+### A smaller installer
+Libraries the interface uses are bundled by Vite into the renderer, yet still
+ship again as runtime dependencies. Moving them to `devDependencies` should cut
+50–70 MB from each package. The cost is a careful check of the packaged
+`app.asar` and an install test of every package type, so it gets its own
+release.
 
 ---
 

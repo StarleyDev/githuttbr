@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleDot, Folder, FolderOpen, MessageSquare } from 'lucide-react'
 import type { PrFile } from '../../../shared/types'
+import { restoreScrollTop } from '../lib/scrollRestore'
 import { useSettingsStore } from '../stores/settings'
 import {
   buildFileTree,
@@ -17,6 +18,7 @@ import {
 import { ViewToggle } from './CommitComposer'
 import { useT, interp } from '../i18n'
 import { sumThreadCounts } from '../lib/prFileThreads'
+import { hasKnownLineCounts } from '../lib/prNoPatch'
 
 type PrTreeNode = FileTreeNode<PrFile>
 
@@ -115,9 +117,16 @@ const FileRow = memo(function FileRow({
         </span>
       )}
       <ThreadBadge count={threadCount} />
-      <span className="prd-file-stat">
-        <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
-      </span>
+      {/* With no patch and no count from the host, "+0 −0" would read as "nothing changed". */}
+      {hasKnownLineCounts(file) ? (
+        <span className="prd-file-stat">
+          <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
+        </span>
+      ) : (
+        <span className="prd-file-stat" title={t('prPage.countsUnknown')} aria-label={t('prPage.countsUnknown')}>
+          —
+        </span>
+      )}
     </div>
   )
 })
@@ -160,6 +169,7 @@ const FolderRow = memo(function FolderRow({
   return (
     <div
       className={`prd-file prp-file-row prp-folder-row ${allViewed ? 'viewed' : ''}`}
+      data-folder-path={node.path}
       data-row-index={index}
       role="treeitem"
       aria-level={level}
@@ -215,7 +225,10 @@ export const PrFileList = memo(function PrFileList({
   selected,
   prKey,
   onSelectFile,
-  onSetFilesViewed
+  onSetFilesViewed,
+  onRowContextMenu,
+  initialScroll = 0,
+  onListScroll
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -229,10 +242,23 @@ export const PrFileList = memo(function PrFileList({
   prKey: string
   onSelectFile: (filename: string) => void
   onSetFilesViewed: (filenames: string[], viewed: boolean) => void
+  /** A right click on a file or folder row: its path, and whether it is a folder. */
+  onRowContextMenu?: (x: number, y: number, row: { path: string; isDir: boolean }) => void
+  /** Where the list was scrolled when the page was last left (lib/prViewState.ts). */
+  initialScroll?: number
+  onListScroll?: (top: number) => void
 }): React.JSX.Element {
   const t = useT()
   const view = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const listRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  // Back where it was: once, after the rows are drawn; a shorter list clamps.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    return restoreScrollTop(el, initialScroll)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [collapsed, setCollapsed] = useState<Set<string>>(() => collapsedByPr.get(prKey) ?? new Set())
   useEffect(() => {
     saveCollapsedFolders(collapsedByPr, prKey, collapsed, COLLAPSED_PRS_KEPT)
@@ -330,7 +356,22 @@ export const PrFileList = memo(function PrFileList({
   }
 
   return (
-    <div className="prp-file-list">
+    <div
+      className="prp-file-list"
+      ref={scrollRef}
+      onScroll={onListScroll ? (e) => onListScroll(e.currentTarget.scrollTop) : undefined}
+      onContextMenu={
+        onRowContextMenu
+          ? (e) => {
+              const row = (e.target as HTMLElement).closest<HTMLElement>('[data-file-path], [data-folder-path]')
+              if (!row) return
+              e.preventDefault()
+              const file = row.dataset.filePath
+              onRowContextMenu(e.clientX, e.clientY, { path: file ?? row.dataset.folderPath ?? '', isDir: file === undefined })
+            }
+          : undefined
+      }
+    >
       <div className="prp-file-list-head">
         <span className="prd-section-title">
           {interp(t('prDetail.filesViewed'), { n: `${viewedCount}/${files.length}` })}
