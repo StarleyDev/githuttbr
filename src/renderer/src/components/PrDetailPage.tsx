@@ -61,6 +61,8 @@ import {
   type ReviewerState
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
+import { PrFileList } from './PrFileList'
+import { setPathsMembership } from '../lib/fileTree'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
@@ -150,6 +152,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       }
       return next
     })
+  // A folder's checkbox ticks many files at once. Stable, so the memoized file
+  // list skips the page's re-renders (typing a comment, for one).
+  const setFilesViewed = useCallback(
+    (paths: string[], on: boolean): void =>
+      setViewed((cur) => {
+        const next = setPathsMembership(cur, paths, on)
+        try {
+          localStorage.setItem(viewedKey, JSON.stringify([...next]))
+        } catch {
+          // Storage full or blocked: the ticks still show for this session.
+        }
+        return next
+      }),
+    [viewedKey]
+  )
 
   const tokens = useMemo(
     () => ({
@@ -506,6 +523,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   files={files}
                   viewed={viewed}
                   onToggleViewed={toggleViewed}
+                  onSetFilesViewed={setFilesViewed}
                   repoPath={repoPath}
                   prUrl={pr.url}
                   threads={pr.reviewThreads}
@@ -1182,6 +1200,7 @@ function FilesSection({
   files,
   viewed,
   onToggleViewed,
+  onSetFilesViewed,
   repoPath,
   prUrl,
   threads,
@@ -1198,6 +1217,7 @@ function FilesSection({
   files: PrFile[]
   viewed: Set<string>
   onToggleViewed: (f: string) => void
+  onSetFilesViewed: (paths: string[], viewed: boolean) => void
   repoPath: string
   prUrl: string
   threads: PrReviewThread[]
@@ -1299,44 +1319,14 @@ function FilesSection({
 
   return (
     <div className="prp-files-split">
-      <div className="prp-file-list">
-        <div className="prd-section-title">
-          {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
-        </div>
-        {files.map((f) => (
-          <div
-            key={f.filename}
-            className={`prd-file prp-file-row ${f.filename === file?.filename ? 'selected' : ''} ${viewed.has(f.filename) ? 'viewed' : ''}`}
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelected(f.filename)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                setSelected(f.filename)
-              }
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={viewed.has(f.filename)}
-              title={t('prPage.markViewed')}
-              aria-label={t('prPage.markViewed')}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleViewed(f.filename)}
-            />
-            <span className={`prd-file-status st-${f.status}`} title={f.status}>
-              {f.status === 'added' ? 'A' : f.status === 'removed' ? 'D' : f.status === 'renamed' ? 'R' : 'M'}
-            </span>
-            <span className="prd-file-name" title={f.filename}>
-              {f.filename}
-            </span>
-            <span className="prd-file-stat">
-              <span className="ins-add">+{f.additions}</span> <span className="ins-del">−{f.deletions}</span>
-            </span>
-          </div>
-        ))}
-      </div>
+      <PrFileList
+        files={files}
+        viewed={viewed}
+        selected={file?.filename ?? ''}
+        prKey={prUrl}
+        onSelectFile={setSelected}
+        onSetFilesViewed={onSetFilesViewed}
+      />
 
       <div className="prp-file-diff" ref={diffRef}>
         {file && (
