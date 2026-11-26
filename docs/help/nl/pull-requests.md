@@ -3,8 +3,8 @@ title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, en reacties op een regel van zijn diff.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number
-source: 729c0829d4ded79d157edea6c162fa638d7b41e0
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image
+source: a4156cb9fd737c311bc0441169b7a3d933dad274
 ---
 
 # Pull-requestspagina
@@ -195,6 +195,15 @@ biedt aan:
   [naar de branch gaan](#naar-de-branch-van-een-pull-request), zonder de checkout. Kwam de commit mee, dan
   opent hij; kwam hij niet mee (een force push heeft hem sindsdien herschreven),
   dan zegt de melding dat.
+- **Commits van de pull request ophalen**, bij een pull request uit een **fork**. Zijn
+  branch staat in een andere repository, maar de meeste hosts spiegelen de head van
+  een pull request in de doelrepository onder een eigen ref — `refs/pull/N/head`
+  (GitHub, GitHub Enterprise Server, Forgejo), `refs/merge-requests/N/head`
+  (GitLab), `refs/pull-requests/N/from` (Bitbucket Data Center). De app fetcht die
+  ene ref, zonder tags, naar een eigen ref, `refs/githuttbr/pr/<remote>/N`, en de
+  commit opent zoals elke andere: de graaf tekent die head als een baan zonder label.
+  Opnieuw fetchen zet de ref op de head zoals die dan is. Heeft de force push
+  sindsdien de commit weggelaten, dan zegt de melding dat.
 - **In de browser openen**, voor als fetchen geen optie is.
 
 De lijst wordt gelezen wanneer je het tabblad voor het eerst opent, niet met de
@@ -215,10 +224,20 @@ Wat het niet doet:
   | GitHub | De **eerste** 250 (de eigen grens van GitHub) |
   | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | De **250 nieuwste** |
   | Forgejo | Het eind dat de server eerst toont; zijn volgorde is niet gedocumenteerd |
-- **De branch van een fork** is van hieruit niet op te halen — hij staat in een
-  andere repository —, dus een commit die alleen in de fork staat, biedt alleen de
-  browser aan. **Pull request lokaal bekijken…** is de manier om hem binnen te
-  halen.
+- **De head van een fork waar de host hem niet spiegelt.** Azure DevOps publiceert
+  alleen een mergeresultaat, nooit de eigen head van een pull request, en
+  bitbucket.org geen van beide: daar biedt de rij alleen de browser aan. Op een
+  andere host die hem toch niet blijkt te spiegelen, zegt de fetch dat.
+  **Pull request lokaal bekijken…** haalt het mergeresultaat van Azure binnen, als je
+  dat nodig hebt.
+- **De gefetchte heads blijven.** `refs/githuttbr/pr/…` is geen branch: niets om uit
+  te checken of te pushen, een fetch met prune laat ze met rust, en git houdt hun
+  commits. Niets verwijdert ze ook — niet het sluiten van de pagina en ook niet
+  [Branches opruimen](branch-cleanup.md). Om ervan af te komen, verwijder je de refs
+  met de hand: `git for-each-ref refs/githuttbr/pr` toont ze, en
+  `git update-ref -d <ref>` verwijdert er een.
+- **Een remote waarvan de naam een `/` bevat** kan geen deel van de naam van die ref
+  zijn, dus daar wordt de fetch geweigerd.
 - **Een verwijderde branch.** Een gemergede pull request heeft zijn branch vaak
   meegenomen: de fetch zegt dat. bitbucket.org toont helemaal geen commits meer
   zodra de bronbranch weg is.
@@ -336,6 +355,81 @@ staan. Een antwoordvak toont zijn gereedschap zodra je erin klikt, en verstuurt 
 ⌘/Ctrl+Enter, omdat Enter nu een nieuwe regel begint.
 [Reacties schrijven](writing-comments.md) heeft de details en de beperkingen.
 
+## Hoe reacties worden getoond
+
+Mensen schrijven reacties in Markdown, dus een reactie die als platte tekst wordt
+getoond, staat vol `**`, `- [ ]` en codehekken. De beschrijving, het gesprek en de
+reviewthreads (in de tabbladen Gesprek en Bestanden) worden als Markdown getekend:
+koppen, lijsten en takenlijsten, tabellen, citaten, codeblokken gemarkeerd in de taal
+die het hek noemt, links en afbeeldingen. De issuepagina tekent haar tekst op dezelfde
+manier. `#123`, `AB#123`, `!123` en `@user` in de tekst worden nog steeds links, met
+de [kaart](#waar-een-123-of-ab123-over-gaat) waar ze er een hadden.
+
+![Een weergegeven reactie: een tabel, een afbeelding van een andere site achter haar plaatshouder gehouden, en een gemarkeerd codeblok](../../screenshots/pr-rendered-comment.webp)
+
+Waar de weergave vandaan komt:
+
+| Host | Weergegeven door |
+|---|---|
+| GitHub, GitHub Enterprise Server | GitHub zelf (`body_html`): vermeldingen en verwijzingen zijn gelinkt zoals op de website, afbeeldingen gaan via de afbeeldingsproxy van GitHub, en privébijlagen dragen hun ondertekende adres |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | De app, uit de Markdown van de reactie. Een relatieve link wijst in de repository; op GitLab wijst `/uploads/…` in het project, zoals GitLab dat doet |
+
+Een reactie is inhoud van anderen, dus wat ze mag bevatten is beperkt, en beperkter
+dan voor je eigen bestanden: een expliciete lijst tags, links en afbeeldingen alleen op
+`https:`, `http:` of `mailto:`, geen scripts, frames, formulieren, SVG of inline
+stijl, en links die nooit in de app opengaan (ze gaan naar je browser). Een
+selectievakje in een takenlijst wordt getoond, maar is niet aanklikbaar: het hier
+aanvinken zou op de host niets veranderen.
+
+**Afbeeldingen van andere sites wachten op een klik.** Een afbeelding laden is een
+verzoek dat de site erachter kan zien, met je IP-adres en het moment waarop je de
+reactie leest — iedereen die mag reageren, kan daar een trackingpixel neerzetten.
+Daarom laden alleen afbeeldingen van de host zelf vanzelf: op github.com zijn
+bijlagen, `*.githubusercontent.com` (inclusief zijn afbeeldingsproxy) en zijn
+assets; op elke andere host zijn eigen adres. Elke andere afbeelding toont
+*Afbeelding van example.net — klik om te laden*, en de klik laadt die ene afbeelding.
+**Instellingen → Beveiliging → Afbeeldingen van andere sites in reacties laden** zet
+dat uit; zie [Beveiliging](security.md#afbeeldingen-in-reacties).
+
+**Het voorbeeld toont wat er geplaatst wordt.** Op deze pagina en de issuepagina
+tekent het tabblad **Voorbeeld** van elk reactievak de tekst op dezelfde manier:
+hetzelfde profiel, dezelfde regeleinden, dezelfde achtergehouden afbeeldingen — een
+geplakte link naar een externe afbeelding laadt die niet terwijl je schrijft. De
+dialoogvensters voor een nieuwe pull request en een nieuw issue houden het gewone
+Markdown-voorbeeld van de app.
+
+**Te lang of te ingewikkeld wordt als tekst getoond.** Markdown wordt in het venster
+van de app weergegeven, en sommige tekst kost veel meer om weer te geven dan de
+grootte doet vermoeden. Een reactie van meer dan **32.000 tekens**, of een die zo is
+opgebouwd dat ze de renderer vastzet (duizenden ongepaarde `_` of `*` in één alinea,
+of meer dan 32 niveaus `>` of lijstmarkeringen op één regel), wordt als platte tekst
+met links getoond, onder *Lange reactie als platte tekst getoond.* of *Reactie als
+platte tekst getoond: te ingewikkeld om hier weer te geven.* Een reactie die toch niet
+kan worden weergegeven, valt vanzelf op dezelfde manier terug: de rest van de pagina
+blijft onaangeroerd.
+
+Wat het niet doet:
+
+- **Bij bewerken staat de tekst zoals hij geschreven is.** **Bewerken** opent nog
+  steeds de Markdown, en een opgeslagen bewerking wordt door de app getekend tot de
+  pagina de pull request opnieuw leest (op GitHub daarna door GitHub).
+- **Privébijlagen van GitHub verlopen.** GitHub ondertekent het adres van een
+  privéafbeelding voor een paar minuten; een die niet meer laadt nadat de pagina een
+  tijd open stond, komt terug met **Vernieuwen**.
+- **Een relatieve afbeelding op GitHub** die de app zelf tekent (een antwoord dat uit
+  de app is verstuurd, voordat de pagina het opnieuw leest), wordt gezocht onder het
+  adres van de repository op github.com, wat niet per se is waar GitHub het zou
+  zetten.
+- **Video’s** in een GitHub-reactie verschijnen als een link naar het bestand, niet
+  als speler.
+- **Extensies die alleen GitHub kent** en die de app zelf tekent (op andere hosts),
+  ontbreken: geen emoji-codes, geen Mermaid-diagrammen, geen opmaak voor meldingen, en
+  formules blijven tekst.
+- **Code wordt alleen gemarkeerd als het hek zijn taal noemt.** De taal raden zou elke
+  grammatica over elk blok van de pagina laten lopen.
+- **Commitberichten** in het tabblad Commits blijven platte tekst: git geeft geen
+  Markdown weer, en de hosts ook niet.
+
 ## Je reacties bewerken en verwijderen
 
 Een typfout in een al verstuurde reactie, of een opmerking die niet meer klopt,
@@ -350,10 +444,13 @@ GitHub en Forgejo.
 Wat "van jou" is, beslist de pagina zelf: die vraagt de host bij elk laden als wie de
 aanroepen van deze repository zich aanmelden (het gekoppelde profiel, niet het profiel
 dat toevallig actief is). De meeste hosts noemen een auteur bij login, vergeleken
-zonder op hoofdletters te letten. Azure DevOps noemt auteurs bij weergavenaam, die
-twee mensen kunnen delen, dus daar moet het auteurs-id van de reactie overeenkomen
-met het id van het account; ontbreekt een van beide, dan toont geen enkele reactie de
-acties. Kan de app niet zeggen wie je bent (een token zonder user-scope, of de host
+zonder op hoofdletters te letten. Azure DevOps noemt auteurs bij weergavenaam, die twee mensen kunnen delen, dus daar
+vergelijkt het nooit namen: een reactie is van jou als het auteurs-id overeenkomt met
+het id van het account, **of** de unieke naam van de auteur (de accountnaam, meestal
+een e-mailadres) overeenkomt met die van het account, zonder op hoofdletters te
+letten. Elk van beide hoort bij één persoon; de tweede dekt een auteurs-id af dat niet
+het id is dat de verbinding meldt. Kan geen van beide worden vergeleken, dan toont
+geen enkele reactie de acties. Kan de app niet zeggen wie je bent (een token zonder user-scope, of de host
 antwoordde niet), dan toont ook geen reactie ze; **Vernieuwen** vraagt het opnieuw.
 De host beslist nog steeds: een account dat hij een reactie niet laat wijzigen,
 wordt geweigerd, en de melding zegt dat.
@@ -378,7 +475,7 @@ gedocumenteerd, en dat staat er ook bij:
 
 | Host | Eerste reactie van een thread met antwoorden |
 |---|---|
-| GitHub | De antwoorden zouden moeten blijven; de documentatie van GitHub zegt het niet. Vanuit de app op die thread antwoorden kan daarna niet meer: zijn antwoorden wijzen naar een reactie die weg is, en de API neemt geen antwoord op een antwoord aan. De thread biedt dan **Antwoorden op GitHub** aan |
+| GitHub | De antwoorden zouden moeten blijven; de documentatie van GitHub zegt het niet. De thread houdt zijn antwoordvak: zonder zijn eerste reactie gaat het antwoord via de GraphQL-API van GitHub naar de thread zelf, gevonden via een antwoord dat er nog in staat. Mislukt dat (een oude Enterprise Server, een token dat GraphQL weigert, een thread waarin dit account volgens GitHub niet mag antwoorden), dan biedt de thread in plaats daarvan **Antwoorden op GitHub** aan. Heb je op GitHub een review in uitvoering, dan kan GitHub het antwoord daaronder opbergen: de melding zegt dat dan, en niemand ziet het antwoord tot je die review daar indient |
 | GitLab | Alleen die notitie verdwijnt; de thread en zijn antwoorden blijven |
 | Azure DevOps | Zou als verwijderd gemarkeerd en verborgen moeten worden, met behoud van de thread en zijn antwoorden; de documentatie van Azure zegt het niet |
 | Bitbucket Data Center | Geweigerd: Data Center verwijdert geen reactie met antwoorden. Verwijder eerst de antwoorden, of bewerk haar in plaats daarvan |
@@ -433,7 +530,7 @@ Azure DevOps linkt `!123` naar die pull request, zonder kaart.
 | Verwijzing | Host | Gelezen uit |
 |---|---|---|
 | `AB#123`, en `#123` in een Azure-repository | Azure DevOps | Work items, tot 200 in één verzoek |
-| `#123` | GitHub, GitHub Enterprise Server | Issues (die ook voor pull requests antwoorden), één verzoek per stuk, één tegelijk |
+| `#123` | GitHub, GitHub Enterprise Server | Issues en pull requests, tot 50 in één GraphQL-verzoek; één REST-verzoek per stuk als GraphQL mislukt |
 | `#123` / `!123` | GitLab | Issues / merge requests, één verzoek per soort |
 | `#123` | Forgejo | Issues (ook pull requests), één verzoek per stuk, twee tegelijk |
 
@@ -451,11 +548,18 @@ en een ander profiel ziet misschien andere items.
 
 Wat het kost:
 
-- **GitHub en Forgejo** kunnen niet meerdere issues in één verzoek lezen, dus elke
-  kaart kost er één. Een hover vraagt er hoogstens **10** op — die waar je op staat
-  en de buren — en op GitHub na elkaar, zoals GitHub van apps vraagt. Het eerste
-  antwoord dat *langzamer* zegt (een 429 of een 403) stopt de rest, en die
-  verwijzingen worden vijf minuten niet opnieuw opgevraagd.
+- **GitHub** leest er tot **50** in één verzoek, via zijn GraphQL-API — die waar je op
+  staat en de dichtstbijzijnde buren. Mislukt GraphQL om een andere reden dan een
+  limiet (een oude Enterprise Server, een token dat het weigert), dan valt de app terug
+  op de REST-API, die één issue per verzoek leest: dan worden alleen de eerste **10**
+  opgevraagd, na elkaar zoals GitHub van apps vraagt; de andere blijven onbekend, en
+  een latere hover vraagt ernaar.
+- **Forgejo** kan niet meerdere issues in één verzoek lezen, dus elke kaart kost er
+  één: een hover vraagt er hoogstens **10** op, twee tegelijk.
+- Op GitHub en Forgejo stopt het eerste antwoord dat *langzamer* zegt (een 429, een
+  403, de eigen limietfout van GraphQL, een secundaire limiet, of een antwoord dat het
+  laatste verzoek van de limiet opmaakte) de rest — GitHub valt dan niet terug op REST
+  — en die verwijzingen worden vijf minuten niet opnieuw opgevraagd.
 - **Azure DevOps** leest tot 200 work items in één verzoek, en GitLab één verzoek
   per soort, dus daar gaat de hele pagina in één keer.
 

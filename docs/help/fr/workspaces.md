@@ -3,7 +3,8 @@ title: Espaces de travail, onglets et groupes
 category: Pour commencer
 order: 3
 summary: Beaucoup de dépôts sans se noyer : onglets, groupes, dossiers et espaces de travail.
-keywords: espace de travail workspace onglets tabs groupes groups dossiers folders plusieurs dépôts multiple repos organiser switch basculer disposition layout
+keywords: espace de travail workspace onglets tabs groupes groups dossiers folders plusieurs dépôts multiple repos organiser switch basculer disposition layout aller au dépôt sélecteur taille des onglets go to repository switcher tab sizing
+source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ---
 
 # Espaces de travail, onglets et groupes
@@ -18,7 +19,9 @@ l'onglet actif. Vous pouvez aussi glisser pour réordonner, cliquer avec le bout
 du milieu pour fermer, ou appuyer sur <kbd>⌘⇧T</kbd> pour rouvrir le dernier
 onglet fermé. Un clic droit sur un onglet de dépôt (ou sur une pastille dans un
 [groupe](#groupes)) ouvre le [menu contextuel du dépôt](repo-menu.md) — alias,
-worktrees, GitHub, terminal, affichage, éditeur et retrait. Fermez le dernier
+worktrees, GitHub, terminal, affichage, éditeur et, tout en bas, **Fermer ce
+dépôt** et **Fermer les autres** (une pastille dans un groupe propose plutôt le
+retrait). Fermez le dernier
 onglet et <kbd>⌘W</kbd> ferme la fenêtre à la place. Un point sur l'onglet signale du travail non validé ; un autre signale des
 conflits.
 
@@ -27,6 +30,41 @@ Si un avertissement de fermeture apparaît, <kbd>Escape</kbd> annule toujours.
 modifications non validées ou de conflits, l'avertissement vous oblige
 délibérément à viser le bouton, pour qu'une frappe parasite après <kbd>⌘W</kbd> ne
 puisse pas fermer du travail que vous teniez encore.
+
+### Taille des onglets
+
+Par défaut (**Paramètres → Disposition → Taille des onglets → Ajuster**), les
+onglets se comportent comme ceux d’un navigateur : quand la bande manque de place,
+ils rétrécissent tous pareil jusqu’à une largeur minimale, et ne défilent qu’une fois
+ce plancher atteint. **Fixe** rétablit le comportement classique — chaque onglet
+garde la largeur de son contenu et la bande défile dès qu’ils ne tiennent plus tous.
+
+### Aller à un dépôt
+
+Avec dix dépôts ouverts ou plus, en trouver un dans la bande oblige à faire
+défiler, <kbd>⌘1</kbd>–<kbd>⌘9</kbd> s’arrêtent au neuvième onglet, et la [palette
+de commandes](search.md) mêle les dépôts ouverts à toutes les actions. Appuyez sur
+<kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> (ou **Affichage → Aller au dépôt…**) et tapez
+quelques lettres de son nom, de son dossier ou de sa branche, puis <kbd>Entrée</kbd>.
+
+![Le sélecteur de dépôts, les plus récemment utilisés en premier](../../screenshots/repo-switcher.webp)
+
+La liste ne contient que les dépôts ouverts, membres de groupes compris, dans
+l’ordre où vous les avez regardés pour la dernière fois. Celui que vous venez de
+quitter est en tête, donc <kbd>⌘J</kbd> <kbd>Entrée</kbd> vous y ramène. Chaque
+ligne porte ce que montre son onglet : la branche, le point de travail non validé
+ou de conflit, le groupe où il se trouve, et sa touche <kbd>⌘1</kbd>–<kbd>⌘9</kbd>
+s’il en a une. Le dépôt à l’écran est grisé en bas. Rien ne s’assombrit derrière le
+sélecteur ; un clic à côté ou <kbd>Échap</kbd> le ferme.
+
+Quand rien d’ouvert ne correspond, la dernière ligne, **Rechercher dans tous les
+dépôts**, porte votre recherche vers la page [Dépôts](repositories.md). Le
+raccourci se réassigne dans **Paramètres → Raccourcis**.
+
+*Limites :* l’ordre n’est retenu que pour cette session, donc après un redémarrage
+il part de l’ordre des onglets. Un dépôt ouvert dans deux onglets n’apparaît qu’une
+fois, à son premier onglet. Les dépôts d’autres [espaces de travail](#espaces-de-travail) ne sont
+pas listés — changez d’abord d’espace de travail, ou utilisez la page Dépôts.
 
 ## Groupes
 
@@ -39,6 +77,30 @@ Pour en créer un, clic droit sur un onglet de dépôt → *Nouveau groupe…* :
 l'onglet devient un groupe contenant ce dépôt, à la même place. Dès qu'un groupe
 existe, le même menu propose *Ajouter à un groupe →*, avec la liste des groupes
 ouverts. Glisser un onglet de dépôt sur la pastille d'un groupe fait de même.
+
+Pour en commencer un, clic droit sur un onglet de dépôt → *Nouveau groupe…* :
+l’onglet devient un groupe contenant ce dépôt, à la même place. Une fois qu’un
+groupe existe, le même menu indique *Ajouter à un groupe →*, avec les groupes
+ouverts. Glisser un onglet de dépôt sur une pastille de groupe fait la même chose.
+
+*Nouveau groupe…* demande un nom et une couleur ensemble. La couleur part d’une
+couleur qu’aucun groupe ouvert ne porte encore, tirée au hasard, pour que les
+groupes ne commencent pas tous pareil.
+
+![La boîte de dialogue Nouveau groupe, avec un nom et une couleur choisis ensemble](../../screenshots/new-group-dialog.webp)
+
+Pour changer la couleur d’un groupe, clic droit dessus : les dix couleurs sont dans
+le menu en une rangée de points, avec un anneau autour de la couleur actuelle, et un
+clic l’applique. *Couleur personnalisée…* sous la rangée ouvre un sélecteur pour
+n’importe quelle autre couleur. Les dossiers et les sections de la page Dépôts
+utilisent la même rangée.
+
+![Le menu contextuel d’un groupe : la rangée de couleurs, Couleur personnalisée…, Dégrouper et Fermer le groupe](../../screenshots/group-color-menu.webp)
+
+Pour défaire un groupe, clic droit dessus → **Dégrouper**. Chaque dépôt devient un
+onglet ordinaire à la place du groupe, en gardant les pages qu’il avait ouvertes.
+**Fermer le groupe** ferme au contraire le groupe et tous ses dépôts. Les dossiers ne
+survivent pas à un Dégrouper : ils n’existent qu’à l’intérieur d’un groupe.
 
 ![Un onglet de groupe contenant plusieurs dépôts](../../screenshots/repo-groups.webp)
 

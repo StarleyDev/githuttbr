@@ -3,7 +3,8 @@ title: Przestrzenie, karty i grupy
 category: Zacznij tutaj
 order: 3
 summary: Wiele repozytoriów bez tonięcia w nich: karty, grupy, foldery i przestrzenie robocze.
-keywords: przestrzeń robocza karty grupy foldery wiele repozytoriów układ workspace tabs groups folders multiple repos organise switch layout
+keywords: przestrzeń robocza karty grupy foldery wiele repozytoriów układ workspace tabs groups folders multiple repos organise switch layout przejdź do repozytorium przełącznik rozmiar kart go to repository switcher tab sizing
+source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ---
 
 # Przestrzenie, karty i grupy
@@ -18,7 +19,9 @@ przeciągać, żeby zmienić kolejność, zamykać środkowym przyciskiem myszy 
 przywracać ostatnio zamkniętą przez <kbd>⌘⇧T</kbd>. Kliknij kartę repozytorium
 (albo chip wewnątrz [grupy](#grupy)) prawym przyciskiem, żeby dostać
 [menu kontekstowe repozytorium](repo-menu.md) — alias, worktree, GitHub,
-terminal, pokazanie w menedżerze plików, edytor i usuwanie. Zamknij ostatnią
+terminal, pokazanie w menedżerze plików, edytor, a na samym dole **Zamknij to
+repozytorium** i **Zamknij pozostałe** (chip w grupie oferuje zamiast tego
+usuwanie). Zamknij ostatnią
 kartę, a <kbd>⌘W</kbd> zamknie zamiast niej okno. Kropka na karcie oznacza
 niezacommitowaną pracę; inna kropka oznacza konflikty.
 
@@ -28,12 +31,71 @@ niezacommitowanych zmianach albo konfliktach ostrzeżenie celowo każe ci sięgn
 po przycisk, żeby przypadkowe uderzenie w klawisz po <kbd>⌘W</kbd> nie zamknęło
 pracy, którą wciąż trzymałeś.
 
+### Rozmiar kart
+
+Domyślnie (**Ustawienia → Układ → Rozmiar kart → Dopasuj**) karty zachowują się
+jak w przeglądarce: gdy w pasku brakuje miejsca, kurczą się równo do minimalnej
+szerokości, a przewijają dopiero, gdy i ta granica zostanie osiągnięta. **Stały**
+przywraca klasyczne zachowanie — każda karta zachowuje szerokość swojej zawartości,
+a pasek przewija się, gdy tylko nie mieszczą się wszystkie.
+
+### Przechodzenie do repozytorium
+
+Przy dziesięciu lub więcej otwartych repozytoriach znalezienie jednego w pasku
+wymaga przewijania, <kbd>⌘1</kbd>–<kbd>⌘9</kbd> kończą się na dziewiątej karcie, a
+[paleta poleceń](search.md) miesza otwarte repozytoria ze wszystkimi akcjami.
+Naciśnij <kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> (albo **Widok → Przejdź do
+repozytorium…**) i wpisz kilka liter jego nazwy, folderu lub gałęzi, potem
+<kbd>Enter</kbd>.
+
+![Przełącznik repozytoriów, ostatnio używane na początku](../../screenshots/repo-switcher.webp)
+
+Lista zawiera tylko otwarte repozytoria, łącznie z tymi w grupach, w kolejności, w
+jakiej ostatnio na nie patrzyłeś. To, które właśnie opuściłeś, jest pierwsze, więc
+<kbd>⌘J</kbd> <kbd>Enter</kbd> zabiera cię z powrotem. Każdy wiersz niesie to, co
+pokazuje jego karta: gałąź, kropkę niezacommitowanej pracy lub konfliktu, grupę, w
+której jest, i klawisz <kbd>⌘1</kbd>–<kbd>⌘9</kbd>, jeśli go ma. Repozytorium na
+ekranie jest przygaszone na dole. Za przełącznikiem nic się nie przyciemnia;
+kliknięcie obok albo <kbd>Esc</kbd> go zamyka.
+
+Gdy nic otwartego nie pasuje, ostatni wiersz, **Szukaj we wszystkich
+repozytoriach**, przenosi wyszukiwanie na stronę [Repozytoria](repositories.md).
+Skrót można zmienić w **Ustawienia → Skróty**.
+
+*Ograniczenia:* kolejność jest pamiętana tylko w tej sesji, więc po ponownym
+uruchomieniu zaczyna się od kolejności kart. Repozytorium otwarte w dwóch kartach
+pojawia się raz, przy pierwszej karcie. Repozytoria z innych
+[przestrzeni roboczych](#przestrzenie-robocze) nie są wymienione — najpierw zmień przestrzeń
+roboczą albo użyj strony Repozytoria.
+
 ## Grupy
 
 Zbierz powiązane repozytoria w nazwaną, oznaczoną kolorem **kartę grupy**.
 Wewnątrz grupy dostajesz drugi rząd z jednym chipem na repozytorium, a sama
 grupa potrafi za jednym zamachem wykonać **Pobierz wszystko** lub **Pull na
 wszystkich**.
+
+Żeby założyć grupę, kliknij prawym przyciskiem kartę repozytorium → *Nowa
+grupa…*: karta staje się grupą z tym repozytorium, w tym samym miejscu. Gdy grupa
+już istnieje, ta sama pozycja menu brzmi *Dodaj do grupy →* i wymienia otwarte
+grupy. Przeciągnięcie karty repozytorium na chip grupy robi to samo.
+
+*Nowa grupa…* pyta jednocześnie o nazwę i kolor. Kolor zaczyna od losowego, którego
+nie nosi jeszcze żadna otwarta grupa, żeby grupy nie zaczynały się tak samo.
+
+![Okno Nowa grupa, z nazwą i kolorem wybieranymi razem](../../screenshots/new-group-dialog.webp)
+
+Żeby zmienić kolor grupy, kliknij ją prawym przyciskiem: dziesięć kolorów stoi w
+menu jako rząd kropek, z obwódką wokół bieżącego, a jedno kliknięcie go stosuje.
+*Własny kolor…* pod rzędem otwiera wybór dowolnego innego koloru. Foldery i sekcje na
+stronie Repozytoria używają tego samego rzędu.
+
+![Menu kontekstowe grupy: rząd kolorów, Własny kolor…, Rozgrupuj i Zamknij grupę](../../screenshots/group-color-menu.webp)
+
+Żeby rozwiązać grupę, kliknij ją prawym przyciskiem → **Rozgrupuj**. Każde
+repozytorium staje się zwykłą kartą w miejscu grupy i zachowuje otwarte strony.
+**Zamknij grupę** zamyka natomiast grupę i każde repozytorium w niej. Foldery nie
+przetrwają rozgrupowania: istnieją tylko wewnątrz grupy.
 
 ![Karta grupy z kilkoma repozytoriami](../../screenshots/repo-groups.webp)
 

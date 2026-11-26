@@ -3,7 +3,8 @@ title: Çalışma alanları, sekmeler ve gruplar
 category: Buradan başlayın
 order: 3
 summary: Boğulmadan çok sayıda depo: sekmeler, gruplar, klasörler ve çalışma alanları.
-keywords: çalışma alanı sekmeler gruplar klasörler çoklu depo düzenleme geçiş yerleşim workspace tabs groups folders multiple repos organise switch layout
+keywords: çalışma alanı sekmeler gruplar klasörler çoklu depo düzenleme geçiş yerleşim workspace tabs groups folders multiple repos organise switch layout depoya git değiştirici sekme boyutu go to repository switcher tab sizing
+source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ---
 
 # Çalışma alanları, sekmeler ve gruplar
@@ -18,7 +19,8 @@ kullanın. Ayrıca sürükleyerek sıralayabilir, orta tıkla kapatabilir ya da 
 kapattığınızı yeniden açmak için <kbd>⌘⇧T</kbd> tuşuna basabilirsiniz. Bir depo
 sekmesine (ya da bir [grup](#gruplar) içindeki çipe) sağ tıklamak
 [depo bağlam menüsünü](repo-menu.md) getirir — takma ad, worktree'ler, GitHub,
-terminal, gösterme, düzenleyici ve kaldırma. Son
+terminal, gösterme, düzenleyici ve en altta **Bu depoyu kapat** ile
+**Diğerlerini kapat** (bir grup içindeki çip bunun yerine kaldırmayı sunar). Son
 sekmeyi kapatın; <kbd>⌘W</kbd> bu kez pencereyi kapatır. Sekmedeki bir nokta
 commit'lenmemiş çalışma, farklı bir nokta ise çakışma anlamına gelir.
 
@@ -28,12 +30,68 @@ veya çakışmalar varken uyarı sizi bilerek düğmeye uzanmaya zorlar; böylec
 <kbd>⌘W</kbd> sonrası yanlışlıkla basılan bir tuş, hâlâ elinizde tuttuğunuz
 çalışmayı kapatamaz.
 
+### Sekme boyutu
+
+Varsayılan olarak (**Ayarlar → Yerleşim → Sekme boyutu → Sığdır**) sekmeler bir
+tarayıcınınkiler gibi davranır: şerit yer kalmayınca eşit olarak bir en küçük
+genişliğe kadar daralırlar ve ancak o sınıra da ulaşılınca kaydırılırlar. **Sabit**
+klasik davranışı geri getirir — her sekme içeriğinin genişliğini korur ve hepsi
+sığmadığı anda şerit kaydırılır.
+
+### Bir depoya gitmek
+
+On ya da daha fazla depo açıkken şeritte birini bulmak kaydırmak demektir,
+<kbd>⌘1</kbd>–<kbd>⌘9</kbd> dokuzuncu sekmede durur ve [komut paleti](search.md) açık
+depoları tüm eylemlerle karıştırır. <kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> tuşlarına (ya
+da **Görünüm → Depoya git…**) basın ve adından, klasöründen ya da dalından birkaç harf
+yazın, sonra <kbd>Enter</kbd>.
+
+![Depo değiştirici, en son kullanılanlar önce](../../screenshots/repo-switcher.webp)
+
+Listede yalnızca açık depolar vardır, grup üyeleri dahil, en son baktığınız sırayla.
+Az önce ayrıldığınız en baştadır, bu yüzden <kbd>⌘J</kbd> <kbd>Enter</kbd> sizi ona
+geri götürür. Her satır sekmesinin gösterdiğini taşır: dal, commit’lenmemiş çalışma
+ya da çakışma noktası, bulunduğu grup ve varsa <kbd>⌘1</kbd>–<kbd>⌘9</kbd> tuşu.
+Ekrandaki depo altta soluk durur. Değiştiricinin arkasında hiçbir şey kararmaz;
+dışarı bir tıklama ya da <kbd>Esc</kbd> onu kapatır.
+
+Açık hiçbir şey eşleşmediğinde son satır, **Tüm depolarda ara**, aramanızı
+[Depolar](repositories.md) sayfasına taşır. Kısayol **Ayarlar → Kısayollar** içinde
+yeniden atanabilir.
+
+*Sınırlar:* sıra yalnızca bu oturum için hatırlanır, bu yüzden yeniden başlattıktan
+sonra sekme sırasından başlar. İki sekmede açık bir depo bir kez, ilk sekmesinde
+listelenir. Başka [çalışma alanlarındaki](#çalışma-alanları) depolar listelenmez — önce çalışma
+alanını değiştirin ya da Depolar sayfasını kullanın.
+
 ## Gruplar
 
 İlgili depoları adlandırılmış, renk kodlu bir **grup sekmesinde** toplayın. Bir
 grubun içinde depo başına bir çipin bulunduğu ikinci bir satır elde edersiniz ve
 grubun kendisi tek seferde **Tümünü fetch et** veya **Tümünü pull et**
 yapabilir.
+
+Bir tane başlatmak için bir depo sekmesine sağ tıklayın → *Yeni grup…*: sekme, aynı
+yerde o depoyu içeren bir gruba dönüşür. Bir grup var olduğunda aynı menü *Gruba ekle
+→* der ve açık grupları listeler. Bir depo sekmesini bir grup çipinin üzerine
+sürüklemek de aynısını yapar.
+
+*Yeni grup…* adı ve rengi birlikte sorar. Renk, grupların hepsi aynı başlamasın diye,
+henüz hiçbir açık grubun taşımadığı rastgele bir renkten başlar.
+
+![Yeni grup iletişim kutusu; ad ve renk birlikte seçilir](../../screenshots/new-group-dialog.webp)
+
+Bir grubun rengini değiştirmek için ona sağ tıklayın: on renk menüde bir nokta
+sırası olarak durur, geçerli olanın çevresinde bir halka vardır ve bir tıklama onu
+uygular. Sıranın altındaki *Özel renk…* başka herhangi bir renk için bir seçici açar.
+Klasörler ve Depolar sayfasındaki bölümler aynı sırayı kullanır.
+
+![Bir grubun sağ tık menüsü: renk sırası, Özel renk…, Grubu dağıt ve Grubu kapat](../../screenshots/group-color-menu.webp)
+
+Bir grubu dağıtmak için ona sağ tıklayın → **Grubu dağıt**. Her depo, açık
+sayfalarını koruyarak grubun yerinde sıradan bir sekme olur. **Grubu kapat** ise
+grubu ve içindeki her depoyu kapatır. Klasörler dağıtmadan sağ çıkmaz: yalnızca bir
+grubun içinde var olurlar.
 
 ![Birkaç depo içeren bir grup sekmesi](../../screenshots/repo-groups.webp)
 

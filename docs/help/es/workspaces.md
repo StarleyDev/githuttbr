@@ -3,7 +3,8 @@ title: Espacios de trabajo, pestañas y grupos
 category: Empieza aquí
 order: 3
 summary: Muchos repositorios sin ahogarte: pestañas, grupos, carpetas y espacios de trabajo.
-keywords: espacio de trabajo workspace pestañas tabs grupos groups carpetas folders varios repositorios organizar cambiar layout
+keywords: espacio de trabajo workspace pestañas tabs grupos groups carpetas folders varios repositorios organizar cambiar layout ir al repositorio selector tamaño de pestañas go to repository switcher tab sizing
+source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ---
 
 # Espacios de trabajo, pestañas y grupos
@@ -18,7 +19,8 @@ activa. También puedes arrastrar para reordenar, cerrar con el botón central, 
 pulsar <kbd>⌘⇧T</kbd> para reabrir la última que cerraste. Haz clic derecho en
 una pestaña de repositorio (o en una ficha dentro de un [grupo](#grupos)) para
 el [menú contextual del repositorio](repo-menu.md) — alias, worktrees, GitHub,
-terminal, mostrar, editor y quitar. Cierra la última
+terminal, mostrar, editor y, al final, **Cerrar este repositorio** y **Cerrar las
+demás** (una ficha dentro de un grupo ofrece quitar en su lugar). Cierra la última
 pestaña y <kbd>⌘W</kbd> cierra la ventana. Un punto en la pestaña significa
 trabajo sin commitear; otro distinto significa conflictos.
 
@@ -28,12 +30,73 @@ cambios sin commitear o conflictos, el aviso te obliga deliberadamente a ir al
 botón, para que una tecla suelta después de <kbd>⌘W</kbd> no cierre trabajo que
 todavía tenías en la mano.
 
+### Tamaño de pestañas
+
+Por defecto (**Ajustes → Diseño → Tamaño de pestañas → Ajustar**) las pestañas se
+comportan como las de un navegador: cuando la franja se queda sin espacio, encogen
+por igual hasta un ancho mínimo, y solo se desplazan cuando se alcanza incluso ese
+mínimo. **Fijo** recupera el comportamiento clásico — cada pestaña conserva el ancho
+de su contenido y la franja se desplaza en cuanto no caben todas.
+
+### Ir a un repositorio
+
+Con diez o más repositorios abiertos, encontrar uno en la franja obliga a
+desplazarse, <kbd>⌘1</kbd>–<kbd>⌘9</kbd> se detienen en la novena pestaña, y la
+[paleta de comandos](search.md) mezcla los repositorios abiertos con todas las
+acciones. Pulsa <kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> (o **Ver → Ir al
+repositorio…**) y escribe unas letras de su nombre, carpeta o rama, y luego
+<kbd>Enter</kbd>.
+
+![El selector de repositorios, los usados más recientemente primero](../../screenshots/repo-switcher.webp)
+
+La lista tiene solo los repositorios abiertos, incluidos los de grupos, en el orden
+en que los miraste por última vez. El que acabas de dejar va primero, así que
+<kbd>⌘J</kbd> <kbd>Enter</kbd> te devuelve a él. Cada fila lleva lo que muestra su
+pestaña: la rama, el punto de trabajo sin commitear o de conflicto, el grupo en que
+está y su tecla <kbd>⌘1</kbd>–<kbd>⌘9</kbd> cuando la tiene. El repositorio en
+pantalla aparece atenuado al final. Nada se oscurece detrás del selector; un clic
+fuera o <kbd>Esc</kbd> lo cierra.
+
+Cuando nada abierto coincide, la última fila, **Buscar en todos los
+repositorios**, lleva tu búsqueda a la página [Repositorios](repositories.md). El
+atajo se puede reasignar en **Ajustes → Atajos**.
+
+*Límites:* el orden se recuerda solo en esta sesión, así que tras reiniciar empieza
+por el orden de las pestañas. Un repositorio abierto en dos pestañas aparece una
+vez, en su primera pestaña. Los repositorios de otros [workspaces](#espacios-de-trabajo) no
+aparecen — cambia antes de workspace, o usa la página Repositorios.
+
 ## Grupos
 
 Agrupa repositorios relacionados en una **pestaña de grupo** con nombre y
 color. Dentro de un grupo tienes una segunda fila con una ficha por
 repositorio, y el grupo entero puede hacer **Fetch de todos** o **Pull de
 todos** de una vez.
+
+Para empezar uno, haz clic derecho en una pestaña de repositorio → *Nuevo grupo…*:
+la pestaña se convierte en un grupo con ese repositorio, en el mismo sitio. Una vez
+que existe un grupo, el mismo menú dice *Mover a un grupo →*, con los grupos
+abiertos. Arrastrar una pestaña de repositorio sobre una ficha de grupo hace lo
+mismo.
+
+*Nuevo grupo…* pide un nombre y un color a la vez. El color empieza en uno que
+ningún grupo abierto lleva todavía, elegido al azar, para que los grupos no empiecen
+todos iguales.
+
+![El diálogo Nuevo grupo, con nombre y color elegidos a la vez](../../screenshots/new-group-dialog.webp)
+
+Para cambiar el color de un grupo, haz clic derecho en él: los diez colores están
+en el menú como una fila de puntos, con un anillo alrededor del actual, y un clic
+lo aplica. *Color personalizado…* bajo la fila abre un selector para cualquier otro
+color. Las carpetas y las secciones de la página Repositorios usan la misma fila.
+
+![El menú contextual de un grupo: la fila de colores, Color personalizado…, Desagrupar y Cerrar grupo](../../screenshots/group-color-menu.webp)
+
+Para deshacer un grupo, haz clic derecho en él → **Desagrupar**. Cada repositorio
+se convierte en una pestaña normal donde estaba el grupo, conservando las páginas
+que tenía abiertas. **Cerrar grupo** cierra en cambio el grupo y todos sus
+repositorios. Las carpetas no sobreviven a un Desagrupar: solo existen dentro de un
+grupo.
 
 ![Una pestaña de grupo con varios repositorios](../../screenshots/repo-groups.webp)
 

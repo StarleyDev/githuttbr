@@ -3,8 +3,8 @@ title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri ve diff’inin bir satırına yorumlar.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number
-source: 729c0829d4ded79d157edea6c162fa638d7b41e0
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image
+source: a4156cb9fd737c311bc0441169b7a3d933dad274
 ---
 
 # Pull request sayfası
@@ -183,6 +183,15 @@ sessizce başarısız olmak yerine bunu söyler ve şunları sunar:
 - **Görmek için PR dalını getir** — [dala gitmek](#bir-pull-requestin-dalına-gitmek) ile aynı tek dallık
   fetch, checkout olmadan. Commit onunla geldiyse açılır; gelmediyse (o zamandan
   beri bir force push onu yeniden yazdıysa) bildirim bunu söyler.
+- **Pull request’in commit’lerini al**, bir **fork**’tan gelen pull request’te. Dalı
+  başka bir depodadır, ama çoğu sunucu bir pull request’in head’ini hedef depoda kendi
+  ref’i altında yansıtır — `refs/pull/N/head` (GitHub, GitHub Enterprise Server,
+  Forgejo), `refs/merge-requests/N/head` (GitLab), `refs/pull-requests/N/from`
+  (Bitbucket Data Center). Uygulama yalnızca o ref’i, etiketler olmadan, kendine ait
+  bir ref’e, `refs/githuttbr/pr/<remote>/N`, fetch eder ve commit diğerleri gibi
+  açılır: grafik o head’i etiketsiz bir şerit olarak çizer. Yeniden fetch etmek ref’i
+  head’in o anki hâline taşır. O zamandan beri bir force push commit’i dışarıda
+  bıraktıysa bildirim bunu söyler.
 - **Tarayıcıda aç**, fetch bir seçenek olmadığında.
 
 Liste sayfayla birlikte değil, sekmeyi ilk açtığınızda okunur, ve her **Yenile**’de
@@ -202,9 +211,19 @@ Yapmadıkları:
   | GitHub | **İlk** 250 (GitHub’ın kendi sınırı) |
   | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | **En yeni 250** |
   | Forgejo | Sunucu hangi ucu önce listelerse; sırası belgelenmemiştir |
-- **Bir fork’un dalı** buradan getirilemez — başka bir depodadır —, bu yüzden
-  yalnızca fork’ta olan bir commit yalnızca tarayıcıyı sunar. **Pull request’i
-  yerelde önizle…** onu getirmenin yoludur.
+- **Sunucunun yansıtmadığı yerde bir fork’un head’i.** Azure DevOps yalnızca bir
+  birleştirme sonucunu yayımlar, bir pull request’in kendi head’ini asla; bitbucket.org
+  ise ikisini de yayımlamaz: orada satır yalnızca tarayıcıyı sunar. Yansıtmadığı
+  ortaya çıkan başka bir sunucuda fetch bunu söyler. **Pull request’i yerelde
+  önizle…**, ihtiyacınız olan buysa, Azure’un birleştirme sonucunu getirir.
+- **Fetch edilen head’ler kalır.** `refs/githuttbr/pr/…` bir dal değildir: checkout
+  edilecek ya da push edilecek bir şey yoktur, prune’lu bir fetch ona dokunmaz ve git
+  commit’lerini tutar. Onu kaldıran bir şey de yoktur — ne sayfayı kapatmak ne de
+  [Dal temizliği](branch-cleanup.md). Onlardan kurtulmak için ref’leri elle silin:
+  `git for-each-ref refs/githuttbr/pr` onları listeler, `git update-ref -d <ref>`
+  birini siler.
+- **Adında `/` olan bir uzak depo** o ref’in adının bir parçası olamaz, bu yüzden
+  orada fetch reddedilir.
 - **Silinmiş bir dal.** Birleştirilmiş bir pull request çoğu zaman dalını da
   götürmüştür: fetch bunu söyler. bitbucket.org, kaynak dal gidince hiç commit
   listelemez.
@@ -320,6 +339,78 @@ içine tıkladığınızda araçlarını gösterir ve Enter artık yeni bir sat�
 için ⌘/Ctrl+Enter ile gönderir. Ayrıntılar ve sınırlar
 [Yorum yazmak](writing-comments.md) sayfasında.
 
+## Yorumlar nasıl gösterilir
+
+İnsanlar yorumları Markdown ile yazar, bu yüzden düz metin olarak gösterilen bir yorum
+`**`, `- [ ]` ve kod çitleriyle doludur. Açıklama, konuşma ve inceleme konuşmaları
+(Konuşma ve Dosyalar sekmelerinde) Markdown olarak çizilir: başlıklar, listeler ve
+görev listeleri, tablolar, alıntılar, çitin adlandırdığı dilde vurgulanan kod blokları,
+bağlantılar ve görseller. Issue sayfası da metnini aynı biçimde çizer. Metindeki
+`#123`, `AB#123`, `!123` ve `@user` hâlâ bağlantıya dönüşür, kartı olduğu yerde
+[kartıyla](#bir-123-ya-da-ab123-neyle-ilgili) birlikte.
+
+![İşlenmiş bir yorum: bir tablo, yer tutucusunun arkasında bekletilen başka bir siteden bir görsel ve vurgulanmış bir kod bloğu](../../screenshots/pr-rendered-comment.webp)
+
+Çizimin geldiği yer:
+
+| Sunucu | İşleyen |
+|---|---|
+| GitHub, GitHub Enterprise Server | GitHub’ın kendisi (`body_html`): bahsetmeler ve referanslar web sitesindeki gibi bağlanır, görseller GitHub’ın görsel proxy’sinden geçer ve özel ekler imzalı adreslerini taşır |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | Uygulama, yorumun Markdown’ından. Göreli bir bağlantı depoyu gösterir; GitLab’de `/uploads/…`, GitLab’in yaptığı gibi projeyi gösterir |
+
+Bir yorum başkalarının içeriğidir, bu yüzden içerebileceği şeyler dardır ve kendi
+dosyalarınız için olandan daha dardır: açık bir etiket listesi, yalnızca `https:`,
+`http:` ya da `mailto:` üzerindeki bağlantılar ve görseller; betik, çerçeve, form, SVG
+ya da satır içi stil yok; ve uygulamanın içinde asla açılmayan bağlantılar (tarayıcınıza
+giderler). Bir görev listesindeki onay kutusu gösterilir ama tıklanamaz: burada
+işaretlemek sunucuda hiçbir şeyi değiştirmezdi.
+
+**Başka sitelerden görseller bir tıklama bekler.** Bir görseli yüklemek, arkasındaki
+sitenin IP adresinizle ve yorumu okuduğunuz anla birlikte izleyebileceği bir istektir
+— yorum yapabilen herkes oraya bir izleme pikseli koyabilir. Bu yüzden yalnızca
+sunucunun kendisinden gelen görseller kendiliğinden yüklenir: github.com’da ekleri,
+`*.githubusercontent.com` (görsel proxy’si dahil) ve varlıkları; başka herhangi bir
+sunucuda kendi adresi. Diğer her görsel *example.net kaynaklı görsel — yüklemek için
+tıklayın* gösterir ve tıklama yalnızca o görseli yükler. **Ayarlar → Güvenlik →
+Yorumlarda diğer sitelerden görselleri yükle** bunu kapatır;
+[Güvenlik](security.md#yorumlardaki-görseller) sayfasına bakın.
+
+**Önizleme gönderilecek olanı gösterir.** Bu sayfada ve issue sayfasında, her yorum
+kutusunun **Önizleme** sekmesi metni aynı biçimde çizer: aynı profil, aynı satır
+sonları, aynı bekletilen görseller — dışarıdaki bir görsele yapıştırılmış bir
+bağlantı, siz yazarken onu yüklemez. Yeni pull request ve yeni issue iletişim
+kutuları uygulamanın olağan Markdown önizlemesini korur.
+
+**Çok uzun ya da çok karmaşık olan metin olarak gösterilir.** Markdown uygulamanın
+penceresinde işlenir ve bazı metinlerin işlenmesi boyutlarının düşündürdüğünden çok
+daha pahalıdır. **32.000 karakteri** aşan ya da işleyiciyi kilitleyecek biçimde
+kurulmuş bir yorum (bir paragrafta binlerce eşsiz `_` ya da `*`, ya da tek satırda 32
+seviyeden fazla `>` veya liste işareti), bağlantılarıyla düz metin olarak, *Uzun yorum
+düz metin olarak gösteriliyor.* ya da *Yorum düz metin olarak gösteriliyor: burada
+işlenemeyecek kadar karmaşık.* başlığı altında gösterilir. Yine de işlenemeyen bir
+yorum kendiliğinden aynı biçimde geri düşer: sayfanın geri kalanı etkilenmez.
+
+Yapmadıkları:
+
+- **Düzenlerken metin yazıldığı gibi görünür.** **Düzenle** hâlâ Markdown’ı açar ve
+  kaydedilmiş bir düzenlemeyi, sayfa pull request’i yeniden okuyana kadar uygulama
+  çizer (GitHub’da ondan sonra GitHub).
+- **Özel GitHub ekleri süresi dolar.** GitHub özel bir görselin adresini birkaç
+  dakikalığına imzalar; sayfa bir süre açık kaldıktan sonra artık yüklenmeyen biri
+  **Yenile** ile geri gelir.
+- **GitHub’da uygulamanın kendisinin çizdiği göreli bir görsel** (sayfa onu yeniden
+  okumadan önce uygulamadan gönderilmiş bir yanıt), deponun github.com’daki adresi
+  altında aranır; bu, GitHub’ın onu koyacağı yer olmayabilir.
+- Bir GitHub yorumundaki **videolar** oynatıcı olarak değil, dosyaya bir bağlantı
+  olarak görünür.
+- Uygulamanın kendisinin çizdiği (diğer sunucularda) **yalnızca GitHub’a özgü
+  uzantılar** yoktur: emoji kısa kodları, Mermaid diyagramları, uyarı biçimleri yok ve
+  formüller metin olarak kalır.
+- **Kod yalnızca çit dilini adlandırdığında vurgulanır.** Dili tahmin etmek, her
+  dilbilgisini sayfadaki her bloğun üzerinden geçirmek demek olurdu.
+- Commit’ler sekmesindeki **commit mesajları** düz metin kalır: git Markdown işlemez,
+  sunucular da işlemez.
+
 ## Yorumlarınızı düzenlemek ve silmek
 
 Gönderilmiş bir yorumdaki yazım hatası ya da artık geçerli olmayan bir not, eskiden
@@ -333,10 +424,12 @@ sayfasında da, GitHub ve Forgejo’daki yorumları için, bunlar vardır.
 Neyin “sizin” olduğuna sayfanın kendisi karar verir: her yüklemede sunucuya bu
 deponun çağrılarının kim olarak oturum açtığını sorar (o anda etkin olan profili
 değil, deponun bağlı profilini). Çoğu sunucu yazarı, büyük/küçük harf ayrımı
-gözetmeden karşılaştırılan kullanıcı adıyla belirtir. Azure DevOps yazarları iki
-kişinin paylaşabileceği görünen adla belirtir; bu yüzden orada yorumun yazar
-kimliği hesabın kimliğiyle eşleşmelidir; kimliklerden biri eksikse hiçbir yorum
-eylemleri göstermez. Uygulama kim olduğunuzu anlayamadığında (kullanıcı kapsamı
+gözetmeden karşılaştırılan kullanıcı adıyla belirtir. Azure DevOps yazarları iki kişinin paylaşabileceği görünen adla belirtir; bu yüzden
+orada adlar asla karşılaştırılmaz: yazarının kimliği hesabın kimliğiyle eşleştiğinde
+**ya da** yazarının benzersiz adı (hesap adı, genellikle bir e-posta adresi),
+büyük/küçük harf ayrımı gözetmeden, hesabınkiyle eşleştiğinde yorum sizindir. İkisi
+de tek bir kişiye özgüdür; ikincisi, bağlantının bildirdiğinden farklı bir yazar
+kimliğini kapsar. Hiçbiri karşılaştırılamadığında hiçbir yorum eylemleri göstermez. Uygulama kim olduğunuzu anlayamadığında (kullanıcı kapsamı
 olmayan bir token ya da sunucu yanıt vermedi) hiçbir yorum bunları göstermez;
 **Yenile** yeniden sorar. Kararı yine sunucu verir: bir yorumu değiştirmesine izin
 vermediği bir hesap reddedilir ve mesaj bunu söyler.
@@ -360,7 +453,7 @@ söylenir:
 
 | Sunucu | Yanıtları olan bir konuşmanın ilk yorumu |
 |---|---|
-| GitHub | Yanıtlar kalmalı; GitHub’ın belgeleri bunu söylemez. O konuşmaya uygulamadan yanıt vermek artık mümkün değildir: yanıtları artık olmayan bir yorumu gösterir ve API bir yanıta yanıt kabul etmez. Konuşma bu durumda **GitHub’da yanıtla** seçeneğini sunar |
+| GitHub | Yanıtlar kalmalı; GitHub’ın belgeleri bunu söylemez. Konuşma yanıt kutusunu korur: ilk yorumu gidince yanıt, GitHub’ın GraphQL API’si üzerinden, içinde hâlâ duran bir yanıt aracılığıyla bulunan konuşmanın kendisine gönderilir. Bu başarısız olursa (eski bir Enterprise Server, GraphQL’in reddettiği bir token, GitHub’ın bu hesabın yanıt veremeyeceğini söylediği bir konuşma), konuşma bunun yerine **GitHub’da yanıtla** seçeneğini sunar. GitHub’da devam eden bir incelemeniz varsa GitHub yanıtı onun altına koyabilir: bu durumda bildirim bunu söyler ve o incelemeyi orada gönderene kadar yanıtı kimse görmez |
 | GitLab | Yalnızca o not gider; konuşma ve yanıtları kalır |
 | Azure DevOps | Silindi olarak işaretlenip gizlenmeli, konuşma ve yanıtları korunmalı; Azure’un belgeleri bunu söylemez |
 | Bitbucket Data Center | Reddedilir: Data Center yanıtları olan bir yorumu silmez. Önce yanıtları silin ya da onun yerine yorumu düzenleyin |
@@ -414,7 +507,7 @@ pull request’e bağlanır.
 | Referans | Sunucu | Okunduğu yer |
 |---|---|---|
 | `AB#123`, ve bir Azure deposunda `#123` | Azure DevOps | Work item’lar, tek istekte 200’e kadar |
-| `#123` | GitHub, GitHub Enterprise Server | Issue’lar (pull request’ler için de yanıt verir), her biri için bir istek, birer birer |
+| `#123` | GitHub, GitHub Enterprise Server | Issue’lar ve pull request’ler, tek GraphQL isteğinde 50’ye kadar; GraphQL başarısız olunca her biri için bir REST isteği |
 | `#123` / `!123` | GitLab | Issue’lar / merge request’ler, tür başına bir istek |
 | `#123` | Forgejo | Issue’lar (pull request’ler de), her biri için bir istek, ikişer ikişer |
 
@@ -432,11 +525,18 @@ görebilir.
 
 Maliyeti:
 
-- **GitHub ve Forgejo** birden çok issue’yu tek istekte okuyamaz, bu yüzden her kart
-  bir istek tutar. Bir üzerine gelme en fazla **10** tane ister — üzerinde olduğunuz
-  ve komşuları — ve GitHub’da, GitHub’ın uygulamalardan istediği gibi, birbiri
-  ardına. *Yavaşla* diyen ilk yanıt (429 ya da 403) gerisini durdurur ve bu
-  referanslar beş dakika boyunca yeniden sorulmaz.
+- **GitHub**, GraphQL API’si üzerinden tek istekte **50**’ye kadar okur — üzerinde
+  olduğunuz ve en yakın komşuları. GraphQL bir hız sınırı dışında başka bir nedenle
+  başarısız olduğunda (eski bir Enterprise Server, reddettiği bir token), uygulama her
+  istekte bir issue okuyan REST API’sine geri döner: o zaman yalnızca ilk **10** tane,
+  GitHub’ın uygulamalardan istediği gibi birbiri ardına sorulur; diğerleri bilinmeden
+  kalır ve sonraki bir üzerine gelme onları sorar.
+- **Forgejo** birden çok issue’yu tek istekte okuyamaz, bu yüzden her kart bir istek
+  tutar: bir üzerine gelme en fazla **10** tane ister, ikişer ikişer.
+- GitHub ve Forgejo’da *yavaşla* diyen ilk yanıt (bir 429, bir 403, GraphQL’in kendi
+  hız sınırı hatası, ikincil bir sınır ya da sınırın son isteğini harcamış bir yanıt)
+  gerisini durdurur — GitHub o zaman REST’e geri dönmez — ve bu referanslar beş dakika
+  boyunca yeniden sorulmaz.
 - **Azure DevOps** tek istekte 200’e kadar work item okur, GitLab ise tür başına bir
   istek yapar; bu yüzden orada tüm sayfa bir kerede gider.
 

@@ -3,8 +3,8 @@ title: Güvenlik ve sırlar
 category: Güvenlik
 order: 70
 summary: Maskeleme, korumalar, anahtar zinciri — ve Gitcito'nun yapmayı reddettikleri.
-keywords: güvenlik sırlar maskeleme anahtar zinciri token korumalı dal büyük dosya gizlilik security secrets masking keychain safeStorage protected branch large file guard privacy okunamayan yedek bölümler yolları çevir başka bilgisayar yeni makine profilleri birleştir profilleri değiştir ne dışa aktarılacağını seç tam yedek ekip için manifest parola şifreleme appimage apparmor sandbox sorun bildir
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: güvenlik sırlar maskeleme anahtar zinciri token korumalı dal büyük dosya gizlilik security secrets masking keychain safeStorage protected branch large file guard privacy okunamayan yedek bölümler yolları çevir başka bilgisayar yeni makine profilleri birleştir profilleri değiştir ne dışa aktarılacağını seç tam yedek ekip için manifest parola şifreleme appimage apparmor sandbox sorun bildir yorumlardaki görseller izleme pikseli ip adresi üçüncü taraf görseller yüklemek için tıkla images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Güvenlik ve sırlar
@@ -39,6 +39,47 @@ kabul edilir.
 | **Derleme çöpü** | `xcuserdata/`, `DerivedData/` ya da bir `.DS_Store` işlemek — aynı tek tıklık *Yok say ve takibi bırak* ile |
 | **Korumalı dal** | Doğrudan `main`/`master`'a commit'lerken ya da birini force push ederken |
 | **İzlenen sırlar** | Bir sır dosyasını *izleyen* bir depoyu push ederken — oturum başına bir kez uyarılır |
+
+## Yorumlardaki görseller
+
+Pull request ve issue yorumlarını başkaları yazar ve bunlardan birindeki bir görsel,
+bilgisayarınızın yazarın seçtiği siteye yaptığı bir istektir. O site IP adresinizi ve
+yorumu ne zaman okuduğunuzu öğrenir — bir izleme pikselinin yorum yapma hakkından
+fazlasına ihtiyacı yoktur.
+
+Bu yüzden uygulama kendiliğinden yalnızca sunucunun kendisinden gelen görselleri
+yükler: github.com’da ekleri, `*.githubusercontent.com` (GitHub’ın kendi işlemesinde
+her dış görselin önüne koyduğu proxy dahil) ve varlıkları; başka herhangi bir
+sunucuda, https üzerinden, kendi web adresi. Diğer her görsel alan adını belirten bir
+yer tutucu gösterir ve yalnızca ona tıkladığınızda istenir — yalnızca o görsel, bir
+kez. İstek asla bir `Referer` göndermez.
+
+| Ayar | Ne yapar |
+|---|---|
+| **Yorumlarda diğer sitelerden görselleri yükle** (varsayılan olarak kapalı) | Her siteden görseller, sunucunun web sitesindeki gibi tıklamadan yüklenir |
+
+Sınırlar:
+
+- **Sunucu sizi yine de görür.** Sunucunun kendisinden bir görsel — ve GitHub’da
+  proxy’si üzerinden geçen her görsel — sunucuya yapılan bir istektir ve sunucu bu
+  hesabın pull request’i okuduğunu zaten bilir.
+- **`raw.githubusercontent.com` ve `gist.githubusercontent.com` tıklamadan
+  yüklenir.** Oraya herkes bir dosya koyabilir, yani görsel onlarındır — ama onu
+  GitHub sunar ve yazarı IP adresinizi ya da ne zaman okuduğunuzu görmez.
+- **Özel GitHub ekleri süresi dolar.** İmzalı adresleri birkaç dakika geçerlidir;
+  sayfadaki **Yenile**, yüklenmeyi bırakmış birini geri getirir.
+- Bu sayfalardaki **bir yorum kutusunun önizlemesi** aynı kurala uyar: dışarıdaki bir
+  görsele yapıştırılmış bir bağlantı siz yazarken yüklenmez.
+- **Yalnızca pull request ve issue sayfaları.** Deponun bir Markdown dosyasındaki, bir
+  sürüm notundaki ya da wiki’deki görseller deponuzun kendi içeriğidir ve eskisi gibi
+  yüklenir.
+- **Bağlantı bir görsel değildir.** Bir yorumdaki bağlantıya tıklamak, uygulamadaki her
+  bağlantı gibi onu tarayıcınızda açar.
+
+Bir yorum pencereyi kilitleyemez ya da çökertemez de: 32.000 karakteri aşan ya da
+Markdown işleyicisini saniyelerce çalıştıracak biçimde kurulmuş bir yorum düz metin
+olarak gösterilir. Bir yorumun geri kalanının nasıl kısıtlandığı
+[Pull request’ler](pull-requests.md#yorumlar-nasıl-gösterilir) sayfasındadır.
 
 ## AppImage ve ondan uzun yaşayan yollar
 
@@ -79,6 +120,8 @@ anahtar zinciri çağrısı yapar.
 
 Kapalıyken Entegrasyonlar’daki token alanı bunu belirtir — *Yalnızca Gitcito’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.* — yanında bir **Etkinleştir** düğmesiyle. Oradan ya da buradan açmak, bu oturumda girdiğiniz token’ları da kaydeder; yeniden yapıştırmanız gerekmez.
 
+![Anahtarlık kapalıyken Entegrasyonlar’daki token alanı: yalnızca kapatana kadar saklanır, bir Etkinleştir düğmesiyle](../../screenshots/token-keychain-notice.webp)
+
 Anahtarlık kapalıyken **kaldırdığınız** bir token hemen gider — artık hiçbir
 şeyle gönderilmez — ama yalnızca **bu oturum için**: anahtarlık kapalıyken
 şifreli depoya yazılamaz ve silme işlemi bellekte tutulur, asla bir dosyada
@@ -118,6 +161,24 @@ yapay zekânın anahtarı ortak yerine taşınmaz (her profil kendi anahtarını
 okumaya devam eder) ve kasa, oturumluk bir modu olmadığı için temel depolamaya
 kaydetmeyi sürdürür. Yeni token'ları yeniden kalıcı olarak saklamak için bir
 anahtarlık kurun ya da kilidini açın ve Gitcito'yu yeniden başlatın.
+
+Gitcito hangi depoyu aldığı konusunda sistemin sözüne güvenmez. Sistem onu öyle
+adlandırdığında, onu hiç adlandıramadığında ve şifrelediği şey sabit parolayla
+işaretlenmiş olarak geri geldiğinde — sistem ne derse desin — onu temel sayar. Böylece
+sessizce geri düşen bir anahtarlık bile yeni token’ları diskten uzak tutar.
+
+Yanıt vermeyi bırakan bir anahtarlık sonsuza kadar beklenmez. Linux’ta anahtarlık bu
+oturumda bir kez yanıt verdikten sonra, 10 saniye yanıtsız bıraktığı bir soru
+*anahtarlık yok* sayılır: kaydettiğiniz bir token kapatana kadar tutulur ve Kasa kapalı
+kalır. Bir oturumun ilk sorusu — anahtarlığın kendi parola isteğini getirebilecek olan
+— ve Gitcito’nun açıklamasının hemen ardından gelen soru iki dakika alır, böylece bir
+iletişim kutusunu okumak asla yarıda kesilmez. Böyle bir zaman aşımından sonraki
+yarım dakika boyunca yanıt yeniden sorulmadan *anahtarlık yok* kalır; ardından Gitcito
+yeniden sorar. macOS ve Windows yerelde yanıt verir ve asla zaman aşımına uğratılmaz.
+
+Sınır yalnızca o soruyu kapsar — *bir anahtarlık var mı?* Onu yanıtlayıp sonra
+şifrelerken ya da şifre çözerken takılan bir anahtarlık yine de beklenir: ayarları
+kaydetmek ve Kasa, o yanıt verene ya da Gitcito yeniden başlayana kadar meşgul kalır.
 
 ### Kayıtlı token'lar okunamadığında
 

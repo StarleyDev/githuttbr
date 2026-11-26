@@ -40,7 +40,7 @@ export function EditableComment({
   head: React.ReactNode
   headClassName: string
   bodyClassName: string
-  /** The text as the page shows it (autolinked). */
+  /** The text as the page shows it (rendered: components/RemoteMarkdown.tsx). */
   rendered: React.ReactNode
   drafts: React.RefObject<Record<string, CommentEditDraft>>
   busy: boolean

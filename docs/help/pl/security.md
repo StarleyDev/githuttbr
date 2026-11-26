@@ -3,8 +3,8 @@ title: Bezpieczeństwo i sekrety
 category: Bezpieczeństwo
 order: 70
 summary: Maskowanie, zabezpieczenia, pęk kluczy — i to, czego Gitcito robić odmawia.
-keywords: bezpieczeństwo sekrety maskowanie pęk kluczy tokeny chroniona gałąź duży plik prywatność security secrets masking keychain safeStorage protected branch guard privacy nieczytelne kopia zapasowa części tłumaczenie ścieżek inny komputer nowa maszyna scalanie profili zastępowanie profili wybór eksportu pełna kopia dla zespołu manifest hasło szyfrowanie appimage apparmor sandbox zgłoś problem
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: bezpieczeństwo sekrety maskowanie pęk kluczy tokeny chroniona gałąź duży plik prywatność security secrets masking keychain safeStorage protected branch guard privacy nieczytelne kopia zapasowa części tłumaczenie ścieżek inny komputer nowa maszyna scalanie profili zastępowanie profili wybór eksportu pełna kopia dla zespołu manifest hasło szyfrowanie appimage apparmor sandbox zgłoś problem obrazy w komentarzach piksel śledzący adres ip obrazy z innych witryn kliknij aby wczytać images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Bezpieczeństwo i sekrety
@@ -39,6 +39,47 @@ szablony, a nie jak sekrety.
 | **Śmieci z budowania** | Commit `xcuserdata/`, `DerivedData/` albo `.DS_Store` — z tym samym *Ignoruj i przestań śledzić* jednym kliknięciem |
 | **Chroniona gałąź** | Commit prosto na `main`/`master` albo force push na nią |
 | **Śledzone sekrety** | Push repozytorium, które *śledzi* plik z sekretem — ostrzeżenie raz na sesję |
+
+## Obrazy w komentarzach
+
+Komentarze do pull requestów i issues piszą inni ludzie, a obraz w jednym z nich to
+zapytanie, które twój komputer wysyła do witryny wybranej przez autora. Ta witryna
+poznaje twój adres IP i moment, w którym czytasz komentarz — pikselowi śledzącemu nie
+potrzeba nic więcej niż prawa do komentowania.
+
+Dlatego aplikacja sama z siebie wczytuje tylko obrazy z samego hostingu: na github.com
+jego załączniki, `*.githubusercontent.com` (łącznie z proxy, które GitHub stawia przed
+każdym zewnętrznym obrazem we własnym renderowaniu) i jego zasoby; na każdym innym
+hostingu jego własny adres, przez https. Każdy inny obraz pokazuje zastępnik z nazwą
+domeny i jest pobierany dopiero po kliknięciu — ten jeden obraz, raz. Zapytanie nigdy
+nie wysyła nagłówka `Referer`.
+
+| Ustawienie | Co robi |
+|---|---|
+| **Wczytuj obrazy z innych witryn w komentarzach** (domyślnie wyłączone) | Obrazy z każdej witryny wczytują się bez kliknięcia, jak na stronie hostingu |
+
+Ograniczenia:
+
+- **Hosting i tak cię widzi.** Obraz z samego hostingu — a na GitHubie każdy obraz
+  przez jego proxy — to zapytanie do hostingu, który i tak wie, że to konto czyta pull
+  request.
+- **`raw.githubusercontent.com` i `gist.githubusercontent.com` wczytują się bez
+  kliknięcia.** Każdy może tam umieścić plik, więc obraz jest jego — ale serwuje go
+  GitHub, a jego autor nie widzi twojego adresu IP ani tego, kiedy czytasz.
+- **Prywatne załączniki GitHuba wygasają.** Ich podpisany adres działa kilka minut;
+  **Odśwież** na stronie przywraca taki, który przestał się wczytywać.
+- **Podgląd pola komentarza** na tych stronach podlega tej samej regule: wklejony link
+  do zewnętrznego obrazu nie jest wczytywany, gdy piszesz.
+- **Tylko strony pull requesta i issue.** Obrazy w pliku Markdown repozytorium, w
+  notatce do wydania czy w wiki to treść twojego repozytorium i wczytują się jak
+  dotąd.
+- **Link to nie obraz.** Kliknięcie linku w komentarzu otwiera go w przeglądarce, jak
+  każdy link w aplikacji.
+
+Komentarz nie może też zablokować ani wywrócić okna: taki, który ma ponad 32 000
+znaków albo jest zbudowany tak, by renderer Markdownu pracował całymi sekundami, jest
+pokazywany jako zwykły tekst. Jak ograniczana jest reszta komentarza, opisuje
+[Pull requesty](pull-requests.md#jak-pokazywane-są-komentarze).
 
 ## AppImage i ścieżki, które ją przeżywają
 
@@ -76,6 +117,8 @@ później w **Ustawienia → Bezpieczeństwo → Pęk kluczy systemu**.
 nie wymaga zapisania.
 
 Dopóki jest wyłączony, pole tokenu w Integracjach o tym mówi — *Zapisany tylko do zamknięcia Gitcito: systemowy pęk kluczy jest wyłączony.* — z przyciskiem **Włącz** obok. Włączenie go, stamtąd lub stąd, zapisuje też tokeny wpisane już w tej sesji, więc nie trzeba ich wklejać ponownie.
+
+![Pole tokenu w Integracjach przy wyłączonym pęku kluczy: zapisany tylko do zamknięcia, z przyciskiem Włącz](../../screenshots/token-keychain-notice.webp)
 
 Token, który **usuniesz** przy wyłączonym pęku kluczy, znika od razu — nie jest
 już z niczym wysyłany — ale tylko **na tę sesję**: zaszyfrowanego magazynu nie
@@ -116,6 +159,26 @@ usuwa starą wartość z dysku. Dwa ograniczenia: klucz ogólnej SI nie jest
 przenoszony do wspólnego miejsca (każdy profil dalej czyta swój), a sejf nadal
 zapisuje w podstawowym magazynie, bo nie ma trybu tylko na sesję. Zainstaluj lub
 odblokuj pęk kluczy i uruchom Gitcito ponownie, żeby znów zapisywać nowe tokeny.
+
+Gitcito nie wierzy na słowo systemowi, jaki magazyn dostało. Liczy go jako
+podstawowy, gdy system tak go nazywa, gdy w ogóle nie potrafi go nazwać i gdy to, co
+szyfruje, wraca oznaczone stałym hasłem — cokolwiek powiedział system. Dzięki temu
+pęk kluczy, który po cichu się wycofa, i tak trzyma nowe tokeny poza dyskiem.
+
+Na pęk kluczy, który przestaje odpowiadać, nie czeka się w nieskończoność. Na Linuksie,
+gdy pęk kluczy raz odpowiedział w tej sesji, pytanie, które zostawi bez odpowiedzi
+przez 10 sekund, liczy się jako *brak pęku kluczy*: zapisany token jest trzymany do
+zamknięcia, a Sejf zostaje zamknięty. Pierwsze pytanie sesji — to, które może wywołać
+własną prośbę pęku kluczy o hasło — i to tuż po wyjaśnieniu Gitcito dostają dwie
+minuty, żeby czytanie okna nigdy nie zostało przerwane. Przez pół minuty po takim
+przekroczeniu czasu odpowiedź pozostaje *brak pęku kluczy* bez ponownego pytania;
+potem Gitcito pyta od nowa. macOS i Windows odpowiadają lokalnie i nigdy nie mają
+limitu czasu.
+
+Ten limit dotyczy tylko tego jednego pytania — *czy jest pęk kluczy?* Na pęk kluczy,
+który na nie odpowie, a potem zawiesi się przy szyfrowaniu lub odszyfrowaniu, nadal
+się czeka: zapisywanie ustawień i Sejf pozostają zajęte, dopóki nie odpowie albo
+Gitcito się nie uruchomi ponownie.
 
 ### Gdy zapisanych tokenów nie da się odczytać
 

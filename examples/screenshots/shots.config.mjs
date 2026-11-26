@@ -1205,6 +1205,66 @@ export const shots = [
     }
   },
   {
+    // Comments rendered as Markdown: a task list, a table, a highlighted fence,
+    // and an image from a site other than the host held back behind its
+    // placeholder. Faked detail — a fictional GitHub repository and people, no
+    // network; the held image is never requested.
+    out: 'pr-rendered-comment',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
+        const fence = '`'.repeat(3)
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+          body: [
+            'Adds **workspace search** to the command palette. Closes #41.',
+            '',
+            '- [x] A filename index per open repository',
+            '- [x] Results capped at 50',
+            '- [ ] A setting for the cap'
+          ].join('\n'),
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          viewer: 'sam',
+          comments: [
+            {
+              author: 'alex', createdAt: '2026-11-20T10:00:00Z', handle: { id: 501, kind: 'conversation' },
+              body: [
+                'Timings on the large fixture:',
+                '',
+                '| Repositories | Files | First query |',
+                '|---:|---:|---:|',
+                '| 3 | 92k | 41 ms |',
+                '| 8 | 240k | 118 ms |',
+                '',
+                '![Flame graph of the first query](https://perf.example.net/flame/search-42.png)',
+                '',
+                `${fence}ts`,
+                'const results = index.search(query, { limit: 50 })',
+                fence
+              ].join('\n')
+            },
+            {
+              author: 'sam', createdAt: '2026-11-20T10:40:00Z', handle: { id: 502, kind: 'conversation' },
+              body: 'Thanks — `limit` becomes a setting in the next commit. @alex the follow-up is #43.'
+            }
+          ],
+          reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'kalani' }],
+          commits: 3, changedFiles: 2, additions: 84, deletions: 12
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
+      }), repos['octopus-merge'])
+      await page.locator('.md-remote-img-blocked').waitFor()
+      await page.locator('.md-remote pre code.hljs').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // The card a work item reference opens on hover: its type, title and
     // state. An Azure DevOps pull request whose comments name work items; the
     // detail and the titles are faked in main — a fictional organization and

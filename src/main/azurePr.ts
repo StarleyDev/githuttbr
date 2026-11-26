@@ -98,6 +98,8 @@ function mapAzureComment(th: AzThread, c: AzComment, kind: 'conversation' | 'rev
     handle: { id: c.id, kind, threadId: th.id },
     // Display names repeat; the identity id is what tells two "Ana Souza" apart.
     ...(c.author?.id ? { authorId: c.author.id } : {}),
+    // The account name, unique per user: a second way to know the comment is yours.
+    ...(c.author?.uniqueName ? { authorUniqueName: c.author.uniqueName } : {}),
     ...(isEditedAfter(c.publishedDate, c.lastContentUpdatedDate) ? { edited: true } : {})
   }
 }

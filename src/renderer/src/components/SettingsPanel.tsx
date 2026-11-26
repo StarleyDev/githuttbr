@@ -3957,6 +3957,21 @@ function SecurityPage(): React.JSX.Element {
         </span>
       </label>
 
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.commentImagesFromOtherSites}
+          onChange={(e) => update((s) => ({ ...s, commentImagesFromOtherSites: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.commentImagesFromOtherSites')}</strong>
+          <span className="settings-hint">{t('settings.commentImagesFromOtherSitesHint')}</span>
+        </span>
+      </label>
+
       <label style={{ marginTop: 12 }}>
         {t('settings.largeFileWarn')}
         <NumberField

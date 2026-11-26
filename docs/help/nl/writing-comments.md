@@ -4,7 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 57.5
 summary: De Markdown-editor achter elk reactievak — Schrijven / Voorbeeld, een opmaakbalk met de sneltoetsen van GitHub, lijsten die doorgaan bij Enter, en aanvulling van @vermeldingen / #verwijzingen.
 keywords: markdown-editor reactievak werkbalk vet cursief code link citaat kop opsomming genummerde lijst takenlijst checklist voorbeeld schrijven sneltoets vermelding apenstaartje verwijzing hekje issuenummer automatisch aanvullen antwoord pull-requestbeschrijving issuetekst markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Reacties schrijven
@@ -125,9 +125,13 @@ handboek achter het dialoogvenster zou openen.
 - **Het voorbeeld is de renderer van de app.** Het toont Markdown zoals de app het
   tekent; de weergave van de host kan in details afwijken (GitHub-eigen extensies,
   vermeldingen die links worden).
-- **Geplaatste reacties worden niet opgemaakt weergegeven.** Eenmaal verstuurd
-  verschijnt een reactie in het gesprek in de app als platte tekst, met klikbare
-  links — Markdown-opmaak wordt alleen in het voorbeeld en op de website van de
-  host getekend.
+- **Het voorbeeld is de weergave van de app, niet die van de host.** Op de pull-request-
+  en issuepagina tekent het voorbeeld de tekst zoals de geplaatste reactie in de app
+  wordt getoond ([hoe reacties worden getoond](pull-requests.md#hoe-reacties-worden-getoond)): hetzelfde
+  strikte profiel, regeleinden behouden, en een afbeelding van een andere site die op
+  een klik wacht. Op GitHub wordt de geplaatste reactie daarna door GitHub getekend,
+  dus een extensie die de app niet kent, kan er anders uitzien. De dialoogvensters
+  voor een nieuwe pull request en een nieuw issue gebruiken het gewone
+  Markdown-voorbeeld van de app.
 - De sneltoetsen liggen vast: ze staan niet in de instellingen voor sneltoetsen en
   volgen daar geen nieuwe toewijzing.

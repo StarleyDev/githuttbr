@@ -699,12 +699,20 @@ export type PrCommentKind = 'conversation' | 'review'
 export interface PrComment {
   author: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   createdAt: string
   handle?: PrCommentHandle
   /** The host says the text was changed after it was posted. */
   edited?: boolean
   /** The author's account id, where `author` is a display name (Azure DevOps). */
   authorId?: string
+  /** The author's unique account name (Azure DevOps `uniqueName`): "yours" also matches on it. */
+  authorUniqueName?: string
   /** Others answered it, in the host's own thread (Data Center, Azure DevOps, GitLab). */
   hasReplies?: boolean
 }
@@ -720,12 +728,20 @@ export interface PrReviewComment {
   id: number
   author: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   createdAt: string
   handle?: PrCommentHandle
   /** The host says the text was changed after it was posted. */
   edited?: boolean
   /** The author's account id, where `author` is a display name (Azure DevOps). */
   authorId?: string
+  /** The author's unique account name (Azure DevOps `uniqueName`): "yours" also matches on it. */
+  authorUniqueName?: string
 }
 
 /** An inline review thread anchored to a file/line in the PR diff. */
@@ -844,6 +860,12 @@ export interface PrDetail {
   number: number
   title: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   author: string
   source: string
   target: string
@@ -895,6 +917,8 @@ export interface PrDetail {
   viewer?: string | null
   /** The viewer's account id, where the host has one worth matching on (Azure DevOps, bitbucket.org). */
   viewerId?: string | null
+  /** The viewer's unique account name (Azure DevOps), matched against `authorUniqueName`. */
+  viewerUniqueName?: string | null
   /** Authors are display names two people can share: "yours" is matched on `viewerId` only. */
   viewerById?: boolean
 }
@@ -933,9 +957,11 @@ export interface ReferenceSummary extends ReferenceQuery {
   /**
    * Why it is not available: the host has no such item or will not show it to
    * this account (`notFound`), the host is throttling (`rateLimited`), or the
-   * host was not asked or not reached — no account, no API, offline (`unreachable`).
+   * host was not reached — no account, no API, offline (`unreachable`). `notAsked`:
+   * left out of this request (a capped fallback) — the renderer keeps no answer for
+   * it, so the next hover asks.
    */
-  reason?: 'notFound' | 'rateLimited' | 'unreachable'
+  reason?: 'notFound' | 'rateLimited' | 'unreachable' | 'notAsked'
   kind?: 'issue' | 'pr' | 'mr' | 'workItem'
   title?: string
   /** GitHub, GitLab and Forgejo, normalized. */
@@ -1009,6 +1035,12 @@ export interface IssueDetail {
   number: number
   title: string
   body: string
+  /**
+   * The host's own rendering of `body` (GitHub's `body_html`: mentions and
+   * references linked, images proxied, private attachments signed). Untrusted —
+   * the page sanitizes it like any comment. `body` stays for editing.
+   */
+  bodyHtml?: string
   author: string
   state: 'open' | 'closed'
   url: string
@@ -1023,6 +1055,7 @@ export interface IssueDetail {
   /** Who the page's calls sign in as; see `PrDetail.viewer`. */
   viewer?: string | null
   viewerId?: string | null
+  viewerUniqueName?: string | null
   viewerById?: boolean
 }
 
@@ -3921,6 +3954,10 @@ export interface AppSettings {
   worktreeCopyIgnored: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
+  /** Images in pull request and issue comments from a site other than the host's
+   *  own load without a click. Off: each shows a placeholder until clicked, so a
+   *  stranger's comment cannot learn this machine's IP and when it was read. */
+  commentImagesFromOtherSites: boolean
   /** File view (working-tree files only): a colored bar next to lines changed
    *  since HEAD/the index, click to see the change. */
   showChangeGutter: boolean
@@ -4484,6 +4521,7 @@ export function defaultSettings(): AppSettings {
     worktreeShortLabels: true,
     worktreeCopyIgnored: false,
     maskSecrets: true,
+    commentImagesFromOtherSites: false,
     showChangeGutter: true,
     showMinimap: true,
     enableLaunchJson: true,

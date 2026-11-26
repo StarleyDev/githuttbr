@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block
 ---
 
 # Pull requests page
@@ -183,6 +183,16 @@ not, the row says so instead of failing quietly, and offers:
   [going to the branch](#going-to-a-pull-requests-branch), without the
   checkout. When the commit came with it, it opens; when it did not (a force
   push rewrote it since), the toast says so.
+- **Fetch the pull request's commits**, on a pull request from a **fork**. Its
+  branch lives in another repository, but most hosts mirror a pull request's
+  head in the target repository under a ref of its own — `refs/pull/N/head`
+  (GitHub, GitHub Enterprise Server, Forgejo), `refs/merge-requests/N/head`
+  (GitLab), `refs/pull-requests/N/from` (Bitbucket Data Center). The app
+  fetches that one ref, without tags, into a ref of its own,
+  `refs/githuttbr/pr/<remote>/N`, and the commit opens like any other: the
+  graph draws that head as a lane without a label. Fetching again moves the ref
+  to the head as it is then. If the force push since left the commit out, the
+  toast says so.
 - **Open in browser**, for when fetching is not an option.
 
 The list is read the first time you open the tab, not with the page, and again
@@ -203,9 +213,19 @@ What it does not do:
   | GitHub | The **first** 250 (GitHub's own limit) |
   | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | The **250 most recent** |
   | Forgejo | Whichever end the server lists first; its order is not documented |
-- **A fork's branch** cannot be fetched from here — it lives in another
-  repository — so a commit only in the fork offers the browser alone.
-  **Preview pull request locally…** is the way to bring it in.
+- **A fork's head where the host does not mirror it.** Azure DevOps publishes
+  only a merge result, never a pull request's own head, and bitbucket.org
+  publishes neither: there the row offers the browser alone. On another host
+  that turns out not to mirror it, the fetch says so. **Preview pull request
+  locally…** brings in Azure's merge result, if that is what you need.
+- **The fetched heads stay.** `refs/githuttbr/pr/…` is not a branch: nothing
+  to check out or push, a pruning fetch leaves it alone, and git keeps its
+  commits. Nothing removes it either — neither closing the page nor
+  [Clean up local branches](branch-cleanup.md). To drop them, delete the refs
+  by hand: `git for-each-ref refs/githuttbr/pr` lists them, and
+  `git update-ref -d <ref>` deletes one.
+- **A remote whose name has a `/`** cannot be one part of that ref's name, so
+  the fetch is refused there.
 - **A deleted branch.** A merged pull request has often taken its branch with
   it: the fetch says so. bitbucket.org lists no commits at all once the source
   branch is gone.
@@ -320,6 +340,78 @@ A reply box shows its tools once you click into it, and sends with
 ⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
 has the details and the limits.
 
+## How comments are shown
+
+People write comments in Markdown, so a comment shown as plain text is full of
+`**`, `- [ ]` and code fences. The description, the conversation and the review
+threads (in the Conversation and Files tabs) are drawn as Markdown: headings,
+lists and task lists, tables, quotes, code blocks highlighted in the language
+the fence names, links and images. The issue page draws its text the same way.
+`#123`, `AB#123`, `!123` and `@user` in the text still become links, with the
+[card](#what-a-123-or-ab123-is-about) where they had one.
+
+![A rendered comment: a table, an image from another site held back behind its
+placeholder, and a highlighted code block](../screenshots/pr-rendered-comment.webp)
+
+Where the drawing comes from:
+
+| Host | Rendered by |
+|---|---|
+| GitHub, GitHub Enterprise Server | GitHub itself (`body_html`): mentions and references are linked as on the website, images go through GitHub's image proxy, and private attachments carry their signed address |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | The app, from the comment's Markdown. A relative link points into the repository; on GitLab, `/uploads/…` points into the project, as GitLab does |
+
+A comment is other people's content, so what it may contain is narrow, and
+narrower than for your own files: an explicit list of tags, links and images on
+`https:`, `http:` or `mailto:` only, no scripts, frames, forms, SVG or inline
+style, and links that never open inside the app (they go to your browser). A
+checkbox in a task list is shown, not clickable: ticking it here would change
+nothing on the host.
+
+**Images from another site wait for a click.** Loading an image is a request
+the site behind it can watch, with your IP address and the moment you read the
+comment — anyone who can comment can put a tracking pixel there. So only images
+from the host itself load on their own: on github.com its attachments,
+`*.githubusercontent.com` (which includes its image proxy) and its assets; on
+any other host, its own address. Every other image shows *Image from
+example.net — click to load*, and the click loads that one image. **Settings →
+Security → Load images from other sites in comments** turns that off; see
+[Security](security.md#images-in-comments).
+
+**Preview shows what will be posted.** On this page and the issue page, the
+**Preview** tab of every comment box draws the text the same way: the same
+profile, the same line breaks, the same held-back images — a pasted link to an
+outside image does not load it while you write. The new pull request and new
+issue dialogs keep the app's ordinary Markdown preview.
+
+**Too long or too intricate is shown as text.** Markdown is rendered in the
+app's window, and some text costs far more to render than its size suggests.
+A comment over **32,000 characters**, or one shaped to stall the renderer
+(thousands of unmatched `_` or `*` in one paragraph, or more than 32 levels of
+`>` or list markers on one line), is shown as plain text with links, under
+*Long comment shown as plain text* or *Comment shown as plain text: too
+intricate to render here*. A comment that still fails to render falls back the
+same way, on its own: the rest of the page is untouched.
+
+What it does not do:
+
+- **Editing shows the text as written.** **Edit** still opens the Markdown, and
+  a saved edit is drawn by the app until the page reads the pull request again
+  (on GitHub, then by GitHub).
+- **Private GitHub attachments expire.** GitHub signs a private image's address
+  for a few minutes; one that no longer loads after the page has been open a
+  while comes back with **Refresh**.
+- **A relative image on GitHub** that the app draws itself (a reply sent from
+  the app, before the page reads it again) is looked for under the repository's
+  address on github.com, which may not be where GitHub would put it.
+- **Videos** in a GitHub comment show as a link to the file, not a player.
+- **GitHub-only extensions** the app draws itself (on other hosts) are not
+  there: no emoji shortcodes, no Mermaid diagrams, no alerts styling, and math
+  stays as text.
+- **Code is highlighted only when the fence names its language.** Guessing the
+  language would run every grammar over every block on the page.
+- **Commit messages** in the Commits tab stay plain text: git does not render
+  Markdown, and neither do the hosts.
+
 ## Editing and deleting your comments
 
 A typo in a comment already sent, or a remark that no longer applies, used to
@@ -334,8 +426,12 @@ The issue page has them too, for its comments on GitHub and Forgejo.
 repository's calls sign in as each time it loads (its bound profile, not
 whichever profile is active). Most hosts name an author by login, compared
 without regard to case. Azure DevOps names authors by display name, which two
-people can share, so there the comment's author id must match the account's id;
-when either id is missing, no comment shows the actions. When the app cannot
+people can share, so there it never compares names: a comment is yours when its
+author id matches the account's id, **or** its author's unique name (the
+account name, usually an e-mail address) matches the account's, without regard
+to case. Either is unique to one person; the second covers an author id that is
+not the one the connection reports. When neither can be compared, no comment
+shows the actions. When the app cannot
 tell who you are (a token without user scope, or the host did not answer), no
 comment shows them either; **Refresh** asks again. The host still decides: an
 account it does not let change a comment is refused, and the message says so.
@@ -358,7 +454,7 @@ names which. Two of these are not written down by the host, and say so:
 
 | Host | First comment of a thread with replies |
 |---|---|
-| GitHub | The replies should stay; GitHub's documentation does not say. Replying to that thread from the app is no longer possible: its replies point at a comment that is gone, and the API takes no reply to a reply. The thread then offers **Reply on GitHub** instead |
+| GitHub | The replies should stay; GitHub's documentation does not say. The thread keeps its reply box: with its first comment gone, the reply is sent to the thread itself through GitHub's GraphQL API, found through a reply still in it. Should that fail (an old Enterprise Server, a token GraphQL refuses, a thread GitHub says this account cannot reply in), the thread offers **Reply on GitHub** instead. While you have a review in progress on GitHub, GitHub may file the reply under it: the toast then says so, and nobody sees the reply until you submit that review there |
 | GitLab | Only that note goes; the thread and its replies stay |
 | Azure DevOps | Should be marked deleted and hidden, with the thread and its replies kept; Azure's documentation does not say |
 | Bitbucket Data Center | Refused: Data Center does not delete a comment that has replies. Delete the replies first, or edit it instead |
@@ -411,7 +507,7 @@ pull request, without a card.
 | Reference | Host | Read from |
 |---|---|---|
 | `AB#123`, and `#123` in an Azure repository | Azure DevOps | Work items, up to 200 in one request |
-| `#123` | GitHub, GitHub Enterprise Server | Issues (which answers for pull requests too), one request each, one at a time |
+| `#123` | GitHub, GitHub Enterprise Server | Issues and pull requests, up to 50 in one GraphQL request; one REST request each when GraphQL fails |
 | `#123` / `!123` | GitLab | Issues / merge requests, one request per kind |
 | `#123` | Forgejo | Issues (pull requests too), one request each, two at a time |
 
@@ -428,11 +524,18 @@ repository is [bound to](profiles.md), and another profile may see other items.
 
 What it costs:
 
-- **GitHub and Forgejo** have no way to read several issues in one request, so
-  each card costs one. A hover asks for at most **10** — the one you are on and
-  its neighbours — and on GitHub one after another, as GitHub asks of apps.
-  The first answer that says *slow down* (a 429, or a 403) stops the rest, and
-  those references are not asked for again for five minutes.
+- **GitHub** reads up to **50** in one request, through its GraphQL API — the
+  one you are on and its nearest neighbours. When GraphQL fails for another
+  reason than a rate limit (an old Enterprise Server, a token it refuses), the
+  app falls back to the REST API, which reads one issue per request: then only
+  the first **10** are asked, one after another as GitHub asks of apps; the
+  others are left unknown, and a later hover asks for them.
+- **Forgejo** has no way to read several issues in one request, so each card
+  costs one: a hover asks for at most **10**, two at a time.
+- On GitHub and Forgejo, the first answer that says *slow down* (a 429, a 403,
+  GraphQL's own rate-limit error, a secondary limit, or an answer that spent the
+  last request of the limit) stops the rest — GitHub does not fall back to REST
+  then — and those references are not asked for again for five minutes.
 - **Azure DevOps** reads up to 200 work items in one request, and GitLab one
   request per kind, so there the whole page goes at once.
 

@@ -3,8 +3,8 @@ title: Sicurezza e segreti
 category: Sicurezza
 order: 70
 summary: Mascheramento, protezioni, il portachiavi — e cosa Gitcito si rifiuta di fare.
-keywords: sicurezza segreti mascheramento portachiavi keychain safeStorage token branch protetto file grande protezione privacy illeggibile backup parti tradurre percorsi altro computer nuova macchina unire profili sostituire profili scegliere cosa esportare backup completo per il team manifesto password cifratura appimage apparmor sandbox segnalare un problema
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: sicurezza segreti mascheramento portachiavi keychain safeStorage token branch protetto file grande protezione privacy illeggibile backup parti tradurre percorsi altro computer nuova macchina unire profili sostituire profili scegliere cosa esportare backup completo per il team manifesto password cifratura appimage apparmor sandbox segnalare un problema immagini nei commenti pixel traccianti indirizzo ip immagini di terzi clic per caricare images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Sicurezza e segreti
@@ -39,6 +39,47 @@ segreti.
 | **Rumore di build** | Committare `xcuserdata/`, `DerivedData/` o un `.DS_Store` — con lo stesso *Ignora e smetti di tracciare* in un clic |
 | **Branch protetto** | Quando committi direttamente su `main`/`master`, o ci fai un force push |
 | **Segreti tracciati** | Quando fai push di un repository che *traccia* un file di segreti — avvisato una volta per sessione |
+
+## Immagini nei commenti
+
+I commenti di pull request e issue li scrivono altre persone, e un’immagine in uno di
+essi è una richiesta che il tuo computer fa al sito scelto dall’autore. Quel sito
+viene a sapere il tuo indirizzo IP e quando leggi il commento — a un pixel tracciante
+non serve altro che il diritto di commentare.
+
+Quindi l’app carica da sola solo le immagini dell’host stesso: su github.com i suoi
+allegati, `*.githubusercontent.com` (che include il proxy che GitHub mette davanti a
+ogni immagine esterna nella propria visualizzazione) e le sue risorse; su qualsiasi
+altro host, il suo indirizzo web, via https. Ogni altra immagine mostra un segnaposto
+che ne nomina il dominio, e viene richiesta solo quando ci fai clic — quell’immagine,
+una volta. La richiesta non invia mai un `Referer`.
+
+| Impostazione | Cosa fa |
+|---|---|
+| **Carica le immagini di altri siti nei commenti** (disattivata per impostazione predefinita) | Le immagini di qualsiasi sito si caricano senza clic, come sul sito dell’host |
+
+I limiti:
+
+- **L’host ti vede comunque.** Un’immagine dell’host stesso — e su GitHub, qualsiasi
+  immagine tramite il suo proxy — è una richiesta all’host, che sa già che questo
+  account sta leggendo la pull request.
+- **`raw.githubusercontent.com` e `gist.githubusercontent.com` si caricano senza
+  clic.** Chiunque può metterci un file, quindi l’immagine è sua — ma la serve GitHub,
+  e il suo autore non vede il tuo indirizzo IP né quando leggi.
+- **Gli allegati privati di GitHub scadono.** Il loro indirizzo firmato dura pochi
+  minuti; **Aggiorna** sulla pagina riporta uno che ha smesso di caricarsi.
+- **L’anteprima di un riquadro di commento** su quelle pagine segue la stessa regola:
+  un link incollato a un’immagine esterna non viene caricato mentre scrivi.
+- **Solo le pagine di pull request e di issue.** Le immagini in un file Markdown del
+  repository, in una nota di rilascio o nella wiki sono contenuto del tuo repository e
+  si caricano come prima.
+- **Un link non è un’immagine.** Fare clic su un link in un commento lo apre nel tuo
+  browser, come qualsiasi link dell’app.
+
+Un commento non può nemmeno bloccare o far andare in crash la finestra: uno oltre i
+32.000 caratteri, o costruito per far lavorare il renderer Markdown per secondi, è
+mostrato come testo semplice. Come è limitato il resto di un commento è descritto in
+[Pull request](pull-requests.md#come-vengono-mostrati-i-commenti).
 
 ## L'AppImage e i percorsi che le sopravvivono
 
@@ -79,6 +120,8 @@ Un'installazione appena fatta effettua **zero** chiamate al portachiavi finché
 non c'è davvero qualcosa da conservare.
 
 Finché è disattivato, il campo del token in Integrazioni lo segnala — *Conservato solo finché non chiudi Gitcito: il portachiavi di sistema è disattivato.* — con un pulsante **Attiva** accanto. Attivarlo, da lì o da qui, salva anche i token già inseriti in questa sessione, quindi non serve incollarli di nuovo.
+
+![Il campo del token in Integrazioni con il portachiavi disattivato: conservato solo fino alla chiusura, con un pulsante Attiva](../../screenshots/token-keychain-notice.webp)
 
 Un token che **rimuovi** mentre il portachiavi è disattivato sparisce subito —
 non viene più inviato con niente —, ma solo **per questa sessione**: l'archivio
@@ -123,6 +166,27 @@ spostata nel suo spazio condiviso (ogni profilo continua a leggere la propria),
 e la cassaforte continua a salvare nell'archiviazione di base, perché non ha una
 modalità solo sessione. Installa o sblocca un portachiavi e riavvia Gitcito per
 tornare a salvare nuovi token.
+
+Gitcito non si fida di ciò che il sistema dice dell’archivio che ha ottenuto. Lo
+conta come base quando il sistema lo chiama così, quando non sa dargli alcun nome, e
+quando ciò che cifra torna marcato con la password fissa — qualunque cosa abbia detto
+il sistema. Così un portachiavi che ripiega in silenzio tiene comunque i nuovi token
+fuori dal disco.
+
+Un portachiavi che smette di rispondere non viene atteso per sempre. Su Linux, una
+volta che il portachiavi ha risposto una volta nella sessione, una domanda che lascia
+senza risposta per 10 secondi conta come *nessun portachiavi*: un token che salvi è
+tenuto fino alla chiusura, e la cassaforte resta chiusa. La prima domanda di una
+sessione — quella che può far comparire la richiesta di password del portachiavi
+stesso — e quella subito dopo la spiegazione di Gitcito hanno due minuti, così la
+lettura di una finestra non viene mai interrotta. Per mezzo minuto dopo un tale
+timeout la risposta resta *nessun portachiavi* senza chiedere di nuovo; poi Gitcito
+chiede da capo. macOS e Windows rispondono in locale e non hanno mai un timeout.
+
+Il limite copre solo quella domanda — *c’è un portachiavi?* Un portachiavi che
+risponde e poi si blocca mentre cifra o decifra viene ancora atteso: il salvataggio
+delle impostazioni, e la cassaforte, restano occupati finché non risponde o Gitcito
+si riavvia.
 
 ### Quando i token salvati non si possono leggere
 

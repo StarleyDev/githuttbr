@@ -4,6 +4,7 @@ category: Comece por aqui
 order: 3
 summary: Muitos repositórios sem se afogar: abas, grupos, pastas e workspaces.
 keywords: workspace workspaces abas tabs grupos groups pastas folders múltiplos repositórios organizar alternar layout ir para repositório seletor tamanho das abas
+source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ---
 
 # Workspaces, abas e grupos

@@ -7,11 +7,11 @@ import { useSettingsStore } from '../stores/settings'
 import { useT, type TranslationKey } from '../i18n'
 import type { AutolinkOptions, ReferenceLinkParts } from '../lib/autolink'
 import {
-  AZURE_REQUEST_MAX,
+  getCacheableSummaries,
   getReferenceKey,
+  getReferenceRequestMax,
   orderByNearness,
   pickReferenceBatch,
-  REFERENCE_REQUEST_MAX,
   REFERENCE_TTL_MS,
   ReferenceCache,
   unavailableSummaries,
@@ -59,13 +59,14 @@ export function ReferenceScope({
   const on = !!host
   const azure = !!host?.azure
   const gitlab = !!host?.gitlab
+  const github = !!host?.github
   const profileId = useSettingsStore((s) => s.settings.repoProfiles[repoPath] ?? s.settings.activeProfileId)
   const value = useMemo(
     () =>
       remoteUrl && on
-        ? { repoPath, remoteUrl, key: `${repoPath}\n${remoteUrl}\n${profileId}`, host: { azure, gitlab } }
+        ? { repoPath, remoteUrl, key: `${repoPath}\n${remoteUrl}\n${profileId}`, host: { azure, gitlab, github } }
         : null,
-    [repoPath, remoteUrl, profileId, on, azure, gitlab]
+    [repoPath, remoteUrl, profileId, on, azure, gitlab, github]
   )
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>
 }
@@ -111,8 +112,8 @@ function requestSummaries(scope: Scope, first: ReferenceQuery | null, also: read
   const all = [...(visible.get(scope.key)?.values() ?? [])].map((e) => e.q)
   const at = first ? all.findIndex((q) => getReferenceKey(q) === getReferenceKey(first)) : -1
   const onScreen = [...also, ...orderByNearness(all, at)]
-  // Azure reads up to 200 work items in one request; other hosts pay one request per reference.
-  const max = scope.host.azure ? AZURE_REQUEST_MAX : REFERENCE_REQUEST_MAX
+  // Azure reads up to 200 work items in one request, GitHub 50; other hosts pay one request per reference.
+  const max = getReferenceRequestMax(scope.host)
   const isKnown = (q: ReferenceQuery): boolean => cache.isFresh(scope.key, q) || inflight.has(flightKey(scope, q))
   const batch = pickReferenceBatch(first, onScreen, isKnown, max)
   if (!batch.length) return
@@ -129,9 +130,8 @@ function requestSummaries(scope: Scope, first: ReferenceQuery | null, also: read
     .getReferenceSummaries(scope.repoPath, scope.remoteUrl, tokens, batch)
     .catch(() => unavailableSummaries(batch))
     .then((summaries) => {
-      // Whatever the answer left out counts as unavailable, so no card spins forever.
-      const got = new Set(summaries.map(getReferenceKey))
-      cache.saveSummaries(scope.key, [...summaries, ...unavailableSummaries(batch.filter((q) => !got.has(getReferenceKey(q))))])
+      // Left out counts as unavailable, so no card spins forever; "not asked" stays unknown.
+      cache.saveSummaries(scope.key, getCacheableSummaries(batch, summaries))
       for (const q of batch) inflight.delete(flightKey(scope, q))
       notify()
     })
@@ -198,7 +198,9 @@ const KIND_KEY: Record<NonNullable<ReferenceSummary['kind']>, TranslationKey> = 
 const REASON_KEY: Record<NonNullable<ReferenceSummary['reason']>, TranslationKey> = {
   notFound: 'ref.unavailable',
   rateLimited: 'ref.rateLimited',
-  unreachable: 'ref.unreachable'
+  unreachable: 'ref.unreachable',
+  // Never cached (getCacheableSummaries), so never shown; read as "could not read" if it were.
+  notAsked: 'ref.unreachable'
 }
 
 function KindIcon({ s }: { s: ReferenceSummary }): React.JSX.Element {

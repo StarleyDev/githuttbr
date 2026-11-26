@@ -29,6 +29,7 @@ export default {
       'test/prPickerLogic.test.ts',
       'test/prBranchGo.test.ts',
       'test/markdownEdit.test.ts',
+      'test/remoteContent.test.ts',
       'test/externalUrl.test.ts',
       'test/diff.test.ts',
       'test/lineDiff.test.ts',

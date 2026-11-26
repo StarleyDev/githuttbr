@@ -4,7 +4,7 @@ category: Sincronizzazione e più repo
 order: 57.5
 summary: L’editor Markdown dietro ogni riquadro di commento — Scrivi / Anteprima, una barra di formattazione con le scorciatoie di GitHub, elenchi che continuano con Invio e completamento di @menzioni / #riferimenti.
 keywords: editor markdown riquadro di commento barra degli strumenti grassetto corsivo codice link citazione titolo elenco puntato numerato elenco di attività checklist anteprima scrivi scorciatoia menzione chiocciola riferimento cancelletto numero della issue completamento automatico risposta descrizione della pull request corpo della issue markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Scrivere commenti
@@ -124,8 +124,12 @@ aprirebbe dietro la finestra.
 - **L’anteprima è il renderer dell’app.** Mostra il Markdown come lo disegna l’app;
   la resa dell’host può differire nei dettagli (estensioni proprie di GitHub,
   menzioni trasformate in link).
-- **I commenti pubblicati non vengono resi.** Una volta inviato, un commento appare
-  nella conversazione dell’app come testo semplice, con i link cliccabili — la
-  formattazione Markdown viene disegnata solo nell’anteprima e sul sito dell’host.
+- **L’anteprima è il disegno dell’app, non quello dell’host.** Nelle pagine di pull
+  request e di issue, l’anteprima disegna il testo come il commento pubblicato sarà
+  mostrato nell’app ([come vengono mostrati i commenti](pull-requests.md#come-vengono-mostrati-i-commenti)):
+  lo stesso profilo rigoroso, gli a capo mantenuti, e un’immagine di un altro sito che
+  aspetta un clic. Su GitHub il commento pubblicato è poi disegnato da GitHub, quindi
+  un’estensione che l’app non conosce può apparire diversa. Le finestre di nuova pull
+  request e nuova issue usano l’anteprima Markdown abituale dell’app.
 - Le scorciatoie sono fisse: non sono nelle impostazioni delle scorciatoie e non
   seguono una riassegnazione fatta lì.

@@ -122,8 +122,12 @@ the dialog.
 - **Preview is the app's renderer.** It shows Markdown as the app draws it; the
   host's own rendering may differ in details (GitHub-specific extensions,
   mentions turned into links).
-- **Posted comments are not rendered.** Once sent, a comment shows in the app's
-  conversation as plain text, with links made clickable — Markdown formatting is
-  only drawn in Preview and on the host's website.
+- **Preview is the app's drawing, not the host's.** On the pull request and
+  issue pages, Preview draws the text as the posted comment will be shown in
+  the app ([how comments are shown](pull-requests.md#how-comments-are-shown)):
+  the same strict profile, line breaks kept, and an image from another site
+  waiting for a click. On GitHub the posted comment is then drawn by GitHub,
+  so an extension the app does not know may look different. The new pull
+  request and new issue dialogs use the app's ordinary Markdown preview.
 - The shortcuts are fixed: they are not in the shortcuts settings, and do not
   follow a rebinding there.

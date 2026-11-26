@@ -3,8 +3,8 @@ title: Seguridad y secretos
 category: Seguridad
 order: 70
 summary: Enmascarado, guardas, el llavero — y lo que Gitcito se niega a hacer.
-keywords: seguridad security secretos secrets enmascarar masking llavero keychain safeStorage tokens rama protegida protected branch archivo grande large file guarda privacidad ilegible copia de seguridad partes traducir rutas otro equipo máquina nueva combinar perfiles reemplazar perfiles elegir qué exportar copia completa para el equipo de trabajo manifiesto contraseña cifrado appimage apparmor sandbox reportar problema
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: seguridad security secretos secrets enmascarar masking llavero keychain safeStorage tokens rama protegida protected branch archivo grande large file guarda privacidad ilegible copia de seguridad partes traducir rutas otro equipo máquina nueva combinar perfiles reemplazar perfiles elegir qué exportar copia completa para el equipo de trabajo manifiesto contraseña cifrado appimage apparmor sandbox reportar problema imágenes en comentarios píxel de seguimiento dirección ip imágenes de terceros clic para cargar images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Seguridad y secretos
@@ -38,6 +38,47 @@ botón con forma de ojo los revela por vista. `.env.example`, `.sample` y
 | **Ruido de compilación** | Al commitear `xcuserdata/`, `DerivedData/` o un `.DS_Store` — con el mismo *Ignorar y dejar de rastrear* de un clic |
 | **Rama protegida** | Al commitear directamente a `main`/`master`, o al hacerle force push |
 | **Secretos con seguimiento** | Al publicar un repositorio que *sigue* un archivo de secretos — se avisa una vez por sesión |
+
+## Imágenes en los comentarios
+
+Los comentarios de pull requests e issues los escriben otras personas, y una imagen
+en uno es una petición que tu equipo hace al sitio que eligió el autor. Ese sitio se
+entera de tu dirección IP y de cuándo lees el comentario — un píxel de seguimiento no
+necesita más que el derecho a comentar.
+
+Por eso la app carga por su cuenta solo las imágenes del propio host: en github.com
+sus adjuntos, `*.githubusercontent.com` (que incluye el proxy que GitHub pone delante
+de cada imagen externa en su propio renderizado) y sus recursos; en cualquier otro
+host, su propia dirección web, por https. Cualquier otra imagen muestra un marcador
+con su dominio, y solo se pide cuando haces clic en ella — esa imagen, una vez. La
+petición nunca envía un `Referer`.
+
+| Ajuste | Qué hace |
+|---|---|
+| **Cargar imágenes de otros sitios en los comentarios** (desactivado por defecto) | Las imágenes de cualquier sitio se cargan sin clic, como en la web del host |
+
+Los límites:
+
+- **El host te sigue viendo.** Una imagen del propio host — y en GitHub, cualquier
+  imagen a través de su proxy — es una petición al host, que ya sabe que esta cuenta
+  está leyendo la pull request.
+- **`raw.githubusercontent.com` y `gist.githubusercontent.com` se cargan sin clic.**
+  Cualquiera puede poner un archivo ahí, así que la imagen es suya — pero la sirve
+  GitHub, y su autor no ve tu dirección IP ni cuándo la lees.
+- **Los adjuntos privados de GitHub caducan.** Su dirección firmada dura unos minutos;
+  **Actualizar** en la página recupera una que dejó de cargarse.
+- **La vista previa de un cuadro de comentario** en esas páginas sigue la misma regla:
+  un enlace pegado a una imagen externa no se carga mientras escribes.
+- **Solo las páginas de pull request y de issue.** Las imágenes de un archivo
+  Markdown del repositorio, de una nota de release o de la wiki son contenido de tu
+  propio repositorio y se cargan como antes.
+- **Un enlace no es una imagen.** Hacer clic en un enlace de un comentario lo abre en
+  tu navegador, como cualquier enlace de la app.
+
+Un comentario tampoco puede atascar ni colgar la ventana: uno de más de 32.000
+caracteres, o construido para hacer trabajar al renderizador de Markdown durante
+segundos, se muestra como texto plano. Cómo se restringe el resto de un comentario
+está en [Pull requests](pull-requests.md#cómo-se-muestran-los-comentarios).
 
 ## La AppImage y las rutas que le sobreviven
 
@@ -77,6 +118,8 @@ Una instalación recién hecha hace **cero** llamadas al llavero hasta que algo
 necesita guardarse de verdad.
 
 Mientras esté desactivado, el campo del token en Integraciones lo indica — *Se guarda solo hasta que cierres Gitcito: el llavero del sistema está desactivado.* — con un botón **Activar** al lado. Activarlo, desde allí o desde aquí, también guarda los tokens que ya escribiste en esta sesión, así que no hay que pegarlos de nuevo.
+
+![El campo del token en Integraciones con el llavero desactivado: se guarda solo hasta que cierres, con un botón Activar](../../screenshots/token-keychain-notice.webp)
 
 Un token que **quitas** con el llavero desactivado desaparece al momento — ya no
 se envía con nada —, pero solo **durante esta sesión**: el almacén cifrado no se
@@ -119,6 +162,26 @@ la clave de la IA general no se mueve a su espacio compartido (cada perfil sigue
 leyendo la suya), y la bóveda sigue guardando en el almacenamiento básico,
 porque no tiene modo solo de sesión. Instala o desbloquea un llavero y reinicia
 Gitcito para volver a guardar tokens nuevos.
+
+Gitcito no se fía de lo que dice el sistema sobre el almacén que le ha tocado. Lo
+cuenta como básico cuando el sistema lo nombra así, cuando no puede nombrarlo en
+absoluto, y cuando lo que cifra vuelve marcado con la contraseña fija — diga lo que
+diga el sistema. Así, un llavero que recurre en silencio a lo básico sigue manteniendo
+los tokens nuevos fuera del disco.
+
+A un llavero que deja de responder no se le espera para siempre. En Linux, una vez que
+el llavero ha respondido una vez en esta sesión, una pregunta que deja sin responder
+10 segundos cuenta como *sin llavero*: un token que guardes se conserva hasta que
+cierres, y la Bóveda sigue cerrada. La primera pregunta de una sesión — la que puede
+abrir la petición de contraseña del propio llavero — y la que llega justo después de
+la explicación de Gitcito tienen dos minutos, para que leer un diálogo nunca se corte.
+Durante medio minuto después de un tiempo agotado así, la respuesta sigue siendo *sin
+llavero* sin volver a preguntar; luego Gitcito pregunta de nuevo. macOS y Windows
+responden localmente y nunca se les pone un tiempo límite.
+
+El límite cubre esa única pregunta — *¿hay un llavero?* Un llavero que la responde y
+luego se cuelga al cifrar o descifrar se sigue esperando: guardar los ajustes, y la
+Bóveda, siguen ocupados hasta que responde o Gitcito se reinicia.
 
 ### Cuando no se pueden leer los tokens guardados
 

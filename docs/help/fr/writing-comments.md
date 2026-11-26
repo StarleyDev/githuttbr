@@ -4,7 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 57.5
 summary: L’éditeur Markdown derrière chaque zone de commentaire — Écrire / Aperçu, une barre de mise en forme avec les raccourcis de GitHub, des listes qui continuent avec Entrée, et la complétion des @mentions / #références.
 keywords: éditeur markdown zone de commentaire barre d’outils gras italique code lien citation titre liste à puces numérotée liste de tâches checklist aperçu écrire raccourci mention arobase référence dièse numéro d’issue autocomplétion réponse description de la pull request corps de l’issue markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Écrire des commentaires
@@ -130,9 +130,14 @@ manuel s’ouvrirait derrière la boîte de dialogue.
 - **L’aperçu est le moteur de rendu de l’application.** Il montre le Markdown comme
   l’application le dessine ; le rendu de l’hébergeur peut différer dans le détail
   (extensions propres à GitHub, mentions transformées en liens).
-- **Les commentaires publiés ne sont pas rendus.** Une fois envoyé, un commentaire
-  s’affiche dans la conversation de l’application en texte brut, avec des liens
-  cliquables — la mise en forme Markdown n’est dessinée que dans l’aperçu et sur le
-  site de l’hébergeur.
+- **L’aperçu est le dessin de l’application, pas celui de l’hébergeur.** Sur les pages
+  de pull request et d’issue, l’aperçu dessine le texte comme le commentaire publié
+  sera affiché dans l’application
+  ([comment les commentaires sont affichés](pull-requests.md#comment-les-commentaires-sont-affichés)) : le même
+  profil strict, les sauts de ligne conservés, et une image d’un autre site qui attend
+  un clic. Sur GitHub, le commentaire publié est ensuite dessiné par GitHub, donc une
+  extension que l’application ne connaît pas peut avoir un autre aspect. Les boîtes de
+  dialogue de nouvelle pull request et de nouvelle issue utilisent l’aperçu Markdown
+  habituel de l’application.
 - Les raccourcis sont fixes : ils ne figurent pas dans les réglages des raccourcis
   et ne suivent pas une réassignation faite là.

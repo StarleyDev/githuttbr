@@ -4,7 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 57.5
 summary: Edytor Markdown za każdym polem komentarza — Pisz / Podgląd, pasek formatowania ze skrótami GitHuba, listy, które ciągną się po Enterze, i podpowiadanie @wzmianek / #odwołań.
 keywords: edytor markdown pole komentarza pasek narzędzi pogrubienie kursywa kod link cytat nagłówek lista punktowana numerowana lista zadań checklista podgląd pisz skrót wzmianka małpa odwołanie krzyżyk numer issue autouzupełnianie odpowiedź opis pull requesta treść issue markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Pisanie komentarzy
@@ -121,8 +121,12 @@ ma tego linku, bo podręcznik otworzyłby się za oknem dialogowym.
 - **Podgląd to renderer aplikacji.** Pokazuje Markdown tak, jak rysuje go
   aplikacja; wyświetlanie na hostingu może się różnić w szczegółach (rozszerzenia
   właściwe GitHubowi, wzmianki zamieniane w linki).
-- **Opublikowane komentarze nie są formatowane.** Po wysłaniu komentarz pokazuje
-  się w rozmowie w aplikacji jako zwykły tekst, z klikalnymi linkami — formatowanie
-  Markdown jest rysowane tylko w podglądzie i na stronie hostingu.
+- **Podgląd to rysunek aplikacji, a nie hostingu.** Na stronach pull requesta i issue
+  podgląd rysuje tekst tak, jak opublikowany komentarz zostanie pokazany w aplikacji
+  ([jak pokazywane są komentarze](pull-requests.md#jak-pokazywane-są-komentarze)): ten sam ścisły profil,
+  zachowane złamania wierszy i obraz z innej witryny czekający na kliknięcie. Na
+  GitHubie opublikowany komentarz rysuje potem GitHub, więc rozszerzenie, którego
+  aplikacja nie zna, może wyglądać inaczej. Okna nowego pull requesta i nowego issue
+  używają zwykłego podglądu Markdownu aplikacji.
 - Skróty są stałe: nie ma ich w ustawieniach skrótów i nie podążają za zmianą
   przypisania tam.

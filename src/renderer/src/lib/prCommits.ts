@@ -1,4 +1,5 @@
-import type { PrCommit } from '../../../shared/types'
+import type { HostingProvider, PrCommit } from '../../../shared/types'
+import { flavorForRemoteUrl } from '../../../shared/prRefs'
 
 /** Commits authored on one calendar day, in the order the list had them. */
 export interface PrCommitDay {
@@ -61,4 +62,15 @@ export function getPrCommitWebUrl(prUrl: string, sha: string): string | null {
   // Forgejo / Gitea: …/pulls/7 → the repository's commit.
   if ((m = /^(.*)\/pulls\/\d+(?:\/.*)?$/.exec(path))) return at(`${m[1]}/commit/${sha}`)
   return null
+}
+
+/**
+ * A fork pull request's head can be fetched from this remote: the host mirrors
+ * it under a ref of its own (main/git.ts fetchPrHead). Azure DevOps publishes
+ * only a merge result and bitbucket.org nothing, so there the Commits tab
+ * offers the browser alone. The provider decides when known; the URL otherwise.
+ */
+export function canFetchPrHead(remoteUrl: string, provider?: HostingProvider | null): boolean {
+  if (provider === 'azure' || flavorForRemoteUrl(remoteUrl) === 'azure') return false
+  return !/(^|[@/.])bitbucket\.org([:/]|$)/i.test(remoteUrl)
 }

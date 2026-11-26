@@ -18,6 +18,8 @@ export interface ReferenceHost {
   azure: boolean
   /** GitLab: `!12` is a merge request. */
   gitlab: boolean
+  /** GitHub or GitHub Enterprise Server: one GraphQL request reads a page of references. */
+  github: boolean
 }
 
 /**
@@ -37,7 +39,8 @@ export function getReferenceHost(remoteUrl: string | undefined, provider: Hostin
   if (provider === 'bitbucket' || (!provider && host.includes('bitbucket'))) return null
   return {
     azure: provider === 'azure' || !!azureOrgOf(web),
-    gitlab: provider === 'gitlab' || (!provider && host.includes('gitlab'))
+    gitlab: provider === 'gitlab' || (!provider && host.includes('gitlab')),
+    github: provider === 'github' || (!provider && host.includes('github'))
   }
 }
 
@@ -75,6 +78,23 @@ export function unavailableSummaries(
   return queries.map((q) => ({ sigil: q.sigil, id: q.id, available: false, reason }))
 }
 
+/**
+ * What to cache from one request's answer: everything it answered, except what
+ * the host left unasked (`notAsked`), which stays unknown so the next hover asks
+ * for it; and, for a reference the answer left out altogether, "could not read",
+ * so no card spins forever.
+ */
+export function getCacheableSummaries(
+  batch: readonly ReferenceQuery[],
+  summaries: readonly ReferenceSummary[]
+): ReferenceSummary[] {
+  const got = new Set(summaries.map(getReferenceKey))
+  return [
+    ...summaries.filter((s) => s.reason !== 'notAsked'),
+    ...unavailableSummaries(batch.filter((q) => !got.has(getReferenceKey(q))))
+  ]
+}
+
 /** An answer is fresh this long. */
 export const REFERENCE_TTL_MS = 5 * 60_000
 /** "Not found" or "not reached" is asked again sooner, so a fixed permission or network shows. */
@@ -83,11 +103,25 @@ export const REFERENCE_UNAVAILABLE_TTL_MS = 60_000
 export const REFERENCE_RATE_LIMITED_TTL_MS = 5 * 60_000
 /**
  * Most references one hover asks for, on a host that reads them one request
- * each (GitHub, Forgejo): the one hovered and its neighbours on screen.
+ * each (Forgejo; GitHub when GraphQL fails): the one hovered and its
+ * neighbours on screen.
  */
 export const REFERENCE_REQUEST_MAX = 10
 /** Azure's batch read takes 200 work items in one request. */
 export const AZURE_REQUEST_MAX = 200
+/**
+ * GitHub reads fifty in one GraphQL request (main/referenceSummaries.ts). Should
+ * GraphQL fail, REST reads only the first ten — nearest first — and the rest
+ * are asked again later.
+ */
+export const GITHUB_REQUEST_MAX = 50
+
+/** Most references one request asks this host for. */
+export function getReferenceRequestMax(host: ReferenceHost): number {
+  if (host.azure) return AZURE_REQUEST_MAX
+  if (host.github) return GITHUB_REQUEST_MAX
+  return REFERENCE_REQUEST_MAX
+}
 /** Entries kept before the oldest are dropped. */
 const CACHE_MAX = 2000
 

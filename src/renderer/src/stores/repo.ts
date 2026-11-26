@@ -1570,6 +1570,36 @@ export const repoActions = {
       }
     }),
 
+  /**
+   * A pull request from a fork: its branch is on no remote here, but the
+   * target repository mirrors its head under a well-known ref. Fetch that into
+   * `<remote>/pr/<number>`, so its commits can be opened in the repository's
+   * view. False when the remote publishes no head (Azure DevOps, bitbucket.org)
+   * or the fetch failed — the toast says which. No undo, as for fetchPrBranch.
+   */
+  fetchPrHead: (path: string, remote: string, number: number): Promise<boolean> =>
+    enqueue(path, async () => {
+      const ui = useUIStore.getState()
+      ui.beginInflight()
+      ui.setBusy(interp(t('busy.fetchingPrHead'), { n: String(number), remote }), 'fetch')
+      muteWatcher(path)
+      try {
+        const ref = await gitApi.fetchPrHead(path, remote, number)
+        if (!ref) {
+          toast('info', interp(t('act.prHeadMissing'), { n: String(number), remote }), { repoPath: path })
+          return false
+        }
+        await useRepoStore.getState().refresh(path, { only: ['log', 'branches'] })
+        return true
+      } catch (err) {
+        toast('error', err instanceof Error ? err.message : String(err), { repoPath: path })
+        return false
+      } finally {
+        ui.setBusy(null)
+        ui.endInflight()
+      }
+    }),
+
   /** Open a commit in its repository's view, as a click in the graph would. */
   showCommitInRepo: async (path: string, sha: string): Promise<void> => {
     if (!useRepoStore.getState().repos[path]) await useRepoStore.getState().ensure(path)

@@ -14,6 +14,7 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
+import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThread } from './githubGraphql'
 import {
   getAnchorLine,
   getAnchorSide,
@@ -866,7 +867,7 @@ export function markAwaitingYou(prs: PullRequest[], login: string | null): PullR
 }
 
 /** Who a token signs in as, per host — remembered for a while, keyed by a hash of the token (never the token). */
-const loginCache = new Map<string, { login: string | null; id: string | null; at: number }>()
+const loginCache = new Map<string, { login: string | null; id: string | null; uniqueName: string | null; at: number }>()
 const LOGIN_TTL_MS = 10 * 60_000
 
 async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<string | null> {
@@ -878,12 +879,17 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
  * is a display name two people can share (Azure DevOps, bitbucket.org), the
  * account's own id — what "your comment" must be matched on there.
  */
-async function myAccount(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<{ login: string | null; id: string | null } | null> {
+async function myAccount(
+  parsed: ParsedRemote,
+  token: string,
+  auth: ApiAuth
+): Promise<{ login: string | null; id: string | null; uniqueName: string | null } | null> {
   const key = `${parsed.provider}|${parsed.base ?? ''}|${createHash('sha256').update(token).digest('hex').slice(0, 16)}`
   const hit = loginCache.get(key)
-  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return { login: hit.login, id: hit.id }
+  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return { login: hit.login, id: hit.id, uniqueName: hit.uniqueName }
   let login: string | null = null
   let id: string | null = null
+  let uniqueName: string | null = null
   // Only the host's own "no" is worth remembering: a token without user scope
   // stays that way. A network error or a 5xx is asked again next time.
   let refused = false
@@ -903,21 +909,24 @@ async function myAccount(parsed: ParsedRemote, token: string, auth: ApiAuth): Pr
       } else refused = res.status === 401 || res.status === 403
       if (!res.ok && !refused) return null
     } else if (parsed.provider === 'azure') {
-      const me = await adoJson<{ authenticatedUser?: { id?: string; providerDisplayName?: string } }>(
-        `https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`,
-        token
-      )
+      const me = await adoJson<{
+        authenticatedUser?: { id?: string; providerDisplayName?: string; properties?: { Account?: { $value?: unknown } } }
+      }>(`https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`, token)
       login = me.authenticatedUser?.providerDisplayName ?? null
       // The identity id: what a comment's `author.id` (an IdentityRef) names.
       id = me.authenticatedUser?.id ?? null
+      // The account name (an email or UPN) — what a comment's `author.uniqueName`
+      // carries. A second key for "yours", should the two ids ever differ.
+      const account = me.authenticatedUser?.properties?.Account?.$value
+      uniqueName = typeof account === 'string' && account.trim() ? account.trim() : null
     }
   } catch (err) {
     // A token without user scope cannot say who it is: no marks, no error.
     refused = isAuthRefusal(err)
     if (!refused) return null
   }
-  loginCache.set(key, { login, id, at: Date.now() })
-  return { login, id }
+  loginCache.set(key, { login, id, uniqueName, at: Date.now() })
+  return { login, id, uniqueName }
 }
 
 /** A 401/403 from the host. Every client myLogin uses sets `status` on what it throws. */
@@ -2129,15 +2138,26 @@ interface GhIssueComment {
   id: number
   user: GhUser | null
   body: string
+  /** Present when asked for with GH_FULL_BODY. */
+  body_html?: string
   created_at: string
   updated_at?: string
 }
+
+/**
+ * Ask GitHub for `body_html` beside `body`: its own rendering, with mentions and
+ * references linked, third-party images behind its camo proxy and private
+ * attachments signed — none of which a local Markdown render can reproduce. The
+ * renderer sanitizes it like any other comment (lib/remoteContent.ts).
+ */
+const GH_FULL_BODY: RequestInit = { headers: { Accept: 'application/vnd.github.full+json' } }
 
 /** GitHub keeps no "edited" flag: an `updated_at` past `created_at` is the sign. */
 export function mapGhIssueComment(c: GhIssueComment): PrComment {
   return {
     author: c.user?.login ?? 'unknown',
     body: c.body,
+    ...(c.body_html ? { bodyHtml: c.body_html } : {}),
     createdAt: c.created_at,
     handle: { id: c.id, kind: 'conversation' },
     ...(isEditedAfter(c.created_at, c.updated_at) ? { edited: true } : {})
@@ -2149,6 +2169,7 @@ interface GhReviewComment {
   id: number
   user: GhUser | null
   body: string
+  body_html?: string
   created_at: string
   updated_at?: string
   path: string
@@ -2184,6 +2205,7 @@ async function pullRequestDetail(
       number: number
       title: string
       body: string | null
+      body_html?: string | null
       user: GhUser
       head: { ref: string; label?: string; repo: { full_name: string } | null }
       base: { ref: string; repo: { full_name: string } | null }
@@ -2206,19 +2228,20 @@ async function pullRequestDetail(
       deletions?: number
       changed_files?: number
       commits?: number
-    }>(`${api}/pulls/${number}`, token),
+    }>(`${api}/pulls/${number}`, token, GH_FULL_BODY),
     // Every page: a long discussion used to stop at its first 100 comments.
     allPages((page) =>
       ghJson<GhIssueComment[]>(
         `${api}/issues/${number}/comments?per_page=100&page=${page}`,
-        token
+        token,
+        GH_FULL_BODY
       )
     ),
     allPages((page) =>
       ghJson<Array<{ user: GhUser | null; state: string }>>(`${api}/pulls/${number}/reviews?per_page=100&page=${page}`, token)
     ),
     allPages((page) =>
-      ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token)
+      ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token, GH_FULL_BODY)
     ).catch(() => [] as GhReviewComment[])
   ])
 
@@ -2232,6 +2255,7 @@ async function pullRequestDetail(
       id: rc.id,
       author: rc.user?.login ?? 'unknown',
       body: rc.body,
+      ...(rc.body_html ? { bodyHtml: rc.body_html } : {}),
       createdAt: rc.created_at,
       handle: { id: rc.id, kind: 'review' as const },
       ...(isEditedAfter(rc.created_at, rc.updated_at) ? { edited: true } : {})
@@ -2286,6 +2310,7 @@ async function pullRequestDetail(
     number: pr.number,
     title: pr.title,
     body: pr.body ?? '',
+    ...(pr.body_html ? { bodyHtml: pr.body_html } : {}),
     author: pr.user.login,
     source: pr.head.ref,
     target: pr.base.ref,
@@ -2607,6 +2632,33 @@ async function replyReviewComment(
 }
 
 /**
+ * GitHub: reply in a review thread whose first comment was deleted. REST
+ * replies name the root comment, which is gone; GraphQL replies name the
+ * thread. The thread is found through a comment still in it — its REST
+ * `node_id` is the GraphQL comment id. Any failure is thrown: the page then
+ * offers the host's own page instead. `pending`: GitHub filed the reply under
+ * the viewer's pending review, unseen until that review is submitted.
+ */
+async function replyReviewThread(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  commentId: number,
+  body: string
+): Promise<{ pending: boolean }> {
+  if (!Number.isSafeInteger(commentId) || commentId <= 0) throw new Error('Not a review comment id.')
+  if (typeof body !== 'string' || !body.trim()) throw new Error('An empty reply.')
+  const { owner, repo, token, ep, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const comment = await ghJson<{ node_id?: string }>(`${api}/pulls/comments/${commentId}`, token)
+  if (!comment.node_id) throw new Error('GitHub did not name the comment.')
+  const post = createGithubGraphqlPost(ep.graphqlUrl, token)
+  const thread = await findReviewThread(post, owner, repo, number, comment.node_id)
+  if (!thread) throw new Error('GitHub did not find the review thread.')
+  if (!thread.viewerCanReply) throw new Error('GitHub does not let this account reply in this thread.')
+  return addReviewThreadReply(post, thread.id, body)
+}
+
+/**
  * Why a line comment failed, in words the renderer recognises
  * (lib/gitErrorHint.ts): `refused` when the host turned the account down,
  * `outsideDiff` when it would not anchor a comment to that line — which is what
@@ -2893,10 +2945,11 @@ async function deletePrComment(remoteUrl: string, tokens: HostTokens, number: nu
 export interface PageViewer {
   viewer: string | null
   viewerId: string | null
+  viewerUniqueName: string | null
   viewerById: boolean
 }
 
-const NO_VIEWER: PageViewer = { viewer: null, viewerId: null, viewerById: false }
+const NO_VIEWER: PageViewer = { viewer: null, viewerId: null, viewerUniqueName: null, viewerById: false }
 
 /**
  * A detail read with its viewer. Both settle before the call answers: a failed
@@ -2922,7 +2975,7 @@ async function viewerOf(remoteUrl: string, tokens: HostTokens): Promise<PageView
     const viewerById = parsed.provider === 'azure' || (parsed.provider === 'bitbucket' && !parsed.base)
     const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
     const me = auth ? await myAccount(parsed, auth.token, auth) : null
-    return { viewer: me?.login ?? null, viewerId: me?.id ?? null, viewerById }
+    return { viewer: me?.login ?? null, viewerId: me?.id ?? null, viewerUniqueName: me?.uniqueName ?? null, viewerById }
   } catch {
     return NO_VIEWER
   }
@@ -3271,8 +3324,10 @@ async function referenceSummaries(
       return await azureReferenceSummaries(a.optional, a.repo.org, queries)
     }
     if (provider === 'github') {
-      const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
-      return await githubReferenceSummaries((url) => ghJson(url, token), api, queries)
+      const { owner, repo, token, ep, api } = await ghRepoOf(remoteUrl, tokens.github)
+      // GraphQL reads a page of references in one request; REST is the fallback.
+      const graphql = { post: createGithubGraphqlRawPost(ep.graphqlUrl, token), owner, repo }
+      return await githubReferenceSummaries((url) => ghJson(url, token), api, queries, graphql)
     }
     if (provider === 'gitlab') {
       const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
@@ -3304,6 +3359,7 @@ async function issueDetail(
       number: number
       title: string
       body: string | null
+      body_html?: string | null
       user: { login: string } | null
       state: string
       html_url: string
@@ -3311,10 +3367,11 @@ async function issueDetail(
       labels: Array<{ name: string } | string>
       assignees: Array<{ login: string }> | null
       milestone: { title: string } | null
-    }>(`${api}/issues/${number}`, token),
+    }>(`${api}/issues/${number}`, token, GH_FULL_BODY),
     ghJson<GhIssueComment[]>(
       `${api}/issues/${number}/comments?per_page=100`,
-      token
+      token,
+      GH_FULL_BODY
     ),
     fetchClosingPrs(ep.graphqlUrl, owner, repo, number, token),
     fetchProjectFields(ep.graphqlUrl, owner, repo, number, token)
@@ -3324,6 +3381,7 @@ async function issueDetail(
     number: issue.number,
     title: issue.title,
     body: issue.body ?? '',
+    ...(issue.body_html ? { bodyHtml: issue.body_html } : {}),
     author: issue.user?.login ?? 'unknown',
     state: issue.state === 'closed' ? 'closed' : 'open',
     url: issue.html_url,
@@ -4602,6 +4660,11 @@ export function registerHostingHandlers(): void {
     'hosting:prReplyReviewComment',
     (remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
+  )
+  handleForRepo(
+    'hosting:prReplyReviewThread',
+    (remoteUrl: string, tokens: HostTokens, number: number, commentId: number, body: string) =>
+      replyReviewThread(remoteUrl, tokens, number, commentId, body)
   )
   handleForRepo(
     'hosting:prCommentOnLine',

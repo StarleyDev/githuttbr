@@ -4,7 +4,7 @@ category: Sincronizar y muchos repos
 order: 57.5
 summary: El editor de Markdown detrás de cada cuadro de comentario — Escribir / Vista previa, una barra de formato con los atajos de GitHub, listas que continúan con Enter y autocompletado de @menciones / #referencias.
 keywords: editor markdown cuadro de comentario barra de herramientas negrita cursiva código enlace cita encabezado lista con viñetas numerada tareas checklist vista previa escribir atajo mención arroba referencia almohadilla número de issue autocompletar respuesta descripción de la pull request cuerpo de la issue markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Escribir comentarios
@@ -125,8 +125,12 @@ detrás del diálogo.
 - **La vista previa es el renderizador de la app.** Muestra el Markdown como lo
   dibuja la app; el renderizado del host puede diferir en detalles (extensiones
   propias de GitHub, menciones convertidas en enlaces).
-- **Los comentarios publicados no se renderizan.** Una vez enviado, un comentario
-  se ve en la conversación de la app como texto plano, con los enlaces clicables —
-  el formato Markdown solo se dibuja en la vista previa y en la web del host.
+- **La vista previa es el dibujo de la app, no el del host.** En las páginas de pull
+  request y de issue, la vista previa dibuja el texto como se mostrará en la app el
+  comentario publicado ([cómo se muestran los comentarios](pull-requests.md#cómo-se-muestran-los-comentarios)):
+  el mismo perfil estricto, los saltos de línea conservados, y una imagen de otro
+  sitio esperando un clic. En GitHub, el comentario publicado lo dibuja luego GitHub,
+  así que una extensión que la app no conoce puede verse distinta. Los diálogos de pull
+  request nueva e issue nueva usan la vista previa de Markdown habitual de la app.
 - Los atajos son fijos: no están en los ajustes de atajos y no siguen una
   reasignación hecha allí.

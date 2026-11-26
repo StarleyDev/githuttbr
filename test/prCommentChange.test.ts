@@ -45,6 +45,8 @@ interface Sent {
 /** [method, URL prefix, status, body]. The first match answers; anything else is 200 {}. */
 let routes: Array<[string, string, number, unknown]> = []
 const sent: Sent[] = []
+/** The Accept header each URL was asked with. */
+const accepts = new Map<string, string>()
 
 const edit = (remote: string, handle: unknown, body: unknown = 'Better wording.'): Promise<unknown> =>
   Promise.resolve().then(() => handlers.get('hosting:prEditComment')!({}, '', remote, {}, 7, handle, body))
@@ -99,6 +101,7 @@ describe('editing and deleting a pull request comment — main', () => {
         const url = String(input)
         const method = (init?.method ?? 'GET').toUpperCase()
         sent.push({ url, method, body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined })
+        accepts.set(url, new Headers(init?.headers).get('accept') ?? '')
         const hit = routes.find(([m, prefix]) => m === method && url.startsWith(prefix))
         const [, , status, body] = hit ?? ['', '', 200, {}]
         // A 204 carries no body: the clients must not try to read one.
@@ -110,11 +113,45 @@ describe('editing and deleting a pull request comment — main', () => {
   afterEach(() => {
     routes = []
     sent.length = 0
+    accepts.clear()
   })
   afterAll(() => vi.unstubAllGlobals())
 
   describe('GitHub', () => {
     const API = 'https://api.github.com/repos/team/app'
+
+    it('the detail asks for body_html too, and hands it to the page beside the raw body', async () => {
+      const user = { login: 'ana' }
+      routes = [
+        ['GET', `${API}/issues/7/comments`, 200, [
+          { id: 1, user, body: '**hi**', body_html: '<p><strong>hi</strong></p>', created_at: '2026-01-01T10:00:00Z' }
+        ]],
+        ['GET', `${API}/pulls/7/reviews`, 200, []],
+        ['GET', `${API}/pulls/7/comments`, 200, [
+          { id: 2, user, body: '`x`', body_html: '<p><code>x</code></p>', created_at: '2026-01-01T10:00:00Z',
+            path: 'a.ts', line: 3, original_line: 3, diff_hunk: '@@', side: 'RIGHT' }
+        ]],
+        ['GET', `${API}/pulls/7`, 200, {
+          number: 7, title: 'T', body: '- [ ] a', body_html: '<ul><li>a</li></ul>', user, draft: false, state: 'open',
+          merged: false, mergeable: true, html_url: 'https://github.com/team/app/pull/7', created_at: '2026-01-01T10:00:00Z',
+          updated_at: '2026-01-01T10:00:00Z', closed_at: null, merged_at: null, merged_by: null, milestone: null,
+          head: { ref: 'f', repo: { full_name: 'team/app' } }, base: { ref: 'main', repo: { full_name: 'team/app' } }
+        }]
+      ]
+      const pr = (await handlers.get('hosting:prDetail')!({}, '', GITHUB, {}, 7)) as {
+        body: string
+        bodyHtml?: string
+        comments: Array<{ body: string; bodyHtml?: string }>
+        reviewThreads: Array<{ comments: Array<{ body: string; bodyHtml?: string }> }>
+      }
+      expect(pr.body).toBe('- [ ] a')
+      expect(pr.bodyHtml).toBe('<ul><li>a</li></ul>')
+      expect(pr.comments[0]).toMatchObject({ body: '**hi**', bodyHtml: '<p><strong>hi</strong></p>' })
+      expect(pr.reviewThreads[0].comments[0]).toMatchObject({ body: '`x`', bodyHtml: '<p><code>x</code></p>' })
+      for (const url of [`${API}/pulls/7`, `${API}/issues/7/comments?per_page=100&page=1`, `${API}/pulls/7/comments?per_page=100&page=1`]) {
+        expect(accepts.get(url)).toBe('application/vnd.github.full+json')
+      }
+    })
 
     it('a conversation comment is edited and deleted through the issue comments endpoint', async () => {
       await edit(GITHUB, CONVERSATION)
@@ -157,6 +194,86 @@ describe('editing and deleting a pull request comment — main', () => {
           })
       )
       expect((await failure(edit(GITHUB, CONVERSATION))).message).toMatch(/^GitHub rate limit exceeded/)
+    })
+
+    describe('a thread whose first comment was deleted (GraphQL)', () => {
+      const reply = (commentId: unknown, body: unknown = 'Thanks!'): Promise<unknown> =>
+        Promise.resolve().then(() => handlers.get('hosting:prReplyReviewThread')!({}, '', GITHUB, {}, 7, commentId, body))
+      const GRAPHQL = 'https://api.github.com/graphql'
+      // One answer serves both requests: each reads its own field.
+      const answer = {
+        data: {
+          repository: {
+            pullRequest: {
+              reviewThreads: {
+                pageInfo: { hasNextPage: false, endCursor: null },
+                nodes: [
+                  { id: 'PRRT_other', viewerCanReply: true, comments: { nodes: [{ id: 'PRRC_x' }] } },
+                  { id: 'PRRT_wanted', viewerCanReply: true, comments: { nodes: [{ id: 'PRRC_survivor' }, { id: 'PRRC_y' }] } }
+                ]
+              }
+            }
+          },
+          addPullRequestReviewThreadReply: { comment: { id: 'PRRC_new', state: 'SUBMITTED' } }
+        }
+      }
+
+      it('finds the thread through a comment still in it, and replies to the thread', async () => {
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
+          ['POST', GRAPHQL, 200, answer]
+        ]
+        expect(await reply(43)).toEqual({ pending: false })
+        const posts = sent.filter((s) => s.url === GRAPHQL)
+        expect(posts).toHaveLength(2)
+        expect((posts[0].body as { variables: unknown }).variables).toEqual({ owner: 'team', repo: 'app', number: 7, after: null })
+        expect((posts[1].body as { query: string }).query).toMatch(/addPullRequestReviewThreadReply/)
+        expect((posts[1].body as { variables: unknown }).variables).toEqual({ thread: 'PRRT_wanted', body: 'Thanks!' })
+        // REST is never asked to reply to the deleted root.
+        expect(sent.some((s) => s.method === 'POST' && s.url.startsWith(`${API}/pulls`))).toBe(false)
+      })
+
+      it('fails — so the page offers GitHub — when GraphQL refuses or no thread holds the comment', async () => {
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
+          ['POST', GRAPHQL, 200, { errors: [{ type: 'INSUFFICIENT_SCOPES', message: 'Your token has not been granted the required scopes' }] }]
+        ]
+        expect((await failure(reply(43))).message).toMatch(/^GitHub: Your token has not been granted/)
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_unknown' }],
+          ['POST', GRAPHQL, 200, answer]
+        ]
+        expect((await failure(reply(43))).message).toMatch(/did not find the review thread/)
+        expect(sent.filter((s) => s.url === GRAPHQL && JSON.stringify(s.body).includes('addPullRequestReviewThreadReply'))).toEqual([])
+      })
+
+      it('says when the reply landed in the viewer’s pending review', async () => {
+        const pendingAnswer = JSON.parse(JSON.stringify(answer)) as typeof answer
+        pendingAnswer.data.addPullRequestReviewThreadReply.comment.state = 'PENDING'
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
+          ['POST', GRAPHQL, 200, pendingAnswer]
+        ]
+        expect(await reply(43)).toEqual({ pending: true })
+      })
+
+      it('sends no reply where GitHub says this account may not reply (viewerCanReply false)', async () => {
+        const locked = JSON.parse(JSON.stringify(answer)) as typeof answer
+        locked.data.repository.pullRequest.reviewThreads.nodes[1].viewerCanReply = false
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
+          ['POST', GRAPHQL, 200, locked]
+        ]
+        expect((await failure(reply(43))).message).toMatch(/does not let this account reply/)
+        expect(sent.filter((s) => s.url === GRAPHQL)).toHaveLength(1)
+      })
+
+      it('refuses a malformed comment id or an empty reply before anything is sent', async () => {
+        await failure(reply(0))
+        await failure(reply('43'))
+        await failure(reply(43, '   '))
+        expect(sent).toEqual([])
+      })
     })
   })
 
@@ -314,14 +431,14 @@ describe('editing and deleting a pull request comment — main', () => {
       const { withViewer, forgetLogins } = await import('../src/main/hosting')
       forgetLogins()
       routes = [['GET', 'https://api.github.com/user', 200, { login: 'ana' }]]
-      expect(await withViewer(GITHUB, {}, read)).toEqual({ number: 7, viewer: 'ana', viewerId: null, viewerById: false })
+      expect(await withViewer(GITHUB, {}, read)).toEqual({ number: 7, viewer: 'ana', viewerId: null, viewerUniqueName: null, viewerById: false })
     })
 
     it('a failing "who am I" leaves nobody, and the detail still answers', async () => {
       const { withViewer, forgetLogins } = await import('../src/main/hosting')
       forgetLogins()
       routes = [['GET', 'https://api.github.com/user', 500, { message: 'boom' }]]
-      expect(await withViewer(GITHUB, {}, read)).toEqual({ number: 7, viewer: null, viewerId: null, viewerById: false })
+      expect(await withViewer(GITHUB, {}, read)).toEqual({ number: 7, viewer: null, viewerId: null, viewerUniqueName: null, viewerById: false })
     })
 
     it('a failing read fails the call', async () => {
@@ -336,14 +453,40 @@ describe('editing and deleting a pull request comment — main', () => {
       routes = [
         ['GET', 'https://dev.azure.com/acme/_apis/connectionData', 200, { authenticatedUser: { id: 'id-ana-1', providerDisplayName: 'Ana Souza' } }]
       ]
-      expect(await withViewer(AZURE, {}, read)).toEqual({ number: 7, viewer: 'Ana Souza', viewerId: 'id-ana-1', viewerById: true })
+      expect(await withViewer(AZURE, {}, read)).toEqual({
+        number: 7,
+        viewer: 'Ana Souza',
+        viewerId: 'id-ana-1',
+        viewerUniqueName: null,
+        viewerById: true
+      })
+    })
+
+    it('Azure DevOps: the account name too, from the connection identity (properties.Account)', async () => {
+      const { withViewer, forgetLogins } = await import('../src/main/hosting')
+      forgetLogins()
+      routes = [
+        [
+          'GET',
+          'https://dev.azure.com/acme/_apis/connectionData',
+          200,
+          {
+            authenticatedUser: {
+              id: 'id-ana-1',
+              providerDisplayName: 'Ana Souza',
+              properties: { Account: { $type: 'System.String', $value: 'ana.souza@example.com' } }
+            }
+          }
+        ]
+      ]
+      expect(await withViewer(AZURE, {}, read)).toMatchObject({ viewerId: 'id-ana-1', viewerUniqueName: 'ana.souza@example.com' })
     })
 
     it('bitbucket.org: the account uuid, and matching by id only', async () => {
       const { withViewer, forgetLogins } = await import('../src/main/hosting')
       forgetLogins()
       routes = [['GET', 'https://api.bitbucket.org/2.0/user', 200, { display_name: 'Ana Souza', uuid: '{a1b2}' }]]
-      expect(await withViewer(BB_CLOUD, {}, read)).toEqual({ number: 7, viewer: 'Ana Souza', viewerId: '{a1b2}', viewerById: true })
+      expect(await withViewer(BB_CLOUD, {}, read)).toEqual({ number: 7, viewer: 'Ana Souza', viewerId: '{a1b2}', viewerUniqueName: null, viewerById: true })
     })
   })
 
@@ -360,6 +503,8 @@ describe('editing and deleting a pull request comment — main', () => {
       expect(c.handle).toEqual({ id: 5, kind: 'conversation' })
       expect(c.edited).toBe(true)
       expect(mapGhIssueComment({ id: 6, user: null, body: 'y', created_at: '2026-01-01T10:00:00Z', updated_at: '2026-01-01T10:00:00Z' }).edited).toBeUndefined()
+      // No body_html asked for (or an empty one): nothing claims a rendering.
+      expect('bodyHtml' in mapGhIssueComment({ id: 7, user: null, body: 'z', created_at: '2026-01-01T10:00:00Z' })).toBe(false)
     })
 
     it('Azure DevOps: thread and comment id; deleted comments hidden; edited from the content date', async () => {
@@ -376,7 +521,7 @@ describe('editing and deleting a pull request comment — main', () => {
                 id: 2,
                 content: 'kept',
                 commentType: 'text',
-                author: { id: 'id-ana-1', displayName: 'Ana Souza' },
+                author: { id: 'id-ana-1', displayName: 'Ana Souza', uniqueName: 'ana.souza@example.com' },
                 publishedDate: '2026-01-01T10:00:00Z',
                 lastContentUpdatedDate: '2026-01-02T10:00:00Z'
               }
@@ -396,6 +541,8 @@ describe('editing and deleting a pull request comment — main', () => {
       expect(pr.comments[0].handle).toEqual({ id: 2, kind: 'conversation', threadId: 9 })
       expect(pr.comments[0].edited).toBe(true)
       expect(pr.comments[0].authorId).toBe('id-ana-1')
+      expect(pr.comments[0].authorUniqueName).toBe('ana.souza@example.com')
+      expect(pr.comments[1].authorUniqueName).toBeUndefined()
       expect(pr.comments[0].hasReplies).toBeUndefined()
       // The first comment of a conversation thread with replies is marked answered.
       expect(pr.comments.slice(1).map((c) => !!c.hasReplies)).toEqual([true, false])
