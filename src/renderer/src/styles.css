@@ -5840,13 +5840,15 @@ body.col-resizing .node-ava {
 }
 /* Dialogs built for a fixed header — a root that fills the height, with a
    list that scrolls on its own — get the body's height, so only that list
-   moves. Settings is one, and so are the radar, time machine, range-diff and
-   local CI. A new dialog of that shape adds its root here. */
-.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root)) {
+   moves. Settings is one, and so are the radar, time machine, range-diff,
+   local CI and repository settings. A new dialog of that shape adds its root here. */
+.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings)) {
   display: flex;
   flex-direction: column;
 }
-.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) { min-height: 0; }
+.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings) {
+  min-height: 0;
+}
 /* Everything else scrolls as a whole, with its title pinned on top. The gap
    under it is padding, not margin, so scrolled content does not show through. */
 .modal-scroll > h3:first-child,
@@ -7151,6 +7153,35 @@ body.col-resizing .node-ava {
   gap: 8px;
   margin-top: 18px;
 }
+/* The footer of a scrolling dialog stays at the bottom, so its buttons never
+   scroll away; only the body moves. The footer is the last child (an inline
+   row of actions mid-dialog is not), and dialogs that lay out their own fixed
+   regions are left alone. Opaque, and the padding it adds below is taken back
+   by the margin, so a short dialog looks exactly as before. */
+.modal-scroll
+  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) *) {
+  position: sticky;
+  /* Chromium pins a sticky box inside the scroller's padding, so the 22px under
+     .modal-scroll would leave a strip where rows show through: reach into it. A
+     scroller of its own without that padding (repository settings) zeroes it. */
+  bottom: calc(-1 * var(--modal-foot-inset, 22px));
+  z-index: 3;
+  background: var(--bg-2);
+  padding-bottom: 14px;
+  margin-bottom: -14px;
+}
+/* A fade above the pinned footer, so rows sliding under it do not end in a
+   hard cut. It paints over the footer's own top margin, empty when not scrolled. */
+.modal-scroll
+  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) *)::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: 12px;
+  background: linear-gradient(to bottom, transparent, var(--bg-2));
+  pointer-events: none;
+}
 
 .modal-close {
   position: absolute;
@@ -7913,6 +7944,11 @@ body.col-resizing .node-ava {
 
 .page-head.stuck {
   box-shadow: 0 10px 10px -10px rgba(0, 0, 0, 0.45);
+}
+/* A page embedded in a dialog (Insights in repository settings) sits under the
+   dialog's own fixed title and tabs: one pinned header is enough. */
+.modal .page-head {
+  position: static;
 }
 
 .changelog-inner {
@@ -17547,7 +17583,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* ─── Repo settings tabs ───────────────────────────────────────────────── */
 .repo-settings { display: flex; flex-direction: column; min-height: 0; }
 .repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
-.repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; }
+.repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; --modal-foot-inset: 0px; }
 .repo-image-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .rip-field { position: relative; flex: 1; min-width: 0; display: flex; }
 .rip-field input { flex: 1; min-width: 0; padding-inline-end: 26px; }
