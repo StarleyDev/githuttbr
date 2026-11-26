@@ -2,9 +2,9 @@
 title: Pagina delle pull request
 category: Sincronizzazione e più repo
 order: 57
-summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI — e ‹ › per scorrere la lista filtrata da dentro una PR.
-keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, e commenti su una riga del suo diff.
+keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Pagina delle pull request
@@ -159,6 +159,79 @@ Cosa non fa:
 - **Questa finestra.** Il checkout avviene nella working tree di questo
   repository. Quando il branch è già in checkout in un altro
   [worktree](worktrees.md), si apre invece la scheda di quel worktree.
+
+## Commentare una riga
+
+Qui si poteva già rispondere a un thread di revisione, ma non aprirne uno, quindi una
+vera revisione ti mandava ancora nel browser. Nella scheda **File** di una pull
+request, ogni riga del diff accetta un commento suo:
+
+- **Passa sopra una riga** e premi il **+** che compare sul suo numero, oppure
+  **fai clic sulla riga** stessa (un clic che chiude una selezione di testo, o un
+  doppio clic che seleziona una parola, non conta: quello è leggere). Anche il menu
+  del tasto destro — o il tasto del menu contestuale della tastiera — ha *Commenta la
+  riga N*.
+- Si apre un riquadro **sotto quella riga**. Scrivi, poi **Commenta** — oppure
+  ⌘/Ctrl+Invio. **Annulla** lo chiude; anche **Esc**, chiedendo prima se hai già
+  scritto qualcosa. In entrambi i casi il focus torna su quella riga.
+- Se va a buon fine, il nuovo thread compare **sotto la sua riga**, e nei thread di
+  revisione della scheda Conversazione, dove lo vedranno tutti gli altri.
+
+![Un commento scritto sotto una riga modificata, con un thread precedente sotto la sua riga](../../screenshots/pr-line-comment.webp)
+
+Il lato su cui finisce il commento segue la riga:
+
+| Riga | Ancorato a |
+|---|---|
+| **Aggiunta** (verde) | La nuova versione del file, al suo nuovo numero |
+| **Eliminata** (rossa) | La vecchia versione, al suo vecchio numero |
+| **Invariata** | La nuova versione (a GitLab vengono inviati entrambi i numeri, come richiede) |
+
+Anche i thread esistenti sono mostrati sotto le loro righe, con il riquadro di
+risposta dove l’host permette all’app di rispondere dentro un thread (Forgejo no).
+Un thread compare su una riga solo quando l’host dice che appartiene ancora al diff
+mostrato; il resto rimane nella scheda Conversazione, invece che su una riga
+indovinata:
+
+| Host | Un thread scritto prima dell’ultimo push |
+|---|---|
+| GitHub | Obsoleto quando la sua riga è cambiata: solo Conversazione |
+| GitLab | Scritto su un head precedente: solo Conversazione |
+| Azure DevOps | Seguito da Azure fin dove si trova ora la sua riga |
+| Bitbucket Data Center | Orfano quando la sua riga non c’è più: solo Conversazione |
+| Forgejo | Forgejo non dice che un commento è obsoleto, quindi compare al numero di riga registrato — dopo un push quella riga può contenere altro codice |
+
+Un commento su una riga fuori dagli hunk mostrati sta solo nella scheda
+Conversazione, su ogni host.
+
+Un commento scritto e non inviato conta come testo non inviato: **‹ ›** e Alt+frecce
+chiedono prima di lasciarlo, come per il riquadro del commento principale. Guardare
+un altro file lo conserva; per iniziarne uno su un’altra riga, pubblica o annulla il
+primo.
+
+Cosa non fa:
+
+- **Una riga, pubblicata subito.** Non ci sono intervalli di righe, né una revisione
+  in sospeso in cui raccogliere commenti da inviare dopo, né modifiche suggerite.
+  Ogni commento viene pubblicato nel momento in cui lo invii, come thread a sé (su
+  Forgejo, come revisione che contiene solo quel commento, perché Forgejo non ha una
+  chiamata per il commento singolo).
+- **Il diff che stai guardando.** La scheda File ricorda a quale commit (su Azure
+  DevOps, a quale iterazione) è stato letto il suo diff, e il commento viene inviato
+  rispetto a quello. Quando nel frattempo la pull request è andata avanti — un push,
+  una nuova base di merge —, il commento non viene pubblicato sulla riga che ora ha
+  quel numero: viene rifiutato con *la pull request è cambiata da quando questo diff
+  è stato caricato*, e **Aggiorna** mostra il nuovo diff. Su GitHub invece il
+  commento viene pubblicato sul commit che hai letto, e GitHub lo segna come
+  obsoleto se quella riga è cambiata. Una riga che l’host continua a non accettare
+  viene rifiutata come fuori dal diff.
+- **Rifiutato.** Senza permesso di commentare (un token in sola lettura, un account
+  a cui il repository non permette di commentare), l’host lo rifiuta e il messaggio
+  dice che il motivo è quello.
+- Le pull request di **bitbucket.org** si aprono nel browser — l’app non ha ancora
+  una pagina per loro —, quindi lì un commento di riga si fa ancora sul sito.
+- **Un file senza diff** (binario, o troppo grande perché l’host lo includa) non ha
+  righe da commentare.
 
 ## Limiti
 

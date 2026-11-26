@@ -13345,6 +13345,74 @@ input[type='range']:focus-visible {
 .diff-split-cell.selectable:hover {
   filter: brightness(1.12);
 }
+/* ── Line comments (a pull request's Files tab) ──
+   The "+" sits over the first gutter and shows on hover or keyboard focus. It
+   is absolutely placed so the row's columns do not move to make room. */
+.diff-line.commentable,
+.diff-split-cell.commentable {
+  position: relative;
+  cursor: pointer;
+}
+.diff-comment-btn {
+  position: absolute;
+  inset-inline-start: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 1;
+}
+.diff-line.commentable:hover .diff-comment-btn,
+.diff-split-cell.commentable:hover .diff-comment-btn,
+.diff-comment-btn:focus-visible {
+  opacity: 1;
+}
+.diff-comment-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* What sits under a line: its review threads, the composer. Sticky to the
+   left edge so a wide diff scrolled sideways does not carry it out of view. */
+.diff-line-extra {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 760px;
+  padding: 6px 10px 8px 46px;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  color: var(--text-0);
+}
+.diff-split .diff-line-extra { padding-inline-start: 10px; max-width: none; }
+/* Column mode: each column is as wide as its longest line, so the block keeps a
+   readable width and sticks to the column's left edge instead. */
+.diff-split.is-cols .diff-line-extra { max-width: 640px; }
+.diff-line-extra-spacer { flex: none; }
+.prp-line-threads { display: flex; flex-direction: column; gap: 8px; }
+.prp-line-threads .prp-card { margin-bottom: 0; }
+.prp-line-composer {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-2);
+  padding: 8px 10px;
+}
+.prp-line-composer-loc { font-size: 11px; color: var(--text-2); margin-bottom: 6px; }
+.prp-line-composer-loc code { font-family: var(--mono); color: var(--text-1); }
+.prp-line-composer .prd-input { margin-bottom: 6px; min-height: 72px; }
+.prp-line-composer-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.prp-line-composer-hint { margin-inline-start: auto; font-size: 11px; color: var(--text-3); }
+.prp-line-threads + .prp-line-composer { margin-top: 8px; }
+
 .diff-line.line-selected,
 .diff-split-cell.line-selected {
   box-shadow: inset 3px 0 0 var(--accent);

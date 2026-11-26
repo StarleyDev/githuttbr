@@ -703,6 +703,32 @@ export interface PrReviewThread {
   /** Reply target: GitHub root comment id, or GitLab discussion id. */
   rootId: number | string
   comments: PrReviewComment[]
+  /**
+   * Which side of the diff `line` counts on: `old` for a deleted line, `new` for
+   * an added or unchanged one. Absent when the host does not say, or when the
+   * thread no longer sits on the current diff (an outdated GitHub comment) —
+   * the Files tab then lists it only in the conversation, never on a guessed line.
+   */
+  side?: PrLineSide
+}
+
+/** Which version of a file a diff line belongs to: before the change, or after. */
+export type PrLineSide = 'old' | 'new'
+
+/**
+ * One line of a PR file's diff, as a new line comment is anchored to it. Both
+ * numbers are kept because the hosts disagree on which they want — GitLab
+ * needs both for an unchanged line, the others one, picked by side.
+ */
+export interface PrLineAnchor {
+  path: string
+  /** The path before a rename; absent when the file kept its name. */
+  oldPath?: string
+  kind: 'add' | 'del' | 'ctx'
+  /** The line in the old version — null for an added line. */
+  oldLine: number | null
+  /** The line in the new version — null for a deleted line. */
+  newLine: number | null
 }
 
 /** One CI check-run on a PR's head commit. */
@@ -729,6 +755,26 @@ export interface PrFile {
   patch?: string
   /** The path before a rename. */
   previousFilename?: string
+}
+
+/**
+ * Which version of a pull request a diff was read at: the head commit (and
+ * merge base, where the host names it), plus Azure DevOps's iteration. A line
+ * comment carries it, so a push after the diff loaded is caught instead of the
+ * comment landing on whatever line now has that number.
+ */
+export interface PrDiffRevision {
+  headSha: string
+  baseSha?: string
+  /** Azure DevOps: the iteration the diff is the last of. */
+  iteration?: number
+}
+
+/** A pull request's changed files and the revision they were read at — null
+ *  when the host did not say, or the PR moved while they were being read. */
+export interface PrFileList {
+  files: PrFile[]
+  revision: PrDiffRevision | null
 }
 
 /** Full detail for one pull request (conversation + review state). */

@@ -70,6 +70,7 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prFiles', 1],
   ['hosting:prChecks', 1],
   ['hosting:prComment', 1, 'Thanks!'],
+  ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],
   ['hosting:prReview', 1, 'APPROVE', ''],
   ['hosting:prMerge', 1, 'merge'],
   ['hosting:listPRs'],

@@ -2,9 +2,9 @@
 title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
-summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI — en ‹ › om vanuit een PR door de gefilterde lijst te lopen.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, en reacties op een regel van zijn diff.
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Pull-requestspagina
@@ -162,6 +162,78 @@ Wat het niet doet:
 - **Dit venster.** De checkout gebeurt in de werkmap van deze repository. Als de
   branch al is uitgecheckt in een andere [worktree](worktrees.md), opent in
   plaats daarvan het tabblad van die worktree.
+
+## Reageren op een regel
+
+Antwoorden op een reviewthread kon hier al; er een beginnen niet, dus een echte
+review stuurde je nog steeds naar de browser. In het tabblad **Bestanden** van een
+pull request neemt elke regel van de diff een eigen reactie aan:
+
+- **Hover over een regel** en druk op de **+** die boven zijn nummer verschijnt, of
+  **klik op de regel** zelf (een klik die een tekstselectie afsluit, of een
+  dubbelklik die een woord selecteert, telt niet — dat is lezen). Het
+  rechtermuisknopmenu — of de contextmenutoets van het toetsenbord — heeft ook
+  *Reageren op regel N*.
+- Er opent een vak **onder die regel**. Schrijf, dan **Reageren** — of
+  ⌘/Ctrl+Enter. **Annuleren** sluit het; **Esc** ook, met eerst een vraag als er al
+  iets getypt is. Hoe dan ook gaat de focus terug naar die regel.
+- Als het lukt, verschijnt de nieuwe thread **onder zijn regel**, en in de
+  reviewthreads van het tabblad Gesprek, waar iedereen hem ziet.
+
+![Een reactie die onder een gewijzigde regel wordt geschreven, met een eerdere thread onder zijn eigen regel](../../screenshots/pr-line-comment.webp)
+
+Aan welke kant de reactie terechtkomt, volgt de regel:
+
+| Regel | Verankerd aan |
+|---|---|
+| **Toegevoegd** (groen) | De nieuwe versie van het bestand, op het nieuwe nummer |
+| **Verwijderd** (rood) | De oude versie, op het oude nummer |
+| **Ongewijzigd** | De nieuwe versie (GitLab krijgt beide nummers, zoals het vereist) |
+
+Bestaande threads worden ook onder hun regels getoond, met hun antwoordvak waar de
+host de app laat antwoorden binnen een thread (Forgejo niet). Een thread wordt alleen
+bij een regel getoond als de host zegt dat hij nog bij de getoonde diff hoort; al het
+andere blijft in het tabblad Gesprek, in plaats van bij een gegokte regel:
+
+| Host | Een thread van vóór de laatste push |
+|---|---|
+| GitHub | Verouderd als zijn regel veranderde: alleen Gesprek |
+| GitLab | Geschreven op een oudere head: alleen Gesprek |
+| Azure DevOps | Door Azure gevolgd naar waar zijn regel nu staat |
+| Bitbucket Data Center | Verweesd als zijn regel weg is: alleen Gesprek |
+| Forgejo | Forgejo zegt niet dat een reactie verouderd is, dus wordt hij getoond op het opgeslagen regelnummer — na een push kan op die regel nu andere code staan |
+
+Een reactie op een regel buiten de getoonde hunks staat op elke host alleen in het
+tabblad Gesprek.
+
+Een getypte, niet verstuurde reactie telt als onverzonden tekst: **‹ ›** en
+Alt+pijlen vragen het eerst voordat ze hem verlaten, net als bij het hoofdvak voor
+reacties. Een ander bestand bekijken houdt hem vast; om er een op een andere regel te
+beginnen, plaats of annuleer je eerst de eerste.
+
+Wat het niet doet:
+
+- **Eén regel, meteen geplaatst.** Er is geen regelbereik, geen openstaande review om
+  reacties in te verzamelen en later in te dienen, en geen voorgestelde wijziging.
+  Elke reactie wordt geplaatst op het moment dat je hem verstuurt, als eigen thread
+  (op Forgejo als review met alleen die ene reactie, omdat Forgejo geen aanroep voor
+  een losse reactie heeft).
+- **De diff waar je naar kijkt.** Het tabblad Bestanden onthoudt op welke commit (op
+  Azure DevOps: welke iteratie) zijn diff is gelezen, en de reactie wordt daartegen
+  verstuurd. Is de pull request sindsdien verder gegaan — een push, een nieuwe
+  merge-basis —, dan wordt de reactie niet geplaatst op de regel die nu dat nummer
+  heeft: hij wordt geweigerd met *de pull request is veranderd sinds deze diff werd
+  geladen*, en **Vernieuwen** toont de nieuwe diff. Op GitHub wordt de reactie in
+  plaats daarvan geplaatst op de commit die je las, en GitHub markeert hem als
+  verouderd als die regel veranderd is. Een regel die de host nog steeds niet
+  aanneemt, wordt geweigerd als buiten de diff.
+- **Geweigerd.** Zonder recht om te reageren (een token met alleen leesrechten, een
+  account dat in de repository niet mag reageren) weigert de host, en de melding
+  zegt dat dat de reden is.
+- Pull requests op **bitbucket.org** openen in de browser — de app heeft er nog geen
+  pagina voor —, dus daar plaats je een regelreactie nog steeds op de website.
+- **Een bestand zonder diff** (binair, of te groot voor de host om mee te sturen)
+  heeft geen regels om op te reageren.
 
 ## Beperkingen
 

@@ -2,6 +2,8 @@ import type {
   PrCheck,
   PrDetail,
   PrFile,
+  PrDiffRevision,
+  PrLineAnchor,
   PrMergeMethod,
   PrReview,
   PrReviewEvent,
@@ -9,6 +11,7 @@ import type {
   PrWorkItem
 } from '../shared/types'
 import { unifiedDiff } from '../shared/lineDiff'
+import { getAnchorLine, getAnchorSide, LINE_COMMENT_STALE } from '../shared/prLineAnchor'
 
 /**
  * Azure DevOps pull requests on the PR page. Every call goes through `ado`,
@@ -122,7 +125,8 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
         line: ctx.rightFileStart?.line ?? ctx.leftFileStart?.line ?? null,
         diffHunk: '',
         rootId: th.id,
-        comments: notes.map((c) => ({ id: c.id, author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' }))
+        comments: notes.map((c) => ({ id: c.id, author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })),
+        ...(ctx.rightFileStart?.line ? { side: 'new' as const } : ctx.leftFileStart?.line ? { side: 'old' as const } : {})
       })
     } else {
       for (const c of notes) comments.push({ author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })
@@ -165,9 +169,17 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
  *  a refusal there must not be mistaken for a revoked credential. */
 export async function azurePrDetail(ado: Ado, r: AzureRepo, id: number, optional: Ado = ado): Promise<PrDetail> {
   const base = `${repoApi(r)}/pullrequests/${id}`
+  // Threads read against the last iteration: Azure then tracks each one across
+  // the pushes since it was written, so its line is where it is today — the
+  // line the Files tab draws it on, which shows that same iteration.
+  const threadsNow = async (): Promise<{ value?: AzThread[] }> => {
+    const last = await azurePrRevision(ado, r, id).catch(() => null)
+    const tracked = last?.iteration !== undefined ? `$iteration=${last.iteration}&$baseIteration=0&` : ''
+    return ado<{ value?: AzThread[] }>(`${base}/threads?${tracked}${V}`)
+  }
   const [pr, threads, workItems] = await Promise.all([
     ado<AzPr>(`${base}?${V}`),
-    ado<{ value?: AzThread[] }>(`${base}/threads?${V}`).catch(() => ({ value: [] as AzThread[] })),
+    threadsNow().catch(() => ({ value: [] as AzThread[] })),
     // A token without Work Items (Read) cannot list them: the row is left out, the PR still opens.
     azurePrWorkItems(optional, r, id).catch(() => undefined)
   ])
@@ -390,6 +402,8 @@ interface AzChange {
   changeType?: string
   item?: { path?: string; gitObjectType?: string; isFolder?: boolean }
   originalPath?: string
+  /** What keeps a thread on its line across later pushes. */
+  changeTrackingId?: number
 }
 
 export function azureChangeStatus(changeType: string | undefined): string {
@@ -463,6 +477,67 @@ export async function azureComment(ado: Ado, r: AzureRepo, id: number, body: str
     method: 'POST',
     // status 1 = active; commentType 1 = text.
     body: JSON.stringify({ comments: [{ parentCommentId: 0, content: body, commentType: 1 }], status: 1 })
+  })
+}
+
+type AzIteration = { id: number; sourceRefCommit?: { commitId: string }; commonRefCommit?: { commitId: string } }
+
+/** The PR's last iteration — what the Files tab shows — as a revision; null without one. */
+export async function azurePrRevision(ado: Ado, r: AzureRepo, id: number): Promise<PrDiffRevision | null> {
+  const its = await ado<{ value?: AzIteration[] }>(`${repoApi(r)}/pullrequests/${id}/iterations?${V}`)
+  const last = (its.value ?? [])[(its.value ?? []).length - 1]
+  if (!last) return null
+  return {
+    headSha: last.sourceRefCommit?.commitId ?? '',
+    ...(last.commonRefCommit?.commitId ? { baseSha: last.commonRefCommit.commitId } : {}),
+    iteration: last.id
+  }
+}
+
+/**
+ * Start a thread on one line of the PR's diff. The Files tab shows the merge
+ * base against the last iteration, which Azure calls comparing that iteration
+ * with itself; the change's tracking id is what keeps the thread on its line
+ * when the branch moves on — sent when the iteration lists the file.
+ */
+export async function azureCommentOnLine(
+  ado: Ado,
+  r: AzureRepo,
+  id: number,
+  anchor: PrLineAnchor,
+  body: string,
+  read: PrDiffRevision | null
+): Promise<void> {
+  const base = `${repoApi(r)}/pullrequests/${id}`
+  const its = await ado<{ value?: Array<{ id: number }> }>(`${base}/iterations?${V}`)
+  const last = (its.value ?? [])[(its.value ?? []).length - 1]
+  // A push since the diff loaded made a new iteration: its line numbers may not be these.
+  if (read?.iteration !== undefined && last && read.iteration !== last.id) throw new Error(LINE_COMMENT_STALE)
+  const filePath = `/${anchor.path.replace(/^\//, '')}`
+  let changeTrackingId: number | undefined
+  if (last) {
+    const changes = await ado<{ changeEntries?: AzChange[] }>(`${base}/iterations/${last.id}/changes?$top=2000&${V}`).catch(
+      () => ({ changeEntries: [] as AzChange[] })
+    )
+    changeTrackingId = (changes.changeEntries ?? []).find((c) => c.item?.path === filePath)?.changeTrackingId
+  }
+  const at = { line: getAnchorLine(anchor), offset: 1 }
+  const side = getAnchorSide(anchor) === 'old' ? 'left' : 'right'
+  await ado(`${base}/threads?${V}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      comments: [{ parentCommentId: 0, content: body, commentType: 1 }],
+      status: 1,
+      threadContext: { filePath, [`${side}FileStart`]: at, [`${side}FileEnd`]: at },
+      ...(last
+        ? {
+            pullRequestThreadContext: {
+              ...(changeTrackingId !== undefined ? { changeTrackingId } : {}),
+              iterationContext: { firstComparingIteration: last.id, secondComparingIteration: last.id }
+            }
+          }
+        : {})
+    })
   })
 }
 

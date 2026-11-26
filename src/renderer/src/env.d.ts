@@ -280,6 +280,15 @@ interface PreloadApi {
       inReplyTo: number | string,
       body: string
     ): Promise<unknown>
+    prCommentOnLine(
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      anchor: unknown,
+      body: string,
+      revision: unknown
+    ): Promise<unknown>
     ciRuns(repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown>
     ciRunJobs(repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown>
     ciJobLog(repoPath: string, remoteUrl: string, tokens: unknown, runId: string, jobId: string): Promise<unknown>

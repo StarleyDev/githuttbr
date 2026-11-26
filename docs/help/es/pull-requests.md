@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronizar y muchos repos
 order: 57
-summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI — y ‹ › para recorrer la lista filtrada desde dentro de una PR.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, y comentarios en una línea de su diff.
+keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Página de pull requests
@@ -159,6 +159,77 @@ Lo que no hace:
 - **Esta ventana.** El checkout ocurre en el árbol de trabajo de este
   repositorio. Cuando la rama ya está en checkout en otro
   [worktree](worktrees.md), se abre en su lugar la pestaña de ese worktree.
+
+## Comentar una línea
+
+Aquí ya se podía responder a un hilo de revisión, pero no empezar uno, así que una
+revisión de verdad seguía mandándote al navegador. En la pestaña **Archivos** de una
+pull request, cualquier línea del diff admite un comentario propio:
+
+- **Pasa el ratón por una línea** y pulsa el **+** que aparece sobre su número, o
+  **haz clic en la propia línea** (un clic que termina una selección de texto, o un
+  doble clic que selecciona una palabra, no cuenta: eso es leer). El menú del botón
+  derecho — o la tecla de menú contextual del teclado — también tiene *Comentar en
+  la línea N*.
+- Se abre un cuadro **bajo esa línea**. Escribe y luego **Comentar** — o
+  ⌘/Ctrl+Enter. **Cancelar** lo cierra; **Esc** también, preguntando antes si ya
+  escribiste algo. En ambos casos el foco vuelve a esa línea.
+- Si sale bien, el hilo nuevo aparece **bajo su línea**, y en los hilos de revisión
+  de la pestaña Conversación, donde lo verán los demás.
+
+![Un comentario escribiéndose bajo una línea cambiada, con un hilo anterior bajo su propia línea](../../screenshots/pr-line-comment.webp)
+
+El lado en que queda el comentario depende de la línea:
+
+| Línea | Anclado a |
+|---|---|
+| **Añadida** (verde) | La versión nueva del archivo, en su número nuevo |
+| **Borrada** (roja) | La versión antigua, en su número antiguo |
+| **Sin cambios** | La versión nueva (a GitLab se le envían ambos números, como exige) |
+
+Los hilos existentes también se dibujan bajo sus líneas, con su cuadro de respuesta
+donde el host deja a la app responder dentro de un hilo (Forgejo no). Un hilo solo
+se dibuja en una línea cuando el host dice que aún pertenece al diff mostrado; lo
+demás se queda en la pestaña Conversación, en vez de en una línea adivinada:
+
+| Host | Un hilo escrito antes del último push |
+|---|---|
+| GitHub | Obsoleto cuando su línea cambió: solo Conversación |
+| GitLab | Escrito sobre un head anterior: solo Conversación |
+| Azure DevOps | Azure lo sigue hasta donde está ahora su línea |
+| Bitbucket Data Center | Huérfano cuando su línea ya no está: solo Conversación |
+| Forgejo | Forgejo no indica que un comentario esté obsoleto, así que se dibuja en el número de línea guardado — tras un push esa línea puede contener ahora otro código |
+
+Un comentario en una línea fuera de los hunks mostrados está solo en la pestaña
+Conversación, en todos los hosts.
+
+Un comentario escrito y no enviado cuenta como texto sin enviar: **‹ ›** y Alt+flechas
+preguntan antes de dejarlo, como con el cuadro de comentario principal. Mirar otro
+archivo lo conserva; para empezar uno en otra línea, publica o cancela el primero.
+
+Lo que no hace:
+
+- **Una línea, publicada al momento.** No hay rangos de líneas, ni revisión
+  pendiente en la que juntar comentarios para enviarlos después, ni cambios
+  sugeridos. Cada comentario se publica en cuanto lo envías, como hilo propio (en
+  Forgejo, como una revisión que contiene ese único comentario, ya que Forgejo no
+  tiene una llamada para un comentario suelto).
+- **El diff que estás mirando.** La pestaña Archivos recuerda en qué commit (en Azure
+  DevOps, en qué iteración) se leyó su diff, y el comentario se envía contra ese.
+  Cuando la pull request ha avanzado desde entonces — un push, una nueva base de
+  merge —, el comentario no se publica en la línea que ahora tenga ese número: se
+  rechaza con *la pull request cambió desde que se cargó este diff*, y
+  **Actualizar** muestra el diff nuevo. En GitHub, en cambio, el comentario se
+  publica contra el commit que leíste, y GitHub lo marca como obsoleto si esa línea
+  cambió. Una línea que el host siga sin aceptar se rechaza por estar fuera del diff.
+- **Rechazado.** Sin permiso para comentar (un token de solo lectura, una cuenta a
+  la que el repositorio no deja comentar), el host lo rechaza y el mensaje dice que
+  ese es el motivo.
+- Las pull requests de **bitbucket.org** se abren en el navegador — la app aún no
+  tiene página para ellas —, así que ahí un comentario de línea se sigue haciendo en
+  la web.
+- **Un archivo sin diff** (binario, o demasiado grande para que el host lo incluya)
+  no tiene líneas que comentar.
 
 ## Límites
 

@@ -10,6 +10,8 @@ import type {
   PrCheck,
   PrDetail,
   PrFile,
+  PrDiffRevision,
+  PrLineAnchor,
   PrMergeMethod,
   PrReview,
   PrReviewEvent,
@@ -20,6 +22,7 @@ import type {
   RemoteRepo
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
+import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -99,6 +102,7 @@ interface FjPull {
   html_url: string
   head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null }
   base?: { ref?: string }
+  merge_base?: string
   requested_reviewers?: Array<{ login?: string }> | null
   state?: string
   merged?: boolean
@@ -487,10 +491,14 @@ export async function forgejoPullDetail(
     for (const c of lineComments) {
       reviewThreads.push({
         path: c.path,
-        line: c.line ?? c.position ?? c.original_position ?? null,
+        // Gitea sends both, the unused one as 0 (an unsigned field, never omitted):
+        // `||`, not `??`, or an old-side comment reads as line 0.
+        line: c.line || c.position || c.original_position || null,
         diffHunk: c.diff_hunk ?? '',
         rootId: c.id,
-        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }]
+        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }],
+        // `position` counts in the new file, `original_position` in the old; one is set.
+        ...(c.position ? { side: 'new' as const } : c.original_position ? { side: 'old' as const } : {})
       })
     }
   }
@@ -670,6 +678,42 @@ export async function forgejoReview(
     method: 'POST',
     body: JSON.stringify({ event: REVIEW_EVENT[event], body })
   })
+}
+
+/**
+ * A comment on one line of the diff. Forgejo has no single-comment endpoint:
+ * a line comment is a review holding one comment, submitted at once (COMMENT,
+ * not PENDING) so it is not left as a draft only its author sees. A deleted
+ * line is `old_position`; added and unchanged lines are `new_position`.
+ */
+export async function forgejoCommentOnLine(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string,
+  read: PrDiffRevision | null
+): Promise<void> {
+  const position = getAnchorSide(anchor) === 'old' ? 'old_position' : 'new_position'
+  await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/reviews`, token, {
+    method: 'POST',
+    body: JSON.stringify({
+      event: 'COMMENT',
+      body: '',
+      // The commit the diff was read at, so the comment is placed against it.
+      ...(read ? { commit_id: read.headSha } : {}),
+      comments: [{ path: anchor.path, body, [position]: getAnchorLine(anchor) }]
+    })
+  })
+}
+
+/** The pull's head commit and merge base, as the Files tab's diff was read at. */
+export async function forgejoPullRevision(base: string, owner: string, repo: string, token: string, number: number): Promise<PrDiffRevision | null> {
+  const pr = await fjJson<FjPull>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
+  if (!pr.head?.sha) return null
+  return { headSha: pr.head.sha, ...(pr.merge_base ? { baseSha: pr.merge_base } : {}) }
 }
 
 export async function forgejoMerge(

@@ -2,9 +2,9 @@
 title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
-summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI — und ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, und Kommentare zu einer Zeile seines Diffs.
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Pull-Request-Seite
@@ -165,6 +165,80 @@ Was es nicht tut:
 - **Dieses Fenster.** Der Checkout passiert im Arbeitsverzeichnis dieses
   Repositorys. Wenn der Branch schon in einem anderen [Worktree](worktrees.md)
   ausgecheckt ist, öffnet sich stattdessen der Tab dieses Worktrees.
+
+## Eine Zeile kommentieren
+
+Auf einen Review-Thread antworten ging hier schon; einen beginnen nicht, also
+schickte dich ein echtes Review weiterhin in den Browser. Im Tab **Dateien** eines
+Pull Requests nimmt jede Zeile des Diffs einen eigenen Kommentar an:
+
+- **Fahre über eine Zeile** und drück das **+**, das über ihrer Nummer erscheint,
+  oder **klick auf die Zeile** selbst (ein Klick, der eine Textauswahl beendet, oder
+  ein Doppelklick, der ein Wort markiert, zählt nicht — das ist Lesen). Das
+  Kontextmenü — oder die Kontextmenütaste der Tastatur — hat ebenfalls *Zeile N
+  kommentieren*.
+- Ein Feld öffnet sich **unter dieser Zeile**. Schreib, dann **Kommentieren** —
+  oder ⌘/Ctrl+Enter. **Abbrechen** schließt es; **Esc** auch, mit Rückfrage, wenn
+  schon etwas getippt wurde. So oder so kehrt der Fokus zu dieser Zeile zurück.
+- Bei Erfolg erscheint der neue Thread **unter seiner Zeile** und in den
+  Review-Threads des Tabs Unterhaltung, wo alle anderen ihn sehen.
+
+![Ein Kommentar wird unter einer geänderten Zeile geschrieben, mit einem früheren Thread unter seiner eigenen Zeile](../../screenshots/pr-line-comment.webp)
+
+Auf welcher Seite der Kommentar landet, folgt der Zeile:
+
+| Zeile | Verankert an |
+|---|---|
+| **Hinzugefügt** (grün) | Der neuen Fassung der Datei, unter ihrer neuen Nummer |
+| **Gelöscht** (rot) | Der alten Fassung, unter ihrer alten Nummer |
+| **Unverändert** | Der neuen Fassung (GitLab bekommt beide Nummern, wie es verlangt) |
+
+Bestehende Threads werden ebenfalls unter ihren Zeilen gezeigt, mit ihrem
+Antwortfeld, wo der Host der App erlaubt, in einem Thread zu antworten (Forgejo
+nicht). Ein Thread erscheint nur dann an einer Zeile, wenn der Host sagt, dass er
+noch zum gezeigten Diff gehört; alles andere bleibt im Tab Unterhaltung, statt an
+einer geratenen Zeile zu landen:
+
+| Host | Ein Thread von vor dem letzten Push |
+|---|---|
+| GitHub | Veraltet, wenn seine Zeile sich geändert hat: nur Unterhaltung |
+| GitLab | Gegen einen älteren Head geschrieben: nur Unterhaltung |
+| Azure DevOps | Von Azure dorthin verfolgt, wo seine Zeile jetzt ist |
+| Bitbucket Data Center | Verwaist, wenn seine Zeile weg ist: nur Unterhaltung |
+| Forgejo | Forgejo sagt nicht, dass ein Kommentar veraltet ist, also erscheint er an seiner gespeicherten Zeilennummer — nach einem Push kann dort jetzt anderer Code stehen |
+
+Ein Kommentar zu einer Zeile außerhalb der gezeigten Hunks steht auf jedem Host nur
+im Tab Unterhaltung.
+
+Ein getippter, nicht gesendeter Kommentar zählt als ungesendeter Text: **‹ ›** und
+Alt+Pfeile fragen nach, bevor sie ihn verlassen, wie beim Hauptkommentarfeld. Der
+Blick in eine andere Datei behält ihn; um einen an einer anderen Zeile zu beginnen,
+sende oder verwirf zuerst den ersten.
+
+Was es nicht tut:
+
+- **Eine Zeile, sofort gesendet.** Es gibt keinen Zeilenbereich, kein ausstehendes
+  Review, in dem man Kommentare sammelt und später abschickt, und keine
+  Änderungsvorschläge. Jeder Kommentar wird in dem Moment veröffentlicht, in dem du
+  ihn sendest, als eigener Thread (auf Forgejo als Review mit genau diesem einen
+  Kommentar, da Forgejo keinen Aufruf für einen Einzelkommentar hat).
+- **Der Diff, den du ansiehst.** Der Tab Dateien merkt sich, an welchem Commit (auf
+  Azure DevOps: an welcher Iteration) sein Diff gelesen wurde, und der Kommentar
+  wird dagegen gesendet. Hat sich der Pull Request seitdem weiterbewegt — ein Push,
+  eine neue Merge-Basis —, wird der Kommentar nicht an die Zeile gehängt, die jetzt
+  diese Nummer hat: er wird abgelehnt mit *Der Pull Request hat sich seit dem Laden
+  dieses Diffs geändert*, und **Aktualisieren** zeigt den neuen Diff. Auf GitHub
+  wird der Kommentar stattdessen gegen den Commit gesendet, den du gelesen hast, und
+  GitHub markiert ihn als veraltet, wenn sich die Zeile geändert hat. Eine Zeile,
+  die der Host trotzdem nicht annimmt, wird als außerhalb des Diffs abgelehnt.
+- **Abgelehnt.** Ohne Berechtigung zum Kommentieren (ein Token nur zum Lesen, ein
+  Konto, das in dem Repository nicht kommentieren darf) lehnt der Host ab, und die
+  Meldung nennt das als Grund.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser — die App hat noch keine
+  Seite für sie —, also wird ein Zeilenkommentar dort weiterhin auf der Website
+  geschrieben.
+- **Eine Datei ohne Diff** (binär oder zu groß, als dass der Host sie mitliefert)
+  hat keine Zeilen zum Kommentieren.
 
 ## Grenzen
 

@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — and ‹ › to walk the filtered list from inside a PR.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, and comments on a line of its diff.
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review
 ---
 
 # Pull requests page
@@ -151,6 +151,74 @@ What it does not do:
 - **This window.** The checkout happens in this repository's working tree. When
   the branch is already checked out in another [worktree](worktrees.md), that
   worktree's tab opens instead.
+
+## Commenting on a line
+
+Replying to a review thread was possible here; starting one was not, so a real
+review still sent you to the browser. In a pull request's **Files** tab, any
+line of the diff takes a comment of its own:
+
+- **Hover a line** and press the **+** that appears over its number, or
+  **click the line** itself (a click that ends a text selection, or a double
+  click selecting a word, does not count — that is reading). The right-click
+  menu — or the keyboard's context-menu key — has *Comment on line N* too.
+- A box opens **under that line**. Write, then **Comment** — or ⌘/Ctrl+Enter.
+  **Cancel** closes it; **Esc** does too, asking first when something was typed.
+  Either way the focus goes back to that line.
+- On success the new thread appears **under its line**, and in the
+  Conversation tab's review threads, where everyone else will see it.
+
+![A comment being written under a changed line, with an earlier thread under its own line](../screenshots/pr-line-comment.webp)
+
+Which side the comment lands on follows the line:
+
+| Line | Anchored to |
+|---|---|
+| **Added** (green) | The new version of the file, at its new number |
+| **Deleted** (red) | The old version, at its old number |
+| **Unchanged** | The new version (GitLab is sent both numbers, as it requires) |
+
+Existing threads are drawn under their lines as well, with their reply box
+where the host lets the app reply inside a thread (Forgejo does not). A thread
+is drawn on a line only when the host says it still belongs to the diff shown;
+anything else stays in the Conversation tab, rather than on a guessed line:
+
+| Host | A thread written before the latest push |
+|---|---|
+| GitHub | Outdated when its line changed: Conversation only |
+| GitLab | Written against an older head: Conversation only |
+| Azure DevOps | Followed by Azure to where its line is now |
+| Bitbucket Data Center | Orphaned when its line is gone: Conversation only |
+| Forgejo | Forgejo does not say a comment is outdated, so it is drawn at its recorded line number — after a push that line may now hold other code |
+
+A comment on a line outside the hunks shown is in the Conversation tab only, on
+every host.
+
+A comment typed and not sent counts as unsent text: **‹ ›** and Alt+arrows ask
+before leaving it, as they do for the main comment box. Looking at another file
+keeps it; to start one on another line, post or cancel the first.
+
+What it does not do:
+
+- **One line, posted at once.** There is no range of lines, no pending review to
+  batch comments into and submit later, and no suggested change. Each comment is
+  published the moment you send it, as its own thread (on Forgejo, as a review
+  holding that one comment, since Forgejo has no single-comment call).
+- **The diff you are looking at.** The Files tab remembers which commit (on
+  Azure DevOps, which iteration) its diff was read at, and a comment is sent
+  against that. When the pull request has moved on since — a push, a new merge
+  base — the comment is not posted on whatever line now has that number: it is
+  refused with *the pull request changed since this diff loaded*, and
+  **Refresh** shows the new diff. On GitHub the comment is posted against the
+  commit you read instead, and GitHub marks it outdated if that line has changed.
+  A line the host still will not take is refused as outside the diff.
+- **Refused.** Without permission to comment (a read-only token, an account the
+  repository does not let comment), the host refuses it and the message says
+  that is the reason.
+- **bitbucket.org** pull requests open in the browser — the app has no page
+  for them yet — so a line comment there is still made on the website.
+- **A file without a diff** (binary, or too large for the host to include)
+  has no lines to comment on.
 
 ## Limits
 

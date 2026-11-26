@@ -2,6 +2,7 @@ import { countChecks } from './ciSummary'
 import { bbsReviewerIds, collectPickerOptions, createWithoutRejectedReviewers, PICKER_MAX_PAGES, reviewersMissing } from './prMeta'
 import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
+import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 import {
   bitbucketServerEndpoints,
   bitbucketServerPullRequestUrl,
@@ -26,7 +27,9 @@ import type {
   PrReviewComment,
   PrReviewEvent,
   PrReviewThread,
-  PullRequest
+  PullRequest,
+  PrDiffRevision,
+  PrLineAnchor
 } from '../shared/types'
 
 /**
@@ -199,7 +202,7 @@ interface BbsActivity {
   user?: BbsUser
   commentAction?: string
   comment?: BbsComment
-  commentAnchor?: { path?: string; line?: number; srcPath?: string }
+  commentAnchor?: { path?: string; line?: number; srcPath?: string; fileType?: 'FROM' | 'TO'; orphaned?: boolean }
 }
 
 interface BbsMergeability {
@@ -330,7 +333,16 @@ export function mapBbsActivities(activities: BbsActivity[]): { comments: PrComme
         line: typeof a.commentAnchor.line === 'number' ? a.commentAnchor.line : null,
         diffHunk: '',
         rootId: a.comment.id,
-        comments: all.map(toComment)
+        comments: all.map(toComment),
+        // FROM is the old file (a removed line), TO the new one. An orphaned
+        // anchor no longer matches the diff, so it is not drawn on a line.
+        ...(a.commentAnchor.orphaned || typeof a.commentAnchor.line !== 'number'
+          ? {}
+          : a.commentAnchor.fileType === 'FROM'
+            ? { side: 'old' as const }
+            : a.commentAnchor.fileType === 'TO'
+              ? { side: 'new' as const }
+              : {})
       })
     } else {
       for (const c of all) comments.push({ author: who(c.author), body: c.text ?? '', createdAt: iso(c.createdDate) ?? '' })
@@ -597,6 +609,42 @@ export async function bbsComment(repo: BitbucketServerRepo, token: string, id: n
   await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/comments`, token, {
     method: 'POST',
     body: JSON.stringify(parentId !== undefined ? { text, parent: { id: parentId } } : { text })
+  })
+}
+
+const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> = { add: 'ADDED', del: 'REMOVED', ctx: 'CONTEXT' }
+
+/** The pull request's source head, as the Files tab's diff was read at. */
+export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffRevision | null> {
+  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
+  return pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : null
+}
+
+/**
+ * A comment on one line of the pull request's effective diff (the one its
+ * Diff tab shows). A removed line counts in the source file (FROM), added and
+ * context lines in the destination (TO); `srcPath` names a renamed file's old path.
+ */
+export async function bbsCommentOnLine(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number,
+  anchor: PrLineAnchor,
+  text: string
+): Promise<void> {
+  await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/comments`, token, {
+    method: 'POST',
+    body: JSON.stringify({
+      text,
+      anchor: {
+        path: anchor.path,
+        ...(anchor.oldPath ? { srcPath: anchor.oldPath } : {}),
+        line: getAnchorLine(anchor),
+        lineType: LINE_TYPE[anchor.kind],
+        fileType: getAnchorSide(anchor) === 'old' ? 'FROM' : 'TO',
+        diffType: 'EFFECTIVE'
+      }
+    })
   })
 }
 

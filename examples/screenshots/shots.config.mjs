@@ -901,7 +901,7 @@ export const shots = [
           labels: [{ name: 'enhancement', color: '84c5dd' }], commits: 3, changedFiles: 2, additions: 84, deletions: 12
         }))
         ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
         type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
@@ -978,7 +978,7 @@ export const shots = [
           reviewThreads: [], requestedReviewers: [{ login: 'jordan' }], commits: 2, changedFiles: 3, additions: 41, deletions: 6
         }))
         ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
         type: 'pr', repoPath, remoteUrl: 'https://bitbucket.example.corp/bitbucket/scm/plat/hooks.git', number: 118,
@@ -986,6 +986,62 @@ export const shots = [
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-merge').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The Files tab with a comment being written on a changed line: the
+    // composer open under it, and an earlier thread drawn under its own line.
+    // Faked detail and diff — a fictional GitHub repository, no network.
+    out: 'pr-line-comment',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+          body: 'Search filenames across open repositories from the command palette.',
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          comments: [], reviews: [],
+          reviewThreads: [{
+            path: 'src/search.ts', line: 6, side: 'new', diffHunk: '', rootId: 901,
+            comments: [{ id: 901, author: 'alex', body: 'Could this ignore case too?', createdAt: '2026-11-20T10:00:00Z' }]
+          }],
+          commits: 3, changedFiles: 1, additions: 8, deletions: 2
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ revision: { headSha: 'c0ffee42' }, files: [{
+          filename: 'src/search.ts', status: 'modified', additions: 8, deletions: 2,
+          patch: [
+            '@@ -1,5 +1,11 @@',
+            " import { listFiles } from './files'",
+            '',
+            '-export function search(query: string): string[] {',
+            '-  return listFiles().filter((f) => f.includes(query))',
+            '+export function search(query: string, limit = 50): string[] {',
+            '+  const q = query.trim()',
+            '+  if (!q) return []',
+            '+  const hits = listFiles().filter((f) => f.includes(q))',
+            '+  // The palette shows one screen of results; more is noise.',
+            '+  return hits.slice(0, limit)',
+            ' }',
+            '+',
+            '+export const SEARCH_LIMIT = 50'
+          ].join('\n')
+        }] }))
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
+      }), repos['octopus-merge'])
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-tab').nth(1).click()
+      await page.locator('.prp-line-threads').waitFor()
+      const row = page.locator('.diff-line.add', { hasText: 'hits.slice' })
+      await row.hover()
+      await row.locator('.diff-comment-btn').click()
+      await page.locator('.prp-line-composer textarea').fill('Worth a test for the limit — 50 is easy to break.')
+      await row.hover()
       await page.waitForTimeout(300)
     }
   },
@@ -1007,7 +1063,7 @@ export const shots = [
           { name: 'ci / lint', status: 'completed', conclusion: 'success', url: job(0), hasLog: true },
           { name: 'ci / test', status: 'completed', conclusion: 'failure', url: job(1), hasLog: true }
         ])
-        ipcMain.handle('hosting:prFiles', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
         const R = '\u001b[31m', G = '\u001b[32m', D = '\u001b[2m', X = '\u001b[0m'
         ipcMain.handle('hosting:prCheckLog', () => [
           `${D}Run npm test${X}`,
@@ -4283,6 +4339,6 @@ async function fakePullRequestHost(app) {
       }
     })
     ipcMain.handle('hosting:prChecks', () => [])
-    ipcMain.handle('hosting:prFiles', () => [])
+    ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
   })
 }

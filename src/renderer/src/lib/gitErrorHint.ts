@@ -28,6 +28,20 @@ interface Rule {
 }
 
 const RULES: Rule[] = [
+  // hosting.ts lineCommentFailure: the code picks the sentence, every host alike.
+  // First: the host's own words follow, and must not be matched by a rule below.
+  {
+    test: /Line comment \[refused\]:/,
+    hint: () => ({ key: 'gitError.lineCommentRefused' })
+  },
+  {
+    test: /Line comment \[stale\]:/,
+    hint: () => ({ key: 'gitError.lineCommentStale' })
+  },
+  {
+    test: /Line comment \[outsideDiff\]:/,
+    hint: () => ({ key: 'gitError.lineCommentOutsideDiff' })
+  },
   {
     // GitHub refuses workflow edits from a credential without the workflow scope.
     // Which kind of credential it names decides the fix.
