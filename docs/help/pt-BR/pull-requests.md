@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: 9e19b808de2f4b452855ae0de64359ac42c0df09
+source: fbedbb481e24dc9a16ad5f07657a7a24bda0cc56
 ---
 
 # Página de pull requests
@@ -417,9 +417,14 @@ caminho antigo na base com o novo no head; no diff de uma atualização, os dois
 heads dela. Os bytes vêm deste clone quando ele tem os commits, o que é rápido e
 de graça, e senão do host, com o perfil do repositório. Limites: uma imagem com
 mais de 32 MB não é pré-visualizada; comentários de linha não se aplicam a uma
-imagem (um SVG mantém o diff de texto, e os comentários, embaixo dela); e quando
-nem o clone nem o host conseguem dar os bytes, a aba diz isso e oferece buscar a
-branch do pull request ou abri-lo no host.
+imagem (um SVG mantém o diff de texto, e os comentários, embaixo dela); uma
+imagem guardada no **Git LFS** é lida do host, porque o clone só tem o ponteiro
+dela — GitLab, Azure DevOps e Forgejo a resolvem, enquanto a API do GitHub só
+devolve o ponteiro, então ali a aba manda você para o host; quando o host não
+informa o merge base (e o app usa a ponta da branch de destino), uma nota avisa
+que o "antes" pode incluir mudanças posteriores no destino; e quando nem o clone
+nem o host conseguem dar os bytes, a aba diz isso e oferece buscar a branch do
+pull request ou abri-lo no host.
 
 ![Uma imagem que o pull request mudou, antes e depois lado a lado](../../screenshots/pr-image-diff.webp)
 
@@ -437,8 +442,10 @@ branch você abriria.
 próximo PR, e ao voltar ele está onde você deixou: a mesma aba, o mesmo arquivo
 aberto, a mesma rolagem, e todo texto que você não tinha enviado — o
 comentário, uma resposta, um comentário de linha, uma edição. Isso dura até
-você fechar o pull request ou sair do app; fica só na memória. Fechar um PR com
-texto não enviado pergunta antes. Se uma atualização encontra sumido o lugar de
+você fechar o pull request ou sair do app; fica só na memória, para os 50 pull
+requests mais recentes (além disso o lugar mais antigo é liberado, e o texto que
+ele guardava vai para a próxima página de pull request que você abrir). Fechar
+um PR com texto não enviado pergunta antes. Se uma atualização encontra sumido o lugar de
 um rascunho — a conversa que ele respondia, o comentário que editava, o arquivo
 em que estava — o texto não é descartado: ele espera no topo da página para ser
 copiado ou descartado.
@@ -487,10 +494,11 @@ linha adivinhada:
 Um comentário numa linha fora dos trechos mostrados fica só na aba Conversa,
 em todos os hosts.
 
-Um comentário digitado e não enviado conta como texto não enviado: **‹ ›** e
-Alt+setas perguntam antes de deixá-lo para trás, como fazem com a caixa de
-comentário principal. Olhar outro arquivo mantém o texto; para começar um em
-outra linha, envie ou cancele o primeiro.
+Um comentário digitado e não enviado fica com o pull request, como o texto da
+caixa de comentário principal: **‹ ›**, Alt+setas ou outra aba o deixam onde
+está, e ele volta à linha dele quando você retorna (veja *Ao voltar* acima).
+Olhar outro arquivo mantém o texto; para começar um em outra linha, envie ou
+cancele o primeiro.
 
 O que não faz:
 
@@ -633,8 +641,9 @@ comentário é recusada, e a mensagem diz isso.
   branco em volta do texto saem: código indentado e uma quebra de linha com dois
   espaços no fim ficam como foram digitados. O texto novo aparece na hora e a
   página lê o pull request de novo. Na página do pull request, uma edição não
-  salva conta como texto não enviado: **‹ ›** perguntam antes de sair dela. A
-  página de issue não tem essas setas, e nada ali pergunta antes de a aba fechar.
+  salva fica com o pull request quando você segue com **‹ ›** ou troca de aba,
+  e fechar o pull request pergunta antes. A página de issue não guarda nada:
+  nada ali pergunta antes de a aba fechar.
 - **Excluir** sempre pergunta antes, e a pergunta diz o que acontece: o
   servidor remove o comentário para todos, e não dá para desfazer. Não há
   entrada de desfazer, porque nada o traz de volta.

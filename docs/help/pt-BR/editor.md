@@ -4,7 +4,7 @@ category: Ferramentas de workspace
 order: 95
 summary: Mande um repositório, um arquivo ou uma linha de código para o editor em que você realmente escreve.
 keywords: editor vscode code cursor windsurf devin desktop zed sublime jetbrains intellij webstorm xcode abrir no editor linha coluna comando personalizado argv
-source: d5e2c70f2cd464c4e84e26bf7e8dd233e9d7b8fa
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Editor externo
@@ -40,14 +40,18 @@ Reconhecidos de fábrica:
 
 **No Linux, um editor fora do PATH.** Um editor descompactado numa pasta à sua
 escolha muitas vezes não está no PATH, mas está no menu de aplicativos. O
-Gitcito também lê as entradas `.desktop` do menu — em
-`~/.local/share/applications`, `/usr/share/applications` e nos exports do
-Flatpak — e reconhece um editor pelo nome ou pelo programa que a linha `Exec=`
-inicia. Para uma versão do VS Code como o Devin Desktop, prefere o comando em
+Gitcito também lê as entradas `.desktop` do menu — nas pastas de dados do XDG
+(`~/.local/share`, depois `/usr/local/share` e `/usr/share`, ou o que
+`XDG_DATA_HOME` e `XDG_DATA_DIRS` disserem) e nos exports do Flatpak e do Snap —
+e reconhece um editor pelo nome ou pelo programa que a linha `Exec=` inicia. Uma
+entrada marcada como oculta ou para não ser exibida, ou cujo programa de
+`TryExec=` não existe, não conta. Para uma versão do VS Code como o Devin Desktop, prefere o comando em
 `bin/` ao lado desse programa, porque só ele consegue pular para uma linha. As
 entradas são lidas como texto e nada nelas é executado; uma entrada que precisa
 de argumentos extras para abrir o editor (um `flatpak run …` do Flatpak) é
-ignorada, então essa instalação ainda precisa do comando no PATH.
+ignorada, então essa instalação ainda precisa do comando no PATH. No macOS, um
+`Devin.app` só conta quando o `product.json` dele indica o Devin Desktop, para
+que um app sem relação com o mesmo nome nunca seja o aberto.
 
 ## O limite que vale conhecer
 
