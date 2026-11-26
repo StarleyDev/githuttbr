@@ -582,9 +582,36 @@ export interface StashInfo {
   date: number
 }
 
+/** What a remote URL carries in its userinfo (shared/remoteUrlCredentials.ts). */
+export type UrlCredentialKind = 'password' | 'username'
+
 export interface RemoteInfo {
   name: string
+  /** Any password in the URL is removed before it leaves main; a user name stays. */
   url: string
+  /** What the remote's fetch or push URLs carry in their userinfo, worst first.
+   *  Absent when none carries anything. */
+  urlCredentials?: UrlCredentialKind
+}
+
+/** One of a remote's configured URLs that carries a user name or a password. */
+export interface RemoteUrlCredentialUrl {
+  /** `fetch` for `remote.<name>.url`, `push` for `remote.<name>.pushurl`. */
+  role: 'fetch' | 'push'
+  kind: UrlCredentialKind
+  /** The URL as the fix writes it — the userinfo removed (an ssh user name kept). */
+  url: string
+}
+
+/**
+ * A remote whose configured URLs carry credentials. Never the user name or the
+ * password themselves: only which URLs, what kind, and the clean form.
+ */
+export interface RemoteUrlCredentials {
+  remote: string
+  /** The worst of `urls`: a password outranks a user name. */
+  kind: UrlCredentialKind
+  urls: RemoteUrlCredentialUrl[]
 }
 
 export interface RepoSummary {

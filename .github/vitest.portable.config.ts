@@ -31,6 +31,8 @@ export default {
       'test/markdownEdit.test.ts',
       'test/remoteContent.test.ts',
       'test/externalUrl.test.ts',
+      // Remote URLs as written: scp-like, Windows paths and IPv6 hosts alike.
+      'test/remoteUrlCredentialsParse.test.ts',
       'test/diff.test.ts',
       'test/lineDiff.test.ts',
       'test/movedLines.test.ts',
