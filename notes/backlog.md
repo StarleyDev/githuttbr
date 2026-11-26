@@ -49,6 +49,7 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 | 🟡 | **Falso positivo do `lint:docs`:** imagem com o alt em várias linhas em `repositories.md` | |
 | 🟡 | **Cores dos ícones**: excluir o tema Ultra Contrast? O realce da "Cor plena" encosta 1px no rótulo da barra | Só se incomodar |
 | 🟡 | **Spinner do "Fetch N stale"** | Só o "Fetch all" mostra o spinner |
+| 🟡 | **Pontas de PR de fork ficam para sempre** (`refs/githuttbr/pr/<remote>/<N>`, da aba Commits) | Nada as remove; a limpeza de branches poderia listá-las (por exemplo, as de PRs fechados). Hoje o manual ensina a apagar à mão |
 
 ---
 

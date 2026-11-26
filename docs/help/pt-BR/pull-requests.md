@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
-source: cd5e2b5f5fd03e888f50c4419178d647b0d10924
+source: 4be4a4f8a11caabadd31b5e39bd10ec22fa20fbd
 ---
 
 # Página de pull requests
@@ -195,9 +195,11 @@ commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
   espelha a ponta do pull request no repositório de destino, numa ref própria —
   `refs/pull/N/head` (GitHub, GitHub Enterprise Server, Forgejo),
   `refs/merge-requests/N/head` (GitLab), `refs/pull-requests/N/from`
-  (Bitbucket Data Center). O app busca só essa ref, sem tags, para
-  `<remote>/pr/N`, e o commit abre como qualquer outro. Buscar de novo move
-  `<remote>/pr/N` para a ponta do momento.
+  (Bitbucket Data Center). O app busca só essa ref, sem tags, para uma ref
+  própria, `refs/githuttbr/pr/<remote>/N`, e o commit abre como qualquer
+  outro: o grafo desenha essa ponta como uma faixa sem rótulo. Buscar de novo
+  move a ref para a ponta do momento. Se um force push deixou o commit de fora,
+  o aviso diz isso.
 - **Abrir no navegador**, para quando buscar não é uma opção.
 
 A lista é lida na primeira vez que você abre a aba, não junto com a página, e
@@ -220,13 +222,18 @@ O que não faz:
   | Forgejo | A ponta que o servidor listar primeiro; a ordem dele não é documentada |
 - **A ponta de um fork onde o host não a espelha.** O Azure DevOps publica só
   o resultado do merge, nunca a ponta do próprio pull request, e o
-  bitbucket.org não publica nenhum dos dois: ali a busca diz que o remoto não
-  publica os commits, e resta o navegador. **Pré-visualizar o pull request
-  localmente…** traz o resultado do merge do Azure, se é disso que você precisa.
-- **`<remote>/pr/N` é um nome do próprio app.** Uma branch de verdade chamada
-  `pr/N` nesse remoto usaria o mesmo nome, e a próxima busca completa com
-  limpeza (prune) remove a ref, já que o remoto não tem essa branch — os
-  commits ficam até o git limpar os objetos inalcançáveis.
+  bitbucket.org não publica nenhum dos dois: ali a linha oferece só o
+  navegador. Num outro host que não a espelhe, a busca diz isso.
+  **Pré-visualizar o pull request localmente…** traz o resultado do merge do
+  Azure, se é disso que você precisa.
+- **As pontas buscadas ficam.** `refs/githuttbr/pr/…` não é uma branch: não
+  há o que fazer checkout nem push, uma busca com limpeza (prune) não mexe
+  nela, e o git guarda os commits. Nada a remove, também — nem fechar a página
+  nem [Limpar branches locais](branch-cleanup.md). Para tirá-las, apague as refs
+  à mão: `git for-each-ref refs/githuttbr/pr` lista, e `git update-ref -d <ref>`
+  apaga uma.
+- **Um remoto com `/` no nome** não cabe como uma parte do nome dessa ref, então
+  a busca é recusada ali.
 - **Uma branch apagada.** Um pull request mesclado muitas vezes levou a branch
   junto: a busca diz isso. O bitbucket.org não lista commit nenhum depois que a
   branch de origem some.
@@ -393,7 +400,7 @@ confirmação diz isso:
 
 | Host | Primeiro comentário de uma thread com respostas |
 |---|---|
-| GitHub | As respostas devem ficar; a documentação do GitHub não diz. A thread continua com a caixa de resposta: sem o primeiro comentário, a resposta vai para a própria thread pela API GraphQL do GitHub, encontrada por uma resposta que ainda está nela. Se isso falhar (um Enterprise Server antigo, um token que o GraphQL recusa), a thread oferece **Responder no GitHub** |
+| GitHub | As respostas devem ficar; a documentação do GitHub não diz. A thread continua com a caixa de resposta: sem o primeiro comentário, a resposta vai para a própria thread pela API GraphQL do GitHub, encontrada por uma resposta que ainda está nela. Se isso falhar (um Enterprise Server antigo, um token que o GraphQL recusa, uma thread em que o GitHub diz que esta conta não pode responder), a thread oferece **Responder no GitHub**. Enquanto você tem uma revisão em andamento no GitHub, ele pode colocar a resposta nela: o aviso diz isso, e ninguém vê a resposta até você enviar essa revisão lá |
 | GitLab | Só essa nota sai; a thread e as respostas ficam |
 | Azure DevOps | Deve ser marcado como excluído e sumir, com a thread e as respostas mantidas; a documentação do Azure não diz |
 | Bitbucket Data Center | Recusado: o Data Center não exclui um comentário que tem respostas. Exclua as respostas antes, ou edite o comentário |
@@ -471,12 +478,13 @@ O que custa:
   outro motivo que não o limite de requisições (um Enterprise Server antigo, um
   token que ele recusa), o app volta para a API REST, que lê uma issue por
   requisição: aí só as **10** primeiras são pedidas, uma depois da outra, como o
-  GitHub pede aos apps, e as outras mostram *não foi possível ler* até um
-  próximo passar de mouse pedir de novo.
+  GitHub pede aos apps; as outras ficam sem resposta, e um próximo passar de
+  mouse as pede.
 - **Forgejo** não tem como ler várias issues numa requisição, então cada cartão
   custa uma: um passar de mouse pede no máximo **10**, duas por vez.
 - No GitHub e no Forgejo, a primeira resposta que diz *mais devagar* (um 429,
-  um 403, ou o erro de limite do próprio GraphQL) interrompe o resto — o GitHub
+  um 403, o erro de limite do próprio GraphQL, um limite secundário, ou uma
+  resposta que gastou a última requisição do limite) interrompe o resto — o GitHub
   não volta para o REST nesse caso — e essas referências não são pedidas de novo
   por cinco minutos.
 - **Azure DevOps** lê até 200 itens de trabalho numa requisição, e o GitLab

@@ -188,9 +188,11 @@ not, the row says so instead of failing quietly, and offers:
   head in the target repository under a ref of its own — `refs/pull/N/head`
   (GitHub, GitHub Enterprise Server, Forgejo), `refs/merge-requests/N/head`
   (GitLab), `refs/pull-requests/N/from` (Bitbucket Data Center). The app
-  fetches that one ref, without tags, into `<remote>/pr/N`, and the commit
-  opens like any other. Fetching again moves `<remote>/pr/N` to the head as it
-  is then.
+  fetches that one ref, without tags, into a ref of its own,
+  `refs/githuttbr/pr/<remote>/N`, and the commit opens like any other: the
+  graph draws that head as a lane without a label. Fetching again moves the ref
+  to the head as it is then. If the force push since left the commit out, the
+  toast says so.
 - **Open in browser**, for when fetching is not an option.
 
 The list is read the first time you open the tab, not with the page, and again
@@ -213,13 +215,17 @@ What it does not do:
   | Forgejo | Whichever end the server lists first; its order is not documented |
 - **A fork's head where the host does not mirror it.** Azure DevOps publishes
   only a merge result, never a pull request's own head, and bitbucket.org
-  publishes neither: there the fetch says the remote does not publish the
-  commits, and the browser is what is left. **Preview pull request locally…**
-  brings in Azure's merge result, if that is what you need.
-- **`<remote>/pr/N` is the app's own name.** A real branch called `pr/N` on
-  that remote would share it, and the next full fetch with pruning removes
-  the ref, since the remote has no such branch — the commits stay until git
-  cleans up unreachable objects.
+  publishes neither: there the row offers the browser alone. On another host
+  that turns out not to mirror it, the fetch says so. **Preview pull request
+  locally…** brings in Azure's merge result, if that is what you need.
+- **The fetched heads stay.** `refs/githuttbr/pr/…` is not a branch: nothing
+  to check out or push, a pruning fetch leaves it alone, and git keeps its
+  commits. Nothing removes it either — neither closing the page nor
+  [Clean up local branches](branch-cleanup.md). To drop them, delete the refs
+  by hand: `git for-each-ref refs/githuttbr/pr` lists them, and
+  `git update-ref -d <ref>` deletes one.
+- **A remote whose name has a `/`** cannot be one part of that ref's name, so
+  the fetch is refused there.
 - **A deleted branch.** A merged pull request has often taken its branch with
   it: the fetch says so. bitbucket.org lists no commits at all once the source
   branch is gone.
@@ -376,7 +382,7 @@ names which. Two of these are not written down by the host, and say so:
 
 | Host | First comment of a thread with replies |
 |---|---|
-| GitHub | The replies should stay; GitHub's documentation does not say. The thread keeps its reply box: with its first comment gone, the reply is sent to the thread itself through GitHub's GraphQL API, found through a reply still in it. Should that fail (an old Enterprise Server, a token GraphQL refuses), the thread offers **Reply on GitHub** instead |
+| GitHub | The replies should stay; GitHub's documentation does not say. The thread keeps its reply box: with its first comment gone, the reply is sent to the thread itself through GitHub's GraphQL API, found through a reply still in it. Should that fail (an old Enterprise Server, a token GraphQL refuses, a thread GitHub says this account cannot reply in), the thread offers **Reply on GitHub** instead. While you have a review in progress on GitHub, GitHub may file the reply under it: the toast then says so, and nobody sees the reply until you submit that review there |
 | GitLab | Only that note goes; the thread and its replies stay |
 | Azure DevOps | Should be marked deleted and hidden, with the thread and its replies kept; Azure's documentation does not say |
 | Bitbucket Data Center | Refused: Data Center does not delete a comment that has replies. Delete the replies first, or edit it instead |
@@ -450,13 +456,14 @@ What it costs:
   one you are on and its nearest neighbours. When GraphQL fails for another
   reason than a rate limit (an old Enterprise Server, a token it refuses), the
   app falls back to the REST API, which reads one issue per request: then only
-  the first **10** are asked, one after another as GitHub asks of apps, and the
-  others show *could not read* until a later hover asks again.
+  the first **10** are asked, one after another as GitHub asks of apps; the
+  others are left unknown, and a later hover asks for them.
 - **Forgejo** has no way to read several issues in one request, so each card
   costs one: a hover asks for at most **10**, two at a time.
 - On GitHub and Forgejo, the first answer that says *slow down* (a 429, a 403,
-  or GraphQL's own rate-limit error) stops the rest — GitHub does not fall back
-  to REST then — and those references are not asked for again for five minutes.
+  GraphQL's own rate-limit error, a secondary limit, or an answer that spent the
+  last request of the limit) stops the rest — GitHub does not fall back to REST
+  then — and those references are not asked for again for five minutes.
 - **Azure DevOps** reads up to 200 work items in one request, and GitLab one
   request per kind, so there the whole page goes at once.
 
