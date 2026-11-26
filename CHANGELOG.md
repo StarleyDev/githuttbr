@@ -1,5 +1,11 @@
 
 
+## [4.58.0](https://github.com/StarleyDev/githuttbr/compare/v4.57.0...v4.58.0) (2026-11-26)
+
+### Features
+
+* **pr:** image diffs, every file's diff, and a page that keeps your place ([646763f](https://github.com/StarleyDev/githuttbr/commit/646763f302ef299d3c7ef65672e0c2f4e426af38))
+
 ## [4.57.0](https://github.com/StarleyDev/githuttbr/compare/v4.56.0...v4.57.0) (2026-11-26)
 
 ### Features
