@@ -4559,7 +4559,12 @@ body.col-resizing .node-ava {
 }
 .tab-page-chip:hover { color: var(--text-1); background: var(--bg-3); }
 .tab-page-chip.active { color: var(--accent); background: var(--accent-soft); }
-.tab-page-num { margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.tab-page-num {
+  margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums;
+  /* A release tag or a milestone title can be long: the chip stays a chip. */
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tab-page-chip:not(.tab-page-chip-pr) { padding: 2px 5px 2px 3px; }
 /* A pull request is a destination of its own, not a tool icon: a bordered pill
    with a bigger icon and the number in bold, solid accent while it is open. */
 .tab-page-chip-pr {
