@@ -4,7 +4,7 @@ category: Sync & viele Repos
 order: 57.5
 summary: Der Markdown-Editor hinter jedem Kommentarfeld — Schreiben / Vorschau, eine Formatierungsleiste mit GitHubs Tastenkürzeln, Listen, die bei Enter weitergehen, und Vervollständigung für @Erwähnungen / #Verweise.
 keywords: markdown-editor kommentarfeld werkzeugleiste fett kursiv code link zitat überschrift aufzählung nummerierte liste aufgabenliste checkliste vorschau schreiben tastenkürzel erwähnung at-zeichen verweis raute issue-nummer autovervollständigung antwort pull-request-beschreibung issue-text markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Kommentare schreiben
@@ -129,9 +129,14 @@ sich das Handbuch hinter dem Dialog öffnen würde.
 - **Die Vorschau ist der Renderer der App.** Sie zeigt Markdown so, wie die App es
   zeichnet; die Darstellung des Hosts kann in Details abweichen (GitHub-eigene
   Erweiterungen, Erwähnungen, die zu Links werden).
-- **Gesendete Kommentare werden nicht formatiert dargestellt.** Einmal gesendet,
-  erscheint ein Kommentar in der Unterhaltung der App als reiner Text, mit
-  klickbaren Links — Markdown-Formatierung wird nur in der Vorschau und auf der
-  Website des Hosts gezeichnet.
+- **Die Vorschau ist die Darstellung der App, nicht die des Hosts.** Auf der
+  Pull-Request- und der Issue-Seite zeichnet die Vorschau den Text so, wie der
+  gesendete Kommentar in der App gezeigt wird
+  ([wie Kommentare angezeigt werden](pull-requests.md#wie-kommentare-angezeigt-werden)): dasselbe strenge
+  Profil, Zeilenumbrüche erhalten, und ein Bild von einer anderen Website wartet auf
+  einen Klick. Auf GitHub wird der gesendete Kommentar danach von GitHub gezeichnet,
+  sodass eine Erweiterung, die die App nicht kennt, anders aussehen kann. Die Dialoge
+  für einen neuen Pull Request und ein neues Issue nutzen die gewöhnliche
+  Markdown-Vorschau der App.
 - Die Kürzel sind fest: sie stehen nicht in den Tastenkürzel-Einstellungen und
   folgen keiner Neubelegung dort.

@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronizar y muchos repos
 order: 57
 summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits y comentarios en una línea de su diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number
-source: 729c0829d4ded79d157edea6c162fa638d7b41e0
+keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number fork commits de la pr refs/pull head comentarios renderizados imágenes píxel de seguimiento imagen bloqueada clic para cargar tarea tabla bloque rendered comments images blocked image
+source: a4156cb9fd737c311bc0441169b7a3d933dad274
 ---
 
 # Página de pull requests
@@ -191,6 +191,16 @@ ofrece:
 - **Traer la rama del PR para verlo** — el mismo fetch de una sola rama que
   [ir a la rama](#ir-a-la-rama-de-una-pull-request), sin el checkout. Si el commit llegó con ella, se
   abre; si no (un force push lo reescribió desde entonces), el aviso lo dice.
+- **Obtener los commits del pull request**, en una pull request de un **fork**. Su
+  rama vive en otro repositorio, pero la mayoría de los hosts reflejan el head de una
+  pull request en el repositorio de destino bajo una referencia propia —
+  `refs/pull/N/head` (GitHub, GitHub Enterprise Server, Forgejo),
+  `refs/merge-requests/N/head` (GitLab), `refs/pull-requests/N/from` (Bitbucket Data
+  Center). La app trae esa única referencia, sin etiquetas, a una referencia propia,
+  `refs/githuttbr/pr/<remote>/N`, y el commit se abre como cualquier otro: el grafo
+  dibuja ese head como un carril sin etiqueta. Volver a traerlo mueve la referencia
+  al head tal como esté entonces. Si el force push dejó fuera el commit desde
+  entonces, el aviso lo dice.
 - **Abrir en el navegador**, para cuando traer la rama no es una opción.
 
 La lista se lee la primera vez que abres la pestaña, no con la página, y de nuevo
@@ -211,9 +221,19 @@ Lo que no hace:
   | GitHub | Los **primeros** 250 (el límite del propio GitHub) |
   | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Los **250 más recientes** |
   | Forgejo | El extremo que el servidor liste primero; su orden no está documentado |
-- **La rama de un fork** no se puede traer desde aquí — vive en otro repositorio —,
-  así que un commit que solo está en el fork ofrece únicamente el navegador.
-  **Previsualizar pull request en local…** es la forma de traerlo.
+- **El head de un fork donde el host no lo refleja.** Azure DevOps solo publica un
+  resultado de fusión, nunca el head propio de una pull request, y bitbucket.org no
+  publica ninguno de los dos: ahí la fila ofrece solo el navegador. En otro host que
+  resulte no reflejarlo, el fetch lo dice. **Previsualizar pull request en local…**
+  trae el resultado de fusión de Azure, si es lo que necesitas.
+- **Los heads traídos se quedan.** `refs/githuttbr/pr/…` no es una rama: nada que
+  sacar ni que subir, un fetch con prune no la toca, y git conserva sus commits.
+  Tampoco nada la quita — ni cerrar la página ni la
+  [limpieza de ramas](branch-cleanup.md). Para deshacerte de ellas, borra las
+  referencias a mano: `git for-each-ref refs/githuttbr/pr` las lista, y
+  `git update-ref -d <ref>` borra una.
+- **Un remoto cuyo nombre tiene una `/`** no puede ser una parte del nombre de esa
+  referencia, así que ahí el fetch se rechaza.
 - **Una rama borrada.** Una pull request fusionada a menudo se llevó su rama: el
   fetch lo dice. bitbucket.org no lista ningún commit en cuanto la rama de origen
   desaparece.
@@ -330,6 +350,79 @@ sus herramientas en cuanto haces clic en él, y envía con ⌘/Ctrl+Enter, ya qu
 Enter ahora empieza una línea nueva. [Escribir comentarios](writing-comments.md)
 tiene los detalles y los límites.
 
+## Cómo se muestran los comentarios
+
+La gente escribe los comentarios en Markdown, así que un comentario mostrado como
+texto plano está lleno de `**`, `- [ ]` y vallas de código. La descripción, la
+conversación y los hilos de revisión (en las pestañas Conversación y Archivos) se
+dibujan como Markdown: encabezados, listas y listas de tareas, tablas, citas, bloques
+de código resaltados en el lenguaje que nombra la valla, enlaces e imágenes. La página
+de la issue dibuja su texto igual. `#123`, `AB#123`, `!123` y `@user` en el texto
+siguen convirtiéndose en enlaces, con la [tarjeta](#de-qué-trata-un-123-o-ab123) donde la tenían.
+
+![Un comentario renderizado: una tabla, una imagen de otro sitio retenida tras su marcador y un bloque de código resaltado](../../screenshots/pr-rendered-comment.webp)
+
+De dónde sale el dibujo:
+
+| Host | Renderizado por |
+|---|---|
+| GitHub, GitHub Enterprise Server | El propio GitHub (`body_html`): las menciones y referencias se enlazan como en la web, las imágenes pasan por el proxy de imágenes de GitHub y los adjuntos privados llevan su dirección firmada |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | La app, a partir del Markdown del comentario. Un enlace relativo apunta dentro del repositorio; en GitLab, `/uploads/…` apunta dentro del proyecto, como hace GitLab |
+
+Un comentario es contenido de otras personas, así que lo que puede contener es
+limitado, y más limitado que para tus propios archivos: una lista explícita de
+etiquetas, enlaces e imágenes solo en `https:`, `http:` o `mailto:`, sin scripts,
+frames, formularios, SVG ni estilos en línea, y enlaces que nunca se abren dentro de
+la app (van a tu navegador). Una casilla de una lista de tareas se muestra, pero no se
+puede marcar: marcarla aquí no cambiaría nada en el host.
+
+**Las imágenes de otros sitios esperan un clic.** Cargar una imagen es una petición
+que el sitio detrás de ella puede observar, con tu dirección IP y el momento en que
+lees el comentario — cualquiera que pueda comentar puede poner ahí un píxel de
+seguimiento. Por eso solo las imágenes del propio host se cargan solas: en github.com
+sus adjuntos, `*.githubusercontent.com` (que incluye su proxy de imágenes) y sus
+recursos; en cualquier otro host, su propia dirección. Cualquier otra imagen muestra
+*Imagen de example.net: haz clic para cargarla*, y el clic carga esa imagen.
+**Ajustes → Seguridad → Cargar imágenes de otros sitios en los comentarios** lo
+desactiva; ver [Seguridad](security.md#imágenes-en-los-comentarios).
+
+**La vista previa muestra lo que se publicará.** En esta página y en la de la issue,
+la pestaña **Vista previa** de cada cuadro de comentario dibuja el texto igual: el
+mismo perfil, los mismos saltos de línea, las mismas imágenes retenidas — un enlace
+pegado a una imagen de fuera no la carga mientras escribes. Los diálogos de pull
+request nueva e issue nueva conservan la vista previa de Markdown habitual de la app.
+
+**Lo demasiado largo o enrevesado se muestra como texto.** El Markdown se renderiza
+en la ventana de la app, y algunos textos cuestan mucho más de renderizar de lo que su
+tamaño sugiere. Un comentario de más de **32.000 caracteres**, o uno construido para
+atascar el renderizador (miles de `_` o `*` sin pareja en un párrafo, o más de 32
+niveles de `>` o marcadores de lista en una línea), se muestra como texto plano con
+enlaces, bajo *Comentario largo mostrado como texto sin formato.* o *Comentario
+mostrado como texto sin formato: demasiado complejo para renderizarlo aquí.* Un
+comentario que aun así no se puede renderizar recurre a lo mismo por sí solo: el resto
+de la página no se ve afectado.
+
+Lo que no hace:
+
+- **Al editar se ve el texto tal como se escribió.** **Editar** sigue abriendo el
+  Markdown, y una edición guardada la dibuja la app hasta que la página vuelve a leer
+  la pull request (en GitHub, después la dibuja GitHub).
+- **Los adjuntos privados de GitHub caducan.** GitHub firma la dirección de una imagen
+  privada durante unos minutos; una que deja de cargarse tras tener la página abierta
+  un rato vuelve con **Actualizar**.
+- **Una imagen relativa en GitHub** que dibuja la propia app (una respuesta enviada
+  desde la app, antes de que la página la vuelva a leer) se busca bajo la dirección del
+  repositorio en github.com, que quizá no es donde GitHub la pondría.
+- **Los vídeos** de un comentario de GitHub se muestran como un enlace al archivo, no
+  como un reproductor.
+- **Las extensiones propias de GitHub** que dibuja la app (en otros hosts) no están:
+  sin atajos de emoji, sin diagramas Mermaid, sin estilo de avisos, y las fórmulas
+  quedan como texto.
+- **El código solo se resalta cuando la valla nombra su lenguaje.** Adivinar el
+  lenguaje obligaría a pasar todas las gramáticas por todos los bloques de la página.
+- **Los mensajes de commit** de la pestaña Commits siguen siendo texto plano: git no
+  renderiza Markdown, y los hosts tampoco.
+
 ## Editar y eliminar tus comentarios
 
 Una errata en un comentario ya enviado, o una observación que ya no aplica, antes
@@ -344,10 +437,13 @@ comentarios en GitHub y Forgejo.
 Qué es «tuyo» lo decide la propia página, que pregunta al host, cada vez que carga,
 con qué cuenta se identifican las llamadas de este repositorio (su perfil vinculado,
 no el que esté activo). La mayoría de los hosts nombran a un autor por su login,
-comparado sin distinguir mayúsculas. Azure DevOps nombra a los autores por nombre
-visible, que dos personas pueden compartir, así que ahí el id del autor del
-comentario debe coincidir con el id de la cuenta; si falta cualquiera de los dos, ningún
-comentario muestra las acciones. Cuando la app no puede saber quién eres (un token
+comparado sin distinguir mayúsculas. Azure DevOps nombra a los autores por nombre visible, que dos personas pueden
+compartir, así que ahí nunca compara nombres: un comentario es tuyo cuando el id de
+su autor coincide con el id de la cuenta, **o** el nombre único de su autor (el nombre
+de la cuenta, normalmente una dirección de correo) coincide con el de la cuenta, sin
+distinguir mayúsculas. Cualquiera de los dos es único de una persona; el segundo cubre
+un id de autor que no es el que informa la conexión. Cuando no se puede comparar
+ninguno, ningún comentario muestra las acciones. Cuando la app no puede saber quién eres (un token
 sin scope de usuario, o el host no respondió), tampoco las muestra ningún
 comentario; **Actualizar** vuelve a preguntar. El host sigue decidiendo: a una cuenta
 a la que no deja cambiar un comentario se le rechaza, y el mensaje lo dice.
@@ -372,7 +468,7 @@ host, y se dice:
 
 | Host | Primer comentario de un hilo con respuestas |
 |---|---|
-| GitHub | Las respuestas deberían quedarse; la documentación de GitHub no lo dice. Responder a ese hilo desde la app ya no es posible: sus respuestas apuntan a un comentario que ya no existe, y la API no acepta respuestas a una respuesta. El hilo ofrece entonces **Responder en GitHub** |
+| GitHub | Las respuestas deberían quedarse; la documentación de GitHub no lo dice. El hilo conserva su cuadro de respuesta: sin su primer comentario, la respuesta se envía al hilo mismo a través de la API GraphQL de GitHub, localizado mediante una respuesta que sigue en él. Si eso falla (un Enterprise Server antiguo, un token que GraphQL rechaza, un hilo en el que GitHub dice que esta cuenta no puede responder), el hilo ofrece **Responder en GitHub** en su lugar. Si tienes una revisión en curso en GitHub, GitHub puede archivar la respuesta dentro de ella: el aviso lo dice entonces, y nadie ve la respuesta hasta que envías esa revisión allí |
 | GitLab | Solo se va esa nota; el hilo y sus respuestas se quedan |
 | Azure DevOps | Debería marcarse como eliminado y ocultarse, conservando el hilo y sus respuestas; la documentación de Azure no lo dice |
 | Bitbucket Data Center | Rechazado: Data Center no elimina un comentario que tiene respuestas. Elimina primero las respuestas, o edítalo en su lugar |
@@ -428,7 +524,7 @@ DevOps, `!123` enlaza a esa pull request, sin tarjeta.
 | Referencia | Host | Se lee de |
 |---|---|---|
 | `AB#123`, y `#123` en un repositorio de Azure | Azure DevOps | Work items, hasta 200 en una petición |
-| `#123` | GitHub, GitHub Enterprise Server | Issues (que también responde por las pull requests), una petición por cada una, de una en una |
+| `#123` | GitHub, GitHub Enterprise Server | Issues y pull requests, hasta 50 en una petición GraphQL; una petición REST por cada una cuando GraphQL falla |
 | `#123` / `!123` | GitLab | Issues / merge requests, una petición por tipo |
 | `#123` | Forgejo | Issues (también pull requests), una petición por cada una, de dos en dos |
 
@@ -446,11 +542,18 @@ perfil: la llamada se hace como el perfil al que el repositorio está
 
 Lo que cuesta:
 
-- **GitHub y Forgejo** no pueden leer varias issues en una petición, así que cada
-  tarjeta cuesta una. Pasar el ratón pide como mucho **10** — la que señalas y sus
-  vecinas — y en GitHub una tras otra, como GitHub pide a las apps. La primera
-  respuesta que dice *más despacio* (un 429 o un 403) detiene el resto, y esas
-  referencias no se vuelven a pedir durante cinco minutos.
+- **GitHub** lee hasta **50** en una petición, a través de su API GraphQL — la que
+  señalas y sus vecinas más cercanas. Cuando GraphQL falla por otro motivo que un
+  límite de peticiones (un Enterprise Server antiguo, un token que rechaza), la app
+  recurre a la API REST, que lee una issue por petición: entonces solo se piden las
+  **10** primeras, una tras otra como GitHub pide a las apps; las demás quedan sin
+  conocer, y un paso de ratón posterior las pide.
+- **Forgejo** no puede leer varias issues en una petición, así que cada tarjeta cuesta
+  una: pasar el ratón pide como mucho **10**, de dos en dos.
+- En GitHub y Forgejo, la primera respuesta que dice *más despacio* (un 429, un 403,
+  el propio error de límite de GraphQL, un límite secundario o una respuesta que gastó
+  la última petición del límite) detiene el resto — GitHub no recurre entonces a REST
+  — y esas referencias no se vuelven a pedir durante cinco minutos.
 - **Azure DevOps** lee hasta 200 work items en una petición, y GitLab una petición
   por tipo, así que ahí va toda la página de una vez.
 

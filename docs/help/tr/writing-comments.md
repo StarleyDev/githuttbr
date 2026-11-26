@@ -4,7 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 57.5
 summary: Her yorum kutusunun ardındaki Markdown düzenleyici — Yaz / Önizleme, GitHub’ın kısayollarıyla bir biçimlendirme çubuğu, Enter’da devam eden listeler ve @bahsetme / #referans tamamlama.
 keywords: markdown düzenleyici yorum kutusu araç çubuğu kalın italik kod bağlantı alıntı başlık madde işaretli numaralı liste görev listesi kontrol listesi önizleme yaz kısayol bahsetme at işareti referans diyez issue numarası otomatik tamamlama yanıt pull request açıklaması issue gövdesi markdown editor comment box toolbar mention reference autocomplete reply
-source: 09bca660ae78b5922c3a7306f4001d893844c75b
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Yorum yazmak
@@ -121,8 +121,12 @@ bağlantı yoktur, çünkü el kitabı iletişim kutusunun arkasında açılırd
 - **Önizleme uygulamanın işleyicisidir.** Markdown’ı uygulamanın çizdiği gibi
   gösterir; sunucunun kendi görüntülemesi ayrıntılarda farklı olabilir (GitHub’a
   özgü uzantılar, bağlantıya dönüşen bahsetmeler).
-- **Gönderilmiş yorumlar biçimlendirilmez.** Gönderildikten sonra bir yorum
-  uygulamanın konuşmasında düz metin olarak, tıklanabilir bağlantılarla görünür —
-  Markdown biçimlendirmesi yalnızca önizlemede ve sunucunun web sitesinde çizilir.
+- **Önizleme uygulamanın çizimidir, sunucunun değil.** Pull request ve issue
+  sayfalarında önizleme, metni gönderilen yorumun uygulamada gösterileceği gibi çizer
+  ([yorumlar nasıl gösterilir](pull-requests.md#yorumlar-nasıl-gösterilir)): aynı katı profil, korunan
+  satır sonları ve bir tıklama bekleyen başka bir siteden bir görsel. GitHub’da
+  gönderilen yorumu ardından GitHub çizer, bu yüzden uygulamanın bilmediği bir uzantı
+  farklı görünebilir. Yeni pull request ve yeni issue iletişim kutuları uygulamanın
+  olağan Markdown önizlemesini kullanır.
 - Kısayollar sabittir: kısayol ayarlarında yer almazlar ve oradaki bir yeniden
   atamayı izlemezler.

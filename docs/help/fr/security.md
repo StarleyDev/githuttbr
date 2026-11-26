@@ -3,8 +3,8 @@ title: Sécurité et secrets
 category: Sécurité
 order: 70
 summary: Le masquage, les garde-fous, le trousseau — et ce que Gitcito refuse de faire.
-keywords: sécurité security secrets masquage masking trousseau keychain safeStorage jetons tokens branche protégée protected branch gros fichier large file garde-fou guard confidentialité privacy illisible sauvegarde parties traduire chemins autre ordinateur nouvelle machine fusionner profils remplacer profils choisir quoi exporter sauvegarde complète pour l'équipe manifeste mot de passe chiffrement appimage apparmor sandbox signaler un problème
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: sécurité security secrets masquage masking trousseau keychain safeStorage jetons tokens branche protégée protected branch gros fichier large file garde-fou guard confidentialité privacy illisible sauvegarde parties traduire chemins autre ordinateur nouvelle machine fusionner profils remplacer profils choisir quoi exporter sauvegarde complète pour l'équipe manifeste mot de passe chiffrement appimage apparmor sandbox signaler un problème images dans les commentaires pixel espion adresse ip images tierces cliquer pour charger images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Sécurité et secrets
@@ -39,6 +39,49 @@ comme des secrets.
 | **Bruit de compilation** | Committer `xcuserdata/`, `DerivedData/` ou un `.DS_Store` — avec le même *Ignorer et ne plus suivre* en un clic |
 | **Branche protégée** | Vous validez directement sur `main`/`master`, ou vous en poussez une en force |
 | **Secrets suivis** | Vous poussez un dépôt qui *suit* un fichier secret — averti une fois par session |
+
+## Les images dans les commentaires
+
+Les commentaires des pull requests et des issues sont écrits par d’autres personnes,
+et une image dans l’un d’eux est une requête que votre machine fait au site choisi par
+l’auteur. Ce site apprend votre adresse IP et le moment où vous lisez le commentaire —
+un pixel espion ne demande rien de plus que le droit de commenter.
+
+L’application ne charge donc d’elle-même que les images de l’hébergeur lui-même : sur
+github.com ses pièces jointes, `*.githubusercontent.com` (qui inclut le proxy que
+GitHub place devant chaque image extérieure dans son propre rendu) et ses ressources ;
+sur tout autre hébergeur, sa propre adresse web, en https. Toute autre image affiche
+un espace réservé qui nomme son domaine, et n’est demandée que lorsque vous cliquez
+dessus — cette image-là, une fois. La requête n’envoie jamais de `Referer`.
+
+| Réglage | Ce qu’il fait |
+|---|---|
+| **Charger les images d’autres sites dans les commentaires** (désactivé par défaut) | Les images de n’importe quel site se chargent sans clic, comme sur le site de l’hébergeur |
+
+Les limites :
+
+- **L’hébergeur vous voit quand même.** Une image de l’hébergeur lui-même — et sur
+  GitHub, toute image passant par son proxy — est une requête à l’hébergeur, qui sait
+  déjà que ce compte lit la pull request.
+- **`raw.githubusercontent.com` et `gist.githubusercontent.com` se chargent sans
+  clic.** N’importe qui peut y déposer un fichier, l’image est donc la sienne — mais
+  c’est GitHub qui la sert, et son auteur ne voit ni votre adresse IP ni le moment où
+  vous lisez.
+- **Les pièces jointes privées de GitHub expirent.** Leur adresse signée dure quelques
+  minutes ; **Actualiser** sur la page ramène celle qui ne se charge plus.
+- **L’aperçu d’une zone de commentaire** sur ces pages suit la même règle : un lien
+  collé vers une image extérieure n’est pas chargé pendant que vous écrivez.
+- **Seulement les pages de pull request et d’issue.** Les images d’un fichier Markdown
+  du dépôt, d’une note de version ou du wiki sont le contenu de votre propre dépôt et
+  se chargent comme avant.
+- **Un lien n’est pas une image.** Cliquer sur un lien dans un commentaire l’ouvre
+  dans votre navigateur, comme tout lien de l’application.
+
+Un commentaire ne peut pas non plus bloquer ou faire planter la fenêtre : un
+commentaire de plus de 32 000 caractères, ou conçu pour faire travailler le moteur de
+rendu Markdown pendant des secondes, s’affiche en texte brut. La façon dont le reste
+d’un commentaire est restreint est décrite dans
+[Pull requests](pull-requests.md#comment-les-commentaires-sont-affichés).
 
 ## L'AppImage et les chemins qui lui survivent
 
@@ -80,6 +123,8 @@ Une installation neuve fait **zéro** appel au trousseau tant que rien n'a
 réellement besoin d'être stocké.
 
 Tant qu’il est désactivé, le champ du jeton dans Intégrations le signale — *Conservé seulement jusqu’à la fermeture de Gitcito : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
+
+![Le champ du jeton dans Intégrations avec le trousseau désactivé : conservé seulement jusqu’à la fermeture, avec un bouton Activer](../../screenshots/token-keychain-notice.webp)
 
 Un jeton que vous **supprimez** pendant que le trousseau est désactivé disparaît
 aussitôt — il n'est plus envoyé avec rien —, mais seulement **pour cette
@@ -125,6 +170,28 @@ n'est pas déplacée vers son emplacement partagé (chaque profil continue de li
 la sienne), et le coffre enregistre toujours dans le stockage basique, car il
 n'a pas de mode limité à la session. Installez ou déverrouillez un trousseau et
 redémarrez Gitcito pour enregistrer à nouveau de nouveaux jetons.
+
+Gitcito ne se fie pas à ce que le système dit du stockage qu’il a obtenu. Il le
+compte comme basique quand le système le nomme ainsi, quand il ne peut pas le nommer
+du tout, et quand ce qu’il chiffre revient marqué du mot de passe fixe — quoi qu’ait
+dit le système. Ainsi, un trousseau qui se replie en silence garde quand même les
+nouveaux jetons hors du disque.
+
+Un trousseau qui ne répond plus n’est pas attendu indéfiniment. Sous Linux, une fois
+que le trousseau a répondu une fois pendant la session, une question qu’il laisse sans
+réponse 10 secondes compte comme *pas de trousseau* : un jeton enregistré est gardé
+jusqu’à la fermeture, et le coffre reste fermé. La première question d’une session —
+celle qui peut faire apparaître la propre demande de mot de passe du trousseau — et
+celle qui suit juste l’explication de Gitcito ont deux minutes, pour que la lecture
+d’une boîte de dialogue ne soit jamais écourtée. Pendant une demi-minute après un tel
+dépassement, la réponse reste *pas de trousseau* sans redemander ; ensuite Gitcito
+redemande. macOS et Windows répondent localement et ne sont jamais limités dans le
+temps.
+
+La limite ne couvre que cette question-là — *y a-t-il un trousseau ?* Un trousseau qui
+y répond puis se bloque en chiffrant ou en déchiffrant est toujours attendu :
+l’enregistrement des paramètres, et le coffre, restent occupés jusqu’à ce qu’il réponde
+ou que Gitcito redémarre.
 
 ### Quand les jetons enregistrés ne peuvent pas être lus
 

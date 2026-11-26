@@ -3,8 +3,8 @@ title: Sicherheit & Geheimnisse
 category: Sicherheit
 order: 70
 summary: Maskierung, Wächter, der Schlüsselbund — und was Gitcito sich weigert zu tun.
-keywords: sicherheit geheimnisse secrets maskierung masking schlüsselbund keychain safeStorage tokens geschützter branch protected branch große datei large file wächter guard privatsphäre unlesbar Sicherung Backup Teile Pfade übersetzen anderer Computer neuer Rechner Profile zusammenführen Profile ersetzen Export auswählen vollständige Sicherung fürs Team Manifest Passwort Verschlüsselung AppImage AppArmor Sandbox Problem melden
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: sicherheit geheimnisse secrets maskierung masking schlüsselbund keychain safeStorage tokens geschützter branch protected branch große datei large file wächter guard privatsphäre unlesbar Sicherung Backup Teile Pfade übersetzen anderer Computer neuer Rechner Profile zusammenführen Profile ersetzen Export auswählen vollständige Sicherung fürs Team Manifest Passwort Verschlüsselung AppImage AppArmor Sandbox Problem melden bilder in kommentaren tracking-pixel ip-adresse bilder von dritten zum laden klicken images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Sicherheit & Geheimnisse
@@ -38,6 +38,47 @@ auch nicht. Ein Augen-Schalter deckt sie pro Ansicht auf. `.env.example`,
 | **Build-Müll** | `xcuserdata/`, `DerivedData/` oder eine `.DS_Store` committen — mit demselben *Ignorieren & nicht mehr verfolgen* mit einem Klick |
 | **Geschützter Branch** | Du committest direkt auf `main`/`master` oder erzwingst dort einen Push |
 | **Getrackte Geheimnisse** | Du pushst ein Repository, das eine Geheimnisdatei *trackt* — einmal pro Sitzung gewarnt |
+
+## Bilder in Kommentaren
+
+Kommentare zu Pull Requests und Issues schreiben andere Leute, und ein Bild darin ist
+eine Anfrage, die dein Rechner an die Website stellt, die der Autor gewählt hat. Diese
+Website erfährt deine IP-Adresse und wann du den Kommentar liest — ein Tracking-Pixel
+braucht nicht mehr als das Recht zu kommentieren.
+
+Darum lädt die App von sich aus nur Bilder vom Host selbst: auf github.com seine
+Anhänge, `*.githubusercontent.com` (das den Proxy einschließt, den GitHub in seiner
+eigenen Darstellung vor jedes fremde Bild setzt) und seine Assets; auf jedem anderen
+Host seine eigene Web-Adresse, über https. Jedes andere Bild zeigt einen Platzhalter
+mit seiner Domain und wird erst angefragt, wenn du darauf klickst — genau dieses Bild,
+einmal. Die Anfrage sendet nie einen `Referer`.
+
+| Einstellung | Was sie tut |
+|---|---|
+| **Bilder von anderen Websites in Kommentaren laden** (standardmäßig aus) | Bilder von jeder Website laden ohne Klick, wie auf der Website des Hosts |
+
+Die Grenzen:
+
+- **Der Host sieht dich trotzdem.** Ein Bild vom Host selbst — und auf GitHub jedes
+  Bild über seinen Proxy — ist eine Anfrage an den Host, der ohnehin weiß, dass dieses
+  Konto den Pull Request liest.
+- **`raw.githubusercontent.com` und `gist.githubusercontent.com` laden ohne Klick.**
+  Jeder kann dort eine Datei ablegen, das Bild gehört also ihm — aber GitHub liefert
+  es aus, und sein Autor sieht weder deine IP-Adresse noch, wann du liest.
+- **Private GitHub-Anhänge laufen ab.** Ihre signierte Adresse hält ein paar Minuten;
+  **Aktualisieren** auf der Seite holt eines zurück, das nicht mehr lädt.
+- **Die Vorschau eines Kommentarfelds** auf diesen Seiten folgt derselben Regel: Ein
+  eingefügter Link auf ein fremdes Bild wird nicht geladen, während du schreibst.
+- **Nur die Pull-Request- und die Issue-Seite.** Bilder in einer Markdown-Datei des
+  Repositorys, in Release Notes oder im Wiki sind Inhalt deines eigenen Repositorys und
+  laden wie bisher.
+- **Ein Link ist kein Bild.** Ein Klick auf einen Link in einem Kommentar öffnet ihn
+  in deinem Browser, wie jeden Link in der App.
+
+Ein Kommentar kann das Fenster auch nicht blockieren oder abstürzen lassen: Einer mit
+über 32.000 Zeichen, oder einer, der so gebaut ist, dass der Markdown-Renderer
+sekundenlang arbeitet, wird als reiner Text gezeigt. Wie der Rest eines Kommentars
+eingeschränkt ist, steht unter [Pull Requests](pull-requests.md#wie-kommentare-angezeigt-werden).
 
 ## Das AppImage und Pfade, die es überdauern
 
@@ -79,6 +120,8 @@ Eine frische Installation macht **null** Aufrufe an den Schlüsselbund, bis
 tatsächlich etwas gespeichert werden muss.
 
 Solange er aus ist, sagt das Token-Feld unter Integrationen es an — *Nur gespeichert, bis du Gitcito beendest: der System-Schlüsselbund ist aus.* — mit einer Schaltfläche **Aktivieren** daneben. Ihn dort oder hier einzuschalten speichert auch die Tokens, die du in dieser Sitzung schon eingegeben hast; nichts muss neu eingefügt werden.
+
+![Das Token-Feld unter Integrationen bei ausgeschaltetem Schlüsselbund: nur gespeichert, bis du beendest, mit einer Schaltfläche Aktivieren](../../screenshots/token-keychain-notice.webp)
 
 Ein Token, das du bei ausgeschaltetem Schlüsselbund **entfernst**, ist sofort
 weg — es wird mit nichts mehr gesendet —, aber nur **für diese Sitzung**: Der
@@ -125,6 +168,28 @@ wird nicht in seinen gemeinsamen Platz verschoben (jedes Profil liest weiter
 seinen eigenen), und der Tresor speichert weiterhin im einfachen Speicher, weil
 er keinen Modus nur für die Sitzung hat. Installiere oder entsperre einen Schlüsselbund
 und starte Gitcito neu, um neue Tokens wieder dauerhaft zu speichern.
+
+Gitcito verlässt sich nicht auf das Wort des Systems, welchen Speicher es bekommen
+hat. Es zählt den Speicher als einfach, wenn das System ihn so nennt, wenn es ihn gar
+nicht benennen kann, und wenn das, was es verschlüsselt, mit dem festen Passwort
+markiert zurückkommt — egal, was das System gesagt hat. So hält auch ein
+Schlüsselbund, der still zurückfällt, neue Tokens von der Festplatte fern.
+
+Auf einen Schlüsselbund, der nicht mehr antwortet, wird nicht ewig gewartet. Unter
+Linux gilt, sobald der Schlüsselbund in dieser Sitzung einmal geantwortet hat, eine
+Frage, die er 10 Sekunden unbeantwortet lässt, als *kein Schlüsselbund*: Ein Token,
+das du speicherst, bleibt bis zum Beenden, und der Tresor bleibt zu. Die erste Frage
+einer Sitzung — die, die die eigene Passwortabfrage des Schlüsselbunds aufrufen
+kann — und die direkt nach Gitcitos Erklärung bekommen zwei Minuten, damit das Lesen
+eines Dialogs nie abgeschnitten wird. Eine halbe Minute nach so einer
+Zeitüberschreitung bleibt die Antwort *kein Schlüsselbund*, ohne erneut zu fragen;
+danach fragt Gitcito neu. macOS und Windows antworten lokal und werden nie mit einer
+Frist belegt.
+
+Die Grenze gilt für diese eine Frage — *ist ein Schlüsselbund da?* Ein Schlüsselbund,
+der sie beantwortet und dann beim Verschlüsseln oder Entschlüsseln hängt, wird
+weiterhin abgewartet: Das Speichern der Einstellungen und der Tresor bleiben
+beschäftigt, bis er antwortet oder Gitcito neu startet.
 
 ### Wenn die gespeicherten Tokens nicht gelesen werden können
 

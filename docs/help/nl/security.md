@@ -3,8 +3,8 @@ title: Beveiliging & geheimen
 category: Beveiliging
 order: 70
 summary: Maskeren, bewakingen, de sleutelhanger — en wat Gitcito weigert te doen.
-keywords: beveiliging security geheimen secrets maskeren masking sleutelhanger keychain safeStorage tokens beschermde branch groot bestand bewaking privacy onleesbaar back-up onderdelen paden vertalen andere computer nieuwe machine profielen samenvoegen profielen vervangen kiezen wat je exporteert volledige back-up voor het team manifest wachtwoord versleuteling appimage apparmor sandbox probleem melden
-source: 85fbf0864fa5b571b47ecc648dd16cc7324a8d17
+keywords: beveiliging security geheimen secrets maskeren masking sleutelhanger keychain safeStorage tokens beschermde branch groot bestand bewaking privacy onleesbaar back-up onderdelen paden vertalen andere computer nieuwe machine profielen samenvoegen profielen vervangen kiezen wat je exporteert volledige back-up voor het team manifest wachtwoord versleuteling appimage apparmor sandbox probleem melden afbeeldingen in reacties trackingpixel ip-adres afbeeldingen van derden klik om te laden images in comments tracking pixel third-party images click to load
+source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
 ---
 
 # Beveiliging & geheimen
@@ -38,6 +38,47 @@ wat je staget. Een oogschakelaar onthult ze per weergave. `.env.example`,
 | **Buildrommel** | `xcuserdata/`, `DerivedData/` of een `.DS_Store` committen — met dezelfde *Negeren & niet meer trackken* in één klik |
 | **Beschermde branch** | Rechtstreeks naar `main`/`master` committen, of er een force-pushen |
 | **Getrackte geheimen** | Een repository pushen die een geheimenbestand *trackt* — één waarschuwing per sessie |
+
+## Afbeeldingen in reacties
+
+Reacties op pull requests en issues worden door anderen geschreven, en een afbeelding
+erin is een verzoek dat je computer doet aan de site die de auteur koos. Die site
+komt je IP-adres te weten en wanneer je de reactie leest — een trackingpixel heeft
+niets meer nodig dan het recht om te reageren.
+
+Daarom laadt de app uit zichzelf alleen afbeeldingen van de host zelf: op github.com
+zijn bijlagen, `*.githubusercontent.com` (inclusief de proxy die GitHub in zijn eigen
+weergave voor elke externe afbeelding zet) en zijn assets; op elke andere host zijn
+eigen webadres, via https. Elke andere afbeelding toont een plaatshouder met haar
+domein, en wordt pas opgevraagd als je erop klikt — die ene afbeelding, één keer. Het
+verzoek stuurt nooit een `Referer`.
+
+| Instelling | Wat ze doet |
+|---|---|
+| **Afbeeldingen van andere sites in reacties laden** (standaard uit) | Afbeeldingen van elke site laden zonder klik, zoals op de website van de host |
+
+De beperkingen:
+
+- **De host ziet je nog steeds.** Een afbeelding van de host zelf — en op GitHub elke
+  afbeelding via zijn proxy — is een verzoek aan de host, die al weet dat dit account
+  de pull request leest.
+- **`raw.githubusercontent.com` en `gist.githubusercontent.com` laden zonder klik.**
+  Iedereen kan daar een bestand neerzetten, dus de afbeelding is van hen — maar GitHub
+  levert haar, en haar auteur ziet je IP-adres niet en ook niet wanneer je leest.
+- **Privébijlagen van GitHub verlopen.** Hun ondertekende adres houdt een paar minuten
+  stand; **Vernieuwen** op de pagina haalt er een terug die niet meer laadde.
+- **Het voorbeeld van een reactievak** op die pagina’s volgt dezelfde regel: een
+  geplakte link naar een externe afbeelding wordt niet geladen terwijl je schrijft.
+- **Alleen de pull-request- en issuepagina.** Afbeeldingen in een Markdown-bestand van
+  de repository, in releasenotes of in de wiki zijn inhoud van je eigen repository en
+  laden zoals voorheen.
+- **Een link is geen afbeelding.** Op een link in een reactie klikken opent hem in je
+  browser, zoals elke link in de app.
+
+Een reactie kan het venster ook niet vastzetten of laten crashen: een van meer dan
+32.000 tekens, of een die zo is opgebouwd dat de Markdown-renderer er seconden mee
+bezig is, wordt als platte tekst getoond. Hoe de rest van een reactie wordt beperkt,
+staat bij [Pull requests](pull-requests.md#hoe-reacties-worden-getoond).
 
 ## De AppImage en paden die hem overleven
 
@@ -79,6 +120,8 @@ Een verse installatie doet **nul** aanroepen naar de sleutelhanger tot er
 werkelijk iets opgeslagen moet worden.
 
 Zolang hij uit staat, meldt het tokenveld bij Integraties dat — *Alleen bewaard tot je Gitcito afsluit: de OS-keychain staat uit.* — met een knop **Inschakelen** ernaast. Inschakelen, daar of hier, bewaart ook de tokens die je in deze sessie al hebt ingevoerd, dus je hoeft niets opnieuw te plakken.
+
+![Het tokenveld bij Integraties met de sleutelhanger uit: alleen bewaard tot je afsluit, met een knop Inschakelen](../../screenshots/token-keychain-notice.webp)
 
 Een token dat je **verwijdert** terwijl de sleutelhanger uit staat, is meteen
 weg — het wordt nergens meer mee verstuurd —, maar alleen **voor deze sessie**:
@@ -125,6 +168,27 @@ verplaatst (elk profiel blijft zijn eigen lezen), en de kluis slaat nog steeds
 op in de eenvoudige opslag, omdat die geen modus voor alleen de sessie heeft.
 Installeer of ontgrendel een sleutelhanger en start Gitcito opnieuw om nieuwe
 tokens weer op te slaan.
+
+Gitcito gaat niet af op wat het systeem zegt over welke opslag het kreeg. Het telt de
+opslag als basaal als het systeem hem zo noemt, als het hem helemaal niet kan
+benoemen, en als wat het versleutelt terugkomt gemarkeerd met het vaste wachtwoord —
+wat het systeem ook zei. Zo houdt een sleutelhanger die stil terugvalt nieuwe tokens
+toch van de schijf.
+
+Op een sleutelhanger die niet meer antwoordt, wordt niet eeuwig gewacht. Op Linux
+telt, zodra de sleutelhanger in deze sessie één keer heeft geantwoord, een vraag die
+hij 10 seconden onbeantwoord laat als *geen sleutelhanger*: een token dat je opslaat,
+blijft tot je afsluit, en de kluis blijft dicht. De eerste vraag van een sessie — die
+de eigen wachtwoordvraag van de sleutelhanger kan oproepen — en die direct na de
+uitleg van Gitcito krijgen twee minuten, zodat het lezen van een dialoogvenster nooit
+wordt afgekapt. Een halve minuut na zo’n time-out blijft het antwoord *geen
+sleutelhanger* zonder opnieuw te vragen; daarna vraagt Gitcito opnieuw. macOS en
+Windows antwoorden lokaal en krijgen nooit een time-out.
+
+De grens geldt voor die ene vraag — *is er een sleutelhanger?* Op een sleutelhanger
+die haar beantwoordt en daarna blijft hangen bij het versleutelen of ontsleutelen,
+wordt nog steeds gewacht: instellingen opslaan, en de kluis, blijven bezig tot hij
+antwoordt of Gitcito herstart.
 
 ### Als de opgeslagen tokens niet gelezen kunnen worden
 

@@ -3,8 +3,8 @@ title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity oraz komentarze do wiersza jego diffa.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number
-source: 729c0829d4ded79d157edea6c162fa638d7b41e0
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image
+source: a4156cb9fd737c311bc0441169b7a3d933dad274
 ---
 
 # Strona pull requestów
@@ -186,6 +186,15 @@ Gdy go nie ma, wiersz to mówi, zamiast po cichu zawieść, i proponuje:
   [przejściu do gałęzi](#przejście-do-gałęzi-pull-requesta), bez checkoutu. Jeśli commit przyszedł razem z
   nią, otwiera się; jeśli nie (force push go od tego czasu przepisał), mówi to
   powiadomienie.
+- **Pobierz commity pull requesta**, przy pull requeście z **forka**. Jego gałąź jest
+  w innym repozytorium, ale większość hostingów odzwierciedla head pull requesta w
+  repozytorium docelowym pod osobnym refem — `refs/pull/N/head` (GitHub, GitHub
+  Enterprise Server, Forgejo), `refs/merge-requests/N/head` (GitLab),
+  `refs/pull-requests/N/from` (Bitbucket Data Center). Aplikacja pobiera ten jeden
+  ref, bez tagów, do własnego refu, `refs/githuttbr/pr/<remote>/N`, i commit otwiera
+  się jak każdy inny: graf rysuje ten head jako tor bez etykiety. Ponowne pobranie
+  przesuwa ref na head w jego ówczesnym stanie. Jeśli force push od tego czasu
+  pominął commit, mówi to powiadomienie.
 - **Otwórz w przeglądarce**, gdy pobieranie nie wchodzi w grę.
 
 Lista jest wczytywana przy pierwszym otwarciu zakładki, nie razem ze stroną, i
@@ -206,9 +215,19 @@ Czego to nie robi:
   | GitHub | **Pierwsze** 250 (własny limit GitHuba) |
   | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | **250 najnowszych** |
   | Forgejo | Ten koniec, który serwer wymienia najpierw; jego kolejność nie jest udokumentowana |
-- **Gałęzi forka** nie da się stąd pobrać — jest w innym repozytorium —, więc
-  commit obecny tylko w forku proponuje wyłącznie przeglądarkę. **Podejrzyj pull
-  requesta lokalnie…** to sposób, żeby go ściągnąć.
+- **Head forka tam, gdzie hosting go nie odzwierciedla.** Azure DevOps publikuje tylko
+  wynik scalenia, nigdy własny head pull requesta, a bitbucket.org żadnego z nich:
+  tam wiersz proponuje tylko przeglądarkę. Na innym hostingu, który okaże się go nie
+  odzwierciedlać, mówi to fetch. **Podejrzyj pull requesta lokalnie…** sprowadza wynik
+  scalenia z Azure, jeśli tego potrzebujesz.
+- **Pobrane heady zostają.** `refs/githuttbr/pr/…` nie jest gałęzią: nie ma czego
+  wyciągać ani pushować, fetch z prune go nie rusza, a git zachowuje jego commity. Nic
+  go też nie usuwa — ani zamknięcie strony, ani
+  [sprzątanie gałęzi](branch-cleanup.md). Żeby się ich pozbyć, usuń refy ręcznie:
+  `git for-each-ref refs/githuttbr/pr` je wymienia, a `git update-ref -d <ref>` usuwa
+  jeden.
+- **Zdalne repozytorium, którego nazwa zawiera `/`**, nie może być częścią nazwy tego
+  refu, więc fetch jest tam odrzucany.
 - **Usunięta gałąź.** Scalony pull request często zabrał ze sobą swoją gałąź: fetch
   to mówi. bitbucket.org nie wymienia żadnych commitów, gdy gałęzi źródłowej już nie
   ma.
@@ -326,6 +345,76 @@ pokazuje swoje narzędzia, gdy w nie klikniesz, i wysyła przez ⌘/Ctrl+Enter, 
 Enter zaczyna teraz nowy wiersz. [Pisanie komentarzy](writing-comments.md) opisuje
 szczegóły i ograniczenia.
 
+## Jak pokazywane są komentarze
+
+Ludzie piszą komentarze w Markdownie, więc komentarz pokazany jako zwykły tekst jest
+pełen `**`, `- [ ]` i ogrodzeń kodu. Opis, rozmowa i wątki recenzji (w zakładkach
+Rozmowa i Pliki) są rysowane jako Markdown: nagłówki, listy i listy zadań, tabele,
+cytaty, bloki kodu podświetlane w języku, który podaje ogrodzenie, linki i obrazy.
+Strona issue rysuje swój tekst tak samo. `#123`, `AB#123`, `!123` i `@user` w tekście
+nadal stają się linkami, z [kartą](#czego-dotyczy-123-lub-ab123) tam, gdzie ją miały.
+
+![Wyrenderowany komentarz: tabela, obraz z innej witryny wstrzymany za swoim zastępnikiem i podświetlony blok kodu](../../screenshots/pr-rendered-comment.webp)
+
+Skąd pochodzi rysunek:
+
+| Hosting | Renderuje |
+|---|---|
+| GitHub, GitHub Enterprise Server | Sam GitHub (`body_html`): wzmianki i odwołania są linkowane jak na stronie, obrazy idą przez proxy obrazów GitHuba, a prywatne załączniki niosą swój podpisany adres |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | Aplikacja, z Markdownu komentarza. Względny link wskazuje do repozytorium; na GitLabie `/uploads/…` wskazuje do projektu, tak jak robi to GitLab |
+
+Komentarz to treść innych ludzi, więc to, co może zawierać, jest wąskie, i węższe niż
+dla twoich własnych plików: jawna lista tagów, linki i obrazy tylko przez `https:`,
+`http:` lub `mailto:`, bez skryptów, ramek, formularzy, SVG ani stylów inline, i linki,
+które nigdy nie otwierają się w aplikacji (idą do przeglądarki). Pole wyboru na liście
+zadań jest pokazane, ale nie da się go kliknąć: zaznaczenie go tutaj niczego by nie
+zmieniło na hostingu.
+
+**Obrazy z innych witryn czekają na kliknięcie.** Wczytanie obrazu to zapytanie,
+które witryna za nim może obserwować, z twoim adresem IP i chwilą, w której czytasz
+komentarz — każdy, kto może komentować, może tam umieścić piksel śledzący. Dlatego
+same z siebie wczytują się tylko obrazy z samego hostingu: na github.com jego
+załączniki, `*.githubusercontent.com` (łącznie z jego proxy obrazów) i jego zasoby; na
+każdym innym hostingu jego własny adres. Każdy inny obraz pokazuje *Obraz z
+example.net — kliknij, aby wczytać*, a kliknięcie wczytuje ten jeden obraz.
+**Ustawienia → Bezpieczeństwo → Wczytuj obrazy z innych witryn w komentarzach**
+wyłącza to; zob. [Bezpieczeństwo](security.md#obrazy-w-komentarzach).
+
+**Podgląd pokazuje to, co zostanie opublikowane.** Na tej stronie i na stronie issue
+zakładka **Podgląd** każdego pola komentarza rysuje tekst tak samo: ten sam profil, te
+same złamania wierszy, te same wstrzymane obrazy — wklejony link do zewnętrznego obrazu
+nie wczytuje go, gdy piszesz. Okna nowego pull requesta i nowego issue zachowują
+zwykły podgląd Markdownu aplikacji.
+
+**Zbyt długie lub zbyt zawiłe pokazuje się jako tekst.** Markdown jest renderowany w
+oknie aplikacji, a niektóre teksty kosztują przy renderowaniu dużo więcej, niż
+sugeruje ich rozmiar. Komentarz dłuższy niż **32 000 znaków** albo zbudowany tak, by
+zablokować renderer (tysiące niesparowanych `_` lub `*` w jednym akapicie albo ponad 32
+poziomy `>` lub znaczników list w jednym wierszu), jest pokazywany jako zwykły tekst z
+linkami, pod *Długi komentarz pokazany jako zwykły tekst.* albo *Komentarz pokazany
+jako zwykły tekst: zbyt złożony, by go tu wyrenderować.* Komentarz, którego mimo to
+nie da się wyrenderować, sam wraca do tego samego: reszta strony pozostaje nietknięta.
+
+Czego to nie robi:
+
+- **Edycja pokazuje tekst tak, jak go napisano.** **Edytuj** nadal otwiera Markdown,
+  a zapisaną edycję rysuje aplikacja, dopóki strona nie przeczyta ponownie pull
+  requesta (na GitHubie potem rysuje ją GitHub).
+- **Prywatne załączniki GitHuba wygasają.** GitHub podpisuje adres prywatnego obrazu
+  na kilka minut; ten, który przestaje się wczytywać po dłuższym otwarciu strony,
+  wraca po **Odśwież**.
+- **Względny obraz na GitHubie**, który aplikacja rysuje sama (odpowiedź wysłana z
+  aplikacji, zanim strona ją ponownie przeczyta), jest szukany pod adresem repozytorium
+  na github.com, co nie musi być miejscem, w którym umieściłby go GitHub.
+- **Filmy** w komentarzu GitHuba pokazują się jako link do pliku, a nie odtwarzacz.
+- **Rozszerzeń dostępnych tylko w GitHubie**, gdy aplikacja rysuje sama (na innych
+  hostingach), nie ma: bez skrótów emoji, bez diagramów Mermaid, bez stylu dla
+  ostrzeżeń, a wzory zostają tekstem.
+- **Kod jest podświetlany tylko wtedy, gdy ogrodzenie podaje język.** Zgadywanie
+  języka oznaczałoby puszczanie każdej gramatyki przez każdy blok strony.
+- **Opisy commitów** w zakładce Commity zostają zwykłym tekstem: git nie renderuje
+  Markdownu, a hostingi też nie.
+
 ## Edytowanie i usuwanie twoich komentarzy
 
 Literówka w już wysłanym komentarzu albo uwaga, która przestała być aktualna,
@@ -339,9 +428,12 @@ dla swoich komentarzy na GitHubie i Forgejo.
 O tym, co jest „twoje”, decyduje sama strona, która przy każdym wczytaniu pyta
 hosting, jako kto logują się wywołania tego repozytorium (jego powiązany profil, a
 nie akurat aktywny). Większość hostingów podaje autora po loginie, porównywanym bez
-rozróżniania wielkości liter. Azure DevOps podaje autorów po nazwie wyświetlanej,
-którą mogą dzielić dwie osoby, więc tam id autora komentarza musi zgadzać się z id
-konta; gdy brakuje któregoś z nich, żaden komentarz nie pokazuje akcji. Gdy
+rozróżniania wielkości liter. Azure DevOps podaje autorów po nazwie wyświetlanej, którą mogą dzielić dwie osoby,
+więc tam nigdy nie porównuje nazw: komentarz jest twój, gdy id jego autora zgadza się
+z id konta, **albo** unikalna nazwa autora (nazwa konta, zwykle adres e-mail) zgadza
+się z nazwą konta, bez rozróżniania wielkości liter. Każde z nich należy do jednej
+osoby; drugie obejmuje id autora, które nie jest tym, które podaje połączenie. Gdy
+nie da się porównać żadnego z nich, żaden komentarz nie pokazuje akcji. Gdy
 aplikacja nie potrafi ustalić, kim jesteś (token bez zakresu użytkownika albo
 hosting nie odpowiedział), też żaden komentarz ich nie pokazuje; **Odśwież** pyta
 ponownie. Decyzja i tak należy do hostingu: konto, któremu nie pozwala zmienić
@@ -366,7 +458,7 @@ hosting, i to też jest powiedziane:
 
 | Hosting | Pierwszy komentarz wątku z odpowiedziami |
 |---|---|
-| GitHub | Odpowiedzi powinny zostać; dokumentacja GitHuba tego nie mówi. Odpowiadanie w tym wątku z aplikacji nie jest już możliwe: jego odpowiedzi wskazują na komentarz, którego nie ma, a API nie przyjmuje odpowiedzi na odpowiedź. Wątek proponuje wtedy **Odpowiedz w GitHub** |
+| GitHub | Odpowiedzi powinny zostać; dokumentacja GitHuba tego nie mówi. Wątek zachowuje pole odpowiedzi: gdy nie ma już pierwszego komentarza, odpowiedź trafia do samego wątku przez API GraphQL GitHuba, odnalezionego dzięki odpowiedzi, która wciąż w nim jest. Jeśli to się nie uda (stary Enterprise Server, token odrzucany przez GraphQL, wątek, w którym według GitHuba to konto nie może odpowiadać), wątek proponuje zamiast tego **Odpowiedz w GitHub**. Jeśli masz na GitHubie recenzję w toku, GitHub może dołączyć do niej odpowiedź: powiadomienie wtedy to mówi, i nikt nie widzi odpowiedzi, dopóki nie wyślesz tam tej recenzji |
 | GitLab | Znika tylko ta notatka; wątek i jego odpowiedzi zostają |
 | Azure DevOps | Powinien zostać oznaczony jako usunięty i ukryty, z zachowaniem wątku i odpowiedzi; dokumentacja Azure tego nie mówi |
 | Bitbucket Data Center | Odmowa: Data Center nie usuwa komentarza, który ma odpowiedzi. Najpierw usuń odpowiedzi albo zamiast tego go edytuj |
@@ -420,7 +512,7 @@ szaro. Na Azure DevOps `!123` prowadzi do tego pull requesta, bez karty.
 | Odwołanie | Hosting | Czytane z |
 |---|---|---|
 | `AB#123`, oraz `#123` w repozytorium Azure | Azure DevOps | Work itemy, do 200 w jednym zapytaniu |
-| `#123` | GitHub, GitHub Enterprise Server | Issues (które odpowiadają też za pull requesty), jedno zapytanie na każde, po jednym naraz |
+| `#123` | GitHub, GitHub Enterprise Server | Issues i pull requesty, do 50 w jednym zapytaniu GraphQL; jedno zapytanie REST na każde, gdy GraphQL zawiedzie |
 | `#123` / `!123` | GitLab | Issues / merge requesty, jedno zapytanie na rodzaj |
 | `#123` | Forgejo | Issues (także pull requesty), jedno zapytanie na każde, po dwa naraz |
 
@@ -437,11 +529,18 @@ inny profil może widzieć inne elementy.
 
 Ile to kosztuje:
 
-- **GitHub i Forgejo** nie potrafią czytać kilku issues w jednym zapytaniu, więc
-  każda karta kosztuje jedno. Najechanie prosi o najwyżej **10** — to, na którym
-  jesteś, i sąsiednie — a na GitHubie jedno po drugim, jak GitHub wymaga od
-  aplikacji. Pierwsza odpowiedź mówiąca *zwolnij* (429 albo 403) zatrzymuje resztę, a
-  o te odwołania nie pyta się ponownie przez pięć minut.
+- **GitHub** czyta do **50** w jednym zapytaniu, przez swoje API GraphQL — to, na
+  którym jesteś, i najbliższych sąsiadów. Gdy GraphQL zawiedzie z innego powodu niż
+  limit zapytań (stary Enterprise Server, token, który odrzuca), aplikacja przechodzi
+  na API REST, które czyta jedno issue na zapytanie: wtedy pyta tylko o pierwsze
+  **10**, jedno po drugim, jak GitHub wymaga od aplikacji; reszta zostaje nieznana, a
+  późniejsze najechanie o nią zapyta.
+- **Forgejo** nie potrafi czytać kilku issues w jednym zapytaniu, więc każda karta
+  kosztuje jedno: najechanie prosi o najwyżej **10**, po dwa naraz.
+- Na GitHubie i Forgejo pierwsza odpowiedź mówiąca *zwolnij* (429, 403, własny błąd
+  limitu GraphQL, limit wtórny albo odpowiedź, która zużyła ostatnie zapytanie limitu)
+  zatrzymuje resztę — GitHub nie przechodzi wtedy na REST — a o te odwołania nie pyta
+  się ponownie przez pięć minut.
 - **Azure DevOps** czyta do 200 work itemów w jednym zapytaniu, a GitLab jedno
   zapytanie na rodzaj, więc tam cała strona idzie naraz.
 
