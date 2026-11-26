@@ -105,9 +105,9 @@ export function PrCommitsSection({
 
   const groups = useMemo(() => groupCommitsByDay(list?.commits ?? []), [list])
 
-  // On Azure every `AB#12` in a subject is read up front — one batch request —
-  // so its title can sit beside it. Elsewhere a title costs a request per
-  // reference, so it waits for a hover on the commit's body.
+  // On Azure every work item in a subject (`AB#12`, or `#12`: the same item there) is read
+  // up front, in one batch request, so its title can sit beside it. Elsewhere a title costs a
+  // request per reference, so it waits for a hover on the commit's body.
   const refHost = useReferenceHost()
   const azure = !!refHost?.azure
   const subjectWorkItems = useMemo<ReferenceQuery[]>(
@@ -234,7 +234,7 @@ function PrCommitRow({
   /** The repository's web address, for the body's `#12` links. */
   web: string | undefined
   linkOptions: AutolinkOptions
-  /** Show an `AB#12`'s title beside it in the subject (Azure: read in one batch). */
+  /** Show a work item's title beside it in the subject (Azure: read in one batch). */
   titlesInline: boolean
   now: number
   /** Null while it is not known yet. */
@@ -322,7 +322,7 @@ function PrCommitRow({
   )
 }
 
-/** A commit subject with each `AB#12`'s title, muted, beside it once known. */
+/** A commit subject with each work item's title, muted, beside it once known. */
 function SubjectWithTitles({ subject }: { subject: string }): React.JSX.Element {
   return (
     <>

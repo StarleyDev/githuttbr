@@ -145,10 +145,12 @@ import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSiz
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import {
-  extractReferences,
   getReferenceHost,
+  orderByNearness,
   pickReferenceBatch,
   ReferenceCache,
+  REFERENCE_RATE_LIMITED_TTL_MS,
+  REFERENCE_REQUEST_MAX,
   REFERENCE_TTL_MS,
   REFERENCE_UNAVAILABLE_TTL_MS,
   splitWorkItemMentions,
@@ -1200,28 +1202,47 @@ describe('autolink', () => {
   })
 })
 
-describe('references: extraction', () => {
-  const plain = { azure: false, gitlab: false }
-  it('finds `#12` and `AB#12` once each, in order, and never a bare `#` or `#0`', () => {
-    expect(extractReferences('fix #12, AB#34, #12 again, # and #0', plain)).toEqual([
-      { sigil: '#', id: 12 },
-      { sigil: 'AB#', id: 34 }
-    ])
+describe('references: what counts as one', () => {
+  const texts = (out: unknown): string[] =>
+    (Array.isArray(out) ? out : [out])
+      .filter((n): n is { props: { children: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+      .map((n) => n.props.children)
+  const gh = 'https://github.com/o/r'
+  it('links a #12 standing on its own, in punctuation too', () => {
+    expect(texts(autolink('fix #12, (#13) and #14.', gh))).toEqual(['#12', '#13', '#14'])
   })
-  it('reads an Azure `#12` as the work item `AB#12`', () => {
-    expect(extractReferences('AB#12 and #12 and #13', { azure: true, gitlab: false })).toEqual([
-      { sigil: 'AB#', id: 12 },
-      { sigil: 'AB#', id: 13 }
-    ])
+  it('leaves another repository’s org/repo#12 alone', () => {
+    expect(texts(autolink('see org/repo#12', gh))).toEqual([])
   })
-  it('counts `!12` only on GitLab, and only when it starts a word', () => {
-    expect(extractReferences('see !3, wow!4', { azure: false, gitlab: true })).toEqual([{ sigil: '!', id: 3 }])
-    expect(extractReferences('see !3', plain)).toEqual([])
+  it('leaves HTML entities, hex colours and glued numbers alone', () => {
+    expect(texts(autolink('it&#39;s #123abc and #12ab, #fff, x#12, #12-x', gh))).toEqual([])
   })
-  it('splits a subject around its explicit `AB#` mentions only', () => {
-    expect(splitWorkItemMentions('AB#12 fix rounding (#3)')).toEqual([
+  it('leaves URL fragments alone', () => {
+    expect(texts(autolink('https://github.com/o/r/pull/3#issuecomment-123 and page#12', gh))).toEqual([])
+  })
+  it('links AB#12 only as a word of its own', () => {
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    expect(texts(autolink('AB#12, xAB#13, AB#14x', azure))).toEqual(['AB#12'])
+  })
+  it('links an Azure `!12` to the pull request, with no card', () => {
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    const seen: string[] = []
+    const out = autolink('see !12', azure, undefined, {
+      renderReference: (q) => {
+        seen.push(`${q.sigil}${q.id}`)
+        return null
+      }
+    })
+    expect(seen).toEqual([])
+    const hrefs = (Array.isArray(out) ? out : [out]).filter((n) => n && typeof n === 'object') as Array<{ props: { href: string } }>
+    expect(hrefs.map((n) => n.props.href)).toEqual([`${azure}/pullrequest/12`])
+  })
+  it('splits an Azure subject around AB#12 and #12, with the same boundaries', () => {
+    expect(splitWorkItemMentions('AB#12 fix rounding (#3), org/repo#4, &#39;')).toEqual([
       { text: 'AB#12', id: 12 },
-      { text: ' fix rounding (#3)' }
+      { text: ' fix rounding (' },
+      { text: '#3', id: 3 },
+      { text: '), org/repo#4, &#39;' }
     ])
     expect(splitWorkItemMentions('no refs')).toEqual([{ text: 'no refs' }])
   })
@@ -1237,7 +1258,7 @@ describe('references: extraction', () => {
 
 describe('references: cache and batching', () => {
   const ok = (id: number): ReferenceSummary => ({ sigil: '#', id, available: true, kind: 'issue', title: `Issue ${id}`, state: 'open' })
-  it('keeps an answer per repository and reference until its TTL runs out', () => {
+  it('keeps an answer per scope and reference; past its TTL it is stale, not gone', () => {
     let now = 1_000
     const cache = new ReferenceCache(() => now)
     cache.saveSummaries('repo-a', [ok(1)])
@@ -1245,18 +1266,23 @@ describe('references: cache and batching', () => {
     expect(cache.getSummary('repo-b', { sigil: '#', id: 1 })).toBeUndefined()
     expect(cache.getSummary('repo-a', { sigil: '!', id: 1 })).toBeUndefined()
     now += REFERENCE_TTL_MS - 1
-    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })).toBeDefined()
+    expect(cache.isFresh('repo-a', { sigil: '#', id: 1 })).toBe(true)
     now += 1
-    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })).toBeUndefined()
+    expect(cache.isFresh('repo-a', { sigil: '#', id: 1 })).toBe(false)
+    // Still served: an inline title does not vanish while the re-read is on its way.
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })?.title).toBe('Issue 1')
   })
-  it('forgets "unavailable" sooner, so a fixed permission shows', () => {
+  it('asks again sooner after "not found", and later after "rate limited"', () => {
     let now = 0
     const cache = new ReferenceCache(() => now)
-    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 9 }]))
-    expect(cache.getSummary('r', { sigil: '#', id: 9 })?.available).toBe(false)
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 9 }], 'notFound'))
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 8 }], 'rateLimited'))
     now = REFERENCE_UNAVAILABLE_TTL_MS
-    expect(cache.getSummary('r', { sigil: '#', id: 9 })).toBeUndefined()
-    expect(REFERENCE_UNAVAILABLE_TTL_MS).toBeLessThan(REFERENCE_TTL_MS)
+    expect(cache.isFresh('r', { sigil: '#', id: 9 })).toBe(false)
+    expect(cache.isFresh('r', { sigil: '#', id: 8 })).toBe(true)
+    now = REFERENCE_RATE_LIMITED_TTL_MS
+    expect(cache.isFresh('r', { sigil: '#', id: 8 })).toBe(false)
+    expect(REFERENCE_RATE_LIMITED_TTL_MS).toBeGreaterThan(REFERENCE_UNAVAILABLE_TTL_MS)
   })
   it('batches the hovered reference first, then the unknown ones on screen, up to the cap', () => {
     const known = new Set(['#2'])
@@ -1265,6 +1291,12 @@ describe('references: cache and batching', () => {
     expect(pickReferenceBatch({ sigil: '#', id: 4 }, visible, isKnown).map((q) => q.id)).toEqual([4, 1, 3])
     expect(pickReferenceBatch(null, visible, isKnown, 2).map((q) => q.id)).toEqual([1, 3])
     expect(pickReferenceBatch({ sigil: '#', id: 2 }, [], isKnown)).toEqual([])
+    expect(REFERENCE_REQUEST_MAX).toBe(10)
+  })
+  it('orders the neighbours of the hovered one nearest first', () => {
+    expect(orderByNearness(['a', 'b', 'c', 'd', 'e'], 2)).toEqual(['d', 'b', 'e', 'a'])
+    expect(orderByNearness(['a', 'b', 'c'], 0)).toEqual(['b', 'c'])
+    expect(orderByNearness(['a', 'b'], -1)).toEqual(['a', 'b'])
   })
 })
 

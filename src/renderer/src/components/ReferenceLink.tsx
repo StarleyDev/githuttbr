@@ -9,8 +9,10 @@ import type { AutolinkOptions, ReferenceLinkParts } from '../lib/autolink'
 import {
   AZURE_REQUEST_MAX,
   getReferenceKey,
+  orderByNearness,
   pickReferenceBatch,
   REFERENCE_REQUEST_MAX,
+  REFERENCE_TTL_MS,
   ReferenceCache,
   unavailableSummaries,
   type ReferenceHost
@@ -30,7 +32,11 @@ import {
 interface Scope {
   repoPath: string
   remoteUrl: string
-  /** Cache key for the repository: path and remote. */
+  /**
+   * Cache key: path, remote and the profile main reads them as (the one the
+   * repository is bound to, else the active one). Another profile may see
+   * other items, so a switch or a rebind starts from a cache of its own.
+   */
   key: string
   host: ReferenceHost
 }
@@ -53,9 +59,13 @@ export function ReferenceScope({
   const on = !!host
   const azure = !!host?.azure
   const gitlab = !!host?.gitlab
+  const profileId = useSettingsStore((s) => s.settings.repoProfiles[repoPath] ?? s.settings.activeProfileId)
   const value = useMemo(
-    () => (remoteUrl && on ? { repoPath, remoteUrl, key: `${repoPath}\n${remoteUrl}`, host: { azure, gitlab } } : null),
-    [repoPath, remoteUrl, on, azure, gitlab]
+    () =>
+      remoteUrl && on
+        ? { repoPath, remoteUrl, key: `${repoPath}\n${remoteUrl}\n${profileId}`, host: { azure, gitlab } }
+        : null,
+    [repoPath, remoteUrl, profileId, on, azure, gitlab]
   )
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>
 }
@@ -92,15 +102,19 @@ function registerVisible(scope: Scope, q: ReferenceQuery): () => void {
 }
 
 /**
- * Ask the host about `first` and every other reference on screen it has no
- * fresh answer for — one request. A failure caches "unavailable" briefly
- * rather than asking again on every hover.
+ * Ask the host about `first` and the other references on screen it has no
+ * fresh answer for — one request, nearest neighbours first. A failure caches
+ * "could not read" (briefly; a throttled host longer) rather than asking again
+ * on every hover.
  */
 function requestSummaries(scope: Scope, first: ReferenceQuery | null, also: readonly ReferenceQuery[] = []): void {
-  const onScreen = [...also, ...[...(visible.get(scope.key)?.values() ?? [])].map((e) => e.q)]
+  const all = [...(visible.get(scope.key)?.values() ?? [])].map((e) => e.q)
+  const at = first ? all.findIndex((q) => getReferenceKey(q) === getReferenceKey(first)) : -1
+  const onScreen = [...also, ...orderByNearness(all, at)]
   // Azure reads up to 200 work items in one request; other hosts pay one request per reference.
   const max = scope.host.azure ? AZURE_REQUEST_MAX : REFERENCE_REQUEST_MAX
-  const batch = pickReferenceBatch(first, onScreen, (q) => !!cache.getSummary(scope.key, q) || inflight.has(flightKey(scope, q)), max)
+  const isKnown = (q: ReferenceQuery): boolean => cache.isFresh(scope.key, q) || inflight.has(flightKey(scope, q))
+  const batch = pickReferenceBatch(first, onScreen, isKnown, max)
   if (!batch.length) return
   for (const q of batch) inflight.add(flightKey(scope, q))
   notify()
@@ -123,12 +137,19 @@ function requestSummaries(scope: Scope, first: ReferenceQuery | null, also: read
     })
 }
 
-/** Read these references now, in one request — for a list that shows titles inline. */
+/**
+ * Read these references now, in one request — for a list that shows titles
+ * inline — and again each time the answers go stale while the list is open.
+ * A stale title stays on screen until the new one arrives.
+ */
 export function usePrefetchReferences(queries: readonly ReferenceQuery[]): void {
   const scope = useContext(ScopeContext)
   const key = queries.map(getReferenceKey).join(',')
   useEffect(() => {
-    if (scope && queries.length) requestSummaries(scope, null, queries)
+    if (!scope || !queries.length) return
+    requestSummaries(scope, null, queries)
+    const tick = setInterval(() => requestSummaries(scope, null, queries), REFERENCE_TTL_MS)
+    return () => clearInterval(tick)
     // `key` stands for the list's contents: a new array with the same ids asks nothing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, key])
@@ -154,6 +175,7 @@ function useReferenceSummary(scope: Scope | null, q: ReferenceQuery): { summary?
 const OPEN_DELAY_MS = 300
 const CLOSE_DELAY_MS = 150
 const CARD_WIDTH = 320
+const GAP = 6
 
 // An issue's state and a PR's are separate keys: several languages inflect them differently.
 const PR_STATE_KEY: Record<NonNullable<ReferenceSummary['state']>, TranslationKey> = {
@@ -171,6 +193,12 @@ const KIND_KEY: Record<NonNullable<ReferenceSummary['kind']>, TranslationKey> = 
   pr: 'ref.kindPr',
   mr: 'ref.kindMr',
   workItem: 'ref.kindWorkItem'
+}
+
+const REASON_KEY: Record<NonNullable<ReferenceSummary['reason']>, TranslationKey> = {
+  notFound: 'ref.unavailable',
+  rateLimited: 'ref.rateLimited',
+  unreachable: 'ref.unreachable'
 }
 
 function KindIcon({ s }: { s: ReferenceSummary }): React.JSX.Element {
@@ -196,7 +224,7 @@ function ReferenceCardBody({ label, summary, loading }: { label: string; summary
   if (!summary.available) {
     return (
       <span className="ref-card-row">
-        <span className="ref-card-num">{label}</span> <span className="ref-card-muted">{t('ref.unavailable')}</span>
+        <span className="ref-card-num">{label}</span> <span className="ref-card-muted">{t(REASON_KEY[summary.reason ?? 'unreachable'])}</span>
       </span>
     )
   }
@@ -235,6 +263,7 @@ const ReferenceLink = memo(function ReferenceLink({
   const q = useMemo(() => ({ sigil, id: refId }), [sigil, refId])
   const id = useId()
   const anchor = useRef<HTMLAnchorElement>(null)
+  const card = useRef<HTMLSpanElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
@@ -244,15 +273,39 @@ const ReferenceLink = memo(function ReferenceLink({
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current)
   }, [])
-  // Placed from the link's box when opened; a scroll moves the link, so it closes the card.
+  // Placed from the link's box: below it, or above when the bottom edge is too
+  // close; placed again when the card's content changes, and on scroll or resize.
   useLayoutEffect(() => {
-    if (!open || !anchor.current) return
-    const r = anchor.current.getBoundingClientRect()
-    const left = Math.max(8, Math.min(r.left, window.innerWidth - CARD_WIDTH - 8))
-    setPos({ left, top: r.bottom + 6 })
-    const close = (): void => setOpen(false)
-    window.addEventListener('scroll', close, true)
-    return () => window.removeEventListener('scroll', close, true)
+    if (!open) return
+    const place = (): void => {
+      if (!anchor.current) return
+      const r = anchor.current.getBoundingClientRect()
+      const h = card.current?.offsetHeight ?? 0
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - CARD_WIDTH - 8))
+      const below = r.bottom + GAP
+      const top = below + h > window.innerHeight - 8 && r.top - GAP - h >= 8 ? r.top - GAP - h : below
+      setPos((p) => (p && p.left === left && p.top === top ? p : { left, top }))
+    }
+    place()
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [open, summary, loading, pos === null])
+  // Escape dismisses it wherever the focus is — a card opened by the pointer
+  // too, without moving the pointer away (WCAG 1.4.13).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      if (timer.current) clearTimeout(timer.current)
+      setOpen(false)
+    }
+    document.addEventListener('keydown', onKey, true)
+    return () => document.removeEventListener('keydown', onKey, true)
   }, [open])
 
   if (!scope) return <a href={href}>{text}</a>
@@ -276,25 +329,21 @@ const ReferenceLink = memo(function ReferenceLink({
         aria-describedby={open ? id : undefined}
         onMouseEnter={() => later(show, OPEN_DELAY_MS)}
         onMouseLeave={() => later(hide, CLOSE_DELAY_MS)}
-        onFocus={show}
+        // Keyboard focus only: a click focuses the link too, and must not flash the card.
+        onFocus={(e) => e.currentTarget.matches(':focus-visible') && show()}
         onBlur={hide}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape' && open) {
-            e.stopPropagation()
-            hide()
-          }
-        }}
       >
         {text}
       </a>
       {open &&
-        pos &&
         createPortal(
           <span
+            ref={card}
             id={id}
             role="tooltip"
             className="ref-card"
-            style={{ left: pos.left, top: pos.top, width: CARD_WIDTH }}
+            // Measured hidden on the first frame, then placed.
+            style={pos ? { left: pos.left, top: pos.top, width: CARD_WIDTH } : { left: 0, top: 0, width: CARD_WIDTH, visibility: 'hidden' }}
             // The pointer may cross onto the card without it closing under it.
             onMouseEnter={() => timer.current && clearTimeout(timer.current)}
             onMouseLeave={() => later(hide, CLOSE_DELAY_MS)}

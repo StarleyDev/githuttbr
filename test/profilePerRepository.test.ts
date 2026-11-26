@@ -267,8 +267,8 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
     const refs = [{ sigil: '#', id: 5 }]
     const ask = (repo: string, remote: string): Promise<unknown> =>
       Promise.resolve(handlers.get('hosting:getReferenceSummaries')!({}, repo, remote, { github: WORK.com }, refs))
-    expect(await ask(BOUND, `${BBS}/scm/proj/app.git`)).toEqual([{ sigil: '#', id: 5, available: false }])
-    expect(await ask(BOUND_TO_EMPTY, `${GHES}/team/app.git`)).toEqual([{ sigil: '#', id: 5, available: false }])
+    expect(await ask(BOUND, `${BBS}/scm/proj/app.git`)).toEqual([{ sigil: '#', id: 5, available: false, reason: 'unreachable' }])
+    expect(await ask(BOUND_TO_EMPTY, `${GHES}/team/app.git`)).toEqual([{ sigil: '#', id: 5, available: false, reason: 'unreachable' }])
     expect(calls).toEqual([])
   })
 

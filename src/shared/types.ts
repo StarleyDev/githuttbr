@@ -930,6 +930,12 @@ export interface ReferenceQuery {
  */
 export interface ReferenceSummary extends ReferenceQuery {
   available: boolean
+  /**
+   * Why it is not available: the host has no such item or will not show it to
+   * this account (`notFound`), the host is throttling (`rateLimited`), or the
+   * host was not asked or not reached — no account, no API, offline (`unreachable`).
+   */
+  reason?: 'notFound' | 'rateLimited' | 'unreachable'
   kind?: 'issue' | 'pr' | 'mr' | 'workItem'
   title?: string
   /** GitHub, GitLab and Forgejo, normalized. */

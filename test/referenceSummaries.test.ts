@@ -27,7 +27,7 @@ function fakeHost(answer: (url: URL) => unknown | { status: number }): { get: Js
   }
   const get: JsonGet = async <T>(url: string): Promise<T> => {
     const res = await fetchFake(url)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status })
     return (await res.json()) as T
   }
   return { get, urls }
@@ -85,7 +85,7 @@ describe('reference summaries: Azure Boards', () => {
         stateName: 'Active',
         workItemType: 'User Story'
       },
-      { sigil: 'AB#', id: 99, available: false }
+      { sigil: 'AB#', id: 99, available: false, reason: 'notFound' }
     ])
   })
 
@@ -113,7 +113,7 @@ describe('reference summaries: Azure Boards', () => {
   it('answers "unavailable" when the token may not read work items at all', async () => {
     const host = fakeHost(() => ({ status: 401 }))
     const out = await azureReferenceSummaries(host.get, 'example-org', qs(['AB#', 1]))
-    expect(out).toEqual([{ sigil: 'AB#', id: 1, available: false }])
+    expect(out).toEqual([{ sigil: 'AB#', id: 1, available: false, reason: 'notFound' }])
   })
 })
 
@@ -137,9 +137,41 @@ describe('reference summaries: GitHub', () => {
       { sigil: '#', id: 1, available: true, kind: 'issue', title: 'Crash on empty repo', state: 'open' },
       { sigil: '#', id: 2, available: true, kind: 'pr', title: 'Add range-diff', state: 'merged' },
       { sigil: '#', id: 3, available: true, kind: 'pr', title: 'Abandoned idea', state: 'closed' },
-      { sigil: '#', id: 4, available: false },
-      { sigil: '#', id: 5, available: false }
+      { sigil: '#', id: 4, available: false, reason: 'notFound' },
+      { sigil: '#', id: 5, available: false, reason: 'notFound' }
     ])
+  })
+
+  it('asks one at a time, and stops at the first 429: the rest are rate limited, not asked', async () => {
+    let inFlight = 0
+    let most = 0
+    const urls: string[] = []
+    const get: JsonGet = async <T>(url: string): Promise<T> => {
+      urls.push(url)
+      inFlight++
+      most = Math.max(most, inFlight)
+      await new Promise((r) => setTimeout(r, 2))
+      inFlight--
+      if (url.endsWith('/issues/2')) throw Object.assign(new Error('slow down'), { status: 429 })
+      return { number: 1, title: 'One', state: 'open' } as T
+    }
+    const out = await githubReferenceSummaries(get, API, qs(['#', 1], ['#', 2], ['#', 3], ['#', 4]))
+    expect(most).toBe(1)
+    expect(urls.map((u) => u.split('/').pop())).toEqual(['1', '2'])
+    expect(out.map((s) => [s.id, s.available, s.reason])).toEqual([
+      [1, true, undefined],
+      [2, false, 'rateLimited'],
+      [3, false, 'rateLimited'],
+      [4, false, 'rateLimited']
+    ])
+  })
+
+  it('reads GitHub’s throttling 403 (rateLimited flag) as rate limited, and stops', async () => {
+    const get: JsonGet = async () => {
+      throw Object.assign(new Error('rate limit'), { status: 403, rateLimited: true })
+    }
+    const out = await githubReferenceSummaries(get, API, qs(['#', 1], ['#', 2]))
+    expect(out.map((s) => s.reason)).toEqual(['rateLimited', 'rateLimited'])
   })
 
   it('asks nothing for a sigil GitHub does not have', async () => {
@@ -167,11 +199,11 @@ describe('reference summaries: GitLab', () => {
     const mrs = host.urls.find((u) => u.pathname.endsWith('/merge_requests'))!
     expect(issues.pathname).toBe('/api/v4/projects/team%2Fapp/issues')
     expect(issues.searchParams.getAll('iids[]')).toEqual(['7', '8', '9'])
-    expect(issues.searchParams.get('state')).toBe('all')
+    expect(issues.searchParams.get('state')).toBeNull()
     expect(mrs.searchParams.getAll('iids[]')).toEqual(['3'])
     expect(out).toEqual([
       { sigil: '#', id: 7, available: true, kind: 'issue', title: 'Issue 7', state: 'closed' },
-      { sigil: '#', id: 8, available: false },
+      { sigil: '#', id: 8, available: false, reason: 'notFound' },
       { sigil: '!', id: 3, available: true, kind: 'mr', title: 'MR 3', state: 'merged' },
       { sigil: '#', id: 9, available: true, kind: 'issue', title: 'Issue 9', state: 'open' }
     ])
@@ -187,7 +219,33 @@ describe('reference summaries: GitLab', () => {
     const issuePages = host.urls.filter((u) => u.pathname.endsWith('/issues'))
     expect(issuePages.map((u) => u.searchParams.getAll('iids[]').length)).toEqual([100, 20])
     expect(out.filter((s) => s.sigil === '#').every((s) => s.available)).toBe(true)
-    expect(out.find((s) => s.sigil === '!')).toEqual({ sigil: '!', id: 1, available: false })
+    expect(out.find((s) => s.sigil === '!')).toEqual({ sigil: '!', id: 1, available: false, reason: 'notFound' })
+  })
+})
+
+describe('reference summaries: Forgejo concurrency', () => {
+  it('has at most two requests in flight', async () => {
+    let inFlight = 0
+    let most = 0
+    const get: JsonGet = async <T>(): Promise<T> => {
+      inFlight++
+      most = Math.max(most, inFlight)
+      await new Promise((r) => setTimeout(r, 2))
+      inFlight--
+      return { number: 1, title: 'x', state: 'open' } as T
+    }
+    const ids = Array.from({ length: 6 }, (_, i): [ReferenceQuery['sigil'], number] => ['#', i + 1])
+    const out = await forgejoReferenceSummaries(get, 'https://git.example.corp/api/v1/repos/team/app', qs(...ids))
+    expect(most).toBe(2)
+    expect(out.every((s) => s.available)).toBe(true)
+  })
+
+  it('says "unreachable" when the server cannot be reached', async () => {
+    const get: JsonGet = async () => {
+      throw new TypeError('fetch failed')
+    }
+    const out = await forgejoReferenceSummaries(get, 'https://git.example.corp/api/v1/repos/team/app', qs(['#', 1]))
+    expect(out).toEqual([{ sigil: '#', id: 1, available: false, reason: 'unreachable' }])
   })
 })
 
@@ -206,7 +264,7 @@ describe('reference summaries: Forgejo', () => {
     expect(out).toEqual([
       { sigil: '#', id: 1, available: true, kind: 'issue', title: 'Docs typo', state: 'closed' },
       { sigil: '#', id: 2, available: true, kind: 'pr', title: 'Faster graph', state: 'merged' },
-      { sigil: '#', id: 3, available: false }
+      { sigil: '#', id: 3, available: false, reason: 'notFound' }
     ])
   })
 })

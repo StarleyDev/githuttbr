@@ -3284,9 +3284,9 @@ async function referenceSummaries(
       return await forgejoReferenceSummaries((url) => fjJson(url, f.token), api, queries)
     }
   } catch {
-    /* no credential, or a repository this account cannot read: every card says "unavailable" */
+    /* no credential, or the host not reached: every card says it could not be read */
   }
-  return queries.map(unavailableReference)
+  return queries.map((q) => unavailableReference(q, 'unreachable'))
 }
 
 async function issueDetail(
