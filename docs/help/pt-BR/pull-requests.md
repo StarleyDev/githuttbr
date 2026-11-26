@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção editar comentário excluir comentário apagar comentário editado erro de digitação
-source: 0330a13527850e2beedb9dc1477712d3f83c7b88
+source: c2076e31ba440bfc8a8df6392b02d5abc971546f
 ---
 
 # Página de pull requests
@@ -320,36 +320,47 @@ página de issue também tem, para os comentários dela no GitHub e no Forgejo.
 
 ![Seu próprio comentário, marcado como editado, com Editar e Excluir no fim do cabeçalho](../../screenshots/comment-editor.webp)
 
-"Seu" quer dizer que o autor do comentário é a conta com que as chamadas deste
-repositório entram, a mesma que o **Eu** da lista usa, comparada sem diferenciar
-maiúsculas. Quando o app não consegue saber quem é (um token sem escopo de
-usuário), nenhum comentário mostra as ações. Quem decide continua sendo o host:
-uma conta que ele não deixa alterar um comentário é recusada, e a mensagem diz
-isso.
+"Seu" é decidido pela própria página, que pergunta ao host, a cada carregamento,
+com que conta as chamadas deste repositório entram (o perfil vinculado a ele, não
+o perfil ativo). A maioria dos hosts identifica o autor pelo login, comparado sem
+diferenciar maiúsculas. O Azure DevOps identifica autores pelo nome de exibição,
+que duas pessoas podem ter igual, então ali o id do autor precisa bater com o id
+da conta; quando falta um dos ids, nenhum comentário mostra as ações. Quando o
+app não consegue saber quem é você (um token sem escopo de usuário, ou o host não
+respondeu), nenhum comentário as mostra também; **Atualizar** pergunta de novo.
+Quem decide continua sendo o host: uma conta que ele não deixa alterar um
+comentário é recusada, e a mensagem diz isso.
 
 - **Editar** abre o comentário no lugar, no mesmo editor de Markdown, com o
   texto como foi escrito. **Salvar** (ou ⌘/Ctrl+Enter) envia; **Cancelar** ou
-  **Esc** fecha, perguntando antes quando você mudou algo. O texto novo aparece
-  na hora e a página lê o pull request de novo. Uma edição não salva conta como
-  texto não enviado: **‹ ›** perguntam antes de sair dela.
+  **Esc** fecha, perguntando antes quando você mudou algo. Só as linhas em
+  branco em volta do texto saem: código indentado e uma quebra de linha com dois
+  espaços no fim ficam como foram digitados. O texto novo aparece na hora e a
+  página lê o pull request de novo. Na página do pull request, uma edição não
+  salva conta como texto não enviado: **‹ ›** perguntam antes de sair dela. A
+  página de issue não tem essas setas, e nada ali pergunta antes de a aba fechar.
 - **Excluir** sempre pergunta antes, e a pergunta diz o que acontece: o
   servidor remove o comentário para todos, e não dá para desfazer. Não há
   entrada de desfazer, porque nada o traz de volta.
 
-Excluir o **primeiro comentário de uma thread** que tem respostas muda de host
-para host, e a confirmação diz qual é o caso:
+Excluir o **primeiro comentário de uma thread** que tem respostas (uma thread de
+revisão, ou um comentário da conversa que outros responderam) muda de host para
+host, e a confirmação diz qual é o caso. Dois deles o host não documenta, e a
+confirmação diz isso:
 
 | Host | Primeiro comentário de uma thread com respostas |
 |---|---|
-| GitHub | Só esse comentário sai; as respostas ficam na thread |
+| GitHub | As respostas devem ficar; a documentação do GitHub não diz. Responder a essa thread pelo app deixa de ser possível: as respostas apontam para um comentário que não existe mais, e a API não aceita resposta a uma resposta. A thread passa a oferecer **Responder no GitHub** |
 | GitLab | Só essa nota sai; a thread e as respostas ficam |
-| Azure DevOps | O comentário é marcado como excluído e some; a thread e as respostas ficam |
+| Azure DevOps | Deve ser marcado como excluído e sumir, com a thread e as respostas mantidas; a documentação do Azure não diz |
 | Bitbucket Data Center | Recusado: o Data Center não exclui um comentário que tem respostas. Exclua as respostas antes, ou edite o comentário |
 
-Alguns hosts marcam um comentário como **editado**; o app mostra isso onde o
-host guarda uma data para a mudança: GitHub, Azure DevOps, Bitbucket Data Center
-e Forgejo. No GitLab essa data também muda quando uma thread é resolvida, então
-ela não é usada.
+Alguns hosts marcam um comentário como **editado**. Só o Azure DevOps guarda uma
+data apenas para o texto; no GitHub, no Bitbucket Data Center e no Forgejo o app
+compara quando o comentário foi criado e quando foi atualizado pela última vez,
+então ali a marca é aproximada (outra coisa que mexa no comentário pode ativá-la).
+No GitLab essa data também muda quando uma thread é resolvida, então ela não é
+usada.
 
 O que não faz:
 
@@ -361,8 +372,10 @@ O que não faz:
   comentário: editar ou excluir um comentário que mudou desde que a página
   carregou é recusado, e **Atualizar** mostra o atual. Os outros hosts ficam com
   a última escrita.
-- **Já excluído**: um comentário excluído em outro lugar desde que a página
-  carregou é informado como tal, e a página lê o pull request de novo.
+- **Não encontrado**: quando o host não encontra o comentário, a mensagem diz
+  que ele pode ter sido excluído, ou que esta conta não consegue vê-lo, e a
+  página lê o pull request de novo. Uma edição aberta num comentário que sumiu é
+  descartada.
 - **bitbucket.org**: os pull requests abrem no navegador, então ainda não há
   página para editar os comentários deles, embora o app saiba fazer a chamada.
 - **A descrição** do pull request e os resumos das revisões não são
