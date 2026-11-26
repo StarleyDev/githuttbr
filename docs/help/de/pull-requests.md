@@ -4,7 +4,7 @@ category: Sync & viele Repos
 order: 57
 summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits, seine Updates (jeder Push, was er geändert hat, was seit deinem letzten Besuch neu ist) und Kommentare zu einer Zeile seines Diffs.
 keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image updates iterationen pushes force-push rebase verlauf umgeschrieben diff-versionen was hat sich geändert seit dem letzten besuch neu-badge als gesehen markieren update vergleichen iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Pull-Request-Seite
@@ -871,18 +871,23 @@ Was es nicht tut:
 - Das Durchgehen wird gemerkt, solange die App läuft; nach einem Neustart geht ein
   aus der Liste geöffneter Pull Request stattdessen die offenen Pull Requests
   durch.
-- **Das Lesen der Dateien kann fetchen — einmal.** Sind die Commits des Pull
-  Requests nicht in diesem Klon, fetcht die Seite sie beim Öffnen über ihre IDs von
-  ihrem Remote, und erneut bei **Aktualisieren** — nie nach einem Kommentar, einem
-  Review oder einem Merge, und höchstens einmal pro Fassung des Pull Requests und
-  Sitzung (ein fehlgeschlagener Versuch wartet auf Aktualisieren). Er schreibt nur
-  Objekte: keinen Branch und nicht `FETCH_HEAD`, also bewegt sich das „vor … gefetcht“
-  der Werkzeugleiste nicht. Er gibt nach 20 Sekunden auf, oder wenn die Übertragung
-  15 Sekunden lang unter 1 KB/s kriecht, und fragt nie nach einem Passwort: Gits
-  Abfrage ist aus, und Git Credential Manager wird angewiesen, sein Anmeldefenster
-  nicht zu öffnen, also fällt ein Remote, das eines bräuchte, auf die API zurück. Ein
-  ssh-Remote nutzt deine eigenen ssh-Einstellungen, wie sie sind. Ein flacher oder
-  partieller Klon, dem die Objekte fehlen, fällt auf die API des Hosts zurück.
+- **Das Lesen der Dateien kann fetchen — einmal.** Sind die Commits des Pull Requests
+  nicht in diesem Klon, fetcht die Seite sie beim Öffnen über ihre IDs von ihrem
+  Remote, und erneut bei **Aktualisieren** — nie nach einem Kommentar, einem Review
+  oder einem Merge, und höchstens einmal pro Fassung des Pull Requests und Sitzung
+  (ein fehlgeschlagener Versuch wartet auf Aktualisieren). Er schreibt nur Objekte:
+  keinen Branch und nicht `FETCH_HEAD`, also bewegt sich das „vor … gefetcht“ der
+  Werkzeugleiste nicht. Er gibt nach 20 Sekunden auf, oder wenn die Übertragung 15
+  Sekunden lang unter 1 KB/s kriecht, und fragt nie nach einem Passwort: Gits Abfrage
+  ist aus, und Git Credential Manager wird angewiesen, sein Anmeldefenster nicht zu
+  öffnen, also fällt ein Remote, das eines bräuchte, auf die API zurück. Ein
+  ssh-Remote nutzt deine eigenen ssh-Einstellungen, wie sie sind, nur dass das
+  Passphrase-Fenster von ssh selbst nicht geöffnet wird. Hält eine andere
+  Git-Operation das Repository (ein langer Push) länger als fünf Sekunden, wird der
+  Fetch dieses Mal übersprungen und die API genutzt. Änderungen, die du währenddessen
+  im Arbeitsverzeichnis machst, gehen nicht verloren: Das Repository wird
+  aktualisiert, sobald er fertig ist. Ein flacher oder partieller Klon, dem die
+  Objekte fehlen, fällt auf die API des Hosts zurück.
 - **Über den Obergrenzen** wird eine Datei mit ihren Zahlen und ohne Diff gelistet:
   20.000 geänderte Zeilen oder 8 MB aus dem Klon gelesener Diff, 4 MB pro Fassung,
   die von Azure DevOps gelesen wird. Ein Lesedurchgang behält etwa 150.000 Zeilen oder

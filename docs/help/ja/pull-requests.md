@@ -4,7 +4,7 @@ category: 同期と複数リポジトリ
 order: 57
 summary: リポジトリのプルリクエストをすべて 1 ページに — 状態別に、作成者・レビュアー・マージ先・CI で絞り込み — PR の中から ‹ › で絞り込んだ一覧をたどり、そのコミットと更新（各プッシュ、その変更、前回の訪問以降の新着）を見て、差分の行にコメントできます。
 keywords: プルリクエスト pull requests 一覧 ページ マージリクエスト merge requests pr mr フィルター 作成者 レビュアー 自分の 自分のレビュー待ち レビュー依頼 ci 失敗 マージ先ブランチ ドラフト マージ済み クローズ 検索 トリアージ 前 次 alt 矢印 ナビゲーション チェックアウト checkout ソースブランチへ移動 ターゲットブランチ ブランチ名をコピー フェッチ fetch 行コメント インラインコメント レビューコメント 差分コメント 行にコメント ファイルタブ コードレビュー line comment コミットタブ コミット一覧 PR のコミット コミット履歴 コミットを開く SHA をコピー PR のブランチをフェッチ Markdown エディター ツールバー プレビュー メンション commits tab commit list open commit copy sha markdown editor toolbar preview mention ファイルツリー フォルダーツリー ツリー表示 パス表示 確認済みファイル フォルダーを確認済みにする 編集 削除 編集済み タイプミス file tree viewed files edit delete edited typo 参照 タイトル ホバーカード ワークアイテム AB# イシュー番号 ツールチップ reference title hover card work item issue number フォーク PR のコミット refs/pull head 描画されたコメント 画像 トラッキングピクセル ブロックされた画像 クリックして読み込む タスク 表 ブロック rendered comments images blocked image 更新 イテレーション プッシュ フォースプッシュ リベース 履歴の書き換え 差分バージョン 前回以降の変更 新着バッジ 既読にする 更新を比較 updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # プルリクエストページ
@@ -794,8 +794,10 @@ Azure DevOps の **コミット** タブでは、コミットの件名にある�
   転送が 15 秒間 1 KB/s を下回るとあきらめ、パスワードを尋ねることはありません。git の
   プロンプトは無効にし、Git Credential Manager にはサインイン画面を開かないよう指示するので、
   それが必要なリモートは API に切り替わります。ssh のリモートは、あなたの ssh 設定をそのまま
-  使います。オブジェクトが欠けた shallow クローンや部分クローンは、ホスティングの API に
-  切り替わります。
+  使いますが、ssh 自身のパスフレーズ画面は開きません。別の git 操作がリポジトリを 5 秒を超えて
+  押さえているとき（長い push など）は、その回の fetch を飛ばして API を使います。取得中に
+  作業ツリーで行った変更は失われません。終わり次第リポジトリを更新します。オブジェクトが欠けた
+  shallow クローンや部分クローンは、ホスティングの API に切り替わります。
 - **上限を超えた**ファイルは、数値付きで差分なしで一覧に載ります。クローンから読んだ差分で
   変更 20,000 行または 8 MB、Azure DevOps から読んだ版ごとに 4 MB です。1 回の読み込みが
   保持するのは差分約 150,000 行または 48 MB で、それより後のファイルは**まだ読み込まれて

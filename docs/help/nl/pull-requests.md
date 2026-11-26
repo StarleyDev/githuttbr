@@ -4,7 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, zijn updates (elke push, wat die veranderde, wat nieuw is sinds je laatste bezoek), en reacties op een regel van zijn diff.
 keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image updates iteraties pushes force push rebase geschiedenis herschreven diffversies wat is er veranderd sinds het laatste bezoek nieuw-badge markeren als gezien update vergelijken iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Pull-requestspagina
@@ -857,14 +857,18 @@ Wat het niet doet:
   request niet in deze clone staan, haalt de pagina ze bij het openen op id op van haar
   remote, en opnieuw bij **Vernieuwen** — nooit na een reactie, een review of een merge,
   en hoogstens één keer per versie van de pull request per sessie (een mislukte poging
-  wacht op Vernieuwen). Hij schrijft alleen objecten: geen branch, en niet
-  `FETCH_HEAD`, dus het „… geleden gefetcht” van de werkbalk verandert niet. Hij geeft
-  op na 20 seconden, of als de overdracht 15 seconden lang onder 1 KB/s kruipt, en
-  vraagt nooit om een wachtwoord: de prompt van git staat uit en Git Credential Manager
-  krijgt te horen dat hij zijn aanmeldvenster niet mag openen, dus een remote die er een
-  nodig heeft, valt terug op de API. Een ssh-remote gebruikt je eigen ssh-instellingen
-  zoals ze zijn. Een ondiepe of gedeeltelijke clone die de objecten mist, valt terug op
-  de API van de host.
+  wacht op Vernieuwen). Hij schrijft alleen objecten: geen branch, en niet `FETCH_HEAD`,
+  dus het „… geleden gefetcht” van de werkbalk verandert niet. Hij geeft op na 20
+  seconden, of als de overdracht 15 seconden lang onder 1 KB/s kruipt, en vraagt nooit
+  om een wachtwoord: de prompt van git staat uit en Git Credential Manager krijgt te
+  horen dat hij zijn aanmeldvenster niet mag openen, dus een remote die er een nodig
+  heeft, valt terug op de API. Een ssh-remote gebruikt je eigen ssh-instellingen zoals
+  ze zijn, behalve dat het wachtzinvenster van ssh zelf niet wordt geopend. Houdt een
+  andere git-bewerking de repository (een lange push) langer dan vijf seconden vast, dan
+  wordt de fetch die keer overgeslagen en wordt de API gebruikt. Wijzigingen die je
+  ondertussen in de werkmap maakt, gaan niet verloren: de repository ververst zodra hij
+  klaar is. Een ondiepe of gedeeltelijke clone die de objecten mist, valt terug op de
+  API van de host.
 - **Boven de limieten** wordt een bestand getoond met zijn aantallen en zonder diff:
   20.000 gewijzigde regels of 8 MB diff gelezen uit de clone, 4 MB per versie gelezen
   van Azure DevOps. Eén leesactie bewaart zo’n 150.000 regels of 48 MB aan diffs; de

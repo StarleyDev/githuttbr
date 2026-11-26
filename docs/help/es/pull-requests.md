@@ -4,7 +4,7 @@ category: Sincronizar y muchos repos
 order: 57
 summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits, sus actualizaciones (cada push, qué cambió, qué hay de nuevo desde tu última visita) y comentarios en una línea de su diff.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number fork commits de la pr refs/pull head comentarios renderizados imágenes píxel de seguimiento imagen bloqueada clic para cargar tarea tabla bloque rendered comments images blocked image actualizaciones iteraciones pushes force push rebase historial reescrito versiones del diff qué cambió desde la última visita insignia nueva marcar como vistas comparar actualización updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Página de pull requests
@@ -845,16 +845,21 @@ Lo que no hace:
   pull request abierta desde la lista recorre en su lugar las pull requests
   abiertas.
 - **Leer los archivos puede hacer un fetch — una vez.** Cuando los commits de la pull
-  request no están en este clon, la página los trae por id desde su remoto al abrirse,
-  y de nuevo con **Actualizar** — nunca después de un comentario, una revisión o una
+  request no están en este clon, la página los trae por id desde su remoto al abrirse, y
+  de nuevo con **Actualizar** — nunca después de un comentario, una revisión o una
   fusión, y como mucho una vez por versión de la pull request y sesión (un intento
   fallido espera a Actualizar). Solo escribe objetos: ninguna rama, y no `FETCH_HEAD`,
   así que el «traído hace …» de la barra de herramientas no se mueve. Se rinde a los 20
   segundos, o cuando la transferencia se arrastra por debajo de 1 KB/s durante 15, y
   nunca pide una contraseña: la petición de git está desactivada y a Git Credential
   Manager se le indica que no abra su ventana de inicio de sesión, así que un remoto que
-  la necesita recurre a la API. Un remoto ssh usa tus ajustes de ssh tal como están. Un
-  clon superficial o parcial al que le faltan los objetos recurre a la API del host.
+  la necesita recurre a la API. Un remoto ssh usa tus ajustes de ssh tal como están,
+  salvo que no se abre la ventana de frase de contraseña del propio ssh. Cuando otra
+  operación de git tiene el repositorio ocupado (un push largo) durante más de cinco
+  segundos, el fetch se omite esa vez y se usa la API. Los cambios que hagas en el árbol
+  de trabajo mientras corre no se pierden: el repositorio se actualiza en cuanto
+  termina. Un clon superficial o parcial al que le faltan los objetos recurre a la API
+  del host.
 - **Por encima de los topes**, un archivo se lista con sus recuentos y sin diff: 20.000
   líneas cambiadas u 8 MB de diff leídos del clon, 4 MB por versión leída de Azure
   DevOps. Una lectura conserva unas 150.000 líneas o 48 MB de diffs; los archivos

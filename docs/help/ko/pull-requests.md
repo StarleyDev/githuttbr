@@ -4,7 +4,7 @@ category: 동기화와 여러 저장소
 order: 57
 summary: 저장소의 모든 풀 리퀘스트를 한 페이지에 — 상태별로, 작성자·리뷰어·대상·CI로 필터링하고 — PR 안에서 ‹ ›로 필터링된 목록을 넘기며, 그 커밋과 업데이트(각 푸시, 무엇을 바꿨는지, 마지막 방문 이후 새로운 것)를 보고, diff의 줄에 댓글을 답니다.
 keywords: 풀 리퀘스트 pull requests 목록 페이지 머지 리퀘스트 merge requests pr mr 필터 작성자 리뷰어 내 것 내 리뷰 대기 리뷰 요청 ci 실패 대상 브랜치 초안 병합됨 닫힘 검색 분류 이전 다음 alt 화살표 탐색 체크아웃 checkout 소스 브랜치로 이동 대상 브랜치 브랜치 이름 복사 페치 fetch 줄 댓글 인라인 댓글 리뷰 댓글 diff 댓글 줄에 댓글 달기 파일 탭 코드 리뷰 line comment 커밋 탭 커밋 목록 PR 커밋 커밋 기록 커밋 열기 SHA 복사 PR 브랜치 가져오기 Markdown 편집기 도구 모음 미리 보기 멘션 commits tab commit list open commit copy sha markdown editor toolbar preview mention 파일 트리 폴더 트리 트리 보기 경로 보기 확인한 파일 폴더를 확인함으로 표시 편집 삭제 제거 편집됨 오타 file tree viewed files edit delete edited typo 참조 제목 호버 카드 작업 항목 AB# 이슈 번호 툴팁 reference title hover card work item issue number 포크 PR 커밋 refs/pull head 렌더링된 댓글 이미지 추적 픽셀 차단된 이미지 클릭하여 불러오기 작업 표 블록 rendered comments images blocked image 업데이트 반복 푸시 강제 푸시 리베이스 기록 재작성 diff 버전 마지막 방문 이후 변경 새 항목 배지 확인함으로 표시 업데이트 비교 updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # 풀 리퀘스트 페이지
@@ -752,14 +752,18 @@ DevOps뿐입니다. GitHub, Bitbucket Data Center, Forgejo에서는 앱이 댓�
   마지막 활동 시각이 없기 때문입니다.
 - 넘기기 순서는 앱이 실행되는 동안 기억됩니다. 재시작 후에는 목록에서 연 풀
   리퀘스트도 대신 열린 풀 리퀘스트를 넘깁니다.
-- **파일을 읽다가 한 번 fetch할 수 있습니다.** 풀 리퀘스트의 커밋이 이 클론에 없으면, 페이지는
-  열 때와 **새로 고침** 때 원격에서 id로 가져옵니다. 댓글, 리뷰, 병합 뒤에는 가져오지 않으며,
-  한 세션에서 풀 리퀘스트 버전마다 최대 한 번입니다(실패한 시도는 새로 고침을 기다립니다).
-  객체만 쓰며 브랜치도 `FETCH_HEAD`도 만들지 않으므로, 도구 모음의 “… 전에 가져옴”은 바뀌지
-  않습니다. 20초가 지나거나 전송이 15초 동안 1 KB/s 아래로 기어가면 포기하고, 비밀번호를
-  묻지 않습니다. git의 프롬프트는 꺼 두고 Git Credential Manager에는 로그인 창을 열지 말라고
-  지시하므로, 그것이 필요한 원격은 API로 넘어갑니다. ssh 원격은 당신의 ssh 설정을 그대로
-  씁니다. 객체가 빠진 얕은 클론이나 부분 클론은 호스팅 API로 넘어갑니다.
+- **파일을 읽다가 한 번 fetch할 수 있습니다.** 풀 리퀘스트의 커밋이 이 클론에
+  없으면, 페이지는 열 때와 **새로 고침** 때 원격에서 id로 가져옵니다. 댓글, 리뷰,
+  병합 뒤에는 가져오지 않으며, 한 세션에서 풀 리퀘스트 버전마다 최대 한 번입니다(실패한
+  시도는 새로 고침을 기다립니다). 객체만 쓰며 브랜치도 `FETCH_HEAD`도 만들지
+  않으므로, 도구 모음의 “… 전에 가져옴”은 바뀌지 않습니다. 20초가 지나거나 전송이
+  15초 동안 1 KB/s 아래로 기어가면 포기하고, 비밀번호를 묻지 않습니다. git의
+  프롬프트는 꺼 두고 Git Credential Manager에는 로그인 창을 열지 말라고
+  지시하므로, 그것이 필요한 원격은 API로 넘어갑니다. ssh 원격은 당신의 ssh 설정을
+  그대로 쓰되, ssh 자체의 암호 문구 창은 열지 않습니다. 다른 git 작업이 저장소를
+  5초 넘게 잡고 있으면(긴 push 등) 그때는 fetch를 건너뛰고 API를 씁니다.
+  fetch가 도는 동안 작업 트리에서 한 변경은 사라지지 않으며, 끝나면 저장소를 새로
+  고칩니다. 객체가 빠진 얕은 클론이나 부분 클론은 호스팅 API로 넘어갑니다.
 - **한도를 넘는** 파일은 숫자와 함께 diff 없이 나열됩니다: 클론에서 읽은 diff는 바뀐 줄
   20,000줄 또는 8 MB, Azure DevOps에서 읽은 버전은 4 MB입니다. 한 번의 읽기는 diff 약
   150,000줄 또는 48 MB를 보관하며, 그 뒤의 파일은 **아직 불러오지 않음**이 되어 열 때

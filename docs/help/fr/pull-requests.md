@@ -4,7 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 57
 summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, ses mises à jour (chaque push, ce qu’il a changé, ce qui est nouveau depuis votre dernière visite), et des commentaires sur une ligne de son diff.
 keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo référence titre carte au survol work item AB# numéro d’issue infobulle reference title hover card issue number fork commits de la pr refs/pull head commentaires rendus images pixel espion image bloquée cliquer pour charger tâche tableau bloc rendered comments images blocked image mises à jour itérations pushs force push rebase historique réécrit versions du diff ce qui a changé depuis la dernière visite badge nouveau marquer comme vu comparer mise à jour updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Page des pull requests
@@ -885,8 +885,12 @@ Ce que cela ne fait pas :
   pendant 15, et ne demande jamais de mot de passe : l’invite de git est coupée et Git
   Credential Manager reçoit la consigne de ne pas ouvrir sa fenêtre de connexion, donc
   un distant qui en a besoin se rabat sur l’API. Un distant ssh utilise vos propres
-  réglages ssh tels qu’ils sont. Un clone superficiel ou partiel auquel il manque les
-  objets se rabat sur l’API de l’hébergeur.
+  réglages ssh tels qu’ils sont, sauf que la fenêtre de phrase secrète de ssh lui-même
+  n’est pas ouverte. Quand une autre opération git tient le dépôt (un long push) plus
+  de cinq secondes, le fetch est sauté cette fois-là et l’API est utilisée. Les
+  modifications que vous faites dans l’arbre de travail pendant qu’il tourne ne sont
+  pas perdues : le dépôt se rafraîchit une fois qu’il a fini. Un clone superficiel ou
+  partiel auquel il manque les objets se rabat sur l’API de l’hébergeur.
 - **Au-delà des plafonds**, un fichier est listé avec ses comptes et sans diff : 20 000
   lignes modifiées ou 8 Mo de diff lus depuis le clone, 4 Mo par version lue depuis
   Azure DevOps. Une lecture garde environ 150 000 lignes ou 48 Mo de diffs ; les

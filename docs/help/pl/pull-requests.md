@@ -4,7 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity, jego aktualizacje (każdy push, co zmienił, co nowego od ostatniej wizyty) oraz komentarze do wiersza jego diffa.
 keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image aktualizacje iteracje pushe force push rebase historia przepisana wersje diffa co się zmieniło od ostatniej wizyty plakietka nowa oznacz jako przejrzane porównaj aktualizację updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Strona pull requestów
@@ -831,8 +831,12 @@ Czego to nie robi:
   poniżej 1 KB/s przez 15, i nigdy nie pyta o hasło: monit gita jest wyłączony, a Git
   Credential Manager dostaje polecenie, by nie otwierał okna logowania, więc zdalne
   repozytorium, które by go potrzebowało, przechodzi na API. Zdalne repozytorium ssh
-  używa twoich ustawień ssh takich, jakie są. Płytki lub częściowy klon, któremu brakuje
-  obiektów, przechodzi na API hostingu.
+  używa twoich ustawień ssh takich, jakie są, z tym że okno hasła klucza samego ssh nie
+  jest otwierane. Gdy inna operacja git trzyma repozytorium (długi push) dłużej niż pięć
+  sekund, fetch jest tym razem pomijany i używane jest API. Zmiany, które w tym czasie
+  robisz w kopii roboczej, nie przepadają: repozytorium odświeża się, gdy fetch się
+  skończy. Płytki lub częściowy klon, któremu brakuje obiektów, przechodzi na API
+  hostingu.
 - **Powyżej limitów** plik jest wymieniany z liczbami i bez diffa: 20 000 zmienionych
   wierszy lub 8 MB diffa odczytanego z klonu, 4 MB na wersję odczytaną z Azure DevOps.
   Jeden odczyt zachowuje około 150 000 wierszy lub 48 MB diffów; pliki po nich są

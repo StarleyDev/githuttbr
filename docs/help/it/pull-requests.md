@@ -4,7 +4,7 @@ category: Sincronizzazione e più repo
 order: 57
 summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit, i suoi aggiornamenti (ogni push, cosa ha cambiato, cosa c’è di nuovo dalla tua ultima visita) e commenti su una riga del suo diff.
 keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention albero dei file albero delle cartelle vista ad albero vista percorso file visti segna cartella come vista modifica elimina rimuovi modificato refuso file tree viewed files edit delete edited typo riferimento titolo scheda al passaggio work item AB# numero della issue tooltip reference title hover card issue number fork commit della pr refs/pull head commenti visualizzati immagini pixel traccianti immagine bloccata clic per caricare attività tabella blocco rendered comments images blocked image aggiornamenti iterazioni push force push rebase cronologia riscritta versioni del diff cosa è cambiato dall’ultima visita badge nuovo segna come visto confronta aggiornamento updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Pagina delle pull request
@@ -845,12 +845,16 @@ Cosa non fa:
   e di nuovo con **Aggiorna** — mai dopo un commento, una revisione o un merge, e al
   massimo una volta per versione della pull request e sessione (un tentativo fallito
   aspetta Aggiorna). Scrive solo oggetti: nessun branch, e non `FETCH_HEAD`, quindi il
-  «scaricato … fa» della barra degli strumenti non si muove. Si arrende dopo 20
-  secondi, o quando il trasferimento striscia sotto 1 KB/s per 15, e non chiede mai una
-  password: il prompt di git è disattivato e a Git Credential Manager viene detto di non
-  aprire la sua finestra di accesso, quindi un remote che ne avrebbe bisogno ripiega
-  sull’API. Un remote ssh usa le tue impostazioni ssh così come sono. Un clone shallow o
-  parziale a cui mancano gli oggetti ripiega sull’API dell’host.
+  «scaricato … fa» della barra degli strumenti non si muove. Si arrende dopo 20 secondi,
+  o quando il trasferimento striscia sotto 1 KB/s per 15, e non chiede mai una password:
+  il prompt di git è disattivato e a Git Credential Manager viene detto di non aprire la
+  sua finestra di accesso, quindi un remote che ne avrebbe bisogno ripiega sull’API. Un
+  remote ssh usa le tue impostazioni ssh così come sono, tranne che la finestra della
+  passphrase di ssh stesso non viene aperta. Quando un’altra operazione git tiene il
+  repository (un push lungo) per più di cinque secondi, il fetch viene saltato quella
+  volta e si usa l’API. Le modifiche che fai nell’albero di lavoro mentre è in corso non
+  vanno perse: il repository si aggiorna appena ha finito. Un clone shallow o parziale a
+  cui mancano gli oggetti ripiega sull’API dell’host.
 - **Oltre i tetti**, un file viene elencato con i suoi conteggi e senza diff: 20.000
   righe cambiate o 8 MB di diff letti dal clone, 4 MB per versione letta da Azure
   DevOps. Una lettura conserva circa 150.000 righe o 48 MB di diff; i file successivi

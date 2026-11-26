@@ -4,7 +4,7 @@ category: 同步与多仓库
 order: 57
 summary: 一个仓库的全部拉取请求集中在一页——按状态分，可按作者、评审者、目标分支和 CI 筛选——在拉取请求内用 ‹ › 逐个浏览筛选后的列表，查看其提交和更新（每次推送、它改了什么、自你上次查看以来的新内容），并可评论其差异中的某一行。
 keywords: 拉取请求 pull requests 列表 页面 合并请求 merge requests pr mr 筛选 作者 评审者 我的 等待我评审 请求我评审 ci 失败 目标分支 草稿 已合并 已关闭 搜索 分类 上一个 下一个 alt 方向键 导航 检出 checkout 前往源分支 目标分支 复制分支名 获取 fetch 行评论 行内评论 评审评论 差异评论 评论某行 文件标签 代码评审 line comment 提交标签 提交列表 拉取请求的提交 提交历史 打开提交 复制 SHA 拉取 PR 分支 Markdown 编辑器 工具栏 预览 提及 commits tab commit list open commit copy sha markdown editor toolbar preview mention 文件树 文件夹树 树视图 路径视图 已查看文件 将文件夹标为已查看 编辑 删除 移除 已编辑 笔误 file tree viewed files edit delete edited typo 引用 标题 悬停卡片 工作项 AB# issue 编号 工具提示 reference title hover card work item issue number fork 拉取请求的提交 refs/pull head 渲染的评论 图片 跟踪像素 被拦截的图片 点击加载 任务 表格 代码块 rendered comments images blocked image 更新 迭代 推送 强制推送 变基 历史已改写 差异版本 自上次查看以来的变化 新徽章 标记为已查看 比较更新 updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # 拉取请求页面
@@ -642,8 +642,10 @@ DevOps 上，`!123` 会链接到那个拉取请求，没有卡片。
   请求版本最多一次（失败的尝试会等待“刷新”）。它只写入对象：不创建分支，也不写 `FETCH_HEAD`，
   所以工具栏上的“… 前获取”不会变化。20 秒后，或传输连续 15 秒低于 1 KB/s 时，它就放弃，并且
   从不询问密码：git 的提示已关闭，Git Credential Manager 也被告知不要打开登录窗口，所以需要
-  登录的远程会退回到 API。ssh 远程按原样使用你自己的 ssh 设置。缺少对象的浅克隆或部分克隆会
-  退回到托管平台的 API。
+  登录的远程会退回到 API。ssh 远程按原样使用你自己的 ssh 设置，只是不会打开 ssh 自己的密码
+  短语窗口。当另一个 git 操作占用仓库（例如一次长时间的推送）超过五秒时，这一次会跳过获取而
+  改用 API。获取进行期间你在工作区中做的改动不会丢失：完成后仓库会刷新。缺少对象的浅克隆或
+  部分克隆会退回到托管平台的 API。
 - **超出上限**的文件会带着数字列出，但没有差异：从克隆读取的差异为 20,000 行改动或 8 MB，从
   Azure DevOps 读取的每个版本为 4 MB。单次读取保留约 150,000 行或 48 MB 的差异；之后的文件为
   **尚未加载**，在打开时读取。

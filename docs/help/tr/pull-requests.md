@@ -4,7 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri, güncellemeleri (her push, neyi değiştirdiği, son ziyaretinizden beri ne yeni) ve diff’inin bir satırına yorumlar.
 keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image güncellemeler yinelemeler push’lar force push rebase geçmiş yeniden yazıldı diff sürümleri son ziyaretten beri ne değişti yeni rozeti görüldü olarak işaretle güncellemeyi karşılaştır updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
+source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
 # Pull request sayfası
@@ -828,8 +828,11 @@ Yapmadıkları:
   altında süründüğünde vazgeçer ve asla parola sormaz: git’in istemi kapalıdır ve Git
   Credential Manager’a oturum açma penceresi açmaması söylenir, bu yüzden buna ihtiyaç
   duyacak bir uzak depo API’ye geri döner. Bir ssh uzak deposu kendi ssh ayarlarını
-  olduğu gibi kullanır. Nesneleri eksik olan sığ ya da kısmi bir klon barındırıcının
-  API’sine geri döner.
+  olduğu gibi kullanır; tek fark, ssh’in kendi parola cümlesi penceresinin
+  açılmamasıdır. Başka bir git işlemi depoyu (uzun bir push) beş saniyeden uzun süre
+  tuttuğunda, fetch o seferlik atlanır ve API kullanılır. O sürerken çalışma ağacında
+  yaptığın değişiklikler kaybolmaz: bitince depo yenilenir. Nesneleri eksik olan sığ ya
+  da kısmi bir klon barındırıcının API’sine geri döner.
 - **Sınırların üstünde** bir dosya sayılarıyla ve diff’siz listelenir: klondan okunan bir
   diff’in 20.000 değişen satırı ya da 8 MB’ı, Azure DevOps’tan okunan sürüm başına 4 MB.
   Tek bir okuma yaklaşık 150.000 satır ya da 48 MB diff tutar; ondan sonraki dosyalar
