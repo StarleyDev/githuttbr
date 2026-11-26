@@ -17,6 +17,12 @@ interface RepoWatch {
    *  pending re-scan that follows the index across a checkout or pull. */
   dirs: Map<string, FSWatcher>
   rescan: NodeJS.Timeout | null
+  /** A change arrived while the repo was held (holdRepoWatches): owed once the hold ends. */
+  heldChange: boolean
+  /** …and it touched `.git` metadata, so the owed refresh is a full one. */
+  heldGitChange: boolean
+  /** Send the renderer its `repo:changed`. */
+  notify: (light: boolean) => void
 }
 
 // One active watch per renderer (keyed by webContents id). The app uses a
@@ -97,13 +103,77 @@ function isGitMeta(rel: string): boolean {
   return p === '.git' || p.startsWith('.git/')
 }
 
+/** Holds on each repository's watches, counted: two quiet fetches overlap, the later release ends it. */
+const holds = new Map<string, number>()
+
 /**
- * Mute every window's watch of `repoPath` for `ms` — what `watch:mute` does for
- * one renderer, for a git write the main process makes on its own (the pull
- * request Files tab's quiet fetch), whose churn is not a change to refresh for.
+ * Hold every window's watch of `repoPath` while the main process makes a git
+ * write of its own (the pull request Files tab's quiet fetch), whose churn is
+ * not a change to refresh for. Unlike `watch:mute`'s timed window, a hold lasts
+ * exactly as long as the write — the returned release ends it — and nothing is
+ * dropped: a change that arrives meanwhile (an edit in the editor) is owed, and
+ * the release sends it as one `repo:changed` (light unless `.git` moved too).
+ * Releasing twice is harmless.
  */
-export function muteRepoWatches(repoPath: string, ms: number): void {
-  for (const w of active.values()) if (w.path === repoPath) w.muteUntil = Math.max(w.muteUntil, Date.now() + Math.max(0, ms))
+export function holdRepoWatches(repoPath: string): () => void {
+  holds.set(repoPath, (holds.get(repoPath) ?? 0) + 1)
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    const left = (holds.get(repoPath) ?? 1) - 1
+    if (left > 0) return void holds.set(repoPath, left)
+    holds.delete(repoPath)
+    for (const w of active.values()) {
+      if (w.path !== repoPath || !w.heldChange) continue
+      const light = !w.heldGitChange
+      w.heldChange = false
+      w.heldGitChange = false
+      w.notify(light)
+    }
+  }
+}
+
+/** Whether a hold is on `repoPath` — for the tests. */
+export function isRepoWatchHeld(repoPath: string): boolean {
+  return (holds.get(repoPath) ?? 0) > 0
+}
+
+/**
+ * What a watch does with one change event, given the hold — split out of
+ * setWatch so the tests can drive it without a file system watch.
+ */
+export function noteRepoChange(state: Pick<RepoWatch, 'path' | 'heldChange' | 'heldGitChange'>, gitMeta: boolean): 'held' | 'go' {
+  if (!isRepoWatchHeld(state.path)) return 'go'
+  state.heldChange = true
+  if (gitMeta) state.heldGitChange = true
+  return 'held'
+}
+
+/**
+ * A watch state for a renderer that is not a real window — for the tests,
+ * which feed it changes through noteRepoChange as setWatch's onChange does.
+ */
+export function createTestRepoWatch(
+  path: string,
+  notify: (light: boolean) => void
+): { state: Pick<RepoWatch, 'path' | 'heldChange' | 'heldGitChange'>; dispose: () => void } {
+  let id = -1
+  while (active.has(id)) id--
+  const state: RepoWatch = {
+    path,
+    watchers: [],
+    timer: null,
+    gitChanged: false,
+    muteUntil: 0,
+    dirs: new Map(),
+    rescan: null,
+    heldChange: false,
+    heldGitChange: false,
+    notify
+  }
+  active.set(id, state)
+  return { state, dispose: () => void active.delete(id) }
 }
 
 export function clearWatch(id: number): void {
@@ -143,7 +213,12 @@ export function setWatch(sender: WebContents, repoPath: string): void {
     gitChanged: false,
     muteUntil: 0,
     dirs: new Map(),
-    rescan: null
+    rescan: null,
+    heldChange: false,
+    heldGitChange: false,
+    notify: (light) => {
+      if (!sender.isDestroyed()) sender.send('repo:changed', { path: repoPath, light })
+    }
   }
 
   const onChange = (rel: string | null): void => {
@@ -159,13 +234,15 @@ export function setWatch(sender: WebContents, repoPath: string): void {
     }
     // Ignore events during a self-mute window (the app's own git write).
     if (Date.now() < state.muteUntil) return
+    // Held by main's own write: owed, sent once when the hold ends — not dropped.
+    if (noteRepoChange(state, !!rel && isGitMeta(rel)) === 'held') return
     if (rel && isGitMeta(rel)) state.gitChanged = true
     if (state.timer) clearTimeout(state.timer)
     state.timer = setTimeout(() => {
       const light = !state.gitChanged
       state.gitChanged = false
       state.timer = null
-      if (!sender.isDestroyed()) sender.send('repo:changed', { path: repoPath, light })
+      state.notify(light)
     }, DEBOUNCE_MS)
   }
 

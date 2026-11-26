@@ -3,7 +3,17 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fetchCommitsByIdQuietly, gitMethodIsRead, gitService, RANGE_FILE_LINE_CAP, withRepoLock } from '../src/main/git'
+import {
+  fetchCommitsByIdQuietly,
+  gitMethodIsRead,
+  gitService,
+  observeQuietFetches,
+  RANGE_FILE_LINE_CAP,
+  withRepoLock,
+  withRepoLockWithin,
+  type BoundedGitResult
+} from '../src/main/git'
+import { createServer, type Socket, type AddressInfo } from 'node:net'
 import {
   clearPrFetchAttempts,
   comparableRemoteUrl,
@@ -199,9 +209,71 @@ describe('reading a pull request’s files from this clone', () => {
       expect(asked).toBe(1)
     })
 
-    it('the quiet fetch gives up at its timeout instead of hanging the page', async () => {
-      expect(await fetchCommitsByIdQuietly(clone, 'origin', [head], 1)).toBe(false)
+    it('the quiet fetch gives up at its timeout — killed, and tried once, not again without the flag', async () => {
+      // A server that takes the connection and never answers: only the timeout ends it.
+      const sockets: Socket[] = []
+      const server = createServer((socket) => void sockets.push(socket))
+      await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+      const port = (server.address() as AddressInfo).port
+      execFileSync('git', ['-C', clone, 'remote', 'add', 'stalls', `http://127.0.0.1:${port}/team/app.git`])
+      const seen: BoundedGitResult[] = []
+      observeQuietFetches((r) => seen.push(r))
+      try {
+        const started = Date.now()
+        expect(await fetchCommitsByIdQuietly(clone, 'stalls', [head], 800)).toBe(false)
+        expect(Date.now() - started).toBeLessThan(5000)
+        expect(seen).toHaveLength(1)
+        expect(seen[0].killed).toBe(true)
+      } finally {
+        observeQuietFetches(null)
+        for (const s of sockets) s.destroy()
+        await new Promise<void>((r) => server.close(() => r()))
+      }
     })
+
+    it('a caller joining a fetch in flight is told it is fetching, and when it ends', async () => {
+      const first: boolean[] = []
+      const second: boolean[] = []
+      let letGo: () => void = () => undefined
+      const slowRemote = (): Promise<string> => new Promise((r) => (letGo = () => r('origin')))
+      const a = ensureCommitsFrom(clone, slowRemote, [target, head], 'once', (f) => first.push(f))
+      await new Promise((r) => setTimeout(r, 20))
+      const b = ensureCommitsFrom(clone, slowRemote, [target, head], 'once', (f) => second.push(f))
+      letGo()
+      expect(await Promise.all([a, b])).toEqual([true, true])
+      expect(first).toEqual([true, false])
+      expect(second).toEqual([true, false])
+    })
+
+    it('skips the fetch — and leaves it for the next load — when the lock is held past its wait', async () => {
+      let release: () => void = () => undefined
+      const holding = withRepoLock(clone, 'commit', () => new Promise<void>((r) => (release = r)))
+      const res = await withRepoLockWithin(clone, 'fetchCommitsById', 50, async () => 'ran')
+      expect(res).toEqual({ ran: false })
+      release()
+      await holding
+      // Free now: it runs.
+      expect(await withRepoLockWithin(clone, 'fetchCommitsById', 50, async () => 'ran')).toEqual({ ran: true, value: 'ran' })
+    })
+  })
+
+  it('keeps an accented name whole under quotePath=false, with a Latin-1 body read as Windows-1252', async () => {
+    const r = tmp('githuttbr-pr-latin1-')
+    execFileSync('git', ['init', '-q', '-b', 'main', r])
+    const g = gitIn(r)
+    g('config', 'core.quotePath', 'false')
+    writeFileSync(join(r, 'ação.txt'), Buffer.from('versão um\n', 'latin1'))
+    g('add', '-A')
+    g('commit', '-qm', 'chore: one')
+    const one = g('rev-parse', 'HEAD')
+    writeFileSync(join(r, 'ação.txt'), Buffer.from('versão dois\n', 'latin1'))
+    g('commit', '-qam', 'chore: two')
+    const two = g('rev-parse', 'HEAD')
+    const files = await gitService.getCommitRangeFiles(r, one, two)
+    // One entry, under its real name — not a patched mojibake copy beside a notLoaded one.
+    expect(files.map((f) => f.filename)).toEqual(['ação.txt'])
+    expect(files[0].patch).toContain('+versão dois')
+    expect(files[0].noPatchReason).toBeUndefined()
   })
 
   it('matches the remote by URL, not by user or .git', () => {
@@ -235,6 +307,15 @@ describe('DiffChunkSplitter — a streamed diff cut per file, under a budget', (
     expect(s.chunks[0]).toMatchObject({ oversized: true })
     expect(s.chunks[0].bytes.length).toBe(40)
     expect(s.chunks[1].oversized).toBe(false)
+  })
+
+  it('a read cut mid-file by the hard ceiling ends that file as oversized — tooLarge, not unseen', () => {
+    const s = new DiffChunkSplitter({ fileMaxBytes: 1 << 20, headerBytes: 32, budgetBytes: 1 << 20, budgetLines: 1e6 })
+    s.push(Buffer.from(file('a.ts', 2) + file('huge.js', 50).slice(0, 120)))
+    s.endOversized()
+    expect(s.chunks.map((c) => c.oversized)).toEqual([false, true])
+    expect(s.chunks[1].bytes.length).toBe(32)
+    expect(s.stopped).toBe(true)
   })
 
   it('stops once the line budget is spent, always keeping the first file', () => {

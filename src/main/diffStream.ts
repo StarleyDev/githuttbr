@@ -70,6 +70,25 @@ export class DiffChunkSplitter {
     this.finish()
   }
 
+  /**
+   * The read was cut by a hard ceiling in the middle of a file: that file ends
+   * here as `oversized` (its head kept, `tooLarge` to the caller) rather than
+   * never being seen — which would leave it `notLoaded`, read again, cut again.
+   */
+  endOversized(): void {
+    if (this.stopped) return
+    this.append(this.carry)
+    this.carry = Buffer.alloc(0)
+    if (this.curSize) {
+      const head = Buffer.concat(this.cur).subarray(0, this.limits.headerBytes)
+      this.cur = [head]
+      this.curSize = head.length
+      this.curOver = true
+    }
+    this.finish()
+    this.stopped = true
+  }
+
   private append(part: Uint8Array): void {
     if (!part.length) return
     if (this.curOver) return

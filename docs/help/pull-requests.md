@@ -829,8 +829,12 @@ What it does not do:
   when the transfer crawls under 1 KB/s for 15, and never asks for a password:
   git's prompt is off and Git Credential Manager is told not to open its
   sign-in window, so a remote that needs one falls back to the API. An ssh
-  remote uses your own ssh settings as they are. A shallow or partial clone
-  that lacks the objects falls back to the host's API.
+  remote uses your own ssh settings as they are, except that ssh's own
+  passphrase window is not opened. When another git operation holds the
+  repository (a long push) for more than five seconds, the fetch is skipped
+  that time and the API is used. Changes you make in the working tree while it
+  runs are not lost: the repository refreshes once it is done. A shallow or
+  partial clone that lacks the objects falls back to the host's API.
 - **Over the caps**, a file is listed with its counts and no diff: 20,000
   changed lines or 8 MB of diff read from the clone, 4 MB per version read
   from Azure DevOps. One read keeps about 150,000 lines or 48 MB of diffs; the
