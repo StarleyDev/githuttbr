@@ -365,6 +365,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const people = pr ? participants(pr) : []
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
   const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits', reloads)
+  // A truncated list is not the whole count: the detail's own number, when it says more.
+  const commitCount = commits.list?.truncated
+    ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
+    : (commits.list?.commits.length ?? pr?.commits)
 
   return (
     <div className="prp-frame">
@@ -425,7 +429,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
           <nav className="prp-tabs" role="tablist">
             <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
-            <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commits.list?.commits.length ?? pr?.commits} />
+            <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commitCount} />
             <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
             <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
           </nav>

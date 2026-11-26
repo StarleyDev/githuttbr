@@ -1558,7 +1558,7 @@ export const repoActions = {
    * be read here; the branches and the graph refresh after. No undo: moving a
    * remote-tracking ref is what every fetch does.
    */
-  fetchPrBranch: (path: string, name: string, remote: string): Promise<boolean> =>
+  fetchPrBranch: (path: string, remote: string, name: string): Promise<boolean> =>
     enqueue(path, async () => {
       useUIStore.getState().beginInflight()
       try {

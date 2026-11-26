@@ -130,19 +130,36 @@ describe('a pull request’s commits — main', () => {
       expect(l.commits[1].authorLogin).toBeUndefined()
     })
 
-    it('pages to GitHub’s 250 and says the list may go on', async () => {
+    const fullPages = (total: number): Array<[string, Answer]> => {
       const page = (n: number, from: number): Record<string, unknown>[] =>
         Array.from({ length: n }, (_, i) => gh(`c${from + i}`, from + i ? [`c${from + i - 1}`] : []))
-      routes = [
+      return [
         [`${URL}?per_page=100&page=1`, { body: page(100, 0) }],
         [`${URL}?per_page=100&page=2`, { body: page(100, 100) }],
-        [`${URL}?per_page=100&page=3`, { body: page(50, 200) }]
+        [`${URL}?per_page=100&page=3`, { body: page(50, 200) }],
+        ['https://api.github.com/repos/team/app/pulls/7', { body: { commits: total } }]
       ]
+    }
+
+    it('pages to GitHub’s 250; the PR’s own count says whether there are more', async () => {
+      routes = fullPages(312)
       const l = await list(GITHUB)
-      expect(asked).toHaveLength(3)
+      expect(asked).toHaveLength(4)
+      expect(asked[3]).toBe('https://api.github.com/repos/team/app/pulls/7')
       expect(l.commits).toHaveLength(250)
-      expect(l.truncated).toBe(true)
+      expect(l).toMatchObject({ truncated: true, kept: 'oldest' })
       expect(l.commits[0].subject).toBe('Subject c0')
+    })
+
+    it('a pull request of exactly 250 commits is not truncated', async () => {
+      routes = fullPages(250)
+      expect((await list(GITHUB)).truncated).toBe(false)
+    })
+
+    it('under 250 the count is not asked', async () => {
+      routes = [[URL, { body: [gh('a1', ['f0'])] }]]
+      await list(GITHUB)
+      expect(asked).toEqual([`${URL}?per_page=100&page=1`])
     })
   })
 
@@ -167,7 +184,7 @@ describe('a pull request’s commits — main', () => {
       expect(l.commits[0].authorLogin).toBeUndefined()
     })
 
-    it('past the cap is truncated: three pages of 100, the first 250 kept', async () => {
+    it('past the cap is truncated: three pages of 100, the 250 most recent kept', async () => {
       const page = (from: number): Record<string, unknown>[] =>
         Array.from({ length: 100 }, (_, i) => ({ id: sha(`d${from + i}`), message: `m${from + i}`, author_name: 'Sam', authored_date: '2026-11-02T09:00:00Z' }))
       routes = [
@@ -178,7 +195,9 @@ describe('a pull request’s commits — main', () => {
       const l = await list(`${GITLAB}/team/app.git`)
       expect(asked).toHaveLength(3)
       expect(l.commits).toHaveLength(250)
-      expect(l.truncated).toBe(true)
+      // GitLab lists newest first, so the cap kept the most recent — d0 is the newest.
+      expect(l).toMatchObject({ truncated: true, kept: 'newest' })
+      expect(l.commits[249].subject).toBe('m0')
     })
   })
 
@@ -206,6 +225,41 @@ describe('a pull request’s commits — main', () => {
       // Azure's listing names no parents.
       expect(l.commits[0].parents).toBeUndefined()
       expect(l.truncated).toBe(false)
+    })
+
+    const az = (tag: string): Record<string, unknown> => ({ commitId: sha(tag), comment: tag, author: { name: 'Lee', date: '2026-11-03T08:00:00Z' } })
+
+    it('follows x-ms-continuationtoken, with the same $top, until it stops', async () => {
+      const first = `${URL}?$top=251&api-version=7.1`
+      const second = `${first}&continuationToken=next%2B1`
+      routes = [
+        [first, { body: { value: [az('c3'), az('b2')] }, headers: { 'x-ms-continuationtoken': 'next+1' } }],
+        [second, { body: { value: [az('a1')] } }]
+      ]
+      const l = await list(AZURE)
+      expect(asked).toEqual([first, second])
+      expect(subjects(l)).toEqual(['a1', 'b2', 'c3'])
+      expect(l.truncated).toBe(false)
+    })
+
+    it('a page of exactly 100 with no token, under the $top asked, reads as a cap: truncated', async () => {
+      routes = [[URL, { body: { value: Array.from({ length: 100 }, (_, i) => az(`e${i}`)) } }]]
+      const l = await list(AZURE)
+      expect(l.commits).toHaveLength(100)
+      expect(l).toMatchObject({ truncated: true, kept: 'newest' })
+    })
+
+    it('a token still there at the cap is truncated', async () => {
+      routes = [
+        [
+          URL,
+          { body: { value: Array.from({ length: 251 }, (_, i) => az(`f${i}`)) }, headers: { 'x-ms-continuationtoken': 'more' } }
+        ]
+      ]
+      const l = await list(AZURE)
+      expect(asked).toHaveLength(1)
+      expect(l.commits).toHaveLength(250)
+      expect(l.truncated).toBe(true)
     })
   })
 
@@ -309,6 +363,36 @@ describe('a pull request’s commits — main', () => {
       expect(splitCommitMessage('Fix it\r\n\r\nBecause.\r\n')).toEqual({ subject: 'Fix it', body: 'Because.' })
       expect(splitCommitMessage('Only a subject\n')).toEqual({ subject: 'Only a subject' })
       expect(splitCommitMessage(undefined)).toEqual({ subject: '' })
+    })
+
+    it('a tie in what the parents say falls back to the documented order', async () => {
+      const { isListedNewestFirst } = await import('../src/shared/prCommits')
+      // b's parent a comes before it, d's parent c after it: one vote each way.
+      const tie = [{ sha: 'a' }, { sha: 'b', parentShas: ['a'] }, { sha: 'd', parentShas: ['c'] }, { sha: 'c' }]
+      expect(isListedNewestFirst(tie, true)).toBe(true)
+      expect(isListedNewestFirst(tie, false)).toBe(false)
+    })
+
+    it('a merge commit: its second parent off the list does not sway the order', async () => {
+      const { orderOldestFirst, finishPrCommits } = await import('../src/shared/prCommits')
+      // Newest first: the merge m (parents b and x, x not in the PR), then b, then a.
+      const listed = [
+        { sha: 'm', parentShas: ['b', 'x'] },
+        { sha: 'b', parentShas: ['a'] },
+        { sha: 'a', parentShas: ['root'] }
+      ]
+      expect(orderOldestFirst(listed, false).map((c) => c.sha)).toEqual(['a', 'b', 'm'])
+      const l = finishPrCommits(
+        listed.map((c) => ({ ...c, message: c.sha, authorName: 'Ana', authoredAt: '2026-11-01T00:00:00Z' })),
+        false,
+        false
+      )
+      expect(l.commits.map((c) => [c.subject, c.parents])).toEqual([
+        ['a', 1],
+        ['b', 1],
+        ['m', 2]
+      ])
+      expect(l.kept).toBe('newest')
     })
 
     it('without parents the host’s documented order decides; a non-https avatar is dropped', async () => {

@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterAll } from 'vitest'
 import { execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { getLocalDayKey, getPrCommitWebUrl, groupCommitsByDay } from '../src/renderer/src/lib/prCommits'
 import { gitService, gitMethodIsRead } from '../src/main/git'
 import { repoPath } from './helpers'
@@ -77,5 +80,53 @@ describe('which of a pull request’s commits this clone has', () => {
   it('a tree id is not a commit', async () => {
     const tree = execFileSync('git', ['-C', R, 'rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim()
     expect(await gitService.getLocalCommits(R, [tree])).toEqual([])
+  })
+})
+
+describe('a partial clone is never fetched from by the check', () => {
+  // A scratch origin and a blob:none clone of main alone: the feature commit is
+  // on the promisor remote, not here. The check must not lazily fetch it.
+  const root = mkdtempSync(join(tmpdir(), 'githuttbr-partial-'))
+  afterAll(() => rmSync(root, { recursive: true, force: true }))
+  const git = (cwd: string, args: string[], env: NodeJS.ProcessEnv = {}): string =>
+    execFileSync('git', ['-c', 'user.name=Ana', '-c', 'user.email=ana@example.com', '-C', cwd, ...args], {
+      encoding: 'utf8',
+      env: { ...process.env, ...env },
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim()
+  const has = (cwd: string, sha: string): boolean => {
+    try {
+      git(cwd, ['cat-file', '-e', sha], { GIT_NO_LAZY_FETCH: '1' })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  it('a commit only on the promisor remote stays missing, and nothing is fetched', async () => {
+    const origin = join(root, 'origin')
+    const clone = join(root, 'clone')
+    execFileSync('git', ['init', '-q', '-b', 'main', origin])
+    git(origin, ['config', 'uploadpack.allowFilter', 'true'])
+    git(origin, ['config', 'uploadpack.allowAnySHA1InWant', 'true'])
+    writeFileSync(join(origin, 'a.txt'), 'one\n')
+    git(origin, ['add', 'a.txt'])
+    git(origin, ['commit', '-q', '-m', 'one'])
+    git(origin, ['switch', '-q', '-c', 'feature'])
+    writeFileSync(join(origin, 'a.txt'), 'two\n')
+    git(origin, ['commit', '-q', '-am', 'two'])
+    const feature = git(origin, ['rev-parse', 'HEAD'])
+    git(origin, ['switch', '-q', 'main'])
+    const url = `file://${origin}`
+    execFileSync('git', ['clone', '-q', '--filter=blob:none', '--single-branch', '--branch', 'main', url, clone])
+    const main = git(clone, ['rev-parse', 'HEAD'])
+    expect(has(clone, feature)).toBe(false)
+
+    expect(await gitService.getLocalCommits(clone, [main, feature])).toEqual([main])
+    expect(has(clone, feature)).toBe(false)
+
+    // The control: without the guard, the same question fetches the commit.
+    git(clone, ['cat-file', '-t', feature])
+    expect(has(clone, feature)).toBe(true)
   })
 })

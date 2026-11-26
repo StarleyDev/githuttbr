@@ -208,6 +208,7 @@ import {
   azureReview,
   azureWorkItem,
   type Ado,
+  type AdoPage,
   type AdoText,
   type AzureRepo
 } from './azurePr'
@@ -334,7 +335,7 @@ export function azureAuth(token: string): string {
  * `Unexpected token '<'` from JSON.parse rather than as an auth error. Anything
  * that is not JSON is therefore treated as a rejected credential here.
  */
-export async function adoJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
+export async function adoJson<T>(url: string, token: string, init?: RequestInit, onHeaders?: (h: Headers) => void): Promise<T> {
   const res = await fetch(url, {
     ...init,
     headers: {
@@ -344,6 +345,8 @@ export async function adoJson<T>(url: string, token: string, init?: RequestInit)
       ...(init?.headers as Record<string, string>)
     }
   })
+  // Some lists page by a header (x-ms-continuationtoken), not by the body.
+  if (res.ok) onHeaders?.(res.headers)
 
   const body = await res.text()
   if (!res.ok) {
@@ -2026,19 +2029,26 @@ interface GhUser {
 async function azRepoOf(
   remoteUrl: string,
   sent: string | undefined
-): Promise<{ ado: Ado; optional: Ado; text: AdoText; repo: AzureRepo; token: string }> {
+): Promise<{ ado: Ado; adoPage: AdoPage; optional: Ado; text: AdoText; repo: AzureRepo; token: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
   const auth = await remoteApiToken(remoteUrl, 'azure', sent)
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
+  // The same call and retry as `ado`, handing back the continuation header too.
+  const adoPage: AdoPage = (url) =>
+    withAzureRetry(remoteUrl, auth, async (token) => {
+      let continuation: string | null = null
+      const body = await adoJson<never>(url, token, undefined, (h) => (continuation = h.get('x-ms-continuationtoken')))
+      return { body, continuation }
+    })
   // Calls that need a scope the token may not have (Work Items, Build) skip the
   // retry: a 401/403 there means "not allowed to read this", not "revoked", and
   // the retry would drop a working git credential from the helper over it.
   const optional: Ado = (url, init) => adoJson(url, auth.token, init)
   const text: AdoText = (url, max) => adoTail(url, auth.token, max)
   // The token itself only keys the CI badge cache (by fingerprint); nothing else reads it here.
-  return { ado, optional, text, token: auth.token, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+  return { ado, adoPage, optional, text, token: auth.token, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
 }
 
 /**
@@ -2448,7 +2458,7 @@ async function pullRequestCommitList(remoteUrl: string, tokens: HostTokens, numb
   }
   if (parsed?.provider === 'azure') {
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    return azurePrCommits(a.ado, a.repo, number)
+    return azurePrCommits(a.adoPage, a.repo, number)
   }
   if (parsed?.provider === 'bitbucket') {
     refuseUnreadableDataCenter(remoteUrl)
@@ -2464,8 +2474,15 @@ async function pullRequestCommitList(remoteUrl: string, tokens: HostTokens, numb
     parents?: Array<{ sha?: string }>
   }
   // GitHub lists at most 250 commits of a pull request, oldest first: three
-  // pages of 100 are all there is, and a full 250 may mean more.
+  // pages of 100 are all there is. A full 250 may mean more, so only then is
+  // the pull request's own count asked — a PR of exactly 250 is not truncated.
   const list = await allPages((page) => ghJson<GhCommit[]>(`${api}/pulls/${number}/commits?per_page=100&page=${page}`, token), 3)
+  const more =
+    list.length >= PR_COMMITS_MAX &&
+    (await ghJson<{ commits?: number }>(`${api}/pulls/${number}`, token).then(
+      (pr) => typeof pr.commits !== 'number' || pr.commits > list.length,
+      () => true
+    ))
   return finishPrCommits(
     list
       .filter((c) => typeof c.sha === 'string')
@@ -2479,7 +2496,7 @@ async function pullRequestCommitList(remoteUrl: string, tokens: HostTokens, numb
         parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
       })),
     false,
-    list.length >= PR_COMMITS_MAX
+    more
   )
 }
 

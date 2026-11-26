@@ -50,15 +50,19 @@ export function toPrCommit(raw: RawPrCommit): PrCommit {
   }
 }
 
+type Linked = { sha: string; parentShas?: string[] | null }
+
 /**
- * The commits oldest first. Hosts disagree — GitHub lists oldest first,
- * Data Center and GitLab newest first — and some do not document it. Where
- * parents are listed they settle it: in a newest-first list, some commit's
- * parent comes after it. `newestFirst` is the host's documented order, used
- * only when the parents cannot tell (no parents, or a single commit).
+ * Whether a host's list runs newest first. Hosts disagree — GitHub lists
+ * oldest first, Data Center and GitLab newest first — and some do not
+ * document it. Where parents are listed they settle it: in a newest-first
+ * list a commit's parent comes after it (a merge's other parent may lie
+ * either way, so the majority decides). `newestFirst` is the host's
+ * documented order, used when the parents cannot tell: none listed, a single
+ * commit, or a tie.
  */
-export function orderOldestFirst<T extends { sha: string; parentShas?: string[] | null }>(list: T[], newestFirst: boolean): T[] {
-  if (list.length < 2) return list
+export function isListedNewestFirst(list: readonly Linked[], newestFirst: boolean): boolean {
+  if (list.length < 2) return newestFirst
   const index = new Map(list.map((c, i) => [c.sha, i]))
   let before = 0
   let after = 0
@@ -70,20 +74,28 @@ export function orderOldestFirst<T extends { sha: string; parentShas?: string[] 
       else after++
     }
   })
-  const reverse = before || after ? after > before : newestFirst
-  return reverse ? [...list].reverse() : list
+  return before === after ? newestFirst : after > before
+}
+
+/** The commits oldest first — isListedNewestFirst says how the order is told. */
+export function orderOldestFirst<T extends Linked>(list: T[], newestFirst: boolean): T[] {
+  return isListedNewestFirst(list, newestFirst) ? [...list].reverse() : list
 }
 
 /**
  * A host's list, in the order it was read, as the tab shows it: capped at
- * PR_COMMITS_MAX (the first ones read are kept), then oldest first.
- * `hostHasMore` is the host saying so — a cursor or total the app stopped short
- * of; reading past the cap says it too.
+ * PR_COMMITS_MAX, then oldest first. The cap keeps the first ones read, so a
+ * newest-first host keeps its most recent commits and an oldest-first one its
+ * oldest: `kept` says which. `hostHasMore` is the host saying so — a cursor or
+ * total the app stopped short of; reading past the cap says it too.
  */
 export function finishPrCommits(raws: RawPrCommit[], newestFirst: boolean, hostHasMore: boolean): PrCommitList {
+  // Told from the whole list read, not just the part kept: more parents, a surer answer.
+  const reverse = isListedNewestFirst(raws, newestFirst)
   const kept = raws.slice(0, PR_COMMITS_MAX)
   return {
-    commits: orderOldestFirst(kept, newestFirst).map(toPrCommit),
-    truncated: hostHasMore || raws.length > PR_COMMITS_MAX
+    commits: (reverse ? [...kept].reverse() : kept).map(toPrCommit),
+    truncated: hostHasMore || raws.length > PR_COMMITS_MAX,
+    kept: reverse ? 'newest' : 'oldest'
   }
 }

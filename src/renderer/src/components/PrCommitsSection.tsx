@@ -75,7 +75,12 @@ export function PrCommitsSection({
   // The commit whose "not here" notice is open, by sha.
   const [missing, setMissing] = useState<string | null>(null)
   const [fetching, setFetching] = useState(false)
-  const [now] = useState(() => Date.now())
+  // "3m ago" moves on while the tab stays open.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(tick)
+  }, [])
   const shas = useMemo(() => list?.commits.map((c) => c.sha) ?? [], [list])
 
   const readLocal = useCallback(
@@ -116,7 +121,7 @@ export function PrCommitsSection({
     }
     setFetching(true)
     try {
-      if (!(await repoActions.fetchPrBranch(repoPath, pr.source, remote))) return
+      if (!(await repoActions.fetchPrBranch(repoPath, remote, pr.source))) return
       const found = await readLocal()
       setLocal(found)
       if (found.has(c.sha)) {
@@ -142,7 +147,10 @@ export function PrCommitsSection({
     <div className="prp-commit-tab">
       {list.truncated && (
         <p className="prp-side-note prp-commit-cap">
-          {interp(t('prPage.commitsTruncated'), { n: String(list.commits.length) })}{' '}
+          {/* Which end the host listed first is the end that was kept. */}
+          {interp(t(list.kept === 'newest' ? 'prPage.commitsTruncatedNewest' : 'prPage.commitsTruncatedOldest'), {
+            n: String(list.commits.length)
+          })}{' '}
           <button type="button" className="prp-link" onClick={() => void shellApi.openExternal(pr.url)}>
             {t('common.openInBrowser')}
           </button>
@@ -167,7 +175,12 @@ export function PrCommitsSection({
                 fetching={fetching}
                 onOpen={() => void openCommit(c)}
                 onFetch={() => void fetchAndOpen(c)}
-                onCopied={() => toast('success', t('prPage.commitShaCopied'))}
+                onCopy={(sha) =>
+                  navigator.clipboard.writeText(sha).then(
+                    () => toast('success', t('prPage.commitShaCopied')),
+                    () => toast('error', t('prPage.commitCopyFailed'))
+                  )
+                }
               />
             ))}
           </ul>
@@ -187,7 +200,7 @@ function PrCommitRow({
   fetching,
   onOpen,
   onFetch,
-  onCopied
+  onCopy
 }: {
   commit: PrCommit
   prUrl: string
@@ -200,17 +213,14 @@ function PrCommitRow({
   fetching: boolean
   onOpen: () => void
   onFetch: () => void
-  onCopied: () => void
+  onCopy: (sha: string) => Promise<void>
 }): React.JSX.Element {
   const t = useT()
   const [expanded, setExpanded] = useState(false)
   const web = getPrCommitWebUrl(prUrl, c.sha)
   const at = Date.parse(c.authoredAt)
   const ago = Number.isNaN(at) ? null : timeAgo(at, now)
-  const copySha = (): void => {
-    void navigator.clipboard.writeText(c.sha)
-    onCopied()
-  }
+  const copySha = (): void => void onCopy(c.sha)
   return (
     <li className={`prp-commit ${isLocal === false ? 'is-remote' : ''}`}>
       <div className="prp-commit-row">

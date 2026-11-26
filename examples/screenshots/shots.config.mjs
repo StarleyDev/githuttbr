@@ -1070,7 +1070,7 @@ export const shots = [
           parents: 1, ...(body ? { body } : {})
         })
         ipcMain.handle('hosting:prListCommits', () => ({
-          truncated: false,
+          truncated: false, kept: 'oldest',
           commits: [
             c('3f9a1c2', 'feat(search): list files across open repositories', 'Sam Rivera', 'sam', '2026-11-18T09:12:00Z',
               'The palette asks every open repository for its tracked files once,\nthen filters in memory as you type.'),

@@ -29,6 +29,8 @@ export type Ado = <T>(url: string, init?: RequestInit) => Promise<T>
 /** A plain-text read (a build log), keeping at most the last `max` bytes. Null
  *  when the server will not give it — no permission, or a sign-in page. */
 export type AdoText = (url: string, max: number) => Promise<string | null>
+/** One page of a list Azure continues by header: its body and `x-ms-continuationtoken`. */
+export type AdoPage = <T>(url: string) => Promise<{ body: T; continuation: string | null }>
 
 export interface AzureRepo {
   org: string
@@ -609,20 +611,38 @@ interface AzCommitRef {
   parents?: string[]
 }
 
+/** Commits asked for per page: one past the cap, so a list that goes on shows it. */
+const COMMITS_TOP = PR_COMMITS_MAX + 1
+
 /**
- * The commits of a pull request. One request: `ado` hands back the body only,
- * and Azure sends its continuation token in a header — so one more than the
- * cap is asked for, and getting it says the list goes on. `comment` can be cut
- * short by Azure (`commentTruncated`); the body then ends early.
+ * The commits of a pull request. Azure pages this list by a header,
+ * `x-ms-continuationtoken`, followed up to the cap. A server that serves
+ * fewer than `$top` per page and sends no token is not trusted to have
+ * ended: a page of exactly 100, 200… under the size asked for is read as a
+ * cap, and the list as truncated. `comment` can be cut short by Azure
+ * (`commentTruncated`); the body then ends early.
  */
-export async function azurePrCommits(ado: Ado, r: AzureRepo, id: number): Promise<PrCommitList> {
-  const data = await ado<{ value?: AzCommitRef[] } | AzCommitRef[]>(
-    `${repoApi(r)}/pullrequests/${id}/commits?$top=${PR_COMMITS_MAX + 1}&${V}`
-  )
-  const refs = (Array.isArray(data) ? data : (data?.value ?? [])).filter((c) => typeof c.commitId === 'string')
+export async function azurePrCommits(page: AdoPage, r: AzureRepo, id: number): Promise<PrCommitList> {
+  const base = `${repoApi(r)}/pullrequests/${id}/commits?$top=${COMMITS_TOP}&${V}`
+  const refs: AzCommitRef[] = []
+  let token: string | null = null
+  let capped = false
+  for (let n = 0; n < 10 && refs.length <= PR_COMMITS_MAX; n++) {
+    const url: string = token ? `${base}&continuationToken=${encodeURIComponent(token)}` : base
+    const res: { body: { value?: AzCommitRef[] } | AzCommitRef[] | undefined; continuation: string | null } = await page(url)
+    const { body, continuation } = res
+    const items = Array.isArray(body) ? body : (body?.value ?? [])
+    refs.push(...items)
+    token = continuation || null
+    if (!token) {
+      capped = items.length > 0 && items.length < COMMITS_TOP && items.length % 100 === 0
+      break
+    }
+  }
+  const known = refs.filter((c) => typeof c.commitId === 'string')
   // Azure lists newest first, as the web page does.
   return finishPrCommits(
-    refs.map((c) => ({
+    known.map((c) => ({
       sha: c.commitId!,
       message: c.comment,
       authorName: c.author?.name,
@@ -630,6 +650,6 @@ export async function azurePrCommits(ado: Ado, r: AzureRepo, id: number): Promis
       parentShas: Array.isArray(c.parents) ? c.parents : null
     })),
     true,
-    false
+    !!token || capped
   )
 }

@@ -2007,9 +2007,9 @@ async function commitEditRange(repoPath: string, sha: string): Promise<{ ancesto
  * A non-zero exit is not an error here: `merge-tree --stdin` aborts the batch
  * on the first fatal merge, and the records it already emitted are still good.
  */
-function gitWithStdin(repoPath: string, args: string[], input: string): Promise<string> {
+function gitWithStdin(repoPath: string, args: string[], input: string, extraEnv?: NodeJS.ProcessEnv): Promise<string> {
   return new Promise((resolve) => {
-    const child = spawn('git', ['-C', repoPath, ...args], { env: noPromptEnv() })
+    const child = spawn('git', ['-C', repoPath, ...args], { env: { ...noPromptEnv(), ...extraEnv } })
     let out = ''
     child.stdout.on('data', (d: Buffer) => (out += d.toString()))
     child.on('error', () => resolve(out))
@@ -4732,7 +4732,11 @@ export const gitService = {
     const out = await gitWithStdin(
       repoPath,
       ['cat-file', '--batch-check=%(objectname) %(objecttype)'],
-      wanted.map((s) => `${s}\n`).join('')
+      wanted.map((s) => `${s}\n`).join(''),
+      // A partial clone would fetch a missing object from its promisor remote —
+      // a network write inside a read. Missing stays missing (git 2.44+; older
+      // versions ignore the variable).
+      { GIT_NO_LAZY_FETCH: '1' }
     ).catch(() => '')
     const found = new Set<string>()
     for (const line of out.split('\n')) {

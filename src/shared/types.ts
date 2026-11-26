@@ -801,6 +801,9 @@ export interface PrCommit {
 export interface PrCommitList {
   commits: PrCommit[]
   truncated: boolean
+  /** Which end a truncated list kept — the host's first ones as it lists them:
+   *  the oldest on an oldest-first host, the most recent on a newest-first one. */
+  kept: 'oldest' | 'newest'
 }
 
 /** Full detail for one pull request (conversation + review state). */
