@@ -69,6 +69,7 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prDetail', 1],
   ['hosting:prFiles', 1],
   ['hosting:prListCommits', 1],
+  ['hosting:prListUpdates', 1],
   ['hosting:prChecks', 1],
   ['hosting:prComment', 1, 'Thanks!'],
   ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],
@@ -79,6 +80,13 @@ const PR_OPS: Provider['ops'] = [
   ['hosting:prMerge', 1, 'merge'],
   ['hosting:listPRs'],
   ['hosting:listFinishedPRs']
+]
+// One update's own diff from the host; Forgejo has no two-commit diff and asks nothing.
+const UPDATE_FILES: Provider['ops'][number] = [
+  'hosting:prUpdateFiles',
+  1,
+  { sha: 'a'.repeat(40), iteration: 1 },
+  { sha: 'b'.repeat(40), iteration: 2 }
 ]
 const ISSUE_OPS: Provider['ops'] = [
   ['hosting:listIssues'],
@@ -106,27 +114,27 @@ const PROVIDERS: Provider[] = [
     name: 'github.com',
     remote: 'https://github.com/team/app.git',
     slot: 'com',
-    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, REFS, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, UPDATE_FILES, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, REFS, ['hosting:ciStatuses-github']]
   },
   {
     name: 'GitHub Enterprise Server',
     remote: `${GHES}/team/app.git`,
     slot: 'ghes',
-    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, REFS, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, UPDATE_FILES, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, REFS, ['hosting:ciStatuses-github']]
   },
-  { name: 'a GitLab server', remote: `${GITLAB}/team/app.git`, slot: 'gitlab', ops: [...PR_OPS, PICKER, REFS, ['hosting:getReferenceSummaries', [{ sigil: '!', id: 3 }]]] },
+  { name: 'a GitLab server', remote: `${GITLAB}/team/app.git`, slot: 'gitlab', ops: [...PR_OPS, UPDATE_FILES, PICKER, REFS, ['hosting:getReferenceSummaries', [{ sigil: '!', id: 3 }]]] },
   {
     name: 'a Bitbucket Data Center',
     remote: `${BBS}/scm/proj/app.git`,
     slot: 'bbs',
-    ops: [...PR_OPS, PICKER, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, UPDATE_FILES, PICKER, ['hosting:ciStatuses-github']]
   },
   { name: 'Forgejo', remote: `${FORGEJO}/team/app.git`, slot: 'forgejo', ops: [...PR_OPS, ...ISSUE_OPS, ['hosting:listReleases'], REFS] },
   {
     name: 'Azure DevOps',
     remote: 'https://dev.azure.com/acme/proj/_git/app',
     slot: 'azure',
-    ops: [...PR_OPS, PICKER, ['hosting:workItem', 7], ['hosting:getReferenceSummaries', [{ sigil: 'AB#', id: 7 }]]]
+    ops: [...PR_OPS, UPDATE_FILES, PICKER, ['hosting:workItem', 7], ['hosting:getReferenceSummaries', [{ sigil: 'AB#', id: 7 }]]]
   }
 ]
 

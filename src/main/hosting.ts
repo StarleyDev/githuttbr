@@ -25,6 +25,7 @@ import {
 } from '../shared/prLineAnchor'
 import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
 import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
+import { finishPrUpdates, groupGithubTimeline, groupUpdatesByHeads, type GithubTimelineItem } from '../shared/prUpdates'
 import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../shared/prCommentHandle'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
@@ -62,6 +63,7 @@ import {
   forgejoPullDetail,
   forgejoPullFiles,
   forgejoPullCommits,
+  forgejoPullUpdates,
   forgejoReview,
   describeForgejoAccount,
   fjJson,
@@ -112,6 +114,8 @@ import {
 import { knownBitbucketServerInstances } from './bitbucketServerInstances'
 import {
   bbsPullCommits,
+  bbsPullUpdates,
+  bbsCompareFiles,
   bbsCiStatuses,
   bbsComment,
   bbsCommentOnLine,
@@ -185,6 +189,9 @@ import type {
   PrDiffRevision,
   PrFileList,
   PrCommitList,
+  PrUpdateEnd,
+  PrUpdateFiles,
+  PrUpdateList,
   PrCheck,
   PrFile,
   IssueInfo,
@@ -213,6 +220,8 @@ import {
   azureBuildLog,
   azurePrDetail,
   azurePrFiles,
+  azurePrIterationFiles,
+  azurePrUpdates,
   azureReply,
   azureCommentOnLine,
   azureDeleteComment,
@@ -1977,27 +1986,33 @@ export function diffLineCounts(diff: string): { additions: number; deletions: nu
   return { additions, deletions }
 }
 
-async function glMergeRequestFiles(remoteUrl: string, token: string | undefined, number: number): Promise<PrFile[]> {
-  const { base, auth } = await glProjectOf(remoteUrl, token)
-  type GlDiff = {
-    old_path: string
-    new_path: string
-    new_file: boolean
-    renamed_file: boolean
-    deleted_file: boolean
-    diff: string
-  }
-  const diffs = await allPages((page) =>
-    glJson<GlDiff[]>(`${base}/merge_requests/${number}/diffs?per_page=100&page=${page}`, auth)
-  ).catch(() => [] as GlDiff[])
-  return diffs.map((d) => ({
+/** One file of a GitLab diff — a merge request's, or a compare's. */
+type GlDiff = {
+  old_path: string
+  new_path: string
+  new_file: boolean
+  renamed_file: boolean
+  deleted_file: boolean
+  diff: string
+}
+
+function glDiffToFile(d: GlDiff): PrFile {
+  return {
     filename: d.new_path || d.old_path,
     status: d.new_file ? 'added' : d.deleted_file ? 'removed' : d.renamed_file ? 'renamed' : 'modified',
     ...diffLineCounts(d.diff || ''),
     // GitLab sends an empty diff for binaries and for files over its size limit.
     ...(d.diff ? { patch: d.diff } : {}),
     ...(d.renamed_file && d.old_path !== d.new_path ? { previousFilename: d.old_path } : {})
-  }))
+  }
+}
+
+async function glMergeRequestFiles(remoteUrl: string, token: string | undefined, number: number): Promise<PrFile[]> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  const diffs = await allPages((page) =>
+    glJson<GlDiff[]>(`${base}/merge_requests/${number}/diffs?per_page=100&page=${page}`, auth)
+  ).catch(() => [] as GlDiff[])
+  return diffs.map(glDiffToFile)
 }
 
 async function glReplyReviewComment(
@@ -2597,6 +2612,281 @@ async function pullRequestCommitList(remoteUrl: string, tokens: HostTokens, numb
     false,
     more
   )
+}
+
+// ── Pull request updates (the Updates tab) ──────────────────────────────────
+
+/** A full commit id: anything else could name a ref, or read as an option. */
+const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+
+/** How many GitLab diff versions past the MR's current commits are read for their own commits. */
+const GITLAB_VERSION_READS = 10
+
+/**
+ * The commits of GitLab diff versions already read, by project, MR and version.
+ * A version never changes once written, so it is read once a session. Capped.
+ */
+const glVersionCommits = new Map<string, unknown[]>()
+const GITLAB_VERSION_CACHE_MAX = 200
+
+/**
+ * GitLab's diff versions — one per push, newest first — give each update's
+ * head; the commits come from the MR's commit list, walked from each head.
+ * A head that list no longer reaches (rewritten since) is read through its
+ * own version, which carries that version's commits, for a few of them.
+ * Versions name no pusher.
+ */
+async function glMergeRequestUpdates(remoteUrl: string, token: string | undefined, number: number): Promise<PrUpdateList> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  type GlVersion = { id?: number; head_commit_sha?: string; base_commit_sha?: string; created_at?: string }
+  type GlCommit = { id?: string; message?: string; author_name?: string; authored_date?: string; parent_ids?: string[] }
+  const toRaw = (c: GlCommit): RawPrCommit => ({
+    sha: c.id!,
+    message: c.message,
+    authorName: c.author_name,
+    authoredAt: c.authored_date,
+    parentShas: Array.isArray(c.parent_ids) ? c.parent_ids : null
+  })
+  // Three pages of 100 each, as the Commits tab reads: a full third page is read as more.
+  const [versions, commits] = await Promise.all([
+    allPages((page) => glJson<GlVersion[]>(`${base}/merge_requests/${number}/versions?per_page=100&page=${page}`, auth), 3),
+    allPages((page) => glJson<GlCommit[]>(`${base}/merge_requests/${number}/commits?per_page=100&page=${page}`, auth), 3)
+  ])
+  const graph = new Map<string, RawPrCommit>()
+  for (const c of commits) if (typeof c.id === 'string') graph.set(c.id, toRaw(c))
+  const heads = versions
+    .filter((v): v is GlVersion & { id: number; head_commit_sha: string } => typeof v.id === 'number' && typeof v.head_commit_sha === 'string')
+    .sort((a, b) => a.id - b.id)
+  const missing = heads.filter((v) => !graph.has(v.head_commit_sha)).slice(-GITLAB_VERSION_READS)
+  await Promise.all(
+    missing.map(async (v) => {
+      const key = `${base}|${number}|${v.id}`
+      let list = glVersionCommits.get(key) as GlCommit[] | undefined
+      if (!list) {
+        const detail = await glJson<{ commits?: GlCommit[] }>(`${base}/merge_requests/${number}/versions/${v.id}`, auth).catch(() => null)
+        if (detail) {
+          list = detail.commits ?? []
+          if (glVersionCommits.size >= GITLAB_VERSION_CACHE_MAX) glVersionCommits.delete(glVersionCommits.keys().next().value!)
+          glVersionCommits.set(key, list)
+        }
+      }
+      for (const c of list ?? []) if (typeof c.id === 'string' && !graph.has(c.id)) graph.set(c.id, toRaw(c))
+    })
+  )
+  // Newest first: three full pages kept the latest 300 and lost the opening.
+  const startCut = versions.length >= 300
+  const drafts = groupUpdatesByHeads(
+    heads.map((v) => ({
+      id: String(v.id),
+      createdAt: v.created_at ?? '',
+      headSha: v.head_commit_sha,
+      // The first version listed is compared with its merge base only when it is the opening.
+      ...(v.base_commit_sha && !startCut ? { baseSha: v.base_commit_sha } : {})
+    })),
+    graph
+  )
+  const done = finishPrUpdates(drafts, startCut)
+  return { updates: done.updates, truncated: done.truncated || commits.length >= 300, grouping: 'native', startCut }
+}
+
+/** How many pages of 100 timeline items GitHub is asked for. */
+const GITHUB_TIMELINE_PAGES = 5
+
+/**
+ * GitHub has no record of a plain push, so updates are rebuilt from the pull
+ * request's timeline: its commits and its force pushes (GraphQL — the REST
+ * timeline's commits carry no date of their own beyond the commit's, and its
+ * force pushes no before/after heads). See groupGithubTimeline for how.
+ */
+async function ghPullRequestUpdates(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrUpdateList> {
+  const { owner, repo, token, ep } = await ghRepoOf(remoteUrl, tokens.github)
+  const post = createGithubGraphqlPost(ep.graphqlUrl, token)
+  type Node =
+    | { __typename: 'PullRequestCommit'; commit?: GhGqlCommit | null }
+    | {
+        __typename: 'HeadRefForcePushedEvent'
+        createdAt?: string
+        actor?: { login?: string } | null
+        beforeCommit?: { oid?: string } | null
+        afterCommit?: { oid?: string } | null
+      }
+  type GhGqlCommit = {
+    oid?: string
+    message?: string
+    committedDate?: string
+    authoredDate?: string
+    parents?: { nodes?: Array<{ oid?: string }> } | null
+    author?: { name?: string; user?: { login?: string; avatarUrl?: string } | null } | null
+  }
+  type Answer = {
+    repository?: {
+      pullRequest?: {
+        createdAt?: string
+        author?: { login?: string } | null
+        timelineItems?: { pageInfo?: { hasPreviousPage?: boolean; startCursor?: string | null }; nodes?: Node[] }
+      } | null
+    } | null
+  }
+  const query = `query($owner: String!, $repo: String!, $number: Int!, $before: String) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      createdAt
+      author { login }
+      timelineItems(last: 100, before: $before, itemTypes: [PULL_REQUEST_COMMIT, HEAD_REF_FORCE_PUSHED_EVENT]) {
+        pageInfo { hasPreviousPage startCursor }
+        nodes {
+          __typename
+          ... on PullRequestCommit {
+            commit {
+              oid message committedDate authoredDate
+              parents(first: 2) { nodes { oid } }
+              author { name user { login avatarUrl } }
+            }
+          }
+          ... on HeadRefForcePushedEvent {
+            createdAt
+            actor { login }
+            beforeCommit { oid }
+            afterCommit { oid }
+          }
+        }
+      }
+    }
+  }
+}`
+  // Read from the newest end, a page of 100 at a time: past the cap, the
+  // latest pushes are what matter — the opening is what goes.
+  const pages: GithubTimelineItem[][] = []
+  let opened = { at: '' } as { at: string; author?: string }
+  let before: string | null = null
+  let more = false
+  for (let page = 0; page < GITHUB_TIMELINE_PAGES; page++) {
+    const items: GithubTimelineItem[] = []
+    pages.unshift(items)
+    const data: Answer = await post<Answer>(query, { owner, repo, number, before })
+    const pr = data.repository?.pullRequest
+    if (!pr) throw new HttpStatusError(`GitHub: pull request ${number} not found.`, 404)
+    if (page === 0) opened = { at: pr.createdAt ?? '', ...(pr.author?.login ? { author: pr.author.login } : {}) }
+    for (const n of pr.timelineItems?.nodes ?? []) {
+      if (n.__typename === 'PullRequestCommit') {
+        const c = n.commit
+        if (!c?.oid) continue
+        items.push({
+          type: 'commit',
+          committedAt: c.committedDate ?? '',
+          commit: {
+            sha: c.oid,
+            message: c.message,
+            authorName: c.author?.name,
+            authorLogin: c.author?.user?.login,
+            authorAvatar: c.author?.user?.avatarUrl,
+            authoredAt: c.authoredDate,
+            parentShas: c.parents?.nodes ? c.parents.nodes.flatMap((p) => (p.oid ? [p.oid] : [])) : null
+          }
+        })
+      } else if (n.__typename === 'HeadRefForcePushedEvent') {
+        items.push({
+          type: 'forcePush',
+          at: n.createdAt ?? '',
+          ...(n.actor?.login ? { actor: n.actor.login } : {}),
+          ...(n.beforeCommit?.oid ? { beforeSha: n.beforeCommit.oid } : {}),
+          ...(n.afterCommit?.oid ? { afterSha: n.afterCommit.oid } : {})
+        })
+      }
+    }
+    const info = pr.timelineItems?.pageInfo
+    more = !!info?.hasPreviousPage && !!info.startCursor
+    if (!more) break
+    before = info!.startCursor!
+  }
+  const done = finishPrUpdates(groupGithubTimeline(pages.flat(), opened, more), more)
+  return { updates: done.updates, truncated: done.truncated, grouping: 'approximate', startCut: more }
+}
+
+/**
+ * A pull request's updates — its pushes — for the Updates tab, oldest first.
+ * Each host reads its own record of them (see the per-host functions);
+ * bitbucket.org has no PR page in the app, and answers "unsupported".
+ */
+async function pullRequestUpdateList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrUpdateList> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') return glMergeRequestUpdates(remoteUrl, tokens.gitlab, number)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullUpdates(b.repo, b.token, number)
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullUpdates(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parsed?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrUpdates(a.ado, a.repo, number)
+  }
+  if (parsed?.provider === 'github') return ghPullRequestUpdates(remoteUrl, tokens, number)
+  return { updates: [], truncated: false, grouping: 'unsupported' }
+}
+
+/** One end of an update's comparison, as the renderer sent it — checked before it reaches a URL. */
+function validUpdateEnd(end: unknown): PrUpdateEnd {
+  const e = end as { sha?: unknown; iteration?: unknown } | null
+  if (!e || !isFullSha(e.sha)) throw new Error('An update is compared by its full commit id.')
+  const iteration = typeof e.iteration === 'number' && Number.isSafeInteger(e.iteration) && e.iteration >= 0 ? e.iteration : undefined
+  return { sha: e.sha, ...(iteration !== undefined ? { iteration } : {}) }
+}
+
+/**
+ * The changes one update made — `from`'s tree against `to`'s — from the host,
+ * for when this clone lacks either commit (the renderer diffs locally when it
+ * has both). Null when the host has no way to say: Forgejo's API has no
+ * two-commit diff, and bitbucket.org no PR page; the tab offers to fetch the
+ * branch instead. GitHub's and Data Center's compares diff from the merge base
+ * of the two (`fromMergeBase`): after a rewrite, what the push removed is not
+ * shown — the renderer fetches both heads and diffs locally first, and says so
+ * when it could not.
+ */
+async function pullRequestUpdateFiles(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  fromEnd: unknown,
+  toEnd: unknown
+): Promise<PrUpdateFiles | null> {
+  const from = validUpdateEnd(fromEnd)
+  const to = validUpdateEnd(toEnd)
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    // `straight`: the two trees, from..to — not from the merge base, which after a rebase is elsewhere.
+    const res = await glJson<{ diffs?: GlDiff[] }>(`${base}/repository/compare?from=${from.sha}&to=${to.sha}&straight=true`, auth)
+    return { files: (res?.diffs ?? []).map(glDiffToFile), fromMergeBase: false }
+  }
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return { files: await bbsCompareFiles(b.repo, b.token, from.sha, to.sha), fromMergeBase: true }
+  }
+  if (parsed?.provider === 'azure') {
+    if (from.iteration === undefined || to.iteration === undefined) return null
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    const files = await azurePrIterationFiles(a.ado, a.repo, number, { iteration: from.iteration, sha: from.sha }, { iteration: to.iteration, sha: to.sha })
+    return { files, fromMergeBase: false }
+  }
+  if (parsed?.provider === 'github') {
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    type GhFile = { filename: string; status: string; additions: number; deletions: number; patch?: string; previous_filename?: string }
+    // The file list comes whole (up to 300 files) with the first page; one commit per page keeps the rest small.
+    const res = await ghJson<{ files?: GhFile[] }>(`${api}/compare/${from.sha}...${to.sha}?per_page=1&page=1`, token)
+    const files = (res.files ?? []).map((f) => ({
+      filename: f.filename,
+      status: f.status,
+      additions: f.additions,
+      deletions: f.deletions,
+      ...(f.patch ? { patch: f.patch } : {}),
+      ...(f.previous_filename ? { previousFilename: f.previous_filename } : {})
+    }))
+    return { files, fromMergeBase: true }
+  }
+  return null
 }
 
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
@@ -4684,6 +4974,14 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo('hosting:prListCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestCommitList(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:prListUpdates', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestUpdateList(remoteUrl, tokens, number)
+  )
+  handleForRepo(
+    'hosting:prUpdateFiles',
+    (remoteUrl: string, tokens: HostTokens, number: number, from: unknown, to: unknown) =>
+      pullRequestUpdateFiles(remoteUrl, tokens, number, from, to)
   )
   handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
     pullRequestCheckLog(remoteUrl, tokens, url)
