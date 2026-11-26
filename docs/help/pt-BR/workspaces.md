@@ -116,7 +116,9 @@ aberto; clicar num chip leva você de volta.
 Algumas páginas não são coisa à parte: a [wiki](repo-wiki.md) de um
 repositório, os [insights](insights.md) dele, as [DevTools](devtools.md) que uma
 sessão de execução anunciou. Elas não ocupam uma aba — aparecem como pequenos
-ícones no próprio repositório.
+chips no próprio repositório: um ícone e uma palavra que diz qual página é
+(*CI*, *PRs*, *Wiki*, *#482* para um pull request, a tag de uma release). O nome
+completo fica na dica do mouse, e uma tag ou título longo é cortado com "…".
 
 - **Clique num ícone** para mostrar aquela página. **Clique de novo — ou no nome
   do repositório** — para voltar ao repositório. Enquanto uma página está à

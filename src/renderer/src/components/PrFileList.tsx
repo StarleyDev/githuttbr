@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, CircleDot, Folder, FolderOpen } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleDot, Folder, FolderOpen, MessageSquare } from 'lucide-react'
 import type { PrFile } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
 import {
@@ -16,6 +16,7 @@ import {
 } from '../lib/fileTree'
 import { ViewToggle } from './CommitComposer'
 import { useT, interp } from '../i18n'
+import { sumThreadCounts } from '../lib/prFileThreads'
 
 type PrTreeNode = FileTreeNode<PrFile>
 
@@ -24,6 +25,19 @@ type PrTreeNode = FileTreeNode<PrFile>
 // every folder the reviewer had already folded away. Capped, see saveCollapsedFolders.
 const collapsedByPr = new Map<string, Set<string>>()
 const COLLAPSED_PRS_KEPT = 50
+
+/** The review conversations on a file or folder, as a small speech-bubble count. */
+function ThreadBadge({ count }: { count: number }): React.JSX.Element | null {
+  const t = useT()
+  if (count <= 0) return null
+  const label = interp(t('prPage.fileThreads'), { n: count })
+  return (
+    <span className="prp-file-threads" title={label} aria-label={label}>
+      <MessageSquare size={10} aria-hidden="true" />
+      {count}
+    </span>
+  )
+}
 
 function getStatusLetter(status: string): string {
   return status === 'added' ? 'A' : status === 'removed' ? 'D' : status === 'renamed' ? 'R' : 'M'
@@ -41,6 +55,7 @@ const FileRow = memo(function FileRow({
   isSelected,
   isViewed,
   isChanged,
+  threadCount,
   onSelectFile,
   onSetFilesViewed
 }: {
@@ -52,6 +67,8 @@ const FileRow = memo(function FileRow({
   isViewed: boolean
   /** Ticked once, then changed by a push: not viewed any more. */
   isChanged: boolean
+  /** Review conversations on this file. */
+  threadCount: number
   onSelectFile: (filename: string) => void
   onSetFilesViewed: (filenames: string[], viewed: boolean) => void
 }): React.JSX.Element {
@@ -97,6 +114,7 @@ const FileRow = memo(function FileRow({
           <CircleDot size={10} aria-hidden="true" />
         </span>
       )}
+      <ThreadBadge count={threadCount} />
       <span className="prd-file-stat">
         <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
       </span>
@@ -111,6 +129,7 @@ const FolderRow = memo(function FolderRow({
   isCollapsed,
   totals,
   viewedCount,
+  threadCount,
   onToggleFolder,
   onSetFilesViewed
 }: {
@@ -120,6 +139,8 @@ const FolderRow = memo(function FolderRow({
   isCollapsed: boolean
   totals: FolderTotals<PrFile>
   viewedCount: number
+  /** Review conversations across the folder's files. */
+  threadCount: number
   onToggleFolder: (path: string) => void
   onSetFilesViewed: (filenames: string[], viewed: boolean) => void
 }): React.JSX.Element {
@@ -172,6 +193,7 @@ const FolderRow = memo(function FolderRow({
       >
         {viewedCount}/{total}
       </span>
+      <ThreadBadge count={threadCount} />
       <span className="prd-file-stat">
         <span className="ins-add">+{totals.additions}</span>{' '}
         <span className="ins-del">−{totals.deletions}</span>
@@ -189,6 +211,7 @@ export const PrFileList = memo(function PrFileList({
   files,
   viewed,
   changedSinceViewed,
+  threadCounts,
   selected,
   prKey,
   onSelectFile,
@@ -198,6 +221,8 @@ export const PrFileList = memo(function PrFileList({
   viewed: Set<string>
   /** Ticked once, changed by a push since. */
   changedSinceViewed: Set<string>
+  /** Review conversations per file path (getThreadCountsByPath). */
+  threadCounts: ReadonlyMap<string, number>
   /** The filename whose diff is open. */
   selected: string
   /** Identifies the pull request, to remember its collapsed folders. */
@@ -222,6 +247,11 @@ export const PrFileList = memo(function PrFileList({
     }
     return out
   }, [totals, viewed])
+  const threadsByFolder = useMemo(() => {
+    const out = new Map<string, number>()
+    for (const [path, sum] of totals) out.set(path, sumThreadCounts(threadCounts, sum.files.map((f) => f.filename)))
+    return out
+  }, [totals, threadCounts])
   const rows = useMemo<FileTreeRow<PrFile>[]>(
     () =>
       view === 'tree'
@@ -319,6 +349,7 @@ export const PrFileList = memo(function PrFileList({
               isSelected={node.file.filename === selected}
               isViewed={viewed.has(node.file.filename)}
               isChanged={changedSinceViewed.has(node.file.filename)}
+              threadCount={threadCounts.get(node.file.filename) ?? 0}
               onSelectFile={onSelectFile}
               onSetFilesViewed={onSetFilesViewed}
             />
@@ -331,6 +362,7 @@ export const PrFileList = memo(function PrFileList({
               isCollapsed={collapsed.has(node.path)}
               totals={totals.get(node.path) ?? NO_TOTALS}
               viewedCount={viewedByFolder.get(node.path) ?? 0}
+              threadCount={threadsByFolder.get(node.path) ?? 0}
               onToggleFolder={toggleFolder}
               onSetFilesViewed={onSetFilesViewed}
             />

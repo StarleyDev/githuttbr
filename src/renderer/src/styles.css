@@ -4594,7 +4594,12 @@ body.col-resizing .node-ava {
 }
 .tab-page-chip:hover { color: var(--text-1); background: var(--bg-3); }
 .tab-page-chip.active { color: var(--accent); background: var(--accent-soft); }
-.tab-page-num { margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.tab-page-num {
+  margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums;
+  /* A release tag or a milestone title can be long: the chip stays a chip. */
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tab-page-chip:not(.tab-page-chip-pr) { padding: 2px 5px 2px 3px; }
 /* A pull request is a destination of its own, not a tool icon: a bordered pill
    with a bigger icon and the number in bold, solid accent while it is open. */
 .tab-page-chip-pr {
@@ -13444,8 +13449,9 @@ input[type='range']:focus-visible {
 .prp-line-composer-loc { font-size: 11px; color: var(--text-2); margin-bottom: 6px; }
 .prp-line-composer-loc code { font-family: var(--mono); color: var(--text-1); }
 .prp-line-composer .prd-input { margin-bottom: 6px; min-height: 72px; }
-.prp-line-composer-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.prp-line-composer-hint { margin-inline-start: auto; font-size: 11px; color: var(--text-3); }
+/* Every comment box follows one pattern: the hint on the left, the buttons on the right, the main one last. */
+.prp-line-composer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.prp-line-composer-hint { margin-inline-end: auto; font-size: 11px; color: var(--text-3); }
 .prp-line-threads + .prp-line-composer { margin-top: 8px; }
 
 .diff-line.line-selected,
@@ -19325,7 +19331,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
    the conversation it answers keeps the room. */
 .prp-footer { flex: none; padding: 12px 6px 0 0; border-top: 1px solid var(--border); }
 .prp-footer .prd-input { max-height: 33vh; margin-bottom: 0; }
-.prp-composer-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.prp-composer-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .prp-merge {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   margin-top: 10px; padding: 10px 14px; border-radius: 8px;
@@ -19353,6 +19359,11 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-folder-row.viewed .prd-file-name { text-decoration: none; }
 /* Ticked once, changed by a push since: the row reads as not viewed, with this dot. */
 .prp-file-changed { flex: 0 0 auto; display: inline-flex; color: var(--yellow); }
+/* Review conversations on a file or folder: a muted bubble count, so a file with comments reads at a glance. */
+.prp-file-threads {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; color: var(--accent); font-variant-numeric: tabular-nums;
+}
 .prp-folder-viewed {flex: 0 0 auto; font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .prp-file-diff { flex: 1; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .prp-file-diff-head {

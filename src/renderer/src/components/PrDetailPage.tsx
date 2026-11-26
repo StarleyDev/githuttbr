@@ -66,6 +66,7 @@ import {
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
+import { getThreadCountsByPath } from '../lib/prFileThreads'
 import { usePrViewed } from './usePrViewed'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
@@ -652,14 +653,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   }}
                 />
                 <div className="prp-composer-actions">
-                  <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-                    <MessageSquare size={13} /> {t('prDetail.comment')}
+                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
+                    <X size={13} /> {t('prDetail.requestChanges')}
                   </button>
                   <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
                     <Check size={13} /> {t('prDetail.approve')}
                   </button>
-                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-                    <X size={13} /> {t('prDetail.requestChanges')}
+                  <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
+                    <MessageSquare size={13} /> {t('prDetail.comment')}
                   </button>
                 </div>
               </section>
@@ -1094,13 +1095,13 @@ function LineCommentComposer({
         }}
       />
       <div className="prp-line-composer-actions">
-        <button type="button" className="btn primary tiny" onClick={() => onPost(text)} disabled={busy || !text.trim()}>
-          {busy ? <Loader2 size={12} className="spin" /> : <MessageSquare size={12} />} {t('prPage.lineCommentPost')}
-        </button>
+        <span className="prp-line-composer-hint">{t('prPage.lineCommentHint')}</span>
         <button type="button" className="btn ghost tiny" onClick={onCancel}>
           {t('common.cancel')}
         </button>
-        <span className="prp-line-composer-hint">{t('prPage.lineCommentHint')}</span>
+        <button type="button" className="btn primary tiny" onClick={() => onPost(text)} disabled={busy || !text.trim()}>
+          {busy ? <Loader2 size={12} className="spin" /> : <MessageSquare size={12} />} {t('prPage.lineCommentPost')}
+        </button>
       </div>
     </div>
   )
@@ -1336,6 +1337,8 @@ function FilesSection({
   getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
+  // The file list's speech-bubble counts; only recomputed when the threads change.
+  const threadCounts = useMemo(() => getThreadCountsByPath(threads), [threads])
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
   const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
   const file = files.find((f) => f.filename === selected) ?? files[0]
@@ -1427,6 +1430,7 @@ function FilesSection({
         files={files}
         viewed={viewed}
         changedSinceViewed={changedSinceViewed}
+        threadCounts={threadCounts}
         selected={file?.filename ?? ''}
         prKey={prUrl}
         onSelectFile={setSelected}

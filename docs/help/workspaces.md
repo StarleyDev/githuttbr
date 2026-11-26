@@ -109,8 +109,10 @@ To add a repository the group does not hold yet, click the **+** beside the grou
 
 Some pages are not their own thing: a repository's [wiki](repo-wiki.md), its
 [insights](insights.md), the [dev tools](devtools.md) a launch session
-announced. They do not take a tab — they appear as small icons on the
-repository itself.
+announced. They do not take a tab — they appear as small chips on the
+repository itself: an icon and a word that says which page it is (*CI*, *PRs*,
+*Wiki*, *#482* for a pull request, a release's tag). The full name is in the
+tooltip, and a long tag or title is cut short with an ellipsis.
 
 - **Click an icon** to show that page. **Click it again — or click the
   repository's name** — to come back to the repository. While a page is

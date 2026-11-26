@@ -20,6 +20,7 @@ export default {
     ...base.test,
     globalSetup: [],
     include: [
+      'test/prFileThreads.test.ts',
       'test/pureLogic.test.ts',
       'test/fileTree.test.ts',
       'test/prViewed.test.ts',
