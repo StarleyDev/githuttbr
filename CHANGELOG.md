@@ -1,5 +1,11 @@
 
 
+## [4.57.0](https://github.com/StarleyDev/githuttbr/compare/v4.56.0...v4.57.0) (2026-11-26)
+
+### Features
+
+* **remotes:** spot a password saved in a remote URL and offer to remove it ([cddfb21](https://github.com/StarleyDev/githuttbr/commit/cddfb21d1acb07ac2c06488d853fd0826e10d2df))
+
 ## [4.56.0](https://github.com/StarleyDev/githuttbr/compare/v4.55.0...v4.56.0) (2026-11-26)
 
 ### Features
