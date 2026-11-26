@@ -50,6 +50,12 @@ describe('secure bundle pack/unpack', () => {
     expect(bundle).not.toContain('.env')
   })
 
+  it('opens a bundle written up to 4.58, under the format name it inherited', () => {
+    const old = JSON.stringify({ ...JSON.parse(bundle), format: 'gitcito-secure-bundle' }) // upstream-name: 4.58 bundle
+    expect(readBundleHeader(old)?.fileCount).toBe(4)
+    expect(unpackBundle(old, 'correct horse battery').map((f) => f.path)).toEqual(FILES.map((f) => f.path))
+  })
+
   it('rejects a wrong password via the GCM auth tag', () => {
     expect(() => unpackBundle(bundle, 'wrong password')).toThrowError(
       expect.objectContaining({ code: 'bad-password' })
@@ -135,7 +141,7 @@ describe('v2 multi-section bundles', () => {
 })
 
 describe('v1 back-compat', () => {
-  // A hand-built v1 envelope (the shape gitcito ≤2.x wrote): version 1, `files`.
+  // A hand-built v1 envelope (the shape githuttbr ≤2.x wrote): version 1, `files`.
   it('reads a legacy single-repo bundle as one repo section', () => {
     const v1 = packBundle('legacy', [{ path: '.env', content: Buffer.from('X=1\n') }], 'pw pw pw pw')
     const raw = JSON.parse(v1)

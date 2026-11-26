@@ -27,9 +27,6 @@ const CANDIDATE_DIRS =
       // as the fallback for a system-wide install.
       [join(homedir(), '.local', 'bin'), '/usr/local/bin']
 const LINK_NAME = 'githuttbr'
-/** The command's name before 4.39. Never installed any more, but an AppImage
- *  build may have left one pointing into its /tmp mount — still worth finding. */
-const LEGACY_LINK_NAMES = ['gitcito']
 
 /** Path to the bundled shim script, inside the packaged app's resources (or the
  *  repo's `resources/` folder in dev). */
@@ -132,19 +129,17 @@ async function unlinkMaybePrivileged(link: string): Promise<void> {
   }
 }
 
-/** Every `githuttbr` (or pre-4.39 `gitcito`) symlink in a candidate PATH dir
- *  that points into an AppImage mount — left there by an AppImage build before
- *  it refused to. */
+/** Every `githuttbr` symlink in a candidate PATH dir that points into an
+ *  AppImage mount — left there by an AppImage build before it refused to. Only
+ *  this app's own command name: another app's link is not ours to remove. */
 async function staleLinks(): Promise<string[]> {
   const found: string[] = []
   for (const dir of CANDIDATE_DIRS) {
-    for (const name of [LINK_NAME, ...LEGACY_LINK_NAMES]) {
-      const link = join(dir, name)
-      try {
-        if ((await lstat(link)).isSymbolicLink() && isStaleCliTarget(await readlink(link))) found.push(link)
-      } catch {
-        // no link here
-      }
+    const link = join(dir, LINK_NAME)
+    try {
+      if ((await lstat(link)).isSymbolicLink() && isStaleCliTarget(await readlink(link))) found.push(link)
+    } catch {
+      // no link here
     }
   }
   return found

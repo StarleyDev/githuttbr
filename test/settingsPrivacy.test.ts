@@ -186,7 +186,7 @@ describe('server addresses with a credential in them', () => {
   })
 
   it('lose it on import', () => {
-    const parsed = parseSettingsImport({ __gitcito: 'settings-export', version: 1, settings: settingsWith(profileWith(DIRTY)) })
+    const parsed = parseSettingsImport({ __githuttbr: 'settings-export', version: 1, settings: settingsWith(profileWith(DIRTY)) })
     expect(JSON.stringify(parsed)).not.toMatch(leaks)
   })
 })

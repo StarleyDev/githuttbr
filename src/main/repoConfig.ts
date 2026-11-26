@@ -1,5 +1,5 @@
 /**
- * `.githuttbr.json` (or upstream's `.gitcito.json`) on disk: reading it, writing it, checking what it requires,
+ * `.githuttbr.json` on disk: reading it, writing it, checking what it requires,
  * and proposing one for a repository that has none.
  *
  * The renderer never reaches this module directly — everything here is exposed
@@ -8,7 +8,7 @@
  *
  * The doctor's repairs are a closed set (see `DoctorFix`). The config supplies
  * data for them — a path to copy, a value for `core.hooksPath` — and never a
- * command, so opening a hostile repository cannot make Gitcito run anything it
+ * command, so opening a hostile repository cannot make GitHuttBr run anything it
  * was not already prepared to run.
  */
 
@@ -19,7 +19,6 @@ import { existsSync } from 'fs'
 import { join, relative, resolve, sep } from 'path'
 import {
   REPO_CONFIG_FILE,
-  REPO_CONFIG_FILES,
   REPO_CONFIG_VERSION,
   isSafeRepoRelPath,
   parseRepoConfig,
@@ -28,7 +27,7 @@ import {
   validateRepoConfig
 } from '../shared/repoConfig'
 import type { DoctorCheck, DoctorFix, RepoConfig, RepoConfigResult } from '../shared/types'
-import { APP_IDS } from '../shared/identifiers'
+import { APP_ID } from '../shared/identifiers'
 
 const pexecFile = promisify(execFile)
 
@@ -65,27 +64,22 @@ function relativeInside(repoPath: string, value: string): string | undefined {
 }
 
 /**
- * The config file actually present: `.githuttbr.json`, else upstream's
- * `.gitcito.json`, with its raw text. Null when the repository has neither.
- * The CLI's `config show` prints the text as written, so this stops short of
- * parsing.
+ * The config file, `.githuttbr.json`, with its raw text; null when the
+ * repository has none. The CLI's `config show` prints the text as written, so
+ * this stops short of parsing.
  */
 export async function findRepoConfigFile(repoPath: string): Promise<{ path: string; raw: string } | null> {
-  for (const name of REPO_CONFIG_FILES) {
-    const path = join(repoPath, name)
-    try {
-      return { path, raw: await readFile(path, 'utf8') }
-    } catch {
-      continue
-    }
+  const path = join(repoPath, REPO_CONFIG_FILE)
+  try {
+    return { path, raw: await readFile(path, 'utf8') }
+  } catch {
+    return null
   }
-  return null
 }
 
 /**
- * The repository's config: `.githuttbr.json`, else upstream's `.gitcito.json`.
- * `path` names the file actually read, so the editor can say which one it is;
- * with neither present it is where a save would create one.
+ * The repository's config, `.githuttbr.json`. Without one, `path` is where a
+ * save would create it.
  */
 export async function readRepoConfig(repoPath: string): Promise<RepoConfigResult> {
   const found = await findRepoConfigFile(repoPath)
@@ -95,9 +89,7 @@ export async function readRepoConfig(repoPath: string): Promise<RepoConfigResult
 }
 
 /**
- * Write the config file — always `.githuttbr.json`. A legacy `.gitcito.json`
- * is left where it is: it may be there for teammates on upstream Gitcito, and
- * the new file shadows it from here on. Validated again here rather than trusted from the
+ * Write the config file, `.githuttbr.json`. Validated again here rather than trusted from the
  * renderer: the editor is one caller, and the next one should not be able to
  * introduce a field the loader would reject.
  */
@@ -140,7 +132,7 @@ async function lfsCheck(repoPath: string): Promise<DoctorCheck> {
   try {
     await run(repoPath, 'git', ['lfs', 'version'])
   } catch {
-    // git-lfs is not installed at all — nothing Gitcito can repair from here.
+    // git-lfs is not installed at all — nothing GitHuttBr can repair from here.
     return { ...base, status: 'fail' }
   }
   const names = (await git(repoPath, ['lfs', 'ls-files', '-n']).catch(() => '')).split('\n').filter(Boolean)
@@ -265,14 +257,8 @@ export async function suggestRepoConfig(repoPath: string): Promise<RepoConfig> {
   const defaults = ['main', 'master', 'develop'].filter((b) => locals.includes(b))
   // Existing protection is per-clone (git config); lifting it into the file is
   // how it stops being something each teammate has to rediscover.
-  // A key that is set but empty is an answer ("nothing extra"), exactly as in
-  // protectedBranches(): only an absent key falls through to the legacy one.
-  let configured: string | null = null
-  for (const ns of APP_IDS) {
-    configured = await git(repoPath, ['config', '--get', `${ns}.protectedbranches`]).catch(() => null)
-    if (configured !== null) break
-  }
-  const listed = (configured ?? '')
+  const configured = await git(repoPath, ['config', '--get', `${APP_ID}.protectedbranches`]).catch(() => '')
+  const listed = configured
     .split(',')
     .map((b) => b.trim())
     .filter(Boolean)

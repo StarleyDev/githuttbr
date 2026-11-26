@@ -41,16 +41,21 @@ export function parseSettingsImport(raw: unknown): ParsedSettingsImport | null {
   // Still sealed: the caller decrypts first. Read as bare settings it would
   // import nothing and report success.
   if (isEncryptedSettingsExport(raw)) return null
-  // `__gitcito` is the marker upstream Gitcito, and this fork up to 4.38, wrote.
-  // A backup made before the rename has to restore — tokens and vault included.
-  if (raw.__githuttbr === 'settings-export' || raw.__gitcito === 'settings-export') {
+  // The builds up to 4.38 wrote the marker they inherited, and the 4.39
+  // upgrade guide had users carry their tokens over in exactly such a file. An
+  // import is a file the user picked, so it still restores, handed on under the
+  // current marker only.
+  const oldMarker = raw.__gitcito === 'settings-export' // upstream-name: this app's own exports up to 4.38
+  if (raw.__githuttbr === 'settings-export' || oldMarker) {
     if (!isObject(raw.settings)) return null
     const settings = scrubServerUrls(raw.settings as Partial<AppSettings>)
     const rest: Record<string, unknown> = { ...raw }
-    delete rest.__gitcito
+    delete rest.__gitcito // upstream-name: drop the old marker so downstream sees one
     const bundle = { ...rest, __githuttbr: 'settings-export', settings } as unknown as SettingsBundle
     return { settings, bundle }
   }
+  // Any other app's export marker: not this app's file, and not bare settings.
+  if (Object.entries(raw).some(([k, v]) => k.startsWith('__') && v === 'settings-export')) return null
   return { settings: scrubServerUrls(raw as Partial<AppSettings>), bundle: null }
 }
 

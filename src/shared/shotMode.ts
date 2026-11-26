@@ -4,4 +4,4 @@
  * not `--shot`, so the preload's check means "main decided", never "someone
  * typed a flag".
  */
-export const SHOT_RENDERER_FLAG = '--gitcito-shot-bridge'
+export const SHOT_RENDERER_FLAG = '--githuttbr-shot-bridge'

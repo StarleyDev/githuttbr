@@ -5,7 +5,7 @@
 import type { StackInfo } from './types'
 import { PRODUCT_NAME } from './brand'
 import { APP_REPO_URL } from './appRepo'
-import { APP_ID, APP_IDS } from './identifiers'
+import { APP_ID } from './identifiers'
 
 /** What `planStackSubmit` decides per stack level. */
 export interface StackPrAction {
@@ -49,13 +49,6 @@ export function planStackSubmit(stack: StackInfo, openPrs: OpenPrSlice[], fallba
 export const STACK_SECTION_START = `<!-- ${APP_ID}-stack -->`
 export const STACK_SECTION_END = `<!-- /${APP_ID}-stack -->`
 
-/** Marker pairs a PR body may already carry, the current one first — a PR
- *  stacked before the rename has upstream's `gitcito-stack` markers, and its
- *  section is replaced rather than duplicated. */
-const STACK_SECTION_MARKERS: readonly (readonly [string, string])[] = APP_IDS.map(
-  (ns) => [`<!-- ${ns}-stack -->`, `<!-- /${ns}-stack -->`] as const
-)
-
 /** One rendered line of the stack table. */
 export interface StackSectionLevel {
   branch: string
@@ -85,12 +78,10 @@ export function buildStackSection(levels: StackSectionLevel[], self: number, tru
 
 /** Insert or replace the marked stack section in a PR body, preserving the rest. */
 export function mergeStackSection(body: string, section: string): string {
-  for (const [open, close] of STACK_SECTION_MARKERS) {
-    const start = body.indexOf(open)
-    const end = body.indexOf(close)
-    if (start !== -1 && end !== -1 && end > start) {
-      return body.slice(0, start) + section + body.slice(end + close.length)
-    }
+  const start = body.indexOf(STACK_SECTION_START)
+  const end = body.indexOf(STACK_SECTION_END)
+  if (start !== -1 && end !== -1 && end > start) {
+    return body.slice(0, start) + section + body.slice(end + STACK_SECTION_END.length)
   }
   const trimmed = body.trimEnd()
   return trimmed ? `${trimmed}\n\n${section}` : section

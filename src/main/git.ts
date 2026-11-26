@@ -244,7 +244,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
 import { PRODUCT_NAME } from '../shared/brand'
-import { APP_ID, APP_IDS, LEGACY_APP_ID, isPrePurgePrefix, prePurgeRefRoot, snapshotRefRoot } from '../shared/identifiers'
+import { APP_ID, isPrePurgePrefix, prePurgeRefRoot, snapshotRefRoot } from '../shared/identifiers'
 import { redactSecrets } from '../shared/redact'
 import { cloneFolderProblem } from '../shared/cloneFolder'
 import { isEphemeralTextconv, persistBlocker } from './appImagePaths'
@@ -396,16 +396,12 @@ const gitInstances = new Map<string, SimpleGit>()
  * is `submodule.*.url` and never `submodule.*` (that would let `submodule.x.update=!cmd`).
  */
 export const APP_CONFIG_KEYS: readonly string[] = [
-  // Both namespaces: new values are written under githuttbr, but clearing a
-  // stack level or forgetting a subtree also unsets what upstream Gitcito left.
-  ...APP_IDS.flatMap((ns) => [
-    `branch.*.${ns}parent`,
-    `branch.*.${ns}base`,
-    `${ns}.protectedbranches`,
-    `${ns}.subtree.*.url`,
-    `${ns}.subtree.*.ref`,
-    `${ns}.prepurge.*`
-  ]),
+  `branch.*.${APP_ID}parent`,
+  `branch.*.${APP_ID}base`,
+  `${APP_ID}.protectedbranches`,
+  `${APP_ID}.subtree.*.url`,
+  `${APP_ID}.subtree.*.ref`,
+  `${APP_ID}.prepurge.*`,
   // git-flow's own keys, but only the layout: `gitflow.path.hooks` locates scripts.
   'gitflow.branch.*',
   'gitflow.prefix.*',
@@ -605,11 +601,8 @@ function decodeSubtreeKey(key: string): string {
  */
 async function rememberedSubtreeUrl(repoPath: string, prefix: string, shown: string): Promise<string> {
   const key = encodeSubtreeKey(prefix)
-  for (const ns of [APP_ID, LEGACY_APP_ID]) {
-    const saved = (await runGit(repoPath, ['config', '--get', `${ns}.subtree.${key}.url`]).catch(() => '')).trim()
-    if (saved && saved !== shown && urlWithoutPassword(saved) === shown) return saved
-    if (saved) return shown
-  }
+  const saved = (await runGit(repoPath, ['config', '--get', `${APP_ID}.subtree.${key}.url`]).catch(() => '')).trim()
+  if (saved && saved !== shown && urlWithoutPassword(saved) === shown) return saved
   return shown
 }
 
@@ -622,42 +615,32 @@ async function rememberSubtree(repoPath: string, prefix: string, url: string, re
 }
 
 // ─── Stack metadata in git config ───────────────────────────────────────────
-// branch.<name>.githuttbrparent / .githuttbrbase, read with a fallback to the
-// keys upstream Gitcito wrote (gitcitoparent / gitcitobase), so a stack built
-// before the rename is still a stack. Writes always go to the new keys.
+// branch.<name>.githuttbrparent / .githuttbrbase.
 
 type StackField = 'parent' | 'base'
 
 async function readStackMeta(git: SimpleGit, branch: string, field: StackField): Promise<string> {
-  for (const ns of APP_IDS) {
-    const value = (await git.raw(['config', '--get', `branch.${branch}.${ns}${field}`]).catch(() => '')).trim()
-    if (value) return value
-  }
-  return ''
+  return (await git.raw(['config', '--get', `branch.${branch}.${APP_ID}${field}`]).catch(() => '')).trim()
 }
 
 async function writeStackMeta(git: SimpleGit, branch: string, field: StackField, value: string): Promise<void> {
   await git.raw(['config', `branch.${branch}.${APP_ID}${field}`, value])
 }
 
-/** Unset under both names — a legacy key left behind would quietly bring the link back. */
 async function clearStackMeta(git: SimpleGit, branch: string, field: StackField): Promise<void> {
-  for (const ns of APP_IDS) await git.raw(['config', '--unset', `branch.${branch}.${ns}${field}`]).catch(() => {})
+  await git.raw(['config', '--unset', `branch.${branch}.${APP_ID}${field}`]).catch(() => {})
 }
 
-/** Every recorded stack parent, branch → parent. The new key wins over a legacy one. */
+/** Every recorded stack parent, branch → parent. */
 async function readStackParents(git: SimpleGit): Promise<Map<string, string>> {
   const parents = new Map<string, string>()
-  // Legacy first, so the current namespace overwrites it.
-  for (const ns of [...APP_IDS].reverse()) {
-    const raw = await git.raw(['config', '--get-regexp', `^branch\\..*\\.${ns}parent$`]).catch(() => '')
-    for (const line of raw.split('\n')) {
-      const sp = line.indexOf(' ')
-      if (sp < 0) continue
-      const key = line.slice(0, sp) // branch.<name>.<ns>parent
-      const name = key.slice('branch.'.length, key.length - `.${ns}parent`.length)
-      if (name) parents.set(name, line.slice(sp + 1).trim())
-    }
+  const raw = await git.raw(['config', '--get-regexp', `^branch\\..*\\.${APP_ID}parent$`]).catch(() => '')
+  for (const line of raw.split('\n')) {
+    const sp = line.indexOf(' ')
+    if (sp < 0) continue
+    const key = line.slice(0, sp) // branch.<name>.githuttbrparent
+    const name = key.slice('branch.'.length, key.length - `.${APP_ID}parent`.length)
+    if (name) parents.set(name, line.slice(sp + 1).trim())
   }
   return parents
 }
@@ -699,7 +682,7 @@ async function runSubtree(repoPath: string, args: string[]): Promise<string> {
  * later does not work: after a replay the file is absent from both, and so is a
  * conflict rerere never understood. So it is captured when it is said.
  *
- * Session state on purpose: if Gitcito restarts mid-conflict the hint is simply
+ * Session state on purpose: if GitHuttBr restarts mid-conflict the hint is simply
  * gone, which is better than showing a guess.
  */
 const rerereReplayed = new Map<string, string[]>()
@@ -721,8 +704,8 @@ async function withRerereCapture<T>(repoPath: string, op: () => Promise<T>): Pro
 
 /** Config key holding the paths a purge removed. Git config keys must begin
  *  with a letter, so the timestamp cannot stand alone. */
-function prePurgeKey(at: number, ns: string = APP_ID): string {
-  return `${ns}.prepurge.at${at}`
+function prePurgeKey(at: number): string {
+  return `${APP_ID}.prepurge.at${at}`
 }
 
 /**
@@ -920,7 +903,7 @@ async function copyIgnoredIntoWorktree(srcRepo: string, dest: string): Promise<v
   }
 }
 
-/** The textconv shim Gitcito ships (resources/cli/githuttbr-textconv). */
+/** The textconv shim GitHuttBr ships (resources/cli/githuttbr-textconv). */
 export function bundledTextconvPath(): string {
   // Packaged: extraResources puts cli/ next to app.asar. Source checkout and
   // tests: resources/ sits at the repo root, two levels up from this file.
@@ -931,7 +914,9 @@ export function bundledTextconvPath(): string {
 
 /**
  * Rewrite the pre-4.39 converter entries of one config scope to the converter
- * this install ships. Only entries naming `gitcito-textconv` are touched; under
+ * this install ships. Only entries naming this app's own old converter (its
+ * install directory, see legacyShims.ts) are touched, never another app's
+ * converter of the same file name; under
  * an AppImage nothing is (the mount path must never be persisted — those
  * entries keep their stale badge), nor when the shim is not there to run.
  */
@@ -2108,9 +2093,7 @@ async function listSnapshotRefs(repoPath: string): Promise<{ ref: string; sha: s
       'for-each-ref',
       '--sort=-creatordate',
       '--format=%(refname) %(objectname) %(creatordate:unix)',
-      // Snapshots taken before the rename live under refs/gitcito/wip and are
-      // listed, restored and pruned exactly like new ones.
-      ...APP_IDS.map(snapshotRefRoot)
+      snapshotRefRoot()
     ])
     .catch(() => '')
   const out: { ref: string; sha: string; time: number }[] = []
@@ -5053,7 +5036,7 @@ export const gitService = {
   /**
    * When this repository last fetched, from `FETCH_HEAD`'s mtime. Reading the
    * file rather than trusting our own bookkeeping is the point: a `git fetch`
-   * run in a terminal, or by another Gitcito window, counts the same as ours.
+   * run in a terminal, or by another GitHuttBr window, counts the same as ours.
    * Null when the repository has never fetched.
    */
   async lastFetchAt(repoPath: string): Promise<number | null> {
@@ -5942,7 +5925,7 @@ export const gitService = {
   },
 
   // ─── Credential helpers ────────────────────────────────────────────────────
-  // Git has its own credential store, and it is neither Gitcito's keychain nor
+  // Git has its own credential store, and it is neither GitHuttBr's keychain nor
   // your SSH agent. Misconfiguring it is the usual reason a push asks for a
   // password every single time — or, worse, the reason a password is sitting in
   // a plain file. Nothing here ever reads a secret: `git credential fill` would
@@ -6136,8 +6119,8 @@ export const gitService = {
           // that path is gone (or someone else's) the moment the app quits.
           const info: DiffDriverInfo = { name, textconv, available: converterAvailable(textconv), scope }
           if (isEphemeralTextconv(textconv, process.env, process.resourcesPath ?? '')) info.ephemeral = true
-          // Left by 4.38 and not repointed (an AppImage, or a config we could
-          // not write): fails every diff outside an in-place update.
+          // Left by this app's 4.38 and not repointed (an AppImage, or a config
+          // we could not write): fails every diff.
           else if (isStaleTextconv(textconv)) info.stale = true
           return info
         })
@@ -6146,11 +6129,11 @@ export const gitService = {
     return [...(await read('repo')), ...(await read('global'))]
   },
 
-  /** Converters Gitcito can wire up for the formats it already previews. */
+  /** Converters GitHuttBr can wire up for the formats it already previews. */
   // Takes the repo path it will never use: every repo-scoped method does, and
   // the dispatcher locks on it.
   async diffDriverSuggestions(_repoPath: string): Promise<DiffDriverSuggestion[]> {
-    // Word, Excel and JSON ride the converter Gitcito ships (resources/cli/
+    // Word, Excel and JSON ride the converter GitHuttBr ships (resources/cli/
     // githuttbr-textconv), so they work with nothing installed. The rest still
     // need a real tool on PATH, and the UI says plainly which are missing
     // rather than writing a driver that fails at the first diff.
@@ -6898,18 +6881,13 @@ export const gitService = {
   /**
    * Per-repo protected branches, stored in git config (githuttbr.protectedbranches,
    * comma-joined) so they travel with the repo. Unset → default main/master.
-   * Upstream's gitcito.protectedbranches is read when the new key is absent.
    */
   async protectedBranches(repoPath: string): Promise<string[]> {
     // `runGit`, not simple-git: `config --get` exits 1 for a key that is not
     // there, and simple-git hands that back as an empty string rather than an
     // error — which quietly turned "never configured" into "nothing is
     // protected", and took the force-push guard on main with it.
-    let raw: string | null = null
-    for (const ns of APP_IDS) {
-      raw = await runGit(repoPath, ['config', '--get', `${ns}.protectedbranches`]).catch(() => null)
-      if (raw !== null) break
-    }
+    const raw = await runGit(repoPath, ['config', '--get', `${APP_ID}.protectedbranches`]).catch(() => null)
     if (raw === null) return ['main', 'master'] // never configured → sensible default
     return raw
       .trim()
@@ -7057,15 +7035,11 @@ export const gitService = {
     }
 
     // Anything the user told us about, including prefixes added by another tool.
-    // Legacy gitcito.subtree.* first, so a githuttbr.subtree.* value overwrites it.
-    const remembered = await git
-      .raw(['config', '--get-regexp', `^(${APP_ID}|${LEGACY_APP_ID})\\.subtree\\.`])
-      .catch(() => '')
+    const remembered = await git.raw(['config', '--get-regexp', `^${APP_ID}\\.subtree\\.`]).catch(() => '')
     const lines = remembered
       .split('\n')
       .map((line) => /^(\w+)\.subtree\.(.+)\.(url|ref)\s+(.*)$/.exec(line.trim()))
       .filter((m): m is RegExpExecArray => m !== null)
-      .sort((a, b) => Number(a[1] === APP_ID) - Number(b[1] === APP_ID))
     const meta = new Map<string, { url: string; ref: string }>()
     for (const match of lines) {
       const [, , key, field, value] = match
@@ -7134,16 +7108,14 @@ export const gitService = {
   async subtreeForget(repoPath: string, prefix: string): Promise<void> {
     const key = encodeSubtreeKey(prefix)
     const git = gitFor(repoPath)
-    for (const ns of APP_IDS) {
-      for (const field of ['url', 'ref']) {
-        await git.raw(['config', '--unset', `${ns}.subtree.${key}.${field}`]).catch(() => undefined)
-      }
+    for (const field of ['url', 'ref']) {
+      await git.raw(['config', '--unset', `${APP_ID}.subtree.${key}.${field}`]).catch(() => undefined)
     }
   },
 
   // ─── Notes ───────────────────────────────────────────────────────────────
   // `git notes` attaches text to a commit without touching the commit itself —
-  // the only way to annotate history that is already published. Gitcito uses the
+  // the only way to annotate history that is already published. GitHuttBr uses the
   // default `refs/notes/commits` ref, which is what `git log` and every other
   // tool reads by default.
 
@@ -7188,7 +7160,7 @@ export const gitService = {
    * entirely — the single most common reason someone's notes "disappear" on
    * another machine. These two move them explicitly. Only the user-facing
    * commit-notes ref travels: a wildcard would also publish the app's own
-   * refs/notes/githuttbr-ci (and legacy gitcito-ci) verdicts, which are promised to stay local.
+   * refs/notes/githuttbr-ci verdicts, which are promised to stay local.
    */
   async fetchNotes(repoPath: string, remote = 'origin'): Promise<void> {
     await withRemoteAuth(repoPath, remote, 'fetch', () =>
@@ -7388,28 +7360,24 @@ export const gitService = {
   /** Every purge backup still in the repository, newest first. */
   async historyPurgeBackups(repoPath: string): Promise<HistoryPurgeBackup[]> {
     const git = gitFor(repoPath)
-    // Backups a purge made before the rename sit under refs/gitcito/pre-purge
-    // and stay listed, restorable and droppable.
-    const refs = (
-      await git.raw(['for-each-ref', '--format=%(refname)', ...APP_IDS.map(prePurgeRefRoot)]).catch(() => '')
-    )
+    const refs = (await git.raw(['for-each-ref', '--format=%(refname)', prePurgeRefRoot()]).catch(() => ''))
       .split('\n')
       .map((r) => r.trim())
       .filter(Boolean)
 
-    const byPrefix = new Map<string, { ns: string; at: number; count: number }>()
+    const byPrefix = new Map<string, { at: number; count: number }>()
     for (const ref of refs) {
-      const [, ns, , stamp] = ref.split('/')
+      const [, , , stamp] = ref.split('/')
       const at = Number(stamp)
       if (!Number.isFinite(at)) continue
-      const prefix = `${prePurgeRefRoot(ns)}/${at}`
-      const entry = byPrefix.get(prefix) ?? { ns, at, count: 0 }
+      const prefix = `${prePurgeRefRoot()}/${at}`
+      const entry = byPrefix.get(prefix) ?? { at, count: 0 }
       entry.count++
       byPrefix.set(prefix, entry)
     }
     const out: HistoryPurgeBackup[] = []
-    for (const [prefix, { ns, at, count }] of byPrefix) {
-      const recorded = await git.raw(['config', '--get', prePurgeKey(at, ns)]).catch(() => '')
+    for (const [prefix, { at, count }] of byPrefix) {
+      const recorded = await git.raw(['config', '--get', prePurgeKey(at)]).catch(() => '')
       out.push({
         prefix,
         at,
@@ -7452,8 +7420,8 @@ export const gitService = {
       .map((r) => r.trim())
       .filter(Boolean)
     for (const ref of refs) await git.raw(['update-ref', '-d', ref]).catch(() => undefined)
-    const [, ns, , stamp] = prefix.split('/')
-    await git.raw(['config', '--unset', prePurgeKey(Number(stamp), ns)]).catch(() => undefined)
+    const [, , , stamp] = prefix.split('/')
+    await git.raw(['config', '--unset', prePurgeKey(Number(stamp))]).catch(() => undefined)
     // The old commits are only unreachable once the reflog forgets them too.
     await git.raw(['reflog', 'expire', '--expire=now', '--all']).catch(() => undefined)
     await git.raw(['gc', '--prune=now']).catch(() => undefined)
@@ -7461,7 +7429,7 @@ export const gitService = {
 
   // ─── git-flow ────────────────────────────────────────────────────────────
   // Stored under the same `gitflow.*` keys the `git flow` CLI writes, so a repo
-  // set up by either tool reads correctly in the other. Gitcito runs plain git
+  // set up by either tool reads correctly in the other. GitHuttBr runs plain git
   // commands throughout — the CLI is never required to be installed.
 
   async gitflowStatus(repoPath: string): Promise<GitflowStatus> {
@@ -10173,6 +10141,8 @@ export const gitService = {
   },
 
   async deleteSnapshot(repoPath: string, ref: string): Promise<void> {
+    // Only this app's own snapshots: never a branch, nor another tool's refs.
+    if (!ref.startsWith(`${snapshotRefRoot()}/`)) throw new Error('Not a snapshot.')
     await gitFor(repoPath).raw(['update-ref', '-d', ref]).catch(() => {})
   },
 

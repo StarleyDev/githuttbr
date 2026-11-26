@@ -63,27 +63,24 @@ describe('packaging hardening', () => {
     expect(pkg.build.linux?.desktop?.entry?.StartupWMClass).toBe('githuttbr')
   })
 
-  it('keeps the pre-rename appId, so 4.39 upgrades 4.38 in place', () => {
-    // The macOS bundle id, the NSIS uninstall GUID and the updater all hang off it.
+  it('owns its identity, the reverse-DNS form of git.huttbr.com', () => {
+    // The macOS bundle id, the NSIS uninstall GUID and the updater all hang off it. The old
+    // com.gitcito.desktop made an install replace a real Gitcito on Windows and collide on macOS.
     expect(pkg.build.appId).toBe(BUNDLE_ID)
-    expect(BUNDLE_ID).toBe('com.gitcito.desktop')
+    expect(BUNDLE_ID).toBe('com.huttbr.git')
   })
 
-  it('the renamed linux package replaces the old gitcito one', () => {
+  it('the linux packages coexist with gitcito: no replaces, conflicts or provides', () => {
     expect(pkg.build.linux?.executableName).toBe('githuttbr')
     for (const fpm of [pkg.build.deb?.fpm, pkg.build.rpm?.fpm]) {
-      const flags = (fpm ?? []).join(' ')
-      for (const flag of ['--replaces gitcito', '--conflicts gitcito', '--provides gitcito']) {
-        expect(flags).toContain(flag)
-      }
+      expect((fpm ?? []).join(' ')).not.toMatch(/gitcito/i)
     }
   })
 
   it('the source-checkout shim opens the app by the appId in package.json', () => {
     const shim = readFileSync(join(ROOT, 'resources/cli/githuttbr'), 'utf8')
     expect(shim).toContain(`open -n -b ${pkg.build.appId} --args`)
-    // The old lookup by name: "Gitcito" stopped matching when the bundle was renamed.
-    expect(shim).not.toContain('open -n -a "Gitcito"')
+    expect(shim).not.toMatch(/gitcito/i)
   })
 
   describe('release workflow: a signed macOS build must also be notarized', () => {

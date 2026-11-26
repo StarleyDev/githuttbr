@@ -102,7 +102,6 @@ interface PreloadApi {
   appVersion(): Promise<string>
   appReleases(): Promise<import('../../shared/types').AppRelease[]>
   /** True once, on the first start after settings were copied from a pre-4.39 install. */
-  takeMigrationNotice(): Promise<boolean>
   shell: {
     showItemInFolder(fullPath: string): Promise<void>
     openPath(fullPath: string): Promise<string>

@@ -1,20 +1,25 @@
 /**
- * Settings outside the app that still name a shim the rename took away.
+ * The one setting outside the app that still names a converter this app no
+ * longer ships.
  *
- * 4.38 wrote absolute paths to its bundled converter (`…/cli/gitcito-textconv`)
- * into `diff.<name>.textconv`, and `editor install` set `core.editor` and
- * `sequence.editor` to `gitcito --wait`. 4.39 ships `githuttbr-textconv` and a
- * `githuttbr` command. The converter entries are ours by construction — only
- * the app ever wrote that file name — so they are repointed at the current
- * converter automatically (at start-up for the global config, on open for a
- * repository's), and a stub under the old name covers an install whose path
- * did not change. The editor settings are only recognised, so `githuttbr
- * doctor` can name the fix. Pure: everything is decided from strings, so the
- * decisions are tested on their own (test/legacyShims.test.ts).
+ * Builds up to 4.38 shipped their converter as `gitcito-textconv` and wrote its
+ * absolute path into `diff.<name>.textconv` (in a repository's config, and
+ * sometimes the global one). 4.39 renamed it `githuttbr-textconv`. Those entries
+ * are repointed at the current converter, but only when the path is this
+ * app's own install: upstream Gitcito ships a converter under the same file
+ * name and writes the same kind of entry, and that one is never touched, not
+ * even flagged. Ours is recognised by the install directory, which was always
+ * named after this app ("Git HuttBr", "GitHuttBr", "githuttbr", or the
+ * `.app` bundle) and never after Gitcito. Pure: everything is decided from
+ * strings, so the decisions are tested on their own (test/legacyShims.test.ts).
  */
 
 /** The bundled converter's file name before 4.39 (with or without a Windows extension). */
-const LEGACY_TEXTCONV = /^gitcito-textconv(\.(cmd|bat|exe))?$/i
+const OLD_TEXTCONV = /^gitcito-textconv(\.(cmd|bat|exe))?$/i
+
+/** A directory of this app's own install, in any of the spellings it has had,
+ *  escaped (`Git\ HuttBr`) or not, on either separator. */
+const OWN_INSTALL_DIR = /(^|[\\/])git(\\? )?huttbr(\.app)?[\\/]/i
 
 /**
  * The program word of a textconv command line. A quoted path keeps its
@@ -35,15 +40,16 @@ function programName(program: string): string {
 }
 
 /**
- * True when a `textconv` command runs the pre-rename converter, in any
- * directory, quoted or not. Deliberately only that: "the absolute path is not
- * there" also fires on MSYS paths (`/c/Program Files/…`) and escaped Windows
- * paths this process cannot resolve, and a false "stale" invites the user to
- * delete a converter that works.
+ * True when a `textconv` command runs this app's own pre-4.39 converter: the
+ * old file name inside a directory of this app's install. Deliberately not
+ * "the path is gone": that also fires on MSYS paths (`/c/Program Files/…`) and
+ * escaped Windows paths this process cannot resolve, and a false "stale"
+ * invites the user to delete a converter that works. Upstream Gitcito's
+ * converter, which has the same file name, is never a match.
  */
 export function isStaleTextconv(textconv: string): boolean {
   const parsed = splitProgram(textconv)
-  return !!parsed && LEGACY_TEXTCONV.test(programName(parsed.program))
+  return !!parsed && OLD_TEXTCONV.test(programName(parsed.program)) && OWN_INSTALL_DIR.test(parsed.program)
 }
 
 /**
@@ -53,7 +59,7 @@ export function isStaleTextconv(textconv: string): boolean {
  */
 export function repointLegacyTextconv(textconv: string, current: string): string | null {
   if (!current || current.includes('"') || !isStaleTextconv(textconv)) return null
-  if (LEGACY_TEXTCONV.test(programName(current))) return null
+  if (OLD_TEXTCONV.test(programName(current))) return null
   const parsed = splitProgram(textconv)
   return parsed ? `"${current}"${parsed.rest}` : null
 }
@@ -89,20 +95,4 @@ export function planTextconvRepoints(
     if (next && next !== previous) plan.push({ name, previous, next })
   }
   return plan
-}
-
-/** The git editor settings `editor install` writes. */
-export const EDITOR_KEYS = ['core.editor', 'sequence.editor'] as const
-
-/** What `githuttbr editor install` writes, and what a stale setting should become. */
-export const EDITOR_VALUE = 'githuttbr --wait'
-
-/** True when an editor setting runs the pre-rename `gitcito` command (bare or by path) with `--wait`. */
-export function isLegacyEditor(value: string): boolean {
-  return /(^|[\s"'/\\])gitcito(\.(cmd|bat|exe))?["']?\s+--wait(\s|$)/i.test(value.trim())
-}
-
-/** The one command that repairs a stale editor setting, at the scope it was found in. */
-export function editorFixCommand(key: string, scope: 'global' | 'local'): string {
-  return `git config --${scope} ${key} "${EDITOR_VALUE}"`
 }

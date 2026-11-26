@@ -43,8 +43,7 @@ import { guardStdio } from './stdioGuard'
 import { fixPath, shellPathReady } from './fix-path'
 import { stripEditorGitAskpass } from './editorEnv'
 import { registerCliHandlers, trackWait, releaseAllWaits } from './cli'
-import { APP_NAME, DEV_USER_DATA_DIR, FILE_PREFIX, LEGACY_APP_NAME, SETTINGS_FILE } from './appIdentity'
-import { migrateLegacyData, takeMigrationNotice } from './legacyMigration'
+import { APP_NAME, DEV_USER_DATA_DIR, FILE_PREFIX, SETTINGS_FILE } from './appIdentity'
 import { registerEditorHandlers } from './editor'
 import { registerMenuHandlers } from './menu'
 import { registerEditMenuHandlers } from './editMenu'
@@ -110,17 +109,10 @@ async function deliverEdit(win: BrowserWindow, file: string, sentinel: string): 
 // Electron derives both the settings folder and the OS keychain entry that
 // encrypts tokens from the app name, so it is pinned here (appIdentity.ts),
 // before anything reads userData, instead of following the display name.
-// Until 4.38 it was "Gitcito"; 4.39 renamed it to "GitHuttBr", which starts a
-// new folder and a new keychain entry. The old settings, plain-data files and
-// renderer localStorage are copied over once, without credentials — the old
-// token store is sealed with the old keychain entry and cannot be read under
-// the new one (legacyMigration.ts). It runs here, before the first window, so
-// Chromium opens the copied `Local Storage` rather than creating an empty one.
 if (app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
   app.setName(APP_NAME)
   const userData = join(app.getPath('appData'), APP_NAME)
   app.setPath('userData', userData)
-  migrateLegacyData(userData, join(app.getPath('appData'), LEGACY_APP_NAME))
 }
 
 if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
@@ -552,8 +544,6 @@ app.whenReady().then(() => {
   registerUpdaterHandlers()
   registerSettingsBackupHandlers()
   registerCliHandlers()
-  // Once, after the first start on a settings folder copied from Gitcito.
-  ipcMain.handle('app:takeMigrationNotice', () => takeMigrationNotice(app.getPath('userData')))
   registerEditorHandlers()
   registerSshHandlers()
   registerDiffToolHandlers()

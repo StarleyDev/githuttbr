@@ -1,9 +1,9 @@
 #!/bin/sh
-# githuttbr-textconv — the git textconv filter Gitcito ships.
+# githuttbr-textconv — the git textconv filter GitHuttBr ships.
 #
 # git invokes this with one argument, a path to (a temp copy of) the file,
 # and diffs whatever is printed to stdout. It turns .docx/.xlsx/.json into
-# plain text using Gitcito's own runtime, so document diffs work with no
+# plain text using GitHuttBr's own runtime, so document diffs work with no
 # pandoc/xlsx2csv/jq installed.
 #
 # Inside the packaged app this file lives in resources/cli/, next to app.asar.

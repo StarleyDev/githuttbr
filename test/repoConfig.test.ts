@@ -35,16 +35,16 @@ describe('reading and writing .githuttbr.json', () => {
     expect(git(dir, 'status', '--porcelain')).toContain('.githuttbr.json')
   })
 
-  it("reads upstream's .gitcito.json when there is no .githuttbr.json", async () => {
+  it("never reads upstream's .gitcito.json", async () => {
     const dir = cloneFixture('project-tree')
     writeFileSync(join(dir, '.gitcito.json'), JSON.stringify({ version: 1, protect: ['legacy'] }))
     const result = await readRepoConfig(dir)
-    expect(result.exists).toBe(true)
-    expect(result.path).toBe(join(dir, '.gitcito.json'))
-    expect(result.config?.protect).toEqual(['legacy'])
+    expect(result.exists).toBe(false)
+    expect(result.path).toBe(join(dir, '.githuttbr.json'))
+    expect(result.config).toBeNull()
   })
 
-  it('prefers .githuttbr.json, writes only it, and leaves the legacy file alone', async () => {
+  it("writes only .githuttbr.json and leaves upstream's file alone", async () => {
     const dir = cloneFixture('project-tree')
     const legacy = JSON.stringify({ version: 1, protect: ['legacy'] })
     writeFileSync(join(dir, '.gitcito.json'), legacy)
@@ -63,7 +63,7 @@ describe('reading and writing .githuttbr.json', () => {
   it('keeps the good half of a file with a bad field', async () => {
     const dir = cloneFixture('project-tree')
     writeFileSync(
-      join(dir, '.gitcito.json'),
+      join(dir, '.githuttbr.json'),
       JSON.stringify({ version: 1, protect: ['main'], requires: { hooksPath: '../elsewhere' } })
     )
     const result = await readRepoConfig(dir)
@@ -228,16 +228,9 @@ describe('proposing a config from the repository', () => {
     expect((await suggestRepoConfig(dir)).protect).toContain('release/3.x')
   })
 
-  it("falls back to upstream's gitcito.protectedbranches", async () => {
+  it("ignores upstream's gitcito.protectedbranches", async () => {
     const dir = cloneFixture('project-tree')
     git(dir, 'config', 'gitcito.protectedbranches', 'main,release/2.x')
-    expect((await suggestRepoConfig(dir)).protect).toContain('release/2.x')
-  })
-
-  it('treats an empty githuttbr.protectedbranches as the answer, not as absent', async () => {
-    const dir = cloneFixture('project-tree')
-    git(dir, 'config', 'gitcito.protectedbranches', 'main,release/2.x')
-    git(dir, 'config', 'githuttbr.protectedbranches', '')
     expect((await suggestRepoConfig(dir)).protect ?? []).not.toContain('release/2.x')
   })
 

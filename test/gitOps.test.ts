@@ -10,7 +10,7 @@ import { convertFile } from '../src/main/textconv'
 import { execFileSync } from 'node:child_process'
 
 // Mutation/integration tests: exercise the WRITE paths of gitService (the same
-// code Gitcito runs for merge / cherry-pick / rebase / conflict-resolve / stash
+// code GitHuttBr runs for merge / cherry-pick / rebase / conflict-resolve / stash
 // / commit). Each test works on an isolated copy of a playground repo.
 afterAll(cleanupFixtures)
 
@@ -714,7 +714,7 @@ describe('removing a path from history (leaked-secret playground)', () => {
   const freshClone = async (): Promise<string> => {
     const R = cloneFixture('leaked-secret')
     expect(await raw(R, ['log', '--branches', '--tags', '--oneline', '--', SECRET])).not.toBe('')
-    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/githuttbr/pre-purge', 'refs/gitcito/pre-purge'])).toBe('')
+    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/githuttbr/pre-purge'])).toBe('')
     return R
   }
 
@@ -799,7 +799,7 @@ describe('removing a path from history (leaked-secret playground)', () => {
 
     await gitService.historyPurgeDropBackup(R, backup.prefix)
     expect(await gitService.historyPurgeBackups(R)).toEqual([])
-    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/githuttbr/pre-purge', 'refs/gitcito/pre-purge'])).toBe('')
+    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/githuttbr/pre-purge'])).toBe('')
     expect(await raw(R, ['log', '--all', '--oneline', '--', SECRET])).toBe('')
   })
 
@@ -986,7 +986,7 @@ describe('subtrees (subtree playground)', () => {
     expect(parser!.present).toBe(true)
     // The import commit records which upstream commit it came from.
     expect(parser!.lastSplit).toMatch(/^[0-9a-f]{7,}$/)
-    // Nothing records the url — that is the gap Gitcito fills.
+    // Nothing records the url — that is the gap GitHuttBr fills.
     expect(parser!.url).toBe('')
   })
 
@@ -1724,7 +1724,7 @@ describe('gitattributes', () => {
       expect(suggestion.patterns.length).toBeGreaterThan(0)
       expect(typeof suggestion.available).toBe('boolean')
     }
-    // word/excel/json ride the converter Gitcito ships — always available.
+    // word/excel/json ride the converter GitHuttBr ships — always available.
     for (const name of ['word', 'excel', 'json']) {
       const s = suggestions.find((x) => x.name === name)!
       expect(s.bundled).toBe(true)
