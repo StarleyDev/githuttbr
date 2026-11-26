@@ -231,6 +231,7 @@ export const gitApi = {
   fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
   fetchRemoteBranch: (path: string, remote: string, branch: string) =>
     call<boolean>('fetchRemoteBranch', path, remote, branch),
+  getLocalCommits: (path: string, shas: string[]) => call<string[]>('getLocalCommits', path, shas),
   resolvePrRef: (path: string, remote: string, number: number) =>
     call<PrRefProbe | null>('resolvePrRef', path, remote, number),
   previewRef: (path: string, remote: string, ref: string, mode: PrPreviewMode, localBranch?: string) =>
@@ -1219,6 +1220,8 @@ export const hostingApi = {
     window.api.hosting.prChecks(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
   prFiles: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFileList>,
+  prListCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prListCommits(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCommitList>,
   prReview: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, event: PrReviewEvent, body: string) =>
     window.api.hosting.prReview(repoPath, remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, method: PrMergeMethod) =>

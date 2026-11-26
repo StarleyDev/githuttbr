@@ -68,6 +68,7 @@ interface Provider {
 const PR_OPS: Provider['ops'] = [
   ['hosting:prDetail', 1],
   ['hosting:prFiles', 1],
+  ['hosting:prListCommits', 1],
   ['hosting:prChecks', 1],
   ['hosting:prComment', 1, 'Thanks!'],
   ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],

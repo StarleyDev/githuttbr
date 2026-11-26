@@ -4719,6 +4719,30 @@ export const gitService = {
   },
 
   /**
+   * Which of `shas` are commits this repository has — a pull request's commits
+   * that can open here rather than on the host. One `cat-file --batch-check`
+   * for the whole list. Only full hex ids are asked about: they come from a
+   * hosting API, and anything else could name a ref or read as an option.
+   */
+  async getLocalCommits(repoPath: string, shas: unknown): Promise<string[]> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    // Capped like the Commits tab itself: a caller cannot make one call any size.
+    const wanted = Array.isArray(shas) ? [...new Set(shas.filter(isFullSha))].slice(0, 500) : []
+    if (!wanted.length) return []
+    const out = await gitWithStdin(
+      repoPath,
+      ['cat-file', '--batch-check=%(objectname) %(objecttype)'],
+      wanted.map((s) => `${s}\n`).join('')
+    ).catch(() => '')
+    const found = new Set<string>()
+    for (const line of out.split('\n')) {
+      const [sha, type] = line.trim().split(' ')
+      if (type === 'commit') found.add(sha.toLowerCase())
+    }
+    return wanted.filter((s) => found.has(s.toLowerCase()))
+  },
+
+  /**
    * Whether `ancestor` is a strict ancestor of `descendant`: the one can be
    * fast-forwarded to the other. False for the same commit (nothing to move),
    * for an unknown ref, and for a name that would read as an option.
@@ -9630,6 +9654,7 @@ function lockFor(repoPath: string): RwLock {
 const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
+  'getLocalCommits',
   'isAncestor',
   'isRepository',
   'directoryExists',

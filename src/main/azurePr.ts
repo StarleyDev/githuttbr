@@ -1,5 +1,6 @@
 import type {
   PrCheck,
+  PrCommitList,
   PrDetail,
   PrFile,
   PrDiffRevision,
@@ -12,6 +13,7 @@ import type {
 } from '../shared/types'
 import { unifiedDiff } from '../shared/lineDiff'
 import { getAnchorLine, getAnchorSide, LINE_COMMENT_STALE } from '../shared/prLineAnchor'
+import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
 
 /**
  * Azure DevOps pull requests on the PR page. Every call goes through `ado`,
@@ -598,4 +600,36 @@ export async function azureWorkItem(
     type: typeof f['System.WorkItemType'] === 'string' ? f['System.WorkItemType'] : '',
     ...(typeof f['System.State'] === 'string' ? { state: f['System.State'] } : {})
   }
+}
+
+interface AzCommitRef {
+  commitId?: string
+  comment?: string
+  author?: { name?: string; date?: string }
+  parents?: string[]
+}
+
+/**
+ * The commits of a pull request. One request: `ado` hands back the body only,
+ * and Azure sends its continuation token in a header — so one more than the
+ * cap is asked for, and getting it says the list goes on. `comment` can be cut
+ * short by Azure (`commentTruncated`); the body then ends early.
+ */
+export async function azurePrCommits(ado: Ado, r: AzureRepo, id: number): Promise<PrCommitList> {
+  const data = await ado<{ value?: AzCommitRef[] } | AzCommitRef[]>(
+    `${repoApi(r)}/pullrequests/${id}/commits?$top=${PR_COMMITS_MAX + 1}&${V}`
+  )
+  const refs = (Array.isArray(data) ? data : (data?.value ?? [])).filter((c) => typeof c.commitId === 'string')
+  // Azure lists newest first, as the web page does.
+  return finishPrCommits(
+    refs.map((c) => ({
+      sha: c.commitId!,
+      message: c.comment,
+      authorName: c.author?.name,
+      authoredAt: c.author?.date,
+      parentShas: Array.isArray(c.parents) ? c.parents : null
+    })),
+    true,
+    false
+  )
 }

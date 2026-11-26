@@ -777,6 +777,32 @@ export interface PrFileList {
   revision: PrDiffRevision | null
 }
 
+/** One commit of a pull request, as its host lists it. */
+export interface PrCommit {
+  sha: string
+  shortSha: string
+  /** The message's first line. */
+  subject: string
+  /** The rest of the message, trimmed; absent when there is none. */
+  body?: string
+  authorName: string
+  /** The author's account on the host, when the host matched one. */
+  authorLogin?: string
+  /** An https picture of the author, when the host gives one without a sign-in. */
+  authorAvatar?: string
+  /** ISO date the commit was authored. */
+  authoredAt: string
+  /** Parent count — above one is a merge commit. Absent when the host does not say. */
+  parents?: number
+}
+
+/** A pull request's commits, oldest first. `truncated` when the host has more
+ *  than it listed (GitHub stops at 250) or the app stopped paging. */
+export interface PrCommitList {
+  commits: PrCommit[]
+  truncated: boolean
+}
+
 /** Full detail for one pull request (conversation + review state). */
 export interface PrDetail {
   number: number

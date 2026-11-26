@@ -22,6 +22,7 @@ import {
   validRevision
 } from '../shared/prLineAnchor'
 import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
+import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
 import { githubCiRuns } from './ciRunsGithub'
@@ -55,6 +56,7 @@ import {
   readTail,
   forgejoPullDetail,
   forgejoPullFiles,
+  forgejoPullCommits,
   forgejoReview,
   describeForgejoAccount,
   fjJson,
@@ -104,6 +106,7 @@ import {
 } from '../shared/bitbucketServer'
 import { knownBitbucketServerInstances } from './bitbucketServerInstances'
 import {
+  bbsPullCommits,
   bbsCiStatuses,
   bbsComment,
   bbsCommentOnLine,
@@ -172,6 +175,7 @@ import type {
   PrLineAnchor,
   PrDiffRevision,
   PrFileList,
+  PrCommitList,
   PrCheck,
   PrFile,
   IssueInfo,
@@ -191,6 +195,7 @@ import type {
   GithubStackInfo
 } from '../shared/types'
 import {
+  azurePrCommits,
   azureComment,
   azureMerge,
   azurePrChecks,
@@ -2347,6 +2352,137 @@ async function pullRequestFiles(
   }))
 }
 
+/**
+ * bitbucket.org's commits of a pull request. The endpoint has been seen to
+ * answer with a redirect to the repository's `/commits` listing; that one is
+ * followed only while it stays on the API the credential is for — never with
+ * `redirect: 'follow'`, which would carry it wherever the server points.
+ * "Chronological" says the reference, without saying which way; the parents
+ * settle it. Empty when the source branch is gone (the reference says so).
+ */
+async function bbCloudPullCommits(owner: string, repo: string, auth: ApiAuth, number: number): Promise<PrCommitList> {
+  type BbCommit = {
+    hash?: string
+    message?: string
+    date?: string
+    author?: { raw?: string; user?: { display_name?: string; nickname?: string; links?: { avatar?: { href?: string } } } }
+    parents?: Array<{ hash?: string }>
+  }
+  const API = 'https://api.bitbucket.org/'
+  const get = async (url: string, hops = 0): Promise<{ values?: BbCommit[]; next?: string }> => {
+    const res = await fetch(url, { redirect: 'manual', headers: { Authorization: bitbucketAuthFor(auth), Accept: 'application/json' } })
+    if (res.status >= 300 && res.status < 400) {
+      const to = res.headers.get('location')
+      const next = to ? new URL(to, url).toString() : ''
+      if (hops < 2 && next.startsWith(API)) return get(next, hops + 1)
+      throw new HttpStatusError(`Bitbucket API error (${res.status})`, res.status)
+    }
+    if (!res.ok) {
+      const e = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+      throw new HttpStatusError(e?.error?.message ? `Bitbucket: ${e.error.message}` : `Bitbucket API error (${res.status})`, res.status)
+    }
+    return (await res.json()) as { values?: BbCommit[]; next?: string }
+  }
+  const out: BbCommit[] = []
+  let url: string | undefined =
+    `${API}2.0/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pullrequests/${number}/commits?pagelen=50`
+  // A `next` off the API is not followed, but it still says the list goes on.
+  let more = false
+  for (let page = 0; url && page < 6 && out.length <= PR_COMMITS_MAX; page++) {
+    const d = await get(url)
+    out.push(...(d.values ?? []))
+    more = typeof d.next === 'string'
+    url = more && d.next!.startsWith(API) ? d.next : undefined
+  }
+  const raws: RawPrCommit[] = out
+    .filter((c) => typeof c.hash === 'string')
+    .map((c) => ({
+      sha: c.hash!,
+      message: c.message,
+      // `raw` is "Name <email>"; only the name is shown.
+      authorName: c.author?.user?.display_name || c.author?.raw?.replace(/\s*<[^>]*>\s*$/, ''),
+      authorLogin: c.author?.user?.nickname,
+      authorAvatar: c.author?.user?.links?.avatar?.href,
+      authoredAt: c.date,
+      parentShas: c.parents ? c.parents.flatMap((p) => (p.hash ? [p.hash] : [])) : null
+    }))
+  return finishPrCommits(raws, true, more)
+}
+
+/**
+ * A pull request's commits for its Commits tab, oldest first. Each host is
+ * asked once per page, capped at PR_COMMITS_MAX; `truncated` says the host
+ * has more. bitbucket.org has no PR page in the app yet — it is served here
+ * all the same, like line comments, for when it does.
+ */
+async function pullRequestCommitList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrCommitList> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    type GlCommit = { id?: string; message?: string; author_name?: string; authored_date?: string; parent_ids?: string[] }
+    // Three pages of 100 reach past the cap: a list that stops there is told
+    // apart from one that goes on.
+    const list = await allPages((page) => glJson<GlCommit[]>(`${base}/merge_requests/${number}/commits?per_page=100&page=${page}`, auth), 3)
+    return finishPrCommits(
+      list
+        .filter((c) => typeof c.id === 'string')
+        .map((c) => ({
+          sha: c.id!,
+          message: c.message,
+          authorName: c.author_name,
+          authoredAt: c.authored_date,
+          parentShas: Array.isArray(c.parent_ids) ? c.parent_ids : null
+        })),
+      // Newest first, as in the reference's example.
+      true,
+      false
+    )
+  }
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullCommits(b.repo, b.token, number)
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullCommits(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parsed?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrCommits(a.ado, a.repo, number)
+  }
+  if (parsed?.provider === 'bitbucket') {
+    refuseUnreadableDataCenter(remoteUrl)
+    const auth = await tokenForRemote(remoteUrl, 'bitbucket', tokens)
+    if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+    return bbCloudPullCommits(parsed.owner, parsed.repo, auth, number)
+  }
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  type GhCommit = {
+    sha?: string
+    commit?: { message?: string; author?: { name?: string; date?: string } | null }
+    author?: GhUser | null
+    parents?: Array<{ sha?: string }>
+  }
+  // GitHub lists at most 250 commits of a pull request, oldest first: three
+  // pages of 100 are all there is, and a full 250 may mean more.
+  const list = await allPages((page) => ghJson<GhCommit[]>(`${api}/pulls/${number}/commits?per_page=100&page=${page}`, token), 3)
+  return finishPrCommits(
+    list
+      .filter((c) => typeof c.sha === 'string')
+      .map((c) => ({
+        sha: c.sha!,
+        message: c.commit?.message,
+        authorName: c.commit?.author?.name,
+        authorLogin: c.author?.login,
+        authorAvatar: c.author?.avatar_url,
+        authoredAt: c.commit?.author?.date,
+        parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
+      })),
+    false,
+    list.length >= PR_COMMITS_MAX
+  )
+}
+
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
 async function replyReviewComment(
   remoteUrl: string,
@@ -4169,6 +4305,9 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestFileList(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:prListCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestCommitList(remoteUrl, tokens, number)
   )
   handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
     pullRequestCheckLog(remoteUrl, tokens, url)
