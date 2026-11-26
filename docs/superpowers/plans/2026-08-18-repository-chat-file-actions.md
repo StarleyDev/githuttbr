@@ -468,7 +468,7 @@ afterEach(() => roots.splice(0).forEach((path) => rmSync(path, { recursive: true
 
 it('prepares an exact edit with a local preview and hash', async () => {
   const repo = root()
-  writeFileSync(join(repo, 'LICENSE'), 'MIT License\nCopyright MyAppDesk\n')
+  writeFileSync(join(repo, 'LICENSE'), 'MIT License\nCopyright Example\n')
   const [action] = await prepareRepoFileActions(repo, [{
     type: 'edit_file', path: 'LICENSE', oldText: 'MIT License', newText: 'Apache License, Version 2.0',
     description: 'Replace the license heading'
@@ -1269,7 +1269,7 @@ live('prepares a license file action through an OpenAI-compatible provider', asy
   execFileSync('git', ['-C', repo, 'init'])
   execFileSync('git', ['-C', repo, 'config', 'user.name', 'GitHuttBr Test'])
   execFileSync('git', ['-C', repo, 'config', 'user.email', 'githuttbr@example.invalid'])
-  writeFileSync(join(repo, 'LICENSE'), 'MIT License\n\nCopyright MyAppDesk\n')
+  writeFileSync(join(repo, 'LICENSE'), 'MIT License\n\nCopyright Example\n')
   execFileSync('git', ['-C', repo, 'add', 'LICENSE'])
   execFileSync('git', ['-C', repo, 'commit', '-m', 'test: seed license'])
 

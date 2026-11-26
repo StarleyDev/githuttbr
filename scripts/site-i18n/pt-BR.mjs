@@ -7,7 +7,6 @@ export const ptBR = {
   'nav.download': 'Baixar',
 
   'foot.license': 'Licenciado sob Apache 2.0 · Feito por <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> com 💜',
-  'foot.credit': 'Um fork do {upstream}, da MyAppDesk, sob a licença MIT.',
   'foot.source': 'Código-fonte',
   'foot.roadmap': 'Roadmap',
   'foot.reportIssue': 'Relatar um problema',

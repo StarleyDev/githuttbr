@@ -22,7 +22,7 @@ live('prepares a license file action through an OpenAI-compatible provider', asy
   execFileSync('git', ['-C', repo, 'init'])
   execFileSync('git', ['-C', repo, 'config', 'user.name', 'GitHuttBr Test'])
   execFileSync('git', ['-C', repo, 'config', 'user.email', 'githuttbr@example.invalid'])
-  writeFileSync(join(repo, 'LICENSE'), 'MIT License\n\nCopyright MyAppDesk\n')
+  writeFileSync(join(repo, 'LICENSE'), 'MIT License\n\nCopyright Example\n')
   execFileSync('git', ['-C', repo, 'add', 'LICENSE'])
   execFileSync('git', ['-C', repo, 'commit', '-m', 'test: seed license'])
 

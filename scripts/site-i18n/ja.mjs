@@ -7,7 +7,6 @@ export const ja = {
   'nav.download': 'ダウンロード',
 
   'foot.license': 'Apache 2.0 ライセンス · <a href="https://github.com/StarleyDev">Starley - Mestre Jedi</a> が 💜 を込めて作りました',
-  'foot.credit': 'MyAppDesk による {upstream} のフォーク（MIT ライセンス）。',
   'foot.source': 'ソース',
   'foot.roadmap': 'ロードマップ',
   'foot.reportIssue': '問題を報告',

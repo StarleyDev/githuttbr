@@ -38,7 +38,7 @@ const context = (paths: string[] = []) => ({
 describe('repository file action preparation', () => {
   it('prepares an exact edit with a local preview and hash', async () => {
     const repo = root()
-    writeFileSync(join(repo, 'LICENSE'), 'MIT License\nCopyright MyAppDesk\n')
+    writeFileSync(join(repo, 'LICENSE'), 'MIT License\nCopyright Example\n')
     const [action] = await prepareRepoFileActions(
       repo,
       [

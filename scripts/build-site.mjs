@@ -29,8 +29,6 @@ const REPO = 'StarleyDev/githuttbr'
 // URLs, and the share card, are absolute, so they follow this constant.
 const SITE_URL = 'https://git.huttbr.com'
 // The project GitHuttBr was derived from, credited in the footer (NOTICE).
-const UPSTREAM_REPO = 'MyAppDesk/gitcito' // upstream-name: attribution credit
-const UPSTREAM_NAME = 'Gitcito' // upstream-name: attribution credit
 const RELEASES = `https://github.com/${REPO}/releases`
 const LATEST = `${RELEASES}/latest`
 const SPONSOR = 'https://github.com/sponsors/StarleyDev'
@@ -231,7 +229,6 @@ const footer = (locale = 'en', languages = '', depth = 0) => {
   return `<footer class="foot">${langs}
   <div class="foot-inner wrap">
     <p class="foot-brand"><img src="${base}assets/githuttbr-mark.png" alt="" width="20" height="20" /> <span>${t('foot.license')}</span></p>
-    <p class="foot-credit">${t('foot.credit').replace('{upstream}', `<a href="https://github.com/${UPSTREAM_REPO}">${UPSTREAM_NAME}</a>`)}</p>
     <nav class="foot-links">
       <a href="https://github.com/${REPO}">${t('foot.source')}</a>
       <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a>
@@ -1681,14 +1678,6 @@ code {
   gap: 16px 32px;
   padding-block: 28px 40px;
 }
-.foot-credit {
-  margin: 0;
-  flex-basis: 100%;
-  order: 3;
-  font-size: 0.85em;
-  color: var(--ink-3);
-}
-
 .foot-brand {
   display: flex;
   align-items: center;
