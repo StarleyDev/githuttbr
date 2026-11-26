@@ -910,6 +910,36 @@ export interface PrWorkItem {
   url: string
 }
 
+/**
+ * How a reference is written in commit or comment text: `#12` (an issue or a
+ * pull request; on Azure DevOps a work item), `!12` (a GitLab merge request),
+ * `AB#12` (an Azure Boards work item).
+ */
+export type ReferenceSigil = '#' | '!' | 'AB#'
+
+/** One reference whose summary the hover card asks for. */
+export interface ReferenceQuery {
+  sigil: ReferenceSigil
+  id: number
+}
+
+/**
+ * What the host says about a reference: enough for a hover card. `available`
+ * is false when the host has no such item, this account may not read it, or
+ * the host has no API for it — never an error, so one bad id costs one card.
+ */
+export interface ReferenceSummary extends ReferenceQuery {
+  available: boolean
+  kind?: 'issue' | 'pr' | 'mr' | 'workItem'
+  title?: string
+  /** GitHub, GitLab and Forgejo, normalized. */
+  state?: 'open' | 'closed' | 'merged'
+  /** Azure's own state name ("Active", "Resolved"): a process's vocabulary, shown as is. */
+  stateName?: string
+  /** Azure: Bug, User Story, Task… */
+  workItemType?: string
+}
+
 /** Someone named on a pull request — an assignee or a requested reviewer. */
 export interface PrPerson {
   login: string

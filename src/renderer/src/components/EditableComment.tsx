@@ -92,12 +92,21 @@ export function EditableComment({
         {edited && <em className="comment-edited">{t('prComment.edited')}</em>}
         {mine && handle && !editing && (
           <span className="comment-actions">
-            <button type="button" className="icon-btn" title={t('prComment.edit')} aria-label={t('prComment.edit')} onClick={startEdit} disabled={busy}>
+            <button
+              type="button"
+              className="icon-btn"
+              data-tone="edit"
+              title={t('prComment.edit')}
+              aria-label={t('prComment.edit')}
+              onClick={startEdit}
+              disabled={busy}
+            >
               <Pencil size={12} />
             </button>
             <button
               type="button"
               className="icon-btn danger"
+              data-tone="delete"
               title={t('prComment.delete')}
               aria-label={t('prComment.delete')}
               onClick={() => onDelete(handle)}

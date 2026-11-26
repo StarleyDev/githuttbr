@@ -144,6 +144,17 @@ import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } fr
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
+import {
+  extractReferences,
+  getReferenceHost,
+  pickReferenceBatch,
+  ReferenceCache,
+  REFERENCE_TTL_MS,
+  REFERENCE_UNAVAILABLE_TTL_MS,
+  splitWorkItemMentions,
+  unavailableSummaries
+} from '../src/renderer/src/lib/references'
+import type { ReferenceQuery, ReferenceSummary } from '../src/shared/types'
 import { githubCommitUrl, parseGitHubRemote, githubRemote, forkUpstream, prsFromFork } from '../src/renderer/src/lib/hosting'
 import {
   commitMenuCapabilities,
@@ -1152,11 +1163,108 @@ describe('autolink', () => {
     expect(hrefs(autolink('fix #12 and AB#34', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/12'])
   })
 
+  it('links `!123` to the merge request only on GitLab', () => {
+    const hrefs = (out: unknown): string[] =>
+      (Array.isArray(out) ? out : [out])
+        .filter((n): n is { props: { href: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+        .map((n) => n.props.href)
+    const gl = 'https://gitlab.example.corp/team/app'
+    expect(hrefs(autolink('see !7 and #8', gl, undefined, { gitlab: true }))).toEqual([
+      `${gl}/-/merge_requests/7`,
+      `${gl}/issues/8`
+    ])
+    // Elsewhere, and glued to a word ("done!7"), it stays text.
+    expect(hrefs(autolink('see !7 and #8', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/8'])
+    expect(hrefs(autolink('done!7', gl, undefined, { gitlab: true }))).toEqual([])
+  })
+
+  it('hands each reference link to renderReference, an Azure `#12` as `AB#12`', () => {
+    const seen: string[] = []
+    autolink('fix #12, AB#34 by @ana', 'https://dev.azure.com/example-org/proj/_git/app', undefined, {
+      renderReference: (q, link) => {
+        seen.push(`${q.sigil}${q.id} ${link.text} ${link.href}`)
+        return null
+      }
+    })
+    expect(seen).toEqual([
+      'AB#12 #12 https://dev.azure.com/example-org/_workitems/edit/12',
+      'AB#34 AB#34 https://dev.azure.com/example-org/_workitems/edit/34'
+    ])
+  })
+
   it('builds host-specific file permalinks', () => {
     expect(filePermalink('git@github.com:o/r.git', 'abc123', 'src/a.ts')).toBe('https://github.com/o/r/blob/abc123/src/a.ts')
     expect(filePermalink('https://gitlab.com/g/s/r.git', 'abc', 'x.ts')).toBe('https://gitlab.com/g/s/r/-/blob/abc/x.ts')
     expect(filePermalink('git@bitbucket.org:o/r.git', 'abc', 'x.ts')).toBe('https://bitbucket.org/o/r/src/abc/x.ts')
     expect(filePermalink(undefined, 'abc', 'x.ts')).toBeUndefined()
+  })
+})
+
+describe('references: extraction', () => {
+  const plain = { azure: false, gitlab: false }
+  it('finds `#12` and `AB#12` once each, in order, and never a bare `#` or `#0`', () => {
+    expect(extractReferences('fix #12, AB#34, #12 again, # and #0', plain)).toEqual([
+      { sigil: '#', id: 12 },
+      { sigil: 'AB#', id: 34 }
+    ])
+  })
+  it('reads an Azure `#12` as the work item `AB#12`', () => {
+    expect(extractReferences('AB#12 and #12 and #13', { azure: true, gitlab: false })).toEqual([
+      { sigil: 'AB#', id: 12 },
+      { sigil: 'AB#', id: 13 }
+    ])
+  })
+  it('counts `!12` only on GitLab, and only when it starts a word', () => {
+    expect(extractReferences('see !3, wow!4', { azure: false, gitlab: true })).toEqual([{ sigil: '!', id: 3 }])
+    expect(extractReferences('see !3', plain)).toEqual([])
+  })
+  it('splits a subject around its explicit `AB#` mentions only', () => {
+    expect(splitWorkItemMentions('AB#12 fix rounding (#3)')).toEqual([
+      { text: 'AB#12', id: 12 },
+      { text: ' fix rounding (#3)' }
+    ])
+    expect(splitWorkItemMentions('no refs')).toEqual([{ text: 'no refs' }])
+  })
+  it('tells the host from the provider, or the URL when the PR list has not run', () => {
+    expect(getReferenceHost('git@ssh.dev.azure.com:v3/example-org/proj/app', 'azure')).toEqual({ azure: true, gitlab: false })
+    expect(getReferenceHost('https://dev.azure.com/example-org/proj/_git/app', null)).toEqual({ azure: true, gitlab: false })
+    expect(getReferenceHost('https://gitlab.example.corp/team/app.git', null)).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('https://git.example.corp/team/app.git', 'gitlab')).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('https://bitbucket.org/team/app.git', null)).toBeNull()
+    expect(getReferenceHost(undefined, 'github')).toBeNull()
+  })
+})
+
+describe('references: cache and batching', () => {
+  const ok = (id: number): ReferenceSummary => ({ sigil: '#', id, available: true, kind: 'issue', title: `Issue ${id}`, state: 'open' })
+  it('keeps an answer per repository and reference until its TTL runs out', () => {
+    let now = 1_000
+    const cache = new ReferenceCache(() => now)
+    cache.saveSummaries('repo-a', [ok(1)])
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })?.title).toBe('Issue 1')
+    expect(cache.getSummary('repo-b', { sigil: '#', id: 1 })).toBeUndefined()
+    expect(cache.getSummary('repo-a', { sigil: '!', id: 1 })).toBeUndefined()
+    now += REFERENCE_TTL_MS - 1
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })).toBeDefined()
+    now += 1
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })).toBeUndefined()
+  })
+  it('forgets "unavailable" sooner, so a fixed permission shows', () => {
+    let now = 0
+    const cache = new ReferenceCache(() => now)
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 9 }]))
+    expect(cache.getSummary('r', { sigil: '#', id: 9 })?.available).toBe(false)
+    now = REFERENCE_UNAVAILABLE_TTL_MS
+    expect(cache.getSummary('r', { sigil: '#', id: 9 })).toBeUndefined()
+    expect(REFERENCE_UNAVAILABLE_TTL_MS).toBeLessThan(REFERENCE_TTL_MS)
+  })
+  it('batches the hovered reference first, then the unknown ones on screen, up to the cap', () => {
+    const known = new Set(['#2'])
+    const isKnown = (q: ReferenceQuery): boolean => known.has(`${q.sigil}${q.id}`)
+    const visible = [1, 2, 3, 4, 3].map((id) => ({ sigil: '#' as const, id }))
+    expect(pickReferenceBatch({ sigil: '#', id: 4 }, visible, isKnown).map((q) => q.id)).toEqual([4, 1, 3])
+    expect(pickReferenceBatch(null, visible, isKnown, 2).map((q) => q.id)).toEqual([1, 3])
+    expect(pickReferenceBatch({ sigil: '#', id: 2 }, [], isKnown)).toEqual([])
   })
 })
 

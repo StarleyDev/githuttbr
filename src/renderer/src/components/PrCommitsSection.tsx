@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, Copy, DownloadCloud, ExternalLink, GitCommitHorizontal, Loader2 } from 'lucide-react'
-import type { PrCommit, PrCommitList, PrDetail } from '../../../shared/types'
+import type { PrCommit, PrCommitList, PrDetail, ReferenceQuery } from '../../../shared/types'
+import { autolink, remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
+import { splitWorkItemMentions } from '../lib/references'
+import { getReferenceAutolinkOptions, ReferenceInlineTitle, usePrefetchReferences, useReferenceHost } from './ReferenceLink'
 import { gitApi, hostingApi, shellApi } from '../infrastructure/api'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { useUIStore } from '../stores/ui'
@@ -102,6 +105,24 @@ export function PrCommitsSection({
 
   const groups = useMemo(() => groupCommitsByDay(list?.commits ?? []), [list])
 
+  // On Azure every `AB#12` in a subject is read up front — one batch request —
+  // so its title can sit beside it. Elsewhere a title costs a request per
+  // reference, so it waits for a hover on the commit's body.
+  const refHost = useReferenceHost()
+  const azure = !!refHost?.azure
+  const subjectWorkItems = useMemo<ReferenceQuery[]>(
+    () =>
+      azure
+        ? (list?.commits ?? []).flatMap((c) =>
+            splitWorkItemMentions(c.subject).flatMap((s) => (s.id ? [{ sigil: 'AB#' as const, id: s.id }] : []))
+          )
+        : [],
+    [azure, list]
+  )
+  usePrefetchReferences(subjectWorkItems)
+  const web = remoteWebUrl(remoteUrl)
+  const linkOptions = getReferenceAutolinkOptions(refHost)
+
   const openCommit = async (c: PrCommit): Promise<void> => {
     const here = local ?? (await readLocal())
     if (here.has(c.sha)) {
@@ -168,6 +189,9 @@ export function PrCommitsSection({
                 key={c.sha}
                 commit={c}
                 prUrl={pr.url}
+                web={web}
+                linkOptions={linkOptions}
+                titlesInline={azure}
                 now={now}
                 isLocal={local ? local.has(c.sha) : null}
                 showMissing={missing === c.sha}
@@ -193,6 +217,9 @@ export function PrCommitsSection({
 function PrCommitRow({
   commit: c,
   prUrl,
+  web: repoWeb,
+  linkOptions,
+  titlesInline,
   now,
   isLocal,
   showMissing,
@@ -204,6 +231,11 @@ function PrCommitRow({
 }: {
   commit: PrCommit
   prUrl: string
+  /** The repository's web address, for the body's `#12` links. */
+  web: string | undefined
+  linkOptions: AutolinkOptions
+  /** Show an `AB#12`'s title beside it in the subject (Azure: read in one batch). */
+  titlesInline: boolean
   now: number
   /** Null while it is not known yet. */
   isLocal: boolean | null
@@ -232,7 +264,9 @@ function PrCommitRow({
         >
           <Avatar login={c.authorLogin ?? c.authorName} url={c.authorAvatar} size={20} />
           <span className="prp-commit-text">
-            <span className="prp-commit-subject">{c.subject || c.shortSha}</span>
+            <span className="prp-commit-subject">
+              {!c.subject ? c.shortSha : titlesInline ? <SubjectWithTitles subject={c.subject} /> : c.subject}
+            </span>
             <span className="prp-commit-meta">
               <strong>{c.authorName}</strong>
               {ago && <span title={new Date(at).toLocaleString()}>{interp(t(ago.key), { n: ago.n })}</span>}
@@ -268,7 +302,7 @@ function PrCommitRow({
           </button>
         )}
       </div>
-      {expanded && c.body && <pre className="prp-commit-body">{c.body}</pre>}
+      {expanded && c.body && <pre className="prp-commit-body">{autolink(c.body, repoWeb, undefined, linkOptions)}</pre>}
       {showMissing && (
         <div className="prp-commit-missing" role="status">
           <span>{canFetch ? t('prPage.commitNotHere') : t('prPage.commitInFork')}</span>
@@ -285,5 +319,23 @@ function PrCommitRow({
         </div>
       )}
     </li>
+  )
+}
+
+/** A commit subject with each `AB#12`'s title, muted, beside it once known. */
+function SubjectWithTitles({ subject }: { subject: string }): React.JSX.Element {
+  return (
+    <>
+      {splitWorkItemMentions(subject).map((s, i) =>
+        s.id ? (
+          <span key={i}>
+            {s.text}
+            <ReferenceInlineTitle q={{ sigil: 'AB#', id: s.id }} />
+          </span>
+        ) : (
+          <span key={i}>{s.text}</span>
+        )
+      )}
+    </>
   )
 }

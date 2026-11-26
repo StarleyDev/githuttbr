@@ -271,6 +271,7 @@ interface PreloadApi {
     prPickerOptions(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     prDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     workItem(repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
+    getReferenceSummaries(repoPath: string, remoteUrl: string, tokens: unknown, queries: unknown): Promise<unknown>
     prComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
     prReplyReviewComment(
       repoPath: string,

@@ -196,6 +196,8 @@ import type {
   PrMergeMethod,
   PrMetaField,
   PrPickerOptions,
+  ReferenceQuery,
+  ReferenceSummary,
   ReleaseInfo,
   RemoteOwner,
   RemoteRepo,
@@ -222,6 +224,14 @@ import {
   type AdoText,
   type AzureRepo
 } from './azurePr'
+import {
+  azureReferenceSummaries,
+  forgejoReferenceSummaries,
+  githubReferenceSummaries,
+  gitlabReferenceSummaries,
+  normalizeReferenceQueries,
+  unavailableReference
+} from './referenceSummaries'
 
 interface ParsedRemote {
   provider: Exclude<HostingProvider, null>
@@ -3241,6 +3251,44 @@ async function fetchClosingPrs(
   }
 }
 
+/**
+ * Titles for the references in a repository's commit and comment text, routed
+ * to the host the remote is on, as the profile the repository is bound to. A
+ * host with no API for it (Bitbucket), no credential, or a refusal answers
+ * every reference "unavailable" — the hover card says so; nothing is thrown.
+ */
+async function referenceSummaries(
+  remoteUrl: string,
+  tokens: HostTokens,
+  queries: ReferenceQuery[]
+): Promise<ReferenceSummary[]> {
+  if (!queries.length) return []
+  try {
+    const provider = parseRemoteUrl(remoteUrl)?.provider
+    if (provider === 'azure') {
+      // A plain read (`optional`): Work Items is a scope a code token may lack.
+      const a = await azRepoOf(remoteUrl, tokens.azure)
+      return await azureReferenceSummaries(a.optional, a.repo.org, queries)
+    }
+    if (provider === 'github') {
+      const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+      return await githubReferenceSummaries((url) => ghJson(url, token), api, queries)
+    }
+    if (provider === 'gitlab') {
+      const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+      return await gitlabReferenceSummaries((url) => glJson(url, auth), base, queries)
+    }
+    if (provider === 'forgejo') {
+      const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+      const api = `${f.base}/api/v1/repos/${encodeURIComponent(f.owner)}/${encodeURIComponent(f.repo)}`
+      return await forgejoReferenceSummaries((url) => fjJson(url, f.token), api, queries)
+    }
+  } catch {
+    /* no credential, or a repository this account cannot read: every card says "unavailable" */
+  }
+  return queries.map(unavailableReference)
+}
+
 async function issueDetail(
   remoteUrl: string,
   tokens: { github?: string },
@@ -4543,6 +4591,10 @@ export function registerHostingHandlers(): void {
     // Work Items is a scope a code token may lack: a refusal is shown, never retried.
     return azureWorkItem(a.optional, a.repo.org, id)
   })
+  // The hover card on `#12` / `!12` / `AB#12`: one batch of the references on screen.
+  handleForRepo('hosting:getReferenceSummaries', (remoteUrl: string, tokens: HostTokens, queries: unknown) =>
+    referenceSummaries(remoteUrl, tokens, normalizeReferenceQueries(queries))
+  )
   handleForRepo('hosting:prComment', (remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)
   )

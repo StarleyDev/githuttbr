@@ -1747,6 +1747,41 @@ textarea:focus {
   border-radius: 3px;
 }
 
+/* Per-action tones for a row of icon buttons (the pull request page's header
+   and a comment's Edit / Delete). The theme has five hues; the two in-between
+   ones are mixes of them, so a theme that repaints its slots repaints these. */
+[data-tone='refresh'] { --tone: color-mix(in srgb, var(--accent) 50%, var(--purple)); }
+[data-tone='ai'] { --tone: var(--accent); }
+[data-tone='preview'] { --tone: color-mix(in srgb, var(--green) 50%, var(--purple)); }
+[data-tone='source'] { --tone: var(--green); }
+[data-tone='target'] { --tone: var(--yellow); }
+[data-tone='edit'] { --tone: var(--accent); }
+[data-tone='delete'] { --tone: var(--red); }
+/* The glyph's ink leans a fifth toward the text colour: darker on a light
+   theme, lighter on a dark one. Some themes' green or orange is too pale for a
+   thin 12px stroke on white; this keeps every built-in theme above 3:1. */
+.icon-btn[data-tone] {
+  --tone-ink: color-mix(in srgb, var(--tone) 80%, var(--text-0));
+}
+:root[data-icon-colors='soft'] .icon-btn[data-tone] > svg {
+  color: color-mix(in srgb, var(--tone-ink) 72%, currentColor);
+}
+/* Full: the hue on a chip — the button's own padded box, so nothing moves. */
+:root[data-icon-colors='full'] .icon-btn[data-tone] > svg {
+  color: var(--tone-ink);
+}
+:root[data-icon-colors='full'] .icon-btn[data-tone] {
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
+/* Hover and keyboard focus take the whole hue, in both modes; a disabled
+   button keeps its resting colour and is dimmed below. */
+:root[data-icon-colors='soft'] .icon-btn[data-tone]:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) > svg {
+  color: var(--tone-ink);
+}
+:root[data-icon-colors='full'] .icon-btn[data-tone]:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  background: color-mix(in srgb, var(--tone) 26%, transparent);
+}
+
 .sb-header {
   display: flex;
   align-items: center;
@@ -19252,6 +19287,27 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prd-thread-orphan { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); }
 .comment-actions { display: inline-flex; gap: 2px; margin-inline-start: auto; }
 .comment-actions .icon-btn { padding: 2px 4px; }
+/* The header's and a comment's icon buttons: a ring the keyboard can see, and
+   a disabled one dimmed and inert to hover, whatever its tone. */
+.prp-head .icon-btn:focus-visible,
+.comment-actions .icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.prp-head .icon-btn:disabled,
+.comment-actions .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.prp-head .icon-btn:disabled:hover,
+.comment-actions .icon-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-2);
+}
+:root[data-icon-colors='full'] .prp-head .icon-btn[data-tone]:disabled:hover,
+:root[data-icon-colors='full'] .comment-actions .icon-btn[data-tone]:disabled:hover {
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
 .comment-edit { padding: 8px 12px; }
 .prp-thread .comment-edit, .issue-comment .comment-edit { padding: 4px 0 8px; }
 .comment-edit .prd-input { min-height: 72px; margin-bottom: 6px; }
@@ -20248,3 +20304,47 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .mde-cheat-table kbd { font-family: inherit; font-size: 11px; color: var(--text-2); white-space: nowrap; }
 .mde-cheat-guide { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; }
 .mde-preview[hidden] { display: none; }
+
+/* ─── Reference hover card (components/ReferenceLink.tsx) ─────────────────
+   `#12` / `!12` / `AB#12`: what it is, its title, its state. Fixed to the
+   viewport from the link's box, so a scrolling card body cannot clip it. */
+.ref-card {
+  position: fixed;
+  z-index: 995;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 11px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--text-0);
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: normal;
+  pointer-events: auto;
+}
+.ref-card-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ref-card-icon { display: inline-flex; flex: none; }
+.ref-card-num { font-family: var(--mono); font-size: 11.5px; color: var(--text-1); }
+.ref-card-muted { color: var(--text-2); font-size: 11.5px; }
+.ref-card-title { font-weight: 600; overflow-wrap: anywhere; }
+.ref-card-state {
+  align-self: flex-start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ref-state);
+  background: color-mix(in srgb, var(--ref-state) 14%, transparent);
+}
+.ref-state-open { --ref-state: var(--green); }
+.ref-state-merged { --ref-state: var(--accent); }
+.ref-state-closed { --ref-state: var(--red); }
+.ref-state-neutral { --ref-state: var(--text-1); }
+.ref-card-icon.ref-state-open,
+.ref-card-icon.ref-state-merged,
+.ref-card-icon.ref-state-closed { color: var(--ref-state); }
+/* A title beside its `AB#12` in a list (the PR's Commits tab): there, but quiet. */
+.ref-inline-title { margin-inline-start: 6px; color: var(--text-2); font-weight: 400; }
