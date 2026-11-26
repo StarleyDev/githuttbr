@@ -3,7 +3,8 @@ title: Credential helper
 category: Segurança
 order: 73
 summary: O armazenamento de senhas do próprio git — o terceiro — e por que o https fica te perguntando de novo.
-keywords: credential helper senha password https pergunta de novo osxkeychain wincred manager libsecret store cache git-credentials texto puro esquecer revogado token 401
+keywords: credential helper senha password https pergunta de novo osxkeychain wincred manager libsecret store cache git-credentials texto puro esquecer revogado token 401 token na url do remote senha embutida invalid username or token authentication failed set-url
+source: 6c443db6f1d01e52607a4d9a88e70008db4a8801
 ---
 
 # Credential helper
@@ -118,6 +119,57 @@ aparecem só com origem e perfil. Remotes SSH não são testados, mas
 [Chaves SSH](ssh-keys.md) lista o que o agente tem. A verificação consulta o
 helper do git em silêncio: um helper que precisaria abrir uma janela de login
 conta como sem credencial.
+
+## Uma senha salva na URL do remote
+
+Um clone antigo, ou uma URL copiada de uma wiki, pode levar a credencial dentro
+do endereço: `https://usuario:token@git.example.test/team/app.git`. O git envia
+essa senha e não pergunta a nenhum helper — nem ao token do
+[perfil](profiles.md) do repositório, nem ao GitHub CLI, nem ao armazenamento do
+próprio git. Enquanto o token funciona, ninguém percebe. Quando ele é revogado
+ou expira, todo fetch, pull e push daquele repositório falha com *Invalid
+username or token* ou *Authentication failed*, enquanto os outros repositórios
+do mesmo perfil funcionam. E o token fica em texto puro no `.git/config` do
+repositório.
+
+![Removendo um token salvo da URL de um remote](../../screenshots/remote-url-token.webp)
+
+O Gitcito lê as URLs de fetch e de push de cada remote e avisa em três lugares:
+
+| Onde | O que aparece |
+|------|---------------|
+| Um fetch, pull ou push que falhou | O erro explica que a URL do remote guarda uma senha salva, com **Remover da URL…** |
+| A sidebar | Um ícone de chave na linha do remote; a mesma ação está no menu do botão direito |
+| **Verificar login…** | O remote mostra a senha como origem, com o mesmo botão |
+
+A ação pergunta antes. Ela tira a senha de todas as URLs daquele remote — a de
+fetch e cada URL de push que tiver uma — e não grava nada além do
+`.git/config`. Daí em diante o remote entra com o token do perfil do
+repositório, ou com o helper do próprio git. Quando ela partiu de uma operação
+que falhou, oferece **Tentar de novo**.
+
+**Não há desfazer, de propósito.** Desfazer gravaria o segredo de volta no
+arquivo em texto puro, que é justamente o que a ação existe para impedir. Se o
+token antigo ainda puder funcionar, revogue-o no servidor: ele esteve legível
+para qualquer coisa que pudesse ler a pasta do repositório.
+
+**Limites.**
+
+- O nome de usuário sai junto (`https://git.example.test/…`), como quando você
+  roda `git remote set-url` à mão. Um servidor que precisa dele na URL — um
+  token do Bitbucket Data Center sem nome de usuário no perfil — precisa que ele
+  seja colocado de volta em **Editar remote…**.
+- Um nome de usuário sozinho (`https://usuario@host/…`) não é apontado: o git
+  continua pedindo ao helper a senha daquele usuário, então nada secreto fica
+  guardado.
+- URLs SSH ficam como estão: `git@host:…` e `ssh://git@host/…` dão o login que
+  o ssh usa, não uma credencial.
+- Só o `.git/config` é lido e alterado. Uma URL reescrita por uma regra
+  `url.<base>.insteadOf`, ou um remote definido na config global, não é
+  inspecionado.
+- A senha nunca sai do processo principal: as URLs dos remotes chegam à janela,
+  ao menu de copiar URL e ao diálogo de edição sem ela. Salvar o diálogo de
+  edição com a URL que ele mostrou mantém a senha; só esta ação a remove.
 
 ## Limites que vale conhecer
 
