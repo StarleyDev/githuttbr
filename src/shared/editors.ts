@@ -9,7 +9,7 @@
  * opens the file at the top — the UI hides the "at line" wording in that case.
  */
 
-export type EditorId = 'vscode' | 'cursor' | 'windsurf' | 'zed' | 'sublime' | 'jetbrains' | 'xcode' | 'custom'
+export type EditorId = 'vscode' | 'cursor' | 'windsurf' | 'devin' | 'zed' | 'sublime' | 'jetbrains' | 'xcode' | 'custom'
 
 export interface EditorPreset {
   id: Exclude<EditorId, 'custom'>
@@ -25,6 +25,13 @@ export interface EditorPreset {
   fileArgs: string
   /** argv template for a directory. */
   folderArgs: string
+  /**
+   * Linux: how to recognise the editor among the menu's `.desktop` entries,
+   * for an install that is not on PATH. An entry matches by its `Name=` or by
+   * its `Exec=` program's file name; `cliDir` names the folder, beside that
+   * program, holding the real CLI (VS Code family: `bin/`).
+   */
+  desktop?: { names: string[]; execs: string[]; cliDir?: string }
 }
 
 /** How an editor was located, which decides whether line jumping is possible. */
@@ -83,6 +90,19 @@ export const EDITOR_PRESETS: EditorPreset[] = [
     winPaths: ['Windsurf\\Windsurf.exe'],
     fileArgs: '-g {path}:{line}:{col}',
     folderArgs: '{path}'
+  },
+  {
+    // A VS Code build: the same CLI flags, the CLI in `bin/` next to the app.
+    // Never a bare `devin` — that name belongs to another tool, not this editor.
+    id: 'devin',
+    name: 'Devin Desktop',
+    bins: ['devin-desktop'],
+    macApps: ['Devin.app', 'Devin Desktop.app'],
+    // No published Windows install folder to look in: PATH only there.
+    winPaths: [],
+    fileArgs: '-g {path}:{line}:{col}',
+    folderArgs: '{path}',
+    desktop: { names: ['Devin Desktop'], execs: ['devin-desktop'], cliDir: 'bin' }
   },
   {
     id: 'zed',
