@@ -14,6 +14,7 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
+import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThreadId } from './githubGraphql'
 import {
   getAnchorLine,
   getAnchorSide,
@@ -866,7 +867,7 @@ export function markAwaitingYou(prs: PullRequest[], login: string | null): PullR
 }
 
 /** Who a token signs in as, per host — remembered for a while, keyed by a hash of the token (never the token). */
-const loginCache = new Map<string, { login: string | null; id: string | null; at: number }>()
+const loginCache = new Map<string, { login: string | null; id: string | null; uniqueName: string | null; at: number }>()
 const LOGIN_TTL_MS = 10 * 60_000
 
 async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<string | null> {
@@ -878,12 +879,17 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
  * is a display name two people can share (Azure DevOps, bitbucket.org), the
  * account's own id — what "your comment" must be matched on there.
  */
-async function myAccount(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<{ login: string | null; id: string | null } | null> {
+async function myAccount(
+  parsed: ParsedRemote,
+  token: string,
+  auth: ApiAuth
+): Promise<{ login: string | null; id: string | null; uniqueName: string | null } | null> {
   const key = `${parsed.provider}|${parsed.base ?? ''}|${createHash('sha256').update(token).digest('hex').slice(0, 16)}`
   const hit = loginCache.get(key)
-  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return { login: hit.login, id: hit.id }
+  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return { login: hit.login, id: hit.id, uniqueName: hit.uniqueName }
   let login: string | null = null
   let id: string | null = null
+  let uniqueName: string | null = null
   // Only the host's own "no" is worth remembering: a token without user scope
   // stays that way. A network error or a 5xx is asked again next time.
   let refused = false
@@ -903,21 +909,24 @@ async function myAccount(parsed: ParsedRemote, token: string, auth: ApiAuth): Pr
       } else refused = res.status === 401 || res.status === 403
       if (!res.ok && !refused) return null
     } else if (parsed.provider === 'azure') {
-      const me = await adoJson<{ authenticatedUser?: { id?: string; providerDisplayName?: string } }>(
-        `https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`,
-        token
-      )
+      const me = await adoJson<{
+        authenticatedUser?: { id?: string; providerDisplayName?: string; properties?: { Account?: { $value?: unknown } } }
+      }>(`https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`, token)
       login = me.authenticatedUser?.providerDisplayName ?? null
       // The identity id: what a comment's `author.id` (an IdentityRef) names.
       id = me.authenticatedUser?.id ?? null
+      // The account name (an email or UPN) — what a comment's `author.uniqueName`
+      // carries. A second key for "yours", should the two ids ever differ.
+      const account = me.authenticatedUser?.properties?.Account?.$value
+      uniqueName = typeof account === 'string' && account.trim() ? account.trim() : null
     }
   } catch (err) {
     // A token without user scope cannot say who it is: no marks, no error.
     refused = isAuthRefusal(err)
     if (!refused) return null
   }
-  loginCache.set(key, { login, id, at: Date.now() })
-  return { login, id }
+  loginCache.set(key, { login, id, uniqueName, at: Date.now() })
+  return { login, id, uniqueName }
 }
 
 /** A 401/403 from the host. Every client myLogin uses sets `status` on what it throws. */
@@ -2607,6 +2616,31 @@ async function replyReviewComment(
 }
 
 /**
+ * GitHub: reply in a review thread whose first comment was deleted. REST
+ * replies name the root comment, which is gone; GraphQL replies name the
+ * thread. The thread is found through a comment still in it — its REST
+ * `node_id` is the GraphQL comment id. Any failure is thrown: the page then
+ * offers the host's own page instead.
+ */
+async function replyReviewThread(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  commentId: number,
+  body: string
+): Promise<void> {
+  if (!Number.isSafeInteger(commentId) || commentId <= 0) throw new Error('Not a review comment id.')
+  if (typeof body !== 'string' || !body.trim()) throw new Error('An empty reply.')
+  const { owner, repo, token, ep, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const comment = await ghJson<{ node_id?: string }>(`${api}/pulls/comments/${commentId}`, token)
+  if (!comment.node_id) throw new Error('GitHub did not name the comment.')
+  const post = createGithubGraphqlPost(ep.graphqlUrl, token)
+  const threadId = await findReviewThreadId(post, owner, repo, number, comment.node_id)
+  if (!threadId) throw new Error('GitHub did not find the review thread.')
+  await addReviewThreadReply(post, threadId, body)
+}
+
+/**
  * Why a line comment failed, in words the renderer recognises
  * (lib/gitErrorHint.ts): `refused` when the host turned the account down,
  * `outsideDiff` when it would not anchor a comment to that line — which is what
@@ -2893,10 +2927,11 @@ async function deletePrComment(remoteUrl: string, tokens: HostTokens, number: nu
 export interface PageViewer {
   viewer: string | null
   viewerId: string | null
+  viewerUniqueName: string | null
   viewerById: boolean
 }
 
-const NO_VIEWER: PageViewer = { viewer: null, viewerId: null, viewerById: false }
+const NO_VIEWER: PageViewer = { viewer: null, viewerId: null, viewerUniqueName: null, viewerById: false }
 
 /**
  * A detail read with its viewer. Both settle before the call answers: a failed
@@ -2922,7 +2957,7 @@ async function viewerOf(remoteUrl: string, tokens: HostTokens): Promise<PageView
     const viewerById = parsed.provider === 'azure' || (parsed.provider === 'bitbucket' && !parsed.base)
     const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
     const me = auth ? await myAccount(parsed, auth.token, auth) : null
-    return { viewer: me?.login ?? null, viewerId: me?.id ?? null, viewerById }
+    return { viewer: me?.login ?? null, viewerId: me?.id ?? null, viewerUniqueName: me?.uniqueName ?? null, viewerById }
   } catch {
     return NO_VIEWER
   }
@@ -3271,8 +3306,10 @@ async function referenceSummaries(
       return await azureReferenceSummaries(a.optional, a.repo.org, queries)
     }
     if (provider === 'github') {
-      const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
-      return await githubReferenceSummaries((url) => ghJson(url, token), api, queries)
+      const { owner, repo, token, ep, api } = await ghRepoOf(remoteUrl, tokens.github)
+      // GraphQL reads a page of references in one request; REST is the fallback.
+      const graphql = { post: createGithubGraphqlRawPost(ep.graphqlUrl, token), owner, repo }
+      return await githubReferenceSummaries((url) => ghJson(url, token), api, queries, graphql)
     }
     if (provider === 'gitlab') {
       const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
@@ -4602,6 +4639,11 @@ export function registerHostingHandlers(): void {
     'hosting:prReplyReviewComment',
     (remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
+  )
+  handleForRepo(
+    'hosting:prReplyReviewThread',
+    (remoteUrl: string, tokens: HostTokens, number: number, commentId: number, body: string) =>
+      replyReviewThread(remoteUrl, tokens, number, commentId, body)
   )
   handleForRepo(
     'hosting:prCommentOnLine',

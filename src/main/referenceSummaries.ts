@@ -1,5 +1,6 @@
 import type { ReferenceQuery, ReferenceSigil, ReferenceSummary } from '../shared/types'
 import { mapAzureWorkItems } from './azurePr'
+import type { GithubGraphqlRawPost } from './githubGraphql'
 
 /**
  * Titles for the `#12`, `!12` and `AB#12` references in commit messages and
@@ -22,6 +23,18 @@ export const REFERENCE_BATCH_MAX = 200
  */
 export const GITHUB_CONCURRENCY = 1
 export const FORGEJO_CONCURRENCY = 2
+/**
+ * GitHub references one GraphQL request reads, as aliases of one repository
+ * query. Fifty keeps the query small and its cost at a point or two.
+ */
+export const GITHUB_GRAPHQL_BATCH = 50
+/**
+ * When GraphQL fails, REST reads at most this many — one request each, one at
+ * a time — and the rest are asked again on a later hover.
+ */
+export const GITHUB_REST_FALLBACK_MAX = 10
+/** GraphQL's `Int` is 32-bit: a larger number is no issue, and would fail the whole query. */
+const GRAPHQL_INT_MAX = 2_147_483_647
 
 const SIGILS: readonly ReferenceSigil[] = ['#', '!', 'AB#']
 
@@ -163,19 +176,112 @@ interface GhIssue {
   pull_request?: { merged_at?: string | null } | null
 }
 
+/** The repository a GitHub GraphQL read is about, and the poster that reaches it. */
+export interface GithubGraphqlTarget {
+  post: GithubGraphqlRawPost
+  owner: string
+  repo: string
+}
+
+/**
+ * `#12` on GitHub. With GraphQL at hand, one request reads up to fifty, as
+ * aliases of `issueOrPullRequest`; without it, or when GraphQL fails for any
+ * reason but a rate limit, REST reads up to ten (`githubRestReferenceSummaries`).
+ * A rate limit stops everything: the rest are not asked, by either API.
+ */
+export async function githubReferenceSummaries(
+  get: JsonGet,
+  repoApi: string,
+  queries: readonly ReferenceQuery[],
+  graphql?: GithubGraphqlTarget
+): Promise<ReferenceSummary[]> {
+  const asked = queries.filter((q) => q.sigil === '#')
+  if (!graphql) return byQuery(queries, await githubRestReferenceSummaries(get, repoApi, asked))
+  const out: ReferenceSummary[] = []
+  for (let i = 0; i < asked.length; i += GITHUB_GRAPHQL_BATCH) {
+    const chunk = asked.slice(i, i + GITHUB_GRAPHQL_BATCH)
+    let read: ReferenceSummary[]
+    try {
+      read = await githubGraphqlReferenceSummaries(graphql, chunk)
+    } catch (err) {
+      if (reasonOf(err) === 'rateLimited') {
+        out.push(...asked.slice(i).map((q) => unavailableReference(q, 'rateLimited')))
+        break
+      }
+      // Fall back for what is left, capped: REST pays a request per reference.
+      const rest = asked.slice(i)
+      out.push(...(await githubRestReferenceSummaries(get, repoApi, rest.slice(0, GITHUB_REST_FALLBACK_MAX))))
+      break
+    }
+    out.push(...read)
+  }
+  return byQuery(queries, out)
+}
+
+interface GhGraphqlItem {
+  __typename?: string
+  title?: unknown
+  issueState?: unknown
+  prState?: unknown
+  merged?: unknown
+}
+
+/**
+ * One GraphQL request for `chunk`. The two `state` fields are aliased apart:
+ * IssueState and PullRequestState are different enums, which one selection may
+ * not merge. A null alias is a number with no issue (GraphQL says NOT_FOUND
+ * beside it); a query that came back with no repository at all throws, so the
+ * caller can try REST.
+ */
+async function githubGraphqlReferenceSummaries(
+  { post, owner, repo }: GithubGraphqlTarget,
+  chunk: readonly ReferenceQuery[]
+): Promise<ReferenceSummary[]> {
+  const askable = chunk.filter((q) => q.id <= GRAPHQL_INT_MAX)
+  if (!askable.length) return chunk.map((q) => unavailableReference(q, 'notFound'))
+  // The ids are positive safe integers (normalizeReferenceQueries): safe to write into the query.
+  const fields = askable
+    .map(
+      (q) =>
+        `i${q.id}: issueOrPullRequest(number:${q.id}){ __typename ` +
+        '... on Issue{ title issueState: state } ... on PullRequest{ title prState: state merged } }'
+    )
+    .join('\n')
+  const query = `query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ ${fields} } }`
+  const answer = await post<{ repository?: Record<string, GhGraphqlItem | null> | null }>(query, { owner, name: repo })
+  const limited = answer.errors.find((e) => e.type === 'RATE_LIMITED')
+  if (limited) throw Object.assign(new Error('GitHub: rate limited'), { status: 403, rateLimited: true })
+  const found = answer.data?.repository
+  if (!found) throw new Error(`GitHub GraphQL: ${String(answer.errors[0]?.message ?? 'no repository')}`)
+  return chunk.map((q): ReferenceSummary => {
+    const it = q.id <= GRAPHQL_INT_MAX ? found[`i${q.id}`] : null
+    if (!it || typeof it.title !== 'string') return unavailableReference(q, 'notFound')
+    const pr = it.__typename === 'PullRequest'
+    const state = pr
+      ? it.merged === true || it.prState === 'MERGED'
+        ? 'merged'
+        : it.prState === 'CLOSED'
+          ? 'closed'
+          : 'open'
+      : it.issueState === 'CLOSED'
+        ? 'closed'
+        : 'open'
+    return { ...q, available: true, kind: pr ? 'pr' : 'issue', title: it.title, state }
+  })
+}
+
 /**
  * `#12` through the issues API, which answers for pull requests too (with a
  * `pull_request` member). GitHub has no REST batch read of issues by number,
  * so each is one request, made one after another. An older Enterprise Server
  * that leaves `merged_at` out shows a merged pull request as closed.
  */
-export async function githubReferenceSummaries(
+async function githubRestReferenceSummaries(
   get: JsonGet,
   repoApi: string,
-  queries: readonly ReferenceQuery[]
+  asked: readonly ReferenceQuery[]
 ): Promise<ReferenceSummary[]> {
-  const asked = queries.filter((q) => q.sigil === '#')
-  const read = await readEach(asked, GITHUB_CONCURRENCY, async (q) => {
+  return readEach(asked, GITHUB_CONCURRENCY, async (q) => {
     const issue = await get<GhIssue>(`${repoApi}/issues/${q.id}`)
     if (!issue || typeof issue.title !== 'string') return unavailableReference(q, 'notFound')
     const pr = !!issue.pull_request
@@ -187,7 +293,6 @@ export async function githubReferenceSummaries(
       state: pr && issue.pull_request?.merged_at ? 'merged' : issue.state === 'closed' ? 'closed' : 'open'
     }
   })
-  return byQuery(queries, read)
 }
 
 /** `results` (for some of `queries`) back in the order of all of them; the rest unreachable. */

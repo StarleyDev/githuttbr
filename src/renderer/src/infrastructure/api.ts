@@ -234,6 +234,8 @@ export const gitApi = {
   fetchRemoteBranch: (path: string, remote: string, branch: string) =>
     call<boolean>('fetchRemoteBranch', path, remote, branch),
   getLocalCommits: (path: string, shas: string[]) => call<string[]>('getLocalCommits', path, shas),
+  /** A pull request's head, by its number, into `<remote>/pr/<number>`; null when the remote publishes none. */
+  fetchPrHead: (path: string, remote: string, number: number) => call<string | null>('fetchPrHead', path, remote, number),
   resolvePrRef: (path: string, remote: string, number: number) =>
     call<PrRefProbe | null>('resolvePrRef', path, remote, number),
   previewRef: (path: string, remote: string, ref: string, mode: PrPreviewMode, localBranch?: string) =>
@@ -1195,6 +1197,15 @@ export const hostingApi = {
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
+  /** GitHub: reply in a review thread whose first comment is gone, through a comment still in it. */
+  prReplyReviewThread: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    commentId: number,
+    body: string
+  ) => window.api.hosting.prReplyReviewThread(repoPath, remoteUrl, tokens, number, commentId, body) as Promise<void>,
   /** Start a review thread on one line of the PR's diff, posted at once. */
   prCommentOnLine: (
     repoPath: string,

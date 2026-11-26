@@ -167,6 +167,7 @@ import type {
   RepoDetail,
   PrPreviewMode,
   PrPreviewResult,
+  PrRefCandidate,
   PrRefProbe,
   PreparedRepoChatFileAction,
   RepoFileBatchResult,
@@ -259,6 +260,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   fetchAll: 'fetch',
   fetchRemote: 'fetch',
   fetchRemoteBranch: 'fetch',
+  fetchPrHead: 'fetch',
   amendCommitMessage: 'amend',
   createBranch: 'branchCreate',
   gitflowStart: 'branchCreate',
@@ -1489,8 +1491,35 @@ async function assertSafeRemoteBranch(repoPath: string, remote: string, branch: 
   assertNotOption(remote, 'the remote')
   const normalized = await runGit(repoPath, ['check-ref-format', '--branch', branch]).catch(() => '')
   if (normalized.trim() !== branch) throw new Error(`Refusing the branch name "${branch}": git does not accept it.`)
+  await assertConfiguredRemote(repoPath, remote)
+}
+
+/** `remote` is one of this repository's remotes — never an option, a URL or a path. */
+async function assertConfiguredRemote(repoPath: string, remote: string): Promise<void> {
+  assertNotOption(remote, 'the remote')
   const remotes = (await runGit(repoPath, ['remote'])).split('\n').map((s) => s.trim())
   if (!remotes.includes(remote)) throw new Error(`Refusing the remote "${remote}": it is not configured in this repository.`)
+}
+
+/**
+ * The first of `candidates` that `remote` publishes, with its sha — one
+ * `ls-remote` for all of them. Candidate order is priority order.
+ */
+async function probePrRef(repoPath: string, remote: string, candidates: PrRefCandidate[]): Promise<PrRefProbe | null> {
+  if (!candidates.length) return null
+  const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
+    runGit(repoPath, ['ls-remote', '--', remote, ...candidates.map((c) => c.ref)])
+  )
+  const found = new Map<string, string>()
+  for (const line of out.split('\n')) {
+    const [sha, ref] = line.split('\t')
+    if (sha && ref) found.set(ref.trim(), sha.trim())
+  }
+  for (const c of candidates) {
+    const sha = found.get(c.ref)
+    if (sha) return { ...c, sha }
+  }
+  return null
 }
 
 /**
@@ -3589,21 +3618,37 @@ export const gitService = {
    * to READ_METHODS; the exclusive lock it keeps is merely conservative.
    */
   async resolvePrRef(repoPath: string, remote: string, number: number): Promise<PrRefProbe | null> {
-    const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote))
-    const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
-      runGit(repoPath, ['ls-remote', '--', remote, ...candidates.map((c) => c.ref)])
+    return probePrRef(repoPath, remote, prRefCandidates(number, await getRemoteUrl(repoPath, remote)))
+  },
+
+  /**
+   * Fetch a pull request's head into `refs/remotes/<remote>/pr/<number>`, so
+   * its commits are in this clone even when its branch lives in a fork no
+   * remote here points at. The head is found the way `resolvePrRef` finds it —
+   * the target repository mirrors it under a well-known ref (`refs/pull/N/head`,
+   * `refs/merge-requests/N/head`, `refs/pull-requests/N/from`). Azure DevOps
+   * publishes only a synthetic merge commit, which is no head: not fetched.
+   *
+   * The number and the remote are checked before either reaches a refspec, as
+   * `fetchRemoteBranch` checks its branch; `--no-tags` as there. A write, not a
+   * READ_METHOD: it moves a ref.
+   *
+   * Returns the ref written as `<remote>/pr/<number>`, or null when the remote
+   * publishes no head for that number.
+   */
+  async fetchPrHead(repoPath: string, remote: string, number: number): Promise<string | null> {
+    if (!Number.isSafeInteger(number) || number <= 0) throw new Error(`Refusing the pull request number "${number}".`)
+    await assertConfiguredRemote(repoPath, remote)
+    const local = `refs/remotes/${remote}/pr/${number}`
+    const normalized = await runGit(repoPath, ['check-ref-format', '--normalize', local]).catch(() => '')
+    if (normalized.trim() !== local) throw new Error(`Refusing the ref "${local}": git does not accept it.`)
+    const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote)).filter((c) => c.flavor !== 'azure')
+    const hit = await probePrRef(repoPath, remote, candidates)
+    if (!hit) return null
+    await withRemoteAuth(repoPath, remote, 'fetch', () =>
+      runGit(repoPath, ['fetch', '--no-tags', '--', remote, `+${hit.ref}:${local}`])
     )
-    const found = new Map<string, string>()
-    for (const line of out.split('\n')) {
-      const [sha, ref] = line.split('\t')
-      if (sha && ref) found.set(ref.trim(), sha.trim())
-    }
-    // Candidate order is priority order, so the first hit is the best guess.
-    for (const c of candidates) {
-      const sha = found.get(c.ref)
-      if (sha) return { ...c, sha }
-    }
-    return null
+    return `${remote}/pr/${number}`
   },
 
   /**

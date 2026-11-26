@@ -17,6 +17,8 @@ export interface CommentEditDraft {
 export interface CommentViewer {
   viewer?: string | null
   viewerId?: string | null
+  /** The viewer's unique account name (Azure DevOps), matched like an id. */
+  viewerUniqueName?: string | null
   /** Authors are display names two people can share: only ids may match. */
   viewerById?: boolean
 }
@@ -25,16 +27,20 @@ const sameText = (a: string, b: string): boolean => a.toLowerCase() === b.toLowe
 
 /**
  * The viewer wrote this comment, and the host gave a way to reach it. Ids
- * decide when both sides have one; on a host that names authors by display
- * name (Azure DevOps), a missing id offers nothing rather than guess. Logins
- * compare case-insensitively, as hosts treat them; an unknown viewer owns
- * nothing. The host still decides: this only chooses whether to offer actions.
+ * decide when both sides have one; on Azure DevOps the unique account name
+ * decides too, since the identity id in a comment is not guaranteed to be the
+ * one the connection reports — either match is enough, both being unique per
+ * user. On a host that names authors by display name, a missing id offers
+ * nothing rather than guess. Logins compare case-insensitively, as hosts treat
+ * them; an unknown viewer owns nothing. The host still decides: this only
+ * chooses whether to offer actions.
  */
 export function isMyComment(
-  comment: { author: string; authorId?: string; handle?: PrCommentHandle },
+  comment: { author: string; authorId?: string; authorUniqueName?: string; handle?: PrCommentHandle },
   who: CommentViewer | null | undefined
 ): boolean {
   if (!comment.handle || !who) return false
+  if (comment.authorUniqueName && who.viewerUniqueName && sameText(comment.authorUniqueName, who.viewerUniqueName)) return true
   if (comment.authorId && who.viewerId) return sameText(comment.authorId, who.viewerId)
   if (who.viewerById) return false
   return !!who.viewer && !!comment.author && sameText(comment.author, who.viewer)
@@ -42,8 +48,9 @@ export function isMyComment(
 
 /**
  * GitHub: the thread's first comment is gone (deleted), so its replies point
- * at a comment that no longer exists, and the reply endpoint takes no reply to
- * a reply — the app cannot answer this thread.
+ * at a comment that no longer exists, and the REST reply endpoint takes no
+ * reply to a reply. Such a thread is answered through GraphQL, by the thread's
+ * own id (`hostingApi.prReplyReviewThread`).
  */
 export function isThreadRootMissing(provider: HostingProvider | undefined, thread: PrReviewThread): boolean {
   return provider === 'github' && !thread.comments.some((c) => c.id === thread.rootId)

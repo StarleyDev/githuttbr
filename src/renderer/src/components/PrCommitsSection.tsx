@@ -132,7 +132,8 @@ export function PrCommitsSection({
   }
 
   // Fetch the source branch, then open the commit if it came with it. A fork's
-  // branch is not on any remote here; the notice offers only the host then.
+  // branch is not on any remote here: the pull request's head is fetched
+  // instead, from the ref the target repository mirrors it under.
   const fetchAndOpen = async (c: PrCommit): Promise<void> => {
     if (!useRepoStore.getState().repos[repoPath]) await useRepoStore.getState().ensure(repoPath)
     const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
@@ -142,7 +143,10 @@ export function PrCommitsSection({
     }
     setFetching(true)
     try {
-      if (!(await repoActions.fetchPrBranch(repoPath, remote, pr.source))) return
+      const fetched = pr.sourceRepo
+        ? await repoActions.fetchPrHead(repoPath, remote, pr.number)
+        : await repoActions.fetchPrBranch(repoPath, remote, pr.source)
+      if (!fetched) return
       const found = await readLocal()
       setLocal(found)
       if (found.has(c.sha)) {
@@ -195,7 +199,7 @@ export function PrCommitsSection({
                 now={now}
                 isLocal={local ? local.has(c.sha) : null}
                 showMissing={missing === c.sha}
-                canFetch={!pr.sourceRepo}
+                inFork={!!pr.sourceRepo}
                 fetching={fetching}
                 onOpen={() => void openCommit(c)}
                 onFetch={() => void fetchAndOpen(c)}
@@ -223,7 +227,7 @@ function PrCommitRow({
   now,
   isLocal,
   showMissing,
-  canFetch,
+  inFork,
   fetching,
   onOpen,
   onFetch,
@@ -240,8 +244,8 @@ function PrCommitRow({
   /** Null while it is not known yet. */
   isLocal: boolean | null
   showMissing: boolean
-  /** The branch can be fetched from here — not a fork's. */
-  canFetch: boolean
+  /** The branch lives in a fork: the pull request's head is fetched instead of the branch. */
+  inFork: boolean
   fetching: boolean
   onOpen: () => void
   onFetch: () => void
@@ -305,12 +309,11 @@ function PrCommitRow({
       {expanded && c.body && <pre className="prp-commit-body">{autolink(c.body, repoWeb, undefined, linkOptions)}</pre>}
       {showMissing && (
         <div className="prp-commit-missing" role="status">
-          <span>{canFetch ? t('prPage.commitNotHere') : t('prPage.commitInFork')}</span>
-          {canFetch && (
-            <button type="button" className="btn ghost tiny" onClick={onFetch} disabled={fetching}>
-              {fetching ? <Loader2 size={12} className="spin" /> : <DownloadCloud size={12} />} {t('prPage.commitFetchBranch')}
-            </button>
-          )}
+          <span>{inFork ? t('prPage.commitInFork') : t('prPage.commitNotHere')}</span>
+          <button type="button" className="btn ghost tiny" onClick={onFetch} disabled={fetching}>
+            {fetching ? <Loader2 size={12} className="spin" /> : <DownloadCloud size={12} />}{' '}
+            {inFork ? t('prPage.commitFetchPrHead') : t('prPage.commitFetchBranch')}
+          </button>
           {web && (
             <button type="button" className="btn ghost tiny" onClick={() => void shellApi.openExternal(web)}>
               <ExternalLink size={12} /> {t('common.openInBrowser')}

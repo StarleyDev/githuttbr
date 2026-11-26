@@ -151,6 +151,7 @@ import {
   ReferenceCache,
   REFERENCE_RATE_LIMITED_TTL_MS,
   REFERENCE_REQUEST_MAX,
+  getReferenceRequestMax,
   REFERENCE_TTL_MS,
   REFERENCE_UNAVAILABLE_TTL_MS,
   splitWorkItemMentions,
@@ -1247,11 +1248,13 @@ describe('references: what counts as one', () => {
     expect(splitWorkItemMentions('no refs')).toEqual([{ text: 'no refs' }])
   })
   it('tells the host from the provider, or the URL when the PR list has not run', () => {
-    expect(getReferenceHost('git@ssh.dev.azure.com:v3/example-org/proj/app', 'azure')).toEqual({ azure: true, gitlab: false })
-    expect(getReferenceHost('https://dev.azure.com/example-org/proj/_git/app', null)).toEqual({ azure: true, gitlab: false })
-    expect(getReferenceHost('https://gitlab.example.corp/team/app.git', null)).toEqual({ azure: false, gitlab: true })
-    expect(getReferenceHost('https://git.example.corp/team/app.git', 'gitlab')).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('git@ssh.dev.azure.com:v3/example-org/proj/app', 'azure')).toEqual({ azure: true, gitlab: false, github: false })
+    expect(getReferenceHost('https://dev.azure.com/example-org/proj/_git/app', null)).toEqual({ azure: true, gitlab: false, github: false })
+    expect(getReferenceHost('https://gitlab.example.corp/team/app.git', null)).toEqual({ azure: false, gitlab: true, github: false })
+    expect(getReferenceHost('https://git.example.corp/team/app.git', 'gitlab')).toEqual({ azure: false, gitlab: true, github: false })
     expect(getReferenceHost('https://bitbucket.org/team/app.git', null)).toBeNull()
+    expect(getReferenceHost('https://github.com/team/app.git', null)).toEqual({ azure: false, gitlab: false, github: true })
+    expect(getReferenceHost('https://code.example.corp/team/app.git', 'github')).toEqual({ azure: false, gitlab: false, github: true })
     expect(getReferenceHost(undefined, 'github')).toBeNull()
   })
 })
@@ -1292,6 +1295,18 @@ describe('references: cache and batching', () => {
     expect(pickReferenceBatch(null, visible, isKnown, 2).map((q) => q.id)).toEqual([1, 3])
     expect(pickReferenceBatch({ sigil: '#', id: 2 }, [], isKnown)).toEqual([])
     expect(REFERENCE_REQUEST_MAX).toBe(10)
+  })
+  it('asks GitHub for fifty per request (one GraphQL query), Azure for 200, the rest for ten', () => {
+    const host = (h: Partial<{ azure: boolean; gitlab: boolean; github: boolean }>): { azure: boolean; gitlab: boolean; github: boolean } => ({
+      azure: false,
+      gitlab: false,
+      github: false,
+      ...h
+    })
+    expect(getReferenceRequestMax(host({ github: true }))).toBe(50)
+    expect(getReferenceRequestMax(host({ azure: true }))).toBe(200)
+    expect(getReferenceRequestMax(host({ gitlab: true }))).toBe(10)
+    expect(getReferenceRequestMax(host({}))).toBe(10)
   })
   it('orders the neighbours of the hovered one nearest first', () => {
     expect(orderByNearness(['a', 'b', 'c', 'd', 'e'], 2)).toEqual(['d', 'b', 'e', 'a'])
@@ -8612,11 +8627,26 @@ describe('editing and deleting your own comments (lib/commentEdit)', () => {
     expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-1' }), { viewer: 'Ana Souza', viewerById: true })).toBe(false)
   })
 
+  it('Azure DevOps: the unique account name also makes it yours, ignoring case — never the display name', () => {
+    const me = { viewer: 'Ana Souza', viewerId: 'id-ana-1', viewerUniqueName: 'ana.souza@example.com', viewerById: true }
+    // The comment's identity id differs from the connection's: the account name still matches.
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-9', authorUniqueName: 'Ana.Souza@Example.com' }), me)).toBe(true)
+    // No id on the comment, only the account name.
+    expect(isMyComment(by('Ana Souza', { authorUniqueName: 'ana.souza@example.com' }), me)).toBe(true)
+    // Ids match, account name absent: still yours.
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-1' }), me)).toBe(true)
+    // Another person with the same display name: neither key matches.
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2', authorUniqueName: 'ana.s@example.com' }), me)).toBe(false)
+    expect(isMyComment(by('Ana Souza', { authorUniqueName: 'ana.s@example.com' }), me)).toBe(false)
+    // A viewer whose account name is unknown falls back to the id alone.
+    expect(isMyComment(by('Ana Souza', { authorUniqueName: 'ana.souza@example.com' }), { ...me, viewerUniqueName: null })).toBe(false)
+  })
+
   it('ids decide when both sides carry one, even on a login host', () => {
     expect(isMyComment(by('ana', { authorId: '7' }), { viewer: 'ana', viewerId: '8' })).toBe(false)
   })
 
-  it('a GitHub thread whose first comment is gone cannot be replied to from the app', () => {
+  it('a GitHub thread whose first comment is gone is flagged, to be answered by the thread id', () => {
     const th = (ids: number[], rootId: number): never =>
       ({ path: 'a.ts', line: 1, diffHunk: '', rootId, comments: ids.map((id) => ({ id, author: 'a', body: '', createdAt: '' })) }) as never
     expect(isThreadRootMissing('github', th([10, 11], 10))).toBe(false)

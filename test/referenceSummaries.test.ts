@@ -8,6 +8,7 @@ import {
   REFERENCE_BATCH_MAX
 } from '../src/main/referenceSummaries'
 import type { JsonGet } from '../src/main/referenceSummaries'
+import type { GithubGraphqlRawPost } from '../src/main/githubGraphql'
 import type { ReferenceQuery } from '../src/shared/types'
 
 /**
@@ -179,6 +180,118 @@ describe('reference summaries: GitHub', () => {
     const out = await githubReferenceSummaries(host.get, API, qs(['!', 3], ['AB#', 4]))
     expect(host.urls).toHaveLength(0)
     expect(out.every((s) => !s.available)).toBe(true)
+  })
+})
+
+describe('reference summaries: GitHub through GraphQL', () => {
+  const API = 'https://api.github.com/repos/team/app'
+  type Answer = { data: unknown; errors: Array<{ type?: string; message?: string }> }
+  /** A fake GraphQL poster: records each query, answers with `reply(query)`. */
+  const fakeGraphql = (reply: (query: string) => Answer | Error): { post: GithubGraphqlRawPost; queries: string[] } => {
+    const queries: string[] = []
+    const post = (async (query: string) => {
+      queries.push(query)
+      const r = reply(query)
+      if (r instanceof Error) throw r
+      return r
+    }) as GithubGraphqlRawPost
+    return { post, queries }
+  }
+  /** What GitHub answers for the aliases asked: 1 an issue, 2 merged, 3 closed PR, 4 open PR, others null. */
+  const repositoryFor = (query: string): Record<string, unknown> => {
+    const out: Record<string, unknown> = {}
+    for (const m of query.matchAll(/i(\d+): issueOrPullRequest\(number:(\d+)\)/g)) {
+      const n = Number(m[2])
+      out[`i${n}`] =
+        n === 1
+          ? { __typename: 'Issue', title: 'Crash on empty repo', issueState: 'OPEN' }
+          : n === 2
+            ? { __typename: 'PullRequest', title: 'Add range-diff', prState: 'MERGED', merged: true }
+            : n === 3
+              ? { __typename: 'PullRequest', title: 'Abandoned idea', prState: 'CLOSED', merged: false }
+              : n === 4
+                ? { __typename: 'PullRequest', title: 'Draft work', prState: 'OPEN', merged: false }
+                : n === 6
+                  ? { __typename: 'Issue', title: 'Old bug', issueState: 'CLOSED' }
+                  : null
+    }
+    return out
+  }
+
+  it('reads every number in one request, as aliases, without a REST call', async () => {
+    const host = fakeHost(() => ({ status: 500 }))
+    const gql = fakeGraphql((q) => ({
+      data: { repository: repositoryFor(q) },
+      errors: [{ type: 'NOT_FOUND', message: 'Could not resolve to an issue or pull request with the number of 5.' }]
+    }))
+    const out = await githubReferenceSummaries(host.get, API, qs(['#', 1], ['#', 2], ['#', 3], ['#', 4], ['#', 5], ['#', 6], ['!', 7]), {
+      post: gql.post,
+      owner: 'team',
+      repo: 'app'
+    })
+    expect(gql.queries).toHaveLength(1)
+    // The two enum states are aliased apart: GraphQL refuses to merge IssueState with PullRequestState.
+    expect(gql.queries[0]).toMatch(/issueState: state/)
+    expect(gql.queries[0]).toMatch(/prState: state merged/)
+    expect(host.urls).toHaveLength(0)
+    expect(out).toEqual([
+      { sigil: '#', id: 1, available: true, kind: 'issue', title: 'Crash on empty repo', state: 'open' },
+      { sigil: '#', id: 2, available: true, kind: 'pr', title: 'Add range-diff', state: 'merged' },
+      { sigil: '#', id: 3, available: true, kind: 'pr', title: 'Abandoned idea', state: 'closed' },
+      { sigil: '#', id: 4, available: true, kind: 'pr', title: 'Draft work', state: 'open' },
+      { sigil: '#', id: 5, available: false, reason: 'notFound' },
+      { sigil: '#', id: 6, available: true, kind: 'issue', title: 'Old bug', state: 'closed' },
+      { sigil: '!', id: 7, available: false, reason: 'unreachable' }
+    ])
+  })
+
+  it('splits more than fifty into requests of fifty', async () => {
+    const host = fakeHost(() => ({ status: 500 }))
+    const gql = fakeGraphql((q) => ({ data: { repository: repositoryFor(q) }, errors: [] }))
+    const many = Array.from({ length: 120 }, (_, i) => ['#', i + 1] as ['#', number])
+    const out = await githubReferenceSummaries(host.get, API, qs(...many), { post: gql.post, owner: 'team', repo: 'app' })
+    expect(gql.queries.map((q) => q.match(/issueOrPullRequest/g)?.length)).toEqual([50, 50, 20])
+    expect(out).toHaveLength(120)
+  })
+
+  it('falls back to REST when GraphQL fails, for the first ten only', async () => {
+    const host = fakeHost((u) => ({ number: Number(u.pathname.split('/').pop()), title: 'Via REST', state: 'open' }))
+    const gql = fakeGraphql(() => ({ data: null, errors: [{ type: 'INSUFFICIENT_SCOPES', message: 'no scope' }] }))
+    const many = Array.from({ length: 15 }, (_, i) => ['#', i + 1] as ['#', number])
+    const out = await githubReferenceSummaries(host.get, API, qs(...many), { post: gql.post, owner: 'team', repo: 'app' })
+    expect(host.urls.map((u) => Number(u.pathname.split('/').pop()))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(out.slice(0, 10).every((s) => s.available && s.title === 'Via REST')).toBe(true)
+    // The rest were not asked: "could not read" for now, asked again on a later hover.
+    expect(out.slice(10).map((s) => s.reason)).toEqual(Array(5).fill('unreachable'))
+  })
+
+  it('falls back to REST when the GraphQL request itself fails (an old server, a 5xx)', async () => {
+    const host = fakeHost(() => ({ number: 1, title: 'Via REST', state: 'open' }))
+    const gql = fakeGraphql(() => Object.assign(new Error('GitHub GraphQL error (502)'), { status: 502 }))
+    const out = await githubReferenceSummaries(host.get, API, qs(['#', 1]), { post: gql.post, owner: 'team', repo: 'app' })
+    expect(out[0]).toMatchObject({ available: true, title: 'Via REST' })
+  })
+
+  it('a rate limit stops everything — no REST fallback, no further GraphQL page', async () => {
+    const host = fakeHost(() => ({ number: 1, title: 'Via REST', state: 'open' }))
+    const viaBody = fakeGraphql(() => ({ data: null, errors: [{ type: 'RATE_LIMITED', message: 'API rate limit exceeded' }] }))
+    const many = Array.from({ length: 60 }, (_, i) => ['#', i + 1] as ['#', number])
+    const out = await githubReferenceSummaries(host.get, API, qs(...many), { post: viaBody.post, owner: 'team', repo: 'app' })
+    expect(viaBody.queries).toHaveLength(1)
+    expect(host.urls).toHaveLength(0)
+    expect(new Set(out.map((s) => s.reason))).toEqual(new Set(['rateLimited']))
+    const viaStatus = fakeGraphql(() => Object.assign(new Error('GitHub GraphQL error (403)'), { status: 403, rateLimited: true }))
+    const again = await githubReferenceSummaries(host.get, API, qs(['#', 1], ['#', 2]), { post: viaStatus.post, owner: 'team', repo: 'app' })
+    expect(again.map((s) => s.reason)).toEqual(['rateLimited', 'rateLimited'])
+    expect(host.urls).toHaveLength(0)
+  })
+
+  it('never writes a number past GraphQL’s 32-bit Int into the query', async () => {
+    const host = fakeHost(() => ({ status: 500 }))
+    const gql = fakeGraphql((q) => ({ data: { repository: repositoryFor(q) }, errors: [] }))
+    const out = await githubReferenceSummaries(host.get, API, qs(['#', 1], ['#', 3_000_000_000]), { post: gql.post, owner: 'team', repo: 'app' })
+    expect(gql.queries[0]).not.toMatch(/3000000000/)
+    expect(out.map((s) => s.available)).toEqual([true, false])
   })
 })
 
