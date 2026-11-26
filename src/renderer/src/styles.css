@@ -19255,8 +19255,9 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .comment-edit { padding: 8px 12px; }
 .prp-thread .comment-edit, .issue-comment .comment-edit { padding: 4px 0 8px; }
 .comment-edit .prd-input { min-height: 72px; margin-bottom: 6px; }
-.comment-edit-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.comment-edit-hint { margin-inline-start: auto; font-size: 11px; color: var(--text-3); }
+/* Buttons on the right, the primary one last — where GitHub and Azure put them — with the hint on the left. */
+.comment-edit-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.comment-edit-hint { margin-inline-end: auto; font-size: 11px; color: var(--text-3); }
 /* With the extras, the author stays left and the date, mark and actions sit together on the right. */
 .issue-comment-head:has(.comment-actions, .comment-edited) { justify-content: flex-start; align-items: center; gap: 8px; }
 .issue-comment-head:has(.comment-actions, .comment-edited) > span:first-of-type { margin-inline-start: auto; }

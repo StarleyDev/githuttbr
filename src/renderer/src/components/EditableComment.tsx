@@ -131,13 +131,13 @@ export function EditableComment({
             }}
           />
           <div className="comment-edit-actions">
-            <button type="button" className="btn primary tiny" onClick={save} disabled={busy || !draft.text.trim()}>
-              {busy && <Loader2 size={12} className="spin" />} {t('prComment.save')}
-            </button>
+            <span className="comment-edit-hint">{t('prComment.editHint')}</span>
             <button type="button" className="btn ghost tiny" onClick={escape}>
               {t('common.cancel')}
             </button>
-            <span className="comment-edit-hint">{t('prComment.editHint')}</span>
+            <button type="button" className="btn primary tiny" onClick={save} disabled={busy || !draft.text.trim()}>
+              {busy && <Loader2 size={12} className="spin" />} {t('prComment.save')}
+            </button>
           </div>
         </div>
       ) : (
