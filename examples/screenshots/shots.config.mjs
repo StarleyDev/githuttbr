@@ -1093,11 +1093,15 @@ export const shots = [
       })
       await page.evaluate((repoPath) => {
         window.__shot.settings.getState().update((s) => ({ ...s, fileListView: 'tree' }))
-        // Viewed ticks live in the renderer's storage, under the page's own key.
+        // Viewed ticks live in the renderer's storage. The path-only list is the
+        // old format, migrated on load at each file's current version; the mark
+        // below holds a version that no longer matches — a file a push changed.
+        const pr = 'https://github.com/example/workspace.git#42'
         localStorage.setItem(
-          'githuttbr-pr-viewed:https://github.com/example/workspace.git#42',
+          `githuttbr-pr-viewed:${pr}`,
           JSON.stringify(['src/search/rank.ts', 'src/search/rank.test.ts', 'docs/guide/search.md', 'docs/guide/palette.md'])
         )
+        localStorage.setItem(`githuttbr-pr-viewed-marks:${pr}`, JSON.stringify({ 'src/palette/styles.css': 'stale' }))
         window.__shot.settings.getState().openPageTab({
           type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
         })

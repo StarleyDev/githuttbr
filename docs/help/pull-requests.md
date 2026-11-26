@@ -226,7 +226,10 @@ panel, and the choice is the same one app-wide. In **Tree**, files sit under
 their folders (a chain like `src/main/ipc` is one row), and each folder shows
 its summed **+/−** and how many of its files are viewed (*3/5*). A folder's
 checkbox marks every file inside as viewed, or clears them all; ticks are kept
-on this computer only, never sent to the host. Click a folder, or press ←/→ on
+on this computer only, never sent to the host. A tick holds the version of the
+file's diff: when a push changes a viewed file, it reads as not viewed again,
+with a yellow dot (*changed since you viewed it*). A file without a diff
+(binary, too large) is compared by its status and line counts only. Click a folder, or press ←/→ on
 it, to fold it; ↑/↓ (or j/k) step through the files on screen and open each
 diff. Folded folders are remembered per pull request until the app quits, and a
 file opened inside one unfolds the way to it. The tree is sorted by name, not in
