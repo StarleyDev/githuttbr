@@ -1,6 +1,7 @@
 import { join, isAbsolute, resolve } from 'path'
 import { readFile, stat } from 'fs/promises'
 import { parseRemoteUrl } from './hosting'
+import { readUrlUserinfo } from '../shared/remoteUrlCredentials'
 
 // Repository metadata read straight from the files in .git, never by spawning
 // git. A row on the Repositories page costs two file reads; spawning `git
@@ -49,8 +50,14 @@ export async function readHeadBranch(repoPath: string): Promise<string | null> {
  * for a self-hosted GitLab or Gitea — which is exactly where an owner column
  * earns its keep. The fallback takes the first path segment after the host.
  */
-export function ownerFromRemoteUrl(url: string): string | null {
-  if (!url) return null
+export function ownerFromRemoteUrl(raw: string): string | null {
+  if (!raw) return null
+  // Read the address without its userinfo: a password holding a `/` would
+  // otherwise put part of the token where the owner is expected. An ambiguous
+  // one (readers disagree on the host) names no owner at all.
+  const info = readUrlUserinfo(raw.trim())
+  if (info.ambiguous) return null
+  const url = info.kind ? info.clean : raw
   const known = parseRemoteUrl(url)
   if (known) return known.owner.split('/')[0] || null
 

@@ -3,7 +3,8 @@ title: Credential helper
 category: Bezpieczeństwo
 order: 73
 summary: Własny magazyn haseł gita — ten trzeci — i dlaczego https ciągle pyta cię od nowa.
-keywords: credential helper hasło https pyta znowu osxkeychain wincred manager libsecret store cache git-credentials plaintext zapomnij unieważniony token 401
+keywords: credential helper hasło https pyta znowu osxkeychain wincred manager libsecret store cache git-credentials plaintext zapomnij unieważniony token 401 sprawdź logowanie które konto token w adresie zdalnego repozytorium hasło w url usuń z adresu url token in remote url embedded password invalid username or token authentication failed set-url
+source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
 ---
 
 # Credential helper
@@ -87,6 +88,105 @@ wyjście.
 
 Następny push zapyta cię raz, a helper zapamięta nową odpowiedź.
 
+## Którego konta używa push
+
+Każdy adres URL push jest sprawdzany osobno. Zakres zapisu to tylko możliwość tokenu. Członkostwo w repozytorium, reguły gałęzi i uprawnienie do zmiany konkretnego pliku nie są testowane. Publiczny odczyt może się udać bez poświadczeń.
+
+![Sprawdzanie logowania zdalnego repozytorium](../../screenshots/remote-sign-in.webp)
+
+Push może się zalogować na kilka sposobów: tokenem profilu, logowaniem GitHub CLI
+powiązanym z profilem, helperem samego gita, hasłem zostawionym w adresie zdalnego
+repozytorium albo kluczem SSH. Gdy zostanie odrzucony, najpierw trzeba wiedzieć,
+którego z nich użył. Kliknij prawym przyciskiem zdalne repozytorium w panelu bocznym i
+wybierz **Sprawdź logowanie…** (albo *Sprawdź logowanie zdalnych repozytoriów* w
+palecie poleceń). Sprawdzenie ustala poświadczenie tak samo jak push, a potem pyta o
+nie hosting:
+
+| Pokazuje | Skąd pochodzi |
+|----------|--------------------|
+| Źródło i [profil](profiles.md) za nim | To samo pierwszeństwo, które stosuje push — profil powiązany z repozytorium, inaczej aktywny, inaczej helper gita |
+| Konto | Odpowiedź samego hostingu (`/user`), a nie to, co wpisano w Ustawieniach |
+| Zakresy | Nagłówek `X-OAuth-Scopes` GitHuba; opis, jaki GitLab podaje dla własnego tokenu |
+| Na co pozwalają | Zakresy tokenu związane z zapisem (`repo` na GitHubie, `write_repository` na GitLabie), a na GitHubie, czy `.github/workflows` może się zmienić |
+
+Wskazuje też poświadczenie, które hosting odrzuca (wygasłe lub unieważnione), powiązane
+konto, które nie jest już zalogowane, oraz hasło zapisane zwykłym tekstem w adresie
+zdalnego repozytorium.
+
+**Ograniczenia.** Szczegółowy token GitHuba nie wymienia swoich uprawnień, więc to, czy
+może robić push, pokazuje się jako nieznane, dopóki push nie spróbuje. Forgejo podaje
+konto, ale nie uprawnienia tokenu. Azure DevOps i Bitbucket są pokazywane tylko ze
+źródłem i profilem. Zdalne repozytoria SSH nie są testowane, ale
+[Klucze SSH](ssh-keys.md) wymieniają, co trzyma agent. Sprawdzenie pyta helper gita po
+cichu: helper, który potrzebowałby okna logowania, liczy się jako pusty.
+
+## Hasło zapisane w adresie zdalnego repozytorium
+
+Stary klon albo adres URL wklejony z wiki może nieść poświadczenie w samym adresie:
+`https://user:token@git.example.test/team/app.git`. **Hasło w adresie URL zawsze ma
+pierwszeństwo:** git je wysyła i nie pyta żadnego helpera — ani tokenu
+[profilu](profiles.md) repozytorium, ani GitHub CLI, ani magazynu samego gita. Dopóki
+token działa, wszystko w porządku i Gitcito go nie rusza: **nigdy nie usuwa hasła z
+adresu URL bez pytania.** Gdy token zostanie unieważniony albo wygaśnie, każdy fetch,
+pull i push tego jednego repozytorium kończy się błędem *Invalid username or token*
+albo *Authentication failed*, a pozostałe repozytoria z tym samym profilem działają. A
+token leży zwykłym tekstem w `.git/config` repozytorium.
+
+![Usuwanie zapisanego tokenu z adresu zdalnego repozytorium](../../screenshots/remote-url-token.webp)
+
+Gitcito czyta adresy fetch i push każdego zdalnego repozytorium i mówi o tym w trzech
+miejscach:
+
+| Gdzie | Co widzisz |
+|-------|--------------|
+| Nieudany fetch, pull lub push | Błąd wyjaśnia, że adres zdalnego repozytorium zawiera zapisane hasło, z **Usuń z adresu URL…** |
+| Panel boczny | Dyskretna ikona klucza w wierszu zdalnego repozytorium: jego adres zawiera hasło, które ma pierwszeństwo przed tokenem profilu. Ta sama akcja jest w jego menu kontekstowym |
+| **Sprawdź logowanie…** | Zdalne repozytorium pokazuje hasło jako swoje źródło, z tym samym przyciskiem |
+
+Akcja najpierw pyta. Usuwa hasło z każdego adresu tego zdalnego repozytorium — adresu
+fetch i każdego adresu push, który je zawiera — i nie zapisuje niczego poza
+`.git/config`. Co dzieje się potem, zależy od tego, co jeszcze może się zalogować:
+
+| Po usunięciu | Czego używają fetch i push |
+|---------------|-------------------------|
+| Profil repozytorium ma token lub powiązane konto dla tego hostingu | Tego tokenu — potwierdzenie nie mówi nic więcej |
+| Brak tokenu profilu, ale helper samego gita ma logowanie dla hostingu | Logowania helpera |
+| Żadne z nich | Niczego: fetch i push zawodzą, dopóki nie dodasz tokenu. Potwierdzenie mówi to najpierw i proponuje **Najpierw dodaj token**, co otwiera Ustawienia → Integracje |
+
+Gdy została uruchomiona z nieudanej operacji, proponuje **Spróbuj ponownie**.
+
+**Celowo nie ma cofania.** Cofnięcie zapisałoby sekret z powrotem w pliku zwykłym
+tekstem, a właśnie temu akcja ma zapobiegać. Jeśli stary token mógłby jeszcze działać,
+unieważnij go na serwerze: był czytelny dla wszystkiego, co mogło czytać folder
+repozytorium.
+
+**Ograniczenia.**
+
+- Znika też nazwa użytkownika (`https://git.example.test/…`), jak przy ręcznym
+  `git remote set-url`; potwierdzenie to mówi. Serwer, który potrzebuje jej w adresie
+  — token Bitbucket Data Center bez nazwy użytkownika w profilu — wymaga dodania jej z
+  powrotem przez **Edytuj zdalne repozytorium…**.
+- Sama nazwa użytkownika (`https://user@host/…`) nie jest oznaczana: git nadal pyta
+  helper o hasło tego użytkownika, więc nic tajnego nie jest zapisane.
+- Adresy SSH zostają nietknięte: `git@host:…` i `ssh://git@host/…` wskazują login,
+  którego używa ssh, a nie poświadczenie.
+- Prefiks zdalnego helpera (`persistent-https::https://…`, `gcrypt::…`) jest
+  zachowywany; adres za nim jest czytany i czyszczony jak każdy inny.
+- **Niejednoznaczne adresy nie są proponowane do usunięcia.** Gdy czytniki nie zgadzają
+  się, gdzie zaczyna się host — `@` po `?` lub `#` w adresie albo hasło z niezakodowanym
+  `/` —, cięcie przy złym `@` skierowałoby zdalne repozytorium na inny serwer. Taki
+  adres jest pokazywany tylko zamaskowany, a ikona klucza otwiera **Edytuj zdalne
+  repozytorium…**, żebyś poprawił go ręcznie.
+- Czytany i zmieniany jest tylko `.git/config`. Adres przepisany przez regułę
+  `url.<base>.insteadOf` albo zdalne repozytorium zdefiniowane w twojej globalnej
+  konfiguracji nie są sprawdzane — a zmiana nazwy zdalnego repozytorium nigdy nie
+  kopiuje do konfiguracji repozytorium hasła, które dodaje reguła `insteadOf`.
+- Hasło nigdy nie opuszcza procesu głównego: adresy zdalnych repozytoriów docierają do
+  okna, menu kopiowania adresu i okna edycji bez niego. Zapisanie okna edycji z
+  pokazanym adresem niczego nie zmienia i zachowuje hasło; **zmiana hosta lub ścieżki
+  je usuwa**, bo wpisany adres jest zapisywany tak, jak jest. Tylko ta akcja usuwa hasło,
+  zachowując adres.
+
 ## Ograniczenia warte wiedzy
 
 - **To magazyn gita, nie Gitcito.** Zmiana tutaj zmienia też to, co robi twój
@@ -98,6 +198,10 @@ Następny push zapyta cię raz, a helper zapamięta nową odpowiedź.
   konfigurację, wymazuje na żądanie i nic poza tym.
 - **Token, który dałeś Gitcito, jest osobny.** Unieważnienie jednego nie rusza
   drugiego; stronę pęku kluczy opisuje [bezpieczeństwo](security.md).
+- **Token profilu pozostaje poza środowiskiem hooków repozytorium.** Hook widzi tylko
+  kod do prywatnego punktu dostępu, ważny, dopóki działa to polecenie gita —
+  wystarczający dla hooka, który celowo pyta, jak robi to git-lfs. Zob.
+  [token profilu podczas działania gita](security.md#token-profilu-podczas-działania-gita).
 
 Zobacz też: [Bezpieczeństwo](security.md) · [Klucze SSH](ssh-keys.md) ·
 [Synchronizacja](syncing.md)

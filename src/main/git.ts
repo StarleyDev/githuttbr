@@ -172,7 +172,8 @@ import type {
   PrRefProbe,
   PreparedRepoChatFileAction,
   RepoFileBatchResult,
-  BitbucketServerTokenKind
+  BitbucketServerTokenKind,
+  RemoteUrlCredentials
 } from '../shared/types'
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
@@ -182,6 +183,15 @@ import { parseRangeDiff } from '../shared/rangeDiff'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
 import { branchMatches } from '../shared/repoConfig'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
+import {
+  parseRemoteUrlConfig,
+  remoteUrlCredentialsFrom,
+  hasAmbiguousPassword,
+  passwordRewrites,
+  readUrlUserinfo,
+  urlWithoutPassword,
+  type ConfiguredRemoteUrls
+} from '../shared/remoteUrlCredentials'
 import {
   classifyPushState,
   duplicateDestinations,
@@ -199,7 +209,7 @@ import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fi
 import { recordLog } from './log'
 import { activeProfileAuth, asProfileIdArg, boundProfileName, isProfileId, namedProfileAuth, readSettings } from './settings'
 import { boundNoCredentialMessage } from './hosting'
-import { apiToken, knownServers, providerOfRemote, resolveRemote } from './credentials'
+import { apiToken, credentialFor, knownServers, providerOfRemote, resolveRemote } from './credentials'
 import { isGithubComHost } from '../shared/githubEnterprise'
 import { bitbucketServerGitUsername, isBitbucketCloudHost } from '../shared/bitbucketServer'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
@@ -573,6 +583,22 @@ function encodeSubtreeKey(prefix: string): string {
 
 function decodeSubtreeKey(key: string): string {
   return key.replace(/%2F/g, '/')
+}
+
+/**
+ * The remembered URL of `prefix` when `shown` is that URL as the renderer got
+ * it (without its password, `subtrees`), else `shown` itself — so pulling or
+ * pushing a subtree from the list keeps working with the credential it had,
+ * without the password ever crossing to the renderer.
+ */
+async function rememberedSubtreeUrl(repoPath: string, prefix: string, shown: string): Promise<string> {
+  const key = encodeSubtreeKey(prefix)
+  for (const ns of [APP_ID, LEGACY_APP_ID]) {
+    const saved = (await runGit(repoPath, ['config', '--get', `${ns}.subtree.${key}.url`]).catch(() => '')).trim()
+    if (saved && saved !== shown && urlWithoutPassword(saved) === shown) return saved
+    if (saved) return shown
+  }
+  return shown
 }
 
 /** Remember where a subtree came from — git itself keeps no such record. */
@@ -2446,6 +2472,18 @@ async function remoteCredential(repoPath: string, url: string): Promise<{ cred: 
  * (`anonymousGitEnv`), as its clone was, because the helper would sign in as
  * whichever account the machine holds while the UI names the bound profile.
  */
+/**
+ * Every remote's `url` and `pushurl` values as `.git/config` spells them —
+ * local config only, the one file the fix may write. No remote configured
+ * reads as an empty map (git config exits 1 when nothing matches).
+ */
+async function configuredRemoteUrls(repoPath: string): Promise<Map<string, ConfiguredRemoteUrls>> {
+  const out = await runGit(repoPath, ['config', '--local', '-z', '--get-regexp', '^remote\\..+\\.(url|pushurl)$']).catch(
+    () => ''
+  )
+  return parseRemoteUrlConfig(out)
+}
+
 async function pushUrls(repoPath: string, remote: string): Promise<string[]> {
   const { stdout } = await pexecFile('git', ['-C', repoPath, 'remote', 'get-url', '--push', '--all', '--', remote])
   return [...new Set(stdout.trimEnd().split('\n').filter(Boolean))]
@@ -3538,8 +3576,84 @@ export const gitService = {
 
   async remotes(repoPath: string): Promise<RemoteInfo[]> {
     const git = gitFor(repoPath)
-    const rs = await git.getRemotes(true)
-    return rs.map((r) => ({ name: r.name, url: r.refs.fetch || r.refs.push }))
+    const [rs, creds] = await Promise.all([
+      git.getRemotes(true),
+      gitService.getRemoteUrlCredentials(repoPath).catch(() => [] as RemoteUrlCredentials[])
+    ])
+    const byName = new Map(creds.map((c) => [c.remote, c]))
+    // The renderer shows, copies and links this URL, and an old clone can hold
+    // `user:token@` in it: the password never leaves main. The user name stays,
+    // so editing the remote keeps it (`editRemote` leaves an unchanged URL alone).
+    return rs.map((r) => {
+      const c = byName.get(r.name)
+      return {
+        name: r.name,
+        url: urlWithoutPassword(r.refs.fetch || r.refs.push),
+        ...(c ? { urlCredentials: c.kind } : {}),
+        ...(c?.urls.some((u) => u.ambiguous) ? { urlCredentialsAmbiguous: true as const } : {})
+      }
+    })
+  },
+
+  /**
+   * The remotes whose configured fetch or push URLs carry a user name or a
+   * password — never either value, only which URLs, what kind, and the clean
+   * form. Read from `.git/config` as written: an `insteadOf` rewrite is not
+   * applied, because the fix can only change what the file says.
+   */
+  async getRemoteUrlCredentials(repoPath: string): Promise<RemoteUrlCredentials[]> {
+    return remoteUrlCredentialsFrom(await configuredRemoteUrls(repoPath))
+  },
+
+  /**
+   * Take the password out of every URL of `remote` that holds one, fetch and
+   * push alike, in `.git/config`. A URL with only a user name is left as it is.
+   *
+   * Deliberately no undo entry: undoing would write the plain-text secret back
+   * into the file, and the point of this action is that it is gone. The old
+   * token should be revoked on the server instead.
+   */
+  async removeRemoteUrlCredentials(repoPath: string, remote: string): Promise<void> {
+    assertNotOption(remote, 'the remote name')
+    const urls = (await configuredRemoteUrls(repoPath)).get(remote)
+    if (!urls) throw new Error(`No remote named "${remote}" is configured in this repository.`)
+    // Where the host starts is not certain: cutting at the wrong `@` would move
+    // the remote to another server, with no undo. Left to the user to edit.
+    if (hasAmbiguousPassword([...urls.fetch, ...urls.push])) {
+      throw new Error(`The URL of the remote "${remote}" is ambiguous about its host. Edit the remote by hand.`)
+    }
+    // One `--replace-all` per address, matching only the values with a password
+    // in front of it: each step rewrites in place, so a failure midway loses no
+    // URL and keeps their order. Only clean values and patterns built around the
+    // userinfo reach the argument list — never the old URL or the secret.
+    for (const [list, variable] of [[urls.fetch, 'url'], [urls.push, 'pushurl']] as const) {
+      for (const { pattern, value } of passwordRewrites(list)) {
+        assertNotOption(value, 'the URL')
+        await runGit(repoPath, ['config', '--local', '--replace-all', `remote.${remote}.${variable}`, value, pattern])
+      }
+    }
+  },
+
+  /**
+   * Whether `remote` would still have a credential once the password left its
+   * URL: the repository profile's token or linked account for that host, else —
+   * for a repository not bound to a profile — an answer from git's own helper,
+   * asked silently. Only a yes or no crosses to the renderer, for the removal's
+   * confirmation to warn that fetch and push would fail.
+   */
+  async remoteHasProfileCredential(repoPath: string, remote: string): Promise<boolean> {
+    assertNotOption(remote, 'the remote name')
+    const urls = (await configuredRemoteUrls(repoPath)).get(remote)
+    const first = [...(urls?.fetch ?? []), ...(urls?.push ?? [])]
+      .map((u) => readUrlUserinfo(u))
+      .find((r) => r.kind === 'password' && !r.ambiguous)
+    // Asked with the address alone: the password in the URL must not answer for itself.
+    const url = first?.clean
+    if (!url || !/^https?:\/\//i.test(url)) return false
+    const { cred, bound } = await remoteCredential(repoPath, url).catch(() => ({ cred: null, bound: false }))
+    if (cred) return true
+    if (bound) return false
+    return !!(await credentialFor(url, { repoPath }).catch(() => null))
   },
 
   /** Per remote: which credential a push would use, whose account it is, and what it may do. */
@@ -3573,16 +3687,39 @@ export const gitService = {
     url: string,
     pushUrl?: string
   ): Promise<void> {
-    for (const [v, what] of [[newName, 'the remote name'], [url, 'the URL'], [pushUrl, 'the push URL']] as const) {
+    for (const [v, what] of [[oldName, 'the remote name'], [newName, 'the remote name'], [url, 'the URL'], [pushUrl, 'the push URL']] as const) {
       assertNotOption(v, what)
     }
-    const git = gitFor(repoPath)
-    if (newName && newName !== oldName) await git.remote(['rename', oldName, newName])
+    // The dialog only ever saw the URLs without their password (`remotes`), and
+    // after any `insteadOf` rewrite. Saved back as shown, a URL means "keep it":
+    // it is not written at all — `git remote rename` carries the URLs over — so
+    // neither the configured secret nor one an `insteadOf` rule adds is copied
+    // into .git/config or an argument list. A URL the user did edit is written
+    // as typed: changing the host or path drops a saved password with it.
+    // Taking a password out alone is `removeRemoteUrlCredentials`.
+    const configured = (await configuredRemoteUrls(repoPath)).get(oldName) ?? { fetch: [], push: [] }
+    const [effectiveUrl, effectivePush] = await Promise.all([
+      getRemoteUrl(repoPath, oldName),
+      pushUrls(repoPath, oldName).catch(() => [] as string[])
+    ])
+    const shownAs = (value: string, candidates: string[]): boolean =>
+      candidates.some((c) => c === value || urlWithoutPassword(c) === value)
+    const fetchChanged = !!url && !shownAs(url, [...configured.fetch.slice(0, 1), effectiveUrl].filter(Boolean))
+    const pushChanged = !!pushUrl && !shownAs(pushUrl, [...configured.push, ...effectivePush])
+    if (newName && newName !== oldName) await runGit(repoPath, ['remote', 'rename', oldName, newName])
     const name = newName || oldName
-    if (url) await git.remote(['set-url', name, url])
-    // An empty pushUrl resets the push URL to mirror the fetch URL.
-    if (pushUrl && pushUrl !== url) await git.remote(['set-url', '--push', name, pushUrl])
-    else await git.remote(['set-url', '--push', name, url || pushUrl || '']).catch(() => undefined)
+    if (fetchChanged) {
+      await runGit(repoPath, ['remote', 'set-url', name, url])
+      // A push URL that only mirrored the old fetch URL follows it.
+      const mirror = configured.push.length === 1 && configured.push[0] === configured.fetch[0]
+      if (mirror && !pushChanged) await runGit(repoPath, ['remote', 'set-url', '--push', name, url])
+    }
+    // An empty push URL means the dialog's field was left alone: a distinct push
+    // URL already configured stays as it is.
+    if (pushChanged && pushUrl) {
+      if (pushUrl === (fetchChanged ? url : effectiveUrl) && !configured.push.length) return
+      await runGit(repoPath, ['remote', 'set-url', '--push', name, pushUrl])
+    }
   },
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
@@ -4927,7 +5064,8 @@ export const gitService = {
         await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, args))
         results.push({ remote, ok: true, error: '' })
       } catch (err) {
-        results.push({ remote, ok: false, error: err instanceof Error ? err.message : String(err) })
+        // A return value, not a throw: the dispatcher's redaction never sees it.
+        results.push({ remote, ok: false, error: redactCredentials(err instanceof Error ? err.message : String(err)) })
       }
     }
     return results
@@ -5460,7 +5598,9 @@ export const gitService = {
     const hosts = new Set<string>()
     for (const line of remotes.split('\n')) {
       const url = line.split(/\s+/)[1] ?? ''
-      const host = /^https?:\/\/(?:[^@/]*@)?([^/]+)/.exec(url)?.[1]
+      // Through the shared reader, whose ambiguous cases are redacted greedily:
+      // a first-`@` match would hand `token@host` to the renderer.
+      const host = /^https?:\/\/(?:[^/?#\\]*@)?([^/?#\\@]+)/.exec(readUrlUserinfo(url).ambiguous ? '' : urlWithoutPassword(url))?.[1]
       if (host) hosts.add(host)
     }
 
@@ -6540,7 +6680,9 @@ export const gitService = {
     for (const [prefix, lastSplit] of found) {
       out.push({
         prefix,
-        url: meta.get(prefix)?.url ?? '',
+        // The renderer shows and sends this back; a password in it stays in main
+        // (`rememberedSubtreeUrl` restores it when the same address comes back).
+        url: urlWithoutPassword(meta.get(prefix)?.url ?? ''),
         ref: meta.get(prefix)?.ref ?? '',
         present: existsSync(join(repoPath, prefix)),
         lastSplit
@@ -6567,6 +6709,7 @@ export const gitService = {
   /** Pull upstream changes into an existing subtree. */
   async subtreePull(repoPath: string, prefix: string, url: string, ref: string, squash = true): Promise<void> {
     if (!url.trim() || !ref.trim()) throw new Error('This subtree has no remembered repository — enter one.')
+    url = await rememberedSubtreeUrl(repoPath, prefix, url.trim())
     await runSubtree(repoPath, ['pull', `--prefix=${prefix}`, ...(squash ? ['--squash'] : []), url.trim(), ref.trim()])
     await rememberSubtree(repoPath, prefix, url.trim(), ref.trim())
   },
@@ -6574,6 +6717,7 @@ export const gitService = {
   /** Send local changes under `prefix` back to the source repository. */
   async subtreePush(repoPath: string, prefix: string, url: string, ref: string): Promise<void> {
     if (!url.trim() || !ref.trim()) throw new Error('This subtree has no remembered repository — enter one.')
+    url = await rememberedSubtreeUrl(repoPath, prefix, url.trim())
     await runSubtree(repoPath, ['push', `--prefix=${prefix}`, url.trim(), ref.trim()])
   },
 
@@ -9788,6 +9932,10 @@ const READ_METHODS = new Set<string>([
   'status',
   'stashes',
   'remotes',
+  // Reads .git/config and returns only which URLs carry credentials, never them.
+  'getRemoteUrlCredentials',
+  // Resolves the profile's credential and may ask git's helper; returns a boolean only.
+  'remoteHasProfileCredential',
   'remoteAuthChecks',
   'stackInfo',
   'stackLeaves',

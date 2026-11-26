@@ -3,7 +3,8 @@ title: 凭据助手
 category: 安全
 order: 73
 summary: git 自己的密码存储——第三种——以及为什么 https 老是再问你一次。
-keywords: 凭据助手 密码 明文 令牌 撤销 遗忘 credential helper password https asks again osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401
+keywords: 凭据助手 密码 明文 令牌 撤销 遗忘 credential helper password https asks again osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401 检查登录 哪个账户 远程 URL 中的令牌 嵌入的密码 从 URL 中移除 token in remote url embedded password invalid username or token authentication failed set-url
+source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
 ---
 
 # 凭据助手
@@ -78,6 +79,89 @@ postinstall，什么都行。
 
 下一次推送会问你一次，然后助手把新答案存起来。
 
+## 推送使用哪个账户
+
+每个推送 URL 都会单独检查。写入范围只说明令牌具备的能力。不会测试仓库成员身份、分支规则，也不会测试修改某个特定文件的权限。公开读取可能无需凭据就能成功。
+
+![远程登录检查](../../screenshots/remote-sign-in.webp)
+
+推送可以用多种方式登录：配置档的令牌、关联到配置档的 GitHub CLI 登录、git 自己的
+helper、遗留在远程 URL 中的密码，或 SSH 密钥。被拒绝时，首先需要知道它用的是哪一种。
+在侧边栏右键点击一个远程并选择 **检查登录…**（或在命令面板中使用 *检查远程登录*）。
+检查会以与推送相同的方式确定凭据，然后向托管平台询问它的情况：
+
+| 显示内容 | 来源 |
+|----------|--------------------|
+| 来源，以及其背后的 [配置档](profiles.md) | 与推送相同的优先级——仓库绑定的配置档，否则是当前活动的，否则是 git 的 helper |
+| 账户 | 托管平台自己的回答（`/user`），而不是在设置中输入的内容 |
+| 范围 | GitHub 的 `X-OAuth-Scopes` 响应头；GitLab 对其自身令牌的描述 |
+| 它们允许什么 | 与写入相关的令牌范围（GitHub 的 `repo`、GitLab 的 `write_repository`），以及在 GitHub 上能否修改 `.github/workflows` |
+
+它还会标出托管平台拒绝的凭据（已过期或已撤销）、不再登录的关联账户，以及以明文保存
+在远程 URL 中的密码。
+
+**限制。** GitHub 的细粒度令牌不会列出其权限，所以它能否推送会显示为未知，直到某次
+推送尝试为止。Forgejo 会报告账户，但不报告令牌的权限。Azure DevOps 和 Bitbucket 只
+显示来源和配置档。不会测试 SSH 远程，但 [SSH 密钥](ssh-keys.md) 会列出代理持有的
+内容。检查会静默询问 git 的 helper：需要登录窗口的 helper 视为没有任何内容。
+
+## 保存在远程 URL 中的密码
+
+旧的克隆，或从 wiki 粘贴的 URL，可能把凭据放在地址里：
+`https://user:token@git.example.test/team/app.git`。**URL 中的密码总是优先：** git
+会发送它，并且不询问任何 helper——既不问仓库 [配置档](profiles.md) 的令牌，也不问
+GitHub CLI，也不问 git 自己的存储。只要令牌有效，这没什么问题，Gitcito 也不会去动它：
+**它绝不会不经询问就从 URL 中移除密码。** 一旦令牌被撤销或过期，该仓库的每次 fetch、
+pull 和 push 都会以 *Invalid username or token* 或 *Authentication failed* 失败，而
+同一配置档下的其他仓库都正常。而且令牌以明文存放在仓库的 `.git/config` 中。
+
+![从远程 URL 中移除已保存的令牌](../../screenshots/remote-url-token.webp)
+
+Gitcito 会读取每个远程的 fetch 和 push URL，并在三个地方提示：
+
+| 位置 | 你会看到 |
+|-------|--------------|
+| 失败的 fetch、pull 或 push | 错误会说明该远程的 URL 中保存着密码，并提供 **从 URL 中移除…** |
+| 侧边栏 | 远程那一行上一个不显眼的钥匙图标：它的 URL 中有一个优先于配置档令牌的密码。右键菜单中也有同样的操作 |
+| **检查登录…** | 该远程会把密码显示为来源，并带有同样的按钮 |
+
+这个操作会先询问。它会从该远程的每个 URL 中去掉密码——fetch URL 以及每个含有密码的
+push URL——并且除了 `.git/config` 不写入任何东西。之后会发生什么，取决于还有什么能
+登录：
+
+| 移除之后 | fetch 和 push 使用什么 |
+|---------------|-------------------------|
+| 仓库的配置档有该托管平台的令牌或关联账户 | 那个令牌——确认框不再多说 |
+| 没有配置档令牌，但 git 自己的 helper 有该托管平台的登录 | helper 的登录 |
+| 两者都没有 | 什么都没有：在你添加令牌之前，fetch 和 push 都会失败。确认框会先说明这一点，并提供 **先添加令牌**，它会打开 设置 → 集成 |
+
+如果是从一次失败的操作发起的，它会提供 **重试**。
+
+**故意不提供撤销。** 撤销会把密钥以明文写回文件，而这正是这个操作要阻止的。如果旧
+令牌可能仍然有效，请在服务器上撤销它：任何能读取仓库文件夹的东西都能读到它。
+
+**限制。**
+
+- 用户名也会被去掉（`https://git.example.test/…`），就像你手动运行
+  `git remote set-url` 一样；确认框会说明。需要在 URL 中带用户名的服务器——配置档中
+  没有用户名的 Bitbucket Data Center 令牌——需要用 **编辑远程仓库…** 把它加回去。
+- 只有用户名的 URL（`https://user@host/…`）不会被标出：git 仍会向 helper 询问该用户
+  的密码，所以并没有保存任何机密。
+- 不会改动 SSH URL：`git@host:…` 和 `ssh://git@host/…` 指的是 ssh 使用的登录名，而
+  不是凭据。
+- 远程 helper 的前缀（`persistent-https::https://…`、`gcrypt::…`）会保留；其后的
+  URL 会像其他 URL 一样被读取和清理。
+- **有歧义的 URL 不会提供移除。** 当不同的解析方式对主机从哪里开始意见不一时——地址中
+  `?` 或 `#` 之后的 `@`，或含有未编码 `/` 的密码——在错误的 `@` 处切开会让远程指向
+  另一台服务器。这样的 URL 只以遮盖后的形式显示，钥匙图标会打开 **编辑远程仓库…**，
+  让你手动修正。
+- 只读取和修改 `.git/config`。被 `url.<base>.insteadOf` 规则改写的 URL，或在你的全局
+  配置中定义的远程，都不会被检查——重命名远程也绝不会把 `insteadOf` 规则添加的密码复制
+  到仓库配置中。
+- 密码永远不会离开主进程：远程 URL 到达窗口、复制 URL 菜单和编辑对话框时都不带密码。
+  用对话框显示的 URL 原样保存不会改变任何东西，并保留密码；**修改主机或路径会丢弃
+  密码**，因为你输入的 URL 会按原样写入。只有这个操作能在保留地址的同时移除密码。
+
 ## 值得知道的限制
 
 - **这是 git 的存储，不是 Gitcito 的。** 改动它也会改变你终端里的行为——这正是重点，
@@ -87,6 +171,9 @@ postinstall，什么都行。
   做到这一点，所以这个对话框只报告配置、并按你的要求执行擦除，别的什么都不做。
 - **你交给 Gitcito 的令牌是另一回事。** 撤销其中一个并不会碰到另一个；钥匙串那一侧
   见[安全](security.md)。
+- **配置档的令牌不会进入仓库钩子的环境。** 钩子只能看到一个私有端点的代码，只在那条
+  git 命令运行期间有效——对于像 git-lfs 那样有意询问的钩子来说足够了。参见
+  [git 运行时配置档的令牌](security.md#git-运行期间配置文件的令牌)。
 
 另请参阅：[安全](security.md) · [SSH 密钥](ssh-keys.md) ·
 [同步](syncing.md)
