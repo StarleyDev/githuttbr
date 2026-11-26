@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, and comments on a line of its diff.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch
 ---
 
 # Pull requests page
@@ -151,6 +151,64 @@ What it does not do:
 - **This window.** The checkout happens in this repository's working tree. When
   the branch is already checked out in another [worktree](worktrees.md), that
   worktree's tab opens instead.
+
+## Commits
+
+The sidebar said how many commits a pull request has, never which. Reviewing
+one commit at a time — the way most pull requests are meant to be read — sent
+you to the browser. The **Commits** tab, between Conversation and Files, lists
+them:
+
+- **Oldest first**, the order they apply in, grouped under the day they were
+  authored. A commit rebased in out of date order starts a day of its own
+  rather than being moved.
+- Each row has the author's picture (where the host gives one), the subject,
+  the author, how long ago, and the short SHA. A **merge** badge marks a commit
+  with two parents, where the host says.
+- **▸** beside a commit with more than a subject shows the rest of its message.
+- **Copy** puts the full SHA on the clipboard; **Open in browser** opens the
+  commit on the host — inside the pull request where the host has such a page
+  (GitHub, GitLab, Bitbucket Data Center), else on the repository's commit page.
+
+![The Commits tab: a pull request's commits grouped by day, one with its full message open](../screenshots/pr-commits.webp)
+
+**Click a row** — or Tab to it and press Enter — to open the commit in the app,
+as a click in the graph would: the repository's view, that commit selected,
+its details open. That works when this clone **has** the commit. When it does
+not, the row says so instead of failing quietly, and offers:
+
+- **Fetch the PR branch to see it** — the same single-branch fetch as
+  [going to the branch](#going-to-a-pull-requests-branch), without the
+  checkout. When the commit came with it, it opens; when it did not (a force
+  push rewrote it since), the toast says so.
+- **Open in browser**, for when fetching is not an option.
+
+The list is read the first time you open the tab, not with the page, and again
+on every **Refresh**. Until it is in, the tab's count is the one the host
+gave for the pull request. Merged and closed pull requests list their commits
+the same way.
+
+What it does not do:
+
+- **At most 250 commits.** GitHub itself lists no more than 250 for a pull
+  request; the app stops at the same number on every host, and says *the host
+  has more* when it does, with a link to the pull request on the host.
+- **A fork's branch** cannot be fetched from here — it lives in another
+  repository — so a commit only in the fork offers the browser alone.
+  **Preview pull request locally…** is the way to bring it in.
+- **A deleted branch.** A merged pull request has often taken its branch with
+  it: the fetch says so. bitbucket.org lists no commits at all once the source
+  branch is gone.
+- **Squash merges.** A squash-merged pull request's commits never reached the
+  target branch, so after its branch is deleted they are on the host only.
+- **Authors** are named as their commits name them. GitLab, Azure DevOps and
+  Bitbucket Data Center give no picture without a sign-in an image cannot
+  send, so those rows show the initial.
+- **Long messages on Azure DevOps** may be cut short: Azure's list truncates a
+  commit's message, and the app shows what it sends.
+- **bitbucket.org** pull requests open in the browser — the app has no page for
+  them yet — so this tab is not reached there, although the app can read the
+  list.
 
 ## Commenting on a line
 

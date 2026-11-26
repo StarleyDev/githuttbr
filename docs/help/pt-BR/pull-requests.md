@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
-summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, e comentários numa linha do diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código
-source: d1deab4d48f6f6327673e61daecb55ede0889881
+summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr
+source: 68a0d5d7aee35865690863be826be9099675b14f
 ---
 
 # Página de pull requests
@@ -156,6 +156,67 @@ O que não faz:
 - **Esta janela.** O checkout acontece na working tree deste repositório.
   Quando a branch já está em checkout em outra [worktree](worktrees.md), a aba
   dessa worktree é aberta no lugar.
+
+## Commits
+
+A barra lateral dizia quantos commits um pull request tem, nunca quais. Revisar
+um commit de cada vez — como a maioria dos pull requests foi feita para ser
+lida — mandava você para o navegador. A aba **Commits**, entre Conversa e
+Arquivos, lista os commits:
+
+- **Do mais antigo para o mais novo**, a ordem em que se aplicam, agrupados
+  pelo dia em que foram escritos. Um commit que entrou fora da ordem das datas
+  num rebase abre um dia próprio em vez de ser movido.
+- Cada linha tem a foto do autor (quando o host dá uma), o assunto, o autor,
+  há quanto tempo e o SHA curto. Um selo **merge** marca um commit com dois
+  pais, quando o host informa.
+- **▸** ao lado de um commit com mais que o assunto mostra o resto da mensagem.
+- **Copiar** põe o SHA completo na área de transferência; **Abrir no
+  navegador** abre o commit no host — dentro do pull request quando o host tem
+  essa página (GitHub, GitLab, Bitbucket Data Center), senão na página do
+  commit no repositório.
+
+![A aba Commits: os commits de um pull request agrupados por dia, um com a mensagem completa aberta](../../screenshots/pr-commits.webp)
+
+**Clique numa linha** — ou chegue nela com Tab e aperte Enter — para abrir o
+commit no app, como um clique no grafo faria: a visão do repositório, o commit
+selecionado, os detalhes abertos. Isso funciona quando este clone **tem** o
+commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
+
+- **Buscar a branch do PR para ver** — a mesma busca de uma branch só de
+  [ir para a branch](#ir-para-a-branch-de-um-pull-request), sem o checkout.
+  Quando o commit veio junto, ele abre; quando não veio (um force push o
+  reescreveu depois), o aviso diz isso.
+- **Abrir no navegador**, para quando buscar não é uma opção.
+
+A lista é lida na primeira vez que você abre a aba, não junto com a página, e
+de novo a cada **Atualizar**. Até ela chegar, o número da aba é o que o host
+informou para o pull request. Pull requests mesclados e fechados listam os
+commits do mesmo jeito.
+
+O que não faz:
+
+- **No máximo 250 commits.** O próprio GitHub não lista mais que 250 de um pull
+  request; o app para no mesmo número em todos os hosts, e diz *o host tem
+  mais* quando tem, com um link para o pull request no host.
+- **A branch de um fork** não pode ser buscada daqui — fica em outro
+  repositório —, então um commit que só existe no fork oferece apenas o
+  navegador. **Pré-visualizar o pull request localmente…** é o caminho para
+  trazê-lo.
+- **Uma branch apagada.** Um pull request mesclado muitas vezes levou a branch
+  junto: a busca diz isso. O bitbucket.org não lista commit nenhum depois que a
+  branch de origem some.
+- **Squash merges.** Os commits de um pull request mesclado com squash nunca
+  chegaram à branch de destino; depois que a branch dele é apagada, estão só no
+  host.
+- **Autores** aparecem como os commits os nomeiam. GitLab, Azure DevOps e
+  Bitbucket Data Center não dão foto sem um login que uma imagem não consegue
+  mandar, então essas linhas mostram a inicial.
+- **Mensagens longas no Azure DevOps** podem vir cortadas: a lista do Azure
+  trunca a mensagem do commit, e o app mostra o que ele manda.
+- **bitbucket.org**: os pull requests abrem no navegador — o app ainda não tem
+  página para eles —, então esta aba não aparece lá, embora o app consiga ler a
+  lista.
 
 ## Comentar numa linha
 
