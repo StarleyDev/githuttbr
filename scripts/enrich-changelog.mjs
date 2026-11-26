@@ -7,7 +7,9 @@
  * release brings, so without this the in-app "What's new" page and the
  * GitHub release notes (cut from CHANGELOG.md at the tag) show one line per
  * version. Run by release-it before the release commit (`before:git:release`),
- * so the tag carries the full entry.
+ * so the tag carries the full entry. release-it has already staged its files by
+ * then, so the hook stages CHANGELOG.md itself (`… && git add CHANGELOG.md`) —
+ * without it v4.58.0 was tagged with the one-line entry.
  *
  *   node scripts/enrich-changelog.mjs          # the newest version only
  *   node scripts/enrich-changelog.mjs --all    # every version (backfill)

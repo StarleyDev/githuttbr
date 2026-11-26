@@ -5,6 +5,12 @@
 ### Features
 
 * **pr:** image diffs, every file's diff, and a page that keeps your place ([646763f](https://github.com/StarleyDev/githuttbr/commit/646763f302ef299d3c7ef65672e0c2f4e426af38))
+  - Images in a pull request's Files tab show before and after, as in a commit, read from this clone first and from the host otherwise; Git LFS pointers are recognised instead of drawn as a broken image.
+  - Every changed file gets its diff, however large the pull request: it is computed here from the two commits (fetched once, quietly, within 20 s when missing), and the host's API is only the fallback. A file without a diff says why, and its counts show a dash instead of +0 -0.
+  - Leaving a pull request and coming back returns to the same tab, file and scroll, with every unsent comment, reply and edit still there.
+  - A changed file can be copied by path, old path or folder, opened in your editor or shown in its folder; Devin Desktop joins the editors, found through the Linux application menu.
+  - Text in legacy encodings and accented file names show correctly.
+  - The changelog and release notes list each release's items, not one line.
 
 ## [4.57.0](https://github.com/StarleyDev/githuttbr/compare/v4.56.0...v4.57.0) (2026-11-26)
 

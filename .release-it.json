@@ -6,7 +6,7 @@
       "node scripts/check-release-merges.mjs"
     ],
     "before:git:release": [
-      "node scripts/enrich-changelog.mjs"
+      "node scripts/enrich-changelog.mjs && git add CHANGELOG.md"
     ],
     "after:git:release": [
       "git push origin v${version}"
