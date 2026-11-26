@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr
-source: 68a0d5d7aee35865690863be826be9099675b14f
+source: b05e449a439501a796caf9d103c4204c85bfb380
 ---
 
 # Página de pull requests
@@ -198,7 +198,15 @@ O que não faz:
 
 - **No máximo 250 commits.** O próprio GitHub não lista mais que 250 de um pull
   request; o app para no mesmo número em todos os hosts, e diz *o host tem
-  mais* quando tem, com um link para o pull request no host.
+  mais* quando tem, com um link para o pull request no host. Quais 250 depende
+  da ordem em que o host os lista — o app fica com os listados primeiro, e a
+  linha acima da lista diz quais:
+
+  | Host | Um pull request mais longo mostra |
+  |---|---|
+  | GitHub | Os **primeiros** 250 (o limite do próprio GitHub) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Os **250 mais recentes** |
+  | Forgejo | A ponta que o servidor listar primeiro; a ordem dele não é documentada |
 - **A branch de um fork** não pode ser buscada daqui — fica em outro
   repositório —, então um commit que só existe no fork oferece apenas o
   navegador. **Pré-visualizar o pull request localmente…** é o caminho para

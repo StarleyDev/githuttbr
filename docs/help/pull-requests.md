@@ -192,7 +192,15 @@ What it does not do:
 
 - **At most 250 commits.** GitHub itself lists no more than 250 for a pull
   request; the app stops at the same number on every host, and says *the host
-  has more* when it does, with a link to the pull request on the host.
+  has more* when it does, with a link to the pull request on the host. Which
+  250 depends on the order the host lists them in — the app keeps the ones
+  listed first, and the line above the list says which:
+
+  | Host | A longer pull request shows |
+  |---|---|
+  | GitHub | The **first** 250 (GitHub's own limit) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | The **250 most recent** |
+  | Forgejo | Whichever end the server lists first; its order is not documented |
 - **A fork's branch** cannot be fetched from here — it lives in another
   repository — so a commit only in the fork offers the browser alone.
   **Preview pull request locally…** is the way to bring it in.
