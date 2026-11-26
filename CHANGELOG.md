@@ -1,5 +1,11 @@
 
 
+## [4.55.0](https://github.com/StarleyDev/githuttbr/compare/v4.54.0...v4.55.0) (2026-11-26)
+
+### Features
+
+* **pr:** show comments formatted, and close the pull request gaps ([6c37fda](https://github.com/StarleyDev/githuttbr/commit/6c37fdac17e7dcf35450b625adc346ef254a310b))
+
 ## [4.54.0](https://github.com/StarleyDev/githuttbr/compare/v4.53.0...v4.54.0) (2026-11-26)
 
 ### Features
