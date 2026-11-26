@@ -274,7 +274,9 @@ function Section({
           <ChevronRight size={13} />
         </motion.span>
         {open && openIcon ? openIcon : icon}
-        <span className="sb-title">{title}</span>
+        <span className="sb-title" title={typeof title === 'string' ? title : undefined}>
+          {title}
+        </span>
         {actions && <span className="sb-actions">{actions}</span>}
         <span className="sb-count">{count}</span>
       </div>

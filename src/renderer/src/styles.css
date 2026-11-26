@@ -1781,11 +1781,18 @@ textarea:focus {
 .sb-arrow {
   display: flex;
 }
+/* One line, always: a long section name ("PULL REQUESTS", or a longer translation) used to wrap
+   under the action buttons. It gives way with an ellipsis, and the full name is on hover. */
 .sb-title {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-align: start;
 }
 .sb-count {
+  flex: none;
   background: var(--bg-4);
   border-radius: 8px;
   padding: 1px 7px;
@@ -1794,6 +1801,7 @@ textarea:focus {
 }
 .sb-actions {
   display: flex;
+  flex: none;
   margin-inline-end: 2px;
 }
 

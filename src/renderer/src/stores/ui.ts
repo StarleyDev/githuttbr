@@ -425,7 +425,7 @@ export interface PanelLayout {
 const LAYOUT_KEY = 'githuttbr-layout'
 const SIDEBAR_KEY = 'githuttbr-sidebar-collapsed'
 const DEFAULT_LAYOUT: PanelLayout = {
-  sidebarWidth: 248,
+  sidebarWidth: 264,
   panelWidth: 420,
   terminalHeight: 260,
   problemsHeight: 240,
