@@ -3,8 +3,8 @@ title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, en reacties op een regel van zijn diff.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Pull-requestspagina
@@ -234,6 +234,26 @@ Wat het niet doet:
   geen pagina voor —, dus dit tabblad wordt daar niet bereikt, hoewel de app de
   lijst wel kan lezen.
 
+## De bestanden lezen
+
+Een pull request met tweehonderd bestanden is lastig te lezen als tweehonderd
+volledige paden. De lijst in het tabblad **Bestanden** heeft dezelfde schakelaar
+**Pad / Boom** als het commitpaneel, en de keuze geldt in de hele app. In **Boom**
+staan bestanden onder hun mappen (een keten als `src/main/ipc` is één rij), en elke
+map toont zijn opgetelde **+/−** en hoeveel van zijn bestanden bekeken zijn (*3/5*).
+Het selectievakje van een map markeert elk bestand erin als bekeken, of wist ze
+allemaal; vinkjes blijven alleen op deze computer en gaan nooit naar de host. Een
+vinkje onthoudt de versie van de diff van het bestand: als een push een bekeken
+bestand wijzigt, geldt het weer als niet bekeken, met een gele stip (*Gewijzigd sinds
+je het bekeek*). Een bestand zonder diff (binair, te groot) wordt alleen op status en
+regelaantallen vergeleken. Klik op een map, of druk erop op ←/→, om hem in te klappen;
+↑/↓ (of j/k) lopen door de bestanden op het scherm en openen elke diff. Ingeklapte
+mappen worden per pull request onthouden tot de app sluit, en een bestand dat erin
+wordt geopend, klapt de weg ernaartoe uit. De boom is op naam gesorteerd, niet in de
+volgorde waarin de host de bestanden toont.
+
+![Het tabblad Bestanden in boomweergave: mappen met hun opgetelde wijzigingen en bekeken-aantallen, één ingeklapt](../../screenshots/pr-files-tree.webp)
+
 ## Reageren op een regel
 
 Antwoorden op een reviewthread kon hier al; er een beginnen niet, dus een echte
@@ -315,6 +335,78 @@ aanvulling met **@** / **#** uit de mensen en pull requests die al op het scherm
 staan. Een antwoordvak toont zijn gereedschap zodra je erin klikt, en verstuurt met
 ⌘/Ctrl+Enter, omdat Enter nu een nieuwe regel begint.
 [Reacties schrijven](writing-comments.md) heeft de details en de beperkingen.
+
+## Je reacties bewerken en verwijderen
+
+Een typfout in een al verstuurde reactie, of een opmerking die niet meer klopt,
+betekende vroeger een uitstapje naar de browser. Je eigen reacties hebben nu
+**Bewerken** (het potlood) en **Verwijderen** (de prullenbak) aan het eind van hun
+kop: reacties in het gesprek, reacties in reviewthreads en antwoorden, in de
+tabbladen Gesprek en Bestanden. De issuepagina heeft ze ook, voor haar reacties op
+GitHub en Forgejo.
+
+![Je eigen reactie, gemarkeerd als bewerkt, met Bewerken en Verwijderen aan het eind van de kop](../../screenshots/comment-editor.webp)
+
+Wat "van jou" is, beslist de pagina zelf: die vraagt de host bij elk laden als wie de
+aanroepen van deze repository zich aanmelden (het gekoppelde profiel, niet het profiel
+dat toevallig actief is). De meeste hosts noemen een auteur bij login, vergeleken
+zonder op hoofdletters te letten. Azure DevOps noemt auteurs bij weergavenaam, die
+twee mensen kunnen delen, dus daar moet het auteurs-id van de reactie overeenkomen
+met het id van het account; ontbreekt een van beide, dan toont geen enkele reactie de
+acties. Kan de app niet zeggen wie je bent (een token zonder user-scope, of de host
+antwoordde niet), dan toont ook geen reactie ze; **Vernieuwen** vraagt het opnieuw.
+De host beslist nog steeds: een account dat hij een reactie niet laat wijzigen,
+wordt geweigerd, en de melding zegt dat.
+
+- **Bewerken** opent de reactie ter plekke, in dezelfde Markdown-editor, met de
+  tekst zoals die geschreven is. **Opslaan** (of ⌘/Ctrl+Enter) verstuurt hem;
+  **Annuleren** of **Esc** sluit hem, met eerst een vraag als je iets veranderde.
+  Alleen de lege regels rond de tekst vallen weg: ingesprongen code en een regeleinde
+  van twee spaties aan het eind blijven zoals getypt. De nieuwe tekst verschijnt
+  meteen en de pagina leest de pull request opnieuw. Op de pull-requestspagina telt
+  een niet-opgeslagen bewerking als onverzonden tekst: **‹ ›** vragen het eerst
+  voordat ze haar verlaten. De issuepagina heeft zulke pijlen niet, en daar vraagt
+  niets iets voordat haar tabblad sluit.
+- **Verwijderen** vraagt het altijd eerst, en de vraag zegt wat er gebeurt: de server
+  verwijdert de reactie voor iedereen, en dat kan niet ongedaan worden gemaakt. Er is
+  geen ongedaan-maakitem, omdat niets haar kan terugbrengen.
+
+De **eerste reactie van een thread** met antwoorden verwijderen (een reviewthread,
+of een reactie in het gesprek waarop anderen antwoordden) verschilt per host, en de
+bevestiging zegt welk geval het is. Twee daarvan zijn niet door de host
+gedocumenteerd, en dat staat er ook bij:
+
+| Host | Eerste reactie van een thread met antwoorden |
+|---|---|
+| GitHub | De antwoorden zouden moeten blijven; de documentatie van GitHub zegt het niet. Vanuit de app op die thread antwoorden kan daarna niet meer: zijn antwoorden wijzen naar een reactie die weg is, en de API neemt geen antwoord op een antwoord aan. De thread biedt dan **Antwoorden op GitHub** aan |
+| GitLab | Alleen die notitie verdwijnt; de thread en zijn antwoorden blijven |
+| Azure DevOps | Zou als verwijderd gemarkeerd en verborgen moeten worden, met behoud van de thread en zijn antwoorden; de documentatie van Azure zegt het niet |
+| Bitbucket Data Center | Geweigerd: Data Center verwijdert geen reactie met antwoorden. Verwijder eerst de antwoorden, of bewerk haar in plaats daarvan |
+
+Sommige hosts markeren een reactie als **bewerkt**. Alleen Azure DevOps houdt een
+datum bij voor alleen de tekst; op GitHub, Bitbucket Data Center en Forgejo vergelijkt
+de app wanneer de reactie is gemaakt en voor het laatst bijgewerkt, dus daar is de
+markering een benadering (al het andere dat de reactie aanraakt, kan haar zetten). De
+datum van GitLab verschuift ook wanneer een thread wordt opgelost, dus die wordt niet
+gebruikt.
+
+Wat het niet doet:
+
+- **Reviewreacties op Forgejo** (reacties op een regel) kunnen niet via zijn API
+  worden bewerkt, en alleen sommige versies kunnen er een verwijderen, dus ze tonen
+  geen van beide acties: wijzig ze op de website. Reacties in het gesprek werken
+  zoals elders.
+- **Iemand heeft haar intussen gewijzigd.** Bitbucket Data Center controleert de
+  versie van de reactie: een bewerking of verwijdering van een reactie die is
+  veranderd sinds de pagina laadde, wordt geweigerd, en **Vernieuwen** toont de
+  huidige. De andere hosts nemen de laatste schrijfactie.
+- **Niet gevonden**: als de host de reactie niet vindt, zegt de melding dat ze
+  misschien is verwijderd, of dat dit account haar niet kan zien, en de pagina leest
+  de pull request opnieuw. Een open bewerking van een reactie die weg is, vervalt.
+- Pull requests op **bitbucket.org** openen in de browser, dus er is nog geen pagina
+  om hun reacties te bewerken, hoewel de app de aanroep kan doen.
+- **De beschrijving** van de pull request en de samenvattingen van zijn reviews zijn
+  geen reacties, en worden hier niet bewerkt.
 
 ## Beperkingen
 

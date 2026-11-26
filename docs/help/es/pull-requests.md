@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronizar y muchos repos
 order: 57
 summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits y comentarios en una línea de su diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Página de pull requests
@@ -228,6 +228,26 @@ Lo que no hace:
   tiene página para ellas —, así que ahí no se llega a esta pestaña, aunque la app
   puede leer la lista.
 
+## Leer los archivos
+
+Una pull request de doscientos archivos es difícil de leer como doscientas rutas
+completas. La lista de la pestaña **Archivos** tiene el mismo selector **Ruta /
+Árbol** que el panel de commit, y la elección es la misma en toda la app. En
+**Árbol**, los archivos quedan bajo sus carpetas (una cadena como `src/main/ipc` es
+una sola fila), y cada carpeta muestra su **+/−** sumado y cuántos de sus archivos
+están vistos (*3/5*). La casilla de una carpeta marca como vistos todos los archivos
+de dentro, o los desmarca todos; las marcas se guardan solo en este equipo, nunca se
+envían al host. Una marca recuerda la versión del diff del archivo: cuando un push
+cambia un archivo visto, vuelve a aparecer como no visto, con un punto amarillo
+(*Cambió desde que lo viste*). Un archivo sin diff (binario, demasiado grande) se
+compara solo por su estado y sus recuentos de líneas. Haz clic en una carpeta, o
+pulsa ←/→ sobre ella, para plegarla; ↑/↓ (o j/k) recorren los archivos en pantalla y
+abren cada diff. Las carpetas plegadas se recuerdan por pull request hasta que se
+cierra la app, y un archivo abierto dentro de una despliega el camino hasta él. El
+árbol se ordena por nombre, no en el orden en que el host lista los archivos.
+
+![La pestaña Archivos en vista de árbol: carpetas con sus cambios sumados y recuentos de vistos, una plegada](../../screenshots/pr-files-tree.webp)
+
 ## Comentar una línea
 
 Aquí ya se podía responder a un hilo de revisión, pero no empezar uno, así que una
@@ -309,6 +329,79 @@ personas y pull requests que ya están en pantalla. Un cuadro de respuesta muest
 sus herramientas en cuanto haces clic en él, y envía con ⌘/Ctrl+Enter, ya que
 Enter ahora empieza una línea nueva. [Escribir comentarios](writing-comments.md)
 tiene los detalles y los límites.
+
+## Editar y eliminar tus comentarios
+
+Una errata en un comentario ya enviado, o una observación que ya no aplica, antes
+obligaba a ir al navegador. Tus propios comentarios tienen ahora **Editar** (el
+lápiz) y **Eliminar** (la papelera) al final de su cabecera: comentarios de la
+conversación, comentarios de hilos de revisión y respuestas, en las pestañas
+Conversación y Archivos. La página de la issue también los tiene, para sus
+comentarios en GitHub y Forgejo.
+
+![Tu propio comentario, marcado como editado, con Editar y Eliminar al final de su cabecera](../../screenshots/comment-editor.webp)
+
+Qué es «tuyo» lo decide la propia página, que pregunta al host, cada vez que carga,
+con qué cuenta se identifican las llamadas de este repositorio (su perfil vinculado,
+no el que esté activo). La mayoría de los hosts nombran a un autor por su login,
+comparado sin distinguir mayúsculas. Azure DevOps nombra a los autores por nombre
+visible, que dos personas pueden compartir, así que ahí el id del autor del
+comentario debe coincidir con el id de la cuenta; si falta cualquiera de los dos, ningún
+comentario muestra las acciones. Cuando la app no puede saber quién eres (un token
+sin scope de usuario, o el host no respondió), tampoco las muestra ningún
+comentario; **Actualizar** vuelve a preguntar. El host sigue decidiendo: a una cuenta
+a la que no deja cambiar un comentario se le rechaza, y el mensaje lo dice.
+
+- **Editar** abre el comentario en su sitio, en el mismo editor de Markdown, con su
+  texto tal como se escribió. **Guardar** (o ⌘/Ctrl+Enter) lo envía; **Cancelar** o
+  **Esc** lo cierra, preguntando antes si cambiaste algo. Solo se quitan las líneas
+  en blanco alrededor del texto: el código sangrado y un salto de línea final de dos
+  espacios se quedan como se escribieron. El texto nuevo aparece al instante y la
+  página vuelve a leer la pull request. En la página de la pull request, una edición
+  sin guardar cuenta como texto sin enviar: **‹ ›** preguntan antes de dejarla. La
+  página de la issue no tiene esas flechas, y allí nada pregunta antes de que se
+  cierre su pestaña.
+- **Eliminar** siempre pregunta antes, y la pregunta dice qué pasa: el servidor
+  elimina el comentario para todos, y no se puede deshacer. No hay entrada de
+  deshacer, ya que nada puede recuperarlo.
+
+Eliminar el **primer comentario de un hilo** que tiene respuestas (un hilo de
+revisión, o un comentario de la conversación que otros respondieron) varía según el
+host, y la confirmación dice cómo. Dos de estos casos no están documentados por el
+host, y se dice:
+
+| Host | Primer comentario de un hilo con respuestas |
+|---|---|
+| GitHub | Las respuestas deberían quedarse; la documentación de GitHub no lo dice. Responder a ese hilo desde la app ya no es posible: sus respuestas apuntan a un comentario que ya no existe, y la API no acepta respuestas a una respuesta. El hilo ofrece entonces **Responder en GitHub** |
+| GitLab | Solo se va esa nota; el hilo y sus respuestas se quedan |
+| Azure DevOps | Debería marcarse como eliminado y ocultarse, conservando el hilo y sus respuestas; la documentación de Azure no lo dice |
+| Bitbucket Data Center | Rechazado: Data Center no elimina un comentario que tiene respuestas. Elimina primero las respuestas, o edítalo en su lugar |
+
+Algunos hosts marcan un comentario como **editado**. Solo Azure DevOps guarda una
+fecha para el texto en sí; en GitHub, Bitbucket Data Center y Forgejo la app compara
+cuándo se creó el comentario y cuándo se actualizó por última vez, así que ahí la
+marca es una aproximación (cualquier otra cosa que toque el comentario puede
+ponerla). La fecha de GitLab también cambia cuando se resuelve un hilo, así que no se
+usa.
+
+Lo que no hace:
+
+- **Los comentarios de revisión de Forgejo** (comentarios en una línea) no se pueden
+  editar a través de su API, y solo algunas versiones pueden eliminarlos, así que no
+  muestran ninguna de las dos acciones: cámbialos en la web. Los comentarios de la
+  conversación funcionan como en los demás hosts.
+- **Alguien lo cambió mientras tanto.** Bitbucket Data Center comprueba la versión
+  del comentario: una edición o eliminación de un comentario que cambió desde que se
+  cargó la página se rechaza, y **Actualizar** muestra el actual. Los demás hosts se
+  quedan con la última escritura.
+- **No encontrado**: cuando el host no encuentra el comentario, el mensaje dice que
+  puede haberse eliminado, o que esta cuenta no puede verlo, y la página vuelve a
+  leer la pull request. Una edición abierta sobre un comentario que ya no existe se
+  descarta.
+- Las pull requests de **bitbucket.org** se abren en el navegador, así que aún no hay
+  página donde editar sus comentarios, aunque la app pueda hacer la llamada.
+- **La descripción** de la pull request y los resúmenes de sus revisiones no son
+  comentarios, y no se editan aquí.
 
 ## Límites
 

@@ -3,8 +3,8 @@ title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity oraz komentarze do wiersza jego diffa.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Strona pull requestów
@@ -224,6 +224,26 @@ Czego to nie robi:
   jeszcze dla nich strony —, więc do tej zakładki się tam nie dochodzi, choć
   aplikacja potrafi odczytać listę.
 
+## Czytanie plików
+
+Pull request z dwustoma plikami trudno czytać jako dwieście pełnych ścieżek. Lista w
+zakładce **Pliki** ma ten sam przełącznik **Ścieżki / Drzewo** co panel commita, a
+wybór obowiązuje w całej aplikacji. W widoku **Drzewo** pliki leżą pod swoimi
+folderami (łańcuch taki jak `src/main/ipc` to jeden wiersz), a każdy folder pokazuje
+zsumowane **+/−** i ile jego plików jest przejrzanych (*3/5*). Pole wyboru folderu
+oznacza jako przejrzany każdy plik w środku albo czyści wszystkie; zaznaczenia są
+trzymane tylko na tym komputerze i nigdy nie trafiają na hosting. Zaznaczenie
+pamięta wersję diffa pliku: gdy push zmieni przejrzany plik, znów jest on
+nieprzejrzany, z żółtą kropką (*Zmieniony od czasu przejrzenia*). Plik bez diffa
+(binarny, zbyt duży) jest porównywany tylko po stanie i liczbie wierszy. Kliknij
+folder albo naciśnij na nim ←/→, żeby go zwinąć; ↑/↓ (lub j/k) przechodzą przez pliki
+na ekranie i otwierają każdy diff. Zwinięte foldery są pamiętane dla każdego pull
+requesta do zamknięcia aplikacji, a plik otwarty w jednym z nich rozwija drogę do
+siebie. Drzewo jest posortowane po nazwie, a nie w kolejności, w jakiej hosting
+wymienia pliki.
+
+![Zakładka Pliki w widoku drzewa: foldery z zsumowanymi zmianami i liczbą przejrzanych plików, jeden zwinięty](../../screenshots/pr-files-tree.webp)
+
 ## Komentowanie wiersza
 
 Odpowiadać na wątek recenzji dało się tu już wcześniej; zaczynać nowego nie, więc
@@ -305,6 +325,76 @@ skrótami GitHuba, listy, które ciągną się po Enterze, i podpowiadanie po **
 pokazuje swoje narzędzia, gdy w nie klikniesz, i wysyła przez ⌘/Ctrl+Enter, bo
 Enter zaczyna teraz nowy wiersz. [Pisanie komentarzy](writing-comments.md) opisuje
 szczegóły i ograniczenia.
+
+## Edytowanie i usuwanie twoich komentarzy
+
+Literówka w już wysłanym komentarzu albo uwaga, która przestała być aktualna,
+oznaczała kiedyś wycieczkę do przeglądarki. Twoje komentarze mają teraz **Edytuj**
+(ołówek) i **Usuń** (kosz) na końcu nagłówka: komentarze w rozmowie, komentarze w
+wątkach recenzji i odpowiedzi, w zakładkach Rozmowa i Pliki. Strona issue też je ma,
+dla swoich komentarzy na GitHubie i Forgejo.
+
+![Twój komentarz, oznaczony jako edytowany, z Edytuj i Usuń na końcu nagłówka](../../screenshots/comment-editor.webp)
+
+O tym, co jest „twoje”, decyduje sama strona, która przy każdym wczytaniu pyta
+hosting, jako kto logują się wywołania tego repozytorium (jego powiązany profil, a
+nie akurat aktywny). Większość hostingów podaje autora po loginie, porównywanym bez
+rozróżniania wielkości liter. Azure DevOps podaje autorów po nazwie wyświetlanej,
+którą mogą dzielić dwie osoby, więc tam id autora komentarza musi zgadzać się z id
+konta; gdy brakuje któregoś z nich, żaden komentarz nie pokazuje akcji. Gdy
+aplikacja nie potrafi ustalić, kim jesteś (token bez zakresu użytkownika albo
+hosting nie odpowiedział), też żaden komentarz ich nie pokazuje; **Odśwież** pyta
+ponownie. Decyzja i tak należy do hostingu: konto, któremu nie pozwala zmienić
+komentarza, zostaje odrzucone, a komunikat to mówi.
+
+- **Edytuj** otwiera komentarz w miejscu, w tym samym edytorze Markdown, z tekstem
+  takim, jak go napisano. **Zapisz** (lub ⌘/Ctrl+Enter) go wysyła; **Anuluj** albo
+  **Esc** go zamyka, pytając najpierw, jeśli coś zmieniłeś. Usuwane są tylko puste
+  wiersze wokół tekstu: wcięty kod i końcowe złamanie wiersza z dwóch spacji
+  zostają, jak je wpisano. Nowy tekst pojawia się od razu, a strona ponownie czyta
+  pull request. Na stronie pull requesta niezapisana edycja liczy się jako niewysłany
+  tekst: **‹ ›** pytają, zanim ją opuszczą. Strona issue nie ma takich strzałek i
+  nic tam nie pyta przed zamknięciem jej karty.
+- **Usuń** zawsze najpierw pyta, a pytanie mówi, co się stanie: serwer usuwa
+  komentarz dla wszystkich i nie da się tego cofnąć. Nie ma wpisu cofania, bo nic go
+  nie przywróci.
+
+Usunięcie **pierwszego komentarza wątku**, który ma odpowiedzi (wątek recenzji albo
+komentarz w rozmowie, na który inni odpowiedzieli), działa różnie zależnie od
+hostingu, a potwierdzenie mówi, jak. Dwa z tych przypadków nie są opisane przez
+hosting, i to też jest powiedziane:
+
+| Hosting | Pierwszy komentarz wątku z odpowiedziami |
+|---|---|
+| GitHub | Odpowiedzi powinny zostać; dokumentacja GitHuba tego nie mówi. Odpowiadanie w tym wątku z aplikacji nie jest już możliwe: jego odpowiedzi wskazują na komentarz, którego nie ma, a API nie przyjmuje odpowiedzi na odpowiedź. Wątek proponuje wtedy **Odpowiedz w GitHub** |
+| GitLab | Znika tylko ta notatka; wątek i jego odpowiedzi zostają |
+| Azure DevOps | Powinien zostać oznaczony jako usunięty i ukryty, z zachowaniem wątku i odpowiedzi; dokumentacja Azure tego nie mówi |
+| Bitbucket Data Center | Odmowa: Data Center nie usuwa komentarza, który ma odpowiedzi. Najpierw usuń odpowiedzi albo zamiast tego go edytuj |
+
+Niektóre hostingi oznaczają komentarz jako **edytowany**. Tylko Azure DevOps
+przechowuje datę dla samego tekstu; na GitHubie, Bitbucket Data Center i Forgejo
+aplikacja porównuje, kiedy komentarz utworzono i kiedy ostatnio zaktualizowano, więc
+tam oznaczenie jest przybliżeniem (może je ustawić wszystko inne, co dotknie
+komentarza). Data w GitLabie zmienia się też przy rozwiązaniu wątku, więc nie jest
+używana.
+
+Czego to nie robi:
+
+- **Komentarzy recenzji na Forgejo** (komentarzy do wiersza) nie da się edytować przez
+  jego API, a tylko niektóre wersje potrafią je usuwać, więc nie pokazują żadnej z
+  tych akcji: zmień je na stronie. Komentarze w rozmowie działają jak gdzie indziej.
+- **Ktoś go w międzyczasie zmienił.** Bitbucket Data Center sprawdza wersję
+  komentarza: edycja lub usunięcie komentarza zmienionego od wczytania strony jest
+  odrzucane, a **Odśwież** pokazuje aktualny. Pozostałe hostingi przyjmują ostatni
+  zapis.
+- **Nie znaleziono**: gdy hosting nie znajduje komentarza, komunikat mówi, że mógł
+  zostać usunięty albo że to konto go nie widzi, a strona ponownie czyta pull
+  request. Otwarta edycja komentarza, którego już nie ma, jest porzucana.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce, więc nie ma jeszcze
+  strony, na której można edytować ich komentarze, choć aplikacja potrafi wykonać to
+  wywołanie.
+- **Opis** pull requesta i podsumowania jego recenzji nie są komentarzami i nie są tu
+  edytowane.
 
 ## Ograniczenia
 

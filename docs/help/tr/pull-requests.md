@@ -3,8 +3,8 @@ title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri ve diff’inin bir satırına yorumlar.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Pull request sayfası
@@ -220,6 +220,26 @@ Yapmadıkları:
   henüz bir sayfası yok —, bu yüzden uygulama listeyi okuyabilse de orada bu
   sekmeye ulaşılmaz.
 
+## Dosyaları okumak
+
+İki yüz dosyalı bir pull request’i iki yüz tam yol olarak okumak zordur.
+**Dosyalar** sekmesinin listesinde commit panelindekiyle aynı **Yol / Ağaç** düğmesi
+vardır ve seçim uygulamanın her yerinde aynıdır. **Ağaç** görünümünde dosyalar
+klasörlerinin altında durur (`src/main/ipc` gibi bir zincir tek satırdır) ve her
+klasör toplam **+/−** değerini ve dosyalarından kaçının görüldüğünü (*3/5*) gösterir.
+Bir klasörün onay kutusu içindeki her dosyayı görüldü olarak işaretler ya da hepsini
+temizler; işaretler yalnızca bu bilgisayarda tutulur, sunucuya asla gönderilmez. Bir
+işaret dosyanın diff sürümünü hatırlar: bir push görülmüş bir dosyayı değiştirdiğinde
+dosya sarı bir noktayla (*Gördüğünüzden beri değişti*) yeniden görülmemiş sayılır.
+Diff’i olmayan bir dosya (ikili, çok büyük) yalnızca durumu ve satır sayılarıyla
+karşılaştırılır. Bir klasörü katlamak için ona tıklayın ya da üzerindeyken ←/→ tuşuna
+basın; ↑/↓ (veya j/k) ekrandaki dosyalarda ilerler ve her diff’i açar. Katlanmış
+klasörler uygulama kapanana kadar pull request başına hatırlanır ve birinin içinde
+açılan bir dosya ona giden yolu açar. Ağaç, sunucunun dosyaları listelediği sıraya
+göre değil, ada göre sıralanır.
+
+![Ağaç görünümünde Dosyalar sekmesi: toplam değişiklikleri ve görülen sayılarıyla klasörler, biri katlanmış](../../screenshots/pr-files-tree.webp)
+
 ## Bir satıra yorum yapmak
 
 Burada bir inceleme konuşmasına yanıt vermek mümkündü, ama yenisini başlatmak değil;
@@ -299,6 +319,75 @@ zaten olan kişiler ve pull request’lerden **@** / **#** tamamlama. Bir yanıt
 içine tıkladığınızda araçlarını gösterir ve Enter artık yeni bir satır başlattığı
 için ⌘/Ctrl+Enter ile gönderir. Ayrıntılar ve sınırlar
 [Yorum yazmak](writing-comments.md) sayfasında.
+
+## Yorumlarınızı düzenlemek ve silmek
+
+Gönderilmiş bir yorumdaki yazım hatası ya da artık geçerli olmayan bir not, eskiden
+tarayıcıya gitmek demekti. Kendi yorumlarınızın başlığının sonunda artık
+**Düzenle** (kalem) ve **Sil** (çöp kutusu) var: konuşma yorumları, inceleme
+konuşması yorumları ve yanıtlar, hem Konuşma hem Dosyalar sekmesinde. Issue
+sayfasında da, GitHub ve Forgejo’daki yorumları için, bunlar vardır.
+
+![Düzenlendi olarak işaretlenmiş kendi yorumunuz; başlığının sonunda Düzenle ve Sil](../../screenshots/comment-editor.webp)
+
+Neyin “sizin” olduğuna sayfanın kendisi karar verir: her yüklemede sunucuya bu
+deponun çağrılarının kim olarak oturum açtığını sorar (o anda etkin olan profili
+değil, deponun bağlı profilini). Çoğu sunucu yazarı, büyük/küçük harf ayrımı
+gözetmeden karşılaştırılan kullanıcı adıyla belirtir. Azure DevOps yazarları iki
+kişinin paylaşabileceği görünen adla belirtir; bu yüzden orada yorumun yazar
+kimliği hesabın kimliğiyle eşleşmelidir; kimliklerden biri eksikse hiçbir yorum
+eylemleri göstermez. Uygulama kim olduğunuzu anlayamadığında (kullanıcı kapsamı
+olmayan bir token ya da sunucu yanıt vermedi) hiçbir yorum bunları göstermez;
+**Yenile** yeniden sorar. Kararı yine sunucu verir: bir yorumu değiştirmesine izin
+vermediği bir hesap reddedilir ve mesaj bunu söyler.
+
+- **Düzenle**, yorumu yerinde, aynı Markdown düzenleyicide, yazıldığı hâliyle açar.
+  **Kaydet** (ya da ⌘/Ctrl+Enter) gönderir; **Vazgeç** ya da **Esc** kapatır, bir şey
+  değiştirdiyseniz önce sorar. Yalnızca metnin etrafındaki boş satırlar atılır:
+  girintili kod ve sondaki iki boşluklu satır sonu yazıldığı gibi kalır. Yeni metin
+  hemen görünür ve sayfa pull request’i yeniden okur. Pull request sayfasında
+  kaydedilmemiş bir düzenleme gönderilmemiş metin sayılır: **‹ ›** ondan ayrılmadan
+  önce sorar. Issue sayfasında bu oklar yoktur ve orada sekmesi kapanmadan önce
+  hiçbir şey sormaz.
+- **Sil** her zaman önce sorar ve soru ne olacağını söyler: sunucu yorumu herkes için
+  kaldırır ve bu geri alınamaz. Hiçbir şey onu geri getiremeyeceği için geri alma
+  kaydı yoktur.
+
+Yanıtları olan bir konuşmanın **ilk yorumunu** silmek (bir inceleme konuşması ya da
+başkalarının yanıtladığı bir konuşma yorumu) sunucuya göre değişir ve onay hangisi
+olduğunu söyler. Bunlardan ikisi sunucu tarafından belgelenmemiştir ve bu da
+söylenir:
+
+| Sunucu | Yanıtları olan bir konuşmanın ilk yorumu |
+|---|---|
+| GitHub | Yanıtlar kalmalı; GitHub’ın belgeleri bunu söylemez. O konuşmaya uygulamadan yanıt vermek artık mümkün değildir: yanıtları artık olmayan bir yorumu gösterir ve API bir yanıta yanıt kabul etmez. Konuşma bu durumda **GitHub’da yanıtla** seçeneğini sunar |
+| GitLab | Yalnızca o not gider; konuşma ve yanıtları kalır |
+| Azure DevOps | Silindi olarak işaretlenip gizlenmeli, konuşma ve yanıtları korunmalı; Azure’un belgeleri bunu söylemez |
+| Bitbucket Data Center | Reddedilir: Data Center yanıtları olan bir yorumu silmez. Önce yanıtları silin ya da onun yerine yorumu düzenleyin |
+
+Bazı sunucular bir yorumu **düzenlendi** olarak işaretler. Yalnızca Azure DevOps
+yalnızca metin için bir tarih tutar; GitHub, Bitbucket Data Center ve Forgejo’da
+uygulama yorumun ne zaman oluşturulduğunu ve en son ne zaman güncellendiğini
+karşılaştırır, bu yüzden orada işaret bir yaklaşıktır (yoruma dokunan başka herhangi
+bir şey onu koyabilir). GitLab’in tarihi bir konuşma çözüldüğünde de değişir, bu
+yüzden kullanılmaz.
+
+Yapmadıkları:
+
+- **Forgejo inceleme yorumları** (bir satıra yapılan yorumlar) API’si üzerinden
+  düzenlenemez ve yalnızca bazı sürümler birini silebilir, bu yüzden iki eylemi de
+  göstermezler: onları web sitesinde değiştirin. Konuşma yorumları başka yerlerdeki
+  gibi çalışır.
+- **Bu arada biri değiştirdi.** Bitbucket Data Center yorumun sürümünü denetler:
+  sayfa yüklendiğinden beri değişmiş bir yorumu düzenleme ya da silme reddedilir ve
+  **Yenile** güncel olanı gösterir. Diğer sunucular son yazılanı alır.
+- **Bulunamadı**: sunucu yorumu bulamadığında mesaj, silinmiş olabileceğini ya da bu
+  hesabın onu göremediğini söyler ve sayfa pull request’i yeniden okur. Artık olmayan
+  bir yorum üzerinde açık bir düzenleme bırakılır.
+- **bitbucket.org** pull request’leri tarayıcıda açılır, bu yüzden uygulama çağrıyı
+  yapabilse de yorumlarını düzenleyecek bir sayfa henüz yoktur.
+- Pull request’in **açıklaması** ve incelemelerinin özetleri yorum değildir ve
+  burada düzenlenmez.
 
 ## Sınırlar
 

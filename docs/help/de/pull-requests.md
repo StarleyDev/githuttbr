@@ -3,8 +3,8 @@ title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
 summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits und Kommentare zu einer Zeile seines Diffs.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Pull-Request-Seite
@@ -237,6 +237,27 @@ Was es nicht tut:
   Seite für sie —, also wird dieser Tab dort nicht erreicht, obwohl die App die
   Liste lesen kann.
 
+## Die Dateien lesen
+
+Ein Pull Request mit zweihundert Dateien ist als zweihundert vollständige Pfade
+schwer zu lesen. Die Liste im Tab **Dateien** hat denselben Schalter **Pfad /
+Baum** wie das Commit-Panel, und die Wahl gilt in der ganzen App. In **Baum** stehen
+Dateien unter ihren Ordnern (eine Kette wie `src/main/ipc` ist eine Zeile), und
+jeder Ordner zeigt sein summiertes **+/−** und wie viele seiner Dateien gesehen sind
+(*3/5*). Das Kontrollkästchen eines Ordners markiert jede Datei darin als gesehen
+oder entfernt alle Häkchen; die Häkchen bleiben nur auf diesem Computer und gehen
+nie an den Host. Ein Häkchen merkt sich die Fassung des Diffs der Datei: ändert ein
+Push eine gesehene Datei, gilt sie wieder als nicht gesehen, mit einem gelben Punkt
+(*Geändert, seit du es gesehen hast*). Eine Datei ohne Diff (binär, zu groß) wird nur
+nach Status und Zeilenzahlen verglichen. Klick auf einen Ordner oder drück ←/→ darauf,
+um ihn einzuklappen; ↑/↓ (oder j/k) gehen durch die Dateien auf dem Bildschirm und
+öffnen jeden Diff. Eingeklappte Ordner werden pro Pull Request gemerkt, bis die App
+beendet wird, und eine Datei, die darin geöffnet wird, klappt den Weg zu ihr auf. Der
+Baum ist nach Namen sortiert, nicht in der Reihenfolge, in der der Host die Dateien
+listet.
+
+![Der Tab Dateien in der Baumansicht: Ordner mit ihren summierten Änderungen und Gesehen-Zahlen, einer eingeklappt](../../screenshots/pr-files-tree.webp)
+
 ## Eine Zeile kommentieren
 
 Auf einen Review-Thread antworten ging hier schon; einen beginnen nicht, also
@@ -321,6 +342,80 @@ Pull Requests, die schon auf dem Bildschirm sind. Ein Antwortfeld zeigt seine
 Werkzeuge, sobald du hineinklickst, und sendet mit ⌘/Ctrl+Enter, da Enter jetzt
 eine neue Zeile beginnt. [Kommentare schreiben](writing-comments.md) hat die
 Details und die Grenzen.
+
+## Eigene Kommentare bearbeiten und löschen
+
+Ein Tippfehler in einem schon gesendeten Kommentar oder eine Bemerkung, die nicht
+mehr gilt, bedeutete früher einen Ausflug in den Browser. Deine eigenen Kommentare
+haben jetzt **Bearbeiten** (der Stift) und **Löschen** (der Papierkorb) am Ende ihres
+Kopfes: Kommentare der Unterhaltung, Kommentare in Review-Threads und Antworten, in
+den Tabs Unterhaltung und Dateien. Die Issue-Seite hat sie auch, für ihre Kommentare
+auf GitHub und Forgejo.
+
+![Dein eigener Kommentar, als bearbeitet markiert, mit Bearbeiten und Löschen am Ende seines Kopfes](../../screenshots/comment-editor.webp)
+
+Was „deins“ ist, entscheidet die Seite selbst: Sie fragt den Host bei jedem Laden,
+als wer sich die Aufrufe dieses Repositorys anmelden (sein gebundenes Profil, nicht
+das gerade aktive). Die meisten Hosts nennen einen Autor per Login, verglichen ohne
+Rücksicht auf Groß- und Kleinschreibung. Azure DevOps nennt Autoren per Anzeigename,
+den zwei Personen teilen können, also muss dort die Autoren-ID des Kommentars zur
+ID des Kontos passen; fehlt eine der IDs, zeigt kein Kommentar die Aktionen. Kann
+die App nicht sagen, wer du bist (ein Token ohne User-Scope, oder der Host hat nicht
+geantwortet), zeigt sie auch kein Kommentar; **Aktualisieren** fragt erneut. Der
+Host entscheidet trotzdem: Ein Konto, dem er das Ändern eines Kommentars nicht
+erlaubt, wird abgewiesen, und die Meldung sagt das.
+
+- **Bearbeiten** öffnet den Kommentar an Ort und Stelle, im selben Markdown-Editor,
+  mit seinem Text, wie er geschrieben wurde. **Speichern** (oder ⌘/Ctrl+Enter) sendet
+  ihn; **Abbrechen** oder **Esc** schließt ihn, mit Rückfrage, wenn du etwas geändert
+  hast. Nur die Leerzeilen um den Text fallen weg: eingerückter Code und ein
+  Zeilenumbruch aus zwei Leerzeichen am Ende bleiben, wie getippt. Der neue Text
+  erscheint sofort, und die Seite liest den Pull Request neu. Auf der
+  Pull-Request-Seite zählt eine nicht gespeicherte Bearbeitung als ungesendeter
+  Text: **‹ ›** fragen, bevor sie sie verlassen. Die Issue-Seite hat keine solchen
+  Pfeile, und dort fragt nichts, bevor ihr Tab geschlossen wird.
+- **Löschen** fragt immer zuerst, und die Frage sagt, was passiert: Der Server
+  entfernt den Kommentar für alle, und das lässt sich nicht rückgängig machen. Es
+  gibt keinen Undo-Eintrag, da nichts ihn zurückbringen kann.
+
+Den **ersten Kommentar eines Threads** mit Antworten zu löschen (ein Review-Thread
+oder ein Kommentar der Unterhaltung, auf den andere geantwortet haben), verhält sich
+je nach Host anders, und die Bestätigung sagt, wie. Zwei davon sind vom Host nicht
+dokumentiert, und das wird auch gesagt:
+
+| Host | Erster Kommentar eines Threads mit Antworten |
+|---|---|
+| GitHub | Die Antworten sollten bleiben; GitHubs Dokumentation sagt es nicht. Aus der App in diesem Thread zu antworten geht danach nicht mehr: Seine Antworten zeigen auf einen Kommentar, den es nicht mehr gibt, und die API nimmt keine Antwort auf eine Antwort an. Der Thread bietet dann stattdessen **Auf GitHub antworten** an |
+| GitLab | Nur diese Notiz verschwindet; der Thread und seine Antworten bleiben |
+| Azure DevOps | Sollte als gelöscht markiert und ausgeblendet werden, Thread und Antworten bleiben; Azures Dokumentation sagt es nicht |
+| Bitbucket Data Center | Abgelehnt: Data Center löscht keinen Kommentar, der Antworten hat. Lösche zuerst die Antworten oder bearbeite ihn stattdessen |
+
+Manche Hosts markieren einen Kommentar als **bearbeitet**. Nur Azure DevOps führt
+ein Datum allein für den Text; auf GitHub, Bitbucket Data Center und Forgejo
+vergleicht die App, wann der Kommentar erstellt und zuletzt aktualisiert wurde, also
+ist die Markierung dort eine Näherung (alles andere, was den Kommentar berührt, kann
+sie setzen). Das Datum bei GitLab ändert sich auch, wenn ein Thread aufgelöst wird,
+also wird es nicht verwendet.
+
+Was es nicht tut:
+
+- **Review-Kommentare auf Forgejo** (Kommentare zu einer Zeile) lassen sich über
+  seine API nicht bearbeiten, und nur manche Versionen können einen löschen, also
+  zeigen sie keine der beiden Aktionen: Ändere sie auf der Website. Kommentare der
+  Unterhaltung funktionieren wie anderswo.
+- **Jemand hat ihn inzwischen geändert.** Bitbucket Data Center prüft die Version
+  des Kommentars: Eine Bearbeitung oder Löschung eines Kommentars, der sich seit dem
+  Laden der Seite geändert hat, wird abgelehnt, und **Aktualisieren** zeigt den
+  aktuellen. Die anderen Hosts übernehmen den letzten Schreibvorgang.
+- **Nicht gefunden**: Findet der Host den Kommentar nicht, sagt die Meldung, dass er
+  gelöscht worden sein könnte oder dieses Konto ihn nicht sehen kann, und die Seite
+  liest den Pull Request neu. Eine offene Bearbeitung eines Kommentars, den es nicht
+  mehr gibt, wird verworfen.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser, also gibt es noch keine
+  Seite, auf der man ihre Kommentare bearbeiten könnte, obwohl die App den Aufruf
+  machen kann.
+- **Die Beschreibung** des Pull Requests und die Zusammenfassungen seiner Reviews
+  sind keine Kommentare und werden hier nicht bearbeitet.
 
 ## Grenzen
 

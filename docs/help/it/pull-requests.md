@@ -3,8 +3,8 @@ title: Pagina delle pull request
 category: Sincronizzazione e più repo
 order: 57
 summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit e commenti su una riga del suo diff.
-keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention albero dei file albero delle cartelle vista ad albero vista percorso file visti segna cartella come vista modifica elimina rimuovi modificato refuso file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Pagina delle pull request
@@ -229,6 +229,26 @@ Cosa non fa:
   una pagina per loro —, quindi lì questa scheda non si raggiunge, anche se l’app
   sa leggere l’elenco.
 
+## Leggere i file
+
+Una pull request di duecento file è difficile da leggere come duecento percorsi
+completi. La lista della scheda **File** ha lo stesso selettore **Percorso / Albero**
+del pannello di commit, e la scelta vale per tutta l’app. In **Albero** i file stanno
+sotto le loro cartelle (una catena come `src/main/ipc` è una sola riga), e ogni
+cartella mostra il suo **+/−** sommato e quanti dei suoi file sono visti (*3/5*). La
+casella di una cartella segna come visti tutti i file al suo interno, o li toglie
+tutti; i segni restano solo su questo computer, mai inviati all’host. Un segno
+ricorda la versione del diff del file: quando un push cambia un file visto, torna non
+visto, con un punto giallo (*Modificato da quando l’hai visto*). Un file senza diff
+(binario, troppo grande) viene confrontato solo per stato e conteggi di righe. Fai
+clic su una cartella, o premi ←/→ su di essa, per chiuderla; ↑/↓ (o j/k) scorrono i
+file sullo schermo e aprono ciascun diff. Le cartelle chiuse vengono ricordate per
+pull request finché l’app resta aperta, e un file aperto dentro una di esse apre la
+strada fino a lui. L’albero è ordinato per nome, non nell’ordine in cui l’host elenca
+i file.
+
+![La scheda File in vista ad albero: cartelle con le modifiche sommate e i conteggi dei visti, una chiusa](../../screenshots/pr-files-tree.webp)
+
 ## Commentare una riga
 
 Qui si poteva già rispondere a un thread di revisione, ma non aprirne uno, quindi una
@@ -311,6 +331,76 @@ Invio e completamento con **@** / **#** dalle persone e dalle pull request già 
 schermo. Un riquadro di risposta mostra i suoi strumenti appena ci fai clic dentro,
 e invia con ⌘/Ctrl+Invio, perché ora Invio inizia una nuova riga.
 [Scrivere commenti](writing-comments.md) ha i dettagli e i limiti.
+
+## Modificare ed eliminare i tuoi commenti
+
+Un refuso in un commento già inviato, o un’osservazione che non vale più, prima
+voleva dire passare dal browser. I tuoi commenti hanno ora **Modifica** (la matita)
+ed **Elimina** (il cestino) in fondo all’intestazione: commenti della conversazione,
+commenti dei thread di revisione e risposte, nelle schede Conversazione e File. Anche
+la pagina della issue li ha, per i suoi commenti su GitHub e Forgejo.
+
+![Un tuo commento, segnato come modificato, con Modifica ed Elimina in fondo all’intestazione](../../screenshots/comment-editor.webp)
+
+Che cosa è «tuo» lo decide la pagina stessa, che a ogni caricamento chiede all’host
+con quale account si autenticano le chiamate di questo repository (il suo profilo
+associato, non quello attivo al momento). La maggior parte degli host indica un
+autore per login, confrontato senza badare a maiuscole e minuscole. Azure DevOps
+indica gli autori per nome visualizzato, che due persone possono condividere, quindi
+lì l’id dell’autore del commento deve corrispondere all’id dell’account; se manca uno
+dei due, nessun commento mostra le azioni. Quando l’app non sa dire chi sei (un token
+senza scope utente, o l’host non ha risposto), non le mostra nessun commento;
+**Aggiorna** chiede di nuovo. L’host decide comunque: un account a cui non permette di
+cambiare un commento viene respinto, e il messaggio lo dice.
+
+- **Modifica** apre il commento sul posto, nello stesso editor Markdown, con il suo
+  testo così come è stato scritto. **Salva** (o ⌘/Ctrl+Invio) lo invia; **Annulla** o
+  **Esc** lo chiude, chiedendo prima se hai cambiato qualcosa. Vengono tolte solo le
+  righe vuote intorno al testo: il codice rientrato e un a capo finale di due spazi
+  restano come scritti. Il nuovo testo compare subito e la pagina rilegge la pull
+  request. Nella pagina della pull request, una modifica non salvata conta come
+  testo non inviato: **‹ ›** chiedono prima di lasciarla. La pagina della issue non
+  ha queste frecce, e lì nulla chiede prima che la sua scheda si chiuda.
+- **Elimina** chiede sempre prima, e la domanda dice cosa succede: il server rimuove
+  il commento per tutti, e non si può annullare. Non c’è una voce di annullamento,
+  perché niente può riportarlo indietro.
+
+Eliminare il **primo commento di un thread** che ha risposte (un thread di revisione,
+o un commento della conversazione a cui altri hanno risposto) cambia da host a host,
+e la conferma dice come. Due di questi casi non sono documentati dall’host, e lo
+dice:
+
+| Host | Primo commento di un thread con risposte |
+|---|---|
+| GitHub | Le risposte dovrebbero restare; la documentazione di GitHub non lo dice. Rispondere a quel thread dall’app non è più possibile: le sue risposte puntano a un commento che non c’è più, e l’API non accetta risposte a una risposta. Il thread offre allora **Rispondi su GitHub** |
+| GitLab | Se ne va solo quella nota; il thread e le sue risposte restano |
+| Azure DevOps | Dovrebbe essere segnato come eliminato e nascosto, mantenendo il thread e le sue risposte; la documentazione di Azure non lo dice |
+| Bitbucket Data Center | Rifiutato: Data Center non elimina un commento che ha risposte. Elimina prima le risposte, oppure modificalo |
+
+Alcuni host segnano un commento come **modificato**. Solo Azure DevOps conserva una
+data per il solo testo; su GitHub, Bitbucket Data Center e Forgejo l’app confronta
+quando il commento è stato creato e aggiornato l’ultima volta, quindi lì il segno è
+un’approssimazione (qualsiasi altra cosa tocchi il commento può impostarlo). Su GitLab
+la data cambia anche quando un thread viene risolto, quindi non viene usata.
+
+Cosa non fa:
+
+- **I commenti di revisione di Forgejo** (commenti su una riga) non si possono
+  modificare tramite la sua API, e solo alcune versioni possono eliminarne uno,
+  quindi non mostrano nessuna delle due azioni: cambiali sul sito. I commenti della
+  conversazione funzionano come altrove.
+- **Qualcuno l’ha cambiato nel frattempo.** Bitbucket Data Center controlla la
+  versione del commento: una modifica o un’eliminazione di un commento cambiato da
+  quando la pagina è stata caricata viene rifiutata, e **Aggiorna** mostra quello
+  attuale. Gli altri host tengono l’ultima scrittura.
+- **Non trovato**: quando l’host non trova il commento, il messaggio dice che
+  potrebbe essere stato eliminato, o che questo account non può vederlo, e la pagina
+  rilegge la pull request. Una modifica aperta su un commento che non c’è più viene
+  scartata.
+- Le pull request di **bitbucket.org** si aprono nel browser, quindi non c’è ancora
+  una pagina dove modificarne i commenti, anche se l’app sa fare la chiamata.
+- **La descrizione** della pull request e i riepiloghi delle sue revisioni non sono
+  commenti, e non si modificano qui.
 
 ## Limiti
 

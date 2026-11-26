@@ -3,8 +3,8 @@ title: Page des pull requests
 category: Synchronisation et multi-dépôts
 order: 57
 summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, et des commentaires sur une ligne de son diff.
-keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo
+source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
 ---
 
 # Page des pull requests
@@ -239,6 +239,27 @@ Ce que cela ne fait pas :
   l’application n’a pas encore de page pour elles —, donc cet onglet n’y est pas
   atteint, même si l’application sait lire la liste.
 
+## Lire les fichiers
+
+Une pull request de deux cents fichiers est difficile à lire sous forme de deux
+cents chemins complets. La liste de l’onglet **Fichiers** a le même sélecteur
+**Chemin / Arbre** que le panneau de commit, et le choix vaut pour toute
+l’application. En **Arbre**, les fichiers sont rangés sous leurs dossiers (une
+chaîne comme `src/main/ipc` tient sur une ligne), et chaque dossier affiche son
+**+/−** cumulé et combien de ses fichiers sont vus (*3/5*). La case d’un dossier
+marque comme vus tous les fichiers qu’il contient, ou les décoche tous ; les coches
+restent sur cet ordinateur seulement, jamais envoyées à l’hébergeur. Une coche
+retient la version du diff du fichier : quand un push modifie un fichier vu, il
+redevient non vu, avec un point jaune (*Modifié depuis que vous l’avez vu*). Un
+fichier sans diff (binaire, trop gros) n’est comparé que par son état et ses nombres
+de lignes. Cliquez sur un dossier, ou appuyez sur ←/→ dessus, pour le replier ; ↑/↓
+(ou j/k) parcourent les fichiers à l’écran et ouvrent chaque diff. Les dossiers
+repliés sont retenus par pull request jusqu’à la fermeture de l’application, et un
+fichier ouvert à l’intérieur déplie le chemin jusqu’à lui. L’arbre est trié par nom,
+pas dans l’ordre où l’hébergeur liste les fichiers.
+
+![L’onglet Fichiers en vue arbre : des dossiers avec leurs modifications cumulées et leurs comptes de fichiers vus, l’un replié](../../screenshots/pr-files-tree.webp)
+
 ## Commenter une ligne
 
 On pouvait déjà répondre ici à un fil de relecture, mais pas en ouvrir un, si bien
@@ -324,6 +345,81 @@ des pull requests déjà à l’écran. Une zone de réponse montre ses outils d
 vous cliquez dedans, et envoie avec ⌘/Ctrl+Entrée, puisque Entrée commence
 désormais une nouvelle ligne. [Écrire des commentaires](writing-comments.md)
 donne le détail et les limites.
+
+## Modifier et supprimer vos commentaires
+
+Une coquille dans un commentaire déjà envoyé, ou une remarque qui ne tient plus,
+imposait auparavant un détour par le navigateur. Vos propres commentaires portent
+désormais **Modifier** (le crayon) et **Supprimer** (la corbeille) au bout de leur
+en-tête : commentaires de la conversation, commentaires de fils de relecture et
+réponses, dans les onglets Conversation et Fichiers. La page d’une issue les a aussi,
+pour ses commentaires sur GitHub et Forgejo.
+
+![Votre propre commentaire, marqué modifié, avec Modifier et Supprimer au bout de son en-tête](../../screenshots/comment-editor.webp)
+
+Ce qui est « à vous » est décidé par la page elle-même, qui demande à l’hébergeur, à
+chaque chargement, sous quel compte se connectent les appels de ce dépôt (son profil
+lié, pas le profil actif du moment). La plupart des hébergeurs désignent un auteur
+par son identifiant, comparé sans tenir compte de la casse. Azure DevOps désigne les
+auteurs par leur nom affiché, que deux personnes peuvent partager, donc là l’id de
+l’auteur du commentaire doit correspondre à l’id du compte ; quand l’un des deux
+manque, aucun commentaire n’affiche les actions. Quand l’application ne peut pas
+savoir qui vous êtes (un jeton sans scope utilisateur, ou l’hébergeur n’a pas
+répondu), aucun commentaire ne les affiche non plus ; **Actualiser** redemande.
+L’hébergeur garde le dernier mot : un compte qu’il n’autorise pas à modifier un
+commentaire est refusé, et le message le dit.
+
+- **Modifier** ouvre le commentaire sur place, dans le même éditeur Markdown, avec
+  son texte tel qu’il a été écrit. **Enregistrer** (ou ⌘/Ctrl+Entrée) l’envoie ;
+  **Annuler** ou **Échap** le ferme, en demandant d’abord si vous avez changé quelque
+  chose. Seules les lignes vides autour du texte sont retirées : le code indenté et
+  un saut de ligne final de deux espaces restent tels quels. Le nouveau texte
+  s’affiche aussitôt et la page relit la pull request. Sur la page de la pull
+  request, une modification non enregistrée compte comme du texte non envoyé :
+  **‹ ›** demandent avant de la quitter. La page de l’issue n’a pas ces flèches, et
+  rien n’y demande avant la fermeture de son onglet.
+- **Supprimer** demande toujours d’abord, et la question dit ce qui se passe : le
+  serveur retire le commentaire pour tout le monde, et c’est irréversible. Il n’y a
+  pas d’entrée d’annulation, puisque rien ne peut le faire revenir.
+
+Supprimer le **premier commentaire d’un fil** qui a des réponses (un fil de
+relecture, ou un commentaire de conversation auquel d’autres ont répondu) diffère
+selon l’hébergeur, et la confirmation dit lequel. Deux de ces cas ne sont pas
+documentés par l’hébergeur, et elle le dit :
+
+| Hébergeur | Premier commentaire d’un fil avec réponses |
+|---|---|
+| GitHub | Les réponses devraient rester ; la documentation de GitHub ne le dit pas. Répondre à ce fil depuis l’application n’est plus possible : ses réponses pointent vers un commentaire disparu, et l’API n’accepte pas de réponse à une réponse. Le fil propose alors **Répondre sur GitHub** |
+| GitLab | Seule cette note disparaît ; le fil et ses réponses restent |
+| Azure DevOps | Devrait être marqué supprimé et masqué, en gardant le fil et ses réponses ; la documentation d’Azure ne le dit pas |
+| Bitbucket Data Center | Refusé : Data Center ne supprime pas un commentaire qui a des réponses. Supprimez d’abord les réponses, ou modifiez-le plutôt |
+
+Certains hébergeurs marquent un commentaire **modifié**. Seul Azure DevOps garde une
+date pour le texte seul ; sur GitHub, Bitbucket Data Center et Forgejo, l’application
+compare la date de création et la dernière mise à jour du commentaire, si bien que
+la marque y est une approximation (tout ce qui touche le commentaire peut la
+déclencher). La date de GitLab bouge aussi quand un fil est résolu, elle n’est donc
+pas utilisée.
+
+Ce que cela ne fait pas :
+
+- **Les commentaires de relecture de Forgejo** (commentaires sur une ligne) ne
+  peuvent pas être modifiés via son API, et seules certaines versions peuvent en
+  supprimer un, donc ils n’affichent aucune des deux actions : changez-les sur le
+  site. Les commentaires de conversation marchent comme ailleurs.
+- **Quelqu’un l’a changé entre-temps.** Bitbucket Data Center vérifie la version du
+  commentaire : une modification ou une suppression d’un commentaire changé depuis le
+  chargement de la page est refusée, et **Actualiser** affiche la version actuelle.
+  Les autres hébergeurs retiennent la dernière écriture.
+- **Introuvable** : quand l’hébergeur ne trouve pas le commentaire, le message dit
+  qu’il a peut-être été supprimé, ou que ce compte ne peut pas le voir, et la page
+  relit la pull request. Une modification ouverte sur un commentaire disparu est
+  abandonnée.
+- Les pull requests de **bitbucket.org** s’ouvrent dans le navigateur, il n’y a donc
+  pas encore de page où modifier leurs commentaires, même si l’application sait faire
+  l’appel.
+- **La description** de la pull request et les résumés de ses relectures ne sont pas
+  des commentaires, et ne se modifient pas ici.
 
 ## Limites
 
