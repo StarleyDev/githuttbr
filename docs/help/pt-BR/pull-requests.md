@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
-summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — e ‹ › para percorrer a lista filtrada de dentro de um PR.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, e comentários numa linha do diff.
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código
+source: 773f3c2a8d31429d0b1b61b5aa4a63d8cf3806ca
 ---
 
 # Página de pull requests
@@ -156,6 +156,62 @@ O que não faz:
 - **Esta janela.** O checkout acontece na working tree deste repositório.
   Quando a branch já está em checkout em outra [worktree](worktrees.md), a aba
   dessa worktree é aberta no lugar.
+
+## Comentar numa linha
+
+Responder a uma thread de revisão já era possível aqui; começar uma, não — então
+uma revisão de verdade ainda mandava você para o navegador. Na aba **Arquivos**
+de um pull request, qualquer linha do diff aceita um comentário próprio:
+
+- **Passe o mouse sobre uma linha** e clique no **+** que aparece sobre o
+  número dela, ou **clique na própria linha** (um clique que termina uma
+  seleção de texto não conta — isso é copiar). O menu do botão direito também
+  tem *Comentar na linha N*.
+- Uma caixa abre **logo abaixo da linha**. Escreva e clique em **Comentar** —
+  ou ⌘/Ctrl+Enter. **Cancelar** ou **Esc** fecha a caixa e descarta o texto.
+- Quando dá certo, a nova thread aparece **embaixo da linha** e nas threads de
+  revisão da aba Conversa, onde todo mundo vai vê-la.
+
+![Um comentário sendo escrito embaixo de uma linha alterada, com uma thread anterior embaixo da linha dela](../../screenshots/pr-line-comment.webp)
+
+O lado em que o comentário fica segue a linha:
+
+| Linha | Ancorada em |
+|---|---|
+| **Adicionada** (verde) | A versão nova do arquivo, no número novo |
+| **Removida** (vermelha) | A versão antiga, no número antigo |
+| **Sem alteração** | A versão nova (o GitLab recebe os dois números, como exige) |
+
+As threads que já existem também aparecem embaixo das linhas delas, com a
+caixa de resposta onde o host deixa o app responder dentro de uma thread (o
+Forgejo não deixa). Uma thread que o host põe no lado antigo ou novo de uma
+linha mostrada no diff fica ali; o resto — um comentário numa linha fora dos
+trechos mostrados, ou um comentário desatualizado do GitHub cuja linha mudou
+depois — fica só na aba Conversa, em vez de numa linha adivinhada.
+
+Um comentário digitado e não enviado conta como texto não enviado: **‹ ›** e
+Alt+setas perguntam antes de deixá-lo para trás, como fazem com a caixa de
+comentário principal. Olhar outro arquivo mantém o texto; para começar um em
+outra linha, envie ou cancele o primeiro.
+
+O que não faz:
+
+- **Uma linha, enviada na hora.** Não há intervalo de linhas, nem revisão
+  pendente para juntar comentários e enviar depois, nem sugestão de alteração.
+  Cada comentário é publicado no momento em que você envia, como uma thread
+  própria (no Forgejo, como uma revisão com esse único comentário, já que o
+  Forgejo não tem uma chamada para um comentário avulso).
+- **O diff que o host mandou.** A linha é ancorada no diff como ele foi
+  carregado. Se a branch andou desde então, o host pode recusar a linha como
+  fora do diff; a mensagem diz isso — **Atualize** e tente de novo.
+- **Recusado.** Sem permissão para comentar (um token só de leitura, uma conta
+  que o repositório não deixa comentar), o host recusa e a mensagem diz que o
+  motivo é esse.
+- **bitbucket.org**: os pull requests abrem no navegador — o app ainda não tem
+  página para eles — então um comentário de linha ali continua sendo feito no
+  site.
+- **Um arquivo sem diff** (binário, ou grande demais para o host incluir) não
+  tem linhas para comentar.
 
 ## Limites
 

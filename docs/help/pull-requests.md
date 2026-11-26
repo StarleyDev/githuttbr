@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — and ‹ › to walk the filtered list from inside a PR.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, and comments on a line of its diff.
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review
 ---
 
 # Pull requests page
@@ -151,6 +151,58 @@ What it does not do:
 - **This window.** The checkout happens in this repository's working tree. When
   the branch is already checked out in another [worktree](worktrees.md), that
   worktree's tab opens instead.
+
+## Commenting on a line
+
+Replying to a review thread was possible here; starting one was not, so a real
+review still sent you to the browser. In a pull request's **Files** tab, any
+line of the diff takes a comment of its own:
+
+- **Hover a line** and press the **+** that appears over its number, or
+  **click the line** itself (a click that ends a text selection does not count —
+  that is copying). The right-click menu has *Comment on line N* too.
+- A box opens **under that line**. Write, then **Comment** — or ⌘/Ctrl+Enter.
+  **Cancel** or **Esc** closes it and drops what was typed.
+- On success the new thread appears **under its line**, and in the
+  Conversation tab's review threads, where everyone else will see it.
+
+![A comment being written under a changed line, with an earlier thread under its own line](../screenshots/pr-line-comment.webp)
+
+Which side the comment lands on follows the line:
+
+| Line | Anchored to |
+|---|---|
+| **Added** (green) | The new version of the file, at its new number |
+| **Deleted** (red) | The old version, at its old number |
+| **Unchanged** | The new version (GitLab is sent both numbers, as it requires) |
+
+Existing threads are drawn under their lines as well, with their reply box
+where the host lets the app reply inside a thread (Forgejo does not).
+A thread the host places on the old or new side of a line shown in the diff
+is placed there; anything else — a comment on a line outside the hunks shown,
+or an outdated GitHub comment whose line has since changed — stays in the
+Conversation tab only, rather than on a guessed line.
+
+A comment typed and not sent counts as unsent text: **‹ ›** and Alt+arrows ask
+before leaving it, as they do for the main comment box. Looking at another file
+keeps it; to start one on another line, post or cancel the first.
+
+What it does not do:
+
+- **One line, posted at once.** There is no range of lines, no pending review to
+  batch comments into and submit later, and no suggested change. Each comment is
+  published the moment you send it, as its own thread (on Forgejo, as a review
+  holding that one comment, since Forgejo has no single-comment call).
+- **The diff the host sent.** A line is anchored to the diff as it was loaded.
+  If the branch moved since, the host may refuse the line as outside the diff;
+  the message says so — **Refresh** and try again.
+- **Refused.** Without permission to comment (a read-only token, an account the
+  repository does not let comment), the host refuses it and the message says
+  that is the reason.
+- **bitbucket.org** pull requests open in the browser — the app has no page
+  for them yet — so a line comment there is still made on the website.
+- **A file without a diff** (binary, or too large for the host to include)
+  has no lines to comment on.
 
 ## Limits
 
