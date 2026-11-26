@@ -433,7 +433,7 @@ class AzureAuthError extends Error {
 }
 
 /**
- * An Azure DevOps file's raw bytes (`$format=octetStream`), read up to `max`:
+ * An Azure DevOps file's raw bytes (asked with `Accept: application/octet-stream`), read up to `max`:
  * past it, `tooLarge` and the rest of the body is not read. A refusal throws
  * an AzureAuthError carrying its status and Retry-After, so the caller can
  * retry a throttle; a sign-in page (HTML) is a 401 like adoJson's.

@@ -1,6 +1,6 @@
 import type { PrDiffCommits, PrFile, PrFilesFetchMode, RemoteInfo } from '../shared/types'
-import { fetchCommitsByIdQuietly, gitService, QUIET_FETCH_TIMEOUT_MS, withRepoLock } from './git'
-import { muteRepoWatches } from './watcher'
+import { fetchCommitsByIdQuietly, gitService, withRepoLock, withRepoLockWithin } from './git'
+import { holdRepoWatches } from './watcher'
 
 /**
  * A pull request's Files tab, read from this clone when it can be. `git diff`
@@ -74,7 +74,7 @@ export async function hasPrCommits(repoPath: string, shas: string[]): Promise<bo
 }
 
 /** One attempt per (repository, commits) this session: in flight, or done with its result. */
-const fetchAttempts = new Map<string, { done: boolean; run: Promise<boolean> }>()
+const fetchAttempts = new Map<string, FetchAttempt>()
 
 /** Forget every attempt — for the tests; the app keeps them for the session. */
 export function clearPrFetchAttempts(): void {
@@ -84,7 +84,7 @@ export function clearPrFetchAttempts(): void {
 /**
  * Make sure both commits are here: fetched by id from the remote whose URL is
  * the pull request's when they are not, as `mode` allows. A quiet write —
- * objects only (fetchCommitsByIdQuietly), the watcher muted for it. Two calls
+ * objects only (fetchCommitsByIdQuietly), the watcher held for it. Two calls
  * for the same commits share one fetch. `onFetching` is told when a fetch
  * starts and ends, for the tab's hint. False when they still are not here.
  */
@@ -117,28 +117,67 @@ export async function ensureCommitsFrom(
   if (mode === 'none') return false
   const key = [repoPath, ...wanted.map((s) => s.toLowerCase()).sort()].join('\0')
   const prior = fetchAttempts.get(key)
-  // In flight: wait for it. Done and this is not a Refresh: its answer stands.
-  if (prior && (!prior.done || mode === 'once')) return prior.run
+  // In flight: join it, hint included. Done and this is not a Refresh: its answer stands.
+  if (prior && (!prior.done || mode === 'once')) return joinFetchAttempt(prior, onFetching)
   const missing = wanted.filter((s) => !here.some((h) => h.toLowerCase() === s.toLowerCase()))
-  const entry = { done: false, run: Promise.resolve(false) }
+  const entry: FetchAttempt = { done: false, fetching: false, listeners: new Set(), run: Promise.resolve(false) }
+  if (onFetching) entry.listeners.add(onFetching)
+  const tell = (fetching: boolean): void => {
+    entry.fetching = fetching
+    for (const l of entry.listeners) l(fetching)
+  }
   entry.run = (async (): Promise<boolean> => {
     const remote = await remoteOf()
     if (!remote) return false
-    onFetching?.(true)
-    // Objects land under .git/objects (watcher noise anyway); the mute covers the rest of the churn.
-    muteRepoWatches(repoPath, QUIET_FETCH_TIMEOUT_MS + 2000)
+    tell(true)
     try {
-      return await withRepoLock(repoPath, 'fetchCommitsById', () => fetchCommitsByIdQuietly(repoPath, remote, missing))
+      // The lock first, at most PR_FETCH_LOCK_WAIT_MS: behind a long push the list goes to the API instead.
+      const res = await withRepoLockWithin(repoPath, 'fetchCommitsById', PR_FETCH_LOCK_WAIT_MS, async () => {
+        // Held only while the fetch runs, from inside the lock; what changes meanwhile is sent after.
+        const release = holdRepoWatches(repoPath)
+        try {
+          return await fetchCommitsByIdQuietly(repoPath, remote, missing)
+        } finally {
+          release()
+        }
+      })
+      if (!res.ran) {
+        // Not an attempt: the next load may try again.
+        fetchAttempts.delete(key)
+        return false
+      }
+      return res.value
     } catch {
       return false
     } finally {
-      muteRepoWatches(repoPath, 1500)
-      onFetching?.(false)
+      tell(false)
     }
   })().finally(() => {
     entry.done = true
+    entry.listeners.clear()
   })
   fetchAttempts.set(key, entry)
+  return entry.run
+}
+
+/** How long the quiet fetch waits for the repository's lock before the list uses the API. */
+export const PR_FETCH_LOCK_WAIT_MS = 5_000
+
+interface FetchAttempt {
+  done: boolean
+  /** The fetch itself is running (the remote found, the lock awaited or held). */
+  fetching: boolean
+  /** Every caller's hint, the joiners' too. */
+  listeners: Set<(fetching: boolean) => void>
+  run: Promise<boolean>
+}
+
+/** A caller sharing an attempt in flight: told it is fetching now, and when it ends. */
+function joinFetchAttempt(entry: FetchAttempt, onFetching?: (fetching: boolean) => void): Promise<boolean> {
+  if (onFetching && !entry.done) {
+    entry.listeners.add(onFetching)
+    if (entry.fetching) onFetching(true)
+  }
   return entry.run
 }
 
@@ -158,6 +197,12 @@ export async function readPrFilesFromClone(repoPath: string, commits: PrDiffComm
   const base = commits.baseSha
   if (commits.baseKind !== 'mergeBase' || !isFullSha(base) || !isFullSha(commits.headSha)) return null
   if (!(await hasPrCommits(repoPath, [base, commits.headSha]))) return null
+  // A merge base is an ancestor of the head. One that is not (Data Center's `fromHash` read
+  // the wrong way round, a host's stale answer) would diff the wrong thing: ask the API instead.
+  const ancestor = await withRepoLock(repoPath, 'isAncestor', () => gitService.isAncestor(repoPath, base, commits.headSha)).catch(
+    () => false
+  )
+  if (!ancestor) return null
   try {
     const files = await withRepoLock(repoPath, 'getCommitRangeFiles', () =>
       gitService.getCommitRangeFiles(repoPath, base, commits.headSha)

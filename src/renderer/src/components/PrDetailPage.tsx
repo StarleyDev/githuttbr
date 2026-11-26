@@ -321,14 +321,18 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   )
 
   // A file read on demand joins the list — drawn by the same viewer, line comments and all —
-  // when it was read at the revision the list shows; one from another push is left to its notice.
-  const takeFileDiff = useCallback(
-    (read: PrFile): void => {
-      if (!read.patch || !filesRevision || read.diffSource?.headSha !== filesRevision.headSha) return
-      setFiles((list) => list?.map((f) => (f.filename === read.filename ? read : f)) ?? list)
-    },
-    [filesRevision]
-  )
+  // when it was read between the same two commits as the entry it replaces, compared against
+  // the list as it is now: a refresh that landed while the read ran leaves the new entry alone.
+  const takeFileDiff = useCallback((read: PrFile): void => {
+    const src = read.diffSource
+    if (!read.patch || !src) return
+    setFiles(
+      (list) =>
+        list?.map((f) =>
+          f.filename === read.filename && f.diffSource?.headSha === src.headSha && f.diffSource?.baseSha === src.baseSha ? read : f
+        ) ?? list
+    )
+  }, [])
   const reloadFiles = useCallback(() => void load(), [load])
 
 
