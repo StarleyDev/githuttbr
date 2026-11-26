@@ -440,40 +440,53 @@ each one has to be fetched twice and compared; GitHub stops at 3000 files and
 leaves out the patch of a large one; GitLab marks a big diff *too large* and
 sends nothing. So the Files tab reads **this clone first**, on every host:
 
-1. It asks the host for the pull request's two commits — where it starts (the
-   merge base, or the target branch it is computed from) and its head.
-2. When both are here, `git diff` between them gives every file, in one read,
-   with no cap on how many. These are the same two commits the host's own page
-   compares, so a line number here is the line number there and a line comment
-   lands where you put it.
+1. It asks the host for the pull request's two commits — where it starts and
+   its head. Azure DevOps, GitLab and Forgejo name the merge base; Bitbucket
+   Data Center names the base of the diff its line comments anchor to; GitHub
+   names only the target branch, whose merge base with the head is then worked
+   out here (or, without the commits, by GitHub's compare). The image preview
+   uses the same two commits.
+2. When both are here, `git diff` between them gives every file, with no cap
+   on how many. These are the same two commits the host's own page compares,
+   so a line number here is the line number there and a line comment lands
+   where you put it.
 3. When they are not here, they are fetched **by their ids** from the pull
-   request's remote — objects only, no branch is created or moved — and then
-   diffed here. A server that will not hand out a commit by id (some Azure
-   DevOps and plain git servers) is skipped quietly.
+   request's remote — objects only, no branch is created or moved — once, when
+   the page opens (and again on Refresh), with *Fetching the pull request's
+   commits…* above the list meanwhile. A server that will not hand out a
+   commit by id (some Azure DevOps and plain git servers) is skipped quietly.
 4. Only then is the host's API used, and a file it gives no diff for says why
    instead of pretending to be empty (below).
 
+A file read later — opened while *not loaded yet*, or after **Try again** —
+joins the list like the others: the same viewer, and line comments on it.
+
 On Azure DevOps the API path reads the first hundred files when the tab opens,
-three at a time, and the rest when you open each one. A throttled request is
-retried after the wait the server asks for; one that still fails says so, with
-the reason. Whether a file is text is decided from its bytes, not from Azure's
-own *binary* flag — which it also sets on UTF-16 files and on some text that is
-not ASCII.
+three at a time and within a minute in all, and the rest when you open each
+one. A throttled request pauses every read until the wait the server asks for;
+one that still fails says so, with the reason. Whether a file is text is
+decided from its bytes, not from Azure's own *binary* flag — which it also sets
+on UTF-16 files and on some text that is not ASCII. When the host lists fewer
+files than the pull request has (GitHub stops at 3000), a line above the list
+says so.
 
 ### When a file shows no diff
 
 | What it says | Why | What you can do |
 |---|---|---|
 | **Binary** | Its bytes are not text: an image, an archive. UTF-16 and legacy single-byte text are recognised as text. | Open it on the host. |
-| **Too large to show** | More than 20,000 changed lines, or a version over 4 MB. Its **+/−** is still counted when the clone read it. | Open it on the host. |
-| **Not loaded yet** | Azure DevOps, read from the API: past the first hundred files. | It loads when you open it; **Load the diff** if it did not. |
+| **Too large to show** | More than 20,000 changed lines or 8 MB of diff, or a version over 4 MB. Its **+/−** is still counted when the clone read it. | Open it on the host. |
+| **Not loaded yet** | Past what one read keeps (about 150,000 lines of diffs), or, from Azure DevOps' API, past the first hundred files or the minute. | It loads when you open it; **Load the diff** if it did not. |
 | **Couldn't load** | The read failed — the reason is shown under it. | **Try again**. |
 | **The host left it out** | The host's API sent no diff and this clone does not have the pull request's commits. | **Fetch the pull request to see it locally** — the commits by id, or a fork's pull request head — then it is diffed here. |
 | **Only the name or mode changed** | A rename or a permission change: the content is the same. | Nothing to review in the content. |
+| **Encoding changed** | The same text saved another way: a byte-order mark added or removed, UTF-16 turned into UTF-8. | Check the change is meant — some tools care. |
 
-In the list, a file whose diff was not read shows **—** instead of **+0 −0**,
-which would read as "nothing changed". When the host counts the lines anyway
-(GitHub does, even for a patch it leaves out), the counts are shown.
+In the list, a file whose diff was not read — not loaded yet, couldn't load,
+left out by the host — shows **—** instead of **+0 −0**, which would read as
+"nothing changed". A binary file and a pure rename show their real **+0 −0**,
+and when the host counts the lines anyway (GitHub does, even for a patch it
+leaves out), the counts are shown.
 
 ## Commenting on a line
 
@@ -807,12 +820,26 @@ What it does not do:
   its list has no last-activity time.
 - The walk is remembered while the app runs; after a restart, a pull request
   opened from the list walks the open pull requests instead.
-- **Reading the files may fetch.** When the pull request's commits are not in
-  this clone, opening the Files tab fetches them by id from its remote — a
-  network read that writes objects (and `FETCH_HEAD`), never a branch. A shallow
-  or partial clone that lacks the objects falls back to the host's API.
-- **A file opened on demand** — read after the list, from the API or after a
-  fetch — is shown without line comments: those need the diff the tab loaded.
-  Refresh the page after fetching to comment on it.
+- **Reading the files may fetch — once.** When the pull request's commits are
+  not in this clone, the page fetches them by id from its remote when it opens,
+  and again on **Refresh** — never after a comment, a review or a merge, and at
+  most once per pull request version per session (a failed attempt waits for
+  Refresh). It writes objects only: no branch, and not `FETCH_HEAD`, so the
+  toolbar's "fetched … ago" does not move. It gives up after 20 seconds, or
+  when the transfer crawls under 1 KB/s for 15, and never asks for a password:
+  git's prompt is off and Git Credential Manager is told not to open its
+  sign-in window, so a remote that needs one falls back to the API. An ssh
+  remote uses your own ssh settings as they are. A shallow or partial clone
+  that lacks the objects falls back to the host's API.
 - **Over the caps**, a file is listed with its counts and no diff: 20,000
-  changed lines read from the clone, 4 MB per version read from Azure DevOps.
+  changed lines or 8 MB of diff read from the clone, 4 MB per version read
+  from Azure DevOps. One read keeps about 150,000 lines or 48 MB of diffs; the
+  files after that are **not loaded yet** and are read when opened.
+- **UTF-16 files** that git calls binary are read again as text, up to 50 per
+  pull request and 2 MB per version; past that they show as binary.
+- **Renames** are detected as `git diff -M` detects them (50% similar by
+  default), which can differ a little from the host's own pairing.
+- **Azure DevOps through the API** reads its first hundred files within one
+  minute in all; the files left when the minute is up are **not loaded yet**.
+  A throttled answer pauses every read until the server's Retry-After. A pull
+  request of more than 20,000 changes is listed up to there, and the tab says so.
