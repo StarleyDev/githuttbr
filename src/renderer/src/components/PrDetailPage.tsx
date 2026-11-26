@@ -43,7 +43,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
-import { forgetFinished, registerPrDraft } from '../stores/prList'
+import { forgetFinished, hasUnsentPrDraft, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
@@ -67,7 +67,7 @@ import { readableError } from '../lib/gitErrorHint'
 import { parseDiff } from '../lib/diff'
 import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComment'
 import { getAnchorLine } from '../../../shared/prLineAnchor'
-import { MarkdownEditor, useRepoReferences } from './MarkdownEditor'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
@@ -284,7 +284,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
         : [],
     [pr]
   )
-  const references = useRepoReferences(repoPath)
+  const getReferences = useRepoReferenceGetter(repoPath)
 
   // One review thread — in the conversation, and under its line in the Files
   // tab. Stable while nothing it shows changes, so the Files tab's line blocks
@@ -306,10 +306,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           onReply={(text) => replyRef.current(th.rootId, text)}
           busy={busy}
           mentions={mentions}
-          references={references}
+          getReferences={getReferences}
         />
       ) : null,
-    [pr, web, canReplyInThread, busy, mentions, references]
+    [pr, web, canReplyInThread, busy, mentions, getReferences]
   )
   const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
@@ -505,7 +505,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   onPostLineDraft={postLineDraft}
                   busy={busy}
                   mentions={mentions}
-                  references={references}
+                  getReferences={getReferences}
                 />
               )
             ) : checks === null ? (
@@ -555,7 +555,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   value={comment}
                   onChange={setComment}
                   mentions={mentions}
-                  references={references}
+                  getReferences={getReferences}
+                  // Leaving for the guide unmounts the page: every box on it counts.
+                  hasUnsentText={hasUnsentPrDraft}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       e.preventDefault()
@@ -811,7 +813,7 @@ function ReviewThreadCard({
   onReply,
   busy,
   mentions,
-  references
+  getReferences
 }: {
   thread: PrReviewThread
   pr: PrDetail
@@ -822,7 +824,7 @@ function ReviewThreadCard({
   onReply: (text: string) => Promise<boolean>
   busy: boolean
   mentions: string[]
-  references: MarkdownReference[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
   const key = String(thread.rootId)
@@ -865,7 +867,9 @@ function ReviewThreadCard({
             value={reply}
             onChange={changeReply}
             mentions={mentions}
-            references={references}
+            getReferences={getReferences}
+            // Leaving for the guide unmounts the page: every box on it counts.
+            hasUnsentText={hasUnsentPrDraft}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
@@ -896,7 +900,7 @@ function LineCommentComposer({
   onCancel,
   onPost,
   mentions,
-  references
+  getReferences
 }: {
   anchor: PrLineAnchor
   draft: React.RefObject<string>
@@ -904,7 +908,7 @@ function LineCommentComposer({
   onCancel: () => void
   onPost: (text: string) => void
   mentions: string[]
-  references: MarkdownReference[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -946,7 +950,9 @@ function LineCommentComposer({
         value={text}
         onChange={change}
         mentions={mentions}
-        references={references}
+        getReferences={getReferences}
+        // Leaving for the guide unmounts the page: every box on it counts.
+        hasUnsentText={hasUnsentPrDraft}
         // Escape reaches this only when no @/# list is open: the list closes first.
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -1175,7 +1181,7 @@ function FilesSection({
   onPostLineDraft,
   busy,
   mentions,
-  references
+  getReferences
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -1191,7 +1197,7 @@ function FilesSection({
   onPostLineDraft: (text: string) => Promise<boolean>
   busy: boolean
   mentions: string[]
-  references: MarkdownReference[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
@@ -1241,7 +1247,7 @@ function FilesSection({
           draft={lineDraftText}
           busy={busy}
           mentions={mentions}
-          references={references}
+          getReferences={getReferences}
           onCancel={() => {
             handlers.current.onCancelLineDraft()
             if (draftIdx >= 0) refocusLine(draftIdx)
@@ -1253,7 +1259,7 @@ function FilesSection({
           }
         />
       ) : null,
-    [lineDraft, lineDraftText, busy, draftIdx, refocusLine, mentions, references]
+    [lineDraft, lineDraftText, busy, draftIdx, refocusLine, mentions, getReferences]
   )
   const lineExtras = useMemo(() => {
     const map = new Map<number, React.ReactNode>()

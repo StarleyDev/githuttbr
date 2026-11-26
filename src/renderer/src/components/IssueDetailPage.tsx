@@ -22,7 +22,7 @@ import { autolink, remoteWebUrl } from '../lib/autolink'
 import { useRepoStore } from '../stores/repo'
 import { NO_ITEMS } from '../lib/stableEmpty'
 import { collectMentionNames } from '../lib/markdownEdit'
-import { MarkdownEditor, useRepoReferences } from './MarkdownEditor'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 
 type IssuePage = Extract<PageContent, { type: 'issue' }>
 
@@ -52,7 +52,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
     () => (detail ? collectMentionNames([detail.author], detail.assignees, detail.comments.map((c) => c.author)) : []),
     [detail]
   )
-  const references = useRepoReferences(repoPath)
+  const getReferences = useRepoReferenceGetter(repoPath)
 
   const load = useCallback(async (): Promise<void> => {
     setError(null)
@@ -169,7 +169,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
               value={comment}
               onChange={setComment}
               mentions={mentions}
-              references={references}
+              getReferences={getReferences}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()

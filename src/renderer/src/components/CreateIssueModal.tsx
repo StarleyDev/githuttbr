@@ -6,7 +6,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { useT } from '../i18n'
 import { collectMentionNames } from '../lib/markdownEdit'
-import { MarkdownEditor, useRepoReferences } from './MarkdownEditor'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 
 export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; remoteUrl: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -23,7 +23,7 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
   const prs = useRepoStore((s) => s.repos[repoPath]?.prs)
   const issues = useRepoStore((s) => s.repos[repoPath]?.issues)
   const mentions = useMemo(() => collectMentionNames(prs?.map((p) => p.author), issues?.map((i) => i.author)), [prs, issues])
-  const references = useRepoReferences(repoPath)
+  const getReferences = useRepoReferenceGetter(repoPath)
 
   const submit = async (): Promise<void> => {
     if (!title.trim()) return
@@ -66,9 +66,15 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
         placeholder={t('issue.descriptionPlaceholder')}
         ariaLabel={t('issue.descriptionLabel')}
         mentions={mentions}
-        references={references}
-        // A dialog would cover the handbook page the hint opens.
+        getReferences={getReferences}
+        // A dialog would cover the handbook page the full guide opens.
         helpLink={false}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            void submit()
+          }
+        }}
       />
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} disabled={busy}>

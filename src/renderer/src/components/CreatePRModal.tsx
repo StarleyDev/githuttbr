@@ -11,7 +11,7 @@ import { readOpenAfterCreate, writeOpenAfterCreate } from '../lib/prCreated'
 import { prBaseHint, prBaseRemote } from '../lib/prBase'
 import { announcePrCreated } from '../stores/prCreated'
 import { collectMentionNames } from '../lib/markdownEdit'
-import { MarkdownEditor, useRepoReferences } from './MarkdownEditor'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 import {
   createPickerCache,
   freeEntry,
@@ -229,7 +229,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
       ),
     [meta, repoPrs]
   )
-  const references = useRepoReferences(spec.repoPath)
+  const getReferences = useRepoReferenceGetter(spec.repoPath)
 
   const submit = async (): Promise<void> => {
     if (!valid) return
@@ -315,8 +315,8 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         placeholder={t('createPR.descriptionPlaceholder')}
         ariaLabel={t('createPR.descriptionLabel')}
         mentions={mentions}
-        references={references}
-        // A dialog would cover the handbook page the hint opens.
+        getReferences={getReferences}
+        // A dialog would cover the handbook page the full guide opens.
         helpLink={false}
       />
 

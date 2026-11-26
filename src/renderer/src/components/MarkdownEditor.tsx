@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Bold,
@@ -14,9 +14,11 @@ import {
   TextQuote
 } from 'lucide-react'
 import { MarkdownHtml } from './MarkdownHtml'
+import { MarkdownCheatSheet } from './MarkdownCheatSheet'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
+import { useUIStore } from '../stores/ui'
 import { formatCombo } from '../lib/shortcuts'
 import {
   collectReferences,
@@ -56,6 +58,8 @@ const HEADINGS: { format: LineFormat; labelKey: TranslationKey }[] = [
   { format: 'heading3', labelKey: 'mdEditor.heading3' }
 ]
 
+const isMac = (): boolean => typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)
+
 /** The edit one toolbar tool makes on the current text — pure, from lib/markdownEdit. */
 function editForTool(tool: Tool | LineFormat, state: TextState, t: (k: TranslationKey) => string): TextEdit {
   switch (tool) {
@@ -70,6 +74,30 @@ function editForTool(tool: Tool | LineFormat, state: TextState, t: (k: Translati
     default:
       return toggleLinePrefix(state, tool)
   }
+}
+
+/**
+ * The tool a key combination asks for, or null. The modifier is the platform's
+ * own — ⌘ on macOS, Ctrl elsewhere — so the Cocoa Ctrl+B/E/K text bindings
+ * keep working on a Mac. Letters fall back to the physical key on a layout
+ * whose B is not a Latin "b" (Cyrillic, Greek…); Shift+8 and Shift+7 are read
+ * by physical key always, since they type "*" on one layout and "(" on another.
+ */
+function getToolForKey(e: React.KeyboardEvent): Tool | null {
+  const mod = (isMac() ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey) && !e.altKey
+  if (!mod) return null
+  if (e.shiftKey) {
+    if (e.code === 'Digit8') return 'bullet'
+    if (e.code === 'Digit7') return 'numbered'
+    return null
+  }
+  const key = e.key.toLowerCase()
+  const letter = /^[a-z]$/.test(key) ? key : /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : ''
+  if (letter === 'b') return 'bold'
+  if (letter === 'i') return 'italic'
+  if (letter === 'e') return 'code'
+  if (letter === 'k') return 'link'
+  return null
 }
 
 /**
@@ -92,8 +120,13 @@ function applyEdit(el: HTMLTextAreaElement, edit: TextEdit): void {
   } catch {
     done = false
   }
-  if (!done || el.value !== expected) {
+  if (!done) {
     el.setRangeText(edit.text, edit.start, edit.end, 'end')
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  } else if (el.value !== expected) {
+    // The command ran but left something else (an autocorrect, a browser
+    // quirk): the text is set outright — applying the range again would double it.
+    el.value = expected
     el.dispatchEvent(new Event('input', { bubbles: true }))
   }
   el.setSelectionRange(edit.selStart, edit.selEnd)
@@ -131,7 +164,7 @@ function getCaretPoint(el: HTMLTextAreaElement, pos: number): { left: number; to
 
 /** A combo as `aria-keyshortcuts` spells it: "mod+shift+8" → "Control+Shift+8" (Meta on macOS). */
 function ariaShortcut(combo: string): string {
-  const mac = /mac/i.test(navigator.platform)
+  const mac = isMac()
   return combo
     .split('+')
     // i18n-ignore ARIA key names, read by assistive tech, never shown
@@ -154,16 +187,28 @@ export interface MarkdownEditorProps {
   className?: string
   autoFocus?: boolean
   inputRef?: React.Ref<HTMLTextAreaElement>
-  /** Keys the editor did not take for itself: ⌘/Ctrl+Enter to send, Escape to cancel. */
-  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  /**
+   * Keys the editor did not take for itself: ⌘/Ctrl+Enter to send, Escape to
+   * cancel — from the field, and from the tabs, toolbar or preview around it.
+   */
+  onKeyDown?: (e: React.KeyboardEvent<HTMLElement>) => void
   /** People an @ offers, from what the page already shows. */
   mentions?: string[]
-  /** Pull requests and issues a # offers. */
-  references?: MarkdownReference[]
+  /**
+   * Pull requests and issues a # offers — read when a # list opens, not held:
+   * the repository's lists are refreshed in the background, and a new array
+   * each time would re-render whatever holds the editor.
+   */
+  getReferences?: () => MarkdownReference[]
   /** A box in a list of many (thread replies): the tools appear once it is used. */
   compact?: boolean
-  /** The "Markdown supported" hint opens the handbook — off inside a dialog, which would hide it. */
+  /** The cheat sheet links to the full guide — off inside a dialog, which would hide it. */
   helpLink?: boolean
+  /**
+   * Whether leaving for the guide would lose text: every unsent box on the
+   * page, not only this one. Defaults to this box's own text.
+   */
+  hasUnsentText?: () => boolean
   spellCheck?: boolean
 }
 
@@ -188,9 +233,10 @@ export function MarkdownEditor({
   inputRef,
   onKeyDown,
   mentions,
-  references,
+  getReferences,
   compact = false,
   helpLink = true,
+  hasUnsentText,
   spellCheck = true
 }: MarkdownEditorProps): React.JSX.Element {
   const t = useT()
@@ -199,6 +245,7 @@ export function MarkdownEditor({
   const [mode, setMode] = useState<'write' | 'preview'>('write')
   const [focused, setFocused] = useState(false)
   const [headingOpen, setHeadingOpen] = useState(false)
+  const [cheatAnchor, setCheatAnchor] = useState<HTMLElement | null>(null)
   const [toolIndex, setToolIndex] = useState(0)
   const [completion, setCompletion] = useState<Completion | null>(null)
   const completionRef = useRef<Completion | null>(null)
@@ -222,7 +269,7 @@ export function MarkdownEditor({
 
   const listId = `${id}-ac`
   const optionId = (i: number): string => `${id}-ac-${i}`
-  const expanded = !compact || focused || !!value || mode === 'preview'
+  const expanded = !compact || focused || !!value || mode === 'preview' || !!cheatAnchor
 
   /** Recomputes the @/# list from the caret — after typing, clicking or moving it. */
   const refreshCompletion = (): void => {
@@ -236,7 +283,7 @@ export function MarkdownEditor({
     const items =
       q.trigger === '@'
         ? filterMentions(mentions ?? [], q.query).map((login) => ({ id: login, insert: login, primary: login }))
-        : filterReferences(references ?? [], q.query).map((r) => ({
+        : filterReferences(getReferences?.() ?? [], q.query).map((r) => ({
             id: `${r.kind}-${r.number}`,
             insert: String(r.number),
             primary: `#${r.number}`,
@@ -254,16 +301,29 @@ export function MarkdownEditor({
   // The list sits under the trigger character — above it near the bottom of the
   // window, where the PR page's comment box lives. Fixed, in a portal on <body>:
   // dialogs and the diff's line blocks clip anything positioned inside them.
+  // Measured when a list opens on a new @ or #, and when the page scrolls or
+  // the window resizes — not on every key typed after the trigger.
+  const anchorStart = completion ? completion.query.start : null
   useLayoutEffect(() => {
     const el = ref.current
-    if (!completion || !el) return setPopupAt(null)
-    const caret = getCaretPoint(el, completion.query.start)
-    const box = el.getBoundingClientRect()
-    const left = Math.max(4, Math.min(box.left + caret.left, window.innerWidth - 284))
-    const lineTop = box.top + Math.max(0, Math.min(caret.top, box.height - caret.height))
-    const above = lineTop + caret.height + 220 > window.innerHeight
-    setPopupAt(above ? { left, bottom: window.innerHeight - lineTop + 2 } : { left, top: lineTop + caret.height + 2 })
-  }, [completion])
+    if (anchorStart === null || !el) return setPopupAt(null)
+    const place = (): void => {
+      const caret = getCaretPoint(el, anchorStart)
+      const box = el.getBoundingClientRect()
+      const left = Math.max(4, Math.min(box.left + caret.left, window.innerWidth - 284))
+      const lineTop = box.top + Math.max(0, Math.min(caret.top, box.height - caret.height))
+      const above = lineTop + caret.height + 220 > window.innerHeight
+      setPopupAt(above ? { left, bottom: window.innerHeight - lineTop + 2 } : { left, top: lineTop + caret.height + 2 })
+    }
+    place()
+    window.addEventListener('resize', place)
+    // Capture: the page scrolls inside its own containers, not the window.
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
+  }, [anchorStart])
 
   const pick = (i: number): void => {
     const el = ref.current
@@ -281,7 +341,9 @@ export function MarkdownEditor({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (completion) {
+    // An input method composing a character owns these keys until it commits.
+    const composing = e.nativeEvent.isComposing
+    if (completion && !composing) {
       const n = completion.items.length
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault()
@@ -302,26 +364,15 @@ export function MarkdownEditor({
         return
       }
     }
-    const mod = (e.metaKey || e.ctrlKey) && !e.altKey
-    if (mod) {
-      const key = e.key.toLowerCase()
-      let tool: Tool | null = null
-      if (!e.shiftKey && key === 'b') tool = 'bold'
-      else if (!e.shiftKey && key === 'i') tool = 'italic'
-      else if (!e.shiftKey && key === 'e') tool = 'code'
-      else if (!e.shiftKey && key === 'k') tool = 'link'
-      // By physical key: Shift+8 is "*" on one layout and "(" on another.
-      else if (e.shiftKey && e.code === 'Digit8') tool = 'bullet'
-      else if (e.shiftKey && e.code === 'Digit7') tool = 'numbered'
-      if (tool) {
-        // Taken here, so ⌘K inside a comment makes a link instead of opening the palette.
-        e.preventDefault()
-        e.stopPropagation()
-        runTool(tool)
-        return
-      }
+    const tool = composing ? null : getToolForKey(e)
+    if (tool) {
+      // Taken here, so ⌘K inside a comment makes a link instead of opening the palette.
+      e.preventDefault()
+      e.stopPropagation()
+      runTool(tool)
+      return
     }
-    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && !composing) {
       const el = e.currentTarget
       const edit = continueList({ value: el.value, selStart: el.selectionStart, selEnd: el.selectionEnd })
       if (edit) {
@@ -331,6 +382,13 @@ export function MarkdownEditor({
       }
     }
     onKeyDown?.(e)
+  }
+
+  // Esc and ⌘/Ctrl+Enter mean the same from the tabs, toolbar or preview as
+  // from the field: the box's owner decides what they do.
+  const handleRootKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (e.target === ref.current || e.defaultPrevented) return
+    if (e.key === 'Escape' || (e.key === 'Enter' && (e.metaKey || e.ctrlKey))) onKeyDown?.(e)
   }
 
   // Roving focus: one tab stop for the whole toolbar, arrows move inside it.
@@ -366,7 +424,31 @@ export function MarkdownEditor({
 
   const combo = (c?: string): string => (c ? formatCombo(c) : '')
   const label = (key: TranslationKey, c?: string): string => interp(t(key), { shortcut: combo(c) })
-  const openHelp = (): void => useSettingsStore.getState().openPageTab({ type: 'help', page: 'writing-comments' })
+
+  // Closing gives the focus back to the hint that opened the sheet.
+  const cheatAnchorRef = useRef<HTMLElement | null>(null)
+  cheatAnchorRef.current = cheatAnchor
+  const closeCheatSheet = useCallback((): void => {
+    cheatAnchorRef.current?.focus()
+    setCheatAnchor(null)
+  }, [])
+  // The guide is another tab: this page unmounts on the way, and with it any
+  // text not sent. Asked first, like the PR page's ‹ › do.
+  const openGuide = (): void => {
+    setCheatAnchor(null)
+    const go = (): void => useSettingsStore.getState().openPageTab({ type: 'help', page: 'writing-comments' })
+    if (!(hasUnsentText ? hasUnsentText() : !!value.trim())) return go()
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('mdEditor.leaveTitle'),
+      message: t('mdEditor.leaveMessage'),
+      danger: true,
+      confirmLabel: t('mdEditor.leaveConfirm'),
+      onConfirm: go
+    })
+  }
+
+  const listShown = !!completion && !!popupAt
 
   return (
     <div
@@ -379,6 +461,7 @@ export function MarkdownEditor({
           setHeadingOpen(false)
         }
       }}
+      onKeyDown={handleRootKeyDown}
     >
       {expanded && (
         <div className="mde-bar">
@@ -481,9 +564,12 @@ export function MarkdownEditor({
           className={`${inputClassName} mde-input`}
           placeholder={placeholder}
           aria-label={ariaLabel ?? placeholder}
+          // A combobox only while its list is up, and pointing only at a list that exists.
+          role={listShown ? 'combobox' : undefined}
+          aria-expanded={listShown ? true : undefined}
           aria-autocomplete="list"
-          aria-controls={completion ? listId : undefined}
-          aria-activedescendant={completion ? optionId(active) : undefined}
+          aria-controls={listShown ? listId : undefined}
+          aria-activedescendant={listShown ? optionId(active) : undefined}
           value={value}
           spellCheck={spellCheck}
           rows={compact ? (expanded ? 3 : 1) : undefined}
@@ -495,66 +581,78 @@ export function MarkdownEditor({
           onKeyDown={handleKeyDown}
         />
       </div>
-      {mode === 'preview' && (
-        <div
-          id={`${id}-panel-preview`}
-          role="tabpanel"
-          aria-labelledby={`${id}-tab-preview`}
-          className={`mde-preview ${inputClassName}`}
-          tabIndex={0}
-        >
-          {value.trim() ? (
+      {/* Always in the DOM, so the Preview tab's aria-controls names a real element. */}
+      <div
+        id={`${id}-panel-preview`}
+        role="tabpanel"
+        aria-labelledby={`${id}-tab-preview`}
+        className={`mde-preview ${inputClassName}`}
+        hidden={mode !== 'preview'}
+        tabIndex={mode === 'preview' ? 0 : -1}
+      >
+        {mode === 'preview' &&
+          (value.trim() ? (
             <MarkdownHtml className="md-preview" markdown={value} />
           ) : (
             <span className="mde-preview-empty">{t('mdEditor.previewEmpty')}</span>
-          )}
-        </div>
-      )}
-
-      {completion && popupAt && createPortal(
-        <ul
-          id={listId}
-          role="listbox"
-          className="mde-ac"
-          style={popupAt}
-          aria-label={t(completion.query.trigger === '@' ? 'mdEditor.mentions' : 'mdEditor.references')}
-        >
-          {completion.items.map((item, i) => (
-            <li
-              key={item.id}
-              id={optionId(i)}
-              role="option"
-              aria-selected={i === active}
-              className={`mde-ac-item ${i === active ? 'active' : ''}`}
-              onMouseDown={(e) => {
-                e.preventDefault()
-                pick(i)
-              }}
-              onMouseEnter={() => setActive(i)}
-            >
-              {item.kind === 'pr' ? (
-                <GitPullRequest size={12} aria-label={t('mdEditor.refPr')} />
-              ) : item.kind === 'issue' ? (
-                <CircleDot size={12} aria-label={t('mdEditor.refIssue')} />
-              ) : null}
-              <span className="mde-ac-primary">{item.primary}</span>
-              {item.secondary && <span className="mde-ac-secondary">{item.secondary}</span>}
-            </li>
           ))}
-        </ul>,
-        document.body
-      )}
+      </div>
+
+      {listShown &&
+        completion &&
+        createPortal(
+          <ul
+            id={listId}
+            role="listbox"
+            className="mde-ac"
+            style={popupAt ?? undefined}
+            aria-label={t(completion.query.trigger === '@' ? 'mdEditor.mentions' : 'mdEditor.references')}
+          >
+            {completion.items.map((item, i) => (
+              <li
+                key={item.id}
+                id={optionId(i)}
+                role="option"
+                aria-selected={i === active}
+                className={`mde-ac-item ${i === active ? 'active' : ''}`}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  pick(i)
+                }}
+                onMouseEnter={() => setActive(i)}
+              >
+                {item.kind === 'pr' ? (
+                  <GitPullRequest size={12} aria-label={t('mdEditor.refPr')} />
+                ) : item.kind === 'issue' ? (
+                  <CircleDot size={12} aria-label={t('mdEditor.refIssue')} />
+                ) : null}
+                <span className="mde-ac-primary">{item.primary}</span>
+                {item.secondary && <span className="mde-ac-secondary">{item.secondary}</span>}
+              </li>
+            ))}
+          </ul>,
+          document.body
+        )}
 
       {expanded && (
         <div className="mde-hint">
-          {helpLink ? (
-            <button type="button" className="prp-link mde-hint-link" title={t('mdEditor.markdownHelp')} onClick={openHelp}>
-              {t('mdEditor.markdownSupported')}
-            </button>
-          ) : (
-            <span>{t('mdEditor.markdownSupported')}</span>
-          )}
+          <button
+            type="button"
+            className="prp-link mde-hint-link"
+            title={t('mdEditor.cheatSheet')}
+            aria-haspopup="dialog"
+            aria-expanded={!!cheatAnchor}
+            onClick={(e) => {
+              const btn = e.currentTarget
+              setCheatAnchor((a) => (a ? null : btn))
+            }}
+          >
+            {t('mdEditor.markdownSupported')}
+          </button>
         </div>
+      )}
+      {cheatAnchor && (
+        <MarkdownCheatSheet anchor={cheatAnchor} onClose={closeCheatSheet} onOpenGuide={helpLink ? openGuide : undefined} />
       )}
     </div>
   )
@@ -594,7 +692,7 @@ function HeadingMenu({
           onClose()
         } else if (e.key === 'Tab') {
           onClose()
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
           // Not the toolbar's roving focus: a menu is open.
           e.stopPropagation()
         }
@@ -617,9 +715,14 @@ function HeadingMenu({
   )
 }
 
-/** The pull requests and issues this repository's lists already hold, as `#` references. */
-export function useRepoReferences(repoPath: string): MarkdownReference[] {
-  const prs = useRepoStore((s) => s.repos[repoPath]?.prs)
-  const issues = useRepoStore((s) => s.repos[repoPath]?.issues)
-  return useMemo(() => collectReferences(prs, issues), [prs, issues])
+/**
+ * The pull requests and issues this repository's lists hold, as `#`
+ * references — a getter, read when a # list opens. It subscribes to nothing,
+ * so a background refresh of the lists re-renders nothing.
+ */
+export function useRepoReferenceGetter(repoPath: string): () => MarkdownReference[] {
+  return useCallback(() => {
+    const repo = useRepoStore.getState().repos[repoPath]
+    return collectReferences(repo?.prs, repo?.issues)
+  }, [repoPath])
 }

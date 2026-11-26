@@ -25,7 +25,7 @@ const ISSUES_URL = APP_ISSUES_NEW_URL
  * intercepts anchors: the same link is a working relative link on GitHub and an
  * in-app navigation here, with no separate link syntax to maintain.
  */
-export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.Element {
+export function HelpPage({ initialPage, request }: { initialPage?: string; request?: object }): React.JSX.Element {
   const t = useT()
   const lang = useSettingsStore((s) => s.settings.language ?? 'en')
   const [current, setCurrent] = useState(initialPage ?? HELP_PAGES[0]?.id ?? '')
@@ -62,6 +62,18 @@ export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.E
     setQuery('')
     bodyRef.current?.scrollTo({ top: 0 })
   }
+
+  // A link into an already open Help tab ("Open the full guide" in a comment
+  // box) arrives as a new request: go to its page, keeping Back to where the
+  // reader was.
+  const lastRequest = useRef(request)
+  useEffect(() => {
+    if (request === lastRequest.current) return
+    lastRequest.current = request
+    if (initialPage) go(initialPage)
+    // Only a new request moves the page — not a re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request])
 
   const back = (): void => {
     setHistory((h) => {
