@@ -61,11 +61,21 @@
         ExecWait '"$R8" /S /KEEP_APP_DATA ${MODE_FLAG} --updated _?=$R9' $R7
       ${EndIf}
       ${If} ${Errors}
-        DetailPrint "Could not start the previous uninstaller; the old entry stays."
+        DetailPrint "Could not start the previous uninstaller."
         ClearErrors
       ${ElseIf} $R7 != 0
-        DetailPrint "The previous uninstaller exited with $R7; the old entry may stay."
+        DetailPrint "The previous uninstaller exited with $R7."
       ${EndIf}
+    ${EndIf}
+    ; Whatever happened above, the old entry must not outlive this install: it
+    ; points at the directory the new files are about to fill, so uninstalling
+    ; it later from Settings > Apps would delete the new app. Only its registry
+    ; keys go; the files are overwritten by this install anyway.
+    ReadRegStr $R7 ${ROOT} "${GITHUTTBR_OLD_UNINSTALL_KEY}" DisplayName
+    ${If} $R7 != ""
+      DetailPrint "Removing the previous install's leftover entry: $R7"
+      DeleteRegKey ${ROOT} "${GITHUTTBR_OLD_UNINSTALL_KEY}"
+      DeleteRegKey ${ROOT} "${GITHUTTBR_OLD_INSTALL_KEY}"
     ${EndIf}
   ${EndIf}
   Pop $R9
