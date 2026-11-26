@@ -2,7 +2,7 @@
 title: Omgevingscontrole
 category: Begin hier
 order: 6
-summary: Waar Gitcito buiten de eigen installatie op leunt — git, LFS, de native terminal, de credential helper van git, de GitHub CLI en bestandsbewaking — op één plek gecontroleerd.
+summary: Waar GitHuttBr buiten de eigen installatie op leunt — git, LFS, de native terminal, de credential helper van git, de GitHub CLI en bestandsbewaking — op één plek gecontroleerd.
 keywords: omgeving environment dokter diagnose controle git versie lfs node-pty terminal basis-shell credential helper store gh github cli scopes workflow inotify max_user_watches
 ---
 
@@ -16,7 +16,7 @@ midden in iets anders. **Instellingen → Omgeving** (ook *Settings: Environment
 in het opdrachtenpalet) controleert ze vooraf.
 
 De [repository-dokter](repo-settings.md) beantwoordt een andere vraag: of *deze
-repository* hier kan bouwen, volgens wat zijn `.gitcito.json` vraagt. De
+repository* hier kan bouwen, volgens wat zijn `.githuttbr.json` vraagt. De
 omgevingscontrole gaat over de app zelf en is voor elke repository hetzelfde.
 
 ![Omgevingscontroles in Instellingen](../../screenshots/settings-environment.webp)
@@ -28,7 +28,7 @@ omgevingscontrole gaat over de app zelf en is voor elke repository hetzelfde.
 | **Git** | git 2.31 of nieuwer staat in het `PATH` | Ouder dan 2.31: het account van een [profiel](profiles.md) kan zich niet aanmelden voor fetch en push. Ontbreekt: niets werkt tot git geïnstalleerd is |
 | **Git LFS** | `git lfs` is geïnstalleerd | Niet geïnstalleerd. Alleen repositories die bestanden in LFS bewaren hebben het nodig |
 | **Terminal** | De native terminal is geladen | De [terminal](terminal.md) draait in basismodus: geen kleuren, geen formaat wijzigen, geen schermvullende programma's |
-| **Credential helper** | git heeft een helper voor HTTPS-wachtwoorden — globaal of voor bepaalde hosts (wat `gh auth setup-git` instelt) | Geen helper, dus git buiten Gitcito vraagt elke keer. Of `store`, dat ze als platte tekst bewaart. Zie [Credential helper](credentials.md) |
+| **Credential helper** | git heeft een helper voor HTTPS-wachtwoorden — globaal of voor bepaalde hosts (wat `gh auth setup-git` instelt) | Geen helper, dus git buiten GitHuttBr vraagt elke keer. Of `store`, dat ze als platte tekst bewaart. Zie [Credential helper](credentials.md) |
 | **GitHub CLI** | `gh` is aangemeld met de scope `workflow` | Aangemeld zonder: GitHub weigert elke push die `.github/workflows` wijzigt |
 | **Bestandsbewaking** (Linux) | De inotify-limiet is minstens 65.536 | Een lagere limiet raakt op met een paar grote open repositories, en nieuwe mappen verversen de status niet meer |
 

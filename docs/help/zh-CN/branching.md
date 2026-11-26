@@ -44,7 +44,7 @@ keywords: branch 分支 branches create 创建 checkout 检出 rename 重命名 
 工具栏中的分支下拉列表会列出本地和远程分支。右键点击下拉列表中的任意分支，
 可以重命名本地分支、复制分支名、在新的工作树（worktree）中检出、将其合并到
 当前分支，或删除它。远程分支不提供重命名，确认后会从其远程仓库中删除。
-当所选引用已包含在当前分支中时，Gitcito 会隐藏合并选项；当该分支已被检出时，
+当所选引用已包含在当前分支中时，GitHuttBr 会隐藏合并选项；当该分支已被检出时，
 会禁用创建工作树。
 
 ![工具栏下拉列表中的本地分支操作](../../screenshots/branch-dropdown-local-context-menu.webp)
@@ -66,7 +66,7 @@ keywords: branch 分支 branches create 创建 checkout 检出 rename 重命名 
 工作项引用会在提交信息和拉取请求文本中变成链接：凡是已知 Azure 组织的地方 `AB#1234`
 都会链接，在 Azure 仓库中普通的 `#1234` 也会，因为 Azure 编号的是工作项而不是 issue。
 在关联了 Azure Boards 的 GitHub 仓库中，组织是未知的；在仓库的
-[`.gitcito.json`](repo-config.md) 中添加 `links.tickets` 条目即可——模式 `AB#(\d+)`，
+[`.githuttbr.json`](repo-config.md) 中添加 `links.tickets` 条目即可——模式 `AB#(\d+)`，
 URL `https://dev.azure.com/<org>/_workitems/edit/$1`。
 
 ## 重命名分支
@@ -88,7 +88,7 @@ URL `https://dev.azure.com/<org>/_workitems/edit/$1`。
 自己重新指向。在图上的徽标里，只有当分支恰好跟踪一个远程时才提供此项；跟踪多个
 时请在侧边栏选择分支，让上游没有歧义。
 
-**限制：** Gitcito 不会重写任何引用旧名字的东西 —— 已打开的 PR 仍指向创建时的
+**限制：** GitHuttBr 不会重写任何引用旧名字的东西 —— 已打开的 PR 仍指向创建时的
 分支，按分支名模式匹配的 CI 规则会不再匹配。重命名一个已在别的
 [工作树](worktrees.md) 中检出的分支会失败，git 会明说。
 
@@ -103,7 +103,7 @@ URL `https://dev.azure.com/<org>/_workitems/edit/$1`。
 
 ## 检出一个远程分支
 
-双击一个远程分支，就会创建跟踪它的本地分支。如果同名的本地分支已经存在而且已经**分叉**，Gitcito 会问你要怎么调和——变基、合并还是重置——并提议先把这个分支备份一份。
+双击一个远程分支，就会创建跟踪它的本地分支。如果同名的本地分支已经存在而且已经**分叉**，GitHuttBr 会问你要怎么调和——变基、合并还是重置——并提议先把这个分支备份一份。
 
 ![分叉分支的提示：变基、合并还是重置，并带一个备份选项](../../screenshots/diverged-checkout.webp)
 

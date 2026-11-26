@@ -8,7 +8,7 @@ keywords: accessibilité accessibility a11y lecteur d'écran VoiceOver NVDA navi
 
 # Accessibilité
 
-Gitcito vise à être utilisable sans souris et lisible par un lecteur d'écran.
+GitHuttBr vise à être utilisable sans souris et lisible par un lecteur d'écran.
 Cette page dit ce que cela signifie concrètement — et où sont les limites.
 
 ## Clavier
@@ -58,7 +58,7 @@ Cette page dit ce que cela signifie concrètement — et où sont les limites.
 - L'audit derrière cette page a été fait avec VoiceOver sous macOS. NVDA/JAWS
   sous Windows devraient se comporter de la même façon mais n'ont pas été
   éprouvés sur le terrain — les retours sont bienvenus en
-  [issues](https://github.com/MyAppDesk/gitcito/issues).
+  [issues](https://github.com/StarleyDev/githuttbr/issues).
 
 ## Paramètres associés
 

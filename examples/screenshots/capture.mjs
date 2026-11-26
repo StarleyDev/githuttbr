@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Screenshot + motion-clip capture harness for Gitcito.
+// Screenshot + motion-clip capture harness for GitHuttBr.
 //
 //   node examples/screenshots/capture.mjs            # all stills (WebP)
 //   node examples/screenshots/capture.mjs graph      # only shots matching "graph"
@@ -158,8 +158,8 @@ function seedSettings(shot, theme) {
     tabs: [tab],
     activeTabId: 'shot-tab',
     recentRepos: (shot.recents ?? []).map(ref),
-    appThemeId: shot.appTheme ?? 'gitcito',
-    codeThemeId: shot.appTheme ?? 'gitcito',
+    appThemeId: shot.appTheme ?? 'githuttbr',
+    codeThemeId: shot.appTheme ?? 'githuttbr',
     themeMode: theme,
     onboardingCompleted: true,
     // A terminal opening on its own would change every shot that is not about it.

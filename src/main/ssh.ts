@@ -20,7 +20,7 @@ import {
 const pexecFile = promisify(execFile)
 
 /**
- * SSH keys, the auth path Gitcito never owned but always depended on: a `git@`
+ * SSH keys, the auth path GitHuttBr never owned but always depended on: a `git@`
  * remote authenticates through the system ssh, and `GIT_TERMINAL_PROMPT=0` does
  * nothing for it. All this module does is make that machinery inspectable —
  * which keys exist, whether the agent holds them, whether the host accepts them.

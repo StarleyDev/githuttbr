@@ -4,13 +4,13 @@ category: Dallanma ve cerrahi
 order: 46
 summary: Geçmiş bir commit'in dosyalarını veya mesajını yerinde yeniden yazın — zincirleme etki önce önizlenir.
 keywords: commit düzenleme geçmişi yeniden yazma eski commit mesaj düzeltme yazım hatası zincirleme yeniden oynatma yerinde rebase cerrahi edit commit rewrite history amend past reword fix typo cascade replay rebase in place surgery
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Herhangi bir commit'i düzenleyin
 
 Yazım hatası üç hafta önceki bir commit'te. Alışıldık çözüm etkileşimli bir
-rebase'tir: commit'te dur, düzenle, devam et, dua et. Gitcito'nun çözümü ise
+rebase'tir: commit'te dur, düzenle, devam et, dua et. GitHuttBr'nun çözümü ise
 şu: commit'e sağ tıklayın, **Bu commit'i düzenle**, metni değiştirin, bitti.
 Commit ayrıntıları panelindeki kalem düğmesi de aynı düzenleyiciyi açar.
 

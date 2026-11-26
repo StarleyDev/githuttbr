@@ -1030,12 +1030,6 @@ export const testsApi = {
   cancel: (repoPath: string) => window.api.tests.cancel(repoPath)
 }
 
-// The one-time notice after 4.39 copied settings over from the old "Gitcito"
-// folder: tokens could not come along, and the user has to be told so.
-export const migrationApi = {
-  takeNotice: (): Promise<boolean> => window.api.takeMigrationNotice()
-}
-
 export const shellApi = {
   selectDirectory: (title?: string) => window.api.selectDirectory(title),
   selectDirectories: (title?: string) => window.api.selectDirectories(title),
@@ -1120,7 +1114,7 @@ export const sshApi = {
 export const editorApi = {
   /** Editors installed on this machine, CLI installs first (only those can jump
    *  to a line). Re-probed on demand — an editor installed after launch shows up
-   *  without restarting Gitcito. */
+   *  without restarting GitHuttBr. */
   detect: () => window.api.editor.detect(),
   /** Opens `target` in the configured editor. Resolves to '' on success, or to
    *  the failure message. */
@@ -1377,17 +1371,17 @@ export const keychainApi = {
   onUnlocked: (cb: () => void) => window.api.keychain.onUnlocked(cb)
 }
 
-// Installs/checks the `gitcito` shell command, the equivalent of VS Code's
+// Installs/checks the `githuttbr` shell command, the equivalent of VS Code's
 // "Shell Command: Install 'code' in PATH", plus the two channels the CLI uses
 // once it is installed: a request to open something, and a file git is waiting
-// on (`gitcito --wait`).
+// on (`githuttbr --wait`).
 export const cliApi = {
   isInstalled: () => window.api.cli.isInstalled(),
   install: () => window.api.cli.install(),
   uninstall: () => window.api.cli.uninstall(),
   /** Installed, refused (and why), or a stale AppImage link left in PATH. */
   status: () => window.api.cli.status(),
-  /** Delete `gitcito` links that point into an AppImage's /tmp mount. */
+  /** Delete `githuttbr` links that point into an AppImage's /tmp mount. */
   removeStale: () => window.api.cli.removeStale(),
   onOpenPath: (cb: (payload: CliOpenPayload) => void) => window.api.cli.onOpenPath(cb),
   onEdit: (cb: (req: { file: string; sentinel: string; content: string }) => void) =>

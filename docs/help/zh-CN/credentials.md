@@ -4,16 +4,16 @@ category: 安全
 order: 73
 summary: git 自己的密码存储——第三种——以及为什么 https 老是再问你一次。
 keywords: 凭据助手 密码 明文 令牌 撤销 遗忘 credential helper password https asks again osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401 检查登录 哪个账户 远程 URL 中的令牌 嵌入的密码 从 URL 中移除 token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # 凭据助手
 
-Gitcito 手里握着三种不同的机密，而人们很自然地以为它们是同一样东西：
+GitHuttBr 手里握着三种不同的机密，而人们很自然地以为它们是同一样东西：
 
 | | 由谁保管 |
 |---|---|
-| 托管方 API 令牌——拉取请求（PR）、议题、CI 检查 | Gitcito，存在你的[操作系统钥匙串](security.md)里 |
+| 托管方 API 令牌——拉取请求（PR）、议题、CI 检查 | GitHuttBr，存在你的[操作系统钥匙串](security.md)里 |
 | `git@…` 传输 | 你的 [SSH 密钥](ssh-keys.md)，经由系统的 ssh agent |
 | **`https://` 传输** | **git 自己的凭据助手** |
 
@@ -51,7 +51,7 @@ Gitcito 手里握着三种不同的机密，而人们很自然地以为它们是
 | `cache` | 内存，保留 15 分钟。磁盘上什么都不留 |
 | `store` | **你主目录里的一个纯文本文件。未加密** |
 
-Gitcito 只提供这台机器上确实装了的那些，标出与你的操作系统相配的那个，其余的置灰。
+GitHuttBr 只提供这台机器上确实装了的那些，标出与你的操作系统相配的那个，其余的置灰。
 
 **作用域很重要。** *对所有仓库*会写进你的全局配置，这几乎总是你想要的；*仅对本仓库*
 是留给那种要向别的东西做认证的特殊仓库的。
@@ -74,7 +74,7 @@ postinstall，什么都行。
 都没说清的 401。**忘记**会请求已配置的助手抹掉它为该主机保存的条目——也就是
 `git credential reject`，git 自己文档里给出的路子。
 
-这条路上什么都不会被读取：Gitcito 从不调用 `git credential fill`，那条命令会把一个
+这条路上什么都不会被读取：GitHuttBr 从不调用 `git credential fill`，那条命令会把一个
 有效的密码打印到标准输出。
 
 下一次推送会问你一次，然后助手把新答案存起来。
@@ -110,14 +110,14 @@ helper、遗留在远程 URL 中的密码，或 SSH 密钥。被拒绝时，首�
 旧的克隆，或从 wiki 粘贴的 URL，可能把凭据放在地址里：
 `https://user:token@git.example.test/team/app.git`。**URL 中的密码总是优先：** git
 会发送它，并且不询问任何 helper——既不问仓库 [配置档](profiles.md) 的令牌，也不问
-GitHub CLI，也不问 git 自己的存储。只要令牌有效，这没什么问题，Gitcito 也不会去动它：
+GitHub CLI，也不问 git 自己的存储。只要令牌有效，这没什么问题，GitHuttBr 也不会去动它：
 **它绝不会不经询问就从 URL 中移除密码。** 一旦令牌被撤销或过期，该仓库的每次 fetch、
 pull 和 push 都会以 *Invalid username or token* 或 *Authentication failed* 失败，而
 同一配置档下的其他仓库都正常。而且令牌以明文存放在仓库的 `.git/config` 中。
 
 ![从远程 URL 中移除已保存的令牌](../../screenshots/remote-url-token.webp)
 
-Gitcito 会读取每个远程的 fetch 和 push URL，并在三个地方提示：
+GitHuttBr 会读取每个远程的 fetch 和 push URL，并在三个地方提示：
 
 | 位置 | 你会看到 |
 |-------|--------------|
@@ -164,12 +164,12 @@ push URL——并且除了 `.git/config` 不写入任何东西。之后会发生
 
 ## 值得知道的限制
 
-- **这是 git 的存储，不是 Gitcito 的。** 改动它也会改变你终端里的行为——这正是重点，
+- **这是 git 的存储，不是 GitHuttBr 的。** 改动它也会改变你终端里的行为——这正是重点，
   但在动手之前值得知道。
 - **系统级的助手只展示，不可编辑。** 它们待在只有管理员才能写的配置里。
-- **Gitcito 无法列出一个助手都存了些什么。** 没有哪个凭据 API 能在不交出机密的前提下
+- **GitHuttBr 无法列出一个助手都存了些什么。** 没有哪个凭据 API 能在不交出机密的前提下
   做到这一点，所以这个对话框只报告配置、并按你的要求执行擦除，别的什么都不做。
-- **你交给 Gitcito 的令牌是另一回事。** 撤销其中一个并不会碰到另一个；钥匙串那一侧
+- **你交给 GitHuttBr 的令牌是另一回事。** 撤销其中一个并不会碰到另一个；钥匙串那一侧
   见[安全](security.md)。
 - **配置档的令牌不会进入仓库钩子的环境。** 钩子只能看到一个私有端点的代码，只在那条
   git 命令运行期间有效——对于像 git-lfs 那样有意询问的钩子来说足够了。参见

@@ -129,8 +129,15 @@ jobs:
           VERSION="${TAG#v}"
           # Write to a file (not a shell arg) so notes containing quotes,
           # backticks or $() never get re-interpreted by the shell.
-          awk "/^## \[${VERSION}\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
-            | sed '/^$/d' | head -100 > release-notes.md
+          # A notice for this one version (.github/release-notices/<version>.md)
+          # goes on top: the update banner of the version users still run shows
+          # these notes, so it is the only place to warn them before they update.
+          NOTICE=".github/release-notices/${VERSION}.md"
+          {
+            if [ -f "$NOTICE" ]; then cat "$NOTICE"; echo; fi
+            awk "/^## \[${VERSION}\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
+              | sed '/^$/d' | head -100
+          } > release-notes.md
 
       # Both jobs reporting success is not proof: check that latest.yml and
       # latest-linux.yml are attached and that every file they name is too.

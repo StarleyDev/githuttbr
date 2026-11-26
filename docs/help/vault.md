@@ -29,15 +29,15 @@ as .env** a whole set straight to the clipboard.
 ## When the vault cannot be read
 
 If the keychain is locked, you turned its prompt away, or the vault was saved by
-another copy of Gitcito (a development build, a re-signed one), the page says
-*Gitcito could not read your vault* — and **leaves it untouched**. Nothing can be
+another copy of GitHuttBr (a development build, a re-signed one), the page says
+*GitHuttBr could not read your vault* — and **leaves it untouched**. Nothing can be
 added or removed meanwhile: saving would replace every secret in it with the one
 you just typed.
 
 | Button | What it does |
 |--------|--------------|
 | **Retry** | Reads the vault again — unlock the keychain first. |
-| **Start a new vault** | Asks first. Gitcito stops waiting for the old vault and starts an empty one. The old file stays beside it as a backup named `githuttbr-vault.enc.bak-<date>`, one per replacement, and Gitcito never deletes it. For a vault that is gone for good, not a prompt you dismissed. |
+| **Start a new vault** | Asks first. GitHuttBr stops waiting for the old vault and starts an empty one. The old file stays beside it as a backup named `githuttbr-vault.enc.bak-<date>`, one per replacement, and GitHuttBr never deletes it. For a vault that is gone for good, not a prompt you dismissed. |
 
 ### Imports and exports never drop it silently
 

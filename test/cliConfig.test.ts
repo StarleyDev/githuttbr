@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildSync } from 'esbuild'
@@ -42,60 +42,46 @@ function cli(...args: string[]): { code: number | null; stdout: string; stderr: 
   return { code: r.status, stdout: r.stdout, stderr: r.stderr }
 }
 
-const LEGACY = JSON.stringify({ version: 1, protect: ['legacy'], requires: { lfs: false } })
+// What upstream Gitcito keeps in a repository. Not this app's file: never read.
+const UPSTREAM = JSON.stringify({ version: 1, protect: ['legacy'], requires: { lfs: false } })
 
 describe('findRepoConfigFile', () => {
-  it('finds the new file first, then the legacy one, else nothing', async () => {
+  it("finds .githuttbr.json and ignores upstream's .gitcito.json", async () => {
     const dir = cloneFixture('project-tree')
     expect(await findRepoConfigFile(dir)).toBeNull()
-    writeFileSync(join(dir, '.gitcito.json'), LEGACY)
-    expect(await findRepoConfigFile(dir)).toEqual({ path: join(dir, '.gitcito.json'), raw: LEGACY })
+    writeFileSync(join(dir, '.gitcito.json'), UPSTREAM)
+    expect(await findRepoConfigFile(dir)).toBeNull()
     writeFileSync(join(dir, '.githuttbr.json'), '{"version":1}')
     expect((await findRepoConfigFile(dir))?.path).toBe(join(dir, '.githuttbr.json'))
   })
 })
 
 describe('githuttbr config / doctor on a repository with only .gitcito.json', () => {
-  it('config show prints the legacy file and names it', () => {
+  it('config show reports no config', () => {
     const dir = cloneFixture('project-tree')
-    writeFileSync(join(dir, '.gitcito.json'), LEGACY)
+    writeFileSync(join(dir, '.gitcito.json'), UPSTREAM)
     const r = cli('config', 'show', dir)
     expect(r.code).toBe(0)
-    expect(r.stdout.trim()).toBe(LEGACY)
-    expect(r.stderr).toContain('.gitcito.json')
+    expect(r.stdout).toContain('No .githuttbr.json')
+    expect(r.stdout + r.stderr).not.toContain('.gitcito.json')
   })
 
-  it('config check validates the legacy file under its own name', () => {
+  it('doctor does not run its requirements', () => {
     const dir = cloneFixture('project-tree')
-    writeFileSync(join(dir, '.gitcito.json'), LEGACY)
-    const r = cli('config', 'check', dir)
-    expect(r.code).toBe(0)
-    expect(r.stdout).toContain('.gitcito.json is valid.')
-  })
-
-  it('doctor runs the legacy requirements and names the file', () => {
-    const dir = cloneFixture('project-tree')
-    writeFileSync(join(dir, '.gitcito.json'), LEGACY)
+    writeFileSync(join(dir, '.gitcito.json'), UPSTREAM)
     const r = cli('doctor', dir)
-    expect(r.stdout).toContain('(.gitcito.json)')
-    expect(r.stdout).not.toContain('No requirements declared')
+    expect(r.stdout).toContain('No requirements declared')
   })
 
-  it('config init will not shadow the legacy file without --force, and then writes the new one', () => {
+  it('config init writes .githuttbr.json without --force and leaves .gitcito.json as it was', () => {
     const dir = cloneFixture('project-tree')
-    writeFileSync(join(dir, '.gitcito.json'), LEGACY)
+    writeFileSync(join(dir, '.gitcito.json'), UPSTREAM)
     // An .nvmrc gives init something to propose.
     writeFileSync(join(dir, '.nvmrc'), '20\n')
-    const refused = cli('config', 'init', dir)
-    expect(refused.code).toBe(2)
-    expect(refused.stderr).toContain('.gitcito.json already exists')
-    expect(existsSync(join(dir, '.githuttbr.json'))).toBe(false)
-
-    const forced = cli('config', 'init', dir, '--force')
-    expect(forced.code).toBe(0)
-    expect(forced.stdout).toContain('Wrote .githuttbr.json')
-    expect(existsSync(join(dir, '.githuttbr.json'))).toBe(true)
-    expect(readFileSync(join(dir, '.gitcito.json'), 'utf8')).toBe(LEGACY)
+    const r = cli('config', 'init', dir)
+    expect(r.code).toBe(0)
+    expect(r.stdout).toContain('Wrote .githuttbr.json')
+    expect(readFileSync(join(dir, '.gitcito.json'), 'utf8')).toBe(UPSTREAM)
   })
 
   it('config check on a repository with neither file says so', () => {
@@ -106,7 +92,7 @@ describe('githuttbr config / doctor on a repository with only .gitcito.json', ()
   })
 })
 
-describe('githuttbr doctor and an editor setting left by 4.38', () => {
+describe('githuttbr doctor and an upstream Gitcito editor setting', () => {
   function cliWith(env: Record<string, string>, ...args: string[]): { code: number | null; stdout: string } {
     const r = spawnSync(process.execPath, [entry, ...args], {
       encoding: 'utf8',
@@ -117,25 +103,19 @@ describe('githuttbr doctor and an editor setting left by 4.38', () => {
   const gitIn = (dir: string, env: Record<string, string>, ...args: string[]): string =>
     spawnSync('git', args, { cwd: dir, encoding: 'utf8', env: { ...process.env, ...env } }).stdout.trim()
 
-  it('names the stale setting and the exact command that fixes it, then --fix repairs it', () => {
+  it('neither reports nor rewrites `gitcito --wait`, even with --fix', () => {
     const dir = cloneFixture('project-tree')
     const globalDir = mkdtempSync(join(tmpdir(), 'githuttbr-gitconfig-'))
     const globalFile = join(globalDir, 'config')
-    writeFileSync(globalFile, '[sequence]\n\teditor = /usr/bin/gitcito --wait\n')
+    const globalText = '[sequence]\n\teditor = /usr/bin/gitcito --wait\n'
+    writeFileSync(globalFile, globalText)
     const env = { GIT_CONFIG_GLOBAL: globalFile }
     gitIn(dir, env, 'config', '--local', 'core.editor', 'gitcito --wait')
 
-    const r = cliWith(env, 'doctor', dir)
-    // A warning about the user's git config never fails a build.
-    expect(r.code).toBe(0)
-    expect(r.stdout).toContain('core.editor (local) runs the old command')
-    expect(r.stdout).toContain('Fix: git config --local core.editor "githuttbr --wait"')
-    expect(r.stdout).toContain('Fix: git config --global sequence.editor "githuttbr --wait"')
-
+    expect(cliWith(env, 'doctor', dir).stdout).not.toContain('gitcito')
     cliWith(env, 'doctor', dir, '--fix')
-    expect(gitIn(dir, env, 'config', '--local', 'core.editor')).toBe('githuttbr --wait')
-    expect(readFileSync(globalFile, 'utf8')).toContain('githuttbr --wait')
-    expect(cliWith(env, 'doctor', dir).stdout).not.toContain('runs the old command')
+    expect(gitIn(dir, env, 'config', '--local', 'core.editor')).toBe('gitcito --wait')
+    expect(readFileSync(globalFile, 'utf8')).toBe(globalText)
     rmSync(globalDir, { recursive: true, force: true })
   })
 })

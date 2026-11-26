@@ -3,7 +3,7 @@
  * integrated terminal.
  *
  * The editor's git extension sets `GIT_ASKPASS` to its own script, which talks
- * back to the editor over `VSCODE_GIT_IPC_HANDLE`. Gitcito started from that
+ * back to the editor over `VSCODE_GIT_IPC_HANDLE`. GitHuttBr started from that
  * terminal (`npm run dev`, `githuttbr .`) passes the env on to every git it
  * spawns, so a fetch against an HTTPS remote with no credential helper raises
  * the *editor's* "sign in to GitHub" prompt, and `GIT_TERMINAL_PROMPT=0` does

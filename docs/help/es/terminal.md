@@ -86,12 +86,12 @@ los gestores de versiones y `brew shellenv` suelen instalarse ahí: una
 herramienta como `fvm`, `nvm` o `pyenv` que funciona en tu terminal funciona
 también aquí.
 
-Además, Gitcito le pregunta a tu shell de login por su `PATH` real al arrancar y
+Además, GitHuttBr le pregunta a tu shell de login por su `PATH` real al arrancar y
 lo fusiona en todo lo que lanza, porque una app gráfica abierta desde el Dock no
 hereda casi nada. Si aun así no encuentra un comando, comprueba que esté en el
 `PATH` de un shell de login y no solo en el de uno interactivo.
 
-Todo lo que ejecutes aquí es invisible para el sistema de bloqueos de Gitcito,
+Todo lo que ejecutes aquí es invisible para el sistema de bloqueos de GitHuttBr,
 así que un `git rebase` largo escrito a mano y un clic en la interfaz todavía
 pueden chocar — la aplicación se refresca desde disco cuando el terminal cambia
 algo.
@@ -117,7 +117,7 @@ necesitan una Nerd Font en la familia de fuente de la terminal (por ejemplo
 Sobre la velocidad: Oh My Posh ejecuta su binario una vez por prompt — unos
 100–200 ms en Windows, más con temas que tienen un segmento de git en un
 repositorio grande — y se nota como una pausa breve antes de cada prompt, no como
-lentitud de Gitcito. Los temas sin segmento de git son los más rápidos. También
+lentitud de GitHuttBr. Los temas sin segmento de git son los más rápidos. También
 influye el estilo de predicción de PowerShell: `-PredictionViewStyle InlineView`
 repinta un área pequeña por tecla, mientras que `ListView` redibuja un bloque
 entero.

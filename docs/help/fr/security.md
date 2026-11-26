@@ -2,14 +2,14 @@
 title: Sécurité et secrets
 category: Sécurité
 order: 70
-summary: Le masquage, les garde-fous, le trousseau — et ce que Gitcito refuse de faire.
+summary: Le masquage, les garde-fous, le trousseau — et ce que GitHuttBr refuse de faire.
 keywords: sécurité security secrets masquage masking trousseau keychain safeStorage jetons tokens branche protégée protected branch gros fichier large file garde-fou guard confidentialité privacy illisible sauvegarde parties traduire chemins autre ordinateur nouvelle machine fusionner profils remplacer profils choisir quoi exporter sauvegarde complète pour l'équipe manifeste mot de passe chiffrement appimage apparmor sandbox signaler un problème images dans les commentaires pixel espion adresse ip images tierces cliquer pour charger images in comments tracking pixel third-party images click to load
-source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
+source: 26f333bbdafd9ab662dc635c22df7456d66b1362
 ---
 
 # Sécurité et secrets
 
-Gitcito n'a **aucun backend**. Les seuls appels réseau vont vers votre hébergeur
+GitHuttBr n'a **aucun backend**. Les seuls appels réseau vont vers votre hébergeur
 Git et, si vous l'activez, vers votre fournisseur d'IA.
 
 ![Les paramètres de sécurité](../../screenshots/settings-security.webp)
@@ -89,14 +89,14 @@ Une AppImage s'exécute depuis un dossier sous `/tmp` (`/tmp/.mount_…`) qui
 n'existe que tant que l'application est ouverte, change de nom à chaque
 lancement et se trouve dans un répertoire où tout utilisateur local peut écrire.
 Jusqu'à la 4.37.1, l'AppImage pouvait écrire un chemin à l'intérieur de ce
-dossier à deux endroits qui lui survivent : le lien `gitcito` dans le `PATH`
+dossier à deux endroits qui lui survivent : le lien `githuttbr` dans le `PATH`
 ([CLI](cli.md)) et le réglage `diff.<name>.textconv` d'un dépôt
 ([attributs](attributes.md)). Une fois l'application fermée, un autre
 utilisateur de la même machine pouvait recréer le dossier avec un programme à
-lui, que votre prochain `gitcito` ou `git diff` exécuterait.
+lui, que votre prochain `githuttbr` ou `git diff` exécuterait.
 
-Gitcito refuse désormais les deux sous une AppImage, signale au démarrage un
-lien `gitcito` périmé (avec une commande de la palette pour le supprimer) et
+GitHuttBr refuse désormais les deux sous une AppImage, signale au démarrage un
+lien `githuttbr` périmé (avec une commande de la palette pour le supprimer) et
 marque un convertisseur périmé dans la boîte de dialogue des attributs avec un
 bouton **Supprimer**. Il ne voit que le dépôt que vous avez ouvert ; pour
 trouver des convertisseurs périmés ailleurs, lancez
@@ -111,7 +111,7 @@ de votre système (le `safeStorage` d'Electron), jamais avec une clé rangée da
 le fichier de paramètres.
 
 **Rien ne touche au trousseau tant que vous ne l'avez pas dit.** Avant même que
-la boîte de dialogue d'autorisation du système ne puisse apparaître, Gitcito
+la boîte de dialogue d'autorisation du système ne puisse apparaître, GitHuttBr
 explique ce qui va être stocké, ce qu'il ne peut pas faire (une application ne
 relit jamais que l'entrée qu'elle a créée — vos autres mots de passe sont
 inatteignables), et que dire non ne pose aucun problème : les jetons vivent alors
@@ -122,7 +122,13 @@ système**.
 Une installation neuve fait **zéro** appel au trousseau tant que rien n'a
 réellement besoin d'être stocké.
 
-Tant qu’il est désactivé, le champ du jeton dans Intégrations le signale — *Conservé seulement jusqu’à la fermeture de Gitcito : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
+**Après la mise à jour vers la 4.59 sur macOS**, le système peut redemander une
+fois l'accès à l'élément *GitHuttBr Safe Storage* : le bundle id de l'app est
+devenu `com.huttbr.git`, et le trousseau redemande pour une app qu'il ne
+reconnaît pas. **Toujours autoriser** conserve les jetons ; voir
+[la mise à jour](upgrading.md).
+
+Tant qu’il est désactivé, le champ du jeton dans Intégrations le signale — *Conservé seulement jusqu’à la fermeture de GitHuttBr : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
 
 ![Le champ du jeton dans Intégrations avec le trousseau désactivé : conservé seulement jusqu’à la fermeture, avec un bouton Activer](../../screenshots/token-keychain-notice.webp)
 
@@ -136,7 +142,7 @@ D'ici là, l'avertissement reste affiché pour cette raison. Pour supprimer
 définitivement un jeton enregistré en une seule étape, videz-le pendant que le
 trousseau est activé.
 
-Un champ vide n'efface que ce que Gitcito vous a montré. Avec le trousseau
+Un champ vide n'efface que ce que GitHuttBr vous a montré. Avec le trousseau
 désactivé dès le départ, les jetons enregistrés ne sont jamais déchiffrés ni
 affichés — les champs sont vides —, donc seul un jeton que vous saisissez là
 puis videz à nouveau est supprimé ; celui enregistré en dessous est toujours là
@@ -160,7 +166,7 @@ désigne jamais une protection qui n'existe pas.
 Pour que rien de nouveau n'atterrisse dans un stockage que n'importe qui pourrait
 débrouiller, un jeton saisi alors qu'aucun trousseau ne tourne n'est conservé
 **que jusqu'à ce que vous quittiez l'application**. Le champ du jeton le dit —
-*Conservé seulement jusqu'à la fermeture de Gitcito : aucun trousseau n'est
+*Conservé seulement jusqu'à la fermeture de GitHuttBr : aucun trousseau n'est
 actif…* — sans bouton pour réessayer, car réessayer n'y changerait rien ; seul
 un trousseau le peut. Importer un fichier de paramètres contenant des
 identifiants le signale de la même façon avant de les importer. Les jetons enregistrés auparavant restent lisibles — vous
@@ -169,9 +175,9 @@ toujours l'ancienne valeur du disque. Deux limites : la clé de l'IA générale
 n'est pas déplacée vers son emplacement partagé (chaque profil continue de lire
 la sienne), et le coffre enregistre toujours dans le stockage basique, car il
 n'a pas de mode limité à la session. Installez ou déverrouillez un trousseau et
-redémarrez Gitcito pour enregistrer à nouveau de nouveaux jetons.
+redémarrez GitHuttBr pour enregistrer à nouveau de nouveaux jetons.
 
-Gitcito ne se fie pas à ce que le système dit du stockage qu’il a obtenu. Il le
+GitHuttBr ne se fie pas à ce que le système dit du stockage qu’il a obtenu. Il le
 compte comme basique quand le système le nomme ainsi, quand il ne peut pas le nommer
 du tout, et quand ce qu’il chiffre revient marqué du mot de passe fixe — quoi qu’ait
 dit le système. Ainsi, un trousseau qui se replie en silence garde quand même les
@@ -182,24 +188,24 @@ que le trousseau a répondu une fois pendant la session, une question qu’il la
 réponse 10 secondes compte comme *pas de trousseau* : un jeton enregistré est gardé
 jusqu’à la fermeture, et le coffre reste fermé. La première question d’une session —
 celle qui peut faire apparaître la propre demande de mot de passe du trousseau — et
-celle qui suit juste l’explication de Gitcito ont deux minutes, pour que la lecture
+celle qui suit juste l’explication de GitHuttBr ont deux minutes, pour que la lecture
 d’une boîte de dialogue ne soit jamais écourtée. Pendant une demi-minute après un tel
-dépassement, la réponse reste *pas de trousseau* sans redemander ; ensuite Gitcito
+dépassement, la réponse reste *pas de trousseau* sans redemander ; ensuite GitHuttBr
 redemande. macOS et Windows répondent localement et ne sont jamais limités dans le
 temps.
 
 La limite ne couvre que cette question-là — *y a-t-il un trousseau ?* Un trousseau qui
 y répond puis se bloque en chiffrant ou en déchiffrant est toujours attendu :
 l’enregistrement des paramètres, et le coffre, restent occupés jusqu’à ce qu’il réponde
-ou que Gitcito redémarre.
+ou que GitHuttBr redémarre.
 
 ### Quand les jetons enregistrés ne peuvent pas être lus
 
 Si vous fermez l'invite du trousseau du système, que le trousseau est verrouillé
-ou que le stockage des jetons a été écrit par une autre copie de Gitcito (une
-version de développement, une version re-signée), Gitcito **ne peut pas lire
+ou que le stockage des jetons a été écrit par une autre copie de GitHuttBr (une
+version de développement, une version re-signée), GitHuttBr **ne peut pas lire
 vos jetons enregistrés — et n'y touche pas**. Paramètres → Sécurité indique
-*Gitcito n'a pas pu lire vos jetons enregistrés*, et un jeton saisi entre-temps
+*GitHuttBr n'a pas pu lire vos jetons enregistrés*, et un jeton saisi entre-temps
 n'est conservé que pour la session (le champ le dit aussi). Il n'est jamais écrit
 par-dessus le stockage qu'il n'a pas pu lire : cela remplacerait chaque jeton
 enregistré par celui que vous venez de saisir.
@@ -207,7 +213,7 @@ enregistré par celui que vous venez de saisir.
 | Bouton | Ce qu'il fait |
 |--------|--------------|
 | **Réessayer** | Relit le stockage — le système peut maintenant demander le trousseau. Dès qu'il est lisible, les jetons saisis entre-temps le rejoignent. |
-| **Créer un nouveau coffre à jetons** | Demande d'abord. Gitcito cesse d'attendre l'ancien stockage et en commence un nouveau avec les seuls jetons de cette session. L'ancien fichier reste à côté comme sauvegarde pendant 30 jours, puis il est supprimé. Pour un stockage perdu pour de bon, pas pour une invite que vous avez fermée. |
+| **Créer un nouveau coffre à jetons** | Demande d'abord. GitHuttBr cesse d'attendre l'ancien stockage et en commence un nouveau avec les seuls jetons de cette session. L'ancien fichier reste à côté comme sauvegarde pendant 30 jours, puis il est supprimé. Pour un stockage perdu pour de bon, pas pour une invite que vous avez fermée. |
 
 ## Importer des paramètres
 
@@ -338,7 +344,7 @@ GitLab ou à une autre organisation Azure ; et les identifiants empruntés au
 gestionnaire d'identifiants de cette machine restent ceux de cette machine.
 
 **Les choix par défaut sont une supposition tirée de votre disque.** Avant
-d'afficher la boîte de dialogue, Gitcito vérifie si les dossiers de dépôts du
+d'afficher la boîte de dialogue, GitHuttBr vérifie si les dossiers de dépôts du
 fichier existent ici. Si aucun n'existe, le fichier vient d'un autre
 ordinateur : **Dépôts** et **Programmes** démarrent décochés, chacun avec la
 raison — les chemins des programmes sont listés, pour que vous voyiez qu'ils
@@ -357,7 +363,7 @@ manquent et un encadré **Traduire les chemins** s'ouvre. À gauche, le dossier
 que les dépôts du fichier ont en commun (`/home/you/code`) ; à droite, où se
 trouve ce dossier sur cet ordinateur, prérempli à partir de votre dossier
 personnel (`/Users/you/code`). Les deux sont modifiables — la supposition peut
-être fausse, et quand Gitcito ne trouve aucun dossier commun il les laisse vides
+être fausse, et quand GitHuttBr ne trouve aucun dossier commun il les laisse vides
 pour que vous les saisissiez. Une barre compte, au fil de la saisie, combien de
 dépôts ont désormais un dossier ici, avec quelques-uns listés — en vert ceux
 trouvés, en rouge ceux qui manquent encore. L'échange emporte avec lui le
@@ -416,7 +422,7 @@ moment-là laisse la boîte de dialogue telle quelle.
 
 **Tout remplacer exige le trousseau.** Avec le trousseau désactivé ou
 indisponible, les anciens jetons resteraient dans le stockage chiffré et
-reviendraient au prochain lancement ; Gitcito refuse donc : il le dit, et rien
+reviendraient au prochain lancement ; GitHuttBr refuse donc : il le dit, et rien
 n'est importé. Même chose tant que les jetons enregistrés ne peuvent pas être
 lus (voir plus haut) : ils reviendraient dès qu'ils pourraient l'être. **Ajouter aux miens**
 fonctionne toujours, en gardant les jetons du fichier pour la session.
@@ -469,21 +475,21 @@ bloc : dans un nouveau fichier à côté, lisible par son seul propriétaire, pu
 substitué, si bien qu'un plantage ou deux enregistrements simultanés ne laissent
 jamais un demi-fichier. Si le fichier de paramètres est un lien symbolique vers
 ailleurs (un dépôt de dotfiles), l'écriture va vers la cible du lien et le lien
-reste. Gitcito ne remplace jamais le lien. Un lien qui pointe vers un fichier
+reste. GitHuttBr ne remplace jamais le lien. Un lien qui pointe vers un fichier
 qui n'existe pas encore est écrit à travers, ce qui crée ce fichier — tant que
 son dossier existe. Quand le dossier a disparu lui aussi, l'enregistrement
 échoue, avec un seul message qui le dit : le lien et ce vers quoi il pointe
 restent intacts, et les modifications faites entre-temps ne durent que jusqu'à
-la fermeture de Gitcito. Restaurez le dossier, ou faites pointer le lien vers un
+la fermeture de GitHuttBr. Restaurez le dossier, ou faites pointer le lien vers un
 endroit qui existe, et l'enregistrement suivant passe.
 
 Les jetons en clair qu'une ancienne version a laissés dans le fichier de
 paramètres ne sont jamais perdus lors d'un enregistrement : ils restent dans le
-fichier jusqu'à ce que Gitcito les charge dans le stockage chiffré (ouvrir les
+fichier jusqu'à ce que GitHuttBr les charge dans le stockage chiffré (ouvrir les
 Paramètres le fait), sauf si vous en effacez un vous-même.
 
 Seules deux choses l'écrivent : un enregistrement de vos paramètres, et
-Gitcito qui les charge (au démarrage, ou à l'ouverture des Paramètres) — c'est
+GitHuttBr qui les charge (au démarrage, ou à l'ouverture des Paramètres) — c'est
 là qu'un ancien jeton en clair passe dans le stockage chiffré, ou que l'adresse
 d'un serveur contenant un mot de passe est nettoyée. Une consultation que
 personne n'a demandée — un fetch qui résout son jeton, un appel d'IA qui cherche
@@ -502,18 +508,18 @@ effacé.
 
 Un fichier qui existe mais ne peut pas être analysé (une modification à la main
 qui a mal tourné, un disque endommagé) n'est **jamais** remplacé par les valeurs
-par défaut : Gitcito indique que le fichier est endommagé et ne va pas plus loin
+par défaut : GitHuttBr indique que le fichier est endommagé et ne va pas plus loin
 — aucun raccourci ni commande de menu ne peut enregistrer par-dessus depuis cet
 écran.
 
 ![L'écran de démarrage pour un fichier de paramètres endommagé, avec Réessayer et Mettre le fichier endommagé de côté et repartir de zéro](../../screenshots/settings-damaged.webp)
 
-Vous pouvez corriger `gitcito-settings.json` dans son dossier de données et
+Vous pouvez corriger `githuttbr-settings.json` dans son dossier de données et
 appuyer sur **Réessayer**, ou appuyer sur **Mettre le fichier endommagé de côté
 et repartir de zéro** : le fichier est renommé en
-`gitcito-settings.json.corrupt-<date>` (jamais supprimé, vous pouvez donc
+`githuttbr-settings.json.corrupt-<date>` (jamais supprimé, vous pouvez donc
 encore en récupérer quelque chose), une copie du stockage chiffré des jetons est
-gardée à côté, et Gitcito démarre comme au premier lancement, avec une note
+gardée à côté, et GitHuttBr démarre comme au premier lancement, avec une note
 indiquant où est passé le fichier. Pour un fichier de paramètres en lien
 symbolique, c'est la cible du lien qui est renommée, si bien que la copie
 endommagée reste dans vos dotfiles, à côté du nouveau fichier de paramètres que
@@ -524,15 +530,15 @@ laisserait le premier jeton enregistré supprimer les jetons des anciens profils
 Corrigez ce qui empêche d'écrire dans le dossier (permissions, disque plein) et
 appuyez sur **Réessayer**.
 
-Si le fichier s'abîme pendant que Gitcito tourne (modifié à la main en
-dessous), les enregistrements s'arrêtent et Gitcito le dit une fois : les
+Si le fichier s'abîme pendant que GitHuttBr tourne (modifié à la main en
+dessous), les enregistrements s'arrêtent et GitHuttBr le dit une fois : les
 paramètres ne peuvent plus être enregistrés jusqu'au redémarrage, et les
 modifications faites entre-temps sont perdues.
 
 Un fichier présent mais qu'on ne peut pas *lire* pendant un instant — un autre
 programme, comme un antivirus, le tient ouvert — est réessayé pendant environ
 deux secondes. S'il échoue encore, ou si le chargement échoue pour une autre
-raison, Gitcito indique qu'il n'a pas pu démarrer, que le fichier n'a pas été
+raison, GitHuttBr indique qu'il n'a pas pu démarrer, que le fichier n'a pas été
 modifié, et propose **Réessayer** ; il ne dit pas que le fichier est endommagé.
 
 ### Limites connues
@@ -567,7 +573,7 @@ l'**environnement** de la commande git — dont héritent chaque hook, filtre et
 processus LFS que git lance, ainsi que chaque paquet npm qu'exécute un script
 husky ou lefthook.
 
-À la place, pour chaque opération, Gitcito ouvre un point d'accès privé à lui —
+À la place, pour chaque opération, GitHuttBr ouvre un point d'accès privé à lui —
 un socket dans un dossier où seul votre utilisateur peut entrer (un tube nommé
 au nom aléatoire sous Windows) — et enregistre un assistant d'identification
 pour ce seul serveur. Quand git demande un identifiant, l'assistant se connecte,
@@ -612,7 +618,7 @@ Ce qu'il ne peut toujours pas faire :
   autre git — est retiré pour l'opération : on ne lui propose jamais le jeton du
   profil à stocker, et on ne l'interroge pas au nom de personne. Toutes les autres
   options `-c` héritées sont conservées.
-- **L'adresse d'un serveur doit être écrite comme git la lit.** Gitcito nomme le
+- **L'adresse d'un serveur doit être écrite comme git la lit.** GitHuttBr nomme le
   serveur selon les règles d'URL standard, git selon les siennes : un nom
   internationalisé (`bücher.example`), une forme numérique abrégée (`127.1`,
   `0x7f.0.0.1`), une adresse IPv6 compressée ou mappée, ou un caractère encodé
@@ -628,7 +634,7 @@ Ce qu'il ne peut toujours pas faire :
 - **N'exécutez pas de hooks auxquels vous ne faites pas confiance**, même avec
   un profil connecté. Un dépôt que vous venez de cloner peut livrer des hooks via
   des outils comme husky, qui les installent lors de `npm install` ; git exécute
-  ce qui se trouve dans `.git/hooks`, depuis Gitcito comme depuis un terminal, et
+  ce qui se trouve dans `.git/hooks`, depuis GitHuttBr comme depuis un terminal, et
   un hook peut faire bien pire que lire un jeton.
 - **Réduisez la portée du jeton.** Un jeton qui ne peut écrire que dans les
   dépôts sur lesquels vous travaillez vaut bien moins pour quiconque s'en empare.
@@ -654,7 +660,7 @@ lui-même.
 
 **La limite :** un nom de serveur isolé dans une phrase est reconnu à sa forme
 — avec des points, en minuscules. Un hôte d'un seul mot (`gitserver`) n'est
-détecté que dans les messages écrits par Gitcito lui-même, et un serveur sous un
+détecté que dans les messages écrits par GitHuttBr lui-même, et un serveur sous un
 domaine de premier niveau qui s'écrit comme une extension de fichier (`.sh`,
 `.md`) est gardé comme nom de fichier. Relisez l'issue avant de la publier
 malgré tout : le nettoyage reconnaît des formes connues, pas tout ce qui est
@@ -672,7 +678,7 @@ installation.
 
 Chacun de ces fichiers est écrit d'un bloc : dans un nouveau fichier à côté,
 puis substitué, si bien qu'un plantage ou deux enregistrements simultanés ne
-laissent jamais un demi-fichier — que Gitcito devrait sinon traiter comme
+laissent jamais un demi-fichier — que GitHuttBr devrait sinon traiter comme
 illisible. Une sauvegarde du stockage des jetons n'est supprimée plus tôt que
 lorsque chaque jeton qu'elle contient est aussi dans le stockage actuel ; toute
 autre sauvegarde est gardée 30 jours.
@@ -685,8 +691,8 @@ les autorise, et les deux paquets Linux gèrent cela différemment :
 
 | Paquet | Ce qui se passe |
 |---------|--------------|
-| `.deb` | Installe `/etc/apparmor.d/gitcito`, un profil pour `/opt/GitHuttBr/gitcito` qui autorise les espaces de noms utilisateur. L'application tourne dans le sandbox. |
-| AppImage | N'a pas de profil. Son lanceur essaie `unshare -Ur true`, et en cas d'échec démarre l'application avec `--no-sandbox` — sous Ubuntu 24.04+, c'est à chaque lancement. Gitcito écrit un avertissement dans sa sortie console quand cela arrive. |
+| `.deb` | Installe `/etc/apparmor.d/githuttbr`, un profil pour `/opt/GitHuttBr/githuttbr` qui autorise les espaces de noms utilisateur. L'application tourne dans le sandbox. |
+| AppImage | N'a pas de profil. Son lanceur essaie `unshare -Ur true`, et en cas d'échec démarre l'application avec `--no-sandbox` — sous Ubuntu 24.04+, c'est à chaque lancement. GitHuttBr écrit un avertissement dans sa sortie console quand cela arrive. |
 
 Pour exécuter l'AppImage dans le sandbox, installez plutôt le `.deb`, ou donnez
 à l'AppImage son propre profil AppArmor qui autorise `userns` (ou, pour toute la
@@ -696,10 +702,10 @@ la restriction pour tout).
 **La limite du profil du `.deb`.** Il est `flags=(unconfined)` avec `userns`
 autorisé, et il s'attache au chemin de l'exécutable. Le même exécutable tourne
 aussi comme simple Node lorsqu'il est lancé avec `ELECTRON_RUN_AS_NODE=1` —
-c'est ainsi que fonctionnent la commande `gitcito`, le convertisseur de diff
-fourni et l'assistant d'identification de Gitcito, si bien que cet interrupteur
+c'est ainsi que fonctionnent la commande `githuttbr`, le convertisseur de diff
+fourni et l'assistant d'identification de GitHuttBr, si bien que cet interrupteur
 ne peut pas être désactivé sans les casser. Ensemble, cela signifie que
-n'importe quel programme local peut utiliser l'exécutable de Gitcito comme un
+n'importe quel programme local peut utiliser l'exécutable de GitHuttBr comme un
 interpréteur Node autorisé à créer des espaces de noms utilisateur — le même
 genre de brèche que les contournements connus de la restriction d'Ubuntu via
 d'autres programmes dotés d'un profil. Cela ne donne à personne plus que les
@@ -708,6 +714,6 @@ qu'Ubuntu ajoute par-dessus. AppArmor ne sait pas distinguer les deux modes d'un
 même exécutable, donc un profil plus étroit n'est pas possible tant que la CLI le
 partage ; un binaire auxiliaire séparé pour la CLI est sur la feuille de route.
 Les administrateurs qui préfèrent s'en passer peuvent ajouter une règle de refus
-dans `/etc/apparmor.d/local/gitcito`, au prix du sandbox.
+dans `/etc/apparmor.d/local/githuttbr`, au prix du sandbox.
 
 **Voir aussi :** [Coffre](vault.md) · [Partage sécurisé](secure-share.md)

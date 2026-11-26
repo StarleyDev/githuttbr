@@ -411,8 +411,8 @@ export const shots = [
       const repo = repoPaths['image-showcase']
       await run('rm', ['-rf', repo])
       await run('git', ['init', '-q', repo])
-      await run('git', ['-C', repo, 'config', 'user.email', 'team@gitcito.dev'])
-      await run('git', ['-C', repo, 'config', 'user.name', 'Gitcito'])
+      await run('git', ['-C', repo, 'config', 'user.email', 'team@githuttbr.dev'])
+      await run('git', ['-C', repo, 'config', 'user.name', 'GitHuttBr'])
       await run('cp', [join(ASSETS, 'hero-before.png'), join(repo, 'mascot.png')])
       await run('git', ['-C', repo, 'add', '-A'])
       await run('git', ['-C', repo, 'commit', '-qm', 'feat: add mascot illustration'])
@@ -2885,7 +2885,7 @@ export const shots = [
     appTheme: 'midnight',
     env: { GITHUTTBR_DEVICE_BIN: DEMO_SDK },
     prepare: async ({ repoPaths }) => {
-      // A pubspec.yaml is what makes Gitcito ask the (fake) Flutter CLI at all.
+      // A pubspec.yaml is what makes GitHuttBr ask the (fake) Flutter CLI at all.
       await writeFile(join(repoPaths['launch-configs'], 'pubspec.yaml'), 'name: demo_app\n')
       await rm(DEMO_SDK, { recursive: true, force: true })
       await mkdir(DEMO_SDK, { recursive: true })
@@ -2927,7 +2927,7 @@ export const shots = [
   {
     // DevTools embedded in a page tab. The playground's stand-in `flutter`
     // serves a placeholder that says so and announces it the way the real CLI
-    // does — the shot is of Gitcito's panel, not a fabricated product page.
+    // does — the shot is of GitHuttBr's panel, not a fabricated product page.
     out: 'devtools',
     repos: ['launch-configs'],
     themes: ['dark'],
@@ -4692,13 +4692,13 @@ export const clips = [
     themes: ['light'],
     gif: {
       durationMs: 5000,
-      // Start on Gitcito light, swap to Nord dark, then back — shows both the
+      // Start on GitHuttBr light, swap to Nord dark, then back — shows both the
       // light/dark switch and a different built-in theme in one clip.
       drive: async (page) => {
         const steps = [
-          { appThemeId: 'gitcito', codeThemeId: 'gitcito', themeMode: 'light' },
+          { appThemeId: 'githuttbr', codeThemeId: 'githuttbr', themeMode: 'light' },
           { appThemeId: 'nord', codeThemeId: 'nord', themeMode: 'dark' },
-          { appThemeId: 'gitcito', codeThemeId: 'gitcito', themeMode: 'light' }
+          { appThemeId: 'githuttbr', codeThemeId: 'githuttbr', themeMode: 'light' }
         ]
         for (const patch of steps) {
           await page.evaluate(

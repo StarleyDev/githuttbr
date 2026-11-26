@@ -4,17 +4,17 @@ category: Bezpieczeństwo
 order: 73
 summary: Własny magazyn haseł gita — ten trzeci — i dlaczego https ciągle pyta cię od nowa.
 keywords: credential helper hasło https pyta znowu osxkeychain wincred manager libsecret store cache git-credentials plaintext zapomnij unieważniony token 401 sprawdź logowanie które konto token w adresie zdalnego repozytorium hasło w url usuń z adresu url token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Credential helper
 
-Gitcito trzyma trzy różne rodzaje sekretów, a ludzie całkiem rozsądnie zakładają,
+GitHuttBr trzyma trzy różne rodzaje sekretów, a ludzie całkiem rozsądnie zakładają,
 że to jedno:
 
 | | Trzymane przez |
 |---|---|
-| Tokeny API hostingu — PR-y, zgłoszenia, sprawdzenia CI | Gitcito, w twoim [pęku kluczy systemu](security.md) |
+| Tokeny API hostingu — PR-y, zgłoszenia, sprawdzenia CI | GitHuttBr, w twoim [pęku kluczy systemu](security.md) |
 | Transport `git@…` | Twój [klucz SSH](ssh-keys.md), przez systemowego agenta ssh |
 | **Transport `https://`** | **Własny credential helper gita** |
 
@@ -55,7 +55,7 @@ zwykłe ustawienie dla adresów, do których pasują, i są zwykle odpowiedzią 
 | `cache` | Pamięć, na 15 minut. Nic na dysku |
 | `store` | **Zwykły plik w twoim katalogu domowym. Bez szyfrowania** |
 
-Gitcito oferuje to, co faktycznie jest na tej maszynie zainstalowane, zaznacza
+GitHuttBr oferuje to, co faktycznie jest na tej maszynie zainstalowane, zaznacza
 ten pasujący do twojego systemu i wyszarza resztę.
 
 **Zasięg ma znaczenie.** *Dla każdego repozytorium* zapisuje do twojej globalnej
@@ -82,7 +82,7 @@ a każdy push wysypuje się z 401, które nic nie nazywa. **Zapomnij** prosi
 skonfigurowany helper o wymazanie swojego wpisu dla tego hosta —
 `git credential reject`, czyli udokumentowana droga samego gita.
 
-Nic po drodze nie jest odczytywane: Gitcito nigdy nie wywołuje
+Nic po drodze nie jest odczytywane: GitHuttBr nigdy nie wywołuje
 `git credential fill`, polecenia, które wypisałoby żywe hasło na standardowe
 wyjście.
 
@@ -126,7 +126,7 @@ Stary klon albo adres URL wklejony z wiki może nieść poświadczenie w samym a
 `https://user:token@git.example.test/team/app.git`. **Hasło w adresie URL zawsze ma
 pierwszeństwo:** git je wysyła i nie pyta żadnego helpera — ani tokenu
 [profilu](profiles.md) repozytorium, ani GitHub CLI, ani magazynu samego gita. Dopóki
-token działa, wszystko w porządku i Gitcito go nie rusza: **nigdy nie usuwa hasła z
+token działa, wszystko w porządku i GitHuttBr go nie rusza: **nigdy nie usuwa hasła z
 adresu URL bez pytania.** Gdy token zostanie unieważniony albo wygaśnie, każdy fetch,
 pull i push tego jednego repozytorium kończy się błędem *Invalid username or token*
 albo *Authentication failed*, a pozostałe repozytoria z tym samym profilem działają. A
@@ -134,7 +134,7 @@ token leży zwykłym tekstem w `.git/config` repozytorium.
 
 ![Usuwanie zapisanego tokenu z adresu zdalnego repozytorium](../../screenshots/remote-url-token.webp)
 
-Gitcito czyta adresy fetch i push każdego zdalnego repozytorium i mówi o tym w trzech
+GitHuttBr czyta adresy fetch i push każdego zdalnego repozytorium i mówi o tym w trzech
 miejscach:
 
 | Gdzie | Co widzisz |
@@ -189,14 +189,14 @@ repozytorium.
 
 ## Ograniczenia warte wiedzy
 
-- **To magazyn gita, nie Gitcito.** Zmiana tutaj zmienia też to, co robi twój
+- **To magazyn gita, nie GitHuttBr.** Zmiana tutaj zmienia też to, co robi twój
   terminal — i o to chodzi, ale warto o tym wiedzieć, zanim się coś zmieni.
 - **Helpery z poziomu systemu są pokazywane, ale nieedytowalne.** Mieszkają
   w konfiguracji, do której zapisać może tylko administrator.
-- **Gitcito nie potrafi wypisać tego, co helper trzyma.** Żadne API poświadczeń
+- **GitHuttBr nie potrafi wypisać tego, co helper trzyma.** Żadne API poświadczeń
   nie wystawia tego bez oddania samych sekretów, więc to okno raportuje
   konfigurację, wymazuje na żądanie i nic poza tym.
-- **Token, który dałeś Gitcito, jest osobny.** Unieważnienie jednego nie rusza
+- **Token, który dałeś GitHuttBr, jest osobny.** Unieważnienie jednego nie rusza
   drugiego; stronę pęku kluczy opisuje [bezpieczeństwo](security.md).
 - **Token profilu pozostaje poza środowiskiem hooków repozytorium.** Hook widzi tylko
   kod do prywatnego punktu dostępu, ważny, dopóki działa to polecenie gita —

@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import {
   chmodSync,
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -19,9 +20,9 @@ import { ROOT } from './helpers'
 /**
  * The shell shims in resources/cli, run against a fake packaged layout:
  *
- *   <root>/Git HuttBr/githuttbr-bin          the "app executable" (echoes how it was run)
- *   <root>/Git HuttBr/resources/app.asar/  stands in for the archive
- *   <root>/Git HuttBr/resources/cli/       the shims + app-binary
+ *   <root>/GitHuttBr/githuttbr-bin          the "app executable" (echoes how it was run)
+ *   <root>/GitHuttBr/resources/app.asar/  stands in for the archive
+ *   <root>/GitHuttBr/resources/cli/       the shims + app-binary
  *
  * plus a `node` on PATH and an out/main/cliEntry.js in the working directory,
  * both planted: a packaged shim must reach neither.
@@ -48,11 +49,11 @@ function exe(path: string, body: string): void {
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'githuttbr-shim-'))
-  app = join(root, 'Git HuttBr')
+  app = join(root, 'GitHuttBr')
   res = join(app, 'resources')
   mkdirSync(join(res, 'cli'), { recursive: true })
   mkdirSync(join(res, 'app.asar', 'out', 'main'), { recursive: true })
-  for (const f of ['githuttbr', 'githuttbr-textconv', 'gitcito-textconv']) {
+  for (const f of ['githuttbr', 'githuttbr-textconv']) {
     copyFileSync(join(ROOT, 'resources/cli', f), join(res, 'cli', f))
     chmodSync(join(res, 'cli', f), 0o755)
   }
@@ -105,7 +106,7 @@ describe('resources/cli/githuttbr, packaged', () => {
   })
 
   it('fails closed when app-binary names something that is not there', () => {
-    writeFileSync(join(res, 'cli', 'app-binary'), '../MacOS/Gitcito\n')
+    writeFileSync(join(res, 'cli', 'app-binary'), '../MacOS/Missing\n')
     const r = run(join(root, 'local-bin', 'githuttbr'), ['status'])
     expect(r.status).not.toBe(0)
     expect(r.stdout).not.toContain('PLANTED')
@@ -136,29 +137,11 @@ describe('resources/cli/githuttbr-textconv, packaged', () => {
   })
 })
 
-// 4.38 wrote this path into git config; an in-place update keeps it working.
-describe('resources/cli/gitcito-textconv, the pre-4.39 name', () => {
-  it('is in the repository as an executable', () => {
-    expect(statSync(join(ROOT, 'resources/cli/gitcito-textconv')).mode & 0o111).not.toBe(0)
-  })
-
-  it('hands over to its sibling with the same arguments', () => {
-    // A stand-in sibling, so the hand-over itself is what is tested.
-    exe(join(res, 'cli', 'githuttbr-textconv'), 'echo "SIBLING $0"; for a in "$@"; do echo "ARG[$a]"; done')
-    const r = run(join(res, 'cli', 'gitcito-textconv'), ['/tmp/some file.docx', '--x'])
-    expect(r.status).toBe(0)
-    expect(r.stdout.trim().split('\n')).toEqual([
-      `SIBLING ${res}/cli/githuttbr-textconv`,
-      'ARG[/tmp/some file.docx]',
-      'ARG[--x]'
-    ])
-  })
-
-  it('reaches the app binary through the real converter, never a PATH node', () => {
-    const r = run(join(res, 'cli', 'gitcito-textconv'), ['/tmp/a.json'])
-    expect(r.status).toBe(0)
-    expect(r.stdout.trim()).toBe(`APP RUN_AS_NODE=1 ${res}/app.asar/out/main/textconvCli.js /tmp/a.json`)
-    expect(r.stdout).not.toContain('PLANTED')
+// The converter's pre-4.39 name, which the upstream app also ships: this app does not any more.
+describe('resources/cli/<old converter name>', () => {
+  it('is gone from the app', () => {
+    expect(existsSync(join(ROOT, 'resources/cli/gitcito-textconv'))).toBe(false) // upstream-name: gone
+    expect(afterPack.CLI_SHIMS).toEqual(['githuttbr', 'githuttbr-textconv'])
   })
 })
 
@@ -166,15 +149,15 @@ describe('after-pack writes cli/app-binary', () => {
   const ctx = (platform: string): unknown => ({
     appOutDir: '/out',
     electronPlatformName: platform,
-    packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'githuttbr' }
+    packager: { appInfo: { productFilename: 'GitHuttBr' }, executableName: 'githuttbr' }
   })
 
   it('points each platform at its real executable', () => {
     expect(afterPack.cliAppBinary(ctx('linux'))).toEqual({ resources: '/out/resources', relative: '../githuttbr' })
-    expect(afterPack.cliAppBinary(ctx('win32'))).toEqual({ resources: '/out/resources', relative: '../Git HuttBr.exe' })
+    expect(afterPack.cliAppBinary(ctx('win32'))).toEqual({ resources: '/out/resources', relative: '../GitHuttBr.exe' })
     expect(afterPack.cliAppBinary(ctx('darwin'))).toEqual({
-      resources: '/out/Git HuttBr.app/Contents/Resources',
-      relative: '../MacOS/Git HuttBr'
+      resources: '/out/GitHuttBr.app/Contents/Resources',
+      relative: '../MacOS/GitHuttBr'
     })
   })
 
@@ -185,7 +168,7 @@ describe('after-pack writes cli/app-binary', () => {
     const context = {
       appOutDir: out,
       electronPlatformName: 'linux',
-      packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'githuttbr' }
+      packager: { appInfo: { productFilename: 'GitHuttBr' }, executableName: 'githuttbr' }
     }
     await expect(afterPack.writeCliAppBinary(context)).rejects.toThrow()
     mkdirSync(join(out, 'resources', 'cli'))
@@ -194,19 +177,18 @@ describe('after-pack writes cli/app-binary', () => {
     expect(readFileSync(join(out, 'resources', 'cli', 'app-binary'), 'utf8')).toBe('../githuttbr\n')
   })
 
-  it('marks every shim executable, the pre-4.39 stub included, and refuses a layout without it', async () => {
-    expect(afterPack.CLI_SHIMS).toContain('gitcito-textconv')
+  it('marks every shim executable, and refuses a layout without one', async () => {
     const out = join(root, 'linux-unpacked')
     const cli = join(out, 'resources', 'cli')
     mkdirSync(cli, { recursive: true })
     const context = {
       appOutDir: out,
       electronPlatformName: 'linux',
-      packager: { appInfo: { productFilename: 'Git HuttBr' }, executableName: 'githuttbr' }
+      packager: { appInfo: { productFilename: 'GitHuttBr' }, executableName: 'githuttbr' }
     }
-    for (const f of ['githuttbr', 'githuttbr-textconv']) writeFileSync(join(cli, f), '', { mode: 0o644 })
+    writeFileSync(join(cli, 'githuttbr'), '', { mode: 0o644 })
     await expect(afterPack.markCliExecutable(context)).rejects.toThrow()
-    writeFileSync(join(cli, 'gitcito-textconv'), '', { mode: 0o644 })
+    writeFileSync(join(cli, 'githuttbr-textconv'), '', { mode: 0o644 })
     await afterPack.markCliExecutable(context)
     for (const f of afterPack.CLI_SHIMS) expect(statSync(join(cli, f)).mode & 0o777).toBe(0o755)
   })

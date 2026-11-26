@@ -17,7 +17,7 @@ misgaat; zie [merge-opties](merge-options.md).
 ## Sleep de ene ref op de andere
 
 Het snelste gebaar in de app: pak een branch op en laat hem op een andere vallen.
-Gitcito opent een klein menu met wat die drop zou kunnen betekenen, en doet niets
+GitHuttBr opent een klein menu met wat die drop zou kunnen betekenen, en doet niets
 tot jij kiest.
 
 ![De ene branch op de andere slepen opent het menu met wat de drop kan betekenen](../../screenshots/clip-branch-drop.webp)
@@ -47,7 +47,7 @@ Laat een tag op een remote branch vallen en het enige dat je krijgt is
 Rebasen vraagt eerst om bevestiging: het geeft elke opnieuw afgespeelde commit
 een nieuwe hash, wat een force push betekent als de branch al gepubliceerd is.
 Pushen vraagt ook: iedereen die het doel pullt krijgt de commits, en een push
-kun je vanuit Gitcito niet ongedaan maken. Mergen vraagt niets — het voegt alleen
+kun je vanuit GitHuttBr niet ongedaan maken. Mergen vraagt niets — het voegt alleen
 toe. Mergen en rebasen draai je terug met één keer **Ongedaan maken**.
 
 ## Een commit op een branch slepen

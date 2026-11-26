@@ -124,7 +124,7 @@ function backupTarget(): string {
 /**
  * The user chose to start a new vault over one this session cannot read (the
  * Vault page). The old file is kept beside it under a name of its own —
- * readable again by whatever could read it, and never deleted by Gitcito —
+ * readable again by whatever could read it, and never deleted by GitHuttBr —
  * and the new vault starts empty.
  */
 async function replaceUnreadableVault(): Promise<boolean> {

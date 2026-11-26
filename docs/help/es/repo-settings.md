@@ -16,12 +16,12 @@ pertenecen a **este** repositorio, no a la aplicación.
 | Pestaña | Qué contiene |
 |---|---|
 | **General** | Ramas protegidas (un multiselector de ramas, guardado en la config de git), la imagen de la pestaña, firma |
-| **Config** | Las [reglas que este repositorio trae consigo](repo-config.md) en `.gitcito.json`, y el doctor que las comprueba |
+| **Config** | Las [reglas que este repositorio trae consigo](repo-config.md) en `.githuttbr.json`, y el doctor que las comprueba |
 | **Info** | Notas y campos libres sobre este repositorio, guardados en local |
 | **Bóveda** | Las entradas de la [bóveda](vault.md) de este repositorio |
 | **Métricas** | El [panel de historial](insights.md) |
 | **Analíticas** | Lo que has hecho en este repositorio, contado en local |
-| **Historial** · **Logs** | El registro de operaciones: cada comando de git que Gitcito ejecutó, con su salida |
+| **Historial** · **Logs** | El registro de operaciones: cada comando de git que GitHuttBr ejecutó, con su salida |
 
 El registro de operaciones es el sincero: cuando algo se comporta de forma rara,
 muestra el comando exacto y el error exacto, para que un informe de fallo lleve
@@ -64,7 +64,7 @@ Límites que conviene saber:
   ajustes muestra un aviso bajo la ruta. Nada más se queja.
 - La imagen se lee una vez por sesión. Si sustituyes el archivo con el mismo
   nombre, vuelve a abrir esta pestaña de ajustes para recargarla.
-- El ajuste vive en la configuración de Gitcito de esta máquina, no en el
+- El ajuste vive en la configuración de GitHuttBr de esta máquina, no en el
   repositorio, así que tus compañeros no lo heredan.
 
 **Ver también:** [Seguridad y secretos](security.md) · [Métricas](insights.md)

@@ -173,6 +173,6 @@ export const en = {
     'GitHuttBr is young. <strong>GitHub</strong> is the battle-tested path. GitHub Enterprise Server, self-managed GitLab and Bitbucket Data Center are <strong>beta</strong> — tested against simulated servers, not yet against real ones. If it breaks: well, <em>it works on my machine</em>. Issues and PRs welcome. 💜',
   'download.yours': 'Your system',
   'download.macHint':
-    'Not signed yet: the first time, open <strong>System Settings → Privacy &amp; Security → Open Anyway</strong>. On a Mac, each new version is downloaded by hand.',
+    'Signed with a Developer ID and notarized by Apple: it opens like any other app, and updates itself.',
   'download.autoUpdate': 'Updates itself from each new release.'
 }

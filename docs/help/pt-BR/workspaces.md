@@ -4,7 +4,7 @@ category: Comece por aqui
 order: 3
 summary: Muitos repositórios sem se afogar: abas, grupos, pastas e workspaces.
 keywords: workspace workspaces abas tabs grupos groups pastas folders múltiplos repositórios organizar alternar layout ir para repositório seletor tamanho das abas
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Workspaces, abas e grupos
@@ -140,7 +140,7 @@ Um workspace é **uma faixa de abas inteira salva**. Trocar troca todas as abas
 de uma vez: `Trabalho` e `Pessoal` param de pisar um no outro.
 
 O nome do workspace fica no canto superior esquerdo, ao lado da marca do
-Gitcito. Clique nele para trocar, criar, renomear, reordenar ou apagar. Ao lado
+GitHuttBr. Clique nele para trocar, criar, renomear, reordenar ou apagar. Ao lado
 fica o medidor que abre a [Central de controle](mission-control.md) do workspace
 em que você está.
 

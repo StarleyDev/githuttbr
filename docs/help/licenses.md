@@ -2,13 +2,13 @@
 title: Open-source licenses
 category: Make it yours
 order: 104
-summary: Read the license of every third-party package this build of Gitcito ships.
+summary: Read the license of every third-party package this build of GitHuttBr ships.
 keywords: licenses licences attribution notices open source MIT Apache BSD third party dependencies credits about
 ---
 
 # Open-source licenses
 
-Gitcito is built on ninety-odd open-source packages, and nearly all of them ask
+GitHuttBr is built on ninety-odd open-source packages, and nearly all of them ask
 for the same thing in return: that their notice travels with the binary. MIT,
 BSD and Apache all say so in the text itself. This page is where that notice
 lives, so the obligation is met by the app rather than by a file someone has to
@@ -48,11 +48,11 @@ Two limits worth knowing:
 - **A handful of packages ship no license file.** They declare an identifier in
   their manifest and nothing else. Those rows say so instead of inventing a
   text, because a license you cannot read is not a license you can rely on.
-- **The identifier is what the package claims.** Gitcito reports it; it does
+- **The identifier is what the package claims.** GitHuttBr reports it; it does
   not audit it. If a package's manifest is wrong, this page is wrong with it.
 
-Gitcito's own license is Apache 2.0, and the badge in the top-right corner opens it on
-GitHub. The code inherited from the original Gitcito came under the MIT license, and
+GitHuttBr's own license is Apache 2.0, and the badge in the top-right corner opens it on
+GitHub. The code inherited from the original GitHuttBr came under the MIT license, and
 its notice travels with the app in `NOTICE`, as the MIT license requires.
 
 **See also:** [Languages & right-to-left](languages.md) · [Themes & appearance](themes.md)

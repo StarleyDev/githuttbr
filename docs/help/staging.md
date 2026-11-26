@@ -62,7 +62,7 @@ highlighted in the diff, *Copy* copies just that text.
 
 Every one of them is on the undo stack (<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Z</kbd>).
 Discard still asks first, because it throws work away, and before it (and
-before revert and apply) Gitcito also takes a [WIP snapshot](recovery.md).
+before revert and apply) GitHuttBr also takes a [WIP snapshot](recovery.md).
 While an action is landing, the buttons stay where they are but are off, so
 nothing is pressed twice on lines that are already gone.
 
@@ -73,7 +73,7 @@ The limits:
   staging a hunk does not also stage a re-indent you could not see.
 - **When the file has moved on.** Revert and apply cut their patch from history,
   and the file may have changed since, through a later commit or edits you have
-  not committed. Gitcito then merges the hunk in three ways, the way git merges
+  not committed. GitHuttBr then merges the hunk in three ways, the way git merges
   a whole commit. Changes that do not overlap combine cleanly. Lines you have
   edited yourself get conflict markers (`<<<<<<< working copy` … `>>>>>>> hunk`)
   and a notice says so. The result is an unstaged change, never staged, so you
@@ -107,7 +107,7 @@ change, staged and unstaged, newly added files included: a file you had
 ### Undoing a discard
 
 Discarding a file, a folder or everything can be undone. Right before it runs,
-Gitcito saves what was staged and what was on disk as two git trees, and the
+GitHuttBr saves what was staged and what was on disk as two git trees, and the
 discard goes on the undo stack. **Undo** (the toolbar button, or
 *Repository → Undo last operation*) puts the discarded files back exactly as
 they were: the staged part staged, the unstaged part on disk, new and untracked
@@ -143,7 +143,7 @@ the folder path.
 
 ## Before you commit
 
-Gitcito checks a few things and asks once, never silently:
+GitHuttBr checks a few things and asks once, never silently:
 
 - a file that looks like a **secret** (`.env`, `*.pem`, `id_rsa`…),
 - a **very large** blob (threshold in Settings → Security),

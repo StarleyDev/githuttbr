@@ -142,10 +142,10 @@ The shell starts as a **login shell**, the same as Terminal.app or iTerm, so
 run. That matters because version managers and `brew shellenv` usually install
 themselves there — a tool like `fvm`, `nvm` or `pyenv` that works in your
 terminal works here too. Known shells (sh, bash, zsh, ksh, fish, tcsh, nu…) get
-the login flag; a custom shell Gitcito does not recognise is started with no
+the login flag; a custom shell GitHuttBr does not recognise is started with no
 arguments, since an unknown flag could stop it starting at all.
 
-Gitcito also asks your login shell for its real `PATH` at startup and merges it
+GitHuttBr also asks your login shell for its real `PATH` at startup and merges it
 into everything it spawns — git hooks, [Run & debug](launch.md) tasks, the
 terminal — because a GUI app launched from the Dock inherits almost nothing. It
 asks the same shell the terminal opens by default, so a tool that only
@@ -184,12 +184,12 @@ or icons render as boxes.
 
 A note on speed: Oh My Posh runs its binary once per prompt — roughly
 100–200 ms on Windows, more for themes with a git segment in a large repo —
-which is felt as a short pause before each prompt, not as Gitcito lag. Themes
+which is felt as a short pause before each prompt, not as GitHuttBr lag. Themes
 without a git segment are the fastest. PowerShell's prediction style matters
 too: `-PredictionViewStyle InlineView` repaints a small area per keystroke
 while `ListView` redraws a whole block.
 
-Anything you run here is invisible to Gitcito's own locking, so a long
+Anything you run here is invisible to GitHuttBr's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app
 refreshes from disk when the terminal changes something.
 

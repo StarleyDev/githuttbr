@@ -4,7 +4,7 @@ category: Erste Schritte
 order: 3
 summary: Viele Repositorys, ohne unterzugehen: Tabs, Gruppen, Ordner und Workspaces.
 keywords: workspace arbeitsbereich tabs gruppen ordner mehrere repos organisieren wechseln layout zu repository wechseln umschalter tab-größe go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Workspaces, Tabs & Gruppen
@@ -146,7 +146,7 @@ Ein Workspace ist eine **komplette gespeicherte Tab-Leiste**. Ein Wechsel tausch
 alle Tabs auf einmal aus: `Work` und `Personal` treten sich nicht mehr gegenseitig
 auf die Füße.
 
-Der Workspace-Name sitzt oben links, neben dem Gitcito-Zeichen. Klick ihn an, um
+Der Workspace-Name sitzt oben links, neben dem GitHuttBr-Zeichen. Klick ihn an, um
 zu wechseln, anzulegen, umzubenennen, umzusortieren oder zu löschen. Daneben liegt
 die Anzeige, die [Mission Control](mission-control.md) für den Workspace öffnet, in
 dem du gerade bist.

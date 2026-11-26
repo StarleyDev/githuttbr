@@ -4,7 +4,7 @@ category: Per iniziare
 order: 3
 summary: Tanti repository senza affogare: schede, gruppi, cartelle e aree di lavoro.
 keywords: area di lavoro workspace schede tabs gruppi cartelle più repo organizza cambia layout vai al repository selettore dimensione delle schede go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Aree di lavoro, schede e gruppi
@@ -141,7 +141,7 @@ Un'area di lavoro è un'**intera striscia di schede salvata**. Cambiarla scambia
 tutte le schede in una volta: `Lavoro` e `Personale` smettono di pestarsi i
 piedi.
 
-Il nome dell'area di lavoro sta in alto a sinistra, accanto al marchio Gitcito.
+Il nome dell'area di lavoro sta in alto a sinistra, accanto al marchio GitHuttBr.
 Cliccalo per cambiare, creare, rinominare, riordinare o eliminare. Accanto c'è
 l'indicatore che apre [Mission control](mission-control.md) per l'area di lavoro
 in cui sei.

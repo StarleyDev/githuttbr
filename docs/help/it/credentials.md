@@ -4,17 +4,17 @@ category: Sicurezza
 order: 73
 summary: L'archivio password di git — il terzo — e perché https continua a chiedertele.
 keywords: credential helper password https chiede di nuovo osxkeychain wincred manager libsecret store cache git-credentials testo in chiaro dimentica revocato token 401 verifica accesso quale account token nell’url del remote password incorporata rimuovilo dall’url token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Credential helper
 
-Gitcito ha a che fare con tre tipi diversi di segreto, e le persone danno per
+GitHuttBr ha a che fare con tre tipi diversi di segreto, e le persone danno per
 scontato — non a torto — che siano una cosa sola:
 
 | | Custodito da |
 |---|---|
-| Token API dell'host — PR, issue, controlli CI | Gitcito, nel tuo [portachiavi di sistema](security.md) |
+| Token API dell'host — PR, issue, controlli CI | GitHuttBr, nel tuo [portachiavi di sistema](security.md) |
 | Trasporto `git@…` | La tua [chiave SSH](ssh-keys.md), tramite l'agente ssh di sistema |
 | **Trasporto `https://`** | **Il credential helper di git** |
 
@@ -55,7 +55,7 @@ risposta a "perché proprio quell'host si comporta diversamente".
 | `cache` | In memoria, per 15 minuti. Niente su disco |
 | `store` | **Un file in chiaro nella tua home. Non cifrato** |
 
-Gitcito propone ciò che è davvero installato su questa macchina, segna quello
+GitHuttBr propone ciò che è davvero installato su questa macchina, segna quello
 adatto al tuo sistema operativo e disattiva il resto.
 
 **L'ambito conta.** *Per ogni repository* scrive nella tua configurazione
@@ -82,7 +82,7 @@ vecchio e ogni push fallisce con un 401 che non nomina niente. **Dimentica**
 chiede all'helper configurato di cancellare la propria voce per quell'host —
 `git credential reject`, cioè la strada documentata da git stesso.
 
-Nel farlo non si legge nulla: Gitcito non chiama mai `git credential fill`, il
+Nel farlo non si legge nulla: GitHuttBr non chiama mai `git credential fill`, il
 comando che stamperebbe una password valida sullo standard output.
 
 Il push successivo te la chiede una volta, e l'helper memorizza la nuova
@@ -125,7 +125,7 @@ Un vecchio clone, o un URL incollato da una wiki, può portare la credenziale de
 l’indirizzo: `https://user:token@git.example.test/team/app.git`. **Una password
 nell’URL ha sempre la precedenza:** git la invia e non chiede a nessun helper — né al
 token del [profilo](profiles.md) del repository, né alla GitHub CLI, né all’archivio di
-git. Finché il token funziona, va bene, e Gitcito lo lascia stare: **non rimuove mai
+git. Finché il token funziona, va bene, e GitHuttBr lo lascia stare: **non rimuove mai
 una password da un URL senza chiedertelo.** Appena il token viene revocato o scade,
 ogni fetch, pull e push di quel repository fallisce con *Invalid username or token* o
 *Authentication failed*, mentre gli altri repository dello stesso profilo funzionano.
@@ -133,7 +133,7 @@ E il token sta in chiaro nel `.git/config` del repository.
 
 ![Rimuovere un token salvato dall’URL di un remote](../../screenshots/remote-url-token.webp)
 
-Gitcito legge gli URL di fetch e di push di ogni remote e lo segnala in tre punti:
+GitHuttBr legge gli URL di fetch e di push di ogni remote e lo segnala in tre punti:
 
 | Dove | Cosa vedi |
 |-------|--------------|
@@ -188,15 +188,15 @@ leggere la cartella del repository.
 
 ## Limiti da conoscere
 
-- **Questo è l'archivio di git, non quello di Gitcito.** Cambiarlo cambia anche
+- **Questo è l'archivio di git, non quello di GitHuttBr.** Cambiarlo cambia anche
   quello che fa il tuo terminale — che è esattamente il punto, e vale la pena
   saperlo prima di cambiarlo.
 - **Gli helper a livello di sistema sono mostrati, non modificabili.** Vivono in
   una configurazione che solo un amministratore può scrivere.
-- **Gitcito non può elencare cosa contiene un helper.** Nessuna API delle
+- **GitHuttBr non può elencare cosa contiene un helper.** Nessuna API delle
   credenziali lo espone senza consegnare i segreti, quindi la finestra riporta la
   configurazione e cancella su richiesta, e nient'altro.
-- **Un token dato a Gitcito è un'altra cosa.** Revocarne uno non tocca l'altro;
+- **Un token dato a GitHuttBr è un'altra cosa.** Revocarne uno non tocca l'altro;
   per il lato portachiavi vedi [sicurezza](security.md).
 - **Il token di un profilo resta fuori dall’ambiente degli hook del repository.** Un
   hook vede solo un codice per un endpoint privato, valido mentre gira quel comando

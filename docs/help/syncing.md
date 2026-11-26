@@ -23,7 +23,7 @@ out without tracking, has none. The fetch still succeeds, a long list of updated
 information for the current branch"*. Nothing was pulled and nothing was broken:
 the second half simply had no target.
 
-Gitcito reads that error and offers the repair as a button, picking which one
+GitHuttBr reads that error and offers the repair as a button, picking which one
 from whether the remote already carries the branch:
 
 | | |
@@ -109,7 +109,7 @@ twice the exposure, not half the caution.
 ## Branches you are not standing on
 
 `git pull` only ever moves HEAD, which is why most clients make you check a
-branch out before you can catch it up. Gitcito does not: right-click any local
+branch out before you can catch it up. GitHuttBr does not: right-click any local
 branch — in the sidebar or on its badge in the [graph](graph.md) — and you get
 **Pull <branch>** and **Push <branch>**, both acting on *that* branch rather
 than the checked-out one.
@@ -206,7 +206,7 @@ reloads the states so you can push what is left.
   **held back** and the result shows which files caused it. The other branches
   still go. To publish a held-back branch, push it on its own. The single push
   shows you those files and asks you to confirm.
-- The repository's own push checklist from `.gitcito.json` is shown once, as for
+- The repository's own push checklist from `.githuttbr.json` is shown once, as for
   any push.
 - Protected branches get no extra confirmation, the same as a normal non-forced
   push. The lock is there so you notice, and the host decides.

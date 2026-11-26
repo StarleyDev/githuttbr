@@ -16,7 +16,11 @@ import type { SecureBundleHeader, SecureBundleSectionSummary, SecureWorkspaceTab
 // v1 (legacy single-repo) bundles carried `{ files: [...] }` and no sections; we
 // still read them, upgrading to a single repo section on unpack.
 
-export const BUNDLE_FORMAT = 'gitcito-secure-bundle'
+// The format marker. Only this one is written.
+export const BUNDLE_FORMAT = 'githuttbr-secure-bundle'
+// What this app itself wrote up to 4.58 (the inherited name). A bundle is a file
+// the user picks, so a teammate's bundle from an older build still opens.
+const OLD_BUNDLE_FORMAT = 'gitcito-secure-bundle' // upstream-name: this app's own bundles up to 4.58
 // v2: repo + vault sections. v3 added workspace-structure and git-notes
 // sections; a bundle is stamped v3 only when it carries one, so older builds
 // refuse it cleanly as unsupported-version instead of misreading it.
@@ -205,7 +209,7 @@ export function readBundleHeader(text: string): SecureBundleHeader | null {
   } catch {
     return null
   }
-  if (!raw || raw.format !== BUNDLE_FORMAT) return null
+  if (!raw || (raw.format !== BUNDLE_FORMAT && raw.format !== OLD_BUNDLE_FORMAT)) return null
   if (typeof raw.version !== 'number' || raw.version > BUNDLE_VERSION) {
     throw new BundleError('unsupported-version')
   }

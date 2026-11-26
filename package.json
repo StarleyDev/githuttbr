@@ -48,7 +48,7 @@
     "repo:stats": "bash examples/repo-stats.sh"
   },
   "build": {
-    "appId": "com.gitcito.desktop",
+    "appId": "com.huttbr.git",
     "productName": "GitHuttBr",
     "artifactName": "${productName}-${version}-${arch}.${ext}",
     "afterPack": "./scripts/after-pack.cjs",
@@ -124,7 +124,9 @@
     "nsis": {
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh"
     },
     "linux": {
       "executableName": "githuttbr",
@@ -139,26 +141,6 @@
           "StartupWMClass": "githuttbr"
         }
       }
-    },
-    "deb": {
-      "fpm": [
-        "--replaces",
-        "gitcito",
-        "--conflicts",
-        "gitcito",
-        "--provides",
-        "gitcito"
-      ]
-    },
-    "rpm": {
-      "fpm": [
-        "--replaces",
-        "gitcito",
-        "--conflicts",
-        "gitcito",
-        "--provides",
-        "gitcito"
-      ]
     }
   },
   "dependencies": {

@@ -2,7 +2,7 @@
 title: 환경 점검
 category: 시작하기
 order: 6
-summary: Gitcito가 자체 설치 밖에서 의존하는 것 — git, LFS, 네이티브 터미널, git의 credential helper, GitHub CLI, 파일 감시 — 를 한곳에서 점검합니다.
+summary: GitHuttBr가 자체 설치 밖에서 의존하는 것 — git, LFS, 네이티브 터미널, git의 credential helper, GitHub CLI, 파일 감시 — 를 한곳에서 점검합니다.
 keywords: 환경 environment 닥터 진단 점검 git 버전 lfs node-pty 터미널 기본 셸 credential helper store gh github cli 스코프 workflow inotify max_user_watches
 ---
 
@@ -13,7 +13,7 @@ keywords: 환경 environment 닥터 진단 점검 git 버전 lfs node-pty 터미
 CLI 로그인. 모두 나중에 다른 작업 도중 모호한 오류로 나타납니다. **설정 → 환경**(명령
 팔레트의 *Settings: Environment*로도 가능)은 이것들을 미리 점검합니다.
 
-[저장소 닥터](repo-settings.md)는 다른 질문에 답합니다. *이 저장소*가 `.gitcito.json`이
+[저장소 닥터](repo-settings.md)는 다른 질문에 답합니다. *이 저장소*가 `.githuttbr.json`이
 요구하는 대로 여기서 빌드될 수 있는지입니다. 환경 점검은 앱 자체를 다루며 어느 저장소에서나
 같습니다.
 
@@ -26,7 +26,7 @@ CLI 로그인. 모두 나중에 다른 작업 도중 모호한 오류로 나타�
 | **Git** | git 2.31 이상이 `PATH`에 있음 | 2.31보다 오래됨: [프로필](profiles.md)의 계정이 fetch와 push에 로그인할 수 없음. 없음: git을 설치할 때까지 아무것도 동작하지 않음 |
 | **Git LFS** | `git lfs`가 설치됨 | 설치되지 않음. LFS에 파일을 두는 저장소만 필요함 |
 | **터미널** | 네이티브 터미널이 로드됨 | [터미널](terminal.md)이 기본 모드로 실행됨: 색상 없음, 크기 조절 없음, 전체 화면 프로그램 없음 |
-| **Credential helper** | git에 HTTPS 비밀번호용 helper가 있음 — 전역 또는 특정 호스트용(`gh auth setup-git`이 설정하는 것) | helper가 없어서 Gitcito 밖의 git이 매번 물음. 또는 평문으로 저장하는 `store`. [Credential helper](credentials.md) 참고 |
+| **Credential helper** | git에 HTTPS 비밀번호용 helper가 있음 — 전역 또는 특정 호스트용(`gh auth setup-git`이 설정하는 것) | helper가 없어서 GitHuttBr 밖의 git이 매번 물음. 또는 평문으로 저장하는 `store`. [Credential helper](credentials.md) 참고 |
 | **GitHub CLI** | `gh`가 `workflow` 스코프로 로그인됨 | 그 스코프 없이 로그인됨: GitHub가 `.github/workflows`를 바꾸는 push를 모두 거부함 |
 | **파일 감시**(Linux) | inotify 한도가 65,536 이상 | 한도가 낮으면 큰 저장소 몇 개만 열어도 바닥나고, 새 폴더에서 상태가 갱신되지 않음 |
 

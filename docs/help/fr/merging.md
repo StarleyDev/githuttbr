@@ -18,7 +18,7 @@ fusion](merge-options.md).
 ## Glisser une référence sur une autre
 
 Le geste le plus rapide de l'application : attrapez une branche et déposez-la sur
-une autre. Gitcito ouvre un petit menu de ce que ce dépôt pourrait signifier, et
+une autre. GitHuttBr ouvre un petit menu de ce que ce dépôt pourrait signifier, et
 ne fait rien tant que vous n'avez pas choisi.
 
 ![Glisser une branche sur une autre ouvre le menu de ce que le dépôt pourrait signifier](../../screenshots/clip-branch-drop.webp)
@@ -51,7 +51,7 @@ c'est sincèrement tout ce qui existe.
 Le rebase demande d'abord confirmation : il donne un nouveau hash à chaque commit
 rejoué, ce qui signifie un push forcé si la branche est déjà publiée. Le push
 demande aussi : tous ceux qui tirent la cible reçoivent ses commits, et un push
-ne peut pas être annulé depuis Gitcito. La fusion, elle, ne demande rien — elle
+ne peut pas être annulé depuis GitHuttBr. La fusion, elle, ne demande rien — elle
 ne fait qu'ajouter. Fusion et rebase se défont d'un seul **Annuler**.
 
 ## Glisser un commit sur une branche

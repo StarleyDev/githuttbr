@@ -2,14 +2,14 @@
 title: Segurança e segredos
 category: Segurança
 order: 70
-summary: Mascaramento, proteções, o chaveiro do sistema — e o que o Gitcito se recusa a fazer.
+summary: Mascaramento, proteções, o chaveiro do sistema — e o que o GitHuttBr se recusa a fazer.
 keywords: segurança security imagens nos comentários pixel de rastreamento endereço ip imagens de terceiros clique para carregar segredos secrets mascaramento masking chaveiro keychain safeStorage tokens branch protegida arquivo grande proteção guard privacidade importar exportar configurações ilegível backup partes traduzir caminhos remapear outro computador máquina nova mesclar perfis substituir perfis escolher o que exportar backup completo outro computador para o time manifesto senha appimage textconv arquivo de configurações danificado credential helper apparmor sandbox
-source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
+source: 26f333bbdafd9ab662dc635c22df7456d66b1362
 ---
 
 # Segurança e segredos
 
-O Gitcito **não tem backend**. As únicas chamadas de rede são para o seu host Git e,
+O GitHuttBr **não tem backend**. As únicas chamadas de rede são para o seu host Git e,
 se você ligar, para o seu provedor de IA.
 
 ![Configurações de segurança](../../screenshots/settings-security.webp)
@@ -85,14 +85,14 @@ restringido está em [Pull requests](pull-requests.md#como-os-comentários-apare
 Um AppImage roda de uma pasta em `/tmp` (`/tmp/.mount_…`) que só existe enquanto o
 app está aberto, muda de nome a cada abertura e fica num diretório em que qualquer
 usuário local pode escrever. Até a 4.37.1, o AppImage podia gravar um caminho de
-dentro dessa pasta em dois lugares que sobrevivem a ela: o link `gitcito` no `PATH`
+dentro dessa pasta em dois lugares que sobrevivem a ela: o link `githuttbr` no `PATH`
 ([CLI](cli.md)) e a configuração `diff.<name>.textconv` de um repositório
 ([atributos](attributes.md)). Depois que o app fecha, outro usuário da mesma máquina
-podia recriar a pasta com um programa dele, que o seu próximo `gitcito` ou `git diff`
+podia recriar a pasta com um programa dele, que o seu próximo `githuttbr` ou `git diff`
 executaria.
 
-Agora o Gitcito recusa os dois sob um AppImage, avisa na inicialização sobre um link
-`gitcito` obsoleto (com um comando da paleta para removê-lo) e marca um conversor
+Agora o GitHuttBr recusa os dois sob um AppImage, avisa na inicialização sobre um link
+`githuttbr` obsoleto (com um comando da paleta para removê-lo) e marca um conversor
 obsoleto no diálogo de Atributos com um botão **Remover**. Ele só enxerga o
 repositório que você tem aberto; para achar conversores obsoletos em outros lugares,
 rode `git config --get-regexp 'diff\..*\.textconv'` em cada repositório (e com
@@ -106,7 +106,7 @@ sistema (o `safeStorage` do Electron), nunca com uma chave no arquivo de
 configurações.
 
 **Nada toca no chaveiro até você mandar.** Antes que o diálogo de permissão do
-próprio sistema possa aparecer, o Gitcito explica o que está sendo guardado, o que
+próprio sistema possa aparecer, o GitHuttBr explica o que está sendo guardado, o que
 ele não consegue fazer (um app só consegue ler de volta a entrada que ele mesmo
 criou — as suas outras senhas são inalcançáveis), e que dizer não está tudo bem: os
 tokens então vivem na memória apenas pela sessão, o Cofre fica fechado, e você pode
@@ -115,7 +115,12 @@ ligar depois em **Configurações → Segurança → Chaveiro do sistema**.
 Uma instalação nova faz **zero** chamadas ao chaveiro até algo de fato precisar ser
 guardado.
 
-Enquanto ele estiver desligado, o campo de token em Integrações avisa — *Guardado só até você fechar o Gitcito: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
+**Depois de atualizar para a 4.59 no macOS** o sistema pode perguntar mais uma vez
+pelo item *GitHuttBr Safe Storage*: o bundle id do app mudou para `com.huttbr.git`,
+e o chaveiro pergunta de novo por um app que ele não reconhece. **Permitir sempre**
+mantém os tokens; veja [atualização](upgrading.md).
+
+Enquanto ele estiver desligado, o campo de token em Integrações avisa — *Guardado só até você fechar o GitHuttBr: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
 
 ![O campo de token em Integrações com o chaveiro desligado: guardado só até fechar, com o botão Ativar](../../screenshots/token-keychain-notice.webp)
 
@@ -127,7 +132,7 @@ momento; feche antes e o token antigo volta na próxima abertura. Até lá o avi
 continua aparecendo por esse motivo. Para apagar de vez um token guardado num passo
 só, limpe-o com o chaveiro ligado.
 
-Um campo em branco só limpa o que o Gitcito mostrou a você. Com o chaveiro
+Um campo em branco só limpa o que o GitHuttBr mostrou a você. Com o chaveiro
 desligado desde o início, os tokens salvos nunca são descriptografados nem
 mostrados — os campos ficam vazios —, então um token que você digita ali e depois
 limpa de novo é o único removido; o salvo por baixo dele continua lá quando o
@@ -149,7 +154,7 @@ que não existe.
 
 Para nada novo cair num armazenamento que qualquer um desembaralha, um token
 digitado sem chaveiro rodando fica guardado **só até você fechar o app**. O campo
-do token avisa — *Guardado só até você fechar o Gitcito: nenhum chaveiro está
+do token avisa — *Guardado só até você fechar o GitHuttBr: nenhum chaveiro está
 rodando…* — sem botão de tentar de novo, porque tentar de novo não resolve; só um
 chaveiro resolve. Importar um arquivo de configurações com credenciais avisa o
 mesmo antes de importá-las. Os tokens salvos antes continuam legíveis — você nunca
@@ -157,9 +162,9 @@ perde o acesso a eles — e apagar ou trocar um ainda remove o valor antigo do d
 Dois limites: a chave da IA geral não é movida para o espaço compartilhado (cada
 perfil continua lendo a sua), e o Cofre continua salvando no armazenamento básico,
 porque não tem modo só de sessão. Instale ou desbloqueie um chaveiro e reinicie o
-Gitcito para voltar a guardar tokens novos.
+GitHuttBr para voltar a guardar tokens novos.
 
-O Gitcito não confia só no que o sistema diz sobre o armazenamento que recebeu.
+O GitHuttBr não confia só no que o sistema diz sobre o armazenamento que recebeu.
 Ele o trata como básico quando o sistema diz que é, quando não sabe dizer qual
 é, e quando o que ele criptografa volta marcado com a senha fixa — diga o
 sistema o que disser. Assim, um chaveiro que cai para o básico em silêncio
@@ -170,22 +175,22 @@ que o chaveiro respondeu uma vez na sessão, uma pergunta sem resposta por 10
 segundos conta como *sem chaveiro*: um token salvo fica só até você fechar o
 app, e o Cofre fica fechado. A primeira pergunta da sessão — a que pode abrir o
 pedido de senha do próprio chaveiro — e a que vem logo depois da explicação do
-Gitcito têm dois minutos, para que ler uma janela nunca seja interrompido. Por
+GitHuttBr têm dois minutos, para que ler uma janela nunca seja interrompido. Por
 meio minuto depois de um desses limites a resposta continua *sem chaveiro* sem
-perguntar de novo; depois o Gitcito pergunta outra vez. macOS e Windows
+perguntar de novo; depois o GitHuttBr pergunta outra vez. macOS e Windows
 respondem localmente e nunca têm limite de tempo.
 
 O limite vale só para essa pergunta — *há um chaveiro aí?* Um chaveiro que
 responde a ela e depois trava ao criptografar ou descriptografar continua sendo
 esperado: salvar as configurações, e o Cofre, ficam ocupados até ele responder
-ou o Gitcito ser reiniciado.
+ou o GitHuttBr ser reiniciado.
 
 ### Quando os tokens salvos não podem ser lidos
 
 Se você fecha o pedido do chaveiro do sistema, o chaveiro está bloqueado ou o
-armazenamento de tokens foi gravado por outra cópia do Gitcito (um build de
-desenvolvimento, uma versão assinada de novo), o Gitcito **não consegue ler os seus
-tokens salvos — e os deixa intactos**. Configurações → Segurança diz *O Gitcito não
+armazenamento de tokens foi gravado por outra cópia do GitHuttBr (um build de
+desenvolvimento, uma versão assinada de novo), o GitHuttBr **não consegue ler os seus
+tokens salvos — e os deixa intactos**. Configurações → Segurança diz *O GitHuttBr não
 conseguiu ler seus tokens salvos*, e um token que você digitar enquanto isso fica só
 pela sessão (o campo também avisa). Ele nunca é gravado por cima do armazenamento que
 não pôde ser lido: isso trocaria todos os tokens salvos pelo que você acabou de
@@ -194,7 +199,7 @@ digitar.
 | Botão | O que faz |
 |--------|--------------|
 | **Tentar de novo** | Lê o armazenamento de novo — o sistema pode pedir o chaveiro agora. Quando ele puder ser lido, os tokens digitados nesse meio-tempo se juntam a ele. |
-| **Criar um novo cofre de tokens** | Pergunta antes. O Gitcito para de esperar pelo armazenamento antigo e começa um novo só com os tokens desta sessão. O arquivo antigo fica ao lado como backup por 30 dias, e depois é apagado. Serve para um armazenamento perdido de vez, não para um pedido que você fechou. |
+| **Criar um novo cofre de tokens** | Pergunta antes. O GitHuttBr para de esperar pelo armazenamento antigo e começa um novo só com os tokens desta sessão. O arquivo antigo fica ao lado como backup por 30 dias, e depois é apagado. Serve para um armazenamento perdido de vez, não para um pedido que você fechou. |
 
 ## Importando configurações
 
@@ -318,7 +323,7 @@ e os logins emprestados do gerenciador de credenciais desta máquina continuam
 sendo os desta máquina.
 
 **Os padrões são um palpite a partir do seu disco.** Antes de o diálogo
-aparecer, o Gitcito confere se as pastas dos repositórios do arquivo existem
+aparecer, o GitHuttBr confere se as pastas dos repositórios do arquivo existem
 aqui. Se nenhuma existe, o arquivo veio de outro computador: **Repositórios** e
 **Programas** começam desmarcados, cada um com o motivo — os caminhos dos
 programas são listados, para você ver que são de outro lugar. Se existem, é o
@@ -336,7 +341,7 @@ existem e abre a caixa **Traduzir caminhos**. À esquerda, a pasta que os
 repositórios do arquivo têm em comum (`/home/you/code`); à direita, onde essa
 pasta fica neste computador, já preenchida a partir da sua pasta pessoal
 (`/Users/you/code`). Os dois campos são editáveis — o palpite pode errar, e
-quando o Gitcito não acha uma pasta em comum deixa os dois vazios para você
+quando o GitHuttBr não acha uma pasta em comum deixa os dois vazios para você
 digitar. Uma barra conta, enquanto você digita, quantos repositórios passam a
 ter pasta aqui, com alguns deles listados — verde encontrado, vermelho ainda
 faltando. A troca leva junto o apelido, a imagem da aba e o perfil de cada
@@ -390,7 +395,7 @@ arquivo não tem serão apagados; **Cancelar** ali deixa o diálogo como estava.
 
 **Substituir tudo precisa do chaveiro.** Com o chaveiro desligado ou indisponível,
 os tokens antigos ficariam no armazenamento criptografado e voltariam na próxima
-abertura, então o Gitcito recusa: ele avisa, e nada é importado. O mesmo vale
+abertura, então o GitHuttBr recusa: ele avisa, e nada é importado. O mesmo vale
 enquanto os tokens salvos não podem ser lidos (veja acima): eles voltariam assim que
 pudessem. **Adicionar às minhas** continua funcionando, guardando os tokens do
 arquivo pela sessão.
@@ -438,21 +443,21 @@ O arquivo de configurações e o armazenamento criptografado de tokens são grav
 inteiros: num arquivo novo ao lado, só do dono, que depois toma o lugar do antigo,
 para que uma queda ou dois salvamentos ao mesmo tempo nunca deixem meio arquivo. Se
 o arquivo de configurações for um link simbólico para outro lugar (um repositório de
-dotfiles), a gravação vai para o destino do link, e o link fica. O Gitcito nunca
+dotfiles), a gravação vai para o destino do link, e o link fica. O GitHuttBr nunca
 substitui o link. Um link que aponta para um arquivo que ainda não existe é gravado
 através dele, criando esse arquivo — desde que a pasta dele exista. Quando a pasta
 também sumiu, o salvamento falha, com uma mensagem dizendo isso: o link e o destino
-dele ficam intactos, e as mudanças feitas enquanto isso só duram até o Gitcito
+dele ficam intactos, e as mudanças feitas enquanto isso só duram até o GitHuttBr
 fechar. Restaure a pasta, ou aponte o link para algum lugar que exista, e o próximo
 salvamento passa.
 
 Tokens em texto puro que uma versão antiga deixou no arquivo de configurações nunca
-são descartados por um salvamento: eles ficam no arquivo até o Gitcito carregá-los
+são descartados por um salvamento: eles ficam no arquivo até o GitHuttBr carregá-los
 no armazenamento criptografado (abrir Configurações faz isso), a não ser que você
 mesmo limpe um.
 
 Só duas coisas gravam esses arquivos: um salvamento das suas configurações, e o
-Gitcito carregando-as (na inicialização, ou quando Configurações abre) — que é quando
+GitHuttBr carregando-as (na inicialização, ou quando Configurações abre) — que é quando
 um token antigo em texto puro é movido para o armazenamento criptografado, ou um
 endereço de servidor com senha dentro é limpo. Uma consulta que ninguém pediu — um
 fetch resolvendo o token, uma chamada de IA achando a chave, uma foto de perfil — só
@@ -467,17 +472,17 @@ novo, e fotos de perfil que precisam de um token guardado esperam. Nada é movid
 uma consulta, então um token que você limpar nesse meio-tempo continua limpo.
 
 Um arquivo que existe mas não pode ser interpretado (uma edição à mão que deu errado,
-um disco danificado) **nunca** é substituído pelos padrões: o Gitcito diz que o
+um disco danificado) **nunca** é substituído pelos padrões: o GitHuttBr diz que o
 arquivo está danificado e não segue adiante — nenhum atalho ou comando de menu
 consegue salvar por cima dele a partir dessa tela.
 
 ![A tela de inicialização para um arquivo de configurações danificado, com Tentar de novo e Mover o arquivo danificado e começar do zero](../../screenshots/settings-damaged.webp)
 
-Você pode consertar o `gitcito-settings.json` na pasta de dados e apertar **Tentar de
+Você pode consertar o `githuttbr-settings.json` na pasta de dados e apertar **Tentar de
 novo**, ou apertar **Mover o arquivo danificado e começar do zero**: o arquivo é
-renomeado para `gitcito-settings.json.corrupt-<date>` (nunca apagado, então você
+renomeado para `githuttbr-settings.json.corrupt-<date>` (nunca apagado, então você
 ainda pode recuperar a partir dele), uma cópia do armazenamento criptografado de
-tokens fica ao lado dele, e o Gitcito começa como numa primeira execução, com uma
+tokens fica ao lado dele, e o GitHuttBr começa como numa primeira execução, com uma
 nota dizendo para onde o arquivo foi. Para um arquivo de configurações que é link
 simbólico, quem é renomeado é o destino do link, então a cópia danificada fica nos
 seus dotfiles, ao lado do arquivo novo que o primeiro salvamento grava através do
@@ -487,13 +492,13 @@ cópia deixaria o primeiro token que você salvar apagar os tokens dos perfis an
 Corrija o que impede a pasta de ser gravada (permissões, disco cheio) e aperte
 **Tentar de novo**.
 
-Se o arquivo estragar com o Gitcito aberto (editado à mão por baixo dele), os
-salvamentos param e o Gitcito avisa uma vez: as configurações não podem ser salvas
+Se o arquivo estragar com o GitHuttBr aberto (editado à mão por baixo dele), os
+salvamentos param e o GitHuttBr avisa uma vez: as configurações não podem ser salvas
 até ele ser reiniciado, e as mudanças feitas nesse meio-tempo se perdem.
 
 Um arquivo que está lá mas não pode ser *lido* por um instante — outro programa,
 como um antivírus, segurando-o — é tentado de novo por cerca de dois segundos. Se
-ainda falhar, ou se o carregamento falhar por qualquer outro motivo, o Gitcito diz
+ainda falhar, ou se o carregamento falhar por qualquer outro motivo, o GitHuttBr diz
 que não conseguiu iniciar, que o arquivo não foi alterado, e oferece **Tentar de
 novo**; ele não chama o arquivo de danificado.
 
@@ -527,7 +532,7 @@ de processos), nem o **ambiente** do comando git — que todo hook, filtro e pro
 de LFS que o git inicia herda, junto com todo pacote npm que um script do husky ou do
 lefthook roda.
 
-Em vez disso, para cada operação o Gitcito abre um ponto de acesso privado próprio —
+Em vez disso, para cada operação o GitHuttBr abre um ponto de acesso privado próprio —
 um socket numa pasta em que só o seu usuário entra (um named pipe com nome aleatório
 no Windows) — e registra um credential helper para aquele servidor. Quando o git
 pede um login, o helper se conecta, prova que pertence a esta operação com um código
@@ -565,7 +570,7 @@ O que ele ainda não consegue fazer:
   iniciado por um alias do git, ou por outro git — é removido durante a operação,
   então ele nunca recebe o token do perfil para guardar, nem é consultado como
   ninguém. Toda outra configuração `-c` herdada é mantida.
-- **Um endereço de servidor precisa estar escrito do jeito que o git lê.** O Gitcito
+- **Um endereço de servidor precisa estar escrito do jeito que o git lê.** O GitHuttBr
   identifica o servidor pelas regras padrão de URL, o git pelas dele: um nome
   internacionalizado (`bücher.example`), uma forma numérica abreviada (`127.1`,
   `0x7f.0.0.1`), um endereço IPv6 comprimido ou mapeado, ou um caractere codificado
@@ -579,7 +584,7 @@ O que ele ainda não consegue fazer:
 - **Não rode hooks em que você não confia** com um perfil autenticado, mesmo assim.
   Um repositório que você acabou de clonar pode trazer hooks por ferramentas como o
   husky, que os instalam no `npm install`; o git roda o que estiver em `.git/hooks`,
-  pelo Gitcito ou por um terminal, e um hook pode fazer coisa muito pior do que ler
+  pelo GitHuttBr ou por um terminal, e um hook pode fazer coisa muito pior do que ler
   um token.
 - **Restrinja o escopo do token.** Um token que só consegue gravar nos repositórios
   em que você trabalha vale muito menos para quem quer que ponha as mãos nele.
@@ -604,7 +609,7 @@ próprio git.
 
 **O limite:** um nome de servidor sozinho numa frase é reconhecido pelo formato —
 com pontos, em minúsculas. Um host de uma palavra só (`gitserver`) só é pego nas
-mensagens que o próprio Gitcito escreve, e um servidor sob um domínio de topo
+mensagens que o próprio GitHuttBr escreve, e um servidor sob um domínio de topo
 escrito como uma extensão de arquivo (`.sh`, `.md`) é mantido como nome de arquivo.
 Leia a issue antes de publicar mesmo assim: a limpeza reconhece formatos
 conhecidos, não tudo o que é privado.
@@ -620,7 +625,7 @@ e-mail, só hashes com um sal por instalação.
 
 Cada um desses arquivos é gravado inteiro: num arquivo novo ao lado, que depois toma
 o lugar do antigo, para que uma queda ou dois salvamentos ao mesmo tempo nunca deixem
-meio arquivo — que o Gitcito teria de tratar como ilegível. Um backup do
+meio arquivo — que o GitHuttBr teria de tratar como ilegível. Um backup do
 armazenamento de tokens só é apagado antes do prazo quando todo token dele também
 está no armazenamento atual; qualquer outro backup é mantido por 30 dias.
 
@@ -632,8 +637,8 @@ dois pacotes Linux lidam com isso de jeitos diferentes:
 
 | Pacote | O que acontece |
 |---------|--------------|
-| `.deb` | Instala `/etc/apparmor.d/gitcito`, um perfil para `/opt/GitHuttBr/gitcito` que permite user namespaces. O app roda com sandbox. |
-| AppImage | Não tem perfil. O inicializador dele tenta `unshare -Ur true` e, quando isso falha, abre o app com `--no-sandbox` — no Ubuntu 24.04+, isso é toda abertura. O Gitcito escreve um aviso na saída do console quando isso acontece. |
+| `.deb` | Instala `/etc/apparmor.d/githuttbr`, um perfil para `/opt/GitHuttBr/githuttbr` que permite user namespaces. O app roda com sandbox. |
+| AppImage | Não tem perfil. O inicializador dele tenta `unshare -Ur true` e, quando isso falha, abre o app com `--no-sandbox` — no Ubuntu 24.04+, isso é toda abertura. O GitHuttBr escreve um aviso na saída do console quando isso acontece. |
 
 Para rodar o AppImage com sandbox, instale o `.deb` no lugar, ou dê ao AppImage um
 perfil AppArmor próprio que permita `userns` (ou, para a máquina toda,
@@ -643,9 +648,9 @@ para tudo).
 **O limite do perfil do `.deb`.** Ele é `flags=(unconfined)` com `userns`
 permitido, e se prende ao caminho do executável. O mesmo executável também roda como
 Node puro quando iniciado com `ELECTRON_RUN_AS_NODE=1` — é assim que o comando
-`gitcito`, o conversor de diff embutido e o credential helper do Gitcito funcionam,
+`githuttbr`, o conversor de diff embutido e o credential helper do GitHuttBr funcionam,
 então essa chave não pode ser desligada sem quebrá-los. Juntando tudo, qualquer
-programa local pode usar o executável do Gitcito como um interpretador Node com
+programa local pode usar o executável do GitHuttBr como um interpretador Node com
 permissão para criar user namespaces — o mesmo tipo de brecha dos contornos
 conhecidos da restrição do Ubuntu por meio de outros programas com perfil. Isso não
 dá a ninguém mais do que os direitos da própria conta; enfraquece uma camada de
@@ -653,6 +658,6 @@ proteção do kernel que o Ubuntu acrescenta por cima. O AppArmor não consegue
 diferenciar os dois modos de um mesmo executável, então um perfil mais estreito não é
 possível enquanto a CLI o compartilha; um binário auxiliar separado para a CLI está
 no roadmap. Administradores que preferem não ter isso podem acrescentar uma regra de
-negação em `/etc/apparmor.d/local/gitcito`, ao custo do sandbox.
+negação em `/etc/apparmor.d/local/githuttbr`, ao custo do sandbox.
 
 **Veja também:** [Cofre](vault.md) · [Compartilhamento seguro](secure-share.md)

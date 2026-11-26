@@ -8,7 +8,7 @@ import { launchHaystack } from './launchActions'
  * Flutter's: React Native, Expo, Capacitor and xcodebuild all take a target, and
  * each spells it differently. This module works out which family a config
  * belongs to, which platforms it could possibly run on, and how to write the
- * chosen device into the command Gitcito is about to spawn.
+ * chosen device into the command GitHuttBr is about to spawn.
  *
  * Everything a config launches also gets the choice as environment variables,
  * which is the only lever available when the config runs a wrapper script we
@@ -113,12 +113,7 @@ export function applyDevice(
     ...(config.env ?? {}),
     GITHUTTBR_DEVICE_ID: device.id,
     GITHUTTBR_DEVICE_NAME: device.name,
-    GITHUTTBR_DEVICE_PLATFORM: device.platform,
-    // The names before the rename, so scripts written for upstream Gitcito
-    // (and for 4.38) keep finding the device.
-    GITCITO_DEVICE_ID: device.id,
-    GITCITO_DEVICE_NAME: device.name,
-    GITCITO_DEVICE_PLATFORM: device.platform
+    GITHUTTBR_DEVICE_PLATFORM: device.platform
   }
   // An AVD name is not a serial — setting it would point adb at nothing.
   if (device.platform === 'android' && device.source !== 'avd') env['ANDROID_SERIAL'] = device.id

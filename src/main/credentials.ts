@@ -12,7 +12,7 @@ import { isAccountLogin } from '../shared/hostToken'
  * Every machine that can `git clone` a private repo already has a working
  * credential for it — stored by osxkeychain, or minted on demand by Git
  * Credential Manager (which does the Entra ID / OAuth dance for Azure DevOps
- * and GitHub). Gitcito used to ignore all of that and demand its own PAT per
+ * and GitHub). GitHuttBr used to ignore all of that and demand its own PAT per
  * provider per profile, which is why multi-org Azure DevOps was painful: one
  * PAT field cannot hold four organizations' tokens.
  *

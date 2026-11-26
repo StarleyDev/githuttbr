@@ -16,7 +16,7 @@ raz po raz zawodzi; zobacz [opcje merge'a](merge-options.md).
 
 ## Przeciągnij jedną referencję na drugą
 
-Najszybszy gest w aplikacji: podnieś gałąź i upuść ją na inną. Gitcito otwiera
+Najszybszy gest w aplikacji: podnieś gałąź i upuść ją na inną. GitHuttBr otwiera
 małe menu z tym, co to upuszczenie mogłoby oznaczać, i nie robi nic, dopóki nie
 wybierzesz.
 
@@ -48,7 +48,7 @@ naprawdę tylko tyle da się zrobić.
 Rebase najpierw prosi o potwierdzenie: nadaje każdemu odtworzonemu commitowi
 nowy hash, co oznacza force push, jeśli gałąź jest już opublikowana. Push też
 pyta: każdy, kto pobierze cel, dostanie jego commity, a pusha nie da się cofnąć
-z poziomu Gitcito. Merge nie pyta — on tylko dokłada. Merge i rebase cofa jedno
+z poziomu GitHuttBr. Merge nie pyta — on tylko dokłada. Merge i rebase cofa jedno
 **Cofnij**.
 
 ## Przeciągnij commit na gałąź

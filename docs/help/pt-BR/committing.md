@@ -61,7 +61,7 @@ Limites:
 - Só gitmojis contam: um assunto que começa com outro emoji fica como está.
 - Um repositório cujo hook `commit-msg` roda o commitlint com o preset
   Conventional padrão rejeita um emoji no início. A regra é do hook, não do
-  Gitcito: configure o commitlint para gitmoji ou use Conventional puro ali.
+  GitHuttBr: configure o commitlint para gitmoji ou use Conventional puro ali.
 
 ## Coisas que o compositor faz por você
 
@@ -84,12 +84,12 @@ commitar.
 
 ## Amend
 
-O amend reescreve o último commit com o que estiver preparado. O Gitcito mostra a
+O amend reescreve o último commit com o que estiver preparado. O GitHuttBr mostra a
 mensagem existente primeiro, então você está editando, não redigitando.
 
 **Fazer amend no commit…** numa linha do grafo faz a mesma coisa para o HEAD:
 carrega a mensagem completa, coloca o compositor em modo amend e o foca. Um HEAD
-que já foi enviado ainda pode receber amend, mas o Gitcito avisa que atualizar o
+que já foi enviado ainda pode receber amend, mas o GitHuttBr avisa que atualizar o
 remoto vai exigir um force push.
 
 **Desfazer commit…** é o irmão para um HEAD não enviado: reset mixed para o pai,

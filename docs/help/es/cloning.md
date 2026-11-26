@@ -90,7 +90,7 @@ real.
   una rama* sin marcar es lo que pide de vuelta las demás ramas
   (`--no-single-branch`), y por eso cambia la pista que hay debajo.
 - **Clonar una carpeta local** normalmente ignora `--depth` por completo, porque
-  git enlaza en duro el almacén de objetos en lugar de descargarlo. Gitcito clona
+  git enlaza en duro el almacén de objetos en lugar de descargarlo. GitHuttBr clona
   a través de una URL `file://` cuando pides una copia superficial de un
   repositorio local, así que la profundidad que pediste es la profundidad que
   obtienes.
@@ -117,7 +117,7 @@ Un clon cancelado no se puede reanudar; volver a lanzarlo empieza desde cero.
 Cuando termina, el nuevo repositorio se abre en una pestaña, anclado al perfil
 con el que clonaste, esté o no el diálogo todavía abierto.
 
-Los clones se ejecutan dentro de la app, así que salir de Gitcito los detiene.
+Los clones se ejecutan dentro de la app, así que salir de GitHuttBr los detiene.
 La salida no espera a la limpieza, de modo que la carpeta a medio escribir puede
 quedarse ahí: bórrala antes de volver a clonar en ese sitio, porque el diálogo
 rechaza una carpeta que ya existe.

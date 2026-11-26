@@ -2,13 +2,13 @@
 title: Open-Source-Lizenzen
 category: Anpassen
 order: 104
-summary: Die Lizenz jedes Drittanbieter-Pakets lesen, das dieser Build von Gitcito mitliefert.
+summary: Die Lizenz jedes Drittanbieter-Pakets lesen, das dieser Build von GitHuttBr mitliefert.
 keywords: lizenzen licenses namensnennung hinweise open source MIT Apache BSD drittanbieter abhängigkeiten credits über
 ---
 
 # Open-Source-Lizenzen
 
-Gitcito baut auf gut neunzig Open-Source-Paketen auf, und fast alle verlangen
+GitHuttBr baut auf gut neunzig Open-Source-Paketen auf, und fast alle verlangen
 dafür dasselbe: dass ihr Hinweis mit dem Programm mitreist. MIT, BSD und Apache
 sagen das im Text selbst. Diese Seite ist der Ort dieses Hinweises — so erfüllt
 die App die Pflicht, nicht eine Datei, an deren Kopie jemand denken muss.
@@ -48,11 +48,11 @@ Zwei Grenzen, die man kennen sollte:
   Bezeichner und sonst nichts. Diese Zeilen sagen das, statt einen Text zu
   erfinden — eine Lizenz, die man nicht lesen kann, ist keine, auf die man sich
   verlassen kann.
-- **Der Bezeichner ist, was das Paket behauptet.** Gitcito zeigt ihn an, prüft
+- **Der Bezeichner ist, was das Paket behauptet.** GitHuttBr zeigt ihn an, prüft
   ihn aber nicht. Ist das Manifest eines Pakets falsch, irrt diese Seite mit.
 
-Gitcitos eigene Lizenz ist Apache 2.0; das Badge oben rechts öffnet sie auf GitHub.
-Der vom ursprünglichen Gitcito übernommene Code kam unter der MIT-Lizenz, und
+GitHuttBrs eigene Lizenz ist Apache 2.0; das Badge oben rechts öffnet sie auf GitHub.
+Der vom ursprünglichen GitHuttBr übernommene Code kam unter der MIT-Lizenz, und
 sein Hinweis reist in `NOTICE` mit der App, wie es die MIT-Lizenz verlangt.
 
 **Siehe auch:** [Sprachen & Rechts-nach-links](languages.md) · [Themes & Erscheinungsbild](themes.md)

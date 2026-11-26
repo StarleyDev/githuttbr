@@ -2,7 +2,7 @@
 title: Verificação do ambiente
 category: Comece por aqui
 order: 6
-summary: Do que o Gitcito depende fora da própria instalação — git, LFS, terminal nativo, credential helper do git, GitHub CLI e observação de arquivos — verificado num só lugar.
+summary: Do que o GitHuttBr depende fora da própria instalação — git, LFS, terminal nativo, credential helper do git, GitHub CLI e observação de arquivos — verificado num só lugar.
 keywords: ambiente environment doctor diagnóstico saúde verificação versão do git lfs node-pty terminal modo básico credential helper store gh github cli escopos workflow inotify max_user_watches
 ---
 
@@ -16,7 +16,7 @@ Cada uma aparece depois como um erro vago, no meio de outra coisa.
 comandos) verifica tudo isso antes.
 
 O [doctor do repositório](repo-settings.md) responde outra pergunta: se *este
-repositório* consegue ser compilado aqui, a partir do que o `.gitcito.json` dele
+repositório* consegue ser compilado aqui, a partir do que o `.githuttbr.json` dele
 pede. A verificação do ambiente cobre o próprio app e é igual para todos os
 repositórios.
 
@@ -29,7 +29,7 @@ repositórios.
 | **Git** | git 2.31 ou mais novo está no `PATH` | Mais velho que 2.31: a conta de um [perfil](profiles.md) não consegue entrar para fetch e push. Ausente: nada funciona até instalar o git |
 | **Git LFS** | `git lfs` está instalado | Não instalado. Só repositórios que guardam arquivos no LFS precisam dele |
 | **Terminal** | O terminal nativo carregou | O [terminal](terminal.md) roda no modo básico: sem cores, sem redimensionar, sem programas em tela cheia |
-| **Credential helper** | O git tem um helper para as senhas HTTPS — global, ou para hosts específicos (o que o `gh auth setup-git` configura) | Nenhum helper, então o git fora do Gitcito pede toda vez. Ou `store`, que guarda as senhas em texto puro. Veja [Credential helper](credentials.md) |
+| **Credential helper** | O git tem um helper para as senhas HTTPS — global, ou para hosts específicos (o que o `gh auth setup-git` configura) | Nenhum helper, então o git fora do GitHuttBr pede toda vez. Ou `store`, que guarda as senhas em texto puro. Veja [Credential helper](credentials.md) |
 | **GitHub CLI** | O `gh` está conectado com o escopo `workflow` | Conectado sem ele: o GitHub recusa qualquer push que altere `.github/workflows` |
 | **Observação de arquivos** (Linux) | O limite do inotify é de pelo menos 65.536 | Um limite menor se esgota com alguns repositórios grandes abertos, e pastas novas param de atualizar o status |
 

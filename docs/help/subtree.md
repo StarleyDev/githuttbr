@@ -19,7 +19,7 @@ detached HEAD to keep straight.
 
 `⌘K` → **Subtrees**.
 
-![A vendored directory found in history, with the source Gitcito remembers for it](../screenshots/subtree.webp)
+![A vendored directory found in history, with the source GitHuttBr remembers for it](../screenshots/subtree.webp)
 
 ## The catch nobody mentions
 
@@ -28,15 +28,15 @@ every url and path. A subtree has nothing — only a `git-subtree-dir:` trailer 
 the commit that did the import.
 
 So a repository can contain a subtree and give you no way to find out where it
-came from. Gitcito does what it can:
+came from. GitHuttBr does what it can:
 
 - The list is discovered from history, by reading those trailers. Any subtree
   added by anyone, with any tool, shows up.
-- The **source repository and ref** are remembered by Gitcito, in this
+- The **source repository and ref** are remembered by GitHuttBr, in this
   repository's git config. A subtree discovered from history starts with those
   fields empty — fill them in once and pull and push work from then on.
 
-The remembered values live under `gitcito.subtree.*` in `.git/config`, so they
+The remembered values live under `githuttbr.subtree.*` in `.git/config`, so they
 stay with the repository but do not travel to a clone. **Forget** clears them
 and touches nothing else.
 
@@ -68,14 +68,14 @@ a standalone repository's history, which is how a subtree stops being a subtree.
 
 - **Push is slow.** It recomputes the directory's history from scratch every
   time. On a large repository this is seconds to minutes, not instant, and
-  Gitcito can only wait for it.
+  GitHuttBr can only wait for it.
 - **A pull is a merge**, so it can conflict like any merge — you land in
   [the resolver](conflicts.md).
 - **`git subtree` is a contrib script**, not a git builtin. A stripped-down git
-  installation can be missing it; Gitcito says so plainly rather than passing on
+  installation can be missing it; GitHuttBr says so plainly rather than passing on
   "'subtree' is not a git command".
 - **Squashed history cannot be un-squashed** later. The commits were never
   imported.
-- Gitcito does not convert a submodule into a subtree, or the reverse.
+- GitHuttBr does not convert a submodule into a subtree, or the reverse.
 
 See also: [Merging & rebasing](merging.md) · [Plumbing with a UI](lfs-sparse.md)

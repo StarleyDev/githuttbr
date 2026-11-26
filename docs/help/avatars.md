@@ -10,7 +10,7 @@ keywords: avatar avatars gravatar github noreply profile picture enterprise ghes
 
 A commit list is a wall of names, and names are slow to scan. A picture next to
 each one turns "who wrote this" into something you answer by glance rather than
-by reading. Gitcito puts one on every author it shows: in the graph's author
+by reading. GitHuttBr puts one on every author it shows: in the graph's author
 column, in commit details next to the author and each co-author, in the
 co-author picker while you compose, in the profile switcher, and beside each
 profile in Settings.
@@ -35,12 +35,12 @@ A commit holds a name and an email, never an account, so the picture has to be
 found from the email. There are two ways, depending on the address:
 
 - **A noreply address** — `12345+login@users.noreply.github.com`, or the older
-  `login@users.noreply.github.com` — names its account outright. Gitcito turns it
+  `login@users.noreply.github.com` — names its account outright. GitHuttBr turns it
   straight into the picture's address (`avatars.githubusercontent.com/u/12345`, or
   `github.com/login.png` for the old form) and loads only the image. No token, no
   API call, and it works in any repository, wherever it is hosted.
 - **Any other address** is looked up on the repository's own server, with your
-  profile's token for that server: Gitcito asks for one commit by that author
+  profile's token for that server: GitHuttBr asks for one commit by that author
   (`GET /repos/{owner}/{repo}/commits/{sha}`, or, when that commit has not been
   pushed, the newest commit by that email), and the server answers with the
   account it belongs to — the same thing it does to draw the commit on its own
@@ -50,7 +50,7 @@ found from the email. There are two ways, depending on the address:
 
 The graph asks in batches — one request per repository for all the authors on
 screen, each author once — and at most four requests at a time. If the server
-says the rate limit is spent, Gitcito stops asking that server until the time
+says the rate limit is spent, GitHuttBr stops asking that server until the time
 it gives, and tries again after.
 
 **GitHub pictures appear once your tokens are unlocked.** Tokens saved in the
@@ -61,7 +61,7 @@ Gravatar or the generated face, and your title-bar avatar its generated one.
 The moment the tokens unlock, the pictures that were waiting on them ask again —
 in the graph and in the title bar alike.
 
-Until then Gitcito cannot tell which servers have a saved token without
+Until then GitHuttBr cannot tell which servers have a saved token without
 decrypting the store, and a saved token outranks a machine login (git's
 credential helper or the GitHub CLI) — so while there is an encrypted store
 that could hold one, it waits for the unlock rather than ask GitHub as what may
@@ -82,7 +82,7 @@ machine login. A token you typed while the keychain was unavailable lives only
 in memory for the session, and is used straight away.
 
 What came back is remembered: for the session in memory, and on disk in
-`github-avatars.json` in Gitcito's data folder — a found picture for 7 days, "no
+`github-avatars.json` in GitHuttBr's data folder — a found picture for 7 days, "no
 account" for a day. "No account" is only ever recorded when the server showed a
 commit by that email whose author is no account. **No commit by that email in
 this repository** — an author who only ever pushed elsewhere — proves nothing
@@ -91,7 +91,7 @@ the lookup back in this repository for ten minutes and is never recorded as "no
 account"; the same author still gets their picture in the next repository. A
 **404** says nothing about the author either — GitHub gives the same answer for
 a private repository your token cannot see, or one whose SSO it is not
-authorised for — so Gitcito records nothing and leaves that repository alone
+authorised for — so GitHuttBr records nothing and leaves that repository alone
 for ten minutes, while the same authors in repositories you can see still get
 their pictures. An **empty repository** (409) is left alone for ten minutes the
 same way. The file is keyed on a SHA-256 hash of the server and the email,
@@ -119,7 +119,7 @@ account or a misconfigured `user.email`. Fix it with
 
 ## The face in the title bar
 
-The avatar next to your profile name is the one avatar in Gitcito that stands for
+The avatar next to your profile name is the one avatar in GitHuttBr that stands for
 **you, in this repository, right now** — so it is the only one that reacts to the
 repository's state. It pulls a face when something is up, and holds a neutral one
 the rest of the time.
@@ -168,7 +168,7 @@ The avatar in the title bar and the profile list is yours, so you can choose it.
 | **Automatic** | The default: your Gravatar for the profile's git email, else the picture of the GitHub account the profile is connected to (github.com first, then any Enterprise Server it holds a token for), else the generated face — the one that reacts to the repository. |
 | **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Integrations. Disabled until one is. |
 | **Icon** | One of 24 glyphs on a colour you pick. |
-| **Image** | A file you choose — PNG or JPEG. It is scaled to 256 px and kept on this computer, in Gitcito's data folder, not in the settings file. |
+| **Image** | A file you choose — PNG or JPEG. It is scaled to 256 px and kept on this computer, in GitHuttBr's data folder, not in the settings file. |
 | **From a repository** | An icon or logo found in one of the profile's repositories — the app's or the company's — copied into the profile like an image. |
 
 An image travels with **Settings → Data → Export settings** and comes back on import;

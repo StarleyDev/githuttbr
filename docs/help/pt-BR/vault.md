@@ -31,15 +31,15 @@ transferência.
 ## Quando o cofre não pode ser lido
 
 Se o chaveiro está bloqueado, você recusou o pedido dele, ou o cofre foi salvo
-por outra cópia do Gitcito (um build de desenvolvimento, um reassinado), a página
-diz *O Gitcito não conseguiu ler o seu cofre* — e **não mexe nele**. Nada pode
+por outra cópia do GitHuttBr (um build de desenvolvimento, um reassinado), a página
+diz *O GitHuttBr não conseguiu ler o seu cofre* — e **não mexe nele**. Nada pode
 ser adicionado ou removido enquanto isso: salvar trocaria todos os segredos dele
 pelo que você acabou de digitar.
 
 | Botão | O que faz |
 |-------|-----------|
 | **Tentar de novo** | Lê o cofre de novo — desbloqueie o chaveiro antes. |
-| **Criar um novo cofre** | Pergunta antes. O Gitcito deixa de esperar pelo cofre antigo e cria um vazio. O arquivo antigo fica ao lado como backup, com o nome `githuttbr-vault.enc.bak-<data>`, um por substituição, e o Gitcito nunca o apaga. Para um cofre perdido de vez, não para um pedido que você recusou. |
+| **Criar um novo cofre** | Pergunta antes. O GitHuttBr deixa de esperar pelo cofre antigo e cria um vazio. O arquivo antigo fica ao lado como backup, com o nome `githuttbr-vault.enc.bak-<data>`, um por substituição, e o GitHuttBr nunca o apaga. Para um cofre perdido de vez, não para um pedido que você recusou. |
 
 ### Importações e exportações nunca o deixam de fora em silêncio
 

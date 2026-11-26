@@ -4,14 +4,14 @@ category: Branches & ingrepen
 order: 46
 summary: Herschrijf de bestanden of het bericht van een historische commit ter plekke — met de cascade eerst als preview.
 keywords: commit bewerken edit herschrijven rewrite geschiedenis history amend verleden reword typfout typo fix cascade replay rebase ter plekke ingreep surgery
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Elke commit bewerken
 
 De typfout zit in een commit van drie weken geleden. De gebruikelijke oplossing is
 een interactieve rebase: stoppen bij de commit, bewerken, doorgaan, bidden. De
-oplossing van Gitcito: rechtsklik op de commit, **Deze commit bewerken**, pas de
+oplossing van GitHuttBr: rechtsklik op de commit, **Deze commit bewerken**, pas de
 tekst aan, klaar. De penknop in het paneel met commitdetails opent dezelfde
 editor.
 

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // scp-style ssh (`git@github.com:o/r.git`). `new URL` cannot read that form, so
 // the link used to resolve to nothing and every PR, issue, CI and avatar call
 // for a private repository ran unauthenticated. The helper is mocked, as in
-// credentials.test.ts: what matters is what Gitcito asks for.
+// credentials.test.ts: what matters is what GitHuttBr asks for.
 
 type ExecCallback = (err: (Error & { killed?: boolean }) | null, stdout: string) => void
 interface Spawn {

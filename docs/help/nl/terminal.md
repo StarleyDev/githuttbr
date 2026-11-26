@@ -87,13 +87,13 @@ telt, want versiebeheerders en `brew shellenv` zetten zichzelf daar meestal
 neer — een tool als `fvm`, `nvm` of `pyenv` die in je terminal werkt, werkt hier
 ook.
 
-Gitcito vraagt bij het opstarten ook je login-shell om het echte `PATH` en mengt
+GitHuttBr vraagt bij het opstarten ook je login-shell om het echte `PATH` en mengt
 dat door alles wat het start, want een GUI-app die vanuit het Dock opent erft
 bijna niets. Wordt een commando alsnog niet gevonden, controleer dan of het in
 het `PATH` van een login-shell staat en niet alleen in dat van een interactieve
 shell.
 
-Wat je hier draait is onzichtbaar voor de eigen vergrendeling van Gitcito, dus
+Wat je hier draait is onzichtbaar voor de eigen vergrendeling van GitHuttBr, dus
 een lange `git rebase` die je met de hand typt en een klik in de UI kunnen alsnog
 botsen — de app ververst vanaf schijf wanneer de terminal iets verandert.
 
@@ -117,7 +117,7 @@ Font nodig in de lettertypefamilie van de terminal (bijv.
 
 Over snelheid: Oh My Posh start zijn programma eenmaal per prompt — op Windows
 zo'n 100–200 ms, meer bij thema's met een git-segment in een grote repository —
-merkbaar als een korte pauze voor elke prompt, niet als traagheid van Gitcito.
+merkbaar als een korte pauze voor elke prompt, niet als traagheid van GitHuttBr.
 Thema's zonder git-segment zijn het snelst. De voorspellingsstijl van PowerShell
 telt ook: `-PredictionViewStyle InlineView` hertekent per toets een klein gebied,
 `ListView` een heel blok.

@@ -20,7 +20,7 @@ live('prepares a license file action through an OpenAI-compatible provider', asy
   const repo = mkdtempSync(join(tmpdir(), 'githuttbr-live-chat-'))
   roots.push(repo)
   execFileSync('git', ['-C', repo, 'init'])
-  execFileSync('git', ['-C', repo, 'config', 'user.name', 'Gitcito Test'])
+  execFileSync('git', ['-C', repo, 'config', 'user.name', 'GitHuttBr Test'])
   execFileSync('git', ['-C', repo, 'config', 'user.email', 'githuttbr@example.invalid'])
   writeFileSync(join(repo, 'LICENSE'), 'MIT License\n\nCopyright MyAppDesk\n')
   execFileSync('git', ['-C', repo, 'add', 'LICENSE'])

@@ -75,7 +75,7 @@ describe('e2e smoke', () => {
       prepare: (repo) =>
         execFileSync(
           'git',
-          ['-C', repo, '-c', 'user.name=Gitcito E2E', '-c', 'user.email=e2e@example.invalid', 'commit', '--allow-empty',
+          ['-C', repo, '-c', 'user.name=GitHuttBr E2E', '-c', 'user.email=e2e@example.invalid', 'commit', '--allow-empty',
             '-m', 'feat: noreply author', '--author', `Octo Cat <${email}>`],
           { encoding: 'utf8' }
         ),

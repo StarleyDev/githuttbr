@@ -10,7 +10,7 @@ keywords: avatar avatares gravatar blobatar autor foto imagen identicon cara sin
 
 Una lista de commits es un muro de nombres, y los nombres se leen despacio. Una
 imagen junto a cada uno convierte «quién escribió esto» en algo que respondes de
-un vistazo. Gitcito pone una en cada autor que muestra: en la columna de autor
+un vistazo. GitHuttBr pone una en cada autor que muestra: en la columna de autor
 del grafo, en los detalles del commit junto al autor y a cada coautor, en el
 selector de coautores mientras redactas, en el conmutador de perfiles y al lado
 de cada perfil en Ajustes.
@@ -41,7 +41,7 @@ persona.
 
 ## La cara de la barra de título
 
-El avatar junto al nombre de tu perfil es el único avatar de Gitcito que
+El avatar junto al nombre de tu perfil es el único avatar de GitHuttBr que
 representa **a ti, en este repositorio, ahora mismo** — así que es el único que
 reacciona al estado del repositorio. Pone cara cuando pasa algo y se queda neutra
 el resto del tiempo.
@@ -90,7 +90,7 @@ El avatar de la barra de título y de la lista de perfiles es tuyo, así que pue
 | **Automático** | El predeterminado: tu Gravatar del correo git del perfil, o la cara generada, la que reacciona al repositorio. |
 | **De la integración** | La foto de la cuenta de GitHub o GitLab que este perfil tiene conectada en Integraciones. Desactivado hasta que haya una. |
 | **Icono** | Uno de 24 símbolos sobre el color que elijas. |
-| **Imagen** | Un archivo que eliges: PNG o JPEG. Se reduce a 256 px y se guarda en este equipo, en la carpeta de datos de Gitcito, no en el archivo de configuración. |
+| **Imagen** | Un archivo que eliges: PNG o JPEG. Se reduce a 256 px y se guarda en este equipo, en la carpeta de datos de GitHuttBr, no en el archivo de configuración. |
 | **De un repositorio** | Un icono o logotipo encontrado en uno de los repositorios del perfil — el de la app o el de la empresa —, copiado en el perfil como una imagen. |
 
 La imagen viaja con **Ajustes → Datos → Exportar ajustes** y vuelve al importar;

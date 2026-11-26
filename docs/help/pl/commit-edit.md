@@ -4,14 +4,14 @@ category: Gałęzie i operacje na historii
 order: 46
 summary: Przepisz pliki lub wiadomość historycznego commita w miejscu — z podglądem kaskady, zanim cokolwiek się zmieni.
 keywords: edytuj commit przepisz historię popraw literówkę zmień wiadomość kaskada odtwarzanie rebase w miejscu chirurgia edit commit rewrite history amend past reword fix typo cascade replay
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Edytuj dowolny commit
 
 Literówka siedzi w commicie sprzed trzech tygodni. Zwykła naprawa to rebase
 interaktywny: zatrzymaj się na commicie, edytuj, kontynuuj, módl się. Naprawa
-w Gitcito: kliknij commit prawym przyciskiem, **Edytuj ten commit**, zmień
+w GitHuttBr: kliknij commit prawym przyciskiem, **Edytuj ten commit**, zmień
 tekst, gotowe. Przycisk pióra w panelu szczegółów commita otwiera ten sam
 edytor.
 

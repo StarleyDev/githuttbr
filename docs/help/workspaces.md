@@ -133,7 +133,7 @@ opens as a tab of its own instead — opening something always opens something.
 A workspace is a **whole saved tab strip**. Switching swaps every tab at once:
 `Work` and `Personal` stop stepping on each other.
 
-The workspace name sits top-left, next to the Gitcito mark. Click it to switch,
+The workspace name sits top-left, next to the GitHuttBr mark. Click it to switch,
 create, rename, reorder or delete. Next to it is the gauge that opens
 [Mission control](mission-control.md) for the workspace you are in.
 

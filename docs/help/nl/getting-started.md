@@ -4,12 +4,12 @@ category: Begin hier
 order: 1
 summary: Open een repository, lees de grafiek, maak je eerste commit.
 keywords: intro eerste stappen openen klonen clone tabbladen tabs grafiek graph commit
-source: 173f891f9f1c5c53ea40cf344baf821e3188344d
+source: 8effe244fab76b263f38e31ac0912d8042c428c6
 ---
 
 # Aan de slag
 
-Gitcito opent een map en toont je zijn geschiedenis. Er wordt niets naar je
+GitHuttBr opent een map en toont je zijn geschiedenis. Er wordt niets naar je
 repository geschreven tot je erom vraagt.
 
 ![Een net geopende repository, nog zonder commits](../../screenshots/empty-repo.webp)
@@ -27,7 +27,7 @@ repository geschreven tot je erom vraagt.
   open repositories niet vooraf grijs maken: Electron stelt de hook per map van
   het paneel niet beschikbaar, dus de controle gebeurt nadat je op Openen klikt.
 - **Gescande repositories**, onder de drie knoppen, toont elke repository in de
-  mappen die Gitcito voor je moet scannen — vink er meerdere aan en open ze in
+  mappen die GitHuttBr voor je moet scannen — vink er meerdere aan en open ze in
   één keer, of dubbelklik op één. Daar voeg je die mappen ook toe of haal je ze
   weg. Zie [Repositories](repositories.md#gescande-repositories).
 - **Verkeerde aangeklikt?** Klonen, Aanmaken, Groep maken en Gescande
@@ -36,7 +36,7 @@ repository geschreven tot je erom vraagt.
 - **Kloon** er een vanaf een URL of rechtstreeks bij je host — zie
   [klonen](cloning.md) voor de opties die een enorme repository snel kloonbaar
   maken.
-- Vanuit een terminal opent `gitcito .` de huidige map in de draaiende app — zie
+- Vanuit een terminal opent `githuttbr .` de huidige map in de draaiende app — zie
   [de commandoregel](cli.md).
 - Eén enkele map die nog geen Git-repository is opent evengoed, en biedt aan hem
   te initialiseren.
@@ -71,5 +71,5 @@ dat alleen ingewijden kunnen vinden.
 2. Stage het — het hele bestand, een hunk, of [losse regels](staging.md).
 3. Schrijf een boodschap en druk op **Committen**.
 
-Al het andere in Gitcito is optioneel.
+Al het andere in GitHuttBr is optioneel.
 

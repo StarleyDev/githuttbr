@@ -9,7 +9,7 @@ keywords: awatar awatary gravatar blobatar autor zdjęcie obrazek identicon twar
 # Awatary autorów
 
 Lista commitów to ściana nazwisk, a nazwiska czyta się wolno. Obrazek obok każdego
-zamienia „kto to napisał” w coś, na co odpowiadasz jednym spojrzeniem. Gitcito daje
+zamienia „kto to napisał” w coś, na co odpowiadasz jednym spojrzeniem. GitHuttBr daje
 go każdemu pokazywanemu autorowi: w kolumnie autora w grafie, w szczegółach commita
 obok autora i każdego współautora, w wyborze współautorów przy pisaniu, w
 przełączniku profili i obok każdego profilu w Ustawieniach.
@@ -37,7 +37,7 @@ zwykle tak zauważasz konto maszynowe albo źle ustawiony `user.email`. Napraw t
 
 ## Twarz na pasku tytułu
 
-Awatar obok nazwy Twojego profilu to jedyny awatar w Gitcito, który przedstawia
+Awatar obok nazwy Twojego profilu to jedyny awatar w GitHuttBr, który przedstawia
 **Ciebie, w tym repozytorium, teraz** — więc jedyny, który reaguje na stan repozytorium.
 Robi minę, gdy coś się dzieje, a przez resztę czasu pozostaje neutralny.
 
@@ -85,7 +85,7 @@ Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybra�
 | **Automatyczny** | Domyślnie: Twój Gravatar dla e-maila git profilu albo wygenerowana twarz — ta, która reaguje na repozytorium. |
 | **Z integracji** | Zdjęcie konta GitHub lub GitLab połączonego z tym profilem w Integracjach. Wyłączone, dopóki takiego nie ma. |
 | **Ikona** | Jeden z 24 symboli na wybranym kolorze. |
-| **Obraz** | Wybrany plik — PNG lub JPEG. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych Gitcito, a nie w pliku ustawień. |
+| **Obraz** | Wybrany plik — PNG lub JPEG. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych GitHuttBr, a nie w pliku ustawień. |
 | **Z repozytorium** | Ikona lub logo znalezione w jednym z repozytoriów profilu — aplikacji albo firmy — skopiowane do profilu jak obraz. |
 
 Obraz trafia do **Ustawienia → Dane → Eksportuj ustawienia** i wraca przy imporcie; usunięcie

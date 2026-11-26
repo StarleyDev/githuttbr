@@ -8,7 +8,7 @@ keywords: intro first steps open clone tabs graph commit
 
 # Getting started
 
-Gitcito opens a folder and shows you its history. Nothing is written to your
+GitHuttBr opens a folder and shows you its history. Nothing is written to your
 repository until you ask for it.
 
 ![A freshly opened repository with no commits yet](../screenshots/empty-repo.webp)
@@ -26,14 +26,14 @@ repository until you ask for it.
   advance: Electron does not expose the panel's per-folder hook, so the check
   happens after you click Open.
 - **Scanned repositories**, under the three buttons, lists every repository
-  in the folders you told Gitcito to scan — tick several and open them at once,
+  in the folders you told GitHuttBr to scan — tick several and open them at once,
   or double-click one. It is also where you add or remove those folders. See
   [Repositories](repositories.md#scanned-repositories).
 - **Clicked the wrong one?** Clone, Create, Create group and Scanned
   repositories, opened from Open repository, have a **Back** arrow beside their title that returns to it.
 - **Clone** one from a URL or straight from your host — see [cloning](cloning.md)
   for the options that make a huge repository quick to clone.
-- From a terminal, `gitcito .` opens the current folder in the running app —
+- From a terminal, `githuttbr .` opens the current folder in the running app —
   see [the command line](cli.md).
 - A single folder that is not a Git repository yet still opens, offering to
   initialise it.
@@ -68,5 +68,5 @@ only power users can find.
 2. Stage it — the whole file, a hunk, or [single lines](staging.md).
 3. Write a message and press **Commit**.
 
-Everything else in Gitcito is optional.
+Everything else in GitHuttBr is optional.
 

@@ -21,13 +21,6 @@ describe('simple-git allowConfig', () => {
       'githuttbr.subtree.vendor%2Fparser.url',
       'githuttbr.subtree.vendor%2Fparser.ref',
       'githuttbr.prepurge.at1795382730',
-      // Legacy keys: unset when a stack level is cleared or a subtree forgotten.
-      'branch.feature/api.gitcitoParent',
-      'branch.main.gitcitobase',
-      'gitcito.protectedbranches',
-      'gitcito.subtree.vendor%2Fparser.url',
-      'gitcito.subtree.vendor%2Fparser.ref',
-      'gitcito.prepurge.at1795382730',
       'gitflow.branch.master',
       'gitflow.prefix.versiontag',
       'rerere.autoUpdate',
@@ -39,6 +32,18 @@ describe('simple-git allowConfig', () => {
       'user.name'
     ]) {
       expect(permitted(key), key).toBe(true)
+    }
+  })
+
+  it("does not reach upstream Gitcito's keys: this app never writes them", () => {
+    for (const key of [
+      'branch.feature/api.gitcitoparent',
+      'branch.main.gitcitobase',
+      'gitcito.protectedbranches',
+      'gitcito.subtree.vendor%2Fparser.url',
+      'gitcito.prepurge.at1795382730'
+    ]) {
+      expect(allowed(key), key).toBe(false)
     }
   })
 

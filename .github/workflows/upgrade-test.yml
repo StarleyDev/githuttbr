@@ -1,0 +1,154 @@
+name: Upgrade test
+
+# Installs the last published release, then this commit's build on top, the way
+# a user's machine gets it, and checks the result. Written for the move to the
+# app's own appId: on Windows the uninstall GUID derives from the appId, so a
+# new build no longer sees the old install by itself (build/installer.nsh takes
+# it out). Runs whenever the installer identity or its script changes.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: Release tag to upgrade from
+        default: v4.58.0
+  push:
+    paths:
+      - build/installer.nsh
+      - package.json
+      - .github/workflows/upgrade-test.yml
+
+permissions:
+  contents: read
+
+env:
+  FROM_TAG: ${{ inputs.from || 'v4.58.0' }}
+  # A version above any published one, so the checks can tell old from new.
+  NEW_VERSION: 99.0.0
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # upgrade: a real old install is replaced, leaving one entry.
+        # foreign: an unrelated app under the old GUID is never touched.
+        scenario: [upgrade, foreign]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the new installer
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          npm pkg set version="$NEW_VERSION"
+          npm run build
+          npx electron-builder --win nsis --publish never
+
+      - name: Install the old release
+        if: matrix.scenario == 'upgrade'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $v = $env:FROM_TAG.TrimStart('v')
+          gh release download $env:FROM_TAG --repo $env:GITHUB_REPOSITORY --pattern "GitHuttBr-Setup-$v.exe" --dir old
+          Start-Process -Wait -FilePath "old\GitHuttBr-Setup-$v.exe" -ArgumentList '/S'
+          # Stand-in for the user's settings and tokens: must survive the upgrade.
+          New-Item -ItemType Directory -Force "$env:APPDATA\GitHuttBr" | Out-Null
+          Set-Content "$env:APPDATA\GitHuttBr\upgrade-marker.txt" 'kept'
+
+      - name: Plant an unrelated app under the old GUID
+        if: matrix.scenario == 'foreign'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force C:\fake-other | Out-Null
+          Copy-Item "$env:windir\System32\hostname.exe" 'C:\fake-other\Uninstall Other.exe'
+          $k = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\2e01bc5f-df2b-5b7a-af33-faa365521d92'
+          New-Item -Force $k | Out-Null
+          Set-ItemProperty $k DisplayName 'Other App 1.0.0'
+          Set-ItemProperty $k UninstallString '"C:\fake-other\Uninstall Other.exe" /currentuser'
+
+      - name: Show the uninstall entries before
+        shell: pwsh
+        run: |
+          Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall |
+            ForEach-Object { '{0} | {1} | {2}' -f $_.PSChildName, $_.GetValue('DisplayName'), $_.GetValue('DisplayVersion') }
+
+      - name: Install the new build on top (as the updater does)
+        shell: pwsh
+        run: |
+          Start-Process -Wait -FilePath "dist\GitHuttBr-Setup-$env:NEW_VERSION.exe" -ArgumentList '/S','--updated'
+
+      - name: Check the result
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $entries = Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall,
+              HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall |
+            Where-Object { $_.GetValue('DisplayName') -like '*HuttBr*' }
+          $entries | ForEach-Object { '{0} | {1} | {2}' -f $_.PSChildName, $_.GetValue('DisplayName'), $_.GetValue('DisplayVersion') }
+          if (@($entries).Count -ne 1) { throw "Expected one GitHuttBr entry, found $(@($entries).Count)" }
+          if ($entries[0].GetValue('DisplayVersion') -ne $env:NEW_VERSION) { throw 'The entry left is not the new version' }
+          $exe = Get-ChildItem -Recurse -Filter GitHuttBr.exe "$env:LOCALAPPDATA\Programs" -ErrorAction SilentlyContinue
+          if (-not $exe) { throw 'GitHuttBr.exe is missing after the upgrade' }
+          if ('${{ matrix.scenario }}' -eq 'upgrade') {
+            if ((Get-Content "$env:APPDATA\GitHuttBr\upgrade-marker.txt") -ne 'kept') { throw 'App data was lost' }
+          } else {
+            $k = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\2e01bc5f-df2b-5b7a-af33-faa365521d92'
+            if ((Get-ItemProperty $k).DisplayName -ne 'Other App 1.0.0') { throw 'The unrelated entry was touched' }
+            if (-not (Test-Path 'C:\fake-other\Uninstall Other.exe')) { throw 'The unrelated uninstaller was removed' }
+          }
+          'Upgrade check passed'
+
+  linux-deb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the new .deb
+        run: |
+          npm pkg set version="$NEW_VERSION"
+          npm run build
+          npx electron-builder --linux deb --publish never
+
+      - name: Install the old release, then the new one on top
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          v="${FROM_TAG#v}"
+          gh release download "$FROM_TAG" --repo "$GITHUB_REPOSITORY" --pattern "GitHuttBr-$v-amd64.deb" --dir old
+          sudo apt-get install -y "./old/GitHuttBr-$v-amd64.deb"
+          sudo apt-get install -y "./dist/GitHuttBr-$NEW_VERSION-amd64.deb"
+          dpkg-query -W -f='${Package} ${Version}\n' | grep -i huttbr | tee installed.txt
+          [ "$(wc -l < installed.txt)" = 1 ] || { echo "::error::Expected one package"; exit 1; }
+          grep -q "^githuttbr $NEW_VERSION" installed.txt || { echo "::error::Not upgraded in place"; exit 1; }
+          echo 'Upgrade check passed'

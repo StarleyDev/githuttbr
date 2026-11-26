@@ -4,14 +4,14 @@ category: Branches e cirurgia
 order: 46
 summary: Reescreva os arquivos ou a mensagem de um commit histórico no lugar — com a cascata em prévia antes.
 keywords: editar commit edit reescrever rewrite história history amend passado reword corrigir erro de digitação typo cascata cascade replay rebase no lugar cirurgia
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Edite qualquer commit
 
 O erro de digitação está num commit de três semanas atrás. A solução de sempre é
 um rebase interativo: parar no commit, editar, continuar, rezar. A solução do
-Gitcito: clique com o botão direito no commit, **Editar este commit**, mude o
+GitHuttBr: clique com o botão direito no commit, **Editar este commit**, mude o
 texto, pronto. O botão de caneta no painel de detalhes do commit abre o mesmo
 editor.
 

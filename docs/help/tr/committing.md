@@ -58,7 +58,7 @@ Sınırlar:
   yazılmaz ve geçmişte arama, metni commit edildiği hâliyle eşleştirir.
 - Yalnızca gitmojiler sayılır: başka bir emojiyle başlayan konu olduğu gibi kalır.
 - `commit-msg` hook'u commitlint'i standart Conventional ön ayarıyla çalıştıran
-  bir depo, baştaki emojiyi reddeder. Bu Gitcito'nun değil, hook'un kuralıdır:
+  bir depo, baştaki emojiyi reddeder. Bu GitHuttBr'nun değil, hook'un kuralıdır:
   commitlint'i gitmoji için yapılandırın ya da orada saf Conventional kullanın.
 
 ## Besteci panelinin sizin için yaptıkları
@@ -82,12 +82,12 @@ engellemez.
 
 ## Amend
 
-Amend, son commit'i hazırlanmış olan neyse onunla yeniden yazar. Gitcito size
+Amend, son commit'i hazırlanmış olan neyse onunla yeniden yazar. GitHuttBr size
 önce mevcut mesajı gösterir; böylece baştan yazmak yerine düzenlemiş olursunuz.
 
 **Commit’i düzelt…** grafikteki bir satırda HEAD için aynı şeyi yapar: mesajın
 tamamını yükler, besteci panelini amend kipine alır ve ona odaklanır. Zaten
-push edilmiş bir HEAD yine de düzeltilebilir; ama Gitcito, uzak depoyu
+push edilmiş bir HEAD yine de düzeltilebilir; ama GitHuttBr, uzak depoyu
 güncellemenin bir force push gerektireceği konusunda uyarır.
 
 **Commit’i geri al…** ise push edilmemiş bir HEAD için olan kardeşidir: üst

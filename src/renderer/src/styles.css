@@ -1,12 +1,12 @@
-/* ─── gitcito design system ──────────────────────────────────────────── */
+/* ─── githuttbr design system ──────────────────────────────────────────── */
 
 :root {
-  /* Gitcito Default brand palette */
-  --gitcito-primary: #2b2d42;
-  --gitcito-purple: #6c5ce7;
-  --gitcito-cyan: #00d4ff;
-  --gitcito-mint: #00e6a8;
-  --gitcito-orange: #ff7a1a;
+  /* GitHuttBr Default brand palette */
+  --githuttbr-primary: #2b2d42;
+  --githuttbr-purple: #6c5ce7;
+  --githuttbr-cyan: #00d4ff;
+  --githuttbr-mint: #00e6a8;
+  --githuttbr-orange: #ff7a1a;
 
   --bg-0: #0f1220;
   --bg-1: #141829;
@@ -2571,7 +2571,7 @@ body.col-resizing .node-ava {
   letter-spacing: 0.05em;
   vertical-align: 1px;
   color: #0a0e1a;
-  background: linear-gradient(135deg, var(--gitcito-mint), var(--gitcito-cyan));
+  background: linear-gradient(135deg, var(--githuttbr-mint), var(--githuttbr-cyan));
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25) inset, 0 1px 4px rgba(0, 230, 168, 0.35);
 }
 
@@ -2585,7 +2585,7 @@ body.col-resizing .node-ava {
 }
 
 .graph-row.row-new:not(.selected) {
-  box-shadow: inset 2px 0 0 var(--gitcito-mint);
+  box-shadow: inset 2px 0 0 var(--githuttbr-mint);
 }
 
 /* Branch preview: commits outside the hovered branch's history fade back. */
@@ -17387,7 +17387,7 @@ button.insights-row:hover { background: var(--bg-2); }
   border: 1px solid var(--border-soft);
 }
 
-/* ── Secure share (.gitcito bundles) ──────────────────────────────────── */
+/* ── Secure share (.githuttbr bundles) ──────────────────────────────────── */
 .share-modal { display: flex; flex-direction: column; min-height: 0; }
 .share-modal h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 15px; }
 .share-modal .settings-hint { margin: 0 0 10px; }
@@ -18782,7 +18782,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .rc-actions { align-items: center; gap: 10px; }
 .rc-actions .settings-hint { flex: 1; margin: 0; }
 
-/* ─── gitcito --wait: git's editor, in a dialog ─────────────────────────── */
+/* ─── githuttbr --wait: git's editor, in a dialog ─────────────────────────── */
 .cliedit-root { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .cliedit-head { display: flex; align-items: flex-start; gap: 11px; }
 .cliedit-head h3 { margin: 0 0 2px; font-size: 15px; }
@@ -18908,7 +18908,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .action-widget-result:disabled { cursor: default; opacity: 0.7; }
 .action-widget-result-num { color: var(--accent); font-weight: 600; flex: none; }
 
-/* ── Repositories (every repo Gitcito knows about, open or not) ── */
+/* ── Repositories (every repo GitHuttBr knows about, open or not) ── */
 .repos-page {
   display: flex;
   flex-direction: column;

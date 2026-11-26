@@ -2,9 +2,9 @@
 title: Dépôts
 category: Synchronisation et multi-dépôts
 order: 52
-summary: Tous les dépôts que Gitcito connaît, ouverts ou non, dans une liste consultable.
+summary: Tous les dépôts que GitHuttBr connaît, ouverts ou non, dans une liste consultable.
 keywords: dépôts registre tous les dépôts favoris étoilés récents parcourir dossier explorer trouver ouvrir gérer gestion de dépôts couleur section teinte surligner espaces de travail depuis dossiers arbre générer import groupé repositories registry favourites starred recent scan folder workspaces
-source: 3f162d07855277e85ece82a631244e36f6028d36
+source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
 ---
 
 # Dépôts
@@ -12,7 +12,7 @@ source: 3f162d07855277e85ece82a631244e36f6028d36
 Le [centre de contrôle](mission-control.md) répond à "lequel de mes dépôts
 ouverts a besoin de moi ?". Il ne connaît que les onglets de l'espace de
 travail actif. Dépôts répond à une autre question : **où est ce dépôt, et est-il
-même ouvert quelque part ?** Il couvre tout ce que Gitcito a jamais vu. Chaque
+même ouvert quelque part ?** Il couvre tout ce que GitHuttBr a jamais vu. Chaque
 espace de travail, chaque onglet, plus ce qu'il trouve en parcourant les
 dossiers que vous lui indiquez.
 
@@ -71,7 +71,7 @@ Trois choses à savoir :
   recolore jamais celles au-dessus. Seules les couleurs que vous changez sont
   enregistrées.
 - La couleur est **locale à cette page**. Teindre ici la section d'un espace
-  ne dit rien de cet espace ailleurs dans Gitcito. La couleur de son onglet
+  ne dit rien de cet espace ailleurs dans GitHuttBr. La couleur de son onglet
   est un paramètre à part.
 - La couleur est **diluée** à un faible pourcentage de la surface plutôt
   qu'appliquée à pleine force, pour qu'un choix saturé reste un fond lisible
@@ -83,9 +83,9 @@ partager une teinte.
 
 ## Ce qui rend un dépôt connu
 
-Une ligne existe ici dès que Gitcito l'a **ouvert** à un moment, ou l'a
+Une ligne existe ici dès que GitHuttBr l'a **ouvert** à un moment, ou l'a
 trouvé sous un **dossier à parcourir**. Rien n'est indexé juste parce que ça
-existe sur le disque quelque part dont vous n'avez jamais parlé à Gitcito.
+existe sur le disque quelque part dont vous n'avez jamais parlé à GitHuttBr.
 
 Ouvrir cette page indexe aussi ce que vous avez **ouvert dans un onglet**,
 c'est ainsi que les dépôts restaurés au démarrage reçoivent une ligne sans
@@ -124,7 +124,7 @@ boîte de dialogue **Dépôts analysés** ci-dessous :
 
 ## Dépôts analysés
 
-Cette page répond à « où est ce dépôt ? » parmi tout ce que Gitcito connaît.
+Cette page répond à « où est ce dépôt ? » parmi tout ce que GitHuttBr connaît.
 Quand vous voulez seulement **ouvrir** quelque chose de vos dossiers de projets,
 la fenêtre **Ouvrir un dépôt** — et l'écran d'accueil — offre un chemin plus
 court : **Dépôts analysés**.
@@ -167,7 +167,7 @@ tableau, pas comme une pile.
 Les actions de fin sont visibles au repos, pas révélées au survol : **ouvrir
 dans un onglet**, et un **⋮** qui ouvre le même [menu contextuel du
 dépôt](repo-menu.md) qu'un clic droit. C'est le menu utilisé partout ailleurs
-dans Gitcito, étendu de deux entrées propres à cette page :
+dans GitHuttBr, étendu de deux entrées propres à cette page :
 
 | Action | Ce qu'elle fait |
 |---|---|
@@ -182,7 +182,7 @@ Un dépôt dont le dossier n'existe plus s'affiche comme **introuvable**, avec
 
 Les onglets sont restaurés au lancement à partir des chemins qu'ils avaient
 quand vous avez quitté. Si un dossier a depuis été déplacé, supprimé, ou se
-trouve sur un disque qui n'est pas branché, chaque lecture que Gitcito faisait
+trouve sur un disque qui n'est pas branché, chaque lecture que GitHuttBr faisait
 dessus échouait avec sa propre notification d'erreur. Désormais le dossier est
 vérifié d'abord, et l'onglet affiche **Dossier du dépôt introuvable** avec le
 chemin enregistré au lieu de l'espace de travail habituel :
@@ -200,7 +200,7 @@ vous-même : un disque externe absent est généralement temporaire, et perdre
 l'onglet pour cela serait pire qu'un espace réservé discret. Tant que le dossier
 manque, le fetch automatique en arrière-plan l'ignore.
 
-Limites : Gitcito ne cherche pas où un dossier est parti — Localiser… vous le
+Limites : GitHuttBr ne cherche pas où un dossier est parti — Localiser… vous le
 demande. Un dossier qui existe mais n'est plus un dépôt affiche à la place
 l'invite habituelle **Ce n'est pas un dépôt Git**.
 
@@ -242,7 +242,7 @@ Sans danger à répéter. Un second parcours **ajoute et ne retire jamais** :
 - Les nouveaux dépôts sont ajoutés à l'espace de travail correspondant.
 - Les dépôts que vous avez déplacés, renommés ou retirés à la main restent
   comme vous les avez laissés.
-- Un espace que vous avez **renommé** est toujours reconnu. Gitcito se
+- Un espace que vous avez **renommé** est toujours reconnu. GitHuttBr se
   souvient du dossier d'où il vient, donc il fusionne au lieu de créer un
   doublon.
 - Un dépôt supprimé du disque garde son onglet et s'affiche introuvable.
@@ -302,7 +302,7 @@ déjà quel type de pull vous voulez.
 ## La barre d'actions
 
 **Ouvrir un dossier…**, **Cloner…** et **Ajouter un dossier à parcourir…**.
-Trois façons de faire entrer un dépôt dans le registre de Gitcito, depuis la
+Trois façons de faire entrer un dépôt dans le registre de GitHuttBr, depuis la
 même page où vous en cherchez un qui est déjà là.
 
 ## Résumé WIP

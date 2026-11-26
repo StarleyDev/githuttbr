@@ -89,7 +89,7 @@ klonlamanın kendisi bildirir.
   (`--no-single-branch`); altındaki ipucunun değişmesinin nedeni budur.
 - **Yerel bir klasörü klonlarken** git normalde `--depth`'i tamamen yok sayar,
   çünkü nesne deposunu indirmek yerine sabit bağla (hardlink) paylaşır. Yerel bir
-  deponun sığ bir kopyasını istediğinizde Gitcito `file://` URL'si üzerinden
+  deponun sığ bir kopyasını istediğinizde GitHuttBr `file://` URL'si üzerinden
   klonlar, böylece istediğiniz derinlik gerçekten elinize geçer.
 
 ## İlerleme, arka plan ve iptal
@@ -114,7 +114,7 @@ edilen bir klon sürdürülemez; yeniden başlatmak sıfırdan başlar.
 Bittiğinde yeni depo, pencere hâlâ açık olsun ya da olmasın, bir sekmede açılır
 ve klonlarken kullandığınız profile sabitlenir.
 
-Klonlar uygulamanın içinde çalışır, bu yüzden Gitcito'dan çıkmak onları durdurur.
+Klonlar uygulamanın içinde çalışır, bu yüzden GitHuttBr'dan çıkmak onları durdurur.
 Çıkış temizliği beklemez, dolayısıyla yarım yazılmış klasör geride kalabilir —
 oraya yeniden klonlamadan önce onu silin, çünkü pencere var olan bir klasörü
 reddeder.

@@ -12,8 +12,7 @@ import type { TranslationKey } from '../i18n'
  * writes `send` straight to the session's stdin.
  *
  * Detection is textual and therefore fallible — a config can always override it
- * with a `"githuttbr": { "hotActions": [...] }` block (or upstream's `"gitcito"`; an empty array turns the
- * buttons off).
+ * with a `"githuttbr": { "hotActions": [...] }` block (an empty array turns the buttons off).
  */
 
 /** Which glyph the toolbar draws for an action. */
@@ -279,11 +278,9 @@ const ICONS = new Set<HotIcon>([
 ])
 
 /** Read a `"githuttbr": { "hotActions": [...] }` block off a config. Returns null
- *  when there is none, and an empty array when the repo turned the buttons off.
- *  A launch.json written for upstream Gitcito carries the block under
- *  `"gitcito"`; it is used when there is no `"githuttbr"` block. */
+ *  when there is none, and an empty array when the repo turned the buttons off. */
 function overrideActions(config: LaunchConfig): HotAction[] | null {
-  const block = config.githuttbr ?? config.gitcito
+  const block = config.githuttbr
   if (typeof block !== 'object' || block === null) return null
   const raw = (block as { hotActions?: unknown }).hotActions
   if (!Array.isArray(raw)) return null

@@ -94,7 +94,7 @@ erreur.
   dessous.
 - **Cloner un dossier local** ignore normalement `--depth` complètement, parce
   que git crée des liens durs vers la base d'objets au lieu de récupérer quoi que
-  ce soit. Gitcito clone via une URL `file://` quand vous demandez une copie
+  ce soit. GitHuttBr clone via une URL `file://` quand vous demandez une copie
   superficielle d'un dépôt local : la profondeur demandée est donc bien celle que
   vous obtenez.
 
@@ -121,7 +121,7 @@ touché — le dossier n'existait pas avant le début du clonage, ce qui est vé
 Une fois terminé, le nouveau dépôt s'ouvre dans un onglet, épinglé au profil
 avec lequel vous avez cloné, que la boîte de dialogue soit encore ouverte ou non.
 
-Les clonages tournent dans l'app : quitter Gitcito les arrête. La fermeture
+Les clonages tournent dans l'app : quitter GitHuttBr les arrête. La fermeture
 n'attend pas le nettoyage, donc le dossier à moitié écrit peut rester —
 supprimez-le avant de cloner de nouveau au même endroit, puisque la boîte de
 dialogue refuse un dossier qui existe.

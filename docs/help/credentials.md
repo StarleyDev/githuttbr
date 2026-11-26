@@ -8,12 +8,12 @@ keywords: credential helper password https asks again osxkeychain wincred manage
 
 # Credential helper
 
-Gitcito holds three different kinds of secret, and people reasonably assume they
+GitHuttBr holds three different kinds of secret, and people reasonably assume they
 are one thing:
 
 | | Held by |
 |---|---|
-| Host API tokens — PRs, issues, CI checks | Gitcito, in your [OS keychain](security.md) |
+| Host API tokens — PRs, issues, CI checks | GitHuttBr, in your [OS keychain](security.md) |
 | `git@…` transport | Your [SSH key](ssh-keys.md), via the system ssh agent |
 | **`https://` transport** | **Git's own credential helper** |
 
@@ -54,7 +54,7 @@ this one host behave differently".
 | `cache` | Memory, for 15 minutes. Nothing on disk |
 | `store` | **A plain file in your home directory. Unencrypted** |
 
-Gitcito offers what is actually installed on this machine, marks the one that
+GitHuttBr offers what is actually installed on this machine, marks the one that
 fits your OS, and greys out the rest.
 
 **Scope matters.** *For every repository* writes to your global config, which is
@@ -81,7 +81,7 @@ and every push fails with a 401 that names nothing. **Forget** asks the
 configured helper to erase its entry for that host — `git credential reject`,
 which is git's own documented route.
 
-Nothing is read on the way: Gitcito never calls `git credential fill`, the
+Nothing is read on the way: GitHuttBr never calls `git credential fill`, the
 command that would print a live password to standard output.
 
 The next push asks you once, and the helper stores the new answer.
@@ -123,7 +123,7 @@ An old clone, or a URL pasted from a wiki, can carry its credential inside the
 address: `https://user:token@git.example.test/team/app.git`. **A password in the
 URL always takes priority:** git sends it and asks no helper at all — not the
 token of the repository's [profile](profiles.md), not the GitHub CLI, not git's
-own store. While the token works, that is fine, and Gitcito leaves it alone:
+own store. While the token works, that is fine, and GitHuttBr leaves it alone:
 **it never removes a password from a URL without asking you.** Once the token is
 revoked or expires, every fetch, pull and push of that one repository fails with
 *Invalid username or token* or *Authentication failed*, while the other
@@ -132,7 +132,7 @@ repository's `.git/config`.
 
 ![Removing a saved token from a remote URL](../screenshots/remote-url-token.webp)
 
-Gitcito reads every remote's fetch and push URLs and says so in three places:
+GitHuttBr reads every remote's fetch and push URLs and says so in three places:
 
 | Where | What you see |
 |-------|--------------|
@@ -186,14 +186,14 @@ could read the repository folder.
 
 ## Limits worth knowing
 
-- **This is git's store, not Gitcito's.** Changing it changes what your terminal
+- **This is git's store, not GitHuttBr's.** Changing it changes what your terminal
   does too — which is the point, and worth knowing before you change it.
 - **System-level helpers are shown, not editable.** They live in a config only
   an administrator can write.
-- **Gitcito cannot list what a helper holds.** No credential API exposes that
+- **GitHuttBr cannot list what a helper holds.** No credential API exposes that
   without handing over the secrets, so the dialog reports configuration and
   erases on request, and nothing else.
-- **A token you gave Gitcito is separate.** Revoking one does not touch the
+- **A token you gave GitHuttBr is separate.** Revoking one does not touch the
   other; see [security](security.md) for the keychain side.
 - **A profile's token stays out of the repository's hooks' environment.** A
   hook sees only a code for a private endpoint, valid while that git

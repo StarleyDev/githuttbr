@@ -11,7 +11,6 @@
  * The contract with a caller is git's contract: text on stdout, diagnostics on
  * stderr, and an exit code that means something. `githuttbr doctor` in a CI job
  * is the whole point — the guard rails a repository declares in `.githuttbr.json`
- * (or upstream's `.gitcito.json`)
  * are worth little if only the person with the GUI open ever sees them.
  */
 
@@ -38,7 +37,6 @@ import type { DoctorCheck, RepoConfig } from '../shared/types'
 import { PRODUCT_NAME } from '../shared/brand'
 import { APP_REPO_URL } from '../shared/appRepo'
 import { APP_NAME, SETTINGS_FILE, appDataDir } from './appIdentity'
-import { EDITOR_KEYS, EDITOR_VALUE, editorFixCommand, isLegacyEditor } from './legacyShims'
 
 const pexecFile = promisify(execFile)
 
@@ -137,52 +135,9 @@ function doctorLine(check: DoctorCheck): string {
   return `  ${mark} ${bold(check.id)}${want}${got}`
 }
 
-interface StaleEditor {
-  key: string
-  scope: 'global' | 'local'
-  value: string
-}
-
-/** `core.editor` / `sequence.editor` still running the pre-4.39 `gitcito --wait`, where they are set. */
-async function staleEditorSettings(root: string): Promise<StaleEditor[]> {
-  const found: StaleEditor[] = []
-  for (const scope of ['local', 'global'] as const) {
-    for (const key of EDITOR_KEYS) {
-      const value = await gitOr(root, ['config', `--${scope}`, '--get', key])
-      if (value && isLegacyEditor(value)) found.push({ key, scope, value })
-    }
-  }
-  return found
-}
-
-/**
- * A stale editor setting makes every `git commit` fail with "command not
- * found" — worth a line whatever the repository config asks for. A warning,
- * not a failure: it is the user's git config, not the repository's state.
- */
-async function reportStaleEditors(root: string, fix: boolean): Promise<void> {
-  const stale = await staleEditorSettings(root)
-  if (!stale.length) return
-  for (const s of stale) {
-    if (fix) {
-      try {
-        await git(root, ['config', `--${s.scope}`, s.key, EDITOR_VALUE])
-        out(`  ${OK} fixed ${bold(s.key)} ${dim(`(${s.scope})`)}`)
-        continue
-      } catch (e) {
-        out(`  ${FAIL} could not fix ${bold(s.key)}: ${e instanceof Error ? e.message : String(e)}`)
-      }
-    }
-    out(`  ${WARN} ${bold(s.key)} ${dim(`(${s.scope}) runs the old command · found ${s.value}`)}`)
-    out(`      ${dim('Fix:')} ${editorFixCommand(s.key, s.scope)}`)
-  }
-  out()
-}
-
 async function cmdDoctor(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
   const root = await repoRoot(args.rest[0])
-  await reportStaleEditors(root, args.has('fix'))
   const { config, path } = await readRepoConfig(root)
   if (!config?.requires) {
     out(`${dim('No requirements declared in')} ${basename(path)}${dim('.')}`)
@@ -348,8 +303,6 @@ async function cmdConfig(argv: string[]): Promise<number> {
   const args = parseArgs(argv)
   const [sub, dir] = args.rest
   const root = await repoRoot(dir)
-  // Read from whichever file the repository has — upstream's `.gitcito.json`
-  // counts — and name that one; `init` only ever writes `.githuttbr.json`.
   const found = await findRepoConfigFile(root)
   const name = found ? basename(found.path) : REPO_CONFIG_FILE
 
@@ -474,7 +427,13 @@ async function cmdResolve(argv: string[]): Promise<number> {
 
 // ─── githuttbr editor ─────────────────────────────────────────────────────────
 
-/** Wire (or unwire) Gitcito as git's message editor. `--wait` is what makes it
+/** The git editor settings `editor install` writes. */
+const EDITOR_KEYS = ['core.editor', 'sequence.editor'] as const
+
+/** What `githuttbr editor install` writes. */
+const EDITOR_VALUE = 'githuttbr --wait'
+
+/** Wire (or unwire) GitHuttBr as git's message editor. `--wait` is what makes it
  *  usable there: git blocks until the file comes back, so the command has to
  *  block too. */
 async function cmdEditor(argv: string[]): Promise<number> {

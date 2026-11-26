@@ -4,14 +4,14 @@ category: Ramas y cirugía
 order: 46
 summary: Reescribe los archivos o el mensaje de un commit histórico en el sitio — con la cascada previsualizada primero.
 keywords: editar commit edit reescribir historia rewrite history amend pasado reword corregir errata typo cascada cascade replay rebase in place cirugía surgery
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Edita cualquier commit
 
 La errata está en un commit de hace tres semanas. El arreglo habitual es un
 rebase interactivo: parar en el commit, editar, continuar, rezar. El arreglo de
-Gitcito es: clic derecho en el commit, **Editar este commit**, cambiar el
+GitHuttBr es: clic derecho en el commit, **Editar este commit**, cambiar el
 texto, listo. El botón del lápiz en el panel de detalles del commit abre el
 mismo editor.
 

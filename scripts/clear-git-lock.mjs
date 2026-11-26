@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Release guard: clear a stale `.git/index.lock` before release-it runs.
 //
-// Why this exists: when Gitcito itself is open on this repo (dev mode), its
+// Why this exists: when GitHuttBr itself is open on this repo (dev mode), its
 // background `git status` refreshes briefly create `.git/index.lock`. If
 // release-it's commit step races one of those refreshes — or a previous git
 // process crashed — the lock lingers and release-it dies with:
@@ -25,7 +25,7 @@ const gitDir = (() => {
 
 const lockPath = resolve(gitDir, 'index.lock')
 
-// A Gitcito instance open on THIS repo is the usual culprit: its background
+// A GitHuttBr instance open on THIS repo is the usual culprit: its background
 // `git status` refreshes grab index.lock and race release-it's commit. Detect
 // it up front so the user can close it instead of hitting a mid-release crash.
 const githuttbrOnThisRepo = () => {

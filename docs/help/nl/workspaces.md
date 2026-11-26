@@ -4,7 +4,7 @@ category: Begin hier
 order: 3
 summary: Veel repository's zonder te verdrinken: tabbladen, groepen, mappen en workspaces.
 keywords: workspace werkruimte tabbladen tabs groepen mappen meerdere repos organiseren wisselen indeling ga naar repository wisselaar tabbladgrootte go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Workspaces, tabbladen & groepen
@@ -140,7 +140,7 @@ ervoor opent dan een eigen tabblad — openen moet altijd iets openen.
 Een workspace is een **hele opgeslagen tabbladenstrook**. Wisselen verwisselt elk
 tabblad tegelijk: `Werk` en `Privé` trappen elkaar niet meer op de tenen.
 
-De naam van de workspace staat linksboven, naast het Gitcito-merkteken. Klik erop
+De naam van de workspace staat linksboven, naast het GitHuttBr-merkteken. Klik erop
 om te wisselen, aan te maken, te hernoemen, te herordenen of te verwijderen.
 Ernaast zit de meter die [Mission control](mission-control.md) opent voor de
 workspace waarin je zit.

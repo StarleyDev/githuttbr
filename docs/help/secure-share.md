@@ -9,8 +9,8 @@ keywords: secure share export import bundle encrypted workspace transfer machine
 # Secure share
 
 Getting a new machine — or a new teammate — set up usually means re-entering
-everything. Secure share packs it into one encrypted `.gitcito` file instead:
-Gitcito's team features have **no backend**, so the file *is* the transport.
+everything. Secure share packs it into one encrypted `.githuttbr` file instead:
+GitHuttBr's team features have **no backend**, so the file *is* the transport.
 Send it however you already send files; the password travels separately.
 
 ![Exporting one repository's settings as an encrypted bundle](../screenshots/secure-share.webp)
@@ -40,7 +40,7 @@ first, then by folder — so importing does not clone the world again.
 
 A **workspace structure** section recreates the workspace with the repositories
 you already have; ones you don't are listed with their remote so you can clone
-them first and re-import — Gitcito never clones on your behalf here. A **commit
+them first and re-import — GitHuttBr never clones on your behalf here. A **commit
 notes** section previews what would land — new, identical, differing, or
 pinned to commits you don't have — and differing notes are only replaced when
 you tick **overwrite**; there is no merge of diverging notes.

@@ -6,7 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
 import { confirmRemoveRecentRepo, repositoryMenuItems } from '../lib/repositoryMenuItems'
 import { chooseRepositories } from '../openRepositories'
-import gitcitoLaunch from '../assets/gitcito-launch.png'
+import githuttbrLaunch from '../assets/githuttbr-launch.png'
 import { PRODUCT_NAME } from '../../../shared/brand'
 
 export interface LauncherItem {
@@ -252,7 +252,7 @@ export function Welcome(): React.JSX.Element {
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
       >
         <div className="welcome-logo">
-          <img className="welcome-art" src={gitcitoLaunch} alt="" draggable={false} />
+          <img className="welcome-art" src={githuttbrLaunch} alt="" draggable={false} />
         </div>
         <h1>{PRODUCT_NAME}</h1>
         <p>{t('welcome.tagline')}</p>

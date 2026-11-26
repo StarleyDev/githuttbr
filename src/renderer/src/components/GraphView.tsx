@@ -539,10 +539,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // The linear toggle used to be a per-machine localStorage flag; carry an
   // existing "on" over to the new setting once, then forget the key.
   useEffect(() => {
-    // Both names: migrateStorage has already copied the legacy key across.
-    const keys = ['githuttbr-graph-linear', 'gitcito-graph-linear']
-    if (keys.some((k) => localStorage.getItem(k) === 'on')) setFocus('linear')
-    for (const k of keys) localStorage.removeItem(k)
+    const key = 'githuttbr-graph-linear'
+    if (localStorage.getItem(key) === 'on') setFocus('linear')
+    localStorage.removeItem(key)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

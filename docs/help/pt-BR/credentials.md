@@ -4,17 +4,17 @@ category: Segurança
 order: 73
 summary: O armazenamento de senhas do próprio git — o terceiro — e por que o https fica te perguntando de novo.
 keywords: credential helper senha password https pergunta de novo osxkeychain wincred manager libsecret store cache git-credentials texto puro esquecer revogado token 401 token na url do remote senha embutida invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Credential helper
 
-O Gitcito guarda três tipos diferentes de segredo, e as pessoas razoavelmente supõem
+O GitHuttBr guarda três tipos diferentes de segredo, e as pessoas razoavelmente supõem
 que são uma coisa só:
 
 | | Guardado por |
 |---|---|
-| Tokens de API do host — PRs, issues, checks de CI | O Gitcito, no [keychain do sistema](security.md) |
+| Tokens de API do host — PRs, issues, checks de CI | O GitHuttBr, no [keychain do sistema](security.md) |
 | Transporte `git@…` | Sua [chave SSH](ssh-keys.md), via o agente ssh do sistema |
 | **Transporte `https://`** | **O credential helper do próprio git** |
 
@@ -55,7 +55,7 @@ da configuração simples para as URLs que casarem, e costumam ser a resposta pa
 | `cache` | Memória, por 15 minutos. Nada em disco |
 | `store` | **Um arquivo simples na sua pasta pessoal. Sem criptografia** |
 
-O Gitcito oferece o que está de fato instalado nesta máquina, marca o que combina
+O GitHuttBr oferece o que está de fato instalado nesta máquina, marca o que combina
 com o seu sistema operacional, e deixa o resto acinzentado.
 
 **O escopo importa.** *Para todo repositório* escreve no seu config global, que é o
@@ -82,7 +82,7 @@ todo push falha com um 401 que não nomeia nada. **Esquecer** pede ao helper
 configurado que apague a entrada dele para aquele host — `git credential reject`,
 que é a rota documentada do próprio git.
 
-Nada é lido no caminho: o Gitcito nunca chama `git credential fill`, o comando que
+Nada é lido no caminho: o GitHuttBr nunca chama `git credential fill`, o comando que
 imprimiria uma senha viva na saída padrão.
 
 O próximo push pergunta uma vez, e o helper guarda a nova resposta.
@@ -126,7 +126,7 @@ Um clone antigo, ou uma URL copiada de uma wiki, pode levar a credencial dentro
 do endereço: `https://usuario:token@git.example.test/team/app.git`. **Uma senha
 na URL sempre tem prioridade:** o git a envia e não pergunta a nenhum helper —
 nem ao token do [perfil](profiles.md) do repositório, nem ao GitHub CLI, nem ao
-armazenamento do próprio git. Enquanto o token funciona, tudo bem, e o Gitcito
+armazenamento do próprio git. Enquanto o token funciona, tudo bem, e o GitHuttBr
 não mexe nela: **ele nunca remove uma senha da URL sem te perguntar.** Quando o
 token é revogado ou expira, todo fetch, pull e push daquele repositório falha
 com *Invalid username or token* ou *Authentication failed*, enquanto os outros
@@ -135,7 +135,7 @@ repositórios do mesmo perfil funcionam. E o token fica em texto puro no
 
 ![Removendo um token salvo da URL de um remote](../../screenshots/remote-url-token.webp)
 
-O Gitcito lê as URLs de fetch e de push de cada remote e avisa em três lugares:
+O GitHuttBr lê as URLs de fetch e de push de cada remote e avisa em três lugares:
 
 | Onde | O que aparece |
 |------|---------------|
@@ -190,14 +190,14 @@ para qualquer coisa que pudesse ler a pasta do repositório.
 
 ## Limites que vale conhecer
 
-- **Este é o armazenamento do git, não o do Gitcito.** Mudá-lo muda o que o seu
+- **Este é o armazenamento do git, não o do GitHuttBr.** Mudá-lo muda o que o seu
   terminal faz também — que é o ponto, e vale saber antes de mudar.
 - **Helpers em nível de sistema são mostrados, não editáveis.** Eles moram num
   config em que só um administrador pode escrever.
-- **O Gitcito não consegue listar o que um helper guarda.** Nenhuma API de
+- **O GitHuttBr não consegue listar o que um helper guarda.** Nenhuma API de
   credenciais expõe isso sem entregar os segredos, então o diálogo reporta
   configuração e apaga sob pedido, e nada mais.
-- **Um token que você deu ao Gitcito é separado.** Revogar um não toca no outro; veja
+- **Um token que você deu ao GitHuttBr é separado.** Revogar um não toca no outro; veja
   [segurança](security.md) para o lado do keychain.
 
 Veja também: [Segurança](security.md) · [Chaves SSH](ssh-keys.md) ·

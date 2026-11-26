@@ -93,7 +93,7 @@ den echten Fehler.
   Hinweis darunter.
 - **Beim Klonen eines lokalen Ordners** ignoriert git `--depth` normalerweise
   komplett, weil es den Objektspeicher hardlinkt, statt ihn zu übertragen.
-  Gitcito klont deshalb über eine `file://`-URL, wenn du eine flache Kopie
+  GitHuttBr klont deshalb über eine `file://`-URL, wenn du eine flache Kopie
   eines lokalen Repositorys anforderst — so bekommst du die Tiefe, die du
   angefordert hast.
 
@@ -121,7 +121,7 @@ neuer Start beginnt bei null.
 Wenn er fertig ist, öffnet sich das neue Repository in einem Tab, angeheftet an
 das Profil, mit dem du geklont hast — egal, ob der Dialog noch offen ist.
 
-Klone laufen innerhalb der App, also stoppt das Beenden von Gitcito sie. Das
+Klone laufen innerhalb der App, also stoppt das Beenden von GitHuttBr sie. Das
 Beenden wartet nicht auf das Aufräumen, daher kann der halb geschriebene Ordner
 liegen bleiben — lösche ihn, bevor du dorthin erneut klonst, denn der Dialog
 lehnt einen existierenden Ordner ab.

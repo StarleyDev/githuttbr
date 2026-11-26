@@ -299,7 +299,7 @@ export type ModalSpec =
   | { kind: 'stash-partial'; repoPath: string }
   | { kind: 'create-tag'; repoPath: string; hash?: string; at?: string }
   | { kind: 'cheatsheet' }
-  // `gitcito --wait <file>` — a `git commit`/`git rebase -i` is blocked on this
+  // `githuttbr --wait <file>` — a `git commit`/`git rebase -i` is blocked on this
   // dialog, so closing it by any route must answer git (see CliEditModal).
   | { kind: 'cli-edit'; file: string; sentinel: string; content: string }
   | { kind: 'ai-accounts-notice' }

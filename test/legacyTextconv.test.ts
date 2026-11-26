@@ -13,13 +13,15 @@ import {
 import { cloneFixture, cleanupFixtures } from './fixtures'
 import { ROOT } from './helpers'
 
-// 4.38 wrote `diff.<name>.textconv = "<install>/resources/cli/gitcito-textconv"`.
+// This app's 4.38 wrote `diff.<name>.textconv = "<install>/resources/cli/gitcito-textconv"`.
 // 4.39 repoints those entries at the converter it ships: the global config at
-// start-up, a repository's own config when it is opened.
+// start-up, a repository's own config when it is opened. Upstream Gitcito's
+// entries, same file name in Gitcito's own install, are never touched.
 
 afterAll(() => cleanupFixtures())
 
 const LEGACY = '"/opt/Git HuttBr/resources/cli/gitcito-textconv"'
+const UPSTREAM = '"/opt/Gitcito/resources/cli/gitcito-textconv"'
 const current = (): string => `"${bundledTextconvPath()}"`
 
 function git(repo: string, ...args: string[]): string {
@@ -100,6 +102,15 @@ describe('repointLegacyDiffDrivers, in a repository', () => {
     expect(await gitService.repointLegacyDiffDrivers(R)).toEqual([])
   })
 
+  it("never rewrites or flags upstream Gitcito's converter of the same name", async () => {
+    const R = jsonRepo()
+    git(R, 'config', '--local', 'diff.json.textconv', UPSTREAM)
+    expect(await gitService.repointLegacyDiffDrivers(R)).toEqual([])
+    expect(git(R, 'config', '--local', 'diff.json.textconv').trim()).toBe(UPSTREAM)
+    const json = (await gitService.diffDrivers(R)).find((d) => d.name === 'json')!
+    expect(json.stale).toBeUndefined()
+  })
+
   it('leaves the old entry, and its stale badge, when running as an AppImage', async () => {
     const R = jsonRepo()
     git(R, 'config', '--local', 'diff.json.textconv', LEGACY)
@@ -131,6 +142,7 @@ describe('the global config', () => {
       const legacyMac = '"/Applications/Git HuttBr.app/Contents/Resources/cli/gitcito-textconv"'
       execFileSync('git', ['config', '--global', 'diff.excel.textconv', legacyMac])
       execFileSync('git', ['config', '--global', 'diff.exif.textconv', 'exiftool'])
+      execFileSync('git', ['config', '--global', 'diff.word.textconv', UPSTREAM])
 
       const atStart = await repointGlobalLegacyTextconvs()
       expect(atStart).toEqual([{ name: 'excel', previous: legacyMac, next: current(), scope: 'global' }])
@@ -139,6 +151,9 @@ describe('the global config', () => {
       )
       expect(execFileSync('git', ['config', '--global', 'diff.exif.textconv'], { encoding: 'utf8' }).trim()).toBe(
         'exiftool'
+      )
+      expect(execFileSync('git', ['config', '--global', 'diff.word.textconv'], { encoding: 'utf8' }).trim()).toBe(
+        UPSTREAM
       )
       // Once per run, however often it is asked.
       expect(await repointGlobalLegacyTextconvs()).toBe(atStart)

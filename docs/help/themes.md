@@ -8,7 +8,7 @@ keywords: theme themes dark light appearance colors colours font size graph pale
 
 # Themes & appearance
 
-Built-in themes — Gitcito, Nord, Dracula, Solarized, GitHub, Monokai,
+Built-in themes — GitHuttBr, Nord, Dracula, Solarized, GitHub, Monokai,
 Midnight, Contrast and Daltonic — each with a light and a dark variant.
 
 ![Switching from light to dark](../screenshots/clip-themes.webp)

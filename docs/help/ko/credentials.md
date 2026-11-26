@@ -4,17 +4,17 @@ category: 보안
 order: 73
 summary: git 자신의 비밀번호 저장소 — 세 번째 저장소 — 그리고 https가 자꾸 다시 묻는 이유.
 keywords: 자격 증명 credential 헬퍼 helper 비밀번호 password https 다시 물음 asks again osxkeychain wincred manager libsecret store cache git-credentials 평문 plaintext 잊기 forget 폐기된 revoked 토큰 token 401 로그인 확인 어떤 계정 원격 URL의 토큰 포함된 비밀번호 URL에서 제거 token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # 자격 증명 헬퍼
 
-Gitcito는 서로 다른 세 종류의 비밀을 다루는데, 사람들은 당연하다는 듯이 이것들을
+GitHuttBr는 서로 다른 세 종류의 비밀을 다루는데, 사람들은 당연하다는 듯이 이것들을
 하나로 여겨요.
 
 | | 보관하는 곳 |
 |---|---|
-| 호스트 API 토큰 — PR, 이슈, CI 검사 | Gitcito가 [OS 키체인](security.md)에 |
+| 호스트 API 토큰 — PR, 이슈, CI 검사 | GitHuttBr가 [OS 키체인](security.md)에 |
 | `git@…` 전송 | 시스템 ssh 에이전트를 통한 당신의 [SSH 키](ssh-keys.md) |
 | **`https://` 전송** | **git 자신의 자격 증명 헬퍼** |
 
@@ -55,7 +55,7 @@ git에서 가장 흔한 두 가지 불만을 만들어 내요. *왜 또 물어�
 | `cache` | 메모리에 15분간. 디스크에는 아무것도 남지 않아요 |
 | `store` | **홈 디렉터리의 평문 파일. 암호화되지 않아요** |
 
-Gitcito는 이 컴퓨터에 실제로 설치된 것만 제시하고, 당신의 OS에 맞는 것을
+GitHuttBr는 이 컴퓨터에 실제로 설치된 것만 제시하고, 당신의 OS에 맞는 것을
 표시하며, 나머지는 흐리게 처리해요.
 
 **범위가 중요해요.** *모든 저장소에* 는 전역 설정에 쓰는 것이고 거의 언제나
@@ -81,7 +81,7 @@ Gitcito는 이 컴퓨터에 실제로 설치된 것만 제시하고, 당신의 O
 알려 주지 않는 401로 실패해요. **잊기**는 설정된 헬퍼에게 그 호스트에 대한 항목을
 지우라고 요청해요 — `git credential reject`, 즉 git 자신이 문서화한 경로예요.
 
-그 과정에서 읽는 것은 아무것도 없어요. Gitcito는 살아 있는 비밀번호를 표준 출력에
+그 과정에서 읽는 것은 아무것도 없어요. GitHuttBr는 살아 있는 비밀번호를 표준 출력에
 찍어 낼 명령인 `git credential fill` 을 결코 호출하지 않아요.
 
 다음 푸시에서 한 번 묻고, 헬퍼가 새 답을 저장해요.
@@ -120,14 +120,14 @@ Gitcito는 이 컴퓨터에 실제로 설치된 것만 제시하고, 당신의 O
 `https://user:token@git.example.test/team/app.git`. **URL의 비밀번호가 항상
 우선합니다:** git은 그것을 보내고 어떤 헬퍼에도 묻지 않습니다 — 저장소
 [프로필](profiles.md)의 토큰에도, GitHub CLI에도, git 자체의 저장소에도. 토큰이 유효한
-동안은 괜찮고, Gitcito도 그대로 둡니다: **묻지 않고 URL에서 비밀번호를 제거하는 일은
+동안은 괜찮고, GitHuttBr도 그대로 둡니다: **묻지 않고 URL에서 비밀번호를 제거하는 일은
 절대 없습니다.** 토큰이 폐기되거나 만료되면 그 저장소 하나의 fetch, pull, push가 모두
 *Invalid username or token*이나 *Authentication failed*로 실패하고, 같은 프로필의 다른
 저장소는 동작합니다. 게다가 토큰은 저장소의 `.git/config`에 평문으로 남아 있습니다.
 
 ![원격 URL에서 저장된 토큰 제거하기](../../screenshots/remote-url-token.webp)
 
-Gitcito는 각 원격의 fetch와 push URL을 읽고 세 곳에서 알려 줍니다.
+GitHuttBr는 각 원격의 fetch와 push URL을 읽고 세 곳에서 알려 줍니다.
 
 | 위치 | 보이는 것 |
 |-------|--------------|
@@ -179,14 +179,14 @@ Gitcito는 각 원격의 fetch와 push URL을 읽고 세 곳에서 알려 줍니
 
 ## 알아 둘 만한 한계
 
-- **이건 git의 저장소지 Gitcito의 것이 아니에요.** 여기를 바꾸면 터미널의 동작도
+- **이건 git의 저장소지 GitHuttBr의 것이 아니에요.** 여기를 바꾸면 터미널의 동작도
   바뀌어요 — 그게 요점이지만, 바꾸기 전에 알아 둘 만한 사실이에요.
 - **시스템 수준 헬퍼는 보이기만 하고 편집할 수 없어요.** 관리자만 쓸 수 있는
   설정 파일에 있으니까요.
-- **Gitcito는 헬퍼가 무엇을 갖고 있는지 나열할 수 없어요.** 비밀을 넘겨주지 않고
+- **GitHuttBr는 헬퍼가 무엇을 갖고 있는지 나열할 수 없어요.** 비밀을 넘겨주지 않고
   그걸 알려 주는 자격 증명 API는 없어서, 이 대화 상자는 설정을 보고하고 요청에
   따라 지우는 일만 해요.
-- **Gitcito에 준 토큰은 별개예요.** 한쪽을 폐기해도 다른 쪽은 그대로예요. 키체인
+- **GitHuttBr에 준 토큰은 별개예요.** 한쪽을 폐기해도 다른 쪽은 그대로예요. 키체인
   쪽은 [보안](security.md)을 보세요.
 - **프로필의 토큰은 저장소 훅의 환경에 들어가지 않습니다.** 훅이 보는 것은 그 git
   명령이 도는 동안만 유효한, 비공개 엔드포인트용 코드뿐입니다 — git-lfs처럼 일부러

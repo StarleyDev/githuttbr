@@ -104,7 +104,6 @@ const api = {
   appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   appReleases: (): Promise<unknown> => ipcRenderer.invoke('app:releases'),
   /** True once, on the first start after settings were copied from a pre-4.39 install. */
-  takeMigrationNotice: (): Promise<boolean> => ipcRenderer.invoke('app:takeMigrationNotice'),
 
   shell: {
     showItemInFolder: (fullPath: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', fullPath),

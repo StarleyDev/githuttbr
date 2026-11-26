@@ -2,7 +2,7 @@
 title: 環境チェック
 category: はじめに
 order: 6
-summary: Gitcito が自身のインストール外で頼っているもの — git、LFS、ネイティブターミナル、git の credential helper、GitHub CLI、ファイル監視 — を 1 か所でチェックします。
+summary: GitHuttBr が自身のインストール外で頼っているもの — git、LFS、ネイティブターミナル、git の credential helper、GitHub CLI、ファイル監視 — を 1 か所でチェックします。
 keywords: 環境 environment ドクター 診断 チェック git バージョン lfs node-pty ターミナル 基本シェル credential helper store gh github cli スコープ workflow inotify max_user_watches
 ---
 
@@ -15,7 +15,7 @@ push できない GitHub CLI のログイン。どれも後になって、別の
 それらを先にチェックします。
 
 [リポジトリのドクター](repo-settings.md) は別の問いに答えます。*このリポジトリ* が
-`.gitcito.json` の求めるとおりにここでビルドできるか、です。環境チェックはアプリ自体を
+`.githuttbr.json` の求めるとおりにここでビルドできるか、です。環境チェックはアプリ自体を
 対象とし、どのリポジトリでも同じです。
 
 ![設定の環境チェック](../../screenshots/settings-environment.webp)
@@ -27,7 +27,7 @@ push できない GitHub CLI のログイン。どれも後になって、別の
 | **Git** | git 2.31 以降が `PATH` にある | 2.31 より古い: [プロファイル](profiles.md)のアカウントが fetch と push でサインインできない。ない: git をインストールするまで何も動かない |
 | **Git LFS** | `git lfs` がインストール済み | 未インストール。LFS にファイルを置くリポジトリだけが必要とする |
 | **ターミナル** | ネイティブターミナルが読み込まれた | [ターミナル](terminal.md)が基本モードで動作: 色なし、サイズ変更なし、全画面プログラムなし |
-| **Credential helper** | git に HTTPS パスワード用の helper がある — グローバル、または特定ホスト向け(`gh auth setup-git` が設定するもの) | helper がなく、Gitcito の外の git が毎回尋ねる。または平文で保存する `store`。[Credential helper](credentials.md) を参照 |
+| **Credential helper** | git に HTTPS パスワード用の helper がある — グローバル、または特定ホスト向け(`gh auth setup-git` が設定するもの) | helper がなく、GitHuttBr の外の git が毎回尋ねる。または平文で保存する `store`。[Credential helper](credentials.md) を参照 |
 | **GitHub CLI** | `gh` が `workflow` スコープ付きでログイン済み | それなしでログイン: GitHub は `.github/workflows` を変更する push をすべて拒否する |
 | **ファイル監視**(Linux) | inotify の上限が 65,536 以上 | 上限が低いと大きなリポジトリをいくつか開いただけで尽き、新しいフォルダーでステータスが更新されなくなる |
 

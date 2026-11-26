@@ -73,11 +73,11 @@ Tab 补全，都会在它看不到的地方改变这一行，因此它会保持�
 管理器和 `brew shellenv` 通常就把自己写在那里——在你终端里能用的 `fvm`、`nvm`、
 `pyenv` 之类的工具，在这里同样能用。
 
-Gitcito 还会在启动时向你的登录 shell 询问真正的 `PATH`，并把它合并进自己启动的
+GitHuttBr 还会在启动时向你的登录 shell 询问真正的 `PATH`，并把它合并进自己启动的
 每一个进程，因为从 Dock 打开的图形应用几乎什么都继承不到。如果某个命令仍然找不
 到，请确认它在登录 shell 的 `PATH` 里，而不是只在交互式 shell 的 `PATH` 里。
 
-你在这里运行的任何东西对 Gitcito 自己的加锁机制都是不可见的，所以一条手敲的长 `git rebase` 和界面上的一次点击仍然可能撞车——当终端改动了什么时，应用会从磁盘重新读取。
+你在这里运行的任何东西对 GitHuttBr 自己的加锁机制都是不可见的，所以一条手敲的长 `git rebase` 和界面上的一次点击仍然可能撞车——当终端改动了什么时，应用会从磁盘重新读取。
 
 ## Shell、主题与 Oh My Posh
 
@@ -93,7 +93,7 @@ Gitcito 还会在启动时向你的登录 shell 询问真正的 `PATH`，并把�
 `CaskaydiaMono Nerd Font`），否则图标会显示为方块。
 
 关于速度：Oh My Posh 每个提示符都会运行一次它的程序——在 Windows 上约 100–200 毫秒，
-带 git 段的主题在大型仓库中更久——这表现为每个提示符前的短暂停顿，而不是 Gitcito 的卡顿。
+带 git 段的主题在大型仓库中更久——这表现为每个提示符前的短暂停顿，而不是 GitHuttBr 的卡顿。
 不带 git 段的主题最快。PowerShell 的预测显示样式也有影响：
 `-PredictionViewStyle InlineView` 每次按键重绘一小块区域，而 `ListView` 会重绘整个区块。
 

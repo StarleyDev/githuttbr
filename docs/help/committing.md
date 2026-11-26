@@ -60,7 +60,7 @@ Limits:
 - Only gitmoji count: a subject that starts with any other emoji is left alone.
 - A repository whose `commit-msg` hook runs commitlint with the stock
   Conventional preset rejects a leading emoji. That is the hook's rule, not
-  Gitcito's — configure commitlint for gitmoji or use plain Conventional there.
+  GitHuttBr's — configure commitlint for gitmoji or use plain Conventional there.
 
 ## Things the composer does for you
 
@@ -81,12 +81,12 @@ Hints, never a gate — it will not stop you committing.
 
 ## Amend
 
-Amend rewrites the last commit with whatever is staged. Gitcito shows you the
+Amend rewrites the last commit with whatever is staged. GitHuttBr shows you the
 existing message first so you are editing, not retyping.
 
 **Amend Commit…** on a graph row does the same thing for HEAD: it loads the
 full message, switches the composer into amend mode, and focuses it. A HEAD
-that was already pushed can still be amended, but Gitcito warns that updating
+that was already pushed can still be amended, but GitHuttBr warns that updating
 the remote will take a force push.
 
 **Undo Commit…** is the sibling for an unpushed HEAD: mixed reset to the

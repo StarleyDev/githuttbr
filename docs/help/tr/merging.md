@@ -17,7 +17,7 @@ birleştir…** kullanın; bkz. [birleştirme seçenekleri](merge-options.md).
 ## Bir ref'i diğerinin üzerine sürükleme
 
 Uygulamadaki en hızlı hareket: bir dalı kaldırıp bir başkasının üzerine
-bırakın. Gitcito o bırakmanın ne anlama gelebileceğini gösteren küçük bir menü
+bırakın. GitHuttBr o bırakmanın ne anlama gelebileceğini gösteren küçük bir menü
 açar ve siz seçene kadar hiçbir şey yapmaz.
 
 ![Bir dalı diğerinin üzerine sürüklemek, bırakmanın ne anlama gelebileceğini gösteren menüyü açar](../../screenshots/clip-branch-drop.webp)
@@ -48,7 +48,7 @@ tek şey budur.
 
 Rebase önce onay ister: yeniden oynatılan her commit'e yeni bir hash verir, bu
 da dal zaten yayımlanmışsa force push demektir. Push da sorar: hedefi pull eden
-herkes onun commit'lerini alır ve bir push Gitcito'dan geri alınamaz. Birleştirme
+herkes onun commit'lerini alır ve bir push GitHuttBr'dan geri alınamaz. Birleştirme
 sormaz — yalnızca ekler. Birleştirme ve rebase tek bir **Geri al** ile geri döner.
 
 ## Bir commit’i bir dalın üzerine sürükleyin

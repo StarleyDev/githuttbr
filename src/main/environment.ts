@@ -7,7 +7,7 @@ import { gitSupportsCredentialEnv } from './gitCredentialEnv'
 import type { DoctorStatus, EnvCheck } from '../shared/types'
 
 /**
- * The machine-wide environment check: what Gitcito relies on outside its own
+ * The machine-wide environment check: what GitHuttBr relies on outside its own
  * bundle. The repository doctor (repoConfig.ts) answers "can this repo build
  * here"; this answers "will the app itself behave" — the failures that
  * otherwise surface as a vague error the first time a push or a terminal runs.

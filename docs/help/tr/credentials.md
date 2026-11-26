@@ -4,17 +4,17 @@ category: Güvenlik
 order: 73
 summary: Git'in kendi parola deposu — üçüncüsü — ve https neden size sürekli yeniden soruyor.
 keywords: kimlik bilgisi yardımcısı credential helper parola https tekrar soruyor osxkeychain wincred manager libsecret store cache git-credentials düz metin unut iptal edilmiş token 401 oturumu kontrol et hangi hesap uzak depo url’sinde token gömülü parola url’den kaldır token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Kimlik bilgisi yardımcısı
 
-Gitcito üç ayrı türde gizli bilgi tutar ve insanlar bunların tek bir şey
+GitHuttBr üç ayrı türde gizli bilgi tutar ve insanlar bunların tek bir şey
 olduğunu varsaymakta haksız da değiller:
 
 | | Kimde durur |
 |---|---|
-| Servis API token'ları — pull request'ler, issue'lar, CI kontrolleri | Gitcito, [işletim sistemi anahtar zincirinizde](security.md) |
+| Servis API token'ları — pull request'ler, issue'lar, CI kontrolleri | GitHuttBr, [işletim sistemi anahtar zincirinizde](security.md) |
 | `git@…` taşıması | [SSH anahtarınız](ssh-keys.md), sistemin ssh ajanı üzerinden |
 | **`https://` taşıması** | **Git'in kendi kimlik bilgisi yardımcısı** |
 
@@ -55,7 +55,7 @@ listeler. Bunlar, eşleştikleri URL'ler için düz ayarı geçersiz kılar ve g
 | `cache` | Bellek, 15 dakikalığına. Diske hiçbir şey yazılmaz |
 | `store` | **Ev dizininizde düz bir dosya. Şifresiz** |
 
-Gitcito bu makinede gerçekten kurulu olanları önerir, işletim sisteminize
+GitHuttBr bu makinede gerçekten kurulu olanları önerir, işletim sisteminize
 uyanı işaretler ve geri kalanını soluklaştırır.
 
 **Kapsam önemlidir.** *Her depo için* seçeneği genel yapılandırmanıza yazar ki
@@ -83,7 +83,7 @@ sürdürür ve her push, hiçbir şeyin adını vermeyen bir 401 ile başarısı
 **Unut**, yapılandırılmış yardımcıdan o sunucuya ait kaydı silmesini ister —
 git'in kendi belgelenmiş yolu olan `git credential reject`.
 
-Bu yolda hiçbir şey okunmaz: Gitcito, canlı bir parolayı standart çıktıya
+Bu yolda hiçbir şey okunmaz: GitHuttBr, canlı bir parolayı standart çıktıya
 yazdıracak olan `git credential fill` komutunu asla çağırmaz.
 
 Sonraki push size bir kez sorar, yardımcı da yeni cevabı saklar.
@@ -125,7 +125,7 @@ Eski bir klon ya da bir wiki’den yapıştırılmış bir URL, kimlik bilgisini
 taşıyabilir: `https://user:token@git.example.test/team/app.git`. **URL’deki bir parola
 her zaman önceliklidir:** git onu gönderir ve hiçbir helper’a sormaz — ne deponun
 [profilinin](profiles.md) token’ına, ne GitHub CLI’ya, ne git’in kendi deposuna. Token
-çalıştığı sürece sorun yoktur ve Gitcito ona dokunmaz: **size sormadan bir URL’den asla
+çalıştığı sürece sorun yoktur ve GitHuttBr ona dokunmaz: **size sormadan bir URL’den asla
 parola kaldırmaz.** Token iptal edildiğinde ya da süresi dolduğunda, o tek deponun her
 fetch, pull ve push’u *Invalid username or token* ya da *Authentication failed* ile
 başarısız olur; aynı profildeki diğer depolar ise çalışır. Ve token, deponun
@@ -133,7 +133,7 @@ başarısız olur; aynı profildeki diğer depolar ise çalışır. Ve token, de
 
 ![Kayıtlı bir token’ı uzak depo URL’sinden kaldırmak](../../screenshots/remote-url-token.webp)
 
-Gitcito her uzak deponun fetch ve push URL’lerini okur ve bunu üç yerde söyler:
+GitHuttBr her uzak deponun fetch ve push URL’lerini okur ve bunu üç yerde söyler:
 
 | Nerede | Ne görürsünüz |
 |-------|--------------|
@@ -186,16 +186,16 @@ sunucuda iptal edin: depo klasörünü okuyabilen her şey onu okuyabiliyordu.
 
 ## Bilmeye değer sınırlar
 
-- **Burası git'in deposu, Gitcito'nunki değil.** Burayı değiştirmek
+- **Burası git'in deposu, GitHuttBr'nunki değil.** Burayı değiştirmek
   terminalinizin davranışını da değiştirir — zaten mesele bu, ama
   değiştirmeden önce bilmekte fayda var.
 - **Sistem düzeyindeki yardımcılar gösterilir, düzenlenemez.** Yalnızca bir
   yöneticinin yazabileceği bir yapılandırmada dururlar.
-- **Gitcito bir yardımcının neler tuttuğunu listeleyemez.** Hiçbir kimlik
+- **GitHuttBr bir yardımcının neler tuttuğunu listeleyemez.** Hiçbir kimlik
   bilgisi API'si bunu gizli bilgileri teslim etmeden açığa vurmaz; bu yüzden
   pencere yalnızca yapılandırmayı bildirir ve istendiğinde siler, başka bir şey
   yapmaz.
-- **Gitcito'ya verdiğiniz bir token ayrıdır.** Birini iptal etmek diğerine
+- **GitHuttBr'ya verdiğiniz bir token ayrıdır.** Birini iptal etmek diğerine
   dokunmaz; anahtar zinciri tarafı için [güvenlik](security.md) sayfasına bakın.
 - **Bir profilin token’ı deponun hook’larının ortamına girmez.** Bir hook yalnızca o git
   komutu çalıştığı sürece geçerli, özel bir uç noktaya ait bir kod görür — git-lfs’in

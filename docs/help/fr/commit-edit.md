@@ -4,14 +4,14 @@ category: Branches et chirurgie
 order: 46
 summary: Réécrire les fichiers ou le message d'un commit historique sur place — avec la cascade prévisualisée d'abord.
 keywords: modifier commit edit réécrire historique rewrite history amend passé reword corriger faute typo cascade replay rebase in place chirurgie surgery
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Modifier n'importe quel commit
 
 La faute de frappe est dans un commit d'il y a trois semaines. Le remède
 habituel est un rebase interactif : s'arrêter au commit, modifier, continuer,
-prier. Le remède de Gitcito : clic droit sur le commit, **Modifier ce
+prier. Le remède de GitHuttBr : clic droit sur le commit, **Modifier ce
 commit**, changer le texte, terminé. Le bouton stylo dans le panneau des
 détails du commit ouvre le même éditeur.
 

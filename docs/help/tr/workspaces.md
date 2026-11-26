@@ -4,7 +4,7 @@ category: Buradan başlayın
 order: 3
 summary: Boğulmadan çok sayıda depo: sekmeler, gruplar, klasörler ve çalışma alanları.
 keywords: çalışma alanı sekmeler gruplar klasörler çoklu depo düzenleme geçiş yerleşim workspace tabs groups folders multiple repos organise switch layout depoya git değiştirici sekme boyutu go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Çalışma alanları, sekmeler ve gruplar
@@ -134,7 +134,7 @@ Bir çalışma alanı, **kaydedilmiş bütün bir sekme şerididir**. Geçiş ya
 sekmeyi bir anda değiştirir: `Work` ile `Personal` birbirinin ayağına basmayı
 bırakır.
 
-Çalışma alanının adı sol üstte, Gitcito işaretinin yanında durur. Geçiş yapmak,
+Çalışma alanının adı sol üstte, GitHuttBr işaretinin yanında durur. Geçiş yapmak,
 oluşturmak, yeniden adlandırmak, sıralamak veya silmek için ona tıklayın.
 Yanında ise içinde bulunduğunuz çalışma alanı için
 [Komuta merkezi](mission-control.md)'ni açan gösterge vardır.

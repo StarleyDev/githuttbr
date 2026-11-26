@@ -17,7 +17,7 @@ una y otra vez; mira [opciones de merge](merge-options.md).
 ## Arrastra una ref sobre otra
 
 El gesto más rápido de la aplicación: coge una rama y suéltala sobre otra.
-Gitcito abre un menú pequeño con lo que ese gesto podría significar, y no hace
+GitHuttBr abre un menú pequeño con lo que ese gesto podría significar, y no hace
 nada hasta que elijas.
 
 ![Arrastrar una rama sobre otra abre el menú de lo que puede significar el gesto](../../screenshots/clip-branch-drop.webp)
@@ -49,7 +49,7 @@ todo lo que hay.
 El rebase pide confirmación antes: le da un hash nuevo a cada commit repetido, lo
 que significa un force push si la rama ya está publicada. El push también
 pregunta: todo el que haga pull del destino recibe sus commits, y un push no se
-puede deshacer desde Gitcito. La fusión no pregunta — solo añade. La fusión y el
+puede deshacer desde GitHuttBr. La fusión no pregunta — solo añade. La fusión y el
 rebase se revierten con un solo **Deshacer**.
 
 ## Arrastra un commit sobre una rama

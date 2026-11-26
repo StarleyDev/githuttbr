@@ -4,17 +4,17 @@ category: Sicherheit
 order: 73
 summary: Gits eigener Passwortspeicher — der dritte — und warum https dich immer wieder fragt.
 keywords: credential helper passwort https fragt wieder osxkeychain wincred manager libsecret store cache git-credentials klartext plaintext vergessen widerrufen revoked token 401 anmeldung prüfen welches konto token in der remote-url eingebettetes passwort aus der url entfernen token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Credential Helper
 
-Gitcito verwaltet drei verschiedene Arten von Geheimnissen, und man nimmt
+GitHuttBr verwaltet drei verschiedene Arten von Geheimnissen, und man nimmt
 verständlicherweise an, es sei ein und dasselbe:
 
 | | Verwaltet von |
 |---|---|
-| API-Tokens der Hoster — PRs, Issues, CI-Checks | Gitcito, in deinem [OS-Schlüsselbund](security.md) |
+| API-Tokens der Hoster — PRs, Issues, CI-Checks | GitHuttBr, in deinem [OS-Schlüsselbund](security.md) |
 | `git@…`-Transport | Deinem [SSH-Schlüssel](ssh-keys.md), über den ssh-Agent des Systems |
 | **`https://`-Transport** | **Gits eigenem Credential Helper** |
 
@@ -55,7 +55,7 @@ sind meist die Antwort auf „Warum verhält sich ausgerechnet dieser Host ander
 | `cache` | Arbeitsspeicher, für 15 Minuten. Nichts auf der Platte |
 | `store` | **Eine Klartextdatei in deinem Home-Verzeichnis. Unverschlüsselt** |
 
-Gitcito bietet an, was auf dieser Maschine tatsächlich installiert ist,
+GitHuttBr bietet an, was auf dieser Maschine tatsächlich installiert ist,
 markiert den, der zu deinem Betriebssystem passt, und graut den Rest aus.
 
 **Der Scope zählt.** *Für jedes Repository* schreibt in deine globale
@@ -83,7 +83,7 @@ heraus, und jeder Push scheitert an einem 401, der nichts benennt. **Vergessen**
 bittet den konfigurierten Helper, seinen Eintrag für diesen Host zu löschen —
 `git credential reject`, gits eigener dokumentierter Weg.
 
-Dabei wird unterwegs nichts gelesen: Gitcito ruft niemals `git credential fill`
+Dabei wird unterwegs nichts gelesen: GitHuttBr ruft niemals `git credential fill`
 auf, den Befehl, der ein gültiges Passwort auf die Standardausgabe schreiben
 würde.
 
@@ -129,7 +129,7 @@ Adresse tragen: `https://user:token@git.example.test/team/app.git`. **Ein Passwo
 der URL hat immer Vorrang:** git sendet es und fragt überhaupt keinen Helper — nicht
 das Token des [Profils](profiles.md) des Repositorys, nicht die GitHub CLI, nicht
 gits eigenen Speicher. Solange das Token funktioniert, ist das in Ordnung, und
-Gitcito lässt es in Ruhe: **Es entfernt nie ein Passwort aus einer URL, ohne dich zu
+GitHuttBr lässt es in Ruhe: **Es entfernt nie ein Passwort aus einer URL, ohne dich zu
 fragen.** Sobald das Token widerrufen wird oder abläuft, scheitert jedes Fetch, Pull
 und Push genau dieses Repositorys mit *Invalid username or token* oder
 *Authentication failed*, während die anderen Repositorys mit demselben Profil
@@ -137,7 +137,7 @@ funktionieren. Und das Token steht im Klartext in der `.git/config` des Reposito
 
 ![Ein gespeichertes Token aus einer Remote-URL entfernen](../../screenshots/remote-url-token.webp)
 
-Gitcito liest die Fetch- und Push-URLs jedes Remotes und sagt es an drei Stellen:
+GitHuttBr liest die Fetch- und Push-URLs jedes Remotes und sagt es an drei Stellen:
 
 | Wo | Was du siehst |
 |-------|--------------|
@@ -195,16 +195,16 @@ alles lesbar, was den Repository-Ordner lesen konnte.
 
 ## Grenzen, die man kennen sollte
 
-- **Das ist gits Speicher, nicht Gitcitos.** Ihn zu ändern ändert auch, was dein
+- **Das ist gits Speicher, nicht GitHuttBrs.** Ihn zu ändern ändert auch, was dein
   Terminal tut — was genau der Sinn ist, aber man sollte es wissen, bevor man
   ihn ändert.
 - **Helper auf Systemebene werden angezeigt, sind aber nicht editierbar.** Sie
   stehen in einer Konfiguration, die nur ein Administrator schreiben kann.
-- **Gitcito kann nicht auflisten, was ein Helper vorhält.** Keine
+- **GitHuttBr kann nicht auflisten, was ein Helper vorhält.** Keine
   Credential-API gibt das preis, ohne die Geheimnisse selbst herauszugeben —
   also meldet der Dialog die Konfiguration und löscht auf Anforderung, und sonst
   nichts.
-- **Ein Token, das du Gitcito gegeben hast, ist davon getrennt.** Eines zu
+- **Ein Token, das du GitHuttBr gegeben hast, ist davon getrennt.** Eines zu
   widerrufen rührt das andere nicht an; siehe [Sicherheit](security.md) für die
   Schlüsselbund-Seite.
 - **Das Token eines Profils bleibt aus der Umgebung der Hooks des Repositorys

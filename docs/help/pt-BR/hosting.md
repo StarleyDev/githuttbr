@@ -284,7 +284,7 @@ têm motivo, e nunca disparam notificação de desktop — isso é decidido pelo
 ## Tokens
 
 Tokens por perfil para várias contas ou organizações, guardados no keychain do seu
-sistema. O Gitcito também pode pegar emprestado o que o seu **credential helper do
+sistema. O GitHuttBr também pode pegar emprestado o que o seu **credential helper do
 git** já guarda, então uma organização em que você já se autenticou muitas vezes
 não precisa de configuração nenhuma. Veja [Segurança e segredos](security.md).
 

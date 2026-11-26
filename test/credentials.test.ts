@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
  * The credential helper is mocked here, not run for real: the behaviour under
- * test is how often Gitcito *asks* git, and a real osxkeychain would raise the
+ * test is how often GitHuttBr *asks* git, and a real osxkeychain would raise the
  * very dialog this suite exists to keep quiet.
  */
 type ExecCallback = (err: (Error & { killed?: boolean }) | null, stdout: string) => void

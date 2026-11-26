@@ -280,7 +280,7 @@ geen reden en geven nooit een systeemmelding — die hangt van de reden af.
 ## Tokens
 
 Tokens per profiel voor meerdere accounts of organisaties, bewaard in de
-sleutelhanger van je besturingssysteem. Gitcito kan ook lenen wat je **git
+sleutelhanger van je besturingssysteem. GitHuttBr kan ook lenen wat je **git
 credential helper** al bevat, dus een organisatie waarvoor je al geauthenticeerd
 bent vergt vaak helemaal geen instelwerk. Zie
 [Beveiliging & geheimen](security.md).

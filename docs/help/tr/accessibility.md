@@ -8,7 +8,7 @@ keywords: erişilebilirlik accessibility a11y ekran okuyucu VoiceOver NVDA klavy
 
 # Erişilebilirlik
 
-Gitcito, fare olmadan kullanılabilir ve bir ekran okuyucu için okunabilir
+GitHuttBr, fare olmadan kullanılabilir ve bir ekran okuyucu için okunabilir
 olmayı hedefler. Bu sayfa bunun somut olarak ne anlama geldiğini — ve
 sınırların nerede olduğunu — söyler.
 
@@ -55,7 +55,7 @@ sınırların nerede olduğunu — söyler.
   sürükleme eyleminin bir menü ya da düğme karşılığı vardır.
 - Bu sayfanın arkasındaki denetim macOS'te VoiceOver ile yapıldı. Windows'ta
   NVDA/JAWS aynı şekilde davranmalıdır ama sahada denenmedi — bildirimler
-  [issues](https://github.com/MyAppDesk/gitcito/issues) olarak memnuniyetle
+  [issues](https://github.com/StarleyDev/githuttbr/issues) olarak memnuniyetle
   karşılanır.
 
 ## İlgili ayarlar

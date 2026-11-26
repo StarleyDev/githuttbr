@@ -171,7 +171,7 @@ describe('remote branch worktree checkout', () => {
 
   beforeAll(() => {
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
-    execFileSync('git', ['-C', repo, 'config', 'user.name', 'Gitcito Test'])
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'GitHuttBr Test'])
     execFileSync('git', ['-C', repo, 'config', 'user.email', 'githuttbr@example.com'])
     writeFileSync(join(repo, 'state.txt'), 'main\n')
     execFileSync('git', ['-C', repo, 'add', 'state.txt'])
@@ -1304,7 +1304,7 @@ describe('discoverLaunch — compounds & serverReadyAction (launch-configs playg
     const groups = await discoverLaunch(repoPath('launch-configs'))
     const root = groups.find((g) => g.isRoot)!
     const who = root.inputs.find((i) => i.id === 'who')
-    expect(who).toMatchObject({ type: 'promptString', default: 'gitcito' })
+    expect(who).toMatchObject({ type: 'promptString', default: 'githuttbr' })
     const greeting = root.inputs.find((i) => i.id === 'greeting')
     expect(greeting).toMatchObject({ type: 'pickString', default: 'hola' })
     expect(greeting!.options).toEqual(['hola', 'hello', 'bonjour', 'ciao'])
@@ -1445,7 +1445,7 @@ describe('stack route (stacked-branches playground)', () => {
 
     const info = await gitService.stackInfo(R, 'feature/ui')
     expect(info.branches.map((b) => b.name)).toEqual(['feature/docs', 'feature/ui'])
-    const parents = execFileSync('git', ['-C', R, 'config', '--get-regexp', '(githuttbr|gitcito)parent']).toString()
+    const parents = execFileSync('git', ['-C', R, 'config', '--get-regexp', 'githuttbrparent']).toString()
     expect(parents).not.toContain('branch.feature/api.')
   })
 })
@@ -1481,8 +1481,8 @@ describe('a route edit that conflicts (stacked-branches playground)', () => {
     writeFileSync(join(R, 'NOTES.md'), 'one\ntwo\n')
     run('add', 'NOTES.md')
     run('commit', '-q', '-m', 'note two')
-    run('config', 'branch.note-1.gitcitoparent', 'main')
-    run('config', 'branch.note-2.gitcitoparent', 'note-1')
+    run('config', 'branch.note-1.githuttbrparent', 'main')
+    run('config', 'branch.note-2.githuttbrparent', 'note-1')
     return R
   }
 
@@ -1516,7 +1516,7 @@ describe('restack refuses protected branches (stacked-branches playground)', () 
   it('will not replay a level whose own branch is protected', async () => {
     const R = cloneFixture('stacked-branches')
     // A stack whose bottom level is main itself — the shape that rewrote main.
-    execFileSync('git', ['-C', R, 'config', 'branch.main.gitcitoparent', 'feature/api'])
+    execFileSync('git', ['-C', R, 'config', 'branch.main.githuttbrparent', 'feature/api'])
     const before = execFileSync('git', ['-C', R, 'rev-parse', 'main']).toString().trim()
     await expect(gitService.stackRestack(R, 'main')).rejects.toThrow(/protected/i)
     expect(execFileSync('git', ['-C', R, 'rev-parse', 'main']).toString().trim()).toBe(before)
@@ -1564,7 +1564,7 @@ describe('finding the stacks in a repository (stacked-branches playground)', () 
   it('lists the leaf of each stack, and nothing that is somebody’s parent', async () => {
     const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui
     execFileSync('git', ['-C', R, 'branch', 'docs-1', 'main'])
-    execFileSync('git', ['-C', R, 'config', 'branch.docs-1.gitcitoparent', 'main'])
+    execFileSync('git', ['-C', R, 'config', 'branch.docs-1.githuttbrparent', 'main'])
 
     expect(await gitService.stackLeaves(R)).toEqual(['docs-1', 'feature/ui'])
   })

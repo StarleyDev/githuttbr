@@ -10,7 +10,7 @@ keywords: local ci act actions workflow runner docker pipeline test before push 
 
 The push–wait–red-cross–fix–push loop wastes ten minutes per round trip. With
 [act](https://nektosact.com) the same workflows run in Docker containers on
-your machine, and Gitcito drives them: pick a workflow, press Run, watch the
+your machine, and GitHuttBr drives them: pick a workflow, press Run, watch the
 same log CI would print — before anything leaves your machine.
 To follow the runs the host itself started after you pushed, see
 [CI runs](ci-runs.md).
@@ -19,10 +19,10 @@ To follow the runs the host itself started after you pushed, see
 
 ## An integration, not a bundled runtime
 
-Gitcito deliberately does **not** ship act or Docker — an app that drags a
+GitHuttBr deliberately does **not** ship act or Docker — an app that drags a
 container runtime along is the opposite of a git client. This is an opt-in
 integration: enable it in **Settings → Integrations** (or in the dialog
-itself), and Gitcito detects what is installed and guides you through the rest
+itself), and GitHuttBr detects what is installed and guides you through the rest
 — `brew install act`, a running Docker daemon, done. Nothing runs until all
 three are true: enabled, act installed, Docker reachable.
 
@@ -42,7 +42,7 @@ three are true: enabled, act installed, Docker reachable.
 A finished run pins its result to the commit it tested: a small flask marks the
 row **green or red** in the graph, so you can see at a glance which commits
 have already survived CI locally. The verdict is stored as a git note under
-`refs/notes/gitcito-ci` — local to your machine, never pushed by default.
+`refs/notes/githuttbr-ci` — local to your machine, never pushed by default.
 
 Honesty rule: the verdict is only pinned when your working tree was **clean**.
 A run over uncommitted changes tested something no commit contains, so it shows
@@ -59,7 +59,7 @@ the commit it tested. Right-clicking a commit in the graph offers **Run local
 CI on this commit** directly.
 
 The cost is stated before anything runs, not discovered after: type a revision
-or a range (`main..HEAD`, `HEAD~5..`, a sha), press **Preview**, and Gitcito
+or a range (`main..HEAD`, `HEAD~5..`, a sha), press **Preview**, and GitHuttBr
 shows how many commits the spec matches and which newest N — the explicit
 budget, capped at 50 — would actually run. A sweep runs them **sequentially**
 (act plus Docker is heavy enough that parallel runs would fight for the

@@ -2,14 +2,14 @@
 title: Beveiliging & geheimen
 category: Beveiliging
 order: 70
-summary: Maskeren, bewakingen, de sleutelhanger — en wat Gitcito weigert te doen.
+summary: Maskeren, bewakingen, de sleutelhanger — en wat GitHuttBr weigert te doen.
 keywords: beveiliging security geheimen secrets maskeren masking sleutelhanger keychain safeStorage tokens beschermde branch groot bestand bewaking privacy onleesbaar back-up onderdelen paden vertalen andere computer nieuwe machine profielen samenvoegen profielen vervangen kiezen wat je exporteert volledige back-up voor het team manifest wachtwoord versleuteling appimage apparmor sandbox probleem melden afbeeldingen in reacties trackingpixel ip-adres afbeeldingen van derden klik om te laden images in comments tracking pixel third-party images click to load
-source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
+source: 26f333bbdafd9ab662dc635c22df7456d66b1362
 ---
 
 # Beveiliging & geheimen
 
-Gitcito heeft **geen backend**. De enige netwerkoproepen gaan naar je Git-host
+GitHuttBr heeft **geen backend**. De enige netwerkoproepen gaan naar je Git-host
 en, als je dat aanzet, naar je AI-provider.
 
 ![Beveiligingsinstellingen](../../screenshots/settings-security.webp)
@@ -86,14 +86,14 @@ Een AppImage draait vanuit een map onder `/tmp` (`/tmp/.mount_…`) die alleen
 bestaat zolang de app open is, bij elke start een andere naam krijgt en in een
 map staat waarin elke lokale gebruiker kan schrijven. Tot en met 4.37.1 kon de
 AppImage een pad binnen die map op twee plekken schrijven die hem overleven: de
-`gitcito`-link in `PATH` ([CLI](cli.md)) en de instelling
+`githuttbr`-link in `PATH` ([CLI](cli.md)) en de instelling
 `diff.<name>.textconv` van een repository ([attributen](attributes.md)). Zodra
 de app afsloot, kon een andere gebruiker op dezelfde machine de map opnieuw
-aanmaken met een eigen programma, dat je volgende `gitcito` of `git diff` dan
+aanmaken met een eigen programma, dat je volgende `githuttbr` of `git diff` dan
 zou uitvoeren.
 
-Gitcito weigert nu allebei onder een AppImage, waarschuwt bij het opstarten voor
-een verouderde `gitcito`-link (met een paletopdracht om hem te verwijderen) en
+GitHuttBr weigert nu allebei onder een AppImage, waarschuwt bij het opstarten voor
+een verouderde `githuttbr`-link (met een paletopdracht om hem te verwijderen) en
 markeert een verouderde converter in het attributendialoogvenster met een knop
 **Verwijderen**. Het ziet alleen de repository die je open hebt; om verouderde
 converters elders te vinden, voer je
@@ -109,7 +109,7 @@ besturingssysteem (Electron `safeStorage`), nooit met een sleutel in het
 instellingenbestand.
 
 **Er raakt niets de sleutelhanger tot jij het zegt.** Nog voor het eigen
-toestemmingsvenster van het systeem kan verschijnen, legt Gitcito uit wat er
+toestemmingsvenster van het systeem kan verschijnen, legt GitHuttBr uit wat er
 opgeslagen wordt, wat het niet kan (een app leest alleen ooit de regel terug die
 het zelf aanmaakte — je andere wachtwoorden zijn onbereikbaar), en dat nee zeggen
 prima is: tokens leven dan alleen in het geheugen voor die sessie, de kluis blijft
@@ -119,7 +119,12 @@ OS-sleutelhanger**.
 Een verse installatie doet **nul** aanroepen naar de sleutelhanger tot er
 werkelijk iets opgeslagen moet worden.
 
-Zolang hij uit staat, meldt het tokenveld bij Integraties dat — *Alleen bewaard tot je Gitcito afsluit: de OS-keychain staat uit.* — met een knop **Inschakelen** ernaast. Inschakelen, daar of hier, bewaart ook de tokens die je in deze sessie al hebt ingevoerd, dus je hoeft niets opnieuw te plakken.
+**Na de update naar 4.59 op macOS** kan het systeem nog één keer vragen om het
+onderdeel *GitHuttBr Safe Storage*: de bundle-id van de app is nu
+`com.huttbr.git`, en de sleutelhanger vraagt opnieuw voor een app die hij niet
+herkent. **Sta altijd toe** houdt de tokens; zie [bijwerken](upgrading.md).
+
+Zolang hij uit staat, meldt het tokenveld bij Integraties dat — *Alleen bewaard tot je GitHuttBr afsluit: de OS-keychain staat uit.* — met een knop **Inschakelen** ernaast. Inschakelen, daar of hier, bewaart ook de tokens die je in deze sessie al hebt ingevoerd, dus je hoeft niets opnieuw te plakken.
 
 ![Het tokenveld bij Integraties met de sleutelhanger uit: alleen bewaard tot je afsluit, met een knop Inschakelen](../../screenshots/token-keychain-notice.webp)
 
@@ -133,7 +138,7 @@ terug. Tot die tijd blijft de melding om die reden staan. Wil je een opgeslagen
 token in één stap definitief verwijderen, maak het dan leeg terwijl de
 sleutelhanger aan staat.
 
-Een leeg veld wist alleen wat Gitcito je liet zien. Staat de sleutelhanger vanaf
+Een leeg veld wist alleen wat GitHuttBr je liet zien. Staat de sleutelhanger vanaf
 het begin uit, dan worden de opgeslagen tokens nooit ontsleuteld en nooit
 getoond — de velden zijn leeg —, dus wordt alleen een token verwijderd dat je
 daar intypt en weer leegmaakt; het opgeslagen token eronder is er nog zodra de
@@ -156,7 +161,7 @@ woord *sleutelhanger* nooit staat voor bescherming die er niet is.
 
 Zodat er niets nieuws belandt in een opslag die iedereen kan ontrafelen, wordt
 een token dat je typt terwijl er geen sleutelhanger draait **alleen bewaard tot
-je afsluit**. Het tokenveld zegt het — *Alleen bewaard tot je Gitcito afsluit:
+je afsluit**. Het tokenveld zegt het — *Alleen bewaard tot je GitHuttBr afsluit:
 er draait geen sleutelhanger…* — zonder knop om het opnieuw te proberen, want
 opnieuw proberen helpt niet; alleen een sleutelhanger helpt. Een
 instellingenbestand met inloggegevens importeren zegt hetzelfde voordat het ze
@@ -166,10 +171,10 @@ wissen of vervangen haalt de oude waarde nog steeds van de schijf. Twee
 beperkingen: de sleutel van de algemene AI wordt niet naar zijn gedeelde plek
 verplaatst (elk profiel blijft zijn eigen lezen), en de kluis slaat nog steeds
 op in de eenvoudige opslag, omdat die geen modus voor alleen de sessie heeft.
-Installeer of ontgrendel een sleutelhanger en start Gitcito opnieuw om nieuwe
+Installeer of ontgrendel een sleutelhanger en start GitHuttBr opnieuw om nieuwe
 tokens weer op te slaan.
 
-Gitcito gaat niet af op wat het systeem zegt over welke opslag het kreeg. Het telt de
+GitHuttBr gaat niet af op wat het systeem zegt over welke opslag het kreeg. Het telt de
 opslag als basaal als het systeem hem zo noemt, als het hem helemaal niet kan
 benoemen, en als wat het versleutelt terugkomt gemarkeerd met het vaste wachtwoord —
 wat het systeem ook zei. Zo houdt een sleutelhanger die stil terugvalt nieuwe tokens
@@ -180,23 +185,23 @@ telt, zodra de sleutelhanger in deze sessie één keer heeft geantwoord, een vra
 hij 10 seconden onbeantwoord laat als *geen sleutelhanger*: een token dat je opslaat,
 blijft tot je afsluit, en de kluis blijft dicht. De eerste vraag van een sessie — die
 de eigen wachtwoordvraag van de sleutelhanger kan oproepen — en die direct na de
-uitleg van Gitcito krijgen twee minuten, zodat het lezen van een dialoogvenster nooit
+uitleg van GitHuttBr krijgen twee minuten, zodat het lezen van een dialoogvenster nooit
 wordt afgekapt. Een halve minuut na zo’n time-out blijft het antwoord *geen
-sleutelhanger* zonder opnieuw te vragen; daarna vraagt Gitcito opnieuw. macOS en
+sleutelhanger* zonder opnieuw te vragen; daarna vraagt GitHuttBr opnieuw. macOS en
 Windows antwoorden lokaal en krijgen nooit een time-out.
 
 De grens geldt voor die ene vraag — *is er een sleutelhanger?* Op een sleutelhanger
 die haar beantwoordt en daarna blijft hangen bij het versleutelen of ontsleutelen,
 wordt nog steeds gewacht: instellingen opslaan, en de kluis, blijven bezig tot hij
-antwoordt of Gitcito herstart.
+antwoordt of GitHuttBr herstart.
 
 ### Als de opgeslagen tokens niet gelezen kunnen worden
 
 Als je de sleutelhangervraag van het systeem wegklikt, de sleutelhanger
-vergrendeld is of de tokenopslag door een andere kopie van Gitcito is
-geschreven (een ontwikkelbuild, een opnieuw ondertekende), **kan Gitcito je
+vergrendeld is of de tokenopslag door een andere kopie van GitHuttBr is
+geschreven (een ontwikkelbuild, een opnieuw ondertekende), **kan GitHuttBr je
 opgeslagen tokens niet lezen — en laat het ze ongemoeid**. Instellingen →
-Beveiliging zegt *Gitcito kon je opgeslagen tokens niet lezen*, en een token dat
+Beveiliging zegt *GitHuttBr kon je opgeslagen tokens niet lezen*, en een token dat
 je intussen intypt wordt alleen voor de sessie bewaard (het veld zegt dat ook).
 Het wordt nooit over de opslag geschreven die niet gelezen kon worden: dat zou
 elk opgeslagen token vervangen door het token dat je net hebt ingetypt.
@@ -204,7 +209,7 @@ elk opgeslagen token vervangen door het token dat je net hebt ingetypt.
 | Knop | Wat hij doet |
 |--------|--------------|
 | **Opnieuw proberen** | Leest de opslag opnieuw — het systeem vraagt nu misschien om de sleutelhanger. Zodra die leesbaar is, komen de intussen ingetypte tokens erbij. |
-| **Nieuwe tokenopslag starten** | Vraagt eerst. Gitcito wacht niet langer op de oude opslag en begint een nieuwe met alleen de tokens van deze sessie. Het oude bestand blijft er 30 dagen naast staan als back-up en wordt daarna verwijderd. Voor een opslag die voorgoed weg is, niet voor een vraag die je hebt weggeklikt. |
+| **Nieuwe tokenopslag starten** | Vraagt eerst. GitHuttBr wacht niet langer op de oude opslag en begint een nieuwe met alleen de tokens van deze sessie. Het oude bestand blijft er 30 dagen naast staan als back-up en wordt daarna verwijderd. Voor een opslag die voorgoed weg is, niet voor een vraag die je hebt weggeklikt. |
 
 ## Instellingen importeren
 
@@ -334,7 +339,7 @@ Azure-organisatie gaat; en de logins die van de credential helper van deze
 machine komen blijven van deze machine.
 
 **De standaardkeuzes zijn een gok op basis van je schijf.** Voordat het venster
-verschijnt, controleert Gitcito of de repositorymappen uit het bestand hier
+verschijnt, controleert GitHuttBr of de repositorymappen uit het bestand hier
 bestaan. Bestaat er geen enkele, dan komt het bestand van een andere computer:
 **Repository’s** en **Programma’s** beginnen niet aangevinkt, elk met de
 reden — de paden van de programma's staan erbij, zodat je ziet dat ze ergens
@@ -354,7 +359,7 @@ ontbreken en er opent een vak **Paden vertalen**. Links de map die de
 repositories in het bestand gemeen hebben (`/home/you/code`); rechts waar die
 map op deze computer staat, vooraf ingevuld vanuit je thuismap
 (`/Users/you/code`). Beide zijn bewerkbaar — de gok kan fout zijn, en als
-Gitcito geen gemeenschappelijke map vindt laat het beide leeg zodat jij ze
+GitHuttBr geen gemeenschappelijke map vindt laat het beide leeg zodat jij ze
 typt. Een balk telt terwijl je typt hoeveel repositories hier nu een map
 hebben, met een paar ervan in een lijst — groen gevonden, rood nog ontbrekend.
 De wissel neemt de bijnaam, tabbladafbeelding en het profiel van de repository
@@ -414,7 +419,7 @@ het was.
 
 **Alles vervangen heeft de sleutelhanger nodig.** Met de sleutelhanger uit of
 niet beschikbaar zouden de oude tokens in de versleutelde opslag blijven en bij
-de volgende start terugkomen, dus weigert Gitcito: het zegt dat, en er wordt
+de volgende start terugkomen, dus weigert GitHuttBr: het zegt dat, en er wordt
 niets geïmporteerd. Hetzelfde geldt zolang de opgeslagen tokens niet gelezen
 kunnen worden (zie hierboven): ze zouden terugkomen zodra dat wel kon. **Toevoegen aan de
 mijne** werkt nog steeds, en houdt de tokens uit het bestand voor de sessie.
@@ -466,20 +471,20 @@ geschreven: naar een nieuw bestand ernaast dat alleen de eigenaar kan lezen, dat
 daarna wordt omgewisseld, zodat een crash of twee gelijktijdige opslagacties
 nooit een half bestand achterlaten. Is het instellingenbestand een symbolische
 link naar elders (een dotfiles-repository), dan gaat het schrijven naar het doel
-van de link en blijft de link staan. Gitcito vervangt de link nooit. Een link
+van de link en blijft de link staan. GitHuttBr vervangt de link nooit. Een link
 die wijst naar een bestand dat nog niet bestaat, wordt doorgeschreven en maakt
 dat bestand aan — zolang de map ervan bestaat. Ontbreekt de map ook, dan mislukt
 het opslaan, met één melding die dat zegt: de link en waar hij naar wijst
 blijven onaangeroerd, en wijzigingen in de tussentijd blijven alleen bestaan tot
-Gitcito sluit. Zet de map terug, of laat de link naar iets wijzen dat bestaat,
+GitHuttBr sluit. Zet de map terug, of laat de link naar iets wijzen dat bestaat,
 en de volgende keer opslaan lukt.
 
 Platte-teksttokens die een oudere versie in het instellingenbestand heeft
 achtergelaten, gaan bij opslaan nooit verloren: ze blijven in het bestand tot
-Gitcito ze in de versleutelde opslag laadt (Instellingen openen doet dat), tenzij
+GitHuttBr ze in de versleutelde opslag laadt (Instellingen openen doet dat), tenzij
 je er zelf een wist.
 
-Maar twee dingen schrijven ze: het opslaan van je instellingen, en Gitcito dat
+Maar twee dingen schrijven ze: het opslaan van je instellingen, en GitHuttBr dat
 ze laadt (bij het opstarten, of als Instellingen opent) — dan wordt een oud
 platte-teksttoken naar de versleutelde opslag verplaatst, of een serveradres
 met een wachtwoord erin opgeschoond. Een opvraging waar niemand om vroeg — een
@@ -497,18 +502,18 @@ blijft gewist.
 
 Een bestand dat bestaat maar niet te parsen is (een handmatige bewerking die
 misging, een beschadigde schijf) wordt **nooit** vervangen door de
-standaardwaarden: Gitcito zegt dat het bestand beschadigd is en start niet
+standaardwaarden: GitHuttBr zegt dat het bestand beschadigd is en start niet
 verder — geen sneltoets of menuopdracht kan er vanaf dat scherm overheen
 opslaan.
 
 ![Het opstartscherm voor een beschadigd instellingenbestand, met Opnieuw proberen en Beschadigd bestand opzij zetten en opnieuw beginnen](../../screenshots/settings-damaged.webp)
 
-Je kunt `gitcito-settings.json` in de gegevensmap repareren en op
+Je kunt `githuttbr-settings.json` in de gegevensmap repareren en op
 **Opnieuw proberen** drukken, of op **Beschadigd bestand opzij zetten en opnieuw
 beginnen** drukken: het bestand wordt hernoemd naar
-`gitcito-settings.json.corrupt-<date>` (nooit verwijderd, dus je kunt er nog
+`githuttbr-settings.json.corrupt-<date>` (nooit verwijderd, dus je kunt er nog
 iets uit terughalen), er wordt een kopie van de versleutelde tokenopslag naast
-bewaard, en Gitcito start zoals bij de eerste keer, met een melding waar het
+bewaard, en GitHuttBr start zoals bij de eerste keer, met een melding waar het
 bestand is gebleven. Bij een instellingenbestand via een symbolische link wordt
 het doel van de link hernoemd, zodat de beschadigde kopie in je dotfiles blijft,
 naast het nieuwe instellingenbestand dat de eerste opslag dan via de link
@@ -519,15 +524,15 @@ opslaat de tokens van de oude profielen laten verwijderen. Los op wat het
 schrijven in de map verhindert (rechten, een volle schijf) en druk op
 **Opnieuw proberen**.
 
-Raakt het bestand beschadigd terwijl Gitcito draait (eronder met de hand
-bewerkt), dan stopt het opslaan en zegt Gitcito dat één keer: instellingen
+Raakt het bestand beschadigd terwijl GitHuttBr draait (eronder met de hand
+bewerkt), dan stopt het opslaan en zegt GitHuttBr dat één keer: instellingen
 kunnen tot een herstart niet worden opgeslagen, en wijzigingen in de
 tussentijd gaan verloren.
 
 Een bestand dat er is maar even niet te *lezen* is — een ander programma, zoals
 een virusscanner, houdt het vast — wordt ongeveer twee seconden opnieuw
 geprobeerd. Mislukt het nog steeds, of mislukt het laden om een andere reden,
-dan zegt Gitcito dat het niet kon starten, dat het bestand niet is gewijzigd, en
+dan zegt GitHuttBr dat het niet kon starten, dat het bestand niet is gewijzigd, en
 biedt het **Opnieuw proberen** aan; het noemt het bestand niet beschadigd.
 
 ### Bekende grenzen
@@ -560,7 +565,7 @@ gebruiker kan de proceslijst lezen) en niet in de **omgeving** van het
 git-commando — die elke hook, filter en LFS-proces erft dat git start, samen met
 elk npm-pakket dat een husky- of lefthook-script uitvoert.
 
-In plaats daarvan opent Gitcito voor elke bewerking een eigen privé-eindpunt —
+In plaats daarvan opent GitHuttBr voor elke bewerking een eigen privé-eindpunt —
 een socket in een map waar alleen jouw gebruiker in kan (een named pipe met een
 willekeurige naam op Windows) — en registreert het een credential helper voor
 die ene server. Als git om een login vraagt, maakt de helper verbinding, bewijst
@@ -604,7 +609,7 @@ Wat het nog steeds niet kan:
   andere git — wordt voor de bewerking verwijderd, zodat hij nooit het token van
   het profiel aangeboden krijgt om op te slaan, en nooit namens niemand wordt
   gevraagd. Elke andere geërfde `-c`-instelling blijft behouden.
-- **Een serveradres moet zo geschreven zijn als git het leest.** Gitcito
+- **Een serveradres moet zo geschreven zijn als git het leest.** GitHuttBr
   benoemt de server volgens de standaard-URL-regels, git volgens zijn eigen: een
   geïnternationaliseerde naam (`bücher.example`), een numerieke verkorting
   (`127.1`, `0x7f.0.0.1`), een gecomprimeerd of gemapt IPv6-adres of een
@@ -619,7 +624,7 @@ Wat het nog steeds niet kan:
 - **Draai geen hooks die je niet vertrouwt**, ook niet met een aangemeld
   profiel. Een repository die je net hebt gekloond, kan hooks meebrengen via
   hulpmiddelen als husky, die ze bij `npm install` installeren; git voert uit wat
-  er in `.git/hooks` staat, vanuit Gitcito net zo goed als vanuit een terminal,
+  er in `.git/hooks` staat, vanuit GitHuttBr net zo goed als vanuit een terminal,
   en een hook kan veel ergere dingen doen dan een token lezen.
 - **Beperk de reikwijdte van het token.** Een token dat alleen kan schrijven naar
   de repositories waaraan je werkt, is veel minder waard voor wie het in handen
@@ -645,7 +650,7 @@ blijven staan, net als bestandsnamen en de eigen melding van git.
 
 **De grens:** een servernaam die los in een zin staat, wordt herkend aan zijn
 vorm — met punten, in kleine letters. Een host van één woord (`gitserver`) wordt
-alleen opgemerkt in de meldingen die Gitcito zelf schrijft, en een server onder
+alleen opgemerkt in de meldingen die GitHuttBr zelf schrijft, en een server onder
 een topleveldomein dat gespeld wordt als een bestandsextensie (`.sh`, `.md`)
 blijft staan als bestandsnaam. Lees het issue toch na voordat je het plaatst:
 het opschonen herkent bekende vormen, niet alles wat privé is.
@@ -662,7 +667,7 @@ installatie.
 
 Elk van deze bestanden wordt in één keer geschreven: naar een nieuw bestand
 ernaast, dat daarna wordt omgewisseld, zodat een crash of twee gelijktijdige
-opslagacties nooit een half bestand achterlaten — dat Gitcito anders als
+opslagacties nooit een half bestand achterlaten — dat GitHuttBr anders als
 onleesbaar zou moeten behandelen. Een back-up van de tokenopslag wordt alleen
 vroeg verwijderd als elk token erin ook in de huidige opslag staat; elke andere
 back-up wordt 30 dagen bewaard.
@@ -675,8 +680,8 @@ toestaat, en de twee Linux-pakketten gaan daar verschillend mee om:
 
 | Pakket | Wat er gebeurt |
 |---------|--------------|
-| `.deb` | Installeert `/etc/apparmor.d/gitcito`, een profiel voor `/opt/GitHuttBr/gitcito` dat user namespaces toestaat. De app draait in de sandbox. |
-| AppImage | Heeft geen profiel. Het startprogramma probeert `unshare -Ur true`, en als dat mislukt start het de app met `--no-sandbox` — op Ubuntu 24.04+ is dat bij elke start. Gitcito schrijft dan een waarschuwing naar zijn console-uitvoer. |
+| `.deb` | Installeert `/etc/apparmor.d/githuttbr`, een profiel voor `/opt/GitHuttBr/githuttbr` dat user namespaces toestaat. De app draait in de sandbox. |
+| AppImage | Heeft geen profiel. Het startprogramma probeert `unshare -Ur true`, en als dat mislukt start het de app met `--no-sandbox` — op Ubuntu 24.04+ is dat bij elke start. GitHuttBr schrijft dan een waarschuwing naar zijn console-uitvoer. |
 
 Om de AppImage in de sandbox te draaien, installeer je in plaats daarvan het
 `.deb`, of geef je de AppImage een eigen AppArmor-profiel dat `userns` toestaat
@@ -686,10 +691,10 @@ wat de beperking voor alles uitschakelt).
 **De grens van het `.deb`-profiel.** Het is `flags=(unconfined)` met `userns`
 toegestaan, en het hangt aan het pad van het uitvoerbare bestand. Datzelfde
 uitvoerbare bestand draait ook als gewone Node wanneer het wordt gestart met
-`ELECTRON_RUN_AS_NODE=1` — zo werken de `gitcito`-opdracht, de meegeleverde
-diff-converter en de credential helper van Gitcito, dus die schakelaar kan niet
+`ELECTRON_RUN_AS_NODE=1` — zo werken de `githuttbr`-opdracht, de meegeleverde
+diff-converter en de credential helper van GitHuttBr, dus die schakelaar kan niet
 uit zonder ze te breken. Samen betekent dat: elk lokaal programma kan het
-uitvoerbare bestand van Gitcito gebruiken als een Node-interpreter die user
+uitvoerbare bestand van GitHuttBr gebruiken als een Node-interpreter die user
 namespaces mag aanmaken — hetzelfde soort gat als de bekende omwegen rond de
 Ubuntu-beperking via andere programma's met een profiel. Het geeft niemand meer
 dan de rechten van zijn eigen account; het verzwakt een
@@ -697,6 +702,6 @@ kernelhardingslaag die Ubuntu er bovenop legt. AppArmor kan de twee modi van é�
 uitvoerbaar bestand niet uit elkaar houden, dus een nauwer profiel is niet
 mogelijk zolang de CLI het deelt; een apart hulpprogramma voor de CLI staat op
 de roadmap. Beheerders die dit liever niet hebben, kunnen een deny-regel
-toevoegen in `/etc/apparmor.d/local/gitcito`, ten koste van de sandbox.
+toevoegen in `/etc/apparmor.d/local/githuttbr`, ten koste van de sandbox.
 
 **Zie ook:** [Kluis](vault.md) · [Veilig delen](secure-share.md)

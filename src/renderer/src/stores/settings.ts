@@ -98,16 +98,20 @@ export { GROUP_COLORS }
 const groupColors = (tabs: TabState[]): (string | undefined)[] =>
   tabs.map((t) => (t.kind === 'group' ? t.color : undefined))
 
-// Map pre-dynamic-theme ids onto the new merged light/dark theme ids.
+// Map pre-dynamic-theme ids onto the new merged light/dark theme ids. The
+// built-in theme kept its inherited id until 4.58: that id sits in this app's
+// own settings file, and is carried to `githuttbr` here rather than reset.
 const LEGACY_APP_THEME_IDS: Record<string, string> = {
-  'gitcito-light': 'gitcito',
-  'gitcito-contrast': 'contrast',
+  gitcito: 'githuttbr', // upstream-name: this app's own old theme id
+  'gitcito-light': 'githuttbr', // upstream-name: this app's own old theme id
+  'gitcito-contrast': 'contrast', // upstream-name: this app's own old theme id
   'solarized-dark': 'solarized',
   'github-light': 'github'
 }
 const LEGACY_CODE_THEME_IDS: Record<string, string> = {
-  'gitcito-dark': 'gitcito',
-  'gitcito-light-code': 'gitcito',
+  gitcito: 'githuttbr', // upstream-name: this app's own old theme id
+  'gitcito-dark': 'githuttbr', // upstream-name: this app's own old theme id
+  'gitcito-light-code': 'githuttbr', // upstream-name: this app's own old theme id
   'dracula-code': 'dracula',
   'github-code': 'github',
   'monokai-code': 'monokai',
@@ -424,7 +428,7 @@ interface SettingsState {
    *  (the root repo or a sibling worktree) is already open, this prompts to
    *  group instead of landing as a standalone tab — see `planWorktreeGroup`. */
   openWorktreeRepo(repo: RepoRef, rootPath: string, groupName?: string): void
-  /** Open (or focus) a repo requested by the `gitcito` CLI shim. Unlike
+  /** Open (or focus) a repo requested by the `githuttbr` CLI shim. Unlike
    *  openRepoTab, this can target/create a named group and inserts brand-new
    *  standalone tabs at the front (leftmost) since a CLI-opened repo is the
    *  thing the user just asked for. */
@@ -565,6 +569,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   // An unknown value (a hand-edited file, a newer build's mode) falls back to the default.
   settings.iconColors = ICON_COLOR_MODES.includes(settings.iconColors) ? settings.iconColors : sd.iconColors
   settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
+  if (settings.terminalThemeId === 'gitcito') settings.terminalThemeId = 'githuttbr' // upstream-name: own old id
   settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
   settings.terminalFontFamily = settings.terminalFontFamily ?? sd.terminalFontFamily
   settings.terminalShell = settings.terminalShell ?? sd.terminalShell
@@ -631,8 +636,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   } else if (
     settings.workspaces.length === 1 &&
     settings.workspaces[0].id === 'default' &&
-    // "Gitcito" too: the lone default carries the app's name, and this build has another.
-    (settings.workspaces[0].name === 'Default' || settings.workspaces[0].name === 'Gitcito')
+    settings.workspaces[0].name === 'Default'
   ) {
     // Legacy auto-created workspace was named "Default". The logo now doubles
     // as the workspace switcher, so rebrand the lone default to the app name.

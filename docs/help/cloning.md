@@ -126,7 +126,7 @@ field stays a plain text box and the clone itself reports the real error.
   one branch* unchecked is what asks for the other branches back
   (`--no-single-branch`), which is why the hint under it changes.
 - **Cloning a local folder** normally ignores `--depth` entirely, because git
-  hardlinks the object store instead of fetching. Gitcito clones through a
+  hardlinks the object store instead of fetching. GitHuttBr clones through a
   `file://` URL when you ask for a shallow copy of a local repository, so the
   depth you asked for is the depth you get.
 
@@ -152,6 +152,6 @@ A cancelled clone cannot be resumed; starting it again starts from zero.
 When it finishes, the new repository opens in a tab, pinned to the profile you
 cloned with, whether or not the dialog is still open.
 
-Clones run inside the app, so quitting Gitcito stops them. The quit does not
+Clones run inside the app, so quitting GitHuttBr stops them. The quit does not
 wait for the cleanup, so the half-written folder can be left behind — delete it
 before cloning there again, since the dialog refuses a folder that exists.

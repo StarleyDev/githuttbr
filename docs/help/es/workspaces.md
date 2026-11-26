@@ -4,7 +4,7 @@ category: Empieza aquí
 order: 3
 summary: Muchos repositorios sin ahogarte: pestañas, grupos, carpetas y espacios de trabajo.
 keywords: espacio de trabajo workspace pestañas tabs grupos groups carpetas folders varios repositorios organizar cambiar layout ir al repositorio selector tamaño de pestañas go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Espacios de trabajo, pestañas y grupos
@@ -142,7 +142,7 @@ Un espacio de trabajo es **una tira de pestañas entera, guardada**. Cambiar de
 espacio intercambia todas las pestañas a la vez: `Trabajo` y `Personal` dejan de
 pisarse.
 
-El nombre del espacio está arriba a la izquierda, junto a la marca de Gitcito.
+El nombre del espacio está arriba a la izquierda, junto a la marca de GitHuttBr.
 Haz clic para cambiar, crear, renombrar, reordenar o borrar. Al lado está el
 indicador que abre el [Centro de control](mission-control.md) del espacio en el
 que estás.

@@ -73,7 +73,7 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
   const home = join(sandbox, 'home')
   mkdirSync(join(home, '.ssh'), { recursive: true })
   const gitconfig = join(home, '.gitconfig')
-  writeFileSync(gitconfig, '[user]\n\tname = Gitcito E2E\n\temail = e2e@example.invalid\n')
+  writeFileSync(gitconfig, '[user]\n\tname = GitHuttBr E2E\n\temail = e2e@example.invalid\n')
   const env = {
     HOME: home,
     XDG_CONFIG_HOME: join(home, '.config'),
@@ -92,8 +92,8 @@ export async function startApp(opts: StartOptions = {}): Promise<RunningApp> {
     profiles: [
       {
         id: 'default',
-        name: 'Gitcito E2E',
-        gitName: 'Gitcito E2E',
+        name: 'GitHuttBr E2E',
+        gitName: 'GitHuttBr E2E',
         gitEmail: 'e2e@example.invalid',
         githubToken: '',
         azureToken: '',

@@ -10,7 +10,7 @@ keywords: avatar avatare gravatar blobatar autor foto bild identicon gesicht off
 
 Eine Commit-Liste ist eine Wand aus Namen, und Namen liest man langsam. Ein Bild
 neben jedem macht aus „wer hat das geschrieben“ eine Frage, die man mit einem Blick
-beantwortet. Gitcito gibt jedem angezeigten Autor eines: in der Autorenspalte des
+beantwortet. GitHuttBr gibt jedem angezeigten Autor eines: in der Autorenspalte des
 Graphen, in den Commit-Details neben Autor und jedem Co-Autor, in der Co-Autoren-
 Auswahl beim Schreiben, im Profilwechsler und neben jedem Profil in den
 Einstellungen.
@@ -40,7 +40,7 @@ eine falsch gesetzte `user.email` auf. Korrigiere es mit
 
 ## Das Gesicht in der Titelleiste
 
-Der Avatar neben deinem Profilnamen ist der einzige Avatar in Gitcito, der für
+Der Avatar neben deinem Profilnamen ist der einzige Avatar in GitHuttBr, der für
 **dich, in diesem Repository, jetzt** steht — also der einzige, der auf den Zustand
 des Repositorys reagiert. Er zieht ein Gesicht, wenn etwas los ist, und bleibt sonst
 neutral.
@@ -91,7 +91,7 @@ Der Avatar in der Titelleiste und in der Profilliste gehört dir – also kannst
 | **Automatisch** | Der Standard: dein Gravatar zur Git-E-Mail des Profils oder das generierte Gesicht – das, das auf das Repository reagiert. |
 | **Aus der Integration** | Das Bild des GitHub- oder GitLab-Kontos, das dieses Profil unter Integrationen verbunden hat. Deaktiviert, solange keins verbunden ist. |
 | **Symbol** | Eines von 24 Symbolen auf einer Farbe deiner Wahl. |
-| **Bild** | Eine Datei deiner Wahl – PNG oder JPEG. Sie wird auf 256 px verkleinert und auf diesem Computer im Datenordner von Gitcito abgelegt, nicht in der Einstellungsdatei. |
+| **Bild** | Eine Datei deiner Wahl – PNG oder JPEG. Sie wird auf 256 px verkleinert und auf diesem Computer im Datenordner von GitHuttBr abgelegt, nicht in der Einstellungsdatei. |
 | **Aus einem Repository** | Ein Symbol oder Logo aus einem der Repositorys des Profils — das der App oder der Firma —, wie ein Bild ins Profil kopiert. |
 
 Das Bild wandert mit **Einstellungen → Daten → Einstellungen exportieren** und kommt beim Import

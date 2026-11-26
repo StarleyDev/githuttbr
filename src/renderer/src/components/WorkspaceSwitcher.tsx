@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Plus, Pencil, Trash2, GripVertical, Gauge } from 'lucide-react'
-import gitcitoMark from '../assets/gitcito-mark.png'
+import githuttbrMark from '../assets/githuttbr-mark.png'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
@@ -9,8 +9,8 @@ import { useT, interp } from '../i18n'
 /**
  * Title-bar brand + workspace selector. A workspace is a saved tab layout;
  * switching swaps the whole tab strip. This control lives where the app logo
- * sits: the gitcito mark plus the active workspace name (the lone default
- * workspace is named "Gitcito", so with one workspace it just reads as the
+ * sits: the githuttbr mark plus the active workspace name (the lone default
+ * workspace is named "GitHuttBr", so with one workspace it just reads as the
  * brand). Clicking opens the switcher to create/rename/delete/switch.
  */
 export function WorkspaceSwitcher(): React.JSX.Element {
@@ -155,7 +155,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
           title={interp(t('ws.switcherTitle'), { name: active.name })}
           onClick={toggle}
         >
-          <img className="logo-mark" src={gitcitoMark} alt="" draggable={false} />
+          <img className="logo-mark" src={githuttbrMark} alt="" draggable={false} />
           <span className="workspace-switcher-name">{active.name}</span>
           <ChevronDown size={13} className="profile-switcher-chevron" />
         </button>

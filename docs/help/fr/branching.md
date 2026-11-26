@@ -65,7 +65,7 @@ locales et distantes. Un clic droit sur une branche de ce menu permet de
 renommer une branche locale, copier son nom, l'extraire dans un nouveau
 worktree, la fusionner dans la branche active ou la supprimer. Les branches
 distantes n'offrent pas le renommage et sont supprimées de leur dépôt
-distant après confirmation. Gitcito masque la fusion quand la référence
+distant après confirmation. GitHuttBr masque la fusion quand la référence
 sélectionnée est déjà contenue dans la branche active, et désactive la
 création de worktree quand cette branche est déjà extraite.
 
@@ -96,7 +96,7 @@ les textes de pull request : `AB#1234` partout où l’organisation Azure est
 connue, et sur un dépôt Azure un simple `#1234` aussi, car Azure numérote des
 work items, pas des issues. Sur un dépôt GitHub lié à Azure Boards,
 l’organisation n’est pas connue ; une entrée `links.tickets` dans le
-[`.gitcito.json`](repo-config.md) du dépôt y remédie — motif `AB#(\d+)`, URL
+[`.githuttbr.json`](repo-config.md) du dépôt y remédie — motif `AB#(\d+)`, URL
 `https://dev.azure.com/<org>/_workitems/edit/$1`.
 
 ## Renommer une branche
@@ -123,7 +123,7 @@ du graphe, l'option n'apparaît que si la branche suit exactement un dépôt
 distant ; s'il y en a plusieurs, passez par la barre latérale pour lever
 l'ambiguïté.
 
-**Limites :** Gitcito ne réécrit rien de ce qui référençait l'ancien nom — les
+**Limites :** GitHuttBr ne réécrit rien de ce qui référençait l'ancien nom — les
 pull requests ouvertes pointent toujours vers la branche d'origine, et les
 règles de CI qui filtrent sur un motif de branche cessent de correspondre.
 Renommer une branche extraite dans un autre [worktree](worktrees.md) échoue, et
@@ -146,7 +146,7 @@ par dépôt, tout en restant à leur place habituelle en dessous.
 ## Extraire une branche distante
 
 Double-cliquez une branche distante pour créer la branche locale qui la suit. Si
-une branche locale de ce nom existe déjà et a **divergé**, Gitcito demande
+une branche locale de ce nom existe déjà et a **divergé**, GitHuttBr demande
 comment réconcilier — rebase, fusion ou réinitialisation — et propose de
 sauvegarder la branche d'abord.
 

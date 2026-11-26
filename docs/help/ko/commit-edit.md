@@ -4,13 +4,13 @@ category: 브랜치와 수술
 order: 46
 summary: 과거 커밋의 파일이나 메시지를 제자리에서 다시 쓰기 — 캐스케이드를 먼저 미리 봐요.
 keywords: edit commit 커밋 편집 rewrite history 히스토리 다시 쓰기 amend 과거 past reword 오타 수정 fix typo cascade 캐스케이드 replay 리플레이 rebase 리베이스 in place 제자리 surgery 수술
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # 아무 커밋이나 편집
 
 오타가 3주 전 커밋에 있어요. 흔한 해결책은 대화형 리베이스예요. 그 커밋에서 멈추
-고, 편집하고, 계속하고, 기도하는 것. Gitcito의 해결책은 이래요. 커밋을 우클릭하
+고, 편집하고, 계속하고, 기도하는 것. GitHuttBr의 해결책은 이래요. 커밋을 우클릭하
 고, **이 커밋 편집**, 텍스트를 고치면, 끝. 커밋 상세 패널의 펜 버튼도 같은 편
 집기를 열어요.
 

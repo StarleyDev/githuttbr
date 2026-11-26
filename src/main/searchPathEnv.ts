@@ -1,7 +1,7 @@
 /**
  * Strip search-path entries that resolve against the current directory.
  *
- * Every git Gitcito runs has its cwd set to a repository — a repository the
+ * Every git GitHuttBr runs has its cwd set to a repository — a repository the
  * user may have just cloned from a stranger. An empty entry in a colon list
  * (`a::b`, a leading or trailing `:`) means "the current directory" to the
  * dynamic loader and to `execvp`, and so does `.` or any relative path. With

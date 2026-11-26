@@ -10,7 +10,7 @@ keywords: ci local act actions workflow flujo de trabajo runner docker pipeline 
 
 El ciclo push–esperar–cruz roja–arreglar–push desperdicia diez minutos por
 vuelta. Con [act](https://nektosact.com) los mismos workflows se ejecutan en
-contenedores Docker en tu máquina, y Gitcito los dirige: elige un workflow,
+contenedores Docker en tu máquina, y GitHuttBr los dirige: elige un workflow,
 pulsa Ejecutar y observa el mismo log que imprimiría la CI — antes de que nada
 salga de tu máquina.
 
@@ -18,10 +18,10 @@ salga de tu máquina.
 
 ## Una integración, no un runtime incluido
 
-Gitcito deliberadamente **no** incluye act ni Docker — una app que arrastra
+GitHuttBr deliberadamente **no** incluye act ni Docker — una app que arrastra
 consigo un runtime de contenedores es lo contrario de un cliente git. Es una
 integración opcional: actívala en **Ajustes → Integraciones** (o en el propio
-diálogo), y Gitcito detecta qué está instalado y te guía por el resto —
+diálogo), y GitHuttBr detecta qué está instalado y te guía por el resto —
 `brew install act`, un daemon de Docker en marcha, listo. Nada se ejecuta hasta
 que las tres condiciones se cumplen: activada, act instalado, Docker accesible.
 
@@ -42,7 +42,7 @@ que las tres condiciones se cumplen: activada, act instalado, Docker accesible.
 Una ejecución terminada fija su resultado al commit que probó: un pequeño
 matraz marca la fila en **verde o rojo** en el grafo, para que veas de un
 vistazo qué commits ya han sobrevivido a la CI en local. El veredicto se guarda
-como una nota de git bajo `refs/notes/gitcito-ci` — local a tu máquina, nunca
+como una nota de git bajo `refs/notes/githuttbr-ci` — local a tu máquina, nunca
 se hace push de él por defecto.
 
 Regla de honestidad: el veredicto solo se fija cuando tu árbol de trabajo
@@ -63,7 +63,7 @@ probó. Hacer clic derecho en un commit del grafo ofrece directamente
 
 El coste se anuncia antes de que nada se ejecute, no se descubre después:
 escribe una revisión o un rango (`main..HEAD`, `HEAD~5..`, un sha), pulsa
-**Vista previa**, y Gitcito muestra cuántos commits coinciden con la
+**Vista previa**, y GitHuttBr muestra cuántos commits coinciden con la
 especificación y qué N más recientes — el presupuesto explícito, con un tope
 de 50 — se ejecutarían realmente. Un barrido los ejecuta **secuencialmente**
 (act más Docker pesa lo bastante como para que ejecuciones paralelas se

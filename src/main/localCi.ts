@@ -1,6 +1,6 @@
 // Local CI: run the repository's GitHub Actions workflows on this machine via
 // nektos/act — deliberately an *optional integration*, not a bundled runtime.
-// Gitcito only orchestrates: it detects act and Docker, lists workflow files,
+// GitHuttBr only orchestrates: it detects act and Docker, lists workflow files,
 // spawns `act` and streams its output. Installing the tools is the user's
 // explicit choice, guided by the UI.
 import { ipcMain } from 'electron'
@@ -9,7 +9,7 @@ import { promisify } from 'util'
 import { readdir, readFile, mkdtemp, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { APP_IDS, ciNotesRef } from '../shared/identifiers'
+import { ciNotesRef } from '../shared/identifiers'
 import {
   parseWorkflowName,
   type LocalCiStatus,
@@ -246,12 +246,10 @@ async function recordAt(repoPath: string, workflowFile: string, ok: boolean, sha
   await git(repoPath, ['notes', `--ref=${ciNotesRef()}`, 'add', '-f', '-m', note, sha])
 }
 
-/** Every recorded verdict, keyed by commit sha — feeds the graph's ✓/✗ badges.
- *  Verdicts recorded before the rename (refs/notes/gitcito-ci) are read too;
- *  a newer githuttbr-ci note on the same commit wins. */
+/** Every recorded verdict, keyed by commit sha — feeds the graph's ✓/✗ badges. */
 async function verdicts(repoPath: string): Promise<Record<string, LocalCiVerdict>> {
   const out: Record<string, LocalCiVerdict> = {}
-  for (const ns of [...APP_IDS].reverse()) await readVerdicts(repoPath, ciNotesRef(ns), out)
+  await readVerdicts(repoPath, ciNotesRef(), out)
   return out
 }
 

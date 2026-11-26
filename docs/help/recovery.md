@@ -22,9 +22,9 @@ This is the "I just reset the wrong branch" button.
 
 ## WIP snapshots
 
-Uncommitted work is the one thing the reflog cannot save, so Gitcito snapshots
+Uncommitted work is the one thing the reflog cannot save, so GitHuttBr snapshots
 it: the **whole working tree — modified, staged and untracked files** —
-committed through a throwaway index and pinned under `refs/gitcito/wip`.
+committed through a throwaway index and pinned under `refs/githuttbr/wip`.
 Neither your real index nor your stash list is touched.
 
 ![WIP snapshots](../screenshots/snapshots.webp)
@@ -54,7 +54,7 @@ local hidden refs: never pushed, safe from `git gc`, newest 50 kept.
 ## Guided bisect
 
 Mark commits good and bad, watch the range narrow, land on the first bad commit.
-Gitcito tracks how many steps are left, so you know whether you are two
+GitHuttBr tracks how many steps are left, so you know whether you are two
 questions from the answer or ten.
 
 ![Guided bisect](../screenshots/bisect.webp)
@@ -72,7 +72,7 @@ its exit code:
 | anything else | Bad |
 
 A test suite already speaks that language, which is why `npm test` is usually
-the whole answer. Gitcito offers this project's own scripts as one-click fills,
+the whole answer. GitHuttBr offers this project's own scripts as one-click fills,
 streams the output while it runs, and lands on the first bad commit without you
 answering a single question.
 
@@ -102,13 +102,13 @@ Unable to create '…/refs/remotes/origin/x.lock': File exists.
 
 The repository is not damaged. A file is simply in the way.
 
-Gitcito retries a handful of times first, because a lock held by a *running*
+GitHuttBr retries a handful of times first, because a lock held by a *running*
 git usually clears within milliseconds. When it does not, the failure opens a
 dialog instead of a wall of text: every lock still on disk, how old each one is,
 and one button that removes them and re-runs the action that failed.
 
 **Age is the whole argument.** A lock younger than 30 seconds is presumed to
-belong to a git that is still working, and Gitcito refuses to delete it — it
+belong to a git that is still working, and GitHuttBr refuses to delete it — it
 offers to wait and retry instead. Older ones are offered for removal, oldest
 first, and the dialog says plainly what to check before agreeing: that no
 editor, terminal or other Git client is working in this repository right now.
@@ -125,9 +125,9 @@ last one where git allows it.
 
 ## If the window goes blank
 
-The part of Gitcito that draws the window can crash or freeze, for example
+The part of GitHuttBr that draws the window can crash or freeze, for example
 after it runs out of memory in a session left open for many hours. The window
-then shows only its dark background. Gitcito notices and reloads the window by
+then shows only its dark background. GitHuttBr notices and reloads the window by
 itself: right away after a crash or an error that takes down the whole window,
 and about 40 seconds after it stops responding to your clicks and keys. Your
 repositories, tabs and settings come back as they were. Git work runs in a
@@ -135,9 +135,9 @@ separate process, so a crash doesn't interrupt a fetch or push.
 
 *Limits:* text you were typing but hadn't saved, such as a half-written commit
 message, can be lost. A frozen window is only noticed once you click or type in
-it. If the window keeps failing straight after loading, Gitcito waits longer
+it. If the window keeps failing straight after loading, GitHuttBr waits longer
 between attempts (up to five minutes) instead of reloading over and over. Each
 incident is written to `renderer-recovery.log` in the app's log folder
-(`~/Library/Logs/Gitcito/` on macOS).
+(`~/Library/Logs/GitHuttBr/` on macOS).
 
 **See also:** [What changed since](range-diff.md) · [Stashes](stashes.md)

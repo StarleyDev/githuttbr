@@ -163,7 +163,7 @@ npm run playground:rebuild                             # capturing dirties the r
 
 ### The website
 
-`docs/help/` is also the source of <https://myappdesk.github.io/gitcito/>.
+`docs/help/` is also the source of <https://git.huttbr.com/>.
 `scripts/build-site.mjs` renders the landing page and one HTML page per
 handbook entry — no framework, no bundler, `marked` and nothing else.
 

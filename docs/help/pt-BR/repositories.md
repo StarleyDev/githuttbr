@@ -2,7 +2,7 @@
 title: Repositórios
 category: Sincronização e vários repositórios
 order: 52
-summary: Todo repositório que o Gitcito conhece, aberto ou não, numa lista pesquisável.
+summary: Todo repositório que o GitHuttBr conhece, aberto ou não, numa lista pesquisável.
 keywords: repositórios registro todos os repos favoritos estrela recentes varrer pasta explorar achar abrir gerenciar gestão de repositórios cor seção tinta destacar workspaces a partir de pastas árvore gerar importação em massa repositories registry favourites starred recent scan folder
 ---
 
@@ -11,7 +11,7 @@ keywords: repositórios registro todos os repos favoritos estrela recentes varre
 A [central de controle](mission-control.md) responde "qual dos meus
 repositórios abertos precisa de mim?". Ela só conhece as abas do workspace
 ativo. Repositórios responde outra pergunta: **onde está aquele repo, e ele
-está aberto em algum lugar?** Cobre tudo que o Gitcito já viu. Cada
+está aberto em algum lugar?** Cobre tudo que o GitHuttBr já viu. Cada
 workspace, cada aba, mais o que ele acha varrendo as pastas que você aponta.
 
 ![A página Repositórios: seções coloridas para repositórios abertos,
@@ -65,7 +65,7 @@ Três coisas que valem saber:
   mesmas cores em cada abertura, e adicionar um workspace nunca recolore as
   de cima. Só as cores que você muda são guardadas.
 - A cor é **local desta página**. Pintar aqui a seção de um workspace não
-  diz nada daquele workspace no resto do Gitcito. A cor da aba dele é outro
+  diz nada daquele workspace no resto do GitHuttBr. A cor da aba dele é outro
   ajuste.
 - A cor é **misturada** a um percentual baixo da superfície, em vez de
   aplicada em força total, para um tom saturado continuar um fundo
@@ -77,9 +77,9 @@ compartilhar um tom.
 
 ## O que torna um repositório conhecido
 
-Uma linha existe aqui quando o Gitcito **abriu** em algum momento, ou
+Uma linha existe aqui quando o GitHuttBr **abriu** em algum momento, ou
 encontrou debaixo de uma **pasta de varredura**. Nada é indexado só porque
-existe no disco num lugar de que você nunca falou ao Gitcito.
+existe no disco num lugar de que você nunca falou ao GitHuttBr.
 
 Abrir esta página também indexa o que você tem **aberto numa aba**, e é
 assim que repositórios restaurados na inicialização ganham uma linha sem
@@ -101,7 +101,7 @@ Pastas de varredura se configuram em Configurações:
 
 ## Repositórios escaneados
 
-Esta página responde "onde está aquele repositório?" em tudo que o Gitcito
+Esta página responde "onde está aquele repositório?" em tudo que o GitHuttBr
 conhece. Quando você só quer **abrir** algo das suas pastas de projeto, a janela
 **Abrir repositório** — e a tela de boas-vindas — tem um caminho mais curto:
 **Repositórios escaneados**.
@@ -142,7 +142,7 @@ primeira e a lista ler como tabela, não como pilha.
 As ações do fim ficam visíveis em repouso, não reveladas no hover: **abrir
 numa aba**, e um **⋮** que abre o mesmo [menu de contexto do
 repositório](repo-menu.md) de um clique direito. É o menu usado em todo o
-Gitcito, estendido com duas entradas específicas desta página:
+GitHuttBr, estendido com duas entradas específicas desta página:
 
 | Ação | O que faz |
 |---|---|
@@ -157,7 +157,7 @@ Um repositório cuja pasta não existe mais aparece como **ausente**, com
 
 As abas são restauradas na abertura do app com os caminhos que tinham quando
 você fechou. Se uma pasta foi movida, apagada ou está num disco que não está
-conectado, cada leitura que o Gitcito fazia nela falhava com um aviso de erro
+conectado, cada leitura que o GitHuttBr fazia nela falhava com um aviso de erro
 próprio. Agora a pasta é conferida antes, e a aba mostra **Pasta do repositório
 não encontrada** com o caminho salvo, no lugar do workspace de sempre:
 
@@ -174,7 +174,7 @@ costuma ser temporário, e perder a aba por isso seria pior que um aviso discret
 no lugar dela. Enquanto a pasta estiver ausente, o fetch automático em segundo
 plano pula esse repositório.
 
-Limites: o Gitcito não procura para onde a pasta foi — Localizar… pergunta a
+Limites: o GitHuttBr não procura para onde a pasta foi — Localizar… pergunta a
 você. Uma pasta que existe mas não é mais um repositório mostra a tela de sempre,
 **Não é um repositório Git**.
 
@@ -214,7 +214,7 @@ Seguro de repetir. Uma segunda varredura **adiciona e nunca remove**:
 
 - Repositórios novos são acrescentados ao workspace correspondente.
 - Os que você moveu, renomeou ou tirou à mão ficam como você deixou.
-- Um workspace que você **renomeou** ainda é reconhecido. O Gitcito lembra
+- Um workspace que você **renomeou** ainda é reconhecido. O GitHuttBr lembra
   a pasta de onde veio, então mescla em vez de criar um duplicado.
 - Um repositório apagado do disco guarda a aba e aparece como ausente.
 
@@ -271,7 +271,7 @@ pergunta que tipo de pull você quer.
 ## A barra de ações
 
 **Abrir pasta…**, **Clonar…** e **Adicionar pasta de varredura…**. Três
-jeitos de trazer um repositório para o registro do Gitcito, da mesma página
+jeitos de trazer um repositório para o registro do GitHuttBr, da mesma página
 em que você procura um que já está lá.
 
 ## Resumo WIP

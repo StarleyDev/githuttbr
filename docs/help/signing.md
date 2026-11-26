@@ -9,7 +9,7 @@ keywords: sign signing gpg ssh x509 verified signature badge trust
 # Signed commits
 
 Turn signing on per repository (**Settings → Profile → Commit signing**, with that repository open — each change is saved to it as you make it): GPG, SSH or X.509,
-with the key you choose. Gitcito writes `commit.gpgsign`, `gpg.format` and
+with the key you choose. GitHuttBr writes `commit.gpgsign`, `gpg.format` and
 `user.signingkey` for that repository — the same config any other tool reads.
 
 | | |

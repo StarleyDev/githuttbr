@@ -13,11 +13,13 @@ import { join } from 'path'
 /**
  * The package identity (`build.appId` in package.json): the macOS bundle id,
  * the Windows NSIS uninstall GUID and the updater's notion of "the same app".
- * It intentionally stays the pre-rename value: users never see it, and keeping
- * it is what lets a 4.39 installer upgrade 4.38 in place — and 4.38's updater
- * install 4.39 — instead of leaving two apps side by side. Do not rename it.
+ * The reverse-DNS form of git.huttbr.com. Up to 4.58 it was the identity
+ * inherited from the app GitHuttBr was derived from, which made an install
+ * replace (or collide with) a real install of that app; build/installer.nsh
+ * removes such an old GitHuttBr install on Windows, and nothing else reads the
+ * old value.
  */
-export const BUNDLE_ID = 'com.gitcito.desktop'
+export const BUNDLE_ID = 'com.huttbr.git'
 
 /** `app.setName` for packaged builds: the userData folder and the keychain entry. */
 export const APP_NAME = 'GitHuttBr'
@@ -26,12 +28,7 @@ export const DEV_USER_DATA_DIR = 'githuttbr-dev'
 /** Every file the app keeps in userData starts with this. */
 export const FILE_PREFIX = 'githuttbr-'
 
-/** The app before 4.39 — its userData folder and file prefix, read once to migrate. */
-export const LEGACY_APP_NAME = 'Gitcito'
-export const LEGACY_FILE_PREFIX = 'gitcito-'
-
 export const SETTINGS_FILE = `${FILE_PREFIX}settings.json`
-export const LEGACY_SETTINGS_FILE = `${LEGACY_FILE_PREFIX}settings.json`
 
 type Env = Record<string, string | undefined>
 

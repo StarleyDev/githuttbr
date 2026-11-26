@@ -8,7 +8,7 @@ keywords: acessibilidade accessibility a11y leitor de tela VoiceOver NVDA navega
 
 # Acessibilidade
 
-O Gitcito quer ser operável sem mouse e legível para um leitor de tela. Esta
+O GitHuttBr quer ser operável sem mouse e legível para um leitor de tela. Esta
 página diz o que isso significa em concreto — e onde estão os limites.
 
 ## Teclado
@@ -54,7 +54,7 @@ página diz o que isso significa em concreto — e onde estão os limites.
 - A auditoria por trás desta página foi feita com o VoiceOver no macOS.
   NVDA/JAWS no Windows devem se comportar do mesmo jeito, mas não foram
   testados na prática — relatos são bem-vindos como
-  [issues](https://github.com/MyAppDesk/gitcito/issues).
+  [issues](https://github.com/StarleyDev/githuttbr/issues).
 
 ## Configurações relacionadas
 

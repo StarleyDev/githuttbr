@@ -10,7 +10,7 @@ keywords: ci locale local ci act actions workflow runner docker pipeline test pr
 
 Il ciclo push–attesa–croce rossa–correzione–push spreca dieci minuti a ogni
 giro. Con [act](https://nektosact.com) gli stessi workflow girano in container
-Docker sulla tua macchina, e Gitcito li pilota: scegli un workflow, premi
+Docker sulla tua macchina, e GitHuttBr li pilota: scegli un workflow, premi
 Esegui, guarda lo stesso log che stamperebbe la CI — prima che qualcosa lasci
 la tua macchina.
 
@@ -18,10 +18,10 @@ la tua macchina.
 
 ## Un'integrazione, non un runtime incluso
 
-Gitcito deliberatamente **non** include act né Docker — un'app che si trascina
+GitHuttBr deliberatamente **non** include act né Docker — un'app che si trascina
 dietro un runtime per container è l'opposto di un client git. È
 un'integrazione opt-in: attivala in **Impostazioni → Integrazioni** (o nella
-finestra stessa), e Gitcito rileva cosa è installato e ti guida per il resto —
+finestra stessa), e GitHuttBr rileva cosa è installato e ti guida per il resto —
 `brew install act`, un demone Docker in esecuzione, fatto. Nulla viene eseguito
 finché non sono vere tutte e tre le condizioni: attivata, act installato,
 Docker raggiungibile.
@@ -43,7 +43,7 @@ Docker raggiungibile.
 Un'esecuzione conclusa appunta il suo risultato al commit che ha testato: una
 piccola ampolla segna la riga in **verde o rosso** nel grafo, così vedi a colpo
 d'occhio quali commit sono già sopravvissuti alla CI in locale. Il verdetto è
-salvato come nota git sotto `refs/notes/gitcito-ci` — locale alla tua macchina,
+salvato come nota git sotto `refs/notes/githuttbr-ci` — locale alla tua macchina,
 mai pushato per impostazione predefinita.
 
 Regola di onestà: il verdetto viene appuntato solo se il tuo albero di lavoro
@@ -64,7 +64,7 @@ direttamente **Esegui la CI locale su questo commit**.
 
 Il costo viene dichiarato prima che qualcosa parta, non scoperto dopo: digita
 una revisione o un intervallo (`main..HEAD`, `HEAD~5..`, uno sha), premi
-**Anteprima**, e Gitcito mostra quanti commit corrispondono alla specifica e
+**Anteprima**, e GitHuttBr mostra quanti commit corrispondono alla specifica e
 quali N più recenti — il budget esplicito, con un tetto di 50 — verrebbero
 davvero eseguiti. Una passata li esegue **in sequenza** (act più Docker pesa
 abbastanza da far litigare esecuzioni parallele per la macchina), trasmette il

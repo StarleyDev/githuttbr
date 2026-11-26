@@ -2,10 +2,7 @@
 # 29. stacked-branches — exercise the branch-stack feature (Layers icon / ⌘K).
 #
 # Builds a 2-level stack on top of main and records the stack metadata the app
-# stores in git config (branch.<name>.githuttbrparent / .githuttbrbase). The
-# upper level deliberately uses upstream Gitcito's older key names
-# (gitcitoparent / gitcitobase): a stack built before the rename must still
-# read as one stack.
+# stores in git config (branch.<name>.githuttbrparent / .githuttbrbase).
 #
 #     feature/ui   (leaf, current)   ── parent: feature/api
 #     feature/api                    ── parent: main
@@ -45,9 +42,8 @@ EOF
 git -C "$R" add -A && git -C "$R" commit -qm "ui: add UserCard"
 echo "export const OrgCard = (id) => id" >> "$R/ui.js"
 git -C "$R" add -A && git -C "$R" commit -qm "ui: add OrgCard"
-# Legacy key names on purpose — see the header.
-git -C "$R" config branch.feature/ui.gitcitoparent feature/api
-git -C "$R" config branch.feature/ui.gitcitobase "$API_TIP"
+git -C "$R" config branch.feature/ui.githuttbrparent feature/api
+git -C "$R" config branch.feature/ui.githuttbrbase "$API_TIP"
 
 # ── Make the stack stale ─────────────────────────────────────────────────
 # New commit on main ⇒ feature/api is now behind its parent.

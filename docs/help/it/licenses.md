@@ -2,13 +2,13 @@
 title: Licenze open source
 category: Personalizzazione
 order: 104
-summary: Leggi la licenza di ogni pacchetto di terze parti incluso in questa build di Gitcito.
+summary: Leggi la licenza di ogni pacchetto di terze parti incluso in questa build di GitHuttBr.
 keywords: licenze licenses attribuzione avvisi open source MIT Apache BSD terze parti dipendenze crediti informazioni
 ---
 
 # Licenze open source
 
-Gitcito si basa su novanta e passa pacchetti open source, e quasi tutti chiedono
+GitHuttBr si basa su novanta e passa pacchetti open source, e quasi tutti chiedono
 la stessa cosa in cambio: che il loro avviso viaggi con il binario. MIT, BSD e
 Apache lo dicono nel testo stesso. Questa pagina è il posto in cui vive
 quell’avviso, così l’obbligo lo rispetta l’app e non un file che qualcuno deve
@@ -48,12 +48,12 @@ Due limiti da conoscere:
   identificatore nel manifest e nient’altro. Quelle righe lo dicono invece di
   inventare un testo, perché una licenza che non puoi leggere non è una licenza
   su cui puoi contare.
-- **L’identificatore è ciò che il pacchetto dichiara.** Gitcito lo riporta; non
+- **L’identificatore è ciò che il pacchetto dichiara.** GitHuttBr lo riporta; non
   lo verifica. Se il manifest di un pacchetto è sbagliato, questa pagina sbaglia
   con lui.
 
-La licenza di Gitcito è Apache 2.0, e il badge in alto a destra la apre su GitHub.
-Il codice ereditato dal Gitcito originale è arrivato sotto licenza MIT, e la sua
+La licenza di GitHuttBr è Apache 2.0, e il badge in alto a destra la apre su GitHub.
+Il codice ereditato dal GitHuttBr originale è arrivato sotto licenza MIT, e la sua
 nota viaggia con l'app in `NOTICE`, come richiede la licenza MIT.
 
 **Vedi anche:** [Lingue e scrittura da destra a sinistra](languages.md) · [Temi e aspetto](themes.md)

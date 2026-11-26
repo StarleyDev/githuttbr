@@ -66,12 +66,12 @@ import { PrDetailPage } from './components/PrDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import { RepoChatPanel } from './components/RepoChatPanel'
-import gitcitoLaunch from './assets/gitcito-launch.png'
+import githuttbrLaunch from './assets/githuttbr-launch.png'
 import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent, TEXT_KEEPS } from './lib/shortcuts'
 import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
 import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
-import { hostingApi, gitApi, cliApi, keychainApi, migrationApi } from './infrastructure/api'
+import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 import { PRODUCT_NAME } from '../../shared/brand'
 import { getLinkClickAction } from '../../shared/externalUrl'
 import { cliViewAction, type CliAction } from './lib/cliView'
@@ -83,7 +83,7 @@ import { trackRepoSwitch } from './lib/repoSwitch'
 import { APP_ISSUES_NEW_URL } from '../../shared/appRepo'
 
 /**
- * Carry out what a `gitcito <verb>` invocation asked for, once its repository
+ * Carry out what a `githuttbr <verb>` invocation asked for, once its repository
  * has a tab.
  *
  * Everything here is a normal store call — the CLI gets no privileged path
@@ -215,7 +215,7 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
       >
         <div className="welcome-logo">
-          <img className="welcome-art" src={gitcitoLaunch} alt="" draggable={false} />
+          <img className="welcome-art" src={githuttbrLaunch} alt="" draggable={false} />
         </div>
         <h1>{tab.name}</h1>
         <p>{t('group.manageHint')}</p>
@@ -536,9 +536,6 @@ let staleCliWarned = false
 // Repositories whose terminal already had its automatic open this session.
 const terminalAutoOpened = new Set<string>()
 
-/** The app's name before 4.39 — where migrated settings came from. A product name, never translated. */
-const LEGACY_PRODUCT_NAME = 'Gitcito'
-
 export default function App(): React.JSX.Element {
   const t = useT()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
@@ -607,8 +604,8 @@ export default function App(): React.JSX.Element {
     useUpdatesStore.getState().init()
   }, [])
 
-  // `gitcito <dir> [-n name] [-g group]` (installed CLI shim) asks this window
-  // to open a folder — on cold launch or when a second `gitcito` invocation
+  // `githuttbr <dir> [-n name] [-g group]` (installed CLI shim) asks this window
+  // to open a folder — on cold launch or when a second `githuttbr` invocation
   // hands off to this already-running instance (both routed through the same
   // main-process IPC event, see src/main/index.ts). The event can arrive
   // before settings finish loading from disk (load() resolves asynchronously
@@ -644,9 +641,9 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
-  // An AppImage build used to link `gitcito` into its own /tmp mount. That
+  // An AppImage build used to link `githuttbr` into its own /tmp mount. That
   // link outlives the mount, and whoever recreates the directory decides what
-  // the next `gitcito` runs — so say so once per launch; the palette removes it.
+  // the next `githuttbr` runs — so say so once per launch; the palette removes it.
   useEffect(() => {
     if (window.api.platform === 'win32' || staleCliWarned) return
     staleCliWarned = true
@@ -660,35 +657,7 @@ export default function App(): React.JSX.Element {
       .catch(() => undefined)
   }, [])
 
-  // 4.39 moved the settings folder with the app's new name, and copied the old
-  // settings over without their tokens (main/legacyMigration.ts). Say so once,
-  // after the dictionary for the user's language is in.
-  useEffect(() => {
-    const show = (): void => {
-      void migrationApi
-        .takeNotice()
-        .then((pending) => {
-          if (!pending) return
-          useUIStore.getState().openModal({
-            kind: 'confirm',
-            title: tr('migration.title'),
-            message: interp(tr('migration.message'), { old: LEGACY_PRODUCT_NAME, app: PRODUCT_NAME }),
-            confirmLabel: tr('migration.dismiss'),
-            onConfirm: () => undefined
-          })
-        })
-        .catch(() => undefined)
-    }
-    if (useSettingsStore.getState().loaded) return show()
-    const unsub = useSettingsStore.subscribe((s) => {
-      if (!s.loaded) return
-      unsub()
-      show()
-    })
-    return unsub
-  }, [])
-
-  // `gitcito --wait <file>` — git is blocked on a shell process until the app
+  // `githuttbr --wait <file>` — git is blocked on a shell process until the app
   // answers, so the request always ends in a modal that must call finishEdit.
   useEffect(() => {
     return cliApi.onEdit(({ file, sentinel, content }) => {

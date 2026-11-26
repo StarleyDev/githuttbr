@@ -4,13 +4,13 @@ category: ブランチと手術
 order: 46
 summary: 過去のコミットのファイルやメッセージをその場で書き換え — カスケードを先にプレビュー。
 keywords: edit commit コミット編集 rewrite history 履歴の書き換え amend 過去 past reword タイポ修正 fix typo cascade カスケード replay リプレイ rebase リベース in place その場 surgery 手術
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # 任意のコミットを編集
 
 タイポは 3 週間前のコミットの中にあります。いつもの直し方は対話的リベースです。
-そのコミットで止め、編集し、続行し、祈る。Gitcito の直し方はこうです。コミットを
+そのコミットで止め、編集し、続行し、祈る。GitHuttBr の直し方はこうです。コミットを
 右クリック、**このコミットを編集**、テキストを変更、完了。コミット詳細パネルの
 ペンボタンからも同じエディターが開きます。
 

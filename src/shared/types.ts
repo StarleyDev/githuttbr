@@ -453,10 +453,10 @@ export interface RefTip {
   subject: string
 }
 
-/** Whether the user has let Gitcito use the OS keychain (safeStorage). */
+/** Whether the user has let GitHuttBr use the OS keychain (safeStorage). */
 export type KeychainConsent = 'granted' | 'declined' | 'unset'
 
-/** What Gitcito is about to encrypt, so the explainer can say why it asks. */
+/** What GitHuttBr is about to encrypt, so the explainer can say why it asks. */
 export type KeychainReason = 'tokens' | 'vault' | 'settings'
 
 /** What a declaration is, for the semantic-diff labels. */
@@ -2269,7 +2269,7 @@ export interface RepoChatExecutionResult {
   failedIndex?: number
   failedType?: RepoChatAction['type']
   /** `detail` is English: the whole result is handed to the model. When the
-   *  failure is Gitcito's own copy, `detailKey` names it so the UI can show it
+   *  failure is GitHuttBr's own copy, `detailKey` names it so the UI can show it
    *  in the user's language instead. */
   error?: { code: RepoChatActionErrorCode; detail?: string; detailKey?: string; paths?: string[] }
   remaining: number
@@ -2289,7 +2289,7 @@ export interface RepoChatExecutionResult {
 // ─── Launch configurations (VS Code-style .vscode/launch.json) ──────────────
 
 /** One entry from a `.vscode/launch.json` `configurations` array. Only the
- *  fields Gitcito actually runs are typed; the rest is preserved opaquely. */
+ *  fields GitHuttBr actually runs are typed; the rest is preserved opaquely. */
 export interface LaunchConfig {
   name: string
   type?: string
@@ -2319,7 +2319,7 @@ export interface LaunchConfig {
   [key: string]: unknown
 }
 
-/** One entry from a `.vscode/tasks.json` `tasks` array (subset Gitcito runs). */
+/** One entry from a `.vscode/tasks.json` `tasks` array (subset GitHuttBr runs). */
 export interface LaunchTask {
   label: string
   type?: string
@@ -2332,7 +2332,7 @@ export interface LaunchTask {
   dependsOn?: string | string[]
   /** "sequence" runs dependsOn one-by-one; otherwise they're independent. */
   dependsOrder?: 'sequence' | 'parallel'
-  /** A watch/server task that never exits — Gitcito won't block the launch on it. */
+  /** A watch/server task that never exits — GitHuttBr won't block the launch on it. */
   isBackground?: boolean
   [key: string]: unknown
 }
@@ -2348,7 +2348,7 @@ export interface LaunchInput {
   /** Options for a `pickString`. Each is either a raw value or {label,value}. */
   options?: (string | { label?: string; value: string })[]
   password?: boolean
-  /** Gitcito: replace ${fileValue:name} in description/default with a JSON/YAML scalar. */
+  /** GitHuttBr: replace ${fileValue:name} in description/default with a JSON/YAML scalar. */
   fileValues?: Record<string, { file: string; key: string }>
 }
 
@@ -2509,9 +2509,7 @@ export interface RunDeviceSnapshot {
  *  (non-secret). Analytics/usage live in their own machine-local store and are
  *  never exported. */
 export interface SettingsBundle {
-  /** The export marker. Upstream Gitcito (and this fork up to 4.38) wrote
-   *  `__gitcito` instead; `parseSettingsImport` accepts either and hands back
-   *  this shape. */
+  /** The export marker. An export carrying any other app's marker is refused. */
   __githuttbr: 'settings-export'
   version: 1
   /** Only the parts chosen at export time: a part left out is absent, and the
@@ -2913,7 +2911,7 @@ export interface CloneOptions {
   cloneId?: string
 }
 
-/** The three git-flow branch kinds Gitcito automates. */
+/** The three git-flow branch kinds GitHuttBr automates. */
 export type GitflowKind = 'feature' | 'release' | 'hotfix'
 
 /**
@@ -3180,7 +3178,7 @@ export interface BranchRestoreResult {
  * A directory in this repository whose contents came from another repository via
  * `git subtree`. Unlike a submodule there is no `.gitmodules` to read: git
  * records only a `git-subtree-dir:` trailer on the commit that did the import,
- * so the url and ref are remembered by Gitcito unless the user supplies them.
+ * so the url and ref are remembered by GitHuttBr unless the user supplies them.
  */
 export interface SubtreeInfo {
   /** Directory inside this repo, e.g. `vendor/parser`. */
@@ -3278,7 +3276,7 @@ export interface DiffDriverInfo {
   /** True when the converter sits inside an AppImage's per-launch /tmp mount:
    *  stale once that app quits, and recreatable by any other local user. */
   ephemeral?: boolean
-  /** True when the converter is the pre-4.39 `gitcito-textconv` and could not be
+  /** True when the converter is this app's own pre-4.39 converter and could not be
    *  repointed (an AppImage, or an unwritable config): every diff through it fails
    *  unless the old install's directory is still there. */
   stale?: boolean
@@ -3293,7 +3291,7 @@ export interface DiffDriverRepoint {
   scope: 'repo' | 'global'
 }
 
-/** A converter Gitcito knows how to wire up, if it is installed. */
+/** A converter GitHuttBr knows how to wire up, if it is installed. */
 export interface DiffDriverSuggestion {
   /** Driver name, used as `diff=<name>` in .gitattributes. */
   name: string
@@ -3301,9 +3299,9 @@ export interface DiffDriverSuggestion {
   patterns: string[]
   /** The textconv command line. */
   textconv: string
-  /** The binary it needs ('' when Gitcito ships the converter itself). */
+  /** The binary it needs ('' when GitHuttBr ships the converter itself). */
   binary: string
-  /** True when the converter is the one Gitcito ships — nothing to install. */
+  /** True when the converter is the one GitHuttBr ships — nothing to install. */
   bundled?: boolean
   available: boolean
   /** Why a bundled converter is offered but not available: 'appimage' — its
@@ -3464,7 +3462,7 @@ export interface MaintenanceStats {
   gcLog: string
 }
 
-/** The maintenance jobs Gitcito will run, in the order they cost. */
+/** The maintenance jobs GitHuttBr will run, in the order they cost. */
 export type MaintenanceTask = 'gc' | 'aggressive' | 'commitGraph' | 'prune'
 
 /** Size on disk before and after a maintenance run. */
@@ -3763,7 +3761,7 @@ export interface RepoFolder {
   folders: RepoFolder[]
 }
 
-/** One repository Gitcito knows about, whether or not it is open. The registry
+/** One repository GitHuttBr knows about, whether or not it is open. The registry
  *  file is a cache: lose it and a rescan rebuilds it. */
 export interface RegistryRepo {
   /** Canonical absolute path — the identity, and the key used everywhere else. */
@@ -3788,7 +3786,7 @@ export interface RegistryRepo {
   foundUnder?: string[]
 }
 
-/** A folder Gitcito scans for repositories. A preference, not an index. */
+/** A folder GitHuttBr scans for repositories. A preference, not an index. */
 export interface RepoScanRoot {
   path: string
   /** How deep to descend. 3 covers ~/Code/<client>/<repo>; deeper gets slow
@@ -3990,7 +3988,7 @@ export interface AppSettings {
   repoProfiles: Record<string, string>
   /**
    * Display aliases keyed by canonical repository path. An alias changes only
-   * the name Gitcito shows — it never renames or moves the directory on disk.
+   * the name GitHuttBr shows — it never renames or moves the directory on disk.
    * Path-keyed (not stored on RepoRef) so the same repo across tabs, groups and
    * workspaces cannot diverge.
    */
@@ -4060,7 +4058,7 @@ export interface AppSettings {
   /**
    * When the Problems dock is allowed to run the project's analyzers. They are
    * the repository's own toolchain — `tsc`, `eslint`, `cargo clippy` — so this
-   * is about how much of your machine Gitcito may spend without being asked.
+   * is about how much of your machine GitHuttBr may spend without being asked.
    *
    * `onOpen` sweeps when the dock is opened with nothing to show (the default),
    * `manual` only ever sweeps on the refresh button, and `off` hides the
@@ -4649,8 +4647,8 @@ export function defaultSettings(): AppSettings {
     favouriteRepos: [],
     repoSectionColors: {},
     pullMode: 'default',
-    appThemeId: 'gitcito',
-    codeThemeId: 'gitcito',
+    appThemeId: 'githuttbr',
+    codeThemeId: 'githuttbr',
     themeMode: 'auto',
     codeFontSize: 12,
     iconColors: 'soft',
@@ -4704,7 +4702,7 @@ export function defaultSettings(): AppSettings {
     terminalPlacement: 'center',
     terminalCenterApplied: false,
     openTerminalOnRepoOpen: true,
-    terminalThemeId: 'gitcito',
+    terminalThemeId: 'githuttbr',
     terminalFontSize: 12.5,
     terminalFontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
     terminalShell: 'powershell',
@@ -4821,7 +4819,7 @@ export interface EnvCheck {
 /**
  * A repair the doctor can perform. Deliberately a closed union: the config
  * supplies *data* (a path, a config value), never a command. Nothing a
- * repository ships can make Gitcito run something of its choosing.
+ * repository ships can make GitHuttBr run something of its choosing.
  */
 export type DoctorFix =
   | { kind: 'submodules' }

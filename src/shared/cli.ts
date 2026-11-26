@@ -77,7 +77,7 @@ export interface CliOpenPayload {
 }
 
 /** Extracts the `--flag=value` switches the bundled shim (resources/cli/githuttbr)
- *  passes through `open -a Gitcito --args`.
+ *  passes through `open -a GitHuttBr --args`.
  *
  *  Flags MUST use the `--flag=value` form (single token), not `--flag value`
  *  (two tokens). Electron/Chromium's command-line parser reorders argv

@@ -35,14 +35,6 @@ import type {
 /** The file name, at the repository root. Every write goes here. */
 export const REPO_CONFIG_FILE = '.githuttbr.json'
 
-/** Upstream Gitcito's name for the same file. Still read when the new one is
- *  absent — a repository that ships it for Gitcito users keeps its rules here
- *  too — and never deleted or renamed by this app. */
-export const LEGACY_REPO_CONFIG_FILE = '.gitcito.json'
-
-/** Names to look for, in order: the first that exists is the config. */
-export const REPO_CONFIG_FILES: readonly string[] = [REPO_CONFIG_FILE, LEGACY_REPO_CONFIG_FILE]
-
 /** Schema version this build understands. A newer file is ignored, not guessed at. */
 export const REPO_CONFIG_VERSION = 1
 
@@ -228,7 +220,7 @@ const TOP_LEVEL = new Set(['version', 'protect', 'links', 'commit', 'requires', 
  * Returns the config with every rejected field dropped, plus the list of what
  * was rejected. `config` is null only when the document is not an object or
  * carries a version this build does not understand — a version bump must not
- * make an old Gitcito guess at fields it has never seen.
+ * make an old GitHuttBr guess at fields it has never seen.
  */
 export function validateRepoConfig(value: unknown): { config: RepoConfig | null; issues: RepoConfigIssue[] } {
   const issues: Issues = []

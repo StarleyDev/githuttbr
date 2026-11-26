@@ -60,7 +60,7 @@ Límites:
 - Solo cuentan los gitmoji: un asunto que empieza con otro emoji se deja igual.
 - Un repositorio cuyo hook `commit-msg` ejecuta commitlint con el preset
   Conventional estándar rechaza un emoji al inicio. Es la regla del hook, no de
-  Gitcito: configura commitlint para gitmoji o usa Conventional puro allí.
+  GitHuttBr: configura commitlint para gitmoji o usa Conventional puro allí.
 
 ## Cosas que el compositor hace por ti
 
@@ -82,12 +82,12 @@ demasiado anchas. Son pistas, nunca una barrera — no te impedirá hacer el com
 
 ## Amend
 
-Amend reescribe el último commit con lo que tengas preparado. Gitcito te enseña
+Amend reescribe el último commit con lo que tengas preparado. GitHuttBr te enseña
 antes el mensaje existente, para que estés editando y no reescribiendo.
 
 **Enmendar commit…** en una fila del grafo hace lo mismo para HEAD: carga el
 mensaje completo, pone el compositor en modo amend y le da el foco. Un HEAD ya
-enviado también se puede enmendar, pero Gitcito avisa de que actualizar el
+enviado también se puede enmendar, pero GitHuttBr avisa de que actualizar el
 remoto exigirá un force push.
 
 **Deshacer commit…** es su hermano para un HEAD sin enviar: reset mixed al

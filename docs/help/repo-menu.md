@@ -28,14 +28,14 @@ opens the launcher.
 
 | Action | Effect |
 |---|---|
-| **Create Alias…** / **Change Alias…** | A display name only. Gitcito never renames or moves the folder on disk. The same alias follows the repository across tabs, groups and workspaces. |
+| **Create Alias…** / **Change Alias…** | A display name only. GitHuttBr never renames or moves the folder on disk. The same alias follows the repository across tabs, groups and workspaces. |
 | **Remove Alias** | Shown when an alias exists. Restores the folder name. |
 | **Show Worktrees** | Focuses this repository and opens the sidebar's worktree section. |
 | **New Worktree…** | The same create-worktree prompt used from a branch. Disabled while the path is missing or a merge/rebase/cherry-pick/revert is in progress. |
 | **Copy Repo Name** | Copies the canonical folder name, not the alias. |
 | **Copy Repo Path** | Copies the absolute path. |
 | **View on GitHub** | Origin if it is github.com, otherwise the first parseable GitHub remote. Disabled when none can be derived. |
-| **Open in Terminal** | Opens Gitcito's terminal with this repository as the working directory. |
+| **Open in Terminal** | Opens GitHuttBr's terminal with this repository as the working directory. |
 | **Reveal in Finder / Explorer** | Highlights the repository folder in the platform file manager. |
 | **Open in External Editor** | The editor configured in Settings. Visible but disabled until one is set. |
 | **Remove…** | Drops the chip from its group, or the row from its list. Uses the same uncommitted-work warning as the chip's **×**. It never deletes files from disk. |

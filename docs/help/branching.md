@@ -68,7 +68,7 @@ The branch dropdown in the toolbar lists local and remote branches. Right-click
 any branch in that dropdown to rename a local branch, copy its name, check it
 out in a new worktree, merge it into the active branch, or delete it. Remote
 branches omit rename and are deleted from their remote after confirmation.
-Gitcito omits merge when the selected ref is already contained in the active
+GitHuttBr omits merge when the selected ref is already contained in the active
 branch, and disables worktree creation when that branch is already checked out.
 
 ![Local branch actions in the toolbar dropdown](../screenshots/branch-dropdown-local-context-menu.webp)
@@ -99,7 +99,7 @@ Work item mentions link in commit messages and pull request text: `AB#1234`
 everywhere the Azure organization is known, and on an Azure repository plain
 `#1234` too, since Azure numbers work items, not issues. On a GitHub repository
 linked to Azure Boards the organization is not known; a `links.tickets` entry
-in the repository's [`.gitcito.json`](repo-config.md) covers it — pattern
+in the repository's [`.githuttbr.json`](repo-config.md) covers it — pattern
 `AB#(\d+)`, URL `https://dev.azure.com/<org>/_workitems/edit/$1`.
 
 ## Renaming a branch
@@ -124,7 +124,7 @@ checked out has to repoint. It is offered on a graph badge only when the branch
 tracks exactly one remote; with several, pick the branch in the sidebar so the
 upstream is unambiguous.
 
-**Limits:** Gitcito does not rewrite anything that referred to the old name —
+**Limits:** GitHuttBr does not rewrite anything that referred to the old name —
 open pull requests still point at the branch they were opened against, and CI
 rules matching a branch pattern stop matching. Renaming a branch that is checked
 out in another [worktree](worktrees.md) fails, and git says so.
@@ -145,7 +145,7 @@ below.
 ## Checking out a remote branch
 
 Double-click a remote branch to create the local one that tracks it. If a local
-branch of that name already exists and has **diverged**, Gitcito asks how to
+branch of that name already exists and has **diverged**, GitHuttBr asks how to
 reconcile — rebase, merge or reset — and offers to back the branch up first.
 
 ![The diverged-branch prompt: rebase, merge or reset, with a backup option](../screenshots/diverged-checkout.webp)

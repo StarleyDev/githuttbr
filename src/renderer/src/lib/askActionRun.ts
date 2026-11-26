@@ -11,7 +11,7 @@ import { redactSecrets } from '../../../shared/redact'
 import { t, translate, type TranslationKey } from '../i18n'
 
 /**
- * A failure in Gitcito's own words. The result travels to the model as well as
+ * A failure in GitHuttBr's own words. The result travels to the model as well as
  * to the card, so the detail is English (CLAUDE.md §3, "copy that is also model
  * input") and the key rides along for the UI to translate.
  */

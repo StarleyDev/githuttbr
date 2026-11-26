@@ -2,14 +2,14 @@
 title: Güvenlik ve sırlar
 category: Güvenlik
 order: 70
-summary: Maskeleme, korumalar, anahtar zinciri — ve Gitcito'nun yapmayı reddettikleri.
+summary: Maskeleme, korumalar, anahtar zinciri — ve GitHuttBr'nun yapmayı reddettikleri.
 keywords: güvenlik sırlar maskeleme anahtar zinciri token korumalı dal büyük dosya gizlilik security secrets masking keychain safeStorage protected branch large file guard privacy okunamayan yedek bölümler yolları çevir başka bilgisayar yeni makine profilleri birleştir profilleri değiştir ne dışa aktarılacağını seç tam yedek ekip için manifest parola şifreleme appimage apparmor sandbox sorun bildir yorumlardaki görseller izleme pikseli ip adresi üçüncü taraf görseller yüklemek için tıkla images in comments tracking pixel third-party images click to load
-source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
+source: 26f333bbdafd9ab662dc635c22df7456d66b1362
 ---
 
 # Güvenlik ve sırlar
 
-Gitcito'nun **arka ucu yoktur**. Tek ağ çağrıları Git sunucunuza ve, açarsanız,
+GitHuttBr'nun **arka ucu yoktur**. Tek ağ çağrıları Git sunucunuza ve, açarsanız,
 yapay zekâ sağlayıcınıza gider.
 
 ![Güvenlik ayarları](../../screenshots/settings-security.webp)
@@ -87,13 +87,13 @@ Bir AppImage, `/tmp` altındaki bir klasörden (`/tmp/.mount_…`) çalışır; 
 yalnızca uygulama açıkken vardır, her açılışta adı değişir ve her yerel
 kullanıcının yazabildiği bir dizinde durur. 4.37.1'e kadar AppImage, bu klasörün
 içindeki bir yolu ondan uzun yaşayan iki yere yazabiliyordu: `PATH` içindeki
-`gitcito` bağlantısı ([CLI](cli.md)) ve bir deponun `diff.<name>.textconv`
+`githuttbr` bağlantısı ([CLI](cli.md)) ve bir deponun `diff.<name>.textconv`
 ayarı ([öznitelikler](attributes.md)). Uygulama kapandıktan sonra aynı
 makinedeki başka bir kullanıcı klasörü kendi programıyla yeniden oluşturabilir,
-bir sonraki `gitcito` ya da `git diff` komutunuz da onu çalıştırırdı.
+bir sonraki `githuttbr` ya da `git diff` komutunuz da onu çalıştırırdı.
 
-Gitcito artık AppImage altında ikisini de reddeder, açılışta eskimiş bir
-`gitcito` bağlantısı için uyarır (onu kaldıran bir palet komutuyla) ve
+GitHuttBr artık AppImage altında ikisini de reddeder, açılışta eskimiş bir
+`githuttbr` bağlantısı için uyarır (onu kaldıran bir palet komutuyla) ve
 Öznitelikler penceresinde eskimiş bir dönüştürücüyü bir **Kaldır** düğmesiyle
 işaretler. Yalnızca açık olan depoyu görebilir; başka yerlerdeki eskimiş
 dönüştürücüleri bulmak için her depoda (ve `--global` ile)
@@ -108,7 +108,7 @@ değil, işletim sisteminizin anahtar zinciriyle (Electron `safeStorage`)
 şifrelenir.
 
 **Siz söyleyene kadar anahtar zincirine hiçbir şey dokunmaz.** Sistemin kendi
-izin penceresi belirmeden önce Gitcito neyin saklandığını, neyi
+izin penceresi belirmeden önce GitHuttBr neyin saklandığını, neyi
 yapamayacağını (bir uygulama yalnızca kendi oluşturduğu kaydı geri okur —
 diğer parolalarınıza erişilemez) ve hayır demenin sorun olmadığını anlatır:
 o zaman token'lar yalnızca oturum boyunca bellekte yaşar, kasa kapalı kalır ve
@@ -118,7 +118,12 @@ istediğinizde **Ayarlar → Güvenlik → İşletim sistemi anahtar zinciri**
 Yeni bir kurulum, gerçekten saklanması gereken bir şey çıkana kadar **sıfır**
 anahtar zinciri çağrısı yapar.
 
-Kapalıyken Entegrasyonlar’daki token alanı bunu belirtir — *Yalnızca Gitcito’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.* — yanında bir **Etkinleştir** düğmesiyle. Oradan ya da buradan açmak, bu oturumda girdiğiniz token’ları da kaydeder; yeniden yapıştırmanız gerekmez.
+**macOS'ta 4.59'a güncelledikten sonra** sistem *GitHuttBr Safe Storage* öğesi
+için bir kez daha sorabilir: uygulamanın bundle id'si `com.huttbr.git` oldu ve
+anahtar zinciri tanımadığı bir uygulama için yeniden sorar. **Her Zaman İzin
+Ver** token'ları korur; bkz. [güncelleme](upgrading.md).
+
+Kapalıyken Entegrasyonlar’daki token alanı bunu belirtir — *Yalnızca GitHuttBr’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.* — yanında bir **Etkinleştir** düğmesiyle. Oradan ya da buradan açmak, bu oturumda girdiğiniz token’ları da kaydeder; yeniden yapıştırmanız gerekmez.
 
 ![Anahtarlık kapalıyken Entegrasyonlar’daki token alanı: yalnızca kapatana kadar saklanır, bir Etkinleştir düğmesiyle](../../screenshots/token-keychain-notice.webp)
 
@@ -130,7 +135,7 @@ değil. Çıkmadan önce anahtarlığı yeniden açın, kayıtlı kopya o zaman 
 bu nedenle görünür kalır. Kayıtlı bir token'ı tek adımda kalıcı olarak silmek
 için anahtarlık açıkken onu temizleyin.
 
-Boş bir alan yalnızca Gitcito'nun size gösterdiğini temizler. Anahtarlık en
+Boş bir alan yalnızca GitHuttBr'nun size gösterdiğini temizler. Anahtarlık en
 baştan kapalıysa kayıtlı token'lar hiç çözülmez ve hiç gösterilmez — alanlar
 boştur —, bu yüzden yalnızca oraya yazıp yeniden temizlediğiniz token silinir;
 altındaki kayıtlı token, anahtarlık açıldığında hâlâ oradadır.
@@ -151,7 +156,7 @@ bir korumayı temsil etmez.
 
 Herkesin çözebileceği bir depolamaya yeni hiçbir şey düşmesin diye, çalışan bir
 anahtarlık yokken yazdığınız bir token **yalnızca uygulamayı kapatana kadar**
-tutulur. Token alanı bunu söyler — *Yalnızca Gitcito'yu kapatana kadar saklanır:
+tutulur. Token alanı bunu söyler — *Yalnızca GitHuttBr'yu kapatana kadar saklanır:
 çalışan bir anahtarlık yok…* — yeniden deneme düğmesi olmadan, çünkü yeniden
 denemek işe yaramaz; yalnızca bir anahtarlık yarar. Kimlik bilgileri içeren bir ayarlar dosyasını
 içe aktarmak da onları içe aktarmadan önce aynısını söyler. Daha önce kaydedilmiş
@@ -160,9 +165,9 @@ temizlemek ya da değiştirmek eski değeri yine diskten siler. İki sınır: ge
 yapay zekânın anahtarı ortak yerine taşınmaz (her profil kendi anahtarını
 okumaya devam eder) ve kasa, oturumluk bir modu olmadığı için temel depolamaya
 kaydetmeyi sürdürür. Yeni token'ları yeniden kalıcı olarak saklamak için bir
-anahtarlık kurun ya da kilidini açın ve Gitcito'yu yeniden başlatın.
+anahtarlık kurun ya da kilidini açın ve GitHuttBr'yu yeniden başlatın.
 
-Gitcito hangi depoyu aldığı konusunda sistemin sözüne güvenmez. Sistem onu öyle
+GitHuttBr hangi depoyu aldığı konusunda sistemin sözüne güvenmez. Sistem onu öyle
 adlandırdığında, onu hiç adlandıramadığında ve şifrelediği şey sabit parolayla
 işaretlenmiş olarak geri geldiğinde — sistem ne derse desin — onu temel sayar. Böylece
 sessizce geri düşen bir anahtarlık bile yeni token’ları diskten uzak tutar.
@@ -171,21 +176,21 @@ Yanıt vermeyi bırakan bir anahtarlık sonsuza kadar beklenmez. Linux’ta anah
 oturumda bir kez yanıt verdikten sonra, 10 saniye yanıtsız bıraktığı bir soru
 *anahtarlık yok* sayılır: kaydettiğiniz bir token kapatana kadar tutulur ve Kasa kapalı
 kalır. Bir oturumun ilk sorusu — anahtarlığın kendi parola isteğini getirebilecek olan
-— ve Gitcito’nun açıklamasının hemen ardından gelen soru iki dakika alır, böylece bir
+— ve GitHuttBr’nun açıklamasının hemen ardından gelen soru iki dakika alır, böylece bir
 iletişim kutusunu okumak asla yarıda kesilmez. Böyle bir zaman aşımından sonraki
-yarım dakika boyunca yanıt yeniden sorulmadan *anahtarlık yok* kalır; ardından Gitcito
+yarım dakika boyunca yanıt yeniden sorulmadan *anahtarlık yok* kalır; ardından GitHuttBr
 yeniden sorar. macOS ve Windows yerelde yanıt verir ve asla zaman aşımına uğratılmaz.
 
 Sınır yalnızca o soruyu kapsar — *bir anahtarlık var mı?* Onu yanıtlayıp sonra
 şifrelerken ya da şifre çözerken takılan bir anahtarlık yine de beklenir: ayarları
-kaydetmek ve Kasa, o yanıt verene ya da Gitcito yeniden başlayana kadar meşgul kalır.
+kaydetmek ve Kasa, o yanıt verene ya da GitHuttBr yeniden başlayana kadar meşgul kalır.
 
 ### Kayıtlı token'lar okunamadığında
 
 Sistemin anahtarlık istemini kapatırsanız, anahtarlık kilitliyse ya da token
-deposunu Gitcito'nun başka bir kopyası yazdıysa (bir geliştirme derlemesi,
-yeniden imzalanmış bir sürüm), Gitcito **kayıtlı token'larınızı okuyamaz — ve
-onlara dokunmaz**. Ayarlar → Güvenlik *Gitcito kayıtlı token'larınızı
+deposunu GitHuttBr'nun başka bir kopyası yazdıysa (bir geliştirme derlemesi,
+yeniden imzalanmış bir sürüm), GitHuttBr **kayıtlı token'larınızı okuyamaz — ve
+onlara dokunmaz**. Ayarlar → Güvenlik *GitHuttBr kayıtlı token'larınızı
 okuyamadı* der ve bu arada yazdığınız bir token yalnızca oturum boyunca tutulur
 (alan da bunu söyler). Okuyamadığı deponun üzerine asla yazılmaz: bu, her kayıtlı
 token'ı az önce yazdığınızla değiştirirdi.
@@ -193,7 +198,7 @@ token'ı az önce yazdığınızla değiştirirdi.
 | Düğme | Ne yapar |
 |--------|--------------|
 | **Yeniden dene** | Depoyu yeniden okur — sistem şimdi anahtarlığı isteyebilir. Okunabildiği anda, bu arada yazılan token'lar ona katılır. |
-| **Yeni belirteç deposu başlat** | Önce sorar. Gitcito eski depoyu beklemeyi bırakır ve yalnızca bu oturumun token'larıyla yenisini başlatır. Eski dosya 30 gün boyunca yedek olarak yanında kalır, sonra silinir. Kalıcı olarak kaybolmuş bir depo içindir, kapattığınız bir istem için değil. |
+| **Yeni belirteç deposu başlat** | Önce sorar. GitHuttBr eski depoyu beklemeyi bırakır ve yalnızca bu oturumun token'larıyla yenisini başlatır. Eski dosya 30 gün boyunca yedek olarak yanında kalır, sonra silinir. Kalıcı olarak kaybolmuş bir depo içindir, kapattığınız bir istem için değil. |
 
 ## Ayarları içe aktarma
 
@@ -319,7 +324,7 @@ credential helper'ından ödünç alınan oturum açma bilgileri bu makinenin ol
 kalır.
 
 **Varsayılanlar diskinize dayanan bir tahmindir.** Pencere görünmeden önce
-Gitcito dosyadaki depo klasörlerinin burada olup olmadığına bakar. Hiçbiri
+GitHuttBr dosyadaki depo klasörlerinin burada olup olmadığına bakar. Hiçbiri
 yoksa dosya başka bir bilgisayardan gelmiştir: **Depolar** ve **Programlar**
 işaretsiz başlar, her biri nedeniyle birlikte — programların yolları listelenir,
 böylece başka bir yere ait olduklarını görürsünüz. Varsa aynı bilgisayardır
@@ -337,7 +342,7 @@ aktarılamaz. Diğer bölümler aktarılabilir.
 işaretleyin; bir **Yolları çevir** kutusu açılır. Solda, dosyadaki depoların
 ortak klasörü (`/home/you/code`); sağda, o klasörün bu bilgisayarda nerede
 olduğu, ev klasörünüzden önceden doldurulmuş olarak (`/Users/you/code`). İkisi
-de düzenlenebilir — tahmin yanlış olabilir ve Gitcito ortak bir klasör
+de düzenlenebilir — tahmin yanlış olabilir ve GitHuttBr ortak bir klasör
 bulamazsa ikisini de sizin yazmanız için boş bırakır. Bir çubuk, siz yazarken
 kaç deponun artık burada bir klasörü olduğunu sayar ve birkaçını listeler —
 bulunanlar yeşil, hâlâ eksik olanlar kırmızı. Değişim deponun takma adını,
@@ -392,7 +397,7 @@ dosyada olmayan her kayıtlı token ve API anahtarının silineceğini söyler; 
 
 **Tümünü değiştir anahtar zincirine ihtiyaç duyar.** Anahtar zinciri kapalıyken
 ya da kullanılamazken eski token'lar şifreli depoda kalır ve bir sonraki
-açılışta geri gelirdi; bu yüzden Gitcito reddeder: bunu söyler ve hiçbir şey içe
+açılışta geri gelirdi; bu yüzden GitHuttBr reddeder: bunu söyler ve hiçbir şey içe
 aktarılmaz. Kayıtlı token'lar okunamadığı sürece de (yukarıya bakın) aynısı geçerlidir: okunabilir
 olur olmaz geri gelirlerdi. **Benimkilere ekle** yine çalışır ve dosyadaki
 token'ları oturum boyunca tutar.
@@ -440,19 +445,19 @@ Ayarlar dosyası ve şifreli token deposu bütün olarak yazılır: yanında yal
 sahibinin okuyabildiği yeni bir dosyaya, sonra yer değiştirilerek; böylece bir
 çökme ya da aynı anda iki kaydetme asla yarım bir dosya bırakmaz. Ayarlar
 dosyası başka bir yere sembolik bağlantıysa (bir dotfiles deposu), yazma
-bağlantının hedefine gider ve bağlantı kalır. Gitcito bağlantıyı asla
+bağlantının hedefine gider ve bağlantı kalır. GitHuttBr bağlantıyı asla
 değiştirmez. Henüz var olmayan bir dosyayı gösteren bağlantının içinden yazılır
 ve o dosya oluşturulur — klasörü var olduğu sürece. Klasör de yoksa kaydetme
 başarısız olur, bunu söyleyen tek bir mesajla: bağlantı ve gösterdiği yer
-dokunulmadan kalır, bu arada yapılan değişiklikler yalnızca Gitcito kapanana
+dokunulmadan kalır, bu arada yapılan değişiklikler yalnızca GitHuttBr kapanana
 kadar sürer. Klasörü geri getirin ya da bağlantıyı var olan bir yere yöneltin,
 bir sonraki kaydetme başarılı olur.
 
 Eski bir sürümün ayarlar dosyasında bıraktığı düz metin token'lar bir kaydetmeyle
-asla kaybolmaz: siz birini kendiniz temizlemedikçe, Gitcito onları şifreli depoya
+asla kaybolmaz: siz birini kendiniz temizlemedikçe, GitHuttBr onları şifreli depoya
 yükleyene kadar (Ayarlar'ı açmak bunu yapar) dosyada kalırlar.
 
-Onları yalnızca iki şey yazar: ayarlarınızın kaydedilmesi ve Gitcito'nun onları
+Onları yalnızca iki şey yazar: ayarlarınızın kaydedilmesi ve GitHuttBr'nun onları
 yüklemesi (açılışta ya da Ayarlar açıldığında) — eski bir düz metin token'ın
 şifreli depoya taşındığı ya da içinde parola olan bir sunucu adresinin
 temizlendiği an budur. Kimsenin istemediği bir sorgu — token'ını çözen bir
@@ -468,17 +473,17 @@ token gerektiren profil resimleri bekler. Bir sorgu hiçbir şeyi taşımaz, bu
 yüzden bu arada temizlediğiniz bir token temizlenmiş kalır.
 
 Var olan ama ayrıştırılamayan bir dosya (ters giden elle düzenleme, hasarlı bir
-disk) **asla** varsayılanlarla değiştirilmez: Gitcito dosyanın bozuk olduğunu
+disk) **asla** varsayılanlarla değiştirilmez: GitHuttBr dosyanın bozuk olduğunu
 söyler ve daha ileri başlamaz — o ekrandan hiçbir kısayol ya da menü komutu onun
 üzerine kaydedemez.
 
 ![Bozuk bir ayarlar dosyası için açılış ekranı, Yeniden dene ve Bozuk dosyayı kenara al ve sıfırdan başla düğmeleriyle](../../screenshots/settings-damaged.webp)
 
-`gitcito-settings.json` dosyasını veri klasöründe düzeltip **Yeniden dene**'ye
+`githuttbr-settings.json` dosyasını veri klasöründe düzeltip **Yeniden dene**'ye
 basabilir ya da **Bozuk dosyayı kenara al ve sıfırdan başla**'ya basabilirsiniz:
-dosyanın adı `gitcito-settings.json.corrupt-<date>` olarak değiştirilir (asla
+dosyanın adı `githuttbr-settings.json.corrupt-<date>` olarak değiştirilir (asla
 silinmez, bu yüzden ondan hâlâ bir şeyler kurtarabilirsiniz), şifreli token
-deposunun bir kopyası yanında tutulur ve Gitcito ilk açılıştaki gibi başlar;
+deposunun bir kopyası yanında tutulur ve GitHuttBr ilk açılıştaki gibi başlar;
 dosyanın nereye gittiğini söyleyen bir notla. Sembolik bağlantılı bir ayarlar
 dosyasında adı değiştirilen bağlantının hedefidir; böylece bozuk kopya,
 ilk kaydetmenin sonra bağlantı üzerinden yazacağı yeni ayarlar dosyasının
@@ -488,13 +493,13 @@ kopya olmadan sıfırdan başlamak, kaydettiğiniz ilk token'ın eski profilleri
 token'larını silmesine yol açardı. Klasöre yazmayı engelleyeni (izinler, dolu
 bir disk) düzeltin ve **Yeniden dene**'ye basın.
 
-Dosya Gitcito çalışırken bozulursa (altından elle düzenlenirse), kaydetmeler
-durur ve Gitcito bunu bir kez söyler: ayarlar yeniden başlatılana kadar
+Dosya GitHuttBr çalışırken bozulursa (altından elle düzenlenirse), kaydetmeler
+durur ve GitHuttBr bunu bir kez söyler: ayarlar yeniden başlatılana kadar
 kaydedilemez ve bu arada yapılan değişiklikler kaybolur.
 
 Orada olan ama bir anlığına *okunamayan* bir dosya — virüs taraması gibi başka
 bir program onu tutuyor — yaklaşık iki saniye boyunca yeniden denenir. Hâlâ
-başarısız olursa ya da yükleme başka bir nedenle başarısız olursa, Gitcito
+başarısız olursa ya da yükleme başka bir nedenle başarısız olursa, GitHuttBr
 başlayamadığını, dosyanın değiştirilmediğini söyler ve **Yeniden dene** sunar;
 dosyaya bozuk demez.
 
@@ -526,7 +531,7 @@ listesini okuyabilir), ne de git komutunun **ortamına** — git'in başlattığ
 hook, filtre ve LFS süreci, bir husky ya da lefthook betiğinin çalıştırdığı her
 npm paketiyle birlikte bu ortamı devralır.
 
-Bunun yerine Gitcito her işlem için kendine ait özel bir uç nokta açar —
+Bunun yerine GitHuttBr her işlem için kendine ait özel bir uç nokta açar —
 yalnızca sizin kullanıcınızın girebildiği bir klasörde bir soket (Windows'ta
 rastgele adlı bir adlandırılmış kanal) — ve yalnızca o sunucu için bir kimlik
 bilgisi yardımcısı kaydeder. Git oturum açma bilgisi istediğinde yardımcı
@@ -568,7 +573,7 @@ Hâlâ yapamadıkları:
   başka bir git tarafından başlatılmışsa — işlem süresince kaldırılır; böylece ona
   saklaması için profilin token'ı asla sunulmaz ve kimse adına sorulmaz. Devralınan
   diğer her `-c` ayarı korunur.
-- **Bir sunucu adresi git'in okuduğu şekilde yazılmalıdır.** Gitcito sunucuyu
+- **Bir sunucu adresi git'in okuduğu şekilde yazılmalıdır.** GitHuttBr sunucuyu
   standart URL kurallarına göre, git ise kendi kurallarına göre adlandırır:
   uluslararasılaştırılmış bir ad (`bücher.example`), sayısal bir kısaltma
   (`127.1`, `0x7f.0.0.1`), sıkıştırılmış ya da eşlenmiş bir IPv6 adresi veya ana
@@ -583,7 +588,7 @@ Hâlâ yapamadıkları:
 - **Güvenmediğiniz hook'ları çalıştırmayın**, oturum açmış bir profille bile.
   Az önce klonladığınız bir depo, onları `npm install` sırasında kuran husky gibi
   araçlarla hook'lar getirebilir; git, `.git/hooks` içinde ne varsa onu
-  Gitcito'dan da bir terminalden de aynı şekilde çalıştırır ve bir hook bir
+  GitHuttBr'dan da bir terminalden de aynı şekilde çalıştırır ve bir hook bir
   token'ı okumaktan çok daha kötüsünü yapabilir.
 - **Token'ın kapsamını daraltın.** Yalnızca üzerinde çalıştığınız depolara
   yazabilen bir token, onu ele geçiren herkes için çok daha az değerlidir.
@@ -608,7 +613,7 @@ da öyle.
 
 **Sınır:** bir cümlede tek başına duran bir sunucu adı şeklinden tanınır —
 noktalı, küçük harfli. Tek kelimelik bir ana makine (`gitserver`) yalnızca
-Gitcito'nun kendi yazdığı mesajlarda yakalanır ve dosya uzantısı gibi yazılan
+GitHuttBr'nun kendi yazdığı mesajlarda yakalanır ve dosya uzantısı gibi yazılan
 bir üst düzey alan adı (`.sh`, `.md`) altındaki bir sunucu dosya adı olarak
 bırakılır. Yine de issue'yu göndermeden önce okuyun: temizleme bilinen şekilleri
 tanır, özel olan her şeyi değil.
@@ -624,7 +629,7 @@ yalnızca her kuruluma özel tuzlanmış hash'ler saklar.
 
 Bu dosyaların her biri bütün olarak yazılır: yanında yeni bir dosyaya, sonra yer
 değiştirilerek; böylece bir çökme ya da aynı anda iki kaydetme asla yarım bir
-dosya bırakmaz — Gitcito'nun aksi hâlde okunamaz sayması gereken bir dosya. Token
+dosya bırakmaz — GitHuttBr'nun aksi hâlde okunamaz sayması gereken bir dosya. Token
 deposunun bir yedeği, yalnızca içindeki her token mevcut depoda da varsa erken
 silinir; diğer her yedek 30 gün tutulur.
 
@@ -636,8 +641,8 @@ bunları yasaklar ve iki Linux paketi bunu farklı şekilde ele alır:
 
 | Paket | Ne olur |
 |---------|--------------|
-| `.deb` | Kullanıcı ad alanlarına izin veren, `/opt/GitHuttBr/gitcito` için bir profil olan `/etc/apparmor.d/gitcito` dosyasını kurar. Uygulama sandbox içinde çalışır. |
-| AppImage | Profili yoktur. Başlatıcısı `unshare -Ur true` dener ve bu başarısız olursa uygulamayı `--no-sandbox` ile başlatır — Ubuntu 24.04+ üzerinde bu her açılış demektir. Bu olduğunda Gitcito konsol çıktısına bir uyarı yazar. |
+| `.deb` | Kullanıcı ad alanlarına izin veren, `/opt/GitHuttBr/githuttbr` için bir profil olan `/etc/apparmor.d/githuttbr` dosyasını kurar. Uygulama sandbox içinde çalışır. |
+| AppImage | Profili yoktur. Başlatıcısı `unshare -Ur true` dener ve bu başarısız olursa uygulamayı `--no-sandbox` ile başlatır — Ubuntu 24.04+ üzerinde bu her açılış demektir. Bu olduğunda GitHuttBr konsol çıktısına bir uyarı yazar. |
 
 AppImage'ı sandbox içinde çalıştırmak için onun yerine `.deb` paketini kurun ya
 da AppImage'a `userns` izni veren kendi AppArmor profilini verin (ya da makine
@@ -647,9 +652,9 @@ genelinde, kısıtlamayı her şey için kapatan
 **`.deb` profilinin sınırı.** `userns` izinli `flags=(unconfined)` profilidir ve
 yürütülebilir dosyanın yoluna bağlanır. Aynı yürütülebilir dosya
 `ELECTRON_RUN_AS_NODE=1` ile başlatıldığında düz Node olarak da çalışır —
-`gitcito` komutu, birlikte gelen diff dönüştürücüsü ve Gitcito'nun kimlik bilgisi
+`githuttbr` komutu, birlikte gelen diff dönüştürücüsü ve GitHuttBr'nun kimlik bilgisi
 yardımcısı böyle çalışır, bu yüzden bu anahtar onları bozmadan kapatılamaz.
-Birlikte bu, herhangi bir yerel programın Gitcito'nun yürütülebilir dosyasını
+Birlikte bu, herhangi bir yerel programın GitHuttBr'nun yürütülebilir dosyasını
 kullanıcı ad alanı oluşturmasına izin verilen bir Node yorumlayıcısı olarak
 kullanabileceği anlamına gelir — Ubuntu kısıtlamasının profilli başka programlar
 üzerinden bilinen atlatma yollarıyla aynı türden bir açık. Kimseye kendi
@@ -657,7 +662,7 @@ hesabının haklarından fazlasını vermez; Ubuntu'nun üstüne eklediği bir �
 sağlamlaştırma katmanını zayıflatır. AppArmor tek bir yürütülebilir dosyanın iki
 kipini birbirinden ayıramaz, bu yüzden CLI onu paylaştığı sürece daha dar bir
 profil mümkün değildir; CLI için ayrı bir yardımcı ikili yol haritasındadır. Bunu
-istemeyen yöneticiler, sandbox pahasına `/etc/apparmor.d/local/gitcito` içine bir
+istemeyen yöneticiler, sandbox pahasına `/etc/apparmor.d/local/githuttbr` içine bir
 deny kuralı ekleyebilir.
 
 **Ayrıca bakınız:** [Kasa](vault.md) · [Güvenli paylaşım](secure-share.md)

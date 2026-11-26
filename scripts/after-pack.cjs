@@ -2,7 +2,7 @@
  * electron-builder afterPack hook: flip Electron's fuses on the packaged binary.
  *
  * Fuses are bits compiled into the Electron executable that switch whole
- * features off before any JavaScript runs. A packaged Gitcito has no use for
+ * features off before any JavaScript runs. A packaged GitHuttBr has no use for
  * the two that let anyone who can set an environment variable or a command
  * line run code inside a signed app:
  *
@@ -16,7 +16,7 @@
  *   ELECTRON_RUN_AS_NODE, and the test runner (main/testRunner.ts) does the
  *   same with process.execPath. Turning it off breaks every headless verb.
  * - Cookie encryption stays OFF. It keys the cookie store with the OS keychain
- *   at every launch, while Gitcito touches the keychain only after the user
+ *   at every launch, while GitHuttBr touches the keychain only after the user
  *   opts in (main/keychain.ts); the app keeps nothing of value in cookies.
  * - Embedded asar integrity / OnlyLoadAppFromAsar stay OFF. electron-builder 26
  *   writes the integrity record for macOS (Info.plist ElectronAsarIntegrity)
@@ -51,7 +51,7 @@ function electronBinary(context) {
  * resources/cli/githuttbr and githuttbr-textconv run the app binary with
  * ELECTRON_RUN_AS_NODE, and its name differs per platform — the product name on
  * macOS and Windows, the package's executableName on Linux. Guessing it in shell
- * is how the shims ended up looking for a MacOS/Gitcito that never existed, so
+ * is how the shims ended up looking for a MacOS/GitHuttBr that never existed, so
  * the build writes the answer next to them: `cli/app-binary`, one line, the
  * executable relative to the resources directory.
  *
@@ -83,16 +83,14 @@ async function writeCliAppBinary(context) {
  * The shims git and the shell run directly. extraResources copies modes as it
  * finds them, and a checkout on a filesystem without them (or a Windows build
  * host) would ship a converter git cannot execute — a failure nobody sees until
- * the first `git diff` of a .docx. `gitcito-textconv` is the pre-4.39 name,
- * kept as a stub because 4.38 wrote its absolute path into git config.
+ * the first `git diff` of a .docx.
  */
-const CLI_SHIMS = ['githuttbr', 'githuttbr-textconv', 'gitcito-textconv']
+const CLI_SHIMS = ['githuttbr', 'githuttbr-textconv']
 
 async function markCliExecutable(context) {
   const fs = require('node:fs/promises')
   const cliDir = path.join(cliAppBinary(context).resources, 'cli')
-  // A missing shim is a broken build: the stub in particular has no other
-  // way to be noticed before a user's diffs start failing.
+  // A missing shim is a broken build, noticed here rather than at a user's first diff.
   for (const name of CLI_SHIMS) await fs.chmod(path.join(cliDir, name), 0o755)
 }
 

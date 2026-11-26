@@ -1,4 +1,4 @@
-# Gitcito — working agreement
+# GitHuttBr — working agreement
 
 A Git client built with Electron, React and TypeScript. Three processes, one
 shared type module, and a hard rule about translations.
@@ -97,7 +97,7 @@ is what makes this app safe to explore, and it is expected, not optional.
 
 ## 3. Translations — the rule that has teeth
 
-Gitcito's UI copy lives in **one dictionary file per locale** under
+GitHuttBr's UI copy lives in **one dictionary file per locale** under
 `src/renderer/src/i18n/`:
 
 | File | Role |
@@ -256,7 +256,7 @@ One concern per PR. Commit only when asked; if you are on `main`, branch first.
 
 ## 8. Documentation — the second rule that has teeth
 
-Gitcito ships its own handbook: **`docs/help/*.md`**, rendered inside the app
+GitHuttBr ships its own handbook: **`docs/help/*.md`**, rendered inside the app
 (Help, in the status bar) and readable straight from the repository on GitHub.
 One source, two readers.
 
@@ -288,7 +288,7 @@ fails when a modal, page tab or command-palette entry has no page behind it.
 
 ### The website
 
-The same Markdown is also <https://myappdesk.github.io/gitcito/>.
+The same Markdown is also <https://git.huttbr.com/>.
 `scripts/build-site.mjs` renders a landing page plus one HTML page per handbook
 entry — no framework, no bundler, `marked` and nothing else. Keep it that way:
 a marketing page that needs a toolchain to fix a typo is a page nobody fixes.

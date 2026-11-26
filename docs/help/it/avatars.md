@@ -10,7 +10,7 @@ keywords: avatar gravatar blobatar autore foto immagine identicon faccia offline
 
 Un elenco di commit è un muro di nomi, e i nomi si leggono lentamente.
 Un’immagine accanto a ciascuno trasforma «chi ha scritto questo» in qualcosa a cui
-rispondi con un’occhiata. Gitcito ne mette una su ogni autore che mostra: nella
+rispondi con un’occhiata. GitHuttBr ne mette una su ogni autore che mostra: nella
 colonna autore del grafo, nei dettagli del commit accanto all’autore e a ogni
 coautore, nel selettore di coautori mentre scrivi, nel commutatore di profili e
 accanto a ogni profilo nelle Impostazioni.
@@ -39,7 +39,7 @@ due indirizzi sono davvero la stessa persona.
 
 ## La faccia nella barra del titolo
 
-L’avatar accanto al nome del tuo profilo è l’unico avatar in Gitcito che
+L’avatar accanto al nome del tuo profilo è l’unico avatar in GitHuttBr che
 rappresenta **te, in questo repository, adesso** — quindi è l’unico che reagisce
 allo stato del repository. Fa una faccia quando c’è qualcosa, e resta neutra il
 resto del tempo.
@@ -89,7 +89,7 @@ L’avatar nella barra del titolo e nell’elenco dei profili è tuo, quindi puo
 | **Automatico** | Il predefinito: il tuo Gravatar per l’email git del profilo, o il volto generato — quello che reagisce al repository. |
 | **Dall’integrazione** | L’immagine dell’account GitHub o GitLab collegato a questo profilo in Integrazioni. Disattivato finché non ce n’è uno. |
 | **Icona** | Uno di 24 simboli sul colore che scegli. |
-| **Immagine** | Un file che scegli — PNG o JPEG. Viene ridotto a 256 px e conservato su questo computer, nella cartella dati di Gitcito, non nel file delle impostazioni. |
+| **Immagine** | Un file che scegli — PNG o JPEG. Viene ridotto a 256 px e conservato su questo computer, nella cartella dati di GitHuttBr, non nel file delle impostazioni. |
 | **Da un repository** | Un’icona o un logo trovato in uno dei repository del profilo — quello dell’app o dell’azienda —, copiato nel profilo come un’immagine. |
 
 L’immagine viaggia con **Impostazioni → Dati → Esporta le impostazioni** e torna all’importazione;

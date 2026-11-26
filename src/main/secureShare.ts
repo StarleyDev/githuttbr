@@ -171,8 +171,7 @@ async function pickBundle(): Promise<
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Import secure bundle',
     filters: [
-      // Bundles saved before the 4.39 rename end in `.gitcito`; they open the same.
-      { name: `${PRODUCT_NAME} bundle`, extensions: ['githuttbr', 'gitcito'] },
+      { name: `${PRODUCT_NAME} bundle`, extensions: ['githuttbr'] },
       { name: 'All files', extensions: ['*'] }
     ],
     properties: ['openFile']

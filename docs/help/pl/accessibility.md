@@ -8,7 +8,7 @@ keywords: dostępność accessibility a11y czytnik ekranu VoiceOver NVDA nawigac
 
 # Dostępność
 
-Gitcito ma dać się obsłużyć bez myszy i być czytelny dla czytnika ekranu. Ta
+GitHuttBr ma dać się obsłużyć bez myszy i być czytelny dla czytnika ekranu. Ta
 strona mówi, co to znaczy konkretnie — i gdzie są granice.
 
 ## Klawiatura
@@ -57,7 +57,7 @@ strona mówi, co to znaczy konkretnie — i gdzie są granice.
 - Audyt stojący za tą stroną zrobiono VoiceOverem na macOS. NVDA/JAWS na
   Windows powinny zachowywać się tak samo, ale nie zostały sprawdzone w
   praktyce — zgłoszenia są mile widziane jako
-  [issues](https://github.com/MyAppDesk/gitcito/issues).
+  [issues](https://github.com/StarleyDev/githuttbr/issues).
 
 ## Powiązane ustawienia
 
