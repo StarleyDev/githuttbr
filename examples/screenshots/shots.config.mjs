@@ -1035,13 +1035,63 @@ export const shots = [
         type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
-      await page.locator('.prp-tab').nth(1).click()
+      await page.locator('.prp-tab').nth(2).click()
       await page.locator('.prp-line-threads').waitFor()
       const row = page.locator('.diff-line.add', { hasText: 'hits.slice' })
       await row.hover()
       await row.locator('.diff-comment-btn').click()
       await page.locator('.prp-line-composer textarea').fill('Worth a test for the limit — 50 is easy to break.')
       await row.hover()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The Commits tab: a pull request's commits grouped by day, one with its
+    // full message open, and one this clone does not have — its notice
+    // offering the branch fetch. Faked detail and commits — a fictional GitHub
+    // repository, no network; the shas exist nowhere, so none is local.
+    out: 'pr-commits',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits']) ipcMain.removeHandler('hosting:' + method)
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+          body: 'Search filenames across open repositories from the command palette.',
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          comments: [], reviews: [], reviewThreads: [],
+          commits: 5, changedFiles: 3, additions: 64, deletions: 9
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        const c = (sha, subject, authorName, authorLogin, authoredAt, body) => ({
+          sha: sha.padEnd(40, '0'), shortSha: sha.slice(0, 7), subject, authorName, authorLogin, authoredAt,
+          parents: 1, ...(body ? { body } : {})
+        })
+        ipcMain.handle('hosting:prListCommits', () => ({
+          truncated: false, kept: 'oldest',
+          commits: [
+            c('3f9a1c2', 'feat(search): list files across open repositories', 'Sam Rivera', 'sam', '2026-11-18T09:12:00Z',
+              'The palette asks every open repository for its tracked files once,\nthen filters in memory as you type.'),
+            c('8b04d7e', 'test(search): cover an empty query', 'Sam Rivera', 'sam', '2026-11-18T15:40:00Z'),
+            c('c51e0aa', 'fix(search): trim the query before matching', 'Alex Chen', 'alex', '2026-11-19T10:05:00Z',
+              'A trailing space from the palette matched nothing.\n\nTrim once, up front, so every repository sees the same query.'),
+            c('d2a7f63', 'perf(search): stop at one screen of results', 'Sam Rivera', 'sam', '2026-11-20T08:30:00Z'),
+            c('e90b4c1', 'docs(search): mention the result limit', 'Alex Chen', 'alex', '2026-11-20T11:47:00Z')
+          ]
+        }))
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
+      }), repos['octopus-merge'])
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-tab').nth(1).click()
+      await page.locator('.prp-commit').first().waitFor()
+      await page.locator('.prp-commit', { hasText: 'trim the query' }).locator('.prp-commit-more').click()
+      await page.locator('.prp-commit', { hasText: 'one screen of results' }).locator('.prp-commit-open').click()
+      await page.locator('.prp-commit-missing').waitFor()
+      await page.mouse.move(0, 0)
       await page.waitForTimeout(300)
     }
   },
@@ -1086,7 +1136,7 @@ export const shots = [
         type: 'pr', repoPath, remoteUrl: 'https://forge.example.org/studio/catalog.git', number: 7, title: 'Cache the catalog index'
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
-      await page.locator('.prp-tab').nth(2).click()
+      await page.locator('.prp-tab').nth(3).click()
       await page.locator('.prd-check-logs[aria-expanded]').nth(1).click()
       await page.locator('.prp-check-log pre').waitFor()
       await page.waitForTimeout(300)

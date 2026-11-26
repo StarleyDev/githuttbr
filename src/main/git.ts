@@ -2007,9 +2007,9 @@ async function commitEditRange(repoPath: string, sha: string): Promise<{ ancesto
  * A non-zero exit is not an error here: `merge-tree --stdin` aborts the batch
  * on the first fatal merge, and the records it already emitted are still good.
  */
-function gitWithStdin(repoPath: string, args: string[], input: string): Promise<string> {
+function gitWithStdin(repoPath: string, args: string[], input: string, extraEnv?: NodeJS.ProcessEnv): Promise<string> {
   return new Promise((resolve) => {
-    const child = spawn('git', ['-C', repoPath, ...args], { env: noPromptEnv() })
+    const child = spawn('git', ['-C', repoPath, ...args], { env: { ...noPromptEnv(), ...extraEnv } })
     let out = ''
     child.stdout.on('data', (d: Buffer) => (out += d.toString()))
     child.on('error', () => resolve(out))
@@ -4716,6 +4716,34 @@ export const gitService = {
     const before = (await runGit(repoPath, ['rev-parse', '--verify', `refs/heads/${branch}^{commit}`])).trim()
     await runGit(repoPath, ['branch', '-f', branch, sha])
     return before
+  },
+
+  /**
+   * Which of `shas` are commits this repository has — a pull request's commits
+   * that can open here rather than on the host. One `cat-file --batch-check`
+   * for the whole list. Only full hex ids are asked about: they come from a
+   * hosting API, and anything else could name a ref or read as an option.
+   */
+  async getLocalCommits(repoPath: string, shas: unknown): Promise<string[]> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    // Capped like the Commits tab itself: a caller cannot make one call any size.
+    const wanted = Array.isArray(shas) ? [...new Set(shas.filter(isFullSha))].slice(0, 500) : []
+    if (!wanted.length) return []
+    const out = await gitWithStdin(
+      repoPath,
+      ['cat-file', '--batch-check=%(objectname) %(objecttype)'],
+      wanted.map((s) => `${s}\n`).join(''),
+      // A partial clone would fetch a missing object from its promisor remote —
+      // a network write inside a read. Missing stays missing (git 2.44+; older
+      // versions ignore the variable).
+      { GIT_NO_LAZY_FETCH: '1' }
+    ).catch(() => '')
+    const found = new Set<string>()
+    for (const line of out.split('\n')) {
+      const [sha, type] = line.trim().split(' ')
+      if (type === 'commit') found.add(sha.toLowerCase())
+    }
+    return wanted.filter((s) => found.has(s.toLowerCase()))
   },
 
   /**
@@ -9630,6 +9658,7 @@ function lockFor(repoPath: string): RwLock {
 const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
+  'getLocalCommits',
   'isAncestor',
   'isRepository',
   'directoryExists',

@@ -3,6 +3,7 @@ import { bbsReviewerIds, collectPickerOptions, createWithoutRejectedReviewers, P
 import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
+import { finishPrCommits } from '../shared/prCommits'
 import {
   bitbucketServerEndpoints,
   bitbucketServerPullRequestUrl,
@@ -17,6 +18,7 @@ import type {
   CreatePrResult,
   PrCheck,
   PrComment,
+  PrCommitList,
   PrDetail,
   PrFile,
   PrMergeMethod,
@@ -876,5 +878,41 @@ export async function bbsPickerOptions(repo: BitbucketServerRepo, token: string)
     },
     // A reviewer is a user name, so one can be typed when the list could not be read.
     { people: true }
+  )
+}
+
+interface BbsCommit {
+  id?: string
+  message?: string
+  author?: BbsUser
+  authorTimestamp?: number
+  parents?: Array<{ id?: string }>
+}
+
+/**
+ * A pull request's commits, newest first as the server lists them. No
+ * `avatarSize`: the server's avatar links need its sign-in, which an <img>
+ * does not have. The author's `slug` is there only when the commit's email
+ * matched an account.
+ */
+export async function bbsPullCommits(repo: BitbucketServerRepo, token: string, id: number): Promise<PrCommitList> {
+  let partial = false
+  // 6 × 50 reaches past the cap, so a list that goes on is told apart from one that ends there.
+  const commits = await bbsPages<BbsCommit>(`${bbsRepoApi(repo)}/pull-requests/${id}/commits`, token, 50, 6, () => {
+    partial = true
+  })
+  return finishPrCommits(
+    commits
+      .filter((c) => typeof c.id === 'string')
+      .map((c) => ({
+        sha: c.id!,
+        message: c.message,
+        authorName: c.author?.displayName || c.author?.name,
+        authorLogin: c.author?.slug,
+        authoredAt: c.authorTimestamp,
+        parentShas: c.parents ? c.parents.flatMap((p) => (p.id ? [p.id] : [])) : null
+      })),
+    true,
+    partial
   )
 }

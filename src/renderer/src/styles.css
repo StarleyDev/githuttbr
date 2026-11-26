@@ -19278,6 +19278,38 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-viewed-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); cursor: pointer; flex: none; }
 .prp-file-diff > :last-child { flex: 1; min-height: 0; overflow: auto; }
 .prp-no-patch { padding: 16px; color: var(--text-2); font-size: 13px; }
+/* Commits: one list per day, a row per commit, opening it in the repository. */
+.prp-commit-cap { margin: 0 0 10px; }
+.prp-commit-day + .prp-commit-day { margin-top: 14px; }
+.prp-commit-day-title {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--text-2);
+}
+.prp-commit-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); }
+.prp-commit + .prp-commit { border-top: 1px solid var(--border); }
+.prp-commit-row { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; }
+.prp-commit-open {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 6px;
+  background: none; border: none; text-align: start; font: inherit; color: inherit; cursor: pointer;
+}
+.prp-commit-open:hover, .prp-commit-open:focus-visible { background: var(--bg-3); }
+.prp-commit-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prp-commit-subject { font-size: 13px; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prp-commit-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-3); }
+.prp-commit-meta strong { color: var(--text-2); font-weight: 600; }
+.prp-commit-badge { padding: 0 5px; border-radius: 8px; border: 1px solid var(--border); font-size: 10.5px; }
+.prp-commit.is-remote .prp-commit-sha { color: var(--text-3); }
+.prp-commit-sha { flex: none; font-size: 11.5px; color: var(--accent); }
+.prp-commit-body {
+  margin: 0 12px 10px 42px; padding: 8px 10px; border-radius: 6px; background: var(--bg-1);
+  font: 12px/1.5 var(--mono, ui-monospace, monospace); color: var(--text-1); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.prp-commit-missing {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 12px 10px 42px; padding: 8px 10px;
+  border-radius: 6px; font-size: 12px; color: var(--text-1);
+  border: 1px solid color-mix(in srgb, var(--warn, #d29922) 45%, var(--border));
+  background: color-mix(in srgb, var(--warn, #d29922) 8%, var(--bg-2));
+}
+.prp-commit-missing > span { flex: 1 1 260px; }
 
 .prp-side {
   flex: 0 0 270px; display: flex; flex-direction: column; gap: 0; overflow-y: auto;

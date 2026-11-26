@@ -1271,13 +1271,44 @@ async function runCheckoutRemoteInner(
 // After a PR branch is checked out: the repository's graph, at the branch tip.
 // Runs after the refresh, so the branch and its commit are in the lists.
 function showBranchInRepo(path: string, name: string): void {
+  const sha = useRepoStore.getState().repos[path]?.branches.locals.find((b) => b.name === name)?.sha
+  if (!sha) return useSettingsStore.getState().showRepoView(path)
+  showCommitInRepo(path, sha)
+}
+
+// The repository's view, with one commit selected (its details open) and the
+// graph scrolled to it. A sha the graph has not loaded still selects: the
+// details read the commit from git, not from the graph.
+function showCommitInRepo(path: string, sha: string): void {
   useSettingsStore.getState().showRepoView(path)
   const repo = useRepoStore.getState().repos[path]
-  const sha = repo?.branches.locals.find((b) => b.name === name)?.sha
-  if (!repo || !sha) return
+  if (!repo) return
   const hash = repo.commits.find((c) => c.hash.startsWith(sha) || sha.startsWith(c.hash))?.hash ?? sha
   useRepoStore.getState().select(path, { type: 'commit', hash })
   useUIStore.getState().requestScrollTo(hash, path)
+}
+
+// Fetch one pull request branch into its remote-tracking ref, inside a queue
+// slot the caller already holds. False, with a toast saying why, when the
+// fetch failed or the server no longer has the branch.
+async function fetchPrBranchInSlot(path: string, remote: string, name: string): Promise<boolean> {
+  useUIStore.getState().setBusy(interp(t('busy.fetchingBranch'), { branch: name, remote }), 'fetch')
+  muteWatcher(path)
+  let found: boolean
+  try {
+    found = await gitApi.fetchRemoteBranch(path, remote, name)
+  } catch (err) {
+    toast('error', err instanceof Error ? err.message : String(err), { repoPath: path })
+    return false
+  } finally {
+    useUIStore.getState().setBusy(null)
+  }
+  if (!found) {
+    // Merged pull requests often take their branch with them.
+    toast('info', interp(t('act.prBranchGone'), { branch: name, remote }), { repoPath: path })
+    return false
+  }
+  return true
 }
 
 // A pull request's branch that only exists on the server: fetch that one
@@ -1291,27 +1322,11 @@ function runFetchAndCheckoutPrBranch(
   onLanded: () => void
 ): Promise<boolean> {
   return enqueue(path, async () => {
-    const ui = useUIStore.getState()
-    ui.beginInflight()
-    ui.setBusy(interp(t('busy.fetchingBranch'), { branch: name, remote }), 'fetch')
-    muteWatcher(path)
     // One inflight span over the fetch and the checkout, so the app never reads
     // as idle in the gap between them.
+    useUIStore.getState().beginInflight()
     try {
-      let found: boolean
-      try {
-        found = await gitApi.fetchRemoteBranch(path, remote, name)
-      } catch (err) {
-        toast('error', err instanceof Error ? err.message : String(err), { repoPath: path })
-        return false
-      } finally {
-        useUIStore.getState().setBusy(null)
-      }
-      if (!found) {
-        // Merged pull requests often take their branch with them.
-        toast('info', interp(t('act.prBranchGone'), { branch: name, remote }), { repoPath: path })
-        return false
-      }
+      if (!(await fetchPrBranchInSlot(path, remote, name))) return false
       // Already fetched just now, so no second fetch inside checkoutRemote.
       return await runCheckoutRemoteInner(path, `${remote}/${name}`, name, undefined, onLanded)
     } finally {
@@ -1536,6 +1551,29 @@ export const repoActions = {
       case 'fetch':
         await runFetchAndCheckoutPrBranch(path, remote, name, land)
     }
+  },
+
+  /**
+   * Fetch a pull request's branch without checking it out, so its commits can
+   * be read here; the branches and the graph refresh after. No undo: moving a
+   * remote-tracking ref is what every fetch does.
+   */
+  fetchPrBranch: (path: string, remote: string, name: string): Promise<boolean> =>
+    enqueue(path, async () => {
+      useUIStore.getState().beginInflight()
+      try {
+        if (!(await fetchPrBranchInSlot(path, remote, name))) return false
+        await useRepoStore.getState().refresh(path, { only: ['log', 'branches'] })
+        return true
+      } finally {
+        useUIStore.getState().endInflight()
+      }
+    }),
+
+  /** Open a commit in its repository's view, as a click in the graph would. */
+  showCommitInRepo: async (path: string, sha: string): Promise<void> => {
+    if (!useRepoStore.getState().repos[path]) await useRepoStore.getState().ensure(path)
+    showCommitInRepo(path, sha)
   },
 
   createBranch: (path: string, name: string, at?: string) => {

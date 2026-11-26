@@ -43,6 +43,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
+import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
 import { forgetFinished, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -69,7 +70,7 @@ import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComm
 import { getAnchorLine } from '../../../shared/prLineAnchor'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
-type Section = 'conversation' | 'files' | 'checks'
+type Section = 'conversation' | 'commits' | 'files' | 'checks'
 
 const REVIEW_KEY: Record<ReviewerState, TranslationKey> = {
   APPROVED: 'prPage.reviewApproved',
@@ -160,8 +161,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // Forgejo has no API to reply inside an existing line thread.
   const canReplyInThread = provider !== 'forgejo'
 
+  // Bumped by every load, so the Commits tab re-reads with the rest of the page.
+  const [reloads, setReloads] = useState(0)
   const load = useCallback(async (): Promise<void> => {
     setError(null)
+    setReloads((n) => n + 1)
     try {
       setPr(await hostingApi.prDetail(repoPath, remoteUrl, tokens, number))
       // Checks and files fill in after the conversation: the page is usable first.
@@ -360,6 +364,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
+  const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits', reloads)
+  // A truncated list is not the whole count: the detail's own number, when it says more.
+  const commitCount = commits.list?.truncated
+    ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
+    : (commits.list?.commits.length ?? pr?.commits)
 
   return (
     <div className="prp-frame">
@@ -420,6 +429,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
           <nav className="prp-tabs" role="tablist">
             <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
+            <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commitCount} />
             <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
             <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
           </nav>
@@ -463,6 +473,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 {pr.reviewThreads.map((th) => threadCard(th, true))}
                 {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
               </>
+            ) : section === 'commits' ? (
+              <PrCommitsSection repoPath={repoPath} remoteUrl={remoteUrl} pr={pr} list={commits.list} error={commits.error} />
             ) : section === 'files' ? (
               files === null ? (
                 <div className="prd-empty">

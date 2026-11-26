@@ -8,6 +8,7 @@ import type {
   IssueInfo,
   MilestoneInfo,
   PrCheck,
+  PrCommitList,
   PrDetail,
   PrFile,
   PrDiffRevision,
@@ -23,6 +24,7 @@ import type {
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
+import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -942,4 +944,53 @@ export async function markForgejoNotificationRead(base: string, token: string, i
 
 export async function markAllForgejoNotificationsRead(base: string, token: string): Promise<void> {
   await fjJson(`${api(base)}/notifications`, token, { method: 'PUT' })
+}
+
+interface FjCommit {
+  sha?: string
+  commit?: { message?: string; author?: { name?: string; date?: string } }
+  author?: { login?: string; avatar_url?: string } | null
+  parents?: Array<{ sha?: string }> | null
+}
+
+/**
+ * A pull request's commits. `verification` and `files` are turned off: both
+ * default to on and cost the server a signature check and a diff per commit.
+ * The page size is the server's (MAX_RESPONSE_ITEMS may be under 50), and its
+ * X-Total-Count says when the list ends — paging stops past the cap.
+ */
+export async function forgejoPullCommits(base: string, owner: string, repo: string, token: string, number: number): Promise<PrCommitList> {
+  const url = `${repoApi(base, owner, repo)}/pulls/${number}/commits?verification=false&files=false`
+  const out: FjCommit[] = []
+  let size = 0
+  let ended = false
+  for (let page = 1; page <= 20 && out.length <= PR_COMMITS_MAX; page++) {
+    const res = await fjResponse(`${url}&limit=50&page=${page}`, token)
+    const text = await res.text()
+    const items = (text ? JSON.parse(text) : []) as FjCommit[]
+    const header = res.headers.get('x-total-count')
+    const total = header === null ? NaN : Number(header)
+    out.push(...items)
+    if (page === 1) size = items.length
+    if (!items.length || (Number.isFinite(total) ? out.length >= total : items.length < size)) {
+      ended = true
+      break
+    }
+  }
+  return finishPrCommits(
+    out
+      .filter((c) => typeof c.sha === 'string')
+      .map((c) => ({
+        sha: c.sha!,
+        message: c.commit?.message,
+        authorName: c.commit?.author?.name,
+        authorLogin: c.author?.login,
+        authorAvatar: c.author?.avatar_url,
+        authoredAt: c.commit?.author?.date,
+        parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
+      })),
+    // The order is not documented; the parents settle it, this is the fallback.
+    false,
+    !ended
+  )
 }
