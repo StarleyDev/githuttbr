@@ -3344,6 +3344,7 @@ export const it: Dict = {
   'prPage.markFolderViewed': 'Segna tutti i file in {folder} come visti',
   'prPage.unmarkFolderViewed': 'Segna tutti i file in {folder} come non visti',
   'prPage.changedSinceViewed': 'Modificato da quando l’hai visto',
+  'prPage.fileThreads': "{n} conversazioni di revisione su questo file",
   'prPage.folderViewed': '{viewed} di {total} file visti',
   'prPage.filesTree': 'File modificati',
   'prPage.lineCommentPlaceholder': 'Lascia un commento su questa riga…',

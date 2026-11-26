@@ -19298,6 +19298,11 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-folder-row.viewed .prd-file-name { text-decoration: none; }
 /* Ticked once, changed by a push since: the row reads as not viewed, with this dot. */
 .prp-file-changed { flex: 0 0 auto; display: inline-flex; color: var(--yellow); }
+/* Review conversations on a file or folder: a muted bubble count, so a file with comments reads at a glance. */
+.prp-file-threads {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; color: var(--accent); font-variant-numeric: tabular-nums;
+}
 .prp-folder-viewed {flex: 0 0 auto; font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .prp-file-diff { flex: 1; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .prp-file-diff-head {

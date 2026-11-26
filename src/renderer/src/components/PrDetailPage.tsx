@@ -63,6 +63,7 @@ import {
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
+import { getThreadCountsByPath } from '../lib/prFileThreads'
 import { usePrViewed } from './usePrViewed'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
@@ -1315,6 +1316,8 @@ function FilesSection({
   getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
+  // The file list's speech-bubble counts; only recomputed when the threads change.
+  const threadCounts = useMemo(() => getThreadCountsByPath(threads), [threads])
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
   const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
   const file = files.find((f) => f.filename === selected) ?? files[0]
@@ -1406,6 +1409,7 @@ function FilesSection({
         files={files}
         viewed={viewed}
         changedSinceViewed={changedSinceViewed}
+        threadCounts={threadCounts}
         selected={file?.filename ?? ''}
         prKey={prUrl}
         onSelectFile={setSelected}

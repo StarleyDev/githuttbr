@@ -3396,6 +3396,7 @@ export const he: Dict = {
   'prPage.markFolderViewed': 'סימון כל הקבצים ב-{folder} כנצפו',
   'prPage.unmarkFolderViewed': 'סימון כל הקבצים ב-{folder} כלא נצפו',
   'prPage.changedSinceViewed': 'השתנה מאז שצפית בו',
+  'prPage.fileThreads': "שיחות סקירה על הקובץ: {n}",
   'prPage.folderViewed': 'נצפו {viewed} מתוך {total} קבצים',
   'prPage.filesTree': 'קבצים ששונו',
   'prPage.lineCommentPlaceholder': 'השאירו תגובה על השורה הזו…',

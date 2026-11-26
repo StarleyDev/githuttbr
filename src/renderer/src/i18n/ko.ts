@@ -3393,6 +3393,7 @@ export const ko: Dict = {
   'prPage.markFolderViewed': '{folder}의 모든 파일을 확인함으로 표시',
   'prPage.unmarkFolderViewed': '{folder}의 모든 파일을 확인 안 함으로 표시',
   'prPage.changedSinceViewed': '확인한 뒤 변경됨',
+  'prPage.fileThreads': "이 파일의 리뷰 대화 {n}개",
   'prPage.folderViewed': '파일 {total}개 중 {viewed}개 확인함',
   'prPage.filesTree': '변경된 파일',
   'prPage.lineCommentPlaceholder': '이 줄에 댓글을 남기세요…',

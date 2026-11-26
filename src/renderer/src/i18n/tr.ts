@@ -3339,6 +3339,7 @@ export const tr: Dict = {
   'prPage.markFolderViewed': '{folder} içindeki tüm dosyaları görüldü olarak işaretle',
   'prPage.unmarkFolderViewed': '{folder} içindeki tüm dosyaları görülmedi olarak işaretle',
   'prPage.changedSinceViewed': 'Gördüğünüzden beri değişti',
+  'prPage.fileThreads': "Bu dosyada {n} inceleme konuşması",
   'prPage.folderViewed': '{total} dosyadan {viewed} tanesi görüldü',
   'prPage.filesTree': 'Değişen dosyalar',
   'prPage.lineCommentPlaceholder': 'Bu satıra bir yorum bırakın…',

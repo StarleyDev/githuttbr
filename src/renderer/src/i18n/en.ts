@@ -3392,6 +3392,7 @@ export const en = {
   'prPage.markFolderViewed': 'Mark every file in {folder} as viewed',
   'prPage.unmarkFolderViewed': 'Mark every file in {folder} as not viewed',
   'prPage.changedSinceViewed': 'Changed since you viewed it',
+  'prPage.fileThreads': "{n} review conversations on this file",
   'prPage.folderViewed': '{viewed} of {total} files viewed',
   'prPage.filesTree': 'Changed files',
   'prPage.lineCommentPlaceholder': 'Leave a comment on this line…',

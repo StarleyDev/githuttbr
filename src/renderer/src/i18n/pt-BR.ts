@@ -3401,6 +3401,7 @@ export const ptBR: Dict = {
   'prPage.markFolderViewed': 'Marcar todos os arquivos de {folder} como vistos',
   'prPage.unmarkFolderViewed': 'Marcar todos os arquivos de {folder} como não vistos',
   'prPage.changedSinceViewed': 'Mudou desde que você viu',
+  'prPage.fileThreads': "{n} conversas de revisão neste arquivo",
   'prPage.folderViewed': '{viewed} de {total} arquivos vistos',
   'prPage.filesTree': 'Arquivos alterados',
   'prPage.lineCommentPlaceholder': 'Deixe um comentário nesta linha…',

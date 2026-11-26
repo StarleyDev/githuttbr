@@ -3394,6 +3394,7 @@ export const es: Dict = {
   'prPage.markFolderViewed': 'Marcar todos los archivos de {folder} como vistos',
   'prPage.unmarkFolderViewed': 'Marcar todos los archivos de {folder} como no vistos',
   'prPage.changedSinceViewed': 'Cambió desde que lo viste',
+  'prPage.fileThreads': "{n} conversaciones de revisión en este archivo",
   'prPage.folderViewed': '{viewed} de {total} archivos vistos',
   'prPage.filesTree': 'Archivos cambiados',
   'prPage.lineCommentPlaceholder': 'Deja un comentario en esta línea…',

@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
-source: fca6ca59b71f1a13ff0113f753b16b5f51758c15
+source: 637a1d17bf6af468baba0f97eb880ec0b0ad6033
 ---
 
 # Página de pull requests
@@ -238,7 +238,10 @@ dela, ou desmarca todos; as marcas ficam só neste computador, nunca vão para o
 host. Uma marca guarda a versão do diff do arquivo: quando um push muda um
 arquivo visto, ele volta a aparecer como não visto, com um ponto amarelo
 (*mudou desde que você viu*). Um arquivo sem diff (binário, grande demais) é
-comparado só pelo status e pela contagem de linhas. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
+comparado só pelo status e pela contagem de linhas. Um arquivo com conversas
+de revisão mostra um balão com a contagem ao lado (as pastas somam as dos seus
+arquivos), para os que têm comentários se destacarem numa lista longa; as
+conversas desatualizadas também contam. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
 percorrem os arquivos na tela e abrem o diff de cada um. As pastas recolhidas
 são lembradas por pull request até o app fechar, e um arquivo aberto dentro de
 uma delas reabre o caminho até ele. A árvore é ordenada por nome, não na ordem

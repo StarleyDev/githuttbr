@@ -3393,6 +3393,7 @@ export const pl: Dict = {
   'prPage.markFolderViewed': 'Oznacz wszystkie pliki w {folder} jako przejrzane',
   'prPage.unmarkFolderViewed': 'Oznacz wszystkie pliki w {folder} jako nieprzejrzane',
   'prPage.changedSinceViewed': 'Zmieniony od czasu przejrzenia',
+  'prPage.fileThreads': "Rozmowy w recenzji tego pliku: {n}",
   'prPage.folderViewed': 'Przejrzano {viewed} z {total} plików',
   'prPage.filesTree': 'Zmienione pliki',
   'prPage.lineCommentPlaceholder': 'Zostaw komentarz do tego wiersza…',

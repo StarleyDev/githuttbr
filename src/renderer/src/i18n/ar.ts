@@ -3396,6 +3396,7 @@ export const ar: Dict = {
   'prPage.markFolderViewed': 'وضع علامة «تمت المشاهدة» على كل الملفات في {folder}',
   'prPage.unmarkFolderViewed': 'إزالة علامة «تمت المشاهدة» عن كل الملفات في {folder}',
   'prPage.changedSinceViewed': 'تغيّر منذ أن شاهدته',
+  'prPage.fileThreads': "محادثات المراجعة على هذا الملف: {n}",
   'prPage.folderViewed': 'تمت مشاهدة {viewed} من {total} ملفات',
   'prPage.filesTree': 'الملفات المتغيّرة',
   'prPage.lineCommentPlaceholder': 'اترك تعليقًا على هذا السطر…',

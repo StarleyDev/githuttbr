@@ -3393,6 +3393,7 @@ export const ru: Dict = {
   'prPage.markFolderViewed': 'Отметить все файлы в {folder} как просмотренные',
   'prPage.unmarkFolderViewed': 'Отметить все файлы в {folder} как непросмотренные',
   'prPage.changedSinceViewed': 'Изменён с момента просмотра',
+  'prPage.fileThreads': "Обсуждений в ревью этого файла: {n}",
   'prPage.folderViewed': 'Просмотрено файлов: {viewed} из {total}',
   'prPage.filesTree': 'Изменённые файлы',
   'prPage.lineCommentPlaceholder': 'Оставьте комментарий к этой строке…',
