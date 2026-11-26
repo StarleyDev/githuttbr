@@ -12,6 +12,7 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 |---|---|---|
 | ⏳ | **Rollback de verdade** (v4.51.0) | Num build empacotado, voltar da v4.52 para a v4.51: deve aparecer o aviso "Você voltou…", a v4.52 não deve mais ser oferecida e, ao atualizar de novo, deve vir a pergunta "restaurar ou manter". Os ajustes desconhecidos devem ser preservados |
 | ⏳ | **Azure Pipelines**: validação de build como check e log do build | Testar num PR do Azure com validação de build que falhou e um token com *Build: Read* |
+| ⏳ | **Ajustes de PR do host** (resposta via GraphQL, commits de fork, "seu" no Azure, referências via GraphQL) | Conferir com um PR real: responder numa conversa do GitHub cuja raiz foi apagada; buscar os commits de um PR de fork (GitHub e GitLab); Editar/Excluir num comentário seu no Azure; passar o mouse em `#123` num repositório do GitHub |
 | 🟡 | **Ícone `.icns` no macOS**, montado por script | Conferir no Finder e no Dock |
 
 ---
@@ -22,10 +23,6 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 |---|---|---|
 | 🟠 | **Instalador menor**: mover para `devDependencies` as bibliotecas usadas só pela interface (o Vite já as embute no bundle) | Estimativa: 50–70 MB a menos. Depois de mover, conferir o `app.asar` (nada da interface deve faltar), o `check:native` e um teste do AppImage e do .deb. Ver [`decisions.md`](decisions.md) |
 | 🟠 | **Mostrar os comentários formatados na conversa do PR.** Hoje aparecem com o markdown cru no app (no site do host aparecem formatados) | Precisa de um render próprio para conteúdo remoto (sem `style`, forms, só `https`/`mailto`), imagens de terceiros só com clique, e no GitHub usar o `body_html` (imagens via camo, anexos privados). Ver a review do editor em `.reviews/` |
-| 🟡 | **Azure: confirmar que `authenticatedUser.id` = `author.id`** dos comentários | Se não bater, os botões Editar/Excluir não aparecem no Azure (falha segura). Conferir com um PR real |
-| 🟡 | **GitHub: responder numa conversa cuja raiz foi apagada** | Hoje o app mostra "Responder no GitHub". Dá para responder pela GraphQL (`addPullRequestReviewThreadReply`) |
-| 🟡 | **Commits de PR de fork no GitHub** | Hoje só abrem no navegador; dá para buscar via `refs/pull/N/head` (`resolvePrRef`/`previewRef`) |
-| 🟡 | **Referências no GitHub numa consulta só** (GraphQL com aliases) em vez de uma por vez | Hoje até 10 por hover, em série |
 
 ---
 
@@ -59,7 +56,7 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 
 | | Item | Notas |
 |---|---|---|
-| 🟠 | **Páginas só em en e pt-BR, ou atrasadas nos outros 14 idiomas**: `security.md`, `vault.md`, `terminal.md`, `rollback.md`, `worktrees.md`, `branch-cleanup.md`, e `workspaces.md` (faltam seções inteiras: tamanho das abas, ir para um repositório, grupos) | `pull-requests.md` e `writing-comments.md` estão em dia desde a v4.54 |
+| 🟠 | **Páginas só em en e pt-BR, ou atrasadas nos outros 14 idiomas**: `security.md`, `vault.md`, `terminal.md`, `rollback.md`, `worktrees.md`, `branch-cleanup.md`, e `workspaces.md` (faltam seções inteiras: tamanho das abas, ir para um repositório, grupos) | `writing-comments.md` está em dia desde a v4.54. `pull-requests.md` ficou atrasada nos 14 idiomas (fora en e pt-BR) com os ajustes de PR do host: resposta em conversa sem raiz, commits de PR de fork, "seu comentário" no Azure e referências do GitHub via GraphQL |
 | 🟡 | **Páginas antigas** (~90 mil palavras) | Inclui os parágrafos de work items e de Azure Pipelines do `hosting.md` |
 | 🟡 | **Screenshot do cofre ilegível** (`VaultUnreadableNotice`) | Gerar com um cofre falso, nunca o da máquina |
 
