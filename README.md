@@ -33,22 +33,12 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 ## Install
 
 Grab the latest build from **[Releases](https://github.com/StarleyDev/githuttbr/releases)**.
-On Linux and Windows the app then updates itself from those releases.
-Coming from 4.38 or earlier? Settings come along on their own; tokens and a few terminal
-settings do not — see **[Upgrading from 4.38](docs/help/upgrading.md)**.
+The app then updates itself from those releases, on Linux, Windows and macOS.
+Updating across 4.59, the release that gave GitHuttBr its own identity? See
+**[Upgrading](docs/help/upgrading.md)**.
 
-macOS needs **13 Ventura or later** (Electron no longer supports macOS 12).
-
-The macOS build is **not signed**, so macOS blocks it the first time ("Apple could not
-verify…"). Open it once, then go to **System Settings → Privacy & Security** and click
-**Open Anyway** (since macOS 15, right-click → Open no longer does it). Or, in a terminal:
-
-```sh
-xattr -dr com.apple.quarantine "/Applications/GitHuttBr.app"
-```
-
-macOS only lets a signed app update itself, so on a Mac each new version is downloaded
-from Releases by hand.
+macOS needs **13 Ventura or later** (Electron no longer supports macOS 12). The macOS
+build is signed with a Developer ID and notarized by Apple, so it opens like any other app.
 
 Then, optionally, open repositories from your terminal:
 
@@ -152,7 +142,7 @@ git actually is.
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |
 | **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. Launched from an editor's terminal, git never borrows that editor's sign-in window. |
 | **[Remote sign-in check](docs/help/credentials.md#which-account-a-push-uses)** | Right-click a remote: see the account and token scopes for each push destination, including separate push URLs. |
-| **[Token in a remote URL](docs/help/credentials.md#a-password-saved-in-the-remote-url)** | An old clone with `user:token@` in its remote URL ignores your profile's token. Gitcito flags it, explains the failing push, and takes it out of `.git/config` once you confirm. |
+| **[Token in a remote URL](docs/help/credentials.md#a-password-saved-in-the-remote-url)** | An old clone with `user:token@` in its remote URL ignores your profile's token. GitHuttBr flags it, explains the failing push, and takes it out of `.git/config` once you confirm. |
 | **[Environment check](docs/help/environment.md)** | Git version, LFS, the native terminal, git's credential helper, the GitHub CLI's `workflow` scope and the inotify limit — checked in one place, each fix a command to copy. |
 | **[SSH keys](docs/help/ssh-keys.md)** | See which key the agent is holding, generate one, test the host — the auth path tokens never covered. |
 
@@ -305,21 +295,9 @@ Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ## Origin
 
-GitHuttBr is a fork of **[Gitcito](https://github.com/MyAppDesk/gitcito)** by MyAppDesk,
+GitHuttBr is derived from **[Gitcito](https://github.com/MyAppDesk/gitcito)** by MyAppDesk, <!-- upstream-name: credit -->
 released under the MIT licence; [NOTICE](NOTICE) keeps its original copyright and permission notice.
 Thanks to its author for the foundation this project grew from.
-
-Once a day the **Upstream watch** workflow compares this repository's `main` with the
-original's and keeps an issue open while there is something new. To bring it in:
-
-```sh
-scripts/sync-upstream.sh          # fetch, merge, run the gate
-scripts/sync-upstream.sh --push   # …and push main when it is green
-npx release-it patch --ci         # then cut a release
-```
-
-Conflicts, when there are any, are in the files that make this build its own —
-the brand, the README, LICENSE and NOTICE, the version. Keep this repository's side.
 
 ---
 
