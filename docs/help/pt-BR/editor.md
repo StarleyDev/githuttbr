@@ -3,7 +3,8 @@ title: Editor externo
 category: Ferramentas de workspace
 order: 95
 summary: Mande um repositório, um arquivo ou uma linha de código para o editor em que você realmente escreve.
-keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode abrir no editor linha coluna comando personalizado argv
+keywords: editor vscode code cursor windsurf devin desktop zed sublime jetbrains intellij webstorm xcode abrir no editor linha coluna comando personalizado argv
+source: d5e2c70f2cd464c4e84e26bf7e8dd233e9d7b8fa
 ---
 
 # Editor externo
@@ -31,10 +32,22 @@ Reconhecidos de fábrica:
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (nunca um `devin` sozinho, que é outra ferramenta) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | IDEs da JetBrains | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**No Linux, um editor fora do PATH.** Um editor descompactado numa pasta à sua
+escolha muitas vezes não está no PATH, mas está no menu de aplicativos. O
+Gitcito também lê as entradas `.desktop` do menu — em
+`~/.local/share/applications`, `/usr/share/applications` e nos exports do
+Flatpak — e reconhece um editor pelo nome ou pelo programa que a linha `Exec=`
+inicia. Para uma versão do VS Code como o Devin Desktop, prefere o comando em
+`bin/` ao lado desse programa, porque só ele consegue pular para uma linha. As
+entradas são lidas como texto e nada nelas é executado; uma entrada que precisa
+de argumentos extras para abrir o editor (um `flatpak run …` do Flatpak) é
+ignorada, então essa instalação ainda precisa do comando no PATH.
 
 ## O limite que vale conhecer
 

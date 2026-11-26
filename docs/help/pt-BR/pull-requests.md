@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: 9e19b808de2f4b452855ae0de64359ac42c0df09
 ---
 
 # Página de pull requests
@@ -408,6 +408,40 @@ uma delas reabre o caminho até ele. A árvore é ordenada por nome, não na ord
 em que o host lista os arquivos.
 
 ![A aba Arquivos em Árvore: pastas com a soma das mudanças e quantos arquivos foram vistos, uma recolhida](../../screenshots/pr-files-tree.webp)
+
+**Imagens.** Uma imagem que o pull request adiciona, remove ou muda (png,
+jpg, gif, webp, bmp, ico, avif, svg) não tem diff de texto para ler, então a
+aba mostra a imagem — a mesma visão da de um commit: a nova, a antiga, ou antes
+e depois lado a lado e com um deslizador. Uma imagem renomeada compara o
+caminho antigo na base com o novo no head; no diff de uma atualização, os dois
+heads dela. Os bytes vêm deste clone quando ele tem os commits, o que é rápido e
+de graça, e senão do host, com o perfil do repositório. Limites: uma imagem com
+mais de 32 MB não é pré-visualizada; comentários de linha não se aplicam a uma
+imagem (um SVG mantém o diff de texto, e os comentários, embaixo dela); e quando
+nem o clone nem o host conseguem dar os bytes, a aba diz isso e oferece buscar a
+branch do pull request ou abri-lo no host.
+
+![Uma imagem que o pull request mudou, antes e depois lado a lado](../../screenshots/pr-image-diff.webp)
+
+**Caminhos e o seu editor.** A barra acima do diff tem um botão para copiar o
+caminho do arquivo e um menu **⋯**; o clique direito num arquivo ou pasta da
+lista abre o mesmo menu. Ele copia o caminho, o caminho antigo de um arquivo
+renomeado ou o da pasta; e abre o arquivo no seu [editor](editor.md) (ou em
+outro app) ou o mostra no gerenciador de arquivos. Essas duas ações agem na
+**sua cópia de trabalho**, não na versão do pull request: só ficam ativas para
+um arquivo que existe nela (um arquivo que o PR exclui, ou que a sua branch não
+tem, diz o porquê), e quando a branch em uso não é a do PR, o menu diz qual
+branch você abriria.
+
+**Ao voltar.** Saia de um pull request para o repositório, outra aba ou o
+próximo PR, e ao voltar ele está onde você deixou: a mesma aba, o mesmo arquivo
+aberto, a mesma rolagem, e todo texto que você não tinha enviado — o
+comentário, uma resposta, um comentário de linha, uma edição. Isso dura até
+você fechar o pull request ou sair do app; fica só na memória. Fechar um PR com
+texto não enviado pergunta antes. Se uma atualização encontra sumido o lugar de
+um rascunho — a conversa que ele respondia, o comentário que editava, o arquivo
+em que estava — o texto não é descartado: ele espera no topo da página para ser
+copiado ou descartado.
 
 ## Comentar numa linha
 

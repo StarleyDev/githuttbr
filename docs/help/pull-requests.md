@@ -394,6 +394,38 @@ the order the host lists the files.
 
 ![The Files tab in Tree view: folders with their summed changes and viewed counts, one folded](../screenshots/pr-files-tree.webp)
 
+**Images.** A picture the pull request adds, removes or changes (png, jpg,
+gif, webp, bmp, ico, avif, svg) has no text diff to read, so the tab shows the
+image instead — the same view as a commit's: the new one, the old one, or
+before and after side by side and as a slider. A renamed image compares its
+old path at the base with its new one at the head; in an update's own diff,
+the update's two heads. The bytes come from this clone when it has the commits,
+which is free and fast, and otherwise from the host with the repository's
+profile. Limits: an image over 32 MB is not previewed; line comments do not
+apply to a picture (an SVG keeps its text diff, and its comments, under it);
+and when neither the clone nor the host can give the bytes, the tab says so and
+offers to fetch the pull request's branch or to open it on the host.
+
+![An image the pull request changed, before and after side by side](../screenshots/pr-image-diff.webp)
+
+**Paths and your editor.** The bar above the diff has a copy button for the
+file's path and a **⋯** menu; right-click a file or folder in the list for the
+same menu. It copies the path, a renamed file's old path, or the folder's;
+and it opens the file in your [editor](editor.md) (or another app) or shows it
+in the file manager. Those two act on **your working copy**, not on the pull
+request's version: they are only live for a file that exists in it (a file the
+PR deletes, or one your branch does not have, says why), and when the checked
+out branch is not the PR's, the menu says which branch you would be opening.
+
+**Coming back.** Leave a pull request for the repository, another tab or the
+next PR, and it is where you left it when you return: the same tab, the same
+file open, the same scroll, and every text you had not sent — the comment, a
+reply, a line comment, an edit. This lasts until you close the pull request or
+quit the app; it is kept in memory only. Closing a PR with unsent text asks
+first. If a refresh finds the place of a draft gone — the conversation it
+answered, the comment it edited, the file it was on — the text is not dropped:
+it waits at the top of the page to be copied or discarded.
+
 ## Commenting on a line
 
 Replying to a review thread was possible here; starting one was not, so a real
