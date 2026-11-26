@@ -132,7 +132,8 @@ function localDiff(beforePath: string, afterPath: string): Promise<string> {
   return new Promise((resolveDiff, reject) => {
     execFile(
       'git',
-      ['diff', '--no-index', '--no-color', '--', beforePath, afterPath],
+      // The a/ b/ prefixes whatever the user's diff.noprefix / mnemonicPrefix says.
+      ['diff', '--src-prefix=a/', '--dst-prefix=b/', '--no-index', '--no-color', '--', beforePath, afterPath],
       { maxBuffer: REPO_FILE_BATCH_MAX_BYTES * 4 },
       (error, stdout) => {
         const code = (error as (Error & { code?: number | string }) | null)?.code

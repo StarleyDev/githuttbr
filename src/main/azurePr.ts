@@ -1,5 +1,7 @@
 import type {
   PrCheck,
+  PrUpdateKind,
+  PrUpdateList,
   PrComment,
   PrCommentHandle,
   PrCommitList,
@@ -15,7 +17,8 @@ import type {
 } from '../shared/types'
 import { unifiedDiff } from '../shared/lineDiff'
 import { getAnchorLine, getAnchorSide, LINE_COMMENT_STALE } from '../shared/prLineAnchor'
-import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
+import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
+import { finishPrUpdates, keepFirstListing, toUpdateCommits, type PrUpdateDraft } from '../shared/prUpdates'
 import { isEditedAfter } from '../shared/prCommentHandle'
 
 /**
@@ -448,10 +451,36 @@ export async function azurePrFiles(ado: Ado, r: AzureRepo, id: number): Promise<
   )
   const last = (its.value ?? [])[(its.value ?? []).length - 1]
   if (!last) return []
-  const head = last.sourceRefCommit?.commitId
-  const mergeBase = last.commonRefCommit?.commitId
   const changes = await ado<{ changeEntries?: AzChange[] }>(`${base}/iterations/${last.id}/changes?$top=2000&${V}`)
-  const entries = (changes.changeEntries ?? []).filter((c) => c.item?.path && !c.item.isFolder && c.item.gitObjectType !== 'tree')
+  return diffAzureChanges(ado, r, changes.changeEntries ?? [], last.commonRefCommit?.commitId, last.sourceRefCommit?.commitId)
+}
+
+/**
+ * The changes between two iterations of a pull request — what one push did —
+ * as `$compareTo` lists them, each file diffed between the two iterations'
+ * source commits. Azure sends no patch, as for the whole PR.
+ */
+export async function azurePrIterationFiles(
+  ado: Ado,
+  r: AzureRepo,
+  id: number,
+  from: { iteration: number; sha: string },
+  to: { iteration: number; sha: string }
+): Promise<PrFile[]> {
+  const url = `${repoApi(r)}/pullrequests/${id}/iterations/${to.iteration}/changes?$top=2000&$compareTo=${from.iteration}&${V}`
+  const changes = await ado<{ changeEntries?: AzChange[] }>(url)
+  return diffAzureChanges(ado, r, changes.changeEntries ?? [], from.sha, to.sha)
+}
+
+/** Each changed file diffed between its version at `before` and at `after`. */
+async function diffAzureChanges(
+  ado: Ado,
+  r: AzureRepo,
+  changeEntries: AzChange[],
+  before: string | undefined,
+  after: string | undefined
+): Promise<PrFile[]> {
+  const entries = changeEntries.filter((c) => c.item?.path && !c.item.isFolder && c.item.gitObjectType !== 'tree')
 
   const content = async (path: string, commit: string | undefined): Promise<string | null> => {
     if (!commit) return null
@@ -479,11 +508,11 @@ export async function azurePrFiles(ado: Ado, r: AzureRepo, id: number): Promise<
         ...(status === 'renamed' && c.originalPath ? { previousFilename: c.originalPath.replace(/^\//, '') } : {})
       }
       if (i < MAX_DIFFED_FILES) {
-        const [before, after] = await Promise.all([
-          status === 'added' ? '' : content(oldPath, mergeBase),
-          status === 'removed' ? '' : content(path, head)
+        const [old, now] = await Promise.all([
+          status === 'added' ? '' : content(oldPath, before),
+          status === 'removed' ? '' : content(path, after)
         ])
-        const patch = before !== null && after !== null ? unifiedDiff(before, after) : null
+        const patch = old !== null && now !== null ? unifiedDiff(old, now) : null
         if (patch) {
           file.patch = patch
           for (const line of patch.split('\n')) {
@@ -694,4 +723,88 @@ export async function azurePrCommits(page: AdoPage, r: AzureRepo, id: number): P
     true,
     !!token || capped
   )
+}
+
+interface AzIterationFull {
+  id?: number
+  createdDate?: string
+  reason?: string
+  author?: AzIdentity
+  push?: { pushedBy?: AzIdentity }
+  sourceRefCommit?: { commitId?: string }
+  commonRefCommit?: { commitId?: string }
+  commits?: AzCommitRef[]
+  hasMoreCommits?: boolean
+}
+
+/** Iterations whose cut-short commit list is read again on its own, at most. */
+const ITERATION_COMMIT_READS = 20
+/** The most commits one iteration's own list is asked for (Azure's batch limit). */
+const ITERATION_COMMITS_TOP = 500
+
+const toRawCommit = (c: AzCommitRef): RawPrCommit => ({
+  sha: c.commitId!,
+  message: c.comment,
+  authorName: c.author?.name,
+  authoredAt: c.author?.date,
+  parentShas: Array.isArray(c.parents) ? c.parents : null
+})
+
+/**
+ * A pull request's updates, as Azure DevOps records them: one iteration per
+ * push, with who pushed, when, the source commit and why (`create`, `push`,
+ * `forcePush`, `rebase`…). The iterations come with their commits in one call;
+ * one whose list Azure cut short (`hasMoreCommits`) is read on its own. Whether
+ * an iteration lists only its push or the whole branch is not documented, so a
+ * commit counts in the first iteration that lists it; removed commits are not
+ * reported — a force push or rebase is marked instead.
+ */
+export async function azurePrUpdates(ado: Ado, r: AzureRepo, id: number): Promise<PrUpdateList> {
+  const base = `${repoApi(r)}/pullrequests/${id}`
+  const res = await ado<{ value?: AzIterationFull[] } | AzIterationFull[]>(`${base}/iterations?includeCommits=true&${V}`)
+  const iterations = (Array.isArray(res) ? res : (res?.value ?? []))
+    .filter((it): it is AzIterationFull & { id: number } => typeof it.id === 'number')
+    .sort((a, b) => a.id - b.id)
+  let reads = 0
+  const lists = await Promise.all(
+    iterations.map(async (it) => {
+      let refs = it.commits ?? []
+      let short = !!it.hasMoreCommits
+      if (short && reads < ITERATION_COMMIT_READS) {
+        reads++
+        const more = await ado<{ value?: AzCommitRef[] } | AzCommitRef[]>(
+          `${base}/iterations/${it.id}/commits?top=${ITERATION_COMMITS_TOP}&${V}`
+        ).catch(() => null)
+        const items = Array.isArray(more) ? more : more?.value
+        if (items) {
+          refs = items
+          short = items.length >= ITERATION_COMMITS_TOP
+        }
+      }
+      // Azure lists newest first, as the web page does; the parents settle it when they disagree.
+      return { short, commits: toUpdateCommits(refs.filter((c) => typeof c.commitId === 'string').map(toRawCommit), true) }
+    })
+  )
+  const own = keepFirstListing(lists.map((l) => l.commits))
+  const drafts: PrUpdateDraft[] = iterations.map((it, i) => {
+    const reason = (it.reason ?? '').toLowerCase()
+    const kind: PrUpdateKind = i === 0 || reason === 'create' ? 'opened' : reason === 'forcepush' || reason === 'rebase' ? 'rewrite' : 'push'
+    const pusher = it.push?.pushedBy?.displayName || it.author?.displayName
+    const head = it.sourceRefCommit?.commitId
+    const mergeBase = it.commonRefCommit?.commitId
+    return {
+      id: String(it.id),
+      iteration: it.id,
+      kind,
+      createdAt: it.createdDate ?? '',
+      ...(pusher ? { pusher } : {}),
+      ...(head ? { headSha: head } : {}),
+      ...(i === 0 && mergeBase ? { fromSha: mergeBase } : {}),
+      added: own[i],
+      ...(lists[i].short ? { commitsTruncated: true } : {}),
+      ...(reason === 'retarget' ? { retarget: true } : {})
+    }
+  })
+  const { updates, truncated } = finishPrUpdates(drafts)
+  return { updates, truncated, grouping: 'native', startCut: false }
 }

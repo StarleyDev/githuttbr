@@ -19561,6 +19561,50 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   background: color-mix(in srgb, var(--warn, #d29922) 8%, var(--bg-2));
 }
 .prp-commit-missing > span { flex: 1 1 260px; }
+/* Updates: one card per push, newest first; "new" and "history rewritten" as badges. */
+.prp-tab-new { background: color-mix(in srgb, var(--accent) 18%, var(--bg-3)); color: var(--text-0); }
+.prp-updates-note { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 10px; }
+.prp-updates-note svg { flex: none; margin-top: 2px; }
+.prp-updates-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px;
+  border-radius: 6px; font-size: 12px; color: var(--text-1);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-2));
+}
+.prp-updates-bar > span { flex: 1 1 auto; }
+.prp-update-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.prp-update { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); padding: 8px 12px 10px; }
+.prp-update.is-new { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.prp-update-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.prp-update-icon { display: inline-flex; color: var(--text-3); }
+.prp-update-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-0); }
+.prp-update-badge { padding: 0 6px; border-radius: 8px; font-size: 10.5px; line-height: 17px; border: 1px solid var(--border); }
+.prp-update-badge.is-new { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.prp-update-badge.is-rewrite {
+  color: var(--text-1);
+  border-color: color-mix(in srgb, var(--warn, #d29922) 55%, var(--border));
+  background: color-mix(in srgb, var(--warn, #d29922) 12%, var(--bg-2));
+}
+.prp-update-meta { display: inline-flex; gap: 8px; font-size: 11.5px; color: var(--text-3); }
+.prp-update-view { margin-inline-start: auto; }
+.prp-update-commits { margin-top: 8px; }
+.prp-update-commits-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+.prp-update-commit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.prp-update-commit { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 12.5px; }
+.prp-update-commit-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+.prp-update-commit-author { flex: none; font-size: 11.5px; color: var(--text-3); }
+.prp-update-commits.is-removed .prp-update-commit-subject,
+.prp-update-commits.is-removed .prp-commit-sha { text-decoration: line-through; color: var(--text-3); }
+.prp-update-empty { margin: 6px 0 0; }
+.prp-update-banner {
+  margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-2));
+}
+.prp-update-banner-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.prp-update-banner-row strong { flex: 1 1 auto; color: var(--text-0); }
+.prp-update-banner-note { display: flex; align-items: center; gap: 6px; }
+.prp-update-missing { margin: 8px 0 0; }
 
 .prp-side {
   flex: 0 0 270px; display: flex; flex-direction: column; gap: 0; overflow-y: auto;

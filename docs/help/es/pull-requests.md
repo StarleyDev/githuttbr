@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronizar y muchos repos
 order: 57
-summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits y comentarios en una línea de su diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number fork commits de la pr refs/pull head comentarios renderizados imágenes píxel de seguimiento imagen bloqueada clic para cargar tarea tabla bloque rendered comments images blocked image
-source: a4156cb9fd737c311bc0441169b7a3d933dad274
+summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits, sus actualizaciones (cada push, qué cambió, qué hay de nuevo desde tu última visita) y comentarios en una línea de su diff.
+keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number fork commits de la pr refs/pull head comentarios renderizados imágenes píxel de seguimiento imagen bloqueada clic para cargar tarea tabla bloque rendered comments images blocked image actualizaciones iteraciones pushes force push rebase historial reescrito versiones del diff qué cambió desde la última visita insignia nueva marcar como vistas comparar actualización updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Página de pull requests
@@ -164,8 +164,7 @@ Lo que no hace:
 
 La barra lateral decía cuántos commits tiene una pull request, nunca cuáles.
 Revisar un commit cada vez — como se supone que se leen la mayoría de las pull
-requests — te mandaba al navegador. La pestaña **Commits**, entre Conversación y
-Archivos, los lista:
+requests — te mandaba al navegador. La pestaña **Commits**, entre Conversación y Actualizaciones, los lista:
 
 - **Los más antiguos primero**, en el orden en que se aplican, agrupados bajo el
   día en que se escribieron. Un commit rebasado fuera del orden de fechas empieza
@@ -247,6 +246,143 @@ Lo que no hace:
 - Las pull requests de **bitbucket.org** se abren en el navegador — la app aún no
   tiene página para ellas —, así que ahí no se llega a esta pestaña, aunque la app
   puede leer la lista.
+
+## Actualizaciones
+
+Una pull request que revisaste el lunes se ha movido para el jueves. La pestaña
+Commits muestra dónde está ahora, no qué pasó desde entonces: qué commits llegaron
+en qué push, si alguien hizo force push y reescribió lo que ya habías leído, y cómo
+queda el código *comparado con la versión que viste*. La pestaña
+**Actualizaciones**, entre Commits y Archivos, responde a eso — como la propia
+pestaña Updates de Azure DevOps.
+
+Lista cada push a la pull request, **los más recientes primero**:
+
+- **Actualización 1 — abierta** es el push con el que se abrió la pull request;
+  cada push posterior lleva el número siguiente.
+- Cada una muestra **cuándo**, **quién hizo el push** (cuando el host lo dice) y
+  los **commits que añadió** — SHA corto, asunto, autor. Cuando el host informa de
+  commits que un push quitó de la rama, aparecen bajo **Commits eliminados**,
+  tachados.
+- Un force push o un rebase se marca como **historial reescrito**: los commits que
+  habías leído pueden haber desaparecido, y los listados pueden ser copias nuevas
+  de trabajo antiguo. En Azure DevOps, un push que movió la pull request a otra rama
+  de destino se marca como **destino cambiado**.
+
+![La pestaña Actualizaciones: pushes de más reciente a más antiguo, un force push marcado como «historial reescrito», uno marcado como Nueva](../../screenshots/pr-updates.webp)
+
+### Qué cambió en una actualización
+
+**Ver los cambios de esta actualización** abre la pestaña Archivos solo con ese
+push: el diff desde el head de la actualización anterior hasta este — o, para la
+Actualización 1, desde la rama de destino contra la que se abrió, cuando el host
+nombra ese punto (Azure DevOps, GitLab). El mismo árbol de archivos y el mismo
+visor, con un aviso — *Mostrando los cambios de Actualización 3 (frente a
+Actualización 2)* — y **Mostrar todos los cambios** para volver a la pull request
+entera.
+
+![La pestaña Archivos mostrando los cambios de una actualización, con el aviso sobre el árbol de archivos](../../screenshots/pr-update-diff.webp)
+
+El diff se hace siempre **en este clon** cuando se puede: `git diff` entre los dos
+heads, exacto y sin preguntar al host. Cuando falta alguno de los heads, la app
+primero trae los dos **por su id de commit** desde el remoto de la pull request — no
+se escribe ninguna rama, etiqueta ni referencia; un head que un force push
+sustituyó ya no está en ninguna rama, pero la mayoría de los hosts aún lo sirven
+por su id — y compara aquí. Solo cuando ese fetch falla se pregunta al host:
+
+| Host | La comparación del host |
+|---|---|
+| Azure DevOps | Los cambios de la iteración con `$compareTo` — entre los dos pushes |
+| GitLab | La comparación del repositorio, directamente de un head al otro |
+| Bitbucket Data Center | La comparación del repositorio — **desde la base común** de los dos heads |
+| GitHub | La API de comparación (`base...head`) — **desde la base común** de los dos heads |
+| Forgejo / Gitea | Ninguna: su API no tiene un diff entre dos commits |
+
+Desde la base común, el diff de una reescritura no es lo que hizo el push: lo que
+quitó no se muestra, y los cambios que recibió la rama de destino desde entonces
+pueden parecer de la pull request. El aviso lo dice — *Comparado desde la base
+común: no se muestra lo que este push eliminó.* — cuando una actualización con
+historial reescrito se comparó así. Cuando nada funciona, el aviso lo dice y ofrece
+traer la rama (o, desde un fork, el head de la pull request) y comparar aquí.
+
+Los comentarios de línea pertenecen al diff de la pull request entera, así que no
+hay **+** en una línea mientras se muestra una sola actualización; el aviso lo dice.
+Marcar un archivo como visto funciona como siempre — marca el archivo en la pull
+request.
+
+### Nuevo desde tu última visita
+
+Las actualizaciones subidas desde la última vez que abriste la pestaña llevan una
+insignia **Nueva**, y la propia pestaña dice cuántas: *Actualizaciones 5 · 2
+nuevas*. Abrir la pestaña las marca como vistas (las insignias siguen mientras estás
+en ella, para que veas cuáles eran nuevas); cuando **Actualizar** trae más con la
+pestaña abierta, **Marcar como vistas** las quita. Abrir solo la página de la pull
+request no marca nada. La primera vez que abres la pestaña Actualizaciones de una
+pull request, nada es nuevo — no hay una visita anterior con la que comparar.
+
+Las actualizaciones se leen con la página, para ese número, y de nuevo con
+**Actualizar** — no después de cada comentario o revisión que publicas.
+
+Lo que ya se vio se guarda solo en este equipo, por repositorio y pull request, y
+nunca se envía al host.
+
+### Según el host
+
+| Host | De dónde salen las actualizaciones | Quién hizo el push | Commits eliminados | Reescritura detectada |
+|---|---|---|---|---|
+| Azure DevOps | Las **iteraciones** de la pull request — el registro propio de Azure de cada push | Sí | No (no se informa) | Sí: `forcePush` / `rebase` |
+| GitLab | Las **versiones del diff** de la merge request; los commits de cada versión se deducen de su head | No (las versiones no nombran a nadie) | Sí | Sí: un head anterior que ya no se alcanza |
+| Bitbucket Data Center | La actividad de la pull request: **OPENED** y cada **RESCOPED** que movió la rama de origen | Sí | Sí, con los totales del host | Sí: un rescope que quitó commits |
+| GitHub | **Deducidas** de los commits y force pushes de la línea de tiempo — ver abajo | Solo los force pushes | No | Sí: un evento de force push |
+| Forgejo / Gitea | Las entradas de **push** de la línea de tiempo, la primera escrita con la propia pull request | Sí | No | Sí: una entrada de force push |
+| bitbucket.org | No disponible | — | — | — |
+
+**GitHub no guarda registro de un push normal** — solo de los force pushes —, así
+que las actualizaciones se **deducen de las horas de los commits**. Una
+actualización es una serie de commits que se construyen unos sobre otros, entre
+force pushes; un commit que no se construye sobre el anterior, o que llega más de
+diez minutos después de él, empieza la siguiente. Un commit hecho después de abrirse
+la pull request no puede haber estado en la apertura. Así, un push de commits
+hechos con una hora de diferencia aparece **partido** en dos, y dos pushes con unos
+minutos de diferencia aparecen como **uno**; la pestaña dice que la agrupación es
+aproximada. Los commits nuevos de un rebase, que la línea de tiempo puede listar
+justo antes de su force push, cuentan como de ese force push. Los heads de antes y
+después de un force push son exactos, así que su **Ver los cambios** también lo es.
+
+### Límites
+
+- **Topes.** Se listan las 100 actualizaciones más recientes. La línea de tiempo de
+  GitHub se lee desde su extremo más reciente, hasta 500 elementos; la actividad de
+  Bitbucket Data Center (también de más reciente a más antigua) hasta 1.000; las
+  versiones y commits de GitLab hasta 300 cada uno; la línea de tiempo de Forgejo
+  hasta 500 entradas, las más recientes cuando es más larga. Cuando un tope corta la
+  **apertura**, los números ya no son los del host: la pestaña lo dice y cuenta hacia
+  atrás desde la última (*Última actualización*, *Actualización, 2 antes de la
+  última*).
+- **Azure DevOps** no informa de commits eliminados; en su lugar se marca un force
+  push o un rebase. Una iteración cuya lista de commits Azure recorta se lee por
+  separado (hasta 500 commits), y la actualización dice cuándo sigue incompleta.
+- **GitLab** no nombra a quién hizo el push. Una versión cuyo head se reescribió se
+  lee por separado para encontrar sus commits — para las diez más recientes de esas
+  versiones —, una vez por sesión: las versiones nunca cambian.
+- **Forgejo y Gitea** no listan commits de un force push — solo sus dos heads, que
+  es lo que compara **Ver los cambios** —, y tras un force push nada dice qué
+  contenía la apertura, así que queda vacía salvo que el servidor registrara el push
+  de la propia apertura. Su API no tiene un diff entre dos commits, así que esa
+  comparación necesita los dos commits en este clon. Un servidor sin la API de línea
+  de tiempo muestra todos los commits en una sola actualización.
+- **Traer por id** necesita un host que sirva un commit por su id. GitHub lo hace
+  con cualquier commit que todavía tenga; otro host, o un servidor git simple, puede
+  rechazar uno al que no apunte ninguna rama — entonces se usa la comparación del
+  host. Los commits traídos quedan en este clon sin referencia, y git los recoge con
+  el tiempo.
+- **La comparación de Bitbucket Data Center** lee el diff estructurado del servidor
+  y lo dibuja como uno unificado; los archivos muy grandes pueden llegar recortados.
+- Un head reescrito puede haber **desaparecido del host** para siempre (Azure y
+  GitLab lo conservan; otros pueden recogerlo). Entonces ninguno de los dos lados
+  puede comparar, y el aviso lo dice.
+- Las pull requests de **bitbucket.org** se abren en el navegador y no tienen
+  pestaña Actualizaciones.
 
 ## Leer los archivos
 

@@ -2,9 +2,9 @@
 title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
-summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity oraz komentarze do wiersza jego diffa.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image
-source: a4156cb9fd737c311bc0441169b7a3d933dad274
+summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity, jego aktualizacje (każdy push, co zmienił, co nowego od ostatniej wizyty) oraz komentarze do wiersza jego diffa.
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image aktualizacje iteracje pushe force push rebase historia przepisana wersje diffa co się zmieniło od ostatniej wizyty plakietka nowa oznacz jako przejrzane porównaj aktualizację updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Strona pull requestów
@@ -160,7 +160,7 @@ Czego to nie robi:
 
 Panel boczny mówił, ile commitów ma pull request, nigdy które. Recenzowanie po
 jednym commicie — tak, jak większość pull requestów powinna być czytana —
-odsyłało cię do przeglądarki. Zakładka **Commity**, między Rozmową a Plikami, je
+odsyłało cię do przeglądarki. Zakładka **Commity**, między Rozmową a Aktualizacjami, je
 wymienia:
 
 - **Najstarsze najpierw**, w kolejności, w jakiej się nakładają, pogrupowane pod
@@ -242,6 +242,135 @@ Czego to nie robi:
 - Pull requesty z **bitbucket.org** otwierają się w przeglądarce — aplikacja nie ma
   jeszcze dla nich strony —, więc do tej zakładki się tam nie dochodzi, choć
   aplikacja potrafi odczytać listę.
+
+## Aktualizacje
+
+Pull request, który recenzowałeś w poniedziałek, do czwartku poszedł dalej. Zakładka
+Commity pokazuje, gdzie jest teraz, a nie co się od tego czasu stało: które commity
+przyszły z którym pushem, czy ktoś zrobił force push i przepisał to, co już
+przeczytałeś, i jak wygląda kod *w porównaniu z wersją, którą widziałeś*. Zakładka
+**Aktualizacje**, między Commitami a Plikami, na to odpowiada — tak jak własna zakładka
+Updates w Azure DevOps.
+
+Wymienia każdy push do pull requesta, **od najnowszego**:
+
+- **Aktualizacja 1 — otwarcie** to push, z którym otwarto pull request; każdy
+  późniejszy push dostaje kolejny numer.
+- Każda pokazuje **kiedy**, **kto zrobił push** (gdy hosting to podaje) i **dodane
+  commity** — krótki SHA, temat, autor. Gdy hosting zgłasza commity, które push zdjął
+  z gałęzi, są wymienione pod **Usunięte commity**, przekreślone.
+- Force push lub rebase jest oznaczony jako **historia przepisana**: commity, które
+  przeczytałeś, mogły zniknąć, a wymienione mogą być nowymi kopiami starej pracy. W
+  Azure DevOps push, który przeniósł pull request na inną gałąź docelową, jest
+  oznaczony jako **zmieniony cel**.
+
+![Zakładka Aktualizacje: pushe od najnowszego, force push oznaczony „historia przepisana”, jeden oznaczony jako Nowa](../../screenshots/pr-updates.webp)
+
+### Co się zmieniło w jednej aktualizacji
+
+**Pokaż zmiany w tej aktualizacji** otwiera zakładkę Pliki tylko dla tego pusha:
+diff od heada poprzedniej aktualizacji do tego — albo, dla Aktualizacji 1, od gałęzi
+docelowej, względem której ją otwarto, gdy hosting wskazuje ten punkt (Azure DevOps,
+GitLab). To samo drzewo plików i ta sama przeglądarka, z banerem — *Zmiany w:
+Aktualizacja 3 (względem: Aktualizacja 2)* — i **Pokaż wszystkie zmiany**, by wrócić
+do całego pull requesta.
+
+![Zakładka Pliki pokazująca zmiany jednej aktualizacji, z banerem nad drzewem plików](../../screenshots/pr-update-diff.webp)
+
+Diff zawsze powstaje **w tym klonie**, gdy się da: `git diff` między dwoma headami,
+dokładny i bez pytania hostingu. Gdy brakuje któregoś z headów, aplikacja najpierw
+pobiera oba **po identyfikatorach commitów** ze zdalnego repozytorium pull requesta —
+nie zapisuje się żadna gałąź, tag ani ref; head zastąpiony przez force push nie leży
+już na żadnej gałęzi, ale większość hostingów wciąż serwuje go po identyfikatorze — i
+porównuje tutaj. Dopiero gdy to pobranie zawiedzie, pyta się hostingu:
+
+| Hosting | Porównanie hostingu |
+|---|---|
+| Azure DevOps | Zmiany iteracji z `$compareTo` — między dwoma pushami |
+| GitLab | Porównanie repozytorium, prosto od jednego heada do drugiego |
+| Bitbucket Data Center | Porównanie repozytorium — **od wspólnej bazy** dwóch headów |
+| GitHub | API porównania (`base...head`) — **od wspólnej bazy** dwóch headów |
+| Forgejo / Gitea | Brak: ich API nie ma diffa między dwoma commitami |
+
+Od wspólnej bazy diff przepisania nie jest tym, co zrobił push: tego, co usunął, nie
+widać, a zmiany, które gałąź docelowa dostała od tego czasu, mogą wyglądać jak zmiany
+pull requesta. Baner to mówi — *Porównano od wspólnej bazy: tego, co ten push usunął,
+nie widać.* — gdy aktualizacja z przepisaną historią została tak porównana. Gdy nic
+nie działa, baner to mówi i proponuje pobrać gałąź (albo, z forka, head pull
+requesta) i porównać tutaj.
+
+Komentarze do wierszy należą do diffa całego pull requesta, więc gdy pokazana jest
+jedna aktualizacja, przy wierszu nie ma **+**; baner to mówi. Zaznaczanie pliku jako
+przejrzanego działa jak zwykle — oznacza plik w pull requeście.
+
+### Nowe od twojej ostatniej wizyty
+
+Aktualizacje wypchnięte od twojego ostatniego otwarcia zakładki mają plakietkę
+**Nowa**, a sama zakładka mówi, ile ich jest: *Aktualizacje 5 · nowe: 2*. Otwarcie
+zakładki oznacza je jako przejrzane (plakietki zostają, dopóki na niej jesteś, żebyś
+widział, które były nowe); gdy **Odśwież** przyniesie kolejne przy otwartej zakładce,
+**Oznacz jako przejrzane** je czyści. Samo otwarcie strony pull requesta niczego nie
+oznacza. Przy pierwszym otwarciu zakładki Aktualizacje danego pull requesta nic nie
+jest nowe — nie ma wcześniejszej wizyty do porównania.
+
+Aktualizacje są wczytywane razem ze stroną, dla tego licznika, i ponownie przy
+**Odśwież** — nie po każdym komentarzu czy recenzji, którą publikujesz.
+
+To, co przejrzano, jest trzymane tylko na tym komputerze, osobno dla repozytorium i
+pull requesta, i nigdy nie trafia na hosting.
+
+### Według hostingu
+
+| Hosting | Skąd pochodzą aktualizacje | Kto zrobił push | Usunięte commity | Wykrywanie przepisania |
+|---|---|---|---|---|
+| Azure DevOps | **Iteracje** pull requesta — własny zapis każdego pusha w Azure | Tak | Nie (nie są zgłaszane) | Tak: `forcePush` / `rebase` |
+| GitLab | **Wersje diffa** merge requesta; commity każdej wersji wyliczone z jej heada | Nie (wersje nikogo nie wskazują) | Tak | Tak: wcześniejszy head, do którego nie da się już dojść |
+| Bitbucket Data Center | Aktywność pull requesta: **OPENED** i każde **RESCOPED**, które przesunęło gałąź źródłową | Tak | Tak, z sumami hostingu | Tak: rescope, który usunął commity |
+| GitHub | **Wywnioskowane** z commitów i force pushy na osi czasu — zob. niżej | Tylko force pushe | Nie | Tak: zdarzenie force push |
+| Forgejo / Gitea | Wpisy **push** na osi czasu, pierwszy zapisany razem z samym pull requestem | Tak | Nie | Tak: wpis force push |
+| bitbucket.org | Niedostępne | — | — | — |
+
+**GitHub nie zapisuje zwykłego pusha** — tylko force pushe —, więc aktualizacje są
+**wywnioskowane z czasów commitów**. Aktualizacja to ciąg commitów budujących jeden
+na drugim, między force pushami; commit, który nie buduje na poprzednim albo przychodzi
+ponad dziesięć minut po nim, zaczyna następną. Commit utworzony po otwarciu pull
+requesta nie mógł być w otwarciu. Push commitów zrobionych w odstępie godziny pojawia
+się więc **podzielony** na dwa, a dwa pushe w odstępie kilku minut jako **jeden**;
+zakładka mówi, że grupowanie jest przybliżone. Nowe commity rebase’u, które oś czasu
+może wymieniać tuż przed jego force pushem, liczą się do tego force pusha. Heady
+przed i po force pushu są dokładne, więc jego **Pokaż zmiany** też.
+
+### Ograniczenia
+
+- **Limity.** Wymienianych jest 100 najnowszych aktualizacji. Oś czasu GitHuba jest
+  czytana od najnowszego końca, do 500 elementów; aktywność Bitbucket Data Center
+  (również od najnowszej) do 1000; wersje i commity GitLaba do 300 każde; oś czasu
+  Forgejo do 500 wpisów, najnowsze, gdy jest dłuższa. Gdy limit odetnie **otwarcie**,
+  numery nie są już numerami hostingu: zakładka to mówi i liczy wstecz od najnowszej
+  (*Najnowsza aktualizacja*, *Aktualizacja, 2 przed najnowszą*).
+- **Azure DevOps** nie zgłasza usuniętych commitów; zamiast tego oznaczany jest force
+  push lub rebase. Iteracja, której listę commitów Azure przycina, jest czytana
+  osobno (do 500 commitów), a aktualizacja mówi, gdy wciąż jest niepełna.
+- **GitLab** nie podaje, kto zrobił push. Wersja, której head został wypchnięty
+  przepisaniem, jest czytana osobno, żeby znaleźć jej commity — dla dziesięciu
+  najnowszych takich wersji —, raz na sesję: wersje nigdy się nie zmieniają.
+- **Forgejo i Gitea** nie wymieniają commitów dla force pusha — tylko jego dwa heady,
+  i to właśnie porównuje **Pokaż zmiany** —, a po force pushu nic nie mówi, co
+  zawierało otwarcie, więc zostaje ono puste, chyba że serwer zapisał push samego
+  otwarcia. Ich API nie ma diffa między dwoma commitami, więc to porównanie wymaga obu
+  commitów w tym klonie. Serwer bez API osi czasu pokazuje wszystkie commity w jednej
+  aktualizacji.
+- **Pobieranie po identyfikatorze** wymaga hostingu, który serwuje commit po jego
+  identyfikatorze. GitHub robi to dla każdego commita, który jeszcze ma; inny hosting
+  albo zwykły serwer git może odmówić takiego, na który nie wskazuje żadna gałąź —
+  wtedy używane jest porównanie hostingu. Pobrane commity leżą w tym klonie bez refu,
+  a git z czasem je sprząta.
+- **Porównanie Bitbucket Data Center** czyta strukturalny diff serwera i rysuje go
+  jako diff unified; bardzo duże pliki mogą wrócić przycięte.
+- Przepisany head może na dobre **zniknąć z hostingu** (Azure i GitLab go trzymają;
+  inne mogą go sprzątnąć). Wtedy żadna strona nie może porównać, a baner to mówi.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce i nie mają zakładki
+  Aktualizacje.
 
 ## Czytanie plików
 

@@ -406,6 +406,10 @@ const api = {
       ipcRenderer.invoke('hosting:prFiles', repoPath, remoteUrl, tokens, number),
     prListCommits: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prListCommits', repoPath, remoteUrl, tokens, number),
+    prListUpdates: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prListUpdates', repoPath, remoteUrl, tokens, number),
+    prUpdateFiles: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, from: unknown, to: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prUpdateFiles', repoPath, remoteUrl, tokens, number, from, to),
     prReview: (
       repoPath: string,
       remoteUrl: string,

@@ -1,4 +1,5 @@
 import type {
+  PrUpdateList,
   ConnectedAccount,
   CreatePrOpts,
   CreatePrResult,
@@ -26,7 +27,8 @@ import type {
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
-import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
+import { finishPrCommits, orderOldestFirst, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
+import { finishPrUpdates, groupForgejoPushes, singleUpdate, type ForgejoPush } from '../shared/prUpdates'
 import { isEditedAfter } from '../shared/prCommentHandle'
 
 /**
@@ -75,21 +77,27 @@ export interface FjPage<T> {
  * X-Total-Count header does; without it, the first page's length is taken as
  * the real page size and a shorter or empty page ends the walk.
  */
-export async function forgejoPages<T>(fetchPage: (page: number) => Promise<FjPage<T>>, maxPages = 20): Promise<T[]> {
+export async function forgejoPages<T>(
+  fetchPage: (page: number) => Promise<FjPage<T>>,
+  maxPages = 20,
+  partial?: () => void
+): Promise<T[]> {
   const out: T[] = []
   let size = 0
   for (let page = 1; page <= maxPages; page++) {
     const { items, total } = await fetchPage(page)
     out.push(...items)
     if (page === 1) size = items.length
-    if (items.length === 0) break
-    if (total !== undefined ? out.length >= total : items.length < size) break
+    if (items.length === 0) return out
+    if (total !== undefined ? out.length >= total : items.length < size) return out
   }
+  // The cap ended the walk, not the server.
+  partial?.()
   return out
 }
 
 /** Every item of a Forgejo list endpoint (up to `maxPages` pages). */
-async function fjList<T>(url: string, token: string, maxPages?: number): Promise<T[]> {
+async function fjList<T>(url: string, token: string, maxPages?: number, partial?: () => void): Promise<T[]> {
   const sep = url.includes('?') ? '&' : '?'
   return forgejoPages(async (page) => {
     const res = await fjResponse(`${url}${sep}limit=50&page=${page}`, token)
@@ -97,7 +105,7 @@ async function fjList<T>(url: string, token: string, maxPages?: number): Promise
     const header = res.headers.get('x-total-count')
     const total = header === null ? NaN : Number(header)
     return { items: (text ? JSON.parse(text) : []) as T[], ...(Number.isFinite(total) ? { total } : {}) }
-  }, maxPages)
+  }, maxPages, partial)
 }
 
 interface FjPull {
@@ -1010,6 +1018,19 @@ interface FjCommit {
  * X-Total-Count says when the list ends — paging stops past the cap.
  */
 export async function forgejoPullCommits(base: string, owner: string, repo: string, token: string, number: number): Promise<PrCommitList> {
+  const { raws, ended } = await forgejoPullCommitRaws(base, owner, repo, token, number)
+  // The order is not documented; the parents settle it, this is the fallback.
+  return finishPrCommits(raws, false, !ended)
+}
+
+/** The pull request's commits as the server lists them, and whether the list ended before the cap. */
+async function forgejoPullCommitRaws(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number
+): Promise<{ raws: RawPrCommit[]; ended: boolean }> {
   const url = `${repoApi(base, owner, repo)}/pulls/${number}/commits?verification=false&files=false`
   const out: FjCommit[] = []
   let size = 0
@@ -1027,20 +1048,115 @@ export async function forgejoPullCommits(base: string, owner: string, repo: stri
       break
     }
   }
-  return finishPrCommits(
-    out
-      .filter((c) => typeof c.sha === 'string')
-      .map((c) => ({
-        sha: c.sha!,
-        message: c.commit?.message,
-        authorName: c.commit?.author?.name,
-        authorLogin: c.author?.login,
-        authorAvatar: c.author?.avatar_url,
-        authoredAt: c.commit?.author?.date,
-        parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
-      })),
-    // The order is not documented; the parents settle it, this is the fallback.
-    false,
-    !ended
-  )
+  const raws = out
+    .filter((c) => typeof c.sha === 'string')
+    .map((c) => ({
+      sha: c.sha!,
+      message: c.commit?.message,
+      authorName: c.commit?.author?.name,
+      authorLogin: c.author?.login,
+      authorAvatar: c.author?.avatar_url,
+      authoredAt: c.commit?.author?.date,
+      parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
+    }))
+  return { raws, ended }
+}
+
+/** A timeline entry; only `pull_push` ones are read. */
+interface FjTimelineComment {
+  id?: number
+  type?: string
+  body?: string
+  created_at?: string
+  user?: { login?: string } | null
+}
+
+/** A `pull_push` comment's body: the commits a push added, or a force push's [old, new] heads. */
+export function parseForgejoPushBody(body: string | undefined): { force: boolean; commitIds: string[] } | null {
+  try {
+    const d = JSON.parse(body ?? '') as { is_force_push?: unknown; commit_ids?: unknown }
+    if (!d || typeof d !== 'object' || !Array.isArray(d.commit_ids)) return null
+    const ids = d.commit_ids.filter((x): x is string => typeof x === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(x))
+    return { force: d.is_force_push === true, commitIds: ids }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A pull request's updates from its timeline: Forgejo (and Gitea) record each
+ * push as a `pull_push` comment naming the commits it added, or a force push's
+ * old and new heads. A server without the timeline endpoint (404) gets every
+ * commit in one update, and the tab says why.
+ */
+export async function forgejoPullUpdates(base: string, owner: string, repo: string, token: string, number: number): Promise<PrUpdateList> {
+  const r = repoApi(base, owner, repo)
+  const [pr, commits, read] = await Promise.all([
+    fjJson<{ created_at?: string; user?: { login?: string } }>(`${r}/pulls/${number}`, token),
+    forgejoPullCommitRaws(base, owner, repo, token, number),
+    readTimelineNewest(`${r}/issues/${number}/timeline`, token, TIMELINE_PAGES).catch((err: unknown) => {
+      if (err instanceof HttpStatusError && err.status === 404) return null
+      throw err
+    })
+  ])
+  const timeline = read?.items ?? null
+  const oldestFirst = orderOldestFirst(commits.raws, false)
+  const opened = { at: pr?.created_at ?? '', ...(pr?.user?.login ? { author: pr.user.login } : {}) }
+  if (!timeline) {
+    const { updates } = finishPrUpdates(singleUpdate(oldestFirst, opened))
+    return { updates, truncated: !commits.ended, grouping: 'single', startCut: false }
+  }
+  const pushes: ForgejoPush[] = timeline.flatMap((c) => {
+    if (c.type !== 'pull_push') return []
+    const body = parseForgejoPushBody(c.body)
+    if (!body) return []
+    return [
+      {
+        id: `comment:${c.id ?? c.created_at ?? ''}`,
+        at: c.created_at ?? '',
+        ...(c.user?.login ? { pusher: c.user.login } : {}),
+        ...body
+      }
+    ]
+  })
+  const startCut = !!read?.startCut
+  const done = finishPrUpdates(groupForgejoPushes(pushes, opened, oldestFirst, startCut), startCut)
+  return { updates: done.updates, truncated: done.truncated || !!read?.partial || !commits.ended, grouping: 'native', startCut }
+}
+
+/** How many pages of the timeline are read, at most. */
+const TIMELINE_PAGES = 10
+
+/**
+ * A timeline, its newest end first when it is longer than `maxPages`: the
+ * first page's X-Total-Count says how many pages there are, and the last
+ * `maxPages` are read — the latest pushes matter more than the oldest.
+ * `startCut` then; `partial` when the server sent no total and the walk from
+ * the start stopped at the cap.
+ */
+async function readTimelineNewest(
+  url: string,
+  token: string,
+  maxPages: number
+): Promise<{ items: FjTimelineComment[]; startCut: boolean; partial: boolean }> {
+  const page = async (n: number): Promise<{ items: FjTimelineComment[]; total: number }> => {
+    const res = await fjResponse(`${url}?limit=50&page=${n}`, token)
+    const text = await res.text()
+    const header = res.headers.get('x-total-count')
+    return { items: (text ? JSON.parse(text) : []) as FjTimelineComment[], total: header === null ? NaN : Number(header) }
+  }
+  const first = await page(1)
+  const size = first.items.length
+  if (!Number.isFinite(first.total) || !size) {
+    let partial = false
+    const items = await fjList<FjTimelineComment>(url, token, maxPages, () => {
+      partial = true
+    })
+    return { items, startCut: false, partial }
+  }
+  const pages = Math.ceil(first.total / size)
+  const from = pages > maxPages ? pages - maxPages + 1 : 2
+  const rest = await Promise.all(Array.from({ length: Math.max(0, pages - from + 1) }, (_, i) => page(from + i)))
+  const items = [...(pages > maxPages ? [] : first.items), ...rest.flatMap((p) => p.items)]
+  return { items, startCut: pages > maxPages, partial: false }
 }

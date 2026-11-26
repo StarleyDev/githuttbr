@@ -234,6 +234,9 @@ export const gitApi = {
   fetchRemoteBranch: (path: string, remote: string, branch: string) =>
     call<boolean>('fetchRemoteBranch', path, remote, branch),
   getLocalCommits: (path: string, shas: string[]) => call<string[]>('getLocalCommits', path, shas),
+  fetchCommitsById: (path: string, remote: string, shas: string[]) => call<boolean>('fetchCommitsById', path, remote, shas),
+  getCommitRangeFiles: (path: string, from: string, to: string) =>
+    call<import('../../../shared/types').PrFile[]>('getCommitRangeFiles', path, from, to),
   /** A pull request's head, by its number, into `<remote>/pr/<number>`; null when the remote publishes none. */
   fetchPrHead: (path: string, remote: string, number: number) => call<string | null>('fetchPrHead', path, remote, number),
   resolvePrRef: (path: string, remote: string, number: number) =>
@@ -1259,6 +1262,20 @@ export const hostingApi = {
     window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFileList>,
   prListCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prListCommits(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCommitList>,
+  prListUpdates: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prListUpdates(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrUpdateList>,
+  /** The changes one update made, from the host; null when the host cannot diff two commits. */
+  prUpdateFiles: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    from: import('../../../shared/types').PrUpdateEnd,
+    to: import('../../../shared/types').PrUpdateEnd
+  ) =>
+    window.api.hosting.prUpdateFiles(repoPath, remoteUrl, tokens, number, from, to) as Promise<
+      import('../../../shared/types').PrUpdateFiles | null
+    >,
   prReview: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, event: PrReviewEvent, body: string) =>
     window.api.hosting.prReview(repoPath, remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, method: PrMergeMethod) =>

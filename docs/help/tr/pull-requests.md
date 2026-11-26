@@ -2,9 +2,9 @@
 title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
-summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri ve diff’inin bir satırına yorumlar.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image
-source: a4156cb9fd737c311bc0441169b7a3d933dad274
+summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri, güncellemeleri (her push, neyi değiştirdiği, son ziyaretinizden beri ne yeni) ve diff’inin bir satırına yorumlar.
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image güncellemeler yinelemeler push’lar force push rebase geçmiş yeniden yazıldı diff sürümleri son ziyaretten beri ne değişti yeni rozeti görüldü olarak işaretle güncellemeyi karşılaştır updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Pull request sayfası
@@ -158,8 +158,7 @@ Yapmadıkları:
 
 Kenar çubuğu bir pull request’te kaç commit olduğunu söylüyordu, hangileri
 olduğunu hiç söylemiyordu. Her seferinde bir commit incelemek — çoğu pull
-request’in okunması gereken biçim — sizi tarayıcıya gönderiyordu. Konuşma ile
-Dosyalar arasındaki **Commit’ler** sekmesi onları listeler:
+request’in okunması gereken biçim — sizi tarayıcıya gönderiyordu. Konuşma ile Güncellemeler arasındaki **Commit’ler** sekmesi onları listeler:
 
 - **Önce en eskiler**, uygulandıkları sırayla, yazıldıkları günün altında
   gruplanmış. Tarih sırasının dışında rebase ile gelen bir commit taşınmak yerine
@@ -238,6 +237,138 @@ Yapmadıkları:
 - **bitbucket.org** pull request’leri tarayıcıda açılır — uygulamanın onlar için
   henüz bir sayfası yok —, bu yüzden uygulama listeyi okuyabilse de orada bu
   sekmeye ulaşılmaz.
+
+## Güncellemeler
+
+Pazartesi incelediğiniz bir pull request perşembeye kadar ilerlemiştir. Commit’ler
+sekmesi onun şimdi nerede olduğunu gösterir, o zamandan beri ne olduğunu değil: hangi
+commit’lerin hangi push ile geldiğini, birinin force push yapıp zaten okuduğunuzu
+yeniden yazıp yazmadığını ve kodun *gördüğünüz sürüme kıyasla* nasıl göründüğünü.
+Commit’ler ile Dosyalar arasındaki **Güncellemeler** sekmesi bunu yanıtlar — tıpkı
+Azure DevOps’un kendi Updates sekmesi gibi.
+
+Pull request’e yapılan her push’u **en yeniden başlayarak** listeler:
+
+- **Güncelleme 1 — açılış**, pull request’in açıldığı push’tur; sonraki her push bir
+  sonraki numarayı alır.
+- Her biri **ne zaman** olduğunu, **kimin push ettiğini** (sunucu söylüyorsa) ve
+  **eklenen commit’leri** gösterir — kısa SHA, konu, yazar. Sunucu bir push’un daldan
+  çıkardığı commit’leri bildiriyorsa, bunlar üstü çizili olarak **Kaldırılan
+  commit’ler** altında listelenir.
+- Bir force push ya da rebase **geçmiş yeniden yazıldı** olarak işaretlenir:
+  okuduğunuz commit’ler gitmiş olabilir ve listelenenler eski çalışmanın yeni
+  kopyaları olabilir. Azure DevOps’ta pull request’i başka bir hedef dala taşıyan bir
+  push **hedef değişti** olarak işaretlenir.
+
+![Güncellemeler sekmesi: en yeniden başlayan push’lar, “geçmiş yeniden yazıldı” olarak işaretli bir force push, Yeni olarak işaretli bir tane](../../screenshots/pr-updates.webp)
+
+### Bir güncellemede ne değişti
+
+**Bu güncellemedeki değişiklikleri göster**, Dosyalar sekmesini yalnızca o push için
+açar: önceki güncellemenin head’inden bunun head’ine kadar olan diff — ya da
+Güncelleme 1 için, sunucunun o noktayı belirttiği yerde (Azure DevOps, GitLab),
+açıldığı hedef daldan itibaren. Aynı dosya ağacı ve görüntüleyici, bir şeritle —
+*Güncelleme 3 değişiklikleri (Güncelleme 2 ile karşılaştırmalı)* — ve tüm pull
+request’e dönmek için **Tüm değişiklikleri göster**.
+
+![Bir güncellemenin değişikliklerini gösteren Dosyalar sekmesi, dosya ağacının üstünde şeritle](../../screenshots/pr-update-diff.webp)
+
+Diff, mümkün olduğunda her zaman **bu klonda** yapılır: iki head arasında `git diff`,
+kesin ve sunucuya sormadan. Head’lerden biri eksikse, uygulama önce ikisini de pull
+request’in uzak deposundan **commit kimlikleriyle** fetch eder — hiçbir dal, etiket
+ya da ref yazılmaz; bir force push’un yerini aldığı bir head artık hiçbir dalda
+değildir ama çoğu sunucu onu kimliğiyle hâlâ sunar — ve burada karşılaştırır. Ancak
+bu fetch başarısız olursa sunucuya sorulur:
+
+| Sunucu | Sunucunun karşılaştırması |
+|---|---|
+| Azure DevOps | `$compareTo` ile yinelemenin değişiklikleri — iki push arasında |
+| GitLab | Depo karşılaştırması, doğrudan bir head’den diğerine |
+| Bitbucket Data Center | Depo karşılaştırması — iki head’in **ortak tabanından** |
+| GitHub | Compare API’si (`base...head`) — iki head’in **ortak tabanından** |
+| Forgejo / Gitea | Yok: API’lerinde iki commit arasında diff yok |
+
+Ortak tabandan, bir yeniden yazmanın diff’i push’un yaptığı şey değildir: kaldırdığı
+şey gösterilmez ve hedef dalın o zamandan beri aldığı değişiklikler pull request’in
+değişiklikleri gibi görünebilir. Geçmişi yeniden yazılmış bir güncelleme böyle
+karşılaştırıldığında şerit bunu söyler — *Ortak tabandan karşılaştırıldı: bu push’un
+kaldırdıkları gösterilmez.* Hiçbir şey işe yaramazsa şerit bunu söyler ve dalı (ya da
+bir fork’tan pull request’in head’ini) fetch edip burada karşılaştırmayı önerir.
+
+Satır yorumları tüm pull request’in diff’ine aittir, bu yüzden tek bir güncelleme
+gösterilirken bir satırda **+** yoktur; şerit bunu söyler. Bir dosyayı görüldü olarak
+işaretlemek her zamanki gibi çalışır — dosyayı pull request’te işaretler.
+
+### Son ziyaretinizden beri yeni
+
+Sekmeyi son açışınızdan beri push edilen güncellemeler bir **Yeni** rozeti taşır ve
+sekmenin kendisi kaç tane olduğunu söyler: *Güncellemeler 5 · 2 yeni*. Sekmeyi açmak
+onları görüldü olarak işaretler (hangilerinin yeni olduğunu görebilmeniz için siz
+sekmedeyken rozetler kalır); sekme açıkken **Yenile** daha fazlasını getirirse,
+**Görüldü olarak işaretle** onları temizler. Yalnızca pull request sayfasını açmak
+hiçbir şeyi işaretlemez. Bir pull request’in Güncellemeler sekmesini ilk kez
+açtığınızda hiçbir şey yeni değildir — karşılaştırılacak önceki bir ziyaret yoktur.
+
+Güncellemeler o sayı için sayfayla birlikte, ve **Yenile** ile yeniden okunur —
+gönderdiğiniz her yorum ya da incelemeden sonra değil.
+
+Görülenler yalnızca bu bilgisayarda, depo ve pull request başına tutulur, sunucuya asla
+gönderilmez.
+
+### Sunucuya göre
+
+| Sunucu | Güncellemelerin geldiği yer | Push eden | Kaldırılan commit’ler | Yeniden yazma algılanır |
+|---|---|---|---|---|
+| Azure DevOps | Pull request’in **yinelemeleri** — Azure’un her push’un kendi kaydı | Evet | Hayır (bildirilmez) | Evet: `forcePush` / `rebase` |
+| GitLab | Merge request’in **diff sürümleri**; her sürümün commit’leri head’inden çıkarılır | Hayır (sürümler kimseyi adlandırmaz) | Evet | Evet: artık ulaşılamayan daha önceki bir head |
+| Bitbucket Data Center | Pull request’in etkinliği: **OPENED** ve kaynak dalı taşıyan her **RESCOPED** | Evet | Evet, sunucunun toplamlarıyla | Evet: commit kaldıran bir rescope |
+| GitHub | Zaman çizelgesinin commit’lerinden ve force push’larından **çıkarılır** — aşağıya bakın | Yalnızca force push’lar | Hayır | Evet: bir force push olayı |
+| Forgejo / Gitea | Zaman çizelgesinin **push** kayıtları, ilki pull request’in kendisiyle yazılır | Evet | Hayır | Evet: bir force push kaydı |
+| bitbucket.org | Kullanılamaz | — | — | — |
+
+**GitHub sıradan bir push’un kaydını tutmaz** — yalnızca force push’ların —, bu yüzden
+güncellemeler **commit zamanlarından çıkarılır**. Bir güncelleme, force push’lar
+arasında birbiri üzerine kurulan bir commit dizisidir; bir öncekinin üzerine
+kurulmayan ya da ondan on dakikadan fazla sonra gelen bir commit bir sonrakini
+başlatır. Pull request açıldıktan sonra yapılmış bir commit açılışta olamaz. Yani bir
+saat arayla yapılmış commit’lerin tek bir push’u ikiye **bölünmüş** görünür, birkaç
+dakika arayla iki push ise **tek** görünür; sekme gruplamanın yaklaşık olduğunu
+söyler. Zaman çizelgesinin force push’undan hemen önce listeleyebileceği bir rebase’in
+yeni commit’leri o force push’a sayılır. Bir force push’un öncesi ve sonrası head’leri
+kesindir, bu yüzden **Değişiklikleri göster** de kesindir.
+
+### Sınırlar
+
+- **Üst sınırlar.** En yeni 100 güncelleme listelenir. GitHub’ın zaman çizelgesi en
+  yeni ucundan 500 öğeye kadar okunur; Bitbucket Data Center’ın etkinliği (o da en
+  yeniden başlayarak) 1.000’e kadar; GitLab’in sürümleri ve commit’leri her biri
+  300’e kadar; Forgejo’nun zaman çizelgesi 500 kayda kadar, daha uzunsa en yenileri.
+  Bir sınır **açılışı** kestiğinde numaralar artık sunucununkiler değildir: sekme bunu
+  söyler ve en sondan geriye sayar (*Son güncelleme*, *Güncelleme, sondan 2 önce*).
+- **Azure DevOps** kaldırılan commit bildirmez; onun yerine bir force push ya da
+  rebase işaretlenir. Azure’un commit listesini kısalttığı bir yineleme ayrıca okunur
+  (500 commit’e kadar) ve güncelleme hâlâ eksikse bunu söyler.
+- **GitLab** push edeni adlandırmaz. Head’i yeniden yazılarak gitmiş bir sürüm,
+  commit’lerini bulmak için ayrıca okunur — bu tür en yeni on sürüm için —, oturum
+  başına bir kez: sürümler asla değişmez.
+- **Forgejo ve Gitea** bir force push için commit listelemez — yalnızca iki head’ini,
+  ki **Değişiklikleri göster** bunları karşılaştırır —, ve bir force push’tan sonra
+  açılışın ne içerdiğini hiçbir şey söylemez; bu yüzden sunucu açılışın kendi push’unu
+  kaydetmediyse açılış boş kalır. API’lerinde iki commit arasında diff yoktur, bu
+  yüzden o karşılaştırma iki commit’in de bu klonda olmasını gerektirir. Zaman
+  çizelgesi API’si olmayan bir sunucu tüm commit’leri tek bir güncellemede gösterir.
+- **Kimlikle fetch** etmek, bir commit’i kimliğiyle sunan bir sunucu gerektirir.
+  GitHub bunu hâlâ tuttuğu her commit için yapar; başka bir sunucu ya da düz bir git
+  sunucusu, hiçbir dalın göstermediği bir commit’i reddedebilir — o zaman sunucunun
+  karşılaştırması kullanılır. Fetch edilen commit’ler bu klonda ref’siz durur ve git
+  zamanla onları toplar.
+- **Bitbucket Data Center’ın karşılaştırması** sunucunun yapılandırılmış diff’ini
+  okur ve onu birleşik bir diff olarak çizer; çok büyük dosyalar kısaltılmış gelebilir.
+- Yeniden yazılmış bir head **sunucudan** kalıcı olarak **gitmiş** olabilir (Azure ve
+  GitLab onu tutar; diğerleri toplayabilir). O zaman hiçbir taraf karşılaştıramaz ve
+  şerit bunu söyler.
+- **bitbucket.org** pull request’leri tarayıcıda açılır ve Güncellemeler sekmeleri
+  yoktur.
 
 ## Dosyaları okumak
 

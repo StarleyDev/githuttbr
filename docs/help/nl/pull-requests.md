@@ -2,9 +2,9 @@
 title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
-summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, en reacties op een regel van zijn diff.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image
-source: a4156cb9fd737c311bc0441169b7a3d933dad274
+summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, zijn updates (elke push, wat die veranderde, wat nieuw is sinds je laatste bezoek), en reacties op een regel van zijn diff.
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image updates iteraties pushes force push rebase geschiedenis herschreven diffversies wat is er veranderd sinds het laatste bezoek nieuw-badge markeren als gezien update vergelijken iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+source: f18fc735b9bf5de082b823f277804050231ce86d
 ---
 
 # Pull-requestspagina
@@ -167,8 +167,7 @@ Wat het niet doet:
 
 De zijbalk zei hoeveel commits een pull request heeft, nooit welke. Eén commit
 tegelijk reviewen — zoals de meeste pull requests bedoeld zijn om gelezen te worden
-— stuurde je naar de browser. Het tabblad **Commits**, tussen Gesprek en
-Bestanden, toont ze:
+— stuurde je naar de browser. Het tabblad **Commits**, tussen Gesprek en Updates, toont ze:
 
 - **Oudste eerst**, in de volgorde waarin ze worden toegepast, gegroepeerd onder de
   dag waarop ze zijn geschreven. Een commit die buiten de datumvolgorde is
@@ -252,6 +251,141 @@ Wat het niet doet:
 - Pull requests op **bitbucket.org** openen in de browser — de app heeft er nog
   geen pagina voor —, dus dit tabblad wordt daar niet bereikt, hoewel de app de
   lijst wel kan lezen.
+
+## Updates
+
+Een pull request die je maandag reviewde, is donderdag verder. Het tabblad Commits
+toont waar hij nu staat, niet wat er sindsdien gebeurde: welke commits met welke push
+kwamen, of iemand force-pushte en herschreef wat je al gelezen had, en hoe de code
+eruitziet *vergeleken met de versie die jij zag*. Het tabblad **Updates**, tussen
+Commits en Bestanden, beantwoordt dat — zoals het eigen Updates-tabblad van Azure
+DevOps.
+
+Het toont elke push naar de pull request, **nieuwste eerst**:
+
+- **Update 1 — geopend** is de push waarmee de pull request werd geopend; elke latere
+  push krijgt het volgende nummer.
+- Elke update toont **wanneer**, **wie pushte** (waar de host dat zegt), en de
+  **toegevoegde commits** — korte SHA, onderwerp, auteur. Waar de host commits meldt
+  die een push van de branch haalde, staan ze onder **Verwijderde commits**,
+  doorgestreept.
+- Een force push of rebase is gemarkeerd als **geschiedenis herschreven**: commits die
+  je had gelezen kunnen weg zijn, en de getoonde kunnen nieuwe kopieën van oud werk
+  zijn. Op Azure DevOps is een push die de pull request naar een andere doelbranch
+  verplaatste, gemarkeerd als **doel gewijzigd**.
+
+![Het tabblad Updates: pushes nieuwste eerst, een force push gemarkeerd als „geschiedenis herschreven”, een als Nieuw](../../screenshots/pr-updates.webp)
+
+### Wat er in één update veranderde
+
+**Wijzigingen in deze update bekijken** opent het tabblad Bestanden voor alleen die
+push: de diff van de head van de vorige update naar deze — of, voor Update 1, vanaf
+de doelbranch waartegen hij werd geopend, waar de host dat punt noemt (Azure DevOps,
+GitLab). Dezelfde bestandsboom en viewer, met een banner — *Wijzigingen in Update 3
+(ten opzichte van Update 2)* — en **Alle wijzigingen tonen** om terug te gaan naar de
+hele pull request.
+
+![Het tabblad Bestanden met de wijzigingen van één update, met de banner boven de bestandsboom](../../screenshots/pr-update-diff.webp)
+
+De diff wordt altijd **in deze clone** gemaakt als het kan: `git diff` tussen de twee
+heads, exact en zonder de host te vragen. Ontbreekt een van de heads, dan fetcht de
+app eerst beide **op hun commit-id** van de remote van de pull request — er wordt geen
+branch, tag of ref geschreven; een head die een force push verving, staat op geen
+branch meer, maar de meeste hosts leveren hem nog op zijn id — en vergelijkt hier.
+Pas als die fetch mislukt, wordt de host gevraagd:
+
+| Host | De vergelijking van de host |
+|---|---|
+| Azure DevOps | De wijzigingen van de iteratie met `$compareTo` — tussen de twee pushes |
+| GitLab | De repositoryvergelijking, rechtstreeks van de ene head naar de andere |
+| Bitbucket Data Center | De repositoryvergelijking — **vanaf de gemeenschappelijke basis** van de twee heads |
+| GitHub | De compare-API (`base...head`) — **vanaf de gemeenschappelijke basis** van de twee heads |
+| Forgejo / Gitea | Geen: hun API heeft geen diff tussen twee commits |
+
+Vanaf de gemeenschappelijke basis is de diff van een herschrijving niet wat de push
+deed: wat hij verwijderde, wordt niet getoond, en wijzigingen die de doelbranch
+sindsdien kreeg, kunnen eruitzien als die van de pull request. De banner zegt dat —
+*Vergeleken vanaf de gemeenschappelijke basis: wat deze push verwijderde, wordt niet
+getoond.* — als een update met herschreven geschiedenis zo is vergeleken. Werkt niets,
+dan zegt de banner dat en biedt aan de branch (of, vanuit een fork, de head van de pull
+request) te fetchen en hier te vergelijken.
+
+Regelreacties horen bij de diff van de hele pull request, dus er is geen **+** op een
+regel zolang één update wordt getoond; de banner zegt dat. Een bestand als bekeken
+aanvinken werkt zoals gewoonlijk — het markeert het bestand in de pull request.
+
+### Nieuw sinds je laatste bezoek
+
+Updates die zijn gepusht sinds je het tabblad voor het laatst opende, dragen een badge
+**Nieuw**, en het tabblad zelf zegt hoeveel: *Updates 5 · 2 nieuw*. Het tabblad openen
+markeert ze als gezien (de badges blijven zolang je erop staat, zodat je ziet welke
+nieuw waren); brengt **Vernieuwen** er meer terwijl het tabblad open is, dan haalt
+**Markeren als gezien** ze weg. Alleen de pull-requestspagina openen markeert niets.
+De eerste keer dat je het tabblad Updates van een pull request opent, is niets nieuw —
+er is geen eerder bezoek om mee te vergelijken.
+
+De updates worden met de pagina gelezen, voor dat aantal, en opnieuw bij
+**Vernieuwen** — niet na elke reactie of review die je plaatst.
+
+Wat gezien is, wordt alleen op deze computer bewaard, per repository en pull request,
+en nooit naar de host gestuurd.
+
+### Per host
+
+| Host | Waar de updates vandaan komen | Wie pushte | Verwijderde commits | Herschrijving herkend |
+|---|---|---|---|---|
+| Azure DevOps | De **iteraties** van de pull request — Azures eigen registratie van elke push | Ja | Nee (niet gemeld) | Ja: `forcePush` / `rebase` |
+| GitLab | De **diffversies** van de merge request; de commits van elke versie afgeleid uit haar head | Nee (versies noemen niemand) | Ja | Ja: een eerdere head die niet meer bereikt wordt |
+| Bitbucket Data Center | De activiteit van de pull request: **OPENED** en elke **RESCOPED** die de bronbranch verplaatste | Ja | Ja, met de totalen van de host | Ja: een rescope die commits verwijderde |
+| GitHub | **Afgeleid** uit de commits en force pushes van de tijdlijn — zie hieronder | Alleen force pushes | Nee | Ja: een force-push-gebeurtenis |
+| Forgejo / Gitea | De **push**-items van de tijdlijn, het eerste geschreven met de pull request zelf | Ja | Nee | Ja: een force-push-item |
+| bitbucket.org | Niet beschikbaar | — | — | — |
+
+**GitHub houdt geen gewone push bij** — alleen force pushes —, dus de updates worden
+**afgeleid uit commitmomenten**. Een update is een reeks commits die op elkaar
+voortbouwen, tussen force pushes; een commit die niet op de vorige voortbouwt, of meer
+dan tien minuten na de vorige komt, begint de volgende. Een commit die na het openen
+van de pull request is gemaakt, kan niet in de opening hebben gezeten. Een push van
+commits die een uur uit elkaar liggen, verschijnt dus **gesplitst** in tweeën, en twee
+pushes die een paar minuten uit elkaar liggen, verschijnen als **één**; het tabblad
+zegt dat de groepering bij benadering is. De nieuwe commits van een rebase, die de
+tijdlijn mogelijk vlak voor de force push toont, tellen mee bij die force push. De
+heads vóór en na een force push zijn exact, dus zijn **Wijzigingen bekijken** ook.
+
+### Beperkingen
+
+- **Limieten.** De 100 nieuwste updates worden getoond. De tijdlijn van GitHub wordt
+  vanaf het nieuwste eind gelezen, tot 500 items; de activiteit van Bitbucket Data
+  Center (ook nieuwste eerst) tot 1.000; de versies en commits van GitLab tot 300
+  elk; de tijdlijn van Forgejo tot 500 items, de nieuwste als ze langer is. Als een
+  limiet de **opening** afkapt, zijn de nummers niet meer die van de host: het tabblad
+  zegt dat en telt terug vanaf de nieuwste (*Nieuwste update*, *Update, 2 vóór de
+  nieuwste*).
+- **Azure DevOps** meldt geen verwijderde commits; in plaats daarvan wordt een force
+  push of rebase gemarkeerd. Een iteratie waarvan Azure de commitlijst inkort, wordt
+  apart gelezen (tot 500 commits), en de update zegt het als ze nog onvolledig is.
+- **GitLab** noemt niet wie pushte. Een versie waarvan de head is weggeschreven, wordt
+  apart gelezen om haar commits te vinden — voor de tien nieuwste zulke versies —, één
+  keer per sessie: versies veranderen nooit.
+- **Forgejo en Gitea** tonen geen commits voor een force push — alleen de twee heads,
+  en die vergelijkt **Wijzigingen bekijken** —, en na een force push zegt niets wat de
+  opening bevatte, dus die blijft leeg, tenzij de server de push van de opening zelf
+  heeft vastgelegd. Hun API heeft geen diff tussen twee commits, dus die vergelijking
+  heeft beide commits in deze clone nodig. Een server zonder de tijdlijn-API toont alle
+  commits in één update.
+- **Fetchen op id** vraagt een host die een commit op zijn id levert. GitHub doet dat
+  voor elke commit die het nog heeft; een andere host, of een eenvoudige git-server,
+  kan een commit weigeren waar geen branch naar wijst — dan wordt de vergelijking van
+  de host gebruikt. Gefetchte commits staan zonder ref in deze clone, en git ruimt ze
+  op den duur op.
+- **De vergelijking van Bitbucket Data Center** leest de gestructureerde diff van de
+  server en tekent die als unified diff; zeer grote bestanden kunnen ingekort
+  terugkomen.
+- Een herschreven head kan definitief **van de host verdwenen** zijn (Azure en GitLab
+  bewaren hem; andere ruimen hem mogelijk op). Dan kan geen van beide kanten
+  vergelijken, en de banner zegt dat.
+- Pull requests op **bitbucket.org** openen in de browser en hebben geen tabblad
+  Updates.
 
 ## De bestanden lezen
 

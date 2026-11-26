@@ -1600,6 +1600,28 @@ export const repoActions = {
       }
     }),
 
+  /**
+   * Bring down the two heads of a pull request update by their ids, so its
+   * changes are compared here rather than by the host. Quiet: a server that
+   * will not serve them is not an error — the caller asks the host instead.
+   * Nothing to refresh: no ref moves.
+   */
+  fetchPrUpdateCommits: (path: string, remote: string, shas: string[]): Promise<boolean> =>
+    enqueue(path, async () => {
+      const ui = useUIStore.getState()
+      ui.beginInflight()
+      ui.setBusy(interp(t('busy.fetchingUpdateCommits'), { remote }), 'fetch')
+      muteWatcher(path)
+      try {
+        return await gitApi.fetchCommitsById(path, remote, shas)
+      } catch {
+        return false
+      } finally {
+        ui.setBusy(null)
+        ui.endInflight()
+      }
+    }),
+
   /** Open a commit in its repository's view, as a click in the graph would. */
   showCommitInRepo: async (path: string, sha: string): Promise<void> => {
     if (!useRepoStore.getState().repos[path]) await useRepoStore.getState().ensure(path)

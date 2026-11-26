@@ -310,6 +310,8 @@ interface PreloadApi {
     prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prListCommits(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prListUpdates(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prUpdateFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number, from: unknown, to: unknown): Promise<unknown>
     prReview(repoPath: string, remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
     prMerge(repoPath: string, remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
     listNotifications(token: string, all?: boolean): Promise<unknown>
