@@ -5,7 +5,7 @@ import { homedir } from 'os'
 import { delimiter, join } from 'path'
 import { EDITOR_PRESETS, editorLaunch } from '../shared/editors'
 import type { DetectedEditor, EditorSetting, EditorTarget } from '../shared/editors'
-import { desktopEntryDirs, findDesktopEditors, nodeDesktopFs } from './desktopEntries'
+import { desktopEntryDirs, findDesktopEditors, isBundleOfProduct, nodeDesktopFs, nodeProductFs } from './desktopEntries'
 
 /**
  * Finding and launching the user's external editor.
@@ -86,7 +86,9 @@ export function detectEditors(): DetectedEditor[] {
       continue
     }
     if (process.platform === 'darwin') {
-      const bundle = preset.macApps.map(macApp).find(Boolean)
+      const bundle = preset.macApps
+        .map(macApp)
+        .find((b): b is string => !!b && (!preset.macProduct || isBundleOfProduct(b, preset.macProduct, nodeProductFs)))
       if (bundle) {
         found.push({ id: preset.id, name: preset.name, command: bundle, source: 'app' })
         continue

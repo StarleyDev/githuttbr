@@ -1,6 +1,6 @@
 import { accessSync, constants, readdirSync, readFileSync, statSync } from 'fs'
 import { homedir } from 'os'
-import { basename, dirname, isAbsolute, join } from 'path'
+import { basename, delimiter, dirname, isAbsolute, join } from 'path'
 import type { EditorPreset } from '../shared/editors'
 
 // Linux: finding an editor through the application menu's `.desktop` entries,
@@ -13,6 +13,12 @@ export interface DesktopEntry {
   name: string
   exec: string
   type: string
+  /** `Hidden=true`: the entry is deleted, as far as the menu is concerned. */
+  hidden: boolean
+  /** `NoDisplay=true`: not meant to be shown or picked. */
+  noDisplay: boolean
+  /** `TryExec=`: a program that must exist for the entry to count. */
+  tryExec?: string
 }
 
 /** The `[Desktop Entry]` group of a `.desktop` file; null when it has none or no `Exec=`. */
@@ -34,7 +40,14 @@ export function parseDesktopEntry(text: string): DesktopEntry | null {
     if (!(key in fields)) fields[key] = line.slice(eq + 1).trim()
   }
   if (!fields.Exec) return null
-  return { name: fields.Name ?? '', exec: fields.Exec, type: fields.Type ?? 'Application' }
+  return {
+    name: fields.Name ?? '',
+    exec: fields.Exec,
+    type: fields.Type ?? 'Application',
+    hidden: fields.Hidden === 'true',
+    noDisplay: fields.NoDisplay === 'true',
+    ...(fields.TryExec ? { tryExec: fields.TryExec } : {})
+  }
 }
 
 /**
@@ -81,6 +94,8 @@ export interface DesktopFs {
   listDir: (dir: string) => string[]
   readText: (file: string) => string | null
   isExecutable: (file: string) => boolean
+  /** Whether a bare program name is an executable on PATH (for `TryExec=`). */
+  isOnPath: (name: string) => boolean
 }
 
 /**
@@ -92,7 +107,9 @@ export interface DesktopFs {
  */
 export function getDesktopEntryCommand(entry: DesktopEntry, preset: EditorPreset, fs: DesktopFs): string | null {
   const match = preset.desktop
-  if (!match || entry.type !== 'Application') return null
+  if (!match || entry.type !== 'Application' || entry.hidden || entry.noDisplay) return null
+  // TryExec names a program that must be there, or the entry does not count (the spec's rule).
+  if (entry.tryExec && !(isAbsolute(entry.tryExec) ? fs.isExecutable(entry.tryExec) : fs.isOnPath(entry.tryExec))) return null
   const argv = splitDesktopExec(entry.exec)
   if (argv.length !== 1 || !isAbsolute(argv[0])) return null
   const program = argv[0]
@@ -109,13 +126,39 @@ export function getDesktopEntryCommand(entry: DesktopEntry, preset: EditorPreset
   return fs.isExecutable(program) ? program : null
 }
 
-/** Where the menu's entries live: the user's own first, then the system's and Flatpak's exports. */
-export function desktopEntryDirs(home = homedir()): string[] {
-  return [
-    join(home, '.local/share/applications'),
-    '/usr/share/applications',
-    '/var/lib/flatpak/exports/share/applications'
+/**
+ * Where the menu's entries live, by the XDG base-directory rules: the user's
+ * own data folder first (`XDG_DATA_HOME`, else `~/.local/share`), then each of
+ * `XDG_DATA_DIRS` (else `/usr/local/share:/usr/share`) — then Flatpak's and
+ * Snap's exports, which a desktop may list there or not.
+ */
+export function desktopEntryDirs(env: NodeJS.ProcessEnv = process.env, home = homedir()): string[] {
+  const dataHome = env.XDG_DATA_HOME && isAbsolute(env.XDG_DATA_HOME) ? env.XDG_DATA_HOME : join(home, '.local/share')
+  const dataDirs = (env.XDG_DATA_DIRS || '/usr/local/share:/usr/share').split(':').filter((d) => isAbsolute(d))
+  const dirs = [
+    join(dataHome, 'applications'),
+    ...dataDirs.map((d) => join(d, 'applications')),
+    join(dataHome, 'flatpak/exports/share/applications'),
+    '/var/lib/flatpak/exports/share/applications',
+    '/var/lib/snapd/desktop/applications'
   ]
+  return [...new Set(dirs)]
+}
+
+/**
+ * Whether a macOS bundle is the VS Code build a preset names: its
+ * `Contents/Resources/app/product.json` says `applicationName`. A bundle with
+ * the right file name but another product — another tool called "Devin" —
+ * is not launched with `open -a` by mistake.
+ */
+export function isBundleOfProduct(bundle: string, applicationName: string, fs: Pick<DesktopFs, 'readText'>): boolean {
+  const text = fs.readText(join(bundle, 'Contents/Resources/app/product.json'))
+  if (!text) return false
+  try {
+    return (JSON.parse(text) as { applicationName?: unknown }).applicationName === applicationName
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -149,6 +192,21 @@ export function findDesktopEditors(
 
 /** A `.desktop` file is a few hundred bytes; anything past this is not one worth reading. */
 const DESKTOP_FILE_MAX = 64 * 1024
+/** A VS Code build's product.json lists its gallery and extensions: larger, still bounded. */
+const PRODUCT_FILE_MAX = 4 * 1024 * 1024
+
+function readTextUnder(file: string, max: number): string | null {
+  try {
+    const info = statSync(file)
+    if (!info.isFile() || info.size > max) return null
+    return readFileSync(file, 'utf8')
+  } catch {
+    return null
+  }
+}
+
+/** Reads a bundle's product.json for isBundleOfProduct. */
+export const nodeProductFs: Pick<DesktopFs, 'readText'> = { readText: (file) => readTextUnder(file, PRODUCT_FILE_MAX) }
 
 /** The real filesystem, read-only and quiet: a missing folder or unreadable file is simply absent. */
 export const nodeDesktopFs: DesktopFs = {
@@ -159,22 +217,22 @@ export const nodeDesktopFs: DesktopFs = {
       return []
     }
   },
-  readText: (file) => {
-    try {
-      const info = statSync(file)
-      if (!info.isFile() || info.size > DESKTOP_FILE_MAX) return null
-      return readFileSync(file, 'utf8')
-    } catch {
-      return null
-    }
-  },
-  isExecutable: (file) => {
-    try {
-      if (!statSync(file).isFile()) return false
-      accessSync(file, constants.X_OK)
-      return true
-    } catch {
-      return false
-    }
+  readText: (file) => readTextUnder(file, DESKTOP_FILE_MAX),
+  isExecutable: (file) => isExecutableFile(file),
+  isOnPath: (name) =>
+    !name.includes('/') &&
+    (process.env.PATH || '')
+      .split(delimiter)
+      .filter((d) => isAbsolute(d))
+      .some((d) => isExecutableFile(join(d, name)))
+}
+
+function isExecutableFile(file: string): boolean {
+  try {
+    if (!statSync(file).isFile()) return false
+    accessSync(file, constants.X_OK)
+    return true
+  } catch {
+    return false
   }
 }

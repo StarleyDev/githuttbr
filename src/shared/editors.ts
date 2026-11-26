@@ -32,6 +32,11 @@ export interface EditorPreset {
    * program, holding the real CLI (VS Code family: `bin/`).
    */
   desktop?: { names: string[]; execs: string[]; cliDir?: string }
+  /**
+   * macOS: the `applicationName` a VS Code build's `product.json` must carry
+   * for one of `macApps` to count — a bundle name alone could be another app.
+   */
+  macProduct?: string
 }
 
 /** How an editor was located, which decides whether line jumping is possible. */
@@ -98,6 +103,7 @@ export const EDITOR_PRESETS: EditorPreset[] = [
     name: 'Devin Desktop',
     bins: ['devin-desktop'],
     macApps: ['Devin.app', 'Devin Desktop.app'],
+    macProduct: 'devin-desktop',
     // No published Windows install folder to look in: PATH only there.
     winPaths: [],
     fileArgs: '-g {path}:{line}:{col}',

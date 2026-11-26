@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { EDITOR_PRESETS, editorLaunch, presetFor } from '../src/shared/editors'
 import {
+  desktopEntryDirs,
   findDesktopEditors,
+  isBundleOfProduct,
   getDesktopEntryCommand,
   parseDesktopEntry,
   splitDesktopExec,
@@ -18,8 +20,9 @@ import { detectEditors } from '../src/main/editor'
 const devin = presetFor('devin')!
 
 /** A fake filesystem: these files exist, these are executable. */
-function fakeFs(files: Record<string, string>, executables: string[]): DesktopFs {
+function fakeFs(files: Record<string, string>, executables: string[], onPath: string[] = []): DesktopFs {
   return {
+    isOnPath: (name) => onPath.includes(name),
     listDir: (dir) =>
       Object.keys(files)
         .filter((f) => f.startsWith(`${dir}/`) && !f.slice(dir.length + 1).includes('/'))
@@ -37,7 +40,9 @@ describe('desktop entries', () => {
     expect(parseDesktopEntry(entry('Devin Desktop', '/opt/tools/devin-app/devin-desktop %F'))).toEqual({
       name: 'Devin Desktop',
       exec: '/opt/tools/devin-app/devin-desktop %F',
-      type: 'Application'
+      type: 'Application',
+      hidden: false,
+      noDisplay: false
     })
     expect(parseDesktopEntry('[Desktop Entry]\nName=No exec\n')).toBeNull()
   })
@@ -68,6 +73,47 @@ describe('desktop entries', () => {
     expect(getDesktopEntryCommand(parseDesktopEntry(entry('Devin Desktop', 'devin-desktop %F'))!, devin, fs)).toBeNull()
     // Matched by program name even when the entry is called something else.
     expect(getDesktopEntryCommand(parseDesktopEntry(entry('My editor', '/opt/a/devin-desktop'))!, devin, fs)).toBe('/opt/a/devin-desktop')
+  })
+
+  it('skips a hidden, undisplayed or TryExec-failing entry', () => {
+    const fs = fakeFs({}, ['/opt/a/devin-desktop', '/opt/a/check'], ['devin-desktop'])
+    const base = '[Desktop Entry]\nName=Devin Desktop\nExec=/opt/a/devin-desktop %F\n'
+    const cmd = (extra: string): string | null => getDesktopEntryCommand(parseDesktopEntry(base + extra)!, devin, fs)
+    expect(cmd('')).toBe('/opt/a/devin-desktop')
+    expect(cmd('Hidden=true\n')).toBeNull()
+    expect(cmd('NoDisplay=true\n')).toBeNull()
+    expect(cmd('TryExec=/opt/a/missing\n')).toBeNull()
+    expect(cmd('TryExec=/opt/a/check\n')).toBe('/opt/a/devin-desktop')
+    expect(cmd('TryExec=devin-desktop\n')).toBe('/opt/a/devin-desktop')
+    expect(cmd('TryExec=not-installed\n')).toBeNull()
+  })
+
+  it('looks where XDG says, then Flatpak and Snap', () => {
+    expect(desktopEntryDirs({}, '/home/ana')).toEqual([
+      '/home/ana/.local/share/applications',
+      '/usr/local/share/applications',
+      '/usr/share/applications',
+      '/home/ana/.local/share/flatpak/exports/share/applications',
+      '/var/lib/flatpak/exports/share/applications',
+      '/var/lib/snapd/desktop/applications'
+    ])
+    const dirs = desktopEntryDirs({ XDG_DATA_HOME: '/data/ana', XDG_DATA_DIRS: '/opt/share:relative:/usr/share' }, '/home/ana')
+    expect(dirs.slice(0, 3)).toEqual(['/data/ana/applications', '/opt/share/applications', '/usr/share/applications'])
+  })
+
+  it('macOS: a bundle counts only when its product.json names the editor', () => {
+    const fs = {
+      readText: (f: string): string | null =>
+        f === '/Applications/Devin.app/Contents/Resources/app/product.json'
+          ? JSON.stringify({ applicationName: 'devin-desktop', nameShort: 'Devin' })
+          : f === '/Applications/Other/Devin.app/Contents/Resources/app/product.json'
+            ? JSON.stringify({ applicationName: 'something-else' })
+            : null
+    }
+    expect(isBundleOfProduct('/Applications/Devin.app', 'devin-desktop', fs)).toBe(true)
+    expect(isBundleOfProduct('/Applications/Other/Devin.app', 'devin-desktop', fs)).toBe(false)
+    expect(isBundleOfProduct('/Applications/NoProduct/Devin.app', 'devin-desktop', fs)).toBe(false)
+    expect(devin.macProduct).toBe('devin-desktop')
   })
 
   it('walks the menu folders, first match wins, other files ignored', () => {
