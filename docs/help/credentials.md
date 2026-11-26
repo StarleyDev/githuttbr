@@ -120,13 +120,15 @@ silently: a helper that needs a login window counts as having nothing.
 ## A password saved in the remote URL
 
 An old clone, or a URL pasted from a wiki, can carry its credential inside the
-address: `https://user:token@git.example.test/team/app.git`. Git sends that
-password and asks no helper at all — not the token of the repository's
-[profile](profiles.md), not the GitHub CLI, not git's own store. While the token
-works nobody notices. Once it is revoked or expires, every fetch, pull and push
-of that one repository fails with *Invalid username or token* or
-*Authentication failed*, while the other repositories on the same profile work.
-And the token sits in plain text in the repository's `.git/config`.
+address: `https://user:token@git.example.test/team/app.git`. **A password in the
+URL always takes priority:** git sends it and asks no helper at all — not the
+token of the repository's [profile](profiles.md), not the GitHub CLI, not git's
+own store. While the token works, that is fine, and Gitcito leaves it alone:
+**it never removes a password from a URL without asking you.** Once the token is
+revoked or expires, every fetch, pull and push of that one repository fails with
+*Invalid username or token* or *Authentication failed*, while the other
+repositories on the same profile work. And the token sits in plain text in the
+repository's `.git/config`.
 
 ![Removing a saved token from a remote URL](../screenshots/remote-url-token.webp)
 
@@ -135,14 +137,20 @@ Gitcito reads every remote's fetch and push URLs and says so in three places:
 | Where | What you see |
 |-------|--------------|
 | A failed fetch, pull or push | The error explains that the remote's URL holds a saved password, with **Remove it from the URL…** |
-| The sidebar | A key icon on the remote's row; the same action is in its right-click menu |
+| The sidebar | A quiet key icon on the remote's row: its URL holds a password that takes priority over the profile's token. The same action is in its right-click menu |
 | **Check sign-in…** | The remote shows the password as its source, with the same button |
 
 The action asks first. It takes the password out of every URL of that remote —
 the fetch URL and each push URL holding one — and writes nothing but
-`.git/config`. From then on the remote signs in with the repository profile's
-token, or git's own helper. When it started from a failed operation, it offers
-**Try again**.
+`.git/config`. What happens next depends on what else can sign in:
+
+| After removal | What fetch and push use |
+|---------------|-------------------------|
+| The repository's profile has a token or linked account for that host | That token — the confirmation says nothing more |
+| No profile token, but git's own helper has a login for the host | The helper's login |
+| Neither | Nothing: fetch and push fail until you add a token. The confirmation says so first and offers **Add a token first**, which opens Settings → Integrations |
+
+When it started from a failed operation, it offers **Try again**.
 
 **There is no undo, on purpose.** Undoing would write the secret back into the
 file in plain text, which is what the action exists to stop. If the old token
@@ -152,19 +160,29 @@ could read the repository folder.
 **Limits.**
 
 - The user name goes too (`https://git.example.test/…`), as when you run
-  `git remote set-url` by hand. A server that needs it in the URL — a
-  Bitbucket Data Center token with no user name in the profile — needs it added
-  back with **Edit remote…**.
+  `git remote set-url` by hand; the confirmation says so. A server that needs it
+  in the URL — a Bitbucket Data Center token with no user name in the profile —
+  needs it added back with **Edit remote…**.
 - A user name alone (`https://user@host/…`) is not flagged: git still asks the
   helper for that user's password, so nothing secret is stored.
 - SSH URLs are left alone: `git@host:…` and `ssh://git@host/…` name the login
   ssh uses, not a credential.
-- Only `.git/config` is read and changed. A URL rewritten by an
+- A remote helper's prefix (`persistent-https::https://…`, `gcrypt::…`) is kept;
+  the URL after it is read and cleaned like any other.
+- **Ambiguous URLs are not offered for removal.** When readers disagree on where
+  the host starts — an `@` after a `?` or `#` in the address, or a password
+  holding an unencoded `/` — cutting at the wrong `@` would point the remote at
+  another server. Such a URL is only shown redacted, and the key icon opens
+  **Edit remote…** so you fix it by hand.
+- Only `.git/config` is read and changed. A URL rewritten by a
   `url.<base>.insteadOf` rule, or a remote defined in your global config, is not
-  inspected.
+  inspected — and renaming a remote never copies a password an `insteadOf` rule
+  adds into the repository's config.
 - The password never leaves the main process: remote URLs reach the window, the
   copy-URL menu and the edit dialog without it. Saving the edit dialog with the
-  URL it showed keeps the password; only this action removes it.
+  URL it showed changes nothing and keeps the password; **changing the host or
+  the path drops it**, since the URL you typed is written as it is. Only this
+  action removes a password while keeping the address.
 
 ## Limits worth knowing
 
