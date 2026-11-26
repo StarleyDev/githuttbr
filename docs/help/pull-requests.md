@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention
 ---
 
 # Pull requests page
@@ -285,6 +285,16 @@ What it does not do:
   for them yet — so a line comment there is still made on the website.
 - **A file without a diff** (binary, or too large for the host to include)
   has no lines to comment on.
+
+## Writing comments
+
+Every box on the page — the comment at the bottom, a reply inside a thread, a
+comment on a line — is the same Markdown editor: **Write / Preview** tabs, a
+formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and
+**@** / **#** completion from the people and pull requests already on screen.
+A reply box shows its tools once you click into it, and sends with
+⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
+has the details and the limits.
 
 ## Limits
 

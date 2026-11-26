@@ -44,7 +44,7 @@ import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
 import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
-import { forgetFinished, registerPrDraft } from '../stores/prList'
+import { forgetFinished, hasUnsentPrDraft, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
@@ -68,6 +68,8 @@ import { readableError } from '../lib/gitErrorHint'
 import { parseDiff } from '../lib/diff'
 import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComment'
 import { getAnchorLine } from '../../../shared/prLineAnchor'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
+import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
 type Section = 'conversation' | 'commits' | 'files' | 'checks'
@@ -273,6 +275,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     return ok
   }
 
+  // Who an @ offers and what a # offers: only what this page and the repository's
+  // lists already hold — no request of their own.
+  const mentions = useMemo(
+    () =>
+      pr
+        ? collectMentionNames(
+            participants(pr),
+            pr.requestedReviewers?.filter((r) => !r.team).map((r) => r.login),
+            pr.assignees?.map((a) => a.login)
+          )
+        : [],
+    [pr]
+  )
+  const getReferences = useRepoReferenceGetter(repoPath)
+
   // One review thread — in the conversation, and under its line in the Files
   // tab. Stable while nothing it shows changes, so the Files tab's line blocks
   // (and the diff under them) are not rebuilt for an unrelated re-render.
@@ -292,9 +309,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           drafts={replyDrafts}
           onReply={(text) => replyRef.current(th.rootId, text)}
           busy={busy}
+          mentions={mentions}
+          getReferences={getReferences}
         />
       ) : null,
-    [pr, web, canReplyInThread, busy]
+    [pr, web, canReplyInThread, busy, mentions, getReferences]
   )
   const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
@@ -497,6 +516,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   onCancelLineDraft={cancelLineDraft}
                   onPostLineDraft={postLineDraft}
                   busy={busy}
+                  mentions={mentions}
+                  getReferences={getReferences}
                 />
               )
             ) : checks === null ? (
@@ -541,11 +562,20 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           {!loading && !error && pr && section === 'conversation' && (
             <footer className="prp-footer">
               <section className="prp-composer">
-                <textarea
-                  className="prd-input"
+                <MarkdownEditor
                   placeholder={t('prDetail.commentPlaceholder')}
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  onChange={setComment}
+                  mentions={mentions}
+                  getReferences={getReferences}
+                  // Leaving for the guide unmounts the page: every box on it counts.
+                  hasUnsentText={hasUnsentPrDraft}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault()
+                      if (!busy) submitComment()
+                    }
+                  }}
                 />
                 <div className="prp-composer-actions">
                   <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
@@ -793,7 +823,9 @@ function ReviewThreadCard({
   canReply,
   drafts,
   onReply,
-  busy
+  busy,
+  mentions,
+  getReferences
 }: {
   thread: PrReviewThread
   pr: PrDetail
@@ -803,6 +835,8 @@ function ReviewThreadCard({
   drafts: React.RefObject<Record<string, string>>
   onReply: (text: string) => Promise<boolean>
   busy: boolean
+  mentions: string[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
   const key = String(thread.rootId)
@@ -836,14 +870,23 @@ function ReviewThreadCard({
       ))}
       {canReply && (
         <div className="prd-thread-reply">
-          <input
-            className="prd-reply-input"
+          {/* A textarea now, so Enter is a new line (or the next list item) and
+              ⌘/Ctrl+Enter sends — the same keys as every other comment box. */}
+          <MarkdownEditor
+            compact
+            inputClassName="prd-reply-input"
             placeholder={t('prDetail.replyPlaceholder')}
-            aria-label={t('prDetail.replyPlaceholder')}
             value={reply}
-            onChange={(e) => changeReply(e.target.value)}
+            onChange={changeReply}
+            mentions={mentions}
+            getReferences={getReferences}
+            // Leaving for the guide unmounts the page: every box on it counts.
+            hasUnsentText={hasUnsentPrDraft}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') send()
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                if (!busy) send()
+              }
             }}
           />
           <button className="btn ghost tiny" onClick={send} disabled={busy || !reply.trim()}>
@@ -867,13 +910,17 @@ function LineCommentComposer({
   draft,
   busy,
   onCancel,
-  onPost
+  onPost,
+  mentions,
+  getReferences
 }: {
   anchor: PrLineAnchor
   draft: React.RefObject<string>
   busy: boolean
   onCancel: () => void
   onPost: (text: string) => void
+  mentions: string[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -908,13 +955,17 @@ function LineCommentComposer({
       <div className="prp-line-composer-loc">
         <code>{anchor.path}</code> · {where}
       </div>
-      <textarea
-        ref={ref}
-        className="prd-input"
+      <MarkdownEditor
+        inputRef={ref}
         placeholder={t('prPage.lineCommentPlaceholder')}
-        aria-label={label}
+        ariaLabel={label}
         value={text}
-        onChange={(e) => change(e.target.value)}
+        onChange={change}
+        mentions={mentions}
+        getReferences={getReferences}
+        // Leaving for the guide unmounts the page: every box on it counts.
+        hasUnsentText={hasUnsentPrDraft}
+        // Escape reaches this only when no @/# list is open: the list closes first.
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             e.preventDefault()
@@ -1140,7 +1191,9 @@ function FilesSection({
   onOpenLineDraft,
   onCancelLineDraft,
   onPostLineDraft,
-  busy
+  busy,
+  mentions,
+  getReferences
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -1155,6 +1208,8 @@ function FilesSection({
   onCancelLineDraft: () => void
   onPostLineDraft: (text: string) => Promise<boolean>
   busy: boolean
+  mentions: string[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
@@ -1203,6 +1258,8 @@ function FilesSection({
           anchor={lineDraft.anchor}
           draft={lineDraftText}
           busy={busy}
+          mentions={mentions}
+          getReferences={getReferences}
           onCancel={() => {
             handlers.current.onCancelLineDraft()
             if (draftIdx >= 0) refocusLine(draftIdx)
@@ -1214,7 +1271,7 @@ function FilesSection({
           }
         />
       ) : null,
-    [lineDraft, lineDraftText, busy, draftIdx, refocusLine]
+    [lineDraft, lineDraftText, busy, draftIdx, refocusLine, mentions, getReferences]
   )
   const lineExtras = useMemo(() => {
     const map = new Map<number, React.ReactNode>()

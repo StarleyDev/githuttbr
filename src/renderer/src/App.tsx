@@ -73,6 +73,7 @@ import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } fro
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi, migrationApi } from './infrastructure/api'
 import { PRODUCT_NAME } from '../../shared/brand'
+import { getLinkClickAction } from '../../shared/externalUrl'
 import { cliViewAction, type CliAction } from './lib/cliView'
 import type { CliOpenPayload } from '../../shared/cli'
 import { runAppCommand } from './appCommands'
@@ -301,7 +302,7 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'repositories':
       return <RepositoriesPage />
     case 'help':
-      return <HelpPage initialPage={tab.page.page} />
+      return <HelpPage initialPage={tab.page.page} request={tab.page} />
     case 'licenses':
       return (
         <Suspense fallback={<PageLoading />}>
@@ -776,17 +777,21 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Open http(s) links in the user's default browser instead of navigating
-  // inside the app window. Catches plain <a href> clicks (e.g. rendered
-  // changelog/markdown) which the main-process window-open handler misses.
+  // Links in rendered text (Markdown previews, release notes, the wiki) never
+  // navigate the window: http(s) and mailto open in the user's browser or mail
+  // client, a `#fragment` is left to the page, and anything else — a relative
+  // `docs/setup.md`, `file:`, a custom scheme — does nothing. Main refuses the
+  // same navigations too; this keeps them from being attempted.
   useEffect(() => {
     const onClick = (e: MouseEvent): void => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return
+      if (e.defaultPrevented) return
       const anchor = (e.target as HTMLElement | null)?.closest('a')
       const href = anchor?.getAttribute('href')
-      if (!href || !/^https?:\/\//i.test(href)) return
+      if (!href) return
+      const action = getLinkClickAction(href)
+      if (action === 'in-page') return
       e.preventDefault()
-      void window.api.openExternal(href)
+      if (action === 'external' && e.button === 0) void window.api.openExternal(href)
     }
     document.addEventListener('click', onClick)
     return () => document.removeEventListener('click', onClick)

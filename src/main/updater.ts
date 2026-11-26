@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { openExternalUrl } from './externalLinks'
 import { autoUpdater, CancellationToken } from 'electron-updater'
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
@@ -258,7 +259,7 @@ export function registerUpdaterHandlers(): void {
     // Unsupported (dev): open the release page; the renderer also handles this,
     // but guard here in case it calls through anyway.
     if (!app.isPackaged) {
-      if (state.info?.url) await shell.openExternal(state.info.url)
+      if (state.info?.url) openExternalUrl(state.info.url, 'updater')
       return
     }
     wireAutoUpdater()

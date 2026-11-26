@@ -1165,6 +1165,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           // running at once are two DevTools.
           (page.type !== 'devtools' || (t.page.type === 'devtools' && t.page.launchId === page.launchId))
       )
+      // Help is one tab, but a link into it names a page: the open tab goes
+      // there. A fresh page object is what tells HelpPage the link was followed.
+      if (existing && page.type === 'help' && page.page) {
+        return { ...s, activeTabId: existing.id, tabs: s.tabs.map((t) => (t.id === existing.id ? { ...t, page } : t)) }
+      }
       if (existing) return { ...s, activeTabId: existing.id }
       // No name is stored: page tabs label themselves at render time, in the
       // language the user is reading right now (see `pageTabLabel`).

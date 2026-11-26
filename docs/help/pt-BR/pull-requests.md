@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr
-source: b05e449a439501a796caf9d103c4204c85bfb380
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção
+source: c269e43eb3dc0b9f86141af27ef39b50e5550953
 ---
 
 # Página de pull requests
@@ -298,6 +298,17 @@ O que não faz:
   site.
 - **Um arquivo sem diff** (binário, ou grande demais para o host incluir) não
   tem linhas para comentar.
+
+## Escrever comentários
+
+Toda caixa da página — o comentário no fim, a resposta dentro de uma thread, o
+comentário numa linha — é o mesmo editor de Markdown: abas **Escrever /
+Visualizar**, uma barra de formatação com os atalhos do GitHub, listas que
+continuam no Enter e sugestões de **@** / **#** a partir das pessoas e dos pull
+requests que já estão na tela. A caixa de resposta mostra as ferramentas quando
+você clica nela, e envia com ⌘/Ctrl+Enter, já que o Enter agora começa uma
+linha nova. [Escrever comentários](writing-comments.md) tem os detalhes e os
+limites.
 
 ## Limites
 

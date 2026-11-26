@@ -163,6 +163,10 @@ let unsentDraft: (() => boolean) | null = null
 export function registerPrDraft(check: (() => boolean) | null): void {
   unsentDraft = check
 }
+/** Whether the open PR page has text nobody sent — in any of its boxes. */
+export function hasUnsentPrDraft(): boolean {
+  return !!unsentDraft?.()
+}
 
 /** Which arrow moved us, so the new page's strip can put the focus back on it. */
 let pendingFocus: -1 | 1 | null = null

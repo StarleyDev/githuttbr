@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CircleDot,
   CheckCircle2,
@@ -21,6 +21,8 @@ import { useSettingsStore } from '../stores/settings'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { useRepoStore } from '../stores/repo'
 import { NO_ITEMS } from '../lib/stableEmpty'
+import { collectMentionNames } from '../lib/markdownEdit'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 
 type IssuePage = Extract<PageContent, { type: 'issue' }>
 
@@ -45,6 +47,12 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
+  // An @ offers the people this issue already shows; a # the repository's loaded PRs and issues.
+  const mentions = useMemo(
+    () => (detail ? collectMentionNames([detail.author], detail.assignees, detail.comments.map((c) => c.author)) : []),
+    [detail]
+  )
+  const getReferences = useRepoReferenceGetter(repoPath)
 
   const load = useCallback(async (): Promise<void> => {
     setError(null)
@@ -154,11 +162,20 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
               </div>
             ))}
 
-            <textarea
-              className="issue-input"
+            <MarkdownEditor
+              className="issue-editor"
+              inputClassName="issue-input"
               placeholder={t('issue.commentPlaceholder')}
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={setComment}
+              mentions={mentions}
+              getReferences={getReferences}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  if (!busy) postComment()
+                }
+              }}
             />
             <div className="issue-actions">
               <button className="btn ghost small" onClick={postComment} disabled={busy || !comment.trim()}>
