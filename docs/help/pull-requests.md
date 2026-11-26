@@ -159,10 +159,12 @@ review still sent you to the browser. In a pull request's **Files** tab, any
 line of the diff takes a comment of its own:
 
 - **Hover a line** and press the **+** that appears over its number, or
-  **click the line** itself (a click that ends a text selection does not count —
-  that is copying). The right-click menu has *Comment on line N* too.
+  **click the line** itself (a click that ends a text selection, or a double
+  click selecting a word, does not count — that is reading). The right-click
+  menu — or the keyboard's context-menu key — has *Comment on line N* too.
 - A box opens **under that line**. Write, then **Comment** — or ⌘/Ctrl+Enter.
-  **Cancel** or **Esc** closes it and drops what was typed.
+  **Cancel** closes it; **Esc** does too, asking first when something was typed.
+  Either way the focus goes back to that line.
 - On success the new thread appears **under its line**, and in the
   Conversation tab's review threads, where everyone else will see it.
 
@@ -177,11 +179,20 @@ Which side the comment lands on follows the line:
 | **Unchanged** | The new version (GitLab is sent both numbers, as it requires) |
 
 Existing threads are drawn under their lines as well, with their reply box
-where the host lets the app reply inside a thread (Forgejo does not).
-A thread the host places on the old or new side of a line shown in the diff
-is placed there; anything else — a comment on a line outside the hunks shown,
-or an outdated GitHub comment whose line has since changed — stays in the
-Conversation tab only, rather than on a guessed line.
+where the host lets the app reply inside a thread (Forgejo does not). A thread
+is drawn on a line only when the host says it still belongs to the diff shown;
+anything else stays in the Conversation tab, rather than on a guessed line:
+
+| Host | A thread written before the latest push |
+|---|---|
+| GitHub | Outdated when its line changed: Conversation only |
+| GitLab | Written against an older head: Conversation only |
+| Azure DevOps | Followed by Azure to where its line is now |
+| Bitbucket Data Center | Orphaned when its line is gone: Conversation only |
+| Forgejo | Forgejo does not say a comment is outdated, so it is drawn at its recorded line number — after a push that line may now hold other code |
+
+A comment on a line outside the hunks shown is in the Conversation tab only, on
+every host.
 
 A comment typed and not sent counts as unsent text: **‹ ›** and Alt+arrows ask
 before leaving it, as they do for the main comment box. Looking at another file
@@ -193,9 +204,14 @@ What it does not do:
   batch comments into and submit later, and no suggested change. Each comment is
   published the moment you send it, as its own thread (on Forgejo, as a review
   holding that one comment, since Forgejo has no single-comment call).
-- **The diff the host sent.** A line is anchored to the diff as it was loaded.
-  If the branch moved since, the host may refuse the line as outside the diff;
-  the message says so — **Refresh** and try again.
+- **The diff you are looking at.** The Files tab remembers which commit (on
+  Azure DevOps, which iteration) its diff was read at, and a comment is sent
+  against that. When the pull request has moved on since — a push, a new merge
+  base — the comment is not posted on whatever line now has that number: it is
+  refused with *the pull request changed since this diff loaded*, and
+  **Refresh** shows the new diff. On GitHub the comment is posted against the
+  commit you read instead, and GitHub marks it outdated if that line has changed.
+  A line the host still will not take is refused as outside the diff.
 - **Refused.** Without permission to comment (a read-only token, an account the
   repository does not let comment), the host refuses it and the message says
   that is the reason.
