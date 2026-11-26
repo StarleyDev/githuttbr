@@ -8,9 +8,11 @@ import {
   getUpdateCompare,
   getUpdatesNewestFirst,
   getUpdatesSeenKey,
+  getUpdateNumbering,
   getUpdateTitle,
   parseUpdatesSeenMark,
   type UpdateCompare,
+  type UpdateNumbering,
   type UpdatesSeenMark
 } from '../lib/prUpdates'
 import { readableError } from '../lib/gitErrorHint'
@@ -134,10 +136,11 @@ export function PrUpdatesSection({
   list: PrUpdateList | null
   error: string | null
   seen: PrUpdatesSeen
-  onViewChanges: (update: PrUpdate, compare: UpdateCompare) => void
+  onViewChanges: (update: PrUpdate, compare: UpdateCompare, numbering: UpdateNumbering) => void
 }): React.JSX.Element {
   const t = useT()
   const ordered = useMemo(() => getUpdatesNewestFirst(list?.updates ?? []), [list])
+  const numbering = useMemo(() => getUpdateNumbering(list?.updates ?? [], list?.startCut), [list])
 
   if (error) return <div className="prd-error">{readableError(error, t, interp)}</div>
   if (!list) {
@@ -158,7 +161,9 @@ export function PrUpdatesSection({
           <Info size={12} aria-hidden="true" /> {t(list.grouping === 'approximate' ? 'prUpdates.approximate' : 'prUpdates.single')}
         </p>
       )}
-      {list.truncated && <p className="prp-side-note prp-updates-note">{t('prUpdates.truncated')}</p>}
+      {list.truncated && (
+        <p className="prp-side-note prp-updates-note">{t(list.startCut ? 'prUpdates.startCut' : 'prUpdates.truncated')}</p>
+      )}
       {newCount > 0 && (
         <div className="prp-updates-bar" role="status">
           <span>{interp(t('prUpdates.newCount'), { n: String(newCount) })}</span>
@@ -169,7 +174,7 @@ export function PrUpdatesSection({
       )}
       <ol className="prp-update-list" aria-label={t('prUpdates.listLabel')}>
         {ordered.map((u) => (
-          <PrUpdateItem key={u.id} update={u} isNew={seen.shownNew.has(u.id)} onViewChanges={onViewChanges} />
+          <PrUpdateItem key={u.id} update={u} numbering={numbering} isNew={seen.shownNew.has(u.id)} onViewChanges={onViewChanges} />
         ))}
       </ol>
     </div>
@@ -178,15 +183,17 @@ export function PrUpdatesSection({
 
 function PrUpdateItem({
   update: u,
+  numbering,
   isNew,
   onViewChanges
 }: {
   update: PrUpdate
+  numbering: UpdateNumbering
   isNew: boolean
-  onViewChanges: (update: PrUpdate, compare: UpdateCompare) => void
+  onViewChanges: (update: PrUpdate, compare: UpdateCompare, numbering: UpdateNumbering) => void
 }): React.JSX.Element {
   const t = useT()
-  const title = getUpdateTitle(u)
+  const title = getUpdateTitle(u, numbering)
   const compare = getUpdateCompare(u)
   const date = fmtDate(u.createdAt)
   const headingId = `prp-update-${u.index}`
@@ -204,6 +211,11 @@ function PrUpdateItem({
             {t('prUpdates.rewritten')}
           </span>
         )}
+        {u.retarget && (
+          <span className="prp-update-badge" title={t('prUpdates.retargetedTitle')}>
+            {t('prUpdates.retargeted')}
+          </span>
+        )}
         {isNew && (
           <span className="prp-update-badge is-new" aria-label={t('prUpdates.newAria')} title={t('prUpdates.newAria')}>
             {t('prUpdates.new')}
@@ -214,7 +226,7 @@ function PrUpdateItem({
           {u.pusher && <span>{interp(t('prUpdates.pushedBy'), { name: u.pusher })}</span>}
         </span>
         {compare && (
-          <button type="button" className="btn ghost tiny prp-update-view" onClick={() => onViewChanges(u, compare)}>
+          <button type="button" className="btn ghost tiny prp-update-view" onClick={() => onViewChanges(u, compare, numbering)}>
             <FileDiff size={12} aria-hidden="true" /> {t('prUpdates.viewChanges')}
           </button>
         )}

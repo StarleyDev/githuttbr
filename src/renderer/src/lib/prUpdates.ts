@@ -54,8 +54,29 @@ export function getNewUpdateIds(updates: readonly PrUpdate[], seen: UpdatesSeenM
   return new Set(updates.filter((u) => Date.parse(u.createdAt) > since).map((u) => u.id))
 }
 
-/** The key and number of an update's heading — the opening push has its own wording. */
-export function getUpdateTitle(update: PrUpdate): { key: TranslationKey; vars: { n: string } } {
+/** How the list counts: its newest update's number, and whether the start was cut off. */
+export interface UpdateNumbering {
+  newest: number
+  startCut: boolean
+}
+
+export function getUpdateNumbering(updates: readonly PrUpdate[], startCut: boolean | undefined): UpdateNumbering {
+  return { newest: updates[updates.length - 1]?.index ?? 0, startCut: !!startCut }
+}
+
+/**
+ * The key and number of an update's heading. The opening push has its own
+ * wording. When the host's record was cut before the opening, the numbers are
+ * not the host's: the heading counts back from the latest instead.
+ */
+export function getUpdateTitle(
+  update: Pick<PrUpdate, 'index' | 'kind'>,
+  numbering: UpdateNumbering
+): { key: TranslationKey; vars: Record<string, string> } {
+  if (numbering.startCut) {
+    const back = numbering.newest - update.index
+    return back <= 0 ? { key: 'prUpdates.titleLatest', vars: {} } : { key: 'prUpdates.titleBefore', vars: { n: String(back) } }
+  }
   return { key: update.kind === 'opened' ? 'prUpdates.titleOpened' : 'prUpdates.title', vars: { n: String(update.index) } }
 }
 
@@ -63,7 +84,7 @@ export function getUpdateTitle(update: PrUpdate): { key: TranslationKey; vars: {
 export interface UpdateCompare {
   from: PrUpdateEnd
   to: PrUpdateEnd
-  /** The update the changes run from; null when it is the merge base (the first update). */
+  /** The update the changes run from; null when it is the merge base (the opening). */
   previousIndex: number | null
 }
 
@@ -75,8 +96,8 @@ export interface UpdateCompare {
  */
 export function getUpdateCompare(update: PrUpdate): UpdateCompare | null {
   if (!update.headSha || !update.fromSha || update.headSha === update.fromSha) return null
-  // The first update listed may not be Update 1 when the list was capped.
-  const isFirst = update.index === 1
+  // The opening is compared with its merge base; any other update with the one before it.
+  const isFirst = update.kind === 'opened'
   // Azure numbers its iterations 1, 2, 3…: the previous one is one less.
   const fromIteration = update.iteration !== undefined ? (isFirst ? 0 : update.iteration - 1) : undefined
   return {

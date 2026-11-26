@@ -176,6 +176,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   // Bumped by every load, so the Commits tab re-reads with the rest of the page.
   const [reloads, setReloads] = useState(0)
+  // Bumped by the Refresh button only: the Updates tab re-reads its pushes then,
+  // not after every comment or review the page posts.
+  const [refreshes, setRefreshes] = useState(0)
   const load = useCallback(async (): Promise<void> => {
     setError(null)
     setReloads((n) => n + 1)
@@ -473,7 +476,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
     : (commits.list?.commits.length ?? pr?.commits)
   // The Updates tab (PrUpdatesSection.tsx): read with the page, for its "1 new".
-  const updates = usePrUpdates(repoPath, remoteUrl, tokens, number, reloads)
+  const updates = usePrUpdates(repoPath, remoteUrl, tokens, number, refreshes)
   const updatesSeen = usePrUpdatesSeen(remoteUrl, number, updates.list, section === 'updates')
   // One update's own changes, shown in the Files tab instead of the whole PR's.
   const [updateView, setUpdateView] = useState<UpdateDiffView | null>(null)
@@ -496,7 +499,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
               </h2>
               {/* Each action its own hue (Settings → Themes → Icon colours, lib/iconTone.ts). */}
-              <button className="icon-btn" data-tone="refresh" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
+              <button className="icon-btn" data-tone="refresh" title={t('prPage.refresh')} onClick={() => {
+                  setRefreshes((n) => n + 1)
+                  void load()
+                }} disabled={busy}>
                 <RefreshCw size={14} />
               </button>
               {aiEnabled && pr && (
@@ -626,8 +632,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 list={updates.list}
                 error={updates.error}
                 seen={updatesSeen}
-                onViewChanges={(update, compare) => {
-                  setUpdateView({ update, compare })
+                onViewChanges={(update, compare, numbering) => {
+                  setUpdateView({ update, compare, numbering })
                   setSection('files')
                 }}
               />

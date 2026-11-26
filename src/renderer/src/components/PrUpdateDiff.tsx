@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { DownloadCloud, Loader2, MessageSquareOff, Undo2 } from 'lucide-react'
+import { DownloadCloud, Info, Loader2, MessageSquareOff, Undo2 } from 'lucide-react'
 import type { PrDetail, PrFile, PrUpdate } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { remoteForPrUrl } from '../lib/prBranchGo'
 import { canFetchPrHead } from '../lib/prCommits'
-import type { UpdateCompare } from '../lib/prUpdates'
+import { getUpdateTitle, type UpdateCompare, type UpdateNumbering } from '../lib/prUpdates'
 import { readableError } from '../lib/gitErrorHint'
 import { useT, interp } from '../i18n'
 
@@ -16,18 +16,22 @@ type Tokens = Parameters<typeof hostingApi.prUpdateFiles>[2]
 export interface UpdateDiffView {
   update: PrUpdate
   compare: UpdateCompare
+  numbering: UpdateNumbering
 }
 
 export type UpdateDiffState =
   | { status: 'loading' }
-  | { status: 'ready'; files: PrFile[] }
+  /** `fromMergeBase`: the host diffed from the two heads' merge base, not between them. */
+  | { status: 'ready'; files: PrFile[]; fromMergeBase: boolean }
   /** Neither this clone nor the host could diff the two commits. */
   | { status: 'missing'; error?: string }
 
 /**
  * The files one update changed. This clone first — `git diff` between the two
- * heads is fast and asks nothing of the host — and the host's compare when a
- * head is not here. `retry` reads again, after a fetch brought the commits.
+ * heads is exact, fast, and asks nothing of the host. A head that is not here
+ * is fetched by its id from the pull request's remote; only when that fails is
+ * the host's compare used, which on GitHub and Data Center diffs from the
+ * merge base. `retry` reads again, after the banner's branch fetch.
  */
 export function usePrUpdateDiff(
   repoPath: string,
@@ -43,15 +47,24 @@ export function usePrUpdateDiff(
     let live = true
     setState({ status: 'loading' })
     const { from, to } = view.compare
+    const shas = [from.sha, to.sha]
+    const diffHere = async (): Promise<PrFile[] | null> => {
+      const here = await gitApi.getLocalCommits(repoPath, shas).catch(() => [] as string[])
+      return here.length === 2 ? gitApi.getCommitRangeFiles(repoPath, from.sha, to.sha).catch(() => null) : null
+    }
     const read = async (): Promise<UpdateDiffState> => {
-      const here = await gitApi.getLocalCommits(repoPath, [from.sha, to.sha]).catch(() => [] as string[])
-      if (here.length === 2) {
-        const local = await gitApi.getCommitRangeFiles(repoPath, from.sha, to.sha).catch(() => null)
-        if (local) return { status: 'ready', files: local }
+      const local = await diffHere()
+      if (local) return { status: 'ready', files: local, fromMergeBase: false }
+      // Fetch the two heads by id from the PR's remote, then compare here.
+      if (!useRepoStore.getState().repos[repoPath]) await useRepoStore.getState().ensure(repoPath).catch(() => undefined)
+      const remote = remoteForPrUrl(useRepoStore.getState().repos[repoPath]?.remotes ?? [], remoteUrl)
+      if (remote && (await repoActions.fetchPrUpdateCommits(repoPath, remote, shas))) {
+        const fetched = await diffHere()
+        if (fetched) return { status: 'ready', files: fetched, fromMergeBase: false }
       }
       try {
-        const files = await hostingApi.prUpdateFiles(repoPath, remoteUrl, tokens, number, from, to)
-        return files ? { status: 'ready', files } : { status: 'missing' }
+        const res = await hostingApi.prUpdateFiles(repoPath, remoteUrl, tokens, number, from, to)
+        return res ? { status: 'ready', files: res.files, fromMergeBase: res.fromMergeBase } : { status: 'missing' }
       } catch (err) {
         return { status: 'missing', error: err instanceof Error ? err.message : String(err) }
       }
@@ -90,11 +103,18 @@ export function PrUpdateDiffBanner({
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const [fetching, setFetching] = useState(false)
-  const { update, compare } = view
+  const { update, compare, numbering } = view
+  const label = (u: { index: number; kind: PrUpdate['kind'] }): string => {
+    const title = getUpdateTitle(u, numbering)
+    return interp(t(title.key), title.vars)
+  }
   const heading =
     compare.previousIndex === null
-      ? interp(t('prUpdates.bannerVsBase'), { n: String(update.index) })
-      : interp(t('prUpdates.bannerVsPrevious'), { n: String(update.index), prev: String(compare.previousIndex) })
+      ? interp(t('prUpdates.bannerVsBase'), { update: label({ index: update.index, kind: 'push' }) })
+      : interp(t('prUpdates.bannerVsPrevious'), {
+          update: label({ index: update.index, kind: 'push' }),
+          prev: label({ index: compare.previousIndex, kind: 'push' })
+        })
   const inFork = !!pr.sourceRepo
   const canFetch = !inFork || canFetchPrHead(remoteUrl)
 
@@ -131,6 +151,11 @@ export function PrUpdateDiffBanner({
       {state.status === 'loading' && (
         <p className="prp-side-note">
           <Loader2 size={12} className="spin" aria-hidden="true" /> {t('prDetail.loading')}
+        </p>
+      )}
+      {state.status === 'ready' && state.fromMergeBase && update.kind === 'rewrite' && (
+        <p className="prp-side-note prp-update-banner-note">
+          <Info size={12} aria-hidden="true" /> {t('prUpdates.mergeBaseNote')}
         </p>
       )}
       {state.status === 'ready' && state.files.length === 0 && <p className="prp-side-note">{t('prUpdates.diffEmpty')}</p>}
