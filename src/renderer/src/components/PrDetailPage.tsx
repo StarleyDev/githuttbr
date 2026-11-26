@@ -26,7 +26,8 @@ import {
   ClipboardList,
   Copy,
   ScrollText,
-  Target
+  Target,
+  History
 } from 'lucide-react'
 import type {
   PageContent,
@@ -45,6 +46,8 @@ import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
 import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
+import { PrUpdatesSection, usePrUpdates, usePrUpdatesSeen } from './PrUpdatesSection'
+import { PrUpdateDiffBanner, usePrUpdateDiff, type UpdateDiffView } from './PrUpdateDiff'
 import { forgetFinished, hasUnsentPrDraft, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -94,7 +97,10 @@ import {
 import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
-type Section = 'conversation' | 'commits' | 'files' | 'checks'
+type Section = 'conversation' | 'commits' | 'updates' | 'files' | 'checks'
+
+/** No review threads: an update's own diff takes no line comments. */
+const NO_THREADS: PrReviewThread[] = []
 
 const REVIEW_KEY: Record<ReviewerState, TranslationKey> = {
   APPROVED: 'prPage.reviewApproved',
@@ -466,6 +472,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const commitCount = commits.list?.truncated
     ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
     : (commits.list?.commits.length ?? pr?.commits)
+  // The Updates tab (PrUpdatesSection.tsx): read with the page, for its "1 new".
+  const updates = usePrUpdates(repoPath, remoteUrl, tokens, number, reloads)
+  const updatesSeen = usePrUpdatesSeen(remoteUrl, number, updates.list, section === 'updates')
+  // One update's own changes, shown in the Files tab instead of the whole PR's.
+  const [updateView, setUpdateView] = useState<UpdateDiffView | null>(null)
+  const updateDiff = usePrUpdateDiff(repoPath, remoteUrl, tokens, number, updateView)
 
   const content = (
     <div className="prp-frame">
@@ -533,6 +545,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             <nav className="prp-tabs" role="tablist">
               <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
               <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commitCount} />
+              <SectionTab
+                id="updates"
+                active={section}
+                onPick={setSection}
+                icon={<History size={13} />}
+                label={t('prUpdates.tab')}
+                count={updates.list?.updates.length}
+                newCount={updatesSeen.unseen.size}
+              />
               <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
               <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
             </nav>
@@ -600,8 +621,54 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </>
             ) : section === 'commits' ? (
               <PrCommitsSection repoPath={repoPath} remoteUrl={remoteUrl} pr={pr} list={commits.list} error={commits.error} />
+            ) : section === 'updates' ? (
+              <PrUpdatesSection
+                list={updates.list}
+                error={updates.error}
+                seen={updatesSeen}
+                onViewChanges={(update, compare) => {
+                  setUpdateView({ update, compare })
+                  setSection('files')
+                }}
+              />
             ) : section === 'files' ? (
-              files === null ? (
+              updateView ? (
+                <>
+                  <PrUpdateDiffBanner
+                    repoPath={repoPath}
+                    remoteUrl={remoteUrl}
+                    pr={pr}
+                    view={updateView}
+                    state={updateDiff.state}
+                    onRetry={updateDiff.retry}
+                    onShowAll={() => setUpdateView(null)}
+                  />
+                  {updateDiff.state.status === 'ready' && updateDiff.state.files.length > 0 && (
+                    <FilesSection
+                      // A fresh list per update: its selection belongs to one diff.
+                      key={updateView.update.id}
+                      files={updateDiff.state.files}
+                      viewed={viewed}
+                      changedSinceViewed={changedSinceViewed}
+                      onToggleViewed={toggleViewed}
+                      onSetFilesViewed={setFilesViewed}
+                      repoPath={repoPath}
+                      prUrl={pr.url}
+                      threads={NO_THREADS}
+                      renderThread={renderFileThread}
+                      lineDraft={null}
+                      lineDraftText={lineDraftText}
+                      onOpenLineDraft={openLineDraft}
+                      onCancelLineDraft={cancelLineDraft}
+                      onPostLineDraft={postLineDraft}
+                      busy={busy}
+                      mentions={mentions}
+                      getReferences={getReferences}
+                      lineCommentsOff
+                    />
+                  )}
+                </>
+              ) : files === null ? (
                 <div className="prd-empty">
                   <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
                 </div>
@@ -1154,7 +1221,8 @@ function SectionTab({
   onPick,
   icon,
   label,
-  count
+  count,
+  newCount
 }: {
   id: Section
   active: Section
@@ -1162,11 +1230,20 @@ function SectionTab({
   icon: React.ReactNode
   label: string
   count?: number
+  /** Items new since the last visit (the Updates tab). */
+  newCount?: number
 }): React.JSX.Element {
+  const t = useT()
+  const fresh = newCount !== undefined && newCount > 0 ? interp(t('prUpdates.tabNew'), { n: String(newCount) }) : null
   return (
     <button role="tab" aria-selected={active === id} className={`prp-tab ${active === id ? 'active' : ''}`} onClick={() => onPick(id)}>
       {icon} {label}
       {count !== undefined && count > 0 && <span className="prp-tab-count">{count}</span>}
+      {fresh && (
+        <span className="prp-tab-count prp-tab-new" aria-label={interp(t('prUpdates.newCount'), { n: String(newCount) })}>
+          {fresh}
+        </span>
+      )}
     </button>
   )
 }
@@ -1356,7 +1433,8 @@ function FilesSection({
   onPostLineDraft,
   busy,
   mentions,
-  getReferences
+  getReferences,
+  lineCommentsOff = false
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -1376,6 +1454,8 @@ function FilesSection({
   busy: boolean
   mentions: string[]
   getReferences: () => MarkdownReference[]
+  /** An update's own diff: its lines are not the PR's, so no "+" to comment on them. */
+  lineCommentsOff?: boolean
 }): React.JSX.Element {
   const t = useT()
   // The file list's speech-bubble counts; only recomputed when the threads change.
@@ -1504,7 +1584,7 @@ function FilesSection({
                 // show KEY=•••• while the setting is on.
                 maskValues={maskSecrets && isSecretFile(file.filename)}
                 repoPath={repoPath}
-                onCommentLine={commentOnLine}
+                onCommentLine={lineCommentsOff ? undefined : commentOnLine}
                 lineExtras={lineExtras}
               />
             ) : (
