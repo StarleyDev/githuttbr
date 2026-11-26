@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, FolderOpen, Folder, Pencil } from 'lucide-re
 import type { CodeSearchHit, FileEntry } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
 import { stepPath, visiblePaths } from '../lib/fileNav'
+import { buildFileTree, collectTreeFiles, type FileTreeNode } from '../lib/fileTree'
 import { bucketOf } from '../lib/fileStats'
 import { MatchRows } from './SearchMatches'
 import { t, type TranslationKey } from '../i18n'
@@ -75,44 +76,7 @@ interface FileListProps {
   activeLine?: number | null
 }
 
-interface TreeNode {
-  name: string
-  path: string
-  children: TreeNode[]
-  file?: FileEntry
-}
-
-function buildTree(files: FileEntry[]): TreeNode[] {
-  const root: TreeNode = { name: '', path: '', children: [] }
-  for (const f of files) {
-    const parts = f.path.split('/')
-    let node = root
-    let acc = ''
-    for (let i = 0; i < parts.length; i++) {
-      acc = acc ? `${acc}/${parts[i]}` : parts[i]
-      const isLeaf = i === parts.length - 1
-      let child = node.children.find((c) => c.name === parts[i] && !!c.file === isLeaf)
-      if (!child) {
-        child = { name: parts[i], path: acc, children: [], file: isLeaf ? f : undefined }
-        node.children.push(child)
-      }
-      node = child
-    }
-  }
-  // Compress single-child folder chains (a/b/c → "a/b/c")
-  const compress = (node: TreeNode): TreeNode => {
-    while (!node.file && node.children.length === 1 && !node.children[0].file) {
-      const only = node.children[0]
-      node = { ...only, name: node.name ? `${node.name}/${only.name}` : only.name }
-    }
-    return { ...node, children: node.children.map(compress) }
-  }
-  const sortNodes = (nodes: TreeNode[]): TreeNode[] =>
-    [...nodes]
-      .sort((a, b) => Number(!!a.file) - Number(!!b.file) || a.name.localeCompare(b.name))
-      .map((n) => ({ ...n, children: sortNodes(n.children) }))
-  return sortNodes(root.children.map(compress))
-}
+type TreeNode = FileTreeNode<FileEntry>
 
 // Aggregate descendant-file counts for a folder, bucketed like statusClass —
 // shown as badges when the folder is collapsed.
@@ -126,11 +90,7 @@ interface FolderCounts {
 
 function countsOf(node: TreeNode): FolderCounts {
   const c: FolderCounts = { add: 0, mod: 0, del: 0, ren: 0, conflict: 0 }
-  const walk = (n: TreeNode): void => {
-    if (n.file) c[bucketOf(n.file.status)]++
-    for (const child of n.children) walk(child)
-  }
-  walk(node)
+  for (const f of collectTreeFiles(node)) c[bucketOf(f.status)]++
   return c
 }
 
@@ -299,7 +259,10 @@ const PLAIN_CLICK = {
 export function FileListView(props: FileListProps): React.JSX.Element {
   const view = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const tree = useMemo(() => (view === 'tree' ? buildTree(props.files) : []), [view, props.files])
+  const tree = useMemo(
+    () => (view === 'tree' ? buildFileTree(props.files, (f) => f.path) : []),
+    [view, props.files]
+  )
   const listRef = useRef<HTMLDivElement>(null)
   // Fallback cursor for lists whose selection lives elsewhere (the conflicted
   // list opens the resolver, so `current` never points into it).

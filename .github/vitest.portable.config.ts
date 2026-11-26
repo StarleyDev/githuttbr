@@ -21,6 +21,8 @@ export default {
     globalSetup: [],
     include: [
       'test/pureLogic.test.ts',
+      'test/fileTree.test.ts',
+      'test/prViewed.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
       'test/prPickerLogic.test.ts',

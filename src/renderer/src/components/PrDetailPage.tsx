@@ -61,6 +61,8 @@ import {
   type ReviewerState
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
+import { PrFileList } from './PrFileList'
+import { usePrViewed } from './usePrViewed'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
@@ -128,28 +130,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(null)
   const lineDraftText = useRef('')
 
-  // "Viewed" ticks are local and kept per repo + PR: GitHub's own viewed state
-  // has no simple REST call. Same key as the modal used, so ticks carry over.
-  const viewedKey = `githuttbr-pr-viewed:${remoteUrl}#${number}`
-  const [viewed, setViewed] = useState<Set<string>>(() => {
-    try {
-      return new Set(JSON.parse(localStorage.getItem(viewedKey) || '[]') as string[])
-    } catch {
-      return new Set()
-    }
-  })
-  const toggleViewed = (f: string): void =>
-    setViewed((cur) => {
-      const next = new Set(cur)
-      if (next.has(f)) next.delete(f)
-      else next.add(f)
-      try {
-        localStorage.setItem(viewedKey, JSON.stringify([...next]))
-      } catch {
-        // Storage full or blocked: the tick still shows for this session.
-      }
-      return next
-    })
+  // "Viewed" ticks, per file version: a push that changes a ticked file un-ticks it.
+  const { viewed, changed: changedSinceViewed, setFilesViewed } = usePrViewed(remoteUrl, number, files)
+  const toggleViewed = (f: string): void => setFilesViewed([f], !viewed.has(f))
 
   const tokens = useMemo(
     () => ({
@@ -505,7 +488,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 <FilesSection
                   files={files}
                   viewed={viewed}
+                  changedSinceViewed={changedSinceViewed}
                   onToggleViewed={toggleViewed}
+                  onSetFilesViewed={setFilesViewed}
                   repoPath={repoPath}
                   prUrl={pr.url}
                   threads={pr.reviewThreads}
@@ -1181,7 +1166,9 @@ function ChangeSummary({ pr, files }: { pr: PrDetail; files: PrFile[] | null }):
 function FilesSection({
   files,
   viewed,
+  changedSinceViewed,
   onToggleViewed,
+  onSetFilesViewed,
   repoPath,
   prUrl,
   threads,
@@ -1197,7 +1184,10 @@ function FilesSection({
 }: {
   files: PrFile[]
   viewed: Set<string>
+  /** Ticked once, changed by a push since. */
+  changedSinceViewed: Set<string>
   onToggleViewed: (f: string) => void
+  onSetFilesViewed: (paths: string[], viewed: boolean) => void
   repoPath: string
   prUrl: string
   threads: PrReviewThread[]
@@ -1299,44 +1289,15 @@ function FilesSection({
 
   return (
     <div className="prp-files-split">
-      <div className="prp-file-list">
-        <div className="prd-section-title">
-          {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
-        </div>
-        {files.map((f) => (
-          <div
-            key={f.filename}
-            className={`prd-file prp-file-row ${f.filename === file?.filename ? 'selected' : ''} ${viewed.has(f.filename) ? 'viewed' : ''}`}
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelected(f.filename)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                setSelected(f.filename)
-              }
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={viewed.has(f.filename)}
-              title={t('prPage.markViewed')}
-              aria-label={t('prPage.markViewed')}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleViewed(f.filename)}
-            />
-            <span className={`prd-file-status st-${f.status}`} title={f.status}>
-              {f.status === 'added' ? 'A' : f.status === 'removed' ? 'D' : f.status === 'renamed' ? 'R' : 'M'}
-            </span>
-            <span className="prd-file-name" title={f.filename}>
-              {f.filename}
-            </span>
-            <span className="prd-file-stat">
-              <span className="ins-add">+{f.additions}</span> <span className="ins-del">−{f.deletions}</span>
-            </span>
-          </div>
-        ))}
-      </div>
+      <PrFileList
+        files={files}
+        viewed={viewed}
+        changedSinceViewed={changedSinceViewed}
+        selected={file?.filename ?? ''}
+        prKey={prUrl}
+        onSelectFile={setSelected}
+        onSetFilesViewed={onSetFilesViewed}
+      />
 
       <div className="prp-file-diff" ref={diffRef}>
         {file && (

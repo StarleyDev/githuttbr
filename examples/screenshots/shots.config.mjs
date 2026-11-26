@@ -1046,6 +1046,74 @@ export const shots = [
     }
   },
   {
+    // The Files tab in Tree view: a PR's files under their folders, each folder
+    // with its summed +/- and viewed count, one folder folded and fully viewed,
+    // another partly viewed. Faked detail and files — a fictional GitHub
+    // repository, no network.
+    out: 'pr-files-tree',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
+        const patch = [
+          '@@ -1,5 +1,11 @@',
+          " import { listFiles } from './files'",
+          " import { rankHits } from './rank'",
+          '',
+          '-export function search(query: string): string[] {',
+          '-  return listFiles().filter((f) => f.includes(query))',
+          '+export function search(query: string, limit = 50): string[] {',
+          '+  const q = query.trim()',
+          '+  if (!q) return []',
+          '+  const hits = listFiles().filter((f) => f.includes(q))',
+          '+  return rankHits(hits, q).slice(0, limit)',
+          ' }'
+        ].join('\n')
+        const files = [
+          { filename: 'src/search/index.ts', status: 'modified', additions: 5, deletions: 2, patch },
+          { filename: 'src/search/rank.ts', status: 'added', additions: 42, deletions: 0, patch: '@@ -0,0 +1 @@\n+export {}' },
+          { filename: 'src/search/rank.test.ts', status: 'added', additions: 57, deletions: 0, patch: '@@ -0,0 +1 @@\n+export {}' },
+          { filename: 'src/palette/SearchResults.tsx', status: 'modified', additions: 12, deletions: 4, patch: '@@ -1 +1 @@\n-a\n+b' },
+          { filename: 'src/palette/styles.css', status: 'modified', additions: 6, deletions: 1, patch: '@@ -1 +1 @@\n-a\n+b' },
+          { filename: 'src/legacy/find.ts', status: 'removed', additions: 0, deletions: 31, patch: '@@ -1 +0,0 @@\n-a' },
+          { filename: 'docs/guide/search.md', status: 'added', additions: 18, deletions: 0, patch: '@@ -0,0 +1 @@\n+a' },
+          { filename: 'docs/guide/palette.md', status: 'modified', additions: 3, deletions: 1, patch: '@@ -1 +1 @@\n-a\n+b' },
+          { filename: 'package.json', status: 'modified', additions: 1, deletions: 1, patch: '@@ -1 +1 @@\n-a\n+b' }
+        ]
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+          body: 'Search filenames across open repositories from the command palette.',
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          comments: [], reviews: [], reviewThreads: [],
+          commits: 3, changedFiles: files.length, additions: 144, deletions: 40
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ revision: { headSha: 'c0ffee42' }, files }))
+      })
+      await page.evaluate((repoPath) => {
+        window.__shot.settings.getState().update((s) => ({ ...s, fileListView: 'tree' }))
+        // Viewed ticks live in the renderer's storage. The path-only list is the
+        // old format, migrated on load at each file's current version; the mark
+        // below holds a version that no longer matches — a file a push changed.
+        const pr = 'https://github.com/example/workspace.git#42'
+        localStorage.setItem(
+          `githuttbr-pr-viewed:${pr}`,
+          JSON.stringify(['src/search/rank.ts', 'src/search/rank.test.ts', 'docs/guide/search.md', 'docs/guide/palette.md'])
+        )
+        localStorage.setItem(`githuttbr-pr-viewed-marks:${pr}`, JSON.stringify({ 'src/palette/styles.css': 'stale' }))
+        window.__shot.settings.getState().openPageTab({
+          type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
+        })
+      }, repos['octopus-merge'])
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-tab').nth(2).click()
+      await page.locator('.prp-folder-row', { hasText: 'docs/guide' }).click()
+      await page.locator('.prp-file-row', { hasText: 'index.ts' }).click()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // The Commits tab: a pull request's commits grouped by day, one with its
     // full message open, and one this clone does not have — its notice
     // offering the branch fetch. Faked detail and commits — a fictional GitHub
