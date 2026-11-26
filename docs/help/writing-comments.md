@@ -1,7 +1,7 @@
 ---
 title: Writing comments
 category: Sync & many repos
-order: 57
+order: 57.5
 summary: The Markdown editor behind every comment box — Write / Preview, a formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and @mention / #reference completion.
 keywords: markdown editor comment box toolbar bold italic code link quote heading bulleted numbered task list checklist preview write shortcut mention at sign reference hash issue number autocomplete reply pull request description issue body
 ---
@@ -54,7 +54,9 @@ tool** exactly like a typed word, and redo brings it back.
 
 The toolbar is one stop for Tab; ← → move between its buttons, and ↓ opens the
 heading menu. Inside a comment box ⌘/Ctrl+K makes a link instead of opening the
-command palette.
+command palette. On a Mac the shortcuts use ⌘ only, so Ctrl+B, Ctrl+E and
+Ctrl+K keep doing what macOS text fields do with them. On a keyboard layout
+whose letters are not Latin, the shortcuts follow the physical B, I, E and K keys.
 
 ## Lists
 
@@ -85,16 +87,27 @@ anything inside code are left alone.
 
 ## Sending
 
-The keys the boxes had stay: ⌘/Ctrl+Enter sends a pull request or issue comment,
-a thread reply and a line comment; Esc cancels a line comment. A **thread
-reply** used to be a one-line field sent with Enter; it is a small text box now,
-so Enter is a new line (or the next list item) and ⌘/Ctrl+Enter sends. A reply
-box shows its tabs and tools once you click into it, so a long conversation
-does not grow a toolbar under every thread.
+⌘/Ctrl+Enter sends from every box: a pull request or issue comment, a thread
+reply, a line comment, and the description of a new issue. It works from the
+tabs, the toolbar and the preview too, not only the field. Esc cancels a line
+comment, from the same places. A **thread reply** used to be a one-line field
+sent with Enter; it is a small text box now, so Enter is a new line (or the
+next list item) and ⌘/Ctrl+Enter sends. A reply box shows its tabs and tools
+once you click into it, so a long conversation does not grow a toolbar under
+every thread.
 
-**Markdown supported**, under a box on the pull request and issue pages, opens
-this page. Inside the new pull request and new issue dialogs it is a plain note:
-the handbook would open behind the dialog.
+## The cheat sheet
+
+**Markdown supported**, under every box, opens a cheat sheet in place: each
+format, what to type for it, and its shortcut. Esc or a click elsewhere closes
+it. Nothing you are writing moves.
+
+At its foot, **Open the full guide** opens this page. The handbook is a tab of
+its own, so going there leaves the page the box is on, and the text not sent
+from it would be lost: when there is any — in this box or in any other on the
+pull request page — the app asks first. Inside the new pull request and new
+issue dialogs the sheet has no such link, since the handbook would open behind
+the dialog.
 
 ## Limits
 
@@ -109,5 +122,8 @@ the handbook would open behind the dialog.
 - **Preview is the app's renderer.** It shows Markdown as the app draws it; the
   host's own rendering may differ in details (GitHub-specific extensions,
   mentions turned into links).
+- **Posted comments are not rendered.** Once sent, a comment shows in the app's
+  conversation as plain text, with links made clickable — Markdown formatting is
+  only drawn in Preview and on the host's website.
 - The shortcuts are fixed: they are not in the shortcuts settings, and do not
   follow a rebinding there.

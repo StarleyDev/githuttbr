@@ -1,10 +1,10 @@
 ---
 title: Escrever comentários
 category: Sincronização e vários repositórios
-order: 57
+order: 57.5
 summary: O editor de Markdown por trás de toda caixa de comentário — Escrever / Visualizar, uma barra de formatação com os atalhos do GitHub, listas que continuam no Enter e sugestões de @menção / #referência.
 keywords: editor markdown caixa de comentário barra de ferramentas negrito itálico código link citação título lista com marcadores numerada tarefas checklist visualizar escrever atalho menção arroba referência cerquilha número da issue autocompletar resposta descrição do pull request corpo da issue
-source: 5af854bb439ca88349a2b22c0d5e8ef75c40a14d
+source: 09bca660ae78b5922c3a7306f4001d893844c75b
 ---
 
 # Escrever comentários
@@ -56,7 +56,10 @@ volta.
 
 A barra é uma parada só para o Tab; ← → andam entre os botões, e ↓ abre o menu
 de títulos. Dentro de uma caixa de comentário, ⌘/Ctrl+K cria um link em vez de
-abrir a paleta de comandos.
+abrir a paleta de comandos. No Mac os atalhos usam só o ⌘, então Ctrl+B, Ctrl+E
+e Ctrl+K continuam fazendo o que os campos de texto do macOS fazem com eles. Num
+layout de teclado cujas letras não são latinas, os atalhos seguem as teclas
+físicas B, I, E e K.
 
 ## Listas
 
@@ -86,17 +89,28 @@ título e qualquer coisa dentro de código ficam de fora.
 
 ## Enviar
 
-As teclas que as caixas tinham continuam: ⌘/Ctrl+Enter envia um comentário de
-pull request ou de issue, uma resposta de thread e um comentário de linha; Esc
-cancela um comentário de linha. Uma **resposta de thread** era um campo de uma
-linha enviado com Enter; agora é uma caixa de texto pequena, então Enter é uma
-linha nova (ou o próximo item da lista) e ⌘/Ctrl+Enter envia. A caixa de
-resposta mostra as abas e as ferramentas quando você clica nela, para que uma
-conversa longa não ganhe uma barra embaixo de cada thread.
+⌘/Ctrl+Enter envia de qualquer caixa: um comentário de pull request ou de
+issue, uma resposta de thread, um comentário de linha e a descrição de uma nova
+issue. Funciona também a partir das abas, da barra e da visualização, não só do
+campo. Esc cancela um comentário de linha, dos mesmos lugares. Uma **resposta
+de thread** era um campo de uma linha enviado com Enter; agora é uma caixa de
+texto pequena, então Enter é uma linha nova (ou o próximo item da lista) e
+⌘/Ctrl+Enter envia. A caixa de resposta mostra as abas e as ferramentas quando
+você clica nela, para que uma conversa longa não ganhe uma barra embaixo de
+cada thread.
 
-**Markdown suportado**, embaixo de uma caixa nas páginas de pull request e de
-issue, abre esta página. Nos diálogos de novo pull request e nova issue é só um
-aviso: o manual abriria atrás do diálogo.
+## O guia rápido
+
+**Markdown suportado**, embaixo de cada caixa, abre um guia rápido ali mesmo:
+cada formato, o que digitar para ele e o atalho. Esc ou um clique fora fecha o
+guia. Nada do que você está escrevendo sai do lugar.
+
+No rodapé, **Abrir o guia completo** abre esta página. O manual é uma aba
+própria, então ir até ele sai da página onde a caixa está, e o texto não
+enviado dela se perderia: quando há algum — nesta caixa ou em qualquer outra da
+página do pull request — o app pergunta antes. Nos diálogos de novo pull
+request e nova issue o guia rápido não tem esse link, já que o manual abriria
+atrás do diálogo.
 
 ## Limites
 
@@ -111,5 +125,9 @@ aviso: o manual abriria atrás do diálogo.
 - **A visualização é o renderizador do app.** Mostra o Markdown como o app
   desenha; a renderização do host pode diferir em detalhes (extensões próprias
   do GitHub, menções viradas em links).
+- **Comentários enviados não são renderizados.** Depois de enviado, um
+  comentário aparece na conversa do app como texto simples, com os links
+  clicáveis — a formatação Markdown só é desenhada na visualização e no site do
+  host.
 - Os atalhos são fixos: não aparecem nas configurações de atalhos e não seguem
   uma troca feita lá.
