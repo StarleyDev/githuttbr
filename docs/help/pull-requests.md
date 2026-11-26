@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo
 ---
 
 # Pull requests page
@@ -129,7 +129,9 @@ you:
 
 The header has the same two moves as buttons: **Go to source branch** and
 **Go to target branch**. They work on the branch you are already on too —
-they just take you to the repository.
+they just take you to the repository. With [icon colors](themes.md#icon-colors)
+on, each header button has its own: refresh blue, AI review violet, preview
+teal, source branch green, target branch orange (open in browser stays grey).
 
 Nothing is looked up until you click: opening a pull request does not read or
 fetch any branch.
@@ -380,6 +382,54 @@ What it does not do:
   edit their comments on yet, although the app can make the call.
 - **The description** of the pull request and its reviews' summaries are not
   comments, and are not edited here.
+
+## What a `#123` or `AB#123` is about
+
+A commit that says *fixes AB#4821* or a comment that says *see #312* tells you
+a number, not what it was. Finding out meant opening it. Now, **pointing at a
+reference** — or tabbing to it — opens a small card with what the host says
+about it:
+
+- an icon for its kind, and the reference as written;
+- its **title**;
+- its **state** (open, closed, merged — on Azure DevOps, the work item's own
+  state, such as *Active* or *Resolved*);
+- on Azure DevOps, the **work item type** (Bug, User Story, Task…).
+
+![The card on a work item reference in a comment: its type, title and state](../screenshots/reference-card.webp)
+
+The cards are on the pull request page (description, comments, review threads,
+and the full message of a commit in the **Commits** tab), the issue page, and
+the subject in the commit details panel. In the **Commits** tab on Azure DevOps,
+each `AB#123` in a commit's subject also shows its title beside it, in grey.
+
+| Reference | Host | Read from |
+|---|---|---|
+| `AB#123`, and `#123` in an Azure repository | Azure DevOps | Work items, up to 200 in one request |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (which answers for pull requests too), one request each |
+| `#123` / `!123` | GitLab | Issues / merge requests, one request per kind |
+| `#123` | Forgejo | Issues (pull requests too), one request each |
+
+Nothing is asked until a card opens. Then the reference you are on and every
+other one on the page not yet known go in one call, so the next card is
+usually instant. Answers are kept for five minutes while the app runs (a
+reference that could not be read, for one), never on disk. The call is made as
+the profile the repository is [bound to](profiles.md).
+
+What it does not do:
+
+- **Bitbucket** has no card: the app reads no issues there, and the link
+  opens the browser as before.
+- **Not found, or no access.** A deleted issue, a work item in a project this
+  account cannot see, or an Azure token without the *Work Items (Read)* scope
+  all read the same: the card says it cannot be read, and the link still works.
+- **`AB#123` outside Azure DevOps** — in a GitHub repository connected to Azure
+  Boards — is not linked, so it has no card: the app does not know which
+  organization it belongs to.
+- **A bare `#123` in the Commits tab's subjects** gets no title beside it: on
+  Azure it is as often a pull request number (*Merged PR 123*) as a work item.
+  Its title is one hover away in the commit's message.
+- **The graph's** commit rows do not show cards.
 
 ## Limits
 

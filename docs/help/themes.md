@@ -49,6 +49,13 @@ one family:
   Environment green; Integrations and Data cyan; Themes orange; Security red.
   General and Shortcuts stay grey.
 
+A row of icon buttons with no labels does the opposite — each button gets its
+own color, so they can be told apart. On the [pull request page](pull-requests.md)
+the header's buttons read refresh blue, AI review the accent, preview locally
+teal, go to source branch green and go to target branch orange (open in browser
+stays grey), and your own comments' **Edit** takes the accent and **Delete**
+red. Blue and teal are mixes of the theme's colors, so they follow it too.
+
 | Option | What you see |
 |---|---|
 | **Monochrome** | Every icon grey, as before this option existed |
@@ -59,7 +66,7 @@ The colors come from the theme — a theme that repaints its green or its accent
 repaints the icons with it, custom and AI-generated themes included.
 
 Limits: only the toolbar's main buttons, the sidebar section headers, the Tools
-menu and the Settings pages are colored; other menus, the rows inside a section
+menu, the Settings pages and the pull request page's buttons are colored; other menus, the rows inside a section
 and the commit graph are not. A hovered menu row keeps its usual look, icon
 included. Color
 is never the only clue — every icon keeps its label.

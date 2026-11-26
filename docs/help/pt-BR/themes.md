@@ -50,6 +50,14 @@ grupo se ler como uma família:
   Ambiente verde; Integrações e Dados ciano; Temas laranja; Segurança vermelho.
   Geral e Atalhos ficam cinza.
 
+Uma fileira de botões só com ícone, sem nome, faz o contrário: cada botão ganha
+a sua cor, para se distinguirem. Na [página do pull request](pull-requests.md),
+os botões do cabeçalho ficam assim: atualizar azul, revisão com IA no destaque,
+pré-visualizar localmente verde-azulado, ir para a branch de origem verde e ir
+para a branch de destino laranja (abrir no navegador fica cinza); nos seus
+comentários, **Editar** fica no destaque e **Excluir** vermelho. O azul e o
+verde-azulado são misturas das cores do tema, então também acompanham o tema.
+
 | Opção | O que aparece |
 |---|---|
 | **Monocromático** | Todos os ícones cinza, como antes desta opção |
@@ -60,7 +68,8 @@ As cores vêm do tema: um tema que muda o verde ou o destaque muda os ícones
 junto, inclusive os temas personalizados e os gerados por IA.
 
 Limites: só os botões principais da barra, os cabeçalhos das seções da lateral,
-o menu Ferramentas e as páginas das Configurações ganham cor; os outros menus, as
+o menu Ferramentas, as páginas das Configurações e os botões da página do pull
+request ganham cor; os outros menus, as
 linhas dentro das seções e o grafo não. Uma linha de menu sob o mouse mantém o
 visual de sempre, ícone incluído. A cor nunca é a
 única pista: todo ícone mantém o nome.
