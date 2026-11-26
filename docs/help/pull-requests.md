@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention
+keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed
 ---
 
 # Pull requests page
@@ -217,6 +217,22 @@ What it does not do:
 - **bitbucket.org** pull requests open in the browser — the app has no page for
   them yet — so this tab is not reached there, although the app can read the
   list.
+
+## Reading the files
+
+A pull request of two hundred files is hard to read as two hundred full paths.
+The **Files** tab's list has the same **Path / Tree** switch as the commit
+panel, and the choice is the same one app-wide. In **Tree**, files sit under
+their folders (a chain like `src/main/ipc` is one row), and each folder shows
+its summed **+/−** and how many of its files are viewed (*3/5*). A folder's
+checkbox marks every file inside as viewed, or clears them all; ticks are kept
+on this computer only, never sent to the host. Click a folder, or press ←/→ on
+it, to fold it; ↑/↓ (or j/k) step through the files on screen and open each
+diff. Folded folders are remembered per pull request until the app quits, and a
+file opened inside one unfolds the way to it. The tree is sorted by name, not in
+the order the host lists the files.
+
+![The Files tab in Tree view: folders with their summed changes and viewed counts, one folded](../screenshots/pr-files-tree.webp)
 
 ## Commenting on a line
 

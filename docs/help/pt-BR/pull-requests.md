@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista
+source: 8e6695f2ae138acd9b484cf703d3e3e2abf16d87
 ---
 
 # Página de pull requests
@@ -225,6 +225,23 @@ O que não faz:
 - **bitbucket.org**: os pull requests abrem no navegador — o app ainda não tem
   página para eles —, então esta aba não aparece lá, embora o app consiga ler a
   lista.
+
+## Ler os arquivos
+
+Um pull request de duzentos arquivos é difícil de ler como duzentos caminhos
+completos. A lista da aba **Arquivos** tem a mesma chave **Caminho / Árvore**
+do painel de commit, e a escolha vale para o app inteiro. Em **Árvore**, os
+arquivos ficam sob as pastas (uma sequência como `src/main/ipc` vira uma linha
+só), e cada pasta mostra a soma de **+/−** e quantos dos seus arquivos já foram
+vistos (*3/5*). A caixa de uma pasta marca como vistos todos os arquivos dentro
+dela, ou desmarca todos; as marcas ficam só neste computador, nunca vão para o
+host. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
+percorrem os arquivos na tela e abrem o diff de cada um. As pastas recolhidas
+são lembradas por pull request até o app fechar, e um arquivo aberto dentro de
+uma delas reabre o caminho até ele. A árvore é ordenada por nome, não na ordem
+em que o host lista os arquivos.
+
+![A aba Arquivos em Árvore: pastas com a soma das mudanças e quantos arquivos foram vistos, uma recolhida](../../screenshots/pr-files-tree.webp)
 
 ## Comentar numa linha
 
