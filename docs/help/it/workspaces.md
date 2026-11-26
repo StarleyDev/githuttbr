@@ -3,7 +3,8 @@ title: Aree di lavoro, schede e gruppi
 category: Per iniziare
 order: 3
 summary: Tanti repository senza affogare: schede, gruppi, cartelle e aree di lavoro.
-keywords: area di lavoro workspace schede tabs gruppi cartelle più repo organizza cambia layout
+keywords: area di lavoro workspace schede tabs gruppi cartelle più repo organizza cambia layout vai al repository selettore dimensione delle schede go to repository switcher tab sizing
+source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ---
 
 # Aree di lavoro, schede e gruppi
@@ -18,7 +19,9 @@ quella attiva. Puoi anche trascinarle per riordinarle, chiuderle con il clic
 centrale, o premere <kbd>⌘⇧T</kbd> per riaprire l'ultima che hai chiuso. Clic
 destro su una scheda di repository (o su una pillola dentro un
 [gruppo](#gruppi)) per il [menu contestuale del repository](repo-menu.md) —
-alias, worktree, GitHub, terminale, mostra, editor e rimozione. Chiudi
+alias, worktree, GitHub, terminale, mostra, editor e, in fondo, **Chiudi questo
+repository** e **Chiudi le altre** (una pillola in un gruppo offre invece la
+rimozione). Chiudi
 l'ultima scheda e <kbd>⌘W</kbd> chiude invece la finestra. Un punto sulla scheda
 significa lavoro non committato; uno diverso significa conflitti.
 
@@ -28,11 +31,70 @@ modifiche non committate o conflitti, l'avviso ti costringe deliberatamente a
 cercare il pulsante, così una pressione di tasto a vuoto dopo <kbd>⌘W</kbd> non
 può chiudere lavoro che avevi ancora fra le mani.
 
+### Dimensione delle schede
+
+Per impostazione predefinita (**Impostazioni → Disposizione → Dimensione delle
+schede → Adatta**) le schede si comportano come quelle di un browser: quando la
+striscia resta senza spazio si restringono in modo uguale fino a una larghezza
+minima, e scorrono solo quando anche quel minimo è raggiunto. **Fissa** riporta il
+comportamento classico — ogni scheda mantiene la larghezza del suo contenuto e la
+striscia scorre appena non ci stanno tutte.
+
+### Andare a un repository
+
+Con dieci o più repository aperti, trovarne uno nella striscia vuol dire
+scorrere, <kbd>⌘1</kbd>–<kbd>⌘9</kbd> si fermano alla nona scheda, e la [tavolozza
+dei comandi](search.md) mescola i repository aperti a tutte le azioni. Premi
+<kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> (o **Vista → Vai al repository…**) e scrivi
+qualche lettera del nome, della cartella o del branch, poi <kbd>Invio</kbd>.
+
+![Il selettore dei repository, i più usati di recente per primi](../../screenshots/repo-switcher.webp)
+
+L’elenco contiene solo i repository aperti, compresi quelli nei gruppi, nell’ordine
+in cui li hai guardati l’ultima volta. Quello che hai appena lasciato è in cima,
+quindi <kbd>⌘J</kbd> <kbd>Invio</kbd> ti riporta lì. Ogni riga porta ciò che mostra
+la sua scheda: il branch, il punto di lavoro non committato o di conflitto, il
+gruppo in cui sta e il suo tasto <kbd>⌘1</kbd>–<kbd>⌘9</kbd> quando ce l’ha. Il
+repository sullo schermo è in fondo, attenuato. Dietro il selettore non si scurisce
+nulla; un clic fuori o <kbd>Esc</kbd> lo chiude.
+
+Quando nulla di aperto corrisponde, l’ultima riga, **Cerca in tutti i
+repository**, porta la ricerca alla pagina [Repository](repositories.md). La
+scorciatoia si può riassegnare in **Impostazioni → Scorciatoie**.
+
+*Limiti:* l’ordine è ricordato solo per questa sessione, quindi dopo un riavvio
+parte dall’ordine delle schede. Un repository aperto in due schede compare una volta
+sola, alla sua prima scheda. I repository di altri [workspace](#aree-di-lavoro) non sono
+elencati — cambia prima workspace, o usa la pagina Repository.
+
 ## Gruppi
 
 Raccogli repository affini in una **scheda di gruppo** con un nome e un colore.
 Dentro un gruppo ottieni una seconda riga con una pillola per repository, e il
 gruppo stesso può fare **Fetch su tutti** o **Pull su tutti** in un colpo solo.
+
+Per iniziarne uno, clic destro su una scheda di repository → *Nuovo gruppo…*: la
+scheda diventa un gruppo con quel repository, nello stesso posto. Una volta che un
+gruppo esiste, lo stesso menu dice *Aggiungi a un gruppo →*, con i gruppi aperti.
+Trascinare una scheda di repository su una pillola di gruppo fa lo stesso.
+
+*Nuovo gruppo…* chiede insieme un nome e un colore. Il colore parte da uno che
+nessun gruppo aperto porta ancora, scelto a caso, così i gruppi non cominciano tutti
+uguali.
+
+![La finestra Nuovo gruppo, con nome e colore scelti insieme](../../screenshots/new-group-dialog.webp)
+
+Per ricolorare un gruppo, clic destro su di esso: i dieci colori sono nel menu come
+una fila di pallini, con un anello intorno a quello attuale, e un clic lo applica.
+*Colore personalizzato…* sotto la fila apre un selettore per qualsiasi altro colore.
+Le cartelle e le sezioni della pagina Repository usano la stessa fila.
+
+![Il menu contestuale di un gruppo: la fila dei colori, Colore personalizzato…, Separa gruppo e Chiudi il gruppo](../../screenshots/group-color-menu.webp)
+
+Per sciogliere un gruppo, clic destro su di esso → **Separa gruppo**. Ogni
+repository diventa una scheda normale dove stava il gruppo, mantenendo le pagine che
+aveva aperte. **Chiudi il gruppo** chiude invece il gruppo e tutti i suoi repository.
+Le cartelle non sopravvivono a una separazione: esistono solo dentro un gruppo.
 
 ![Una scheda di gruppo con diversi repository](../../screenshots/repo-groups.webp)
 
