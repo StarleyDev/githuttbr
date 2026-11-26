@@ -263,6 +263,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   fetchRemote: 'fetch',
   fetchRemoteBranch: 'fetch',
   fetchPrHead: 'fetch',
+  fetchCommitsById: 'fetch',
   amendCommitMessage: 'amend',
   createBranch: 'branchCreate',
   gitflowStart: 'branchCreate',
@@ -1537,6 +1538,14 @@ async function probePrRef(repoPath: string, remote: string, candidates: PrRefCan
  * it does not need the guard — and it is exactly the *clean* repo, where the
  * reads return nothing, that pays the 50ms per call otherwise.
  */
+/**
+ * The `a/` and `b/` path prefixes, whatever the user's config says. A patch read
+ * by the app — split into files, its paths parsed, or fed back to `git apply` —
+ * assumes them; `diff.noprefix` or `diff.mnemonicPrefix` (`i/`, `w/`, `c/`)
+ * would otherwise make added and binary files vanish, or a hunk not apply.
+ */
+const DIFF_PREFIXES = ['--src-prefix=a/', '--dst-prefix=b/']
+
 async function runGit(
   repoPath: string,
   args: string[],
@@ -4820,11 +4829,36 @@ export const gitService = {
     if (!isFullSha(from) || !isFullSha(to)) throw new Error('Two full commit ids are compared.')
     const out = await runGit(
       repoPath,
-      ['diff', '--no-color', '--no-ext-diff', '--no-textconv', '-M', from, to, '--'],
+      ['diff', ...DIFF_PREFIXES, '--no-color', '--no-ext-diff', '--no-textconv', '-M', from, to, '--'],
       { GIT_NO_LAZY_FETCH: '1' },
       64 << 20
     )
     return splitUnifiedDiff(out)
+  },
+
+  /**
+   * Bring single commits down from `remote` by their ids — the two heads of a
+   * pull request update, so getCommitRangeFiles can compare them here. A head
+   * a force push replaced is on no branch any more, but most hosts still serve
+   * it by id. Nothing but FETCH_HEAD moves: no ref, no tag. A write all the
+   * same (objects and FETCH_HEAD), so not a READ_METHOD. Only full hex ids and
+   * a configured remote reach the command line. True when every commit is here
+   * afterwards; false when the server would not give them.
+   */
+  async fetchCommitsById(repoPath: string, remote: string, shas: unknown): Promise<boolean> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    const wanted = Array.isArray(shas) ? [...new Set(shas)] : []
+    if (!wanted.length || wanted.length > 4 || !wanted.every(isFullSha)) throw new Error('Commits are fetched by their full ids.')
+    await assertConfiguredRemote(repoPath, remote)
+    try {
+      await withRemoteAuth(repoPath, remote, 'fetch', () =>
+        runGit(repoPath, ['fetch', '--no-tags', '--', remote, ...wanted])
+      )
+    } catch {
+      // A server that serves no unadvertised commit, or one that is gone: the caller asks the host.
+      return false
+    }
+    return (await gitService.getLocalCommits(repoPath, wanted)).length === wanted.length
   },
 
   /**
@@ -7723,7 +7757,7 @@ export const gitService = {
         return ''
       }
     }
-    return git.raw(staged ? ['diff', '--cached', ...ws, '--', file] : ['diff', ...ws, '--', file])
+    return git.raw(staged ? ['diff', ...DIFF_PREFIXES, '--cached', ...ws, '--', file] : ['diff', ...DIFF_PREFIXES, ...ws, '--', file])
   },
 
   async commitFiles(repoPath: string, hash: string): Promise<FileEntry[]> {
@@ -7751,7 +7785,7 @@ export const gitService = {
     // that's empty for files which only changed on the merged-in branch — the
     // "No changes to display" bug.
     return memo(commitDiffCache, `f\0${repoPath}\0${hash}\0${ignoreWs ? 1 : 0}\0${file}`, () =>
-      gitFor(repoPath).raw(['show', '--format=', '--first-parent', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
+      gitFor(repoPath).raw(['show', ...DIFF_PREFIXES, '--format=', '--first-parent', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
     )
   },
 
@@ -7840,19 +7874,19 @@ export const gitService = {
     const git = gitFor(repoPath)
     const ws = ignoreWs ? ['-w'] : []
     if (untracked) {
-      return git.raw(['diff-tree', '--root', '--no-commit-id', '-p', ...ws, `${sha}^3`, '--', file])
+      return git.raw(['diff-tree', ...DIFF_PREFIXES, '--root', '--no-commit-id', '-p', ...ws, `${sha}^3`, '--', file])
     }
-    return git.raw(['diff', ...ws, `${sha}^1`, sha, '--', file])
+    return git.raw(['diff', ...DIFF_PREFIXES, ...ws, `${sha}^1`, sha, '--', file])
   },
 
   async stagedDiff(repoPath: string): Promise<string> {
-    return gitFor(repoPath).raw(['diff', '--cached'])
+    return gitFor(repoPath).raw(['diff', ...DIFF_PREFIXES, '--cached'])
   },
 
   /** Full patch of a single commit (vs its first parent; root commit shows full tree). */
   async commitDiff(repoPath: string, hash: string): Promise<string> {
     return memo(commitDiffCache, `d\0${repoPath}\0${hash}`, () =>
-      gitFor(repoPath).raw(['show', '--format=', '--first-parent', hash])
+      gitFor(repoPath).raw(['show', ...DIFF_PREFIXES, '--format=', '--first-parent', hash])
     )
   },
 
@@ -8739,7 +8773,7 @@ export const gitService = {
     // A rebase/merge/cherry-pick in flight owns the index; stay out of it.
     if (await gitService.mergeState(repoPath)) return empty('in-progress')
 
-    const diff = await runGit(repoPath, ['diff', '--cached'])
+    const diff = await runGit(repoPath, ['diff', ...DIFF_PREFIXES, '--cached'])
     if (!diff.trim()) return empty('no-staged')
 
     const range = await absorbCandidates(repoPath)
@@ -8762,7 +8796,7 @@ export const gitService = {
     if (!plan.targets.length) return { created: 0, rebased: false }
 
     const originalHead = (await runGit(repoPath, ['rev-parse', 'HEAD'])).trim()
-    const originalDiff = await runGit(repoPath, ['diff', '--cached'])
+    const originalDiff = await runGit(repoPath, ['diff', ...DIFF_PREFIXES, '--cached'])
     const files = parsePatch(originalDiff)
 
     // Oldest target first: each fixup shifts the lines below it, and applying in
@@ -9055,7 +9089,7 @@ export const gitService = {
     const [aheadCommits, behindCommits, diff] = await Promise.all([
       parseLog(`${b}..${a}`),
       parseLog(`${a}..${b}`),
-      git.raw(['diff', `${b}...${a}`]).catch(() => '')
+      git.raw(['diff', ...DIFF_PREFIXES, `${b}...${a}`]).catch(() => '')
     ])
     return { aheadCommits, behindCommits, diff }
   },
@@ -9106,7 +9140,7 @@ export const gitService = {
     // execFile's default 1 MB buffer is small for a long-lived branch's diff.
     const [log, diff] = await Promise.all([
       runGit(repoPath, ['log', '--no-merges', format, `${base}..${source}`, '--'], undefined, 16 << 20).catch(() => ''),
-      runGit(repoPath, ['diff', `${base}...${source}`, '--'], undefined, 64 << 20).catch(() => '')
+      runGit(repoPath, ['diff', ...DIFF_PREFIXES, `${base}...${source}`, '--'], undefined, 64 << 20).catch(() => '')
     ])
     const commits = log
       .split(REC)

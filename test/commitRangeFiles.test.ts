@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterAll } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { gitService, gitMethodIsRead } from '../src/main/git'
 import { repoPath } from './helpers'
+import { cloneFixture, cleanupFixtures } from './fixtures'
 
 // getCommitRangeFiles: what one pull request update changed, read from this
 // clone — the Updates tab's "View changes in this update" when both heads are
@@ -12,6 +13,8 @@ const R = repoPath('change-summary')
 const rev = (ref: string): string => execFileSync('git', ['-C', R, 'rev-parse', ref], { encoding: 'utf8' }).trim()
 
 describe('getCommitRangeFiles', () => {
+  afterAll(cleanupFixtures)
+
   it('is a read', () => {
     expect(gitMethodIsRead('getCommitRangeFiles')).toBe(true)
   })
@@ -33,6 +36,23 @@ describe('getCommitRangeFiles', () => {
     const files = await gitService.getCommitRangeFiles(R, rev('HEAD'), rev('HEAD~1'))
     expect(files.find((f) => f.filename === 'src/legacy.js')?.status).toBe('added')
   })
+
+  // A user's diff.noprefix (or mnemonicPrefix) must not make added and binary
+  // files vanish from the split: the app asks for a/ and b/ itself.
+  for (const [key, value] of [
+    ['diff.noprefix', 'true'],
+    ['diff.mnemonicPrefix', 'true']
+  ]) {
+    it(`keeps every file with ${key}=${value} set`, async () => {
+      const copy = cloneFixture('change-summary')
+      execFileSync('git', ['-C', copy, 'config', key, value])
+      const r = (ref: string): string => execFileSync('git', ['-C', copy, 'rev-parse', ref], { encoding: 'utf8' }).trim()
+      const files = await gitService.getCommitRangeFiles(copy, r('HEAD~1'), r('HEAD'))
+      const plain = await gitService.getCommitRangeFiles(R, rev('HEAD~1'), rev('HEAD'))
+      expect(files.map((f) => [f.filename, f.status]).sort()).toEqual(plain.map((f) => [f.filename, f.status]).sort())
+      expect(files.filter((f) => f.status === 'added')).toHaveLength(2)
+    })
+  }
 
   it('refuses anything but two full commit ids', async () => {
     await expect(gitService.getCommitRangeFiles(R, 'HEAD~1', rev('HEAD'))).rejects.toThrow(/full commit ids/)
