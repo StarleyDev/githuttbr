@@ -1,5 +1,18 @@
 
 
+## [4.59.0](https://github.com/StarleyDev/githuttbr/compare/v4.58.0...v4.59.0) (2026-11-26)
+
+### Bug Fixes
+
+* **identity:** ship as its own app, apart from Gitcito ([4c7db95](https://github.com/StarleyDev/githuttbr/commit/4c7db9569e1b3242bad7da5714328cc7ec94068b))
+  - The app identifier is now com.huttbr.git. Settings, tokens and repositories stay where they are: the data folder and the keychain entry keep the GitHuttBr name.
+  - On Windows the installer removes the previous GitHuttBr install before copying the new files, so one entry is left; an unrelated app is never touched. An upgrade test installs the last release and this build on top.
+  - The .deb and .rpm no longer replace, conflict with or provide another package, and the first run no longer imports another app's data.
+  - Every text says GitHuttBr: the UI in 16 languages, the handbook and the site. A test keeps the old name from coming back.
+  - The notes of this release open with what to do if the automatic update fails: download the version from the site, or uninstall and reinstall.
+  - macOS may ask once for the password so the app can read its saved tokens.
+* **release:** stage the enriched changelog before the release commit ([31f686d](https://github.com/StarleyDev/githuttbr/commit/31f686d20f57d9244587c56be621d919093df7b8))
+
 ## [4.58.0](https://github.com/StarleyDev/githuttbr/compare/v4.57.0...v4.58.0) (2026-11-26)
 
 ### Features
