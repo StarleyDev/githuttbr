@@ -43,9 +43,96 @@ export const REMOTE_URI_SAFE_ATTR: readonly string[] = [
 
 export const REMOTE_FORBID_ATTR: readonly string[] = ['style', 'target', 'srcset', 'id', 'name']
 
-/** Links and images: http(s) and mailto, nothing else — no `javascript:`, no `data:`, no `file:`. */
-export const REMOTE_URI = /^(?:https?|mailto):/i
-const IMAGE_URI = /^https?:/i
+/**
+ * Links and images: http(s) with an authority, and mailto — no `javascript:`,
+ * no `data:`, no `file:`, and no `https:host` without its slashes, which a
+ * browser reads as a path and would make a link that goes nowhere.
+ */
+export const REMOTE_URI = /^(?:https?:\/\/|mailto:)/i
+const IMAGE_URI = /^https?:\/\//i
+
+// ── What is too much to render ───────────────────────────────────────────────
+//
+// marked runs on the UI thread, and some shapes cost it far more than their
+// size: unmatched emphasis delimiters in one paragraph are quadratic (62 KB of
+// `_a` took seconds), and deep nesting — `>` or list markers — recurses until
+// the stack overflows. Measured on marked 18 with `breaks: true`: at the caps
+// below the worst shape left in parses in about 70 ms. Past them the comment is
+// shown as text, as it was before comments were rendered.
+
+/** Markdown source longer than this (characters) is shown as text. GitHub's own limit is 65,536. */
+export const REMOTE_MARKDOWN_MAX = 32_000
+/** Emphasis delimiters (`_`, `*`, `~`) allowed in one block — a run of lines with no blank one between. */
+export const REMOTE_DELIMITERS_PER_BLOCK = 2_000
+/** Block markers (`>`, list bullets and numbers) allowed at the start of one line. */
+export const REMOTE_NESTING_MAX = 32
+
+/** Whether a comment's Markdown is rendered, or why it is shown as text. */
+export type RemoteRenderPlan = 'markdown' | 'tooLong' | 'tooComplex'
+
+const FENCE = /^ {0,3}(`{3,}|~{3,})/
+
+/** How deeply the line at `line` opens blocks: each `>`, `-`/`*`/`+` or `1.` before its text. */
+function getNestingDepth(line: string): number {
+  let depth = 0
+  let i = 0
+  const n = line.length
+  while (i < n) {
+    const c = line[i]
+    if (c === ' ' || c === '\t') {
+      i++
+    } else if (c === '>') {
+      depth++
+      i++
+    } else if ((c === '-' || c === '*' || c === '+') && (i + 1 === n || line[i + 1] === ' ' || line[i + 1] === '\t')) {
+      depth++
+      i++
+    } else if (c >= '0' && c <= '9') {
+      let j = i
+      while (j < n && j - i < 9 && line[j] >= '0' && line[j] <= '9') j++
+      if ((line[j] === '.' || line[j] === ')') && (j + 1 === n || line[j + 1] === ' ' || line[j + 1] === '\t')) {
+        depth++
+        i = j + 1
+      } else break
+    } else break
+    if (depth > REMOTE_NESTING_MAX) break
+  }
+  return depth
+}
+
+/**
+ * Decide, in one linear pass, whether a comment's Markdown can be rendered
+ * here without stalling the window: its length, the emphasis delimiters in any
+ * one block (fenced code does not count — it is not parsed for emphasis), and
+ * the nesting at the start of any line.
+ */
+export function getRemoteRenderPlan(src: string): RemoteRenderPlan {
+  if (src.length > REMOTE_MARKDOWN_MAX) return 'tooLong'
+  let fence: string | null = null
+  let delimiters = 0
+  for (const line of src.split('\n')) {
+    const f = FENCE.exec(line)?.[1]
+    if (fence) {
+      if (f && f[0] === fence[0] && f.length >= fence.length) fence = null
+      continue
+    }
+    if (f) {
+      fence = f
+      continue
+    }
+    if (!line.trim()) {
+      delimiters = 0
+      continue
+    }
+    for (let i = 0; i < line.length; i++) {
+      const c = line.charCodeAt(i)
+      if (c === 95 || c === 42 || c === 126) delimiters++ // _ * ~
+    }
+    if (delimiters > REMOTE_DELIMITERS_PER_BLOCK) return 'tooComplex'
+    if (getNestingDepth(line) > REMOTE_NESTING_MAX) return 'tooComplex'
+  }
+  return 'markdown'
+}
 
 /** Where a comment is shown: the repository its relative links and own images belong to. */
 export interface RemoteContentContext {
@@ -216,23 +303,46 @@ export function getAnchorReference(text: string, href: string, repoWebUrl: strin
   return target === `${base}/issues/${id}` || target === `${base}/pull/${id}` ? { sigil: '#', id } : null
 }
 
-/** A cache of rendered comments, keyed by what produced them — oldest out first. */
+/**
+ * A cache of rendered comments, keyed by what produced them — oldest out
+ * first, bounded both in entries and in total size (the caller's measure,
+ * characters of key plus value), so a page of long comments cannot hold memory
+ * indefinitely. An entry larger than the whole budget is not kept.
+ */
 export class RenderCache<V> {
-  private readonly map = new Map<string, V>()
-  constructor(private readonly max: number) {}
+  private readonly map = new Map<string, { value: V; size: number }>()
+  private total = 0
+  constructor(
+    private readonly maxEntries: number,
+    private readonly maxSize: number
+  ) {}
   getValue(key: string): V | undefined {
-    const v = this.map.get(key)
-    if (v === undefined) return undefined
+    const e = this.map.get(key)
+    if (!e) return undefined
     this.map.delete(key)
-    this.map.set(key, v)
-    return v
+    this.map.set(key, e)
+    return e.value
   }
-  setValue(key: string, value: V): void {
+  setValue(key: string, value: V, size: number): void {
+    this.removeEntry(key)
+    if (size > this.maxSize) return
+    this.map.set(key, { value, size })
+    this.total += size
+    while (this.map.size > this.maxEntries || this.total > this.maxSize) {
+      this.removeEntry(this.map.keys().next().value as string)
+    }
+  }
+  private removeEntry(key: string): void {
+    const e = this.map.get(key)
+    if (!e) return
+    this.total -= e.size
     this.map.delete(key)
-    this.map.set(key, value)
-    while (this.map.size > this.max) this.map.delete(this.map.keys().next().value as string)
   }
   get size(): number {
     return this.map.size
+  }
+  /** The sum of the kept entries' sizes. */
+  get totalSize(): number {
+    return this.total
   }
 }

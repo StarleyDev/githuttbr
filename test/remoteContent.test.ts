@@ -7,16 +7,25 @@ import {
   getAnchorReference,
   getGithubFenceLanguage,
   getImageDomain,
+  getRemoteRenderPlan,
   isAllowedRemoteUrl,
   isHostImage,
   RenderCache,
   REMOTE_ALLOWED_TAGS,
+  REMOTE_DELIMITERS_PER_BLOCK,
+  REMOTE_MARKDOWN_MAX,
+  REMOTE_NESTING_MAX,
   resolveRemoteUrl,
   type PolicyElement,
   type RemoteContentContext
 } from '../src/renderer/src/lib/remoteContent'
-import { convertRemoteTree, type RemoteImageParts, type RemoteNode } from '../src/renderer/src/lib/remoteTree'
-import { parseRemoteMarkdown, REMOTE_PURIFY_CONFIG } from '../src/renderer/src/preview/remoteMarkdown'
+import { convertRemoteTree, REMOTE_TREE_DEPTH_MAX, type RemoteImageParts, type RemoteNode } from '../src/renderer/src/lib/remoteTree'
+import {
+  getRemoteCommentRender,
+  parseRemoteMarkdown,
+  REMOTE_HTML_MAX,
+  REMOTE_PURIFY_CONFIG
+} from '../src/renderer/src/preview/remoteMarkdown'
 import { withCommentBody } from '../src/renderer/src/lib/commentEdit'
 import type { AutolinkOptions } from '../src/renderer/src/lib/autolink'
 import type { PrDetail } from '../src/shared/types'
@@ -90,6 +99,78 @@ describe('remote comments — the sanitizer profile', () => {
       expect(isAllowedRemoteUrl(bad, 'image')).toBe(false)
     }
     expect(isAllowedRemoteUrl('mailto:a@example.org', 'image')).toBe(false)
+  })
+
+  it('wants the slashes: `https:host` is not a link', () => {
+    for (const bad of ['https:evil.example.net', 'http:/x', 'https:']) {
+      expect(isAllowedRemoteUrl(bad, 'link')).toBe(false)
+      expect(isAllowedRemoteUrl(bad, 'image')).toBe(false)
+    }
+    const a = fakeEl('a', { href: 'https:evil.example.net' })
+    applyRemoteElementPolicy(a, GH)
+    expect(a.attrs.href).toBeUndefined()
+  })
+})
+
+describe('remote comments — what is too much to render', () => {
+  const huge = (n: number): string => 'word '.repeat(Math.ceil(n / 5)).slice(0, n)
+
+  it('a comment over the cap is shown as text, unparsed', () => {
+    expect(getRemoteRenderPlan(huge(REMOTE_MARKDOWN_MAX))).toBe('markdown')
+    expect(getRemoteRenderPlan(huge(REMOTE_MARKDOWN_MAX + 1))).toBe('tooLong')
+    const render = vi.fn(() => '<p>x</p>')
+    expect(getRemoteCommentRender(huge(REMOTE_MARKDOWN_MAX + 1), undefined, GH, render)).toEqual({ kind: 'text', reason: 'tooLong' })
+    expect(render).not.toHaveBeenCalled()
+    // The host's own rendering has its cap too.
+    expect(getRemoteCommentRender('x', 'a'.repeat(REMOTE_HTML_MAX + 1), GH, render)).toEqual({ kind: 'text', reason: 'tooLong' })
+  })
+
+  it('pathological shapes under the cap are refused before parsing', () => {
+    // Deep nesting overflows marked's stack; this one is the reported crash.
+    expect(() => parseRemoteMarkdown('>'.repeat(5000) + ' x')).toThrow(RangeError)
+    expect(getRemoteRenderPlan('>'.repeat(5000) + ' x')).toBe('tooComplex')
+    expect(getRemoteRenderPlan('- '.repeat(REMOTE_NESTING_MAX + 1) + 'x')).toBe('tooComplex')
+    expect(getRemoteRenderPlan('1. '.repeat(REMOTE_NESTING_MAX + 1) + 'x')).toBe('tooComplex')
+    // Unmatched emphasis in one block is quadratic, line breaks or not.
+    expect(getRemoteRenderPlan('_a'.repeat(16_000))).toBe('tooComplex')
+    expect(getRemoteRenderPlan(Array.from({ length: 800 }, () => '_a'.repeat(19)).join('\n'))).toBe('tooComplex')
+    expect(getRemoteRenderPlan('*a'.repeat(REMOTE_DELIMITERS_PER_BLOCK + 1))).toBe('tooComplex')
+  })
+
+  it('ordinary comments are rendered — code fences and blank lines do not add up', () => {
+    expect(getRemoteRenderPlan('> quoted\n>> twice\n\n- a\n  - b\n    1. c')).toBe('markdown')
+    const snake = Array.from({ length: 400 }, () => 'snake_case_name = other_name_here').join('\n')
+    expect(getRemoteRenderPlan('```py\n' + snake + '\n```\nsee above')).toBe('markdown')
+    const paragraphs = Array.from({ length: 15 }, () => '_a'.repeat(900)).join('\n\n')
+    expect(getRemoteRenderPlan(paragraphs)).toBe('markdown')
+  })
+
+  it('the worst shape the plan lets through still parses quickly', () => {
+    // Blocks each just under the delimiter limit, up to the cap: about 70 ms on
+    // a desktop; the bound here is loose, to catch a regression in kind.
+    const per = Math.floor(REMOTE_DELIMITERS_PER_BLOCK / 2)
+    const blocks = Array.from({ length: Math.floor(REMOTE_MARKDOWN_MAX / (per * 2 + 2)) }, () => '_a'.repeat(per)).join('\n\n')
+    expect(getRemoteRenderPlan(blocks)).toBe('markdown')
+    const t = performance.now()
+    parseRemoteMarkdown(blocks)
+    expect(performance.now() - t).toBeLessThan(1500)
+  })
+
+  it('a render that throws falls back to text instead of reaching React', () => {
+    const boom = (): string => {
+      throw new RangeError('Maximum call stack size exceeded')
+    }
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    expect(getRemoteCommentRender('a perfectly ordinary comment', undefined, GH, boom)).toEqual({ kind: 'text', reason: 'tooComplex' })
+    warn.mockRestore()
+  })
+
+  it('a tree deeper than the walk allows is shown as its text', () => {
+    let node: RemoteNode = text('deep')
+    for (let i = 0; i < REMOTE_TREE_DEPTH_MAX + 10; i++) node = el('blockquote', {}, node)
+    const { html } = render(root(node))
+    expect(html).toContain('deep')
+    expect((html.match(/<blockquote>/g) ?? []).length).toBeLessThanOrEqual(REMOTE_TREE_DEPTH_MAX + 1)
   })
 })
 
@@ -347,14 +428,29 @@ describe('remote comments — the walk only builds what the profile allows', () 
 
 describe('remote comments — memo and edits', () => {
   it('the render cache drops the oldest entry first, and a read keeps an entry fresh', () => {
-    const c = new RenderCache<string>(2)
-    c.setValue('a', '1')
-    c.setValue('b', '2')
+    const c = new RenderCache<string>(2, 1000)
+    c.setValue('a', '1', 1)
+    c.setValue('b', '2', 1)
     expect(c.getValue('a')).toBe('1')
-    c.setValue('c', '3')
+    c.setValue('c', '3', 1)
     expect(c.getValue('b')).toBeUndefined()
     expect(c.getValue('a')).toBe('1')
     expect(c.size).toBe(2)
+  })
+
+  it('the render cache is bounded in size too, and never keeps an entry over the budget', () => {
+    const c = new RenderCache<string>(100, 10)
+    c.setValue('a', 'x', 4)
+    c.setValue('b', 'y', 4)
+    c.setValue('c', 'z', 4)
+    expect(c.getValue('a')).toBeUndefined()
+    expect(c.totalSize).toBe(8)
+    c.setValue('huge', 'w', 11)
+    expect(c.getValue('huge')).toBeUndefined()
+    expect(c.totalSize).toBe(8)
+    // Replacing an entry does not count it twice.
+    c.setValue('b', 'y2', 4)
+    expect(c.totalSize).toBe(8)
   })
 
   it('an edited comment drops the host’s rendering of its old text', () => {

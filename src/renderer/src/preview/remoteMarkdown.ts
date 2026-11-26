@@ -3,8 +3,10 @@ import createDOMPurify, { type Config, type DOMPurify } from 'dompurify'
 import {
   applyRemoteElementPolicy,
   getGithubFenceLanguage,
+  getRemoteRenderPlan,
   isAllowedRemoteUrl,
   RenderCache,
+  REMOTE_MARKDOWN_MAX,
   REMOTE_ALLOWED_ATTR,
   REMOTE_ALLOWED_TAGS,
   REMOTE_FORBID_ATTR,
@@ -113,18 +115,57 @@ export function renderRemoteMarkdown(src: string, ctx: RemoteContentContext): st
   return sanitizeRemoteHtml(parseRemoteMarkdown(src), ctx)
 }
 
+/** A comment, ready to show: sanitized HTML, or why it is shown as text. */
+export type RemoteCommentRender =
+  | { kind: 'html'; html: string }
+  | { kind: 'text'; reason: 'tooLong' | 'tooComplex' }
+
+/** The host's own rendering longer than this (characters) is shown as text — about four times GitHub's limit. */
+export const REMOTE_HTML_MAX = 262_144
+
 // A page re-renders on every keystroke in its composer; a comment renders once.
-const cache = new RenderCache<string>(400)
+// Bounded in entries and in characters (about 8 MB as UTF-16).
+const cache = new RenderCache<RemoteCommentRender>(400, 4_000_000)
 
 /**
- * A comment's sanitized HTML, memoized on its text and its context: the host's
- * rendering when there is one (GitHub), else the Markdown rendered here.
+ * A comment, memoized on its text and its context: the host's rendering when
+ * there is one (GitHub), else the Markdown rendered here — unless it is too
+ * long or too intricate to render on the UI thread (lib/remoteContent.ts), or
+ * rendering it throws. Those come back as text, never as an exception.
+ * `render` is replaceable for the tests.
  */
-export function getRemoteCommentHtml(body: string, bodyHtml: string | undefined, ctx: RemoteContentContext): string {
-  const key = `${ctx.repoWebUrl ?? ''}\u0000${ctx.gitlab ? 1 : 0}${ctx.loadAllImages ? 1 : 0}${bodyHtml ? 'h' : 'm'}\u0000${bodyHtml ?? body}`
+export function getRemoteCommentRender(
+  body: string,
+  bodyHtml: string | undefined,
+  ctx: RemoteContentContext,
+  render: (src: string, ctx: RemoteContentContext) => string = renderRemoteMarkdown
+): RemoteCommentRender {
+  // Over the cap nothing is parsed, and nothing is kept.
+  if (bodyHtml ? bodyHtml.length > REMOTE_HTML_MAX : body.length > REMOTE_MARKDOWN_MAX) {
+    return { kind: 'text', reason: 'tooLong' }
+  }
+  const flags = `${ctx.gitlab ? 1 : 0}${ctx.loadAllImages ? 1 : 0}${bodyHtml ? 'h' : 'm'}`
+  const key = `${ctx.repoWebUrl ?? ''}\u0000${flags}\u0000${bodyHtml ?? body}`
   const hit = cache.getValue(key)
-  if (hit !== undefined) return hit
-  const html = bodyHtml ? sanitizeRemoteHtml(bodyHtml, ctx) : renderRemoteMarkdown(body, ctx)
-  cache.setValue(key, html)
-  return html
+  if (hit) return hit
+  let out: RemoteCommentRender
+  if (bodyHtml) {
+    out = attemptRender(() => sanitizeRemoteHtml(bodyHtml, ctx))
+  } else {
+    const plan = getRemoteRenderPlan(body)
+    out = plan === 'markdown' ? attemptRender(() => render(body, ctx)) : { kind: 'text', reason: plan }
+  }
+  cache.setValue(key, out, key.length + (out.kind === 'html' ? out.html.length : 0))
+  return out
+}
+
+function attemptRender(fn: () => string): RemoteCommentRender {
+  try {
+    return { kind: 'html', html: fn() }
+  } catch (err) {
+    // A shape the plan did not foresee (deep recursion, most likely): text is
+    // still readable, while a throw during render would reload the window.
+    console.warn('[remoteMarkdown] comment shown as text:', err instanceof Error ? err.name : 'error')
+    return { kind: 'text', reason: 'tooComplex' }
+  }
 }

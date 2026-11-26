@@ -1889,6 +1889,8 @@ export const he: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'תמונות בתגובות על בקשות משיכה ו-issues שמגיעות מאתר שאינו אתר האחסון נטענות בלי לחיצה. כשהאפשרות כבויה, כל תמונה מציגה מציין מקום עד שלוחצים: בקשת התמונה חושפת לאותו אתר את כתובת ה-IP שלך ומתי קראת את התגובה.',
   'remoteImage.blocked': 'תמונה מ-{domain} — לחצו לטעינה',
+  'remoteMarkdown.tooLong': 'תגובה ארוכה מוצגת כטקסט פשוט.',
+  'remoteMarkdown.tooComplex': 'התגובה מוצגת כטקסט פשוט: מורכבת מדי להצגה כאן.',
   'settings.launchEnabled': 'הפעלת launch.json',
   'settings.fileViewer': 'מציג קבצים',
   'settings.fileViewerIntro': 'איך תצוגת הקובץ (קבצי עץ העבודה) מציגה שינויים לא מחויבים.',

@@ -1869,6 +1869,8 @@ export const ja: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'プルリクエストや issue のコメントにある、ホスト以外のサイトの画像をクリックなしで読み込みます。オフの場合はクリックするまでプレースホルダーを表示します。画像を取得すると、そのサイトにあなたの IP アドレスとコメントを読んだ時刻が伝わります。',
   'remoteImage.blocked': '{domain} の画像 — クリックして読み込む',
+  'remoteMarkdown.tooLong': '長いコメントのため、プレーンテキストで表示しています。',
+  'remoteMarkdown.tooComplex': '複雑すぎてここでは描画できないため、プレーンテキストで表示しています。',
   'settings.launchEnabled': 'launch.json を有効にする',
   'settings.fileViewer': 'ファイルビューア',
   'settings.fileViewerIntro': 'ファイルビュー（ワークツリーのファイル）が未コミットの変更をどう表示するか。',

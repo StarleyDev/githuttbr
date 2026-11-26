@@ -1890,6 +1890,8 @@ export const ptBR: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'Imagens em comentários de pull requests e issues que vêm de um site que não é o do host carregam sem clique. Desligado, cada uma mostra um aviso até você clicar: pedir a imagem revela a esse site o seu IP e quando você leu o comentário.',
   'remoteImage.blocked': 'Imagem de {domain} — clique para carregar',
+  'remoteMarkdown.tooLong': 'Comentário longo mostrado como texto simples.',
+  'remoteMarkdown.tooComplex': 'Comentário mostrado como texto simples: complexo demais para renderizar aqui.',
   'settings.launchEnabled': 'Ativar o launch.json',
   'settings.fileViewer': 'Visualizador de arquivos',
   'settings.fileViewerIntro': 'Como a visualização de arquivo (arquivos da árvore de trabalho) mostra alterações não commitadas.',

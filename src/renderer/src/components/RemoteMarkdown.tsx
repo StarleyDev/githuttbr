@@ -1,12 +1,12 @@
-import { memo, useMemo, useState } from 'react'
+import { Component, createContext, memo, useContext, useMemo, useState, type ReactNode } from 'react'
 import { ImageOff } from 'lucide-react'
-import { interp, useT } from '../i18n'
+import { interp, useT, type TranslationKey } from '../i18n'
 import { useSettingsStore } from '../stores/settings'
-import type { AutolinkOptions } from '../lib/autolink'
+import { autolink, type AutolinkOptions } from '../lib/autolink'
 import { canLoadLanguage, escapeHtml, highlightCode, isLanguageReady } from '../lib/highlight'
 import { getImageDomain } from '../lib/remoteContent'
 import { convertRemoteTree, type RemoteImageParts } from '../lib/remoteTree'
-import { getRemoteCommentHtml } from '../preview/remoteMarkdown'
+import { getRemoteCommentRender, type RemoteCommentRender } from '../preview/remoteMarkdown'
 import { PENDING_ATTR, usePendingHighlight } from '../preview/pendingHighlight'
 
 /**
@@ -15,41 +15,118 @@ import { PENDING_ATTR, usePendingHighlight } from '../preview/pendingHighlight'
  * then turned into React elements (lib/remoteTree.tsx) so references keep their
  * hover cards and third-party images wait for a click.
  *
- * Typing stays cheap: the HTML is cached per text, the element tree is memoized
- * on it, and the component on its props — a keystroke in the composer renders
- * none of this again.
+ * Typing stays cheap: the result is cached per text, the element tree is
+ * memoized on it, and the component on its props — a keystroke in the composer
+ * renders none of this again.
+ *
+ * Nothing in a comment can take the page down: one too long or too intricate to
+ * parse on the UI thread is shown as text with a note, and anything that still
+ * throws while rendering is caught here, per comment, and shown as text too.
  */
-export const RemoteMarkdown = memo(function RemoteMarkdown({
-  body,
-  bodyHtml,
-  repoWebUrl,
-  linkOptions
-}: {
+interface RemoteMarkdownProps {
   body: string
   /** The host's rendering of `body`, when it sent one (GitHub). */
   bodyHtml?: string
   repoWebUrl: string | undefined
   linkOptions?: AutolinkOptions
-}): React.JSX.Element {
+}
+
+export const RemoteMarkdown = memo(function RemoteMarkdown(props: RemoteMarkdownProps): React.JSX.Element {
+  // Keyed on the text, so a comment that failed once is tried again when it changes.
+  return (
+    <RemoteMarkdownBoundary key={props.bodyHtml ?? props.body} fallback={<RemoteText {...props} reason="tooComplex" />}>
+      <RenderedComment {...props} />
+    </RemoteMarkdownBoundary>
+  )
+})
+
+/** Where the comment boxes of a page preview their text the way it will be shown once posted. */
+export interface RemotePreviewScope {
+  repoWebUrl: string | undefined
+  linkOptions?: AutolinkOptions
+}
+
+const PreviewScopeContext = createContext<RemotePreviewScope | null>(null)
+
+/**
+ * Comment boxes under this preview through RemoteMarkdown — the profile, the
+ * image policy and the line breaks the posted comment will get — instead of the
+ * generous renderer for the user's own files.
+ */
+export function RemotePreviewProvider({
+  repoWebUrl,
+  linkOptions,
+  children
+}: RemotePreviewScope & { children: ReactNode }): React.JSX.Element {
+  const value = useMemo(() => ({ repoWebUrl, linkOptions }), [repoWebUrl, linkOptions])
+  return <PreviewScopeContext.Provider value={value}>{children}</PreviewScopeContext.Provider>
+}
+
+/** The page's preview scope, or null where a box writes something else (a new PR's description). */
+export function useRemotePreviewScope(): RemotePreviewScope | null {
+  return useContext(PreviewScopeContext)
+}
+
+function RenderedComment({ body, bodyHtml, repoWebUrl, linkOptions }: RemoteMarkdownProps): React.JSX.Element {
   const loadAllImages = useSettingsStore((s) => s.settings.commentImagesFromOtherSites)
   const gitlab = !!linkOptions?.gitlab
-  const html = useMemo(
-    () => getRemoteCommentHtml(body, bodyHtml, { repoWebUrl, gitlab, loadAllImages }),
+  const rendered: RemoteCommentRender = useMemo(
+    () => getRemoteCommentRender(body, bodyHtml, { repoWebUrl, gitlab, loadAllImages }),
     [body, bodyHtml, repoWebUrl, gitlab, loadAllImages]
   )
+  const html = rendered.kind === 'html' ? rendered.html : null
   const tree = useMemo(() => {
+    if (html === null) return null
     const tpl = document.createElement('template')
     tpl.innerHTML = html
     return convertRemoteTree(tpl.content, { repoWebUrl, linkOptions, renderImage, renderCode })
   }, [html, repoWebUrl, linkOptions])
   // A fence whose language is not loaded yet is highlighted in place once it is.
   const pendingRef = usePendingHighlight(html)
+  if (rendered.kind === 'text') {
+    return <RemoteText body={body} repoWebUrl={repoWebUrl} linkOptions={linkOptions} reason={rendered.reason} />
+  }
   return (
     <div ref={pendingRef} className="md-preview md-remote">
       {tree}
     </div>
   )
-})
+}
+
+const TEXT_NOTE: Record<'tooLong' | 'tooComplex', TranslationKey> = {
+  tooLong: 'remoteMarkdown.tooLong',
+  tooComplex: 'remoteMarkdown.tooComplex'
+}
+
+/** The comment as it was shown before comments were rendered: its text, links made, and why. */
+function RemoteText({
+  body,
+  repoWebUrl,
+  linkOptions,
+  reason
+}: RemoteMarkdownProps & { reason: 'tooLong' | 'tooComplex' }): React.JSX.Element {
+  const t = useT()
+  return (
+    <div className="md-remote md-remote-text">
+      <p className="md-remote-note">{t(TEXT_NOTE[reason])}</p>
+      <div className="md-remote-plain">{autolink(body, repoWebUrl, undefined, linkOptions)}</div>
+    </div>
+  )
+}
+
+/** Catches a render that throws, for one comment — the rest of the page stays. */
+class RemoteMarkdownBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true }
+  }
+  componentDidCatch(err: unknown): void {
+    console.warn('[remoteMarkdown] comment shown as text after a render error:', err instanceof Error ? err.name : 'error')
+  }
+  render(): ReactNode {
+    return this.state.failed ? this.props.fallback : this.props.children
+  }
+}
 
 const renderImage = (img: RemoteImageParts): React.ReactNode =>
   img.blocked ? <BlockedImage key={img.key} img={img} /> : <RemoteImage key={img.key} img={img} />

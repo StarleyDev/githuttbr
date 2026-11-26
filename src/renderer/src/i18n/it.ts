@@ -1870,6 +1870,8 @@ export const it: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'Le immagini nei commenti di pull request e issue che provengono da un sito diverso dall’host si caricano senza clic. Disattivato, ognuna mostra un segnaposto finché non fai clic: richiedere l’immagine rivela a quel sito il tuo IP e quando hai letto il commento.',
   'remoteImage.blocked': 'Immagine da {domain} — fai clic per caricarla',
+  'remoteMarkdown.tooLong': 'Commento lungo mostrato come testo semplice.',
+  'remoteMarkdown.tooComplex': 'Commento mostrato come testo semplice: troppo complesso da visualizzare qui.',
   'settings.launchEnabled': 'Attiva launch.json',
   'settings.fileViewer': 'Visualizzatore file',
   'settings.fileViewerIntro': 'Come la vista File (file dell’albero di lavoro) mostra le modifiche non salvate.',

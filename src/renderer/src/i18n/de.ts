@@ -1889,6 +1889,8 @@ export const de: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'Bilder in Kommentaren zu Pull Requests und Issues, die nicht vom Host selbst stammen, laden ohne Klick. Aus: Jedes zeigt einen Platzhalter, bis du klickst – die Anfrage verrät der Website deine IP-Adresse und wann du den Kommentar gelesen hast.',
   'remoteImage.blocked': 'Bild von {domain} – zum Laden klicken',
+  'remoteMarkdown.tooLong': 'Langer Kommentar als reiner Text angezeigt.',
+  'remoteMarkdown.tooComplex': 'Kommentar als reiner Text angezeigt: zu verschachtelt, um ihn hier darzustellen.',
   'settings.launchEnabled': 'launch.json aktivieren',
   'settings.fileViewer': 'Dateianzeige',
   'settings.fileViewerIntro': 'Wie die Dateiansicht (Dateien im Arbeitsverzeichnis) nicht committete Änderungen anzeigt.',

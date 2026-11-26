@@ -1889,6 +1889,8 @@ export const ar: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'تُحمَّل الصور في تعليقات طلبات السحب والمشكلات القادمة من موقع غير موقع الاستضافة دون نقر. عند الإيقاف تظهر لكل صورة علامة بديلة حتى تنقر عليها: طلب الصورة يكشف لذلك الموقع عنوان IP الخاص بك ووقت قراءتك للتعليق.',
   'remoteImage.blocked': 'صورة من {domain} — انقر للتحميل',
+  'remoteMarkdown.tooLong': 'تعليق طويل معروض كنص عادي.',
+  'remoteMarkdown.tooComplex': 'التعليق معروض كنص عادي: معقّد جدًا لعرضه هنا.',
   'settings.launchEnabled': 'تفعيل launch.json',
   'settings.fileViewer': 'عارض الملفات',
   'settings.fileViewerIntro': 'كيف تعرض واجهة الملف (ملفات شجرة العمل) التغييرات غير الملتزم بها.',

@@ -78,7 +78,7 @@ import { getAnchorLine } from '../../../shared/prLineAnchor'
 import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
 import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
 import { EditableComment } from './EditableComment'
-import { RemoteMarkdown } from './RemoteMarkdown'
+import { RemoteMarkdown, RemotePreviewProvider } from './RemoteMarkdown'
 import {
   getCommentKey,
   getCommentKeys,
@@ -892,7 +892,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   )
   return (
     <ReferenceScope repoPath={repoPath} remoteUrl={remoteUrl} host={refHost}>
-      {content}
+      <RemotePreviewProvider repoWebUrl={web} linkOptions={linkOptions}>
+        {content}
+      </RemotePreviewProvider>
     </ReferenceScope>
   )
 }

@@ -65,7 +65,7 @@ function languageOf(n: RemoteNode | undefined): string | null {
 /** Convert a sanitized fragment's children. */
 export function convertRemoteTree(root: RemoteNode, opts: RemoteTreeOptions): ReactNode[] {
   const walk = { opts, key: 0 }
-  return convertChildren(root, walk, false)
+  return convertChildren(root, walk, false, 0)
 }
 
 interface Walk {
@@ -73,17 +73,21 @@ interface Walk {
   key: number
 }
 
-function convertChildren(parent: RemoteNode, w: Walk, plain: boolean): ReactNode[] {
+/** Deeper than this, a subtree is shown as its text: the walk recurses, and so does React. */
+export const REMOTE_TREE_DEPTH_MAX = 64
+
+function convertChildren(parent: RemoteNode, w: Walk, plain: boolean, depth: number): ReactNode[] {
+  if (depth > REMOTE_TREE_DEPTH_MAX) return [parent.textContent ?? '']
   const out: ReactNode[] = []
   for (const child of children(parent)) {
-    const node = convertNode(child, w, plain)
+    const node = convertNode(child, w, plain, depth)
     if (node !== null && node !== undefined && node !== '') out.push(node)
   }
   return out
 }
 
 /** `plain`: inside a link or code — text shows as it is, never autolinked. */
-function convertNode(node: RemoteNode, w: Walk, plain: boolean): ReactNode {
+function convertNode(node: RemoteNode, w: Walk, plain: boolean, depth: number): ReactNode {
   const { opts } = w
   if (node.nodeType === 3) {
     const text = node.textContent ?? ''
@@ -93,7 +97,7 @@ function convertNode(node: RemoteNode, w: Walk, plain: boolean): ReactNode {
   if (node.nodeType !== 1) return null
   const tag = tagOf(node)
   // The sanitizer removed anything else; unwrapping here is only a second fence.
-  if (!ALLOWED.has(tag)) return <Fragment key={w.key++}>{convertChildren(node, w, plain)}</Fragment>
+  if (!ALLOWED.has(tag)) return <Fragment key={w.key++}>{convertChildren(node, w, plain, depth + 1)}</Fragment>
   const key = w.key++
   switch (tag) {
     case 'a': {
@@ -108,7 +112,7 @@ function convertNode(node: RemoteNode, w: Walk, plain: boolean): ReactNode {
       }
       return (
         <a key={key} href={href} rel="noopener noreferrer" title={attr(node, 'title') ?? undefined}>
-          {convertChildren(node, w, true)}
+          {convertChildren(node, w, true, depth + 1)}
         </a>
       )
     }
@@ -141,13 +145,13 @@ function convertNode(node: RemoteNode, w: Walk, plain: boolean): ReactNode {
     case 'details':
       return (
         <details key={key} open={has(node, 'open') || undefined}>
-          {convertChildren(node, w, plain)}
+          {convertChildren(node, w, plain, depth + 1)}
         </details>
       )
     case 'ol':
       return (
         <ol key={key} start={intAttr(node, 'start', 1_000_000)}>
-          {convertChildren(node, w, plain)}
+          {convertChildren(node, w, plain, depth + 1)}
         </ol>
       )
     case 'th':
@@ -161,10 +165,10 @@ function convertNode(node: RemoteNode, w: Walk, plain: boolean): ReactNode {
           colSpan: intAttr(node, 'colspan', 100),
           rowSpan: intAttr(node, 'rowspan', 100)
         },
-        ...convertChildren(node, w, plain)
+        ...convertChildren(node, w, plain, depth + 1)
       )
     }
     default:
-      return VOID.has(tag) ? createElement(tag, { key }) : createElement(tag, { key }, ...convertChildren(node, w, plain))
+      return VOID.has(tag) ? createElement(tag, { key }) : createElement(tag, { key }, ...convertChildren(node, w, plain, depth + 1))
   }
 }

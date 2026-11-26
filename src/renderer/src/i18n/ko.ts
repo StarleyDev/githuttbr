@@ -1889,6 +1889,8 @@ export const ko: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     '풀 리퀘스트와 이슈 댓글에서 호스트가 아닌 사이트의 이미지를 클릭 없이 불러옵니다. 끄면 클릭할 때까지 자리 표시자를 보여 줍니다. 이미지를 요청하면 그 사이트가 내 IP 주소와 댓글을 읽은 시각을 알게 됩니다.',
   'remoteImage.blocked': '{domain}의 이미지 — 클릭하여 불러오기',
+  'remoteMarkdown.tooLong': '긴 댓글이라 일반 텍스트로 표시합니다.',
+  'remoteMarkdown.tooComplex': '여기서 렌더링하기에는 너무 복잡해 일반 텍스트로 표시합니다.',
   'settings.launchEnabled': 'launch.json 사용',
   'settings.fileViewer': '파일 뷰어',
   'settings.fileViewerIntro': '파일 보기(작업 트리 파일)가 커밋되지 않은 변경 사항을 표시하는 방식입니다.',

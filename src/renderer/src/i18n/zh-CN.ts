@@ -1889,6 +1889,8 @@ export const zhCN: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     '拉取请求和议题评论中来自托管平台以外网站的图片无需点击即可加载。关闭时，每张图片在你点击前显示占位符：请求图片会让该网站得知你的 IP 地址和你阅读评论的时间。',
   'remoteImage.blocked': '来自 {domain} 的图片 — 点击加载',
+  'remoteMarkdown.tooLong': '评论过长，以纯文本显示。',
+  'remoteMarkdown.tooComplex': '评论过于复杂，无法在此渲染，以纯文本显示。',
   'settings.launchEnabled': '启用 launch.json',
   'settings.fileViewer': '文件查看器',
   'settings.fileViewerIntro': '文件视图（工作树文件）如何显示未提交的更改。',

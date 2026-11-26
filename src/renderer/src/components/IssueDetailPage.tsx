@@ -25,7 +25,7 @@ import {
 } from '../lib/commentEdit'
 import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 import { EditableComment } from './EditableComment'
-import { RemoteMarkdown } from './RemoteMarkdown'
+import { RemoteMarkdown, RemotePreviewProvider } from './RemoteMarkdown'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -380,7 +380,9 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   )
   return (
     <ReferenceScope repoPath={repoPath} remoteUrl={remoteUrl} host={refHost}>
-      {content}
+      <RemotePreviewProvider repoWebUrl={remoteWebUrl(remoteUrl)} linkOptions={linkOptions}>
+        {content}
+      </RemotePreviewProvider>
     </ReferenceScope>
   )
 }

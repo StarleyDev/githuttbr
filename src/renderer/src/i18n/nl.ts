@@ -1890,6 +1890,8 @@ export const nl: Dict = {
   'settings.commentImagesFromOtherSitesHint':
     'Afbeeldingen in reacties op pull requests en issues die van een andere site dan de host komen, laden zonder klik. Uit: elke afbeelding toont een plaatshouder tot je klikt — het opvragen ervan vertelt die site je IP-adres en wanneer je de reactie las.',
   'remoteImage.blocked': 'Afbeelding van {domain} — klik om te laden',
+  'remoteMarkdown.tooLong': 'Lange reactie als platte tekst getoond.',
+  'remoteMarkdown.tooComplex': 'Reactie als platte tekst getoond: te ingewikkeld om hier weer te geven.',
   'settings.launchEnabled': 'launch.json inschakelen',
   'settings.fileViewer': 'Bestandsviewer',
   'settings.fileViewerIntro': 'Hoe de bestandsweergave (working-tree-bestanden) niet-gecommitte wijzigingen toont.',
