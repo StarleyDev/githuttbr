@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DownloadCloud, ExternalLink, Loader2 } from 'lucide-react'
 import type { PrDetail, PrFile } from '../../../shared/types'
 import { getImageSides, type PrDiffCommits, type PrImageContent, type PrImageSide } from '../../../shared/prImage'
@@ -32,8 +32,10 @@ export function getPrFilesUrl(prUrl: string): string {
 
 type PreviewState =
   | { status: 'loading' }
-  | { status: 'ready'; before: string | null; after: string | null }
+  /** `approximate`: the "before" is the target branch's tip, not the merge base. */
+  | { status: 'ready'; before: string | null; after: string | null; approximate: boolean }
   | { status: 'tooLarge'; size: number }
+  | { status: 'lfs' }
   | { status: 'failed'; error?: string }
 
 /**
@@ -41,19 +43,19 @@ type PreviewState =
  * read the commit view's image diff makes, no API cost — else from the host
  * with the repository's profile. Remembered for the page's life.
  */
-async function getImageContent(source: PrImageSource, side: PrImageSide): Promise<PrImageContent> {
-  const cached = source.cache.getImage(side.sha, side.path)
-  if (cached) return cached
-  const here = await gitApi.getLocalCommits(source.repoPath, [side.sha]).catch(() => [] as string[])
-  let content: PrImageContent = { status: 'missing' }
-  if (here.length === 1) {
-    content = await gitApi.getImageBlob(source.repoPath, side.sha, side.path).catch(() => content)
-  }
-  if (content.status === 'missing') {
-    content = await hostingApi.prFileContent(source.repoPath, source.remoteUrl, source.tokens, side.sha, side.path)
-  }
-  source.cache.setImage(side.sha, side.path, content)
-  return content
+function getImageContent(source: PrImageSource, side: PrImageSide): Promise<PrImageContent> {
+  // Cached, or one read shared with anyone asking for it meanwhile.
+  return source.cache.loadImage(side.sha, side.path, async () => {
+    const here = await gitApi.getLocalCommits(source.repoPath, [side.sha]).catch(() => [] as string[])
+    let content: PrImageContent = { status: 'missing' }
+    if (here.length === 1) {
+      content = await gitApi.getImageBlob(source.repoPath, side.sha, side.path).catch(() => content)
+    }
+    if (content.status === 'missing') {
+      content = await hostingApi.prFileContent(source.repoPath, source.remoteUrl, source.tokens, side.sha, side.path)
+    }
+    return content
+  })
 }
 
 /**
@@ -69,10 +71,14 @@ export function PrImagePreview({ source, file }: { source: PrImageSource; file: 
   const [state, setState] = useState<PreviewState>({ status: 'loading' })
   const [tries, setTries] = useState(0)
   const [fetching, setFetching] = useState(false)
+  // The file whose picture is on screen: a refresh of the same file keeps it
+  // there while the (cached) read runs, instead of flashing "loading".
+  const shownFor = useRef<string | null>(null)
+  const fileKey = `${file.filename}\u0000${file.status}\u0000${file.previousFilename ?? ''}`
 
   useEffect(() => {
     let live = true
-    setState({ status: 'loading' })
+    if (shownFor.current !== fileKey) setState({ status: 'loading' })
     const read = async (): Promise<PreviewState> => {
       const commits = await source.getCommits()
       if (!commits) return { status: 'failed' }
@@ -83,20 +89,25 @@ export function PrImagePreview({ source, file }: { source: PrImageSource; file: 
       ])
       const big = [before, after].find((c) => c?.status === 'tooLarge')
       if (big && big.status === 'tooLarge') return { status: 'tooLarge', size: big.size }
+      if (before?.status === 'lfs' || after?.status === 'lfs') return { status: 'lfs' }
       // Every side this file should have must be here: half a modified image misleads.
       if ((sides.before && before?.status !== 'ok') || (sides.after && after?.status !== 'ok')) return { status: 'failed' }
       const url = (c: PrImageContent | null): string | null => (c?.status === 'ok' ? c.dataUrl : null)
-      return { status: 'ready', before: url(before), after: url(after) }
+      return { status: 'ready', before: url(before), after: url(after), approximate: !!sides.before && !!commits.baseApproximate }
     }
     read()
       .catch((err: unknown): PreviewState => ({ status: 'failed', error: err instanceof Error ? err.message : String(err) }))
-      .then((s) => live && setState(s))
+      .then((s) => {
+        if (!live) return
+        shownFor.current = fileKey
+        setState(s)
+      })
     return () => {
       live = false
     }
     // The file by value: a refresh hands over an equal object, which reads nothing again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source, file.filename, file.status, file.previousFilename, tries])
+  }, [source, fileKey, tries])
 
   if (state.status === 'loading') {
     return (
@@ -105,13 +116,28 @@ export function PrImagePreview({ source, file }: { source: PrImageSource; file: 
       </div>
     )
   }
-  if (state.status === 'ready') return <ImageDiff before={state.before} after={state.after} />
+  if (state.status === 'ready') {
+    return (
+      <>
+        {state.approximate && <p className="prp-side-note prp-image-note">{t('prImage.baseApproximate')}</p>}
+        <ImageDiff before={state.before} after={state.after} />
+      </>
+    )
+  }
 
   const openOnHost = (
     <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(source.pr.url))}>
       <ExternalLink size={13} /> {t('common.openInBrowser')}
     </button>
   )
+  if (state.status === 'lfs') {
+    return (
+      <div className="prp-no-patch">
+        <p>{t('prImage.lfs')}</p>
+        {openOnHost}
+      </div>
+    )
+  }
   if (state.status === 'tooLarge') {
     return (
       <div className="prp-no-patch">

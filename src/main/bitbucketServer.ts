@@ -676,7 +676,7 @@ export async function bbsPullDiffCommits(
   repo: BitbucketServerRepo,
   token: string,
   id: number
-): Promise<{ baseSha: string | null; headSha: string } | null> {
+): Promise<{ baseSha: string | null; headSha: string; baseApproximate?: boolean } | null> {
   const r = bbsRepoApi(repo)
   const pr = await bbsJson<BbsPull>(`${r}/pull-requests/${id}`, token)
   const head = pr.fromRef?.latestCommit
@@ -684,8 +684,10 @@ export async function bbsPullDiffCommits(
   const ends = await bbsJson<{ fromHash?: string; toHash?: string }>(`${r}/pull-requests/${id}/changes?limit=1`, token).catch(
     () => null
   )
-  const base = [ends?.fromHash, ends?.toHash].find((h) => !!h && h !== head) ?? pr.toRef?.latestCommit ?? null
-  return { baseSha: base, headSha: head }
+  const end = [ends?.fromHash, ends?.toHash].find((h) => !!h && h !== head)
+  if (end) return { baseSha: end, headSha: head }
+  const tip = pr.toRef?.latestCommit ?? null
+  return { baseSha: tip, headSha: head, ...(tip ? { baseApproximate: true } : {}) }
 }
 
 /**

@@ -179,7 +179,9 @@ import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import {
   getImageMime,
   isFullCommitSha,
+  isLfsPointer,
   isSafeRepoFilePath,
+  LFS_POINTER_MAX_BYTES,
   PR_IMAGE_MAX_BYTES,
   type PrImageContent
 } from '../shared/prImage'
@@ -8336,7 +8338,13 @@ export const gitService = {
     if (!Number.isFinite(size)) return { status: 'missing' }
     if (size > PR_IMAGE_MAX_BYTES) return { status: 'tooLarge', size }
     const url = await readFileDataUrl(repoPath, file, sha)
-    return url === null ? { status: 'missing' } : { status: 'ok', dataUrl: url }
+    if (url === null) return { status: 'missing' }
+    // An LFS pointer is not the picture: "missing" here, so the host — which
+    // resolves LFS on GitLab, Azure and Forgejo — is asked instead.
+    if (size < LFS_POINTER_MAX_BYTES && isLfsPointer(Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'))) {
+      return { status: 'missing' }
+    }
+    return { status: 'ok', dataUrl: url }
   },
 
   /**

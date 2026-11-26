@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { copyFileSync } from 'node:fs'
+import { copyFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { gitMethodIsRead, gitService } from '../src/main/git'
@@ -47,6 +47,15 @@ describe('getImageBlob — an image at a commit, from this clone', () => {
 
   it('is a read: it takes the shared lock', () => {
     expect(gitMethodIsRead('getImageBlob')).toBe(true)
+  })
+
+  it('an LFS pointer is "missing" here, so the host — which resolves LFS — is asked', async () => {
+    const tmp = cloneFixture('binary-images-unicode')
+    const pointer = `version https://git-lfs.github.com/spec/v1\noid sha256:${'a'.repeat(64)}\nsize 52341\n`
+    writeFileSync(join(tmp, 'assets/banner.png'), pointer)
+    git(tmp, 'add', '-A')
+    git(tmp, '-c', 'user.name=Ana Test', '-c', 'user.email=ana@example.test', 'commit', '-qm', 'lfs pointer')
+    expect(await gitService.getImageBlob(tmp, git(tmp, 'rev-parse', 'HEAD'), 'assets/banner.png')).toEqual({ status: 'missing' })
   })
 
   it('a renamed image with spaces and non-ASCII in its name reads at its new path', async () => {

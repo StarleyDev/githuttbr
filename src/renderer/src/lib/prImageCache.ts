@@ -1,29 +1,36 @@
 import type { PrImageContent } from '../../../shared/prImage'
 
 /**
- * The images a pull request page has already read, so going back to a file
- * does not read it again — from git or, worse, from the host. Keyed by commit
- * and path (a commit's file never changes), least recently used first out, and
- * bounded twice: by entries and by the characters of the data URLs it holds,
- * since one screenshot can weigh more than a hundred icons.
+ * The images a pull request page has already read, so going back to a file —
+ * or a refresh of the page — does not read it again, from git or, worse, from
+ * the host. Keyed by commit and path (a commit's file never changes), least
+ * recently used first out, and bounded by the bytes of the data URLs it holds
+ * (one screenshot can weigh more than a hundred icons) as well as by entries.
+ * Two asks for the same image while the first is still out share one read.
  */
 export interface PrImageCache {
   getImage: (sha: string, path: string) => PrImageContent | undefined
   setImage: (sha: string, path: string, content: PrImageContent) => void
-  /** Characters held, for the bound. */
+  /** The cached image, else one read shared by every caller until it lands. */
+  loadImage: (sha: string, path: string, read: () => Promise<PrImageContent>) => Promise<PrImageContent>
+  /** Bytes held, for the bound. */
   getSize: () => number
 }
 
-/** What one entry weighs: its data URL, or a token amount for "too large". */
+/** The default bound: about 40 MB of data URLs. */
+export const PR_IMAGE_CACHE_BYTES = 40 * 1024 * 1024
+
+/** What one entry weighs: its data URL (ASCII, one byte a character), or a token amount otherwise. */
 function weigh(content: PrImageContent): number {
   return content.status === 'ok' ? content.dataUrl.length : 64
 }
 
-export function createPrImageCache(maxEntries = 60, maxChars = 96 * 1024 * 1024): PrImageCache {
+export function createPrImageCache(maxEntries = 60, maxBytes = PR_IMAGE_CACHE_BYTES): PrImageCache {
   const map = new Map<string, PrImageContent>()
+  const inflight = new Map<string, Promise<PrImageContent>>()
   let size = 0
   const keyOf = (sha: string, path: string): string => `${sha}\u0000${path}`
-  return {
+  const cache: PrImageCache = {
     getImage: (sha, path) => {
       const key = keyOf(sha, path)
       const hit = map.get(key)
@@ -43,15 +50,31 @@ export function createPrImageCache(maxEntries = 60, maxChars = 96 * 1024 * 1024)
         map.delete(key)
       }
       // An image larger than the whole bound is shown, never kept.
-      if (weigh(content) > maxChars) return
+      if (weigh(content) > maxBytes) return
       map.set(key, content)
       size += weigh(content)
       for (const [k, v] of map) {
-        if (map.size <= maxEntries && size <= maxChars) break
+        if (map.size <= maxEntries && size <= maxBytes) break
         map.delete(k)
         size -= weigh(v)
       }
     },
+    loadImage: (sha, path, read) => {
+      const hit = cache.getImage(sha, path)
+      if (hit) return Promise.resolve(hit)
+      const key = keyOf(sha, path)
+      const pending = inflight.get(key)
+      if (pending) return pending
+      const run = read()
+        .then((content) => {
+          cache.setImage(sha, path, content)
+          return content
+        })
+        .finally(() => inflight.delete(key))
+      inflight.set(key, run)
+      return run
+    },
     getSize: () => size
   }
+  return cache
 }

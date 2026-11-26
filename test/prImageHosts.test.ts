@@ -153,8 +153,48 @@ describe('pull request image preview — main, per host', () => {
     const r = await content(`${GITLAB}/team/app.git`, sha('a'), PATH)
     expect(asked.map((c) => c.url)).toEqual([url])
     expect(asked[0].headers).toMatchObject({ 'PRIVATE-TOKEN': 'gl-token' })
-    expect(asked[0].redirect).toBe('error')
+    expect(asked[0].redirect).toBe('manual')
     expect(r.status).toBe('ok')
+  })
+
+  it('an LFS object behind a redirect: one hop, https only, without the token', async () => {
+    const url = `${GITLAB}/api/v4/projects/team%2Fapp/repository/files/logo.png/raw?ref=${sha('a')}&lfs=true`
+    routes = [
+      [url, { status: 302, body: '', headers: { location: 'https://objects.example.test/lfs/abc?sig=1' } }],
+      ['https://objects.example.test/lfs/abc', { body: PNG }]
+    ]
+    const r = await content(`${GITLAB}/team/app.git`, sha('a'), 'logo.png')
+    expect(r.status).toBe('ok')
+    expect(asked.map((c) => c.url)).toEqual([url, 'https://objects.example.test/lfs/abc?sig=1'])
+    expect(JSON.stringify(asked[1].headers)).not.toContain('gl-token')
+    expect(asked[1].redirect).toBe('error')
+    // To plain http: not followed, and the 302 is a refusal.
+    asked.length = 0
+    routes = [[url, { status: 302, body: '', headers: { location: 'http://objects.example.test/lfs/abc' } }]]
+    await expect(content(`${GITLAB}/team/app.git`, sha('a'), 'logo.png')).rejects.toThrow(/refused/)
+    expect(asked).toHaveLength(1)
+  })
+
+  it('a Git LFS pointer is "lfs", never a broken picture — on GitHub and from a raw endpoint', async () => {
+    const pointer = Buffer.from('version https://git-lfs.github.com/spec/v1\noid sha256:' + 'a'.repeat(64) + '\nsize 12345\n')
+    routes = [
+      [
+        'https://api.github.com/repos/team/app/contents/logo.png',
+        { body: { type: 'file', size: pointer.length, sha: sha('b'), encoding: 'base64', content: pointer.toString('base64') } }
+      ]
+    ]
+    expect(await content(GITHUB, sha('a'), 'logo.png')).toEqual({ status: 'lfs' })
+    routes = [[`${BBS}/rest/api/latest/projects/PROJ/repos/app/raw/logo.png`, { body: pointer }]]
+    expect(await content(`${BBS}/scm/proj/app.git`, sha('a'), 'logo.png')).toEqual({ status: 'lfs' })
+  })
+
+  it('GitHub without a merge base: the base tip, marked approximate', async () => {
+    const API = 'https://api.github.com/repos/team/app'
+    routes = [
+      [`${API}/pulls/7`, { body: { head: { sha: sha('h') }, base: { sha: sha('t') } } }],
+      [`${API}/compare/`, { status: 500, body: {} }]
+    ]
+    expect(await commits(GITHUB)).toEqual({ baseSha: sha('t'), headSha: sha('h'), baseApproximate: true })
   })
 
   it('GitLab: the merge request’s diff refs name the merge base', async () => {

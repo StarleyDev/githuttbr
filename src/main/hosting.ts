@@ -2456,7 +2456,10 @@ async function pullRequestDiffCommits(remoteUrl: string, tokens: HostTokens, num
           () => null
         )
       : null
-    return { baseSha: cmp?.merge_base_commit?.sha ?? tip ?? null, headSha: head }
+    const mergeBase = cmp?.merge_base_commit?.sha
+    return mergeBase
+      ? { baseSha: mergeBase, headSha: head }
+      : { baseSha: tip ?? null, headSha: head, ...(tip ? { baseApproximate: true } : {}) }
   }
   const rev = await pullRequestRevision(remoteUrl, tokens, number)
   return rev?.headSha ? { baseSha: rev.baseSha ?? null, headSha: rev.headSha } : null
@@ -2482,7 +2485,8 @@ async function pullRequestFileContent(
   const parsed = parseRemoteUrl(remoteUrl)
   if (parsed?.provider === 'gitlab') {
     const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
-    return fetchFileBytes(hostFileUrls.gitlabRaw(base, path, sha), { redirect: 'error', headers: gitlabAuth(auth) }, mime, 'GitLab')
+    // `manual`: an LFS object may sit behind one redirect to object storage, followed without the token.
+    return fetchFileBytes(hostFileUrls.gitlabRaw(base, path, sha), { redirect: 'manual', headers: gitlabAuth(auth) }, mime, 'GitLab')
   }
   if (isBbs(remoteUrl)) {
     const b = await bbsRepoOf(remoteUrl)
@@ -2497,7 +2501,7 @@ async function pullRequestFileContent(
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return fetchFileBytes(
       hostFileUrls.forgejoMedia(forgejoRepoApi(f.base, f.owner, f.repo), path, sha),
-      { redirect: 'error', headers: { Authorization: `token ${f.token}` } },
+      { redirect: 'manual', headers: { Authorization: `token ${f.token}` } },
       mime,
       'Forgejo'
     )

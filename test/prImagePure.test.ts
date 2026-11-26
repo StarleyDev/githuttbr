@@ -4,6 +4,7 @@ import {
   getImageMime,
   getImageSides,
   isFullCommitSha,
+  isLfsPointer,
   isPreviewableImage,
   isSafeRepoFilePath
 } from '../src/shared/prImage'
@@ -53,6 +54,31 @@ describe('pull request image preview — which files, which sides, what is kept'
       expect(isSafeRepoFilePath(bad), JSON.stringify(bad)).toBe(false)
     }
     expect(encodePathSegments('a b/ç#?.png')).toBe('a%20b/%C3%A7%23%3F.png')
+  })
+
+  it('tells a Git LFS pointer from an image', () => {
+    const enc = (s: string): Uint8Array => new TextEncoder().encode(s)
+    expect(isLfsPointer(enc('version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 9\n'))).toBe(true)
+    expect(isLfsPointer(enc('version https://git-lfs.github.com/spec/v1' + 'x'.repeat(2000)))).toBe(false)
+    expect(isLfsPointer(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBe(false)
+  })
+
+  it('the image cache: one read for two asks in flight, and a byte bound', async () => {
+    const cache = createPrImageCache()
+    let reads = 0
+    const read = async (): Promise<{ status: 'ok'; dataUrl: string }> => {
+      reads++
+      return { status: 'ok', dataUrl: 'data:image/png;base64,AA' }
+    }
+    const [a, b] = await Promise.all([cache.loadImage('s', 'a.png', read), cache.loadImage('s', 'a.png', read)])
+    expect(a).toEqual(b)
+    expect(reads).toBe(1)
+    await cache.loadImage('s', 'a.png', read)
+    expect(reads).toBe(1)
+    // A failed read is not remembered: the next ask reads again.
+    const failing = createPrImageCache()
+    await expect(failing.loadImage('s', 'x.png', () => Promise.reject(new Error('offline')))).rejects.toThrow()
+    expect(await failing.loadImage('s', 'x.png', read)).toMatchObject({ status: 'ok' })
   })
 
   it('the image cache: hits by commit and path, forgets the oldest past either bound, never keeps "missing"', () => {

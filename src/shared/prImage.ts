@@ -61,9 +61,26 @@ export function encodePathSegments(path: string): string {
   return path.split('/').map(encodeURIComponent).join('/')
 }
 
+/**
+ * Git LFS keeps a small text pointer in the repository instead of the file.
+ * Read as an image it is a broken picture; read as this, it is "ask the host".
+ */
+export const LFS_POINTER_PREFIX = 'version https://git-lfs.github.com/spec/v1'
+/** A pointer is ~130 bytes; anything this large is a real file. */
+export const LFS_POINTER_MAX_BYTES = 1024
+
+/** Whether these bytes are a Git LFS pointer rather than the file it points to. */
+export function isLfsPointer(bytes: Uint8Array): boolean {
+  if (bytes.byteLength >= LFS_POINTER_MAX_BYTES || bytes.byteLength < LFS_POINTER_PREFIX.length) return false
+  for (let i = 0; i < LFS_POINTER_PREFIX.length; i++) if (bytes[i] !== LFS_POINTER_PREFIX.charCodeAt(i)) return false
+  return true
+}
+
 /** One side of an image comparison, read at a commit. */
 export type PrImageContent =
   | { status: 'ok'; dataUrl: string }
+  /** The file is in Git LFS and this reader only got its pointer: open it on the host. */
+  | { status: 'lfs' }
   /** Larger than PR_IMAGE_MAX_BYTES; `size` in bytes. */
   | { status: 'tooLarge'; size: number }
   /** Not there: the commit or the blob is not here, or the host has no such file. */
@@ -74,6 +91,12 @@ export interface PrDiffCommits {
   /** Null when the host would not say — the "before" side is then unavailable. */
   baseSha: string | null
   headSha: string
+  /**
+   * The host named no merge base and `baseSha` is the target branch's tip: the
+   * "before" image is the target's current version, which a change landed on
+   * the target since the branch was cut would show too.
+   */
+  baseApproximate?: boolean
 }
 
 /** A file at a commit: what one side of an image comparison reads. */
