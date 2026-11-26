@@ -355,6 +355,14 @@ const api = {
       body: string
     ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReplyReviewComment', repoPath, remoteUrl, tokens, number, inReplyTo, body),
+    prCommentOnLine: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      anchor: unknown,
+      body: string
+    ): Promise<unknown> => ipcRenderer.invoke('hosting:prCommentOnLine', repoPath, remoteUrl, tokens, number, anchor, body),
     ciRuns: (repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciRuns', repoPath, remoteUrl, tokens, branch),
     ciRunJobs: (repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown> =>

@@ -13,6 +13,7 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
+import { getAnchorLine, getAnchorSide, isValidLineAnchor } from '../shared/prLineAnchor'
 import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
@@ -39,6 +40,7 @@ import {
   createForgejoPull,
   createForgejoRepo,
   forgejoComment,
+  forgejoCommentOnLine,
   forgejoMerge,
   forgejoPullChecks,
   forgejoJobLog,
@@ -96,6 +98,7 @@ import { knownBitbucketServerInstances } from './bitbucketServerInstances'
 import {
   bbsCiStatuses,
   bbsComment,
+  bbsCommentOnLine,
   bbsMerge,
   bbsPullChecks,
   bbsPullDetail,
@@ -157,6 +160,7 @@ import type {
   PrDetail,
   PrReview,
   PrReviewThread,
+  PrLineAnchor,
   PrCheck,
   PrFile,
   IssueInfo,
@@ -183,6 +187,7 @@ import {
   azurePrDetail,
   azurePrFiles,
   azureReply,
+  azureCommentOnLine,
   azureReview,
   azureWorkItem,
   type Ado,
@@ -1772,6 +1777,8 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
         // GitLab notes carry a file position but not the surrounding hunk.
         diffHunk: '',
         rootId: d.id,
+        // An unchanged line carries both numbers; it is drawn on the new side.
+        ...(pos.new_line != null ? { side: 'new' as const } : pos.old_line != null ? { side: 'old' as const } : {}),
         comments: notes.map((n) => ({
           id: n.id,
           author: n.author?.username ?? 'unknown',
@@ -2044,6 +2051,8 @@ interface GhReviewComment {
   original_line: number | null
   diff_hunk: string
   in_reply_to_id?: number
+  /** LEFT (the old file) or RIGHT (the new one), for `line`. */
+  side?: 'LEFT' | 'RIGHT' | null
 }
 
 async function pullRequestDetail(
@@ -2123,7 +2132,10 @@ async function pullRequestDetail(
         line: rc.line ?? rc.original_line,
         diffHunk: rc.diff_hunk,
         rootId,
-        comments: [comment]
+        comments: [comment],
+        // An outdated comment has no `line` on the current diff — its
+        // original_line counts in a commit the Files tab is not showing.
+        ...(rc.line != null && rc.side ? { side: rc.side === 'LEFT' ? ('old' as const) : ('new' as const) } : {})
       })
   }
   const reviewThreads = [...threadById.values()]
@@ -2298,6 +2310,143 @@ async function replyReviewComment(
     method: 'POST',
     body: JSON.stringify({ body, in_reply_to: inReplyTo })
   })
+}
+
+/**
+ * Why a line comment failed, in words the renderer recognises
+ * (lib/gitErrorHint.ts): `refused` when the host turned the account down,
+ * `outsideDiff` when it would not anchor a comment to that line — which is what
+ * a 422 (GitHub), a 400 (GitLab, Forgejo, Bitbucket) or a 409 (Data Center)
+ * means here, since everything else in the request is the app's own. The
+ * host's words follow, for the toast's details. Anything else passes unchanged.
+ */
+export function lineCommentFailure(err: unknown): unknown {
+  const status = err && typeof err === 'object' && 'status' in err ? Number((err as { status: unknown }).status) : NaN
+  // A spent rate limit is a 403 too, and it says when to try again: kept as it is.
+  if (err && typeof err === 'object' && (err as { rateLimited?: unknown }).rateLimited === true) return err
+  const words = err instanceof Error ? err.message : String(err)
+  if (status === 401 || status === 403) return new HttpStatusError(`Line comment [refused]: ${words}`, status)
+  if (status === 400 || status === 409 || status === 422) return new HttpStatusError(`Line comment [outsideDiff]: ${words}`, status)
+  return err
+}
+
+/** bitbucket.org: an inline comment, `to` a line of the new file or `from` one of the old. */
+async function bbCloudCommentOnLine(
+  owner: string,
+  repo: string,
+  auth: ApiAuth,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string
+): Promise<void> {
+  const res = await fetch(
+    `https://api.bitbucket.org/2.0/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pullrequests/${number}/comments`,
+    {
+      method: 'POST',
+      redirect: 'error',
+      headers: { Authorization: bitbucketAuthFor(auth), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: { raw: body },
+        inline: { path: anchor.path, [getAnchorSide(anchor) === 'old' ? 'from' : 'to']: getAnchorLine(anchor) }
+      })
+    }
+  )
+  if (!res.ok) {
+    const e = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+    throw new HttpStatusError(e?.error?.message ? `Bitbucket: ${e.error.message}` : `Bitbucket API error (${res.status})`, res.status)
+  }
+}
+
+/** GitLab: a new discussion positioned on the line, against the MR's current diff refs. */
+async function glCommentOnLine(
+  remoteUrl: string,
+  token: string | undefined,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string
+): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  const mrUrl = `${base}/merge_requests/${number}`
+  const mr = await glJson<{ diff_refs?: { base_sha?: string; head_sha?: string; start_sha?: string } | null }>(mrUrl, auth)
+  const refs = mr.diff_refs
+  if (!refs?.base_sha || !refs.head_sha || !refs.start_sha) {
+    throw new Error('GitLab did not say which commits this merge request compares — refresh it and try again.')
+  }
+  // An added line has only new_line, a removed one only old_line, and an
+  // unchanged line both — GitLab rejects a context line given just one.
+  const lines = {
+    ...(anchor.kind !== 'del' ? { new_line: anchor.newLine } : {}),
+    ...(anchor.kind !== 'add' ? { old_line: anchor.oldLine } : {})
+  }
+  await glJson(`${mrUrl}/discussions`, auth, {
+    method: 'POST',
+    body: JSON.stringify({
+      body,
+      position: {
+        position_type: 'text',
+        base_sha: refs.base_sha,
+        start_sha: refs.start_sha,
+        head_sha: refs.head_sha,
+        old_path: anchor.oldPath ?? anchor.path,
+        new_path: anchor.path,
+        ...lines
+      }
+    })
+  })
+}
+
+/**
+ * Start a review thread on one line of a pull request's diff, posted at once
+ * (no pending review). Each host anchors it its own way; the anchor is the
+ * same everywhere — a deleted line is the old side, the rest the new.
+ */
+async function commentOnPrLine(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  anchor: unknown,
+  body: unknown
+): Promise<void> {
+  if (!isValidLineAnchor(anchor)) throw new Error('A line comment needs a file and a line of its diff.')
+  if (typeof body !== 'string' || !body.trim()) throw new Error('A line comment needs some text.')
+  const text = body.trim()
+  try {
+    if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return await glCommentOnLine(remoteUrl, tokens.gitlab, number, anchor, text)
+    if (isBbs(remoteUrl)) {
+      const b = await bbsRepoOf(remoteUrl)
+      return await bbsCommentOnLine(b.repo, b.token, number, anchor, text)
+    }
+    const parsed = parseRemoteUrl(remoteUrl)
+    if (parsed?.provider === 'forgejo') {
+      const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+      return await forgejoCommentOnLine(f.base, f.owner, f.repo, f.token, number, anchor, text)
+    }
+    if (parsed?.provider === 'azure') {
+      const a = await azRepoOf(remoteUrl, tokens.azure)
+      return await azureCommentOnLine(a.ado, a.repo, number, anchor, text)
+    }
+    if (parsed?.provider === 'bitbucket') {
+      refuseUnreadableDataCenter(remoteUrl)
+      const auth = await tokenForRemote(remoteUrl, 'bitbucket', tokens)
+      if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+      return await bbCloudCommentOnLine(parsed.owner, parsed.repo, auth, number, anchor, text)
+    }
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    // The comment names the commit it was written against: the PR's head now.
+    const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
+    await ghJson(`${api}/pulls/${number}/comments`, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        body: text,
+        commit_id: pr.head.sha,
+        path: anchor.path,
+        line: getAnchorLine(anchor),
+        side: getAnchorSide(anchor) === 'old' ? 'LEFT' : 'RIGHT'
+      })
+    })
+  } catch (err) {
+    throw lineCommentFailure(err)
+  }
 }
 
 async function commentOnPr(
@@ -3931,6 +4080,11 @@ export function registerHostingHandlers(): void {
     'hosting:prReplyReviewComment',
     (remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
+  )
+  handleForRepo(
+    'hosting:prCommentOnLine',
+    (remoteUrl: string, tokens: HostTokens, number: number, anchor: unknown, body: unknown) =>
+      commentOnPrLine(remoteUrl, tokens, number, anchor, body)
   )
   handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestFiles(remoteUrl, tokens, number)

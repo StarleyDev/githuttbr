@@ -1176,6 +1176,15 @@ export const hostingApi = {
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
+  /** Start a review thread on one line of the PR's diff, posted at once. */
+  prCommentOnLine: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    anchor: import('../../../shared/types').PrLineAnchor,
+    body: string
+  ) => window.api.hosting.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, body) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
   ciRuns: (repoPath: string, remoteUrl: string, tokens: PrTokens, branch?: string) =>
     window.api.hosting.ciRuns(repoPath, remoteUrl, tokens, branch) as Promise<import('../../../shared/types').CiRunList>,

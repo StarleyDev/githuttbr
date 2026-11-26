@@ -2,6 +2,7 @@ import type {
   PrCheck,
   PrDetail,
   PrFile,
+  PrLineAnchor,
   PrMergeMethod,
   PrReview,
   PrReviewEvent,
@@ -9,6 +10,7 @@ import type {
   PrWorkItem
 } from '../shared/types'
 import { unifiedDiff } from '../shared/lineDiff'
+import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 
 /**
  * Azure DevOps pull requests on the PR page. Every call goes through `ado`,
@@ -122,7 +124,8 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
         line: ctx.rightFileStart?.line ?? ctx.leftFileStart?.line ?? null,
         diffHunk: '',
         rootId: th.id,
-        comments: notes.map((c) => ({ id: c.id, author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' }))
+        comments: notes.map((c) => ({ id: c.id, author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })),
+        ...(ctx.rightFileStart?.line ? { side: 'new' as const } : ctx.leftFileStart?.line ? { side: 'old' as const } : {})
       })
     } else {
       for (const c of notes) comments.push({ author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })
@@ -390,6 +393,8 @@ interface AzChange {
   changeType?: string
   item?: { path?: string; gitObjectType?: string; isFolder?: boolean }
   originalPath?: string
+  /** What keeps a thread on its line across later pushes. */
+  changeTrackingId?: number
 }
 
 export function azureChangeStatus(changeType: string | undefined): string {
@@ -463,6 +468,44 @@ export async function azureComment(ado: Ado, r: AzureRepo, id: number, body: str
     method: 'POST',
     // status 1 = active; commentType 1 = text.
     body: JSON.stringify({ comments: [{ parentCommentId: 0, content: body, commentType: 1 }], status: 1 })
+  })
+}
+
+/**
+ * Start a thread on one line of the PR's diff. The Files tab shows the merge
+ * base against the last iteration, which Azure calls comparing that iteration
+ * with itself; the change's tracking id is what keeps the thread on its line
+ * when the branch moves on — sent when the iteration lists the file.
+ */
+export async function azureCommentOnLine(ado: Ado, r: AzureRepo, id: number, anchor: PrLineAnchor, body: string): Promise<void> {
+  const base = `${repoApi(r)}/pullrequests/${id}`
+  const its = await ado<{ value?: Array<{ id: number }> }>(`${base}/iterations?${V}`)
+  const last = (its.value ?? [])[(its.value ?? []).length - 1]
+  const filePath = `/${anchor.path.replace(/^\//, '')}`
+  let changeTrackingId: number | undefined
+  if (last) {
+    const changes = await ado<{ changeEntries?: AzChange[] }>(`${base}/iterations/${last.id}/changes?$top=2000&${V}`).catch(
+      () => ({ changeEntries: [] as AzChange[] })
+    )
+    changeTrackingId = (changes.changeEntries ?? []).find((c) => c.item?.path === filePath)?.changeTrackingId
+  }
+  const at = { line: getAnchorLine(anchor), offset: 1 }
+  const side = getAnchorSide(anchor) === 'old' ? 'left' : 'right'
+  await ado(`${base}/threads?${V}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      comments: [{ parentCommentId: 0, content: body, commentType: 1 }],
+      status: 1,
+      threadContext: { filePath, [`${side}FileStart`]: at, [`${side}FileEnd`]: at },
+      ...(last
+        ? {
+            pullRequestThreadContext: {
+              ...(changeTrackingId !== undefined ? { changeTrackingId } : {}),
+              iterationContext: { firstComparingIteration: last.id, secondComparingIteration: last.id }
+            }
+          }
+        : {})
+    })
   })
 }
 

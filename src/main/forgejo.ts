@@ -10,6 +10,7 @@ import type {
   PrCheck,
   PrDetail,
   PrFile,
+  PrLineAnchor,
   PrMergeMethod,
   PrReview,
   PrReviewEvent,
@@ -20,6 +21,7 @@ import type {
   RemoteRepo
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
+import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -490,7 +492,9 @@ export async function forgejoPullDetail(
         line: c.line ?? c.position ?? c.original_position ?? null,
         diffHunk: c.diff_hunk ?? '',
         rootId: c.id,
-        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }]
+        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }],
+        // `position` counts in the new file, `original_position` in the old; one is set.
+        ...(c.position ? { side: 'new' as const } : c.original_position ? { side: 'old' as const } : {})
       })
     }
   }
@@ -669,6 +673,28 @@ export async function forgejoReview(
   await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/reviews`, token, {
     method: 'POST',
     body: JSON.stringify({ event: REVIEW_EVENT[event], body })
+  })
+}
+
+/**
+ * A comment on one line of the diff. Forgejo has no single-comment endpoint:
+ * a line comment is a review holding one comment, submitted at once (COMMENT,
+ * not PENDING) so it is not left as a draft only its author sees. A deleted
+ * line is `old_position`; added and unchanged lines are `new_position`.
+ */
+export async function forgejoCommentOnLine(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string
+): Promise<void> {
+  const position = getAnchorSide(anchor) === 'old' ? 'old_position' : 'new_position'
+  await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/reviews`, token, {
+    method: 'POST',
+    body: JSON.stringify({ event: 'COMMENT', body: '', comments: [{ path: anchor.path, body, [position]: getAnchorLine(anchor) }] })
   })
 }
 
