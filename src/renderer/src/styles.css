@@ -19965,6 +19965,19 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .branch-cleanup-main {
   margin: 0 0 6px;
 }
+.branch-cleanup-squash {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.branch-cleanup-squash-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .branch-cleanup-stale {
   display: flex;
   align-items: center;
@@ -20002,7 +20015,8 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   background: color-mix(in srgb, var(--red) 15%, transparent);
   color: var(--red);
 }
-.badge.cleanup-merged {
+.badge.cleanup-merged,
+.badge.cleanup-squash {
   background: rgba(63, 208, 164, 0.15);
   color: var(--green);
 }

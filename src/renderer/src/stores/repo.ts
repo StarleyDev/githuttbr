@@ -50,7 +50,7 @@ import { planBranchCheckout } from '../lib/prBranchGo'
 import { isSecretFile } from '../lib/secrets'
 import { isProtectedBranch } from '../lib/repoConfig'
 import { partitionBySecrets, tallyPushResults, type SecretFlag } from '../lib/pushBranches'
-import { getRestoreRequests, tallyDeleteResults } from '../lib/branchCleanup'
+import { getDeletedShaList, getRestoreRequests, tallyDeleteResults } from '../lib/branchCleanup'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { enterpriseBasesOf, forkUpstream, prsFromFork } from '../lib/hosting'
@@ -207,10 +207,16 @@ interface RepoStoreState {
    *  user to commit: it is a tracked file like any other. */
   saveRepoConfig(path: string, config: RepoConfig): Promise<boolean>
 
-  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null, onError?: (message: string) => boolean, refetch?: RefreshSlice[]): Promise<boolean>
+  run(path: string, label: RunLabel, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null, onError?: (message: string) => boolean, refetch?: RefreshSlice[]): Promise<boolean>
   undo(path: string): Promise<void>
   redo(path: string): Promise<void>
 }
+
+/**
+ * What `run()` shows: one string for the busy label and the success toast, or
+ * two when the outcome is only known afterwards — "Deleted 3 branches: …".
+ */
+export type RunLabel = string | { busy: string; done: () => string }
 
 const toast = (kind: 'success' | 'error' | 'info', msg: string, opts?: { repoPath?: string }): void =>
   useUIStore.getState().toast(kind, msg, opts)
@@ -887,13 +893,13 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     enqueue(path, async () => {
       const ui = useUIStore.getState()
       ui.beginInflight()
-      ui.setBusy(label, op)
+      ui.setBusy(typeof label === 'string' ? label : label.busy, op)
       // Ignore the FS-watch event our own write is about to produce; the
       // targeted refresh below already reflects it.
       muteWatcher(path)
       try {
         await fn()
-        toast('success', label)
+        toast('success', typeof label === 'string' ? label : label.done())
         if (undoEntry) {
           const repo = get().repos[path]
           if (repo) {
@@ -1571,17 +1577,32 @@ export const repoActions = {
    * The branch cleanup's delete: one queued operation and one undo entry for
    * the whole batch, however many branches it holds. The main process checks
    * every name again and reports each; the undo recreates exactly the ones it
-   * deleted, at the sha they had, with their tracking config.
+   * deleted, at the sha they had, with their tracking config. The redo sends
+   * the original requests — the same acceptances, never more — so a branch
+   * whose commits stopped existing elsewhere in between is refused, not lost.
    * Resolves to the per-branch results, or null when the call itself failed.
    */
   deleteLocalBranches: async (path: string, requests: BranchDeleteRequest[]): Promise<BranchDeleteResult[] | null> => {
     if (!requests.length) return null
     let results: BranchDeleteResult[] = []
+    // Where each deleted branch lives after an undo: its own name, or the one
+    // it was restored under because its name was taken.
+    let restoredAs = new Map<string, string>()
     const entry: UndoEntry = {
-      label: interp(t('undoLabel.branchCleanup'), { count: requests.length }),
+      label: '',
       undo: async () => {
         const restored = await gitApi.restoreLocalBranches(path, getRestoreRequests(results))
         const failed = restored.filter((r) => r.status === 'failed')
+        restoredAs = new Map(restored.filter((r) => r.restoredAs).map((r) => [r.name, r.restoredAs as string]))
+        const renamed = restored.filter((r) => r.status === 'restoredAs')
+        if (renamed.length) {
+          toast(
+            'info',
+            interp(t('branchCleanup.restoredAs'), {
+              branches: renamed.map((r) => interp(t('branchCleanup.renamedLine'), { branch: r.name, as: r.restoredAs ?? '' })).join(', ')
+            })
+          )
+        }
         if (failed.length) {
           throw new Error(
             interp(t('branchCleanup.restoreFailed'), { branches: failed.map((r) => `${r.name}: ${r.error ?? ''}`).join('\n') })
@@ -1589,29 +1610,71 @@ export const repoActions = {
         }
       },
       redo: async () => {
-        const again = getRestoreRequests(results).map((r) => ({ name: r.name, sha: r.sha, force: true }))
-        await gitApi.deleteLocalBranches(path, again)
+        const deleted = new Set(results.filter((r) => r.status === 'deleted').map((r) => r.name))
+        const again = requests
+          .filter((r) => deleted.has(r.name))
+          .map((r) => ({ ...r, name: restoredAs.get(r.name) ?? r.name }))
+        const res = await gitApi.deleteLocalBranches(path, again)
+        const kept = res.filter((r) => r.status !== 'deleted')
+        if (kept.length) {
+          throw new Error(
+            interp(t('branchCleanup.redoKept'), { count: kept.length, branches: kept.map((r) => r.name).join(', ') })
+          )
+        }
       }
+    }
+    const shaList = (): string => {
+      const { entries, more } = getDeletedShaList(results)
+      const list = entries.map((e) => interp(t('branchCleanup.wasSha'), e)).join(', ')
+      return more ? `${list} ${interp(t('branchCleanup.listMore'), { count: more })}` : list
     }
     const ok = await useRepoStore.getState().run(
       path,
-      interp(t('act.branchCleanup'), { count: requests.length }),
+      {
+        busy: interp(t('busy.branchCleanup'), { count: requests.length }),
+        done: () => {
+          const { deleted } = tallyDeleteResults(results)
+          return deleted === 1
+            ? interp(t('act.branchCleanupOne'), { branches: shaList() })
+            : interp(t('act.branchCleanupMany'), { count: deleted, branches: shaList() })
+        }
+      },
       async () => {
         results = await gitApi.deleteLocalBranches(path, requests)
         const { deleted } = tallyDeleteResults(results)
-        // Nothing deleted means nothing to undo: fail the operation instead.
-        if (!deleted) throw new Error(t('branchCleanup.nothingDeleted'))
-        entry.label = interp(t('undoLabel.branchCleanup'), { count: deleted })
+        // Nothing deleted means nothing to undo: fail the operation instead,
+        // with git's own words when git is what refused.
+        if (!deleted) {
+          const gitError = results.find((r) => r.status === 'failed')?.error
+          throw new Error(gitError ?? t('branchCleanup.nothingDeleted'))
+        }
+        entry.label =
+          deleted === 1
+            ? interp(t('undoLabel.branchCleanupOne'), { branches: shaList() })
+            : interp(t('undoLabel.branchCleanupMany'), { count: deleted, branches: shaList() })
       },
       entry,
       null,
       undefined,
       ['log', 'branches']
     )
-    const { refused, failed } = tallyDeleteResults(results)
-    if (ok && refused + failed > 0) {
-      const kept = results.filter((r) => r.status !== 'deleted').map((r) => r.name)
-      toast('info', interp(t('branchCleanup.someKept'), { count: kept.length, branches: kept.slice(0, 10).join(', ') }))
+    if (ok) {
+      const refused = results.filter((r) => r.status === 'refused').map((r) => r.name)
+      const failed = results.filter((r) => r.status === 'failed')
+      if (refused.length) {
+        toast('info', interp(t('branchCleanup.someRefused'), { count: refused.length, branches: refused.slice(0, 10).join(', ') }))
+      }
+      if (failed.length) {
+        toast(
+          'error',
+          interp(t('branchCleanup.someFailed'), {
+            count: failed.length,
+            branches: failed.slice(0, 10).map((r) => r.name).join(', '),
+            error: failed[0].error ?? ''
+          }),
+          { repoPath: path }
+        )
+      }
     }
     return results.length ? results : ok ? [] : null
   },

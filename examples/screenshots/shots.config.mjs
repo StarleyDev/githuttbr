@@ -3345,9 +3345,9 @@ export const shots = [
     }
   },
   {
-    // Clean up local branches…: gone and merged PR branches ticked, the
-    // squash-merged and unpushed ones held back with their "only here" chip,
-    // and the stale filter on so the old spike shows up, unticked.
+    // Clean up local branches…: gone and merged PR branches ticked, the squash
+    // check run so the squash-merged PR is ticked too, the unpushed work held
+    // back with its "only here" chip, and the stale filter on for the old spike.
     out: 'branch-cleanup',
     repos: ['branch-cleanup'],
     themes: ['dark'],
@@ -3358,6 +3358,9 @@ export const shots = [
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'branch-cleanup', repoPath: p }), repo)
       await page.locator('.branch-cleanup-row').first().waitFor()
       await page.locator('.branch-cleanup-include-stale').check()
+      // The opt-in squash check: the squash-merged PR earns its chip and its tick.
+      await page.locator('.branch-cleanup-squash-btn').click()
+      await page.locator('.cleanup-squash').first().waitFor()
       await page.waitForTimeout(500)
     }
   },

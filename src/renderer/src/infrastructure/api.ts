@@ -69,6 +69,7 @@ import type {
   BranchDeleteResult,
   BranchRestoreRequest,
   BranchRestoreResult,
+  BranchSquashCheck,
   PushBranchesResult,
   RepoStatus,
   RerereStatus,
@@ -250,6 +251,8 @@ export const gitApi = {
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),
   deleteBranchIfAt: (path: string, name: string, sha: string) => call<boolean>('deleteBranchIfAt', path, name, sha),
   getBranchCleanupCandidates: (path: string) => call<BranchCleanupScan>('getBranchCleanupCandidates', path),
+  getSquashMergedBranches: (path: string, names: string[]) =>
+    call<BranchSquashCheck[]>('getSquashMergedBranches', path, names),
   deleteLocalBranches: (path: string, requests: BranchDeleteRequest[]) =>
     call<BranchDeleteResult[]>('deleteLocalBranches', path, requests),
   restoreLocalBranches: (path: string, requests: BranchRestoreRequest[]) =>

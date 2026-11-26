@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { execFileSync } from 'child_process'
-import { mkdtempSync, rmSync } from 'fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { gitService } from '../src/main/git'
@@ -8,7 +8,10 @@ import { cloneFixture, cleanupFixtures } from './fixtures'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../src/shared/branchCleanup'
 import {
   filterCleanupRows,
+  getBulkSelectableRows,
   getCleanupConfirmSummary,
+  getDeletedShaList,
+  getSquashCheckNames,
   getCleanupReasons,
   getCleanupRows,
   getDefaultCleanupSelection,
@@ -24,7 +27,7 @@ import type { BranchCleanupCandidate, BranchCleanupScan, BranchDeleteResult } fr
 const worktreeDirs: string[] = []
 afterAll(() => {
   cleanupFixtures()
-  for (const dir of worktreeDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
+  for (const dir of worktreeDirs.splice(0)) rmSync(dir, { recursive: true, acceptedUnique: 99 })
 })
 
 const git = (dir: string, ...args: string[]): string =>
@@ -39,6 +42,7 @@ const candidate = (over: Partial<BranchCleanupCandidate>): BranchCleanupCandidat
   upstream: null,
   gone: false,
   merged: false,
+  mergedInto: null,
   atMainTip: false,
   lastCommitAt: NOW - DAY,
   uniqueCommits: 0,
@@ -130,21 +134,60 @@ describe('cleanup classification', () => {
     expect([...getDefaultCleanupSelection(rows)].sort()).toEqual(['a-gone', 'b-merged'])
   })
 
-  it('forces exactly the rows with unique commits, and only the ones still listed', () => {
+  it('accepts exactly the unique commits each ticked row showed, only for rows still listed', () => {
     const rows = getCleanupRows(candidates, { now: NOW, staleMonths: 3, includeStale: false })
     const req = getDeleteRequests(rows, new Set(['a-gone', 'a-gone-unique', 'c-stale']))
-    expect(req.map((r) => [r.name, r.force])).toEqual([
-      ['a-gone', false],
-      ['a-gone-unique', true]
+    expect(req).toEqual([
+      { name: 'a-gone', sha: 'a'.repeat(40), acceptedUnique: 0 },
+      { name: 'a-gone-unique', sha: 'a'.repeat(40), acceptedUnique: 3 }
     ])
   })
 
-  it('tells the confirm what is lost', () => {
+  it('never lets select-all reach a risky row', () => {
     const rows = getCleanupRows(candidates, { now: NOW, staleMonths: 3, includeStale: true })
-    const s = getCleanupConfirmSummary(rows, new Set(['a-gone', 'a-gone-unique', 'c-stale']))
+    expect(getBulkSelectableRows(rows).map((r) => r.branch.name)).toEqual(['a-gone', 'b-merged'])
+  })
+
+  it('tells the confirm what is lost, as a floor, and what the list is hiding', () => {
+    const rows = getCleanupRows(candidates, { now: NOW, staleMonths: 3, includeStale: true })
+    const s = getCleanupConfirmSummary(rows, new Set(['a-gone', 'a-gone-unique', 'c-stale']), new Set(['a-gone']))
     expect(s.count).toBe(3)
     expect(s.risky.map((r) => r.name)).toEqual(['a-gone-unique', 'c-stale'])
-    expect(s.riskyCommits).toBe(4)
+    // Stacked branches share commits: the largest branch is all that is certain.
+    expect(s.riskyCommitsAtLeast).toBe(3)
+    expect(s.riskyCapped).toBe(false)
+    expect(s.hidden).toBe(2)
+  })
+
+  it('treats a squash-merged gone branch as merged once checked', () => {
+    const squashed = new Map([['a-gone-unique', 'origin/main']])
+    expect(getSquashCheckNames(getCleanupRows(candidates, { now: NOW, staleMonths: 3, includeStale: true }))).toEqual([
+      'a-gone-unique'
+    ])
+    const rows = getCleanupRows(candidates, { now: NOW, staleMonths: 3, includeStale: false, squashed })
+    const row = rows.find((r) => r.branch.name === 'a-gone-unique')!
+    expect(row).toMatchObject({ reasons: ['gone', 'squash'], risky: false, recommended: true, squashedInto: 'origin/main' })
+    expect(getBulkSelectableRows(rows).map((r) => r.branch.name)).toContain('a-gone-unique')
+    expect(getDeleteRequests(rows, new Set(['a-gone-unique']))).toEqual([
+      { name: 'a-gone-unique', sha: 'a'.repeat(40), acceptedUnique: 0, squashMerged: true }
+    ])
+    const s = getCleanupConfirmSummary(rows, new Set(['a-gone-unique']), new Set(['a-gone-unique']))
+    expect(s).toMatchObject({ squashed: 1, risky: [], hidden: 0 })
+  })
+
+  it('lists deleted branches with their short sha, capped', () => {
+    const results: BranchDeleteResult[] = ['a', 'b', 'c'].map((n, i) => ({
+      name: n,
+      sha: String(i + 1).repeat(40),
+      status: 'deleted'
+    }))
+    expect(getDeletedShaList(results, 2)).toEqual({
+      entries: [
+        { branch: 'a', sha: '1111111' },
+        { branch: 'b', sha: '2222222' }
+      ],
+      more: 1
+    })
   })
 
   it('filters by every word of the query', () => {
@@ -249,10 +292,10 @@ describe('branch cleanup against real git (branch-cleanup playground)', () => {
     // The write refuses them even when asked directly.
     const sha = (b: string): string => git(repo, 'rev-parse', b)
     const res = await gitService.deleteLocalBranches(repo, [
-      { name: 'pr/1412-login-timeout', sha: sha('pr/1412-login-timeout'), force: true },
-      { name: 'feature/local-merge', sha: sha('feature/local-merge'), force: true },
-      { name: 'main', sha: sha('main'), force: true },
-      { name: 'release/1.0', sha: sha('release/1.0'), force: true }
+      { name: 'pr/1412-login-timeout', sha: sha('pr/1412-login-timeout'), acceptedUnique: 99 },
+      { name: 'feature/local-merge', sha: sha('feature/local-merge'), acceptedUnique: 99 },
+      { name: 'main', sha: sha('main'), acceptedUnique: 99 },
+      { name: 'release/1.0', sha: sha('release/1.0'), acceptedUnique: 99 }
     ])
     expect(res.map((r) => [r.name, r.status, r.refusal])).toEqual([
       ['pr/1412-login-timeout', 'refused', 'current'],
@@ -270,12 +313,12 @@ describe('branch cleanup against real git (branch-cleanup playground)', () => {
     const scan = byName(await gitService.getBranchCleanupCandidates(repo))
     const at = (n: string): string => scan.get(n)!.sha
     const res = await gitService.deleteLocalBranches(repo, [
-      { name: 'pr/1412-login-timeout', sha: at('pr/1412-login-timeout'), force: false },
-      { name: 'feature/local-merge', sha: at('feature/local-merge'), force: false },
-      { name: 'pr/1398-dark-mode', sha: at('pr/1398-dark-mode'), force: false },
-      { name: 'wip/export-csv', sha: at('wip/export-csv'), force: true },
-      { name: 'pr/1420-retry-banner', sha: at('pr/1412-login-timeout'), force: false },
-      { name: 'no/such-branch', sha: at('pr/1412-login-timeout'), force: true }
+      { name: 'pr/1412-login-timeout', sha: at('pr/1412-login-timeout'), acceptedUnique: 0 },
+      { name: 'feature/local-merge', sha: at('feature/local-merge'), acceptedUnique: 0 },
+      { name: 'pr/1398-dark-mode', sha: at('pr/1398-dark-mode'), acceptedUnique: 0 },
+      { name: 'wip/export-csv', sha: at('wip/export-csv'), acceptedUnique: 2 },
+      { name: 'pr/1420-retry-banner', sha: at('pr/1412-login-timeout'), acceptedUnique: 0 },
+      { name: 'no/such-branch', sha: at('pr/1412-login-timeout'), acceptedUnique: 99 }
     ])
     expect(res.map((r) => [r.name, r.status, r.refusal])).toEqual([
       ['pr/1412-login-timeout', 'deleted', undefined],
@@ -302,7 +345,7 @@ describe('branch cleanup against real git (branch-cleanup playground)', () => {
     const before = new Map(names.map((n) => [n, scan.get(n)!.sha]))
     const res = await gitService.deleteLocalBranches(
       repo,
-      names.map((n) => ({ name: n, sha: before.get(n)!, force: true }))
+      names.map((n) => ({ name: n, sha: before.get(n)!, acceptedUnique: scan.get(n)!.uniqueCommits }))
     )
     expect(res.every((r) => r.status === 'deleted')).toBe(true)
     expect(() => git(repo, 'config', '--get', 'branch.wip/export-csv.remote')).toThrow()
@@ -325,6 +368,123 @@ describe('branch cleanup against real git (branch-cleanup playground)', () => {
     // A second undo finds them in place and leaves them alone.
     const again = await gitService.restoreLocalBranches(repo, getRestoreRequests(res))
     expect(again.map((r) => r.status)).toEqual(['exists', 'exists', 'exists'])
+  })
+
+  it('refuses a branch holding more unique commits than the user accepted', async () => {
+    const { repo } = isolatedClone()
+    const at = git(repo, 'rev-parse', 'wip/export-csv')
+    // The confirm showed 1 commit; there are 2. The redo case: a branch that
+    // was safe when deleted, undone, and whose remote copy was pruned since.
+    const res = await gitService.deleteLocalBranches(repo, [{ name: 'wip/export-csv', sha: at, acceptedUnique: 1 }])
+    expect(res[0]).toMatchObject({ status: 'refused', refusal: 'unique' })
+    expect(git(repo, 'rev-parse', 'wip/export-csv')).toBe(at)
+  })
+
+  it('restores beside a branch that took the name since, and reports it', async () => {
+    const { repo } = isolatedClone()
+    const old = git(repo, 'rev-parse', 'wip/export-csv')
+    const res = await gitService.deleteLocalBranches(repo, [{ name: 'wip/export-csv', sha: old, acceptedUnique: 2 }])
+    expect(res[0].status).toBe('deleted')
+    // The PR checkout recreates the name at another commit.
+    git(repo, 'branch', 'wip/export-csv', 'main')
+    const restored = await gitService.restoreLocalBranches(repo, getRestoreRequests(res))
+    const as = `wip/export-csv-restored-${old.slice(0, 7)}`
+    expect(restored).toEqual([{ name: 'wip/export-csv', status: 'restoredAs', restoredAs: as }])
+    expect(git(repo, 'rev-parse', as)).toBe(old)
+    expect(git(repo, 'rev-parse', 'wip/export-csv')).toBe(git(repo, 'rev-parse', 'main'))
+    expect(git(repo, 'config', '--get', `branch.${as}.merge`)).toBe('refs/heads/wip/export-csv')
+  })
+
+  it('excludes, and refuses to delete, a branch a rebase is replaying', async () => {
+    const { repo } = isolatedClone()
+    const at = git(repo, 'rev-parse', 'feature/active-work')
+    // `--exec false` stops the rebase after its first pick: HEAD detached, the branch not current.
+    expect(() =>
+      execFileSync('git', ['-C', repo, 'rebase', '--exec', 'false', 'main', 'feature/active-work'], { stdio: 'ignore' })
+    ).toThrow()
+    const scan = await gitService.getBranchCleanupCandidates(repo)
+    expect(scan.excluded).toContainEqual({ name: 'feature/active-work', reason: 'rebasing' })
+    const res = await gitService.deleteLocalBranches(repo, [{ name: 'feature/active-work', sha: at, acceptedUnique: 99 }])
+    expect(res[0]).toMatchObject({ status: 'refused', refusal: 'rebasing' })
+  })
+
+  it('names the local default branch when only it holds the merge', async () => {
+    const { repo } = isolatedClone()
+    git(repo, 'merge', '-q', '--no-ff', '-m', 'merge active work', 'feature/active-work')
+    const c = byName(await gitService.getBranchCleanupCandidates(repo)).get('feature/active-work')
+    expect(c).toMatchObject({ merged: true, mergedInto: 'main' })
+    expect(byName(await gitService.getBranchCleanupCandidates(repo)).get('pr/1412-login-timeout')?.mergedInto).toBe(
+      'origin/main'
+    )
+  })
+
+  describe('squash merges', () => {
+    const shaOf = (repo: string, ref: string): string => git(repo, 'rev-parse', ref)
+
+    it('finds a squash-merged branch and leaves an unmerged one alone', async () => {
+      const { repo } = isolatedClone()
+      const res = await gitService.getSquashMergedBranches(repo, ['pr/1398-dark-mode', 'wip/export-csv', 'no/such'])
+      expect(res).toEqual([
+        { name: 'pr/1398-dark-mode', squashedInto: 'origin/main' },
+        { name: 'wip/export-csv', squashedInto: null },
+        { name: 'no/such', squashedInto: null }
+      ])
+    })
+
+    it('still finds it after main moved on past the squash', async () => {
+      const { repo } = isolatedClone()
+      // Another commit lands on the server's main after the squash.
+      git(repo, 'checkout', '-q', '-b', 'tmp-next', 'origin/main')
+      git(repo, 'commit', '-q', '--allow-empty', '-m', 'chore: next release')
+      writeFileSync(join(repo, 'CHANGELOG.md'), '# Changelog\n\n- dark mode\n')
+      git(repo, 'add', 'CHANGELOG.md')
+      git(repo, 'commit', '-q', '-m', 'docs: changelog')
+      git(repo, 'update-ref', 'refs/remotes/origin/main', 'tmp-next')
+      git(repo, 'checkout', '-q', 'main')
+      const [res] = await gitService.getSquashMergedBranches(repo, ['pr/1398-dark-mode'])
+      expect(res.squashedInto).toBe('origin/main')
+    })
+
+    it('does not call a branch squash-merged once it has a commit main lacks', async () => {
+      const { repo } = isolatedClone()
+      git(repo, 'checkout', '-q', 'pr/1398-dark-mode')
+      execFileSync('git', ['-C', repo, 'commit', '-q', '--allow-empty', '-m', 'theme: one more tweak'])
+      writeFileSync(join(repo, 'src', 'theme.ts'), 'export const theme = "high contrast"\n')
+      git(repo, 'commit', '-qam', 'theme: high contrast')
+      git(repo, 'checkout', '-q', 'main')
+      const [res] = await gitService.getSquashMergedBranches(repo, ['pr/1398-dark-mode'])
+      expect(res.squashedInto).toBeNull()
+    })
+
+    it('deletes on a squash acceptance only while the squash still holds', async () => {
+      const { repo } = isolatedClone()
+      const dark = shaOf(repo, 'pr/1398-dark-mode')
+      const csv = shaOf(repo, 'wip/export-csv')
+      // A squash acceptance for a branch that is not squash-merged is refused.
+      const refused = await gitService.deleteLocalBranches(repo, [
+        { name: 'wip/export-csv', sha: csv, acceptedUnique: 0, squashMerged: true }
+      ])
+      expect(refused[0]).toMatchObject({ status: 'refused', refusal: 'squashChanged' })
+
+      // The server's main rewound to before the squash: the content is no longer there.
+      const squashed = shaOf(repo, 'origin/main')
+      git(repo, 'update-ref', 'refs/remotes/origin/main', 'origin/main~2')
+      git(repo, 'checkout', '-q', '--detach')
+      git(repo, 'branch', '-f', 'main', 'origin/main')
+      git(repo, 'checkout', '-q', 'main')
+      const gone = await gitService.deleteLocalBranches(repo, [
+        { name: 'pr/1398-dark-mode', sha: dark, acceptedUnique: 0, squashMerged: true }
+      ])
+      expect(gone[0]).toMatchObject({ status: 'refused', refusal: 'squashChanged' })
+      expect(shaOf(repo, 'pr/1398-dark-mode')).toBe(dark)
+
+      // Back to the squashed main: now it goes.
+      git(repo, 'update-ref', 'refs/remotes/origin/main', squashed)
+      const ok = await gitService.deleteLocalBranches(repo, [
+        { name: 'pr/1398-dark-mode', sha: dark, acceptedUnique: 0, squashMerged: true }
+      ])
+      expect(ok[0].status).toBe('deleted')
+    })
   })
 
   it('refuses to restore an option-looking name or a non-sha', async () => {

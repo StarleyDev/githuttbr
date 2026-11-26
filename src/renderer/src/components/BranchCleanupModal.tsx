@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, BrushCleaning, CloudDownload, Loader2, Search, Trash2 } from 'lucide-react'
+import { AlertTriangle, BrushCleaning, CloudDownload, GitMerge, Loader2, Search, Trash2 } from 'lucide-react'
 import type { BranchCleanupScan } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -9,10 +9,12 @@ import { timeAgo } from '../lib/timeAgo'
 import {
   DEFAULT_STALE_MONTHS,
   filterCleanupRows,
+  getBulkSelectableRows,
   getCleanupConfirmSummary,
   getCleanupRows,
   getDefaultCleanupSelection,
   getDeleteRequests,
+  getSquashCheckNames,
   type CleanupReason,
   type CleanupRow
 } from '../lib/branchCleanup'
@@ -21,6 +23,7 @@ import { useT, interp, type TranslationKey } from '../i18n'
 const REASON_KEY: Record<CleanupReason, TranslationKey> = {
   gone: 'branchCleanup.reasonGone',
   merged: 'branchCleanup.reasonMerged',
+  squash: 'branchCleanup.reasonSquash',
   stale: 'branchCleanup.reasonStale'
 }
 
@@ -47,7 +50,10 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
   const [staleMonths, setStaleMonths] = useState(DEFAULT_STALE_MONTHS)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [busy, setBusy] = useState<'fetch' | 'delete' | null>(null)
+  const [busy, setBusy] = useState<'fetch' | 'delete' | 'squash' | null>(null)
+  // What the opt-in squash check found (name → ref), and how many it looked at.
+  const [squashed, setSquashed] = useState<Map<string, string>>(new Map())
+  const [squashChecked, setSquashChecked] = useState<{ found: number; count: number } | null>(null)
   // The time a scan landed — "stale" and "last fetch" are measured from it, so
   // the list does not reshuffle while it is open.
   const [now, setNow] = useState(() => Date.now())
@@ -57,6 +63,9 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
     gitApi.getBranchCleanupCandidates(repoPath).then(
       (s) => {
         setNow(Date.now())
+        // A new scan can move any branch: an old squash verdict is not evidence.
+        setSquashed(new Map())
+        setSquashChecked(null)
         setScan(s)
       },
       (err: unknown) => setLoadError(err instanceof Error ? err.message : String(err))
@@ -66,8 +75,8 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
   useEffect(() => readScan(), [readScan])
 
   const rows = useMemo(
-    () => (scan ? getCleanupRows(scan.candidates, { now, staleMonths, includeStale }) : []),
-    [scan, now, staleMonths, includeStale]
+    () => (scan ? getCleanupRows(scan.candidates, { now, staleMonths, includeStale, squashed }) : []),
+    [scan, now, staleMonths, includeStale, squashed]
   )
   // The ticks follow each new scan: what was recommended before a fetch may be gone now.
   useEffect(() => {
@@ -78,8 +87,11 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
   const shown = useMemo(() => filterCleanupRows(rows, query), [rows, query])
   const rendered = shown.slice(0, ROW_LIMIT)
   const requests = getDeleteRequests(rows, selected)
-  const allShownSelected = shown.length > 0 && shown.every((r) => selected.has(r.branch.name))
+  // Select-all never reaches a risky row: those take a tick of their own.
+  const bulkShown = getBulkSelectableRows(shown)
+  const allShownSelected = bulkShown.length > 0 && bulkShown.every((r) => selected.has(r.branch.name))
   const mainRef = scan?.mainRef ?? ''
+  const squashCandidates = getSquashCheckNames(rows)
 
   const toggle = (name: string): void =>
     setSelected((prev) => {
@@ -92,7 +104,7 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
   const toggleShown = (): void =>
     setSelected((prev) => {
       const next = new Set(prev)
-      for (const r of shown) {
+      for (const r of bulkShown) {
         if (allShownSelected) next.delete(r.branch.name)
         else next.add(r.branch.name)
       }
@@ -109,6 +121,26 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
     }
   }
 
+  const checkSquashMerges = async (): Promise<void> => {
+    const names = squashCandidates
+    if (!names.length) return
+    setBusy('squash')
+    try {
+      const res = await gitApi.getSquashMergedBranches(repoPath, names)
+      const next = new Map(squashed)
+      const found = res.filter((r) => r.squashedInto)
+      for (const r of found) next.set(r.name, r.squashedInto as string)
+      setSquashed(next)
+      setSquashChecked({ found: found.length, count: names.length })
+      // Squash-merged is as safe as merged: tick them as the dialog would have.
+      setSelected((prev) => new Set([...prev, ...found.map((r) => r.name)]))
+    } catch (err) {
+      useUIStore.getState().toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const runDelete = async (): Promise<void> => {
     setBusy('delete')
     try {
@@ -122,8 +154,12 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
 
   const confirmDelete = (): void => {
     if (!requests.length || busy) return
-    const summary = getCleanupConfirmSummary(rows, selected)
+    const summary = getCleanupConfirmSummary(rows, selected, new Set(rendered.map((r) => r.branch.name)))
     let message = t('branchCleanup.confirmMessage')
+    if (summary.hidden) message += `\n\n${interp(t('branchCleanup.confirmHidden'), { count: summary.hidden })}`
+    if (summary.squashed) {
+      message += `\n\n${interp(t('branchCleanup.confirmSquash'), { count: summary.squashed, ref: mainRef })}`
+    }
     if (summary.risky.length) {
       const names = summary.risky.slice(0, CONFIRM_NAMES).map((r) =>
         interp(t('branchCleanup.confirmRiskyLine'), { branch: r.name, commits: r.capped ? `${r.commits}+` : r.commits })
@@ -131,7 +167,8 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
       if (summary.risky.length > CONFIRM_NAMES) {
         names.push(interp(t('branchCleanup.confirmMore'), { count: summary.risky.length - CONFIRM_NAMES }))
       }
-      message += `\n\n${interp(t('branchCleanup.confirmRisky'), { commits: summary.riskyCommits })}\n${names.join('\n')}`
+      const commits = summary.riskyCapped ? `${summary.riskyCommitsAtLeast}+` : summary.riskyCommitsAtLeast
+      message += `\n\n${interp(t('branchCleanup.confirmRisky'), { commits })}\n${names.join('\n')}`
     }
     openModal({
       kind: 'confirm',
@@ -158,8 +195,13 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
         reason === 'gone'
           ? interp(t('branchCleanup.reasonGoneTitle'), { upstream: b.upstream ?? '' })
           : reason === 'merged'
-            ? interp(t('branchCleanup.reasonMergedTitle'), { ref: mainRef })
-            : interp(t('branchCleanup.reasonStaleTitle'), { months: staleMonths })
+            ? // A merge only the local default branch holds is not on the server yet: say so.
+              b.mergedInto && b.mergedInto !== mainRef
+              ? interp(t('branchCleanup.reasonMergedLocalTitle'), { ref: b.mergedInto })
+              : interp(t('branchCleanup.reasonMergedTitle'), { ref: b.mergedInto ?? mainRef })
+            : reason === 'squash'
+              ? interp(t('branchCleanup.reasonSquashTitle'), { ref: row.squashedInto ?? mainRef })
+              : interp(t('branchCleanup.reasonStaleTitle'), { months: staleMonths })
       return (
         <span key={reason} className={`badge cleanup-chip cleanup-${reason}`} title={title}>
           {t(REASON_KEY[reason])}
@@ -220,6 +262,27 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
         </p>
       )}
 
+      {(squashCandidates.length > 0 || squashChecked) && (
+        <div className="branch-cleanup-squash">
+          <span className="modal-hint">
+            {squashChecked
+              ? interp(t('branchCleanup.squashResult'), squashChecked)
+              : interp(t('branchCleanup.squashHint'), { count: squashCandidates.length, ref: mainRef })}
+          </span>
+          {squashCandidates.length > 0 && !squashChecked && (
+            <button
+              className="btn ghost branch-cleanup-squash-btn"
+              type="button"
+              disabled={!!busy}
+              onClick={() => void checkSquashMerges()}
+            >
+              {busy === 'squash' ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />}
+              {t('branchCleanup.squashCheck')}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="branch-cleanup-stale">
         <label className="clone-partial">
           <input
@@ -265,7 +328,7 @@ export function BranchCleanupModal({ repoPath }: { repoPath: string }): React.JS
           >
             {t('branchCleanup.selectRecommended')}
           </button>
-          <button className="link-btn" type="button" disabled={!shown.length || !!busy} onClick={toggleShown}>
+          <button className="link-btn" type="button" disabled={!bulkShown.length || !!busy} onClick={toggleShown}>
             {allShownSelected ? t('clone.selectNone') : t('clone.selectAll')}
           </button>
         </span>

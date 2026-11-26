@@ -2727,6 +2727,9 @@ export interface BranchCleanupCandidate {
   gone: boolean
   /** Reachable from the default branch (remote-tracking, or local when that is all there is). */
   merged: boolean
+  /** The copy of the default branch that contains it (`origin/main`, or `main` when only the
+   *  local one does — a merge made here and not pushed yet). Null when not merged. */
+  mergedInto: string | null
   /** The tip is exactly the default branch's tip: a branch nobody committed on yet. */
   atMainTip: boolean
   /** Committer date of the tip, epoch milliseconds. */
@@ -2738,13 +2741,15 @@ export interface BranchCleanupCandidate {
 }
 
 /** Why a local branch is never offered for cleanup. */
-export type BranchCleanupExclusion = 'current' | 'worktree' | 'default' | 'protected'
+export type BranchCleanupExclusion = 'current' | 'worktree' | 'rebasing' | 'default' | 'protected'
 
 export interface BranchCleanupScan {
   /** The default branch's name (`main`), or null when none could be found. */
   mainBranch: string | null
   /** What "merged" was measured against: `origin/main`, or `main` without a remote copy. */
   mainRef: string | null
+  /** Every ref "merged" was measured against, full names, the remote copy first. */
+  mainRefs: string[]
   candidates: BranchCleanupCandidate[]
   excluded: { name: string; reason: BranchCleanupExclusion }[]
   /** When the repository last fetched (FETCH_HEAD's mtime), or null. */
@@ -2756,12 +2761,24 @@ export interface BranchDeleteRequest {
   name: string
   /** The tip the dialog listed. A branch that moved since is refused, not deleted. */
   sha: string
-  /** The user explicitly confirmed losing commits that exist only on this branch. */
-  force: boolean
+  /**
+   * How many commits that exist only on this branch the user explicitly accepted
+   * losing — the count the confirm showed. A branch with more is refused.
+   */
+  acceptedUnique: number
+  /** Deleted because its content was found squash-merged: the main process checks that again. */
+  squashMerged?: boolean
 }
 
 /** Why the main process refused to delete a requested branch. */
-export type BranchDeleteRefusal = 'missing' | 'moved' | 'unique' | BranchCleanupExclusion
+export type BranchDeleteRefusal = 'missing' | 'moved' | 'unique' | 'squashChanged' | BranchCleanupExclusion
+
+/** A gone branch whose whole content is already in the default branch — a squash merge. */
+export interface BranchSquashCheck {
+  name: string
+  /** The default-branch ref whose tree already holds the branch's changes, or null. */
+  squashedInto: string | null
+}
 
 export interface BranchDeleteResult {
   name: string
@@ -2786,7 +2803,13 @@ export interface BranchRestoreRequest {
 
 export interface BranchRestoreResult {
   name: string
-  status: 'restored' | 'exists' | 'failed'
+  /**
+   * `exists`: the name is back at the same commit, nothing to do. `restoredAs`:
+   * the name was taken by another commit, so the branch came back under a new name.
+   */
+  status: 'restored' | 'restoredAs' | 'exists' | 'failed'
+  /** The name it was recreated under when `status` is `restoredAs`. */
+  restoredAs?: string
   error?: string
 }
 

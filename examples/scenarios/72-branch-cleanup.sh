@@ -20,6 +20,8 @@
 #     and feature/local-merge); pr/1398-dark-mode and wip/export-csv carry an
 #     "N commits exist only here" chip and are unticked; "Delete 3 branches".
 #   • Tick "Also list stale branches" ⇒ spike/graphql-idea appears, unticked.
+#   • Check squash merges ⇒ pr/1398-dark-mode turns "Squash-merged" and is ticked;
+#     wip/export-csv stays unticked (its content is not in main).
 #   • Delete ⇒ one confirm, then the branches are gone; Undo brings each back
 #     at the same sha, and the PR ones track origin/<name> again (gone).
 R="$ROOT/branch-cleanup"

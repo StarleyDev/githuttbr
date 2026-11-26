@@ -108,6 +108,7 @@ import type {
   BranchDeleteResult,
   BranchRestoreRequest,
   BranchRestoreResult,
+  BranchSquashCheck,
   RerereStatus,
   SubtreeInfo,
   CleanEntry,
@@ -2287,8 +2288,65 @@ async function cleanupMainRefs(
   const refs: string[] = []
   if (remoteRef && remoteRefs.has(remoteRef)) refs.push(remoteRef)
   if (localNames.has(mainBranch)) refs.push(`refs/heads/${mainBranch}`)
-  const mainRef = refs.length ? refs[0].replace(/^refs\/(remotes|heads)\//, '') : null
+  const mainRef = refs.length ? shortCleanupRef(refs[0]) : null
   return { mainBranch, mainRef, refs }
+}
+
+/** `refs/remotes/origin/main` → `origin/main`, `refs/heads/main` → `main`. */
+function shortCleanupRef(ref: string): string {
+  return ref.replace(/^refs\/(remotes|heads)\//, '')
+}
+
+/**
+ * Branches a rebase is replaying in any worktree. While it runs HEAD is
+ * detached, so the branch reads as free; its name is only in
+ * `rebase-merge/head-name` or `rebase-apply/head-name` of that worktree's gitdir.
+ */
+async function rebasingBranches(repoPath: string): Promise<Set<string>> {
+  const out = new Set<string>()
+  const rel = (await runGit(repoPath, ['rev-parse', '--git-common-dir']).catch(() => '')).trim()
+  if (!rel) return out
+  const common = isAbsolute(rel) ? rel : join(repoPath, rel)
+  const linked = await readdir(join(common, 'worktrees')).catch(() => [] as string[])
+  const gitdirs = [common, ...linked.map((id) => join(common, 'worktrees', id))]
+  for (const dir of gitdirs) {
+    for (const state of ['rebase-merge', 'rebase-apply']) {
+      const head = await readFile(join(dir, state, 'head-name'), 'utf8').catch(() => '')
+      const ref = head.trim()
+      if (ref.startsWith('refs/heads/')) out.add(ref.slice('refs/heads/'.length))
+    }
+  }
+  return out
+}
+
+/**
+ * For each branch, the first default-branch ref (remote copy first) into which
+ * merging it changes nothing — its content is already there, the signature of
+ * a squash merge. One `merge-tree --stdin` per ref, over the branches still
+ * unmatched; a short batch (git aborts on a fatal merge) is finished one by one.
+ */
+async function squashMergedInto(
+  repoPath: string,
+  refs: string[],
+  branches: { name: string; sha: string }[]
+): Promise<Map<string, string>> {
+  const found = new Map<string, string>()
+  for (const ref of refs) {
+    const pending = branches.filter((b) => !found.has(b.name))
+    if (!pending.length) break
+    const [baseSha, baseTree] = await Promise.all([
+      runGit(repoPath, ['rev-parse', '--verify', '-q', `${ref}^{commit}`]).then((s) => s.trim(), () => ''),
+      runGit(repoPath, ['rev-parse', '--verify', '-q', `${ref}^{tree}`]).then((s) => s.trim(), () => '')
+    ])
+    if (!baseSha || !baseTree) continue
+    const stdin = pending.map((b) => `${baseSha} ${b.sha}`).join('\n') + '\n'
+    const records = parseMergeTreeStdin(await gitWithStdin(repoPath, ['merge-tree', '--stdin', '--name-only'], stdin))
+    for (let i = 0; i < pending.length; i++) {
+      const rec = records[i] ?? (await singleMergeTree(repoPath, baseSha, pending[i].sha))
+      if (rec.status === 'clean' && rec.tree === baseTree) found.set(pending[i].name, shortCleanupRef(ref))
+    }
+  }
+  return found
 }
 
 /** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
@@ -3736,15 +3794,17 @@ export const gitService = {
       '%(committerdate:unix)'
     ].join('%00')
     const big = 64 * 1024 * 1024
-    const [refsOut, remoteRefsOut, remotesOut, worktrees, localProtected, config, lastFetchAt] = await Promise.all([
-      runGit(repoPath, ['for-each-ref', `--format=${fmt}`, 'refs/heads'], undefined, big),
-      runGit(repoPath, ['for-each-ref', '--format=%(refname)', 'refs/remotes'], undefined, big).catch(() => ''),
-      runGit(repoPath, ['remote']).catch(() => ''),
-      gitService.worktrees(repoPath),
-      gitService.protectedBranches(repoPath).catch(() => ['main', 'master']),
-      readRepoConfig(repoPath).catch(() => null),
-      gitService.lastFetchAt(repoPath)
-    ])
+    const [refsOut, remoteRefsOut, remotesOut, worktrees, rebasing, localProtected, config, lastFetchAt] =
+      await Promise.all([
+        runGit(repoPath, ['for-each-ref', `--format=${fmt}`, 'refs/heads'], undefined, big),
+        runGit(repoPath, ['for-each-ref', '--format=%(refname)', 'refs/remotes'], undefined, big).catch(() => ''),
+        runGit(repoPath, ['remote']).catch(() => ''),
+        gitService.worktrees(repoPath),
+        rebasingBranches(repoPath),
+        gitService.protectedBranches(repoPath).catch(() => ['main', 'master']),
+        readRepoConfig(repoPath).catch(() => null),
+        gitService.lastFetchAt(repoPath)
+      ])
     const rows = refsOut
       .split('\n')
       .filter(Boolean)
@@ -3770,7 +3830,13 @@ export const gitService = {
       runGit(repoPath, ['rev-list', '--parents', '--branches', '--not', '--remotes', ...notMain, '--'], undefined, 256 * 1024 * 1024),
       Promise.all(main.refs.map((ref) => runGit(repoPath, ['rev-parse', '--verify', '-q', ref]).then((s) => s.trim(), () => '')))
     ])
-    const merged = new Set(mergedOuts.flatMap((out) => out.split('\n').filter(Boolean)))
+    // The first ref that contains a branch names it: the remote copy wins, so
+    // "main" alone means a merge that only exists here.
+    const mergedInto = new Map<string, string>()
+    mergedOuts.forEach((out, i) => {
+      const short = shortCleanupRef(main.refs[i])
+      for (const name of out.split('\n').filter(Boolean)) if (!mergedInto.has(name)) mergedInto.set(name, short)
+    })
     const unique = parseRevListParents(uniqueOut)
     const tips = new Set(mainTips.filter(Boolean))
 
@@ -3779,6 +3845,9 @@ export const gitService = {
     const exclusionOf = (name: string, isCurrent: boolean): BranchCleanupExclusion | null => {
       if (isCurrent) return 'current'
       if (inWorktree.has(name)) return 'worktree'
+      // Mid-rebase, HEAD is detached and the branch looks free — deleting it
+      // would leave the rebase nowhere to land.
+      if (rebasing.has(name)) return 'rebasing'
       if (name === main.mainBranch) return 'default'
       if (protectedPatterns.some((p) => branchMatches(p, name))) return 'protected'
       return null
@@ -3798,14 +3867,35 @@ export const gitService = {
         sha: r.sha,
         upstream: r.upstream,
         gone: parseUpstreamTrack(r.track).gone,
-        merged: merged.has(r.name),
+        merged: mergedInto.has(r.name),
+        mergedInto: mergedInto.get(r.name) ?? null,
         atMainTip: tips.has(r.sha),
         lastCommitAt: r.date,
         uniqueCommits: count,
         uniqueCapped: capped
       })
     }
-    return { mainBranch: main.mainBranch, mainRef: main.mainRef, candidates, excluded, lastFetchAt }
+    return { mainBranch: main.mainBranch, mainRef: main.mainRef, mainRefs: main.refs, candidates, excluded, lastFetchAt }
+  },
+
+  /**
+   * Which of `names` were squash-merged: merging the branch into the default
+   * branch changes nothing, so its content is already there even though its
+   * commits are not. One batched `merge-tree` per copy of the default branch —
+   * no index, no working tree, only loose tree objects, as the conflict radar.
+   * Opt-in from the dialog: it costs a few milliseconds per branch.
+   */
+  async getSquashMergedBranches(repoPath: string, names: string[]): Promise<BranchSquashCheck[]> {
+    const wanted = [...new Set(names)]
+    if (!wanted.length) return []
+    const scan = await gitService.getBranchCleanupCandidates(repoPath)
+    const byName = new Map(scan.candidates.map((c) => [c.name, c]))
+    const branches = wanted.flatMap((n) => {
+      const c = byName.get(n)
+      return c ? [{ name: n, sha: c.sha }] : []
+    })
+    const into = await squashMergedInto(repoPath, scan.mainRefs, branches)
+    return wanted.map((name) => ({ name, squashedInto: into.get(name) ?? null }))
   },
 
   /**
@@ -3813,9 +3903,10 @@ export const gitService = {
    *
    * Nothing from the renderer is taken on trust: the scan runs again under the
    * write lock, and a branch is refused when it no longer exists, moved since
-   * the dialog listed it, became current, sits in a worktree, is the default
-   * or protected — or has commits that exist nowhere else and the user did not
-   * explicitly accept losing them.
+   * the dialog listed it, became current, sits in a worktree or a rebase, is
+   * the default or protected — or holds more commits found nowhere else than
+   * the user accepted losing. A branch accepted as squash-merged has its
+   * merge-tree check run again here, and is refused if it no longer holds.
    *
    * The deletion itself is `git branch -D`, after that check. `-d` would test
    * "merged" against HEAD or the upstream, and a branch whose upstream is gone
@@ -3831,6 +3922,18 @@ export const gitService = {
     const tracking = parseBranchTrackingConfig(
       await runGit(repoPath, ['config', '--get-regexp', '^branch\\..*\\.(remote|merge)$']).catch(() => '')
     )
+    // Squash acceptances are only honoured for branches that still need them.
+    const squashWanted = requests.filter((r) => {
+      const c = byName.get(r.name)
+      return r.squashMerged && c && c.sha === r.sha && c.uniqueCommits > Math.max(0, r.acceptedUnique)
+    })
+    const squashed = squashWanted.length
+      ? await squashMergedInto(
+          repoPath,
+          scan.mainRefs,
+          squashWanted.map((r) => ({ name: r.name, sha: r.sha }))
+        )
+      : new Map<string, string>()
 
     const results: BranchDeleteResult[] = []
     const allowed: BranchDeleteResult[] = []
@@ -3843,10 +3946,12 @@ export const gitService = {
       }
       const excludedReason = excludedBy.get(req.name)
       const found = byName.get(req.name)
+      const accepted = Number.isFinite(req.acceptedUnique) ? Math.max(0, req.acceptedUnique) : 0
       if (excludedReason) refuse(excludedReason)
       else if (!found) refuse('missing')
       else if (found.sha !== req.sha) refuse('moved')
-      else if (found.uniqueCommits > 0 && !req.force) refuse('unique')
+      else if (found.uniqueCommits > accepted && req.squashMerged && !squashed.has(req.name)) refuse('squashChanged')
+      else if (found.uniqueCommits > accepted && !req.squashMerged) refuse('unique')
       else {
         const t = tracking.get(req.name)
         const entry: BranchDeleteResult = { name: req.name, sha: found.sha, status: 'deleted' }
@@ -3884,27 +3989,43 @@ export const gitService = {
 
   /**
    * The undo of a cleanup: recreate each branch at its exact sha and put its
-   * tracking config back. A name that exists again by now is left alone —
-   * whatever is there was made after the delete, and is not ours to replace.
+   * tracking config back. A name that is back at the same commit needs
+   * nothing. A name taken since by another commit — a PR checked out again —
+   * is not ours to move: the deleted branch comes back beside it, as
+   * `<name>-restored-<short sha>`, and the result says so.
    */
   async restoreLocalBranches(repoPath: string, requests: BranchRestoreRequest[]): Promise<BranchRestoreResult[]> {
-    const existing = new Set(
-      (await runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads'])).split('\n').filter(Boolean)
+    const existing = new Map(
+      (await runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)%00%(objectname)', 'refs/heads']))
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => line.split('\0') as [string, string])
     )
     const results: BranchRestoreResult[] = []
     for (const req of requests) {
-      if (existing.has(req.name)) {
-        results.push({ name: req.name, status: 'exists' })
-        continue
-      }
       try {
         assertNotOption(req.name, 'the branch name')
         if (!isObjectId(req.sha)) throw new Error(`Refusing "${req.sha}": it is not a commit id.`)
-        await runGit(repoPath, ['branch', '--no-track', '--', req.name, req.sha])
-        if (req.upstreamRemote) await runGit(repoPath, ['config', '--', `branch.${req.name}.remote`, req.upstreamRemote])
-        if (req.upstreamMerge) await runGit(repoPath, ['config', '--', `branch.${req.name}.merge`, req.upstreamMerge])
-        existing.add(req.name)
-        results.push({ name: req.name, status: 'restored' })
+        let name = req.name
+        if (existing.get(name) === req.sha) {
+          results.push({ name: req.name, status: 'exists' })
+          continue
+        }
+        if (existing.has(name)) {
+          name = `${req.name}-restored-${req.sha.slice(0, 7)}`
+          if (existing.get(name) === req.sha) {
+            results.push({ name: req.name, status: 'restoredAs', restoredAs: name })
+            continue
+          }
+          if (existing.has(name)) throw new Error(`"${req.name}" and "${name}" both exist at other commits.`)
+        }
+        await runGit(repoPath, ['branch', '--no-track', '--', name, req.sha])
+        if (req.upstreamRemote) await runGit(repoPath, ['config', '--', `branch.${name}.remote`, req.upstreamRemote])
+        if (req.upstreamMerge) await runGit(repoPath, ['config', '--', `branch.${name}.merge`, req.upstreamMerge])
+        existing.set(name, req.sha)
+        results.push(
+          name === req.name ? { name: req.name, status: 'restored' } : { name: req.name, status: 'restoredAs', restoredAs: name }
+        )
       } catch (err) {
         results.push({ name: req.name, status: 'failed', error: err instanceof Error ? err.message : String(err) })
       }
@@ -9540,6 +9661,8 @@ const READ_METHODS = new Set<string>([
   'outgoingFiles',
   // The branch cleanup's scan: refs, config and history, nothing written.
   'getBranchCleanupCandidates',
+  // Loose tree objects only, like mergePreview: no ref, index or worktree moves.
+  'getSquashMergedBranches',
   'commitsTouchingPath',
   'protectedBranches',
   'repoConfig',
