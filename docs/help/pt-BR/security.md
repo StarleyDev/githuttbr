@@ -61,13 +61,24 @@ Os limites:
 - **O host continua vendo você.** Uma imagem do próprio host — e, no GitHub,
   qualquer imagem pelo proxy dele — é um pedido ao host, que já sabe que esta
   conta está lendo o pull request.
+- **`raw.githubusercontent.com` e `gist.githubusercontent.com` carregam sem
+  clique.** Qualquer pessoa pode pôr um arquivo ali, então a imagem é dela — mas
+  quem serve é o GitHub, e o autor não vê o seu IP nem quando você leu.
+- **Anexos privados do GitHub expiram.** O endereço assinado dura alguns
+  minutos; **Atualizar** na página traz de volta um que parou de carregar.
+- **A visualização de uma caixa de comentário** nessas páginas segue a mesma
+  regra: um link colado para uma imagem de fora não é carregado enquanto você
+  escreve.
 - **Só as páginas de pull request e de issue.** Imagens num arquivo Markdown do
   repositório, numa nota de release ou na wiki são conteúdo do seu próprio
   repositório e carregam como antes.
 - **Um link não é uma imagem.** Clicar num link de um comentário abre o link no
   seu navegador, como qualquer link do app.
 
-Como o resto de um comentário é restringido está em [Pull requests](pull-requests.md#como-os-comentários-aparecem).
+Um comentário também não consegue travar nem derrubar a janela: um com mais de
+32.000 caracteres, ou montado para fazer o renderizador de Markdown trabalhar
+por segundos, aparece como texto simples. Como o resto de um comentário é
+restringido está em [Pull requests](pull-requests.md#como-os-comentários-aparecem).
 
 ## O keychain do sistema
 

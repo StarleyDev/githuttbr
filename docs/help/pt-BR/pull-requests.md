@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação markdown renderizado comentários imagens pixel de rastreamento imagem bloqueada clique para carregar lista de tarefas tabela bloco de código
-source: a09d3c338b67dfa468bca330dec5a4d0b96200f5
+source: 7a63ff33e390a1d3914de17da688421ff5b5b965
 ---
 
 # Página de pull requests
@@ -374,11 +374,33 @@ mostra *Imagem de example.net — clique para carregar*, e o clique carrega só
 aquela imagem. **Configurações → Segurança → Carregar imagens de outros sites
 nos comentários** desliga isso; veja [Segurança](security.md#imagens-nos-comentários).
 
+**A visualização mostra o que vai ser enviado.** Nesta página e na de issue, a
+aba **Visualizar** de toda caixa de comentário desenha o texto do mesmo jeito:
+o mesmo perfil, as mesmas quebras de linha, as mesmas imagens retidas — um link
+colado para uma imagem de fora não a carrega enquanto você escreve. Os diálogos
+de novo pull request e nova issue mantêm a visualização Markdown comum do app.
+
+**Longo ou intrincado demais aparece como texto.** O Markdown é renderizado na
+janela do app, e certos textos custam muito mais do que o tamanho sugere. Um
+comentário com mais de **32.000 caracteres**, ou montado para travar o
+renderizador (milhares de `_` ou `*` sem par num parágrafo, ou mais de 32
+níveis de `>` ou de marcadores de lista numa linha), aparece como texto simples
+com links, sob *Comentário longo mostrado como texto simples* ou *Comentário
+mostrado como texto simples: complexo demais para renderizar aqui*. Um
+comentário que ainda assim falhe ao renderizar cai no mesmo texto, sozinho: o
+resto da página não é afetado.
+
 O que não faz:
 
 - **Editar mostra o texto como foi escrito.** **Editar** continua abrindo o
   Markdown, e uma edição salva é desenhada pelo app até a página ler o pull
   request de novo (no GitHub, a partir daí, pelo GitHub).
+- **Anexos privados do GitHub expiram.** O GitHub assina o endereço de uma
+  imagem privada por alguns minutos; uma que parou de carregar depois de a
+  página ficar aberta um tempo volta com **Atualizar**.
+- **Uma imagem relativa no GitHub** que o próprio app desenha (uma resposta
+  enviada pelo app, antes de a página ler de novo) é procurada sob o endereço
+  do repositório no github.com, que pode não ser onde o GitHub a poria.
 - **Vídeos** num comentário do GitHub aparecem como link para o arquivo, não
   como player.
 - **Extensões só do GitHub** que o app desenha sozinho (nos outros hosts) não

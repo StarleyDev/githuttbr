@@ -357,11 +357,32 @@ example.net — click to load*, and the click loads that one image. **Settings �
 Security → Load images from other sites in comments** turns that off; see
 [Security](security.md#images-in-comments).
 
+**Preview shows what will be posted.** On this page and the issue page, the
+**Preview** tab of every comment box draws the text the same way: the same
+profile, the same line breaks, the same held-back images — a pasted link to an
+outside image does not load it while you write. The new pull request and new
+issue dialogs keep the app's ordinary Markdown preview.
+
+**Too long or too intricate is shown as text.** Markdown is rendered in the
+app's window, and some text costs far more to render than its size suggests.
+A comment over **32,000 characters**, or one shaped to stall the renderer
+(thousands of unmatched `_` or `*` in one paragraph, or more than 32 levels of
+`>` or list markers on one line), is shown as plain text with links, under
+*Long comment shown as plain text* or *Comment shown as plain text: too
+intricate to render here*. A comment that still fails to render falls back the
+same way, on its own: the rest of the page is untouched.
+
 What it does not do:
 
 - **Editing shows the text as written.** **Edit** still opens the Markdown, and
   a saved edit is drawn by the app until the page reads the pull request again
   (on GitHub, then by GitHub).
+- **Private GitHub attachments expire.** GitHub signs a private image's address
+  for a few minutes; one that no longer loads after the page has been open a
+  while comes back with **Refresh**.
+- **A relative image on GitHub** that the app draws itself (a reply sent from
+  the app, before the page reads it again) is looked for under the repository's
+  address on github.com, which may not be where GitHub would put it.
 - **Videos** in a GitHub comment show as a link to the file, not a player.
 - **GitHub-only extensions** the app draws itself (on other hosts) are not
   there: no emoji shortcodes, no Mermaid diagrams, no alerts styling, and math

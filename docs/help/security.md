@@ -60,13 +60,23 @@ The limits:
 - **The host still sees you.** An image from the host itself — and on GitHub,
   any image through its proxy — is a request to the host, which already knows
   this account is reading the pull request.
+- **`raw.githubusercontent.com` and `gist.githubusercontent.com` load without a
+  click.** Anyone can put a file there, so the image is theirs — but GitHub
+  serves it, and its author does not see your IP address or when you read it.
+- **Private GitHub attachments expire.** Their signed address lasts a few
+  minutes; **Refresh** on the page brings back one that stopped loading.
+- **The Preview of a comment box** on those pages follows the same rule: a
+  pasted link to an outside image is not loaded while you write.
 - **Only the pull request and issue pages.** Images in a Markdown file of the
   repository, in a release note or in the wiki are your repository's own
   content and load as before.
 - **A link is not an image.** Clicking a link in a comment opens it in your
   browser, as any link in the app does.
 
-How the rest of a comment is restricted is in [Pull requests](pull-requests.md#how-comments-are-shown).
+A comment cannot stall or crash the window either: one over 32,000 characters,
+or shaped to make the Markdown renderer work for seconds, is shown as plain
+text. How the rest of a comment is restricted is in
+[Pull requests](pull-requests.md#how-comments-are-shown).
 
 ## The AppImage and paths that outlive it
 

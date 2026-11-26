@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57.5
 summary: O editor de Markdown por trás de toda caixa de comentário — Escrever / Visualizar, uma barra de formatação com os atalhos do GitHub, listas que continuam no Enter e sugestões de @menção / #referência.
 keywords: editor markdown caixa de comentário barra de ferramentas negrito itálico código link citação título lista com marcadores numerada tarefas checklist visualizar escrever atalho menção arroba referência cerquilha número da issue autocompletar resposta descrição do pull request corpo da issue
-source: 3d8bb898dd73722496fb232dcd59c4e4c477c3ec
+source: cc7673de22ce745f04a0341c4d263219c432b693
 ---
 
 # Escrever comentários
@@ -125,11 +125,13 @@ atrás do diálogo.
 - **A visualização é o renderizador do app.** Mostra o Markdown como o app
   desenha; a renderização do host pode diferir em detalhes (extensões próprias
   do GitHub, menções viradas em links).
-- **A visualização e o comentário enviado podem diferir.** Depois de enviado,
-  o comentário é desenhado nas páginas de pull request e de issue pelo próprio
-  renderizador do host no GitHub, e por um perfil mais restrito em todo lugar
-  ([como os comentários aparecem](pull-requests.md#como-os-comentários-aparecem)):
-  uma imagem de outro site espera um clique ali, e uma extensão do GitHub que a
-  visualização não conhece pode aparecer diferente.
+- **A visualização é o desenho do app, não o do host.** Nas páginas de pull
+  request e de issue, a visualização desenha o texto como o comentário enviado
+  vai aparecer no app ([como os comentários aparecem](pull-requests.md#como-os-comentários-aparecem)):
+  o mesmo perfil restrito, as quebras de linha mantidas, e uma imagem de outro
+  site esperando um clique. No GitHub o comentário enviado passa a ser desenhado
+  pelo GitHub, então uma extensão que o app não conhece pode aparecer
+  diferente. Os diálogos de novo pull request e nova issue usam a visualização
+  Markdown comum do app.
 - Os atalhos são fixos: não aparecem nas configurações de atalhos e não seguem
   uma troca feita lá.
