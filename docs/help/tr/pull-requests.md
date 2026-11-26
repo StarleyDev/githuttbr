@@ -2,9 +2,9 @@
 title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
-summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş — ve bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ › ve diff’inin bir satırına yorumlar.
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Pull request sayfası
@@ -153,6 +153,76 @@ Yapmadıkları:
 - **Bu pencere.** Checkout bu deponun çalışma ağacında gerçekleşir. Dal zaten
   başka bir [çalışma ağacında](worktrees.md) checkout edilmişse, bunun yerine o
   çalışma ağacının sekmesi açılır.
+
+## Bir satıra yorum yapmak
+
+Burada bir inceleme konuşmasına yanıt vermek mümkündü, ama yenisini başlatmak değil;
+bu yüzden gerçek bir inceleme sizi yine tarayıcıya gönderiyordu. Bir pull request’in
+**Dosyalar** sekmesinde diff’in her satırı kendi yorumunu alabilir:
+
+- **Bir satırın üzerine gelin** ve numarasının üstünde beliren **+** düğmesine
+  basın ya da **satırın kendisine tıklayın** (bir metin seçimini bitiren tıklama ya
+  da bir kelimeyi seçen çift tıklama sayılmaz — bu okumaktır). Sağ tık menüsünde —
+  ya da klavyenin bağlam menüsü tuşunda — da *N. satıra yorum yap* vardır.
+- **O satırın altında** bir kutu açılır. Yazın, ardından **Yorum yap** — ya da
+  ⌘/Ctrl+Enter. **Vazgeç** kutuyu kapatır; **Esc** de kapatır, bir şey yazılmışsa
+  önce sorar. Her iki durumda da odak o satıra döner.
+- Başarılı olursa yeni konuşma **kendi satırının altında** ve herkesin göreceği
+  Konuşma sekmesinin inceleme konuşmalarında görünür.
+
+![Değişmiş bir satırın altında yazılan bir yorum ve kendi satırının altında daha eski bir konuşma](../../screenshots/pr-line-comment.webp)
+
+Yorumun hangi tarafa düştüğü satıra bağlıdır:
+
+| Satır | Bağlandığı yer |
+|---|---|
+| **Eklenen** (yeşil) | Dosyanın yeni sürümü, yeni numarasıyla |
+| **Silinen** (kırmızı) | Eski sürüm, eski numarasıyla |
+| **Değişmeyen** | Yeni sürüm (GitLab’e, istediği gibi, iki numara da gönderilir) |
+
+Var olan konuşmalar da kendi satırlarının altında gösterilir; sunucu uygulamanın bir
+konuşma içinde yanıt vermesine izin veriyorsa yanıt kutusuyla birlikte (Forgejo
+izin vermez). Bir konuşma ancak sunucu onun gösterilen diff’e hâlâ ait olduğunu
+söylüyorsa bir satırda gösterilir; geri kalanı tahmin edilmiş bir satır yerine
+Konuşma sekmesinde kalır:
+
+| Sunucu | Son push’tan önce yazılmış bir konuşma |
+|---|---|
+| GitHub | Satırı değiştiyse eskimiş: yalnızca Konuşma |
+| GitLab | Daha eski bir head’e karşı yazılmış: yalnızca Konuşma |
+| Azure DevOps | Azure onu satırının şimdi olduğu yere taşır |
+| Bitbucket Data Center | Satırı yok olduysa sahipsiz: yalnızca Konuşma |
+| Forgejo | Forgejo bir yorumun eskidiğini söylemez, bu yüzden kayıtlı satır numarasında gösterilir — bir push’tan sonra o satırda artık başka kod olabilir |
+
+Gösterilen hunk’ların dışındaki bir satıra yapılan yorum, her sunucuda yalnızca
+Konuşma sekmesindedir.
+
+Yazılmış ama gönderilmemiş bir yorum gönderilmemiş metin sayılır: **‹ ›** ve
+Alt+oklar, ana yorum kutusunda olduğu gibi, ondan ayrılmadan önce sorar. Başka bir
+dosyaya bakmak onu korur; başka bir satırda yorum başlatmak için önce ilkini
+gönderin ya da vazgeçin.
+
+Yapmadıkları:
+
+- **Tek satır, hemen gönderilir.** Satır aralığı yoktur; yorumları toplayıp sonra
+  göndereceğiniz bekleyen bir inceleme yoktur; önerilen değişiklik yoktur. Her yorum
+  gönderdiğiniz anda kendi konuşması olarak yayımlanır (Forgejo’da, tek yorum için
+  bir çağrısı olmadığından, yalnızca o yorumu içeren bir inceleme olarak).
+- **Baktığınız diff.** Dosyalar sekmesi diff’inin hangi commit’te (Azure DevOps’ta
+  hangi yinelemede) okunduğunu hatırlar ve yorum ona göre gönderilir. Pull request o
+  zamandan beri ilerlediyse — bir push, yeni bir birleştirme tabanı — yorum şimdi o
+  numarayı taşıyan satıra yazılmaz: *bu diff yüklendiğinden beri pull request
+  değişti* diyerek reddedilir ve **Yenile** yeni diff’i gösterir. GitHub’da ise yorum
+  okuduğunuz commit’e göre gönderilir ve o satır değiştiyse GitHub onu eskimiş
+  olarak işaretler. Sunucunun yine de kabul etmediği bir satır, diff’in dışında
+  olduğu gerekçesiyle reddedilir.
+- **Reddedildi.** Yorum yapma izni olmadan (salt okunur bir token, deponun yorum
+  yapmasına izin vermediği bir hesap) sunucu reddeder ve mesaj nedenin bu olduğunu
+  söyler.
+- **bitbucket.org** pull request’leri tarayıcıda açılır — uygulamanın onlar için
+  henüz bir sayfası yok —, bu yüzden orada satır yorumu hâlâ web sitesinde yapılır.
+- **Diff’i olmayan bir dosyada** (ikili ya da sunucunun eklemeyeceği kadar büyük)
+  yorum yapılacak satır yoktur.
 
 ## Sınırlar
 

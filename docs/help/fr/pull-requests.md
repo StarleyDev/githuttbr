@@ -2,9 +2,9 @@
 title: Page des pull requests
 category: Synchronisation et multi-dépôts
 order: 57
-summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI — et ‹ › pour parcourir la liste filtrée depuis une PR.
-keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, et des commentaires sur une ligne de son diff.
+keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Page des pull requests
@@ -167,6 +167,81 @@ Ce que cela ne fait pas :
 - **Cette fenêtre.** Le checkout se fait dans l’arbre de travail de ce dépôt.
   Quand la branche est déjà extraite dans un autre [arbre de
   travail](worktrees.md), c’est l’onglet de cet arbre de travail qui s’ouvre.
+
+## Commenter une ligne
+
+On pouvait déjà répondre ici à un fil de relecture, mais pas en ouvrir un, si bien
+qu’une vraie relecture vous renvoyait encore au navigateur. Dans l’onglet
+**Fichiers** d’une pull request, chaque ligne du diff accepte son propre
+commentaire :
+
+- **Survolez une ligne** et appuyez sur le **+** qui apparaît sur son numéro, ou
+  **cliquez sur la ligne** elle-même (un clic qui termine une sélection de texte, ou
+  un double clic qui sélectionne un mot, ne compte pas — c’est de la lecture). Le
+  menu du clic droit — ou la touche menu contextuel du clavier — propose aussi
+  *Commenter la ligne N*.
+- Une zone s’ouvre **sous cette ligne**. Écrivez, puis **Commenter** — ou
+  ⌘/Ctrl+Entrée. **Annuler** la ferme ; **Échap** aussi, en demandant d’abord si
+  quelque chose a été saisi. Dans les deux cas, le focus revient sur cette ligne.
+- En cas de succès, le nouveau fil apparaît **sous sa ligne**, et dans les fils de
+  relecture de l’onglet Conversation, où tout le monde le verra.
+
+![Un commentaire en cours d’écriture sous une ligne modifiée, avec un fil plus ancien sous sa propre ligne](../../screenshots/pr-line-comment.webp)
+
+Le côté où atterrit le commentaire suit la ligne :
+
+| Ligne | Ancré à |
+|---|---|
+| **Ajoutée** (vert) | La nouvelle version du fichier, à son nouveau numéro |
+| **Supprimée** (rouge) | L’ancienne version, à son ancien numéro |
+| **Inchangée** | La nouvelle version (GitLab reçoit les deux numéros, comme il l’exige) |
+
+Les fils existants sont eux aussi affichés sous leurs lignes, avec leur zone de
+réponse là où l’hébergeur laisse l’application répondre dans un fil (pas Forgejo).
+Un fil n’est affiché sur une ligne que si l’hébergeur dit qu’il appartient encore au
+diff affiché ; le reste demeure dans l’onglet Conversation, plutôt que sur une ligne
+devinée :
+
+| Hébergeur | Un fil écrit avant le dernier push |
+|---|---|
+| GitHub | Obsolète quand sa ligne a changé : Conversation seulement |
+| GitLab | Écrit sur un head plus ancien : Conversation seulement |
+| Azure DevOps | Suivi par Azure jusqu’à l’endroit où se trouve sa ligne |
+| Bitbucket Data Center | Orphelin quand sa ligne a disparu : Conversation seulement |
+| Forgejo | Forgejo n’indique pas qu’un commentaire est obsolète, il est donc affiché au numéro de ligne enregistré — après un push, cette ligne peut contenir un autre code |
+
+Un commentaire sur une ligne hors des hunks affichés n’est que dans l’onglet
+Conversation, sur tous les hébergeurs.
+
+Un commentaire saisi et non envoyé compte comme du texte non envoyé : **‹ ›** et
+Alt+flèches demandent avant de le quitter, comme pour la zone de commentaire
+principale. Regarder un autre fichier le conserve ; pour en commencer un sur une
+autre ligne, publiez ou annulez le premier.
+
+Ce que cela ne fait pas :
+
+- **Une ligne, publiée aussitôt.** Pas de plage de lignes, pas de relecture en
+  attente où regrouper des commentaires pour les soumettre plus tard, pas de
+  suggestion de modification. Chaque commentaire est publié dès que vous l’envoyez,
+  en fil distinct (sur Forgejo, en relecture contenant ce seul commentaire, car
+  Forgejo n’a pas d’appel pour un commentaire isolé).
+- **Le diff que vous regardez.** L’onglet Fichiers retient sur quel commit (sur
+  Azure DevOps, quelle itération) son diff a été lu, et le commentaire est envoyé
+  par rapport à celui-ci. Quand la pull request a bougé depuis — un push, une
+  nouvelle base de fusion —, le commentaire n’est pas publié sur la ligne qui porte
+  maintenant ce numéro : il est refusé avec *la pull request a changé depuis le
+  chargement de ce diff*, et **Actualiser** affiche le nouveau diff. Sur GitHub, le
+  commentaire est au contraire publié sur le commit que vous avez lu, et GitHub le
+  marque obsolète si la ligne a changé. Une ligne que l’hébergeur refuse encore est
+  rejetée comme hors du diff.
+- **Refusé.** Sans droit de commenter (un jeton en lecture seule, un compte que le
+  dépôt n’autorise pas à commenter), l’hébergeur refuse et le message indique que
+  c’est la raison.
+- Les pull requests de **bitbucket.org** s’ouvrent dans le navigateur — l’application
+  n’a pas encore de page pour elles —, donc un commentaire de ligne s’y fait encore
+  sur le site.
+- **Un fichier sans diff** (binaire, ou trop gros pour que l’hébergeur l’inclue) n’a
+  aucune ligne à commenter.
 
 ## Limites
 

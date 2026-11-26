@@ -2,9 +2,9 @@
 title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
-summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI — oraz ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, oraz komentarze do wiersza jego diffa.
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment
+source: d1deab4d48f6f6327673e61daecb55ede0889881
 ---
 
 # Strona pull requestów
@@ -155,6 +155,78 @@ Czego to nie robi:
 - **To okno.** Checkout odbywa się w katalogu roboczym tego repozytorium. Gdy
   gałąź jest już wyciągnięta w innym [worktree](worktrees.md), zamiast tego
   otwiera się karta tego worktree.
+
+## Komentowanie wiersza
+
+Odpowiadać na wątek recenzji dało się tu już wcześniej; zaczynać nowego nie, więc
+prawdziwa recenzja wciąż odsyłała cię do przeglądarki. W zakładce **Pliki** pull
+requesta każdy wiersz diffa przyjmuje własny komentarz:
+
+- **Najedź na wiersz** i naciśnij **+**, który pojawia się nad jego numerem, albo
+  **kliknij sam wiersz** (kliknięcie kończące zaznaczenie tekstu albo podwójne
+  kliknięcie zaznaczające słowo się nie liczy — to czytanie). Menu prawego
+  przycisku — lub klawisz menu kontekstowego — też ma *Skomentuj wiersz N*.
+- **Pod tym wierszem** otwiera się pole. Napisz, potem **Skomentuj** — albo
+  ⌘/Ctrl+Enter. **Anuluj** je zamyka; **Esc** też, pytając najpierw, jeśli coś już
+  wpisano. Tak czy inaczej fokus wraca na ten wiersz.
+- Po powodzeniu nowy wątek pojawia się **pod swoim wierszem** oraz w wątkach
+  recenzji zakładki Rozmowa, gdzie zobaczą go wszyscy inni.
+
+![Komentarz pisany pod zmienionym wierszem, z wcześniejszym wątkiem pod jego własnym wierszem](../../screenshots/pr-line-comment.webp)
+
+Strona, po której ląduje komentarz, wynika z wiersza:
+
+| Wiersz | Zakotwiczony w |
+|---|---|
+| **Dodany** (zielony) | Nowej wersji pliku, pod jej nowym numerem |
+| **Usunięty** (czerwony) | Starej wersji, pod jej starym numerem |
+| **Niezmieniony** | Nowej wersji (GitLab dostaje oba numery, bo tego wymaga) |
+
+Istniejące wątki również są rysowane pod swoimi wierszami, z polem odpowiedzi tam,
+gdzie hosting pozwala aplikacji odpowiadać w wątku (Forgejo nie). Wątek trafia na
+wiersz tylko wtedy, gdy hosting mówi, że nadal należy do pokazanego diffa; wszystko
+inne zostaje w zakładce Rozmowa, zamiast lądować na zgadniętym wierszu:
+
+| Hosting | Wątek napisany przed ostatnim pushem |
+|---|---|
+| GitHub | Nieaktualny, gdy jego wiersz się zmienił: tylko Rozmowa |
+| GitLab | Napisany do starszego heada: tylko Rozmowa |
+| Azure DevOps | Azure przenosi go tam, gdzie jest teraz jego wiersz |
+| Bitbucket Data Center | Osierocony, gdy jego wiersza już nie ma: tylko Rozmowa |
+| Forgejo | Forgejo nie mówi, że komentarz jest nieaktualny, więc jest rysowany pod zapisanym numerem wiersza — po pushu w tym wierszu może być teraz inny kod |
+
+Komentarz do wiersza spoza pokazanych hunków jest na każdym hostingu tylko w
+zakładce Rozmowa.
+
+Komentarz wpisany i niewysłany liczy się jako niewysłany tekst: **‹ ›** i
+Alt+strzałki pytają, zanim go opuszczą, tak jak przy głównym polu komentarza.
+Przejrzenie innego pliku go zachowuje; żeby zacząć komentarz w innym wierszu, wyślij
+lub anuluj pierwszy.
+
+Czego to nie robi:
+
+- **Jeden wiersz, wysłany od razu.** Nie ma zakresu wierszy, oczekującej recenzji, w
+  której zbiera się komentarze do późniejszego wysłania, ani proponowanych zmian.
+  Każdy komentarz jest publikowany w chwili wysłania, jako osobny wątek (na Forgejo
+  jako recenzja z tym jednym komentarzem, bo Forgejo nie ma wywołania dla
+  pojedynczego komentarza).
+- **Diff, który oglądasz.** Zakładka Pliki pamięta, przy którym commicie (na Azure
+  DevOps: przy której iteracji) wczytano jej diff, i komentarz jest wysyłany
+  względem niego. Gdy pull request od tego czasu poszedł dalej — push, nowa baza
+  scalenia —, komentarz nie trafia na wiersz, który ma teraz ten numer: zostaje
+  odrzucony z komunikatem *pull request zmienił się od załadowania tego diffa*, a
+  **Odśwież** pokazuje nowy diff. Na GitHubie komentarz jest zamiast tego
+  publikowany względem commita, który czytałeś, a GitHub oznacza go jako
+  nieaktualny, jeśli ten wiersz się zmienił. Wiersz, którego hosting nadal nie
+  przyjmuje, jest odrzucany jako leżący poza diffem.
+- **Odrzucony.** Bez uprawnienia do komentowania (token tylko do odczytu, konto,
+  któremu repozytorium nie pozwala komentować) hosting odmawia, a komunikat podaje,
+  że to jest powód.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce — aplikacja nie ma
+  jeszcze dla nich strony —, więc komentarz do wiersza nadal dodaje się tam na
+  stronie.
+- **Plik bez diffa** (binarny albo zbyt duży, by hosting go dołączył) nie ma
+  wierszy do skomentowania.
 
 ## Ograniczenia
 
