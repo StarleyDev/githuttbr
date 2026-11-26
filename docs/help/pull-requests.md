@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff.
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block
 ---
 
 # Pull requests page
@@ -158,7 +158,7 @@ What it does not do:
 
 The sidebar said how many commits a pull request has, never which. Reviewing
 one commit at a time — the way most pull requests are meant to be read — sent
-you to the browser. The **Commits** tab, between Conversation and Files, lists
+you to the browser. The **Commits** tab, between Conversation and Updates, lists
 them:
 
 - **Oldest first**, the order they apply in, grouped under the day they were
@@ -239,6 +239,108 @@ What it does not do:
 - **bitbucket.org** pull requests open in the browser — the app has no page for
   them yet — so this tab is not reached there, although the app can read the
   list.
+
+## Updates
+
+A pull request you reviewed on Monday has moved by Thursday. The Commits tab
+shows where it is now, not what happened since: which commits came in which
+push, whether someone force-pushed and rewrote what you had already read, and
+what the code looks like *compared with the version you saw*. The **Updates**
+tab, between Commits and Files, answers that — the way Azure DevOps' own
+Updates tab does.
+
+It lists each push to the pull request, **newest first**:
+
+- **Update 1 — opened** is the push the pull request was opened with; every
+  later push is the next number.
+- Each one shows **when**, **who pushed** (where the host says), and the
+  **commits it added** — short SHA, subject, author. Where the host reports
+  commits a push took off the branch, they are listed under **Commits
+  removed**, struck through.
+- A force push or a rebase is marked **history rewritten**: commits you had
+  read may be gone, and the ones listed may be new copies of old work.
+
+![The Updates tab: pushes newest first, a force push marked "history rewritten", one marked New](../screenshots/pr-updates.webp)
+
+### What changed in one update
+
+**View changes in this update** opens the Files tab on that push alone: the
+diff from the previous update's head to this one — or, for Update 1, from the
+target branch it was opened against, where the host names that point (Azure
+DevOps, GitLab). The same file tree and viewer, with a
+banner — *Showing changes in Update 3 (vs Update 2)* — and **Show all
+changes** to go back to the whole pull request.
+
+![The Files tab showing one update's changes, with the banner above the file tree](../screenshots/pr-update-diff.webp)
+
+The diff is read from **this clone** when it has both commits — `git diff`
+between the two heads, fast and without asking the host. When either is
+missing, the host is asked (Azure DevOps' iteration changes with
+`$compareTo`, GitLab's compare, Bitbucket Data Center's compare, GitHub's
+compare). When neither works, the banner says so and offers to fetch the
+branch (or, from a fork, the pull request's head) and compare here.
+
+Line comments belong to the whole pull request's diff, so there is no **+**
+on a line while one update is shown; the banner says so. Ticking a file as
+viewed works as usual — it marks the file in the pull request.
+
+### New since your last visit
+
+Updates pushed since you last opened the tab carry a **New** badge, and the
+tab itself says how many: *Updates 5 · 2 new*. Opening the tab marks them
+seen (the badges stay while you are on it, so you can see which were new);
+when a refresh brings more while the tab is open, **Mark as seen** clears
+them. Opening the pull request page alone marks nothing. The first time you
+open a pull request's Updates tab, nothing is new — there is no earlier visit
+to compare with.
+
+What has been seen is kept on this computer only, per repository and pull
+request, never sent to the host.
+
+### Per host
+
+| Host | Where the updates come from | Pusher | Removed commits | Rewrite detected |
+|---|---|---|---|---|
+| Azure DevOps | The pull request's **iterations** — Azure's own record of each push | Yes | No (not reported) | Yes: `forcePush` / `rebase` |
+| GitLab | The merge request's **diff versions**; each version's commits worked out from its head | No (versions name nobody) | Yes | Yes: an earlier head no longer reached |
+| Bitbucket Data Center | The pull request's activity: **OPENED** and each **RESCOPED** that moved the source branch | Yes | Yes, with the host's totals | Yes: a rescope that removed commits |
+| GitHub | **Rebuilt** from the timeline's commits and force pushes — see below | Force pushes only | No | Yes: a force-push event |
+| Forgejo / Gitea | The timeline's **push** entries | Yes | No | Yes: a force-push entry |
+| bitbucket.org | Not available | — | — | — |
+
+**GitHub keeps no record of an ordinary push** — only of force pushes. The
+app rebuilds the updates from what it has: the opening and each force push
+start an update, and a commit committed after an update began must have been
+pushed later, so it starts the next one. Several plain pushes in a row
+therefore show as **one** update, and the tab says the grouping is
+approximate. A force push's own before and after heads are exact, so its
+**View changes** is too.
+
+### Limits
+
+- **Caps.** The 100 most recent updates are listed; GitHub's timeline is read
+  up to 500 items, Bitbucket Data Center's activity up to 1,000, GitLab's
+  versions and commits up to 300 each. Past a cap, the tab says the list stops
+  short.
+- **Azure DevOps** reports no removed commits; a force push or rebase is
+  marked instead. An iteration whose commit list Azure cuts short is read on
+  its own (up to 500 commits), and the update says when it is still partial.
+- **GitLab** names no pusher. A version whose head was rewritten away is read
+  on its own to find its commits — for the ten most recent such versions.
+- **Forgejo and Gitea** list no commits for a force push — only its two heads,
+  which is what **View changes** compares. Their API has no two-commit diff, so
+  that comparison needs both commits in this clone (the banner offers the
+  fetch). A server without the timeline API shows every commit in one update.
+- **GitHub's compare** diffs from the merge base of the two heads. After a
+  rebase onto a newer target, that can show more than the push itself changed;
+  a local comparison does not have this problem.
+- **Bitbucket Data Center's compare** reads the server's structured diff and
+  draws it as a unified one; very large files may come back truncated.
+- A rewritten head can be **gone from the host** for good (Azure and GitLab
+  keep it; others may collect it). Then neither side can compare, and the
+  banner says so.
+- **bitbucket.org** pull requests open in the browser, and have no Updates
+  tab.
 
 ## Reading the files
 

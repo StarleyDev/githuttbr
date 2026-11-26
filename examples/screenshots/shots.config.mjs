@@ -183,6 +183,88 @@ async function fakeRollbackData(app) {
 }
 
 /** @type {Shot[]} */
+/** The pr-updates shots' fictional Azure DevOps pull request. */
+const PR_UPDATES_REMOTE = 'https://dev.azure.com/example/studio/_git/catalog'
+const PR_UPDATES_FAKE = (() => {
+  const sha = (tag) => tag.padEnd(40, '0')
+  const c = (tag, subject, authorName, authoredAt) => ({
+    sha: sha(tag), shortSha: tag.slice(0, 7), subject, authorName, authoredAt, parents: 1
+  })
+  const index = [
+    '@@ -1,6 +1,9 @@',
+    " import { readCatalog } from './read'",
+    '',
+    '-export async function loadIndex(): Promise<Index> {',
+    '-  return buildIndex(await readCatalog())',
+    '+let cached: Index | null = null',
+    '+',
+    '+export async function loadIndex(): Promise<Index> {',
+    '+  // Built once per process: the catalog does not change while it runs.',
+    '+  cached ??= buildIndex(await readCatalog())',
+    '+  return cached',
+    ' }'
+  ].join('\n')
+  return {
+    detail: {
+      number: 118, title: 'Cache the catalog index', author: 'Rita Moreau', source: 'cache-index', target: 'main',
+      body: 'Keep the catalog index between requests instead of rebuilding it each time.',
+      state: 'open', draft: false, merged: false, mergeable: true,
+      url: 'https://dev.azure.com/example/studio/_git/catalog/pullrequest/118',
+      comments: [], reviews: [], reviewThreads: [], commits: 5, changedFiles: 2, additions: 41, deletions: 6
+    },
+    updates: {
+      truncated: false,
+      grouping: 'native',
+      updates: [
+        {
+          id: '1', index: 1, iteration: 1, kind: 'opened', createdAt: '2026-11-19T09:14:00Z', pusher: 'Rita Moreau',
+          headSha: sha('5be0c21'), fromSha: sha('a0a0a0a'), removed: [],
+          added: [
+            c('31d8e04', 'feat(index): keep the built index in memory', 'Rita Moreau', '2026-11-19T08:50:00Z'),
+            c('5be0c21', 'test(index): cover a second request', 'Rita Moreau', '2026-11-19T09:05:00Z')
+          ]
+        },
+        {
+          id: '2', index: 2, iteration: 2, kind: 'push', createdAt: '2026-11-20T14:31:00Z', pusher: 'Rita Moreau',
+          headSha: sha('7c1f9ab'), fromSha: sha('5be0c21'), removed: [],
+          added: [c('7c1f9ab', 'fix(index): rebuild after the catalog file changes', 'Rita Moreau', '2026-11-20T14:20:00Z')]
+        },
+        {
+          id: '3', index: 3, iteration: 3, kind: 'rewrite', createdAt: '2026-11-21T16:02:00Z', pusher: 'Rita Moreau',
+          headSha: sha('e4b27d0'), fromSha: sha('7c1f9ab'), removed: [],
+          added: [
+            c('9a63f10', 'feat(index): keep the built index in memory', 'Rita Moreau', '2026-11-21T15:58:00Z'),
+            c('e4b27d0', 'test(index): cover a second request', 'Rita Moreau', '2026-11-21T15:59:00Z')
+          ]
+        },
+        {
+          id: '4', index: 4, iteration: 4, kind: 'push', createdAt: '2026-11-24T10:47:00Z', pusher: 'Tomás Ibarra',
+          headSha: sha('f05d6c8'), fromSha: sha('e4b27d0'), removed: [],
+          added: [c('f05d6c8', 'perf(index): skip the stat call on a warm cache', 'Tomás Ibarra', '2026-11-24T10:40:00Z')]
+        }
+      ]
+    },
+    files: [
+      { filename: 'src/catalog/index.ts', status: 'modified', additions: 7, deletions: 2, patch: index },
+      {
+        filename: 'src/catalog/index.test.ts', status: 'modified', additions: 6, deletions: 0,
+        patch: [
+          '@@ -12,3 +12,9 @@',
+          " it('builds the index', async () => {",
+          '   expect(await loadIndex()).toBeDefined()',
+          ' })',
+          '+',
+          "+it('reuses the index on a second request', async () => {",
+          '+  const first = await loadIndex()',
+          '+  expect(await loadIndex()).toBe(first)',
+          '+})',
+          '+'
+        ].join('\n')
+      }
+    ]
+  }
+})()
+
 export const shots = [
   {
     out: 'repo-groups',
@@ -1035,7 +1117,7 @@ export const shots = [
         type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
-      await page.locator('.prp-tab').nth(2).click()
+      await page.locator('.prp-tab').nth(3).click()
       await page.locator('.prp-line-threads').waitFor()
       const row = page.locator('.diff-line.add', { hasText: 'hits.slice' })
       await row.hover()
@@ -1107,7 +1189,7 @@ export const shots = [
         })
       }, repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
-      await page.locator('.prp-tab').nth(2).click()
+      await page.locator('.prp-tab').nth(3).click()
       await page.locator('.prp-folder-row', { hasText: 'docs/guide' }).click()
       await page.locator('.prp-file-row', { hasText: 'index.ts' }).click()
       await page.waitForTimeout(300)
@@ -1159,6 +1241,71 @@ export const shots = [
       await page.locator('.prp-commit', { hasText: 'trim the query' }).locator('.prp-commit-more').click()
       await page.locator('.prp-commit', { hasText: 'one screen of results' }).locator('.prp-commit-open').click()
       await page.locator('.prp-commit-missing').waitFor()
+      await page.mouse.move(0, 0)
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The Updates tab: a pull request's pushes newest first, Azure-like — the
+    // opening, two plain pushes and a force push marked "history rewritten",
+    // with the newest pushed since the last visit badged New (the seen mark is
+    // planted in the renderer's storage). Faked detail and updates — a
+    // fictional Azure DevOps project, no network.
+    out: 'pr-updates',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }, fake) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListUpdates', 'prUpdateFiles']) {
+          ipcMain.removeHandler('hosting:' + method)
+        }
+        ipcMain.handle('hosting:prDetail', () => fake.detail)
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        ipcMain.handle('hosting:prListUpdates', () => fake.updates)
+        ipcMain.handle('hosting:prUpdateFiles', () => fake.files)
+      }, PR_UPDATES_FAKE)
+      await page.evaluate(({ repoPath, remoteUrl }) => {
+        localStorage.setItem(
+          `githuttbr-pr-updates-seen:${remoteUrl}#118`,
+          JSON.stringify({ id: '3', at: '2026-11-21T16:02:00Z' })
+        )
+        window.__shot.settings.getState().openPageTab({ type: 'pr', repoPath, remoteUrl, number: 118, title: 'Cache the catalog index' })
+      }, { repoPath: repos['octopus-merge'], remoteUrl: PR_UPDATES_REMOTE })
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-tab-new').waitFor()
+      await page.locator('.prp-tab').nth(2).click()
+      await page.locator('.prp-update').first().waitFor()
+      await page.mouse.move(0, 0)
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // "View changes in this update": the Files tab on one push alone, under
+    // the banner naming the update and what it is compared with. The shas
+    // exist nowhere, so the faked host compare answers. Fictional data.
+    out: 'pr-update-diff',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }, fake) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListUpdates', 'prUpdateFiles']) {
+          ipcMain.removeHandler('hosting:' + method)
+        }
+        ipcMain.handle('hosting:prDetail', () => fake.detail)
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        ipcMain.handle('hosting:prListUpdates', () => fake.updates)
+        ipcMain.handle('hosting:prUpdateFiles', () => fake.files)
+      }, PR_UPDATES_FAKE)
+      await page.evaluate(({ repoPath, remoteUrl }) => {
+        window.__shot.settings.getState().openPageTab({ type: 'pr', repoPath, remoteUrl, number: 118, title: 'Cache the catalog index' })
+      }, { repoPath: repos['octopus-merge'], remoteUrl: PR_UPDATES_REMOTE })
+      await page.locator('.prp-head h2').waitFor()
+      await page.locator('.prp-tab').nth(2).click()
+      await page.locator('.prp-update').first().locator('.prp-update-view').click()
+      await page.locator('.prp-update-banner').waitFor()
+      await page.locator('.prp-file-row', { hasText: 'index.ts' }).click()
       await page.mouse.move(0, 0)
       await page.waitForTimeout(300)
     }
@@ -1356,7 +1503,7 @@ export const shots = [
         type: 'pr', repoPath, remoteUrl: 'https://forge.example.org/studio/catalog.git', number: 7, title: 'Cache the catalog index'
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
-      await page.locator('.prp-tab').nth(3).click()
+      await page.locator('.prp-tab').nth(4).click()
       await page.locator('.prd-check-logs[aria-expanded]').nth(1).click()
       await page.locator('.prp-check-log pre').waitFor()
       await page.waitForTimeout(300)
