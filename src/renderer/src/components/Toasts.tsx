@@ -42,8 +42,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   // A recognised git/host error reads as what it means and what to do; git's own
   // text moves to the details. Copy, report and "fix with AI" keep using the raw
   // message — it is what names the failing call.
-  const hint = toast.kind === 'error' ? explainGitError(toast.message) : null
-  const text = readableError(toast.message, t, interp)
+  const hint = toast.kind === 'error' ? (toast.explanation ?? explainGitError(toast.message)) : null
+  const text = toast.explanation ?? readableError(toast.message, t, interp)
 
   return (
     <motion.div

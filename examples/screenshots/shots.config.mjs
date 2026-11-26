@@ -1771,6 +1771,30 @@ export const shots = [
     }
   },
   {
+    // An old clone with a token in its remote URL: the confirmation that takes it
+    // out. The token is fake and the host fictional; the dialog names neither.
+    out: 'remote-url-token',
+    repos: ['octopus-merge'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['octopus-merge']
+      await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
+      await run('git', [
+        '-C',
+        repo,
+        'remote',
+        'add',
+        'origin',
+        'https://studio-bot:fake-token-for-shots@forge.example.org/studio/catalog.git'
+      ])
+    },
+    drive: async (page, repos) => {
+      const path = repos['octopus-merge']
+      await page.evaluate((p) => window.__shot.repoActions.confirmRemoveRemoteUrlCredentials(p, 'origin'), path)
+      await page.locator('.modal-actions').first().waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     out: 'forgejo-integration',
     repos: ['octopus-merge'],
     drive: async (page) => {

@@ -582,9 +582,44 @@ export interface StashInfo {
   date: number
 }
 
+/** What a remote URL carries in its userinfo (shared/remoteUrlCredentials.ts). */
+export type UrlCredentialKind = 'password' | 'username'
+
 export interface RemoteInfo {
   name: string
+  /** Any password in the URL is removed before it leaves main; a user name stays. */
   url: string
+  /** What the remote's fetch or push URLs carry in their userinfo, worst first.
+   *  Absent when none carries anything. */
+  urlCredentials?: UrlCredentialKind
+  /** A password is there but its URL is ambiguous about the host, so it is not
+   *  offered for automatic removal (shared/remoteUrlCredentials.ts). */
+  urlCredentialsAmbiguous?: true
+}
+
+/** One of a remote's configured URLs that carries a user name or a password. */
+export interface RemoteUrlCredentialUrl {
+  /** `fetch` for `remote.<name>.url`, `push` for `remote.<name>.pushurl`. */
+  role: 'fetch' | 'push'
+  kind: UrlCredentialKind
+  /** The URL as the fix writes it — the userinfo removed (an ssh user name kept).
+   *  For an ambiguous one, the URL redacted greedily: it is not rewritten. */
+  url: string
+  /** Readers disagree on where its host starts: never rewritten automatically. */
+  ambiguous?: true
+}
+
+/**
+ * A remote whose configured URLs carry credentials. Never the user name or the
+ * password themselves: only which URLs, what kind, and the clean form.
+ */
+export interface RemoteUrlCredentials {
+  remote: string
+  /** The worst of `urls`: a password outranks a user name. */
+  kind: UrlCredentialKind
+  /** A password is there and every URL holding one can be cleaned safely. */
+  removable: boolean
+  urls: RemoteUrlCredentialUrl[]
 }
 
 export interface RepoSummary {
