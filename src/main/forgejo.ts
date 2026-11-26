@@ -15,6 +15,7 @@ import type {
   PrDetail,
   PrFile,
   PrNoPatchReason,
+  PrDiffCommits,
   PrDiffRevision,
   PrLineAnchor,
   PrMergeMethod,
@@ -778,22 +779,22 @@ export async function forgejoCommentOnLine(
   })
 }
 
-/** The pull's head commit and merge base, as the Files tab's diff was read at. */
-/** The two commits a pull request's diff is between: its merge base (or the target's tip) and its head. */
-export async function forgejoPullEnds(
+/** The two commits a pull request's diff is between: its merge base (or, unnamed, the target's tip) and its head. */
+export async function forgejoPullDiffCommits(
   base: string,
   owner: string,
   repo: string,
   token: string,
   number: number
-): Promise<{ base: string; head: string; baseIsMergeBase: boolean } | null> {
+): Promise<PrDiffCommits | null> {
   const pr = await fjJson<FjPull & { base?: { sha?: string } }>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
   const head = pr.head?.sha
   if (!head) return null
-  if (pr.merge_base) return { base: pr.merge_base, head, baseIsMergeBase: true }
-  return pr.base?.sha ? { base: pr.base.sha, head, baseIsMergeBase: false } : null
+  if (pr.merge_base) return { headSha: head, baseSha: pr.merge_base, baseKind: 'mergeBase' }
+  return { headSha: head, baseSha: pr.base?.sha ?? null, baseKind: 'targetTip' }
 }
 
+/** The pull's head commit and merge base, as the Files tab's diff was read at. */
 export async function forgejoPullRevision(base: string, owner: string, repo: string, token: string, number: number): Promise<PrDiffRevision | null> {
   const pr = await fjJson<FjPull>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
   if (!pr.head?.sha) return null

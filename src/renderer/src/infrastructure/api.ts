@@ -1279,8 +1279,17 @@ export const hostingApi = {
     window.api.hosting.prCheckLog(repoPath, remoteUrl, tokens, url) as Promise<string | null>,
   prChecks: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prChecks(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
-  prFiles: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
-    window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFileList>,
+  /** `fetchMode`: whether the list may fetch the PR's missing commits — `once` on first load, `refresh` on Refresh. */
+  prFiles: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    fetchMode: import('../../../shared/types').PrFilesFetchMode = 'none'
+  ) => window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number, fetchMode) as Promise<import('../../../shared/types').PrFileList>,
+  /** Told when the Files tab's quiet fetch of a PR's commits starts and ends. Returns the unsubscribe. */
+  onPrFilesFetching: (cb: (p: import('../../../shared/types').PrFilesFetching) => void): (() => void) =>
+    window.api.hosting.onPrFilesFetching(cb as (p: unknown) => void),
   /** One file's diff read on demand — this clone first, then the host. Always the file back, with a reason when still no patch. */
   prFileDiff: (repoPath: string, remoteUrl: string, tokens: PrTokens, request: import('../../../shared/types').PrFileDiffRequest) =>
     window.api.hosting.prFileDiff(repoPath, remoteUrl, tokens, request) as Promise<import('../../../shared/types').PrFile>,

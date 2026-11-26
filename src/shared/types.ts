@@ -854,9 +854,10 @@ export interface PrFile {
  * - `notLoaded` — not read yet; it is read when the file is opened;
  * - `failed` — reading it failed (`noPatchError` says how), worth trying again;
  * - `hostOmitted` — the host's API left the diff out and this clone has neither commit;
- * - `noChanges` — a rename or a mode change: nothing in the content changed.
+ * - `noChanges` — a rename or a mode change: nothing in the content changed;
+ * - `encodingChanged` — the same text, saved in another encoding (a BOM added or dropped).
  */
-export type PrNoPatchReason = 'binary' | 'tooLarge' | 'notLoaded' | 'failed' | 'hostOmitted' | 'noChanges'
+export type PrNoPatchReason = 'binary' | 'tooLarge' | 'notLoaded' | 'failed' | 'hostOmitted' | 'noChanges' | 'encodingChanged'
 
 /**
  * The two commits a pull request file's diff is between, and the pull request
@@ -897,6 +898,34 @@ export interface PrDiffRevision {
 export interface PrFileList {
   files: PrFile[]
   revision: PrDiffRevision | null
+  /** The two commits the files were diffed between, resolved — what the image preview reads too. */
+  commits?: PrDiffCommits | null
+  /** The host listed fewer files than the pull request has (its own cap was reached). */
+  truncated?: boolean
+}
+
+/** When the Files tab may fetch the pull request's missing commits (main/prLocalFiles.ts). */
+export type PrFilesFetchMode = 'none' | 'once' | 'refresh'
+
+/** Sent while the Files tab fetches the pull request's commits, for its hint. */
+export interface PrFilesFetching {
+  repoPath: string
+  remoteUrl: string
+  number: number
+  fetching: boolean
+}
+
+/**
+ * The two commits a pull request's diff compares. `baseKind` says what
+ * `baseSha` is: the merge base (what every host's own diff starts from), or
+ * the target branch's tip when nothing could name the merge base — then a
+ * change landed on the target since the branch was cut shows too, and the UI
+ * says so. Null `baseSha` when the host would not say at all.
+ */
+export interface PrDiffCommits {
+  headSha: string
+  baseSha: string | null
+  baseKind: 'mergeBase' | 'targetTip'
 }
 
 /** One commit of a pull request, as its host lists it. */

@@ -310,7 +310,8 @@ interface PreloadApi {
     prFileContent(repoPath: string, remoteUrl: string, tokens: unknown, sha: string, path: string): Promise<unknown>
     prCheckLog(repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
     prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
-    prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number, fetchMode?: unknown): Promise<unknown>
+    onPrFilesFetching(cb: (p: unknown) => void): () => void
     prFileDiff(repoPath: string, remoteUrl: string, tokens: unknown, request: unknown): Promise<unknown>
     prListCommits(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prListUpdates(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>

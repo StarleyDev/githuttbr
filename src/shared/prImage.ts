@@ -5,6 +5,8 @@
  * disagree about what an image is.
  */
 
+import type { PrDiffCommits } from './types'
+
 /** Extension → the MIME type the data URL is labelled with. */
 const IMAGE_MIME: Readonly<Record<string, string>> = {
   png: 'image/png',
@@ -86,18 +88,8 @@ export type PrImageContent =
   /** Not there: the commit or the blob is not here, or the host has no such file. */
   | { status: 'missing' }
 
-/** The two commits a pull request's diff compares: the merge base and the head. */
-export interface PrDiffCommits {
-  /** Null when the host would not say — the "before" side is then unavailable. */
-  baseSha: string | null
-  headSha: string
-  /**
-   * The host named no merge base and `baseSha` is the target branch's tip: the
-   * "before" image is the target's current version, which a change landed on
-   * the target since the branch was cut would show too.
-   */
-  baseApproximate?: boolean
-}
+/** The two commits a pull request's diff compares — one type with the Files tab (shared/types.ts). */
+export type { PrDiffCommits }
 
 /** A file at a commit: what one side of an image comparison reads. */
 export interface PrImageSide {

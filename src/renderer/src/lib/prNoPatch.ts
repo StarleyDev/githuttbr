@@ -6,9 +6,17 @@ import type { TranslationKey } from '../i18n'
  * from the reason the main process gave. Pure: the component renders the keys.
  */
 
-/** A file's +/− counts are known when it has a patch, or the host counted it anyway (GitHub). */
-export function hasKnownLineCounts(file: Pick<PrFile, 'patch' | 'additions' | 'deletions'>): boolean {
-  return !!file.patch || file.additions > 0 || file.deletions > 0
+/** The reasons a file's diff was simply not read: its 0/0 is "unknown", not "nothing changed". */
+const UNREAD: ReadonlySet<PrNoPatchReason> = new Set(['notLoaded', 'failed', 'hostOmitted'])
+
+/**
+ * A file's +/− counts are known unless its diff was not read and nobody
+ * counted it: a binary file or a pure rename really is +0 −0, and a host that
+ * counts the lines of a patch it leaves out (GitHub) is believed.
+ */
+export function hasKnownLineCounts(file: Pick<PrFile, 'patch' | 'additions' | 'deletions' | 'noPatchReason'>): boolean {
+  if (file.patch || file.additions > 0 || file.deletions > 0) return true
+  return !UNREAD.has(file.noPatchReason ?? 'hostOmitted')
 }
 
 /** What the notice can offer to do about it. */
@@ -27,7 +35,8 @@ const NOTICES: Record<PrNoPatchReason, NoPatchNotice> = {
   notLoaded: { messageKey: 'prPage.noPatchNotLoaded', action: 'load', autoLoad: true },
   failed: { messageKey: 'prPage.noPatchFailed', action: 'retry', autoLoad: false },
   hostOmitted: { messageKey: 'prPage.noPatchHostOmitted', action: 'fetch', autoLoad: false },
-  noChanges: { messageKey: 'prPage.noPatchNoChanges', action: null, autoLoad: false }
+  noChanges: { messageKey: 'prPage.noPatchNoChanges', action: null, autoLoad: false },
+  encodingChanged: { messageKey: 'prPage.noPatchEncodingChanged', action: null, autoLoad: false }
 }
 
 /**

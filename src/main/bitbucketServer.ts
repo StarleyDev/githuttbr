@@ -34,6 +34,7 @@ import type {
   PrReviewEvent,
   PrReviewThread,
   PullRequest,
+  PrDiffCommits,
   PrDiffRevision,
   PrLineAnchor
 } from '../shared/types'
@@ -667,18 +668,6 @@ export async function bbsDeleteComment(repo: BitbucketServerRepo, token: string,
 const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> = { add: 'ADDED', del: 'REMOVED', ctx: 'CONTEXT' }
 
 /** The pull request's source head, as the Files tab's diff was read at. */
-/**
- * The two commits a pull request's effective diff is between: the source
- * branch's head and the target branch's tip, whose merge base the server diffs
- * from. Null when either is missing.
- */
-export async function bbsPullEnds(repo: BitbucketServerRepo, token: string, id: number): Promise<{ base: string; head: string } | null> {
-  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
-  const head = pr.fromRef?.latestCommit
-  const base = pr.toRef?.latestCommit
-  return head && base ? { base, head } : null
-}
-
 export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffRevision | null> {
   const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
   return pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : null
@@ -689,13 +678,10 @@ export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, 
  * base and the source head. The changes resource names both ends of that diff
  * (`fromHash`/`toHash`); the one that is not the head is the base. A server
  * that names neither falls back to the target branch's tip — close, but not
- * the merge base when the target moved on.
+ * the merge base when the target moved on. This is the diff Data Center's line
+ * comments anchor to, so the Files tab diffs the same two commits.
  */
-export async function bbsPullDiffCommits(
-  repo: BitbucketServerRepo,
-  token: string,
-  id: number
-): Promise<{ baseSha: string | null; headSha: string; baseApproximate?: boolean } | null> {
+export async function bbsPullDiffCommits(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffCommits | null> {
   const r = bbsRepoApi(repo)
   const pr = await bbsJson<BbsPull>(`${r}/pull-requests/${id}`, token)
   const head = pr.fromRef?.latestCommit
@@ -704,9 +690,8 @@ export async function bbsPullDiffCommits(
     () => null
   )
   const end = [ends?.fromHash, ends?.toHash].find((h) => !!h && h !== head)
-  if (end) return { baseSha: end, headSha: head }
-  const tip = pr.toRef?.latestCommit ?? null
-  return { baseSha: tip, headSha: head, ...(tip ? { baseApproximate: true } : {}) }
+  if (end) return { baseSha: end, headSha: head, baseKind: 'mergeBase' }
+  return { baseSha: pr.toRef?.latestCommit ?? null, headSha: head, baseKind: 'targetTip' }
 }
 
 /**

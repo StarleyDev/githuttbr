@@ -97,6 +97,15 @@ function isGitMeta(rel: string): boolean {
   return p === '.git' || p.startsWith('.git/')
 }
 
+/**
+ * Mute every window's watch of `repoPath` for `ms` — what `watch:mute` does for
+ * one renderer, for a git write the main process makes on its own (the pull
+ * request Files tab's quiet fetch), whose churn is not a change to refresh for.
+ */
+export function muteRepoWatches(repoPath: string, ms: number): void {
+  for (const w of active.values()) if (w.path === repoPath) w.muteUntil = Math.max(w.muteUntil, Date.now() + Math.max(0, ms))
+}
+
 export function clearWatch(id: number): void {
   const w = active.get(id)
   if (!w) return

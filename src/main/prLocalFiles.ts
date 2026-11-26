@@ -1,5 +1,6 @@
-import type { PrFile, RemoteInfo } from '../shared/types'
-import { gitService, withRepoLock } from './git'
+import type { PrDiffCommits, PrFile, PrFilesFetchMode, RemoteInfo } from '../shared/types'
+import { fetchCommitsByIdQuietly, gitService, QUIET_FETCH_TIMEOUT_MS, withRepoLock } from './git'
+import { muteRepoWatches } from './watcher'
 
 /**
  * A pull request's Files tab, read from this clone when it can be. `git diff`
@@ -14,22 +15,22 @@ import { gitService, withRepoLock } from './git'
  * part — the host's API.
  */
 
-/** The two ends of a pull request's diff as its host defines them. */
-export interface PrDiffEnds {
-  /** The merge base when the host names one (Azure, GitLab, Forgejo); else the target branch's tip. */
-  base: string
-  head: string
-  /** `base` is already the merge base: no `git merge-base` needed. */
-  baseIsMergeBase: boolean
-}
+/**
+ * When the Files tab may fetch the pull request's commits it does not have:
+ * - `none` — never (a reload after a comment, a review, a merge);
+ * - `once` — the page's first load: at most one attempt per commits, per session;
+ *   a failed one is not tried again;
+ * - `refresh` — the Refresh button: a failed attempt is tried again.
+ */
+export type PrFetchMode = PrFilesFetchMode
 
-/** The commits a local read ended up comparing, and the files. */
+/** The commits a local read compared, and the files. */
 export interface PrLocalFiles {
   files: PrFile[]
   mergeBase: string
 }
 
-const isFullSha = (s: string): boolean => /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+const isFullSha = (s: string | null | undefined): s is string => !!s && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
 
 /**
  * A remote URL as a pull request names it, without user, password, query or
@@ -63,56 +64,105 @@ export function findRemoteForUrl(remotes: readonly RemoteInfo[], remoteUrl: stri
 }
 
 /** Which of `shas` this clone has, under the repository's read lock. */
-const localCommits = (repoPath: string, shas: string[]): Promise<string[]> =>
+const getHereCommits = (repoPath: string, shas: string[]): Promise<string[]> =>
   withRepoLock(repoPath, 'getLocalCommits', () => gitService.getLocalCommits(repoPath, shas)).catch(() => [] as string[])
+
+/** Whether both commits are here. */
+export async function hasPrCommits(repoPath: string, shas: string[]): Promise<boolean> {
+  const wanted = [...new Set(shas)]
+  return wanted.every(isFullSha) && (await getHereCommits(repoPath, wanted)).length === wanted.length
+}
+
+/** One attempt per (repository, commits) this session: in flight, or done with its result. */
+const fetchAttempts = new Map<string, { done: boolean; run: Promise<boolean> }>()
+
+/** Forget every attempt — for the tests; the app keeps them for the session. */
+export function clearPrFetchAttempts(): void {
+  fetchAttempts.clear()
+}
 
 /**
  * Make sure both commits are here: fetched by id from the remote whose URL is
- * the pull request's when they are not. A quiet write — FETCH_HEAD and objects,
- * no ref — as the Updates tab does. False when they still are not here.
+ * the pull request's when they are not, as `mode` allows. A quiet write —
+ * objects only (fetchCommitsByIdQuietly), the watcher muted for it. Two calls
+ * for the same commits share one fetch. `onFetching` is told when a fetch
+ * starts and ends, for the tab's hint. False when they still are not here.
  */
-export async function ensurePrCommits(repoPath: string, remoteUrl: string, shas: string[]): Promise<boolean> {
-  return ensureCommitsFrom(repoPath, async () => {
+export async function ensurePrCommits(
+  repoPath: string,
+  remoteUrl: string,
+  shas: string[],
+  mode: PrFetchMode,
+  onFetching?: (fetching: boolean) => void
+): Promise<boolean> {
+  const remoteOf = async (): Promise<string | null> => {
     const remotes = await withRepoLock(repoPath, 'remotes', () => gitService.remotes(repoPath)).catch(() => [] as RemoteInfo[])
     return findRemoteForUrl(remotes, remoteUrl)
-  }, shas)
+  }
+  return ensureCommitsFrom(repoPath, remoteOf, shas, mode, onFetching)
 }
 
-/** ensurePrCommits with the remote already resolved — asked for only when a commit is missing. */
+/** ensurePrCommits with the remote resolved by `remoteOf` — asked only when a commit is missing. */
 export async function ensureCommitsFrom(
   repoPath: string,
   remoteOf: () => Promise<string | null>,
-  shas: string[]
+  shas: string[],
+  mode: PrFetchMode,
+  onFetching?: (fetching: boolean) => void
 ): Promise<boolean> {
   const wanted = [...new Set(shas)]
   if (!wanted.length || !wanted.every(isFullSha)) return false
-  const here = await localCommits(repoPath, wanted)
+  const here = await getHereCommits(repoPath, wanted)
   if (here.length === wanted.length) return true
-  const remote = await remoteOf()
-  if (!remote) return false
+  if (mode === 'none') return false
+  const key = [repoPath, ...wanted.map((s) => s.toLowerCase()).sort()].join('\0')
+  const prior = fetchAttempts.get(key)
+  // In flight: wait for it. Done and this is not a Refresh: its answer stands.
+  if (prior && (!prior.done || mode === 'once')) return prior.run
   const missing = wanted.filter((s) => !here.some((h) => h.toLowerCase() === s.toLowerCase()))
-  return withRepoLock(repoPath, 'fetchCommitsById', () => gitService.fetchCommitsById(repoPath, remote, missing)).catch(
-    () => false
-  )
+  const entry = { done: false, run: Promise.resolve(false) }
+  entry.run = (async (): Promise<boolean> => {
+    const remote = await remoteOf()
+    if (!remote) return false
+    onFetching?.(true)
+    // Objects land under .git/objects (watcher noise anyway); the mute covers the rest of the churn.
+    muteRepoWatches(repoPath, QUIET_FETCH_TIMEOUT_MS + 2000)
+    try {
+      return await withRepoLock(repoPath, 'fetchCommitsById', () => fetchCommitsByIdQuietly(repoPath, remote, missing))
+    } catch {
+      return false
+    } finally {
+      muteRepoWatches(repoPath, 1500)
+      onFetching?.(false)
+    }
+  })().finally(() => {
+    entry.done = true
+  })
+  fetchAttempts.set(key, entry)
+  return entry.run
+}
+
+/** The merge base of two commits, from this clone — null when either is not here. */
+export async function getLocalMergeBase(repoPath: string, base: string, head: string): Promise<string | null> {
+  if (!(await hasPrCommits(repoPath, [base, head]))) return null
+  return withRepoLock(repoPath, 'getMergeBase', () => gitService.getMergeBase(repoPath, base, head)).catch(() => null)
 }
 
 /**
- * The pull request's files from this clone, or null when its commits cannot
- * be had here (not fetched, the server will not serve them by id, a shallow or
- * partial clone missing objects). Never throws: null sends the caller to the host.
+ * The pull request's files from this clone, from its merge base to its head —
+ * or null when that cannot be had here (no merge base named, a commit or an
+ * object missing). Never fetches (ensurePrCommits does), never throws: null
+ * sends the caller to the host.
  */
-export async function readPrFilesFromClone(repoPath: string, remoteUrl: string, ends: PrDiffEnds): Promise<PrLocalFiles | null> {
-  if (!isFullSha(ends.base) || !isFullSha(ends.head)) return null
-  if (!(await ensurePrCommits(repoPath, remoteUrl, [ends.base, ends.head]))) return null
+export async function readPrFilesFromClone(repoPath: string, commits: PrDiffCommits): Promise<PrLocalFiles | null> {
+  const base = commits.baseSha
+  if (commits.baseKind !== 'mergeBase' || !isFullSha(base) || !isFullSha(commits.headSha)) return null
+  if (!(await hasPrCommits(repoPath, [base, commits.headSha]))) return null
   try {
-    const mergeBase = ends.baseIsMergeBase
-      ? ends.base
-      : await withRepoLock(repoPath, 'getMergeBase', () => gitService.getMergeBase(repoPath, ends.base, ends.head))
-    if (!mergeBase) return null
     const files = await withRepoLock(repoPath, 'getCommitRangeFiles', () =>
-      gitService.getCommitRangeFiles(repoPath, mergeBase, ends.head)
+      gitService.getCommitRangeFiles(repoPath, base, commits.headSha)
     )
-    return { files, mergeBase }
+    return { files, mergeBase: base }
   } catch {
     return null
   }
@@ -122,20 +172,16 @@ export async function readPrFilesFromClone(repoPath: string, remoteUrl: string, 
  * One file between two commits, from this clone — a file opened on demand, or
  * read again after the host's API failed it. From the two commits' merge base,
  * as the Files tab, unless `straight` (an update: previous head → head). Null
- * when it cannot be had here.
+ * when it cannot be had here. Never fetches: the notice's button does that.
  */
 export async function readPrFileFromClone(
   repoPath: string,
-  remoteUrl: string,
   ends: { base: string; head: string; straight: boolean },
   paths: string[]
 ): Promise<PrFile | null> {
-  if (!isFullSha(ends.base) || !isFullSha(ends.head)) return null
-  if (!(await ensurePrCommits(repoPath, remoteUrl, [ends.base, ends.head]))) return null
+  if (!(await hasPrCommits(repoPath, [ends.base, ends.head]))) return null
   try {
-    const from = ends.straight
-      ? ends.base
-      : await withRepoLock(repoPath, 'getMergeBase', () => gitService.getMergeBase(repoPath, ends.base, ends.head))
+    const from = ends.straight ? ends.base : await getLocalMergeBase(repoPath, ends.base, ends.head)
     if (!from) return null
     const files = await withRepoLock(repoPath, 'getCommitRangeFiles', () =>
       gitService.getCommitRangeFiles(repoPath, from, ends.head, paths)

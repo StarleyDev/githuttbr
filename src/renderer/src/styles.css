@@ -19531,6 +19531,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-no-patch { padding: 16px; color: var(--text-2); font-size: 13px; }
 .prp-no-patch-notice { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 10px; }
 .prp-no-patch-notice p { margin: 0; }
+.prp-files-banner { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
 .prp-image-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Commits: one list per day, a row per commit, opening it in the repository. */
 .prp-commit-cap { margin: 0 0 10px; }

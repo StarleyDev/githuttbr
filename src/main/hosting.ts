@@ -55,7 +55,7 @@ import {
   forgejoCommentOnLine,
   forgejoDeleteComment,
   forgejoEditComment,
-  forgejoPullEnds,
+  forgejoPullDiffCommits,
   forgejoPullRevision,
   forgejoRepoApi,
   forgejoMerge,
@@ -131,7 +131,6 @@ import {
   bbsCommentOnLine,
   bbsDeleteComment,
   bbsEditComment,
-  bbsPullEnds,
   bbsPullRevision,
   bbsPullDiffCommits,
   bbsRepoApi,
@@ -253,7 +252,7 @@ import {
   type AdoText,
   type AzureRepo
 } from './azurePr'
-import { readPrFileFromClone, readPrFilesFromClone, type PrDiffEnds } from './prLocalFiles'
+import { ensurePrCommits, getLocalMergeBase, readPrFileFromClone, readPrFilesFromClone, type PrFetchMode } from './prLocalFiles'
 import { withNoPatchReasons } from '../shared/prFileDiff'
 import {
   azureReferenceSummaries,
@@ -2510,37 +2509,70 @@ async function pullRequestRevision(remoteUrl: string, tokens: HostTokens, number
 }
 
 /**
- * The two commits a pull request's Files tab compares — its merge base and its
- * head — for the image preview, which reads each side of an image at one of
- * them. GitLab, Forgejo and Azure name the merge base on the pull request (the
- * revision above); GitHub is asked for it through a compare of the base tip
- * and the head; Data Center through the changes resource's ends.
+ * The two commits a pull request's diff compares, as its host names them —
+ * one helper for the Files tab and the image preview. A revision already read
+ * (pullRequestRevision) is reused instead of asking again:
+ * - GitLab (`diff_refs.base_sha`), Forgejo (`merge_base`), Azure
+ *   (`commonRefCommit`) name the merge base: `mergeBase`;
+ * - Data Center: the changes resource's `fromHash`/`toHash` — the end that is
+ *   not the head is the base of the diff its line comments anchor to
+ *   (`mergeBase`); without them, the target's tip (`targetTip`);
+ * - GitHub names the target's tip only (`base.sha`): `targetTip`, resolved by
+ *   resolvePrMergeBase.
  */
-async function pullRequestDiffCommits(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrDiffCommits | null> {
+async function pullRequestDiffCommits(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  revision?: PrDiffRevision | null
+): Promise<PrDiffCommits | null> {
+  if (revision?.headSha && revision.baseSha) return { headSha: revision.headSha, baseSha: revision.baseSha, baseKind: 'mergeBase' }
   const parsed = parseRemoteUrl(remoteUrl)
   if (isBbs(remoteUrl)) {
     const b = await bbsRepoOf(remoteUrl)
     return bbsPullDiffCommits(b.repo, b.token, number)
   }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullDiffCommits(f.base, f.owner, f.repo, f.token, number)
+  }
   if (parsed?.provider === 'github') {
     const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
     const pr = await ghJson<{ head?: { sha?: string }; base?: { sha?: string } }>(`${api}/pulls/${number}`, token)
-    const head = pr.head?.sha
-    if (!head) return null
-    const tip = pr.base?.sha
-    // One commit per page: the merge base is all this needs, not the commit list.
-    const cmp = tip
-      ? await ghJson<{ merge_base_commit?: { sha?: string } }>(`${api}/compare/${tip}...${head}?per_page=1&page=1`, token).catch(
-          () => null
-        )
-      : null
-    const mergeBase = cmp?.merge_base_commit?.sha
-    return mergeBase
-      ? { baseSha: mergeBase, headSha: head }
-      : { baseSha: tip ?? null, headSha: head, ...(tip ? { baseApproximate: true } : {}) }
+    return pr.head?.sha ? { headSha: pr.head.sha, baseSha: pr.base?.sha ?? null, baseKind: 'targetTip' } : null
   }
-  const rev = await pullRequestRevision(remoteUrl, tokens, number)
-  return rev?.headSha ? { baseSha: rev.baseSha ?? null, headSha: rev.headSha } : null
+  const rev = revision ?? (await pullRequestRevision(remoteUrl, tokens, number))
+  if (!rev?.headSha) return null
+  return { headSha: rev.headSha, baseSha: rev.baseSha ?? null, baseKind: rev.baseSha ? 'mergeBase' : 'targetTip' }
+}
+
+/**
+ * A `targetTip` base turned into the merge base: from this clone when it has
+ * both commits (free, exact), else — on GitHub — the compare API's
+ * `merge_base_commit`. When neither can say, the tip stays, marked as such
+ * (the image preview then notes its "before" is approximate).
+ */
+async function resolvePrMergeBase(
+  repoPath: string | undefined,
+  remoteUrl: string,
+  tokens: HostTokens,
+  commits: PrDiffCommits
+): Promise<PrDiffCommits> {
+  const tip = commits.baseSha
+  if (commits.baseKind === 'mergeBase' || !tip) return commits
+  const local = repoPath ? await getLocalMergeBase(repoPath, tip, commits.headSha) : null
+  if (local) return { ...commits, baseSha: local, baseKind: 'mergeBase' }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'github') {
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    // One commit per page: the merge base is all this needs, not the commit list.
+    const cmp = await ghJson<{ merge_base_commit?: { sha?: string } }>(
+      `${api}/compare/${tip}...${commits.headSha}?per_page=1&page=1`,
+      token
+    ).catch(() => null)
+    const mergeBase = cmp?.merge_base_commit?.sha
+    if (mergeBase) return { ...commits, baseSha: mergeBase, baseKind: 'mergeBase' }
+  }
+  return commits
 }
 
 /**
@@ -2600,67 +2632,60 @@ async function pullRequestFileContent(
   throw new Error('This host cannot serve a pull request file here.')
 }
 
-/**
- * The two commits the pull request's diff is between, as its host defines
- * them. The revision's base is the merge base where the host names one (Azure,
- * GitLab, Forgejo); GitHub and Data Center name only the target branch, whose
- * merge base with the head is taken locally. Null when the host does not say.
- */
-async function pullRequestDiffEnds(
-  remoteUrl: string,
-  tokens: HostTokens,
-  number: number,
-  revision: PrDiffRevision
-): Promise<PrDiffEnds | null> {
-  if (revision.baseSha) return { base: revision.baseSha, head: revision.headSha, baseIsMergeBase: true }
-  const parsed = parseRemoteUrl(remoteUrl)
-  if (isBbs(remoteUrl)) {
-    const b = await bbsRepoOf(remoteUrl)
-    const ends = await bbsPullEnds(b.repo, b.token, number)
-    return ends ? { ...ends, baseIsMergeBase: false } : null
-  }
-  if (parsed?.provider === 'forgejo') {
-    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
-    return forgejoPullEnds(f.base, f.owner, f.repo, f.token, number)
-  }
-  if (parsed?.provider !== 'github') return null
-  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
-  const pr = await ghJson<{ head?: { sha?: string }; base?: { sha?: string } }>(`${api}/pulls/${number}`, token)
-  return pr.head?.sha && pr.base?.sha ? { base: pr.base.sha, head: pr.head.sha, baseIsMergeBase: false } : null
+/** A fetch mode off the IPC boundary; anything else is `none` — never fetch by surprise. */
+function parseFetchMode(value: unknown): PrFetchMode {
+  return value === 'once' || value === 'refresh' ? value : 'none'
 }
 
 /**
- * The changed files and the revision they were read at.
+ * The changed files, the revision they were read at, and the two commits
+ * they compare.
  *
  * This clone first (prLocalFiles.ts): `git diff` from the merge base to the
  * head is exact and complete on every host, and the line numbers are the ones
  * the host's own diff has — the same two commits — so line comments anchor
- * where they should. The commits are fetched by id when they are not here.
- * Only when that fails is the host's API asked, and every file it leaves
- * without a patch says why (`noPatchReason`) and, where it can be read again,
- * from where (`diffSource`).
+ * where they should. Missing commits are fetched by id, as `fetchMode` allows:
+ * once per session on the page's first load, again on Refresh, never on the
+ * reload after a comment (`onFetching` drives the tab's hint). Only when that
+ * fails is the host's API asked, and every file it leaves without a patch says
+ * why (`noPatchReason`) and, where it can be read again, from where (`diffSource`).
  *
  * The revision is read before and after the files: when the two differ, a
  * push landed in between and nobody can say which one the diff shows — null
  * then, and a line comment checks the head when it is posted instead.
  */
-async function pullRequestFileList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrFileList> {
+async function pullRequestFileList(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  fetchMode: PrFetchMode = 'none',
+  onFetching?: (fetching: boolean) => void
+): Promise<PrFileList> {
   const repoPath = hostingRepo.getStore()
   const revision = (): Promise<PrDiffRevision | null> => pullRequestRevision(remoteUrl, tokens, number).catch(() => null)
   const before = await revision()
-  const ends = before?.headSha ? await pullRequestDiffEnds(remoteUrl, tokens, number, before).catch(() => null) : null
-  const local = ends && repoPath ? await readPrFilesFromClone(repoPath, remoteUrl, ends) : null
-  const source: PrFileDiffSource | null = ends ? { remoteUrl, number, baseSha: local?.mergeBase ?? ends.base, headSha: ends.head } : null
-  const files = local
-    ? withNoPatchReasons(local.files, 'noChanges', source)
-    : withNoPatchReasons(await pullRequestFiles(remoteUrl, tokens, number), 'hostOmitted', source)
+  const named = before?.headSha ? await pullRequestDiffCommits(remoteUrl, tokens, number, before).catch(() => null) : null
+  // The two commits, here — fetched by id when the mode allows — before the merge base is resolved from them.
+  if (named?.baseSha && repoPath) await ensurePrCommits(repoPath, remoteUrl, [named.baseSha, named.headSha], fetchMode, onFetching)
+  const commits = named ? await resolvePrMergeBase(repoPath, remoteUrl, tokens, named).catch(() => named) : null
+  const local = commits && repoPath ? await readPrFilesFromClone(repoPath, commits) : null
+  const source: PrFileDiffSource | null =
+    commits?.baseSha ? { remoteUrl, number, baseSha: local?.mergeBase ?? commits.baseSha, headSha: commits.headSha } : null
+  let files: PrFile[]
+  let truncated = false
+  if (local) files = withNoPatchReasons(local.files, 'noChanges', source)
+  else {
+    const listed = await pullRequestFiles(remoteUrl, tokens, number)
+    files = withNoPatchReasons(listed.files, 'hostOmitted', source)
+    truncated = listed.truncated
+  }
   const after = before ? await revision() : null
-  const same = !!before && !!after && isSameRevision(before, after) && (!ends || ends.head === after.headSha)
-  return { files, revision: same ? after : null }
+  const same = !!before && !!after && isSameRevision(before, after) && (!commits || commits.headSha === after.headSha)
+  return { files, revision: same ? after : null, commits, ...(truncated ? { truncated: true } : {}) }
 }
 
 /** A PR file request off the IPC boundary, or an error when it is not one. */
-function validFileDiffRequest(value: unknown): PrFileDiffRequest {
+function parseFileDiffRequest(value: unknown): PrFileDiffRequest {
   const v = value as { file?: Record<string, unknown>; source?: Record<string, unknown> } | null
   const f = v?.file
   const s = v?.source
@@ -2696,42 +2721,50 @@ function validFileDiffRequest(value: unknown): PrFileDiffRequest {
 /**
  * One pull request file's diff, read on demand: a file the list left
  * `notLoaded`, one that `failed`, one the host's API omitted. This clone first
- * — fetching the two commits by id when they are missing — then, on Azure
- * DevOps, the file's two versions from the API. Always answers with the file:
- * when there is still no patch, its reason says why.
+ * (its commits are fetched by the notice's own button, never here), then, on
+ * Azure DevOps, the file's two versions from the API. Always answers with the
+ * file and where it was read from (`diffSource`, which the page matches to its
+ * revision before it takes the file in); with no patch, its reason says why.
  */
 async function pullRequestFileDiff(remoteUrl: string, tokens: HostTokens, request: unknown): Promise<PrFile> {
-  const { file, source } = validFileDiffRequest(request)
+  const { file, source } = parseFileDiffRequest(request)
   // The request names its pull request; it is read for this one only.
   if (source.remoteUrl !== remoteUrl) throw new Error('Refusing that file request.')
   const repoPath = hostingRepo.getStore()
   const paths = file.previousFilename && file.previousFilename !== file.filename ? [file.filename, file.previousFilename] : [file.filename]
   const ends = { base: source.baseSha, head: source.headSha, straight: !!source.straight }
-  const local = repoPath ? await readPrFileFromClone(repoPath, remoteUrl, ends, paths) : null
-  if (local) return withNoPatchReasons([local], 'noChanges', source)[0]
+  const local = repoPath ? await readPrFileFromClone(repoPath, ends, paths) : null
+  if (local) return { ...withNoPatchReasons([local], 'noChanges', source)[0], diffSource: source }
   if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
     const a = await azRepoOf(remoteUrl, tokens.azure)
     const read = await azureFileDiff(a.bytes, a.repo, file, source.baseSha, source.headSha)
-    return withNoPatchReasons([read], 'failed', source)[0]
+    return { ...withNoPatchReasons([read], 'failed', source)[0], diffSource: source }
   }
   // Other hosts send a PR's diff whole or not at all: without the commits here, nothing more to read.
   return { ...file, additions: 0, deletions: 0, noPatchReason: 'hostOmitted', diffSource: source }
 }
 
-/** Changed files in a PR (for the file-by-file review checklist). */
+/** GitHub's `pulls/{n}/files` lists at most this many (30 pages of 100). */
+const GITHUB_PR_FILES_MAX = 3000
+
+/**
+ * Changed files in a PR from the host's API (for the file-by-file review
+ * checklist), and whether the host stopped short of the whole list.
+ */
 async function pullRequestFiles(
   remoteUrl: string,
   tokens: HostTokens,
   number: number
-): Promise<PrFile[]> {
-  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
+): Promise<{ files: PrFile[]; truncated: boolean }> {
+  const whole = (files: PrFile[]): { files: PrFile[]; truncated: boolean } => ({ files, truncated: false })
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return whole(await glMergeRequestFiles(remoteUrl, tokens.gitlab, number))
   if (isBbs(remoteUrl)) {
     const b = await bbsRepoOf(remoteUrl)
-    return bbsPullFiles(b.repo, b.token, number)
+    return whole(await bbsPullFiles(b.repo, b.token, number))
   }
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
-    return forgejoPullFiles(f.base, f.owner, f.repo, f.token, number)
+    return whole(await forgejoPullFiles(f.base, f.owner, f.repo, f.token, number))
   }
   if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
     const a = await azRepoOf(remoteUrl, tokens.azure)
@@ -2751,7 +2784,7 @@ async function pullRequestFiles(
   const data = await allPages((page) =>
     ghJson<GhFile[]>(`${api}/pulls/${number}/files?per_page=100&page=${page}`, token)
   ).catch(() => [] as GhFile[])
-  return data.map((f) => ({
+  const files = data.map((f) => ({
     filename: f.filename,
     status: f.status,
     additions: f.additions,
@@ -2759,6 +2792,7 @@ async function pullRequestFiles(
     ...(f.patch ? { patch: f.patch } : {}),
     ...(f.previous_filename ? { previousFilename: f.previous_filename } : {})
   }))
+  return { files, truncated: files.length >= GITHUB_PR_FILES_MAX }
 }
 
 /**
@@ -3139,7 +3173,7 @@ async function pullRequestUpdateFiles(
 ): Promise<PrUpdateFiles | null> {
   const from = validUpdateEnd(fromEnd)
   const to = validUpdateEnd(toEnd)
-  const res = await hostUpdateFiles(remoteUrl, tokens, number, from, to)
+  const res = await getHostUpdateFiles(remoteUrl, tokens, number, from, to)
   if (!res) return null
   // A file the host left out can be read again between the same two commits —
   // only when the list itself is between them, not from their merge base.
@@ -3147,7 +3181,7 @@ async function pullRequestUpdateFiles(
   return { ...res, files: withNoPatchReasons(res.files, 'hostOmitted', source) }
 }
 
-async function hostUpdateFiles(
+async function getHostUpdateFiles(
   remoteUrl: string,
   tokens: HostTokens,
   number: number,
@@ -5276,8 +5310,18 @@ export function registerHostingHandlers(): void {
   handleForRepo('hosting:prDeleteComment', (remoteUrl: string, tokens: HostTokens, number: number, handle: unknown) =>
     deletePrComment(remoteUrl, tokens, number, handle)
   )
-  handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestFileList(remoteUrl, tokens, number)
+  // Not handleForRepo: the list tells its window when it starts and ends a fetch of the PR's commits.
+  ipcMain.handle(
+    'hosting:prFiles',
+    (e, repoPath: unknown, remoteUrl: string, tokens: HostTokens, number: number, fetchMode?: unknown) => {
+      const sender = (e as { sender?: Electron.WebContents } | undefined)?.sender
+      const onFetching = (fetching: boolean): void => {
+        if (sender && !sender.isDestroyed()) sender.send('hosting:prFilesFetching', { repoPath, remoteUrl, number, fetching })
+      }
+      return hostingRepo.run(asRepoPath(repoPath), () =>
+        pullRequestFileList(remoteUrl, tokens, number, parseFetchMode(fetchMode), onFetching)
+      )
+    }
   )
   handleForRepo('hosting:prFileDiff', (remoteUrl: string, tokens: HostTokens, request: unknown) =>
     pullRequestFileDiff(remoteUrl, tokens, request)
@@ -5293,9 +5337,11 @@ export function registerHostingHandlers(): void {
     (remoteUrl: string, tokens: HostTokens, number: number, from: unknown, to: unknown) =>
       pullRequestUpdateFiles(remoteUrl, tokens, number, from, to)
   )
-  handleForRepo('hosting:prDiffCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestDiffCommits(remoteUrl, tokens, number)
-  )
+  // The image preview's own ask, for when the file list could not name the commits.
+  handleForRepo('hosting:prDiffCommits', async (remoteUrl: string, tokens: HostTokens, number: number) => {
+    const named = await pullRequestDiffCommits(remoteUrl, tokens, number)
+    return named ? resolvePrMergeBase(hostingRepo.getStore(), remoteUrl, tokens, named) : null
+  })
   handleForRepo('hosting:prFileContent', (remoteUrl: string, tokens: HostTokens, sha: unknown, path: unknown) =>
     pullRequestFileContent(remoteUrl, tokens, sha, path)
   )

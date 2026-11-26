@@ -142,7 +142,7 @@ describe('pull request image preview — main, per host', () => {
         [`${API}/pulls/7`, { body: { head: { sha: sha('h') }, base: { sha: sha('t') } } }],
         [`${API}/compare/${sha('t')}...${sha('h')}`, { body: { merge_base_commit: { sha: sha('m') } } }]
       ]
-      expect(await commits(GITHUB)).toEqual({ baseSha: sha('m'), headSha: sha('h') })
+      expect(await commits(GITHUB)).toEqual({ baseSha: sha('m'), headSha: sha('h'), baseKind: 'mergeBase' })
       expect(asked[1].url).toBe(`${API}/compare/${sha('t')}...${sha('h')}?per_page=1&page=1`)
     })
   })
@@ -194,12 +194,12 @@ describe('pull request image preview — main, per host', () => {
       [`${API}/pulls/7`, { body: { head: { sha: sha('h') }, base: { sha: sha('t') } } }],
       [`${API}/compare/`, { status: 500, body: {} }]
     ]
-    expect(await commits(GITHUB)).toEqual({ baseSha: sha('t'), headSha: sha('h'), baseApproximate: true })
+    expect(await commits(GITHUB)).toEqual({ baseSha: sha('t'), headSha: sha('h'), baseKind: 'targetTip' })
   })
 
   it('GitLab: the merge request’s diff refs name the merge base', async () => {
     routes = [[`${GITLAB}/api/v4/projects/team%2Fapp/merge_requests/7`, { body: { diff_refs: { base_sha: sha('m'), head_sha: sha('h') } } }]]
-    expect(await commits(`${GITLAB}/team/app.git`)).toEqual({ baseSha: sha('m'), headSha: sha('h') })
+    expect(await commits(`${GITLAB}/team/app.git`)).toEqual({ baseSha: sha('m'), headSha: sha('h'), baseKind: 'mergeBase' })
   })
 
   it('Azure DevOps: Items - Get by commit, octet-stream, LFS resolved', async () => {
@@ -242,7 +242,7 @@ describe('pull request image preview — main, per host', () => {
       [`${API}/pull-requests/7`, { body: { id: 7, title: 'x', fromRef: { latestCommit: sha('h') }, toRef: { latestCommit: sha('t') } } }],
       [`${API}/pull-requests/7/changes`, { body: { fromHash: sha('h'), toHash: sha('m'), values: [] } }]
     ]
-    expect(await commits(`${BBS}/scm/proj/app.git`)).toEqual({ baseSha: sha('m'), headSha: sha('h') })
+    expect(await commits(`${BBS}/scm/proj/app.git`)).toEqual({ baseSha: sha('m'), headSha: sha('h'), baseKind: 'mergeBase' })
   })
 
   it('a body past the cap with no Content-Length is cut off as it streams', async () => {

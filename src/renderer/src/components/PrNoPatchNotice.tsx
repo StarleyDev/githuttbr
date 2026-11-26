@@ -19,8 +19,9 @@ import { useT, interp } from '../i18n'
  * reason (binary, too large, not read yet, failed, left out by the host, only
  * renamed) and, where something can be done, the button for it — read it now,
  * try again, or fetch the pull request so this clone can diff it. A file read
- * here is drawn here, without line comments: those need the diff the page
- * loaded, so it says how to get that.
+ * here is handed to the page (`onFileDiffRead`), which takes it into its list
+ * when it is of the revision the list shows — then the normal viewer draws it,
+ * line comments included. Otherwise (an update's own diff) it is drawn here.
  */
 
 /** Files read on demand, by head and path — opening a file twice reads it once. */
@@ -33,7 +34,19 @@ function rememberLoaded(key: string, file: PrFile): void {
   loaded.set(key, file)
 }
 
-export function PrNoPatchNotice({ file, repoPath }: { file: PrFile; repoPath: string }): React.JSX.Element {
+export function PrNoPatchNotice({
+  file,
+  repoPath,
+  onFileDiffRead,
+  onFetched
+}: {
+  file: PrFile
+  repoPath: string
+  /** A read with a patch, for the page to take into its list. */
+  onFileDiffRead?: (read: PrFile) => void
+  /** The PR's commits are here now: the page reads its list again, from this clone. */
+  onFetched?: () => void
+}): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
@@ -61,19 +74,23 @@ export function PrNoPatchNotice({ file, repoPath }: { file: PrFile; repoPath: st
         file: { filename: file.filename, status: file.status, ...(file.previousFilename ? { previousFilename: file.previousFilename } : {}) },
         source
       })
-      if (read.patch) rememberLoaded(keyOf(file), read)
+      if (read.patch) {
+        rememberLoaded(keyOf(file), read)
+        onFileDiffRead?.(read)
+      }
       setShown(read)
     } catch (err) {
       setShown((s) => ({ ...s, noPatchReason: 'failed', noPatchError: err instanceof Error ? err.message : String(err) }))
     } finally {
       setBusy(false)
     }
-  }, [repoPath, tokens, file, source])
+  }, [repoPath, tokens, file, source, onFileDiffRead])
 
-  // A file the list did not read yet is read when it is opened.
+  // A file the list did not read yet is read when it is opened; one read before goes straight to the page.
   const autoLoad = notice.autoLoad
   useEffect(() => {
-    if (autoLoad) void readFileDiff()
+    if (shown.patch) onFileDiffRead?.(shown)
+    else if (autoLoad) void readFileDiff()
     // Once per file: a failure shows its button rather than trying in a loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file.filename])
@@ -88,27 +105,27 @@ export function PrNoPatchNotice({ file, repoPath }: { file: PrFile; repoPath: st
       return
     }
     setBusy(true)
+    let fetched = false
     try {
-      const byId = await repoActions.fetchPrUpdateCommits(repoPath, remote, [source.baseSha, source.headSha])
-      if (!byId && canFetchPrHead(source.remoteUrl)) await repoActions.fetchPrHead(repoPath, remote, source.number)
+      fetched = await repoActions.fetchPrUpdateCommits(repoPath, remote, [source.baseSha, source.headSha])
+      if (!fetched && canFetchPrHead(source.remoteUrl)) fetched = await repoActions.fetchPrHead(repoPath, remote, source.number)
     } finally {
       setBusy(false)
     }
-    await readFileDiff()
+    // With the commits here the whole list is read again from this clone; without a page to do it, this file.
+    if (fetched && onFetched) onFetched()
+    else await readFileDiff()
   }
 
   if (shown.patch) {
     return (
-      <>
-        <p className="prp-side-note">{t('prPage.noPatchReadHere')}</p>
-        <DiffViewer
-          diff={shown.patch}
-          file={shown.filename}
-          lang={guessLanguage(shown.filename)}
-          maskValues={maskSecrets && isSecretFile(shown.filename)}
-          repoPath={repoPath}
-        />
-      </>
+      <DiffViewer
+        diff={shown.patch}
+        file={shown.filename}
+        lang={guessLanguage(shown.filename)}
+        maskValues={maskSecrets && isSecretFile(shown.filename)}
+        repoPath={repoPath}
+      />
     )
   }
 

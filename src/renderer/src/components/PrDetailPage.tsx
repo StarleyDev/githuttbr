@@ -37,6 +37,7 @@ import type {
   PrDetail,
   PrFile,
   PrDiffRevision,
+  PrFilesFetchMode,
   PrLineAnchor,
   PrMergeMethod,
   PrReviewEvent,
@@ -161,6 +162,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [files, setFiles] = useState<PrFile[] | null>(null)
   // The revision those files' diff was read at: a line comment carries it.
   const [filesRevision, setFilesRevision] = useState<PrDiffRevision | null>(null)
+  // The two commits the files were diffed between — the image preview reads the same ones.
+  const [filesCommits, setFilesCommits] = useState<PrDiffCommits | null>(null)
+  // The host listed fewer files than the pull request has.
+  const [filesTruncated, setFilesTruncated] = useState(false)
+  // The list is fetching the PR's commits into this clone (main/prLocalFiles.ts).
+  const [fetchingCommits, setFetchingCommits] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // Where this PR's page was when it was last left, and its unsent text
@@ -221,6 +228,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const commitsByHead = useRef(new Map<string, Promise<PrDiffCommits | null>>())
   const revHead = filesRevision?.headSha ?? null
   const revBase = filesRevision?.baseSha ?? null
+  const listCommits = filesCommits
   const imageSource = useMemo<PrImageSource>(() => {
     let unkeyed: Promise<PrDiffCommits | null> | null = null
     const ask = (): Promise<PrDiffCommits | null> => hostingApi.prDiffCommits(repoPath, remoteUrl, tokens, number).catch(() => null)
@@ -231,7 +239,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       pr: { number, url: prUrl, source: prSource, sourceRepo: prSourceRepo },
       cache: imageCache,
       getCommits: () => {
-        if (revHead && revBase) return Promise.resolve({ baseSha: revBase, headSha: revHead })
+        // The file list already resolved them (main's resolvePrMergeBase): no second ask.
+        if (listCommits && (!revHead || listCommits.headSha === revHead)) return Promise.resolve(listCommits)
+        if (revHead && revBase) return Promise.resolve({ baseSha: revBase, headSha: revHead, baseKind: 'mergeBase' as const })
         if (!revHead) return (unkeyed ??= ask())
         const known = commitsByHead.current.get(revHead)
         if (known) return known
@@ -246,7 +256,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     }
     // Without a revision, a re-read of the files is the only sign the head may have moved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repoPath, remoteUrl, tokens, number, prUrl, prSource, prSourceRepo, imageCache, revHead, revBase, revHead ? null : files])
+  }, [repoPath, remoteUrl, tokens, number, prUrl, prSource, prSourceRepo, imageCache, revHead, revBase, listCommits, revHead ? null : files])
   // Forgejo has no API to reply inside an existing line thread.
   const canReplyInThread = provider !== 'forgejo'
 
@@ -255,7 +265,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // Bumped by the Refresh button only: the Updates tab re-reads its pushes then,
   // not after every comment or review the page posts.
   const [refreshes, setRefreshes] = useState(0)
-  const load = useCallback(async (): Promise<void> => {
+  // `fetchMode`: the first load may fetch the PR's missing commits once, Refresh again; a reload after a write never.
+  const load = useCallback(async (fetchMode: PrFilesFetchMode = 'none'): Promise<void> => {
     setError(null)
     setReloads((n) => n + 1)
     try {
@@ -272,7 +283,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       // Checks and files fill in after the conversation: the page is usable first.
       void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
       void hostingApi
-        .prFiles(repoPath, remoteUrl, tokens, number)
+        .prFiles(repoPath, remoteUrl, tokens, number, fetchMode)
         .then((list) => {
           // A line comment on a file the diff no longer lists keeps its text, as a notice.
           if (collectOrphanDrafts(view, { threadIds: null, commentKeys: null, filePaths: new Set(list.files.map((f) => f.filename)) })) {
@@ -281,10 +292,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           }
           setFiles(list.files)
           setFilesRevision(list.revision)
+          setFilesCommits(list.commits ?? null)
+          setFilesTruncated(!!list.truncated)
         })
         .catch(() => {
           setFiles([])
           setFilesRevision(null)
+          setFilesCommits(null)
+          setFilesTruncated(false)
         })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -293,8 +308,28 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   useEffect(() => {
     setLoading(true)
-    void load().finally(() => setLoading(false))
+    void load('once').finally(() => setLoading(false))
   }, [load])
+
+  // The hint while the list fetches this PR's commits, for this page only.
+  useEffect(
+    () =>
+      hostingApi.onPrFilesFetching((p) => {
+        if (p.repoPath === repoPath && p.remoteUrl === remoteUrl && p.number === number) setFetchingCommits(p.fetching)
+      }),
+    [repoPath, remoteUrl, number]
+  )
+
+  // A file read on demand joins the list — drawn by the same viewer, line comments and all —
+  // when it was read at the revision the list shows; one from another push is left to its notice.
+  const takeFileDiff = useCallback(
+    (read: PrFile): void => {
+      if (!read.patch || !filesRevision || read.diffSource?.headSha !== filesRevision.headSha) return
+      setFiles((list) => list?.map((f) => (f.filename === read.filename ? read : f)) ?? list)
+    },
+    [filesRevision]
+  )
+  const reloadFiles = useCallback(() => void load(), [load])
 
 
   /** Run a write, refresh, toast. True when it went through. */
@@ -596,7 +631,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // In an update's own diff an image compares the update's two heads, not the merge base.
   const updateImageSource = useMemo<PrImageSource | null>(() => {
     if (!updateView) return null
-    const ends: PrDiffCommits = { baseSha: updateView.compare.from.sha, headSha: updateView.compare.to.sha }
+    const ends: PrDiffCommits = { baseSha: updateView.compare.from.sha, headSha: updateView.compare.to.sha, baseKind: 'mergeBase' }
     return { ...imageSource, getCommits: () => Promise.resolve(ends) }
   }, [updateView, imageSource])
 
@@ -619,7 +654,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               {/* Each action its own hue (Settings → Themes → Icon colours, lib/iconTone.ts). */}
               <button className="icon-btn" data-tone="refresh" title={t('prPage.refresh')} onClick={() => {
                   setRefreshes((n) => n + 1)
-                  void load()
+                  void load('refresh')
                 }} disabled={busy}>
                 <RefreshCw size={14} />
               </button>
@@ -813,11 +848,18 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </>
               ) : files === null ? (
                 <div className="prd-empty">
-                  <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
+                  <Loader2 size={15} className="spin" /> {fetchingCommits ? t('prPage.fetchingPrCommits') : t('prDetail.loading')}
                 </div>
               ) : files.length === 0 ? (
                 <p className="prp-muted prp-pad">{t('prPage.noFiles')}</p>
               ) : (
+                <>
+                {(fetchingCommits || filesTruncated) && (
+                  <p className="prp-side-note prp-files-banner" role="status">
+                    {fetchingCommits && <Loader2 size={12} className="spin" aria-hidden="true" />}{' '}
+                    {fetchingCommits ? t('prPage.fetchingPrCommits') : interp(t('prPage.filesTruncated'), { n: String(files.length) })}
+                  </p>
+                )}
                 <FilesSection
                   files={files}
                   viewed={viewed}
@@ -839,7 +881,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   imageSource={imageSource}
                   view={view}
                   prSource={pr.source}
+                  onFileDiffRead={takeFileDiff}
+                  onReloadFiles={reloadFiles}
                 />
+                </>
               )
             ) : checks === null ? (
               <div className="prd-empty">
@@ -1583,7 +1628,9 @@ function FilesSection({
   lineCommentsOff = false,
   imageSource,
   view,
-  prSource
+  prSource,
+  onFileDiffRead,
+  onReloadFiles
 }: {
   files: PrFile[]
   viewed: Set<string>
@@ -1611,6 +1658,10 @@ function FilesSection({
   view: PrViewState
   /** The PR's source branch — the file actions say when the working copy is on another. */
   prSource: string
+  /** A file read on demand, for the page to take into its list (and draw with the normal viewer). */
+  onFileDiffRead?: (read: PrFile) => void
+  /** Read the list again — after the notice fetched the PR's commits. */
+  onReloadFiles?: () => void
 }): React.JSX.Element {
   const t = useT()
   // The file list's speech-bubble counts; only recomputed when the threads change.
@@ -1825,7 +1876,14 @@ function FilesSection({
               />
             ) : isSvg && imageSource ? null : (
               <div className="prp-no-patch">
-                <PrNoPatchNotice key={file.filename} file={file} repoPath={repoPath} />
+                <PrNoPatchNotice
+                  // One notice per file version: another push is another read.
+                  key={`${file.filename}:${file.diffSource?.headSha ?? ''}:${file.diffSource?.baseSha ?? ''}`}
+                  file={file}
+                  repoPath={repoPath}
+                  onFileDiffRead={onFileDiffRead}
+                  onFetched={onReloadFiles}
+                />
                 <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(prUrl))}>
                   <ExternalLink size={13} /> {t('common.openInBrowser')}
                 </button>

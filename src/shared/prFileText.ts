@@ -9,18 +9,23 @@
  * - a byte-order mark settles the encoding (UTF-8, UTF-16 LE/BE);
  * - a NUL byte means binary — unless the bytes read as BOM-less UTF-16 (every
  *   other byte NUL, the shape of mostly-ASCII UTF-16);
+ * - UTF-16 that decodes to more than 5% control characters is binary after all;
  * - valid UTF-8 is text;
  * - invalid UTF-8 is text in a single-byte encoding (Windows-1252, Latin-1)
  *   when control bytes are rare — a legacy file — and binary when they are not.
  */
 
-export type FileBytesVerdict = { kind: 'text'; text: string } | { kind: 'binary' }
+export type TextEncodingName = 'utf-8' | 'utf-8-bom' | 'utf-16le' | 'utf-16be' | 'windows-1252'
+
+export type FileBytesVerdict = { kind: 'text'; text: string; encoding?: TextEncodingName } | { kind: 'binary' }
 
 /** How far into a file the NUL and control-byte checks look — git's own window. */
 const SNIFF_BYTES = 8000
 
 /** Above this share of control bytes, a file that is not UTF-8 is taken for binary. */
 const CONTROL_SHARE = 0.1
+/** Above this share of control characters, a UTF-16 reading is noise, not text. */
+const UTF16_CONTROL_SHARE = 0.05
 
 function decodeUtf16(bytes: Uint8Array, littleEndian: boolean, skip: number): string {
   const units = Math.floor((bytes.length - skip) / 2)
@@ -35,7 +40,8 @@ function decodeUtf16(bytes: Uint8Array, littleEndian: boolean, skip: number): st
     }
     out += String.fromCharCode(...part)
   }
-  return out
+  // A trailing odd byte is half a character: shown as one replacement, not dropped silently.
+  return (bytes.length - skip) % 2 ? `${out}�` : out
 }
 
 /** BOM-less UTF-16: in the sniffed window, one byte of each pair is nearly always NUL. */
@@ -55,30 +61,52 @@ function sniffUtf16(bytes: Uint8Array): 'le' | 'be' | null {
   return null
 }
 
-function isControlByte(b: number): boolean {
+function isControlCode(c: number): boolean {
   // Tab, newline, vertical tab, form feed, carriage return and escape appear in text.
-  return b < 0x20 && b !== 0x09 && b !== 0x0a && b !== 0x0b && b !== 0x0c && b !== 0x0d && b !== 0x1b
+  return c < 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0b && c !== 0x0c && c !== 0x0d && c !== 0x1b
+}
+
+/** A UTF-16 reading, or binary when what it decodes to is mostly control characters. */
+function utf16Verdict(bytes: Uint8Array, littleEndian: boolean, skip: number): FileBytesVerdict {
+  const text = decodeUtf16(bytes, littleEndian, skip)
+  const sample = text.slice(0, SNIFF_BYTES)
+  let controls = 0
+  for (let i = 0; i < sample.length; i++) if (isControlCode(sample.charCodeAt(i)) || sample.charCodeAt(i) === 0) controls++
+  if (sample.length && controls / sample.length > UTF16_CONTROL_SHARE) return { kind: 'binary' }
+  return { kind: 'text', text, encoding: littleEndian ? 'utf-16le' : 'utf-16be' }
 }
 
 export function decodeFileBytes(bytes: Uint8Array): FileBytesVerdict {
   if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
-    return { kind: 'text', text: new TextDecoder('utf-8').decode(bytes.subarray(3)) }
+    return { kind: 'text', text: new TextDecoder('utf-8').decode(bytes.subarray(3)), encoding: 'utf-8-bom' }
   }
-  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) return { kind: 'text', text: decodeUtf16(bytes, true, 2) }
-  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) return { kind: 'text', text: decodeUtf16(bytes, false, 2) }
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) return utf16Verdict(bytes, true, 2)
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) return utf16Verdict(bytes, false, 2)
   const window = bytes.subarray(0, SNIFF_BYTES)
   if (window.includes(0)) {
     const utf16 = sniffUtf16(bytes)
-    return utf16 ? { kind: 'text', text: decodeUtf16(bytes, utf16 === 'le', 0) } : { kind: 'binary' }
+    return utf16 ? utf16Verdict(bytes, utf16 === 'le', 0) : { kind: 'binary' }
   }
   try {
-    return { kind: 'text', text: new TextDecoder('utf-8', { fatal: true }).decode(bytes) }
+    return { kind: 'text', text: new TextDecoder('utf-8', { fatal: true }).decode(bytes), encoding: 'utf-8' }
   } catch {
     // Not UTF-8. A legacy single-byte file has few control bytes; binary data has many.
   }
   let controls = 0
-  for (const b of window) if (isControlByte(b)) controls++
+  for (const b of window) if (isControlCode(b)) controls++
   if (window.length && controls / window.length > CONTROL_SHARE) return { kind: 'binary' }
-  return { kind: 'text', text: new TextDecoder('windows-1252').decode(bytes) }
+  return { kind: 'text', text: new TextDecoder('windows-1252').decode(bytes), encoding: 'windows-1252' }
 }
 
+/**
+ * Bytes already known to be text (a file's piece of `git diff`): UTF-8 when
+ * they are valid UTF-8, else Windows-1252 — the same fallback as decodeFileBytes,
+ * so a Latin-1 file reads `ação`, not `a��o`.
+ */
+export function decodeTextBytes(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes)
+  }
+}

@@ -30,7 +30,11 @@ export function diffFileVersions(before: FileBytesVerdict, after: FileBytesVerdi
   if (before.kind === 'binary' || after.kind === 'binary') return { additions: 0, deletions: 0, noPatchReason: 'binary' }
   const patch = unifiedDiff(before.text, after.text)
   if (patch === null) return { additions: 0, deletions: 0, noPatchReason: 'tooLarge' }
-  if (patch === '') return { additions: 0, deletions: 0, noPatchReason: 'noChanges' }
+  if (patch === '') {
+    // The same text in another encoding (a BOM added, UTF-16 to UTF-8) is a change, not "nothing".
+    const recoded = !!before.encoding && !!after.encoding && before.encoding !== after.encoding
+    return { additions: 0, deletions: 0, noPatchReason: recoded ? 'encodingChanged' : 'noChanges' }
+  }
   return { patch, ...countPatchLines(patch) }
 }
 

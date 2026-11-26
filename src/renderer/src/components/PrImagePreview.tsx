@@ -93,7 +93,7 @@ export function PrImagePreview({ source, file }: { source: PrImageSource; file: 
       // Every side this file should have must be here: half a modified image misleads.
       if ((sides.before && before?.status !== 'ok') || (sides.after && after?.status !== 'ok')) return { status: 'failed' }
       const url = (c: PrImageContent | null): string | null => (c?.status === 'ok' ? c.dataUrl : null)
-      return { status: 'ready', before: url(before), after: url(after), approximate: !!sides.before && !!commits.baseApproximate }
+      return { status: 'ready', before: url(before), after: url(after), approximate: !!sides.before && commits.baseKind === 'targetTip' }
     }
     read()
       .catch((err: unknown): PreviewState => ({ status: 'failed', error: err instanceof Error ? err.message : String(err) }))

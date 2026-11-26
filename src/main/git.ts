@@ -3,7 +3,7 @@ import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
 import { isGuardedEnvKey } from '@simple-git/argv-parser'
 import { basename, dirname, isAbsolute, join, relative, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat, utimes } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -187,7 +187,8 @@ import {
 } from '../shared/prImage'
 import { prRefCandidates } from '../shared/prRefs'
 import { splitUnifiedDiff } from './forgejo'
-import { decodeFileBytes } from '../shared/prFileText'
+import { decodeFileBytes, decodeTextBytes } from '../shared/prFileText'
+import { DiffChunkSplitter } from './diffStream'
 import { diffFileVersions } from '../shared/prFileDiff'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
@@ -1536,8 +1537,45 @@ async function assertSafeRemoteBranch(repoPath: string, remote: string, branch: 
 
 /** A file changing more lines than this is listed, not diffed — see getCommitRangeFiles. */
 export const RANGE_FILE_LINE_CAP = 20_000
-/** The whole range's diff output, with every over-cap file already left out. */
-const RANGE_DIFF_MAX_BUFFER = 512 << 20
+/** One file's piece of the diff past this is `tooLarge`: a minified bundle is one line of megabytes. */
+export const RANGE_FILE_MAX_BYTES = 8 << 20
+/** Patches kept in one range read; the files after are `notLoaded`, read when opened. */
+export const RANGE_BUDGET_LINES = 150_000
+export const RANGE_BUDGET_BYTES = 48 << 20
+/** A hard ceiling on what one streamed diff may hold, whatever the budget says. */
+const RANGE_DIFF_MAX_BUFFER = 128 << 20
+
+/**
+ * Run git and hand its stdout to `splitter` as it arrives, stopping git once
+ * the splitter's budget is spent. Rejects on a failure git reports (exit code
+ * not 0, unless it was stopped here) with its stderr, redacted.
+ */
+function streamGit(repoPath: string, args: string[], extraEnv: NodeJS.ProcessEnv, splitter: DiffChunkSplitter): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', ['-C', repoPath, ...args], { env: { ...noPromptEnv(), ...extraEnv } })
+    let stopped = false
+    let total = 0
+    let stderr = ''
+    child.stdout.on('data', (d: Buffer) => {
+      if (stopped) return
+      total += d.length
+      if (!splitter.push(d) || total > RANGE_DIFF_MAX_BUFFER) {
+        stopped = true
+        child.kill()
+      }
+    })
+    child.stderr.on('data', (d: Buffer) => {
+      if (stderr.length < 8192) stderr += d.toString()
+    })
+    child.on('error', (err) => reject(err))
+    child.on('close', (code) => {
+      if (stopped) return resolve()
+      if (code !== 0) return reject(new Error(redactCredentials(stderr.trim() || `git exited with ${code}`)))
+      splitter.end()
+      resolve()
+    })
+  })
+}
 /** Files git calls binary that are read again as bytes, and how big each may be. */
 const RANGE_BINARY_REREADS = 50
 const RANGE_BLOB_MAX_BYTES = 2 << 20
@@ -1565,12 +1603,16 @@ export function parseNumstatZ(out: string): NumstatEntry[] {
   return entries
 }
 
-/** The over-cap files of a range, with their counts and status but no patch. */
-async function largeRangeFiles(repoPath: string, from: string, to: string, large: NumstatEntry[]): Promise<PrFile[]> {
-  const spec = large.flatMap((c) => (c.oldPath ? [c.oldPath, c.path] : [c.path])).map((p) => `:(top,literal)${p}`)
-  const raw = await runGit(repoPath, ['diff', '--name-status', '-z', '--no-ext-diff', '-M', from, to, '--', ...spec], {
-    GIT_NO_LAZY_FETCH: '1'
-  }).catch(() => '')
+/**
+ * The files of a range the budgeted read did not reach, with their counts and
+ * status but no patch — `notLoaded`, each read on demand. Their status comes
+ * from one `--name-status` of the whole range (no per-file argv, which on
+ * Windows would run out of command line long before ten thousand files).
+ */
+async function getUnreadRangeFiles(repoPath: string, from: string, to: string, unread: NumstatEntry[]): Promise<PrFile[]> {
+  const raw = await runGit(repoPath, ['diff', '--name-status', '-z', '--no-ext-diff', '-M', from, to, '--'], { GIT_NO_LAZY_FETCH: '1' }, 64 << 20).catch(
+    () => ''
+  )
   const statusOf = new Map<string, string>()
   const parts = raw.split('\0')
   for (let i = 0; i < parts.length; i++) {
@@ -1584,12 +1626,13 @@ async function largeRangeFiles(repoPath: string, from: string, to: string, large
       i += 1
     }
   }
-  return large.map((c) => ({
+  return unread.map((c) => ({
     filename: c.path,
     status: c.oldPath ? 'renamed' : (statusOf.get(c.path) ?? 'modified'),
     additions: c.additions,
     deletions: c.deletions,
-    noPatchReason: 'tooLarge' as const,
+    // Over the line cap, reading it alone would not help; the rest just were not reached.
+    noPatchReason: !c.binary && c.additions + c.deletions > RANGE_FILE_LINE_CAP ? ('tooLarge' as const) : ('notLoaded' as const),
     ...(c.oldPath ? { previousFilename: c.oldPath } : {})
   }))
 }
@@ -1636,16 +1679,83 @@ async function rereadBinaryAsText(repoPath: string, from: string, to: string, fi
  * A gitService call made from elsewhere in the main process (the pull request
  * Files tab's local-first read), under the same per-repository read/write lock
  * the IPC dispatcher takes — a fetch here must not run beside a commit there.
+ *
+ * Not re-entrant: RwLock has no owner, so an `op` that took the same repo's
+ * lock again would wait on itself for ever. A nested call throws instead.
  */
 export async function withRepoLock<T>(repoPath: string, method: string, op: () => Promise<T>): Promise<T> {
+  if (heldRepoLocks.getStore()?.has(repoPath)) throw new Error(`withRepoLock is not re-entrant (${method} inside a held lock).`)
   const isWrite = !gitMethodIsRead(method)
   if (isWrite) await shellPathReady()
   const release = await lockFor(repoPath).acquire(isWrite)
+  const held = new Set(heldRepoLocks.getStore() ?? [])
+  held.add(repoPath)
   try {
-    return await withLockRetry(op)
+    return await heldRepoLocks.run(held, () => withLockRetry(op))
   } finally {
     release()
   }
+}
+
+/** The repositories whose lock this async call chain holds through withRepoLock. */
+const heldRepoLocks = new AsyncLocalStorage<Set<string>>()
+
+/** Full hex ids (at most four) and a configured remote — all fetchCommitsById lets reach git. */
+async function checkFetchById(repoPath: string, remote: string, shas: unknown): Promise<string[]> {
+  const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+  const wanted = Array.isArray(shas) ? [...new Set(shas)] : []
+  if (!wanted.length || wanted.length > 4 || !wanted.every(isFullSha)) throw new Error('Commits are fetched by their full ids.')
+  await assertConfiguredRemote(repoPath, remote)
+  return wanted as string[]
+}
+
+/** How long the Files tab's background fetch by id may take before the host's API is asked instead. */
+export const QUIET_FETCH_TIMEOUT_MS = 20_000
+
+/**
+ * fetchCommitsById for a fetch nobody clicked — the pull request Files tab
+ * bringing its two commits here. It must never hang the page or ask anything:
+ * - a 20 s ceiling, and git gives up on a transfer under 1 KB/s for 15 s;
+ * - no prompt: GIT_TERMINAL_PROMPT=0 (noPromptEnv) and GCM_INTERACTIVE=never,
+ *   so Git Credential Manager fails instead of opening its sign-in window.
+ *   An ssh remote keeps the user's own ssh command untouched — the app builds
+ *   none — so its ConnectTimeout is theirs; the 20 s ceiling still holds;
+ * - `--no-write-fetch-head`: FETCH_HEAD's time is what "fetched 2 min ago"
+ *   reads, and this was not a fetch the user made. A git older than 2.29 has
+ *   no such flag; FETCH_HEAD is then put back as it was.
+ * True when every commit is here afterwards.
+ */
+export async function fetchCommitsByIdQuietly(
+  repoPath: string,
+  remote: string,
+  shas: string[],
+  timeoutMs = QUIET_FETCH_TIMEOUT_MS
+): Promise<boolean> {
+  const wanted = await checkFetchById(repoPath, remote, shas)
+  const env = { GCM_INTERACTIVE: 'never', GIT_TERMINAL_PROMPT: '0' }
+  const slow = ['-c', 'http.lowSpeedLimit=1000', '-c', 'http.lowSpeedTime=15']
+  const fetch = (extra: string[]): Promise<string> =>
+    withRemoteAuth(repoPath, remote, 'fetch', () =>
+      runGit(repoPath, [...slow, 'fetch', '--no-tags', ...extra, '--', remote, ...wanted], env, undefined, timeoutMs)
+    )
+  try {
+    await fetch(['--no-write-fetch-head'])
+  } catch (err) {
+    if (!/no-write-fetch-head/.test(err instanceof Error ? err.message : String(err))) return false
+    // An old git: fetch as before, then give FETCH_HEAD back its content and time.
+    const rel = (await runGit(repoPath, ['rev-parse', '--git-path', 'FETCH_HEAD']).catch(() => '')).trim()
+    const file = rel ? (isAbsolute(rel) ? rel : join(repoPath, rel)) : ''
+    const before = file ? await stat(file).then(async (s) => ({ s, body: await readFile(file) }), () => null) : null
+    try {
+      await fetch([])
+    } catch {
+      return false
+    } finally {
+      if (file && before) await writeFile(file, before.body).then(() => utimes(file, before.s.atime, before.s.mtime), () => undefined)
+      else if (file) await rm(file, { force: true }).catch(() => undefined)
+    }
+  }
+  return (await gitService.getLocalCommits(repoPath, wanted)).length === wanted.length
 }
 
 /** Where fetchPrHead keeps fork pull request heads: `<prefix><remote>/<number>`. */
@@ -5087,12 +5197,16 @@ export const gitService = {
    * getLocalCommits; no external diff or textconv, so the patch is git's own
    * and a repository's config cannot run a program from here.
    *
-   * No cap on the number of files. A file over RANGE_FILE_LINE_CAP changed
-   * lines is listed with its counts and `tooLarge` instead of its patch — a
-   * generated lockfile must not hold the rest up or fill the output buffer.
-   * A file git calls binary is read again as bytes (decodeFileBytes): UTF-16
-   * text is binary to git and plain text to a reviewer. `paths` limits it to
-   * those files (a renamed file's two paths) — one file read again on demand.
+   * No cap on the number of files, and a bounded read. `--numstat` first
+   * lists every file with its counts; the patches then stream in as bytes,
+   * cut per file (DiffChunkSplitter) and decoded per file (UTF-8, else
+   * Windows-1252), until RANGE_BUDGET_LINES / RANGE_BUDGET_BYTES worth are
+   * kept — the files past that are `notLoaded`, read one by one on demand
+   * through `paths`. A file over RANGE_FILE_LINE_CAP changed lines or
+   * RANGE_FILE_MAX_BYTES is `tooLarge` with its counts. A file git calls
+   * binary is read again as bytes (decodeFileBytes): UTF-16 text is binary to
+   * git and plain text to a reviewer. `paths` limits it to those files (a
+   * renamed file's two paths).
    */
   async getCommitRangeFiles(repoPath: string, from: unknown, to: unknown, paths?: unknown): Promise<PrFile[]> {
     const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
@@ -5107,18 +5221,32 @@ export const gitService = {
     const counts = parseNumstatZ(
       await runGit(repoPath, ['diff', '--numstat', '-z', ...plain, from, to, '--', ...spec], env, 64 << 20)
     )
-    const large = counts.filter((c) => !c.binary && c.additions + c.deletions > RANGE_FILE_LINE_CAP)
-    const skip = large.flatMap((c) => (c.oldPath ? [c.oldPath, c.path] : [c.path]))
-    const out = await runGit(
-      repoPath,
-      ['diff', ...DIFF_PREFIXES, ...plain, from, to, '--', ...spec, ...skip.map((p) => `:(top,exclude,literal)${p}`)],
-      env,
-      RANGE_DIFF_MAX_BUFFER
-    )
-    const files = splitUnifiedDiff(out)
-    if (large.length) files.push(...(await largeRangeFiles(repoPath, from, to, large)))
+    const splitter = new DiffChunkSplitter({
+      fileMaxBytes: RANGE_FILE_MAX_BYTES,
+      headerBytes: 4096,
+      budgetBytes: RANGE_BUDGET_BYTES,
+      budgetLines: RANGE_BUDGET_LINES
+    })
+    await streamGit(repoPath, ['diff', ...DIFF_PREFIXES, ...plain, from, to, '--', ...spec], env, splitter)
+    const byPath = new Map(counts.map((c) => [c.path, c]))
+    const files: PrFile[] = []
+    for (const chunk of splitter.chunks) {
+      const [file] = splitUnifiedDiff(decodeTextBytes(chunk.bytes))
+      if (!file) continue
+      const c = byPath.get(file.filename)
+      const over = chunk.oversized || (!!c && !c.binary && c.additions + c.deletions > RANGE_FILE_LINE_CAP)
+      if (!over) files.push(file)
+      else {
+        delete file.patch
+        files.push({ ...file, additions: c?.additions ?? 0, deletions: c?.deletions ?? 0, noPatchReason: 'tooLarge' })
+      }
+    }
+    // Past the budget: listed from the numstat, read when opened.
+    const seen = new Set(files.map((f) => f.filename))
+    const unseen = counts.filter((c) => !seen.has(c.path))
+    if (unseen.length) files.push(...(await getUnreadRangeFiles(repoPath, from, to, unseen)))
     await rereadBinaryAsText(repoPath, from, to, files)
-    // In git's own order, which the numstat kept: the large ones were appended.
+    // In git's own order, which the numstat kept: the unread ones were appended.
     const order = new Map(counts.map((c, i) => [c.path, i]))
     return files.sort((a, b) => (order.get(a.filename) ?? 0) - (order.get(b.filename) ?? 0))
   },
@@ -5145,10 +5273,7 @@ export const gitService = {
    * afterwards; false when the server would not give them.
    */
   async fetchCommitsById(repoPath: string, remote: string, shas: unknown): Promise<boolean> {
-    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
-    const wanted = Array.isArray(shas) ? [...new Set(shas)] : []
-    if (!wanted.length || wanted.length > 4 || !wanted.every(isFullSha)) throw new Error('Commits are fetched by their full ids.')
-    await assertConfiguredRemote(repoPath, remote)
+    const wanted = await checkFetchById(repoPath, remote, shas)
     try {
       await withRemoteAuth(repoPath, remote, 'fetch', () =>
         runGit(repoPath, ['fetch', '--no-tags', '--', remote, ...wanted])
