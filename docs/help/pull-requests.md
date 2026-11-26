@@ -394,6 +394,49 @@ the order the host lists the files.
 
 ![The Files tab in Tree view: folders with their summed changes and viewed counts, one folded](../screenshots/pr-files-tree.webp)
 
+### Where the diff comes from
+
+A review is only as good as the diff it reads. A host's API is not a good
+source for it: Azure DevOps sends no diff at all, only the list of files, and
+each one has to be fetched twice and compared; GitHub stops at 3000 files and
+leaves out the patch of a large one; GitLab marks a big diff *too large* and
+sends nothing. So the Files tab reads **this clone first**, on every host:
+
+1. It asks the host for the pull request's two commits — where it starts (the
+   merge base, or the target branch it is computed from) and its head.
+2. When both are here, `git diff` between them gives every file, in one read,
+   with no cap on how many. These are the same two commits the host's own page
+   compares, so a line number here is the line number there and a line comment
+   lands where you put it.
+3. When they are not here, they are fetched **by their ids** from the pull
+   request's remote — objects only, no branch is created or moved — and then
+   diffed here. A server that will not hand out a commit by id (some Azure
+   DevOps and plain git servers) is skipped quietly.
+4. Only then is the host's API used, and a file it gives no diff for says why
+   instead of pretending to be empty (below).
+
+On Azure DevOps the API path reads the first hundred files when the tab opens,
+three at a time, and the rest when you open each one. A throttled request is
+retried after the wait the server asks for; one that still fails says so, with
+the reason. Whether a file is text is decided from its bytes, not from Azure's
+own *binary* flag — which it also sets on UTF-16 files and on some text that is
+not ASCII.
+
+### When a file shows no diff
+
+| What it says | Why | What you can do |
+|---|---|---|
+| **Binary** | Its bytes are not text: an image, an archive. UTF-16 and legacy single-byte text are recognised as text. | Open it on the host. |
+| **Too large to show** | More than 20,000 changed lines, or a version over 4 MB. Its **+/−** is still counted when the clone read it. | Open it on the host. |
+| **Not loaded yet** | Azure DevOps, read from the API: past the first hundred files. | It loads when you open it; **Load the diff** if it did not. |
+| **Couldn't load** | The read failed — the reason is shown under it. | **Try again**. |
+| **The host left it out** | The host's API sent no diff and this clone does not have the pull request's commits. | **Fetch the pull request to see it locally** — the commits by id, or a fork's pull request head — then it is diffed here. |
+| **Only the name or mode changed** | A rename or a permission change: the content is the same. | Nothing to review in the content. |
+
+In the list, a file whose diff was not read shows **—** instead of **+0 −0**,
+which would read as "nothing changed". When the host counts the lines anyway
+(GitHub does, even for a patch it leaves out), the counts are shown.
+
 ## Commenting on a line
 
 Replying to a review thread was possible here; starting one was not, so a real
@@ -724,3 +767,12 @@ What it does not do:
   its list has no last-activity time.
 - The walk is remembered while the app runs; after a restart, a pull request
   opened from the list walks the open pull requests instead.
+- **Reading the files may fetch.** When the pull request's commits are not in
+  this clone, opening the Files tab fetches them by id from its remote — a
+  network read that writes objects (and `FETCH_HEAD`), never a branch. A shallow
+  or partial clone that lacks the objects falls back to the host's API.
+- **A file opened on demand** — read after the list, from the API or after a
+  fetch — is shown without line comments: those need the diff the tab loaded.
+  Refresh the page after fetching to comment on it.
+- **Over the caps**, a file is listed with its counts and no diff: 20,000
+  changed lines read from the clone, 4 MB per version read from Azure DevOps.

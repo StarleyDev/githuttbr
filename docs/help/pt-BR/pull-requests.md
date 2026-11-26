@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: 7a05cea1df11de9bdd566fd97eb1594f1f1736e0
 ---
 
 # Página de pull requests
@@ -409,6 +409,50 @@ em que o host lista os arquivos.
 
 ![A aba Arquivos em Árvore: pastas com a soma das mudanças e quantos arquivos foram vistos, uma recolhida](../../screenshots/pr-files-tree.webp)
 
+### De onde vem o diff
+
+Uma revisão só é tão boa quanto o diff que ela lê. A API de um host não é uma
+boa fonte para ele: o Azure DevOps não manda diff nenhum, só a lista de
+arquivos, e cada um precisa ser buscado duas vezes e comparado; o GitHub para
+em 3000 arquivos e deixa de fora o patch de um arquivo grande; o GitLab marca um
+diff grande como *too large* e não manda nada. Por isso a aba Arquivos lê
+**este clone primeiro**, em todo host:
+
+1. Ela pede ao host os dois commits do pull request — onde ele começa (a merge
+   base, ou a branch de destino de onde ela é calculada) e a ponta dele.
+2. Quando os dois estão aqui, um `git diff` entre eles dá todos os arquivos,
+   numa leitura só, sem limite de quantidade. São os mesmos dois commits que a
+   página do próprio host compara, então o número de uma linha aqui é o número
+   dela lá, e um comentário de linha cai onde você o colocou.
+3. Quando não estão aqui, eles são buscados **pelos ids** no remote do pull
+   request — só objetos, nenhuma branch é criada ou movida — e então comparados
+   aqui. Um servidor que não entrega um commit pelo id (alguns Azure DevOps e
+   servidores git simples) é pulado em silêncio.
+4. Só então a API do host é usada, e um arquivo para o qual ela não dá diff diz
+   por quê, em vez de fingir que está vazio (abaixo).
+
+No Azure DevOps, o caminho pela API lê os cem primeiros arquivos quando a aba
+abre, três por vez, e o resto quando você abre cada um. Uma requisição
+estrangulada (throttling) é repetida depois da espera que o servidor pede; uma
+que ainda falha diz isso, com o motivo. Se um arquivo é texto é decidido pelos
+bytes dele, não pela flag *binário* do Azure — que ele também liga em arquivos
+UTF-16 e em algum texto que não é ASCII.
+
+### Quando um arquivo não mostra diff
+
+| O que diz | Por quê | O que você pode fazer |
+|---|---|---|
+| **Binário** | Os bytes não são texto: uma imagem, um arquivo compactado. UTF-16 e texto legado de um byte são reconhecidos como texto. | Abrir no host. |
+| **Grande demais para mostrar** | Mais de 20.000 linhas alteradas, ou uma versão acima de 4 MB. O **+/−** dele ainda é contado quando o clone o leu. | Abrir no host. |
+| **Ainda não carregado** | Azure DevOps, lido pela API: depois dos cem primeiros arquivos. | Ele carrega quando você o abre; **Carregar o diff** se não carregou. |
+| **Não foi possível carregar** | A leitura falhou — o motivo aparece embaixo. | **Tentar de novo**. |
+| **O host deixou de fora** | A API do host não mandou diff e este clone não tem os commits do pull request. | **Buscar o pull request para ver localmente** — os commits pelo id, ou a ponta do pull request de um fork — e então ele é comparado aqui. |
+| **Só o nome ou o modo mudou** | Um rename ou uma mudança de permissão: o conteúdo é o mesmo. | Nada a revisar no conteúdo. |
+
+Na lista, um arquivo cujo diff não foi lido mostra **—** em vez de **+0 −0**,
+que leria como "nada mudou". Quando o host conta as linhas mesmo assim (o GitHub
+conta, até num patch que ele deixa de fora), as contagens aparecem.
+
 ## Comentar numa linha
 
 Responder a uma thread de revisão já era possível aqui; começar uma, não — então
@@ -756,3 +800,12 @@ O que não faz:
   fechado): a lista dele não tem hora da última atividade.
 - O percurso fica guardado enquanto o app está aberto; depois de reiniciar, um
   pull request aberto da lista percorre os pull requests abertos.
+- **Ler os arquivos pode buscar.** Quando os commits do pull request não estão
+  neste clone, abrir a aba Arquivos busca esses commits pelo id no remote dele —
+  uma leitura de rede que grava objetos (e o `FETCH_HEAD`), nunca uma branch. Um
+  clone raso ou parcial sem os objetos cai na API do host.
+- **Um arquivo aberto sob demanda** — lido depois da lista, pela API ou depois
+  de uma busca — aparece sem comentários de linha: eles precisam do diff que a
+  aba carregou. Atualize a página depois de buscar para comentar nele.
+- **Acima dos limites**, o arquivo aparece com as contagens e sem diff: 20.000
+  linhas alteradas lidas do clone, 4 MB por versão lida do Azure DevOps.
