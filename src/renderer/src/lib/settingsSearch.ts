@@ -166,6 +166,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   // Security
   e('security', 'settings.security'),
   e('security', 'settings.maskSecrets', 'settings.maskSecretsHint'),
+  e('security', 'settings.commentImagesFromOtherSites', 'settings.commentImagesFromOtherSitesHint'),
   e('security', 'keychain.settingsTitle'),
   e('security', 'settings.vault'),
   e('security', 'ssh.title'),

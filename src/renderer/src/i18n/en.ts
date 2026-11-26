@@ -1882,6 +1882,12 @@ export const en = {
   'settings.maskSecrets': 'Mask secret values',
   'settings.maskSecretsHint':
     'Hide values in .env / key / credential files (KEY=••••••) in the diff, file and blame views. Display-only — use the eye toggle to reveal. Never changes the file or what you stage.',
+  'settings.commentImagesFromOtherSites': 'Load images from other sites in comments',
+  'settings.commentImagesFromOtherSitesHint':
+    'Images in pull request and issue comments that come from a site other than the host load without a click. Off, each shows a placeholder until you click it: an image request tells that site your IP address and when you read the comment.',
+  'remoteImage.blocked': 'Image from {domain} — click to load',
+  'remoteMarkdown.tooLong': 'Long comment shown as plain text.',
+  'remoteMarkdown.tooComplex': 'Comment shown as plain text: too intricate to render here.',
   'settings.launchEnabled': 'Enable launch.json',
   'settings.fileViewer': 'File viewer',
   'settings.fileViewerIntro': 'How the File view (working-tree files) shows uncommitted changes.',

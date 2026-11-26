@@ -146,6 +146,7 @@ const PART_OF_KEY: Record<keyof AppSettings, ImportPart> = {
   worktreeShortLabels: 'prefs',
   worktreeCopyIgnored: 'prefs',
   maskSecrets: 'prefs',
+  commentImagesFromOtherSites: 'prefs',
   showChangeGutter: 'prefs',
   showMinimap: 'prefs',
   enableLaunchJson: 'prefs',

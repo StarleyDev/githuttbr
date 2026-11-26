@@ -2138,15 +2138,26 @@ interface GhIssueComment {
   id: number
   user: GhUser | null
   body: string
+  /** Present when asked for with GH_FULL_BODY. */
+  body_html?: string
   created_at: string
   updated_at?: string
 }
+
+/**
+ * Ask GitHub for `body_html` beside `body`: its own rendering, with mentions and
+ * references linked, third-party images behind its camo proxy and private
+ * attachments signed — none of which a local Markdown render can reproduce. The
+ * renderer sanitizes it like any other comment (lib/remoteContent.ts).
+ */
+const GH_FULL_BODY: RequestInit = { headers: { Accept: 'application/vnd.github.full+json' } }
 
 /** GitHub keeps no "edited" flag: an `updated_at` past `created_at` is the sign. */
 export function mapGhIssueComment(c: GhIssueComment): PrComment {
   return {
     author: c.user?.login ?? 'unknown',
     body: c.body,
+    ...(c.body_html ? { bodyHtml: c.body_html } : {}),
     createdAt: c.created_at,
     handle: { id: c.id, kind: 'conversation' },
     ...(isEditedAfter(c.created_at, c.updated_at) ? { edited: true } : {})
@@ -2158,6 +2169,7 @@ interface GhReviewComment {
   id: number
   user: GhUser | null
   body: string
+  body_html?: string
   created_at: string
   updated_at?: string
   path: string
@@ -2193,6 +2205,7 @@ async function pullRequestDetail(
       number: number
       title: string
       body: string | null
+      body_html?: string | null
       user: GhUser
       head: { ref: string; label?: string; repo: { full_name: string } | null }
       base: { ref: string; repo: { full_name: string } | null }
@@ -2215,19 +2228,20 @@ async function pullRequestDetail(
       deletions?: number
       changed_files?: number
       commits?: number
-    }>(`${api}/pulls/${number}`, token),
+    }>(`${api}/pulls/${number}`, token, GH_FULL_BODY),
     // Every page: a long discussion used to stop at its first 100 comments.
     allPages((page) =>
       ghJson<GhIssueComment[]>(
         `${api}/issues/${number}/comments?per_page=100&page=${page}`,
-        token
+        token,
+        GH_FULL_BODY
       )
     ),
     allPages((page) =>
       ghJson<Array<{ user: GhUser | null; state: string }>>(`${api}/pulls/${number}/reviews?per_page=100&page=${page}`, token)
     ),
     allPages((page) =>
-      ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token)
+      ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token, GH_FULL_BODY)
     ).catch(() => [] as GhReviewComment[])
   ])
 
@@ -2241,6 +2255,7 @@ async function pullRequestDetail(
       id: rc.id,
       author: rc.user?.login ?? 'unknown',
       body: rc.body,
+      ...(rc.body_html ? { bodyHtml: rc.body_html } : {}),
       createdAt: rc.created_at,
       handle: { id: rc.id, kind: 'review' as const },
       ...(isEditedAfter(rc.created_at, rc.updated_at) ? { edited: true } : {})
@@ -2295,6 +2310,7 @@ async function pullRequestDetail(
     number: pr.number,
     title: pr.title,
     body: pr.body ?? '',
+    ...(pr.body_html ? { bodyHtml: pr.body_html } : {}),
     author: pr.user.login,
     source: pr.head.ref,
     target: pr.base.ref,
@@ -3343,6 +3359,7 @@ async function issueDetail(
       number: number
       title: string
       body: string | null
+      body_html?: string | null
       user: { login: string } | null
       state: string
       html_url: string
@@ -3350,10 +3367,11 @@ async function issueDetail(
       labels: Array<{ name: string } | string>
       assignees: Array<{ login: string }> | null
       milestone: { title: string } | null
-    }>(`${api}/issues/${number}`, token),
+    }>(`${api}/issues/${number}`, token, GH_FULL_BODY),
     ghJson<GhIssueComment[]>(
       `${api}/issues/${number}/comments?per_page=100`,
-      token
+      token,
+      GH_FULL_BODY
     ),
     fetchClosingPrs(ep.graphqlUrl, owner, repo, number, token),
     fetchProjectFields(ep.graphqlUrl, owner, repo, number, token)
@@ -3363,6 +3381,7 @@ async function issueDetail(
     number: issue.number,
     title: issue.title,
     body: issue.body ?? '',
+    ...(issue.body_html ? { bodyHtml: issue.body_html } : {}),
     author: issue.user?.login ?? 'unknown',
     state: issue.state === 'closed' ? 'closed' : 'open',
     url: issue.html_url,

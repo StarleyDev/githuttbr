@@ -45,6 +45,8 @@ interface Sent {
 /** [method, URL prefix, status, body]. The first match answers; anything else is 200 {}. */
 let routes: Array<[string, string, number, unknown]> = []
 const sent: Sent[] = []
+/** The Accept header each URL was asked with. */
+const accepts = new Map<string, string>()
 
 const edit = (remote: string, handle: unknown, body: unknown = 'Better wording.'): Promise<unknown> =>
   Promise.resolve().then(() => handlers.get('hosting:prEditComment')!({}, '', remote, {}, 7, handle, body))
@@ -99,6 +101,7 @@ describe('editing and deleting a pull request comment — main', () => {
         const url = String(input)
         const method = (init?.method ?? 'GET').toUpperCase()
         sent.push({ url, method, body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined })
+        accepts.set(url, new Headers(init?.headers).get('accept') ?? '')
         const hit = routes.find(([m, prefix]) => m === method && url.startsWith(prefix))
         const [, , status, body] = hit ?? ['', '', 200, {}]
         // A 204 carries no body: the clients must not try to read one.
@@ -110,11 +113,45 @@ describe('editing and deleting a pull request comment — main', () => {
   afterEach(() => {
     routes = []
     sent.length = 0
+    accepts.clear()
   })
   afterAll(() => vi.unstubAllGlobals())
 
   describe('GitHub', () => {
     const API = 'https://api.github.com/repos/team/app'
+
+    it('the detail asks for body_html too, and hands it to the page beside the raw body', async () => {
+      const user = { login: 'ana' }
+      routes = [
+        ['GET', `${API}/issues/7/comments`, 200, [
+          { id: 1, user, body: '**hi**', body_html: '<p><strong>hi</strong></p>', created_at: '2026-01-01T10:00:00Z' }
+        ]],
+        ['GET', `${API}/pulls/7/reviews`, 200, []],
+        ['GET', `${API}/pulls/7/comments`, 200, [
+          { id: 2, user, body: '`x`', body_html: '<p><code>x</code></p>', created_at: '2026-01-01T10:00:00Z',
+            path: 'a.ts', line: 3, original_line: 3, diff_hunk: '@@', side: 'RIGHT' }
+        ]],
+        ['GET', `${API}/pulls/7`, 200, {
+          number: 7, title: 'T', body: '- [ ] a', body_html: '<ul><li>a</li></ul>', user, draft: false, state: 'open',
+          merged: false, mergeable: true, html_url: 'https://github.com/team/app/pull/7', created_at: '2026-01-01T10:00:00Z',
+          updated_at: '2026-01-01T10:00:00Z', closed_at: null, merged_at: null, merged_by: null, milestone: null,
+          head: { ref: 'f', repo: { full_name: 'team/app' } }, base: { ref: 'main', repo: { full_name: 'team/app' } }
+        }]
+      ]
+      const pr = (await handlers.get('hosting:prDetail')!({}, '', GITHUB, {}, 7)) as {
+        body: string
+        bodyHtml?: string
+        comments: Array<{ body: string; bodyHtml?: string }>
+        reviewThreads: Array<{ comments: Array<{ body: string; bodyHtml?: string }> }>
+      }
+      expect(pr.body).toBe('- [ ] a')
+      expect(pr.bodyHtml).toBe('<ul><li>a</li></ul>')
+      expect(pr.comments[0]).toMatchObject({ body: '**hi**', bodyHtml: '<p><strong>hi</strong></p>' })
+      expect(pr.reviewThreads[0].comments[0]).toMatchObject({ body: '`x`', bodyHtml: '<p><code>x</code></p>' })
+      for (const url of [`${API}/pulls/7`, `${API}/issues/7/comments?per_page=100&page=1`, `${API}/pulls/7/comments?per_page=100&page=1`]) {
+        expect(accepts.get(url)).toBe('application/vnd.github.full+json')
+      }
+    })
 
     it('a conversation comment is edited and deleted through the issue comments endpoint', async () => {
       await edit(GITHUB, CONVERSATION)
@@ -466,6 +503,8 @@ describe('editing and deleting a pull request comment — main', () => {
       expect(c.handle).toEqual({ id: 5, kind: 'conversation' })
       expect(c.edited).toBe(true)
       expect(mapGhIssueComment({ id: 6, user: null, body: 'y', created_at: '2026-01-01T10:00:00Z', updated_at: '2026-01-01T10:00:00Z' }).edited).toBeUndefined()
+      // No body_html asked for (or an empty one): nothing claims a rendering.
+      expect('bodyHtml' in mapGhIssueComment({ id: 7, user: null, body: 'z', created_at: '2026-01-01T10:00:00Z' })).toBe(false)
     })
 
     it('Azure DevOps: thread and comment id; deleted comments hidden; edited from the content date', async () => {

@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
-keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação
-source: 4be4a4f8a11caabadd31b5e39bd10ec22fa20fbd
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
+source: a4156cb9fd737c311bc0441169b7a3d933dad274
 ---
 
 # Página de pull requests
@@ -355,6 +355,81 @@ requests que já estão na tela. A caixa de resposta mostra as ferramentas quand
 você clica nela, e envia com ⌘/Ctrl+Enter, já que o Enter agora começa uma
 linha nova. [Escrever comentários](writing-comments.md) tem os detalhes e os
 limites.
+
+## Como os comentários aparecem
+
+As pessoas escrevem comentários em Markdown, então um comentário mostrado como
+texto simples fica cheio de `**`, `- [ ]` e blocos de código. A descrição, a
+conversa e as threads de revisão (nas abas Conversa e Arquivos) são desenhadas
+como Markdown: títulos, listas e listas de tarefas, tabelas, citações, blocos
+de código destacados na linguagem que o bloco indica, links e imagens. A página
+de issue desenha o texto do mesmo jeito. `#123`, `AB#123`, `!123` e `@usuário`
+no texto continuam virando links, com o
+[cartão](#do-que-trata-um-123-ou-ab123) onde já tinham.
+
+![Um comentário renderizado: uma tabela, uma imagem de outro site retida atrás
+do aviso, e um bloco de código destacado](../../screenshots/pr-rendered-comment.webp)
+
+De onde vem o desenho:
+
+| Host | Renderizado por |
+|---|---|
+| GitHub, GitHub Enterprise Server | O próprio GitHub (`body_html`): menções e referências ligadas como no site, imagens passam pelo proxy de imagens do GitHub, e anexos privados trazem o endereço assinado |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | O app, a partir do Markdown do comentário. Um link relativo aponta para dentro do repositório; no GitLab, `/uploads/…` aponta para dentro do projeto, como o GitLab faz |
+
+Um comentário é conteúdo de outras pessoas, então o que ele pode conter é
+restrito, e mais restrito do que nos seus próprios arquivos: uma lista explícita
+de tags, links e imagens só em `https:`, `http:` ou `mailto:`, nada de scripts,
+frames, formulários, SVG ou estilo inline, e links que nunca abrem dentro do
+app (vão para o seu navegador). A caixa de seleção de uma lista de tarefas
+aparece, mas não é clicável: marcá-la aqui não mudaria nada no host.
+
+**Imagens de outro site esperam um clique.** Carregar uma imagem é um pedido
+que o site por trás dela pode observar, com o seu IP e o momento em que você
+leu o comentário — qualquer pessoa que pode comentar pode pôr ali um pixel de
+rastreamento. Por isso só as imagens do próprio host carregam sozinhas: no
+github.com os anexos, `*.githubusercontent.com` (que inclui o proxy de imagens)
+e os assets dele; em qualquer outro host, o próprio endereço. Toda outra imagem
+mostra *Imagem de example.net — clique para carregar*, e o clique carrega só
+aquela imagem. **Configurações → Segurança → Carregar imagens de outros sites
+nos comentários** desliga isso; veja [Segurança](security.md#imagens-nos-comentários).
+
+**A visualização mostra o que vai ser enviado.** Nesta página e na de issue, a
+aba **Visualizar** de toda caixa de comentário desenha o texto do mesmo jeito:
+o mesmo perfil, as mesmas quebras de linha, as mesmas imagens retidas — um link
+colado para uma imagem de fora não a carrega enquanto você escreve. Os diálogos
+de novo pull request e nova issue mantêm a visualização Markdown comum do app.
+
+**Longo ou intrincado demais aparece como texto.** O Markdown é renderizado na
+janela do app, e certos textos custam muito mais do que o tamanho sugere. Um
+comentário com mais de **32.000 caracteres**, ou montado para travar o
+renderizador (milhares de `_` ou `*` sem par num parágrafo, ou mais de 32
+níveis de `>` ou de marcadores de lista numa linha), aparece como texto simples
+com links, sob *Comentário longo mostrado como texto simples* ou *Comentário
+mostrado como texto simples: complexo demais para renderizar aqui*. Um
+comentário que ainda assim falhe ao renderizar cai no mesmo texto, sozinho: o
+resto da página não é afetado.
+
+O que não faz:
+
+- **Editar mostra o texto como foi escrito.** **Editar** continua abrindo o
+  Markdown, e uma edição salva é desenhada pelo app até a página ler o pull
+  request de novo (no GitHub, a partir daí, pelo GitHub).
+- **Anexos privados do GitHub expiram.** O GitHub assina o endereço de uma
+  imagem privada por alguns minutos; uma que parou de carregar depois de a
+  página ficar aberta um tempo volta com **Atualizar**.
+- **Uma imagem relativa no GitHub** que o próprio app desenha (uma resposta
+  enviada pelo app, antes de a página ler de novo) é procurada sob o endereço
+  do repositório no github.com, que pode não ser onde o GitHub a poria.
+- **Vídeos** num comentário do GitHub aparecem como link para o arquivo, não
+  como player.
+- **Extensões só do GitHub** que o app desenha sozinho (nos outros hosts) não
+  aparecem: sem atalhos de emoji, sem diagramas Mermaid, sem o estilo dos
+  alertas, e fórmulas ficam como texto.
+- **O código só é destacado quando o bloco indica a linguagem.** Adivinhar a
+  linguagem passaria todas as gramáticas por todos os blocos da página.
+- **Mensagens de commit** na aba Commits continuam em texto simples: o git não
+  renderiza Markdown, e os hosts também não.
 
 ## Editar e excluir seus comentários
 

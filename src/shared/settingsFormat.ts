@@ -112,6 +112,7 @@ const KNOWN_SETTINGS: { [K in keyof Required<AppSettings>]: true } = {
   worktreeShortLabels: true,
   worktreeCopyIgnored: true,
   maskSecrets: true,
+  commentImagesFromOtherSites: true,
   showChangeGutter: true,
   showMinimap: true,
   enableLaunchJson: true,

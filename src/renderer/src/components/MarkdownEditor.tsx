@@ -14,6 +14,7 @@ import {
   TextQuote
 } from 'lucide-react'
 import { MarkdownHtml } from './MarkdownHtml'
+import { RemoteMarkdown, useRemotePreviewScope } from './RemoteMarkdown'
 import { MarkdownCheatSheet } from './MarkdownCheatSheet'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { useRepoStore } from '../stores/repo'
@@ -243,6 +244,8 @@ export function MarkdownEditor({
   const id = useId()
   const ref = useRef<HTMLTextAreaElement | null>(null)
   const [mode, setMode] = useState<'write' | 'preview'>('write')
+  // On a pull request or issue page, Preview shows what the posted comment will look like.
+  const remotePreview = useRemotePreviewScope()
   const [focused, setFocused] = useState(false)
   const [headingOpen, setHeadingOpen] = useState(false)
   const [cheatAnchor, setCheatAnchor] = useState<HTMLElement | null>(null)
@@ -592,7 +595,11 @@ export function MarkdownEditor({
       >
         {mode === 'preview' &&
           (value.trim() ? (
-            <MarkdownHtml className="md-preview" markdown={value} />
+            remotePreview ? (
+              <RemoteMarkdown body={value} repoWebUrl={remotePreview.repoWebUrl} linkOptions={remotePreview.linkOptions} />
+            ) : (
+              <MarkdownHtml className="md-preview" markdown={value} />
+            )
           ) : (
             <span className="mde-preview-empty">{t('mdEditor.previewEmpty')}</span>
           ))}

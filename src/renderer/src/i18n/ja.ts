@@ -1865,6 +1865,12 @@ export const ja: Dict = {
   'settings.maskSecrets': 'シークレットの値を伏せる',
   'settings.maskSecretsHint':
     '.env や鍵、認証情報のファイルの値を、差分、ファイル、blame の各ビューで隠します（KEY=••••••）。表示だけの機能で、目のアイコンで表示に戻せます。ファイルの中身やステージする内容が変わることはありません。',
+  'settings.commentImagesFromOtherSites': 'コメント内の他サイトの画像を読み込む',
+  'settings.commentImagesFromOtherSitesHint':
+    'プルリクエストや issue のコメントにある、ホスト以外のサイトの画像をクリックなしで読み込みます。オフの場合はクリックするまでプレースホルダーを表示します。画像を取得すると、そのサイトにあなたの IP アドレスとコメントを読んだ時刻が伝わります。',
+  'remoteImage.blocked': '{domain} の画像 — クリックして読み込む',
+  'remoteMarkdown.tooLong': '長いコメントのため、プレーンテキストで表示しています。',
+  'remoteMarkdown.tooComplex': '複雑すぎてここでは描画できないため、プレーンテキストで表示しています。',
   'settings.launchEnabled': 'launch.json を有効にする',
   'settings.fileViewer': 'ファイルビューア',
   'settings.fileViewerIntro': 'ファイルビュー（ワークツリーのファイル）が未コミットの変更をどう表示するか。',

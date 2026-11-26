@@ -1865,6 +1865,12 @@ export const tr: Dict = {
   'settings.maskSecrets': 'Sır değerlerini maskele',
   'settings.maskSecretsHint':
     '.env / anahtar / kimlik bilgisi dosyalarındaki değerleri fark, dosya ve blame görünümlerinde gizler (ANAHTAR=••••••). Yalnızca görüntüyle ilgilidir — göstermek için göz düğmesini kullanın. Dosyayı ya da stage’e aldığınızı asla değiştirmez.',
+  'settings.commentImagesFromOtherSites': 'Yorumlarda diğer sitelerden görselleri yükle',
+  'settings.commentImagesFromOtherSitesHint':
+    'Pull request ve issue yorumlarında barındırma sitesi dışındaki bir siteden gelen görseller tıklamadan yüklenir. Kapalıyken her biri siz tıklayana kadar yer tutucu gösterir: görseli istemek o siteye IP adresinizi ve yorumu ne zaman okuduğunuzu bildirir.',
+  'remoteImage.blocked': '{domain} kaynaklı görsel — yüklemek için tıklayın',
+  'remoteMarkdown.tooLong': 'Uzun yorum düz metin olarak gösteriliyor.',
+  'remoteMarkdown.tooComplex': 'Yorum düz metin olarak gösteriliyor: burada işlenemeyecek kadar karmaşık.',
   'settings.launchEnabled': 'launch.json desteğini aç',
   'settings.fileViewer': 'Dosya görüntüleyici',
   'settings.fileViewerIntro': 'Dosya görünümü (çalışma ağacındaki dosyalar) commit edilmemiş değişiklikleri nasıl gösterir.',

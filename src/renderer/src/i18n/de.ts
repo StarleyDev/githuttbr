@@ -1885,6 +1885,12 @@ export const de: Dict = {
   'settings.maskSecrets': 'Geheime Werte maskieren',
   'settings.maskSecretsHint':
     'Verbirgt Werte in .env-, Schlüssel- und Zugangsdatendateien (KEY=••••••) in der Diff-, Datei- und Blame-Ansicht. Nur die Anzeige — mit dem Augensymbol einblenden. Ändert nie die Datei oder das, was du stagst.',
+  'settings.commentImagesFromOtherSites': 'Bilder von anderen Websites in Kommentaren laden',
+  'settings.commentImagesFromOtherSitesHint':
+    'Bilder in Kommentaren zu Pull Requests und Issues, die nicht vom Host selbst stammen, laden ohne Klick. Aus: Jedes zeigt einen Platzhalter, bis du klickst – die Anfrage verrät der Website deine IP-Adresse und wann du den Kommentar gelesen hast.',
+  'remoteImage.blocked': 'Bild von {domain} – zum Laden klicken',
+  'remoteMarkdown.tooLong': 'Langer Kommentar als reiner Text angezeigt.',
+  'remoteMarkdown.tooComplex': 'Kommentar als reiner Text angezeigt: zu verschachtelt, um ihn hier darzustellen.',
   'settings.launchEnabled': 'launch.json aktivieren',
   'settings.fileViewer': 'Dateianzeige',
   'settings.fileViewerIntro': 'Wie die Dateiansicht (Dateien im Arbeitsverzeichnis) nicht committete Änderungen anzeigt.',

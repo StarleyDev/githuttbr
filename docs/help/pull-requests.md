@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block
 ---
 
 # Pull requests page
@@ -339,6 +339,78 @@ formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and
 A reply box shows its tools once you click into it, and sends with
 ⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
 has the details and the limits.
+
+## How comments are shown
+
+People write comments in Markdown, so a comment shown as plain text is full of
+`**`, `- [ ]` and code fences. The description, the conversation and the review
+threads (in the Conversation and Files tabs) are drawn as Markdown: headings,
+lists and task lists, tables, quotes, code blocks highlighted in the language
+the fence names, links and images. The issue page draws its text the same way.
+`#123`, `AB#123`, `!123` and `@user` in the text still become links, with the
+[card](#what-a-123-or-ab123-is-about) where they had one.
+
+![A rendered comment: a table, an image from another site held back behind its
+placeholder, and a highlighted code block](../screenshots/pr-rendered-comment.webp)
+
+Where the drawing comes from:
+
+| Host | Rendered by |
+|---|---|
+| GitHub, GitHub Enterprise Server | GitHub itself (`body_html`): mentions and references are linked as on the website, images go through GitHub's image proxy, and private attachments carry their signed address |
+| GitLab, Forgejo, Azure DevOps, Bitbucket Data Center | The app, from the comment's Markdown. A relative link points into the repository; on GitLab, `/uploads/…` points into the project, as GitLab does |
+
+A comment is other people's content, so what it may contain is narrow, and
+narrower than for your own files: an explicit list of tags, links and images on
+`https:`, `http:` or `mailto:` only, no scripts, frames, forms, SVG or inline
+style, and links that never open inside the app (they go to your browser). A
+checkbox in a task list is shown, not clickable: ticking it here would change
+nothing on the host.
+
+**Images from another site wait for a click.** Loading an image is a request
+the site behind it can watch, with your IP address and the moment you read the
+comment — anyone who can comment can put a tracking pixel there. So only images
+from the host itself load on their own: on github.com its attachments,
+`*.githubusercontent.com` (which includes its image proxy) and its assets; on
+any other host, its own address. Every other image shows *Image from
+example.net — click to load*, and the click loads that one image. **Settings →
+Security → Load images from other sites in comments** turns that off; see
+[Security](security.md#images-in-comments).
+
+**Preview shows what will be posted.** On this page and the issue page, the
+**Preview** tab of every comment box draws the text the same way: the same
+profile, the same line breaks, the same held-back images — a pasted link to an
+outside image does not load it while you write. The new pull request and new
+issue dialogs keep the app's ordinary Markdown preview.
+
+**Too long or too intricate is shown as text.** Markdown is rendered in the
+app's window, and some text costs far more to render than its size suggests.
+A comment over **32,000 characters**, or one shaped to stall the renderer
+(thousands of unmatched `_` or `*` in one paragraph, or more than 32 levels of
+`>` or list markers on one line), is shown as plain text with links, under
+*Long comment shown as plain text* or *Comment shown as plain text: too
+intricate to render here*. A comment that still fails to render falls back the
+same way, on its own: the rest of the page is untouched.
+
+What it does not do:
+
+- **Editing shows the text as written.** **Edit** still opens the Markdown, and
+  a saved edit is drawn by the app until the page reads the pull request again
+  (on GitHub, then by GitHub).
+- **Private GitHub attachments expire.** GitHub signs a private image's address
+  for a few minutes; one that no longer loads after the page has been open a
+  while comes back with **Refresh**.
+- **A relative image on GitHub** that the app draws itself (a reply sent from
+  the app, before the page reads it again) is looked for under the repository's
+  address on github.com, which may not be where GitHub would put it.
+- **Videos** in a GitHub comment show as a link to the file, not a player.
+- **GitHub-only extensions** the app draws itself (on other hosts) are not
+  there: no emoji shortcodes, no Mermaid diagrams, no alerts styling, and math
+  stays as text.
+- **Code is highlighted only when the fence names its language.** Guessing the
+  language would run every grammar over every block on the page.
+- **Commit messages** in the Commits tab stay plain text: git does not render
+  Markdown, and neither do the hosts.
 
 ## Editing and deleting your comments
 

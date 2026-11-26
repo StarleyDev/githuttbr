@@ -1865,6 +1865,12 @@ export const fr: Dict = {
   'settings.maskSecrets': 'Masquer les valeurs secrètes',
   'settings.maskSecretsHint':
     'Masque les valeurs des fichiers .env / de clés / d’identifiants (CLÉ=••••••) dans les vues diff, fichier et blame. Purement visuel — utilisez l’œil pour révéler. Ne modifie jamais le fichier ni ce que vous indexez.',
+  'settings.commentImagesFromOtherSites': 'Charger les images d’autres sites dans les commentaires',
+  'settings.commentImagesFromOtherSitesHint':
+    'Les images des commentaires de pull requests et d’issues qui viennent d’un autre site que l’hébergeur se chargent sans clic. Désactivé, chacune affiche un espace réservé jusqu’à ce que vous cliquiez : demander l’image indique à ce site votre adresse IP et quand vous avez lu le commentaire.',
+  'remoteImage.blocked': 'Image de {domain} — cliquez pour la charger',
+  'remoteMarkdown.tooLong': 'Commentaire long affiché en texte brut.',
+  'remoteMarkdown.tooComplex': 'Commentaire affiché en texte brut : trop complexe pour être rendu ici.',
   'settings.launchEnabled': 'Activer launch.json',
   'settings.fileViewer': 'Visionneuse de fichiers',
   'settings.fileViewerIntro': 'Comment la vue Fichier (fichiers de l’arbre de travail) affiche les modifications non validées.',
