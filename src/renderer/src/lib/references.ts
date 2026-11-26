@@ -78,6 +78,23 @@ export function unavailableSummaries(
   return queries.map((q) => ({ sigil: q.sigil, id: q.id, available: false, reason }))
 }
 
+/**
+ * What to cache from one request's answer: everything it answered, except what
+ * the host left unasked (`notAsked`), which stays unknown so the next hover asks
+ * for it; and, for a reference the answer left out altogether, "could not read",
+ * so no card spins forever.
+ */
+export function getCacheableSummaries(
+  batch: readonly ReferenceQuery[],
+  summaries: readonly ReferenceSummary[]
+): ReferenceSummary[] {
+  const got = new Set(summaries.map(getReferenceKey))
+  return [
+    ...summaries.filter((s) => s.reason !== 'notAsked'),
+    ...unavailableSummaries(batch.filter((q) => !got.has(getReferenceKey(q))))
+  ]
+}
+
 /** An answer is fresh this long. */
 export const REFERENCE_TTL_MS = 5 * 60_000
 /** "Not found" or "not reached" is asked again sooner, so a fixed permission or network shows. */

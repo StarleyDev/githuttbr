@@ -185,7 +185,7 @@ describe('reference summaries: GitHub', () => {
 
 describe('reference summaries: GitHub through GraphQL', () => {
   const API = 'https://api.github.com/repos/team/app'
-  type Answer = { data: unknown; errors: Array<{ type?: string; message?: string }> }
+  type Answer = { data: unknown; errors: Array<{ type?: string; message?: string }>; exhausted?: boolean }
   /** A fake GraphQL poster: records each query, answers with `reply(query)`. */
   const fakeGraphql = (reply: (query: string) => Answer | Error): { post: GithubGraphqlRawPost; queries: string[] } => {
     const queries: string[] = []
@@ -193,7 +193,7 @@ describe('reference summaries: GitHub through GraphQL', () => {
       queries.push(query)
       const r = reply(query)
       if (r instanceof Error) throw r
-      return r
+      return { exhausted: false, ...r }
     }) as GithubGraphqlRawPost
     return { post, queries }
   }
@@ -261,8 +261,8 @@ describe('reference summaries: GitHub through GraphQL', () => {
     const out = await githubReferenceSummaries(host.get, API, qs(...many), { post: gql.post, owner: 'team', repo: 'app' })
     expect(host.urls.map((u) => Number(u.pathname.split('/').pop()))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     expect(out.slice(0, 10).every((s) => s.available && s.title === 'Via REST')).toBe(true)
-    // The rest were not asked: "could not read" for now, asked again on a later hover.
-    expect(out.slice(10).map((s) => s.reason)).toEqual(Array(5).fill('unreachable'))
+    // The rest were not asked: marked so, never cached, asked again on a later hover.
+    expect(out.slice(10).map((s) => s.reason)).toEqual(Array(5).fill('notAsked'))
   })
 
   it('falls back to REST when the GraphQL request itself fails (an old server, a 5xx)', async () => {
@@ -284,6 +284,21 @@ describe('reference summaries: GitHub through GraphQL', () => {
     const again = await githubReferenceSummaries(host.get, API, qs(['#', 1], ['#', 2]), { post: viaStatus.post, owner: 'team', repo: 'app' })
     expect(again.map((s) => s.reason)).toEqual(['rateLimited', 'rateLimited'])
     expect(host.urls).toHaveLength(0)
+  })
+
+  it('an answer that spent the last of the limit stops the next request: the rest are rate limited', async () => {
+    const host = fakeHost(() => ({ number: 1, title: 'Via REST', state: 'open' }))
+    const queries: string[] = []
+    const post = (async (query: string) => {
+      queries.push(query)
+      return { data: { repository: repositoryFor(query) }, errors: [], exhausted: true }
+    }) as GithubGraphqlRawPost
+    const many = Array.from({ length: 60 }, (_, i) => ['#', i + 1] as ['#', number])
+    const out = await githubReferenceSummaries(host.get, API, qs(...many), { post, owner: 'team', repo: 'app' })
+    expect(queries).toHaveLength(1)
+    expect(host.urls).toHaveLength(0)
+    expect(out[0]).toMatchObject({ available: true })
+    expect(out.slice(50).map((s) => s.reason)).toEqual(Array(10).fill('rateLimited'))
   })
 
   it('never writes a number past GraphQL’s 32-bit Int into the query', async () => {

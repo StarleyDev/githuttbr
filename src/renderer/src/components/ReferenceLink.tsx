@@ -7,6 +7,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useT, type TranslationKey } from '../i18n'
 import type { AutolinkOptions, ReferenceLinkParts } from '../lib/autolink'
 import {
+  getCacheableSummaries,
   getReferenceKey,
   getReferenceRequestMax,
   orderByNearness,
@@ -129,9 +130,8 @@ function requestSummaries(scope: Scope, first: ReferenceQuery | null, also: read
     .getReferenceSummaries(scope.repoPath, scope.remoteUrl, tokens, batch)
     .catch(() => unavailableSummaries(batch))
     .then((summaries) => {
-      // Whatever the answer left out counts as unavailable, so no card spins forever.
-      const got = new Set(summaries.map(getReferenceKey))
-      cache.saveSummaries(scope.key, [...summaries, ...unavailableSummaries(batch.filter((q) => !got.has(getReferenceKey(q))))])
+      // Left out counts as unavailable, so no card spins forever; "not asked" stays unknown.
+      cache.saveSummaries(scope.key, getCacheableSummaries(batch, summaries))
       for (const q of batch) inflight.delete(flightKey(scope, q))
       notify()
     })
@@ -198,7 +198,9 @@ const KIND_KEY: Record<NonNullable<ReferenceSummary['kind']>, TranslationKey> = 
 const REASON_KEY: Record<NonNullable<ReferenceSummary['reason']>, TranslationKey> = {
   notFound: 'ref.unavailable',
   rateLimited: 'ref.rateLimited',
-  unreachable: 'ref.unreachable'
+  unreachable: 'ref.unreachable',
+  // Never cached (getCacheableSummaries), so never shown; read as "could not read" if it were.
+  notAsked: 'ref.unreachable'
 }
 
 function KindIcon({ s }: { s: ReferenceSummary }): React.JSX.Element {

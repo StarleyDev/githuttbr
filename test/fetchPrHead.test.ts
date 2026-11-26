@@ -54,31 +54,57 @@ describe('fetching a pull request head by number (fork PR commits)', () => {
     for (const dir of extra.splice(0)) rmSync(dir, { recursive: true, force: true })
   })
 
-  it('fetches refs/pull/N/head into <remote>/pr/N: the commits become local', async () => {
+  const HEAD7 = 'refs/githuttbr/pr/upstream/7'
+
+  it('fetches refs/pull/N/head into a private ref: the commits become local and show in the graph', async () => {
     expect(await gitService.getLocalCommits(repo, [forkSha])).toEqual([])
-    expect(await gitService.fetchPrHead(repo, 'upstream', 7)).toBe('upstream/pr/7')
-    expect(git('rev-parse', 'refs/remotes/upstream/pr/7')).toBe(forkSha)
+    expect(await gitService.fetchPrHead(repo, 'upstream', 7)).toBe(HEAD7)
+    expect(git('rev-parse', HEAD7)).toBe(forkSha)
     expect(await gitService.getLocalCommits(repo, [forkSha])).toEqual([forkSha])
-    // Only that ref: no branch of the remote, and no tag.
-    expect(git('for-each-ref', '--format=%(refname)', 'refs/remotes/upstream')).toBe('refs/remotes/upstream/pr/7')
+    // Not a branch of the remote, and no tag: nothing to check out or push.
+    expect(git('for-each-ref', '--format=%(refname)', 'refs/remotes/upstream')).toBe('')
     expect(git('tag', '--list', 'v9.9.9')).toBe('')
+    // The graph walks the private refs, so the Commits tab can open the commit there.
+    expect((await gitService.log(repo)).map((c) => c.hash)).toContain(forkSha)
   })
 
   it('finds GitLab’s merge-requests convention too', async () => {
-    expect(await gitService.fetchPrHead(repo, 'upstream', 8)).toBe('upstream/pr/8')
-    expect(git('rev-parse', 'refs/remotes/upstream/pr/8')).toBe(mrSha)
+    expect(await gitService.fetchPrHead(repo, 'upstream', 8)).toBe('refs/githuttbr/pr/upstream/8')
+    expect(git('rev-parse', 'refs/githuttbr/pr/upstream/8')).toBe(mrSha)
   })
 
   it('a force-pushed head moves the local ref along', async () => {
     await gitService.fetchPrHead(repo, 'upstream', 7)
     execFileSync('git', ['-C', bare, 'update-ref', 'refs/pull/7/head', mrSha])
     await gitService.fetchPrHead(repo, 'upstream', 7)
+    expect(git('rev-parse', HEAD7)).toBe(mrSha)
+  })
+
+  it('leaves a real pr/N branch of the remote alone, and survives fetch --prune', async () => {
+    // The remote has a branch literally named pr/7, with its own commit.
+    execFileSync('git', ['-C', bare, 'update-ref', 'refs/heads/pr/7', mrSha])
+    git('fetch', '-q', 'upstream')
     expect(git('rev-parse', 'refs/remotes/upstream/pr/7')).toBe(mrSha)
+    await gitService.fetchPrHead(repo, 'upstream', 7)
+    expect(git('rev-parse', 'refs/remotes/upstream/pr/7')).toBe(mrSha)
+    expect(git('rev-parse', HEAD7)).toBe(forkSha)
+    // The branch goes away on the server; a pruning fetch drops its tracking ref, not the PR head.
+    execFileSync('git', ['-C', bare, 'update-ref', '-d', 'refs/heads/pr/7'])
+    git('fetch', '-q', '--prune', 'upstream')
+    expect(() => git('rev-parse', '--verify', '-q', 'refs/remotes/upstream/pr/7')).toThrow()
+    expect(git('rev-parse', HEAD7)).toBe(forkSha)
+    git('gc', '-q', '--prune=now')
+    expect(await gitService.getLocalCommits(repo, [forkSha])).toEqual([forkSha])
   })
 
   it('null when the remote publishes no head for that number', async () => {
     expect(await gitService.fetchPrHead(repo, 'upstream', 99)).toBeNull()
-    expect(git('for-each-ref', '--format=%(refname)', 'refs/remotes/upstream')).toBe('')
+    expect(git('for-each-ref', '--format=%(refname)', 'refs/githuttbr/pr')).toBe('')
+  })
+
+  it('refuses a remote whose name cannot be one segment of the private ref', async () => {
+    git('remote', 'add', 'team/upstream', bare)
+    await expect(gitService.fetchPrHead(repo, 'team/upstream', 7)).rejects.toThrow(/in a ref name/)
   })
 
   it('refuses a bad number or a remote that is not configured, before anything runs', async () => {

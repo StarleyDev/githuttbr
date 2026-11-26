@@ -1197,7 +1197,10 @@ export const hostingApi = {
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
-  /** GitHub: reply in a review thread whose first comment is gone, through a comment still in it. */
+  /**
+   * GitHub: reply in a review thread whose first comment is gone, through a comment still in it.
+   * `pending`: the reply landed in the viewer's pending review, unseen until it is submitted.
+   */
   prReplyReviewThread: (
     repoPath: string,
     remoteUrl: string,
@@ -1205,7 +1208,8 @@ export const hostingApi = {
     number: number,
     commentId: number,
     body: string
-  ) => window.api.hosting.prReplyReviewThread(repoPath, remoteUrl, tokens, number, commentId, body) as Promise<void>,
+  ) =>
+    window.api.hosting.prReplyReviewThread(repoPath, remoteUrl, tokens, number, commentId, body) as Promise<{ pending: boolean }>,
   /** Start a review thread on one line of the PR's diff, posted at once. */
   prCommentOnLine: (
     repoPath: string,

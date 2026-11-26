@@ -244,21 +244,40 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     )
   const merge = (): void =>
     void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
+  /**
+   * Reply in a review thread. True once the host took the reply — even when
+   * reading the page again fails after it — so the card never offers the
+   * host's page (and a second copy) for a reply that went through.
+   */
   const replyToThread = async (thread: PrReviewThread, text: string): Promise<boolean> => {
     const body = text.trim()
     if (!body) return false
     // GitHub: with the first comment gone, REST has nothing to reply to — the
     // reply goes to the thread itself (GraphQL), found through a comment still in it.
     const survivor = isThreadRootMissing(provider, thread) ? thread.comments[0] : undefined
-    const ok = await act(
-      () =>
-        survivor
-          ? hostingApi.prReplyReviewThread(repoPath, remoteUrl, tokens, number, survivor.id, body)
-          : hostingApi.prReplyReviewComment(repoPath, remoteUrl, tokens, number, thread.rootId, body),
-      t('prDetail.replyPosted')
-    )
-    if (ok) replyDrafts.current[String(thread.rootId)] = ''
-    return ok
+    setBusy(true)
+    let pending = false
+    try {
+      if (survivor) pending = (await hostingApi.prReplyReviewThread(repoPath, remoteUrl, tokens, number, survivor.id, body)).pending
+      else await hostingApi.prReplyReviewComment(repoPath, remoteUrl, tokens, number, thread.rootId, body)
+    } catch (err) {
+      toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
+      setBusy(false)
+      return false
+    }
+    replyDrafts.current[String(thread.rootId)] = ''
+    // A reply filed under the viewer's pending review is not posted: nobody sees it yet.
+    if (pending) toast('info', t('prComment.replyPendingReview'))
+    else toast('success', t('prDetail.replyPosted'))
+    try {
+      await load()
+      void useRepoStore.getState().refreshPRs(repoPath, { silent: true })
+    } catch {
+      /* the reply is in; the page shows its own read error */
+    } finally {
+      setBusy(false)
+    }
+    return true
   }
 
   // A click on a line opens its composer — unless a comment already typed on

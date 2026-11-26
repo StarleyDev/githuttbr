@@ -939,9 +939,11 @@ export interface ReferenceSummary extends ReferenceQuery {
   /**
    * Why it is not available: the host has no such item or will not show it to
    * this account (`notFound`), the host is throttling (`rateLimited`), or the
-   * host was not asked or not reached — no account, no API, offline (`unreachable`).
+   * host was not reached — no account, no API, offline (`unreachable`). `notAsked`:
+   * left out of this request (a capped fallback) — the renderer keeps no answer for
+   * it, so the next hover asks.
    */
-  reason?: 'notFound' | 'rateLimited' | 'unreachable'
+  reason?: 'notFound' | 'rateLimited' | 'unreachable' | 'notAsked'
   kind?: 'issue' | 'pr' | 'mr' | 'workItem'
   title?: string
   /** GitHub, GitLab and Forgejo, normalized. */

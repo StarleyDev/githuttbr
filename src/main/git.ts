@@ -1494,6 +1494,9 @@ async function assertSafeRemoteBranch(repoPath: string, remote: string, branch: 
   await assertConfiguredRemote(repoPath, remote)
 }
 
+/** Where fetchPrHead keeps fork pull request heads: `<prefix><remote>/<number>`. */
+const PR_HEAD_REF_PREFIX = 'refs/githuttbr/pr/'
+
 /** `remote` is one of this repository's remotes — never an option, a URL or a path. */
 async function assertConfiguredRemote(repoPath: string, remote: string): Promise<void> {
   assertNotOption(remote, 'the remote')
@@ -2850,6 +2853,9 @@ export const gitService = {
       '--tags',
       '--remotes',
       'HEAD',
+      // Fork pull request heads the Commits tab fetched (fetchPrHead): private
+      // refs, so the real-refs list above does not reach them.
+      `--glob=${PR_HEAD_REF_PREFIX}*`,
       ...stashBases,
       '--ignore-missing',
       '--date-order',
@@ -3622,24 +3628,33 @@ export const gitService = {
   },
 
   /**
-   * Fetch a pull request's head into `refs/remotes/<remote>/pr/<number>`, so
+   * Fetch a pull request's head into `refs/githuttbr/pr/<remote>/<number>`, so
    * its commits are in this clone even when its branch lives in a fork no
    * remote here points at. The head is found the way `resolvePrRef` finds it —
    * the target repository mirrors it under a well-known ref (`refs/pull/N/head`,
    * `refs/merge-requests/N/head`, `refs/pull-requests/N/from`). Azure DevOps
    * publishes only a synthetic merge commit, which is no head: not fetched.
    *
+   * A private ref, like `refs/githuttbr/wip`: not a remote-tracking branch, so
+   * it never takes the place of a real `pr/N` branch, `fetch --prune` leaves it
+   * alone (the commits stay safe from gc), and it is nothing to check out or
+   * push. The graph walks it explicitly (`log`). It stays until deleted by hand.
+   *
    * The number and the remote are checked before either reaches a refspec, as
    * `fetchRemoteBranch` checks its branch; `--no-tags` as there. A write, not a
    * READ_METHOD: it moves a ref.
    *
-   * Returns the ref written as `<remote>/pr/<number>`, or null when the remote
-   * publishes no head for that number.
+   * Returns the ref written, or null when the remote publishes no head for
+   * that number.
    */
   async fetchPrHead(repoPath: string, remote: string, number: number): Promise<string | null> {
     if (!Number.isSafeInteger(number) || number <= 0) throw new Error(`Refusing the pull request number "${number}".`)
     await assertConfiguredRemote(repoPath, remote)
-    const local = `refs/remotes/${remote}/pr/${number}`
+    // One plain path segment: a remote named `a/b` would nest under another's numbers.
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(remote) || remote.endsWith('.lock') || remote.includes('..')) {
+      throw new Error(`Refusing the remote "${remote}" in a ref name.`)
+    }
+    const local = `${PR_HEAD_REF_PREFIX}${remote}/${number}`
     const normalized = await runGit(repoPath, ['check-ref-format', '--normalize', local]).catch(() => '')
     if (normalized.trim() !== local) throw new Error(`Refusing the ref "${local}": git does not accept it.`)
     const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote)).filter((c) => c.flavor !== 'azure')
@@ -3648,7 +3663,7 @@ export const gitService = {
     await withRemoteAuth(repoPath, remote, 'fetch', () =>
       runGit(repoPath, ['fetch', '--no-tags', '--', remote, `+${hit.ref}:${local}`])
     )
-    return `${remote}/pr/${number}`
+    return local
   },
 
   /**

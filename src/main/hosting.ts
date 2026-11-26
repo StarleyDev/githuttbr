@@ -14,7 +14,7 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
-import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThreadId } from './githubGraphql'
+import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThread } from './githubGraphql'
 import {
   getAnchorLine,
   getAnchorSide,
@@ -2620,7 +2620,8 @@ async function replyReviewComment(
  * replies name the root comment, which is gone; GraphQL replies name the
  * thread. The thread is found through a comment still in it — its REST
  * `node_id` is the GraphQL comment id. Any failure is thrown: the page then
- * offers the host's own page instead.
+ * offers the host's own page instead. `pending`: GitHub filed the reply under
+ * the viewer's pending review, unseen until that review is submitted.
  */
 async function replyReviewThread(
   remoteUrl: string,
@@ -2628,16 +2629,17 @@ async function replyReviewThread(
   number: number,
   commentId: number,
   body: string
-): Promise<void> {
+): Promise<{ pending: boolean }> {
   if (!Number.isSafeInteger(commentId) || commentId <= 0) throw new Error('Not a review comment id.')
   if (typeof body !== 'string' || !body.trim()) throw new Error('An empty reply.')
   const { owner, repo, token, ep, api } = await ghRepoOf(remoteUrl, tokens.github)
   const comment = await ghJson<{ node_id?: string }>(`${api}/pulls/comments/${commentId}`, token)
   if (!comment.node_id) throw new Error('GitHub did not name the comment.')
   const post = createGithubGraphqlPost(ep.graphqlUrl, token)
-  const threadId = await findReviewThreadId(post, owner, repo, number, comment.node_id)
-  if (!threadId) throw new Error('GitHub did not find the review thread.')
-  await addReviewThreadReply(post, threadId, body)
+  const thread = await findReviewThread(post, owner, repo, number, comment.node_id)
+  if (!thread) throw new Error('GitHub did not find the review thread.')
+  if (!thread.viewerCanReply) throw new Error('GitHub does not let this account reply in this thread.')
+  return addReviewThreadReply(post, thread.id, body)
 }
 
 /**

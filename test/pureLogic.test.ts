@@ -144,6 +144,7 @@ import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } fr
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
+import { canFetchPrHead } from '../src/renderer/src/lib/prCommits'
 import {
   getReferenceHost,
   orderByNearness,
@@ -152,6 +153,7 @@ import {
   REFERENCE_RATE_LIMITED_TTL_MS,
   REFERENCE_REQUEST_MAX,
   getReferenceRequestMax,
+  getCacheableSummaries,
   REFERENCE_TTL_MS,
   REFERENCE_UNAVAILABLE_TTL_MS,
   splitWorkItemMentions,
@@ -1295,6 +1297,17 @@ describe('references: cache and batching', () => {
     expect(pickReferenceBatch(null, visible, isKnown, 2).map((q) => q.id)).toEqual([1, 3])
     expect(pickReferenceBatch({ sigil: '#', id: 2 }, [], isKnown)).toEqual([])
     expect(REFERENCE_REQUEST_MAX).toBe(10)
+  })
+  it('caches what was answered, not what was left unasked; what was left out reads "could not read"', () => {
+    const batch = [1, 2, 3].map((id) => ({ sigil: '#' as const, id }))
+    const answered: ReferenceSummary[] = [
+      { sigil: '#', id: 1, available: true, kind: 'issue', title: 'A', state: 'open' },
+      { sigil: '#', id: 2, available: false, reason: 'notAsked' }
+    ]
+    expect(getCacheableSummaries(batch, answered).map((s) => [s.id, s.available, s.reason])).toEqual([
+      [1, true, undefined],
+      [3, false, 'unreachable']
+    ])
   })
   it('asks GitHub for fifty per request (one GraphQL query), Azure for 200, the rest for ten', () => {
     const host = (h: Partial<{ azure: boolean; gitlab: boolean; github: boolean }>): { azure: boolean; gitlab: boolean; github: boolean } => ({
@@ -8642,8 +8655,26 @@ describe('editing and deleting your own comments (lib/commentEdit)', () => {
     expect(isMyComment(by('Ana Souza', { authorUniqueName: 'ana.souza@example.com' }), { ...me, viewerUniqueName: null })).toBe(false)
   })
 
+  it('an empty or blank unique name never matches, on either side', () => {
+    const me = { viewer: 'Ana Souza', viewerId: 'id-ana-1', viewerUniqueName: '', viewerById: true }
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2', authorUniqueName: '' }), me)).toBe(false)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2', authorUniqueName: '  ' }), { ...me, viewerUniqueName: '  ' })).toBe(false)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2', authorUniqueName: 'ana@example.com' }), me)).toBe(false)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2', authorUniqueName: '' }), { ...me, viewerUniqueName: 'ana@example.com' })).toBe(false)
+  })
+
   it('ids decide when both sides carry one, even on a login host', () => {
     expect(isMyComment(by('ana', { authorId: '7' }), { viewer: 'ana', viewerId: '8' })).toBe(false)
+  })
+
+  it('a fork PR head can be fetched except where the host mirrors none (Azure DevOps, bitbucket.org)', () => {
+    expect(canFetchPrHead('https://github.com/team/app.git')).toBe(true)
+    expect(canFetchPrHead('git@gitlab.example.corp:team/app.git')).toBe(true)
+    expect(canFetchPrHead('https://bitbucket.example.corp/scm/proj/app.git')).toBe(true)
+    expect(canFetchPrHead('https://bitbucket.org/team/app.git')).toBe(false)
+    expect(canFetchPrHead('git@bitbucket.org:team/app.git')).toBe(false)
+    expect(canFetchPrHead('https://dev.azure.com/acme/proj/_git/app')).toBe(false)
+    expect(canFetchPrHead('https://git.example.corp/team/app.git', 'azure')).toBe(false)
   })
 
   it('a GitHub thread whose first comment is gone is flagged, to be answered by the thread id', () => {

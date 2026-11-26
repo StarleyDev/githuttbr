@@ -200,7 +200,7 @@ export async function githubReferenceSummaries(
   const out: ReferenceSummary[] = []
   for (let i = 0; i < asked.length; i += GITHUB_GRAPHQL_BATCH) {
     const chunk = asked.slice(i, i + GITHUB_GRAPHQL_BATCH)
-    let read: ReferenceSummary[]
+    let read: { summaries: ReferenceSummary[]; exhausted: boolean }
     try {
       read = await githubGraphqlReferenceSummaries(graphql, chunk)
     } catch (err) {
@@ -209,11 +209,18 @@ export async function githubReferenceSummaries(
         break
       }
       // Fall back for what is left, capped: REST pays a request per reference.
+      // The rest were not asked — not "unreachable": the next hover asks again.
       const rest = asked.slice(i)
       out.push(...(await githubRestReferenceSummaries(get, repoApi, rest.slice(0, GITHUB_REST_FALLBACK_MAX))))
+      out.push(...rest.slice(GITHUB_REST_FALLBACK_MAX).map((q) => unavailableReference(q, 'notAsked')))
       break
     }
-    out.push(...read)
+    out.push(...read.summaries)
+    // That answer spent the last of the limit: the next chunk would be refused.
+    if (read.exhausted) {
+      out.push(...asked.slice(i + GITHUB_GRAPHQL_BATCH).map((q) => unavailableReference(q, 'rateLimited')))
+      break
+    }
   }
   return byQuery(queries, out)
 }
@@ -236,9 +243,9 @@ interface GhGraphqlItem {
 async function githubGraphqlReferenceSummaries(
   { post, owner, repo }: GithubGraphqlTarget,
   chunk: readonly ReferenceQuery[]
-): Promise<ReferenceSummary[]> {
+): Promise<{ summaries: ReferenceSummary[]; exhausted: boolean }> {
   const askable = chunk.filter((q) => q.id <= GRAPHQL_INT_MAX)
-  if (!askable.length) return chunk.map((q) => unavailableReference(q, 'notFound'))
+  if (!askable.length) return { summaries: chunk.map((q) => unavailableReference(q, 'notFound')), exhausted: false }
   // The ids are positive safe integers (normalizeReferenceQueries): safe to write into the query.
   const fields = askable
     .map(
@@ -253,7 +260,7 @@ async function githubGraphqlReferenceSummaries(
   if (limited) throw Object.assign(new Error('GitHub: rate limited'), { status: 403, rateLimited: true })
   const found = answer.data?.repository
   if (!found) throw new Error(`GitHub GraphQL: ${String(answer.errors[0]?.message ?? 'no repository')}`)
-  return chunk.map((q): ReferenceSummary => {
+  const summaries = chunk.map((q): ReferenceSummary => {
     const it = q.id <= GRAPHQL_INT_MAX ? found[`i${q.id}`] : null
     if (!it || typeof it.title !== 'string') return unavailableReference(q, 'notFound')
     const pr = it.__typename === 'PullRequest'
@@ -268,6 +275,7 @@ async function githubGraphqlReferenceSummaries(
         : 'open'
     return { ...q, available: true, kind: pr ? 'pr' : 'issue', title: it.title, state }
   })
+  return { summaries, exhausted: answer.exhausted }
 }
 
 /**

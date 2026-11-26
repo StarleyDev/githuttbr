@@ -40,7 +40,10 @@ export function isMyComment(
   who: CommentViewer | null | undefined
 ): boolean {
   if (!comment.handle || !who) return false
-  if (comment.authorUniqueName && who.viewerUniqueName && sameText(comment.authorUniqueName, who.viewerUniqueName)) return true
+  // A blank name names nobody: only a real one on both sides may match.
+  const author = comment.authorUniqueName?.trim()
+  const viewer = who.viewerUniqueName?.trim()
+  if (author && viewer && sameText(author, viewer)) return true
   if (comment.authorId && who.viewerId) return sameText(comment.authorId, who.viewerId)
   if (who.viewerById) return false
   return !!who.viewer && !!comment.author && sameText(comment.author, who.viewer)

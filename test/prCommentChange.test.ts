@@ -171,13 +171,13 @@ describe('editing and deleting a pull request comment — main', () => {
               reviewThreads: {
                 pageInfo: { hasNextPage: false, endCursor: null },
                 nodes: [
-                  { id: 'PRRT_other', comments: { nodes: [{ id: 'PRRC_x' }] } },
-                  { id: 'PRRT_wanted', comments: { nodes: [{ id: 'PRRC_survivor' }, { id: 'PRRC_y' }] } }
+                  { id: 'PRRT_other', viewerCanReply: true, comments: { nodes: [{ id: 'PRRC_x' }] } },
+                  { id: 'PRRT_wanted', viewerCanReply: true, comments: { nodes: [{ id: 'PRRC_survivor' }, { id: 'PRRC_y' }] } }
                 ]
               }
             }
           },
-          addPullRequestReviewThreadReply: { comment: { id: 'PRRC_new' } }
+          addPullRequestReviewThreadReply: { comment: { id: 'PRRC_new', state: 'SUBMITTED' } }
         }
       }
 
@@ -186,7 +186,7 @@ describe('editing and deleting a pull request comment — main', () => {
           ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
           ['POST', GRAPHQL, 200, answer]
         ]
-        await reply(43)
+        expect(await reply(43)).toEqual({ pending: false })
         const posts = sent.filter((s) => s.url === GRAPHQL)
         expect(posts).toHaveLength(2)
         expect((posts[0].body as { variables: unknown }).variables).toEqual({ owner: 'team', repo: 'app', number: 7, after: null })
@@ -208,6 +208,27 @@ describe('editing and deleting a pull request comment — main', () => {
         ]
         expect((await failure(reply(43))).message).toMatch(/did not find the review thread/)
         expect(sent.filter((s) => s.url === GRAPHQL && JSON.stringify(s.body).includes('addPullRequestReviewThreadReply'))).toEqual([])
+      })
+
+      it('says when the reply landed in the viewer’s pending review', async () => {
+        const pendingAnswer = JSON.parse(JSON.stringify(answer)) as typeof answer
+        pendingAnswer.data.addPullRequestReviewThreadReply.comment.state = 'PENDING'
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
+          ['POST', GRAPHQL, 200, pendingAnswer]
+        ]
+        expect(await reply(43)).toEqual({ pending: true })
+      })
+
+      it('sends no reply where GitHub says this account may not reply (viewerCanReply false)', async () => {
+        const locked = JSON.parse(JSON.stringify(answer)) as typeof answer
+        locked.data.repository.pullRequest.reviewThreads.nodes[1].viewerCanReply = false
+        routes = [
+          ['GET', `${API}/pulls/comments/43`, 200, { id: 43, node_id: 'PRRC_survivor' }],
+          ['POST', GRAPHQL, 200, locked]
+        ]
+        expect((await failure(reply(43))).message).toMatch(/does not let this account reply/)
+        expect(sent.filter((s) => s.url === GRAPHQL)).toHaveLength(1)
       })
 
       it('refuses a malformed comment id or an empty reply before anything is sent', async () => {
