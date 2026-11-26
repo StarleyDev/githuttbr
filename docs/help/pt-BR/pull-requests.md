@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, e comentários numa linha do diff.
-keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção
-source: c269e43eb3dc0b9f86141af27ef39b50e5550953
+keywords: pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr editor markdown barra formatação visualizar menção editar comentário excluir comentário apagar comentário editado erro de digitação
+source: 0330a13527850e2beedb9dc1477712d3f83c7b88
 ---
 
 # Página de pull requests
@@ -309,6 +309,64 @@ requests que já estão na tela. A caixa de resposta mostra as ferramentas quand
 você clica nela, e envia com ⌘/Ctrl+Enter, já que o Enter agora começa uma
 linha nova. [Escrever comentários](writing-comments.md) tem os detalhes e os
 limites.
+
+## Editar e excluir seus comentários
+
+Um erro de digitação num comentário já enviado, ou uma observação que deixou de
+valer, antes exigia ir ao navegador. Agora os seus comentários têm **Editar** (o
+lápis) e **Excluir** (a lixeira) no fim do cabeçalho: comentários da conversa,
+comentários e respostas de threads de revisão, nas abas Conversa e Arquivos. A
+página de issue também tem, para os comentários dela no GitHub e no Forgejo.
+
+![Seu próprio comentário, marcado como editado, com Editar e Excluir no fim do cabeçalho](../../screenshots/comment-editor.webp)
+
+"Seu" quer dizer que o autor do comentário é a conta com que as chamadas deste
+repositório entram, a mesma que o **Eu** da lista usa, comparada sem diferenciar
+maiúsculas. Quando o app não consegue saber quem é (um token sem escopo de
+usuário), nenhum comentário mostra as ações. Quem decide continua sendo o host:
+uma conta que ele não deixa alterar um comentário é recusada, e a mensagem diz
+isso.
+
+- **Editar** abre o comentário no lugar, no mesmo editor de Markdown, com o
+  texto como foi escrito. **Salvar** (ou ⌘/Ctrl+Enter) envia; **Cancelar** ou
+  **Esc** fecha, perguntando antes quando você mudou algo. O texto novo aparece
+  na hora e a página lê o pull request de novo. Uma edição não salva conta como
+  texto não enviado: **‹ ›** perguntam antes de sair dela.
+- **Excluir** sempre pergunta antes, e a pergunta diz o que acontece: o
+  servidor remove o comentário para todos, e não dá para desfazer. Não há
+  entrada de desfazer, porque nada o traz de volta.
+
+Excluir o **primeiro comentário de uma thread** que tem respostas muda de host
+para host, e a confirmação diz qual é o caso:
+
+| Host | Primeiro comentário de uma thread com respostas |
+|---|---|
+| GitHub | Só esse comentário sai; as respostas ficam na thread |
+| GitLab | Só essa nota sai; a thread e as respostas ficam |
+| Azure DevOps | O comentário é marcado como excluído e some; a thread e as respostas ficam |
+| Bitbucket Data Center | Recusado: o Data Center não exclui um comentário que tem respostas. Exclua as respostas antes, ou edite o comentário |
+
+Alguns hosts marcam um comentário como **editado**; o app mostra isso onde o
+host guarda uma data para a mudança: GitHub, Azure DevOps, Bitbucket Data Center
+e Forgejo. No GitLab essa data também muda quando uma thread é resolvida, então
+ela não é usada.
+
+O que não faz:
+
+- **Comentários de revisão do Forgejo** (comentários numa linha) não podem ser
+  editados pela API, e só algumas versões permitem excluir, então eles não
+  mostram nenhuma das ações: altere-os no site. Comentários da conversa
+  funcionam como nos outros hosts.
+- **Alguém mudou no meio tempo.** O Bitbucket Data Center confere a versão do
+  comentário: editar ou excluir um comentário que mudou desde que a página
+  carregou é recusado, e **Atualizar** mostra o atual. Os outros hosts ficam com
+  a última escrita.
+- **Já excluído**: um comentário excluído em outro lugar desde que a página
+  carregou é informado como tal, e a página lê o pull request de novo.
+- **bitbucket.org**: os pull requests abrem no navegador, então ainda não há
+  página para editar os comentários deles, embora o app saiba fazer a chamada.
+- **A descrição** do pull request e os resumos das revisões não são
+  comentários, e não são editados aqui.
 
 ## Limites
 
