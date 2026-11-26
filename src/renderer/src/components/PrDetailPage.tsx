@@ -438,65 +438,68 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     <div className="prp-frame">
       <div className="prp-page">
         <div className="prp-main">
-          <PrNavBar page={page} />
-          <header className="prp-head">
-            {status && (
-              <span className={`prp-state prp-${status}`}>
-                <StatusIcon status={status} /> {t(STATUS_KEY[status])}
-              </span>
-            )}
-            <h2>
-              {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
-            </h2>
-            <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
-              <RefreshCw size={14} />
-            </button>
-            {aiEnabled && pr && (
-              <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
-                <Sparkles size={14} />
+          {/* One block, so the stacked layout can pin it whole (see .prp-top). */}
+          <div className="prp-top">
+            <PrNavBar page={page} />
+            <header className="prp-head">
+              {status && (
+                <span className={`prp-state prp-${status}`}>
+                  <StatusIcon status={status} /> {t(STATUS_KEY[status])}
+                </span>
+              )}
+              <h2>
+                {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
+              </h2>
+              <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
+                <RefreshCw size={14} />
               </button>
-            )}
-            <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
-              <GitPullRequestArrow size={14} />
-            </button>
-            {pr && (
-              <>
-                <BranchGoButton
-                  title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
-                  usable={!pr.sourceRepo && canGo}
-                  onGo={() => void goToBranch(pr.source)}
-                  icon={<GitBranch size={14} />}
-                />
-                <BranchGoButton
-                  title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
-                  usable={canGo}
-                  onGo={() => void goToBranch(pr.target)}
-                  icon={<Target size={14} />}
-                />
-              </>
-            )}
-            {pr && (
-              <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
-                <ExternalLink size={14} />
+              {aiEnabled && pr && (
+                <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
+                  <Sparkles size={14} />
+                </button>
+              )}
+              <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
+                <GitPullRequestArrow size={14} />
               </button>
+              {pr && (
+                <>
+                  <BranchGoButton
+                    title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
+                    usable={!pr.sourceRepo && canGo}
+                    onGo={() => void goToBranch(pr.source)}
+                    icon={<GitBranch size={14} />}
+                  />
+                  <BranchGoButton
+                    title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
+                    usable={canGo}
+                    onGo={() => void goToBranch(pr.target)}
+                    icon={<Target size={14} />}
+                  />
+                </>
+              )}
+              {pr && (
+                <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
+                  <ExternalLink size={14} />
+                </button>
+              )}
+            </header>
+            {pr && (
+              <div className="prp-sub">
+                {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
+                  author: pr.author,
+                  source: pr.source,
+                  target: pr.target
+                })}
+              </div>
             )}
-          </header>
-          {pr && (
-            <div className="prp-sub">
-              {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
-                author: pr.author,
-                source: pr.source,
-                target: pr.target
-              })}
-            </div>
-          )}
 
-          <nav className="prp-tabs" role="tablist">
-            <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
-            <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commitCount} />
-            <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
-            <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
-          </nav>
+            <nav className="prp-tabs" role="tablist">
+              <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
+              <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commitCount} />
+              <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
+              <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
+            </nav>
+          </div>
 
           <div className="prp-body">
             {loading ? (
