@@ -7971,8 +7971,9 @@ body.col-resizing .node-ava {
   position: sticky;
   top: 0;
   z-index: 10;
-  margin-top: -14px;
-  padding-top: 14px;
+  /* The head owns the column's whole top gap (see the rule below): it starts
+     where it rests, so scrolling never carries it up before it pins. */
+  padding-top: 32px;
   background: var(--bg-1);
   transition: box-shadow 0.15s ease;
 }
@@ -7990,6 +7991,9 @@ body.col-resizing .node-ava {
   max-width: 760px;
   margin: 0 auto;
   padding: 32px 32px 64px;
+}
+.changelog-inner:has(> .page-head) {
+  padding-top: 0;
 }
 
 .changelog-header {
