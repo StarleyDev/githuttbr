@@ -7,7 +7,7 @@ import { PRODUCT_NAME } from '../../../shared/brand'
 
 export const APP_THEMES: AppTheme[] = [
   {
-    id: 'gitcito',
+    id: 'githuttbr',
     name: PRODUCT_NAME,
     builtin: true,
     light: {
@@ -365,7 +365,7 @@ export const APP_THEMES: AppTheme[] = [
 
 export const CODE_THEMES: CodeTheme[] = [
   {
-    id: 'gitcito',
+    id: 'githuttbr',
     name: PRODUCT_NAME,
     builtin: true,
     light: {
@@ -817,7 +817,7 @@ export function findCodeTheme(id: string, custom: CodeTheme[]): CodeTheme {
 
 export const TERMINAL_THEMES: TerminalTheme[] = [
   {
-    id: 'gitcito',
+    id: 'githuttbr',
     name: PRODUCT_NAME,
     builtin: true,
     colors: {

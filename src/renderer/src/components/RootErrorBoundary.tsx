@@ -21,7 +21,7 @@ export class RootErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[gitcito] UI error, reloading:', error, info.componentStack)
+    console.error('[githuttbr] UI error, reloading:', error, info.componentStack)
     const where = info.componentStack?.split('\n').find((line) => line.trim()) ?? ''
     windowApi.reportUiCrash(`${error.message} ${where.trim()}`)
   }

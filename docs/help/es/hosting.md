@@ -280,7 +280,7 @@ motivo y nunca lanzan una notificación del sistema — eso lo decide el motivo.
 ## Tokens
 
 Tokens por perfil para varias cuentas u organizaciones, guardados en el llavero
-del sistema. Gitcito también puede tomar prestado lo que ya tenga tu **helper
+del sistema. GitHuttBr también puede tomar prestado lo que ya tenga tu **helper
 de credenciales de git**, así que una organización para la que ya te has
 autenticado a menudo no necesita configuración ninguna. Mira [Seguridad y
 secretos](security.md).

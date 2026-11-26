@@ -59,7 +59,7 @@ Rozwijana lista gałęzi na pasku narzędzi pokazuje gałęzie lokalne i zdalne.
 Kliknij prawym przyciskiem dowolną gałąź na tej liście, aby zmienić nazwę
 gałęzi lokalnej, skopiować jej nazwę, otworzyć ją w nowym worktree, scalić
 ją z aktywną gałęzią lub ją usunąć. Gałęzie zdalne nie oferują zmiany nazwy
-i po potwierdzeniu są usuwane ze swojego zdalnego repozytorium. Gitcito
+i po potwierdzeniu są usuwane ze swojego zdalnego repozytorium. GitHuttBr
 pomija scalanie, gdy wybrana referencja jest już zawarta w aktywnej gałęzi,
 i wyłącza tworzenie worktree, gdy ta gałąź jest już wyewidencjonowana.
 
@@ -89,7 +89,7 @@ Wzmianki o work itemach stają się linkami w wiadomościach commitów i tekstac
 pull requestów: `AB#1234` wszędzie, gdzie znana jest organizacja Azure, a w
 repozytorium Azure także zwykłe `#1234`, bo Azure numeruje work itemy, nie
 issues. W repozytorium GitHub połączonym z Azure Boards organizacja nie jest
-znana; wpis `links.tickets` w [`.gitcito.json`](repo-config.md) repozytorium to
+znana; wpis `links.tickets` w [`.githuttbr.json`](repo-config.md) repozytorium to
 załatwia — wzorzec `AB#(\d+)`, URL
 `https://dev.azure.com/<org>/_workitems/edit/$1`.
 
@@ -116,7 +116,7 @@ wybraną, musi przestawić się sam. Na plakietce w grafie opcja pojawia się ty
 wtedy, gdy gałąź śledzi dokładnie jedną zdalną; przy kilku wybierz gałąź w
 panelu bocznym, żeby upstream był jednoznaczny.
 
-**Ograniczenia:** Gitcito nie przepisuje niczego, co odwoływało się do starej
+**Ograniczenia:** GitHuttBr nie przepisuje niczego, co odwoływało się do starej
 nazwy — otwarte pull requesty nadal wskazują gałąź, wobec której powstały, a
 reguły CI dopasowane do wzorca gałęzi przestają pasować. Zmiana nazwy gałęzi
 wybranej w innym [worktree](worktrees.md) kończy się błędem, a git to zgłasza.
@@ -138,7 +138,7 @@ repozytorium, i jednocześnie zostają na swoim zwykłym miejscu niżej.
 ## Przełączanie na gałąź zdalną
 
 Kliknij dwukrotnie gałąź zdalną, żeby utworzyć lokalną, która ją śledzi. Jeśli
-lokalna gałąź o tej nazwie już istnieje i się **rozeszła**, Gitcito zapyta, jak
+lokalna gałąź o tej nazwie już istnieje i się **rozeszła**, GitHuttBr zapyta, jak
 to pogodzić — rebase, merge czy reset — i zaproponuje wcześniejsze zrobienie
 kopii gałęzi.
 

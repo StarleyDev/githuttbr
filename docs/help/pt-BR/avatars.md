@@ -10,7 +10,7 @@ keywords: avatar avatares gravatar blobatar autor foto imagem identicon rosto of
 
 Uma lista de commits é um muro de nomes, e nomes se leem devagar. Uma imagem ao
 lado de cada um transforma «quem escreveu isso» em algo que você responde de
-relance. O Gitcito coloca uma em cada autor que mostra: na coluna de autor do
+relance. O GitHuttBr coloca uma em cada autor que mostra: na coluna de autor do
 grafo, nos detalhes do commit ao lado do autor e de cada coautor, no seletor de
 coautores enquanto você escreve, no alternador de perfis e ao lado de cada perfil
 nas Configurações.
@@ -40,7 +40,7 @@ pessoa.
 
 ## O rosto na barra de título
 
-O avatar ao lado do nome do seu perfil é o único avatar do Gitcito que representa
+O avatar ao lado do nome do seu perfil é o único avatar do GitHuttBr que representa
 **você, neste repositório, agora** — então é o único que reage ao estado do
 repositório. Ele faz uma cara quando tem algo, e fica neutro o resto do tempo.
 
@@ -87,7 +87,7 @@ O avatar da barra de título e da lista de perfis é seu, então você pode esco
 | **Automático** | O padrão: seu Gravatar do e-mail git do perfil, ou o rosto gerado — o que reage ao repositório. |
 | **Da integração** | A foto da conta GitHub ou GitLab que este perfil tem conectada em Integrações. Desabilitado até haver uma. |
 | **Ícone** | Um de 24 símbolos, na cor que você escolher. |
-| **Imagem** | Um arquivo que você escolhe — PNG ou JPEG. É reduzido para 256 px e guardado neste computador, na pasta de dados do Gitcito, não no arquivo de configurações. |
+| **Imagem** | Um arquivo que você escolhe — PNG ou JPEG. É reduzido para 256 px e guardado neste computador, na pasta de dados do GitHuttBr, não no arquivo de configurações. |
 | **Do repositório** | Um ícone ou logo encontrado num dos repositórios do perfil — o do app ou o da empresa — copiado para o perfil como uma imagem. |
 
 A imagem vai junto em **Configurações → Dados → Exportar configurações** e volta na importação;

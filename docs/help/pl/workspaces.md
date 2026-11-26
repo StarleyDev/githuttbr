@@ -4,7 +4,7 @@ category: Zacznij tutaj
 order: 3
 summary: Wiele repozytoriów bez tonięcia w nich: karty, grupy, foldery i przestrzenie robocze.
 keywords: przestrzeń robocza karty grupy foldery wiele repozytoriów układ workspace tabs groups folders multiple repos organise switch layout przejdź do repozytorium przełącznik rozmiar kart go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Przestrzenie, karty i grupy
@@ -140,7 +140,7 @@ strona otworzy się wtedy we własnej karcie: otwieranie musi zawsze coś otworz
 Przestrzeń robocza to **cały zapisany pasek kart**. Przełączenie podmienia
 wszystkie karty naraz: `Praca` i `Prywatne` przestają sobie wchodzić w drogę.
 
-Nazwa przestrzeni siedzi w lewym górnym rogu, obok znaku Gitcito. Kliknij ją,
+Nazwa przestrzeni siedzi w lewym górnym rogu, obok znaku GitHuttBr. Kliknij ją,
 żeby przełączyć, utworzyć, zmienić nazwę, przestawić lub usunąć. Obok znajduje
 się wskaźnik otwierający [Centrum dowodzenia](mission-control.md) dla
 przestrzeni, w której jesteś.

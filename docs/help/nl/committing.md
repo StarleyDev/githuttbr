@@ -59,7 +59,7 @@ Grenzen:
 - Alleen gitmoji tellen: een onderwerp dat met een andere emoji begint, blijft zoals het is.
 - Een repository waarvan de `commit-msg`-hook commitlint met de standaard
   Conventional-preset draait, weigert een emoji vooraan. Dat is de regel van de
-  hook, niet van Gitcito — stel commitlint in voor gitmoji of gebruik daar puur
+  hook, niet van GitHuttBr — stel commitlint in voor gitmoji of gebruik daar puur
   Conventional.
 
 ## Wat de opsteller voor je doet
@@ -83,12 +83,12 @@ het houdt je niet tegen bij het committen.
 
 ## Amend
 
-Amend herschrijft de laatste commit met wat er gestaged staat. Gitcito laat je
+Amend herschrijft de laatste commit met wat er gestaged staat. GitHuttBr laat je
 eerst de bestaande boodschap zien, zodat je bewerkt in plaats van overtypt.
 
 **Commit aanpassen…** op een grafiekrij doet hetzelfde voor HEAD: het laadt de
 volledige boodschap, zet de opsteller in de amend-stand en geeft hem focus. Een
-HEAD die al gepusht is kan nog steeds worden aangepast, maar Gitcito waarschuwt
+HEAD die al gepusht is kan nog steeds worden aangepast, maar GitHuttBr waarschuwt
 dat het bijwerken van de remote een force push zal kosten.
 
 **Commit ongedaan maken…** is de tegenhanger voor een niet-gepushte HEAD: een

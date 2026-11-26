@@ -4,7 +4,7 @@ category: Outils de l'espace de travail
 order: 95
 summary: Envoyer un dépôt, un fichier ou une seule ligne de code vers l'éditeur dans lequel vous écrivez vraiment.
 keywords: éditeur editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode ouvrir dans l'éditeur ligne line colonne column commande personnalisée custom argv devin desktop
-source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
+source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
 ---
 
 # Éditeur externe
@@ -14,14 +14,14 @@ le corrige. L'écart entre remarquer un problème dans un diff et avoir le curse
 sur cette ligne dans son éditeur, c'est une recherche de fichier et un défilement
 — à chaque fois.
 
-Pointez Gitcito vers votre éditeur une fois et cet écart disparaît : clic droit
+Pointez GitHuttBr vers votre éditeur une fois et cet écart disparaît : clic droit
 sur une ligne dans la vue fichier ou blame, et elle s'ouvre là-bas, à cette
 ligne.
 
 ## En choisir un
 
 **Paramètres → Général → Éditeur externe.** La liste déroulante énumère les
-éditeurs que Gitcito trouve sur cette machine — il cherche d'abord la commande de
+éditeurs que GitHuttBr trouve sur cette machine — il cherche d'abord la commande de
 chaque éditeur, puis, sur macOS, le bundle d'application dans `/Applications` et
 `~/Applications`. Le balayage a lieu chaque fois que vous ouvrez les paramètres :
 un éditeur installé il y a cinq minutes apparaît donc sans redémarrage.
@@ -41,7 +41,7 @@ Reconnus d'origine :
 
 **Sous Linux, un éditeur hors du PATH.** Un éditeur décompressé dans un dossier de
 votre choix n’est souvent pas dans le PATH, mais il est dans le menu des applications.
-Gitcito lit aussi les entrées `.desktop` du menu — dans les dossiers de données XDG
+GitHuttBr lit aussi les entrées `.desktop` du menu — dans les dossiers de données XDG
 (`~/.local/share`, puis `/usr/local/share` et `/usr/share`, ou ce que disent
 `XDG_DATA_HOME` et `XDG_DATA_DIRS`) et dans les exports de Flatpak et de Snap — et
 reconnaît un éditeur à son nom ou au programme que lance sa ligne `Exec=`. Une entrée
@@ -59,7 +59,7 @@ application sans rapport portant le même nom n’est jamais celle qui s’ouvre
 **Sauter à une ligne exige la commande de l'éditeur, pas son icône.** Un bundle
 `.app` macOS est lancé via `open`, qui accepte un chemin et rien d'autre — un
 éditeur trouvé uniquement sous forme de bundle ouvre donc le fichier au début, et
-Gitcito le dit sous la liste déroulante plutôt que de prétendre le contraire.
+GitHuttBr le dit sous la liste déroulante plutôt que de prétendre le contraire.
 
 Le correctif est du côté de l'éditeur : *Shell Command: Install 'code' command in
 PATH* pour VS Code, le lien symbolique `subl` de Sublime, *Toolbox → Settings →
@@ -80,7 +80,7 @@ l'éditeur et le saut à la ligne fonctionne.
 Les actions de ligne n'apparaissent que là où le numéro de ligne veut encore dire
 quelque chose : un fichier affiché à un ancien commit, ou un blame rembobiné à
 une révision antérieure, a des lignes qui ne correspondent plus à ce qui est sur
-le disque ; Gitcito ne propose donc aucun saut à cet endroit plutôt que de vous
+le disque ; GitHuttBr ne propose donc aucun saut à cet endroit plutôt que de vous
 envoyer au mauvais.
 
 ## Projets Xcode et autres paquets
@@ -107,12 +107,12 @@ plus que ça ne rapporte.
 
 **Le paquet s'ouvre par le système, pas par votre éditeur.** Un `.xcodeproj`
 donné à un éditeur de texte s'ouvre comme un dossier de property lists, ce que
-personne ne voulait en cliquant — Gitcito le confie donc à ce que le système lui
+personne ne voulait en cliquant — GitHuttBr le confie donc à ce que le système lui
 associe, c'est-à-dire Xcode sur un Mac où Xcode est installé. Votre choix
 d'éditeur ne bouge pas ; il vaut toujours pour tout fichier ordinaire.
 
 **C'est une convention de nommage, pas un attribut du système de fichiers.**
-Gitcito regarde l'extension : un répertoire que vous auriez nommé `notes.app` se
+GitHuttBr regarde l'extension : un répertoire que vous auriez nommé `notes.app` se
 replie lui aussi, et sous Linux ou Windows — où ce sont des dossiers ordinaires
 — un clic ouvre le gestionnaire de fichiers plutôt qu'un IDE.
 
@@ -137,7 +137,7 @@ syntaxe. Quatre marqueurs : `{path}`, `{line}`, `{col}`, `{repo}`.
 Un marqueur sans valeur emporte son option avec lui : `--line {line} {path}`
 lancé sans ligne devient simplement le chemin, jamais un `--line` orphelin qui
 avalerait le nom de fichier comme argument. Un gabarit sans `{line}` signifie
-simplement que Gitcito ne proposera pas d'actions à la ligne près pour cet
+simplement que GitHuttBr ne proposera pas d'actions à la ligne près pour cet
 éditeur.
 
 ## Ce que ce n'est pas
@@ -148,5 +148,5 @@ une image, un PDF, un dossier dans le Finder. L'éditeur est le plus spécifique
 des deux : là où les deux sont définis, l'éditeur l'emporte sur l'icône en bout
 de ligne de l'arborescence ; les deux restent listés dans le menu contextuel.
 
-Gitcito ne lance jamais votre éditeur de lui-même, et fermer Gitcito ne le ferme
+GitHuttBr ne lance jamais votre éditeur de lui-même, et fermer GitHuttBr ne le ferme
 jamais : l'éditeur est démarré détaché, comme un processus à part entière.

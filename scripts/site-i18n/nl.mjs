@@ -155,6 +155,6 @@ export const nl = {
     'GitHuttBr is jong. <strong>GitHub</strong> is de best geteste route. GitHub Enterprise Server, self-managed GitLab en Bitbucket Data Center zijn <strong>bèta</strong> — getest tegen gesimuleerde servers, nog niet tegen echte. Gaat het stuk: tja, <em>op mijn machine werkt het</em>. Issues en PR’s welkom. 💜',
   'download.yours': 'Jouw systeem',
   'download.macHint':
-    'Nog niet ondertekend: open de eerste keer <strong>Systeeminstellingen → Privacy en beveiliging → Toch openen</strong>. Op een Mac download je elke nieuwe versie met de hand.',
+    'Ondertekend met een Developer ID en genotariseerd door Apple: opent als elke andere app en werkt zichzelf bij.',
   'download.autoUpdate': 'Werkt zichzelf bij met elke nieuwe release.'
 }

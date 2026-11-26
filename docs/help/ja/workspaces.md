@@ -4,7 +4,7 @@ category: はじめに
 order: 3
 summary: 大量のリポジトリに溺れないための、タブ・グループ・フォルダ・ワークスペース。
 keywords: ワークスペース workspace タブ tabs グループ groups フォルダ folders 複数リポジトリ multiple repos 整理 organise 切り替え switch レイアウト layout リポジトリへ移動 スイッチャー タブのサイズ go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # ワークスペース、タブ、グループ
@@ -133,7 +133,7 @@ source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 ワークスペースとは **タブ列まるごとを保存したもの** です。切り替えるとすべてのタブが
 一度に入れ替わり、`Work` と `Personal` が互いの邪魔をしなくなります。
 
-ワークスペース名は左上、Gitcito のマークの隣にあります。クリックすると切り替え、
+ワークスペース名は左上、GitHuttBr のマークの隣にあります。クリックすると切り替え、
 作成、名前変更、並べ替え、削除ができます。その隣にあるゲージが、いま開いている
 ワークスペースの [ミッションコントロール](mission-control.md) を開きます。
 

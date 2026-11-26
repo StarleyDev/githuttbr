@@ -58,7 +58,7 @@ export interface DropContext {
   currentBranch?: string
   /** The target is a strict ancestor of the source (`merge-base --is-ancestor`). */
   canFastForward?: boolean
-  /** The repository's remote is on a host Gitcito can open a pull request on. */
+  /** The repository's remote is on a host GitHuttBr can open a pull request on. */
   canCreatePr?: boolean
   /** The remote branch a push of the source onto the target would update
    *  (`origin/main`): the target itself if remote, else the local target's upstream. */

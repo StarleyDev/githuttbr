@@ -22,7 +22,7 @@ Die Todo-Liste von `git rebase -i`, als Liste, die du ziehen kannst.
 | **drop** | Den Commit wegwerfen |
 
 Zieh Zeilen, um sie umzusortieren. Der Editor öffnet sich nie in einem Terminal
-— Gitcito schreibt die Todo-Liste für dich.
+— GitHuttBr schreibt die Todo-Liste für dich.
 
 ## Autosquash, ein Klick
 

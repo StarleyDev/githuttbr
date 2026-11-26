@@ -150,6 +150,6 @@ export const he = {
     'GitHuttBr עדיין צעיר. <strong>GitHub</strong> הוא הנתיב הבדוק ביותר. GitHub Enterprise Server, GitLab בניהול עצמי ו־Bitbucket Data Center נמצאים ב<strong>בטא</strong> — נבדקו מול שרתים מדומים, עוד לא מול אמיתיים. אם משהו נשבר: ובכן, <em>אצלי זה עובד</em>. Issues ו־PRs יתקבלו בברכה. 💜',
   'download.yours': 'המערכת שלכם',
   'download.macHint':
-    'עדיין לא חתום: בפעם הראשונה פתחו את <strong>הגדרות המערכת ← פרטיות ואבטחה ← לפתוח בכל זאת</strong>. ב־Mac כל גרסה חדשה מורידים ידנית.',
+    'חתום ב־Developer ID ומאושר (notarized) על ידי Apple: נפתח כמו כל אפליקציה אחרת ומתעדכן מעצמו.',
   'download.autoUpdate': 'מתעדכן מעצמו בכל גרסה חדשה.'
 }

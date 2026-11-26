@@ -17,7 +17,7 @@ vedi [opzioni di merge](merge-options.md).
 ## Trascina un ref su un altro
 
 Il gesto più rapido dell'app: prendi un branch e lascialo cadere su un altro.
-Gitcito apre un piccolo menu con i significati possibili di quel rilascio, e non
+GitHuttBr apre un piccolo menu con i significati possibili di quel rilascio, e non
 fa niente finché non scegli.
 
 ![Trascinare un branch su un altro apre il menu dei possibili significati del rilascio](../../screenshots/clip-branch-drop.webp)
@@ -49,7 +49,7 @@ davvero tutto quello che c'è.
 Il rebase chiede prima conferma: dà a ogni commit riapplicato un nuovo hash, il
 che significa un force push se il branch è già pubblicato. Anche il push
 chiede: chiunque faccia pull del target riceve i suoi commit, e un push non si
-può annullare da Gitcito. Il merge non chiede — si limita ad aggiungere. Merge e
+può annullare da GitHuttBr. Il merge non chiede — si limita ad aggiungere. Merge e
 rebase si annullano con un solo **Annulla**.
 
 ## Trascinare un commit su un branch

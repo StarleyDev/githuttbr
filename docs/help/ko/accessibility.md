@@ -8,7 +8,7 @@ keywords: 접근성 accessibility a11y 스크린 리더 VoiceOver NVDA 키보드
 
 # 접근성
 
-Gitcito는 마우스 없이도 다룰 수 있고 스크린 리더로도 읽히는 것을 목표로 해요.
+GitHuttBr는 마우스 없이도 다룰 수 있고 스크린 리더로도 읽히는 것을 목표로 해요.
 이 페이지는 그게 구체적으로 무슨 뜻인지 — 그리고 한계가 어디인지 — 말해요.
 
 ## 키보드
@@ -51,7 +51,7 @@ Gitcito는 마우스 없이도 다룰 수 있고 스크린 리더로도 읽히�
   된 대체 수단이 있어요.
 - 이 페이지 뒤의 점검은 macOS의 VoiceOver로 했어요. Windows의 NVDA/JAWS도
   똑같이 동작해야 하지만 실전 검증은 아직이에요 — 제보는
-  [issues](https://github.com/MyAppDesk/gitcito/issues)로 환영해요.
+  [issues](https://github.com/StarleyDev/githuttbr/issues)로 환영해요.
 
 ## 관련 설정
 

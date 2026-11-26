@@ -17,7 +17,7 @@ see [merge options](merge-options.md).
 ## Drag one ref onto another
 
 The quickest gesture in the app: pick up a branch and drop it on another one.
-Gitcito opens a small menu of what that drop could mean, and does nothing until
+GitHuttBr opens a small menu of what that drop could mean, and does nothing until
 you choose.
 
 ![Dragging one branch onto another opens the menu of what the drop could mean](../screenshots/clip-branch-drop.webp)
@@ -47,7 +47,7 @@ because that is genuinely all there is.
 Rebase asks for confirmation first: it gives every replayed commit a new hash,
 which means a force push if the branch is already published. Push asks too:
 everyone who pulls the target gets its commits, and a push cannot be undone from
-Gitcito. Merge does not ask — it only adds. Merge and rebase come back with one
+GitHuttBr. Merge does not ask — it only adds. Merge and rebase come back with one
 **Undo**.
 
 ## Drag a commit onto a branch

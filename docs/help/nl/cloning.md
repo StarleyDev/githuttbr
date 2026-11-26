@@ -89,7 +89,7 @@ dan blijft het veld een gewoon tekstvak en meldt de kloon zelf de echte fout.
   één branch* uitgevinkt laten juist wat de andere branches terugvraagt
   (`--no-single-branch`), en daarom verandert de hint eronder.
 - **Een lokale map klonen** negeert `--depth` normaal volledig, omdat git de
-  objectopslag hardlinkt in plaats van op te halen. Gitcito kloont via een
+  objectopslag hardlinkt in plaats van op te halen. GitHuttBr kloont via een
   `file://`-URL wanneer je om een shallow kopie van een lokale repository vraagt,
   zodat de diepte die je vroeg de diepte is die je krijgt.
 
@@ -116,6 +116,6 @@ begint bij nul.
 Als hij klaar is, opent de nieuwe repository in een tabblad, vastgezet aan het
 profiel waarmee je kloonde, of het venster nu nog open is of niet.
 
-Klonen lopen binnen de app, dus Gitcito afsluiten stopt ze. Het afsluiten wacht
+Klonen lopen binnen de app, dus GitHuttBr afsluiten stopt ze. Het afsluiten wacht
 niet op het opruimen, dus de half geschreven map kan achterblijven — verwijder
 hem voordat je daar opnieuw kloont, want het venster weigert een map die bestaat.

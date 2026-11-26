@@ -47,13 +47,13 @@ rewrites that line where it sits, rather than appending a second rule that wins
 by being later. Comments in the file survive untouched, because the "why" beside
 a rule is usually worth more than the rule.
 
-Every save is a normal Gitcito action: it toasts, and **Undo** restores the file
+Every save is a normal GitHuttBr action: it toasts, and **Undo** restores the file
 exactly as it was.
 
 **A repository can have several attributes files.** One at the root, one in any
 subdirectory, and a private `.git/info/attributes` that is never committed and
 applies only on your machine — the right place for a rule that is about you, not
-about the project. Gitcito lists them all and says which is which.
+about the project. GitHuttBr lists them all and says which is which.
 
 ## What applies to a path?
 
@@ -77,19 +77,19 @@ Two halves, and both are needed:
 1. `diff.<name>.textconv` in git config — the converter command.
 2. `*.docx diff=<name>` in `.gitattributes` — which files it applies to.
 
-The buttons here do both at once. For Word, Excel, JSON and `.strings`, Gitcito
+The buttons here do both at once. For Word, Excel, JSON and `.strings`, GitHuttBr
 **ships the converter itself** — the same parsing its previews use, exposed as a
-small `gitcito-textconv` command inside the app — so those four work with
-nothing installed. The rest still need a real tool on your PATH: Gitcito checks
+small `githuttbr-textconv` command inside the app — so those four work with
+nothing installed. The rest still need a real tool on your PATH: GitHuttBr checks
 and greys out what is missing rather than writing a driver that fails at the
 first diff.
 
 | Driver | Needs | Gives you |
 |--------|-------|-----------|
-| `word` | nothing — ships with Gitcito | Prose diffs of `.docx` |
-| `excel` | nothing — ships with Gitcito | Row diffs (CSV per sheet) of `.xlsx`/`.xls` |
-| `json` | nothing — ships with Gitcito | Key-sorted, stable JSON diffs |
-| `strings` | nothing — ships with Gitcito | Line diffs of a UTF-16 `.strings`, which git calls binary |
+| `word` | nothing — ships with GitHuttBr | Prose diffs of `.docx` |
+| `excel` | nothing — ships with GitHuttBr | Row diffs (CSV per sheet) of `.xlsx`/`.xls` |
+| `json` | nothing — ships with GitHuttBr | Key-sorted, stable JSON diffs |
+| `strings` | nothing — ships with GitHuttBr | Line diffs of a UTF-16 `.strings`, which git calls binary |
 | `pdf` | `pdftotext` (poppler) | Text diffs of `.pdf` |
 | `exif` | `exiftool` | What changed about an image, when the pixels are opaque |
 
@@ -113,16 +113,16 @@ driver covers them: it sorts keys, so a translation added at the top stops
 rewriting the whole file in the diff.
 
 The bundled converter's limits, stated plainly: `.doc` (the old binary Word
-format) is not understood, only `.docx`; PDF is not covered — Gitcito previews
+format) is not understood, only `.docx`; PDF is not covered — GitHuttBr previews
 PDFs with the browser's viewer and has no text extractor to reuse; and each
 diff of a document pays a short converter start-up cost. Setting
 `git config diff.<name>.cachetextconv true` makes git cache the output per blob.
 
 The converter half lives in **your** config, not in the repository — git will
 not run commands a clone hands you, which is a security property worth keeping.
-The bundled drivers also point at *your* Gitcito install path, so a teammate
+The bundled drivers also point at *your* GitHuttBr install path, so a teammate
 who clones gets the `diff=word` rule and, until they wire their own converter
-(Gitcito or otherwise), the old unreadable diff. Say so in your README.
+(GitHuttBr or otherwise), the old unreadable diff. Say so in your README.
 
 **Not in the AppImage.** An AppImage runs from a folder under `/tmp` that
 exists only while the app is open and gets a new random name every launch. A
@@ -139,7 +139,7 @@ rather than trusted.
 
 ![A diff driver pointing into a temporary AppImage folder, flagged, with a Remove button](../screenshots/attributes-stale-driver.webp)
 
-Gitcito only spots one in the repository you open this dialog on, plus your
+GitHuttBr only spots one in the repository you open this dialog on, plus your
 global config. To find others, run this in each repository (and once with
 `--global`) and unset any entry that mentions `/tmp/.mount_` or
 `appimage_extracted_`:
@@ -149,12 +149,14 @@ git config --get-regexp 'diff\..*\.textconv'
 git config --unset diff.word.textconv    # for each one it lists
 ```
 
-**After the 4.39 rename.** Versions up to 4.38 wrote the bundled converter as
-<code>…/cli/git&#99;ito-textconv</code>; 4.39 ships it under the new name. Such
+**After the 4.39 rename.** Versions up to 4.38 wrote the bundled converter's
+path under its old, inherited file name; 4.39 ships it under the new name. Such
 entries are **repointed automatically** — your global config when the app
 starts, a repository's config when you open it — with one note saying how many,
-and an **Undo**. Only entries whose program is that converter are touched; the
-arguments after it are kept.
+and an **Undo**. Only entries whose program is that converter **inside a
+GitHuttBr install folder** are touched; the arguments after it are kept.
+The app GitHuttBr was derived from ships a converter with that same file name,
+and its entries are neither repointed nor flagged (see [upgrading](upgrading.md)).
 
 What cannot be repointed keeps the flag **converter predates 4.39**, with the
 same **Remove** button (which can be undone): that is the AppImage, whose own
@@ -162,7 +164,7 @@ converter path must never be written into a config, and a config the app could
 not write. Remove it, then add the driver again from the suggestions. The flag
 is only about that converter: a driver whose program is merely missing shows
 **converter not installed** instead, so an MSYS-style or escaped Windows path this
-machine cannot resolve is never called stale. See [upgrading](upgrading.md).
+machine cannot resolve is never called stale.
 
 ## Clean/smudge filters — with a dry run first
 
@@ -173,7 +175,7 @@ noise from what gets committed.
 
 It is also the most dangerous thing `.gitattributes` can point at: a filter
 runs on **every checkout of every matching file**, and a wrong one corrupts
-your working tree quietly. So Gitcito refuses to be a text box here. Configuring
+your working tree quietly. So GitHuttBr refuses to be a text box here. Configuring
 a filter goes through a **dry run** against real matching files in your
 repository:
 
@@ -211,8 +213,8 @@ unchanged.
   now on.
 - **Rules only take effect where the file is visible.** A rule in
   `design/.gitattributes` says nothing about `src/`.
-- Gitcito writes whole files, so a hand-formatted file comes back with its
-  formatting — but a rule Gitcito rewrites is reformatted to git's canonical
+- GitHuttBr writes whole files, so a hand-formatted file comes back with its
+  formatting — but a rule GitHuttBr rewrites is reformatted to git's canonical
   `pattern attr attr` spacing.
 
 See also: [LFS & sparse checkout](lfs-sparse.md) ·

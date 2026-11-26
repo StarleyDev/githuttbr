@@ -8,7 +8,7 @@ keywords: アクセシビリティ accessibility a11y スクリーンリーダ�
 
 # アクセシビリティ
 
-Gitcito は、マウスなしで操作でき、スクリーンリーダーで読めることを目指して
+GitHuttBr は、マウスなしで操作でき、スクリーンリーダーで読めることを目指して
 います。このページでは、それが具体的に何を意味するのか — そして限界がどこに
 あるのか — を説明します。
 
@@ -55,7 +55,7 @@ Gitcito は、マウスなしで操作でき、スクリーンリーダーで読
   ドラッグ操作にもメニューかボタンの同等手段があります。
 - このページの背後にある監査は macOS の VoiceOver で行いました。Windows の
   NVDA/JAWS も同等に動くはずですが、実地では確認していません — 報告は
-  [issues](https://github.com/MyAppDesk/gitcito/issues) として歓迎します。
+  [issues](https://github.com/StarleyDev/githuttbr/issues) として歓迎します。
 
 ## 関連する設定
 

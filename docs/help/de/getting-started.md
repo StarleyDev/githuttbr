@@ -4,12 +4,12 @@ category: Erste Schritte
 order: 1
 summary: Ein Repository öffnen, den Graphen lesen, den ersten Commit machen.
 keywords: einführung intro erste schritte first steps öffnen open clone klonen tabs graph commit
-source: 173f891f9f1c5c53ea40cf344baf821e3188344d
+source: 8effe244fab76b263f38e31ac0912d8042c428c6
 ---
 
 # Erste Schritte
 
-Gitcito öffnet einen Ordner und zeigt dir seine Historie. In dein Repository wird
+GitHuttBr öffnet einen Ordner und zeigt dir seine Historie. In dein Repository wird
 nichts geschrieben, bevor du nicht darum bittest.
 
 ![Ein frisch geöffnetes Repository, noch ohne Commits](../../screenshots/empty-repo.webp)
@@ -28,7 +28,7 @@ nichts geschrieben, bevor du nicht darum bittest.
   Repositories nicht vorab ausgrauen: Electron stellt den Hook des Dialogs pro
   Ordner nicht bereit, deshalb wird erst nach dem Klick auf Öffnen geprüft.
 - **Gescannte Repositories**, unter den drei Schaltflächen, listet jedes
-  Repository in den Ordnern, die Gitcito für dich durchsuchen soll — hake mehrere
+  Repository in den Ordnern, die GitHuttBr für dich durchsuchen soll — hake mehrere
   an und öffne sie auf einmal, oder doppelklicke auf eines. Dort fügst du diese
   Ordner auch hinzu oder entfernst sie. Siehe
   [Repositories](repositories.md#gescannte-repositories).
@@ -38,7 +38,7 @@ nichts geschrieben, bevor du nicht darum bittest.
 - **Klone** eines von einer URL oder direkt von deinem Hoster — unter
   [Klonen](cloning.md) stehen die Optionen, die ein riesiges Repository schnell
   klonbar machen.
-- Aus einem Terminal öffnet `gitcito .` den aktuellen Ordner in der laufenden
+- Aus einem Terminal öffnet `githuttbr .` den aktuellen Ordner in der laufenden
   App — siehe [die Kommandozeile](cli.md).
 - Ein einzelner Ordner, der noch kein Git-Repository ist, lässt sich trotzdem
   öffnen; dabei wird angeboten, ihn zu initialisieren.
@@ -74,5 +74,5 @@ erreichbar — es gibt also nichts, das nur Power-User finden.
 2. Stage sie — die ganze Datei, einen Hunk oder [einzelne Zeilen](staging.md).
 3. Schreib eine Nachricht und drück **Commit**.
 
-Alles andere in Gitcito ist optional.
+Alles andere in GitHuttBr ist optional.
 

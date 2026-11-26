@@ -2,13 +2,13 @@
 title: Licenças de código aberto
 category: Deixe do seu jeito
 order: 104
-summary: Leia a licença de cada pacote de terceiros que este build do Gitcito inclui.
+summary: Leia a licença de cada pacote de terceiros que este build do GitHuttBr inclui.
 keywords: licenças licencas atribuição avisos código aberto open source MIT Apache BSD terceiros dependências créditos sobre
 ---
 
 # Licenças de código aberto
 
-O Gitcito é feito sobre umas noventa e poucas bibliotecas de código aberto, e
+O GitHuttBr é feito sobre umas noventa e poucas bibliotecas de código aberto, e
 quase todas pedem a mesma coisa em troca: que o aviso delas acompanhe o binário.
 MIT, BSD e Apache dizem isso no próprio texto. Esta página é onde esse aviso
 mora, para que a obrigação seja cumprida pelo app e não por um arquivo que
@@ -49,11 +49,11 @@ Dois limites que vale saber:
   identificador no manifesto e nada mais. Essas linhas dizem isso em vez de
   inventar um texto, porque uma licença que você não consegue ler não é uma
   licença em que dá para confiar.
-- **O identificador é o que o pacote afirma.** O Gitcito o mostra; não o audita.
+- **O identificador é o que o pacote afirma.** O GitHuttBr o mostra; não o audita.
   Se o manifesto de um pacote estiver errado, esta página erra junto.
 
-A licença do próprio Gitcito é Apache 2.0, e o selo no canto superior direito a abre no
-GitHub. O código herdado do Gitcito original veio sob a licença MIT, e o aviso dela
+A licença do próprio GitHuttBr é Apache 2.0, e o selo no canto superior direito a abre no
+GitHub. O código herdado do GitHuttBr original veio sob a licença MIT, e o aviso dela
 acompanha o app no `NOTICE`, como a MIT exige.
 
 **Veja também:** [Idiomas e da direita para a esquerda](languages.md) · [Temas e aparência](themes.md)

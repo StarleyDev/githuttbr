@@ -4,17 +4,17 @@ category: Sécurité
 order: 73
 summary: Le magasin de mots de passe propre à git — le troisième — et pourquoi https vous redemande sans arrêt.
 keywords: assistant d'identifiants credential helper mot de passe password https redemande osxkeychain wincred manager libsecret store cache git-credentials texte clair plaintext oublier forget révoqué revoked jeton token 401 vérifier la connexion quel compte jeton dans l’url du distant mot de passe intégré le retirer de l’url token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Assistant d'identifiants
 
-Gitcito détient trois sortes de secrets différentes, et on suppose
+GitHuttBr détient trois sortes de secrets différentes, et on suppose
 raisonnablement qu'il s'agit d'une seule chose :
 
 | | Détenu par |
 |---|---|
-| Les jetons d'API de l'hébergeur — PR, tickets, vérifications de CI | Gitcito, dans le [trousseau du système](security.md) |
+| Les jetons d'API de l'hébergeur — PR, tickets, vérifications de CI | GitHuttBr, dans le [trousseau du système](security.md) |
 | Le transport `git@…` | Votre [clé SSH](ssh-keys.md), via l'agent ssh du système |
 | **Le transport `https://`** | **L'assistant d'identifiants propre à git** |
 
@@ -57,7 +57,7 @@ différemment ».
 | `cache` | La mémoire, pendant 15 minutes. Rien sur le disque |
 | `store` | **Un simple fichier dans votre répertoire personnel. Non chiffré** |
 
-Gitcito propose ce qui est réellement installé sur cette machine, marque celui
+GitHuttBr propose ce qui est réellement installé sur cette machine, marque celui
 qui correspond à votre système, et grise le reste.
 
 **La portée compte.** *Pour tous les dépôts* écrit dans votre configuration
@@ -85,7 +85,7 @@ chaque push échoue avec un 401 qui ne nomme rien. **Oublier** demande à
 l'assistant configuré d'effacer son entrée pour cet hôte — `git credential
 reject`, la voie documentée par git lui-même.
 
-Rien n'est lu au passage : Gitcito n'appelle jamais `git credential fill`, la
+Rien n'est lu au passage : GitHuttBr n'appelle jamais `git credential fill`, la
 commande qui imprimerait un mot de passe actif sur la sortie standard.
 
 Le push suivant vous demande une fois, et l'assistant stocke la nouvelle réponse.
@@ -128,7 +128,7 @@ Un vieux clone, ou une URL collée depuis un wiki, peut porter son identifiant d
 l’adresse : `https://user:token@git.example.test/team/app.git`. **Un mot de passe dans
 l’URL a toujours la priorité :** git l’envoie et ne consulte aucun helper — ni le
 jeton du [profil](profiles.md) du dépôt, ni la GitHub CLI, ni le stockage propre à
-git. Tant que le jeton marche, tout va bien, et Gitcito n’y touche pas : **il ne retire
+git. Tant que le jeton marche, tout va bien, et GitHuttBr n’y touche pas : **il ne retire
 jamais un mot de passe d’une URL sans vous le demander.** Dès que le jeton est révoqué
 ou expire, chaque fetch, pull et push de ce dépôt échoue avec *Invalid username or
 token* ou *Authentication failed*, alors que les autres dépôts du même profil
@@ -136,7 +136,7 @@ fonctionnent. Et le jeton se trouve en clair dans le `.git/config` du dépôt.
 
 ![Retirer un jeton enregistré de l’URL d’un distant](../../screenshots/remote-url-token.webp)
 
-Gitcito lit les URL de fetch et de push de chaque distant et le signale à trois
+GitHuttBr lit les URL de fetch et de push de chaque distant et le signale à trois
 endroits :
 
 | Où | Ce que vous voyez |
@@ -194,15 +194,15 @@ lire le dossier du dépôt.
 
 ## Limites qu'il vaut mieux connaître
 
-- **C'est le magasin de git, pas celui de Gitcito.** Le modifier modifie aussi ce
+- **C'est le magasin de git, pas celui de GitHuttBr.** Le modifier modifie aussi ce
   que fait votre terminal — c'est le but, et cela vaut la peine de le savoir
   avant de le modifier.
 - **Les assistants au niveau système sont affichés, pas modifiables.** Ils vivent
   dans une configuration que seul un administrateur peut écrire.
-- **Gitcito ne peut pas lister ce qu'un assistant détient.** Aucune API
+- **GitHuttBr ne peut pas lister ce qu'un assistant détient.** Aucune API
   d'identifiants ne l'expose sans livrer les secrets : la boîte de dialogue
   rapporte donc la configuration et efface sur demande, rien de plus.
-- **Un jeton que vous avez confié à Gitcito est séparé.** En révoquer un ne
+- **Un jeton que vous avez confié à GitHuttBr est séparé.** En révoquer un ne
   touche pas à l'autre ; voir [sécurité](security.md) pour le côté trousseau.
 - **Le jeton d’un profil reste hors de l’environnement des hooks du dépôt.** Un hook
   ne voit qu’un code pour un point d’accès privé, valable le temps de cette commande

@@ -150,6 +150,6 @@ export const ja = {
     'GitHuttBr はまだ若いアプリです。いちばん実績があるのは <strong>GitHub</strong> です。GitHub Enterprise Server、セルフマネージドの GitLab、Bitbucket Data Center は<strong>ベータ</strong>で、模擬サーバーでは試験済みですが、本物のサーバーではまだです。壊れたら——まあ、<em>私の環境では動いています</em>。Issue と PR は大歓迎です。💜',
   'download.yours': 'あなたのシステム',
   'download.macHint':
-    'まだ署名されていません。初回は<strong>システム設定 → プライバシーとセキュリティ → このまま開く</strong>を選んでください。Mac では新しいバージョンを毎回手動でダウンロードします。',
+    'Developer ID で署名され、Apple の公証済みです。ほかのアプリと同じように開き、自動で更新されます。',
   'download.autoUpdate': '新しいリリースのたびに自動で更新されます。'
 }

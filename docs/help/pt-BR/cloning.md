@@ -89,7 +89,7 @@ reporta o erro real.
   branch* desmarcado é o que pede as outras branches de volta
   (`--no-single-branch`), e é por isso que a dica embaixo dela muda.
 - **Clonar uma pasta local** normalmente ignora o `--depth` por completo, porque o
-  git faz hardlink do banco de objetos em vez de buscar. O Gitcito clona por uma
+  git faz hardlink do banco de objetos em vez de buscar. O GitHuttBr clona por uma
   URL `file://` quando você pede uma cópia rasa de um repositório local, então a
   profundidade que você pediu é a profundidade que você recebe.
 
@@ -115,6 +115,6 @@ cancelado não pode ser retomado; começar de novo começa do zero.
 Quando termina, o novo repositório abre numa aba, fixado ao perfil com que você
 clonou, esteja o diálogo ainda aberto ou não.
 
-Os clones rodam dentro do app, então sair do Gitcito os interrompe. A saída não
+Os clones rodam dentro do app, então sair do GitHuttBr os interrompe. A saída não
 espera a limpeza, então a pasta escrita pela metade pode ficar para trás — apague-a
 antes de clonar ali de novo, já que o diálogo recusa uma pasta que existe.

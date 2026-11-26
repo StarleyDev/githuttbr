@@ -431,7 +431,7 @@ describe('moving a symlinked damaged settings file aside', () => {
     await fresh({ consent: 'granted' })
     const dotfiles = mkdtempSync(join(tmpdir(), 'githuttbr-dotfiles-'))
     try {
-      const real = join(realpathSync(dotfiles), 'gitcito.json')
+      const real = join(realpathSync(dotfiles), 'githuttbr.json')
       writeFileSync(real, '{"profiles": [')
       rmSync(settingsFile())
       symlinkSync(real, settingsFile())
@@ -456,7 +456,7 @@ describe('moving a symlinked damaged settings file aside', () => {
   it('a link into a folder that is gone: the save fails, says so once, and touches nothing', async () => {
     await fresh({ consent: 'granted' })
     await useSettingsStore.getState().load()
-    const gone = join(dir, 'gone', 'gitcito.json')
+    const gone = join(dir, 'gone', 'githuttbr.json')
     rmSync(settingsFile())
     symlinkSync(gone, settingsFile())
     const toast = vi.spyOn(useUIStore.getState(), 'toast')

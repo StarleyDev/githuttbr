@@ -12,12 +12,12 @@ A Git client is where you read code; it is rarely where you fix it. The gap
 between noticing a problem in a diff and having the cursor on that line in your
 editor is a file search and a scroll — every time.
 
-Point Gitcito at your editor once and that gap closes: right-click a line in the
+Point GitHuttBr at your editor once and that gap closes: right-click a line in the
 file or blame view and it opens there, at that line.
 
 ## Choosing one
 
-**Settings → General → External editor.** The dropdown lists the editors Gitcito
+**Settings → General → External editor.** The dropdown lists the editors GitHuttBr
 can find on this machine — it looks for each editor's command first, then, on
 macOS, for the application bundle in `/Applications` and `~/Applications`. The
 scan runs each time you open Settings, so an editor installed five minutes ago
@@ -37,7 +37,7 @@ Recognised out of the box:
 | Xcode | `xed` |
 
 **On Linux, an editor outside PATH.** An editor unpacked into a folder of
-your choosing is often not on PATH, but it is in the application menu. Gitcito
+your choosing is often not on PATH, but it is in the application menu. GitHuttBr
 also reads the menu's `.desktop` entries — in the XDG data folders
 (`~/.local/share`, then `/usr/local/share` and `/usr/share`, or whatever
 `XDG_DATA_HOME` and `XDG_DATA_DIRS` say) and in Flatpak's and Snap's exports —
@@ -55,7 +55,7 @@ Desktop, so an unrelated app of the same name is never the one opened.
 
 **Jumping to a line needs the editor's command, not its icon.** A macOS `.app`
 bundle is launched through `open`, which accepts a path and nothing else — so an
-editor found only as a bundle opens the file at the top, and Gitcito says so
+editor found only as a bundle opens the file at the top, and GitHuttBr says so
 under the dropdown rather than pretending otherwise.
 
 The fix is on the editor's side: VS Code's *Shell Command: Install 'code' command
@@ -75,7 +75,7 @@ scripts*. Once the command exists, pick the editor again and the line jump works
 
 Line actions only appear where the line number still means something: a file
 shown at an old commit, or a blame rewound to an earlier revision, has lines that
-no longer match what is on disk, so Gitcito offers no jump there rather than
+no longer match what is on disk, so GitHuttBr offers no jump there rather than
 sending you to the wrong place.
 
 ## Xcode projects and other packages
@@ -101,11 +101,11 @@ it saves.
 
 **The package opens through the system, not through your editor.** An
 `.xcodeproj` handed to a text editor opens as a folder of property lists, which
-is not what anyone clicking it wanted — so Gitcito hands it to whatever the OS
+is not what anyone clicking it wanted — so GitHuttBr hands it to whatever the OS
 associates with it, which on a Mac with Xcode installed is Xcode. Your editor
 choice is untouched; it still governs every ordinary file.
 
-**It is a naming convention, not a filesystem flag.** Gitcito matches the
+**It is a naming convention, not a filesystem flag.** GitHuttBr matches the
 extension, so a directory you happened to name `notes.app` collapses too, and on
 Linux or Windows — where these are ordinary folders — clicking one opens it in
 the file manager rather than in an IDE.
@@ -129,7 +129,7 @@ never turn into syntax. Four placeholders: `{path}`, `{line}`, `{col}`, `{repo}`
 A placeholder with no value takes its flag with it: `--line {line} {path}` run
 without a line becomes just the path, never a dangling `--line` that would eat
 the filename as its argument. A template with no `{line}` in it simply means
-Gitcito will not offer line-precise actions for that editor.
+GitHuttBr will not offer line-precise actions for that editor.
 
 ## What this is not
 
@@ -139,5 +139,5 @@ folder in Finder. The editor is the more specific of the two, so where both are
 set the editor wins on the file tree's row-end icon; both stay listed in the
 right-click menu.
 
-Gitcito never launches your editor by itself, and closing Gitcito never closes
+GitHuttBr never launches your editor by itself, and closing GitHuttBr never closes
 it: the editor is started detached, as a process of its own.

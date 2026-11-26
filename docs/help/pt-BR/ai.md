@@ -80,11 +80,11 @@ O teste envia uma mensagem curta ao provedor e consome a cota do plano. Limite a
 ![Usar minha assinatura](../../screenshots/ai-subscription.webp)
 
 Escolha o provedor **CLI local** para responder com uma CLI de agente já
-instalada e autenticada nesta máquina — `claude`, `gemini` ou `codex`. O Gitcito
+instalada e autenticada nesta máquina — `claude`, `gemini` ou `codex`. O GitHuttBr
 executa o binário com o seu prompt e lê a resposta; não há chave de API para
 colar nem token guardado.
 
-O Gitcito só executa um comando que você configurou como conta, e sempre com uma
+O GitHuttBr só executa um comando que você configurou como conta, e sempre com uma
 lista de argumentos em vez de um shell, de modo que nada em um diff ou em um nome
 de branch pode ser interpretado como comando.
 
@@ -112,7 +112,7 @@ Ao atualizar de uma versão anterior às contas, isto aparece uma vez. O provedo
 ## Modelos
 
 As listas de modelos vêm do próprio provedor e ficam em cache por um dia;
-**Buscar modelos** atualiza uma na hora. Abaixo da lista o Gitcito diz de onde
+**Buscar modelos** atualiza uma na hora. Abaixo da lista o GitHuttBr diz de onde
 ela veio — ao vivo, do cache (com a data) ou da lista embutida de reserva, e por
 quê.
 
@@ -124,7 +124,7 @@ Ollama recém-baixada continua utilizável mesmo que o provedor não a liste.
 Um provedor a quem você ainda não deu uma chave, ou que esteja inacessível,
 recorre a uma pequena lista embutida em vez de a um menu vazio.
 
-Nenhum provedor publica uma lista ordenada ou curada, então o recorte é do Gitcito: instantâneos datados se dobram no modelo do qual são um instantâneo (`gpt-4o` cobre `gpt-4o-2024-08-06`), e o que sobra vem do mais novo para o mais antigo em vez de alfabético. **Mostrar todos os modelos**, no fim da lista, traz de volta tudo o que o provedor devolveu.
+Nenhum provedor publica uma lista ordenada ou curada, então o recorte é do GitHuttBr: instantâneos datados se dobram no modelo do qual são um instantâneo (`gpt-4o` cobre `gpt-4o-2024-08-06`), e o que sobra vem do mais novo para o mais antigo em vez de alfabético. **Mostrar todos os modelos**, no fim da lista, traz de volta tudo o que o provedor devolveu.
 
 ## O que ela consegue fazer
 
@@ -160,7 +160,7 @@ recusada — selecione na visão de arquivo.
 ## Ancorada, não chutando
 
 A revisão vê o diff como **hunks rotulados** e só pode citar esses rótulos; o
-Gitcito então resolve cada rótulo num arquivo e numa linha reais. Um modelo que
+GitHuttBr então resolve cada rótulo num arquivo e numa linha reais. Um modelo que
 inventa uma localização é **rejeitado e consultado de novo**, então os achados
 sempre apontam para código que existe.
 
@@ -172,7 +172,7 @@ versão do arquivo.
 O [chat do repositório](repo-chat.md) funciona do mesmo jeito: só pode citar os
 trechos que recebeu, e a requisição em duas etapas escolhe esses trechos a partir
 da lista de arquivos rastreados do próprio Git, não de algo que o modelo escreve.
-Quando ele propõe uma mudança, o Gitcito valida as ações exatas de arquivo,
+Quando ele propõe uma mudança, o GitHuttBr valida as ações exatas de arquivo,
 calcula os diffs localmente, e depois roda as ações Git seguintes sob a política
 de aprovação configurada.
 

@@ -8,7 +8,7 @@ keywords: barrierefreiheit accessibility a11y screenreader VoiceOver NVDA tastat
 
 # Barrierefreiheit
 
-Gitcito soll ohne Maus bedienbar und für einen Screenreader lesbar sein. Diese
+GitHuttBr soll ohne Maus bedienbar und für einen Screenreader lesbar sein. Diese
 Seite sagt, was das konkret bedeutet — und wo die Grenzen liegen.
 
 ## Tastatur
@@ -56,7 +56,7 @@ Seite sagt, was das konkret bedeutet — und wo die Grenzen liegen.
 - Das Audit hinter dieser Seite wurde mit VoiceOver auf macOS gemacht.
   NVDA/JAWS unter Windows sollten sich gleich verhalten, sind aber nicht
   praxiserprobt — Berichte sind als
-  [Issues](https://github.com/MyAppDesk/gitcito/issues) willkommen.
+  [Issues](https://github.com/StarleyDev/githuttbr/issues) willkommen.
 
 ## Verwandte Einstellungen
 

@@ -8,7 +8,7 @@ keywords: accessibility a11y screen reader VoiceOver NVDA keyboard navigation fo
 
 # Accessibility
 
-Gitcito aims to be operable without a mouse and legible to a screen reader.
+GitHuttBr aims to be operable without a mouse and legible to a screen reader.
 This page says what that means concretely — and where the edges are.
 
 ## Keyboard
@@ -51,7 +51,7 @@ This page says what that means concretely — and where the edges are.
   equivalent.
 - The audit behind this page was done with VoiceOver on macOS. NVDA/JAWS on
   Windows should behave equivalently but have not been road-tested — reports
-  are welcome as [issues](https://github.com/MyAppDesk/gitcito/issues).
+  are welcome as [issues](https://github.com/StarleyDev/githuttbr/issues).
 
 ## Related settings
 

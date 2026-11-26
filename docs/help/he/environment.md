@@ -2,7 +2,7 @@
 title: בדיקת סביבה
 category: התחלה כאן
 order: 6
-summary: במה Gitcito תלוי מחוץ להתקנה שלו — git, LFS, הטרמינל המקורי, ה-credential helper של git, GitHub CLI ומעקב קבצים — נבדק במקום אחד.
+summary: במה GitHuttBr תלוי מחוץ להתקנה שלו — git, LFS, הטרמינל המקורי, ה-credential helper של git, GitHub CLI ומעקב קבצים — נבדק במקום אחד.
 keywords: סביבה environment רופא אבחון בדיקה git גרסה lfs node-pty טרמינל מעטפת בסיסית credential helper store gh github cli הרשאות workflow inotify max_user_watches
 ---
 
@@ -14,7 +14,7 @@ keywords: סביבה environment רופא אבחון בדיקה git גרסה lfs
 בלוח הפקודות) בודקת אותן מראש.
 
 [רופא המאגר](repo-settings.md) עונה על שאלה אחרת: האם אפשר לבנות כאן את *המאגר הזה*, לפי
-מה שה-`.gitcito.json` שלו מבקש. בדיקת הסביבה נוגעת לאפליקציה עצמה וזהה לכל מאגר.
+מה שה-`.githuttbr.json` שלו מבקש. בדיקת הסביבה נוגעת לאפליקציה עצמה וזהה לכל מאגר.
 
 ![בדיקות הסביבה בהגדרות](../../screenshots/settings-environment.webp)
 
@@ -25,7 +25,7 @@ keywords: סביבה environment רופא אבחון בדיקה git גרסה lfs
 | **Git** | git 2.31 ומעלה נמצא ב-`PATH` | ישן מ-2.31: החשבון של [פרופיל](profiles.md) אינו יכול להיכנס ל-fetch ול-push. חסר: שום דבר לא עובד עד שמתקינים git |
 | **Git LFS** | `git lfs` מותקן | לא מותקן. רק מאגרים ששומרים קבצים ב-LFS צריכים אותו |
 | **טרמינל** | הטרמינל המקורי נטען | ה[טרמינל](terminal.md) רץ במצב בסיסי: בלי צבעים, בלי שינוי גודל, בלי תוכנות במסך מלא |
-| **Credential helper** | ל-git יש helper לסיסמאות HTTPS — גלובלי, או לשרתים מסוימים (מה ש-`gh auth setup-git` מגדיר) | אין helper, ולכן git מחוץ ל-Gitcito שואל בכל פעם. או `store`, ששומר אותן כטקסט גלוי. ראו [Credential helper](credentials.md) |
+| **Credential helper** | ל-git יש helper לסיסמאות HTTPS — גלובלי, או לשרתים מסוימים (מה ש-`gh auth setup-git` מגדיר) | אין helper, ולכן git מחוץ ל-GitHuttBr שואל בכל פעם. או `store`, ששומר אותן כטקסט גלוי. ראו [Credential helper](credentials.md) |
 | **GitHub CLI** | `gh` מחובר עם ההרשאה `workflow` | מחובר בלעדיה: GitHub דוחה כל push שמשנה את `.github/workflows` |
 | **מעקב קבצים** (Linux) | מגבלת inotify היא לפחות 65,536 | מגבלה נמוכה יותר נגמרת עם כמה מאגרים גדולים פתוחים, ותיקיות חדשות מפסיקות לרענן את המצב |
 

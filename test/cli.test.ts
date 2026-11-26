@@ -8,7 +8,7 @@ import type { RepoConfig } from '../src/shared/types'
 
 describe('parseCliOpenArgs', () => {
   it('returns null without --open', () => {
-    expect(parseCliOpenArgs(['/Applications/Gitcito.app', '--name=x'])).toBeNull()
+    expect(parseCliOpenArgs(['/Applications/GitHuttBr.app', '--name=x'])).toBeNull()
   })
 
   it('reads every flag the shim can pass', () => {

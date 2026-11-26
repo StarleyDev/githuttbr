@@ -9,7 +9,7 @@ keywords: avatar avatarlar gravatar blobatar yazar fotoğraf resim identicon yü
 # Yazar avatarları
 
 Commit listesi bir isim duvarıdır ve isimler yavaş okunur. Her birinin yanındaki resim,
-"bunu kim yazdı" sorusunu bir bakışta cevaplanan bir şeye dönüştürür. Gitcito
+"bunu kim yazdı" sorusunu bir bakışta cevaplanan bir şeye dönüştürür. GitHuttBr
 gösterdiği her yazara bir tane koyar: graftaki yazar sütununda, commit ayrıntılarında
 yazarın ve her ortak yazarın yanında, yazarken açılan ortak yazar seçicisinde, profil
 değiştiricide ve Ayarlar'daki her profilin yanında.
@@ -37,7 +37,7 @@ adres gerçekten aynı kişiyse [yazar öznitelikleri](attributes.md) ile düzel
 
 ## Başlık çubuğundaki yüz
 
-Profil adınızın yanındaki avatar, Gitcito'da **sizi, bu depoda, şu anda** temsil eden tek
+Profil adınızın yanındaki avatar, GitHuttBr'da **sizi, bu depoda, şu anda** temsil eden tek
 avatardır — dolayısıyla deponun durumuna tepki veren tek avatar. Bir şey olduğunda yüzünü
 değiştirir, geri kalan zamanda nötr kalır.
 
@@ -84,7 +84,7 @@ Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçeb
 | **Otomatik** | Varsayılan: profilin git e-postasına ait Gravatar’ınız ya da oluşturulmuş yüz — depoya tepki veren yüz. |
 | **Entegrasyondan** | Bu profilin Entegrasyonlar’da bağlı olduğu GitHub veya GitLab hesabının resmi. Bağlı hesap yoksa devre dışıdır. |
 | **Simge** | Seçtiğiniz bir renk üzerinde 24 simgeden biri. |
-| **Görsel** | Seçtiğiniz bir dosya — PNG veya JPEG. 256 px’e küçültülür ve ayarlar dosyasında değil, Gitcito’nun veri klasöründe, bu bilgisayarda saklanır. |
+| **Görsel** | Seçtiğiniz bir dosya — PNG veya JPEG. 256 px’e küçültülür ve ayarlar dosyasında değil, GitHuttBr’nun veri klasöründe, bu bilgisayarda saklanır. |
 | **Bir depodan** | Profilin depolarından birinde bulunan bir simge ya da logo — uygulamanın ya da şirketin — görsel gibi profile kopyalanır. |
 
 Görsel **Ayarlar → Veri → Ayarları dışa aktar** ile birlikte gider ve içe aktarınca geri

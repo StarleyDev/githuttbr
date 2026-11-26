@@ -92,7 +92,7 @@ prawdziwy błąd.
   *Tylko jedna gałąź* odznaczone jest właśnie tym, co upomina się o pozostałe
   gałęzie (`--no-single-branch`) — dlatego podpowiedź pod spodem się zmienia.
 - **Klonowanie lokalnego katalogu** normalnie zupełnie ignoruje `--depth`,
-  ponieważ git twardo linkuje magazyn obiektów zamiast go pobierać. Gitcito
+  ponieważ git twardo linkuje magazyn obiektów zamiast go pobierać. GitHuttBr
   klonuje przez adres `file://`, gdy prosisz o płytką kopię lokalnego
   repozytorium — tak, żeby głębokość, o którą poprosiłeś, była głębokością,
   którą dostaniesz.
@@ -120,7 +120,7 @@ zaczyna od zera.
 Po zakończeniu nowe repozytorium otwiera się w karcie, przypięte do profilu,
 którym zostało sklonowane — niezależnie od tego, czy okno jest jeszcze otwarte.
 
-Klony działają wewnątrz aplikacji, więc zamknięcie Gitcito je zatrzymuje.
+Klony działają wewnątrz aplikacji, więc zamknięcie GitHuttBr je zatrzymuje.
 Zamykanie nie czeka na sprzątanie, więc do połowy zapisany katalog może zostać —
 usuń go przed ponownym klonowaniem w to miejsce, bo okno odrzuca katalog, który
 istnieje.

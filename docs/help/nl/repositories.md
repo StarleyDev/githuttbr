@@ -2,9 +2,9 @@
 title: Repositories
 category: Synchroniseren & meerdere repo's
 order: 52
-summary: Elke repository die Gitcito kent, open of niet, in één doorzoekbare lijst.
+summary: Elke repository die GitHuttBr kent, open of niet, in één doorzoekbare lijst.
 keywords: repositories register alle repos favorieten ster recent scannen map bladeren vinden openen beheren repositorybeheer kleur sectie tint markeren workspaces uit mappen boom genereren bulkimport registry favourites starred recent scan folder workspaces
-source: 3f162d07855277e85ece82a631244e36f6028d36
+source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
 ---
 
 # Repositories
@@ -12,7 +12,7 @@ source: 3f162d07855277e85ece82a631244e36f6028d36
 [Mission control](mission-control.md) beantwoordt "welke van mijn open
 repositories heeft mij nodig?". Het kent alleen de tabbladen van de actieve
 workspace. Repositories beantwoordt een andere vraag: **waar is die repo, en
-is hij überhaupt ergens open?** Het dekt alles wat Gitcito ooit heeft
+is hij überhaupt ergens open?** Het dekt alles wat GitHuttBr ooit heeft
 gezien. Elke workspace, elk tabblad, en wat het vindt door mappen te
 scannen die jij aanwijst.
 
@@ -69,7 +69,7 @@ Drie dingen die je wilt weten:
   secties erboven nooit om. Alleen de kleuren die jij wijzigt worden
   bewaard.
 - De kleur is **lokaal op deze pagina**. Hier de sectie van een workspace
-  kleuren zegt niets over die workspace elders in Gitcito. De tabkleur is
+  kleuren zegt niets over die workspace elders in GitHuttBr. De tabkleur is
   een aparte instelling.
 - De kleur wordt **afgemengd** tot een laag percentage van het vlak in
   plaats van op volle sterkte, zodat een verzadigde keuze in lichte en
@@ -81,9 +81,9 @@ dezelfde tint delen.
 
 ## Wat een repository bekend maakt
 
-Er staat hier een rij zodra Gitcito hem ooit heeft **geopend**, of hem
+Er staat hier een rij zodra GitHuttBr hem ooit heeft **geopend**, of hem
 heeft gevonden onder een **scanmap**. Niets wordt geïndexeerd alleen omdat
-het ergens op schijf bestaat waar je Gitcito nooit over hebt verteld.
+het ergens op schijf bestaat waar je GitHuttBr nooit over hebt verteld.
 
 Deze pagina openen indexeert ook wat je nu **in een tabblad open** hebt,
 zo krijgen repositories die bij het opstarten worden hersteld een rij
@@ -122,7 +122,7 @@ Scanmappen stel je in bij Instellingen → Gegevens, of in het venster
 
 ## Gescande repositories
 
-Deze pagina beantwoordt „waar is die repository?” over alles wat Gitcito kent.
+Deze pagina beantwoordt „waar is die repository?” over alles wat GitHuttBr kent.
 Wil je alleen iets uit je projectmappen **openen**, dan heeft het venster
 **Repository openen** — en het welkomstscherm — een kortere weg: **Gescande
 repositories**.
@@ -163,7 +163,7 @@ naam in de eerste staat en de lijst als tabel leest, niet als stapel.
 De acties aan het eind staan in rust zichtbaar, ze verschijnen niet pas bij
 hover: **openen in een tabblad**, en een **⋮** dat hetzelfde
 [contextmenu van de repository](repo-menu.md) opent als een
-rechtermuisklik. Dat is het menu dat overal in Gitcito geldt, hier
+rechtermuisklik. Dat is het menu dat overal in GitHuttBr geldt, hier
 uitgebreid met twee items die alleen deze pagina heeft:
 
 | Actie | Wat het doet |
@@ -179,7 +179,7 @@ met **Lokaliseren…** en **Vergeten** inline in plaats van de gewone rij-acties
 
 Tabbladen worden bij het starten hersteld vanaf de paden die ze hadden toen je
 afsloot. Is een map sindsdien verplaatst, verwijderd, of staat hij op een schijf
-die niet is aangesloten, dan mislukte vroeger elke leesactie van Gitcito daarop
+die niet is aangesloten, dan mislukte vroeger elke leesactie van GitHuttBr daarop
 met een eigen foutmelding. Nu wordt eerst de map gecontroleerd, en toont het
 tabblad **Repositorymap niet gevonden** met het opgeslagen pad in plaats van de
 gewone werkruimte:
@@ -197,7 +197,7 @@ ontbrekende externe schijf is meestal tijdelijk, en het tabblad daarvoor
 kwijtraken zou erger zijn dan een stille plaatsaanduiding. Zolang de map
 ontbreekt, slaat de automatische achtergrond-fetch hem over.
 
-Grenzen: Gitcito zoekt niet waar een map naartoe is gegaan — Lokaliseren… vraagt
+Grenzen: GitHuttBr zoekt niet waar een map naartoe is gegaan — Lokaliseren… vraagt
 het jou. Een map die bestaat maar geen repository meer is, toont in plaats
 daarvan de gebruikelijke melding **Geen Git-repository**.
 
@@ -237,7 +237,7 @@ Veilig te herhalen. Een tweede scan **voegt toe en verwijdert nooit**:
 - Nieuwe repositories worden aan de bijbehorende workspace gehangen.
 - Repositories die je zelf verplaatste, hernoemde of weghaalde blijven zoals
   je ze achterliet.
-- Een workspace die je **hernoemde** wordt nog herkend. Gitcito onthoudt de
+- Een workspace die je **hernoemde** wordt nog herkend. GitHuttBr onthoudt de
   map waar hij vandaan kwam, dus hij voegt samen in plaats van een
   duplicaat te maken.
 - Een van schijf verwijderde repository houdt zijn tabblad en toont als
@@ -296,7 +296,7 @@ soort pull je wilt.
 ## De actiebalk
 
 **Map openen…**, **Klonen…** en **Scanmap toevoegen…**. Drie manieren om
-een repository in het register van Gitcito te brengen, vanaf dezelfde
+een repository in het register van GitHuttBr te brengen, vanaf dezelfde
 pagina waarop je er een zoekt die er al is.
 
 ## WIP-overzicht

@@ -1,4 +1,4 @@
-// Gitcito mascot — a friendly, curious axolotl that guides users through
+// GitHuttBr mascot — a friendly, curious axolotl that guides users through
 // repository history. Used in welcome, empty, loading and error states.
 import { useT } from '../i18n'
 

@@ -16,12 +16,12 @@ repository horen, niet bij de app.
 | Tabblad | Wat erin zit |
 |---|---|
 | **Algemeen** | Beschermde branches (een meervoudige branchkeuze, opgeslagen in de git-config), ondertekenen, de tabafbeelding |
-| **Config** | De [regels die deze repository meebrengt](repo-config.md) in `.gitcito.json`, en de doctor die ze controleert |
+| **Config** | De [regels die deze repository meebrengt](repo-config.md) in `.githuttbr.json`, en de doctor die ze controleert |
 | **Info** | Vrije notities en velden over deze repository, lokaal bewaard |
 | **Kluis** | De [kluis](vault.md)-regels van deze repository |
 | **Inzichten** | Het [geschiedenisdashboard](insights.md) |
 | **Analytics** | Wat jij in deze repository gedaan hebt, lokaal geteld |
-| **Geschiedenis** · **Logs** | Het operatielogboek: elk git-commando dat Gitcito draaide, met de uitvoer |
+| **Geschiedenis** · **Logs** | Het operatielogboek: elk git-commando dat GitHuttBr draaide, met de uitvoer |
 
 Het operatielogboek is het eerlijke onderdeel: gedraagt iets zich vreemd, dan
 toont het het exacte commando en de exacte fout, zodat een bugmelding feiten kan
@@ -64,7 +64,7 @@ Grenzen om te kennen:
   instellingenpagina een waarschuwing onder het pad. Verder klaagt niets.
 - De afbeelding wordt eens per sessie gelezen. Vervang je het bestand onder
   dezelfde naam, open deze instellingenpagina dan opnieuw om te herladen.
-- De instelling staat in Gitcito’s eigen instellingen op deze computer, niet in
+- De instelling staat in GitHuttBr’s eigen instellingen op deze computer, niet in
   de repository, dus teamgenoten erven haar niet.
 
 **Zie ook:** [Beveiliging & geheimen](security.md) · [Inzichten](insights.md)

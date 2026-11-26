@@ -4,17 +4,17 @@ category: セキュリティ
 order: 73
 summary: git 自身のパスワード保管先 — 3 つめのもの — と、https が何度も尋ねてくる理由。
 keywords: credential helper password https asks again osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401 認証情報 ヘルパー パスワード 平文 忘れさせる トークン 失効 サインインを確認 どのアカウント リモート URL のトークン 埋め込まれたパスワード URL から削除 token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # 認証情報ヘルパー
 
-Gitcito は 3 種類の秘密情報を扱っていて、多くの人はそれらを 1 つのものだと思っています。
+GitHuttBr は 3 種類の秘密情報を扱っていて、多くの人はそれらを 1 つのものだと思っています。
 無理もありません。
 
 | | 保管しているのは |
 |---|---|
-| ホストの API トークン — プルリクエスト、イシュー、CI のチェック | Gitcito が [OS のキーチェーン](security.md) に |
+| ホストの API トークン — プルリクエスト、イシュー、CI のチェック | GitHuttBr が [OS のキーチェーン](security.md) に |
 | `git@…` の通信 | あなたの [SSH 鍵](ssh-keys.md)。システムの ssh エージェント経由 |
 | **`https://` の通信** | **git 自身の認証情報ヘルパー** |
 
@@ -55,7 +55,7 @@ Gitcito は 3 種類の秘密情報を扱っていて、多くの人はそれら
 | `cache` | メモリ上に 15 分間。ディスクには何も残りません |
 | `store` | **ホームディレクトリの平文ファイル。暗号化なし** |
 
-Gitcito は、このマシンに実際に入っているものを提示し、あなたの OS に合うものに印を付け、
+GitHuttBr は、このマシンに実際に入っているものを提示し、あなたの OS に合うものに印を付け、
 残りをグレーアウトします。
 
 **スコープは重要です。** *すべてのリポジトリで（グローバル）* はグローバルの設定へ書き
@@ -82,7 +82,7 @@ Gitcito は、このマシンに実際に入っているものを提示し、あ
 経路です。
 
 その途中で何かを読み出すことはありません。生のパスワードを標準出力へ書き出してしまう
-コマンド `git credential fill` を、Gitcito が呼ぶことは決してありません。
+コマンド `git credential fill` を、GitHuttBr が呼ぶことは決してありません。
 
 次のプッシュで一度だけ尋ねられ、ヘルパーが新しい答えを保存します。
 
@@ -122,7 +122,7 @@ SSH のリモートは確認しませんが、[SSH キー](ssh-keys.md) にエ�
 あります: `https://user:token@git.example.test/team/app.git`。**URL のパスワードは
 常に優先されます:** git はそれを送り、どのヘルパーにも問い合わせません — リポジトリの
 [プロファイル](profiles.md) のトークンにも、GitHub CLI にも、git 自身のストアにも。
-トークンが有効な間は問題なく、Gitcito もそのままにします: **確認なしに URL から
+トークンが有効な間は問題なく、GitHuttBr もそのままにします: **確認なしに URL から
 パスワードを削除することはありません。** トークンが失効したり期限切れになったりすると、
 そのリポジトリだけ fetch・pull・push のすべてが *Invalid username or token* や
 *Authentication failed* で失敗し、同じプロファイルのほかのリポジトリは動きます。しかも
@@ -130,7 +130,7 @@ SSH のリモートは確認しませんが、[SSH キー](ssh-keys.md) にエ�
 
 ![リモート URL から保存済みトークンを削除する](../../screenshots/remote-url-token.webp)
 
-Gitcito は各リモートの fetch と push の URL を読み、3 か所でそれを伝えます。
+GitHuttBr は各リモートの fetch と push の URL を読み、3 か所でそれを伝えます。
 
 | 場所 | 表示されるもの |
 |-------|--------------|
@@ -184,14 +184,14 @@ Gitcito は各リモートの fetch と push の URL を読み、3 か所でそ�
 
 ## 知っておくべき制限
 
-- **これは git の保管先であって、Gitcito のものではありません。** ここを変えると
+- **これは git の保管先であって、GitHuttBr のものではありません。** ここを変えると
   ターミナルの挙動も変わります — それが狙いですが、変える前に知っておく価値があります。
 - **システムスコープのヘルパーは表示されるだけで、編集できません。** 管理者だけが書ける
   設定ファイルにあるからです。
-- **Gitcito はヘルパーが持っている中身を一覧できません。** 秘密情報そのものを渡さずに
+- **GitHuttBr はヘルパーが持っている中身を一覧できません。** 秘密情報そのものを渡さずに
   それを見せる認証情報 API は存在しません。だからこのダイアログは設定を報告し、依頼が
   あれば消す、それだけです。
-- **Gitcito に渡したトークンは別物です。** 一方を失効させても、もう一方には触れません。
+- **GitHuttBr に渡したトークンは別物です。** 一方を失効させても、もう一方には触れません。
   キーチェーン側については [セキュリティ](security.md) を見てください。
 - **プロファイルのトークンは、リポジトリのフックの環境に入りません。** フックに見える
   のは、その git コマンドの実行中だけ有効な、非公開の接続先用のコードだけです —

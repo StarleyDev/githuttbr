@@ -17,11 +17,11 @@ import {
 import { defaultSettings, type AppSettings, type GroupTab, type RepoTab } from '../src/shared/types'
 
 const caps = (over: Partial<RepoMenuCapabilities> = {}): RepoMenuCapabilities => ({
-  path: '/Users/me/src/gitcito',
-  canonicalName: 'gitcito',
+  path: '/Users/me/src/githuttbr',
+  canonicalName: 'githuttbr',
   alias: null,
   pathAvailable: true,
-  githubUrl: 'https://github.com/ThalesMMS/gitcito',
+  githubUrl: 'https://github.com/someone/githuttbr',
   editorAvailable: true,
   editorName: 'VS Code',
   terminalAvailable: true,
@@ -35,22 +35,22 @@ const actionIds = (c: RepoMenuCapabilities): string[] =>
 
 describe('canonical repository identity', () => {
   it('uses the last path segment as the canonical name on POSIX and Windows', () => {
-    expect(canonicalRepoName('/Users/me/src/gitcito')).toBe('gitcito')
-    expect(canonicalRepoName('C:\\Users\\me\\src\\gitcito')).toBe('gitcito')
-    expect(canonicalRepoName('C:/Users/me/src/gitcito/')).toBe('gitcito')
+    expect(canonicalRepoName('/Users/me/src/githuttbr')).toBe('githuttbr')
+    expect(canonicalRepoName('C:\\Users\\me\\src\\githuttbr')).toBe('githuttbr')
+    expect(canonicalRepoName('C:/Users/me/src/githuttbr/')).toBe('githuttbr')
   })
 
   it('canonicalizes Windows and POSIX paths to one alias key', () => {
-    expect(canonicalRepoPath('C:\\Users\\me\\src\\gitcito')).toBe('c:/Users/me/src/gitcito')
-    expect(canonicalRepoPath('C:/Users/me/src/gitcito/')).toBe('c:/Users/me/src/gitcito')
-    expect(canonicalRepoPath('/Users/me/src/gitcito/')).toBe('/Users/me/src/gitcito')
+    expect(canonicalRepoPath('C:\\Users\\me\\src\\githuttbr')).toBe('c:/Users/me/src/githuttbr')
+    expect(canonicalRepoPath('C:/Users/me/src/githuttbr/')).toBe('c:/Users/me/src/githuttbr')
+    expect(canonicalRepoPath('/Users/me/src/githuttbr/')).toBe('/Users/me/src/githuttbr')
   })
 
   it('prefers the path-keyed alias over a leftover RepoRef.name', () => {
-    const aliases = { '/repos/gitcito': 'Work' }
-    expect(repoDisplayName('/repos/gitcito', aliases, 'old-chip-name')).toBe('Work')
-    expect(repoDisplayName('/repos/gitcito', {}, 'old-chip-name')).toBe('old-chip-name')
-    expect(repoDisplayName('/repos/gitcito', {}, undefined)).toBe('gitcito')
+    const aliases = { '/repos/githuttbr': 'Work' }
+    expect(repoDisplayName('/repos/githuttbr', aliases, 'old-chip-name')).toBe('Work')
+    expect(repoDisplayName('/repos/githuttbr', {}, 'old-chip-name')).toBe('old-chip-name')
+    expect(repoDisplayName('/repos/githuttbr', {}, undefined)).toBe('githuttbr')
   })
 })
 
@@ -59,9 +59,9 @@ describe('githubRepoUrl', () => {
     expect(
       githubRepoUrl([
         { name: 'upstream', url: 'https://github.com/other/fork.git' },
-        { name: 'origin', url: 'git@github.com:ThalesMMS/gitcito.git' }
+        { name: 'origin', url: 'git@github.com:someone/githuttbr.git' }
       ])
-    ).toBe('https://github.com/ThalesMMS/gitcito')
+    ).toBe('https://github.com/someone/githuttbr')
   })
 
   it('falls back to the first parseable GitHub remote when origin is not GitHub', () => {
@@ -190,8 +190,8 @@ describe('toolbar repository switcher entries', () => {
   it('lists standalone tabs and group members, skipping page tabs', () => {
     const { tabs } = settingsWithRepos()
     expect(openRepoSwitcherEntries(tabs)).toEqual([
-      { tabId: 't1', tabKind: 'repo', groupName: null, path: '/repos/gitcito', name: 'gitcito' },
-      { tabId: 'g1', tabKind: 'group', groupName: 'Work', path: '/repos/gitcito', name: 'gitcito' },
+      { tabId: 't1', tabKind: 'repo', groupName: null, path: '/repos/githuttbr', name: 'githuttbr' },
+      { tabId: 'g1', tabKind: 'group', groupName: 'Work', path: '/repos/githuttbr', name: 'githuttbr' },
       { tabId: 'g1', tabKind: 'group', groupName: 'Work', path: '/repos/other', name: 'other' }
     ])
   })
@@ -212,25 +212,25 @@ describe('toolbar repository switcher entries', () => {
 
 describe('repository menu action routing', () => {
   it('copies the canonical name, not the display alias', () => {
-    expect(repoMenuActionTarget('copyName', caps({ alias: 'Work', canonicalName: 'gitcito' }))).toEqual({
-      copy: 'gitcito'
+    expect(repoMenuActionTarget('copyName', caps({ alias: 'Work', canonicalName: 'githuttbr' }))).toEqual({
+      copy: 'githuttbr'
     })
   })
 
   it('copies the absolute repository path', () => {
-    expect(repoMenuActionTarget('copyPath', caps({ path: 'C:\\src\\gitcito' }))).toEqual({
-      copy: 'C:\\src\\gitcito'
+    expect(repoMenuActionTarget('copyPath', caps({ path: 'C:\\src\\githuttbr' }))).toEqual({
+      copy: 'C:\\src\\githuttbr'
     })
   })
 
   it('opens the normalized GitHub web URL', () => {
     expect(
-      repoMenuActionTarget('viewOnGitHub', caps({ githubUrl: 'https://github.com/ThalesMMS/gitcito' }))
-    ).toEqual({ url: 'https://github.com/ThalesMMS/gitcito' })
+      repoMenuActionTarget('viewOnGitHub', caps({ githubUrl: 'https://github.com/someone/githuttbr' }))
+    ).toEqual({ url: 'https://github.com/someone/githuttbr' })
   })
 
   it('targets the repository root for terminal, reveal and editor', () => {
-    const path = '/Users/me/src/gitcito'
+    const path = '/Users/me/src/githuttbr'
     expect(repoMenuActionTarget('openTerminal', caps({ path }))).toEqual({ path })
     expect(repoMenuActionTarget('reveal', caps({ path }))).toEqual({ path })
     expect(repoMenuActionTarget('openEditor', caps({ path }))).toEqual({ path })
@@ -238,13 +238,13 @@ describe('repository menu action routing', () => {
 })
 
 function settingsWithRepos(): AppSettings {
-  const path = '/repos/gitcito'
+  const path = '/repos/githuttbr'
   const other = '/repos/other'
   const repoTab: RepoTab = {
     id: 't1',
     kind: 'repo',
-    name: 'gitcito',
-    repos: [{ path, name: 'gitcito' }],
+    name: 'githuttbr',
+    repos: [{ path, name: 'githuttbr' }],
     activeRepoPath: path
   }
   const groupTab: GroupTab = {
@@ -252,7 +252,7 @@ function settingsWithRepos(): AppSettings {
     kind: 'group',
     name: 'Work',
     repos: [
-      { path, name: 'gitcito' },
+      { path, name: 'githuttbr' },
       { path: other, name: 'other' }
     ],
     folders: [{ id: 'f1', name: 'Nested', paths: [path], folders: [] }],
@@ -261,9 +261,9 @@ function settingsWithRepos(): AppSettings {
   return {
     ...defaultSettings(),
     tabs: [repoTab, groupTab],
-    recentRepos: [{ path, name: 'gitcito' }],
+    recentRepos: [{ path, name: 'githuttbr' }],
     workspaces: [
-      { id: 'default', name: 'Gitcito', tabs: [repoTab, groupTab], activeTabId: 't1' },
+      { id: 'default', name: 'GitHuttBr', tabs: [repoTab, groupTab], activeTabId: 't1' },
       {
         id: 'personal',
         name: 'Personal',
@@ -271,8 +271,8 @@ function settingsWithRepos(): AppSettings {
           {
             id: 't2',
             kind: 'repo',
-            name: 'gitcito',
-            repos: [{ path, name: 'gitcito' }],
+            name: 'githuttbr',
+            repos: [{ path, name: 'githuttbr' }],
             activeRepoPath: path
           }
         ],
@@ -284,8 +284,8 @@ function settingsWithRepos(): AppSettings {
 
 describe('path-keyed aliases', () => {
   it('persists one display alias across standalone tabs, groups, nested folders and workspaces', () => {
-    const next = applyRepoAlias(settingsWithRepos(), '/repos/gitcito', 'Work alias')
-    expect(next.repoAliases[canonicalRepoPath('/repos/gitcito')]).toBe('Work alias')
+    const next = applyRepoAlias(settingsWithRepos(), '/repos/githuttbr', 'Work alias')
+    expect(next.repoAliases[canonicalRepoPath('/repos/githuttbr')]).toBe('Work alias')
     expect(next.tabs[0].name).toBe('Work alias')
     expect(next.tabs[0].kind === 'repo' && next.tabs[0].repos[0].name).toBe('Work alias')
     expect(next.tabs[1].kind === 'group' && next.tabs[1].repos[0].name).toBe('Work alias')
@@ -297,11 +297,11 @@ describe('path-keyed aliases', () => {
   })
 
   it('removing an alias restores the canonical folder name without touching the directory', () => {
-    const aliased = applyRepoAlias(settingsWithRepos(), '/repos/gitcito', 'Work alias')
-    const next = applyRepoAlias(aliased, '/repos/gitcito', null)
-    expect(next.repoAliases['/repos/gitcito']).toBeUndefined()
-    expect(next.tabs[0].name).toBe('gitcito')
-    expect(next.tabs[0].kind === 'repo' && next.tabs[0].repos[0].name).toBe('gitcito')
+    const aliased = applyRepoAlias(settingsWithRepos(), '/repos/githuttbr', 'Work alias')
+    const next = applyRepoAlias(aliased, '/repos/githuttbr', null)
+    expect(next.repoAliases['/repos/githuttbr']).toBeUndefined()
+    expect(next.tabs[0].name).toBe('githuttbr')
+    expect(next.tabs[0].kind === 'repo' && next.tabs[0].repos[0].name).toBe('githuttbr')
   })
 
   it('migrates per-group RepoRef.name custom names into the shared alias map', () => {
@@ -309,11 +309,11 @@ describe('path-keyed aliases', () => {
     if (s.tabs[1].kind === 'group') {
       s.tabs[1] = {
         ...s.tabs[1],
-        repos: s.tabs[1].repos.map((r) => (r.path === '/repos/gitcito' ? { ...r, name: 'Old group name' } : r))
+        repos: s.tabs[1].repos.map((r) => (r.path === '/repos/githuttbr' ? { ...r, name: 'Old group name' } : r))
       }
     }
     const next = migrateRepoAliases(s)
-    expect(next.repoAliases['/repos/gitcito']).toBe('Old group name')
+    expect(next.repoAliases['/repos/githuttbr']).toBe('Old group name')
     expect(next.tabs[0].kind === 'repo' && next.tabs[0].repos[0].name).toBe('Old group name')
     expect(next.tabs[1].kind === 'group' && next.tabs[1].repos[0].name).toBe('Old group name')
   })

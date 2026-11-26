@@ -4,7 +4,7 @@ category: Strumenti dell'area di lavoro
 order: 95
 summary: Manda un repository, un file o una singola riga di codice all'editor in cui scrivi davvero.
 keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode apri nell'editor riga colonna comando personalizzato argv devin desktop
-source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
+source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
 ---
 
 # Editor esterno
@@ -13,13 +13,13 @@ Un client Git è dove leggi il codice; raramente è dove lo sistemi. La distanza
 fra il notare un problema in un diff e l'avere il cursore su quella riga nel tuo
 editor è una ricerca del file più uno scorrimento — ogni volta.
 
-Indica a Gitcito il tuo editor una volta sola e quella distanza sparisce: clic
+Indica a GitHuttBr il tuo editor una volta sola e quella distanza sparisce: clic
 destro su una riga nella vista file o blame e si apre lì, a quella riga.
 
 ## Sceglierne uno
 
 **Impostazioni → Generali → Editor esterno.** Il menu a tendina elenca gli editor
-che Gitcito riesce a trovare su questa macchina — cerca prima il comando di
+che GitHuttBr riesce a trovare su questa macchina — cerca prima il comando di
 ciascun editor, poi, su macOS, il bundle dell'applicazione in `/Applications` e
 `~/Applications`. La scansione parte ogni volta che apri le impostazioni, quindi
 un editor installato cinque minuti fa compare senza riavviare.
@@ -38,7 +38,7 @@ Riconosciuti in partenza:
 | Xcode | `xed` |
 
 **Su Linux, un editor fuori dal PATH.** Un editor scompattato in una cartella a tua
-scelta spesso non è nel PATH, ma è nel menu delle applicazioni. Gitcito legge anche le
+scelta spesso non è nel PATH, ma è nel menu delle applicazioni. GitHuttBr legge anche le
 voci `.desktop` del menu — nelle cartelle dati XDG (`~/.local/share`, poi
 `/usr/local/share` e `/usr/share`, o quello che dicono `XDG_DATA_HOME` e
 `XDG_DATA_DIRS`) e negli export di Flatpak e Snap — e riconosce un editor dal nome o dal
@@ -57,7 +57,7 @@ stesso nome.
 **Saltare a una riga richiede il comando dell'editor, non la sua icona.** Un
 bundle `.app` di macOS viene lanciato tramite `open`, che accetta un percorso e
 nient'altro — quindi un editor trovato solo come bundle apre il file dall'inizio,
-e Gitcito lo dice sotto il menu invece di fingere il contrario.
+e GitHuttBr lo dice sotto il menu invece di fingere il contrario.
 
 La soluzione sta dalla parte dell'editor: *Shell Command: Install 'code' command
 in PATH* per VS Code, il link simbolico `subl` di Sublime, *Toolbox → Settings →
@@ -78,7 +78,7 @@ l'editor e il salto alla riga funziona.
 Le azioni sulla riga compaiono solo dove il numero di riga significa ancora
 qualcosa: un file mostrato a un commit vecchio, o un blame riavvolto a una
 revisione precedente, ha righe che non corrispondono più a quello che c'è su
-disco, quindi Gitcito lì non offre alcun salto invece di mandarti nel posto
+disco, quindi GitHuttBr lì non offre alcun salto invece di mandarti nel posto
 sbagliato.
 
 ## Progetti Xcode e altri pacchetti
@@ -105,11 +105,11 @@ quanto faccia risparmiare.
 
 **Il pacchetto si apre tramite il sistema, non tramite il tuo editor.** Un
 `.xcodeproj` passato a un editor di testo si apre come una cartella di property
-list, che non è quello che voleva chi ha cliccato — così Gitcito lo passa a ciò
+list, che non è quello che voleva chi ha cliccato — così GitHuttBr lo passa a ciò
 che il sistema gli associa, che su un Mac con Xcode installato è Xcode. La
 scelta dell'editor resta intatta e continua a valere per ogni file normale.
 
-**È una convenzione sui nomi, non un flag del filesystem.** Gitcito guarda
+**È una convenzione sui nomi, non un flag del filesystem.** GitHuttBr guarda
 l'estensione, quindi anche una cartella che hai chiamato `notes.app` si chiude, e
 su Linux o Windows — dove sono cartelle qualsiasi — un clic apre il gestore file
 invece di un IDE.
@@ -135,7 +135,7 @@ segnaposto: `{path}`, `{line}`, `{col}`, `{repo}`.
 Un segnaposto senza valore si porta via il suo flag: `--line {line} {path}`
 eseguito senza una riga diventa solo il percorso, mai un `--line` penzolante che
 si mangerebbe il nome del file come argomento. Un template senza `{line}` vuol
-dire semplicemente che per quell'editor Gitcito non offrirà azioni precise alla
+dire semplicemente che per quell'editor GitHuttBr non offrirà azioni precise alla
 riga.
 
 ## Cosa non è
@@ -146,5 +146,5 @@ selettore di sistema e ricorda una sola applicazione per aprire *qualsiasi cosa*
 due, quindi dove sono impostati entrambi l'editor vince sull'icona a fine riga
 nell'albero dei file; entrambi restano elencati nel menu contestuale.
 
-Gitcito non lancia mai il tuo editor da solo, e chiudere Gitcito non lo chiude
+GitHuttBr non lancia mai il tuo editor da solo, e chiudere GitHuttBr non lo chiude
 mai: l'editor viene avviato staccato, come processo a sé.

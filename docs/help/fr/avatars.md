@@ -10,7 +10,7 @@ keywords: avatar avatars gravatar blobatar auteur photo image identicon visage h
 
 Une liste de commits est un mur de noms, et les noms se lisent lentement. Une
 image à côté de chacun transforme « qui a écrit ça » en une question à laquelle on
-répond d’un coup d’œil. Gitcito en met une sur chaque auteur qu’il affiche : dans
+répond d’un coup d’œil. GitHuttBr en met une sur chaque auteur qu’il affiche : dans
 la colonne auteur du graphe, dans les détails du commit à côté de l’auteur et de
 chaque co-auteur, dans le sélecteur de co-auteurs pendant la rédaction, dans le
 sélecteur de profils, et à côté de chaque profil dans les Paramètres.
@@ -41,7 +41,7 @@ personne.
 
 ## Le visage de la barre de titre
 
-L’avatar à côté du nom de votre profil est le seul avatar de Gitcito qui représente
+L’avatar à côté du nom de votre profil est le seul avatar de GitHuttBr qui représente
 **vous, dans ce dépôt, maintenant** — c’est donc le seul qui réagit à l’état du
 dépôt. Il fait une tête quand il se passe quelque chose, et reste neutre le reste
 du temps.
@@ -91,7 +91,7 @@ L’avatar de la barre de titre et de la liste des profils est le vôtre : vous 
 | **Automatique** | Par défaut : votre Gravatar pour l’e-mail git du profil, ou le visage généré — celui qui réagit au dépôt. |
 | **De l’intégration** | La photo du compte GitHub ou GitLab connecté à ce profil dans Intégrations. Désactivé tant qu’il n’y en a pas. |
 | **Icône** | L’un des 24 symboles, sur la couleur de votre choix. |
-| **Image** | Un fichier que vous choisissez — PNG ou JPEG. Réduit à 256 px et conservé sur cet ordinateur, dans le dossier de données de Gitcito, pas dans le fichier de paramètres. |
+| **Image** | Un fichier que vous choisissez — PNG ou JPEG. Réduit à 256 px et conservé sur cet ordinateur, dans le dossier de données de GitHuttBr, pas dans le fichier de paramètres. |
 | **Depuis un dépôt** | Une icône ou un logo trouvé dans l’un des dépôts du profil — celui de l’app ou de l’entreprise —, copié dans le profil comme une image. |
 
 L’image suit **Paramètres → Données → Exporter les paramètres** et revient à l’import ; supprimer le

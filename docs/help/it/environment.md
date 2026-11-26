@@ -2,7 +2,7 @@
 title: Controllo dell’ambiente
 category: Per iniziare
 order: 6
-summary: Da cosa dipende Gitcito fuori dalla propria installazione — git, LFS, il terminale nativo, il credential helper di git, la CLI di GitHub e il monitoraggio dei file — controllato in un unico posto.
+summary: Da cosa dipende GitHuttBr fuori dalla propria installazione — git, LFS, il terminale nativo, il credential helper di git, la CLI di GitHub e il monitoraggio dei file — controllato in un unico posto.
 keywords: ambiente environment dottore diagnosi controllo git versione lfs node-pty terminale shell base credential helper store gh github cli scope workflow inotify max_user_watches
 ---
 
@@ -17,7 +17,7 @@ dei comandi) li controlla in anticipo.
 
 Il [dottore del repository](repo-settings.md) risponde a un’altra domanda: se
 *questo repository* può essere compilato qui, in base a ciò che chiede il suo
-`.gitcito.json`. Il controllo dell’ambiente riguarda l’app stessa ed è uguale per
+`.githuttbr.json`. Il controllo dell’ambiente riguarda l’app stessa ed è uguale per
 ogni repository.
 
 ![Controlli dell’ambiente nelle Impostazioni](../../screenshots/settings-environment.webp)
@@ -29,7 +29,7 @@ ogni repository.
 | **Git** | git 2.31 o successivo è nel `PATH` | Più vecchio di 2.31: l’account di un [profilo](profiles.md) non può autenticarsi per fetch e push. Assente: nulla funziona finché git non è installato |
 | **Git LFS** | `git lfs` è installato | Non installato. Serve solo ai repository che tengono file in LFS |
 | **Terminale** | Il terminale nativo si è caricato | Il [terminale](terminal.md) funziona in modalità base: niente colori, niente ridimensionamento, niente programmi a schermo intero |
-| **Credential helper** | git ha un helper per le password HTTPS — globale o per host specifici (ciò che imposta `gh auth setup-git`) | Nessun helper, quindi git fuori da Gitcito chiede ogni volta. Oppure `store`, che le salva in chiaro. Vedi [Credential helper](credentials.md) |
+| **Credential helper** | git ha un helper per le password HTTPS — globale o per host specifici (ciò che imposta `gh auth setup-git`) | Nessun helper, quindi git fuori da GitHuttBr chiede ogni volta. Oppure `store`, che le salva in chiaro. Vedi [Credential helper](credentials.md) |
 | **CLI di GitHub** | `gh` ha effettuato l’accesso con lo scope `workflow` | Accesso senza di esso: GitHub rifiuta ogni push che modifica `.github/workflows` |
 | **Monitoraggio file** (Linux) | Il limite inotify è almeno 65.536 | Un limite più basso si esaurisce con pochi repository grandi aperti, e le nuove cartelle smettono di aggiornare lo stato |
 

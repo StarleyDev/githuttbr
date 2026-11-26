@@ -4,12 +4,12 @@ category: Empieza aquí
 order: 1
 summary: Abre un repositorio, lee el grafo, haz tu primer commit.
 keywords: intro primeros pasos abrir clonar clone pestañas tabs grafo graph commit empezar inicio
-source: 173f891f9f1c5c53ea40cf344baf821e3188344d
+source: 8effe244fab76b263f38e31ac0912d8042c428c6
 ---
 
 # Primeros pasos
 
-Gitcito abre una carpeta y te enseña su historial. No escribe nada en tu
+GitHuttBr abre una carpeta y te enseña su historial. No escribe nada en tu
 repositorio hasta que se lo pidas.
 
 ![Un repositorio recién abierto, todavía sin commits](../../screenshots/empty-repo.webp)
@@ -28,7 +28,7 @@ repositorio hasta que se lo pidas.
   repositorios abiertos: Electron no expone el gancho por carpeta del panel,
   así que la comprobación ocurre después de pulsar Abrir.
 - **Repositorios escaneados**, debajo de los tres botones, lista todos los
-  repositorios de las carpetas que le pediste a Gitcito que escanee — marca
+  repositorios de las carpetas que le pediste a GitHuttBr que escanee — marca
   varios y ábrelos de una vez, o haz doble clic en uno. También es donde añades
   o quitas esas carpetas. Mira [Repositorios](repositories.md#repositorios-escaneados).
 - **¿Pulsaste el que no era?** Clonar, Crear, Crear grupo y Repositorios
@@ -37,7 +37,7 @@ repositorio hasta que se lo pidas.
 - **Clona** uno desde una URL o directamente desde tu hosting — mira
   [clonar](cloning.md) para las opciones que hacen que un repositorio enorme se
   clone rápido.
-- Desde un terminal, `gitcito .` abre la carpeta actual en la app que ya está
+- Desde un terminal, `githuttbr .` abre la carpeta actual en la app que ya está
   en marcha — mira [la línea de comandos](cli.md).
 - Una sola carpeta que todavía no es un repositorio Git también se abre, y te
   ofrece inicializarla.
@@ -73,5 +73,5 @@ nada que solo encuentren los usuarios avanzados.
 2. Prepáralo — el archivo entero, un hunk, o [líneas sueltas](staging.md).
 3. Escribe un mensaje y pulsa **Commit**.
 
-Todo lo demás en Gitcito es opcional.
+Todo lo demás en GitHuttBr es opcional.
 

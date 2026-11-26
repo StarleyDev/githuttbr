@@ -1,4 +1,4 @@
-import gitcitoLaunch from '../assets/gitcito-launch.png'
+import githuttbrLaunch from '../assets/githuttbr-launch.png'
 import { resolveWorktreeDir } from '../lib/branchMenu'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -2358,7 +2358,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     <>
       {/* The same welcome art as a new workspace: opening a repository is the
           other way into the app, and it should greet you the same way. */}
-      <img className="launcher-art" src={gitcitoLaunch} alt="" draggable={false} />
+      <img className="launcher-art" src={githuttbrLaunch} alt="" draggable={false} />
       <h3>
         {spec.groupId
           ? interp(t('launcher.manageGroup'), { name: groupTab?.name ?? t('launcher.groupFallback') })

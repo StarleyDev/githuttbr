@@ -10,7 +10,7 @@ keywords: lokale ci local ci act actions workflow runner docker pipeline testen 
 
 Die Schleife push–warten–rotes Kreuz–fixen–push verschwendet zehn Minuten pro
 Runde. Mit [act](https://nektosact.com) laufen dieselben Workflows in
-Docker-Containern auf deinem Rechner, und Gitcito steuert sie: Workflow
+Docker-Containern auf deinem Rechner, und GitHuttBr steuert sie: Workflow
 auswählen, Ausführen drücken, dasselbe Log verfolgen, das die CI ausgeben würde
 — bevor irgendetwas deinen Rechner verlässt.
 
@@ -18,10 +18,10 @@ auswählen, Ausführen drücken, dasselbe Log verfolgen, das die CI ausgeben wü
 
 ## Eine Integration, keine mitgelieferte Runtime
 
-Gitcito liefert act und Docker ganz bewusst **nicht** mit — eine App, die eine
+GitHuttBr liefert act und Docker ganz bewusst **nicht** mit — eine App, die eine
 Container-Runtime mitschleppt, ist das Gegenteil eines Git-Clients. Es ist eine
 Opt-in-Integration: aktiviere sie unter **Einstellungen → Integrationen** (oder
-direkt im Dialog), und Gitcito erkennt, was installiert ist, und führt dich
+direkt im Dialog), und GitHuttBr erkennt, was installiert ist, und führt dich
 durch den Rest — `brew install act`, ein laufender Docker-Daemon, fertig.
 Nichts läuft, bevor alle drei Bedingungen erfüllt sind: aktiviert, act
 installiert, Docker erreichbar.
@@ -42,7 +42,7 @@ installiert, Docker erreichbar.
 Ein abgeschlossener Lauf heftet sein Ergebnis an den Commit, den er getestet
 hat: ein kleiner Kolben markiert die Zeile im Graphen **grün oder rot**, sodass
 du auf einen Blick siehst, welche Commits die CI lokal schon überstanden haben.
-Das Urteil wird als Git-Note unter `refs/notes/gitcito-ci` gespeichert — lokal
+Das Urteil wird als Git-Note unter `refs/notes/githuttbr-ci` gespeichert — lokal
 auf deinem Rechner, standardmäßig nie gepusht.
 
 Ehrlichkeitsregel: Das Urteil wird nur angeheftet, wenn dein Arbeitsbaum
@@ -63,7 +63,7 @@ Graphen bietet direkt **Lokale CI auf diesem Commit ausführen** an.
 
 Die Kosten werden genannt, bevor irgendetwas läuft, statt hinterher entdeckt
 zu werden: Tippe eine Revision oder einen Bereich ein (`main..HEAD`,
-`HEAD~5..`, eine sha), drücke **Vorschau**, und Gitcito zeigt, wie viele
+`HEAD~5..`, eine sha), drücke **Vorschau**, und GitHuttBr zeigt, wie viele
 Commits die Angabe trifft und welche neuesten N — das explizite Budget,
 gedeckelt bei 50 — tatsächlich laufen würden. Ein Durchlauf führt sie
 **nacheinander** aus (act plus Docker ist schwer genug, dass parallele Läufe

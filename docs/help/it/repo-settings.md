@@ -16,12 +16,12 @@ appartengono a **questo** repository, non all'applicazione.
 | Scheda | Cosa contiene |
 |---|---|
 | **Generali** | Branch protetti (una selezione multipla di branch, conservata nella configurazione git), firma, l’immagine della scheda |
-| **Config** | Le [regole che questo repository porta con sé](repo-config.md) in `.gitcito.json`, e il doctor che le controlla |
+| **Config** | Le [regole che questo repository porta con sé](repo-config.md) in `.githuttbr.json`, e il doctor che le controlla |
 | **Info** | Note e campi liberi su questo repository, conservati in locale |
 | **Cassaforte** | Le voci della [cassaforte](vault.md) di questo repository |
 | **Insight** | Il [cruscotto della storia](insights.md) |
 | **Analytics** | Quello che hai fatto in questo repository, conteggiato in locale |
-| **Cronologia** · **Log** | Il registro delle operazioni: ogni comando git eseguito da Gitcito, con il suo output |
+| **Cronologia** · **Log** | Il registro delle operazioni: ogni comando git eseguito da GitHuttBr, con il suo output |
 
 Il registro delle operazioni è quello onesto: quando qualcosa si comporta in modo
 strano, mostra il comando esatto e l'errore esatto, così una segnalazione di bug
@@ -64,7 +64,7 @@ Limiti da conoscere:
   impostazioni mostra un avviso sotto il percorso. Nient’altro si lamenta.
 - L’immagine viene letta una volta per sessione. Se sostituisci il file con lo
   stesso nome, riapri questa scheda delle impostazioni per ricaricarla.
-- L’impostazione vive nelle impostazioni di Gitcito su questo computer, non nel
+- L’impostazione vive nelle impostazioni di GitHuttBr su questo computer, non nel
   repository: i colleghi non la ereditano.
 
 **Vedi anche:** [Sicurezza e segreti](security.md) · [Insight](insights.md)

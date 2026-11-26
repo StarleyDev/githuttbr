@@ -2,13 +2,13 @@
 title: سطر الأوامر
 category: أدوات مساحة العمل
 order: 93
-summary: الأمر `gitcito .` يفتح مستودعًا — و`gitcito doctor` يجيب دون أن يفتح شيئًا.
+summary: الأمر `githuttbr .` يفتح مستودعًا — و`githuttbr doctor` يجيب دون أن يفتح شيئًا.
 keywords: cli سطر الأوامر طرفية shim path تثبيت فتح مجلد نسخة واحدة doctor status repos commit-check config editor completions wait core.editor blame show search أفعال رمز الخروج ci hook
 ---
 
 # سطر الأوامر
 
-من الطرفية يُطرح نوعان من الأسئلة، و`gitcito` يجيب عنهما معًا.
+من الطرفية يُطرح نوعان من الأسئلة، و`githuttbr` يجيب عنهما معًا.
 
 الأول هو *«أرِني هذا»* — أنت داخل نسخة من المستودع، وثمة ما يستحق النظر، والتطبيق
 هو المكان المناسب للنظر فيه. هذه الاستدعاءات تفتح نافذة، أقرب ما يمكن إلى ما
@@ -19,14 +19,14 @@ keywords: cli سطر الأوامر طرفية shim path تثبيت فتح مج�
 المخرج القياسي ثم تنصرف.
 
 ```sh
-gitcito .                        # افتح هذا المجلد
-gitcito blame src/api.ts -l 84   # …عند لوم ذلك السطر
-gitcito doctor                   # بلا نافذة: يفحص المستودع ويخرج بالرمز 1 عند الفشل
+githuttbr .                        # افتح هذا المجلد
+githuttbr blame src/api.ts -l 84   # …عند لوم ذلك السطر
+githuttbr doctor                   # بلا نافذة: يفحص المستودع ويخرج بالرمز 1 عند الفشل
 ```
 
 ## التثبيت
 
-لوحة الأوامر (<kbd>⌘K</kbd>) ← **تثبيت الأمر 'gitcito' في PATH**. على macOS يُنشئ
+لوحة الأوامر (<kbd>⌘K</kbd>) ← **تثبيت الأمر 'githuttbr' في PATH**. على macOS يُنشئ
 وصلة رمزية إلى وسيط صغير في `/usr/local/bin` أو `/opt/homebrew/bin`، ولا يطلب
 صلاحيات المدير إلا إذا لم يكن أيٌّ منهما قابلًا للكتابة لديك. على لينكس يذهب إلى
 `~/.local/bin` الذي لا يحتاج صلاحيات أصلًا. الأمر نفسه يزيله. ويندوز غير مدعوم
@@ -35,28 +35,28 @@ gitcito doctor                   # بلا نافذة: يفحص المستودع 
 ثم، اختياريًا:
 
 ```sh
-gitcito completions zsh >> ~/.zshrc     # أو bash أو fish
+githuttbr completions zsh >> ~/.zshrc     # أو bash أو fish
 ```
 
 ## فتح الأشياء
 
 | الأمر | يفتح |
 |-------|------|
-| `gitcito [مسار]` | المستودع (افتراضيًا: المجلد الحالي) |
-| `gitcito open <اسم>` | مستودعًا **باسم لسانه** — `gitcito open api` |
-| `gitcito diff` | تغييرات نسخة العمل |
-| `gitcito graph` | مخطط الإيداعات |
-| `gitcito show <ref>` | إيداعًا واحدًا — `HEAD~2` أو وسمًا أو بصمة قصيرة |
-| `gitcito blame <ملف>` | لوم ملف؛ أضف `-l 84` للهبوط على سطر بعينه |
-| `gitcito search <استعلام>` | بحث الشيفرة والاستعلام مكتوب سلفًا |
-| `gitcito stack` و`stash` و`reflog` و`conflicts` و`todos` و`chat` و`settings` | تلك اللوحة |
-| `gitcito ci` و`clean` و`bisect` و`absorb` و`snapshots` و`insights` و`terminal` | …وهكذا |
+| `githuttbr [مسار]` | المستودع (افتراضيًا: المجلد الحالي) |
+| `githuttbr open <اسم>` | مستودعًا **باسم لسانه** — `githuttbr open api` |
+| `githuttbr diff` | تغييرات نسخة العمل |
+| `githuttbr graph` | مخطط الإيداعات |
+| `githuttbr show <ref>` | إيداعًا واحدًا — `HEAD~2` أو وسمًا أو بصمة قصيرة |
+| `githuttbr blame <ملف>` | لوم ملف؛ أضف `-l 84` للهبوط على سطر بعينه |
+| `githuttbr search <استعلام>` | بحث الشيفرة والاستعلام مكتوب سلفًا |
+| `githuttbr stack` و`stash` و`reflog` و`conflicts` و`todos` و`chat` و`settings` | تلك اللوحة |
+| `githuttbr ci` و`clean` و`bisect` و`absorb` و`snapshots` و`insights` و`terminal` | …وهكذا |
 
-الأمر `gitcito help verbs` يطبع القائمة كاملة. وثلاثة خيارات تنطبق عليها جميعًا:
+الأمر `githuttbr help verbs` يطبع القائمة كاملة. وثلاثة خيارات تنطبق عليها جميعًا:
 `-n <اسم>` يضبط الاسم المعروض للسان، و`-g <مجموعة>` يضعه في لسان مجموعة (تُنشأ عند
 الحاجة)، و`-l <n>` يختار سطرًا.
 
-Gitcito **نسخة واحدة**: تشغيل `gitcito` والتطبيق مفتوح يسلّم الطلب إلى تلك
+GitHuttBr **نسخة واحدة**: تشغيل `githuttbr` والتطبيق مفتوح يسلّم الطلب إلى تلك
 النافذة بدل إطلاق نسخة ثانية. المسار المفتوح سلفًا — لسانًا كان أو داخل مجموعة —
 **يُبرَّز** ولا يُكرَّر. والمجلد الذي ليس مستودعًا بعد يُفتح أيضًا، عارضًا مسار
 «تهيئة مستودع هنا».
@@ -65,14 +65,14 @@ Gitcito **نسخة واحدة**: تشغيل `gitcito` والتطبيق مفتو�
 
 هذه تطبع ثم تنتهي. لا نافذة تُفتح، ولا حاجة حتى أن يكون التطبيق قيد التشغيل.
 
-### `gitcito status`
+### `githuttbr status`
 
 الفرع، والتتبّع، والتقدّم/التأخّر، وشجرة العمل، والمخبّآت — وإن كان المستودع يحمل
-واحدة — [قائمة التحقق قبل الدفع من `.gitcito.json`](repo-config.md). يخرج
+واحدة — [قائمة التحقق قبل الدفع من `.githuttbr.json`](repo-config.md). يخرج
 بالرمز 1 حين تكون في شجرة العمل تعارضات، فيعمل
-`gitcito status || echo محجوب`.
+`githuttbr status || echo محجوب`.
 
-### `gitcito doctor [--fix]`
+### `githuttbr doctor [--fix]`
 
 يُجري الفحوص نفسها التي تجريها لوحة [إعداد المستودع](repo-config.md): إصدار
 Node، والوحدات الفرعية، وLFS، و`core.hooksPath`، والملفات المطلوبة. **يخرج بالرمز
@@ -80,7 +80,7 @@ Node، والوحدات الفرعية، وLFS، و`core.hooksPath`، والمل
 لم يرها إلا من فتح الواجهة الرسومية:
 
 ```yaml
-- run: gitcito doctor          # في التكامل المستمر، قبل أي شيء مكلف
+- run: githuttbr doctor          # في التكامل المستمر، قبل أي شيء مكلف
 ```
 
 الخيار `--fix` يطبّق الإصلاحات التي يعرفها الطبيب (تهيئة الوحدات الفرعية،
@@ -90,54 +90,54 @@ Node، والوحدات الفرعية، وLFS، و`core.hooksPath`، والمل
 التحذيرات لا تُفشل التشغيل. التحذير يعني أن الطبيب لم يستطع تحديد شيء، لا أن شيئًا
 معطوب؛ وإفشال البناء بسببها يجعل هذا الملف باهظ التبنّي.
 
-### `gitcito commit-check [ملف]`
+### `githuttbr commit-check [ملف]`
 
 يفحص رسالة إيداع. بلا وسيط يقرأ `.git/COMMIT_EDITMSG`، و`-m "…"` يفحص نصًا. وهو
-يعرف ما أعلنه المستودع: النطاق المجهول **خطأ** حين يسرد `.gitcito.json` نطاقات،
+يعرف ما أعلنه المستودع: النطاق المجهول **خطأ** حين يسرد `.githuttbr.json` نطاقات،
 ومجرد نصيحة أسلوبية حين لا يسردها. اربطه بخطّاف:
 
 ```sh
 # .husky/commit-msg
-gitcito commit-check "$1"
+githuttbr commit-check "$1"
 ```
 
-### `gitcito config init | show | check`
+### `githuttbr config init | show | check`
 
-الأمر `init` يقرأ المستودع ويقترح `.gitcito.json` مما هو موجود فعلًا — `.nvmrc`،
+الأمر `init` يقرأ المستودع ويقترح `.githuttbr.json` مما هو موجود فعلًا — `.nvmrc`،
 و`.gitmodules`، و`.env.example` بلا `.env`، ونطاقات الإيداع التي يستعملها التاريخ.
 و`--dry-run` يطبع بدل أن يكتب. و`show` يطبع الملف الحالي، و`check` يتحقق منه ويسرد
 كل حقل سيُهمَل.
 
-### `gitcito repos [مرشّح]`
+### `githuttbr repos [مرشّح]`
 
-كل مستودع يعرفه Gitcito — الألسنة المفتوحة أولًا ثم الأخيرة — مع مجموعته. والخيار
+كل مستودع يعرفه GitHuttBr — الألسنة المفتوحة أولًا ثم الأخيرة — مع مجموعته. والخيار
 `--paths` يطبع المسارات مجرّدة، واحدًا في كل سطر، للاستعمال في السكربتات:
 
 ```sh
-cd "$(gitcito repos --paths api | head -1)"
+cd "$(githuttbr repos --paths api | head -1)"
 ```
 
-## Gitcito محرِّرًا لـ git
+## GitHuttBr محرِّرًا لـ git
 
 ```sh
-gitcito editor install
+githuttbr editor install
 ```
 
-يضبط `core.editor` و`sequence.editor` على `gitcito --wait`. ومن ثَمّ يفتح
+يضبط `core.editor` و`sequence.editor` على `githuttbr --wait`. ومن ثَمّ يفتح
 `git commit` (بلا `-m`) و`git commit --amend` و`git tag -a` و`git rebase -i`
-ملفّاتها في Gitcito بدل vim، مع عدّاد للأحرف والتلميحات نفسها التي يعرضها مؤلّف
+ملفّاتها في GitHuttBr بدل vim، مع عدّاد للأحرف والتلميحات نفسها التي يعرضها مؤلّف
 الرسائل.
 
-![المحرِّر الذي يفتحه Gitcito حين يطلب git واحدًا](../../screenshots/cli-edit.webp)
+![المحرِّر الذي يفتحه GitHuttBr حين يطلب git واحدًا](../../screenshots/cli-edit.webp)
 
 المهم هنا كلمة **ينتظر**: فـ git متوقف عند ذلك الحوار. لذلك
 
 - **حفظ ومتابعة** يعيد كتابة الملف ويمضي git في طريقه.
 - **إلغاء** يكتب ملفًّا فارغًا، وهو ما يقرؤه git على أنه *إجهاض*.
-- إغلاق الحوار بأي طريقة أخرى — Escape، أو الخلفية، أو إنهاء Gitcito — يُحسب
+- إغلاق الحوار بأي طريقة أخرى — Escape، أو الخلفية، أو إنهاء GitHuttBr — يُحسب
   إلغاءً. فطرفية تنتظر إلى الأبد نتيجة أسوأ بكثير من رسالة يُعاد كتابتها.
 
-أضف `--local` لقصره على مستودع واحد، وتراجع عنه بـ `gitcito editor uninstall`.
+أضف `--local` لقصره على مستودع واحد، وتراجع عنه بـ `githuttbr editor uninstall`.
 
 ## ما لن يفعله
 

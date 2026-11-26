@@ -8,7 +8,7 @@ keywords: stash stashes partial keep-index apply pop drop untracked branch chang
 
 # Stashes
 
-Stashing in Gitcito is not all-or-nothing.
+Stashing in GitHuttBr is not all-or-nothing.
 
 | Action | What it does |
 |---|---|
@@ -29,7 +29,7 @@ files* button) restores just the selection.
 
 ## When a stash will not apply
 
-If applying a stash would clobber untracked files, git stops. Gitcito offers to
+If applying a stash would clobber untracked files, git stops. GitHuttBr offers to
 overwrite them and retry, rather than leaving you to work out the incantation.
 
 If the tree has moved too far, **stash → branch** recreates the branch the stash

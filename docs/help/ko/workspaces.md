@@ -4,7 +4,7 @@ category: 시작하기
 order: 3
 summary: 저장소가 많아도 허우적대지 않기 — 탭, 그룹, 폴더, 작업 공간.
 keywords: 작업 공간 workspace 탭 tabs 그룹 groups 폴더 folders 여러 저장소 multiple repos 정리 organise 전환 switch 레이아웃 layout 저장소로 이동 전환기 탭 크기 go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # 작업 공간, 탭, 그룹
@@ -126,7 +126,7 @@ source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 작업 공간은 **저장된 탭 줄 전체** 예요. 전환하면 모든 탭이 한 번에 바뀌어요.
 `Work` 와 `Personal` 이 서로를 밟지 않게 되죠.
 
-작업 공간 이름은 왼쪽 위, Gitcito 마크 옆에 있어요. 클릭하면 전환, 생성, 이름
+작업 공간 이름은 왼쪽 위, GitHuttBr 마크 옆에 있어요. 클릭하면 전환, 생성, 이름
 변경, 순서 변경, 삭제를 할 수 있어요. 그 옆의 계기판은 지금 있는 작업 공간의
 [미션 컨트롤](mission-control.md)을 열어요.
 

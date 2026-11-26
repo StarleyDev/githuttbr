@@ -2,9 +2,9 @@
 title: Repozytoria
 category: Synchronizacja i wiele repozytoriów
 order: 52
-summary: Każde repozytorium, które Gitcito zna, otwarte albo nie, na jednej przeszukiwalnej liście.
+summary: Każde repozytorium, które GitHuttBr zna, otwarte albo nie, na jednej przeszukiwalnej liście.
 keywords: repozytoria rejestr wszystkie repozytoria ulubione gwiazdka ostatnie skan folder przeglądaj znajdź otwórz zarządzaj zarządzanie repozytoriami kolor sekcja odcień podświetlenie przestrzenie z folderów drzewo generuj import masowy repositories registry favourites starred recent scan folder workspaces
-source: 3f162d07855277e85ece82a631244e36f6028d36
+source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
 ---
 
 # Repozytoria
@@ -13,7 +13,7 @@ source: 3f162d07855277e85ece82a631244e36f6028d36
 otwartych repozytoriów mnie potrzebuje?". Zna tylko karty aktywnej
 przestrzeni roboczej. Repozytoria odpowiadają na inne: **gdzie jest to
 repozytorium i czy w ogóle jest gdzieś otwarte?** Obejmują wszystko, co
-Gitcito kiedykolwiek widział. Każdą przestrzeń, każdą kartę, oraz to, co
+GitHuttBr kiedykolwiek widział. Każdą przestrzeń, każdą kartę, oraz to, co
 znajdzie, skanując foldery, które mu wskażesz.
 
 ![Strona Repozytoria: kolorowe sekcje otwartych, ulubionych, ostatnich i
@@ -66,7 +66,7 @@ Trzy rzeczy warte zapamiętania:
   kolory przy każdym starcie, a dodanie przestrzeni nigdy nie przekolorowuje
   tych powyżej. Zapisują się tylko kolory, które zmienisz.
 - Kolor jest **lokalny dla tej strony**. Pokolorowanie tu sekcji przestrzeni
-  nic nie mówi o tej przestrzeni gdzie indziej w Gitcito. Kolor jej karty to
+  nic nie mówi o tej przestrzeni gdzie indziej w GitHuttBr. Kolor jej karty to
   osobne ustawienie.
 - Kolor jest **rozcieńczany** do niskiego procentu powierzchni, zamiast
   leżeć pełną siłą, żeby nasycony wybór zostawał czytelnym tłem w jasnym i
@@ -78,7 +78,7 @@ więc dzielić odcień.
 
 ## Co sprawia, że repozytorium jest znane
 
-Wiersz pojawia się tutaj, gdy Gitcito je kiedyś **otworzył**, albo znalazł
+Wiersz pojawia się tutaj, gdy GitHuttBr je kiedyś **otworzył**, albo znalazł
 pod **folderem do skanowania**. Nic nie jest indeksowane tylko dlatego, że
 leży na dysku w miejscu, o którym nigdy mu nie wspomniałeś.
 
@@ -119,7 +119,7 @@ Foldery do skanowania ustawia się w Ustawienia → Dane albo w oknie
 ## Zeskanowane repozytoria
 
 Ta strona odpowiada na pytanie „gdzie jest to repozytorium?” wśród wszystkiego,
-co zna Gitcito. Gdy chcesz tylko **otworzyć** coś ze swoich katalogów z
+co zna GitHuttBr. Gdy chcesz tylko **otworzyć** coś ze swoich katalogów z
 projektami, okno **Otwórz repozytorium** — i ekran powitalny — ma krótszą
 drogę: **Zeskanowane repozytoria**.
 
@@ -158,7 +158,7 @@ pierwszej i lista czyta się jak tabela, nie jak stos.
 Końcowe akcje widać w spoczynku, nie dopiero po najechaniu: **otwórz w
 karcie** oraz **⋮**, które otwiera to samo [menu kontekstowe
 repozytorium](repo-menu.md) co kliknięcie prawym. To menu używane wszędzie
-w Gitcito, rozszerzone o dwa wpisy właściwe tej stronie:
+w GitHuttBr, rozszerzone o dwa wpisy właściwe tej stronie:
 
 | Akcja | Co robi |
 |---|---|
@@ -173,7 +173,7 @@ Repozytorium, którego folder już nie istnieje, pokazuje się jako
 
 Karty są przywracane przy starcie ze ścieżek, które miały, gdy zamknąłeś
 aplikację. Jeśli folder został od tego czasu przeniesiony, usunięty albo leży na
-dysku, który nie jest podłączony, każdy odczyt Gitcito z niego kończył się
+dysku, który nie jest podłączony, każdy odczyt GitHuttBr z niego kończył się
 dawniej osobnym powiadomieniem o błędzie. Teraz folder jest najpierw sprawdzany,
 a karta pokazuje **Nie znaleziono folderu repozytorium** z zapisaną ścieżką
 zamiast zwykłego obszaru roboczego:
@@ -191,7 +191,7 @@ brak zewnętrznego dysku jest zwykle chwilowy, a utrata karty z tego powodu
 byłaby gorsza niż cichy zastępnik. Dopóki folderu brakuje, automatyczny fetch w
 tle go pomija.
 
-Ograniczenia: Gitcito nie szuka, gdzie podział się folder — Zlokalizuj… pyta
+Ograniczenia: GitHuttBr nie szuka, gdzie podział się folder — Zlokalizuj… pyta
 ciebie. Folder, który istnieje, ale nie jest już repozytorium, pokazuje zamiast
 tego zwykły komunikat **To nie jest repozytorium Gita**.
 
@@ -232,7 +232,7 @@ Bezpieczne do powtórzenia. Drugi skan **dodaje i nigdy nie usuwa**:
 - Nowe repozytoria dopisywane są do pasującej przestrzeni.
 - Te, które przeniosłeś, przemianowałeś albo usunąłeś ręcznie, zostają jak
   je zostawiłeś.
-- Przestrzeń, którą **przemianowałeś**, nadal jest rozpoznawana. Gitcito
+- Przestrzeń, którą **przemianowałeś**, nadal jest rozpoznawana. GitHuttBr
   pamięta folder, z którego wyszła, więc scala zamiast tworzyć duplikat.
 - Repozytorium skasowane z dysku trzyma kartę i pokazuje się jako
   brakujące.
@@ -289,7 +289,7 @@ zostaje nietknięty, bo to menu i tak pyta, jakiego pulla chcesz.
 ## Pasek akcji
 
 **Otwórz folder…**, **Klonuj…** i **Dodaj folder do skanowania…**. Trzy
-sposoby, żeby włożyć repozytorium do rejestru Gitcito, z tej samej strony,
+sposoby, żeby włożyć repozytorium do rejestru GitHuttBr, z tej samej strony,
 na której szukasz już znanego.
 
 ## Podsumowanie WIP

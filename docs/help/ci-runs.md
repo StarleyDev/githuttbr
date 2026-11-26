@@ -14,7 +14,7 @@ log. **CI runs** puts that loop next to the code. One page lists the remote's
 runs, newest first; a click opens a run's jobs, each job's steps and its log;
 and the buttons to run it again or stop it are on the row.
 
-It talks to the host's own API with the token you already gave Gitcito. Nothing
+It talks to the host's own API with the token you already gave GitHuttBr. Nothing
 runs on your machine — for that, see [Local CI](local-ci.md).
 
 ![The CI runs page: a failed run opened on its jobs, with the failing step and the log](../screenshots/ci-runs.webp)

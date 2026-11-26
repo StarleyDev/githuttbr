@@ -152,6 +152,6 @@ export const ptBR = {
     'O GitHuttBr é jovem. O <strong>GitHub</strong> é o caminho mais testado. GitHub Enterprise Server, GitLab self-managed e Bitbucket Data Center estão em <strong>beta</strong> — testados contra servidores simulados, ainda não contra reais. Se quebrar: bem, <em>funciona na minha máquina</em>. Issues e PRs são bem-vindos. 💜',
   'download.yours': 'Seu sistema',
   'download.macHint':
-    'Ainda não é assinado: na primeira vez, abra <strong>Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim</strong>. No Mac, cada versão nova é baixada à mão.',
+    'Assinado com Developer ID e notarizado pela Apple: abre como qualquer outro app e se atualiza sozinho.',
   'download.autoUpdate': 'Atualiza sozinho a cada nova release.'
 }

@@ -4,12 +4,12 @@ category: Pour commencer
 order: 1
 summary: Ouvrir un dépôt, lire le graphe, faire son premier commit.
 keywords: intro premiers pas débuter ouvrir cloner clone onglets tabs graphe graph commit valider
-source: 173f891f9f1c5c53ea40cf344baf821e3188344d
+source: 8effe244fab76b263f38e31ac0912d8042c428c6
 ---
 
 # Premiers pas
 
-Gitcito ouvre un dossier et vous montre son historique. Rien n'est écrit dans
+GitHuttBr ouvre un dossier et vous montre son historique. Rien n'est écrit dans
 votre dépôt tant que vous ne le demandez pas.
 
 ![Un dépôt fraîchement ouvert, encore sans aucun commit](../../screenshots/empty-repo.webp)
@@ -28,7 +28,7 @@ votre dépôt tant que vous ne le demandez pas.
   dépôts ouverts : Electron n'expose pas le crochet par dossier du panneau, donc
   la vérification a lieu après le clic sur Ouvrir.
 - **Dépôts analysés**, sous les trois boutons, liste tous les dépôts des
-  dossiers que vous avez demandé à Gitcito d'analyser — cochez-en plusieurs et
+  dossiers que vous avez demandé à GitHuttBr d'analyser — cochez-en plusieurs et
   ouvrez-les d'un coup, ou double-cliquez sur l'un d'eux. C'est aussi là que
   vous ajoutez ou retirez ces dossiers. Voir [Dépôts](repositories.md#dépôts-analysés).
 - **Mauvais bouton ?** Cloner, Créer, Créer un groupe et Dépôts analysés,
@@ -37,7 +37,7 @@ votre dépôt tant que vous ne le demandez pas.
 - **Clonez-en un** depuis une URL ou directement depuis votre hébergeur — voir
   [le clonage](cloning.md) pour les options qui rendent rapide le clonage d'un
   dépôt énorme.
-- Depuis un terminal, `gitcito .` ouvre le dossier courant dans l'application
+- Depuis un terminal, `githuttbr .` ouvre le dossier courant dans l'application
   déjà lancée — voir [la ligne de commande](cli.md).
 - Un dossier seul qui n'est pas encore un dépôt Git s'ouvre quand même, en vous
   proposant de l'initialiser.
@@ -73,5 +73,5 @@ seuls les utilisateurs avancés puissent trouver.
 2. Indexez-le — le fichier entier, une section, ou [ligne par ligne](staging.md).
 3. Écrivez un message et appuyez sur **Commit**.
 
-Tout le reste dans Gitcito est optionnel.
+Tout le reste dans GitHuttBr est optionnel.
 

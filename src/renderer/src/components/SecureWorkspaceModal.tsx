@@ -41,7 +41,7 @@ import type {
 
 // Multi-section secure share, launched from the Global Vault: bundle the global
 // vault's secrets and any open repositories' files into one password-encrypted
-// .gitcito, and on import route each section to a repo (matched by git remote,
+// .githuttbr, and on import route each section to a repo (matched by git remote,
 // then folder name) or into the global vault. Single-repo share still lives in
 // Repo Settings → Vault (SecureShareModal); this is the workspace-wide door.
 

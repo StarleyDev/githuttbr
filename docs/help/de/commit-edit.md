@@ -4,14 +4,14 @@ category: Branches & Eingriffe
 order: 46
 summary: Dateien oder Nachricht eines historischen Commits an Ort und Stelle umschreiben — die Kaskade wird vorher als Vorschau gezeigt.
 keywords: commit bearbeiten edit historie umschreiben rewrite history amend vergangenheit reword tippfehler typo korrigieren kaskade cascade replay rebase in place eingriff surgery
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Beliebige Commits bearbeiten
 
 Der Tippfehler steckt in einem Commit von vor drei Wochen. Die übliche Lösung
 ist ein interaktiver Rebase: beim Commit anhalten, bearbeiten, fortsetzen,
-beten. Gitcitos Lösung ist: Rechtsklick auf den Commit, **Diesen Commit
+beten. GitHuttBrs Lösung ist: Rechtsklick auf den Commit, **Diesen Commit
 bearbeiten**, Text ändern, fertig. Der Stift-Button im Commit-Details-Panel
 öffnet denselben Editor.
 

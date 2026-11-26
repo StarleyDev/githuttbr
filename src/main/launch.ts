@@ -567,7 +567,7 @@ function serverReadyTap(config: LaunchConfig, folder: string): ((chunk: string) 
  * `flutter run` prints "The Flutter DevTools debugger and profiler ... is
  * available at: http://127.0.0.1:9100?uri=..." once the VM service is up. That
  * URL is a whole Flutter-web app — network view, timeline, widget inspector,
- * memory — so Gitcito does not need to speak to the Dart VM Service itself; it
+ * memory — so GitHuttBr does not need to speak to the Dart VM Service itself; it
  * needs to know the address.
  *
  * The URL changes when the app restarts, so this keeps reporting rather than

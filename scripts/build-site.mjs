@@ -18,10 +18,6 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 import { LOCALE_NAMES, RTL_LOCALES, SITE, coverage, strings } from './site-i18n/index.mjs'
-// The handbook is upstream's text, branded at display time exactly as the app
-// does it (src/renderer/src/help/pages.ts). A plain TypeScript module with
-// nothing but erasable types, so Node loads it without a build step.
-import { brandText } from '../src/shared/brand.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP_DIR = join(ROOT, 'docs/help')
@@ -32,9 +28,9 @@ const REPO = 'StarleyDev/githuttbr'
 // Served by Cloudflare Pages on the project's own domain. Canonical and hreflang
 // URLs, and the share card, are absolute, so they follow this constant.
 const SITE_URL = 'https://git.huttbr.com'
-// The project this fork is built from. Its handbook pages link to it for
-// feedback; on the fork's site that feedback belongs to the fork instead.
-const UPSTREAM_REPO = 'MyAppDesk/gitcito'
+// The project GitHuttBr was derived from, credited in the footer (NOTICE).
+const UPSTREAM_REPO = 'MyAppDesk/gitcito' // upstream-name: attribution credit
+const UPSTREAM_NAME = 'Gitcito' // upstream-name: attribution credit
 const RELEASES = `https://github.com/${REPO}/releases`
 const LATEST = `${RELEASES}/latest`
 const SPONSOR = 'https://github.com/sponsors/StarleyDev'
@@ -51,10 +47,9 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, 
 
 // ── Handbook ────────────────────────────────────────────────────────────────
 
-/** Flat `key: value` front matter — the same shape the app parses. Branded as
- *  a whole, before parsing, so title, summary, keywords and body all match. */
+/** Flat `key: value` front matter — the same shape the app parses. */
 function parsePage(file) {
-  const src = brandText(readFileSync(join(HELP_DIR, file), 'utf8'))
+  const src = readFileSync(join(HELP_DIR, file), 'utf8')
   // `file` may be `absorb.md` or `es/absorb.md`; the id is the basename either way.
   const id = (file.split('/').pop() ?? file).replace(/\.md$/, '')
   if (!src.startsWith('---')) return { id, title: id, category: 'Guide', order: 999, summary: '', body: src }
@@ -103,7 +98,6 @@ function siteLinks(markdown, depth = 1) {
   return markdown
     .replace(/\]\(([\w-]+)\.md\)/g, '](./$1.html)')
     .replace(/\]\(\.\.\/(?:\.\.\/)?screenshots\/([\w.-]+)\)/g, `](${assets}$1)`)
-    .replaceAll(`https://github.com/${UPSTREAM_REPO}/issues`, `https://github.com/${REPO}/issues`)
 }
 
 // ── Translated handbooks ────────────────────────────────────────────────────
@@ -237,7 +231,7 @@ const footer = (locale = 'en', languages = '', depth = 0) => {
   return `<footer class="foot">${langs}
   <div class="foot-inner wrap">
     <p class="foot-brand"><img src="${base}assets/githuttbr-mark.png" alt="" width="20" height="20" /> <span>${t('foot.license')}</span></p>
-    <p class="foot-credit">${t('foot.credit').replace('{upstream}', `<a href="https://github.com/${UPSTREAM_REPO}">Gitcito</a>`)}</p>
+    <p class="foot-credit">${t('foot.credit').replace('{upstream}', `<a href="https://github.com/${UPSTREAM_REPO}">${UPSTREAM_NAME}</a>`)}</p>
     <nav class="foot-links">
       <a href="https://github.com/${REPO}">${t('foot.source')}</a>
       <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a>

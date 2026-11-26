@@ -23,7 +23,7 @@ function initRepo(name: string): string {
   const repo = join(root, 'repo')
   mkdirSync(repo)
   execFileSync('git', ['init', '-q', '-b', 'main', repo])
-  git(repo, ['config', 'user.name', 'Gitcito Test'])
+  git(repo, ['config', 'user.name', 'GitHuttBr Test'])
   git(repo, ['config', 'user.email', 'githuttbr@example.invalid'])
   git(repo, ['config', 'commit.gpgsign', 'false'])
   git(repo, ['config', 'core.autocrlf', 'false'])

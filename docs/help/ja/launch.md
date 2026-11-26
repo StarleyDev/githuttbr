@@ -2,13 +2,13 @@
 title: 実行とデバッグ（launch.json）
 category: ワークスペースツール
 order: 91
-summary: VS Code の起動構成を Gitcito から離れずに実行する。
+summary: VS Code の起動構成を GitHuttBr から離れずに実行する。
 keywords: launch.json run 実行 debug デバッグ vscode configs 構成 設定 tasks タスク preLaunchTask input background バックグラウンド 起動 compound compounds stopAll serverReadyAction 並列セッション hot reload hot restart device simulator emulator run target flutter metro expo vite nodemon vitest jest mocha ava wrangler dotnet watch adb simctl avd xcodebuild capacitor
 ---
 
 # 実行とデバッグ
 
-Gitcito はあなたの `.vscode/launch.json` を読み — ルートのものも、入れ子になった
+GitHuttBr はあなたの `.vscode/launch.json` を読み — ルートのものも、入れ子になった
 ものも、区切り線でグループ分けして — 選んだ構成を統合ターミナルで実行します。
 
 ![起動構成のピッカーとフローティングツールバー](../../screenshots/launch-configs.webp)
@@ -29,7 +29,7 @@ Gitcito はあなたの `.vscode/launch.json` を読み — ルートのもの�
   このペインは成功すると自動で閉じ、失敗した場合は開いたままになります。
 - **`serverReadyAction`** に対応: セッションの出力が設定したパターンに一致すると、
   告知された URL をブラウザで開きます（`openExternally`。`debugWithChrome` /
-  `debugWithEdge` もブラウザを開くだけです — Gitcito はデバッガをアタッチできません）。
+  `debugWithEdge` もブラウザを開くだけです — GitHuttBr はデバッガをアタッチできません）。
 
 ![2 つの並列セッションを実行する compound](../../screenshots/launch-compound.webp)
 
@@ -45,7 +45,7 @@ compound のメンバーは *compound › メンバー* と表示され、再起
 だけを再起動します。
 ツールバーが必要なものに重なったら、グリップをドラッグして横にずらせます — 位置は記憶され、グリップをダブルクリックすると中央に戻ります。
 
-Gitcito があえて**しない**こと: プログラムを本物のターミナルで実行しますが、
+GitHuttBr があえて**しない**こと: プログラムを本物のターミナルで実行しますが、
 デバッガではありません — ブレークポイントも変数インスペクションも Debug
 Adapter Protocol もありません。attach 専用の構成は `preLaunchTask` を持つ場合に
 機能します（タスクこそが仕事です）。純粋な attach には実行するものがありません。
@@ -59,7 +59,7 @@ Adapter Protocol もありません。attach 専用の構成は `preLaunchTask` 
 します。同じ結果のために起動構成を再起動するのは遅い道です — プロセスを落とし、
 すべての `preLaunchTask` をやり直し、アプリの状態を捨ててしまいます。
 
-そこで Gitcito は、構成が実際に起動するコマンドを読み取り — `npm run dev` は
+そこで GitHuttBr は、構成が実際に起動するコマンドを読み取り — `npm run dev` は
 `package.json` のスクリプトまで追いかけます — そのランタイムのキーをデバッグ
 ツールバーに並べます。押すと、そのキーがセッションの標準入力に書き込まれます。
 ターミナルで自分でタイプしたのとまったく同じです。
@@ -84,7 +84,7 @@ Adapter Protocol もありません。attach 専用の構成は `preLaunchTask` 
 です。
 
 **限界。** 判定はテキストベースです。コマンドラインのプログラム名を照合するので、
-Gitcito が読めないラッパースクリプト経由で開発サーバーを起動する構成には何も
+GitHuttBr が読めないラッパースクリプト経由で開発サーバーを起動する構成には何も
 出ません。キー送信の確認応答もありません — ボタンが一瞬光るだけで、本当の答えは
 プロセス自身の出力です。一時停止中や終了済みのセッションは入力を受け取らないので、
 ボタンは無効になります。
@@ -96,7 +96,7 @@ Gitcito が読めないラッパースクリプト経由で開発サーバーを
   "name": "API (watch)",
   "type": "node-terminal",
   "command": "./scripts/dev.sh",
-  "gitcito": { "hotActions": [{ "label": "Reload", "send": "r", "icon": "reload" }] }
+  "githuttbr": { "hotActions": [{ "label": "Reload", "send": "r", "icon": "reload" }] }
 }
 ```
 
@@ -111,7 +111,7 @@ Gitcito が読めないラッパースクリプト経由で開発サーバーを
 
 モバイルアプリをビルドする構成には、どこで実行するかを教える必要があります。
 この選択は Flutter だけのものではありません — React Native、Expo、Capacitor、
-xcodebuild もターゲットを取り、しかも書き方はそれぞれ違います。だから Gitcito は
+xcodebuild もターゲットを取り、しかも書き方はそれぞれ違います。だから GitHuttBr は
 **LAUNCH** タブの隣で一度だけ尋ね、その構成のランタイムが読む形で書き込みます。
 ピッカーは、リポジトリのどれかの構成が実際にデバイスを取れるときだけ現れます。
 
@@ -141,14 +141,14 @@ xcodebuild もターゲットを取り、しかも書き方はそれぞれ違い
 | xcodebuild | `-destination id=<id>` |
 | それ以外 | 環境変数のみ |
 
-起動した構成には `GITCITO_DEVICE_ID`、`GITCITO_DEVICE_NAME`、
-`GITCITO_DEVICE_PLATFORM` が環境変数として渡り、ターゲットが実機の Android なら
+起動した構成には `GITHUTTBR_DEVICE_ID`、`GITHUTTBR_DEVICE_NAME`、
+`GITHUTTBR_DEVICE_PLATFORM` が環境変数として渡り、ターゲットが実機の Android なら
 `ANDROID_SERIAL` も付きます。ラッパースクリプトや Gradle タスク、素の `adb` が
-同じ端末に当たるのは、これのおかげです — Gitcito はコマンドを書き換えません。
+同じ端末に当たるのは、これのおかげです — GitHuttBr はコマンドを書き換えません。
 
 **未起動のデバイスを起こす。** *未起動* の下の項目は、選ぶと起動します:
 `flutter emulators --launch`、`xcrun simctl boot`（と Simulator ウィンドウ）、
-または切り離して実行する `emulator -avd` — Gitcito を終了しても Android
+または切り離して実行する `emulator -avd` — GitHuttBr を終了しても Android
 エミュレーターは道連れになりません。
 
 **限界。** すでにデバイスを指定している構成 — 明示的な `-d`、`--simulator`、
@@ -164,7 +164,7 @@ Dart-Code の `deviceId` — はそのままです。ピッカーが作者の記
 
 ## JSON と YAML からの入力値
 
-プロジェクトのファイルから現在のバージョンを表示したり、初期値を設定したりできます。Gitcito は起動時に、入力欄を表示する前にファイルを読み込みます。VS Code 拡張機能は不要です。
+プロジェクトのファイルから現在のバージョンを表示したり、初期値を設定したりできます。GitHuttBr は起動時に、入力欄を表示する前にファイルを読み込みます。VS Code 拡張機能は不要です。
 
 promptString または pickString に fileValues を追加します。各値に起動設定のフォルダーからの相対パスと、ドットで区切ったプロパティを指定します。description または default で ${fileValue:name} を使います。default が空なら入力は任意です。
 
@@ -181,4 +181,4 @@ promptString または pickString に fileValues を追加します。各値に�
 }
 ```
 
-フォルダー内の 1 MiB 以下の JSON、YAML、YML ファイルと、文字列、数値、真偽値に対応します。ファイルやプロパティの欠落、不正なデータ、外部へのパスがあればエラーで起動を中止します。コマンドや JavaScript 式は実行しません。新しい起動ごとに読み直します。Restart は前の回答を再利用します。VS Code はこれらの Gitcito 独自フィールドを標準では解決しません。
+フォルダー内の 1 MiB 以下の JSON、YAML、YML ファイルと、文字列、数値、真偽値に対応します。ファイルやプロパティの欠落、不正なデータ、外部へのパスがあればエラーで起動を中止します。コマンドや JavaScript 式は実行しません。新しい起動ごとに読み直します。Restart は前の回答を再利用します。VS Code はこれらの GitHuttBr 独自フィールドを標準では解決しません。

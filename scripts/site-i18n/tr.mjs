@@ -152,6 +152,6 @@ export const tr = {
     'GitHuttBr genç. En çok denenmiş yol <strong>GitHub</strong>. GitHub Enterprise Server, kendi barındırdığınız GitLab ve Bitbucket Data Center <strong>beta</strong> aşamasında — simüle edilmiş sunuculara karşı test edildi, henüz gerçeklerine karşı değil. Bozulursa: eh, <em>benim makinemde çalışıyor</em>. Issue ve PR’lara açığız. 💜',
   'download.yours': 'Sizin sisteminiz',
   'download.macHint':
-    'Henüz imzalı değil: ilk seferde <strong>Sistem Ayarları → Gizlilik ve Güvenlik → Yine de Aç</strong> yolunu izleyin. Mac’te her yeni sürüm elle indirilir.',
+    'Developer ID ile imzalı ve Apple tarafından onaylı (notarized): her uygulama gibi açılır ve kendini günceller.',
   'download.autoUpdate': 'Her yeni sürümde kendini günceller.'
 }

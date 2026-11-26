@@ -22,7 +22,7 @@ import type {
 } from '../../../shared/types'
 
 // Export a chosen set of repo files (typically .env and friends) as a
-// password-encrypted .gitcito bundle, or import one into this repo — files
+// password-encrypted .githuttbr bundle, or import one into this repo — files
 // land at the same relative paths they were exported from.
 
 const MIN_PASSWORD = 8

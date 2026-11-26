@@ -8,7 +8,7 @@ keywords: accessibilità accessibility a11y screen reader VoiceOver NVDA navigaz
 
 # Accessibilità
 
-Gitcito punta a essere usabile senza mouse e leggibile da uno screen reader.
+GitHuttBr punta a essere usabile senza mouse e leggibile da uno screen reader.
 Questa pagina dice cosa significa in concreto — e dove stanno i confini.
 
 ## Tastiera
@@ -56,7 +56,7 @@ Questa pagina dice cosa significa in concreto — e dove stanno i confini.
 - L'audit dietro questa pagina è stato fatto con VoiceOver su macOS.
   NVDA/JAWS su Windows dovrebbero comportarsi allo stesso modo ma non sono
   stati collaudati sul campo — le segnalazioni sono benvenute come
-  [issue](https://github.com/MyAppDesk/gitcito/issues).
+  [issue](https://github.com/StarleyDev/githuttbr/issues).
 
 ## Impostazioni collegate
 

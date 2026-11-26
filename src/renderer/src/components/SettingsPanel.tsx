@@ -3654,7 +3654,7 @@ function RerereCard(): React.JSX.Element {
 /**
  * Chooses `diff.tool` and `merge.tool`. The lists come from git itself, so a
  * tool someone added by hand with `difftool.<name>.cmd` shows up here without
- * Gitcito knowing anything about it.
+ * GitHuttBr knowing anything about it.
  *
  * Needs a repository only because git config is read through one — the values
  * are written globally, since a favourite comparison app is a property of the
@@ -3733,7 +3733,7 @@ function DiffToolCard(): React.JSX.Element {
 /**
  * Picks the external editor used by every "Open in <editor>" action. Detection
  * runs each time the card mounts rather than being cached: installing an editor
- * while Gitcito is open should be one settings visit away, not a restart.
+ * while GitHuttBr is open should be one settings visit away, not a restart.
  */
 function EditorCard(): React.JSX.Element {
   const editor = useSettingsStore((s) => s.settings.editor)
@@ -4055,7 +4055,7 @@ function SshKeysCard(): React.JSX.Element {
           try {
             // The comment is what identifies the key on the host's list later,
             // so it defaults to the profile's git identity.
-            await sshApi.generate(name, profile.gitEmail || profile.gitName || 'gitcito', '')
+            await sshApi.generate(name, profile.gitEmail || profile.gitName || 'githuttbr', '')
             toast('success', t('ssh.generated'))
             await reload()
           } catch (err) {
@@ -4211,7 +4211,7 @@ function ShortcutsPage(): React.JSX.Element {
   )
 }
 
-/** Folders Gitcito walks looking for repositories. The editor itself is shared
+/** Folders GitHuttBr walks looking for repositories. The editor itself is shared
  *  with the Scanned repositories dialog. */
 function ScanRootsSection(): React.JSX.Element {
   const t = useT()

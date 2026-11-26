@@ -9,7 +9,7 @@ keywords: חתימה מאומת חתימה תג אמון sign signing gpg ssh x5
 # קומיטים חתומים
 
 הפעילו חתימה לכל מאגר בנפרד (**הגדרות ← פרופיל ← חתימת קומיטים**, כשהמאגר פתוח — כל שינוי נשמר בו מיד): GPG, SSH או X.509, עם
-המפתח שתבחרו. Gitcito כותב `commit.gpgsign`, `gpg.format` ו־`user.signingkey`
+המפתח שתבחרו. GitHuttBr כותב `commit.gpgsign`, `gpg.format` ו־`user.signingkey`
 עבור המאגר הזה — אותה תצורה שכל כלי אחר קורא.
 
 | | |

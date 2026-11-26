@@ -16,7 +16,7 @@ errado sempre; veja [opções de merge](merge-options.md).
 
 ## Arraste uma ref sobre outra
 
-O gesto mais rápido do app: pegue uma branch e solte em cima de outra. O Gitcito
+O gesto mais rápido do app: pegue uma branch e solte em cima de outra. O GitHuttBr
 abre um menuzinho com o que aquele drop poderia significar, e não faz nada até
 você escolher.
 
@@ -48,7 +48,7 @@ que você recebe é *Comparar*, porque é genuinamente tudo que existe ali.
 O rebase pede confirmação antes: ele dá um hash novo a cada commit reaplicado, o
 que significa um force push se a branch já foi publicada. O push também
 pergunta: todo mundo que fizer pull do alvo recebe os commits dele, e um push não
-pode ser desfeito pelo Gitcito. O merge não pergunta — ele só acrescenta. Merge e
+pode ser desfeito pelo GitHuttBr. O merge não pergunta — ele só acrescenta. Merge e
 rebase voltam com um **Desfazer**.
 
 ## Arraste um commit sobre uma branch

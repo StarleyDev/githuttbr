@@ -90,7 +90,7 @@ l'errore vero.
   solo branch* non spuntato è ciò che richiede indietro gli altri branch
   (`--no-single-branch`), ed è per questo che il suggerimento sotto cambia.
 - **Clonare una cartella locale** normalmente ignora del tutto `--depth`, perché
-  git crea hardlink allo store degli oggetti invece di scaricare. Gitcito clona
+  git crea hardlink allo store degli oggetti invece di scaricare. GitHuttBr clona
   attraverso un URL `file://` quando chiedi una copia shallow di un repository
   locale, così la profondità che hai chiesto è la profondità che ottieni.
 
@@ -117,6 +117,6 @@ ricomincia da zero.
 Quando finisce, il nuovo repository si apre in una scheda, ancorato al profilo
 con cui hai clonato, che la finestra sia ancora aperta o no.
 
-I clone girano dentro l'app, quindi chiudere Gitcito li ferma. La chiusura non
+I clone girano dentro l'app, quindi chiudere GitHuttBr li ferma. La chiusura non
 aspetta la pulizia, quindi la cartella scritta a metà può restare: eliminala
 prima di clonare di nuovo lì, perché la finestra rifiuta una cartella esistente.

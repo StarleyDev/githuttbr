@@ -8,7 +8,7 @@ keywords: toegankelijkheid accessibility a11y schermlezer VoiceOver NVDA toetsen
 
 # Toegankelijkheid
 
-Gitcito wil zonder muis bedienbaar zijn en leesbaar voor een schermlezer.
+GitHuttBr wil zonder muis bedienbaar zijn en leesbaar voor een schermlezer.
 Deze pagina zegt wat dat concreet betekent — en waar de randen zitten.
 
 ## Toetsenbord
@@ -56,7 +56,7 @@ Deze pagina zegt wat dat concreet betekent — en waar de randen zitten.
 - De audit achter deze pagina is gedaan met VoiceOver op macOS. NVDA/JAWS op
   Windows zouden zich hetzelfde moeten gedragen, maar zijn niet in de
   praktijk getest — meldingen zijn welkom als
-  [issues](https://github.com/MyAppDesk/gitcito/issues).
+  [issues](https://github.com/StarleyDev/githuttbr/issues).
 
 ## Verwante instellingen
 

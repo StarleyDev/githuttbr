@@ -137,7 +137,7 @@ function DoctorRow({ check, repoPath }: { check: DoctorCheck; repoPath: string }
 }
 
 /**
- * The repository's own `.githuttbr.json` (or upstream's `.gitcito.json`), edited as a form.
+ * The repository's own `.githuttbr.json`, edited as a form.
  *
  * Editing it here rather than in a text editor is the point: the file is a
  * schema most people will meet once, and a form is what makes its fields

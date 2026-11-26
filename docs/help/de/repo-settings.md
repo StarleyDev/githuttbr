@@ -16,12 +16,12 @@ zu **diesem** Repository gehören, nicht zur App.
 | Tab | Was drinsteckt |
 |---|---|
 | **Allgemein** | Geschützte Branches (eine Mehrfachauswahl von Branches, in der git-Konfiguration gespeichert), Signieren, das Tab-Bild |
-| **Config** | Die [Regeln, die dieses Repository mitbringt](repo-config.md), in `.gitcito.json` — und der Doctor, der sie prüft |
+| **Config** | Die [Regeln, die dieses Repository mitbringt](repo-config.md), in `.githuttbr.json` — und der Doctor, der sie prüft |
 | **Info** | Freie Notizen und Felder zu diesem Repository, lokal gespeichert |
 | **Tresor** | Die Einträge im [Tresor](vault.md) dieses Repositorys |
 | **Einblicke** | Das [Historie-Dashboard](insights.md) |
 | **Auswertung** | Was du in diesem Repository getan hast, lokal gezählt |
-| **Historie** · **Protokolle** | Das Operationsprotokoll: jeder git-Befehl, den Gitcito ausgeführt hat, samt seiner Ausgabe |
+| **Historie** · **Protokolle** | Das Operationsprotokoll: jeder git-Befehl, den GitHuttBr ausgeführt hat, samt seiner Ausgabe |
 
 Das Operationsprotokoll ist das ehrliche: Wenn sich etwas seltsam verhält, zeigt
 es den exakten Befehl und den exakten Fehler — damit ein Fehlerbericht Fakten
@@ -65,7 +65,7 @@ Grenzen, die man kennen sollte:
   unter dem Pfad eine Warnung. Sonst beschwert sich nichts.
 - Das Bild wird einmal pro Sitzung gelesen. Ersetzt du die Datei unter gleichem
   Namen, öffne diese Einstellungsseite erneut, um es neu zu laden.
-- Die Einstellung liegt in Gitcitos eigenen Einstellungen auf diesem Rechner,
+- Die Einstellung liegt in GitHuttBrs eigenen Einstellungen auf diesem Rechner,
   nicht im Repository; Teammitglieder erben sie also nicht.
 
 **Siehe auch:** [Sicherheit & Geheimnisse](security.md) · [Einblicke](insights.md)

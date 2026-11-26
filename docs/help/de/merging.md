@@ -17,7 +17,7 @@ wieder schiefgeht; siehe [Merge-Optionen](merge-options.md).
 ## Eine Ref auf eine andere ziehen
 
 Die schnellste Geste der App: Nimm einen Branch auf und lass ihn auf einem
-anderen fallen. Gitcito öffnet ein kleines Menü mit dem, was dieser Drop
+anderen fallen. GitHuttBr öffnet ein kleines Menü mit dem, was dieser Drop
 bedeuten könnte, und tut nichts, bis du dich entscheidest.
 
 ![Einen Branch auf einen anderen ziehen öffnet das Menü mit dem, was der Drop bedeuten könnte](../../screenshots/clip-branch-drop.webp)
@@ -49,7 +49,7 @@ tatsächlich alles ist, was es gibt.
 Rebase fragt vorher nach: Es gibt jedem neu abgespielten Commit einen neuen
 Hash, was einen Force-Push bedeutet, wenn der Branch schon veröffentlicht ist.
 Push fragt ebenfalls: Wer das Ziel pullt, bekommt seine Commits, und ein Push
-lässt sich in Gitcito nicht rückgängig machen. Merge fragt nicht — es fügt nur
+lässt sich in GitHuttBr nicht rückgängig machen. Merge fragt nicht — es fügt nur
 hinzu. Merge und Rebase holt ein einziges **Rückgängig** zurück.
 
 ## Einen Commit auf einen Branch ziehen

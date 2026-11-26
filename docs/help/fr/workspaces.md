@@ -4,7 +4,7 @@ category: Pour commencer
 order: 3
 summary: Beaucoup de dépôts sans se noyer : onglets, groupes, dossiers et espaces de travail.
 keywords: espace de travail workspace onglets tabs groupes groups dossiers folders plusieurs dépôts multiple repos organiser switch basculer disposition layout aller au dépôt sélecteur taille des onglets go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # Espaces de travail, onglets et groupes
@@ -149,7 +149,7 @@ Un espace de travail est une **barre d'onglets entière, sauvegardée**. En chan
 dessus.
 
 Le nom de l'espace de travail se trouve en haut à gauche, à côté de la marque
-Gitcito. Cliquez dessus pour changer, créer, renommer, réordonner ou supprimer.
+GitHuttBr. Cliquez dessus pour changer, créer, renommer, réordonner ou supprimer.
 Juste à côté se trouve la jauge qui ouvre le [centre de
 contrôle](mission-control.md) de l'espace de travail où vous êtes.
 

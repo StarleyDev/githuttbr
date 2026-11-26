@@ -16,12 +16,12 @@ A engrenagem ao lado das ferramentas da barra abre as configurações que perten
 | Aba | O que contém |
 |---|---|
 | **Geral** | Branches protegidas (uma seleção múltipla de branches, guardada no git config), assinatura, a imagem da aba |
-| **Config** | As [regras que este repositório carrega](repo-config.md) em `.gitcito.json`, e o doctor que as verifica |
+| **Config** | As [regras que este repositório carrega](repo-config.md) em `.githuttbr.json`, e o doctor que as verifica |
 | **Informações** | Notas e campos livres sobre este repositório, mantidos localmente |
 | **Cofre** | As entradas do [cofre](vault.md) deste repositório |
 | **Insights** | O [painel de histórico](insights.md) |
 | **Analytics** | O que você fez neste repositório, contado localmente |
-| **Histórico** · **Logs** | O log de operações: todo comando git que o Gitcito rodou, com a saída dele |
+| **Histórico** · **Logs** | O log de operações: todo comando git que o GitHuttBr rodou, com a saída dele |
 
 O log de operações é o honesto: quando algo se comporta de forma estranha, ele
 mostra o comando exato e o erro exato, para que um relato de bug possa carregar
@@ -64,7 +64,7 @@ Limites que vale conhecer:
   configurações mostra um aviso abaixo do caminho. Nada mais reclama.
 - A imagem é lida uma vez por sessão. Se você substituir o arquivo com o mesmo
   nome, abra esta aba de configurações de novo para recarregá-la.
-- A configuração fica nas configurações do Gitcito nesta máquina, não no
+- A configuração fica nas configurações do GitHuttBr nesta máquina, não no
   repositório, então os colegas não a herdam.
 
 **Veja também:** [Segurança e segredos](security.md) · [Insights](insights.md)

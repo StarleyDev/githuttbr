@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 59
 summary: Acompanhe GitHub Actions, pipelines do GitLab, Azure Pipelines e Forgejo Actions pelo app — cada job, seus passos e seu log, com reexecutar e cancelar.
 keywords: execuções de ci ci runs actions workflow pipeline build github actions gitlab pipelines azure pipelines forgejo actions jobs passos steps logs reexecutar re-run cancelar dispatch workflow_dispatch selo badge status grafo
-source: 65066816cee2f0a2a5fdf96e99fbbe251ff44d26
+source: 4440960af1bb5133767f3c65f45603e19e78bcb8
 ---
 
 # Execuções de CI
@@ -17,7 +17,7 @@ jobs de uma execução, os passos de cada job e o log; e os botões para rodar d
 novo ou parar ficam na própria linha.
 
 Ela conversa com a API do próprio serviço, com o token que você já deu ao
-Gitcito. Nada roda na sua máquina — para isso, veja [CI local](local-ci.md).
+GitHuttBr. Nada roda na sua máquina — para isso, veja [CI local](local-ci.md).
 
 ![A página Execuções de CI: uma execução que falhou aberta nos jobs, com o passo que falhou e o log](../../screenshots/ci-runs.webp)
 

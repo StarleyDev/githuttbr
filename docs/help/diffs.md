@@ -106,7 +106,7 @@ elsewhere, it said "No changes to display" under an **Unstaged** chip; committed
 it went blank. Now the viewer keeps up, and the chip in its header — Unstaged,
 Staged, or a commit — says where the file is now:
 
-| What happens outside Gitcito | What the open file does |
+| What happens outside GitHuttBr | What the open file does |
 |------------------------------|-------------------------|
 | The file is staged | Switches to the **Staged** diff |
 | The file is unstaged | Switches back to the **Unstaged** diff |
@@ -119,7 +119,7 @@ Staged, or a commit — says where the file is now:
 
 ![A diff opened Unstaged, still on screen as Staged after a terminal staged the file](../screenshots/file-follows-git.webp)
 
-Committing from Gitcito's own composer still closes the file, as before: when
+Committing from GitHuttBr's own composer still closes the file, as before: when
 you commit, the result in the graph is what you want to see.
 
 A commit that leaves history some other way — rebased away further back, say —

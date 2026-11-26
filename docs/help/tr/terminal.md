@@ -85,13 +85,13 @@ shell)** olarak başlar; yani `~/.zprofile`, `~/.zlogin` ve `~/.bash_profile`
 genellikle oraya yazar — terminalinizde çalışan `fvm`, `nvm` veya `pyenv` gibi
 bir araç burada da çalışır.
 
-Gitcito ayrıca açılışta oturum açma kabuğunuza gerçek `PATH` değerini sorar ve
+GitHuttBr ayrıca açılışta oturum açma kabuğunuza gerçek `PATH` değerini sorar ve
 başlattığı her şeye karıştırır; çünkü Dock'tan açılan bir arayüz uygulaması
 neredeyse hiçbir şey devralmaz. Bir komut yine de bulunamıyorsa, onun yalnızca
 etkileşimli bir kabuğun değil, oturum açma kabuğunun `PATH`'inde olduğundan emin
 olun.
 
-Burada çalıştırdığınız hiçbir şey Gitcito'nun kendi kilitleme mekanizmasına
+Burada çalıştırdığınız hiçbir şey GitHuttBr'nun kendi kilitleme mekanizmasına
 görünmez; dolayısıyla elle yazılmış uzun bir `git rebase` ile arayüzdeki bir
 tıklama yine de çakışabilir — terminal bir şeyi değiştirdiğinde uygulama
 durumunu diskten tazeler.
@@ -115,7 +115,7 @@ yoksa simgeler kutu olarak görünür.
 
 Hız üzerine: Oh My Posh her istemde programını bir kez çalıştırır — Windows’ta
 yaklaşık 100–200 ms, büyük bir depoda git bölümü olan temalarda daha fazla — ve bu
-Gitcito’nun yavaşlığı olarak değil, her istemden önce kısa bir duraklama olarak
+GitHuttBr’nun yavaşlığı olarak değil, her istemden önce kısa bir duraklama olarak
 hissedilir. Git bölümü olmayan temalar en hızlısıdır. PowerShell’in tahmin stili
 de önemlidir: `-PredictionViewStyle InlineView` her tuşta küçük bir alanı yeniden
 çizer, `ListView` ise bütün bir bloğu.

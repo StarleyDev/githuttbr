@@ -19,7 +19,7 @@ destacado próprio para você manter na cabeça.
 
 `⌘K` → **Subtrees**.
 
-![Um diretório vendorizado encontrado no histórico, com a origem que o Gitcito lembra para ele](../../screenshots/subtree.webp)
+![Um diretório vendorizado encontrado no histórico, com a origem que o GitHuttBr lembra para ele](../../screenshots/subtree.webp)
 
 ## A pegadinha que ninguém menciona
 
@@ -28,15 +28,15 @@ destacado próprio para você manter na cabeça.
 trailer `git-subtree-dir:` no commit que fez a importação.
 
 Ou seja, um repositório pode conter um subtree e não te dar jeito nenhum de
-descobrir de onde ele veio. O Gitcito faz o que dá:
+descobrir de onde ele veio. O GitHuttBr faz o que dá:
 
 - A lista é descoberta a partir do histórico, lendo esses trailers. Qualquer
   subtree adicionado por qualquer pessoa, com qualquer ferramenta, aparece.
-- O **repositório de origem e a ref** são lembrados pelo Gitcito, no git config
+- O **repositório de origem e a ref** são lembrados pelo GitHuttBr, no git config
   deste repositório. Um subtree descoberto pelo histórico começa com esses campos
   vazios — preencha uma vez e o pull e o push funcionam a partir dali.
 
-Os valores lembrados vivem em `gitcito.subtree.*` no `.git/config`, então ficam com
+Os valores lembrados vivem em `githuttbr.subtree.*` no `.git/config`, então ficam com
 o repositório mas não viajam para um clone. **Esquecer** limpa esses valores e não
 toca em mais nada.
 
@@ -68,15 +68,15 @@ subtree.
 ## Limites que vale conhecer
 
 - **O push é lento.** Ele recalcula o histórico do diretório do zero toda vez. Num
-  repositório grande isso é de segundos a minutos, não instantâneo, e o Gitcito só
+  repositório grande isso é de segundos a minutos, não instantâneo, e o GitHuttBr só
   pode esperar.
 - **Um pull é um merge**, então pode conflitar como qualquer merge — você cai n[o
   resolvedor](conflicts.md).
 - **O `git subtree` é um script de contrib**, não um builtin do git. Uma instalação
-  enxuta do git pode não tê-lo; o Gitcito diz isso com todas as letras em vez de
+  enxuta do git pode não tê-lo; o GitHuttBr diz isso com todas as letras em vez de
   repassar um "'subtree' is not a git command".
 - **Histórico com squash não pode ser des-squashado** depois. Os commits nunca
   foram importados.
-- O Gitcito não converte um submódulo em subtree, nem o contrário.
+- O GitHuttBr não converte um submódulo em subtree, nem o contrário.
 
 Veja também: [Merge e rebase](merging.md) · [Plumbing com uma interface](lfs-sparse.md)

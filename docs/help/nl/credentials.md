@@ -4,17 +4,17 @@ category: Beveiliging
 order: 73
 summary: De eigen wachtwoordkluis van git — de derde — en waarom https het steeds opnieuw vraagt.
 keywords: credential helper wachtwoord password https vraagt opnieuw osxkeychain wincred manager libsecret store cache git-credentials platte tekst plaintext vergeten ingetrokken revoked token 401 aanmelding controleren welk account token in de remote-url ingebed wachtwoord uit de url verwijderen token in remote url embedded password invalid username or token authentication failed set-url
-source: 1e74bbd13f1cd8ca72fac755ce38a4e43bc11456
+source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
 ---
 
 # Credential helper
 
-Gitcito houdt drie verschillende soorten geheim vast, en mensen nemen begrijpelijk
+GitHuttBr houdt drie verschillende soorten geheim vast, en mensen nemen begrijpelijk
 aan dat het één ding is:
 
 | | Bewaard door |
 |---|---|
-| API-tokens van hosts — PR's, issues, CI-checks | Gitcito, in je [OS-sleutelhanger](security.md) |
+| API-tokens van hosts — PR's, issues, CI-checks | GitHuttBr, in je [OS-sleutelhanger](security.md) |
 | `git@…`-transport | Je [SSH-sleutel](ssh-keys.md), via de ssh-agent van het systeem |
 | **`https://`-transport** | **De eigen credential helper van git** |
 
@@ -55,7 +55,7 @@ het antwoord op "waarom gedraagt juist deze host zich anders".
 | `cache` | Geheugen, 15 minuten lang. Niets op schijf |
 | `store` | **Een plat bestand in je thuismap. Onversleuteld** |
 
-Gitcito biedt aan wat er werkelijk op deze machine staat, markeert degene die bij
+GitHuttBr biedt aan wat er werkelijk op deze machine staat, markeert degene die bij
 je besturingssysteem past, en maakt de rest grijs.
 
 **Scope doet ertoe.** *Voor elke repository* schrijft naar je globale config, en
@@ -83,7 +83,7 @@ en faalt elke push met een 401 die niets bij naam noemt. **Vergeten** vraagt de
 ingestelde helper zijn regel voor die host te wissen — `git credential reject`,
 de eigen gedocumenteerde route van git.
 
-Onderweg wordt er niets gelezen: Gitcito roept nooit `git credential fill` aan,
+Onderweg wordt er niets gelezen: GitHuttBr roept nooit `git credential fill` aan,
 het commando dat een levend wachtwoord naar standaarduitvoer zou printen.
 
 De volgende push vraagt het je één keer, en de helper bewaart het nieuwe
@@ -127,7 +127,7 @@ Een oude clone, of een URL die uit een wiki is geplakt, kan zijn inloggegevens i
 adres dragen: `https://user:token@git.example.test/team/app.git`. **Een wachtwoord in
 de URL heeft altijd voorrang:** git stuurt het en vraagt geen enkele helper — niet het
 token van het [profiel](profiles.md) van de repository, niet de GitHub CLI, niet de
-eigen opslag van git. Zolang het token werkt, is dat prima, en Gitcito laat het met
+eigen opslag van git. Zolang het token werkt, is dat prima, en GitHuttBr laat het met
 rust: **het verwijdert nooit een wachtwoord uit een URL zonder het je te vragen.**
 Zodra het token wordt ingetrokken of verloopt, mislukt elke fetch, pull en push van die
 ene repository met *Invalid username or token* of *Authentication failed*, terwijl de
@@ -136,7 +136,7 @@ de `.git/config` van de repository.
 
 ![Een opgeslagen token uit een remote-URL verwijderen](../../screenshots/remote-url-token.webp)
 
-Gitcito leest de fetch- en push-URL’s van elke remote en meldt het op drie plekken:
+GitHuttBr leest de fetch- en push-URL’s van elke remote en meldt het op drie plekken:
 
 | Waar | Wat je ziet |
 |-------|--------------|
@@ -193,15 +193,15 @@ repositorymap kon lezen.
 
 ## Grenzen die je moet kennen
 
-- **Dit is de kluis van git, niet van Gitcito.** Hem veranderen verandert ook wat
+- **Dit is de kluis van git, niet van GitHuttBr.** Hem veranderen verandert ook wat
   je terminal doet — wat de bedoeling is, en goed om te weten voor je hem
   verandert.
 - **Helpers op systeemniveau worden getoond, niet bewerkt.** Die staan in een
   config die alleen een beheerder kan schrijven.
-- **Gitcito kan niet opsommen wat een helper bevat.** Geen enkele credential-API
+- **GitHuttBr kan niet opsommen wat een helper bevat.** Geen enkele credential-API
   onthult dat zonder de geheimen te overhandigen, dus het venster rapporteert de
   configuratie en wist op verzoek, en verder niets.
-- **Een token dat je aan Gitcito gaf staat los.** De een intrekken raakt de ander
+- **Een token dat je aan GitHuttBr gaf staat los.** De een intrekken raakt de ander
   niet; zie [beveiliging](security.md) voor de kant van de sleutelhanger.
 - **Het token van een profiel blijft buiten de omgeving van de hooks van de
   repository.** Een hook ziet alleen een code voor een privé-eindpunt, geldig zolang

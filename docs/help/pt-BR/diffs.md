@@ -109,7 +109,7 @@ dizia "Nenhuma mudança para exibir" sob um selo **Não preparado**; commitado,
 ficava em branco. Agora o visualizador acompanha, e o selo no cabeçalho — Não
 preparado, Preparado, ou um commit — diz onde o arquivo está agora:
 
-| O que acontece fora do Gitcito | O que o arquivo aberto faz |
+| O que acontece fora do GitHuttBr | O que o arquivo aberto faz |
 |--------------------------------|----------------------------|
 | O arquivo é preparado | Passa para o diff **Preparado** |
 | O arquivo é despreparado | Volta para o diff **Não preparado** |
@@ -122,7 +122,7 @@ preparado, Preparado, ou um commit — diz onde o arquivo está agora:
 
 ![Um diff aberto como Não preparado, ainda na tela como Preparado depois que um terminal preparou o arquivo](../../screenshots/file-follows-git.webp)
 
-Commitar pelo próprio compositor do Gitcito continua fechando o arquivo, como
+Commitar pelo próprio compositor do GitHuttBr continua fechando o arquivo, como
 antes: quando é você quem commita, o que você quer ver é o resultado no grafo.
 
 Um commit que sai do histórico de outro jeito — removido por um rebase mais

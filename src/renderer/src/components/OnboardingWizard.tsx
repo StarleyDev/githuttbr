@@ -32,7 +32,7 @@ import { settingsDecryptMessageKey } from '../lib/settingsPassword'
 import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { AIPage, IntegrationsPage } from './SettingsPanel'
-import gitcitoLaunch from '../assets/gitcito-launch.png'
+import githuttbrLaunch from '../assets/githuttbr-launch.png'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -125,7 +125,7 @@ function WelcomeStep({
   return (
     <div className="onboarding-welcome">
       <div className="onboarding-logo">
-        <img src={gitcitoLaunch} alt="" draggable={false} className="onboarding-art" />
+        <img src={githuttbrLaunch} alt="" draggable={false} className="onboarding-art" />
       </div>
       <div className="onboarding-title">{t('onboarding.welcomeTitle')}</div>
       <div className="onboarding-subtitle">{t('onboarding.welcomeSubtitle')}</div>

@@ -4,7 +4,7 @@ category: 从这里开始
 order: 3
 summary: 管着一堆仓库却不至于淹死：标签页、分组、文件夹和工作空间。
 keywords: workspace 工作空间 tabs 标签页 groups 分组 folders 文件夹 多仓库 organise 整理 switch 切换 layout 布局 转到仓库 切换器 标签页尺寸 go to repository switcher tab sizing
-source: 586a4f8276c9ee0949d40b012b298df48e7b696f
+source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 ---
 
 # 工作空间、标签页与分组
@@ -113,7 +113,7 @@ source: 586a4f8276c9ee0949d40b012b298df48e7b696f
 一个工作空间就是**一整条保存下来的标签栏**。切换会把所有标签页一次换掉：`Work`
 和 `Personal` 从此互不打扰。
 
-工作空间的名字在左上角，紧挨着 Gitcito 的标志。点它可以切换、新建、重命名、重新
+工作空间的名字在左上角，紧挨着 GitHuttBr 的标志。点它可以切换、新建、重命名、重新
 排序或删除。旁边那个仪表盘图标，会为你当前所在的工作空间打开
 [任务中心](mission-control.md)。
 

@@ -2,7 +2,7 @@
 title: Ortam denetimi
 category: Buradan başlayın
 order: 6
-summary: Gitcito’nun kendi kurulumu dışında dayandığı şeyler — git, LFS, yerel terminal, git’in credential helper’ı, GitHub CLI ve dosya izleme — tek yerde denetlenir.
+summary: GitHuttBr’nun kendi kurulumu dışında dayandığı şeyler — git, LFS, yerel terminal, git’in credential helper’ı, GitHub CLI ve dosya izleme — tek yerde denetlenir.
 keywords: ortam environment doktor tanılama denetim git sürüm lfs node-pty terminal temel kabuk credential helper store gh github cli scopes workflow inotify max_user_watches
 ---
 
@@ -15,7 +15,7 @@ belirsiz bir hata olarak ortaya çıkar. **Ayarlar → Ortam** (komut paletinde
 *Settings: Environment*) bunları önceden denetler.
 
 [Depo doktoru](repo-settings.md) başka bir soruyu yanıtlar: *bu depo*, kendi
-`.gitcito.json` dosyasının istediklerine göre burada derlenebilir mi. Ortam
+`.githuttbr.json` dosyasının istediklerine göre burada derlenebilir mi. Ortam
 denetimi uygulamanın kendisiyle ilgilidir ve her depo için aynıdır.
 
 ![Ayarlar’daki ortam denetimleri](../../screenshots/settings-environment.webp)
@@ -27,7 +27,7 @@ denetimi uygulamanın kendisiyle ilgilidir ve her depo için aynıdır.
 | **Git** | git 2.31 veya daha yenisi `PATH`’te | 2.31’den eski: bir [profilin](profiles.md) hesabı fetch ve push için oturum açamaz. Yok: git kurulana kadar hiçbir şey çalışmaz |
 | **Git LFS** | `git lfs` kurulu | Kurulu değil. Yalnızca dosyaları LFS’te tutan depolar buna ihtiyaç duyar |
 | **Terminal** | Yerel terminal yüklendi | [Terminal](terminal.md) temel modda çalışır: renk yok, yeniden boyutlandırma yok, tam ekran programlar yok |
-| **Credential helper** | git’in HTTPS parolaları için bir helper’ı var — genel olarak ya da belirli sunucular için (`gh auth setup-git`’in kurduğu) | Helper yok, bu yüzden Gitcito dışındaki git her seferinde sorar. Ya da onları düz metin olarak tutan `store`. Bkz. [Credential helper](credentials.md) |
+| **Credential helper** | git’in HTTPS parolaları için bir helper’ı var — genel olarak ya da belirli sunucular için (`gh auth setup-git`’in kurduğu) | Helper yok, bu yüzden GitHuttBr dışındaki git her seferinde sorar. Ya da onları düz metin olarak tutan `store`. Bkz. [Credential helper](credentials.md) |
 | **GitHub CLI** | `gh`, `workflow` kapsamıyla oturum açmış | Onsuz oturum açmış: GitHub, `.github/workflows` değiştiren her push’u reddeder |
 | **Dosya izleme** (Linux) | inotify sınırı en az 65.536 | Daha düşük bir sınır birkaç büyük açık depoda tükenir ve yeni klasörler durumu yenilemeyi bırakır |
 

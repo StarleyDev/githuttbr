@@ -58,8 +58,8 @@ mapprefix, geen afwezigheid.
 
 ## Wat de herschrijving werkelijk doet
 
-Gitcito kopieert elke branch en tag naar
-`refs/gitcito/pre-purge/<timestamp>/…`, en draait dan:
+GitHuttBr kopieert elke branch en tag naar
+`refs/githuttbr/pre-purge/<timestamp>/…`, en draait dan:
 
 ```sh
 git filter-branch --force \
@@ -111,9 +111,9 @@ Roteer de sleutel. Purge daarna, zodat de volgende die kloont hem niet vindt.
 - **Het herschrijft op pad, niet op inhoud.** Een geheim verwijderen dat in een
   bronbestand geplakt is in plaats van in een eigen bestand te wonen vraagt een
   inhoudsfilter — dat is het terrein van `git filter-repo --replace-text`, en
-  Gitcito zet daar geen schil omheen.
+  GitHuttBr zet daar geen schil omheen.
 - **`filter-branch` is traag bij zeer grote geschiedenissen.** Het is wat overal
-  met git meekomt, en daarom gebruikt Gitcito het. Bij een repository met
+  met git meekomt, en daarom gebruikt GitHuttBr het. Bij een repository met
   tienduizenden commits is `git filter-repo` in de [terminal](terminal.md) de
   snellere tool.
 - **De klonen van anderen zijn niet jouw repository.** Zij houden de oude

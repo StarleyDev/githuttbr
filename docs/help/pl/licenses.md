@@ -2,13 +2,13 @@
 title: Licencje open source
 category: Dostosuj do siebie
 order: 104
-summary: Przeczytaj licencję każdego pakietu zewnętrznego dołączonego do tej wersji Gitcito.
+summary: Przeczytaj licencję każdego pakietu zewnętrznego dołączonego do tej wersji GitHuttBr.
 keywords: licencje licenses uznanie autorstwa informacje open source MIT Apache BSD zewnętrzne zależności podziękowania o programie
 ---
 
 # Licencje open source
 
-Gitcito jest zbudowane na ponad dziewięćdziesięciu pakietach open source i prawie
+GitHuttBr jest zbudowane na ponad dziewięćdziesięciu pakietach open source i prawie
 wszystkie proszą w zamian o to samo: żeby ich informacja podróżowała razem z
 programem. MIT, BSD i Apache mówią to w samym tekście. Ta strona jest miejscem tej
 informacji, dzięki czemu obowiązek spełnia aplikacja, a nie plik, o którego
@@ -48,11 +48,11 @@ Dwa ograniczenia, które warto znać:
   manifeście i nic więcej. Te wiersze to mówią, zamiast wymyślać tekst, bo
   licencja, której nie da się przeczytać, nie jest licencją, na której można
   polegać.
-- **Identyfikator to to, co deklaruje pakiet.** Gitcito go pokazuje, ale nie
+- **Identyfikator to to, co deklaruje pakiet.** GitHuttBr go pokazuje, ale nie
   weryfikuje. Jeśli manifest pakietu jest błędny, ta strona myli się razem z nim.
 
-Licencja samego Gitcito to Apache 2.0, a etykieta w prawym górnym rogu otwiera ją na
-GitHubie. Kod odziedziczony po oryginalnym Gitcito przyszedł na licencji MIT, a jego
+Licencja samego GitHuttBr to Apache 2.0, a etykieta w prawym górnym rogu otwiera ją na
+GitHubie. Kod odziedziczony po oryginalnym GitHuttBr przyszedł na licencji MIT, a jego
 nota podróżuje z aplikacją w `NOTICE`, jak wymaga licencja MIT.
 
 **Zobacz też:** [Języki i pisanie od prawej do lewej](languages.md) · [Motywy i wygląd](themes.md)

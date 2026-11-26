@@ -4,7 +4,7 @@ category: Narzędzia środowiska pracy
 order: 95
 summary: Wyślij repozytorium, plik albo jedną linię kodu do edytora, w którym naprawdę piszesz.
 keywords: edytor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode otwórz w edytorze linia kolumna własne polecenie argv devin desktop
-source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
+source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
 ---
 
 # Zewnętrzny edytor
@@ -14,13 +14,13 @@ naprawiasz. Odległość między zauważeniem problemu w diffie a postawieniem
 kursora na tej linii w edytorze to wyszukanie pliku i przewinięcie — za każdym
 razem.
 
-Wskaż Gitcito swój edytor raz, a ta odległość znika: kliknij linię prawym
+Wskaż GitHuttBr swój edytor raz, a ta odległość znika: kliknij linię prawym
 przyciskiem w widoku pliku albo blame, a otworzy się tam, na tej linii.
 
 ## Wybieranie
 
 **Ustawienia → Ogólne → Zewnętrzny edytor.** Lista wypisuje edytory, które
-Gitcito potrafi znaleźć na tej maszynie — szuka najpierw polecenia każdego
+GitHuttBr potrafi znaleźć na tej maszynie — szuka najpierw polecenia każdego
 edytora, a potem, na macOS, pakietu aplikacji w `/Applications`
 i `~/Applications`. Skanowanie uruchamia się przy każdym otwarciu Ustawień, więc
 edytor zainstalowany pięć minut temu pojawia się bez restartu.
@@ -39,7 +39,7 @@ Rozpoznawane z pudełka:
 | Xcode | `xed` |
 
 **Na Linuksie: edytor spoza PATH.** Edytor rozpakowany do wybranego przez ciebie
-folderu często nie jest w PATH, ale jest w menu aplikacji. Gitcito czyta też wpisy
+folderu często nie jest w PATH, ale jest w menu aplikacji. GitHuttBr czyta też wpisy
 `.desktop` menu — w folderach danych XDG (`~/.local/share`, potem `/usr/local/share` i
 `/usr/share`, albo to, co mówią `XDG_DATA_HOME` i `XDG_DATA_DIRS`) oraz w eksportach
 Flatpaka i Snapa — i rozpoznaje edytor po nazwie albo po programie, który uruchamia
@@ -56,7 +56,7 @@ wskazuje Devin Desktop, więc nigdy nie otworzy się obca aplikacja o tej samej 
 
 **Skok do linii wymaga polecenia edytora, nie jego ikony.** Pakiet `.app` na
 macOS uruchamia się przez `open`, które przyjmuje ścieżkę i nic więcej — więc
-edytor znaleziony wyłącznie jako pakiet otwiera plik na początku, a Gitcito mówi
+edytor znaleziony wyłącznie jako pakiet otwiera plik na początku, a GitHuttBr mówi
 o tym pod listą, zamiast udawać, że jest inaczej.
 
 Naprawa leży po stronie edytora: w VS Code *Shell Command: Install 'code'
@@ -77,7 +77,7 @@ a skok do linii zadziała.
 
 Akcje liniowe pojawiają się tylko tam, gdzie numer linii jeszcze coś znaczy:
 plik pokazany na starym commicie albo blame przewinięty do wcześniejszej rewizji
-ma linie, które już nie odpowiadają temu, co jest na dysku — więc Gitcito nie
+ma linie, które już nie odpowiadają temu, co jest na dysku — więc GitHuttBr nie
 oferuje tam skoku, zamiast odesłać cię w złe miejsce.
 
 ## Projekty Xcode i inne pakiety
@@ -103,11 +103,11 @@ Rozpoznawane: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`,
 
 **Pakiet otwiera system, nie Twój edytor.** `.xcodeproj` podany edytorowi
 tekstu otwiera się jako folder pełen property list, czego nikt klikający nie
-chciał — więc Gitcito przekazuje go temu, co system z nim kojarzy, czyli na Macu
+chciał — więc GitHuttBr przekazuje go temu, co system z nim kojarzy, czyli na Macu
 z Xcode właśnie Xcode'owi. Wybór edytora zostaje nietknięty i nadal rządzi każdym
 zwykłym plikiem.
 
-**To konwencja nazw, nie flaga systemu plików.** Gitcito patrzy na rozszerzenie,
+**To konwencja nazw, nie flaga systemu plików.** GitHuttBr patrzy na rozszerzenie,
 więc katalog, który przypadkiem nazwałeś `notes.app`, też się zwinie, a na
 Linuksie czy Windowsie — gdzie to zwykłe foldery — kliknięcie otworzy menedżera
 plików zamiast IDE.
@@ -133,7 +133,7 @@ nazwa pliku nigdy nie zamieni się w składnię. Cztery symbole zastępcze:
 Symbol bez wartości zabiera ze sobą swoją flagę: `--line {line} {path}`
 uruchomione bez linii staje się samą ścieżką, nigdy zwisającym `--line`, które
 zjadłoby nazwę pliku jako swój argument. Szablon bez `{line}` oznacza po prostu,
-że Gitcito nie zaproponuje dla tego edytora akcji celujących w linię.
+że GitHuttBr nie zaproponuje dla tego edytora akcji celujących w linię.
 
 ## Czym to nie jest
 
@@ -143,5 +143,5 @@ pokazuje systemowy wybór i pamięta jedną aplikację do otwierania
 konkretny z tych dwóch, więc gdy ustawione są oba, na ikonie na końcu wiersza
 w drzewie plików wygrywa edytor; oba zostają wypisane w menu kontekstowym.
 
-Gitcito nigdy nie odpala twojego edytora samo z siebie, a zamknięcie Gitcito
+GitHuttBr nigdy nie odpala twojego edytora samo z siebie, a zamknięcie GitHuttBr
 nigdy go nie zamyka: edytor jest uruchamiany odczepiony, jako własny proces.

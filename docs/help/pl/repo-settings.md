@@ -16,12 +16,12 @@ repozytorium, a nie do aplikacji.
 | Zakładka | Co zawiera |
 |---|---|
 | **Ogólne** | Chronione gałęzie (wielokrotny wybór gałęzi, zapisany w konfiguracji gita), podpisywanie, obraz karty |
-| **Config** | [Zasady, które niesie to repozytorium](repo-config.md) w `.gitcito.json`, oraz doctor, który je sprawdza |
+| **Config** | [Zasady, które niesie to repozytorium](repo-config.md) w `.githuttbr.json`, oraz doctor, który je sprawdza |
 | **Informacje** | Dowolne notatki i pola o tym repozytorium, trzymane lokalnie |
 | **Sejf** | Wpisy [sejfu](vault.md) tego repozytorium |
 | **Statystyki** | [Panel historii](insights.md) |
 | **Analityka** | Co zrobiłeś w tym repozytorium, policzone lokalnie |
-| **Historia** · **Logi** | Dziennik operacji: każde polecenie gita, które Gitcito uruchomiło, wraz z jego wyjściem |
+| **Historia** · **Logi** | Dziennik operacji: każde polecenie gita, które GitHuttBr uruchomiło, wraz z jego wyjściem |
 
 Dziennik operacji jest tym uczciwym: gdy coś zachowuje się dziwnie, pokazuje
 dokładne polecenie i dokładny błąd, więc zgłoszenie błędu może nieść fakty,
@@ -64,7 +64,7 @@ Ograniczenia, o których warto wiedzieć:
   ustawień pokazuje ostrzeżenie pod ścieżką. Nic poza tym nie protestuje.
 - Obraz jest wczytywany raz na sesję. Jeśli podmienisz plik pod tą samą nazwą,
   otwórz ponownie tę kartę ustawień, aby go przeładować.
-- Ustawienie żyje w ustawieniach Gitcito na tym komputerze, nie w repozytorium,
+- Ustawienie żyje w ustawieniach GitHuttBr na tym komputerze, nie w repozytorium,
   więc współpracownicy go nie dziedziczą.
 
 **Zobacz też:** [Bezpieczeństwo i sekrety](security.md) · [Statystyki](insights.md)

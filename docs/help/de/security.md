@@ -2,14 +2,14 @@
 title: Sicherheit & Geheimnisse
 category: Sicherheit
 order: 70
-summary: Maskierung, Wächter, der Schlüsselbund — und was Gitcito sich weigert zu tun.
+summary: Maskierung, Wächter, der Schlüsselbund — und was GitHuttBr sich weigert zu tun.
 keywords: sicherheit geheimnisse secrets maskierung masking schlüsselbund keychain safeStorage tokens geschützter branch protected branch große datei large file wächter guard privatsphäre unlesbar Sicherung Backup Teile Pfade übersetzen anderer Computer neuer Rechner Profile zusammenführen Profile ersetzen Export auswählen vollständige Sicherung fürs Team Manifest Passwort Verschlüsselung AppImage AppArmor Sandbox Problem melden bilder in kommentaren tracking-pixel ip-adresse bilder von dritten zum laden klicken images in comments tracking pixel third-party images click to load
-source: 54e884bf6189103cc1a4deb2c87ddaf5a13e7af4
+source: 26f333bbdafd9ab662dc635c22df7456d66b1362
 ---
 
 # Sicherheit & Geheimnisse
 
-Gitcito hat **kein Backend**. Die einzigen Netzwerkaufrufe gehen an deinen
+GitHuttBr hat **kein Backend**. Die einzigen Netzwerkaufrufe gehen an deinen
 Git-Host und, falls du es einschaltest, an deinen KI-Anbieter.
 
 ![Sicherheitseinstellungen](../../screenshots/settings-security.webp)
@@ -86,14 +86,14 @@ Ein AppImage läuft aus einem Ordner unter `/tmp` (`/tmp/.mount_…`), der nur
 existiert, solange die App offen ist, bei jedem Start anders heißt und in einem
 Verzeichnis liegt, in das jeder lokale Benutzer schreiben kann. Bis 4.37.1
 konnte das AppImage einen Pfad in diesem Ordner an zwei Stellen schreiben, die
-es überdauern: den `gitcito`-Link im `PATH` ([CLI](cli.md)) und die Einstellung
+es überdauern: den `githuttbr`-Link im `PATH` ([CLI](cli.md)) und die Einstellung
 `diff.<name>.textconv` eines Repositories ([Attribute](attributes.md)). Sobald
 die App beendet war, konnte ein anderer Benutzer auf demselben Rechner den
-Ordner mit einem eigenen Programm neu anlegen, das dein nächstes `gitcito` oder
+Ordner mit einem eigenen Programm neu anlegen, das dein nächstes `githuttbr` oder
 `git diff` ausführen würde.
 
-Gitcito verweigert beides jetzt unter einem AppImage, warnt beim Start vor einem
-veralteten `gitcito`-Link (mit einem Palettenbefehl, um ihn zu entfernen) und
+GitHuttBr verweigert beides jetzt unter einem AppImage, warnt beim Start vor einem
+veralteten `githuttbr`-Link (mit einem Palettenbefehl, um ihn zu entfernen) und
 markiert einen veralteten Konverter im Attribute-Dialog mit einer Schaltfläche
 **Entfernen**. Es sieht nur das Repository, das du geöffnet hast; um veraltete
 Konverter anderswo zu finden, führe
@@ -109,7 +109,7 @@ Betriebssystems verschlüsselt (Electron `safeStorage`), niemals mit einem
 Schlüssel in der Einstellungsdatei.
 
 **Nichts rührt den Schlüsselbund an, bevor du es sagst.** Noch bevor der
-Berechtigungsdialog des Systems auftauchen kann, erklärt Gitcito, was gespeichert
+Berechtigungsdialog des Systems auftauchen kann, erklärt GitHuttBr, was gespeichert
 wird, was es nicht kann (eine App liest immer nur den Eintrag zurück, den sie
 selbst angelegt hat — deine anderen Passwörter sind unerreichbar) und dass Nein
 sagen völlig in Ordnung ist: Tokens leben dann nur für die Sitzung im
@@ -119,7 +119,12 @@ Arbeitsspeicher, der Tresor bleibt zu, und du kannst es später unter
 Eine frische Installation macht **null** Aufrufe an den Schlüsselbund, bis
 tatsächlich etwas gespeichert werden muss.
 
-Solange er aus ist, sagt das Token-Feld unter Integrationen es an — *Nur gespeichert, bis du Gitcito beendest: der System-Schlüsselbund ist aus.* — mit einer Schaltfläche **Aktivieren** daneben. Ihn dort oder hier einzuschalten speichert auch die Tokens, die du in dieser Sitzung schon eingegeben hast; nichts muss neu eingefügt werden.
+**Nach dem Update auf 4.59 unter macOS** fragt das System womöglich noch einmal
+nach dem Eintrag *GitHuttBr Safe Storage*: Die Bundle-ID der App ist jetzt
+`com.huttbr.git`, und der Schlüsselbund fragt erneut für eine App, die er nicht
+kennt. **Immer erlauben** behält die Tokens; siehe [Aktualisieren](upgrading.md).
+
+Solange er aus ist, sagt das Token-Feld unter Integrationen es an — *Nur gespeichert, bis du GitHuttBr beendest: der System-Schlüsselbund ist aus.* — mit einer Schaltfläche **Aktivieren** daneben. Ihn dort oder hier einzuschalten speichert auch die Tokens, die du in dieser Sitzung schon eingegeben hast; nichts muss neu eingefügt werden.
 
 ![Das Token-Feld unter Integrationen bei ausgeschaltetem Schlüsselbund: nur gespeichert, bis du beendest, mit einer Schaltfläche Aktivieren](../../screenshots/token-keychain-notice.webp)
 
@@ -133,7 +138,7 @@ nächsten Start wieder da. Bis dahin bleibt der Hinweis aus diesem Grund
 sichtbar. Um ein gespeichertes Token in einem Schritt endgültig zu löschen,
 leere es bei eingeschaltetem Schlüsselbund.
 
-Ein leeres Feld löscht nur, was Gitcito dir gezeigt hat. Ist der Schlüsselbund
+Ein leeres Feld löscht nur, was GitHuttBr dir gezeigt hat. Ist der Schlüsselbund
 von Anfang an aus, werden die gespeicherten Tokens nie entschlüsselt und nie
 angezeigt — die Felder sind leer —, also wird nur ein Token entfernt, das du dort
 eintippst und wieder leerst; das gespeicherte darunter ist noch da, sobald der
@@ -156,7 +161,7 @@ Status des Schlüsselbunds — *Es läuft kein Schlüsselbund…* —, damit das
 
 Damit nichts Neues in einem Speicher landet, den jeder entschlüsseln könnte, wird
 ein Token, das du eingibst, während kein Schlüsselbund läuft, **nur bis zum
-Beenden** behalten. Das Token-Feld sagt es — *Nur bis zum Beenden von Gitcito
+Beenden** behalten. Das Token-Feld sagt es — *Nur bis zum Beenden von GitHuttBr
 gespeichert: Es läuft kein Schlüsselbund…* — ohne Schaltfläche zum erneuten
 Versuchen, weil ein neuer Versuch nichts bringt; nur ein Schlüsselbund hilft.
 Der Import einer Einstellungsdatei mit Zugangsdaten sagt dasselbe, bevor er sie
@@ -167,9 +172,9 @@ weiterhin von der Festplatte. Zwei Grenzen: Der Schlüssel der allgemeinen KI
 wird nicht in seinen gemeinsamen Platz verschoben (jedes Profil liest weiter
 seinen eigenen), und der Tresor speichert weiterhin im einfachen Speicher, weil
 er keinen Modus nur für die Sitzung hat. Installiere oder entsperre einen Schlüsselbund
-und starte Gitcito neu, um neue Tokens wieder dauerhaft zu speichern.
+und starte GitHuttBr neu, um neue Tokens wieder dauerhaft zu speichern.
 
-Gitcito verlässt sich nicht auf das Wort des Systems, welchen Speicher es bekommen
+GitHuttBr verlässt sich nicht auf das Wort des Systems, welchen Speicher es bekommen
 hat. Es zählt den Speicher als einfach, wenn das System ihn so nennt, wenn es ihn gar
 nicht benennen kann, und wenn das, was es verschlüsselt, mit dem festen Passwort
 markiert zurückkommt — egal, was das System gesagt hat. So hält auch ein
@@ -180,24 +185,24 @@ Linux gilt, sobald der Schlüsselbund in dieser Sitzung einmal geantwortet hat, 
 Frage, die er 10 Sekunden unbeantwortet lässt, als *kein Schlüsselbund*: Ein Token,
 das du speicherst, bleibt bis zum Beenden, und der Tresor bleibt zu. Die erste Frage
 einer Sitzung — die, die die eigene Passwortabfrage des Schlüsselbunds aufrufen
-kann — und die direkt nach Gitcitos Erklärung bekommen zwei Minuten, damit das Lesen
+kann — und die direkt nach GitHuttBrs Erklärung bekommen zwei Minuten, damit das Lesen
 eines Dialogs nie abgeschnitten wird. Eine halbe Minute nach so einer
 Zeitüberschreitung bleibt die Antwort *kein Schlüsselbund*, ohne erneut zu fragen;
-danach fragt Gitcito neu. macOS und Windows antworten lokal und werden nie mit einer
+danach fragt GitHuttBr neu. macOS und Windows antworten lokal und werden nie mit einer
 Frist belegt.
 
 Die Grenze gilt für diese eine Frage — *ist ein Schlüsselbund da?* Ein Schlüsselbund,
 der sie beantwortet und dann beim Verschlüsseln oder Entschlüsseln hängt, wird
 weiterhin abgewartet: Das Speichern der Einstellungen und der Tresor bleiben
-beschäftigt, bis er antwortet oder Gitcito neu startet.
+beschäftigt, bis er antwortet oder GitHuttBr neu startet.
 
 ### Wenn die gespeicherten Tokens nicht gelesen werden können
 
 Wenn du die Schlüsselbund-Abfrage des Systems schließt, der Schlüsselbund
-gesperrt ist oder der Token-Speicher von einer anderen Kopie von Gitcito
+gesperrt ist oder der Token-Speicher von einer anderen Kopie von GitHuttBr
 geschrieben wurde (einem Entwicklungsbuild, einem neu signierten), **kann
-Gitcito deine gespeicherten Tokens nicht lesen — und lässt sie unangetastet**.
-Einstellungen → Sicherheit sagt *Gitcito konnte deine gespeicherten Tokens
+GitHuttBr deine gespeicherten Tokens nicht lesen — und lässt sie unangetastet**.
+Einstellungen → Sicherheit sagt *GitHuttBr konnte deine gespeicherten Tokens
 nicht lesen*, und ein Token, das du in der Zwischenzeit eintippst, wird nur für
 die Sitzung behalten (das Feld sagt es auch). Es wird nie über den Speicher
 geschrieben, der nicht gelesen werden konnte: Das würde jedes gespeicherte Token
@@ -206,7 +211,7 @@ durch das gerade eingetippte ersetzen.
 | Schaltfläche | Was sie tut |
 |--------|--------------|
 | **Erneut versuchen** | Liest den Speicher erneut — das System fragt jetzt vielleicht nach dem Schlüsselbund. Sobald er lesbar ist, kommen die zwischenzeitlich eingetippten Tokens hinzu. |
-| **Neuen Token-Speicher anlegen** | Fragt zuerst. Gitcito wartet nicht länger auf den alten Speicher und beginnt einen neuen nur mit den Tokens dieser Sitzung. Die alte Datei bleibt 30 Tage lang als Sicherung daneben liegen und wird dann gelöscht. Für einen endgültig verlorenen Speicher, nicht für eine weggeklickte Abfrage. |
+| **Neuen Token-Speicher anlegen** | Fragt zuerst. GitHuttBr wartet nicht länger auf den alten Speicher und beginnt einen neuen nur mit den Tokens dieser Sitzung. Die alte Datei bleibt 30 Tage lang als Sicherung daneben liegen und wird dann gelöscht. Für einen endgültig verlorenen Speicher, nicht für eine weggeklickte Abfrage. |
 
 ## Einstellungen importieren
 
@@ -337,7 +342,7 @@ Azure-Organisation geht; und die Anmeldungen, die vom Credential Helper dieses
 Rechners stammen, bleiben die dieses Rechners.
 
 **Die Voreinstellungen sind eine Vermutung anhand deiner Festplatte.** Bevor
-der Dialog erscheint, prüft Gitcito, ob die Repository-Ordner aus der Datei
+der Dialog erscheint, prüft GitHuttBr, ob die Repository-Ordner aus der Datei
 hier existieren. Existiert keiner, stammt die Datei von einem anderen Computer:
 **Repositorys** und **Programme** sind anfangs nicht angehakt, jeweils mit
 Begründung — die Pfade der Programme werden aufgelistet, damit du siehst, dass
@@ -357,7 +362,7 @@ fehlen, und ein Feld **Pfade übersetzen** öffnet sich. Links der Ordner, den d
 Repositories der Datei gemeinsam haben (`/home/you/code`); rechts, wo dieser
 Ordner auf diesem Computer liegt, vorausgefüllt aus deinem Home-Ordner
 (`/Users/you/code`). Beide sind editierbar — die Vermutung kann falsch sein, und
-findet Gitcito keinen gemeinsamen Ordner, lässt es beide leer, damit du sie
+findet GitHuttBr keinen gemeinsamen Ordner, lässt es beide leer, damit du sie
 eintippst. Ein Balken zählt beim Tippen, wie viele Repositories jetzt hier einen
 Ordner haben, und listet einige davon — grün gefunden, rot noch fehlend. Der
 Tausch nimmt Spitzname, Tab-Bild und Profil des Repositorys mit, dazu seine
@@ -416,7 +421,7 @@ gelöscht wird; **Abbrechen** dort lässt den Dialog, wie er war.
 
 **Alle ersetzen braucht den Schlüsselbund.** Ist der Schlüsselbund aus oder
 nicht verfügbar, blieben die alten Tokens im verschlüsselten Speicher und kämen
-beim nächsten Start zurück — deshalb verweigert Gitcito es: Es sagt das, und
+beim nächsten Start zurück — deshalb verweigert GitHuttBr es: Es sagt das, und
 nichts wird importiert. Dasselbe gilt, solange die gespeicherten Tokens nicht
 gelesen werden können (siehe oben): Sie kämen zurück, sobald sie es könnten. **Hinzufügen**
 funktioniert weiterhin und behält die Tokens der Datei für die Sitzung.
@@ -468,20 +473,20 @@ geschrieben: in eine neue, nur für den Besitzer lesbare Datei daneben, die dann
 ausgetauscht wird, sodass ein Absturz oder zwei gleichzeitige Speichervorgänge
 nie eine halbe Datei hinterlassen. Ist die Einstellungsdatei ein symbolischer
 Link an einen anderen Ort (ein Dotfiles-Repository), geht das Schreiben an das
-Ziel des Links und der Link bleibt. Gitcito ersetzt den Link nie. Einer, der auf
+Ziel des Links und der Link bleibt. GitHuttBr ersetzt den Link nie. Einer, der auf
 eine noch nicht vorhandene Datei zeigt, wird durchgeschrieben und legt diese
 Datei an — sofern ihr Ordner existiert. Fehlt auch der Ordner, schlägt das
 Speichern stattdessen fehl, mit einer einzigen Meldung dazu: Der Link und sein
 Ziel bleiben unangetastet, und Änderungen in der Zwischenzeit halten nur, bis
-Gitcito schließt. Stelle den Ordner wieder her oder lass den Link auf etwas
+GitHuttBr schließt. Stelle den Ordner wieder her oder lass den Link auf etwas
 Vorhandenes zeigen, dann klappt das nächste Speichern.
 
 Klartext-Tokens, die eine ältere Version in der Einstellungsdatei hinterlassen
-hat, gehen beim Speichern nie verloren: Sie bleiben in der Datei, bis Gitcito
+hat, gehen beim Speichern nie verloren: Sie bleiben in der Datei, bis GitHuttBr
 sie in den verschlüsselten Speicher lädt (das Öffnen der Einstellungen tut das),
 es sei denn, du löschst selbst eines.
 
-Nur zwei Dinge schreiben sie: ein Speichern deiner Einstellungen, und Gitcito,
+Nur zwei Dinge schreiben sie: ein Speichern deiner Einstellungen, und GitHuttBr,
 wenn es sie lädt (beim Start oder beim Öffnen der Einstellungen) — dann wird ein
 altes Klartext-Token in den verschlüsselten Speicher verschoben oder eine
 Serveradresse mit einem Passwort darin bereinigt. Ein Nachschlagen, um das
@@ -499,17 +504,17 @@ das du in der Zwischenzeit löschst, gelöscht.
 
 Eine Datei, die existiert, aber nicht geparst werden kann (eine missglückte
 Handbearbeitung, ein beschädigter Datenträger), wird **nie** durch die
-Standardwerte ersetzt: Gitcito sagt, dass die Datei beschädigt ist, und startet
+Standardwerte ersetzt: GitHuttBr sagt, dass die Datei beschädigt ist, und startet
 nicht weiter — kein Tastenkürzel und kein Menübefehl kann von diesem Bildschirm
 aus darüber speichern.
 
 ![Der Startbildschirm bei einer beschädigten Einstellungsdatei, mit Erneut versuchen und Beschädigte Datei beiseitelegen und neu beginnen](../../screenshots/settings-damaged.webp)
 
-Du kannst `gitcito-settings.json` in ihrem Datenordner reparieren und
+Du kannst `githuttbr-settings.json` in ihrem Datenordner reparieren und
 **Erneut versuchen** drücken, oder **Beschädigte Datei beiseitelegen und neu
-beginnen** drücken: Die Datei wird in `gitcito-settings.json.corrupt-<date>`
+beginnen** drücken: Die Datei wird in `githuttbr-settings.json.corrupt-<date>`
 umbenannt (nie gelöscht, du kannst also noch etwas daraus retten), eine Kopie
-des verschlüsselten Token-Speichers wird daneben aufbewahrt, und Gitcito
+des verschlüsselten Token-Speichers wird daneben aufbewahrt, und GitHuttBr
 startet wie beim ersten Mal, mit einem Hinweis, wohin die Datei gegangen ist.
 Bei einer per Symlink verknüpften Einstellungsdatei wird das Ziel des Links
 umbenannt, sodass die beschädigte Kopie in deinen Dotfiles bleibt, neben der
@@ -521,15 +526,15 @@ speicherst, die Tokens der alten Profile löschen lassen. Behebe, was das
 Schreiben in den Ordner verhindert (Berechtigungen, eine volle Festplatte), und
 drücke **Erneut versuchen**.
 
-Geht die Datei kaputt, während Gitcito läuft (darunter von Hand bearbeitet),
-stoppt das Speichern und Gitcito sagt es einmal: Die Einstellungen können bis
+Geht die Datei kaputt, während GitHuttBr läuft (darunter von Hand bearbeitet),
+stoppt das Speichern und GitHuttBr sagt es einmal: Die Einstellungen können bis
 zum Neustart nicht gespeichert werden, und Änderungen in der Zwischenzeit gehen
 verloren.
 
 Eine Datei, die da ist, aber kurz nicht *gelesen* werden kann — ein anderes
 Programm wie ein Virenscanner hält sie fest —, wird etwa zwei Sekunden lang
 erneut versucht. Schlägt es weiter fehl oder scheitert das Laden aus einem
-anderen Grund, sagt Gitcito, dass es nicht starten konnte, dass die Datei nicht
+anderen Grund, sagt GitHuttBr, dass es nicht starten konnte, dass die Datei nicht
 verändert wurde, und bietet **Erneut versuchen** an; es nennt die Datei nicht
 beschädigt.
 
@@ -565,7 +570,7 @@ lokale Benutzer kann die Prozessliste lesen) und nicht in der **Umgebung** des
 git-Befehls — die jeder Hook, Filter und LFS-Prozess erbt, den git startet,
 zusammen mit jedem npm-Paket, das ein husky- oder lefthook-Skript ausführt.
 
-Stattdessen öffnet Gitcito für jede Operation einen eigenen privaten Endpunkt —
+Stattdessen öffnet GitHuttBr für jede Operation einen eigenen privaten Endpunkt —
 einen Socket in einem Ordner, den nur dein Benutzer betreten kann (unter Windows
 eine Named Pipe mit zufälligem Namen) — und registriert einen
 Credential-Helper für genau diesen einen Server. Wenn git nach einer Anmeldung
@@ -609,7 +614,7 @@ Was es weiterhin nicht kann:
   von einem anderen git gestartet —, wird für die Operation entfernt, sodass ihm
   nie das Token des Profils zum Speichern angeboten und er nie im Namen von
   niemandem gefragt wird. Jede andere geerbte `-c`-Einstellung bleibt.
-- **Eine Serveradresse muss so geschrieben sein, wie git sie liest.** Gitcito
+- **Eine Serveradresse muss so geschrieben sein, wie git sie liest.** GitHuttBr
   benennt den Server nach den Standard-URL-Regeln, git nach seinen eigenen: ein
   internationalisierter Name (`bücher.example`), eine numerische Kurzform
   (`127.1`, `0x7f.0.0.1`), eine komprimierte oder gemappte IPv6-Adresse oder ein
@@ -624,7 +629,7 @@ Was es weiterhin nicht kann:
 - **Führe keine Hooks aus, denen du nicht vertraust**, auch nicht mit einem
   angemeldeten Profil. Ein gerade geklontes Repository kann Hooks über Werkzeuge
   wie husky mitbringen, die sie bei `npm install` installieren; git führt aus,
-  was in `.git/hooks` liegt, aus Gitcito wie aus einem Terminal, und ein Hook
+  was in `.git/hooks` liegt, aus GitHuttBr wie aus einem Terminal, und ein Hook
   kann weit Schlimmeres tun, als ein Token zu lesen.
 - **Schränke das Token ein.** Ein Token, das nur in die Repositories schreiben
   kann, an denen du arbeitest, ist für jeden, der es in die Hände bekommt, viel
@@ -650,7 +655,7 @@ gebunden ist, E-Mail- und IP-Adressen werden ersetzt. Öffentliche Hosts wie
 
 **Die Grenze:** Ein Servername, der allein in einem Satz steht, wird an seiner
 Form erkannt — mit Punkten, kleingeschrieben. Ein Host aus einem Wort
-(`gitserver`) wird nur in den Meldungen erkannt, die Gitcito selbst schreibt,
+(`gitserver`) wird nur in den Meldungen erkannt, die GitHuttBr selbst schreibt,
 und ein Server unter einer Top-Level-Domain, die wie eine Dateiendung aussieht
 (`.sh`, `.md`), bleibt als Dateiname stehen. Lies das Issue trotzdem, bevor du
 es postest: Die Bereinigung erkennt bekannte Formen, nicht alles Private.
@@ -667,7 +672,7 @@ gesalzene Hashes.
 
 Jede dieser Dateien wird am Stück geschrieben: in eine neue Datei daneben, die
 dann ausgetauscht wird, sodass ein Absturz oder zwei gleichzeitige
-Speichervorgänge nie eine halbe Datei hinterlassen — die Gitcito sonst als
+Speichervorgänge nie eine halbe Datei hinterlassen — die GitHuttBr sonst als
 unlesbar behandeln müsste. Eine Sicherung des Token-Speichers wird nur dann
 früher gelöscht, wenn jedes Token darin auch im aktuellen Speicher ist; jede
 andere Sicherung wird 30 Tage lang aufbewahrt.
@@ -680,8 +685,8 @@ erlaubt, und die beiden Linux-Pakete gehen damit unterschiedlich um:
 
 | Paket | Was passiert |
 |---------|--------------|
-| `.deb` | Installiert `/etc/apparmor.d/gitcito`, ein Profil für `/opt/GitHuttBr/gitcito`, das User-Namespaces erlaubt. Die App läuft in der Sandbox. |
-| AppImage | Hat kein Profil. Sein Starter versucht `unshare -Ur true`, und wenn das scheitert, startet er die App mit `--no-sandbox` — unter Ubuntu 24.04+ ist das jeder Start. Gitcito gibt dann eine Warnung auf seiner Konsolenausgabe aus. |
+| `.deb` | Installiert `/etc/apparmor.d/githuttbr`, ein Profil für `/opt/GitHuttBr/githuttbr`, das User-Namespaces erlaubt. Die App läuft in der Sandbox. |
+| AppImage | Hat kein Profil. Sein Starter versucht `unshare -Ur true`, und wenn das scheitert, startet er die App mit `--no-sandbox` — unter Ubuntu 24.04+ ist das jeder Start. GitHuttBr gibt dann eine Warnung auf seiner Konsolenausgabe aus. |
 
 Um das AppImage in der Sandbox laufen zu lassen, installiere stattdessen das
 `.deb`, oder gib dem AppImage ein eigenes AppArmor-Profil, das `userns` erlaubt
@@ -691,10 +696,10 @@ die Einschränkung für alles abschaltet).
 **Die Grenze des `.deb`-Profils.** Es ist `flags=(unconfined)` mit erlaubtem
 `userns` und hängt am Pfad der ausführbaren Datei. Dieselbe ausführbare Datei
 läuft auch als reines Node, wenn sie mit `ELECTRON_RUN_AS_NODE=1` gestartet
-wird — so funktionieren der `gitcito`-Befehl, der mitgelieferte Diff-Konverter
-und der Credential-Helper von Gitcito, daher lässt sich der Schalter nicht
+wird — so funktionieren der `githuttbr`-Befehl, der mitgelieferte Diff-Konverter
+und der Credential-Helper von GitHuttBr, daher lässt sich der Schalter nicht
 abschalten, ohne sie kaputtzumachen. Zusammen bedeutet das: Jedes lokale
-Programm kann die ausführbare Datei von Gitcito als Node-Interpreter nutzen, der
+Programm kann die ausführbare Datei von GitHuttBr als Node-Interpreter nutzen, der
 User-Namespaces anlegen darf — dieselbe Art Lücke wie die bekannten Umgehungen
 der Ubuntu-Einschränkung über andere Programme mit Profil. Niemand erhält
 dadurch mehr als die Rechte seines eigenen Kontos; es schwächt eine
@@ -702,7 +707,7 @@ Kernel-Härtungsschicht, die Ubuntu obendrauf legt. AppArmor kann die beiden Mod
 einer ausführbaren Datei nicht unterscheiden, daher ist ein engeres Profil nicht
 möglich, solange die CLI sie teilt; ein separates Hilfsprogramm für die CLI
 steht auf der Roadmap. Administratoren, die das nicht wollen, können eine
-Deny-Regel in `/etc/apparmor.d/local/gitcito` hinzufügen, auf Kosten der
+Deny-Regel in `/etc/apparmor.d/local/githuttbr` hinzufügen, auf Kosten der
 Sandbox.
 
 **Siehe auch:** [Tresor](vault.md) · [Sicheres Teilen](secure-share.md)

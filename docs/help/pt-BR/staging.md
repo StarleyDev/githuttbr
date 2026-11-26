@@ -64,7 +64,7 @@ seleção inteira. Com texto destacado no diff, *Copiar* copia só esse texto.
 
 Todas entram na pilha de desfazer (<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Z</kbd>).
 Descartar ainda pergunta antes, porque joga trabalho fora, e antes dele (e antes
-de reverter e aplicar) o Gitcito também tira um [snapshot WIP](recovery.md).
+de reverter e aplicar) o GitHuttBr também tira um [snapshot WIP](recovery.md).
 Enquanto uma ação está sendo aplicada, os botões continuam no lugar mas ficam
 desligados, para nada ser apertado duas vezes em linhas que já sumiram.
 
@@ -76,7 +76,7 @@ Os limites:
   via.
 - **Quando o arquivo já mudou.** Reverter e aplicar recortam o patch do
   histórico, e o arquivo pode ter mudado desde então, por um commit posterior ou
-  por edições que você não commitou. O Gitcito então mescla o hunk em três vias,
+  por edições que você não commitou. O GitHuttBr então mescla o hunk em três vias,
   do jeito que o git mescla um commit inteiro. Mudanças que não se sobrepõem se
   combinam limpas. Linhas que você mesmo editou ganham marcadores de conflito
   (`<<<<<<< working copy` … `>>>>>>> hunk`) e um aviso diz isso. O resultado é
@@ -113,7 +113,7 @@ trás como não rastreado.
 ### Desfazendo um descarte
 
 Descartar um arquivo, uma pasta ou tudo pode ser desfeito. Logo antes de rodar,
-o Gitcito salva o que estava preparado e o que estava no disco como duas árvores
+o GitHuttBr salva o que estava preparado e o que estava no disco como duas árvores
 do git, e o descarte entra na pilha de desfazer. **Desfazer** (o botão da barra
 de ferramentas, ou *Repositório → Desfazer última operação*) devolve os arquivos
 descartados exatamente como estavam: a parte preparada preparada, a não preparada
@@ -153,7 +153,7 @@ da pasta.
 
 ## Antes de você commitar
 
-O Gitcito confere algumas coisas e pergunta uma vez, nunca em silêncio:
+O GitHuttBr confere algumas coisas e pergunta uma vez, nunca em silêncio:
 
 - um arquivo que parece um **segredo** (`.env`, `*.pem`, `id_rsa`…),
 - um blob **muito grande** (limite em Configurações → Segurança),

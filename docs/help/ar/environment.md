@@ -2,7 +2,7 @@
 title: فحص البيئة
 category: ابدأ من هنا
 order: 6
-summary: ما يعتمد عليه Gitcito خارج تثبيته — git وLFS والطرفية الأصلية وcredential helper الخاص بـ git وGitHub CLI ومراقبة الملفات — مفحوصًا في مكان واحد.
+summary: ما يعتمد عليه GitHuttBr خارج تثبيته — git وLFS والطرفية الأصلية وcredential helper الخاص بـ git وGitHub CLI ومراقبة الملفات — مفحوصًا في مكان واحد.
 keywords: البيئة environment طبيب تشخيص فحص git إصدار lfs node-pty طرفية صدفة أساسية credential helper store gh github cli نطاقات workflow inotify max_user_watches
 ---
 
@@ -14,7 +14,7 @@ keywords: البيئة environment طبيب تشخيص فحص git إصدار lfs
 **الإعدادات ← البيئة** (وأيضًا *Settings: Environment* في لوحة الأوامر) يفحصها مسبقًا.
 
 يجيب [طبيب المستودع](repo-settings.md) عن سؤال مختلف: هل يمكن بناء *هذا المستودع* هنا،
-وفق ما يطلبه ملف `.gitcito.json` الخاص به. أما فحص البيئة فيخص التطبيق نفسه، وهو واحد لكل
+وفق ما يطلبه ملف `.githuttbr.json` الخاص به. أما فحص البيئة فيخص التطبيق نفسه، وهو واحد لكل
 المستودعات.
 
 ![فحوص البيئة في الإعدادات](../../screenshots/settings-environment.webp)
@@ -26,7 +26,7 @@ keywords: البيئة environment طبيب تشخيص فحص git إصدار lfs
 | **Git** | git 2.31 أو أحدث موجود في `PATH` | أقدم من 2.31: لا يستطيع حساب [الملف الشخصي](profiles.md) تسجيل الدخول لـ fetch وpush. غير موجود: لا يعمل شيء حتى يُثبّت git |
 | **Git LFS** | `git lfs` مثبت | غير مثبت. لا تحتاجه إلا المستودعات التي تحفظ ملفات في LFS |
 | **الطرفية** | حُمّلت الطرفية الأصلية | تعمل [الطرفية](terminal.md) في الوضع الأساسي: بلا ألوان، وبلا تغيير حجم، وبلا برامج ملء الشاشة |
-| **Credential helper** | لدى git مساعد لكلمات مرور HTTPS — عامًّا أو لمضيفين محددين (ما يضبطه `gh auth setup-git`) | لا مساعد، فيسأل git خارج Gitcito في كل مرة. أو `store` الذي يحفظها نصًا واضحًا. راجع [Credential helper](credentials.md) |
+| **Credential helper** | لدى git مساعد لكلمات مرور HTTPS — عامًّا أو لمضيفين محددين (ما يضبطه `gh auth setup-git`) | لا مساعد، فيسأل git خارج GitHuttBr في كل مرة. أو `store` الذي يحفظها نصًا واضحًا. راجع [Credential helper](credentials.md) |
 | **GitHub CLI** | `gh` مسجّل الدخول بنطاق `workflow` | مسجّل الدخول من دونه: يرفض GitHub أي push يغيّر `.github/workflows` |
 | **مراقبة الملفات** (Linux) | حد inotify لا يقل عن 65,536 | الحد الأدنى ينفد مع بضعة مستودعات كبيرة مفتوحة، فتتوقف المجلدات الجديدة عن تحديث الحالة |
 

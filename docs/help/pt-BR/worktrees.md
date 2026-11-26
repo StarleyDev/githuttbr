@@ -42,7 +42,7 @@ sem stash.
   e os agentes que rodam neles.
 - Uma branch só pode estar em um worktree por vez, então fazer checkout de uma
   branch que outro worktree já tem não funciona — o git recusa com *already used
-  by worktree at …*. O Gitcito leva você até lá: o menu da branch passa a dizer
+  by worktree at …*. O GitHuttBr leva você até lá: o menu da branch passa a dizer
   *Ir para `x` no worktree dela*, e clicar duas vezes na linha abre a aba
   daquele worktree em vez de falhar.
 

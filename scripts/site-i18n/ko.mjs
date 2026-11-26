@@ -148,6 +148,6 @@ export const ko = {
     'GitHuttBr는 아직 젊습니다. 가장 많이 검증된 경로는 <strong>GitHub</strong>입니다. GitHub Enterprise Server, 자체 관리형 GitLab, Bitbucket Data Center는 <strong>베타</strong>로, 모의 서버에서는 테스트했지만 실제 서버에서는 아직입니다. 문제가 생기면 — 글쎄요, <em>제 컴퓨터에서는 잘 됩니다</em>. 이슈와 PR 환영합니다. 💜',
   'download.yours': '내 시스템',
   'download.macHint':
-    '아직 서명되지 않았습니다. 처음 실행할 때 <strong>시스템 설정 → 개인정보 보호 및 보안 → 그래도 열기</strong>를 누르세요. Mac에서는 새 버전을 매번 직접 내려받아야 합니다.',
+    'Developer ID로 서명되고 Apple의 공증을 받았습니다. 다른 앱처럼 바로 열리고 스스로 업데이트됩니다.',
   'download.autoUpdate': '새 릴리스가 나올 때마다 스스로 업데이트됩니다.'
 }

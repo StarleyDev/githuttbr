@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 // Real-shaped output from each analyzer. These formats are the contract between
-// Gitcito and six tools it does not control, so they are pinned here.
+// GitHuttBr and six tools it does not control, so they are pinned here.
 
 describe('problems: analyzer parsers', () => {
   const repo = '/repo'

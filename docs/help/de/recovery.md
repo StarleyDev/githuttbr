@@ -24,9 +24,9 @@ Das ist der „ich habe gerade den falschen Branch zurückgesetzt“-Knopf.
 ## WIP-Schnappschüsse
 
 Nicht committete Arbeit ist das Einzige, was das Reflog nicht retten kann, also
-macht Gitcito Schnappschüsse davon: das **gesamte Arbeitsverzeichnis —
+macht GitHuttBr Schnappschüsse davon: das **gesamte Arbeitsverzeichnis —
 geänderte, gestagte und ungetrackte Dateien** — committet über einen
-Wegwerf-Index und festgepinnt unter `refs/gitcito/wip`. Weder dein echter Index
+Wegwerf-Index und festgepinnt unter `refs/githuttbr/wip`. Weder dein echter Index
 noch deine Stash-Liste werden angefasst.
 
 ![WIP-Schnappschüsse](../../screenshots/snapshots.webp)
@@ -61,7 +61,7 @@ werden behalten.
 ## Geführtes Bisect
 
 Markier Commits als gut und schlecht, sieh zu, wie der Bereich enger wird, und
-lande beim ersten schlechten Commit. Gitcito verfolgt mit, wie viele Schritte
+lande beim ersten schlechten Commit. GitHuttBr verfolgt mit, wie viele Schritte
 noch bleiben, damit du weißt, ob du zwei Fragen von der Antwort entfernt bist
 oder zehn.
 
@@ -80,7 +80,7 @@ deinen Befehl aus und liest dessen Exit-Code:
 | alles andere | Schlecht |
 
 Eine Testsuite spricht diese Sprache bereits, deshalb ist `npm test` meist schon
-die ganze Antwort. Gitcito bietet die Skripte dieses Projekts als Ein-Klick-
+die ganze Antwort. GitHuttBr bietet die Skripte dieses Projekts als Ein-Klick-
 Vorlagen an, streamt die Ausgabe während des Laufs und landet beim ersten
 schlechten Commit, ohne dass du eine einzige Frage beantwortest.
 
@@ -112,14 +112,14 @@ Unable to create '…/refs/remotes/origin/x.lock': File exists.
 
 Das Repository ist nicht beschädigt. Es liegt schlicht eine Datei im Weg.
 
-Gitcito versucht es zuerst ein paar Mal erneut, denn eine Sperre in der Hand
+GitHuttBr versucht es zuerst ein paar Mal erneut, denn eine Sperre in der Hand
 eines *laufenden* git löst sich meist binnen Millisekunden. Wenn nicht, öffnet
 der Fehler einen Dialog statt einer Textwand: jede Sperre, die noch auf der
 Platte liegt, wie alt sie jeweils ist, und eine Schaltfläche, die sie entfernt
 und die gescheiterte Aktion erneut ausführt.
 
 **Das Alter ist das ganze Argument.** Eine Sperre, die jünger als 30 Sekunden
-ist, gehört vermutlich einem git, das noch arbeitet — Gitcito weigert sich, sie
+ist, gehört vermutlich einem git, das noch arbeitet — GitHuttBr weigert sich, sie
 zu löschen, und bietet stattdessen Warten und Wiederholen an. Ältere werden zum
 Entfernen angeboten, die ältesten zuerst, und der Dialog sagt klar, was vorher
 zu prüfen ist: dass gerade kein Editor, kein Terminal und kein anderer

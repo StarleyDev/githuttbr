@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import { extname } from 'path'
 
-// The formats Gitcito's bundled textconv converter understands. Word and Excel
+// The formats GitHuttBr's bundled textconv converter understands. Word and Excel
 // reuse the same libraries the preview pane loads; JSON is native. PDF is
 // deliberately absent — the app previews PDFs with Chromium's viewer and has
 // no text extractor to reuse, so that suggestion still points at pdftotext.

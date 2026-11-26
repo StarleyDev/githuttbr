@@ -3,7 +3,7 @@ title: Per-repository settings
 category: Workspace tools
 order: 94
 summary: Protected branches, the tab image, info, analytics, history and the operation log.
-keywords: repo settings protected branches tab image icon logo picture analytics operation log history info gear config gitcito.json doctor
+keywords: repo settings protected branches tab image icon logo picture analytics operation log history info gear config githuttbr.json doctor
 ---
 
 # Per-repository settings
@@ -16,12 +16,12 @@ repository, not the app.
 | Tab | What it holds |
 |---|---|
 | **General** | Protected branches (a branch multi-select, stored in git config), the tab image, signing |
-| **Config** | The [rules this repository ships](repo-config.md) in `.gitcito.json`, and the doctor that checks them |
+| **Config** | The [rules this repository ships](repo-config.md) in `.githuttbr.json`, and the doctor that checks them |
 | **Info** | Free-form notes and fields about this repository, kept locally |
 | **Vault** | This repository's [vault](vault.md) entries |
 | **Insights** | The [history dashboard](insights.md) |
 | **Analytics** | What you have done in this repository, counted locally |
-| **History** · **Logs** | The operation log: every git command Gitcito ran, with its output |
+| **History** · **Logs** | The operation log: every git command GitHuttBr ran, with its output |
 
 The operation log is the honest one: when something behaves oddly, it shows the
 exact command and the exact error, so a bug report can carry facts rather than
@@ -63,7 +63,7 @@ Limits worth knowing:
   tab shows a warning under the path. Nothing else complains.
 - The image is read once per session. If you replace the file under the same
   name, open this settings tab again to reload it.
-- The setting lives in Gitcito's own settings on this machine, not in the
+- The setting lives in GitHuttBr's own settings on this machine, not in the
   repository, so teammates do not inherit it.
 
 **See also:** [Repository rules](repo-config.md) · [Security & secrets](security.md) ·

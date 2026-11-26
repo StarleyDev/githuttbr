@@ -4,14 +4,14 @@ category: Branch e chirurgia
 order: 46
 summary: Riscrivi i file o il messaggio di un commit storico sul posto — con la cascata in anteprima prima.
 keywords: modifica commit edit riscrivi rewrite storia history amend passato reword correggi refuso typo cascata cascade replay rebase sul posto chirurgia
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # Modifica qualsiasi commit
 
 Il refuso sta in un commit di tre settimane fa. La soluzione classica è un rebase
 interattivo: fermarsi al commit, modificare, continuare, pregare. La soluzione di
-Gitcito è: clic destro sul commit, **Modifica questo commit**, cambia il testo,
+GitHuttBr è: clic destro sul commit, **Modifica questo commit**, cambia il testo,
 fatto. Il pulsante a forma di penna nel pannello dei dettagli del commit apre
 lo stesso editor.
 

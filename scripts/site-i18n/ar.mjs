@@ -151,6 +151,6 @@ export const ar = {
     'GitHuttBr ما زال حديثًا. <strong>GitHub</strong> هو المسار الأكثر اختبارًا. أما GitHub Enterprise Server وGitLab المُدار ذاتيًا وBitbucket Data Center فما زالت <strong>تجريبية</strong> — اختُبرت على خوادم محاكاة، لا على خوادم حقيقية بعد. إن تعطّل شيء: حسنًا، <em>إنه يعمل على جهازي</em>. البلاغات وطلبات الدمج مرحّب بها. 💜',
   'download.yours': 'نظامك',
   'download.macHint':
-    'غير موقّع بعد: في المرة الأولى افتح <strong>إعدادات النظام ← الخصوصية والأمن ← الفتح على أي حال</strong>. على Mac تُنزَّل كل نسخة جديدة يدويًا.',
+    'موقّع بمعرّف Developer ID وموثّق من Apple: يُفتح مثل أي تطبيق آخر ويحدّث نفسه.',
   'download.autoUpdate': 'يحدّث نفسه مع كل إصدار جديد.'
 }

@@ -2,13 +2,13 @@
 title: Security & secrets
 category: Security
 order: 70
-summary: Masking, guards, the keychain — and what Gitcito refuses to do.
+summary: Masking, guards, the keychain — and what GitHuttBr refuses to do.
 keywords: security secrets images in comments tracking pixel ip address third-party images click to load masking keychain safeStorage tokens protected branch large file guard privacy import export settings unreadable backup parts translate paths remap another computer new machine merge profiles replace profiles choose what to export full backup another computer for the team manifest
 ---
 
 # Security & secrets
 
-Gitcito has **no backend**. The only network calls are to your Git host and, if
+GitHuttBr has **no backend**. The only network calls are to your Git host and, if
 you turn it on, your AI provider.
 
 ![Security settings](../screenshots/settings-security.webp)
@@ -83,13 +83,13 @@ text. How the rest of a comment is restricted is in
 An AppImage runs from a folder under `/tmp` (`/tmp/.mount_…`) that exists only
 while the app is open, is renamed every launch, and sits in a directory every
 local user can write to. Up to 4.37.1, the AppImage could write a path inside
-that folder into two places that outlive it: the `gitcito` link in `PATH`
+that folder into two places that outlive it: the `githuttbr` link in `PATH`
 ([CLI](cli.md)) and a repository's `diff.<name>.textconv` setting
 ([attributes](attributes.md)). Once the app quits, another user on the same
 machine could recreate the folder with a program of their own, which your next
-`gitcito` or `git diff` would run.
+`githuttbr` or `git diff` would run.
 
-Gitcito now refuses both under an AppImage, warns about a stale `gitcito` link
+GitHuttBr now refuses both under an AppImage, warns about a stale `githuttbr` link
 at start-up (with a palette command to remove it), and flags a stale converter
 in the Attributes dialog with a **Remove** button. It can only see the
 repository you have open; to find stale converters elsewhere, run
@@ -103,7 +103,7 @@ Tokens and [vault](vault.md) entries are encrypted with your OS keychain
 (Electron `safeStorage`), never with a key in the settings file.
 
 **Nothing touches the keychain until you say so.** Before the system's own
-permission dialog can appear, Gitcito explains what is being stored, what it
+permission dialog can appear, GitHuttBr explains what is being stored, what it
 cannot do (an app only ever reads back the entry it created — your other
 passwords are unreachable), and that saying no is fine: tokens then live in
 memory for the session only, the vault stays closed, and you can turn it on
@@ -112,7 +112,12 @@ later in **Settings → Security → OS keychain**.
 A fresh install makes **zero** keychain calls until something actually needs
 storing.
 
-While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
+**After updating to 4.59 on macOS** the system may ask once more for the item
+*GitHuttBr Safe Storage*: the app's bundle id changed to `com.huttbr.git`, and
+the keychain asks again for an app it does not recognise. **Always Allow** keeps
+the tokens; see [upgrading](upgrading.md).
+
+While it is off, the token field in Integrations says so — *Saved only until you quit GitHuttBr: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
 
 ![The token field in Integrations with the keychain off: saved only until you
 quit, with an Enable button](../screenshots/token-keychain-notice.webp)
@@ -125,7 +130,7 @@ is deleted then; quit first and the old token is back on the next launch. Until
 then the notice stays up for that reason. To delete a stored token for good in
 one step, clear it while the keychain is on.
 
-A blank only clears what Gitcito showed you. With the keychain off from the
+A blank only clears what GitHuttBr showed you. With the keychain off from the
 start, the saved tokens are never decrypted and never shown — the fields are
 empty — so a token you type there and then clear again is the only one
 removed; the saved one underneath it is still there once the keychain is on.
@@ -145,16 +150,16 @@ Settings → Security says so under the keychain status — *No keyring is runni
 
 So that nothing new lands in a store anyone could unscramble, a token you type
 while no keyring runs is kept **only until you quit**. The token field says so —
-*Saved only until you quit Gitcito: no keyring is running…* — with no button to
+*Saved only until you quit GitHuttBr: no keyring is running…* — with no button to
 retry, because retrying cannot help; only a keyring can. Importing a settings file
 with credentials says the same before it imports them. Tokens saved before stay
 readable — you are never locked out of them — and clearing or replacing one still
 removes the old value from disk. Two limits: the general AI key is not moved to its
 shared slot (each profile keeps reading its own), and the Vault still saves to the
 basic store, because it has no session-only mode. Install or unlock a keyring and
-restart Gitcito to store new tokens again.
+restart GitHuttBr to store new tokens again.
 
-Gitcito does not take the system's word for which store it got. It counts the
+GitHuttBr does not take the system's word for which store it got. It counts the
 store as basic when the system names it as such, when it cannot name it at all,
 and when what it encrypts comes back marked with the fixed password — whatever
 the system said. So a keyring that silently falls back still keeps new tokens
@@ -164,21 +169,21 @@ A keyring that stops answering is not waited on forever. On Linux, once the
 keyring has answered once this session, a question it leaves unanswered for 10
 seconds counts as *no keyring*: a token you save is kept until you quit, and the
 Vault stays closed. The first question of a session — the one that may bring up
-the keyring's own password prompt — and the one right after Gitcito's
+the keyring's own password prompt — and the one right after GitHuttBr's
 explanation get two minutes, so reading a dialog is never cut short. For half a
 minute after such a timeout the answer stays *no keyring* without asking again;
-then Gitcito asks afresh. macOS and Windows answer locally and are never timed out.
+then GitHuttBr asks afresh. macOS and Windows answer locally and are never timed out.
 
 The limit covers that one question — *is a keyring there?* A keyring that
 answers it and then hangs while encrypting or decrypting is still waited on:
-saving settings, and the Vault, stay busy until it answers or Gitcito restarts.
+saving settings, and the Vault, stay busy until it answers or GitHuttBr restarts.
 
 ### When the saved tokens cannot be read
 
 If you dismiss the system's keychain prompt, the keyring is locked, or the token
-store was written by another copy of Gitcito (a development build, a re-signed
-one), Gitcito **cannot read your saved tokens — and leaves them untouched**.
-Settings → Security says *Gitcito could not read your saved tokens*, and a token
+store was written by another copy of GitHuttBr (a development build, a re-signed
+one), GitHuttBr **cannot read your saved tokens — and leaves them untouched**.
+Settings → Security says *GitHuttBr could not read your saved tokens*, and a token
 you type meanwhile is kept for the session only (the field says so too). It is
 never written over the store it could not read: that would replace every saved
 token with the one you just typed.
@@ -186,7 +191,7 @@ token with the one you just typed.
 | Button | What it does |
 |--------|--------------|
 | **Retry** | Reads the store again — the system may ask for the keychain now. Once it can be read, the tokens typed meanwhile join it. |
-| **Start a new token store** | Asks first. Gitcito stops waiting for the old store and starts a new one with only this session's tokens. The old file stays beside it as a backup for 30 days, then it is deleted. For a store that is gone for good, not a prompt you dismissed. |
+| **Start a new token store** | Asks first. GitHuttBr stops waiting for the old store and starts a new one with only this session's tokens. The old file stays beside it as a backup for 30 days, then it is deleted. For a store that is gone for good, not a prompt you dismissed. |
 
 ## Importing settings
 
@@ -305,7 +310,7 @@ keeps yours — but only for the same instance, so a token is never sent to a
 different Forgejo, GitLab issuer or Azure organization; and the logins borrowed
 from this machine's credential helper stay this machine's.
 
-**The defaults are a guess from your disk.** Before the dialog shows, Gitcito
+**The defaults are a guess from your disk.** Before the dialog shows, GitHuttBr
 checks whether the repository folders in the file exist here. If none do, the
 file comes from another computer: **Repositories** and **Programs** start
 unticked, each with the reason — the programs' paths are listed, so you can see
@@ -323,7 +328,7 @@ The other parts can.
 missing and a **Translate paths** box opens. On the left, the folder the file's
 repositories have in common (`/home/you/code`); on the right, where that folder
 is on this computer, pre-filled from your home folder (`/Users/you/code`). Both
-are editable — the guess can be wrong, and when Gitcito finds no common folder
+are editable — the guess can be wrong, and when GitHuttBr finds no common folder
 it leaves both empty for you to type. A bar counts, as you type, how many
 repositories now have a folder here, with a few of them listed — green found,
 red still missing. The swap carries the repository's nickname, tab picture and
@@ -376,7 +381,7 @@ will be deleted; **Cancel** there leaves the dialog as it was.
 
 **Replace all needs the keychain.** With the keychain off or unavailable, the
 old tokens would stay in the encrypted store and come back on the next launch,
-so Gitcito refuses instead: it says so, and nothing is imported. The same goes
+so GitHuttBr refuses instead: it says so, and nothing is imported. The same goes
 while the saved tokens cannot be read (see above): they would come back the
 moment they could. **Add to mine** still works, keeping the file's tokens for
 the session.
@@ -423,18 +428,18 @@ The settings file and the encrypted token store are written whole: to a new
 owner-only file beside them, then swapped in, so a crash or two saves at once
 never leave half a file. If the settings file is symlinked elsewhere (a
 dotfiles repository), the write goes to the link's target and the link stays.
-Gitcito never replaces the link. One pointing at a file that is not there yet is
+GitHuttBr never replaces the link. One pointing at a file that is not there yet is
 written through, creating that file — as long as its folder exists. When the
 folder is gone too, the save fails instead, with one message saying so: the
 link and wherever it points are left untouched, and changes made meanwhile last
-only until Gitcito closes. Restore the folder, or point the link somewhere that
+only until GitHuttBr closes. Restore the folder, or point the link somewhere that
 exists, and the next save goes through.
 
 Plaintext tokens an older version left in the settings file are never dropped
-by a save: they stay in the file until Gitcito loads them into the encrypted
+by a save: they stay in the file until GitHuttBr loads them into the encrypted
 store (opening Settings does), unless you clear one yourself.
 
-Only two things write them: a save of your settings, and Gitcito loading them
+Only two things write them: a save of your settings, and GitHuttBr loading them
 (at start-up, or when Settings opens) — which is when an old plaintext token is
 moved into the encrypted store, or a server address with a password in it is
 cleaned. A lookup nobody asked for — a fetch resolving its token, an AI call
@@ -449,17 +454,17 @@ need a stored token wait. Nothing is moved by a lookup, so a token you clear in
 the meantime stays cleared.
 
 One that exists but cannot be parsed (a hand edit gone wrong, a damaged disk)
-is **never** replaced by the defaults: Gitcito says the file is damaged and
+is **never** replaced by the defaults: GitHuttBr says the file is damaged and
 starts no further — no shortcut or menu command can save over it from that
 screen.
 
 ![The boot screen for a damaged settings file, with Try again and Move the damaged file aside and start fresh](../screenshots/settings-damaged.webp)
 
-You can fix `gitcito-settings.json` in its data folder and press
+You can fix `githuttbr-settings.json` in its data folder and press
 **Try again**, or press **Move the damaged file aside and start fresh**: the file
-is renamed to `gitcito-settings.json.corrupt-<date>` (never deleted, so you
+is renamed to `githuttbr-settings.json.corrupt-<date>` (never deleted, so you
 can still recover from it), a copy of the encrypted token store is kept beside
-it, and Gitcito starts as on a first run, with a note saying where the file
+it, and GitHuttBr starts as on a first run, with a note saying where the file
 went. For a symlinked settings file it is the link's target that is renamed, so
 the damaged copy stays in your dotfiles, beside the fresh settings file the
 first save then writes through the link. The copy is made first: if it cannot
@@ -468,13 +473,13 @@ to check, since starting fresh without the copy would let the first token you
 save delete the old profiles' tokens. Fix what keeps the folder from being
 written to (permissions, a full disk) and press **Try again**.
 
-If the file goes bad while Gitcito is running (edited by hand underneath it),
-saves stop and Gitcito says so once: settings cannot be saved until it is
+If the file goes bad while GitHuttBr is running (edited by hand underneath it),
+saves stop and GitHuttBr says so once: settings cannot be saved until it is
 restarted, and changes made in the meantime are lost.
 
 A file that is there but cannot be *read* for a moment — another program, such
 as an antivirus scan, holding it — is retried for about two seconds. If it still
-fails, or loading fails for any other reason, Gitcito says it could not start,
+fails, or loading fails for any other reason, GitHuttBr says it could not start,
 that the file has not been changed, and offers **Try again**; it does not call
 the file damaged.
 
@@ -504,7 +509,7 @@ list), and not the **environment** of the git command — which every hook, filt
 and LFS process git starts inherits, along with every npm package a husky or
 lefthook script runs.
 
-Instead, for each operation Gitcito opens a private endpoint of its own — a
+Instead, for each operation GitHuttBr opens a private endpoint of its own — a
 socket in a folder only your user can enter (a named pipe with a random name on
 Windows) — and registers a credential helper for that one server. When git asks
 for a login, the helper connects, proves it belongs to this operation with a
@@ -543,7 +548,7 @@ What it still cannot do:
   app started from a git alias, or by another git — is removed for the
   operation, so it is never offered the profile's token to store, nor asked as
   nobody. Every other inherited `-c` setting is kept.
-- **A server address must be written the way git reads it.** Gitcito names the
+- **A server address must be written the way git reads it.** GitHuttBr names the
   server by the standard URL rules, git by its own: an internationalised name
   (`bücher.example`), a numeric shorthand (`127.1`, `0x7f.0.0.1`), a compressed
   or mapped IPv6 address, or an encoded character in the host are a different
@@ -557,7 +562,7 @@ What it still cannot do:
 - **Do not run hooks you do not trust** with a profile signed in all the same. A
   repository you just cloned can ship hooks through tools such as husky, which
   install them on `npm install`; git runs whatever sits in `.git/hooks`, from
-  Gitcito or from a terminal alike, and a hook can do far worse than read a
+  GitHuttBr or from a terminal alike, and a hook can do far worse than read a
   token.
 - **Scope the token down.** A token that can only write to the repositories you
   work on is worth much less to anything that gets hold of it.
@@ -581,7 +586,7 @@ hosts such as `github.com` stay, and so do file names and git's own message.
 
 **The limit:** a server name standing alone in a sentence is recognised by its
 shape — dotted, lower case. A one-word host (`gitserver`) is caught only in the
-messages Gitcito itself writes, and a server under a top-level domain spelled
+messages GitHuttBr itself writes, and a server under a top-level domain spelled
 like a file extension (`.sh`, `.md`) is kept as a file name. Read the issue
 before posting it all the same: the cleaning recognises known shapes, not
 everything private.
@@ -595,7 +600,7 @@ version — has that part removed when it is read, imported or saved. The commit
 avatar cache stores no e-mail addresses, only hashes salted per install.
 
 Each of these files is written whole: to a new file beside it, then swapped in,
-so a crash or two saves at once never leave half a file — which Gitcito would
+so a crash or two saves at once never leave half a file — which GitHuttBr would
 otherwise have to treat as unreadable. A backup of the token store is deleted
 early only when every token in it is also in the current store; any other
 backup is kept for 30 days.
@@ -608,8 +613,8 @@ the two Linux packages deal with that differently:
 
 | Package | What happens |
 |---------|--------------|
-| `.deb` | Installs `/etc/apparmor.d/gitcito`, a profile for `/opt/GitHuttBr/gitcito` that allows user namespaces. The app runs sandboxed. |
-| AppImage | Has no profile. Its launcher tries `unshare -Ur true`, and when that fails it starts the app with `--no-sandbox` — on Ubuntu 24.04+, that is every launch. Gitcito prints a warning to its console output when this happens. |
+| `.deb` | Installs `/etc/apparmor.d/githuttbr`, a profile for `/opt/GitHuttBr/githuttbr` that allows user namespaces. The app runs sandboxed. |
+| AppImage | Has no profile. Its launcher tries `unshare -Ur true`, and when that fails it starts the app with `--no-sandbox` — on Ubuntu 24.04+, that is every launch. GitHuttBr prints a warning to its console output when this happens. |
 
 To run the AppImage sandboxed, install the `.deb` instead, or give the
 AppImage its own AppArmor profile that allows `userns` (or, machine-wide,
@@ -619,9 +624,9 @@ restriction off for everything).
 **The limit of the `.deb` profile.** It is `flags=(unconfined)` with `userns`
 allowed, and it attaches to the executable path. The same executable also runs
 as plain Node when started with `ELECTRON_RUN_AS_NODE=1` — that is how the
-`gitcito` command, the bundled diff converter and Gitcito's credential helper
+`githuttbr` command, the bundled diff converter and GitHuttBr's credential helper
 work, so the switch cannot be turned off without breaking them. Together that
-means any local program can use Gitcito's executable as a Node interpreter that
+means any local program can use GitHuttBr's executable as a Node interpreter that
 is allowed to create user namespaces — the same kind of gap as the known
 workarounds for Ubuntu's restriction through other profiled programs. It does
 not give anyone more than their own account's rights; it weakens a kernel
@@ -629,6 +634,6 @@ hardening layer Ubuntu adds on top. AppArmor cannot tell the two modes of one
 executable apart, so a narrower profile is not possible while the CLI shares
 it; a separate helper binary for the CLI is on the roadmap.
 Administrators who would rather not have this can add a deny rule in
-`/etc/apparmor.d/local/gitcito`, at the cost of the sandbox.
+`/etc/apparmor.d/local/githuttbr`, at the cost of the sandbox.
 
 **See also:** [Vault](vault.md) · [Secure share](secure-share.md)

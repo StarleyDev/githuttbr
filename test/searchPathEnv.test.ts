@@ -27,7 +27,7 @@ describe('sanitizeDirList', () => {
   })
 
   it('leaves absolute entries and their order untouched', () => {
-    const value = '/tmp/.mount_Gitcito/usr/lib:/usr/local/lib:/opt/x y/lib'
+    const value = '/tmp/.mount_GitHuttBr/usr/lib:/usr/local/lib:/opt/x y/lib'
     expect(sanitizeDirList(value, true)).toBe(value)
   })
 })
@@ -47,14 +47,14 @@ describe('sanitizePreload', () => {
 describe('sanitizeSearchPathEnv', () => {
   it('repairs the AppImage launcher shape: an unset LD_LIBRARY_PATH leaves a trailing empty entry', () => {
     const env: NodeJS.ProcessEnv = {
-      APPIMAGE: '/home/u/Gitcito.AppImage',
+      APPIMAGE: '/home/u/GitHuttBr.AppImage',
       LD_LIBRARY_PATH: '/tmp/.mount_Gitci/usr/lib:',
       PATH: '/tmp/.mount_Gitci:/usr/bin::bin',
       XDG_DATA_DIRS: '/tmp/.mount_Gitci/usr/share/:/usr/share:'
     }
     expect(sanitizeSearchPathEnv(env, linux).sort()).toEqual(['LD_LIBRARY_PATH', 'PATH', 'XDG_DATA_DIRS'])
     expect(env).toEqual({
-      APPIMAGE: '/home/u/Gitcito.AppImage',
+      APPIMAGE: '/home/u/GitHuttBr.AppImage',
       LD_LIBRARY_PATH: '/tmp/.mount_Gitci/usr/lib',
       PATH: '/tmp/.mount_Gitci:/usr/bin',
       XDG_DATA_DIRS: '/tmp/.mount_Gitci/usr/share/:/usr/share'
@@ -107,7 +107,7 @@ describe.skipIf(process.platform === 'win32')('hardenEnv at startup', () => {
   })
 
   it('leaves git, run in a repository, with no cwd-relative library path', async () => {
-    process.env['APPIMAGE'] = '/home/u/Gitcito.AppImage'
+    process.env['APPIMAGE'] = '/home/u/GitHuttBr.AppImage'
     process.env['LD_LIBRARY_PATH'] = '/tmp/.mount_Gitci/usr/lib:'
     vi.resetModules()
     await import('../src/main/hardenEnv')

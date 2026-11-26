@@ -14,7 +14,7 @@ back used to mean finding the old installer on the Releases page, reinstalling
 by hand, and hoping the older build would read the settings the newer one wrote.
 
 **Settings → About → Previous versions** does it from inside the app: pick a
-version, confirm, and Gitcito copies your settings, downloads that version,
+version, confirm, and GitHuttBr copies your settings, downloads that version,
 restarts in it, and stops offering the version you left. **Cancel** stops it
 while it is still downloading; nothing is installed.
 
@@ -71,12 +71,12 @@ already filled in with both versions, so the fix can start from what broke.
 Close the band when you have read it.
 
 This works even when you went back without the app — a package manager, an old
-installer: at start-up Gitcito compares the version that ran last with the one
+installer: at start-up GitHuttBr compares the version that ran last with the one
 running now, and a step back is treated the same way.
 
 ## When the fix is out
 
-Once a newer version is offered and installed, Gitcito checks whether your
+Once a newer version is offered and installed, GitHuttBr checks whether your
 settings changed while you were on the older one. If they did, it asks once:
 
 | Choice | Result |
@@ -110,7 +110,7 @@ back because they are filed under the profile, not in the settings. Where a
 token still sits in the settings file itself (the keychain declined, Linux
 without a keyring), a restore writes it back onto its profile untouched.
 
-When Gitcito asks whether to restore after an update, it compares the copy
+When GitHuttBr asks whether to restore after an update, it compares the copy
 with the settings now, ignoring tokens, key order, and fields only the current
 settings have (an older version fills a profile with its own defaults; that is
 not your change). Something removed — a shortcut, an alias, a favourite — does
@@ -160,7 +160,7 @@ a name (`auth: "oauth"`) is dropped all the same — the rule errs on the safe s
   back to life when you update. A value an older version does not recognise in
   a setting it *does* know (a new theme, a new column) falls back to its default
   there, as it always has — and after updating, that reset counts as a change
-  when Gitcito asks whether to restore the copy.
+  when GitHuttBr asks whether to restore the copy.
 - **Three versions, no more.** An older version is installed by hand from the
   Releases page, without the settings copy, the skipped version or the banner.
 - **The list needs GitHub.** It is read from the public releases, without a

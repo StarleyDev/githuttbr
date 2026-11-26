@@ -86,13 +86,13 @@ istotne, bo menedżery wersji i `brew shellenv` zwykle wpisują się właśnie t
 narzędzie takie jak `fvm`, `nvm` czy `pyenv`, które działa w twoim terminalu,
 zadziała też tutaj.
 
-Gitcito przy starcie pyta też twoją powłokę logowania o prawdziwy `PATH` i
+GitHuttBr przy starcie pyta też twoją powłokę logowania o prawdziwy `PATH` i
 scala go we wszystkim, co uruchamia, bo aplikacja graficzna otwarta z Docka nie
 dziedziczy prawie niczego. Jeśli mimo to polecenia nie widać, sprawdź, czy jest
 w `PATH` powłoki logowania, a nie tylko interaktywnej.
 
 Wszystko, co tutaj uruchomisz, jest niewidoczne dla własnego blokowania
-Gitcito, więc długi `git rebase` wpisany ręcznie i kliknięcie w interfejsie
+GitHuttBr, więc długi `git rebase` wpisany ręcznie i kliknięcie w interfejsie
 wciąż mogą się zderzyć — aplikacja odświeża się z dysku, gdy terminal coś
 zmieni.
 
@@ -114,7 +114,7 @@ zastosować nowy. Glify promptu wymagają Nerd Font w rodzinie czcionki terminal
 
 O szybkości: Oh My Posh uruchamia swój program raz na każdy prompt — w Windows
 około 100–200 ms, więcej przy motywach z segmentem git w dużym repozytorium — co
-odczuwa się jako krótką pauzę przed każdym promptem, a nie spowolnienie Gitcito.
+odczuwa się jako krótką pauzę przed każdym promptem, a nie spowolnienie GitHuttBr.
 Najszybsze są motywy bez segmentu git. Liczy się też styl podpowiedzi
 PowerShella: `-PredictionViewStyle InlineView` przerysowuje mały obszar przy
 każdym klawiszu, a `ListView` cały blok.

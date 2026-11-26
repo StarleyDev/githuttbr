@@ -146,6 +146,7 @@ export const zhCN = {
   'honest.body':
     'GitHuttBr 还很年轻。<strong>GitHub</strong> 是经过最多实战检验的路径。GitHub Enterprise Server、自管 GitLab 和 Bitbucket Data Center 仍处于<strong>测试版</strong>——已在模拟服务器上测试，尚未在真实服务器上测试。如果出了问题：嗯，<em>在我的机器上是好的</em>。欢迎提 Issue 和 PR。💜',
   'download.yours': '你的系统',
-  'download.macHint': '尚未签名：首次打开时，请前往<strong>系统设置 → 隐私与安全性 → 仍要打开</strong>。在 Mac 上，每个新版本都需要手动下载。',
+  'download.macHint':
+    '已使用 Developer ID 签名并经 Apple 公证：像其他应用一样直接打开，并会自动更新。',
   'download.autoUpdate': '每次发布新版本都会自动更新。'
 }

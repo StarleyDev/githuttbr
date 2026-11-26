@@ -4,12 +4,12 @@ category: Buradan başlayın
 order: 1
 summary: Bir depo açın, grafiği okuyun, ilk commit'inizi alın.
 keywords: giriş ilk adımlar açma klonlama sekmeler grafik commit intro open clone tabs graph
-source: 173f891f9f1c5c53ea40cf344baf821e3188344d
+source: 8effe244fab76b263f38e31ac0912d8042c428c6
 ---
 
 # Başlarken
 
-Gitcito bir klasörü açar ve size geçmişini gösterir. Siz istemedikçe deponuza
+GitHuttBr bir klasörü açar ve size geçmişini gösterir. Siz istemedikçe deponuza
 hiçbir şey yazılmaz.
 
 ![Henüz hiç commit'i olmayan, yeni açılmış bir depo](../../screenshots/empty-repo.webp)
@@ -26,7 +26,7 @@ hiçbir şey yazılmaz.
   belirtilir, böylece diğerleri yine de açılır. macOS seçicisi açık depoları
   önceden soluklaştıramaz: Electron panelin klasör başına kancasını sunmaz, bu
   yüzden denetim Aç'a tıkladıktan sonra yapılır.
-- **Taranan depolar**, üç düğmenin altında, Gitcito'ya taramasını söylediğiniz
+- **Taranan depolar**, üç düğmenin altında, GitHuttBr'ya taramasını söylediğiniz
   klasörlerdeki her depoyu listeler — birkaçını işaretleyip hepsini birden açın
   ya da birine çift tıklayın. Bu klasörleri eklediğiniz ya da kaldırdığınız yer
   de burasıdır. Bkz. [Depolar](repositories.md#taranan-depolar).
@@ -36,9 +36,9 @@ hiçbir şey yazılmaz.
 - Bir URL'den veya doğrudan barındırıcınızdan **klonlayın** — devasa bir depoyu
   hızlıca klonlamayı sağlayan seçenekler için [klonlama](cloning.md) sayfasına
   bakın.
-- Terminalden `gitcito .` komutu, çalışan uygulamada geçerli klasörü açar —
+- Terminalden `githuttbr .` komutu, çalışan uygulamada geçerli klasörü açar —
   bkz. [komut satırı](cli.md).
-- Henüz Git deposu olmayan tek bir klasör de açılır; Gitcito onu başlatmayı
+- Henüz Git deposu olmayan tek bir klasör de açılır; GitHuttBr onu başlatmayı
   önerir.
 
 ## Üç panel
@@ -72,5 +72,5 @@ kullanıcıların bulabildiği hiçbir şey yok.
    [tek tek satırları](staging.md).
 3. Bir mesaj yazıp **Commit**'e basın.
 
-Gitcito'daki diğer her şey isteğe bağlıdır.
+GitHuttBr'daki diğer her şey isteğe bağlıdır.
 

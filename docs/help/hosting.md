@@ -707,7 +707,7 @@ desktop notification — that is decided by the reason.
 ## Tokens
 
 Per-profile tokens for multiple accounts or orgs, stored with your OS keychain.
-Gitcito can also borrow whatever your **git credential helper** already holds,
+GitHuttBr can also borrow whatever your **git credential helper** already holds,
 so an org you have already authenticated for often needs no setup at all. See
 [Security & secrets](security.md).
 

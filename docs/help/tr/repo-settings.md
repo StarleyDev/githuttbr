@@ -16,12 +16,12 @@ ayarları açar.
 | Sekme | Neler var |
 |---|---|
 | **Genel** | Korumalı dallar (git config'te saklanan çoklu dal seçimi), imzalama, sekme görseli |
-| **Config** | Bu deponun `.gitcito.json` içinde taşıdığı [kurallar](repo-config.md) ve onları denetleyen doctor |
+| **Config** | Bu deponun `.githuttbr.json` içinde taşıdığı [kurallar](repo-config.md) ve onları denetleyen doctor |
 | **Bilgi** | Bu depo hakkında serbest biçimli notlar ve alanlar, yerelde tutulur |
 | **Kasa** | Bu deponun [kasa](vault.md) girdileri |
 | **İçgörüler** | [Geçmiş panosu](insights.md) |
 | **Analitik** | Bu depoda ne yaptığınız, yerelde sayılmış hâliyle |
-| **Geçmiş** · **Günlükler** | İşlem günlüğü: Gitcito'nun çalıştırdığı her git komutu, çıktısıyla |
+| **Geçmiş** · **Günlükler** | İşlem günlüğü: GitHuttBr'nun çalıştırdığı her git komutu, çıktısıyla |
 
 Dürüst olanı işlem günlüğüdür: bir şey tuhaf davrandığında tam komutu ve tam
 hatayı gösterir, böylece bir hata raporu sıfat yerine olgu taşıyabilir.
@@ -63,7 +63,7 @@ Bilinmesi gereken sınırlar:
   uyarı gösterir. Başka hiçbir şey şikâyet etmez.
 - Görsel oturum başına bir kez okunur. Dosyayı aynı adla değiştirirseniz,
   yeniden yüklemek için bu ayarlar sekmesini tekrar açın.
-- Ayar, bu makinedeki Gitcito ayarlarında durur, depoda değil; bu yüzden ekip
+- Ayar, bu makinedeki GitHuttBr ayarlarında durur, depoda değil; bu yüzden ekip
   arkadaşlarınıza geçmez.
 
 **Ayrıca bakınız:** [Güvenlik ve sırlar](security.md) · [İçgörüler](insights.md)

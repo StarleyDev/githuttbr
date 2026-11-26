@@ -8,7 +8,7 @@ keywords: 无障碍 辅助功能 accessibility a11y 屏幕阅读器 VoiceOver NV
 
 # 无障碍
 
-Gitcito 的目标是不用鼠标也能操作，屏幕阅读器也能读懂。这一页讲清楚这具体
+GitHuttBr 的目标是不用鼠标也能操作，屏幕阅读器也能读懂。这一页讲清楚这具体
 意味着什么——以及边界在哪里。
 
 ## 键盘
@@ -45,7 +45,7 @@ Gitcito 的目标是不用鼠标也能操作，屏幕阅读器也能读懂。这
   完成；每个拖放动作都有菜单或按钮等价物。
 - 这一页背后的审查是在 macOS 上用 VoiceOver 做的。Windows 上的 NVDA/JAWS
   应该表现一致，但尚未实测——欢迎以
-  [issues](https://github.com/MyAppDesk/gitcito/issues) 的形式反馈。
+  [issues](https://github.com/StarleyDev/githuttbr/issues) 的形式反馈。
 
 ## 相关设置
 

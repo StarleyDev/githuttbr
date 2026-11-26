@@ -2,13 +2,13 @@
 title: Opensourcelicenties
 category: Naar eigen smaak
 order: 104
-summary: Lees de licentie van elk pakket van derden dat deze build van Gitcito meelevert.
+summary: Lees de licentie van elk pakket van derden dat deze build van GitHuttBr meelevert.
 keywords: licenties licenses naamsvermelding kennisgevingen open source MIT Apache BSD derden afhankelijkheden credits over
 ---
 
 # Opensourcelicenties
 
-Gitcito is gebouwd op ruim negentig opensourcepakketten, en bijna allemaal vragen
+GitHuttBr is gebouwd op ruim negentig opensourcepakketten, en bijna allemaal vragen
 ze hetzelfde terug: dat hun kennisgeving met het programma meereist. MIT, BSD en
 Apache zeggen dat in hun eigen tekst. Deze pagina is waar die kennisgeving staat,
 zodat de app de verplichting nakomt en niet een bestand dat iemand moet
@@ -48,12 +48,12 @@ Twee grenzen om te kennen:
   in hun manifest en verder niets. Die rijen zeggen dat, in plaats van een tekst
   te verzinnen — een licentie die je niet kunt lezen, is er geen waar je op kunt
   vertrouwen.
-- **De aanduiding is wat het pakket beweert.** Gitcito toont haar; het controleert
+- **De aanduiding is wat het pakket beweert.** GitHuttBr toont haar; het controleert
   haar niet. Klopt het manifest van een pakket niet, dan klopt deze pagina ook
   niet.
 
-De eigen licentie van Gitcito is Apache 2.0, en het label rechtsboven opent haar op
-GitHub. De code die van het oorspronkelijke Gitcito is overgenomen, kwam onder de
+De eigen licentie van GitHuttBr is Apache 2.0, en het label rechtsboven opent haar op
+GitHub. De code die van het oorspronkelijke GitHuttBr is overgenomen, kwam onder de
 MIT-licentie, en de vermelding daarvan reist met de app mee in `NOTICE`, zoals de
 MIT-licentie vereist.
 

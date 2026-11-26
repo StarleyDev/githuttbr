@@ -29,14 +29,14 @@ remoção. **Abrir repositório…** no rodapé abre o launcher.
 
 | Ação | Efeito |
 |---|---|
-| **Criar apelido…** / **Alterar apelido…** | Só um nome de exibição. O Gitcito nunca renomeia nem move a pasta no disco. O mesmo apelido acompanha o repositório em abas, grupos e workspaces. |
+| **Criar apelido…** / **Alterar apelido…** | Só um nome de exibição. O GitHuttBr nunca renomeia nem move a pasta no disco. O mesmo apelido acompanha o repositório em abas, grupos e workspaces. |
 | **Remover apelido** | Aparece quando existe um apelido. Volta ao nome da pasta. |
 | **Mostrar worktrees** | Foca este repositório e abre a seção de worktrees da barra lateral. |
 | **Novo worktree…** | A mesma janela de criar worktree usada a partir de uma branch. Desabilitado enquanto o caminho não existe ou há um merge/rebase/cherry-pick/revert em andamento. |
 | **Copiar nome do repo** | Copia o nome canônico da pasta, não o apelido. |
 | **Copiar caminho do repo** | Copia o caminho absoluto. |
 | **Ver no GitHub** | O origin, se for github.com; senão, o primeiro remote do GitHub que der para interpretar. Desabilitado quando não dá para descobrir nenhum. |
-| **Abrir no terminal** | Abre o terminal do Gitcito com este repositório como pasta de trabalho. |
+| **Abrir no terminal** | Abre o terminal do GitHuttBr com este repositório como pasta de trabalho. |
 | **Revelar no Finder / Explorer** | Destaca a pasta do repositório no gerenciador de arquivos do sistema. |
 | **Abrir no editor externo** | O editor configurado em Configurações. Visível, mas desabilitado até um ser definido. |
 | **Remover…** | Tira o chip do grupo, ou a linha da lista. Usa o mesmo aviso de trabalho não commitado do **×** do chip. Nunca apaga arquivos do disco. |

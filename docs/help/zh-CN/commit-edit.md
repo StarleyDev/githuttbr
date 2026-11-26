@@ -4,13 +4,13 @@ category: 分支与手术
 order: 46
 summary: 就地改写历史提交的文件或提交信息 — 先预览级联效果。
 keywords: edit commit 编辑提交 rewrite history 改写历史 amend 修补 past 过去 reword 改写信息 fix typo 修正错别字 cascade 级联 replay 重放 rebase 变基 in place 就地 surgery 手术
-source: a4939d2924a07f92eec156b1ed9631c46ea58850
+source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 ---
 
 # 编辑任意提交
 
 错别字在三周前的一个提交里。常规的修法是交互式变基：停在那个提交上，编辑，继续，
-然后祈祷。Gitcito 的修法是：右键点击提交，**编辑此提交**，改好文字，完成。提交
+然后祈祷。GitHuttBr 的修法是：右键点击提交，**编辑此提交**，改好文字，完成。提交
 详情面板里的钢笔按钮打开的也是同一个编辑器。
 
 ![正在编辑一个历史提交](../../screenshots/commit-edit.webp)

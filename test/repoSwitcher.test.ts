@@ -11,7 +11,7 @@ const repoTab = (id: string, path: string): TabState => ({
 })
 
 const tabs: TabState[] = [
-  repoTab('a', 'gitcito'),
+  repoTab('a', 'githuttbr'),
   repoTab('b', 'indicators'),
   {
     id: 'g',
@@ -30,8 +30,8 @@ const id = (_: string, name: string): string => name
 
 describe('repository switcher', () => {
   it('lists recently used first, then tab order, with the current one last', () => {
-    const es = switcherEntries(tabs, 'b', ['/r/indicators', '/r/dotfiles', '/r/gitcito'], id)
-    expect(names(es)).toEqual(['dotfiles', 'gitcito', 'api', 'auth', 'indicators'])
+    const es = switcherEntries(tabs, 'b', ['/r/indicators', '/r/dotfiles', '/r/githuttbr'], id)
+    expect(names(es)).toEqual(['dotfiles', 'githuttbr', 'api', 'auth', 'indicators'])
     expect(es.at(-1)?.current).toBe(true)
   })
 

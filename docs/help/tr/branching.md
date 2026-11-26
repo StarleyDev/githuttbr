@@ -57,7 +57,7 @@ Araç çubuğundaki dal açılır menüsü yerel ve uzak dalları listeler. Bu
 menüdeki herhangi bir dala sağ tıklayarak yerel bir dalı yeniden
 adlandırabilir, adını kopyalayabilir, yeni bir worktree içinde açabilir,
 etkin dala birleştirebilir veya silebilirsiniz. Uzak dallarda yeniden
-adlandırma yoktur; onay sonrasında uzak depodan silinirler. Gitcito, seçilen
+adlandırma yoktur; onay sonrasında uzak depodan silinirler. GitHuttBr, seçilen
 referans zaten etkin dalın içindeyse birleştirmeyi gizler ve o dal zaten
 çekilmişse worktree oluşturmayı devre dışı bırakır.
 
@@ -87,7 +87,7 @@ tercih ederseniz görev olarak `AB#1234 başlık` verilir.
 dönüşür: Azure organizasyonunun bilindiği her yerde `AB#1234`, bir Azure deposunda
 ise yalın `#1234` da; çünkü Azure issue’ları değil iş öğelerini numaralandırır.
 Azure Boards’a bağlı bir GitHub deposunda organizasyon bilinmez; deponun
-[`.gitcito.json`](repo-config.md) dosyasındaki bir `links.tickets` girdisi bunu
+[`.githuttbr.json`](repo-config.md) dosyasındaki bir `links.tickets` girdisi bunu
 karşılar — desen `AB#(\d+)`, URL `https://dev.azure.com/<org>/_workitems/edit/$1`.
 
 ## Bir dalı yeniden adlandırmak
@@ -113,7 +113,7 @@ yönlenmesi gerekir. Graf rozetinde bu seçenek yalnızca dal tam olarak bir uza
 izliyorsa görünür; birden fazlaysa upstream belirsiz kalmasın diye dalı kenar
 çubuğundan seç.
 
-**Sınırlar:** Gitcito eski ada başvuran hiçbir şeyi yeniden yazmaz — açık pull
+**Sınırlar:** GitHuttBr eski ada başvuran hiçbir şeyi yeniden yazmaz — açık pull
 request'ler hâlâ açıldıkları dalı gösterir ve dal desenine göre eşleşen CI
 kuralları eşleşmeyi bırakır. Başka bir [worktree](worktrees.md) içinde checkout
 edilmiş bir dalı yeniden adlandırmak başarısız olur, git de bunu söyler.
@@ -134,7 +134,7 @@ aşağıdaki normal yerlerinde de durmaya devam eder.
 ## Uzak bir dalı checkout etmek
 
 Uzak bir dala çift tıklayarak onu izleyen yerel dalı oluşturun. Aynı adda bir
-yerel dal zaten varsa ve **ayrışmışsa**, Gitcito bunu nasıl uzlaştıracağınızı
+yerel dal zaten varsa ve **ayrışmışsa**, GitHuttBr bunu nasıl uzlaştıracağınızı
 sorar — rebase, merge ya da reset — ve önce dalı yedeklemeyi önerir.
 
 ![Ayrışmış dal sorusu: rebase, merge veya reset, yedekleme seçeneğiyle](../../screenshots/diverged-checkout.webp)

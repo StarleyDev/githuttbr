@@ -10,7 +10,7 @@ keywords: avatar avatars gravatar blobatar auteur foto afbeelding identicon gezi
 
 Een commitlijst is een muur van namen, en namen lees je langzaam. Een plaatje
 ernaast maakt van "wie heeft dit geschreven" iets wat je met één blik antwoordt.
-Gitcito geeft elke auteur die het toont er een: in de auteurskolom van de graaf, in
+GitHuttBr geeft elke auteur die het toont er een: in de auteurskolom van de graaf, in
 de commitdetails naast de auteur en elke co-auteur, in de co-auteurkiezer terwijl je
 schrijft, in de profielwisselaar en naast elk profiel in Instellingen.
 
@@ -39,7 +39,7 @@ verkeerd ingestelde `user.email` op. Herstel het met
 
 ## Het gezicht in de titelbalk
 
-De avatar naast je profielnaam is de enige avatar in Gitcito die staat voor **jou, in
+De avatar naast je profielnaam is de enige avatar in GitHuttBr die staat voor **jou, in
 deze repository, nu** — dus de enige die reageert op de staat van de repository. Hij
 trekt een gezicht als er iets is, en blijft de rest van de tijd neutraal.
 
@@ -88,7 +88,7 @@ De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
 | **Automatisch** | De standaard: je Gravatar voor het git-e-mailadres van het profiel, of het gegenereerde gezicht — dat op de repository reageert. |
 | **Uit de integratie** | De foto van het GitHub- of GitLab-account dat dit profiel in Integraties heeft gekoppeld. Uitgeschakeld tot er een is. |
 | **Pictogram** | Een van 24 symbolen op een kleur naar keuze. |
-| **Afbeelding** | Een bestand dat je kiest — PNG of JPEG. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van Gitcito, niet in het instellingenbestand. |
+| **Afbeelding** | Een bestand dat je kiest — PNG of JPEG. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van GitHuttBr, niet in het instellingenbestand. |
 | **Uit een repository** | Een pictogram of logo uit een van de repository's van het profiel — dat van de app of van het bedrijf —, net als een afbeelding in het profiel gekopieerd. |
 
 De afbeelding gaat mee met **Instellingen → Gegevens → Instellingen exporteren** en komt terug bij
