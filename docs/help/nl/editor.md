@@ -3,7 +3,8 @@ title: Externe editor
 category: Werkomgeving & tools
 order: 95
 summary: Stuur een repository, een bestand of één regel code naar de editor waar je echt in schrijft.
-keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode openen in editor regel kolom eigen commando argv
+keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode openen in editor regel kolom eigen commando argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Externe editor
@@ -30,10 +31,26 @@ Standaard herkend:
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (nooit een kale `devin`, wat een ander hulpmiddel is) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains-IDE's | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Op Linux, een editor buiten het PATH.** Een editor die je in een map naar keuze hebt
+uitgepakt, staat vaak niet in het PATH, maar wel in het toepassingsmenu. Gitcito leest
+ook de `.desktop`-items van het menu — in de XDG-gegevensmappen (`~/.local/share`,
+daarna `/usr/local/share` en `/usr/share`, of wat `XDG_DATA_HOME` en `XDG_DATA_DIRS`
+zeggen) en in de exports van Flatpak en Snap — en herkent een editor aan zijn naam of
+aan het programma dat zijn `Exec=`-regel start. Een item dat als verborgen of niet
+weer te geven is gemarkeerd, of waarvan het `TryExec=`-programma ontbreekt, telt niet.
+Voor een VS Code-build zoals Devin Desktop geeft het de voorkeur aan het commando in
+`bin/` naast dat programma, omdat alleen dat naar een regel kan springen. De items
+worden als tekst gelezen en er wordt niets uit uitgevoerd; een item dat extra
+argumenten nodig heeft om de editor te starten (een Flatpak-`flatpak run …`), wordt
+overgeslagen, dus zo’n installatie heeft nog steeds haar commando in het PATH nodig. Op
+macOS telt een `Devin.app` alleen als de `product.json` ervan Devin Desktop noemt,
+zodat er nooit een andere app met dezelfde naam wordt geopend.
 
 ## De grens die je moet kennen
 

@@ -4,7 +4,7 @@ category: Sincronizar y muchos repos
 order: 57
 summary: Todas las pull requests de un repositorio en una página — por estado, filtradas por autor, revisor, destino y CI —, ‹ › para recorrer la lista filtrada desde dentro de una PR, sus commits, sus actualizaciones (cada push, qué cambió, qué hay de nuevo desde tu última visita) y comentarios en una línea de su diff.
 keywords: pull requests lista página merge requests pr mr filtro autor revisor mías esperando mi revisión piden mi revisión ci fallando rama de destino borradores fusionadas cerradas búsqueda triaje anterior siguiente alt flecha navegación checkout ir a la rama de origen destino copiar nombre de la rama fetch comentario de línea comentario en línea comentario de revisión comentario en el diff comentar línea pestaña archivos revisión de código line comment pestaña commits lista de commits commits de la pr historial de commits abrir commit copiar sha traer la rama de la pr editor markdown barra de formato vista previa mención commits tab commit list open commit copy sha markdown editor toolbar preview mention árbol de archivos árbol de carpetas vista de árbol vista de rutas archivos vistos marcar carpeta como vista editar eliminar borrar editado errata file tree viewed files edit delete edited typo referencia título tarjeta al pasar el ratón work item AB# número de issue tooltip reference title hover card issue number fork commits de la pr refs/pull head comentarios renderizados imágenes píxel de seguimiento imagen bloqueada clic para cargar tarea tabla bloque rendered comments images blocked image actualizaciones iteraciones pushes force push rebase historial reescrito versiones del diff qué cambió desde la última visita insignia nueva marcar como vistas comparar actualización updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
 ---
 
 # Página de pull requests
@@ -404,6 +404,101 @@ cierra la app, y un archivo abierto dentro de una despliega el camino hasta él.
 
 ![La pestaña Archivos en vista de árbol: carpetas con sus cambios sumados y recuentos de vistos, una plegada](../../screenshots/pr-files-tree.webp)
 
+**Imágenes.** Una imagen que la pull request añade, quita o cambia (png, jpg, gif,
+webp, bmp, ico, avif, svg) no tiene un diff de texto que leer, así que la pestaña
+muestra la imagen — la misma vista que en un commit: la nueva, la antigua, o antes y
+después lado a lado y con un deslizador. Una imagen renombrada compara su ruta
+antigua en la base con la nueva en el head; en el diff de una sola actualización, los
+dos heads de la actualización. Los bytes salen de este clon cuando tiene los commits,
+lo que es gratis y rápido, y si no del host con el perfil del repositorio. Límites:
+una imagen de más de 32 MB no se previsualiza; los comentarios de línea no se aplican
+a una imagen (un SVG conserva su diff de texto, y sus comentarios, debajo); una imagen
+guardada en **Git LFS** se lee del host, ya que un clon solo tiene su puntero —
+GitLab, Azure DevOps y Forgejo lo resuelven, mientras que la API de GitHub solo da el
+puntero, así que allí la pestaña te manda al host; donde el host no nombra la base de
+fusión (recurre a la punta de la rama de destino), una nota dice que el «antes» puede
+incluir cambios posteriores en el destino; y cuando ni el clon ni el host pueden dar
+los bytes, la pestaña lo dice y ofrece traer la rama de la pull request o abrirla en el
+host.
+
+![Una imagen que la pull request cambió, antes y después lado a lado](../../screenshots/pr-image-diff.webp)
+
+**Rutas y tu editor.** La barra encima del diff tiene un botón para copiar la ruta del
+archivo y un menú **⋯**; el clic derecho sobre un archivo o una carpeta de la lista
+abre el mismo menú. Copia la ruta, la ruta anterior de un archivo renombrado o la de la
+carpeta; y abre el archivo en tu [editor](editor.md) (u otra app) o lo muestra en el
+gestor de archivos. Esas dos acciones actúan sobre **tu copia de trabajo**, no sobre la
+versión de la pull request: solo están activas para un archivo que exista en ella (un
+archivo que la PR borra, o uno que tu rama no tiene, dice por qué), y cuando la rama
+sacada no es la de la PR, el menú dice qué rama abrirías.
+
+**Volver.** Deja una pull request para el repositorio, otra pestaña o la siguiente PR,
+y al volver está donde la dejaste: la misma pestaña, el mismo archivo abierto, el mismo
+desplazamiento y todo el texto que no habías enviado — el comentario, una respuesta, un
+comentario de línea, una edición. Esto dura hasta que cierras la pull request o sales
+de la app; se guarda solo en memoria, para las 50 pull requests más recientes (pasado
+eso se suelta el sitio más antiguo, y cualquier texto que tuviera pasa a la siguiente
+página de pull request que abras). Cerrar una PR con texto sin enviar pregunta antes.
+Si al actualizar resulta que el sitio de un borrador ya no existe — la conversación a
+la que respondía, el comentario que editaba, el archivo en el que estaba —, el texto no
+se pierde: espera arriba de la página para que lo copies o lo descartes.
+
+### De dónde sale el diff
+
+Una revisión es tan buena como el diff que lee. La API de un host no es una buena
+fuente para eso: Azure DevOps no envía ningún diff, solo la lista de archivos, y cada
+uno hay que traerlo dos veces y compararlo; GitHub se detiene en 3000 archivos y omite
+el patch de uno grande; GitLab marca un diff grande como *demasiado grande* y no envía
+nada. Por eso la pestaña Archivos lee **primero este clon**, en todos los hosts:
+
+1. Pide al host los dos commits de la pull request — dónde empieza y su head. Azure
+   DevOps, GitLab y Forgejo nombran la base de fusión; Bitbucket Data Center nombra la
+   base del diff al que se anclan sus comentarios de línea; GitHub nombra solo la rama
+   de destino, cuya base de fusión con el head se calcula aquí (o, sin los commits,
+   con la comparación de GitHub). La vista previa de imágenes usa los mismos dos
+   commits.
+2. Cuando los dos están aquí, `git diff` entre ellos da todos los archivos, sin tope de
+   cantidad. Son los mismos dos commits que compara la propia página del host, así que
+   un número de línea aquí es el número de línea allí y un comentario de línea cae
+   donde lo pones.
+3. Cuando no están aquí, se traen **por sus ids** desde el remoto de la pull request —
+   solo objetos, no se crea ni se mueve ninguna rama —, una vez, al abrir la página (y
+   de nuevo al Actualizar), con *Trayendo los commits del pull request…* encima de la
+   lista mientras tanto. Un servidor que no entrega un commit por su id (algunos Azure
+   DevOps y servidores git simples) se salta en silencio.
+4. Solo entonces se usa la API del host, y un archivo para el que no da diff dice por
+   qué en lugar de fingir que está vacío (abajo).
+
+Un archivo leído después — abierto mientras *aún no estaba cargado*, o tras
+**Reintentar** — se une a la lista como los demás: el mismo visor, y comentarios de
+línea en él.
+
+En Azure DevOps la vía de la API lee los primeros cien archivos al abrir la pestaña,
+de tres en tres y en un minuto en total, y el resto cuando abres cada uno. Una petición
+limitada pausa todas las lecturas hasta la espera que pide el servidor; una que aun así
+falla lo dice, con el motivo. Si un archivo es texto se decide por sus bytes, no por la
+marca *binary* de Azure — que también pone en archivos UTF-16 y en algún texto que no
+es ASCII. Cuando el host lista menos archivos de los que tiene la pull request (GitHub
+se detiene en 3000), una línea encima de la lista lo dice.
+
+### Cuando un archivo no muestra diff
+
+| Lo que dice | Por qué | Qué puedes hacer |
+|---|---|---|
+| **Binario** | Sus bytes no son texto: una imagen, un archivo comprimido. UTF-16 y el texto antiguo de un byte se reconocen como texto. | Abrirlo en el host. |
+| **Demasiado grande para mostrarlo** | Más de 20.000 líneas cambiadas u 8 MB de diff, o una versión de más de 4 MB. Su **+/−** se cuenta igualmente cuando el clon lo leyó. | Abrirlo en el host. |
+| **Aún no cargado** | Más allá de lo que conserva una lectura (unas 150.000 líneas de diff), o, por la API de Azure DevOps, más allá de los primeros cien archivos o del minuto. | Se carga al abrirlo; **Cargar el diff** si no. |
+| **No se pudo cargar** | La lectura falló — el motivo aparece debajo. | **Reintentar**. |
+| **El host lo omitió** | La API del host no envió diff y este clon no tiene los commits de la pull request. | **Traer el pull request para verlo localmente** — los commits por id, o el head de la pull request de un fork —; entonces se compara aquí. |
+| **Solo cambió el nombre o el modo** | Un renombrado o un cambio de permisos: el contenido es el mismo. | Nada que revisar en el contenido. |
+| **Cambió la codificación** | El mismo texto guardado de otra forma: una marca de orden de bytes añadida o quitada, UTF-16 pasado a UTF-8. | Comprobar que el cambio es intencionado — a algunas herramientas les importa. |
+
+En la lista, un archivo cuyo diff no se leyó — aún no cargado, no se pudo cargar,
+omitido por el host — muestra **—** en lugar de **+0 −0**, que se leería como «nada
+cambió». Un archivo binario y un renombrado puro muestran su **+0 −0** real, y cuando
+el host cuenta las líneas igualmente (GitHub lo hace, incluso para un patch que omite),
+se muestran los recuentos.
+
 ## Comentar una línea
 
 Aquí ya se podía responder a un hilo de revisión, pero no empezar uno, así que una
@@ -447,9 +542,10 @@ demás se queda en la pestaña Conversación, en vez de en una línea adivinada:
 Un comentario en una línea fuera de los hunks mostrados está solo en la pestaña
 Conversación, en todos los hosts.
 
-Un comentario escrito y no enviado cuenta como texto sin enviar: **‹ ›** y Alt+flechas
-preguntan antes de dejarlo, como con el cuadro de comentario principal. Mirar otro
-archivo lo conserva; para empezar uno en otra línea, publica o cancela el primero.
+Un comentario escrito y no enviado se queda con la pull request, como el texto del
+cuadro de comentario principal: **‹ ›**, Alt+flechas u otra pestaña lo dejan donde
+está, y vuelve a su línea cuando regresas (ver *Volver* arriba). Mirar otro archivo lo
+conserva; para empezar uno en otra línea, publica o cancela el primero.
 
 Lo que no hace:
 
@@ -589,9 +685,9 @@ a la que no deja cambiar un comentario se le rechaza, y el mensaje lo dice.
   **Esc** lo cierra, preguntando antes si cambiaste algo. Solo se quitan las líneas
   en blanco alrededor del texto: el código sangrado y un salto de línea final de dos
   espacios se quedan como se escribieron. El texto nuevo aparece al instante y la
-  página vuelve a leer la pull request. En la página de la pull request, una edición
-  sin guardar cuenta como texto sin enviar: **‹ ›** preguntan antes de dejarla. La
-  página de la issue no tiene esas flechas, y allí nada pregunta antes de que se
+  página vuelve a leer la pull request. En la página de la pull request, una edición sin guardar se queda con la pull request
+  cuando sigues con **‹ ›** o cambias de pestaña, y cerrar la pull request pregunta
+  antes. La página de la issue no conserva nada: allí nada pregunta antes de que se
   cierre su pestaña.
 - **Eliminar** siempre pregunta antes, y la pregunta dice qué pasa: el servidor
   elimina el comentario para todos, y no se puede deshacer. No hay entrada de
@@ -748,3 +844,26 @@ Lo que no hace:
 - El recorrido se recuerda mientras la app está abierta; tras un reinicio, una
   pull request abierta desde la lista recorre en su lugar las pull requests
   abiertas.
+- **Leer los archivos puede hacer un fetch — una vez.** Cuando los commits de la pull
+  request no están en este clon, la página los trae por id desde su remoto al abrirse,
+  y de nuevo con **Actualizar** — nunca después de un comentario, una revisión o una
+  fusión, y como mucho una vez por versión de la pull request y sesión (un intento
+  fallido espera a Actualizar). Solo escribe objetos: ninguna rama, y no `FETCH_HEAD`,
+  así que el «traído hace …» de la barra de herramientas no se mueve. Se rinde a los 20
+  segundos, o cuando la transferencia se arrastra por debajo de 1 KB/s durante 15, y
+  nunca pide una contraseña: la petición de git está desactivada y a Git Credential
+  Manager se le indica que no abra su ventana de inicio de sesión, así que un remoto que
+  la necesita recurre a la API. Un remoto ssh usa tus ajustes de ssh tal como están. Un
+  clon superficial o parcial al que le faltan los objetos recurre a la API del host.
+- **Por encima de los topes**, un archivo se lista con sus recuentos y sin diff: 20.000
+  líneas cambiadas u 8 MB de diff leídos del clon, 4 MB por versión leída de Azure
+  DevOps. Una lectura conserva unas 150.000 líneas o 48 MB de diffs; los archivos
+  siguientes quedan **aún no cargados** y se leen al abrirlos.
+- **Los archivos UTF-16** que git llama binarios se vuelven a leer como texto, hasta 50
+  por pull request y 2 MB por versión; pasado eso aparecen como binarios.
+- **Los renombrados** se detectan como los detecta `git diff -M` (50 % de similitud
+  por defecto), lo que puede diferir un poco del emparejamiento del propio host.
+- **Azure DevOps por la API** lee sus primeros cien archivos en un minuto en total;
+  los archivos que quedan cuando se acaba el minuto quedan **aún no cargados**. Una
+  respuesta limitada pausa todas las lecturas hasta el Retry-After del servidor. Una
+  pull request de más de 20.000 cambios se lista hasta ahí, y la pestaña lo dice.

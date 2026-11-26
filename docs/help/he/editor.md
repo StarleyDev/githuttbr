@@ -3,7 +3,8 @@ title: עורך חיצוני
 category: כלי סביבת העבודה
 order: 95
 summary: שלחו מאגר, קובץ או שורת קוד אחת אל העורך שאתם באמת כותבים בו.
-keywords: עורך פתיחה בעורך שורה עמודה פקודה מותאמת editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv
+keywords: עורך פתיחה בעורך שורה עמודה פקודה מותאמת editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # עורך חיצוני
@@ -29,10 +30,22 @@ keywords: עורך פתיחה בעורך שורה עמודה פקודה מותא
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (אף פעם לא `devin` לבד, שהוא כלי אחר) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | סביבות הפיתוח של JetBrains | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**ב־Linux: עורך מחוץ ל־PATH.** עורך שחולץ לתיקייה שבחרתם לרוב לא נמצא ב־PATH, אבל הוא
+בתפריט היישומים. Gitcito קורא גם את רשומות ה־`.desktop` של התפריט — בתיקיות הנתונים של XDG
+(`~/.local/share`, אחר כך `/usr/local/share` ו־`/usr/share`, או מה ש־`XDG_DATA_HOME`
+ו־`XDG_DATA_DIRS` אומרים) ובייצואים של Flatpak ו־Snap — ומזהה עורך לפי השם שלו או לפי
+התוכנית ששורת ה־`Exec=` שלו מפעילה. רשומה שמסומנת כמוסתרת או כלא להצגה, או שתוכנית
+ה־`TryExec=` שלה חסרה, לא נספרת. לבנייה של VS Code כמו Devin Desktop מועדפת הפקודה שב־`bin/`
+ליד אותה תוכנית, כי רק היא יודעת לקפוץ לשורה. הרשומות נקראות כטקסט ושום דבר מהן לא מורץ;
+רשומה שצריכה ארגומנטים נוספים כדי להפעיל את העורך (`flatpak run …` של Flatpak) מדולגת, כך
+שהתקנה כזו עדיין צריכה פקודה משלה ב־PATH. ב־macOS‏ `Devin.app` נספרת רק אם ה־`product.json`
+שלה נוקב ב־Devin Desktop, כך שאפליקציה זרה באותו שם לעולם לא תיפתח.
 
 ## המגבלה ששווה להכיר
 

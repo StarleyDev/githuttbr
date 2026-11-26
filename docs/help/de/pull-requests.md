@@ -4,7 +4,7 @@ category: Sync & viele Repos
 order: 57
 summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits, seine Updates (jeder Push, was er geändert hat, was seit deinem letzten Besuch neu ist) und Kommentare zu einer Zeile seines Diffs.
 keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image updates iterationen pushes force-push rebase verlauf umgeschrieben diff-versionen was hat sich geändert seit dem letzten besuch neu-badge als gesehen markieren update vergleichen iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: f18fc735b9bf5de082b823f277804050231ce86d
+source: ced0b909c8b775fb4c2a4d61bc521cd6cc6d2bcc
 ---
 
 # Pull-Request-Seite
@@ -415,6 +415,108 @@ listet.
 
 ![Der Tab Dateien in der Baumansicht: Ordner mit ihren summierten Änderungen und Gesehen-Zahlen, einer eingeklappt](../../screenshots/pr-files-tree.webp)
 
+**Bilder.** Ein Bild, das der Pull Request hinzufügt, entfernt oder ändert (png,
+jpg, gif, webp, bmp, ico, avif, svg), hat keinen Text-Diff zum Lesen, also zeigt
+der Tab stattdessen das Bild — dieselbe Ansicht wie bei einem Commit: das neue, das
+alte oder vorher und nachher nebeneinander und als Schieberegler. Ein umbenanntes
+Bild vergleicht seinen alten Pfad an der Basis mit seinem neuen am Head; im Diff
+eines einzelnen Updates die beiden Heads des Updates. Die Bytes kommen aus diesem
+Klon, wenn er die Commits hat — kostenlos und schnell —, sonst vom Host mit dem
+Profil des Repositorys. Grenzen: Ein Bild über 32 MB wird nicht in der Vorschau
+gezeigt; Zeilenkommentare gelten nicht für ein Bild (ein SVG behält seinen
+Text-Diff samt Kommentaren darunter); ein in **Git LFS** gespeichertes Bild wird
+vom Host gelesen, da ein Klon nur seinen Zeiger hat — GitLab, Azure DevOps und
+Forgejo lösen ihn auf, während GitHubs API nur den Zeiger liefert, also schickt dich
+der Tab dort zum Host; wo der Host die Merge-Basis nicht nennt (er weicht auf die
+Spitze des Ziel-Branches aus), sagt ein Hinweis, dass „vorher“ spätere Änderungen am
+Ziel enthalten kann; und wenn weder der Klon noch der Host die Bytes liefern kann,
+sagt der Tab das und bietet an, den Branch des Pull Requests zu fetchen oder ihn auf
+dem Host zu öffnen.
+
+![Ein Bild, das der Pull Request geändert hat, vorher und nachher nebeneinander](../../screenshots/pr-image-diff.webp)
+
+**Pfade und dein Editor.** Die Leiste über dem Diff hat einen Kopieren-Button für
+den Pfad der Datei und ein Menü **⋯**; ein Rechtsklick auf eine Datei oder einen
+Ordner in der Liste öffnet dasselbe Menü. Es kopiert den Pfad, den alten Pfad einer
+umbenannten Datei oder den des Ordners; und es öffnet die Datei in deinem
+[Editor](editor.md) (oder einer anderen App) oder zeigt sie im Dateimanager. Diese
+beiden wirken auf **deine Arbeitskopie**, nicht auf die Fassung des Pull Requests:
+Sie sind nur für eine Datei aktiv, die dort existiert (eine Datei, die der PR löscht,
+oder eine, die dein Branch nicht hat, sagt, warum), und wenn der ausgecheckte Branch
+nicht der des PR ist, sagt das Menü, welchen Branch du öffnen würdest.
+
+**Zurückkommen.** Verlässt du einen Pull Request für das Repository, einen anderen
+Tab oder den nächsten PR, ist er bei der Rückkehr so, wie du ihn verlassen hast:
+derselbe Tab, dieselbe offene Datei, dieselbe Scrollposition und jeder Text, den du
+nicht gesendet hattest — der Kommentar, eine Antwort, ein Zeilenkommentar, eine
+Bearbeitung. Das hält, bis du den Pull Request schließt oder die App beendest; es
+liegt nur im Speicher, für die 50 zuletzt besuchten Pull Requests (darüber hinaus
+wird der älteste Stand losgelassen, und jeder Text darin wandert zur nächsten
+Pull-Request-Seite, die du öffnest). Einen PR mit ungesendetem Text zu schließen
+fragt zuerst. Stellt ein Aktualisieren fest, dass der Ort eines Entwurfs weg ist —
+die Unterhaltung, auf die er antwortete, der Kommentar, den er bearbeitete, die
+Datei, an der er hing —, wird der Text nicht verworfen: Er wartet oben auf der Seite
+darauf, kopiert oder verworfen zu werden.
+
+### Woher der Diff kommt
+
+Ein Review ist nur so gut wie der Diff, den es liest. Die API eines Hosts ist dafür
+keine gute Quelle: Azure DevOps schickt überhaupt keinen Diff, nur die Liste der
+Dateien, und jede muss zweimal geholt und verglichen werden; GitHub hört bei 3000
+Dateien auf und lässt den Patch einer großen weg; GitLab markiert einen großen Diff
+als *zu groß* und schickt nichts. Darum liest der Tab Dateien auf jedem Host
+**zuerst diesen Klon**:
+
+1. Er fragt den Host nach den beiden Commits des Pull Requests — wo er beginnt und
+   seinem Head. Azure DevOps, GitLab und Forgejo nennen die Merge-Basis; Bitbucket
+   Data Center nennt die Basis des Diffs, an dem seine Zeilenkommentare verankert
+   sind; GitHub nennt nur den Ziel-Branch, dessen Merge-Basis mit dem Head dann hier
+   ermittelt wird (oder, ohne die Commits, über GitHubs Compare). Die Bildvorschau
+   nutzt dieselben beiden Commits.
+2. Sind beide hier, liefert `git diff` zwischen ihnen jede Datei, ohne Obergrenze
+   für ihre Zahl. Es sind dieselben beiden Commits, die die eigene Seite des Hosts
+   vergleicht, also ist eine Zeilennummer hier die Zeilennummer dort, und ein
+   Zeilenkommentar landet, wo du ihn setzt.
+3. Sind sie nicht hier, werden sie **über ihre IDs** vom Remote des Pull Requests
+   gefetcht — nur Objekte, kein Branch wird angelegt oder bewegt —, einmal, wenn die
+   Seite sich öffnet (und erneut bei Aktualisieren), und solange steht *Commits des
+   Pull Requests werden abgerufen…* über der Liste. Ein Server, der keinen Commit
+   über seine ID herausgibt (manche Azure-DevOps- und einfache Git-Server), wird
+   still übersprungen.
+4. Erst dann wird die API des Hosts benutzt, und eine Datei, für die sie keinen
+   Diff liefert, sagt, warum, statt so zu tun, als wäre sie leer (unten).
+
+Eine später gelesene Datei — geöffnet, solange sie *noch nicht geladen* war, oder
+nach **Erneut versuchen** — fügt sich in die Liste ein wie die anderen: derselbe
+Viewer, und Zeilenkommentare darauf.
+
+Auf Azure DevOps liest der API-Weg beim Öffnen des Tabs die ersten hundert Dateien,
+drei gleichzeitig und insgesamt innerhalb einer Minute, den Rest, wenn du jede
+öffnest. Eine gedrosselte Anfrage pausiert jedes Lesen bis zu der Wartezeit, die der
+Server verlangt; eine, die trotzdem fehlschlägt, sagt das, mit dem Grund. Ob eine
+Datei Text ist, wird aus ihren Bytes entschieden, nicht aus Azures eigenem
+*binary*-Flag — das es auch bei UTF-16-Dateien und bei manchem Text setzt, der kein
+ASCII ist. Listet der Host weniger Dateien, als der Pull Request hat (GitHub hört bei
+3000 auf), sagt eine Zeile über der Liste das.
+
+### Wenn eine Datei keinen Diff zeigt
+
+| Was sie sagt | Warum | Was du tun kannst |
+|---|---|---|
+| **Binär** | Ihre Bytes sind kein Text: ein Bild, ein Archiv. UTF-16 und alte Ein-Byte-Kodierungen werden als Text erkannt. | Auf dem Host öffnen. |
+| **Zu groß zum Anzeigen** | Mehr als 20.000 geänderte Zeilen oder 8 MB Diff, oder eine Fassung über 4 MB. Ihr **+/−** wird trotzdem gezählt, wenn der Klon sie gelesen hat. | Auf dem Host öffnen. |
+| **Noch nicht geladen** | Jenseits dessen, was ein Lesedurchgang behält (etwa 150.000 Diff-Zeilen), oder, über die API von Azure DevOps, jenseits der ersten hundert Dateien oder der Minute. | Sie lädt, wenn du sie öffnest; **Diff laden**, falls nicht. |
+| **Konnte nicht geladen werden** | Das Lesen ist fehlgeschlagen — der Grund steht darunter. | **Erneut versuchen**. |
+| **Vom Host weggelassen** | Die API des Hosts hat keinen Diff geschickt, und dieser Klon hat die Commits des Pull Requests nicht. | **Pull Request abrufen, um ihn lokal zu sehen** — die Commits über ihre IDs oder den Head des Pull Requests eines Forks —, dann wird hier verglichen. |
+| **Nur Name oder Modus geändert** | Eine Umbenennung oder eine Rechteänderung: Der Inhalt ist derselbe. | Am Inhalt gibt es nichts zu reviewen. |
+| **Kodierung geändert** | Derselbe Text anders gespeichert: eine Byte-Order-Mark hinzugefügt oder entfernt, UTF-16 zu UTF-8 gemacht. | Prüfen, ob die Änderung gewollt ist — manche Werkzeuge reagieren darauf. |
+
+In der Liste zeigt eine Datei, deren Diff nicht gelesen wurde — noch nicht geladen,
+nicht ladbar, vom Host weggelassen —, **—** statt **+0 −0**, was sich wie „nichts
+geändert“ lesen würde. Eine Binärdatei und eine reine Umbenennung zeigen ihr echtes
+**+0 −0**, und wenn der Host die Zeilen trotzdem zählt (GitHub tut es, sogar für einen
+Patch, den es weglässt), werden die Zahlen gezeigt.
+
 ## Eine Zeile kommentieren
 
 Auf einen Review-Thread antworten ging hier schon; einen beginnen nicht, also
@@ -459,10 +561,11 @@ einer geratenen Zeile zu landen:
 Ein Kommentar zu einer Zeile außerhalb der gezeigten Hunks steht auf jedem Host nur
 im Tab Unterhaltung.
 
-Ein getippter, nicht gesendeter Kommentar zählt als ungesendeter Text: **‹ ›** und
-Alt+Pfeile fragen nach, bevor sie ihn verlassen, wie beim Hauptkommentarfeld. Der
-Blick in eine andere Datei behält ihn; um einen an einer anderen Zeile zu beginnen,
-sende oder verwirf zuerst den ersten.
+Ein getippter, nicht gesendeter Kommentar bleibt beim Pull Request, wie der Text des
+Hauptkommentarfelds: **‹ ›**, Alt+Pfeile oder ein anderer Tab lassen ihn, wo er ist,
+und er ist wieder an seiner Zeile, wenn du zurückkommst (siehe *Zurückkommen* oben).
+Der Blick in eine andere Datei behält ihn; um einen an einer anderen Zeile zu
+beginnen, sende oder verwirf zuerst den ersten.
 
 Was es nicht tut:
 
@@ -605,10 +708,10 @@ erlaubt, wird abgewiesen, und die Meldung sagt das.
   ihn; **Abbrechen** oder **Esc** schließt ihn, mit Rückfrage, wenn du etwas geändert
   hast. Nur die Leerzeilen um den Text fallen weg: eingerückter Code und ein
   Zeilenumbruch aus zwei Leerzeichen am Ende bleiben, wie getippt. Der neue Text
-  erscheint sofort, und die Seite liest den Pull Request neu. Auf der
-  Pull-Request-Seite zählt eine nicht gespeicherte Bearbeitung als ungesendeter
-  Text: **‹ ›** fragen, bevor sie sie verlassen. Die Issue-Seite hat keine solchen
-  Pfeile, und dort fragt nichts, bevor ihr Tab geschlossen wird.
+  erscheint sofort, und die Seite liest den Pull Request neu. Auf der Pull-Request-Seite bleibt eine nicht gespeicherte Bearbeitung beim Pull
+  Request, wenn du mit **‹ ›** weitergehst oder den Tab wechselst, und den Pull Request
+  zu schließen fragt zuerst. Die Issue-Seite behält nichts: Dort fragt nichts, bevor
+  ihr Tab geschlossen wird.
 - **Löschen** fragt immer zuerst, und die Frage sagt, was passiert: Der Server
   entfernt den Kommentar für alle, und das lässt sich nicht rückgängig machen. Es
   gibt keinen Undo-Eintrag, da nichts ihn zurückbringen kann.
@@ -768,3 +871,29 @@ Was es nicht tut:
 - Das Durchgehen wird gemerkt, solange die App läuft; nach einem Neustart geht ein
   aus der Liste geöffneter Pull Request stattdessen die offenen Pull Requests
   durch.
+- **Das Lesen der Dateien kann fetchen — einmal.** Sind die Commits des Pull
+  Requests nicht in diesem Klon, fetcht die Seite sie beim Öffnen über ihre IDs von
+  ihrem Remote, und erneut bei **Aktualisieren** — nie nach einem Kommentar, einem
+  Review oder einem Merge, und höchstens einmal pro Fassung des Pull Requests und
+  Sitzung (ein fehlgeschlagener Versuch wartet auf Aktualisieren). Er schreibt nur
+  Objekte: keinen Branch und nicht `FETCH_HEAD`, also bewegt sich das „vor … gefetcht“
+  der Werkzeugleiste nicht. Er gibt nach 20 Sekunden auf, oder wenn die Übertragung
+  15 Sekunden lang unter 1 KB/s kriecht, und fragt nie nach einem Passwort: Gits
+  Abfrage ist aus, und Git Credential Manager wird angewiesen, sein Anmeldefenster
+  nicht zu öffnen, also fällt ein Remote, das eines bräuchte, auf die API zurück. Ein
+  ssh-Remote nutzt deine eigenen ssh-Einstellungen, wie sie sind. Ein flacher oder
+  partieller Klon, dem die Objekte fehlen, fällt auf die API des Hosts zurück.
+- **Über den Obergrenzen** wird eine Datei mit ihren Zahlen und ohne Diff gelistet:
+  20.000 geänderte Zeilen oder 8 MB aus dem Klon gelesener Diff, 4 MB pro Fassung,
+  die von Azure DevOps gelesen wird. Ein Lesedurchgang behält etwa 150.000 Zeilen oder
+  48 MB an Diffs; die Dateien danach sind **noch nicht geladen** und werden beim
+  Öffnen gelesen.
+- **UTF-16-Dateien**, die git binär nennt, werden erneut als Text gelesen, bis zu 50
+  pro Pull Request und 2 MB pro Fassung; darüber hinaus erscheinen sie als binär.
+- **Umbenennungen** werden erkannt, wie `git diff -M` sie erkennt (standardmäßig 50 %
+  Ähnlichkeit), was ein wenig von der eigenen Zuordnung des Hosts abweichen kann.
+- **Azure DevOps über die API** liest seine ersten hundert Dateien innerhalb von
+  insgesamt einer Minute; die Dateien, die nach Ablauf der Minute übrig sind, sind
+  **noch nicht geladen**. Eine gedrosselte Antwort pausiert jedes Lesen bis zum
+  Retry-After des Servers. Ein Pull Request mit mehr als 20.000 Änderungen wird bis
+  dahin gelistet, und der Tab sagt das.

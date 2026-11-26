@@ -3,7 +3,8 @@ title: Зовнішній редактор
 category: Інструменти робочого простору
 order: 95
 summary: Надішліть репозиторій, файл або один рядок коду до редактора, в якому ви справді пишете.
-keywords: редактор відкрити в редакторі рядок колонка власна команда editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv
+keywords: редактор відкрити в редакторі рядок колонка власна команда editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # Зовнішній редактор
@@ -32,10 +33,25 @@ Git-клієнт — це місце, де ви читаєте код; лаго�
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop` (ніколи не просто `devin` — це інший інструмент) |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains IDEs | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**У Linux — редактор поза PATH.** Редактор, розпакований у вибрану вами теку, часто не
+лежить у PATH, але є в меню застосунків. Gitcito також читає записи `.desktop` меню — у
+теках даних XDG (`~/.local/share`, потім `/usr/local/share` і `/usr/share`, або те, що
+вказують `XDG_DATA_HOME` і `XDG_DATA_DIRS`) і в експортах Flatpak і Snap, — і
+розпізнає редактор за назвою або за програмою, яку запускає його рядок `Exec=`. Запис,
+позначений прихованим або не для показу, чи чия програма `TryExec=` відсутня, не
+враховується. Для збірки VS Code на кшталт Devin Desktop перевага надається команді в
+`bin/` поруч із цією програмою, бо лише вона вміє переходити до рядка. Записи
+читаються як текст, і нічого з них не запускається; запис, якому для запуску редактора
+потрібні додаткові аргументи (`flatpak run …` у Flatpak), пропускається, тож такому
+встановленню все одно потрібна своя команда в PATH. У macOS `Devin.app` враховується,
+лише якщо її `product.json` називає Devin Desktop, тому стороння програма з тією самою
+назвою ніколи не відкриється.
 
 ## Обмеження, про яке варто знати
 

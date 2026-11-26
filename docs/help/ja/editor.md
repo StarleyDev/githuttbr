@@ -3,7 +3,8 @@ title: 外部エディター
 category: ワークスペースツール
 order: 95
 summary: リポジトリ、ファイル、あるいはコードの 1 行を、実際に書いているエディターへ送ります。
-keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv 外部エディター エディター カスタムコマンド 行 列 引数
+keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv 外部エディター エディター カスタムコマンド 行 列 引数 devin desktop
+source: 674896b0a37459043e2c80f3b4bf29ce60bbc72b
 ---
 
 # 外部エディター
@@ -29,10 +30,24 @@ Git クライアントはコードを読む場所であって、直す場所で�
 | Visual Studio Code | `code`, `code-insiders` |
 | Cursor | `cursor` |
 | Windsurf | `windsurf` |
+| Devin Desktop | `devin-desktop`（単独の `devin` は別のツールなので使いません） |
 | Zed | `zed` |
 | Sublime Text | `subl` |
 | JetBrains の IDE | `idea`, `webstorm`, `pycharm`, `rustrover`, `goland`, `clion`, `rider`, `phpstorm` |
 | Xcode | `xed` |
+
+**Linux で PATH にないエディタ。** 好きなフォルダに展開したエディタは、PATH にはなくても
+アプリケーションメニューにはあることがよくあります。Gitcito はメニューの `.desktop` エントリ
+も読みます。対象は XDG のデータフォルダ（`~/.local/share`、次に `/usr/local/share` と
+`/usr/share`、または `XDG_DATA_HOME` と `XDG_DATA_DIRS` が示す場所）と Flatpak・Snap の
+エクスポートで、名前か、`Exec=` 行が起動するプログラムでエディタを認識します。非表示や
+表示しないと指定されたエントリ、`TryExec=` のプログラムがないエントリは数えません。Devin
+Desktop のような VS Code のビルドでは、そのプログラムの隣の `bin/` にあるコマンドを優先します。
+行へジャンプできるのはそちらだけだからです。エントリはテキストとして読むだけで、そこから何も
+実行しません。エディタの起動に追加の引数が必要なエントリ（Flatpak の `flatpak run …`）は
+飛ばすので、そうしたインストールには引き続き PATH 上のコマンドが必要です。macOS では、
+`Devin.app` は `product.json` が Devin Desktop を名乗る場合にだけ数えるので、同じ名前の別の
+アプリが開くことはありません。
 
 ## 知っておくべき制限
 
