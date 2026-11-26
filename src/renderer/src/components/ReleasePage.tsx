@@ -9,6 +9,7 @@ import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT } from '../i18n'
 import type { PageTab, ReleaseInfo } from '../../../shared/types'
+import { PageHead } from './PageHead'
 
 /** A page tab for a single platform release. Renders the release notes as
  *  markdown (GitHub-flavoured), matching the "What's new" changelog layout,
@@ -48,60 +49,61 @@ export function ReleasePage({ tab }: { tab: PageTab }): React.JSX.Element | null
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <Rocket size={20} />
-            <div>
-              <h1>{title}</h1>
-              <div className="release-meta">
-                {release.tag && (
-                  <span className="release-meta-tag">
-                    <TagIcon size={11} /> {release.tag}
-                  </span>
-                )}
-                {date && <span className="changelog-version">{date}</span>}
-                {release.prerelease && <span className="badge release-pre">{t('release.prereleaseBadge')}</span>}
-                {release.draft && <span className="badge release-draft">{t('release.draftBadge')}</span>}
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <Rocket size={20} />
+              <div>
+                <h1>{title}</h1>
+                <div className="release-meta">
+                  {release.tag && (
+                    <span className="release-meta-tag">
+                      <TagIcon size={11} /> {release.tag}
+                    </span>
+                  )}
+                  {date && <span className="changelog-version">{date}</span>}
+                  {release.prerelease && <span className="badge release-pre">{t('release.prereleaseBadge')}</span>}
+                  {release.draft && <span className="badge release-draft">{t('release.draftBadge')}</span>}
+                </div>
               </div>
             </div>
-          </div>
-          <span
-            className="changelog-source"
-            role="button"
-            title={t('release.openOnWeb')}
-            onClick={() => void shellApi.openExternal(release.url)}
-          >
-            <Github size={12} /> {t('release.openOnWeb')} <ExternalLink size={11} />
-          </span>
-        </header>
-
-        {(older || newer) && (
-          <nav className="release-nav">
-            <button
-              className="release-nav-btn"
-              disabled={!older}
-              title={older ? relLabel(older) : undefined}
-              onClick={() =>
-                older && navigatePageTab(tab.id, { type: 'release', release: older, repoPath })
-              }
+            <span
+              className="changelog-source"
+              role="button"
+              title={t('release.openOnWeb')}
+              onClick={() => void shellApi.openExternal(release.url)}
             >
-              <ChevronLeft size={14} />
-              <span>{older ? relLabel(older) : ''}</span>
-            </button>
-            <span className="release-nav-current">{relLabel(release)}</span>
-            <button
-              className="release-nav-btn right"
-              disabled={!newer}
-              title={newer ? relLabel(newer) : undefined}
-              onClick={() =>
-                newer && navigatePageTab(tab.id, { type: 'release', release: newer, repoPath })
-              }
-            >
-              <span>{newer ? relLabel(newer) : ''}</span>
-              <ChevronRight size={14} />
-            </button>
-          </nav>
-        )}
+              <Github size={12} /> {t('release.openOnWeb')} <ExternalLink size={11} />
+            </span>
+          </header>
+          {(older || newer) && (
+            <nav className="release-nav">
+              <button
+                className="release-nav-btn"
+                disabled={!older}
+                title={older ? relLabel(older) : undefined}
+                onClick={() =>
+                  older && navigatePageTab(tab.id, { type: 'release', release: older, repoPath })
+                }
+              >
+                <ChevronLeft size={14} />
+                <span>{older ? relLabel(older) : ''}</span>
+              </button>
+              <span className="release-nav-current">{relLabel(release)}</span>
+              <button
+                className="release-nav-btn right"
+                disabled={!newer}
+                title={newer ? relLabel(newer) : undefined}
+                onClick={() =>
+                  newer && navigatePageTab(tab.id, { type: 'release', release: newer, repoPath })
+                }
+              >
+                <span>{newer ? relLabel(newer) : ''}</span>
+                <ChevronRight size={14} />
+              </button>
+            </nav>
+          )}
+        </PageHead>
 
         <article
           ref={htmlRef}

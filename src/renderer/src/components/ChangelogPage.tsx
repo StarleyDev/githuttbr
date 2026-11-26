@@ -22,6 +22,7 @@ import { useUpdatesStore } from '../stores/updates'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
 import { APP_REPO_URL } from '../../../shared/appRepo'
+import { PageHead } from './PageHead'
 
 type Source = 'loading' | 'live' | 'bundled'
 
@@ -145,44 +146,46 @@ export function ChangelogPage(): React.JSX.Element {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <Sparkles size={20} />
-            <div>
-              <h1>{t('changelog.title')}</h1>
-              {version && <span className="changelog-version">v{version}</span>}
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <Sparkles size={20} />
+              <div>
+                <h1>{t('changelog.title')}</h1>
+                {version && <span className="changelog-version">v{version}</span>}
+              </div>
             </div>
-          </div>
-          <div className="changelog-header-actions">
-            {source === 'live' ? (
+            <div className="changelog-header-actions">
+              {source === 'live' ? (
+                <button
+                  type="button"
+                  className="changelog-source changelog-source-live changelog-source-btn"
+                  title={t('changelog.openLatest')}
+                  onClick={() => void window.api.openExternal(latestUrl)}
+                >
+                  <Github size={12} /> {t('changelog.live')}
+                </button>
+              ) : (
+                <span className={`changelog-source changelog-source-${source}`}>
+                  {source === 'loading' && (
+                    <>
+                      <RefreshCw size={12} className="spin" /> {t('changelog.checking')}
+                    </>
+                  )}
+                  {source === 'bundled' && t('changelog.bundled')}
+                </span>
+              )}
               <button
                 type="button"
-                className="changelog-source changelog-source-live changelog-source-btn"
-                title={t('changelog.openLatest')}
-                onClick={() => void window.api.openExternal(latestUrl)}
+                className="changelog-source changelog-source-btn"
+                title={t('changelog.licensesTitle')}
+                onClick={() => useSettingsStore.getState().openPageTab({ type: 'licenses' })}
               >
-                <Github size={12} /> {t('changelog.live')}
+                <Scale size={12} /> {t('changelog.licenses')}
               </button>
-            ) : (
-              <span className={`changelog-source changelog-source-${source}`}>
-                {source === 'loading' && (
-                  <>
-                    <RefreshCw size={12} className="spin" /> {t('changelog.checking')}
-                  </>
-                )}
-                {source === 'bundled' && t('changelog.bundled')}
-              </span>
-            )}
-            <button
-              type="button"
-              className="changelog-source changelog-source-btn"
-              title={t('changelog.licensesTitle')}
-              onClick={() => useSettingsStore.getState().openPageTab({ type: 'licenses' })}
-            >
-              <Scale size={12} /> {t('changelog.licenses')}
-            </button>
-          </div>
-        </header>
+            </div>
+          </header>
+        </PageHead>
 
         {newer && (
           <motion.section

@@ -7892,6 +7892,27 @@ body.col-resizing .node-ava {
   min-height: 0;
   overflow-y: auto;
   background: var(--bg-1);
+  /* Focus and scrollIntoView stop below the sticky head (PageHead measures it). */
+  scroll-padding-top: calc(var(--page-head-h, 0px) + 8px);
+}
+
+/* The header and the controls right under it stay in view while the page
+   scrolls. Opaque, so rows passing underneath do not show through; the
+   negative margin borrows part of the column's top padding, so the stuck head
+   keeps some air above the title and covers it with its own background. Above
+   page content, below popovers (20+) and modals. */
+.page-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-top: -14px;
+  padding-top: 14px;
+  background: var(--bg-1);
+  transition: box-shadow 0.15s ease;
+}
+
+.page-head.stuck {
+  box-shadow: 0 10px 10px -10px rgba(0, 0, 0, 0.45);
 }
 
 .changelog-inner {
@@ -13198,7 +13219,8 @@ input[type='range']:focus-visible {
 .wiki-empty p { margin: 0; font-size: 13px; }
 .wiki-empty .settings-hint { max-width: 520px; }
 .wiki-body { display: grid; grid-template-columns: 220px 1fr; gap: 20px; align-items: start; }
-.wiki-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+/* Sticks just below the page's own sticky head, not underneath it. */
+.wiki-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--page-head-h, 0px) + 8px); }
 .wiki-nav-item { display: flex; align-items: center; gap: 8px; text-align: start; background: none; border: none; border-radius: 6px; padding: 7px 9px; cursor: pointer; color: var(--text-1); }
 .wiki-nav-item svg { flex-shrink: 0; color: var(--text-2); }
 .wiki-nav-item:hover { background: var(--bg-2); }
