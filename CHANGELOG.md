@@ -1,5 +1,14 @@
 
 
+## [4.59.1](https://github.com/StarleyDev/githuttbr/compare/v4.59.0...v4.59.1) (2026-11-26)
+
+### Bug Fixes
+
+* **brand:** remove the remaining mentions of the original project ([364ede9](https://github.com/StarleyDev/githuttbr/commit/364ede9cb7195e0db3af8da3b99b0f7b865939da))
+  - The upgrade page, the site footer, the README and the changelog no longer name another app; the NOTICE keeps the licence notice.
+  - The changelog lists only this app's releases.
+  - A test keeps the name from coming back, now in the changelog too.
+
 ## [4.59.0](https://github.com/StarleyDev/githuttbr/compare/v4.58.0...v4.59.0) (2026-11-26)
 
 ### Bug Fixes
