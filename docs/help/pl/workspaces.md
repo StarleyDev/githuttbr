@@ -54,8 +54,10 @@ Aby dodać repozytorium, którego grupa jeszcze nie ma, kliknij **+** obok nazwy
 
 Niektóre strony nie są bytem osobnym: [wiki](repo-wiki.md) repozytorium, jego
 [statystyki](insights.md), [narzędzia deweloperskie](devtools.md) ogłoszone
-przez sesję uruchomienia. Nie zajmują karty — pojawiają się jako małe ikony na
-samym repozytorium.
+przez sesję uruchomienia. Nie zajmują karty — pojawiają się jako małe etykiety na
+samym repozytorium: ikona i słowo, które mówi, jaka to strona (*CI*, *PR-y*,
+*Wiki*, *#482* dla pull requesta, tag wydania). Pełna nazwa jest w podpowiedzi, a
+długi tag lub tytuł jest skracany wielokropkiem.
 
 - **Kliknij ikonę**, żeby pokazać stronę. **Kliknij ponownie — albo kliknij
   nazwę repozytorium** — żeby wrócić do repozytorium. Dopóki strona jest

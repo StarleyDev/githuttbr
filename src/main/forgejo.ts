@@ -8,8 +8,13 @@ import type {
   IssueInfo,
   MilestoneInfo,
   PrCheck,
+  PrComment,
+  PrCommentHandle,
+  PrCommitList,
   PrDetail,
   PrFile,
+  PrDiffRevision,
+  PrLineAnchor,
   PrMergeMethod,
   PrReview,
   PrReviewEvent,
@@ -20,6 +25,9 @@ import type {
   RemoteRepo
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
+import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
+import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
+import { isEditedAfter } from '../shared/prCommentHandle'
 
 /**
  * Forgejo (and Gitea, whose API it shares) — `/api/v1` on the instance's own
@@ -99,6 +107,7 @@ interface FjPull {
   html_url: string
   head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null }
   base?: { ref?: string }
+  merge_base?: string
   requested_reviewers?: Array<{ login?: string }> | null
   state?: string
   merged?: boolean
@@ -434,6 +443,30 @@ interface FjReview {
   submitted_at?: string
 }
 
+/** A conversation comment on an issue or pull request. */
+interface FjIssueComment {
+  id: number
+  user?: FjUser | null
+  body?: string
+  created_at?: string
+  updated_at?: string
+}
+
+/**
+ * A conversation comment, with what edits and deletes it. Review (line)
+ * comments get no handle: the API has no call to edit one, and only some
+ * Forgejo versions can delete one, so the page offers neither.
+ */
+export function mapForgejoComment(c: FjIssueComment): PrComment {
+  return {
+    author: c.user?.login ?? 'unknown',
+    body: c.body ?? '',
+    createdAt: c.created_at ?? '',
+    handle: { id: c.id, kind: 'conversation' },
+    ...(isEditedAfter(c.created_at, c.updated_at) ? { edited: true } : {})
+  }
+}
+
 interface FjReviewComment {
   id: number
   body: string
@@ -472,7 +505,7 @@ export async function forgejoPullDetail(
   const r = repoApi(base, owner, repo)
   const [pr, comments, reviews] = await Promise.all([
     fjJson<FjDetail>(`${r}/pulls/${number}`, token),
-    fjJson<Array<{ user: FjUser | null; body: string; created_at: string }>>(
+    fjJson<FjIssueComment[]>(
       `${r}/issues/${number}/comments?limit=50`,
       token
     ).catch(() => []),
@@ -487,10 +520,14 @@ export async function forgejoPullDetail(
     for (const c of lineComments) {
       reviewThreads.push({
         path: c.path,
-        line: c.line ?? c.position ?? c.original_position ?? null,
+        // Gitea sends both, the unused one as 0 (an unsigned field, never omitted):
+        // `||`, not `??`, or an old-side comment reads as line 0.
+        line: c.line || c.position || c.original_position || null,
         diffHunk: c.diff_hunk ?? '',
         rootId: c.id,
-        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }]
+        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }],
+        // `position` counts in the new file, `original_position` in the old; one is set.
+        ...(c.position ? { side: 'new' as const } : c.original_position ? { side: 'old' as const } : {})
       })
     }
   }
@@ -517,7 +554,7 @@ export async function forgejoPullDetail(
     merged: !!pr.merged,
     mergeable: pr.state === 'open' ? !!pr.mergeable : null,
     url: pr.html_url,
-    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    comments: comments.map(mapForgejoComment),
     reviews: reviews.flatMap((rv) => {
       const state = mapForgejoReviewState(rv)
       return state ? [{ author: rv.user?.login ?? 'unknown', state }] : []
@@ -655,6 +692,29 @@ export async function forgejoComment(base: string, owner: string, repo: string, 
   await fjJson(`${repoApi(base, owner, repo)}/issues/${number}/comments`, token, { method: 'POST', body: JSON.stringify({ body }) })
 }
 
+function issueCommentUrl(base: string, owner: string, repo: string, handle: PrCommentHandle): string {
+  // Refused here rather than sent: /issues/comments/{id} would act on some other comment type.
+  if (handle.kind !== 'conversation') throw new Error('Forgejo cannot edit or delete a review comment through its API.')
+  return `${repoApi(base, owner, repo)}/issues/comments/${handle.id}`
+}
+
+/** Replace a conversation comment's text (issueEditComment). */
+export async function forgejoEditComment(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  handle: PrCommentHandle,
+  body: string
+): Promise<void> {
+  await fjJson(issueCommentUrl(base, owner, repo, handle), token, { method: 'PATCH', body: JSON.stringify({ body }) })
+}
+
+/** Delete a conversation comment (issueDeleteComment). */
+export async function forgejoDeleteComment(base: string, owner: string, repo: string, token: string, handle: PrCommentHandle): Promise<void> {
+  await fjJson(issueCommentUrl(base, owner, repo, handle), token, { method: 'DELETE' })
+}
+
 const REVIEW_EVENT: Record<PrReviewEvent, string> = { APPROVE: 'APPROVED', REQUEST_CHANGES: 'REQUEST_CHANGES', COMMENT: 'COMMENT' }
 
 export async function forgejoReview(
@@ -670,6 +730,42 @@ export async function forgejoReview(
     method: 'POST',
     body: JSON.stringify({ event: REVIEW_EVENT[event], body })
   })
+}
+
+/**
+ * A comment on one line of the diff. Forgejo has no single-comment endpoint:
+ * a line comment is a review holding one comment, submitted at once (COMMENT,
+ * not PENDING) so it is not left as a draft only its author sees. A deleted
+ * line is `old_position`; added and unchanged lines are `new_position`.
+ */
+export async function forgejoCommentOnLine(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string,
+  read: PrDiffRevision | null
+): Promise<void> {
+  const position = getAnchorSide(anchor) === 'old' ? 'old_position' : 'new_position'
+  await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/reviews`, token, {
+    method: 'POST',
+    body: JSON.stringify({
+      event: 'COMMENT',
+      body: '',
+      // The commit the diff was read at, so the comment is placed against it.
+      ...(read ? { commit_id: read.headSha } : {}),
+      comments: [{ path: anchor.path, body, [position]: getAnchorLine(anchor) }]
+    })
+  })
+}
+
+/** The pull's head commit and merge base, as the Files tab's diff was read at. */
+export async function forgejoPullRevision(base: string, owner: string, repo: string, token: string, number: number): Promise<PrDiffRevision | null> {
+  const pr = await fjJson<FjPull>(`${repoApi(base, owner, repo)}/pulls/${number}`, token)
+  if (!pr.head?.sha) return null
+  return { headSha: pr.head.sha, ...(pr.merge_base ? { baseSha: pr.merge_base } : {}) }
 }
 
 export async function forgejoMerge(
@@ -734,7 +830,7 @@ export async function forgejoIssueDetail(
   const at = `${api(base)}/repos/${repoPath(owner, repo)}/issues/${number}`
   const [i, comments] = await Promise.all([
     fjJson<FjIssue>(at, token),
-    fjList<{ user?: { login?: string } | null; body?: string; created_at?: string }>(`${at}/comments`, token)
+    fjList<FjIssueComment>(`${at}/comments`, token)
   ])
   return {
     ...mapForgejoIssue(i),
@@ -743,7 +839,7 @@ export async function forgejoIssueDetail(
     assignees: (i.assignees ?? []).map((a) => a.login ?? '').filter(Boolean),
     milestone: i.milestone?.title ?? null,
     createdAt: i.created_at ?? '',
-    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body ?? '', createdAt: c.created_at ?? '' })),
+    comments: comments.map(mapForgejoComment),
     // GitHub-only: closing pull requests and Projects v2 fields. Forgejo's API has no
     // issue → closing-PR lookup, so the page hides the section rather than claim "none".
     linkedPrs: [],
@@ -898,4 +994,53 @@ export async function markForgejoNotificationRead(base: string, token: string, i
 
 export async function markAllForgejoNotificationsRead(base: string, token: string): Promise<void> {
   await fjJson(`${api(base)}/notifications`, token, { method: 'PUT' })
+}
+
+interface FjCommit {
+  sha?: string
+  commit?: { message?: string; author?: { name?: string; date?: string } }
+  author?: { login?: string; avatar_url?: string } | null
+  parents?: Array<{ sha?: string }> | null
+}
+
+/**
+ * A pull request's commits. `verification` and `files` are turned off: both
+ * default to on and cost the server a signature check and a diff per commit.
+ * The page size is the server's (MAX_RESPONSE_ITEMS may be under 50), and its
+ * X-Total-Count says when the list ends — paging stops past the cap.
+ */
+export async function forgejoPullCommits(base: string, owner: string, repo: string, token: string, number: number): Promise<PrCommitList> {
+  const url = `${repoApi(base, owner, repo)}/pulls/${number}/commits?verification=false&files=false`
+  const out: FjCommit[] = []
+  let size = 0
+  let ended = false
+  for (let page = 1; page <= 20 && out.length <= PR_COMMITS_MAX; page++) {
+    const res = await fjResponse(`${url}&limit=50&page=${page}`, token)
+    const text = await res.text()
+    const items = (text ? JSON.parse(text) : []) as FjCommit[]
+    const header = res.headers.get('x-total-count')
+    const total = header === null ? NaN : Number(header)
+    out.push(...items)
+    if (page === 1) size = items.length
+    if (!items.length || (Number.isFinite(total) ? out.length >= total : items.length < size)) {
+      ended = true
+      break
+    }
+  }
+  return finishPrCommits(
+    out
+      .filter((c) => typeof c.sha === 'string')
+      .map((c) => ({
+        sha: c.sha!,
+        message: c.commit?.message,
+        authorName: c.commit?.author?.name,
+        authorLogin: c.author?.login,
+        authorAvatar: c.author?.avatar_url,
+        authoredAt: c.commit?.author?.date,
+        parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
+      })),
+    // The order is not documented; the parents settle it, this is the fallback.
+    false,
+    !ended
+  )
 }

@@ -674,11 +674,39 @@ export interface PrPreviewResult {
   conflicts: string[]
 }
 
+/**
+ * Where a comment lives on its host, so it can be edited or deleted. Absent on a
+ * comment the host offers no API to change (a Forgejo review comment).
+ */
+export interface PrCommentHandle {
+  /** The host's own comment id (GitLab: the note id). */
+  id: number
+  /**
+   * Which endpoint the comment is reached through, where the host has two:
+   * GitHub and Forgejo keep conversation comments with the issue, and review
+   * comments with the pull request. The hosts with one endpoint ignore it.
+   */
+  kind: PrCommentKind
+  /** Azure DevOps: the thread the comment belongs to. */
+  threadId?: number
+  /** Bitbucket Data Center: the comment's version, which an edit or a delete must name. */
+  version?: number
+}
+
+export type PrCommentKind = 'conversation' | 'review'
+
 /** A comment on a pull request's conversation. */
 export interface PrComment {
   author: string
   body: string
   createdAt: string
+  handle?: PrCommentHandle
+  /** The host says the text was changed after it was posted. */
+  edited?: boolean
+  /** The author's account id, where `author` is a display name (Azure DevOps). */
+  authorId?: string
+  /** Others answered it, in the host's own thread (Data Center, Azure DevOps, GitLab). */
+  hasReplies?: boolean
 }
 
 /** A submitted review on a pull request. */
@@ -693,6 +721,11 @@ export interface PrReviewComment {
   author: string
   body: string
   createdAt: string
+  handle?: PrCommentHandle
+  /** The host says the text was changed after it was posted. */
+  edited?: boolean
+  /** The author's account id, where `author` is a display name (Azure DevOps). */
+  authorId?: string
 }
 
 /** An inline review thread anchored to a file/line in the PR diff. */
@@ -703,6 +736,32 @@ export interface PrReviewThread {
   /** Reply target: GitHub root comment id, or GitLab discussion id. */
   rootId: number | string
   comments: PrReviewComment[]
+  /**
+   * Which side of the diff `line` counts on: `old` for a deleted line, `new` for
+   * an added or unchanged one. Absent when the host does not say, or when the
+   * thread no longer sits on the current diff (an outdated GitHub comment) —
+   * the Files tab then lists it only in the conversation, never on a guessed line.
+   */
+  side?: PrLineSide
+}
+
+/** Which version of a file a diff line belongs to: before the change, or after. */
+export type PrLineSide = 'old' | 'new'
+
+/**
+ * One line of a PR file's diff, as a new line comment is anchored to it. Both
+ * numbers are kept because the hosts disagree on which they want — GitLab
+ * needs both for an unchanged line, the others one, picked by side.
+ */
+export interface PrLineAnchor {
+  path: string
+  /** The path before a rename; absent when the file kept its name. */
+  oldPath?: string
+  kind: 'add' | 'del' | 'ctx'
+  /** The line in the old version — null for an added line. */
+  oldLine: number | null
+  /** The line in the new version — null for a deleted line. */
+  newLine: number | null
 }
 
 /** One CI check-run on a PR's head commit. */
@@ -729,6 +788,55 @@ export interface PrFile {
   patch?: string
   /** The path before a rename. */
   previousFilename?: string
+}
+
+/**
+ * Which version of a pull request a diff was read at: the head commit (and
+ * merge base, where the host names it), plus Azure DevOps's iteration. A line
+ * comment carries it, so a push after the diff loaded is caught instead of the
+ * comment landing on whatever line now has that number.
+ */
+export interface PrDiffRevision {
+  headSha: string
+  baseSha?: string
+  /** Azure DevOps: the iteration the diff is the last of. */
+  iteration?: number
+}
+
+/** A pull request's changed files and the revision they were read at — null
+ *  when the host did not say, or the PR moved while they were being read. */
+export interface PrFileList {
+  files: PrFile[]
+  revision: PrDiffRevision | null
+}
+
+/** One commit of a pull request, as its host lists it. */
+export interface PrCommit {
+  sha: string
+  shortSha: string
+  /** The message's first line. */
+  subject: string
+  /** The rest of the message, trimmed; absent when there is none. */
+  body?: string
+  authorName: string
+  /** The author's account on the host, when the host matched one. */
+  authorLogin?: string
+  /** An https picture of the author, when the host gives one without a sign-in. */
+  authorAvatar?: string
+  /** ISO date the commit was authored. */
+  authoredAt: string
+  /** Parent count — above one is a merge commit. Absent when the host does not say. */
+  parents?: number
+}
+
+/** A pull request's commits, oldest first. `truncated` when the host has more
+ *  than it listed (GitHub stops at 250) or the app stopped paging. */
+export interface PrCommitList {
+  commits: PrCommit[]
+  truncated: boolean
+  /** Which end a truncated list kept — the host's first ones as it lists them:
+   *  the oldest on an oldest-first host, the most recent on a newest-first one. */
+  kept: 'oldest' | 'newest'
 }
 
 /** Full detail for one pull request (conversation + review state). */
@@ -780,6 +888,15 @@ export interface PrDetail {
   avatars?: Record<string, string>
   /** Work items linked to the PR (Azure Boards). */
   workItems?: PrWorkItem[]
+  /**
+   * Who this page's calls sign in as, named the way the host names comment
+   * authors: what "your comment" is matched on. Null when the token cannot say.
+   */
+  viewer?: string | null
+  /** The viewer's account id, where the host has one worth matching on (Azure DevOps, bitbucket.org). */
+  viewerId?: string | null
+  /** Authors are display names two people can share: "yours" is matched on `viewerId` only. */
+  viewerById?: boolean
 }
 
 /** A work item a pull request is linked to. */
@@ -791,6 +908,42 @@ export interface PrWorkItem {
   /** New, Active, Resolved… */
   state?: string
   url: string
+}
+
+/**
+ * How a reference is written in commit or comment text: `#12` (an issue or a
+ * pull request; on Azure DevOps a work item), `!12` (a GitLab merge request),
+ * `AB#12` (an Azure Boards work item).
+ */
+export type ReferenceSigil = '#' | '!' | 'AB#'
+
+/** One reference whose summary the hover card asks for. */
+export interface ReferenceQuery {
+  sigil: ReferenceSigil
+  id: number
+}
+
+/**
+ * What the host says about a reference: enough for a hover card. `available`
+ * is false when the host has no such item, this account may not read it, or
+ * the host has no API for it — never an error, so one bad id costs one card.
+ */
+export interface ReferenceSummary extends ReferenceQuery {
+  available: boolean
+  /**
+   * Why it is not available: the host has no such item or will not show it to
+   * this account (`notFound`), the host is throttling (`rateLimited`), or the
+   * host was not asked or not reached — no account, no API, offline (`unreachable`).
+   */
+  reason?: 'notFound' | 'rateLimited' | 'unreachable'
+  kind?: 'issue' | 'pr' | 'mr' | 'workItem'
+  title?: string
+  /** GitHub, GitLab and Forgejo, normalized. */
+  state?: 'open' | 'closed' | 'merged'
+  /** Azure's own state name ("Active", "Resolved"): a process's vocabulary, shown as is. */
+  stateName?: string
+  /** Azure: Bug, User Story, Task… */
+  workItemType?: string
 }
 
 /** Someone named on a pull request — an assignee or a requested reviewer. */
@@ -867,6 +1020,10 @@ export interface IssueDetail {
   linkedPrs: LinkedPr[]
   linkedPrsStatus: LinkedPrsStatus
   projectFields: ProjectFieldGroup[]
+  /** Who the page's calls sign in as; see `PrDetail.viewer`. */
+  viewer?: string | null
+  viewerId?: string | null
+  viewerById?: boolean
 }
 
 export type PrReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
@@ -2711,6 +2868,106 @@ export interface PushBranchesResult {
   /** `remote:` lines the server sent — where a hosting service explains a
    *  protected-branch refusal. */
   remoteMessages: string[]
+}
+
+/**
+ * One local branch the cleanup dialog may offer for deletion. The current
+ * branch, branches checked out in a worktree, the default branch and protected
+ * branches never appear here — they are listed in `excluded` instead.
+ */
+export interface BranchCleanupCandidate {
+  name: string
+  sha: string
+  /** The configured upstream, short form (`origin/feature`), or null. */
+  upstream: string | null
+  /** The upstream is configured but its remote-tracking ref is gone (`[gone]`). */
+  gone: boolean
+  /** Reachable from the default branch (remote-tracking, or local when that is all there is). */
+  merged: boolean
+  /** The copy of the default branch that contains it (`origin/main`, or `main` when only the
+   *  local one does — a merge made here and not pushed yet). Null when not merged. */
+  mergedInto: string | null
+  /** The tip is exactly the default branch's tip: a branch nobody committed on yet. */
+  atMainTip: boolean
+  /** Committer date of the tip, epoch milliseconds. */
+  lastCommitAt: number
+  /** Commits reachable from this branch and from no remote-tracking ref and not from the default branch. */
+  uniqueCommits: number
+  /** `uniqueCommits` stopped counting at the cap: the real number is at least this. */
+  uniqueCapped: boolean
+}
+
+/** Why a local branch is never offered for cleanup. */
+export type BranchCleanupExclusion = 'current' | 'worktree' | 'rebasing' | 'default' | 'protected'
+
+export interface BranchCleanupScan {
+  /** The default branch's name (`main`), or null when none could be found. */
+  mainBranch: string | null
+  /** What "merged" was measured against: `origin/main`, or `main` without a remote copy. */
+  mainRef: string | null
+  /** Every ref "merged" was measured against, full names, the remote copy first. */
+  mainRefs: string[]
+  candidates: BranchCleanupCandidate[]
+  excluded: { name: string; reason: BranchCleanupExclusion }[]
+  /** When the repository last fetched (FETCH_HEAD's mtime), or null. */
+  lastFetchAt: number | null
+}
+
+/** One branch the user chose to delete, with the tip the dialog showed. */
+export interface BranchDeleteRequest {
+  name: string
+  /** The tip the dialog listed. A branch that moved since is refused, not deleted. */
+  sha: string
+  /**
+   * How many commits that exist only on this branch the user explicitly accepted
+   * losing — the count the confirm showed. A branch with more is refused.
+   */
+  acceptedUnique: number
+  /** Deleted because its content was found squash-merged: the main process checks that again. */
+  squashMerged?: boolean
+}
+
+/** Why the main process refused to delete a requested branch. */
+export type BranchDeleteRefusal = 'missing' | 'moved' | 'unique' | 'squashChanged' | BranchCleanupExclusion
+
+/** A gone branch whose whole content is already in the default branch — a squash merge. */
+export interface BranchSquashCheck {
+  name: string
+  /** The default-branch ref whose tree already holds the branch's changes, or null. */
+  squashedInto: string | null
+}
+
+export interface BranchDeleteResult {
+  name: string
+  sha: string
+  status: 'deleted' | 'refused' | 'failed'
+  refusal?: BranchDeleteRefusal
+  /** git's message when `status` is `failed`. */
+  error?: string
+  /** `branch.<name>.remote` as it was before the delete, for the undo. */
+  upstreamRemote?: string
+  /** `branch.<name>.merge` as it was before the delete, for the undo. */
+  upstreamMerge?: string
+}
+
+/** What the undo of a cleanup recreates: the branch at its sha, and its tracking config. */
+export interface BranchRestoreRequest {
+  name: string
+  sha: string
+  upstreamRemote?: string
+  upstreamMerge?: string
+}
+
+export interface BranchRestoreResult {
+  name: string
+  /**
+   * `exists`: the name is back at the same commit, nothing to do. `restoredAs`:
+   * the name was taken by another commit, so the branch came back under a new name.
+   */
+  status: 'restored' | 'restoredAs' | 'exists' | 'failed'
+  /** The name it was recreated under when `status` is `restoredAs`. */
+  restoredAs?: string
+  error?: string
 }
 
 /**

@@ -19,7 +19,7 @@ import {
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { RepoTabLabel } from './RepoTabLabel'
-import { tabLabel, pageTabLabel } from '../lib/tabLabel'
+import { tabLabel, pageTabLabel, pageChipLabel } from '../lib/tabLabel'
 import { pagesForRepo } from '../lib/tabPages'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
 import { canonicalRepoName, lookupRepoAlias, repoDisplayName } from '../lib/repoAlias'
@@ -947,8 +947,8 @@ export function TitleBar(): React.JSX.Element {
         }}
       >
         {pageTabIcon(page.type)}
-        {/* Several PRs can sit on one repository: the number tells them apart. */}
-        {page.type === 'pr' && <span className="tab-page-num">#{page.number}</span>}
+        {/* A word beside the icon — "CI", "PRs", "#482" — so the chips read without hovering. */}
+        <span className="tab-page-num">{pageChipLabel(page, t)}</span>
         <span
           className="tab-page-close"
           role="button"

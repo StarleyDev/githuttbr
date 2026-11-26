@@ -50,6 +50,14 @@ böylece grup tek bir aile gibi okunur:
   renginde; Profil ve Ortam yeşil; Entegrasyonlar ve Veri camgöbeği; Temalar
   turuncu; Güvenlik kırmızı. Genel ve Kısayollar gri kalır.
 
+Etiketsiz bir simge düğmeleri sırası tersini yapar — her düğme kendi rengini alır,
+böylece birbirinden ayırt edilebilirler. [Pull request sayfasında](pull-requests.md)
+başlığın düğmeleri şöyledir: yenile mavi, yapay zekâ incelemesi vurgu rengi, yerelde
+önizle turkuaz, kaynak dala git yeşil ve hedef dala git turuncu (tarayıcıda aç gri
+kalır); kendi yorumlarınızda **Düzenle** vurgu rengini, **Sil** kırmızıyı alır —
+orada ve issue sayfasında. Mavi ve turkuaz temanın renklerinin karışımlarıdır, bu
+yüzden onlar da temayı izler.
+
 | Seçenek | Ne görürsünüz |
 |---|---|
 | **Tek renk** | Her simge gri, bu seçenek yokken olduğu gibi |
@@ -60,10 +68,10 @@ Renkler temadan gelir — yeşilini ya da vurgu rengini değiştiren bir tema
 simgeleri de onunla birlikte boyar; özel ve yapay zekâ üretimi temalar dahil.
 
 Sınırlar: yalnızca araç çubuğunun ana düğmeleri, kenar çubuğu bölüm başlıkları,
-Araçlar menüsü ve Ayarlar sayfaları renklenir; diğer menüler, bir bölümün içindeki
-satırlar ve commit grafiği renklenmez. Üzerine gelinen menü satırı, simgesi dahil
-her zamanki görünümünü korur. Renk asla tek ipucu değildir — her simge etiketini
-korur.
+Araçlar menüsü, Ayarlar sayfaları ve pull request ile issue sayfalarının düğmeleri
+renklenir; diğer menüler, bir bölümün içindeki satırlar ve commit grafiği
+renklenmez. Üzerine gelinen menü satırı, simgesi dahil her zamanki görünümünü korur.
+Renk asla tek ipucu değildir — her simge etiketini korur.
 
 ## Bir ayarı bulmak
 

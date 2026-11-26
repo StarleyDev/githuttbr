@@ -17,6 +17,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import type { GitHubNotification } from '../../../shared/types'
 import { useT, t as tr, interp, type TranslationKey } from '../i18n'
+import { PageHead } from './PageHead'
 
 /** GitHub's `reason` field → its label's key (the key, not the text: a module
  *  constant would freeze the language active on first import). */
@@ -125,39 +126,40 @@ export function NotificationsPage(): React.JSX.Element {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <Bell size={20} />
-            <div>
-              <h1>{t('notif.title')}</h1>
-              <span className="settings-hint">{t('notif.subtitle')}</span>
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <Bell size={20} />
+              <div>
+                <h1>{t('notif.title')}</h1>
+                <span className="settings-hint">{t('notif.subtitle')}</span>
+              </div>
             </div>
-          </div>
-        </header>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
-          <div className="codesearch-tabs" style={{ margin: 0 }}>
-            <button className={`codesearch-tab ${!showAll ? 'active' : ''}`} onClick={() => setShowAll(false)}>
-              {t('notif.unread')} {unreadCount > 0 ? `(${unreadCount})` : ''}
+          </header>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
+            <div className="codesearch-tabs" style={{ margin: 0 }}>
+              <button className={`codesearch-tab ${!showAll ? 'active' : ''}`} onClick={() => setShowAll(false)}>
+                {t('notif.unread')} {unreadCount > 0 ? `(${unreadCount})` : ''}
+              </button>
+              <button className={`codesearch-tab ${showAll ? 'active' : ''}`} onClick={() => setShowAll(true)}>
+                {t('notif.all')}
+              </button>
+            </div>
+            <button className="btn ghost small" onClick={() => void refresh()} disabled={loading}>
+              <RefreshCw size={13} className={loading ? 'spin' : undefined} />
+              {t('notif.refresh')}
             </button>
-            <button className={`codesearch-tab ${showAll ? 'active' : ''}`} onClick={() => setShowAll(true)}>
-              {t('notif.all')}
+            <button
+              className="btn ghost small"
+              onClick={() => void markAllRead()}
+              disabled={unreadCount === 0}
+              style={{ marginLeft: 'auto' }}
+            >
+              <CheckCheck size={13} />
+              {t('notif.markAllRead')}
             </button>
           </div>
-          <button className="btn ghost small" onClick={() => void refresh()} disabled={loading}>
-            <RefreshCw size={13} className={loading ? 'spin' : undefined} />
-            {t('notif.refresh')}
-          </button>
-          <button
-            className="btn ghost small"
-            onClick={() => void markAllRead()}
-            disabled={unreadCount === 0}
-            style={{ marginLeft: 'auto' }}
-          >
-            <CheckCheck size={13} />
-            {t('notif.markAllRead')}
-          </button>
-        </div>
+        </PageHead>
 
         {/* An empty list without a typed token may also mean the credential
             helper had nothing for github.com — point at Settings either way. */}

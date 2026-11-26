@@ -50,6 +50,34 @@ export function pageTabLabel(page: PageContent, t: (key: TranslationKey) => stri
   }
 }
 
+/**
+ * The few words a repository's page chip shows beside its icon, so a row of
+ * chips reads without hovering each one. The full name stays in the tooltip
+ * (`pageTabLabel`); long values are cut by CSS, never here.
+ */
+export function pageChipLabel(page: PageContent, t: (key: TranslationKey) => string): string {
+  switch (page.type) {
+    case 'pr':
+      return `#${page.number}`
+    case 'issue':
+      return `#${page.issue.number}`
+    case 'ci-runs':
+      return t('chip.ciRuns')
+    case 'pull-requests':
+      return t('chip.pullRequests')
+    case 'wiki':
+      return t('chip.wiki')
+    case 'release':
+      return page.release.tag || page.release.name || `#${page.release.id}`
+    case 'milestone':
+      return page.milestone.title
+    case 'devtools':
+      return page.tool
+    default:
+      return pageTabLabel(page, t)
+  }
+}
+
 /** A tab's display name: what the user renamed it to, or the derived label. */
 export function tabLabel(tab: PageTab, t: (key: TranslationKey) => string): string {
   return tab.renamed && tab.name ? tab.name : pageTabLabel(tab.page, t)

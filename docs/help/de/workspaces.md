@@ -56,7 +56,10 @@ Um ein Repository hinzuzufügen, das die Gruppe noch nicht enthält, klicke auf 
 Manche Seiten sind nichts Eigenes: das [Wiki](repo-wiki.md) eines Repositories,
 seine [Insights](insights.md), die [Dev-Werkzeuge](devtools.md), die eine
 Launch-Sitzung angekündigt hat. Sie belegen keinen Tab — sie erscheinen als
-kleine Symbole am Repository selbst.
+kleine Chips am Repository selbst: ein Symbol und ein Wort, das sagt, welche Seite
+es ist (*CI*, *PRs*, *Wiki*, *#482* für einen Pull Request, das Tag eines Releases).
+Der volle Name steht im Tooltip, und ein langes Tag oder ein langer Titel wird mit
+Auslassungspunkten gekürzt.
 
 - **Klick auf ein Symbol** zeigt die Seite. **Noch einmal klicken — oder auf den
   Namen des Repositories** — bringt zum Repository zurück. Solange eine Seite

@@ -68,8 +68,13 @@ interface Provider {
 const PR_OPS: Provider['ops'] = [
   ['hosting:prDetail', 1],
   ['hosting:prFiles', 1],
+  ['hosting:prListCommits', 1],
   ['hosting:prChecks', 1],
   ['hosting:prComment', 1, 'Thanks!'],
+  ['hosting:prCommentOnLine', 1, { path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 3 }, 'Nit.'],
+  // One handle every host accepts: Azure reads the thread, Data Center the version.
+  ['hosting:prEditComment', 1, { id: 3, kind: 'conversation', threadId: 2, version: 0 }, 'Edited.'],
+  ['hosting:prDeleteComment', 1, { id: 3, kind: 'conversation', threadId: 2, version: 0 }],
   ['hosting:prReview', 1, 'APPROVE', ''],
   ['hosting:prMerge', 1, 'merge'],
   ['hosting:listPRs'],
@@ -84,6 +89,8 @@ const ISSUE_OPS: Provider['ops'] = [
 ]
 // Reviewer / assignee / label choices for the create dialog — every host but Forgejo has some.
 const PICKER: Provider['ops'][number] = ['hosting:prPickerOptions']
+// Titles for the hover card on `#12`: the issues API, as the bound profile.
+const REFS: Provider['ops'][number] = ['hosting:getReferenceSummaries', [{ sigil: '#', id: 5 }]]
 const GITHUB_ONLY: Provider['ops'] = [
   ['hosting:createPR', { title: 'T', body: '', source: 'feature', target: 'main', draft: false }],
   ['hosting:updatePR', 1, { base: 'main' }],
@@ -99,27 +106,27 @@ const PROVIDERS: Provider[] = [
     name: 'github.com',
     remote: 'https://github.com/team/app.git',
     slot: 'com',
-    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, REFS, ['hosting:ciStatuses-github']]
   },
   {
     name: 'GitHub Enterprise Server',
     remote: `${GHES}/team/app.git`,
     slot: 'ghes',
-    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, ['hosting:ciStatuses-github']]
+    ops: [...PR_OPS, PICKER, ...ISSUE_OPS, ...GITHUB_ONLY, REFS, ['hosting:ciStatuses-github']]
   },
-  { name: 'a GitLab server', remote: `${GITLAB}/team/app.git`, slot: 'gitlab', ops: [...PR_OPS, PICKER] },
+  { name: 'a GitLab server', remote: `${GITLAB}/team/app.git`, slot: 'gitlab', ops: [...PR_OPS, PICKER, REFS, ['hosting:getReferenceSummaries', [{ sigil: '!', id: 3 }]]] },
   {
     name: 'a Bitbucket Data Center',
     remote: `${BBS}/scm/proj/app.git`,
     slot: 'bbs',
     ops: [...PR_OPS, PICKER, ['hosting:ciStatuses-github']]
   },
-  { name: 'Forgejo', remote: `${FORGEJO}/team/app.git`, slot: 'forgejo', ops: [...PR_OPS, ...ISSUE_OPS, ['hosting:listReleases']] },
+  { name: 'Forgejo', remote: `${FORGEJO}/team/app.git`, slot: 'forgejo', ops: [...PR_OPS, ...ISSUE_OPS, ['hosting:listReleases'], REFS] },
   {
     name: 'Azure DevOps',
     remote: 'https://dev.azure.com/acme/proj/_git/app',
     slot: 'azure',
-    ops: [...PR_OPS, PICKER, ['hosting:workItem', 7]]
+    ops: [...PR_OPS, PICKER, ['hosting:workItem', 7], ['hosting:getReferenceSummaries', [{ sigil: 'AB#', id: 7 }]]]
   }
 ]
 
@@ -229,6 +236,19 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
     })
   }
 
+  // The PR page's "you" (whose comments get Edit and Delete) is asked as the
+  // bound profile too: never the active one's account.
+  it('the PR page asks who "you" are as the bound profile', async () => {
+    const { forgetLogins } = await import('../src/main/hosting')
+    forgetLogins()
+    const github = PROVIDERS[0]
+    await invoke(BOUND, github, ['hosting:prDetail', 1])
+    const who = calls.filter((c) => c.url === 'https://api.github.com/user')
+    expect(who).toHaveLength(1)
+    expect(who[0].credentials).toContain(PERSONAL.com)
+    expect(who[0].credentials).not.toContain('work-')
+  })
+
   // Bound to a profile with nothing for the host: nothing is sent, and the
   // error names that profile — "this profile" would point at the active one.
   it('a bound profile with no credential sends nothing and says which profile it is', async () => {
@@ -238,6 +258,17 @@ describe('a repository’s hosting actions run as the profile it is bound to', (
         .then(() => null, (e: Error) => e)
       expect(err?.message, remote).toContain('the profile "Empty" this repository is bound to')
     }
+    expect(calls).toEqual([])
+  })
+
+  // The hover card never fails: a host with no issue API (Bitbucket) or no
+  // credential answers every reference "unavailable", and asks nobody.
+  it('reference titles: Bitbucket and a credential-less profile answer "unavailable" without a request', async () => {
+    const refs = [{ sigil: '#', id: 5 }]
+    const ask = (repo: string, remote: string): Promise<unknown> =>
+      Promise.resolve(handlers.get('hosting:getReferenceSummaries')!({}, repo, remote, { github: WORK.com }, refs))
+    expect(await ask(BOUND, `${BBS}/scm/proj/app.git`)).toEqual([{ sigil: '#', id: 5, available: false, reason: 'unreachable' }])
+    expect(await ask(BOUND_TO_EMPTY, `${GHES}/team/app.git`)).toEqual([{ sigil: '#', id: 5, available: false, reason: 'unreachable' }])
     expect(calls).toEqual([])
   })
 

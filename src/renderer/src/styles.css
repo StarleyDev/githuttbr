@@ -1747,6 +1747,41 @@ textarea:focus {
   border-radius: 3px;
 }
 
+/* Per-action tones for a row of icon buttons (the pull request page's header
+   and a comment's Edit / Delete). The theme has five hues; the two in-between
+   ones are mixes of them, so a theme that repaints its slots repaints these. */
+[data-tone='refresh'] { --tone: color-mix(in srgb, var(--accent) 50%, var(--purple)); }
+[data-tone='ai'] { --tone: var(--accent); }
+[data-tone='preview'] { --tone: color-mix(in srgb, var(--green) 50%, var(--purple)); }
+[data-tone='source'] { --tone: var(--green); }
+[data-tone='target'] { --tone: var(--yellow); }
+[data-tone='edit'] { --tone: var(--accent); }
+[data-tone='delete'] { --tone: var(--red); }
+/* The glyph's ink leans a fifth toward the text colour: darker on a light
+   theme, lighter on a dark one. Some themes' green or orange is too pale for a
+   thin 12px stroke on white; this keeps every built-in theme above 3:1. */
+.icon-btn[data-tone] {
+  --tone-ink: color-mix(in srgb, var(--tone) 80%, var(--text-0));
+}
+:root[data-icon-colors='soft'] .icon-btn[data-tone] > svg {
+  color: color-mix(in srgb, var(--tone-ink) 72%, currentColor);
+}
+/* Full: the hue on a chip — the button's own padded box, so nothing moves. */
+:root[data-icon-colors='full'] .icon-btn[data-tone] > svg {
+  color: var(--tone-ink);
+}
+:root[data-icon-colors='full'] .icon-btn[data-tone] {
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
+/* Hover and keyboard focus take the whole hue, in both modes; a disabled
+   button keeps its resting colour and is dimmed below. */
+:root[data-icon-colors='soft'] .icon-btn[data-tone]:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) > svg {
+  color: var(--tone-ink);
+}
+:root[data-icon-colors='full'] .icon-btn[data-tone]:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  background: color-mix(in srgb, var(--tone) 26%, transparent);
+}
+
 .sb-header {
   display: flex;
   align-items: center;
@@ -1781,11 +1816,18 @@ textarea:focus {
 .sb-arrow {
   display: flex;
 }
+/* One line, always: a long section name ("PULL REQUESTS", or a longer translation) used to wrap
+   under the action buttons. It gives way with an ellipsis, and the full name is on hover. */
 .sb-title {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-align: start;
 }
 .sb-count {
+  flex: none;
   background: var(--bg-4);
   border-radius: 8px;
   padding: 1px 7px;
@@ -1794,6 +1836,7 @@ textarea:focus {
 }
 .sb-actions {
   display: flex;
+  flex: none;
   margin-inline-end: 2px;
 }
 
@@ -4551,7 +4594,12 @@ body.col-resizing .node-ava {
 }
 .tab-page-chip:hover { color: var(--text-1); background: var(--bg-3); }
 .tab-page-chip.active { color: var(--accent); background: var(--accent-soft); }
-.tab-page-num { margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.tab-page-num {
+  margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums;
+  /* A release tag or a milestone title can be long: the chip stays a chip. */
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tab-page-chip:not(.tab-page-chip-pr) { padding: 2px 5px 2px 3px; }
 /* A pull request is a destination of its own, not a tool icon: a bordered pill
    with a bigger icon and the number in bold, solid accent while it is open. */
 .tab-page-chip-pr {
@@ -5827,13 +5875,15 @@ body.col-resizing .node-ava {
 }
 /* Dialogs built for a fixed header — a root that fills the height, with a
    list that scrolls on its own — get the body's height, so only that list
-   moves. Settings is one, and so are the radar, time machine, range-diff and
-   local CI. A new dialog of that shape adds its root here. */
-.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root)) {
+   moves. Settings is one, and so are the radar, time machine, range-diff,
+   local CI and repository settings. A new dialog of that shape adds its root here. */
+.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings)) {
   display: flex;
   flex-direction: column;
 }
-.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) { min-height: 0; }
+.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings) {
+  min-height: 0;
+}
 /* Everything else scrolls as a whole, with its title pinned on top. The gap
    under it is padding, not margin, so scrolled content does not show through. */
 .modal-scroll > h3:first-child,
@@ -5863,6 +5913,11 @@ body.col-resizing .node-ava {
    "tracks origin/…" line fit without wrapping. */
 .modal-push-branches {
   width: 504px;
+}
+
+/* Wide enough for a long PR branch name plus its reason chips on one line. */
+.modal-branch-cleanup {
+  width: 600px;
 }
 
 /* 20px over the default 420px: the reviewer, assignee and label chips and the
@@ -7133,6 +7188,35 @@ body.col-resizing .node-ava {
   gap: 8px;
   margin-top: 18px;
 }
+/* The footer of a scrolling dialog stays at the bottom, so its buttons never
+   scroll away; only the body moves. The footer is the last child (an inline
+   row of actions mid-dialog is not), and dialogs that lay out their own fixed
+   regions are left alone. Opaque, and the padding it adds below is taken back
+   by the margin, so a short dialog looks exactly as before. */
+.modal-scroll
+  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) *) {
+  position: sticky;
+  /* Chromium pins a sticky box inside the scroller's padding, so the 22px under
+     .modal-scroll would leave a strip where rows show through: reach into it. A
+     scroller of its own without that padding (repository settings) zeroes it. */
+  bottom: calc(-1 * var(--modal-foot-inset, 22px));
+  z-index: 3;
+  background: var(--bg-2);
+  padding-bottom: 14px;
+  margin-bottom: -14px;
+}
+/* A fade above the pinned footer, so rows sliding under it do not end in a
+   hard cut. It paints over the footer's own top margin, empty when not scrolled. */
+.modal-scroll
+  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) *)::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: 12px;
+  background: linear-gradient(to bottom, transparent, var(--bg-2));
+  pointer-events: none;
+}
 
 .modal-close {
   position: absolute;
@@ -7874,6 +7958,32 @@ body.col-resizing .node-ava {
   min-height: 0;
   overflow-y: auto;
   background: var(--bg-1);
+  /* Focus and scrollIntoView stop below the sticky head (PageHead measures it). */
+  scroll-padding-top: calc(var(--page-head-h, 0px) + 8px);
+}
+
+/* The header and the controls right under it stay in view while the page
+   scrolls. Opaque, so rows passing underneath do not show through; the
+   negative margin borrows part of the column's top padding, so the stuck head
+   keeps some air above the title and covers it with its own background. Above
+   page content, below popovers (20+) and modals. */
+.page-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-top: -14px;
+  padding-top: 14px;
+  background: var(--bg-1);
+  transition: box-shadow 0.15s ease;
+}
+
+.page-head.stuck {
+  box-shadow: 0 10px 10px -10px rgba(0, 0, 0, 0.45);
+}
+/* A page embedded in a dialog (Insights in repository settings) sits under the
+   dialog's own fixed title and tabs: one pinned header is enough. */
+.modal .page-head {
+  position: static;
 }
 
 .changelog-inner {
@@ -13180,7 +13290,8 @@ input[type='range']:focus-visible {
 .wiki-empty p { margin: 0; font-size: 13px; }
 .wiki-empty .settings-hint { max-width: 520px; }
 .wiki-body { display: grid; grid-template-columns: 220px 1fr; gap: 20px; align-items: start; }
-.wiki-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+/* Sticks just below the page's own sticky head, not underneath it. */
+.wiki-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--page-head-h, 0px) + 8px); }
 .wiki-nav-item { display: flex; align-items: center; gap: 8px; text-align: start; background: none; border: none; border-radius: 6px; padding: 7px 9px; cursor: pointer; color: var(--text-1); }
 .wiki-nav-item svg { flex-shrink: 0; color: var(--text-2); }
 .wiki-nav-item:hover { background: var(--bg-2); }
@@ -13332,6 +13443,75 @@ input[type='range']:focus-visible {
 .diff-split-cell.selectable:hover {
   filter: brightness(1.12);
 }
+/* ── Line comments (a pull request's Files tab) ──
+   The "+" sits over the first gutter and shows on hover or keyboard focus. It
+   is absolutely placed so the row's columns do not move to make room. */
+.diff-line.commentable,
+.diff-split-cell.commentable {
+  position: relative;
+  cursor: pointer;
+}
+.diff-comment-btn {
+  position: absolute;
+  inset-inline-start: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 1;
+}
+.diff-line.commentable:hover .diff-comment-btn,
+.diff-split-cell.commentable:hover .diff-comment-btn,
+.diff-comment-btn:focus-visible {
+  opacity: 1;
+}
+.diff-comment-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* What sits under a line: its review threads, the composer. Sticky to the
+   left edge so a wide diff scrolled sideways does not carry it out of view. */
+.diff-line-extra {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 760px;
+  padding: 6px 10px 8px 46px;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  color: var(--text-0);
+}
+.diff-split .diff-line-extra { padding-inline-start: 10px; max-width: none; }
+/* Column mode: each column is as wide as its longest line, so the block keeps a
+   readable width and sticks to the column's left edge instead. */
+.diff-split.is-cols .diff-line-extra { max-width: 640px; }
+.diff-line-extra-spacer { flex: none; }
+.prp-line-threads { display: flex; flex-direction: column; gap: 8px; }
+.prp-line-threads .prp-card { margin-bottom: 0; }
+.prp-line-composer {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-2);
+  padding: 8px 10px;
+}
+.prp-line-composer-loc { font-size: 11px; color: var(--text-2); margin-bottom: 6px; }
+.prp-line-composer-loc code { font-family: var(--mono); color: var(--text-1); }
+.prp-line-composer .prd-input { margin-bottom: 6px; min-height: 72px; }
+/* Every comment box follows one pattern: the hint on the left, the buttons on the right, the main one last. */
+.prp-line-composer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.prp-line-composer-hint { margin-inline-end: auto; font-size: 11px; color: var(--text-3); }
+.prp-line-threads + .prp-line-composer { margin-top: 8px; }
+
 .diff-line.line-selected,
 .diff-split-cell.line-selected {
   box-shadow: inset 3px 0 0 var(--accent);
@@ -17003,10 +17183,14 @@ button.insights-row:hover { background: var(--bg-2); }
   overflow-x: auto;
   white-space: pre;
 }
-.prd-thread-reply { display: flex; gap: 6px; margin-top: 8px; }
+.prd-thread-reply { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.prd-thread-reply > .btn { align-self: flex-end; }
 .prd-reply-input {
-  flex: 1;
+  width: 100%;
   font-size: 12px;
+  font-family: inherit;
+  line-height: 1.45;
+  resize: vertical;
   padding: 5px 8px;
   background: var(--bg-0);
   border: 1px solid var(--border-soft);
@@ -17434,7 +17618,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* ─── Repo settings tabs ───────────────────────────────────────────────── */
 .repo-settings { display: flex; flex-direction: column; min-height: 0; }
 .repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
-.repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; }
+.repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; --modal-foot-inset: 0px; }
 .repo-image-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .rip-field { position: relative; flex: 1; min-width: 0; display: flex; }
 .rip-field input { flex: 1; min-width: 0; padding-inline-end: 26px; }
@@ -19112,18 +19296,18 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* ── Pull request page ───────────────────────────────────────────────────────
    A PR as a tab: conversation / files / checks on the left, everything about
    the PR on the right. Shares the issue page's field styles (.issue-field…). */
-/* Same frame as the pull requests list: a centred 1420px column with margins on both sides, so
-   moving between the list and a PR does not make the content jump to the window edges. Done with
-   padding rather than max-width so the page background still fills the whole tab. */
+/* The PR page uses the whole tab: reviewing files side by side needs the width, and a centred
+   column left the diff cramped between empty margins. The list page keeps its centred column. */
 /* The page's own width, not the window's, decides when the sidebar stacks: with the repository
    sidebar open a wide window can still leave the conversation a sliver. A container query cannot
    look at the element it styles, hence the frame around .prp-page. */
 .prp-frame { container-type: inline-size; flex: 1; min-height: 0; height: 100%; overflow: hidden; }
 .prp-page {
   display: flex; gap: 20px; height: 100%; overflow: hidden; box-sizing: border-box;
-  background: var(--bg-1); padding: 24px max(32px, calc((100% - 1420px) / 2 + 32px));
+  background: var(--bg-1); padding: 20px 24px;
 }
 .prp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.prp-top { flex: none; display: flex; flex-direction: column; }
 .prp-head { display: flex; align-items: center; gap: 10px; }
 .prp-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 19px; line-height: 1.3; overflow-wrap: anywhere; }
 .prp-num { color: var(--text-3); font-weight: 400; }
@@ -19162,6 +19346,43 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-thread .prp-card-body { padding: 2px 0 8px; }
 .prp-thread-comment + .prp-thread-comment { border-top: 1px solid var(--border); }
 .prp-muted { color: var(--text-3); font-style: italic; }
+
+/* Your own comment: Edit and Delete at the end of its header, the edit in place of its text. */
+.comment-edited { font-size: 11px; color: var(--text-3); }
+.prd-thread-orphan { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); }
+.comment-actions { display: inline-flex; gap: 2px; margin-inline-start: auto; }
+.comment-actions .icon-btn { padding: 2px 4px; }
+/* The header's and a comment's icon buttons: a ring the keyboard can see, and
+   a disabled one dimmed and inert to hover, whatever its tone. */
+.prp-head .icon-btn:focus-visible,
+.comment-actions .icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.prp-head .icon-btn:disabled,
+.comment-actions .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.prp-head .icon-btn:disabled:hover,
+.comment-actions .icon-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-2);
+}
+:root[data-icon-colors='full'] .prp-head .icon-btn[data-tone]:disabled:hover,
+:root[data-icon-colors='full'] .comment-actions .icon-btn[data-tone]:disabled:hover {
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
+.comment-edit { padding: 8px 12px; }
+.prp-thread .comment-edit, .issue-comment .comment-edit { padding: 4px 0 8px; }
+.comment-edit .prd-input { min-height: 72px; margin-bottom: 6px; }
+/* Buttons on the right, the primary one last — where GitHub and Azure put them — with the hint on the left. */
+.comment-edit-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.comment-edit-hint { margin-inline-end: auto; font-size: 11px; color: var(--text-3); }
+/* With the extras, the author stays left and the date, mark and actions sit together on the right. */
+.issue-comment-head:has(.comment-actions, .comment-edited) { justify-content: flex-start; align-items: center; gap: 8px; }
+.issue-comment-head:has(.comment-actions, .comment-edited) > span:first-of-type { margin-inline-start: auto; }
+.issue-comment-head .comment-actions { margin-inline-start: 0; }
 .prp-pad { padding: 8px 2px; }
 
 /* Review and merge stay in view below the scrolling conversation. The comment
@@ -19169,7 +19390,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
    the conversation it answers keeps the room. */
 .prp-footer { flex: none; padding: 12px 6px 0 0; border-top: 1px solid var(--border); }
 .prp-footer .prd-input { max-height: 33vh; margin-bottom: 0; }
-.prp-composer-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.prp-composer-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .prp-merge {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   margin-top: 10px; padding: 10px 14px; border-radius: 8px;
@@ -19187,6 +19408,27 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-file-list { flex: 0 0 300px; min-width: 0; overflow-y: auto; }
 .prp-file-row { cursor: pointer; border-radius: 5px; }
 .prp-file-row.selected { background: var(--accent-soft); }
+/* Pinned while the list scrolls under it: the viewed count and the Path/Tree switch stay at hand. */
+.prp-file-list-head {
+  position: sticky; top: 0; z-index: 2; background: var(--bg-1);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 2px; padding-bottom: 4px;
+}
+.prp-file-list-head .prd-section-title { margin: 0; }
+/* A folder row: same columns as a file row, so the checkboxes and the +/- line up. */
+.prp-folder-row { gap: 5px; color: var(--text-1); }
+.prp-folder-row svg { color: var(--text-2); flex: 0 0 auto; }
+.prp-folder-row .prp-folder-name { font-family: inherit; font-weight: 600; }
+/* A fully viewed folder dims like a viewed file, without the strike-through. */
+.prp-folder-row.viewed .prd-file-name { text-decoration: none; }
+/* Ticked once, changed by a push since: the row reads as not viewed, with this dot. */
+.prp-file-changed { flex: 0 0 auto; display: inline-flex; color: var(--yellow); }
+/* Review conversations on a file or folder: a muted bubble count, so a file with comments reads at a glance. */
+.prp-file-threads {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.prp-folder-viewed {flex: 0 0 auto; font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .prp-file-diff { flex: 1; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .prp-file-diff-head {
   display: flex; align-items: center; gap: 10px; padding: 8px 12px; flex-wrap: wrap;
@@ -19197,6 +19439,38 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-viewed-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); cursor: pointer; flex: none; }
 .prp-file-diff > :last-child { flex: 1; min-height: 0; overflow: auto; }
 .prp-no-patch { padding: 16px; color: var(--text-2); font-size: 13px; }
+/* Commits: one list per day, a row per commit, opening it in the repository. */
+.prp-commit-cap { margin: 0 0 10px; }
+.prp-commit-day + .prp-commit-day { margin-top: 14px; }
+.prp-commit-day-title {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--text-2);
+}
+.prp-commit-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); }
+.prp-commit + .prp-commit { border-top: 1px solid var(--border); }
+.prp-commit-row { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; }
+.prp-commit-open {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 6px;
+  background: none; border: none; text-align: start; font: inherit; color: inherit; cursor: pointer;
+}
+.prp-commit-open:hover, .prp-commit-open:focus-visible { background: var(--bg-3); }
+.prp-commit-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prp-commit-subject { font-size: 13px; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prp-commit-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-3); }
+.prp-commit-meta strong { color: var(--text-2); font-weight: 600; }
+.prp-commit-badge { padding: 0 5px; border-radius: 8px; border: 1px solid var(--border); font-size: 10.5px; }
+.prp-commit.is-remote .prp-commit-sha { color: var(--text-3); }
+.prp-commit-sha { flex: none; font-size: 11.5px; color: var(--accent); }
+.prp-commit-body {
+  margin: 0 12px 10px 42px; padding: 8px 10px; border-radius: 6px; background: var(--bg-1);
+  font: 12px/1.5 var(--mono, ui-monospace, monospace); color: var(--text-1); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.prp-commit-missing {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 12px 10px 42px; padding: 8px 10px;
+  border-radius: 6px; font-size: 12px; color: var(--text-1);
+  border: 1px solid color-mix(in srgb, var(--warn, #d29922) 45%, var(--border));
+  background: color-mix(in srgb, var(--warn, #d29922) 8%, var(--bg-2));
+}
+.prp-commit-missing > span { flex: 1 1 260px; }
 
 .prp-side {
   flex: 0 0 270px; display: flex; flex-direction: column; gap: 0; overflow-y: auto;
@@ -19270,12 +19544,31 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* Narrow page: the sidebar moves under the conversation instead of squeezing it. 760px is where
    the conversation would drop below ~400px next to the 270px sidebar, its gap and the padding. */
 @container (max-width: 760px) {
-  .prp-page { flex-direction: column; overflow-y: auto; padding: 18px 16px; }
-  .prp-main { overflow: visible; }
+  .prp-page { flex-direction: column; overflow-y: auto; padding: 18px 16px; gap: 0; }
+  /* The whole page scrolls here, so the top block and the footer pin themselves to it. Without
+     .prp-main's box they are the page's own children, which is what keeps them pinned while the
+     sidebar scrolls by too; `order` puts that sidebar between the body and the footer. */
+  .prp-main { display: contents; }
+  /* Negative offsets: Chromium pins sticky boxes inside the scroller's padding, and the page's
+     18px would otherwise leave a strip where scrolled content shows through. */
+  .prp-top {
+    position: sticky; top: -18px; z-index: 5; background: var(--bg-1);
+    margin: -18px -16px 0; padding: 18px 16px 0;
+  }
   .prp-body { overflow: visible; }
-  .prp-side { flex: none; border-inline-start: none; padding-inline-start: 0; border-top: 1px solid var(--border); }
+  .prp-side {
+    flex: none; order: 1; margin-top: 20px;
+    border-inline-start: none; padding-inline-start: 0; border-top: 1px solid var(--border);
+  }
+  .prp-footer {
+    order: 2; position: sticky; bottom: -18px; z-index: 5; background: var(--bg-1);
+    margin: 0 -16px -18px; padding: 12px 16px 18px;
+  }
   .prp-files-split { flex-direction: column; height: auto; }
   .prp-file-list { flex: none; max-height: 240px; }
+  /* The diff keeps its own scroller (long lines scroll sideways), so it gets a bounded height:
+     its toolbar then stays pinned inside it, as it does beside the list. */
+  .prp-file-diff { max-height: 75vh; }
 }
 
 /* Settings → Environment: the doctor's rows, machine-wide. */
@@ -19928,3 +20221,224 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .rollback-last-resort .rollback-report-btn {
   margin-top: 8px;
 }
+
+/* Branch cleanup — the push dialog's checkbox rows, with reason chips. */
+.branch-cleanup-fetch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 8px;
+  font-size: 12px;
+}
+.branch-cleanup-fetch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.branch-cleanup-fetch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.branch-cleanup-main {
+  margin: 0 0 6px;
+}
+.branch-cleanup-squash {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.branch-cleanup-squash-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.branch-cleanup-stale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.branch-cleanup-months {
+  width: 72px;
+  flex-shrink: 0;
+}
+.branch-cleanup-select-actions {
+  display: inline-flex;
+  gap: 12px;
+}
+.branch-cleanup-list {
+  max-height: 320px;
+}
+.branch-cleanup-row {
+  cursor: pointer;
+}
+.branch-cleanup-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.cleanup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.badge.cleanup-gone {
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
+}
+.badge.cleanup-merged,
+.badge.cleanup-squash {
+  background: rgba(63, 208, 164, 0.15);
+  color: var(--green);
+}
+.badge.cleanup-stale,
+.badge.cleanup-tip {
+  background: var(--bg-3);
+  color: var(--text-2);
+}
+.badge.cleanup-unique {
+  background: color-mix(in srgb, var(--yellow) 15%, transparent);
+  color: var(--yellow);
+}
+.branch-cleanup-age {
+  width: 64px;
+  flex-shrink: 0;
+  text-align: end;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.branch-cleanup-excluded {
+  display: block;
+  margin-top: 8px;
+}
+
+/* ─── Markdown comment editor ──────────────────────────────────────────────
+   One box for every comment the app writes to a host: Write / Preview tabs and
+   the formatting tools on one row above the field, the "Markdown supported"
+   hint under it. The field keeps the class of the box it replaced. */
+.mde { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.mde-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.mde-tabs { display: inline-flex; gap: 2px; }
+.mde-tab {
+  background: none; border: 1px solid transparent; border-radius: 6px; padding: 3px 9px;
+  font-size: 12px; color: var(--text-2); cursor: pointer;
+}
+.mde-tab:hover { color: var(--text-0); }
+.mde-tab.active { color: var(--text-0); background: var(--bg-2); border-color: var(--border); }
+.mde-toolbar { display: inline-flex; align-items: center; gap: 1px; flex-wrap: wrap; }
+.mde-tool { color: var(--text-2); }
+.mde-tool[aria-expanded='true'] { background: var(--bg-4); color: var(--text-0); }
+.mde-heading { position: relative; display: inline-flex; }
+.mde-menu {
+  position: absolute; top: calc(100% + 4px); inset-inline-start: 0; z-index: 30;
+  display: flex; flex-direction: column; min-width: 130px; padding: 4px;
+  background: var(--bg-3, var(--bg-2)); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.mde-menu-item {
+  background: none; border: none; border-radius: 5px; padding: 4px 8px; text-align: start;
+  color: var(--text-0); cursor: pointer; font-weight: 700;
+}
+.mde-menu-item:hover, .mde-menu-item:focus-visible { background: var(--bg-4); outline: none; }
+.mde-h1 { font-size: 15px; }
+.mde-h2 { font-size: 13.5px; }
+.mde-h3 { font-size: 12.5px; }
+.mde-input { display: block; }
+.mde-preview { overflow: auto; white-space: normal; }
+.mde-preview-empty { color: var(--text-3); font-style: italic; font-size: 12.5px; }
+.mde-hint { display: flex; justify-content: flex-start; margin-top: 3px; font-size: 11px; color: var(--text-3); }
+.mde-hint .mde-hint-link { font-size: 11px; color: var(--text-3); }
+.mde-hint .mde-hint-link:hover { color: var(--accent); }
+/* A thread's reply box: just the field until it is used. */
+.mde-compact:not(.mde-open) .mde-input { min-height: 0; }
+.mde-ac {
+  position: fixed; z-index: 1100; list-style: none; margin: 0; padding: 4px;
+  width: 280px; max-height: 220px; overflow-y: auto;
+  background: var(--bg-3, var(--bg-2)); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.mde-ac-item {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 5px;
+  font-size: 12px; color: var(--text-1); cursor: pointer; min-width: 0;
+}
+.mde-ac-item.active { background: var(--bg-4); color: var(--text-0); }
+.mde-ac-item svg { flex: none; opacity: 0.8; }
+.mde-ac-primary { flex: none; font-weight: 600; }
+.mde-ac-secondary { color: inherit; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* The issue page's box had its margin on the textarea; it moves to the editor. */
+.issue-editor { margin-top: 6px; }
+.issue-editor .issue-input { margin-top: 0; }
+.prp-footer .mde-preview { max-height: 33vh; }
+.prp-line-composer .mde-preview { margin-bottom: 6px; min-height: 72px; }
+/* The cheat sheet "Markdown supported" opens in place: what to type, and its key. */
+.mde-cheat {
+  position: fixed; z-index: 1100; width: 400px; max-width: calc(100vw - 16px); max-height: min(420px, 70vh);
+  overflow-y: auto; padding: 10px 12px; font-size: 12px; color: var(--text-1);
+  background: var(--bg-3, var(--bg-2)); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); outline: none;
+}
+.mde-cheat-title { font-weight: 700; color: var(--text-0); margin-bottom: 6px; }
+.mde-cheat-table { width: 100%; border-collapse: collapse; }
+.mde-cheat-table th, .mde-cheat-table td { padding: 3px 6px 3px 0; text-align: start; vertical-align: baseline; }
+.mde-cheat-table thead th { font-size: 10.5px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.03em; }
+.mde-cheat-table tbody th { font-weight: 500; color: var(--text-1); }
+.mde-cheat-table code { font-family: var(--mono); font-size: 11.5px; color: var(--text-0); white-space: nowrap; }
+.mde-cheat-table kbd { font-family: inherit; font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.mde-cheat-guide { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; }
+.mde-preview[hidden] { display: none; }
+
+/* ─── Reference hover card (components/ReferenceLink.tsx) ─────────────────
+   `#12` / `!12` / `AB#12`: what it is, its title, its state. Fixed to the
+   viewport from the link's box, so a scrolling card body cannot clip it. */
+.ref-card {
+  position: fixed;
+  z-index: 995;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 11px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--text-0);
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: normal;
+  pointer-events: auto;
+}
+.ref-card-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ref-card-icon { display: inline-flex; flex: none; }
+.ref-card-num { font-family: var(--mono); font-size: 11.5px; color: var(--text-1); }
+.ref-card-muted { color: var(--text-2); font-size: 11.5px; }
+.ref-card-title { font-weight: 600; overflow-wrap: anywhere; }
+.ref-card-state {
+  align-self: flex-start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ref-state);
+  background: color-mix(in srgb, var(--ref-state) 14%, transparent);
+}
+.ref-state-open { --ref-state: var(--green); }
+.ref-state-merged { --ref-state: var(--accent); }
+.ref-state-closed { --ref-state: var(--red); }
+.ref-state-neutral { --ref-state: var(--text-1); }
+.ref-card-icon.ref-state-open,
+.ref-card-icon.ref-state-merged,
+.ref-card-icon.ref-state-closed { color: var(--ref-state); }
+/* A title beside its `AB#12` in a list (the PR's Commits tab): there, but quiet. */
+.ref-inline-title { margin-inline-start: 6px; color: var(--text-2); font-weight: 400; }

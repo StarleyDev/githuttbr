@@ -271,6 +271,7 @@ interface PreloadApi {
     prPickerOptions(repoPath: string, remoteUrl: string, tokens: unknown): Promise<unknown>
     prDetail(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     workItem(repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
+    getReferenceSummaries(repoPath: string, remoteUrl: string, tokens: unknown, queries: unknown): Promise<unknown>
     prComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
     prReplyReviewComment(
       repoPath: string,
@@ -280,6 +281,17 @@ interface PreloadApi {
       inReplyTo: number | string,
       body: string
     ): Promise<unknown>
+    prCommentOnLine(
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      anchor: unknown,
+      body: string,
+      revision: unknown
+    ): Promise<unknown>
+    prEditComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, handle: unknown, body: string): Promise<unknown>
+    prDeleteComment(repoPath: string, remoteUrl: string, tokens: unknown, number: number, handle: unknown): Promise<unknown>
     ciRuns(repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown>
     ciRunJobs(repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown>
     ciJobLog(repoPath: string, remoteUrl: string, tokens: unknown, runId: string, jobId: string): Promise<unknown>
@@ -289,6 +301,7 @@ interface PreloadApi {
     prCheckLog(repoPath: string, remoteUrl: string, tokens: unknown, url: string): Promise<unknown>
     prChecks(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prFiles(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prListCommits(repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prReview(repoPath: string, remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
     prMerge(repoPath: string, remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
     listNotifications(token: string, all?: boolean): Promise<unknown>

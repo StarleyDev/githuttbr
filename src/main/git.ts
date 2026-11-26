@@ -101,6 +101,14 @@ import type {
   BranchPushResult,
   PushBranchesResult,
   UpstreamPushTarget,
+  BranchCleanupCandidate,
+  BranchCleanupExclusion,
+  BranchCleanupScan,
+  BranchDeleteRequest,
+  BranchDeleteResult,
+  BranchRestoreRequest,
+  BranchRestoreResult,
+  BranchSquashCheck,
   RerereStatus,
   SubtreeInfo,
   CleanEntry,
@@ -168,6 +176,8 @@ import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
+import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
+import { branchMatches } from '../shared/repoConfig'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import {
   classifyPushState,
@@ -255,6 +265,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   gitflowFinish: 'merge',
   deleteBranch: 'branchDelete',
   deleteRemoteBranch: 'branchDelete',
+  deleteLocalBranches: 'branchDelete',
   merge: 'merge',
   mergeInto: 'merge',
   rebase: 'rebase',
@@ -1996,9 +2007,9 @@ async function commitEditRange(repoPath: string, sha: string): Promise<{ ancesto
  * A non-zero exit is not an error here: `merge-tree --stdin` aborts the batch
  * on the first fatal merge, and the records it already emitted are still good.
  */
-function gitWithStdin(repoPath: string, args: string[], input: string): Promise<string> {
+function gitWithStdin(repoPath: string, args: string[], input: string, extraEnv?: NodeJS.ProcessEnv): Promise<string> {
   return new Promise((resolve) => {
-    const child = spawn('git', ['-C', repoPath, ...args], { env: noPromptEnv() })
+    const child = spawn('git', ['-C', repoPath, ...args], { env: { ...noPromptEnv(), ...extraEnv } })
     let out = ''
     child.stdout.on('data', (d: Buffer) => (out += d.toString()))
     child.on('error', () => resolve(out))
@@ -2252,6 +2263,90 @@ async function remoteDefaultBranch(repoPath: string, remote: string): Promise<st
   const prefix = `refs/remotes/${remote}/`
   const ref = out.trim()
   return ref.startsWith(prefix) ? ref.slice(prefix.length) : null
+}
+
+/**
+ * The default branch the branch cleanup measures against, and the refs that
+ * stand for it. The remote's copy comes first: a local main nobody pulled for
+ * a month would otherwise hide every merge since. The local one still counts
+ * too, so a merge made here and not pushed yet is not mistaken for lost work.
+ */
+async function cleanupMainRefs(
+  repoPath: string,
+  localNames: Set<string>,
+  remoteRefs: Set<string>,
+  remotes: string[]
+): Promise<{ mainBranch: string | null; mainRef: string | null; refs: string[] }> {
+  const remote = remotes.includes('origin') ? 'origin' : (remotes[0] ?? null)
+  const fromRemote = remote ? await remoteDefaultBranch(repoPath, remote) : null
+  const mainBranch =
+    fromRemote ??
+    ['main', 'master'].find((n) => localNames.has(n) || (remote && remoteRefs.has(`refs/remotes/${remote}/${n}`))) ??
+    null
+  if (!mainBranch) return { mainBranch: null, mainRef: null, refs: [] }
+  const remoteRef = remote ? `refs/remotes/${remote}/${mainBranch}` : null
+  const refs: string[] = []
+  if (remoteRef && remoteRefs.has(remoteRef)) refs.push(remoteRef)
+  if (localNames.has(mainBranch)) refs.push(`refs/heads/${mainBranch}`)
+  const mainRef = refs.length ? shortCleanupRef(refs[0]) : null
+  return { mainBranch, mainRef, refs }
+}
+
+/** `refs/remotes/origin/main` → `origin/main`, `refs/heads/main` → `main`. */
+function shortCleanupRef(ref: string): string {
+  return ref.replace(/^refs\/(remotes|heads)\//, '')
+}
+
+/**
+ * Branches a rebase is replaying in any worktree. While it runs HEAD is
+ * detached, so the branch reads as free; its name is only in
+ * `rebase-merge/head-name` or `rebase-apply/head-name` of that worktree's gitdir.
+ */
+async function rebasingBranches(repoPath: string): Promise<Set<string>> {
+  const out = new Set<string>()
+  const rel = (await runGit(repoPath, ['rev-parse', '--git-common-dir']).catch(() => '')).trim()
+  if (!rel) return out
+  const common = isAbsolute(rel) ? rel : join(repoPath, rel)
+  const linked = await readdir(join(common, 'worktrees')).catch(() => [] as string[])
+  const gitdirs = [common, ...linked.map((id) => join(common, 'worktrees', id))]
+  for (const dir of gitdirs) {
+    for (const state of ['rebase-merge', 'rebase-apply']) {
+      const head = await readFile(join(dir, state, 'head-name'), 'utf8').catch(() => '')
+      const ref = head.trim()
+      if (ref.startsWith('refs/heads/')) out.add(ref.slice('refs/heads/'.length))
+    }
+  }
+  return out
+}
+
+/**
+ * For each branch, the first default-branch ref (remote copy first) into which
+ * merging it changes nothing — its content is already there, the signature of
+ * a squash merge. One `merge-tree --stdin` per ref, over the branches still
+ * unmatched; a short batch (git aborts on a fatal merge) is finished one by one.
+ */
+async function squashMergedInto(
+  repoPath: string,
+  refs: string[],
+  branches: { name: string; sha: string }[]
+): Promise<Map<string, string>> {
+  const found = new Map<string, string>()
+  for (const ref of refs) {
+    const pending = branches.filter((b) => !found.has(b.name))
+    if (!pending.length) break
+    const [baseSha, baseTree] = await Promise.all([
+      runGit(repoPath, ['rev-parse', '--verify', '-q', `${ref}^{commit}`]).then((s) => s.trim(), () => ''),
+      runGit(repoPath, ['rev-parse', '--verify', '-q', `${ref}^{tree}`]).then((s) => s.trim(), () => '')
+    ])
+    if (!baseSha || !baseTree) continue
+    const stdin = pending.map((b) => `${baseSha} ${b.sha}`).join('\n') + '\n'
+    const records = parseMergeTreeStdin(await gitWithStdin(repoPath, ['merge-tree', '--stdin', '--name-only'], stdin))
+    for (let i = 0; i < pending.length; i++) {
+      const rec = records[i] ?? (await singleMergeTree(repoPath, baseSha, pending[i].sha))
+      if (rec.status === 'clean' && rec.tree === baseTree) found.set(pending[i].name, shortCleanupRef(ref))
+    }
+  }
+  return found
 }
 
 /** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
@@ -3678,6 +3773,266 @@ export const gitService = {
     return true
   },
 
+  // ─── Branch cleanup ────────────────────────────────────────────────────
+  // Local branches whose work already lives somewhere else: the upstream was
+  // deleted on the server (a merged PR), or the default branch contains them.
+  // Built for repositories with thousands of branches, so the cost is a fixed
+  // handful of git calls, never one per branch.
+
+  /**
+   * Every local branch the cleanup may offer, with what it knows about each.
+   * Classification (which reasons apply, what is pre-selected) is the
+   * renderer's, in lib/branchCleanup — this only reports facts.
+   */
+  async getBranchCleanupCandidates(repoPath: string): Promise<BranchCleanupScan> {
+    const fmt = [
+      '%(refname:lstrip=2)',
+      '%(objectname)',
+      '%(HEAD)',
+      '%(upstream:lstrip=2)',
+      '%(upstream:track)',
+      '%(committerdate:unix)'
+    ].join('%00')
+    const big = 64 * 1024 * 1024
+    const [refsOut, remoteRefsOut, remotesOut, worktrees, rebasing, localProtected, config, lastFetchAt] =
+      await Promise.all([
+        runGit(repoPath, ['for-each-ref', `--format=${fmt}`, 'refs/heads'], undefined, big),
+        runGit(repoPath, ['for-each-ref', '--format=%(refname)', 'refs/remotes'], undefined, big).catch(() => ''),
+        runGit(repoPath, ['remote']).catch(() => ''),
+        gitService.worktrees(repoPath),
+        rebasingBranches(repoPath),
+        gitService.protectedBranches(repoPath).catch(() => ['main', 'master']),
+        readRepoConfig(repoPath).catch(() => null),
+        gitService.lastFetchAt(repoPath)
+      ])
+    const rows = refsOut
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [name, sha, head, upstream, track, date] = line.split('\0')
+        return { name, sha, isCurrent: head === '*', upstream: upstream || null, track: track ?? '', date: +date * 1000 }
+      })
+    const localNames = new Set(rows.map((r) => r.name))
+    const remoteRefs = new Set(remoteRefsOut.split('\n').filter(Boolean))
+    const remotes = remotesOut.split('\n').map((s) => s.trim()).filter(Boolean)
+    const main = await cleanupMainRefs(repoPath, localNames, remoteRefs, remotes)
+
+    // Merged into either copy of the default branch, one for-each-ref each.
+    // The unique-commit walk is one rev-list: every local branch, minus every
+    // remote-tracking ref and the local default branch.
+    const notMain = main.mainBranch && localNames.has(main.mainBranch) ? [`refs/heads/${main.mainBranch}`] : []
+    const [mergedOuts, uniqueOut, mainTips] = await Promise.all([
+      Promise.all(
+        main.refs.map((ref) =>
+          runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)', `--merged=${ref}`, 'refs/heads'], undefined, big)
+        )
+      ),
+      runGit(repoPath, ['rev-list', '--parents', '--branches', '--not', '--remotes', ...notMain, '--'], undefined, 256 * 1024 * 1024),
+      Promise.all(main.refs.map((ref) => runGit(repoPath, ['rev-parse', '--verify', '-q', ref]).then((s) => s.trim(), () => '')))
+    ])
+    // The first ref that contains a branch names it: the remote copy wins, so
+    // "main" alone means a merge that only exists here.
+    const mergedInto = new Map<string, string>()
+    mergedOuts.forEach((out, i) => {
+      const short = shortCleanupRef(main.refs[i])
+      for (const name of out.split('\n').filter(Boolean)) if (!mergedInto.has(name)) mergedInto.set(name, short)
+    })
+    const unique = parseRevListParents(uniqueOut)
+    const tips = new Set(mainTips.filter(Boolean))
+
+    const inWorktree = new Set(worktrees.filter((w) => w.branch && !w.isCurrent).map((w) => w.branch as string))
+    const protectedPatterns = [...new Set([...localProtected, ...(config?.config?.protect ?? [])])]
+    const exclusionOf = (name: string, isCurrent: boolean): BranchCleanupExclusion | null => {
+      if (isCurrent) return 'current'
+      if (inWorktree.has(name)) return 'worktree'
+      // Mid-rebase, HEAD is detached and the branch looks free — deleting it
+      // would leave the rebase nowhere to land.
+      if (rebasing.has(name)) return 'rebasing'
+      if (name === main.mainBranch) return 'default'
+      if (protectedPatterns.some((p) => branchMatches(p, name))) return 'protected'
+      return null
+    }
+
+    const candidates: BranchCleanupCandidate[] = []
+    const excluded: BranchCleanupScan['excluded'] = []
+    for (const r of rows) {
+      const reason = exclusionOf(r.name, r.isCurrent)
+      if (reason) {
+        excluded.push({ name: r.name, reason })
+        continue
+      }
+      const { count, capped } = countUniqueCommits(unique, r.sha)
+      candidates.push({
+        name: r.name,
+        sha: r.sha,
+        upstream: r.upstream,
+        gone: parseUpstreamTrack(r.track).gone,
+        merged: mergedInto.has(r.name),
+        mergedInto: mergedInto.get(r.name) ?? null,
+        atMainTip: tips.has(r.sha),
+        lastCommitAt: r.date,
+        uniqueCommits: count,
+        uniqueCapped: capped
+      })
+    }
+    return { mainBranch: main.mainBranch, mainRef: main.mainRef, mainRefs: main.refs, candidates, excluded, lastFetchAt }
+  },
+
+  /**
+   * Which of `names` were squash-merged: merging the branch into the default
+   * branch changes nothing, so its content is already there even though its
+   * commits are not. One batched `merge-tree` per copy of the default branch —
+   * no index, no working tree, only loose tree objects, as the conflict radar.
+   * Opt-in from the dialog: it costs a few milliseconds per branch.
+   */
+  async getSquashMergedBranches(repoPath: string, names: string[]): Promise<BranchSquashCheck[]> {
+    const wanted = [...new Set(names)]
+    if (!wanted.length) return []
+    const scan = await gitService.getBranchCleanupCandidates(repoPath)
+    const byName = new Map(scan.candidates.map((c) => [c.name, c]))
+    const branches = wanted.flatMap((n) => {
+      const c = byName.get(n)
+      return c ? [{ name: n, sha: c.sha }] : []
+    })
+    const into = await squashMergedInto(repoPath, scan.mainRefs, branches)
+    return wanted.map((name) => ({ name, squashedInto: into.get(name) ?? null }))
+  },
+
+  /**
+   * Delete the branches the cleanup dialog chose, and report each one.
+   *
+   * Nothing from the renderer is taken on trust: the scan runs again under the
+   * write lock, and a branch is refused when it no longer exists, moved since
+   * the dialog listed it, became current, sits in a worktree or a rebase, is
+   * the default or protected — or holds more commits found nowhere else than
+   * the user accepted losing. A branch accepted as squash-merged has its
+   * merge-tree check run again here, and is refused if it no longer holds.
+   *
+   * The deletion itself is `git branch -D`, after that check. `-d` would test
+   * "merged" against HEAD or the upstream, and a branch whose upstream is gone
+   * has only HEAD left — so `-d` would refuse every merged branch while you
+   * stand on anything but main, and say nothing about the remotes. The check
+   * above is the one this feature promises.
+   */
+  async deleteLocalBranches(repoPath: string, requests: BranchDeleteRequest[]): Promise<BranchDeleteResult[]> {
+    if (!requests.length) return []
+    const scan = await gitService.getBranchCleanupCandidates(repoPath)
+    const byName = new Map(scan.candidates.map((c) => [c.name, c]))
+    const excludedBy = new Map(scan.excluded.map((e) => [e.name, e.reason]))
+    const tracking = parseBranchTrackingConfig(
+      await runGit(repoPath, ['config', '--get-regexp', '^branch\\..*\\.(remote|merge)$']).catch(() => '')
+    )
+    // Squash acceptances are only honoured for branches that still need them.
+    const squashWanted = requests.filter((r) => {
+      const c = byName.get(r.name)
+      return r.squashMerged && c && c.sha === r.sha && c.uniqueCommits > Math.max(0, r.acceptedUnique)
+    })
+    const squashed = squashWanted.length
+      ? await squashMergedInto(
+          repoPath,
+          scan.mainRefs,
+          squashWanted.map((r) => ({ name: r.name, sha: r.sha }))
+        )
+      : new Map<string, string>()
+
+    const results: BranchDeleteResult[] = []
+    const allowed: BranchDeleteResult[] = []
+    const seen = new Set<string>()
+    for (const req of requests) {
+      if (seen.has(req.name)) continue
+      seen.add(req.name)
+      const refuse = (refusal: BranchDeleteResult['refusal']): void => {
+        results.push({ name: req.name, sha: req.sha, status: 'refused', refusal })
+      }
+      const excludedReason = excludedBy.get(req.name)
+      const found = byName.get(req.name)
+      const accepted = Number.isFinite(req.acceptedUnique) ? Math.max(0, req.acceptedUnique) : 0
+      if (excludedReason) refuse(excludedReason)
+      else if (!found) refuse('missing')
+      else if (found.sha !== req.sha) refuse('moved')
+      else if (found.uniqueCommits > accepted && req.squashMerged && !squashed.has(req.name)) refuse('squashChanged')
+      else if (found.uniqueCommits > accepted && !req.squashMerged) refuse('unique')
+      else {
+        const t = tracking.get(req.name)
+        const entry: BranchDeleteResult = { name: req.name, sha: found.sha, status: 'deleted' }
+        if (t?.remote) entry.upstreamRemote = t.remote
+        if (t?.merge) entry.upstreamMerge = t.merge
+        allowed.push(entry)
+        results.push(entry)
+      }
+    }
+
+    // In batches: one spawn per hundred branches, not one per branch. git
+    // carries on past a branch it cannot delete, so a failed batch is read
+    // back from the refs rather than trusted from the exit code.
+    const failures: string[] = []
+    for (let i = 0; i < allowed.length; i += 100) {
+      const names = allowed.slice(i, i + 100).map((e) => e.name)
+      await runGit(repoPath, ['branch', '-D', '--', ...names]).catch((err: unknown) => {
+        failures.push(err instanceof Error ? err.message : String(err))
+      })
+    }
+    if (failures.length) {
+      const left = new Set(
+        (await runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads'])).split('\n').filter(Boolean)
+      )
+      for (const e of allowed) {
+        if (!left.has(e.name)) continue
+        e.status = 'failed'
+        e.error = failures.join('\n')
+        delete e.upstreamRemote
+        delete e.upstreamMerge
+      }
+    }
+    return results
+  },
+
+  /**
+   * The undo of a cleanup: recreate each branch at its exact sha and put its
+   * tracking config back. A name that is back at the same commit needs
+   * nothing. A name taken since by another commit — a PR checked out again —
+   * is not ours to move: the deleted branch comes back beside it, as
+   * `<name>-restored-<short sha>`, and the result says so.
+   */
+  async restoreLocalBranches(repoPath: string, requests: BranchRestoreRequest[]): Promise<BranchRestoreResult[]> {
+    const existing = new Map(
+      (await runGit(repoPath, ['for-each-ref', '--format=%(refname:lstrip=2)%00%(objectname)', 'refs/heads']))
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => line.split('\0') as [string, string])
+    )
+    const results: BranchRestoreResult[] = []
+    for (const req of requests) {
+      try {
+        assertNotOption(req.name, 'the branch name')
+        if (!isObjectId(req.sha)) throw new Error(`Refusing "${req.sha}": it is not a commit id.`)
+        let name = req.name
+        if (existing.get(name) === req.sha) {
+          results.push({ name: req.name, status: 'exists' })
+          continue
+        }
+        if (existing.has(name)) {
+          name = `${req.name}-restored-${req.sha.slice(0, 7)}`
+          if (existing.get(name) === req.sha) {
+            results.push({ name: req.name, status: 'restoredAs', restoredAs: name })
+            continue
+          }
+          if (existing.has(name)) throw new Error(`"${req.name}" and "${name}" both exist at other commits.`)
+        }
+        await runGit(repoPath, ['branch', '--no-track', '--', name, req.sha])
+        if (req.upstreamRemote) await runGit(repoPath, ['config', '--', `branch.${name}.remote`, req.upstreamRemote])
+        if (req.upstreamMerge) await runGit(repoPath, ['config', '--', `branch.${name}.merge`, req.upstreamMerge])
+        existing.set(name, req.sha)
+        results.push(
+          name === req.name ? { name: req.name, status: 'restored' } : { name: req.name, status: 'restoredAs', restoredAs: name }
+        )
+      } catch (err) {
+        results.push({ name: req.name, status: 'failed', error: err instanceof Error ? err.message : String(err) })
+      }
+    }
+    return results
+  },
+
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
     try {
       await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', '--delete', '--', remote, name]))
@@ -4361,6 +4716,34 @@ export const gitService = {
     const before = (await runGit(repoPath, ['rev-parse', '--verify', `refs/heads/${branch}^{commit}`])).trim()
     await runGit(repoPath, ['branch', '-f', branch, sha])
     return before
+  },
+
+  /**
+   * Which of `shas` are commits this repository has — a pull request's commits
+   * that can open here rather than on the host. One `cat-file --batch-check`
+   * for the whole list. Only full hex ids are asked about: they come from a
+   * hosting API, and anything else could name a ref or read as an option.
+   */
+  async getLocalCommits(repoPath: string, shas: unknown): Promise<string[]> {
+    const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s)
+    // Capped like the Commits tab itself: a caller cannot make one call any size.
+    const wanted = Array.isArray(shas) ? [...new Set(shas.filter(isFullSha))].slice(0, 500) : []
+    if (!wanted.length) return []
+    const out = await gitWithStdin(
+      repoPath,
+      ['cat-file', '--batch-check=%(objectname) %(objecttype)'],
+      wanted.map((s) => `${s}\n`).join(''),
+      // A partial clone would fetch a missing object from its promisor remote —
+      // a network write inside a read. Missing stays missing (git 2.44+; older
+      // versions ignore the variable).
+      { GIT_NO_LAZY_FETCH: '1' }
+    ).catch(() => '')
+    const found = new Set<string>()
+    for (const line of out.split('\n')) {
+      const [sha, type] = line.trim().split(' ')
+      if (type === 'commit') found.add(sha.toLowerCase())
+    }
+    return wanted.filter((s) => found.has(s.toLowerCase()))
   },
 
   /**
@@ -9275,6 +9658,7 @@ function lockFor(repoPath: string): RwLock {
 const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
+  'getLocalCommits',
   'isAncestor',
   'isRepository',
   'directoryExists',
@@ -9304,6 +9688,10 @@ const READ_METHODS = new Set<string>([
   // The multi-branch push dialog's reads: refs and history, nothing written.
   'branchPushStates',
   'outgoingFiles',
+  // The branch cleanup's scan: refs, config and history, nothing written.
+  'getBranchCleanupCandidates',
+  // Loose tree objects only, like mergePreview: no ref, index or worktree moves.
+  'getSquashMergedBranches',
   'commitsTouchingPath',
   'protectedBranches',
   'repoConfig',

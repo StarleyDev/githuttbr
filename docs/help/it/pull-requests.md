@@ -2,9 +2,9 @@
 title: Pagina delle pull request
 category: Sincronizzazione e più repo
 order: 57
-summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI — e ‹ › per scorrere la lista filtrata da dentro una PR.
-keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit e commenti su una riga del suo diff.
+keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention albero dei file albero delle cartelle vista ad albero vista percorso file visti segna cartella come vista modifica elimina rimuovi modificato refuso file tree viewed files edit delete edited typo riferimento titolo scheda al passaggio work item AB# numero della issue tooltip reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Pagina delle pull request
@@ -135,7 +135,7 @@ parte lenta. Sulla pagina di una pull request, il campo **Branch** lo fa per te:
 
 L’intestazione offre le stesse due mosse come pulsanti: **Vai al branch di
 origine** e **Vai al branch di destinazione**. Funzionano anche sul branch su cui
-sei già — semplicemente ti portano al repository.
+sei già — semplicemente ti portano al repository. Con i [colori delle icone](themes.md#colori-delle-icone) attivi, ogni pulsante dell’intestazione ha il suo: aggiorna blu, revisione IA viola, anteprima turchese, branch di origine verde, branch di destinazione arancione (apri nel browser resta grigio).
 
 Non viene consultato nulla finché non fai clic: aprire una pull request non legge
 né scarica alcun branch.
@@ -159,6 +159,315 @@ Cosa non fa:
 - **Questa finestra.** Il checkout avviene nella working tree di questo
   repository. Quando il branch è già in checkout in un altro
   [worktree](worktrees.md), si apre invece la scheda di quel worktree.
+
+## Commit
+
+La barra laterale diceva quanti commit ha una pull request, mai quali. Revisionare
+un commit alla volta — come la maggior parte delle pull request è pensata per
+essere letta — ti mandava nel browser. La scheda **Commit**, tra Conversazione e
+File, li elenca:
+
+- **Dal più vecchio**, nell’ordine in cui si applicano, raggruppati sotto il giorno
+  in cui sono stati scritti. Un commit portato dentro con un rebase fuori
+  dall’ordine delle date apre un giorno tutto suo invece di essere spostato.
+- Ogni riga ha l’immagine dell’autore (dove l’host la fornisce), l’oggetto,
+  l’autore, quanto tempo fa e lo SHA breve. Un badge **merge** segna un commit con
+  due genitori, dove l’host lo dice.
+- **▸** accanto a un commit che ha più dell’oggetto mostra il resto del messaggio.
+- **Copia** mette lo SHA completo negli appunti; **Apri nel browser** apre il commit
+  sull’host — dentro la pull request dove l’host ha una pagina del genere (GitHub,
+  GitLab, Bitbucket Data Center), altrimenti sulla pagina del commit del
+  repository.
+
+![La scheda Commit: i commit di una pull request raggruppati per giorno, uno con il messaggio completo aperto](../../screenshots/pr-commits.webp)
+
+**Fai clic su una riga** — o raggiungila con Tab e premi Invio — per aprire il
+commit nell’app, come farebbe un clic nel grafo: la vista del repository, quel
+commit selezionato, i suoi dettagli aperti. Funziona quando questo clone **ha** il
+commit. Quando non ce l’ha, la riga lo dice invece di fallire in silenzio, e
+offre:
+
+- **Scarica il branch della PR per vederlo** — lo stesso fetch di un solo branch di
+  [andare al branch](#andare-al-branch-di-una-pull-request), senza il checkout. Se il commit è arrivato con
+  lui, si apre; se no (un force push l’ha riscritto nel frattempo), la notifica lo
+  dice.
+- **Apri nel browser**, per quando scaricare non è un’opzione.
+
+L’elenco viene letto la prima volta che apri la scheda, non con la pagina, e di
+nuovo a ogni **Aggiorna**. Finché non arriva, il conteggio della scheda è quello
+che l’host ha dato per la pull request. Le pull request unite e chiuse elencano i
+loro commit allo stesso modo.
+
+Cosa non fa:
+
+- **Al massimo 250 commit.** GitHub stesso non ne elenca più di 250 per una pull
+  request; l’app si ferma allo stesso numero su ogni host, e dice *l’host ne ha
+  altri* quando è così, con un link alla pull request sull’host. Quali 250 dipende
+  dall’ordine in cui l’host li elenca — l’app tiene i primi elencati, e la riga
+  sopra l’elenco dice quali:
+
+  | Host | Una pull request più lunga mostra |
+  |---|---|
+  | GitHub | I **primi** 250 (il limite di GitHub stesso) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | I **250 più recenti** |
+  | Forgejo | L’estremo che il server elenca per primo; il suo ordine non è documentato |
+- **Il branch di un fork** non si può scaricare da qui — sta in un altro repository
+  —, quindi un commit presente solo nel fork offre soltanto il browser. **Prova la
+  pull request in locale…** è il modo per portarlo qui.
+- **Un branch eliminato.** Una pull request unita spesso si è portata via il suo
+  branch: il fetch lo dice. bitbucket.org non elenca più alcun commit una volta
+  sparito il branch di origine.
+- **Merge squash.** I commit di una pull request unita con squash non hanno mai
+  raggiunto il branch di destinazione, quindi dopo l’eliminazione del suo branch
+  stanno solo sull’host.
+- **Gli autori** sono nominati come li nominano i loro commit. GitLab, Azure DevOps
+  e Bitbucket Data Center non danno immagini senza un accesso che un’immagine non
+  può inviare, quindi quelle righe mostrano l’iniziale.
+- **I messaggi lunghi su Azure DevOps** possono essere tagliati: l’elenco di Azure
+  tronca il messaggio di un commit, e l’app mostra ciò che invia.
+- Le pull request di **bitbucket.org** si aprono nel browser — l’app non ha ancora
+  una pagina per loro —, quindi lì questa scheda non si raggiunge, anche se l’app
+  sa leggere l’elenco.
+
+## Leggere i file
+
+Una pull request di duecento file è difficile da leggere come duecento percorsi
+completi. La lista della scheda **File** ha lo stesso selettore **Percorso / Albero**
+del pannello di commit, e la scelta vale per tutta l’app. In **Albero** i file stanno
+sotto le loro cartelle (una catena come `src/main/ipc` è una sola riga), e ogni
+cartella mostra il suo **+/−** sommato e quanti dei suoi file sono visti (*3/5*). La
+casella di una cartella segna come visti tutti i file al suo interno, o li toglie
+tutti; i segni restano solo su questo computer, mai inviati all’host. Un segno
+ricorda la versione del diff del file: quando un push cambia un file visto, torna non
+visto, con un punto giallo (*Modificato da quando l’hai visto*). Un file senza diff
+(binario, troppo grande) viene confrontato solo per stato e conteggi di righe. Un file con conversazioni di revisione mostra accanto un numero in un fumetto (le cartelle sommano i loro), così quelli con commenti spiccano in un elenco lungo; contano anche le conversazioni obsolete. Fai
+clic su una cartella, o premi ←/→ su di essa, per chiuderla; ↑/↓ (o j/k) scorrono i
+file sullo schermo e aprono ciascun diff. Le cartelle chiuse vengono ricordate per
+pull request finché l’app resta aperta, e un file aperto dentro una di esse apre la
+strada fino a lui. L’albero è ordinato per nome, non nell’ordine in cui l’host elenca
+i file.
+
+![La scheda File in vista ad albero: cartelle con le modifiche sommate e i conteggi dei visti, una chiusa](../../screenshots/pr-files-tree.webp)
+
+## Commentare una riga
+
+Qui si poteva già rispondere a un thread di revisione, ma non aprirne uno, quindi una
+vera revisione ti mandava ancora nel browser. Nella scheda **File** di una pull
+request, ogni riga del diff accetta un commento suo:
+
+- **Passa sopra una riga** e premi il **+** che compare sul suo numero, oppure
+  **fai clic sulla riga** stessa (un clic che chiude una selezione di testo, o un
+  doppio clic che seleziona una parola, non conta: quello è leggere). Anche il menu
+  del tasto destro — o il tasto del menu contestuale della tastiera — ha *Commenta la
+  riga N*.
+- Si apre un riquadro **sotto quella riga**. Scrivi, poi **Commenta** — oppure
+  ⌘/Ctrl+Invio. **Annulla** lo chiude; anche **Esc**, chiedendo prima se hai già
+  scritto qualcosa. In entrambi i casi il focus torna su quella riga.
+- Se va a buon fine, il nuovo thread compare **sotto la sua riga**, e nei thread di
+  revisione della scheda Conversazione, dove lo vedranno tutti gli altri.
+
+![Un commento scritto sotto una riga modificata, con un thread precedente sotto la sua riga](../../screenshots/pr-line-comment.webp)
+
+Il lato su cui finisce il commento segue la riga:
+
+| Riga | Ancorato a |
+|---|---|
+| **Aggiunta** (verde) | La nuova versione del file, al suo nuovo numero |
+| **Eliminata** (rossa) | La vecchia versione, al suo vecchio numero |
+| **Invariata** | La nuova versione (a GitLab vengono inviati entrambi i numeri, come richiede) |
+
+Anche i thread esistenti sono mostrati sotto le loro righe, con il riquadro di
+risposta dove l’host permette all’app di rispondere dentro un thread (Forgejo no).
+Un thread compare su una riga solo quando l’host dice che appartiene ancora al diff
+mostrato; il resto rimane nella scheda Conversazione, invece che su una riga
+indovinata:
+
+| Host | Un thread scritto prima dell’ultimo push |
+|---|---|
+| GitHub | Obsoleto quando la sua riga è cambiata: solo Conversazione |
+| GitLab | Scritto su un head precedente: solo Conversazione |
+| Azure DevOps | Seguito da Azure fin dove si trova ora la sua riga |
+| Bitbucket Data Center | Orfano quando la sua riga non c’è più: solo Conversazione |
+| Forgejo | Forgejo non dice che un commento è obsoleto, quindi compare al numero di riga registrato — dopo un push quella riga può contenere altro codice |
+
+Un commento su una riga fuori dagli hunk mostrati sta solo nella scheda
+Conversazione, su ogni host.
+
+Un commento scritto e non inviato conta come testo non inviato: **‹ ›** e Alt+frecce
+chiedono prima di lasciarlo, come per il riquadro del commento principale. Guardare
+un altro file lo conserva; per iniziarne uno su un’altra riga, pubblica o annulla il
+primo.
+
+Cosa non fa:
+
+- **Una riga, pubblicata subito.** Non ci sono intervalli di righe, né una revisione
+  in sospeso in cui raccogliere commenti da inviare dopo, né modifiche suggerite.
+  Ogni commento viene pubblicato nel momento in cui lo invii, come thread a sé (su
+  Forgejo, come revisione che contiene solo quel commento, perché Forgejo non ha una
+  chiamata per il commento singolo).
+- **Il diff che stai guardando.** La scheda File ricorda a quale commit (su Azure
+  DevOps, a quale iterazione) è stato letto il suo diff, e il commento viene inviato
+  rispetto a quello. Quando nel frattempo la pull request è andata avanti — un push,
+  una nuova base di merge —, il commento non viene pubblicato sulla riga che ora ha
+  quel numero: viene rifiutato con *la pull request è cambiata da quando questo diff
+  è stato caricato*, e **Aggiorna** mostra il nuovo diff. Su GitHub invece il
+  commento viene pubblicato sul commit che hai letto, e GitHub lo segna come
+  obsoleto se quella riga è cambiata. Una riga che l’host continua a non accettare
+  viene rifiutata come fuori dal diff.
+- **Rifiutato.** Senza permesso di commentare (un token in sola lettura, un account
+  a cui il repository non permette di commentare), l’host lo rifiuta e il messaggio
+  dice che il motivo è quello.
+- Le pull request di **bitbucket.org** si aprono nel browser — l’app non ha ancora
+  una pagina per loro —, quindi lì un commento di riga si fa ancora sul sito.
+- **Un file senza diff** (binario, o troppo grande perché l’host lo includa) non ha
+  righe da commentare.
+
+## Scrivere commenti
+
+Ogni riquadro della pagina — il commento in fondo, una risposta in un thread, un
+commento su una riga — è lo stesso editor Markdown: schede **Scrivi / Anteprima**,
+una barra di formattazione con le scorciatoie di GitHub, elenchi che continuano con
+Invio e completamento con **@** / **#** dalle persone e dalle pull request già sullo
+schermo. Un riquadro di risposta mostra i suoi strumenti appena ci fai clic dentro,
+e invia con ⌘/Ctrl+Invio, perché ora Invio inizia una nuova riga.
+[Scrivere commenti](writing-comments.md) ha i dettagli e i limiti.
+
+## Modificare ed eliminare i tuoi commenti
+
+Un refuso in un commento già inviato, o un’osservazione che non vale più, prima
+voleva dire passare dal browser. I tuoi commenti hanno ora **Modifica** (la matita)
+ed **Elimina** (il cestino) in fondo all’intestazione: commenti della conversazione,
+commenti dei thread di revisione e risposte, nelle schede Conversazione e File. Anche
+la pagina della issue li ha, per i suoi commenti su GitHub e Forgejo.
+
+![Un tuo commento, segnato come modificato, con Modifica ed Elimina in fondo all’intestazione](../../screenshots/comment-editor.webp)
+
+Che cosa è «tuo» lo decide la pagina stessa, che a ogni caricamento chiede all’host
+con quale account si autenticano le chiamate di questo repository (il suo profilo
+associato, non quello attivo al momento). La maggior parte degli host indica un
+autore per login, confrontato senza badare a maiuscole e minuscole. Azure DevOps
+indica gli autori per nome visualizzato, che due persone possono condividere, quindi
+lì l’id dell’autore del commento deve corrispondere all’id dell’account; se manca uno
+dei due, nessun commento mostra le azioni. Quando l’app non sa dire chi sei (un token
+senza scope utente, o l’host non ha risposto), non le mostra nessun commento;
+**Aggiorna** chiede di nuovo. L’host decide comunque: un account a cui non permette di
+cambiare un commento viene respinto, e il messaggio lo dice.
+
+- **Modifica** apre il commento sul posto, nello stesso editor Markdown, con il suo
+  testo così come è stato scritto. **Salva** (o ⌘/Ctrl+Invio) lo invia; **Annulla** o
+  **Esc** lo chiude, chiedendo prima se hai cambiato qualcosa. Vengono tolte solo le
+  righe vuote intorno al testo: il codice rientrato e un a capo finale di due spazi
+  restano come scritti. Il nuovo testo compare subito e la pagina rilegge la pull
+  request. Nella pagina della pull request, una modifica non salvata conta come
+  testo non inviato: **‹ ›** chiedono prima di lasciarla. La pagina della issue non
+  ha queste frecce, e lì nulla chiede prima che la sua scheda si chiuda.
+- **Elimina** chiede sempre prima, e la domanda dice cosa succede: il server rimuove
+  il commento per tutti, e non si può annullare. Non c’è una voce di annullamento,
+  perché niente può riportarlo indietro.
+
+Eliminare il **primo commento di un thread** che ha risposte (un thread di revisione,
+o un commento della conversazione a cui altri hanno risposto) cambia da host a host,
+e la conferma dice come. Due di questi casi non sono documentati dall’host, e lo
+dice:
+
+| Host | Primo commento di un thread con risposte |
+|---|---|
+| GitHub | Le risposte dovrebbero restare; la documentazione di GitHub non lo dice. Rispondere a quel thread dall’app non è più possibile: le sue risposte puntano a un commento che non c’è più, e l’API non accetta risposte a una risposta. Il thread offre allora **Rispondi su GitHub** |
+| GitLab | Se ne va solo quella nota; il thread e le sue risposte restano |
+| Azure DevOps | Dovrebbe essere segnato come eliminato e nascosto, mantenendo il thread e le sue risposte; la documentazione di Azure non lo dice |
+| Bitbucket Data Center | Rifiutato: Data Center non elimina un commento che ha risposte. Elimina prima le risposte, oppure modificalo |
+
+Alcuni host segnano un commento come **modificato**. Solo Azure DevOps conserva una
+data per il solo testo; su GitHub, Bitbucket Data Center e Forgejo l’app confronta
+quando il commento è stato creato e aggiornato l’ultima volta, quindi lì il segno è
+un’approssimazione (qualsiasi altra cosa tocchi il commento può impostarlo). Su GitLab
+la data cambia anche quando un thread viene risolto, quindi non viene usata.
+
+Cosa non fa:
+
+- **I commenti di revisione di Forgejo** (commenti su una riga) non si possono
+  modificare tramite la sua API, e solo alcune versioni possono eliminarne uno,
+  quindi non mostrano nessuna delle due azioni: cambiali sul sito. I commenti della
+  conversazione funzionano come altrove.
+- **Qualcuno l’ha cambiato nel frattempo.** Bitbucket Data Center controlla la
+  versione del commento: una modifica o un’eliminazione di un commento cambiato da
+  quando la pagina è stata caricata viene rifiutata, e **Aggiorna** mostra quello
+  attuale. Gli altri host tengono l’ultima scrittura.
+- **Non trovato**: quando l’host non trova il commento, il messaggio dice che
+  potrebbe essere stato eliminato, o che questo account non può vederlo, e la pagina
+  rilegge la pull request. Una modifica aperta su un commento che non c’è più viene
+  scartata.
+- Le pull request di **bitbucket.org** si aprono nel browser, quindi non c’è ancora
+  una pagina dove modificarne i commenti, anche se l’app sa fare la chiamata.
+- **La descrizione** della pull request e i riepiloghi delle sue revisioni non sono
+  commenti, e non si modificano qui.
+
+## Di cosa parla un `#123` o un `AB#123`
+
+Un commit che dice *fixes AB#4821* o un commento che dice *vedi #312* ti dà un
+numero, non di cosa si trattava. Scoprirlo voleva dire aprirlo. Ora, **puntare un
+riferimento** — o raggiungerlo con Tab — apre una piccola scheda con ciò che l’host
+ne dice:
+
+- un’icona per il suo tipo, e il riferimento così come è scritto;
+- il suo **titolo**;
+- il suo **stato** (aperta, chiusa, unita — su Azure DevOps, lo stato proprio del
+  work item, come *Active* o *Resolved*);
+- su Azure DevOps, il **tipo di work item** (Bug, User Story, Task…).
+
+![La scheda su un riferimento a un work item in un commento: tipo, titolo e stato](../../screenshots/reference-card.webp)
+
+Le schede ci sono nella pagina della pull request (descrizione, commenti, thread di
+revisione e il messaggio completo di un commit nella scheda **Commit**), nella
+pagina della issue e nell’oggetto del pannello dei dettagli del commit. Nella scheda
+**Commit** su Azure DevOps, ogni work item nell’oggetto di un commit (`AB#123`, o
+`#123`, lo stesso elemento lì) mostra anche il suo titolo accanto, in grigio. Su
+Azure DevOps, `!123` porta a quella pull request, senza scheda.
+
+| Riferimento | Host | Letto da |
+|---|---|---|
+| `AB#123`, e `#123` in un repository Azure | Azure DevOps | Work item, fino a 200 in una richiesta |
+| `#123` | GitHub, GitHub Enterprise Server | Issue (che risponde anche per le pull request), una richiesta ciascuna, una alla volta |
+| `#123` / `!123` | GitLab | Issue / merge request, una richiesta per tipo |
+| `#123` | Forgejo | Issue (anche pull request), una richiesta ciascuna, due alla volta |
+
+Un `#123` conta solo come parola a sé: `org/repo#123` (un altro repository),
+`&#39;`, un colore come `#123abc` e il `#issuecomment-…` di un link restano come
+sono.
+
+Non si chiede nulla finché una scheda non si apre. Allora il riferimento su cui sei
+e quelli più vicini sulla pagina non ancora noti partono in una sola chiamata, così
+la scheda successiva di solito è immediata. Le risposte restano in memoria finché
+l’app è aperta, mai su disco, per cinque minuti; dopo continuano a essere mostrate e
+vengono rilette al passaggio successivo. Sono tenute per profilo: la chiamata è
+fatta come il profilo a cui il repository è [associato](profiles.md), e un altro
+profilo può vedere altri elementi.
+
+Quanto costa:
+
+- **GitHub e Forgejo** non sanno leggere più issue in una richiesta, quindi ogni
+  scheda ne costa una. Un passaggio ne chiede al massimo **10** — quella su cui sei e
+  le sue vicine — e su GitHub una dopo l’altra, come GitHub chiede alle app. La
+  prima risposta che dice *rallenta* (un 429 o un 403) ferma il resto, e quei
+  riferimenti non vengono richiesti di nuovo per cinque minuti.
+- **Azure DevOps** legge fino a 200 work item in una richiesta, e GitLab una
+  richiesta per tipo, quindi lì parte tutta la pagina in una volta.
+
+Cosa non fa:
+
+- **Bitbucket** non ha scheda: l’app lì non legge issue, e il link apre il browser
+  come prima.
+- **Non trovato, o senza accesso.** Una issue eliminata, un work item in un progetto
+  che questo account non può vedere, o un token Azure senza lo scope *Work Items
+  (Read)* appaiono allo stesso modo: la scheda lo dice, e il link funziona comunque.
+  Un host che limita le richieste, non raggiungibile o senza account in questo
+  profilo ha un messaggio suo.
+- **`AB#123` fuori da Azure DevOps** — in un repository GitHub collegato ad Azure
+  Boards — non è un link, quindi non ha scheda: l’app non sa a quale organizzazione
+  appartenga.
+- **Lo stato unita sui GitHub Enterprise Server più vecchi** che non inviano quando
+  una pull request è stata unita: appare chiusa.
+- Le righe dei commit **del grafo** non mostrano schede.
 
 ## Limiti
 

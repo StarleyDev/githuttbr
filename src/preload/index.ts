@@ -344,6 +344,8 @@ const api = {
       ipcRenderer.invoke('hosting:prDetail', repoPath, remoteUrl, tokens, number),
     workItem: (repoPath: string, remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:workItem', repoPath, remoteUrl, tokens, id),
+    getReferenceSummaries: (repoPath: string, remoteUrl: string, tokens: unknown, queries: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:getReferenceSummaries', repoPath, remoteUrl, tokens, queries),
     prComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prComment', repoPath, remoteUrl, tokens, number, body),
     prReplyReviewComment: (
@@ -355,6 +357,26 @@ const api = {
       body: string
     ): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReplyReviewComment', repoPath, remoteUrl, tokens, number, inReplyTo, body),
+    prCommentOnLine: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      anchor: unknown,
+      body: string,
+      revision: unknown
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prCommentOnLine', repoPath, remoteUrl, tokens, number, anchor, body, revision),
+    prEditComment: (
+      repoPath: string,
+      remoteUrl: string,
+      tokens: unknown,
+      number: number,
+      handle: unknown,
+      body: string
+    ): Promise<unknown> => ipcRenderer.invoke('hosting:prEditComment', repoPath, remoteUrl, tokens, number, handle, body),
+    prDeleteComment: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, handle: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prDeleteComment', repoPath, remoteUrl, tokens, number, handle),
     ciRuns: (repoPath: string, remoteUrl: string, tokens: unknown, branch?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciRuns', repoPath, remoteUrl, tokens, branch),
     ciRunJobs: (repoPath: string, remoteUrl: string, tokens: unknown, runId: string): Promise<unknown> =>
@@ -373,6 +395,8 @@ const api = {
       ipcRenderer.invoke('hosting:prChecks', repoPath, remoteUrl, tokens, number),
     prFiles: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prFiles', repoPath, remoteUrl, tokens, number),
+    prListCommits: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prListCommits', repoPath, remoteUrl, tokens, number),
     prReview: (
       repoPath: string,
       remoteUrl: string,

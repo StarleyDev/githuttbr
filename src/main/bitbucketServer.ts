@@ -2,6 +2,9 @@ import { countChecks } from './ciSummary'
 import { bbsReviewerIds, collectPickerOptions, createWithoutRejectedReviewers, PICKER_MAX_PAGES, reviewersMissing } from './prMeta'
 import { prMetaSupport, uniqueById, withoutSelf } from '../shared/prMeta'
 import { splitUnifiedDiff } from './forgejo'
+import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
+import { finishPrCommits } from '../shared/prCommits'
+import { isEditedAfter } from '../shared/prCommentHandle'
 import {
   bitbucketServerEndpoints,
   bitbucketServerPullRequestUrl,
@@ -16,6 +19,8 @@ import type {
   CreatePrResult,
   PrCheck,
   PrComment,
+  PrCommentHandle,
+  PrCommitList,
   PrDetail,
   PrFile,
   PrMergeMethod,
@@ -26,7 +31,9 @@ import type {
   PrReviewComment,
   PrReviewEvent,
   PrReviewThread,
-  PullRequest
+  PullRequest,
+  PrDiffRevision,
+  PrLineAnchor
 } from '../shared/types'
 
 /**
@@ -189,6 +196,9 @@ interface BbsComment {
   text?: string
   author?: BbsUser
   createdDate?: number
+  updatedDate?: number
+  /** What an edit or a delete must name: the server refuses a stale one. */
+  version?: number
   comments?: BbsComment[]
 }
 
@@ -199,7 +209,7 @@ interface BbsActivity {
   user?: BbsUser
   commentAction?: string
   comment?: BbsComment
-  commentAnchor?: { path?: string; line?: number; srcPath?: string }
+  commentAnchor?: { path?: string; line?: number; srcPath?: string; fileType?: 'FROM' | 'TO'; orphaned?: boolean }
 }
 
 interface BbsMergeability {
@@ -308,12 +318,16 @@ function flatten(c: BbsComment): BbsComment[] {
   return [c, ...(c.comments ?? []).flatMap(flatten)]
 }
 
-const toComment = (c: BbsComment): PrReviewComment => ({
-  id: c.id,
+/** A comment's text, and the version an edit or a delete must name. */
+const commentOf = (c: BbsComment, kind: 'conversation' | 'review'): PrComment => ({
   author: who(c.author),
   body: c.text ?? '',
-  createdAt: iso(c.createdDate) ?? ''
+  createdAt: iso(c.createdDate) ?? '',
+  handle: { id: c.id, kind, ...(typeof c.version === 'number' ? { version: c.version } : {}) },
+  ...(isEditedAfter(c.createdDate, c.updatedDate) ? { edited: true } : {})
 })
+
+const toComment = (c: BbsComment): PrReviewComment => ({ id: c.id, ...commentOf(c, 'review') })
 
 /** Activities → the conversation, the line threads and the review verdicts. */
 export function mapBbsActivities(activities: BbsActivity[]): { comments: PrComment[]; reviewThreads: PrReviewThread[] } {
@@ -330,10 +344,20 @@ export function mapBbsActivities(activities: BbsActivity[]): { comments: PrComme
         line: typeof a.commentAnchor.line === 'number' ? a.commentAnchor.line : null,
         diffHunk: '',
         rootId: a.comment.id,
-        comments: all.map(toComment)
+        comments: all.map(toComment),
+        // FROM is the old file (a removed line), TO the new one. An orphaned
+        // anchor no longer matches the diff, so it is not drawn on a line.
+        ...(a.commentAnchor.orphaned || typeof a.commentAnchor.line !== 'number'
+          ? {}
+          : a.commentAnchor.fileType === 'FROM'
+            ? { side: 'old' as const }
+            : a.commentAnchor.fileType === 'TO'
+              ? { side: 'new' as const }
+              : {})
       })
     } else {
-      for (const c of all) comments.push({ author: who(c.author), body: c.text ?? '', createdAt: iso(c.createdDate) ?? '' })
+      // Data Center refuses to delete an answered comment: the confirm says so up front.
+      for (const c of all) comments.push({ ...commentOf(c, 'conversation'), ...(c.comments?.length ? { hasReplies: true } : {}) })
     }
   }
   return { comments, reviewThreads }
@@ -600,6 +624,73 @@ export async function bbsComment(repo: BitbucketServerRepo, token: string, id: n
   })
 }
 
+const commentUrl = (repo: BitbucketServerRepo, id: number, handle: PrCommentHandle): string =>
+  `${bbsRepoApi(repo)}/pull-requests/${id}/comments/${handle.id}`
+
+/** The version the page read: Data Center refuses an edit or a delete without it. */
+function versionOf(handle: PrCommentHandle): number {
+  if (typeof handle.version !== 'number') throw new Error("Bitbucket Data Center needs the comment's version; refresh the page.")
+  return handle.version
+}
+
+/**
+ * Replace a comment's text. Only its author may. A 409 means someone changed
+ * it since the page read it: the version no longer matches.
+ */
+export async function bbsEditComment(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number,
+  handle: PrCommentHandle,
+  text: string
+): Promise<void> {
+  await bbsJson(commentUrl(repo, id, handle), token, { method: 'PUT', body: JSON.stringify({ text, version: versionOf(handle) }) })
+}
+
+/**
+ * Delete a comment. A 409 means it changed since it was read, or that it has
+ * replies: Data Center does not delete a comment someone answered.
+ */
+export async function bbsDeleteComment(repo: BitbucketServerRepo, token: string, id: number, handle: PrCommentHandle): Promise<void> {
+  await bbsJson(`${commentUrl(repo, id, handle)}?version=${versionOf(handle)}`, token, { method: 'DELETE' })
+}
+
+const LINE_TYPE: Record<PrLineAnchor['kind'], 'ADDED' | 'REMOVED' | 'CONTEXT'> = { add: 'ADDED', del: 'REMOVED', ctx: 'CONTEXT' }
+
+/** The pull request's source head, as the Files tab's diff was read at. */
+export async function bbsPullRevision(repo: BitbucketServerRepo, token: string, id: number): Promise<PrDiffRevision | null> {
+  const pr = await bbsJson<BbsPull>(`${bbsRepoApi(repo)}/pull-requests/${id}`, token)
+  return pr.fromRef?.latestCommit ? { headSha: pr.fromRef.latestCommit } : null
+}
+
+/**
+ * A comment on one line of the pull request's effective diff (the one its
+ * Diff tab shows). A removed line counts in the source file (FROM), added and
+ * context lines in the destination (TO); `srcPath` names a renamed file's old path.
+ */
+export async function bbsCommentOnLine(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number,
+  anchor: PrLineAnchor,
+  text: string
+): Promise<void> {
+  await bbsJson(`${bbsRepoApi(repo)}/pull-requests/${id}/comments`, token, {
+    method: 'POST',
+    body: JSON.stringify({
+      text,
+      anchor: {
+        path: anchor.path,
+        ...(anchor.oldPath ? { srcPath: anchor.oldPath } : {}),
+        line: getAnchorLine(anchor),
+        lineType: LINE_TYPE[anchor.kind],
+        fileType: getAnchorSide(anchor) === 'old' ? 'FROM' : 'TO',
+        diffType: 'EFFECTIVE'
+      }
+    })
+  })
+}
+
 /**
  * Who a token signs in as. The REST API has no "current user" resource; every
  * response names the authenticated user in its `X-AUSERNAME` header, so the
@@ -828,5 +919,41 @@ export async function bbsPickerOptions(repo: BitbucketServerRepo, token: string)
     },
     // A reviewer is a user name, so one can be typed when the list could not be read.
     { people: true }
+  )
+}
+
+interface BbsCommit {
+  id?: string
+  message?: string
+  author?: BbsUser
+  authorTimestamp?: number
+  parents?: Array<{ id?: string }>
+}
+
+/**
+ * A pull request's commits, newest first as the server lists them. No
+ * `avatarSize`: the server's avatar links need its sign-in, which an <img>
+ * does not have. The author's `slug` is there only when the commit's email
+ * matched an account.
+ */
+export async function bbsPullCommits(repo: BitbucketServerRepo, token: string, id: number): Promise<PrCommitList> {
+  let partial = false
+  // 6 × 50 reaches past the cap, so a list that goes on is told apart from one that ends there.
+  const commits = await bbsPages<BbsCommit>(`${bbsRepoApi(repo)}/pull-requests/${id}/commits`, token, 50, 6, () => {
+    partial = true
+  })
+  return finishPrCommits(
+    commits
+      .filter((c) => typeof c.id === 'string')
+      .map((c) => ({
+        sha: c.id!,
+        message: c.message,
+        authorName: c.author?.displayName || c.author?.name,
+        authorLogin: c.author?.slug,
+        authoredAt: c.authorTimestamp,
+        parentShas: c.parents ? c.parents.flatMap((p) => (p.id ? [p.id] : [])) : null
+      })),
+    true,
+    partial
   )
 }

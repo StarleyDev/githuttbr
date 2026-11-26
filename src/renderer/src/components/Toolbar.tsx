@@ -36,6 +36,7 @@ import {
   BookOpen,
   Radar,
   Magnet,
+  BrushCleaning,
   Clock,
   Film,
   MoreHorizontal,
@@ -269,6 +270,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       { separator: true },
       ...withTone<MenuItem>('ref', [
         { label: t('absorb.open'), icon: <Magnet size={15} />, onClick: () => openModal({ kind: 'absorb', repoPath: path }) },
+        {
+          label: t('branchCleanup.open'),
+          icon: <BrushCleaning size={15} />,
+          onClick: () => openModal({ kind: 'branch-cleanup', repoPath: path })
+        },
         {
           label: t('radar.open'),
           icon: <Radar size={15} />,

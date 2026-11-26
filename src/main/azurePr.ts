@@ -1,7 +1,12 @@
 import type {
   PrCheck,
+  PrComment,
+  PrCommentHandle,
+  PrCommitList,
   PrDetail,
   PrFile,
+  PrDiffRevision,
+  PrLineAnchor,
   PrMergeMethod,
   PrReview,
   PrReviewEvent,
@@ -9,6 +14,9 @@ import type {
   PrWorkItem
 } from '../shared/types'
 import { unifiedDiff } from '../shared/lineDiff'
+import { getAnchorLine, getAnchorSide, LINE_COMMENT_STALE } from '../shared/prLineAnchor'
+import { finishPrCommits, PR_COMMITS_MAX } from '../shared/prCommits'
+import { isEditedAfter } from '../shared/prCommentHandle'
 
 /**
  * Azure DevOps pull requests on the PR page. Every call goes through `ado`,
@@ -24,6 +32,8 @@ export type Ado = <T>(url: string, init?: RequestInit) => Promise<T>
 /** A plain-text read (a build log), keeping at most the last `max` bytes. Null
  *  when the server will not give it — no permission, or a sign-in page. */
 export type AdoText = (url: string, max: number) => Promise<string | null>
+/** One page of a list Azure continues by header: its body and `x-ms-continuationtoken`. */
+export type AdoPage = <T>(url: string) => Promise<{ body: T; continuation: string | null }>
 
 export interface AzureRepo {
   org: string
@@ -73,8 +83,23 @@ interface AzComment {
   content?: string
   author?: AzIdentity
   publishedDate?: string
+  /** When the text last changed; `lastUpdatedDate` also moves for a like. */
+  lastContentUpdatedDate?: string
   commentType?: string
   isDeleted?: boolean
+}
+
+/** A comment as the page shows it: its thread and id, to edit or delete it in place. */
+function mapAzureComment(th: AzThread, c: AzComment, kind: 'conversation' | 'review'): PrComment {
+  return {
+    author: nameOf(c.author),
+    body: c.content ?? '',
+    createdAt: c.publishedDate ?? '',
+    handle: { id: c.id, kind, threadId: th.id },
+    // Display names repeat; the identity id is what tells two "Ana Souza" apart.
+    ...(c.author?.id ? { authorId: c.author.id } : {}),
+    ...(isEditedAfter(c.publishedDate, c.lastContentUpdatedDate) ? { edited: true } : {})
+  }
 }
 
 interface AzThread {
@@ -122,10 +147,14 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
         line: ctx.rightFileStart?.line ?? ctx.leftFileStart?.line ?? null,
         diffHunk: '',
         rootId: th.id,
-        comments: notes.map((c) => ({ id: c.id, author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' }))
+        comments: notes.map((c) => ({ id: c.id, ...mapAzureComment(th, c, 'review') })),
+        ...(ctx.rightFileStart?.line ? { side: 'new' as const } : ctx.leftFileStart?.line ? { side: 'old' as const } : {})
       })
     } else {
-      for (const c of notes) comments.push({ author: nameOf(c.author), body: c.content ?? '', createdAt: c.publishedDate ?? '' })
+      // A conversation thread's first comment, with others after it, is one that was answered.
+      notes.forEach((c, i) =>
+        comments.push({ ...mapAzureComment(th, c, 'conversation'), ...(i === 0 && notes.length > 1 ? { hasReplies: true } : {}) })
+      )
     }
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -165,9 +194,17 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
  *  a refusal there must not be mistaken for a revoked credential. */
 export async function azurePrDetail(ado: Ado, r: AzureRepo, id: number, optional: Ado = ado): Promise<PrDetail> {
   const base = `${repoApi(r)}/pullrequests/${id}`
+  // Threads read against the last iteration: Azure then tracks each one across
+  // the pushes since it was written, so its line is where it is today — the
+  // line the Files tab draws it on, which shows that same iteration.
+  const threadsNow = async (): Promise<{ value?: AzThread[] }> => {
+    const last = await azurePrRevision(ado, r, id).catch(() => null)
+    const tracked = last?.iteration !== undefined ? `$iteration=${last.iteration}&$baseIteration=0&` : ''
+    return ado<{ value?: AzThread[] }>(`${base}/threads?${tracked}${V}`)
+  }
   const [pr, threads, workItems] = await Promise.all([
     ado<AzPr>(`${base}?${V}`),
-    ado<{ value?: AzThread[] }>(`${base}/threads?${V}`).catch(() => ({ value: [] as AzThread[] })),
+    threadsNow().catch(() => ({ value: [] as AzThread[] })),
     // A token without Work Items (Read) cannot list them: the row is left out, the PR still opens.
     azurePrWorkItems(optional, r, id).catch(() => undefined)
   ])
@@ -390,6 +427,8 @@ interface AzChange {
   changeType?: string
   item?: { path?: string; gitObjectType?: string; isFolder?: boolean }
   originalPath?: string
+  /** What keeps a thread on its line across later pushes. */
+  changeTrackingId?: number
 }
 
 export function azureChangeStatus(changeType: string | undefined): string {
@@ -466,11 +505,91 @@ export async function azureComment(ado: Ado, r: AzureRepo, id: number, body: str
   })
 }
 
+type AzIteration = { id: number; sourceRefCommit?: { commitId: string }; commonRefCommit?: { commitId: string } }
+
+/** The PR's last iteration — what the Files tab shows — as a revision; null without one. */
+export async function azurePrRevision(ado: Ado, r: AzureRepo, id: number): Promise<PrDiffRevision | null> {
+  const its = await ado<{ value?: AzIteration[] }>(`${repoApi(r)}/pullrequests/${id}/iterations?${V}`)
+  const last = (its.value ?? [])[(its.value ?? []).length - 1]
+  if (!last) return null
+  return {
+    headSha: last.sourceRefCommit?.commitId ?? '',
+    ...(last.commonRefCommit?.commitId ? { baseSha: last.commonRefCommit.commitId } : {}),
+    iteration: last.id
+  }
+}
+
+/**
+ * Start a thread on one line of the PR's diff. The Files tab shows the merge
+ * base against the last iteration, which Azure calls comparing that iteration
+ * with itself; the change's tracking id is what keeps the thread on its line
+ * when the branch moves on — sent when the iteration lists the file.
+ */
+export async function azureCommentOnLine(
+  ado: Ado,
+  r: AzureRepo,
+  id: number,
+  anchor: PrLineAnchor,
+  body: string,
+  read: PrDiffRevision | null
+): Promise<void> {
+  const base = `${repoApi(r)}/pullrequests/${id}`
+  const its = await ado<{ value?: Array<{ id: number }> }>(`${base}/iterations?${V}`)
+  const last = (its.value ?? [])[(its.value ?? []).length - 1]
+  // A push since the diff loaded made a new iteration: its line numbers may not be these.
+  if (read?.iteration !== undefined && last && read.iteration !== last.id) throw new Error(LINE_COMMENT_STALE)
+  const filePath = `/${anchor.path.replace(/^\//, '')}`
+  let changeTrackingId: number | undefined
+  if (last) {
+    const changes = await ado<{ changeEntries?: AzChange[] }>(`${base}/iterations/${last.id}/changes?$top=2000&${V}`).catch(
+      () => ({ changeEntries: [] as AzChange[] })
+    )
+    changeTrackingId = (changes.changeEntries ?? []).find((c) => c.item?.path === filePath)?.changeTrackingId
+  }
+  const at = { line: getAnchorLine(anchor), offset: 1 }
+  const side = getAnchorSide(anchor) === 'old' ? 'left' : 'right'
+  await ado(`${base}/threads?${V}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      comments: [{ parentCommentId: 0, content: body, commentType: 1 }],
+      status: 1,
+      threadContext: { filePath, [`${side}FileStart`]: at, [`${side}FileEnd`]: at },
+      ...(last
+        ? {
+            pullRequestThreadContext: {
+              ...(changeTrackingId !== undefined ? { changeTrackingId } : {}),
+              iterationContext: { firstComparingIteration: last.id, secondComparingIteration: last.id }
+            }
+          }
+        : {})
+    })
+  })
+}
+
 export async function azureReply(ado: Ado, r: AzureRepo, id: number, threadId: number, body: string): Promise<void> {
   await ado(`${repoApi(r)}/pullrequests/${id}/threads/${threadId}/comments?${V}`, {
     method: 'POST',
     body: JSON.stringify({ content: body, parentCommentId: 1, commentType: 1 })
   })
+}
+
+const commentUrl = (r: AzureRepo, id: number, handle: PrCommentHandle): string => {
+  if (!handle.threadId) throw new Error('An Azure DevOps comment is reached through its thread, and none was given.')
+  return `${repoApi(r)}/pullrequests/${id}/threads/${handle.threadId}/comments/${handle.id}?${V}`
+}
+
+/** Replace a comment's text (Pull Request Thread Comments - Update). */
+export async function azureEditComment(ado: Ado, r: AzureRepo, id: number, handle: PrCommentHandle, body: string): Promise<void> {
+  await ado(commentUrl(r, id, handle), { method: 'PATCH', body: JSON.stringify({ content: body }) })
+}
+
+/**
+ * Delete a comment (Pull Request Thread Comments - Delete). Azure marks it
+ * `isDeleted` rather than removing it: the thread and its replies stay, and
+ * the page hides the deleted comment.
+ */
+export async function azureDeleteComment(ado: Ado, r: AzureRepo, id: number, handle: PrCommentHandle): Promise<void> {
+  await ado(commentUrl(r, id, handle), { method: 'DELETE' })
 }
 
 /** Approve = 10; request changes = -5 ("waiting for author"), which is what it asks for. */
@@ -523,4 +642,54 @@ export async function azureWorkItem(
     type: typeof f['System.WorkItemType'] === 'string' ? f['System.WorkItemType'] : '',
     ...(typeof f['System.State'] === 'string' ? { state: f['System.State'] } : {})
   }
+}
+
+interface AzCommitRef {
+  commitId?: string
+  comment?: string
+  author?: { name?: string; date?: string }
+  parents?: string[]
+}
+
+/** Commits asked for per page: one past the cap, so a list that goes on shows it. */
+const COMMITS_TOP = PR_COMMITS_MAX + 1
+
+/**
+ * The commits of a pull request. Azure pages this list by a header,
+ * `x-ms-continuationtoken`, followed up to the cap. A server that serves
+ * fewer than `$top` per page and sends no token is not trusted to have
+ * ended: a page of exactly 100, 200… under the size asked for is read as a
+ * cap, and the list as truncated. `comment` can be cut short by Azure
+ * (`commentTruncated`); the body then ends early.
+ */
+export async function azurePrCommits(page: AdoPage, r: AzureRepo, id: number): Promise<PrCommitList> {
+  const base = `${repoApi(r)}/pullrequests/${id}/commits?$top=${COMMITS_TOP}&${V}`
+  const refs: AzCommitRef[] = []
+  let token: string | null = null
+  let capped = false
+  for (let n = 0; n < 10 && refs.length <= PR_COMMITS_MAX; n++) {
+    const url: string = token ? `${base}&continuationToken=${encodeURIComponent(token)}` : base
+    const res: { body: { value?: AzCommitRef[] } | AzCommitRef[] | undefined; continuation: string | null } = await page(url)
+    const { body, continuation } = res
+    const items = Array.isArray(body) ? body : (body?.value ?? [])
+    refs.push(...items)
+    token = continuation || null
+    if (!token) {
+      capped = items.length > 0 && items.length < COMMITS_TOP && items.length % 100 === 0
+      break
+    }
+  }
+  const known = refs.filter((c) => typeof c.commitId === 'string')
+  // Azure lists newest first, as the web page does.
+  return finishPrCommits(
+    known.map((c) => ({
+      sha: c.commitId!,
+      message: c.comment,
+      authorName: c.author?.name,
+      authoredAt: c.author?.date,
+      parentShas: Array.isArray(c.parents) ? c.parents : null
+    })),
+    true,
+    !!token || capped
+  )
 }

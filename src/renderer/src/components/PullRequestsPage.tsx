@@ -35,6 +35,7 @@ import { timeAgo } from '../lib/timeAgo'
 import { readableError } from '../lib/gitErrorHint'
 import { ciIcon, ciTitle } from './CiIcon'
 import { HostUserAvatar } from './HostUserAvatar'
+import { PageHead } from './PageHead'
 
 const TAB_KEY: Record<PrListTab, TranslationKey> = {
   open: 'prList.tabOpen',
@@ -221,29 +222,145 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
     .join(', ')
   const repoName = repoPath.split(/[\\/]/).pop() ?? repoPath
 
+  // Tabs and filters need a remote to list from: same gate as the list below.
+  const ready = repoLoaded && !!origin
+
   return (
     <div className="changelog-page prl-page">
       <div className="changelog-inner">
-        <header className="prl-header">
-          <div className="changelog-title">
-            <GitPullRequest size={20} />
-            <div>
-              <h1>{t('prList.title')}</h1>
-              <span className="settings-hint">
-                {/* i18n-ignore repository and product names are data */}
-                {provider ? `${repoName} · ${PROVIDER_NAME[provider]}` : repoName}
-              </span>
+        <PageHead>
+          <header className="prl-header">
+            <div className="changelog-title">
+              <GitPullRequest size={20} />
+              <div>
+                <h1>{t('prList.title')}</h1>
+                <span className="settings-hint">
+                  {/* i18n-ignore repository and product names are data */}
+                  {provider ? `${repoName} · ${PROVIDER_NAME[provider]}` : repoName}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="prl-header-actions">
-            <button className="btn ghost small" onClick={refresh} title={t('prList.refresh')}>
-              <RefreshCw size={13} className={finishedHere?.status === 'loading' ? 'spin' : undefined} /> {t('prList.refresh')}
-            </button>
-            <button className="btn small" onClick={() => openModal({ kind: 'create-pr', repoPath })}>
-              <Plus size={13} /> {t('prList.newPr')}
-            </button>
-          </div>
-        </header>
+            <div className="prl-header-actions">
+              <button className="btn ghost small" onClick={refresh} title={t('prList.refresh')}>
+                <RefreshCw size={13} className={finishedHere?.status === 'loading' ? 'spin' : undefined} /> {t('prList.refresh')}
+              </button>
+              <button className="btn small" onClick={() => openModal({ kind: 'create-pr', repoPath })}>
+                <Plus size={13} /> {t('prList.newPr')}
+              </button>
+            </div>
+          </header>
+          {ready && (
+            <>
+              <nav className="prl-tabs" role="tablist" aria-label={t('prList.title')}>
+                {PR_LIST_TABS.map((id) => (
+                  <button
+                    key={id}
+                    role="tab"
+                    aria-selected={tab === id}
+                    className={`prl-tab ${tab === id ? 'active' : ''}`}
+                    onClick={() => setTab(repoPath, id)}
+                  >
+                    {t(TAB_KEY[id])}
+                    {counts[id] !== null && (
+                      <span className="prl-tab-count">
+                        {counts[id]}
+                        {((id === 'merged' || id === 'closed') && finishedHere?.data?.truncated) || (id === 'open' && openCapped)
+                          ? '+'
+                          : ''}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="prl-filters">
+                <label className="prl-field prl-field-search">
+                  {t('prList.search')}
+                  <input
+                    type="search"
+                    value={view.filters.query}
+                    placeholder={t('prList.searchPlaceholder')}
+                    onChange={(e) => setFilters(repoPath, { query: e.target.value })}
+                  />
+                </label>
+                <label className="prl-field">
+                  {t('prList.author')}
+                  <select value={filters.author} onChange={(e) => setFilters(repoPath, { author: e.target.value })}>
+                    <option value="">{t('prList.allAuthors')}</option>
+                    {me && <option value={ME}>{interp(t('prList.meOption'), { name: me, n: mine })}</option>}
+                    {authors.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {interp(t('prList.withCount'), { name: a.value, n: a.count })}
+                      </option>
+                    ))}
+                    {/* A pick the current tab has nobody for stays selectable, or the select would lie. */}
+                    {filters.author && filters.author !== ME && !authors.some((a) => a.value === filters.author) && (
+                      <option value={filters.author}>{filters.author}</option>
+                    )}
+                  </select>
+                </label>
+                <label className="prl-field">
+                  {t('prList.reviewer')}
+                  <select value={filters.reviewer} onChange={(e) => setFilters(repoPath, { reviewer: e.target.value })}>
+                    <option value="">{t('prList.anyReviewer')}</option>
+                    {me && <option value={ME}>{interp(t('prList.reviewMeOption'), { n: awaiting })}</option>}
+                    {reviewers.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {interp(t('prList.withCount'), { name: a.value, n: a.count })}
+                      </option>
+                    ))}
+                    {filters.reviewer && filters.reviewer !== ME && !reviewers.some((a) => a.value === filters.reviewer) && (
+                      <option value={filters.reviewer}>{filters.reviewer}</option>
+                    )}
+                  </select>
+                </label>
+                <label className="prl-field">
+                  {t('prList.target')}
+                  <select value={filters.target} onChange={(e) => setFilters(repoPath, { target: e.target.value })}>
+                    <option value="">{t('prList.allTargets')}</option>
+                    {targets.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {interp(t('prList.withCount'), { name: a.value, n: a.count })}
+                      </option>
+                    ))}
+                    {filters.target && !targets.some((a) => a.value === filters.target) && (
+                      <option value={filters.target}>{filters.target}</option>
+                    )}
+                  </select>
+                </label>
+                <div className="prl-chips">
+                  {me && (
+                    <button
+                      className={`prl-chip ${filters.author === ME ? 'active' : ''}`}
+                      aria-pressed={filters.author === ME}
+                      onClick={() => setFilters(repoPath, { author: filters.author === ME ? '' : ME })}
+                    >
+                      {t('prList.chipMine')}
+                    </button>
+                  )}
+                  {me && (
+                    <button
+                      className={`prl-chip ${filters.reviewer === ME ? 'active' : ''}`}
+                      aria-pressed={filters.reviewer === ME}
+                      onClick={() => setFilters(repoPath, { reviewer: filters.reviewer === ME ? '' : ME })}
+                    >
+                      {t('prList.chipAwaiting')}
+                    </button>
+                  )}
+                  {!finishedTab && (
+                    <button
+                      className={`prl-chip ${filters.ciFailing ? 'active' : ''}`}
+                      aria-pressed={filters.ciFailing}
+                      onClick={() => setFilters(repoPath, { ciFailing: !filters.ciFailing })}
+                    >
+                      {t('prList.chipCiFailing')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </PageHead>
 
         {!repoLoaded ? (
           <div className="ci-runs-empty">
@@ -253,114 +370,6 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
           <p className="ci-runs-empty">{t('prList.noRemote')}</p>
         ) : (
           <>
-            <nav className="prl-tabs" role="tablist" aria-label={t('prList.title')}>
-              {PR_LIST_TABS.map((id) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={tab === id}
-                  className={`prl-tab ${tab === id ? 'active' : ''}`}
-                  onClick={() => setTab(repoPath, id)}
-                >
-                  {t(TAB_KEY[id])}
-                  {counts[id] !== null && (
-                    <span className="prl-tab-count">
-                      {counts[id]}
-                      {((id === 'merged' || id === 'closed') && finishedHere?.data?.truncated) || (id === 'open' && openCapped)
-                        ? '+'
-                        : ''}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </nav>
-
-            <div className="prl-filters">
-              <label className="prl-field prl-field-search">
-                {t('prList.search')}
-                <input
-                  type="search"
-                  value={view.filters.query}
-                  placeholder={t('prList.searchPlaceholder')}
-                  onChange={(e) => setFilters(repoPath, { query: e.target.value })}
-                />
-              </label>
-              <label className="prl-field">
-                {t('prList.author')}
-                <select value={filters.author} onChange={(e) => setFilters(repoPath, { author: e.target.value })}>
-                  <option value="">{t('prList.allAuthors')}</option>
-                  {me && <option value={ME}>{interp(t('prList.meOption'), { name: me, n: mine })}</option>}
-                  {authors.map((a) => (
-                    <option key={a.value} value={a.value}>
-                      {interp(t('prList.withCount'), { name: a.value, n: a.count })}
-                    </option>
-                  ))}
-                  {/* A pick the current tab has nobody for stays selectable, or the select would lie. */}
-                  {filters.author && filters.author !== ME && !authors.some((a) => a.value === filters.author) && (
-                    <option value={filters.author}>{filters.author}</option>
-                  )}
-                </select>
-              </label>
-              <label className="prl-field">
-                {t('prList.reviewer')}
-                <select value={filters.reviewer} onChange={(e) => setFilters(repoPath, { reviewer: e.target.value })}>
-                  <option value="">{t('prList.anyReviewer')}</option>
-                  {me && <option value={ME}>{interp(t('prList.reviewMeOption'), { n: awaiting })}</option>}
-                  {reviewers.map((a) => (
-                    <option key={a.value} value={a.value}>
-                      {interp(t('prList.withCount'), { name: a.value, n: a.count })}
-                    </option>
-                  ))}
-                  {filters.reviewer && filters.reviewer !== ME && !reviewers.some((a) => a.value === filters.reviewer) && (
-                    <option value={filters.reviewer}>{filters.reviewer}</option>
-                  )}
-                </select>
-              </label>
-              <label className="prl-field">
-                {t('prList.target')}
-                <select value={filters.target} onChange={(e) => setFilters(repoPath, { target: e.target.value })}>
-                  <option value="">{t('prList.allTargets')}</option>
-                  {targets.map((a) => (
-                    <option key={a.value} value={a.value}>
-                      {interp(t('prList.withCount'), { name: a.value, n: a.count })}
-                    </option>
-                  ))}
-                  {filters.target && !targets.some((a) => a.value === filters.target) && (
-                    <option value={filters.target}>{filters.target}</option>
-                  )}
-                </select>
-              </label>
-              <div className="prl-chips">
-                {me && (
-                  <button
-                    className={`prl-chip ${filters.author === ME ? 'active' : ''}`}
-                    aria-pressed={filters.author === ME}
-                    onClick={() => setFilters(repoPath, { author: filters.author === ME ? '' : ME })}
-                  >
-                    {t('prList.chipMine')}
-                  </button>
-                )}
-                {me && (
-                  <button
-                    className={`prl-chip ${filters.reviewer === ME ? 'active' : ''}`}
-                    aria-pressed={filters.reviewer === ME}
-                    onClick={() => setFilters(repoPath, { reviewer: filters.reviewer === ME ? '' : ME })}
-                  >
-                    {t('prList.chipAwaiting')}
-                  </button>
-                )}
-                {!finishedTab && (
-                  <button
-                    className={`prl-chip ${filters.ciFailing ? 'active' : ''}`}
-                    aria-pressed={filters.ciFailing}
-                    onClick={() => setFilters(repoPath, { ciFailing: !filters.ciFailing })}
-                  >
-                    {t('prList.chipCiFailing')}
-                  </button>
-                )}
-              </div>
-            </div>
-
             <div className="prl-status" aria-live="polite">
               {active
                 ? interp(t('prList.shownOf'), { n: rows.length, total: inTab.length })

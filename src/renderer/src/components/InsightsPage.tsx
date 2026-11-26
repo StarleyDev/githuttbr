@@ -7,6 +7,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import type { RepoInsights } from '../../../shared/types'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { PageHead } from './PageHead'
 
 const RANGES: { label: string; labelKey?: TranslationKey; days: number }[] = [
   { label: '30d', days: 30 },
@@ -75,28 +76,29 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <BarChart3 size={20} />
-            <div>
-              <h1>{t('insights.title')}</h1>
-              <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <BarChart3 size={20} />
+              <div>
+                <h1>{t('insights.title')}</h1>
+                <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
+              </div>
             </div>
+          </header>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
+            <div className="codesearch-tabs" style={{ margin: 0 }}>
+              {RANGES.map((r) => (
+                <button key={r.days} className={`codesearch-tab ${days === r.days ? 'active' : ''}`} onClick={() => setDays(r.days)}>
+                  {r.labelKey ? t(r.labelKey) : r.label}
+                </button>
+              ))}
+            </div>
+            <button className="btn ghost small" onClick={() => setDays((d) => d)} disabled={loading} style={{ marginLeft: 'auto' }}>
+              <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {loading ? t('insights.loading') : t('insights.refresh')}
+            </button>
           </div>
-        </header>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
-          <div className="codesearch-tabs" style={{ margin: 0 }}>
-            {RANGES.map((r) => (
-              <button key={r.days} className={`codesearch-tab ${days === r.days ? 'active' : ''}`} onClick={() => setDays(r.days)}>
-                {r.labelKey ? t(r.labelKey) : r.label}
-              </button>
-            ))}
-          </div>
-          <button className="btn ghost small" onClick={() => setDays((d) => d)} disabled={loading} style={{ marginLeft: 'auto' }}>
-            <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {loading ? t('insights.loading') : t('insights.refresh')}
-          </button>
-        </div>
+        </PageHead>
 
         {!data || data.totalCommits === 0 ? (
           <p className="settings-hint">{loading ? t('insights.crunching') : t('insights.noCommits')}</p>

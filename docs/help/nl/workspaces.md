@@ -53,8 +53,11 @@ Om een repository toe te voegen die de groep nog niet heeft, klik je op de **+**
 
 Sommige pagina's zijn niets op zichzelf: de [wiki](repo-wiki.md) van een
 repository, de [insights](insights.md), de [dev tools](devtools.md) die een
-launch-sessie aankondigde. Ze nemen geen tabblad — ze verschijnen als kleine
-pictogrammen op de repository zelf.
+launch-sessie aankondigde. Ze nemen geen tabblad — ze verschijnen als kleine chips
+op de repository zelf: een pictogram en een woord dat zegt welke pagina het is
+(*CI*, *PR’s*, *Wiki*, *#482* voor een pull request, de tag van een release). De
+volledige naam staat in de tooltip, en een lange tag of titel wordt afgekapt met
+een beletselteken.
 
 - **Klik een pictogram** om die pagina te tonen. **Klik nog eens — of klik de
   naam van de repository** — om terug te gaan. Zolang een pagina getoond wordt,

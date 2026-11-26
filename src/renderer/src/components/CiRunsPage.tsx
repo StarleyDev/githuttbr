@@ -17,6 +17,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { PageHead } from './PageHead'
 import { interp, t as translateNow, useT } from '../i18n'
 import {
   ciDot,
@@ -165,30 +166,23 @@ export function CiRunsPage({ repoPath }: { repoPath: string }): React.JSX.Elemen
     () => (list?.runs ?? []).filter((r) => runMatches(r, query, runHeadline(r, subjectOf))),
     [list, query, subjectOf]
   )
+  // The toolbar only makes sense once there is a host to ask: same gate as the list below.
+  const ready = repoLoaded && !!remoteUrl && !(list && !list.supported)
 
   return (
     <div className="changelog-page ci-runs-page">
       <div className="changelog-inner">
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <Workflow size={20} />
-            <div>
-              <h1>{t('ciRuns.title')}</h1>
-              <span className="settings-hint">{t('ciRuns.subtitle')}</span>
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <Workflow size={20} />
+              <div>
+                <h1>{t('ciRuns.title')}</h1>
+                <span className="settings-hint">{t('ciRuns.subtitle')}</span>
+              </div>
             </div>
-          </div>
-        </header>
-
-        {!repoLoaded ? (
-          <div className="ci-runs-empty">
-            <Loader2 size={15} className="spin" /> {t('common.loading')}
-          </div>
-        ) : !remoteUrl ? (
-          <p className="ci-runs-empty">{t('ciRuns.noRemote')}</p>
-        ) : list && !list.supported ? (
-          <p className="ci-runs-empty">{t('ciRuns.unsupported')}</p>
-        ) : (
-          <>
+          </header>
+          {ready && (
             <div className="ci-runs-toolbar">
               <div className="codesearch-tabs" style={{ margin: 0 }}>
                 <button className={`codesearch-tab ${!onlyBranch ? 'active' : ''}`} onClick={() => setOnlyBranch(false)}>
@@ -217,7 +211,19 @@ export function CiRunsPage({ repoPath }: { repoPath: string }): React.JSX.Elemen
                 </button>
               )}
             </div>
+          )}
+        </PageHead>
 
+        {!repoLoaded ? (
+          <div className="ci-runs-empty">
+            <Loader2 size={15} className="spin" /> {t('common.loading')}
+          </div>
+        ) : !remoteUrl ? (
+          <p className="ci-runs-empty">{t('ciRuns.noRemote')}</p>
+        ) : list && !list.supported ? (
+          <p className="ci-runs-empty">{t('ciRuns.unsupported')}</p>
+        ) : (
+          <>
             {dispatchOpen && list?.capabilities.dispatch && (
               <DispatchForm
                 repoPath={repoPath}

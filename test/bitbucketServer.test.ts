@@ -480,7 +480,7 @@ describe('mapping the documented shapes', () => {
 
   it('activities become the conversation and the line threads, oldest first', () => {
     const { comments, reviewThreads } = mapBbsActivities(ACTIVITIES.values as never)
-    expect(comments).toEqual([{ author: 'jdoe', body: 'Looks good overall.', createdAt: new Date(1700000200000).toISOString() }])
+    expect(comments).toEqual([{ author: 'jdoe', body: 'Looks good overall.', createdAt: new Date(1700000200000).toISOString(), handle: { id: 11, kind: 'conversation', version: 0 } }])
     expect(reviewThreads).toHaveLength(1)
     expect(reviewThreads[0]).toMatchObject({ path: 'src/a.ts', line: 4, rootId: 12 })
     expect(reviewThreads[0].comments.map((c) => c.body)).toEqual(['This line is off by one.', 'Fixed.'])
@@ -900,7 +900,7 @@ describe('call sites, through the real IPC handlers', () => {
   })
 
   it('lists the changed files with their hunks', async () => {
-    const files = (await call('hosting:prFiles', UNBOUND, REMOTE, tokens, 1)) as Array<{ filename: string; patch?: string }>
+    const { files } = (await call('hosting:prFiles', UNBOUND, REMOTE, tokens, 1)) as { files: Array<{ filename: string; patch?: string }> }
     expect(files.map((f) => f.filename)).toEqual(['src/a.ts', 'src/b.ts'])
     expect(files[0].patch).toContain('+three')
     expectOnlyServerA()

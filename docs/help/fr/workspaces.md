@@ -60,7 +60,10 @@ Pour ajouter un dépôt que le groupe ne contient pas encore, cliquez sur le **+
 Certaines pages ne sont pas autonomes : le [wiki](repo-wiki.md) d’un dépôt, ses
 [statistiques](insights.md), les [outils de développement](devtools.md) qu’une
 session de lancement a annoncés. Elles ne prennent pas d’onglet — elles
-apparaissent en petites icônes sur le dépôt lui-même.
+apparaissent en petites puces sur le dépôt lui-même : une icône et un mot qui dit
+de quelle page il s’agit (*CI*, *PR*, *Wiki*, *#482* pour une pull request, le tag
+d’une release). Le nom complet est dans l’infobulle, et un tag ou un titre long est
+raccourci par des points de suspension.
 
 - **Cliquez une icône** pour afficher la page. **Recliquez — ou cliquez le nom
   du dépôt** — pour revenir au dépôt. Tant qu’une page est affichée, le nom

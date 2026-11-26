@@ -23,6 +23,7 @@ import { useUIStore } from '../stores/ui'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
 import { parseDotenv } from '../lib/dotenv'
 import { interp, useT } from '../i18n'
+import { PageHead } from './PageHead'
 
 function EntryRow({
   entry,
@@ -146,18 +147,20 @@ export function VaultPage(): React.JSX.Element {
   return (
     <div className="changelog-page">
       <motion.div className="changelog-inner" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <KeyRound size={20} />
-            <div>
-              <h1>{t('vault.globalTitle')}</h1>
-              <span className="settings-hint">{t('vault.globalSubtitle')}</span>
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <KeyRound size={20} />
+              <div>
+                <h1>{t('vault.globalTitle')}</h1>
+                <span className="settings-hint">{t('vault.globalSubtitle')}</span>
+              </div>
             </div>
-          </div>
-          <span className="vault-scope-badge">
-            <Globe size={12} /> {t('vault.global')}
-          </span>
-        </header>
+            <span className="vault-scope-badge">
+              <Globe size={12} /> {t('vault.global')}
+            </span>
+          </header>
+        </PageHead>
 
         <div className="vault-explainer">
           <Info size={15} />

@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash } from 'node:crypto'
-import { ipcMain, shell } from 'electron'
+import { ipcMain } from 'electron'
+import { openExternalUrl } from './externalLinks'
 import {
   apiToken,
   forgetCredential,
@@ -13,7 +14,17 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
+import {
+  getAnchorLine,
+  getAnchorSide,
+  isSameRevision,
+  isValidLineAnchor,
+  LINE_COMMENT_STALE,
+  validRevision
+} from '../shared/prLineAnchor'
 import { tokenCheckFailure, type TokenCheckResult } from '../shared/tokenCheck'
+import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
+import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../shared/prCommentHandle'
 import { countChecks } from './ciSummary'
 import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
 import { githubCiRuns } from './ciRunsGithub'
@@ -39,12 +50,17 @@ import {
   createForgejoPull,
   createForgejoRepo,
   forgejoComment,
+  forgejoCommentOnLine,
+  forgejoDeleteComment,
+  forgejoEditComment,
+  forgejoPullRevision,
   forgejoMerge,
   forgejoPullChecks,
   forgejoJobLog,
   readTail,
   forgejoPullDetail,
   forgejoPullFiles,
+  forgejoPullCommits,
   forgejoReview,
   describeForgejoAccount,
   fjJson,
@@ -94,8 +110,13 @@ import {
 } from '../shared/bitbucketServer'
 import { knownBitbucketServerInstances } from './bitbucketServerInstances'
 import {
+  bbsPullCommits,
   bbsCiStatuses,
   bbsComment,
+  bbsCommentOnLine,
+  bbsDeleteComment,
+  bbsEditComment,
+  bbsPullRevision,
   bbsMerge,
   bbsPullChecks,
   bbsPullDetail,
@@ -154,9 +175,15 @@ import type {
   HostingAccess,
   HostingProvider,
   PullRequest,
+  PrComment,
+  PrCommentHandle,
   PrDetail,
   PrReview,
   PrReviewThread,
+  PrLineAnchor,
+  PrDiffRevision,
+  PrFileList,
+  PrCommitList,
   PrCheck,
   PrFile,
   IssueInfo,
@@ -169,6 +196,8 @@ import type {
   PrMergeMethod,
   PrMetaField,
   PrPickerOptions,
+  ReferenceQuery,
+  ReferenceSummary,
   ReleaseInfo,
   RemoteOwner,
   RemoteRepo,
@@ -176,6 +205,7 @@ import type {
   GithubStackInfo
 } from '../shared/types'
 import {
+  azurePrCommits,
   azureComment,
   azureMerge,
   azurePrChecks,
@@ -183,12 +213,25 @@ import {
   azurePrDetail,
   azurePrFiles,
   azureReply,
+  azureCommentOnLine,
+  azureDeleteComment,
+  azureEditComment,
+  azurePrRevision,
   azureReview,
   azureWorkItem,
   type Ado,
+  type AdoPage,
   type AdoText,
   type AzureRepo
 } from './azurePr'
+import {
+  azureReferenceSummaries,
+  forgejoReferenceSummaries,
+  githubReferenceSummaries,
+  gitlabReferenceSummaries,
+  normalizeReferenceQueries,
+  unavailableReference
+} from './referenceSummaries'
 
 interface ParsedRemote {
   provider: Exclude<HostingProvider, null>
@@ -312,7 +355,7 @@ export function azureAuth(token: string): string {
  * `Unexpected token '<'` from JSON.parse rather than as an auth error. Anything
  * that is not JSON is therefore treated as a rejected credential here.
  */
-export async function adoJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
+export async function adoJson<T>(url: string, token: string, init?: RequestInit, onHeaders?: (h: Headers) => void): Promise<T> {
   const res = await fetch(url, {
     ...init,
     headers: {
@@ -322,6 +365,8 @@ export async function adoJson<T>(url: string, token: string, init?: RequestInit)
       ...(init?.headers as Record<string, string>)
     }
   })
+  // Some lists page by a header (x-ms-continuationtoken), not by the body.
+  if (res.ok) onHeaders?.(res.headers)
 
   const body = await res.text()
   if (!res.ok) {
@@ -821,14 +866,24 @@ export function markAwaitingYou(prs: PullRequest[], login: string | null): PullR
 }
 
 /** Who a token signs in as, per host — remembered for a while, keyed by a hash of the token (never the token). */
-const loginCache = new Map<string, { login: string | null; at: number }>()
+const loginCache = new Map<string, { login: string | null; id: string | null; at: number }>()
 const LOGIN_TTL_MS = 10 * 60_000
 
 async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<string | null> {
+  return (await myAccount(parsed, token, auth))?.login ?? null
+}
+
+/**
+ * Who a token signs in as: the login the host names authors by and, where that
+ * is a display name two people can share (Azure DevOps, bitbucket.org), the
+ * account's own id — what "your comment" must be matched on there.
+ */
+async function myAccount(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<{ login: string | null; id: string | null } | null> {
   const key = `${parsed.provider}|${parsed.base ?? ''}|${createHash('sha256').update(token).digest('hex').slice(0, 16)}`
   const hit = loginCache.get(key)
-  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return hit.login
+  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return { login: hit.login, id: hit.id }
   let login: string | null = null
+  let id: string | null = null
   // Only the host's own "no" is worth remembering: a token without user scope
   // stays that way. A network error or a 5xx is asked again next time.
   let refused = false
@@ -841,23 +896,28 @@ async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Prom
     // "you" is the display name too — the only thing the list can be matched on.
     else if (parsed.provider === 'bitbucket') {
       const res = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: bitbucketAuthFor(auth) } })
-      if (res.ok) login = ((await res.json()) as { display_name?: string | null }).display_name ?? null
-      else refused = res.status === 401 || res.status === 403
+      if (res.ok) {
+        const me = (await res.json()) as { display_name?: string | null; uuid?: string | null }
+        login = me.display_name ?? null
+        id = me.uuid ?? null
+      } else refused = res.status === 401 || res.status === 403
       if (!res.ok && !refused) return null
     } else if (parsed.provider === 'azure') {
-      const me = await adoJson<{ authenticatedUser?: { providerDisplayName?: string } }>(
+      const me = await adoJson<{ authenticatedUser?: { id?: string; providerDisplayName?: string } }>(
         `https://dev.azure.com/${encodeURIComponent(parsed.owner)}/_apis/connectionData`,
         token
       )
       login = me.authenticatedUser?.providerDisplayName ?? null
+      // The identity id: what a comment's `author.id` (an IdentityRef) names.
+      id = me.authenticatedUser?.id ?? null
     }
   } catch (err) {
     // A token without user scope cannot say who it is: no marks, no error.
     refused = isAuthRefusal(err)
     if (!refused) return null
   }
-  loginCache.set(key, { login, at: Date.now() })
-  return login
+  loginCache.set(key, { login, id, at: Date.now() })
+  return { login, id }
 }
 
 /** A 401/403 from the host. Every client myLogin uses sets `status` on what it throws. */
@@ -1680,6 +1740,8 @@ interface GlNote {
     old_path?: string | null
     new_line?: number | null
     old_line?: number | null
+    /** The MR head the note was written against. */
+    head_sha?: string | null
   } | null
 }
 
@@ -1737,6 +1799,7 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
       changes_count?: string | null
       source_project_id?: number
       project_id?: number
+      diff_refs?: { head_sha?: string } | null
     }>(`${mrUrl}?with_labels_details=true`, auth),
     allPages((page) =>
       glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100&page=${page}`, auth)
@@ -1772,16 +1835,37 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
         // GitLab notes carry a file position but not the surrounding hunk.
         diffHunk: '',
         rootId: d.id,
+        // An unchanged line carries both numbers; it is drawn on the new side.
+        // Only on the current diff: a note written against an older head counts
+        // its line in that version, so it stays in the conversation.
+        ...(pos.head_sha && pos.head_sha === mr.diff_refs?.head_sha
+          ? pos.new_line != null
+            ? { side: 'new' as const }
+            : pos.old_line != null
+              ? { side: 'old' as const }
+              : {}
+          : {}),
+        // One notes endpoint edits and deletes both kinds. No "edited" mark: a
+        // note's updated_at also moves when its thread is resolved.
         comments: notes.map((n) => ({
           id: n.id,
           author: n.author?.username ?? 'unknown',
           body: n.body,
-          createdAt: n.created_at
+          createdAt: n.created_at,
+          handle: { id: n.id, kind: 'review' as const }
         }))
       })
     } else {
-      for (const n of notes)
-        comments.push({ author: n.author?.username ?? 'unknown', body: n.body, createdAt: n.created_at })
+      notes.forEach((n, i) =>
+        comments.push({
+          author: n.author?.username ?? 'unknown',
+          body: n.body,
+          createdAt: n.created_at,
+          handle: { id: n.id, kind: 'conversation' },
+          // A discussion's first note, with replies after it.
+          ...(i === 0 && notes.length > 1 ? { hasReplies: true } : {})
+        })
+      )
     }
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -1991,19 +2075,26 @@ interface GhUser {
 async function azRepoOf(
   remoteUrl: string,
   sent: string | undefined
-): Promise<{ ado: Ado; optional: Ado; text: AdoText; repo: AzureRepo; token: string }> {
+): Promise<{ ado: Ado; adoPage: AdoPage; optional: Ado; text: AdoText; repo: AzureRepo; token: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
   const auth = await remoteApiToken(remoteUrl, 'azure', sent)
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
+  // The same call and retry as `ado`, handing back the continuation header too.
+  const adoPage: AdoPage = (url) =>
+    withAzureRetry(remoteUrl, auth, async (token) => {
+      let continuation: string | null = null
+      const body = await adoJson<never>(url, token, undefined, (h) => (continuation = h.get('x-ms-continuationtoken')))
+      return { body, continuation }
+    })
   // Calls that need a scope the token may not have (Work Items, Build) skip the
   // retry: a 401/403 there means "not allowed to read this", not "revoked", and
   // the retry would drop a working git credential from the helper over it.
   const optional: Ado = (url, init) => adoJson(url, auth.token, init)
   const text: AdoText = (url, max) => adoTail(url, auth.token, max)
   // The token itself only keys the CI badge cache (by fingerprint); nothing else reads it here.
-  return { ado, optional, text, token: auth.token, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+  return { ado, adoPage, optional, text, token: auth.token, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
 }
 
 /**
@@ -2033,17 +2124,40 @@ async function fjRepoOf(
   return { base: parsed.base, owner: parsed.owner, repo: parsed.repo, token: auth.token }
 }
 
+/** A conversation comment on a GitHub issue or PR. */
+interface GhIssueComment {
+  id: number
+  user: GhUser | null
+  body: string
+  created_at: string
+  updated_at?: string
+}
+
+/** GitHub keeps no "edited" flag: an `updated_at` past `created_at` is the sign. */
+export function mapGhIssueComment(c: GhIssueComment): PrComment {
+  return {
+    author: c.user?.login ?? 'unknown',
+    body: c.body,
+    createdAt: c.created_at,
+    handle: { id: c.id, kind: 'conversation' },
+    ...(isEditedAfter(c.created_at, c.updated_at) ? { edited: true } : {})
+  }
+}
+
 /** An inline review comment on a GitHub PR. */
 interface GhReviewComment {
   id: number
   user: GhUser | null
   body: string
   created_at: string
+  updated_at?: string
   path: string
   line: number | null
   original_line: number | null
   diff_hunk: string
   in_reply_to_id?: number
+  /** LEFT (the old file) or RIGHT (the new one), for `line`. */
+  side?: 'LEFT' | 'RIGHT' | null
 }
 
 async function pullRequestDetail(
@@ -2095,7 +2209,7 @@ async function pullRequestDetail(
     }>(`${api}/pulls/${number}`, token),
     // Every page: a long discussion used to stop at its first 100 comments.
     allPages((page) =>
-      ghJson<Array<{ user: GhUser | null; body: string; created_at: string }>>(
+      ghJson<GhIssueComment[]>(
         `${api}/issues/${number}/comments?per_page=100&page=${page}`,
         token
       )
@@ -2114,7 +2228,14 @@ async function pullRequestDetail(
   const sortedRC = [...reviewComments].sort((a, b) => a.created_at.localeCompare(b.created_at))
   for (const rc of sortedRC) {
     const rootId = rc.in_reply_to_id ?? rc.id
-    const comment = { id: rc.id, author: rc.user?.login ?? 'unknown', body: rc.body, createdAt: rc.created_at }
+    const comment = {
+      id: rc.id,
+      author: rc.user?.login ?? 'unknown',
+      body: rc.body,
+      createdAt: rc.created_at,
+      handle: { id: rc.id, kind: 'review' as const },
+      ...(isEditedAfter(rc.created_at, rc.updated_at) ? { edited: true } : {})
+    }
     const existing = threadById.get(rootId)
     if (existing) existing.comments.push(comment)
     else
@@ -2123,7 +2244,10 @@ async function pullRequestDetail(
         line: rc.line ?? rc.original_line,
         diffHunk: rc.diff_hunk,
         rootId,
-        comments: [comment]
+        comments: [comment],
+        // An outdated comment has no `line` on the current diff — its
+        // original_line counts in a commit the Files tab is not showing.
+        ...(rc.line != null && rc.side ? { side: rc.side === 'LEFT' ? ('old' as const) : ('new' as const) } : {})
       })
   }
   const reviewThreads = [...threadById.values()]
@@ -2170,7 +2294,7 @@ async function pullRequestDetail(
     merged: pr.merged,
     mergeable: pr.mergeable,
     url: pr.html_url,
-    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    comments: comments.map(mapGhIssueComment),
     reviews: reviews
       .filter((r) => r.state !== 'PENDING')
       .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] })),
@@ -2225,6 +2349,50 @@ async function pullRequestChecks(
   }))
 }
 
+/**
+ * The revision a pull request is at, as its Files tab would read it: head (and
+ * merge base) commits, or Azure's last iteration. Null on a host without one.
+ */
+async function pullRequestRevision(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrDiffRevision | null> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    const mr = await glJson<{ diff_refs?: { base_sha?: string; head_sha?: string } | null }>(`${base}/merge_requests/${number}`, auth)
+    const refs = mr.diff_refs
+    return refs?.head_sha ? { headSha: refs.head_sha, ...(refs.base_sha ? { baseSha: refs.base_sha } : {}) } : null
+  }
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullRevision(b.repo, b.token, number)
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullRevision(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parsed?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrRevision(a.ado, a.repo, number)
+  }
+  if (parsed?.provider !== 'github') return null
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const pr = await ghJson<{ head?: { sha?: string } }>(`${api}/pulls/${number}`, token)
+  return pr.head?.sha ? { headSha: pr.head.sha } : null
+}
+
+/**
+ * The changed files and the revision they were read at. The revision is read
+ * before and after the files: when the two differ, a push landed in between and
+ * nobody can say which one the diff shows — null then, and a line comment
+ * checks the head when it is posted instead.
+ */
+async function pullRequestFileList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrFileList> {
+  const revision = (): Promise<PrDiffRevision | null> => pullRequestRevision(remoteUrl, tokens, number).catch(() => null)
+  const before = await revision()
+  const files = await pullRequestFiles(remoteUrl, tokens, number)
+  const after = before ? await revision() : null
+  return { files, revision: before && after && isSameRevision(before, after) ? after : null }
+}
+
 /** Changed files in a PR (for the file-by-file review checklist). */
 async function pullRequestFiles(
   remoteUrl: string,
@@ -2268,6 +2436,144 @@ async function pullRequestFiles(
   }))
 }
 
+/**
+ * bitbucket.org's commits of a pull request. The endpoint has been seen to
+ * answer with a redirect to the repository's `/commits` listing; that one is
+ * followed only while it stays on the API the credential is for — never with
+ * `redirect: 'follow'`, which would carry it wherever the server points.
+ * "Chronological" says the reference, without saying which way; the parents
+ * settle it. Empty when the source branch is gone (the reference says so).
+ */
+async function bbCloudPullCommits(owner: string, repo: string, auth: ApiAuth, number: number): Promise<PrCommitList> {
+  type BbCommit = {
+    hash?: string
+    message?: string
+    date?: string
+    author?: { raw?: string; user?: { display_name?: string; nickname?: string; links?: { avatar?: { href?: string } } } }
+    parents?: Array<{ hash?: string }>
+  }
+  const API = 'https://api.bitbucket.org/'
+  const get = async (url: string, hops = 0): Promise<{ values?: BbCommit[]; next?: string }> => {
+    const res = await fetch(url, { redirect: 'manual', headers: { Authorization: bitbucketAuthFor(auth), Accept: 'application/json' } })
+    if (res.status >= 300 && res.status < 400) {
+      const to = res.headers.get('location')
+      const next = to ? new URL(to, url).toString() : ''
+      if (hops < 2 && next.startsWith(API)) return get(next, hops + 1)
+      throw new HttpStatusError(`Bitbucket API error (${res.status})`, res.status)
+    }
+    if (!res.ok) {
+      const e = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+      throw new HttpStatusError(e?.error?.message ? `Bitbucket: ${e.error.message}` : `Bitbucket API error (${res.status})`, res.status)
+    }
+    return (await res.json()) as { values?: BbCommit[]; next?: string }
+  }
+  const out: BbCommit[] = []
+  let url: string | undefined =
+    `${API}2.0/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pullrequests/${number}/commits?pagelen=50`
+  // A `next` off the API is not followed, but it still says the list goes on.
+  let more = false
+  for (let page = 0; url && page < 6 && out.length <= PR_COMMITS_MAX; page++) {
+    const d = await get(url)
+    out.push(...(d.values ?? []))
+    more = typeof d.next === 'string'
+    url = more && d.next!.startsWith(API) ? d.next : undefined
+  }
+  const raws: RawPrCommit[] = out
+    .filter((c) => typeof c.hash === 'string')
+    .map((c) => ({
+      sha: c.hash!,
+      message: c.message,
+      // `raw` is "Name <email>"; only the name is shown.
+      authorName: c.author?.user?.display_name || c.author?.raw?.replace(/\s*<[^>]*>\s*$/, ''),
+      authorLogin: c.author?.user?.nickname,
+      authorAvatar: c.author?.user?.links?.avatar?.href,
+      authoredAt: c.date,
+      parentShas: c.parents ? c.parents.flatMap((p) => (p.hash ? [p.hash] : [])) : null
+    }))
+  return finishPrCommits(raws, true, more)
+}
+
+/**
+ * A pull request's commits for its Commits tab, oldest first. Each host is
+ * asked once per page, capped at PR_COMMITS_MAX; `truncated` says the host
+ * has more. bitbucket.org has no PR page in the app yet — it is served here
+ * all the same, like line comments, for when it does.
+ */
+async function pullRequestCommitList(remoteUrl: string, tokens: HostTokens, number: number): Promise<PrCommitList> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'gitlab') {
+    const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+    type GlCommit = { id?: string; message?: string; author_name?: string; authored_date?: string; parent_ids?: string[] }
+    // Three pages of 100 reach past the cap: a list that stops there is told
+    // apart from one that goes on.
+    const list = await allPages((page) => glJson<GlCommit[]>(`${base}/merge_requests/${number}/commits?per_page=100&page=${page}`, auth), 3)
+    return finishPrCommits(
+      list
+        .filter((c) => typeof c.id === 'string')
+        .map((c) => ({
+          sha: c.id!,
+          message: c.message,
+          authorName: c.author_name,
+          authoredAt: c.authored_date,
+          parentShas: Array.isArray(c.parent_ids) ? c.parent_ids : null
+        })),
+      // Newest first, as in the reference's example.
+      true,
+      false
+    )
+  }
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsPullCommits(b.repo, b.token, number)
+  }
+  if (parsed?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullCommits(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parsed?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrCommits(a.adoPage, a.repo, number)
+  }
+  if (parsed?.provider === 'bitbucket') {
+    refuseUnreadableDataCenter(remoteUrl)
+    const auth = await tokenForRemote(remoteUrl, 'bitbucket', tokens)
+    if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+    return bbCloudPullCommits(parsed.owner, parsed.repo, auth, number)
+  }
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  type GhCommit = {
+    sha?: string
+    commit?: { message?: string; author?: { name?: string; date?: string } | null }
+    author?: GhUser | null
+    parents?: Array<{ sha?: string }>
+  }
+  // GitHub lists at most 250 commits of a pull request, oldest first: three
+  // pages of 100 are all there is. A full 250 may mean more, so only then is
+  // the pull request's own count asked — a PR of exactly 250 is not truncated.
+  const list = await allPages((page) => ghJson<GhCommit[]>(`${api}/pulls/${number}/commits?per_page=100&page=${page}`, token), 3)
+  const more =
+    list.length >= PR_COMMITS_MAX &&
+    (await ghJson<{ commits?: number }>(`${api}/pulls/${number}`, token).then(
+      (pr) => typeof pr.commits !== 'number' || pr.commits > list.length,
+      () => true
+    ))
+  return finishPrCommits(
+    list
+      .filter((c) => typeof c.sha === 'string')
+      .map((c) => ({
+        sha: c.sha!,
+        message: c.commit?.message,
+        authorName: c.commit?.author?.name,
+        authorLogin: c.author?.login,
+        authorAvatar: c.author?.avatar_url,
+        authoredAt: c.commit?.author?.date,
+        parentShas: c.parents ? c.parents.flatMap((p) => (p.sha ? [p.sha] : [])) : null
+      })),
+    false,
+    more
+  )
+}
+
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
 async function replyReviewComment(
   remoteUrl: string,
@@ -2298,6 +2604,328 @@ async function replyReviewComment(
     method: 'POST',
     body: JSON.stringify({ body, in_reply_to: inReplyTo })
   })
+}
+
+/**
+ * Why a line comment failed, in words the renderer recognises
+ * (lib/gitErrorHint.ts): `refused` when the host turned the account down,
+ * `outsideDiff` when it would not anchor a comment to that line — which is what
+ * a 422 (GitHub), a 400 (GitLab, Forgejo, Bitbucket) or a 409 (Data Center)
+ * means here, since everything else in the request is the app's own. The
+ * host's words follow, for the toast's details. Anything else passes unchanged.
+ */
+export function lineCommentFailure(err: unknown): unknown {
+  const status = err && typeof err === 'object' && 'status' in err ? Number((err as { status: unknown }).status) : NaN
+  // A spent rate limit is a 403 too, and it says when to try again: kept as it is.
+  if (err && typeof err === 'object' && (err as { rateLimited?: unknown }).rateLimited === true) return err
+  const words = err instanceof Error ? err.message : String(err)
+  if (status === 401 || status === 403) return new HttpStatusError(`Line comment [refused]: ${words}`, status)
+  if (status === 400 || status === 409 || status === 422) return new HttpStatusError(`Line comment [outsideDiff]: ${words}`, status)
+  return err
+}
+
+/** bitbucket.org: an inline comment, `to` a line of the new file or `from` one of the old. */
+async function bbCloudCommentOnLine(
+  owner: string,
+  repo: string,
+  auth: ApiAuth,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string
+): Promise<void> {
+  const res = await fetch(
+    `https://api.bitbucket.org/2.0/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pullrequests/${number}/comments`,
+    {
+      method: 'POST',
+      redirect: 'error',
+      headers: { Authorization: bitbucketAuthFor(auth), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: { raw: body },
+        inline: { path: anchor.path, [getAnchorSide(anchor) === 'old' ? 'from' : 'to']: getAnchorLine(anchor) }
+      })
+    }
+  )
+  if (!res.ok) {
+    const e = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+    throw new HttpStatusError(e?.error?.message ? `Bitbucket: ${e.error.message}` : `Bitbucket API error (${res.status})`, res.status)
+  }
+}
+
+/** GitLab: a new discussion positioned on the line, against the MR's current diff refs. */
+async function glCommentOnLine(
+  remoteUrl: string,
+  token: string | undefined,
+  number: number,
+  anchor: PrLineAnchor,
+  body: string,
+  read: PrDiffRevision | null
+): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  const mrUrl = `${base}/merge_requests/${number}`
+  const mr = await glJson<{ diff_refs?: { base_sha?: string; head_sha?: string; start_sha?: string } | null }>(mrUrl, auth)
+  const refs = mr.diff_refs
+  if (!refs?.base_sha || !refs.head_sha || !refs.start_sha) {
+    throw new Error('GitLab did not say which commits this merge request compares — refresh it and try again.')
+  }
+  // The position names today's refs: they must be the ones the diff was read at.
+  if (read && !isSameRevision(read, { headSha: refs.head_sha, baseSha: refs.base_sha })) throw new Error(LINE_COMMENT_STALE)
+  // An added line has only new_line, a removed one only old_line, and an
+  // unchanged line both — GitLab rejects a context line given just one.
+  const lines = {
+    ...(anchor.kind !== 'del' ? { new_line: anchor.newLine } : {}),
+    ...(anchor.kind !== 'add' ? { old_line: anchor.oldLine } : {})
+  }
+  await glJson(`${mrUrl}/discussions`, auth, {
+    method: 'POST',
+    body: JSON.stringify({
+      body,
+      position: {
+        position_type: 'text',
+        base_sha: refs.base_sha,
+        start_sha: refs.start_sha,
+        head_sha: refs.head_sha,
+        old_path: anchor.oldPath ?? anchor.path,
+        new_path: anchor.path,
+        ...lines
+      }
+    })
+  })
+}
+
+/**
+ * Start a review thread on one line of a pull request's diff, posted at once
+ * (no pending review). Each host anchors it its own way; the anchor is the
+ * same everywhere — a deleted line is the old side, the rest the new.
+ */
+async function commentOnPrLine(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  anchor: unknown,
+  body: unknown,
+  read: PrDiffRevision | null = null
+): Promise<void> {
+  if (!isValidLineAnchor(anchor)) throw new Error('A line comment needs a file and a line of its diff.')
+  if (typeof body !== 'string' || !body.trim()) throw new Error('A line comment needs some text.')
+  const text = body.trim()
+  try {
+    if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return await glCommentOnLine(remoteUrl, tokens.gitlab, number, anchor, text, read)
+    // Data Center and Forgejo anchor to the PR as it is now: refused when that is
+    // no longer the revision the line was read at.
+    const refuseMoved = async (): Promise<void> => {
+      const now = read ? await pullRequestRevision(remoteUrl, tokens, number) : null
+      if (read && now && !isSameRevision(read, now)) throw new Error(LINE_COMMENT_STALE)
+    }
+    if (isBbs(remoteUrl)) {
+      const b = await bbsRepoOf(remoteUrl)
+      await refuseMoved()
+      return await bbsCommentOnLine(b.repo, b.token, number, anchor, text)
+    }
+    const parsed = parseRemoteUrl(remoteUrl)
+    if (parsed?.provider === 'forgejo') {
+      const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+      await refuseMoved()
+      return await forgejoCommentOnLine(f.base, f.owner, f.repo, f.token, number, anchor, text, read)
+    }
+    if (parsed?.provider === 'azure') {
+      const a = await azRepoOf(remoteUrl, tokens.azure)
+      return await azureCommentOnLine(a.ado, a.repo, number, anchor, text, read)
+    }
+    if (parsed?.provider === 'bitbucket') {
+      refuseUnreadableDataCenter(remoteUrl)
+      const auth = await tokenForRemote(remoteUrl, 'bitbucket', tokens)
+      if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+      return await bbCloudCommentOnLine(parsed.owner, parsed.repo, auth, number, anchor, text)
+    }
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    // The comment names the commit its line was read at, so GitHub places it in
+    // that version — and marks it outdated if the line has changed since. Only
+    // when the diff's commit is unknown is the head asked for now.
+    const commitId = read?.headSha ?? (await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)).head.sha
+    await ghJson(`${api}/pulls/${number}/comments`, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        body: text,
+        commit_id: commitId,
+        path: anchor.path,
+        line: getAnchorLine(anchor),
+        side: getAnchorSide(anchor) === 'old' ? 'LEFT' : 'RIGHT'
+      })
+    })
+  } catch (err) {
+    throw lineCommentFailure(err)
+  }
+}
+
+/**
+ * Why an edit or a delete of a comment failed, in words the renderer
+ * recognises (lib/gitErrorHint.ts): `refused` for a 401 (the account turned
+ * down; on Data Center, also "not allowed"), `notAllowed` for a 403 (not yours,
+ * or no permission), `gone` for a 404 (deleted meanwhile), `changed` for a 409
+ * (edited meanwhile: Data Center's version check). A Data Center delete's 409
+ * may also mean the comment has replies, which that server will not delete:
+ * `conflict` says both. The host's words follow, for the toast's details.
+ */
+export function commentChangeFailure(err: unknown, opts: { deleting: boolean; dataCenter: boolean }): unknown {
+  const status = err && typeof err === 'object' && 'status' in err ? Number((err as { status: unknown }).status) : NaN
+  // A spent rate limit is a 403 too, and it says when to try again: kept as it is.
+  if (err && typeof err === 'object' && (err as { rateLimited?: unknown }).rateLimited === true) return err
+  const words = err instanceof Error ? err.message : String(err)
+  const tag =
+    status === 401
+      ? 'refused'
+      : status === 403
+        ? 'notAllowed'
+        : status === 404
+          ? 'gone'
+          : status === 409
+            ? opts.deleting && opts.dataCenter
+              ? 'conflict'
+              : 'changed'
+            : null
+  return tag ? new HttpStatusError(`Comment change [${tag}]: ${words}`, status) : err
+}
+
+/** bitbucket.org: PUT or DELETE one pull request comment. */
+async function bbCloudChangeComment(
+  owner: string,
+  repo: string,
+  auth: ApiAuth,
+  number: number,
+  handle: PrCommentHandle,
+  body: string | null
+): Promise<void> {
+  const res = await fetch(
+    `https://api.bitbucket.org/2.0/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pullrequests/${number}/comments/${handle.id}`,
+    {
+      method: body === null ? 'DELETE' : 'PUT',
+      redirect: 'error',
+      headers: { Authorization: bitbucketAuthFor(auth), ...(body === null ? {} : { 'Content-Type': 'application/json' }) },
+      ...(body === null ? {} : { body: JSON.stringify({ content: { raw: body } }) })
+    }
+  )
+  if (!res.ok) {
+    const e = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+    throw new HttpStatusError(e?.error?.message ? `Bitbucket: ${e.error.message}` : `Bitbucket API error (${res.status})`, res.status)
+  }
+}
+
+/**
+ * Edit (`body` set) or delete (`body` null) one comment of a pull request,
+ * reached through the handle its host's mapper gave it. The host decides who
+ * may: this only routes the call, and names the refusal (commentChangeFailure).
+ */
+async function changePrComment(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  handle: unknown,
+  body: string | null
+): Promise<void> {
+  if (!Number.isInteger(number) || number <= 0) throw new Error('A pull request number is a positive integer.')
+  if (!isValidCommentHandle(handle)) throw new Error('This comment cannot be changed from here.')
+  const dataCenter = isBbs(remoteUrl)
+  try {
+    const parsed = parseRemoteUrl(remoteUrl)
+    if (parsed?.provider === 'gitlab') {
+      // Conversation and review notes alike: the notes endpoint takes either.
+      const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+      const url = `${base}/merge_requests/${number}/notes/${handle.id}`
+      await glJson(url, auth, body === null ? { method: 'DELETE' } : { method: 'PUT', body: JSON.stringify({ body }) })
+      return
+    }
+    if (dataCenter) {
+      const b = await bbsRepoOf(remoteUrl)
+      return body === null
+        ? await bbsDeleteComment(b.repo, b.token, number, handle)
+        : await bbsEditComment(b.repo, b.token, number, handle, body)
+    }
+    if (parsed?.provider === 'forgejo') {
+      const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+      return body === null
+        ? await forgejoDeleteComment(f.base, f.owner, f.repo, f.token, handle)
+        : await forgejoEditComment(f.base, f.owner, f.repo, f.token, handle, body)
+    }
+    if (parsed?.provider === 'azure') {
+      // `optional`: a 403 here means "not your comment", not a revoked
+      // credential, and must not evict a working one from the helper.
+      const a = await azRepoOf(remoteUrl, tokens.azure)
+      return body === null
+        ? await azureDeleteComment(a.optional, a.repo, number, handle)
+        : await azureEditComment(a.optional, a.repo, number, handle, body)
+    }
+    if (parsed?.provider === 'bitbucket') {
+      refuseUnreadableDataCenter(remoteUrl)
+      const auth = await tokenForRemote(remoteUrl, 'bitbucket', tokens)
+      if (!auth) throw await noCredential('Bitbucket', remoteUrl)
+      return await bbCloudChangeComment(parsed.owner, parsed.repo, auth, number, handle, body)
+    }
+    const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+    // Conversation comments belong to the issue side of the API, review comments to the pull side.
+    const url = `${api}/${handle.kind === 'review' ? 'pulls' : 'issues'}/comments/${handle.id}`
+    await ghSend(url, token, body === null ? { method: 'DELETE' } : { method: 'PATCH', body: JSON.stringify({ body }) })
+  } catch (err) {
+    throw commentChangeFailure(err, { deleting: body === null, dataCenter })
+  }
+}
+
+async function editPrComment(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  handle: unknown,
+  body: unknown
+): Promise<void> {
+  if (typeof body !== 'string' || !body.trim()) throw new Error('An edited comment needs some text.')
+  // Only the blank lines around it go: indented code and a trailing two-space break are Markdown.
+  return changePrComment(remoteUrl, tokens, number, handle, stripOuterNewlines(body))
+}
+
+async function deletePrComment(remoteUrl: string, tokens: HostTokens, number: number, handle: unknown): Promise<void> {
+  return changePrComment(remoteUrl, tokens, number, handle, null)
+}
+
+/**
+ * Who this repository's calls sign in as, for the PR and issue pages' "your
+ * comment". Never fails the page: null when the token cannot say.
+ */
+/** Who the page's viewer is, as `PrDetail.viewer*` carries it. */
+export interface PageViewer {
+  viewer: string | null
+  viewerId: string | null
+  viewerById: boolean
+}
+
+const NO_VIEWER: PageViewer = { viewer: null, viewerId: null, viewerById: false }
+
+/**
+ * A detail read with its viewer. Both settle before the call answers: a failed
+ * read must not leave the viewer's request running past it, under a profile
+ * scope already left. Exported for tests.
+ */
+export async function withViewer<T extends object>(remoteUrl: string, tokens: HostTokens, read: Promise<T>): Promise<T & PageViewer> {
+  const [detail, viewer] = await Promise.allSettled([read, viewerOf(remoteUrl, tokens)])
+  if (detail.status === 'rejected') throw detail.reason
+  return { ...detail.value, ...(viewer.status === 'fulfilled' ? viewer.value : NO_VIEWER) }
+}
+
+/**
+ * Who this repository's calls sign in as, for the PR and issue pages' "your
+ * comment". Azure DevOps and bitbucket.org name authors by display name, which
+ * two people can share: there "yours" is matched on the account id only
+ * (`viewerById`). Never fails the page: nobody, when the token cannot say.
+ */
+async function viewerOf(remoteUrl: string, tokens: HostTokens): Promise<PageViewer> {
+  try {
+    const parsed = parseRemoteUrl(remoteUrl)
+    if (!parsed) return NO_VIEWER
+    const viewerById = parsed.provider === 'azure' || (parsed.provider === 'bitbucket' && !parsed.base)
+    const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
+    const me = auth ? await myAccount(parsed, auth.token, auth) : null
+    return { viewer: me?.login ?? null, viewerId: me?.id ?? null, viewerById }
+  } catch {
+    return NO_VIEWER
+  }
 }
 
 async function commentOnPr(
@@ -2623,6 +3251,44 @@ async function fetchClosingPrs(
   }
 }
 
+/**
+ * Titles for the references in a repository's commit and comment text, routed
+ * to the host the remote is on, as the profile the repository is bound to. A
+ * host with no API for it (Bitbucket), no credential, or a refusal answers
+ * every reference "unavailable" — the hover card says so; nothing is thrown.
+ */
+async function referenceSummaries(
+  remoteUrl: string,
+  tokens: HostTokens,
+  queries: ReferenceQuery[]
+): Promise<ReferenceSummary[]> {
+  if (!queries.length) return []
+  try {
+    const provider = parseRemoteUrl(remoteUrl)?.provider
+    if (provider === 'azure') {
+      // A plain read (`optional`): Work Items is a scope a code token may lack.
+      const a = await azRepoOf(remoteUrl, tokens.azure)
+      return await azureReferenceSummaries(a.optional, a.repo.org, queries)
+    }
+    if (provider === 'github') {
+      const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+      return await githubReferenceSummaries((url) => ghJson(url, token), api, queries)
+    }
+    if (provider === 'gitlab') {
+      const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
+      return await gitlabReferenceSummaries((url) => glJson(url, auth), base, queries)
+    }
+    if (provider === 'forgejo') {
+      const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+      const api = `${f.base}/api/v1/repos/${encodeURIComponent(f.owner)}/${encodeURIComponent(f.repo)}`
+      return await forgejoReferenceSummaries((url) => fjJson(url, f.token), api, queries)
+    }
+  } catch {
+    /* no credential, or the host not reached: every card says it could not be read */
+  }
+  return queries.map((q) => unavailableReference(q, 'unreachable'))
+}
+
 async function issueDetail(
   remoteUrl: string,
   tokens: { github?: string },
@@ -2646,7 +3312,7 @@ async function issueDetail(
       assignees: Array<{ login: string }> | null
       milestone: { title: string } | null
     }>(`${api}/issues/${number}`, token),
-    ghJson<Array<{ user: { login: string } | null; body: string; created_at: string }>>(
+    ghJson<GhIssueComment[]>(
       `${api}/issues/${number}/comments?per_page=100`,
       token
     ),
@@ -2665,7 +3331,7 @@ async function issueDetail(
     assignees: (issue.assignees ?? []).map((a) => a.login),
     milestone: issue.milestone?.title ?? null,
     createdAt: issue.created_at,
-    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    comments: comments.map(mapGhIssueComment),
     linkedPrs: closing.prs,
     linkedPrsStatus: closing.status,
     projectFields
@@ -3875,7 +4541,7 @@ export function registerHostingHandlers(): void {
   // No credential: a browser page.
   ipcMain.handle('hosting:openCreatePR', (_e, remoteUrl: string, source: string, target: string) => {
     const url = createPullRequestUrl(remoteUrl, source, target)
-    if (url) shell.openExternal(url)
+    if (url) openExternalUrl(url, 'hosting:openCreatePR')
     return url != null
   })
   // The account's own inbox: the active profile's.
@@ -3914,8 +4580,9 @@ export function registerHostingHandlers(): void {
   handleForRepo('hosting:prPickerOptions', (remoteUrl: string, tokens: HostTokens) =>
     prPickerOptions(remoteUrl, tokens)
   )
+  // With who "you" are on the host, so the page knows which comments are yours.
   handleForRepo('hosting:prDetail', (remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestDetail(remoteUrl, tokens, number)
+    withViewer(remoteUrl, tokens, pullRequestDetail(remoteUrl, tokens, number))
   )
   // An Azure Boards work item, in the organization of the repository's Azure remote.
   handleForRepo('hosting:workItem', async (remoteUrl: string, tokens: HostTokens, id: number) => {
@@ -3924,6 +4591,10 @@ export function registerHostingHandlers(): void {
     // Work Items is a scope a code token may lack: a refusal is shown, never retried.
     return azureWorkItem(a.optional, a.repo.org, id)
   })
+  // The hover card on `#12` / `!12` / `AB#12`: one batch of the references on screen.
+  handleForRepo('hosting:getReferenceSummaries', (remoteUrl: string, tokens: HostTokens, queries: unknown) =>
+    referenceSummaries(remoteUrl, tokens, normalizeReferenceQueries(queries))
+  )
   handleForRepo('hosting:prComment', (remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)
   )
@@ -3932,8 +4603,24 @@ export function registerHostingHandlers(): void {
     (remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
   )
+  handleForRepo(
+    'hosting:prCommentOnLine',
+    (remoteUrl: string, tokens: HostTokens, number: number, anchor: unknown, body: unknown, revision: unknown) =>
+      commentOnPrLine(remoteUrl, tokens, number, anchor, body, validRevision(revision))
+  )
+  handleForRepo(
+    'hosting:prEditComment',
+    (remoteUrl: string, tokens: HostTokens, number: number, handle: unknown, body: unknown) =>
+      editPrComment(remoteUrl, tokens, number, handle, body)
+  )
+  handleForRepo('hosting:prDeleteComment', (remoteUrl: string, tokens: HostTokens, number: number, handle: unknown) =>
+    deletePrComment(remoteUrl, tokens, number, handle)
+  )
   handleForRepo('hosting:prFiles', (remoteUrl: string, tokens: HostTokens, number: number) =>
-    pullRequestFiles(remoteUrl, tokens, number)
+    pullRequestFileList(remoteUrl, tokens, number)
+  )
+  handleForRepo('hosting:prListCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
+    pullRequestCommitList(remoteUrl, tokens, number)
   )
   handleForRepo('hosting:prCheckLog', (remoteUrl: string, tokens: HostTokens, url: string) =>
     pullRequestCheckLog(remoteUrl, tokens, url)
@@ -3995,7 +4682,7 @@ export function registerHostingHandlers(): void {
     milestoneIssues(remoteUrl, tokens, number)
   )
   handleForRepo('hosting:issueDetail', (remoteUrl: string, tokens: { github?: string }, number: number) =>
-    issueDetail(remoteUrl, tokens, number)
+    withViewer(remoteUrl, tokens, issueDetail(remoteUrl, tokens, number))
   )
   handleForRepo(
     'hosting:setIssueState',

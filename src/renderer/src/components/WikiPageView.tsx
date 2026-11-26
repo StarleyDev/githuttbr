@@ -10,6 +10,7 @@ import { interp, useT } from '../i18n'
 import { ImportMap, LanguageBar, PageMap, StackList } from './WikiOverview'
 import { topLanguages } from '../../../shared/repoFacts'
 import type { ImportGraph, RepoFacts, RepoWiki, WikiArchetype, WikiProgress } from '../../../shared/types'
+import { PageHead } from './PageHead'
 
 type Freshness = 'current' | 'behind' | 'outdated'
 
@@ -148,29 +149,31 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <BookOpen size={20} />
-            <h1>{t('wiki.title')}</h1>
-            <span className="settings-hint">{repoName}</span>
-          </div>
-          <div className="wiki-actions">
-            {wiki && (
-              <button className="btn ghost small" onClick={() => void exportToRepo()} disabled={generating || exporting}>
-                {exporting ? <Loader2 size={13} className="spin" /> : <FolderDown size={13} />} {t('wiki.export')}
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <BookOpen size={20} />
+              <h1>{t('wiki.title')}</h1>
+              <span className="settings-hint">{repoName}</span>
+            </div>
+            <div className="wiki-actions">
+              {wiki && (
+                <button className="btn ghost small" onClick={() => void exportToRepo()} disabled={generating || exporting}>
+                  {exporting ? <Loader2 size={13} className="spin" /> : <FolderDown size={13} />} {t('wiki.export')}
+                </button>
+              )}
+              {wiki && (
+                <button className="btn ghost small" onClick={() => void remove()} disabled={generating || exporting}>
+                  <Trash2 size={13} /> {t('wiki.clear')}
+                </button>
+              )}
+              <button className="btn primary small" onClick={() => void generate()} disabled={generating}>
+                {generating ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />}{' '}
+                {wiki ? t('wiki.regenerate') : t('wiki.generate')}
               </button>
-            )}
-            {wiki && (
-              <button className="btn ghost small" onClick={() => void remove()} disabled={generating || exporting}>
-                <Trash2 size={13} /> {t('wiki.clear')}
-              </button>
-            )}
-            <button className="btn primary small" onClick={() => void generate()} disabled={generating}>
-              {generating ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />}{' '}
-              {wiki ? t('wiki.regenerate') : t('wiki.generate')}
-            </button>
-          </div>
-        </header>
+            </div>
+          </header>
+        </PageHead>
 
         {wiki && freshness !== 'current' && (
           <p className="wiki-stale">

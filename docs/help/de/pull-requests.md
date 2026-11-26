@@ -2,9 +2,9 @@
 title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
-summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI — und ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits und Kommentare zu einer Zeile seines Diffs.
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Pull-Request-Seite
@@ -141,7 +141,7 @@ erledigt das Feld **Branches** das für dich:
 
 Der Kopf hat dieselben zwei Schritte als Buttons: **Zum Quell-Branch wechseln**
 und **Zum Ziel-Branch wechseln**. Sie funktionieren auch auf dem Branch, auf dem
-du schon bist — sie bringen dich dann einfach zum Repository.
+du schon bist — sie bringen dich dann einfach zum Repository. Mit eingeschalteten [Symbolfarben](themes.md#symbolfarben) hat jeder Button im Kopf seine eigene: Aktualisieren blau, KI-Review violett, Vorschau türkis, Quell-Branch grün, Ziel-Branch orange (Im Browser öffnen bleibt grau).
 
 Nichts wird nachgeschlagen, bevor du klickst: einen Pull Request zu öffnen liest
 oder fetcht keinen Branch.
@@ -165,6 +165,324 @@ Was es nicht tut:
 - **Dieses Fenster.** Der Checkout passiert im Arbeitsverzeichnis dieses
   Repositorys. Wenn der Branch schon in einem anderen [Worktree](worktrees.md)
   ausgecheckt ist, öffnet sich stattdessen der Tab dieses Worktrees.
+
+## Commits
+
+Die Seitenleiste sagte, wie viele Commits ein Pull Request hat, nie welche. Einen
+Commit nach dem anderen zu reviewen — so, wie die meisten Pull Requests gelesen
+werden sollen — schickte dich in den Browser. Der Tab **Commits**, zwischen
+Unterhaltung und Dateien, listet sie:
+
+- **Älteste zuerst**, in der Reihenfolge, in der sie angewendet werden, gruppiert
+  nach dem Tag, an dem sie geschrieben wurden. Ein Commit, der außer der
+  Datumsreihenfolge hineingerebased wurde, beginnt einen eigenen Tag, statt
+  verschoben zu werden.
+- Jede Zeile hat das Bild des Autors (wo der Host eins liefert), den Betreff, den
+  Autor, wie lange es her ist, und den kurzen SHA. Ein **Merge**-Badge markiert
+  einen Commit mit zwei Eltern, wo der Host das sagt.
+- **▸** neben einem Commit mit mehr als einem Betreff zeigt den Rest seiner
+  Nachricht.
+- **Kopieren** legt den vollständigen SHA in die Zwischenablage; **Im Browser
+  öffnen** öffnet den Commit auf dem Host — innerhalb des Pull Requests, wo der
+  Host eine solche Seite hat (GitHub, GitLab, Bitbucket Data Center), sonst auf der
+  Commit-Seite des Repositorys.
+
+![Der Tab Commits: die Commits eines Pull Requests nach Tag gruppiert, einer mit geöffneter vollständiger Nachricht](../../screenshots/pr-commits.webp)
+
+**Klick auf eine Zeile** — oder springe mit Tab hin und drück Enter —, um den
+Commit in der App zu öffnen, wie ein Klick im Graphen: die Ansicht des
+Repositorys, dieser Commit ausgewählt, seine Details offen. Das klappt, wenn dieser
+Klon den Commit **hat**. Hat er ihn nicht, sagt die Zeile das, statt still zu
+scheitern, und bietet an:
+
+- **PR-Branch abrufen, um ihn zu sehen** — derselbe Fetch eines einzelnen Branches
+  wie beim [Wechsel zum Branch](#zum-branch-eines-pull-requests-wechseln), ohne den Checkout. Kam der Commit
+  mit, öffnet er sich; kam er nicht (ein Force-Push hat ihn seitdem umgeschrieben),
+  sagt der Toast das.
+- **Im Browser öffnen**, für den Fall, dass Fetchen keine Option ist.
+
+Die Liste wird gelesen, wenn du den Tab zum ersten Mal öffnest, nicht mit der
+Seite, und erneut bei jedem **Aktualisieren**. Bis sie da ist, ist die Zahl im Tab
+die, die der Host für den Pull Request angegeben hat. Gemergte und geschlossene
+Pull Requests listen ihre Commits genauso.
+
+Was es nicht tut:
+
+- **Höchstens 250 Commits.** GitHub selbst listet für einen Pull Request nicht mehr
+  als 250; die App hört auf jedem Host bei derselben Zahl auf und sagt *der Host
+  hat mehr*, wenn das so ist, mit einem Link zum Pull Request auf dem Host. Welche
+  250 es sind, hängt von der Reihenfolge ab, in der der Host sie listet — die App
+  behält die zuerst gelisteten, und die Zeile über der Liste sagt, welche:
+
+  | Host | Ein längerer Pull Request zeigt |
+  |---|---|
+  | GitHub | Die **ersten** 250 (GitHubs eigene Grenze) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | Die **250 neuesten** |
+  | Forgejo | Das Ende, das der Server zuerst listet; seine Reihenfolge ist nicht dokumentiert |
+- **Der Branch eines Forks** lässt sich von hier nicht fetchen — er liegt in einem
+  anderen Repository —, also bietet ein Commit, der nur im Fork ist, allein den
+  Browser an. **Pull Request lokal ansehen…** ist der Weg, ihn hereinzuholen.
+- **Ein gelöschter Branch.** Ein gemergter Pull Request hat seinen Branch oft
+  mitgenommen: der Fetch sagt das. bitbucket.org listet gar keine Commits mehr,
+  sobald der Quell-Branch weg ist.
+- **Squash-Merges.** Die Commits eines per Squash gemergten Pull Requests haben den
+  Ziel-Branch nie erreicht, also gibt es sie nach dem Löschen seines Branches nur
+  noch auf dem Host.
+- **Autoren** werden so genannt, wie ihre Commits sie nennen. GitLab, Azure DevOps
+  und Bitbucket Data Center liefern kein Bild ohne eine Anmeldung, die ein Bild
+  nicht mitschicken kann, also zeigen diese Zeilen die Initiale.
+- **Lange Nachrichten auf Azure DevOps** können gekürzt sein: Azures Liste schneidet
+  die Nachricht eines Commits ab, und die App zeigt, was es sendet.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser — die App hat noch keine
+  Seite für sie —, also wird dieser Tab dort nicht erreicht, obwohl die App die
+  Liste lesen kann.
+
+## Die Dateien lesen
+
+Ein Pull Request mit zweihundert Dateien ist als zweihundert vollständige Pfade
+schwer zu lesen. Die Liste im Tab **Dateien** hat denselben Schalter **Pfad /
+Baum** wie das Commit-Panel, und die Wahl gilt in der ganzen App. In **Baum** stehen
+Dateien unter ihren Ordnern (eine Kette wie `src/main/ipc` ist eine Zeile), und
+jeder Ordner zeigt sein summiertes **+/−** und wie viele seiner Dateien gesehen sind
+(*3/5*). Das Kontrollkästchen eines Ordners markiert jede Datei darin als gesehen
+oder entfernt alle Häkchen; die Häkchen bleiben nur auf diesem Computer und gehen
+nie an den Host. Ein Häkchen merkt sich die Fassung des Diffs der Datei: ändert ein
+Push eine gesehene Datei, gilt sie wieder als nicht gesehen, mit einem gelben Punkt
+(*Geändert, seit du es gesehen hast*). Eine Datei ohne Diff (binär, zu groß) wird nur
+nach Status und Zeilenzahlen verglichen. Eine Datei mit Review-Unterhaltungen zeigt daneben eine Zahl in einer Sprechblase (Ordner zählen ihre zusammen), sodass die kommentierten in einer langen Liste hervorstechen; veraltete Unterhaltungen zählen mit. Klick auf einen Ordner oder drück ←/→ darauf,
+um ihn einzuklappen; ↑/↓ (oder j/k) gehen durch die Dateien auf dem Bildschirm und
+öffnen jeden Diff. Eingeklappte Ordner werden pro Pull Request gemerkt, bis die App
+beendet wird, und eine Datei, die darin geöffnet wird, klappt den Weg zu ihr auf. Der
+Baum ist nach Namen sortiert, nicht in der Reihenfolge, in der der Host die Dateien
+listet.
+
+![Der Tab Dateien in der Baumansicht: Ordner mit ihren summierten Änderungen und Gesehen-Zahlen, einer eingeklappt](../../screenshots/pr-files-tree.webp)
+
+## Eine Zeile kommentieren
+
+Auf einen Review-Thread antworten ging hier schon; einen beginnen nicht, also
+schickte dich ein echtes Review weiterhin in den Browser. Im Tab **Dateien** eines
+Pull Requests nimmt jede Zeile des Diffs einen eigenen Kommentar an:
+
+- **Fahre über eine Zeile** und drück das **+**, das über ihrer Nummer erscheint,
+  oder **klick auf die Zeile** selbst (ein Klick, der eine Textauswahl beendet, oder
+  ein Doppelklick, der ein Wort markiert, zählt nicht — das ist Lesen). Das
+  Kontextmenü — oder die Kontextmenütaste der Tastatur — hat ebenfalls *Zeile N
+  kommentieren*.
+- Ein Feld öffnet sich **unter dieser Zeile**. Schreib, dann **Kommentieren** —
+  oder ⌘/Ctrl+Enter. **Abbrechen** schließt es; **Esc** auch, mit Rückfrage, wenn
+  schon etwas getippt wurde. So oder so kehrt der Fokus zu dieser Zeile zurück.
+- Bei Erfolg erscheint der neue Thread **unter seiner Zeile** und in den
+  Review-Threads des Tabs Unterhaltung, wo alle anderen ihn sehen.
+
+![Ein Kommentar wird unter einer geänderten Zeile geschrieben, mit einem früheren Thread unter seiner eigenen Zeile](../../screenshots/pr-line-comment.webp)
+
+Auf welcher Seite der Kommentar landet, folgt der Zeile:
+
+| Zeile | Verankert an |
+|---|---|
+| **Hinzugefügt** (grün) | Der neuen Fassung der Datei, unter ihrer neuen Nummer |
+| **Gelöscht** (rot) | Der alten Fassung, unter ihrer alten Nummer |
+| **Unverändert** | Der neuen Fassung (GitLab bekommt beide Nummern, wie es verlangt) |
+
+Bestehende Threads werden ebenfalls unter ihren Zeilen gezeigt, mit ihrem
+Antwortfeld, wo der Host der App erlaubt, in einem Thread zu antworten (Forgejo
+nicht). Ein Thread erscheint nur dann an einer Zeile, wenn der Host sagt, dass er
+noch zum gezeigten Diff gehört; alles andere bleibt im Tab Unterhaltung, statt an
+einer geratenen Zeile zu landen:
+
+| Host | Ein Thread von vor dem letzten Push |
+|---|---|
+| GitHub | Veraltet, wenn seine Zeile sich geändert hat: nur Unterhaltung |
+| GitLab | Gegen einen älteren Head geschrieben: nur Unterhaltung |
+| Azure DevOps | Von Azure dorthin verfolgt, wo seine Zeile jetzt ist |
+| Bitbucket Data Center | Verwaist, wenn seine Zeile weg ist: nur Unterhaltung |
+| Forgejo | Forgejo sagt nicht, dass ein Kommentar veraltet ist, also erscheint er an seiner gespeicherten Zeilennummer — nach einem Push kann dort jetzt anderer Code stehen |
+
+Ein Kommentar zu einer Zeile außerhalb der gezeigten Hunks steht auf jedem Host nur
+im Tab Unterhaltung.
+
+Ein getippter, nicht gesendeter Kommentar zählt als ungesendeter Text: **‹ ›** und
+Alt+Pfeile fragen nach, bevor sie ihn verlassen, wie beim Hauptkommentarfeld. Der
+Blick in eine andere Datei behält ihn; um einen an einer anderen Zeile zu beginnen,
+sende oder verwirf zuerst den ersten.
+
+Was es nicht tut:
+
+- **Eine Zeile, sofort gesendet.** Es gibt keinen Zeilenbereich, kein ausstehendes
+  Review, in dem man Kommentare sammelt und später abschickt, und keine
+  Änderungsvorschläge. Jeder Kommentar wird in dem Moment veröffentlicht, in dem du
+  ihn sendest, als eigener Thread (auf Forgejo als Review mit genau diesem einen
+  Kommentar, da Forgejo keinen Aufruf für einen Einzelkommentar hat).
+- **Der Diff, den du ansiehst.** Der Tab Dateien merkt sich, an welchem Commit (auf
+  Azure DevOps: an welcher Iteration) sein Diff gelesen wurde, und der Kommentar
+  wird dagegen gesendet. Hat sich der Pull Request seitdem weiterbewegt — ein Push,
+  eine neue Merge-Basis —, wird der Kommentar nicht an die Zeile gehängt, die jetzt
+  diese Nummer hat: er wird abgelehnt mit *Der Pull Request hat sich seit dem Laden
+  dieses Diffs geändert*, und **Aktualisieren** zeigt den neuen Diff. Auf GitHub
+  wird der Kommentar stattdessen gegen den Commit gesendet, den du gelesen hast, und
+  GitHub markiert ihn als veraltet, wenn sich die Zeile geändert hat. Eine Zeile,
+  die der Host trotzdem nicht annimmt, wird als außerhalb des Diffs abgelehnt.
+- **Abgelehnt.** Ohne Berechtigung zum Kommentieren (ein Token nur zum Lesen, ein
+  Konto, das in dem Repository nicht kommentieren darf) lehnt der Host ab, und die
+  Meldung nennt das als Grund.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser — die App hat noch keine
+  Seite für sie —, also wird ein Zeilenkommentar dort weiterhin auf der Website
+  geschrieben.
+- **Eine Datei ohne Diff** (binär oder zu groß, als dass der Host sie mitliefert)
+  hat keine Zeilen zum Kommentieren.
+
+## Kommentare schreiben
+
+Jedes Feld auf der Seite — der Kommentar unten, eine Antwort in einem Thread, ein
+Kommentar zu einer Zeile — ist derselbe Markdown-Editor: Tabs **Schreiben /
+Vorschau**, eine Formatierungsleiste mit GitHubs Tastenkürzeln, Listen, die bei
+Enter weitergehen, und Vervollständigung mit **@** / **#** aus den Personen und
+Pull Requests, die schon auf dem Bildschirm sind. Ein Antwortfeld zeigt seine
+Werkzeuge, sobald du hineinklickst, und sendet mit ⌘/Ctrl+Enter, da Enter jetzt
+eine neue Zeile beginnt. [Kommentare schreiben](writing-comments.md) hat die
+Details und die Grenzen.
+
+## Eigene Kommentare bearbeiten und löschen
+
+Ein Tippfehler in einem schon gesendeten Kommentar oder eine Bemerkung, die nicht
+mehr gilt, bedeutete früher einen Ausflug in den Browser. Deine eigenen Kommentare
+haben jetzt **Bearbeiten** (der Stift) und **Löschen** (der Papierkorb) am Ende ihres
+Kopfes: Kommentare der Unterhaltung, Kommentare in Review-Threads und Antworten, in
+den Tabs Unterhaltung und Dateien. Die Issue-Seite hat sie auch, für ihre Kommentare
+auf GitHub und Forgejo.
+
+![Dein eigener Kommentar, als bearbeitet markiert, mit Bearbeiten und Löschen am Ende seines Kopfes](../../screenshots/comment-editor.webp)
+
+Was „deins“ ist, entscheidet die Seite selbst: Sie fragt den Host bei jedem Laden,
+als wer sich die Aufrufe dieses Repositorys anmelden (sein gebundenes Profil, nicht
+das gerade aktive). Die meisten Hosts nennen einen Autor per Login, verglichen ohne
+Rücksicht auf Groß- und Kleinschreibung. Azure DevOps nennt Autoren per Anzeigename,
+den zwei Personen teilen können, also muss dort die Autoren-ID des Kommentars zur
+ID des Kontos passen; fehlt eine der IDs, zeigt kein Kommentar die Aktionen. Kann
+die App nicht sagen, wer du bist (ein Token ohne User-Scope, oder der Host hat nicht
+geantwortet), zeigt sie auch kein Kommentar; **Aktualisieren** fragt erneut. Der
+Host entscheidet trotzdem: Ein Konto, dem er das Ändern eines Kommentars nicht
+erlaubt, wird abgewiesen, und die Meldung sagt das.
+
+- **Bearbeiten** öffnet den Kommentar an Ort und Stelle, im selben Markdown-Editor,
+  mit seinem Text, wie er geschrieben wurde. **Speichern** (oder ⌘/Ctrl+Enter) sendet
+  ihn; **Abbrechen** oder **Esc** schließt ihn, mit Rückfrage, wenn du etwas geändert
+  hast. Nur die Leerzeilen um den Text fallen weg: eingerückter Code und ein
+  Zeilenumbruch aus zwei Leerzeichen am Ende bleiben, wie getippt. Der neue Text
+  erscheint sofort, und die Seite liest den Pull Request neu. Auf der
+  Pull-Request-Seite zählt eine nicht gespeicherte Bearbeitung als ungesendeter
+  Text: **‹ ›** fragen, bevor sie sie verlassen. Die Issue-Seite hat keine solchen
+  Pfeile, und dort fragt nichts, bevor ihr Tab geschlossen wird.
+- **Löschen** fragt immer zuerst, und die Frage sagt, was passiert: Der Server
+  entfernt den Kommentar für alle, und das lässt sich nicht rückgängig machen. Es
+  gibt keinen Undo-Eintrag, da nichts ihn zurückbringen kann.
+
+Den **ersten Kommentar eines Threads** mit Antworten zu löschen (ein Review-Thread
+oder ein Kommentar der Unterhaltung, auf den andere geantwortet haben), verhält sich
+je nach Host anders, und die Bestätigung sagt, wie. Zwei davon sind vom Host nicht
+dokumentiert, und das wird auch gesagt:
+
+| Host | Erster Kommentar eines Threads mit Antworten |
+|---|---|
+| GitHub | Die Antworten sollten bleiben; GitHubs Dokumentation sagt es nicht. Aus der App in diesem Thread zu antworten geht danach nicht mehr: Seine Antworten zeigen auf einen Kommentar, den es nicht mehr gibt, und die API nimmt keine Antwort auf eine Antwort an. Der Thread bietet dann stattdessen **Auf GitHub antworten** an |
+| GitLab | Nur diese Notiz verschwindet; der Thread und seine Antworten bleiben |
+| Azure DevOps | Sollte als gelöscht markiert und ausgeblendet werden, Thread und Antworten bleiben; Azures Dokumentation sagt es nicht |
+| Bitbucket Data Center | Abgelehnt: Data Center löscht keinen Kommentar, der Antworten hat. Lösche zuerst die Antworten oder bearbeite ihn stattdessen |
+
+Manche Hosts markieren einen Kommentar als **bearbeitet**. Nur Azure DevOps führt
+ein Datum allein für den Text; auf GitHub, Bitbucket Data Center und Forgejo
+vergleicht die App, wann der Kommentar erstellt und zuletzt aktualisiert wurde, also
+ist die Markierung dort eine Näherung (alles andere, was den Kommentar berührt, kann
+sie setzen). Das Datum bei GitLab ändert sich auch, wenn ein Thread aufgelöst wird,
+also wird es nicht verwendet.
+
+Was es nicht tut:
+
+- **Review-Kommentare auf Forgejo** (Kommentare zu einer Zeile) lassen sich über
+  seine API nicht bearbeiten, und nur manche Versionen können einen löschen, also
+  zeigen sie keine der beiden Aktionen: Ändere sie auf der Website. Kommentare der
+  Unterhaltung funktionieren wie anderswo.
+- **Jemand hat ihn inzwischen geändert.** Bitbucket Data Center prüft die Version
+  des Kommentars: Eine Bearbeitung oder Löschung eines Kommentars, der sich seit dem
+  Laden der Seite geändert hat, wird abgelehnt, und **Aktualisieren** zeigt den
+  aktuellen. Die anderen Hosts übernehmen den letzten Schreibvorgang.
+- **Nicht gefunden**: Findet der Host den Kommentar nicht, sagt die Meldung, dass er
+  gelöscht worden sein könnte oder dieses Konto ihn nicht sehen kann, und die Seite
+  liest den Pull Request neu. Eine offene Bearbeitung eines Kommentars, den es nicht
+  mehr gibt, wird verworfen.
+- **bitbucket.org**-Pull-Requests öffnen sich im Browser, also gibt es noch keine
+  Seite, auf der man ihre Kommentare bearbeiten könnte, obwohl die App den Aufruf
+  machen kann.
+- **Die Beschreibung** des Pull Requests und die Zusammenfassungen seiner Reviews
+  sind keine Kommentare und werden hier nicht bearbeitet.
+
+## Worum es bei einem `#123` oder `AB#123` geht
+
+Ein Commit, der *fixes AB#4821* sagt, oder ein Kommentar mit *siehe #312* nennt
+dir eine Nummer, nicht, worum es ging. Um das herauszufinden, musstest du es
+öffnen. Jetzt öffnet das **Zeigen auf einen Verweis** — oder das Hinspringen mit
+Tab — eine kleine Karte mit dem, was der Host darüber sagt:
+
+- ein Symbol für seine Art und der Verweis, wie er geschrieben steht;
+- sein **Titel**;
+- sein **Status** (offen, geschlossen, gemergt — auf Azure DevOps der eigene Status
+  des Work Items, etwa *Active* oder *Resolved*);
+- auf Azure DevOps der **Work-Item-Typ** (Bug, User Story, Task…).
+
+![Die Karte an einem Work-Item-Verweis in einem Kommentar: Typ, Titel und Status](../../screenshots/reference-card.webp)
+
+Die Karten gibt es auf der Pull-Request-Seite (Beschreibung, Kommentare,
+Review-Threads und die vollständige Nachricht eines Commits im Tab **Commits**), auf
+der Issue-Seite und im Betreff im Commit-Detailbereich. Im Tab **Commits** auf Azure
+DevOps zeigt jedes Work Item im Betreff eines Commits (`AB#123`, oder `#123`, dort
+dasselbe Item) außerdem seinen Titel daneben, in Grau. Auf Azure DevOps verlinkt
+`!123` auf diesen Pull Request, ohne Karte.
+
+| Verweis | Host | Gelesen aus |
+|---|---|---|
+| `AB#123`, und `#123` in einem Azure-Repository | Azure DevOps | Work Items, bis zu 200 in einer Anfrage |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (die auch für Pull Requests antworten), eine Anfrage pro Stück, eine nach der anderen |
+| `#123` / `!123` | GitLab | Issues / Merge Requests, eine Anfrage pro Art |
+| `#123` | Forgejo | Issues (auch Pull Requests), eine Anfrage pro Stück, zwei gleichzeitig |
+
+Ein `#123` zählt nur als eigenes Wort: `org/repo#123` (ein anderes Repository),
+`&#39;`, eine Farbe wie `#123abc` und das `#issuecomment-…` eines Links bleiben
+unberührt.
+
+Nichts wird abgefragt, bevor sich eine Karte öffnet. Dann gehen der Verweis, auf dem
+du bist, und die noch unbekannten ihm nächstgelegenen auf der Seite in einem Aufruf
+raus, sodass die nächste Karte meist sofort da ist. Antworten werden im Speicher
+gehalten, solange die App läuft, nie auf der Festplatte, fünf Minuten lang; danach
+werden sie weiter angezeigt und beim nächsten Hover neu gelesen. Sie werden pro
+Profil gehalten: Der Aufruf geschieht als das Profil, an das das Repository
+[gebunden](profiles.md) ist, und ein anderes Profil sieht womöglich andere Items.
+
+Was es kostet:
+
+- **GitHub und Forgejo** können nicht mehrere Issues in einer Anfrage lesen, also
+  kostet jede Karte eine. Ein Hover fragt höchstens **10** an — die, auf der du bist,
+  und ihre Nachbarn — und auf GitHub nacheinander, wie GitHub es von Apps verlangt.
+  Die erste Antwort, die *langsamer* sagt (ein 429 oder ein 403), stoppt den Rest, und
+  diese Verweise werden fünf Minuten lang nicht erneut abgefragt.
+- **Azure DevOps** liest bis zu 200 Work Items in einer Anfrage und GitLab eine
+  Anfrage pro Art, also geht dort die ganze Seite auf einmal.
+
+Was es nicht tut:
+
+- **Bitbucket** hat keine Karte: Die App liest dort keine Issues, und der Link öffnet
+  wie bisher den Browser.
+- **Nicht gefunden oder kein Zugriff.** Ein gelöschtes Issue, ein Work Item in einem
+  Projekt, das dieses Konto nicht sehen kann, oder ein Azure-Token ohne den Scope
+  *Work Items (Read)* sehen gleich aus: Die Karte sagt es, und der Link funktioniert
+  trotzdem. Ein Host, der drosselt, nicht erreichbar ist oder in diesem Profil kein
+  Konto hat, bekommt eine eigene Meldung.
+- **`AB#123` außerhalb von Azure DevOps** — in einem GitHub-Repository, das mit Azure
+  Boards verbunden ist — wird nicht verlinkt und hat daher keine Karte: Die App weiß
+  nicht, zu welcher Organisation es gehört.
+- **Gemergter Status auf älteren GitHub Enterprise Servern**, die nicht mitschicken,
+  wann ein Pull Request gemergt wurde: Er erscheint als geschlossen.
+- Die Commit-Zeilen **des Graphen** zeigen keine Karten.
 
 ## Grenzen
 

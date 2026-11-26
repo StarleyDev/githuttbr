@@ -4,6 +4,21 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
 import { parseDiff } from '../src/renderer/src/lib/diff'
+import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../src/renderer/src/lib/prLineComment'
+import { getAnchorLine, getAnchorSide, isValidLineAnchor } from '../src/shared/prLineAnchor'
+import {
+  getCommentKey,
+  getCommentKeys,
+  getDeleteConfirmKey,
+  hasUnsavedEdit,
+  isCommentGone,
+  isEditChanged,
+  isMyComment,
+  isThreadRootMissing,
+  pruneEditDrafts,
+  withCommentBody
+} from '../src/renderer/src/lib/commentEdit'
+import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../src/shared/prCommentHandle'
 import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 import { parseSettingsImport } from '../src/renderer/src/lib/settingsImport'
@@ -129,6 +144,19 @@ import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } fr
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
+import {
+  getReferenceHost,
+  orderByNearness,
+  pickReferenceBatch,
+  ReferenceCache,
+  REFERENCE_RATE_LIMITED_TTL_MS,
+  REFERENCE_REQUEST_MAX,
+  REFERENCE_TTL_MS,
+  REFERENCE_UNAVAILABLE_TTL_MS,
+  splitWorkItemMentions,
+  unavailableSummaries
+} from '../src/renderer/src/lib/references'
+import type { ReferenceQuery, ReferenceSummary } from '../src/shared/types'
 import { githubCommitUrl, parseGitHubRemote, githubRemote, forkUpstream, prsFromFork } from '../src/renderer/src/lib/hosting'
 import {
   commitMenuCapabilities,
@@ -1137,11 +1165,138 @@ describe('autolink', () => {
     expect(hrefs(autolink('fix #12 and AB#34', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/12'])
   })
 
+  it('links `!123` to the merge request only on GitLab', () => {
+    const hrefs = (out: unknown): string[] =>
+      (Array.isArray(out) ? out : [out])
+        .filter((n): n is { props: { href: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+        .map((n) => n.props.href)
+    const gl = 'https://gitlab.example.corp/team/app'
+    expect(hrefs(autolink('see !7 and #8', gl, undefined, { gitlab: true }))).toEqual([
+      `${gl}/-/merge_requests/7`,
+      `${gl}/issues/8`
+    ])
+    // Elsewhere, and glued to a word ("done!7"), it stays text.
+    expect(hrefs(autolink('see !7 and #8', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/8'])
+    expect(hrefs(autolink('done!7', gl, undefined, { gitlab: true }))).toEqual([])
+  })
+
+  it('hands each reference link to renderReference, an Azure `#12` as `AB#12`', () => {
+    const seen: string[] = []
+    autolink('fix #12, AB#34 by @ana', 'https://dev.azure.com/example-org/proj/_git/app', undefined, {
+      renderReference: (q, link) => {
+        seen.push(`${q.sigil}${q.id} ${link.text} ${link.href}`)
+        return null
+      }
+    })
+    expect(seen).toEqual([
+      'AB#12 #12 https://dev.azure.com/example-org/_workitems/edit/12',
+      'AB#34 AB#34 https://dev.azure.com/example-org/_workitems/edit/34'
+    ])
+  })
+
   it('builds host-specific file permalinks', () => {
     expect(filePermalink('git@github.com:o/r.git', 'abc123', 'src/a.ts')).toBe('https://github.com/o/r/blob/abc123/src/a.ts')
     expect(filePermalink('https://gitlab.com/g/s/r.git', 'abc', 'x.ts')).toBe('https://gitlab.com/g/s/r/-/blob/abc/x.ts')
     expect(filePermalink('git@bitbucket.org:o/r.git', 'abc', 'x.ts')).toBe('https://bitbucket.org/o/r/src/abc/x.ts')
     expect(filePermalink(undefined, 'abc', 'x.ts')).toBeUndefined()
+  })
+})
+
+describe('references: what counts as one', () => {
+  const texts = (out: unknown): string[] =>
+    (Array.isArray(out) ? out : [out])
+      .filter((n): n is { props: { children: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+      .map((n) => n.props.children)
+  const gh = 'https://github.com/o/r'
+  it('links a #12 standing on its own, in punctuation too', () => {
+    expect(texts(autolink('fix #12, (#13) and #14.', gh))).toEqual(['#12', '#13', '#14'])
+  })
+  it('leaves another repository’s org/repo#12 alone', () => {
+    expect(texts(autolink('see org/repo#12', gh))).toEqual([])
+  })
+  it('leaves HTML entities, hex colours and glued numbers alone', () => {
+    expect(texts(autolink('it&#39;s #123abc and #12ab, #fff, x#12, #12-x', gh))).toEqual([])
+  })
+  it('leaves URL fragments alone', () => {
+    expect(texts(autolink('https://github.com/o/r/pull/3#issuecomment-123 and page#12', gh))).toEqual([])
+  })
+  it('links AB#12 only as a word of its own', () => {
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    expect(texts(autolink('AB#12, xAB#13, AB#14x', azure))).toEqual(['AB#12'])
+  })
+  it('links an Azure `!12` to the pull request, with no card', () => {
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    const seen: string[] = []
+    const out = autolink('see !12', azure, undefined, {
+      renderReference: (q) => {
+        seen.push(`${q.sigil}${q.id}`)
+        return null
+      }
+    })
+    expect(seen).toEqual([])
+    const hrefs = (Array.isArray(out) ? out : [out]).filter((n) => n && typeof n === 'object') as Array<{ props: { href: string } }>
+    expect(hrefs.map((n) => n.props.href)).toEqual([`${azure}/pullrequest/12`])
+  })
+  it('splits an Azure subject around AB#12 and #12, with the same boundaries', () => {
+    expect(splitWorkItemMentions('AB#12 fix rounding (#3), org/repo#4, &#39;')).toEqual([
+      { text: 'AB#12', id: 12 },
+      { text: ' fix rounding (' },
+      { text: '#3', id: 3 },
+      { text: '), org/repo#4, &#39;' }
+    ])
+    expect(splitWorkItemMentions('no refs')).toEqual([{ text: 'no refs' }])
+  })
+  it('tells the host from the provider, or the URL when the PR list has not run', () => {
+    expect(getReferenceHost('git@ssh.dev.azure.com:v3/example-org/proj/app', 'azure')).toEqual({ azure: true, gitlab: false })
+    expect(getReferenceHost('https://dev.azure.com/example-org/proj/_git/app', null)).toEqual({ azure: true, gitlab: false })
+    expect(getReferenceHost('https://gitlab.example.corp/team/app.git', null)).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('https://git.example.corp/team/app.git', 'gitlab')).toEqual({ azure: false, gitlab: true })
+    expect(getReferenceHost('https://bitbucket.org/team/app.git', null)).toBeNull()
+    expect(getReferenceHost(undefined, 'github')).toBeNull()
+  })
+})
+
+describe('references: cache and batching', () => {
+  const ok = (id: number): ReferenceSummary => ({ sigil: '#', id, available: true, kind: 'issue', title: `Issue ${id}`, state: 'open' })
+  it('keeps an answer per scope and reference; past its TTL it is stale, not gone', () => {
+    let now = 1_000
+    const cache = new ReferenceCache(() => now)
+    cache.saveSummaries('repo-a', [ok(1)])
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })?.title).toBe('Issue 1')
+    expect(cache.getSummary('repo-b', { sigil: '#', id: 1 })).toBeUndefined()
+    expect(cache.getSummary('repo-a', { sigil: '!', id: 1 })).toBeUndefined()
+    now += REFERENCE_TTL_MS - 1
+    expect(cache.isFresh('repo-a', { sigil: '#', id: 1 })).toBe(true)
+    now += 1
+    expect(cache.isFresh('repo-a', { sigil: '#', id: 1 })).toBe(false)
+    // Still served: an inline title does not vanish while the re-read is on its way.
+    expect(cache.getSummary('repo-a', { sigil: '#', id: 1 })?.title).toBe('Issue 1')
+  })
+  it('asks again sooner after "not found", and later after "rate limited"', () => {
+    let now = 0
+    const cache = new ReferenceCache(() => now)
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 9 }], 'notFound'))
+    cache.saveSummaries('r', unavailableSummaries([{ sigil: '#', id: 8 }], 'rateLimited'))
+    now = REFERENCE_UNAVAILABLE_TTL_MS
+    expect(cache.isFresh('r', { sigil: '#', id: 9 })).toBe(false)
+    expect(cache.isFresh('r', { sigil: '#', id: 8 })).toBe(true)
+    now = REFERENCE_RATE_LIMITED_TTL_MS
+    expect(cache.isFresh('r', { sigil: '#', id: 8 })).toBe(false)
+    expect(REFERENCE_RATE_LIMITED_TTL_MS).toBeGreaterThan(REFERENCE_UNAVAILABLE_TTL_MS)
+  })
+  it('batches the hovered reference first, then the unknown ones on screen, up to the cap', () => {
+    const known = new Set(['#2'])
+    const isKnown = (q: ReferenceQuery): boolean => known.has(`${q.sigil}${q.id}`)
+    const visible = [1, 2, 3, 4, 3].map((id) => ({ sigil: '#' as const, id }))
+    expect(pickReferenceBatch({ sigil: '#', id: 4 }, visible, isKnown).map((q) => q.id)).toEqual([4, 1, 3])
+    expect(pickReferenceBatch(null, visible, isKnown, 2).map((q) => q.id)).toEqual([1, 3])
+    expect(pickReferenceBatch({ sigil: '#', id: 2 }, [], isKnown)).toEqual([])
+    expect(REFERENCE_REQUEST_MAX).toBe(10)
+  })
+  it('orders the neighbours of the hovered one nearest first', () => {
+    expect(orderByNearness(['a', 'b', 'c', 'd', 'e'], 2)).toEqual(['d', 'b', 'e', 'a'])
+    expect(orderByNearness(['a', 'b', 'c'], 0)).toEqual(['b', 'c'])
+    expect(orderByNearness(['a', 'b'], -1)).toEqual(['a', 'b'])
   })
 })
 
@@ -8344,5 +8499,213 @@ describe('edit context menu', () => {
     expect(parseEditMenuLabels({ cut: 'Cut' })).toBeNull()
     expect(parseEditMenuLabels(null)).toBeNull()
     expect(parseEditMenuLabels(EDIT_MENU_FALLBACK_LABELS)).toEqual(EDIT_MENU_FALLBACK_LABELS)
+  })
+})
+
+describe('a pull request diff line ↔ its comment anchor', () => {
+  const patch = ['@@ -10,4 +10,4 @@', ' keep', '-gone', '+added', ' tail'].join('\n')
+  const lines = parseDiff(patch)
+  const file = { filename: 'src/app.ts' }
+  const at = (text: string): number => lines.findIndex((l) => l.text === text && l.kind !== 'hunk')
+
+  it('an added line is the new side, by its new number only', () => {
+    const a = getLineAnchor(lines[at('added')], file)
+    expect(a).toEqual({ path: 'src/app.ts', kind: 'add', oldLine: null, newLine: 11 })
+    expect(getAnchorSide(a!)).toBe('new')
+    expect(getAnchorLine(a!)).toBe(11)
+  })
+
+  it('a deleted line is the old side, by its old number only', () => {
+    const a = getLineAnchor(lines[at('gone')], file)
+    expect(a).toEqual({ path: 'src/app.ts', kind: 'del', oldLine: 11, newLine: null })
+    expect(getAnchorSide(a!)).toBe('old')
+    expect(getAnchorLine(a!)).toBe(11)
+  })
+
+  it('a context line carries both numbers and counts on the new side', () => {
+    const a = getLineAnchor(lines[at('tail')], file)
+    expect(a).toEqual({ path: 'src/app.ts', kind: 'ctx', oldLine: 12, newLine: 12 })
+    expect(getAnchorSide(a!)).toBe('new')
+  })
+
+  it('a hunk header is no line to comment on; a rename keeps the old path', () => {
+    expect(getLineAnchor(lines[0], file)).toBeNull()
+    expect(getLineAnchor(lines[at('gone')], { filename: 'b.ts', previousFilename: 'a.ts' })).toMatchObject({ path: 'b.ts', oldPath: 'a.ts' })
+    expect(getLineAnchor(lines[at('gone')], { filename: 'b.ts', previousFilename: 'b.ts' })).not.toHaveProperty('oldPath')
+  })
+
+  it('every anchor it makes passes the boundary check; malformed ones do not', () => {
+    for (const l of lines) {
+      const a = getLineAnchor(l, file)
+      if (a) expect(isValidLineAnchor(a)).toBe(true)
+    }
+    expect(isValidLineAnchor({ path: 'a', kind: 'add', oldLine: 2, newLine: 2 })).toBe(false)
+    expect(isValidLineAnchor({ path: 'a', kind: 'ctx', oldLine: 2, newLine: null })).toBe(false)
+    expect(isValidLineAnchor({ path: 'a', kind: 'del', oldLine: 0, newLine: null })).toBe(false)
+    expect(isValidLineAnchor({ path: ' ', kind: 'del', oldLine: 3, newLine: null })).toBe(false)
+    expect(isValidLineAnchor({ path: 'a', kind: 'meta', oldLine: 3, newLine: 3 })).toBe(false)
+    expect(isValidLineAnchor(null)).toBe(false)
+  })
+
+  it('the same line is the same anchor, whatever else differs', () => {
+    const a = getLineAnchor(lines[at('added')], file)!
+    expect(isSameAnchor(a, { ...a })).toBe(true)
+    expect(isSameAnchor(a, getLineAnchor(lines[at('gone')], file)!)).toBe(false)
+  })
+
+  it('threads land on their line by side: old by the old number, new by the new', () => {
+    const thread = (line: number, side?: 'old' | 'new', path = 'src/app.ts'): Parameters<typeof getThreadsByLine>[0][number] => ({
+      path,
+      line,
+      side,
+      diffHunk: '',
+      rootId: `${path}:${side}:${line}`,
+      comments: []
+    })
+    const map = getThreadsByLine(
+      [thread(11, 'old'), thread(11, 'new'), thread(12, 'new'), thread(12), thread(11, 'new', 'other.ts'), thread(99, 'new')],
+      file,
+      lines
+    )
+    expect(map.get(at('gone'))?.map((t) => t.rootId)).toEqual(['src/app.ts:old:11'])
+    expect(map.get(at('added'))?.map((t) => t.rootId)).toEqual(['src/app.ts:new:11'])
+    // Line 12 on the new side is the context line; the side-less thread is left to the conversation.
+    expect(map.get(at('tail'))?.map((t) => t.rootId)).toEqual(['src/app.ts:new:12'])
+    // A context line is in both files: an old-side thread finds it by its old number.
+    const keep = getThreadsByLine([thread(10, 'old')], file, lines)
+    expect(keep.get(at('keep'))?.map((t) => t.rootId)).toEqual(['src/app.ts:old:10'])
+    expect([...map.keys()].sort()).toEqual([at('gone'), at('added'), at('tail')].sort())
+  })
+})
+
+describe('editing and deleting your own comments (lib/commentEdit)', () => {
+  const H = { id: 7, kind: 'conversation' as const }
+
+  const by = (author: string, extra: Record<string, unknown> = {}): { author: string; handle: typeof H } => ({
+    author,
+    handle: H,
+    ...extra
+  })
+
+  it('a comment is yours when its author is the viewer, ignoring case', () => {
+    expect(isMyComment(by('Ana'), { viewer: 'ana' })).toBe(true)
+    expect(isMyComment(by('ana.lima'), { viewer: 'ANA.LIMA' })).toBe(true)
+    expect(isMyComment(by('bruno'), { viewer: 'ana' })).toBe(false)
+  })
+
+  it('an unknown viewer owns nothing, and a comment with no handle cannot be changed', () => {
+    expect(isMyComment(by('ana'), { viewer: null })).toBe(false)
+    expect(isMyComment(by('ana'), {})).toBe(false)
+    expect(isMyComment(by('ana'), { viewer: '' })).toBe(false)
+    expect(isMyComment(by('ana'), null)).toBe(false)
+    expect(isMyComment({ author: 'ana' }, { viewer: 'ana' })).toBe(false)
+    expect(isMyComment(by(''), { viewer: '' })).toBe(false)
+  })
+
+  it('a display-name host matches on the account id only: two "Ana Souza" are not one', () => {
+    const me = { viewer: 'Ana Souza', viewerId: 'id-ana-1', viewerById: true }
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-1' }), me)).toBe(true)
+    expect(isMyComment(by('Ana Souza', { authorId: 'ID-ANA-1' }), me)).toBe(true)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-2' }), me)).toBe(false)
+    // An id missing on either side offers nothing, rather than guess by name.
+    expect(isMyComment(by('Ana Souza'), me)).toBe(false)
+    expect(isMyComment(by('Ana Souza', { authorId: 'id-ana-1' }), { viewer: 'Ana Souza', viewerById: true })).toBe(false)
+  })
+
+  it('ids decide when both sides carry one, even on a login host', () => {
+    expect(isMyComment(by('ana', { authorId: '7' }), { viewer: 'ana', viewerId: '8' })).toBe(false)
+  })
+
+  it('a GitHub thread whose first comment is gone cannot be replied to from the app', () => {
+    const th = (ids: number[], rootId: number): never =>
+      ({ path: 'a.ts', line: 1, diffHunk: '', rootId, comments: ids.map((id) => ({ id, author: 'a', body: '', createdAt: '' })) }) as never
+    expect(isThreadRootMissing('github', th([10, 11], 10))).toBe(false)
+    expect(isThreadRootMissing('github', th([11, 12], 10))).toBe(true)
+    // Other hosts' thread ids are not comment ids.
+    expect(isThreadRootMissing('azure', th([1, 2], 9))).toBe(false)
+    expect(isThreadRootMissing('gitlab', th([1], 3))).toBe(false)
+  })
+
+  it('edits of comments no longer on the page are dropped', () => {
+    const drafts = {
+      [getCommentKey(H)]: { text: 'x', original: 'y' },
+      [getCommentKey({ id: 99, kind: 'conversation' })]: { text: 'gone', original: 'was' }
+    }
+    const keys = getCommentKeys({ comments: [{ author: 'a', body: '', createdAt: '', handle: H }], reviewThreads: [] })
+    pruneEditDrafts(drafts, keys)
+    expect(Object.keys(drafts)).toEqual([getCommentKey(H)])
+  })
+
+  it('an edited body loses only the blank lines around it', () => {
+    expect(stripOuterNewlines('\n\n    code\nbreak  \nend\n\n')).toBe('    code\nbreak  \nend')
+    expect(stripOuterNewlines('  \r\n  indented')).toBe('  indented')
+    expect(stripOuterNewlines('plain')).toBe('plain')
+  })
+
+  it('keys tell a thread comment from a conversation one with the same id', () => {
+    expect(getCommentKey({ id: 2, kind: 'review', threadId: 9 })).not.toBe(getCommentKey({ id: 2, kind: 'conversation', threadId: 9 }))
+    expect(getCommentKey({ id: 2, kind: 'review', threadId: 9 })).not.toBe(getCommentKey({ id: 2, kind: 'review', threadId: 10 }))
+  })
+
+  it('an unsaved edit counts only when it changed the text', () => {
+    expect(isEditChanged({ text: 'a', original: 'a' })).toBe(false)
+    expect(isEditChanged({ text: 'a  ', original: 'a' })).toBe(false)
+    expect(isEditChanged({ text: 'b', original: 'a' })).toBe(true)
+    expect(isEditChanged(undefined)).toBe(false)
+    expect(hasUnsavedEdit({})).toBe(false)
+    expect(hasUnsavedEdit({ x: { text: 'a', original: 'a' }, y: { text: 'c', original: 'a' } })).toBe(true)
+  })
+
+  it('the delete confirm names what the host does to a thread’s first comment', () => {
+    expect(getDeleteConfirmKey('github', false)).toBe('prComment.deleteMessage')
+    expect(getDeleteConfirmKey('github', true)).toBe('prComment.deleteFirstGithub')
+    expect(getDeleteConfirmKey('gitlab', true)).toBe('prComment.deleteFirstGitlab')
+    expect(getDeleteConfirmKey('azure', true)).toBe('prComment.deleteFirstAzure')
+    expect(getDeleteConfirmKey('bitbucket', true)).toBe('prComment.deleteFirstBitbucket')
+    expect(getDeleteConfirmKey('forgejo', true)).toBe('prComment.deleteMessage')
+    expect(getDeleteConfirmKey(undefined, true)).toBe('prComment.deleteMessage')
+  })
+
+  it('a saved edit replaces that one comment’s text and marks it edited', () => {
+    const pr = {
+      comments: [
+        { author: 'ana', body: 'old', createdAt: '', handle: H },
+        { author: 'ana', body: 'other', createdAt: '', handle: { id: 8, kind: 'conversation' as const } }
+      ],
+      reviewThreads: [
+        { path: 'a.ts', line: 1, diffHunk: '', rootId: 1, comments: [{ id: 7, author: 'ana', body: 'line', createdAt: '', handle: { id: 7, kind: 'review' as const } }] }
+      ]
+    } as never
+    const next = withCommentBody(pr, H, 'new')
+    expect(next.comments.map((c) => [c.body, !!c.edited])).toEqual([
+      ['new', true],
+      ['other', false]
+    ])
+    // Same id, other kind: untouched.
+    expect(next.reviewThreads[0].comments[0].body).toBe('line')
+  })
+
+  it('a "gone" refusal asks the page to read the PR again', () => {
+    expect(isCommentGone("Error invoking remote method 'hosting:prDeleteComment': Error: Comment change [gone]: GitHub: Not Found")).toBe(true)
+    expect(isCommentGone('Comment change [notAllowed]: GitHub: Forbidden')).toBe(false)
+  })
+
+  it('a handle from the renderer is checked before a URL is built from it', () => {
+    expect(isValidCommentHandle({ id: 1, kind: 'conversation' })).toBe(true)
+    expect(isValidCommentHandle({ id: 1, kind: 'review', threadId: 3, version: 0 })).toBe(true)
+    expect(isValidCommentHandle({ id: '1', kind: 'review' })).toBe(false)
+    expect(isValidCommentHandle({ id: 1, kind: 'note' })).toBe(false)
+    expect(isValidCommentHandle({ id: 1, kind: 'review', threadId: 0 })).toBe(false)
+    expect(isValidCommentHandle({ id: 1, kind: 'review', version: 1.5 })).toBe(false)
+    expect(isValidCommentHandle({ id: 2 ** 53, kind: 'review' })).toBe(false)
+    expect(isValidCommentHandle(null)).toBe(false)
+  })
+
+  it('"edited" needs the update more than a second past the creation', () => {
+    expect(isEditedAfter('2026-01-01T10:00:00Z', '2026-01-01T10:00:01Z')).toBe(false)
+    expect(isEditedAfter('2026-01-01T10:00:00Z', '2026-01-01T10:00:02Z')).toBe(true)
+    expect(isEditedAfter(1000, 5000)).toBe(true)
+    expect(isEditedAfter(undefined, '2026-01-01T10:00:02Z')).toBe(false)
+    expect(isEditedAfter('nonsense', '2026-01-01T10:00:02Z')).toBe(false)
   })
 })

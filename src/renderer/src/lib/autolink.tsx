@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import type { RepoConfigLink } from '../../../shared/types'
+import type { ReferenceQuery, RepoConfigLink } from '../../../shared/types'
 import { ticketSegments } from './repoConfig'
 import { azureOrgOf, workItemUrl } from './workItem'
+import { AB_REF, BANG_REF, HASH_REF } from './referencePattern'
 
 /** Convert a git remote URL (ssh or https) to its web base, or undefined. */
 export function remoteWebUrl(url?: string): string | undefined {
@@ -24,8 +25,31 @@ export function filePermalink(remoteUrl: string | undefined, sha: string, file: 
   return `${base}/blob/${sha}/${path}`
 }
 
-// `AB#123` first, so its `#123` is not taken as an issue on its own.
-const TOKEN = /(\bAB#\d+)|(#\d+)|(\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)/g
+// `AB#123` first, so its `#123` is not taken as an issue on its own. The
+// boundaries (lib/referencePattern.ts) keep `org/repo#12`, `&#39;` and colours out.
+// Groups: 1 AB#n (2 its number), 3 #n (4), 5 @user, 6 !n (7).
+const TOKEN = new RegExp(
+  `(${AB_REF})|(${HASH_REF})|(\\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)|(${BANG_REF})`,
+  'g'
+)
+
+/** A reference link autolink made, handed to `renderReference` to dress. */
+export interface ReferenceLinkParts {
+  key: number
+  href: string
+  text: string
+}
+
+export interface AutolinkOptions {
+  /** The remote is on GitLab: `!123` links to its merge request. */
+  gitlab?: boolean
+  /**
+   * Render an issue / pull request / work item link — the hover card wraps it
+   * (components/ReferenceLink.tsx). Not called for `@user` or tracker links.
+   * Absent, the link is a plain `<a>`.
+   */
+  renderReference?: (q: ReferenceQuery, link: ReferenceLinkParts) => ReactNode
+}
 
 /**
  * Turn `#123` issue/PR refs and `@user` mentions in free text into links to the
@@ -36,7 +60,12 @@ const TOKEN = /(\bAB#\d+)|(#\d+)|(\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)/g
  * Tracker patterns win where both could match: they are the repository's own
  * statement about what its commit text means.
  */
-export function autolink(text: string, repoWebUrl?: string, tickets?: RepoConfigLink[]): ReactNode {
+export function autolink(
+  text: string,
+  repoWebUrl?: string,
+  tickets?: RepoConfigLink[],
+  options?: AutolinkOptions
+): ReactNode {
   if (tickets?.length) {
     const segments = ticketSegments(text, tickets)
     if (segments.length > 1 || segments[0]?.href) {
@@ -46,12 +75,12 @@ export function autolink(text: string, repoWebUrl?: string, tickets?: RepoConfig
             {seg.text}
           </a>
         ) : (
-          <span key={i}>{hostLinks(seg.text, repoWebUrl)}</span>
+          <span key={i}>{hostLinks(seg.text, repoWebUrl, options)}</span>
         )
       )
     }
   }
-  return hostLinks(text, repoWebUrl)
+  return hostLinks(text, repoWebUrl, options)
 }
 
 /**
@@ -59,7 +88,7 @@ export function autolink(text: string, repoWebUrl?: string, tickets?: RepoConfig
  * work item, not an issue, and `AB#123` — Azure Boards' own mention — is one
  * everywhere the organization is known.
  */
-function hostLinks(text: string, repoWebUrl?: string): ReactNode {
+function hostLinks(text: string, repoWebUrl?: string, options?: AutolinkOptions): ReactNode {
   if (!text || !repoWebUrl) return text
   let origin: string
   try {
@@ -73,32 +102,47 @@ function hostLinks(text: string, repoWebUrl?: string): ReactNode {
   let m: RegExpExecArray | null
   TOKEN.lastIndex = 0
   let i = 0
+  const reference = (q: ReferenceQuery, href: string, label: string): ReactNode => {
+    const key = i++
+    return options?.renderReference ? (
+      options.renderReference(q, { key, href, text: label })
+    ) : (
+      <a key={key} href={href}>
+        {label}
+      </a>
+    )
+  }
   while ((m = TOKEN.exec(text)) !== null) {
     if (m.index > last) out.push(text.slice(last, m.index))
     if (m[1]) {
       // AB#123 — a work item. Without a known Azure org it stays text.
-      const n = m[1].slice(3)
+      const n = Number(m[2])
+      out.push(azureOrg ? reference({ sigil: 'AB#', id: n }, workItemUrl(azureOrg, n), m[1]) : m[1])
+    } else if (m[3]) {
+      const n = Number(m[4])
+      // On Azure `#123` is the work item `AB#123` names: one card, one cache entry.
       out.push(
-        azureOrg ? (
-          <a key={i++} href={workItemUrl(azureOrg, n)}>
-            {m[1]}
+        azureOrg
+          ? reference({ sigil: 'AB#', id: n }, workItemUrl(azureOrg, n), m[3])
+          : reference({ sigil: '#', id: n }, `${repoWebUrl}/issues/${n}`, m[3])
+      )
+    } else if (m[6]) {
+      // `!123` is a GitLab merge request, and on Azure DevOps a pull request
+      // (its own "!123" mention; a link only — no card). Elsewhere punctuation.
+      const n = Number(m[7])
+      if (options?.gitlab) out.push(reference({ sigil: '!', id: n }, `${repoWebUrl}/-/merge_requests/${n}`, m[6]))
+      else if (azureOrg) {
+        out.push(
+          <a key={i++} href={`${repoWebUrl}/pullrequest/${n}`}>
+            {m[6]}
           </a>
-        ) : (
-          m[1]
         )
-      )
-    } else if (m[2]) {
-      const n = m[2].slice(1)
-      out.push(
-        <a key={i++} href={azureOrg ? workItemUrl(azureOrg, n) : `${repoWebUrl}/issues/${n}`}>
-          {m[2]}
-        </a>
-      )
+      } else out.push(m[6])
     } else {
-      const user = m[3].slice(1)
+      const user = m[5].slice(1)
       out.push(
         <a key={i++} href={`${origin}/${user}`}>
-          {m[3]}
+          {m[5]}
         </a>
       )
     }

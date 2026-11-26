@@ -5,6 +5,7 @@ import { logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useT, t as tr, interp, type TranslationKey } from '../i18n'
 import type { ActivityEvent, LogEntry } from '../../../shared/types'
+import { PageHead } from './PageHead'
 
 /** Singular, verb-style labels for an operation log row. */
 const EVENT_LOG_LABELS: Record<ActivityEvent, TranslationKey> = {
@@ -97,42 +98,43 @@ export function LogsPage(): React.JSX.Element {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <header className="changelog-header">
-          <div className="changelog-title">
-            <ScrollText size={20} />
-            <div>
-              <h1>{t('logs.title')}</h1>
-              <span className="settings-hint">{t('logs.subtitle')}</span>
+        <PageHead>
+          <header className="changelog-header">
+            <div className="changelog-title">
+              <ScrollText size={20} />
+              <div>
+                <h1>{t('logs.title')}</h1>
+                <span className="settings-hint">{t('logs.subtitle')}</span>
+              </div>
             </div>
+          </header>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
+            <label className="settings-field" style={{ maxWidth: 280 }}>
+              <span className="settings-field-label">{t('logs.repository')}</span>
+              <select value={repoFilter} onChange={(e) => setRepoFilter(e.target.value)}>
+                <option value="all">{t('logs.allRepositories')}</option>
+                {repos.map(([path, name]) => (
+                  <option key={path} value={path}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="btn ghost small" onClick={() => void refresh()} disabled={loading}>
+              <RefreshCw size={13} className={loading ? 'spin' : undefined} />
+              {t('logs.refresh')}
+            </button>
+            <button
+              className="btn ghost small"
+              onClick={() => void clear()}
+              disabled={entries.length === 0}
+              style={{ marginLeft: 'auto' }}
+            >
+              <Trash2 size={13} />
+              {t('logs.clear')}
+            </button>
           </div>
-        </header>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
-          <label className="settings-field" style={{ maxWidth: 280 }}>
-            <span className="settings-field-label">{t('logs.repository')}</span>
-            <select value={repoFilter} onChange={(e) => setRepoFilter(e.target.value)}>
-              <option value="all">{t('logs.allRepositories')}</option>
-              {repos.map(([path, name]) => (
-                <option key={path} value={path}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="btn ghost small" onClick={() => void refresh()} disabled={loading}>
-            <RefreshCw size={13} className={loading ? 'spin' : undefined} />
-            {t('logs.refresh')}
-          </button>
-          <button
-            className="btn ghost small"
-            onClick={() => void clear()}
-            disabled={entries.length === 0}
-            style={{ marginLeft: 'auto' }}
-          >
-            <Trash2 size={13} />
-            {t('logs.clear')}
-          </button>
-        </div>
+        </PageHead>
 
         {filtered.length === 0 ? (
           <p className="settings-hint">

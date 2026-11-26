@@ -1,6 +1,6 @@
 # Backlog
 
-O que ficou para depois, com o contexto para retomar sem reler a conversa. Atualizado em 2026-11-25, na preparação da v4.52.0.
+O que ficou para depois, com o contexto para retomar sem reler a conversa. Atualizado em 2026-11-26, na preparação da v4.54.0.
 
 Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando teste ou decisão.
 
@@ -21,8 +21,11 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 | | Item | Notas |
 |---|---|---|
 | 🟠 | **Instalador menor**: mover para `devDependencies` as bibliotecas usadas só pela interface (o Vite já as embute no bundle) | Estimativa: 50–70 MB a menos. Depois de mover, conferir o `app.asar` (nada da interface deve faltar), o `check:native` e um teste do AppImage e do .deb. Ver [`decisions.md`](decisions.md) |
-| 🟡 | **Detalhe do PR apertado em larguras médias.** A media query de 860px olha a janela, não o painel. Com a barra lateral aberta, entre ~860 e ~1000px de painel, sobram ~200px para a conversa (`.prp-side` fixo em 270px) | Trocar por `container-type: inline-size` no pai e `@container`. Já acontecia antes da v4.52 |
-| 🟡 | **5 screenshots gerados e não usados** por nenhuma página: `diff-wrap`, `gitmoji-picker`, `profile-avatar`, `token-keychain-notice`, `worktree-care` | Cada um tem entrada no `examples/screenshots/shots.config.mjs`. Usar numa página do manual ou tirar a entrada |
+| 🟠 | **Mostrar os comentários formatados na conversa do PR.** Hoje aparecem com o markdown cru no app (no site do host aparecem formatados) | Precisa de um render próprio para conteúdo remoto (sem `style`, forms, só `https`/`mailto`), imagens de terceiros só com clique, e no GitHub usar o `body_html` (imagens via camo, anexos privados). Ver a review do editor em `.reviews/` |
+| 🟡 | **Azure: confirmar que `authenticatedUser.id` = `author.id`** dos comentários | Se não bater, os botões Editar/Excluir não aparecem no Azure (falha segura). Conferir com um PR real |
+| 🟡 | **GitHub: responder numa conversa cuja raiz foi apagada** | Hoje o app mostra "Responder no GitHub". Dá para responder pela GraphQL (`addPullRequestReviewThreadReply`) |
+| 🟡 | **Commits de PR de fork no GitHub** | Hoje só abrem no navegador; dá para buscar via `refs/pull/N/head` (`resolvePrRef`/`previewRef`) |
+| 🟡 | **Referências no GitHub numa consulta só** (GraphQL com aliases) em vez de uma por vez | Hoje até 10 por hover, em série |
 
 ---
 
@@ -56,7 +59,7 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 
 | | Item | Notas |
 |---|---|---|
-| 🟠 | **Páginas novas só em en e pt-BR**: `security.md`, `vault.md`, `terminal.md`, `rollback.md`, `worktrees.md`, `pull-requests.md` | Traduzir para os outros 14 idiomas |
+| 🟠 | **Páginas só em en e pt-BR, ou atrasadas nos outros 14 idiomas**: `security.md`, `vault.md`, `terminal.md`, `rollback.md`, `worktrees.md`, `branch-cleanup.md`, e `workspaces.md` (faltam seções inteiras: tamanho das abas, ir para um repositório, grupos) | `pull-requests.md` e `writing-comments.md` estão em dia desde a v4.54 |
 | 🟡 | **Páginas antigas** (~90 mil palavras) | Inclui os parágrafos de work items e de Azure Pipelines do `hosting.md` |
 | 🟡 | **Screenshot do cofre ilegível** (`VaultUnreadableNotice`) | Gerar com um cofre falso, nunca o da máquina |
 

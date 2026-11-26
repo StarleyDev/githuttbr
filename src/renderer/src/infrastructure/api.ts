@@ -64,6 +64,12 @@ import type {
   RemoteAuthCheck,
   PushRemoteResult,
   BranchPushState,
+  BranchCleanupScan,
+  BranchDeleteRequest,
+  BranchDeleteResult,
+  BranchRestoreRequest,
+  BranchRestoreResult,
+  BranchSquashCheck,
   PushBranchesResult,
   RepoStatus,
   RerereStatus,
@@ -77,6 +83,8 @@ import type {
   PullRequest,
   FinishedPullRequests,
   PrDetail,
+  ReferenceQuery,
+  ReferenceSummary,
   PrReviewEvent,
   PrMergeMethod,
   IssueInfo,
@@ -225,6 +233,7 @@ export const gitApi = {
   fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
   fetchRemoteBranch: (path: string, remote: string, branch: string) =>
     call<boolean>('fetchRemoteBranch', path, remote, branch),
+  getLocalCommits: (path: string, shas: string[]) => call<string[]>('getLocalCommits', path, shas),
   resolvePrRef: (path: string, remote: string, number: number) =>
     call<PrRefProbe | null>('resolvePrRef', path, remote, number),
   previewRef: (path: string, remote: string, ref: string, mode: PrPreviewMode, localBranch?: string) =>
@@ -244,6 +253,13 @@ export const gitApi = {
     call<void>('createBranch', path, name, at, checkout),
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),
   deleteBranchIfAt: (path: string, name: string, sha: string) => call<boolean>('deleteBranchIfAt', path, name, sha),
+  getBranchCleanupCandidates: (path: string) => call<BranchCleanupScan>('getBranchCleanupCandidates', path),
+  getSquashMergedBranches: (path: string, names: string[]) =>
+    call<BranchSquashCheck[]>('getSquashMergedBranches', path, names),
+  deleteLocalBranches: (path: string, requests: BranchDeleteRequest[]) =>
+    call<BranchDeleteResult[]>('deleteLocalBranches', path, requests),
+  restoreLocalBranches: (path: string, requests: BranchRestoreRequest[]) =>
+    call<BranchRestoreResult[]>('restoreLocalBranches', path, requests),
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
   stackInfo: (path: string, leaf?: string) => call<StackInfo>('stackInfo', path, leaf),
@@ -1166,6 +1182,9 @@ export const hostingApi = {
     window.api.hosting.prDetail(repoPath, remoteUrl, tokens, number) as Promise<PrDetail>,
   workItem: (repoPath: string, remoteUrl: string, tokens: { azure?: string }, id: number) =>
     window.api.hosting.workItem(repoPath, remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
+  /** Titles for `#12` / `!12` / `AB#12` references, one entry per query; never throws for a missing id. */
+  getReferenceSummaries: (repoPath: string, remoteUrl: string, tokens: PrTokens, queries: ReferenceQuery[]) =>
+    window.api.hosting.getReferenceSummaries(repoPath, remoteUrl, tokens, queries) as Promise<ReferenceSummary[]>,
   prComment: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, body: string) =>
     window.api.hosting.prComment(repoPath, remoteUrl, tokens, number, body) as Promise<void>,
   prReplyReviewComment: (
@@ -1176,6 +1195,34 @@ export const hostingApi = {
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(repoPath, remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
+  /** Start a review thread on one line of the PR's diff, posted at once. */
+  prCommentOnLine: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    anchor: import('../../../shared/types').PrLineAnchor,
+    body: string,
+    /** The revision the Files tab's diff was read at; null when the host did not say. */
+    revision: import('../../../shared/types').PrDiffRevision | null
+  ) => window.api.hosting.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, body, revision) as Promise<void>,
+  /** Replace the text of one of the PR's (or issue's) comments, reached through its handle. */
+  prEditComment: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    handle: import('../../../shared/types').PrCommentHandle,
+    body: string
+  ) => window.api.hosting.prEditComment(repoPath, remoteUrl, tokens, number, handle, body) as Promise<void>,
+  /** Delete one of the PR's (or issue's) comments on the host. It cannot be restored. */
+  prDeleteComment: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    number: number,
+    handle: import('../../../shared/types').PrCommentHandle
+  ) => window.api.hosting.prDeleteComment(repoPath, remoteUrl, tokens, number, handle) as Promise<void>,
   /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
   ciRuns: (repoPath: string, remoteUrl: string, tokens: PrTokens, branch?: string) =>
     window.api.hosting.ciRuns(repoPath, remoteUrl, tokens, branch) as Promise<import('../../../shared/types').CiRunList>,
@@ -1194,7 +1241,9 @@ export const hostingApi = {
   prChecks: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prChecks(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
   prFiles: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
-    window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
+    window.api.hosting.prFiles(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFileList>,
+  prListCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
+    window.api.hosting.prListCommits(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCommitList>,
   prReview: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, event: PrReviewEvent, body: string) =>
     window.api.hosting.prReview(repoPath, remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, method: PrMergeMethod) =>

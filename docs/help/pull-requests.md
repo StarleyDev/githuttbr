@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — and ‹ › to walk the filtered list from inside a PR.
-keywords: pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, and comments on a line of its diff.
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo
 ---
 
 # Pull requests page
@@ -129,7 +129,9 @@ you:
 
 The header has the same two moves as buttons: **Go to source branch** and
 **Go to target branch**. They work on the branch you are already on too —
-they just take you to the repository.
+they just take you to the repository. With [icon colors](themes.md#icon-colors)
+on, each header button has its own: refresh blue, AI review violet, preview
+teal, source branch green, target branch orange (open in browser stays grey).
 
 Nothing is looked up until you click: opening a pull request does not read or
 fetch any branch.
@@ -151,6 +153,304 @@ What it does not do:
 - **This window.** The checkout happens in this repository's working tree. When
   the branch is already checked out in another [worktree](worktrees.md), that
   worktree's tab opens instead.
+
+## Commits
+
+The sidebar said how many commits a pull request has, never which. Reviewing
+one commit at a time — the way most pull requests are meant to be read — sent
+you to the browser. The **Commits** tab, between Conversation and Files, lists
+them:
+
+- **Oldest first**, the order they apply in, grouped under the day they were
+  authored. A commit rebased in out of date order starts a day of its own
+  rather than being moved.
+- Each row has the author's picture (where the host gives one), the subject,
+  the author, how long ago, and the short SHA. A **merge** badge marks a commit
+  with two parents, where the host says.
+- **▸** beside a commit with more than a subject shows the rest of its message.
+- **Copy** puts the full SHA on the clipboard; **Open in browser** opens the
+  commit on the host — inside the pull request where the host has such a page
+  (GitHub, GitLab, Bitbucket Data Center), else on the repository's commit page.
+
+![The Commits tab: a pull request's commits grouped by day, one with its full message open](../screenshots/pr-commits.webp)
+
+**Click a row** — or Tab to it and press Enter — to open the commit in the app,
+as a click in the graph would: the repository's view, that commit selected,
+its details open. That works when this clone **has** the commit. When it does
+not, the row says so instead of failing quietly, and offers:
+
+- **Fetch the PR branch to see it** — the same single-branch fetch as
+  [going to the branch](#going-to-a-pull-requests-branch), without the
+  checkout. When the commit came with it, it opens; when it did not (a force
+  push rewrote it since), the toast says so.
+- **Open in browser**, for when fetching is not an option.
+
+The list is read the first time you open the tab, not with the page, and again
+on every **Refresh**. Until it is in, the tab's count is the one the host
+gave for the pull request. Merged and closed pull requests list their commits
+the same way.
+
+What it does not do:
+
+- **At most 250 commits.** GitHub itself lists no more than 250 for a pull
+  request; the app stops at the same number on every host, and says *the host
+  has more* when it does, with a link to the pull request on the host. Which
+  250 depends on the order the host lists them in — the app keeps the ones
+  listed first, and the line above the list says which:
+
+  | Host | A longer pull request shows |
+  |---|---|
+  | GitHub | The **first** 250 (GitHub's own limit) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | The **250 most recent** |
+  | Forgejo | Whichever end the server lists first; its order is not documented |
+- **A fork's branch** cannot be fetched from here — it lives in another
+  repository — so a commit only in the fork offers the browser alone.
+  **Preview pull request locally…** is the way to bring it in.
+- **A deleted branch.** A merged pull request has often taken its branch with
+  it: the fetch says so. bitbucket.org lists no commits at all once the source
+  branch is gone.
+- **Squash merges.** A squash-merged pull request's commits never reached the
+  target branch, so after its branch is deleted they are on the host only.
+- **Authors** are named as their commits name them. GitLab, Azure DevOps and
+  Bitbucket Data Center give no picture without a sign-in an image cannot
+  send, so those rows show the initial.
+- **Long messages on Azure DevOps** may be cut short: Azure's list truncates a
+  commit's message, and the app shows what it sends.
+- **bitbucket.org** pull requests open in the browser — the app has no page for
+  them yet — so this tab is not reached there, although the app can read the
+  list.
+
+## Reading the files
+
+A pull request of two hundred files is hard to read as two hundred full paths.
+The **Files** tab's list has the same **Path / Tree** switch as the commit
+panel, and the choice is the same one app-wide. In **Tree**, files sit under
+their folders (a chain like `src/main/ipc` is one row), and each folder shows
+its summed **+/−** and how many of its files are viewed (*3/5*). A folder's
+checkbox marks every file inside as viewed, or clears them all; ticks are kept
+on this computer only, never sent to the host. A tick holds the version of the
+file's diff: when a push changes a viewed file, it reads as not viewed again,
+with a yellow dot (*changed since you viewed it*). A file without a diff
+(binary, too large) is compared by its status and line counts only. A file with review
+conversations shows a speech-bubble count beside it (folders add theirs up), so
+the ones with comments stand out in a long list; outdated conversations count
+too. Click a folder, or press ←/→ on
+it, to fold it; ↑/↓ (or j/k) step through the files on screen and open each
+diff. Folded folders are remembered per pull request until the app quits, and a
+file opened inside one unfolds the way to it. The tree is sorted by name, not in
+the order the host lists the files.
+
+![The Files tab in Tree view: folders with their summed changes and viewed counts, one folded](../screenshots/pr-files-tree.webp)
+
+## Commenting on a line
+
+Replying to a review thread was possible here; starting one was not, so a real
+review still sent you to the browser. In a pull request's **Files** tab, any
+line of the diff takes a comment of its own:
+
+- **Hover a line** and press the **+** that appears over its number, or
+  **click the line** itself (a click that ends a text selection, or a double
+  click selecting a word, does not count — that is reading). The right-click
+  menu — or the keyboard's context-menu key — has *Comment on line N* too.
+- A box opens **under that line**. Write, then **Comment** — or ⌘/Ctrl+Enter.
+  **Cancel** closes it; **Esc** does too, asking first when something was typed.
+  Either way the focus goes back to that line.
+- On success the new thread appears **under its line**, and in the
+  Conversation tab's review threads, where everyone else will see it.
+
+![A comment being written under a changed line, with an earlier thread under its own line](../screenshots/pr-line-comment.webp)
+
+Which side the comment lands on follows the line:
+
+| Line | Anchored to |
+|---|---|
+| **Added** (green) | The new version of the file, at its new number |
+| **Deleted** (red) | The old version, at its old number |
+| **Unchanged** | The new version (GitLab is sent both numbers, as it requires) |
+
+Existing threads are drawn under their lines as well, with their reply box
+where the host lets the app reply inside a thread (Forgejo does not). A thread
+is drawn on a line only when the host says it still belongs to the diff shown;
+anything else stays in the Conversation tab, rather than on a guessed line:
+
+| Host | A thread written before the latest push |
+|---|---|
+| GitHub | Outdated when its line changed: Conversation only |
+| GitLab | Written against an older head: Conversation only |
+| Azure DevOps | Followed by Azure to where its line is now |
+| Bitbucket Data Center | Orphaned when its line is gone: Conversation only |
+| Forgejo | Forgejo does not say a comment is outdated, so it is drawn at its recorded line number — after a push that line may now hold other code |
+
+A comment on a line outside the hunks shown is in the Conversation tab only, on
+every host.
+
+A comment typed and not sent counts as unsent text: **‹ ›** and Alt+arrows ask
+before leaving it, as they do for the main comment box. Looking at another file
+keeps it; to start one on another line, post or cancel the first.
+
+What it does not do:
+
+- **One line, posted at once.** There is no range of lines, no pending review to
+  batch comments into and submit later, and no suggested change. Each comment is
+  published the moment you send it, as its own thread (on Forgejo, as a review
+  holding that one comment, since Forgejo has no single-comment call).
+- **The diff you are looking at.** The Files tab remembers which commit (on
+  Azure DevOps, which iteration) its diff was read at, and a comment is sent
+  against that. When the pull request has moved on since — a push, a new merge
+  base — the comment is not posted on whatever line now has that number: it is
+  refused with *the pull request changed since this diff loaded*, and
+  **Refresh** shows the new diff. On GitHub the comment is posted against the
+  commit you read instead, and GitHub marks it outdated if that line has changed.
+  A line the host still will not take is refused as outside the diff.
+- **Refused.** Without permission to comment (a read-only token, an account the
+  repository does not let comment), the host refuses it and the message says
+  that is the reason.
+- **bitbucket.org** pull requests open in the browser — the app has no page
+  for them yet — so a line comment there is still made on the website.
+- **A file without a diff** (binary, or too large for the host to include)
+  has no lines to comment on.
+
+## Writing comments
+
+Every box on the page — the comment at the bottom, a reply inside a thread, a
+comment on a line — is the same Markdown editor: **Write / Preview** tabs, a
+formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and
+**@** / **#** completion from the people and pull requests already on screen.
+A reply box shows its tools once you click into it, and sends with
+⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
+has the details and the limits.
+
+## Editing and deleting your comments
+
+A typo in a comment already sent, or a remark that no longer applies, used to
+mean a trip to the browser. Your own comments now carry **Edit** (the pencil)
+and **Delete** (the bin) at the end of their header: conversation comments,
+review-thread comments and replies, in both the Conversation and Files tabs.
+The issue page has them too, for its comments on GitHub and Forgejo.
+
+![Your own comment, marked edited, with Edit and Delete at the end of its header](../screenshots/comment-editor.webp)
+
+"Yours" is decided by the page itself, which asks the host who this
+repository's calls sign in as each time it loads (its bound profile, not
+whichever profile is active). Most hosts name an author by login, compared
+without regard to case. Azure DevOps names authors by display name, which two
+people can share, so there the comment's author id must match the account's id;
+when either id is missing, no comment shows the actions. When the app cannot
+tell who you are (a token without user scope, or the host did not answer), no
+comment shows them either; **Refresh** asks again. The host still decides: an
+account it does not let change a comment is refused, and the message says so.
+
+- **Edit** opens the comment in place, in the same Markdown editor, with its
+  text as written. **Save** (or ⌘/Ctrl+Enter) sends it; **Cancel** or **Esc**
+  closes it, asking first when you changed something. Only the blank lines
+  around the text are dropped: indented code and a trailing two-space line
+  break stay as typed. The new text shows at once and the page reads the pull
+  request again. On the pull request page, an edit nobody saved counts as
+  unsent text: **‹ ›** ask before leaving it. The issue page has no such
+  arrows, and nothing there asks before its tab closes.
+- **Delete** always asks first, and the question says what happens: the server
+  removes the comment for everyone, and it cannot be undone. There is no undo
+  entry, since nothing can bring it back.
+
+Deleting the **first comment of a thread** that has replies (a review thread,
+or a conversation comment others answered) differs per host, and the confirm
+names which. Two of these are not written down by the host, and say so:
+
+| Host | First comment of a thread with replies |
+|---|---|
+| GitHub | The replies should stay; GitHub's documentation does not say. Replying to that thread from the app is no longer possible: its replies point at a comment that is gone, and the API takes no reply to a reply. The thread then offers **Reply on GitHub** instead |
+| GitLab | Only that note goes; the thread and its replies stay |
+| Azure DevOps | Should be marked deleted and hidden, with the thread and its replies kept; Azure's documentation does not say |
+| Bitbucket Data Center | Refused: Data Center does not delete a comment that has replies. Delete the replies first, or edit it instead |
+
+Some hosts mark a comment **edited**. Only Azure DevOps keeps a date for the
+text alone; on GitHub, Bitbucket Data Center and Forgejo the app compares when
+the comment was created and last updated, so the mark is an approximation there
+(anything else that touches the comment may set it). GitLab's date also moves
+when a thread is resolved, so it is not used.
+
+What it does not do:
+
+- **Forgejo review comments** (comments on a line) cannot be edited through its
+  API, and only some versions can delete one, so they show neither action:
+  change them on the website. Conversation comments work as elsewhere.
+- **Someone changed it meanwhile.** Bitbucket Data Center checks the comment's
+  version: an edit or a delete of a comment changed since the page loaded is
+  refused, and **Refresh** shows the current one. The other hosts take the last
+  write.
+- **Not found**: when the host does not find the comment, the message says it
+  may have been deleted, or that this account cannot see it, and the page reads
+  the pull request again. An edit open on a comment that is gone is dropped.
+- **bitbucket.org** pull requests open in the browser, so there is no page to
+  edit their comments on yet, although the app can make the call.
+- **The description** of the pull request and its reviews' summaries are not
+  comments, and are not edited here.
+
+## What a `#123` or `AB#123` is about
+
+A commit that says *fixes AB#4821* or a comment that says *see #312* tells you
+a number, not what it was. Finding out meant opening it. Now, **pointing at a
+reference** — or tabbing to it — opens a small card with what the host says
+about it:
+
+- an icon for its kind, and the reference as written;
+- its **title**;
+- its **state** (open, closed, merged — on Azure DevOps, the work item's own
+  state, such as *Active* or *Resolved*);
+- on Azure DevOps, the **work item type** (Bug, User Story, Task…).
+
+![The card on a work item reference in a comment: its type, title and state](../screenshots/reference-card.webp)
+
+The cards are on the pull request page (description, comments, review threads,
+and the full message of a commit in the **Commits** tab), the issue page, and
+the subject in the commit details panel. In the **Commits** tab on Azure DevOps,
+each work item in a commit's subject (`AB#123`, or `#123`, the same item there)
+also shows its title beside it, in grey. On Azure DevOps, `!123` links to that
+pull request, without a card.
+
+| Reference | Host | Read from |
+|---|---|---|
+| `AB#123`, and `#123` in an Azure repository | Azure DevOps | Work items, up to 200 in one request |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (which answers for pull requests too), one request each, one at a time |
+| `#123` / `!123` | GitLab | Issues / merge requests, one request per kind |
+| `#123` | Forgejo | Issues (pull requests too), one request each, two at a time |
+
+A `#123` counts only as a word of its own: `org/repo#123` (another
+repository), `&#39;`, a colour like `#123abc` and a link's `#issuecomment-…`
+are left alone.
+
+Nothing is asked until a card opens. Then the reference you are on and the
+ones nearest it on the page that are not yet known go in one call, so the next
+card is usually instant. Answers are kept in memory while the app runs, never
+on disk, for five minutes; after that they are still shown and read again on
+the next hover. They are kept per profile: the call is made as the profile the
+repository is [bound to](profiles.md), and another profile may see other items.
+
+What it costs:
+
+- **GitHub and Forgejo** have no way to read several issues in one request, so
+  each card costs one. A hover asks for at most **10** — the one you are on and
+  its neighbours — and on GitHub one after another, as GitHub asks of apps.
+  The first answer that says *slow down* (a 429, or a 403) stops the rest, and
+  those references are not asked for again for five minutes.
+- **Azure DevOps** reads up to 200 work items in one request, and GitLab one
+  request per kind, so there the whole page goes at once.
+
+What it does not do:
+
+- **Bitbucket** has no card: the app reads no issues there, and the link
+  opens the browser as before.
+- **Not found, or no access.** A deleted issue, a work item in a project this
+  account cannot see, or an Azure token without the *Work Items (Read)* scope
+  read the same: the card says so, and the link still works. A host that is
+  throttling, unreachable, or has no account in this profile gets its own
+  message.
+- **`AB#123` outside Azure DevOps** — in a GitHub repository connected to Azure
+  Boards — is not linked, so it has no card: the app does not know which
+  organization it belongs to.
+- **Merged state on older GitHub Enterprise Servers** that do not send when a
+  pull request was merged: it reads as closed.
+- **The graph's** commit rows do not show cards.
 
 ## Limits
 

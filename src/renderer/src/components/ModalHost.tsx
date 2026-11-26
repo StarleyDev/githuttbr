@@ -40,6 +40,7 @@ import { LocalCIModal } from './LocalCIModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
 import { AbsorbModal } from './AbsorbModal'
+import { BranchCleanupModal } from './BranchCleanupModal'
 import { CliEditModal } from './CliEditModal'
 import { TimeMachineModal } from './TimeMachineModal'
 import { ImportSettingsDialog } from './ImportSettingsDialog'
@@ -2474,6 +2475,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-clone'
                   : modal.kind === 'push-branches'
                   ? 'modal-push-branches'
+                  : modal.kind === 'branch-cleanup'
+                  ? 'modal-branch-cleanup'
                   : modal.kind === 'create-pr'
                   ? 'modal-create-pr'
                   : modal.kind === 'settings'
@@ -2564,6 +2567,7 @@ export function ModalHost(): React.JSX.Element {
                 <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
               )}
               {modal.kind === 'absorb' && <AbsorbModal repoPath={modal.repoPath} />}
+              {modal.kind === 'branch-cleanup' && <BranchCleanupModal repoPath={modal.repoPath} />}
               {modal.kind === 'cli-edit' && (
                 <CliEditModal file={modal.file} sentinel={modal.sentinel} content={modal.content} />
               )}

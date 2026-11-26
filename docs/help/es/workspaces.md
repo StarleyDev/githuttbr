@@ -54,8 +54,11 @@ Para añadir un repositorio que el grupo aún no tiene, haz clic en el **+** jun
 
 Algunas páginas no son algo aparte: la [wiki](repo-wiki.md) de un repositorio,
 sus [métricas](insights.md), las [dev tools](devtools.md) que anunció una
-sesión de lanzamiento. No ocupan una pestaña — aparecen como iconitos en el
-propio repositorio.
+sesión de lanzamiento. No ocupan una pestaña — aparecen como pequeñas etiquetas en
+el propio repositorio: un icono y una palabra que dice qué página es (*CI*, *PRs*,
+*Wiki*, *#482* para una pull request, la etiqueta de una release). El nombre
+completo está en el tooltip, y una etiqueta o un título largos se recortan con
+puntos suspensivos.
 
 - **Clic en un icono** para ver esa página. **Clic otra vez — o clic en el
   nombre del repositorio** — para volver al repositorio. Mientras hay una

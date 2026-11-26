@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   GitPullRequest,
   GitPullRequestArrow,
@@ -28,17 +28,32 @@ import {
   ScrollText,
   Target
 } from 'lucide-react'
-import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
+import type {
+  PageContent,
+  PrCheck,
+  PrCommentHandle,
+  PrDetail,
+  PrFile,
+  PrDiffRevision,
+  PrLineAnchor,
+  PrMergeMethod,
+  PrReviewEvent,
+  PrReviewThread
+} from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { CheckLogPanel } from './CheckLogPanel'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
-import { forgetFinished, registerPrDraft } from '../stores/prList'
+import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
+import { forgetFinished, hasUnsentPrDraft, registerPrDraft } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteForPrUrl } from '../lib/prBranchGo'
-import { autolink, remoteWebUrl } from '../lib/autolink'
+import { autolink, remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
+import { getReferenceHost } from '../lib/references'
+import type { IconTone } from '../lib/iconTone'
+import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 import {
   checkCounts,
   checkState,
@@ -50,13 +65,35 @@ import {
   type ReviewerState
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
+import { PrFileList } from './PrFileList'
+import { getThreadCountsByPath } from '../lib/prFileThreads'
+import { usePrViewed } from './usePrViewed'
 import { guessLanguage } from '../lib/highlight'
 import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { readableError } from '../lib/gitErrorHint'
+import { parseDiff } from '../lib/diff'
+import { getLineAnchor, getThreadsByLine, isSameAnchor } from '../lib/prLineComment'
+import { getAnchorLine } from '../../../shared/prLineAnchor'
+import { MarkdownEditor, useRepoReferenceGetter } from './MarkdownEditor'
+import { collectMentionNames, type MarkdownReference } from '../lib/markdownEdit'
+import { EditableComment } from './EditableComment'
+import {
+  getCommentKey,
+  getCommentKeys,
+  getDeleteConfirmKey,
+  hasUnsavedEdit,
+  isCommentGone,
+  isMyComment,
+  isThreadRootMissing,
+  pruneEditDrafts,
+  withCommentBody,
+  type CommentEditDraft
+} from '../lib/commentEdit'
+import { stripOuterNewlines } from '../../../shared/prCommentHandle'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
-type Section = 'conversation' | 'files' | 'checks'
+type Section = 'conversation' | 'commits' | 'files' | 'checks'
 
 const REVIEW_KEY: Record<ReviewerState, TranslationKey> = {
   APPROVED: 'prPage.reviewApproved',
@@ -93,6 +130,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // The check whose log is open, by its link: a refresh may reorder the list.
   const [openLog, setOpenLog] = useState<string | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
+  // The revision those files' diff was read at: a line comment carries it.
+  const [filesRevision, setFilesRevision] = useState<PrDiffRevision | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [section, setSection] = useState<Section>('conversation')
@@ -100,31 +139,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [busy, setBusy] = useState(false)
   const [mergeMethod, setMergeMethod] = useState<PrMergeMethod>('merge')
   // Per-thread reply drafts, keyed by the thread root id (GitHub comment id or
-  // GitLab discussion id).
-  const [replies, setReplies] = useState<Record<number | string, string>>({})
+  // GitLab discussion id). Text being typed lives in the box itself; these refs
+  // only remember it — for the unsent-draft check, and for the same thread's box
+  // in the other tab — so a keystroke re-renders one box, not the whole page
+  // (and with it every highlighted line of the diff).
+  const replyDrafts = useRef<Record<string, string>>({})
+  // Edits of your own comments in progress, by comment key — same reasoning.
+  const editDrafts = useRef<Record<string, CommentEditDraft>>({})
+  // The comment being written on one line of the Files tab's diff. One at a
+  // time, kept while another file is looked at, so nothing typed is lost.
+  const [lineDraft, setLineDraft] = useState<{ anchor: PrLineAnchor } | null>(null)
+  const lineDraftText = useRef('')
 
-  // "Viewed" ticks are local and kept per repo + PR: GitHub's own viewed state
-  // has no simple REST call. Same key as the modal used, so ticks carry over.
-  const viewedKey = `githuttbr-pr-viewed:${remoteUrl}#${number}`
-  const [viewed, setViewed] = useState<Set<string>>(() => {
-    try {
-      return new Set(JSON.parse(localStorage.getItem(viewedKey) || '[]') as string[])
-    } catch {
-      return new Set()
-    }
-  })
-  const toggleViewed = (f: string): void =>
-    setViewed((cur) => {
-      const next = new Set(cur)
-      if (next.has(f)) next.delete(f)
-      else next.add(f)
-      try {
-        localStorage.setItem(viewedKey, JSON.stringify([...next]))
-      } catch {
-        // Storage full or blocked: the tick still shows for this session.
-      }
-      return next
-    })
+  // "Viewed" ticks, per file version: a push that changes a ticked file un-ticks it.
+  const { viewed, changed: changedSinceViewed, setFilesViewed } = usePrViewed(remoteUrl, number, files)
+  const toggleViewed = (f: string): void => setFilesViewed([f], !viewed.has(f))
 
   const tokens = useMemo(
     () => ({
@@ -138,13 +167,28 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   // Forgejo has no API to reply inside an existing line thread.
   const canReplyInThread = provider !== 'forgejo'
 
+  // Bumped by every load, so the Commits tab re-reads with the rest of the page.
+  const [reloads, setReloads] = useState(0)
   const load = useCallback(async (): Promise<void> => {
     setError(null)
+    setReloads((n) => n + 1)
     try {
-      setPr(await hostingApi.prDetail(repoPath, remoteUrl, tokens, number))
+      const detail = await hostingApi.prDetail(repoPath, remoteUrl, tokens, number)
+      // An edit of a comment that is gone now has nothing left to save.
+      pruneEditDrafts(editDrafts.current, getCommentKeys(detail))
+      setPr(detail)
       // Checks and files fill in after the conversation: the page is usable first.
       void hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
-      void hostingApi.prFiles(repoPath, remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
+      void hostingApi
+        .prFiles(repoPath, remoteUrl, tokens, number)
+        .then((list) => {
+          setFiles(list.files)
+          setFilesRevision(list.revision)
+        })
+        .catch(() => {
+          setFiles([])
+          setFilesRevision(null)
+        })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
@@ -157,12 +201,17 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   // ‹ › and Alt+arrows ask before leaving text nobody sent.
   useEffect(() => {
-    const check = (): boolean => !!comment.trim() || Object.values(replies).some((r) => r.trim())
+    const check = (): boolean =>
+      !!comment.trim() ||
+      Object.values(replyDrafts.current).some((r) => r.trim()) ||
+      !!lineDraftText.current.trim() ||
+      hasUnsavedEdit(editDrafts.current)
     registerPrDraft(check)
     return () => registerPrDraft(null)
-  }, [comment, replies])
+  }, [comment])
 
-  const act = async (fn: () => Promise<void>, ok: string): Promise<void> => {
+  /** Run a write, refresh, toast. True when it went through. */
+  const act = async (fn: () => Promise<void>, ok: string): Promise<boolean> => {
     setBusy(true)
     try {
       await fn()
@@ -171,9 +220,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       // A merge (or close) moves it between the list page's tabs.
       forgetFinished(repoPath)
       toast('success', ok)
+      return true
     } catch (err) {
       // The explanation in the user's language when there is one, else the host's own words.
       toast('error', readableError(err instanceof Error ? err.message : String(err), t, interp))
+      return false
     } finally {
       setBusy(false)
     }
@@ -193,17 +244,130 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     )
   const merge = (): void =>
     void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
-  const replyToThread = (rootId: number | string): void => {
-    const body = (replies[rootId] ?? '').trim()
-    if (!body) return
-    void act(
-      () =>
-        hostingApi
-          .prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body)
-          .then(() => setReplies((r) => ({ ...r, [rootId]: '' }))),
+  const replyToThread = async (rootId: number | string, text: string): Promise<boolean> => {
+    const body = text.trim()
+    if (!body) return false
+    const ok = await act(
+      () => hostingApi.prReplyReviewComment(repoPath, remoteUrl, tokens, number, rootId, body),
       t('prDetail.replyPosted')
     )
+    if (ok) replyDrafts.current[String(rootId)] = ''
+    return ok
   }
+
+  // A click on a line opens its composer — unless a comment already typed on
+  // another line would be dropped by it: that one has to be posted or
+  // cancelled first, and the toast says where it is.
+  const openLineDraft = (anchor: PrLineAnchor): void => {
+    if (lineDraft && isSameAnchor(lineDraft.anchor, anchor)) return
+    if (lineDraft && lineDraftText.current.trim()) {
+      toast('info', interp(t('prPage.lineCommentPending'), { path: lineDraft.anchor.path, line: String(getAnchorLine(lineDraft.anchor)) }))
+      return
+    }
+    lineDraftText.current = ''
+    setLineDraft({ anchor })
+  }
+  const cancelLineDraft = (): void => {
+    lineDraftText.current = ''
+    setLineDraft(null)
+  }
+  const postLineDraft = async (text: string): Promise<boolean> => {
+    if (!lineDraft || !text.trim()) return false
+    const { anchor } = lineDraft
+    const ok = await act(
+      () => hostingApi.prCommentOnLine(repoPath, remoteUrl, tokens, number, anchor, text.trim(), filesRevision),
+      t('prPage.lineCommentPosted')
+    )
+    if (ok) {
+      lineDraftText.current = ''
+      setLineDraft((d) => (d && isSameAnchor(d.anchor, anchor) ? null : d))
+    }
+    return ok
+  }
+
+  // Your own comments: the host still decides, the page only offers. "You" is
+  // only ever the viewer this PR's own read named — never the list's, which may
+  // be another profile's, or stale. A 404 means the comment is not there (or
+  // not visible to this token): its edit is dropped and the page reads the PR again.
+  const readAgainIfGone = (handle: PrCommentHandle) => (err: unknown): never => {
+    if (isCommentGone(err instanceof Error ? err.message : String(err))) {
+      delete editDrafts.current[getCommentKey(handle)]
+      void load()
+    }
+    throw err
+  }
+  const saveCommentEdit = (handle: PrCommentHandle, text: string): Promise<boolean> =>
+    act(async () => {
+      const body = stripOuterNewlines(text)
+      await hostingApi.prEditComment(repoPath, remoteUrl, tokens, number, handle, body).catch(readAgainIfGone(handle))
+      setPr((cur) => (cur ? withCommentBody(cur, handle, body) : cur))
+    }, t('prComment.saved'))
+  const askDeleteComment = (handle: PrCommentHandle, firstWithReplies: boolean): void => {
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prComment.deleteTitle'),
+      message: t(getDeleteConfirmKey(provider, firstWithReplies)),
+      danger: true,
+      confirmLabel: t('prComment.delete'),
+      onConfirm: () =>
+        void act(
+          () => hostingApi.prDeleteComment(repoPath, remoteUrl, tokens, number, handle).catch(readAgainIfGone(handle)),
+          t('prComment.deleted')
+        )
+    })
+  }
+
+  // Who an @ offers and what a # offers: only what this page and the repository's
+  // lists already hold — no request of their own.
+  const mentions = useMemo(
+    () =>
+      pr
+        ? collectMentionNames(
+            participants(pr),
+            pr.requestedReviewers?.filter((r) => !r.team).map((r) => r.login),
+            pr.assignees?.map((a) => a.login)
+          )
+        : [],
+    [pr]
+  )
+  const getReferences = useRepoReferenceGetter(repoPath)
+
+  // One review thread — in the conversation, and under its line in the Files
+  // tab. Stable while nothing it shows changes, so the Files tab's line blocks
+  // (and the diff under them) are not rebuilt for an unrelated re-render.
+  const replyRef = useRef(replyToThread)
+  replyRef.current = replyToThread
+  const changeRef = useRef({ save: saveCommentEdit, remove: askDeleteComment })
+  changeRef.current = { save: saveCommentEdit, remove: askDeleteComment }
+  const web = remoteWebUrl(remoteUrl)
+  // `#12` / `!12` / `AB#12` get a hover card with the title (components/ReferenceLink.tsx).
+  const refHost = useMemo(() => getReferenceHost(remoteUrl, provider), [remoteUrl, provider])
+  const linkOptions = getReferenceAutolinkOptions(refHost)
+  const threadCard = useCallback(
+    (th: PrReviewThread, withLocation: boolean): React.JSX.Element | null =>
+      pr ? (
+        <ReviewThreadCard
+          key={th.rootId}
+          thread={th}
+          pr={pr}
+          web={web}
+          linkOptions={linkOptions}
+          withLocation={withLocation}
+          canReply={canReplyInThread}
+          rootMissing={isThreadRootMissing(provider, th)}
+          drafts={replyDrafts}
+          editDrafts={editDrafts}
+          onReply={(text) => replyRef.current(th.rootId, text)}
+          onSaveEdit={(handle, text) => changeRef.current.save(handle, text)}
+          onDelete={(handle, firstWithReplies) => changeRef.current.remove(handle, firstWithReplies)}
+          busy={busy}
+          mentions={mentions}
+          getReferences={getReferences}
+        />
+      ) : null,
+    [pr, web, linkOptions, canReplyInThread, provider, busy, mentions, getReferences]
+  )
+  const renderFileThread = useCallback((th: PrReviewThread) => threadCard(th, false), [threadCard])
 
   // Hand the preview modal the remote this PR's repository is actually behind —
   // matching on URL, since a repo may have several remotes configured.
@@ -261,7 +425,6 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     })
   }
 
-  const web = remoteWebUrl(remoteUrl)
   const status = pr ? prStatus(pr) : null
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
   // A merge-check veto blocks the merge without being a conflict (Bitbucket Data Center).
@@ -272,69 +435,82 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
+  const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits', reloads)
+  // A truncated list is not the whole count: the detail's own number, when it says more.
+  const commitCount = commits.list?.truncated
+    ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
+    : (commits.list?.commits.length ?? pr?.commits)
 
-  return (
+  const content = (
     <div className="prp-frame">
       <div className="prp-page">
         <div className="prp-main">
-          <PrNavBar page={page} />
-          <header className="prp-head">
-            {status && (
-              <span className={`prp-state prp-${status}`}>
-                <StatusIcon status={status} /> {t(STATUS_KEY[status])}
-              </span>
-            )}
-            <h2>
-              {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
-            </h2>
-            <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
-              <RefreshCw size={14} />
-            </button>
-            {aiEnabled && pr && (
-              <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
-                <Sparkles size={14} />
+          {/* One block, so the stacked layout can pin it whole (see .prp-top). */}
+          <div className="prp-top">
+            <PrNavBar page={page} />
+            <header className="prp-head">
+              {status && (
+                <span className={`prp-state prp-${status}`}>
+                  <StatusIcon status={status} /> {t(STATUS_KEY[status])}
+                </span>
+              )}
+              <h2>
+                {pr?.title ?? page.title} <span className="prp-num">#{number}</span>
+              </h2>
+              {/* Each action its own hue (Settings → Themes → Icon colours, lib/iconTone.ts). */}
+              <button className="icon-btn" data-tone="refresh" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
+                <RefreshCw size={14} />
               </button>
-            )}
-            <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
-              <GitPullRequestArrow size={14} />
-            </button>
-            {pr && (
-              <>
-                <BranchGoButton
-                  title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
-                  usable={!pr.sourceRepo && canGo}
-                  onGo={() => void goToBranch(pr.source)}
-                  icon={<GitBranch size={14} />}
-                />
-                <BranchGoButton
-                  title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
-                  usable={canGo}
-                  onGo={() => void goToBranch(pr.target)}
-                  icon={<Target size={14} />}
-                />
-              </>
-            )}
-            {pr && (
-              <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
-                <ExternalLink size={14} />
+              {aiEnabled && pr && (
+                <button className="icon-btn" data-tone="ai" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
+                  <Sparkles size={14} />
+                </button>
+              )}
+              <button className="icon-btn" data-tone="preview" title={t('prPreview.open')} onClick={previewLocally}>
+                <GitPullRequestArrow size={14} />
               </button>
+              {pr && (
+                <>
+                  <BranchGoButton
+                    title={branchGoTitle(pr.source, !!pr.sourceRepo, 'prPage.goToSource')}
+                    usable={!pr.sourceRepo && canGo}
+                    onGo={() => void goToBranch(pr.source)}
+                    icon={<GitBranch size={14} />}
+                    tone="source"
+                  />
+                  <BranchGoButton
+                    title={branchGoTitle(pr.target, false, 'prPage.goToTarget')}
+                    usable={canGo}
+                    onGo={() => void goToBranch(pr.target)}
+                    icon={<Target size={14} />}
+                    tone="target"
+                  />
+                </>
+              )}
+              {pr && (
+                // No tone: leaving the app is not one of the page's own actions, so it stays grey.
+                <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
+                  <ExternalLink size={14} />
+                </button>
+              )}
+            </header>
+            {pr && (
+              <div className="prp-sub">
+                {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
+                  author: pr.author,
+                  source: pr.source,
+                  target: pr.target
+                })}
+              </div>
             )}
-          </header>
-          {pr && (
-            <div className="prp-sub">
-              {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
-                author: pr.author,
-                source: pr.source,
-                target: pr.target
-              })}
-            </div>
-          )}
 
-          <nav className="prp-tabs" role="tablist">
-            <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
-            <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
-            <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
-          </nav>
+            <nav className="prp-tabs" role="tablist">
+              <SectionTab id="conversation" active={section} onPick={setSection} icon={<MessageSquare size={13} />} label={t('prPage.tabConversation')} count={conversationCount} />
+              <SectionTab id="commits" active={section} onPick={setSection} icon={<GitCommitHorizontal size={13} />} label={t('prPage.tabCommits')} count={commitCount} />
+              <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
+              <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
+            </nav>
+          </div>
 
           <div className="prp-body">
             {loading ? (
@@ -352,18 +528,35 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     <span>{fmtDate(pr.createdAt)}</span>
                   </div>
                   <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
-                    {pr.body.trim() ? autolink(pr.body, web) : t('prPage.noDescription')}
+                    {pr.body.trim() ? autolink(pr.body, web, undefined, linkOptions) : t('prPage.noDescription')}
                   </div>
                 </article>
 
                 {pr.comments.map((c, i) => (
-                  <article key={i} className="prp-card">
-                    <div className="prp-card-head">
-                      <Avatar login={c.author} avatars={pr.avatars} />
-                      <strong>{c.author}</strong>
-                      <span>{fmtDate(c.createdAt)}</span>
-                    </div>
-                    <div className="prp-card-body">{autolink(c.body, web)}</div>
+                  <article key={c.handle ? `${c.handle.threadId ?? ''}:${c.handle.id}` : i} className="prp-card">
+                    <EditableComment
+                      handle={c.handle}
+                      body={c.body}
+                      edited={c.edited}
+                      mine={isMyComment(c, pr)}
+                      headClassName="prp-card-head"
+                      bodyClassName="prp-card-body"
+                      head={
+                        <>
+                          <Avatar login={c.author} avatars={pr.avatars} />
+                          <strong>{c.author}</strong>
+                          <span>{fmtDate(c.createdAt)}</span>
+                        </>
+                      }
+                      rendered={autolink(c.body, web, undefined, linkOptions)}
+                      drafts={editDrafts}
+                      busy={busy}
+                      mentions={mentions}
+                      getReferences={getReferences}
+                      hasUnsentText={hasUnsentPrDraft}
+                      onSave={saveCommentEdit}
+                      onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
+                    />
                   </article>
                 ))}
 
@@ -372,47 +565,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
                   </div>
                 )}
-                {pr.reviewThreads.map((th) => (
-                  <article key={th.rootId} className="prp-card prp-thread">
-                    <div className="prd-thread-loc" title={th.path}>
-                      {th.path}
-                      {th.line != null ? `:${th.line}` : ''}
-                    </div>
-                    {th.diffHunk && <pre className="prd-thread-hunk">{th.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
-                    {th.comments.map((c) => (
-                      <div key={c.id} className="prp-thread-comment">
-                        <div className="prp-card-head">
-                          <Avatar login={c.author} avatars={pr.avatars} />
-                          <strong>{c.author}</strong>
-                          <span>{fmtDate(c.createdAt)}</span>
-                        </div>
-                        <div className="prp-card-body">{autolink(c.body, web)}</div>
-                      </div>
-                    ))}
-                    {canReplyInThread && (
-                      <div className="prd-thread-reply">
-                        <input
-                          className="prd-reply-input"
-                          placeholder={t('prDetail.replyPlaceholder')}
-                          value={replies[th.rootId] ?? ''}
-                          onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') replyToThread(th.rootId)
-                          }}
-                        />
-                        <button
-                          className="btn ghost tiny"
-                          onClick={() => replyToThread(th.rootId)}
-                          disabled={busy || !(replies[th.rootId] ?? '').trim()}
-                        >
-                          {t('prDetail.reply')}
-                        </button>
-                      </div>
-                    )}
-                  </article>
-                ))}
+                {pr.reviewThreads.map((th) => threadCard(th, true))}
                 {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
               </>
+            ) : section === 'commits' ? (
+              <PrCommitsSection repoPath={repoPath} remoteUrl={remoteUrl} pr={pr} list={commits.list} error={commits.error} />
             ) : section === 'files' ? (
               files === null ? (
                 <div className="prd-empty">
@@ -424,9 +581,21 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 <FilesSection
                   files={files}
                   viewed={viewed}
+                  changedSinceViewed={changedSinceViewed}
                   onToggleViewed={toggleViewed}
+                  onSetFilesViewed={setFilesViewed}
                   repoPath={repoPath}
                   prUrl={pr.url}
+                  threads={pr.reviewThreads}
+                  renderThread={renderFileThread}
+                  lineDraft={lineDraft}
+                  lineDraftText={lineDraftText}
+                  onOpenLineDraft={openLineDraft}
+                  onCancelLineDraft={cancelLineDraft}
+                  onPostLineDraft={postLineDraft}
+                  busy={busy}
+                  mentions={mentions}
+                  getReferences={getReferences}
                 />
               )
             ) : checks === null ? (
@@ -471,21 +640,30 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           {!loading && !error && pr && section === 'conversation' && (
             <footer className="prp-footer">
               <section className="prp-composer">
-                <textarea
-                  className="prd-input"
+                <MarkdownEditor
                   placeholder={t('prDetail.commentPlaceholder')}
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  onChange={setComment}
+                  mentions={mentions}
+                  getReferences={getReferences}
+                  // Leaving for the guide unmounts the page: every box on it counts.
+                  hasUnsentText={hasUnsentPrDraft}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault()
+                      if (!busy) submitComment()
+                    }
+                  }}
                 />
                 <div className="prp-composer-actions">
-                  <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-                    <MessageSquare size={13} /> {t('prDetail.comment')}
+                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
+                    <X size={13} /> {t('prDetail.requestChanges')}
                   </button>
                   <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
                     <Check size={13} /> {t('prDetail.approve')}
                   </button>
-                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-                    <X size={13} /> {t('prDetail.requestChanges')}
+                  <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
+                    <MessageSquare size={13} /> {t('prDetail.comment')}
                   </button>
                 </div>
               </section>
@@ -707,6 +885,229 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
       </div>
     </div>
   )
+  return (
+    <ReferenceScope repoPath={repoPath} remoteUrl={remoteUrl} host={refHost}>
+      {content}
+    </ReferenceScope>
+  )
+}
+
+/**
+ * One inline review thread: where it is (in the conversation; under its line
+ * in the Files tab that is plain to see), its comments, and the reply box —
+ * absent where the host has no API to reply inside a thread. The reply being
+ * typed is this box's own state; `drafts` only remembers it for the page.
+ */
+function ReviewThreadCard({
+  thread,
+  pr,
+  web,
+  linkOptions,
+  withLocation,
+  canReply,
+  rootMissing,
+  drafts,
+  editDrafts,
+  onReply,
+  onSaveEdit,
+  onDelete,
+  busy,
+  mentions,
+  getReferences
+}: {
+  thread: PrReviewThread
+  pr: PrDetail
+  web: string | undefined
+  linkOptions: AutolinkOptions
+  withLocation: boolean
+  canReply: boolean
+  /** GitHub: the thread's first comment was deleted, so the app cannot reply here. */
+  rootMissing: boolean
+  drafts: React.RefObject<Record<string, string>>
+  editDrafts: React.RefObject<Record<string, CommentEditDraft>>
+  onReply: (text: string) => Promise<boolean>
+  onSaveEdit: (handle: PrCommentHandle, text: string) => Promise<boolean>
+  /** `firstWithReplies`: the thread's first comment, with others under it — the confirm says what each host does then. */
+  onDelete: (handle: PrCommentHandle, firstWithReplies: boolean) => void
+  busy: boolean
+  mentions: string[]
+  getReferences: () => MarkdownReference[]
+}): React.JSX.Element {
+  const t = useT()
+  const key = String(thread.rootId)
+  const [reply, setReply] = useState(() => drafts.current[key] ?? '')
+  const changeReply = (v: string): void => {
+    setReply(v)
+    drafts.current[key] = v
+  }
+  const send = (): void => {
+    if (!reply.trim()) return
+    void onReply(reply).then((ok) => ok && setReply(''))
+  }
+  return (
+    <article className="prp-card prp-thread">
+      {withLocation && (
+        <div className="prd-thread-loc" title={thread.path}>
+          {thread.path}
+          {thread.line != null ? `:${thread.line}` : ''}
+        </div>
+      )}
+      {withLocation && thread.diffHunk && <pre className="prd-thread-hunk">{thread.diffHunk.split('\n').slice(-6).join('\n')}</pre>}
+      {thread.comments.map((c, i) => (
+        <div key={c.id} className="prp-thread-comment">
+          <EditableComment
+            handle={c.handle}
+            body={c.body}
+            edited={c.edited}
+            mine={isMyComment(c, pr)}
+            headClassName="prp-card-head"
+            bodyClassName="prp-card-body"
+            head={
+              <>
+                <Avatar login={c.author} avatars={pr.avatars} />
+                <strong>{c.author}</strong>
+                <span>{fmtDate(c.createdAt)}</span>
+              </>
+            }
+            rendered={autolink(c.body, web, undefined, linkOptions)}
+            drafts={editDrafts}
+            busy={busy}
+            mentions={mentions}
+            getReferences={getReferences}
+            hasUnsentText={hasUnsentPrDraft}
+            onSave={onSaveEdit}
+            onDelete={(handle) => onDelete(handle, i === 0 && thread.comments.length > 1)}
+          />
+        </div>
+      ))}
+      {canReply && rootMissing && (
+        <div className="prd-thread-reply prd-thread-orphan">
+          <span>{t('prComment.rootDeletedHint')}</span>
+          <button type="button" className="btn ghost tiny" onClick={() => void shellApi.openExternal(pr.url)}>
+            <ExternalLink size={12} /> {t('prComment.replyOnGithub')}
+          </button>
+        </div>
+      )}
+      {canReply && !rootMissing && (
+        <div className="prd-thread-reply">
+          {/* A textarea now, so Enter is a new line (or the next list item) and
+              ⌘/Ctrl+Enter sends — the same keys as every other comment box. */}
+          <MarkdownEditor
+            compact
+            inputClassName="prd-reply-input"
+            placeholder={t('prDetail.replyPlaceholder')}
+            value={reply}
+            onChange={changeReply}
+            mentions={mentions}
+            getReferences={getReferences}
+            // Leaving for the guide unmounts the page: every box on it counts.
+            hasUnsentText={hasUnsentPrDraft}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                if (!busy) send()
+              }
+            }}
+          />
+          <button className="btn ghost tiny" onClick={send} disabled={busy || !reply.trim()}>
+            {t('prDetail.reply')}
+          </button>
+        </div>
+      )}
+    </article>
+  )
+}
+
+/**
+ * The box under a diff line for a new review comment. It takes the focus when
+ * it opens; Escape cancels (asking first when something was typed) and
+ * ⌘/Ctrl+Enter posts. The text is this box's own state — a keystroke
+ * re-renders the box, not the diff around it — and `draft` remembers it for
+ * the page (the unsent-draft check, and coming back from another file).
+ */
+function LineCommentComposer({
+  anchor,
+  draft,
+  busy,
+  onCancel,
+  onPost,
+  mentions,
+  getReferences
+}: {
+  anchor: PrLineAnchor
+  draft: React.RefObject<string>
+  busy: boolean
+  onCancel: () => void
+  onPost: (text: string) => void
+  mentions: string[]
+  getReferences: () => MarkdownReference[]
+}): React.JSX.Element {
+  const t = useT()
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const [text, setText] = useState(() => draft.current)
+  useEffect(() => ref.current?.focus(), [])
+  const change = (v: string): void => {
+    setText(v)
+    draft.current = v
+  }
+  const escape = (): void => {
+    if (!text.trim()) return onCancel()
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prPage.lineCommentDiscardTitle'),
+      message: t('prPage.lineCommentDiscardMessage'),
+      danger: true,
+      confirmLabel: t('prPage.lineCommentDiscard'),
+      onConfirm: onCancel
+    })
+  }
+  const line = String(getAnchorLine(anchor))
+  const where = interp(t(anchor.kind === 'del' ? 'prPage.lineCommentOld' : 'prPage.lineCommentNew'), { line })
+  const label = interp(t('prPage.lineCommentLabel'), { path: anchor.path, line })
+  return (
+    <div
+      className="prp-line-composer"
+      role="group"
+      aria-label={label}
+      // A click inside must not reach the diff row, which would reopen the box.
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="prp-line-composer-loc">
+        <code>{anchor.path}</code> · {where}
+      </div>
+      <MarkdownEditor
+        inputRef={ref}
+        placeholder={t('prPage.lineCommentPlaceholder')}
+        ariaLabel={label}
+        value={text}
+        onChange={change}
+        mentions={mentions}
+        getReferences={getReferences}
+        // Leaving for the guide unmounts the page: every box on it counts.
+        hasUnsentText={hasUnsentPrDraft}
+        // Escape reaches this only when no @/# list is open: the list closes first.
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            escape()
+          } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            if (text.trim() && !busy) onPost(text)
+          }
+        }}
+      />
+      <div className="prp-line-composer-actions">
+        <span className="prp-line-composer-hint">{t('prPage.lineCommentHint')}</span>
+        <button type="button" className="btn ghost tiny" onClick={onCancel}>
+          {t('common.cancel')}
+        </button>
+        <button type="button" className="btn primary tiny" onClick={() => onPost(text)} disabled={busy || !text.trim()}>
+          {busy ? <Loader2 size={12} className="spin" /> : <MessageSquare size={12} />} {t('prPage.lineCommentPost')}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function SectionTab({
@@ -806,17 +1207,20 @@ function BranchGoButton({
   title,
   usable,
   onGo,
-  icon
+  icon,
+  tone
 }: {
   title: string
   usable: boolean
   onGo: () => void
   icon: React.ReactNode
+  tone: IconTone
 }): React.JSX.Element {
   return (
     <button
       type="button"
       className="icon-btn prp-branch-head-go"
+      data-tone={tone}
       aria-disabled={!usable}
       title={title}
       aria-label={title}
@@ -900,63 +1304,143 @@ function ChangeSummary({ pr, files }: { pr: PrDetail; files: PrFile[] | null }):
 function FilesSection({
   files,
   viewed,
+  changedSinceViewed,
   onToggleViewed,
+  onSetFilesViewed,
   repoPath,
-  prUrl
+  prUrl,
+  threads,
+  renderThread,
+  lineDraft,
+  lineDraftText,
+  onOpenLineDraft,
+  onCancelLineDraft,
+  onPostLineDraft,
+  busy,
+  mentions,
+  getReferences
 }: {
   files: PrFile[]
   viewed: Set<string>
+  /** Ticked once, changed by a push since. */
+  changedSinceViewed: Set<string>
   onToggleViewed: (f: string) => void
+  onSetFilesViewed: (paths: string[], viewed: boolean) => void
   repoPath: string
   prUrl: string
+  threads: PrReviewThread[]
+  renderThread: (th: PrReviewThread) => React.ReactNode
+  lineDraft: { anchor: PrLineAnchor } | null
+  lineDraftText: React.RefObject<string>
+  onOpenLineDraft: (anchor: PrLineAnchor) => void
+  onCancelLineDraft: () => void
+  onPostLineDraft: (text: string) => Promise<boolean>
+  busy: boolean
+  mentions: string[]
+  getReferences: () => MarkdownReference[]
 }): React.JSX.Element {
   const t = useT()
+  // The file list's speech-bubble counts; only recomputed when the threads change.
+  const threadCounts = useMemo(() => getThreadCountsByPath(threads), [threads])
   const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
   const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
   const file = files.find((f) => f.filename === selected) ?? files[0]
+  const diffRef = useRef<HTMLDivElement>(null)
+
+  // The same parse the viewer draws, so an index here is a line there.
+  const lines = useMemo(() => (file?.patch ? parseDiff(file.patch) : []), [file?.patch])
+  const threadsByLine = useMemo(
+    () => (file ? getThreadsByLine(threads, file, lines) : new Map<number, PrReviewThread[]>()),
+    [threads, file, lines]
+  )
+  const draftHere = !!file && !!lineDraft && lineDraft.anchor.path === file.filename
+  const draftIdx = useMemo(
+    () =>
+      file && lineDraft && lineDraft.anchor.path === file.filename
+        ? lines.findIndex((l) => {
+            const a = getLineAnchor(l, file)
+            return !!a && isSameAnchor(a, lineDraft.anchor)
+          })
+        : -1,
+    [file, lineDraft, lines]
+  )
+
+  // The page's handlers change every render; the blocks under the lines must
+  // not, or the diff would be rebuilt for nothing. The latest ones ride a ref.
+  const handlers = useRef({ onCancelLineDraft, onPostLineDraft, onOpenLineDraft })
+  handlers.current = { onCancelLineDraft, onPostLineDraft, onOpenLineDraft }
+  // Closing the box puts the focus back on its line's "+" (or the diff), so a
+  // keyboard user is where they were — not at the top of the page.
+  const refocusLine = useCallback((idx: number): void => {
+    requestAnimationFrame(() => {
+      const root = diffRef.current
+      const target =
+        root?.querySelector<HTMLElement>(`.diff-comment-btn[data-line-idx="${idx}"]`) ??
+        root?.querySelector<HTMLElement>('.diff-viewer')
+      target?.focus()
+    })
+  }, [])
+  const composer = useMemo(
+    () =>
+      lineDraft ? (
+        <LineCommentComposer
+          key={`${lineDraft.anchor.path}:${lineDraft.anchor.kind}:${lineDraft.anchor.oldLine}:${lineDraft.anchor.newLine}`}
+          anchor={lineDraft.anchor}
+          draft={lineDraftText}
+          busy={busy}
+          mentions={mentions}
+          getReferences={getReferences}
+          onCancel={() => {
+            handlers.current.onCancelLineDraft()
+            if (draftIdx >= 0) refocusLine(draftIdx)
+          }}
+          onPost={(text) =>
+            void handlers.current.onPostLineDraft(text).then((ok) => {
+              if (ok && draftIdx >= 0) refocusLine(draftIdx)
+            })
+          }
+        />
+      ) : null,
+    [lineDraft, lineDraftText, busy, draftIdx, refocusLine, mentions, getReferences]
+  )
+  const lineExtras = useMemo(() => {
+    const map = new Map<number, React.ReactNode>()
+    for (const [idx, ths] of threadsByLine) {
+      map.set(idx, <div className="prp-line-threads">{ths.map((th) => renderThread(th))}</div>)
+    }
+    if (draftIdx >= 0) {
+      map.set(
+        draftIdx,
+        <>
+          {map.get(draftIdx)}
+          {composer}
+        </>
+      )
+    }
+    return map
+  }, [threadsByLine, renderThread, draftIdx, composer])
+  const commentOnLine = useCallback(
+    (idx: number): void => {
+      const anchor = file && lines[idx] ? getLineAnchor(lines[idx], file) : null
+      if (anchor) handlers.current.onOpenLineDraft(anchor)
+    },
+    [file, lines]
+  )
 
   return (
     <div className="prp-files-split">
-      <div className="prp-file-list">
-        <div className="prd-section-title">
-          {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
-        </div>
-        {files.map((f) => (
-          <div
-            key={f.filename}
-            className={`prd-file prp-file-row ${f.filename === file?.filename ? 'selected' : ''} ${viewed.has(f.filename) ? 'viewed' : ''}`}
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelected(f.filename)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                setSelected(f.filename)
-              }
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={viewed.has(f.filename)}
-              title={t('prPage.markViewed')}
-              aria-label={t('prPage.markViewed')}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleViewed(f.filename)}
-            />
-            <span className={`prd-file-status st-${f.status}`} title={f.status}>
-              {f.status === 'added' ? 'A' : f.status === 'removed' ? 'D' : f.status === 'renamed' ? 'R' : 'M'}
-            </span>
-            <span className="prd-file-name" title={f.filename}>
-              {f.filename}
-            </span>
-            <span className="prd-file-stat">
-              <span className="ins-add">+{f.additions}</span> <span className="ins-del">−{f.deletions}</span>
-            </span>
-          </div>
-        ))}
-      </div>
+      <PrFileList
+        files={files}
+        viewed={viewed}
+        changedSinceViewed={changedSinceViewed}
+        threadCounts={threadCounts}
+        selected={file?.filename ?? ''}
+        prKey={prUrl}
+        onSelectFile={setSelected}
+        onSetFilesViewed={onSetFilesViewed}
+      />
 
-      <div className="prp-file-diff">
+      <div className="prp-file-diff" ref={diffRef}>
         {file && (
           <>
             <div className="prp-file-diff-head">
@@ -969,6 +1453,8 @@ function FilesSection({
                 {t('prPage.markViewed')}
               </label>
             </div>
+            {/* A draft whose line is gone from a refreshed diff stays, above it. */}
+            {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
             {file.patch ? (
               <DiffViewer
                 // A fresh viewer per file: its scroll and selection belong to one diff.
@@ -980,6 +1466,8 @@ function FilesSection({
                 // show KEY=•••• while the setting is on.
                 maskValues={maskSecrets && isSecretFile(file.filename)}
                 repoPath={repoPath}
+                onCommentLine={commentOnLine}
+                lineExtras={lineExtras}
               />
             ) : (
               <div className="prp-no-patch">

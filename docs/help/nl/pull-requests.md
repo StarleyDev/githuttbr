@@ -2,9 +2,9 @@
 title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
-summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI — en ‹ › om vanuit een PR door de gefilterde lijst te lopen.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, en reacties op een regel van zijn diff.
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Pull-requestspagina
@@ -138,7 +138,7 @@ voor je:
 
 De kop heeft dezelfde twee stappen als knoppen: **Naar de bronbranch** en **Naar
 de doelbranch**. Ze werken ook op de branch waar je al op staat — dan brengen ze
-je gewoon naar de repository.
+je gewoon naar de repository. Met [pictogramkleuren](themes.md#pictogramkleuren) aan heeft elke knop in de kop zijn eigen kleur: vernieuwen blauw, AI-review violet, voorbeeld turquoise, bronbranch groen, doelbranch oranje (in de browser openen blijft grijs).
 
 Er wordt niets opgezocht tot je klikt: een pull request openen leest of fetcht
 geen enkele branch.
@@ -162,6 +162,318 @@ Wat het niet doet:
 - **Dit venster.** De checkout gebeurt in de werkmap van deze repository. Als de
   branch al is uitgecheckt in een andere [worktree](worktrees.md), opent in
   plaats daarvan het tabblad van die worktree.
+
+## Commits
+
+De zijbalk zei hoeveel commits een pull request heeft, nooit welke. Eén commit
+tegelijk reviewen — zoals de meeste pull requests bedoeld zijn om gelezen te worden
+— stuurde je naar de browser. Het tabblad **Commits**, tussen Gesprek en
+Bestanden, toont ze:
+
+- **Oudste eerst**, in de volgorde waarin ze worden toegepast, gegroepeerd onder de
+  dag waarop ze zijn geschreven. Een commit die buiten de datumvolgorde is
+  ingerebased, begint een eigen dag in plaats van te worden verplaatst.
+- Elke rij heeft de afbeelding van de auteur (waar de host er een geeft), het
+  onderwerp, de auteur, hoe lang geleden, en de korte SHA. Een **merge**-badge
+  markeert een commit met twee ouders, waar de host dat zegt.
+- **▸** naast een commit met meer dan een onderwerp toont de rest van zijn
+  bericht.
+- **Kopiëren** zet de volledige SHA op het klembord; **In de browser openen** opent
+  de commit op de host — binnen de pull request waar de host zo'n pagina heeft
+  (GitHub, GitLab, Bitbucket Data Center), anders op de commitpagina van de
+  repository.
+
+![Het tabblad Commits: de commits van een pull request gegroepeerd per dag, één met het volledige bericht open](../../screenshots/pr-commits.webp)
+
+**Klik op een rij** — of ga er met Tab heen en druk op Enter — om de commit in de
+app te openen, zoals een klik in de graaf zou doen: de weergave van de repository,
+die commit geselecteerd, zijn details open. Dat werkt als deze clone de commit
+**heeft**. Heeft hij hem niet, dan zegt de rij dat in plaats van stil te falen, en
+biedt aan:
+
+- **PR-branch ophalen om hem te zien** — dezelfde fetch van één branch als bij
+  [naar de branch gaan](#naar-de-branch-van-een-pull-request), zonder de checkout. Kwam de commit mee, dan
+  opent hij; kwam hij niet mee (een force push heeft hem sindsdien herschreven),
+  dan zegt de melding dat.
+- **In de browser openen**, voor als fetchen geen optie is.
+
+De lijst wordt gelezen wanneer je het tabblad voor het eerst opent, niet met de
+pagina, en opnieuw bij elke **Vernieuwen**. Tot hij binnen is, is het aantal op het
+tabblad het aantal dat de host voor de pull request gaf. Gemergede en gesloten pull
+requests tonen hun commits op dezelfde manier.
+
+Wat het niet doet:
+
+- **Hoogstens 250 commits.** GitHub zelf toont er voor een pull request niet meer
+  dan 250; de app stopt op elke host bij hetzelfde aantal, en zegt *de host heeft er
+  meer* als dat zo is, met een link naar de pull request op de host. Welke 250 het
+  zijn, hangt af van de volgorde waarin de host ze toont — de app houdt de eerst
+  getoonde, en de regel boven de lijst zegt welke:
+
+  | Host | Een langere pull request toont |
+  |---|---|
+  | GitHub | De **eerste** 250 (de eigen grens van GitHub) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | De **250 nieuwste** |
+  | Forgejo | Het eind dat de server eerst toont; zijn volgorde is niet gedocumenteerd |
+- **De branch van een fork** is van hieruit niet op te halen — hij staat in een
+  andere repository —, dus een commit die alleen in de fork staat, biedt alleen de
+  browser aan. **Pull request lokaal bekijken…** is de manier om hem binnen te
+  halen.
+- **Een verwijderde branch.** Een gemergede pull request heeft zijn branch vaak
+  meegenomen: de fetch zegt dat. bitbucket.org toont helemaal geen commits meer
+  zodra de bronbranch weg is.
+- **Squash-merges.** De commits van een met squash gemergede pull request hebben de
+  doelbranch nooit bereikt, dus na het verwijderen van zijn branch staan ze alleen
+  nog op de host.
+- **Auteurs** worden genoemd zoals hun commits ze noemen. GitLab, Azure DevOps en
+  Bitbucket Data Center geven geen afbeelding zonder een aanmelding die een
+  afbeelding niet kan meesturen, dus die rijen tonen de initiaal.
+- **Lange berichten op Azure DevOps** kunnen ingekort zijn: de lijst van Azure kapt
+  het bericht van een commit af, en de app toont wat het stuurt.
+- Pull requests op **bitbucket.org** openen in de browser — de app heeft er nog
+  geen pagina voor —, dus dit tabblad wordt daar niet bereikt, hoewel de app de
+  lijst wel kan lezen.
+
+## De bestanden lezen
+
+Een pull request met tweehonderd bestanden is lastig te lezen als tweehonderd
+volledige paden. De lijst in het tabblad **Bestanden** heeft dezelfde schakelaar
+**Pad / Boom** als het commitpaneel, en de keuze geldt in de hele app. In **Boom**
+staan bestanden onder hun mappen (een keten als `src/main/ipc` is één rij), en elke
+map toont zijn opgetelde **+/−** en hoeveel van zijn bestanden bekeken zijn (*3/5*).
+Het selectievakje van een map markeert elk bestand erin als bekeken, of wist ze
+allemaal; vinkjes blijven alleen op deze computer en gaan nooit naar de host. Een
+vinkje onthoudt de versie van de diff van het bestand: als een push een bekeken
+bestand wijzigt, geldt het weer als niet bekeken, met een gele stip (*Gewijzigd sinds
+je het bekeek*). Een bestand zonder diff (binair, te groot) wordt alleen op status en
+regelaantallen vergeleken. Een bestand met reviewgesprekken toont ernaast een aantal in een tekstballon (mappen tellen het hunne op), zodat de bestanden met reacties opvallen in een lange lijst; verouderde gesprekken tellen mee. Klik op een map, of druk erop op ←/→, om hem in te klappen;
+↑/↓ (of j/k) lopen door de bestanden op het scherm en openen elke diff. Ingeklapte
+mappen worden per pull request onthouden tot de app sluit, en een bestand dat erin
+wordt geopend, klapt de weg ernaartoe uit. De boom is op naam gesorteerd, niet in de
+volgorde waarin de host de bestanden toont.
+
+![Het tabblad Bestanden in boomweergave: mappen met hun opgetelde wijzigingen en bekeken-aantallen, één ingeklapt](../../screenshots/pr-files-tree.webp)
+
+## Reageren op een regel
+
+Antwoorden op een reviewthread kon hier al; er een beginnen niet, dus een echte
+review stuurde je nog steeds naar de browser. In het tabblad **Bestanden** van een
+pull request neemt elke regel van de diff een eigen reactie aan:
+
+- **Hover over een regel** en druk op de **+** die boven zijn nummer verschijnt, of
+  **klik op de regel** zelf (een klik die een tekstselectie afsluit, of een
+  dubbelklik die een woord selecteert, telt niet — dat is lezen). Het
+  rechtermuisknopmenu — of de contextmenutoets van het toetsenbord — heeft ook
+  *Reageren op regel N*.
+- Er opent een vak **onder die regel**. Schrijf, dan **Reageren** — of
+  ⌘/Ctrl+Enter. **Annuleren** sluit het; **Esc** ook, met eerst een vraag als er al
+  iets getypt is. Hoe dan ook gaat de focus terug naar die regel.
+- Als het lukt, verschijnt de nieuwe thread **onder zijn regel**, en in de
+  reviewthreads van het tabblad Gesprek, waar iedereen hem ziet.
+
+![Een reactie die onder een gewijzigde regel wordt geschreven, met een eerdere thread onder zijn eigen regel](../../screenshots/pr-line-comment.webp)
+
+Aan welke kant de reactie terechtkomt, volgt de regel:
+
+| Regel | Verankerd aan |
+|---|---|
+| **Toegevoegd** (groen) | De nieuwe versie van het bestand, op het nieuwe nummer |
+| **Verwijderd** (rood) | De oude versie, op het oude nummer |
+| **Ongewijzigd** | De nieuwe versie (GitLab krijgt beide nummers, zoals het vereist) |
+
+Bestaande threads worden ook onder hun regels getoond, met hun antwoordvak waar de
+host de app laat antwoorden binnen een thread (Forgejo niet). Een thread wordt alleen
+bij een regel getoond als de host zegt dat hij nog bij de getoonde diff hoort; al het
+andere blijft in het tabblad Gesprek, in plaats van bij een gegokte regel:
+
+| Host | Een thread van vóór de laatste push |
+|---|---|
+| GitHub | Verouderd als zijn regel veranderde: alleen Gesprek |
+| GitLab | Geschreven op een oudere head: alleen Gesprek |
+| Azure DevOps | Door Azure gevolgd naar waar zijn regel nu staat |
+| Bitbucket Data Center | Verweesd als zijn regel weg is: alleen Gesprek |
+| Forgejo | Forgejo zegt niet dat een reactie verouderd is, dus wordt hij getoond op het opgeslagen regelnummer — na een push kan op die regel nu andere code staan |
+
+Een reactie op een regel buiten de getoonde hunks staat op elke host alleen in het
+tabblad Gesprek.
+
+Een getypte, niet verstuurde reactie telt als onverzonden tekst: **‹ ›** en
+Alt+pijlen vragen het eerst voordat ze hem verlaten, net als bij het hoofdvak voor
+reacties. Een ander bestand bekijken houdt hem vast; om er een op een andere regel te
+beginnen, plaats of annuleer je eerst de eerste.
+
+Wat het niet doet:
+
+- **Eén regel, meteen geplaatst.** Er is geen regelbereik, geen openstaande review om
+  reacties in te verzamelen en later in te dienen, en geen voorgestelde wijziging.
+  Elke reactie wordt geplaatst op het moment dat je hem verstuurt, als eigen thread
+  (op Forgejo als review met alleen die ene reactie, omdat Forgejo geen aanroep voor
+  een losse reactie heeft).
+- **De diff waar je naar kijkt.** Het tabblad Bestanden onthoudt op welke commit (op
+  Azure DevOps: welke iteratie) zijn diff is gelezen, en de reactie wordt daartegen
+  verstuurd. Is de pull request sindsdien verder gegaan — een push, een nieuwe
+  merge-basis —, dan wordt de reactie niet geplaatst op de regel die nu dat nummer
+  heeft: hij wordt geweigerd met *de pull request is veranderd sinds deze diff werd
+  geladen*, en **Vernieuwen** toont de nieuwe diff. Op GitHub wordt de reactie in
+  plaats daarvan geplaatst op de commit die je las, en GitHub markeert hem als
+  verouderd als die regel veranderd is. Een regel die de host nog steeds niet
+  aanneemt, wordt geweigerd als buiten de diff.
+- **Geweigerd.** Zonder recht om te reageren (een token met alleen leesrechten, een
+  account dat in de repository niet mag reageren) weigert de host, en de melding
+  zegt dat dat de reden is.
+- Pull requests op **bitbucket.org** openen in de browser — de app heeft er nog geen
+  pagina voor —, dus daar plaats je een regelreactie nog steeds op de website.
+- **Een bestand zonder diff** (binair, of te groot voor de host om mee te sturen)
+  heeft geen regels om op te reageren.
+
+## Reacties schrijven
+
+Elk vak op de pagina — de reactie onderaan, een antwoord in een thread, een reactie
+op een regel — is dezelfde Markdown-editor: tabbladen **Schrijven / Voorbeeld**,
+een opmaakbalk met de sneltoetsen van GitHub, lijsten die doorgaan bij Enter, en
+aanvulling met **@** / **#** uit de mensen en pull requests die al op het scherm
+staan. Een antwoordvak toont zijn gereedschap zodra je erin klikt, en verstuurt met
+⌘/Ctrl+Enter, omdat Enter nu een nieuwe regel begint.
+[Reacties schrijven](writing-comments.md) heeft de details en de beperkingen.
+
+## Je reacties bewerken en verwijderen
+
+Een typfout in een al verstuurde reactie, of een opmerking die niet meer klopt,
+betekende vroeger een uitstapje naar de browser. Je eigen reacties hebben nu
+**Bewerken** (het potlood) en **Verwijderen** (de prullenbak) aan het eind van hun
+kop: reacties in het gesprek, reacties in reviewthreads en antwoorden, in de
+tabbladen Gesprek en Bestanden. De issuepagina heeft ze ook, voor haar reacties op
+GitHub en Forgejo.
+
+![Je eigen reactie, gemarkeerd als bewerkt, met Bewerken en Verwijderen aan het eind van de kop](../../screenshots/comment-editor.webp)
+
+Wat "van jou" is, beslist de pagina zelf: die vraagt de host bij elk laden als wie de
+aanroepen van deze repository zich aanmelden (het gekoppelde profiel, niet het profiel
+dat toevallig actief is). De meeste hosts noemen een auteur bij login, vergeleken
+zonder op hoofdletters te letten. Azure DevOps noemt auteurs bij weergavenaam, die
+twee mensen kunnen delen, dus daar moet het auteurs-id van de reactie overeenkomen
+met het id van het account; ontbreekt een van beide, dan toont geen enkele reactie de
+acties. Kan de app niet zeggen wie je bent (een token zonder user-scope, of de host
+antwoordde niet), dan toont ook geen reactie ze; **Vernieuwen** vraagt het opnieuw.
+De host beslist nog steeds: een account dat hij een reactie niet laat wijzigen,
+wordt geweigerd, en de melding zegt dat.
+
+- **Bewerken** opent de reactie ter plekke, in dezelfde Markdown-editor, met de
+  tekst zoals die geschreven is. **Opslaan** (of ⌘/Ctrl+Enter) verstuurt hem;
+  **Annuleren** of **Esc** sluit hem, met eerst een vraag als je iets veranderde.
+  Alleen de lege regels rond de tekst vallen weg: ingesprongen code en een regeleinde
+  van twee spaties aan het eind blijven zoals getypt. De nieuwe tekst verschijnt
+  meteen en de pagina leest de pull request opnieuw. Op de pull-requestspagina telt
+  een niet-opgeslagen bewerking als onverzonden tekst: **‹ ›** vragen het eerst
+  voordat ze haar verlaten. De issuepagina heeft zulke pijlen niet, en daar vraagt
+  niets iets voordat haar tabblad sluit.
+- **Verwijderen** vraagt het altijd eerst, en de vraag zegt wat er gebeurt: de server
+  verwijdert de reactie voor iedereen, en dat kan niet ongedaan worden gemaakt. Er is
+  geen ongedaan-maakitem, omdat niets haar kan terugbrengen.
+
+De **eerste reactie van een thread** met antwoorden verwijderen (een reviewthread,
+of een reactie in het gesprek waarop anderen antwoordden) verschilt per host, en de
+bevestiging zegt welk geval het is. Twee daarvan zijn niet door de host
+gedocumenteerd, en dat staat er ook bij:
+
+| Host | Eerste reactie van een thread met antwoorden |
+|---|---|
+| GitHub | De antwoorden zouden moeten blijven; de documentatie van GitHub zegt het niet. Vanuit de app op die thread antwoorden kan daarna niet meer: zijn antwoorden wijzen naar een reactie die weg is, en de API neemt geen antwoord op een antwoord aan. De thread biedt dan **Antwoorden op GitHub** aan |
+| GitLab | Alleen die notitie verdwijnt; de thread en zijn antwoorden blijven |
+| Azure DevOps | Zou als verwijderd gemarkeerd en verborgen moeten worden, met behoud van de thread en zijn antwoorden; de documentatie van Azure zegt het niet |
+| Bitbucket Data Center | Geweigerd: Data Center verwijdert geen reactie met antwoorden. Verwijder eerst de antwoorden, of bewerk haar in plaats daarvan |
+
+Sommige hosts markeren een reactie als **bewerkt**. Alleen Azure DevOps houdt een
+datum bij voor alleen de tekst; op GitHub, Bitbucket Data Center en Forgejo vergelijkt
+de app wanneer de reactie is gemaakt en voor het laatst bijgewerkt, dus daar is de
+markering een benadering (al het andere dat de reactie aanraakt, kan haar zetten). De
+datum van GitLab verschuift ook wanneer een thread wordt opgelost, dus die wordt niet
+gebruikt.
+
+Wat het niet doet:
+
+- **Reviewreacties op Forgejo** (reacties op een regel) kunnen niet via zijn API
+  worden bewerkt, en alleen sommige versies kunnen er een verwijderen, dus ze tonen
+  geen van beide acties: wijzig ze op de website. Reacties in het gesprek werken
+  zoals elders.
+- **Iemand heeft haar intussen gewijzigd.** Bitbucket Data Center controleert de
+  versie van de reactie: een bewerking of verwijdering van een reactie die is
+  veranderd sinds de pagina laadde, wordt geweigerd, en **Vernieuwen** toont de
+  huidige. De andere hosts nemen de laatste schrijfactie.
+- **Niet gevonden**: als de host de reactie niet vindt, zegt de melding dat ze
+  misschien is verwijderd, of dat dit account haar niet kan zien, en de pagina leest
+  de pull request opnieuw. Een open bewerking van een reactie die weg is, vervalt.
+- Pull requests op **bitbucket.org** openen in de browser, dus er is nog geen pagina
+  om hun reacties te bewerken, hoewel de app de aanroep kan doen.
+- **De beschrijving** van de pull request en de samenvattingen van zijn reviews zijn
+  geen reacties, en worden hier niet bewerkt.
+
+## Waar een `#123` of `AB#123` over gaat
+
+Een commit die *fixes AB#4821* zegt, of een reactie die *zie #312* zegt, geeft je
+een nummer, niet waar het over ging. Dat uitzoeken betekende het openen. Nu opent
+**wijzen naar een verwijzing** — of er met Tab heen gaan — een kleine kaart met wat
+de host erover zegt:
+
+- een pictogram voor de soort, en de verwijzing zoals ze geschreven is;
+- de **titel**;
+- de **status** (open, gesloten, gemerged — op Azure DevOps de eigen status van het
+  work item, zoals *Active* of *Resolved*);
+- op Azure DevOps het **type work item** (Bug, User Story, Task…).
+
+![De kaart bij een verwijzing naar een work item in een reactie: type, titel en status](../../screenshots/reference-card.webp)
+
+De kaarten staan op de pull-requestspagina (beschrijving, reacties, reviewthreads
+en het volledige bericht van een commit in het tabblad **Commits**), op de
+issuepagina en in het onderwerp in het commitdetailpaneel. In het tabblad
+**Commits** op Azure DevOps toont elk work item in het onderwerp van een commit
+(`AB#123`, of `#123`, daar hetzelfde item) ook zijn titel ernaast, in grijs. Op
+Azure DevOps linkt `!123` naar die pull request, zonder kaart.
+
+| Verwijzing | Host | Gelezen uit |
+|---|---|---|
+| `AB#123`, en `#123` in een Azure-repository | Azure DevOps | Work items, tot 200 in één verzoek |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (die ook voor pull requests antwoorden), één verzoek per stuk, één tegelijk |
+| `#123` / `!123` | GitLab | Issues / merge requests, één verzoek per soort |
+| `#123` | Forgejo | Issues (ook pull requests), één verzoek per stuk, twee tegelijk |
+
+Een `#123` telt alleen als eigen woord: `org/repo#123` (een andere repository),
+`&#39;`, een kleur als `#123abc` en de `#issuecomment-…` van een link blijven
+ongemoeid.
+
+Er wordt niets gevraagd tot een kaart opengaat. Dan gaan de verwijzing waar je op
+staat en de nog onbekende die er op de pagina het dichtst bij staan in één aanroep,
+zodat de volgende kaart meestal meteen klaar is. Antwoorden blijven in het geheugen
+zolang de app draait, nooit op schijf, vijf minuten lang; daarna worden ze nog
+getoond en bij de volgende hover opnieuw gelezen. Ze worden per profiel bewaard: de
+aanroep gebeurt als het profiel waaraan de repository is [gekoppeld](profiles.md),
+en een ander profiel ziet misschien andere items.
+
+Wat het kost:
+
+- **GitHub en Forgejo** kunnen niet meerdere issues in één verzoek lezen, dus elke
+  kaart kost er één. Een hover vraagt er hoogstens **10** op — die waar je op staat
+  en de buren — en op GitHub na elkaar, zoals GitHub van apps vraagt. Het eerste
+  antwoord dat *langzamer* zegt (een 429 of een 403) stopt de rest, en die
+  verwijzingen worden vijf minuten niet opnieuw opgevraagd.
+- **Azure DevOps** leest tot 200 work items in één verzoek, en GitLab één verzoek
+  per soort, dus daar gaat de hele pagina in één keer.
+
+Wat het niet doet:
+
+- **Bitbucket** heeft geen kaart: de app leest daar geen issues, en de link opent
+  zoals voorheen de browser.
+- **Niet gevonden, of geen toegang.** Een verwijderd issue, een work item in een
+  project dat dit account niet kan zien, of een Azure-token zonder de scope *Work
+  Items (Read)* zien er hetzelfde uit: de kaart zegt het, en de link werkt nog
+  steeds. Een host die afremt, onbereikbaar is of geen account in dit profiel heeft,
+  krijgt een eigen melding.
+- **`AB#123` buiten Azure DevOps** — in een GitHub-repository die met Azure Boards is
+  verbonden — wordt niet gelinkt en heeft dus geen kaart: de app weet niet bij welke
+  organisatie het hoort.
+- **De gemergede status op oudere GitHub Enterprise Servers** die niet meesturen
+  wanneer een pull request gemerged is: die leest als gesloten.
+- De commitrijen **van de graaf** tonen geen kaarten.
 
 ## Beperkingen
 

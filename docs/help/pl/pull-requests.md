@@ -2,9 +2,9 @@
 title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
-summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI — oraz ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch
-source: 652fe566e0d021496e698b305175c701c5bf2e4e
+summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity oraz komentarze do wiersza jego diffa.
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number
+source: 729c0829d4ded79d157edea6c162fa638d7b41e0
 ---
 
 # Strona pull requestów
@@ -132,7 +132,7 @@ najwolniejsza część. Na stronie pull requesta pole **Gałęzie** robi to za c
 
 Nagłówek ma te same dwa ruchy jako przyciski: **Przejdź do gałęzi źródłowej** i
 **Przejdź do gałęzi docelowej**. Działają też dla gałęzi, na której już jesteś —
-po prostu przenoszą cię do repozytorium.
+po prostu przenoszą cię do repozytorium. Z włączonymi [kolorami ikon](themes.md#kolory-ikon) każdy przycisk w nagłówku ma własny: odśwież niebieski, recenzja AI fioletowy, podgląd turkusowy, gałąź źródłowa zielony, gałąź docelowa pomarańczowy (otwórz w przeglądarce zostaje szary).
 
 Nic nie jest sprawdzane, dopóki nie klikniesz: otwarcie pull requesta nie czyta
 ani nie pobiera żadnej gałęzi.
@@ -155,6 +155,310 @@ Czego to nie robi:
 - **To okno.** Checkout odbywa się w katalogu roboczym tego repozytorium. Gdy
   gałąź jest już wyciągnięta w innym [worktree](worktrees.md), zamiast tego
   otwiera się karta tego worktree.
+
+## Commity
+
+Panel boczny mówił, ile commitów ma pull request, nigdy które. Recenzowanie po
+jednym commicie — tak, jak większość pull requestów powinna być czytana —
+odsyłało cię do przeglądarki. Zakładka **Commity**, między Rozmową a Plikami, je
+wymienia:
+
+- **Najstarsze najpierw**, w kolejności, w jakiej się nakładają, pogrupowane pod
+  dniem, w którym je napisano. Commit wciągnięty rebase’em poza kolejnością dat
+  zaczyna własny dzień, zamiast zostać przesunięty.
+- Każdy wiersz ma obrazek autora (jeśli hosting go podaje), temat, autora, jak
+  dawno temu i krótki SHA. Plakietka **merge** oznacza commit z dwoma rodzicami,
+  jeśli hosting to podaje.
+- **▸** obok commita, który ma coś więcej niż temat, pokazuje resztę jego opisu.
+- **Kopiuj** umieszcza pełny SHA w schowku; **Otwórz w przeglądarce** otwiera
+  commit na hostingu — w pull requeście, jeśli hosting ma taką stronę (GitHub,
+  GitLab, Bitbucket Data Center), a w przeciwnym razie na stronie commita w
+  repozytorium.
+
+![Zakładka Commity: commity pull requesta pogrupowane według dni, jeden z otwartym pełnym opisem](../../screenshots/pr-commits.webp)
+
+**Kliknij wiersz** — albo dojdź do niego Tabem i naciśnij Enter — żeby otworzyć
+commit w aplikacji, jak zrobiłoby to kliknięcie w grafie: widok repozytorium, ten
+commit zaznaczony, jego szczegóły otwarte. To działa, gdy ten klon **ma** commit.
+Gdy go nie ma, wiersz to mówi, zamiast po cichu zawieść, i proponuje:
+
+- **Pobierz gałąź PR, aby go zobaczyć** — ten sam fetch jednej gałęzi co przy
+  [przejściu do gałęzi](#przejście-do-gałęzi-pull-requesta), bez checkoutu. Jeśli commit przyszedł razem z
+  nią, otwiera się; jeśli nie (force push go od tego czasu przepisał), mówi to
+  powiadomienie.
+- **Otwórz w przeglądarce**, gdy pobieranie nie wchodzi w grę.
+
+Lista jest wczytywana przy pierwszym otwarciu zakładki, nie razem ze stroną, i
+ponownie przy każdym **Odśwież**. Dopóki nie dotrze, licznik zakładki to ten, który
+hosting podał dla pull requesta. Scalone i zamknięte pull requesty wymieniają swoje
+commity tak samo.
+
+Czego to nie robi:
+
+- **Najwyżej 250 commitów.** Sam GitHub nie wymienia ich dla pull requesta więcej
+  niż 250; aplikacja zatrzymuje się na tej samej liczbie na każdym hostingu i mówi
+  *host ma ich więcej*, gdy tak jest, z linkiem do pull requesta na hostingu. Które
+  250 to będą, zależy od kolejności, w jakiej hosting je wymienia — aplikacja
+  zostawia pierwsze wymienione, a linijka nad listą mówi które:
+
+  | Hosting | Dłuższy pull request pokazuje |
+  |---|---|
+  | GitHub | **Pierwsze** 250 (własny limit GitHuba) |
+  | GitLab, Azure DevOps, Bitbucket Data Center, bitbucket.org | **250 najnowszych** |
+  | Forgejo | Ten koniec, który serwer wymienia najpierw; jego kolejność nie jest udokumentowana |
+- **Gałęzi forka** nie da się stąd pobrać — jest w innym repozytorium —, więc
+  commit obecny tylko w forku proponuje wyłącznie przeglądarkę. **Podejrzyj pull
+  requesta lokalnie…** to sposób, żeby go ściągnąć.
+- **Usunięta gałąź.** Scalony pull request często zabrał ze sobą swoją gałąź: fetch
+  to mówi. bitbucket.org nie wymienia żadnych commitów, gdy gałęzi źródłowej już nie
+  ma.
+- **Scalenia squash.** Commity pull requesta scalonego przez squash nigdy nie
+  trafiły do gałęzi docelowej, więc po usunięciu jego gałęzi są już tylko na
+  hostingu.
+- **Autorzy** są nazywani tak, jak nazywają ich commity. GitLab, Azure DevOps i
+  Bitbucket Data Center nie dają obrazka bez logowania, którego obrazek nie może
+  wysłać, więc te wiersze pokazują inicjał.
+- **Długie opisy na Azure DevOps** mogą być przycięte: lista Azure obcina opis
+  commita, a aplikacja pokazuje to, co dostaje.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce — aplikacja nie ma
+  jeszcze dla nich strony —, więc do tej zakładki się tam nie dochodzi, choć
+  aplikacja potrafi odczytać listę.
+
+## Czytanie plików
+
+Pull request z dwustoma plikami trudno czytać jako dwieście pełnych ścieżek. Lista w
+zakładce **Pliki** ma ten sam przełącznik **Ścieżki / Drzewo** co panel commita, a
+wybór obowiązuje w całej aplikacji. W widoku **Drzewo** pliki leżą pod swoimi
+folderami (łańcuch taki jak `src/main/ipc` to jeden wiersz), a każdy folder pokazuje
+zsumowane **+/−** i ile jego plików jest przejrzanych (*3/5*). Pole wyboru folderu
+oznacza jako przejrzany każdy plik w środku albo czyści wszystkie; zaznaczenia są
+trzymane tylko na tym komputerze i nigdy nie trafiają na hosting. Zaznaczenie
+pamięta wersję diffa pliku: gdy push zmieni przejrzany plik, znów jest on
+nieprzejrzany, z żółtą kropką (*Zmieniony od czasu przejrzenia*). Plik bez diffa
+(binarny, zbyt duży) jest porównywany tylko po stanie i liczbie wierszy. Plik z rozmowami recenzji pokazuje obok liczbę w dymku (foldery sumują swoje), więc pliki z komentarzami wyróżniają się na długiej liście; nieaktualne rozmowy też się liczą. Kliknij
+folder albo naciśnij na nim ←/→, żeby go zwinąć; ↑/↓ (lub j/k) przechodzą przez pliki
+na ekranie i otwierają każdy diff. Zwinięte foldery są pamiętane dla każdego pull
+requesta do zamknięcia aplikacji, a plik otwarty w jednym z nich rozwija drogę do
+siebie. Drzewo jest posortowane po nazwie, a nie w kolejności, w jakiej hosting
+wymienia pliki.
+
+![Zakładka Pliki w widoku drzewa: foldery z zsumowanymi zmianami i liczbą przejrzanych plików, jeden zwinięty](../../screenshots/pr-files-tree.webp)
+
+## Komentowanie wiersza
+
+Odpowiadać na wątek recenzji dało się tu już wcześniej; zaczynać nowego nie, więc
+prawdziwa recenzja wciąż odsyłała cię do przeglądarki. W zakładce **Pliki** pull
+requesta każdy wiersz diffa przyjmuje własny komentarz:
+
+- **Najedź na wiersz** i naciśnij **+**, który pojawia się nad jego numerem, albo
+  **kliknij sam wiersz** (kliknięcie kończące zaznaczenie tekstu albo podwójne
+  kliknięcie zaznaczające słowo się nie liczy — to czytanie). Menu prawego
+  przycisku — lub klawisz menu kontekstowego — też ma *Skomentuj wiersz N*.
+- **Pod tym wierszem** otwiera się pole. Napisz, potem **Skomentuj** — albo
+  ⌘/Ctrl+Enter. **Anuluj** je zamyka; **Esc** też, pytając najpierw, jeśli coś już
+  wpisano. Tak czy inaczej fokus wraca na ten wiersz.
+- Po powodzeniu nowy wątek pojawia się **pod swoim wierszem** oraz w wątkach
+  recenzji zakładki Rozmowa, gdzie zobaczą go wszyscy inni.
+
+![Komentarz pisany pod zmienionym wierszem, z wcześniejszym wątkiem pod jego własnym wierszem](../../screenshots/pr-line-comment.webp)
+
+Strona, po której ląduje komentarz, wynika z wiersza:
+
+| Wiersz | Zakotwiczony w |
+|---|---|
+| **Dodany** (zielony) | Nowej wersji pliku, pod jej nowym numerem |
+| **Usunięty** (czerwony) | Starej wersji, pod jej starym numerem |
+| **Niezmieniony** | Nowej wersji (GitLab dostaje oba numery, bo tego wymaga) |
+
+Istniejące wątki również są rysowane pod swoimi wierszami, z polem odpowiedzi tam,
+gdzie hosting pozwala aplikacji odpowiadać w wątku (Forgejo nie). Wątek trafia na
+wiersz tylko wtedy, gdy hosting mówi, że nadal należy do pokazanego diffa; wszystko
+inne zostaje w zakładce Rozmowa, zamiast lądować na zgadniętym wierszu:
+
+| Hosting | Wątek napisany przed ostatnim pushem |
+|---|---|
+| GitHub | Nieaktualny, gdy jego wiersz się zmienił: tylko Rozmowa |
+| GitLab | Napisany do starszego heada: tylko Rozmowa |
+| Azure DevOps | Azure przenosi go tam, gdzie jest teraz jego wiersz |
+| Bitbucket Data Center | Osierocony, gdy jego wiersza już nie ma: tylko Rozmowa |
+| Forgejo | Forgejo nie mówi, że komentarz jest nieaktualny, więc jest rysowany pod zapisanym numerem wiersza — po pushu w tym wierszu może być teraz inny kod |
+
+Komentarz do wiersza spoza pokazanych hunków jest na każdym hostingu tylko w
+zakładce Rozmowa.
+
+Komentarz wpisany i niewysłany liczy się jako niewysłany tekst: **‹ ›** i
+Alt+strzałki pytają, zanim go opuszczą, tak jak przy głównym polu komentarza.
+Przejrzenie innego pliku go zachowuje; żeby zacząć komentarz w innym wierszu, wyślij
+lub anuluj pierwszy.
+
+Czego to nie robi:
+
+- **Jeden wiersz, wysłany od razu.** Nie ma zakresu wierszy, oczekującej recenzji, w
+  której zbiera się komentarze do późniejszego wysłania, ani proponowanych zmian.
+  Każdy komentarz jest publikowany w chwili wysłania, jako osobny wątek (na Forgejo
+  jako recenzja z tym jednym komentarzem, bo Forgejo nie ma wywołania dla
+  pojedynczego komentarza).
+- **Diff, który oglądasz.** Zakładka Pliki pamięta, przy którym commicie (na Azure
+  DevOps: przy której iteracji) wczytano jej diff, i komentarz jest wysyłany
+  względem niego. Gdy pull request od tego czasu poszedł dalej — push, nowa baza
+  scalenia —, komentarz nie trafia na wiersz, który ma teraz ten numer: zostaje
+  odrzucony z komunikatem *pull request zmienił się od załadowania tego diffa*, a
+  **Odśwież** pokazuje nowy diff. Na GitHubie komentarz jest zamiast tego
+  publikowany względem commita, który czytałeś, a GitHub oznacza go jako
+  nieaktualny, jeśli ten wiersz się zmienił. Wiersz, którego hosting nadal nie
+  przyjmuje, jest odrzucany jako leżący poza diffem.
+- **Odrzucony.** Bez uprawnienia do komentowania (token tylko do odczytu, konto,
+  któremu repozytorium nie pozwala komentować) hosting odmawia, a komunikat podaje,
+  że to jest powód.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce — aplikacja nie ma
+  jeszcze dla nich strony —, więc komentarz do wiersza nadal dodaje się tam na
+  stronie.
+- **Plik bez diffa** (binarny albo zbyt duży, by hosting go dołączył) nie ma
+  wierszy do skomentowania.
+
+## Pisanie komentarzy
+
+Każde pole na stronie — komentarz na dole, odpowiedź w wątku, komentarz do wiersza
+— to ten sam edytor Markdown: zakładki **Pisz / Podgląd**, pasek formatowania ze
+skrótami GitHuba, listy, które ciągną się po Enterze, i podpowiadanie po **@** /
+**#** spośród osób i pull requestów, które są już na ekranie. Pole odpowiedzi
+pokazuje swoje narzędzia, gdy w nie klikniesz, i wysyła przez ⌘/Ctrl+Enter, bo
+Enter zaczyna teraz nowy wiersz. [Pisanie komentarzy](writing-comments.md) opisuje
+szczegóły i ograniczenia.
+
+## Edytowanie i usuwanie twoich komentarzy
+
+Literówka w już wysłanym komentarzu albo uwaga, która przestała być aktualna,
+oznaczała kiedyś wycieczkę do przeglądarki. Twoje komentarze mają teraz **Edytuj**
+(ołówek) i **Usuń** (kosz) na końcu nagłówka: komentarze w rozmowie, komentarze w
+wątkach recenzji i odpowiedzi, w zakładkach Rozmowa i Pliki. Strona issue też je ma,
+dla swoich komentarzy na GitHubie i Forgejo.
+
+![Twój komentarz, oznaczony jako edytowany, z Edytuj i Usuń na końcu nagłówka](../../screenshots/comment-editor.webp)
+
+O tym, co jest „twoje”, decyduje sama strona, która przy każdym wczytaniu pyta
+hosting, jako kto logują się wywołania tego repozytorium (jego powiązany profil, a
+nie akurat aktywny). Większość hostingów podaje autora po loginie, porównywanym bez
+rozróżniania wielkości liter. Azure DevOps podaje autorów po nazwie wyświetlanej,
+którą mogą dzielić dwie osoby, więc tam id autora komentarza musi zgadzać się z id
+konta; gdy brakuje któregoś z nich, żaden komentarz nie pokazuje akcji. Gdy
+aplikacja nie potrafi ustalić, kim jesteś (token bez zakresu użytkownika albo
+hosting nie odpowiedział), też żaden komentarz ich nie pokazuje; **Odśwież** pyta
+ponownie. Decyzja i tak należy do hostingu: konto, któremu nie pozwala zmienić
+komentarza, zostaje odrzucone, a komunikat to mówi.
+
+- **Edytuj** otwiera komentarz w miejscu, w tym samym edytorze Markdown, z tekstem
+  takim, jak go napisano. **Zapisz** (lub ⌘/Ctrl+Enter) go wysyła; **Anuluj** albo
+  **Esc** go zamyka, pytając najpierw, jeśli coś zmieniłeś. Usuwane są tylko puste
+  wiersze wokół tekstu: wcięty kod i końcowe złamanie wiersza z dwóch spacji
+  zostają, jak je wpisano. Nowy tekst pojawia się od razu, a strona ponownie czyta
+  pull request. Na stronie pull requesta niezapisana edycja liczy się jako niewysłany
+  tekst: **‹ ›** pytają, zanim ją opuszczą. Strona issue nie ma takich strzałek i
+  nic tam nie pyta przed zamknięciem jej karty.
+- **Usuń** zawsze najpierw pyta, a pytanie mówi, co się stanie: serwer usuwa
+  komentarz dla wszystkich i nie da się tego cofnąć. Nie ma wpisu cofania, bo nic go
+  nie przywróci.
+
+Usunięcie **pierwszego komentarza wątku**, który ma odpowiedzi (wątek recenzji albo
+komentarz w rozmowie, na który inni odpowiedzieli), działa różnie zależnie od
+hostingu, a potwierdzenie mówi, jak. Dwa z tych przypadków nie są opisane przez
+hosting, i to też jest powiedziane:
+
+| Hosting | Pierwszy komentarz wątku z odpowiedziami |
+|---|---|
+| GitHub | Odpowiedzi powinny zostać; dokumentacja GitHuba tego nie mówi. Odpowiadanie w tym wątku z aplikacji nie jest już możliwe: jego odpowiedzi wskazują na komentarz, którego nie ma, a API nie przyjmuje odpowiedzi na odpowiedź. Wątek proponuje wtedy **Odpowiedz w GitHub** |
+| GitLab | Znika tylko ta notatka; wątek i jego odpowiedzi zostają |
+| Azure DevOps | Powinien zostać oznaczony jako usunięty i ukryty, z zachowaniem wątku i odpowiedzi; dokumentacja Azure tego nie mówi |
+| Bitbucket Data Center | Odmowa: Data Center nie usuwa komentarza, który ma odpowiedzi. Najpierw usuń odpowiedzi albo zamiast tego go edytuj |
+
+Niektóre hostingi oznaczają komentarz jako **edytowany**. Tylko Azure DevOps
+przechowuje datę dla samego tekstu; na GitHubie, Bitbucket Data Center i Forgejo
+aplikacja porównuje, kiedy komentarz utworzono i kiedy ostatnio zaktualizowano, więc
+tam oznaczenie jest przybliżeniem (może je ustawić wszystko inne, co dotknie
+komentarza). Data w GitLabie zmienia się też przy rozwiązaniu wątku, więc nie jest
+używana.
+
+Czego to nie robi:
+
+- **Komentarzy recenzji na Forgejo** (komentarzy do wiersza) nie da się edytować przez
+  jego API, a tylko niektóre wersje potrafią je usuwać, więc nie pokazują żadnej z
+  tych akcji: zmień je na stronie. Komentarze w rozmowie działają jak gdzie indziej.
+- **Ktoś go w międzyczasie zmienił.** Bitbucket Data Center sprawdza wersję
+  komentarza: edycja lub usunięcie komentarza zmienionego od wczytania strony jest
+  odrzucane, a **Odśwież** pokazuje aktualny. Pozostałe hostingi przyjmują ostatni
+  zapis.
+- **Nie znaleziono**: gdy hosting nie znajduje komentarza, komunikat mówi, że mógł
+  zostać usunięty albo że to konto go nie widzi, a strona ponownie czyta pull
+  request. Otwarta edycja komentarza, którego już nie ma, jest porzucana.
+- Pull requesty z **bitbucket.org** otwierają się w przeglądarce, więc nie ma jeszcze
+  strony, na której można edytować ich komentarze, choć aplikacja potrafi wykonać to
+  wywołanie.
+- **Opis** pull requesta i podsumowania jego recenzji nie są komentarzami i nie są tu
+  edytowane.
+
+## Czego dotyczy `#123` lub `AB#123`
+
+Commit z napisem *fixes AB#4821* albo komentarz *zob. #312* podaje ci numer, a nie
+to, czego dotyczył. Żeby się dowiedzieć, trzeba było go otworzyć. Teraz
+**wskazanie odwołania** — albo dojście do niego Tabem — otwiera małą kartę z tym, co
+mówi o nim hosting:
+
+- ikonę jego rodzaju i odwołanie tak, jak je zapisano;
+- jego **tytuł**;
+- jego **stan** (otwarty, zamknięty, scalony — na Azure DevOps własny stan work
+  itemu, np. *Active* albo *Resolved*);
+- na Azure DevOps **typ work itemu** (Bug, User Story, Task…).
+
+![Karta odwołania do work itemu w komentarzu: typ, tytuł i stan](../../screenshots/reference-card.webp)
+
+Karty są na stronie pull requesta (opis, komentarze, wątki recenzji i pełny opis
+commita w zakładce **Commity**), na stronie issue i w temacie w panelu szczegółów
+commita. W zakładce **Commity** na Azure DevOps każdy work item w temacie commita
+(`AB#123` albo `#123`, tam to ten sam element) pokazuje też obok swój tytuł, na
+szaro. Na Azure DevOps `!123` prowadzi do tego pull requesta, bez karty.
+
+| Odwołanie | Hosting | Czytane z |
+|---|---|---|
+| `AB#123`, oraz `#123` w repozytorium Azure | Azure DevOps | Work itemy, do 200 w jednym zapytaniu |
+| `#123` | GitHub, GitHub Enterprise Server | Issues (które odpowiadają też za pull requesty), jedno zapytanie na każde, po jednym naraz |
+| `#123` / `!123` | GitLab | Issues / merge requesty, jedno zapytanie na rodzaj |
+| `#123` | Forgejo | Issues (także pull requesty), jedno zapytanie na każde, po dwa naraz |
+
+`#123` liczy się tylko jako osobne słowo: `org/repo#123` (inne repozytorium),
+`&#39;`, kolor taki jak `#123abc` i `#issuecomment-…` w linku zostają nietknięte.
+
+Nic nie jest pobierane, dopóki karta się nie otworzy. Wtedy odwołanie, na którym
+jesteś, i najbliższe mu na stronie, jeszcze nieznane, idą jednym wywołaniem, więc
+następna karta zwykle jest natychmiast. Odpowiedzi są trzymane w pamięci, dopóki
+aplikacja działa, nigdy na dysku, przez pięć minut; potem dalej są pokazywane i
+czytane ponownie przy następnym najechaniu. Są trzymane osobno dla każdego profilu:
+wywołanie idzie jako profil, z którym repozytorium jest [powiązane](profiles.md), a
+inny profil może widzieć inne elementy.
+
+Ile to kosztuje:
+
+- **GitHub i Forgejo** nie potrafią czytać kilku issues w jednym zapytaniu, więc
+  każda karta kosztuje jedno. Najechanie prosi o najwyżej **10** — to, na którym
+  jesteś, i sąsiednie — a na GitHubie jedno po drugim, jak GitHub wymaga od
+  aplikacji. Pierwsza odpowiedź mówiąca *zwolnij* (429 albo 403) zatrzymuje resztę, a
+  o te odwołania nie pyta się ponownie przez pięć minut.
+- **Azure DevOps** czyta do 200 work itemów w jednym zapytaniu, a GitLab jedno
+  zapytanie na rodzaj, więc tam cała strona idzie naraz.
+
+Czego to nie robi:
+
+- **Bitbucket** nie ma karty: aplikacja nie czyta tam issues, a link jak dotąd
+  otwiera przeglądarkę.
+- **Nie znaleziono albo brak dostępu.** Usunięte issue, work item w projekcie,
+  którego to konto nie widzi, albo token Azure bez zakresu *Work Items (Read)*
+  wyglądają tak samo: karta to mówi, a link nadal działa. Hosting, który ogranicza
+  ruch, jest nieosiągalny albo nie ma konta w tym profilu, dostaje własny komunikat.
+- **`AB#123` poza Azure DevOps** — w repozytorium GitHuba połączonym z Azure Boards —
+  nie jest linkiem, więc nie ma karty: aplikacja nie wie, do jakiej organizacji
+  należy.
+- **Stan scalony na starszych GitHub Enterprise Server**, które nie podają, kiedy
+  pull request scalono: wygląda jak zamknięty.
+- Wiersze commitów **w grafie** nie pokazują kart.
 
 ## Ograniczenia
 
