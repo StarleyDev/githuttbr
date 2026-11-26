@@ -190,6 +190,7 @@ import type {
   PrFileList,
   PrCommitList,
   PrUpdateEnd,
+  PrUpdateFiles,
   PrUpdateList,
   PrCheck,
   PrFile,
@@ -2622,6 +2623,13 @@ const isFullSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-
 const GITLAB_VERSION_READS = 10
 
 /**
+ * The commits of GitLab diff versions already read, by project, MR and version.
+ * A version never changes once written, so it is read once a session. Capped.
+ */
+const glVersionCommits = new Map<string, unknown[]>()
+const GITLAB_VERSION_CACHE_MAX = 200
+
+/**
  * GitLab's diff versions — one per push, newest first — give each update's
  * head; the commits come from the MR's commit list, walked from each head.
  * A head that list no longer reaches (rewritten since) is read through its
@@ -2652,21 +2660,33 @@ async function glMergeRequestUpdates(remoteUrl: string, token: string | undefine
   const missing = heads.filter((v) => !graph.has(v.head_commit_sha)).slice(-GITLAB_VERSION_READS)
   await Promise.all(
     missing.map(async (v) => {
-      const detail = await glJson<{ commits?: GlCommit[] }>(`${base}/merge_requests/${number}/versions/${v.id}`, auth).catch(() => null)
-      for (const c of detail?.commits ?? []) if (typeof c.id === 'string' && !graph.has(c.id)) graph.set(c.id, toRaw(c))
+      const key = `${base}|${number}|${v.id}`
+      let list = glVersionCommits.get(key) as GlCommit[] | undefined
+      if (!list) {
+        const detail = await glJson<{ commits?: GlCommit[] }>(`${base}/merge_requests/${number}/versions/${v.id}`, auth).catch(() => null)
+        if (detail) {
+          list = detail.commits ?? []
+          if (glVersionCommits.size >= GITLAB_VERSION_CACHE_MAX) glVersionCommits.delete(glVersionCommits.keys().next().value!)
+          glVersionCommits.set(key, list)
+        }
+      }
+      for (const c of list ?? []) if (typeof c.id === 'string' && !graph.has(c.id)) graph.set(c.id, toRaw(c))
     })
   )
+  // Newest first: three full pages kept the latest 300 and lost the opening.
+  const startCut = versions.length >= 300
   const drafts = groupUpdatesByHeads(
     heads.map((v) => ({
       id: String(v.id),
       createdAt: v.created_at ?? '',
       headSha: v.head_commit_sha,
-      ...(v.base_commit_sha ? { baseSha: v.base_commit_sha } : {})
+      // The first version listed is compared with its merge base only when it is the opening.
+      ...(v.base_commit_sha && !startCut ? { baseSha: v.base_commit_sha } : {})
     })),
     graph
   )
-  const { updates, truncated } = finishPrUpdates(drafts)
-  return { updates, truncated: truncated || versions.length >= 300 || commits.length >= 300, grouping: 'native' }
+  const done = finishPrUpdates(drafts, startCut)
+  return { updates: done.updates, truncated: done.truncated || commits.length >= 300, grouping: 'native', startCut }
 }
 
 /** How many pages of 100 timeline items GitHub is asked for. */
@@ -2703,17 +2723,17 @@ async function ghPullRequestUpdates(remoteUrl: string, tokens: HostTokens, numbe
       pullRequest?: {
         createdAt?: string
         author?: { login?: string } | null
-        timelineItems?: { pageInfo?: { hasNextPage?: boolean; endCursor?: string | null }; nodes?: Node[] }
+        timelineItems?: { pageInfo?: { hasPreviousPage?: boolean; startCursor?: string | null }; nodes?: Node[] }
       } | null
     } | null
   }
-  const query = `query($owner: String!, $repo: String!, $number: Int!, $after: String) {
+  const query = `query($owner: String!, $repo: String!, $number: Int!, $before: String) {
   repository(owner: $owner, name: $repo) {
     pullRequest(number: $number) {
       createdAt
       author { login }
-      timelineItems(first: 100, after: $after, itemTypes: [PULL_REQUEST_COMMIT, HEAD_REF_FORCE_PUSHED_EVENT]) {
-        pageInfo { hasNextPage endCursor }
+      timelineItems(last: 100, before: $before, itemTypes: [PULL_REQUEST_COMMIT, HEAD_REF_FORCE_PUSHED_EVENT]) {
+        pageInfo { hasPreviousPage startCursor }
         nodes {
           __typename
           ... on PullRequestCommit {
@@ -2734,12 +2754,16 @@ async function ghPullRequestUpdates(remoteUrl: string, tokens: HostTokens, numbe
     }
   }
 }`
-  const items: GithubTimelineItem[] = []
+  // Read from the newest end, a page of 100 at a time: past the cap, the
+  // latest pushes are what matter — the opening is what goes.
+  const pages: GithubTimelineItem[][] = []
   let opened = { at: '' } as { at: string; author?: string }
-  let after: string | null = null
+  let before: string | null = null
   let more = false
   for (let page = 0; page < GITHUB_TIMELINE_PAGES; page++) {
-    const data: Answer = await post<Answer>(query, { owner, repo, number, after })
+    const items: GithubTimelineItem[] = []
+    pages.unshift(items)
+    const data: Answer = await post<Answer>(query, { owner, repo, number, before })
     const pr = data.repository?.pullRequest
     if (!pr) throw new HttpStatusError(`GitHub: pull request ${number} not found.`, 404)
     if (page === 0) opened = { at: pr.createdAt ?? '', ...(pr.author?.login ? { author: pr.author.login } : {}) }
@@ -2771,12 +2795,12 @@ async function ghPullRequestUpdates(remoteUrl: string, tokens: HostTokens, numbe
       }
     }
     const info = pr.timelineItems?.pageInfo
-    more = !!info?.hasNextPage && !!info.endCursor
+    more = !!info?.hasPreviousPage && !!info.startCursor
     if (!more) break
-    after = info!.endCursor!
+    before = info!.startCursor!
   }
-  const { updates, truncated } = finishPrUpdates(groupGithubTimeline(items, opened))
-  return { updates, truncated: truncated || more, grouping: 'approximate' }
+  const done = finishPrUpdates(groupGithubTimeline(pages.flat(), opened, more), more)
+  return { updates: done.updates, truncated: done.truncated, grouping: 'approximate', startCut: more }
 }
 
 /**
@@ -2816,8 +2840,10 @@ function validUpdateEnd(end: unknown): PrUpdateEnd {
  * for when this clone lacks either commit (the renderer diffs locally when it
  * has both). Null when the host has no way to say: Forgejo's API has no
  * two-commit diff, and bitbucket.org no PR page; the tab offers to fetch the
- * branch instead. GitHub's compare diffs from the merge base of the two, which
- * after a rewrite can show more than the push changed.
+ * branch instead. GitHub's and Data Center's compares diff from the merge base
+ * of the two (`fromMergeBase`): after a rewrite, what the push removed is not
+ * shown — the renderer fetches both heads and diffs locally first, and says so
+ * when it could not.
  */
 async function pullRequestUpdateFiles(
   remoteUrl: string,
@@ -2825,7 +2851,7 @@ async function pullRequestUpdateFiles(
   number: number,
   fromEnd: unknown,
   toEnd: unknown
-): Promise<PrFile[] | null> {
+): Promise<PrUpdateFiles | null> {
   const from = validUpdateEnd(fromEnd)
   const to = validUpdateEnd(toEnd)
   const parsed = parseRemoteUrl(remoteUrl)
@@ -2833,23 +2859,24 @@ async function pullRequestUpdateFiles(
     const { base, auth } = await glProjectOf(remoteUrl, tokens.gitlab)
     // `straight`: the two trees, from..to — not from the merge base, which after a rebase is elsewhere.
     const res = await glJson<{ diffs?: GlDiff[] }>(`${base}/repository/compare?from=${from.sha}&to=${to.sha}&straight=true`, auth)
-    return (res?.diffs ?? []).map(glDiffToFile)
+    return { files: (res?.diffs ?? []).map(glDiffToFile), fromMergeBase: false }
   }
   if (isBbs(remoteUrl)) {
     const b = await bbsRepoOf(remoteUrl)
-    return bbsCompareFiles(b.repo, b.token, from.sha, to.sha)
+    return { files: await bbsCompareFiles(b.repo, b.token, from.sha, to.sha), fromMergeBase: true }
   }
   if (parsed?.provider === 'azure') {
     if (from.iteration === undefined || to.iteration === undefined) return null
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    return azurePrIterationFiles(a.ado, a.repo, number, { iteration: from.iteration, sha: from.sha }, { iteration: to.iteration, sha: to.sha })
+    const files = await azurePrIterationFiles(a.ado, a.repo, number, { iteration: from.iteration, sha: from.sha }, { iteration: to.iteration, sha: to.sha })
+    return { files, fromMergeBase: false }
   }
   if (parsed?.provider === 'github') {
     const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
     type GhFile = { filename: string; status: string; additions: number; deletions: number; patch?: string; previous_filename?: string }
     // The file list comes whole (up to 300 files) with the first page; one commit per page keeps the rest small.
     const res = await ghJson<{ files?: GhFile[] }>(`${api}/compare/${from.sha}...${to.sha}?per_page=1&page=1`, token)
-    return (res.files ?? []).map((f) => ({
+    const files = (res.files ?? []).map((f) => ({
       filename: f.filename,
       status: f.status,
       additions: f.additions,
@@ -2857,6 +2884,7 @@ async function pullRequestUpdateFiles(
       ...(f.patch ? { patch: f.patch } : {}),
       ...(f.previous_filename ? { previousFilename: f.previous_filename } : {})
     }))
+    return { files, fromMergeBase: true }
   }
   return null
 }

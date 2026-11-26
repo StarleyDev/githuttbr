@@ -801,9 +801,10 @@ export async function azurePrUpdates(ado: Ado, r: AzureRepo, id: number): Promis
       ...(head ? { headSha: head } : {}),
       ...(i === 0 && mergeBase ? { fromSha: mergeBase } : {}),
       added: own[i],
-      ...(lists[i].short ? { commitsTruncated: true } : {})
+      ...(lists[i].short ? { commitsTruncated: true } : {}),
+      ...(reason === 'retarget' ? { retarget: true } : {})
     }
   })
   const { updates, truncated } = finishPrUpdates(drafts)
-  return { updates, truncated, grouping: 'native' }
+  return { updates, truncated, grouping: 'native', startCut: false }
 }

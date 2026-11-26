@@ -998,9 +998,11 @@ interface BbsRescopeActivity {
 export async function bbsPullUpdates(repo: BitbucketServerRepo, token: string, id: number): Promise<PrUpdateList> {
   const r = bbsRepoApi(repo)
   let partial = false
+  let activitiesCut = false
   const [activities, current] = await Promise.all([
+    // Newest first: a cap keeps the latest and loses the opening.
     bbsPages<BbsRescopeActivity>(`${r}/pull-requests/${id}/activities`, token, 100, 10, () => {
-      partial = true
+      activitiesCut = true
     }),
     bbsPages<BbsCommit>(`${r}/pull-requests/${id}/commits`, token, 50, 6, () => {
       partial = true
@@ -1009,6 +1011,7 @@ export async function bbsPullUpdates(repo: BitbucketServerRepo, token: string, i
   // Newest first as the server lists them; oldest first here, ties by id.
   const ordered = [...activities].sort((a, b) => (a.createdDate ?? 0) - (b.createdDate ?? 0) || (a.id ?? 0) - (b.id ?? 0))
   const opened = ordered.find((a) => a.action === 'OPENED')
+  const startCut = activitiesCut && !opened
   const rescopes = ordered.filter((a) => a.action === 'RESCOPED' && !!a.fromHash && a.fromHash !== a.previousFromHash)
   const addedLater = new Set(rescopes.flatMap((a) => knownCommits(a.added?.commits).map((c) => c.id!)))
   const original = new Map<string, BbsCommit>()
@@ -1025,14 +1028,15 @@ export async function bbsPullUpdates(repo: BitbucketServerRepo, token: string, i
   // The head at the opening is what the first push moved the branch from.
   const openedHead = rescopes[0]?.previousFromHash ?? (knownCommits(current)[0]?.id || undefined)
   const drafts: PrUpdateDraft[] = [
-    {
+    // Without the OPENED entry nothing says what the opening held: no opening update.
+    ...(startCut ? [] : [{
       id: opened?.id !== undefined ? `activity:${opened.id}` : 'opened',
       kind: 'opened',
       createdAt: iso(opened?.createdDate),
       ...who(opened?.user),
       ...(openedHead ? { headSha: openedHead } : {}),
       added: first
-    },
+    } satisfies PrUpdateDraft]),
     ...rescopes.map((a): PrUpdateDraft => {
       const added = knownCommits(a.added?.commits)
       const removed = knownCommits(a.removed?.commits)
@@ -1050,8 +1054,8 @@ export async function bbsPullUpdates(repo: BitbucketServerRepo, token: string, i
       }
     })
   ]
-  const { updates, truncated } = finishPrUpdates(drafts)
-  return { updates, truncated: truncated || partial, grouping: 'native' }
+  const done = finishPrUpdates(drafts, startCut)
+  return { updates: done.updates, truncated: done.truncated || partial || activitiesCut, grouping: 'native', startCut }
 }
 
 interface BbsDiffSegment {

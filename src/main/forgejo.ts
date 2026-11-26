@@ -1091,22 +1091,20 @@ export function parseForgejoPushBody(body: string | undefined): { force: boolean
  */
 export async function forgejoPullUpdates(base: string, owner: string, repo: string, token: string, number: number): Promise<PrUpdateList> {
   const r = repoApi(base, owner, repo)
-  let partial = false
-  const [pr, commits, timeline] = await Promise.all([
+  const [pr, commits, read] = await Promise.all([
     fjJson<{ created_at?: string; user?: { login?: string } }>(`${r}/pulls/${number}`, token),
     forgejoPullCommitRaws(base, owner, repo, token, number),
-    fjList<FjTimelineComment>(`${r}/issues/${number}/timeline`, token, 10, () => {
-      partial = true
-    }).catch((err: unknown) => {
+    readTimelineNewest(`${r}/issues/${number}/timeline`, token, TIMELINE_PAGES).catch((err: unknown) => {
       if (err instanceof HttpStatusError && err.status === 404) return null
       throw err
     })
   ])
+  const timeline = read?.items ?? null
   const oldestFirst = orderOldestFirst(commits.raws, false)
   const opened = { at: pr?.created_at ?? '', ...(pr?.user?.login ? { author: pr.user.login } : {}) }
   if (!timeline) {
     const { updates } = finishPrUpdates(singleUpdate(oldestFirst, opened))
-    return { updates, truncated: !commits.ended, grouping: 'single' }
+    return { updates, truncated: !commits.ended, grouping: 'single', startCut: false }
   }
   const pushes: ForgejoPush[] = timeline.flatMap((c) => {
     if (c.type !== 'pull_push') return []
@@ -1121,6 +1119,44 @@ export async function forgejoPullUpdates(base: string, owner: string, repo: stri
       }
     ]
   })
-  const { updates, truncated } = finishPrUpdates(groupForgejoPushes(pushes, opened, oldestFirst))
-  return { updates, truncated: truncated || partial || !commits.ended, grouping: 'native' }
+  const startCut = !!read?.startCut
+  const done = finishPrUpdates(groupForgejoPushes(pushes, opened, oldestFirst, startCut), startCut)
+  return { updates: done.updates, truncated: done.truncated || !!read?.partial || !commits.ended, grouping: 'native', startCut }
+}
+
+/** How many pages of the timeline are read, at most. */
+const TIMELINE_PAGES = 10
+
+/**
+ * A timeline, its newest end first when it is longer than `maxPages`: the
+ * first page's X-Total-Count says how many pages there are, and the last
+ * `maxPages` are read — the latest pushes matter more than the oldest.
+ * `startCut` then; `partial` when the server sent no total and the walk from
+ * the start stopped at the cap.
+ */
+async function readTimelineNewest(
+  url: string,
+  token: string,
+  maxPages: number
+): Promise<{ items: FjTimelineComment[]; startCut: boolean; partial: boolean }> {
+  const page = async (n: number): Promise<{ items: FjTimelineComment[]; total: number }> => {
+    const res = await fjResponse(`${url}?limit=50&page=${n}`, token)
+    const text = await res.text()
+    const header = res.headers.get('x-total-count')
+    return { items: (text ? JSON.parse(text) : []) as FjTimelineComment[], total: header === null ? NaN : Number(header) }
+  }
+  const first = await page(1)
+  const size = first.items.length
+  if (!Number.isFinite(first.total) || !size) {
+    let partial = false
+    const items = await fjList<FjTimelineComment>(url, token, maxPages, () => {
+      partial = true
+    })
+    return { items, startCut: false, partial }
+  }
+  const pages = Math.ceil(first.total / size)
+  const from = pages > maxPages ? pages - maxPages + 1 : 2
+  const rest = await Promise.all(Array.from({ length: Math.max(0, pages - from + 1) }, (_, i) => page(from + i)))
+  const items = [...(pages > maxPages ? [] : first.items), ...rest.flatMap((p) => p.items)]
+  return { items, startCut: pages > maxPages, partial: false }
 }

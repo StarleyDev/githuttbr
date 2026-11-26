@@ -891,6 +891,8 @@ export interface PrUpdate {
   removed: PrCommit[]
   /** The host counted more commits than it listed. */
   commitsTruncated?: boolean
+  /** Azure DevOps: the push changed the target branch (a retarget), not the source. */
+  retarget?: boolean
 }
 
 /**
@@ -906,6 +908,16 @@ export interface PrUpdateList {
   updates: PrUpdate[]
   truncated: boolean
   grouping: PrUpdateGrouping
+  /** The host's record was read from its newest end and stopped before the
+   *  opening: the numbers are not the host's, so the tab counts back from the latest. */
+  startCut?: boolean
+}
+
+/** One update's changed files from the host. `fromMergeBase` when the host diffs
+ *  from the two heads' merge base (GitHub, Bitbucket Data Center), not between them. */
+export interface PrUpdateFiles {
+  files: PrFile[]
+  fromMergeBase: boolean
 }
 
 /** One end of an update's comparison: a commit, and Azure's iteration of it. */

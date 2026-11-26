@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { defaultSettings, type PrFile, type PrUpdateList } from '../src/shared/types'
+import { defaultSettings, type PrUpdateFiles, type PrUpdateList } from '../src/shared/types'
 
 // A pull request's updates, per host: the URLs each one is asked, how its
 // record maps onto PrUpdate, force pushes, and truncation — plus the host
@@ -44,8 +44,8 @@ const posted: string[] = []
 
 const updates = (remote: string): Promise<PrUpdateList> =>
   Promise.resolve().then(() => handlers.get('hosting:prListUpdates')!({}, '', remote, {}, 7) as Promise<PrUpdateList>)
-const updateFiles = (remote: string, from: unknown, to: unknown): Promise<PrFile[] | null> =>
-  Promise.resolve().then(() => handlers.get('hosting:prUpdateFiles')!({}, '', remote, {}, 7, from, to) as Promise<PrFile[] | null>)
+const updateFiles = (remote: string, from: unknown, to: unknown): Promise<PrUpdateFiles | null> =>
+  Promise.resolve().then(() => handlers.get('hosting:prUpdateFiles')!({}, '', remote, {}, 7, from, to) as Promise<PrUpdateFiles | null>)
 
 const sha = (tag: string): string => tag.padEnd(40, '0')
 const tags = (l: PrUpdateList, i: number): string[] => l.updates[i].added.map((c) => c.sha.slice(0, 2))
@@ -187,10 +187,31 @@ describe('a pull request’s updates — main', () => {
           { body: { content: 'two\n' } }
         ]
       ]
-      const files = await updateFiles(AZURE, { sha: sha('b2'), iteration: 2 }, { sha: sha('c3'), iteration: 3 })
+      const res = await updateFiles(AZURE, { sha: sha('b2'), iteration: 2 }, { sha: sha('c3'), iteration: 3 })
       expect(asked[0]).toBe(`${BASE}/iterations/3/changes?$top=2000&$compareTo=2&api-version=7.1`)
+      expect(res!.fromMergeBase).toBe(false)
+      const files = res!.files
       expect(files).toHaveLength(1)
-      expect(files![0]).toMatchObject({ filename: 'src/app.ts', status: 'modified', additions: 1, deletions: 1 })
+      expect(files[0]).toMatchObject({ filename: 'src/app.ts', status: 'modified', additions: 1, deletions: 1 })
+    })
+
+    it('a retarget is marked as one', async () => {
+      routes = [
+        [
+          `${BASE}/iterations?includeCommits=true`,
+          {
+            body: {
+              value: [
+                { id: 1, reason: 'create', sourceRefCommit: { commitId: sha('a1') }, commits: [ref('a1')] },
+                { id: 2, reason: 'retarget', sourceRefCommit: { commitId: sha('a1') }, commits: [] }
+              ]
+            }
+          }
+        ]
+      ]
+      const l = await updates(AZURE)
+      expect(l.updates[1]).toMatchObject({ kind: 'push', retarget: true })
+      expect(l.updates[0].retarget).toBeUndefined()
     })
 
     it('without the iterations, Azure cannot compare: null, and nothing asked', async () => {
@@ -241,6 +262,27 @@ describe('a pull request’s updates — main', () => {
       expect(l.truncated).toBe(false)
     })
 
+    it('a version read for its commits is not read again: versions never change', async () => {
+      const route: Array<[string, Answer]> = [
+        [
+          `${MR}/versions?per_page=100&page=1`,
+          {
+            body: [
+              { id: 22, head_commit_sha: sha('y9'), created_at: '2026-11-03T10:00:00Z' },
+              { id: 21, head_commit_sha: sha('d4'), created_at: '2026-11-02T10:00:00Z' }
+            ]
+          }
+        ],
+        [`${MR}/commits?per_page=100&page=1`, { body: [commit('y9', ['ba'])] }],
+        [`${MR}/versions/21`, { body: { commits: [commit('d4', ['ba'])] } }]
+      ]
+      routes = route
+      await updates(`${GITLAB}/team/app.git`)
+      const again = await updates(`${GITLAB}/team/app.git`)
+      expect(asked.filter((u) => u.endsWith('/versions/21'))).toHaveLength(1)
+      expect(again.updates[0].added.map((c) => c.sha)).toEqual([sha('d4')])
+    })
+
     it('compares the two trees directly (straight)', async () => {
       routes = [
         [
@@ -248,9 +290,10 @@ describe('a pull request’s updates — main', () => {
           { body: { diffs: [{ old_path: 'a.ts', new_path: 'a.ts', new_file: false, renamed_file: false, deleted_file: false, diff: '@@ -1 +1 @@\n-a\n+b\n' }] } }
         ]
       ]
-      const files = await updateFiles(`${GITLAB}/team/app.git`, { sha: sha('a1') }, { sha: sha('b2') })
+      const res = await updateFiles(`${GITLAB}/team/app.git`, { sha: sha('a1') }, { sha: sha('b2') })
       expect(asked[0]).toBe(`${GITLAB}/api/v4/projects/team%2Fapp/repository/compare?from=${sha('a1')}&to=${sha('b2')}&straight=true`)
-      expect(files).toEqual([{ filename: 'a.ts', status: 'modified', additions: 1, deletions: 1, patch: '@@ -1 +1 @@\n-a\n+b\n' }])
+      expect(res?.fromMergeBase).toBe(false)
+      expect(res?.files).toEqual([{ filename: 'a.ts', status: 'modified', additions: 1, deletions: 1, patch: '@@ -1 +1 @@\n-a\n+b\n' }])
     })
   })
 
@@ -324,14 +367,16 @@ describe('a pull request’s updates — main', () => {
         { body: { isLastPage: false, nextPageStart: (i + 1) * 100, values: [] } }
       ])
       const l = await updates(`${BBS}/scm/proj/app.git`)
-      expect(l.updates[0].kind).toBe('opened')
+      // The newest first: the cap lost the OPENED entry, so nothing is called the opening.
+      expect(l.updates).toEqual([])
       expect(asked.filter((u) => u.includes('/activities'))).toHaveLength(10)
       expect(l.truncated).toBe(true)
+      expect(l.startCut).toBe(true)
     })
 
     it('compares with the new head as `from`, as the server reads it', async () => {
       routes = [[`${BBS}/rest/api/latest/projects/PROJ/repos/app/compare/diff`, { body: { diffs: [] } }]]
-      expect(await updateFiles(`${BBS}/scm/proj/app.git`, { sha: sha('a1') }, { sha: sha('b2') })).toEqual([])
+      expect(await updateFiles(`${BBS}/scm/proj/app.git`, { sha: sha('a1') }, { sha: sha('b2') })).toEqual({ files: [], fromMergeBase: true })
       expect(asked[0]).toBe(`${BBS}/rest/api/latest/projects/PROJ/repos/app/compare/diff?from=${sha('b2')}&to=${sha('a1')}&contextLines=3`)
     })
   })
@@ -349,14 +394,14 @@ describe('a pull request’s updates — main', () => {
         author: { name: 'Ana', user: { login: 'ana', avatarUrl: 'https://avatars.example.com/ana' } }
       }
     })
-    const answer = (nodes: unknown[], hasNextPage = false): Answer => ({
+    const answer = (nodes: unknown[], more = false): Answer => ({
       body: {
         data: {
           repository: {
             pullRequest: {
               createdAt: '2026-11-01T10:00:00Z',
               author: { login: 'ana' },
-              timelineItems: { pageInfo: { hasNextPage, endCursor: hasNextPage ? 'c1' : null }, nodes }
+              timelineItems: { pageInfo: { hasPreviousPage: more, startCursor: more ? 'c1' : null }, nodes }
             }
           }
         }
@@ -383,18 +428,22 @@ describe('a pull request’s updates — main', () => {
       const l = await updates(GITHUB)
       expect(asked).toEqual([GRAPHQL])
       expect(posted[0]).toContain('HEAD_REF_FORCE_PUSHED_EVENT')
-      expect(JSON.parse(posted[0]).variables).toEqual({ owner: 'team', repo: 'app', number: 7, after: null })
+      expect(posted[0]).toContain('last: 100, before: $before')
+      expect(JSON.parse(posted[0]).variables).toEqual({ owner: 'team', repo: 'app', number: 7, before: null })
       expect(l.grouping).toBe('approximate')
       expect(l.updates.map((u) => u.kind)).toEqual(['opened', 'push', 'rewrite'])
       expect(l.updates[2]).toMatchObject({ pusher: 'bruno', fromSha: sha('b2'), headSha: sha('r5'), added: [] })
       expect(l.truncated).toBe(false)
     })
 
-    it('stops after five pages and says so', async () => {
+    it('reads from the newest end, stops after five pages and says the start is cut', async () => {
       routes = [[GRAPHQL, answer([node('a1', '2026-11-01T09:00:00Z')], true)]]
       const l = await updates(GITHUB)
       expect(asked).toHaveLength(5)
+      expect(JSON.parse(posted[1]).variables.before).toBe('c1')
       expect(l.truncated).toBe(true)
+      expect(l.startCut).toBe(true)
+      expect(l.updates.every((u) => u.kind !== 'opened')).toBe(true)
     })
 
     it('compares through the compare API, three dots', async () => {
@@ -404,9 +453,11 @@ describe('a pull request’s updates — main', () => {
           { body: { files: [{ filename: 'b.ts', status: 'renamed', additions: 0, deletions: 0, previous_filename: 'a.ts' }] } }
         ]
       ]
-      const files = await updateFiles(GITHUB, { sha: sha('a1') }, { sha: sha('b2') })
+      const res = await updateFiles(GITHUB, { sha: sha('a1') }, { sha: sha('b2') })
       expect(asked[0]).toBe(`https://api.github.com/repos/team/app/compare/${sha('a1')}...${sha('b2')}?per_page=1&page=1`)
-      expect(files).toEqual([{ filename: 'b.ts', status: 'renamed', additions: 0, deletions: 0, previousFilename: 'a.ts' }])
+      // Three dots: from the merge base, which the banner says for a rewrite.
+      expect(res?.fromMergeBase).toBe(true)
+      expect(res?.files).toEqual([{ filename: 'b.ts', status: 'renamed', additions: 0, deletions: 0, previousFilename: 'a.ts' }])
     })
 
     it('refuses anything but a full commit id before it reaches a URL', async () => {
@@ -432,6 +483,14 @@ describe('a pull request’s updates — main', () => {
           `${REPO}/issues/7/timeline`,
           {
             body: [
+              // Written with the pull request: the opening's commits.
+              {
+                id: 2,
+                type: 'pull_push',
+                body: JSON.stringify({ is_force_push: false, commit_ids: [sha('a1')] }),
+                created_at: '2026-11-01T10:00:01Z',
+                user: { login: 'ana' }
+              },
               { id: 3, type: 'comment', body: 'Looks good', created_at: '2026-11-01T12:00:00Z' },
               {
                 id: 5,
@@ -448,7 +507,7 @@ describe('a pull request’s updates — main', () => {
                 user: { login: 'bruno' }
               }
             ],
-            headers: { 'x-total-count': '3' }
+            headers: { 'x-total-count': '4' }
           }
         ]
       ]
@@ -475,6 +534,29 @@ describe('a pull request’s updates — main', () => {
       expect(l.grouping).toBe('single')
       expect(l.updates).toHaveLength(1)
       expect(tags(l, 0)).toEqual(['a1'])
+    })
+
+    it('a long timeline is read from its newest pages: the start is cut, so no opening', async () => {
+      const push = (n: number): Record<string, unknown> => ({
+        id: n,
+        type: 'pull_push',
+        body: JSON.stringify({ is_force_push: false, commit_ids: [sha(`c${n}`)] }),
+        created_at: `2026-11-02T10:${String(n % 60).padStart(2, '0')}:00Z`
+      })
+      routes = [
+        [`${REPO}/pulls/7`, { body: { created_at: '2026-11-01T10:00:00Z' } }],
+        [`${REPO}/pulls/7/commits`, { body: [], headers: { 'x-total-count': '0' } }],
+        // 600 entries in pages of 50: twelve pages; the last ten are read.
+        ...Array.from({ length: 12 }, (_, i): [string, Answer] => [
+          `${REPO}/issues/7/timeline?limit=50&page=${i + 1}`,
+          { body: i === 11 ? [push(1), push(2)] : Array.from({ length: 50 }, () => ({ type: 'comment' })), headers: { 'x-total-count': '600' } }
+        ])
+      ]
+      const l = await updates(`${FORGEJO}/team/app.git`)
+      const pages = asked.filter((u) => u.includes('/timeline')).map((u) => Number(/page=(\d+)/.exec(u)![1]))
+      expect(pages.sort((a, b) => a - b)).toEqual([1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+      expect(l.startCut).toBe(true)
+      expect(l.updates.map((u) => u.kind)).toEqual(['push', 'push'])
     })
 
     it('has no two-commit diff in its API: null, and nothing asked', async () => {

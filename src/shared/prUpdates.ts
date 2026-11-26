@@ -33,22 +33,28 @@ export function shaOnlyCommit(sha: string): PrCommit {
  * Number the drafts (oldest first, from 1), give each its comparison base —
  * the previous update's head unless the host named one — and keep the newest
  * PR_UPDATES_MAX. The numbers are counted before the cut, so "Update 140"
- * stays 140 when the oldest ones are dropped.
+ * stays 140 when the oldest ones are dropped. `startCut`: the host's record
+ * was read from its newest end and stopped short of the opening — the first
+ * listed is no opening, and the tab counts back from the latest instead.
  */
-export function finishPrUpdates(drafts: readonly PrUpdateDraft[]): { updates: PrUpdate[]; truncated: boolean } {
+export function finishPrUpdates(
+  drafts: readonly PrUpdateDraft[],
+  startCut = false
+): { updates: PrUpdate[]; truncated: boolean; startCut: boolean } {
   const all = drafts.map((d, i): PrUpdate => {
     const previous = i > 0 ? drafts[i - 1].headSha : undefined
     const fromSha = d.fromSha ?? previous
     return {
       ...d,
+      ...(startCut && d.kind === 'opened' ? { kind: 'push' as const } : {}),
       index: i + 1,
       added: d.added,
       removed: d.removed ?? [],
       ...(fromSha ? { fromSha } : {})
     }
   })
-  const truncated = all.length > PR_UPDATES_MAX
-  return { updates: truncated ? all.slice(all.length - PR_UPDATES_MAX) : all, truncated }
+  const capped = all.length > PR_UPDATES_MAX
+  return { updates: capped ? all.slice(all.length - PR_UPDATES_MAX) : all, truncated: capped || startCut, startCut }
 }
 
 /** Which of `list` are not in `seen`, keeping the order. */
@@ -156,24 +162,44 @@ function isLater(at: string, than: string): boolean {
 }
 
 /**
+ * The longest pause between two commits of one inferred push. Commits a push
+ * carries are usually made minutes apart; a longer silence is read as the
+ * work of a later push.
+ */
+export const GITHUB_PUSH_WINDOW_MS = 10 * 60 * 1000
+
+/** Whether more than the push window separates two ISO dates (unreadable: no). */
+function isPastWindow(at: string, since: string): boolean {
+  const a = Date.parse(at)
+  const b = Date.parse(since)
+  return !Number.isNaN(a) && !Number.isNaN(b) && a - b > GITHUB_PUSH_WINDOW_MS
+}
+
+/**
  * GitHub keeps no record of a plain push — only of a force push — so updates
- * are reconstructed: the pull request's opening and each force push start
- * one, and a commit committed after the update it would fall in began must
- * have been pushed later, so it starts the next. Several plain pushes in a
- * row land in one update; the tab says the grouping is approximate.
+ * are inferred from commit times. An update is a run of commits that chain by
+ * parent (each on the one before it), between force pushes; a commit that
+ * does not chain on, or comes more than GITHUB_PUSH_WINDOW_MS after the one
+ * before it, starts the next. Commits committed after the pull request was
+ * opened, or after a force push, cannot have been in it. So one push may come
+ * out split in two, or two quick pushes as one; the tab says the grouping is
+ * approximate. A rebase's new commits listed just before its force push are
+ * moved into it rather than shown twice.
  */
 export function groupGithubTimeline(
   items: readonly GithubTimelineItem[],
-  opened: { at: string; author?: string }
+  opened: { at: string; author?: string },
+  startCut = false
 ): PrUpdateDraft[] {
-  type Open = { draft: PrUpdateDraft; raws: RawPrCommit[] }
+  type Open = { draft: PrUpdateDraft; raws: RawPrCommit[]; lastAt: string }
   const groups: Open[] = []
   const start = (kind: PrUpdateKind, at: string, extra: Partial<PrUpdateDraft> = {}): Open => {
-    const g: Open = { draft: { id: '', kind, createdAt: at, added: [], ...extra }, raws: [] }
+    const g: Open = { draft: { id: '', kind, createdAt: at, added: [], ...extra }, raws: [], lastAt: at }
     groups.push(g)
     return g
   }
-  let current = start('opened', opened.at, opened.author ? { pusher: opened.author } : {})
+  // Read from the newest end and cut short: the first items are some push's, not the opening's.
+  let current = startCut ? start('push', '') : start('opened', opened.at, opened.author ? { pusher: opened.author } : {})
   for (const item of items) {
     if (item.type === 'forcePush') {
       current = start('rewrite', item.at, {
@@ -183,9 +209,31 @@ export function groupGithubTimeline(
       })
       continue
     }
-    if (isLater(item.committedAt, current.draft.createdAt)) current = start('push', item.committedAt)
+    const last = current.raws[current.raws.length - 1]
+    // Parents unknown: nothing says the chain breaks.
+    const chained = !last || !item.commit.parentShas?.length || item.commit.parentShas.includes(last.sha)
+    // An opening or a force push holds only what was committed by then.
+    const afterStart = current.draft.kind !== 'push' && isLater(item.committedAt, current.draft.createdAt)
+    const pause = !!last && isPastWindow(item.committedAt, current.lastAt)
+    if (afterStart || !chained || pause) current = start('push', item.committedAt)
     current.raws.push(item.commit)
+    current.lastAt = item.committedAt
+    // A push happens after its last commit.
+    if (current.draft.kind === 'push') current.draft.createdAt = item.committedAt
   }
+  // A rebase whose new commits the timeline lists before its force push: they
+  // are the force push's, not a push of their own.
+  for (let i = groups.length - 2; i >= 0; i--) {
+    const g = groups[i]
+    const next = groups[i + 1]
+    const head = g.raws[g.raws.length - 1]?.sha
+    if (g.draft.kind === 'push' && next.draft.kind === 'rewrite' && head && head === next.draft.headSha) {
+      next.raws = [...g.raws, ...next.raws]
+      groups.splice(i, 1)
+    }
+  }
+  // A cut-short start leaves an empty group before a first force push: nothing to show.
+  if (startCut && groups[0] && !groups[0].raws.length && !groups[0].draft.headSha) groups.shift()
   return groups.map(({ draft, raws }, i) => {
     const added = raws.map(toPrCommit)
     const head = draft.headSha ?? added[added.length - 1]?.sha
@@ -208,39 +256,68 @@ export interface ForgejoPush {
   at: string
   pusher?: string
   force: boolean
+  /** Oldest first, as the server writes them. */
   commitIds: string[]
 }
 
 /**
+ * How close to the pull request's creation its first push comment can be and
+ * still be the opening's: the server writes it while creating the pull request.
+ */
+export const FORGEJO_OPENING_PUSH_MS = 10_000
+
+function isWithin(at: string, of: string, ms: number): boolean {
+  const a = Date.parse(at)
+  const b = Date.parse(of)
+  return !Number.isNaN(a) && !Number.isNaN(b) && Math.abs(a - b) <= ms
+}
+
+/**
  * Forgejo records each push to a pull request as a comment naming the commits
- * it added — or, for a force push, the old and the new head. What no push
- * names was there when the pull request was opened.
+ * it added, oldest first — or, for a force push, the old and the new head.
+ * Creating the pull request writes one too, with its first commits: that one
+ * is the opening. On a server that did not, the opening is what no later push
+ * named — unless a force push since rewrote the branch, when nothing can say
+ * what the opening held and it is left empty. A force push lists no commits.
+ * `startCut`: the oldest comments were not read, so there is no opening.
  */
 export function groupForgejoPushes(
   pushes: readonly ForgejoPush[],
   opened: { at: string; author?: string },
-  commits: readonly RawPrCommit[]
+  commits: readonly RawPrCommit[],
+  startCut = false
 ): PrUpdateDraft[] {
   const bySha = new Map(commits.map((c) => [c.sha, c]))
   const commitOf = (sha: string): PrCommit => {
     const raw = bySha.get(sha)
     return raw ? toPrCommit(raw) : shaOnlyCommit(sha)
   }
-  const pushed = new Set(pushes.filter((p) => !p.force).flatMap((p) => p.commitIds))
-  // The PR's own list is oldest first (finishPrCommits ordered it).
-  const initial = commits.filter((c) => !pushed.has(c.sha)).map(toPrCommit)
-  const first: PrUpdateDraft = {
-    id: 'opened',
-    kind: 'opened',
-    createdAt: opened.at,
-    ...(opened.author ? { pusher: opened.author } : {}),
-    ...(initial.length ? { headSha: initial[initial.length - 1].sha } : {}),
-    added: initial
+  let later = pushes
+  let initial: PrCommit[] | null = null
+  if (!startCut && later[0] && !later[0].force && isWithin(later[0].at, opened.at, FORGEJO_OPENING_PUSH_MS)) {
+    initial = later[0].commitIds.map(commitOf)
+    later = later.slice(1)
   }
-  const later = pushes.map((p): PrUpdateDraft => {
+  const drafts: PrUpdateDraft[] = []
+  if (!startCut) {
+    if (!initial) {
+      const pushed = new Set(later.filter((p) => !p.force).flatMap((p) => p.commitIds))
+      // The PR's own list is oldest first (the caller ordered it).
+      initial = later.some((p) => p.force) ? [] : commits.filter((c) => !pushed.has(c.sha)).map(toPrCommit)
+    }
+    drafts.push({
+      id: 'opened',
+      kind: 'opened',
+      createdAt: opened.at,
+      ...(opened.author ? { pusher: opened.author } : {}),
+      ...(initial.length ? { headSha: initial[initial.length - 1].sha } : {}),
+      added: initial
+    })
+  }
+  for (const p of later) {
     if (p.force) {
       const [before, after] = p.commitIds
-      return {
+      drafts.push({
         id: p.id,
         kind: 'rewrite',
         createdAt: p.at,
@@ -248,21 +325,20 @@ export function groupForgejoPushes(
         ...(after ? { headSha: after } : {}),
         ...(before ? { fromSha: before } : {}),
         added: []
-      }
+      })
+      continue
     }
-    // Listed newest first, as `git rev-list` gives them; the parents settle it when known.
-    const raws = p.commitIds.map((s) => bySha.get(s) ?? { sha: s, message: '', authorName: '', authoredAt: '' })
-    const added = orderOldestFirst(raws, true).map((r) => commitOf(r.sha))
-    return {
+    const added = p.commitIds.map(commitOf)
+    drafts.push({
       id: p.id,
       kind: 'push',
       createdAt: p.at,
       ...(p.pusher ? { pusher: p.pusher } : {}),
       ...(added.length ? { headSha: added[added.length - 1].sha } : {}),
       added
-    }
-  })
-  return [first, ...later]
+    })
+  }
+  return drafts
 }
 
 /** Every commit in one update, when the host records no pushes at all. */
