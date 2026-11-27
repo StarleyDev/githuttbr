@@ -946,7 +946,23 @@ function AISettingsPage({
   const activeId = useSettingsStore((s) => s.settings.activeProfileId)
   const saveGeneralAI = useSettingsStore((s) => s.saveGeneralAI)
   const saveAIFor = useSettingsStore((s) => s.saveAIFor)
+  const setProfileOwnAI = useSettingsStore((s) => s.setProfileOwnAI)
+  const unlocked = useSettingsStore((s) => s.unlocked)
   const selectId = useId()
+  // Removing a profile's own AI deletes its accounts and keys, so it asks first
+  // — the same confirmation the Profile page uses — and lands on the general AI.
+  const removeOwnAI = (profileId: string, name: string): void =>
+    useUIStore.getState().openDialog({
+      kind: 'confirm',
+      title: t('settings.backToGeneralAiTitle'),
+      message: interp(t('settings.backToGeneralAiConfirm'), { profile: name }),
+      danger: true,
+      confirmLabel: t('settings.removeOwnAi'),
+      onConfirm: () => {
+        setProfileOwnAI(profileId, false)
+        onScope('general')
+      }
+    })
   // A profile that went back to the general AI has no own AI left to edit.
   const ownProfile =
     scope === 'general' ? undefined : profiles.find((p) => p.id === scope.profileId && p.ownAI === true)
@@ -973,6 +989,11 @@ function AISettingsPage({
             ? interp(t('settings.aiScopeOwnHint'), { profile: ownProfile.name })
             : t('settings.aiScopeGeneralHint')}
         </span>
+        {ownProfile && (
+          <button className="btn danger small" onClick={() => removeOwnAI(ownProfile.id, ownProfile.name)}>
+            {t('settings.removeOwnAi')}
+          </button>
+        )}
       </div>
 
       {ownProfile ? (
@@ -996,9 +1017,26 @@ function AISettingsPage({
                 <span className={`settings-ai-profile-mode ${p.ownAI ? 'own' : ''}`}>
                   {p.ownAI ? t('settings.aiOwnShort') : t('settings.aiUsesGeneral')}
                 </span>
-                {p.ownAI && (
-                  <button className="btn ghost tiny" onClick={() => onScope({ profileId: p.id })}>
-                    {t('settings.aiEditOwn')}
+                {p.ownAI ? (
+                  <>
+                    <button className="btn ghost tiny" onClick={() => onScope({ profileId: p.id })}>
+                      {t('settings.aiEditOwn')}
+                    </button>
+                    <button className="btn ghost tiny danger" onClick={() => removeOwnAI(p.id, p.name)}>
+                      {t('settings.removeOwnAi')}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn ghost tiny"
+                    disabled={!unlocked}
+                    title={unlocked ? undefined : t('settings.useOwnAiLocked')}
+                    onClick={() => {
+                      setProfileOwnAI(p.id, true)
+                      onScope({ profileId: p.id })
+                    }}
+                  >
+                    {t('settings.useOwnAi')}
                   </button>
                 )}
               </li>
