@@ -169,6 +169,42 @@ anahtarını düzeltmeden önce — ve rozeti bunu söylemeye devam eder; sonrak
 zekâ görevi o sağlayıcının gerekçesiyle başarısız olur. Bir taslakta **Kullan**
 yoktur: kaydedilene kadar sağlayıcı değildir.
 
+### Kullanılan yapay zekâ, durum çubuğundan
+
+Kendi yapay zekâsı olan bir profil, genel yapay zekânın kullandığı sağlayıcıyı
+yok sayar: genel yapay zekâda başka bir sağlayıcıyı kullanıma almak o profil
+için hiçbir şey değiştirmez ve Ayarlar dışında bunu söyleyen bir şey yoktu. Bir
+deponun altındaki durum çubuğu artık söylüyor. **Yapay zekâ:** _sağlayıcı_
+düğmesi, kullanılan profil için yanıt veren sağlayıcıyı durumunu gösteren bir
+noktayla adlandırır — yeşil **Hazır**, kırmızı **Yanıt vermiyor**, kehribar
+**Anahtar yok**, gri **Denetlenmedi**.
+
+Tıklamak küçük bir panel açar:
+
+| Bölüm | Ne gösterir |
+| --- | --- |
+| Başlık | Kullanılan profil ve **genel yapay zekâyı izleyip izlemediği** ya da **kendi yapay zekâsı olduğu** |
+| Sağlayıcı başına bir satır | O yapay zekânın kayıtlı her sağlayıcısı, modeli ve durumuyla; yanıt vermeyen bir sağlayıcı nedenini ikinci satırda gösterir |
+| **Kullanımda** / **Kullan** | Şu an yanıt veren sağlayıcı ve diğerlerinin her birinde tek tıkla geçiş |
+| **Yapay zekâyı yapılandır** | **Ayarlar → Yapay zekâ** sayfasını açar |
+| **Kullanım ve maliyet** | Depo ayarlarının *Analiz* sekmesini açar |
+
+**Kullan**, profilin yapay zekâsını okuduğu yere yazar. Genel yapay zekâyı
+izleyen bir profilde genel yapay zekâyı — dolayısıyla onu izleyen her profili —
+değiştirir; kendi yapay zekâsı olan bir profilde yalnızca onunkini. Kendi
+sağlayıcısı olan görevler onu korur. **Esc** paneli kapatır; yapay zekâ
+kapalıyken düğme gizlenir.
+
+![Durum çubuğundan kullanılan yapay zekâ: profil, yapay zekâsı ve durumuyla her sağlayıcı](../../screenshots/statusbar-ai.webp)
+
+**Sınırlar:** nokta, uygulamanın zaten getirdiği model listesinden (bir güne
+kadar saklanır) çıkarılır ve hiçbir şeyi test etmez; yanıt vermeyi bırakmış bir
+sağlayıcı hâlâ **Hazır** görünebilir — emin olmanın yolu Ayarlar'da bağlantıyı
+test etmektir. Ayarlar açılana kadar pencere anahtarların kendisini tutmaz; bu
+yüzden anahtarı olmayan bir sağlayıcı orada **Anahtar yok** yerine
+**Denetlenmedi** ya da **Yanıt vermiyor** görünebilir. Ayarlar'daki **Kullan**
+gibi, geçiş de kullanıma aldığı sağlayıcıyı test etmez.
+
 ### API anahtarı yerine abonelik kullanmak
 
 İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin. Genel yapay zekânın ilk hesabı **Kullanımda** olur.

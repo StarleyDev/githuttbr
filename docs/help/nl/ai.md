@@ -168,6 +168,41 @@ herstelt — en zijn badge blijft dat zeggen; de volgende AI-taak mislukt met de
 reden van die provider. Een concept heeft geen **Gebruiken**: het is pas een
 provider als het is opgeslagen.
 
+### De AI in gebruik, vanuit de statusbalk
+
+Een profiel met een eigen AI negeert de aanbieder die de algemene AI gebruikt:
+een andere aanbieder in gebruik nemen op de algemene AI verandert niets voor dat
+profiel, en buiten Instellingen zei niets dat. De statusbalk onderaan een
+repository zegt het nu. De knop **AI:** _aanbieder_ noemt de aanbieder die voor
+het actieve profiel antwoordt, met een stip voor de status — groen **Klaar**,
+rood **Reageert niet**, oranje **Geen sleutel**, grijs **Niet gecontroleerd**.
+
+Een klik opent een klein paneel:
+
+| Onderdeel | Wat het toont |
+| --- | --- |
+| Kop | Het actieve profiel, en of het **de algemene AI volgt** of **een eigen AI heeft** |
+| Eén rij per aanbieder | Elke opgeslagen aanbieder van die AI, met model en status; een aanbieder die niet reageert toont de reden op een tweede regel |
+| **In gebruik** / **Gebruiken** | De aanbieder die nu antwoordt, en wisselen met één klik bij elke andere |
+| **AI instellen** | Opent **Instellingen → AI** |
+| **Gebruik en kosten** | Opent het tabblad *Statistieken* van de repository-instellingen |
+
+**Gebruiken** schrijft waar het profiel zijn AI leest. Op een profiel dat de
+algemene AI volgt verandert het de algemene AI — en dus elk profiel dat die
+volgt; op een profiel met een eigen AI alleen die. Taken met een eigen
+aanbieder houden die. **Esc** sluit het paneel, en de knop is verborgen zolang
+AI uit staat.
+
+![De AI in gebruik vanuit de statusbalk: het profiel, zijn AI en elke aanbieder met zijn status](../../screenshots/statusbar-ai.webp)
+
+**De grenzen:** de stip komt uit de modellijst die de app toch al ophaalde (tot
+een dag bewaard) en test nooit iets, dus een aanbieder die niet meer antwoordt
+kan nog **Klaar** tonen — de verbinding testen in Instellingen is de manier om
+het zeker te weten. Zolang Instellingen niet geopend is, heeft het venster de
+sleutels zelf niet, dus een aanbieder zonder sleutel kan daar **Niet
+gecontroleerd** of **Reageert niet** tonen in plaats van **Geen sleutel**. Net
+als **Gebruiken** in Instellingen test het wisselen de aanbieder niet.
+
 ### Een abonnement in plaats van een API-sleutel
 
 Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt. Het eerste account van de algemene AI komt **In gebruik**.

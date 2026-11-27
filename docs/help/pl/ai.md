@@ -167,6 +167,40 @@ poprawieniem klucza — a jego plakietka dalej to pokazuje; następne zadanie AI
 kończy się błędem z powodem tego dostawcy. Szkic nie ma **Użyj**: staje się
 dostawcą dopiero po zapisaniu.
 
+### Używane AI, z paska stanu
+
+Profil z własnym AI ignoruje dostawcę używanego przez ogólne AI: ustawienie
+innego dostawcy w ogólnym AI niczego dla tego profilu nie zmienia, a poza
+Ustawieniami nic o tym nie mówiło. Pasek stanu na dole repozytorium mówi o tym
+teraz. Przycisk **AI:** _dostawca_ podaje dostawcę, który odpowiada dla
+aktywnego profilu, z kropką oznaczającą stan — zielona **Gotowy**, czerwona
+**Nie odpowiada**, bursztynowa **Brak klucza**, szara **Nie sprawdzono**.
+
+Kliknięcie otwiera mały panel:
+
+| Część | Co pokazuje |
+| --- | --- |
+| Nagłówek | Aktywny profil i to, czy **korzysta z ogólnego AI**, czy **ma własne AI** |
+| Wiersz na dostawcę | Każdy zapisany dostawca tego AI z modelem i stanem; ten, który nie odpowiada, podaje powód w drugiej linii |
+| **W użyciu** / **Użyj** | Dostawca, który teraz odpowiada, i przełączenie jednym kliknięciem przy każdym innym |
+| **Skonfiguruj AI** | Otwiera **Ustawienia → AI** |
+| **Użycie i koszt** | Otwiera kartę *Analityka* w ustawieniach repozytorium |
+
+**Użyj** zapisuje tam, skąd profil czyta swoje AI. W profilu korzystającym z
+ogólnego AI zmienia ogólne AI — a więc każdy profil, który z niego korzysta; w
+profilu z własnym AI zmienia tylko jego. Zadania z własnym dostawcą go
+zachowują. **Esc** zamyka panel, a przycisk jest ukryty, gdy AI jest wyłączone.
+
+![Używane AI z paska stanu: profil, jego AI i każdy dostawca ze swoim stanem](../../screenshots/statusbar-ai.webp)
+
+**Ograniczenia:** kropka wynika z listy modeli, którą aplikacja i tak pobrała
+(przechowywanej do jednego dnia), i niczego nie testuje, więc dostawca, który
+przestał odpowiadać, może nadal pokazywać **Gotowy** — pewność daje test
+połączenia w Ustawieniach. Dopóki Ustawienia nie zostały otwarte, okno nie ma
+samych kluczy, więc dostawca bez klucza może tam pokazywać **Nie sprawdzono**
+lub **Nie odpowiada** zamiast **Brak klucza**. Tak jak **Użyj** w Ustawieniach,
+przełączenie nie testuje dostawcy, którego ustawia.
+
 ### Subskrypcja zamiast klucza API
 
 Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI jest od razu **W użyciu**.

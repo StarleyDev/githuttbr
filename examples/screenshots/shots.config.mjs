@@ -777,6 +777,45 @@ export const shots = [
     }
   },
   {
+    // The status bar's AI button, opened: a profile with its own AI — the case
+    // the popover exists for — and one provider in each state. Every endpoint
+    // is local: the fake model server answers, port 9 refuses, and the keyless
+    // OpenAI row reads "No key" without a request (its endpoint is port 9 too,
+    // so nothing leaves the machine even if it were asked).
+    out: 'statusbar-ai',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      const port = await serveFakeModels()
+      await page.evaluate((port) => {
+        const store = window.__shot.settings
+        store.getState().update((s) => {
+          const local = {
+            id: 'ollama',
+            label: 'Local models',
+            provider: 'ollama',
+            endpoint: `http://127.0.0.1:${port}/v1`,
+            apiKey: '',
+            model: 'llama3.2'
+          }
+          const gateway = { ...local, id: 'custom', label: 'Team gateway', provider: 'custom', endpoint: 'http://127.0.0.1:9/v1', model: 'gpt-4o' }
+          const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: 'http://127.0.0.1:9/v1', model: 'gpt-4o-mini' }
+          const own = { ...s.ai, accounts: [local, gateway, hosted], defaultAccountId: 'ollama' }
+          const base = s.profiles.find((p) => p.id === s.activeProfileId) ?? s.profiles[0]
+          const work = { ...base, id: 'work', name: 'Work', ownAI: true, ai: own }
+          return { ...s, profiles: [...s.profiles.filter((p) => p.id !== 'work'), work], activeProfileId: 'work' }
+        })
+        // The fake settings hold no stored keys, so they count as loaded: that
+        // is what lets the keyless row say "No key" rather than "Not checked".
+        store.setState({ unlocked: true })
+      }, port)
+      await page.locator('.status-ai-btn').click()
+      await page.locator('.ai-chip-row .ai-chip-dot.ready').waitFor()
+      await page.locator('.ai-chip-row .ai-chip-dot.failing').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // A new provider is a draft until "Test and save" passes. Pointed at a
     // local port nothing listens on — not Ollama's, which may be running on the
     // capturing machine and would put its real model list in the shot — the

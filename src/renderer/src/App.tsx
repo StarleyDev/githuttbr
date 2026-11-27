@@ -52,6 +52,7 @@ import { BootError, bootErrorKind } from './components/BootError'
 import { ChangelogPage } from './components/ChangelogPage'
 import { MissionControlPage } from './components/MissionControlPage'
 import { HelpPage } from './components/HelpPage'
+import { AIStatusChip } from './components/AIStatusChip'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
@@ -1417,6 +1418,7 @@ export default function App(): React.JSX.Element {
               <ProblemsStatusChip path={repo.path} />
               <CodeTodosStatusChip path={repo.path} />
               <span className="status-sep" />
+              <AIStatusChip repoPath={repo.path} />
               <button
                 className="status-branch-profile status-branch-btn"
                 title={t('app.switchBranch')}

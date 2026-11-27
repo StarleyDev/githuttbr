@@ -166,6 +166,41 @@ guardar los conserva.
 y su insignia lo sigue diciendo; la siguiente tarea de IA falla con el motivo de
 ese proveedor. Un borrador no tiene **Usar**: no es un proveedor hasta guardarlo.
 
+### La IA en uso, desde la barra de estado
+
+Un perfil con IA propia ignora el proveedor en uso de la IA general: poner otro
+proveedor en uso en la IA general no cambia nada para ese perfil, y fuera de
+Ajustes nada lo decía. La barra de estado, al pie de un repositorio, ahora lo
+dice. Su botón **IA:** _proveedor_ nombra el proveedor que responde por el
+perfil en uso, con un punto para su estado — verde **Listo**, rojo **No
+responde**, ámbar **Sin clave**, gris **Sin comprobar**.
+
+Al pulsarlo se abre un pequeño panel:
+
+| Parte | Qué muestra |
+| --- | --- |
+| Cabecera | El perfil en uso, y si **sigue la IA general** o **tiene su propia IA** |
+| Una fila por proveedor | Cada proveedor guardado de esa IA, con su modelo y su estado; uno que no responde muestra el motivo en una segunda línea |
+| **En uso** / **Usar** | El proveedor que responde ahora, y el cambio con un clic en cada uno de los demás |
+| **Configurar IA** | Abre **Ajustes → IA** |
+| **Uso y coste** | Abre la pestaña *Analíticas* de los ajustes del repositorio |
+
+**Usar** escribe donde el perfil lee su IA. En un perfil que sigue la IA
+general cambia la IA general — y con ella todos los perfiles que la siguen; en
+un perfil con IA propia cambia solo la suya. Las tareas que tienen un proveedor
+propio lo conservan. **Esc** cierra el panel, y el botón se oculta mientras la
+IA está desactivada.
+
+![La IA en uso desde la barra de estado: el perfil, su IA y cada proveedor con su estado](../../screenshots/statusbar-ai.webp)
+
+**Los límites:** el punto se calcula con la lista de modelos que la app ya pidió
+(guardada hasta un día) y nunca prueba nada, así que un proveedor que dejó de
+responder puede seguir en **Listo** — probar la conexión en Ajustes es la forma
+de estar seguro. Hasta que se abren los Ajustes, la ventana no tiene las claves
+en sí, de modo que un proveedor sin clave puede verse como **Sin comprobar** o
+**No responde** en lugar de **Sin clave**. Como **Usar** en Ajustes, el cambio
+no prueba el proveedor que pone en uso.
+
 ### Usar una suscripción en vez de una clave de API
 
 Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general queda **En uso**.

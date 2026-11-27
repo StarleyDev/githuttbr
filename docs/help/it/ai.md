@@ -168,6 +168,43 @@ sistemarne la chiave — e il suo badge continua a dirlo; la prossima attività 
 fallisce con il motivo di quel fornitore. Una bozza non ha **Usa**: diventa un
 fornitore solo dopo il salvataggio.
 
+### L'IA in uso, dalla barra di stato
+
+Un profilo con una propria IA ignora il fornitore in uso dell'IA generale:
+mettere in uso un altro fornitore sull'IA generale non cambia nulla per quel
+profilo, e fuori dalle impostazioni niente lo diceva. La barra di stato, in
+fondo a un repository, ora lo dice. Il pulsante **IA:** _fornitore_ indica il
+fornitore che risponde per il profilo attivo, con un punto per il suo stato —
+verde **Pronto**, rosso **Non risponde**, ambra **Nessuna chiave**, grigio **Non
+verificato**.
+
+Un clic apre un piccolo pannello:
+
+| Parte | Cosa mostra |
+| --- | --- |
+| Intestazione | Il profilo attivo, e se **segue l'IA generale** o **ha una propria IA** |
+| Una riga per fornitore | Ogni fornitore salvato di quell'IA, con modello e stato; uno che non risponde mostra il motivo su una seconda riga |
+| **In uso** / **Usa** | Il fornitore che risponde ora, e il cambio con un clic su ciascuno degli altri |
+| **Configura IA** | Apre **Impostazioni → IA** |
+| **Utilizzo e costi** | Apre la scheda *Statistiche* delle impostazioni del repository |
+
+**Usa** scrive dove il profilo legge la sua IA. Su un profilo che segue l'IA
+generale cambia l'IA generale — e quindi ogni profilo che la segue; su un
+profilo con una propria IA cambia solo quella. Le attività con un fornitore
+proprio lo mantengono. **Esc** chiude il pannello, e il pulsante è nascosto
+finché l'IA è disattivata.
+
+![L'IA in uso dalla barra di stato: il profilo, la sua IA e ogni fornitore con il suo stato](../../screenshots/statusbar-ai.webp)
+
+**I limiti:** il punto è ricavato dall'elenco dei modelli che l'app ha già
+recuperato (conservato fino a un giorno) e non testa mai nulla, quindi un
+fornitore che ha smesso di rispondere può ancora apparire **Pronto** — provare
+la connessione nelle impostazioni è il modo per esserne certi. Finché le
+impostazioni non sono state aperte, la finestra non ha le chiavi vere e
+proprie, quindi un fornitore senza chiave può apparire **Non verificato** o
+**Non risponde** invece di **Nessuna chiave**. Come **Usa** nelle impostazioni,
+il cambio non testa il fornitore che mette in uso.
+
 ### Usare un abbonamento al posto di una chiave API
 
 Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account. Il primo account dell'IA generale diventa quello **In uso**.
