@@ -10,7 +10,7 @@ keywords: branch ramo crea checkout rinomina elimina remote pinned appuntati sid
 
 Un'unica barra laterale, riordinabile e ricercabile, contiene **branch, remote,
 tag, stash, worktree e sottomoduli**. Ogni sezione può essere nascosta o
-riordinata (Impostazioni → Layout), e il filtro di ricerca vale per tutte.
+riordinata (Impostazioni → Layout e terminale), e il filtro di ricerca vale per tutte.
 Quali sezioni e cartelle restano aperte o chiuse viene ricordato per
 repository, anche dopo un riavvio.
 
@@ -47,7 +47,7 @@ Un prefisso con un solo figlio resta una cartella — `release/1.2.3` è `releas
 con `1.2.3` dentro — così aggiungere `release/1.2.4` dopo non ridisegna l’albero.
 Una sequenza di cartelle con un solo figlio si comprime in un’intestazione
 (`dependabot/npm_and_yarn`). Le intestazioni di cartella hanno il segno cartella;
-la ref, il segno branch, remoto o tag.
+la ref, il segno branch, remoto o tag. **Impostazioni → Layout e terminale → Raggruppa le ref per prefisso** disattiva le cartelle, per un elenco piatto.
 
 Un clic destro sull'intestazione di una cartella agisce sull'intero gruppo:
 *Elimina tutti i branch sotto `feature` (4 branch)* rimuove tutto il contenuto

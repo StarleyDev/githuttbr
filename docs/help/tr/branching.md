@@ -10,7 +10,7 @@ keywords: dal dallar oluşturma checkout yeniden adlandırma silme uzak sabitlen
 
 Yeniden sıralanabilir, aranabilir tek bir kenar çubuğu **dalları, uzak
 depoları, etiketleri, stash'leri, çalışma ağaçlarını ve alt modülleri** barındırır.
-Her bölüm gizlenebilir ya da yeniden sıralanabilir (Ayarlar → Düzen) ve filtre
+Her bölüm gizlenebilir ya da yeniden sıralanabilir (Ayarlar → Yerleşim ve terminal) ve filtre
 kutusu hepsine birden uygulanır.
 Hangi bölümleri ve klasörleri açık ya da kapalı bıraktığınız depo başına
 hatırlanır; yeniden başlatınca da korunur.
@@ -45,7 +45,7 @@ Adında `/` bulunan dallar otomatik olarak katlanabilir klasörlere toplanır.
 Tek çocuklu bir önek yine klasördür — `release/1.2.3`, içinde `1.2.3` olan
 `release`dır — sonra `release/1.2.4` eklemek ağacı yeniden çizmez. Tek çocuklu
 klasör zinciri tek başlıkta toplanır (`dependabot/npm_and_yarn`). Klasör
-başlıkları klasör işareti taşır; ref’in kendisi dal, uzak veya etiket işareti.
+başlıkları klasör işareti taşır; ref’in kendisi dal, uzak veya etiket işareti. **Ayarlar → Yerleşim ve terminal → Ref’leri öneke göre grupla** klasörleri kapatır, düz bir liste verir.
 
 Bir klasör başlığına sağ tıklamak tüm grup üzerinde çalışır: *`feature`
 altındaki tüm dalları sil (4 dal)*, tam olarak hangi dalların gideceğini

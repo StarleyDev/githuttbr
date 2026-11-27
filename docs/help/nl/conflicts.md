@@ -149,7 +149,7 @@ Rebase een langlevende branch en je komt elke keer hetzelfde conflict tegen.
 hoe jij een conflict beslechtte en speelt dat antwoord opnieuw af als het
 identieke conflict weer opduikt.
 
-**Instellingen → Algemeen → Conflictoplossingen onthouden.** Het schrijft
+**Instellingen → Git & synchronisatie → Conflictoplossingen onthouden.** Het schrijft
 `rerere.enabled` naar je globale git-config, dus de commandoregel gedraagt zich
 net zo.
 

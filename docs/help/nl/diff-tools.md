@@ -13,7 +13,7 @@ GitHuttBr redden de meeste dagen. Sommige dagen niet: een gegenereerd bestand va
 4.000 regels, een merge waarbij je vier kolommen tegelijk moet zien, of gewoon de
 tool die je al tien jaar gebruikt en sneller leest dan welke nieuwe ook.
 
-**Instellingen → Algemeen → Externe diff- & mergetools.**
+**Instellingen → Git & synchronisatie → Externe diff- & mergetools.**
 
 ## Het is de lijst van git, niet die van ons
 

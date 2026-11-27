@@ -319,7 +319,7 @@ company servers after a merger. A profile holds all of them at once —
 gitlab.com plus a list of self-managed servers, each with its own token — so
 nobody has to switch profiles to move between them.
 
-gitlab.com is the token at the top of **Settings → Integrations → GitLab**.
+gitlab.com is the token at the top of **Settings → Connected accounts → GitLab**.
 Below it, under **Self-managed GitLab**, type a server's address — for example
 `gitlab.example.corp`, or `https://example.net/gitlab` for one served under a
 path — press **Add server**, then paste a token for it. The row says which
@@ -387,7 +387,7 @@ different place: REST under `https://<host>/api/v3`, GraphQL at
 a host is "some git server": push and fetch work, but no pull requests, issues
 or checks.
 
-Add the server in **Settings → Integrations → GitHub → GitHub Enterprise
+Add the server in **Settings → Connected accounts → GitHub → GitHub Enterprise
 Server**: type its address, press **Add server**, then paste a token for it.
 The row says which account the token signs in as. A profile can hold several
 servers, each with its own token, next to its github.com token.
@@ -462,7 +462,7 @@ own tokens. Without telling the app about it, a remote on such a server is
 "some git server": push and fetch work if git can sign in by itself, but there
 are no pull requests and no build status.
 
-Add the server in **Settings → Integrations → Bitbucket → Bitbucket Data
+Add the server in **Settings → Connected accounts → Bitbucket → Bitbucket Data
 Center**: type the address you open Bitbucket at — with its path, if it has
 one — press **Add server**, then paste an HTTP access token for it. The row
 says which user the token signs in as. A profile can hold several servers, each
@@ -615,7 +615,7 @@ under the field; what is wrong with the address is shown in red under the addres
 
 Forgejo, and Gitea, which shares its API, always runs at an address its owner
 chose: your own server, or a public one such as codeberg.org. Give a profile
-that address in **Settings → Integrations → Forgejo**, together with an access
+that address in **Settings → Connected accounts → Forgejo**, together with an access
 token. **Create token** opens the token page on that server. Give the token
 read and write permission on *repository*, *issue* and *notification*, and
 read permission on *user* and *organization*. A token's permissions cannot be
@@ -686,7 +686,7 @@ for example) marks nothing.
 
 ![Pull requests waiting for your review, marked with an eye](../screenshots/pr-awaiting-review.webp)
 
-With **Settings → Desktop notifications** on, a GitLab or Forgejo pull request
+With **Settings → General → Desktop notifications** on, a GitLab or Forgejo pull request
 that *starts* waiting for you raises one; clicking it opens the PR page. The
 first look at a repository only takes note of what is already waiting, so
 opening the app does not replay a backlog. GitHub's review requests are left to
@@ -711,7 +711,7 @@ GitHuttBr can also borrow whatever your **git credential helper** already holds,
 so an org you have already authenticated for often needs no setup at all. See
 [Security & secrets](security.md).
 
-Each profile **links its own account**. In Settings → Integrations, **Link to the
+Each profile **links its own account**. In Settings → Connected accounts, **Link to the
 profile** looks for a login already on the machine — git's credential helper,
 then the **GitHub CLI**'s active account, then the helper's own sign-in window
 — and ties that account to the profile. Nothing is shared implicitly: a new

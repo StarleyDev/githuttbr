@@ -101,7 +101,7 @@ standalone tab a **Group name** field appears (prefilled with the root's
 folder name) and both land in a new group; with no family member open it just
 says the worktree opens as its own tab. Inside the group, chips collapse to
 just the leaf (`main`, `feature/x`) because the group already says which
-repository they belong to — a Settings → Layout toggle keeps the full
+repository they belong to — a Settings → Layout & terminal toggle keeps the full
 `root · branch` name if you prefer. The offer only ever joins worktrees that
 share the same root — it never merges unrelated repositories.
 

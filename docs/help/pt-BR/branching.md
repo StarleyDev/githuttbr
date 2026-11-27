@@ -10,7 +10,7 @@ keywords: branch branches criar create checkout renomear rename apagar delete re
 
 Uma única barra lateral, reordenável e pesquisável, guarda **branches, remotes,
 tags, stashes, worktrees e submódulos**. Toda seção pode ser escondida ou
-reordenada (Configurações → Layout), e a caixa de filtro vale para todas elas.
+reordenada (Configurações → Layout e terminal), e a caixa de filtro vale para todas elas.
 Quais seções e pastas você deixa abertas ou fechadas fica lembrado por
 repositório, mesmo depois de reiniciar.
 
@@ -45,7 +45,7 @@ Um prefixo com um filho só continua pasta — `release/1.2.3` é `release` com
 `1.2.3` dentro — então acrescentar `release/1.2.4` depois não redesenha a árvore.
 Uma sequência de pastas de um filho só vira um cabeçalho
 (`dependabot/npm_and_yarn`). Cabeçalhos de pasta levam marca de pasta; a ref,
-marca de branch, remoto ou tag.
+marca de branch, remoto ou tag. **Configurações → Layout e terminal → Agrupar refs por prefixo** desliga as pastas, para uma lista plana.
 
 Clique com o botão direito no cabeçalho de uma pasta para agir sobre o grupo
 inteiro: *Excluir todas as branches em `feature` (4 branches)* remove tudo o

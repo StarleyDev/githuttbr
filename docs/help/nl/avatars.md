@@ -81,7 +81,7 @@ voor de honderden die een scrollende graaf tekent.
 ## De afbeelding van je profiel
 
 De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
-**Instellingen → Profiel → Avatar** biedt vijf bronnen:
+**Instellingen → Profiel & identiteit → Avatar** biedt vijf bronnen:
 
 | Bron | Wat hij toont |
 |---|---|
@@ -91,7 +91,7 @@ De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
 | **Afbeelding** | Een bestand dat je kiest — PNG of JPEG. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van GitHuttBr, niet in het instellingenbestand. |
 | **Uit een repository** | Een pictogram of logo uit een van de repository's van het profiel — dat van de app of van het bedrijf —, net als een afbeelding in het profiel gekopieerd. |
 
-De afbeelding gaat mee met **Instellingen → Gegevens → Instellingen exporteren** en komt terug bij
+De afbeelding gaat mee met **Instellingen → Gegevens & back-up → Instellingen exporteren** en komt terug bij
 importeren; het profiel verwijderen verwijdert haar.
 
 ### Een pictogram uit een repository

@@ -13,7 +13,7 @@ GitHuttBr'nun [diff görüntüleyicisi](diffs.md) ve [üç panelli çakışma
 üretilmiş bir dosya, aynı anda dört sütun görmeniz gereken bir birleştirme ya da
 sadece on yıldır kullandığınız ve her yeni araçtan daha hızlı okuduğunuz alet.
 
-**Ayarlar → Genel → Harici diff ve merge araçları.**
+**Ayarlar → Git ve eşitleme → Harici diff ve merge araçları.**
 
 ## Liste bizim değil, git'in
 

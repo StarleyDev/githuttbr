@@ -8,7 +8,7 @@ keywords: ssh schlüssel key keys agent ssh-add ssh-keygen ed25519 publickey per
 
 # SSH-Schlüssel
 
-**Einstellungen → Sicherheit → SSH-Schlüssel.**
+**Einstellungen → Sicherheit & Bestätigungen → SSH-Schlüssel.**
 
 ## Warum das hier neben den Tokens steht
 

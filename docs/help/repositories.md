@@ -86,7 +86,7 @@ reopen them. It covers open tabs only, and it happens on the first visit of
 each session rather than once ever — so a repository you **Forget** stays
 forgotten unless you open it again.
 
-Scan folders are configured in Settings → Data, or in the **Scanned
+Scan folders are configured in Settings → Data & backup, or in the **Scanned
 repositories** dialog below:
 
 - **Depth** is how many directory levels the scan descends below the root

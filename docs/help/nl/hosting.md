@@ -151,7 +151,7 @@ de inloggegevens vallen die git gebruikt.
 ## Zelf beheerde GitLab
 
 Een bedrijfs-GitLab heeft een eigen adres. Geef een profiel dat adres in
-**Instellingen → Integraties → GitLab → GitLab-adres**, bijvoorbeeld
+**Instellingen → Gekoppelde accounts → GitLab → GitLab-adres**, bijvoorbeeld
 `git.example.org` of `https://example.net/gitlab` voor een instantie onder een
 pad. Vanaf dan zijn remotes op die host GitLab: merge requests worden getoond,
 geopend, gereviewd en gemerged, de kloonbrowser en *Repository aanmaken* praten
@@ -188,7 +188,7 @@ Stel het adres van de instantie in voordat je het token invoert. Het adres wijzi
 
 Forgejo — en Gitea, dat dezelfde API deelt — draait altijd op een adres dat de
 eigenaar koos: je eigen server, of een publieke zoals codeberg.org. Geef een
-profiel dat adres in **Instellingen → Integraties → Forgejo**, samen met een
+profiel dat adres in **Instellingen → Gekoppelde accounts → Forgejo**, samen met een
 toegangstoken. **Token aanmaken** opent de tokenpagina van die server. Geef het token lees- en schrijfrechten op *repository*, *issue* en
 *notification*, en leesrechten op *user* en *organization*. De rechten van een
 token zijn achteraf niet te wijzigen: een token zonder *issue* of *notification*
@@ -258,7 +258,7 @@ minuten onthouden. Een token dat zijn eigen gebruiker niet mag lezen (zonder
 
 ![Pull requests die op jouw review wachten, gemarkeerd met een oog](../../screenshots/pr-awaiting-review.webp)
 
-Met **Instellingen → Systeemmeldingen** aan geeft een pull request op GitLab of
+Met **Instellingen → Algemeen → Systeemmeldingen** aan geeft een pull request op GitLab of
 Forgejo die op jou *begint* te wachten er een; een klik opent de PR-pagina. De
 eerste blik op een repository onthoudt alleen wat al wacht, dus de app openen
 speelt geen achterstand af. Reviewverzoeken van GitHub blijven bij zijn
@@ -285,7 +285,7 @@ credential helper** al bevat, dus een organisatie waarvoor je al geauthenticeerd
 bent vergt vaak helemaal geen instelwerk. Zie
 [Beveiliging & geheimen](security.md).
 
-Elk profiel **koppelt zijn eigen account**. In Instellingen → Integraties zoekt
+Elk profiel **koppelt zijn eigen account**. In Instellingen → Gekoppelde accounts zoekt
 **Koppelen aan het profiel** een login die al op de machine staat — in de credential
 helper van git, dan het actieve account van de **GitHub CLI**, dan het
 aanmeldvenster van de helper — en koppelt dat account aan het profiel. Niets

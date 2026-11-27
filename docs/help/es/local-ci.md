@@ -20,7 +20,7 @@ salga de tu máquina.
 
 GitHuttBr deliberadamente **no** incluye act ni Docker — una app que arrastra
 consigo un runtime de contenedores es lo contrario de un cliente git. Es una
-integración opcional: actívala en **Ajustes → Integraciones** (o en el propio
+integración opcional: actívala en **Ajustes → Cuentas conectadas** (o en el propio
 diálogo), y GitHuttBr detecta qué está instalado y te guía por el resto —
 `brew install act`, un daemon de Docker en marcha, listo. Nada se ejecuta hasta
 que las tres condiciones se cumplen: activada, act instalado, Docker accesible.

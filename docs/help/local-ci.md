@@ -21,7 +21,7 @@ To follow the runs the host itself started after you pushed, see
 
 GitHuttBr deliberately does **not** ship act or Docker — an app that drags a
 container runtime along is the opposite of a git client. This is an opt-in
-integration: enable it in **Settings → Integrations** (or in the dialog
+integration: enable it in **Settings → Connected accounts** (or in the dialog
 itself), and GitHuttBr detects what is installed and guides you through the rest
 — `brew install act`, a running Docker daemon, done. Nothing runs until all
 three are true: enabled, act installed, Docker reachable.

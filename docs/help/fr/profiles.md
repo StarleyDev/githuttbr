@@ -19,20 +19,13 @@ quand vous avez deux comptes GitHub.
 
 ## Modifier un profil, utiliser un profil
 
-Les Paramètres répartissent leurs pages en deux. **Ce profil** regroupe les pages
-qui changent avec le profil — **Profil** et **Intégrations**. **Application**
-regroupe tout le reste, qui s'applique dans n'importe quel profil et l'indique en
-haut de la page.
+Deux pages des Paramètres changent avec le profil — **Profil et identité** et **Comptes connectés**, en haut du groupe **Vous**, dont l’en-tête nomme le profil qu’elles modifient. Toutes les autres pages valent pour n’importe quel profil et l’indiquent en haut.
 
-Les deux pages du profil s'ouvrent sur une barre : *Modification du profil* et un
-sélecteur. Le sélecteur choisit le profil que vous **modifiez** ; il ne change pas
-celui que l'application **utilise**. Quand ils diffèrent, un bandeau ambre le dit
-— *Vous modifiez Travail. L'application utilise Personnel* — avec **Utiliser ce
-profil** pour basculer. C'est le moment où l'on lie le plus facilement un compte
-au mauvais profil, alors la page Intégrations nomme aussi le profil sur chaque
-carte et sur le bouton lui-même : **Lier au profil Travail**, et la confirmation
-le répète. Nouveau et supprimer sont dans la même barre ; supprimer demande
-d'abord.
+**Profil et identité** s’ouvre sur la carte du profil : son image, son nom (modifiable sur place), *utilisé* quand l’app l’utilise, le sélecteur et **Nouveau profil**. **Comptes connectés** s’ouvre sur le même sélecteur dans une barre, *Modification du profil*. Le sélecteur choisit le profil que vous **modifiez** ; il ne change pas celui que l’app **utilise**. Quand ils diffèrent, une bande ambre le dit, avec **Utiliser ce profil** pour basculer. C’est le moment où l’on lie le plus facilement un compte au mauvais profil : Comptes connectés nomme donc aussi le profil sur chaque carte et sur le bouton lui-même, et la confirmation le répète. La suppression d’un profil est au même endroit, et demande d’abord.
+
+Sous la carte viennent l’identité git et la signature des commits. Quand un dépôt ouvert committe sous une autre identité — sa configuration git nomme un autre auteur —, une ligne le signale, avec **Appliquer l’identité au dépôt courant** ; quand les deux concordent, il n’y a rien à appliquer et la ligne n’apparaît pas. Viennent ensuite l’image du profil, un résumé de ses **comptes connectés** — une ligne par hôte avec *Connecté*, *Jeton expiré ou en erreur*, *Injoignable* ou *Non connecté*, et **Connecter** ou **Renouveler**, qui ouvrent Comptes connectés sur cet hôte — et l’IA qu’utilise le profil.
+
+Le résumé vérifie discrètement, sans fenêtre de connexion, à chaque ouverture de la page ou changement de jeton ; il ne sonde jamais en continu. Ce qu’il trouve sert aussi au menu latéral : **Comptes connectés** affiche un petit compteur d’alerte quand un jeton a été refusé ou a échoué, et seulement pour les vérifications déjà faites par les Paramètres. Un hôte injoignable ne compte pas — le jeton peut être bon.
 
 ![Modification du profil Travail pendant que l'application en utilise un autre : le bandeau ambre, et le bouton de liaison qui nomme Travail](../../screenshots/settings-profile-band.webp)
 
@@ -50,8 +43,7 @@ indique seulement quelle IA le profil utilise et y renvoie.
 ## Chaque profil, ses propres comptes
 
 En plus d'un jeton, un profil peut **lier** une connexion déjà présente sur la
-machine — du credential helper de git ou de GitHub CLI — dans Paramètres →
-Intégrations. Un lien appartient à un seul profil : un nouveau profil commence
+machine — du credential helper de git ou de GitHub CLI — dans Paramètres → Comptes connectés. Un lien appartient à un seul profil : un nouveau profil commence
 déconnecté, et un compte qu'un autre profil détient déjà est refusé, si bien que
 deux profils peuvent tenir deux comptes GitHub (ou Azure DevOps) côte à côte.
 Voir [Hébergement](hosting.md).

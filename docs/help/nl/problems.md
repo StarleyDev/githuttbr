@@ -53,7 +53,7 @@ GitHuttBr. Ze starten wanneer je het paneel opent of ververst, nooit vanzelf.
 Daarom is de lijst een momentopname: bewerk een bestand en hij is verouderd tot
 je opnieuw draait.
 
-**Instellingen → Algemeen → Code-analyzers** bepaalt hoe gretig dat gaat:
+**Instellingen → Code-analyses** bepaalt hoe gretig dat gaat:
 sweepen bij het openen van het paneel (standaard), alleen bij verversen, of uit —
 wat de analyzerhelft, de teller in de statusbalk en het commando volledig
 verbergt.

@@ -62,4 +62,4 @@ Deze pagina zegt wat dat concreet betekent — en waar de randen zitten.
 
 **Verminderde beweging** wordt overgenomen van de systeeminstelling —
 animaties vallen terug op directe overgangen. Het themacontrast is per thema
-af te stellen in [Instellingen → Uiterlijk](themes.md).
+af te stellen in [Instellingen → Thema’s](themes.md).

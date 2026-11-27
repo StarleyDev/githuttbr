@@ -13,6 +13,22 @@ you turn it on, your AI provider.
 
 ![Security settings](../screenshots/settings-security.webp)
 
+## The Security & confirmations page
+
+**Settings → Security & confirmations** starts with what holds right now, in
+one strip: whether secrets are masked, whether the OS keychain is in use, and
+whether a force push asks first — with *turning it on is recommended* while it
+does not. The strip only reports; the switches are below it.
+
+| Block | What it holds |
+|---|---|
+| **Ask before something dangerous** | **Confirm before force push**, the large-file threshold, and a line that cannot be switched: discard, hard reset and deleting a protected branch always ask, and each confirmation says what would be lost |
+| **Privacy** | **Mask secret values**, **Load images from other sites in comments**, and the [Vault](vault.md) |
+| **OS keychain**, **SSH keys** | Where tokens are kept ([below](#the-os-keychain)) and the keys your agent holds ([SSH keys](ssh-keys.md)) |
+
+The force-push confirmation used to sit on General. Protected branches are set
+per repository, in its [settings](repo-settings.md).
+
 ## Secret masking
 
 Values in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` and friends
@@ -32,7 +48,7 @@ stage. An eye toggle reveals them per view. `.env.example`, `.sample` and
 | Guard | When |
 |---|---|
 | **Secret file** | Committing something that looks like a credential — with a one-click *Ignore & untrack* |
-| **Large file** | Committing an oversized blob (threshold in Settings → Security) |
+| **Large file** | Committing an oversized blob (threshold in Settings → Security & confirmations) |
 | **Build noise** | Committing `xcuserdata/`, `DerivedData/` or a `.DS_Store` — with the same one-click *Ignore & untrack* |
 | **Protected branch** | Committing straight to `main`/`master`, or force-pushing one |
 | **Tracked secrets** | Pushing a repository that *tracks* a secret file — warned once per session |
@@ -107,7 +123,7 @@ permission dialog can appear, GitHuttBr explains what is being stored, what it
 cannot do (an app only ever reads back the entry it created — your other
 passwords are unreachable), and that saying no is fine: tokens then live in
 memory for the session only, the vault stays closed, and you can turn it on
-later in **Settings → Security → OS keychain**.
+later in **Settings → Security & confirmations → OS keychain**.
 
 A fresh install makes **zero** keychain calls until something actually needs
 storing.
@@ -117,9 +133,9 @@ storing.
 the keychain asks again for an app it does not recognise. **Always Allow** keeps
 the tokens; see [upgrading](upgrading.md).
 
-While it is off, the token field in Integrations says so — *Saved only until you quit GitHuttBr: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
+While it is off, the token field in Connected accounts says so — *Saved only until you quit GitHuttBr: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
 
-![The token field in Integrations with the keychain off: saved only until you
+![The token field in Connected accounts with the keychain off: saved only until you
 quit, with an Enable button](../screenshots/token-keychain-notice.webp)
 
 A token you **remove** while the keychain is off is gone at once — nothing is
@@ -145,7 +161,7 @@ more: the settings load again normally.
 On Linux the keychain is a secret service — GNOME Keyring or KWallet. When none
 is running, the system still "encrypts", but with a fixed password that is the
 same on every machine: the tokens and keys are scrambled, not protected.
-Settings → Security says so under the keychain status — *No keyring is running…*
+Settings → Security & confirmations says so under the keychain status — *No keyring is running…*
 — so the word *keychain* never stands for protection that is not there.
 
 So that nothing new lands in a store anyone could unscramble, a token you type
@@ -183,7 +199,7 @@ saving settings, and the Vault, stay busy until it answers or GitHuttBr restarts
 If you dismiss the system's keychain prompt, the keyring is locked, or the token
 store was written by another copy of GitHuttBr (a development build, a re-signed
 one), GitHuttBr **cannot read your saved tokens — and leaves them untouched**.
-Settings → Security says *GitHuttBr could not read your saved tokens*, and a token
+Settings → Security & confirmations says *GitHuttBr could not read your saved tokens*, and a token
 you type meanwhile is kept for the session only (the field says so too). It is
 never written over the store it could not read: that would replace every saved
 token with the one you just typed.
@@ -195,8 +211,10 @@ token with the one you just typed.
 
 ## Importing settings
 
-**Settings → Import / Export** moves settings, profiles and themes between
-machines. The default export carries **no tokens or API keys**, and importing
+**Settings → Data & backup → Import / Export** moves settings, profiles and themes between
+machines. It leads that page; what can be wiped and not brought back — the list
+of recently opened repositories — sits apart below it, under **Danger zone**,
+and asks before it clears anything. The default export carries **no tokens or API keys**, and importing
 such a file never touches the ones you have saved — a blank token in the file
 means "not in this file", not "remove mine".
 
@@ -210,7 +228,7 @@ offers (the table below), each with its size on this computer, and writes only
 the ones you tick. A part left out is not in the file at all — importing it
 later leaves that part of the other machine exactly as it is.
 
-![Settings → Data → Export: "Another computer" picked, the green note saying the file carries no path of this machine, and the manifest of what goes in](../screenshots/settings-export.webp)
+![Settings → Data & backup → Export: "Another computer" picked, the green note saying the file carries no path of this machine, and the manifest of what goes in](../screenshots/settings-export.webp)
 
 Three shortcuts above the parts tick the usual combinations. Changing a
 checkbox by hand lights the shortcut that matches, or none:
@@ -263,7 +281,7 @@ file (and type its password, if it has one), a dialog asks which parts to bring
 in. Nothing is applied until you press **Import**; **Cancel** leaves everything
 as it was.
 
-![Settings → Data → Import: four parts, the repositories unticked because none of their folders exist here, and the path translation open](../screenshots/settings-import.webp)
+![Settings → Data & backup → Import: four parts, the repositories unticked because none of their folders exist here, and the path translation open](../screenshots/settings-import.webp)
 
 | Part | What it carries |
 |------|-----------------|
@@ -403,7 +421,7 @@ minimum length. You type it twice and tick that you understand it cannot be
 recovered; importing the file asks for it — in a dialog in Settings, inside the
 welcome step on first run — and a wrong one asks again.
 
-![Settings → Data → Export: a file protected with a password, the no-recovery warning acknowledged](../screenshots/settings-export-password.webp)
+![Settings → Data & backup → Export: a file protected with a password, the no-recovery warning acknowledged](../screenshots/settings-export-password.webp)
 
 | | Without a password | With a password |
 |---|---|---|

@@ -51,7 +51,7 @@ La **vista de archivo** de un archivo del árbol de trabajo — preparado o no, 
 
 ![Margen de cambios con una ventana emergente abierta, minimapa a la derecha](../../screenshots/change-gutter.webp)
 
-El **minimapa**, desactivado por defecto, añade una vista general a escala de todo el archivo en el borde derecho — haz clic o arrástralo para moverte, como haría una barra de desplazamiento si también pudiera mostrarte la forma del archivo. Ambos son ajustes por máquina en **Ajustes → General → Visor de archivos**.
+El **minimapa**, desactivado por defecto, añade una vista general a escala de todo el archivo en el borde derecho — haz clic o arrástralo para moverte, como haría una barra de desplazamiento si también pudiera mostrarte la forma del archivo. Ambos son ajustes por máquina en **Ajustes → Diseño y terminal → Visor de archivos**.
 
 Ninguno de los dos lee el historial: cambia a Diff, Blame o un commit anterior y el margen de cambios desaparece — esas vistas ya muestran cada cambio directamente.
 

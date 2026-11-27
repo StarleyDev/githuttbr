@@ -18,7 +18,7 @@ deine Aliase.
   sich seine Größe.
 - Die Sichtbarkeit des Terminals gilt pro Repository: wechselst du zu einem Tab,
   der nie eines geöffnet hat, bleibt es geschlossen.
-- **Es öffnet sich mit dem Repository und dockt standardmäßig unter dem Graphen an.** Wird ein Repository in einer Sitzung zum ersten Mal zum aktiven Tab, öffnet sich sein Terminal mit einer Shell in dessen Ordner. Schließt du es, bleibt es für dieses Repository bis zum nächsten Start geschlossen. Jedes besuchte Repository kostet einen Shell-Prozess; **Terminal beim Öffnen eines Repositorys öffnen** und die Position stellst du unter Einstellungen → Layout ein.
+- **Es öffnet sich mit dem Repository und dockt standardmäßig unter dem Graphen an.** Wird ein Repository in einer Sitzung zum ersten Mal zum aktiven Tab, öffnet sich sein Terminal mit einer Shell in dessen Ordner. Schließt du es, bleibt es für dieses Repository bis zum nächsten Start geschlossen. Jedes besuchte Repository kostet einen Shell-Prozess; **Terminal beim Öffnen eines Repositorys öffnen** und die Position stellst du unter Einstellungen → Layout & Terminal ein.
 - Tabs benennen sich nach dem, was in ihnen läuft.
 - Klappst du die Terminal-Liste ein, schrumpft sie zu einer **Leiste**: ein Icon
   pro Terminal (geteilte Terminals zeigen eine Mini-Karte der Panels), Klick zum
@@ -98,7 +98,7 @@ etwas verändert.
 
 ## Shell, Theme & Oh My Posh
 
-Unter Windows wählt Einstellungen → Layout die Shell, die jedes neue Terminal
+Unter Windows wählt Einstellungen → Layout & Terminal die Shell, die jedes neue Terminal
 startet — PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL oder eine
 eigene ausführbare Datei. Das Aussehen des Terminals (Theme, Schriftgröße,
 Schriftfamilie) liegt unter Einstellungen → Themes → Terminal-Theme und gilt

@@ -10,7 +10,7 @@ keywords: gałąź gałęzie utwórz przełącz zmień nazwę usuń zdalne przyp
 
 Jeden panel boczny — przestawialny i przeszukiwalny — mieści **gałęzie, zdalne
 repozytoria, tagi, stashe, worktree i podmoduły**. Każdą sekcję da się ukryć
-albo przestawić (Ustawienia → Układ), a pole filtra działa na wszystkie naraz.
+albo przestawić (Ustawienia → Układ i terminal), a pole filtra działa na wszystkie naraz.
 To, które sekcje i katalogi zostawiasz rozwinięte albo zwinięte, jest
 zapamiętywane per repozytorium — także po restarcie.
 
@@ -47,7 +47,7 @@ Prefiks z jednym dzieckiem nadal jest folderem — `release/1.2.3` to `release`
 z `1.2.3` w środku — więc dodanie `release/1.2.4` później nie przebudowuje drzewa.
 Ciąg folderów z jednym dzieckiem zwija się do jednego nagłówka
 (`dependabot/npm_and_yarn`). Nagłówki folderów mają znak folderu; ref — znak
-brancha, zdalnego albo tagu.
+brancha, zdalnego albo tagu. **Ustawienia → Układ i terminal → Grupuj refy po prefiksie** wyłącza foldery, dając płaską listę.
 
 Kliknij prawym przyciskiem nagłówek katalogu, by zadziałać na całą grupę: *Usuń
 wszystkie branche pod `feature` (4 branchy)* usuwa wszystko w środku po jednym

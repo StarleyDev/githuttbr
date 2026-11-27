@@ -67,7 +67,7 @@ GitHuttBr prüft ein paar Dinge und fragt einmal nach — nie stillschweigend:
 
 - eine Datei, die nach einem **Geheimnis** aussieht (`.env`, `*.pem`,
   `id_rsa`…),
-- ein **sehr großer** Blob (Schwellwert unter Einstellungen → Sicherheit),
+- ein **sehr großer** Blob (Schwellwert unter Einstellungen → Sicherheit & Bestätigungen),
 - ein Commit **direkt auf einen geschützten Branch** (voreingestellt
   `main`/`master`).
 

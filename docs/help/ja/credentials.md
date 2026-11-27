@@ -4,7 +4,7 @@ category: セキュリティ
 order: 73
 summary: git 自身のパスワード保管先 — 3 つめのもの — と、https が何度も尋ねてくる理由。
 keywords: credential helper password https asks again osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401 認証情報 ヘルパー パスワード 平文 忘れさせる トークン 失効 サインインを確認 どのアカウント リモート URL のトークン 埋め込まれたパスワード URL から削除 token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # 認証情報ヘルパー
@@ -146,7 +146,7 @@ GitHuttBr は各リモートの fetch と push の URL を読み、3 か所で�
 |---------------|-------------------------|
 | リポジトリのプロファイルにそのホスト用のトークンか紐づけアカウントがある | そのトークン — 確認はそれ以上何も言いません |
 | プロファイルのトークンはないが、git 自身のヘルパーにそのホストのログインがある | ヘルパーのログイン |
-| どちらもない | 何もない: トークンを追加するまで fetch と push は失敗します。確認は先にそう伝え、設定 → 連携 を開く **先にトークンを追加** を示します |
+| どちらもない | 何もない: トークンを追加するまで fetch と push は失敗します。確認は先にそう伝え、設定 → 接続済みアカウント を開く **先にトークンを追加** を示します |
 
 失敗した操作から始めた場合は **再試行** を示します。
 

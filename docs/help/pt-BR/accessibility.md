@@ -60,4 +60,4 @@ página diz o que isso significa em concreto — e onde estão os limites.
 
 **Movimento reduzido** é respeitado a partir da configuração do sistema — as
 animações viram transições instantâneas. O contraste pode ser ajustado tema a
-tema em [Configurações → Aparência](themes.md).
+tema em [Configurações → Temas](themes.md).

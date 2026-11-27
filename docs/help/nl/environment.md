@@ -49,7 +49,7 @@ controleren**.
 - Ze controleert wat de app vanuit haar eigen proces ziet. Een shellprofiel dat
   het `PATH` alleen in je terminal wijzigt, kan de twee laten verschillen.
 - De rij van de GitHub CLI toont de eigen aanmelding van `gh`, niet de accounts
-  die onder **Instellingen → Integraties** gekoppeld zijn. Dat zijn aparte
+  die onder **Instellingen → Gekoppelde accounts** gekoppeld zijn. Dat zijn aparte
   aanmeldingen. Een ontbrekende `workflow`-scope daar merk je in plaats daarvan als
   een geweigerde push.
 - Ze meldt wat geïnstalleerd is. Ze installeert of werkt niets bij.

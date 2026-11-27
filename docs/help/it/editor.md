@@ -4,7 +4,7 @@ category: Strumenti dell'area di lavoro
 order: 95
 summary: Manda un repository, un file o una singola riga di codice all'editor in cui scrivi davvero.
 keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode apri nell'editor riga colonna comando personalizzato argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # Editor esterno
@@ -18,7 +18,7 @@ destro su una riga nella vista file o blame e si apre lì, a quella riga.
 
 ## Sceglierne uno
 
-**Impostazioni → Generali → Editor esterno.** Il menu a tendina elenca gli editor
+**Impostazioni → Git e sincronizzazione → Editor esterno.** Il menu a tendina elenca gli editor
 che GitHuttBr riesce a trovare su questa macchina — cerca prima il comando di
 ciascun editor, poi, su macOS, il bundle dell'applicazione in `/Applications` e
 `~/Applications`. La scansione parte ogni volta che apri le impostazioni, quindi

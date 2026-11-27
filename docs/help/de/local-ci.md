@@ -20,7 +20,7 @@ auswählen, Ausführen drücken, dasselbe Log verfolgen, das die CI ausgeben wü
 
 GitHuttBr liefert act und Docker ganz bewusst **nicht** mit — eine App, die eine
 Container-Runtime mitschleppt, ist das Gegenteil eines Git-Clients. Es ist eine
-Opt-in-Integration: aktiviere sie unter **Einstellungen → Integrationen** (oder
+Opt-in-Integration: aktiviere sie unter **Einstellungen → Verbundene Konten** (oder
 direkt im Dialog), und GitHuttBr erkennt, was installiert ist, und führt dich
 durch den Rest — `brew install act`, ein laufender Docker-Daemon, fertig.
 Nichts läuft, bevor alle drei Bedingungen erfüllt sind: aktiviert, act

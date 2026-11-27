@@ -148,7 +148,7 @@ login revogado nem apaga a credencial que o git usa.
 ## GitLab self-managed
 
 O GitLab de uma empresa fica num endereço próprio. Informe esse endereço a um
-perfil em **Configurações → Integrações → GitLab → Endereço do GitLab**, por
+perfil em **Configurações → Contas conectadas → GitLab → Endereço do GitLab**, por
 exemplo `git.example.org`, ou `https://example.net/gitlab` para um servido
 dentro de um caminho. A partir daí, os remotes nesse host são GitLab: os merge
 requests são listados, abertos, revisados e mesclados, o navegador de clone e o
@@ -190,7 +190,7 @@ logo abaixo do campo; o que está errado no endereço aparece em vermelho abaixo
 
 O Forgejo, e o Gitea, que usa a mesma API, sempre roda num endereço escolhido
 pelo dono: o seu próprio servidor ou um público, como o codeberg.org. Informe
-esse endereço a um perfil em **Configurações → Integrações → Forgejo**, junto
+esse endereço a um perfil em **Configurações → Contas conectadas → Forgejo**, junto
 com um token de acesso. **Criar token** abre a página de tokens desse servidor.
 Dê ao token permissão de leitura e escrita em *repository*, *issue* e
 *notification*, e de leitura em *user* e *organization*. As permissões de um
@@ -263,7 +263,7 @@ Forgejo, por exemplo) não marca nada.
 
 ![Pull requests aguardando a sua revisão, marcados com um olho](../../screenshots/pr-awaiting-review.webp)
 
-Com **Configurações → Notificações do sistema** ligado, um pull request do GitLab
+Com **Configurações → Geral → Notificações do sistema** ligado, um pull request do GitLab
 ou do Forgejo que *passa* a esperar por você dispara uma; clicar nela abre a
 página do PR. A primeira olhada num repositório só registra o que já está
 esperando, então abrir o app não repete o acúmulo. Os pedidos de review do GitHub
@@ -288,7 +288,7 @@ sistema. O GitHuttBr também pode pegar emprestado o que o seu **credential help
 git** já guarda, então uma organização em que você já se autenticou muitas vezes
 não precisa de configuração nenhuma. Veja [Segurança e segredos](security.md).
 
-Cada perfil **vincula a sua própria conta**. Em Configurações → Integrações,
+Cada perfil **vincula a sua própria conta**. Em Configurações → Contas conectadas,
 **Vincular ao perfil** procura um login que já esteja na máquina — o credential
 helper do git, depois a conta ativa do **GitHub CLI**, depois a janela de login
 do próprio helper — e liga essa conta ao perfil. Nada é compartilhado

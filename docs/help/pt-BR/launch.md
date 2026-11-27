@@ -42,7 +42,7 @@ integrado.
 Uma barra de ferramentas flutuante te dá **pausar / retomar, reiniciar, parar**, e
 alterna entre as sessões em execução.
 
-Ative em **Configurações → Geral → Habilitar launch.json**. O botão **LAUNCH**
+Ative em **Configurações → Analisadores de código → Habilitar launch.json**. O botão **LAUNCH**
 aparece ao lado das abas Git / Arquivos.
 
 Um membro de compound aparece como *compound › membro*, e reiniciá-lo

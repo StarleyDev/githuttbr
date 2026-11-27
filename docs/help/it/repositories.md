@@ -4,7 +4,7 @@ category: Sincronizzazione e più repo
 order: 52
 summary: Ogni repository che GitHuttBr conosce, aperto o no, in un elenco ricercabile.
 keywords: repository registro tutti i repo preferiti stellati recenti scansione cartella sfogliare trovare aprire gestire gestione repository colore sezione tinta evidenziare aree di lavoro da cartelle albero generare importazione massiva repositories registry favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Repository
@@ -92,7 +92,7 @@ che tu debba riaprirli. Copre solo le schede aperte, e succede alla prima
 visita di ogni sessione, non una volta per sempre. Un repository che
 **Dimentichi** resta dimenticato, a meno che non lo apri di nuovo.
 
-Le cartelle da scansionare si configurano in Impostazioni → Dati, o nella
+Le cartelle da scansionare si configurano in Impostazioni → Dati e backup, o nella
 finestra **Repository scansionati** più sotto:
 
 - **Profondità** è quanti livelli di directory la scansione scende sotto la

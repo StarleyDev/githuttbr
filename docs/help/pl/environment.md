@@ -51,6 +51,6 @@ konfigurację i to Ty powinieneś je przeczytać przed uruchomieniem. Potem naci
   zmienia `PATH` tylko w Twoim terminalu, może sprawić, że obie strony się
   rozjadą.
 - Wiersz GitHub CLI odzwierciedla własne logowanie `gh`, a nie konta połączone w
-  **Ustawienia → Integracje**. To osobne dane logowania. Brak scope `workflow`
+  **Ustawienia → Połączone konta**. To osobne dane logowania. Brak scope `workflow`
   tam objawia się raczej odrzuconym pushem.
 - Raportuje, co jest zainstalowane. Niczego nie instaluje ani nie aktualizuje.

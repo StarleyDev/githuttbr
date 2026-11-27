@@ -4,7 +4,7 @@ category: 从这里开始
 order: 3
 summary: 管着一堆仓库却不至于淹死：标签页、分组、文件夹和工作空间。
 keywords: workspace 工作空间 tabs 标签页 groups 分组 folders 文件夹 多仓库 organise 整理 switch 切换 layout 布局 转到仓库 切换器 标签页尺寸 go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # 工作空间、标签页与分组
@@ -28,7 +28,7 @@ source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 
 ### 标签页尺寸
 
-默认情况下（**设置 → 布局 → 标签页尺寸 → 自适应**），标签页的行为和浏览器一样：标签条
+默认情况下（**设置 → 布局与终端 → 标签页尺寸 → 自适应**），标签页的行为和浏览器一样：标签条
 放不下时，它们会等比收缩到一个最小宽度，只有连这个下限也到了才开始滚动。**固定** 恢复
 经典行为——每个标签页保持其内容宽度，一旦放不下全部，标签条就滚动。
 

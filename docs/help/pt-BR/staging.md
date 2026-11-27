@@ -156,7 +156,7 @@ da pasta.
 O GitHuttBr confere algumas coisas e pergunta uma vez, nunca em silêncio:
 
 - um arquivo que parece um **segredo** (`.env`, `*.pem`, `id_rsa`…),
-- um blob **muito grande** (limite em Configurações → Segurança),
+- um blob **muito grande** (limite em Configurações → Segurança e confirmações),
 - commitar **direto numa branch protegida** (`main`/`master` por padrão).
 
 Cada um oferece um *Ignorar e parar de rastrear* com um clique. Veja

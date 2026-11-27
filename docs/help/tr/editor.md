@@ -4,7 +4,7 @@ category: Çalışma alanı araçları
 order: 95
 summary: Bir depoyu, bir dosyayı ya da tek bir kod satırını gerçekten yazdığınız düzenleyiciye gönderin.
 keywords: düzenleyici editör editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode düzenleyicide aç satır sütun özel komut argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # Harici düzenleyici
@@ -18,7 +18,7 @@ blame görünümünde bir satıra sağ tıklayın, düzenleyici tam o satırda a
 
 ## Birini seçmek
 
-**Ayarlar → Genel → Harici düzenleyici.** Açılır liste, GitHuttBr'nun bu makinede
+**Ayarlar → Git ve eşitleme → Harici düzenleyici.** Açılır liste, GitHuttBr'nun bu makinede
 bulabildiği düzenleyicileri gösterir — önce her düzenleyicinin komutunu, sonra
 macOS'ta `/Applications` ve `~/Applications` içindeki uygulama paketini arar.
 Tarama, Ayarlar'ı her açtığınızda yeniden çalışır; yani beş dakika önce

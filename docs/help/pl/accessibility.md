@@ -63,4 +63,4 @@ strona mówi, co to znaczy konkretnie — i gdzie są granice.
 
 **Ograniczenie ruchu** jest honorowane z ustawienia systemowego — animacje
 zapadają się do natychmiastowych przejść. Kontrast motywu można dostroić dla
-każdego motywu w [Ustawienia → Wygląd](themes.md).
+każdego motywu w [Ustawienia → Motywy](themes.md).

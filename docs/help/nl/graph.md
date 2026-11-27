@@ -35,7 +35,7 @@ een met honderd.
 ## Het laten tonen wat jij wilt
 
 - De **graaffocus** bepaalt hoeveel geschiedenis wordt getekend — Instellingen →
-  Thema's → **Graaf**, of het tandwielmenu in de kop van de graaf. *Alles* tekent
+  **Graaf**, of het tandwielmenu in de kop van de graaf. *Alles* tekent
   alles; *Lineaire geschiedenis* (first-parent) laat alleen de stam over;
   *Samengevoegde branches verbergen* houdt de stam plus de branches die nog niet
   zijn samengevoegd; *Solomodus* houdt jouw branch, je favoriete branches en de
@@ -55,11 +55,15 @@ een met honderd.
 
 - **Kolommen**: toon, verberg, herschaal en herschik de kolommen voor branch,
   boodschap, auteur, datum, SHA, handtekening en deployment.
-- **Stijl**: Instellingen → Thema's → **Grafiek** — baanpalet (8 ingebouwde,
+- **Stijl**: Instellingen → **Graaf** — baanpalet (8 ingebouwde,
   eigen, of door AI gegenereerd), hoekstijl, rijdichtheid en lijndikte, met een
   live minigrafiek als voorbeeld.
 
 ![Grafiekstijlinstellingen met live voorbeeld](../../screenshots/settings-graph.webp)
+
+- **Wat een rij toont**: Instellingen → Graaf → **Inhoud van rijen** — **Relatieve datums**, **Avatars tonen** en **GitHub-profielfoto’s gebruiken** (zie [avatars](avatars.md) voor wat elk ervan aan het netwerk vraagt). **Automatisch meer laden bij scrollen** staat bij de geschiedenisaantallen. **Refs groeperen op prefix** groepeert de lijsten in de zijbalk, niet de graaf, en staat daarom onder Instellingen → Indeling & terminal.
+
+Alle instellingen van de graaf staan op die pagina; tot 4.60 waren ze verdeeld over Algemeen en een tabblad Graaf onder Thema’s.
 
 ## Waar stashes zitten
 

@@ -18,8 +18,7 @@ Midnight, Contrast en Daltonic — elk met een lichte en een donkere variant.
 - Instelbare **lettergrootte voor code**.
 - **Pictogramkleuren** voor de werkbalk en de secties van de zijbalk — zie
   hieronder.
-- Een aparte **grafiekstijl**: baanpalet, hoekstijl, rijdichtheid en lijndikte,
-  met een live minigrafiek als voorbeeld.
+- Het **uiterlijk van de graaf** — baanpalet, hoeken, rijdichtheid en lijndikte, met een live voorbeeld — heeft een eigen pagina, **Instellingen → Graaf**: zie [de commitgraaf](graph.md).
 
 ![Thema-instellingen](../../screenshots/settings-themes.webp)
 
@@ -48,9 +47,7 @@ als één familie leest:
   vergelijkingen) in het accent; en één kleur per groep: Inspecteren cyaan,
   Branches & geschiedenis het accent, Bestanden & patches groen, Repository
   oranje, Geheimen & delen rood.
-- **Instellingenpagina's** — Indeling, Werkruimtes en AI in het accent; Profiel en
-  Omgeving groen; Integraties en Gegevens cyaan; Thema’s oranje; Beveiliging rood.
-  Algemeen en Sneltoetsen blijven grijs.
+- **Instellingenpagina's** — Indeling & terminal, Werkruimtes en AI in de accentkleur; Profiel & identiteit, Code-analyses en Omgeving groen; Gekoppelde accounts, Git & synchronisatie en Gegevens & back-up cyaan; Thema’s en Graaf oranje; Beveiliging & bevestigingen rood. Algemeen, Sneltoetsen en Over blijven grijs.
 
 Een rij pictogramknoppen zonder label doet het omgekeerde — elke knop krijgt een
 eigen kleur, zodat je ze uit elkaar houdt. Op de
@@ -78,6 +75,29 @@ commitgrafiek niet. Een menuregel onder de muis houdt zijn gewone uiterlijk,
 pictogram inbegrepen. Kleur is nooit de enige aanwijzing — elk pictogram houdt zijn
 label.
 
+## Hoe Instellingen is ingedeeld
+
+Het zijmenu groepeert de pagina’s naar onderwerp:
+
+| Groep | Pagina’s |
+|---|---|
+| **Jij** | Profiel & identiteit · Gekoppelde accounts · AI — de eerste twee bewerken het profiel dat in de kop staat ([profielen](profiles.md)) |
+| **Weergave** | Thema’s · Graaf · Indeling & terminal |
+| **Gedrag** | Algemeen · Git & synchronisatie · Beveiliging & bevestigingen · Code-analyses |
+| **Systeem** | Werkruimtes · Sneltoetsen · Omgeving · Gegevens & back-up · Over |
+
+Algemeen houdt alleen wat over de app als geheel gaat — Taal, Repository-tabbladen tonen, Bureaubladmeldingen, Changelog openen na updates, Waarschuwen bij het sluiten. De rest is verhuisd naar de pagina waar het thuishoort, en de notitie op de pagina linkt erheen:
+
+| Optie | Nu in |
+|---|---|
+| Aantal commits bij het openen, Commits per “meer laden”, Automatisch meer laden bij scrollen, Relatieve datums, Avatars tonen, GitHub-profielfoto’s gebruiken | **Graaf** — met Baanpalet, Lijnhoeken, Rijdichtheid, Stijl van de knooppunten, Graaffocus, Stash-indeling, Lijndikte, vroeger het tabblad Graaf van Thema’s |
+| Automatisch fetchen elke (minuten), Altijd een merge-commit maken, Conflictoplossingen onthouden, Externe diff- & merge-tools, Externe editor, Standaardapp voor “Openen met” | **Git & synchronisatie** |
+| Bevestigen vóór een force push | **Beveiliging & bevestigingen** |
+| Code-analyzers, launch.json | **Code-analyses** |
+| Bestandsviewer, Profielavatar animeren, Voltooide taken verbergen, Refs groeperen op prefix | **Indeling & terminal** |
+
+Integraties heet nu **Gekoppelde accounts**, Gegevens heet **Gegevens & back-up**. Aan wat een optie doet is niets veranderd, en opgeslagen instellingen blijven zoals ze zijn. Een link die een pagina met haar oude naam opent, komt nog steeds op de juiste uit.
+
 ## Een instelling vinden
 
 Instellingen is verdeeld over veel pagina's, en de optie die je zoekt staat zelden waar je
@@ -91,15 +111,10 @@ pagina — elk met de naam, de beschrijving van één regel en de pagina waar hi
 staat. De zijbalk dimt de pagina's zonder treffer en toont een aantal bij de
 pagina's met treffers.
 
-- Er wordt gezocht in de naam van de instelling, de beschrijving en de naam van
-  de pagina. Hoofdletters en accenten tellen niet, en elk getypt woord moet
-  voorkomen, dus "terminal lettertype" beperkt zich tot de
-  lettertype-instellingen van de terminal.
+- Hij vergelijkt de naam van een instelling, de beschrijving en de naam van de pagina — ook de pagina waar ze stond voordat het menu werd hergroepeerd: "general fetch" vindt nog steeds automatisch fetchen onder Git & synchronisatie, en "integrations" vindt Gekoppelde accounts. Hoofdletters en accenten tellen niet, en elk getypt woord moet voorkomen: "terminal font" beperkt zich tot de lettertype-instellingen van de terminal.
 - Er wordt tegelijk in de taal van de interface en in het Engels gezocht: met de
   app in het Nederlands vindt "token" of "font" de instelling nog steeds.
-- Klik op een resultaat, of druk op **Enter** voor het eerste, om de pagina te
-  openen (en op Thema's het juiste tabblad — Thema of Graaf), naar de instelling
-  te scrollen en die even op te lichten.
+- Klik op een resultaat, of druk op **Enter** voor het eerste, om de pagina te openen, naar de instelling te scrollen en die even op te lichten.
 - **Esc** wist de zoekopdracht; een tweede **Esc** sluit Instellingen.
 
 De zoekfunctie kijkt naar namen en beschrijvingen, niet naar de waarden die je
@@ -114,5 +129,7 @@ toont.
 Zijbalk links of rechts, overal panelen waarvan je de grootte kunt aanpassen, een
 inklapbare zijbalk voor wanneer de grafiek het hele venster verdient, en
 terminalplaatsing per repository.
+
+Dezelfde pagina, **Instellingen → Indeling & terminal**, bevat ook de extra’s van de titelbalk en de zijbalk — **Profielavatar animeren**, **Voltooide taken verbergen**, **Refs groeperen op prefix** — en de wijzigingsmarge en minimap van de bestandsweergave.
 
 **Zie ook:** [De commitgrafiek](graph.md) · [Profielen](profiles.md)

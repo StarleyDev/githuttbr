@@ -42,7 +42,7 @@ geïntegreerde terminal.
 Een zwevende werkbalk geeft je **pauzeren / hervatten, herstarten, stoppen**, en
 schakelt tussen draaiende sessies.
 
-Zet het aan onder **Instellingen → Algemeen → launch.json inschakelen**. De knop
+Zet het aan onder **Instellingen → Code-analyses → launch.json inschakelen**. De knop
 **LAUNCH** verschijnt naast de tabbladen Git / Bestanden.
 
 Een compound-lid verschijnt als *compound › lid*, en herstarten herstart

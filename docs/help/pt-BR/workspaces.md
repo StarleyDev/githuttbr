@@ -4,7 +4,7 @@ category: Comece por aqui
 order: 3
 summary: Muitos repositórios sem se afogar: abas, grupos, pastas e workspaces.
 keywords: workspace workspaces abas tabs grupos groups pastas folders múltiplos repositórios organizar alternar layout ir para repositório seletor tamanho das abas
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Workspaces, abas e grupos
@@ -32,7 +32,7 @@ tinha nas mãos.
 
 ### Tamanho das abas
 
-Por padrão (**Configurações → Layout → Tamanho das abas → Ajustar**) as abas se
+Por padrão (**Configurações → Layout e terminal → Tamanho das abas → Ajustar**) as abas se
 comportam como as de um navegador: quando a faixa fica sem espaço, elas encolhem
 por igual até uma largura mínima, e só rolam quando até esse piso é atingido.
 **Fixo** volta ao comportamento clássico — cada aba mantém a largura do conteúdo

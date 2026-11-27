@@ -4,7 +4,7 @@ category: Pour commencer
 order: 3
 summary: Beaucoup de dépôts sans se noyer : onglets, groupes, dossiers et espaces de travail.
 keywords: espace de travail workspace onglets tabs groupes groups dossiers folders plusieurs dépôts multiple repos organiser switch basculer disposition layout aller au dépôt sélecteur taille des onglets go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Espaces de travail, onglets et groupes
@@ -33,7 +33,7 @@ puisse pas fermer du travail que vous teniez encore.
 
 ### Taille des onglets
 
-Par défaut (**Paramètres → Disposition → Taille des onglets → Ajuster**), les
+Par défaut (**Paramètres → Disposition et terminal → Taille des onglets → Ajuster**), les
 onglets se comportent comme ceux d’un navigateur : quand la bande manque de place,
 ils rétrécissent tous pareil jusqu’à une largeur minimale, et ne défilent qu’une fois
 ce plancher atteint. **Fixe** rétablit le comportement classique — chaque onglet

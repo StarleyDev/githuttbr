@@ -4,7 +4,7 @@ category: Sicherheit
 order: 70
 summary: Maskierung, Wächter, der Schlüsselbund — und was GitHuttBr sich weigert zu tun.
 keywords: sicherheit geheimnisse secrets maskierung masking schlüsselbund keychain safeStorage tokens geschützter branch protected branch große datei large file wächter guard privatsphäre unlesbar Sicherung Backup Teile Pfade übersetzen anderer Computer neuer Rechner Profile zusammenführen Profile ersetzen Export auswählen vollständige Sicherung fürs Team Manifest Passwort Verschlüsselung AppImage AppArmor Sandbox Problem melden bilder in kommentaren tracking-pixel ip-adresse bilder von dritten zum laden klicken images in comments tracking pixel third-party images click to load
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Sicherheit & Geheimnisse
@@ -13,6 +13,18 @@ GitHuttBr hat **kein Backend**. Die einzigen Netzwerkaufrufe gehen an deinen
 Git-Host und, falls du es einschaltest, an deinen KI-Anbieter.
 
 ![Sicherheitseinstellungen](../../screenshots/settings-security.webp)
+
+## Die Seite Sicherheit & Bestätigungen
+
+**Einstellungen → Sicherheit & Bestätigungen** beginnt mit dem, was gerade gilt, in einem Streifen: ob Geheimnisse maskiert sind, ob der Schlüsselbund des Systems genutzt wird und ob ein Force-Push vorher fragt — mit *Einschalten empfohlen*, solange er es nicht tut. Der Streifen berichtet nur; die Schalter folgen darunter.
+
+| Block | Was er enthält |
+|---|---|
+| **Vor Gefährlichem fragen** | **Vor Force-Push bestätigen**, die Schwelle für große Dateien und eine Zeile, die sich nicht abschalten lässt: Verwerfen, Hard-Reset und das Löschen eines geschützten Branches fragen immer, und jede Bestätigung sagt, was verloren ginge |
+| **Privatsphäre** | **Geheime Werte maskieren**, **Bilder von anderen Websites in Kommentaren laden** und der [Tresor](vault.md) |
+| **Schlüsselbund des Betriebssystems**, **SSH-Schlüssel** | Wo Tokens liegen und welche Schlüssel dein Agent hält ([SSH-Schlüssel](ssh-keys.md)) |
+
+Die Force-Push-Bestätigung lag früher unter Allgemein. Geschützte Branches stellst du pro Repository ein, in seinen [Einstellungen](repo-settings.md).
 
 ## Geheimnisse maskieren
 
@@ -34,7 +46,7 @@ auch nicht. Ein Augen-Schalter deckt sie pro Ansicht auf. `.env.example`,
 | Wächter | Wann |
 |---|---|
 | **Geheimnisdatei** | Du committest etwas, das nach einem Zugangsdatum aussieht — mit *Ignorieren & nicht mehr verfolgen* auf einen Klick |
-| **Große Datei** | Du committest einen übergroßen Blob (Schwellwert unter Einstellungen → Sicherheit) |
+| **Große Datei** | Du committest einen übergroßen Blob (Schwellwert unter Einstellungen → Sicherheit & Bestätigungen) |
 | **Build-Müll** | `xcuserdata/`, `DerivedData/` oder eine `.DS_Store` committen — mit demselben *Ignorieren & nicht mehr verfolgen* mit einem Klick |
 | **Geschützter Branch** | Du committest direkt auf `main`/`master` oder erzwingst dort einen Push |
 | **Getrackte Geheimnisse** | Du pushst ein Repository, das eine Geheimnisdatei *trackt* — einmal pro Sitzung gewarnt |
@@ -114,7 +126,7 @@ wird, was es nicht kann (eine App liest immer nur den Eintrag zurück, den sie
 selbst angelegt hat — deine anderen Passwörter sind unerreichbar) und dass Nein
 sagen völlig in Ordnung ist: Tokens leben dann nur für die Sitzung im
 Arbeitsspeicher, der Tresor bleibt zu, und du kannst es später unter
-**Einstellungen → Sicherheit → Schlüsselbund des Betriebssystems** einschalten.
+**Einstellungen → Sicherheit & Bestätigungen → Schlüsselbund des Betriebssystems** einschalten.
 
 Eine frische Installation macht **null** Aufrufe an den Schlüsselbund, bis
 tatsächlich etwas gespeichert werden muss.
@@ -124,9 +136,9 @@ nach dem Eintrag *GitHuttBr Safe Storage*: Die Bundle-ID der App ist jetzt
 `com.huttbr.git`, und der Schlüsselbund fragt erneut für eine App, die er nicht
 kennt. **Immer erlauben** behält die Tokens; siehe [Aktualisieren](upgrading.md).
 
-Solange er aus ist, sagt das Token-Feld unter Integrationen es an — *Nur gespeichert, bis du GitHuttBr beendest: der System-Schlüsselbund ist aus.* — mit einer Schaltfläche **Aktivieren** daneben. Ihn dort oder hier einzuschalten speichert auch die Tokens, die du in dieser Sitzung schon eingegeben hast; nichts muss neu eingefügt werden.
+Solange er aus ist, sagt das Token-Feld unter Verbundene Konten es an — *Nur gespeichert, bis du GitHuttBr beendest: der System-Schlüsselbund ist aus.* — mit einer Schaltfläche **Aktivieren** daneben. Ihn dort oder hier einzuschalten speichert auch die Tokens, die du in dieser Sitzung schon eingegeben hast; nichts muss neu eingefügt werden.
 
-![Das Token-Feld unter Integrationen bei ausgeschaltetem Schlüsselbund: nur gespeichert, bis du beendest, mit einer Schaltfläche Aktivieren](../../screenshots/token-keychain-notice.webp)
+![Das Token-Feld unter Verbundene Konten bei ausgeschaltetem Schlüsselbund: nur gespeichert, bis du beendest, mit einer Schaltfläche Aktivieren](../../screenshots/token-keychain-notice.webp)
 
 Ein Token, das du bei ausgeschaltetem Schlüsselbund **entfernst**, ist sofort
 weg — es wird mit nichts mehr gesendet —, aber nur **für diese Sitzung**: Der
@@ -155,7 +167,7 @@ Einstellungen laden wieder normal.
 Unter Linux ist der Schlüsselbund ein Secret Service — GNOME Keyring oder
 KWallet. Läuft keiner, „verschlüsselt“ das System trotzdem, aber mit einem
 festen Passwort, das auf jedem Rechner gleich ist: Tokens und Schlüssel sind
-nur verschleiert, nicht geschützt. Einstellungen → Sicherheit sagt das unter dem
+nur verschleiert, nicht geschützt. Einstellungen → Sicherheit & Bestätigungen sagt das unter dem
 Status des Schlüsselbunds — *Es läuft kein Schlüsselbund…* —, damit das Wort
 *Schlüsselbund* nie für einen Schutz steht, den es nicht gibt.
 
@@ -202,7 +214,7 @@ Wenn du die Schlüsselbund-Abfrage des Systems schließt, der Schlüsselbund
 gesperrt ist oder der Token-Speicher von einer anderen Kopie von GitHuttBr
 geschrieben wurde (einem Entwicklungsbuild, einem neu signierten), **kann
 GitHuttBr deine gespeicherten Tokens nicht lesen — und lässt sie unangetastet**.
-Einstellungen → Sicherheit sagt *GitHuttBr konnte deine gespeicherten Tokens
+Einstellungen → Sicherheit & Bestätigungen sagt *GitHuttBr konnte deine gespeicherten Tokens
 nicht lesen*, und ein Token, das du in der Zwischenzeit eintippst, wird nur für
 die Sitzung behalten (das Feld sagt es auch). Es wird nie über den Speicher
 geschrieben, der nicht gelesen werden konnte: Das würde jedes gespeicherte Token
@@ -215,11 +227,13 @@ durch das gerade eingetippte ersetzen.
 
 ## Einstellungen importieren
 
-**Einstellungen → Import / Export** bringt Einstellungen, Profile und Themes
+**Einstellungen → Daten & Sicherung → Import / Export** bringt Einstellungen, Profile und Themes
 von einem Rechner auf den anderen. Der Standardexport enthält **keine Tokens
 und keine API-Schlüssel**, und der Import einer solchen Datei rührt deine
 gespeicherten nie an — ein leeres Token in der Datei heißt „nicht in dieser
 Datei“, nicht „lösch meins“.
+
+Import und Export stehen oben auf der Seite **Daten & Sicherung**; was sich unwiderruflich löschen lässt — die Liste der zuletzt geöffneten Repositorys — steht getrennt darunter, unter **Gefahrenbereich**, und fragt, bevor es etwas leert.
 
 ### Auswählen, was exportiert wird
 
@@ -232,7 +246,7 @@ unten), jeweils mit seiner Größe auf diesem Computer, und schreibt nur die
 angehakten. Ein ausgelassener Teil ist überhaupt nicht in der Datei — ein
 späterer Import lässt diesen Teil des anderen Rechners genau so, wie er ist.
 
-![Einstellungen → Daten → Exportieren: „Anderer Computer“ gewählt, der grüne Hinweis, dass die Datei keinen Pfad dieses Rechners enthält, und das Manifest dessen, was hineinkommt](../../screenshots/settings-export.webp)
+![Einstellungen → Daten & Sicherung → Exportieren: „Anderer Computer“ gewählt, der grüne Hinweis, dass die Datei keinen Pfad dieses Rechners enthält, und das Manifest dessen, was hineinkommt](../../screenshots/settings-export.webp)
 
 Drei Schnellwahlen über den Teilen haken die üblichen Kombinationen an. Ändert
 man ein Kästchen von Hand, leuchtet die passende Schnellwahl auf, oder keine:
@@ -289,7 +303,7 @@ Passworts, falls sie eines hat) ein Dialog, welche Teile übernommen werden.
 Nichts wird angewendet, bevor du **Importieren** drückst; **Abbrechen** lässt
 alles, wie es war.
 
-![Einstellungen → Daten → Importieren: vier Teile, die Repositories nicht angehakt, weil keiner ihrer Ordner hier existiert, und die Pfadübersetzung geöffnet](../../screenshots/settings-import.webp)
+![Einstellungen → Daten & Sicherung → Importieren: vier Teile, die Repositories nicht angehakt, weil keiner ihrer Ordner hier existiert, und die Pfadübersetzung geöffnet](../../screenshots/settings-import.webp)
 
 | Teil | Was er enthält |
 |------|-----------------|
@@ -444,7 +458,7 @@ es sich nicht wiederherstellen lässt; der Import der Datei fragt danach — in
 einem Dialog in den Einstellungen, beim ersten Start im Willkommensschritt — und
 ein falsches wird erneut abgefragt.
 
-![Einstellungen → Daten → Exportieren: eine mit Passwort geschützte Datei, die Warnung zur fehlenden Wiederherstellung bestätigt](../../screenshots/settings-export-password.webp)
+![Einstellungen → Daten & Sicherung → Exportieren: eine mit Passwort geschützte Datei, die Warnung zur fehlenden Wiederherstellung bestätigt](../../screenshots/settings-export-password.webp)
 
 | | Ohne Passwort | Mit Passwort |
 |---|---|---|

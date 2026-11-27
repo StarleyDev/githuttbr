@@ -158,7 +158,7 @@ por todas as mudanças do arquivo.
 O **minimapa**, desligado por padrão, acrescenta uma visão geral reduzida do
 arquivo inteiro na borda direita — clique ou arraste para pular, do jeito que
 uma barra de rolagem faria se também mostrasse o formato do arquivo. Os dois são
-opções por máquina em **Configurações → Geral → Visualizador de arquivos**.
+opções por máquina em **Configurações → Layout e terminal → Visualizador de arquivos**.
 
 Nenhum dos dois lê o histórico: troque para Diff, Blame ou um commit mais antigo
 e a barra some — essas visões já mostram cada mudança diretamente.

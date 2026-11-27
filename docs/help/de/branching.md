@@ -10,7 +10,7 @@ keywords: branch branches erstellen auschecken checkout umbenennen löschen remo
 
 Eine einzige umsortierbare, durchsuchbare Seitenleiste beherbergt **Branches,
 Remotes, Tags, Stashes, Worktrees und Submodule**. Jeder Abschnitt lässt sich
-ausblenden oder umsortieren (Einstellungen → Layout), und das Filterfeld gilt
+ausblenden oder umsortieren (Einstellungen → Layout & Terminal), und das Filterfeld gilt
 für alle.
 Welche Abschnitte und Ordner auf- oder zugeklappt sind, merkt sich die
 Seitenleiste pro Repository — auch über Neustarts hinweg.
@@ -48,7 +48,7 @@ Ein Präfix mit einem Kind bleibt ein Ordner — `release/1.2.3` ist `release`
 mit `1.2.3` darin — damit `release/1.2.4` den Baum später nicht umbaut.
 Eine Folge von Ordnern mit einem Kind fällt in eine Kopfzeile zusammen
 (`dependabot/npm_and_yarn`). Ordnerköpfe tragen ein Ordnersymbol; die Ref
-selbst ein Branch-, Remote- oder Tag-Zeichen.
+selbst ein Branch-, Remote- oder Tag-Zeichen. **Einstellungen → Layout & Terminal → Refs nach Präfix gruppieren** schaltet die Ordner ab, für eine flache Liste.
 
 Ein Rechtsklick auf einen Ordnerkopf wirkt auf die ganze Gruppe: *Alle Branches
 unter `feature` löschen (4 Branches)* entfernt alles darin nach einer einzigen

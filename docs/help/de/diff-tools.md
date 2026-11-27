@@ -14,7 +14,7 @@ reichen für die meisten Tage. An manchen Tagen nicht: eine generierte Datei mit
 schlicht das Tool, das du seit einem Jahrzehnt benutzt und schneller liest als
 jedes neue.
 
-**Einstellungen → Allgemein → Externe Diff- und Merge-Tools.**
+**Einstellungen → Git & Synchronisierung → Externe Diff- und Merge-Tools.**
 
 ## Es ist gits Liste, nicht unsere
 

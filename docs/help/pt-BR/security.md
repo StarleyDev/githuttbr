@@ -4,7 +4,7 @@ category: Segurança
 order: 70
 summary: Mascaramento, proteções, o chaveiro do sistema — e o que o GitHuttBr se recusa a fazer.
 keywords: segurança security imagens nos comentários pixel de rastreamento endereço ip imagens de terceiros clique para carregar segredos secrets mascaramento masking chaveiro keychain safeStorage tokens branch protegida arquivo grande proteção guard privacidade importar exportar configurações ilegível backup partes traduzir caminhos remapear outro computador máquina nova mesclar perfis substituir perfis escolher o que exportar backup completo outro computador para o time manifesto senha appimage textconv arquivo de configurações danificado credential helper apparmor sandbox
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Segurança e segredos
@@ -13,6 +13,18 @@ O GitHuttBr **não tem backend**. As únicas chamadas de rede são para o seu ho
 se você ligar, para o seu provedor de IA.
 
 ![Configurações de segurança](../../screenshots/settings-security.webp)
+
+## A página Segurança e confirmações
+
+**Configurações → Segurança e confirmações** começa com o que vale agora, numa faixa só: se os segredos estão mascarados, se o chaveiro do sistema está em uso e se o force push pede confirmação — com *recomendamos ligar* enquanto não pede. A faixa só informa; as chaves ficam abaixo dela.
+
+| Bloco | O que contém |
+|---|---|
+| **Perguntar antes de algo perigoso** | **Confirmar antes de um force push**, o limite de arquivo grande e uma linha que não se desliga: descartar, reset hard e apagar um branch protegido sempre perguntam, e cada confirmação diz o que seria perdido |
+| **Privacidade** | **Mascarar valores secretos**, **Carregar imagens de outros sites nos comentários** e o [Cofre](vault.md) |
+| **Chaveiro do sistema**, **Chaves SSH** | Onde os tokens ficam e as chaves que o agente carrega ([chaves SSH](ssh-keys.md)) |
+
+A confirmação de force push ficava em Geral. Branches protegidos se definem por repositório, nas [configurações do repositório](repo-settings.md).
 
 ## Mascaramento de segredos
 
@@ -33,7 +45,7 @@ tratados como templates, não como segredos.
 | Proteção | Quando |
 |---|---|
 | **Arquivo de segredo** | Ao commitar algo que parece uma credencial — com um *Ignorar e parar de rastrear* em um clique |
-| **Arquivo grande** | Ao commitar um blob acima do tamanho (limite em Configurações → Segurança) |
+| **Arquivo grande** | Ao commitar um blob acima do tamanho (limite em Configurações → Segurança e confirmações) |
 | **Lixo de build** | Ao commitar `xcuserdata/`, `DerivedData/` ou um `.DS_Store` — com o mesmo *Ignorar e parar de rastrear* em um clique |
 | **Branch protegida** | Ao commitar direto na `main`/`master`, ou dar force push numa delas |
 | **Segredos rastreados** | Ao dar push num repositório que *rastreia* um arquivo de segredo — avisado uma vez por sessão |
@@ -110,7 +122,7 @@ próprio sistema possa aparecer, o GitHuttBr explica o que está sendo guardado,
 ele não consegue fazer (um app só consegue ler de volta a entrada que ele mesmo
 criou — as suas outras senhas são inalcançáveis), e que dizer não está tudo bem: os
 tokens então vivem na memória apenas pela sessão, o Cofre fica fechado, e você pode
-ligar depois em **Configurações → Segurança → Chaveiro do sistema**.
+ligar depois em **Configurações → Segurança e confirmações → Chaveiro do sistema**.
 
 Uma instalação nova faz **zero** chamadas ao chaveiro até algo de fato precisar ser
 guardado.
@@ -120,9 +132,9 @@ pelo item *GitHuttBr Safe Storage*: o bundle id do app mudou para `com.huttbr.gi
 e o chaveiro pergunta de novo por um app que ele não reconhece. **Permitir sempre**
 mantém os tokens; veja [atualização](upgrading.md).
 
-Enquanto ele estiver desligado, o campo de token em Integrações avisa — *Guardado só até você fechar o GitHuttBr: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
+Enquanto ele estiver desligado, o campo de token em Contas conectadas avisa — *Guardado só até você fechar o GitHuttBr: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
 
-![O campo de token em Integrações com o chaveiro desligado: guardado só até fechar, com o botão Ativar](../../screenshots/token-keychain-notice.webp)
+![O campo de token em Contas conectadas com o chaveiro desligado: guardado só até fechar, com o botão Ativar](../../screenshots/token-keychain-notice.webp)
 
 Um token que você **remove** com o chaveiro desligado some na hora — nada mais é
 enviado com ele — mas só **nesta sessão**: o armazenamento criptografado não pode
@@ -148,7 +160,7 @@ que ninguém mais pode responder: as configurações carregam de novo normalment
 No Linux, o chaveiro é um serviço de segredos — GNOME Keyring ou KWallet. Quando
 nenhum está rodando, o sistema ainda "criptografa", mas com uma senha fixa, igual
 em todas as máquinas: os tokens e as chaves ficam embaralhados, não protegidos.
-Configurações → Segurança avisa isso embaixo do status do chaveiro — *Nenhum
+Configurações → Segurança e confirmações avisa isso embaixo do status do chaveiro — *Nenhum
 chaveiro está rodando…* — para a palavra *chaveiro* nunca prometer uma proteção
 que não existe.
 
@@ -190,7 +202,7 @@ ou o GitHuttBr ser reiniciado.
 Se você fecha o pedido do chaveiro do sistema, o chaveiro está bloqueado ou o
 armazenamento de tokens foi gravado por outra cópia do GitHuttBr (um build de
 desenvolvimento, uma versão assinada de novo), o GitHuttBr **não consegue ler os seus
-tokens salvos — e os deixa intactos**. Configurações → Segurança diz *O GitHuttBr não
+tokens salvos — e os deixa intactos**. Configurações → Segurança e confirmações diz *O GitHuttBr não
 conseguiu ler seus tokens salvos*, e um token que você digitar enquanto isso fica só
 pela sessão (o campo também avisa). Ele nunca é gravado por cima do armazenamento que
 não pôde ser lido: isso trocaria todos os tokens salvos pelo que você acabou de
@@ -203,10 +215,12 @@ digitar.
 
 ## Importando configurações
 
-**Configurações → Importar / Exportar** leva configurações, perfis e temas de uma
+**Configurações → Dados e backup → Importar / Exportar** leva configurações, perfis e temas de uma
 máquina para outra. A exportação padrão **não leva tokens nem chaves de API**, e
 importar um arquivo assim nunca mexe nos que você já salvou — um token em branco no
 arquivo quer dizer "não está neste arquivo", não "apague o meu".
+
+Import e export abrem a página **Dados e backup**; o que pode ser apagado sem volta — a lista de repositórios abertos recentemente — fica à parte, abaixo, em **Zona de perigo**, e pergunta antes de limpar qualquer coisa.
 
 ### Escolhendo o que exportar
 
@@ -219,7 +233,7 @@ dela neste computador, e grava só as que você marcar. Uma parte deixada de for
 não está no arquivo — importá-lo depois deixa essa parte da outra máquina
 exatamente como está.
 
-![Configurações → Dados → Exportar: "Outro computador" escolhido, a nota verde dizendo que o arquivo não leva caminhos desta máquina, e o manifesto do que vai junto](../../screenshots/settings-export.webp)
+![Configurações → Dados e backup → Exportar: "Outro computador" escolhido, a nota verde dizendo que o arquivo não leva caminhos desta máquina, e o manifesto do que vai junto](../../screenshots/settings-export.webp)
 
 Três atalhos acima das partes marcam as combinações comuns. Mudar uma caixa à
 mão acende o atalho que bate, ou nenhum:
@@ -273,7 +287,7 @@ depois de escolher o arquivo (e digitar a senha, se ele tiver), um diálogo
 pergunta quais partes trazer. Nada é aplicado antes de **Importar**;
 **Cancelar** deixa tudo como estava.
 
-![Configurações → Dados → Importar: quatro partes, os repositórios desmarcados porque nenhuma pasta existe aqui, e a tradução de caminhos aberta](../../screenshots/settings-import.webp)
+![Configurações → Dados e backup → Importar: quatro partes, os repositórios desmarcados porque nenhuma pasta existe aqui, e a tradução de caminhos aberta](../../screenshots/settings-import.webp)
 
 | Parte | O que leva |
 |-------|------------|
@@ -417,7 +431,7 @@ Você digita duas vezes e confirma que entende que ela não pode ser recuperada;
 importar o arquivo pede a senha — num diálogo em Configurações, dentro da etapa de
 boas-vindas na primeira execução — e uma senha errada pede de novo.
 
-![Configurações → Dados → Exportar: um arquivo protegido com senha, o aviso de que não há recuperação confirmado](../../screenshots/settings-export-password.webp)
+![Configurações → Dados e backup → Exportar: um arquivo protegido com senha, o aviso de que não há recuperação confirmado](../../screenshots/settings-export-password.webp)
 
 | | Sem senha | Com senha |
 |---|---|---|

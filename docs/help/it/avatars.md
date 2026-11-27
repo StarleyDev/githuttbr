@@ -71,7 +71,7 @@ un’occhiata.
 ### Movimento
 
 L’avatar della barra del titolo respira e sbatte le palpebre da sé. Disattivalo in
-**Impostazioni → Temi → Grafo → Anima l’avatar del profilo** — l’espressione
+**Impostazioni → Layout e terminale → Anima l’avatar del profilo** — l’espressione
 continua a seguire il repository, smette soltanto di muoversi. Il movimento viene
 inoltre saltato automaticamente se il sistema chiede movimento ridotto.
 
@@ -82,7 +82,7 @@ un grafo disegna mentre scorre.
 ## L’immagine del tuo profilo
 
 L’avatar nella barra del titolo e nell’elenco dei profili è tuo, quindi puoi sceglierlo.
-**Impostazioni → Profilo → Avatar** offre cinque fonti:
+**Impostazioni → Profilo e identità → Avatar** offre cinque fonti:
 
 | Fonte | Cosa mostra |
 |---|---|
@@ -92,7 +92,7 @@ L’avatar nella barra del titolo e nell’elenco dei profili è tuo, quindi puo
 | **Immagine** | Un file che scegli — PNG o JPEG. Viene ridotto a 256 px e conservato su questo computer, nella cartella dati di GitHuttBr, non nel file delle impostazioni. |
 | **Da un repository** | Un’icona o un logo trovato in uno dei repository del profilo — quello dell’app o dell’azienda —, copiato nel profilo come un’immagine. |
 
-L’immagine viaggia con **Impostazioni → Dati → Esporta le impostazioni** e torna all’importazione;
+L’immagine viaggia con **Impostazioni → Dati e backup → Esporta le impostazioni** e torna all’importazione;
 eliminare il profilo la elimina.
 
 ### Un’icona da un repository
@@ -137,7 +137,7 @@ non ha espressione: il volto che reagisce al repository è quello automatico.
 
 ## Disattivare la ricerca
 
-**Impostazioni → Temi → Grafo → Mostra avatar.**
+**Impostazioni → Grafo → Mostra avatar.**
 
 Disattivato significa:
 

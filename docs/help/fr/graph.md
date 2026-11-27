@@ -36,7 +36,7 @@ dépôt d'une centaine.
 ## Lui faire montrer ce que vous voulez
 
 - La **focalisation du graphe** décide de la quantité d'historique dessinée —
-  Paramètres → Thèmes → **Graphe**, ou le menu engrenage de l'en-tête du graphe.
+  Paramètres → **Graphe**, ou le menu engrenage de l'en-tête du graphe.
   *Tout* dessine l'ensemble ; *Historique linéaire* (premier parent) ne laisse
   que le tronc ; *Masquer les branches fusionnées* garde le tronc plus les
   branches encore non fusionnées ; *Mode solo* garde votre branche, vos branches
@@ -57,11 +57,15 @@ dépôt d'une centaine.
 
 - **Colonnes** : afficher, masquer, redimensionner et réordonner les colonnes
   branche, message, auteur, date, SHA, signature et déploiement.
-- **Style** : Paramètres → Thèmes → **Graphe** — palette de couloirs (8 intégrées,
+- **Style** : Paramètres → **Graphe** — palette de couloirs (8 intégrées,
   personnalisée, ou générée par l'IA), style des angles, densité des lignes et
   épaisseur des traits, avec un aperçu en direct sous forme de mini-graphe.
 
 ![Les paramètres de style du graphe avec aperçu en direct](../../screenshots/settings-graph.webp)
+
+- **Ce que montre chaque ligne** : Paramètres → Graphe → **Contenu des lignes** — **Dates relatives**, **Afficher les avatars** et **Utiliser les photos de profil GitHub** (voir [les avatars](avatars.md) pour ce que chacun demande au réseau). **Charger la suite automatiquement au défilement** se trouve avec les quantités d’historique. **Grouper les réfs par préfixe** regroupe les listes de la barre latérale, pas le graphe : il est dans Paramètres → Disposition et terminal.
+
+Tous les réglages du graphe sont sur cette page ; jusqu’à la 4.60, ils étaient répartis entre Général et un onglet Graphe dans Thèmes.
 
 ## Où s'assoient les remises
 

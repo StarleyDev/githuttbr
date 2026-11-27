@@ -154,7 +154,7 @@ lines, with next/previous to step through every change in the file.
 The **minimap**, off by default, adds a scaled overview of the whole file at
 the right edge — click or drag it to jump around, the way a scrollbar would if
 it could also show you the shape of the file. Both are per-machine toggles
-under **Settings → General → File viewer**.
+under **Settings → Layout & terminal → File viewer**.
 
 Neither reads history: switch to Diff, Blame or an older commit and the gutter
 disappears — those views already show every change directly.

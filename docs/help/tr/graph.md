@@ -34,8 +34,7 @@ depo gibi kayar.
 
 ## İstediğinizi göstermesi
 
-- **Grafik odağı**, geçmişin ne kadarının çizileceğini belirler — Ayarlar →
-  Temalar → **Grafik** ya da grafik başlığındaki dişli menüsü. *Her şey* hepsini
+- **Grafik odağı**, geçmişin ne kadarının çizileceğini belirler — Ayarlar → **Grafik** ya da grafik başlığındaki dişli menüsü. *Her şey* hepsini
   çizer; *Doğrusal geçmiş* (ilk üst commit) yalnızca gövdeyi bırakır;
   *Birleştirilmiş dalları gizle* gövdeyi ve henüz birleştirilmemiş dalları tutar;
   *Solo mod* kendi dalını, yıldızladığın dalları ve varsayılan dalı tutar.
@@ -54,11 +53,15 @@ depo gibi kayar.
 
 - **Sütunlar**: dal, mesaj, yazar, tarih, SHA, imza ve dağıtım sütunlarını
   gösterin, gizleyin, yeniden boyutlandırın ve sıralayın.
-- **Biçem**: Ayarlar → Temalar → **Grafik** — şerit paleti (8 hazır, özel veya
+- **Biçem**: Ayarlar → **Grafik** — şerit paleti (8 hazır, özel veya
   yapay zekâ üretimi), köşe biçemi, satır yoğunluğu ve çizgi kalınlığı, canlı
   mini grafik önizlemesiyle.
 
 ![Canlı önizlemeli grafik biçemi ayarları](../../screenshots/settings-graph.webp)
+
+- **Bir satırın gösterdikleri**: Ayarlar → Grafik → **Satır içeriği** — **Göreli tarihler**, **Avatarları göster** ve **GitHub profil fotoğraflarını kullan** (her birinin ağdan ne istediği için bkz. [avatarlar](avatars.md)). **Kaydırınca otomatik yükle** geçmiş miktarlarının yanındadır. **Ref’leri öneke göre grupla** grafiği değil kenar çubuğu listelerini gruplar; bu yüzden Ayarlar → Yerleşim ve terminal içindedir.
+
+Grafiğin tüm ayarları o sayfadadır; 4.60’a kadar Genel ile Temalar içindeki bir Grafik sekmesi arasında bölünmüşlerdi.
 
 ## Stash'lerin oturduğu yer
 

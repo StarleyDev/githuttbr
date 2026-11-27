@@ -51,7 +51,7 @@ Konfiguration, und die solltest du lesen, bevor du sie ausführst. Danach
 - Geprüft wird, was die App aus ihrem eigenen Prozess sieht. Ein Shell-Profil,
   das `PATH` nur in deinem Terminal ändert, kann die beiden auseinanderbringen.
 - Die GitHub-CLI-Zeile spiegelt die eigene Anmeldung von `gh`, nicht die unter
-  **Einstellungen → Integrationen** verbundenen Konten. Das sind getrennte
+  **Einstellungen → Verbundene Konten** verbundenen Konten. Das sind getrennte
   Anmeldungen. Ein fehlender `workflow`-Scope dort zeigt sich stattdessen als
   abgelehnter Push.
 - Sie meldet, was installiert ist. Sie installiert oder aktualisiert nichts.

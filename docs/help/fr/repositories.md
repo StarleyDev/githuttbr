@@ -4,7 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 52
 summary: Tous les dépôts que GitHuttBr connaît, ouverts ou non, dans une liste consultable.
 keywords: dépôts registre tous les dépôts favoris étoilés récents parcourir dossier explorer trouver ouvrir gérer gestion de dépôts couleur section teinte surligner espaces de travail depuis dossiers arbre générer import groupé repositories registry favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Dépôts
@@ -94,7 +94,7 @@ produit à la première visite de chaque session, pas une fois pour toutes. Un
 dépôt que vous **Oubliez** reste oublié, sauf si vous l'ouvrez à
 nouveau.
 
-Les dossiers à parcourir se règlent dans Paramètres → Données, ou dans la
+Les dossiers à parcourir se règlent dans Paramètres → Données et sauvegarde, ou dans la
 boîte de dialogue **Dépôts analysés** ci-dessous :
 
 - **Profondeur** est le nombre de niveaux de répertoires que le parcours

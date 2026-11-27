@@ -4,7 +4,7 @@ category: Sicherheit
 order: 73
 summary: Gits eigener Passwortspeicher — der dritte — und warum https dich immer wieder fragt.
 keywords: credential helper passwort https fragt wieder osxkeychain wincred manager libsecret store cache git-credentials klartext plaintext vergessen widerrufen revoked token 401 anmeldung prüfen welches konto token in der remote-url eingebettetes passwort aus der url entfernen token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Credential Helper
@@ -153,7 +153,7 @@ Fetch-URL und jeder Push-URL, die eines enthält — und schreibt nichts außer
 |---------------|-------------------------|
 | Das Profil des Repositorys hat ein Token oder ein verknüpftes Konto für diesen Host | Dieses Token — die Bestätigung sagt nichts weiter |
 | Kein Profil-Token, aber gits eigener Helper hat eine Anmeldung für den Host | Die Anmeldung des Helpers |
-| Keines von beiden | Nichts: Fetch und Push scheitern, bis du ein Token hinzufügst. Die Bestätigung sagt das zuerst und bietet **Zuerst ein Token hinzufügen** an, was Einstellungen → Integrationen öffnet |
+| Keines von beiden | Nichts: Fetch und Push scheitern, bis du ein Token hinzufügst. Die Bestätigung sagt das zuerst und bietet **Zuerst ein Token hinzufügen** an, was Einstellungen → Verbundene Konten öffnet |
 
 Wenn sie aus einer fehlgeschlagenen Operation heraus gestartet wurde, bietet sie
 **Erneut versuchen** an.

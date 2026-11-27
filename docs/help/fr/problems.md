@@ -54,7 +54,7 @@ celle de GitHuttBr. Elles démarrent quand vous ouvrez le panneau ou appuyez sur
 actualiser, jamais d’elles-mêmes. C’est aussi pourquoi la liste est un
 instantané : modifiez un fichier et elle est périmée jusqu’à la relance.
 
-**Paramètres → Général → Analyseurs de code** décide de son empressement :
+**Paramètres → Analyseurs de code** décide de son empressement :
 balayer à l’ouverture du panneau (par défaut), uniquement sur actualiser, ou
 désactivé — ce qui masque entièrement la moitié analyseurs, son compteur dans la
 barre d’état et sa commande.

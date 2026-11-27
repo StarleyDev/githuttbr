@@ -73,7 +73,7 @@ Blick.
 ### Bewegung
 
 Der Avatar in der Titelleiste atmet und blinkt von sich aus. Abschalten unter
-**Einstellungen → Themes → Graph → Profil-Avatar animieren** — der Ausdruck folgt
+**Einstellungen → Layout & Terminal → Profil & Identität-Avatar animieren** — der Ausdruck folgt
 weiter dem Repository, er bewegt sich nur nicht mehr. Bewegung wird außerdem
 automatisch übersprungen, wenn dein System reduzierte Bewegung verlangt.
 
@@ -84,7 +84,7 @@ Verschwendung für die mehreren Hundert, die ein scrollender Graph zeichnet.
 ## Das Bild deines Profils
 
 Der Avatar in der Titelleiste und in der Profilliste gehört dir – also kannst du ihn wählen.
-**Einstellungen → Profil → Avatar** bietet fünf Quellen:
+**Einstellungen → Profil & Identität → Avatar** bietet fünf Quellen:
 
 | Quelle | Was er zeigt |
 |---|---|
@@ -94,7 +94,7 @@ Der Avatar in der Titelleiste und in der Profilliste gehört dir – also kannst
 | **Bild** | Eine Datei deiner Wahl – PNG oder JPEG. Sie wird auf 256 px verkleinert und auf diesem Computer im Datenordner von GitHuttBr abgelegt, nicht in der Einstellungsdatei. |
 | **Aus einem Repository** | Ein Symbol oder Logo aus einem der Repositorys des Profils — das der App oder der Firma —, wie ein Bild ins Profil kopiert. |
 
-Das Bild wandert mit **Einstellungen → Daten → Einstellungen exportieren** und kommt beim Import
+Das Bild wandert mit **Einstellungen → Daten & Sicherung → Einstellungen exportieren** und kommt beim Import
 zurück; wird das Profil gelöscht, wird es mitgelöscht.
 
 ### Ein Symbol aus einem Repository
@@ -140,7 +140,7 @@ keinen Gesichtsausdruck: Das Gesicht, das auf das Repository reagiert, ist das a
 
 ## Die Abfrage abschalten
 
-**Einstellungen → Themes → Graph → Avatare anzeigen.**
+**Einstellungen → Graph → Avatare anzeigen.**
 
 Aus bedeutet:
 

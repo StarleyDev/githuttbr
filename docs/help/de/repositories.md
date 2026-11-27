@@ -4,7 +4,7 @@ category: Sync & viele Repos
 order: 52
 summary: Jedes Repository, das GitHuttBr kennt, offen oder nicht, in einer durchsuchbaren Liste.
 keywords: repositories registry alle repos favoriten markiert zuletzt scan ordner durchsuchen finden öffnen verwalten repository-verwaltung farbe abschnitt tint hervorheben workspaces aus ordnern baum erzeugen massenimport favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Repositories
@@ -92,7 +92,7 @@ Zeile, ohne dass du sie neu öffnen musst. Es betrifft nur offene Tabs, und es
 passiert beim ersten Besuch jeder Sitzung, nicht ein für alle Mal. Ein
 Repository, das du **vergessen** hast, bleibt vergessen, bis du es wieder öffnest.
 
-Scan-Ordner werden unter Einstellungen → Daten konfiguriert, oder im Dialog
+Scan-Ordner werden unter Einstellungen → Daten & Sicherung konfiguriert, oder im Dialog
 **Gescannte Repositories** weiter unten:
 
 - **Tiefe** ist, wie viele Verzeichnisebenen der Scan unter der Wurzel

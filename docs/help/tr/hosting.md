@@ -146,8 +146,7 @@ asla düşürmez.
 
 ## Kendi sunucunuzdaki GitLab
 
-Bir şirket GitLab’ı kendi adresinde yaşar. Bu adresi bir profile **Ayarlar →
-Entegrasyonlar → GitLab → GitLab adresi** altında verin; örneğin
+Bir şirket GitLab’ı kendi adresinde yaşar. Bu adresi bir profile **Ayarlar → Bağlı hesaplar → GitLab → GitLab adresi** altında verin; örneğin
 `git.example.org` ya da bir yol altında sunuluyorsa
 `https://example.net/gitlab`. Bundan sonra o sunucudaki uzak depolar GitLab’dır:
 merge request’ler listelenir, açılır, incelenir ve birleştirilir, klon tarayıcısı
@@ -183,7 +182,7 @@ Token’ı girmeden önce örneğin adresini ayarlayın. Adresi değiştirmek ö
 
 Forgejo — ve aynı API’yi paylaşan Gitea — her zaman sahibinin seçtiği bir adreste
 çalışır: kendi sunucunuz ya da codeberg.org gibi herkese açık bir sunucu. Bu
-adresi bir profile **Ayarlar → Entegrasyonlar → Forgejo** altında, bir erişim
+adresi bir profile **Ayarlar → Bağlı hesaplar → Forgejo** altında, bir erişim
 token’ıyla birlikte verin. Token’a *repository*, *issue* ve *notification* üzerinde okuma ve yazma,
 *user* ve *organization* üzerinde okuma izni verin. Bir token’ın izinleri sonradan
 değişmez: *issue* ya da *notification* olmadan oluşturulan token issue veya
@@ -252,7 +251,7 @@ dakika hatırlanır. Kendi kullanıcısını okuyamayan bir token (örneğin For
 
 ![İncelemenizi bekleyen, bir gözle işaretlenmiş pull request’ler](../../screenshots/pr-awaiting-review.webp)
 
-**Ayarlar → Masaüstü bildirimleri** açıkken, sizi *beklemeye başlayan* bir GitLab
+**Ayarlar → Genel → Masaüstü bildirimleri** açıkken, sizi *beklemeye başlayan* bir GitLab
 veya Forgejo pull request’i bir bildirim çıkarır; tıklamak PR sayfasını açar. Bir
 depoya ilk bakış yalnızca zaten bekleyenleri not eder, bu yüzden uygulamayı açmak
 birikmiş olanları yeniden oynatmaz. GitHub’ın inceleme istekleri, onları zaten
@@ -278,7 +277,7 @@ zaten tuttuğu bilgileri ödünç alabilir; böylece hâlihazırda kimlik
 doğruladığınız bir kuruluş çoğu zaman hiçbir kuruluma ihtiyaç duymaz.
 [Güvenlik ve sırlar](security.md) sayfasına bakın.
 
-Her profil **kendi hesabını bağlar**. Ayarlar → Entegrasyonlar'da **Profile
+Her profil **kendi hesabını bağlar**. Ayarlar → Bağlı hesaplar'da **Profile
 bağla**, makinede zaten bulunan bir oturumu arar — git'in credential
 helper'ı, ardından **GitHub CLI**'ın etkin hesabı, ardından helper'ın kendi
 oturum açma penceresi — ve o hesabı profile bağlar. Hiçbir şey örtük olarak

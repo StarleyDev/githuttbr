@@ -34,11 +34,11 @@ every profile that follows it.
 
 Every AI is set up on this one page. The **Editing** bar at the top picks whose:
 the general AI, or a profile's own (*Own AI of Work*). **Set up its own AI** on
-the Profile page, or **Edit its own AI** in the list of profiles, opens the page
-on that one. The Profile page itself only shows which AI the profile uses and
+the Profile & identity page, or **Edit its own AI** in the list of profiles, opens the page
+on that one. The Profile & identity page itself only shows which AI the profile uses and
 what answers — it never hosts the editor, and holds no AI option of its own.
 
-![A profile's AI on its Profile page: General or Own, what answers, and the way to set it up](../screenshots/settings-profile-ai.webp)
+![A profile's AI on its Profile & identity page: General or Own, what answers, and the way to set it up](../screenshots/settings-profile-ai.webp)
 
 Below the accounts, the same page holds how that AI **writes** and what it may
 do, in sections:

@@ -150,7 +150,7 @@ revocato e non scarta mai la credenziale che usa git.
 ## GitLab self-managed
 
 Un GitLab aziendale ha il suo indirizzo. Indicalo a un profilo in
-**Impostazioni → Integrazioni → GitLab → Indirizzo GitLab**, ad esempio
+**Impostazioni → Account collegati → GitLab → Indirizzo GitLab**, ad esempio
 `git.example.org` o `https://example.net/gitlab` se è servito sotto un percorso.
 Da quel momento i remote su quell’host sono GitLab: le merge request si elencano,
 aprono, revisionano e uniscono, il browser di clonazione e *Crea repository*
@@ -187,7 +187,7 @@ Imposta l’indirizzo dell’istanza prima di inserirne il token. Cambiare l’i
 
 Forgejo — e Gitea, che ne condivide l’API — gira sempre a un indirizzo scelto dal
 suo proprietario: il tuo server, o uno pubblico come codeberg.org. Indica quell’indirizzo
-a un profilo in **Impostazioni → Integrazioni → Forgejo**, insieme a un token di
+a un profilo in **Impostazioni → Account collegati → Forgejo**, insieme a un token di
 accesso. **Crea token** apre la pagina dei token di quel server. Dai al token permessi di lettura e scrittura su *repository*, *issue* e
 *notification*, e di lettura su *user* e *organization*. I permessi di un token
 non si cambiano dopo: uno creato senza *issue* o *notification* non elenca issue
@@ -257,7 +257,7 @@ ricordato per dieci minuti. Un token che non può leggere il proprio utente (sen
 
 ![Pull request in attesa della tua revisione, segnate con un occhio](../../screenshots/pr-awaiting-review.webp)
 
-Con **Impostazioni → Notifiche di sistema** attivo, una pull request di GitLab o
+Con **Impostazioni → Generali → Notifiche di sistema** attivo, una pull request di GitLab o
 Forgejo che *inizia* ad attenderti ne genera una; un clic apre la pagina della PR.
 Il primo sguardo a un repository prende solo nota di ciò che già attende, quindi
 aprire l’app non ripropone l’arretrato. Le richieste di revisione di GitHub sono
@@ -284,7 +284,7 @@ tuo **credential helper di git** già custodisce, quindi un'organizzazione per c
 ti sei già autenticato spesso non richiede alcuna configurazione. Vedi
 [Sicurezza e segreti](security.md).
 
-Ogni profilo **collega il proprio account**. In Impostazioni → Integrazioni,
+Ogni profilo **collega il proprio account**. In Impostazioni → Account collegati,
 **Collega al profilo** cerca un accesso già presente sulla macchina — il credential
 helper di git, poi l'account attivo di **GitHub CLI**, poi la finestra di
 accesso dell'helper — e collega quell'account al profilo. Nulla è condiviso

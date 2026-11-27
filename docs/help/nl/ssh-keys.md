@@ -8,7 +8,7 @@ keywords: ssh sleutel key keys agent ssh-add ssh-keygen ed25519 publickey permis
 
 # SSH-sleutels
 
-**Instellingen → Beveiliging → SSH-sleutels.**
+**Instellingen → Beveiliging & bevestigingen → SSH-sleutels.**
 
 ## Waarom dit naast de tokens staat
 
