@@ -87,6 +87,65 @@ kullanır; böylece Claude modelleri yalnızca çalışıyor gibi görünmek yer
 gerçekten çalışır. Gemini'ye Google'ın OpenAI uyumlu uç noktası üzerinden
 ulaşılır.
 
+### Sağlayıcı eklemek ve düzenlemek
+
+Yarım doldurulup kaydedilen bir sağlayıcı sessiz bir tuzaktı: boş bir anahtar
+varsayılan olabiliyor ve hiçbir şey yanıt vermiyordu. Bu yüzden bu kartta
+yazarken hiçbir şey kaydedilmez.
+
+**Sağlayıcı ekle**, kesik kenarlı ve **Taslak · kaydedilmedi** işaretli bir kart
+açar. Sağlayıcıyı, anahtarı, uç noktayı ve modeli doldurup
+**Test et ve kaydet** seçin. GitHuttBr önce bu anahtarla sağlayıcının
+modellerini listeler — **Modelleri getir** ile aynı istek — ve yalnızca yanıt
+gelirse kaydeder. **Bağlandı · N model** görürsünüz ve sağlayıcı listeye
+**Hazır** olarak girer.
+
+Test başarısız olursa kart, sağlayıcının nedeniyle birlikte
+**Bağlanılamadı** (reddedilen anahtar, `401`; çalışmayan bir
+sunucu) ve **Hiçbir şey kaydedilmedi.** gösterir. Alanı düzeltip yeniden test
+edin, olduğu gibi tutmak için **Yine de kaydet** seçin — o zaman
+**Yanıt vermiyor** görünür — ya da iz bırakmayan **Vazgeç**.
+
+Kayıtlı bir sağlayıcıyı düzenlemek de aynı şekilde çalışır. Bir şerit
+**Kaydedilmemiş değişiklikler — kaydedene kadar hiçbir şey değişmez** der ve dokunduğunuz her alan
+**· değişti** ile işaretlenir. **Değişiklikleri at** kayıtlı
+değerleri geri getirir; **Test et ve kaydet** test edip kaydeder. Bekleyen
+değişiklikler varken başka bir sağlayıcı seçmek, yenisini eklemek ya da
+**Aboneliğimi kullan** açmak **“…” üzerindeki değişiklikler kaydedilsin mi?** diye sorar — **Kaydet**,
+**Değişiklikleri at** veya **Düzenlemeye devam et**. Ayarları kapatmak
+taslağı bellekte tutar, döndüğünüzde hâlâ oradadır; diske asla yazılmaz.
+
+Anahtarlar eskisi gibi, anahtarlığınıza ve yalnızca kaydederken kaydedilir. Bir
+sağlayıcının hatası, anahtar ve token'a benzeyen her şey maskelenerek
+gösterilir.
+
+![Sağlayıcı eklemek ve düzenlemek](../../screenshots/ai-provider-draft.webp)
+
+| Sağlayıcı türü | **Test et ve kaydet** neyi denetler |
+| --- | --- |
+| API anahtarı veya yerel sunucu (Ollama, özel uç nokta) | Modelleri listeler; başarı, uç noktanın bu anahtarla yanıt verdiği anlamına gelir |
+| Abonelik (Codex, Claude Code) | Aşağıda anlatılan kısa test istemini planınızın kotasından gönderir |
+| Yerel CLI | Komutu `PATH` içinde arar; elle yazılan bir yol denetlenmeden kaydedilir |
+
+### Durum rozetleri
+
+Listedeki her sağlayıcının, sayfanın zaten bildiklerinden — son testten ya da
+yine de getirdiği model listesinden — çıkarılan bir rozeti vardır. Arka planda
+hiçbir şey yoklanmaz.
+
+| Rozet | Anlamı |
+| --- | --- |
+| **Hazır** | Son test ya da model listesi başarılı oldu |
+| **Yanıt vermiyor** | Son deneme başarısız oldu; neden alttaki satırda, **Yeniden test et** ile birlikte |
+| **Anahtar yok** | Sağlayıcının bir API anahtarına ihtiyacı var ve yok |
+| **Denetlenmedi** | Henüz hiçbir şey sormadı — test edilene kadar bir abonelik ya da getirilmemiş bir liste |
+
+**Sınır:** bir rozet ancak son denetimi kadar tazedir. Bir saat önce yanıt
+vermeyi bırakan bir sağlayıcı, bir şey ona yeniden sorana kadar
+**Hazır** kalır — emin olmak için kartında **Bağlantıyı test et**
+seçin. Elle yazılmış yolu olan bir **yerel CLI** **Denetlenmedi**
+kalır, çünkü çalıştığını kanıtlamak bir isteme mal olur.
+
 ### API anahtarı yerine abonelik kullanmak
 
 İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin. Genel yapay zekânın ilk hesabı varsayılan olur.

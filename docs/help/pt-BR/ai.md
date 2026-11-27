@@ -86,6 +86,65 @@ A Anthropic usa a própria API `/v1/messages` em vez de uma chamada no formato
 OpenAI, então os modelos Claude funcionam de fato em vez de apenas parecer.
 O Gemini é alcançado pelo endpoint compatível com OpenAI do Google.
 
+### Adicionar e editar um provedor
+
+Um provedor salvo pela metade era uma armadilha silenciosa: uma chave vazia
+podia virar o padrão, e nada respondia. Por isso nada neste cartão é salvo
+enquanto você digita.
+
+**Adicionar provedor** abre um cartão marcado **Rascunho · não salvo**, com borda
+tracejada. Preencha provedor, chave, endpoint e modelo e escolha
+**Testar e salvar**. O GitHuttBr primeiro lista os modelos do provedor
+com essa chave — a mesma requisição de **Buscar modelos** — e só salva quando
+ele responde. Você vê **Conectado · N modelos**, e o provedor entra na lista como
+**Pronto**.
+
+Quando o teste falha, o cartão diz **Não foi possível conectar** com o motivo
+do provedor (uma chave recusada, `401`; um servidor que não está rodando) e
+**Nada foi salvo.** Corrija o campo e teste de novo, escolha
+**Salvar mesmo assim** para mantê-lo como está — ele passa a aparecer como
+**Não responde** — ou **Cancelar**, que não deixa rastro.
+
+Editar um provedor salvo funciona do mesmo jeito. Uma faixa diz
+**Alterações não salvas — nada muda até você salvar**, e cada campo que você mexeu fica marcado
+**· alterado**. **Descartar alterações** devolve os valores salvos;
+**Testar e salvar** testa e salva. Escolher outro provedor, adicionar um
+ou abrir **Usar minha assinatura** com alterações pendentes pergunta
+**Salvar alterações em “…”?** — **Salvar**, **Descartar alterações** ou
+**Continuar editando**. Fechar as Configurações mantém o rascunho na
+memória, então ele continua lá quando você volta; ele nunca é gravado em disco.
+
+As chaves são salvas exatamente como antes, no seu chaveiro, e só na hora de
+salvar. O erro de um provedor aparece com a chave e qualquer coisa com cara de
+token mascaradas.
+
+![Adicionar e editar um provedor](../../screenshots/ai-provider-draft.webp)
+
+| Tipo de provedor | O que **Testar e salvar** verifica |
+| --- | --- |
+| Chave de API ou servidor local (Ollama, endpoint próprio) | Lista os modelos; sucesso quer dizer que o endpoint respondeu com essa chave |
+| Assinatura (Codex, Claude Code) | Envia o prompt curto de teste descrito abaixo, da franquia do seu plano |
+| CLI local | Procura o comando no seu `PATH`; um caminho digitado é salvo sem verificação |
+
+### Selos de status
+
+Cada provedor da lista tem um selo, calculado com o que a página já sabe — o
+último teste, ou a lista de modelos que ela buscou de qualquer forma. Nada é
+consultado em segundo plano.
+
+| Selo | Significado |
+| --- | --- |
+| **Pronto** | O último teste ou listagem de modelos deu certo |
+| **Não responde** | A última tentativa falhou; o motivo está na linha de baixo, com **Testar de novo** |
+| **Sem chave** | O provedor precisa de uma chave de API e não tem |
+| **Não verificado** | Nada perguntou a ele ainda — uma assinatura até ser testada, ou uma lista não buscada |
+
+**O limite:** um selo é tão recente quanto a última verificação. Um provedor que
+parou de responder há uma hora continua **Pronto** até algo
+perguntar de novo — escolha **Testar conexão** no cartão dele para ter certeza.
+Uma **CLI local** com caminho digitado fica **Não verificado**,
+porque provar que funciona custaria um prompt.
+
 ### Usar uma assinatura em vez de uma chave de API
 
 Na configuração inicial ou em Configurações → IA, escolha **Usar minha assinatura**. Selecione ChatGPT ou Claude e entre pelo terminal com o comando correspondente. Teste a conexão e adicione a conta após a confirmação.

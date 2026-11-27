@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style custom instructions co-author hover explain own ai general ai
+keywords: ai draft unsaved changes test and save status ready no key not checked not responding openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style custom instructions co-author hover explain own ai general ai
 ---
 
 # AI features
@@ -85,6 +85,62 @@ working over `http://`.
 Anthropic uses its own `/v1/messages` API rather than an OpenAI-shaped call, so
 Claude models work directly instead of only appearing to. Gemini is reached
 through Google's OpenAI-compatible endpoint.
+
+### Adding and editing a provider
+
+A provider that was saved half-filled used to be a quiet trap: an empty key
+could become the default, and nothing answered. So nothing on this card is
+saved as you type.
+
+**Add provider** opens a card marked **Draft · not saved**, with a dashed edge.
+Fill in the provider, key, endpoint and model, then choose **Test and save**.
+GitHuttBr first lists the provider's models with that key — the same request
+**Fetch models** makes — and only saves when it answers. You see
+**Connected · N models**, and the provider joins the list as **Ready**.
+
+When the test fails, the card says **Could not connect** with the provider's
+reason (a refused key, `401`; a server that is not running) and **Nothing was
+saved.** Fix the field and test again, choose **Save anyway** to keep it as it
+is — it then shows as **Not responding** — or **Cancel**, which leaves no trace.
+
+Editing a saved provider works the same way. A banner says **Unsaved changes —
+nothing changes until you save**, and each field you touched is marked
+**· changed**. **Discard** puts the saved values back; **Test and save** tests
+and saves. Picking another provider, adding one or opening **Use my
+subscription** with changes pending asks **Save changes to …?** — **Save**,
+**Discard** or **Keep editing**. Closing Settings keeps the draft in memory, so
+it is still there when you come back; it is never written to disk.
+
+Keys are saved exactly as before, to your keychain, and only at save time. A
+provider's error is shown with the key and anything shaped like a token
+masked.
+
+![Adding and editing a provider](../screenshots/ai-provider-draft.webp)
+
+| Provider type | What **Test and save** checks |
+| --- | --- |
+| API key or local server (Ollama, custom endpoint) | Lists the models; success means the endpoint answered with this key |
+| Subscription (Codex, Claude Code) | Sends the short test prompt described below, from your plan allowance |
+| Local CLI | Looks for the command on your `PATH`; a typed path is saved without a check |
+
+### Status badges
+
+Every provider in the list carries one badge, worked out from what the page
+already knows — the last test, or the model list it fetched anyway. Nothing is
+polled in the background.
+
+| Badge | Meaning |
+| --- | --- |
+| **Ready** | The last test or model listing succeeded |
+| **Not responding** | The last attempt failed; the reason is on the line below, with **Test again** |
+| **No key** | The provider needs an API key and has none |
+| **Not checked** | Nothing has asked it yet — a subscription until it is tested, or a list not fetched |
+
+**The limit:** a badge is only as fresh as its last check. A provider that
+stopped answering an hour ago still reads **Ready** until something asks it
+again — choose **Test connection** on its card to be sure. A **Local CLI**
+with a typed path stays **Not checked**, since proving it works would cost a
+prompt.
 
 ### Using a subscription instead of an API key
 

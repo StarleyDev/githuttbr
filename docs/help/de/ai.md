@@ -86,6 +86,67 @@ Anthropic nutzt seine eigene `/v1/messages`-API statt eines OpenAI-förmigen
 Aufrufs, deshalb funktionieren Claude-Modelle jetzt wirklich, statt es nur zu
 scheinen. Gemini wird über Googles OpenAI-kompatiblen Endpunkt angesprochen.
 
+### Einen Anbieter hinzufügen und bearbeiten
+
+Ein halb ausgefüllt gespeicherter Anbieter war eine stille Falle: Ein leerer
+Schlüssel konnte zum Standard werden, und nichts antwortete. Deshalb wird auf
+dieser Karte nichts beim Tippen gespeichert.
+
+**Anbieter hinzufügen** öffnet eine Karte mit der Markierung **Entwurf · nicht gespeichert**
+und gestricheltem Rand. Trage Anbieter, Schlüssel, Endpunkt und Modell ein und
+wähle **Testen und speichern**. GitHuttBr listet zuerst mit diesem Schlüssel
+die Modelle des Anbieters — dieselbe Anfrage wie **Modelle abrufen** — und
+speichert nur, wenn er antwortet. Du siehst **Verbunden · N Modelle**, und der
+Anbieter erscheint in der Liste als **Bereit**.
+
+Schlägt der Test fehl, zeigt die Karte **Verbindung fehlgeschlagen** mit dem
+Grund des Anbieters (ein abgelehnter Schlüssel, `401`; ein Server, der nicht
+läuft) und **Es wurde nichts gespeichert.** Korrigiere das Feld und teste erneut,
+wähle **Trotzdem speichern**, um ihn so zu behalten — dann steht er auf
+**Antwortet nicht** —, oder **Abbrechen**, das keine Spur hinterlässt.
+
+Einen gespeicherten Anbieter zu bearbeiten funktioniert genauso. Ein Banner
+zeigt **Ungespeicherte Änderungen – nichts ändert sich, bis du speicherst**, und jedes geänderte Feld ist mit
+**· geändert** markiert. **Änderungen verwerfen** stellt die
+gespeicherten Werte wieder her; **Testen und speichern** testet und speichert.
+Wer mit offenen Änderungen einen anderen Anbieter wählt, einen hinzufügt oder
+**Mein Abo verwenden** öffnet, wird gefragt: **Änderungen an „…“ speichern?** —
+**Speichern**, **Änderungen verwerfen** oder **Weiter bearbeiten**. Beim
+Schließen der Einstellungen bleibt der Entwurf im Speicher und ist beim
+Zurückkommen noch da; auf die Festplatte wird er nie geschrieben.
+
+Schlüssel werden genau wie bisher im Schlüsselbund gespeichert, und nur beim
+Speichern. Die Fehlermeldung eines Anbieters erscheint mit maskiertem Schlüssel
+und maskierten tokenartigen Zeichenfolgen.
+
+![Einen Anbieter hinzufügen und bearbeiten](../../screenshots/ai-provider-draft.webp)
+
+| Anbietertyp | Was **Testen und speichern** prüft |
+| --- | --- |
+| API-Schlüssel oder lokaler Server (Ollama, eigener Endpunkt) | Listet die Modelle; Erfolg heißt, der Endpunkt hat mit diesem Schlüssel geantwortet |
+| Abo (Codex, Claude Code) | Sendet den unten beschriebenen kurzen Testprompt, aus dem Kontingent deines Plans |
+| Lokale CLI | Sucht den Befehl in deinem `PATH`; ein eingetippter Pfad wird ohne Prüfung gespeichert |
+
+### Statusabzeichen
+
+Jeder Anbieter in der Liste trägt ein Abzeichen, abgeleitet aus dem, was die
+Seite schon weiß — dem letzten Test oder der ohnehin geladenen Modellliste. Im
+Hintergrund wird nichts abgefragt.
+
+| Abzeichen | Bedeutung |
+| --- | --- |
+| **Bereit** | Der letzte Test oder die letzte Modellliste war erfolgreich |
+| **Antwortet nicht** | Der letzte Versuch ist fehlgeschlagen; der Grund steht in der Zeile darunter, mit **Erneut testen** |
+| **Kein Schlüssel** | Der Anbieter braucht einen API-Schlüssel und hat keinen |
+| **Nicht geprüft** | Noch nichts hat ihn gefragt — ein Abo, bis es getestet ist, oder eine nicht geladene Liste |
+
+**Die Grenze:** Ein Abzeichen ist nur so frisch wie seine letzte Prüfung. Ein
+Anbieter, der seit einer Stunde nicht mehr antwortet, steht weiter auf
+**Bereit**, bis ihn etwas erneut fragt — wähle
+**Verbindung testen** auf seiner Karte, um sicherzugehen. Eine **lokale CLI** mit
+eingetipptem Pfad bleibt **Nicht geprüft**, weil der Nachweis einen
+Prompt kosten würde.
+
 ### Ein Abo statt eines API-Schlüssels nutzen
 
 Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu. Das erste Konto der allgemeinen KI wird zum Standard.

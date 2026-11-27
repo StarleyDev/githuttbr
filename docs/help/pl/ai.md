@@ -84,6 +84,66 @@ Anthropic używa własnego API `/v1/messages`, a nie wywołania w kształcie Ope
 więc modele Claude naprawdę działają, zamiast tylko na to wyglądać. Gemini jest
 osiągane przez zgodny z OpenAI endpoint Google.
 
+### Dodawanie i edycja dostawcy
+
+Dostawca zapisany w połowie był cichą pułapką: pusty klucz mógł zostać
+domyślnym i nic nie odpowiadało. Dlatego nic na tej karcie nie zapisuje się
+w trakcie pisania.
+
+**Dodaj dostawcę** otwiera kartę oznaczoną **Szkic · niezapisany**, z przerywaną
+ramką. Uzupełnij dostawcę, klucz, endpoint i model, a potem wybierz
+**Testuj i zapisz**. GitHuttBr najpierw pobiera listę modeli dostawcy
+z tym kluczem — to samo żądanie co **Pobierz modele** — i zapisuje dopiero, gdy
+dostawca odpowie. Zobaczysz **Połączono · modele: N**, a dostawca trafi na listę
+jako **Gotowy**.
+
+Gdy test się nie uda, karta pokazuje **Nie udało się połączyć** z powodem
+podanym przez dostawcę (odrzucony klucz, `401`; serwer, który nie działa) oraz
+**Nic nie zostało zapisane.** Popraw pole i przetestuj ponownie, wybierz
+**Zapisz mimo to**, aby zostawić go tak, jak jest — będzie wtedy
+oznaczony **Nie odpowiada** — albo **Anuluj**, które nie zostawia
+śladu.
+
+Edycja zapisanego dostawcy działa tak samo. Pasek informuje
+**Niezapisane zmiany — nic się nie zmieni, dopóki nie zapiszesz**, a każde zmienione pole jest oznaczone
+**· zmieniono**. **Odrzuć zmiany** przywraca zapisane wartości;
+**Testuj i zapisz** testuje i zapisuje. Wybranie innego dostawcy, dodanie
+nowego lub otwarcie **Użyj mojej subskrypcji** przy niezapisanych zmianach pyta
+**Zapisać zmiany w „…”?** — **Zapisz**, **Odrzuć zmiany** lub
+**Edytuj dalej**. Zamknięcie Ustawień zachowuje szkic w pamięci, więc
+czeka po powrocie; nigdy nie jest zapisywany na dysk.
+
+Klucze zapisują się dokładnie jak dotąd, w pęku kluczy, i tylko przy zapisie.
+Błąd dostawcy jest pokazywany z zamaskowanym kluczem i wszystkim, co wygląda na
+token.
+
+![Dodawanie i edycja dostawcy](../../screenshots/ai-provider-draft.webp)
+
+| Rodzaj dostawcy | Co sprawdza **Testuj i zapisz** |
+| --- | --- |
+| Klucz API lub serwer lokalny (Ollama, własny endpoint) | Pobiera listę modeli; sukces oznacza, że endpoint odpowiedział z tym kluczem |
+| Subskrypcja (Codex, Claude Code) | Wysyła krótki prompt testowy opisany niżej, z limitu Twojego planu |
+| Lokalne CLI | Szuka polecenia w `PATH`; wpisana ścieżka jest zapisywana bez sprawdzania |
+
+### Plakietki stanu
+
+Każdy dostawca na liście ma jedną plakietkę, wyliczoną z tego, co strona już
+wie — z ostatniego testu albo z listy modeli pobranej i tak. Nic nie jest
+odpytywane w tle.
+
+| Plakietka | Znaczenie |
+| --- | --- |
+| **Gotowy** | Ostatni test lub pobranie listy modeli się udało |
+| **Nie odpowiada** | Ostatnia próba się nie udała; powód jest w wierszu niżej, z **Testuj ponownie** |
+| **Brak klucza** | Dostawca wymaga klucza API, a go nie ma |
+| **Nie sprawdzono** | Nic go jeszcze nie pytało — subskrypcja do czasu testu albo niepobrana lista |
+
+**Ograniczenie:** plakietka jest tak świeża jak ostatnie sprawdzenie. Dostawca,
+który przestał odpowiadać godzinę temu, nadal ma **Gotowy**,
+dopóki coś go znowu nie zapyta — wybierz **Testuj połączenie** na jego karcie,
+żeby mieć pewność. **Lokalne CLI** z wpisaną ścieżką zostaje
+**Nie sprawdzono**, bo udowodnienie, że działa, kosztowałoby prompt.
+
 ### Subskrypcja zamiast klucza API
 
 Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI staje się domyślnym.
