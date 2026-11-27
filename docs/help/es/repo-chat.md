@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Pregunta lo que quieras — preguntas generales o sobre este repositorio —, con los archivos y commits que fijes como contexto, y deja que proponga acciones de git que apruebas antes de ejecutarse.
 keywords: chat preguntar pregunta asistente contexto adjuntar fijar arrastrar soltar commit archivo evidencia anclado ia panel acciones ejecutar aprobar aprobación automática permitir corregir error aviso pregunta general cualquier pregunta pensando leyendo archivos
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Chat del repositorio
@@ -162,6 +162,15 @@ rechazan destinos inseguros, secretos, ignorados, generados, binarios, obsoletos
 demasiado grandes o enlazados mediante symlink. Reset, reescribir el historial,
 borrar ramas y toda operación forzada siguen solo en su interfaz dedicada.
 
+**Un texto de la conversación puede convertirse en archivo.** Pide un texto y
+luego *crea el archivo*: la respuesta anterior es el contenido y, si no nombras
+el archivo, el asistente elige un nombre y lo muestra en la tarjeta. Con las
+acciones de archivo activadas, al modelo se le dice que puede escribir, así que
+una respuesta anterior que afirmaba no tener acceso no se repite. Si aun así la
+respuesta estructurada falla, la respuesta dice que el cambio no pudo prepararse
+esta vez y que enviar la petición de nuevo lo reintenta; nunca afirma que el
+archivo se escribió.
+
 Un merge o un rebase pueden pararse en un conflicto. Si ocurre, la ejecución se
 detiene ahí, la tarjeta marca esa fila como fallida y conserva la cuenta de lo
 ya ejecutado, y el aviso de conflicto toma el relevo igual que si la operación
@@ -265,6 +274,12 @@ borrador es editable — no se envía nada hasta que pulsas Enviar.
   saltarse el [enmascarado de secretos](security.md).
 - **Los binarios y los archivos de más de 512 KB** de fuera del repositorio se
   omiten igual. Dentro del repositorio rigen las reglas habituales.
+- **Una pregunta no recibe propuestas.** Las acciones solo se ofrecen al modelo
+  cuando tu mensaje pide que se haga algo — "haz commit de los archivos
+  preparados", "faça um stash", "crea la rama". Preguntar cuál es la versión, o
+  qué es un commit, nunca vuelve con un plan para ejecutar. Una respuesta corta
+  que insiste en la petición justo anterior — "sí", "te di acceso" — cuenta como
+  esa petición; una pregunta o un agradecimiento, no.
 - **Nunca escribe por su cuenta.** El modelo no tiene herramientas, solo texto:
   un cambio llega como tarjeta de propuesta, se ejecuta solo bajo [tus reglas
   de aprobación](#modos-de-aprobación), y un paso destructivo siempre confirma.

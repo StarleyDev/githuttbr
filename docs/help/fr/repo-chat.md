@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Posez n’importe quelle question — générale ou sur ce dépôt —, avec les fichiers et les commits que vous épinglez comme contexte, et laissez-la proposer des actions git que vous approuvez avant leur exécution.
 keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification question générale n’importe quelle question réflexion lecture des fichiers
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Discussion du dépôt
@@ -169,6 +169,15 @@ périmées, trop grosses ou atteintes par lien symbolique sont refusées. Reset,
 réécriture d'historique, suppression de branche et toute opération forcée
 restent dans leur interface dédiée.
 
+**Un texte de la conversation peut devenir un fichier.** Demandez un texte, puis
+*crée le fichier* : la réponse précédente en est le contenu et, si vous ne
+nommez pas le fichier, l’assistant choisit un nom et l’affiche sur la carte.
+Avec les actions de fichier activées, le modèle est informé qu’il peut écrire ;
+une réponse précédente qui prétendait ne pas avoir accès n’est donc pas répétée.
+Si la réponse structurée échoue malgré tout, la réponse dit que la modification
+n’a pas pu être préparée cette fois et que renvoyer la demande la retente ; elle
+ne prétend jamais que le fichier a été écrit.
+
 Un merge ou un rebase peut s'arrêter sur un conflit. Le cas échéant, l'exécution
 s'arrête là, la carte marque la ligne en échec et conserve le compte de ce qui
 a déjà tourné, et le bandeau de conflit prend le relais exactement comme pour la
@@ -274,6 +283,13 @@ que vous pressiez Envoyer.
 - **Les binaires et les fichiers de plus de 512 Ko** venus de l’extérieur du
   dépôt sont ignorés de la même façon. À l’intérieur, les règles habituelles
   s’appliquent.
+- **Une question ne reçoit aucune proposition.** Les actions ne sont proposées
+  au modèle que lorsque votre message demande de faire quelque chose — « commite
+  les fichiers indexés », « faça um stash », « crée la branche ». Demander
+  quelle est la version, ou ce qu’est un commit, ne peut jamais revenir avec un
+  plan à exécuter. Une réponse courte qui insiste sur la demande juste avant — «
+  oui », « je t’ai donné l’accès » — compte comme cette demande ; une question
+  ou un remerciement, non.
 - **Elle n’écrit jamais d’elle-même.** Le modèle n’a aucun outil, seulement du
   texte : un changement arrive comme carte de proposition, ne s’exécute que
   selon [vos règles d’approbation](#modes-dapprobation), et une étape
