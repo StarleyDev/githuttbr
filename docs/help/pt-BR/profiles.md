@@ -37,9 +37,12 @@ nome. Criar e apagar ficam na mesma barra; apagar pede confirmação.
 ## A IA é compartilhada
 
 Um perfil não precisa de IA própria: uma [IA geral](ai.md#uma-ia-para-todos-os-perfis)
-atende todos os perfis, e um perfil só usa uma própria quando precisa. O que
-cada perfil sempre guarda é como a IA escreve para ele — estilo de commit,
-instruções personalizadas e o resto de *Preferências de escrita da IA*.
+atende todos os perfis, e um perfil só usa uma própria quando precisa. A escolha
+vale para tudo: um perfil na IA geral também escreve do jeito que a IA geral está
+configurada — estilo de commit, instruções personalizadas, chat do repositório.
+Um perfil que precisa de outro estilo ganha uma IA própria, uma cópia da geral
+que ele pode mudar. Tudo isso se edita na página **IA**; a página Perfil só diz
+qual IA o perfil usa e leva até lá.
 
 ## Cada perfil com as suas contas
 

@@ -3526,7 +3526,7 @@ export const shots = [
   },
   {
     // A profile's AI as one line — general or its own, what answers, and the
-    // way to the AI page — above its writing preferences.
+    // way to the AI page, where all of its options live.
     out: 'settings-profile-ai',
     repos: ['octopus-merge'],
     themes: ['light'],

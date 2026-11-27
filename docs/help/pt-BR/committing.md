@@ -10,7 +10,9 @@ keywords: commit mensagem message compositor composer conventional gitmoji ticke
 
 ## Estilos de mensagem
 
-Escolha um nas Configurações; o compositor se adapta a ele.
+Escolha um em **Configurações → IA → Mensagens de commit**, ou direto no
+compositor; o compositor se adapta a ele. O estilo é da IA que o perfil usa — a
+geral ou a própria do perfil.
 
 | Estilo | Se parece com |
 |---|---|

@@ -10,7 +10,9 @@ keywords: commit message composer conventional gitmoji ticket amend template co-
 
 ## Message styles
 
-Pick one in Settings; the composer adapts to it.
+Pick one in **Settings → AI → Commit messages**, or straight from the composer;
+the composer adapts to it. The style belongs to the AI the profile uses — the
+general one, or the profile's own.
 
 | Style | Looks like |
 |---|---|

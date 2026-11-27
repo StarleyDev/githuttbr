@@ -89,7 +89,9 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 
 ## Configurações
 
-**Configurações → Perfil → Preferências de escrita da IA → Chat do repositório** (cada perfil tem as suas):
+**Configurações → IA → Chat do repositório** — na IA geral, ou na própria de um
+perfil quando ele tem uma (a barra **Editando** escolhe qual, veja
+[Uma IA para todos os perfis](ai.md#uma-ia-para-todos-os-perfis)):
 
 | Configuração | O que faz |
 |---|---|
@@ -236,8 +238,9 @@ escolher **Executar** ou **Dispensar**:
 
 ### Modos de aprovação
 
-O menu com escudo abaixo da caixa de mensagem (também em **Configurações → Perfil
-→ Chat do repositório**) decide como um cartão executa:
+O menu com escudo abaixo da caixa de mensagem (também em **Configurações → IA →
+Chat do repositório**) decide como um cartão executa — para todo perfil na mesma
+IA:
 
 | Modo | Executa |
 |---|---|

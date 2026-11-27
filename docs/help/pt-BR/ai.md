@@ -20,30 +20,50 @@ A IA é configurada uma vez, em **Configurações → IA**, e todos os
 conta de novo. A página lista cada perfil e se ele segue esta **IA geral**.
 
 Um perfil pode usar **uma IA própria** — um perfil de trabalho que precisa
-passar pela conta da empresa, por custo ou política de dados. Na página
-**Perfil** dele, em *IA deste perfil*, troque **Geral** por **Própria**: ela
-começa como uma cópia da IA geral, e os provedores e chaves dali em diante são
-só dele. Voltar para **Geral** apaga esses provedores, depois de uma
-confirmação, e não mexe na IA geral.
+passar pela conta da empresa, por custo ou política de dados, ou que escreve os
+commits de outro jeito. Na página **Perfil** dele, em *IA deste perfil*, troque
+**Geral** por **Própria**: ela começa como uma cópia de toda a IA geral —
+contas, chaves e preferências — e dali em diante tudo isso é só dele. Voltar
+para **Geral** apaga tudo, depois de uma confirmação, e não mexe na IA geral.
+
+Um perfil usa uma IA **inteira**: a geral ou a própria, nunca uma mistura. As
+contas e os modelos *e* o jeito como a IA escreve e o que o chat pode fazer vêm
+do mesmo lugar, então mudar o estilo de commit na IA geral muda para todo
+perfil que segue ela.
 
 Toda IA é configurada nesta página. A barra **Editando** no topo escolhe de
 quem: a IA geral ou a própria de um perfil (*IA própria de Trabalho*).
 **Configurar a IA própria**, na página Perfil, ou **Editar a IA própria**, na
 lista de perfis, abre a página já nela. A página Perfil só mostra qual IA o
-perfil usa e o que responde; o editor nunca fica lá.
+perfil usa e o que responde; o editor nunca fica lá, nem opção de IA nenhuma.
 
 ![A IA de um perfil na página Perfil: Geral ou Própria, o que responde e o caminho para configurar](../../screenshots/settings-profile-ai.webp)
 
-O jeito como a IA **escreve** continua por perfil nos dois casos: estilo da
-mensagem de commit, estilo das explicações, estilos de conflito e de nome de
-branch, instruções personalizadas, linha de coautor e chat do repositório. Eles
-ficam na página **Perfil**, em *Preferências de escrita da IA*, então um
-perfil de trabalho pode fazer commits no estilo `ticket` e um pessoal no
-`conventional`, os dois com a mesma IA.
+Abaixo das contas, a mesma página guarda como essa IA **escreve** e o que ela
+pode fazer, em seções:
+
+| Seção | Guarda |
+|---|---|
+| **Mensagens de commit** | Estilo da mensagem de commit, *Gerar descrição do commit*, a linha de coautor |
+| **Explicar e passar o mouse** | Estilo das explicações, *Explicar código ao passar o mouse* e a tecla dele |
+| **Conflitos e branches** | Estilo de resolução de conflitos, estilo de nome de branch |
+| **Instruções personalizadas** | Regras suas, incluídas em todo pedido que esta IA faz |
+| **Chat do repositório** | Se o chat está ligado, o que ele lê, as ações que pode propor — veja [Chat do repositório](repo-chat.md#configurações) |
+
+A troca de estilo no compositor e os seletores de modelo e de aprovação do chat
+gravam na mesma IA que o perfil lê: a geral ou a própria do perfil.
 
 Quem atualiza de uma versão em que cada perfil tinha a sua IA não perde nada:
 a IA do perfil em uso vira a IA geral, e qualquer outro perfil com uma IA
 diferente fica com ela como própria.
+
+**Quem atualiza da 4.59 ou anterior**, quando as preferências de escrita
+ficavam em cada perfil: uma única vez, as preferências do perfil em uso (ou, se
+ele tiver IA própria, do primeiro perfil na IA geral) passam para a IA geral.
+Perfis com IA própria ficam com as suas. **O limite:** se dois perfis na IA
+geral escreviam diferente — um de trabalho em `ticket` e um pessoal em
+`conventional` — os dois passam a escrever como o que foi copiado. Para manter
+a diferença, dê a um deles uma IA própria e escolha o estilo de novo lá.
 
 ## Provedores
 
