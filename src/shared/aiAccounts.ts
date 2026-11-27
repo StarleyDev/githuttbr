@@ -3,6 +3,7 @@ import {
   aiProviderPreset,
   defaultAIConfig,
   type AIAccount,
+  type AIAssignment,
   type AIConfig,
   type AIFeature,
   type AIProvider
@@ -67,6 +68,35 @@ export function findAccount(ai: AIConfig, accountId: string | undefined): AIAcco
 export function accountFor(ai: AIConfig, feature?: AIFeature): AIAccount | undefined {
   const assigned = feature ? ai.assignments?.[feature]?.accountId : undefined
   return findAccount(ai, assigned) ?? findAccount(ai, ai.defaultAccountId) ?? (ai.accounts ?? [])[0]
+}
+
+type Assignments = Partial<Record<AIFeature, AIAssignment>>
+
+/**
+ * Point a task at another account, or back at the default one ('').
+ *
+ * The model resets to the new account's default: a model name belongs to the
+ * account it was picked from, and carrying `gemini-2.5-flash` over to an Ollama
+ * account left the task asking Ollama for a model it does not have.
+ */
+export function assignFeatureAccount(ai: AIConfig, feature: AIFeature, accountId: string): Assignments {
+  const next: Assignments = { ...(ai.assignments ?? {}) }
+  if (!accountId) delete next[feature]
+  else next[feature] = { accountId, model: '' }
+  return next
+}
+
+/**
+ * Pick a task's model. A row still on the default account is pinned to the
+ * account the model came from — the name only means something there, so it
+ * must not follow a later change of default to another provider.
+ */
+export function assignFeatureModel(ai: AIConfig, feature: AIFeature, model: string): Assignments {
+  const next: Assignments = { ...(ai.assignments ?? {}) }
+  const accountId = ai.assignments?.[feature]?.accountId ?? ''
+  if (!model && !accountId) delete next[feature]
+  else next[feature] = { accountId: accountId || (accountFor(ai, feature)?.id ?? ''), model }
+  return next
 }
 
 /** The model a feature uses: its own override, else the account's default. */
