@@ -161,6 +161,14 @@ evidence the assistant read; unsafe, secret, ignored, generated, binary, stale,
 oversized, and symlinked targets are refused. Reset, history rewriting, deleting
 a branch and every force operation remain available only in their dedicated UI.
 
+**Text from the conversation can become a file.** Ask for a text, then *create
+the file*: the earlier reply is the content, and when you name no file the
+assistant picks a name and shows it on the card. With file actions on, the model
+is told it can write, so an earlier reply that claimed it had no access is not
+repeated. If its structured answer still fails, the reply says the change could
+not be prepared this time and that sending the request again retries it; it
+never claims the file was written.
+
 A merge or a rebase can stop on a conflict. When it does, the run stops there,
 the card marks the row failed and keeps the count of what already ran, and the
 conflict banner takes over exactly as it would for the same operation started
@@ -265,7 +273,9 @@ nothing is sent until you press Send.
 - **A question gets no proposals.** Actions are offered to the model only when
   your message asks for something to be done — "commit the staged files",
   "faça um stash", "create the branch". Asking what the version is, or what a
-  commit is, can never come back with a plan to run.
+  commit is, can never come back with a plan to run. A short reply that insists
+  on the request just before it — "yes", "I gave you access" — counts as that
+  request; a question or a thank-you does not.
 - **The model never writes directly.** It returns structured proposals; GitHuttBr
   validates them, computes the diff, and runs them only under
   [your approval rules](#approval-modes). Destructive Git work always confirms.

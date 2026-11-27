@@ -132,6 +132,23 @@ const REPO_CONFIG_RULE = `- \`.githuttbr.json\` is this app's own per-repository
   {"version":1,"protect":["main","release/*"],"links":{"tickets":[{"match":"([A-Z]+-\\\\d+)","url":"https://tracker/browse/$1","label":"Jira"}]},"commit":{"scopes":["ui","api"],"ticketFromBranch":true,"trailers":["Refs: {ticket}"]},"requires":{"node":">=20","submodules":true,"lfs":false,"hooksPath":".husky","files":[{"path":".env","from":".env.example","why":"local secrets"}]},"checklist":{"push":["Run the tests"]}}
 - Use only those keys — an unknown key is rejected by the loader, not ignored. "match" is a JavaScript regular expression source. Read the existing file first when one is present, and edit it rather than replacing it.`
 
+/**
+ * Said outright, because the opposite is what a model assumes: Gemini, with
+ * file changes on and the schema in hand, answered "crie o arquivo" with "I run
+ * in an isolated environment, copy the text yourself" — twice. The text to
+ * write was its own earlier reply, which it did not think of as file content.
+ */
+const FILE_ACCESS_RULE = `- File changes are turned on for this repository: you can create, edit and delete its files by proposing file actions, which the app applies once its approval check passes. Never say you have no access, run in an isolated environment, or that the user must create the file by hand — and if an earlier reply in this conversation said so, it was wrong: propose the action now.
+- A file's content may come from the conversation: text you wrote in an earlier reply ("crie o arquivo" after a generated text) is that content, copied exactly. When the user names no file, choose a short new name that fits and say it in "description".`
+
+/**
+ * The plain-text retry after a failed JSON answer cannot carry an action. Told
+ * nothing, a model asked to create a file in it explained that it has no
+ * access — a refusal the user then argues with, when the app could have done
+ * it. It says what is true instead: nothing was prepared this time.
+ */
+const PLAIN_FALLBACK_ACTION_RULE = `The user asked for a change. The app can make it once it is proposed in the structured format, but this reply could not carry a proposal. Do not claim it was done, and do not say you lack access or cannot make it: say in one sentence that the change could not be prepared this time and that sending the request again will retry it, then help with anything else the message asks.`
+
 export function repoChatActionRules(
   actionsEnabled: boolean,
   fileActionsEnabled: boolean,
@@ -147,6 +164,7 @@ export function repoChatActionRules(
   {"type":"write_file","path":"README.md","content":"complete content","mode":"replace","description":"…"} (replace only evidence explicitly marked complete file)
   {"type":"delete_file","path":"obsolete.txt","description":"…"}
 - Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.
+${FILE_ACCESS_RULE}
 ${REPO_CONFIG_RULE}`
     : '- Creating, editing, replacing and deleting files is turned off by the user\'s "File read-only mode" setting (Settings → AI → Repository chat). When asked to change a file, propose nothing for it: say plainly that file changes are off and name that setting — never pretend the file was changed. Git actions remain available.'
 
@@ -645,7 +663,7 @@ const GIT_VERBS =
   'commit|stash|push|pull|fetch|merge|rebase|checkout|switch|branch|tag|revert|reset|cherry-pick|stage|unstage|discard'
 /** Imperatives in Portuguese and Spanish: distinct verb forms, safe to match anywhere. */
 const ASK_FOR_ACTION_ANYWHERE = new RegExp(
-  String.raw`\b(fa[cç]a|faz|crie|cria|apague|apaga|remova|remove|exclua|commite|comite|comita|commita|envie|mande|manda|adicione|adiciona|ignore|desfa[cç]a|reverta|mescle|troque|troca|mude|muda|altere|altera|edite|edita|escreva|corrija|corrige|renomeie|guarde|salve|descarte|haz|crea|borra|elimina|a[nñ]ade|sube|cambia|corrige|revierte)\b` +
+  String.raw`\b(fa[cç]a|faz|crie|cria|apague|apaga|remova|remove|exclua|commite|comite|comita|commita|envie|mande|manda|adicione|adiciona|ignore|desfa[cç]a|reverta|mescle|troque|troca|mude|muda|altere|altera|edite|edita|escreva|corrija|corrige|renomeie|guarde|salve|salva|descarte|haz|crea|borra|elimina|a[nñ]ade|sube|cambia|corrige|revierte)\b` +
     String.raw`|\b(d[eêaá]|dar|fa[zç]a?|fazer|rodar?|execut[ae]r?)\s+(um|o|a|uns|el|un)?\s*(${GIT_VERBS})\b`,
   'i'
 )
@@ -658,7 +676,7 @@ const ASK_FOR_ACTION_AT_START = new RegExp(
 
 /** A request to create, edit, write or delete a file — the part File read-only mode turns off. */
 export function asksToChangeFiles(message: string): boolean {
-  return /\b(crie|cria|criar|edite|edita|editar|altere|altera|escreva|escrever|apague|apaga|apagar|exclua|delete|remova|renomeie|create|edit|write|rewrite|rename|crea|edita|escribe|borra)\b[\s\S]{0,60}\b(arquivo|arquivos|file|files|archivo|archivos|\S+\.[a-z0-9]{1,8})\b/i.test(
+  return /\b(crie|cria|criar|salve|salva|salvar|edite|edita|editar|altere|altera|escreva|escrever|apague|apaga|apagar|exclua|delete|remova|renomeie|create|edit|write|rewrite|rename|crea|edita|escribe|borra)\b[\s\S]{0,60}\b(arquivo|arquivos|file|files|archivo|archivos|\S+\.[a-z0-9]{1,8})\b/i.test(
     message
   )
 }
@@ -671,6 +689,33 @@ export function asksToChangeFiles(message: string): boolean {
 export function asksForAction(message: string): boolean {
   const text = message.trim()
   return ASK_FOR_ACTION_ANYWHERE.test(text) || ASK_FOR_ACTION_AT_START.test(text)
+}
+
+/** "Tem sim, eu dei acesso", "you can", "go ahead": a reply that insists on the request before it. */
+const INSISTS =
+  /^(sim|yes|yep|pode|vai|faz|fa[cç]a|do it|go ahead)\b|\b(dei|liberei|ativei|habilitei|permiti|gave|granted|enabled|turned on|allowed)\b|\b(tem|t[aá]|est[aá]|consegue|pode|voc[eê] pode|you can|you do|you have|it is|it's)\s+(sim|acesso|access|on|liberad|ativad|habilitad|permitid|allowed|enabled)|\b(acesso|access|permiss[aã]o|permission)\b/i
+
+/**
+ * The message that carries the request this turn acts on: the latest one, or —
+ * when that is only a short insistence like "Tem sim eu dei acesso" — the
+ * request it insists on. Read as a question instead, the insistence went to the
+ * plain conversation, which cannot act, and the refusal was simply repeated.
+ * A question ("e o nome?") or a thank-you never inherits a request.
+ */
+export function actionRequestOf(messages: readonly RepoChatMessage[]): string | null {
+  const latest = messages.at(-1)
+  if (latest?.role !== 'user') return null
+  if (asksForAction(latest.content)) return latest.content
+  const insists = (text: string): boolean =>
+    text.trim().split(/\s+/).length <= 8 && !text.includes('?') && INSISTS.test(text.trim())
+  if (!insists(latest.content)) return null
+  // Back over earlier insistences ("Tem sim" twice) to the request itself.
+  const earlier = messages.slice(0, -1).filter((m) => m.role === 'user').slice(-3).reverse()
+  for (const message of earlier) {
+    if (asksForAction(message.content)) return message.content
+    if (!insists(message.content)) return null
+  }
+  return null
 }
 
 /**
@@ -1133,7 +1178,8 @@ export async function answerRepoChat(
     : { evidence: [], notes: [] }
   // A question never gets an action to propose: a 3B model asked "what is the
   // version of this project" offered — and was one click from running — a stash.
-  const actionsEnabled = cfg.repoChatActions !== false && asksForAction(messages.at(-1)?.content ?? '')
+  const actionRequest = actionRequestOf(messages)
+  const actionsEnabled = cfg.repoChatActions !== false && actionRequest !== null
   const fileActionsEnabled = actionsEnabled && cfg.repoChatReadOnly === false
   const remoteActionsEnabled = actionsEnabled && cfg.repoChatRemoteActions === true
   // What a proposal may touch — the same unfiltered working-tree set the Ask
@@ -1230,7 +1276,7 @@ ${actionRules}
   const latest = anchor ?? typed
   // Said by the app, not left to the model: told that file changes were off,
   // a model asked to create teste.txt answered with the file's text instead.
-  const fileChangeRefused = actionsEnabled && !fileActionsEnabled && asksToChangeFiles(typed)
+  const fileChangeRefused = actionsEnabled && !fileActionsEnabled && asksToChangeFiles(actionRequest ?? typed)
   // Known to be impossible before any model is asked, so none is: Gemini,
   // told file changes were off, still answered "I created teste.txt" above the
   // app's own note, and kept to it in the next turns.
@@ -1366,8 +1412,7 @@ ${actionRules}
           [
             {
               role: 'system',
-              content:
-                "You are a helpful assistant. Answer the user's latest message in its language, in concise Markdown, using the repository context below where it applies. Never invent file names, file contents or commits that are not in it."
+              content: `You are a helpful assistant. Answer the user's latest message in its language, in concise Markdown, using the repository context below where it applies. Never invent file names, file contents or commits that are not in it.${actionsEnabled ? `\n${PLAIN_FALLBACK_ACTION_RULE}` : ''}`
             },
             context,
             ...historyTurns(messages)
