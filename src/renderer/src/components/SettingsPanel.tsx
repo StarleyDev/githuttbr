@@ -2915,7 +2915,8 @@ function LayoutPage(): React.JSX.Element {
       <label className="settings-field">
         <span className="settings-field-label">{t('settings.sidebarSections')}</span>
         <span className="settings-hint">{t('settings.sidebarSectionsHint')}</span>
-        <div className="settings-toggle-list">
+        {/* Thirteen one-word switches: two columns halve the scroll. */}
+        <div className="settings-toggle-list two">
           {SIDEBAR_SECTIONS.map((sec) => (
             <label key={sec.id} className="settings-toggle-card">
               <input

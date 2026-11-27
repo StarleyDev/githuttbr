@@ -9480,6 +9480,14 @@ body.col-resizing .node-ava {
   gap: 10px;
 }
 
+.settings-toggle-list.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 720px) {
+  .settings-toggle-list.two { grid-template-columns: minmax(0, 1fr); }
+}
+
 .settings-app-picker {
   display: flex;
   align-items: center;
