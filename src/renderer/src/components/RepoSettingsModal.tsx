@@ -147,7 +147,7 @@ function SettingRow({
 
 function GeneralTab({ repoPath, onOpenPage }: { repoPath: string; onOpenPage: (p: RepoSettingsPage) => void }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
-  const openModal = useUIStore((s) => s.openModal)
+  const openDialog = useUIStore((s) => s.openDialog)
   const toast = useUIStore((s) => s.toast)
   const t = useT()
   const repo = useRepoStore((s) => s.repos[repoPath])
@@ -222,8 +222,9 @@ function GeneralTab({ repoPath, onOpenPage }: { repoPath: string; onOpenPage: (p
 
   const name = repoDisplayName(repoPath, useSettingsStore.getState().settings.repoAliases, repo?.name)
   // "Remove from list" reads as "delete"; the confirm says the folder stays.
+  // A dialog over the settings, not in their place: Cancel keeps them open.
   const confirmForget = (): void => {
-    openModal({
+    openDialog({
       kind: 'confirm',
       title: t('repos.forget'),
       message: interp(t('repos.forgetConfirm'), { name }),

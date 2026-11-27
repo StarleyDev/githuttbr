@@ -248,6 +248,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
           className="commitedit-message"
           value={text}
           disabled={!editable}
+          readOnly={generation.state.phase === 'generating'}
           rows={3}
           onChange={(e) => {
             setMessage(e.target.value)

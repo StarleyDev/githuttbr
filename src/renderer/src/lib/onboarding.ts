@@ -160,8 +160,15 @@ export function withListedModel(account: AIAccount, models: readonly string[]): 
  * Adds the account and puts it in use, as Settings does when a new account is
  * saved and then picked — and turns AI on, which choosing a card asked for.
  */
-export function addAccountInUse(ai: AIConfig, account: AIAccount): { ai: AIConfig; accountId: string } {
-  const { ai: added, accountId } = commitDraft(ai, { original: null, account })
+export function addAccountInUse(
+  ai: AIConfig,
+  account: AIAccount,
+  replacingId?: string
+): { ai: AIConfig; accountId: string } {
+  // Back on the step to fix the key: the account saved a moment ago is
+  // updated, not joined by a second copy holding the wrong key.
+  const original = replacingId ? ((ai.accounts ?? []).find((a) => a.id === replacingId) ?? null) : null
+  const { ai: added, accountId } = commitDraft(ai, { original, account })
   return { ai: { ...setAccountInUse(added, accountId), enabled: true }, accountId }
 }
 

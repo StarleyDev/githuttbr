@@ -77,10 +77,12 @@ lento ou um caro nunca seja surpresa.
   modelos. A escolha vale **só para aquela geração**; as Configurações não
   mudam.
 - Enquanto roda, o ✦ gira e a mesma linha mostra os segundos até ali e
-  **Cancelar**, que interrompe a própria requisição, não só o indicador. Depois
-  de 30 segundos também oferece **Usar** outra conta pronta, que roda a mesma
-  geração nela. O aviso global *está demorando mais que o esperado*
-  ([IA](ai.md)) continua aparecendo também.
+  **Cancelar**, que interrompe a própria requisição, não só o indicador. O
+  resumo e a descrição ficam só leitura enquanto isso, para a resposta não
+  apagar o que você digitar. Depois de 30 segundos, o aviso global *está
+  demorando mais que o esperado* ([IA](ai.md)) oferece continuar aguardando ou
+  levar a mesma geração para outra conta pronta; **Gerar de novo** passa a usar
+  essa conta.
 - O texto novo **substitui** o que havia, e o antigo é guardado: **Desfazer** e
   **Gerar de novo** aparecem na mesma linha (no hover, *Gerado por conta ·
   modelo em 7 s*). Desfazer devolve o seu resumo e a sua descrição. Os dois

@@ -74,9 +74,10 @@ export interface OnboardingAI {
 /**
  * The step's state lives with the wizard, not the step, so going back to the
  * accounts step and returning keeps the detection, the test and the choice.
- * `saveAccount` writes the account and returns the id it was saved under.
+ * `saveAccount` writes the account — over `replacingId` when the step saved
+ * one already — and returns the id it was saved under.
  */
-export function useOnboardingAI(saveAccount: (account: AIAccount) => string): OnboardingAI {
+export function useOnboardingAI(saveAccount: (account: AIAccount, replacingId?: string) => string): OnboardingAI {
   const [clis, setClis] = useState<DetectedCli[] | null>(null)
   const [choice, setChoice] = useState<AIChoice | null>(null)
   const [provider, setProviderState] = useState<AIProvider>('openai')
@@ -106,7 +107,7 @@ export function useOnboardingAI(saveAccount: (account: AIAccount) => string): On
   }
 
   const save = (account: AIAccount): void => {
-    const id = saveAccount(account)
+    const id = saveAccount(account, saved?.id)
     setSaved({ id, label: accountLabel(account), fingerprint: checkFingerprint(account) })
   }
 
@@ -171,9 +172,12 @@ export function useOnboardingAI(saveAccount: (account: AIAccount) => string): On
     return result.ok ? withListedModel(account, result.models) : null
   }
 
-  // Editing a field invalidates a test of the old value.
+  // Editing a field invalidates a test of the old value — one still running
+  // too: its answer is about the old key and must not land as "Ready".
   const edited = <T,>(set: (v: T) => void) => (v: T): void => {
     set(v)
+    run.current++
+    setBusy(false)
     setCheck(null)
   }
 
@@ -214,6 +218,8 @@ export function useOnboardingAI(saveAccount: (account: AIAccount) => string): On
     setServer: (next: LocalServer) => {
       setServerState(next)
       setEndpointState(LOCAL_SERVERS[next].endpoint)
+      run.current++
+      setBusy(false)
       setCheck(null)
     },
     setEndpoint: edited(setEndpointState),

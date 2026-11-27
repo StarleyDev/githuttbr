@@ -1109,6 +1109,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             placeholder={t('composer.summaryPlaceholder')}
             title={t('composer.summaryTitle')}
             value={summary}
+            // While the AI writes, typing here would be overwritten by its answer.
+            readOnly={generation.state.phase === 'generating'}
             maxLength={100}
             onChange={(e) => {
               histIdx.current = -1 // typing cancels history navigation
@@ -1206,6 +1208,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           className="commit-description"
           placeholder={t('composer.descriptionPlaceholder')}
           value={description}
+          readOnly={generation.state.phase === 'generating'}
           rows={3}
           onChange={(e) => setDescription(e.target.value)}
         />

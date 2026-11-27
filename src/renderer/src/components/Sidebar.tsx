@@ -2252,9 +2252,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // from the full list so the badge does not lie about what exists.
   // Subtasks stay inside the modal: the sidebar is a glance, and a nested tree
   // there would cost more height than the section is worth.
-  const sortedTodos = hideDoneTodos
-    ? sortTodos(topLevelTodos(todos), manualTodoOrder).filter((td) => !td.done)
-    : sortTodos(topLevelTodos(todos), manualTodoOrder)
+  // Memoised: the filter rebuilds its search index whenever this array changes identity.
+  const sortedTodos = useMemo(
+    () =>
+      hideDoneTodos
+        ? sortTodos(topLevelTodos(todos), manualTodoOrder).filter((td) => !td.done)
+        : sortTodos(topLevelTodos(todos), manualTodoOrder),
+    [todos, manualTodoOrder, hideDoneTodos]
+  )
   const todoCounts = todoSummary(todos)
   const PRIORITY_LABEL: Record<RepoTodo['priority'], TranslationKey> = {
     high: 'todos.priorityHigh',
