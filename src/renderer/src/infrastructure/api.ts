@@ -1347,6 +1347,12 @@ export const hostingApi = {
     window.api.hosting.prReview(repoPath, remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, method: PrMergeMethod) =>
     window.api.hosting.prMerge(repoPath, remoteUrl, tokens, number, method) as Promise<void>,
+  /** Closes a pull request without merging it, or reopens a closed one. */
+  prSetState: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, state: 'open' | 'closed') =>
+    window.api.hosting.prSetState(repoPath, remoteUrl, tokens, number, state) as Promise<void>,
+  /** Moves a pull request to draft, or marks a draft ready for review. */
+  prSetDraft: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number, draft: boolean) =>
+    window.api.hosting.prSetDraft(repoPath, remoteUrl, tokens, number, draft) as Promise<void>,
   listNotifications: (token: string, all?: boolean) =>
     window.api.hosting.listNotifications(token, all) as Promise<GitHubNotification[]>,
   markNotificationRead: (token: string, id: string) =>

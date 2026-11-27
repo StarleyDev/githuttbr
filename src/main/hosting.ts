@@ -14,6 +14,7 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
+import { titleForDraft } from './prDraftTitle'
 import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThread } from './githubGraphql'
 import {
   getAnchorLine,
@@ -59,6 +60,8 @@ import {
   forgejoPullRevision,
   forgejoRepoApi,
   forgejoMerge,
+  forgejoSetPullState,
+  forgejoSetPullDraft,
   forgejoPullChecks,
   forgejoJobLog,
   readTail,
@@ -135,6 +138,8 @@ import {
   bbsPullDiffCommits,
   bbsRepoApi,
   bbsMerge,
+  bbsSetPullState,
+  bbsSetPullDraft,
   bbsPullChecks,
   bbsPullDetail,
   bbsPullFiles,
@@ -230,6 +235,8 @@ import {
   azurePrCommits,
   azureComment,
   azureMerge,
+  azureSetPullState,
+  azureSetPullDraft,
   azurePrChecks,
   azureBuildLog,
   azurePrDetail,
@@ -2149,6 +2156,29 @@ async function glMergeMr(
   })
 }
 
+async function glSetMrState(
+  remoteUrl: string,
+  token: string | undefined,
+  number: number,
+  state: 'open' | 'closed'
+): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  await glJson(`${base}/merge_requests/${number}`, auth, {
+    method: 'PUT',
+    body: JSON.stringify({ state_event: state === 'closed' ? 'close' : 'reopen' })
+  })
+}
+
+/** Moves a merge request to draft or back: GitLab reads a "Draft:" title as a draft. */
+async function glSetMrDraft(remoteUrl: string, token: string | undefined, number: number, draft: boolean): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  const mr = await glJson<{ title: string }>(`${base}/merge_requests/${number}`, auth)
+  await glJson(`${base}/merge_requests/${number}`, auth, {
+    method: 'PUT',
+    body: JSON.stringify({ title: titleForDraft(mr.title, draft, 'Draft:') })
+  })
+}
+
 /**
  * Every page of a list endpoint, 100 at a time — the most GitHub and GitLab
  * serve per page, whatever `per_page` asks for. Capped so a pathological PR
@@ -3689,6 +3719,64 @@ async function mergePr(
     method: 'PUT',
     body: JSON.stringify({ merge_method: method })
   })
+}
+
+/**
+ * Closes a pull request without merging it, or reopens a closed one. Nothing
+ * else changes: the branch, its commits and the conversation stay, so a close
+ * is undone by a reopen. The host refuses it for someone without the right
+ * (not the author nor a maintainer) and its words reach the user.
+ */
+async function setPullRequestState(
+  remoteUrl: string,
+  tokens: HostTokens,
+  number: number,
+  state: 'open' | 'closed'
+): Promise<void> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glSetMrState(remoteUrl, tokens.gitlab, number, state)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsSetPullState(b.repo, b.token, number, state)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoSetPullState(f.base, f.owner, f.repo, f.token, number, state)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureSetPullState(a.ado, a.repo, number, state)
+  }
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`${api}/pulls/${number}`, token, { method: 'PATCH', body: JSON.stringify({ state }) })
+}
+
+const CONVERT_TO_DRAFT = `mutation($id:ID!){ convertPullRequestToDraft(input:{pullRequestId:$id}){ pullRequest{ isDraft } } }`
+const MARK_READY = `mutation($id:ID!){ markPullRequestReadyForReview(input:{pullRequestId:$id}){ pullRequest{ isDraft } } }`
+
+/**
+ * Moves a pull request back to draft — not ready, reviewers not asked yet —
+ * or marks a draft ready for review. Reversible either way, like a close.
+ * GitHub's REST API cannot flip it, so this one goes through GraphQL.
+ */
+async function setPullRequestDraft(remoteUrl: string, tokens: HostTokens, number: number, draft: boolean): Promise<void> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glSetMrDraft(remoteUrl, tokens.gitlab, number, draft)
+  if (isBbs(remoteUrl)) {
+    const b = await bbsRepoOf(remoteUrl)
+    return bbsSetPullDraft(b.repo, b.token, number, draft)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoSetPullDraft(f.base, f.owner, f.repo, f.token, number, draft)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureSetPullDraft(a.ado, a.repo, number, draft)
+  }
+  const { token, ep, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const pr = await ghJson<{ node_id?: string }>(`${api}/pulls/${number}`, token)
+  if (!pr.node_id) throw new Error('GitHub did not name the pull request.')
+  const post = createGithubGraphqlPost(ep.graphqlUrl, token)
+  await post(draft ? CONVERT_TO_DRAFT : MARK_READY, { id: pr.node_id })
 }
 
 async function listIssues(
@@ -5377,6 +5465,17 @@ export function registerHostingHandlers(): void {
     (remoteUrl: string, tokens: HostTokens, number: number, event: PrReviewEvent, body: string) =>
       reviewPr(remoteUrl, tokens, number, event, body)
   )
+  handleForRepo(
+    'hosting:prSetState',
+    (remoteUrl: string, tokens: HostTokens, number: number, state: unknown) => {
+      if (state !== 'open' && state !== 'closed') throw new Error('Invalid pull request state.')
+      return setPullRequestState(remoteUrl, tokens, number, state)
+    }
+  )
+  handleForRepo('hosting:prSetDraft', (remoteUrl: string, tokens: HostTokens, number: number, draft: unknown) => {
+    if (typeof draft !== 'boolean') throw new Error('Invalid draft flag.')
+    return setPullRequestDraft(remoteUrl, tokens, number, draft)
+  })
   handleForRepo('hosting:prMerge', (remoteUrl: string, tokens: HostTokens, number: number, method: PrMergeMethod) =>
     mergePr(remoteUrl, tokens, number, method)
   )

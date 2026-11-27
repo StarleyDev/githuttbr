@@ -7708,6 +7708,12 @@ body.col-resizing .node-ava {
   background: var(--bg-4);
   color: var(--text-1);
 }
+/* A destructive action that is not the main one (Close pull request, Reset
+   bisect): the quiet ghost button, in red words. `.btn.ghost` comes after
+   `.btn.danger` and used to win both properties, so it never read as danger. */
+.btn.ghost.danger {
+  color: var(--red);
+}
 .btn.ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-4));
   color: var(--text-0);

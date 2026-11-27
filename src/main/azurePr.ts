@@ -815,6 +815,19 @@ export async function azureMerge(ado: Ado, r: AzureRepo, id: number, method: PrM
   })
 }
 
+/** Abandons (closes) or reactivates a pull request. Azure calls a closed one "abandoned". */
+export async function azureSetPullState(ado: Ado, r: AzureRepo, id: number, state: 'open' | 'closed'): Promise<void> {
+  await ado(`${repoApi(r)}/pullrequests/${id}?${V}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: state === 'closed' ? 'abandoned' : 'active' })
+  })
+}
+
+/** Moves a pull request to draft or publishes it for review. */
+export async function azureSetPullDraft(ado: Ado, r: AzureRepo, id: number, draft: boolean): Promise<void> {
+  await ado(`${repoApi(r)}/pullrequests/${id}?${V}`, { method: 'PATCH', body: JSON.stringify({ isDraft: draft }) })
+}
+
 /** An Azure Boards work item's title, type and state — for a branch named after it. */
 export async function azureWorkItem(
   ado: Ado,

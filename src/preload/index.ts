@@ -443,6 +443,10 @@ const api = {
       ipcRenderer.invoke('hosting:prReview', repoPath, remoteUrl, tokens, number, event, body),
     prMerge: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prMerge', repoPath, remoteUrl, tokens, number, method),
+    prSetState: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prSetState', repoPath, remoteUrl, tokens, number, state),
+    prSetDraft: (repoPath: string, remoteUrl: string, tokens: unknown, number: number, draft: boolean): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prSetDraft', repoPath, remoteUrl, tokens, number, draft),
     listNotifications: (token: string, all?: boolean): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listNotifications', token, all),
     markNotificationRead: (token: string, id: string): Promise<unknown> =>
