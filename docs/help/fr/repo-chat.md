@@ -115,8 +115,25 @@ panneau proposant une réponse que rien ne peut produire.
 Le fournisseur et le modèle qui répondent à la discussion se choisissent sur la
 page **IA**, sous **Modèle par tâche** — voir [Fonctions IA](ai.md#modèle-par-tâche).
 
-Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
-du nom du fournisseur : même réglage, sans ouvrir les Paramètres.
+### Les pastilles de l’en-tête
+
+Sous le titre du panneau, trois pastilles disent ce que la discussion fera de
+votre prochain message, et chacune le change sans ouvrir les Paramètres :
+
+| Pastille | Affiche | Cliquez pour |
+|---|---|---|
+| **Compte · modèle** | Qui répond, avec un point pour l’état du compte — prêt, ne répond pas, pas de clé ou pas encore vérifié | Choisir un autre modèle dans un menu groupé par compte, ou revenir au modèle du profil. C’est le même réglage que **Modèle par tâche → Discussion** |
+| **Peut : …** | Ce que la discussion peut faire — *lire*, plus *Git*, *fichiers* et *distant* quand ils sont activés | Activer ou désactiver **Actions Git locales**, **Créer, modifier et supprimer des fichiers** et **Actions distantes**, ou ouvrir **Tous les réglages du chat** |
+| **Approbation** | *Demande avant d’exécuter*, *Exécute les actions sûres* ou *Exécute toutes les actions* | Choisir l’un des trois modes d’approbation (plus bas). Masquée tant que les actions Git locales sont désactivées, puisque rien n’est proposé |
+
+Ce sont les mêmes réglages que **Paramètres → IA → Discussion du dépôt**,
+enregistrés sur la même IA : les deux ne se contredisent jamais. Envoyer une
+seule question à un modèle plus puissant tient en un clic et ne dérange pas le
+reste de l’application. Le point d’état est lu dans la liste de modèles que le
+panneau a déjà récupérée — il n’envoie jamais de requête à lui seul, donc *Non
+vérifié* signifie seulement que rien n’a encore prouvé le compte.
+
+![La pastille des capacités ouverte](../../screenshots/repo-chat-capabilities.webp)
 
 Le bouton baguette à côté du titre du panneau ouvre l’**assistant de
 configuration IA** — un parcours guidé qui génère des fichiers de configuration
@@ -149,10 +166,7 @@ n'affiche simplement rien.
 
 Demandez un changement plutôt qu’un fait — *indexe les fichiers markdown,
 valide ceci comme un correctif, mets la sortie du build dans les exclusions* —
-et la réponse arrive avec une **carte d’actions**. Une conversation vide
-propose quelques demandes d’exemple sous forme de pastilles sous
-l’introduction ; en cliquer une remplit le champ de saisie, pour que vous
-puissiez la modifier avant l’envoi. La carte liste les étapes concrètes que
+et la réponse arrive avec une **carte d’actions**. Une conversation vide commence par **Posez n’importe quelle question** et trois suggestions — *Relis le dernier commit*, *Qu’est-ce qui a changé depuis main ?* (avec le nom de la branche par défaut du dépôt quand il en a une) et *Rédige la description de la PR pour cette branche*. En cliquer une remplit le champ de saisie sans rien envoyer, pour que vous puissiez la modifier d’abord. La carte liste les étapes concrètes que
 l’assistant veut effectuer, une ligne par action, avec les boutons **Exécuter**
 et **Ignorer**. Rien de ce que contient la carte n’a encore eu lieu ; le modèle
 ne peut que proposer, et chaque proposition est vérifiée contre la copie de
@@ -256,7 +270,7 @@ jusqu’à ce que vous choisissiez **Exécuter** ou **Ignorer** :
 
 ### Modes d’approbation
 
-Le menu au bouclier sous le champ de saisie (aussi dans **Paramètres → IA →
+La pastille d’approbation dans l’en-tête du panneau (aussi dans **Paramètres → IA →
 Discussion du dépôt**) décide de la façon dont une carte s’exécute — pour tous
 les profils sur la même IA :
 

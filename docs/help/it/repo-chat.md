@@ -111,8 +111,25 @@ risposte che nessuno può dare.
 Quale fornitore e quale modello rispondono alla chat si imposta nella pagina
 **IA**, sotto **Modello per attività** — vedi [Funzioni AI](ai.md#modello-per-attività).
 
-Il modello della chat si cambia anche dall’intestazione del pannello, accanto al
-nome del provider: è la stessa impostazione, senza aprire le Impostazioni.
+### Le pillole dell'intestazione
+
+Sotto il titolo del pannello, tre pillole dicono cosa farà la chat con il tuo
+prossimo messaggio, e ognuna lo cambia senza aprire le Impostazioni:
+
+| Pillola | Mostra | Clicca per |
+|---|---|---|
+| **Account · modello** | Chi risponde, con un punto per lo stato dell'account — pronto, non risponde, nessuna chiave o non ancora verificato | Scegliere un altro modello da un menu raggruppato per account, o tornare al modello del profilo. È la stessa impostazione di **Modello per attività → Chat** |
+| **Può: …** | Cosa può fare la chat — *leggere*, più *Git*, *file* e *remoto* quando sono attivi | Attivare o disattivare **Azioni Git locali**, **Creare, modificare ed eliminare file** e **Azioni remote**, o aprire **Tutte le impostazioni della chat** |
+| **Approvazione** | *Chiede prima di eseguire*, *Esegue le azioni sicure* o *Esegue tutte le azioni* | Scegliere una delle tre modalità di approvazione (più sotto). Nascosta finché le azioni Git locali sono disattivate, perché non viene proposto nulla |
+
+Sono le stesse impostazioni di **Impostazioni → AI → Chat del repository**,
+salvate sulla stessa IA, quindi le due non sono mai in disaccordo. Spostare una
+singola domanda su un modello più potente è un clic e non tocca il resto
+dell'app. Il punto di stato viene dall'elenco dei modelli che il pannello ha già
+recuperato — non invia mai una richiesta propria, quindi *Non verificato*
+significa solo che niente ha ancora provato l'account.
+
+![La pillola delle capacità aperta](../../screenshots/repo-chat-capabilities.webp)
 
 Il pulsante a bacchetta accanto al titolo del pannello apre la **procedura
 guidata di configurazione IA** — un percorso guidato che genera i file di
@@ -144,9 +161,7 @@ un'immagine leggibile semplicemente non mostra nulla.
 
 Chiedi una modifica invece di un fatto — *metti in stage i file markdown,
 committa questo come fix, aggiungi l'output di build alla lista degli ignore* —
-e la risposta arriva con una **scheda di azioni**. Una conversazione vuota
-offre alcune richieste di esempio come chip sotto l'introduzione; cliccarne una
-riempie il campo di testo, così puoi modificarla prima dell'invio. La scheda
+e la risposta arriva con una **scheda di azioni**. Una conversazione vuota comincia con **Chiedi qualsiasi cosa** e tre suggerimenti — *Rivedi l’ultimo commit*, *Cosa è cambiato da main?* (con il nome del branch predefinito del repository quando ne ha uno) e *Scrivi la descrizione della PR per questo branch*. Cliccarne uno riempie il campo di testo senza inviare nulla, così puoi modificarlo prima. La scheda
 elenca i passi concreti che
 l'assistente vuole compiere, una riga per azione, con i pulsanti **Esegui** e
 **Ignora**. Nulla di ciò che c'è nella scheda è già accaduto; il modello può
@@ -251,7 +266,7 @@ scegli **Esegui** o **Ignora**:
 
 ### Modalità di approvazione
 
-Il menu con lo scudo sotto il campo di testo (anche in **Impostazioni → AI →
+La pillola di approvazione nell'intestazione del pannello (anche in **Impostazioni → AI →
 Chat del repository**) decide come viene eseguita una scheda — per ogni profilo
 sulla stessa IA:
 

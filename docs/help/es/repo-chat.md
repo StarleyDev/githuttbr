@@ -111,8 +111,25 @@ panel ofreciendo respuestas que nadie puede dar.
 Qué proveedor y qué modelo responden al chat se elige en la página **IA**, en
 **Modelo por tarea** — consulta [Funciones de IA](ai.md#modelo-por-tarea).
 
-El modelo del chat también se cambia desde la cabecera del propio panel, junto
-al nombre del proveedor: es el mismo ajuste, sin abrir los Ajustes.
+### Las píldoras de la cabecera
+
+Bajo el título del panel, tres píldoras dicen qué hará el chat con tu próximo
+mensaje, y cada una lo cambia sin abrir los Ajustes:
+
+| Píldora | Muestra | Pulsa para |
+|---|---|---|
+| **Cuenta · modelo** | Quién responde, con un punto para el estado de la cuenta — listo, no responde, sin clave o sin comprobar todavía | Elegir otro modelo en un menú agrupado por cuenta, o volver al modelo del perfil. Es el mismo ajuste que **Modelo por tarea → Chat** |
+| **Puede: …** | Lo que el chat puede hacer — *leer*, y además *Git*, *archivos* y *remoto* cuando están activados | Activar o desactivar **Acciones Git locales**, **Crear, editar y eliminar archivos** y **Acciones remotas**, o abrir **Todos los ajustes del chat** |
+| **Aprobación** | *Pregunta antes de ejecutar*, *Ejecuta acciones seguras* o *Ejecuta todas las acciones* | Elegir uno de los tres modos de aprobación (más abajo). Se oculta mientras las acciones Git locales están desactivadas, porque no se propone nada |
+
+Son los mismos ajustes que **Ajustes → IA → Chat del repositorio**, guardados en
+la misma IA, así que nunca discrepan. Llevar una sola pregunta a un modelo más
+potente es un clic y no altera el resto de la aplicación. El punto de estado se
+lee de la lista de modelos que el panel ya obtuvo — nunca hace una petición
+propia, así que *Sin comprobar* solo significa que nada ha probado aún la
+cuenta.
+
+![La píldora de capacidades abierta](../../screenshots/repo-chat-capabilities.webp)
 
 El botón de la varita junto al título del panel abre el **asistente de
 configuración de IA** — un flujo guiado que genera archivos de configuración
@@ -144,9 +161,7 @@ una imagen legible simplemente no muestra nada.
 
 Pide un cambio en vez de un dato — *prepara los archivos markdown, haz commit
 de esto como un fix, pon la salida del build en la lista de ignorados* — y la
-respuesta llega con una **tarjeta de acciones**. Una conversación vacía ofrece
-algunas peticiones de ejemplo como fichas bajo la introducción; al pulsar una
-se rellena el cuadro de texto para que puedas editarla antes de enviarla. La
+respuesta llega con una **tarjeta de acciones**. Una conversación vacía empieza con **Pregunta lo que quieras** y tres sugerencias — *Revisa el último commit*, *¿Qué cambió desde main?* (con el nombre de la rama por defecto del repositorio cuando la tiene) y *Escribe la descripción del PR de esta rama*. Al pulsar una se rellena el cuadro de texto sin enviar nada, para que puedas editarla antes. La
 tarjeta enumera los pasos concretos que el asistente quiere dar, una fila por
 acción, con los botones **Ejecutar** e **Ignorar**. Nada de lo que hay en la tarjeta ha ocurrido todavía; el modelo
 solo puede proponer, y cada propuesta se comprueba contra la copia de trabajo
@@ -250,7 +265,7 @@ eliges **Ejecutar** o **Ignorar**:
 
 ### Modos de aprobación
 
-El desplegable con el escudo bajo el cuadro de texto (también en **Ajustes → IA
+La píldora de aprobación en la cabecera del panel (también en **Ajustes → IA
 → Chat del repositorio**) decide cómo se ejecuta una tarjeta — para todos los
 perfiles en la misma IA:
 

@@ -115,8 +115,26 @@ anbietet, was niemand beantworten kann.
 Welcher Anbieter und welches Modell im Chat antworten, wird auf der Seite **KI**
 unter **Modell je Aufgabe** festgelegt — siehe [KI-Funktionen](ai.md#modell-je-aufgabe).
 
-Das Chat-Modell lässt sich auch in der Kopfzeile des Panels umstellen, neben dem
-Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
+### Die Pillen in der Kopfzeile
+
+Unter dem Paneltitel sagen drei Pillen, was der Chat mit deiner nächsten
+Nachricht tun wird, und jede ändert das, ohne die Einstellungen zu öffnen:
+
+| Pille | Zeigt | Klicken, um |
+|---|---|---|
+| **Konto · Modell** | Wer antwortet, mit einem Punkt für den Zustand des Kontos — bereit, antwortet nicht, kein Schlüssel oder noch nicht geprüft | Ein anderes Modell aus einem nach Konto gruppierten Menü zu wählen oder zum Modell des Profils zurückzukehren. Dieselbe Einstellung wie **Modell je Aufgabe → Chat** |
+| **Darf: …** | Was der Chat darf — *lesen*, dazu *Git*, *Dateien* und *Remote*, wenn sie an sind | **Lokale Git-Aktionen**, **Dateien erstellen, bearbeiten und löschen** und **Remote-Aktionen** umzuschalten oder **Alle Chat-Einstellungen** zu öffnen |
+| **Freigabe** | *Fragt vor dem Ausführen*, *Führt sichere Aktionen aus* oder *Führt alle Aktionen aus* | Einen der drei Freigabemodi (unten) zu wählen. Ausgeblendet, solange lokale Git-Aktionen aus sind, weil nichts vorgeschlagen wird |
+
+Es sind dieselben Einstellungen wie unter **Einstellungen → KI →
+Repository-Chat**, auf dieselbe KI geschrieben, sodass beide nie
+widersprechen. Eine einzelne Frage an ein stärkeres Modell zu geben ist ein
+Klick und stört den Rest der App nicht. Der Statuspunkt stammt aus der
+Modellliste, die das Panel ohnehin geholt hat — er schickt nie eine eigene
+Anfrage, *Nicht geprüft* heißt also nur, dass noch nichts das Konto bestätigt
+hat.
+
+![Die geöffnete Fähigkeiten-Pille](../../screenshots/repo-chat-capabilities.webp)
 
 Der Zauberstab-Knopf neben dem Paneltitel öffnet den
 **KI-Konfigurationsassistenten** — einen geführten Ablauf, der
@@ -148,9 +166,7 @@ Erwähnung, die nicht zu einem lesbaren Bild führt, zeigt einfach nichts.
 
 Bitte um eine Änderung statt um eine Auskunft — *stage die Markdown-Dateien,
 committe das als Fix, setz die Build-Ausgabe auf die Ignore-Liste* — und die
-Antwort kommt mit einer **Aktionskarte**. Eine leere Unterhaltung bietet unter
-der Einführung ein paar Beispielanfragen als Chips an; ein Klick darauf füllt
-das Eingabefeld, sodass du sie vor dem Senden bearbeiten kannst. Die Karte
+Antwort kommt mit einer **Aktionskarte**. Eine leere Unterhaltung beginnt mit **Frag einfach** und drei Vorschlägen — *Prüfe den letzten Commit*, *Was hat sich seit main geändert?* (mit dem Namen des Standard-Branches des Repositorys, wenn es einen hat) und *Schreib die PR-Beschreibung für diesen Branch*. Ein Klick füllt das Eingabefeld und sendet nichts, sodass du den Text vorher bearbeiten kannst. Die Karte
 listet die konkreten Schritte, die der
 Assistent gehen will, eine Zeile pro Aktion, mit den Knöpfen **Ausführen** und
 **Ablehnen**. Nichts auf der Karte ist schon passiert; das Modell kann nur
@@ -258,7 +274,7 @@ Mit **Immer fragen** bleibt dieselbe Art von Änderung offen, bis Sie
 
 ### Freigabemodi
 
-Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → KI →
+Die Freigabe-Pille in der Kopfzeile des Panels (auch in **Einstellungen → KI →
 Repository-Chat**) entscheidet, wie eine Karte läuft — für jedes Profil auf
 derselben KI:
 

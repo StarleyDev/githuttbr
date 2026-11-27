@@ -119,6 +119,33 @@ async function serveFakeModels() {
 }
 
 /**
+ * The chat's AI for the chat shots: a ready account on the loopback fake model
+ * server and a keyless hosted one, so the model pill shows a real status dot
+ * without a request to any provider. Files are on so the capabilities pill
+ * reads past the defaults.
+ */
+async function seedChatAI(page, extra = {}) {
+  const port = await serveFakeModels()
+  await page.evaluate(({ port, extra }) => {
+    window.__shot.settings.getState().update((s) => {
+      const local = {
+        id: 'ollama',
+        label: 'Local models',
+        provider: 'ollama',
+        endpoint: `http://127.0.0.1:${port}/v1`,
+        apiKey: '',
+        model: 'llama3.2'
+      }
+      const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
+      return {
+        ...s,
+        ai: { ...s.ai, accounts: [local, hosted], defaultAccountId: 'ollama', repoChatReadOnly: false, ...extra }
+      }
+    })
+  }, { port, extra })
+}
+
+/**
  * Seed a repository's todo list through the settings store.
  *
  * Written straight into `repoTodos` rather than through `addTodo` so the ages
@@ -503,19 +530,41 @@ export const shots = [
     }
   },
   {
-    // Empty repository chat: the example-request chips and the config-wizard
-    // wand in the header, before anything has been asked.
+    // Empty repository chat: the header pills (model, capabilities, approval),
+    // the starter requests and the config-wizard wand, before anything is asked.
     out: 'repo-chat-empty',
     repos: ['deep-history-monorepo'],
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
         shot.ui.getState().openChatPanel()
       }, repo)
       await page.waitForSelector('.ai-ask-chip')
+      await page.locator('.repo-chat-pill .repo-chat-dot.ready').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The capabilities pill open: the chat's permission switches, written to
+    // the same settings as Settings → AI → Repository chat.
+    out: 'repo-chat-capabilities',
+    repos: ['deep-history-monorepo'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.locator('.repo-chat-pill .repo-chat-dot.ready').waitFor()
+      await page.click('.repo-chat-pill.caps')
+      await page.waitForSelector('.repo-chat-pop.caps')
       await page.waitForTimeout(300)
     }
   },
@@ -528,6 +577,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -577,6 +627,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -629,6 +680,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['pr-ready-branch']
+      await seedChatAI(page, { repoChatRemoteActions: true })
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -682,6 +734,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['image-showcase']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)

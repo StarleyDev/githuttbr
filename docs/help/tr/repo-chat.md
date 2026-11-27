@@ -108,8 +108,25 @@ Soru sormak incelemeden ucuzdur, bu yüzden küçük bir model çoğu zaman yete
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
 yanıtlayamayacağı bir şeyi öneren panel kalmaz.
 
-Sohbet modeli, panelin kendi başlığından da değiştirilebilir; sağlayıcı adının
-yanındadır — aynı ayar, Ayarlar’ı açmadan.
+### Başlıktaki rozetler
+
+Panel başlığının altındaki üç rozet, sohbetin bir sonraki mesajınızla ne
+yapacağını söyler; her biri bunu Ayarlar’ı açmadan değiştirir:
+
+| Rozet | Gösterir | Tıklayınca |
+|---|---|---|
+| **Hesap · model** | Kimin yanıtladığını, hesabın durumunu gösteren bir noktayla — hazır, yanıt vermiyor, anahtar yok ya da henüz denetlenmedi | Hesaba göre gruplanmış bir menüden başka bir model seçersiniz ya da profilin modeline dönersiniz. **Görev başına model → Sohbet** ile aynı ayardır |
+| **Yapabilir: …** | Sohbetin neler yapabileceğini — *okuma*, açıksa ayrıca *Git*, *dosyalar* ve *uzak* | **Yerel Git eylemleri**, **Dosya oluşturmak, düzenlemek ve silmek** ve **Uzak eylemler** anahtarlarını değiştirir ya da **Tüm sohbet ayarları**nı açarsınız |
+| **Onay** | *Çalıştırmadan önce sorar*, *Güvenli eylemleri çalıştırır* ya da *Tüm eylemleri çalıştırır* | Üç onay modundan birini (aşağıda) seçersiniz. Yerel Git eylemleri kapalıyken gizlenir, çünkü hiçbir şey önerilmez |
+
+Bunlar **Ayarlar → Yapay zekâ → Depo sohbeti** ile aynı ayarlardır ve aynı
+yapay zekâya yazılır; ikisi hiçbir zaman çelişmez. Tek bir soruyu daha güçlü
+bir modele taşımak tek tıktır ve uygulamanın geri kalanını etkilemez. Durum
+noktası, panelin zaten çektiği model listesinden okunur — kendi başına asla
+istek göndermez; yani *Denetlenmedi* yalnızca hesabı henüz hiçbir şeyin
+doğrulamadığı anlamına gelir.
+
+![Açık yetenekler rozeti](../../screenshots/repo-chat-capabilities.webp)
 
 Panel başlığının yanındaki sihirli değnek düğmesi **yapay zekâ yapılandırma
 sihirbazını** açar — bu depo için asistan yapılandırma dosyaları (talimatlar,
@@ -140,9 +157,7 @@ görsele karşılık gelmeyen bir söz hiçbir şey göstermez.
 
 Bir olgu yerine bir değişiklik isteyin — *markdown dosyalarını hazırla, bunu
 düzeltme olarak commit’le, derleme çıktısını yoksayma listesine ekle* — ve
-yanıt bir **eylem kartıyla** gelir. Boş bir konuşma, giriş metninin altında
-birkaç örnek isteği çip olarak sunar; birine tıklamak yazma kutusunu doldurur,
-göndermeden önce düzenleyebilirsiniz. Kart, asistanın atmak istediği somut
+yanıt bir **eylem kartıyla** gelir. Boş bir konuşma **Ne istersen sor** ve üç öneriyle başlar — *Son commit’i incele*, *main dalından bu yana ne değişti?* (deponun varsayılan dalı varsa onun adıyla) ve *Bu dal için PR açıklamasını yaz*. Birine tıklamak yazma kutusunu doldurur ve hiçbir şey göndermez; önce düzenleyebilirsiniz. Kart, asistanın atmak istediği somut
 adımları listeler: her
 eyleme bir satır, **Çalıştır** ve **Reddet** düğmeleriyle. Karttaki hiçbir şey
 henüz olmuş değildir; model yalnızca önerebilir ve her öneri siz görmeden önce
@@ -242,7 +257,7 @@ seçene kadar bekler:
 
 ### Onay modları
 
-Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Yapay zekâ → Depo
+Panel başlığındaki onay rozeti (ayrıca **Ayarlar → Yapay zekâ → Depo
 sohbeti** içinde) bir kartın nasıl çalışacağına karar verir — aynı yapay
 zekâdaki her profil için:
 

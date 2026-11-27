@@ -113,8 +113,25 @@ aanbiedt dat niemand kan geven.
 Welke provider en welk model de chat beantwoorden, stel je in op de pagina **AI**,
 onder **Model per taak** — zie [AI-functies](ai.md#model-per-taak).
 
-Het chatmodel is ook te wisselen in de koptekst van het paneel zelf, naast de
-naam van de provider — dezelfde instelling, zonder Instellingen te openen.
+### De pillen in de kop
+
+Onder de titel van het paneel zeggen drie pillen wat de chat met je volgende
+bericht gaat doen, en elk ervan verandert dat zonder de Instellingen te openen:
+
+| Pil | Toont | Klik om |
+|---|---|---|
+| **Account · model** | Wie antwoordt, met een stip voor de staat van het account — klaar, reageert niet, geen sleutel of nog niet gecontroleerd | Een ander model te kiezen uit een menu gegroepeerd per account, of terug te gaan naar het model van het profiel. Dezelfde instelling als **Model per taak → Chat** |
+| **Mag: …** | Wat de chat mag — *lezen*, plus *Git*, *bestanden* en *remote* als die aan staan | **Lokale Git-acties**, **Bestanden maken, bewerken en verwijderen** en **Externe acties** om te zetten, of **Alle chatinstellingen** te openen |
+| **Goedkeuring** | *Vraagt vóór uitvoeren*, *Voert veilige acties uit* of *Voert alle acties uit* | Een van de drie goedkeuringsmodi (hieronder) te kiezen. Verborgen zolang lokale Git-acties uit staan, omdat er niets wordt voorgesteld |
+
+Het zijn dezelfde instellingen als **Instellingen → AI → Repository-chat**,
+opgeslagen op dezelfde AI, dus de twee spreken elkaar nooit tegen. Eén vraag
+naar een sterker model sturen is één klik en verstoort de rest van de app niet.
+De statusstip komt uit de modellijst die het paneel toch al ophaalde — hij doet
+nooit een eigen verzoek, dus *Niet gecontroleerd* betekent alleen dat nog niets
+het account heeft bewezen.
+
+![De geopende mogelijkhedenpil](../../screenshots/repo-chat-capabilities.webp)
 
 De toverstafknop naast de paneeltitel opent de **AI-configuratiewizard** — een
 begeleide flow die assistentconfiguratiebestanden (instructies, agents, hooks)
@@ -145,9 +162,7 @@ leidt, toont gewoon niets.
 
 Vraag om een verandering in plaats van een feit — *stage de
 markdown-bestanden, commit dit als fix, zet de buildoutput op de ignorelijst* —
-en het antwoord komt met een **actiekaart**. Een leeg gesprek biedt onder de
-introductie een paar voorbeeldverzoeken als chips aan; erop klikken vult het
-invoerveld, zodat je het verzoek kunt bewerken voor je het verstuurt. De kaart
+en het antwoord komt met een **actiekaart**. Een leeg gesprek begint met **Vraag wat je wilt** en drie suggesties — *Bekijk de laatste commit*, *Wat is er veranderd sinds main?* (met de naam van de standaardbranch van de repository als die er is) en *Schrijf de PR-beschrijving voor deze branch*. Erop klikken vult het invoerveld en verstuurt niets, zodat je het eerst kunt bewerken. De kaart
 somt de concrete stappen op die de
 assistent wil zetten, één rij per actie, met de knoppen **Uitvoeren** en
 **Afwijzen**. Niets op de kaart is al gebeurd; het model kan alleen
@@ -252,7 +267,7 @@ Met **Altijd vragen** blijft dezelfde soort wijziging openstaan tot je
 
 ### Goedkeuringsmodi
 
-Het schildmenu onder het invoerveld (ook in **Instellingen → AI →
+De goedkeuringspil in de kop van het paneel (ook in **Instellingen → AI →
 Repository-chat**) bepaalt hoe een kaart loopt — voor elk profiel op dezelfde
 AI:
 
