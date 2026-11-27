@@ -11,9 +11,6 @@ import {
   UserCircle2,
   Unplug,
   Bot,
-  Cloud,
-  GitFork,
-  Server,
   BadgeCheck,
   FlaskConical,
   Plug,
@@ -70,7 +67,7 @@ import {
   History,
   PanelTop
 } from 'lucide-react'
-import { Github, Gitlab } from './BrandIcons'
+import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -426,7 +423,7 @@ const INTEGRATIONS = [
   {
     id: 'github',
     label: 'GitHub',
-    icon: Github,
+    icon: GithubLogo,
     field: 'githubToken',
     kind: 'pat',
     placeholder: 'ghp_…',
@@ -435,7 +432,7 @@ const INTEGRATIONS = [
   {
     id: 'azure',
     label: 'Azure DevOps',
-    icon: Server,
+    icon: AzureLogo,
     field: 'azureToken',
     kind: 'pat',
     placeholderKey: 'integrations.azurePatPlaceholder',
@@ -445,7 +442,7 @@ const INTEGRATIONS = [
   {
     id: 'gitlab',
     label: 'GitLab',
-    icon: Gitlab,
+    icon: GitlabLogo,
     field: 'gitlabToken',
     kind: 'pat',
     placeholder: 'glpat-…',
@@ -455,7 +452,7 @@ const INTEGRATIONS = [
   {
     id: 'bitbucket',
     label: 'Bitbucket',
-    icon: Cloud,
+    icon: BitbucketLogo,
     field: 'bitbucketToken',
     kind: 'app',
     placeholder: 'username:app_password',
@@ -464,7 +461,7 @@ const INTEGRATIONS = [
   {
     id: 'forgejo',
     label: 'Forgejo',
-    icon: GitFork,
+    icon: ForgejoLogo,
     field: 'forgejoToken',
     kind: 'pat',
     placeholder: '',

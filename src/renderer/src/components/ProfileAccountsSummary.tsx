@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Cloud, GitFork, Loader2, Plug, Server } from 'lucide-react'
-import { Github, Gitlab } from './BrandIcons'
+import { Loader2, Plug } from 'lucide-react'
+import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { hostingApi } from '../infrastructure/api'
 import { useT, type TranslationKey } from '../i18n'
 import { useAccountChecksStore } from '../stores/accountChecks'
@@ -11,17 +11,17 @@ import type { TokenCheckFailureKind } from '../../../shared/tokenCheck'
 type HostRow = {
   id: RepoHost
   label: string
-  icon: typeof Cloud
+  icon: React.ComponentType<{ size?: number }>
   field: 'githubToken' | 'azureToken' | 'gitlabToken' | 'bitbucketToken' | 'forgejoToken'
 }
 
 /** The same hosts, in the same order, as the Connected accounts page's tabs. */
 const HOSTS: HostRow[] = [
-  { id: 'github', label: 'GitHub', icon: Github, field: 'githubToken' },
-  { id: 'azure', label: 'Azure DevOps', icon: Server, field: 'azureToken' },
-  { id: 'gitlab', label: 'GitLab', icon: Gitlab, field: 'gitlabToken' },
-  { id: 'bitbucket', label: 'Bitbucket', icon: Cloud, field: 'bitbucketToken' },
-  { id: 'forgejo', label: 'Forgejo', icon: GitFork, field: 'forgejoToken' }
+  { id: 'github', label: 'GitHub', icon: GithubLogo, field: 'githubToken' },
+  { id: 'azure', label: 'Azure DevOps', icon: AzureLogo, field: 'azureToken' },
+  { id: 'gitlab', label: 'GitLab', icon: GitlabLogo, field: 'gitlabToken' },
+  { id: 'bitbucket', label: 'Bitbucket', icon: BitbucketLogo, field: 'bitbucketToken' },
+  { id: 'forgejo', label: 'Forgejo', icon: ForgejoLogo, field: 'forgejoToken' }
 ]
 
 type RowState =

@@ -1848,6 +1848,18 @@ textarea:focus {
   border-radius: 3px;
 }
 
+/* Hosting services in their own colours (components/HostLogos.tsx). GitHub's
+   mark is black or white by design, so it takes the text colour; Bitbucket and
+   Azure use the lighter of their brand blues, which stays legible on a dark
+   background. Monochrome greys them like every other icon. */
+.host-logo { flex: none; }
+.host-logo-github { color: var(--text-0); }
+.host-logo-gitlab { color: #fc6d26; }
+.host-logo-bitbucket { color: #2684ff; }
+.host-logo-forgejo { color: #fb923c; }
+.host-logo-azure { color: #0078d4; }
+:root[data-icon-colors='mono'] .host-logo { color: var(--text-2); }
+
 /* Per-action tones for a row of icon buttons (the pull request page's header
    and a comment's Edit / Delete). The theme has five hues; the two in-between
    ones are mixes of them, so a theme that repaints its slots repaints these. */

@@ -2,8 +2,8 @@ import githuttbrLaunch from '../assets/githuttbr-launch.png'
 import { resolveWorktreeDir } from '../lib/branchMenu'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput, FolderPlus } from 'lucide-react'
-import { Github, Gitlab } from './BrandIcons'
+import { X, Globe, Cloud, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput, FolderPlus } from 'lucide-react'
+import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { LauncherBack } from './LauncherBack'
 import { useClonesStore } from '../stores/clones'
@@ -638,13 +638,13 @@ const HOST_META: Record<
   }
 }
 
-const PROVIDER_ICONS: Record<RemoteProviderId, typeof Globe> = {
+const PROVIDER_ICONS: Record<RemoteProviderId, React.ComponentType<{ size?: number }>> = {
   url: Globe,
-  github: Github,
-  gitlab: Gitlab,
-  bitbucket: Cloud,
-  azure: Server,
-  forgejo: GitFork
+  github: GithubLogo,
+  gitlab: GitlabLogo,
+  bitbucket: BitbucketLogo,
+  azure: AzureLogo,
+  forgejo: ForgejoLogo
 }
 
 function repoToName(repo: RemoteRepo): string {
