@@ -69,7 +69,7 @@ overschildert, schildert de pictogrammen mee, eigen en door AI gegenereerde
 thema's inbegrepen.
 
 Grenzen: alleen de hoofdknoppen van de werkbalk, de koppen van de zijbalksecties,
-het menu Gereedschap, de instellingenpagina's en de knoppen van de pull-request- en
+het menu Gereedschap, de rechtsklikmenu's van commits, branches en repository's, de instellingenpagina's en de knoppen van de pull-request- en
 issuepagina krijgen kleur; andere menu's, de rijen binnen een sectie en de
 commitgrafiek niet. Een menuregel onder de muis houdt zijn gewone uiterlijk,
 pictogram inbegrepen. Kleur is nooit de enige aanwijzing — elk pictogram houdt zijn

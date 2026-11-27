@@ -58,6 +58,23 @@ teal, go to source branch green and go to target branch orange (open in browser
 stays grey), and your own comments' **Edit** takes the accent and **Delete**
 red — there and on the issue page. Blue and teal are mixes of the theme's colors, so they follow it too.
 
+The right-click menus of commits, branches and repositories — the graph's
+commits, stashes and branch or tag badges, the sidebar's branches, tags and
+stashes, the branch picker, the menu a drag-and-drop opens, and a repository's
+menu on its tab, its group chip, the Repositories page and the launcher — give
+every row an icon colored by what its action does, the same way in each of them:
+
+| Color | Actions |
+|---|---|
+| Refs (the accent) | check out, create a branch or tag, merge, rebase, cherry-pick, revert, compare, rename, worktree, squash, fixup; a repository's alias, and moving it into a group, folder or workspace |
+| Sending (green) | push, create a pull request, open on the host, go to the release, export a patch |
+| Receiving (cyan) | pull, fast-forward |
+| Set aside (orange) | apply or pop a stash, pin, star, copy, amend, edit the message |
+| Security (red) | reset, delete, drop, undo the commit, move a branch, remove from the list, close |
+| Preview (teal) | range-diff, conflict radar, local CI, show worktrees, open in the terminal, file manager or editor |
+
+A destructive row is red throughout, icon included, as it always was.
+
 | Option | What you see |
 |---|---|
 | **Monochrome** | Every icon grey, as before this option existed |
@@ -86,7 +103,7 @@ it. Security stays red in most palettes because it is a warning; with
 **Monochrome** the palette has nothing to color.
 
 Limits: only the toolbar's main buttons, the sidebar section headers, the Tools
-menu, the Settings pages and the buttons of the pull request and issue pages are colored; other menus, the rows inside a section
+menu, the right-click menus of commits, branches and repositories, the Settings pages and the buttons of the pull request and issue pages are colored; other menus, the rows inside a section
 and the commit graph are not. A hovered menu row keeps its usual look, icon
 included. Color
 is never the only clue — every icon keeps its label.

@@ -65,7 +65,7 @@ Renkler temadan gelir — yeşilini ya da vurgu rengini değiştiren bir tema
 simgeleri de onunla birlikte boyar; özel ve yapay zekâ üretimi temalar dahil.
 
 Sınırlar: yalnızca araç çubuğunun ana düğmeleri, kenar çubuğu bölüm başlıkları,
-Araçlar menüsü, Ayarlar sayfaları ve pull request ile issue sayfalarının düğmeleri
+Araçlar menüsü, commit'lerin, dalların ve depoların sağ tık menüleri, Ayarlar sayfaları ve pull request ile issue sayfalarının düğmeleri
 renklenir; diğer menüler, bir bölümün içindeki satırlar ve commit grafiği
 renklenmez. Üzerine gelinen menü satırı, simgesi dahil her zamanki görünümünü korur.
 Renk asla tek ipucu değildir — her simge etiketini korur.

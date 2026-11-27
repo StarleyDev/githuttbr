@@ -13,6 +13,9 @@
  * Menus and lists that group many entries (the Tools menu, the Settings pages)
  * give a whole group one tone, so a group reads as one family.
  *
+ * The commit and ref right-click menus tone each row by the family of its
+ * action instead — one table, `lib/menuActionIcons.ts`, for every such menu.
+ *
  * A page whose header is a row of icon buttons (the pull request page) gives
  * each action its own tone instead, so they can be told apart at a glance:
  *

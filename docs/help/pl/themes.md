@@ -65,7 +65,7 @@ Kolory pochodzą z motywu — motyw, który przemalowuje swój zielony albo akce
 przemalowuje razem z nim ikony, także motywy własne i generowane przez AI.
 
 Ograniczenia: kolor dostają tylko główne przyciski paska narzędzi, nagłówki
-sekcji paska bocznego, menu Narzędzia, strony Ustawień oraz przyciski stron pull
+sekcji paska bocznego, menu Narzędzia, menu kontekstowe commitów, gałęzi i repozytoriów, strony Ustawień oraz przyciski stron pull
 requesta i issue; inne menu, wiersze wewnątrz sekcji i graf commitów nie. Wiersz
 menu pod kursorem zachowuje zwykły wygląd, razem z ikoną. Kolor nigdy nie jest
 jedyną wskazówką — każda ikona zachowuje etykietę.

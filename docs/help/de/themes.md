@@ -69,7 +69,7 @@ Die Farben kommen aus dem Theme — ein Theme, das sein Grün oder seinen Akzent
 umfärbt, färbt die Symbole mit, eigene und KI-generierte Themes eingeschlossen.
 
 Grenzen: Gefärbt werden nur die Hauptknöpfe der Werkzeugleiste, die
-Abschnittsköpfe der Seitenleiste, das Werkzeuge-Menü, die Einstellungsseiten und
+Abschnittsköpfe der Seitenleiste, das Werkzeuge-Menü, die Rechtsklick-Menüs von Commits, Branches und Repositorys, die Einstellungsseiten und
 die Knöpfe der Pull-Request- und der Issue-Seite; andere Menüs, die Zeilen
 innerhalb eines Abschnitts und der Commit-Graph nicht. Eine Menüzeile unter dem
 Mauszeiger behält ihr gewohntes Aussehen, Symbol eingeschlossen. Farbe ist nie der

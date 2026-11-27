@@ -28,7 +28,10 @@ with a hundred.
   until a pull brings them in.
 - Right-click a commit for **Amend**, **Undo**, **Reset to Commit…** and
   **View on GitHub**, plus checkout, cherry-pick, revert, branch, tag and
-  copy. Unsafe actions stay visible and disable.
+  copy. Unsafe actions stay visible and disable. Each row carries an icon
+  colored by its kind of action — see [icon colors](themes.md).
+
+![A commit's right-click menu, each action with its colored icon](../screenshots/commit-context-menu.webp)
 
 ## Making it show what you want
 

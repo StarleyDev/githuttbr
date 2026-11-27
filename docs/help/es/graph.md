@@ -30,6 +30,8 @@ desplaza igual que uno con cien.
   commit…** y **Ver en GitHub**, además de checkout, cherry-pick, revert, rama,
   etiqueta y copiar. Las acciones inseguras siguen visibles y se deshabilitan.
 
+![El menú contextual de un commit, cada acción con su icono de color](../../screenshots/commit-context-menu.webp)
+
 ## Que muestre lo que tú quieres
 
 - El **enfoque del grafo** decide cuánto historial se dibuja — Ajustes → **Grafo**, o el menú del engranaje en la cabecera del grafo. *Todo* lo dibuja

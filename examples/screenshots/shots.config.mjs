@@ -2696,6 +2696,26 @@ export const shots = [
     }
   },
   {
+    // A commit's right-click menu in the graph: every row with its icon, coloured
+    // by the family of its action. Opened near the top so the long menu fits.
+    out: 'commit-context-menu',
+    repos: ['force-push'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.waitForSelector('.graph-row[draggable="true"]')
+      const at = await page.evaluate(() => {
+        const row = document.querySelectorAll('.graph-row[draggable="true"]')[1]
+        if (!row) return null
+        const r = row.getBoundingClientRect()
+        return { x: r.left + r.width * 0.35, y: r.top + r.height / 2 }
+      })
+      if (!at) return
+      await page.mouse.click(at.x, at.y, { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // WIP snapshots — uncommitted-work safety net. Select a snapshot and a
     // file so the shot shows the whole story: list, kinds, file list, diff.
     out: 'snapshots',

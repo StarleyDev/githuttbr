@@ -33,6 +33,8 @@ commitów przewija się tak jak to ze stoma.
   cherry-pick, revert, gałąź, tag i kopiowanie. Akcje niebezpieczne pozostają
   widoczne i się dezaktywują.
 
+![Menu kontekstowe commita, każda akcja z kolorową ikoną](../../screenshots/commit-context-menu.webp)
+
 ## Ustawianie tego, co ma pokazywać
 
 - **Fokus grafu** decyduje, ile historii jest rysowane — Ustawienia → **Graf**, albo menu koła zębatego w nagłówku grafu. *Wszystko* rysuje całość;

@@ -69,8 +69,8 @@ Los colores salen del tema: un tema que repinta su verde o su acento repinta los
 iconos con él, incluidos los temas personalizados y los generados por IA.
 
 Límites: solo se colorean los botones principales de la barra de herramientas,
-las cabeceras de las secciones de la barra lateral, el menú Herramientas, las
-páginas de Ajustes y los botones de las páginas de pull request e issue; los demás
+las cabeceras de las secciones de la barra lateral, el menú Herramientas, los
+menús contextuales de commits, ramas y repositorios, las páginas de Ajustes y los botones de las páginas de pull request e issue; los demás
 menús, las filas dentro de una sección y el grafo de commits no. Una fila de menú
 bajo el ratón conserva su aspecto habitual, icono incluido. El color nunca es la
 única pista: cada icono conserva su etiqueta.

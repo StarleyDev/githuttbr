@@ -70,7 +70,7 @@ Les couleurs viennent du thème : un thème qui repeint son vert ou son accent
 repeint les icônes avec, thèmes personnalisés et générés par l’IA compris.
 
 Limites : seuls les boutons principaux de la barre d’outils, les en-têtes des
-sections de la barre latérale, le menu Outils, les pages des Paramètres et les
+sections de la barre latérale, le menu Outils, les menus contextuels des commits, des branches et des dépôts, les pages des Paramètres et les
 boutons des pages de pull request et d’issue sont colorés ; les autres menus, les
 lignes à l’intérieur d’une section et le graphe des commits ne le sont pas. Une
 ligne de menu survolée garde son aspect habituel, icône comprise. La couleur n’est
