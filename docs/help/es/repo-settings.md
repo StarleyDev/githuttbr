@@ -2,8 +2,9 @@
 title: Ajustes por repositorio
 category: Herramientas del espacio de trabajo
 order: 94
-summary: Ramas protegidas, la imagen de la pestaña, información, analíticas, historial y el registro de operaciones.
-keywords: ajustes del repo repo settings ramas protegidas protected branches imagen de la pestaña tab image icono logo analíticas analytics registro de operaciones operation log historial información engranaje gear
+summary: El nombre visible, el perfil, las ramas protegidas y la imagen de pestaña de un repositorio, además de sus reglas, su bóveda y su actividad.
+keywords: ajustes del repo repo settings ramas protegidas protected branches imagen de la pestaña tab image icono logo analíticas analytics registro de operaciones operation log historial información engranaje gear nombre visible alias perfil quitar de la lista olvidar métricas configuración del proyecto
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Ajustes por repositorio
@@ -13,19 +14,51 @@ pertenecen a **este** repositorio, no a la aplicación.
 
 ![Ajustes por repositorio](../../screenshots/repo-settings.webp)
 
-| Pestaña | Qué contiene |
-|---|---|
-| **General** | Ramas protegidas (un multiselector de ramas, guardado en la config de git), la imagen de la pestaña, firma |
-| **Config** | Las [reglas que este repositorio trae consigo](repo-config.md) en `.githuttbr.json`, y el doctor que las comprueba |
-| **Info** | Notas y campos libres sobre este repositorio, guardados en local |
-| **Bóveda** | Las entradas de la [bóveda](vault.md) de este repositorio |
-| **Métricas** | El [panel de historial](insights.md) |
-| **Analíticas** | Lo que has hecho en este repositorio, contado en local |
-| **Historial** · **Logs** | El registro de operaciones: cada comando de git que GitHuttBr ejecutó, con su salida |
+La cabecera dice qué repositorio estás a punto de cambiar: su nombre, su
+carpeta, la rama actual, el remoto principal (`origin` cuando existe) con el
+host donde vive, y algunos recuentos. El de ramas sale de la lista ya cargada.
+El de la bóveda aparece solo después de abrir **Bóveda**, porque leer la bóveda
+consulta el llavero del sistema, y abrir los ajustes no debería. No hay recuento
+de commits: contar un historial largo es una llamada git aparte, y una cabecera
+no la merece.
+
+Las páginas están en una navegación lateral, en tres grupos:
+
+| Grupo | Página | Qué contiene |
+|---|---|---|
+| Repositorio | **General** | Nombre visible, perfil, ramas protegidas, la imagen de la pestaña y Quitar de la lista |
+| Repositorio | **Configuración del proyecto** | Las [reglas que trae este repositorio](repo-config.md) en `.githuttbr.json`, y el doctor que las comprueba |
+| Repositorio | **Información** | Notas y campos libres sobre este repositorio, guardados localmente |
+| Seguridad | **Bóveda** | Las entradas de la [bóveda](vault.md) de este repositorio |
+| Actividad | **Analítica** | Lo que has hecho en GitHuttBr, contado localmente |
+| Actividad | **Métricas** | El [panel del historial](insights.md) |
+| Actividad | **Historial de operaciones** | Commits a lo largo del tiempo y quién los hizo, en los repositorios que has abierto |
+| Actividad | **Registro** | El registro de operaciones: cada comando git que GitHuttBr ejecutó aquí, con su resultado |
 
 El registro de operaciones es el sincero: cuando algo se comporta de forma rara,
 muestra el comando exacto y el error exacto, para que un informe de fallo lleve
 hechos en vez de adjetivos.
+
+## General
+
+Cada ajuste es una fila: lo que hace a la izquierda, el control a la derecha.
+No se guarda nada hasta que pulsas **Guardar**.
+
+| Fila | Qué hace | Dónde se guarda |
+|---|---|---|
+| **Nombre visible** | El nombre en pestañas y listas. La carpeta en disco nunca se renombra; vacío, se usa el nombre de la carpeta | Ajustes de GitHuttBr, en este equipo |
+| **Perfil** | La identidad, los tokens y la IA a los que cambia este repositorio cuando su pestaña está activa. **Auto** sigue el perfil activo | Ajustes de GitHuttBr, en este equipo |
+| **Ramas protegidas** | Avisa antes de hacer commit o force push directamente en estas ramas | El git config del repositorio |
+| **Imagen de la pestaña** | Una imagen pequeña en la pestaña, más abajo | Ajustes de GitHuttBr, en este equipo |
+
+Cuando el repositorio tiene un `.githuttbr.json`, un aviso arriba de General lo
+indica y enlaza a **Configuración del proyecto**. Esas reglas viajan con el
+repositorio a todos los que lo clonan; las filas bajo el aviso son solo tuyas.
+
+**Quitar de la lista…** saca el repositorio de [Repositorios](repositories.md).
+Pregunta antes, y la pregunta dice lo que no hace: la carpeta en disco no se
+toca, y una pestaña abierta sigue abierta. Abrir el repositorio de nuevo lo
+devuelve a la lista.
 
 ## Imagen de la pestaña
 

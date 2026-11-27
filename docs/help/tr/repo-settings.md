@@ -2,8 +2,9 @@
 title: Depo başına ayarlar
 category: Çalışma alanı araçları
 order: 94
-summary: Korumalı dallar, bilgi, analitik, geçmiş ve işlem günlüğü.
-keywords: depo ayarları repo settings korumalı dallar protected branches analitik analytics işlem günlüğü operation log geçmiş history bilgi info dişli gear sekme görseli tab image simge logo
+summary: Bir deponun görünen adı, profili, korumalı dalları ve sekme görseli; ayrıca kuralları, kasası ve etkinliği.
+keywords: depo ayarları repo settings korumalı dallar protected branches analitik analytics işlem günlüğü operation log geçmiş history bilgi info dişli gear sekme görseli tab image simge logo görünen ad takma ad profil listeden kaldır unut ölçümler proje yapılandırması
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Depo başına ayarlar
@@ -13,18 +14,48 @@ ayarları açar.
 
 ![Depo başına ayarlar](../../screenshots/repo-settings.webp)
 
-| Sekme | Neler var |
-|---|---|
-| **Genel** | Korumalı dallar (git config'te saklanan çoklu dal seçimi), imzalama, sekme görseli |
-| **Config** | Bu deponun `.githuttbr.json` içinde taşıdığı [kurallar](repo-config.md) ve onları denetleyen doctor |
-| **Bilgi** | Bu depo hakkında serbest biçimli notlar ve alanlar, yerelde tutulur |
-| **Kasa** | Bu deponun [kasa](vault.md) girdileri |
-| **İçgörüler** | [Geçmiş panosu](insights.md) |
-| **Analitik** | Bu depoda ne yaptığınız, yerelde sayılmış hâliyle |
-| **Geçmiş** · **Günlükler** | İşlem günlüğü: GitHuttBr'nun çalıştırdığı her git komutu, çıktısıyla |
+Başlık, değiştirmek üzere olduğunuz depoyu söyler: adı, klasörü, geçerli dal,
+barındığı sunucuyla birlikte ana uzak depo (varsa `origin`) ve birkaç sayı. Dal
+sayısı zaten yüklenmiş listeden gelir. Kasa sayısı ancak **Kasa**’yı açtıktan
+sonra görünür, çünkü kasayı okumak sistem anahtar zincirine sorar ve ayarları
+açmak bunu yapmamalı. Commit sayısı yok: uzun bir geçmişi saymak ayrı bir git
+çağrısıdır ve bir başlık buna değmez.
+
+Sayfalar yan gezinmede, üç grupta durur:
+
+| Grup | Sayfa | Ne içerir |
+|---|---|---|
+| Depo | **Genel** | Görünen ad, profil, korumalı dallar, sekme görseli ve Listeden kaldır |
+| Depo | **Proje yapılandırması** | Bu deponun `.githuttbr.json` içinde [taşıdığı kurallar](repo-config.md) ve onları denetleyen doctor |
+| Depo | **Bilgiler** | Bu depo hakkında serbest notlar ve alanlar, yerelde tutulur |
+| Güvenlik | **Kasa** | Bu deponun [kasa](vault.md) girdileri |
+| Etkinlik | **Ölçümler** | GitHuttBr içinde yaptıklarınız, yerelde sayılır |
+| Etkinlik | **İçgörüler** | [Geçmiş panosu](insights.md) |
+| Etkinlik | **İşlem geçmişi** | Açtığınız depolar için zaman içindeki commit’ler ve onları yapanlar |
+| Etkinlik | **Kayıtlar** | İşlem günlüğü: GitHuttBr’ın burada çalıştırdığı her git komutu, sonucuyla |
 
 Dürüst olanı işlem günlüğüdür: bir şey tuhaf davrandığında tam komutu ve tam
 hatayı gösterir, böylece bir hata raporu sıfat yerine olgu taşıyabilir.
+
+## Genel
+
+Her ayar bir satırdır: solda ne yaptığı, sağda denetimi. **Kaydet**’e basana
+kadar hiçbir şey saklanmaz.
+
+| Satır | Ne yapar | Nerede saklanır |
+|---|---|---|
+| **Görünen ad** | Sekmelerde ve listelerde görünen ad. Diskteki klasör asla yeniden adlandırılmaz; boşsa klasör adı kullanılır | GitHuttBr ayarları, bu bilgisayar |
+| **Profil** | Sekmesi etkinken bu deponun geçtiği kimlik, belirteçler ve yapay zekâ. **Otomatik**, etkin profili izler | GitHuttBr ayarları, bu bilgisayar |
+| **Korumalı dallar** | Bu dallara doğrudan commit veya force push yapmadan önce uyarır | Deponun git config’i |
+| **Sekme görseli** | Sekmede küçük bir resim, aşağıda | GitHuttBr ayarları, bu bilgisayar |
+
+Depoda bir `.githuttbr.json` varsa, Genel’in üstündeki bir bildirim bunu söyler
+ve **Proje yapılandırması**’na götürür. O kurallar depoyla birlikte onu
+klonlayan herkese gider; bildirimin altındaki satırlar yalnızca sizindir.
+
+**Listeden kaldır…** depoyu [Depolar](repositories.md)’dan çıkarır. Önce sorar
+ve soru neyi yapmadığını söyler: diskteki klasöre dokunulmaz, açık bir sekme
+açık kalır. Depoyu yeniden açmak onu listeye geri koyar.
 
 ## Sekme görseli
 

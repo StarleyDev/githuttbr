@@ -2,8 +2,9 @@
 title: Instellingen per repository
 category: Werkomgeving & tools
 order: 94
-summary: Beschermde branches, info, analytics, geschiedenis en het operatielogboek.
-keywords: repo-instellingen settings beschermde branches protected analytics operatielogboek operation log geschiedenis info tandwiel tabafbeelding tab image pictogram logo
+summary: De weergavenaam, het profiel, de beschermde branches en de tabafbeelding van één repository, plus zijn regels, kluis en activiteit.
+keywords: repo-instellingen settings beschermde branches protected analytics operatielogboek operation log geschiedenis info tandwiel tabafbeelding tab image pictogram logo weergavenaam alias profiel uit de lijst verwijderen vergeten statistieken projectconfiguratie
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Instellingen per repository
@@ -13,19 +14,51 @@ repository horen, niet bij de app.
 
 ![Instellingen per repository](../../screenshots/repo-settings.webp)
 
-| Tabblad | Wat erin zit |
-|---|---|
-| **Algemeen** | Beschermde branches (een meervoudige branchkeuze, opgeslagen in de git-config), ondertekenen, de tabafbeelding |
-| **Config** | De [regels die deze repository meebrengt](repo-config.md) in `.githuttbr.json`, en de doctor die ze controleert |
-| **Info** | Vrije notities en velden over deze repository, lokaal bewaard |
-| **Kluis** | De [kluis](vault.md)-regels van deze repository |
-| **Inzichten** | Het [geschiedenisdashboard](insights.md) |
-| **Analytics** | Wat jij in deze repository gedaan hebt, lokaal geteld |
-| **Geschiedenis** · **Logs** | Het operatielogboek: elk git-commando dat GitHuttBr draaide, met de uitvoer |
+De kop zegt welke repository je gaat wijzigen: de naam, de map, de huidige
+branch, de hoofdremote (`origin` als die er is) met de host waar hij staat, en
+een paar tellingen. Het aantal branches komt uit de lijst die al geladen is. Het
+aantal in de kluis verschijnt pas nadat je **Kluis** hebt geopend, omdat de
+kluis lezen de sleutelbos van het systeem raadpleegt, en instellingen openen dat
+niet hoort te doen. Er is geen aantal commits: een lange geschiedenis tellen is
+een eigen git-aanroep, en een kop is die niet waard.
+
+De pagina’s staan in een zijnavigatie, in drie groepen:
+
+| Groep | Pagina | Wat erin staat |
+|---|---|---|
+| Repository | **Algemeen** | Weergavenaam, profiel, beschermde branches, de tabafbeelding en Uit de lijst verwijderen |
+| Repository | **Projectconfiguratie** | De [regels die deze repository meebrengt](repo-config.md) in `.githuttbr.json`, en de doctor die ze controleert |
+| Repository | **Informatie** | Vrije notities en velden over deze repository, lokaal bewaard |
+| Beveiliging | **Kluis** | De [kluis](vault.md)-items van deze repository |
+| Activiteit | **Statistieken** | Wat je in GitHuttBr hebt gedaan, lokaal geteld |
+| Activiteit | **Inzichten** | Het [geschiedenisdashboard](insights.md) |
+| Activiteit | **Bewerkingsgeschiedenis** | Commits door de tijd en wie ze maakte, voor de repositories die je hebt geopend |
+| Activiteit | **Logboek** | Het bewerkingslogboek: elk git-commando dat GitHuttBr hier uitvoerde, met het resultaat |
 
 Het operatielogboek is het eerlijke onderdeel: gedraagt iets zich vreemd, dan
 toont het het exacte commando en de exacte fout, zodat een bugmelding feiten kan
 dragen in plaats van bijvoeglijke naamwoorden.
+
+## Algemeen
+
+Elke instelling is een rij: links wat ze doet, rechts het bedieningselement.
+Er wordt niets opgeslagen tot je op **Opslaan** drukt.
+
+| Rij | Wat ze doet | Opgeslagen in |
+|---|---|---|
+| **Weergavenaam** | De naam op tabbladen en in lijsten. De map op schijf wordt nooit hernoemd; leeg betekent de mapnaam | Instellingen van GitHuttBr, deze computer |
+| **Profiel** | De identiteit, tokens en AI waar deze repository naar overschakelt als zijn tabblad actief is. **Automatisch** volgt het actieve profiel | Instellingen van GitHuttBr, deze computer |
+| **Beschermde branches** | Waarschuwt voor een commit of force-push direct op deze branches | De git-config van de repository |
+| **Tabafbeelding** | Een kleine afbeelding op het tabblad, hieronder | Instellingen van GitHuttBr, deze computer |
+
+Heeft de repository een `.githuttbr.json`, dan zegt een melding boven Algemeen
+dat en linkt die naar **Projectconfiguratie**. Die regels reizen met de
+repository mee naar iedereen die hem kloont; de rijen eronder zijn alleen van jou.
+
+**Uit de lijst verwijderen…** haalt de repository uit
+[Repositories](repositories.md). Het vraagt eerst, en de vraag zegt wat het niet
+doet: de map op schijf blijft onaangeroerd, en een open tabblad blijft open. De
+repository opnieuw openen zet hem terug in de lijst.
 
 ## Tabafbeelding
 

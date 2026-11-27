@@ -70,7 +70,15 @@ function EntryRow({
 
 /** Repo-scoped secrets, shown inside Repo Settings. Global secrets live in the
  *  standalone Vault page — a button here jumps there. */
-export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Element {
+export function RepoVaultTab({
+  repoPath,
+  onCount
+}: {
+  repoPath: string
+  /** This repository's secret count, each time the list is read or changed —
+   *  for the settings header, which does not list the vault on its own. */
+  onCount?: (n: number) => void
+}): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const closeModal = useUIStore((s) => s.closeModal)
@@ -86,6 +94,10 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    if (data?.available && !data.unreadable) onCount?.(data.repo.length)
+  }, [data, onCount])
 
   const copy = (v: string): void => void navigator.clipboard.writeText(v)
 

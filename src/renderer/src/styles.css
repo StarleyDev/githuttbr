@@ -18420,8 +18420,177 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 
 /* ─── Repo settings tabs ───────────────────────────────────────────────── */
 .repo-settings { display: flex; flex-direction: column; min-height: 0; }
-.repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
 .repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; --modal-foot-inset: 0px; }
+/* Repository settings: a summary header over a side nav and one page at a time.
+   The modal keeps one size while you move between pages, like global Settings. */
+.modal:has(> .modal-scroll > .repo-settings-shell) {
+  width: min(1000px, calc(100vw - 48px));
+  height: min(760px, calc(100vh - 80px));
+}
+.repo-settings-shell { flex: 1; }
+.repo-settings-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* Room for the modal's own close button in the corner. */
+  padding: 0 36px 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.repo-settings-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.repo-settings-summary-text { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.modal-scroll .repo-settings-summary h3.repo-settings-name {
+  position: static;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  cursor: default;
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repo-settings-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.repo-settings-path {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  font-family: var(--mono);
+}
+.repo-settings-meta-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.repo-settings-host {
+  margin-inline-start: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg-4);
+  color: var(--text-1);
+  font-size: 11px;
+}
+.repo-settings-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.repo-settings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.repo-settings-layout { display: flex; flex: 1; min-height: 0; gap: 18px; padding-top: 14px; }
+.repo-settings-nav {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-inline-end: 14px;
+  border-inline-end: 1px solid var(--border);
+}
+.repo-settings-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.repo-settings-nav-heading {
+  padding: 0 10px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3, var(--text-2));
+}
+.repo-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 7px;
+  color: var(--text-1);
+  font-size: 13px;
+  text-align: start;
+}
+.repo-settings-nav-item:hover { background: var(--bg-3); color: var(--text-0); }
+.repo-settings-nav-item.active { background: var(--accent-soft); color: var(--text-0); }
+.repo-settings-nav-item.active svg { color: var(--accent); }
+.repo-settings-content { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.repo-settings-page-head { margin-bottom: 12px; }
+.repo-settings-page-head h4 { margin: 0 0 3px; font-size: 15px; }
+.repo-settings-page-head p { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.repo-settings-content .repo-settings-body { padding-inline-end: 6px; }
+.repo-settings-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--accent-soft);
+  background: var(--accent-soft);
+  font-size: 12.5px;
+  color: var(--text-1);
+}
+.repo-settings-banner > svg { flex: none; color: var(--accent); }
+.repo-settings-banner > span { flex: 1; min-width: 0; }
+.repo-settings-banner .btn { flex: none; }
+.repo-settings-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-1, var(--bg-2));
+}
+.repo-settings-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 12px 14px;
+}
+.repo-settings-row + .repo-settings-row { border-top: 1px solid var(--border); }
+.repo-settings-row-text { flex: 1 1 42%; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.repo-settings-row-label { font-size: 13px; font-weight: 600; color: var(--text-0); }
+.repo-settings-row-hint { font-size: 12px; line-height: 1.45; color: var(--text-2); }
+.repo-settings-row-control { flex: 1 1 58%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.repo-settings-row-control > .modal-input { width: 100%; margin: 0; }
+.repo-settings-row-control > select {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-0);
+  font-size: 13px;
+  padding: 8px 9px;
+  font-family: inherit;
+}
+.repo-settings-row-control > select:focus { outline: none; border-color: var(--accent); }
+.repo-settings-danger { margin-top: 18px; border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+.repo-settings-row.danger .repo-settings-row-label { color: var(--danger); }
+.repo-settings-row.danger .repo-settings-row-control { align-items: flex-end; }
+@media (max-width: 760px) {
+  .repo-settings-layout { flex-direction: column; }
+  .repo-settings-nav { flex: none; flex-direction: row; flex-wrap: wrap; border-inline-end: 0; padding: 0 0 10px; border-bottom: 1px solid var(--border); }
+  .repo-settings-row { flex-direction: column; gap: 8px; }
+}
 .repo-image-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .rip-field { position: relative; flex: 1; min-width: 0; display: flex; }
 .rip-field input { flex: 1; min-width: 0; padding-inline-end: 26px; }
