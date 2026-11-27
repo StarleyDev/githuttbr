@@ -166,10 +166,26 @@ export function addAccountInUse(
   replacingId?: string
 ): { ai: AIConfig; accountId: string } {
   // Back on the step to fix the key: the account saved a moment ago is
-  // updated, not joined by a second copy holding the wrong key.
-  const original = replacingId ? ((ai.accounts ?? []).find((a) => a.id === replacingId) ?? null) : null
-  const { ai: added, accountId } = commitDraft(ai, { original, account })
+  // updated, not joined by a second copy holding the wrong key. Another kind of
+  // account (OpenAI, then Gemini) replaces it under its own id instead, so the
+  // id keeps naming the provider and a later OpenAI account is not "openai-2".
+  const saved = replacingId ? ((ai.accounts ?? []).find((a) => a.id === replacingId) ?? null) : null
+  const sameKind =
+    !!saved &&
+    saved.provider === account.provider &&
+    !!saved.subscription === !!account.subscription &&
+    (saved.cli ?? '') === (account.cli ?? '')
+  const base = saved && !sameKind ? withoutAccount(ai, saved.id) : ai
+  const { ai: added, accountId } = commitDraft(base, { original: sameKind ? saved : null, account })
   return { ai: { ...setAccountInUse(added, accountId), enabled: true }, accountId }
+}
+
+/** The config without one account, and without any task assignment that pointed at it. */
+function withoutAccount(ai: AIConfig, id: string): AIConfig {
+  const assignments = Object.fromEntries(
+    Object.entries(ai.assignments ?? {}).filter(([, assigned]) => assigned?.accountId !== id)
+  ) as AIConfig['assignments']
+  return { ...ai, accounts: (ai.accounts ?? []).filter((a) => a.id !== id), assignments }
 }
 
 /** Whole seconds for "answered in N s", never 0 for an answer that took any time. */
