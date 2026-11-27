@@ -14,12 +14,15 @@
  * keeps only its message.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { AIRequestEvent, AISlowChoice } from '../shared/types'
 
 interface Inflight {
   controller: AbortController
   arm: (ms: number) => void
   stop: () => void
+  /** The renderer's name for the job this call belongs to (`runWithAIRequestTag`). */
+  tag?: string
 }
 
 export const AI_SLOW_MS = 30_000
@@ -32,6 +35,16 @@ const PROBE_FAILURES_TO_GIVE_UP = 2
 
 const inflight = new Map<number, Inflight>()
 let nextId = 1
+/**
+ * The renderer cannot know a call's id — it is minted here, deep under the
+ * feature function — so a surface that wants its own Cancel names the job
+ * instead, and every model call made inside that job carries the name.
+ */
+const requestTags = new AsyncLocalStorage<string>()
+/** Jobs running now, so a cancel between two of their calls still lands. */
+const activeTags = new Set<string>()
+/** Jobs cancelled while still running: a retry or second call they start is refused. */
+const cancelledTags = new Set<string>()
 let listener: (event: AIRequestEvent) => void = () => undefined
 
 export function setAIRequestListener(fn: (event: AIRequestEvent) => void): void {
@@ -77,6 +90,8 @@ export async function trackAIRequest<T>(
   options: TrackOptions,
   run: (signal: AbortSignal) => Promise<T>
 ): Promise<T> {
+  const tag = requestTags.getStore()
+  if (tag !== undefined && cancelledTags.has(tag)) throw new Error(`${AI_CANCELLED} Cancelled.`)
   const id = nextId++
   const controller = new AbortController()
   let slowTimer: ReturnType<typeof setTimeout> | undefined
@@ -110,7 +125,7 @@ export async function trackAIRequest<T>(
     if (probeTimer) clearTimeout(probeTimer)
   }
 
-  inflight.set(id, { controller, arm, stop })
+  inflight.set(id, { controller, arm, stop, tag })
   arm(options.slowMs ?? AI_SLOW_MS)
   schedule(PROBE_FIRST_MS)
 
@@ -139,6 +154,35 @@ export function answerSlowAIRequest(id: number, choice: AISlowChoice): void {
   if (choice.kind === 'wait') request.arm(AI_SLOW_AGAIN_MS)
   else if (choice.kind === 'cancel') request.controller.abort(new Error(`${AI_CANCELLED} Cancelled.`))
   else request.controller.abort(new Error(`${aiSwitchTag(choice.accountId)} Switching account.`))
+}
+
+/**
+ * Runs a job whose model calls can be cancelled by name from the renderer
+ * (`cancelAIRequestsByTag`). The name only lives as long as the job: once it
+ * settles, a cancel for it is a no-op and leaves nothing behind.
+ */
+export async function runWithAIRequestTag<T>(tag: string, job: () => Promise<T>): Promise<T> {
+  activeTags.add(tag)
+  try {
+    return await requestTags.run(tag, job)
+  } finally {
+    activeTags.delete(tag)
+    cancelledTags.delete(tag)
+  }
+}
+
+/** The renderer's Cancel: ends every call of that job now, and any it would start next. */
+export function cancelAIRequestsByTag(tag: string): void {
+  let running = false
+  for (const request of inflight.values()) {
+    if (request.tag !== tag) continue
+    running = true
+    request.controller.abort(new Error(`${AI_CANCELLED} Cancelled.`))
+  }
+  // Between two calls of a job (the JSON re-ask) nothing is in flight; remember
+  // the cancel so the next call is refused. A tag that is not running at all is
+  // ignored, so a late cancel cannot leak into the set.
+  if (running || activeTags.has(tag)) cancelledTags.add(tag)
 }
 
 export function inflightAIRequestCount(): number {

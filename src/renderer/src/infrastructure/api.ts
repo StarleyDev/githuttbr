@@ -854,8 +854,23 @@ function guarded<T>(cfg: AIConfig, call: (cfg: AIConfig) => Promise<T>): Promise
 }
 
 export const aiApi = {
-  commitMessage: (diff: string, cfg: AIConfig, ctx: { branch: string }) =>
-    guarded(cfg, (c) => window.api.ai.commitMessage(diff, c, ctx) as Promise<{ summary: string; description: string }>),
+  /**
+   * `ctx.requestTag` names the generation so `cancelRequest` can end it in main;
+   * `onAttempt` hears each config actually tried — the slow prompt's "use
+   * another account" re-runs the call elsewhere — and may throw to stop a retry.
+   */
+  commitMessage: (
+    diff: string,
+    cfg: AIConfig,
+    ctx: { branch: string; requestTag?: string },
+    onAttempt?: (cfg: AIConfig) => void
+  ) =>
+    guarded(cfg, (c) => {
+      onAttempt?.(c)
+      return window.api.ai.commitMessage(diff, c, ctx) as Promise<{ summary: string; description: string }>
+    }),
+  /** Ends a tagged generation in main: its in-flight call and any retry it would make. */
+  cancelRequest: (tag: string) => window.api.ai.cancelRequest(tag) as Promise<void>,
   listModels: (cfg: AIConfig, force = false) => window.api.ai.listModels(cfg, force) as Promise<ModelCatalog>,
   signInSubscription: (binary: SubscriptionCli, path: string, requestId: string) =>
     window.api.ai.signInSubscription(binary, path, requestId) as Promise<SubscriptionTest>,

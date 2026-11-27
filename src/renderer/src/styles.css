@@ -4368,27 +4368,81 @@ body.col-resizing .node-ava {
 .commit-ticket { width: 88px; flex: 0 0 auto; text-transform: uppercase; }
 .commit-ticket::placeholder { text-transform: none; }
 
-.ai-btn {
+/* Generate with AI: the action, and beside it who answers. */
+.commit-ai {
+  --ai-tint: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
+  --ai-edge: color-mix(in srgb, var(--accent) 34%, var(--border));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.commit-ai-split {
+  display: flex;
+  min-width: 0;
+  border: 1px solid var(--ai-edge);
+  border-radius: 8px;
+  background: var(--ai-tint);
+  overflow: hidden;
+}
+.commit-ai-split button {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 38px;
-  flex-shrink: 0;
-  padding: 0;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text-0);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  font-size: 12px;
+  cursor: pointer;
 }
-.ai-btn:hover:not(:disabled) {
+.commit-ai-split button:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 16%, var(--bg-1));
-  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
 }
-.ai-btn:disabled {
-  opacity: 0.4;
+.commit-ai-split button:disabled {
+  opacity: 0.45;
   cursor: default;
+}
+.commit-ai-main {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+.commit-ai-target {
+  flex: 1 1 auto;
+  justify-content: space-between;
+  border-inline-start: 1px solid var(--ai-edge) !important;
+  color: var(--text-1) !important;
+}
+.commit-ai-target-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commit-ai-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: 12px;
+}
+.commit-ai-status.done {
+  border-color: var(--ai-edge);
+}
+.commit-ai-status-text {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.commit-ai-status .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .commit-description {
@@ -20814,3 +20868,9 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-file-diff-head .icon-btn { flex: none; }
 /* An SVG shows its picture above its text diff: the picture gets a share, the diff scrolls. */
 .prp-file-diff > .image-diff:not(:last-child) { flex: none; max-height: 45%; overflow: auto; }
+
+/* The commit editor is wide: the split button keeps a button's size there. */
+.commitedit .commit-ai-split {
+  align-self: flex-start;
+  width: min(100%, 460px);
+}

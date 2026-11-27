@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2, Radar, Sparkles, SquarePen, Upload, X } from 'lucide-react'
+import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2, Radar, SquarePen, Upload, X } from 'lucide-react'
 import type { CommitEditInfo, CommitEditPreview, FileEntry } from '../../../shared/types'
-import { gitApi, aiApi } from '../infrastructure/api'
+import { gitApi } from '../infrastructure/api'
 import { useUIStore, type CommitEditDraft, type CommitEditFileDraft, type CommitEditViewState } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -9,6 +9,8 @@ import { t as tNow, useT, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 import { guessLanguage } from '../lib/highlight'
 import { CodeEditor } from './CodeEditor'
+import { CommitAIGenerate } from './CommitAIGenerate'
+import { useCommitGeneration } from './useCommitGeneration'
 
 type CommitEditTarget = Pick<CommitEditViewState, 'repoPath' | 'sha' | 'subject'>
 
@@ -64,9 +66,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const [message, setMessage] = useState<string | null>(saved?.message ?? null)
   const [preview, setPreview] = useState<CommitEditPreview | null>(null)
   const [busy, setBusy] = useState(false)
-  const [aiBusy, setAiBusy] = useState(false)
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
-  const aiFor = useSettingsStore((s) => s.aiFor)
   const branch = useRepoStore((s) => s.repos[repoPath]?.branches.current ?? '')
 
   useEffect(() => {
@@ -166,24 +166,23 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   }, [repoPath, sha, edits, text, toast])
 
   // AI message from the commit's own diff — works for any commit, not just HEAD.
-  const generateMessage = async (): Promise<void> => {
-    setAiBusy(true)
-    try {
+  // The message is one field here, so it travels as the draft's summary.
+  const generation = useCommitGeneration({
+    repoPath,
+    branch,
+    diff: async () => {
       const diff = await gitApi.commitDiff(repoPath, sha)
-      if (!diff.trim()) {
-        toast('info', t('commitPanel.nothingToSummarize'))
-        return
-      }
-      const msg = await aiApi.commitMessage(diff, { ...aiFor('commit'), cliCwd: repoPath }, { branch })
-      setMessage(msg.description ? `${msg.summary}\n\n${msg.description}` : msg.summary)
+      if (!diff.trim()) toast('info', t('commitPanel.nothingToSummarize'))
+      return diff
+    },
+    current: { summary: text, description: '' },
+    apply: (draft) => {
+      const next = draft.description ? `${draft.summary}\n\n${draft.description}` : draft.summary
+      setMessage(next)
       setPreview(null)
-      toast('success', t('commitPanel.aiGenerated'))
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      setAiBusy(false)
+      return { summary: next, description: '' }
     }
-  }
+  })
 
   const apply = (): void => {
     openModal({
@@ -243,17 +242,6 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
           <label className="commitedit-label" htmlFor="commitedit-message">
             {t('commitEdit.message')}
           </label>
-          {aiEnabled && (
-            <button
-              className="icon-btn commit-edit-btn"
-              type="button"
-              title={t('commitPanel.generateWithAiTitle')}
-              disabled={!editable || aiBusy}
-              onClick={() => void generateMessage()}
-            >
-              {aiBusy ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />}
-            </button>
-          )}
         </div>
         <textarea
           id="commitedit-message"
@@ -266,6 +254,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
             setPreview(null)
           }}
         />
+        {aiEnabled && <CommitAIGenerate gen={generation} disabled={!editable} />}
 
         <div className="commitedit-split">
           <div className="commitedit-files">

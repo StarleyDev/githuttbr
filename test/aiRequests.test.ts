@@ -5,7 +5,9 @@ import {
   AI_CANCELLED,
   AI_UNREACHABLE,
   answerSlowAIRequest,
+  cancelAIRequestsByTag,
   inflightAIRequestCount,
+  runWithAIRequestTag,
   serverAnswers,
   setAIRequestListener,
   trackAIRequest
@@ -76,6 +78,55 @@ describe('a model call in flight', () => {
     finish('still here')
     await expect(call).resolves.toBe('still here')
   }, 15_000)
+})
+
+describe('cancelling a job by its tag', () => {
+  it('ends the call in flight for that tag, and only that one', async () => {
+    let finishOther!: (v: string) => void
+    const mine = runWithAIRequestTag('w1:commit-1', () => trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, hang))
+    const other = runWithAIRequestTag('w1:commit-2', () =>
+      trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, () => new Promise<string>((r) => (finishOther = r)))
+    )
+    await sleep(5)
+    cancelAIRequestsByTag('w1:commit-1')
+    await expect(mine).rejects.toThrow(AI_CANCELLED)
+    finishOther('answer')
+    await expect(other).resolves.toBe('answer')
+    expect(inflightAIRequestCount()).toBe(0)
+  })
+
+  it('a cancel between two calls of a job refuses the next one', async () => {
+    let second = false
+    const job = runWithAIRequestTag('w1:commit-3', async () => {
+      await trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, async () => 'first')
+      await sleep(10)
+      second = true
+      return trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, async () => 'second')
+    })
+    await sleep(2)
+    cancelAIRequestsByTag('w1:commit-3')
+    await expect(job).rejects.toThrow(AI_CANCELLED)
+    expect(second).toBe(true)
+    expect(inflightAIRequestCount()).toBe(0)
+  })
+
+  it('a cancel for a job that already ended, or never ran, leaves nothing behind', async () => {
+    await runWithAIRequestTag('w1:commit-4', () => trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, async () => 'ok'))
+    cancelAIRequestsByTag('w1:commit-4')
+    cancelAIRequestsByTag('w1:never')
+    // The same tag reused later runs normally: the late cancel did not stick.
+    await expect(
+      runWithAIRequestTag('w1:commit-4', () => trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, async () => 'again'))
+    ).resolves.toBe('again')
+  })
+
+  it('a call outside any job ignores every tag', async () => {
+    let finish!: (v: string) => void
+    const call = trackAIRequest({ label: 'Ollama', accountId: 'ollama' }, () => new Promise<string>((r) => (finish = r)))
+    cancelAIRequestsByTag('w1:commit-1')
+    finish('free')
+    await expect(call).resolves.toBe('free')
+  })
 })
 
 describe('probing a local server', () => {

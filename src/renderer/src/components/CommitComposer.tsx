@@ -27,6 +27,8 @@ import { openWithMenuItems } from '../lib/openWith'
 import { buildFilePathClipboardPayload } from '../lib/filePathClipboard'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { ChangeSummary } from './ChangeSummary'
+import { CommitAIGenerate } from './CommitAIGenerate'
+import { useCommitGeneration } from './useCommitGeneration'
 
 type ListName = 'staged' | 'unstaged'
 
@@ -178,7 +180,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // Collapsed by default — the commit-style row is "advanced" and toggled by the
   // chevron on the summary row.
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [aiBusy, setAiBusy] = useState(false)
   const [aiStageBusy, setAiStageBusy] = useState(false)
   const [selection, setSelection] = useState<{ list: ListName; paths: Set<string> }>({
     list: 'unstaged',
@@ -685,24 +686,24 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
   const selectedCount = (list: ListName): number => (selection.list === list ? selection.paths.size : 0)
 
-  const generateWithAI = async (): Promise<void> => {
-    if (staged.length === 0) {
-      toast('info', t('composer.stageFirst'))
-      return
+  // Replaces the summary and description; the banner it leaves offers Undo.
+  const generation = useCommitGeneration({
+    repoPath: path,
+    branch: repo.branches.current,
+    diff: async () => {
+      if (staged.length === 0) {
+        toast('info', t('composer.stageFirst'))
+        return ''
+      }
+      return gitApi.stagedDiff(path)
+    },
+    current: { summary, description },
+    apply: (draft) => {
+      histIdx.current = -1
+      setSummary(draft.summary)
+      setDescription(draft.description)
     }
-    setAiBusy(true)
-    try {
-      const stagedDiff = await gitApi.stagedDiff(path)
-      const msg = await aiApi.commitMessage(stagedDiff, { ...aiFor('commit'), cliCwd: repo.path }, { branch: repo.branches.current })
-      setSummary(msg.summary)
-      setDescription(msg.description)
-      toast('success', t('composer.aiGenerated'))
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      setAiBusy(false)
-    }
-  }
+  })
 
   const autoStageWithAI = async (): Promise<void> => {
     if (unstaged.length === 0) return
@@ -730,6 +731,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const runCommit = async (message: string): Promise<void> => {
     const ok = await repoActions.commit(path, message, amend)
     if (ok) {
+      generation.dismiss()
       setSummary('')
       setDescription('')
       setAmend(false)
@@ -1127,17 +1129,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           <button className="commit-type commit-coauthor" title={t('composer.addCoAuthor')} onClick={(e) => void openCoAuthorMenu(e)}>
             <Users size={14} />
           </button>
-          {aiEnabled && (
-            <motion.button
-              className="ai-btn"
-              title={t('composer.generateWithAi')}
-              disabled={aiBusy || staged.length === 0}
-              onClick={() => void generateWithAI()}
-              whileTap={{ scale: 0.92 }}
-            >
-              {aiBusy ? <Loader2 size={15} className="spin" /> : <Sparkles size={14} />}
-            </motion.button>
-          )}
         </div>
         <AnimatePresence initial={false}>
           {showAdvanced && (
@@ -1211,6 +1202,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           rows={3}
           onChange={(e) => setDescription(e.target.value)}
         />
+        {aiEnabled && <CommitAIGenerate gen={generation} disabled={staged.length === 0} />}
         {lintHints.length > 0 && (
           <ul className="commit-lint">
             {lintHints.map((h, i) => (

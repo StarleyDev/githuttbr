@@ -1,0 +1,143 @@
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import type { AIConfig } from '../../../shared/types'
+import { aiApi } from '../infrastructure/api'
+import { useSettingsStore } from '../stores/settings'
+import { useUIStore } from '../stores/ui'
+import {
+  IDLE,
+  configForTarget,
+  configLabel,
+  defaultGenerationTarget,
+  elapsedSeconds,
+  nextGeneration,
+  type GenerationState,
+  type GenerationTarget,
+  type MessageDraft
+} from '../lib/commitGeneration'
+
+let seq = 0
+
+/** Thrown inside a retry the user already cancelled, so it never reaches main. */
+class GenerationCancelled extends Error {}
+
+export interface CommitGeneration {
+  state: GenerationState
+  /** Seconds the current generation has run; 0 when idle. */
+  elapsed: number
+  /** Starts a generation; `target` overrides the commit task's account for this one call. */
+  generate: (target?: GenerationTarget | null) => Promise<void>
+  /** "Generate again": the same account and model as the last generation. */
+  regenerate: () => Promise<void>
+  /** Ends the running generation, here and in main. */
+  cancel: () => void
+  /** Restores the text from before the generation and drops the banner. */
+  undo: () => void
+  /** Drops the banner (the user committed). Also ends a generation still running. */
+  dismiss: () => void
+}
+
+interface Options {
+  repoPath: string
+  branch: string
+  /** The diff to describe, or '' when there is nothing to describe (the caller toasts why). */
+  diff: () => Promise<string>
+  current: MessageDraft
+  /** Writes a message into the fields; returns it as `current` will then read, when the surface reshapes it. */
+  apply: (draft: MessageDraft) => MessageDraft | void
+}
+
+/**
+ * One commit-message generation at a time, cancellable. Cancel works twice
+ * over: the renderer stops listening to the request (a late answer changes
+ * nothing), and main is told to abort it by the tag it was started with —
+ * the call in flight and any re-ask it would make.
+ */
+export function useCommitGeneration({ repoPath, branch, diff, current, apply }: Options): CommitGeneration {
+  const [state, dispatch] = useReducer(nextGeneration, IDLE)
+  const [now, setNow] = useState(() => Date.now())
+  const running = useRef<string | null>(null)
+  const lastTarget = useRef<GenerationTarget | null>(null)
+  const latest = useRef({ current, apply, diff, state })
+  latest.current = { current, apply, diff, state }
+
+  useEffect(() => {
+    if (state.phase !== 'generating') return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [state.phase])
+
+  // The banner goes the moment the text is no longer what was generated.
+  useEffect(() => dispatch({ type: 'edit', current }), [current.summary, current.description]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cancel = useCallback((): void => {
+    const tag = running.current
+    if (!tag) return
+    running.current = null
+    dispatch({ type: 'cancel' })
+    void aiApi.cancelRequest(tag).catch(() => undefined)
+  }, [])
+
+  // A composer that goes away takes its request with it.
+  useEffect(() => cancel, [cancel])
+
+  const generate = useCallback(
+    async (target?: GenerationTarget | null): Promise<void> => {
+      if (running.current) cancel()
+      lastTarget.current = target ?? null
+      const ai = useSettingsStore.getState().activeAI()
+      const cfg: AIConfig = { ...configForTarget(ai, target ?? defaultGenerationTarget(ai)), cliCwd: repoPath }
+      const tag = `commit-${++seq}`
+      running.current = tag
+      dispatch({
+        type: 'start',
+        tag,
+        startedAt: Date.now(),
+        label: configLabel(cfg),
+        accountId: cfg.accountId ?? '',
+        current: latest.current.current
+      })
+      try {
+        const text = await latest.current.diff()
+        if (running.current !== tag) return
+        if (!text.trim()) {
+          running.current = null
+          dispatch({ type: 'fail', tag })
+          return
+        }
+        const msg = await aiApi.commitMessage(text, cfg, { branch, requestTag: tag }, (tried) => {
+          if (running.current !== tag) throw new GenerationCancelled()
+          dispatch({ type: 'attempt', tag, label: configLabel(tried), accountId: tried.accountId ?? '' })
+        })
+        if (running.current !== tag) return
+        running.current = null
+        const written = { summary: msg.summary, description: msg.description }
+        const generated = latest.current.apply(written) ?? written
+        dispatch({ type: 'finish', tag, finishedAt: Date.now(), generated })
+      } catch (err) {
+        if (running.current !== tag) return
+        running.current = null
+        dispatch({ type: 'fail', tag })
+        useUIStore.getState().toast('error', err instanceof Error ? err.message : String(err))
+      }
+    },
+    [repoPath, branch, cancel]
+  )
+
+  const regenerate = useCallback((): Promise<void> => generate(lastTarget.current), [generate])
+
+  const undo = useCallback((): void => {
+    const s = latest.current.state
+    if (s.phase !== 'generated') return
+    latest.current.apply(s.previous)
+    dispatch({ type: 'undo' })
+  }, [])
+
+  const dismiss = useCallback((): void => {
+    cancel()
+    dispatch({ type: 'dismiss' })
+  }, [cancel])
+
+  const elapsed = state.phase === 'generating' ? elapsedSeconds(state.startedAt, now) : 0
+  return { state, elapsed, generate, regenerate, cancel, undo, dismiss }
+}
