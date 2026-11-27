@@ -22,7 +22,7 @@ describe('menu action icons', () => {
       incoming: ['pull', 'fastForward'],
       shelf: ['favourite', 'stashApply', 'stashPop', 'pin', 'unpin', 'copy', 'copyLink', 'editMessage'],
       guard: ['reset', 'undoCommit', 'moveBranch', 'delete'],
-      preview: ['rangeDiff', 'conflictRadar', 'openTerminal', 'reveal', 'openEditor']
+      preview: ['rangeDiff', 'conflictRadar', 'openTerminal', 'reveal', 'openEditor', 'openWith']
     }
     for (const [tone, members] of Object.entries(family)) {
       for (const id of members) expect([id, toneOf(id)]).toEqual([id, tone])

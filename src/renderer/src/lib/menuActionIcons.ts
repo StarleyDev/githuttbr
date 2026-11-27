@@ -1,5 +1,6 @@
 import { createElement, type ReactNode } from 'react'
 import {
+  AppWindow,
   ArchiveRestore,
   ArrowDownToLine,
   ArrowUpFromDot,
@@ -132,6 +133,7 @@ export type MenuActionId =
   | 'openTerminal'
   | 'reveal'
   | 'openEditor'
+  | 'openWith'
   | 'favourite'
   | 'unfavourite'
   | 'locate'
@@ -194,6 +196,7 @@ export const MENU_ACTION_ICONS: Record<MenuActionId, { Icon: LucideIcon; tone: I
   openTerminal: { Icon: SquareTerminal, tone: 'preview' },
   reveal: { Icon: FolderSearch, tone: 'preview' },
   openEditor: { Icon: Code, tone: 'preview' },
+  openWith: { Icon: AppWindow, tone: 'preview' },
   favourite: { Icon: Star, tone: 'shelf' },
   unfavourite: { Icon: StarOff, tone: 'shelf' },
   locate: { Icon: LocateFixed, tone: 'ref' },

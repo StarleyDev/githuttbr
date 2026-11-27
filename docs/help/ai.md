@@ -211,7 +211,8 @@ another provider in use on the general AI changes nothing for that profile, and
 outside Settings nothing said so. The status bar at the bottom of a repository
 now does. Its **AI:** _provider_ button names the provider that answers for
 the profile in use, with a dot for its status — green **Ready**, red **Not
-responding**, amber **No key**, grey **Not checked**.
+responding**, amber **No key**, grey **Not checked**. When the provider is **Ready** the whole
+button turns green, so a working AI does not read as switched off.
 
 Clicking it opens a small panel:
 

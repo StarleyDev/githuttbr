@@ -202,7 +202,8 @@ provedor em uso na IA geral não muda nada para esse perfil, e fora das
 Configurações nada dizia isso. A barra de status, no rodapé de um repositório,
 agora diz. O botão **IA:** _provedor_ mostra o provedor que responde pelo perfil
 em uso, com um ponto para o status — verde **Pronto**, vermelho **Não
-responde**, âmbar **Sem chave**, cinza **Não verificado**.
+responde**, âmbar **Sem chave**, cinza **Não verificado**. Com o provedor **Pronto** o botão
+inteiro fica verde, para uma IA funcionando não parecer desligada.
 
 Um clique abre um pequeno painel:
 

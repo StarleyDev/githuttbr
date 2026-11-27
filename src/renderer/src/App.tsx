@@ -1391,6 +1391,7 @@ export default function App(): React.JSX.Element {
           <footer className="statusbar">
             <button
               className="status-path status-path-btn"
+              data-tone="shelf"
               title={t('sidebar.openFolder')}
               onClick={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -1441,6 +1442,7 @@ export default function App(): React.JSX.Element {
                   <span className="status-sep" />
                   <button
                     className="status-issue-btn"
+                    data-tone="ref"
                     title={t('help.title')}
                     onClick={() => useSettingsStore.getState().openPageTab({ type: 'help' })}
                   >
@@ -1450,6 +1452,7 @@ export default function App(): React.JSX.Element {
                   <span className="status-sep" />
                   <button
                     className="status-issue-btn"
+                    data-tone="guard"
                     title={t('app.reportIssueTitle')}
                     onClick={() => void window.api.openExternal(APP_ISSUES_NEW_URL)}
                   >
