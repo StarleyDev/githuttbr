@@ -83,6 +83,33 @@ describe('which of a pull request’s commits this clone has', () => {
   })
 })
 
+describe('what each of a pull request’s commits changed', () => {
+  const R = repoPath('merge-conflict')
+  const numstat = (sha: string): { additions: number; deletions: number; files: number } => {
+    const rows = execFileSync('git', ['-C', R, 'show', '--numstat', '--format=', sha], { encoding: 'utf8' })
+      .split('\n')
+      .filter(Boolean)
+      .map((r) => r.split('\t'))
+    const n = (v: string): number => (v === '-' ? 0 : Number(v))
+    return {
+      additions: rows.reduce((s, r) => s + n(r[0]), 0),
+      deletions: rows.reduce((s, r) => s + n(r[1]), 0),
+      files: rows.length
+    }
+  }
+
+  it('is a read, and answers git’s own numbers for the local commits only', async () => {
+    expect(gitMethodIsRead('getCommitStats')).toBe(true)
+    const commits = (await gitService.log(R, 30)).filter((c) => c.parents.length === 1).slice(0, 2)
+    expect(commits.length).toBe(2)
+    const absent = 'f'.repeat(40)
+    const stats = await gitService.getCommitStats(R, [...commits.map((c) => c.hash), absent, 'HEAD'])
+    expect(Object.keys(stats).sort()).toEqual(commits.map((c) => c.hash).sort())
+    for (const c of commits) expect(stats[c.hash]).toEqual(numstat(c.hash))
+    expect(await gitService.getCommitStats(R, 'nope')).toEqual({})
+  })
+})
+
 describe('a partial clone is never fetched from by the check', () => {
   // A scratch origin and a blob:none clone of main alone: the feature commit is
   // on the promisor remote, not here. The check must not lazily fetch it.

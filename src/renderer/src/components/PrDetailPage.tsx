@@ -73,6 +73,8 @@ import {
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
+import { PrFilesProgress } from './PrFilesProgress'
+import { filterPrFiles, type PrFileFilter } from '../lib/prFilesProgress'
 import { PrNoPatchNotice } from './PrNoPatchNotice'
 import { getPrFilesUrl, PrImagePreview, type PrImageSource } from './PrImagePreview'
 import { createPrImageCache } from '../lib/prImageCache'
@@ -1725,6 +1727,8 @@ function FilesSection({
   )
   const file = files.find((f) => f.filename === selected) ?? files[0]
   const diffRef = useRef<HTMLDivElement>(null)
+  const [filter, setFilter] = useState<PrFileFilter>('all')
+  const shownFiles = useMemo(() => filterPrFiles(files, filter, viewed, threadCounts), [files, filter, viewed, threadCounts])
   useEffect(() => {
     if (file) view.selectedFile = file.filename
   }, [view, file])
@@ -1845,105 +1849,116 @@ function FilesSection({
   )
 
   return (
-    <div className="prp-files-split">
-      <PrFileList
+    <div className="prf-files">
+      <PrFilesProgress
         files={files}
+        shown={shownFiles}
         viewed={viewed}
-        changedSinceViewed={changedSinceViewed}
-        threadCounts={threadCounts}
         selected={file?.filename ?? ''}
-        prKey={prUrl}
+        filter={filter}
+        onFilterChange={setFilter}
         onSelectFile={setSelected}
-        onSetFilesViewed={onSetFilesViewed}
-        onRowContextMenu={(x, y, row) => {
-          const f = row.isDir ? undefined : files.find((it) => it.filename === row.path)
-          openPrPathMenu(x, y, repoPath, { ...row, oldPath: f?.previousFilename, status: f?.status }, prSource)
-        }}
-        initialScroll={view.fileListScroll}
-        onListScroll={(top) => {
-          view.fileListScroll = top
-        }}
       />
+      <div className="prp-files-split">
+        <PrFileList
+          files={shownFiles}
+          viewed={viewed}
+          changedSinceViewed={changedSinceViewed}
+          threadCounts={threadCounts}
+          selected={file?.filename ?? ''}
+          prKey={prUrl}
+          onSelectFile={setSelected}
+          onSetFilesViewed={onSetFilesViewed}
+          onRowContextMenu={(x, y, row) => {
+            const f = row.isDir ? undefined : files.find((it) => it.filename === row.path)
+            openPrPathMenu(x, y, repoPath, { ...row, oldPath: f?.previousFilename, status: f?.status }, prSource)
+          }}
+          initialScroll={view.fileListScroll}
+          onListScroll={(top) => {
+            view.fileListScroll = top
+          }}
+        />
 
-      <div className="prp-file-diff" ref={diffRef}>
-        {file && (
-          <>
-            <div className="prp-file-diff-head">
-              <code title={file.filename}>{file.filename}</code>
-              {file.previousFilename && (
-                <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
-              )}
-              <button
-                type="button"
-                className="icon-btn prp-branch-copy"
-                title={t('fileTree.copyPath')}
-                aria-label={interp(t('prFiles.copyPathOf'), { path: file.filename })}
-                onClick={() => copyPrPath(file.filename)}
-              >
-                <Copy size={12} />
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                title={t('prFiles.moreActions')}
-                aria-label={t('prFiles.moreActions')}
-                aria-haspopup="menu"
-                onClick={(e) => {
-                  const r = e.currentTarget.getBoundingClientRect()
-                  openPrPathMenu(r.left, r.bottom + 2, repoPath, {
-                    path: file.filename,
-                    isDir: false,
-                    oldPath: file.previousFilename,
-                    status: file.status
-                  }, prSource)
-                }}
-              >
-                <MoreHorizontal size={13} />
-              </button>
-              <label className="prp-viewed-toggle">
-                <input type="checkbox" checked={viewed.has(file.filename)} onChange={() => onToggleViewed(file.filename)} />
-                {t('prPage.markViewed')}
-              </label>
-            </div>
-            {/* A draft whose line is gone from a refreshed diff stays, above it. */}
-            {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
-            {imageFile && imageSource && (
-              // A fresh preview per file, like the viewer below.
-              <PrImagePreview key={`image:${file.filename}`} source={imageSource} file={file} />
-            )}
-            {/* An image's patch is "Binary files differ", or nothing; an SVG's is
-                real text, so its diff (and its line comments) stays under the picture. */}
-            {imageFile && imageSource && !isSvg ? null : file.patch ? (
-              <DiffViewer
-                // A fresh viewer per file: its scroll and selection belong to one diff.
-                key={file.filename}
-                diff={file.patch}
-                file={file.filename}
-                lang={guessLanguage(file.filename)}
-                // Same rule as every other diff in the app: secret-looking files
-                // show KEY=•••• while the setting is on.
-                maskValues={maskSecrets && isSecretFile(file.filename)}
-                repoPath={repoPath}
-                onCommentLine={lineCommentsOff ? undefined : commentOnLine}
-                lineExtras={lineExtras}
-              />
-            ) : isSvg && imageSource ? null : (
-              <div className="prp-no-patch">
-                <PrNoPatchNotice
-                  // One notice per file version: another push is another read.
-                  key={`${file.filename}:${file.diffSource?.headSha ?? ''}:${file.diffSource?.baseSha ?? ''}`}
-                  file={file}
-                  repoPath={repoPath}
-                  onFileDiffRead={onFileDiffRead}
-                  onFetched={onReloadFiles}
-                />
-                <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(prUrl))}>
-                  <ExternalLink size={13} /> {t('common.openInBrowser')}
+        <div className="prp-file-diff" ref={diffRef}>
+          {file && (
+            <>
+              <div className="prp-file-diff-head">
+                <code title={file.filename}>{file.filename}</code>
+                {file.previousFilename && (
+                  <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
+                )}
+                <button
+                  type="button"
+                  className="icon-btn prp-branch-copy"
+                  title={t('fileTree.copyPath')}
+                  aria-label={interp(t('prFiles.copyPathOf'), { path: file.filename })}
+                  onClick={() => copyPrPath(file.filename)}
+                >
+                  <Copy size={12} />
                 </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title={t('prFiles.moreActions')}
+                  aria-label={t('prFiles.moreActions')}
+                  aria-haspopup="menu"
+                  onClick={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect()
+                    openPrPathMenu(r.left, r.bottom + 2, repoPath, {
+                      path: file.filename,
+                      isDir: false,
+                      oldPath: file.previousFilename,
+                      status: file.status
+                    }, prSource)
+                  }}
+                >
+                  <MoreHorizontal size={13} />
+                </button>
+                <label className="prp-viewed-toggle">
+                  <input type="checkbox" checked={viewed.has(file.filename)} onChange={() => onToggleViewed(file.filename)} />
+                  {t('prPage.markViewed')}
+                </label>
               </div>
-            )}
-          </>
-        )}
+              {/* A draft whose line is gone from a refreshed diff stays, above it. */}
+              {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
+              {imageFile && imageSource && (
+                // A fresh preview per file, like the viewer below.
+                <PrImagePreview key={`image:${file.filename}`} source={imageSource} file={file} />
+              )}
+              {/* An image's patch is "Binary files differ", or nothing; an SVG's is
+                  real text, so its diff (and its line comments) stays under the picture. */}
+              {imageFile && imageSource && !isSvg ? null : file.patch ? (
+                <DiffViewer
+                  // A fresh viewer per file: its scroll and selection belong to one diff.
+                  key={file.filename}
+                  diff={file.patch}
+                  file={file.filename}
+                  lang={guessLanguage(file.filename)}
+                  // Same rule as every other diff in the app: secret-looking files
+                  // show KEY=•••• while the setting is on.
+                  maskValues={maskSecrets && isSecretFile(file.filename)}
+                  repoPath={repoPath}
+                  onCommentLine={lineCommentsOff ? undefined : commentOnLine}
+                  lineExtras={lineExtras}
+                />
+              ) : isSvg && imageSource ? null : (
+                <div className="prp-no-patch">
+                  <PrNoPatchNotice
+                    // One notice per file version: another push is another read.
+                    key={`${file.filename}:${file.diffSource?.headSha ?? ''}:${file.diffSource?.baseSha ?? ''}`}
+                    file={file}
+                    repoPath={repoPath}
+                    onFileDiffRead={onFileDiffRead}
+                    onFetched={onReloadFiles}
+                  />
+                  <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(prUrl))}>
+                    <ExternalLink size={13} /> {t('common.openInBrowser')}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

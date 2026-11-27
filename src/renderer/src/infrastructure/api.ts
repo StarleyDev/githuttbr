@@ -22,6 +22,7 @@ import type {
   ModelCatalog,
   BlameLine,
   BranchCompareResult,
+  PrCommitStats,
   PrComparison,
   BranchesPayload,
   CheckoutRemoteResult,
@@ -243,6 +244,8 @@ export const gitApi = {
   fetchRemoteBranch: (path: string, remote: string, branch: string) =>
     call<boolean>('fetchRemoteBranch', path, remote, branch),
   getLocalCommits: (path: string, shas: string[]) => call<string[]>('getLocalCommits', path, shas),
+  getCommitStats: (path: string, shas: string[]) =>
+    call<Record<string, PrCommitStats>>('getCommitStats', path, shas),
   fetchCommitsById: (path: string, remote: string, shas: string[]) => call<boolean>('fetchCommitsById', path, remote, shas),
   getCommitRangeFiles: (path: string, from: string, to: string) =>
     call<import('../../../shared/types').PrFile[]>('getCommitRangeFiles', path, from, to),

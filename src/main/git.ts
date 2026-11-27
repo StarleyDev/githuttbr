@@ -23,6 +23,7 @@ import {
 import type {
   BlameLine,
   PrFile,
+  PrCommitStats,
   DoctorCheck,
   DoctorFix,
   RepoConfig,
@@ -5319,6 +5320,41 @@ export const gitService = {
   },
 
   /**
+   * Lines added and removed, and files touched, by each of `shas` against its
+   * parent — the Commits tab's per-row numbers. Only the commits this clone
+   * holds (getLocalCommits), in one `git log` pass. A merge gets no entry: its
+   * change is against two parents. Blobs a partial clone lacks are not fetched
+   * (missing stays missing), so there the whole answer is empty rather than slow.
+   */
+  async getCommitStats(repoPath: string, shas: unknown): Promise<Record<string, PrCommitStats>> {
+    const here = await gitService.getLocalCommits(repoPath, shas)
+    if (!here.length) return {}
+    const out = await runGit(
+      repoPath,
+      ['log', '--no-walk=unsorted', '--numstat', '--no-textconv', '--no-ext-diff', '--format=%x01%H %P', ...here, '--'],
+      { GIT_NO_LAZY_FETCH: '1' },
+      32 << 20
+    ).catch(() => '')
+    const stats: Record<string, PrCommitStats> = {}
+    for (const rec of out.split('\x01')) {
+      const [head, ...rows] = rec.split('\n')
+      const [sha, ...parents] = head.trim().split(' ').filter(Boolean)
+      if (!sha || parents.length > 1) continue
+      const s: PrCommitStats = { additions: 0, deletions: 0, files: 0 }
+      for (const row of rows) {
+        // "<added>\t<removed>\t<path>", "-" for a binary file's counts.
+        const m = /^(\d+|-)\t(\d+|-)\t/.exec(row)
+        if (!m) continue
+        s.files++
+        if (m[1] !== '-') s.additions += Number(m[1])
+        if (m[2] !== '-') s.deletions += Number(m[2])
+      }
+      stats[sha.toLowerCase()] = s
+    }
+    return stats
+  },
+
+  /**
    * The files changed between two commits, each with its patch — what one
    * push to a pull request did, for its Updates tab, and a whole pull request
    * (merge base → head) for its Files tab. The two trees directly (`from to`,
@@ -10444,6 +10480,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remo
 
 const READ_METHODS = new Set<string>([
   'getLocalCommits',
+  'getCommitStats',
   'getCommitRangeFiles',
   'getMergeBase',
   'isAncestor',

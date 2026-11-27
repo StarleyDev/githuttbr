@@ -38,6 +38,8 @@ export default {
       'test/prViewed.test.ts',
       // The Conversation tab's timeline, its filters and the last-visit marks.
       'test/prTimeline.test.ts',
+      // The Commits tab's summary and type chips; the Files tab's filter and "next unviewed".
+      'test/prCommitSummary.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
       // The PR Checks tab: failed tests read from vitest, jest and pytest logs.

@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff. The conversation as one timeline, with what is new since your last visit.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit mpare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
 ---
 
 # Pull requests page
@@ -161,28 +161,40 @@ one commit at a time — the way most pull requests are meant to be read — sen
 you to the browser. The **Commits** tab, between Conversation and Updates, lists
 them:
 
+- **A summary line** on top: how many commits, by how many authors, the pull
+  request's **+/−**, and one coloured chip per
+  [Conventional Commit](https://www.conventionalcommits.org/) type with its
+  count — *feat 2 · fix 1 · test 1* tells you what kind of change this is
+  before you read a line of it. Features are green, fixes and reverts red,
+  tests in the accent colour, performance yellow, the rest grey.
 - **Oldest first**, the order they apply in, grouped under the day they were
   authored. A commit rebased in out of date order starts a day of its own
   rather than being moved.
-- Each row has the author's picture (where the host gives one), the subject,
-  the author, how long ago, and the short SHA. A **merge** badge marks a commit
-  with two parents, where the host says.
-- **▸** beside a commit with more than a subject shows the rest of its message.
-- **Copy** puts the full SHA on the clipboard; **Open in browser** opens the
-  commit on the host — inside the pull request where the host has such a page
-  (GitHub, GitLab, Bitbucket Data Center), else on the repository's commit page.
+- Each row has the author's picture (where the host gives one), the subject —
+  its type as the same coloured chip and its scope muted, when it follows
+  Conventional Commits — the author, how long ago, and, for a commit this
+  clone has, its **+/−** and how many files it touched. Then a **CI** dot
+  (green passed, red failed, yellow running) where the host reports a run for
+  that commit, the short SHA, and **View diff**. A **merge** badge marks a
+  commit with two parents, where the host says.
+- A commit with more than a subject shows the rest of its message under the row.
+- On hover, **Copy** puts the full SHA on the clipboard and **Open in browser**
+  opens the commit on the host — inside the pull request where the host has
+  such a page (GitHub, GitLab, Bitbucket Data Center), else on the repository's
+  commit page.
 
 ![The Commits tab: a pull request's commits grouped by day, one with its full message open](../screenshots/pr-commits.webp)
 
-**Click a row** — or Tab to it and press Enter — to open the commit in the app,
-as a click in the graph would: the repository's view, that commit selected,
-its details open. That works when this clone **has** the commit. When it does
-not, the row says so instead of failing quietly, and offers:
+**View diff** — or a click on the row, or Tab to it and Enter — opens the
+commit in the app, as a click in the graph would: the repository's view, that
+commit selected, its details open. That works when this clone **has** the
+commit. When it does not, the row says *not in your repository yet* and its
+button changes:
 
-- **Fetch the PR branch to see it** — the same single-branch fetch as
+- **Fetch the branch** — the same single-branch fetch as
   [going to the branch](#going-to-a-pull-requests-branch), without the
-  checkout. When the commit came with it, it opens; when it did not (a force
-  push rewrote it since), the toast says so.
+  checkout. Every commit that came with it can then open; if this one did not
+  (a force push rewrote it since), the toast says so.
 - **Fetch the pull request's commits**, on a pull request from a **fork**. Its
   branch lives in another repository, but most hosts mirror a pull request's
   head in the target repository under a ref of its own — `refs/pull/N/head`
@@ -194,6 +206,12 @@ not, the row says so instead of failing quietly, and offers:
   to the head as it is then. If the force push since left the commit out, the
   toast says so.
 - **Open in browser**, for when fetching is not an option.
+
+**Compare two commits** asks you to tick two rows, then opens the
+[comparison](merging.md#compare-any-two-refs) between them in the repository's view:
+the older one is the base, so you see what happened from one to the other —
+the commits in between and their combined diff. Both have to be in this clone;
+until two are, the button is greyed out.
 
 The list is read the first time you open the tab, not with the page, and again
 on every **Refresh**. Until it is in, the tab's count is the one the host
@@ -231,6 +249,15 @@ What it does not do:
   branch is gone.
 - **Squash merges.** A squash-merged pull request's commits never reached the
   target branch, so after its branch is deleted they are on the host only.
+- **Per-commit numbers come from your clone.** The **+/−** and file count are
+  read from git, never asked of the host, so a commit not fetched yet shows
+  none, and neither does a merge (its change is against two parents). A
+  partial clone missing a commit's files shows none rather than download them.
+- **CI for the 40 most recent commits only**, quietly: one request per commit
+  would add up on a long pull request, and CI usually ran on the pushed heads
+  anyway. No credential for the host means no dots, never a sign-in.
+- **The type chips read the subject.** A team that does not write Conventional
+  Commits gets no chips and no type counts — nothing is guessed.
 - **Authors** are named as their commits name them. GitLab, Azure DevOps and
   Bitbucket Data Center give no picture without a sign-in an image cannot
   send, so those rows show the initial.
@@ -374,7 +401,14 @@ and after heads are exact, so its **View changes** is too.
 
 ## Reading the files
 
-A pull request of two hundred files is hard to read as two hundred full paths.
+A pull request of two hundred files is hard to read as two hundred full paths,
+and hard to finish without losing your place. Above the list and the diff, a
+line keeps count — *4 of 9 files viewed*, with a bar — and **Next unviewed →**
+opens the next file down that you have not ticked, wrapping round to the top;
+it is greyed out once everything listed is viewed. **Show** narrows the list
+to **Unviewed** files or files **With comments** (any review conversation on
+them), and back to **All**.
+
 The **Files** tab's list has the same **Path / Tree** switch as the commit
 panel, and the choice is the same one app-wide. In **Tree**, files sit under
 their folders (a chain like `src/main/ipc` is one row), and each folder shows
@@ -382,11 +416,12 @@ its summed **+/−** and how many of its files are viewed (*3/5*). A folder's
 checkbox marks every file inside as viewed, or clears them all; ticks are kept
 on this computer only, never sent to the host. A tick holds the version of the
 file's diff: when a push changes a viewed file, it reads as not viewed again,
-with a yellow dot (*changed since you viewed it*). A file without a diff
+with a **changed** pill (*changed since you viewed it*). A file without a diff
 (binary, too large) is compared by its status and line counts only. A file with review
 conversations shows a speech-bubble count beside it (folders add theirs up), so
 the ones with comments stand out in a long list; outdated conversations count
-too. Click a folder, or press ←/→ on
+too, and so do resolved ones — the hosts' lists the app reads do not say which
+are resolved. Click a folder, or press ←/→ on
 it, to fold it; ↑/↓ (or j/k) step through the files on screen and open each
 diff. Folded folders are remembered per pull request until the app quits, and a
 file opened inside one unfolds the way to it. The tree is sorted by name, not in
