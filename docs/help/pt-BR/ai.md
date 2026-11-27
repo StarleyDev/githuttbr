@@ -183,7 +183,7 @@ Um clique abre um pequeno painel:
 | Uma linha por provedor | Todos os provedores salvos dessa IA, com modelo e status; um provedor que não responde mostra o motivo numa segunda linha |
 | **Em uso** / **Usar** | O provedor que responde agora, e a troca com um clique em cada um dos outros |
 | **Configurar IA** | Abre **Configurações → IA** |
-| **Uso e custo** | Abre a aba *Métricas* das configurações do repositório |
+| **Uso e custo** | Abre a página *Métricas* das configurações do repositório |
 
 **Usar** grava onde o perfil lê a IA. Num perfil que segue a IA geral, muda a
 IA geral — e portanto todos os perfis que a seguem; num perfil com IA própria,

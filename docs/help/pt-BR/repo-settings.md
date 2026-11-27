@@ -2,8 +2,9 @@
 title: Configurações por repositório
 category: Ferramentas de workspace
 order: 94
-summary: Branches protegidas, informações, analytics, histórico e o log de operações.
-keywords: configurações do repo repo settings branches protegidas protected branches analytics log de operações operation log histórico informações engrenagem imagem da aba tab image ícone logo
+summary: Nome de exibição, perfil, branches protegidas e imagem da aba de um repositório, mais as regras, o cofre e a atividade dele.
+keywords: configurações do repo repo settings branches protegidas protected branches analytics log de operações operation log histórico informações engrenagem imagem da aba tab image ícone logo nome de exibição alias perfil remover da lista esquecer métricas configuração do projeto
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Configurações por repositório
@@ -13,19 +14,50 @@ A engrenagem ao lado das ferramentas da barra abre as configurações que perten
 
 ![Configurações por repositório](../../screenshots/repo-settings.webp)
 
-| Aba | O que contém |
-|---|---|
-| **Geral** | Branches protegidas (uma seleção múltipla de branches, guardada no git config), assinatura, a imagem da aba |
-| **Config** | As [regras que este repositório carrega](repo-config.md) em `.githuttbr.json`, e o doctor que as verifica |
-| **Informações** | Notas e campos livres sobre este repositório, mantidos localmente |
-| **Cofre** | As entradas do [cofre](vault.md) deste repositório |
-| **Insights** | O [painel de histórico](insights.md) |
-| **Analytics** | O que você fez neste repositório, contado localmente |
-| **Histórico** · **Logs** | O log de operações: todo comando git que o GitHuttBr rodou, com a saída dele |
+O cabeçalho diz qual repositório você está prestes a alterar: o nome, a pasta,
+a branch atual, o remoto principal (`origin` quando existe) com o host onde ele
+fica, e algumas contagens. A contagem de branches vem da lista já carregada. A
+do cofre só aparece depois que você abre **Cofre**, porque ler o cofre consulta
+o chaveiro do sistema, e abrir as configurações não deveria. Não há contagem de
+commits: contar um histórico longo é uma chamada git à parte, e um cabeçalho não
+vale isso.
+
+As páginas ficam numa navegação lateral, em três grupos:
+
+| Grupo | Página | O que contém |
+|---|---|---|
+| Repositório | **Geral** | Nome de exibição, perfil, branches protegidas, a imagem da aba e Remover da lista |
+| Repositório | **Configuração do projeto** | As [regras que este repositório carrega](repo-config.md) em `.githuttbr.json`, e o doctor que as verifica |
+| Repositório | **Informações** | Notas e campos livres sobre este repositório, mantidos localmente |
+| Segurança | **Cofre** | As entradas do [cofre](vault.md) deste repositório |
+| Atividade | **Métricas** | O que você fez no GitHuttBr, contado localmente |
+| Atividade | **Insights** | O [painel de histórico](insights.md) |
+| Atividade | **Histórico de operações** | Commits ao longo do tempo e quem os fez, nos repositórios que você abriu |
+| Atividade | **Logs** | O log de operações: todo comando git que o GitHuttBr rodou aqui, com o resultado |
 
 O log de operações é o honesto: quando algo se comporta de forma estranha, ele
 mostra o comando exato e o erro exato, para que um relato de bug possa carregar
 fatos em vez de adjetivos.
+
+## Geral
+
+Cada configuração é uma linha: o que ela faz à esquerda, o controle à direita.
+Nada é gravado até você clicar em **Salvar**.
+
+| Linha | O que faz | Onde fica |
+|---|---|---|
+| **Nome de exibição** | O nome nas abas e listas. A pasta no disco nunca é renomeada; vazio, usa o nome da pasta | Configurações do GitHuttBr, nesta máquina |
+| **Perfil** | A identidade, os tokens e a IA que este repositório ativa quando a aba dele está ativa. **Automático** segue o perfil ativo | Configurações do GitHuttBr, nesta máquina |
+| **Branches protegidas** | Avisa antes de commitar ou fazer force push direto nessas branches | O git config do repositório |
+| **Imagem da aba** | Uma imagem pequena na aba, abaixo | Configurações do GitHuttBr, nesta máquina |
+
+Quando o repositório tem um `.githuttbr.json`, um aviso no topo de Geral diz
+isso e leva a **Configuração do projeto**. Essas regras vão com o repositório
+para todos que o clonam; as linhas abaixo do aviso são só suas.
+
+**Remover da lista…** tira o repositório de [Repositórios](repositories.md).
+Pergunta antes, e a pergunta diz o que não faz: a pasta no disco não é tocada, e
+uma aba aberta continua aberta. Abrir o repositório de novo o devolve à lista.
 
 ## Imagem da aba
 

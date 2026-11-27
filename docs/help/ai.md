@@ -191,7 +191,7 @@ Clicking it opens a small panel:
 | One row per provider | Every saved provider of that AI, with its model and status; a provider that is not responding shows why on a second line |
 | **In use** / **Use** | The provider answering now, and a one-click switch on every other one |
 | **Configure AI** | Opens **Settings → AI** |
-| **Usage and cost** | Opens the *Analytics* tab of the repository settings |
+| **Usage and cost** | Opens the *Metrics* page of the repository settings |
 
 **Use** writes where the profile reads its AI. On a profile that follows the
 general AI it changes the general AI — and so every profile that follows it; on

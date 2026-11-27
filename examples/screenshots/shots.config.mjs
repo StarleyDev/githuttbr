@@ -2811,21 +2811,26 @@ export const shots = [
     }
   },
   {
-    // Repository settings — tabbed (general / analytics / history / logs).
+    // Repository settings — the summary header, the grouped side nav and the
+    // General page's rows. A small `.githuttbr.json` is written so the banner
+    // that points at Project configuration shows; the repo-config shot later
+    // overwrites it with its fuller file.
     out: 'repo-settings',
     repos: ['deep-history-monorepo'],
     themes: ['light'],
+    prepare: async ({ repoPaths }) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await writeFile(join(repo, '.githuttbr.json'), `${JSON.stringify({ version: 1, protect: ['main'] }, null, 2)}\n`)
+    },
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
-      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p }), repo)
-      await page.waitForTimeout(400)
-      // Click the Insights tab to show the relocated repo-insights dashboard.
-      await page.evaluate(() => {
-        const btn = [...document.querySelectorAll('.repo-settings-tabs button')].find((b) => /Insights|Métricas/.test(b.textContent || ''))
-        if (btn) btn.click()
-      })
-      await page.waitForTimeout(500)
-      await page.waitForTimeout(700)
+      await page.evaluate(async (p) => {
+        // The config is read on refresh; refresh first so the banner is there.
+        await window.__shot.repo.getState().refresh(p)
+        window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p, tab: 'general' })
+      }, repo)
+      await page.waitForSelector('.repo-settings-row', { timeout: 10000 })
+      await page.waitForTimeout(900)
     }
   },
   {

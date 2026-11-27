@@ -2,8 +2,9 @@
 title: Einstellungen pro Repository
 category: Workspace-Werkzeuge
 order: 94
-summary: Geschützte Branches, Info, Auswertung, Historie und das Operationsprotokoll.
-keywords: repo einstellungen settings geschützte branches protected auswertung analytics operationsprotokoll log historie info zahnrad tab-bild tab image symbol logo bild
+summary: Anzeigename, Profil, geschützte Branches und Tab-Bild eines Repositorys, dazu seine Regeln, sein Tresor und seine Aktivität.
+keywords: repo einstellungen settings geschützte branches protected auswertung analytics operationsprotokoll log historie info zahnrad tab-bild tab image symbol logo bild Anzeigename Alias Profil aus der Liste entfernen vergessen Kennzahlen Projektkonfiguration
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Einstellungen pro Repository
@@ -13,19 +14,51 @@ zu **diesem** Repository gehören, nicht zur App.
 
 ![Einstellungen pro Repository](../../screenshots/repo-settings.webp)
 
-| Tab | Was drinsteckt |
-|---|---|
-| **Allgemein** | Geschützte Branches (eine Mehrfachauswahl von Branches, in der git-Konfiguration gespeichert), Signieren, das Tab-Bild |
-| **Config** | Die [Regeln, die dieses Repository mitbringt](repo-config.md), in `.githuttbr.json` — und der Doctor, der sie prüft |
-| **Info** | Freie Notizen und Felder zu diesem Repository, lokal gespeichert |
-| **Tresor** | Die Einträge im [Tresor](vault.md) dieses Repositorys |
-| **Einblicke** | Das [Historie-Dashboard](insights.md) |
-| **Auswertung** | Was du in diesem Repository getan hast, lokal gezählt |
-| **Historie** · **Protokolle** | Das Operationsprotokoll: jeder git-Befehl, den GitHuttBr ausgeführt hat, samt seiner Ausgabe |
+Die Kopfzeile sagt, welches Repository du gleich änderst: Name, Ordner, aktueller
+Branch, das Haupt-Remote (`origin`, wenn es eines gibt) mit dem Host, auf dem es
+liegt, und ein paar Zahlen. Die Branch-Zahl stammt aus der schon geladenen Liste.
+Die Tresor-Zahl erscheint erst, nachdem du **Tresor** geöffnet hast, denn den
+Tresor zu lesen fragt den Schlüsselbund des Systems, und das Öffnen der
+Einstellungen sollte das nicht. Eine Commit-Zahl gibt es nicht: eine lange
+Historie zu zählen ist ein eigener git-Aufruf, und eine Kopfzeile ist ihn nicht wert.
+
+Die Seiten stehen in einer Seitennavigation, in drei Gruppen:
+
+| Gruppe | Seite | Was sie enthält |
+|---|---|---|
+| Repository | **Allgemein** | Anzeigename, Profil, geschützte Branches, das Tab-Bild und Aus der Liste entfernen |
+| Repository | **Projektkonfiguration** | Die [Regeln, die dieses Repository mitbringt](repo-config.md), in `.githuttbr.json`, und der Doctor, der sie prüft |
+| Repository | **Informationen** | Freie Notizen und Felder zu diesem Repository, lokal gespeichert |
+| Sicherheit | **Tresor** | Die [Tresor](vault.md)-Einträge dieses Repositorys |
+| Aktivität | **Kennzahlen** | Was du in GitHuttBr getan hast, lokal gezählt |
+| Aktivität | **Einblicke** | Das [Historien-Dashboard](insights.md) |
+| Aktivität | **Vorgangsverlauf** | Commits über die Zeit und wer sie gemacht hat, für die Repositorys, die du geöffnet hast |
+| Aktivität | **Protokolle** | Das Vorgangsprotokoll: jeder git-Befehl, den GitHuttBr hier ausgeführt hat, mit Ergebnis |
 
 Das Operationsprotokoll ist das ehrliche: Wenn sich etwas seltsam verhält, zeigt
 es den exakten Befehl und den exakten Fehler — damit ein Fehlerbericht Fakten
 transportieren kann statt Adjektive.
+
+## Allgemein
+
+Jede Einstellung ist eine Zeile: links, was sie tut, rechts das Bedienelement.
+Gespeichert wird erst, wenn du **Speichern** drückst.
+
+| Zeile | Was sie tut | Gespeichert in |
+|---|---|---|
+| **Anzeigename** | Der Name auf Tabs und in Listen. Der Ordner auf der Festplatte wird nie umbenannt; leer gilt der Ordnername | GitHuttBrs Einstellungen, dieser Rechner |
+| **Profil** | Identität, Tokens und KI, zu denen dieses Repository wechselt, wenn sein Tab aktiv ist. **Automatisch** folgt dem aktiven Profil | GitHuttBrs Einstellungen, dieser Rechner |
+| **Geschützte Branches** | Warnt vor einem Commit oder Force-Push direkt auf diese Branches | Die git-Konfiguration des Repositorys |
+| **Tab-Bild** | Ein kleines Bild auf dem Tab, siehe unten | GitHuttBrs Einstellungen, dieser Rechner |
+
+Hat das Repository eine `.githuttbr.json`, sagt ein Hinweis oben in Allgemein
+das und verlinkt auf **Projektkonfiguration**. Diese Regeln reisen mit dem
+Repository zu allen, die es klonen; die Zeilen darunter gelten nur für dich.
+
+**Aus der Liste entfernen…** nimmt das Repository aus
+[Repositorys](repositories.md). Es fragt vorher, und die Frage sagt, was es nicht
+tut: der Ordner auf der Festplatte bleibt unberührt, und ein offener Tab bleibt
+offen. Öffnest du das Repository wieder, steht es wieder in der Liste.
 
 ## Tab-Bild
 
