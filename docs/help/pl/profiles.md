@@ -39,8 +39,8 @@ i usuwanie są na tym samym pasku; usunięcie najpierw pyta.
 Profil nie potrzebuje własnej AI: jedna [ogólna
 AI](ai.md#jedna-ai-dla-wszystkich-profili) obsługuje każdy profil, a profil
 wybiera własną tylko wtedy, gdy musi. Ten wybór obejmuje wszystko: profil na
-ogólnej AI pisze też tak, jak ustawiono ogólną AI — styl commitów, własne
-instrukcje, czat repozytorium. Profil, który potrzebuje innego stylu, dostaje
+ogólnej AI pisze też tak, jak ustawiono ogólną AI — styl commitów, dodatkowe
+zasady dla commitów, czat repozytorium. Profil, który potrzebuje innego stylu, dostaje
 własną AI, kopię ogólnej, którą może potem zmienić. Wszystko to edytuje się na
 stronie **AI**; strona Profil mówi tylko, której AI profil używa, i prowadzi
 tam.

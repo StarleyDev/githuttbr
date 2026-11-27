@@ -44,11 +44,14 @@ pode fazer, em seções:
 
 | Seção | Guarda |
 |---|---|
-| **Mensagens de commit** | Estilo da mensagem de commit, *Gerar descrição do commit*, a linha de coautor |
+| **Mensagens de commit** | O estilo de commit — Conventional, Gitmoji e Ticket como cartões com uma linha de exemplo, o resto em *Mais estilos* — *Gerar a descrição do commit*, a linha de coautor, **Regras extras para commits** e uma prévia |
 | **Explicar e passar o mouse** | Estilo das explicações, *Explicar código ao passar o mouse* e a tecla dele |
-| **Conflitos e branches** | Estilo de resolução de conflitos, estilo de nome de branch |
-| **Instruções personalizadas** | Regras suas, incluídas em todo pedido que esta IA faz |
+| **Conflitos e branches** | Estilo de resolução de conflitos, estilo de nome de branch, cada um com um exemplo do resultado |
 | **Chat do repositório** | Se o chat está ligado, o que ele lê, as ações que pode propor — veja [Chat do repositório](repo-chat.md#configurações) |
+
+**Regras extras para commits** — *Instruções personalizadas* até a 4.60 — entram só na geração de mensagens de commit: o chat, as explicações, as revisões e os nomes de branch não as leem. A prévia é um exemplo fixo, não uma chamada ao modelo: mostra o formato do estilo escolhido, não o que a IA vai escrever para a sua alteração.
+
+![Mensagens de commit](../../screenshots/settings-ai-commits.webp)
 
 A troca de estilo no compositor e os seletores de modelo e de aprovação do chat
 gravam na mesma IA que o perfil lê: a geral ou a própria do perfil.

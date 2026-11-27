@@ -47,11 +47,14 @@ mag, in secties:
 
 | Sectie | Bevat |
 |---|---|
-| **Commitberichten** | Stijl van commitberichten, *Commit-omschrijving genereren*, de co-auteurregel |
+| **Commitberichten** | De commitstijl — Conventional, Gitmoji en Ticket als kaarten met een voorbeeldregel, de rest onder *Meer stijlen* — *Commit-omschrijving genereren*, de co-auteursregel, **Extra regels voor commits** en een voorbeeldweergave |
 | **Uitleg & hover** | Stijl van uitleg, *Code uitleggen bij hoveren* en de bijbehorende toets |
-| **Conflicten & branches** | Stijl voor conflictoplossing, stijl voor branchnamen |
-| **Eigen instructies** | Je eigen regels, toegevoegd aan elk verzoek dat deze AI doet |
+| **Conflicten & branches** | Stijl voor conflictoplossing, stijl voor branchnamen, elk met een voorbeeld van het resultaat |
 | **Repository-chat** | Of de chat aan staat, wat hij leest, welke acties hij mag voorstellen — zie [Repository-chat](repo-chat.md#instellingen) |
+
+**Extra regels voor commits** — tot 4.60 *Eigen instructies* — gaan alleen mee met het genereren van commitberichten: de chat, uitleg, reviews en branchnamen lezen ze niet. De voorbeeldweergave is een vast voorbeeld, geen modelaanroep: hij toont de vorm van de gekozen stijl, niet wat de AI voor jouw wijziging schrijft.
+
+![Commitberichten](../../screenshots/settings-ai-commits.webp)
 
 De stijlschakelaar in de opsteller en de model- en goedkeuringskiezers van de
 chat schrijven naar dezelfde AI die het profiel leest: de algemene of de eigen

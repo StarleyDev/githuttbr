@@ -48,11 +48,14 @@ darf, in Abschnitten:
 
 | Abschnitt | Enthält |
 |---|---|
-| **Commit-Nachrichten** | Stil der Commit-Nachrichten, *Commit-Beschreibung erzeugen*, die Co-Autor-Zeile |
+| **Commit-Nachrichten** | Der Commit-Stil — Conventional, Gitmoji und Ticket als Karten mit einer Beispielzeile, der Rest unter *Weitere Stile* — *Commit-Beschreibung erzeugen*, die Co-Autor-Zeile, **Zusätzliche Regeln für Commits** und eine Vorschau |
 | **Erklären & Hover** | Stil der Erklärungen, *Code beim Überfahren erklären* und seine Zusatztaste |
-| **Konflikte & Branches** | Stil der Konfliktlösung, Stil der Branch-Namen |
-| **Eigene Anweisungen** | Deine eigenen Regeln, die jeder Anfrage dieser KI beigefügt werden |
+| **Konflikte & Branches** | Stil der Konfliktlösung, Stil der Branch-Namen, jeweils mit einem Beispiel des Ergebnisses |
 | **Repository-Chat** | Ob der Chat an ist, was er liest, welche Aktionen er vorschlagen darf — siehe [Repository-Chat](repo-chat.md#einstellungen) |
+
+**Zusätzliche Regeln für Commits** — bis 4.60 *Eigene Anweisungen* — fließen nur in die Erzeugung von Commit-Nachrichten ein: Chat, Erklärungen, Reviews und Branch-Namen lesen sie nicht. Die Vorschau ist ein festes Beispiel, kein Modellaufruf: sie zeigt die Form des gewählten Stils, nicht das, was die KI für deine Änderung schreibt.
+
+![Commit-Nachrichten](../../screenshots/settings-ai-commits.webp)
 
 Der Stilschalter im Editor und die Modell- und Freigabeauswahl des Chats
 schreiben in dieselbe KI, die das Profil liest: die allgemeine oder die eigene

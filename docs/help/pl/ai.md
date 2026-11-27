@@ -47,11 +47,14 @@ sekcjach:
 
 | Sekcja | Zawiera |
 |---|---|
-| **Komunikaty commitów** | Styl opisów commitów, *Generuj opis commita*, wiersz współautora |
+| **Komunikaty commitów** | Styl commitów — Conventional, Gitmoji i Ticket jako karty z linią przykładu, reszta w *Więcej stylów* — *Generuj opis commita*, linia współautora, **Dodatkowe zasady dla commitów** i podgląd |
 | **Wyjaśnianie i najechanie** | Styl wyjaśnień, *Wyjaśniaj kod po najechaniu* i jego klawisz modyfikujący |
-| **Konflikty i gałęzie** | Styl rozwiązywania konfliktów, styl nazywania gałęzi |
-| **Własne instrukcje** | Twoje własne zasady, dołączane do każdego zapytania tej AI |
+| **Konflikty i gałęzie** | Styl rozwiązywania konfliktów, styl nazywania gałęzi, każdy z przykładem wyniku |
 | **Czat repozytorium** | Czy czat jest włączony, co czyta, jakie akcje może proponować — zobacz [Czat repozytorium](repo-chat.md#ustawienia) |
+
+**Dodatkowe zasady dla commitów** — do wersji 4.60 *Własne instrukcje* — trafiają tylko do generowania komunikatów commitów: czat, wyjaśnienia, recenzje i nazwy gałęzi ich nie czytają. Podgląd to stały przykład, nie wywołanie modelu: pokazuje kształt wybranego stylu, a nie to, co AI napisze dla twojej zmiany.
+
+![Komunikaty commitów](../../screenshots/settings-ai-commits.webp)
 
 Przełącznik stylu w kompozytorze oraz wybór modelu i trybu zatwierdzania w
 czacie zapisują do tej samej AI, którą czyta profil: ogólnej albo własnej AI

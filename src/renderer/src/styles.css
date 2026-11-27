@@ -8328,6 +8328,140 @@ body.col-resizing .node-ava {
 }
 .settings-ai-active-own > span { flex: 1 1 240px; }
 
+/* AI page, below the accounts: how the AI writes and what the chat may do.
+   One card per section, so each reads as a unit; examples sit in monospace
+   right under the control that shapes them. */
+.ai-behaviour { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+.ai-behaviour-scope {
+  margin: 0; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  color: var(--text-1); background: var(--bg-2); border: 1px dashed var(--border);
+}
+.ai-card {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 4px 14px 14px; border-radius: 10px;
+  border: 1px solid var(--border-soft); background: color-mix(in srgb, var(--bg-2) 45%, transparent);
+}
+.ai-card > h4, .ai-card-header h4 { margin-top: 10px; }
+.ai-card-header { display: flex; align-items: center; gap: 12px; }
+.ai-card-header h4 { flex: 1; min-width: 0; }
+.ai-card-header + .settings-hint { margin-top: -6px; }
+
+.ai-style-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.ai-style-cards { display: contents; }
+.settings-form .ai-style-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  min-width: 0; padding: 10px 12px; border-radius: 9px; text-align: start;
+  background: var(--bg-2); border: 1px solid var(--border-soft); color: var(--text-0);
+  font: inherit; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.ai-style-card strong { font-size: 12.5px; }
+.ai-style-card code {
+  max-width: 100%; font-family: var(--mono); font-size: 11.5px; color: var(--text-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ai-style-card:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.ai-style-card.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-2));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ai-style-card:focus-visible, .ai-pill:focus-visible, .ai-approval-card:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.settings-form .ai-style-card.more { justify-content: center; cursor: default; }
+.settings-form .ai-style-card.more select { width: 100%; }
+/* The co-author hint carries an e-mail address with no break opportunity. */
+.ai-card .settings-toggle-copy .settings-hint { overflow-wrap: anywhere; }
+
+.ai-preview-message, .ai-example pre {
+  margin: 0; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-word;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.55; color: var(--text-0);
+  background: var(--bg-1); border: 1px solid var(--border-soft);
+}
+.ai-example { display: flex; flex-direction: column; gap: 4px; }
+.ai-example-label { font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+.ai-example pre { padding: 6px 10px; }
+
+.ai-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-form .ai-pill {
+  padding: 5px 12px; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--text-1); background: var(--bg-2); border: 1px solid var(--border-soft); cursor: pointer;
+}
+.ai-pill:hover { color: var(--text-0); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.ai-pill.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+.ai-hover-row {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px;
+  background: var(--bg-2); border: 1px solid var(--border-soft);
+}
+.ai-hover-sentence { font-size: 12.5px; font-weight: 600; color: var(--text-0); line-height: 1.9; }
+.settings-form select.ai-kbd {
+  display: inline-block; width: auto; margin: 0 4px; padding: 1px 6px; vertical-align: baseline;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--text-0);
+  background: var(--bg-1); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px;
+}
+
+/* A bare switch: the toggle card's control without the card. */
+.settings-form label.ai-switch { position: relative; display: inline-flex; flex: none; cursor: pointer; }
+.ai-switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+.ai-switch input:checked ~ .settings-toggle-control {
+  background: color-mix(in srgb, var(--accent) 24%, var(--bg-4));
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+}
+.ai-switch input:checked ~ .settings-toggle-control .settings-toggle-thumb {
+  transform: translateX(calc(18px * var(--dir))); background: var(--accent);
+}
+.ai-switch input:focus-visible ~ .settings-toggle-control { box-shadow: 0 0 0 3px var(--accent-soft); }
+.settings-form label.ai-switch.disabled { cursor: not-allowed; opacity: 0.5; }
+
+.ai-chat-summary {
+  margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; color: var(--text-0);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-2));
+}
+.ai-chat-summary.off { color: var(--text-2); border-color: var(--border); background: var(--bg-2); }
+.ai-chat-body { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; border: none; min-width: 0; }
+.ai-chat-body:disabled { opacity: 0.5; }
+.ai-permissions {
+  list-style: none; margin: 0; padding: 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+.ai-permission { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--bg-2); }
+.ai-permission + .ai-permission { border-top: 1px solid var(--border-soft); }
+.ai-permission.disabled .settings-toggle-copy { opacity: 0.55; }
+.ai-permission-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; border-radius: 7px; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.ai-permission-always {
+  flex: none; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+  color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+.ai-approval-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.settings-form .ai-approval-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px;
+  text-align: start; font: inherit; color: var(--text-0); cursor: pointer; border-radius: 9px;
+  background: var(--bg-2); border: 1px solid var(--border-soft);
+}
+.ai-approval-card strong { font-size: 12.5px; }
+.ai-approval-card .settings-hint { margin: 0; }
+.ai-approval-card.active {
+  border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--bg-2));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ai-approval-card:disabled, .ai-pill:disabled, .ai-style-card:disabled { cursor: not-allowed; }
+.ai-approval-note { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+.ai-privacy {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--green) 35%, var(--border));
+  background: color-mix(in srgb, var(--green) 5%, transparent);
+}
+.ai-privacy .settings-field-label { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 720px) {
+  .ai-approval-cards { grid-template-columns: 1fr; }
+}
+
 .settings-form {
   flex: 1;
   display: flex;

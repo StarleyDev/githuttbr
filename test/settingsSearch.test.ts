@@ -64,6 +64,16 @@ describe('settings search', () => {
     expect(pages.has('layout')).toBe(true)
   })
 
+  it('still finds a renamed setting by the name it had before', () => {
+    expect(keys('custom instructions', inEnglish)[0]).toBe('settings.commitRules')
+    expect(keys('extra rules', inEnglish)[0]).toBe('settings.commitRules')
+    // "Read-only" was the old, inverted name of the file switch.
+    expect(keys('read-only', inEnglish)).toContain('settings.repoChatFiles')
+    expect(keys('file read-only mode', inEnglish)[0]).toBe('settings.repoChatFiles')
+    expect(keys('instruções personalizadas', inPortuguese)[0]).toBe('settings.commitRules')
+    expect(keys('somente leitura', inPortuguese)).toContain('settings.repoChatFiles')
+  })
+
   it('counts matches per page for the sidebar', () => {
     const counts = countSettingsByPage(searchSettings('terminal', inEnglish))
     expect(counts.layout).toBeGreaterThan(0)
@@ -87,6 +97,7 @@ describe('settings index', () => {
   it('covers every labelled setting the Settings screens render', () => {
     const files = [
       'SettingsPanel.tsx',
+      'AIBehaviourSettings.tsx',
       'EnvironmentSettings.tsx',
       'GithubEnterpriseSettings.tsx',
       'GitlabServersSettings.tsx',

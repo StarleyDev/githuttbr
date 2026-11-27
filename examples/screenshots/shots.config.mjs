@@ -759,6 +759,24 @@ export const shots = [
     }
   },
   {
+    // Settings → AI, scrolled to Commit messages: the style cards with their
+    // sample lines, the two switches, the extra rules and the static preview.
+    out: 'settings-ai-commits',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      await page.waitForTimeout(400)
+      await page.evaluate(() => {
+        const heading = [...document.querySelectorAll('.ai-card h4')].find((el) =>
+          /commit messages/i.test(el.textContent ?? '')
+        )
+        heading?.closest('.ai-card')?.scrollIntoView({ block: 'start' })
+      })
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // A new provider is a draft until "Test and save" passes. Pointed at a
     // local port nothing listens on — not Ollama's, which may be running on the
     // capturing machine and would put its real model list in the shot — the
@@ -791,8 +809,9 @@ export const shots = [
     }
   },
   {
-    // Settings → AI, scrolled to the Repository chat block: the enable switch,
-    // the committed-content-only guard, the action switches and how they run.
+    // Settings → AI, scrolled to the Repository chat card: the switch in its
+    // header, the sentence summing up what the AI may do, the permission rows,
+    // the approval cards and the privacy box.
     out: 'settings-repo-chat',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -801,11 +820,12 @@ export const shots = [
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
       await page.waitForTimeout(400)
       await page.evaluate(() => {
-        // The section has no id of its own — its heading is the only handle.
-        const heading = [...document.querySelectorAll('h4')].find((el) =>
+        // The section has no id of its own — its heading is the only handle;
+        // its card is scrolled to, so the switch in the header stays in view.
+        const heading = [...document.querySelectorAll('.ai-card h4')].find((el) =>
           /repository chat/i.test(el.textContent ?? '')
         )
-        heading?.scrollIntoView({ block: 'start' })
+        heading?.closest('.ai-card')?.scrollIntoView({ block: 'start' })
       })
       await page.waitForTimeout(400)
     }

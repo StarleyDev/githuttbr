@@ -46,11 +46,14 @@ può fare, in sezioni:
 
 | Sezione | Contiene |
 |---|---|
-| **Messaggi di commit** | Stile dei messaggi di commit, *Genera la descrizione del commit*, la riga del coautore |
+| **Messaggi di commit** | Lo stile dei commit — Conventional, Gitmoji e Ticket come schede con una riga di esempio, gli altri sotto *Altri stili* — *Genera la descrizione del commit*, la riga del co-autore, **Regole extra per i commit** e un’anteprima |
 | **Spiegazione e hover** | Stile delle spiegazioni, *Spiega il codice al passaggio del mouse* e il suo tasto modificatore |
-| **Conflitti e branch** | Stile di risoluzione dei conflitti, stile dei nomi dei branch |
-| **Istruzioni personalizzate** | Le tue regole, aggiunte a ogni richiesta che fa questa IA |
+| **Conflitti e branch** | Stile di risoluzione dei conflitti, stile dei nomi dei branch, ognuno con un esempio del risultato |
 | **Chat del repository** | Se la chat è attiva, che cosa legge, le azioni che può proporre — vedi [Chat del repository](repo-chat.md#impostazioni) |
+
+Le **Regole extra per i commit** — *Istruzioni personalizzate* fino alla 4.60 — entrano solo nella generazione dei messaggi di commit: chat, spiegazioni, revisioni e nomi dei branch non le leggono. L’anteprima è un esempio fisso, non una chiamata al modello: mostra la forma dello stile scelto, non quello che l’IA scriverà per la tua modifica.
+
+![Messaggi di commit](../../screenshots/settings-ai-commits.webp)
 
 Il selettore di stile del compositore e i selettori di modello e di approvazione
 della chat scrivono nella stessa IA che il profilo legge: quella generale o

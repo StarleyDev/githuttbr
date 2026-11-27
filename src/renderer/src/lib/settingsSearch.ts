@@ -51,10 +51,19 @@ export interface SettingsEntry {
   hint?: TranslationKey
   /** The Themes page's tab the setting sits on. */
   tab?: 'theme' | 'graph'
+  /** Names the setting went by before, searched as labels: someone who learnt
+   *  "Custom instructions" still finds "Extra rules for commits". */
+  aka?: readonly TranslationKey[]
 }
 
 const e = (page: SettingsPageId, key: TranslationKey, hint?: TranslationKey, tab?: 'theme' | 'graph'): SettingsEntry =>
   hint || tab ? { page, key, ...(hint ? { hint } : {}), ...(tab ? { tab } : {}) } : { page, key }
+
+/** An entry that was renamed: its old labels stay searchable. */
+const renamed = (page: SettingsPageId, key: TranslationKey, hint: TranslationKey | undefined, aka: TranslationKey[]): SettingsEntry => ({
+  ...e(page, key, hint),
+  aka
+})
 
 /** In sidebar order, then top to bottom within a page — the order ties keep. */
 export const SETTINGS_INDEX: readonly SettingsEntry[] = [
@@ -130,6 +139,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('ai', 'settings.commitStyle', 'settings.commitStyleHint'),
   e('ai', 'settings.generateDescription', 'settings.generateDescriptionHint'),
   e('ai', 'settings.coAuthor', 'settings.coAuthorHint'),
+  renamed('ai', 'settings.commitRules', 'settings.commitRulesHint', ['settings.customInstructions']),
+  e('ai', 'settings.commitPreview', 'settings.commitPreviewHint'),
   e('ai', 'settings.aiSectionExplain'),
   e('ai', 'settings.explainStyle', 'settings.explainStyleHint'),
   e('ai', 'settings.hoverExplain', 'settings.hoverExplainHint'),
@@ -137,13 +148,16 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('ai', 'settings.aiSectionBranches'),
   e('ai', 'settings.conflictStyle', 'settings.conflictStyleHint'),
   e('ai', 'settings.branchNamingStyle', 'settings.branchNamingStyleHint'),
-  e('ai', 'settings.customInstructions', 'settings.customInstructionsHint'),
   e('ai', 'settings.repoChat'),
   e('ai', 'settings.repoChatEnable', 'settings.repoChatEnableHint'),
-  e('ai', 'settings.repoChatCommitted', 'settings.repoChatCommittedHint'),
-  e('ai', 'settings.repoChatActions', 'settings.repoChatActionsHint'),
-  e('ai', 'settings.repoChatReadOnly', 'settings.repoChatReadOnlyHint'),
-  e('ai', 'settings.repoChatRemoteActions', 'settings.repoChatRemoteActionsHint'),
+  e('ai', 'settings.repoChatPermissions'),
+  e('ai', 'settings.repoChatRead', 'settings.repoChatReadHint'),
+  renamed('ai', 'settings.repoChatGitActions', 'settings.repoChatGitActionsHint', ['settings.repoChatActions']),
+  // Its old name said the opposite ("read-only"); both still find it.
+  renamed('ai', 'settings.repoChatFiles', 'settings.repoChatFilesHint', ['settings.repoChatReadOnly']),
+  renamed('ai', 'settings.repoChatRemote', 'settings.repoChatRemoteActionsHint', ['settings.repoChatRemoteActions']),
+  renamed('ai', 'settings.repoChatApprovalTitle', 'settings.repoChatApprovalHint', ['chat.approvalTitle']),
+  renamed('ai', 'settings.repoChatCommitted', 'settings.repoChatCommittedHint', ['settings.repoChatPrivacy']),
   e('ai', 'settings.aiByProfile', 'settings.aiByProfileHint'),
   e('profile', 'settings.profileAiTitle', 'settings.profileAiGeneral'),
   e('profile', 'settings.useOwnAi', 'settings.profileAiGeneral'),
@@ -235,7 +249,7 @@ export function searchSettings(
 
   const scored: { entry: SettingsEntry; score: number; at: number }[] = []
   entries.forEach((entry, at) => {
-    const labels = read(entry.key).map(normalizeSearchText)
+    const labels = [entry.key, ...(entry.aka ?? [])].flatMap(read).map(normalizeSearchText)
     const rest = [
       ...(entry.hint ? read(entry.hint) : []),
       ...read(SETTINGS_PAGE_KEYS[entry.page])

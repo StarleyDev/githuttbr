@@ -3,7 +3,7 @@ title: Repository chat
 category: AI
 order: 82
 summary: Ask anything — general questions or questions about this repository — pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
-keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look general question any question thinking reading files
+keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look general question any question thinking reading files permissions create edit delete files read-only file read-only mode local git actions remote actions privacy approval
 ---
 
 # Repository chat
@@ -96,12 +96,19 @@ when it has one (the **Editing** bar picks which, see
 
 | Setting | Does |
 |---|---|
-| **Ask questions about the repository** | Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
-| **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
-| **Propose file and Git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
-| **File read-only mode** | On blocks file creation, editing, replacement, and deletion while keeping Git actions available. It is on by default |
-| **Let chat propose remote actions** | Off by default. On adds fetch, pull, push, opening a pull request and submitting a stack to what chat may propose — see [Actions that leave the machine](#actions-that-leave-the-machine) |
-| **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
+| **Ask questions about the repository** | The switch in the section's header. Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
+| **Read the repository** | Always on while chat is. Files that look like secrets are never read |
+| **Local Git actions** | Off makes chat purely read-only again: no action cards, no approval choice. It was *Propose file and Git actions in chat* |
+| **Create, edit and delete files** | On lets chat propose exact edits, new files, replacements and deletions. **Off by default**, and only available with local Git actions on. It replaces *File read-only mode* with the meaning turned around: this switch on is that mode off, and a saved setting reads the same as before |
+| **Remote actions** | Off by default. On adds fetch, pull, push, opening a pull request and submitting a stack to what chat may propose — see [Actions that leave the machine](#actions-that-leave-the-machine). Needs local Git actions |
+| **When the AI proposes an action** | The approval mode, one card each — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
+| **Committed content only** | Under *Privacy*. Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
+
+Above the list, one sentence sums up the current settings — *Right now the AI
+can read the repository, propose commits and branches and create or edit files —
+always asking for your approval* — so the effect of a switch reads in words, not
+only as its position. It describes these settings, not the model: a proposal is
+still checked and refused when it breaks a rule below.
 
 Which provider and model answers chat is set on the **AI** page, under **Model
 per task** — see [AI features](ai.md#model-per-task).
@@ -180,7 +187,7 @@ from the toolbar.
 [the repository's own config file](repo-config.md), so *add ticket links for
 JIRA-1234* or *protect the release branches* becomes a file action written
 against the real schema instead of plausible-looking keys the loader would
-reject. It needs file actions enabled — the same **File read-only mode** switch.
+reject. It needs file actions enabled — the same **Create, edit and delete files** switch.
 
 **Rows that need a picture get one.** A one-line summary is enough for "stage
 two files" and nowhere near enough for "open four pull requests against a
@@ -193,7 +200,7 @@ would open it, retarget it, or leave it alone.
 ### Actions that leave the machine
 
 Fetching, pulling, pushing, opening a pull request and submitting a stack are
-**off by default**, behind **Let chat propose remote actions**. Publishing work
+**off by default**, behind **Remote actions**. Publishing work
 is a decision worth opting into, and with the setting off the model is not told
 those actions exist — it cannot propose one and be refused, which is the failure
 mode that teaches people to turn things on without reading.

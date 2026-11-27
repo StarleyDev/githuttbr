@@ -50,11 +50,14 @@ yapabileceğini bölümler hâlinde tutar:
 
 | Bölüm | İçerir |
 |---|---|
-| **Commit mesajları** | Commit mesajı stili, *Commit açıklaması üret*, ortak yazar satırı |
+| **Commit mesajları** | Commit stili — Conventional, Gitmoji ve kayıt no, örnek bir satırla kartlar olarak, geri kalanı *Diğer stiller* altında — *Commit açıklaması üret*, ortak yazar satırı, **Commit’ler için ek kurallar** ve bir önizleme |
 | **Açıklama ve üzerine gelme** | Açıklama stili, *İmleç üzerindeyken kodu açıkla* ve değiştirici tuşu |
-| **Çakışmalar ve dallar** | Çakışma çözme stili, dal adlandırma stili |
-| **Özel yönergeler** | Kendi kurallarınız; bu yapay zekânın yaptığı her isteğe eklenir |
+| **Çakışmalar ve dallar** | Çakışma çözme stili, dal adlandırma stili, her biri sonucun bir örneğiyle |
 | **Depo sohbeti** | Sohbetin açık olup olmadığı, neyi okuduğu, önerebileceği eylemler — bkz. [Depo sohbeti](repo-chat.md#ayarlar) |
+
+**Commit’ler için ek kurallar** — 4.60’a kadar *Özel yönergeler* — yalnızca commit mesajı üretimine eklenir: sohbet, açıklamalar, incelemeler ve dal adları bunları okumaz. Önizleme sabit bir örnektir, model çağrısı değildir: seçilen stilin biçimini gösterir, yapay zekânın sizin değişikliğiniz için ne yazacağını değil.
+
+![Commit mesajları](../../screenshots/settings-ai-commits.webp)
 
 Besteci panelindeki stil değiştirici ve sohbetin model ve onay seçicileri,
 profilin okuduğu yapay zekâya yazar: genel olana ya da profilin kendisininkine.

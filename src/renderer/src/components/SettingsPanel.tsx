@@ -51,8 +51,6 @@ import {
   ArrowDownUp,
   Circle,
   GitCompareArrows,
-  GitMerge,
-  MessageSquare,
   Network,
   Repeat2,
   Rows3,
@@ -90,9 +88,9 @@ import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type Profile, type SigningConfig, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
 import { tabActiveRepoPath } from '../../../shared/types'
-import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
+import type { KeychainConsent, TabRepoLabel } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import { GRAPH_FOCUS_MODES, focusedHashes, type FocusInput } from '../lib/graphFocus'
 import { layoutGraph } from '../graph/layout'
@@ -127,6 +125,7 @@ import { repoActions } from '../stores/repo'
 import { useT, interp, loadLocale, type TranslationKey } from '../i18n'
 import { accountLabel, resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
+import { AIBehaviourSettings } from './AIBehaviourSettings'
 import { LanguagePicker } from './LanguagePicker'
 import { NumberField } from './NumberField'
 import { ScanRootsEditor } from './ScanRootsEditor'
@@ -165,48 +164,6 @@ const PAGES: { id: SettingsPage; icon: React.ReactNode; tone?: IconTone; scope: 
 ]
 const PROFILE_PAGES = PAGES.filter((p) => p.scope === 'profile')
 const APP_PAGES = PAGES.filter((p) => p.scope === 'app')
-
-const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
-  { id: 'auto', key: 'commitStyle.auto' },
-  { id: 'ticket', key: 'commitStyle.ticket' },
-  { id: 'conventional', key: 'commitStyle.conventional' },
-  { id: 'gitmoji', key: 'commitStyle.gitmoji' },
-  { id: 'gitmoji-conventional', key: 'commitStyle.gitmojiConventional' },
-  { id: 'plain', key: 'commitStyle.plain' },
-  { id: 'caveman', key: 'commitStyle.caveman' },
-  { id: 'haiku', key: 'commitStyle.haiku' }
-]
-
-const EXPLAIN_STYLES: { id: ExplainStyle; key: TranslationKey }[] = [
-  { id: 'normal', key: 'explainStyle.normal' },
-  { id: 'concise', key: 'explainStyle.concise' },
-  { id: 'detailed', key: 'explainStyle.detailed' },
-  { id: 'eli5', key: 'explainStyle.eli5' },
-  { id: 'caveman', key: 'explainStyle.caveman' },
-  { id: 'pirate', key: 'explainStyle.pirate' },
-  { id: 'formal', key: 'explainStyle.formal' }
-]
-
-const HOVER_MODIFIERS: { id: HoverModifier; key: TranslationKey }[] = [
-  { id: 'shift', key: 'hoverKey.shift' },
-  { id: 'alt', key: 'hoverKey.alt' },
-  { id: 'ctrl', key: 'hoverKey.ctrl' },
-  { id: 'meta', key: 'hoverKey.meta' },
-  { id: 'none', key: 'hoverKey.none' }
-]
-
-const CONFLICT_STYLES: { id: ConflictStyle; key: TranslationKey }[] = [
-  { id: 'clean', key: 'conflictStyle.clean' },
-  { id: 'commented', key: 'conflictStyle.commented' },
-  { id: 'conservative', key: 'conflictStyle.conservative' }
-]
-
-const BRANCH_NAMING_STYLES: { id: BranchNamingStyle; key: TranslationKey }[] = [
-  { id: 'prefix/description', key: 'branchNamingStyle.prefix/description' },
-  { id: 'prefix/ticket-description', key: 'branchNamingStyle.prefix/ticket-description' },
-  { id: 'username/prefix/description', key: 'branchNamingStyle.username/prefix/description' },
-  { id: 'plain', key: 'branchNamingStyle.plain' }
-]
 
 /**
  * Per-repo commit-signing controls (commit.gpgsign / gpg.format / user.signingkey).
@@ -1182,240 +1139,7 @@ export function AIPage({
 
       {/* How it writes and what the chat may do: part of this same config, so a
           profile on the general AI writes like every other one on it. */}
-      <h4><GitCommit size={14} /> {t('settings.aiSectionCommits')}</h4>
-      <label className="settings-field" data-setting="settings.commitStyle">
-        <span className="settings-field-label">{t('settings.commitStyle')}</span>
-        <select
-          value={ai.commitStyle}
-          onChange={(e) => onChange({ ...ai, commitStyle: e.target.value as CommitStyle })}
-        >
-          {COMMIT_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-        <span className="settings-hint">{t('settings.commitStyleHint')}</span>
-      </label>
-
-      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-        <input
-          type="checkbox"
-          checked={ai.generateDescription}
-          onChange={(e) => onChange({ ...ai, generateDescription: e.target.checked })}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.generateDescription')}</strong>
-          <span className="settings-hint">{t('settings.generateDescriptionHint')}</span>
-        </span>
-      </label>
-
-      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-        <input
-          type="checkbox"
-          checked={ai.coAuthor !== false}
-          onChange={(e) => onChange({ ...ai, coAuthor: e.target.checked })}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.coAuthor')}</strong>
-          <span className="settings-hint">{t('settings.coAuthorHint')}</span>
-        </span>
-      </label>
-
-      <h4><MessageSquare size={14} /> {t('settings.aiSectionExplain')}</h4>
-      <label className="settings-field">
-        <span className="settings-field-label">{t('settings.explainStyle')}</span>
-        <span className="settings-hint">{t('settings.explainStyleHint')}</span>
-        <select
-          value={ai.explainStyle ?? 'normal'}
-          onChange={(e) => onChange({ ...ai, explainStyle: e.target.value as ExplainStyle })}
-        >
-          {EXPLAIN_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-        <input
-          type="checkbox"
-          checked={ai.hoverExplain !== false}
-          onChange={(e) => onChange({ ...ai, hoverExplain: e.target.checked })}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.hoverExplain')}</strong>
-          <span className="settings-hint">{t('settings.hoverExplainHint')}</span>
-        </span>
-      </label>
-
-      {ai.hoverExplain !== false && (
-        <label className="settings-field" style={{ marginTop: 12 }}>
-          <span className="settings-field-label">{t('settings.hoverExplainKey')}</span>
-          <span className="settings-hint">{t('settings.hoverExplainKeyHint')}</span>
-          <select
-            value={ai.hoverExplainKey ?? 'shift'}
-            onChange={(e) => onChange({ ...ai, hoverExplainKey: e.target.value as HoverModifier })}
-          >
-            {HOVER_MODIFIERS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {t(m.key)}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      <h4><GitMerge size={14} /> {t('settings.aiSectionBranches')}</h4>
-      <label className="settings-field">
-        <span className="settings-field-label">{t('settings.conflictStyle')}</span>
-        <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
-        <select
-          value={ai.conflictStyle ?? 'clean'}
-          onChange={(e) => onChange({ ...ai, conflictStyle: e.target.value as ConflictStyle })}
-        >
-          {CONFLICT_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="settings-field" style={{ marginTop: 12 }}>
-        <span className="settings-field-label">{t('settings.branchNamingStyle')}</span>
-        <span className="settings-hint">{t('settings.branchNamingStyleHint')}</span>
-        <select
-          value={ai.branchNamingStyle ?? 'prefix/description'}
-          onChange={(e) => onChange({ ...ai, branchNamingStyle: e.target.value as BranchNamingStyle })}
-        >
-          {BRANCH_NAMING_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <h4><ScrollText size={14} /> {t('settings.customInstructions')}</h4>
-      <label className="settings-field">
-        <span className="settings-hint">{t('settings.customInstructionsHint')}</span>
-        <textarea
-          rows={3}
-          value={ai.customInstructions}
-          aria-label={t('settings.customInstructions')}
-          placeholder={t('settings.customInstructionsPlaceholder')}
-          onChange={(e) => onChange({ ...ai, customInstructions: e.target.value })}
-        />
-      </label>
-
-      <h4><Bot size={14} /> {t('settings.repoChat')}</h4>
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={ai.repoChat !== false}
-          onChange={(e) => onChange({ ...ai, repoChat: e.target.checked })}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.repoChatEnable')}</strong>
-          <span className="settings-hint">{t('settings.repoChatEnableHint')}</span>
-        </span>
-      </label>
-
-      {ai.repoChat !== false && (
-        <>
-          <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-            <input
-              type="checkbox"
-              checked={ai.repoChatCommittedOnly === true}
-              onChange={(e) => onChange({ ...ai, repoChatCommittedOnly: e.target.checked })}
-            />
-            <span className="settings-toggle-control" aria-hidden="true">
-              <span className="settings-toggle-thumb" />
-            </span>
-            <span className="settings-toggle-copy">
-              <strong>{t('settings.repoChatCommitted')}</strong>
-              <span className="settings-hint">{t('settings.repoChatCommittedHint')}</span>
-            </span>
-          </label>
-
-          <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-            <input
-              type="checkbox"
-              checked={ai.repoChatActions !== false}
-              onChange={(e) => onChange({ ...ai, repoChatActions: e.target.checked })}
-            />
-            <span className="settings-toggle-control" aria-hidden="true">
-              <span className="settings-toggle-thumb" />
-            </span>
-            <span className="settings-toggle-copy">
-              <strong>{t('settings.repoChatActions')}</strong>
-              <span className="settings-hint">{t('settings.repoChatActionsHint')}</span>
-            </span>
-          </label>
-
-          {ai.repoChatActions !== false && (
-            <>
-              <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-                <input
-                  type="checkbox"
-                  checked={ai.repoChatReadOnly !== false}
-                  onChange={(e) => onChange({ ...ai, repoChatReadOnly: e.target.checked })}
-                />
-                <span className="settings-toggle-control" aria-hidden="true">
-                  <span className="settings-toggle-thumb" />
-                </span>
-                <span className="settings-toggle-copy">
-                  <strong>{t('settings.repoChatReadOnly')}</strong>
-                  <span className="settings-hint">{t('settings.repoChatReadOnlyHint')}</span>
-                </span>
-              </label>
-
-              <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-                <input
-                  type="checkbox"
-                  checked={ai.repoChatRemoteActions === true}
-                  onChange={(e) => onChange({ ...ai, repoChatRemoteActions: e.target.checked })}
-                />
-                <span className="settings-toggle-control" aria-hidden="true">
-                  <span className="settings-toggle-thumb" />
-                </span>
-                <span className="settings-toggle-copy">
-                  <strong>{t('settings.repoChatRemoteActions')}</strong>
-                  <span className="settings-hint">{t('settings.repoChatRemoteActionsHint')}</span>
-                </span>
-              </label>
-
-              <label style={{ marginTop: 12 }}>
-                {t('chat.approvalTitle')}
-                <select
-                  value={ai.repoChatApproval ?? 'ask'}
-                  onChange={(e) =>
-                    onChange({ ...ai, repoChatApproval: e.target.value as typeof ai.repoChatApproval })
-                  }
-                >
-                  <option value="ask">{t('chat.approvalAsk')}</option>
-                  <option value="auto-safe">{t('chat.approvalSafe')}</option>
-                  <option value="auto-all">{t('chat.approvalAll')}</option>
-                </select>
-              </label>
-              <span className="settings-hint">{t('settings.repoChatApprovalHint')}</span>
-            </>
-          )}
-        </>
-      )}
+      <AIBehaviourSettings ai={ai} onChange={onChange} scope={scope} />
 
       </div>
     </>

@@ -96,11 +96,14 @@ perfil quando ele tem uma (a barra **Editando** escolhe qual, veja
 | Configuração | O que faz |
 |---|---|
 | **Faça perguntas sobre o repositório** | Desligado tira a aba, o botão da barra e o alvo do atalho. O resto da IA continua |
+| **Ler o repositório** | Arquivos, histórico e diffs, para te responder. Arquivos que parecem segredos nunca são lidos |
 | **Apenas conteúdo commitado** | Responde a partir do último commit em vez da árvore de trabalho: alterações não commitadas nunca saem da máquina |
-| **Propor ações de arquivo e Git no chat** | Desligado devolve o chat ao modo somente leitura: sem cartões de ações, sem menu de aprovação |
-| **Modo somente leitura de arquivos** | Ligado bloqueia criação, edição, substituição e exclusão de arquivos, mas mantém as ações Git disponíveis. Vem ligado por padrão |
-| **Como as ações propostas são executadas** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
-| **Permitir que o chat proponha ações remotas** | Desligado por padrão. Ligado, acrescenta fetch, pull, push, abrir um pull request e enviar uma pilha |
+| **Ações Git locais** | Stage, commit, branch, stash, merge e mais, propostos num cartão que você revisa. Desligado: o chat só responde |
+| **Criar, editar e excluir arquivos** | Edições exatas, arquivos novos, substituições e exclusões, cada um com seu diff no cartão. Exige as ações Git locais. Desligado por padrão. Substitui *Modo somente leitura de arquivos* com o sentido invertido: ligado aqui é aquele modo desligado, e uma configuração salva continua valendo igual |
+| **Quando a IA propõe uma ação** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
+| **Ações remotas** | Desligado por padrão. Ligado, acrescenta fetch, pull, push, abrir um pull request e enviar uma pilha |
+
+Acima da lista, uma frase resume o que a IA pode fazer agora com essas configurações. Ela descreve as configurações, não o modelo: uma proposta continua sendo conferida e recusada quando quebra uma regra.
 
 O provedor e o modelo que respondem no chat são definidos na página **IA**, em
 **Modelo por tarefa** — veja [Funções de IA](ai.md#modelo-por-tarefa). Perguntar
