@@ -696,6 +696,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // Replaces the summary and description; the banner it leaves offers Undo.
   const generation = useCommitGeneration({
     repoPath: path,
+    keepKey: `composer:${path}`,
     branch: repo.branches.current,
     diff: async () => {
       if (staged.length === 0) {

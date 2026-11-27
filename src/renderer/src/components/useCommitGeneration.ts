@@ -46,7 +46,16 @@ interface Options {
   current: MessageDraft
   /** Writes a message into the fields; returns it as `current` will then read, when the surface reshapes it. */
   apply: (draft: MessageDraft) => MessageDraft | void
+  /**
+   * Keeps a finished generation — its Undo and "Generate again" — when the
+   * surface unmounts, as switching tabs does, so they are still there on the
+   * way back. One key per surface and repository.
+   */
+  keepKey?: string
 }
+
+/** Finished generations kept across unmounts, by `keepKey`; memory only, like the drafts. */
+const keptGenerations = new Map<string, { state: GenerationState; lastTarget: GenerationTarget | null }>()
 
 /**
  * One commit-message generation at a time, cancellable. Cancel works twice
@@ -54,11 +63,12 @@ interface Options {
  * nothing), and main is told to abort it by the tag it was started with —
  * the call in flight and any re-ask it would make.
  */
-export function useCommitGeneration({ repoPath, branch, diff, current, apply }: Options): CommitGeneration {
-  const [state, dispatch] = useReducer(nextGeneration, IDLE)
+export function useCommitGeneration({ repoPath, branch, diff, current, apply, keepKey }: Options): CommitGeneration {
+  const kept = keepKey ? keptGenerations.get(keepKey) : undefined
+  const [state, dispatch] = useReducer(nextGeneration, kept?.state ?? IDLE)
   const [now, setNow] = useState(() => Date.now())
   const running = useRef<string | null>(null)
-  const lastTarget = useRef<GenerationTarget | null>(null)
+  const lastTarget = useRef<GenerationTarget | null>(kept?.lastTarget ?? null)
   const latest = useRef({ current, apply, diff, state })
   latest.current = { current, apply, diff, state }
 
@@ -68,6 +78,14 @@ export function useCommitGeneration({ repoPath, branch, diff, current, apply }: 
     const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [state.phase])
+
+  // Only a finished generation is worth keeping: one still running is
+  // cancelled with the surface, and idle has nothing to restore.
+  useEffect(() => {
+    if (!keepKey) return
+    if (state.phase === 'generated') keptGenerations.set(keepKey, { state, lastTarget: lastTarget.current })
+    else keptGenerations.delete(keepKey)
+  }, [keepKey, state])
 
   // The banner goes the moment the text is no longer what was generated.
   useEffect(() => dispatch({ type: 'edit', current }), [current.summary, current.description]) // eslint-disable-line react-hooks/exhaustive-deps

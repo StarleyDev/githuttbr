@@ -10597,8 +10597,20 @@ input.is-invalid {
 .ai-accounts-item:hover {
   background: var(--bg-2);
 }
-.ai-accounts-item:focus-visible {
+.ai-accounts-item:focus-within:has(.ai-accounts-item-select:focus-visible) {
   border-color: var(--accent);
+}
+/* The name is the row's select button: it reads as the name, not as a button. */
+.ai-accounts-item-select {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.ai-accounts-item-select:focus-visible {
+  outline: none;
 }
 .ai-accounts-item.active {
   border-color: var(--accent);

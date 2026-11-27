@@ -86,7 +86,8 @@ model or a costly one is never a surprise.
   account · model in 7 s*). Undo puts your summary and description back. Both
   go away as soon as you edit the text or commit.
 - The description you type, or the one the AI wrote, stays when you switch to
-  another tab and come back, like the summary.
+  another tab and come back, like the summary — and so do **Undo** and
+  **Generate again** after a generation.
 
 ![Generate with AI and its account menu](../screenshots/commit-ai-generate.webp)
 

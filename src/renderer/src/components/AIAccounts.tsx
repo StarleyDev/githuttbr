@@ -876,7 +876,9 @@ export function AIAccountsEditor({
       </h4>
       <span className="settings-hint">{t('settings.aiAccountsHint')}</span>
 
-      <div className="ai-accounts-list" role="listbox" aria-label={t('settings.selectAccount')}>
+      {/* A list, not a listbox: rows carry their own buttons (Use, Test again),
+          which an option may not contain. The name is the row's select button. */}
+      <div className="ai-accounts-list" role="list" aria-label={t('settings.selectAccount')}>
         {accounts.map((a) => {
           const active = !setup && !newDraft && a.id === saved?.id
           const view = statusOf(a, a.id)
@@ -890,20 +892,23 @@ export function AIAccountsEditor({
           }
           return (
             <div
-              role="option"
-              tabIndex={0}
-              aria-selected={active}
+              role="listitem"
               key={a.id}
               className={`ai-accounts-item${active ? ' active' : ''}${role === 'in-use' ? ' in-use' : ''}`}
               onClick={select}
-              onKeyDown={(e) => {
-                if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
-                e.preventDefault()
-                select()
-              }}
             >
               <div className="ai-accounts-item-main">
-                <span className="ai-accounts-item-name">{accountLabel(a)}</span>
+                <button
+                  type="button"
+                  className="ai-accounts-item-name ai-accounts-item-select"
+                  aria-current={active ? 'true' : undefined}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    select()
+                  }}
+                >
+                  {accountLabel(a)}
+                </button>
                 {role === 'in-use' && (
                   <span className="ai-accounts-item-in-use" title={t('settings.accountInUseTitle')}>
                     <Check size={11} /> {t('settings.accountInUse')}
@@ -951,9 +956,19 @@ export function AIAccountsEditor({
           )
         })}
         {newDraft && (
-          <div role="option" tabIndex={0} aria-selected={!setup} className={`ai-accounts-item draft${setup ? '' : ' active'}`} onClick={() => setSetup(false)}>
+          <div role="listitem" className={`ai-accounts-item draft${setup ? '' : ' active'}`} onClick={() => setSetup(false)}>
             <div className="ai-accounts-item-main">
-              <span className="ai-accounts-item-name">{accountLabel(newDraft.account)}</span>
+              <button
+                type="button"
+                className="ai-accounts-item-name ai-accounts-item-select"
+                aria-current={!setup ? 'true' : undefined}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSetup(false)
+                }}
+              >
+                {accountLabel(newDraft.account)}
+              </button>
               <span className="ai-status draft">{t('settings.accountNotSaved')}</span>
             </div>
           </div>

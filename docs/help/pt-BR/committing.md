@@ -88,7 +88,8 @@ lento ou um caro nunca seja surpresa.
   modelo em 7 s*). Desfazer devolve o seu resumo e a sua descrição. Os dois
   somem assim que você edita o texto ou faz o commit.
 - A descrição que você digitou, ou a que a IA escreveu, continua lá quando você
-  troca de aba e volta, como o resumo.
+  troca de aba e volta, como o resumo — e **Desfazer** e **Gerar de novo**
+  também, depois de uma geração.
 
 ![Gerar com IA e o menu de contas](../../screenshots/commit-ai-generate.webp)
 
