@@ -78,12 +78,20 @@ body {
   user-select: none;
 }
 
+/* No sharp corners anywhere: a button that gains a hover or selected fill
+   would otherwise light up as a hard-edged rectangle. Rules that must stay
+   square (rows and bars that touch the window edge) say so explicitly. */
 button {
   font-family: inherit;
   background: none;
   border: none;
+  border-radius: 6px;
   color: inherit;
   cursor: pointer;
+}
+
+select {
+  border-radius: 6px;
 }
 
 input,
@@ -8414,6 +8422,12 @@ body.col-resizing .node-ava {
 .modal .page-head {
   position: static;
 }
+/* Full-window pages are square because they fill the window; embedded in a
+   dialog the darker page reads as a card and gets the dialog's rounded corners. */
+.modal .changelog-page {
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+}
 
 .changelog-inner {
   max-width: 760px;
@@ -9835,14 +9849,37 @@ body.col-resizing .node-ava {
   color: var(--text-1);
 }
 .md-preview table {
-  border-collapse: collapse;
   margin: 0.8em 0;
   font-size: 0.9em;
 }
 .md-preview th,
 .md-preview td {
-  border: 1px solid var(--border);
   padding: 6px 10px;
+}
+/* Rounded tables: a collapsed border cannot take a radius, so the grid is drawn
+   with separate borders — the table owns the outer edge, each cell only its
+   end and bottom lines, and the last column and row drop theirs. */
+.md-preview table,
+.help-article table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.md-preview :is(th, td),
+.help-article :is(th, td) {
+  border: 0;
+  border-inline-end: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.md-preview tr > :last-child,
+.help-article tr > :last-child {
+  border-inline-end: 0;
+}
+.md-preview tr:last-child > :is(th, td),
+.help-article tr:last-child > :is(th, td) {
+  border-bottom: 0;
 }
 .md-preview th {
   background: var(--bg-2);
@@ -13767,9 +13804,8 @@ input[type='range']:focus-visible {
 .help-article code { font-family: var(--mono, monospace); font-size: 12px; background: var(--bg-2); padding: 1px 5px; border-radius: 4px; }
 .help-article pre { background: var(--bg-2); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
 .help-article pre code { background: none; padding: 0; font-size: 11.5px; line-height: 1.6; }
-.help-article table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+.help-article table { width: 100%; margin: 10px 0; }
 .help-article th, .help-article td {
-  border: 1px solid var(--border);
   padding: 6px 10px;
   font-size: 12.5px;
   text-align: start;
@@ -20460,7 +20496,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repos-section-bar {
   display: flex;
   align-items: center;
-  border-radius: 0;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--repos-section-color, var(--text-0)) 12%, var(--bg-2));
   border: none;
   border-bottom: 1px solid color-mix(in srgb, var(--repos-section-color, var(--text-0)) 22%, var(--border-soft));
@@ -21987,4 +22023,32 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .commitedit .commit-ai-split {
   align-self: flex-start;
   width: min(100%, 460px);
+}
+
+/* Corner policy (see the base button rule): underline tabs round only the top,
+   so the active underline stays a straight line; rows separated by a rule,
+   segments split by a divider, stripes and edge-to-edge bars stay square,
+   because a radius there would bend the separator at both ends. Their
+   containers carry the rounded edge instead. */
+.right-panel-tab,
+.theme-tab,
+.prp-tab,
+.prl-tab,
+.sheet-tab {
+  border-radius: 6px 6px 0 0;
+}
+.back-btn,
+.commit-note-add,
+.commit-ai-target,
+.repo-row,
+.fv-mode,
+.blame-meta,
+.conflict-output-gutter .cog,
+.snapshot-file-row,
+.share-row,
+.licenses-row,
+.todo-row,
+.prp-commit,
+.prl-row {
+  border-radius: 0;
 }
