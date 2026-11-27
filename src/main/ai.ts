@@ -201,7 +201,7 @@ function shapeSummary(summary: string, cfg: AIConfig): string {
 }
 
 /** One chat completion against the account's provider, as raw message text. */
-async function chatComplete(
+export async function chatComplete(
   input: AIConfig,
   messages: ChatMessage[],
   feature: string,

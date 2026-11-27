@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Pytaj o cokolwiek — o sprawy ogólne albo o to repozytorium — korzystając z plików i commitów przypiętych jako kontekst, i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
 keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast pytanie ogólne dowolne pytanie myślę odczytywanie plików
-source: 9a8e2844d500415fe360978afa13a72ced0ff985
+source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
 ---
 
 # Czat repozytorium
@@ -27,18 +27,25 @@ graf nie traci zaznaczenia, gdy o coś pytasz.
 
 Działa jak każdy czat: **wysyłana jest twoja wiadomość**, a obok niej tylko
 nazwa i gałąź repozytorium — bez stanu Gita, bez listy plików, bez zawartości
-plików. Powitanie albo pytanie niedotyczące repozytorium dostaje odpowiedź od
-razu, w jednym wywołaniu, i nic z repozytorium nie opuszcza twojego komputera.
+plików — a odpowiedź wraca jako zwykły tekst. Powitanie albo pytanie
+niedotyczące repozytorium dostaje odpowiedź od razu, w jednym wywołaniu, i nic
+z repozytorium nie opuszcza twojego komputera.
 
-**Czytanie na żądanie.** Gdy pytanie dotyczy kodu, model prosi o to, czego
-potrzebuje, zamiast zgadywać: najpierw o **przegląd** (stan Gita i listę
-śledzonych plików), potem o dokładne ścieżki z tej listy, dosłowne wyszukiwania
-albo skróty commitów z najnowszej historii. Aplikacja je odczytuje i zadaje
-pytanie ponownie z tym, co znalazła. Może się to zdarzyć najwyżej cztery razy —
-każda runda to kolejne wywołanie modelu, na które czekasz — a w ostatniej musi
-odpowiedzieć tym, co ma. Odpowiedź o repozytorium może cytować tylko fragmenty,
-które otrzymała: zmyślony plik lub wiersz to błąd walidacji, a nie wiarygodnie
-brzmiąca odpowiedź.
+**Kiedy wchodzi repozytorium.** Jest otwierane dla modelu w trzech przypadkach:
+
+| Ty… | Co się dzieje |
+|------|--------------|
+| Wymieniasz śledzony plik (`config.json`, `src/app.ts`) | Ten plik jest odczytywany, zanim model odpowie |
+| Mówisz to wprost — „to repozytorium”, „moje zmiany”, „niezatwierdzone”, „bieżąca gałąź” | Wysyłany jest stan Gita i lista śledzonych plików |
+| Pytasz o coś, do czego model uzna je za potrzebne | Odpowiada pojedynczym wierszem `@repo`, a aplikacja otwiera mu repozytorium |
+
+Od tej chwili model prosi o to, czego jeszcze potrzebuje, zamiast zgadywać: o
+dokładne ścieżki z listy, dosłowne wyszukiwania albo skróty commitów z
+najnowszej historii. Aplikacja je odczytuje i zadaje pytanie ponownie z tym, co
+znalazła. Może się to zdarzyć najwyżej cztery razy — każda runda to kolejne
+wywołanie modelu, na które czekasz — a w ostatniej musi odpowiedzieć tym, co
+ma. Te odpowiedzi cytują fragmenty, z których skorzystały, a zmyślony plik lub
+wiersz to błąd walidacji, a nie wiarygodnie brzmiąca odpowiedź.
 
 Gdy czekasz, wiersz pod twoją wiadomością mówi, co się dzieje: **Myślę…**, gdy
 model pracuje, **Odczytywanie plików (N)…** albo **Przeszukiwanie
@@ -262,6 +269,12 @@ Szkic można edytować — nic nie zostanie wysłane, póki nie naciśniesz Wyś
   akcji Gita na czacie** nawet nie proponuje.
 - **Rozmowy żyją tylko w pamięci.** Każde repozytorium ma własny wątek; wyjście z
   GitHuttBr je porzuca.
+- **Małe modele lokalne słabiej radzą sobie z pytaniami o repozytorium.**
+  Zmierzone na modelu 3B: na ogólne pytania odpowiada tak dobrze jak we własnym
+  terminalu, ale może nie poprosić o repozytorium, gdy powinien, a długa
+  odpowiedź zbudowana z plików może wrócić ucięta. Wymienienie pliku albo
+  napisanie „to repozytorium” sprawia, że aplikacja i tak je otworzy. Model 7B
+  lub większy radzi sobie wyraźnie lepiej.
 
 ## Jak otworzyć
 

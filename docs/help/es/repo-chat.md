@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Pregunta lo que quieras — preguntas generales o sobre este repositorio —, con los archivos y commits que fijes como contexto, y deja que proponga acciones de git que apruebas antes de ejecutarse.
 keywords: chat preguntar pregunta asistente contexto adjuntar fijar arrastrar soltar commit archivo evidencia anclado ia panel acciones ejecutar aprobar aprobación automática permitir corregir error aviso pregunta general cualquier pregunta pensando leyendo archivos
-source: 9a8e2844d500415fe360978afa13a72ced0ff985
+source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
 ---
 
 # Chat del repositorio
@@ -27,19 +27,25 @@ entre ambos, así el grafo no pierde su selección cuando preguntas algo.
 
 Funciona como cualquier chat: **lo que se envía es tu mensaje**, sin nada más a
 su lado que el nombre y la rama del repositorio —ni estado de Git, ni lista de
-archivos, ni contenido de archivos—. Un saludo o una pregunta que no trata del
-repositorio se responde ahí mismo, en una llamada, y nada del repositorio sale
-de tu equipo.
+archivos, ni contenido de archivos—, y la respuesta llega como texto plano. Un
+saludo o una pregunta que no trata del repositorio se responde ahí mismo, en una
+llamada, y nada del repositorio sale de tu equipo.
 
-**Lectura bajo demanda.** Cuando la pregunta trata del código, el modelo pide lo
-que necesita en lugar de adivinar: primero la **vista general** (el estado de
-Git y la lista de archivos rastreados), luego rutas exactas de esa lista,
-búsquedas literales o hashes de commits del historial reciente. La app los lee y
-repite la pregunta con lo que encontraron. Ocurre como mucho cuatro veces —cada
-ronda es otra llamada al modelo que esperas— y en la última debe responder con
-lo que tenga. Una respuesta sobre el repositorio solo puede citar los fragmentos
-que recibió: un archivo o una línea inventados son un error de validación, no
-una respuesta plausible.
+**Cuándo entra el repositorio.** Se abre para el modelo en tres casos:
+
+| Tú… | Qué pasa |
+|------|--------------|
+| Nombras un archivo rastreado (`config.json`, `src/app.ts`) | Ese archivo se lee antes de que el modelo responda |
+| Lo dices con palabras —«este repositorio», «mis cambios», «sin confirmar», «rama actual»— | Se envían el estado de Git y la lista de archivos rastreados |
+| Preguntas algo para lo que el modelo decide que lo necesita | Responde con una sola línea `@repo`, y la app le abre el repositorio |
+
+A partir de ahí el modelo pide lo demás que necesita en lugar de adivinar: rutas
+exactas de la lista, búsquedas literales o hashes de commits del historial
+reciente. La app los lee y repite la pregunta con lo que encontraron. Ocurre
+como mucho cuatro veces —cada ronda es otra llamada al modelo que esperas— y en
+la última debe responder con lo que tenga. Estas respuestas citan los
+fragmentos que usaron, y un archivo o una línea inventados son un error de
+validación, no una respuesta plausible.
 
 Mientras esperas, la línea bajo tu mensaje dice qué está pasando: **Pensando…**
 mientras el modelo trabaja, **Leyendo archivos (N)…** o **Buscando en el
@@ -265,6 +271,12 @@ borrador es editable — no se envía nada hasta que pulsas Enviar.
   Con **Proponer acciones de git en el chat** desactivado, ni siquiera propone.
 - **Las conversaciones viven solo en memoria.** Cada repositorio mantiene su hilo
   aparte; al salir de GitHuttBr se descartan.
+- **Los modelos locales pequeños flojean en preguntas sobre el repositorio.**
+  Medido con un modelo de 3B: las preguntas generales se responden tan bien como
+  en su propia terminal, pero puede no pedir el repositorio cuando debería, y una
+  respuesta larga construida a partir de archivos puede llegar cortada. Nombrar
+  el archivo, o decir «este repositorio», hace que la app lo abra de todos modos.
+  Un modelo de 7B o mayor lo hace notablemente mejor.
 
 ## Cómo abrirlo
 
