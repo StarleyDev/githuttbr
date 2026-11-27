@@ -67,6 +67,7 @@ import {
   History,
   PanelTop
 } from 'lucide-react'
+import { WINDOWS_TERMINAL_SHELLS } from '../lib/terminalShells'
 import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
@@ -2754,11 +2755,7 @@ function LayoutPreview({
 // they are executable names, not copy to translate. 'system' keeps the legacy
 // COMSPEC (cmd.exe) behavior.
 const TERMINAL_SHELL_OPTIONS: { id: string; label: string }[] = [
-  { id: 'powershell', label: 'PowerShell' }, // i18n-ignore proper noun
-  { id: 'pwsh', label: 'PowerShell Core (pwsh)' }, // i18n-ignore proper noun
-  { id: 'cmd', label: 'Command Prompt (cmd)' }, // i18n-ignore proper noun
-  { id: 'gitbash', label: 'Git Bash' }, // i18n-ignore proper noun
-  { id: 'wsl', label: 'WSL' }, // i18n-ignore proper noun
+  ...WINDOWS_TERMINAL_SHELLS,
   { id: 'system', label: 'System default' } // i18n-ignore platform term
 ]
 

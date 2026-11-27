@@ -12,12 +12,15 @@ export function TerminalPanel({
   panelId,
   cwd,
   active,
-  launchId
+  launchId,
+  shell
 }: {
   panelId: string
   cwd: string
   active: boolean
   launchId?: number
+  /** The panel's own shell, when it was opened with one other than the default. */
+  shell?: string
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   // xterm loads with the first terminal of the session. Until it lands the host
@@ -44,7 +47,7 @@ export function TerminalPanel({
   useLayoutEffect(() => {
     const host = hostRef.current
     if (!host || !reg) return
-    const handle = reg.getOrCreateTerm(panelId, cwd, launchId)
+    const handle = reg.getOrCreateTerm(panelId, cwd, launchId, shell)
     host.appendChild(handle.container)
     handle.fitSafely()
 
@@ -59,15 +62,15 @@ export function TerminalPanel({
       // Detach (keep instance alive); container re-attaches on next mount.
       if (handle.container.parentElement === host) host.removeChild(handle.container)
     }
-  }, [reg, panelId, cwd, launchId])
+  }, [reg, panelId, cwd, launchId, shell])
 
   // Refit + focus when this panel becomes the visible one.
   useEffect(() => {
     if (!active || !reg) return
-    const handle = reg.getOrCreateTerm(panelId, cwd, launchId)
+    const handle = reg.getOrCreateTerm(panelId, cwd, launchId, shell)
     handle.fitSafely()
     handle.term.focus()
-  }, [reg, active, panelId, cwd, launchId])
+  }, [reg, active, panelId, cwd, launchId, shell])
 
   const onDrop = (e: React.DragEvent): void => {
     if (!reg) return
@@ -80,7 +83,7 @@ export function TerminalPanel({
       .filter(Boolean)
       .map(shellQuote)
     if (paths.length === 0) return
-    const handle = reg.getOrCreateTerm(panelId, cwd, launchId)
+    const handle = reg.getOrCreateTerm(panelId, cwd, launchId, shell)
     handle.pasteText(paths.join(' '))
     handle.term.focus()
   }
@@ -89,7 +92,7 @@ export function TerminalPanel({
     <div
       className="terminal-host"
       ref={hostRef}
-      onClick={() => reg?.getOrCreateTerm(panelId, cwd, launchId).term.focus()}
+      onClick={() => reg?.getOrCreateTerm(panelId, cwd, launchId, shell).term.focus()}
       onDragOver={(e) => {
         if (e.dataTransfer?.types?.includes('Files')) {
           e.preventDefault()

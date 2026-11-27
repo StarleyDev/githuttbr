@@ -10,7 +10,9 @@ import {
   ChevronDown,
   Pencil,
   Ungroup,
-  X
+  X,
+  Check,
+  Settings2
 } from 'lucide-react'
 import { TerminalPanel } from './TerminalPanel'
 import { ResizeHandle } from './ResizeHandle'
@@ -20,6 +22,8 @@ import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../lib/terminalTitles'
+import { terminalShellChoices } from '../lib/terminalShells'
+import { useSettingsStore } from '../stores/settings'
 
 const MIN_PANEL_PX = 80
 
@@ -84,6 +88,7 @@ function TerminalGroupView({
               cwd={panel.cwd}
               active={active && panel.id === group.activePanelId}
               launchId={panel.launchId}
+              shell={panel.shell}
             />
           </div>
           {i < group.panels.length - 1 && (
@@ -118,6 +123,42 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
+
+  // "New terminal with…": the + opens the default shell; this menu opens one
+  // terminal with another, leaving Settings' default as it is.
+  const openNewTerminalMenu = (e: React.MouseEvent<HTMLButtonElement>): void => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const platform = window.api.platform
+    const setting = useSettingsStore.getState().settings.terminalShell
+    const lookup = platform === 'win32' ? Promise.resolve(null) : window.api.term.shells().catch(() => null)
+    void lookup.then((posix) => {
+      const systemName = posix?.system ? posix.system.slice(posix.system.lastIndexOf('/') + 1) : ''
+      const choices = terminalShellChoices(platform, setting, posix)
+      openContextMenu(r.left, r.bottom + 4, [
+        { label: t('terminal.newWith'), disabled: true },
+        { separator: true },
+        ...choices.map((c) => ({
+          label:
+            c.label === null
+              ? systemName
+                ? interp(t('settings.terminalShellSystem'), { shell: systemName })
+                : t('settings.terminalShellSystemPlain')
+              : c.detail
+                ? `${c.label} · ${c.detail}` // i18n-ignore shell name and path
+                : c.label,
+          icon: c.isDefault ? <Check size={15} /> : <SquareTerminal size={15} />,
+          title: c.isDefault ? t('terminal.shellIsDefault') : undefined,
+          onClick: (): void => addGroup(cwd, cwd, c.isDefault ? undefined : c.value)
+        })),
+        { separator: true },
+        {
+          label: t('terminal.changeDefaultShell'),
+          icon: <Settings2 size={15} />,
+          onClick: (): void => useUIStore.getState().openModal({ kind: 'settings', page: 'layout' })
+        }
+      ])
+    })
+  }
 
   const collapsed = layout.terminalListCollapsed
   const listWidth = layout.terminalListWidth
@@ -317,6 +358,15 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
             <Plus size={14} />
           </button>
           <button
+            className="icon-btn terminal-new-with"
+            title={t('terminal.newWithTitle')}
+            aria-label={t('terminal.newWithTitle')}
+            aria-haspopup="menu"
+            onClick={openNewTerminalMenu}
+          >
+            <ChevronDown size={12} />
+          </button>
+          <button
             className="icon-btn"
             title={t('app.closePanel')}
             onClick={() => setTerminalOpen(cwd, false)}
@@ -376,6 +426,15 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
               <span className="terminal-list-head-actions">
                 <button className="icon-btn" onClick={() => addGroup(cwd, cwd)} title={t('terminal.new')}>
                   <Plus size={14} />
+                </button>
+                <button
+                  className="icon-btn terminal-new-with"
+                  title={t('terminal.newWithTitle')}
+                  aria-label={t('terminal.newWithTitle')}
+                  aria-haspopup="menu"
+                  onClick={openNewTerminalMenu}
+                >
+                  <ChevronDown size={12} />
                 </button>
                 <button
                   className="icon-btn"

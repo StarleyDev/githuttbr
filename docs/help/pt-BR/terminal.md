@@ -107,6 +107,14 @@ PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL ou um executável
 próprio. O visual do terminal (tema, tamanho e família da fonte) fica em
 Configurações → Temas → Tema do terminal e vale na hora para todas as sessões.
 
+**Um terminal com outro shell.** O **▾** ao lado do **+** da lista de terminais
+abre *Novo terminal com…*: os mesmos shells — o padrão do sistema, todo shell
+utilizável de `/etc/shells` ou as opções do Windows — com o padrão de hoje
+marcado. Escolher um abre só aquele terminal com ele, e dividir esse terminal
+abre o novo painel com o mesmo shell; o padrão nas Configurações não muda.
+*Mudar o shell padrão nas Configurações…*, no fim do menu, leva direto ao
+seletor.
+
 Se o [Oh My Posh](https://ohmyposh.dev) estiver instalado, a seção de tema do
 terminal também lista todo `*.omp.json` em `%POSH_THEMES_PATH%`, com prévia ao
 vivo — escolher um o injeta como `POSH_THEME` nos terminais novos, então um
