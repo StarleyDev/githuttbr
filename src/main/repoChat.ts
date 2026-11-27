@@ -574,7 +574,7 @@ function sameFileName(typed: string, actual: string): boolean {
  */
 export function mentionedPaths(message: string, tracked: readonly string[]): string[] {
   const words = [...new Set(message.toLowerCase().match(/[\w./-]+\.[a-z0-9]{1,8}\b/g) ?? [])]
-  if (!words.length) return []
+  if (!words.length) return bareNamePaths(message, tracked)
   const exact = tracked.filter((path) => {
     const lower = path.toLowerCase()
     const name = lower.slice(lower.lastIndexOf('/') + 1)
@@ -591,9 +591,51 @@ export function mentionedPaths(message: string, tracked: readonly string[]): str
   return [...found].sort((x, y) => x.split('/').length - y.split('/').length).slice(0, REPO_CHAT_MAX_PATHS)
 }
 
+const GIT_VERBS =
+  'commit|stash|push|pull|fetch|merge|rebase|checkout|switch|branch|tag|revert|reset|cherry-pick|stage|unstage|discard'
+/** Imperatives in Portuguese and Spanish: distinct verb forms, safe to match anywhere. */
+const ASK_FOR_ACTION_ANYWHERE = new RegExp(
+  String.raw`\b(fa[cç]a|faz|crie|cria|apague|apaga|remova|remove|exclua|commite|comite|comita|commita|envie|mande|manda|adicione|adiciona|ignore|desfa[cç]a|reverta|mescle|troque|troca|mude|muda|altere|altera|edite|edita|escreva|corrija|corrige|renomeie|guarde|salve|descarte|haz|crea|borra|elimina|a[nñ]ade|sube|cambia|corrige|revierte)\b` +
+    String.raw`|\b(d[eêaá]|dar|fa[zç]a?|fazer|rodar?|execut[ae]r?)\s+(um|o|a|uns|el|un)?\s*(${GIT_VERBS})\b`,
+  'i'
+)
+/** English (and Git words as commands): only where an instruction starts. */
+const ASK_FOR_ACTION_AT_START = new RegExp(
+  String.raw`(^|[.!?;\n]\s*|\b(please|pls|can you|could you|would you|pode|poderia|voc[eê] pode|puedes)\s+)` +
+    String.raw`(${GIT_VERBS}|create|delete|remove|add|ignore|undo|rename|edit|change|update|fix|write|rewrite|move|apply|squash|amend)\b`,
+  'i'
+)
+
+/**
+ * True when the user's latest message asks for something to be done, not
+ * explained. Only then may the answer carry action proposals — the approval
+ * prompt is the second line of defence, not the first.
+ */
+export function asksForAction(message: string): boolean {
+  const text = message.trim()
+  return ASK_FOR_ACTION_ANYWHERE.test(text) || ASK_FOR_ACTION_AT_START.test(text)
+}
+
+/**
+ * "a versão do pakage deste projeto": a root file named without its extension.
+ * Only beside a phrase about this repository — "what is a package manager?"
+ * must not send package.json — and only for root files, within one slip.
+ */
+function bareNamePaths(message: string, tracked: readonly string[]): string[] {
+  if (!ABOUT_THIS_REPOSITORY.test(message)) return []
+  const words = new Set(message.toLowerCase().match(/\b[a-z][\w-]{4,}\b/g) ?? [])
+  return tracked.filter((path) => {
+    if (path.includes('/')) return false
+    const dot = path.lastIndexOf('.')
+    const stem = (dot > 0 ? path.slice(0, dot) : path).toLowerCase()
+    return stem.length >= 5 && [...words].some((word) => word === stem || withinEdits(word, stem, 1))
+  })
+}
+
 /** Notes for the file names the user typed that were read as another, nearby name. */
 export function typedAs(message: string, read: readonly string[]): string[] {
   const words = [...new Set(message.toLowerCase().match(/[\w./-]+\.[a-z0-9]{1,8}\b/g) ?? [])]
+  if (!words.length && read.length) return [`The user's message refers to ${read.join(', ')}, which was read below.`]
   const names = new Set(read.map((p) => p.toLowerCase().slice(p.lastIndexOf('/') + 1)))
   const exact = new Set(read.map((p) => p.toLowerCase()))
   return words
@@ -1032,7 +1074,9 @@ export async function answerRepoChat(
   const pinned = attachments.length
     ? await collectAttachmentEvidence(repoPath, attachments, ignored, status, skipped, committedOnly)
     : { evidence: [], notes: [] }
-  const actionsEnabled = cfg.repoChatActions !== false
+  // A question never gets an action to propose: a 3B model asked "what is the
+  // version of this project" offered — and was one click from running — a stash.
+  const actionsEnabled = cfg.repoChatActions !== false && asksForAction(messages.at(-1)?.content ?? '')
   const fileActionsEnabled = actionsEnabled && cfg.repoChatReadOnly === false
   const remoteActionsEnabled = actionsEnabled && cfg.repoChatRemoteActions === true
   // What a proposal may touch — the same unfiltered working-tree set the Ask
