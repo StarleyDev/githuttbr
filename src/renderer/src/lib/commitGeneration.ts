@@ -74,8 +74,8 @@ export function generationChoices(ai: AIConfig, catalogs: Record<string, ModelCa
 }
 
 /** The account offered beside Cancel once a generation runs long: the first other one that is ready. */
-export function fallbackAccount(ai: AIConfig, currentAccountId: string): AIAccount | null {
-  return otherAccounts(ai, currentAccountId)[0] ?? null
+export function fallbackAccount(ai: AIConfig, currentAccountId: string, keysKnown = true): AIAccount | null {
+  return otherAccounts(ai, currentAccountId, keysKnown)[0] ?? null
 }
 
 /** The same account's default model — what "Use <account>" sends to. */

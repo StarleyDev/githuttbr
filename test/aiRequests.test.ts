@@ -257,6 +257,8 @@ describe('the renderer guard', () => {
     const base = ai()
     const withoutKey = { ...base, accounts: [...(base.accounts ?? []), newAccount(base.accounts ?? [], 'openai')] }
     expect(otherAccounts(withoutKey).map((a) => a.id)).toEqual(['google'])
+    // Keys not decrypted yet: a blank key says nothing, so the account stays on offer.
+    expect(otherAccounts(withoutKey, withoutKey.accountId, false).length).toBeGreaterThan(1)
     expect(configForAccount({ ...base, cliCwd: '/repo' }, 'google').cliCwd).toBe('/repo')
   })
 })

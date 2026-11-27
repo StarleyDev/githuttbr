@@ -37,6 +37,12 @@ describe('chat model pill', () => {
     expect(chatModelPill(ai({ accounts: [keyless] }), {}).status).toBe('no-key')
   })
 
+  it('does not call a key missing before Settings has decrypted the keys', () => {
+    const locked = { ...openai, apiKey: '' }
+    expect(chatModelPill(ai({ accounts: [locked] }), {}, false).status).toBe('unchecked')
+    expect(chatModelPill(ai({ accounts: [locked] }), { openai: live(['gpt-4o']) }, false).status).toBe('ready')
+  })
+
   it('treats an assignment to a deleted account as following the default', () => {
     const pill = chatModelPill(ai({ assignments: { chat: { accountId: 'gone', model: 'x' } } }), {})
     expect(pill.followsDefault).toBe(true)

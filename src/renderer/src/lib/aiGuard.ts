@@ -25,9 +25,14 @@ export function accountNameOf(cfg: AIConfig, accountId = cfg.accountId): string 
   return account ? accountLabel(account) : (cfg.provider ?? 'AI')
 }
 
-/** Accounts a call could move to: every other one that can make a call right now. */
-export function otherAccounts(cfg: AIConfig, excludeId = cfg.accountId): AIAccount[] {
-  return (cfg.accounts ?? []).filter((a) => a.id !== excludeId && !accountNeedsKey(a))
+/**
+ * Accounts a call could move to: every other one that can make a call right
+ * now. Until Settings has been opened the renderer holds no decrypted keys
+ * (`keysKnown` false) — main fills the key in for the call — so a blank key
+ * then says nothing and the account stays on offer.
+ */
+export function otherAccounts(cfg: AIConfig, excludeId = cfg.accountId, keysKnown = true): AIAccount[] {
+  return (cfg.accounts ?? []).filter((a) => a.id !== excludeId && (!keysKnown || !accountNeedsKey(a)))
 }
 
 /** The same call's config, pointed at another account (its default model). */
@@ -35,11 +40,16 @@ export function configForAccount(cfg: AIConfig, accountId: string): AIConfig {
   return { ...resolveAI({ ...cfg, defaultAccountId: accountId, assignments: {} }), cliCwd: cfg.cliCwd }
 }
 
+/** The user stopped the call (Cancel on the slow prompt): not a failure to report. */
+export class AIRequestCancelled extends Error {}
+
 export interface GuardDeps {
   /** Ask which account to use now that `label` is not responding; null keeps the failure. */
   askUnreachable: (label: string, others: AIAccount[]) => Promise<string | null>
   cancelledMessage: () => string
   unreachableMessage: (label: string) => string
+  /** Whether the renderer holds the decrypted keys (Settings opened); see otherAccounts. */
+  keysKnown?: () => boolean
 }
 
 /**
@@ -59,9 +69,9 @@ export async function guardAI<T>(
     const outcome = aiOutcome(err)
     if (!outcome) throw err
     if (outcome.kind === 'switch') return guardAI(configForAccount(cfg, outcome.accountId), call, deps)
-    if (outcome.kind === 'cancelled') throw new Error(deps.cancelledMessage())
+    if (outcome.kind === 'cancelled') throw new AIRequestCancelled(deps.cancelledMessage())
     const label = accountNameOf(cfg)
-    const others = otherAccounts(cfg)
+    const others = otherAccounts(cfg, cfg.accountId, deps.keysKnown?.() ?? true)
     const pick = others.length ? await deps.askUnreachable(label, others) : null
     if (pick) return guardAI(configForAccount(cfg, pick), call, deps)
     throw new Error(deps.unreachableMessage(label))

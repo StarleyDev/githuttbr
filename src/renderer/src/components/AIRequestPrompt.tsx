@@ -23,7 +23,8 @@ export function AIRequestPrompt(): React.JSX.Element | null {
     setAIGuardDeps({
       askUnreachable,
       cancelledMessage: () => t('aiGuard.cancelled'),
-      unreachableMessage: (label) => interp(t('aiGuard.unreachable'), { name: label })
+      unreachableMessage: (label) => interp(t('aiGuard.unreachable'), { name: label }),
+      keysKnown: () => useSettingsStore.getState().unlocked
     })
     return () => setAIGuardDeps(null)
   }, [askUnreachable, t])
@@ -51,6 +52,7 @@ function PromptCard({ prompt }: { prompt: AIPrompt }): React.JSX.Element {
   const t = useT()
   const ai = useSettingsStore((s) => s.activeAI())
   const dismiss = useAIPromptStore((s) => s.dismiss)
+  const keysKnown = useSettingsStore((s) => s.unlocked)
 
   if (prompt.kind === 'unreachable') {
     return (
@@ -77,7 +79,7 @@ function PromptCard({ prompt }: { prompt: AIPrompt }): React.JSX.Element {
     dismiss(prompt.key)
     void aiApi.answerSlow(prompt.requestId, choice)
   }
-  const others = otherAccounts(ai, prompt.accountId).slice(0, 2)
+  const others = otherAccounts(ai, prompt.accountId, keysKnown).slice(0, 2)
   return (
     <div className="toast toast-info ai-prompt" role="status">
       <Hourglass size={16} />

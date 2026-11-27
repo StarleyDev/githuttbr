@@ -3,8 +3,10 @@ import type { AIConfig } from '../../../shared/types'
 import { aiApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { AIRequestCancelled } from '../lib/aiGuard'
 import {
   IDLE,
+  accountDefaultTarget,
   configForTarget,
   configLabel,
   defaultGenerationTarget,
@@ -108,6 +110,11 @@ export function useCommitGeneration({ repoPath, branch, diff, current, apply }: 
         const msg = await aiApi.commitMessage(text, cfg, { branch, requestTag: tag }, (tried) => {
           if (running.current !== tag) throw new GenerationCancelled()
           dispatch({ type: 'attempt', tag, label: configLabel(tried), accountId: tried.accountId ?? '' })
+          // Moved to another account from the slow prompt: "Generate again" goes there too, not
+          // back to the account that was too slow.
+          if (tried.accountId && tried.accountId !== cfg.accountId) {
+            lastTarget.current = accountDefaultTarget(useSettingsStore.getState().activeAI(), tried.accountId)
+          }
         })
         if (running.current !== tag) return
         running.current = null
@@ -117,6 +124,11 @@ export function useCommitGeneration({ repoPath, branch, diff, current, apply }: 
       } catch (err) {
         if (running.current !== tag) return
         running.current = null
+        // Cancel on the slow prompt: the user's own choice, so no error toast.
+        if (err instanceof AIRequestCancelled) {
+          dispatch({ type: 'cancel' })
+          return
+        }
         dispatch({ type: 'fail', tag })
         useUIStore.getState().toast('error', err instanceof Error ? err.message : String(err))
       }

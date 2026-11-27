@@ -80,6 +80,7 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
   const t = useT()
   const ids = useId()
   const saveAIFor = useSettingsStore((state) => state.saveAIFor)
+  const keysKnown = useSettingsStore((state) => state.unlocked)
   const openModal = useUIStore((state) => state.openModal)
   const { catalogs } = useModelCatalogs(ai)
   const [open, setOpen] = useState<PillId | null>(null)
@@ -109,8 +110,8 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
     return () => window.removeEventListener('mousedown', onMouseDown)
   }, [open])
 
-  const pill = chatModelPill(ai, catalogs)
-  const groups = open === 'model' ? chatModelMenu(ai, catalogs) : []
+  const pill = chatModelPill(ai, catalogs, keysKnown)
+  const groups = open === 'model' ? chatModelMenu(ai, catalogs, keysKnown) : []
   const can = chatCapabilities(ai)
   const abilities = chatCapabilityTags(ai)
     .map((key) => t(key))

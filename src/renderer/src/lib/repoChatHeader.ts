@@ -7,7 +7,8 @@
 import type { TranslationKey } from '../i18n'
 import type { AIConfig, ChatActionApproval, ModelCatalog } from '../../../shared/types'
 import { accountFor, accountLabel, findAccount, modelFor } from '../../../shared/aiAccounts'
-import { accountStatus, type AccountStatus } from './aiAccountDraft'
+import type { AccountStatus } from './aiAccountDraft'
+import { statusBarAccountStatus } from './aiStatusBar'
 import { chatCapabilities } from './aiBehaviour'
 import { chatModelGroups, type ChatModelGroup } from './repoChatContext'
 import { defaultBranchName } from './graphFocus'
@@ -21,14 +22,23 @@ export interface ChatModelPill {
   followsDefault: boolean
 }
 
-export function chatModelPill(ai: AIConfig, catalogs: Record<string, ModelCatalog>): ChatModelPill {
+/**
+ * `keysKnown`: whether the renderer holds the decrypted keys yet. Before
+ * Settings is opened every API account would read "no key" here while the
+ * status bar, which already allows for that, calls the same account ready.
+ */
+export function chatModelPill(
+  ai: AIConfig,
+  catalogs: Record<string, ModelCatalog>,
+  keysKnown = true
+): ChatModelPill {
   const account = accountFor(ai, 'chat')
   const assigned = ai.assignments?.chat
   return {
     account: account ? accountLabel(account) : '',
     model: modelFor(ai, 'chat'),
     // Derived from the model list the panel already fetched — never a request of its own.
-    status: account ? accountStatus(account, catalogs[account.id], undefined).status : 'unchecked',
+    status: account ? statusBarAccountStatus(account, catalogs[account.id], null, keysKnown).status : 'unchecked',
     followsDefault: !assigned || !findAccount(ai, assigned.accountId)
   }
 }
@@ -38,11 +48,17 @@ export interface ChatModelMenuGroup extends ChatModelGroup {
 }
 
 /** The model menu: every account's models, each group with its status dot. */
-export function chatModelMenu(ai: AIConfig, catalogs: Record<string, ModelCatalog>): ChatModelMenuGroup[] {
+export function chatModelMenu(
+  ai: AIConfig,
+  catalogs: Record<string, ModelCatalog>,
+  keysKnown = true
+): ChatModelMenuGroup[] {
   const models = Object.fromEntries(Object.entries(catalogs).map(([id, c]) => [id, c.models]))
   return chatModelGroups(ai, models).map((group) => {
     const account = findAccount(ai, group.accountId)
-    const status = account ? accountStatus(account, catalogs[group.accountId], undefined).status : 'unchecked'
+    const status = account
+      ? statusBarAccountStatus(account, catalogs[group.accountId], null, keysKnown).status
+      : 'unchecked'
     return { ...group, status }
   })
 }

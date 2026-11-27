@@ -22,6 +22,7 @@ import type { CommitGeneration } from './useCommitGeneration'
 export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; disabled: boolean }): React.JSX.Element {
   const t = useT()
   const ai = useSettingsStore((s) => s.activeAI())
+  const keysKnown = useSettingsStore((s) => s.unlocked)
   const { catalogs } = useModelCatalogs(ai)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const target = defaultGenerationTarget(ai)
@@ -54,7 +55,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
     openContextMenu(r.left, r.bottom + 4, items)
   }
 
-  const fallback = busy && gen.elapsed >= SLOW_GENERATION_SECONDS ? fallbackAccount(ai, state.accountId) : null
+  const fallback = busy && gen.elapsed >= SLOW_GENERATION_SECONDS ? fallbackAccount(ai, state.accountId, keysKnown) : null
 
   return (
     <div className="commit-ai">
