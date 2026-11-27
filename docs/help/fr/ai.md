@@ -90,7 +90,7 @@ Google.
 ### Ajouter et modifier un fournisseur
 
 Un fournisseur enregistré à moitié rempli était un piège discret : une clé vide
-pouvait devenir celle par défaut, et rien ne répondait. Rien sur cette carte
+pouvait finir par être utilisée, et rien ne répondait. Rien sur cette carte
 n'est donc enregistré pendant la saisie.
 
 **Ajouter un fournisseur** ouvre une carte marquée **Brouillon · non enregistré**, au bord en
@@ -147,9 +147,29 @@ jusqu'à ce que quelque chose l'interroge à nouveau — choisissez
 chemin saisi reste **Non vérifié**, car prouver qu'elle marche
 coûterait un prompt.
 
+### Le fournisseur utilisé
+
+Un fournisseur répond à toute tâche qui n’a pas son propre fournisseur dans
+**Modèle par tâche**. Sa ligne porte la mention **Utilisé** — une pastille pleine
+et un bord d’accent — et reste à sa place dans la liste. L’IA générale et un
+profil doté de sa propre IA ont chacun leur fournisseur utilisé ; la liste change
+celui que vous modifiez.
+
+Chaque autre fournisseur enregistré a un bouton **Utiliser** à droite de sa
+ligne, à côté de son badge. Un clic le rend utilisé et enregistre aussitôt : le
+fournisseur qui répond est un choix, pas une modification, il n’attend donc pas
+**Tester et enregistrer**. La fiche de ce fournisseur ne s’ouvre pas, et une
+fiche avec des modifications non enregistrées les garde.
+
+**La limite :** **Utiliser** ne teste rien. Un fournisseur marqué **Pas de clé**
+ou **Ne répond pas** peut être utilisé — exprès, avant de corriger sa clé — et
+son badge continue de le dire ; la tâche IA suivante échoue avec la raison de ce
+fournisseur. Un brouillon n’a pas de bouton **Utiliser** : ce n’est un
+fournisseur qu’une fois enregistré.
+
 ### Utiliser un abonnement plutôt qu'une clé d'API
 
-Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte. Le premier compte de l'IA générale devient le compte par défaut.
+Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte. Le premier compte de l'IA générale devient le compte **Utilisé**.
 
 Après avoir installé la CLI, cliquez sur Connecter pour ouvrir la page de connexion du fournisseur. Vous pouvez annuler la connexion en cours.
 
@@ -181,9 +201,9 @@ compte.
 
 Sous **Modèle par tâche**, chaque fonction — messages de commit, chat,
 expliquer, revue de PR, résolution de conflits, wiki, thèmes — peut viser son
-propre compte et son propre modèle. Laissez une ligne sur la valeur par défaut
-pour suivre le compte par défaut. Un modèle économique pour les messages de
-commit et un modèle puissant pour le chat est le partage habituel.
+propre compte et son propre modèle. Laissez une ligne sur **Fournisseur utilisé**
+pour suivre le fournisseur marqué **Utilisé**. Un modèle économique pour les
+messages de commit et un modèle puissant pour le chat est le partage habituel.
 
 ### Avis de mise à jour
 

@@ -89,7 +89,7 @@ O Gemini é alcançado pelo endpoint compatível com OpenAI do Google.
 ### Adicionar e editar um provedor
 
 Um provedor salvo pela metade era uma armadilha silenciosa: uma chave vazia
-podia virar o padrão, e nada respondia. Por isso nada neste cartão é salvo
+podia acabar em uso, e nada respondia. Por isso nada neste cartão é salvo
 enquanto você digita.
 
 **Adicionar provedor** abre um cartão marcado **Rascunho · não salvo**, com borda
@@ -145,6 +145,24 @@ perguntar de novo — escolha **Testar conexão** no cartão dele para ter certe
 Uma **CLI local** com caminho digitado fica **Não verificado**,
 porque provar que funciona custaria um prompt.
 
+### O provedor em uso
+
+Um provedor responde a toda tarefa que não tem um provedor próprio em
+**Modelo por tarefa**. A linha dele é marcada **Em uso** — um selo preenchido e
+uma borda de destaque — e fica onde está na lista. A IA geral e um perfil com IA
+própria têm, cada um, o seu provedor em uso; a lista muda o que você está
+editando.
+
+Todo outro provedor salvo tem um botão **Usar** à direita da linha, ao lado do
+selo. Um clique o coloca em uso e salva na hora: qual provedor responde é uma
+escolha, não uma edição, então não espera **Testar e salvar**. O cartão desse
+provedor não é aberto, e um cartão com alterações não salvas continua com elas.
+
+**O limite:** **Usar** não testa nada. Um provedor marcado **Sem chave** ou
+**Não responde** pode ser colocado em uso — de propósito, antes de corrigir a
+chave — e o selo continua dizendo isso; a próxima tarefa de IA falha com o motivo
+desse provedor. Um rascunho não tem **Usar**: só vira provedor depois de salvo.
+
 ### Usar uma assinatura em vez de uma chave de API
 
 Na configuração inicial ou em Configurações → IA, escolha **Usar minha assinatura**. Selecione ChatGPT ou Claude e entre pelo terminal com o comando correspondente. Teste a conexão e adicione a conta após a confirmação.
@@ -178,9 +196,9 @@ Se o comando não estiver no seu `PATH`, digite o caminho completo na conta.
 
 Em **Modelo por tarefa**, cada recurso — mensagens de commit, chat,
 explicar, revisão de PR, resolução de conflitos, wiki, temas — pode apontar para
-a própria conta e o próprio modelo. Deixe uma linha no padrão para seguir a
-conta padrão. Modelo barato para mensagens de commit e um forte para o chat é a
-divisão mais comum.
+a própria conta e o próprio modelo. Deixe uma linha em **Provedor em uso** para
+seguir o provedor marcado **Em uso**. Modelo barato para mensagens de commit e um
+forte para o chat é a divisão mais comum.
 
 ### Aviso de atualização
 
