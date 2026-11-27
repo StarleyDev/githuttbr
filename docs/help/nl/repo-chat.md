@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Vraag alles — algemene vragen of vragen over deze repository — met de bestanden en commits die je als context vastzet, en laat hem git-acties voorstellen die jij goedkeurt voordat ze lopen.
 keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel acties uitvoeren goedkeuren automatisch toestaan fout herstellen toast algemene vraag elke vraag aan het nadenken bestanden lezen
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Repository-chat
@@ -26,19 +26,21 @@ zodat de graaf zijn selectie niet kwijtraakt als je iets vraagt.
 
 ## Wat hij leest
 
-Elk bericht begint met **één** aanroep. Het model ziet de toestand van de
-repository (branch, gewijzigde bestanden) en de lijst met gevolgde bestanden,
-maar geen bestandsinhoud. Een begroeting of een vraag die niet over de
-repository gaat, wordt meteen beantwoord, in die ene aanroep.
+Hij werkt zoals elke chat: **wat verstuurd wordt is je bericht**, met daarnaast
+alleen de naam en de branch van de repository — geen Git-toestand, geen
+bestandslijst, geen bestandsinhoud. Een begroeting of een vraag die niet over de
+repository gaat, wordt meteen beantwoord, in één aanroep, en niets uit de
+repository verlaat je machine.
 
 **Lezen op verzoek.** Gaat de vraag over de code, dan vraagt het model om wat
-het nodig heeft in plaats van te raden: exacte paden uit de lijst, letterlijke
-zoekopdrachten of commit-hashes uit de recente historie. De app leest die en
-stelt de vraag opnieuw met de fragmenten. Dat gebeurt hooguit drie keer — elke
-ronde is weer een modelaanroep waar je op wacht — en in de laatste moet het
-antwoorden met wat het heeft. Een antwoord over de repository mag alleen de
-fragmenten citeren die het kreeg: een verzonnen bestand of regel is een
-validatiefout, geen aannemelijk klinkend antwoord.
+het nodig heeft in plaats van te raden: eerst het **overzicht** (de Git-toestand
+en de lijst met gevolgde bestanden), daarna exacte paden uit die lijst,
+letterlijke zoekopdrachten of commit-hashes uit de recente historie. De app
+leest die en stelt de vraag opnieuw met wat ze opleverden. Dat gebeurt hooguit
+vier keer — elke ronde is weer een modelaanroep waar je op wacht — en in de
+laatste moet het antwoorden met wat het heeft. Een antwoord over de repository
+mag alleen de fragmenten citeren die het kreeg: een verzonnen bestand of regel
+is een validatiefout, geen aannemelijk klinkend antwoord.
 
 Terwijl je wacht, zegt de regel onder je bericht wat er gebeurt: **Aan het
 nadenken…** terwijl het model werkt, **Bestanden lezen (N)…** of **Repository

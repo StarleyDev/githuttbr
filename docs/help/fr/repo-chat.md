@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Posez n’importe quelle question — générale ou sur ce dépôt —, avec les fichiers et les commits que vous épinglez comme contexte, et laissez-la proposer des actions git que vous approuvez avant leur exécution.
 keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification question générale n’importe quelle question réflexion lecture des fichiers
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Discussion du dépôt
@@ -26,19 +26,21 @@ de l’un à l’autre, sans que le graphe perde sa sélection.
 
 ## Ce qu’elle lit
 
-Chaque message commence par **un seul** appel. Le modèle voit l’état du dépôt
-(branche, fichiers modifiés) et la liste de ses fichiers suivis, mais aucun
-contenu de fichier. Une salutation ou une question qui ne porte pas sur le dépôt
-reçoit sa réponse tout de suite, dans cet unique appel.
+Elle fonctionne comme n’importe quel chat : **c’est votre message qui est
+envoyé**, avec à côté rien d’autre que le nom et la branche du dépôt — ni état
+Git, ni liste de fichiers, ni contenu de fichier. Une salutation ou une question
+qui ne porte pas sur le dépôt reçoit sa réponse tout de suite, en un seul appel,
+et rien du dépôt ne quitte votre machine.
 
 **Lecture à la demande.** Quand la question porte sur le code, le modèle demande
-ce dont il a besoin au lieu de deviner : des chemins exacts de la liste, des
-recherches littérales ou des hachages de commits de l’historique récent.
-L’application les lit et repose la question avec les extraits. Cela arrive trois
-fois au plus — chaque tour est un appel de modèle supplémentaire que vous
-attendez — et au dernier elle doit répondre avec ce qu’elle a. Une réponse sur le
-dépôt ne peut citer que les extraits reçus : un fichier ou une ligne inventés
-sont une erreur de validation, pas une réponse plausible.
+ce dont il a besoin au lieu de deviner : d’abord la **vue d’ensemble** (l’état
+Git et la liste des fichiers suivis), puis des chemins exacts de cette liste,
+des recherches littérales ou des hachages de commits de l’historique récent.
+L’application les lit et repose la question avec ce qu’ils ont donné. Cela
+arrive quatre fois au plus — chaque tour est un appel de modèle supplémentaire
+que vous attendez — et au dernier elle doit répondre avec ce qu’elle a. Une
+réponse sur le dépôt ne peut citer que les extraits reçus : un fichier ou une
+ligne inventés sont une erreur de validation, pas une réponse plausible.
 
 Pendant l’attente, la ligne sous votre message dit ce qui se passe :
 **Réflexion…** pendant que le modèle travaille, **Lecture des fichiers (N)…** ou

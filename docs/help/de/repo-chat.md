@@ -4,7 +4,7 @@ category: KI
 order: 82
 summary: Frag alles — allgemeine Fragen oder Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest, und lass ihn Git-Aktionen vorschlagen, die du vor dem Ausführen freigibst.
 keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel aktionen ausführen freigeben freigabe automatisch erlauben beheben fehler toast allgemeine frage beliebige frage denkt nach dateien werden gelesen
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Repository-Chat
@@ -26,19 +26,21 @@ zwischen beiden, ohne dass der Graph seine Auswahl verliert.
 
 ## Was er liest
 
-Jede Nachricht beginnt mit **einem** Aufruf. Das Modell sieht den Zustand des
-Repositorys (Branch, geänderte Dateien) und die Liste der versionierten Dateien,
-aber keine Dateiinhalte. Eine Begrüßung oder eine Frage, die nicht das
-Repository betrifft, wird gleich dort beantwortet, in diesem einen Aufruf.
+Er funktioniert wie jeder Chat: **gesendet wird Ihre Nachricht**, daneben nur
+der Name und der Branch des Repositorys — kein Git-Zustand, keine Dateiliste,
+keine Dateiinhalte. Eine Begrüßung oder eine Frage, die nicht das Repository
+betrifft, wird gleich dort beantwortet, in einem Aufruf, und nichts aus dem
+Repository verlässt Ihren Rechner.
 
 **Lesen bei Bedarf.** Geht es in der Frage um den Code, fordert das Modell an,
-was es braucht, statt zu raten: exakte Pfade aus der Liste, wörtliche Suchen
-oder Commit-Hashes aus der jüngsten Historie. Die App liest sie und stellt die
-Frage mit den Ausschnitten erneut. Das passiert höchstens dreimal — jede Runde
-ist ein weiterer Modellaufruf, auf den Sie warten — und in der letzten muss es
-mit dem antworten, was es hat. Eine Antwort zum Repository darf nur die
-Ausschnitte zitieren, die sie bekommen hat: eine erfundene Datei oder Zeile ist
-ein Validierungsfehler, keine plausibel klingende Antwort.
+was es braucht, statt zu raten: zuerst den **Überblick** (den Git-Zustand und
+die Liste der versionierten Dateien), dann exakte Pfade aus dieser Liste,
+wörtliche Suchen oder Commit-Hashes aus der jüngsten Historie. Die App liest sie
+und stellt die Frage mit dem Gefundenen erneut. Das passiert höchstens viermal —
+jede Runde ist ein weiterer Modellaufruf, auf den Sie warten — und in der
+letzten muss es mit dem antworten, was es hat. Eine Antwort zum Repository darf
+nur die Ausschnitte zitieren, die sie bekommen hat: eine erfundene Datei oder
+Zeile ist ein Validierungsfehler, keine plausibel klingende Antwort.
 
 Während Sie warten, sagt die Zeile unter Ihrer Nachricht, was gerade passiert:
 **Denkt nach…**, solange das Modell arbeitet, **Dateien werden gelesen (N)…**

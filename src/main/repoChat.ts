@@ -34,13 +34,14 @@ export const REPO_CHAT_MAX_SEARCHES = 5
 export const REPO_CHAT_MAX_SEARCH_PATHS = 48
 export const REPO_CHAT_CONTEXT_BYTES = 32_000
 export const REPO_CHAT_MAX_ATTACHMENTS = 8
-/** Evidence rounds an answer may ask for before it must answer with what it
- *  has. The first call sees only the repository's state and file list, so a
- *  greeting or a general question is answered in one call; a question about the
- *  code asks for files, and a second look at what arrived is where "the caller
- *  is in the other file" gets resolved. Bounded, because each round is another
- *  model call the user waits for. */
-export const REPO_CHAT_MAX_EVIDENCE_ROUNDS = 3
+/** Rounds an answer may spend asking for the repository before it must answer
+ *  with what it has. The first call carries only the user's message and the
+ *  repository's name — like any chat, nothing the user did not ask for — so a
+ *  greeting or a general question is one call. A repository question asks for
+ *  the overview (state and file list), then files, searches or commits, and a
+ *  second look at what arrived is where "the caller is in the other file" gets
+ *  resolved. Bounded, because each round is another model call. */
+export const REPO_CHAT_MAX_EVIDENCE_ROUNDS = 4
 /** Pinned context may take this much of the budget before the model's picks. */
 export const REPO_CHAT_PINNED_BYTES = 20_000
 
@@ -62,7 +63,7 @@ interface RawChatAnswer {
   content: string
   sourceIds: string[]
   actions?: Array<AskAction | RepoChatFileAction>
-  needMore?: { paths?: string[]; searches?: string[]; commits?: string[]; reason?: string }
+  needMore?: { overview?: boolean; paths?: string[]; searches?: string[]; commits?: string[]; reason?: string }
 }
 
 export interface RepoChatEvidence extends RepoChatSource {
@@ -94,6 +95,7 @@ export function chatAnswerSchema(
               type: 'object',
               additionalProperties: false,
               properties: {
+                overview: { type: 'boolean' },
                 paths: { type: 'array', maxItems: REPO_CHAT_MAX_PATHS, items: { type: 'string' } },
                 searches: { type: 'array', maxItems: REPO_CHAT_MAX_SEARCHES, items: { type: 'string' } },
                 commits: { type: 'array', maxItems: 4, items: { type: 'string' } },
@@ -513,7 +515,7 @@ async function repoShapeSummary(repoPath: string, includeRemote: boolean): Promi
 
 /** Offered only while a round remains — on the last one the model must answer
  *  with what it has, so the rule is not in the prompt to tempt it. */
-const MORE_EVIDENCE_RULE = `- For a question about this repository, when the evidence does not settle it and you can name what would, set "needMore" instead of guessing: "paths" (exact paths from the eligible tracked-file list), "searches" (literal strings), "commits" (hashes from the history above), plus a one-line "reason". You will be asked again with what those turn up. Answer normally when you can already answer — a greeting or a question that is not about this repository needs no "needMore" — and keep "content" to one short line while you are still gathering.`
+const MORE_EVIDENCE_RULE = `- Nothing from the repository is sent unless you ask for it. When the user's message is about this repository — its code, files, changes, history or a Git task — set "needMore" instead of guessing: "overview": true for its Git state and tracked-file list; "paths" (exact paths from that list), "searches" (literal strings) and "commits" (hashes from the history) for contents; plus a one-line "reason". You will be asked again with what those turn up. Answer directly, with no "needMore", when you can already answer — a greeting or a question that is not about this repository needs nothing from it — and keep "content" to one short line while you are still gathering.`
 
 /**
  * What a second look is allowed to ask for. Paths must come from the same
@@ -524,9 +526,11 @@ const MORE_EVIDENCE_RULE = `- For a question about this repository, when the evi
 function normalizeNeedMore(
   value: RawChatAnswer['needMore'],
   known: Set<string>,
-  alreadyRead: Set<string>
-): { paths: string[]; searches: string[]; commits: string[] } | null {
+  alreadyRead: Set<string>,
+  overviewShown = false
+): { overview: boolean; paths: string[]; searches: string[]; commits: string[] } | null {
   if (!value) return null
+  const overview = value.overview === true && !overviewShown
   const paths = (value.paths ?? [])
     .filter((path): path is string => typeof path === 'string' && known.has(path) && !alreadyRead.has(path))
     .slice(0, REPO_CHAT_MAX_PATHS)
@@ -539,7 +543,9 @@ function normalizeNeedMore(
     .slice(0, 4)
   // An empty request is not a request: answering with what is already here is
   // strictly better than another round that adds nothing.
-  return paths.length || searches.length || commits.length ? { paths, searches, commits } : null
+  return overview || paths.length || searches.length || commits.length
+    ? { overview, paths, searches, commits }
+    : null
 }
 
 /** Provider prompt for a factual post-execution report with actions disabled. */
@@ -911,6 +917,17 @@ export async function answerRepoChat(
   // time rather than computed once.
   const collected: RawEvidence[] = []
   const fileList = candidates.length ? `\n\nEligible tracked files:\n${serializePaths(candidates)}` : ''
+  // Until the model asks for the overview, the repository is a name and a
+  // branch: the user's message goes out on its own, as in any chat.
+  let overviewShown = false
+  const briefing = (): string =>
+    [
+      `Open repository: ${basename(repoPath)} (branch ${status.current || 'detached HEAD'}). Nothing from it has been read yet.`,
+      attachments.length ? `Pinned context: ${attachments.map(attachmentLabel).join(', ')}` : '',
+      ...pinned.notes
+    ]
+      .filter(Boolean)
+      .join('\n')
   let evidence = packRepoChatEvidence([...pinned.evidence, ...collected])
   let evidenceIds = new Set(evidence.map((item) => item.id))
   const buildActionContext = (): RepoChatActionContext => ({
@@ -957,7 +974,9 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
         // and the user's latest message is the last thing the model reads.
         {
           role: 'system',
-          content: `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}${mayAskMore ? fileList : ''}`
+          content: overviewShown
+            ? `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}${mayAskMore ? fileList : ''}`
+            : `Repository context (reference only; the user's question is the last message):\n${briefing()}${evidence.length ? `\n\nEvidence:\n${serializeEvidence(evidence)}` : ''}`
         },
         ...historyTurns(messages)
       ],
@@ -1000,8 +1019,9 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
       0.2
     )
 
-    const more = mayAskMore ? normalizeNeedMore(result.needMore, allowed, readPaths) : null
+    const more = mayAskMore ? normalizeNeedMore(result.needMore, allowed, readPaths, overviewShown) : null
     if (!more) break
+    if (more.overview) overviewShown = true
 
     onProgress({ phase: 'reading', files: more.paths.length + more.commits.length })
     const extra = await collectEvidence(
@@ -1023,7 +1043,8 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
           committedOnly
         )
       : { evidence: [], notes: [] }
-    if (!extra.length && !extraCommits.evidence.length) break
+    // A round that only opened the overview still has something new to show.
+    if (!extra.length && !extraCommits.evidence.length && !more.overview) break
 
     collected.push(...extra, ...extraCommits.evidence)
     for (const item of [...extra, ...extraCommits.evidence]) readPaths.add(item.path)

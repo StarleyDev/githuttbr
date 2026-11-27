@@ -25,17 +25,19 @@ something.
 
 ## What it reads
 
-Every message starts with **one** call. The model sees the repository's state
-(branch, changed files) and its tracked-file list, but no file contents. A
-greeting or a question that is not about the repository is answered right
-there, in that one call.
+It works like any chat: **your message is what is sent**, with nothing but the
+repository's name and branch beside it — no Git state, no file list, no file
+contents. A greeting or a question that is not about the repository is
+answered right there, in one call, and nothing from the repository leaves your
+machine.
 
 **Reading on demand.** When the question is about the code, the model asks for
-what it needs instead of guessing: exact paths from the list, literal searches,
-or commit hashes from the recent history. The app reads those and puts the
-question again with the excerpts. That happens at most three times — each round
-is another model call you wait for — and on the last one it must answer with
-what it has. A repository answer may cite only the excerpts it was given: a
+what it needs instead of guessing: first the **overview** (the Git state and the
+tracked-file list), then exact paths from that list, literal searches, or commit
+hashes from the recent history. The app reads those and puts the question again
+with what they turned up. That happens at most four times — each round is
+another model call you wait for — and on the last one it must answer with what
+it has. A repository answer may cite only the excerpts it was given: a
 made-up file or line is a validation error, not a plausible-looking answer.
 
 While you wait, the line under your message says what is happening:

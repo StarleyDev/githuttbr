@@ -4,7 +4,7 @@ category: Yapay zekâ
 order: 82
 summary: Her şeyi sorun — genel sorular ya da bu depo hakkında sorular —; bağlam olarak sabitlediğiniz dosya ve commit’lerle, ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
 keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim genel soru herhangi bir soru düşünüyor dosyalar okunuyor
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Depo sohbeti
@@ -24,17 +24,19 @@ yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 
 ## Ne okur
 
-Her mesaj **tek** bir çağrıyla başlar. Model deponun durumunu (dal, değişen
-dosyalar) ve izlenen dosya listesini görür, ama hiçbir dosya içeriğini görmez.
-Bir selam ya da depoyla ilgili olmayan bir soru orada, o tek çağrıda yanıtlanır.
+Her sohbet gibi çalışır: **gönderilen sizin mesajınızdır**, yanında da yalnızca
+deponun adı ve dalı — Git durumu yok, dosya listesi yok, dosya içeriği yok. Bir
+selam ya da depoyla ilgili olmayan bir soru orada, tek bir çağrıda yanıtlanır ve
+depodan hiçbir şey makinenizden çıkmaz.
 
 **İhtiyaç anında okuma.** Soru kodla ilgiliyse model tahmin etmek yerine neye
-ihtiyacı olduğunu ister: listeden tam yollar, birebir aramalar ya da yakın
-geçmişten commit özetleri. Uygulama bunları okur ve soruyu alıntılarla yeniden
-sorar. Bu en çok üç kez olur — her tur beklediğiniz bir model çağrısı daha
-demektir — ve sonuncusunda elindekiyle yanıt vermek zorundadır. Depoyla ilgili
-bir yanıt yalnızca kendisine verilen alıntılara kaynak gösterebilir: uydurulmuş
-bir dosya ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
+ihtiyacı olduğunu ister: önce **genel bakışı** (Git durumu ve izlenen dosya
+listesi), sonra o listeden tam yolları, birebir aramaları ya da yakın geçmişten
+commit özetlerini. Uygulama bunları okur ve soruyu bulunanlarla yeniden sorar.
+Bu en çok dört kez olur — her tur beklediğiniz bir model çağrısı daha demektir —
+ve sonuncusunda elindekiyle yanıt vermek zorundadır. Depoyla ilgili bir yanıt
+yalnızca kendisine verilen alıntılara kaynak gösterebilir: uydurulmuş bir dosya
+ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
 
 Siz beklerken mesajınızın altındaki satır ne olduğunu söyler: model çalışırken
 **Düşünüyor…**, yalnızca uygulama istenenleri gerçekten okurken **Dosyalar

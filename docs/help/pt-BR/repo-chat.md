@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Pergunte qualquer coisa — perguntas gerais ou sobre este repositório —, fixe arquivos e commits como contexto e deixe que ele proponha mudanças revisáveis em arquivos seguidas de ações Git.
 keywords: chat pergunta perguntar assistente contexto anexar fixar arrastar soltar commit arquivo evidência ancorado ia painel ações executar aprovar aprovação automática permitir corrigir erro aviso pergunta geral qualquer pergunta pensando lendo arquivos
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Chat do repositório
@@ -25,18 +25,21 @@ os dois, então o grafo não perde a seleção quando você pergunta algo.
 
 ## O que ele lê
 
-Cada mensagem começa com **uma** chamada. O modelo vê o estado do repositório
-(branch, arquivos alterados) e a lista de arquivos rastreados, mas nenhum
-conteúdo de arquivo. Uma saudação ou uma pergunta que não é sobre o repositório
-é respondida ali mesmo, nessa única chamada.
+Funciona como qualquer chat: **o que vai é a sua mensagem**, com nada além do
+nome e da branch do repositório ao lado — sem estado do Git, sem lista de
+arquivos, sem conteúdo de arquivo. Uma saudação ou uma pergunta que não é sobre
+o repositório é respondida ali mesmo, em uma chamada, e nada do repositório sai
+da sua máquina.
 
 **Leitura sob demanda.** Quando a pergunta é sobre o código, o modelo pede o que
-precisa em vez de adivinhar: caminhos exatos da lista, buscas literais ou hashes
-de commits do histórico recente. O app lê isso e refaz a pergunta com os
-trechos. Isso ocorre no máximo três vezes — cada rodada é outra chamada ao
-modelo que você espera — e na última ele precisa responder com o que tem. Uma
-resposta sobre o repositório só pode citar os trechos que recebeu: um arquivo ou
-linha inventados são erro de validação, não uma resposta plausível.
+precisa em vez de adivinhar: primeiro a **visão geral** (o estado do Git e a
+lista de arquivos rastreados), depois caminhos exatos dessa lista, buscas
+literais ou hashes de commits do histórico recente. O app lê isso e refaz a
+pergunta com o que foi encontrado. Isso ocorre no máximo quatro vezes — cada
+rodada é outra chamada ao modelo que você espera — e na última ele precisa
+responder com o que tem. Uma resposta sobre o repositório só pode citar os
+trechos que recebeu: um arquivo ou linha inventados são erro de validação, não
+uma resposta plausível.
 
 Enquanto você espera, a linha abaixo da sua mensagem diz o que está acontecendo:
 **Pensando…** enquanto o modelo trabalha, **Lendo arquivos (N)…** ou **Buscando
