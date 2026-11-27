@@ -177,7 +177,7 @@ as one plan (or from an error toast's "fix with AI").
 messages, Claude for chat, a local Ollama for the rest — with model lists fetched
 live from each provider. OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral, Ollama, any compatible endpoint, or a [signed-in CLI](docs/help/ai.md)
-you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.md#using-a-subscription-instead-of-an-api-key) during onboarding or in Settings → AI.
+you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.md#using-a-subscription-instead-of-an-api-key) during [first-run setup](docs/help/first-run.md), which finds Claude Code or Codex on the machine and tests it, or in Settings → AI.
 A provider is [tested before it is saved](docs/help/ai.md#adding-and-editing-a-provider), and each one shows whether it is ready, missing a key or not responding.
 The status bar names [the AI in use](docs/help/ai.md#the-ai-in-use-from-the-status-bar) for the profile — general or its own — and switches its provider in one click.
 

@@ -341,15 +341,26 @@ export async function testSubscription(binary: SubscriptionCli, path: string): P
   }
 }
 
+/** The version number in a CLI's `--version` line — "2.1.0 (Claude Code)", "codex-cli 0.46.0". */
+export function parseCliVersion(output: string): string | undefined {
+  return /\b(\d+\.\d+(?:\.\d+)?(?:[-+][\w.]+)?)\b/.exec(output)?.[1]
+}
+
 /**
  * Which agent CLIs are on PATH. Used to populate the account editor — it
  * resolves the executable's location and nothing more, so listing has no side
  * effect on the user's session or usage.
+ *
+ * `versions` also asks each found binary for `--version` — first-run setup
+ * names what it found. Opt-in, so the status bar and the account editor, which
+ * only need the path, do not spawn a process per CLI on every look.
  */
-export async function detectCliBinaries(): Promise<{ binary: AICliBinary; label: string; path: string }[]> {
+export async function detectCliBinaries(
+  opts: { versions?: boolean } = {}
+): Promise<{ binary: AICliBinary; label: string; path: string; version?: string }[]> {
   await shellPathReady()
   const lookup = process.platform === 'win32' ? 'where' : 'which'
-  const found: { binary: AICliBinary; label: string; path: string }[] = []
+  const found: { binary: AICliBinary; label: string; path: string; version?: string }[] = []
   for (const binary of CLI_BINARIES) {
     const spec = CLIS[binary]
     try {
@@ -360,5 +371,17 @@ export async function detectCliBinaries(): Promise<{ binary: AICliBinary; label:
       // Not installed, or the lookup tool is missing: simply not offered.
     }
   }
-  return found
+  if (!opts.versions) return found
+  return Promise.all(
+    found.map(async (cli) => {
+      try {
+        const { code, stdout } = await run(cli.path, ['--version'], '', 5_000)
+        const version = code === 0 ? parseCliVersion(stdout) : undefined
+        return version ? { ...cli, version } : cli
+      } catch {
+        // A CLI that cannot say its version is still found.
+        return cli
+      }
+    })
+  )
 }

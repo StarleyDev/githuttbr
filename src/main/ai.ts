@@ -1124,7 +1124,10 @@ export function registerAiHandlers(): void {
     listAccountModels(await withStoredKey(cfg), force === true)
   )
   ipcMain.handle('ai:testSubscription', (_event, binary, path) => testSubscription(binary, path))
-  ipcMain.handle('ai:detectCli', () => detectCliBinaries())
+  // Renderer input: only a literal `versions: true` asks for the extra spawns.
+  ipcMain.handle('ai:detectCli', (_event, opts: unknown) =>
+    detectCliBinaries({ versions: !!opts && typeof opts === 'object' && (opts as { versions?: unknown }).versions === true })
+  )
   ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
   ipcMain.handle('ai:editSelection', (_e, req: EditSelectionRequest, cfg: AIConfig) => editSelection(req, cfg))
   ipcMain.handle('ai:hoverExplain', (_e, req: HoverExplainRequest, cfg: AIConfig) => hoverExplain(req, cfg))

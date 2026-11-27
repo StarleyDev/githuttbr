@@ -4787,6 +4787,52 @@ export const shots = [
       await page.waitForSelector('.boot-error', { timeout: 15000 })
       await page.waitForTimeout(400)
     }
+  },
+  {
+    // First run, on the AI step: a subscription CLI found on this machine and
+    // tested. Both answers are faked in main — which CLI, its version, and a
+    // test that takes under three seconds — so the shot shows the same thing on
+    // every machine, never whatever happens to be installed on the one running it.
+    out: 'onboarding-ai',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    settings: {
+      onboardingCompleted: false,
+      profiles: [
+        {
+          id: 'default',
+          name: 'Default',
+          gitName: '',
+          gitEmail: '',
+          githubToken: '',
+          azureToken: '',
+          gitlabToken: '',
+          bitbucketToken: '',
+          ai: { enabled: true, provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini' }
+        }
+      ]
+    },
+    drive: async (page, _repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('ai:detectCli')
+        ipcMain.removeHandler('ai:testSubscription')
+        ipcMain.handle('ai:detectCli', () => [
+          { binary: 'claude', label: 'Claude Code', path: '/usr/local/bin/claude', version: '2.1.0' }
+        ])
+        ipcMain.handle('ai:testSubscription', () => new Promise((resolve) => setTimeout(() => resolve('connected'), 2700)))
+      })
+      const primary = page.locator('.onboarding-footer .btn.primary')
+      await page.locator('.onboarding-start-btn').click()
+      // Identity filled, accounts left empty: the stepper shows both a check and a skip.
+      const fields = page.locator('.onboarding-body input.modal-input')
+      await fields.nth(1).fill('Sam Example')
+      await fields.nth(2).fill('sam@example.com')
+      await primary.click()
+      await page.locator('.onboarding-step.current').filter({ hasText: 'Accounts' }).waitFor()
+      await primary.click()
+      await page.locator('.onboarding-ai-choice').first().click()
+      await page.locator('.onboarding-ai-found .onboarding-ai-result.ok').waitFor({ timeout: 15000 })
+    }
   }
 ]
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
