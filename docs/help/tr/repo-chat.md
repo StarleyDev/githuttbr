@@ -4,7 +4,7 @@ category: Yapay zekâ
 order: 82
 summary: Her şeyi sorun — genel sorular ya da bu depo hakkında sorular —; bağlam olarak sabitlediğiniz dosya ve commit’lerle, ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
 keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim genel soru herhangi bir soru düşünüyor dosyalar okunuyor
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Depo sohbeti
@@ -158,6 +158,14 @@ ikili, bayatlamış, fazla büyük ve sembolik bağla erişilen hedefler reddedi
 Reset, geçmişi yeniden yazma, dal silme ve her türlü zorlamalı işlem yalnızca
 kendi arayüzünde kalır.
 
+**Konuşmadaki bir metin dosyaya dönüşebilir.** Bir metin isteyin, ardından
+*dosyayı oluştur* deyin: önceki yanıt içeriktir ve dosyaya ad vermezseniz
+asistan bir ad seçip kartta gösterir. Dosya eylemleri açıkken modele
+yazabileceği söylenir; böylece erişimi olmadığını iddia eden önceki bir yanıt
+tekrarlanmaz. Yapılandırılmış yanıt yine de başarısız olursa, yanıt değişikliğin
+bu kez hazırlanamadığını ve isteği yeniden göndermenin tekrar deneyeceğini
+söyler; dosyanın yazıldığını asla iddia etmez.
+
 Bir merge veya rebase çakışmada durabilir. Durduğunda çalıştırma orada biter,
 kart o satırı başarısız işaretler ve o ana dek çalışanların sayısını korur;
 çakışma şeridi, aynı işlem araç çubuğundan başlatılmış gibi devreye girer.
@@ -258,6 +266,12 @@ Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
   [sır maskelemeyi](security.md) atlatmanın yolu değildir.
 - **İkili dosyalar ve 512 KB’ı aşanlar**, depo dışından geldiklerinde aynı
   şekilde atlanır. Depo içinde her zamanki kurallar geçerlidir.
+- **Bir soru öneri almaz.** Eylemler modele yalnızca mesajınız bir şeyin
+  yapılmasını istediğinde sunulur — "hazırlanan dosyaları commit et", "faça um
+  stash", "dalı oluştur". Sürümün ne olduğunu ya da commit’in ne olduğunu sormak
+  asla çalıştırılacak bir planla dönmez. Hemen önceki isteği yineleyen kısa bir
+  yanıt — "evet", "erişim verdim" — o istek sayılır; bir soru ya da teşekkür
+  sayılmaz.
 - **Kendi başına asla yazmaz.** Modelin aracı yok, yalnızca metni var: bir
   değişiklik öneri kartı olarak gelir, yalnızca
   [sizin onay kurallarınıza](#onay-modları) göre çalışır ve yıkıcı bir adım her

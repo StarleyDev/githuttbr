@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Pergunte qualquer coisa — perguntas gerais ou sobre este repositório —, fixe arquivos e commits como contexto e deixe que ele proponha mudanças revisáveis em arquivos seguidas de ações Git.
 keywords: chat pergunta perguntar assistente contexto anexar fixar arrastar soltar commit arquivo evidência ancorado ia painel ações executar aprovar aprovação automática permitir corrigir erro aviso pergunta geral qualquer pergunta pensando lendo arquivos
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Chat do repositório
@@ -163,6 +163,15 @@ gerados, binários, desatualizados, grandes demais ou alcançados por symlink s�
 recusados. Reset, reescrita de histórico, exclusão de branch e toda operação
 forçada continuam apenas na interface dedicada.
 
+**Um texto da conversa pode virar um arquivo.** Peça um texto e depois *crie o
+arquivo*: a resposta anterior é o conteúdo e, quando você não dá nome ao
+arquivo, o assistente escolhe um e o mostra no cartão. Com as ações de arquivo
+ligadas, o modelo é avisado de que pode escrever, então uma resposta anterior
+que dizia não ter acesso não se repete. Se mesmo assim a resposta estruturada
+falhar, a resposta diz que a alteração não pôde ser preparada desta vez e que
+enviar o pedido de novo tenta outra vez; ela nunca afirma que o arquivo foi
+gravado.
+
 Um merge ou um rebase pode parar em um conflito. Quando isso acontece, a
 execução para ali, o cartão marca aquela linha como falha e mantém a contagem do
 que já rodou, e o aviso de conflito assume exatamente como faria para a mesma
@@ -265,6 +274,12 @@ editável — nada é enviado até você apertar Enviar.
   [mascaramento de segredos](security.md).
 - **Binários e arquivos acima de 512 KB** vindos de fora do repositório são
   ignorados do mesmo jeito. Dentro dele valem as regras de sempre.
+- **Uma pergunta não recebe propostas.** As ações só são oferecidas ao modelo
+  quando sua mensagem pede que algo seja feito — "faça commit dos arquivos em
+  stage", "faça um stash", "crie a branch". Perguntar qual é a versão, ou o que
+  é um commit, nunca volta com um plano para executar. Uma resposta curta que
+  insiste no pedido logo antes dela — "sim", "eu dei acesso" — conta como esse
+  pedido; uma pergunta ou um agradecimento, não.
 - **O modelo nunca escreve diretamente.** Ele devolve propostas estruturadas;
   o GitHuttBr valida, calcula o diff e executa apenas sob as
   [suas regras de aprovação](#modos-de-aprovação). Trabalho Git destrutivo sempre

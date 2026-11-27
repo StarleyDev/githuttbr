@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Vraag alles — algemene vragen of vragen over deze repository — met de bestanden en commits die je als context vastzet, en laat hem git-acties voorstellen die jij goedkeurt voordat ze lopen.
 keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel acties uitvoeren goedkeuren automatisch toestaan fout herstellen toast algemene vraag elke vraag aan het nadenken bestanden lezen
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Repository-chat
@@ -164,6 +164,15 @@ gegenereerde, binaire, verouderde, te grote en via symlink bereikte doelen
 worden geweigerd. Reset, historie herschrijven, branches verwijderen en elke
 force-operatie blijven in hun eigen scherm.
 
+**Tekst uit het gesprek kan een bestand worden.** Vraag om een tekst en daarna
+*maak het bestand aan*: het vorige antwoord is de inhoud, en noem je geen
+bestandsnaam, dan kiest de assistent er een en toont die op de kaart. Met
+bestandsacties aan krijgt het model te horen dat het kan schrijven, dus een
+eerder antwoord dat beweerde geen toegang te hebben wordt niet herhaald. Mislukt
+het gestructureerde antwoord toch, dan zegt het antwoord dat de wijziging deze
+keer niet kon worden voorbereid en dat het verzoek opnieuw sturen het nogmaals
+probeert; het beweert nooit dat het bestand is geschreven.
+
 Een merge of rebase kan op een conflict stranden. Dan stopt de run daar, markeert
 de kaart die regel als mislukt en houdt het aantal al uitgevoerde acties bij, en
 neemt de conflictbanner het over, net als bij dezelfde operatie vanuit de
@@ -267,6 +276,12 @@ er wordt niets verstuurd tot je op Verzenden drukt.
   [maskeren van geheimen](security.md) niet.
 - **Binaries en bestanden groter dan 512 KB** van buiten de repository worden op
   dezelfde manier overgeslagen. Binnen gelden de gewone regels.
+- **Een vraag krijgt geen voorstellen.** Acties worden het model alleen
+  aangeboden wanneer je bericht vraagt om iets te doen — "commit de gestagede
+  bestanden", "faça um stash", "maak de branch aan". Vragen wat de versie is, of
+  wat een commit is, kan nooit terugkomen met een plan om uit te voeren. Een
+  kort antwoord dat aandringt op het verzoek vlak ervoor — "ja", "ik heb je
+  toegang gegeven" — telt als dat verzoek; een vraag of een bedankje niet.
 - **Hij schrijft nooit uit zichzelf.** Het model heeft geen gereedschap, alleen
   tekst: een verandering komt als voorstelkaart, loopt alleen onder
   [jouw goedkeuringsregels](#goedkeuringsmodi), en een destructieve stap vraagt

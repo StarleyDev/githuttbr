@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Pytaj o cokolwiek — o sprawy ogólne albo o to repozytorium — korzystając z plików i commitów przypiętych jako kontekst, i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
 keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast pytanie ogólne dowolne pytanie myślę odczytywanie plików
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Czat repozytorium
@@ -161,6 +161,15 @@ generowane, binarne, nieaktualne, zbyt duże i osiągane przez dowiązania
 symboliczne są odrzucane. Reset, przepisywanie historii, kasowanie gałęzi i
 każda operacja wymuszona pozostają wyłącznie w swoim własnym interfejsie.
 
+**Tekst z rozmowy może stać się plikiem.** Poproś o tekst, a potem *utwórz
+plik*: poprzednia odpowiedź jest treścią, a gdy nie podasz nazwy pliku, asystent
+wybierze ją sam i pokaże na karcie. Przy włączonych akcjach na plikach model
+dostaje informację, że może pisać, więc wcześniejsza odpowiedź twierdząca, że
+nie ma dostępu, się nie powtarza. Jeśli ustrukturyzowana odpowiedź mimo to
+zawiedzie, odpowiedź mówi, że tym razem nie udało się przygotować zmiany i że
+ponowne wysłanie prośby spróbuje jeszcze raz; nigdy nie twierdzi, że plik został
+zapisany.
+
 Merge albo rebase może zatrzymać się na konflikcie. Wtedy przebieg kończy się w
 tym miejscu, karta oznacza ten wiersz jako nieudany i zachowuje licznik tego, co
 już wykonano, a baner konfliktu przejmuje kontrolę dokładnie tak, jak przy tej
@@ -262,6 +271,12 @@ Szkic można edytować — nic nie zostanie wysłane, póki nie naciśniesz Wyś
   [maskowania sekretów](security.md).
 - **Pliki binarne i większe niż 512 KB** spoza repozytorium są pomijane tak samo.
   Wewnątrz obowiązują zwykłe reguły.
+- **Pytanie nie dostaje propozycji.** Akcje są oferowane modelowi tylko wtedy,
+  gdy twoja wiadomość prosi o zrobienie czegoś — „zrób commit plików w stage”,
+  „faça um stash”, „utwórz gałąź”. Pytanie o wersję albo o to, czym jest commit,
+  nigdy nie wróci z planem do uruchomienia. Krótka odpowiedź, która obstaje przy
+  prośbie tuż przed nią — „tak”, „dałem ci dostęp” — liczy się jako ta prośba;
+  pytanie albo podziękowanie nie.
 - **Nigdy nie zapisuje samodzielnie.** Model nie ma narzędzi, tylko tekst:
   zmiana przychodzi jako karta propozycji, uruchamia się wyłącznie według
   [twoich reguł zatwierdzania](#tryby-zatwierdzania), a krok destrukcyjny

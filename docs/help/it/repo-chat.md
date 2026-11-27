@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Chiedi qualsiasi cosa — domande generali o su questo repository —, con i file e i commit che fissi come contesto, e lascia che proponga azioni git che approvi prima dell'esecuzione.
 keywords: chat domanda chiedere assistente contesto allegare fissare trascinare commit file prova ancorato ai pannello azioni eseguire approvare approvazione automatica consentire correggere errore notifica domanda generale qualsiasi domanda sto pensando lettura dei file
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Chat del repository
@@ -163,6 +163,15 @@ generate, binarie, obsolete, troppo grandi o raggiunte via symlink vengono
 rifiutate. Reset, riscrittura della cronologia, eliminazione di branch e ogni
 operazione forzata restano solo nella loro interfaccia dedicata.
 
+**Un testo della conversazione può diventare un file.** Chiedi un testo e poi
+*crea il file*: la risposta precedente è il contenuto e, se non dai un nome al
+file, l’assistente ne sceglie uno e lo mostra sulla scheda. Con le azioni sui
+file attive, al modello viene detto che può scrivere, quindi una risposta
+precedente che diceva di non avere accesso non si ripete. Se la risposta
+strutturata fallisce comunque, la risposta dice che la modifica non è stata
+preparata questa volta e che inviare di nuovo la richiesta riprova; non afferma
+mai che il file sia stato scritto.
+
 Un merge o un rebase può fermarsi su un conflitto. In tal caso l'esecuzione si
 arresta lì, la scheda segna quella riga come fallita e mantiene il conteggio di
 quanto è già stato eseguito, e il banner dei conflitti prende il posto esattamente
@@ -267,6 +276,12 @@ Invia.
   [mascheramento dei segreti](security.md).
 - **I binari e i file oltre 512 KB** presi da fuori del repository vengono
   saltati allo stesso modo. Dentro valgono le regole consuete.
+- **Una domanda non riceve proposte.** Le azioni vengono offerte al modello solo
+  quando il tuo messaggio chiede di fare qualcosa — "fai commit dei file in
+  stage", "faça um stash", "crea il branch". Chiedere qual è la versione, o che
+  cos’è un commit, non può mai tornare con un piano da eseguire. Una risposta
+  breve che insiste sulla richiesta appena prima — "sì", "ti ho dato l’accesso"
+  — conta come quella richiesta; una domanda o un ringraziamento no.
 - **Non scrive mai da sola.** Il modello non ha strumenti, solo testo: una
   modifica arriva come scheda di proposta, viene eseguita solo secondo le
   [tue regole di approvazione](#modalità-di-approvazione), e un passo

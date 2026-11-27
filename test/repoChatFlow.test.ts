@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat, asksForAction, asksToChangeFiles, followUpOf, historyTurns, mentionsLastCommit, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
+import { actionRequestOf, answerRepoChat, asksForAction, asksToChangeFiles, followUpOf, historyTurns, mentionsLastCommit, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -441,5 +441,123 @@ describe('chat waiting line', () => {
     expect(chatProgressLabel({ phase: 'thinking' })).toEqual({ key: 'chat.thinking' })
     expect(chatProgressLabel({ phase: 'reading', files: 3 })).toEqual({ key: 'chat.readingFiles', vars: { count: 3 } })
     expect(chatProgressLabel({ phase: 'reading', files: 0 })).toEqual({ key: 'chat.searchingRepo' })
+  })
+})
+
+describe('"crie o arquivo" after a generated text, with file changes on', () => {
+  const text = 'Kq3vLm8pRt2sWb7nKc4dZf9gHj1yUe6aPo0iTr5wQs8xMv3bNl6kJh2cGd7fSe1rAt4yUi9oPw0qLz5xCv2bNm7kJh4gFd8sAe3'
+  const refusal =
+    'Como estou rodando dentro de um ambiente isolado, não consigo criar o arquivo arquivo.txt. Copie o texto acima.'
+  const conversation = [
+    { role: 'user' as const, content: 'gere um texto aleatório de 100 caracteres' },
+    { role: 'assistant' as const, content: text },
+    { role: 'user' as const, content: 'pode ser esse' },
+    { role: 'assistant' as const, content: text },
+    { role: 'user' as const, content: 'crie o arquivo' }
+  ]
+  const on = { ...cfg, repoChatActions: true, repoChatReadOnly: false }
+  const write = {
+    content: 'Proposed arquivo.txt.',
+    sourceIds: [],
+    actions: [{ type: 'write_file', path: 'arquivo.txt', content: text, mode: 'create', description: 'Create arquivo.txt' }]
+  }
+
+  it('sends the file actions, says they are on, and carries the text to write', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([write])
+    const reply = await answerRepoChat(repo, conversation, on)
+
+    expect(bodies).toHaveLength(1)
+    const schema = JSON.stringify(bodies[0].response_format)
+    expect(schema).toMatch(/write_file/)
+    const prompt = promptOf(bodies[0])
+    // Told outright: Gemini, given only the schema, answered "I run in an isolated environment".
+    expect(prompt).toMatch(/File changes are turned on for this repository/)
+    expect(prompt).toMatch(/text you wrote in an earlier reply/)
+    // The earlier reply is a real assistant turn, and the request is the last thing read.
+    const sent = bodies[0].messages as { role: string; content: string }[]
+    expect(sent).toContainEqual({ role: 'assistant', content: text })
+    expect(sent.at(-1)).toEqual({ role: 'user', content: 'crie o arquivo' })
+    expect(reply.actions).toEqual([expect.objectContaining({ type: 'write_file', path: 'arquivo.txt', content: text })])
+  })
+
+  it('never tells the model the files are off when they are on', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([write])
+    await answerRepoChat(repo, conversation, on)
+    expect(promptOf(bodies[0])).not.toMatch(/File read-only mode/)
+  })
+
+  it('"Tem sim eu dei acesso" goes back to the rounds that can propose the file', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([write])
+    const insisted = [...conversation, { role: 'assistant' as const, content: refusal }, { role: 'user' as const, content: 'Tem sim eu dei acesso' }]
+    const reply = await answerRepoChat(repo, insisted, on)
+
+    expect(bodies).toHaveLength(1)
+    // Not the plain conversation, which is told it cannot change anything.
+    expect(bodies[0].response_format).toBeDefined()
+    expect(promptOf(bodies[0])).not.toMatch(/You cannot change anything from here/)
+    expect(promptOf(bodies[0])).toMatch(/if an earlier reply in this conversation said so, it was wrong/)
+    expect(reply.actions?.[0]).toMatchObject({ type: 'write_file', path: 'arquivo.txt' })
+  })
+
+  it('in File read-only mode the insistence is still refused by the app, with no model asked', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([write])
+    const insisted = [...conversation, { role: 'assistant' as const, content: refusal }, { role: 'user' as const, content: 'Tem sim eu dei acesso' }]
+    const reply = await answerRepoChat(repo, insisted, { ...cfg, repoChatActions: true })
+    expect(reply.notice).toBe('file-read-only')
+    expect(bodies).toHaveLength(0)
+  })
+
+  it('a failed JSON answer is not turned into "I have no access"', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([
+      { content: '', sourceIds: [] },
+      { content: '', sourceIds: [] },
+      'Não consegui preparar a alteração desta vez; envie o pedido de novo.'
+    ])
+    const reply = await answerRepoChat(repo, conversation, on)
+    expect(bodies).toHaveLength(3)
+    expect(bodies[2].response_format).toBeUndefined()
+    expect(promptOf(bodies[2])).toMatch(/this reply could not carry a proposal/)
+    expect(promptOf(bodies[2])).toMatch(/do not say you lack access/)
+    expect(reply.actions).toBeUndefined()
+  })
+
+  it('a plain question after a request never inherits it', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel(['Chama-se arquivo.txt.'])
+    await answerRepoChat(repo, [...conversation, { role: 'assistant' as const, content: 'Proposed.' }, { role: 'user' as const, content: 'qual o nome dele?' }], on)
+    expect(bodies[0].response_format).toBeUndefined()
+  })
+})
+
+describe('the request a reply insists on', () => {
+  const request = { role: 'user' as const, content: 'crie o arquivo' }
+  const refusal = { role: 'assistant' as const, content: 'Não consigo.' }
+  const after = (content: string) => [request, refusal, { role: 'user' as const, content }]
+
+  it('is inherited by an insistence or a go-ahead', () => {
+    for (const reply of ['Tem sim eu dei acesso', 'eu dei acesso', 'sim', 'pode sim', 'você pode sim', 'I gave you access', 'go ahead', 'Já habilitei']) {
+      expect(actionRequestOf(after(reply)), reply).toBe('crie o arquivo')
+    }
+  })
+
+  it('reaches back over an earlier insistence', () => {
+    const twice = [...after('Tem sim eu dei acesso'), refusal, { role: 'user' as const, content: 'eu liberei o acesso' }]
+    expect(actionRequestOf(twice)).toBe('crie o arquivo')
+  })
+
+  it('is not inherited by a question, a thank-you or a new subject', () => {
+    for (const reply of ['qual o nome dele?', 'obrigado', 'ok', 'e o que é um commit', 'explique o arquivo config.json para mim agora mesmo por favor']) {
+      expect(actionRequestOf(after(reply)), reply).toBeNull()
+    }
+    expect(actionRequestOf([{ role: 'user', content: 'Tem sim eu dei acesso' }])).toBeNull()
+  })
+
+  it('is the latest message itself when that asks', () => {
+    expect(actionRequestOf(after('faça um stash'))).toBe('faça um stash')
   })
 })

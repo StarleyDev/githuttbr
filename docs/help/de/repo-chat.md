@@ -4,7 +4,7 @@ category: KI
 order: 82
 summary: Frag alles — allgemeine Fragen oder Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest, und lass ihn Git-Aktionen vorschlagen, die du vor dem Ausführen freigibst.
 keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel aktionen ausführen freigeben freigabe automatisch erlauben beheben fehler toast allgemeine frage beliebige frage denkt nach dateien werden gelesen
-source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Repository-Chat
@@ -168,6 +168,16 @@ erreichte Ziele werden abgelehnt. Reset, das Umschreiben von Historie, das
 Löschen von Branches und jede Force-Operation bleiben ihrer eigenen Oberfläche
 vorbehalten.
 
+**Text aus dem Gespräch kann zur Datei werden.** Bitte um einen Text und dann
+*erstelle die Datei*: die vorige Antwort ist der Inhalt, und nennst du keinen
+Dateinamen, wählt der Assistent einen und zeigt ihn auf der Karte. Mit
+eingeschalteten Datei-Aktionen wird dem Modell gesagt, dass es schreiben kann,
+also wiederholt sich eine frühere Antwort nicht, die behauptete, keinen Zugriff
+zu haben. Scheitert die strukturierte Antwort trotzdem, sagt die Antwort, dass
+die Änderung diesmal nicht vorbereitet werden konnte und dass ein erneutes
+Senden der Bitte es noch einmal versucht; sie behauptet nie, die Datei sei
+geschrieben worden.
+
 Ein Merge oder ein Rebase kann an einem Konflikt stehenbleiben. Dann endet der
 Lauf dort, die Karte markiert die Zeile als fehlgeschlagen und behält die Zahl
 des bereits Gelaufenen, und das Konfliktbanner übernimmt genau wie bei derselben
@@ -273,6 +283,13 @@ Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
   [Geheimnis-Maskierung](security.md) nicht.
 - **Binärdateien und Dateien über 512 KB** von außerhalb des Repositorys werden
   genauso übersprungen. Innerhalb gelten die üblichen Regeln.
+- **Eine Frage bekommt keine Vorschläge.** Aktionen werden dem Modell nur
+  angeboten, wenn deine Nachricht darum bittet, etwas zu tun — „committe die
+  gestagten Dateien“, „faça um stash“, „erstelle den Branch“. Die Frage nach der
+  Version oder danach, was ein Commit ist, kann nie mit einem Plan zum Ausführen
+  zurückkommen. Eine kurze Antwort, die auf der Bitte direkt davor besteht —
+  „ja“, „ich habe dir Zugriff gegeben“ — zählt als diese Bitte; eine Frage oder
+  ein Dank nicht.
 - **Er schreibt nie von allein.** Das Modell hat keine Werkzeuge, nur Text:
   eine Änderung kommt als Vorschlagskarte, läuft nur nach
   [deinen Freigaberegeln](#freigabemodi), und ein destruktiver Schritt
