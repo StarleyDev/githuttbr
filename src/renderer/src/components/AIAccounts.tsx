@@ -716,7 +716,7 @@ export function AIAccountsEditor({
     }
   }
 
-  const commit = (d: AccountDraft, check: AccountCheck | null): void => {
+  const commitAccountDraft = (d: AccountDraft, check: AccountCheck | null): void => {
     const { ai: next, accountId } = commitDraft(latest.current.ai, d)
     const committed = (next.accounts ?? []).find((a) => a.id === accountId)
     onChange(next)
@@ -731,7 +731,7 @@ export function AIAccountsEditor({
   }
 
   /** Tests the draft and saves it when the test passes. True when saved. */
-  const save = async (): Promise<boolean> => {
+  const saveAccountDraft = async (): Promise<boolean> => {
     const d = latest.current.draft
     if (!d) return false
     const key = d.original ? d.original.id : NEW_DRAFT
@@ -743,14 +743,14 @@ export function AIAccountsEditor({
     if (check) setCheck(key, check)
     // Fields are locked while testing, so the draft is still the one tested.
     if (!check || check.ok) {
-      commit(d, check)
+      commitAccountDraft(d, check)
       return true
     }
     setFailedSave(true)
     return false
   }
 
-  const test = async (account: AIAccount, key: string): Promise<void> => {
+  const testAccountConnection = async (account: AIAccount, key: string): Promise<void> => {
     setTesting(key)
     const check = await runCheck(account)
     if (!mounted.current) return
@@ -785,10 +785,10 @@ export function AIAccountsEditor({
       secondaryLabel: t('settings.accountDiscard'),
       secondaryDanger: true,
       onConfirm: () => {
-        void save().then((saved) => saved && then())
+        void saveAccountDraft().then((saved) => saved && then())
       },
       onSecondary: () => {
-        discard()
+        discardAccountDraft()
         then()
       }
     })
@@ -810,7 +810,7 @@ export function AIAccountsEditor({
     setDraft(isDraftDirty(d) ? d : null)
   }
 
-  const discard = (): void => {
+  const discardAccountDraft = (): void => {
     setDraft(null)
     setFailedSave(false)
     setKeptNotice(false)
@@ -940,7 +940,7 @@ export function AIAccountsEditor({
                     disabled={testing !== null}
                     onClick={(e) => {
                       e.stopPropagation()
-                      void test(a, a.id)
+                      void testAccountConnection(a, a.id)
                     }}
                   >
                     {testing === a.id ? <Loader2 size={11} className="spin" /> : null} {t('settings.accountTestAgain')}
@@ -1008,14 +1008,14 @@ export function AIAccountsEditor({
             deleteAccount(id)
           }}
           onUse={() => putAccountInUse(shown.id)}
-          onRefresh={() => (dirty ? void test(shown, shownKey) : void reload(shown))}
-          onSave={() => void save()}
+          onRefresh={() => (dirty ? void testAccountConnection(shown, shownKey) : void reload(shown))}
+          onSave={() => void saveAccountDraft()}
           onSaveAnyway={() => {
             const d = latest.current.draft
-            if (d) commit(d, checks[shownKey] ?? null)
+            if (d) commitAccountDraft(d, checks[shownKey] ?? null)
           }}
-          onDiscard={discard}
-          onTest={() => void test(shown, shownKey)}
+          onDiscard={discardAccountDraft}
+          onTest={() => void testAccountConnection(shown, shownKey)}
         />
       )}
 

@@ -27,15 +27,15 @@ export interface CommitGeneration {
   /** Seconds the current generation has run; 0 when idle. */
   elapsed: number
   /** Starts a generation; `target` overrides the commit task's account for this one call. */
-  generate: (target?: GenerationTarget | null) => Promise<void>
+  generateMessage: (target?: GenerationTarget | null) => Promise<void>
   /** "Generate again": the same account and model as the last generation. */
-  regenerate: () => Promise<void>
+  regenerateMessage: () => Promise<void>
   /** Ends the running generation, here and in main. */
-  cancel: () => void
+  cancelGeneration: () => void
   /** Restores the text from before the generation and drops the banner. */
-  undo: () => void
+  undoGeneration: () => void
   /** Drops the banner (the user committed). Also ends a generation still running. */
-  dismiss: () => void
+  dismissGenerationBanner: () => void
 }
 
 interface Options {
@@ -72,7 +72,7 @@ export function useCommitGeneration({ repoPath, branch, diff, current, apply }: 
   // The banner goes the moment the text is no longer what was generated.
   useEffect(() => dispatch({ type: 'edit', current }), [current.summary, current.description]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const cancel = useCallback((): void => {
+  const cancelGeneration = useCallback((): void => {
     const tag = running.current
     if (!tag) return
     running.current = null
@@ -81,11 +81,11 @@ export function useCommitGeneration({ repoPath, branch, diff, current, apply }: 
   }, [])
 
   // A composer that goes away takes its request with it.
-  useEffect(() => cancel, [cancel])
+  useEffect(() => cancelGeneration, [cancelGeneration])
 
-  const generate = useCallback(
+  const generateMessage = useCallback(
     async (target?: GenerationTarget | null): Promise<void> => {
-      if (running.current) cancel()
+      if (running.current) cancelGeneration()
       lastTarget.current = target ?? null
       const ai = useSettingsStore.getState().activeAI()
       const cfg: AIConfig = { ...configForTarget(ai, target ?? defaultGenerationTarget(ai)), cliCwd: repoPath }
@@ -133,23 +133,31 @@ export function useCommitGeneration({ repoPath, branch, diff, current, apply }: 
         useUIStore.getState().toast('error', err instanceof Error ? err.message : String(err))
       }
     },
-    [repoPath, branch, cancel]
+    [repoPath, branch, cancelGeneration]
   )
 
-  const regenerate = useCallback((): Promise<void> => generate(lastTarget.current), [generate])
+  const regenerateMessage = useCallback((): Promise<void> => generateMessage(lastTarget.current), [generateMessage])
 
-  const undo = useCallback((): void => {
+  const undoGeneration = useCallback((): void => {
     const s = latest.current.state
     if (s.phase !== 'generated') return
     latest.current.apply(s.previous)
     dispatch({ type: 'undo' })
   }, [])
 
-  const dismiss = useCallback((): void => {
-    cancel()
+  const dismissGenerationBanner = useCallback((): void => {
+    cancelGeneration()
     dispatch({ type: 'dismiss' })
-  }, [cancel])
+  }, [cancelGeneration])
 
   const elapsed = state.phase === 'generating' ? elapsedSeconds(state.startedAt, now) : 0
-  return { state, elapsed, generate, regenerate, cancel, undo, dismiss }
+  return {
+    state,
+    elapsed,
+    generateMessage,
+    regenerateMessage,
+    cancelGeneration,
+    undoGeneration,
+    dismissGenerationBanner
+  }
 }

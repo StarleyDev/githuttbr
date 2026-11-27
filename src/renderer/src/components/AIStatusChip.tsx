@@ -63,7 +63,7 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
     }
   }, [wantsDetection, clis])
 
-  const close = (restoreFocus: boolean): void => {
+  const closePopover = (restoreFocus: boolean): void => {
     setPosition(null)
     if (restoreFocus) triggerRef.current?.focus()
   }
@@ -75,15 +75,15 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
     const onMouseDown = (event: MouseEvent): void => {
       const target = event.target as Node
       if (triggerRef.current?.contains(target) || popoverRef.current?.contains(target)) return
-      close(false)
+      closePopover(false)
     }
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         event.stopPropagation()
-        close(true)
+        closePopover(true)
       }
     }
-    const onResize = (): void => close(false)
+    const onResize = (): void => closePopover(false)
     window.addEventListener('mousedown', onMouseDown)
     window.addEventListener('keydown', onKeyDown, true)
     window.addEventListener('resize', onResize)
@@ -101,9 +101,9 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
   const view = aiStatusView(ai, profile, { catalogs, clis: wantsDetection ? clis : [], keysKnown })
   if (!view) return null
 
-  const toggle = (): void => {
+  const togglePopover = (): void => {
     if (position) {
-      close(false)
+      closePopover(false)
       return
     }
     const rect = triggerRef.current?.getBoundingClientRect()
@@ -121,7 +121,7 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
   }
 
   const openPage = (open: () => void): void => {
-    close(false)
+    closePopover(false)
     open()
   }
 
@@ -139,7 +139,7 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
         title={interp(t('aiStatus.buttonTitle'), { account: view.inUse.label, status: inUseStatus })}
         aria-haspopup="dialog"
         aria-expanded={position !== null}
-        onClick={toggle}
+        onClick={togglePopover}
       >
         <span className={`ai-chip-dot ${view.inUse.status.status}`} aria-hidden="true" />
         <span>{interp(t('aiStatus.button'), { account: view.inUse.label })}</span>
@@ -157,7 +157,7 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
             onBlur={(event) => {
               // Tabbing out of the popover closes it, the way a menu does.
               const next = event.relatedTarget as Node | null
-              if (next && !popoverRef.current?.contains(next) && next !== triggerRef.current) close(false)
+              if (next && !popoverRef.current?.contains(next) && next !== triggerRef.current) closePopover(false)
             }}
             style={{ left: position.left, bottom: position.bottom, width: position.width, maxHeight: position.maxHeight }}
           >

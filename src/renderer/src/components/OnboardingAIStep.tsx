@@ -59,7 +59,7 @@ export interface OnboardingAI {
   check: ConnectionCheck | null
   saved: { id: string; label: string } | null
   detectClis: () => void
-  choose: (choice: AIChoice) => void
+  chooseAIOption: (choice: AIChoice) => void
   setProvider: (provider: AIProvider) => void
   setApiKey: (key: string) => void
   setServer: (server: LocalServer) => void
@@ -106,7 +106,7 @@ export function useOnboardingAI(saveAccount: (account: AIAccount, replacingId?: 
     return null
   }
 
-  const save = (account: AIAccount): void => {
+  const saveAIAccount = (account: AIAccount): void => {
     const id = saveAccount(account, saved?.id)
     setSaved({ id, label: accountLabel(account), fingerprint: checkFingerprint(account) })
   }
@@ -141,7 +141,7 @@ export function useOnboardingAI(saveAccount: (account: AIAccount, replacingId?: 
     return status
   }
 
-  const choose = (next: AIChoice): void => {
+  const chooseAIOption = (next: AIChoice): void => {
     setChoice(next)
     // Picking the card is the go-ahead for its one test prompt; a result
     // already in hand is not paid for twice.
@@ -189,14 +189,14 @@ export function useOnboardingAI(saveAccount: (account: AIAccount, replacingId?: 
     if (input.kind === 'subscription') {
       const status = cliTest?.status ?? (await testCliNow())
       if (status !== 'connected') return false
-      save(account)
+      saveAIAccount(account)
       return true
     }
     if (input.kind === 'api-key' && !input.apiKey.trim()) return false
     const fp = checkFingerprint(account)
     const tested = check && check.fingerprint === fp && check.ok ? withListedModel(account, check.models) : await testConnection()
     if (!tested) return false
-    save(tested)
+    saveAIAccount(tested)
     return true
   }
 
@@ -212,7 +212,7 @@ export function useOnboardingAI(saveAccount: (account: AIAccount, replacingId?: 
     check,
     saved: saved ? { id: saved.id, label: saved.label } : null,
     detectClis,
-    choose,
+    chooseAIOption,
     setProvider: edited(setProviderState),
     setApiKey: edited(setApiKeyState),
     setServer: (next: LocalServer) => {
@@ -226,7 +226,7 @@ export function useOnboardingAI(saveAccount: (account: AIAccount, replacingId?: 
     testCli: () => void testCliNow(),
     testConnection,
     saveSubscription: (binary, label, path) => {
-      save(accountForChoice(existing(), { kind: 'subscription', cli: binary, path, label }))
+      saveAIAccount(accountForChoice(existing(), { kind: 'subscription', cli: binary, path, label }))
     },
     continueStep
   }
@@ -267,7 +267,7 @@ export function OnboardingAIStep({ ai }: { ai: OnboardingAI }): React.JSX.Elemen
               role="radio"
               aria-checked={selected}
               className={`onboarding-ai-choice${selected ? ' selected' : ''}`}
-              onClick={() => ai.choose(c.id)}
+              onClick={() => ai.chooseAIOption(c.id)}
             >
               <Icon size={18} className="onboarding-ai-choice-icon" />
               <strong>{t(c.titleKey)}</strong>

@@ -738,7 +738,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const runCommit = async (message: string): Promise<void> => {
     const ok = await repoActions.commit(path, message, amend)
     if (ok) {
-      generation.dismiss()
+      generation.dismissGenerationBanner()
       setSummary('')
       setDescription('')
       setAmend(false)

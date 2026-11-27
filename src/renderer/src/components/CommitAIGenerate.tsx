@@ -37,12 +37,12 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
               label: model,
               icon:
                 target?.accountId === choice.accountId && target.model === model ? <Check size={13} /> : undefined,
-              onClick: (): void => void gen.generate({ accountId: choice.accountId, model })
+              onClick: (): void => void gen.generateMessage({ accountId: choice.accountId, model })
             }))
           : [
               {
                 label: t('composerAI.accountDefault'),
-                onClick: (): void => void gen.generate({ accountId: choice.accountId, model: '' })
+                onClick: (): void => void gen.generateMessage({ accountId: choice.accountId, model: '' })
               }
             ]
       }))
@@ -69,7 +69,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
           title={t('composer.generateWithAi')}
           aria-label={t('composerAI.generate')}
           disabled={disabled || busy}
-          onClick={() => void gen.generate()}
+          onClick={() => void gen.generateMessage()}
         >
           {busy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
         </button>
@@ -95,7 +95,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
           >
             {interp(t('composerAI.elapsed'), { seconds: gen.elapsed })}
           </span>
-          <button type="button" className="btn ghost small" onClick={gen.cancel}>
+          <button type="button" className="btn ghost small" onClick={gen.cancelGeneration}>
             <X size={12} /> {t('aiGuard.cancel')}
           </button>
         </>
@@ -108,7 +108,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
             className="commit-ai-icon undo"
             title={interp(t('composerAI.undoTitle'), { action: t('composerAI.undo'), details: doneTitle })}
             aria-label={t('composerAI.undo')}
-            onClick={gen.undo}
+            onClick={gen.undoGeneration}
           >
             <Undo2 size={14} />
           </button>
@@ -118,7 +118,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
             title={t('composerAI.again')}
             aria-label={t('composerAI.again')}
             disabled={disabled}
-            onClick={() => void gen.regenerate()}
+            onClick={() => void gen.regenerateMessage()}
           >
             <RotateCw size={14} />
           </button>
