@@ -19214,7 +19214,18 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prd-file:hover { background: var(--bg-3); }
 .prd-file.viewed { opacity: 0.55; }
 .prd-file.viewed .prd-file-name { text-decoration: line-through; }
-.prd-file-status { width: 14px; text-align: center; font-family: var(--mono, monospace); font-weight: 600; flex: 0 0 auto; color: var(--text-3); }
+.prd-file-status {
+  width: 16px; height: 16px; line-height: 16px; text-align: center; flex: 0 0 auto;
+  font-family: var(--mono, monospace); font-size: 10.5px; font-weight: 700;
+  border-radius: 4px; color: var(--text-3);
+}
+/* The host's status words (GitHub: added/removed/renamed/copied/modified/changed)
+   tint the letter like the other file trees do, on a chip of the same hue. */
+.prd-file-status.st-added { --st: var(--green); }
+.prd-file-status.st-removed { --st: var(--red); }
+.prd-file-status:is(.st-renamed, .st-copied) { --st: var(--blue, #4da3ff); }
+.prd-file-status:is(.st-modified, .st-changed) { --st: var(--yellow); }
+.prd-file-status[class*='st-'] { color: var(--st, var(--text-3)); background: color-mix(in srgb, var(--st, transparent) 16%, transparent); }
 .prd-file-name { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono, monospace); }
 .prd-file-stat { flex: 0 0 auto; font-size: 11px; }
 
@@ -20931,6 +20942,14 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* A folder row: same columns as a file row, so the checkboxes and the +/- line up. */
 .prp-folder-row { gap: 5px; color: var(--text-1); }
 .prp-folder-row svg { color: var(--text-2); flex: 0 0 auto; }
+/* The folder glyph follows Settings → Themes → icon colours, like the sidebar:
+   mono keeps it grey, soft mixes the folder hue in, full paints it whole. */
+:root[data-icon-colors='soft'] .prp-folder-row .prp-folder-icon {
+  color: color-mix(in srgb, var(--yellow) 72%, var(--text-2));
+}
+:root[data-icon-colors='full'] .prp-folder-row .prp-folder-icon {
+  color: var(--yellow);
+}
 .prp-folder-row .prp-folder-name { font-family: inherit; font-weight: 600; }
 /* A fully viewed folder dims like a viewed file, without the strike-through. */
 .prp-folder-row.viewed .prd-file-name { text-decoration: none; }

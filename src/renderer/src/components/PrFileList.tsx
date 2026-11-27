@@ -195,7 +195,11 @@ const FolderRow = memo(function FolderRow({
         onChange={() => onSetFilesViewed(totals.files.map((f) => f.filename), !allViewed)}
       />
       {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-      {isCollapsed ? <Folder size={13} /> : <FolderOpen size={13} />}
+      {isCollapsed ? (
+        <Folder size={13} className="prp-folder-icon" />
+      ) : (
+        <FolderOpen size={13} className="prp-folder-icon" />
+      )}
       <span className="prd-file-name prp-folder-name">{node.name}</span>
       <span
         className="prp-folder-viewed"
