@@ -13,6 +13,7 @@ import type {
   SettingsBundle
 } from '../../../shared/types'
 import type { WorktreeGroupPlan } from '../lib/worktrees'
+import type { SettingsPageId } from '../lib/settingsSearch'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { touchMru } from '../lib/repoSwitcher'
 
@@ -215,7 +216,8 @@ export type ModalSpec =
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void; back?: LauncherBackTarget }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string; initialName?: string }
   | { kind: 'work-item-branch'; path: string; remoteUrl: string }
-  | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment' | 'about'; themeTab?: 'theme' | 'graph' }
+  /** `themeTab: 'graph'` with `page: 'themes'` still opens the Graph page, as it did the Graph tab. */
+  | { kind: 'settings'; page?: SettingsPageId; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   /** A picked, unlocked settings export: choose its parts before applying. */
   | { kind: 'settings-import'; settings: Partial<AppSettings>; bundle: SettingsBundle | null }
