@@ -1,5 +1,19 @@
 
 
+## [4.61.0](https://github.com/StarleyDev/githuttbr/compare/v4.60.1...v4.61.0) (2026-11-27)
+
+### Features
+
+* **pr:** close, reopen and draft a pull request from its page, and steadier AI ([4b2db4c](https://github.com/StarleyDev/githuttbr/commit/4b2db4c2eb468ca51968320e913587b9e9cd9275))
+  - Close a pull request opened by mistake without merging it, after a confirm that says what stays; Reopen undoes it. Move to draft and Ready for review flip the draft state. On GitHub, GitLab, Azure DevOps, Bitbucket Data Center and Forgejo.
+  - The repository chat sends a single system message, so local models whose chat template accepts only one (Mistral-style, in llama.cpp and LM Studio) answer instead of failing or losing the context.
+  - A prompt too long for the model is no longer sent a second time.
+  - The commit subject's length ignores the leading gitmoji.
+  - The summary and description are read-only while the AI writes them, and Undo and Generate again survive a tab switch.
+  - Onboarding: fixing the key, or switching provider, after saving updates the account instead of adding a second one.
+  - The AI account list works with screen readers, and a failed CLI detection no longer leaves accounts "not checked".
+  - The handbook covers all of it in every language.
+
 ## [4.60.1](https://github.com/StarleyDev/githuttbr/compare/v4.60.0...v4.60.1) (2026-11-27)
 
 ### Bug Fixes
