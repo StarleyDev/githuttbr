@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai draft unsaved changes test and save status ready no key not checked not responding openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style custom instructions co-author hover explain own ai general ai
+keywords: ai draft unsaved changes test and save status ready no key not checked not responding openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style custom instructions co-author hover explain own ai general ai status bar ai in use popover profile follows general ai
 ---
 
 # AI features
@@ -159,6 +159,41 @@ does not open that provider's card, and a card with unsaved changes keeps them.
 responding** can be put in use — on purpose, before fixing its key — and its
 badge keeps saying so; the next AI task fails with that provider's reason. A
 draft has no **Use**: it is not a provider until it is saved.
+
+### The AI in use, from the status bar
+
+A profile with its own AI ignores the general AI's provider in use: putting
+another provider in use on the general AI changes nothing for that profile, and
+outside Settings nothing said so. The status bar at the bottom of a repository
+now does. Its **AI:** _provider_ button names the provider that answers for
+the profile in use, with a dot for its status — green **Ready**, red **Not
+responding**, amber **No key**, grey **Not checked**.
+
+Clicking it opens a small panel:
+
+| Part | What it shows |
+| --- | --- |
+| Header | The profile in use, and whether it **follows the general AI** or **has its own AI** |
+| One row per provider | Every saved provider of that AI, with its model and status; a provider that is not responding shows why on a second line |
+| **In use** / **Use** | The provider answering now, and a one-click switch on every other one |
+| **Configure AI** | Opens **Settings → AI** |
+| **Usage and cost** | Opens the *Analytics* tab of the repository settings |
+
+**Use** writes where the profile reads its AI. On a profile that follows the
+general AI it changes the general AI — and so every profile that follows it; on
+a profile with its own AI it changes that one only. Tasks that have a provider of
+their own keep it. **Esc** closes the panel, and the
+button is hidden while AI is turned off.
+
+![The AI in use from the status bar: the profile, its AI, and every provider with its status](../screenshots/statusbar-ai.webp)
+
+**The limits:** the dot is worked out from the model list the app fetched
+anyway (kept for up to a day) and never tests anything, so a provider that
+stopped answering can still read **Ready** — testing the connection in Settings
+is the way to be sure. Until Settings has been opened, the window does not hold
+the keys themselves, so a provider with no key can read **Not checked** or **Not
+responding** there instead of **No key**. Like **Use** in Settings, the switch
+does not test the provider it puts in use.
 
 ### Using a subscription instead of an API key
 

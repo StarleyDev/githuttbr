@@ -167,6 +167,42 @@ Schlüssel reparierst — und sein Abzeichen sagt es weiterhin; die nächste
 KI-Aufgabe scheitert mit dem Grund dieses Anbieters. Ein Entwurf hat kein
 **Verwenden**: Er ist erst nach dem Speichern ein Anbieter.
 
+### Die verwendete KI, aus der Statusleiste
+
+Ein Profil mit eigener KI ignoriert den Anbieter, den die allgemeine KI
+verwendet: einen anderen Anbieter in der allgemeinen KI zu verwenden ändert für
+dieses Profil nichts, und außerhalb der Einstellungen sagte das nichts. Die
+Statusleiste am unteren Rand eines Repositorys sagt es jetzt. Ihr Knopf **KI:** _Anbieter_ nennt den Anbieter, der für das aktive Profil antwortet, mit einem
+Punkt für seinen Status — grün **Bereit**, rot **Antwortet nicht**, bernstein
+**Kein Schlüssel**, grau **Nicht geprüft**.
+
+Ein Klick öffnet ein kleines Panel:
+
+| Teil | Was er zeigt |
+| --- | --- |
+| Kopf | Das aktive Profil, und ob es **der allgemeinen KI folgt** oder **eine eigene KI hat** |
+| Eine Zeile pro Anbieter | Jeder gespeicherte Anbieter dieser KI, mit Modell und Status; ein Anbieter, der nicht antwortet, nennt den Grund in einer zweiten Zeile |
+| **In Verwendung** / **Verwenden** | Der Anbieter, der jetzt antwortet, und ein Wechsel mit einem Klick bei jedem anderen |
+| **KI konfigurieren** | Öffnet **Einstellungen → KI** |
+| **Nutzung und Kosten** | Öffnet den Tab *Auswertung* der Repository-Einstellungen |
+
+**Verwenden** schreibt dorthin, wo das Profil seine KI liest. Bei einem Profil,
+das der allgemeinen KI folgt, ändert es die allgemeine KI — und damit jedes
+Profil, das ihr folgt; bei einem Profil mit eigener KI nur dessen eigene.
+Aufgaben mit eigenem Anbieter behalten ihn. **Esc** schließt das Panel, und der
+Knopf ist ausgeblendet, solange KI ausgeschaltet ist.
+
+![Die verwendete KI aus der Statusleiste: das Profil, seine KI und jeder Anbieter mit seinem Status](../../screenshots/statusbar-ai.webp)
+
+**Die Grenzen:** Der Punkt wird aus der Modellliste abgeleitet, die die App
+ohnehin abgerufen hat (bis zu einem Tag aufbewahrt), und testet nie etwas — ein
+Anbieter, der nicht mehr antwortet, kann also noch **Bereit** zeigen; sicher ist
+nur ein Verbindungstest in den Einstellungen. Bis die Einstellungen geöffnet
+wurden, hält das Fenster die Schlüssel selbst nicht, sodass ein Anbieter ohne
+Schlüssel dort **Nicht geprüft** oder **Antwortet nicht** statt **Kein
+Schlüssel** zeigen kann. Wie **Verwenden** in den Einstellungen testet der
+Wechsel den Anbieter nicht, den er in Verwendung nimmt.
+
 ### Ein Abo statt eines API-Schlüssels nutzen
 
 Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu. Das erste Konto der allgemeinen KI ist danach **In Verwendung**.

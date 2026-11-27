@@ -167,6 +167,42 @@ son badge continue de le dire ; la tâche IA suivante échoue avec la raison de 
 fournisseur. Un brouillon n’a pas de bouton **Utiliser** : ce n’est un
 fournisseur qu’une fois enregistré.
 
+### L'IA utilisée, depuis la barre d'état
+
+Un profil qui a sa propre IA ignore le fournisseur utilisé par l'IA générale :
+en utiliser un autre sur l'IA générale ne change rien pour ce profil, et hors
+des paramètres rien ne le disait. La barre d'état, en bas d'un dépôt, le dit
+désormais. Son bouton **IA :** _fournisseur_ nomme le fournisseur qui répond
+pour le profil actif, avec un point pour son état — vert **Prêt**, rouge **Ne
+répond pas**, ambre **Pas de clé**, gris **Non vérifié**.
+
+Un clic ouvre un petit panneau :
+
+| Partie | Ce qu'elle montre |
+| --- | --- |
+| En-tête | Le profil actif, et s'il **suit l'IA générale** ou **a sa propre IA** |
+| Une ligne par fournisseur | Chaque fournisseur enregistré de cette IA, avec son modèle et son état ; celui qui ne répond pas affiche la raison sur une deuxième ligne |
+| **Utilisé** / **Utiliser** | Le fournisseur qui répond maintenant, et un changement en un clic sur chacun des autres |
+| **Configurer l'IA** | Ouvre **Paramètres → IA** |
+| **Utilisation et coût** | Ouvre l'onglet *Statistiques* des paramètres du dépôt |
+
+**Utiliser** écrit là où le profil lit son IA. Sur un profil qui suit l'IA
+générale, il modifie l'IA générale — donc chaque profil qui la suit ; sur un
+profil qui a sa propre IA, il ne modifie que la sienne. Les tâches qui ont leur
+propre fournisseur le gardent. **Échap** ferme le panneau, et le bouton est
+masqué tant que l'IA est désactivée.
+
+![L'IA utilisée depuis la barre d'état : le profil, son IA et chaque fournisseur avec son état](../../screenshots/statusbar-ai.webp)
+
+**Les limites :** le point est déduit de la liste de modèles que l'app a
+récupérée de toute façon (conservée jusqu'à un jour) et ne teste jamais rien ;
+un fournisseur qui ne répond plus peut donc encore afficher **Prêt** — tester la
+connexion dans les paramètres est le moyen d'en être sûr. Tant que les
+paramètres n'ont pas été ouverts, la fenêtre ne détient pas les clés
+elles-mêmes, si bien qu'un fournisseur sans clé peut y afficher **Non vérifié**
+ou **Ne répond pas** au lieu de **Pas de clé**. Comme **Utiliser** dans les
+paramètres, ce changement ne teste pas le fournisseur qu'il met en service.
+
 ### Utiliser un abonnement plutôt qu'une clé d'API
 
 Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte. Le premier compte de l'IA générale devient le compte **Utilisé**.

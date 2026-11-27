@@ -163,6 +163,40 @@ provedor não é aberto, e um cartão com alterações não salvas continua com 
 chave — e o selo continua dizendo isso; a próxima tarefa de IA falha com o motivo
 desse provedor. Um rascunho não tem **Usar**: só vira provedor depois de salvo.
 
+### A IA em uso, pela barra de status
+
+Um perfil com IA própria ignora o provedor em uso da IA geral: pôr outro
+provedor em uso na IA geral não muda nada para esse perfil, e fora das
+Configurações nada dizia isso. A barra de status, no rodapé de um repositório,
+agora diz. O botão **IA:** _provedor_ mostra o provedor que responde pelo perfil
+em uso, com um ponto para o status — verde **Pronto**, vermelho **Não
+responde**, âmbar **Sem chave**, cinza **Não verificado**.
+
+Um clique abre um pequeno painel:
+
+| Parte | O que mostra |
+| --- | --- |
+| Cabeçalho | O perfil em uso e se ele **segue a IA geral** ou **tem IA própria** |
+| Uma linha por provedor | Todos os provedores salvos dessa IA, com modelo e status; um provedor que não responde mostra o motivo numa segunda linha |
+| **Em uso** / **Usar** | O provedor que responde agora, e a troca com um clique em cada um dos outros |
+| **Configurar IA** | Abre **Configurações → IA** |
+| **Uso e custo** | Abre a aba *Métricas* das configurações do repositório |
+
+**Usar** grava onde o perfil lê a IA. Num perfil que segue a IA geral, muda a
+IA geral — e portanto todos os perfis que a seguem; num perfil com IA própria,
+muda só a dele. Tarefas que têm um provedor próprio continuam com ele. **Esc**
+fecha o painel, e o botão fica oculto enquanto a IA está desligada.
+
+![A IA em uso pela barra de status: o perfil, a IA dele e cada provedor com seu status](../../screenshots/statusbar-ai.webp)
+
+**Os limites:** o ponto é calculado a partir da lista de modelos que o app já
+buscou (guardada por até um dia) e nunca testa nada, então um provedor que
+parou de responder ainda pode aparecer como **Pronto** — testar a conexão nas
+Configurações é o jeito de ter certeza. Até as Configurações serem abertas, a
+janela não tem as chaves em si, então um provedor sem chave pode aparecer como
+**Não verificado** ou **Não responde** em vez de **Sem chave**. Como o **Usar**
+das Configurações, a troca não testa o provedor que põe em uso.
+
 ### Usar uma assinatura em vez de uma chave de API
 
 Na configuração inicial ou em Configurações → IA, escolha **Usar minha assinatura**. Selecione ChatGPT ou Claude e entre pelo terminal com o comando correspondente. Teste a conexão e adicione a conta após a confirmação.
