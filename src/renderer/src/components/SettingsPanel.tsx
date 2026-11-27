@@ -3340,7 +3340,8 @@ function GitSyncPage(): React.JSX.Element {
         <RefreshCw size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
         {t('settings.gitSync')}
       </h4>
-      <div className="settings-grid">
+      {/* Two short numbers side by side: a full-width box for "30" wasted the page. */}
+      <div className="settings-grid two settings-grid-numbers">
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.autoFetch')}</span>
           <NumberField

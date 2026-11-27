@@ -9450,6 +9450,16 @@ body.col-resizing .node-ava {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* A number needs a few digits of room, not the whole column. */
+.settings-grid-numbers input[type='number'] {
+  width: 120px;
+  max-width: 100%;
+}
+/* Side by side only while each column still fits its label and hint. */
+@media (max-width: 720px) {
+  .settings-grid-numbers.two { grid-template-columns: minmax(0, 1fr); }
+}
+
 .settings-field {
   display: flex;
   flex-direction: column;
