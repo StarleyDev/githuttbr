@@ -98,6 +98,9 @@ export async function trackAIRequest<T>(
   let probeTimer: ReturnType<typeof setTimeout> | undefined
   let failures = 0
   let announced = false
+  // A probe already in flight when the call ends must not re-arm itself: the
+  // controller of a call that finished normally is never aborted.
+  let settled = false
 
   const arm = (ms: number): void => {
     if (slowTimer) clearTimeout(slowTimer)
@@ -111,7 +114,7 @@ export async function trackAIRequest<T>(
     if (!options.probeUrl) return
     probeTimer = setTimeout(async () => {
       const alive = await probe(options.probeUrl as string)
-      if (controller.signal.aborted) return
+      if (settled || controller.signal.aborted) return
       failures = alive ? 0 : failures + 1
       if (failures >= PROBE_FAILURES_TO_GIVE_UP) {
         controller.abort(new Error(`${AI_UNREACHABLE} ${options.label} stopped responding.`))
@@ -121,6 +124,7 @@ export async function trackAIRequest<T>(
     }, ms)
   }
   const stop = (): void => {
+    settled = true
     if (slowTimer) clearTimeout(slowTimer)
     if (probeTimer) clearTimeout(probeTimer)
   }

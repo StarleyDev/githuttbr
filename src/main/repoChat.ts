@@ -540,7 +540,9 @@ You will then be given its Git state and file list. Otherwise, answer directly. 
  */
 export function repoRequestOf(reply: string, repoName: string): string | null {
   const name = repoName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const m = new RegExp(`^[\\s\`>*]*@(?:repo(?:sitory)?|${name})\\b[\`:\\s]*(.*)$`, 'im').exec(reply)
+  // Code in the answer is not a request: Spring's `@Repository` sits on a line of its own too.
+  const prose = reply.replace(/```[\s\S]*?```/g, '')
+  const m = new RegExp(`^[\\s\`>*]*@(?:repo(?:sitory)?|${name})\\b[\`:\\s]*(.*)$`, 'im').exec(prose)
   if (m) return m[1].replace(/`+$/, '').trim() || 'the repository'
   // "repo package.json" — the @ dropped. Only a short reply that is nothing
   // but that line: a sentence that merely starts with "repo" is an answer.
@@ -606,10 +608,17 @@ export function mentionsRepository(message: string, tracked: readonly string[]):
 export function mentionsLastCommit(message: string): boolean {
   // No \b before "último": in a JavaScript regex \b only knows ASCII letters,
   // so it never matches before "ú" — the accented spelling slipped through.
-  return /(?<!\p{L})([uú]l?t?i?mo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit(?!\p{L})|(?<!\p{L})commit\s+(mais recente|atual|anterior)(?!\p{L})|\bHEAD\b/iu.test(
+  return /(?<!\p{L})([uú]l?t?i?mo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit(?!\p{L})|(?<!\p{L})commit\s+(mais recente|atual|anterior)(?!\p{L})/iu.test(
     message
-  )
+  ) || POINTS_AT_HEAD.test(message)
 }
+
+/**
+ * "o que mudou no HEAD?", "review HEAD": HEAD as the commit to read. Alone —
+ * "o que é HEAD no git?" — it is the concept, and reading the latest diff for
+ * that only buries the answer. Case-sensitive: "head" is an ordinary word.
+ */
+const POINTS_AT_HEAD = /\b([Nn]o|[Dd]o|[Oo]|[Tt]he|[Ii]n|[Aa]t|[Rr]eview|[Rr]evis[ae]|[Dd]iff)\s+HEAD\b|\bHEAD\s+(commit|diff)\b/
 
 /** Edit distance, stopping early once it passes `limit`. */
 function withinEdits(a: string, b: string, limit: number): boolean {
@@ -670,7 +679,9 @@ const ASK_FOR_ACTION_ANYWHERE = new RegExp(
 /** English (and Git words as commands): only where an instruction starts. */
 const ASK_FOR_ACTION_AT_START = new RegExp(
   String.raw`(^|[.!?;\n]\s*|\b(please|pls|can you|could you|would you|pode|poderia|voc[eê] pode|puedes)\s+)` +
-    String.raw`(${GIT_VERBS}|create|delete|remove|add|ignore|undo|rename|edit|change|update|fix|write|rewrite|move|apply|squash|amend)\b`,
+    String.raw`(${GIT_VERBS}|create|delete|remove|add|ignore|undo|rename|edit|change|update|fix|write|rewrite|move|apply|squash|amend|` +
+    // "Pode criar o arquivo x?": the infinitive after a polite opening.
+    String.raw`criar|apagar|remover|excluir|adicionar|editar|alterar|renomear|escrever|corrigir|salvar|mudar|desfazer|crear|borrar|eliminar|a[nñ]adir|cambiar|escribir)\b`,
   'i'
 )
 
@@ -688,8 +699,18 @@ export function asksToChangeFiles(message: string): boolean {
  */
 export function asksForAction(message: string): boolean {
   const text = message.trim()
+  // "O que faz o useEffect?", "Explique o que muda entre let e const": the verb
+  // sits inside a question, not an order. Read as one, a general programming
+  // question pulled in the repository and could be answered with a proposal.
+  if (ASKS_A_QUESTION.test(text) && !POLITE_REQUEST.test(text)) return false
   return ASK_FOR_ACTION_ANYWHERE.test(text) || ASK_FOR_ACTION_AT_START.test(text)
 }
+
+/** Opens like a question or a request to explain — in Portuguese, Spanish or English. */
+const ASKS_A_QUESTION =
+  /^(o\s+que|que|qu[eé]|como|c[oó]mo|por\s*qu[eê]|porque|qual|quais|cu[aá]l(es)?|quando|cu[aá]ndo|onde|d[oó]nde|quem|qui[eé]n|ser[aá]|what|how|why|which|when|where|who|does|do|is|are|explique|explica|me\s+explica|explain|descreva|describe|me\s+diga|tell\s+me)\b/i
+/** "Pode criar o arquivo x?", "can you commit this?": a request that happens to end with "?". */
+const POLITE_REQUEST = /^(pode|poderia|voc[eê]\s+pode|consegue|puedes|podr[ií]as|can\s+you|could\s+you|would\s+you|please)\b/i
 
 /** "Tem sim, eu dei acesso", "you can", "go ahead": a reply that insists on the request before it. */
 const INSISTS =

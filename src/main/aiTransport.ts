@@ -142,6 +142,16 @@ export function usesMaxCompletionTokens(model: string): boolean {
   return /^(?:o[1-9](?:[-.]|$)|gpt-5(?:[-.]|$))/.test(base)
 }
 
+/**
+ * A failed fetch. Only a local server is tagged "unreachable" — that prompt
+ * asks whether Ollama is still running. A cloud host keeps its own reason (a
+ * proxy's self-signed certificate, DNS) instead of "is it still running?".
+ */
+function unreachableMessage(base: string, reason: string | null): string {
+  const text = `Could not reach ${base}.${reason ? ` ${reason}` : ''}`
+  return isLocal(base) ? `${AI_UNREACHABLE} ${text}` : text
+}
+
 export function fetchFailureReason(err: unknown): string | null {
   const cause = err instanceof Error && 'cause' in err ? (err.cause as { code?: string; message?: string } | undefined) : null
   if (cause?.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
@@ -229,7 +239,7 @@ async function callOpenAI(
     } catch (err) {
       if (options?.signal?.aborted) throw err
       const reason = fetchFailureReason(err)
-      throw new Error(`${AI_UNREACHABLE} Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+      throw new Error(unreachableMessage(base, reason))
     }
   }
 
@@ -295,7 +305,7 @@ async function callAnthropic(
   } catch (err) {
     if (options?.signal?.aborted) throw err
     const reason = fetchFailureReason(err)
-    throw new Error(`${AI_UNREACHABLE} Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+    throw new Error(unreachableMessage(base, reason))
   }
   if (!res.ok) throw new Error(await readError(res))
   const json = (await res.json()) as {

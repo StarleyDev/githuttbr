@@ -190,7 +190,12 @@ describe('questions never get actions to propose', () => {
       'what does stash do?',
       'Qual a versão no package.json?',
       'Em qual branch eu estou?',
-      'how do I rebase onto main?'
+      'how do I rebase onto main?',
+      'O que faz o useEffect?',
+      'o que cria um índice no postgres?',
+      'Explique o que muda entre let e const',
+      'O que cria o arquivo package-lock.json?',
+      'how do I remove a submodule?'
     ]) {
       expect(asksForAction(q), q).toBe(false)
     }
@@ -205,7 +210,9 @@ describe('questions never get actions to propose', () => {
       'Please push this branch',
       'pode dar um push?',
       'ignore os arquivos *.log',
-      'corrija o typo no README.md'
+      'corrija o typo no README.md',
+      'pode criar o arquivo notas.txt?',
+      'can you commit this?'
     ]) {
       expect(asksForAction(q), q).toBe(true)
     }
@@ -272,6 +279,10 @@ describe('the last commit', () => {
     expect(mentionsLastCommit('Revise a última alteração commit')).toBe(true)
     expect(mentionsLastCommit('review the last commit')).toBe(true)
     expect(mentionsLastCommit('o que mudou no HEAD?')).toBe(true)
+    expect(mentionsLastCommit('review HEAD')).toBe(true)
+    // The concept, not the commit: nothing to read.
+    expect(mentionsLastCommit('o que é HEAD no git?')).toBe(false)
+    expect(mentionsLastCommit('use your head')).toBe(false)
     expect(mentionsLastCommit('o que é um commit?')).toBe(false)
   })
 
@@ -607,5 +618,13 @@ describe('the request a reply insists on', () => {
 
   it('is the latest message itself when that asks', () => {
     expect(actionRequestOf(after('faça um stash'))).toBe('faça um stash')
+  })
+})
+
+describe('code in an answer is not a request for the repository', () => {
+  it('ignores an annotation inside a fenced block', () => {
+    const answer = 'Use a repository bean:\n\n```java\n@Repository\npublic interface Users {}\n```'
+    expect(repoRequestOf(answer, 'my-app')).toBeNull()
+    expect(repoRequestOf('@repo package.json', 'my-app')).toBe('package.json')
   })
 })

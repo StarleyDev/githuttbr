@@ -78,6 +78,32 @@ describe('a model call in flight', () => {
     finish('still here')
     await expect(call).resolves.toBe('still here')
   }, 15_000)
+
+  it('stops probing when the call ends while a probe is still in flight', async () => {
+    vi.useFakeTimers()
+    let probes = 0
+    let answerProbe!: (alive: boolean) => void
+    let finish!: (v: string) => void
+    const call = trackAIRequest(
+      {
+        label: 'Ollama',
+        accountId: 'ollama',
+        probeUrl: 'http://x/models',
+        probe: () => {
+          probes++
+          return new Promise<boolean>((r) => (answerProbe = r))
+        }
+      },
+      () => new Promise<string>((r) => (finish = r))
+    )
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(probes).toBe(1)
+    finish('done')
+    await expect(call).resolves.toBe('done')
+    answerProbe(true)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(probes).toBe(1)
+  })
 })
 
 describe('cancelling a job by its tag', () => {
@@ -151,6 +177,17 @@ describe('probing a local server', () => {
       defaultAccountId: 'ollama'
     })
     await expect(callModel(cfg, [{ role: 'user', content: 'hi' }], 0.2)).rejects.toThrow(AI_UNREACHABLE)
+  })
+
+  it('a cloud host that cannot be reached keeps its own reason, not "is it still running?"', async () => {
+    const cfg: AIConfig = resolveAI({
+      ...defaultAIConfig(),
+      accounts: [{ ...newAccount([], 'custom'), endpoint: 'https://ai.invalid/v1' }],
+      defaultAccountId: 'custom'
+    })
+    const err = await callModel(cfg, [{ role: 'user', content: 'hi' }], 0.2).catch((e: Error) => e)
+    expect(String(err)).toContain('Could not reach https://ai.invalid/v1')
+    expect(String(err)).not.toContain(AI_UNREACHABLE)
   })
 })
 
