@@ -2066,6 +2066,8 @@ function ThemesPage(): React.JSX.Element {
         })}
       </div>
 
+      <ReleaseTierSettings />
+
       <div className="theme-section-header" style={{ marginTop: 22 }}>
         <h4><Palette size={14} /> {t('settings.appTheme')}</h4>
         <div className="theme-section-actions">
@@ -3365,7 +3367,6 @@ function GitSyncPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.missionRefreshHint')}</span>
         </label>
       </div>
-      <ReleaseTierSettings />
 
       <h4 className="settings-section-title">
         <GitMerge size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />

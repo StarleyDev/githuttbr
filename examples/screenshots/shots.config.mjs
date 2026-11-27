@@ -847,14 +847,34 @@ export const shots = [
     }
   },
   {
-    // Settings → Git & sync: the auto-fetch and Mission Control refresh side by
-    // side, and the release note colours under them.
+    // Settings → Git & sync: the auto-fetch and Mission Control refresh side by side.
     out: 'settings-git-sync',
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'git' }))
       await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Settings → Themes, scrolled to Release note colors: four ranges, the
+    // fourth given a custom colour so the picked swatch shows.
+    out: 'settings-release-colors',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() =>
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          missionReleaseTiers: { limits: [5, 20, 50], tones: ['muted', 'yellow', 'red', '#c084fc'] }
+        }))
+      )
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
+      await page.waitForTimeout(600)
+      await page.evaluate(() =>
+        document.querySelector('[data-setting="settings.missionReleaseTiers"]')?.scrollIntoView({ block: 'center' })
+      )
+      await page.waitForTimeout(300)
     }
   },
   {

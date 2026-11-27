@@ -1054,6 +1054,7 @@ export const ptBR: Dict = {
   'settings.releaseTone.yellow': 'Amarelo',
   'settings.releaseTone.red': 'Vermelho',
   'settings.releaseTone.purple': 'Roxo',
+  'settings.releaseTone.custom': 'Cor personalizada…',
   'settings.confirmForcePush': 'Confirmar antes de um force push',
   'settings.confirmForcePushHint': 'Pede confirmação antes de qualquer force push.',
   'settings.warnOnClose': 'Avisar ao fechar',

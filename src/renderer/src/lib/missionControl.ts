@@ -1,5 +1,5 @@
-import type { CiState, ConflictOpKind, PullRequest, ReleaseNoteTiers, ReleaseTone, RepoPulse } from '../../../shared/types'
-import { DEFAULT_RELEASE_TIERS, RELEASE_TONES } from '../../../shared/types'
+import type { CiState, ConflictOpKind, PullRequest, ReleaseNoteTiers, ReleaseTone, ReleaseToneName, RepoPulse } from '../../../shared/types'
+import { DEFAULT_RELEASE_TIERS, RELEASE_TIER_COUNT, RELEASE_TONES, isCustomReleaseTone } from '../../../shared/types'
 import type { TranslationKey } from '../i18n'
 
 /**
@@ -251,26 +251,37 @@ export function releaseNote(release: RepoPulse['release']): { key: TranslationKe
 }
 
 /**
- * The tiers as Settings holds them, made usable: whole non-negative counts,
- * the second never below the first, and a known tone in each slot — an
- * imported or hand-edited file can carry anything.
+ * The ranges as Settings holds them, made usable: whole non-negative limits
+ * that never go down, and a known tone in every slot — an imported or
+ * hand-edited file can carry anything. The first shape (`warnAfter`,
+ * `alertAfter`, three tones) still reads, its last tone carried into the new
+ * range.
  */
-export function normalizeReleaseTiers(raw: Partial<ReleaseNoteTiers> | undefined): ReleaseNoteTiers {
-  const count = (n: unknown, fallback: number): number =>
-    typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.round(n)) : fallback
-  const warnAfter = count(raw?.warnAfter, DEFAULT_RELEASE_TIERS.warnAfter)
-  const alertAfter = Math.max(warnAfter, count(raw?.alertAfter, DEFAULT_RELEASE_TIERS.alertAfter))
-  const tone = (i: number): ReleaseTone => {
-    const t = raw?.tones?.[i]
-    return t && RELEASE_TONES.includes(t) ? t : DEFAULT_RELEASE_TIERS.tones[i]
+export function normalizeReleaseTiers(raw: unknown): ReleaseNoteTiers {
+  const src = (raw ?? {}) as Partial<ReleaseNoteTiers> & { warnAfter?: unknown; alertAfter?: unknown }
+  const legacy = !Array.isArray(src.limits) && (src.warnAfter !== undefined || src.alertAfter !== undefined)
+  const rawLimits: unknown[] = legacy ? [src.warnAfter, src.alertAfter] : Array.isArray(src.limits) ? src.limits : []
+  const rawTones: unknown[] = Array.isArray(src.tones) ? src.tones : []
+  const limits: number[] = []
+  for (let i = 0; i < RELEASE_TIER_COUNT - 1; i++) {
+    const n = rawLimits[i]
+    const value = typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.round(n)) : DEFAULT_RELEASE_TIERS.limits[i]
+    limits.push(Math.max(value, limits[i - 1] ?? 0))
   }
-  return { warnAfter, alertAfter, tones: [tone(0), tone(1), tone(2)] }
+  const tones: ReleaseTone[] = []
+  for (let i = 0; i < RELEASE_TIER_COUNT; i++) {
+    // A legacy file had three tones: its "above" one stays above.
+    const t = legacy && i === RELEASE_TIER_COUNT - 1 ? rawTones[rawTones.length - 1] : rawTones[i]
+    const known =
+      typeof t === 'string' && (RELEASE_TONES.includes(t as ReleaseToneName) || isCustomReleaseTone(t))
+    tones.push(known ? (t as ReleaseTone) : DEFAULT_RELEASE_TIERS.tones[i])
+  }
+  return { limits, tones }
 }
 
-/** The colour of a release note: by how many commits HEAD is past its tag. */
+/** The colour of a release note: the first range its commit count fits in. */
 export function releaseTone(release: RepoPulse['release'], tiers: ReleaseNoteTiers): ReleaseTone {
   if (!release) return 'muted'
-  if (release.since <= tiers.warnAfter) return tiers.tones[0]
-  if (release.since <= tiers.alertAfter) return tiers.tones[1]
-  return tiers.tones[2]
+  const i = tiers.limits.findIndex((limit) => release.since <= limit)
+  return tiers.tones[i === -1 ? tiers.tones.length - 1 : i]
 }

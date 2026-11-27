@@ -21,7 +21,7 @@ import {
   Tag
 } from 'lucide-react'
 import type { CiState, PullRequest, RepoDetail, RepoPulse } from '../../../shared/types'
-import { tabRepos } from '../../../shared/types'
+import { isCustomReleaseTone, tabRepos } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore, repoActions } from '../stores/repo'
@@ -644,6 +644,7 @@ export function MissionControlPage(): React.JSX.Element {
             const row = rows.find((r) => r.path === p.path)
             const host = hosting[p.path]
             const note = releaseNote(p.release ?? null)
+            const tone = releaseTone(p.release ?? null, tiers)
             const isOpen = expanded === p.path
             const detail = details[p.path]
             const fetchStale = isFetchStale(p, Date.now())
@@ -777,7 +778,11 @@ export function MissionControlPage(): React.JSX.Element {
                             <Tag size={11} /> <span>{p.release.tag}</span>
                           </span>
                         )}
-                        <span className="mc-release-note" data-tone={releaseTone(p.release ?? null, tiers)}>
+                        <span
+                          className="mc-release-note"
+                          data-tone={isCustomReleaseTone(tone) ? 'custom' : tone}
+                          style={isCustomReleaseTone(tone) ? { color: tone } : undefined}
+                        >
                           {interp(t(note.key), { n: String(note.n ?? '') })}
                         </span>
                       </div>

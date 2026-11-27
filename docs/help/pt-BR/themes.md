@@ -107,6 +107,29 @@ linhas dentro das seções e o grafo não. Uma linha de menu sob o mouse mantém
 visual de sempre, ícone incluído. A cor nunca é a
 única pista: todo ícone mantém o nome.
 
+## Cores da nota de release
+
+O [Mission control](mission-control.md) mostra quantos commits cada repositório
+fez desde a última tag. **Cores da nota de release** decide como esse número
+aparece, para uma release atrasada se destacar e uma recente ficar discreta.
+
+São quatro faixas. As três primeiras terminam num número de commits que você
+escolhe; a última pega tudo o que passar delas. Cada faixa usa uma das cores do
+tema, ou uma **cor personalizada** pela bolinha no fim da linha.
+
+| Faixa | Padrão |
+|---|---|
+| Até 5 commits | Cinza, como o resto da linha |
+| Depois, até 20 | Amarelo |
+| Depois, até 50 | Vermelho |
+| Acima disso | Vermelho |
+
+Uma cor do tema acompanha o tema, no claro e no escuro. Uma cor personalizada
+fica exatamente como foi escolhida em qualquer tema, então escolha uma que se leia
+nos dois fundos.
+
+![Configurações → Temas: as quatro faixas da nota de release, cada uma com as cores e a bolinha personalizada](../../screenshots/settings-release-colors.webp)
+
 ## Como as Configurações se organizam
 
 O menu lateral agrupa as páginas pelo assunto:

@@ -1053,6 +1053,7 @@ export const pl: Dict = {
   'settings.releaseTone.yellow': 'Żółty',
   'settings.releaseTone.red': 'Czerwony',
   'settings.releaseTone.purple': 'Fioletowy',
+  'settings.releaseTone.custom': 'Własny kolor…',
   'settings.confirmForcePush': 'Potwierdzaj przed force pushem',
   'settings.confirmForcePushHint': 'Pyta o potwierdzenie przed każdym force pushem.',
   'settings.warnOnClose': 'Ostrzegaj przy zamykaniu',

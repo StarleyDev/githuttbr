@@ -1053,6 +1053,7 @@ export const zhCN: Dict = {
   'settings.releaseTone.yellow': '黄色',
   'settings.releaseTone.red': '红色',
   'settings.releaseTone.purple': '紫色',
+  'settings.releaseTone.custom': '自定义颜色…',
   'settings.confirmForcePush': '强制推送前确认',
   'settings.confirmForcePushHint': '任何强制推送之前都先请求确认。',
   'settings.warnOnClose': '关闭时提醒',

@@ -1053,6 +1053,7 @@ export const ko: Dict = {
   'settings.releaseTone.yellow': '노랑',
   'settings.releaseTone.red': '빨강',
   'settings.releaseTone.purple': '보라',
+  'settings.releaseTone.custom': '사용자 지정 색상…',
   'settings.confirmForcePush': '강제 푸시 전에 확인',
   'settings.confirmForcePushHint': '강제 푸시를 하기 전에 항상 확인을 받습니다.',
   'settings.warnOnClose': '닫을 때 경고',

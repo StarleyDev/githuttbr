@@ -1,10 +1,10 @@
-import { RELEASE_TONES, type ReleaseNoteTiers, type ReleaseTone } from '../../../shared/types'
+import { RELEASE_TONES, isCustomReleaseTone, type ReleaseNoteTiers, type ReleaseTone, type ReleaseToneName } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
 import { useT, type TranslationKey } from '../i18n'
 import { normalizeReleaseTiers } from '../lib/missionControl'
 import { NumberField } from './NumberField'
 
-const TONE_LABEL: Record<ReleaseTone, TranslationKey> = {
+const TONE_LABEL: Record<ReleaseToneName, TranslationKey> = {
   muted: 'settings.releaseTone.muted',
   accent: 'settings.releaseTone.accent',
   green: 'settings.releaseTone.green',
@@ -19,10 +19,15 @@ interface TierRow {
   count?: { value: number; min: number; set: (n: number) => void }
 }
 
+/** What the custom swatch opens on when the range has no colour of its own yet. */
+const CUSTOM_START = '#4f8cff'
+
 /**
- * Settings → Git & sync: the colours of Mission Control's "N commits since the
- * tag", in three tiers by count. Colours are theme tokens, offered as swatches,
- * so a pick follows the theme in light and dark.
+ * Settings → Themes: the colours of Mission Control's "N commits since the
+ * tag", in ranges by count — one row per range, the last one open-ended.
+ * Colours are theme tokens, offered as swatches, so a pick follows the theme
+ * in light and dark; the last swatch opens the system colour picker for a
+ * colour of one's own, which stays as picked in every theme.
  */
 export function ReleaseTierSettings(): React.JSX.Element {
   const t = useT()
@@ -32,36 +37,36 @@ export function ReleaseTierSettings(): React.JSX.Element {
   const save = (next: ReleaseNoteTiers): void =>
     update((s) => ({ ...s, missionReleaseTiers: normalizeReleaseTiers(next) }))
 
+  // One row per limit, then the open-ended last range. Raising a limit past the
+  // next ones carries them along, so the ranges never cross.
   const rows: TierRow[] = [
-    {
-      labelKey: 'settings.releaseTierFresh',
-      // Raising the first count past the second carries the second along.
-      count: {
-        value: tiers.warnAfter,
-        min: 0,
-        set: (n) => save({ ...tiers, warnAfter: n, alertAfter: Math.max(n, tiers.alertAfter) })
-      }
-    },
-    {
-      labelKey: 'settings.releaseTierDue',
-      count: { value: tiers.alertAfter, min: tiers.warnAfter, set: (n) => save({ ...tiers, alertAfter: n }) }
-    },
+    ...tiers.limits.map(
+      (value, i): TierRow => ({
+        labelKey: i === 0 ? 'settings.releaseTierFresh' : 'settings.releaseTierDue',
+        count: {
+          value,
+          min: i === 0 ? 0 : tiers.limits[i - 1],
+          set: (n) =>
+            save({ ...tiers, limits: tiers.limits.map((limit, j) => (j === i ? n : j > i ? Math.max(limit, n) : limit)) })
+        }
+      })
+    ),
     { labelKey: 'settings.releaseTierOverdue' }
   ]
 
   const pick = (tier: number, tone: ReleaseTone): void => {
-    const tones: ReleaseNoteTiers['tones'] = [...tiers.tones]
+    const tones = [...tiers.tones]
     tones[tier] = tone
     save({ ...tiers, tones })
   }
 
   return (
-    <div className="settings-field">
-      <span className="settings-field-label">{t('settings.missionReleaseTiers')}</span>
-      <span className="settings-hint">{t('settings.missionReleaseTiersHint')}</span>
+    <div className="release-tiers-section" data-setting="settings.missionReleaseTiers">
+      <h4 style={{ marginTop: 16 }}>{t('settings.missionReleaseTiers')}</h4>
+      <p className="settings-hint">{t('settings.missionReleaseTiersHint')}</p>
       <div className="release-tiers">
         {rows.map((row, tier) => (
-          <div key={row.labelKey} className="release-tier">
+          <div key={tier} className="release-tier">
             <span className="release-tier-label">{t(row.labelKey)}</span>
             {row.count ? (
               <NumberField
@@ -88,6 +93,19 @@ export function ReleaseTierSettings(): React.JSX.Element {
                   onClick={() => pick(tier, tone)}
                 />
               ))}
+              {/* A colour of one's own: the native picker behind a swatch. */}
+              <label
+                className={`release-tone release-tone-custom${isCustomReleaseTone(tiers.tones[tier]) ? ' on' : ''}`}
+                title={t('settings.releaseTone.custom')}
+                style={isCustomReleaseTone(tiers.tones[tier]) ? { background: tiers.tones[tier] } : undefined}
+              >
+                <input
+                  type="color"
+                  aria-label={t('settings.releaseTone.custom')}
+                  value={isCustomReleaseTone(tiers.tones[tier]) ? tiers.tones[tier] : CUSTOM_START}
+                  onChange={(e) => pick(tier, e.target.value as ReleaseTone)}
+                />
+              </label>
             </div>
           </div>
         ))}

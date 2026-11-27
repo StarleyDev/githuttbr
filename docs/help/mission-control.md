@@ -32,7 +32,7 @@ counts compare like a table:
 | **Last commit** | Its subject and author: what the repository was last doing, without opening it |
 | **Local** | Conflicts · ↓ to pull · ↑ to push · staged · modified · untracked · stashes. Hover any of them for what it counts |
 | **Hosting** | The open pull requests, with the ones waiting for **your** review in amber, and HEAD's CI. Click the count to open that repository's **Pull requests** page, or **CI** to open its runs |
-| **Release** | The newest tag HEAD reaches, and how many commits came after it — **up to date** when none. The count is coloured by how far behind a release is: grey up to 5 commits, yellow up to 20, red beyond, all of it changeable in **Settings → Git & sync → Release note colours** |
+| **Release** | The newest tag HEAD reaches, and how many commits came after it — **up to date** when none. The count is colored by how far behind a release is: grey up to 5 commits, yellow up to 20, red beyond, in four ranges you can change — custom colors included — in [**Settings → Themes → Release note colors**](themes.md#release-note-colors) |
 | **Activity** | A 14-day commit sparkline, and how many commits that is |
 | **Time** | How long since the last commit, and since the last **fetch** |
 
@@ -45,7 +45,7 @@ fetched for a day or more, or never has, the age turns amber — fetch it before
 trusting a 0. The dashboard reads the fetch time from git itself, so a
 `git fetch` in a terminal counts too.
 
-![Settings → Git & sync: Mission Control's refresh and the release note colours](../screenshots/settings-git-sync.webp)
+![Settings → Git & sync: Mission Control's refresh beside auto-fetch](../screenshots/settings-git-sync.webp)
 
 On a narrow window every column stays, and the table scrolls sideways inside its frame.
 

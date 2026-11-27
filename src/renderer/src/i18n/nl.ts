@@ -1054,6 +1054,7 @@ export const nl: Dict = {
   'settings.releaseTone.yellow': 'Geel',
   'settings.releaseTone.red': 'Rood',
   'settings.releaseTone.purple': 'Paars',
+  'settings.releaseTone.custom': 'Eigen kleur…',
   'settings.confirmForcePush': 'Bevestigen vóór een force push',
   'settings.confirmForcePushHint': 'Vraag om bevestiging vóór elke force push.',
   'settings.warnOnClose': 'Waarschuwen bij het sluiten',

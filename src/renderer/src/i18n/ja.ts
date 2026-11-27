@@ -1038,6 +1038,7 @@ export const ja: Dict = {
   'settings.releaseTone.yellow': '黄',
   'settings.releaseTone.red': '赤',
   'settings.releaseTone.purple': '紫',
+  'settings.releaseTone.custom': 'カスタムカラー…',
   'settings.confirmForcePush': '強制プッシュの前に確認する',
   'settings.confirmForcePushHint': 'すべての強制プッシュの前に確認を求めます。',
   'settings.warnOnClose': '閉じるときに警告する',

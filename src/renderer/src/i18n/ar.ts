@@ -1053,6 +1053,7 @@ export const ar: Dict = {
   'settings.releaseTone.yellow': 'أصفر',
   'settings.releaseTone.red': 'أحمر',
   'settings.releaseTone.purple': 'بنفسجي',
+  'settings.releaseTone.custom': 'لون مخصص…',
   'settings.confirmForcePush': 'التأكيد قبل الإرسال القسري',
   'settings.confirmForcePushHint': 'اطلب تأكيدًا قبل أي إرسال قسري.',
   'settings.warnOnClose': 'التنبيه عند الإغلاق',

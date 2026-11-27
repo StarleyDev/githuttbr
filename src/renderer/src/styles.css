@@ -9475,6 +9475,29 @@ body.col-resizing .node-ava {
 .release-tone:hover { border-color: color-mix(in srgb, var(--release-tone) 50%, var(--text-0)); }
 .release-tone.on { border-color: var(--text-0); }
 .release-tone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The custom swatch: a colour wheel until a colour is picked, then that colour.
+   The native picker sits invisibly on top, so a click anywhere opens it. */
+.release-tones .release-tone-custom {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  box-sizing: border-box;
+  background: conic-gradient(#ff5f5f, #ffd35f, #5fff8a, #5fd3ff, #8a5fff, #ff5fd3, #ff5f5f);
+}
+.release-tone-custom input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+}
+.release-tone-custom:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* A number needs a few digits of room, not the whole column. */
 .settings-grid-numbers input[type='number'] {

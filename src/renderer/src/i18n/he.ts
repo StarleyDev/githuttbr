@@ -1053,6 +1053,7 @@ export const he: Dict = {
   'settings.releaseTone.yellow': 'צהוב',
   'settings.releaseTone.red': 'אדום',
   'settings.releaseTone.purple': 'סגול',
+  'settings.releaseTone.custom': 'צבע מותאם אישית…',
   'settings.confirmForcePush': 'אישור לפני פוש כוחני',
   'settings.confirmForcePushHint': 'בקשת אישור לפני כל פוש כוחני.',
   'settings.warnOnClose': 'אזהרה בעת סגירה',

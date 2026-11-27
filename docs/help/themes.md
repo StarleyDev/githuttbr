@@ -108,6 +108,28 @@ and the commit graph are not. A hovered menu row keeps its usual look, icon
 included. Color
 is never the only clue — every icon keeps its label.
 
+## Release note colors
+
+[Mission control](mission-control.md) says how many commits each repository has
+made since its latest tag. **Release note colors** decides how that count looks,
+so a release that is overdue stands out and a recent one stays quiet.
+
+There are four ranges. The first three end at a number of commits you choose;
+the last takes everything past them. Each range takes one of the theme's colors,
+or a **custom color** from the swatch at the end of its row.
+
+| Range | Out of the box |
+|---|---|
+| Up to 5 commits | Grey, as the rest of the row |
+| Then up to 20 | Yellow |
+| Then up to 50 | Red |
+| More than that | Red |
+
+A theme color follows the theme, in light and dark. A custom color stays exactly
+as picked in every theme, so pick one that reads on both backgrounds.
+
+![Settings → Themes: the four release note ranges, each with its colors and a custom swatch](../screenshots/settings-release-colors.webp)
+
 ## How Settings is organised
 
 The side menu groups its pages by what they are about:

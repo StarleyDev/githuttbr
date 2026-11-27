@@ -1053,6 +1053,7 @@ export const uk: Dict = {
   'settings.releaseTone.yellow': 'Жовтий',
   'settings.releaseTone.red': 'Червоний',
   'settings.releaseTone.purple': 'Фіолетовий',
+  'settings.releaseTone.custom': 'Власний колір…',
   'settings.confirmForcePush': 'Підтверджувати перед force push',
   'settings.confirmForcePushHint': 'Запитувати підтвердження перед будь-яким force push.',
   'settings.warnOnClose': 'Попереджати під час закриття',

@@ -32,7 +32,7 @@ lista, então as contagens se comparam como numa tabela:
 | **Último commit** | Assunto e autor: o que o repositório estava fazendo, sem abri-lo |
 | **Local** | Conflitos · ↓ para baixar · ↑ para enviar · no stage · modificados · não rastreados · stashes. Passe o mouse para ver o que cada uma conta |
 | **Hospedagem** | Os pull requests abertos, com os que aguardam a **sua** revisão em âmbar, e o CI do HEAD. Clique no número para abrir a página de **Pull requests** daquele repositório, ou em **CI** para abrir as execuções |
-| **Release** | A tag mais recente alcançável do HEAD, e quantos commits vieram depois dela — **em dia** quando nenhum. O número muda de cor conforme a release atrasa: cinza até 5 commits, amarelo até 20, vermelho acima, tudo ajustável em **Configurações → Git e sincronização → Cores da nota de release** |
+| **Release** | A tag mais recente alcançável do HEAD, e quantos commits vieram depois dela — **em dia** quando nenhum. O número muda de cor conforme a release atrasa: cinza até 5 commits, amarelo até 20, vermelho acima, em quatro faixas que você muda — cor personalizada incluída — em [**Configurações → Temas → Cores da nota de release**](themes.md#cores-da-nota-de-release) |
 | **Atividade** | Um sparkline de commits de 14 dias, e quantos commits são |
 | **Tempo** | Quanto tempo desde o último commit, e desde o último **fetch** |
 
@@ -45,7 +45,7 @@ sem fetch há um dia ou mais, ou nunca fez, a idade fica âmbar — faça fetch 
 de confiar num 0. O horário vem do próprio git, então um `git fetch` no terminal
 também conta.
 
-![Configurações → Git e sincronização: a atualização do Mission Control e as cores da nota de release](../../screenshots/settings-git-sync.webp)
+![Configurações → Git e sincronização: a atualização do Mission Control ao lado do auto-fetch](../../screenshots/settings-git-sync.webp)
 
 Numa janela estreita todas as colunas ficam, e a tabela rola para o lado dentro da moldura.
 

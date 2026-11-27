@@ -109,19 +109,39 @@ describe('the release column', () => {
 describe('release note colours', () => {
   const tiers = normalizeReleaseTiers(undefined)
 
-  it('starts quiet, turns yellow past 5 commits and red past 20', () => {
-    expect(tiers).toEqual({ warnAfter: 5, alertAfter: 20, tones: ['muted', 'yellow', 'red'] })
-    expect(releaseTone({ tag: 'v1', since: 0 }, tiers)).toBe('muted')
-    expect(releaseTone({ tag: 'v1', since: 5 }, tiers)).toBe('muted')
-    expect(releaseTone({ tag: 'v1', since: 6 }, tiers)).toBe('yellow')
-    expect(releaseTone({ tag: 'v1', since: 20 }, tiers)).toBe('yellow')
-    expect(releaseTone({ tag: 'v1', since: 21 }, tiers)).toBe('red')
+  it('starts quiet, turns yellow past 5 commits and red past 20, the range past 50 red too', () => {
+    expect(tiers).toEqual({ limits: [5, 20, 50], tones: ['muted', 'yellow', 'red', 'red'] })
+    const at = (since: number): string => releaseTone({ tag: 'v1', since }, tiers)
+    expect([at(0), at(5), at(6), at(20), at(21), at(50), at(51)]).toEqual([
+      'muted',
+      'muted',
+      'yellow',
+      'yellow',
+      'red',
+      'red',
+      'red'
+    ])
     expect(releaseTone(null, tiers)).toBe('muted')
   })
 
+  it('takes a fourth colour for the last range', () => {
+    const four = normalizeReleaseTiers({ limits: [5, 20, 50], tones: ['muted', 'yellow', 'red', 'purple'] })
+    expect(releaseTone({ tag: 'v1', since: 51 }, four)).toBe('purple')
+  })
+
   it('repairs what a hand-edited file may hold', () => {
-    const fixed = normalizeReleaseTiers({ warnAfter: 30, alertAfter: 10, tones: ['green', 'nope' as never, 'purple'] })
-    expect(fixed).toEqual({ warnAfter: 30, alertAfter: 30, tones: ['green', 'yellow', 'purple'] })
-    expect(normalizeReleaseTiers({ warnAfter: -3.4 }).warnAfter).toBe(0)
+    const fixed = normalizeReleaseTiers({ limits: [30, 10, -2.4], tones: ['green', 'nope', 'purple'] })
+    expect(fixed).toEqual({ limits: [30, 30, 30], tones: ['green', 'yellow', 'purple', 'red'] })
+  })
+
+  it('keeps a custom #rrggbb colour and drops anything else that is not a tone', () => {
+    const custom = normalizeReleaseTiers({ limits: [5, 20, 50], tones: ['#12ab9F', '#xyz', 'muted', 'red'] })
+    expect(custom.tones).toEqual(['#12ab9F', 'yellow', 'muted', 'red'])
+    expect(releaseTone({ tag: 'v1', since: 1 }, custom)).toBe('#12ab9F')
+  })
+
+  it('still reads the first shape, its last tone kept for the ranges above', () => {
+    const old = normalizeReleaseTiers({ warnAfter: 3, alertAfter: 10, tones: ['muted', 'accent', 'purple'] })
+    expect(old).toEqual({ limits: [3, 10, 50], tones: ['muted', 'accent', 'purple', 'purple'] })
   })
 })

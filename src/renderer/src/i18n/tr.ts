@@ -1038,6 +1038,7 @@ export const tr: Dict = {
   'settings.releaseTone.yellow': 'Sarı',
   'settings.releaseTone.red': 'Kırmızı',
   'settings.releaseTone.purple': 'Mor',
+  'settings.releaseTone.custom': 'Özel renk…',
   'settings.confirmForcePush': 'Force push öncesi onay iste',
   'settings.confirmForcePushHint': 'Her force push öncesinde onay sorar.',
   'settings.warnOnClose': 'Kapatırken uyar',

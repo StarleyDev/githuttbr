@@ -349,17 +349,29 @@ export interface AbsorbPlan {
 
 /** One repository's local health, as shown in Mission Control. */
 /** A theme colour a Mission Control release note can take — tokens, so a theme repaints them. */
-export type ReleaseTone = 'muted' | 'accent' | 'green' | 'yellow' | 'red' | 'purple'
-export const RELEASE_TONES: ReleaseTone[] = ['muted', 'accent', 'green', 'yellow', 'red', 'purple']
+export type ReleaseToneName = 'muted' | 'accent' | 'green' | 'yellow' | 'red' | 'purple'
+export const RELEASE_TONES: ReleaseToneName[] = ['muted', 'accent', 'green', 'yellow', 'red', 'purple']
+/** A theme tone, or a colour of the user's own as `#rrggbb` — that one stays as picked in every theme. */
+export type ReleaseTone = ReleaseToneName | `#${string}`
 
-export interface ReleaseNoteTiers {
-  warnAfter: number
-  alertAfter: number
-  tones: [ReleaseTone, ReleaseTone, ReleaseTone]
+/** Whether `tone` is a custom `#rrggbb` colour rather than a theme tone. */
+export function isCustomReleaseTone(tone: string): tone is `#${string}` {
+  return /^#[0-9a-f]{6}$/i.test(tone)
 }
 
-/** Quiet while a release is recent, yellow past 5 commits, red past 20. */
-export const DEFAULT_RELEASE_TIERS: ReleaseNoteTiers = { warnAfter: 5, alertAfter: 20, tones: ['muted', 'yellow', 'red'] }
+/** Ranges by commit count: up to `limits[i]` takes `tones[i]`; past the last
+ *  limit, the last tone. `tones` is one longer than `limits`. */
+export interface ReleaseNoteTiers {
+  limits: number[]
+  tones: ReleaseTone[]
+}
+
+/** How many ranges Settings offers. */
+export const RELEASE_TIER_COUNT = 4
+
+/** Quiet while a release is recent, yellow past 5 commits, red past 20 — the
+ *  range past 50 starts red too, for whoever wants it louder. */
+export const DEFAULT_RELEASE_TIERS: ReleaseNoteTiers = { limits: [5, 20, 50], tones: ['muted', 'yellow', 'red', 'red'] }
 
 export interface RepoPulse {
   path: string
@@ -4115,8 +4127,7 @@ export interface AppSettings {
   /** How often Mission Control re-reads the repositories while it is on screen,
    *  in seconds; never below 30. It does not run while the page is closed. */
   missionRefreshSeconds?: number
-  /** How Mission Control colours "N commits since the tag": up to `warnAfter`
-   *  in the first tone, up to `alertAfter` in the second, more in the third. */
+  /** How Mission Control colours "N commits since the tag", by range. */
   missionReleaseTiers?: ReleaseNoteTiers
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
@@ -4736,7 +4747,7 @@ export function defaultSettings(): AppSettings {
     todosManualOrder: false,
     autoFetchMinutes: 5,
     missionRefreshSeconds: 30,
-    missionReleaseTiers: { ...DEFAULT_RELEASE_TIERS, tones: [...DEFAULT_RELEASE_TIERS.tones] },
+    missionReleaseTiers: { limits: [...DEFAULT_RELEASE_TIERS.limits], tones: [...DEFAULT_RELEASE_TIERS.tones] },
     desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,
