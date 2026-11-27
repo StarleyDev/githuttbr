@@ -59,10 +59,8 @@ import {
   Ruler,
   ScanSearch,
   FolderSearch,
-  SlidersHorizontal,
   SquarePen,
   ToggleLeft,
-  Keyboard,
   Map as MapIcon,
   Image as ImageIcon,
   Stethoscope,
@@ -92,7 +90,6 @@ import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
-import { personalOf } from '../../../shared/aiScope'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIConfig, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
@@ -401,24 +398,6 @@ function ProfilePage({
       </button>
 
       <SigningSection />
-
-      <h4><SlidersHorizontal size={14} /> {t('settings.preferences')}</h4>
-      <label>
-        {t('settings.commitStyle')}
-        <select
-          value={profile.ai.commitStyle}
-          onChange={(e) =>
-            useSettingsStore.getState().saveAIFor(profile.id, { commitStyle: e.target.value as CommitStyle })
-          }
-        >
-          {COMMIT_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-        <span className="settings-hint">{t('settings.commitStyleHint')}</span>
-      </label>
 
       <ProfileAISection profile={profile} onConfigure={onConfigureAI} />
     </>
@@ -948,10 +927,11 @@ function LocalCiSection(): React.JSX.Element {
 export type AIScope = 'general' | { profileId: string }
 
 /**
- * The one place an AI is set up — providers, models per task, on/off. The bar
- * on top says whose AI is on screen: the general one every profile follows by
- * default, or a profile's own. Keeping both here means the Profile page never
- * hosts this editor, so switching profiles there cannot jump the page.
+ * The one place an AI is set up — providers, models per task, on/off, and how
+ * it writes and what the chat may do. The bar on top says whose AI is on
+ * screen: the general one every profile follows by default, or a profile's
+ * own. Keeping both here means the Profile page never hosts this editor, so
+ * switching profiles there cannot jump the page.
  */
 function AISettingsPage({
   scope,
@@ -996,14 +976,9 @@ function AISettingsPage({
       </div>
 
       {ownProfile ? (
-        <AIPage
-          key={ownProfile.id}
-          ai={ownProfile.ai}
-          onChange={(next) => saveAIFor(ownProfile.id, next)}
-          parts="engine"
-        />
+        <AIPage key={ownProfile.id} ai={ownProfile.ai} onChange={(next) => saveAIFor(ownProfile.id, next)} />
       ) : (
-        <AIPage key="general" ai={generalAI} onChange={saveGeneralAI} parts="engine" />
+        <AIPage key="general" ai={generalAI} onChange={saveGeneralAI} />
       )}
 
       {!ownProfile && (
@@ -1038,8 +1013,9 @@ function AISettingsPage({
 
 /**
  * A profile's AI, as one line: general or its own, what answers, and a way to
- * set it up on the AI page. Then how the AI writes for this profile. Leaving
- * its own AI drops that profile's accounts and keys, so it asks first.
+ * set it up on the AI page — where everything about it, how it writes
+ * included, is edited. Leaving its own AI drops that profile's whole AI
+ * config, accounts and keys too, so it asks first.
  */
 function ProfileAISection({
   profile,
@@ -1050,7 +1026,6 @@ function ProfileAISection({
 }): React.JSX.Element {
   const t = useT()
   const ai = useSettingsStore((s) => s.aiOfProfile(profile.id))
-  const saveAIFor = useSettingsStore((s) => s.saveAIFor)
   const setProfileOwnAI = useSettingsStore((s) => s.setProfileOwnAI)
   // Its own AI starts as a copy of the general one, keys included — which only
   // exist once the keychain is unlocked; before that the copy would have none.
@@ -1107,39 +1082,27 @@ function ProfileAISection({
       <span className="settings-hint">
         {own ? interp(t('settings.profileAiOwn'), { profile: profile.name }) : t('settings.profileAiGeneral')}
       </span>
-
-      <h4>
-        <SlidersHorizontal size={14} /> {t('settings.profileAiPrefs')}
-      </h4>
-      <span className="settings-hint">{t('settings.profileAiPrefsHint')}</span>
-      {/* Only the preferences are written from here: the engine shown beside them
-          may be the general AI's, which this page must not change. */}
-      <AIPage ai={ai} onChange={(next) => saveAIFor(profile.id, personalOf(next))} parts="personal" />
     </>
   )
 }
 
-/** Which half of an AI config a page edits. The engine (on/off, accounts, which
- *  model does what) is the general AI's or a profile's own; the preferences
- *  (how the AI writes) always belong to a profile. Onboarding edits both. */
-export type AIPageParts = 'all' | 'engine' | 'personal'
-
+/**
+ * One AI config, whole: the engine (on/off, accounts, which model does what)
+ * and the behaviour (how it writes, what the chat may do), in sections. The
+ * general AI's or a profile's own — never a mix, since a profile reads all of
+ * it from one place (`effectiveAI`). Onboarding shows it too.
+ */
 export function AIPage({
   ai,
-  onChange,
-  parts = 'all'
+  onChange
 }: {
   ai: AIConfig
   onChange: (next: AIConfig) => void
-  parts?: AIPageParts
 }): React.JSX.Element {
   const t = useT()
-  const showEngine = parts !== 'personal'
-  const showPersonal = parts !== 'engine'
 
   return (
     <>
-      {showEngine && (
       <label className="settings-toggle-card">
         <input
           type="checkbox"
@@ -1154,13 +1117,27 @@ export function AIPage({
           <span className="settings-hint">{t('settings.aiEnabledHint')}</span>
         </span>
       </label>
-      )}
 
       <div style={ai.enabled === false ? { opacity: 0.4, pointerEvents: 'none' } : undefined}>
-      {showEngine && <AIAccountsEditor ai={ai} onChange={(next) => onChange(next)} />}
+      <AIAccountsEditor ai={ai} onChange={(next) => onChange(next)} />
 
-      {showPersonal && (
-      <>
+      {/* How it writes and what the chat may do: part of this same config, so a
+          profile on the general AI writes like every other one on it. */}
+      <h4><GitCommit size={14} /> {t('settings.aiSectionCommits')}</h4>
+      <label className="settings-field" data-setting="settings.commitStyle">
+        <span className="settings-field-label">{t('settings.commitStyle')}</span>
+        <select
+          value={ai.commitStyle}
+          onChange={(e) => onChange({ ...ai, commitStyle: e.target.value as CommitStyle })}
+        >
+          {COMMIT_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+        <span className="settings-hint">{t('settings.commitStyleHint')}</span>
+      </label>
 
       <label className="settings-toggle-card" style={{ marginTop: 12 }}>
         <input
@@ -1177,9 +1154,25 @@ export function AIPage({
         </span>
       </label>
 
-      <h4><MessageSquare size={14} /> {t('settings.explainStyle')}</h4>
-      <span className="settings-hint">{t('settings.explainStyleHint')}</span>
-      <label>
+      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+        <input
+          type="checkbox"
+          checked={ai.coAuthor !== false}
+          onChange={(e) => onChange({ ...ai, coAuthor: e.target.checked })}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.coAuthor')}</strong>
+          <span className="settings-hint">{t('settings.coAuthorHint')}</span>
+        </span>
+      </label>
+
+      <h4><MessageSquare size={14} /> {t('settings.aiSectionExplain')}</h4>
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.explainStyle')}</span>
+        <span className="settings-hint">{t('settings.explainStyleHint')}</span>
         <select
           value={ai.explainStyle ?? 'normal'}
           onChange={(e) => onChange({ ...ai, explainStyle: e.target.value as ExplainStyle })}
@@ -1208,23 +1201,63 @@ export function AIPage({
       </label>
 
       {ai.hoverExplain !== false && (
-        <>
-          <h4><Keyboard size={14} /> {t('settings.hoverExplainKey')}</h4>
+        <label className="settings-field" style={{ marginTop: 12 }}>
+          <span className="settings-field-label">{t('settings.hoverExplainKey')}</span>
           <span className="settings-hint">{t('settings.hoverExplainKeyHint')}</span>
-          <label>
-            <select
-              value={ai.hoverExplainKey ?? 'shift'}
-              onChange={(e) => onChange({ ...ai, hoverExplainKey: e.target.value as HoverModifier })}
-            >
-              {HOVER_MODIFIERS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {t(m.key)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
+          <select
+            value={ai.hoverExplainKey ?? 'shift'}
+            onChange={(e) => onChange({ ...ai, hoverExplainKey: e.target.value as HoverModifier })}
+          >
+            {HOVER_MODIFIERS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {t(m.key)}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
+
+      <h4><GitMerge size={14} /> {t('settings.aiSectionBranches')}</h4>
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.conflictStyle')}</span>
+        <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
+        <select
+          value={ai.conflictStyle ?? 'clean'}
+          onChange={(e) => onChange({ ...ai, conflictStyle: e.target.value as ConflictStyle })}
+        >
+          {CONFLICT_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="settings-field" style={{ marginTop: 12 }}>
+        <span className="settings-field-label">{t('settings.branchNamingStyle')}</span>
+        <span className="settings-hint">{t('settings.branchNamingStyleHint')}</span>
+        <select
+          value={ai.branchNamingStyle ?? 'prefix/description'}
+          onChange={(e) => onChange({ ...ai, branchNamingStyle: e.target.value as BranchNamingStyle })}
+        >
+          {BRANCH_NAMING_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <h4><ScrollText size={14} /> {t('settings.customInstructions')}</h4>
+      <label className="settings-field">
+        <span className="settings-hint">{t('settings.customInstructionsHint')}</span>
+        <textarea
+          rows={3}
+          value={ai.customInstructions}
+          aria-label={t('settings.customInstructions')}
+          placeholder={t('settings.customInstructionsPlaceholder')}
+          onChange={(e) => onChange({ ...ai, customInstructions: e.target.value })}
+        />
+      </label>
 
       <h4><Bot size={14} /> {t('settings.repoChat')}</h4>
       <label className="settings-toggle-card">
@@ -1325,67 +1358,6 @@ export function AIPage({
         </>
       )}
 
-      <h4><GitMerge size={14} /> {t('settings.conflictStyle')}</h4>
-      <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
-      <label>
-        <select
-          value={ai.conflictStyle ?? 'clean'}
-          onChange={(e) => onChange({ ...ai, conflictStyle: e.target.value as ConflictStyle })}
-        >
-          {CONFLICT_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <h4><GitBranch size={14} /> {t('settings.branchNamingStyle')}</h4>
-      <span className="settings-hint">{t('settings.branchNamingStyleHint')}</span>
-      <label>
-        <select
-          value={ai.branchNamingStyle ?? 'prefix/description'}
-          onChange={(e) => onChange({ ...ai, branchNamingStyle: e.target.value as BranchNamingStyle })}
-        >
-          {BRANCH_NAMING_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <details className="settings-advanced">
-        <summary>
-          <ChevronDown size={13} /> {t('settings.advanced')}
-        </summary>
-        <label>
-          {t('settings.customInstructions')}
-          <textarea
-            rows={3}
-            value={ai.customInstructions}
-            placeholder={t('settings.customInstructionsPlaceholder')}
-            onChange={(e) => onChange({ ...ai, customInstructions: e.target.value })}
-          />
-        </label>
-
-        <label className="settings-toggle-card" style={{ marginTop: 12 }}>
-          <input
-            type="checkbox"
-            checked={ai.coAuthor !== false}
-            onChange={(e) => onChange({ ...ai, coAuthor: e.target.checked })}
-          />
-          <span className="settings-toggle-control" aria-hidden="true">
-            <span className="settings-toggle-thumb" />
-          </span>
-          <span className="settings-toggle-copy">
-            <strong>{t('settings.coAuthor')}</strong>
-            <span className="settings-hint">{t('settings.coAuthorHint')}</span>
-          </span>
-        </label>
-      </details>
-      </>
-      )}
       </div>
     </>
   )

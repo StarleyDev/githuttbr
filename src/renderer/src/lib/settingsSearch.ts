@@ -62,7 +62,6 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('profile', 'settings.newProfile'),
   e('profile', 'settings.gitIdentity'),
   e('profile', 'profileAvatar.title'),
-  e('profile', 'settings.preferences'),
   e('profile', 'signing.title'),
   e('profile', 'signing.signAll', 'signing.signAllHint'),
 
@@ -124,25 +123,30 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   // Workspaces
   e('workspaces', 'ws.title'),
 
-  // AI — the general AI is an app page; the AI preferences belong to each profile
+  // AI — everything about an AI lives on the AI page, the general one's or a
+  // profile's own; the Profile page only says which one the profile uses
   e('ai', 'settings.aiEnabled', 'settings.aiEnabledHint'),
+  e('ai', 'settings.aiSectionCommits'),
+  e('ai', 'settings.commitStyle', 'settings.commitStyleHint'),
+  e('ai', 'settings.generateDescription', 'settings.generateDescriptionHint'),
+  e('ai', 'settings.coAuthor', 'settings.coAuthorHint'),
+  e('ai', 'settings.aiSectionExplain'),
+  e('ai', 'settings.explainStyle', 'settings.explainStyleHint'),
+  e('ai', 'settings.hoverExplain', 'settings.hoverExplainHint'),
+  e('ai', 'settings.hoverExplainKey', 'settings.hoverExplainKeyHint'),
+  e('ai', 'settings.aiSectionBranches'),
+  e('ai', 'settings.conflictStyle', 'settings.conflictStyleHint'),
+  e('ai', 'settings.branchNamingStyle', 'settings.branchNamingStyleHint'),
+  e('ai', 'settings.customInstructions', 'settings.customInstructionsHint'),
+  e('ai', 'settings.repoChat'),
+  e('ai', 'settings.repoChatEnable', 'settings.repoChatEnableHint'),
+  e('ai', 'settings.repoChatCommitted', 'settings.repoChatCommittedHint'),
+  e('ai', 'settings.repoChatActions', 'settings.repoChatActionsHint'),
+  e('ai', 'settings.repoChatReadOnly', 'settings.repoChatReadOnlyHint'),
+  e('ai', 'settings.repoChatRemoteActions', 'settings.repoChatRemoteActionsHint'),
   e('ai', 'settings.aiByProfile', 'settings.aiByProfileHint'),
   e('profile', 'settings.profileAiTitle', 'settings.profileAiGeneral'),
   e('profile', 'settings.useOwnAi', 'settings.profileAiGeneral'),
-  e('profile', 'settings.profileAiPrefs', 'settings.profileAiPrefsHint'),
-  e('profile', 'settings.generateDescription', 'settings.generateDescriptionHint'),
-  e('profile', 'settings.coAuthor', 'settings.coAuthorHint'),
-  e('profile', 'settings.branchNamingStyle'),
-  e('profile', 'settings.conflictStyle'),
-  e('profile', 'settings.hoverExplain', 'settings.hoverExplainHint'),
-  e('profile', 'settings.hoverExplainKey'),
-  e('profile', 'settings.explainStyle'),
-  e('profile', 'settings.repoChat'),
-  e('profile', 'settings.repoChatEnable', 'settings.repoChatEnableHint'),
-  e('profile', 'settings.repoChatCommitted', 'settings.repoChatCommittedHint'),
-  e('profile', 'settings.repoChatActions', 'settings.repoChatActionsHint'),
-  e('profile', 'settings.repoChatReadOnly', 'settings.repoChatReadOnlyHint'),
-  e('profile', 'settings.repoChatRemoteActions', 'settings.repoChatRemoteActionsHint'),
 
   // Themes — the Theme tab
   e('themes', 'settings.appearance', undefined, 'theme'),
