@@ -3542,7 +3542,7 @@ export const shots = [
       await page.waitForSelector('.mc-row', { timeout: 15000 }).catch(() => {})
       // Expand the busiest row: the pending commits and dirty files are the
       // part a screenshot can actually teach.
-      await page.click('.mc-row-wrap:first-child .mc-expand').catch(() => {})
+      await page.click('.mc-row-wrap .mc-expand').catch(() => {})
       await page.waitForTimeout(900)
     }
   },

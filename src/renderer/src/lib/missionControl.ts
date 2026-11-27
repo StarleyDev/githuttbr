@@ -1,4 +1,4 @@
-import type { ConflictOpKind, RepoPulse } from '../../../shared/types'
+import type { CiState, ConflictOpKind, PullRequest, RepoPulse } from '../../../shared/types'
 import type { TranslationKey } from '../i18n'
 
 /**
@@ -169,4 +169,82 @@ export function isFetchStale(p: RepoPulse, now: number): boolean {
 /** The repos whose behind count may be lying — what "Fetch stale" fetches. */
 export function staleFetchTargets(pulses: RepoPulse[], now: number): string[] {
   return pulses.filter((p) => isFetchStale(p, now)).map((p) => p.path)
+}
+
+// ── Refresh cadence and the hosting column ──────────────────────────────────
+
+/** The shortest refresh Settings allows — below it the dashboard is all git. */
+export const MISSION_REFRESH_MIN_S = 30
+const MISSION_REFRESH_MAX_S = 3600
+
+/** The refresh interval in ms from Settings' seconds, clamped to 30 s–1 h. */
+export function missionRefreshMs(seconds: number | undefined): number {
+  const s = Number.isFinite(seconds) ? Math.round(seconds as number) : MISSION_REFRESH_MIN_S
+  return Math.min(MISSION_REFRESH_MAX_S, Math.max(MISSION_REFRESH_MIN_S, s)) * 1000
+}
+
+/**
+ * How long a repository's pull requests and CI stay good before the host is
+ * asked again. Each is one API call per repository; at the 30 s refresh a
+ * twenty-repository workspace would spend half of GitHub's hourly allowance.
+ */
+export const HOSTING_TTL_MS = 5 * 60_000
+/** A running CI is looked at again sooner, so a finished run does not sit on the clock. */
+const HOSTING_PENDING_MS = 60_000
+
+/** What the hosting column shows for one repository. */
+export interface HostingSummary {
+  /** The host answered for pull requests; false hides the column's PR part. */
+  hasHost: boolean
+  /** Open pull requests; `capped` when the host's first page came back full. */
+  open: number
+  capped: boolean
+  /** Of those, how many ask for your review. */
+  awaiting: number
+  /** HEAD's CI, null when the host reports none. */
+  ci: CiState | null
+  /** The HEAD the CI was asked for, and when. */
+  sha: string | null
+  at: number
+}
+
+/** The host's first page of pull requests: GitHub's holds 30. */
+const PR_PAGE = 30
+
+export function summarizePrs(prs: PullRequest[]): Pick<HostingSummary, 'open' | 'capped' | 'awaiting'> {
+  const open = prs.filter((p) => (p.state ?? 'open') === 'open')
+  return { open: open.length, capped: prs.length >= PR_PAGE, awaiting: open.filter((p) => p.awaitingYou).length }
+}
+
+/**
+ * Whether to ask the host again: never asked, HEAD moved (its CI is another
+ * run), a run still going, or the TTL passed — never sooner than the refresh
+ * interval itself, which may be set longer than the TTL.
+ */
+export function hostingDue(
+  entry: HostingSummary | undefined,
+  headSha: string | null | undefined,
+  now: number,
+  refreshMs: number
+): boolean {
+  if (!entry) return true
+  if ((headSha ?? null) !== entry.sha) return true
+  if (entry.ci === 'pending' && now - entry.at >= HOSTING_PENDING_MS) return true
+  return now - entry.at >= Math.max(HOSTING_TTL_MS, refreshMs)
+}
+
+/** Header counts over every repository the host answered for. */
+export function hostingTotals(summaries: HostingSummary[]): { prs: number; awaiting: number; ciFailing: number } {
+  return {
+    prs: summaries.reduce((n, s) => n + s.open, 0),
+    awaiting: summaries.reduce((n, s) => n + s.awaiting, 0),
+    ciFailing: summaries.filter((s) => s.ci === 'failure').length
+  }
+}
+
+/** The release column's second line. */
+export function releaseNote(release: RepoPulse['release']): { key: TranslationKey; n?: number } {
+  if (!release) return { key: 'mission.release.none' }
+  if (release.since === 0) return { key: 'mission.release.current' }
+  return { key: 'mission.release.since', n: release.since }
 }

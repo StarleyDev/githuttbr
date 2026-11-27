@@ -30,7 +30,9 @@ lista, então as contagens se comparam como numa tabela:
 |---|---|
 | **Repositório** | Nome, grupo, a branch e seu upstream — ou **sem upstream** em âmbar, já que uma branch assim nunca é enviada por engano, mas também nunca sincroniza |
 | **Último commit** | Assunto e autor: o que o repositório estava fazendo, sem abri-lo |
-| **Contagens** | Conflitos · ↓ para baixar · ↑ para enviar · no stage · modificados · não rastreados · stashes · PRs abertos (quando o repo já está carregado). Passe o mouse para ver o que cada uma conta |
+| **Working tree** | Conflitos · ↓ para baixar · ↑ para enviar · no stage · modificados · não rastreados · stashes. Passe o mouse para ver o que cada uma conta |
+| **Hospedagem** | Os pull requests abertos, com os que aguardam a **sua** revisão em âmbar, e o CI do HEAD. Clique no número para abrir a página de **Pull requests** daquele repositório, ou em **CI** para abrir as execuções |
+| **Release** | A tag mais recente alcançável do HEAD, e quantos commits vieram depois dela — **em dia** quando nenhum |
 | **Atividade** | Um sparkline de commits de 14 dias, e quantos commits são |
 | **Idades** | Quanto tempo desde o último commit, e desde o último **fetch** |
 
@@ -43,7 +45,7 @@ sem fetch há um dia ou mais, ou nunca fez, a idade fica âmbar — faça fetch 
 de confiar num 0. O horário vem do próprio git, então um `git fetch` no terminal
 também conta.
 
-Numa janela estreita, a coluna do último commit sai primeiro; as contagens ficam.
+Numa janela estreita, as colunas do último commit e da release saem primeiro; as contagens e a hospedagem ficam.
 
 Expanda uma linha (a setinha, ou <kbd>espaço</kbd>) para ver exatamente quais
 commits estão esperando para ser enviados e quais arquivos estão sujos.
@@ -51,13 +53,16 @@ commits estão esperando para ser enviados e quais arquivos estão sujos.
 ## Trabalhando a lista
 
 - As pílulas de status no topo são **filtros** — clique em "3 travados" para ver só
-  esses.
+  esses. **N PRs abertos** e **N CI falhando** filtram do mesmo jeito, e também
+  **N aguardando sua revisão**, na linha de baixo.
 - Ordene por **urgência**, **nome** ou **atividade**.
 - **Marque vários repos** para buscar neles, ou dê pull só nos que estão atrasados
   (o botão conta para você).
 - **Fetch em N desatualizados** aparece quando há branches com upstream sem fetch
   há um dia ou mais, e faz fetch só nelas — as que podem estar com o "para baixar" errado.
-- Ela se atualiza sozinha a cada 30 segundos enquanto está aberta.
+- Ela se atualiza sozinha a cada 30 segundos enquanto está aberta — mude em
+  **Configurações → Git e sincronização → Atualização do Mission Control**, no
+  mínimo 30 segundos. Nada roda com a tela fechada.
 
 | Tecla | Ação |
 |---|---|
@@ -74,8 +79,26 @@ devolve ao seu trabalho. Ela nunca acrescenta uma aba própria, e pertence ao
 workspace em que você está — troque de workspace e você recebe o painel daquele
 workspace.
 
-Ler a central é **puramente local**: um `git status` por repositório, sem rede, sem
-tokens. Abrir o painel nunca autentica em lugar nenhum. Buscar é sempre algo que
-você pediu.
+A parte do git é **local**: alguns comandos git por repositório, sem fetch. A
+coluna **Hospedagem** é a única que fala com um host. Ela pergunta ao host de cada
+repositório pelos pull requests abertos e pelo CI do HEAD, com o perfil daquele
+repositório, e em silêncio: um host sem token ou vínculo para esse perfil
+simplesmente não mostra nada, e nenhuma janela de login abre. Um repositório já
+aberto numa aba não custa chamada nenhuma, porque a lateral já tem os pull requests
+dele.
+
+Limites, para ler os números certo:
+
+- Cada host é consultado **no máximo a cada 5 minutos** por repositório (antes,
+  quando o HEAD muda ou uma execução de CI ainda está rodando), seja qual for o
+  intervalo de atualização — a cota da API do host é dividida com o resto do app.
+  **Atualizar** consulta de novo na hora.
+- A contagem mostra **30+** quando a primeira página do host veio cheia; a página
+  da lista tem todos.
+- A coluna de release é a tag mais recente **alcançável do HEAD**, não a mais nova
+  do repositório. Uma tag criada num commit que o HEAD já tem aparece em até dois
+  minutos.
+
+Buscar é sempre algo que você pediu.
 
 **Veja também:** [Workspaces e abas](workspaces.md) · [Workspaces, abas e grupos](workspaces.md)

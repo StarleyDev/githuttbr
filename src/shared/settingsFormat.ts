@@ -95,6 +95,7 @@ const KNOWN_SETTINGS: { [K in keyof Required<AppSettings>]: true } = {
   todosHideDone: true,
   todosManualOrder: true,
   autoFetchMinutes: true,
+  missionRefreshSeconds: true,
   desktopNotifications: true,
   confirmForcePush: true,
   mergeCommit: true,

@@ -372,6 +372,12 @@ export interface RepoPulse {
   operation: ConflictOpKind | null
   /** Commits per day over the last fortnight, oldest first (row sparkline). */
   activity: number[]
+  /** HEAD's commit, null in an empty repo — the key a CI status is asked by. */
+  headSha?: string | null
+  /** The remote hosting data comes from (origin, else the first), null without one. */
+  remoteUrl?: string | null
+  /** The newest tag reachable from HEAD and how many commits came after it; null with no tag. */
+  release?: { tag: string; since: number } | null
   /** Set when the repo could not be read at all (moved, deleted, not a repo). */
   error: string | null
 }
@@ -4093,6 +4099,9 @@ export interface AppSettings {
    *  the first reorder, so nobody has to find the switch first. */
   todosManualOrder?: boolean
   autoFetchMinutes: number
+  /** How often Mission Control re-reads the repositories while it is on screen,
+   *  in seconds; never below 30. It does not run while the page is closed. */
+  missionRefreshSeconds?: number
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
   confirmForcePush: boolean
@@ -4710,6 +4719,7 @@ export function defaultSettings(): AppSettings {
     todosHideDone: true,
     todosManualOrder: false,
     autoFetchMinutes: 5,
+    missionRefreshSeconds: 30,
     desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,

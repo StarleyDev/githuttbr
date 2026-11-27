@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ArrowDownToLine,
+  ArrowUpRight,
   ArrowUpFromLine,
   Archive,
   ChevronDown,
   ChevronRight,
   CircleCheck,
+  CircleDashed,
+  CircleDot,
+  CircleX,
   Download,
   FileCheck,
   FileEdit,
@@ -17,18 +21,25 @@ import {
   GitPullRequest,
   Loader2,
   RefreshCw,
+  Tag,
   Unlink
 } from 'lucide-react'
-import type { RepoDetail, RepoPulse } from '../../../shared/types'
+import type { CiState, PullRequest, RepoDetail, RepoPulse } from '../../../shared/types'
 import { tabRepos } from '../../../shared/types'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, hostingApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore, repoActions } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import {
   activityTotal,
   bulkTargets,
+  hostingDue,
+  hostingTotals,
   isFetchStale,
+  missionRefreshMs,
+  releaseNote,
+  summarizePrs,
+  type HostingSummary,
   OP_LABEL,
   staleFetchTargets,
   orderPulses,
@@ -42,9 +53,59 @@ import {
 import { timeAgo } from '../lib/timeAgo'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
+import { effectiveProfileId } from '../lib/repoProfile'
 
-/** How often the dashboard re-reads the repos while it is on screen. */
-const AUTO_REFRESH_MS = 30_000
+/**
+ * Hosting answers kept across visits: reopening the page inside the TTL asks
+ * no host. Module-level, so it lives as long as the window, not the page.
+ */
+const hostingCache = new Map<string, HostingSummary>()
+
+/** At most this many repositories ask their host at once. */
+const HOSTING_CONCURRENCY = 4
+
+/**
+ * One repository's pull requests and HEAD's CI. A repository already open in
+ * a tab has both in the store, kept fresh by the sidebar, so it costs nothing;
+ * another asks its host as the repository's profile — silently: a background
+ * credential lookup never raises a sign-in window. A host that does not answer
+ * is remembered as such, so it is not asked again until the TTL passes.
+ */
+async function fetchHosting(p: RepoPulse): Promise<HostingSummary> {
+  const sha = p.headSha ?? null
+  const base: HostingSummary = { hasHost: false, open: 0, capped: false, awaiting: 0, ci: null, sha, at: Date.now() }
+  if (!p.remoteUrl) return base
+  const { settings } = useSettingsStore.getState()
+  const profileId = effectiveProfileId(settings, p.path)
+  const profile = settings.profiles.find((x) => x.id === profileId) ?? useSettingsStore.getState().activeProfile()
+  const loaded = useRepoStore.getState().repos[p.path]
+
+  let prs: PullRequest[] | null = loaded?.prProvider ? loaded.prs : null
+  if (!prs) {
+    prs = await hostingApi
+      .listPRs(p.path, p.remoteUrl, {
+        github: profile.githubToken || undefined,
+        azure: profile.azureToken || undefined,
+        gitlab: profile.gitlabToken || undefined,
+        bitbucket: profile.bitbucketToken || undefined,
+        forgejo: profile.forgejoToken || undefined
+      })
+      // No provider: a remote on disk or an unknown host — there is nothing to count.
+      .then((r) => (r.provider ? r.prs : null))
+      .catch(() => null)
+  }
+
+  let ci: CiState | null = null
+  if (sha && prs) {
+    const known = loaded?.ciStatuses?.[sha]
+    if (known && known.state !== 'pending') ci = known.state
+    else {
+      const fresh = await hostingApi.ciStatuses(p.path, p.remoteUrl, [sha], profile.githubToken ?? '').catch(() => null)
+      ci = fresh?.[sha]?.state ?? null
+    }
+  }
+  return prs ? { ...base, hasHost: true, ...summarizePrs(prs), ci } : { ...base, ci }
+}
 
 interface Row {
   path: string
@@ -90,6 +151,18 @@ function Sparkline({ values }: { values: number[] }): React.JSX.Element | null {
   )
 }
 
+const CI_ICON: Record<CiState, typeof CircleCheck> = {
+  success: CircleCheck,
+  failure: CircleX,
+  pending: CircleDot,
+  neutral: CircleDashed
+}
+
+function CiIcon({ state }: { state: CiState }): React.JSX.Element {
+  const Icon = CI_ICON[state]
+  return <Icon size={11} />
+}
+
 interface Badge {
   cls: string
   Icon: typeof CircleCheck
@@ -102,7 +175,7 @@ interface Badge {
  * The row's counts, in a fixed order so a column of rows reads like a table:
  * what blocks, then sync, then the working tree, then the extras.
  */
-function rowBadges(p: RepoPulse, prs: number): Badge[] {
+function rowBadges(p: RepoPulse): Badge[] {
   const all: Badge[] = [
     { cls: 'blocked', Icon: AlertTriangle, n: p.conflicted, title: 'mission.badge.conflicted' },
     { cls: 'behind', Icon: ArrowDownToLine, n: p.behind, title: 'mission.badge.behind' },
@@ -110,8 +183,7 @@ function rowBadges(p: RepoPulse, prs: number): Badge[] {
     { cls: 'staged', Icon: FileCheck, n: p.staged, title: 'mission.badge.staged' },
     { cls: 'dirty', Icon: FileEdit, n: p.unstaged, title: 'mission.badge.modified' },
     { cls: 'untracked', Icon: FilePlus, n: p.untracked, title: 'mission.badge.untracked' },
-    { cls: 'stash', Icon: Archive, n: p.stashes, title: 'mission.badge.stashes' },
-    { cls: 'pr', Icon: GitPullRequest, n: prs, title: 'mission.badge.prs' }
+    { cls: 'stash', Icon: Archive, n: p.stashes, title: 'mission.badge.stashes' }
   ]
   return all.filter((b) => b.n > 0)
 }
@@ -121,8 +193,10 @@ function rowBadges(p: RepoPulse, prs: number): Badge[] {
  * ordered by what needs you: something stuck mid-rebase first, then work to
  * pull or push, then dirty trees, then the quiet ones.
  *
- * Reading is local only (one `git status` per repo, no network), so opening
- * this never authenticates or hits a host. Fetching is always an explicit act.
+ * The git side is local only (a handful of git calls per repo, no fetch).
+ * The hosting column asks each repository's host for its open pull requests
+ * and HEAD's CI, at most every five minutes and silently; fetching is always
+ * an explicit act. Nothing here runs while the page is closed.
  */
 export function MissionControlPage(): React.JSX.Element {
   const tabs = useSettingsStore((s) => s.settings.tabs)
@@ -134,7 +208,8 @@ export function MissionControlPage(): React.JSX.Element {
   const workspace = useSettingsStore(
     (s) => (s.settings.workspaces ?? []).find((w) => w.id === s.settings.activeWorkspaceId)?.name ?? ''
   )
-  const repos = useRepoStore((s) => s.repos)
+  const refreshSeconds = useSettingsStore((s) => s.settings.missionRefreshSeconds)
+  const refreshMs = missionRefreshMs(refreshSeconds)
   const toast = useUIStore((s) => s.toast)
   const setMissionOpen = useUIStore((s) => s.setMissionOpen)
   const t = useT()
@@ -145,6 +220,9 @@ export function MissionControlPage(): React.JSX.Element {
   const [busy, setBusy] = useState<string | null>(null)
   const [filter, setFilter] = useState('')
   const [level, setLevel] = useState<PulseLevel | null>(null)
+  const [hostFilter, setHostFilter] = useState<'prs' | 'ci' | 'review' | null>(null)
+  const [hosting, setHosting] = useState<Record<string, HostingSummary>>(() => Object.fromEntries(hostingCache))
+  const hostingBusy = useRef(false)
   const [sort, setSort] = useState<PulseSort>('urgency')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -168,8 +246,35 @@ export function MissionControlPage(): React.JSX.Element {
     return out
   }, [tabs])
 
+  // Only the repositories whose answer is due; one pass at a time, so a slow
+  // host never stacks a second round of calls behind the first.
+  const refreshHosting = useCallback(
+    async (list: RepoPulse[], force: boolean): Promise<void> => {
+      if (hostingBusy.current) return
+      hostingBusy.current = true
+      try {
+        const now = Date.now()
+        const due = list.filter(
+          (p) => !p.error && p.remoteUrl && (force || hostingDue(hostingCache.get(p.path), p.headSha, now, refreshMs))
+        )
+        let next = 0
+        const worker = async (): Promise<void> => {
+          while (next < due.length) {
+            const p = due[next++]
+            hostingCache.set(p.path, await fetchHosting(p))
+            setHosting(Object.fromEntries(hostingCache))
+          }
+        }
+        await Promise.all(Array.from({ length: Math.min(HOSTING_CONCURRENCY, due.length) }, worker))
+      } finally {
+        hostingBusy.current = false
+      }
+    },
+    [refreshMs]
+  )
+
   const refresh = useCallback(
-    async (opts: { silent?: boolean } = {}) => {
+    async (opts: { silent?: boolean; force?: boolean } = {}) => {
       if (!opts.silent) setLoading(true)
       const results = await Promise.all(
         rows.map((r) =>
@@ -199,8 +304,9 @@ export function MissionControlPage(): React.JSX.Element {
       setPulses(Object.fromEntries(results.map((p) => [p.path, p])))
       setRefreshedAt(Date.now())
       setLoading(false)
+      void refreshHosting(results, opts.force === true)
     },
-    [rows]
+    [rows, refreshHosting]
   )
 
   useEffect(() => {
@@ -208,24 +314,36 @@ export function MissionControlPage(): React.JSX.Element {
   }, [refresh])
 
   // Keep it live while it is on screen: a dashboard that goes stale while you
-  // work in another window is worse than no dashboard.
+  // work in another window is worse than no dashboard. The page unmounts when
+  // closed, and the timer with it — nothing polls in the background.
   useEffect(() => {
-    const id = setInterval(() => void refresh({ silent: true }), AUTO_REFRESH_MS)
+    const id = setInterval(() => void refresh({ silent: true }), refreshMs)
     return () => clearInterval(id)
-  }, [refresh])
+  }, [refresh, refreshMs])
 
   const ordered = useMemo(() => {
     const list = rows.map((r) => pulses[r.path]).filter(Boolean)
     const q = filter.trim().toLowerCase()
     const matched = list.filter((p) => {
       if (level && pulseVerdict(p).level !== level) return false
+      const h = hosting[p.path]
+      if (hostFilter === 'prs' && !(h && h.open > 0)) return false
+      if (hostFilter === 'ci' && h?.ci !== 'failure') return false
+      if (hostFilter === 'review' && !(h && h.awaiting > 0)) return false
       if (!q) return true
       return p.name.toLowerCase().includes(q) || p.path.toLowerCase().includes(q) || p.branch.toLowerCase().includes(q)
     })
     return orderPulses(matched, sort)
-  }, [rows, pulses, filter, level, sort])
+  }, [rows, pulses, filter, level, hostFilter, hosting, sort])
 
   const totals = useMemo(() => pulseTotals(Object.values(pulses)), [pulses])
+  const hostTotals = useMemo(
+    () => hostingTotals(rows.map((r) => hosting[r.path]).filter((h): h is HostingSummary => !!h)),
+    [rows, hosting]
+  )
+  const toggleHostFilter = (kind: 'prs' | 'ci' | 'review'): void => setHostFilter((cur) => (cur === kind ? null : kind))
+  const openRepoPage = (repoPath: string, type: 'pull-requests' | 'ci-runs'): void =>
+    useSettingsStore.getState().openPageTab({ type, repoPath })
   const grand = useMemo(() => {
     const all = Object.values(pulses)
     return {
@@ -354,6 +472,16 @@ export function MissionControlPage(): React.JSX.Element {
           {levelChip('action', t('mission.action'))}
           {levelChip('pending', t('mission.pending'))}
           {levelChip('clean', t('mission.clean'))}
+          {hostTotals.prs > 0 && (
+            <button className={`mc-pill prs ${hostFilter === 'prs' ? 'on' : ''}`} onClick={() => toggleHostFilter('prs')}>
+              <GitPullRequest size={11} /> {interp(t('mission.prsOpen'), { n: String(hostTotals.prs) })}
+            </button>
+          )}
+          {hostTotals.ciFailing > 0 && (
+            <button className={`mc-pill blocked ${hostFilter === 'ci' ? 'on' : ''}`} onClick={() => toggleHostFilter('ci')}>
+              <CircleX size={11} /> {interp(t('mission.ciFailing'), { n: String(hostTotals.ciFailing) })}
+            </button>
+          )}
         </span>
         <input
           ref={filterRef}
@@ -394,7 +522,7 @@ export function MissionControlPage(): React.JSX.Element {
             {interp(t('mission.fetchStaleButton'), { n: String(stale.length) })}
           </button>
         )}
-        <button className="btn ghost small" disabled={loading} onClick={() => void refresh()}>
+        <button className="btn ghost small" disabled={loading} onClick={() => void refresh({ force: true })}>
           <RefreshCw size={13} /> {t('mission.refresh')}
         </button>
       </div>
@@ -412,6 +540,14 @@ export function MissionControlPage(): React.JSX.Element {
         <span className="mc-stat">
           <GitCommitHorizontal size={11} /> {interp(t('mission.totalCommits'), { n: String(grand.commits) })}
         </span>
+        {hostTotals.awaiting > 0 && (
+          <button
+            className={`mc-stat mc-stat-review ${hostFilter === 'review' ? 'on' : ''}`}
+            onClick={() => toggleHostFilter('review')}
+          >
+            <GitPullRequest size={11} /> {interp(t('mission.awaitingReview'), { n: String(hostTotals.awaiting) })}
+          </button>
+        )}
         <span className="mc-stat mc-stat-right">
           {refreshedAt ? interp(t('mission.updated'), { t: agoLabel(t, refreshedAt) ?? '' }) : ''}
         </span>
@@ -443,18 +579,32 @@ export function MissionControlPage(): React.JSX.Element {
           <Loader2 size={22} className="spin" />
         </div>
       ) : ordered.length === 0 ? (
-        <div className="mc-empty">{filter.trim() || level ? t('mission.noMatch') : t('mission.empty')}</div>
+        <div className="mc-empty">{filter.trim() || level || hostFilter ? t('mission.noMatch') : t('mission.empty')}</div>
       ) : (
         <div className="mc-list">
+          <div className="mc-row mc-head">
+            <span />
+            <span />
+            <span />
+            <span>{t('mission.col.repo')}</span>
+            <span className="mc-commit">{t('mission.col.commit')}</span>
+            <span>{t('mission.col.local')}</span>
+            <span>{t('mission.col.hosting')}</span>
+            <span className="mc-release">{t('mission.col.release')}</span>
+            <span>{t('mission.col.activity')}</span>
+            <span className="mc-head-when">{t('mission.col.when')}</span>
+            <span />
+          </div>
           {ordered.map((p, i) => {
             const verdict = pulseVerdict(p)
             const Icon = LEVEL_ICON[verdict.level]
             const row = rows.find((r) => r.path === p.path)
-            const prs = repos[p.path]?.prs?.length ?? 0
+            const host = hosting[p.path]
+            const note = releaseNote(p.release ?? null)
             const isOpen = expanded === p.path
             const detail = details[p.path]
             const fetchStale = isFetchStale(p, Date.now())
-            const badges = rowBadges(p, prs)
+            const badges = rowBadges(p)
             return (
               <div key={p.path} className={`mc-row-wrap ${i === cursor ? 'cursor' : ''}`}>
                 <div
@@ -529,6 +679,58 @@ export function MissionControlPage(): React.JSX.Element {
                             <b.Icon size={11} /> {b.n}
                           </span>
                         ))}
+                      </div>
+                      <div className="mc-hosting">
+                        {host?.hasHost &&
+                          (host.open > 0 ? (
+                            <button
+                              className="mc-pr-chip"
+                              title={interp(t('mission.prChip'), { n: String(host.open) })}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openRepoPage(p.path, 'pull-requests')
+                              }}
+                            >
+                              <GitPullRequest size={11} />
+                              {host.capped ? `${host.open}+` : host.open}
+                              {host.awaiting > 0 && (
+                                <span
+                                  className="mc-pr-awaiting"
+                                  title={interp(t('mission.awaitingReview'), { n: String(host.awaiting) })}
+                                >
+                                  {host.awaiting}
+                                </span>
+                              )}
+                              <ArrowUpRight size={10} className="mc-go" />
+                            </button>
+                          ) : (
+                            <span className="mc-muted">{t('mission.noPrs')}</span>
+                          ))}
+                        {host?.ci && (
+                          <button
+                            className={`mc-ci ${host.ci}`}
+                            title={t(`mission.ci.${host.ci}` as 'mission.ci.success')}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openRepoPage(p.path, 'ci-runs')
+                            }}
+                          >
+                            <CiIcon state={host.ci} />
+                            {/* i18n-ignore product acronym */}
+                            CI
+                          </button>
+                        )}
+                      </div>
+                      <div
+                        className="mc-release"
+                        title={p.release ? interp(t('mission.release.title'), { tag: p.release.tag }) : undefined}
+                      >
+                        {p.release && (
+                          <span className="mc-tag">
+                            <Tag size={11} /> <span>{p.release.tag}</span>
+                          </span>
+                        )}
+                        <span className="mc-release-note">{interp(t(note.key), { n: String(note.n ?? '') })}</span>
                       </div>
                     </>
                   )}

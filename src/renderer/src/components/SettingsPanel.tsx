@@ -68,6 +68,7 @@ import {
   PanelTop
 } from 'lucide-react'
 import { WINDOWS_TERMINAL_SHELLS } from '../lib/terminalShells'
+import { MISSION_REFRESH_MIN_S } from '../lib/missionControl'
 import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
@@ -3349,6 +3350,16 @@ function GitSyncPage(): React.JSX.Element {
             onChange={(n) => update((s) => ({ ...s, autoFetchMinutes: n }))}
           />
           <span className="settings-hint">{t('settings.autoFetchHint')}</span>
+        </label>
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.missionRefresh')}</span>
+          <NumberField
+            min={MISSION_REFRESH_MIN_S}
+            max={3600}
+            value={settings.missionRefreshSeconds ?? MISSION_REFRESH_MIN_S}
+            onChange={(n) => update((s) => ({ ...s, missionRefreshSeconds: Math.max(MISSION_REFRESH_MIN_S, n) }))}
+          />
+          <span className="settings-hint">{t('settings.missionRefreshHint')}</span>
         </label>
       </div>
 

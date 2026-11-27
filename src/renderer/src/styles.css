@@ -14296,11 +14296,13 @@ input[type='range']:focus-visible {
   container-type: inline-size;
 }
 /* A grid rather than a flex row, so every column lines up down the list and the
-   counts read like a table: identity, last commit, counts, activity, ages. */
+   counts read like a table: identity, last commit, counts, hosting, release,
+   activity, ages. Each row is its own grid, so the edge columns are fixed
+   widths — `auto` would size per row and the header would drift. */
 .mc-row {
   display: grid;
   grid-template-columns:
-    auto auto auto minmax(170px, 1fr) minmax(0, 1.5fr) 230px 92px 104px auto;
+    16px 16px 16px minmax(170px, 1fr) minmax(0, 1.4fr) 170px 150px 130px 92px 104px 128px;
   align-items: center;
   gap: 10px;
   padding: 7px 10px;
@@ -14308,19 +14310,92 @@ input[type='range']:focus-visible {
   min-width: 0;
 }
 /* Narrow window: the last commit goes first, the counts stay. */
-@container (max-width: 900px) {
-  .mc-row { grid-template-columns: auto auto auto minmax(150px, 1fr) 200px 80px 96px auto; }
-  .mc-commit { display: none; }
-  .mc-error { grid-column: span 1; }
+@container (max-width: 1100px) {
+  .mc-row { grid-template-columns: 16px 16px 16px minmax(150px, 1fr) 160px 140px 80px 96px 128px; }
+  /* Scoped under .mc-row so they outrank the base rules further down. */
+  .mc-row .mc-commit, .mc-row .mc-release { display: none; }
+  .mc-row .mc-error { grid-column: span 2; }
 }
-.mc-row:hover { background: var(--bg-4); }
+.mc-row:not(.mc-head):hover { background: var(--bg-4); }
+/* Column names, pinned above the rows while the list scrolls. */
+.mc-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: 5px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.mc-head > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-head .mc-head-when { text-align: end; }
+/* Hosting: the PR count opens the repository's pull requests, CI its runs. */
+.mc-hosting { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.mc-pr-chip,
+.mc-ci {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-pr-chip {
+  background: color-mix(in srgb, var(--purple) 16%, transparent);
+  border-color: color-mix(in srgb, var(--purple) 35%, transparent);
+  color: color-mix(in srgb, var(--purple) 80%, var(--text-0));
+}
+.mc-pr-chip:hover { background: color-mix(in srgb, var(--purple) 30%, transparent); border-color: var(--purple); }
+.mc-pr-chip .mc-go { opacity: 0.55; }
+.mc-pr-chip:hover .mc-go { opacity: 1; }
+.mc-pr-awaiting {
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--yellow);
+  color: var(--bg-0);
+  font-size: 10px;
+}
+.mc-ci.success { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+.mc-ci.failure { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
+.mc-ci.pending { background: color-mix(in srgb, var(--warn, #d29922) 14%, transparent); color: var(--warn, #d29922); }
+.mc-ci.neutral { background: var(--bg-4); color: var(--text-2); }
+.mc-ci:hover { border-color: currentColor; }
+.mc-muted { font-size: 10.5px; color: var(--text-3, var(--text-2)); }
+/* Release: the newest tag HEAD reaches, and how far HEAD is past it. */
+.mc-release { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-tag { display: inline-flex; align-items: center; gap: 4px; min-width: 0; font-size: 11px; color: var(--text-1); }
+.mc-tag svg { flex: none; color: var(--yellow); }
+.mc-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-release-note { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-pill { display: inline-flex; align-items: center; gap: 4px; }
+.mc-pill.prs { background: color-mix(in srgb, var(--purple) 18%, transparent); color: var(--purple); }
+.mc-stat-review {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 1px 7px;
+  background: color-mix(in srgb, var(--yellow) 14%, transparent);
+  color: var(--yellow);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-stat-review.on { border-color: currentColor; }
 /* Keyboard cursor: a soft ring around the whole row rather than a bar stuck to
    its left edge, which read as a stray tab. */
 .mc-row-wrap.cursor .mc-row {
   background: var(--bg-4);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
-.mc-check { flex: 0 0 auto; accent-color: var(--accent); cursor: pointer; }
+.mc-check { flex: 0 0 auto; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .mc-expand {
   display: flex;
   flex: 0 0 auto;
@@ -14391,14 +14466,13 @@ input[type='range']:focus-visible {
 .mc-badge.ahead { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .mc-badge.dirty { color: var(--text-1); }
 .mc-badge.staged { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
-.mc-badge.pr { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
-.mc-error { grid-column: span 2; min-width: 0; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-error { grid-column: span 4; min-width: 0; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-times { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
 .mc-age { font-size: 10.5px; color: var(--text-1); white-space: nowrap; }
 .mc-fetched { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 /* The behind count is only as fresh as the last fetch — say so when it is old. */
 .mc-fetched.stale { color: var(--warn, #d29922); }
-.mc-actions { display: flex; gap: 4px; flex: 0 0 auto; opacity: 0; }
+.mc-actions { display: flex; justify-content: flex-end; gap: 4px; flex: 0 0 auto; opacity: 0; }
 .mc-row:hover .mc-actions { opacity: 1; }
 
 /* ── Timelapse (animated history) ── */
