@@ -4728,6 +4728,7 @@ export const uk: Dict = {
   'composerAI.accountDefault': 'Модель акаунта за замовчуванням',
   'composerAI.noAccount': 'Немає акаунта ШІ',
   'composerAI.generating': 'Генерація через {name}… {seconds} с',
+  'composerAI.elapsed': '{seconds} с',
   'composerAI.generated': 'Згенеровано {name} за {seconds} с. Попередній текст збережено.',
   'composerAI.undo': 'Скасувати',
   'composerAI.again': 'Згенерувати знову',

@@ -4731,6 +4731,7 @@ export const ar: Dict = {
   'composerAI.accountDefault': 'النموذج الافتراضي للحساب',
   'composerAI.noAccount': 'لا يوجد حساب ذكاء اصطناعي',
   'composerAI.generating': 'جارٍ الإنشاء باستخدام {name}… {seconds} ث',
+  'composerAI.elapsed': '{seconds} ث',
   'composerAI.generated': 'أنشأه {name} في {seconds} ث. تم الاحتفاظ بالنص السابق.',
   'composerAI.undo': 'تراجع',
   'composerAI.again': 'إنشاء مرة أخرى',

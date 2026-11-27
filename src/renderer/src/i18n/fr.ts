@@ -4676,6 +4676,7 @@ export const fr: Dict = {
   'composerAI.accountDefault': 'Le modèle par défaut du compte',
   'composerAI.noAccount': 'Aucun compte d’IA',
   'composerAI.generating': 'Génération avec {name}… {seconds} s',
+  'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Généré par {name} en {seconds} s. Le texte précédent a été conservé.',
   'composerAI.undo': 'Annuler',
   'composerAI.again': 'Générer à nouveau',

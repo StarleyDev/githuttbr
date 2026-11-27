@@ -188,12 +188,19 @@ interface RepoStoreState {
   repos: Record<string, RepoData>
   /** Per-repo commit summary draft, shared between the WIP graph row and the composer. */
   drafts: Record<string, string>
+  /**
+   * Per-repo commit description draft. In the store, not the composer, for the
+   * same reason as the summary: switching tabs unmounts the composer, and a
+   * description held in its state was lost on the way back.
+   */
+  descriptionDrafts: Record<string, string>
 
   ensure(path: string): Promise<void>
   refresh(path: string, opts?: { light?: boolean; only?: RefreshSlice[] }): Promise<void>
   patch(path: string, partial: Partial<RepoData>): void
   select(path: string, sel: Selection | null): void
   setDraft(path: string, value: string): void
+  setDescriptionDraft(path: string, value: string): void
   loadMore(path: string): Promise<void>
   refreshPRs(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshIssues(path: string, opts?: { silent?: boolean }): Promise<void>
@@ -714,6 +721,7 @@ function announceReviewRequests(
 export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: {},
   drafts: {},
+  descriptionDrafts: {},
 
   // Deliberately a no-op for unknown paths: only `ensure` creates entries.
   // Otherwise an in-flight refresh resolving after a tab closes would
@@ -722,6 +730,8 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     set((s) => (s.repos[path] ? { repos: { ...s.repos, [path]: { ...s.repos[path], ...partial } } } : s)),
 
   setDraft: (path, value) => set((s) => ({ drafts: { ...s.drafts, [path]: value } })),
+  setDescriptionDraft: (path, value) =>
+    set((s) => ({ descriptionDrafts: { ...s.descriptionDrafts, [path]: value } })),
 
   ensure: async (path) => {
     if (get().repos[path]) return

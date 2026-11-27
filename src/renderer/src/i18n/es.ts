@@ -4731,6 +4731,7 @@ export const es: Dict = {
   'composerAI.accountDefault': 'El modelo predeterminado de la cuenta',
   'composerAI.noAccount': 'Ninguna cuenta de IA',
   'composerAI.generating': 'Generando con {name}… {seconds}s',
+  'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Generado por {name} en {seconds} s. Se guardó el texto anterior.',
   'composerAI.undo': 'Deshacer',
   'composerAI.again': 'Generar de nuevo',

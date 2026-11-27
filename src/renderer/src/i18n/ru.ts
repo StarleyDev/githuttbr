@@ -4728,6 +4728,7 @@ export const ru: Dict = {
   'composerAI.accountDefault': 'Модель аккаунта по умолчанию',
   'composerAI.noAccount': 'Нет аккаунта ИИ',
   'composerAI.generating': 'Генерация через {name}… {seconds} с',
+  'composerAI.elapsed': '{seconds} с',
   'composerAI.generated': 'Сгенерировано {name} за {seconds} с. Прежний текст сохранён.',
   'composerAI.undo': 'Отменить',
   'composerAI.again': 'Сгенерировать снова',

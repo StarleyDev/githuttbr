@@ -4731,6 +4731,7 @@ export const he: Dict = {
   'composerAI.accountDefault': 'מודל ברירת המחדל של החשבון',
   'composerAI.noAccount': 'אין חשבון AI',
   'composerAI.generating': 'יוצר עם {name}… {seconds} ש׳',
+  'composerAI.elapsed': '{seconds} ש׳',
   'composerAI.generated': 'נוצר על ידי {name} תוך {seconds} ש׳. הטקסט הקודם נשמר.',
   'composerAI.undo': 'ביטול',
   'composerAI.again': 'יצירה מחדש',

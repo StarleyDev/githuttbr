@@ -4728,6 +4728,7 @@ export const zhCN: Dict = {
   'composerAI.accountDefault': '账户的默认模型',
   'composerAI.noAccount': '没有 AI 账户',
   'composerAI.generating': '正在用 {name} 生成… {seconds} 秒',
+  'composerAI.elapsed': '{seconds} 秒',
   'composerAI.generated': '由 {name} 在 {seconds} 秒内生成。之前的文本已保留。',
   'composerAI.undo': '撤销',
   'composerAI.again': '重新生成',

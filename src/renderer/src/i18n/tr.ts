@@ -4671,6 +4671,7 @@ export const tr: Dict = {
   'composerAI.accountDefault': 'Hesabın varsayılan modeli',
   'composerAI.noAccount': 'Yapay zekâ hesabı yok',
   'composerAI.generating': '{name} ile oluşturuluyor… {seconds} sn',
+  'composerAI.elapsed': '{seconds} sn',
   'composerAI.generated': '{name} tarafından {seconds} sn içinde oluşturuldu. Önceki metin saklandı.',
   'composerAI.undo': 'Geri al',
   'composerAI.again': 'Yeniden oluştur',

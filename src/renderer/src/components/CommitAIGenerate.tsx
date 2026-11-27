@@ -15,9 +15,9 @@ import { useModelCatalogs } from './useModelCatalogs'
 import type { CommitGeneration } from './useCommitGeneration'
 
 /**
- * "✦ Generate with AI | account · model ▾" plus what follows it in place:
- * the running line with Cancel, and the Undo banner once text was replaced.
- * The ▾ menu picks an account and model for one generation only.
+ * "✦ | account · model ▾" plus, on the same row, the running time with
+ * Cancel, or Undo and Generate again once the text was replaced. The ▾ menu
+ * picks an account and model for one generation only.
  */
 export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; disabled: boolean }): React.JSX.Element {
   const t = useT()
@@ -57,6 +57,12 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
 
   const fallback = busy && gen.elapsed >= SLOW_GENERATION_SECONDS ? fallbackAccount(ai, state.accountId, keysKnown) : null
 
+  const doneTitle =
+    state.phase === 'generated' ? interp(t('composerAI.generated'), { name: state.label, seconds: state.seconds }) : ''
+
+  // One row: the icon action, who answers, and — only while it matters — the
+  // running time with Cancel, or Undo and Generate again. The button itself
+  // shows the spinner, so nothing else repeats that the AI is writing.
   return (
     <div className="commit-ai">
       <div className="commit-ai-split">
@@ -64,11 +70,11 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
           type="button"
           className="commit-ai-main"
           title={t('composer.generateWithAi')}
+          aria-label={t('composerAI.generate')}
           disabled={disabled || busy}
           onClick={() => void gen.generate()}
         >
-          {busy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
-          <span>{t('composerAI.generate')}</span>
+          {busy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
         </button>
         <button
           type="button"
@@ -84,10 +90,13 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
       </div>
 
       {state.phase === 'generating' && (
-        <div className="commit-ai-status" role="status">
-          <Loader2 size={13} className="spin" />
-          <span className="commit-ai-status-text">
-            {interp(t('composerAI.generating'), { name: state.label, seconds: gen.elapsed })}
+        <>
+          <span
+            className="commit-ai-elapsed"
+            role="status"
+            title={interp(t('composerAI.generating'), { name: state.label, seconds: gen.elapsed })}
+          >
+            {interp(t('composerAI.elapsed'), { seconds: gen.elapsed })}
           </span>
           {fallback && (
             <button
@@ -101,22 +110,27 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
           <button type="button" className="btn ghost small" onClick={gen.cancel}>
             <X size={12} /> {t('aiGuard.cancel')}
           </button>
-        </div>
+        </>
       )}
 
       {state.phase === 'generated' && (
-        <div className="commit-ai-status done" role="status">
-          <Sparkles size={13} />
-          <span className="commit-ai-status-text">
-            {interp(t('composerAI.generated'), { name: state.label, seconds: state.seconds })}
-          </span>
-          <button type="button" className="btn ghost small" onClick={gen.undo}>
+        <>
+          <button type="button" className="btn ghost small" title={doneTitle} onClick={gen.undo}>
             <Undo2 size={12} /> {t('composerAI.undo')}
           </button>
-          <button type="button" className="btn ghost small" disabled={disabled} onClick={() => void gen.regenerate()}>
+          <button
+            type="button"
+            className="btn ghost small"
+            title={doneTitle}
+            disabled={disabled}
+            onClick={() => void gen.regenerate()}
+          >
             <RotateCw size={12} /> {t('composerAI.again')}
           </button>
-        </div>
+          <span className="commit-ai-live" role="status">
+            {doneTitle}
+          </span>
+        </>
       )}
     </div>
   )

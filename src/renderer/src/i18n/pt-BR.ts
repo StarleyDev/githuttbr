@@ -4737,6 +4737,7 @@ export const ptBR: Dict = {
   'composerAI.accountDefault': 'O modelo padrão da conta',
   'composerAI.noAccount': 'Nenhuma conta de IA',
   'composerAI.generating': 'Gerando com {name}… {seconds}s',
+  'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Gerado por {name} em {seconds} s. O texto anterior foi guardado.',
   'composerAI.undo': 'Desfazer',
   'composerAI.again': 'Gerar de novo',

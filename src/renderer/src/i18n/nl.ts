@@ -4736,6 +4736,7 @@ export const nl: Dict = {
   'composerAI.accountDefault': 'Het standaardmodel van het account',
   'composerAI.noAccount': 'Geen AI-account',
   'composerAI.generating': 'Genereren met {name}… {seconds}s',
+  'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Gegenereerd door {name} in {seconds} s. De vorige tekst is bewaard.',
   'composerAI.undo': 'Ongedaan maken',
   'composerAI.again': 'Opnieuw genereren',

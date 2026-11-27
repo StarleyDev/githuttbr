@@ -4728,6 +4728,7 @@ export const ko: Dict = {
   'composerAI.accountDefault': '계정의 기본 모델',
   'composerAI.noAccount': 'AI 계정 없음',
   'composerAI.generating': '{name}(으)로 생성 중… {seconds}초',
+  'composerAI.elapsed': '{seconds}초',
   'composerAI.generated': '{name}이(가) {seconds}초 만에 생성했습니다. 이전 텍스트는 보관했습니다.',
   'composerAI.undo': '실행 취소',
   'composerAI.again': '다시 생성',

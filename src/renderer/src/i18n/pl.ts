@@ -4728,6 +4728,7 @@ export const pl: Dict = {
   'composerAI.accountDefault': 'Domyślny model konta',
   'composerAI.noAccount': 'Brak konta AI',
   'composerAI.generating': 'Generowanie przez {name}… {seconds} s',
+  'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Wygenerowane przez {name} w {seconds} s. Poprzedni tekst został zachowany.',
   'composerAI.undo': 'Cofnij',
   'composerAI.again': 'Wygeneruj ponownie',
