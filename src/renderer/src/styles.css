@@ -3151,25 +3151,219 @@ body.col-resizing .node-ava {
   border-bottom: 1px solid var(--border-soft);
 }
 
-.repo-chat-header > div {
+.repo-chat-header {
+  flex-wrap: wrap;
+}
+
+.repo-chat-title {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  color: var(--text-0);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The pills under the title: who answers, what the chat may do, how its
+   proposals run. Their own row, wrapping when the column is narrow. */
+.repo-chat-pills {
+  position: relative;
+  flex-basis: 100%;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.repo-chat-pill {
+  max-width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--text-2);
+  background: var(--bg-2);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.repo-chat-pill:hover,
+.repo-chat-pill.open {
+  border-color: var(--border);
+  color: var(--text-0);
+}
+
+.repo-chat-pill:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.repo-chat-pill-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-chat-pill-caret {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Status dot: the same four states as the provider rows in Settings → AI. */
+.repo-chat-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.repo-chat-dot.ready { background: var(--ok, #2ea043); }
+.repo-chat-dot.failing { background: var(--danger); }
+.repo-chat-dot.no-key { background: var(--warn); }
+
+.repo-chat-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  width: min(300px, 100%);
+  max-height: 340px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-1);
+  background: var(--bg-2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.repo-chat-pop-heading {
+  padding: 7px 8px 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-0);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.repo-chat-pop-heading small {
+  margin-inline-start: auto;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.repo-chat-pop-item {
+  width: 100%;
+  padding: 5px 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-1);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.repo-chat-pop-item:hover,
+.repo-chat-pop-item:focus-visible {
+  outline: none;
+  color: var(--text-0);
+  background: var(--accent-soft);
+}
+
+.repo-chat-pop-check {
+  flex-shrink: 0;
+  margin-top: 1px;
+  visibility: hidden;
+  color: var(--accent);
+}
+
+.repo-chat-pop-item[aria-checked='true'] .repo-chat-pop-check {
+  visibility: visible;
+}
+
+.repo-chat-pop-item.two-line > span {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.repo-chat-header strong {
-  color: var(--text-0);
-  font-size: 12px;
-}
-
-.repo-chat-header span {
-  overflow: hidden;
+.repo-chat-pop-item.two-line small {
   color: var(--text-3);
   font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.repo-chat-perms {
+  margin: 0;
+  padding: 2px 4px;
+  list-style: none;
+}
+
+.repo-chat-perms li {
+  padding: 6px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.repo-chat-perms li > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.repo-chat-perms li.disabled {
+  color: var(--text-3);
+}
+
+.repo-chat-perms label.ai-switch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  cursor: pointer;
+}
+
+.repo-chat-perms label.ai-switch.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.repo-chat-pop-link {
+  width: 100%;
+  margin-top: 2px;
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  border-radius: 0 0 5px 5px;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.repo-chat-pop-link:hover,
+.repo-chat-pop-link:focus-visible {
+  outline: none;
+  background: var(--accent-soft);
 }
 
 .repo-chat-messages {
@@ -3428,24 +3622,6 @@ body.col-resizing .node-ava {
 
 /* Approval-mode picker in the composer row — reads as a quiet label, like the
    header's model switcher. */
-.repo-chat-approval {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-3);
-  min-width: 0;
-}
-
-.repo-chat-approval select {
-  max-width: 170px;
-  border: none;
-  background: transparent;
-  color: var(--text-2);
-  font: inherit;
-  font-size: 10px;
-  cursor: pointer;
-}
-
 .repo-chat-sources {
   margin-top: 9px;
   padding-top: 8px;
@@ -3570,34 +3746,6 @@ body.col-resizing .node-ava {
 .repo-chat-composer-actions > span {
   color: var(--text-3);
   font-size: 10px;
-}
-
-/* The header's model switcher writes the same setting as Settings → AI →
-   Repository chat, so it has to read as a label, not as a form field. */
-.repo-chat-model {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.repo-chat-model select {
-  max-width: 190px;
-  padding: 1px 4px;
-  height: auto;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: inherit;
-  background: transparent;
-  font: inherit;
-  font-size: inherit;
-  cursor: pointer;
-}
-
-.repo-chat-model select:hover,
-.repo-chat-model select:focus {
-  border-color: var(--border-soft);
-  background: var(--bg-1);
 }
 
 /* Pinned context: the chips above the composer, the "+" that adds one, and
