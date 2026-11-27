@@ -16,6 +16,7 @@ import type {
   RepoStatus
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
+import { PRODUCT_NAME } from '../shared/brand'
 import { askActionsSchema, isSafeRepoPath, repoChatActionsSchema } from './aiSchemas'
 import { chatComplete, chatCompleteJson, InvalidAIResponse } from './ai'
 import type { ChatMessage } from './aiTransport'
@@ -506,7 +507,7 @@ export function historyTurns(messages: RepoChatMessage[]): ChatMessage[] {
 export function conversationPrompt(repoName: string, branch: string): string {
   return `You are a helpful, knowledgeable assistant. Answer whatever the user asks, on any subject, in the language of their latest message, in concise Markdown.
 
-The app you run in has a local Git repository open: ${repoName} (branch ${branch || 'detached HEAD'}). Nothing from it has been read. It matters only when the user's message is about it — its code, files, changes, history, or a Git task such as committing.
+You run inside ${PRODUCT_NAME}, a Git client. It has a local Git repository open — its folder is named "${repoName}" (branch ${branch || 'detached HEAD'}); that is the repository's name, not the app's. Nothing from it has been read. It matters only when the user's message is about it — its code, files, changes, history, or a Git task such as committing.
 You have not seen its files, so never invent file names, file contents or repository details. If, and only if, answering needs that repository, reply with exactly one line and nothing else — the word "repo" written literally, not the repository's name:
 @repo <what you need from it, in a few words>
 You will then be given its Git state and file list. Otherwise, answer directly. Never say you will check, look or review something later: you cannot act between messages, so either answer now or send the @repo line.`
@@ -1166,7 +1167,9 @@ export async function answerRepoChat(
   let readAs: string[] = []
   const briefing = (): string =>
     [
-      `Open repository: ${basename(repoPath)} (branch ${status.current || 'detached HEAD'}). Nothing from it has been read yet.`,
+      // "Nothing read yet" only while that is true: with a commit or file below
+      // it, Gemini believed the first line and said it could not see the repo.
+      `Open repository: the folder "${basename(repoPath)}" (branch ${status.current || 'detached HEAD'}) — the repository's name, not the app's.${collected.length || pinned.evidence.length ? ' What was read for this question is below.' : ' Nothing from it has been read yet.'}`,
       attachments.length ? `Pinned context: ${attachments.map(attachmentLabel).join(', ')}` : '',
       ...readAs,
       ...pinned.notes
@@ -1192,7 +1195,7 @@ export async function answerRepoChat(
   // under 50 chars"); a small model applied them to every chat reply, answering
   // "what is an apple?" as a commit. They stay with the commit features.
   const actionRules = repoChatActionRules(actionsEnabled, fileActionsEnabled, remoteActionsEnabled)
-  const system = `You are ${actionsEnabled ? 'an assistant' : 'an assistant with read-only access to the repository'} inside a Git client, chatting with the user while their local repository is open. They may ask anything: general questions, programming help, or questions and tasks about this repository. Answer general questions directly from your own knowledge, and do not steer them toward the repository.
+  const system = `You are ${actionsEnabled ? 'an assistant' : 'an assistant with read-only access to the repository'} inside ${PRODUCT_NAME}, a Git client, chatting with the user while their local repository is open. They may ask anything: general questions, programming help, or questions and tasks about this repository. Answer general questions directly from your own knowledge, and do not steer them toward the repository.
 
 Rules:
 - When a question is about this repository, base repository-specific claims only on the supplied repository state and evidence.
