@@ -17,7 +17,7 @@ import type {
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
 import { askActionsSchema, isSafeRepoPath, repoChatActionsSchema } from './aiSchemas'
-import { chatComplete, chatCompleteJson } from './ai'
+import { chatComplete, chatCompleteJson, InvalidAIResponse } from './ai'
 import type { ChatMessage } from './aiTransport'
 import { gitService } from './git'
 import { prepareRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -585,7 +585,7 @@ export function mentionsRepository(message: string, tracked: readonly string[]):
 export function mentionsLastCommit(message: string): boolean {
   // No \b before "último": in a JavaScript regex \b only knows ASCII letters,
   // so it never matches before "ú" — the accented spelling slipped through.
-  return /(?<!\p{L})([uú]ltimo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit(?!\p{L})|(?<!\p{L})commit\s+(mais recente|atual|anterior)(?!\p{L})|\bHEAD\b/iu.test(
+  return /(?<!\p{L})([uú]l?t?i?mo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit(?!\p{L})|(?<!\p{L})commit\s+(mais recente|atual|anterior)(?!\p{L})|\bHEAD\b/iu.test(
     message
   )
 }
@@ -1274,61 +1274,87 @@ ${actionRules}
   for (let round = 0; ; round++) {
     const mayAskMore = round < REPO_CHAT_MAX_EVIDENCE_ROUNDS
     onProgress({ phase: 'thinking' })
-    result = await chatCompleteJson<RawChatAnswer>(
-      chatCfg,
-      [
-        { role: 'system', content: `${system}${mayAskMore ? `\n${MORE_EVIDENCE_RULE}` : ''}` },
-        // Reference material, not a question — so it goes before the turns,
-        // and the user's latest message is the last thing the model reads.
-        {
-          role: 'system',
+    // Reference material, not a question — so it goes before the turns, and
+    // the user's latest message is the last thing the model reads.
+    const context: ChatMessage = {
+      role: 'system',
           content: overviewShown
             ? // Evidence last, nearest the question: a 3B model given the file list
               // after the excerpt answered "1.0.0" with package.json in hand.
               `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}${mayAskMore ? fileList : ''}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}`
             : `Repository context (reference only; the user's question is the last message):\n${briefing()}${evidence.length ? `\n\nEvidence:\n${serializeEvidence(evidence)}` : ''}`
-        },
-        ...historyTurns(messages)
-      ],
-      'repoChatAnswer',
-      {
-        name: 'repo_chat_answer',
-        schema: chatAnswerSchema(actionsEnabled, fileActionsEnabled, remoteActionsEnabled, mayAskMore),
-        normalize: (value) => normalizeChatSources(value, evidence),
-        // Same grounding as the Ask planner: proposed paths must exist in the
-        // working-tree state the model was shown, untracked files included.
-        validate: async (value) => {
-          preparedFileActions = []
-          const errors = validateChatAnswer(value, evidenceIds, actionsEnabled ? actionContext : null)
-          if (errors.length || !actionsEnabled) return errors
+    }
+    try {
+      result = await chatCompleteJson<RawChatAnswer>(
+        chatCfg,
+        [
+          { role: 'system', content: `${system}${mayAskMore ? `\n${MORE_EVIDENCE_RULE}` : ''}` },
+          context,
+          ...historyTurns(messages)
+        ],
+        'repoChatAnswer',
+        {
+          name: 'repo_chat_answer',
+          schema: chatAnswerSchema(actionsEnabled, fileActionsEnabled, remoteActionsEnabled, mayAskMore),
+          normalize: (value) => normalizeChatSources(value, evidence),
+          // Same grounding as the Ask planner: proposed paths must exist in the
+          // working-tree state the model was shown, untracked files included.
+          validate: async (value) => {
+            preparedFileActions = []
+            const errors = validateChatAnswer(value, evidenceIds, actionsEnabled ? actionContext : null)
+            if (errors.length || !actionsEnabled) return errors
 
-          const root = asObject(value)
-          const rawActions = Array.isArray(root?.actions) ? root.actions : []
-          const fileActions = rawActions.filter(isRepoChatFileAction)
-          if (!fileActions.length) return []
+            const root = asObject(value)
+            const rawActions = Array.isArray(root?.actions) ? root.actions : []
+            const fileActions = rawActions.filter(isRepoChatFileAction)
+            if (!fileActions.length) return []
 
-          const targets = [...new Set(fileActions.map((action) => action.path.trim().replace(/\\/g, '/')))]
-          const ignoredPaths = new Set(await gitService.ignoredTrackedFiles(repoPath, targets))
-          try {
-            preparedFileActions = await prepareRepoFileActions(repoPath, fileActions, {
-              evidencePaths: actionContext.evidencePaths,
-              completePaths: actionContext.completePaths,
-              ignoredPaths
-            })
-            return []
-          } catch (error) {
-            if (error instanceof RepoFileActionError) {
-              const paths = error.paths.length ? ` (${error.paths.join(', ')})` : ''
-              return [`File action ${error.code}: ${error.message}${paths}`]
+            const targets = [...new Set(fileActions.map((action) => action.path.trim().replace(/\\/g, '/')))]
+            const ignoredPaths = new Set(await gitService.ignoredTrackedFiles(repoPath, targets))
+            try {
+              preparedFileActions = await prepareRepoFileActions(repoPath, fileActions, {
+                evidencePaths: actionContext.evidencePaths,
+                completePaths: actionContext.completePaths,
+                ignoredPaths
+              })
+              return []
+            } catch (error) {
+              if (error instanceof RepoFileActionError) {
+                const paths = error.paths.length ? ` (${error.paths.join(', ')})` : ''
+                return [`File action ${error.code}: ${error.message}${paths}`]
+              }
+              throw error
             }
-            throw error
-          }
+          },
+          // The action union has optional fields, which strict json_schema forbids.
+          strict: !actionsEnabled
         },
-        // The action union has optional fields, which strict json_schema forbids.
-        strict: !actionsEnabled
-      },
-      0.2
-    )
+        0.2
+      )
+    } catch (err) {
+      if (!(err instanceof InvalidAIResponse)) throw err
+      // The model could not fill the JSON shape — empty text, a field under
+      // another name — even after the correction retry. The user asked a
+      // question, not for a format: ask it once more in plain text, with what
+      // was already read, and answer without citations rather than an error.
+      const text = withoutThinking(
+        await chatComplete(
+          chatCfg,
+          [
+            {
+              role: 'system',
+              content:
+                "You are a helpful assistant. Answer the user's latest message in its language, in concise Markdown, using the repository context below where it applies. Never invent file names, file contents or commits that are not in it."
+            },
+            context,
+            ...historyTurns(messages)
+          ],
+          'repoChatAnswer',
+          0.2
+        )
+      )
+      return { content: text, sources: [], skipped }
+    }
 
     const more = mayAskMore ? normalizeNeedMore(result.needMore, allowed, readPaths, overviewShown) : null
     if (!more) break

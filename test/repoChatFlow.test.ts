@@ -264,6 +264,7 @@ describe('the last commit', () => {
   it('is recognised in either language', () => {
     expect(mentionsLastCommit('Faça uma review do ultimo commit')).toBe(true)
     expect(mentionsLastCommit('Faça uma review do último commit!')).toBe(true)
+    expect(mentionsLastCommit('Faça a review do ulimo commit')).toBe(true)
     expect(mentionsLastCommit('Revise a última alteração commit')).toBe(true)
     expect(mentionsLastCommit('review the last commit')).toBe(true)
     expect(mentionsLastCommit('o que mudou no HEAD?')).toBe(true)
@@ -278,6 +279,25 @@ describe('the last commit', () => {
     expect(steps[0]).toEqual({ phase: 'reading', files: 1 })
     expect(promptOf(bodies[0])).toMatch(/Latest commit \(HEAD\) [0-9a-f]{10}/)
     expect(promptOf(bodies[0])).not.toMatch(/\] \(pinned by the user\)/)
+  })
+})
+
+describe('when the JSON answer fails', () => {
+  it('asks again in plain text instead of showing an error', async () => {
+    const repo = cloneFixture('cherry-pick')
+    // Empty text twice (the JSON try and its correction), then a plain answer.
+    const { bodies } = scriptedModel([
+      { content: '', sourceIds: [] },
+      { content: '', sourceIds: [] },
+      'O último commit adiciona um arquivo e está correto.'
+    ])
+    const reply = await answerRepoChat(repo, [{ role: 'user', content: 'Faça a review do ulimo commit' }], cfg)
+    expect(reply.content).toBe('O último commit adiciona um arquivo e está correto.')
+    expect(reply.sources).toEqual([])
+    expect(bodies).toHaveLength(3)
+    expect(bodies[2].response_format).toBeUndefined()
+    // The plain retry still carries the commit that was read.
+    expect(promptOf(bodies[2])).toMatch(/Latest commit \(HEAD\)/)
   })
 })
 
