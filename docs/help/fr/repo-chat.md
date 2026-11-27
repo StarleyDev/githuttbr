@@ -2,8 +2,9 @@
 title: Discussion du dépôt
 category: IA
 order: 82
-summary: Posez des questions sur ce dépôt, avec les fichiers et les commits que vous épinglez comme contexte — et laissez-la proposer des actions git que vous approuvez avant leur exécution.
-keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification
+summary: Posez n’importe quelle question — générale ou sur ce dépôt —, avec les fichiers et les commits que vous épinglez comme contexte, et laissez-la proposer des actions git que vous approuvez avant leur exécution.
+keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification question générale n’importe quelle question réflexion lecture des fichiers
+source: 6416ab8260b0e6e859213d03b774dc5c118e8282
 ---
 
 # Discussion du dépôt
@@ -13,6 +14,11 @@ réellement le rafraîchissement du jeton ? Qu’a changé ce commit, en une phr
 Pourquoi ce fichier existe-t-il ?* La discussion du dépôt répond sur le dépôt
 ouvert et montre les lignes sur lesquelles elle s’est appuyée.
 
+C’est aussi une discussion d’IA ordinaire. Une salutation, une question générale
+de programmation ou n’importe quoi d’autre reçoit une réponse directe du modèle,
+sans lire le dépôt : elle ne regarde les fichiers que lorsque la question les
+concerne.
+
 Elle partage la colonne de droite avec **Détails** : les onglets du haut passent
 de l’un à l’autre, sans que le graphe perde sa sélection.
 
@@ -20,21 +26,24 @@ de l’un à l’autre, sans que le graphe perde sa sélection.
 
 ## Ce qu’elle lit
 
-Chaque réponse se construit en deux passes. La première choisit un petit
-ensemble de chemins et de recherches littérales dans la liste des fichiers
-suivis du dépôt. La seconde répond en n’utilisant que les extraits rapportés, et
-ne peut citer qu’eux : un fichier ou une ligne inventés sont une erreur de
-validation, pas une réponse plausible.
+Chaque message commence par **un seul** appel. Le modèle voit l’état du dépôt
+(branche, fichiers modifiés) et la liste de ses fichiers suivis, mais aucun
+contenu de fichier. Une salutation ou une question qui ne porte pas sur le dépôt
+reçoit sa réponse tout de suite, dans cet unique appel.
 
-**Un second regard.** La première passe doit deviner quels fichiers comptent à
-partir de leur seul nom, ce qui est exactement la supposition qui échoue sur
-« d'où est-ce appelé ». Une réponse a donc le droit de redemander plutôt que de
-deviner : elle peut nommer d'autres chemins, d'autres recherches littérales ou
-des hachages de commits de l'historique récent, et la question est reposée avec
-ce que cela ramène. Cela arrive deux fois au plus — chaque tour est un appel de
-modèle supplémentaire que vous attendez — et au dernier elle doit répondre avec
-ce qu'elle a. Vous n'en voyez rien, sinon une attente un peu plus longue et une
-meilleure réponse.
+**Lecture à la demande.** Quand la question porte sur le code, le modèle demande
+ce dont il a besoin au lieu de deviner : des chemins exacts de la liste, des
+recherches littérales ou des hachages de commits de l’historique récent.
+L’application les lit et repose la question avec les extraits. Cela arrive trois
+fois au plus — chaque tour est un appel de modèle supplémentaire que vous
+attendez — et au dernier elle doit répondre avec ce qu’elle a. Une réponse sur le
+dépôt ne peut citer que les extraits reçus : un fichier ou une ligne inventés
+sont une erreur de validation, pas une réponse plausible.
+
+Pendant l’attente, la ligne sous votre message dit ce qui se passe :
+**Réflexion…** pendant que le modèle travaille, **Lecture des fichiers (N)…** ou
+**Recherche dans le dépôt…** uniquement pendant que l’application lit vraiment
+ce qu’il a demandé.
 
 | Inclus | Exclu |
 |---|---|
@@ -79,7 +88,6 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 | Réglage | Effet |
 |---|---|
 | **Poser des questions sur le dépôt** | Désactivé, l’onglet, le bouton et la cible du raccourci disparaissent. Le reste de l’IA continue |
-| **Modèle de la discussion** | Un modèle réservé à la discussion. Vide : celui du profil — poser une question coûte moins qu’une relecture, un modèle plus petit suffit souvent |
 | **Contenu validé uniquement** | Répond depuis le dernier commit plutôt que la copie de travail : les modifications non validées ne quittent jamais la machine |
 | **Proposer des actions sur les fichiers et Git** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
 | **Mode fichiers en lecture seule** | Activé, il bloque la création, la modification, le remplacement et la suppression de fichiers tout en gardant les actions Git disponibles. Activé par défaut |
@@ -211,6 +219,16 @@ le plan**. Elle ramène la branche à ce commit et restaure l'arbre, ce qui jett
 ce que le plan a produit : elle demande donc confirmation et nomme le commit de
 retour. Les pull requests ouvertes le restent — un dépôt distant n'est pas
 quelque chose qu'un instantané local peut reprendre.
+
+Avec **Exécuter automatiquement toutes les actions**, une modification de
+fichier valide s’exécute aussitôt et la carte consigne l’action terminée :
+
+![Action de fichier de la discussion du dépôt terminée automatiquement](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Avec **Toujours demander**, le même type de modification reste en attente
+jusqu’à ce que vous choisissiez **Exécuter** ou **Ignorer** :
+
+![Action de fichier de la discussion du dépôt en attente d’approbation](../../screenshots/repo-chat-file-action-approval.webp)
 
 ### Modes d’approbation
 

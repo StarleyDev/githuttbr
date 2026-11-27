@@ -2,8 +2,9 @@
 title: Chat del repositorio
 category: IA
 order: 82
-summary: Pregunta sobre este repositorio, con los archivos y commits que fijes como contexto — y deja que proponga acciones de git que apruebas antes de ejecutarse.
-keywords: chat preguntar pregunta asistente contexto adjuntar fijar arrastrar soltar commit archivo evidencia anclado ia panel acciones ejecutar aprobar aprobación automática permitir corregir error aviso
+summary: Pregunta lo que quieras — preguntas generales o sobre este repositorio —, con los archivos y commits que fijes como contexto, y deja que proponga acciones de git que apruebas antes de ejecutarse.
+keywords: chat preguntar pregunta asistente contexto adjuntar fijar arrastrar soltar commit archivo evidencia anclado ia panel acciones ejecutar aprobar aprobación automática permitir corregir error aviso pregunta general cualquier pregunta pensando leyendo archivos
+source: 6416ab8260b0e6e859213d03b774dc5c118e8282
 ---
 
 # Chat del repositorio
@@ -13,6 +14,10 @@ realmente el refresco del token? ¿Qué cambió este commit, en una frase? ¿Por
 existe este archivo?* El chat del repositorio responde sobre el repositorio
 abierto y muestra las líneas en las que se basó.
 
+También es un chat de IA corriente. Un saludo, una pregunta general de
+programación o cualquier otra cosa recibe una respuesta directa del modelo, sin
+leer el repositorio: solo mira archivos cuando la pregunta trata de ellos.
+
 Comparte la columna derecha con **Detalles**: las pestañas de arriba alternan
 entre ambos, así el grafo no pierde su selección cuando preguntas algo.
 
@@ -20,20 +25,23 @@ entre ambos, así el grafo no pierde su selección cuando preguntas algo.
 
 ## Qué lee
 
-Cada respuesta se construye en dos pasadas. La primera elige un conjunto pequeño
-de rutas y búsquedas literales dentro de la lista de archivos rastreados del
-propio repositorio. La segunda responde usando solo los fragmentos que esa
-pasada trae, y solo puede citar esos fragmentos: un archivo o una línea
-inventados son un error de validación, no una respuesta plausible.
+Cada mensaje empieza con **una** llamada. El modelo ve el estado del repositorio
+(rama, archivos modificados) y su lista de archivos rastreados, pero ningún
+contenido de archivo. Un saludo o una pregunta que no trata del repositorio se
+responde ahí mismo, en esa única llamada.
 
-**Una segunda mirada.** La primera pasada tiene que adivinar qué archivos
-importan solo por su nombre, que es justo la conjetura que falla en «¿desde
-dónde se llama esto?». Por eso una respuesta puede preguntar de vuelta en lugar
-de adivinar: puede nombrar más rutas, más búsquedas literales o hashes de
-commits del historial reciente, y la pregunta se repite con lo que eso traiga.
-Ocurre como mucho dos veces —cada ronda es otra llamada al modelo que esperas— y
-en la última debe responder con lo que tenga. No verás nada de esto salvo una
-espera algo más larga y una respuesta mejor.
+**Lectura bajo demanda.** Cuando la pregunta trata del código, el modelo pide lo
+que necesita en lugar de adivinar: rutas exactas de la lista, búsquedas
+literales o hashes de commits del historial reciente. La app los lee y repite la
+pregunta con los fragmentos. Ocurre como mucho tres veces —cada ronda es otra
+llamada al modelo que esperas— y en la última debe responder con lo que tenga.
+Una respuesta sobre el repositorio solo puede citar los fragmentos que recibió:
+un archivo o una línea inventados son un error de validación, no una respuesta
+plausible.
+
+Mientras esperas, la línea bajo tu mensaje dice qué está pasando: **Pensando…**
+mientras el modelo trabaja, **Leyendo archivos (N)…** o **Buscando en el
+repositorio…** solo mientras la app está leyendo de verdad lo que pidió.
 
 | Incluido | Excluido |
 |---|---|
@@ -78,7 +86,6 @@ entero.
 | Ajuste | Qué hace |
 |---|---|
 | **Haz preguntas sobre el repositorio** | Desactivado quita la pestaña, el botón de la barra y el destino del atajo. El resto de la IA sigue funcionando |
-| **Modelo del chat** | Un modelo solo para el chat. Vacío significa el del perfil: preguntar cuesta menos que revisar, y suele bastar uno más pequeño |
 | **Solo contenido confirmado** | Responde con el último commit en vez de la copia de trabajo: los cambios sin confirmar nunca salen del equipo |
 | **Proponer acciones de archivos y Git en el chat** | Desactivado vuelve el chat de solo lectura otra vez: sin tarjetas de acciones ni desplegable de aprobación |
 | **Modo de solo lectura de archivos** | Activado bloquea crear, editar, reemplazar y eliminar archivos, pero mantiene disponibles las acciones Git. Está activado de forma predeterminada |
@@ -208,6 +215,16 @@ una instantánea de la copia de trabajo; la tarjeta terminada ofrece entonces
 tira lo que el plan produjo, así que confirma primero y nombra el commit al que
 vuelve. Los pull requests que abrió siguen abiertos: un remoto no es algo que
 una instantánea local pueda retirar.
+
+Con **Ejecutar todas las acciones automáticamente**, un cambio de archivo válido
+se ejecuta al momento y la tarjeta registra la acción completada:
+
+![Acción de archivo del chat del repositorio completada automáticamente](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Con **Preguntar siempre**, el mismo tipo de cambio queda pendiente hasta que
+eliges **Ejecutar** o **Ignorar**:
+
+![Acción de archivo del chat del repositorio esperando aprobación](../../screenshots/repo-chat-file-action-approval.webp)
 
 ### Modos de aprobación
 

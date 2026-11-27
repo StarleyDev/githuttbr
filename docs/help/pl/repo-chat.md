@@ -2,8 +2,9 @@
 title: Czat repozytorium
 category: AI
 order: 82
-summary: Pytaj o to repozytorium, korzystając z plików i commitów przypiętych jako kontekst — i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
-keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast
+summary: Pytaj o cokolwiek — o sprawy ogólne albo o to repozytorium — korzystając z plików i commitów przypiętych jako kontekst, i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
+keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast pytanie ogólne dowolne pytanie myślę odczytywanie plików
+source: 6416ab8260b0e6e859213d03b774dc5c118e8282
 ---
 
 # Czat repozytorium
@@ -13,6 +14,10 @@ odświeżany jest token? Co zmienił ten commit, w jednym zdaniu? Po co istnieje
 plik?* Czat repozytorium odpowiada na to w otwartym repozytorium i pokazuje
 wiersze, na których się oparł.
 
+To także zwykły czat AI. Powitanie, ogólne pytanie o programowanie czy
+cokolwiek innego dostaje bezpośrednią odpowiedź modelu, bez czytania
+repozytorium — do plików zagląda tylko wtedy, gdy pytanie ich dotyczy.
+
 Dzieli prawą kolumnę ze **Szczegółami**: karty u góry przełączają między nimi, więc
 graf nie traci zaznaczenia, gdy o coś pytasz.
 
@@ -20,19 +25,23 @@ graf nie traci zaznaczenia, gdy o coś pytasz.
 
 ## Co czyta
 
-Każda odpowiedź powstaje w dwóch przebiegach. Pierwszy wybiera niewielki zestaw
-ścieżek i dosłownych wyszukiwań z listy śledzonych plików repozytorium. Drugi
-odpowiada wyłącznie na podstawie zwróconych fragmentów i tylko je może cytować:
-zmyślony plik lub wiersz to błąd walidacji, a nie wiarygodnie brzmiąca odpowiedź.
+Każda wiadomość zaczyna się od **jednego** wywołania. Model widzi stan
+repozytorium (gałąź, zmienione pliki) i listę śledzonych plików, ale żadnej
+zawartości plików. Powitanie albo pytanie niedotyczące repozytorium dostaje
+odpowiedź od razu, w tym jednym wywołaniu.
 
-**Drugie spojrzenie.** Pierwszy przebieg musi zgadywać po samych nazwach, które
-pliki są istotne — a to dokładnie ta zgadywanka, która zawodzi przy pytaniu
-„skąd to jest wywoływane”. Dlatego odpowiedź może dopytać zamiast zgadywać: może
-wskazać kolejne ścieżki, kolejne dosłowne wyszukiwania albo skróty commitów z
-najnowszej historii, a pytanie zostaje zadane ponownie z tym, co przyniosą. Może
-się to zdarzyć najwyżej dwa razy — każda runda to kolejne wywołanie modelu, na
-które czekasz — a w ostatniej musi odpowiedzieć tym, co ma. Nie zobaczysz z tego
-nic poza nieco dłuższym czekaniem i lepszą odpowiedzią.
+**Czytanie na żądanie.** Gdy pytanie dotyczy kodu, model prosi o to, czego
+potrzebuje, zamiast zgadywać: dokładne ścieżki z listy, dosłowne wyszukiwania
+albo skróty commitów z najnowszej historii. Aplikacja je odczytuje i zadaje
+pytanie ponownie z fragmentami. Może się to zdarzyć najwyżej trzy razy — każda
+runda to kolejne wywołanie modelu, na które czekasz — a w ostatniej musi
+odpowiedzieć tym, co ma. Odpowiedź o repozytorium może cytować tylko fragmenty,
+które otrzymała: zmyślony plik lub wiersz to błąd walidacji, a nie wiarygodnie
+brzmiąca odpowiedź.
+
+Gdy czekasz, wiersz pod twoją wiadomością mówi, co się dzieje: **Myślę…**, gdy
+model pracuje, **Odczytywanie plików (N)…** albo **Przeszukiwanie
+repozytorium…** tylko wtedy, gdy aplikacja faktycznie czyta to, o co poprosił.
 
 | Uwzględnione | Pominięte |
 |---|---|
@@ -77,7 +86,6 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 | Ustawienie | Działanie |
 |---|---|
 | **Zadawaj pytania o repozytorium** | Wyłączone usuwa kartę, przycisk paska i cel skrótu. Reszta AI działa dalej |
-| **Model czatu** | Model tylko dla czatu. Puste oznacza model profilu — pytanie kosztuje mniej niż przegląd, mniejszy zwykle wystarcza |
 | **Tylko zatwierdzona treść** | Odpowiada z ostatniego commita zamiast z katalogu roboczego: niezatwierdzone zmiany nigdy nie opuszczają komputera |
 | **Proponowanie akcji na plikach i w Git** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
 | **Tryb plików tylko do odczytu** | Włączony blokuje tworzenie, edytowanie, zastępowanie i usuwanie plików, ale pozostawia dostępne akcje Git. Domyślnie jest włączony |
@@ -204,6 +212,16 @@ Przenosi gałąź z powrotem na ten commit i przywraca drzewo, co odrzuca wszyst
 co plan wytworzył — dlatego najpierw pyta i nazywa commit, do którego wraca.
 Otwarte pull requesty pozostają otwarte: zdalnego repozytorium lokalna migawka
 nie cofnie.
+
+W trybie **Automatycznie uruchamiaj wszystkie akcje** poprawna zmiana pliku
+wykonuje się od razu, a karta zapisuje ukończoną akcję:
+
+![Automatycznie ukończona akcja na pliku w czacie repozytorium](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+W trybie **Zawsze pytaj** ten sam rodzaj zmiany czeka, aż wybierzesz **Uruchom**
+lub **Odrzuć**:
+
+![Akcja na pliku w czacie repozytorium czeka na zatwierdzenie](../../screenshots/repo-chat-file-action-approval.webp)
 
 ### Tryby zatwierdzania
 
