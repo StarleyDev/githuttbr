@@ -1964,6 +1964,14 @@ export interface RepoChatSkipped {
 }
 
 /** Answer returned by the repository-chat IPC handler. */
+/** A model call that is taking long, announced so the user can decide (main/aiRequests.ts). */
+export type AIRequestEvent =
+  | { type: 'slow'; id: number; label: string; accountId: string }
+  | { type: 'done'; id: number }
+
+/** The user's answer to "this is taking longer than expected". */
+export type AISlowChoice = { kind: 'wait' } | { kind: 'cancel' } | { kind: 'switch'; accountId: string }
+
 export interface RepoChatReply {
   content: string
   sources: RepoChatSource[]

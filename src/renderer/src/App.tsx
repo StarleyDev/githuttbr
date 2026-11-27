@@ -37,6 +37,7 @@ import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
 import { RepoSwitcher } from './components/RepoSwitcher'
 import { Toasts } from './components/Toasts'
+import { AIRequestPrompt } from './components/AIRequestPrompt'
 import { CloneTray } from './components/CloneTray'
 import { UpdateBanner } from './components/UpdateBanner'
 import { RollbackNotices } from './components/RollbackNotices'
@@ -1482,6 +1483,7 @@ export default function App(): React.JSX.Element {
       <CommandPalette />
       <RepoSwitcher />
       <Toasts />
+      <AIRequestPrompt />
       <CloneTray />
       <UpdateBanner />
       <RollbackNotices />

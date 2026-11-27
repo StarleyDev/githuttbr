@@ -1,9 +1,10 @@
-import { ipcMain } from 'electron'
-import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, EditSelectionRequest, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
+import { BrowserWindow, ipcMain } from 'electron'
+import type { AIConfig, AISlowChoice, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, EditSelectionRequest, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
 import { callModel, missingCredential, transportOf, type ChatMessage, type ModelCallOptions } from './aiTransport'
 import { listAccountModels } from './aiModels'
+import { answerSlowAIRequest, setAIRequestListener } from './aiRequests'
 import { detectCliBinaries, signInSubscription, testSubscription } from './aiCli'
 import { createHash } from 'node:crypto'
 import { PRODUCT_NAME } from '../shared/brand'
@@ -1052,7 +1053,27 @@ Rules:
   }
 }
 
+/** The renderer's answer, checked: it crosses IPC as untyped data. */
+function isSlowChoice(value: unknown): value is AISlowChoice {
+  if (!value || typeof value !== 'object') return false
+  const kind = (value as { kind?: unknown }).kind
+  if (kind === 'wait' || kind === 'cancel') return true
+  const accountId = (value as { accountId?: unknown }).accountId
+  return kind === 'switch' && typeof accountId === 'string' && accountId.length > 0 && accountId.length <= 128
+}
+
 export function registerAiHandlers(): void {
+  // A slow call is announced to every window: the prompt is app-wide, whichever
+  // surface started the call.
+  setAIRequestListener((event) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send('ai:request', event)
+    }
+  })
+  ipcMain.handle('ai:answerSlow', (_e, id: unknown, choice: unknown) => {
+    if (typeof id !== 'number' || !isSlowChoice(choice)) return
+    answerSlowAIRequest(id, choice)
+  })
   const signIns = new Map<string, AbortController>()
   ipcMain.handle('ai:signInSubscription', async (event, binary, path, requestId: unknown) => {
     if (typeof requestId !== 'string' || requestId.length > 64) return 'failed'
