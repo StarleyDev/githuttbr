@@ -367,8 +367,12 @@ export interface CommitEditFileDraft {
  *  component because switching repository tabs unmounts the centre pane — and
  *  that must not throw an edit away. */
 export interface CommitEditDraft {
-  /** null until the commit's own message has loaded. */
-  message: string | null
+  /**
+   * The summary and description as typed, kept apart: joined into one message
+   * and split again on the way back, an emptied summary handed its line to the
+   * description's first line. null until the commit's own message has loaded.
+   */
+  parts: { summary: string; description: string } | null
   files: Record<string, CommitEditFileDraft>
   selFile: string
   dirty: boolean

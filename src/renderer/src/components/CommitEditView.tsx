@@ -10,7 +10,7 @@ import { emojifyGitmoji } from '../../../shared/gitmoji'
 import { guessLanguage } from '../lib/highlight'
 import { CodeEditor } from './CodeEditor'
 import { CommitAIGenerate } from './CommitAIGenerate'
-import { CommitMessageEditor } from './CommitMessageEditor'
+import { CommitMessageEditor, SUMMARY_MAX_LENGTH } from './CommitMessageEditor'
 import { joinCommitMessage, splitCommitMessage } from '../lib/commitMessage'
 import { useCommitGeneration } from './useCommitGeneration'
 
@@ -71,7 +71,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   // Summary and description, edited apart like in the composer; null until the
   // commit's own message (or a restored draft) is in.
   const [parts, setParts] = useState<MessageParts | null>(() =>
-    saved?.message != null ? splitCommitMessage(saved.message) : null
+    saved?.parts ?? null
   )
   const [preview, setPreview] = useState<CommitEditPreview | null>(null)
   const [busy, setBusy] = useState(false)
@@ -132,11 +132,10 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const text = message ?? ''
   // Compared in the same normal form, so opening a commit whose message has
   // stray blank lines or CRLFs does not count as an edit.
-  const original = useMemo(() => {
-    if (!info) return ''
-    const loaded = splitCommitMessage(info.message)
-    return joinCommitMessage(loaded.summary, loaded.description)
-  }, [info])
+  const loaded = useMemo(() => (info ? splitCommitMessage(info.message) : null), [info])
+  const original = loaded ? joinCommitMessage(loaded.summary, loaded.description) : ''
+  // An old commit may carry a subject past the composer's cap: it stays editable whole.
+  const summaryMaxLength = Math.max(SUMMARY_MAX_LENGTH, loaded?.summary.length ?? 0)
   const messageChanged = info !== null && message !== null && message !== original
   // Before `info` arrives, a restored draft is the only judge of dirtiness.
   const dirty = Object.keys(edits).length > 0 || messageChanged || (info === null && Boolean(saved?.dirty))
@@ -147,8 +146,8 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   // Mirror the work in progress into the store, so a tab switch (which
   // unmounts this view) and the "open another commit" guard both see it.
   useEffect(() => {
-    saveCommitEditDraft(repoPath, sha, { message, files: drafts, selFile, dirty })
-  }, [repoPath, sha, message, drafts, selFile, dirty, saveCommitEditDraft])
+    saveCommitEditDraft(repoPath, sha, { parts, files: drafts, selFile, dirty })
+  }, [repoPath, sha, parts, drafts, selFile, dirty, saveCommitEditDraft])
 
   // Read by the Escape handler, which is registered once.
   const dirtyRef = useRef(dirty)
@@ -279,6 +278,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
             disabled={!editable}
             readOnly={generation.state.phase === 'generating'}
             summaryId="commitedit-summary"
+            summaryMaxLength={summaryMaxLength}
             afterDescription={aiEnabled && <CommitAIGenerate gen={generation} disabled={!editable} />}
           />
         </div>

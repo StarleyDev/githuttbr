@@ -42,9 +42,18 @@ const COMMIT_STYLE_OPTIONS: { id: CommitStyle; key: TranslationKey; ai?: boolean
   { id: 'haiku', key: 'commitStyle.haiku', ai: true }
 ]
 
+/** The composer's cap on a new subject: long enough for any sensible one. */
+export const SUMMARY_MAX_LENGTH = 100
+
 export interface CommitMessageEditorProps {
   /** Repository the co-author list is read from. */
   repoPath: string
+  /**
+   * Longest summary the field accepts; SUMMARY_MAX_LENGTH when left out. Editing
+   * an old commit raises it to that commit's own subject, so a longer one can
+   * still be edited rather than only shortened.
+   */
+  summaryMaxLength?: number
   /** Current branch: the ticket field's placeholder, and its prefill when asked for. */
   branch: string
   /** Scopes the repository declares in `.githuttbr.json`; empty keeps the scope picker hidden. */
@@ -77,6 +86,7 @@ export interface CommitMessageEditorProps {
  */
 export function CommitMessageEditor({
   repoPath,
+  summaryMaxLength = SUMMARY_MAX_LENGTH,
   branch,
   scopes,
   summary,
@@ -202,7 +212,7 @@ export function CommitMessageEditor({
           disabled={disabled}
           // While the AI writes, typing here would be overwritten by its answer.
           readOnly={readOnly}
-          maxLength={100}
+          maxLength={summaryMaxLength}
           onChange={(e) => setSummary(e.target.value)}
           onKeyDown={onSummaryKeyDown}
         />
