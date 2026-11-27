@@ -146,7 +146,7 @@ the folder path.
 GitHuttBr checks a few things and asks once, never silently:
 
 - a file that looks like a **secret** (`.env`, `*.pem`, `id_rsa`…),
-- a **very large** blob (threshold in Settings → Security),
+- a **very large** blob (threshold in Settings → Security & confirmations),
 - committing **straight to a protected branch** (`main`/`master` by default).
 
 Each of those offers a one-click *Ignore & untrack*. See

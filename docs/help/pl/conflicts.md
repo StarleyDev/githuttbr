@@ -145,7 +145,7 @@ Rebase'uj długo żyjącą gałąź, a za każdym razem spotkasz ten sam konflik
 konflikt rozstrzygnąłeś, i odtwarza tę odpowiedź następnym razem, gdy pojawi się
 identyczny.
 
-**Ustawienia → Ogólne → Zapamiętuj rozwiązania konfliktów.** Zapisuje
+**Ustawienia → Git i synchronizacja → Zapamiętuj rozwiązania konfliktów.** Zapisuje
 `rerere.enabled` do twojej globalnej konfiguracji gita, więc wiersz poleceń
 zachowuje się tak samo.
 

@@ -10,7 +10,7 @@ keywords: branch branches aanmaken checkout hernoemen verwijderen remote pinned 
 
 Eén herschikbare, doorzoekbare zijbalk bevat **branches, remotes, tags, stashes,
 worktrees en submodules**. Elke sectie kan verborgen of verplaatst worden
-(Instellingen → Indeling), en het filterveld werkt op alle secties tegelijk.
+(Instellingen → Indeling & terminal), en het filterveld werkt op alle secties tegelijk.
 Welke secties en mappen je open of dicht laat staan wordt per repository
 onthouden, ook na een herstart.
 
@@ -43,7 +43,7 @@ Branches met een `/` in hun naam vouwen zich automatisch in inklapbare mappen.
 Een prefix met één kind blijft een map — `release/1.2.3` is `release` met
 `1.2.3` erin — zodat `release/1.2.4` de boom later niet herschikt. Een reeks
 mappen met één kind klapt in tot één kop (`dependabot/npm_and_yarn`).
-Mapkoppen dragen een mapteken; de ref zelf een branch-, remote- of tagteken.
+Mapkoppen dragen een mapteken; de ref zelf een branch-, remote- of tagteken. **Instellingen → Indeling & terminal → Refs groeperen op prefix** zet de mappen uit, voor een platte lijst.
 
 Rechtsklik op een mapkop om op de hele groep te werken: *Alle branches onder
 `feature` verwijderen (4 branches)* verwijdert alles erin na één bevestiging

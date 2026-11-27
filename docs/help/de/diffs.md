@@ -52,7 +52,7 @@ Die **Dateiansicht** einer Arbeitsverzeichnis-Datei — gestaged oder nicht, ver
 
 ![Änderungsrand mit geöffnetem Hunk-Popup, Minimap rechts](../../screenshots/change-gutter.webp)
 
-Die standardmäßig deaktivierte **Minimap** fügt am rechten Rand eine verkleinerte Übersicht der gesamten Datei hinzu — klicken oder ziehen, um darin zu springen, wie es ein Scrollbalken täte, wenn er auch die Form der Datei zeigen könnte. Beide sind pro Maschine umschaltbar unter **Einstellungen → Allgemein → Dateianzeige**.
+Die standardmäßig deaktivierte **Minimap** fügt am rechten Rand eine verkleinerte Übersicht der gesamten Datei hinzu — klicken oder ziehen, um darin zu springen, wie es ein Scrollbalken täte, wenn er auch die Form der Datei zeigen könnte. Beide sind pro Maschine umschaltbar unter **Einstellungen → Layout & Terminal → Dateianzeige**.
 
 Keines der beiden liest Historie: Wechsle zu Diff, Blame oder einem älteren Commit, und der Änderungsrand verschwindet — diese Ansichten zeigen jede Änderung bereits direkt.
 

@@ -4,7 +4,7 @@ category: Beveiliging
 order: 70
 summary: Maskeren, bewakingen, de sleutelhanger — en wat GitHuttBr weigert te doen.
 keywords: beveiliging security geheimen secrets maskeren masking sleutelhanger keychain safeStorage tokens beschermde branch groot bestand bewaking privacy onleesbaar back-up onderdelen paden vertalen andere computer nieuwe machine profielen samenvoegen profielen vervangen kiezen wat je exporteert volledige back-up voor het team manifest wachtwoord versleuteling appimage apparmor sandbox probleem melden afbeeldingen in reacties trackingpixel ip-adres afbeeldingen van derden klik om te laden images in comments tracking pixel third-party images click to load
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Beveiliging & geheimen
@@ -13,6 +13,18 @@ GitHuttBr heeft **geen backend**. De enige netwerkoproepen gaan naar je Git-host
 en, als je dat aanzet, naar je AI-provider.
 
 ![Beveiligingsinstellingen](../../screenshots/settings-security.webp)
+
+## De pagina Beveiliging & bevestigingen
+
+**Instellingen → Beveiliging & bevestigingen** begint met wat nu geldt, in één strook: of geheimen gemaskeerd zijn, of de sleutelhanger van het systeem in gebruik is en of een force push eerst vraagt — met *aanzetten wordt aangeraden* zolang dat niet zo is. De strook meldt alleen; de schakelaars staan eronder.
+
+| Blok | Wat erin staat |
+|---|---|
+| **Vragen voor iets gevaarlijks** | **Bevestigen vóór een force push**, de drempel voor grote bestanden en een regel die niet uit kan: verwerpen, hard reset en een beschermde branch verwijderen vragen altijd, en elke bevestiging zegt wat er verloren zou gaan |
+| **Privacy** | **Geheime waarden maskeren**, **Afbeeldingen van andere sites in reacties laden** en de [Kluis](vault.md) |
+| **OS-keychain**, **SSH-sleutels** | Waar tokens bewaard worden en welke sleutels je agent heeft ([SSH-sleutels](ssh-keys.md)) |
+
+De bevestiging voor force push stond vroeger onder Algemeen. Beschermde branches stel je per repository in, in de [instellingen](repo-settings.md) daarvan.
 
 ## Geheimen maskeren
 
@@ -34,7 +46,7 @@ wat je staget. Een oogschakelaar onthult ze per weergave. `.env.example`,
 | Bewaking | Wanneer |
 |---|---|
 | **Geheimenbestand** | Iets committen dat op een credential lijkt — met een *Negeren & niet meer trackken* in één klik |
-| **Groot bestand** | Een te grote blob committen (drempel in Instellingen → Beveiliging) |
+| **Groot bestand** | Een te grote blob committen (drempel in Instellingen → Beveiliging & bevestigingen) |
 | **Buildrommel** | `xcuserdata/`, `DerivedData/` of een `.DS_Store` committen — met dezelfde *Negeren & niet meer trackken* in één klik |
 | **Beschermde branch** | Rechtstreeks naar `main`/`master` committen, of er een force-pushen |
 | **Getrackte geheimen** | Een repository pushen die een geheimenbestand *trackt* — één waarschuwing per sessie |
@@ -113,7 +125,7 @@ toestemmingsvenster van het systeem kan verschijnen, legt GitHuttBr uit wat er
 opgeslagen wordt, wat het niet kan (een app leest alleen ooit de regel terug die
 het zelf aanmaakte — je andere wachtwoorden zijn onbereikbaar), en dat nee zeggen
 prima is: tokens leven dan alleen in het geheugen voor die sessie, de kluis blijft
-dicht, en je kunt het later aanzetten in **Instellingen → Beveiliging →
+dicht, en je kunt het later aanzetten in **Instellingen → Beveiliging & bevestigingen →
 OS-sleutelhanger**.
 
 Een verse installatie doet **nul** aanroepen naar de sleutelhanger tot er
@@ -124,9 +136,9 @@ onderdeel *GitHuttBr Safe Storage*: de bundle-id van de app is nu
 `com.huttbr.git`, en de sleutelhanger vraagt opnieuw voor een app die hij niet
 herkent. **Sta altijd toe** houdt de tokens; zie [bijwerken](upgrading.md).
 
-Zolang hij uit staat, meldt het tokenveld bij Integraties dat — *Alleen bewaard tot je GitHuttBr afsluit: de OS-keychain staat uit.* — met een knop **Inschakelen** ernaast. Inschakelen, daar of hier, bewaart ook de tokens die je in deze sessie al hebt ingevoerd, dus je hoeft niets opnieuw te plakken.
+Zolang hij uit staat, meldt het tokenveld bij Gekoppelde accounts dat — *Alleen bewaard tot je GitHuttBr afsluit: de OS-keychain staat uit.* — met een knop **Inschakelen** ernaast. Inschakelen, daar of hier, bewaart ook de tokens die je in deze sessie al hebt ingevoerd, dus je hoeft niets opnieuw te plakken.
 
-![Het tokenveld bij Integraties met de sleutelhanger uit: alleen bewaard tot je afsluit, met een knop Inschakelen](../../screenshots/token-keychain-notice.webp)
+![Het tokenveld bij Gekoppelde accounts met de sleutelhanger uit: alleen bewaard tot je afsluit, met een knop Inschakelen](../../screenshots/token-keychain-notice.webp)
 
 Een token dat je **verwijdert** terwijl de sleutelhanger uit staat, is meteen
 weg — het wordt nergens meer mee verstuurd —, maar alleen **voor deze sessie**:
@@ -155,7 +167,7 @@ laden weer normaal.
 Op Linux is de sleutelhanger een secret service — GNOME Keyring of KWallet. Als
 er geen draait, „versleutelt” het systeem nog steeds, maar met een vast
 wachtwoord dat op elke machine hetzelfde is: de tokens en sleutels zijn
-door elkaar gehusseld, niet beschermd. Instellingen → Beveiliging zegt het onder
+door elkaar gehusseld, niet beschermd. Instellingen → Beveiliging & bevestigingen zegt het onder
 de status van de sleutelhanger — *Er draait geen sleutelhanger…* — zodat het
 woord *sleutelhanger* nooit staat voor bescherming die er niet is.
 
@@ -200,8 +212,7 @@ antwoordt of GitHuttBr herstart.
 Als je de sleutelhangervraag van het systeem wegklikt, de sleutelhanger
 vergrendeld is of de tokenopslag door een andere kopie van GitHuttBr is
 geschreven (een ontwikkelbuild, een opnieuw ondertekende), **kan GitHuttBr je
-opgeslagen tokens niet lezen — en laat het ze ongemoeid**. Instellingen →
-Beveiliging zegt *GitHuttBr kon je opgeslagen tokens niet lezen*, en een token dat
+opgeslagen tokens niet lezen — en laat het ze ongemoeid**. Instellingen → Beveiliging & bevestigingen zegt *GitHuttBr kon je opgeslagen tokens niet lezen*, en een token dat
 je intussen intypt wordt alleen voor de sessie bewaard (het veld zegt dat ook).
 Het wordt nooit over de opslag geschreven die niet gelezen kon worden: dat zou
 elk opgeslagen token vervangen door het token dat je net hebt ingetypt.
@@ -213,11 +224,13 @@ elk opgeslagen token vervangen door het token dat je net hebt ingetypt.
 
 ## Instellingen importeren
 
-**Instellingen → Importeren / exporteren** brengt instellingen, profielen en
+**Instellingen → Gegevens & back-up → Importeren / exporteren** brengt instellingen, profielen en
 thema's van de ene machine naar de andere. De standaardexport bevat **geen
 tokens of API-sleutels**, en zo'n bestand importeren raakt de jouwe nooit aan —
 een leeg token in het bestand betekent „niet in dit bestand”, niet „verwijder
 de mijne”.
+
+Importeren en exporteren openen de pagina **Gegevens & back-up**; wat onherroepelijk gewist kan worden — de lijst met recent geopende repository’s — staat apart eronder, onder **Gevarenzone**, en vraagt voordat het iets wist.
 
 ### Kiezen wat je exporteert
 
@@ -231,7 +244,7 @@ onderdelen die je aanvinkt. Een weggelaten onderdeel staat helemaal niet in het
 bestand — het later importeren laat dat onderdeel van de andere machine precies
 zoals het is.
 
-![Instellingen → Gegevens → Exporteren: „Andere computer” gekozen, de groene melding dat het bestand geen pad van deze machine bevat, en het manifest van wat erin gaat](../../screenshots/settings-export.webp)
+![Instellingen → Gegevens & back-up → Exporteren: „Andere computer” gekozen, de groene melding dat het bestand geen pad van deze machine bevat, en het manifest van wat erin gaat](../../screenshots/settings-export.webp)
 
 Drie snelkeuzes boven de onderdelen vinken de gebruikelijke combinaties aan.
 Een vakje met de hand wijzigen laat de bijpassende snelkeuze oplichten, of geen:
@@ -286,7 +299,7 @@ nadat je het bestand kiest (en het wachtwoord typt, als het er een heeft),
 vraagt een venster welke onderdelen je wilt meenemen. Er wordt niets toegepast
 tot je op **Importeren** drukt; **Annuleren** laat alles zoals het was.
 
-![Instellingen → Gegevens → Importeren: vier onderdelen, de repositories niet aangevinkt omdat geen van hun mappen hier bestaat, en het vertalen van paden open](../../screenshots/settings-import.webp)
+![Instellingen → Gegevens & back-up → Importeren: vier onderdelen, de repositories niet aangevinkt omdat geen van hun mappen hier bestaat, en het vertalen van paden open](../../screenshots/settings-import.webp)
 
 | Onderdeel | Wat het bevat |
 |------|-----------------|
@@ -443,7 +456,7 @@ dat het niet te herstellen is; het importeren van het bestand vraagt erom — in
 een dialoogvenster in Instellingen, binnen de welkomststap bij de eerste start —
 en een verkeerd wachtwoord wordt opnieuw gevraagd.
 
-![Instellingen → Gegevens → Exporteren: een met een wachtwoord beveiligd bestand, de waarschuwing dat er geen herstel is bevestigd](../../screenshots/settings-export-password.webp)
+![Instellingen → Gegevens & back-up → Exporteren: een met een wachtwoord beveiligd bestand, de waarschuwing dat er geen herstel is bevestigd](../../screenshots/settings-export-password.webp)
 
 | | Zonder wachtwoord | Met wachtwoord |
 |---|---|---|

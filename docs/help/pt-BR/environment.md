@@ -49,6 +49,6 @@ a você ler antes de rodar. Depois de rodar uma, clique em **Verificar de novo**
 - Ela verifica o que o app enxerga do próprio processo. Um perfil de shell que
   muda o `PATH` só dentro do seu terminal pode fazer os dois discordarem.
 - A linha do GitHub CLI reflete o login do próprio `gh`, não as contas
-  conectadas em **Configurações → Integrações**. São credenciais separadas. Se
+  conectadas em **Configurações → Contas conectadas**. São credenciais separadas. Se
   faltar o escopo `workflow` numa delas, o efeito é um push recusado.
 - Ela informa o que está instalado. Não instala nem atualiza nada.

@@ -67,7 +67,7 @@ wierzyć. Twarz mówi tylko *coś się dzieje*, jednym spojrzeniem.
 ### Ruch
 
 Awatar na pasku tytułu sam oddycha i mruga. Wyłącz to w
-**Ustawienia → Motywy → Graf → Animuj awatar profilu** — wyraz twarzy nadal
+**Ustawienia → Układ i terminal → Animuj awatar profilu** — wyraz twarzy nadal
 odzwierciedla repozytorium, tylko przestaje się ruszać. Ruch jest też automatycznie
 pomijany, gdy system prosi o ograniczony ruch.
 
@@ -78,7 +78,7 @@ które graf rysuje podczas przewijania.
 ## Obraz Twojego profilu
 
 Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybrać.
-**Ustawienia → Profil → Awatar** oferuje pięć źródeł:
+**Ustawienia → Profil i tożsamość → Awatar** oferuje pięć źródeł:
 
 | Źródło | Co pokazuje |
 |---|---|
@@ -88,7 +88,7 @@ Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybra�
 | **Obraz** | Wybrany plik — PNG lub JPEG. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych GitHuttBr, a nie w pliku ustawień. |
 | **Z repozytorium** | Ikona lub logo znalezione w jednym z repozytoriów profilu — aplikacji albo firmy — skopiowane do profilu jak obraz. |
 
-Obraz trafia do **Ustawienia → Dane → Eksportuj ustawienia** i wraca przy imporcie; usunięcie
+Obraz trafia do **Ustawienia → Dane i kopia zapasowa → Eksportuj ustawienia** i wraca przy imporcie; usunięcie
 profilu go usuwa.
 
 ### Ikona z repozytorium
@@ -132,7 +132,7 @@ wyrazu: twarz reagująca na repozytorium to ta automatyczna.
 
 ## Wyłączanie zapytania
 
-**Ustawienia → Motywy → Graf → Pokaż awatary.**
+**Ustawienia → Graf → Pokaż awatary.**
 
 Wyłączone znaczy:
 

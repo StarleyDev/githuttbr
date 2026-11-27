@@ -4,7 +4,7 @@ category: Sécurité
 order: 73
 summary: Le magasin de mots de passe propre à git — le troisième — et pourquoi https vous redemande sans arrêt.
 keywords: assistant d'identifiants credential helper mot de passe password https redemande osxkeychain wincred manager libsecret store cache git-credentials texte clair plaintext oublier forget révoqué revoked jeton token 401 vérifier la connexion quel compte jeton dans l’url du distant mot de passe intégré le retirer de l’url token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Assistant d'identifiants
@@ -153,7 +153,7 @@ l’URL de fetch et chaque URL de push qui en contient un — et n’écrit rien
 |---------------|-------------------------|
 | Le profil du dépôt a un jeton ou un compte lié pour cet hébergeur | Ce jeton — la confirmation n’en dit pas plus |
 | Pas de jeton de profil, mais le helper propre à git a une connexion pour l’hébergeur | La connexion du helper |
-| Ni l’un ni l’autre | Rien : fetch et push échouent jusqu’à ce que vous ajoutiez un jeton. La confirmation le dit d’abord et propose **Ajouter d’abord un jeton**, qui ouvre Paramètres → Intégrations |
+| Ni l’un ni l’autre | Rien : fetch et push échouent jusqu’à ce que vous ajoutiez un jeton. La confirmation le dit d’abord et propose **Ajouter d’abord un jeton**, qui ouvre Paramètres → Comptes connectés |
 
 Quand elle a été lancée depuis une opération échouée, elle propose **Réessayer**.
 

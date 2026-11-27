@@ -3,7 +3,7 @@ title: Profiles
 category: Make it yours
 order: 101
 summary: Separate identities and tokens for work and everything else.
-keywords: profile profiles identity git user email tokens accounts switch
+keywords: profile profiles identity git user email tokens accounts switch connected accounts integrations status expired renew
 ---
 
 # Profiles
@@ -15,22 +15,39 @@ correctly and API calls use the right account.
 Useful when the same machine does work and personal repositories, or when you
 have two GitHub accounts.
 
-![A profile: git identity on one side, its integration tokens on the other](../screenshots/settings-profiles.webp)
+![Settings → Profile & identity: the profile card, the git identity with the apply hint, and the connected accounts summary](../screenshots/settings-profiles.webp)
 
 ## Editing a profile, using a profile
 
-Settings splits its pages in two. **This profile** holds the pages that change
-with the profile — **Profile** and **Integrations**. **App** holds everything
-else, which applies in any profile and says so at the top of the page.
+Two Settings pages change with the profile — **Profile & identity** and
+**Connected accounts**, at the top of the **You** group, whose heading names the
+profile they edit. Every other page applies in any profile and says so at the top.
 
-The two profile pages open with a bar: *Editing the profile* and a picker. The
-picker chooses which profile you are **editing**; it does not change the one the
-app is **using**. When they differ, an amber band says so — *You are editing
-Work. The app is using Personal* — with **Use this profile** to switch. That is
-the moment an account is most easily linked to the wrong profile, so the
-Integrations page also names the profile on every card and on the button itself:
-**Link to the profile Work**, and the confirmation repeats it. New and delete are
-in the same bar; deleting asks first.
+**Profile & identity** opens with the profile's card: its picture, its name
+(edited in place), *in use* when the app is using it, the picker and **New
+profile**. **Connected accounts** opens with the same picker in a bar, *Editing
+the profile*. The picker chooses which profile you are **editing**; it does not
+change the one the app is **using**. When they differ, an amber band says so —
+*You are editing Work. The app is using Personal* — with **Use this profile** to
+switch. That is the moment an account is most easily linked to the wrong
+profile, so Connected accounts also names the profile on every card and on the
+button itself: **Link to the profile Work**, and the confirmation repeats it.
+Deleting a profile is in the same place, and asks first.
+
+Below the card come the git identity and commit signing. When a repository is
+open and commits as someone else — its git config names another author — a line
+says so, *my-repo commits as … not as this profile*, with **Apply identity to current
+repo**; when the two agree there is nothing to apply and the line is not
+shown. Then the profile picture, a summary of its **connected accounts** — one
+line per host with *Connected*, *Token expired or error*, *Could not reach* or
+*Not connected*, and **Connect** or **Renew**, which open Connected accounts on
+that host — and which AI the profile uses.
+
+The summary checks quietly, without a sign-in window, each time the page opens
+or a token changes; it never polls. What it finds is also what the side menu
+uses: **Connected accounts** shows a small warning count when a token was
+refused or failed, and only for checks Settings already made. A host it could
+not reach does not count — the token may be fine.
 
 ![Editing the Work profile while the app uses another: the amber band, and the link button naming Work](../screenshots/settings-profile-band.webp)
 
@@ -47,7 +64,7 @@ says which AI the profile uses and links there.
 ## Each profile, its own accounts
 
 Besides a token, a profile can **link** a login already on the machine — from
-git's credential helper or the GitHub CLI — in Settings → Integrations. A link
+git's credential helper or the GitHub CLI — in Settings → Connected accounts. A link
 belongs to one profile: a new profile starts disconnected, and an account
 another profile already holds is refused, so two profiles can hold two GitHub
 (or Azure DevOps) accounts side by side. See [Hosting](hosting.md#tokens).

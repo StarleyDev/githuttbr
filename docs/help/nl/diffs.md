@@ -52,7 +52,7 @@ De **bestandsweergave** van een working-tree-bestand — gestaged of niet, gevol
 
 ![Wijzigingsmarge met een geopende pop-up, minimap rechts](../../screenshots/change-gutter.webp)
 
-De **minimap**, standaard uitgeschakeld, voegt een verkleind overzicht van het hele bestand toe aan de rechterrand — klik of sleep om erin te springen, zoals een scrollbalk zou doen als die ook de vorm van het bestand kon tonen. Beide zijn per-machine-instellingen onder **Instellingen → Algemeen → Bestandsviewer**.
+De **minimap**, standaard uitgeschakeld, voegt een verkleind overzicht van het hele bestand toe aan de rechterrand — klik of sleep om erin te springen, zoals een scrollbalk zou doen als die ook de vorm van het bestand kon tonen. Beide zijn per-machine-instellingen onder **Instellingen → Indeling & terminal → Bestandsviewer**.
 
 Geen van beide leest geschiedenis: schakel over naar Diff, Blame of een oudere commit en de marge verdwijnt — die weergaven tonen elke wijziging al rechtstreeks.
 

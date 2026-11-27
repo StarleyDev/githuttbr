@@ -18,7 +18,7 @@ keywords: 本地 CI local ci act actions 工作流 workflow 运行器 runner doc
 ## 是一项集成，不是内置运行时
 
 GitHuttBr 刻意**不**捆绑 act 或 Docker——一个拖着容器运行时的应用，恰恰是 git
-客户端的反面。这是一项需要主动开启的集成：在**设置 → 集成**（或对话框本身）里
+客户端的反面。这是一项需要主动开启的集成：在**设置 → 已连接的账户**（或对话框本身）里
 启用它，GitHuttBr 会检测已安装的组件并引导你完成剩下的步骤——`brew install act`、
 一个正在运行的 Docker 守护进程，就绪。三个条件全部满足之前什么都不会运行：
 已启用、act 已安装、Docker 可连接。

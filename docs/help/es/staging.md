@@ -65,7 +65,7 @@ siguen copiando la ruta de la carpeta.
 GitHuttBr comprueba unas cuantas cosas y pregunta una vez, nunca en silencio:
 
 - un archivo que parece un **secreto** (`.env`, `*.pem`, `id_rsa`…),
-- un blob **muy grande** (el umbral está en Ajustes → Seguridad),
+- un blob **muy grande** (el umbral está en Ajustes → Seguridad y confirmaciones),
 - hacer commit **directamente a una rama protegida** (`main`/`master` por
   defecto).
 

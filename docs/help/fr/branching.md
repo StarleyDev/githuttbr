@@ -10,8 +10,7 @@ keywords: branche branch branches créer create extraire checkout renommer renam
 
 Une seule barre latérale, réordonnable et cherchable, contient les **branches,
 les distants, les étiquettes, les remisages, les arbres de travail et les
-sous-modules**. Chaque section peut être masquée ou déplacée (Paramètres →
-Disposition), et le champ de filtre s'applique à toutes.
+sous-modules**. Chaque section peut être masquée ou déplacée (Paramètres → Disposition et terminal), et le champ de filtre s'applique à toutes.
 Les sections et dossiers laissés ouverts ou repliés sont mémorisés par dépôt,
 même après un redémarrage.
 
@@ -51,7 +50,7 @@ Un préfixe avec un seul enfant reste un dossier — `release/1.2.3` est `releas
 contenant `1.2.3` — donc ajouter `release/1.2.4` plus tard ne redessine pas
 l’arbre. Une suite de dossiers à un enfant se comprime en un en-tête
 (`dependabot/npm_and_yarn`). Les en-têtes de dossier portent une marque de
-dossier ; la réf, une marque de branche, de distant ou d’étiquette.
+dossier ; la réf, une marque de branche, de distant ou d’étiquette. **Paramètres → Disposition et terminal → Grouper les réfs par préfixe** désactive les dossiers, pour une liste à plat.
 
 Un clic droit sur l'en-tête d'un dossier agit sur tout le groupe : *Supprimer
 toutes les branches sous `feature` (4 branches)* supprime tout son contenu

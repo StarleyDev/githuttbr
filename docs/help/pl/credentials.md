@@ -4,7 +4,7 @@ category: Bezpieczeństwo
 order: 73
 summary: Własny magazyn haseł gita — ten trzeci — i dlaczego https ciągle pyta cię od nowa.
 keywords: credential helper hasło https pyta znowu osxkeychain wincred manager libsecret store cache git-credentials plaintext zapomnij unieważniony token 401 sprawdź logowanie które konto token w adresie zdalnego repozytorium hasło w url usuń z adresu url token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Credential helper
@@ -151,7 +151,7 @@ fetch i każdego adresu push, który je zawiera — i nie zapisuje niczego poza
 |---------------|-------------------------|
 | Profil repozytorium ma token lub powiązane konto dla tego hostingu | Tego tokenu — potwierdzenie nie mówi nic więcej |
 | Brak tokenu profilu, ale helper samego gita ma logowanie dla hostingu | Logowania helpera |
-| Żadne z nich | Niczego: fetch i push zawodzą, dopóki nie dodasz tokenu. Potwierdzenie mówi to najpierw i proponuje **Najpierw dodaj token**, co otwiera Ustawienia → Integracje |
+| Żadne z nich | Niczego: fetch i push zawodzą, dopóki nie dodasz tokenu. Potwierdzenie mówi to najpierw i proponuje **Najpierw dodaj token**, co otwiera Ustawienia → Połączone konta |
 
 Gdy została uruchomiona z nieudanej operacji, proponuje **Spróbuj ponownie**.
 

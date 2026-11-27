@@ -147,7 +147,7 @@ conflitto. `rerere` — *reuse recorded resolution* — è la risposta di git:
 memorizza come hai sistemato un conflitto e ripropone quella risposta la volta
 successiva che ne compare uno identico.
 
-**Impostazioni → Generali → Ricorda le risoluzioni dei conflitti.** Scrive
+**Impostazioni → Git e sincronizzazione → Ricorda le risoluzioni dei conflitti.** Scrive
 `rerere.enabled` nella tua configurazione git globale, così anche la riga di
 comando si comporta allo stesso modo.
 

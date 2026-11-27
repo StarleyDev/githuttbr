@@ -4,7 +4,7 @@ category: Bezpieczeństwo
 order: 70
 summary: Maskowanie, zabezpieczenia, pęk kluczy — i to, czego GitHuttBr robić odmawia.
 keywords: bezpieczeństwo sekrety maskowanie pęk kluczy tokeny chroniona gałąź duży plik prywatność security secrets masking keychain safeStorage protected branch guard privacy nieczytelne kopia zapasowa części tłumaczenie ścieżek inny komputer nowa maszyna scalanie profili zastępowanie profili wybór eksportu pełna kopia dla zespołu manifest hasło szyfrowanie appimage apparmor sandbox zgłoś problem obrazy w komentarzach piksel śledzący adres ip obrazy z innych witryn kliknij aby wczytać images in comments tracking pixel third-party images click to load
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Bezpieczeństwo i sekrety
@@ -13,6 +13,18 @@ GitHuttBr **nie ma żadnego backendu**. Jedyne wywołania sieciowe idą do twoje
 hostingu Gita i — jeśli to włączysz — do twojego dostawcy AI.
 
 ![Ustawienia bezpieczeństwa](../../screenshots/settings-security.webp)
+
+## Strona Bezpieczeństwo i potwierdzenia
+
+**Ustawienia → Bezpieczeństwo i potwierdzenia** zaczyna się od tego, co obowiązuje teraz, w jednym pasku: czy sekrety są zamaskowane, czy używany jest systemowy pęk kluczy i czy force push najpierw pyta — z *zalecamy włączyć*, dopóki nie pyta. Pasek tylko informuje; przełączniki są pod nim.
+
+| Blok | Co zawiera |
+|---|---|
+| **Pytaj przed czymś niebezpiecznym** | **Potwierdzaj przed force pushem**, próg dużego pliku i wiersz, którego nie da się wyłączyć: odrzucenie zmian, twardy reset i usunięcie chronionej gałęzi zawsze pytają, a każde potwierdzenie mówi, co zostałoby utracone |
+| **Prywatność** | **Maskuj wartości sekretów**, **Wczytuj obrazy z innych witryn w komentarzach** i [Sejf](vault.md) |
+| **Pęk kluczy systemu**, **Klucze SSH** | Gdzie przechowywane są tokeny i jakie klucze trzyma agent ([klucze SSH](ssh-keys.md)) |
+
+Potwierdzenie force pusha było wcześniej w Ogólne. Chronione gałęzie ustawia się dla każdego repozytorium w jego [ustawieniach](repo-settings.md).
 
 ## Maskowanie sekretów
 
@@ -35,7 +47,7 @@ szablony, a nie jak sekrety.
 | Zabezpieczenie | Kiedy |
 |---|---|
 | **Plik z sekretem** | Commitowanie czegoś, co wygląda na poświadczenie — z *Ignoruj i przestań śledzić* jednym kliknięciem |
-| **Duży plik** | Commitowanie przerośniętego bloba (próg w Ustawienia → Bezpieczeństwo) |
+| **Duży plik** | Commitowanie przerośniętego bloba (próg w Ustawienia → Bezpieczeństwo i potwierdzenia) |
 | **Śmieci z budowania** | Commit `xcuserdata/`, `DerivedData/` albo `.DS_Store` — z tym samym *Ignoruj i przestań śledzić* jednym kliknięciem |
 | **Chroniona gałąź** | Commit prosto na `main`/`master` albo force push na nią |
 | **Śledzone sekrety** | Push repozytorium, które *śledzi* plik z sekretem — ostrzeżenie raz na sesję |
@@ -111,7 +123,7 @@ systemowe okno uprawnień, GitHuttBr wyjaśnia, co zostanie zapisane, czego nie
 potrafi (aplikacja zawsze odczyta wyłącznie wpis, który sama utworzyła — twoje
 pozostałe hasła są nieosiągalne) i że odmowa jest w porządku: tokeny żyją wtedy
 w pamięci tylko na czas sesji, sejf zostaje zamknięty, a włączyć to możesz
-później w **Ustawienia → Bezpieczeństwo → Pęk kluczy systemu**.
+później w **Ustawienia → Bezpieczeństwo i potwierdzenia → Pęk kluczy systemu**.
 
 Świeża instalacja wykonuje **zero** wywołań do pęku kluczy, dopóki coś naprawdę
 nie wymaga zapisania.
@@ -121,9 +133,9 @@ nie wymaga zapisania.
 `com.huttbr.git`, a pęk kluczy pyta ponownie o aplikację, której nie zna.
 **Zawsze pozwalaj** zachowuje tokeny; zobacz [aktualizację](upgrading.md).
 
-Dopóki jest wyłączony, pole tokenu w Integracjach o tym mówi — *Zapisany tylko do zamknięcia GitHuttBr: systemowy pęk kluczy jest wyłączony.* — z przyciskiem **Włącz** obok. Włączenie go, stamtąd lub stąd, zapisuje też tokeny wpisane już w tej sesji, więc nie trzeba ich wklejać ponownie.
+Dopóki jest wyłączony, pole tokenu w Połączonych kontach o tym mówi — *Zapisany tylko do zamknięcia GitHuttBr: systemowy pęk kluczy jest wyłączony.* — z przyciskiem **Włącz** obok. Włączenie go, stamtąd lub stąd, zapisuje też tokeny wpisane już w tej sesji, więc nie trzeba ich wklejać ponownie.
 
-![Pole tokenu w Integracjach przy wyłączonym pęku kluczy: zapisany tylko do zamknięcia, z przyciskiem Włącz](../../screenshots/token-keychain-notice.webp)
+![Pole tokenu w Połączonych kontach przy wyłączonym pęku kluczy: zapisany tylko do zamknięcia, z przyciskiem Włącz](../../screenshots/token-keychain-notice.webp)
 
 Token, który **usuniesz** przy wyłączonym pęku kluczy, znika od razu — nie jest
 już z niczym wysyłany — ale tylko **na tę sesję**: zaszyfrowanego magazynu nie
@@ -149,8 +161,7 @@ normalnie.
 
 Na Linuksie pęk kluczy to usługa sekretów — GNOME Keyring albo KWallet. Gdy żadna
 nie działa, system nadal „szyfruje”, ale stałym hasłem, takim samym na każdej
-maszynie: tokeny i klucze są zaciemnione, a nie chronione. Ustawienia →
-Bezpieczeństwo mówią o tym pod stanem pęku kluczy — *Nie działa żaden pęk
+maszynie: tokeny i klucze są zaciemnione, a nie chronione. Ustawienia → Bezpieczeństwo i potwierdzenia mówią o tym pod stanem pęku kluczy — *Nie działa żaden pęk
 kluczy…* — żeby słowo *pęk kluczy* nigdy nie oznaczało ochrony, której nie ma.
 
 Żeby nic nowego nie trafiło do magazynu, który każdy mógłby odczytać, token
@@ -190,7 +201,7 @@ GitHuttBr się nie uruchomi ponownie.
 Jeśli zamkniesz systemowe pytanie o pęk kluczy, pęk kluczy jest zablokowany
 albo magazyn tokenów zapisała inna kopia GitHuttBr (wersja deweloperska,
 podpisana na nowo), GitHuttBr **nie może odczytać twoich zapisanych tokenów — i
-zostawia je nietknięte**. Ustawienia → Bezpieczeństwo mówią *GitHuttBr nie mógł
+zostawia je nietknięte**. Ustawienia → Bezpieczeństwo i potwierdzenia mówią *GitHuttBr nie mógł
 odczytać twoich zapisanych tokenów*, a token wpisany w międzyczasie jest
 trzymany tylko na czas sesji (pole też o tym mówi). Nigdy nie jest zapisywany
 na magazyn, którego nie dało się odczytać: zastąpiłoby to każdy zapisany token
@@ -203,10 +214,12 @@ tym, który właśnie wpisałeś.
 
 ## Import ustawień
 
-**Ustawienia → Import / Eksport** przenosi ustawienia, profile i motywy między
+**Ustawienia → Dane i kopia zapasowa → Import / Eksport** przenosi ustawienia, profile i motywy między
 maszynami. Domyślny eksport **nie zawiera tokenów ani kluczy API**, a import
 takiego pliku nigdy nie rusza tych, które masz zapisane — pusty token w pliku
 oznacza „nie ma go w tym pliku”, a nie „usuń mój”.
+
+Import i eksport otwierają stronę **Dane i kopia zapasowa**; to, co można usunąć bezpowrotnie — lista ostatnio otwartych repozytoriów — stoi osobno, niżej, w **Strefa zagrożenia**, i pyta przed wyczyszczeniem czegokolwiek.
 
 ### Wybór, co wyeksportować
 
@@ -219,7 +232,7 @@ komputerze, i zapisuje tylko te, które zaznaczysz. Pominiętej części w ogól
 ma w pliku — późniejszy import zostawia tę część drugiej maszyny dokładnie taką,
 jaka jest.
 
-![Ustawienia → Dane → Eksport: wybrany „Inny komputer”, zielona uwaga, że plik nie zawiera żadnej ścieżki tej maszyny, i manifest tego, co trafia do pliku](../../screenshots/settings-export.webp)
+![Ustawienia → Dane i kopia zapasowa → Eksport: wybrany „Inny komputer”, zielona uwaga, że plik nie zawiera żadnej ścieżki tej maszyny, i manifest tego, co trafia do pliku](../../screenshots/settings-export.webp)
 
 Trzy skróty nad częściami zaznaczają typowe zestawy. Zmiana pola wyboru ręcznie
 podświetla pasujący skrót albo żaden:
@@ -272,7 +285,7 @@ nie prowadzą. Dlatego po wybraniu pliku (i wpisaniu hasła, jeśli je ma) okno
 pyta, które części przenieść. Nic nie jest stosowane, dopóki nie naciśniesz
 **Importuj**; **Anuluj** zostawia wszystko tak, jak było.
 
-![Ustawienia → Dane → Import: cztery części, repozytoria odznaczone, bo żaden z ich folderów tu nie istnieje, i otwarte tłumaczenie ścieżek](../../screenshots/settings-import.webp)
+![Ustawienia → Dane i kopia zapasowa → Import: cztery części, repozytoria odznaczone, bo żaden z ich folderów tu nie istnieje, i otwarte tłumaczenie ścieżek](../../screenshots/settings-import.webp)
 
 | Część | Co zawiera |
 |------|-----------------|
@@ -420,7 +433,7 @@ długości. Wpisujesz je dwa razy i zaznaczasz, że rozumiesz, że nie da się g
 odzyskać; import pliku o nie prosi — w oknie w Ustawieniach, w kroku powitalnym
 przy pierwszym uruchomieniu — a przy błędnym pyta znowu.
 
-![Ustawienia → Dane → Eksport: plik chroniony hasłem, ostrzeżenie o braku możliwości odzyskania potwierdzone](../../screenshots/settings-export-password.webp)
+![Ustawienia → Dane i kopia zapasowa → Eksport: plik chroniony hasłem, ostrzeżenie o braku możliwości odzyskania potwierdzone](../../screenshots/settings-export-password.webp)
 
 | | Bez hasła | Z hasłem |
 |---|---|---|

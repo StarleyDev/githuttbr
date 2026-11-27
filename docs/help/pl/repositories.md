@@ -4,7 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 52
 summary: Każde repozytorium, które GitHuttBr zna, otwarte albo nie, na jednej przeszukiwalnej liście.
 keywords: repozytoria rejestr wszystkie repozytoria ulubione gwiazdka ostatnie skan folder przeglądaj znajdź otwórz zarządzaj zarządzanie repozytoriami kolor sekcja odcień podświetlenie przestrzenie z folderów drzewo generuj import masowy repositories registry favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Repozytoria
@@ -88,7 +88,7 @@ Obejmuje tylko otwarte karty i dzieje się przy pierwszej wizycie każdej
 sesji, nie raz na zawsze. Repozytorium, które **zapomnisz**, zostaje
 zapomniane, dopóki nie otworzysz go znowu.
 
-Foldery do skanowania ustawia się w Ustawienia → Dane albo w oknie
+Foldery do skanowania ustawia się w Ustawienia → Dane i kopia zapasowa albo w oknie
 **Zeskanowane repozytoria** opisanym niżej:
 
 - **Głębokość** to, ile poziomów katalogów skan schodzi poniżej korzenia

@@ -4,7 +4,7 @@ category: Seguridad
 order: 73
 summary: El almacén de contraseñas de git — el tercero — y por qué https te las vuelve a pedir.
 keywords: credential helper ayudante credenciales contraseña password https vuelve a pedir osxkeychain wincred manager libsecret store cache git-credentials texto plano plaintext olvidar forget revocado token 401 comprobar inicio de sesión qué cuenta token en la url del remoto contraseña incrustada quitarlo de la url token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Ayudante de credenciales
@@ -149,7 +149,7 @@ que pasa después depende de qué más puede iniciar sesión:
 |---------------|-------------------------|
 | El perfil del repositorio tiene un token o una cuenta vinculada para ese host | Ese token — la confirmación no dice nada más |
 | Sin token de perfil, pero el helper propio de git tiene un inicio de sesión para el host | El inicio de sesión del helper |
-| Ninguno de los dos | Nada: fetch y push fallan hasta que añadas un token. La confirmación lo dice antes y ofrece **Añadir antes un token**, que abre Ajustes → Integraciones |
+| Ninguno de los dos | Nada: fetch y push fallan hasta que añadas un token. La confirmación lo dice antes y ofrece **Añadir antes un token**, que abre Ajustes → Cuentas conectadas |
 
 Cuando se lanzó desde una operación fallida, ofrece **Reintentar**.
 

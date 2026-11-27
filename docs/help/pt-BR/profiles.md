@@ -19,18 +19,13 @@ você tem duas contas no GitHub.
 
 ## Editar um perfil, usar um perfil
 
-As Configurações dividem as páginas em duas. **Deste perfil** reúne as que mudam
-com o perfil — **Perfil** e **Integrações**. **Do app** reúne todo o resto, que
-vale em qualquer perfil e avisa isso no topo da página.
+Duas páginas das Configurações mudam com o perfil — **Perfil e identidade** e **Contas conectadas**, no topo do grupo **Você**, cujo título nomeia o perfil que elas editam. Todas as outras páginas valem em qualquer perfil e dizem isso no topo.
 
-As duas páginas do perfil abrem com uma barra: *Editando o perfil* e um
-seletor. O seletor escolhe qual perfil você está **editando**; ele não troca o
-perfil que o app está **usando**. Quando os dois são diferentes, uma faixa
-amarela avisa — *Você está editando Trabalho. O app está usando Pessoal* — com
-**Usar este perfil** para trocar. É nesse momento que uma conta costuma ir para
-o perfil errado, então a página Integrações também diz o perfil em cada cartão e
-no próprio botão: **Vincular ao perfil Trabalho**, e a confirmação repete o
-nome. Criar e apagar ficam na mesma barra; apagar pede confirmação.
+**Perfil e identidade** abre com o cartão do perfil: a foto, o nome (editado ali mesmo), *em uso* quando o app o está usando, o seletor e **Novo perfil**. **Contas conectadas** abre com o mesmo seletor numa barra, *Editando o perfil*. O seletor escolhe qual perfil você está **editando**; não muda o que o app está **usando**. Quando os dois diferem, uma faixa âmbar avisa, com **Usar este perfil** para trocar. É nesse momento que uma conta é vinculada ao perfil errado com mais facilidade, então Contas conectadas também nomeia o perfil em cada cartão e no próprio botão, e a confirmação repete. Apagar um perfil fica no mesmo lugar, e pergunta antes.
+
+Abaixo do cartão vêm a identidade git e a assinatura de commits. Quando um repositório está aberto e faz commits como outra pessoa — o git config dele nomeia outro autor —, uma linha avisa, com **Aplicar a identidade ao repositório atual**; quando os dois batem, não há nada a aplicar e a linha não aparece. Depois vêm a foto do perfil, um resumo das **contas conectadas** — uma linha por host com *Conectada*, *Token expirado ou com erro*, *Sem acesso ao servidor* ou *Não conectada*, e **Conectar** ou **Renovar**, que abrem Contas conectadas naquele host — e qual IA o perfil usa.
+
+O resumo verifica em silêncio, sem janela de login, cada vez que a página abre ou um token muda; nunca fica consultando. O que ele encontra é o que o menu lateral usa: **Contas conectadas** mostra uma pequena contagem de alerta quando um token foi recusado ou falhou, e só para verificações que as Configurações já fizeram. Um host inalcançável não conta — o token pode estar bom.
 
 ![Editando o perfil Work enquanto o app usa outro: a faixa amarela e o botão de vincular com o nome Work](../../screenshots/settings-profile-band.webp)
 
@@ -47,7 +42,7 @@ qual IA o perfil usa e leva até lá.
 ## Cada perfil com as suas contas
 
 Além de um token, um perfil pode **vincular** um login que já esteja na máquina —
-do credential helper do git ou do GitHub CLI — em Configurações → Integrações.
+do credential helper do git ou do GitHub CLI — em Configurações → Contas conectadas.
 Um vínculo pertence a um só perfil: um perfil novo começa desconectado, e uma
 conta que outro perfil já tem é recusada. Assim, dois perfis podem ter duas
 contas do GitHub (ou do Azure DevOps) lado a lado. Veja [Hospedagem](hosting.md).

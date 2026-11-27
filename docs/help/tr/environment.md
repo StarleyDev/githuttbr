@@ -48,7 +48,7 @@ denetle**’ye basın.
 - Uygulamanın kendi sürecinden gördüğünü denetler. `PATH`’i yalnızca
   terminalinizde değiştiren bir kabuk profili ikisinin farklı sonuç vermesine
   yol açabilir.
-- GitHub CLI satırı, **Ayarlar → Entegrasyonlar**’da bağlı hesapları değil,
+- GitHub CLI satırı, **Ayarlar → Bağlı hesaplar**’da bağlı hesapları değil,
   `gh`’ın kendi oturumunu yansıtır. Bunlar ayrı kimlik bilgileridir. Orada eksik
   bir `workflow` kapsamı bunun yerine reddedilen bir push olarak görünür.
 - Neyin kurulu olduğunu bildirir. Hiçbir şey kurmaz ya da güncellemez.

@@ -34,8 +34,7 @@ che ne ha cento.
 
 ## Fargli mostrare quello che vuoi
 
-- Il **focus del grafo** decide quanta storia viene disegnata — Impostazioni →
-  Temi → **Grafo**, o il menu dell'ingranaggio nell'intestazione del grafo.
+- Il **focus del grafo** decide quanta storia viene disegnata — Impostazioni → **Grafo**, o il menu dell'ingranaggio nell'intestazione del grafo.
   *Tutto* disegna ogni cosa; *Cronologia lineare* (first-parent) lascia solo il
   tronco; *Nascondi i rami già uniti* tiene il tronco più i rami ancora aperti;
   *Modalità solo* tiene il tuo ramo, i rami preferiti e il ramo predefinito.
@@ -54,11 +53,15 @@ che ne ha cento.
 
 - **Colonne**: mostra, nascondi, ridimensiona e riordina le colonne branch,
   messaggio, autore, data, SHA, firma e deploy.
-- **Stile**: Impostazioni → Temi → **Grafo** — palette delle corsie (8 integrate,
+- **Stile**: Impostazioni → **Grafo** — palette delle corsie (8 integrate,
   personalizzata o generata dall'AI), stile degli angoli, densità delle righe e
   spessore delle linee, con un mini-grafo di anteprima dal vivo.
 
 ![Le impostazioni di stile del grafo con anteprima dal vivo](../../screenshots/settings-graph.webp)
+
+- **Cosa mostra ogni riga**: Impostazioni → Grafo → **Contenuto delle righe** — **Date relative**, **Mostra gli avatar** e **Usa le foto profilo di GitHub** (vedi [avatar](avatars.md) per cosa chiede ciascuno alla rete). **Carica altri commit scorrendo** sta con le quantità di cronologia. **Raggruppa le ref per prefisso** raggruppa gli elenchi della barra laterale, non il grafo, perciò è in Impostazioni → Layout e terminale.
+
+Tutte le impostazioni del grafo stanno in quella pagina; fino alla 4.60 erano divise tra Generali e una scheda Grafo in Temi.
 
 ## Dove stanno gli stash
 

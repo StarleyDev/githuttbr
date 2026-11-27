@@ -72,7 +72,7 @@ vistazo.
 ### Movimiento
 
 El avatar de la barra de título respira y parpadea por su cuenta. Desactívalo en
-**Ajustes → Temas → Grafo → Animar el avatar del perfil** — la expresión sigue
+**Ajustes → Diseño y terminal → Animar el avatar del perfil** — la expresión sigue
 reflejando el repositorio, solo deja de moverse. El movimiento también se omite
 automáticamente si tu sistema pide movimiento reducido.
 
@@ -83,7 +83,7 @@ varios cientos que dibuja un grafo al desplazarse.
 ## La imagen de tu perfil
 
 El avatar de la barra de título y de la lista de perfiles es tuyo, así que puedes elegirlo.
-**Ajustes → Perfil → Avatar** ofrece cinco fuentes:
+**Ajustes → Perfil e identidad → Avatar** ofrece cinco fuentes:
 
 | Fuente | Qué muestra |
 |---|---|
@@ -93,7 +93,7 @@ El avatar de la barra de título y de la lista de perfiles es tuyo, así que pue
 | **Imagen** | Un archivo que eliges: PNG o JPEG. Se reduce a 256 px y se guarda en este equipo, en la carpeta de datos de GitHuttBr, no en el archivo de configuración. |
 | **De un repositorio** | Un icono o logotipo encontrado en uno de los repositorios del perfil — el de la app o el de la empresa —, copiado en el perfil como una imagen. |
 
-La imagen viaja con **Ajustes → Datos → Exportar ajustes** y vuelve al importar;
+La imagen viaja con **Ajustes → Datos y copia de seguridad → Exportar ajustes** y vuelve al importar;
 borrar el perfil la borra.
 
 ### Un icono de un repositorio
@@ -136,7 +136,7 @@ Gravatar, no tiene expresión: la cara que reacciona al repositorio es la autom�
 
 ## Desactivar la consulta
 
-**Ajustes → Temas → Grafo → Mostrar avatares.**
+**Ajustes → Grafo → Mostrar avatares.**
 
 Desactivado significa:
 

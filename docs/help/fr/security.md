@@ -4,7 +4,7 @@ category: Sécurité
 order: 70
 summary: Le masquage, les garde-fous, le trousseau — et ce que GitHuttBr refuse de faire.
 keywords: sécurité security secrets masquage masking trousseau keychain safeStorage jetons tokens branche protégée protected branch gros fichier large file garde-fou guard confidentialité privacy illisible sauvegarde parties traduire chemins autre ordinateur nouvelle machine fusionner profils remplacer profils choisir quoi exporter sauvegarde complète pour l'équipe manifeste mot de passe chiffrement appimage apparmor sandbox signaler un problème images dans les commentaires pixel espion adresse ip images tierces cliquer pour charger images in comments tracking pixel third-party images click to load
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Sécurité et secrets
@@ -13,6 +13,18 @@ GitHuttBr n'a **aucun backend**. Les seuls appels réseau vont vers votre héber
 Git et, si vous l'activez, vers votre fournisseur d'IA.
 
 ![Les paramètres de sécurité](../../screenshots/settings-security.webp)
+
+## La page Sécurité et confirmations
+
+**Paramètres → Sécurité et confirmations** commence par ce qui est vrai maintenant, sur une seule bande : si les secrets sont masqués, si le trousseau du système est utilisé et si un force push demande confirmation — avec *il est recommandé de l’activer* tant que ce n’est pas le cas. La bande ne fait qu’informer ; les interrupteurs sont en dessous.
+
+| Bloc | Ce qu’il contient |
+|---|---|
+| **Demander avant une action dangereuse** | **Confirmer avant un push forcé**, le seuil des gros fichiers et une ligne qui ne se désactive pas : abandonner, reset hard et supprimer une branche protégée demandent toujours, et chaque confirmation dit ce qui serait perdu |
+| **Confidentialité** | **Masquer les valeurs secrètes**, **Charger les images d’autres sites dans les commentaires** et le [Coffre-fort](vault.md) |
+| **Trousseau du système**, **Clés SSH** | Où les jetons sont gardés et les clés que détient votre agent ([clés SSH](ssh-keys.md)) |
+
+La confirmation du force push se trouvait dans Général. Les branches protégées se règlent par dépôt, dans ses [paramètres](repo-settings.md).
 
 ## Masquage des secrets
 
@@ -35,7 +47,7 @@ comme des secrets.
 | Garde-fou | Quand |
 |---|---|
 | **Fichier secret** | Vous validez quelque chose qui ressemble à un identifiant — avec un *Ignorer et ne plus suivre* en un clic |
-| **Gros fichier** | Vous validez un blob surdimensionné (seuil dans Paramètres → Sécurité) |
+| **Gros fichier** | Vous validez un blob surdimensionné (seuil dans Paramètres → Sécurité et confirmations) |
 | **Bruit de compilation** | Committer `xcuserdata/`, `DerivedData/` ou un `.DS_Store` — avec le même *Ignorer et ne plus suivre* en un clic |
 | **Branche protégée** | Vous validez directement sur `main`/`master`, ou vous en poussez une en force |
 | **Secrets suivis** | Vous poussez un dépôt qui *suit* un fichier secret — averti une fois par session |
@@ -116,7 +128,7 @@ explique ce qui va être stocké, ce qu'il ne peut pas faire (une application ne
 relit jamais que l'entrée qu'elle a créée — vos autres mots de passe sont
 inatteignables), et que dire non ne pose aucun problème : les jetons vivent alors
 en mémoire pour la durée de la session seulement, le coffre reste fermé, et vous
-pouvez activer tout cela plus tard dans **Paramètres → Sécurité → Trousseau du
+pouvez activer tout cela plus tard dans **Paramètres → Sécurité et confirmations → Trousseau du
 système**.
 
 Une installation neuve fait **zéro** appel au trousseau tant que rien n'a
@@ -128,9 +140,9 @@ devenu `com.huttbr.git`, et le trousseau redemande pour une app qu'il ne
 reconnaît pas. **Toujours autoriser** conserve les jetons ; voir
 [la mise à jour](upgrading.md).
 
-Tant qu’il est désactivé, le champ du jeton dans Intégrations le signale — *Conservé seulement jusqu’à la fermeture de GitHuttBr : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
+Tant qu’il est désactivé, le champ du jeton dans Comptes connectés le signale — *Conservé seulement jusqu’à la fermeture de GitHuttBr : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
 
-![Le champ du jeton dans Intégrations avec le trousseau désactivé : conservé seulement jusqu’à la fermeture, avec un bouton Activer](../../screenshots/token-keychain-notice.webp)
+![Le champ du jeton dans Comptes connectés avec le trousseau désactivé : conservé seulement jusqu’à la fermeture, avec un bouton Activer](../../screenshots/token-keychain-notice.webp)
 
 Un jeton que vous **supprimez** pendant que le trousseau est désactivé disparaît
 aussitôt — il n'est plus envoyé avec rien —, mais seulement **pour cette
@@ -159,7 +171,7 @@ de nouveau normalement.
 Sous Linux, le trousseau est un service de secrets — GNOME Keyring ou KWallet.
 Quand aucun ne tourne, le système « chiffre » quand même, mais avec un mot de
 passe fixe, identique sur toutes les machines : les jetons et les clés sont
-brouillés, pas protégés. Paramètres → Sécurité le signale sous l'état du
+brouillés, pas protégés. Paramètres → Sécurité et confirmations le signale sous l'état du
 trousseau — *Aucun trousseau n'est actif…* — pour que le mot *trousseau* ne
 désigne jamais une protection qui n'existe pas.
 
@@ -204,7 +216,7 @@ ou que GitHuttBr redémarre.
 Si vous fermez l'invite du trousseau du système, que le trousseau est verrouillé
 ou que le stockage des jetons a été écrit par une autre copie de GitHuttBr (une
 version de développement, une version re-signée), GitHuttBr **ne peut pas lire
-vos jetons enregistrés — et n'y touche pas**. Paramètres → Sécurité indique
+vos jetons enregistrés — et n'y touche pas**. Paramètres → Sécurité et confirmations indique
 *GitHuttBr n'a pas pu lire vos jetons enregistrés*, et un jeton saisi entre-temps
 n'est conservé que pour la session (le champ le dit aussi). Il n'est jamais écrit
 par-dessus le stockage qu'il n'a pas pu lire : cela remplacerait chaque jeton
@@ -217,11 +229,13 @@ enregistré par celui que vous venez de saisir.
 
 ## Importer des paramètres
 
-**Paramètres → Import / Export** transfère paramètres, profils et thèmes d'une
+**Paramètres → Données et sauvegarde → Import / Export** transfère paramètres, profils et thèmes d'une
 machine à l'autre. L'export par défaut ne contient **aucun jeton ni aucune clé
 d'API**, et importer un tel fichier ne touche jamais à ceux que vous avez
 enregistrés — un jeton vide dans le fichier signifie « absent de ce fichier »,
 pas « supprimer le mien ».
+
+L’import et l’export ouvrent la page **Données et sauvegarde** ; ce qui peut être effacé sans retour — la liste des dépôts ouverts récemment — est mis à part, en dessous, sous **Zone de danger**, et demande avant d’effacer quoi que ce soit.
 
 ### Choisir ce qu'on exporte
 
@@ -235,7 +249,7 @@ celles que vous cochez. Une partie laissée de côté n'est pas du tout dans le
 fichier — l'importer plus tard laisse cette partie de l'autre machine
 exactement comme elle est.
 
-![Paramètres → Données → Exporter : « Autre ordinateur » choisi, la note verte indiquant que le fichier ne contient aucun chemin de cette machine, et le manifeste de ce qui part](../../screenshots/settings-export.webp)
+![Paramètres → Données et sauvegarde → Exporter : « Autre ordinateur » choisi, la note verte indiquant que le fichier ne contient aucun chemin de cette machine, et le manifeste de ce qui part](../../screenshots/settings-export.webp)
 
 Trois raccourcis au-dessus des parties cochent les combinaisons habituelles.
 Modifier une case à la main allume le raccourci qui correspond, ou aucun :
@@ -292,7 +306,7 @@ passe, s'il en a un), une boîte de dialogue demande quelles parties importer.
 Rien n'est appliqué avant que vous appuyiez sur **Importer** ; **Annuler**
 laisse tout tel quel.
 
-![Paramètres → Données → Importer : quatre parties, les dépôts décochés car aucun de leurs dossiers n'existe ici, et la traduction des chemins ouverte](../../screenshots/settings-import.webp)
+![Paramètres → Données et sauvegarde → Importer : quatre parties, les dépôts décochés car aucun de leurs dossiers n'existe ici, et la traduction des chemins ouverte](../../screenshots/settings-import.webp)
 
 | Partie | Ce qu'elle contient |
 |------|-----------------|
@@ -446,7 +460,7 @@ comprenez qu'il ne peut pas être récupéré ; l'import du fichier le demande �
 dans une boîte de dialogue des Paramètres, dans l'étape de bienvenue au premier
 lancement — et un mot de passe erroné est redemandé.
 
-![Paramètres → Données → Exporter : un fichier protégé par un mot de passe, l'avertissement d'absence de récupération accepté](../../screenshots/settings-export-password.webp)
+![Paramètres → Données et sauvegarde → Exporter : un fichier protégé par un mot de passe, l'avertissement d'absence de récupération accepté](../../screenshots/settings-export-password.webp)
 
 | | Sans mot de passe | Avec mot de passe |
 |---|---|---|

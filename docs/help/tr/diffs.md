@@ -51,7 +51,7 @@ Bir çalışma ağacı dosyasının **Dosya görünümü** — stage edilmiş ol
 
 ![Bir hunk penceresi açık değişiklik kenar çubuğu, sağda küçük harita](../../screenshots/change-gutter.webp)
 
-Varsayılan olarak kapalı olan **küçük harita**, sağ kenara tüm dosyanın küçültülmüş bir genel görünümünü ekler — bir kaydırma çubuğu dosyanın şeklini de gösterebilseydi yapacağı gibi, atlamak için tıklayın veya sürükleyin. Her ikisi de **Ayarlar → Genel → Dosya görüntüleyici** altında makineye özel ayarlardır.
+Varsayılan olarak kapalı olan **küçük harita**, sağ kenara tüm dosyanın küçültülmüş bir genel görünümünü ekler — bir kaydırma çubuğu dosyanın şeklini de gösterebilseydi yapacağı gibi, atlamak için tıklayın veya sürükleyin. Her ikisi de **Ayarlar → Yerleşim ve terminal → Dosya görüntüleyici** altında makineye özel ayarlardır.
 
 İkisi de geçmişi okumaz: Diff, Blame veya daha eski bir commit'e geçtiğinizde kenar çubuğu kaybolur — bu görünümler zaten her değişikliği doğrudan gösterir.
 

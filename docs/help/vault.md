@@ -47,8 +47,8 @@ then *unavailable*, and the message says so instead.
 
 | Flow | What happens when the vault is unreadable or unavailable |
 |------|------|
-| Settings → Export | Stops before writing the file, and says why: a backup without the vault would look complete. |
-| Settings → Import | The other parts are imported — settings and repository notes before the vault, profile pictures after it — and the vault is skipped and reported at the end. |
+| Settings → Data & backup → Export | Stops before writing the file, and says why: a backup without the vault would look complete. |
+| Settings → Data & backup → Import | The other parts are imported — settings and repository notes before the vault, profile pictures after it — and the vault is skipped and reported at the end. |
 | Onboarding import | The rest is imported; the vault is reported afterwards. |
 | [Secure share](secure-share.md) export | Refused, with the reason. |
 | Secure share import | Refused **before any file of the bundle is written**: the vault is checked first and merged before the files, so the files never land without their secrets. |

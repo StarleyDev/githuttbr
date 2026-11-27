@@ -48,7 +48,7 @@ terminals, but it is not a debugger — no breakpoints, no variable inspection,
 no Debug Adapter Protocol. Attach-only configs still work when they carry a
 `preLaunchTask` (the task is the work); a pure attach has nothing to run.
 
-Turn it on in **Settings → General → Enable launch.json**. The **LAUNCH** button
+Turn it on in **Settings → Code analyzers → Enable launch.json**. The **LAUNCH** button
 appears next to the Git / Files tabs.
 
 ## Hot actions — the fast path next to Restart

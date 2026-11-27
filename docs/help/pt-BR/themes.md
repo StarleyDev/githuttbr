@@ -17,8 +17,7 @@ Contrast e Daltonic — cada um com uma variante clara e uma escura.
 - **Temas personalizados**, e temas **gerados por IA** a partir de um prompt.
 - **Tamanho da fonte de código** ajustável.
 - **Cores dos ícones** da barra de ferramentas e das seções da lateral (veja abaixo).
-- Um **estilo de grafo** à parte: paleta de faixas, estilo de canto, densidade das
-  linhas e espessura dos traços, com uma pré-visualização ao vivo em mini-grafo.
+- A **aparência do grafo** — paleta das faixas, cantos, densidade das linhas e espessura, com uma prévia ao vivo — tem página própria, **Configurações → Grafo**: veja [o grafo de commits](graph.md).
 
 ![Configurações de tema](../../screenshots/settings-themes.webp)
 
@@ -46,9 +45,7 @@ grupo se ler como uma família:
   no destaque; e uma cor por grupo: Inspecionar ciano, Branches e histórico no
   destaque, Arquivos e patches verde, Repositório laranja, Segredos e
   compartilhamento vermelho.
-- **Páginas das Configurações**: Layout, Workspaces e IA no destaque; Perfil e
-  Ambiente verde; Integrações e Dados ciano; Temas laranja; Segurança vermelho.
-  Geral e Atalhos ficam cinza.
+- **Páginas das Configurações** — Layout e terminal, Workspaces e IA na cor de destaque; Perfil e identidade, Analisadores de código e Ambiente em verde; Contas conectadas, Git e sincronização e Dados e backup em ciano; Temas e Grafo em laranja; Segurança e confirmações em vermelho. Geral, Atalhos e Sobre ficam cinza.
 
 Uma fileira de botões só com ícone, sem nome, faz o contrário: cada botão ganha
 a sua cor, para se distinguirem. Na [página do pull request](pull-requests.md),
@@ -74,6 +71,29 @@ linhas dentro das seções e o grafo não. Uma linha de menu sob o mouse mantém
 visual de sempre, ícone incluído. A cor nunca é a
 única pista: todo ícone mantém o nome.
 
+## Como as Configurações se organizam
+
+O menu lateral agrupa as páginas pelo assunto:
+
+| Grupo | Páginas |
+|---|---|
+| **Você** | Perfil e identidade · Contas conectadas · IA — as duas primeiras editam o perfil nomeado no título ([perfis](profiles.md)) |
+| **Aparência** | Temas · Grafo · Layout e terminal |
+| **Comportamento** | Geral · Git e sincronização · Segurança e confirmações · Analisadores de código |
+| **Sistema** | Workspaces · Atalhos · Ambiente · Dados e backup · Sobre |
+
+Geral guarda só o que é do app como um todo — Idioma, As abas de repositório mostram, Notificações do sistema, Abrir o changelog depois das atualizações, Avisar ao fechar. O resto que ficava ali foi para a página a que pertence, e a nota da própria página leva até lá:
+
+| Opção | Agora em |
+|---|---|
+| Commits carregados no início, Commits por “carregar mais”, Carregar mais automaticamente ao rolar, Datas relativas, Mostrar avatares, Usar fotos de perfil do GitHub | **Grafo** — junto com Paleta das faixas, Cantos das linhas, Densidade das linhas, Estilo dos nós, Foco do grafo, Layout dos stashes, Espessura das linhas, que eram a aba Grafo de Temas |
+| Fetch automático a cada (minutos), Sempre criar um commit de merge, Lembrar resoluções de conflito, Ferramentas externas de diff e merge, Editor externo, App padrão do “Abrir com” | **Git e sincronização** |
+| Confirmar antes de um force push | **Segurança e confirmações** |
+| Analisadores de código, launch.json | **Analisadores de código** |
+| Visualizador de arquivos, Animar o avatar do perfil, Ocultar tarefas concluídas, Agrupar refs por prefixo | **Layout e terminal** |
+
+Integrações agora é **Contas conectadas** e Dados é **Dados e backup**. Nada mudou no que cada opção faz, e as configurações salvas continuam como estão. Um link que abre uma página pelo nome antigo ainda chega à página certa.
+
 ## Encontrar uma configuração
 
 As Configurações se espalham por muitas páginas, e a opção que você quer raramente está onde
@@ -88,15 +108,10 @@ agrupadas por página — cada uma com o nome, a descrição de uma linha e a p�
 onde fica. A barra lateral esmaece as páginas sem resultado e mostra a contagem
 nas que têm.
 
-- A busca compara com o nome da configuração, a descrição e o nome da página.
-  Maiúsculas e acentos não importam (digitar "configuracao" acha
-  "configuração"), e toda palavra digitada precisa aparecer, então "fonte
-  terminal" restringe às configurações de fonte do terminal.
+- Ela compara o nome da opção, a descrição e o nome da página — também a página em que a opção ficava antes de o menu ser reagrupado, então "general fetch" ainda acha a busca automática em Git e sincronização, e "integrations" acha Contas conectadas. Maiúsculas e acentos são ignorados, e cada palavra digitada precisa aparecer, então "terminal font" se reduz às opções de fonte do terminal.
 - Ela procura no idioma da interface e em inglês ao mesmo tempo: com o app em
   português, digitar "token" ou "font" ainda acha a configuração.
-- Clique num resultado, ou aperte **Enter** para o primeiro, para abrir a
-  página (e a aba certa em Temas — Tema ou Grafo), rolar até a configuração e
-  destacá-la por um instante.
+- Clique num resultado, ou tecle **Enter** para o primeiro, para abrir a página, rolar até a opção e destacá-la por um instante.
 - **Esc** limpa a busca; um segundo **Esc** fecha as Configurações.
 
 A busca olha nomes e descrições, não os valores que você definiu. As listas de
@@ -110,5 +125,7 @@ página Atalhos, cujo editor lista todos eles.
 Barra lateral à esquerda ou à direita, painéis redimensionáveis por toda parte, uma
 barra lateral colapsável para quando o grafo merece a janela inteira, e posição do
 terminal por repositório.
+
+A mesma página, **Configurações → Layout e terminal**, também guarda os extras da barra de título e da barra lateral — **Animar o avatar do perfil**, **Ocultar tarefas concluídas**, **Agrupar refs por prefixo** — e a margem de alterações e o minimapa do visualizador de arquivos.
 
 **Veja também:** [O grafo de commits](graph.md) · [Perfis](profiles.md)

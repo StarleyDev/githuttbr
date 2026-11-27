@@ -10,7 +10,7 @@ keywords: rama ramas branch branches crear checkout renombrar borrar remoto fija
 
 Una única barra lateral, reordenable y con búsqueda, contiene **ramas, remotos,
 etiquetas, stashes, worktrees y submódulos**. Cada sección se puede esconder o
-reordenar (Ajustes → Disposición), y la caja de filtro se aplica a todas.
+reordenar (Ajustes → Diseño y terminal), y la caja de filtro se aplica a todas.
 Qué secciones y carpetas dejas abiertas o cerradas se recuerda por repositorio,
 incluso tras reiniciar.
 
@@ -45,7 +45,7 @@ Un prefijo con un solo hijo sigue siendo carpeta — `release/1.2.3` es `release
 con `1.2.3` dentro — así que añadir `release/1.2.4` después no redibuja el árbol.
 Una racha de carpetas de un solo hijo se comprime en una cabecera
 (`dependabot/npm_and_yarn`). Las cabeceras de carpeta llevan marca de carpeta;
-la ref, marca de rama, remoto o tag.
+la ref, marca de rama, remoto o tag. **Ajustes → Diseño y terminal → Agrupar refs por prefijo** desactiva las carpetas, para una lista plana.
 
 Haz clic derecho en la cabecera de una carpeta para actuar sobre el grupo
 entero: *Eliminar todas las ramas bajo `feature` (4 ramas)* borra todo lo que

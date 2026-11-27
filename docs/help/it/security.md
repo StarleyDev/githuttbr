@@ -4,7 +4,7 @@ category: Sicurezza
 order: 70
 summary: Mascheramento, protezioni, il portachiavi — e cosa GitHuttBr si rifiuta di fare.
 keywords: sicurezza segreti mascheramento portachiavi keychain safeStorage token branch protetto file grande protezione privacy illeggibile backup parti tradurre percorsi altro computer nuova macchina unire profili sostituire profili scegliere cosa esportare backup completo per il team manifesto password cifratura appimage apparmor sandbox segnalare un problema immagini nei commenti pixel traccianti indirizzo ip immagini di terzi clic per caricare images in comments tracking pixel third-party images click to load
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Sicurezza e segreti
@@ -13,6 +13,18 @@ GitHuttBr **non ha backend**. Le uniche chiamate di rete vanno al tuo host Git e
 se lo attivi, al tuo provider AI.
 
 ![Le impostazioni di sicurezza](../../screenshots/settings-security.webp)
+
+## La pagina Sicurezza e conferme
+
+**Impostazioni → Sicurezza e conferme** si apre con ciò che vale adesso, in un’unica striscia: se i segreti sono mascherati, se il portachiavi del sistema è in uso e se il force push chiede conferma — con *si consiglia di attivarla* finché non la chiede. La striscia informa soltanto; gli interruttori sono sotto.
+
+| Blocco | Cosa contiene |
+|---|---|
+| **Chiedi prima di qualcosa di pericoloso** | **Chiedi conferma prima di un force push**, la soglia dei file grandi e una riga che non si può disattivare: scartare, reset hard ed eliminare un branch protetto chiedono sempre, e ogni conferma dice cosa andrebbe perso |
+| **Privacy** | **Maschera i valori segreti**, **Carica le immagini di altri siti nei commenti** e il [Cassaforte](vault.md) |
+| **Portachiavi del sistema**, **Chiavi SSH** | Dove sono custoditi i token e le chiavi che il tuo agente ha in mano ([chiavi SSH](ssh-keys.md)) |
+
+La conferma del force push stava in Generali. I branch protetti si impostano per repository, nelle sue [impostazioni](repo-settings.md).
 
 ## Mascheramento dei segreti
 
@@ -35,7 +47,7 @@ segreti.
 | Protezione | Quando |
 |---|---|
 | **File di segreti** | Quando committi qualcosa che sembra una credenziale — con un *Ignora e smetti di tracciare* in un clic |
-| **File grande** | Quando committi un blob fuori misura (soglia in Impostazioni → Sicurezza) |
+| **File grande** | Quando committi un blob fuori misura (soglia in Impostazioni → Sicurezza e conferme) |
 | **Rumore di build** | Committare `xcuserdata/`, `DerivedData/` o un `.DS_Store` — con lo stesso *Ignora e smetti di tracciare* in un clic |
 | **Branch protetto** | Quando committi direttamente su `main`/`master`, o ci fai un force push |
 | **Segreti tracciati** | Quando fai push di un repository che *traccia* un file di segreti — avvisato una volta per sessione |
@@ -114,7 +126,7 @@ essere conservato, cosa non può fare (un'applicazione rilegge solo ed
 esclusivamente la voce che ha creato lei — le tue altre password sono
 irraggiungibili) e che dire di no va benissimo: in quel caso i token vivono in
 memoria solo per la sessione, la cassaforte resta chiusa, e puoi attivarlo più
-avanti in **Impostazioni → Sicurezza → Portachiavi di sistema**.
+avanti in **Impostazioni → Sicurezza e conferme → Portachiavi di sistema**.
 
 Un'installazione appena fatta effettua **zero** chiamate al portachiavi finché
 non c'è davvero qualcosa da conservare.
@@ -124,9 +136,9 @@ volta l'accesso all'elemento *GitHuttBr Safe Storage*: il bundle id dell'app è
 diventato `com.huttbr.git`, e il portachiavi chiede di nuovo per un'app che non
 riconosce. **Consenti sempre** mantiene i token; vedi [l'aggiornamento](upgrading.md).
 
-Finché è disattivato, il campo del token in Integrazioni lo segnala — *Conservato solo finché non chiudi GitHuttBr: il portachiavi di sistema è disattivato.* — con un pulsante **Attiva** accanto. Attivarlo, da lì o da qui, salva anche i token già inseriti in questa sessione, quindi non serve incollarli di nuovo.
+Finché è disattivato, il campo del token in Account collegati lo segnala — *Conservato solo finché non chiudi GitHuttBr: il portachiavi di sistema è disattivato.* — con un pulsante **Attiva** accanto. Attivarlo, da lì o da qui, salva anche i token già inseriti in questa sessione, quindi non serve incollarli di nuovo.
 
-![Il campo del token in Integrazioni con il portachiavi disattivato: conservato solo fino alla chiusura, con un pulsante Attiva](../../screenshots/token-keychain-notice.webp)
+![Il campo del token in Account collegati con il portachiavi disattivato: conservato solo fino alla chiusura, con un pulsante Attiva](../../screenshots/token-keychain-notice.webp)
 
 Un token che **rimuovi** mentre il portachiavi è disattivato sparisce subito —
 non viene più inviato con niente —, ma solo **per questa sessione**: l'archivio
@@ -154,7 +166,7 @@ caricano di nuovo normalmente.
 Su Linux il portachiavi è un servizio di segreti — GNOME Keyring o KWallet.
 Quando non ne è in esecuzione nessuno, il sistema «cifra» lo stesso, ma con una
 password fissa, uguale su ogni macchina: i token e le chiavi sono rimescolati,
-non protetti. Impostazioni → Sicurezza lo dice sotto lo stato del
+non protetti. Impostazioni → Sicurezza e conferme lo dice sotto lo stato del
 portachiavi — *Nessun portachiavi è in esecuzione…* — così la parola
 *portachiavi* non indica mai una protezione che non c'è.
 
@@ -198,7 +210,7 @@ si riavvia.
 Se chiudi la richiesta del portachiavi di sistema, il portachiavi è bloccato o
 l'archivio dei token è stato scritto da un'altra copia di GitHuttBr (una build di
 sviluppo, una rifirmata), GitHuttBr **non può leggere i tuoi token salvati — e li
-lascia intatti**. Impostazioni → Sicurezza dice *GitHuttBr non ha potuto leggere i
+lascia intatti**. Impostazioni → Sicurezza e conferme dice *GitHuttBr non ha potuto leggere i
 tuoi token salvati*, e un token che scrivi nel frattempo è tenuto solo per la
 sessione (lo dice anche il campo). Non viene mai scritto sopra l'archivio che
 non è riuscito a leggere: sostituirebbe ogni token salvato con quello appena
@@ -211,10 +223,12 @@ scritto.
 
 ## Importare le impostazioni
 
-**Impostazioni → Importa / Esporta** sposta impostazioni, profili e temi da una
+**Impostazioni → Dati e backup → Importa / Esporta** sposta impostazioni, profili e temi da una
 macchina all'altra. L'esportazione predefinita **non contiene token né chiavi
 API**, e importare un file del genere non tocca mai quelli che hai salvato — un
 token vuoto nel file significa «non è in questo file», non «cancella il mio».
+
+Importazione ed esportazione aprono la pagina **Dati e backup**; ciò che si può cancellare senza ritorno — l’elenco dei repository aperti di recente — sta a parte, sotto, in **Zona pericolosa**, e chiede prima di svuotare qualsiasi cosa.
 
 ### Scegliere cosa esportare
 
@@ -227,7 +241,7 @@ sua dimensione su questo computer, e scrive solo quelle che spunti. Una parte
 lasciata fuori non è affatto nel file — importarlo in seguito lascia quella
 parte dell'altra macchina esattamente com'è.
 
-![Impostazioni → Dati → Esporta: «Un altro computer» scelto, la nota verde che dice che il file non contiene alcun percorso di questa macchina, e il manifesto di ciò che entra](../../screenshots/settings-export.webp)
+![Impostazioni → Dati e backup → Esporta: «Un altro computer» scelto, la nota verde che dice che il file non contiene alcun percorso di questa macchina, e il manifesto di ciò che entra](../../screenshots/settings-export.webp)
 
 Tre scorciatoie sopra le parti spuntano le combinazioni abituali. Cambiare una
 casella a mano illumina la scorciatoia corrispondente, o nessuna:
@@ -282,7 +296,7 @@ la sua password, se ne ha una), una finestra chiede quali parti portare. Non
 viene applicato nulla finché non premi **Importa**; **Annulla** lascia tutto
 com'era.
 
-![Impostazioni → Dati → Importa: quattro parti, i repository non spuntati perché nessuna delle loro cartelle esiste qui, e la traduzione dei percorsi aperta](../../screenshots/settings-import.webp)
+![Impostazioni → Dati e backup → Importa: quattro parti, i repository non spuntati perché nessuna delle loro cartelle esiste qui, e la traduzione dei percorsi aperta](../../screenshots/settings-import.webp)
 
 | Parte | Cosa contiene |
 |------|-----------------|
@@ -433,7 +447,7 @@ recuperare; importare il file la chiede — in una finestra nelle Impostazioni,
 dentro il passo di benvenuto al primo avvio — e una sbagliata la richiede di
 nuovo.
 
-![Impostazioni → Dati → Esporta: un file protetto da password, con l'avviso di nessun recupero confermato](../../screenshots/settings-export-password.webp)
+![Impostazioni → Dati e backup → Esporta: un file protetto da password, con l'avviso di nessun recupero confermato](../../screenshots/settings-export-password.webp)
 
 | | Senza password | Con password |
 |---|---|---|

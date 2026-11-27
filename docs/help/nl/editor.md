@@ -4,7 +4,7 @@ category: Werkomgeving & tools
 order: 95
 summary: Stuur een repository, een bestand of één regel code naar de editor waar je echt in schrijft.
 keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode openen in editor regel kolom eigen commando argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # Externe editor
@@ -18,7 +18,7 @@ de bestands- of blameweergave en hij opent daar, op die regel.
 
 ## Er een kiezen
 
-**Instellingen → Algemeen → Externe editor.** De keuzelijst toont de editors die
+**Instellingen → Git & synchronisatie → Externe editor.** De keuzelijst toont de editors die
 GitHuttBr op deze machine kan vinden — het zoekt eerst naar het commando van elke
 editor en daarna, op macOS, naar de applicatiebundel in `/Applications` en
 `~/Applications`. De scan draait elke keer dat je de instellingen opent, dus een

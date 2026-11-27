@@ -4,7 +4,7 @@ category: أدوات مساحة العمل
 order: 95
 summary: أرسل مستودعًا أو ملفًا أو سطرًا واحدًا من الشيفرة إلى المحرر الذي تكتب فيه فعلًا.
 keywords: محرر خارجي editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode فتح في المحرر سطر عمود أمر مخصص argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # المحرر الخارجي
@@ -18,7 +18,7 @@ source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
 
 ## اختيار محرر
 
-**الإعدادات ← عام ← المحرر الخارجي.** تسرد القائمة المنسدلة المحررات التي
+**الإعدادات ← Git والمزامنة ← المحرر الخارجي.** تسرد القائمة المنسدلة المحررات التي
 يستطيع GitHuttBr العثور عليها في هذا الحاسوب — فهو يبحث أولًا عن أمر كل محرر، ثم،
 على macOS، عن حزمة التطبيق في `/Applications` و`~/Applications`. يعمل المسح في
 كل مرة تفتح فيها الإعدادات، فيظهر محرر ثُبّت قبل خمس دقائق دون إعادة تشغيل.

@@ -4,7 +4,7 @@ category: Segurança
 order: 73
 summary: O armazenamento de senhas do próprio git — o terceiro — e por que o https fica te perguntando de novo.
 keywords: credential helper senha password https pergunta de novo osxkeychain wincred manager libsecret store cache git-credentials texto puro esquecer revogado token 401 token na url do remote senha embutida invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Credential helper
@@ -151,7 +151,7 @@ fetch e cada URL de push que tiver uma — e não grava nada além do
 |-------------------|-------------------------|
 | O perfil do repositório tem token ou conta vinculada para aquele host | Esse token — a confirmação não diz mais nada |
 | Sem token no perfil, mas o helper do próprio git tem um login para o host | O login do helper |
-| Nenhum dos dois | Nada: fetch e push falham até você adicionar um token. A confirmação avisa isso primeiro e oferece **Adicionar um token antes**, que abre Configurações → Integrações |
+| Nenhum dos dois | Nada: fetch e push falham até você adicionar um token. A confirmação avisa isso primeiro e oferece **Adicionar um token antes**, que abre Configurações → Contas conectadas |
 
 Quando ela partiu de uma operação que falhou, oferece **Tentar de novo**.
 

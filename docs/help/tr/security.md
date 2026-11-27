@@ -4,7 +4,7 @@ category: Güvenlik
 order: 70
 summary: Maskeleme, korumalar, anahtar zinciri — ve GitHuttBr'nun yapmayı reddettikleri.
 keywords: güvenlik sırlar maskeleme anahtar zinciri token korumalı dal büyük dosya gizlilik security secrets masking keychain safeStorage protected branch large file guard privacy okunamayan yedek bölümler yolları çevir başka bilgisayar yeni makine profilleri birleştir profilleri değiştir ne dışa aktarılacağını seç tam yedek ekip için manifest parola şifreleme appimage apparmor sandbox sorun bildir yorumlardaki görseller izleme pikseli ip adresi üçüncü taraf görseller yüklemek için tıkla images in comments tracking pixel third-party images click to load
-source: 26f333bbdafd9ab662dc635c22df7456d66b1362
+source: 1d6d4d38c21671916683fc42baaacbaf79bf87fd
 ---
 
 # Güvenlik ve sırlar
@@ -13,6 +13,18 @@ GitHuttBr'nun **arka ucu yoktur**. Tek ağ çağrıları Git sunucunuza ve, aça
 yapay zekâ sağlayıcınıza gider.
 
 ![Güvenlik ayarları](../../screenshots/settings-security.webp)
+
+## Güvenlik ve onaylar sayfası
+
+**Ayarlar → Güvenlik ve onaylar** şu anda geçerli olanla, tek bir şeritte başlar: sırlar maskeli mi, sistem anahtar zinciri kullanılıyor mu ve force push önce soruyor mu — sormadığı sürece *açılması önerilir* notuyla. Şerit yalnızca bilgi verir; anahtarlar altındadır.
+
+| Blok | İçindekiler |
+|---|---|
+| **Tehlikeli bir şeyden önce sor** | **Force push öncesi onay iste**, büyük dosya eşiği ve kapatılamayan bir satır: değişiklikleri atmak, hard reset ve korumalı dal silmek her zaman sorar ve her onay neyin kaybolacağını söyler |
+| **Gizlilik** | **Sır değerlerini maskele**, **Yorumlarda diğer sitelerden görselleri yükle** ve [Kasa](vault.md) |
+| **İşletim sistemi anahtarlığı**, **SSH anahtarları** | Token’ların nerede tutulduğu ve ajanının hangi anahtarları taşıdığı ([SSH anahtarları](ssh-keys.md)) |
+
+Force push onayı eskiden Genel içindeydi. Korumalı dallar depo başına, deponun [ayarlarında](repo-settings.md) belirlenir.
 
 ## Sır maskeleme
 
@@ -35,7 +47,7 @@ kabul edilir.
 | Koruma | Ne zaman |
 |---|---|
 | **Sır dosyası** | Kimlik bilgisine benzeyen bir şeyi commit'lerken — tek tıklamalık *Yok say ve takibi bırak* ile |
-| **Büyük dosya** | Aşırı büyük bir blob'u commit'lerken (eşik: Ayarlar → Güvenlik) |
+| **Büyük dosya** | Aşırı büyük bir blob'u commit'lerken (eşik: Ayarlar → Güvenlik ve onaylar) |
 | **Derleme çöpü** | `xcuserdata/`, `DerivedData/` ya da bir `.DS_Store` işlemek — aynı tek tıklık *Yok say ve takibi bırak* ile |
 | **Korumalı dal** | Doğrudan `main`/`master`'a commit'lerken ya da birini force push ederken |
 | **İzlenen sırlar** | Bir sır dosyasını *izleyen* bir depoyu push ederken — oturum başına bir kez uyarılır |
@@ -112,7 +124,7 @@ izin penceresi belirmeden önce GitHuttBr neyin saklandığını, neyi
 yapamayacağını (bir uygulama yalnızca kendi oluşturduğu kaydı geri okur —
 diğer parolalarınıza erişilemez) ve hayır demenin sorun olmadığını anlatır:
 o zaman token'lar yalnızca oturum boyunca bellekte yaşar, kasa kapalı kalır ve
-istediğinizde **Ayarlar → Güvenlik → İşletim sistemi anahtar zinciri**
+istediğinizde **Ayarlar → Güvenlik ve onaylar → İşletim sistemi anahtar zinciri**
 üzerinden açabilirsiniz.
 
 Yeni bir kurulum, gerçekten saklanması gereken bir şey çıkana kadar **sıfır**
@@ -123,9 +135,9 @@ için bir kez daha sorabilir: uygulamanın bundle id'si `com.huttbr.git` oldu ve
 anahtar zinciri tanımadığı bir uygulama için yeniden sorar. **Her Zaman İzin
 Ver** token'ları korur; bkz. [güncelleme](upgrading.md).
 
-Kapalıyken Entegrasyonlar’daki token alanı bunu belirtir — *Yalnızca GitHuttBr’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.* — yanında bir **Etkinleştir** düğmesiyle. Oradan ya da buradan açmak, bu oturumda girdiğiniz token’ları da kaydeder; yeniden yapıştırmanız gerekmez.
+Kapalıyken Bağlı hesaplar’daki token alanı bunu belirtir — *Yalnızca GitHuttBr’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.* — yanında bir **Etkinleştir** düğmesiyle. Oradan ya da buradan açmak, bu oturumda girdiğiniz token’ları da kaydeder; yeniden yapıştırmanız gerekmez.
 
-![Anahtarlık kapalıyken Entegrasyonlar’daki token alanı: yalnızca kapatana kadar saklanır, bir Etkinleştir düğmesiyle](../../screenshots/token-keychain-notice.webp)
+![Anahtarlık kapalıyken Bağlı hesaplar’daki token alanı: yalnızca kapatana kadar saklanır, bir Etkinleştir düğmesiyle](../../screenshots/token-keychain-notice.webp)
 
 Anahtarlık kapalıyken **kaldırdığınız** bir token hemen gider — artık hiçbir
 şeyle gönderilmez — ama yalnızca **bu oturum için**: anahtarlık kapalıyken
@@ -150,7 +162,7 @@ soruyu hiçbir şey beklemez: ayarlar yeniden normal şekilde yüklenir.
 Linux'ta anahtar zinciri bir gizli bilgi hizmetidir — GNOME Keyring ya da
 KWallet. Hiçbiri çalışmıyorsa sistem yine "şifreler", ama her makinede aynı olan
 sabit bir parolayla: token'lar ve anahtarlar korunmaz, yalnızca karıştırılır.
-Ayarlar → Güvenlik bunu anahtar zinciri durumunun altında söyler — *Çalışan bir
+Ayarlar → Güvenlik ve onaylar bunu anahtar zinciri durumunun altında söyler — *Çalışan bir
 anahtarlık yok…* — böylece *anahtar zinciri* sözcüğü hiçbir zaman var olmayan
 bir korumayı temsil etmez.
 
@@ -190,7 +202,7 @@ kaydetmek ve Kasa, o yanıt verene ya da GitHuttBr yeniden başlayana kadar meş
 Sistemin anahtarlık istemini kapatırsanız, anahtarlık kilitliyse ya da token
 deposunu GitHuttBr'nun başka bir kopyası yazdıysa (bir geliştirme derlemesi,
 yeniden imzalanmış bir sürüm), GitHuttBr **kayıtlı token'larınızı okuyamaz — ve
-onlara dokunmaz**. Ayarlar → Güvenlik *GitHuttBr kayıtlı token'larınızı
+onlara dokunmaz**. Ayarlar → Güvenlik ve onaylar *GitHuttBr kayıtlı token'larınızı
 okuyamadı* der ve bu arada yazdığınız bir token yalnızca oturum boyunca tutulur
 (alan da bunu söyler). Okuyamadığı deponun üzerine asla yazılmaz: bu, her kayıtlı
 token'ı az önce yazdığınızla değiştirirdi.
@@ -202,10 +214,12 @@ token'ı az önce yazdığınızla değiştirirdi.
 
 ## Ayarları içe aktarma
 
-**Ayarlar → İçe / Dışa aktar**, ayarları, profilleri ve temaları makineler
+**Ayarlar → Veri ve yedek → İçe / Dışa aktar**, ayarları, profilleri ve temaları makineler
 arasında taşır. Varsayılan dışa aktarım **hiçbir token ya da API anahtarı
 içermez** ve böyle bir dosyayı içe aktarmak kaydettiklerinize asla dokunmaz —
 dosyadaki boş bir token "bu dosyada yok" demektir, "benimkini sil" değil.
+
+İçe ve dışa aktarma **Veri ve yedek** sayfasını açar; geri getirilemeden silinebilenler — son açılan depoların listesi — ayrı olarak altta, **Tehlikeli bölge** başlığı altında durur ve bir şeyi temizlemeden önce sorar.
 
 ### Neyin dışa aktarılacağını seçmek
 
@@ -218,7 +232,7 @@ yalnızca işaretlediklerinizi yazar. Dışarıda bırakılan bölüm dosyada hi
 yoktur — onu sonradan içe aktarmak, diğer makinenin o bölümünü olduğu gibi
 bırakır.
 
-![Ayarlar → Veri → Dışa aktar: «Başka bir bilgisayar» seçili, dosyanın bu makineye ait hiçbir yol taşımadığını söyleyen yeşil not ve içine girenlerin manifesti](../../screenshots/settings-export.webp)
+![Ayarlar → Veri ve yedek → Dışa aktar: «Başka bir bilgisayar» seçili, dosyanın bu makineye ait hiçbir yol taşımadığını söyleyen yeşil not ve içine girenlerin manifesti](../../screenshots/settings-export.webp)
 
 Bölümlerin üstündeki üç kısayol alışılmış birleşimleri işaretler. Bir kutuyu
 elle değiştirmek, eşleşen kısayolu yakar ya da hiçbirini:
@@ -273,7 +287,7 @@ dosyayı seçtikten (ve varsa parolasını yazdıktan) sonra bir pencere hangi
 bölümlerin getirileceğini sorar. Siz **İçe aktar**'a basana kadar hiçbir şey
 uygulanmaz; **Vazgeç** her şeyi olduğu gibi bırakır.
 
-![Ayarlar → Veri → İçe aktar: dört bölüm, klasörlerinin hiçbiri burada olmadığı için işaretsiz depolar ve açık yol çevirisi](../../screenshots/settings-import.webp)
+![Ayarlar → Veri ve yedek → İçe aktar: dört bölüm, klasörlerinin hiçbiri burada olmadığı için işaretsiz depolar ve açık yol çevirisi](../../screenshots/settings-import.webp)
 
 | Bölüm | Ne taşır |
 |------|-----------------|
@@ -419,7 +433,7 @@ az uzunluğu yoktur. İki kez yazarsınız ve kurtarılamayacağını anladığ�
 işaretlersiniz; dosyayı içe aktarmak onu sorar — Ayarlar'da bir pencerede, ilk
 açılışta karşılama adımının içinde — ve yanlış parola yeniden sorulur.
 
-![Ayarlar → Veri → Dışa aktar: parolayla korunan bir dosya, kurtarma olmadığı uyarısı onaylanmış](../../screenshots/settings-export-password.webp)
+![Ayarlar → Veri ve yedek → Dışa aktar: parolayla korunan bir dosya, kurtarma olmadığı uyarısı onaylanmış](../../screenshots/settings-export-password.webp)
 
 | | Parola olmadan | Parolayla |
 |---|---|---|

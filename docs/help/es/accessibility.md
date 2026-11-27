@@ -64,4 +64,4 @@ límites.
 
 **Reducir el movimiento** se respeta desde el ajuste del sistema — las
 animaciones se convierten en transiciones instantáneas. El contraste del tema
-puede afinarse por tema en [Ajustes → Apariencia](themes.md).
+puede afinarse por tema en [Ajustes → Temas](themes.md).

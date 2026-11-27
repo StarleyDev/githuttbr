@@ -54,7 +54,7 @@ gdy otworzysz panel albo naciśniesz odświeżenie — nigdy z własnej woli. Dl
 lista jest zdjęciem chwili: zmień plik, a będzie nieaktualna do kolejnego
 uruchomienia.
 
-**Ustawienia → Ogólne → Analizatory kodu** decydują, jak bardzo się spieszy:
+**Ustawienia → Analizatory kodu** decydują, jak bardzo się spieszy:
 przebieg przy otwarciu panelu (domyślnie), tylko po naciśnięciu odświeżenia, albo
 wyłączone — co całkowicie ukrywa połowę z analizatorami, jej licznik na pasku
 stanu i jej polecenie.

@@ -4,7 +4,7 @@ category: Sincronizar y muchos repos
 order: 52
 summary: Todos los repositorios que GitHuttBr conoce, abiertos o no, en una lista buscable.
 keywords: repositorios registro todos los repos favoritos destacados recientes escanear carpeta explorar buscar abrir gestionar gestión de repositorios color sección tinte resaltar espacios de trabajo desde carpetas árbol generar importación masiva repositories registry favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Repositorios
@@ -88,7 +88,7 @@ que reabrirlos. Solo cubre pestañas abiertas, y ocurre en la primera visita de
 cada sesión, no una sola vez para siempre. Un repositorio que **Olvidas**
 sigue olvidado salvo que lo abras otra vez.
 
-Las carpetas de escaneo se configuran en Ajustes → Datos, o en el diálogo
+Las carpetas de escaneo se configuran en Ajustes → Datos y copia de seguridad, o en el diálogo
 **Repositorios escaneados** de más abajo:
 
 - **Profundidad** es cuántos niveles de directorio baja el escaneo bajo la raíz

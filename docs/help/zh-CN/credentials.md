@@ -4,7 +4,7 @@ category: 安全
 order: 73
 summary: git 自己的密码存储——第三种——以及为什么 https 老是再问你一次。
 keywords: 凭据助手 密码 明文 令牌 撤销 遗忘 credential helper password https asks again osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401 检查登录 哪个账户 远程 URL 中的令牌 嵌入的密码 从 URL 中移除 token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # 凭据助手
@@ -133,7 +133,7 @@ push URL——并且除了 `.git/config` 不写入任何东西。之后会发生
 |---------------|-------------------------|
 | 仓库的配置档有该托管平台的令牌或关联账户 | 那个令牌——确认框不再多说 |
 | 没有配置档令牌，但 git 自己的 helper 有该托管平台的登录 | helper 的登录 |
-| 两者都没有 | 什么都没有：在你添加令牌之前，fetch 和 push 都会失败。确认框会先说明这一点，并提供 **先添加令牌**，它会打开 设置 → 集成 |
+| 两者都没有 | 什么都没有：在你添加令牌之前，fetch 和 push 都会失败。确认框会先说明这一点，并提供 **先添加令牌**，它会打开 设置 → 已连接的账户 |
 
 如果是从一次失败的操作发起的，它会提供 **重试**。
 

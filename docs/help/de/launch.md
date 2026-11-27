@@ -42,7 +42,7 @@ du auswählst, im integrierten Terminal.
 Eine schwebende Werkzeugleiste gibt dir **Pause / Fortsetzen, Neustart, Stopp**
 und wechselt zwischen laufenden Sitzungen.
 
-Einschalten unter **Einstellungen → Allgemein → launch.json aktivieren**. Der
+Einschalten unter **Einstellungen → Code-Analysen → launch.json aktivieren**. Der
 Knopf **LAUNCH** erscheint dann neben den Tabs Git / Dateien.
 
 Ein Compound-Mitglied erscheint als *Compound › Mitglied*, und ein Neustart

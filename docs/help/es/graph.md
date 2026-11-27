@@ -32,8 +32,7 @@ desplaza igual que uno con cien.
 
 ## Que muestre lo que tú quieres
 
-- El **enfoque del grafo** decide cuánto historial se dibuja — Ajustes → Temas →
-  **Grafo**, o el menú del engranaje en la cabecera del grafo. *Todo* lo dibuja
+- El **enfoque del grafo** decide cuánto historial se dibuja — Ajustes → **Grafo**, o el menú del engranaje en la cabecera del grafo. *Todo* lo dibuja
   entero; *Historial lineal* (first-parent) deja sólo el tronco; *Ocultar ramas
   fusionadas* deja el tronco más las ramas aún sin fusionar; *Modo solo* deja tu
   rama, tus ramas favoritas y la rama por defecto.
@@ -52,11 +51,15 @@ desplaza igual que uno con cien.
 
 - **Columnas**: muestra, esconde, redimensiona y reordena las columnas de rama,
   mensaje, autoría, fecha, SHA, firma y despliegue.
-- **Estilo**: Ajustes → Temas → **Grafo** — paleta de carriles (8 integradas,
+- **Estilo**: Ajustes → **Grafo** — paleta de carriles (8 integradas,
   personalizada o generada por IA), estilo de las esquinas, densidad de filas y
   grosor de línea, con una vista previa en miniatura en vivo.
 
 ![Ajustes de estilo del grafo con vista previa en vivo](../../screenshots/settings-graph.webp)
+
+- **Qué muestra cada fila**: Ajustes → Grafo → **Contenido de la fila** — **Fechas relativas**, **Mostrar avatares** y **Usar fotos de perfil de GitHub** (consulta [avatares](avatars.md) para saber qué pide cada uno a la red). **Cargar más al hacer scroll** está con los recuentos de historial. **Agrupar refs por prefijo** agrupa las listas de la barra lateral, no el grafo, así que está en Ajustes → Diseño y terminal.
+
+Todos los ajustes del grafo están en esa página; hasta la 4.60 estaban repartidos entre General y una pestaña Grafo en Temas.
 
 ## Dónde se sientan los stashes
 

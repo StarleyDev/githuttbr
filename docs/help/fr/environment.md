@@ -50,7 +50,7 @@ Ensuite, cliquez sur **Vérifier à nouveau**.
 - Elle vérifie ce que l’app voit depuis son propre processus. Un profil de shell
   qui modifie le `PATH` seulement dans votre terminal peut faire diverger les deux.
 - La ligne de la CLI GitHub reflète la connexion propre à `gh`, pas les comptes
-  connectés dans **Paramètres → Intégrations**. Ce sont des identités distinctes. Un
+  connectés dans **Paramètres → Comptes connectés**. Ce sont des identités distinctes. Un
   scope `workflow` manquant là-bas se manifeste plutôt par un push refusé.
 - Elle signale ce qui est installé. Elle n’installe ni ne met à jour quoi que ce
   soit.

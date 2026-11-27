@@ -4,7 +4,7 @@ category: אבטחה
 order: 73
 summary: מחסן הסיסמאות של git עצמו — השלישי — ולמה https ממשיך לשאול אתכם שוב.
 keywords: עוזר אישורים סיסמה שואל שוב קובץ פשוט שכחה טוקן שנשלל credential helper password https osxkeychain wincred manager libsecret store cache git-credentials plaintext forget revoked token 401 בדיקת התחברות איזה חשבון טוקן ב־url של ה־remote סיסמה מוטמעת להסיר מה-url token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # עוזר האישורים
@@ -140,7 +140,7 @@ GitHuttBr קורא את כתובות ה־fetch וה־push של כל remote וא�
 |---------------|-------------------------|
 | לפרופיל של המאגר יש טוקן או חשבון מקושר לשרת הזה | בטוקן הזה — האישור לא אומר יותר |
 | אין טוקן פרופיל, אבל ל־helper של git עצמו יש התחברות לשרת | בהתחברות של ה־helper |
-| אף אחד מהם | בשום דבר: fetch ו־push נכשלים עד שתוסיפו טוקן. האישור אומר זאת קודם ומציע **להוסיף טוקן קודם**, שפותח את הגדרות ← אינטגרציות |
+| אף אחד מהם | בשום דבר: fetch ו־push נכשלים עד שתוסיפו טוקן. האישור אומר זאת קודם ומציע **להוסיף טוקן קודם**, שפותח את הגדרות ← חשבונות מחוברים |
 
 כשהיא התחילה מפעולה שנכשלה, היא מציעה **לנסות שוב**.
 

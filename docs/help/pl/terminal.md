@@ -19,7 +19,7 @@ twój znak zachęty, twoje aliasy.
   rozmiar.
 - Widoczność terminala jest per repozytorium: przełączenie się na kartę, która
   nigdy żadnego nie otworzyła, zostawia go zamkniętym.
-- **Otwiera się razem z repozytorium i domyślnie dokuje pod grafem.** Gdy repozytorium po raz pierwszy w sesji staje się aktywną kartą, jego terminal otwiera się z powłoką w tym katalogu. Zamknięty zostaje zamknięty dla tego repozytorium do następnego uruchomienia. Każde odwiedzone repozytorium to jeden proces powłoki; wyłącz **Otwieraj terminal po otwarciu repozytorium** albo zmień położenie w Ustawienia → Układ.
+- **Otwiera się razem z repozytorium i domyślnie dokuje pod grafem.** Gdy repozytorium po raz pierwszy w sesji staje się aktywną kartą, jego terminal otwiera się z powłoką w tym katalogu. Zamknięty zostaje zamknięty dla tego repozytorium do następnego uruchomienia. Każde odwiedzone repozytorium to jeden proces powłoki; wyłącz **Otwieraj terminal po otwarciu repozytorium** albo zmień położenie w Ustawienia → Układ i terminal.
 - Karty nazywają się same, według tego, co w nich działa.
 - Zwinięcie listy terminali kurczy ją do **szyny**: jedna ikona na terminal
   (terminale podzielone pokazują mini mapę paneli), kliknij, żeby przełączyć,
@@ -98,7 +98,7 @@ zmieni.
 
 ## Powłoka, motyw i Oh My Posh
 
-W Windows Ustawienia → Układ wybierają powłokę uruchamianą przez każdy nowy
+W Windows Ustawienia → Układ i terminal wybierają powłokę uruchamianą przez każdy nowy
 terminal — PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL albo własny
 plik wykonywalny. Wygląd terminala (motyw, rozmiar i rodzina czcionki) jest w
 Ustawienia → Motywy → Motyw terminala i działa od razu we wszystkich sesjach.

@@ -4,7 +4,7 @@ category: Empieza aquí
 order: 3
 summary: Muchos repositorios sin ahogarte: pestañas, grupos, carpetas y espacios de trabajo.
 keywords: espacio de trabajo workspace pestañas tabs grupos groups carpetas folders varios repositorios organizar cambiar layout ir al repositorio selector tamaño de pestañas go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Espacios de trabajo, pestañas y grupos
@@ -32,7 +32,7 @@ todavía tenías en la mano.
 
 ### Tamaño de pestañas
 
-Por defecto (**Ajustes → Diseño → Tamaño de pestañas → Ajustar**) las pestañas se
+Por defecto (**Ajustes → Diseño y terminal → Tamaño de pestañas → Ajustar**) las pestañas se
 comportan como las de un navegador: cuando la franja se queda sin espacio, encogen
 por igual hasta un ancho mínimo, y solo se desplazan cuando se alcanza incluso ese
 mínimo. **Fijo** recupera el comportamiento clásico — cada pestaña conserva el ancho

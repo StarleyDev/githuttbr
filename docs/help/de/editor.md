@@ -4,7 +4,7 @@ category: Workspace-Werkzeuge
 order: 95
 summary: Schick ein Repository, eine Datei oder eine einzelne Codezeile an den Editor, in dem du wirklich schreibst.
 keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode öffnen in editor zeile spalte line column eigener befehl custom command argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # Externer Editor
@@ -19,7 +19,7 @@ Zeile.
 
 ## Einen auswählen
 
-**Einstellungen → Allgemein → Externer Editor.** Das Dropdown listet die
+**Einstellungen → Git & Synchronisierung → Externer Editor.** Das Dropdown listet die
 Editoren, die GitHuttBr auf dieser Maschine finden kann — es sucht zuerst nach dem
 Befehl jedes Editors und dann, unter macOS, nach dem Application Bundle in
 `/Applications` und `~/Applications`. Der Scan läuft jedes Mal, wenn du die

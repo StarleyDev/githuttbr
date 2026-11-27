@@ -14,7 +14,7 @@ giornate no: un file generato di 4.000 righe, un merge in cui devi vedere quattr
 colonne insieme, o semplicemente lo strumento che usi da dieci anni e che leggi
 più in fretta di qualunque novità.
 
-**Impostazioni → Generali → Strumenti esterni di diff e merge.**
+**Impostazioni → Git e sincronizzazione → Strumenti esterni di diff e merge.**
 
 ## L'elenco è di git, non nostro
 

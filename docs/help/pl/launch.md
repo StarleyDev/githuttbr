@@ -42,7 +42,7 @@ konfigurację we wbudowanym terminalu.
 Pływający pasek narzędzi daje ci **pauzę / wznowienie, restart, zatrzymanie**
 i przełącza między działającymi sesjami.
 
-Włącz to w **Ustawienia → Ogólne → Włącz launch.json**. Przycisk **LAUNCH**
+Włącz to w **Ustawienia → Analizatory kodu → Włącz launch.json**. Przycisk **LAUNCH**
 pojawia się obok zakładek Git / Pliki.
 
 Członek compoundu wyświetla się jako *compound › członek*, a jego restart

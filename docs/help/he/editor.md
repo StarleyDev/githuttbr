@@ -4,7 +4,7 @@ category: כלי סביבת העבודה
 order: 95
 summary: שלחו מאגר, קובץ או שורת קוד אחת אל העורך שאתם באמת כותבים בו.
 keywords: עורך פתיחה בעורך שורה עמודה פקודה מותאמת editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # עורך חיצוני
@@ -18,7 +18,7 @@ source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
 
 ## בחירת עורך
 
-**הגדרות ← כללי ← עורך חיצוני.** הרשימה הנפתחת מונה את העורכים ש־GitHuttBr מוצא
+**הגדרות ← Git וסנכרון ← עורך חיצוני.** הרשימה הנפתחת מונה את העורכים ש־GitHuttBr מוצא
 במחשב הזה — הוא מחפש קודם את הפקודה של כל עורך, ואז, ב־macOS, את חבילת האפליקציה
 ב־`/Applications` וב־`~/Applications`. הסריקה רצה בכל פעם שאתם פותחים את
 ההגדרות, ולכן עורך שהותקן לפני חמש דקות מופיע בלי הפעלה מחדש.

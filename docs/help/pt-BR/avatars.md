@@ -69,7 +69,7 @@ reais, e é nela que se deve acreditar. O rosto só diz *tem algo aí*, de relan
 ### Movimento
 
 O avatar da barra de título respira e pisca por conta própria. Desligue em
-**Configurações → Temas → Grafo → Animar o avatar do perfil** — a expressão continua
+**Configurações → Layout e terminal → Animar o avatar do perfil** — a expressão continua
 seguindo o repositório, só para de se mover. O movimento também é dispensado
 automaticamente quando o seu sistema pede movimento reduzido.
 
@@ -80,7 +80,7 @@ que um grafo desenha ao rolar.
 ## A imagem do seu perfil
 
 O avatar da barra de título e da lista de perfis é seu, então você pode escolhê-lo.
-**Configurações → Perfil → Avatar** oferece cinco fontes:
+**Configurações → Perfil e identidade → Avatar** oferece cinco fontes:
 
 | Fonte | O que mostra |
 |---|---|
@@ -90,10 +90,10 @@ O avatar da barra de título e da lista de perfis é seu, então você pode esco
 | **Imagem** | Um arquivo que você escolhe — PNG ou JPEG. É reduzido para 256 px e guardado neste computador, na pasta de dados do GitHuttBr, não no arquivo de configurações. |
 | **Do repositório** | Um ícone ou logo encontrado num dos repositórios do perfil — o do app ou o da empresa — copiado para o perfil como uma imagem. |
 
-A imagem vai junto em **Configurações → Dados → Exportar configurações** e volta na importação;
+A imagem vai junto em **Configurações → Dados e backup → Exportar configurações** e volta na importação;
 apagar o perfil apaga a imagem.
 
-![Configurações → Perfil → Avatar em Ícone: um foguete sobre fundo azul, com a
+![Configurações → Perfil e identidade → Avatar em Ícone: um foguete sobre fundo azul, com a
 grade de ícones e as cores](../../screenshots/profile-avatar.webp)
 
 ### Um ícone do repositório
@@ -137,7 +137,7 @@ Gravatar, não tem expressão: o rosto que reage ao repositório é o automátic
 
 ## Desligar a busca
 
-**Configurações → Temas → Grafo → Mostrar avatares.**
+**Configurações → Grafo → Mostrar avatares.**
 
 Desligado significa:
 

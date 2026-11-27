@@ -944,15 +944,15 @@ export const shots = [
     }
   },
   {
-    // Settings → Themes → Graph tab: lane palette, line corners, density,
-    // thickness, with the live mini-graph preview.
+    // Settings → Graph, scrolled to its drawing controls: lane palette, line
+    // corners, density, thickness, with the live mini-graph preview.
     out: 'settings-graph',
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
-      await page.waitForTimeout(300)
-      await page.click('.theme-tabs .theme-tab:nth-child(2)').catch(() => {})
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'graph' }))
+      await page.locator('.graph-style-layout').waitFor()
+      await page.evaluate(() => document.querySelector('.graph-style-layout')?.scrollIntoView({ block: 'start' }))
       await page.waitForTimeout(400)
     }
   },
@@ -1941,7 +1941,7 @@ export const shots = [
     }
   },
   {
-    // Settings → Layout → Terminal shell on macOS/Linux. The detected shell and
+    // Settings → Layout & terminal → Terminal shell on macOS/Linux. The detected shell and
     // the /etc/shells list are faked: the real ones describe this machine.
     out: 'settings-terminal-shell',
     repos: ['octopus-merge'],
@@ -1961,7 +1961,8 @@ export const shots = [
     }
   },
   {
-    // Settings → Security tab (mask secrets, large-file guard, vault entry).
+    // Settings → Security & confirmations: the status strip, the "ask before
+    // something dangerous" block and Privacy.
     out: 'settings-security',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -2121,7 +2122,7 @@ export const shots = [
     }
   },
   {
-    // Integrations with the keychain off — the default every shot launches with
+    // Connected accounts with the keychain off — the default every shot launches with
     // (`keychain` unset) — so the notice under the token field says the token
     // lasts until quit, with its Enable button.
     out: 'token-keychain-notice',
@@ -3566,7 +3567,10 @@ export const shots = [
     }
   },
   {
-    // Profiles — separate identity and tokens for work vs everything else.
+    // Settings → Profile & identity: the header card, the git identity (the
+    // playground repository commits as its own made-up "Playground" author, so
+    // the apply hint shows fake data), and the connected accounts summary — the
+    // seeded profile holds no token, so every host reads Not connected.
     out: 'settings-profiles',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -3751,7 +3755,7 @@ export const shots = [
     }
   },
   {
-    // Editing a profile the app is not using: the amber band, and Integrations
+    // Editing a profile the app is not using: the amber band, and Connected accounts
     // naming that profile on the link button — the moment accounts went astray.
     out: 'settings-profile-band',
     repos: ['octopus-merge'],
@@ -4724,7 +4728,7 @@ export const shots = [
     }
   },
   {
-    // Settings → General with a value below the range still being typed: the
+    // Settings → Graph with a value below the range still being typed: the
     // field is flagged, not clamped, until it is left. Typed for real and never
     // blurred — leaving the field would snap it to 50 and lose the state.
     out: 'number-field-range',
@@ -4732,7 +4736,7 @@ export const shots = [
     themes: ['light'],
     clipTo: '.modal',
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' }))
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'graph' }))
       await page.waitForTimeout(400)
       const input = page
         .locator('.settings-field', { has: page.locator('.settings-field-label', { hasText: 'Initial commits loaded' }) })

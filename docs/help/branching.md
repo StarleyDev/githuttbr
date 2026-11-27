@@ -13,7 +13,7 @@ worktrees and submodules**. Every section can be hidden or reordered, and the
 filter box applies to all of them. Which sections and folders you keep
 expanded or collapsed is remembered per repository, across restarts.
 
-Section visibility works on two levels. **Settings → Layout → Sidebar
+Section visibility works on two levels. **Settings → Layout & terminal → Sidebar
 sections** is the global default every repository and new worktree starts
 with. The sections menu inside the sidebar (the ⚙ button next to the filter
 box) toggles sections for the current repository only; from that same menu,
@@ -51,7 +51,8 @@ A prefix with one child is still a folder — `release/1.2.3` is `release`
 containing `1.2.3` — so adding `release/1.2.4` later does not reshape the
 tree. A run of single-child folders collapses into one header
 (`dependabot/npm_and_yarn`). Folder headers use a folder mark; the ref itself
-uses a branch, remote or tag mark.
+uses a branch, remote or tag mark. **Settings → Layout & terminal → Group refs
+by prefix** turns the folders off, for a flat list.
 
 Right-click a folder header to act on the whole group: *Delete all branches
 under `feature` (4 branches)* removes everything inside after one confirmation

@@ -4,7 +4,7 @@ category: Güvenlik
 order: 73
 summary: Git'in kendi parola deposu — üçüncüsü — ve https neden size sürekli yeniden soruyor.
 keywords: kimlik bilgisi yardımcısı credential helper parola https tekrar soruyor osxkeychain wincred manager libsecret store cache git-credentials düz metin unut iptal edilmiş token 401 oturumu kontrol et hangi hesap uzak depo url’sinde token gömülü parola url’den kaldır token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Kimlik bilgisi yardımcısı
@@ -149,7 +149,7 @@ başka neyin oturum açabildiğine bağlıdır:
 |---------------|-------------------------|
 | Deponun profilinin o sunucu için bir token’ı ya da bağlı hesabı var | O token’ı — onay başka bir şey söylemez |
 | Profil token’ı yok ama git’in kendi helper’ının sunucu için bir oturumu var | Helper’ın oturumunu |
-| İkisi de yok | Hiçbir şeyi: bir token ekleyene kadar fetch ve push başarısız olur. Onay bunu önceden söyler ve Ayarlar → Entegrasyonlar’ı açan **Önce bir token ekle** seçeneğini sunar |
+| İkisi de yok | Hiçbir şeyi: bir token ekleyene kadar fetch ve push başarısız olur. Onay bunu önceden söyler ve Ayarlar → Bağlı hesaplar’ı açan **Önce bir token ekle** seçeneğini sunar |
 
 Başarısız bir işlemden başlatıldıysa **Yeniden dene** sunar.
 

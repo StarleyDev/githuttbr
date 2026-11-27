@@ -35,7 +35,7 @@ Commits wie eines mit hundert.
 ## Ihn zeigen lassen, was du willst
 
 - Der **Graph-Fokus** entscheidet, wie viel Historie gezeichnet wird —
-  Einstellungen → Themes → **Graph** oder das Zahnradmenü in der Kopfzeile des
+  Einstellungen → **Graph** oder das Zahnradmenü in der Kopfzeile des
   Graphen. *Alles* zeichnet alles; *Lineare Historie* (First-Parent) lässt nur
   den Hauptstrang übrig; *Zusammengeführte Branches ausblenden* behält den
   Hauptstrang plus die noch offenen Branches; *Solo-Modus* behält deinen Branch,
@@ -57,11 +57,15 @@ Commits wie eines mit hundert.
 
 - **Spalten**: Branch-, Nachrichten-, Autor-, Datums-, SHA-, Signatur- und
   Deployment-Spalten anzeigen, ausblenden, in der Größe ändern und umsortieren.
-- **Stil**: Einstellungen → Themes → **Graph** — Spurenpalette (8 eingebaute,
+- **Stil**: Einstellungen → **Graph** — Spurenpalette (8 eingebaute,
   eigene oder KI-generierte), Eckenstil, Zeilendichte und Linienstärke, mit einer
   Live-Vorschau als Mini-Graph.
 
 ![Graph-Stileinstellungen mit Live-Vorschau](../../screenshots/settings-graph.webp)
+
+- **Was eine Zeile zeigt**: Einstellungen → Graph → **Zeileninhalt** — **Relative Datumsangaben**, **Avatare anzeigen** und **GitHub-Profilbilder verwenden** (was jede davon im Netz abfragt, steht unter [Avatare](avatars.md)). **Beim Scrollen automatisch nachladen** steht bei den Verlaufsmengen. **Refs nach Präfix gruppieren** gruppiert die Listen der Seitenleiste, nicht den Graphen, und steht deshalb unter Einstellungen → Layout & Terminal.
+
+Alle Einstellungen des Graphen liegen auf dieser Seite; bis 4.60 waren sie zwischen Allgemein und einem Graph-Tab unter Themes aufgeteilt.
 
 ## Wo Stashes sitzen
 

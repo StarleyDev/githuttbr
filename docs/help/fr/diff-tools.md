@@ -14,7 +14,7 @@ jours, non : un fichier généré de 4 000 lignes, une fusion où il faut voir q
 colonnes en même temps, ou tout simplement l'outil que vous utilisez depuis dix
 ans et que vous lisez plus vite que n'importe quel autre.
 
-**Paramètres → Général → Outils externes de diff et de fusion.**
+**Paramètres → Git et synchronisation → Outils externes de diff et de fusion.**
 
 ## C'est la liste de git, pas la nôtre
 

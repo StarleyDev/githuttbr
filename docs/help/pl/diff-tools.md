@@ -14,7 +14,7 @@ Niektórych dni nie: wygenerowany plik na 4000 linii, merge, przy którym musisz
 widzieć cztery kolumny naraz, albo po prostu narzędzie, którego używasz od
 dekady i czytasz szybciej niż jakiekolwiek nowe.
 
-**Ustawienia → Ogólne → Zewnętrzne narzędzia diff i merge.**
+**Ustawienia → Git i synchronizacja → Zewnętrzne narzędzia diff i merge.**
 
 ## To lista gita, nie nasza
 

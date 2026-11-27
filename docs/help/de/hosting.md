@@ -153,7 +153,7 @@ nutzt.
 ## Selbst betriebenes GitLab
 
 Ein Firmen-GitLab hat seine eigene Adresse. Trage sie für ein Profil unter
-**Einstellungen → Integrationen → GitLab → GitLab-Adresse** ein, zum Beispiel
+**Einstellungen → Verbundene Konten → GitLab → GitLab-Adresse** ein, zum Beispiel
 `git.example.org` oder `https://example.net/gitlab` für eines unter einem Pfad.
 Ab dann sind Remotes auf diesem Host GitLab: Merge Requests werden gelistet,
 geöffnet, reviewt und gemergt, der Klon-Browser und *Repository erstellen*
@@ -191,8 +191,7 @@ Lege die Adresse der Instanz fest, bevor du ihr Token einträgst. Eine Änderung
 
 Forgejo — und Gitea, das dieselbe API teilt — läuft immer unter einer Adresse,
 die sein Betreiber gewählt hat: dein eigener Server oder ein öffentlicher wie
-codeberg.org. Trage diese Adresse für ein Profil unter **Einstellungen →
-Integrationen → Forgejo** ein, zusammen mit einem Zugriffstoken. **Token
+codeberg.org. Trage diese Adresse für ein Profil unter **Einstellungen → Verbundene Konten → Forgejo** ein, zusammen mit einem Zugriffstoken. **Token
 erstellen** öffnet die Token-Seite dieses Servers. Gib dem Token Lese- und Schreibrechte auf *repository*, *issue* und
 *notification* sowie Leserechte auf *user* und *organization*. Die Rechte eines
 Tokens lassen sich später nicht ändern: Eines ohne *issue* oder *notification*
@@ -264,7 +263,7 @@ nicht lesen darf (bei Forgejo etwa ohne `read:user`), markiert nichts.
 
 ![Pull Requests, die auf dein Review warten, mit einem Auge markiert](../../screenshots/pr-awaiting-review.webp)
 
-Mit **Einstellungen → Desktop-Benachrichtigungen** löst ein Pull Request auf
+Mit **Einstellungen → Allgemein → Desktop-Benachrichtigungen** löst ein Pull Request auf
 GitLab oder Forgejo, der *beginnt*, auf dich zu warten, eine aus; ein Klick
 öffnet die PR-Seite. Der erste Blick auf ein Repository merkt sich nur, was schon
 wartet, also spielt der App-Start keinen Rückstau ab. GitHubs Review-Anfragen
@@ -293,8 +292,7 @@ dein **git credential helper** ohnehin schon hält — eine Organisation, für d
 dich bereits authentifiziert hast, braucht deshalb oft gar keine Einrichtung.
 Siehe [Sicherheit & Secrets](security.md).
 
-Jedes Profil **verknüpft sein eigenes Konto**. Unter Einstellungen →
-Integrationen sucht **Mit dem Profil verknüpfen** nach einer Anmeldung, die schon auf dem
+Jedes Profil **verknüpft sein eigenes Konto**. Unter Einstellungen → Verbundene Konten sucht **Mit dem Profil verknüpfen** nach einer Anmeldung, die schon auf dem
 Rechner liegt — im Credential Helper von git, dann im aktiven Konto der **GitHub
 CLI**, dann im Anmeldefenster des Helpers — und verknüpft dieses Konto mit dem
 Profil. Nichts wird stillschweigend geteilt: Ein neues Profil startet getrennt,

@@ -21,7 +21,7 @@ imprimerait — avant que quoi que ce soit ne quitte votre machine.
 GitHuttBr ne fournit délibérément **ni** act **ni** Docker — une application qui
 traîne un runtime de conteneurs avec elle est le contraire d'un client git.
 C'est une intégration facultative : activez-la dans
-**Paramètres → Intégrations** (ou dans la boîte de dialogue elle-même), et
+**Paramètres → Comptes connectés** (ou dans la boîte de dialogue elle-même), et
 GitHuttBr détecte ce qui est installé et vous guide pour le reste —
 `brew install act`, un démon Docker en marche, terminé. Rien ne s'exécute tant
 que les trois conditions ne sont pas réunies : activée, act installé, Docker

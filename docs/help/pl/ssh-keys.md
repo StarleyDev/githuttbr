@@ -8,7 +8,7 @@ keywords: ssh klucz klucze agent odcisk hasło do klucza wgraj ssh-add ssh-keyge
 
 # Klucze SSH
 
-**Ustawienia → Bezpieczeństwo → Klucze SSH.**
+**Ustawienia → Bezpieczeństwo i potwierdzenia → Klucze SSH.**
 
 ## Dlaczego to siedzi obok tokenów
 

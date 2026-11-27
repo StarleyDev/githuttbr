@@ -4,7 +4,7 @@ category: 시작하기
 order: 3
 summary: 저장소가 많아도 허우적대지 않기 — 탭, 그룹, 폴더, 작업 공간.
 keywords: 작업 공간 workspace 탭 tabs 그룹 groups 폴더 folders 여러 저장소 multiple repos 정리 organise 전환 switch 레이아웃 layout 저장소로 이동 전환기 탭 크기 go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # 작업 공간, 탭, 그룹
@@ -29,7 +29,7 @@ source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
 
 ### 탭 크기
 
-기본값(**설정 → 레이아웃 → 탭 크기 → 맞춤**)에서는 탭이 브라우저 탭처럼 동작해요.
+기본값(**설정 → 레이아웃 및 터미널 → 탭 크기 → 맞춤**)에서는 탭이 브라우저 탭처럼 동작해요.
 줄에 자리가 모자라면 최소 너비까지 똑같이 줄어들고, 그 하한에도 닿아야 비로소
 스크롤돼요. **고정**은 예전 동작으로 돌아가요 — 탭마다 내용 너비를 유지하고, 모두
 들어가지 않는 순간 줄이 스크롤돼요.

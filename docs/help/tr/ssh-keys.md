@@ -8,7 +8,7 @@ keywords: ssh anahtar anahtarları key keys agent ajan ssh-add ssh-keygen ed2551
 
 # SSH anahtarları
 
-**Ayarlar → Güvenlik → SSH anahtarları.**
+**Ayarlar → Güvenlik ve onaylar → SSH anahtarları.**
 
 ## Bu neden belirteçlerin yanında duruyor
 

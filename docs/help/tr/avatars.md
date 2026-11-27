@@ -66,7 +66,7 @@ odur. Yüz yalnızca *bir şey var* der, bir bakışta.
 ### Hareket
 
 Başlık çubuğundaki avatar kendiliğinden nefes alır ve göz kırpar. Şuradan kapatın:
-**Ayarlar → Temalar → Grafik → Profil avatarını canlandır** — ifade yine depoyu izler,
+**Ayarlar → Yerleşim ve terminal → Profil ve kimlik avatarını canlandır** — ifade yine depoyu izler,
 yalnızca hareket etmeyi bırakır. Sisteminiz azaltılmış hareket istediğinde hareket
 otomatik olarak da atlanır.
 
@@ -77,7 +77,7 @@ birkaç yüz tane için ise savurganlıktır.
 ## Profilinizin resmi
 
 Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçebilirsiniz.
-**Ayarlar → Profil → Avatar** beş kaynak sunar:
+**Ayarlar → Profil ve kimlik → Avatar** beş kaynak sunar:
 
 | Kaynak | Ne gösterir |
 |---|---|
@@ -87,7 +87,7 @@ Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçeb
 | **Görsel** | Seçtiğiniz bir dosya — PNG veya JPEG. 256 px’e küçültülür ve ayarlar dosyasında değil, GitHuttBr’nun veri klasöründe, bu bilgisayarda saklanır. |
 | **Bir depodan** | Profilin depolarından birinde bulunan bir simge ya da logo — uygulamanın ya da şirketin — görsel gibi profile kopyalanır. |
 
-Görsel **Ayarlar → Veri → Ayarları dışa aktar** ile birlikte gider ve içe aktarınca geri
+Görsel **Ayarlar → Veri ve yedek → Ayarları dışa aktar** ile birlikte gider ve içe aktarınca geri
 gelir; profili silmek onu da siler.
 
 ### Bir depodan simge
@@ -129,7 +129,7 @@ Gravatar fotoğrafı gibi ifade taşımaz: depoya tepki veren yüz otomatik olan
 
 ## Sorguyu kapatmak
 
-**Ayarlar → Temalar → Grafik → Avatarları göster.**
+**Ayarlar → Grafik → Avatarları göster.**
 
 Kapalı şu anlama gelir:
 

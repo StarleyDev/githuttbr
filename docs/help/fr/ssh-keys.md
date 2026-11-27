@@ -8,7 +8,7 @@ keywords: ssh clé key clés keys agent ssh-add ssh-keygen ed25519 publickey per
 
 # Clés SSH
 
-**Paramètres → Sécurité → Clés SSH.**
+**Paramètres → Sécurité et confirmations → Clés SSH.**
 
 ## Pourquoi cette section est à côté des jetons
 

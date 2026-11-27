@@ -29,7 +29,7 @@ keypress after <kbd>⌘W</kbd> cannot close work you were still holding.
 
 ### Tab sizing
 
-By default (**Settings → Layout → Tab sizing → Fit**) tabs behave like a
+By default (**Settings → Layout & terminal → Tab sizing → Fit**) tabs behave like a
 browser's: when the strip runs out of room they shrink equally toward a
 minimum width, and only scroll once even that floor is reached. **Fixed**
 restores the classic behaviour — every tab keeps its content width and the

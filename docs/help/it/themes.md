@@ -18,9 +18,7 @@ Midnight, Contrast e Daltonic — ciascuno con una variante chiara e una scura.
 - **Dimensione del carattere del codice** regolabile.
 - **Colori delle icone** per la barra degli strumenti e le sezioni della barra
   laterale — vedi sotto.
-- Uno **stile del grafo** a parte: palette delle corsie, stile degli angoli,
-  densità delle righe e spessore delle linee, con un mini-grafo di anteprima dal
-  vivo.
+- L’**aspetto del grafo** — tavolozza delle corsie, angoli, densità delle righe e spessore, con un’anteprima dal vivo — ha una pagina sua, **Impostazioni → Grafo**: vedi [il grafo dei commit](graph.md).
 
 ![Le impostazioni dei temi](../../screenshots/settings-themes.webp)
 
@@ -48,9 +46,7 @@ così un gruppo si legge come una famiglia:
   locale, i confronti) nell'accento; e un colore per gruppo: Ispeziona ciano,
   Branch e cronologia l'accento, File e patch verde, Repository arancione,
   Segreti e condivisione rosso.
-- **Pagine delle Impostazioni** — Disposizione, Spazi di lavoro e IA nell'accento;
-  Profilo e Ambiente verde; Integrazioni e Dati ciano; Temi arancione; Sicurezza
-  rosso. Generali e Scorciatoie restano grigie.
+- **Pagine delle Impostazioni** — Layout e terminale, Spazi di lavoro e AI nel colore d’accento; Profilo e identità, Analizzatori di codice e Ambiente in verde; Account collegati, Git e sincronizzazione e Dati e backup in ciano; Temi e Grafo in arancione; Sicurezza e conferme in rosso. Generali, Scorciatoie e Informazioni restano grigi.
 
 Una fila di pulsanti con sola icona fa il contrario — ogni pulsante ha il suo colore,
 così si distinguono. Nella [pagina delle pull request](pull-requests.md) i pulsanti
@@ -77,6 +73,29 @@ righe dentro una sezione e il grafo dei commit no. Una riga di menu sotto il mou
 mantiene il suo aspetto abituale, icona compresa. Il colore non è mai l'unico
 indizio: ogni icona mantiene la sua etichetta.
 
+## Come sono organizzate le Impostazioni
+
+Il menu laterale raggruppa le pagine per argomento:
+
+| Gruppo | Pagine |
+|---|---|
+| **Tu** | Profilo e identità · Account collegati · AI — le prime due modificano il profilo nominato nell’intestazione ([profili](profiles.md)) |
+| **Aspetto** | Temi · Grafo · Layout e terminale |
+| **Comportamento** | Generali · Git e sincronizzazione · Sicurezza e conferme · Analizzatori di codice |
+| **Sistema** | Spazi di lavoro · Scorciatoie · Ambiente · Dati e backup · Informazioni |
+
+Generali tiene solo ciò che riguarda l’app nel suo insieme — Lingua, Le schede dei repository mostrano, Notifiche di sistema, Apri il changelog dopo gli aggiornamenti, Avvisa alla chiusura. Il resto è passato alla pagina a cui appartiene, e la nota della pagina porta lì:
+
+| Opzione | Ora in |
+|---|---|
+| Commit caricati all’inizio, Commit per ogni “carica altri”, Carica altri commit scorrendo, Date relative, Mostra gli avatar, Usa le foto profilo di GitHub | **Grafo** — con Palette delle corsie, Angoli delle linee, Densità delle righe, Stile dei nodi, Focus del grafo, Disposizione degli stash, Spessore delle linee, che erano la scheda Grafo di Temi |
+| Fetch automatico ogni (minuti), Crea sempre un commit di merge, Ricorda le risoluzioni dei conflitti, Strumenti esterni di diff e merge, Editor esterno, App predefinita per “Apri con” | **Git e sincronizzazione** |
+| Chiedi conferma prima di un force push | **Sicurezza e conferme** |
+| Analizzatori di codice, launch.json | **Analizzatori di codice** |
+| Visualizzatore file, Anima l’avatar del profilo, Nascondi le attività completate, Raggruppa le ref per prefisso | **Layout e terminale** |
+
+Integrazioni ora si chiama **Account collegati**, Dati è **Dati e backup**. Nulla è cambiato in ciò che fa ogni opzione, e le impostazioni salvate restano come sono. Un link che apre una pagina con il vecchio nome arriva comunque a quella giusta.
+
 ## Trovare un'impostazione
 
 Le Impostazioni sono divise in molte pagine, e l'opzione che cerchi raramente sta dove
@@ -91,14 +110,10 @@ raggruppate per pagina — ognuna con il nome, la descrizione di una riga e la
 pagina in cui si trova. La barra laterale attenua le pagine senza risultati e
 mostra un conteggio su quelle che ne hanno.
 
-- Confronta il nome dell'impostazione, la descrizione e il nome della pagina.
-  Maiuscole e accenti non contano, e ogni parola digitata deve comparire, quindi
-  "font terminale" restringe alle impostazioni del font del terminale.
+- Confronta il nome dell’impostazione, la sua descrizione e il nome della pagina — anche la pagina in cui stava prima che il menu fosse riorganizzato: "general fetch" trova ancora il fetch automatico in Git e sincronizzazione, e "integrations" trova Account collegati. Maiuscole e accenti sono ignorati, e ogni parola digitata deve comparire: "terminal font" si restringe alle impostazioni del font del terminale.
 - Cerca nella lingua dell'interfaccia e in inglese allo stesso tempo: con l'app
   in italiano, digitare "token" o "font" trova comunque l'impostazione.
-- Fai clic su un risultato, o premi **Invio** per il primo, per aprire la sua
-  pagina (e la scheda giusta in Temi — Tema o Grafo), scorrere fino
-  all'impostazione ed evidenziarla per un momento.
+- Fai clic su un risultato, o premi **Invio** per il primo, per aprirne la pagina, scorrere fino all’impostazione ed evidenziarla per un attimo.
 - **Esc** cancella la ricerca; un secondo **Esc** chiude le Impostazioni.
 
 Cerca nei nomi e nelle descrizioni, non nei valori che hai impostato. Gli
@@ -112,5 +127,7 @@ dell'host la scegli tu. Le singole scorciatoie da tastiera non sono indicizzate
 Barra laterale a sinistra o a destra, pannelli ridimensionabili ovunque, una
 barra laterale richiudibile per quando il grafo si merita tutta la finestra, e
 posizionamento del terminale per repository.
+
+La stessa pagina, **Impostazioni → Layout e terminale**, contiene anche gli extra della barra del titolo e della barra laterale — **Anima l’avatar del profilo**, **Nascondi le attività completate**, **Raggruppa le ref per prefisso** — oltre al margine delle modifiche e alla minimappa del visualizzatore di file.
 
 **Vedi anche:** [Il grafo dei commit](graph.md) · [Profili](profiles.md)

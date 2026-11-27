@@ -62,4 +62,4 @@ Seite sagt, was das konkret bedeutet — und wo die Grenzen liegen.
 
 **Reduzierte Bewegung** wird aus der Betriebssystem-Einstellung übernommen —
 Animationen kollabieren zu sofortigen Übergängen. Der Theme-Kontrast lässt
-sich pro Theme in [Einstellungen → Erscheinungsbild](themes.md) einstellen.
+sich pro Theme in [Einstellungen → Themes](themes.md) einstellen.

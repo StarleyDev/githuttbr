@@ -15,7 +15,7 @@ your aliases.
 
 - **Multiple tabs per repository**, each starting in that repository's folder.
 - It docks **under the graph** by default, with the sidebars keeping the full
-  height; Settings → Layout moves it to the **whole bottom edge** or a
+  height; Settings → Layout & terminal moves it to the **whole bottom edge** or a
   **right-hand column**. The pane remembers its size. Updating to 4.40 moves a
   terminal docked at the bottom to the center once; any placement you pick after
   that stays as you set it.
@@ -25,7 +25,7 @@ your aliases.
   folder. Close it and it stays closed for that repository until the next
   launch; switching tabs does not bring it back. Each repository you visit costs
   one shell process, so if you hop across many, turn off **Open the terminal
-  when a repository opens** in Settings → Layout.
+  when a repository opens** in Settings → Layout & terminal.
 - Each terminal remembers **where you were reading**: switch terminals, groups
   or repo tabs and the scrollback stays put — pinned to the bottom when it was
   already following output, back on the same line when it was not.
@@ -122,14 +122,14 @@ of your desktop, not the account record.
 are skipped. A shell missing from `/etc/shells` — common for a Homebrew shell —
 is still used; the app only notes it in its log.
 
-To pick something else, Settings → Layout → **Terminal shell** lists *System
+To pick something else, Settings → Layout & terminal → **Terminal shell** lists *System
 default* (with the shell it detected), every usable shell in `/etc/shells`, and
 **Custom…** for any other path. The choice applies to new terminals; open ones
 keep their shell. If a custom path stops existing, the terminal opens your
 system default instead and prints a note naming both — once per path and app
 run, not in every terminal.
 
-![The terminal shell picker in Settings → Layout](../screenshots/settings-terminal-shell.webp)
+![The terminal shell picker in Settings → Layout & terminal](../screenshots/settings-terminal-shell.webp)
 
 **Windows** picks from PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash,
 WSL, or a custom executable, in the same place. *System default* there is

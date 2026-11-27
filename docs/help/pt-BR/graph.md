@@ -33,8 +33,7 @@ com cem.
 
 ## Fazendo o grafo mostrar o que você quer
 
-- O **foco do grafo** decide quanto histórico é desenhado — Configurações →
-  Temas → **Grafo**, ou o menu da engrenagem no cabeçalho do grafo. *Tudo*
+- O **foco do grafo** decide quanto histórico é desenhado — Configurações → **Grafo**, ou o menu da engrenagem no cabeçalho do grafo. *Tudo*
   desenha tudo; *Histórico linear* (first-parent) deixa só o tronco; *Ocultar
   ramos mesclados* mantém o tronco mais os ramos ainda não mesclados; *Modo solo*
   mantém o seu ramo, os ramos favoritos e o ramo padrão.
@@ -53,11 +52,15 @@ com cem.
 
 - **Colunas**: mostre, esconda, redimensione e reordene as colunas de branch,
   mensagem, autor, data, SHA, assinatura e deploy.
-- **Estilo**: Configurações → Temas → **Grafo** — paleta de faixas (8 nativas,
+- **Estilo**: Configurações → **Grafo** — paleta de faixas (8 nativas,
   personalizada ou gerada por IA), estilo de canto, densidade das linhas e
   espessura dos traços, com uma pré-visualização ao vivo em mini-grafo.
 
 ![Configurações de estilo do grafo com pré-visualização ao vivo](../../screenshots/settings-graph.webp)
+
+- **O que cada linha mostra**: Configurações → Grafo → **Conteúdo da linha** — **Datas relativas**, **Mostrar avatares** e **Usar fotos de perfil do GitHub** (veja [avatares](avatars.md) para o que cada uma pede à rede). **Carregar mais automaticamente ao rolar** fica junto das contagens de histórico. **Agrupar refs por prefixo** agrupa as listas da barra lateral, não o grafo, por isso está em Configurações → Layout e terminal.
+
+Todas as opções do grafo ficam nessa página; até a 4.60 elas se dividiam entre Geral e uma aba Grafo em Temas.
 
 ## Onde os stashes sentam
 

@@ -42,7 +42,7 @@ nel terminale integrato.
 Una barra degli strumenti fluttuante ti dà **pausa / ripresa, riavvio, stop**, e
 permette di passare da una sessione in esecuzione all'altra.
 
-Attivalo in **Impostazioni → Generali → Abilita launch.json**. Il pulsante
+Attivalo in **Impostazioni → Analizzatori di codice → Abilita launch.json**. Il pulsante
 **LAUNCH** compare accanto alle schede Git / File.
 
 Un membro di un compound compare come *compound › membro*, e riavviarlo

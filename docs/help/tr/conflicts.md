@@ -141,7 +141,7 @@ Uzun ömürlü bir dalı rebase edin, aynı çakışmayla her seferinde karşıl
 kullanımı — git'in buna yanıtıdır: bir çakışmayı nasıl çözdüğünüzü ezberler ve
 aynısı bir daha ortaya çıktığında o yanıtı tekrar oynatır.
 
-**Ayarlar → Genel → Çakışma çözümlerini hatırla.** Bu, genel git yapılandırmanıza
+**Ayarlar → Git ve eşitleme → Çakışma çözümlerini hatırla.** Bu, genel git yapılandırmanıza
 `rerere.enabled` yazar; böylece komut satırı da aynı şekilde davranır.
 
 git sizin yerinize yanıt verdiğinde, çözücü boş bir "çakışma işaretçisi yok"

@@ -58,12 +58,17 @@ import {
   ScanSearch,
   FolderSearch,
   SquarePen,
-  ToggleLeft,
   Map as MapIcon,
   Image as ImageIcon,
   Stethoscope,
   Globe,
-  Info
+  Info,
+  AlertTriangle,
+  GitMerge,
+  Lock,
+  EyeOff,
+  History,
+  PanelTop
 } from 'lucide-react'
 import { Github, Gitlab } from './BrandIcons'
 import { highlightCode } from '../lib/highlight'
@@ -132,6 +137,10 @@ import { ScanRootsEditor } from './ScanRootsEditor'
 import { ShortcutEditor } from './CheatsheetModal'
 import { AUTHOR_NAME, AUTHOR_URL, PRODUCT_NAME } from '../../../shared/brand'
 import { SETTINGS_PAGE_KEYS, type SettingsEntry, type SettingsPageId } from '../lib/settingsSearch'
+import { DEFAULT_SETTINGS_PAGE, SETTINGS_NAV_GROUPS, countAccountProblems, resolveSettingsPage } from '../lib/settingsNav'
+import { useAccountChecksStore } from '../stores/accountChecks'
+import { ProfileAvatar } from './ProfileAvatar'
+import { ProfileAccountsSummary } from './ProfileAccountsSummary'
 import {
   SettingsSearchField,
   SettingsSearchResults,
@@ -143,27 +152,29 @@ import {
 type SettingsPage = SettingsPageId
 
 // Labels live in SETTINGS_PAGE_KEYS, shared with the search, so a page's name
-// in the sidebar and in the results can never differ.
+// in the sidebar and in the results can never differ; the order and the groups
+// live in SETTINGS_NAV_GROUPS (lib/settingsNav.ts).
 // `tone`: the page's colour under Settings → Themes → Icon colours; none stays grey.
 // `scope`: whether the page edits the profile chosen in the profile bar or the
-// whole app. The sidebar groups by it, because the two looked like one kind of
-// choice and accounts ended up linked into the wrong profile.
-const PAGES: { id: SettingsPage; icon: React.ReactNode; tone?: IconTone; scope: 'profile' | 'app' }[] = [
-  { id: 'profile', icon: <UserCircle2 size={13} />, tone: 'outgoing', scope: 'profile' },
-  { id: 'integrations', icon: <Plug size={13} />, tone: 'incoming', scope: 'profile' },
-  { id: 'general', icon: <Settings2 size={13} />, scope: 'app' },
-  { id: 'layout', icon: <PanelBottom size={13} />, tone: 'ref', scope: 'app' },
-  { id: 'workspaces', icon: <LayoutGrid size={13} />, tone: 'ref', scope: 'app' },
-  { id: 'ai', icon: <Bot size={13} />, tone: 'ref', scope: 'app' },
-  { id: 'themes', icon: <Palette size={13} />, tone: 'shelf', scope: 'app' },
-  { id: 'security', icon: <ShieldCheck size={13} />, tone: 'guard', scope: 'app' },
-  { id: 'shortcuts', icon: <KeyboardIcon size={13} />, scope: 'app' },
-  { id: 'data', icon: <HardDrive size={13} />, tone: 'incoming', scope: 'app' },
-  { id: 'environment', icon: <Stethoscope size={13} />, tone: 'outgoing', scope: 'app' },
-  { id: 'about', icon: <Info size={13} />, scope: 'app' }
-]
-const PROFILE_PAGES = PAGES.filter((p) => p.scope === 'profile')
-const APP_PAGES = PAGES.filter((p) => p.scope === 'app')
+// whole app. Accounts ended up linked into the wrong profile when the two
+// looked like one kind of choice, so a profile page always shows the profile.
+const PAGES: Record<SettingsPage, { icon: React.ReactNode; tone?: IconTone; scope: 'profile' | 'app' }> = {
+  profile: { icon: <UserCircle2 size={13} />, tone: 'outgoing', scope: 'profile' },
+  integrations: { icon: <Plug size={13} />, tone: 'incoming', scope: 'profile' },
+  ai: { icon: <Bot size={13} />, tone: 'ref', scope: 'app' },
+  themes: { icon: <Palette size={13} />, tone: 'shelf', scope: 'app' },
+  graph: { icon: <Network size={13} />, tone: 'shelf', scope: 'app' },
+  layout: { icon: <PanelBottom size={13} />, tone: 'ref', scope: 'app' },
+  general: { icon: <Settings2 size={13} />, scope: 'app' },
+  git: { icon: <GitMerge size={13} />, tone: 'incoming', scope: 'app' },
+  security: { icon: <ShieldCheck size={13} />, tone: 'guard', scope: 'app' },
+  analyzers: { icon: <ScanSearch size={13} />, tone: 'outgoing', scope: 'app' },
+  workspaces: { icon: <LayoutGrid size={13} />, tone: 'ref', scope: 'app' },
+  shortcuts: { icon: <KeyboardIcon size={13} />, scope: 'app' },
+  environment: { icon: <Stethoscope size={13} />, tone: 'outgoing', scope: 'app' },
+  data: { icon: <HardDrive size={13} />, tone: 'incoming', scope: 'app' },
+  about: { icon: <Info size={13} />, scope: 'app' }
+}
 
 /**
  * Per-repo commit-signing controls (commit.gpgsign / gpg.format / user.signingkey).
@@ -295,47 +306,66 @@ function SigningControls({ repo }: {
   )
 }
 
+/**
+ * The identity a repository commits with, read back from git — so the page can
+ * say when it is not this profile's, and offer to fix that, instead of a button
+ * nobody knows whether to press.
+ */
+function useRepoIdentity(repoPath: string | undefined): {
+  identity: { name: string; email: string } | null
+  reread: () => void
+} {
+  const [identity, setIdentity] = useState<{ name: string; email: string } | null>(null)
+  const [nonce, setNonce] = useState(0)
+  useEffect(() => {
+    let alive = true
+    setIdentity(null)
+    if (!repoPath) return
+    void gitApi
+      .getUser(repoPath)
+      .then((id) => alive && setIdentity(id))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [repoPath, nonce])
+  return { identity, reread: () => setNonce((n) => n + 1) }
+}
+
 function ProfilePage({
   profile,
   edit,
-  onConfigureAI
+  onConfigureAI,
+  onOpenAccounts
 }: {
   profile: Profile
   edit: (p: Partial<Profile>) => void
   onConfigureAI: (scope: AIScope) => void
+  onOpenAccounts: (host: RepoHost) => void
 }): React.JSX.Element {
-  const { activeRepo } = useSettingsStore()
+  const repo = useSettingsStore((s) => s.activeRepo())
   const toast = useUIStore((s) => s.toast)
   const t = useT()
   const accounts = useProfileAccounts(profile)
+  const { identity, reread } = useRepoIdentity(repo?.path)
+  // Only a complete identity can be applied, and only a different one is worth saying.
+  const differs =
+    !!repo &&
+    !!identity &&
+    !!profile.gitName &&
+    !!profile.gitEmail &&
+    (identity.name !== profile.gitName || identity.email !== profile.gitEmail)
 
   const applyToRepo = async (): Promise<void> => {
-    const repo = activeRepo()
-    if (!repo) {
-      toast('info', t('settings.openRepoFirst'))
-      return
-    }
-    if (!profile.gitName || !profile.gitEmail) {
-      toast('error', t('settings.setNameEmailFirst'))
-      return
-    }
+    if (!repo) return
     await gitApi.setUser(repo.path, profile.gitName, profile.gitEmail)
     toast('success', interp(t('settings.identityApplied'), { profile: profile.name, repo: repo.name }))
+    reread()
   }
 
   return (
     <>
-      {/* Using, creating and deleting profiles live in the profile bar above. */}
-      <label>
-        {t('settings.profileName')}
-        <input value={profile.name} onChange={(e) => edit({ name: e.target.value })} />
-      </label>
-
-      <h4>
-        <ImageIcon size={14} /> {t('profileAvatar.title')}
-      </h4>
-      <ProfileAvatarSettings profile={profile} edit={edit} accounts={accounts} />
-
+      {/* The profile's name, picture and in-use state sit in the header card above. */}
       <h4>
         <UserCircle2 size={14} /> {t('settings.gitIdentity')}
       </h4>
@@ -350,11 +380,33 @@ function ProfilePage({
         </label>
       </div>
       <NoreplyEmailButtons profile={profile} edit={edit} accounts={accounts} />
-      <button className="btn ghost small" onClick={() => void applyToRepo()}>
-        {t('settings.applyIdentity')}
-      </button>
+      {differs && identity && repo && (
+        <div className="settings-identity-hint" role="status">
+          <p className="settings-hint">
+            {interpStrong(t('settings.identityDiffers'), {
+              repo: repo.name,
+              name: identity.name || '—',
+              email: identity.email || '—'
+            })}
+          </p>
+          <button className="btn ghost small" onClick={() => void applyToRepo()}>
+            {t('settings.applyIdentity')}
+          </button>
+        </div>
+      )}
 
       <SigningSection />
+
+      <h4>
+        <ImageIcon size={14} /> {t('profileAvatar.title')}
+      </h4>
+      <ProfileAvatarSettings profile={profile} edit={edit} accounts={accounts} />
+
+      <h4>
+        <Plug size={14} /> {t('settings.pageAccounts')}
+      </h4>
+      <p className="settings-hint">{t('settings.accountsSummaryHint')}</p>
+      <ProfileAccountsSummary profile={profile} onOpenAccounts={onOpenAccounts} />
 
       <ProfileAISection profile={profile} onConfigure={onConfigureAI} />
     </>
@@ -423,15 +475,19 @@ const INTEGRATIONS = [
 export function IntegrationsPage({
   profile,
   edit,
-  onGoToSecurity
+  onGoToSecurity,
+  initialTab
 }: {
   profile: Profile
   edit: (p: Partial<Profile>) => void
   /** Jump to the Security page, where SSH keys live. */
   onGoToSecurity?: () => void
+  /** The host to open on — the Profile page's Connect / Renew names it. */
+  initialTab?: RepoHost
 }): React.JSX.Element {
   const t = useT()
-  const [tab, setTab] = useState<(typeof INTEGRATIONS)[number]['id']>('github')
+  const [tab, setTab] = useState<(typeof INTEGRATIONS)[number]['id']>(initialTab ?? 'github')
+  const setAccountCheck = useAccountChecksStore((s) => s.setAccountCheck)
   const active = INTEGRATIONS.find((i) => i.id === tab) ?? INTEGRATIONS[0]
   const ActiveIcon = active.icon
   const scoped = active.id === 'gitlab' || active.id === 'forgejo' ? active.id : undefined
@@ -531,8 +587,10 @@ export function IntegrationsPage({
           if (!result.ok) {
             // A refused token stays saved: replacing it is the user's call, never the check's.
             setCheckFailure(result.failure)
+            setAccountCheck(latest.current.profile.id, active.id, result.failure.kind)
             return
           }
+          setAccountCheck(latest.current.profile.id, active.id, null)
           const info = result.account
           const { edit, profile, label, t } = latest.current
           if (info?.link) {
@@ -570,7 +628,7 @@ export function IntegrationsPage({
       }
     },
     // linkKey, not the link object: a new object with the same account is no reason to re-check.
-    [active.id, token, issuer, linkKey, whoAmIOrg, azureOrgRequired]
+    [active.id, token, issuer, linkKey, whoAmIOrg, azureOrgRequired, setAccountCheck]
   )
 
   // Silent on mount — opening Settings must never pop four sign-in windows.
@@ -1519,7 +1577,7 @@ function PaletteSwatch({ colors }: { colors: string[] }): React.JSX.Element {
   )
 }
 
-function GraphStyleTab(): React.JSX.Element {
+function GraphStyleSection(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const activeAI = useSettingsStore((s) => s.activeAI())
   const update = useSettingsStore((s) => s.update)
@@ -1798,7 +1856,7 @@ function GraphStyleTab(): React.JSX.Element {
   )
 }
 
-function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
+function ThemesPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const activeAI = useSettingsStore((s) => s.activeAI())
   const update = useSettingsStore((s) => s.update)
@@ -1830,7 +1888,6 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
   const [showCodeAIPrompt, setShowCodeAIPrompt] = useState(false)
   const [codeAIPrompt, setCodeAIPrompt] = useState('')
   const [generatingCode, setGeneratingCode] = useState(false)
-  const [tab, setTab] = useState<'theme' | 'graph'>(initialTab ?? 'theme')
 
   const generateAppThemeAI = async (): Promise<void> => {
     if (!appAIPrompt.trim()) return
@@ -1931,27 +1988,6 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
 
   return (
     <>
-      <div className="theme-tabs">
-        <button
-          type="button"
-          className={`theme-tab ${tab === 'theme' ? 'active' : ''}`}
-          onClick={() => setTab('theme')}
-        >
-          <Palette size={13} /> {t('settings.tabTheme')}
-        </button>
-        <button
-          type="button"
-          className={`theme-tab ${tab === 'graph' ? 'active' : ''}`}
-          onClick={() => setTab('graph')}
-        >
-          <GitBranch size={13} /> {t('settings.tabGraph')}
-        </button>
-      </div>
-
-      {tab === 'graph' ? (
-        <GraphStyleTab />
-      ) : (
-      <>
       <h4>
         <Palette size={14} /> {t('settings.appearance')}
       </h4>
@@ -2215,8 +2251,6 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
             </div>
           </div>
         </ThemeDialog>
-      )}
-      </>
       )}
 
       <div className="theme-section-header" style={{ marginTop: 22 }}>
@@ -2515,20 +2549,20 @@ function DataManagementSection(): React.JSX.Element {
   }
 
   return (
-    <div>
+    <div className="settings-feature-card">
       <h4 className="settings-section-title">
         <ArrowDownUp size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
         {t('settings.importExport')}
       </h4>
       <p className="settings-hint">{t('settings.importExportHint')}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-        <button className="btn ghost small" onClick={() => void doImport()} disabled={importing}>
+        <button className="btn small" onClick={() => void doImport()} disabled={importing}>
           {importing ? <Loader2 size={13} className="spin" /> : <Upload size={13} />}
           {t('settings.importSettings')}
         </button>
         {/* The parts, the credentials opt-in and the password are chosen in the
             export dialog, stacked over Settings like the import one. */}
-        <button className="btn ghost small" onClick={() => useUIStore.getState().openModal({ kind: 'settings-export' })}>
+        <button className="btn small" onClick={() => useUIStore.getState().openModal({ kind: 'settings-export' })}>
           <Download size={13} />
           {t('settings.exportSettings')}
         </button>
@@ -2911,6 +2945,92 @@ function LayoutPage(): React.JSX.Element {
         </label>
       </div>
 
+      <h4 className="settings-section-title">
+        <PanelTop size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.layoutChrome')}
+      </h4>
+      <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.avatarMotion}
+            onChange={(e) => update((s) => ({ ...s, avatarMotion: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.avatarMotion')}</strong>
+            <span className="settings-hint">{t('settings.avatarMotionHint')}</span>
+          </span>
+        </label>
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.todosHideDone}
+            onChange={(e) => update((s) => ({ ...s, todosHideDone: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.todosHideDone')}</strong>
+            <span className="settings-hint">{t('settings.todosHideDoneHint')}</span>
+          </span>
+        </label>
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.groupBranches}
+            onChange={(e) => update((s) => ({ ...s, groupBranches: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.groupBranches')}</strong>
+            <span className="settings-hint">{t('settings.groupBranchesHint')}</span>
+          </span>
+        </label>
+      </div>
+
+      <h4 className="settings-section-title">
+        <MapIcon size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.fileViewer')}
+      </h4>
+      <p className="settings-hint">{t('settings.fileViewerIntro')}</p>
+      <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.showChangeGutter}
+            onChange={(e) => update((s) => ({ ...s, showChangeGutter: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.showChangeGutter')}</strong>
+            <span className="settings-hint">{t('settings.showChangeGutterHint')}</span>
+          </span>
+        </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.showMinimap}
+            onChange={(e) => update((s) => ({ ...s, showMinimap: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.showMinimap')}</strong>
+            <span className="settings-hint">{t('settings.showMinimapHint')}</span>
+          </span>
+        </label>
+      </div>
+
       <div className="settings-field">
         <span className="settings-field-label">{t('settings.resetPanelSizes')}</span>
         <span className="settings-hint">{t('settings.resetPanelSizesHint')}</span>
@@ -2929,10 +3049,18 @@ function LayoutPage(): React.JSX.Element {
   )
 }
 
-function GeneralPage(): React.JSX.Element {
+function GeneralPage({ onOpenPage }: { onOpenPage: (page: SettingsPage) => void }): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const t = useT()
+  // The note's links: where each group of options that used to live here went.
+  const moved: { page: SettingsPage; key: TranslationKey }[] = [
+    { page: 'graph', key: 'settings.movedGraph' },
+    { page: 'git', key: 'settings.movedGit' },
+    { page: 'security', key: 'settings.movedSecurity' },
+    { page: 'analyzers', key: 'settings.movedAnalyzers' },
+    { page: 'layout', key: 'settings.movedLayout' }
+  ]
 
   return (
     <div className="settings-general">
@@ -2955,9 +3083,106 @@ function GeneralPage(): React.JSX.Element {
         />
       </label>
 
+      <div className="settings-grid">
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.tabRepoLabel')}</span>
+          <select
+            value={settings.tabRepoLabel ?? 'both'}
+            onChange={(e) => update((s) => ({ ...s, tabRepoLabel: e.target.value as TabRepoLabel }))}
+          >
+            <option value="both">{t('settings.tabRepoLabel.both')}</option>
+            <option value="name">{t('settings.tabRepoLabel.name')}</option>
+            <option value="image">{t('settings.tabRepoLabel.image')}</option>
+          </select>
+          <span className="settings-hint">{t('settings.tabRepoLabelHint')}</span>
+        </label>
+
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.warnOnClose')}</span>
+          <select
+            value={settings.warnOnClose ?? 'always'}
+            onChange={(e) => update((s) => ({ ...s, warnOnClose: e.target.value as AppSettings['warnOnClose'] }))}
+          >
+            <option value="always">{t('settings.warnOnClose.always')}</option>
+            <option value="wip">{t('settings.warnOnClose.wip')}</option>
+            <option value="never">{t('settings.warnOnClose.never')}</option>
+          </select>
+          <span className="settings-hint">{t('settings.warnOnCloseHint')}</span>
+        </label>
+      </div>
+
+      <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.desktopNotifications ?? false}
+            onChange={(e) => update((s) => ({ ...s, desktopNotifications: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.desktopNotifications')}</strong>
+            <span className="settings-hint">{t('settings.desktopNotificationsHint')}</span>
+          </span>
+        </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.autoOpenChangelog}
+            onChange={(e) => update((s) => ({ ...s, autoOpenChangelog: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.autoOpenChangelog')}</strong>
+            <span className="settings-hint">{t('settings.autoOpenChangelogHint')}</span>
+          </span>
+        </label>
+      </div>
+
+      <div className="settings-moved-note" role="note">
+        <p className="settings-hint">{t('settings.generalMovedNote')}</p>
+        <ul>
+          {moved.map((m) => (
+            <li key={m.page}>
+              <button type="button" className="link-btn" onClick={() => onOpenPage(m.page)}>
+                {t(SETTINGS_PAGE_KEYS[m.page])}
+              </button>{' '}
+              <span className="settings-hint">{t(m.key)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Appearance → Graph: how much history loads, what a row shows, and how the
+ * lanes are drawn. The first two came from General, the drawing from the Graph
+ * tab Themes used to have — all of it is about the one view. Group refs by
+ * prefix folds the sidebar's lists, not the graph, so it went to Layout.
+ */
+function GraphPage(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
+
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <Network size={14} /> {t('settings.pageGraph')}
+        </h4>
+        <p className="settings-hint">{t('settings.graphPageIntro')}</p>
+      </div>
+
       <h4 className="settings-section-title">
-        <Network size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        {t('settings.graph')}
+        <History size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.graphHistory')}
       </h4>
       <p className="settings-hint">{t('settings.graphIntro')}</p>
 
@@ -3001,7 +3226,13 @@ function GeneralPage(): React.JSX.Element {
             <span className="settings-hint">{t('settings.autoLoadOnScrollHint')}</span>
           </span>
         </label>
+      </div>
 
+      <h4 className="settings-section-title">
+        <Rows3 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.graphRows')}
+      </h4>
+      <div className="settings-toggle-list">
         <label className="settings-toggle-card">
           <input
             type="checkbox"
@@ -3048,59 +3279,36 @@ function GeneralPage(): React.JSX.Element {
             <span className="settings-hint">{t('settings.githubAvatarsHint')}</span>
           </span>
         </label>
-
-        <label className="settings-toggle-card">
-          <input
-            type="checkbox"
-            checked={settings.avatarMotion}
-            onChange={(e) => update((s) => ({ ...s, avatarMotion: e.target.checked }))}
-          />
-          <span className="settings-toggle-control" aria-hidden="true">
-            <span className="settings-toggle-thumb" />
-          </span>
-          <span className="settings-toggle-copy">
-            <strong>{t('settings.avatarMotion')}</strong>
-            <span className="settings-hint">{t('settings.avatarMotionHint')}</span>
-          </span>
-        </label>
-
-        <label className="settings-toggle-card">
-          <input
-            type="checkbox"
-            checked={settings.groupBranches}
-            onChange={(e) => update((s) => ({ ...s, groupBranches: e.target.checked }))}
-          />
-          <span className="settings-toggle-control" aria-hidden="true">
-            <span className="settings-toggle-thumb" />
-          </span>
-          <span className="settings-toggle-copy">
-            <strong>{t('settings.groupBranches')}</strong>
-            <span className="settings-hint">{t('settings.groupBranchesHint')}</span>
-          </span>
-        </label>
-
-        <label className="settings-toggle-card">
-          <input
-            type="checkbox"
-            checked={settings.todosHideDone}
-            onChange={(e) => update((s) => ({ ...s, todosHideDone: e.target.checked }))}
-          />
-          <span className="settings-toggle-control" aria-hidden="true">
-            <span className="settings-toggle-thumb" />
-          </span>
-          <span className="settings-toggle-copy">
-            <strong>{t('settings.todosHideDone')}</strong>
-            <span className="settings-hint">{t('settings.todosHideDoneHint')}</span>
-          </span>
-        </label>
       </div>
 
       <h4 className="settings-section-title">
-        <ToggleLeft size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        {t('settings.behaviour')}
+        <Palette size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.graphAppearance')}
       </h4>
-      <p className="settings-hint">{t('settings.behaviourIntro')}</p>
+      <GraphStyleSection />
+    </div>
+  )
+}
 
+/** Behaviour → Git & sync: what GitHuttBr does with remotes, merges and the tools git hands off to. */
+function GitSyncPage(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
+
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <GitMerge size={14} /> {t('settings.pageGit')}
+        </h4>
+        <p className="settings-hint">{t('settings.gitIntro')}</p>
+      </div>
+
+      <h4 className="settings-section-title">
+        <RefreshCw size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.gitSync')}
+      </h4>
       <div className="settings-grid">
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.autoFetch')}</span>
@@ -3112,64 +3320,12 @@ function GeneralPage(): React.JSX.Element {
           />
           <span className="settings-hint">{t('settings.autoFetchHint')}</span>
         </label>
-
-        <label className="settings-field">
-          <span className="settings-field-label">{t('settings.warnOnClose')}</span>
-          <select
-            value={settings.warnOnClose ?? 'always'}
-            onChange={(e) => update((s) => ({ ...s, warnOnClose: e.target.value as AppSettings['warnOnClose'] }))}
-          >
-            <option value="always">{t('settings.warnOnClose.always')}</option>
-            <option value="wip">{t('settings.warnOnClose.wip')}</option>
-            <option value="never">{t('settings.warnOnClose.never')}</option>
-          </select>
-          <span className="settings-hint">{t('settings.warnOnCloseHint')}</span>
-        </label>
-
-        <label className="settings-field">
-          <span className="settings-field-label">{t('settings.tabRepoLabel')}</span>
-          <select
-            value={settings.tabRepoLabel ?? 'both'}
-            onChange={(e) => update((s) => ({ ...s, tabRepoLabel: e.target.value as TabRepoLabel }))}
-          >
-            <option value="both">{t('settings.tabRepoLabel.both')}</option>
-            <option value="name">{t('settings.tabRepoLabel.name')}</option>
-            <option value="image">{t('settings.tabRepoLabel.image')}</option>
-          </select>
-          <span className="settings-hint">{t('settings.tabRepoLabelHint')}</span>
-        </label>
       </div>
 
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={settings.confirmForcePush}
-          onChange={(e) => update((s) => ({ ...s, confirmForcePush: e.target.checked }))}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.confirmForcePush')}</strong>
-          <span className="settings-hint">{t('settings.confirmForcePushHint')}</span>
-        </span>
-      </label>
-
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={settings.desktopNotifications ?? false}
-          onChange={(e) => update((s) => ({ ...s, desktopNotifications: e.target.checked }))}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.desktopNotifications')}</strong>
-          <span className="settings-hint">{t('settings.desktopNotificationsHint')}</span>
-        </span>
-      </label>
-
+      <h4 className="settings-section-title">
+        <GitMerge size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.gitMerging')}
+      </h4>
       <label className="settings-toggle-card">
         <input
           type="checkbox"
@@ -3185,49 +3341,6 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={settings.autoOpenChangelog}
-          onChange={(e) => update((s) => ({ ...s, autoOpenChangelog: e.target.checked }))}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.autoOpenChangelog')}</strong>
-          <span className="settings-hint">{t('settings.autoOpenChangelogHint')}</span>
-        </span>
-      </label>
-
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={settings.enableLaunchJson}
-          onChange={(e) => update((s) => ({ ...s, enableLaunchJson: e.target.checked }))}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.launchEnabled')}</strong>
-          <span className="settings-hint">{t('settings.launchEnabledHint')}</span>
-        </span>
-      </label>
-
-      <h4><ScanSearch size={14} /> {t('settings.analyzerMode')}</h4>
-      <span className="settings-hint">{t('settings.analyzerModeHint')}</span>
-      <label>
-        <select
-          value={settings.analyzerMode ?? 'onOpen'}
-          onChange={(e) => update((s) => ({ ...s, analyzerMode: e.target.value as AnalyzerMode }))}
-        >
-          <option value="onOpen">{t('settings.analyzerOnOpen')}</option>
-          <option value="manual">{t('settings.analyzerManual')}</option>
-          <option value="off">{t('settings.analyzerOff')}</option>
-        </select>
-      </label>
-
       <h4 className="settings-section-title">
         <Repeat2 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
         {t('rerere.title')}
@@ -3241,43 +3354,6 @@ function GeneralPage(): React.JSX.Element {
       </h4>
       <p className="settings-hint">{t('difftool.intro')}</p>
       <DiffToolCard />
-
-      <h4 className="settings-section-title">
-        <MapIcon size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        {t('settings.fileViewer')}
-      </h4>
-      <p className="settings-hint">{t('settings.fileViewerIntro')}</p>
-      <div className="settings-toggle-list">
-        <label className="settings-toggle-card">
-          <input
-            type="checkbox"
-            checked={settings.showChangeGutter}
-            onChange={(e) => update((s) => ({ ...s, showChangeGutter: e.target.checked }))}
-          />
-          <span className="settings-toggle-control" aria-hidden="true">
-            <span className="settings-toggle-thumb" />
-          </span>
-          <span className="settings-toggle-copy">
-            <strong>{t('settings.showChangeGutter')}</strong>
-            <span className="settings-hint">{t('settings.showChangeGutterHint')}</span>
-          </span>
-        </label>
-
-        <label className="settings-toggle-card">
-          <input
-            type="checkbox"
-            checked={settings.showMinimap}
-            onChange={(e) => update((s) => ({ ...s, showMinimap: e.target.checked }))}
-          />
-          <span className="settings-toggle-control" aria-hidden="true">
-            <span className="settings-toggle-thumb" />
-          </span>
-          <span className="settings-toggle-copy">
-            <strong>{t('settings.showMinimap')}</strong>
-            <span className="settings-hint">{t('settings.showMinimapHint')}</span>
-          </span>
-        </label>
-      </div>
 
       <h4 className="settings-section-title">
         <SquarePen size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
@@ -3317,7 +3393,53 @@ function GeneralPage(): React.JSX.Element {
           </button>
         )}
       </div>
+    </div>
+  )
+}
 
+/** Behaviour → Code analyzers: when the project's own toolchain may run, and its launch.json. */
+function AnalyzersPage(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
+
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <ScanSearch size={14} /> {t('settings.analyzerMode')}
+        </h4>
+        <p className="settings-hint">{t('settings.analyzerModeHint')}</p>
+      </div>
+      <label>
+        <select
+          value={settings.analyzerMode ?? 'onOpen'}
+          onChange={(e) => update((s) => ({ ...s, analyzerMode: e.target.value as AnalyzerMode }))}
+        >
+          <option value="onOpen">{t('settings.analyzerOnOpen')}</option>
+          <option value="manual">{t('settings.analyzerManual')}</option>
+          <option value="off">{t('settings.analyzerOff')}</option>
+        </select>
+      </label>
+
+      <h4 className="settings-section-title">
+        <Terminal size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.launchTitle')}
+      </h4>
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.enableLaunchJson}
+          onChange={(e) => update((s) => ({ ...s, enableLaunchJson: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.launchEnabled')}</strong>
+          <span className="settings-hint">{t('settings.launchEnabledHint')}</span>
+        </span>
+      </label>
     </div>
   )
 }
@@ -3568,7 +3690,9 @@ function EditorCard(): React.JSX.Element {
   )
 }
 
-function KeychainCard(): React.JSX.Element {
+type KeychainStatus = { consent: KeychainConsent; available: boolean | null; weakBackend: boolean }
+
+function KeychainCard({ onStatus }: { onStatus?: (status: KeychainStatus) => void } = {}): React.JSX.Element {
   const [status, setStatus] = useState<{
     consent: KeychainConsent
     available: boolean | null
@@ -3580,7 +3704,10 @@ function KeychainCard(): React.JSX.Element {
   const t = useT()
 
   const refresh = (): void => {
-    void keychainApi.status().then(setStatus)
+    void keychainApi.status().then((st) => {
+      setStatus(st)
+      onStatus?.(st)
+    })
     void settingsApi
       .secretsState()
       .then((s) => setUnreadable(s.unreadable))
@@ -3677,72 +3804,136 @@ function KeychainCard(): React.JSX.Element {
   )
 }
 
+/** One fact in the Security page's status strip. */
+function SecurityStatus({ tone, children }: { tone: 'ok' | 'warn' | 'off'; children: ReactNode }): React.JSX.Element {
+  return (
+    <span className={`settings-pill ${tone === 'ok' ? 'ok' : tone === 'warn' ? 'warn' : ''}`}>
+      {tone === 'ok' ? <Check size={11} /> : tone === 'warn' ? <AlertTriangle size={11} /> : <Circle size={9} />}
+      {children}
+    </span>
+  )
+}
+
 function SecurityPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const closeModal = useUIStore((s) => s.closeModal)
   const t = useT()
+  const [keychain, setKeychain] = useState<KeychainStatus | null>(null)
 
   const openVault = (): void => {
     openPageTab({ type: 'vault' })
     closeModal()
   }
 
+  const keychainState: { tone: 'ok' | 'warn' | 'off'; key: TranslationKey } =
+    keychain?.consent === 'granted'
+      ? keychain.available === false
+        ? { tone: 'warn', key: 'settings.secKeychainUnavailable' }
+        : { tone: 'ok', key: 'settings.secKeychainOn' }
+      : keychain?.consent === 'declined'
+        ? { tone: 'warn', key: 'settings.secKeychainOff' }
+        : { tone: 'off', key: 'settings.secKeychainUnset' }
+
   return (
     <div className="settings-general">
       <div className="settings-general-header">
         <h4>
-          <ShieldCheck size={14} /> {t('settings.security')}
+          <ShieldCheck size={14} /> {t('settings.pageSecurity')}
         </h4>
+        <p className="settings-hint">{t('settings.securityIntro')}</p>
       </div>
 
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={settings.maskSecrets}
-          onChange={(e) => update((s) => ({ ...s, maskSecrets: e.target.checked }))}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.maskSecrets')}</strong>
-          <span className="settings-hint">{t('settings.maskSecretsHint')}</span>
-        </span>
-      </label>
+      {/* What is true right now, before any of the switches below. */}
+      <div className="settings-status-strip" role="status">
+        <SecurityStatus tone={settings.maskSecrets ? 'ok' : 'warn'}>
+          {t(settings.maskSecrets ? 'settings.secMaskOn' : 'settings.secMaskOff')}
+        </SecurityStatus>
+        <SecurityStatus tone={keychain ? keychainState.tone : 'off'}>{t(keychainState.key)}</SecurityStatus>
+        <SecurityStatus tone={settings.confirmForcePush ? 'ok' : 'warn'}>
+          {t(settings.confirmForcePush ? 'settings.secForcePushOn' : 'settings.secForcePushOff')}
+          {!settings.confirmForcePush && <em className="settings-pill-note">{t('settings.secRecommended')}</em>}
+        </SecurityStatus>
+      </div>
 
-      <label className="settings-toggle-card">
-        <input
-          type="checkbox"
-          checked={settings.commentImagesFromOtherSites}
-          onChange={(e) => update((s) => ({ ...s, commentImagesFromOtherSites: e.target.checked }))}
-        />
-        <span className="settings-toggle-control" aria-hidden="true">
-          <span className="settings-toggle-thumb" />
-        </span>
-        <span className="settings-toggle-copy">
-          <strong>{t('settings.commentImagesFromOtherSites')}</strong>
-          <span className="settings-hint">{t('settings.commentImagesFromOtherSitesHint')}</span>
-        </span>
-      </label>
+      <h4 className="settings-section-title">
+        <AlertTriangle size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.secAskTitle')}
+      </h4>
+      <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.confirmForcePush}
+            onChange={(e) => update((s) => ({ ...s, confirmForcePush: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.confirmForcePush')}</strong>
+            <span className="settings-hint">{t('settings.confirmForcePushHint')}</span>
+          </span>
+        </label>
+      </div>
 
-      <label style={{ marginTop: 12 }}>
-        {t('settings.largeFileWarn')}
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.largeFileWarn')}</span>
         <NumberField
           min={0}
           value={Math.round((settings.largeFileKb ?? 0) / 1024)}
           onChange={(mb) => update((s) => ({ ...s, largeFileKb: mb * 1024 }))}
           style={{ maxWidth: 120 }}
         />
+        <span className="settings-hint">{t('settings.largeFileWarnHint')}</span>
       </label>
-      <span className="settings-hint">{t('settings.largeFileWarnHint')}</span>
 
-      <span className="settings-hint" style={{ display: 'block', marginTop: 12 }}>{t('settings.protectedBranchesMoved')}</span>
+      {/* Not a switch: these always ask, and the row says so where people look for it. */}
+      <div className="settings-readonly-row">
+        <Lock size={13} />
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.secAlwaysAsk')}</strong>
+          <span className="settings-hint">{t('settings.secAlwaysAskHint')}</span>
+        </span>
+      </div>
+      <span className="settings-hint" style={{ display: 'block', marginTop: 8 }}>{t('settings.protectedBranchesMoved')}</span>
 
-      <KeychainCard />
+      <h4 className="settings-section-title">
+        <EyeOff size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.privacyTitle')}
+      </h4>
+      <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.maskSecrets}
+            onChange={(e) => update((s) => ({ ...s, maskSecrets: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.maskSecrets')}</strong>
+            <span className="settings-hint">{t('settings.maskSecretsHint')}</span>
+          </span>
+        </label>
 
-      <SshKeysCard />
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.commentImagesFromOtherSites}
+            onChange={(e) => update((s) => ({ ...s, commentImagesFromOtherSites: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.commentImagesFromOtherSites')}</strong>
+            <span className="settings-hint">{t('settings.commentImagesFromOtherSitesHint')}</span>
+          </span>
+        </label>
+      </div>
 
       <h4 style={{ marginTop: 18 }}>
         <KeyRound size={14} /> {t('settings.vault')}
@@ -3753,6 +3944,10 @@ function SecurityPage(): React.JSX.Element {
         </button>
         <span className="settings-hint" style={{ display: 'block', marginTop: 6 }}>{t('settings.openVaultHint')}</span>
       </div>
+
+      <KeychainCard onStatus={setKeychain} />
+
+      <SshKeysCard />
     </div>
   )
 }
@@ -3982,33 +4177,54 @@ function ScanRootsSection(): React.JSX.Element {
   )
 }
 
-function RepoDataSection(): React.JSX.Element {
+/**
+ * Data & backup's danger list: what can be wiped and not brought back. Kept
+ * apart from import and export, so a click meant for a backup never lands here.
+ */
+function DangerZoneSection(): React.JSX.Element {
   const t = useT()
-  const settings = useSettingsStore((s) => s.settings)
+  const count = useSettingsStore((s) => s.settings.recentRepos.length)
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
-  const count = settings.recentRepos.length
 
-  const clear = (): void => {
-    update((s) => ({ ...s, recentRepos: [] }))
-    toast('success', t('settings.recentCleared'))
-  }
+  const askClearRecent = (): void =>
+    useUIStore.getState().openDialog({
+      kind: 'confirm',
+      title: t('settings.clearRecentRepos'),
+      message: interp(t('settings.clearRecentConfirm'), { n: count }),
+      danger: true,
+      confirmLabel: t('settings.clearRecentRepos'),
+      onConfirm: () => {
+        update((s) => ({ ...s, recentRepos: [] }))
+        toast('success', t('settings.recentCleared'))
+      }
+    })
 
   return (
-    <div style={{ marginTop: 28 }}>
+    <section className="settings-danger-zone">
       <h4 className="settings-section-title">
-        <Database size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        {t('settings.cachedReposTitle')}
+        <AlertTriangle size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.dangerZone')}
       </h4>
-      <p className="settings-hint">{t('settings.cachedReposHint')}</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-        <button className="btn ghost small" onClick={clear} disabled={count === 0}>
-          <Trash2 size={13} />
-          {t('settings.clearRecentRepos')}
-        </button>
-        <span className="settings-hint">{count === 0 ? t('settings.noCachedRepos') : interp(t('settings.nCached'), { n: count })}</span>
-      </div>
-    </div>
+      <p className="settings-hint">{t('settings.dangerZoneHint')}</p>
+      <ul className="settings-danger-list">
+        <li>
+          <span className="settings-toggle-copy">
+            <strong>
+              <Database size={13} /> {t('settings.cachedReposTitle')}
+            </strong>
+            <span className="settings-hint">{t('settings.cachedReposHint')}</span>
+            <span className="settings-hint">
+              {count === 0 ? t('settings.noCachedRepos') : interp(t('settings.nCached'), { n: count })}
+            </span>
+          </span>
+          <button className="btn ghost small danger" onClick={askClearRecent} disabled={count === 0}>
+            <Trash2 size={13} />
+            {t('settings.clearRecentRepos')}
+          </button>
+        </li>
+      </ul>
+    </section>
   )
 }
 
@@ -4406,24 +4622,22 @@ function DataPage(): React.JSX.Element {
     <div className="settings-general">
       <div className="settings-general-header">
         <h4>
-          <HardDrive size={14} /> {t('settings.data')}
+          <HardDrive size={14} /> {t('settings.pageData')}
         </h4>
         <p className="settings-hint">{t('settings.dataIntro')}</p>
       </div>
       <DataManagementSection />
       <ScanRootsSection />
-      <RepoDataSection />
+      <DangerZoneSection />
       <p className="settings-hint" style={{ marginTop: 12 }}>{t('settings.analyticsMoved')}</p>
     </div>
   )
 }
 
 const LAST_PAGE_KEY = 'githuttbr.settings.lastPage'
-const PAGE_IDS: SettingsPage[] = PAGES.map((p) => p.id)
 
 function readLastPage(): SettingsPage {
-  const stored = localStorage.getItem(LAST_PAGE_KEY)
-  return stored && (PAGE_IDS as string[]).includes(stored) ? (stored as SettingsPage) : 'general'
+  return resolveSettingsPage(localStorage.getItem(LAST_PAGE_KEY)) ?? DEFAULT_SETTINGS_PAGE
 }
 
 /** A translated sentence with its placeholders filled in bold. The same
@@ -4436,17 +4650,22 @@ function interpStrong(template: string, vars: Record<string, string>): ReactNode
 }
 
 /**
- * Which profile the Profile and Integrations pages edit. Choosing one here does
- * not make the app use it: the profile being edited and the one in use are two
- * separate things, and the band below says so whenever they differ.
+ * Which profile the Profile and Connected accounts pages edit. Choosing one here
+ * does not make the app use it: the profile being edited and the one in use are
+ * two separate things, and the band below says so whenever they differ.
+ *
+ * With `edit`, it is the Profile page's header card: the same switcher, with the
+ * profile's picture and its name made editable in place.
  */
 function ProfileBar({
   profile,
+  edit,
   onSelectProfile,
   onNewProfile,
   onDeleteProfile
 }: {
   profile: Profile
+  edit?: (p: Partial<Profile>) => void
   onSelectProfile: (id: string) => void
   onNewProfile: () => void
   onDeleteProfile: () => void
@@ -4456,36 +4675,74 @@ function ProfileBar({
   const activeId = useSettingsStore((s) => s.settings.activeProfileId)
   const setActiveProfile = useSettingsStore((s) => s.setActiveProfile)
   const selectId = useId()
+  const nameId = useId()
   const inUse = profile.id === activeId
   const activeProfile = profiles.find((p) => p.id === activeId)
 
+  const picker = (
+    <select
+        id={selectId}
+        value={profile.id}
+        aria-label={t('settings.editingProfile')}
+        onChange={(e) => onSelectProfile(e.target.value)}
+      >
+        {profiles.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.id === activeId ? interp(t('settings.profileOptionInUse'), { name: p.name }) : p.name}
+          </option>
+        ))}
+    </select>
+  )
+  const actions = (
+    <>
+      <button className="btn ghost small" type="button" data-setting="settings.newProfile" onClick={onNewProfile}>
+        <Plus size={13} /> {t('settings.newProfile')}
+      </button>
+      {profiles.length > 1 && (
+        <button className="icon-btn danger" type="button" title={t('settings.deleteProfile')} onClick={onDeleteProfile}>
+          <Trash2 size={14} />
+        </button>
+      )}
+    </>
+  )
+  const state = (
+    <span className={`settings-profile-state ${inUse ? 'in-use' : ''}`}>
+      {inUse && <span className="settings-profile-state-dot" />}
+      {t(inUse ? 'settings.profileInUse' : 'settings.profileNotInUse')}
+    </span>
+  )
+
   return (
     <>
-      <div className="settings-profile-bar">
-        <label htmlFor={selectId}>
-          <UserCircle2 size={14} /> {t('settings.editingProfile')}
-        </label>
-        <select id={selectId} value={profile.id} onChange={(e) => onSelectProfile(e.target.value)}>
-          {profiles.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.id === activeId ? interp(t('settings.profileOptionInUse'), { name: p.name }) : p.name}
-            </option>
-          ))}
-        </select>
-        <span className={`settings-profile-state ${inUse ? 'in-use' : ''}`}>
-          {inUse && <span className="settings-profile-state-dot" />}
-          {t(inUse ? 'settings.profileInUse' : 'settings.profileNotInUse')}
-        </span>
-        <span className="settings-profile-bar-spacer" />
-        <button className="btn ghost small" type="button" data-setting="settings.newProfile" onClick={onNewProfile}>
-          <Plus size={13} /> {t('settings.newProfile')}
-        </button>
-        {profiles.length > 1 && (
-          <button className="icon-btn danger" type="button" title={t('settings.deleteProfile')} onClick={onDeleteProfile}>
-            <Trash2 size={14} />
-          </button>
-        )}
-      </div>
+      {edit ? (
+        <div className="settings-profile-card">
+          <ProfileAvatar profile={profile} size={44} />
+          <div className="settings-profile-card-name">
+            <label htmlFor={nameId} className="settings-hint">
+              {t('settings.profileName')}
+            </label>
+            <div className="settings-profile-card-row">
+              <input id={nameId} value={profile.name} onChange={(e) => edit({ name: e.target.value })} />
+              {state}
+            </div>
+          </div>
+          <span className="settings-profile-bar-spacer" />
+          <div className="settings-profile-card-actions">
+            {picker}
+            {actions}
+          </div>
+        </div>
+      ) : (
+        <div className="settings-profile-bar">
+          <label htmlFor={selectId}>
+            <UserCircle2 size={14} /> {t('settings.editingProfile')}
+          </label>
+          {picker}
+          {state}
+          <span className="settings-profile-bar-spacer" />
+          {actions}
+        </div>
+      )}
       {!inUse && activeProfile && (
         <div className="settings-profile-band" role="status">
           <p>
@@ -4500,17 +4757,26 @@ function ProfileBar({
   )
 }
 
-export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: SettingsPage; initialThemeTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
+/**
+ * `initialPage` is any id a caller has — a current page, an alias, or Themes
+ * with `initialThemeTab: 'graph'` from before Graph had a page of its own.
+ */
+export function SettingsPanel({
+  initialPage,
+  initialThemeTab
+}: { initialPage?: string; initialThemeTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
   const { settings, addProfile, deleteProfile } = useSettingsStore()
   // Over Settings, not instead of it: a modal would close this screen.
   const openDialog = useUIStore((s) => s.openDialog)
   const closeModal = useUIStore((s) => s.closeModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
-  const [page, setPage] = useState<SettingsPage>(initialPage ?? readLastPage())
-  // A search result on the Graph tab has to reopen Themes on that tab; the
-  // nonce remounts the page, since its tab is only read on mount.
-  const [themeTab, setThemeTab] = useState(initialThemeTab)
-  const [themeNonce, setThemeNonce] = useState(0)
+  const [page, setPage] = useState<SettingsPage>(
+    () => resolveSettingsPage(initialPage, initialThemeTab) ?? readLastPage()
+  )
+  // The host Connected accounts opens on; the nonce remounts the page so a
+  // second Connect from the Profile page lands on its host too.
+  const [accountsTab, setAccountsTab] = useState<RepoHost | undefined>(undefined)
+  const [accountsNonce, setAccountsNonce] = useState(0)
   // Whose AI the AI page edits; the Profile page's "Set up" lands it on the right one.
   const [aiScope, setAiScope] = useState<AIScope>('general')
   const search = useSettingsSearch()
@@ -4534,10 +4800,6 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   const pickSetting = (entry: SettingsEntry): void => {
     search.setQuery('')
     setPage(entry.page)
-    if (entry.tab) {
-      setThemeTab(entry.tab)
-      setThemeNonce((n) => n + 1)
-    }
     requestReveal(entry)
   }
 
@@ -4553,7 +4815,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
     clearReveal()
     // `t` is a new function every render; the entry is what this waits on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [revealing, search.active, page, themeNonce, clearReveal])
+  }, [revealing, search.active, page, clearReveal])
   useEffect(() => () => stopRevealRef.current?.(), [])
 
   // Tokens are left encrypted at start-up, so this dialog is where they get
@@ -4573,6 +4835,8 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   }, [])
 
   const profile = settings.profiles.find((p) => p.id === selectedId) ?? settings.profiles[0]
+  const accountFailures = useAccountChecksStore((s) => s.failures[profile.id])
+  const accountProblems = countAccountProblems(accountFailures)
   const edit = (partial: Partial<Profile>): void =>
     useSettingsStore.getState().saveProfile({ ...profile, ...partial })
 
@@ -4595,27 +4859,42 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
     })
   }
 
-  const navItem = (p: (typeof PAGES)[number]): React.JSX.Element => {
+  const openAccounts = (host?: RepoHost): void => {
+    setAccountsTab(host)
+    setAccountsNonce((n) => n + 1)
+    setPage('integrations')
+  }
+
+  const navItem = (id: SettingsPage): React.JSX.Element => {
+    const p = PAGES[id]
     // While searching, a page shows how many matches it holds, and one with
     // none steps back — clicking it still opens it.
-    const hits = search.active ? (search.counts[p.id] ?? 0) : null
+    const hits = search.active ? (search.counts[id] ?? 0) : null
+    // Known from the checks Settings already made; nothing is asked for this.
+    const warn = id === 'integrations' && hits === null ? accountProblems : 0
     return (
       <button
-        key={p.id}
-        className={`profile-item ${!search.active && page === p.id ? 'selected' : ''} ${hits === 0 ? 'dim' : ''}`}
+        key={id}
+        className={`profile-item ${!search.active && page === id ? 'selected' : ''} ${hits === 0 ? 'dim' : ''}`}
         data-tone={p.tone}
         onClick={() => {
           search.setQuery('')
-          setPage(p.id)
+          if (id === 'integrations') openAccounts()
+          else setPage(id)
         }}
       >
         {p.icon}
-        <span>{t(SETTINGS_PAGE_KEYS[p.id])}</span>
+        <span>{t(SETTINGS_PAGE_KEYS[id])}</span>
         {hits !== null && hits > 0 && <span className="settings-search-count">{hits}</span>}
+        {warn > 0 && (
+          <span className="settings-nav-warn" title={interp(t('settings.accountsNeedAttention'), { n: warn })}>
+            <AlertTriangle size={10} /> {warn}
+          </span>
+        )}
       </button>
     )
   }
-  const pageScope = PAGES.find((p) => p.id === page)?.scope ?? 'app'
+  const pageScope = PAGES[page].scope
 
   const confirmDeleteProfile = (id: string, name: string): void =>
     openDialog({
@@ -4639,20 +4918,21 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
       <div className="settings-body">
         <aside className="settings-profiles">
           <div className="settings-side-scroll">
-            {/* Grouped by what a page edits: the profile chosen in the profile
-                bar, or the whole app. The chip names that profile. */}
-            <div className="settings-side-header">
-              <span>{t('settings.navThisProfile')}</span>
-              <span className="settings-side-chip" title={profile.name}>
-                {profile.name}
-              </span>
-            </div>
-            {PROFILE_PAGES.map(navItem)}
-
-            <div className="settings-side-header pages">
-              <span>{t('settings.navApp')}</span>
-            </div>
-            {APP_PAGES.map(navItem)}
+            {/* Four groups by what a page is about. The "You" heading names the
+                profile its first pages edit. */}
+            {SETTINGS_NAV_GROUPS.map((g, i) => (
+              <div key={g.id} className="settings-nav-group" role="group" aria-label={t(g.labelKey)}>
+                <div className={`settings-side-header ${i > 0 ? 'pages' : ''}`}>
+                  <span>{t(g.labelKey)}</span>
+                  {g.id === 'you' && (
+                    <span className="settings-side-chip" title={profile.name}>
+                      {profile.name}
+                    </span>
+                  )}
+                </div>
+                {g.pages.map(navItem)}
+              </div>
+            ))}
           </div>
 
           <div className="settings-footer">
@@ -4710,6 +4990,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
             {pageScope === 'profile' ? (
               <ProfileBar
                 profile={profile}
+                edit={page === 'profile' ? edit : undefined}
                 onSelectProfile={setSelectedId}
                 onNewProfile={askNewProfile}
                 onDeleteProfile={() => confirmDeleteProfile(profile.id, profile.name)}
@@ -4727,19 +5008,29 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
                   setAiScope(scope)
                   setPage('ai')
                 }}
+                onOpenAccounts={openAccounts}
               />
             )}
-            {page === 'workspaces' && <WorkspacesPage />}
             {page === 'integrations' && (
-              <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
+              <IntegrationsPage
+                key={accountsNonce}
+                profile={profile}
+                edit={edit}
+                initialTab={accountsTab}
+                onGoToSecurity={() => setPage('security')}
+              />
             )}
             {page === 'ai' && (
               <AISettingsPage scope={aiScope} onScope={setAiScope} />
             )}
-            {page === 'themes' && <ThemesPage key={themeNonce} initialTab={themeTab} />}
-            {page === 'general' && <GeneralPage />}
+            {page === 'themes' && <ThemesPage />}
+            {page === 'graph' && <GraphPage />}
             {page === 'layout' && <LayoutPage />}
+            {page === 'general' && <GeneralPage onOpenPage={setPage} />}
+            {page === 'git' && <GitSyncPage />}
             {page === 'security' && <SecurityPage />}
+            {page === 'analyzers' && <AnalyzersPage />}
+            {page === 'workspaces' && <WorkspacesPage />}
             {page === 'shortcuts' && <ShortcutsPage />}
             {page === 'data' && <DataPage />}
             {page === 'environment' && <EnvironmentPage />}
