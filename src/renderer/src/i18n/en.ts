@@ -2956,9 +2956,7 @@ export const en = {
   'commitPanel.restoreConfirm': 'Restore',
   'commitPanel.messageLabel': 'Message',
   'commitPanel.trailers': 'Trailers',
-  'commitPanel.coAuthorTrailer': 'Co-author: {name}',
-  'commitPanel.showAllBody': 'Show all · {n} more lines',
-  'commitPanel.showLessBody': 'Show less',
+  'commitPanel.resizeBody': 'Drag to resize the description; double-click for six lines',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Co-authors',
 

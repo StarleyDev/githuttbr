@@ -117,9 +117,9 @@ The file list multi-selects with the usual gestures
 after one confirmation it overwrites the working copies, and touches neither
 HEAD nor the index.
 
-The commit's **description** — everything below its subject — shows under it, its hand-wrapped lines joined to fit the panel (list items and indented lines stay as written). A long one shows its first lines and **Show all**. The trailers git keeps at the end become chips: *Co-author: name* for each `Co-authored-by`, and others such as `Refs:` as written. A commit with no description shows only its subject.
+The commit's **description** — everything below its subject — shows under it, its hand-wrapped lines joined to fit the panel (list items and indented lines stay as written). It shows up to six lines and scrolls inside; drag the handle under it to make it taller, up to half the panel — the height is remembered, and a double-click brings back six lines. The trailers git keeps at the end, such as `Refs:`, become chips as written; co-authors already show as avatars in their own row above. A commit with no description shows only its subject.
 
-The author, the message and the file search stay in place while you scroll the files; a very long description scrolls on its own above them.
+The author, the message and the file search stay in place while you scroll the files.
 
 ![A commit's description under its subject, with its trailers as chips](../screenshots/commit-body.webp)
 

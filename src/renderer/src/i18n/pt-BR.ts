@@ -2959,9 +2959,7 @@ export const ptBR: Dict = {
   'commitPanel.restoreConfirm': 'Restaurar',
   'commitPanel.messageLabel': 'Mensagem',
   'commitPanel.trailers': 'Trailers',
-  'commitPanel.coAuthorTrailer': 'Co-autor: {name}',
-  'commitPanel.showAllBody': 'Mostrar tudo · mais {n} linhas',
-  'commitPanel.showLessBody': 'Mostrar menos',
+  'commitPanel.resizeBody': 'Arraste para redimensionar a descrição; duplo clique volta a seis linhas',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Coautores',
 

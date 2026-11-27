@@ -2958,9 +2958,7 @@ export const zhCN: Dict = {
   'commitPanel.restoreConfirm': '恢复',
   'commitPanel.messageLabel': '信息',
   'commitPanel.trailers': '尾注',
-  'commitPanel.coAuthorTrailer': '共同作者：{name}',
-  'commitPanel.showAllBody': '显示全部 · 还有 {n} 行',
-  'commitPanel.showLessBody': '收起',
+  'commitPanel.resizeBody': '拖动以调整描述高度;双击恢复为六行',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': '共同作者',
 

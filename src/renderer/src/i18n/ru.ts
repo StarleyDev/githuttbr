@@ -2958,9 +2958,7 @@ export const ru: Dict = {
   'commitPanel.restoreConfirm': 'Восстановить',
   'commitPanel.messageLabel': 'Сообщение',
   'commitPanel.trailers': 'Трейлеры',
-  'commitPanel.coAuthorTrailer': 'Соавтор: {name}',
-  'commitPanel.showAllBody': 'Показать всё · ещё {n} строк',
-  'commitPanel.showLessBody': 'Свернуть',
+  'commitPanel.resizeBody': 'Перетащите, чтобы изменить размер описания; двойной щелчок — шесть строк',
   'commitPanel.refsLabel': 'Ссылки',
   'commitPanel.coauthorsLabel': 'Соавторы',
 

@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   isCoAuthorTrailer,
   reflowCommitBody,
-  previewCommitBody,
-  splitCommitBody,
-  trailerPersonName
+  splitCommitBody
 } from '../src/renderer/src/lib/commitBody'
 
 describe('the description below a commit subject', () => {
@@ -46,26 +44,9 @@ describe('the description below a commit subject', () => {
 })
 
 describe('trailer chips', () => {
-  it('shows a co-author by name', () => {
-    expect(trailerPersonName('Alex Example <alex@example.com>')).toBe('Alex Example')
-    expect(trailerPersonName('alex@example.com')).toBe('alex@example.com')
+  it('knows a co-author trailer, in any case', () => {
     expect(isCoAuthorTrailer({ key: 'Co-Authored-By', value: 'x' })).toBe(true)
     expect(isCoAuthorTrailer({ key: 'Refs', value: 'x' })).toBe(false)
-  })
-})
-
-describe('the collapsed description', () => {
-  it('shows a short one whole', () => {
-    expect(previewCommitBody('a\nb\nc')).toEqual({ shown: 'a\nb\nc', hidden: 0 })
-    // Hiding one or two lines saves nothing: shown whole.
-    expect(previewCommitBody(Array.from({ length: 8 }, (_, i) => `l${i}`).join('\n')).hidden).toBe(0)
-  })
-
-  it('cuts a long one after the first lines and counts the rest', () => {
-    const text = Array.from({ length: 15 }, (_, i) => `l${i}`).join('\n')
-    const preview = previewCommitBody(text)
-    expect(preview.shown.split('\n')).toHaveLength(6)
-    expect(preview.hidden).toBe(9)
   })
 })
 

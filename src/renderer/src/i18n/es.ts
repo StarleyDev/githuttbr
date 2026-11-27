@@ -2952,9 +2952,7 @@ export const es: Dict = {
   'commitPanel.restoreConfirm': 'Restaurar',
   'commitPanel.messageLabel': 'Mensaje',
   'commitPanel.trailers': 'Trailers',
-  'commitPanel.coAuthorTrailer': 'Coautor: {name}',
-  'commitPanel.showAllBody': 'Mostrar todo · {n} líneas más',
-  'commitPanel.showLessBody': 'Mostrar menos',
+  'commitPanel.resizeBody': 'Arrastra para cambiar el tamaño de la descripción; doble clic vuelve a seis líneas',
   'commitPanel.refsLabel': 'Referencias',
   'commitPanel.coauthorsLabel': 'Coautores',
 

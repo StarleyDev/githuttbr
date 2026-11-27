@@ -2958,9 +2958,7 @@ export const ko: Dict = {
   'commitPanel.restoreConfirm': '복원',
   'commitPanel.messageLabel': '메시지',
   'commitPanel.trailers': '트레일러',
-  'commitPanel.coAuthorTrailer': '공동 작성자: {name}',
-  'commitPanel.showAllBody': '모두 보기 · {n}줄 더',
-  'commitPanel.showLessBody': '접기',
+  'commitPanel.resizeBody': '끌어서 설명 크기 조정, 두 번 클릭하면 여섯 줄로',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': '공동 작성자',
 

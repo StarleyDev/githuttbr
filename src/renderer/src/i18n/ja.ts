@@ -2918,9 +2918,7 @@ export const ja: Dict = {
   'commitPanel.restoreConfirm': '復元',
   'commitPanel.messageLabel': 'メッセージ',
   'commitPanel.trailers': 'トレーラー',
-  'commitPanel.coAuthorTrailer': '共同作成者: {name}',
-  'commitPanel.showAllBody': 'すべて表示 · あと {n} 行',
-  'commitPanel.showLessBody': '折りたたむ',
+  'commitPanel.resizeBody': 'ドラッグで説明の高さを変更、ダブルクリックで6行に戻す',
   'commitPanel.refsLabel': 'ref',
   'commitPanel.coauthorsLabel': '共著者',
 

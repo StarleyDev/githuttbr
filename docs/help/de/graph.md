@@ -106,9 +106,9 @@ Dateien in den Arbeitsbaum zurückholen* übernimmt diese Dateien genau so, wie
 dieser Commit sie hatte: nach einer einzigen Bestätigung werden die
 Arbeitskopien überschrieben — HEAD und Index bleiben unangetastet.
 
-Die **Beschreibung** des Commits — alles unter dem Betreff — steht direkt darunter; von Hand umbrochene Zeilen werden zusammengeführt, damit sie ins Panel passen (Listenpunkte und eingerückte Zeilen bleiben wie geschrieben). Eine lange zeigt ihre ersten Zeilen und **Alles anzeigen**. Die Trailer, die git am Ende führt, werden zu Chips: *Mitautor: Name* für jedes `Co-authored-by`, andere wie `Refs:` wie geschrieben. Ein Commit ohne Beschreibung zeigt nur seinen Betreff.
+Die **Beschreibung** des Commits — alles unter dem Betreff — steht direkt darunter; von Hand umbrochene Zeilen werden zusammengeführt, damit sie ins Panel passen (Listenpunkte und eingerückte Zeilen bleiben wie geschrieben). Sie zeigt bis zu sechs Zeilen und scrollt in sich; ziehen Sie den Griff darunter, um sie bis zur halben Panelhöhe zu vergrößern — die Höhe bleibt gespeichert, ein Doppelklick stellt sechs Zeilen wieder her. Die Trailer, die git am Ende führt, etwa `Refs:`, werden wie geschrieben zu Chips; Mitautoren stehen schon als Avatare in ihrer eigenen Zeile darüber. Ein Commit ohne Beschreibung zeigt nur seinen Betreff.
 
-Autor, Nachricht und Dateisuche bleiben stehen, während Sie durch die Dateien scrollen; eine sehr lange Beschreibung scrollt darüber für sich.
+Autor, Nachricht und Dateisuche bleiben stehen, während Sie durch die Dateien scrollen.
 
 ![Die Beschreibung eines Commits unter dem Betreff, Trailer als Chips](../../screenshots/commit-body.webp)
 

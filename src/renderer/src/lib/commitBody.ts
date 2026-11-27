@@ -39,8 +39,6 @@ const KNOWN_TRAILERS = new Set([
   'cherry-picked-from'
 ])
 
-/** Lines shown before "Show all"; a longer description is collapsed to these. */
-export const COMMIT_BODY_PREVIEW_LINES = 6
 
 /**
  * Splits a full message (`git log --format=%B`) into the description and its
@@ -88,23 +86,7 @@ export function reflowCommitBody(text: string): string {
   return out.join('\n')
 }
 
-/** The name in a `Name <email>` value, which is what a co-author chip shows. */
-export function trailerPersonName(value: string): string {
-  const m = /^(.*?)\s*<[^>]*>\s*$/.exec(value)
-  return (m ? m[1] : value).trim() || value.trim()
-}
-
 /** Whether the trailer names a co-author — git's key, in any case. */
 export function isCoAuthorTrailer(trailer: CommitTrailer): boolean {
   return trailer.key.toLowerCase() === 'co-authored-by'
-}
-
-/**
- * What the collapsed view shows: the first lines, and how many it hides.
- * Nothing is hidden when hiding would save only a line or two.
- */
-export function previewCommitBody(text: string, limit = COMMIT_BODY_PREVIEW_LINES): { shown: string; hidden: number } {
-  const lines = text.split('\n')
-  if (lines.length <= limit + 2) return { shown: text, hidden: 0 }
-  return { shown: lines.slice(0, limit).join('\n'), hidden: lines.length - limit }
 }

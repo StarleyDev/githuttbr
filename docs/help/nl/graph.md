@@ -104,9 +104,9 @@ bestanden terugzetten naar de werkboom* neemt die bestanden precies zoals deze
 commit ze had: na één bevestiging worden de werkkopieën overschreven, zonder
 HEAD of de index aan te raken.
 
-De **beschrijving** van de commit — alles onder het onderwerp — staat er direct onder; met de hand afgebroken regels worden samengevoegd zodat ze in het paneel passen (lijstitems en ingesprongen regels blijven zoals geschreven). Een lange toont de eerste regels en **Alles tonen**. De trailers die git aan het eind bewaart worden labels: *Co-auteur: naam* voor elke `Co-authored-by`, en andere zoals `Refs:` zoals geschreven. Een commit zonder beschrijving toont alleen het onderwerp.
+De **beschrijving** van de commit — alles onder het onderwerp — staat er direct onder; met de hand afgebroken regels worden samengevoegd zodat ze in het paneel passen (lijstitems en ingesprongen regels blijven zoals geschreven). Hij toont tot zes regels en scrolt van binnen; sleep de greep eronder om hem hoger te maken, tot de helft van het paneel — de hoogte wordt onthouden, en dubbelklikken geeft weer zes regels. De trailers die git aan het eind bewaart, zoals `Refs:`, worden labels zoals geschreven; co-auteurs staan al als avatars in hun eigen rij erboven. Een commit zonder beschrijving toont alleen het onderwerp.
 
-De auteur, het bericht en het zoeken in bestanden blijven staan terwijl je door de bestanden scrolt; een heel lange beschrijving scrolt er los boven.
+De auteur, het bericht en het zoeken in bestanden blijven staan terwijl je door de bestanden scrolt.
 
 ![De beschrijving van een commit onder het onderwerp, trailers als labels](../../screenshots/commit-body.webp)
 

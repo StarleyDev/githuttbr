@@ -99,9 +99,9 @@ La lista de archivos se selecciona en grupo con los gestos habituales (clic con
 como estaban en este commit: tras una única confirmación sobrescribe las copias
 de trabajo, sin tocar HEAD ni el índice.
 
-La **descripción** del commit — todo lo que va debajo del asunto — aparece justo debajo, con las líneas cortadas a mano unidas para caber en el panel (los elementos de lista y las líneas con sangría quedan como se escribieron). Una descripción larga muestra sus primeras líneas y **Mostrar todo**. Los trailers que git guarda al final se vuelven etiquetas: *Coautor: nombre* por cada `Co-authored-by`, y otros como `Refs:` tal cual. Un commit sin descripción muestra solo el asunto.
+La **descripción** del commit — todo lo que va debajo del asunto — aparece justo debajo, con las líneas cortadas a mano unidas para caber en el panel (los elementos de lista y las líneas con sangría quedan como se escribieron). Muestra hasta seis líneas y se desplaza por dentro; arrastra el asa de abajo para agrandarla, hasta la mitad del panel — la altura se recuerda y un doble clic vuelve a seis líneas. Los trailers que git guarda al final, como `Refs:`, se vuelven etiquetas tal cual; los coautores ya aparecen como avatares en su propia fila arriba. Un commit sin descripción muestra solo el asunto.
 
-El autor, el mensaje y la búsqueda de archivos se quedan fijos mientras desplazas los archivos; una descripción muy larga se desplaza sola encima de ellos.
+El autor, el mensaje y la búsqueda de archivos se quedan fijos mientras desplazas los archivos.
 
 ![La descripción de un commit bajo su asunto, con los trailers como etiquetas](../../screenshots/commit-body.webp)
 

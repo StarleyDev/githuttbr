@@ -2958,9 +2958,7 @@ export const uk: Dict = {
   'commitPanel.restoreConfirm': 'Відновити',
   'commitPanel.messageLabel': 'Повідомлення',
   'commitPanel.trailers': 'Трейлери',
-  'commitPanel.coAuthorTrailer': 'Співавтор: {name}',
-  'commitPanel.showAllBody': 'Показати все · ще {n} рядків',
-  'commitPanel.showLessBody': 'Згорнути',
+  'commitPanel.resizeBody': 'Перетягніть, щоб змінити розмір опису; подвійний клік — шість рядків',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': 'Співавтори',
 

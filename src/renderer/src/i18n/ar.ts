@@ -2958,9 +2958,7 @@ export const ar: Dict = {
   'commitPanel.restoreConfirm': 'استعادة',
   'commitPanel.messageLabel': 'الرسالة',
   'commitPanel.trailers': 'التذييلات',
-  'commitPanel.coAuthorTrailer': 'مؤلف مشارك: {name}',
-  'commitPanel.showAllBody': 'عرض الكل · {n} أسطر أخرى',
-  'commitPanel.showLessBody': 'عرض أقل',
+  'commitPanel.resizeBody': 'اسحب لتغيير حجم الوصف؛ النقر المزدوج يعيده إلى ستة أسطر',
   'commitPanel.refsLabel': 'المراجع',
   'commitPanel.coauthorsLabel': 'المؤلفون المشاركون',
 

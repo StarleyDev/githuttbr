@@ -2958,9 +2958,7 @@ export const pl: Dict = {
   'commitPanel.restoreConfirm': 'Przywróć',
   'commitPanel.messageLabel': 'Wiadomość',
   'commitPanel.trailers': 'Stopki',
-  'commitPanel.coAuthorTrailer': 'Współautor: {name}',
-  'commitPanel.showAllBody': 'Pokaż wszystko · jeszcze {n} wierszy',
-  'commitPanel.showLessBody': 'Pokaż mniej',
+  'commitPanel.resizeBody': 'Przeciągnij, aby zmienić rozmiar opisu; dwuklik przywraca sześć wierszy',
   'commitPanel.refsLabel': 'Refy',
   'commitPanel.coauthorsLabel': 'Współautorzy',
 

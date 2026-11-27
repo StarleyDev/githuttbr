@@ -2958,9 +2958,7 @@ export const de: Dict = {
   'commitPanel.restoreConfirm': 'Wiederherstellen',
   'commitPanel.messageLabel': 'Nachricht',
   'commitPanel.trailers': 'Trailer',
-  'commitPanel.coAuthorTrailer': 'Mitautor: {name}',
-  'commitPanel.showAllBody': 'Alles anzeigen · {n} weitere Zeilen',
-  'commitPanel.showLessBody': 'Weniger anzeigen',
+  'commitPanel.resizeBody': 'Ziehen, um die Beschreibung zu skalieren; Doppelklick für sechs Zeilen',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Co-Autor:innen',
 

@@ -425,6 +425,9 @@ export interface PanelLayout {
   terminalListWidth: number
   terminalListCollapsed: boolean
   composerUnstagedRatio: number
+  /** Height of a commit's description in the details panel, dragged by the user;
+   *  0 = the default, six lines. Capped at half the panel when shown. */
+  commitBodyHeight: number
   /** Conflict editor: share of the width taken by the left (ours) side. */
   conflictSideRatio: number
   /** Conflict editor: share of the height taken by the two side panes. */
@@ -445,6 +448,7 @@ const DEFAULT_LAYOUT: PanelLayout = {
   terminalListWidth: 220,
   terminalListCollapsed: false,
   composerUnstagedRatio: 0.5,
+  commitBodyHeight: 0,
   conflictSideRatio: 0.5,
   conflictFilesRatio: 0.55,
   composerConflictedCollapsed: false,

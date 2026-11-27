@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ExternalLink, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2, FilePenLine, ChevronDown, ChevronUp } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ExternalLink, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2, FilePenLine } from 'lucide-react'
 import type { CodeSearchHit, CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, shellApi } from '../infrastructure/api'
@@ -27,7 +27,8 @@ import { openWithMenuItems } from '../lib/openWith'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { ChangeSummary } from './ChangeSummary'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
-import { isCoAuthorTrailer, previewCommitBody, reflowCommitBody, splitCommitBody, trailerPersonName } from '../lib/commitBody'
+import { isCoAuthorTrailer, reflowCommitBody, splitCommitBody } from '../lib/commitBody'
+import { ResizeHandle } from './ResizeHandle'
 import { getReferenceHost } from '../lib/references'
 import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 
@@ -68,9 +69,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   // for every commit would slow a big repository's load), so the selected
   // commit's whole message is read here, one commit at a time.
   const [message, setMessage] = useState<{ hash: string; text: string } | null>(null)
-  const [bodyExpanded, setBodyExpanded] = useState(false)
   useEffect(() => {
-    setBodyExpanded(false)
     let live = true
     void gitApi
       .getCommitMessage(repo.path, hash)
@@ -88,11 +87,34 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     () => {
       if (!message || message.hash !== hash) return { text: '', trailers: [] }
       const split = splitCommitBody(message.text)
-      return { ...split, text: reflowCommitBody(split.text) }
+      // Co-authors already show as avatars in their own row above: not again as chips.
+      const trailers = split.trailers.filter((trailer) => !isCoAuthorTrailer(trailer))
+      return { text: reflowCommitBody(split.text), trailers }
     },
     [message, hash]
   )
-  const bodyPreview = useMemo(() => previewCommitBody(body.text), [body.text])
+  // The description shows up to six lines, then scrolls inside its box; a
+  // handle under it sets the box's height (remembered, up to half the panel),
+  // as GitKraken does. The head never shrinks: the file list gives the room.
+  const detailsRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const bodyHeight = useUIStore((s) => s.layout.commitBodyHeight)
+  const setLayout = useUIStore((s) => s.setLayout)
+  const [panelHeight, setPanelHeight] = useState(0)
+  const [bodyOverflows, setBodyOverflows] = useState(false)
+  useEffect(() => {
+    const el = detailsRef.current
+    if (!el) return
+    const observer = new ResizeObserver(() => setPanelHeight(el.clientHeight))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  const bodyMax = Math.max(80, Math.round(panelHeight * 0.5))
+  const bodyShown = bodyHeight > 0 ? Math.min(bodyHeight, bodyMax) : 0
+  useLayoutEffect(() => {
+    const el = bodyRef.current
+    setBodyOverflows(!!el && el.scrollHeight > el.clientHeight + 1)
+  }, [body.text, bodyShown])
 
   // Multi-select over the commit's file list (⌘/Ctrl-click, Shift-click,
   // Shift+↑/↓), so "restore from this commit" can take several files at once.
@@ -318,7 +340,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   }
 
   return (
-    <div className="details">
+    <div className="details" ref={detailsRef}>
       {/* Who, when and what stay put; only the file list scrolls. The head scrolls
           on its own past 60% of the panel, so a long description never hides the files. */}
       <div className="details-info details-info-split">
@@ -434,40 +456,40 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
               <div className="commit-body-block">
                 {body.text && (
                   <div className="commit-body">
-                    <div className="commit-body-text">
+                    <div
+                      ref={bodyRef}
+                      className="commit-body-text"
+                      style={bodyShown ? { maxHeight: bodyShown, height: bodyShown } : undefined}
+                    >
                       {autolink(
-                        emojifyGitmoji(bodyExpanded || !bodyPreview.hidden ? body.text : bodyPreview.shown),
+                        emojifyGitmoji(body.text),
                         remoteWebUrl(refRemote),
                         repo.config?.config?.links?.tickets,
                         getReferenceAutolinkOptions(refHost)
                       )}
                     </div>
-                    {bodyPreview.hidden > 0 && !bodyExpanded && <div className="commit-body-fade" aria-hidden="true" />}
+                    {(bodyOverflows || bodyShown > 0) && (
+                      <ResizeHandle
+                        axis="y"
+                        className="commit-body-resize"
+                        label={t('commitPanel.resizeBody')}
+                        value={bodyShown || bodyRef.current?.clientHeight || 0}
+                        min={60}
+                        max={bodyMax}
+                        onChange={(h) => setLayout({ commitBodyHeight: h })}
+                        onReset={() => setLayout({ commitBodyHeight: 0 })}
+                      />
+                    )}
                   </div>
                 )}
                 {body.trailers.length > 0 && (
                   <ul className="commit-trailers" aria-label={t('commitPanel.trailers')}>
                     {body.trailers.map((trailer, i) => (
                       <li key={i} className="commit-trailer" title={`${trailer.key}: ${trailer.value}`}>
-                        {isCoAuthorTrailer(trailer)
-                          ? interp(t('commitPanel.coAuthorTrailer'), { name: trailerPersonName(trailer.value) })
-                          : `${trailer.key}: ${trailer.value}` /* i18n-ignore git trailer, shown as written */}
+                        {`${trailer.key}: ${trailer.value}` /* i18n-ignore git trailer, shown as written */}
                       </li>
                     ))}
                   </ul>
-                )}
-                {bodyPreview.hidden > 0 && (
-                  <button
-                    type="button"
-                    className="btn ghost small commit-body-toggle"
-                    aria-expanded={bodyExpanded}
-                    onClick={() => setBodyExpanded((open) => !open)}
-                  >
-                    {bodyExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}{' '}
-                    {bodyExpanded
-                      ? t('commitPanel.showLessBody')
-                      : interp(t('commitPanel.showAllBody'), { n: bodyPreview.hidden })}
-                  </button>
                 )}
               </div>
             )}

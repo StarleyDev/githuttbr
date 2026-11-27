@@ -2958,9 +2958,7 @@ export const he: Dict = {
   'commitPanel.restoreConfirm': 'שחזור',
   'commitPanel.messageLabel': 'הודעה',
   'commitPanel.trailers': 'טריילרים',
-  'commitPanel.coAuthorTrailer': 'מחבר שותף: {name}',
-  'commitPanel.showAllBody': 'הצגת הכול · עוד {n} שורות',
-  'commitPanel.showLessBody': 'הצגת פחות',
+  'commitPanel.resizeBody': 'גררו כדי לשנות את גודל התיאור; לחיצה כפולה מחזירה לשש שורות',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'שותפים לכתיבה',
 

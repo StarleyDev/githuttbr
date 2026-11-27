@@ -2959,9 +2959,7 @@ export const nl: Dict = {
   'commitPanel.restoreConfirm': 'Terugzetten',
   'commitPanel.messageLabel': 'Bericht',
   'commitPanel.trailers': 'Trailers',
-  'commitPanel.coAuthorTrailer': 'Co-auteur: {name}',
-  'commitPanel.showAllBody': 'Alles tonen · nog {n} regels',
-  'commitPanel.showLessBody': 'Minder tonen',
+  'commitPanel.resizeBody': 'Sleep om de beschrijving te vergroten of verkleinen; dubbelklik voor zes regels',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Co-auteurs',
 

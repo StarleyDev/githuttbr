@@ -100,9 +100,9 @@ Dosya listesi alışıldık hareketlerle çoklu seçilir
 bir onaydan sonra çalışma kopyalarının üzerine yazar; HEAD'e de indekse de
 dokunmaz.
 
-Commit’in **açıklaması** — başlığın altındaki her şey — hemen altında görünür; elle bölünmüş satırlar panele sığacak şekilde birleştirilir (liste öğeleri ve girintili satırlar yazıldığı gibi kalır). Uzun bir açıklama ilk satırlarını ve **Tümünü göster**i gösterir. git’in sonda tuttuğu ekler etiket olur: her `Co-authored-by` için *Ortak yazar: ad*, `Refs:` gibi diğerleri yazıldığı gibi. Açıklaması olmayan commit yalnızca başlığını gösterir.
+Commit’in **açıklaması** — başlığın altındaki her şey — hemen altında görünür; elle bölünmüş satırlar panele sığacak şekilde birleştirilir (liste öğeleri ve girintili satırlar yazıldığı gibi kalır). En fazla altı satır gösterir ve içinde kayar; büyütmek için altındaki tutamacı panelin yarısına kadar sürükleyin — yükseklik hatırlanır, çift tıklama altı satıra döner. git’in sonda tuttuğu `Refs:` gibi ekler yazıldığı gibi etiket olur; ortak yazarlar zaten yukarıda kendi satırlarında avatar olarak görünür. Açıklaması olmayan commit yalnızca başlığını gösterir.
 
-Dosyaları kaydırırken yazar, mesaj ve dosya araması yerinde kalır; çok uzun bir açıklama üstte kendi başına kayar.
+Dosyaları kaydırırken yazar, mesaj ve dosya araması yerinde kalır.
 
 ![Başlığın altında commit açıklaması, ekler etiket olarak](../../screenshots/commit-body.webp)
 

@@ -101,9 +101,9 @@ L'elenco dei file si seleziona in gruppo con i gesti consueti (clic
 li aveva questo commit: dopo un'unica conferma sovrascrive le copie di lavoro,
 senza toccare né HEAD né l'indice.
 
-La **descrizione** del commit — tutto ciò che segue l’oggetto — appare subito sotto, con le righe spezzate a mano riunite per stare nel pannello (elementi di elenco e righe rientrate restano come scritte). Una descrizione lunga mostra le prime righe e **Mostra tutto**. I trailer che git tiene in fondo diventano etichette: *Coautore: nome* per ogni `Co-authored-by`, e gli altri come `Refs:` così come sono scritti. Un commit senza descrizione mostra solo l’oggetto.
+La **descrizione** del commit — tutto ciò che segue l’oggetto — appare subito sotto, con le righe spezzate a mano riunite per stare nel pannello (elementi di elenco e righe rientrate restano come scritte). Mostra fino a sei righe e scorre al suo interno; trascina la maniglia sotto per allungarla, fino a metà pannello — l’altezza viene ricordata e un doppio clic torna a sei righe. I trailer che git tiene in fondo, come `Refs:`, diventano etichette così come sono scritti; i coautori compaiono già come avatar nella loro riga in alto. Un commit senza descrizione mostra solo l’oggetto.
 
-L’autore, il messaggio e la ricerca dei file restano fermi mentre scorri i file; una descrizione molto lunga scorre da sola sopra di essi.
+L’autore, il messaggio e la ricerca dei file restano fermi mentre scorri i file.
 
 ![La descrizione di un commit sotto l’oggetto, con i trailer come etichette](../../screenshots/commit-body.webp)
 
