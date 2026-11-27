@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat, asksForAction, historyTurns, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
+import { answerRepoChat, asksForAction, followUpOf, historyTurns, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -221,6 +221,37 @@ describe('questions never get actions to propose', () => {
   })
 })
 
+describe('short follow-ups', () => {
+  const asked = [
+    { role: 'user' as const, content: 'Qual a versão do package.json do projeto?' },
+    { role: 'assistant' as const, content: '4.59.1' }
+  ]
+
+  it('carry the question before them', () => {
+    expect(followUpOf([...asked, { role: 'user', content: 'Tem certeza?' }])).toBe(asked[0].content)
+    expect(followUpOf([...asked, { role: 'user', content: 'Verifique' }])).toBe(asked[0].content)
+    expect(
+      followUpOf([...asked, { role: 'user', content: 'Tem certeza?' }, { role: 'assistant', content: 'Sim' }, { role: 'user', content: 'Verifique' }])
+    ).toBe(asked[0].content)
+    expect(followUpOf([...asked, { role: 'user', content: 'Me explique como funciona um motor a combustão por dentro' }])).toBeNull()
+  })
+
+  it('"Tem certeza?" reads the file again, a new subject does not', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const history = [
+      { role: 'user' as const, content: 'Qual a versão do config.json do projeto?' },
+      { role: 'assistant' as const, content: '1.5.0-main' }
+    ]
+    let model = scriptedModel([{ content: 'Sim, 1.5.0-main.', sourceIds: [] }])
+    await answerRepoChat(repo, [...history, { role: 'user', content: 'Tem certeza?' }], cfg)
+    expect(promptOf(model.bodies[0])).toMatch(/demo-main/)
+
+    model = scriptedModel(['Um rolamento reduz o atrito.'])
+    await answerRepoChat(repo, [...history, { role: 'user', content: 'Como é feito um rolamento?' }], cfg)
+    expect(promptOf(model.bodies[0])).not.toMatch(/demo-main/)
+  })
+})
+
 describe('citations', () => {
   const evidence = [{ id: 'E1', path: 'package.json', startLine: 1, endLine: 5, text: '{}' }]
 
@@ -246,6 +277,11 @@ describe('asking for the repository', () => {
     expect(repoRequestOf('@repo the file list', 'my-app')).toBe('the file list')
     expect(repoRequestOf('`@my-app config.json`', 'my-app')).toBe('config.json')
     expect(repoRequestOf('@repository', 'my-app')).toBe('the repository')
+  })
+
+  it('reads a short "repo …" reply that dropped the @', () => {
+    expect(repoRequestOf('repo package.json', 'my-app')).toBe('package.json')
+    expect(repoRequestOf('Repositories are where Git keeps history, and this one has a long story to tell you.', 'my-app')).toBeNull()
   })
 
   it('does not mistake an answer for a request', () => {
