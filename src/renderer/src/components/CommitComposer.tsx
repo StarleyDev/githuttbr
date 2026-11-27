@@ -9,7 +9,7 @@ import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import { MatchSummary, matchesByFile } from './SearchMatches'
 import { Avatar } from './Avatar'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcTypeWithGitmoji, applyCcScope, currentCcScope, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { lintCommit, subjectLength, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcTypeWithGitmoji, applyCcScope, currentCcScope, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
 import { GitmojiPicker } from './GitmojiPicker'
 import { appendTrailers, configTrailers } from '../lib/repoConfig'
 import { isSecretFile } from '../lib/secrets'
@@ -109,7 +109,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     return out
   }, [repo.commits])
   const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
-  const subjLevel = subjectCounterLevel(summary.trim().length)
+  const subjLen = subjectLength(summary)
+  const subjLevel = subjectCounterLevel(subjLen)
   const currentCcType = parseCcPrefix(summary).type
   const applyCcTypeToDraft = (ty: string): void => {
     histIdx.current = -1
@@ -1129,7 +1130,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           />
           {summary.trim().length > 0 && (
             <span className={`commit-counter ${subjLevel}`} title={interp(t('composer.subjectLength'), { ideal: SUBJECT_IDEAL_LEN })}>
-              {summary.trim().length}
+              {subjLen}
             </span>
           )}
           <button className="commit-type commit-coauthor" title={t('composer.addCoAuthor')} onClick={(e) => void openCoAuthorMenu(e)}>

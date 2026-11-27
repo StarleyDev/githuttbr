@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Check, ChevronDown, CloudUpload, FilePen, GitBranch, Settings, ShieldCheck, Sparkles } from 'lucide-react'
 import type { AIConfig } from '../../../shared/types'
 import { modelFor } from '../../../shared/aiAccounts'
+import { usesGeneralAI } from '../../../shared/aiScope'
 import { interp, useT } from '../i18n'
 import { ACCOUNT_STATUS_LABEL, type AccountStatus } from '../lib/aiAccountDraft'
 import { chatCapabilities, fileEditsAllowed } from '../lib/aiBehaviour'
@@ -82,6 +83,7 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
   const saveAIFor = useSettingsStore((state) => state.saveAIFor)
   const keysKnown = useSettingsStore((state) => state.unlocked)
   const openModal = useUIStore((state) => state.openModal)
+  const profile = useSettingsStore((state) => state.settings.profiles.find((p) => p.id === profileId))
   const { catalogs } = useModelCatalogs(ai)
   const [open, setOpen] = useState<PillId | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -151,6 +153,11 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
     <div
       ref={rootRef}
       className="repo-chat-pills"
+      onBlur={(event) => {
+        // Tabbing out of the pills and their popover closes it, as a menu does.
+        const next = event.relatedTarget as Node | null
+        if (open && next && !rootRef.current?.contains(next)) setOpen(null)
+      }}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && open) {
           event.stopPropagation()
@@ -275,6 +282,12 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
               />
             </li>
           </ul>
+          {/* These switches write the AI the profile reads: say whose it is. */}
+          <p className="repo-chat-pop-scope">
+            {!profile || usesGeneralAI(profile)
+              ? t('settings.aiScopeGeneralHint')
+              : interp(t('settings.aiScopeOwnHint'), { profile: profile.name })}
+          </p>
           <button
             type="button"
             className="repo-chat-pop-link"

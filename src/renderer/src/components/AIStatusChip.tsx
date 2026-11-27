@@ -50,9 +50,14 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
   useEffect(() => {
     if (!wantsDetection || clis) return
     let live = true
-    void aiApi.detectCli().then((found) => {
-      if (live) setClis(found)
-    })
+    // A failed detection reads as "nothing found" rather than leaving the
+    // chip waiting for an answer that never comes.
+    void aiApi
+      .detectCli()
+      .catch(() => [])
+      .then((found) => {
+        if (live) setClis(found)
+      })
     return () => {
       live = false
     }

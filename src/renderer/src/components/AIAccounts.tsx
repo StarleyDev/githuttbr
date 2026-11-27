@@ -654,10 +654,20 @@ export function AIAccountsEditor({
   }, [scope, draft, editingId, checks])
 
   useEffect(() => {
-    void aiApi.detectCli().then((found) => {
-      setClis(found)
-      setClisLoaded(true)
-    })
+    let live = true
+    // A failed detection still ends the loading, so CLI accounts do not stay
+    // "not checked" forever; a closed editor ignores the late answer.
+    void aiApi
+      .detectCli()
+      .catch(() => [])
+      .then((found) => {
+        if (!live) return
+        setClis(found)
+        setClisLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [])
 
   const newDraft = draft && !draft.original ? draft : null

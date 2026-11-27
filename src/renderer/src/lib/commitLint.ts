@@ -27,15 +27,24 @@ const CONVENTIONAL = /^(\w+)(\([^)]*\))?!?:\s/
  * Lint a commit message (subject + optional body) against common conventions.
  * Non-blocking — these are hints, not hard gates.
  */
+/**
+ * The subject's length as a reader counts it: the leading gitmoji (and the
+ * space after it) is a label, not words, so "✨ feat: x" measures like "feat: x".
+ */
+export function subjectLength(summary: string): number {
+  return splitGitmoji(summary.trim()).rest.trim().length
+}
+
 export function lintCommit(summary: string, body: string): LintHint[] {
   const hints: LintHint[] = []
   const s = summary.trim()
   if (!s) return hints
 
-  if (s.length > SUBJECT_MAX)
-    hints.push({ level: 'error', key: 'commitLint.subjectTooLong', vars: { len: s.length, max: SUBJECT_MAX } })
-  else if (s.length > SUBJECT_IDEAL)
-    hints.push({ level: 'warn', key: 'commitLint.subjectLong', vars: { len: s.length, ideal: SUBJECT_IDEAL } })
+  const len = subjectLength(s)
+  if (len > SUBJECT_MAX)
+    hints.push({ level: 'error', key: 'commitLint.subjectTooLong', vars: { len, max: SUBJECT_MAX } })
+  else if (len > SUBJECT_IDEAL)
+    hints.push({ level: 'warn', key: 'commitLint.subjectLong', vars: { len, ideal: SUBJECT_IDEAL } })
 
   if (/[.]$/.test(s)) hints.push({ level: 'warn', key: 'commitLint.trailingPeriod' })
 
