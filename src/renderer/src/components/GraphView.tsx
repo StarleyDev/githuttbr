@@ -22,9 +22,9 @@ import { repoIsGitHub, githubCommitUrl, githubTagUrl, enterpriseBasesOf } from '
 import {
   commitMenuCapabilities,
   commitMenuDisabledKey,
-  splitCommitMessage,
   type CommitMenuCapabilities
 } from '../lib/commitMenuCapabilities'
+import { splitCommitMessage } from '../lib/commitMessage'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { togglePin } from '../lib/pinnedBranches'
 import { focusedHashes, focusedStashes, GRAPH_FOCUS_MODES, type FocusInput } from '../lib/graphFocus'

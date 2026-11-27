@@ -20,6 +20,14 @@ commit details panel opens the same editor.
 Pick any commit that is an ancestor of `HEAD` — linear history or not. The
 editor shows its files and message; edit either.
 
+The message gets the same tools as the [commit composer](committing.md): the
+summary with its length counter and the description below it, the style row
+behind the chevron (Conventional type and scope, ticket key, commit style), the
+gitmoji picker, co-authors and the linter's hints. The commit's message is split
+when it loads — the first line becomes the summary, the rest the description —
+and joined back with one blank line when you rewrite. Turning an old `add retry`
+into `fix: add retry` is one pick from the type list.
+
 Editing a file means reading it, so the editor does not squeeze into a dialog:
 it opens in the centre pane, in place of the commit graph — where the conflict
 resolver and the file viewer open — and takes the full width and height of the

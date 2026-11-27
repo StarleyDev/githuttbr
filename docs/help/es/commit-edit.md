@@ -4,7 +4,7 @@ category: Ramas y cirugía
 order: 46
 summary: Reescribe los archivos o el mensaje de un commit histórico en el sitio — con la cascada previsualizada primero.
 keywords: editar commit edit reescribir historia rewrite history amend pasado reword corregir errata typo cascada cascade replay rebase in place cirugía surgery
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # Edita cualquier commit
@@ -21,6 +21,15 @@ mismo editor.
 
 Elige cualquier commit que sea ancestro de `HEAD` — con historia lineal o sin
 ella. El editor muestra sus archivos y su mensaje; edita cualquiera de los dos.
+
+El mensaje tiene las mismas herramientas que el [compositor de
+commits](committing.md): el resumen con su contador de longitud y la descripción
+debajo, la fila de estilo tras la flecha (tipo y ámbito Conventional, clave del
+ticket, estilo de commit), el selector de gitmoji, los coautores y las
+sugerencias del linter. El mensaje del commit se divide al cargarse — la primera
+línea pasa al resumen, el resto a la descripción — y se vuelve a unir con una
+línea en blanco al reescribir. Convertir un viejo `add retry` en `fix: add
+retry` es elegir una opción de la lista de tipos.
 
 Editar un archivo implica leerlo, así que el editor no se encoge en un diálogo:
 se abre en el panel central, en lugar del grafo de commits — donde se abren el

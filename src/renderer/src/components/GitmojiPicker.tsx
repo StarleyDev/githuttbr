@@ -15,11 +15,13 @@ const MAX_HEIGHT = 360
  */
 export function GitmojiPicker({
   value,
-  onPick
+  onPick,
+  disabled = false
 }: {
   /** The gitmoji currently leading the subject, canonical form ('' if none). */
   value: string
   onPick: (emoji: string) => void
+  disabled?: boolean
 }): React.JSX.Element {
   const t = useT()
   const [open, setOpen] = useState(false)
@@ -114,6 +116,7 @@ export function GitmojiPicker({
         title={current ? `${t('composer.gitmoji')} — ${t(GITMOJI_LABELS[current.code])}` : t('composer.gitmoji')}
         aria-haspopup="listbox"
         aria-expanded={open}
+        disabled={disabled}
         onClick={() => (open ? setOpen(false) : openPicker())}
       >
         {value || '🙂'}

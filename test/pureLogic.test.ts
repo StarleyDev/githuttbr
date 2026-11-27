@@ -165,9 +165,9 @@ import { githubCommitUrl, parseGitHubRemote, githubRemote, forkUpstream, prsFrom
 import {
   commitMenuCapabilities,
   commitMenuDisabledKey,
-  splitCommitMessage,
   type CommitMenuInput
 } from '../src/renderer/src/lib/commitMenuCapabilities'
+import { joinCommitMessage, splitCommitMessage } from '../src/renderer/src/lib/commitMessage'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
@@ -619,6 +619,53 @@ describe('splitCommitMessage', () => {
 
   it('treats a one-line message as summary only', () => {
     expect(splitCommitMessage('Fix typo')).toEqual({ summary: 'Fix typo', description: '' })
+  })
+
+  it('drops the blank lines that lead the body', () => {
+    expect(splitCommitMessage('Fix typo\n\n\n\nMore detail.')).toEqual({
+      summary: 'Fix typo',
+      description: 'More detail.'
+    })
+  })
+
+  it('reads CRLF messages the same as LF ones', () => {
+    expect(splitCommitMessage('Fix typo\r\n\r\nLine one.\r\nLine two.\r\n')).toEqual({
+      summary: 'Fix typo',
+      description: 'Line one.\nLine two.'
+    })
+  })
+})
+
+describe('joinCommitMessage', () => {
+  it('puts one blank line between summary and body', () => {
+    expect(joinCommitMessage('Fix typo', 'More detail.')).toBe('Fix typo\n\nMore detail.')
+  })
+
+  it('writes the summary alone when the body is empty or blank', () => {
+    expect(joinCommitMessage('Fix typo', '')).toBe('Fix typo')
+    expect(joinCommitMessage('Fix typo  ', ' \n\n ')).toBe('Fix typo')
+  })
+
+  it('trims trailing whitespace and leading blank lines, keeping indentation', () => {
+    expect(joinCommitMessage('Fix typo ', '\n\n    code();  \n\n')).toBe('Fix typo\n\n    code();')
+  })
+
+  it('normalises CRLF bodies', () => {
+    expect(joinCommitMessage('Fix typo', 'a\r\nb\r\n')).toBe('Fix typo\n\na\nb')
+  })
+
+  it('round-trips a message through split and join', () => {
+    expect(joinCommitMessage('feat: add thing', '')).toBe('feat: add thing')
+    for (const [raw, clean] of [
+      ['feat: add thing', 'feat: add thing'],
+      ['feat: add\n\nBody.\n\nCo-authored-by: A <a@example.com>', 'feat: add\n\nBody.\n\nCo-authored-by: A <a@example.com>'],
+      ['fix: x\n\n\n\nLate body.\n', 'fix: x\n\nLate body.'],
+      ['fix: y\r\n\r\nWindows body.\r\n', 'fix: y\n\nWindows body.']
+    ]) {
+      const parts = splitCommitMessage(raw)
+      expect(joinCommitMessage(parts.summary, parts.description)).toBe(clean)
+      expect(splitCommitMessage(clean)).toEqual(parts)
+    }
   })
 })
 

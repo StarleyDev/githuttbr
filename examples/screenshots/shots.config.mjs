@@ -2775,8 +2775,9 @@ export const shots = [
   },
   {
     // Commit editing across merges: the oldest commit of a history that
-    // carries real merge commits, previewed so the shot shows the merges
-    // banner and the merge steps replaying with their recorded resolutions.
+    // carries real merge commits, reworded with the Conventional type picker and
+    // previewed, so the shot shows the merges banner, the message tools and the
+    // merge steps replaying with their recorded resolutions.
     out: 'commit-edit-merges',
     repos: ['collaborators'],
     themes: ['light'],
@@ -2789,10 +2790,20 @@ export const shots = [
         window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
       }, repo)
       await page.waitForTimeout(900)
-      // Preview arms only once something changed — a reword is enough.
-      await page.locator('.commitedit-message').fill(
-        (await page.locator('.commitedit-message').inputValue()) + ' (reworded)'
-      )
+      // Preview arms only once something changed — a reword is enough. It is
+      // done with the composer's own tools: the style row open, the Conventional
+      // type picked from the list, so the shot shows the editor has them too.
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          profiles: s.profiles.map((p) =>
+            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'conventional' } } : p
+          )
+        }))
+      })
+      await page.locator('.commitedit-message .commit-advanced-toggle').click()
+      await page.waitForTimeout(300)
+      await page.locator('.commitedit-message .commit-style-row select.commit-type').first().selectOption('build')
       await page.locator('.commitedit-cascade-head button').first().click()
       await page.waitForTimeout(1500)
     }

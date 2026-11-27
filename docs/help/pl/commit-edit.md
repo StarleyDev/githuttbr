@@ -4,7 +4,7 @@ category: Gałęzie i operacje na historii
 order: 46
 summary: Przepisz pliki lub wiadomość historycznego commita w miejscu — z podglądem kaskady, zanim cokolwiek się zmieni.
 keywords: edytuj commit przepisz historię popraw literówkę zmień wiadomość kaskada odtwarzanie rebase w miejscu chirurgia edit commit rewrite history amend past reword fix typo cascade replay
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # Edytuj dowolny commit
@@ -21,6 +21,14 @@ edytor.
 
 Wybierz dowolny commit będący przodkiem `HEAD` — historia liniowa czy nie.
 Edytor pokazuje jego pliki i wiadomość; edytuj jedno lub drugie.
+
+Wiadomość ma te same narzędzia co w [kompozytorze commita](committing.md):
+podsumowanie z licznikiem długości i opis pod nim, wiersz stylu za strzałką (typ
+i zakres Conventional, klucz zgłoszenia, styl commita), wybór gitmoji,
+współautorów i podpowiedzi lintera. Wiadomość commita jest dzielona przy
+wczytaniu — pierwszy wiersz trafia do podsumowania, reszta do opisu — i łączona
+z powrotem jedną pustą linią przy przepisywaniu. Zamiana starego `add retry` na
+`fix: add retry` to jeden wybór z listy typów.
 
 Edytowanie pliku oznacza jego czytanie, więc edytor nie wciska się w okno
 dialogowe: otwiera się w środkowym panelu, w miejscu grafu commitów — tam, gdzie

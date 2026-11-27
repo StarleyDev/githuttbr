@@ -4,7 +4,7 @@ category: Branches et chirurgie
 order: 46
 summary: Réécrire les fichiers ou le message d'un commit historique sur place — avec la cascade prévisualisée d'abord.
 keywords: modifier commit edit réécrire historique rewrite history amend passé reword corriger faute typo cascade replay rebase in place chirurgie surgery
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # Modifier n'importe quel commit
@@ -22,6 +22,15 @@ détails du commit ouvre le même éditeur.
 Choisissez n'importe quel commit qui est un ancêtre de `HEAD` — historique
 linéaire ou non. L'éditeur montre ses fichiers et son message ; modifiez l'un ou
 l'autre.
+
+Le message dispose des mêmes outils que le [compositeur de
+commit](committing.md) : le résumé avec son compteur de longueur et la
+description en dessous, la ligne de style derrière le chevron (type et portée
+Conventional, clé de ticket, style de commit), le sélecteur de gitmoji, les
+co-auteurs et les indications du linter. Le message du commit est découpé au
+chargement — la première ligne devient le résumé, le reste la description — puis
+recollé avec une ligne vide au moment de réécrire. Transformer un vieux `add
+retry` en `fix: add retry`, c'est un choix dans la liste des types.
 
 Modifier un fichier, c'est le lire : l'éditeur ne se tasse donc pas dans une
 boîte de dialogue. Il s'ouvre dans le panneau central, à la place du graphe des
