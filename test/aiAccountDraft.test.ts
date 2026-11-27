@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { defaultAIConfig, type AIAccount, type AIConfig, type ModelCatalog } from '../src/shared/types'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import {
+  accountRowRole,
   accountStatus,
   changedFields,
   checkFingerprint,
@@ -14,6 +15,7 @@ import {
   commitDraft,
   isDraftDirty,
   readableReason,
+  setAccountInUse,
   startEditDraft,
   startNewDraft
 } from '../src/renderer/src/lib/aiAccountDraft'
@@ -193,5 +195,46 @@ describe('account status', () => {
     const plan = openai({ provider: 'cli', cli: 'codex', subscription: true, apiKey: '' })
     expect(accountStatus(plan, live(['x']), undefined, true).status).toBe('unchecked')
     expect(accountStatus(plan, undefined, checkFromSubscription(plan, 'connected')).status).toBe('ready')
+  })
+})
+
+describe('the provider in use', () => {
+  const ollama = openai({ id: 'ollama', label: 'Ollama', provider: 'ollama', apiKey: '' })
+  const keyless = openai({ id: 'groq', label: 'Groq', provider: 'groq', apiKey: '' })
+
+  it('marks the account in use and offers Use on every other saved one', () => {
+    const ai = config([openai(), ollama, keyless], 'ollama')
+    expect(accountRowRole(ai, 'ollama')).toBe('in-use')
+    expect(accountRowRole(ai, 'openai')).toBe('use')
+    // A provider with no key is still the user's choice to make.
+    expect(accountRowRole(ai, 'groq')).toBe('use')
+  })
+
+  it('offers nothing on a draft or an account the config does not hold', () => {
+    const ai = config([openai()])
+    expect(accountRowRole(ai, 'openai', true)).toBe('none')
+    expect(accountRowRole(ai, 'anthropic')).toBe('none')
+  })
+
+  it('a default pointing at nothing marks the first account, the one that answers', () => {
+    const ai = config([openai(), ollama], 'gone')
+    expect(accountRowRole(ai, 'openai')).toBe('in-use')
+    expect(accountRowRole(ai, 'ollama')).toBe('use')
+  })
+
+  it('Use moves the default and touches nothing else', () => {
+    const ai = { ...config([openai(), ollama]), assignments: { chat: { accountId: 'openai', model: 'gpt-4o' } } }
+    const next = setAccountInUse(ai, 'ollama')
+    expect(next.defaultAccountId).toBe('ollama')
+    expect(next.accounts).toBe(ai.accounts)
+    expect(next.assignments).toEqual(ai.assignments)
+    expect(accountRowRole(next, 'ollama')).toBe('in-use')
+    expect(accountRowRole(next, 'openai')).toBe('use')
+  })
+
+  it('Use on the account in use, or an unknown id, returns the same config', () => {
+    const ai = config([openai(), ollama])
+    expect(setAccountInUse(ai, 'openai')).toBe(ai)
+    expect(setAccountInUse(ai, 'missing')).toBe(ai)
   })
 })

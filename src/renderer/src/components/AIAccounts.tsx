@@ -46,6 +46,7 @@ import { interp, useT, type TranslationKey } from '../i18n'
 import { modelPickerView, type ModelPickerMode } from '../lib/modelPicker'
 import {
   ACCOUNT_STATUS_LABEL,
+  accountRowRole,
   accountStatus,
   changedFields,
   checkFingerprint,
@@ -58,6 +59,7 @@ import {
   commitDraft,
   isDraftDirty,
   readableReason,
+  setAccountInUse,
   startNewDraft,
   type AccountCheck,
   type AccountDraft,
@@ -278,7 +280,7 @@ function AccountCard({
   clis,
   onEdit,
   onDelete,
-  onMakeDefault,
+  onUse,
   onRefresh,
   onSave,
   onSaveAnyway,
@@ -287,7 +289,7 @@ function AccountCard({
 }: {
   ai: AIConfig
   account: AIAccount
-  /** A draft not yet added: Cancel instead of Delete, and never a default. */
+  /** A draft not yet added: Cancel instead of Delete, and never in use. */
   isNew: boolean
   /** Changes waiting for Save. False in the commit-on-edit mode. */
   dirty: boolean
@@ -306,7 +308,8 @@ function AccountCard({
   clis: DetectedCli[]
   onEdit: (next: AIAccount) => void
   onDelete: () => void
-  onMakeDefault: () => void
+  /** Puts this account in use at once — a choice, not part of the draft. */
+  onUse: () => void
   onRefresh: () => void
   onSave: () => void
   onSaveAnyway: () => void
@@ -316,7 +319,7 @@ function AccountCard({
   const t = useT()
   const openModal = useUIStore((s) => s.openModal)
   const preset = aiProviderPreset(account.provider)
-  const isDefault = !isNew && ai.defaultAccountId === account.id
+  const role = accountRowRole(ai, account.id, isNew)
   const models = catalog?.models ?? preset.models
   const detected = clis.find((c) => c.binary === (account.cli ?? 'claude'))
   const failure = failedSave && check && !check.ok ? check : undefined
@@ -358,13 +361,18 @@ function AccountCard({
         ) : (
           <>
             <StatusBadge view={status} />
-            {isDefault ? (
-              <span className="ai-account-badge">
-                <Check size={12} /> {t('settings.defaultAccount')}
+            {role === 'in-use' ? (
+              <span className="ai-account-badge in-use" title={t('settings.accountInUseTitle')}>
+                <Check size={12} /> {t('settings.accountInUse')}
               </span>
             ) : (
-              <button type="button" className="btn ghost small" onClick={onMakeDefault}>
-                {t('settings.makeDefault')}
+              <button
+                type="button"
+                className="btn primary small"
+                title={interp(t('settings.accountUseTitle'), { name: accountLabel(account) })}
+                onClick={onUse}
+              >
+                {t('settings.accountUse')}
               </button>
             )}
           </>
@@ -819,6 +827,13 @@ export function AIAccountsEditor({
     setSetup(false)
   }
 
+  /** One click, saved at once: which provider answers is a choice, not an edit
+   *  to hold in a draft. A pending draft of any account is left as it is. */
+  const putAccountInUse = (id: string): void => {
+    const next = setAccountInUse(latest.current.ai, id)
+    if (next !== latest.current.ai) onChange(next)
+  }
+
   const deleteAccount = (id: string): void => {
     const remaining = accounts.filter((a) => a.id !== id)
     if (remaining.length === 0) return
@@ -855,6 +870,7 @@ export function AIAccountsEditor({
         {accounts.map((a) => {
           const active = !setup && !newDraft && a.id === saved?.id
           const view = statusOf(a, a.id)
+          const role = accountRowRole(ai, a.id)
           const select = (): void => {
             if (active) return
             leaveDraft(() => {
@@ -868,7 +884,7 @@ export function AIAccountsEditor({
               tabIndex={0}
               aria-selected={active}
               key={a.id}
-              className={`ai-accounts-item${active ? ' active' : ''}`}
+              className={`ai-accounts-item${active ? ' active' : ''}${role === 'in-use' ? ' in-use' : ''}`}
               onClick={select}
               onKeyDown={(e) => {
                 if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
@@ -878,13 +894,32 @@ export function AIAccountsEditor({
             >
               <div className="ai-accounts-item-main">
                 <span className="ai-accounts-item-name">{accountLabel(a)}</span>
-                {a.id === ai.defaultAccountId && <span className="ai-accounts-item-default">{t('settings.defaultAccount')}</span>}
+                {role === 'in-use' && (
+                  <span className="ai-accounts-item-in-use" title={t('settings.accountInUseTitle')}>
+                    <Check size={11} /> {t('settings.accountInUse')}
+                  </span>
+                )}
                 {editDraft && editDraft.original?.id === a.id && dirty && (
                   <span className="ai-accounts-item-unsaved" title={t('settings.accountUnsaved')} aria-label={t('settings.accountUnsaved')}>
                     <CircleDot size={11} />
                   </span>
                 )}
                 <StatusBadge view={view} />
+                {role === 'use' && (
+                  <button
+                    type="button"
+                    className="btn primary small ai-accounts-item-use"
+                    title={interp(t('settings.accountUseTitle'), { name: accountLabel(a) })}
+                    aria-label={interp(t('settings.accountUseTitle'), { name: accountLabel(a) })}
+                    onClick={(e) => {
+                      // Using a provider is not opening it: the row keeps its selection.
+                      e.stopPropagation()
+                      putAccountInUse(a.id)
+                    }}
+                  >
+                    {t('settings.accountUse')}
+                  </button>
+                )}
               </div>
               {view.status === 'failing' && (
                 <div className="ai-accounts-item-reason">
@@ -962,7 +997,7 @@ export function AIAccountsEditor({
             setCheck(id, undefined)
             deleteAccount(id)
           }}
-          onMakeDefault={() => onChange({ ...ai, defaultAccountId: shown.id })}
+          onUse={() => putAccountInUse(shown.id)}
           onRefresh={() => (dirty ? void test(shown, shownKey) : void reload(shown))}
           onSave={() => void save()}
           onSaveAnyway={() => {
@@ -992,7 +1027,7 @@ export function AIAccountsEditor({
                 value={accountId}
                 onChange={(e) => onChange({ ...ai, assignments: assignFeatureAccount(ai, feature, e.target.value) })}
               >
-                <option value="">{t('settings.useDefaultAccount')}</option>
+                <option value="">{t('settings.useAccountInUse')}</option>
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
                     {accountLabel(a)}

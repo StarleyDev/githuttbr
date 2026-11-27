@@ -1,6 +1,13 @@
 import type { TranslationKey } from '../i18n'
 import type { AIAccount, AIConfig, ModelCatalog, SubscriptionTest } from '../../../shared/types'
-import { accountConnectionKey, accountNeedsKey, newAccount, nextAccountId } from '../../../shared/aiAccounts'
+import {
+  accountConnectionKey,
+  accountFor,
+  accountNeedsKey,
+  findAccount,
+  newAccount,
+  nextAccountId
+} from '../../../shared/aiAccounts'
 import { redactSecrets } from '../../../shared/redact'
 
 /**
@@ -234,4 +241,28 @@ export function changedFields(draft: AccountDraft | null): Set<keyof AIAccount> 
     if ((draft.original[field] ?? '') !== (draft.account[field] ?? '')) out.add(field)
   }
   return out
+}
+
+/**
+ * What a provider's row offers at its right edge: the "In use" pill on the
+ * account answering every task without a provider of its own, a one-click
+ * "Use" on every other saved one, and nothing on a draft — an unsaved provider
+ * cannot be put in use before it exists.
+ *
+ * "In use" follows what actually answers, so a `defaultAccountId` left pointing
+ * at nothing marks the first account, the one `accountFor` falls back to.
+ * A row's status never hides the button: putting a "No key" provider in use is
+ * the user's call, and its pill keeps saying what is wrong.
+ */
+export type AccountRowRole = 'in-use' | 'use' | 'none'
+
+export function accountRowRole(ai: AIConfig, accountId: string, isDraft = false): AccountRowRole {
+  if (isDraft || !findAccount(ai, accountId)) return 'none'
+  return accountFor(ai)?.id === accountId ? 'in-use' : 'use'
+}
+
+/** The config with a saved account put in use. An unknown id changes nothing. */
+export function setAccountInUse(ai: AIConfig, accountId: string): AIConfig {
+  if (!findAccount(ai, accountId) || ai.defaultAccountId === accountId) return ai
+  return { ...ai, defaultAccountId: accountId }
 }
