@@ -10,9 +10,14 @@ import { emojifyGitmoji } from '../../../shared/gitmoji'
 import { guessLanguage } from '../lib/highlight'
 import { CodeEditor } from './CodeEditor'
 import { CommitAIGenerate } from './CommitAIGenerate'
+import { CommitMessageEditor } from './CommitMessageEditor'
+import { joinCommitMessage, splitCommitMessage } from '../lib/commitMessage'
 import { useCommitGeneration } from './useCommitGeneration'
 
 type CommitEditTarget = Pick<CommitEditViewState, 'repoPath' | 'sha' | 'subject'>
+type MessageParts = { summary: string; description: string }
+
+const NO_SCOPES: readonly string[] = []
 
 /** Ask before an action throws away the open editor's unapplied edits. */
 function confirmDiscardCommitEdit(sha: string, onDiscard: () => void): void {
@@ -63,11 +68,16 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const [files, setFiles] = useState<FileEntry[]>([])
   const [drafts, setDrafts] = useState<Record<string, CommitEditFileDraft>>(saved?.files ?? {})
   const [selFile, setSelFile] = useState(saved?.selFile ?? '')
-  const [message, setMessage] = useState<string | null>(saved?.message ?? null)
+  // Summary and description, edited apart like in the composer; null until the
+  // commit's own message (or a restored draft) is in.
+  const [parts, setParts] = useState<MessageParts | null>(() =>
+    saved?.message != null ? splitCommitMessage(saved.message) : null
+  )
   const [preview, setPreview] = useState<CommitEditPreview | null>(null)
   const [busy, setBusy] = useState(false)
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const branch = useRepoStore((s) => s.repos[repoPath]?.branches.current ?? '')
+  const scopes = useRepoStore((s) => s.repos[repoPath]?.config?.config?.commit?.scopes) ?? NO_SCOPES
 
   useEffect(() => {
     let live = true
@@ -76,7 +86,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
         const [i, f] = await Promise.all([gitApi.commitEditInfo(repoPath, sha), gitApi.commitFiles(repoPath, sha)])
         if (!live) return
         setInfo(i)
-        setMessage((m) => m ?? i.message)
+        setParts((p) => p ?? splitCommitMessage(i.message))
         setFiles(f)
       } catch (err) {
         toast('error', err instanceof Error ? err.message : String(err))
@@ -115,8 +125,19 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
     return out
   }, [drafts])
 
+  const summary = parts?.summary ?? ''
+  const description = parts?.description ?? ''
+  // The message the rewrite uses: summary, blank line, body.
+  const message = parts ? joinCommitMessage(parts.summary, parts.description) : null
   const text = message ?? ''
-  const messageChanged = info !== null && message !== null && message.trim() !== info.message.trim()
+  // Compared in the same normal form, so opening a commit whose message has
+  // stray blank lines or CRLFs does not count as an edit.
+  const original = useMemo(() => {
+    if (!info) return ''
+    const loaded = splitCommitMessage(info.message)
+    return joinCommitMessage(loaded.summary, loaded.description)
+  }, [info])
+  const messageChanged = info !== null && message !== null && message !== original
   // Before `info` arrives, a restored draft is the only judge of dirtiness.
   const dirty = Object.keys(edits).length > 0 || messageChanged || (info === null && Boolean(saved?.dirty))
   // Ancestry is the only hard requirement — merges in the range are replayed
@@ -153,6 +174,12 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
     setDrafts((d) => ({ ...d, [path]: { ...d[path], draft } }))
     setPreview(null)
   }
+  const setMessageParts = (next: MessageParts): void => {
+    setParts(next)
+    setPreview(null)
+  }
+  const setSummary = (next: string): void => setMessageParts({ summary: next, description })
+  const setDescription = (next: string): void => setMessageParts({ summary, description: next })
 
   const runPreview = useCallback(async (): Promise<void> => {
     setBusy(true)
@@ -166,7 +193,6 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   }, [repoPath, sha, edits, text, toast])
 
   // AI message from the commit's own diff — works for any commit, not just HEAD.
-  // The message is one field here, so it travels as the draft's summary.
   const generation = useCommitGeneration({
     repoPath,
     branch,
@@ -175,13 +201,8 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
       if (!diff.trim()) toast('info', t('commitPanel.nothingToSummarize'))
       return diff
     },
-    current: { summary: text, description: '' },
-    apply: (draft) => {
-      const next = draft.description ? `${draft.summary}\n\n${draft.description}` : draft.summary
-      setMessage(next)
-      setPreview(null)
-      return { summary: next, description: '' }
-    }
+    current: { summary, description },
+    apply: (draft) => setMessageParts({ summary: draft.summary, description: draft.description })
   })
 
   const apply = (): void => {
@@ -239,23 +260,28 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
         )}
 
         <div className="commitedit-label-row">
-          <label className="commitedit-label" htmlFor="commitedit-message">
+          <label className="commitedit-label" htmlFor="commitedit-summary">
             {t('commitEdit.message')}
           </label>
         </div>
-        <textarea
-          id="commitedit-message"
-          className="commitedit-message"
-          value={text}
-          disabled={!editable}
-          readOnly={generation.state.phase === 'generating'}
-          rows={3}
-          onChange={(e) => {
-            setMessage(e.target.value)
-            setPreview(null)
-          }}
-        />
-        {aiEnabled && <CommitAIGenerate gen={generation} disabled={!editable} />}
+        <div className="commitedit-message">
+          {/* Keyed on the load: the ticket field reads its key from the summary
+              once, when it mounts, and the summary only arrives with the commit. */}
+          <CommitMessageEditor
+            key={parts ? 'loaded' : 'loading'}
+            repoPath={repoPath}
+            branch={branch}
+            scopes={scopes}
+            summary={summary}
+            description={description}
+            setSummary={setSummary}
+            setDescription={setDescription}
+            disabled={!editable}
+            readOnly={generation.state.phase === 'generating'}
+            summaryId="commitedit-summary"
+            afterDescription={aiEnabled && <CommitAIGenerate gen={generation} disabled={!editable} />}
+          />
+        </div>
 
         <div className="commitedit-split">
           <div className="commitedit-files">

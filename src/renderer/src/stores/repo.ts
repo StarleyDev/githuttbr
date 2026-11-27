@@ -59,7 +59,7 @@ import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '..
 import { effectiveProfileId } from '../lib/repoProfile'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
-import { splitCommitMessage } from '../lib/commitMenuCapabilities'
+import { splitCommitMessage } from '../lib/commitMessage'
 import { t, interp, type TranslationKey } from '../i18n'
 
 /** Repos already warned this session about pushing tracked secrets (don't nag). */

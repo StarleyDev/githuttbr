@@ -4,7 +4,7 @@ category: Dallanma ve cerrahi
 order: 46
 summary: Geçmiş bir commit'in dosyalarını veya mesajını yerinde yeniden yazın — zincirleme etki önce önizlenir.
 keywords: commit düzenleme geçmişi yeniden yazma eski commit mesaj düzeltme yazım hatası zincirleme yeniden oynatma yerinde rebase cerrahi edit commit rewrite history amend past reword fix typo cascade replay rebase in place surgery
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # Herhangi bir commit'i düzenleyin
@@ -21,6 +21,14 @@ Commit ayrıntıları panelindeki kalem düğmesi de aynı düzenleyiciyi açar.
 `HEAD`'in atası olan herhangi bir commit'i seçin — geçmiş doğrusal olsun ya da
 olmasın. Düzenleyici dosyalarını ve mesajını gösterir; ikisinden birini
 düzenleyin.
+
+Mesaj, [commit düzenleyicisindeki](committing.md) araçların aynısına sahiptir:
+uzunluk sayacıyla özet ve altında açıklama, okun arkasındaki stil satırı
+(Conventional türü ve kapsamı, bilet anahtarı, commit stili), gitmoji seçici,
+ortak yazarlar ve linter ipuçları. Commit mesajı yüklenirken bölünür — ilk satır
+özet, geri kalanı açıklama olur — ve yeniden yazarken tek bir boş satırla tekrar
+birleştirilir. Eski bir `add retry` mesajını `fix: add retry` yapmak, tür
+listesinden tek bir seçimdir.
 
 Bir dosyayı düzenlemek onu okumak demektir; bu yüzden düzenleyici bir iletişim
 kutusuna sıkıştırılmaz: commit grafiğinin yerine, orta bölmede açılır — çakışma

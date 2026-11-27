@@ -4,7 +4,7 @@ category: Branches & Eingriffe
 order: 46
 summary: Dateien oder Nachricht eines historischen Commits an Ort und Stelle umschreiben — die Kaskade wird vorher als Vorschau gezeigt.
 keywords: commit bearbeiten edit historie umschreiben rewrite history amend vergangenheit reword tippfehler typo korrigieren kaskade cascade replay rebase in place eingriff surgery
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # Beliebige Commits bearbeiten
@@ -22,6 +22,15 @@ bearbeiten**, Text ändern, fertig. Der Stift-Button im Commit-Details-Panel
 Wähle einen beliebigen Commit, der ein Vorfahre von `HEAD` ist — lineare
 Historie oder nicht. Der Editor zeigt seine Dateien und seine Nachricht;
 bearbeite eines von beidem.
+
+Die Nachricht bekommt dieselben Werkzeuge wie der
+[Commit-Composer](committing.md): die Zusammenfassung mit ihrem Längenzähler und
+darunter die Beschreibung, die Stilzeile hinter dem Pfeil (Conventional-Typ und
+-Scope, Ticket-Schlüssel, Commit-Stil), die Gitmoji-Auswahl, Co-Autoren und die
+Hinweise des Linters. Die Nachricht des Commits wird beim Laden aufgeteilt — die
+erste Zeile wird zur Zusammenfassung, der Rest zur Beschreibung — und beim
+Umschreiben mit einer Leerzeile wieder zusammengefügt. Aus einem alten `add
+retry` ein `fix: add retry` zu machen, ist ein Griff in die Typliste.
 
 Eine Datei zu bearbeiten heißt, sie zu lesen — deshalb quetscht sich der Editor
 nicht in einen Dialog: Er öffnet sich im mittleren Bereich anstelle des

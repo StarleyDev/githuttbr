@@ -4,7 +4,7 @@ category: Branches & ingrepen
 order: 46
 summary: Herschrijf de bestanden of het bericht van een historische commit ter plekke — met de cascade eerst als preview.
 keywords: commit bewerken edit herschrijven rewrite geschiedenis history amend verleden reword typfout typo fix cascade replay rebase ter plekke ingreep surgery
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # Elke commit bewerken
@@ -21,6 +21,15 @@ editor.
 
 Kies eender welke commit die een voorouder van `HEAD` is — lineaire geschiedenis
 of niet. De editor toont zijn bestanden en bericht; bewerk een van beide.
+
+Het bericht krijgt dezelfde hulpmiddelen als de
+[commitopsteller](committing.md): de samenvatting met de lengteteller en de
+beschrijving eronder, de stijlrij achter de pijl (Conventional-type en -scope,
+ticketsleutel, commitstijl), de gitmoji-kiezer, co-auteurs en de hints van de
+linter. Het bericht van de commit wordt bij het laden gesplitst — de eerste
+regel wordt de samenvatting, de rest de beschrijving — en bij het herschrijven
+weer samengevoegd met één lege regel. Van een oude `add retry` een `fix: add
+retry` maken is één keuze uit de typelijst.
 
 Een bestand bewerken betekent het lezen, dus de editor perst zich niet in een
 dialoogvenster: hij opent in het middelste paneel, in plaats van de

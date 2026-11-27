@@ -18378,20 +18378,8 @@ button.insights-row:hover { background: var(--bg-2); }
 .commitedit-banner.warn { background: color-mix(in srgb, var(--yellow, #f5a524) 14%, transparent); color: var(--yellow, #b8860b); }
 .commitedit-label { font-size: 11px; font-weight: 600; color: var(--text-2); }
 .commitedit-label-row { display: flex; align-items: center; gap: 6px; }
-.commitedit-message {
-  width: 100%;
-  resize: vertical;
-  font-family: var(--mono, monospace);
-  /* Same setting as the editor below it, so raising the code font size does
-     not leave the message the one small thing on the screen. */
-  font-size: var(--code-font-size, 12px);
-  line-height: 1.55;
-  background: var(--bg-0);
-  color: var(--text-0);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
+/* The composer's message tools (CommitMessageEditor), laid out as in the commit box. */
+.commitedit-message { display: flex; flex-direction: column; gap: 8px; }
 /* min-height keeps the editor usable in a short window; flex: 1 does the rest. */
 .commitedit-split { display: flex; gap: 10px; flex: 1; min-height: 200px; }
 .commitedit-files {
