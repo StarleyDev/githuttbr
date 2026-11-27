@@ -263,11 +263,15 @@ export class InvalidAIResponse extends Error {
 /** True when native json_schema was rejected or exhausted its own validation retries. */
 function rejectsJsonSchema(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
-  // Gemini words it as "The specified schema produces a constraint that has too
-  // many states for serving" — no response_format or json_schema in sight — when
-  // a union-heavy schema (the chat's actions) is too complex for it to compile.
+  // Every OpenAI-compatible provider words a refused schema its own way — Gemini
+  // says "The specified schema produces a constraint that has too many states",
+  // naming neither response_format nor json_schema — and a gateway relays
+  // whatever the model behind it says. So any 400/422 to a request that carried
+  // the schema earns one retry without it; auth (401/403), a missing model (404)
+  // and rate limits (429) do not, since dropping the schema cannot fix those.
   const rejectedFormat =
-    /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured|\bschema\b/i.test(msg)
+    /failed \((400|422)\)/.test(msg) ||
+    (/failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg))
   const exhaustedValidation =
     /structured_output_validation_error|failed to produce a schema-valid structured response/i.test(msg)
   return rejectedFormat || exhaustedValidation
