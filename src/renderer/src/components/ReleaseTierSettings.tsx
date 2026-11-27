@@ -102,6 +102,8 @@ export function ReleaseTierSettings(): React.JSX.Element {
                 <input
                   type="color"
                   aria-label={t('settings.releaseTone.custom')}
+                  // Not a radio, so it says it is the chosen one this way.
+                  aria-current={isCustomReleaseTone(tiers.tones[tier]) ? 'true' : undefined}
                   value={isCustomReleaseTone(tiers.tones[tier]) ? tiers.tones[tier] : CUSTOM_START}
                   onChange={(e) => pick(tier, e.target.value as ReleaseTone)}
                 />

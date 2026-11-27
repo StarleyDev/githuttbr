@@ -184,7 +184,7 @@ kalır, çünkü çalıştığını kanıtlamak bir isteme mal olur.
 ### Kullanımdaki sağlayıcı
 
 **Göreve göre model** altında kendi sağlayıcısı olmayan her görevi tek bir
-sağlayıcı yanıtlar. Onun satırı **Kullanımda** olarak işaretlenir — adının hemen ardından — ve listedeki yerinde kalır. Genel yapay zekâ ve
+sağlayıcı yanıtlar. Onun kartı, diğer kartlarda **Kullan** olan yerde yeşil bir **Kullanımda** ile biter ve listedeki yerinde kalır. Yeşil yalnızca kullanımda demektir: yanıt veren ama kullanımda olmayan bir sağlayıcı sakin bir gri-mavi ile **Hazır** der. Genel yapay zekâ ve
 kendi yapay zekâsı olan bir profil, her biri kendi kullanımdaki sağlayıcısına
 sahiptir; liste o an düzenlediğini değiştirir.
 
@@ -208,7 +208,8 @@ için hiçbir şey değiştirmez ve Ayarlar dışında bunu söyleyen bir şey y
 deponun altındaki durum çubuğu artık söylüyor. **Yapay zekâ:** _sağlayıcı_
 düğmesi, kullanılan profil için yanıt veren sağlayıcıyı durumunu gösteren bir
 noktayla adlandırır — yeşil **Hazır**, kırmızı **Yanıt vermiyor**, kehribar
-**Anahtar yok**, gri **Denetlenmedi**.
+**Anahtar yok**, gri **Denetlenmedi**. Sağlayıcı **Hazır** olduğunda düğmenin
+tamamı yeşile döner, böylece çalışan bir yapay zekâ kapalıymış gibi görünmez.
 
 Tıklamak küçük bir panel açar:
 

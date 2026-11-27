@@ -70,10 +70,36 @@ umfärbt, färbt die Symbole mit, eigene und KI-generierte Themes eingeschlossen
 
 Grenzen: Gefärbt werden nur die Hauptknöpfe der Werkzeugleiste, die
 Abschnittsköpfe der Seitenleiste, das Werkzeuge-Menü, die Rechtsklick-Menüs von Commits, Branches und Repositorys, die Einstellungsseiten und
-die Knöpfe der Pull-Request- und der Issue-Seite; andere Menüs, die Zeilen
+die Knöpfe der Pull-Request- und der Issue-Seite sowie die Symbole der
+Statusleiste (der Ordner, Hilfe, Ein Problem melden) — die Versionsnummer bleibt
+grau; andere Menüs, die Zeilen
 innerhalb eines Abschnitts und der Commit-Graph nicht. Eine Menüzeile unter dem
 Mauszeiger behält ihr gewohntes Aussehen, Symbol eingeschlossen. Farbe ist nie der
 einzige Hinweis — jedes Symbol behält seine Beschriftung.
+
+## Farben des Release-Hinweises
+
+Die [Missionskontrolle](mission-control.md) zeigt, wie viele Commits jedes
+Repository seit seinem neuesten Tag gemacht hat. **Farben des Release-Hinweises**
+legt fest, wie diese Zahl aussieht, damit ein überfälliges Release auffällt und ein
+frisches ruhig bleibt.
+
+Es gibt vier Bereiche. Die ersten drei enden bei einer Commit-Zahl, die du wählst;
+der letzte nimmt alles darüber. Jeder Bereich nimmt eine der Farben des Themes oder
+eine **Eigene Farbe…** aus dem Farbfeld am Ende seiner Zeile.
+
+| Bereich | Ab Werk |
+|---|---|
+| Bis 5 Commits | Grau, wie der Rest der Zeile |
+| Danach bis 20 | Gelb |
+| Danach bis 50 | Rot |
+| Mehr als das | Rot |
+
+Eine Theme-Farbe folgt dem Theme, hell wie dunkel. Eine eigene Farbe bleibt in
+jedem Theme genau so, wie sie gewählt wurde — wähle also eine, die auf beiden
+Hintergründen lesbar ist.
+
+![Einstellungen → Themes: die vier Bereiche des Release-Hinweises, jeder mit seinen Farben und einem eigenen Farbfeld](../../screenshots/settings-release-colors.webp)
 
 ## Wie die Einstellungen aufgebaut sind
 

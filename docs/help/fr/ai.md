@@ -185,7 +185,10 @@ coûterait un prompt.
 ### Le fournisseur utilisé
 
 Un fournisseur répond à toute tâche qui n’a pas son propre fournisseur dans
-**Modèle par tâche**. Sa carte porte la mention **Utilisé** — juste après le nom — et reste à sa place dans la liste. L’IA générale et un
+**Modèle par tâche**. Sa carte se termine par un **Utilisé** vert, là où les autres cartes ont
+**Utiliser**, et reste à sa place dans la liste. Le vert ne signifie qu’utilisé :
+un fournisseur qui répond mais n’est pas utilisé affiche **Prêt** dans un
+gris-bleu discret. L’IA générale et un
 profil doté de sa propre IA ont chacun leur fournisseur utilisé ; la liste change
 celui que vous modifiez.
 
@@ -208,7 +211,8 @@ en utiliser un autre sur l'IA générale ne change rien pour ce profil, et hors
 des paramètres rien ne le disait. La barre d'état, en bas d'un dépôt, le dit
 désormais. Son bouton **IA :** _fournisseur_ nomme le fournisseur qui répond
 pour le profil actif, avec un point pour son état — vert **Prêt**, rouge **Ne
-répond pas**, ambre **Pas de clé**, gris **Non vérifié**.
+répond pas**, ambre **Pas de clé**, gris **Non vérifié**. Quand le fournisseur est **Prêt**,
+tout le bouton passe au vert, pour qu’une IA qui fonctionne ne semble pas éteinte.
 
 Un clic ouvre un petit panneau :
 

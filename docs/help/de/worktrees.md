@@ -36,6 +36,9 @@ Ein Worktree vom letzten Monat gerät schnell in Vergessenheit, und die Fragen k
 | 🔒 | Gesperrt – fahre darüber, um den beim Sperren angegebenen Grund zu sehen |
 | **fehlt**, Name durchgestrichen | Der Ordner ist weg; git hat nur noch den Eintrag |
 
+![Der Abschnitt Worktrees: ein Worktree mit nicht committeter Arbeit und Commits
+voraus, einer fehlt, einer gesperrt, und der Radiergummi im Kopf](../../screenshots/worktree-care.webp)
+
 Die Zahlen werden gelesen, wenn der Abschnitt aufgeht, wenn sich der Commit dieses Worktrees bewegt und wenn das Fenster den Fokus zurückbekommt – nicht bei jeder Aktualisierung, denn jede ist ein `git status` in einem anderen Ordner.
 
 Rechtsklick auf eine Zeile für:
@@ -56,6 +59,49 @@ Was diese Aktionen **nicht** tun:
 - Eine Sperre ist eine Absprache zwischen git-Clients, kein Dateischutz: Sie hält nichts außerhalb von git davon ab, den Ordner zu löschen.
 - Der Haupt-Worktree – das Repository selbst – kann weder gesperrt, verschoben noch entfernt werden.
 - Das Entfernen eines Worktrees löscht nie seinen Branch. Lösche ihn in der Branch-Liste, wenn du fertig bist.
+
+### Worktrees im Header gruppieren
+
+Worktree-Tabs öffnen mit Beschriftungen `root · branch`, und das wird schnell breit.
+
+**Ein Projekt in einer Gruppe nimmt seine Worktrees auf.** Liegt das Repository —
+oder einer seiner Worktrees — schon in einer Gruppe, öffnet sich ein neuer
+Worktree in dieser Gruppe, direkt daneben, ohne dass du etwas abhaken musst: der
+Dialog zum Hinzufügen eines Worktrees sagt nur, welche Gruppe, und **In einem
+Worktree öffnen** im Menü eines Branches macht dasselbe, ohne zu fragen. Ein
+Worktree, der später aus **Zuletzt** oder aus einem Ordner geöffnet wird, kommt
+ebenfalls hinein. Zieh den Chip aus der Gruppe, wenn du ihn für sich haben willst.
+
+Für ein Repository in einem eigenen Tab setze im Dialog zum Hinzufügen eines
+Worktrees das Häkchen bei **Gruppierung von Worktrees mit gemeinsamem
+Stamm-Repository anbieten** (standardmäßig aus, gemerkt wie die
+codegraph-Option): Ist die Wurzel als eigenständiger Tab offen, erscheint ein
+Feld **Gruppenname** (vorausgefüllt mit dem Ordnernamen der Wurzel), und beide
+landen in einer neuen Gruppe; ist kein Familienmitglied offen, sagt der Dialog
+nur, dass der Worktree als eigener Tab öffnet. In der Gruppe schrumpfen die Chips
+auf das letzte Stück (`main`, `feature/x`), weil die Gruppe schon sagt, zu welchem
+Repository sie gehören — ein Schalter unter Einstellungen → Layout & Terminal
+behält den vollen Namen `root · branch`, wenn dir das lieber ist. Das Angebot
+fasst nur Worktrees mit derselben Wurzel zusammen — nie fremde Repositorys.
+
+**Einen Worktree-Tab erkennen.** Ein verknüpfter Worktree ist ein zweiter
+Checkout eines Repositorys, und sein Tab sähe sonst genauso aus wie der des
+Repositorys selbst. Deshalb zeigt ein Worktree-Tab statt des Ordnersymbols eine
+grüne **Gabelung** — auf einem Bild-Tab eine kleine Gabelung in der Ecke des
+Bildes —, und sein Tooltip sagt *Worktree von …* mit dem Ordner, in dem er liegt.
+Der Rechtsklick bietet **… öffnen, das Hauptrepository**: Es holt den Tab mit dem
+Haupt-Checkout nach vorn oder öffnet ihn — in der Gruppe des Worktrees, wenn der
+Worktree in einer liegt. Das klappt, egal wie der Worktree geöffnet wurde: aus
+seiner Familie, über **Repository öffnen** oder aus der gescannten Liste, und die
+Worktrees eines Submoduls verweisen auf das Submodul. Grenzen: die Markierung
+sagt, wo der Checkout liegt, nicht welcher Branch es ist; die Worktrees eines
+Bare-Repositorys werden nicht markiert, da es keinen Haupt-Checkout zum Öffnen
+gibt; und ein Hauptrepository, das über einen Ordner-Symlink geöffnet ist, wird
+nicht als schon offen erkannt, also öffnet das Menü es ein zweites Mal unter
+seinem echten Pfad.
+
+![Ein Worktree-Tab mit dem grünen Gabelungssymbol neben dem Tab des
+Hauptrepositorys, sein Menü offen auf submodules-worktrees öffnen, das Hauptrepository](../../screenshots/worktree-tab.webp)
 
 ![Die Worktree- und Submodul-Abschnitte der Seitenleiste, beide gefüllt](../../screenshots/worktrees.webp)
 

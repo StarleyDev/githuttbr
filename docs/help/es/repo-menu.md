@@ -13,7 +13,10 @@ grupo, una ficha dentro de una carpeta anidada, una fila de la lista de
 bienvenida/lanzador, o una fila del desplegable de repositorios de la barra de
 herramientas — y obtienes el mismo menú de ámbito de repositorio. La ficha del
 grupo sigue abriendo el menú del grupo; el clic tiene que caer sobre el
-repositorio.
+repositorio. Cada fila lleva un icono coloreado según su tipo de acción — en la paleta
+predeterminada, abrir algo en verde azulado, el host en verde, nombrar y
+organizar en el color de acento, copiar y marcar con estrella en naranja, quitar
+y cerrar en rojo ([colores de los iconos](themes.md)).
 
 ![El menú contextual del repositorio sobre una ficha agrupada](../../screenshots/repo-context-menu.webp)
 

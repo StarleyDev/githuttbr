@@ -68,10 +68,36 @@ dall'AI.
 
 Limiti: sono colorati solo i pulsanti principali della barra degli strumenti, le
 intestazioni delle sezioni della barra laterale, il menu Strumenti, i menu contestuali di commit, branch e repository, le pagine delle
-Impostazioni e i pulsanti delle pagine di pull request e issue; gli altri menu, le
+Impostazioni, i pulsanti delle pagine di pull request e issue e le icone della
+barra di stato (la cartella, Aiuto, Segnala un problema) — il numero di versione
+resta grigio; gli altri menu, le
 righe dentro una sezione e il grafo dei commit no. Una riga di menu sotto il mouse
 mantiene il suo aspetto abituale, icona compresa. Il colore non è mai l'unico
 indizio: ogni icona mantiene la sua etichetta.
+
+## Colori della nota di release
+
+Il [Mission control](mission-control.md) dice quanti commit ha fatto ogni
+repository dal suo tag più recente. **Colori della nota di release** decide come
+appare quel numero, così una release in ritardo salta all’occhio e una recente
+resta discreta.
+
+Le fasce sono quattro. Le prime tre finiscono a un numero di commit che scegli tu;
+l’ultima prende tutto quello che le supera. Ogni fascia usa uno dei colori del
+tema, o un **Colore personalizzato…** dal campione in fondo alla sua riga.
+
+| Fascia | Di fabbrica |
+|---|---|
+| Fino a 5 commit | Grigio, come il resto della riga |
+| Poi fino a 20 | Giallo |
+| Poi fino a 50 | Rosso |
+| Oltre | Rosso |
+
+Un colore del tema segue il tema, in chiaro e in scuro. Un colore personalizzato
+resta esattamente come l’hai scelto in ogni tema, quindi scegline uno che si legga
+su entrambi gli sfondi.
+
+![Impostazioni → Temi: le quattro fasce della nota di release, ognuna con i suoi colori e un campione personalizzato](../../screenshots/settings-release-colors.webp)
 
 ## Come sono organizzate le Impostazioni
 

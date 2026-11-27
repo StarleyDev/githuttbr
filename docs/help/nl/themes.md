@@ -69,11 +69,36 @@ overschildert, schildert de pictogrammen mee, eigen en door AI gegenereerde
 thema's inbegrepen.
 
 Grenzen: alleen de hoofdknoppen van de werkbalk, de koppen van de zijbalksecties,
-het menu Gereedschap, de rechtsklikmenu's van commits, branches en repository's, de instellingenpagina's en de knoppen van de pull-request- en
-issuepagina krijgen kleur; andere menu's, de rijen binnen een sectie en de
+het menu Gereedschap, de rechtsklikmenu's van commits, branches en repository's, de instellingenpagina's, de knoppen van de pull-request- en
+issuepagina en de pictogrammen van de statusbalk (de map, Help, Probleem melden)
+krijgen kleur — het versienummer blijft grijs; andere menu's, de rijen binnen een sectie en de
 commitgrafiek niet. Een menuregel onder de muis houdt zijn gewone uiterlijk,
 pictogram inbegrepen. Kleur is nooit de enige aanwijzing — elk pictogram houdt zijn
 label.
+
+## Kleuren van de release-notitie
+
+[Mission control](mission-control.md) zegt hoeveel commits elke repository heeft
+gemaakt sinds zijn laatste tag. **Kleuren van de release-notitie** bepaalt hoe dat
+aantal eruitziet, zodat een achterstallige release opvalt en een recente rustig
+blijft.
+
+Er zijn vier bereiken. De eerste drie eindigen bij een aantal commits dat jij
+kiest; het laatste neemt alles daarboven. Elk bereik krijgt een van de kleuren van
+het thema, of een **Eigen kleur…** uit het staal aan het eind van zijn rij.
+
+| Bereik | Standaard |
+|---|---|
+| Tot 5 commits | Grijs, zoals de rest van de rij |
+| Daarna tot 20 | Geel |
+| Daarna tot 50 | Rood |
+| Meer dan dat | Rood |
+
+Een themakleur volgt het thema, licht en donker. Een eigen kleur blijft in elk
+thema precies zoals gekozen, dus kies er een die op beide achtergronden leesbaar
+is.
+
+![Instellingen → Thema’s: de vier bereiken van de release-notitie, elk met zijn kleuren en een eigen staal](../../screenshots/settings-release-colors.webp)
 
 ## Hoe Instellingen is ingedeeld
 

@@ -12,7 +12,10 @@ Kliknij repozytorium prawym przyciskiem — samodzielną kartę, chip wewnątrz
 grupy, chip w zagnieżdżonym folderze, wiersz na liście powitalnej/w launcherze
 albo wiersz w rozwijanej liście repozytoriów na pasku narzędzi — a dostaniesz
 to samo menu dotyczące repozytorium. Sam chip grupy nadal otwiera menu grupy;
-kliknięcie musi trafić w repozytorium.
+kliknięcie musi trafić w repozytorium. Każdy wiersz ma ikonę w kolorze rodzaju
+akcji — w domyślnej palecie otwieranie czegoś jest morskie, host zielony, nazywanie
+i porządkowanie w kolorze akcentu, kopiowanie i gwiazdka pomarańczowe, usuwanie
+i zamykanie czerwone ([kolory ikon](themes.md)).
 
 ![Menu kontekstowe repozytorium na chipie w grupie](../../screenshots/repo-context-menu.webp)
 

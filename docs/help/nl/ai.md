@@ -182,7 +182,7 @@ kosten.
 ### De provider in gebruik
 
 Eén provider beantwoordt elke taak die onder **Model per taak** geen eigen
-provider heeft. Zijn rij is gemarkeerd **In gebruik** — direct na de naam — en blijft op haar plek in de lijst. De algemene AI en een profiel
+provider heeft. Zijn kaart eindigt met een groen **In gebruik**, waar de andere kaarten **Gebruiken** hebben, en blijft op haar plek in de lijst. Groen betekent alleen in gebruik: een provider die antwoordt maar niet in gebruik is, zegt **Klaar** in een rustig grijsblauw. De algemene AI en een profiel
 met een eigen AI hebben elk hun eigen provider in gebruik; de lijst wijzigt die
 je aan het bewerken bent.
 
@@ -205,7 +205,8 @@ een andere aanbieder in gebruik nemen op de algemene AI verandert niets voor dat
 profiel, en buiten Instellingen zei niets dat. De statusbalk onderaan een
 repository zegt het nu. De knop **AI:** _aanbieder_ noemt de aanbieder die voor
 het actieve profiel antwoordt, met een stip voor de status — groen **Klaar**,
-rood **Reageert niet**, oranje **Geen sleutel**, grijs **Niet gecontroleerd**.
+rood **Reageert niet**, oranje **Geen sleutel**, grijs **Niet gecontroleerd**. Is de aanbieder **Klaar**, dan wordt de hele
+knop groen, zodat een werkende AI niet leest alsof hij uit staat.
 
 Een klik opent een klein paneel:
 

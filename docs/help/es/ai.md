@@ -180,7 +180,10 @@ asegurarte. Una **CLI local** con ruta escrita queda en
 ### El proveedor en uso
 
 Un proveedor responde a toda tarea que no tenga un proveedor propio en
-**Modelo por tarea**. Su tarjeta lleva la marca **En uso** — justo después del nombre — y se queda donde está en la lista. La IA general y un perfil
+**Modelo por tarea**. Su tarjeta termina con un **En uso** verde, donde las demás tarjetas tienen
+**Usar**, y se queda donde está en la lista. El verde solo significa en uso: un
+proveedor que responde pero no está en uso dice **Listo** en un gris azulado
+discreto. La IA general y un perfil
 con IA propia tienen cada uno su proveedor en uso; la lista cambia el que estás
 editando.
 
@@ -202,7 +205,9 @@ proveedor en uso en la IA general no cambia nada para ese perfil, y fuera de
 Ajustes nada lo decía. La barra de estado, al pie de un repositorio, ahora lo
 dice. Su botón **IA:** _proveedor_ nombra el proveedor que responde por el
 perfil en uso, con un punto para su estado — verde **Listo**, rojo **No
-responde**, ámbar **Sin clave**, gris **Sin comprobar**.
+responde**, ámbar **Sin clave**, gris **Sin comprobar**. Cuando el proveedor está
+**Listo**, todo el botón se pone verde, para que una IA que funciona no parezca
+apagada.
 
 Al pulsarlo se abre un pequeño panel:
 

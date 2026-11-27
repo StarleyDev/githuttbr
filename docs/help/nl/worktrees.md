@@ -36,6 +36,9 @@ Een worktree van vorige maand ben je snel vergeten, en de vragen komen bij het o
 | 🔒 | Vergrendeld — beweeg erover voor de reden die bij het vergrendelen is opgegeven |
 | **ontbreekt**, naam doorgestreept | De map is weg; git heeft alleen de registratie nog |
 
+![De sectie Worktrees: een worktree met niet-gecommit werk en commits voor, een
+die ontbreekt, een vergrendelde, en de gum in de kop](../../screenshots/worktree-care.webp)
+
 De aantallen worden gelezen als de sectie opengaat, als de commit van die worktree verandert en als het venster de focus terugkrijgt — niet bij elke verversing, want elk is een `git status` in een andere map.
 
 Klik met rechts op een rij voor:
@@ -56,6 +59,49 @@ Wat deze acties **niet** doen:
 - Een vergrendeling is een afspraak tussen git-clients, geen bestandsbeveiliging: niets buiten git wordt tegengehouden de map te wissen.
 - De hoofd-worktree — de repository zelf — kan niet worden vergrendeld, verplaatst of verwijderd.
 - Een worktree verwijderen verwijdert nooit de branch. Verwijder die in de branchlijst als je klaar bent.
+
+### Worktrees groeperen in de kop
+
+Worktree-tabbladen openen met labels als `root · branch`, en dat wordt snel breed.
+
+**Een project in een groep neemt zijn worktrees op.** Staat de repository — of
+een van zijn worktrees — al in een groep, dan opent een nieuwe worktree in die
+groep, ernaast, zonder dat je iets hoeft aan te vinken: het dialoogvenster voor
+een nieuwe worktree zegt alleen welke groep, en **in een worktree openen** uit het
+menu van een branch doet hetzelfde zonder te vragen. Een worktree die je later
+vanuit **Recent** of een map opent, sluit zich er ook bij aan. Sleep de chip uit
+de groep als je hem los wilt hebben.
+
+Voor een repository in een eigen tabblad vink je in het dialoogvenster
+**Voorstellen om worktrees met dezelfde hoofdrepository te groeperen** aan (standaard
+uit, onthouden zoals de codegraph-optie): staat de root open als los tabblad, dan
+verschijnt een veld **Groepsnaam** (vooraf ingevuld met de mapnaam van de root) en
+komen beide in een nieuwe groep; is er geen familielid open, dan zegt het alleen
+dat de worktree als eigen tabblad opent. Binnen de groep krimpen chips tot alleen
+het laatste deel (`main`, `feature/x`), want de groep zegt al bij welke repository
+ze horen — de schakelaar **Korte worktree-namen in groepen** in Instellingen →
+Indeling & terminal houdt de volledige naam `root · branch` als je dat liever hebt.
+Het voorstel voegt alleen worktrees samen die dezelfde root delen — nooit losstaande
+repository's.
+
+**Een worktree-tabblad herkennen.** Een gekoppelde worktree is een tweede checkout
+van een repository, en zijn tabblad zou er anders precies zo uitzien als dat van de
+repository zelf. Daarom toont een worktree-tabblad een groene **vork** in plaats van
+het mappictogram — op een tabblad met afbeelding een kleine vork op de hoek van het
+plaatje — en zegt de tooltip *Worktree van …* met de map waarin hij staat. Klik er
+met rechts op voor **… openen, de hoofdrepository**, dat het tabblad met de
+hoofdcheckout focust, of het opent — binnen de groep van de worktree als die in een
+groep staat. Dit werkt hoe de worktree ook geopend is: vanuit zijn familie, via
+**Repository openen** of uit de gescande lijst, en de worktrees van een submodule
+wijzen naar de submodule. Grenzen: het teken gaat over waar de checkout staat, niet
+over zijn branch; de worktrees van een bare repository krijgen geen teken, want er
+is geen hoofdcheckout om te openen; en een hoofdrepository die via een map met
+symlink open staat, wordt niet als al geopend herkend, dus het menu opent hem een
+tweede keer onder zijn echte pad.
+
+![Een worktree-tabblad met het groene vorkpictogram naast het tabblad van de
+hoofdrepository, met het menu open op submodules-worktrees openen, de
+hoofdrepository](../../screenshots/worktree-tab.webp)
 
 ![De worktree- en submodulesecties van de zijbalk, beide gevuld](../../screenshots/worktrees.webp)
 

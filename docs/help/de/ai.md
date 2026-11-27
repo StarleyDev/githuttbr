@@ -186,7 +186,10 @@ Prompt kosten würde.
 ### Der verwendete Anbieter
 
 Ein Anbieter beantwortet jede Aufgabe, die unter **Modell je Aufgabe** keinen
-eigenen Anbieter hat. Seine Karte trägt **In Verwendung** — direkt hinter dem Namen — und bleibt an ihrem Platz in der Liste. Die allgemeine KI
+eigenen Anbieter hat. Seine Karte endet mit einem grünen **In Verwendung**, wo die anderen Karten
+**Verwenden** haben, und bleibt an ihrem Platz in der Liste. Grün heißt nur in
+Verwendung: ein Anbieter, der antwortet, aber nicht in Verwendung ist, zeigt
+**Bereit** in einem ruhigen Graublau. Die allgemeine KI
 und ein Profil mit eigener KI haben jeweils ihren eigenen verwendeten Anbieter;
 die Liste ändert den, den du gerade bearbeitest.
 
@@ -209,7 +212,8 @@ verwendet: einen anderen Anbieter in der allgemeinen KI zu verwenden ändert fü
 dieses Profil nichts, und außerhalb der Einstellungen sagte das nichts. Die
 Statusleiste am unteren Rand eines Repositorys sagt es jetzt. Ihr Knopf **KI:** _Anbieter_ nennt den Anbieter, der für das aktive Profil antwortet, mit einem
 Punkt für seinen Status — grün **Bereit**, rot **Antwortet nicht**, bernstein
-**Kein Schlüssel**, grau **Nicht geprüft**.
+**Kein Schlüssel**, grau **Nicht geprüft**. Ist der Anbieter **Bereit**, wird der
+ganze Knopf grün, damit eine funktionierende KI nicht wie ausgeschaltet wirkt.
 
 Ein Klick öffnet ein kleines Panel:
 

@@ -180,7 +180,7 @@ dopóki coś go znowu nie zapyta — wybierz **Testuj połączenie** na jego kar
 ### Dostawca w użyciu
 
 Jeden dostawca odpowiada na każde zadanie, które w sekcji **Model dla zadania**
-nie ma własnego dostawcy. Jego wiersz ma oznaczenie **W użyciu** — tuż po nazwie — i zostaje na swoim miejscu na liście. Ogólne AI i
+nie ma własnego dostawcy. Jego karta kończy się zielonym **W użyciu**, tam gdzie inne karty mają **Użyj**, i zostaje na swoim miejscu na liście. Zielony oznacza tylko „w użyciu”: dostawca, który odpowiada, ale nie jest w użyciu, mówi **Gotowy** w spokojnym szaroniebieskim. Ogólne AI i
 profil z własnym AI mają każde własnego dostawcę w użyciu; lista zmienia tego,
 którego właśnie edytujesz.
 
@@ -203,7 +203,8 @@ innego dostawcy w ogólnym AI niczego dla tego profilu nie zmienia, a poza
 Ustawieniami nic o tym nie mówiło. Pasek stanu na dole repozytorium mówi o tym
 teraz. Przycisk **AI:** _dostawca_ podaje dostawcę, który odpowiada dla
 aktywnego profilu, z kropką oznaczającą stan — zielona **Gotowy**, czerwona
-**Nie odpowiada**, bursztynowa **Brak klucza**, szara **Nie sprawdzono**.
+**Nie odpowiada**, bursztynowa **Brak klucza**, szara **Nie sprawdzono**. Gdy dostawca jest **Gotowy**, cały
+przycisk robi się zielony, żeby działające AI nie wyglądało na wyłączone.
 
 Kliknięcie otwiera mały panel:
 

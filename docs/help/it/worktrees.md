@@ -36,6 +36,9 @@ Un worktree creato il mese scorso si dimentica in fretta, e le domande arrivano 
 | 🔒 | Bloccato — passaci sopra per vedere il motivo indicato al blocco |
 | **mancante**, nome barrato | La cartella non c’è più; git ne ha solo la registrazione |
 
+![La sezione Worktree: un worktree con lavoro senza commit e commit in avanti,
+uno mancante, uno bloccato, e la gomma nell’intestazione](../../screenshots/worktree-care.webp)
+
 I conteggi vengono letti all’apertura della sezione, quando il commit di quel worktree cambia e quando la finestra torna in primo piano — non a ogni aggiornamento, perché ognuno è un `git status` dentro un’altra cartella.
 
 Clic destro su una riga per:
@@ -56,6 +59,50 @@ Cosa **non** fanno:
 - Un blocco è un accordo tra client git, non una protezione dei file: non impedisce a nulla fuori da git di eliminare la cartella.
 - Il worktree principale — il repository stesso — non si può bloccare, spostare né rimuovere.
 - Rimuovere un worktree non elimina mai il suo branch. Eliminalo dall’elenco dei branch se hai finito.
+
+### Raggruppare i worktree nell’intestazione
+
+Le schede dei worktree si aprono con etichette `radice · branch`, che diventano
+presto larghe.
+
+**Un progetto tenuto in un gruppo accoglie i suoi worktree.** Quando il
+repository — o uno dei suoi worktree — sta già in un gruppo, un nuovo worktree si
+apre dentro quel gruppo, accanto a lui, senza nulla da spuntare: la finestra di
+aggiunta del worktree dice solo quale gruppo, e **Apri in un worktree** dal menu
+di un branch fa lo stesso senza chiedere. Anche un worktree aperto più tardi da
+**Recenti** o da una cartella ci entra. Trascina la pillola fuori dal gruppo se la
+vuoi a parte.
+
+Per un repository in una scheda tutta sua, spunta **Proponi di raggruppare i
+worktree che condividono lo stesso repository radice** nella finestra di aggiunta
+(disattivato per impostazione predefinita, ricordato come l’opzione codegraph):
+se la radice è aperta in una scheda autonoma compare un campo **Nome del gruppo**
+(precompilato con il nome della cartella della radice) ed entrambi finiscono in
+un nuovo gruppo; senza nessun membro della famiglia aperto, avvisa solo che il
+worktree si apre in una scheda propria. Dentro il gruppo, le pillole si riducono
+alla foglia (`main`, `feature/x`) perché il gruppo dice già a quale repository
+appartengono — un interruttore in Impostazioni → Layout e terminale mantiene il
+nome completo `radice · branch` se preferisci. La proposta unisce solo worktree
+che condividono la stessa radice — non fonde mai repository estranei.
+
+**Riconoscere una scheda di worktree.** Un worktree collegato è un secondo
+checkout di un repository, e la sua scheda sembrerebbe altrimenti identica a
+quella del repository. Per questo una scheda di worktree mostra una
+**biforcazione** verde al posto dell’icona della cartella — su una scheda con
+immagine, una piccola biforcazione nell’angolo dell’immagine — e il suo tooltip
+dice *Worktree di …* con la cartella in cui vive. Con il clic destro c’è **Apri
+…, il repository principale**, che porta in primo piano la scheda che ha già il
+checkout principale, o lo apre — dentro il gruppo del worktree quando il worktree
+sta in uno. Funziona comunque sia stato aperto il worktree: dalla sua famiglia,
+da **Apri un repository** o dall’elenco scansionato, e i worktree di un
+sottomodulo puntano al sottomodulo. Limiti: il segno dice dove vive il checkout,
+non quale sia il suo branch; i worktree di un repository bare non sono segnati,
+perché non c’è un checkout principale da aprire; e un repository principale
+aperto da una cartella collegata con symlink non viene riconosciuto come già
+aperto, quindi il menu lo apre una seconda volta con il suo percorso reale.
+
+![Una scheda di worktree con l’icona verde della biforcazione accanto alla scheda
+del repository principale, con il menu aperto su Apri submodules-worktrees, il repository principale](../../screenshots/worktree-tab.webp)
 
 ![Le sezioni worktree e sottomoduli della barra laterale, entrambe popolate](../../screenshots/worktrees.webp)
 

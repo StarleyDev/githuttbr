@@ -12,7 +12,10 @@ Bir depoya sağ tıklayın — bağımsız bir sekmeye, bir grup içindeki çipe
 bir klasördeki çipe, karşılama/başlatıcı listesindeki bir satıra ya da araç
 çubuğunun depo açılır listesindeki bir satıra — ve hep aynı depo kapsamlı
 menüyü elde edersiniz. Grup çipinin kendisi yine grup menüsünü açar;
-tıklamanın deponun üzerine denk gelmesi gerekir.
+tıklamanın deponun üzerine denk gelmesi gerekir. Her satırda eylemin türüne göre
+renklenmiş bir simge bulunur — varsayılan palette bir şey açmak deniz mavisi,
+sunucu yeşil, adlandırma ve düzenleme vurgu rengi, kopyalama ve yıldızlama
+turuncu, kaldırma ve kapatma kırmızıdır ([simge renkleri](themes.md)).
 
 ![Gruplanmış bir çipteki depo bağlam menüsü](../../screenshots/repo-context-menu.webp)
 

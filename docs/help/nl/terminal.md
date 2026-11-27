@@ -105,6 +105,14 @@ uitvoerbaar bestand. Het uiterlijk van de terminal (thema, lettergrootte,
 lettertypefamilie) staat onder Instellingen → Thema's → Terminalthema en geldt
 direct voor elke sessie.
 
+**Eén terminal met een andere shell.** De **▾** naast de **+** van de
+terminallijst opent *Nieuwe terminal met…*: dezelfde shells — de systeemstandaard,
+elke bruikbare shell in `/etc/shells`, of de Windows-voorinstellingen — met de
+huidige standaard aangevinkt. Kies er een en er opent één terminal met die shell,
+en een splitsing van die terminal opent er ook mee; de standaard in Instellingen
+verandert niet. *Standaardshell wijzigen in Instellingen…* onderaan gaat meteen
+naar de shellkeuze in Instellingen.
+
 Is [Oh My Posh](https://ohmyposh.dev) geïnstalleerd, dan toont de sectie ook elke
 `*.omp.json` onder `%POSH_THEMES_PATH%` met een live voorbeeld — een keuze wordt
 als `POSH_THEME` aan nieuwe terminals meegegeven, zodat een kale

@@ -65,10 +65,33 @@ Kolory pochodzą z motywu — motyw, który przemalowuje swój zielony albo akce
 przemalowuje razem z nim ikony, także motywy własne i generowane przez AI.
 
 Ograniczenia: kolor dostają tylko główne przyciski paska narzędzi, nagłówki
-sekcji paska bocznego, menu Narzędzia, menu kontekstowe commitów, gałęzi i repozytoriów, strony Ustawień oraz przyciski stron pull
-requesta i issue; inne menu, wiersze wewnątrz sekcji i graf commitów nie. Wiersz
+sekcji paska bocznego, menu Narzędzia, menu kontekstowe commitów, gałęzi i repozytoriów, strony Ustawień, przyciski stron pull
+requesta i issue oraz ikony paska stanu (folder, Pomoc, Zgłoś problem) — numer
+wersji zostaje szary; inne menu, wiersze wewnątrz sekcji i graf commitów nie. Wiersz
 menu pod kursorem zachowuje zwykły wygląd, razem z ikoną. Kolor nigdy nie jest
 jedyną wskazówką — każda ikona zachowuje etykietę.
+
+## Kolory notatki o wydaniu
+
+[Centrum dowodzenia](mission-control.md) pokazuje, ile commitów każde repozytorium
+zrobiło od swojego ostatniego tagu. **Kolory notatki o wydaniu** decydują, jak ta
+liczba wygląda, żeby spóźnione wydanie się wyróżniało, a świeże pozostawało ciche.
+
+Są cztery zakresy. Pierwsze trzy kończą się na liczbie commitów, którą wybierasz;
+ostatni obejmuje wszystko powyżej. Każdy zakres dostaje jeden z kolorów motywu albo
+**Własny kolor…** z próbki na końcu swojego wiersza.
+
+| Zakres | Domyślnie |
+|---|---|
+| Do 5 commitów | Szary, jak reszta wiersza |
+| Potem do 20 | Żółty |
+| Potem do 50 | Czerwony |
+| Powyżej | Czerwony |
+
+Kolor motywu podąża za motywem, w jasnym i ciemnym. Własny kolor zostaje dokładnie
+taki, jak wybrany, w każdym motywie, więc wybierz taki, który czyta się na obu tłach.
+
+![Ustawienia → Motywy: cztery zakresy notatki o wydaniu, każdy z kolorami i własną próbką](../../screenshots/settings-release-colors.webp)
 
 ## Jak są ułożone Ustawienia
 

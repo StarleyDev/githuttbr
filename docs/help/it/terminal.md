@@ -103,6 +103,14 @@ eseguibile personalizzato. L’aspetto del terminale (tema, dimensione e famigli
 del carattere) sta in Impostazioni → Temi → Tema del terminale e si applica
 subito a tutte le sessioni.
 
+**Un terminale con un’altra shell.** La **▾** accanto al **+** dell’elenco dei
+terminali apre *Nuovo terminale con…*: le stesse shell — la predefinita di
+sistema, ogni shell utilizzabile in `/etc/shells` o i preset di Windows — con la
+predefinita attuale spuntata. Sceglierne una apre un solo terminale con quella
+shell, e anche una divisione di quel terminale si apre con essa; la predefinita
+nelle Impostazioni non cambia. *Cambia la shell predefinita nelle
+Impostazioni…*, in fondo, porta dritto al selettore.
+
 Se [Oh My Posh](https://ohmyposh.dev) è installato, la sezione elenca anche ogni
 `*.omp.json` in `%POSH_THEMES_PATH%` con anteprima dal vivo — sceglierne uno lo
 inietta come `POSH_THEME` nei nuovi terminali, così un semplice

@@ -65,10 +65,33 @@ Renkler temadan gelir — yeşilini ya da vurgu rengini değiştiren bir tema
 simgeleri de onunla birlikte boyar; özel ve yapay zekâ üretimi temalar dahil.
 
 Sınırlar: yalnızca araç çubuğunun ana düğmeleri, kenar çubuğu bölüm başlıkları,
-Araçlar menüsü, commit'lerin, dalların ve depoların sağ tık menüleri, Ayarlar sayfaları ve pull request ile issue sayfalarının düğmeleri
-renklenir; diğer menüler, bir bölümün içindeki satırlar ve commit grafiği
+Araçlar menüsü, commit'lerin, dalların ve depoların sağ tık menüleri, Ayarlar sayfaları, pull request ile issue sayfalarının düğmeleri
+ve durum çubuğunun simgeleri (klasör, Yardım, Sorun bildir) renklenir — sürüm
+numarası gri kalır; diğer menüler, bir bölümün içindeki satırlar ve commit grafiği
 renklenmez. Üzerine gelinen menü satırı, simgesi dahil her zamanki görünümünü korur.
 Renk asla tek ipucu değildir — her simge etiketini korur.
+
+## Sürüm notu renkleri
+
+[Görev kontrol](mission-control.md), her deponun son etiketinden bu yana kaç commit
+yaptığını söyler. **Sürüm notu renkleri** bu sayının nasıl görüneceğine karar verir;
+böylece gecikmiş bir sürüm göze çarpar, yeni bir sürüm sessiz kalır.
+
+Dört aralık vardır. İlk üçü seçtiğiniz bir commit sayısında biter; sonuncusu
+ötesindeki her şeyi alır. Her aralık temanın renklerinden birini ya da satırının
+sonundaki örnekten bir **Özel renk…** alır.
+
+| Aralık | Varsayılan |
+|---|---|
+| En fazla 5 commit | Gri, satırın geri kalanı gibi |
+| Sonra en fazla 20 | Sarı |
+| Sonra en fazla 50 | Kırmızı |
+| Daha fazlası | Kırmızı |
+
+Bir tema rengi açık ve koyu temada temayı izler. Özel bir renk her temada tam
+seçildiği gibi kalır; bu yüzden iki arka planda da okunan bir renk seçin.
+
+![Ayarlar → Temalar: dört sürüm notu aralığı, her biri renkleri ve bir özel renk örneğiyle](../../screenshots/settings-release-colors.webp)
 
 ## Ayarlar nasıl düzenlenir
 

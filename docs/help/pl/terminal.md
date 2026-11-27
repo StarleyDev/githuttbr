@@ -103,6 +103,13 @@ terminal — PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL albo wł
 plik wykonywalny. Wygląd terminala (motyw, rozmiar i rodzina czcionki) jest w
 Ustawienia → Motywy → Motyw terminala i działa od razu we wszystkich sesjach.
 
+**Jeden terminal z inną powłoką.** **▾** obok **+** na liście terminali otwiera
+*Nowy terminal z…*: te same powłoki — domyślną systemową, każdą użyteczną powłokę
+z `/etc/shells` albo presety Windows — z zaznaczoną obecną domyślną. Wybranie
+jednej otwiera z nią pojedynczy terminal, a podział tego terminala też otwiera się
+z nią; domyślna w Ustawieniach się nie zmienia. *Zmień domyślną powłokę w
+Ustawieniach…* na dole prowadzi prosto do wyboru powłoki w Ustawieniach.
+
 Jeśli zainstalowano [Oh My Posh](https://ohmyposh.dev), sekcja wymienia też każdy
 `*.omp.json` z `%POSH_THEMES_PATH%` z podglądem na żywo — wybrany trafia do
 nowych terminali jako `POSH_THEME`, więc zwykłe `oh-my-posh init pwsh` w Twoim

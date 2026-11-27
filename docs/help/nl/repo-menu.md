@@ -12,7 +12,10 @@ Rechtsklik een repository — een losstaand tabblad, een chip in een groep, een
 chip in een geneste map, een rij in de welkomst-/launcherlijst, of een rij in de
 repositorykeuzelijst van de werkbalk — en je krijgt hetzelfde menu, gericht op
 die repository. De groepschip zelf opent nog steeds het groepsmenu; de klik moet
-op de repository landen.
+op de repository landen. Elke rij heeft een pictogram dat gekleurd is naar het
+soort actie — in het standaardpalet is iets openen teal, de host groen, een naam
+geven en indelen de accentkleur, kopiëren en een ster geven oranje, verwijderen en
+sluiten rood ([pictogramkleuren](themes.md)).
 
 ![Het contextmenu van de repository op een chip in een groep](../../screenshots/repo-context-menu.webp)
 

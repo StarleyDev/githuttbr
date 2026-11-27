@@ -183,7 +183,10 @@ prompt.
 ### Il fornitore in uso
 
 Un fornitore risponde a ogni attività che non ha un fornitore proprio in
-**Modello per attività**. La sua scheda è segnata **In uso** — subito dopo il nome — e resta al suo posto nella lista. L’AI generale e un profilo
+**Modello per attività**. La sua scheda termina con un **In uso** verde, dove le altre schede hanno
+**Usa**, e resta al suo posto nella lista. Il verde significa solo in uso: un
+fornitore che risponde ma non è in uso dice **Pronto** in un grigio-azzurro
+discreto. L’AI generale e un profilo
 con la propria AI hanno ciascuno il proprio fornitore in uso; la lista cambia
 quello che stai modificando.
 
@@ -207,7 +210,8 @@ profilo, e fuori dalle impostazioni niente lo diceva. La barra di stato, in
 fondo a un repository, ora lo dice. Il pulsante **IA:** _fornitore_ indica il
 fornitore che risponde per il profilo attivo, con un punto per il suo stato —
 verde **Pronto**, rosso **Non risponde**, ambra **Nessuna chiave**, grigio **Non
-verificato**.
+verificato**. Quando il fornitore è **Pronto** l’intero pulsante diventa
+verde, così un’IA che funziona non sembra spenta.
 
 Un clic apre un piccolo pannello:
 
