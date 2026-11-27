@@ -15,14 +15,10 @@ import {
   FileCheck,
   FileEdit,
   FilePlus,
-  FolderGit2,
   Gauge,
-  GitCommitHorizontal,
   GitPullRequest,
   Loader2,
-  RefreshCw,
-  Tag,
-  Unlink
+  Tag
 } from 'lucide-react'
 import type { CiState, PullRequest, RepoDetail, RepoPulse } from '../../../shared/types'
 import { tabRepos } from '../../../shared/types'
@@ -60,6 +56,21 @@ import { effectiveProfileId } from '../lib/repoProfile'
  * no host. Module-level, so it lives as long as the window, not the page.
  */
 const hostingCache = new Map<string, HostingSummary>()
+
+/** Keyed by the account asking too: another profile may see other pull requests. */
+function hostingKey(path: string): string {
+  return `${effectiveProfileId(useSettingsStore.getState().settings, path)}\n${path}`
+}
+
+/** The cached answers for these repositories, as the active profiles see them. */
+function hostingView(paths: string[]): Record<string, HostingSummary> {
+  const out: Record<string, HostingSummary> = {}
+  for (const path of paths) {
+    const hit = hostingCache.get(hostingKey(path))
+    if (hit) out[path] = hit
+  }
+  return out
+}
 
 /** At most this many repositories ask their host at once. */
 const HOSTING_CONCURRENCY = 4
@@ -169,6 +180,24 @@ interface Badge {
   n: number
   /** Tooltip, with `{n}` — the bare number says how many, this says of what. */
   title: TranslationKey
+  /** A working-tree count reads as words ("3 modified"), as drawn; sync and
+   *  conflicts keep their arrow or warning icon. */
+  short?: CountKey
+}
+
+/** Keys that carry a `.one` variant beside them. */
+type CountKey =
+  | 'mission.short.staged'
+  | 'mission.short.modified'
+  | 'mission.short.untracked'
+  | 'mission.short.stashes'
+  | 'mission.blocked'
+  | 'mission.clean'
+  | 'mission.repos'
+
+/** A count in words: the `.one` key for 1, the plain one otherwise — the dictionaries have no plural rules. */
+function countLabel(t: Translate, key: CountKey, n: number): string {
+  return interp(t(n === 1 ? (`${key}.one` as TranslationKey) : key), { n: String(n) })
 }
 
 /**
@@ -180,10 +209,10 @@ function rowBadges(p: RepoPulse): Badge[] {
     { cls: 'blocked', Icon: AlertTriangle, n: p.conflicted, title: 'mission.badge.conflicted' },
     { cls: 'behind', Icon: ArrowDownToLine, n: p.behind, title: 'mission.badge.behind' },
     { cls: 'ahead', Icon: ArrowUpFromLine, n: p.ahead, title: 'mission.badge.ahead' },
-    { cls: 'staged', Icon: FileCheck, n: p.staged, title: 'mission.badge.staged' },
-    { cls: 'dirty', Icon: FileEdit, n: p.unstaged, title: 'mission.badge.modified' },
-    { cls: 'untracked', Icon: FilePlus, n: p.untracked, title: 'mission.badge.untracked' },
-    { cls: 'stash', Icon: Archive, n: p.stashes, title: 'mission.badge.stashes' }
+    { cls: 'staged', Icon: FileCheck, n: p.staged, title: 'mission.badge.staged', short: 'mission.short.staged' },
+    { cls: 'dirty', Icon: FileEdit, n: p.unstaged, title: 'mission.badge.modified', short: 'mission.short.modified' },
+    { cls: 'untracked', Icon: FilePlus, n: p.untracked, title: 'mission.badge.untracked', short: 'mission.short.untracked' },
+    { cls: 'stash', Icon: Archive, n: p.stashes, title: 'mission.badge.stashes', short: 'mission.short.stashes' }
   ]
   return all.filter((b) => b.n > 0)
 }
@@ -221,8 +250,10 @@ export function MissionControlPage(): React.JSX.Element {
   const [filter, setFilter] = useState('')
   const [level, setLevel] = useState<PulseLevel | null>(null)
   const [hostFilter, setHostFilter] = useState<'prs' | 'ci' | 'review' | null>(null)
-  const [hosting, setHosting] = useState<Record<string, HostingSummary>>(() => Object.fromEntries(hostingCache))
+  const [hosting, setHosting] = useState<Record<string, HostingSummary>>({})
   const hostingBusy = useRef(false)
+  // A Refresh clicked while a pass is running: run once more when it ends.
+  const hostingAgain = useRef<RepoPulse[] | null>(null)
   const [sort, setSort] = useState<PulseSort>('urgency')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -250,22 +281,37 @@ export function MissionControlPage(): React.JSX.Element {
   // host never stacks a second round of calls behind the first.
   const refreshHosting = useCallback(
     async (list: RepoPulse[], force: boolean): Promise<void> => {
-      if (hostingBusy.current) return
+      if (hostingBusy.current) {
+        if (force) hostingAgain.current = list
+        return
+      }
       hostingBusy.current = true
+      let batch: RepoPulse[] | null = list
+      let forced = force
       try {
-        const now = Date.now()
-        const due = list.filter(
-          (p) => !p.error && p.remoteUrl && (force || hostingDue(hostingCache.get(p.path), p.headSha, now, refreshMs))
-        )
-        let next = 0
-        const worker = async (): Promise<void> => {
-          while (next < due.length) {
-            const p = due[next++]
-            hostingCache.set(p.path, await fetchHosting(p))
-            setHosting(Object.fromEntries(hostingCache))
+        while (batch) {
+          const paths = batch.map((p) => p.path)
+          setHosting(hostingView(paths))
+          const now = Date.now()
+          const due = batch.filter(
+            (p) =>
+              !p.error &&
+              p.remoteUrl &&
+              (forced || hostingDue(hostingCache.get(hostingKey(p.path)), p.headSha, now, refreshMs))
+          )
+          let next = 0
+          const worker = async (): Promise<void> => {
+            while (next < due.length) {
+              const p = due[next++]
+              hostingCache.set(hostingKey(p.path), await fetchHosting(p))
+              setHosting(hostingView(paths))
+            }
           }
+          await Promise.all(Array.from({ length: Math.min(HOSTING_CONCURRENCY, due.length) }, worker))
+          batch = hostingAgain.current
+          hostingAgain.current = null
+          forced = true
         }
-        await Promise.all(Array.from({ length: Math.min(HOSTING_CONCURRENCY, due.length) }, worker))
       } finally {
         hostingBusy.current = false
       }
@@ -450,28 +496,30 @@ export function MissionControlPage(): React.JSX.Element {
   // Recomputed with every refresh, which is when a fetch age can cross the line.
   const stale = useMemo(() => staleFetchTargets(ordered, Date.now()), [ordered])
 
-  const levelChip = (kind: PulseLevel, label: string): React.JSX.Element | null =>
+  const levelChip = (kind: PulseLevel, label: string | CountKey): React.JSX.Element | null =>
     totals[kind] === 0 && kind !== 'clean' ? null : (
       <button
         className={`mc-pill ${kind} ${level === kind ? 'on' : ''}`}
         onClick={() => setLevel((cur) => (cur === kind ? null : kind))}
       >
-        {interp(label, { n: String(totals[kind]) })}
+        {label.startsWith('mission.')
+          ? countLabel(t, label as CountKey, totals[kind])
+          : interp(label, { n: String(totals[kind]) })}
       </button>
     )
 
   return (
     <div className="mc-root">
       <div className="mc-header">
-        <Gauge size={16} className="mc-title-icon" />
+        <Gauge size={18} className="mc-title-icon" />
         <h2>{t('mission.title')}</h2>
         {workspace && <span className="mc-workspace">{workspace}</span>}
-        <span className="mc-repos">{interp(t('mission.repos'), { n: String(rows.length) })}</span>
+        <span className="mc-repos">{countLabel(t, 'mission.repos', rows.length)}</span>
         <span className="mc-summary">
-          {levelChip('blocked', t('mission.blocked'))}
+          {levelChip('blocked', 'mission.blocked')}
           {levelChip('action', t('mission.action'))}
           {levelChip('pending', t('mission.pending'))}
-          {levelChip('clean', t('mission.clean'))}
+          {levelChip('clean', 'mission.clean')}
           {(hostTotals.prs > 0 || hostTotals.ciFailing > 0) && <span className="mc-summary-sep" aria-hidden="true" />}
           {hostTotals.prs > 0 && (
             <button className={`mc-pill prs ${hostFilter === 'prs' ? 'on' : ''}`} onClick={() => toggleHostFilter('prs')}>
@@ -510,7 +558,7 @@ export function MissionControlPage(): React.JSX.Element {
           disabled={busy !== null}
           onClick={() => void run(bulkTargets(ordered).fetchable, 'fetch', '*all')}
         >
-          {busy === '*all' ? <Loader2 size={13} className="spin" /> : <Download size={13} />} {t('mission.fetchAll')}
+          {busy === '*all' && <Loader2 size={13} className="spin" />} {t('mission.fetchAll')}
         </button>
         {stale.length > 0 && (
           <button
@@ -519,12 +567,12 @@ export function MissionControlPage(): React.JSX.Element {
             title={t('mission.fetchStaleHint')}
             onClick={() => void run(stale, 'fetch', '*stale')}
           >
-            {busy === '*stale' ? <Loader2 size={13} className="spin" /> : <Download size={13} />}{' '}
+            {busy === '*stale' && <Loader2 size={13} className="spin" />}{' '}
             {interp(t('mission.fetchStaleButton'), { n: String(stale.length) })}
           </button>
         )}
         <button className="btn ghost small" disabled={loading} onClick={() => void refresh({ force: true })}>
-          <RefreshCw size={13} /> {t('mission.refresh')}
+          {loading && <Loader2 size={13} className="spin" />} {t('mission.refresh')}
         </button>
       </div>
 
@@ -536,10 +584,10 @@ export function MissionControlPage(): React.JSX.Element {
           <ArrowDownToLine size={11} /> {interp(t('mission.totalBehind'), { n: String(grand.behind) })}
         </span>
         <span className="mc-stat">
-          <FileEdit size={11} /> {interp(t('mission.totalDirty'), { n: String(grand.dirty) })}
+          {interp(t('mission.totalDirty'), { n: String(grand.dirty) })}
         </span>
         <span className="mc-stat">
-          <GitCommitHorizontal size={11} /> {interp(t('mission.totalCommits'), { n: String(grand.commits) })}
+          {interp(t('mission.totalCommits'), { n: String(grand.commits) })}
         </span>
         {hostTotals.awaiting > 0 && (
           <button
@@ -631,7 +679,7 @@ export function MissionControlPage(): React.JSX.Element {
                     {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                   </button>
                   <span className={`mc-level ${verdict.level}`} title={reasonsLabel(t, verdict.reasons)}>
-                    <Icon size={14} />
+                    <Icon size={16} />
                   </span>
                   <div className="mc-ident">
                     <span className="mc-line">
@@ -646,9 +694,7 @@ export function MissionControlPage(): React.JSX.Element {
                         <span className="mc-upstream">→ {p.upstream}</span>
                       ) : (
                         p.branch && (
-                          <span className="mc-noupstream">
-                            <Unlink size={10} /> {t('mission.noUpstream')}
-                          </span>
+                          <span className="mc-noupstream">· {t('mission.noUpstream')}</span>
                         )
                       )}
                     </span>
@@ -677,7 +723,13 @@ export function MissionControlPage(): React.JSX.Element {
                         {p.operation && <span className="mc-badge blocked">{t(OP_LABEL[p.operation])}</span>}
                         {badges.map((b) => (
                           <span key={b.cls} className={`mc-badge ${b.cls}`} title={interp(t(b.title), { n: String(b.n) })}>
-                            <b.Icon size={11} /> {b.n}
+                            {b.short ? (
+                              countLabel(t, b.short, b.n)
+                            ) : (
+                              <>
+                                <b.Icon size={11} /> {b.n}
+                              </>
+                            )}
                           </span>
                         ))}
                       </div>
@@ -759,8 +811,9 @@ export function MissionControlPage(): React.JSX.Element {
                   </span>
                   <div className="mc-actions">
                     <button
-                      className="btn ghost small"
+                      className="mc-icon-btn"
                       title={t('mission.fetch')}
+                      aria-label={t('mission.fetch')}
                       disabled={busy !== null}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -770,9 +823,10 @@ export function MissionControlPage(): React.JSX.Element {
                       {busy === `fetch:${p.path}` ? <Loader2 size={12} className="spin" /> : <Download size={12} />}
                     </button>
                     <button
-                      className="btn ghost small"
+                      className="mc-icon-btn"
                       disabled={busy !== null || !p.upstream}
                       title={t('mission.pull')}
+                      aria-label={t('mission.pull')}
                       onClick={(e) => {
                         e.stopPropagation()
                         void run([p.path], 'pull')
@@ -781,13 +835,13 @@ export function MissionControlPage(): React.JSX.Element {
                       {busy === `pull:${p.path}` ? <Loader2 size={12} className="spin" /> : <ArrowDownToLine size={12} />}
                     </button>
                     <button
-                      className="btn ghost small"
+                      className="mc-open"
                       onClick={(e) => {
                         e.stopPropagation()
                         open(p.path)
                       }}
                     >
-                      <FolderGit2 size={12} /> {t('mission.open.row')}
+                      {t('mission.open.row')}
                     </button>
                   </div>
                 </div>

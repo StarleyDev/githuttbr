@@ -114,7 +114,8 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   useLayoutEffect(() => {
     const el = bodyRef.current
     setBodyOverflows(!!el && el.scrollHeight > el.clientHeight + 1)
-  }, [body.text, bodyShown])
+    // The panel's height too: shrinking the window can make the text overflow.
+  }, [body.text, bodyShown, panelHeight])
 
   // Multi-select over the commit's file list (⌘/Ctrl-click, Shift-click,
   // Shift+↑/↓), so "restore from this commit" can take several files at once.
@@ -459,7 +460,8 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                     <div
                       ref={bodyRef}
                       className="commit-body-text"
-                      style={bodyShown ? { maxHeight: bodyShown, height: bodyShown } : undefined}
+                      // A ceiling, not a height: a short description keeps its own size.
+                      style={bodyShown ? { maxHeight: bodyShown } : undefined}
                     >
                       {autolink(
                         emojifyGitmoji(body.text),

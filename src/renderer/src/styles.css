@@ -14293,7 +14293,7 @@ input[type='range']:focus-visible {
 .mc-pill.action { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
 .mc-pill.clean { background: var(--bg-4); color: var(--text-1); }
-.mc-pill.prs { background: color-mix(in srgb, var(--purple) 16%, transparent); color: var(--purple); }
+.mc-pill.prs { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .mc-filter { margin-inline-start: auto; width: 200px; font-size: 12px; padding: 6px 10px; }
 .mc-sorts { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .mc-sort {
@@ -14311,16 +14311,17 @@ input[type='range']:focus-visible {
 .mc-stat { display: inline-flex; align-items: center; gap: 4px; }
 .mc-stat-right { margin-inline-start: auto; }
 .mc-stat-review {
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 1px 6px;
-  background: color-mix(in srgb, var(--yellow) 14%, transparent);
-  color: var(--yellow);
+  border: 0;
+  border-radius: 3px;
+  padding: 0 4px;
+  background: none;
+  color: var(--accent);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
-.mc-stat-review.on { border-color: currentColor; }
+.mc-stat-review:hover,
+.mc-stat-review.on { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Bulk bar, only present while rows are ticked. */
 .mc-bulk {
@@ -14354,7 +14355,7 @@ input[type='range']:focus-visible {
 .mc-row {
   display: grid;
   grid-template-columns:
-    22px 16px 22px minmax(190px, 1.2fr) minmax(190px, 1.4fr) 170px 200px 130px 92px 96px 150px;
+    22px 16px 22px minmax(190px, 1.2fr) minmax(190px, 1.4fr) 170px 200px 130px 92px 96px 118px;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -14365,7 +14366,7 @@ input[type='range']:focus-visible {
 .mc-row-wrap:last-child .mc-row { border-bottom: 0; }
 /* Narrow window: the last commit and the release step aside; the counts stay. */
 @container (max-width: 1100px) {
-  .mc-row { grid-template-columns: 22px 16px 22px minmax(150px, 1fr) 160px 180px 80px 96px 150px; }
+  .mc-row { grid-template-columns: 22px 16px 22px minmax(150px, 1fr) 160px 180px 80px 96px 118px; }
   /* Scoped under .mc-row so they outrank the base rules further down. */
   .mc-row .mc-commit, .mc-row .mc-release { display: none; }
   .mc-row .mc-error { grid-column: span 2; }
@@ -14378,10 +14379,10 @@ input[type='range']:focus-visible {
   padding-block: 8px;
   background: var(--bg-1);
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-2);
+  color: var(--text-3, var(--text-2));
 }
 .mc-head > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mc-head .mc-head-when { text-align: end; }
@@ -14418,7 +14419,7 @@ input[type='range']:focus-visible {
 .mc-where { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); min-width: 0; }
 .mc-branch { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-upstream { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-noupstream { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; color: var(--warn, #d29922); }
+.mc-noupstream { flex: 0 0 auto; white-space: nowrap; }
 .mc-commit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mc-subject { font-size: 13px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-author { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -14459,11 +14460,11 @@ input[type='range']:focus-visible {
 }
 .mc-pr-chip {
   padding: 3px 8px;
-  background: color-mix(in srgb, var(--purple) 16%, transparent);
-  border-color: color-mix(in srgb, var(--purple) 35%, transparent);
-  color: color-mix(in srgb, var(--purple) 80%, var(--text-0));
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: color-mix(in srgb, var(--accent) 80%, var(--text-0));
 }
-.mc-pr-chip:hover { background: color-mix(in srgb, var(--purple) 32%, transparent); border-color: var(--purple); color: var(--text-0); }
+.mc-pr-chip:hover { background: color-mix(in srgb, var(--accent) 32%, transparent); border-color: var(--accent); color: var(--text-0); }
 .mc-pr-chip .mc-go { opacity: 0.55; }
 .mc-pr-chip:hover .mc-go { opacity: 1; }
 .mc-pr-awaiting {
@@ -14489,8 +14490,6 @@ input[type='range']:focus-visible {
 .mc-release-note { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--accent); }
-.mc-activity.blocked { color: var(--danger, #f85149); }
-.mc-activity.pending { color: var(--warn, #d29922); }
 .mc-activity-n { font-size: 11px; color: var(--text-2); white-space: nowrap; }
 .mc-spark { display: block; }
 
@@ -14499,8 +14498,31 @@ input[type='range']:focus-visible {
 .mc-fetched { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 /* The behind count is only as fresh as the last fetch — say so when it is old. */
 .mc-fetched.stale { color: var(--warn, #d29922); }
-/* Always in view, as drawn: the row's actions are not a hover secret. */
-.mc-actions { display: flex; justify-content: flex-end; gap: 4px; flex: 0 0 auto; }
+/* Always in view, as drawn: the row's actions are not a hover secret. Fetch
+   and pull are bare icons in the muted tone; Open is the one filled button. */
+.mc-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex: 0 0 auto; }
+.mc-icon-btn {
+  display: flex;
+  padding: 5px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.mc-icon-btn:hover:not(:disabled) { background: var(--bg-4); color: var(--text-0); }
+.mc-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.mc-open {
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--bg-4);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mc-open:hover { color: var(--text-0); background: color-mix(in srgb, var(--accent) 18%, var(--bg-4)); }
 
 /* Expanded row: what is waiting to be pushed and what is dirty. */
 .mc-detail {

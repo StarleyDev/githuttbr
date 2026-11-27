@@ -1,12 +1,12 @@
 ---
-title: Central de controle
+title: Mission control
 category: Sincronização e vários repositórios
 order: 51
 summary: Todo repositório do workspace numa tela só, o pior primeiro.
 keywords: central de controle mission control painel dashboard todos os repos visão geral status sujo não enviado atrasado workspace
 ---
 
-# Central de controle
+# Mission control
 
 Vinte repositórios, e a pergunta é sempre a mesma: qual deles precisa de mim?
 

@@ -3540,9 +3540,7 @@ export const shots = [
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().setMissionOpen(true))
       await page.waitForSelector('.mc-row', { timeout: 15000 }).catch(() => {})
-      // Expand the busiest row: the pending commits and dirty files are the
-      // part a screenshot can actually teach.
-      await page.click('.mc-row-wrap .mc-expand').catch(() => {})
+      // As the approved mockup draws it: every row collapsed.
       await page.waitForTimeout(900)
     }
   },

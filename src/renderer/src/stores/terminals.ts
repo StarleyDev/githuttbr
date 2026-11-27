@@ -170,8 +170,11 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
     set((s) => {
       const repo = s.byRepo[repoPath]
       if (!repo) return s
-      // A split of a terminal opened with another shell opens with that shell too.
-      const shell = repo.groups.find((g) => g.id === groupId)?.panels.find((p) => !p.launchId && p.shell)?.shell
+      // A split of a terminal opened with another shell opens with that shell
+      // too — the focused panel's, else the first shell panel's.
+      const group = repo.groups.find((g) => g.id === groupId)
+      const focused = group?.panels.find((p) => p.id === group.activePanelId && !p.launchId)
+      const shell = focused ? focused.shell : group?.panels.find((p) => !p.launchId && p.shell)?.shell
       const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, ...(shell ? { shell } : {}) }
       const groups = repo.groups.map((g) =>
         g.id === groupId
