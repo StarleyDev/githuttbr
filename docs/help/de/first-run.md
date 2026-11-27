@@ -4,7 +4,7 @@ category: Erste Schritte
 order: 2
 summary: Der Einrichtungsassistent beim ersten Start — Git-Identität, Hosting-Konten, KI, Darstellung — und was jeder Schritt speichert.
 keywords: onboarding erster start einrichtung assistent willkommen einstellungen importieren git identität konten ki abo api schlüssel ollama lm studio claude code codex überspringen first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Erster Start
@@ -33,7 +33,8 @@ Die linke Spalte listet die Schritte. Ein grüner Haken markiert einen ausgefül
 
 ## Der KI-Schritt
 
-KI ist optional. Wähle eine der drei Karten oder **Überspringen, ohne KI**:
+KI ist optional. Wähle eine der drei Karten oder **Überspringen, ohne KI**, das KI ausschaltet,
+bis du sie unter [Einstellungen → KI](ai.md) einrichtest:
 
 | Karte | Was sie nutzt | Was sie braucht |
 |---|---|---|

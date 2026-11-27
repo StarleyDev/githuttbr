@@ -3,7 +3,7 @@ title: Hosting & Pull Requests
 category: Sync & viele Repos
 order: 56
 summary: PRs überall erstellen; auf GitHub und GitLab reviewen und mergen.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review prüfen freigeben approve mergen issues benachrichtigungen token
+keywords: pull request schließen wieder öffnen aufgeben ablehnen entwurf bereit für review zurück zum entwurf close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review prüfen freigeben approve mergen issues benachrichtigungen token
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -113,6 +113,31 @@ meldet, fällt weg.
 
 Wenn jemand mitten im Review force-pusht, zeigt dir [was sich seitdem geändert hat](range-diff.md)
 genau, was sich bewegt hat.
+
+### Schließen, wieder öffnen und Entwürfe
+
+Versehentlich geöffnet, oder die Arbeit wird nicht mehr gebraucht? Neben dem
+Merge-Bereich schließt **PR schließen** den Pull Request, ohne zu mergen. Es
+fragt vorher und sagt, was bleibt: der Branch, seine Commits und die
+Unterhaltung. Ein geschlossener Pull Request zeigt in der Zeile Status der
+Seitenleiste **PR wieder öffnen**, das das Schließen rückgängig macht.
+
+**Zurück zum Entwurf** macht einen offenen Pull Request wieder zum Entwurf —
+nicht bereit, niemand um ein Review gebeten —, und **Bereit für Review** holt
+einen Entwurf wieder heraus. Jedes macht das andere rückgängig.
+
+| Host | Schließen | Entwurf |
+|---|---|---|
+| GitHub, GitHub Enterprise | Geschlossen | Der Entwurfsstatus des Hosts |
+| GitLab | Geschlossen | Der Titel beginnt mit *Draft:* — GitLabs eigener Weg |
+| Azure DevOps | **Abandoned** (aufgegeben), sein Wort für geschlossen | Der Entwurfsstatus des Hosts |
+| Bitbucket Data Center | **Declined** (abgelehnt), sein Wort für geschlossen | Der Entwurfsstatus des Hosts (8.18 oder neuer) |
+| Forgejo | Geschlossen | Der Titel beginnt mit *WIP:* — Forgejos eigener Weg |
+
+Grenzen: Wer das darf, entscheidet der Host — meist der Autor und die Maintainer
+des Repositorys —, und seine Ablehnung wird so angezeigt, wie er sie formuliert.
+Schließen löscht den Branch nicht; das erledigt [Branches
+aufräumen](branch-cleanup.md).
 
 GitLab-Unterschiede, offen gesagt: GitLab hat keinen einzelnen „Review
 abschicken“-Aufruf, daher nutzt **Freigeben** den Freigabe-Endpunkt, und

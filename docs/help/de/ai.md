@@ -53,6 +53,10 @@ darf, in Abschnitten:
 | **Konflikte & Branches** | Stil der Konfliktlösung, Stil der Branch-Namen, jeweils mit einem Beispiel des Ergebnisses |
 | **Repository-Chat** | Ob der Chat an ist, was er liest, welche Aktionen er vorschlagen darf — siehe [Repository-Chat](repo-chat.md#einstellungen) |
 
+Eine Zeile über den Abschnitten sagt, wessen KI du bearbeitest und wen sie
+erreicht: *allgemeine KI · gilt für Arbeit und Privat*, oder die eigene eines
+Profils.
+
 **Zusätzliche Regeln für Commits** — bis 4.60 *Eigene Anweisungen* — fließen nur in die Erzeugung von Commit-Nachrichten ein: Chat, Erklärungen, Reviews und Branch-Namen lesen sie nicht. Die Vorschau ist ein festes Beispiel, kein Modellaufruf: sie zeigt die Form des gewählten Stils, nicht das, was die KI für deine Änderung schreibt.
 
 ![Commit-Nachrichten](../../screenshots/settings-ai-commits.webp)
@@ -84,6 +88,14 @@ CLI, in der du bereits angemeldet bist.
 Voreinstellungen gibt es für **OpenAI, Anthropic, Google Gemini, OpenRouter,
 Groq, Mistral** und **Ollama** (vollständig lokal), dazu jeder
 OpenAI-kompatible Endpunkt.
+
+**Ein Schlüssel verlässt diesen Rechner nie unverschlüsselt.** Ein Konto mit
+Schlüssel erreicht seinen Endpunkt über `https://`, oder über einfaches
+`http://` nur auf diesem Computer (`localhost`, `127.x`, `::1`). Ein Aufruf, der
+den Schlüssel über `http://` an einen anderen Host schicken würde, wird
+abgelehnt, bevor etwas hinausgeht, und sagt das. Ein Endpunkt ohne Schlüssel —
+Ollama auf einem anderen Rechner in deinem Netz — funktioniert weiter über
+`http://`.
 
 Anthropic nutzt seine eigene `/v1/messages`-API statt eines OpenAI-förmigen
 Aufrufs, deshalb funktionieren Claude-Modelle jetzt wirklich, statt es nur zu
@@ -208,25 +220,53 @@ Wechsel den Anbieter nicht, den er in Verwendung nimmt.
 
 ### Ein Abo statt eines API-Schlüssels nutzen
 
-Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu. Das erste Konto der allgemeinen KI ist danach **In Verwendung**.
+Wähle unter **Einstellungen → KI** **Mein Abo verwenden**. Beim [ersten
+Start](first-run.md) findet die Karte **Mein Abo** im KI-Schritt Claude Code
+oder Codex und testet es in einem Schritt; wird keins gefunden, fällt sie auf
+genau diese Einrichtung zurück. Wähle den Plan, den du nutzt, und öffne dann
+**Dokumentation** für die Installationsanleitung des Anbieters. Ist sie
+installiert, wähle **ChatGPT (Codex) verbinden** oder **Claude (Claude Code)
+verbinden**. Die CLI des Anbieters öffnet ihre Anmeldeseite im Browser und
+speichert ihre eigene Sitzung. Eine bestehende Abo-Sitzung wird wiederverwendet.
+**Abbrechen** stoppt eine laufende Verbindung. Eine Anmeldung, die länger als
+drei Minuten dauert, wird beendet und kann wiederholt werden.
 
-Klicke nach der CLI-Installation auf Verbinden, um die Anmeldeseite des Anbieters zu öffnen. Eine laufende Verbindung kannst du abbrechen.
+| Plan | Benötigte CLI | Anmeldung im Terminal |
+| --- | --- | --- |
+| ChatGPT mit Codex-Zugang | Codex CLI | `codex login` und ChatGPT wählen |
+| Claude mit Claude-Code-Zugang | Claude Code | `claude auth login` und dein Abo-Konto wählen |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+Das Verbinden testet auch die Sitzung. Hast du dich im Terminal angemeldet,
+wähle **Verbindung testen**. GitHuttBr prüft die Anmeldemethode der CLI und
+sendet einen kurzen Testprompt aus einem leeren temporären Verzeichnis. Die
+Anfrage zählt zum Kontingent deines Anbieters. Nach **Verbunden** wähle
+**Anbieter hinzufügen**. Das erste Konto der allgemeinen KI wird **In
+Verwendung** gesetzt. Bei einer bestehenden Einrichtung wähle **Verwenden** in
+seiner Zeile oder weise unten einzelne Funktionen zu. Um die Einrichtung beim
+ersten Start zu überspringen, wähle **Überspringen, ohne KI** und komm in die
+Einstellungen zurück, wenn du so weit bist.
 
-Der Test sendet eine kurze Anfrage an den Anbieter und nutzt dein Kontingent. Kontingent erschöpft. Versuche es nach der Erneuerung erneut.
+Findet GitHuttBr die CLI nicht, installiere sie oder gib ihren vollständigen
+Programmpfad ein und teste erneut. Ist die Anmeldung abgelaufen oder nutzt die
+CLI einen API-Schlüssel, melde dich mit dem Abo-Konto an. Erreichst du ein
+Nutzungslimit, warte, bis das Kontingent des Anbieters zurückgesetzt wird.
 
 ![Mein Abo verwenden](../../screenshots/ai-subscription.webp)
 
-Wähle den Anbieter **Lokale CLI**, um mit einer Agent-CLI zu antworten, die auf
-diesem Rechner bereits installiert und angemeldet ist — `claude`, `gemini` oder
-`codex`. GitHuttBr startet das Programm mit deiner Eingabe und liest die Antwort;
-es gibt keinen API-Schlüssel einzufügen und kein Token wird gespeichert.
+Für die manuelle Einrichtung wähle den Anbieter **Lokale CLI**, um mit einer
+Agent-CLI zu antworten, die auf diesem Rechner bereits installiert und
+angemeldet ist — `claude`, `gemini`, `codex` oder `devin`. GitHuttBr startet das
+Programm mit deiner Eingabe und liest die Antwort; es gibt keinen API-Schlüssel
+einzufügen und kein Token wird gespeichert.
 
 GitHuttBr führt nur einen Befehl aus, den du als Konto eingerichtet hast, und
 immer mit einer Argumentliste statt einer Shell — nichts aus einem Diff oder
 einem Branch-Namen kann also als Befehl gelesen werden.
+
+Jeder Aufruf startet die CLI mit dem Repository als Arbeitsverzeichnis, sodass
+Agent-CLIs wie Devin die Dateien öffnen können, nach denen du fragst, statt
+blind zu antworten. Funktionen ohne Repository (Theme-Erzeugung) starten sie aus
+dem eigenen Verzeichnis der App.
 
 > **Das ist nicht privater als ein API-Schlüssel.** Deine Eingaben erreichen
 > weiterhin denselben Anbieter, unter deinem eigenen Konto, genau wie mit einem
@@ -275,12 +315,31 @@ Kein Anbieter veröffentlicht eine sortierte oder kuratierte Liste, die Aufberei
 | **Commit-Nachricht** | Zusammenfassung (und optional ein Body) aus deinem gestagten Diff, im gewählten Stil |
 | **Diese Datei erklären** | Erklärung in Alltagssprache in einem Seitenpanel — Normal, Knapp, ELI5… sogar Pirat |
 | **Hover zum Erklären** | Halte <kbd>⇧</kbd> und zeige auf einen Bezeichner für eine einzeilige Erklärung, plus die Zeilen, auf die sie sich stützt |
+| **KI-Bearbeitung der Auswahl** | Wähle Zeilen in einer Datei, beschreibe die Änderung, und das Modell schreibt genau diese Zeilen in den Editor-Entwurf um |
 | **Konfliktlösung** | Schlägt einen Merge in der editierbaren Ausgabe vor — wendet nie automatisch an |
 | **PR-Review** | Fasst einen Diff zusammen und markiert Risiken, jedes verankert an einer echten `path:line` |
 | **PR-Beschreibung** · **Branch-Namen** | Entworfen aus den Commits und dem Diff des Branches |
 | **Themes** · **Graph-Paletten** | Aus einem Prompt generiert |
 | **Smartes Staging** | Vorschläge, was in diesen Commit gehört |
+| **[Repository-Chat](repo-chat.md)** | Verankerte Fragen plus geprüfte Dateiänderungen, gefolgt von validierten Git-Aktionen |
 | **KI-Konfigurationsassistent** | Erzeugt Assistenten-Konfigurationsdateien (Anweisungen, Agenten, Hooks) für das Repository — der Zauberstab-Knopf in der Kopfzeile des Chat-Panels |
+
+### Nur die ausgewählten Zeilen bearbeiten
+
+Ziehe in der Dateiansicht über die Zeilen, die sich ändern sollen, und drücke
+**KI-Bearbeitung…** (oder klicke mit rechts auf eine Zeile und wähle es im
+Menü). Eine Leiste unten zeigt den gewählten Bereich und nimmt deine Anweisung
+entgegen — „benenne diese Variable um“, „füge Null-Prüfungen hinzu“, „übersetze
+diese Strings“. Das Modell sieht die gewählten Zeilen plus etwas Kontext
+drumherum und liefert nur den Ersatz für diesen Bereich, der im
+**Editor-Entwurf** landet statt auf der Festplatte. Du prüfst ihn dort und
+speicherst oder verwirfst über den normalen Bearbeitungsablauf, also wird nichts
+geschrieben, bevor du es sagst. Es funktioniert mit jedem eingerichteten
+Backend, nicht nur mit Agent-CLIs, weil die Antwort Text ist und kein
+Tool-Aufruf. Die Grenzen: Es schreibt jeweils einen zusammenhängenden Bereich
+um, kann keine ganzen Dateien anlegen oder löschen, und eine Auswahl, die über
+Diff-Hunks hinweg reicht, wird abgelehnt — wähle stattdessen in der Dateiansicht
+aus.
 
 ## Verankert, nicht geraten
 
@@ -295,8 +354,16 @@ einem Diff nur die Hunks, die auf dem Bildschirm sichtbar sind. Liegt eine
 Definition anderswo, sagt es das, statt sie zu erfinden. Antworten werden pro
 Dateiversion gecacht.
 
+[Repository-Chat](repo-chat.md) arbeitet genauso: Er darf nur die Auszüge
+zitieren, die er bekommen hat, und die zweistufige Anfrage wählt diese aus der
+Liste der von Git verfolgten Dateien, nicht aus etwas, das das Modell schreibt.
+Schlägt er eine Änderung vor, validiert GitHuttBr exakte Dateiaktionen,
+berechnet ihre Diffs lokal und führt dann folgende Git-Aktionen nach der
+eingestellten Freigaberegel aus.
+
 **Maskierte Secret-Dateien werden nie gesendet.** Ebenso wenig Dateien, die
-unter die Regeln zur Secret-Maskierung fallen.
+unter die Regeln zur Secret-Maskierung fallen — auch eine Datei, die du von Hand
+an den Chat anheftest; sie wird mit einer Begründung abgelehnt statt gelesen.
 
 ## Wenn ein Modell langsam ist oder nicht mehr antwortet
 
@@ -340,10 +407,11 @@ Konflikte, Themes, das Wiki — denn sie laufen alle über denselben Aufruf.
 - CLI-Antworten sind langsamer als ein direkter API-Aufruf: das Programm startet
   pro Anfrage eine ganze Sitzung.
 - Schlüssel werden pro Konto im Schlüsselbund deines Systems abgelegt. Ein Konto
-  zu löschen löscht seinen Schlüssel.
+  zu löschen löscht seinen Schlüssel — es fragt vorher, und es gibt kein
+  Rückgängig.
 - Der Wechsel zurück zu einer Version vor der allgemeinen KI verliert die
   Schlüssel der allgemeinen KI: Diese Version weiß nicht, wo sie liegen, und
   verwirft sie beim Speichern. Die Konten bleiben; gib die Schlüssel neu ein. Die
   eigene KI eines Profils ist nicht betroffen.
 
-**Siehe auch:** [Repo-Wiki](repo-wiki.md) · [Sicherheit & Secrets](security.md)
+**Siehe auch:** [Repository-Chat](repo-chat.md) · [Repo-Wiki](repo-wiki.md) · [Sicherheit & Secrets](security.md)

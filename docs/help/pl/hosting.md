@@ -3,7 +3,7 @@ title: Hosting i pull requesty
 category: Synchronizacja i wiele repozytoriów
 order: 56
 summary: Twórz PR-y wszędzie; recenzuj je i merguj na GitHubie i GitLabie.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps recenzja zatwierdź merge zgłoszenia review approve issues
+keywords: zamknij pr otwórz ponownie porzuć odrzuć szkic gotowy do przeglądu przenieś do szkicu close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request GitHub GitLab Bitbucket Azure DevOps recenzja zatwierdź merge zgłoszenia review approve issues
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -109,6 +109,29 @@ jej wczytaniu. Wiersz, którego host nie podaje, jest pomijany.
 
 Jeśli ktoś zrobi force-push w trakcie recenzji, [co się od tego czasu zmieniło](range-diff.md)
 pokaże dokładnie, co się przesunęło.
+
+### Zamykanie, ponowne otwieranie i szkice
+
+Otwarty przez pomyłkę albo praca nie jest już potrzebna? Obok pola merge
+**Zamknij PR** zamyka go bez scalania. Najpierw pyta i mówi, co zostaje: gałąź,
+jej commity i rozmowa. Zamknięty pull request pokazuje **Otwórz PR ponownie** w
+wierszu Status paska bocznego, co cofa zamknięcie.
+
+**Przenieś do szkicu** cofa otwarty pull request do szkicu — niegotowy, nikt nie
+został poproszony o przegląd — a **Gotowy do przeglądu** wyprowadza szkic z
+powrotem. Jedno cofa drugie.
+
+| Host | Zamknięcie | Szkic |
+|---|---|---|
+| GitHub, GitHub Enterprise | Zamknięty | Stan szkicu u hosta |
+| GitLab | Zamknięty | Tytuł zaczyna się od *Draft:* — własny sposób GitLaba |
+| Azure DevOps | **Abandoned** (porzucony), jego słowo na zamknięty | Stan szkicu u hosta |
+| Bitbucket Data Center | **Declined** (odrzucony), jego słowo na zamknięty | Stan szkicu u hosta (8.18 lub nowszy) |
+| Forgejo | Zamknięty | Tytuł zaczyna się od *WIP:* — własny sposób Forgejo |
+
+Ograniczenia: kto może to zrobić, decyduje host — zwykle autor i opiekunowie
+repozytorium — a jego odmowa jest pokazywana jego słowami. Zamknięcie nie usuwa
+gałęzi; robi to [sprzątanie gałęzi](branch-cleanup.md).
 
 Różnice GitLaba, wprost: GitLab nie ma jednego wywołania „wyślij recenzję”, więc
 **zatwierdź** używa jego endpointu zatwierdzeń, a **poproś o zmiany** cofa twoje

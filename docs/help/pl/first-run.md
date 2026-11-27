@@ -4,7 +4,7 @@ category: Zacznij tutaj
 order: 2
 summary: Kreator pierwszego uruchomienia — tożsamość Git, konta hostingu, AI, wygląd — i co zapisuje każdy krok.
 keywords: onboarding pierwsze uruchomienie kreator konfiguracja powitanie import ustawień tożsamość git konta ai subskrypcja klucz api ollama lm studio claude code codex pomiń first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Pierwsze uruchomienie
@@ -33,7 +33,8 @@ Lewa kolumna pokazuje kroki. Zielony znaczek oznacza krok wypełniony, kreska kr
 
 ## Krok AI
 
-AI jest opcjonalna. Wybierz jedną z trzech kart albo **Pomiń, bez AI**:
+AI jest opcjonalna. Wybierz jedną z trzech kart albo **Pomiń, bez AI**, co wyłącza AI,
+dopóki nie skonfigurujesz jej w [Ustawienia → AI](ai.md):
 
 | Karta | Czego używa | Czego potrzebuje |
 |---|---|---|

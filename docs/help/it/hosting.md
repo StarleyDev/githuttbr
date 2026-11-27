@@ -3,7 +3,7 @@ title: Hosting e pull request
 category: Sincronizzazione e più repo
 order: 56
 summary: Crea PR ovunque; su GitHub e GitLab puoi anche recensirle e fonderle.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review revisione approva merge issue
+keywords: chiudi pull request riapri abbandona rifiuta bozza pronta per la revisione torna a bozza close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review revisione approva merge issue
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -111,6 +111,29 @@ omessa.
 
 Se qualcuno fa force-push a metà revisione, [cosa è cambiato da allora](range-diff.md)
 ti mostra esattamente cosa si è spostato.
+
+### Chiudere, riaprire e bozze
+
+Aperta per errore, o il lavoro non serve più? Accanto al riquadro di merge,
+**Chiudi PR** la chiude senza fare il merge. Chiede prima e dice cosa resta: il
+branch, i suoi commit e la conversazione. Una pull request chiusa mostra
+**Riapri PR** nella riga Stato della barra laterale, che annulla la chiusura.
+
+**Torna a bozza** riporta una pull request aperta a bozza — non pronta, nessuno
+chiamato a revisionarla — e **Pronta per la revisione** fa uscire di nuovo una
+bozza. Ognuno annulla l’altro.
+
+| Host | Chiusura | Bozza |
+|---|---|---|
+| GitHub, GitHub Enterprise | Chiusa | Lo stato di bozza dell’host |
+| GitLab | Chiusa | Il titolo inizia con *Draft:* — il modo di GitLab |
+| Azure DevOps | **Abandoned** (abbandonata), la sua parola per chiusa | Lo stato di bozza dell’host |
+| Bitbucket Data Center | **Declined** (rifiutata), la sua parola per chiusa | Lo stato di bozza dell’host (8.18 o successivo) |
+| Forgejo | Chiusa | Il titolo inizia con *WIP:* — il modo di Forgejo |
+
+Limiti: chi può farlo lo decide l’host — di solito l’autore e i maintainer del
+repository — e il suo rifiuto viene mostrato con le sue parole. Chiudere non
+elimina il branch; lo fa la [pulizia dei branch](branch-cleanup.md).
 
 Differenze di GitLab, dette chiaramente: GitLab non ha una sola chiamata “invia
 revisione”, quindi **approva** usa il suo endpoint di approvazione e **chiedi

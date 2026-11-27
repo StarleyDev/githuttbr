@@ -4,7 +4,7 @@ category: Comece por aqui
 order: 2
 summary: O assistente da primeira abertura — identidade Git, contas de hospedagem, IA, aparência — e o que cada passo salva.
 keywords: onboarding primeira execução primeira abertura assistente configuração boas-vindas importar configurações identidade git contas ia assinatura chave api ollama lm studio claude code codex pular first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Primeira execução

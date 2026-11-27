@@ -4,7 +4,7 @@ category: 从这里开始
 order: 2
 summary: 首次启动时的设置向导 —— Git 身份、托管账户、AI、外观 —— 以及每一步保存的内容。
 keywords: 引导 首次运行 首次启动 设置向导 欢迎 导入设置 git 身份 账户 ai 订阅 api 密钥 ollama lm studio claude code codex 跳过 onboarding first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # 首次运行
@@ -33,7 +33,8 @@ GitHuttBr 第一次打开时，一个简短的向导会询问从第一次提交�
 
 ## AI 步骤
 
-AI 是可选的。选择三张卡片之一，或 **跳过，不用 AI**：
+AI 是可选的。选择三张卡片之一，或 **跳过，不用 AI**，这会关闭 AI，
+直到你在 [设置 → AI](ai.md) 中设置它：
 
 | 卡片 | 使用什么 | 需要什么 |
 |---|---|---|

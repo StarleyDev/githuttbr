@@ -3,7 +3,7 @@ title: Hosting y pull requests
 category: Sincronizar y muchos repos
 order: 56
 summary: Crea PRs en cualquier hosting; revísalos y fusiónalos en GitHub y GitLab.
-keywords: pull request PR merge request MR GitHub GitLab Bitbucket Azure DevOps revisar review aprobar approve fusionar merge issues incidencias notificaciones
+keywords: cerrar pull request reabrir abandonar rechazar borrador listo para revisión pasar a borrador close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request MR GitHub GitLab Bitbucket Azure DevOps revisar review aprobar approve fusionar merge issues incidencias notificaciones
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -111,6 +111,29 @@ lista de archivos cuando carga. Una fila que el host no informa se omite.
 
 Si alguien hace force-push en mitad de la revisión, [qué cambió desde entonces](range-diff.md)
 te muestra exactamente qué se movió.
+
+### Cerrar, reabrir y borradores
+
+¿Lo abriste por error, o el trabajo ya no hace falta? Junto al cuadro de merge,
+**Cerrar PR** lo cierra sin hacer merge. Pregunta antes y dice lo que queda: la
+rama, sus commits y la conversación. Un pull request cerrado muestra **Reabrir
+PR** en la fila Estado de la barra lateral, que deshace el cierre.
+
+**Pasar a borrador** devuelve un pull request abierto a borrador — no listo, sin
+nadie llamado a revisarlo — y **Listo para revisión** saca de nuevo un borrador.
+Cada uno deshace el otro.
+
+| Host | Cerrar | Borrador |
+|---|---|---|
+| GitHub, GitHub Enterprise | Cerrado | El estado de borrador del host |
+| GitLab | Cerrado | El título empieza por *Draft:* — la forma propia de GitLab |
+| Azure DevOps | **Abandoned** (abandonado), su palabra para cerrado | El estado de borrador del host |
+| Bitbucket Data Center | **Declined** (rechazado), su palabra para cerrado | El estado de borrador del host (8.18 o posterior) |
+| Forgejo | Cerrado | El título empieza por *WIP:* — la forma propia de Forgejo |
+
+Límites: quién puede hacerlo lo decide el host — normalmente el autor y los
+mantenedores del repositorio — y su rechazo se muestra con sus propias palabras.
+Cerrar no borra la rama; eso lo hace la [limpieza de ramas](branch-cleanup.md).
 
 Diferencias de GitLab, dichas sin rodeos: GitLab no tiene una única llamada de
 "enviar revisión", así que **aprobar** usa su endpoint de aprobación y **pedir

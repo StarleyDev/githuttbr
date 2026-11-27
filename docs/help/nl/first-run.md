@@ -4,7 +4,7 @@ category: Begin hier
 order: 2
 summary: De wizard bij de eerste start — Git-identiteit, hostingaccounts, AI, weergave — en wat elke stap opslaat.
 keywords: onboarding eerste start wizard instellen welkom instellingen importeren git identiteit accounts ai abonnement api sleutel ollama lm studio claude code codex overslaan first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Eerste start
@@ -33,7 +33,8 @@ De linkerkolom toont de stappen. Een groen vinkje markeert een ingevulde stap, e
 
 ## De AI-stap
 
-AI is optioneel. Kies een van de drie kaarten, of **Overslaan, geen AI**:
+AI is optioneel. Kies een van de drie kaarten, of **Overslaan, geen AI**, dat AI uitzet
+tot je het instelt in [Instellingen → AI](ai.md):
 
 | Kaart | Wat hij gebruikt | Wat hij nodig heeft |
 |---|---|---|

@@ -3,7 +3,7 @@ title: ホスティングとプルリクエスト
 category: 同期と複数リポジトリ
 order: 56
 summary: どのホストでも PR を作成でき、GitHub と GitLab ならレビューとマージまでこなせます。
-keywords: プルリクエスト pull request PR マージリクエスト merge request GitHub GitLab Bitbucket Azure DevOps レビュー review 承認 approve マージ merge イシュー issues 通知
+keywords: PR を閉じる 再度開く 破棄 却下 下書き ドラフト レビューの準備完了 下書きに戻す close pull request reopen abandon decline draft ready for review mark ready move to draft プルリクエスト pull request PR マージリクエスト merge request GitHub GitLab Bitbucket Azure DevOps レビュー review 承認 approve マージ merge イシュー issues 通知
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -104,6 +104,22 @@ GitLab はマージリクエストの行数の合計を報告しないため、�
 
 レビューの途中で誰かが force-push したら、[その後の変更点](range-diff.md)で何が動いたかを
 正確に確認できます。
+
+### 閉じる・再度開く・下書き
+
+間違えて開いた、あるいはもう不要になった? マージ欄の横の **PR を閉じる** で、マージせずに閉じられます。実行前に確認し、残るもの — ブランチ、そのコミット、会話 — を示します。閉じたプルリクエストはサイドバーのステータス行に **PR を再度開く** を表示し、閉じた操作を元に戻せます。
+
+**下書きに戻す** は開いているプルリクエストを下書き — まだ準備ができておらず、誰にもレビューを頼んでいない状態 — に戻し、**レビューの準備完了** は下書きから再び出します。互いに相手を元に戻します。
+
+| ホスト | 閉じる | 下書き |
+|---|---|---|
+| GitHub、GitHub Enterprise | Closed | ホストの下書き状態 |
+| GitLab | Closed | タイトルが *Draft:* で始まる — GitLab 独自の方式 |
+| Azure DevOps | **Abandoned**（破棄）、閉じることを指す同ホストの用語 | ホストの下書き状態 |
+| Bitbucket Data Center | **Declined**（却下）、閉じることを指す同ホストの用語 | ホストの下書き状態（8.18 以降） |
+| Forgejo | Closed | タイトルが *WIP:* で始まる — Forgejo 独自の方式 |
+
+制限: 誰が実行できるかはホストが決めます — 通常は作成者とリポジトリのメンテナー — 。拒否された場合はホストの文言のまま表示します。閉じてもブランチは削除されません。それは [ブランチの整理](branch-cleanup.md) の役割です。
 
 GitLab との違いをはっきり書きます。GitLab には「レビューを送信」にあたる単一の呼び出しが
 ないため、**承認**は承認用のエンドポイントを使い、**変更依頼**はあなたの承認を取り消して

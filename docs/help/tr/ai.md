@@ -55,6 +55,10 @@ yapabileceğini bölümler hâlinde tutar:
 | **Çakışmalar ve dallar** | Çakışma çözme stili, dal adlandırma stili, her biri sonucun bir örneğiyle |
 | **Depo sohbeti** | Sohbetin açık olup olmadığı, neyi okuduğu, önerebileceği eylemler — bkz. [Depo sohbeti](repo-chat.md#ayarlar) |
 
+Bölümlerin üstündeki bir satır, kimin yapay zekâsını düzenlediğinizi ve kime
+ulaştığını söyler: *genel yapay zekâ · İş ve Kişisel için geçerli*, ya da tek
+bir profilin kendi yapay zekâsı.
+
 **Commit’ler için ek kurallar** — 4.60’a kadar *Özel yönergeler* — yalnızca commit mesajı üretimine eklenir: sohbet, açıklamalar, incelemeler ve dal adları bunları okumaz. Önizleme sabit bir örnektir, model çağrısı değildir: seçilen stilin biçimini gösterir, yapay zekânın sizin değişikliğiniz için ne yazacağını değil.
 
 ![Commit mesajları](../../screenshots/settings-ai-commits.webp)
@@ -84,6 +88,13 @@ oturum açtığın bir CLI.
 
 Hazır ayarlar **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq, Mistral** ve
 **Ollama** (tamamen yerel) ile birlikte OpenAI uyumlu her uç noktayı kapsar.
+
+**Bir anahtar bu makineden asla şifrelenmeden çıkmaz.** Anahtarlı bir hesap uç
+noktasına `https://` üzerinden, düz `http://` üzerinden ise yalnızca bu
+bilgisayarda (`localhost`, `127.x`, `::1`) ulaşır. Anahtarı `http://` üzerinden
+başka bir sunucuya gönderecek bir çağrı, hiçbir şey çıkmadan reddedilir ve bunu
+söyler. Anahtarsız bir uç nokta — ağınızdaki başka bir makinede Ollama —
+`http://` üzerinden çalışmaya devam eder.
 
 Anthropic, OpenAI biçimli bir çağrı yerine kendi `/v1/messages` API'sini
 kullanır; böylece Claude modelleri yalnızca çalışıyor gibi görünmek yerine
@@ -207,25 +218,49 @@ gibi, geçiş de kullanıma aldığı sağlayıcıyı test etmez.
 
 ### API anahtarı yerine abonelik kullanmak
 
-İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin. Genel yapay zekânın ilk hesabı **Kullanımda** olur.
+**Ayarlar → Yapay zekâ** içinde **Aboneliğimi kullan**’ı seçin. [İlk
+çalıştırmada](first-run.md), yapay zekâ adımındaki **Aboneliğim** kartı Claude
+Code veya Codex’i bulur ve tek adımda test eder; hiçbiri bulunamazsa bu aynı
+kuruluma döner. Kullandığınız planı seçin, ardından sağlayıcının kurulum
+talimatları için **Belgeler**’i açın. Kurulduktan sonra **ChatGPT (Codex)
+bağla** veya **Claude (Claude Code) bağla**’yı seçin. Sağlayıcının CLI’ı
+tarayıcınızda giriş sayfasını açar ve kendi oturumunu saklar. Mevcut bir
+abonelik oturumu yeniden kullanılır. **Vazgeç** bekleyen bir bağlantıyı
+durdurur. Üç dakikadan uzun süren bir giriş durur ve yeniden denenebilir.
 
-CLI kurulduktan sonra sağlayıcının oturum açma sayfasını açmak için Bağlan düğmesine basın. Bekleyen bağlantıyı iptal edebilirsiniz.
+| Plan | Gereken CLI | Terminalden giriş |
+| --- | --- | --- |
+| Codex erişimli ChatGPT | Codex CLI | `codex login` ve ChatGPT’yi seçin |
+| Claude Code erişimli Claude | Claude Code | `claude auth login` ve abonelik hesabınızı seçin |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+Bağlanmak oturumu da test eder. Terminalden giriş yaptıysanız **Bağlantıyı
+sına**’yı seçin. GitHuttBr CLI’ın giriş yöntemini denetler ve boş bir geçici
+dizinden kısa bir test istemi gönderir. İstek sağlayıcınızın kotasından düşer.
+**Bağlı** göründükten sonra **Sağlayıcı ekle**’yi seçin. Genel yapay zekânın ilk
+hesabı **Kullanımda** yapılır. Mevcut bir kurulum için satırındaki **Kullan**’ı
+seçin ya da aşağıda tek tek özellikleri atayın. İlk çalıştırmada kurulumu
+atlamak için **Atla, yapay zekâ yok**’u seçin ve hazır olduğunuzda Ayarlar’a
+dönün.
 
-Test sağlayıcınıza kısa bir istek gönderir ve plan kotanızı kullanır. Plan sınırına ulaşıldı. Kota yenilendikten sonra tekrar deneyin.
+GitHuttBr CLI’ı bulamazsa onu kurun ya da çalıştırılabilir dosyanın tam yolunu
+girip yeniden test edin. Giriş süresi dolduysa ya da CLI bir API anahtarı
+kullanıyorsa abonelik hesabıyla giriş yapın. Bir kullanım sınırına ulaşırsanız
+sağlayıcının kotasının sıfırlanmasını bekleyin.
 
 ![Aboneliğimi kullan](../../screenshots/ai-subscription.webp)
 
-Bu makinede kurulu ve oturumu açık bir aracı CLI ile cevap almak için **Yerel
-CLI** sağlayıcısını seç — `claude`, `gemini` ya da `codex`. GitHuttBr ikili dosyayı
-isteminle çalıştırır ve cevabını okur; yapıştırılacak bir API anahtarı yoktur,
-saklanan bir belirteç de.
+Elle kurulum için, bu makinede zaten kurulu ve oturum açılmış bir ajan CLI’ı ile
+yanıt vermek üzere **Yerel CLI** sağlayıcısını seçin — `claude`, `gemini`,
+`codex` veya `devin`. GitHuttBr programı isteminizle çalıştırır ve yanıtını
+okur; yapıştırılacak bir API anahtarı yoktur ve hiçbir token saklanmaz.
 
 GitHuttBr yalnızca hesap olarak senin tanımladığın komutu çalıştırır ve bunu her
 zaman kabuk yerine bir argüman listesiyle yapar; böylece bir diff'teki ya da dal
 adındaki hiçbir şey komut olarak yorumlanamaz.
+
+Her çağrı CLI’ı çalışma dizini olarak depoyla başlatır; böylece Devin gibi ajan
+CLI’ları körlemesine yanıt vermek yerine sorduğunuz dosyaları açabilir. Deposu
+olmayan özellikler (tema oluşturma) onu uygulamanın kendi dizininden çalıştırır.
 
 > **Bu, API anahtarından daha gizli değildir.** İstemlerin yine aynı sağlayıcıya,
 > kendi hesabının altında, anahtarla olduğu gibi ulaşır. Değişen şey faturalama
@@ -271,12 +306,29 @@ Hiçbir sağlayıcı sıralanmış ya da seçilmiş bir liste yayımlamaz, dolay
 | **Commit mesajı** | Hazırlanmış diff'inizden, seçtiğiniz üslupta bir özet (ve isteğe bağlı gövde) |
 | **Bu dosyayı açıkla** | Yan panelde sade dille açıklama — Normal, Kısa, ELI5… hatta Korsan |
 | **Üzerine gelince açıkla** | <kbd>⇧</kbd> tuşunu basılı tutup bir tanımlayıcıyı gösterin: tek satırlık açıklama ve dayandığı satırlar |
+| **Seçimi yapay zekâyla düzenleme** | Bir dosyada satırları seçin, değişikliği tarif edin; model yalnızca o satırları düzenleyici taslağında yeniden yazar |
 | **Çakışma çözümü** | Düzenlenebilir çıktıya bir birleştirme önerir — asla kendiliğinden uygulamaz |
 | **PR incelemesi** | Bir diff'i özetler ve riskleri işaretler, her biri gerçek bir `path:line` konumuna bağlı |
 | **PR açıklaması** · **dal adları** | Dalın commit'lerinden ve diff'inden taslaklanır |
 | **Temalar** · **grafik paletleri** | Bir istemden üretilir |
 | **Akıllı hazırlama** | Bu commit'e neyin ait olduğuna dair öneriler |
+| **[Depo sohbeti](repo-chat.md)** | Dayanaklı sorular ve incelenmiş dosya değişiklikleri, ardından doğrulanmış Git eylemleri |
 | **Yapay zekâ yapılandırma sihirbazı** | Depo için asistan yapılandırma dosyaları (talimatlar, ajanlar, hook'lar) üretir — sohbet paneli başlığındaki sihirli değnek düğmesi |
+
+### Yalnızca seçtiğiniz satırları düzenleyin
+
+Dosya görünümünde değişmesini istediğiniz satırların üzerinden sürükleyin ve
+**AI düzenleme…**’ye basın (ya da bir satıra sağ tıklayıp menüden seçin).
+Alttaki bir çubuk seçili aralığı gösterir ve talimatınızı alır — “bu değişkeni
+yeniden adlandır”, “null denetimleri ekle”, “bu metinleri çevir”. Model seçili
+satırları ve çevresinden biraz bağlamı görür ve yalnızca o aralığın yerine
+geçecek metni döndürür; bu metin diske değil **düzenleyici taslağına** gider.
+Onu orada inceler, normal düzenleme akışıyla kaydeder ya da atarsınız; yani siz
+söyleyene kadar hiçbir şey yazılmaz. Yanıt bir araç çağrısı değil metin olduğu
+için yalnızca ajan CLI’larında değil, yapılandırılmış her arka uçta çalışır.
+Sınırlar: bir seferde tek bir bitişik aralığı yeniden yazar, bütün dosya
+oluşturamaz ya da silemez ve diff hunk’larını aşan bir seçim reddedilir — onun
+yerine dosya görünümünde seçin.
 
 ## Tahmin değil, dayanaklı
 
@@ -290,8 +342,16 @@ pencereyi okur — bir diff'te yalnızca ekranda görünen hunk'ları — bu yü
 tanım başka yerde yaşıyorsa uydurmak yerine bunu söyler. Yanıtlar dosya sürümü
 başına önbelleğe alınır.
 
-**Maskelenmiş sır dosyaları asla gönderilmez.** Sır maskeleme kurallarının
-kapsadığı dosyalar da gönderilmez.
+[Depo sohbeti](repo-chat.md) de aynı şekilde çalışır: yalnızca kendisine verilen
+alıntıları gösterebilir ve iki aşamalı istek bunları modelin yazdığı herhangi
+bir şeyden değil, Git’in kendi izlenen dosya listesinden seçer. Bir değişiklik
+önerdiğinde GitHuttBr kesin dosya eylemlerini doğrular, diff’lerini yerelde
+hesaplar, ardından sonraki Git eylemlerini ayarlanmış onay politikasına göre
+çalıştırır.
+
+**Maskelenmiş gizli dosyalar asla gönderilmez.** Gizli bilgi maskeleme
+kurallarının kapsadığı dosyalar da gönderilmez — sohbete elle sabitlediğiniz bir
+dosya dahil; okunmak yerine bir gerekçeyle reddedilir.
 
 ## Bir model yavaşladığında ya da yanıt vermeyi bıraktığında
 
@@ -330,11 +390,11 @@ açıklama, çakışmalar, temalar, wiki — çünkü hepsi aynı çağrıdan ge
   Ayarlar'daki kullanım ve maliyet rakamları bu çağrıları eksik sayar.
 - CLI cevapları doğrudan API çağrısından yavaştır: ikili dosya her istek için
   baştan bir oturum başlatır.
-- Anahtarlar hesap başına işletim sisteminin anahtarlığında saklanır. Bir hesabı
-  silmek anahtarını da siler.
+- Anahtarlar hesap başına işletim sisteminizin anahtar zincirinde saklanır. Bir
+  hesabı silmek anahtarını da siler — önce sorar ve geri alınamaz.
 - Genel yapay zekâdan önceki bir sürüme dönmek, genel yapay zekânın anahtarlarını
   kaybettirir: o sürüm anahtarların nerede tutulduğunu bilmez ve kaydederken
   onları atar. Hesaplar kalır; anahtarları yeniden yazın. Bir profilin kendi
   yapay zekâsı bundan etkilenmez.
 
-**Ayrıca bakınız:** [Depo wiki'si](repo-wiki.md) · [Güvenlik ve sırlar](security.md)
+**Ayrıca bakınız:** [Depo sohbeti](repo-chat.md) · [Depo wiki'si](repo-wiki.md) · [Güvenlik ve sırlar](security.md)

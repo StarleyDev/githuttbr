@@ -4,7 +4,7 @@ category: Pour commencer
 order: 2
 summary: L’assistant du premier lancement — identité Git, comptes d’hébergement, IA, apparence — et ce que chaque étape enregistre.
 keywords: onboarding premier lancement première utilisation assistant configuration bienvenue importer paramètres identité git comptes ia abonnement clé api ollama lm studio claude code codex passer first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Premier lancement
@@ -33,7 +33,8 @@ La colonne de gauche liste les étapes. Une coche verte marque une étape rempli
 
 ## L’étape IA
 
-L’IA est facultative. Choisissez une des trois cartes, ou **Passer, sans IA** :
+L’IA est facultative. Choisissez une des trois cartes, ou **Passer, sans IA**, qui désactive l’IA
+jusqu’à ce que vous la configuriez dans [Paramètres → IA](ai.md) :
 
 | Carte | Ce qu’elle utilise | Ce qu’il faut |
 |---|---|---|

@@ -68,25 +68,32 @@ Grenzen:
 
 ## Die Nachricht mit KI schreiben
 
-Bei eingeschalteter KI steht **Mit KI erzeugen** unter der Beschreibung. Es
-liest den gestagten Diff und schreibt Zusammenfassung und Beschreibung im
-oben gewählten Stil. Der Button nennt, wer antwortet — *Konto · Modell*, das
-Paar, das unter **Einstellungen → KI → Modell pro Aufgabe** für
-Commit-Nachrichten gewählt ist —, damit ein langsames lokales oder ein teures
-Modell nie überrascht.
+Bei eingeschalteter KI steht der **✦**-Button (*Mit KI erzeugen* beim
+Darüberfahren) unter der Beschreibung. Er liest den gestagten Diff und schreibt
+Zusammenfassung und Beschreibung im oben gewählten Stil. Daneben nennt die
+Zeile, wer antwortet — *Konto · Modell*, das Paar, das unter **Einstellungen →
+KI → Modell pro Aufgabe** für Commit-Nachrichten gewählt ist —, damit ein
+langsames lokales oder ein teures Modell nie überrascht.
 
 - **▾** neben dem Namen listet die gespeicherten Konten, jedes mit einigen
   seiner Modelle. Die Wahl gilt **nur für diese eine Erzeugung**; die
   Einstellungen ändern sich nicht.
-- Während es läuft, zeigt das Feld *Erzeuge mit Konto · Modell… 12 s* und
-  **Abbrechen**, das die Anfrage selbst stoppt, nicht nur den Spinner. Nach 30
-  Sekunden bietet es zusätzlich **Verwende** ein anderes bereites Konto an, das
-  dieselbe Erzeugung dort ausführt. Die app-weite Meldung *dauert länger als
-  erwartet* ([KI](ai.md)) erscheint weiterhin.
-- Der neue Text **ersetzt** den alten, der aufbewahrt wird: ein Banner meldet
-  *Von Konto · Modell in 7 s erzeugt* und bietet **Rückgängig**, das
-  Zusammenfassung und Beschreibung zurückholt, und **Erneut erzeugen**. Es
-  verschwindet, sobald du den Text bearbeitest oder committest.
+- Während es läuft, dreht sich das ✦, und dieselbe Zeile zeigt die bisherigen
+  Sekunden und **Abbrechen**, das die Anfrage selbst stoppt, nicht nur den
+  Spinner. Zusammenfassung und Beschreibung sind währenddessen schreibgeschützt,
+  damit die Antwort nichts überschreibt, was du tippst. Nach 30 Sekunden bietet
+  die app-weite Meldung *dauert länger als erwartet* ([KI](ai.md)) an, weiter zu
+  warten oder dieselbe Erzeugung auf ein anderes bereites Konto zu verlegen;
+  **Erneut erzeugen** nutzt danach dieses Konto.
+- Der neue Text **ersetzt** den alten, der aufbewahrt wird: **Rückgängig** und
+  **Erneut erzeugen** erscheinen in derselben Zeile (beim Darüberfahren *Von
+  Konto · Modell in 7 s erzeugt*). Rückgängig holt Zusammenfassung und
+  Beschreibung zurück. Beide verschwinden, sobald du den Text bearbeitest oder
+  committest.
+- Die Beschreibung, die du tippst oder die die KI geschrieben hat, bleibt
+  erhalten, wenn du zu einem anderen Tab wechselst und zurückkommst, wie die
+  Zusammenfassung — und nach einer Erzeugung auch **Rückgängig** und **Erneut
+  erzeugen**.
 
 ![Mit KI erzeugen und das Kontomenü](../../screenshots/commit-ai-generate.webp)
 
@@ -99,8 +106,8 @@ Grenzen:
 
 - Nur der gestagte Diff wird gesendet, bei sehr großen gekürzt — nie
   ungestagte Änderungen oder andere Dateien.
-- Rückgängig hält einen Schritt: den Text vor der ersten Erzeugung in Folge.
-  Ist das Banner weg, ist auch diese Kopie weg.
+- Rückgängig hält einen Schritt: den Text vor der ersten Erzeugung in Folge. Ist
+  Rückgängig weg, ist auch diese Kopie weg.
 - Abbrechen erstattet keine Tokens, die ein Anbieter schon verbraucht hat.
 - Die ▾-Liste zeigt alle gespeicherten Konten, auch eines ohne Schlüssel; es
   zu wählen scheitert mit dem Fehler dieses Kontos.

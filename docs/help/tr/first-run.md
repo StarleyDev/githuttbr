@@ -4,7 +4,7 @@ category: Buradan başlayın
 order: 2
 summary: İlk açılıştaki kurulum sihirbazı — Git kimliği, barındırma hesapları, yapay zekâ, görünüm — ve her adımın kaydettikleri.
 keywords: onboarding ilk çalıştırma ilk açılış kurulum sihirbazı hoş geldiniz ayarları içe aktar git kimliği hesaplar yapay zekâ abonelik api anahtarı ollama lm studio claude code codex atla first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # İlk çalıştırma
@@ -33,7 +33,8 @@ Sol sütun adımları listeler. Yeşil onay doldurduğunuz adımı, çizgi doldu
 
 ## Yapay zekâ adımı
 
-Yapay zekâ isteğe bağlıdır. Üç karttan birini ya da **Atla, yapay zekâ yok** seçeneğini seçin:
+Yapay zekâ isteğe bağlıdır. Üç karttan birini ya da **Atla, yapay zekâ yok** seçeneğini seçin;
+bu, siz [Ayarlar → Yapay zekâ](ai.md) bölümünde kurana kadar yapay zekâyı kapatır:
 
 | Kart | Ne kullanır | Ne gerekir |
 |---|---|---|

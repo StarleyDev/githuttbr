@@ -52,6 +52,10 @@ qu'elle peut faire, en sections :
 | **Conflits et branches** | Style de résolution des conflits, style de nommage des branches, chacun avec un exemple du résultat |
 | **Discussion du dépôt** | Si la discussion est activée, ce qu'elle lit, les actions qu'elle peut proposer — voir [Discussion du dépôt](repo-chat.md#paramètres) |
 
+Une ligne au-dessus des sections indique quelle IA vous modifiez et qui elle
+atteint : *IA générale · s’applique à Travail et Perso*, ou celle propre à un
+profil.
+
 Les **Règles supplémentaires pour les commits** — *Instructions personnalisées* jusqu’à la 4.60 — ne s’ajoutent qu’à la génération des messages de commit : le chat, les explications, les revues et les noms de branche ne les lisent pas. L’aperçu est un exemple fixe, pas un appel au modèle : il montre la forme du style choisi, pas ce que l’IA écrira pour votre modification.
 
 ![Messages de commit](../../screenshots/settings-ai-commits.webp)
@@ -84,6 +88,13 @@ coexistent — une clé professionnelle, une personnelle, un modèle local, une 
 Les préréglages couvrent **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral** et **Ollama** (entièrement local), ainsi que tout point de terminaison
 compatible OpenAI.
+
+**Une clé ne quitte jamais cette machine en clair.** Un compte avec clé joint
+son endpoint en `https://`, ou en `http://` simple uniquement sur cet ordinateur
+(`localhost`, `127.x`, `::1`). Un appel qui enverrait la clé en `http://` vers
+un autre hôte est refusé avant que quoi que ce soit ne parte, et le dit. Un
+endpoint sans clé — Ollama sur une autre machine de votre réseau — continue de
+fonctionner en `http://`.
 
 Anthropic utilise sa propre API `/v1/messages` plutôt qu'un appel de forme
 OpenAI : les modèles Claude fonctionnent vraiment au lieu d'en donner
@@ -208,25 +219,54 @@ paramètres, ce changement ne teste pas le fournisseur qu'il met en service.
 
 ### Utiliser un abonnement plutôt qu'une clé d'API
 
-Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte. Le premier compte de l'IA générale devient le compte **Utilisé**.
+Dans **Paramètres → IA**, choisissez **Utiliser mon abonnement**. Au [premier
+lancement](first-run.md), la carte **Mon abonnement** de l’étape IA trouve
+Claude Code ou Codex et le teste en une seule étape, et revient à cette même
+configuration quand aucun n’est trouvé. Sélectionnez le forfait que vous
+utilisez, puis ouvrez **Documentation** pour les instructions d’installation du
+fournisseur. Une fois installé, choisissez **Connecter ChatGPT (Codex)** ou
+**Connecter Claude (Claude Code)**. Le CLI du fournisseur ouvre sa page de
+connexion dans votre navigateur et enregistre sa propre session. Une session
+d’abonnement existante est réutilisée. **Annuler** arrête une connexion en
+attente. Une connexion qui prend plus de trois minutes s’arrête et peut être
+relancée.
 
-Après avoir installé la CLI, cliquez sur Connecter pour ouvrir la page de connexion du fournisseur. Vous pouvez annuler la connexion en cours.
+| Forfait | CLI requis | Connexion depuis un terminal |
+| --- | --- | --- |
+| ChatGPT avec accès à Codex | Codex CLI | `codex login` puis choisir ChatGPT |
+| Claude avec accès à Claude Code | Claude Code | `claude auth login` puis choisir votre compte d’abonnement |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+La connexion teste aussi la session. Si vous vous êtes connecté depuis un
+terminal, choisissez **Tester la connexion**. GitHuttBr vérifie la méthode de
+connexion du CLI et envoie un court prompt de test depuis un répertoire
+temporaire vide. La requête est décomptée de l’allocation de votre fournisseur.
+Après **Connecté**, choisissez **Ajouter un fournisseur**. Le premier compte de
+l’IA générale est mis **Utilisé**. Pour une configuration existante, choisissez
+**Utiliser** sur sa ligne ou attribuez des fonctions une à une plus bas. Pour
+passer la configuration au premier lancement, choisissez **Passer, sans IA** et
+revenez dans les Paramètres quand vous serez prêt.
 
-Le test envoie un court message au fournisseur et utilise votre quota. Quota atteint. Réessayez après son renouvellement.
+Si GitHuttBr ne trouve pas le CLI, installez-le ou saisissez le chemin complet
+de son exécutable et testez à nouveau. Si la connexion a expiré ou si le CLI
+utilise une clé d’API, connectez-vous avec le compte d’abonnement. Si vous
+atteignez une limite d’utilisation, attendez que le quota du fournisseur se
+renouvelle.
 
 ![Utiliser mon abonnement](../../screenshots/ai-subscription.webp)
 
-Choisissez le fournisseur **CLI locale** pour répondre avec une CLI d'agent déjà
-installée et connectée sur cette machine — `claude`, `gemini` ou `codex`.
-GitHuttBr lance le binaire avec votre requête et lit sa réponse ; aucune clé d'API
-à coller, aucun jeton stocké.
+Pour une configuration manuelle, choisissez le fournisseur **CLI locale** pour
+répondre avec une CLI d’agent déjà installée et connectée sur cette machine —
+`claude`, `gemini`, `codex` ou `devin`. GitHuttBr lance le binaire avec votre
+requête et lit sa réponse ; aucune clé d’API à coller, aucun jeton stocké.
 
 GitHuttBr n'exécute qu'une commande que vous avez configurée comme compte, et
 toujours avec une liste d'arguments plutôt qu'un shell : rien dans un diff ou un
 nom de branche ne peut être interprété comme une commande.
+
+Chaque appel lance la CLI avec le dépôt comme répertoire de travail, pour que
+des CLI d’agent comme Devin puissent ouvrir les fichiers dont vous parlez au
+lieu de répondre à l’aveugle. Les fonctions sans dépôt (génération de thèmes) la
+lancent depuis le répertoire propre de l’application.
 
 > **Ce n'est pas plus privé qu'une clé d'API.** Vos requêtes atteignent toujours
 > le même fournisseur, sous votre propre compte, exactement comme avec une clé.
@@ -275,12 +315,30 @@ Aucun fournisseur ne publie de liste classée ou triée sur le volet ; la mise e
 | **Message de commit** | Un résumé (et un corps optionnel) à partir de votre diff indexé, dans le style que vous avez choisi |
 | **Expliquer ce fichier** | Une explication en langage clair dans un panneau latéral — Normal, Concis, ELI5… et même Pirate |
 | **Survoler pour comprendre** | Maintenez <kbd>⇧</kbd> et pointez un identifiant pour une explication d'une ligne, plus les lignes dont elle s'inspire |
+| **Modification IA de la sélection** | Sélectionnez des lignes dans un fichier, décrivez le changement, et le modèle réécrit uniquement ces lignes dans le brouillon de l’éditeur |
 | **Résolution de conflit** | Propose une fusion dans la sortie éditable — n'applique jamais automatiquement |
 | **Revue de PR** | Résume un diff et signale les risques, chacun ancré à un vrai `path:line` |
 | **Description de PR** · **noms de branche** | Rédigés à partir des commits et du diff de la branche |
 | **Thèmes** · **palettes de graphe** | Générés à partir d'une consigne |
 | **Indexation intelligente** | Des suggestions sur ce qui a sa place dans ce commit |
+| **[Discussion du dépôt](repo-chat.md)** | Questions ancrées et modifications de fichiers relues, suivies d’actions Git validées |
 | **Assistant de configuration IA** | Génère des fichiers de configuration d'assistant (instructions, agents, hooks) pour le dépôt — le bouton baguette dans l'en-tête du panneau de discussion |
+
+### Modifier uniquement les lignes sélectionnées
+
+Dans la vue du fichier, faites glisser sur les lignes à changer et appuyez sur
+**Modification IA…** (ou faites un clic droit sur une ligne et choisissez-la
+dans le menu). Une barre en bas affiche la plage sélectionnée et reçoit votre
+instruction — « renomme cette variable », « ajoute des vérifications de null »,
+« traduis ces chaînes ». Le modèle voit les lignes sélectionnées plus un peu de
+contexte autour et ne renvoie que le remplacement de cette plage, qui arrive
+dans le **brouillon de l’éditeur** et non sur le disque. Vous le relisez là et
+l’enregistrez ou l’abandonnez par le flux d’édition normal : rien n’est écrit
+tant que vous ne le décidez pas. Cela fonctionne avec tous les backends
+configurés, pas seulement les CLI d’agent, car la réponse est du texte, pas un
+appel d’outil. Les limites : une seule plage contiguë à la fois, pas de création
+ni de suppression de fichiers entiers, et une sélection qui chevauche plusieurs
+hunks d’un diff est refusée — sélectionnez plutôt dans la vue du fichier.
 
 ## Ancré, pas devinant
 
@@ -294,8 +352,16 @@ un diff, uniquement les sections visibles à l'écran — si bien que, lorsqu'un
 définition vit ailleurs, il le dit au lieu de l'inventer. Les réponses sont mises
 en cache par version de fichier.
 
-**Les fichiers de secrets masqués ne sont jamais envoyés.** Les fichiers couverts
-par les règles de masquage des secrets non plus.
+[Discussion du dépôt](repo-chat.md) fonctionne de la même manière : il ne peut
+citer que les extraits qu’on lui a fournis, et la requête en deux passes les
+choisit dans la liste des fichiers suivis par Git, pas dans quoi que ce soit
+écrit par le modèle. Quand il propose un changement, GitHuttBr valide des
+actions exactes sur les fichiers, calcule leurs diffs en local, puis exécute les
+actions Git qui suivent selon la politique d’approbation configurée.
+
+**Les fichiers secrets masqués ne sont jamais envoyés.** Pas plus que les
+fichiers couverts par les règles de masquage des secrets — y compris un fichier
+que vous épinglez au chat à la main, refusé avec une raison au lieu d’être lu.
 
 ## Quand un modèle est lent, ou ne répond plus
 
@@ -339,10 +405,11 @@ même appel.
 - Les réponses via CLI sont plus lentes qu'un appel direct à l'API : le binaire
   démarre une session entière à chaque requête.
 - Les clés sont stockées par compte dans le trousseau de votre système.
-  Supprimer un compte supprime sa clé.
+  Supprimer un compte supprime sa clé — il demande d’abord, et c’est
+  irréversible.
 - Revenir à une version antérieure à l'IA générale perd les clés de l'IA
   générale : cette version ne sait pas où elles sont conservées et les abandonne
   en enregistrant. Les comptes restent ; saisissez à nouveau les clés. L'IA
   propre d'un profil n'est pas touchée.
 
-**Voir aussi :** [Wiki du dépôt](repo-wiki.md) · [Sécurité et secrets](security.md)
+**Voir aussi :** [Discussion du dépôt](repo-chat.md) · [Wiki du dépôt](repo-wiki.md) · [Sécurité et secrets](security.md)
