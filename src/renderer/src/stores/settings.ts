@@ -49,7 +49,7 @@ import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { useProfileAvatarsStore } from './profileAvatars'
 import { focusOpenRepo } from '../lib/tabLookup'
-import { planWorktreeGroup, worktreeOpening } from '../lib/worktrees'
+import { planWorktreeGroup, shouldResolveWorktreeFamily, worktreeOpening } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
 import { prRemoteIdentity } from '../lib/hosting'
@@ -982,13 +982,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   openRepoTab: (repo) => {
-    // Auto-group on: with no caller-supplied worktree hint, resolve the repo's
-    // main worktree first so a linked worktree can offer to join its family
-    // rather than landing as a standalone tab it doesn't belong on.
+    // With no caller-supplied worktree hint, resolve the repo's main worktree
+    // first, so a linked worktree opened from Recents or a folder joins the
+    // group its project lives in — as one just created does — or is offered a
+    // group when that setting is on, rather than landing as a stray tab.
     // `resolvedNonWorktrees` remembers the negative — a repo's common dir does
     // not change, so each path costs one rev-parse at most.
     if (
-      get().settings.worktreeAutoGroup &&
+      shouldResolveWorktreeFamily(get().settings.tabs, get().settings.worktreeAutoGroup) &&
       repo.worktreeRoot === undefined &&
       !resolvedNonWorktrees.has(canonicalRepoPath(repo.path))
     ) {

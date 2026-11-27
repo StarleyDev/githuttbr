@@ -137,3 +137,12 @@ export function isRepoOpenInTabs(tabSets: TabState[][], path: string): boolean {
     tabs.some((tab) => tab.kind !== 'page' && tab.repos.some((r) => canonicalRepoPath(r.path) === target))
   )
 }
+
+/**
+ * Whether opening a repository should first ask git which worktree family it
+ * belongs to: when grouping is offered, or when some group is open that a
+ * worktree could join. Otherwise the tab opens at once, with no rev-parse.
+ */
+export function shouldResolveWorktreeFamily(tabs: TabState[], offerGrouping: boolean): boolean {
+  return offerGrouping || tabs.some((tab) => tab.kind === 'group')
+}

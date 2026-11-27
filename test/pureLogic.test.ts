@@ -89,6 +89,7 @@ import {
   isRepoOpenInTabs,
   planWorktreeGroup,
   worktreeOpening,
+  shouldResolveWorktreeFamily,
   prunableWorktreeCount,
   worktreeDisplayName,
   worktreeForBranch,
@@ -6043,6 +6044,14 @@ describe('worktree grouping', () => {
     const plan = planWorktreeGroup(tabs, '/src/mastery')
     expect(worktreeOpening(plan, false)).toBe('join')
     expect(worktreeOpening(plan, true)).toBe('join')
+  })
+
+  it('asks git for the family only when a group could take the worktree in', () => {
+    const solo = [repoTab('t1', ref('/src/mastery', 'mastery'))]
+    const grouped = [groupTab('g1', 'Work', [ref('/src/mastery', 'mastery')])]
+    expect(shouldResolveWorktreeFamily(solo, false)).toBe(false)
+    expect(shouldResolveWorktreeFamily(solo, true)).toBe(true)
+    expect(shouldResolveWorktreeFamily(grouped, false)).toBe(true)
   })
 
   it('a project in a tab of its own is offered a group only when grouping is on', () => {

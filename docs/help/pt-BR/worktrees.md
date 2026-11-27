@@ -100,7 +100,8 @@ Abas de worktree abrem com rótulos `raiz · branch`, que ficam largos rápido.
 repositório — ou um dos worktrees dele — já está num grupo, um worktree novo abre
 dentro desse grupo, ao lado dele, sem nada para marcar: a janela de adicionar
 worktree só diz qual grupo, e **Abrir em worktree** no menu de uma branch faz o
-mesmo sem perguntar. Arraste o chip para fora do grupo se quiser ele separado.
+mesmo sem perguntar. Um worktree aberto depois pelos Recentes ou por uma pasta
+entra também. Arraste o chip para fora do grupo se quiser ele separado.
 
 Para um repositório numa aba própria, marque **Oferecer agrupar worktrees que
 compartilham um repositório raiz** na janela de adicionar worktree (desligado

@@ -98,7 +98,8 @@ Worktree tabs open with `root · branch` labels, which gets wide fast.
 one of its worktrees — already sits in a group, a new worktree opens inside
 that group, beside it, with nothing to tick: the add-worktree dialog just says
 which group, and **Open in worktree** from a branch's menu does the same
-without asking. Drag the chip out of the group if you want it on its own.
+without asking. A worktree opened later from Recents or a folder joins it too.
+Drag the chip out of the group if you want it on its own.
 
 For a repository in a tab of its own, tick **Offer to group worktrees that
 share a root repository** in the add-worktree dialog (off by default,
