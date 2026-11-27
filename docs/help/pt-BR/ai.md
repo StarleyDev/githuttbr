@@ -3,7 +3,7 @@ title: Recursos de IA
 category: IA
 order: 80
 summary: Opcionais, agnósticos de provedor, e ancorados no seu código de verdade.
-keywords: ia ai openai anthropic ollama llm local mensagem de commit explicar revisão wiki ancorado grounded contas conta chave api assinatura cli claude codex gemini modelos
+keywords: ia ai openai anthropic ollama llm local mensagem de commit explicar revisão wiki ancorado grounded contas conta chave api assinatura cli claude codex gemini modelos lento timeout demorando continuar aguardando cancelar não está respondendo ollama fechado trocar de conta outra conta
 ---
 
 # Recursos de IA
@@ -180,7 +180,34 @@ de aprovação configurada.
 regras de mascaramento de segredos — inclusive um arquivo que você fixa no chat à
 mão, que é recusado com um motivo em vez de lido.
 
+## Quando um modelo está lento, ou para de responder
+
+Um modelo local num notebook pode levar um minuto para uma mensagem de commit, e
+um modelo que "pensa" antes de responder demora ainda mais — mas um servidor
+fechado no meio de um pedido não deveria deixar você olhando para um indicador
+girando.
+
+| O que acontece | O que você vê |
+|---|---|
+| Nenhuma resposta após 30 segundos | *"{conta} está demorando mais que o esperado para responder."*, com **Continuar aguardando**, **Usar {outra conta}** e **Cancelar**. Continuar aguardando pergunta de novo um minuto depois, se ainda estiver rodando |
+| Um servidor local (Ollama, LM Studio, llama.cpp…) é fechado enquanto trabalha | Em poucos segundos: *"{conta} não está respondendo. Ele ainda está em execução?"*, com um botão para cada outra conta pronta para uso, e **Cancelar** |
+| O servidor já estava fechado quando você pediu | O mesmo, na hora |
+
+**Usar {outra conta}** cancela o pedido e envia o mesmo para essa conta, com o
+modelo padrão dela — a mensagem de commit, a revisão ou a resposta do chat chega
+como se você tivesse pedido lá. Isso não muda suas configurações: o próximo
+pedido vai de novo para a conta que você escolheu para aquela tarefa.
+
+Isso vale para todo recurso de IA — mensagens de commit, chat, revisão,
+explicar, conflitos, temas, a wiki — porque todos passam pela mesma chamada.
+
 ## Limites
+
+- **Só servidores locais são vigiados para saber se foram fechados.** Um
+  provedor na nuvem que cai falha com o próprio erro; uma chamada na nuvem que
+  só está lenta recebe o aviso de *demorando mais* como qualquer outra. Um
+  servidor local ocupado, e não fechado, conta como vivo: só uma conexão
+  recusada ou derrubada encerra a chamada antes da hora.
 
 - As listas de reserva ficam desatualizadas entre versões. É para isso que serve
   a busca ao vivo; a reserva só cobre o caso em que buscar não é possível.

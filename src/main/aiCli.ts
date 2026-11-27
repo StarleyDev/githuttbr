@@ -102,13 +102,15 @@ function run(
   input: string,
   timeout = CLI_TIMEOUT_MS,
   cwd?: string,
-  env = process.env
+  env = process.env,
+  signal?: AbortSignal
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       file,
       args,
-      { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd, env },
+      // The signal kills the child when the user cancels or switches account.
+      { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd, env, ...(signal ? { signal } : {}) },
       (err, stdout, stderr) => {
         if (err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
           reject(new Error(`\`${file}\` was not found. Install it, or set an explicit path on the account.`))
@@ -177,22 +179,26 @@ function parseClaudeReply(stdout: string): ModelReply | null {
 const NO_USAGE: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
 
 /** One answer from a locally installed, already signed-in agent CLI. */
-export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promise<ModelReply> {
+export async function runCliModel(
+  cfg: AIConfig,
+  messages: ChatMessage[],
+  signal?: AbortSignal
+): Promise<ModelReply> {
   const stamped = (cfg.cliCwd ?? '').trim()
   const cwd = stamped && existsSync(stamped) ? stamped : undefined
   if (cfg.subscription && !cwd) {
     const directory = await mkdtemp(join(tmpdir(), 'githuttbr-model-'))
     try {
-      return await invokeCli(cfg, messages, directory, true)
+      return await invokeCli(cfg, messages, directory, true, signal)
     } finally {
       await rm(directory, { recursive: true, force: true })
     }
   }
-  return invokeCli(cfg, messages, cwd)
+  return invokeCli(cfg, messages, cwd, false, signal)
 }
 
 async function invokeCli(
-  cfg: AIConfig, messages: ChatMessage[], cwd?: string, emptyDirectory = false
+  cfg: AIConfig, messages: ChatMessage[], cwd?: string, emptyDirectory = false, signal?: AbortSignal
 ): Promise<ModelReply> {
   await shellPathReady()
   const binary = cfg.cli ?? 'claude'
@@ -213,7 +219,7 @@ async function invokeCli(
     try {
       const promptPath = join(dir, 'prompt.txt')
       await writeFile(promptPath, prompt, 'utf8')
-      ;({ code, stdout, stderr } = await run(file, [...spec.args(model), ...spec.promptFile(promptPath)], '', undefined, cwd))
+      ;({ code, stdout, stderr } = await run(file, [...spec.args(model), ...spec.promptFile(promptPath)], '', undefined, cwd, process.env, signal))
     } finally {
       await rm(dir, { recursive: true, force: true }).catch(() => {})
     }
@@ -223,7 +229,7 @@ async function invokeCli(
       if (emptyDirectory) args.splice(1, 0, '--skip-git-repo-check')
       args.unshift(...CODEX_SUBSCRIPTION)
     }
-    ;({ code, stdout, stderr } = await run(file, args, prompt, undefined, cwd, env))
+    ;({ code, stdout, stderr } = await run(file, args, prompt, undefined, cwd, env, signal))
   }
   if (code !== 0) {
     const detail = (stderr || stdout).trim().slice(0, 300)

@@ -3,7 +3,7 @@ title: Funzioni AI
 category: AI
 order: 80
 summary: Opzionali, indipendenti dal provider e ancorate al tuo codice reale.
-keywords: ai ia openai anthropic ollama llm locale messaggio di commit spiega review wiki grounded account chiave api abbonamento cli claude codex gemini modelli
+keywords: ai ia openai anthropic ollama llm locale messaggio di commit spiega review wiki grounded account chiave api abbonamento cli claude codex gemini modelli lento timeout impiegando più del previsto continua ad attendere annulla non risponde ollama chiuso cambia account altro account
 ---
 
 # Funzioni AI
@@ -149,7 +149,35 @@ cache per versione del file.
 **I file mascherati perché contengono segreti non vengono mai inviati.** E
 nemmeno i file coperti dalle regole di mascheramento dei segreti.
 
+## Quando un modello è lento, o smette di rispondere
+
+Un modello locale su un portatile può metterci un minuto per un messaggio di
+commit, e un modello che "ragiona" prima di rispondere ancora di più — ma un
+server chiuso a metà richiesta non dovrebbe lasciarti a fissare una rotellina
+che gira.
+
+| Cosa succede | Cosa vedi |
+|---|---|
+| Nessuna risposta dopo 30 secondi | *"{account} sta impiegando più del previsto a rispondere."*, con **Continua ad attendere**, **Usa {altro account}** e **Annulla**. Continua ad attendere chiede di nuovo un minuto dopo, se è ancora in corso |
+| Un server locale (Ollama, LM Studio, llama.cpp…) viene chiuso mentre lavora | Entro pochi secondi: *"{account} non risponde. È ancora in esecuzione?"*, con un pulsante per ogni altro account pronto all'uso, e **Annulla** |
+| Il server era già chiuso quando hai chiesto | Lo stesso, subito |
+
+**Usa {altro account}** annulla la richiesta e invia la stessa a quell'account,
+con il suo modello predefinito — il messaggio di commit, la review o la risposta
+della chat arriva come se l'avessi chiesta lì. Non cambia le tue impostazioni:
+la richiesta successiva va di nuovo all'account che hai scelto per
+quell'attività.
+
+Vale per ogni funzione IA — messaggi di commit, chat, review, spiegazioni,
+conflitti, temi, la wiki — perché passano tutte dalla stessa chiamata.
+
 ## Limiti
+
+- **Solo i server locali vengono controllati per capire se sono stati chiusi.**
+  Un fornitore cloud che va giù fallisce con il proprio errore; una chiamata
+  cloud che è solo lenta riceve l'avviso *più del previsto* come qualsiasi
+  altra. Un server locale occupato, ma non chiuso, conta come vivo: solo una
+  connessione rifiutata o interrotta chiude la chiamata in anticipo.
 
 - Gli elenchi di riserva invecchiano fra una versione e l'altra. È proprio a
   questo che serve il recupero in diretta; la riserva copre solo il caso in cui

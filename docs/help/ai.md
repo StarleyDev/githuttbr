@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker
+keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback
 ---
 
 # AI features
@@ -189,7 +189,33 @@ then runs any following Git actions under the configured approval policy.
 rules cover — including a file you pin to chat by hand, which is refused with a
 reason rather than read.
 
+## When a model is slow, or stops answering
+
+A local model on a laptop can take a minute for a commit message, and a model
+that "thinks" before it answers takes longer still — but a server that was
+closed mid-request should not leave you staring at a spinner.
+
+| What happens | What you see |
+|--------------|--------------|
+| No answer after 30 seconds | *"{account} is taking longer than expected"*, with **Keep waiting**, **Use {another account}** and **Cancel**. Keep waiting asks again a minute later if it is still running |
+| A local server (Ollama, LM Studio, llama.cpp…) is closed while it works | Within a few seconds: *"{account} is not responding"*, with a button for each other account that is ready to use, and **Cancel** |
+| The server was already closed when you asked | The same, straight away |
+
+**Use {another account}** cancels the request and sends the same one to that
+account, with its default model — the commit message, the review or the chat
+answer arrives as if you had asked it there. It does not change your settings:
+the next request goes to the account you chose for that task again.
+
+This covers every AI feature — commit messages, chat, review, explain,
+conflicts, themes, the wiki — because they all go through the same call.
+
 ## Limits
+
+- **Only local servers are watched for being closed.** A cloud provider that
+  goes down fails with its own error; a cloud call that is merely slow gets the
+  *taking longer* prompt like any other. A local server that is busy rather
+  than closed counts as alive: only a refused or dropped connection ends the
+  call early.
 
 - The bundled fallback model lists go stale between releases. That is what the
   live fetch is for; the fallback only covers the case where fetching cannot

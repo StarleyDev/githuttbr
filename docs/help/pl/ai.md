@@ -3,7 +3,7 @@ title: Funkcje AI
 category: AI
 order: 80
 summary: Opcjonalne, niezależne od dostawcy i osadzone w twoim prawdziwym kodzie.
-keywords: ai openai anthropic ollama lokalny llm wiadomość commita wyjaśnij recenzja wiki osadzone commit message explain review grounded konta konto klucz api subskrypcja cli claude codex gemini modele
+keywords: ai openai anthropic ollama lokalny llm wiadomość commita wyjaśnij recenzja wiki osadzone commit message explain review grounded konta konto klucz api subskrypcja cli claude codex gemini modele wolno timeout dłużej niż oczekiwano czekaj dalej anuluj nie odpowiada ollama zamknięty zmień konto inne konto
 ---
 
 # Funkcje AI
@@ -149,7 +149,34 @@ wersji pliku.
 **Zamaskowane pliki z sekretami nigdy nie są wysyłane.** Tak samo pliki objęte
 regułami maskowania sekretów.
 
+## Gdy model działa wolno albo przestaje odpowiadać
+
+Lokalny model na laptopie może potrzebować minuty na wiadomość commita, a model,
+który „myśli” przed odpowiedzią, jeszcze dłużej — ale serwer zamknięty w trakcie
+żądania nie powinien zostawiać cię z kręcącym się kółkiem.
+
+| Co się dzieje | Co widzisz |
+|---|---|
+| Brak odpowiedzi po 30 sekundach | *„{konto} odpowiada dłużej, niż oczekiwano.”*, z przyciskami **Czekaj dalej**, **Użyj {innego konta}** i **Anuluj**. Czekaj dalej pyta ponownie minutę później, jeśli żądanie wciąż trwa |
+| Lokalny serwer (Ollama, LM Studio, llama.cpp…) zostaje zamknięty w trakcie pracy | W ciągu kilku sekund: *„{konto} nie odpowiada. Czy nadal działa?”*, z przyciskiem dla każdego innego konta gotowego do użycia oraz **Anuluj** |
+| Serwer był już zamknięty, gdy wysłano prośbę | To samo, od razu |
+
+**Użyj {innego konta}** anuluje żądanie i wysyła to samo do tamtego konta, z
+jego domyślnym modelem — wiadomość commita, recenzja albo odpowiedź czatu
+przychodzi tak, jakbyś zapytał właśnie tam. Twoje ustawienia się nie zmieniają:
+następne żądanie znów trafia do konta wybranego dla tego zadania.
+
+Dotyczy to każdej funkcji AI — wiadomości commitów, czatu, recenzji,
+wyjaśniania, konfliktów, motywów, wiki — bo wszystkie przechodzą przez to samo
+wywołanie.
+
 ## Ograniczenia
+
+- **Tylko lokalne serwery są obserwowane pod kątem zamknięcia.** Dostawca
+  chmurowy, który padnie, kończy się własnym błędem; wywołanie chmurowe, które
+  jest po prostu wolne, dostaje komunikat *dłużej, niż oczekiwano* jak każde
+  inne. Lokalny serwer zajęty, a nie zamknięty, liczy się jako żywy: tylko
+  odrzucone lub zerwane połączenie kończy wywołanie wcześniej.
 
 - Wbudowane listy zapasowe starzeją się między wydaniami. Po to właśnie jest
   pobieranie na żywo; zapas obejmuje tylko sytuację, gdy pobranie jest

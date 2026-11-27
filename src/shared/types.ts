@@ -1963,13 +1963,21 @@ export interface RepoChatSkipped {
   reason: RepoChatSkipReason
 }
 
-/** Answer returned by the repository-chat IPC handler. */
+/** A model call that is taking long, announced so the user can decide (main/aiRequests.ts). */
+export type AIRequestEvent =
+  | { type: 'slow'; id: number; label: string; accountId: string }
+  | { type: 'done'; id: number }
+
+/** The user's answer to "this is taking longer than expected". */
+export type AISlowChoice = { kind: 'wait' } | { kind: 'cancel' } | { kind: 'switch'; accountId: string }
+
 /** What the repository chat is doing right now, for the panel's waiting line. */
 export type RepoChatProgressStep = { phase: 'thinking' } | { phase: 'reading'; files: number }
 
 /** A progress step as it crosses IPC, tagged with the repository it belongs to. */
 export type RepoChatProgress = RepoChatProgressStep & { repoPath: string }
 
+/** Answer returned by the repository-chat IPC handler. */
 export interface RepoChatReply {
   content: string
   sources: RepoChatSource[]

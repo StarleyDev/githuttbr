@@ -203,7 +203,13 @@ const api = {
       const listener = (_e: unknown, p: unknown): void => cb(p)
       ipcRenderer.on('ai:repoChatProgress', listener)
       return () => ipcRenderer.removeListener('ai:repoChatProgress', listener)
-    }
+    },
+    onRequestEvent: (cb: (event: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, event: unknown): void => cb(event)
+      ipcRenderer.on('ai:request', listener)
+      return () => ipcRenderer.removeListener('ai:request', listener)
+    },
+    answerSlow: (id: number, choice: unknown): Promise<unknown> => ipcRenderer.invoke('ai:answerSlow', id, choice)
   },
 
   wiki: {

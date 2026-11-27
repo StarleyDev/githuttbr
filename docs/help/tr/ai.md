@@ -3,7 +3,7 @@ title: Yapay zekâ özellikleri
 category: Yapay zekâ
 order: 80
 summary: İsteğe bağlı, sağlayıcıdan bağımsız ve gerçek kodunuza dayalı.
-keywords: yapay zekâ yerel model commit mesajı açıklama inceleme ai openai anthropic ollama local llm commit message explain review wiki grounded hesaplar hesap api anahtarı abonelik cli claude codex gemini modeller
+keywords: yapay zekâ yerel model commit mesajı açıklama inceleme ai openai anthropic ollama local llm commit message explain review wiki grounded hesaplar hesap api anahtarı abonelik cli claude codex gemini modeller yavaş zaman aşımı timeout uzun sürüyor beklemeye devam et iptal yanıt vermiyor ollama kapalı hesap değiştir başka hesap
 ---
 
 # Yapay zekâ özellikleri
@@ -152,7 +152,34 @@ başına önbelleğe alınır.
 **Maskelenmiş sır dosyaları asla gönderilmez.** Sır maskeleme kurallarının
 kapsadığı dosyalar da gönderilmez.
 
+## Bir model yavaşladığında ya da yanıt vermeyi bıraktığında
+
+Dizüstü bilgisayardaki yerel bir model bir commit mesajı için bir dakika
+harcayabilir, yanıt vermeden önce "düşünen" bir model daha da uzun sürer — ama
+isteğin ortasında kapatılan bir sunucu sizi dönen bir göstergeye bakar halde
+bırakmamalı.
+
+| Ne olur | Ne görürsünüz |
+|---|---|
+| 30 saniye sonra yanıt yok | *"{hesap} yanıt vermek için beklenenden uzun sürüyor."*, **Beklemeye devam et**, **{başka hesap} kullan** ve **İptal** düğmeleriyle. Beklemeye devam et, hâlâ sürüyorsa bir dakika sonra yeniden sorar |
+| Yerel bir sunucu (Ollama, LM Studio, llama.cpp…) çalışırken kapatılır | Birkaç saniye içinde: *"{hesap} yanıt vermiyor. Hâlâ çalışıyor mu?"*, kullanıma hazır diğer her hesap için bir düğme ve **İptal** ile |
+| Siz sorduğunuzda sunucu zaten kapalıydı | Aynısı, hemen |
+
+**{başka hesap} kullan** isteği iptal eder ve aynısını o hesaba, onun varsayılan
+modeliyle gönderir — commit mesajı, inceleme ya da sohbet yanıtı oraya
+sormuşsunuz gibi gelir. Ayarlarınızı değiştirmez: sonraki istek yine o görev
+için seçtiğiniz hesaba gider.
+
+Bu, her yapay zekâ özelliğini kapsar — commit mesajları, sohbet, inceleme,
+açıklama, çakışmalar, temalar, wiki — çünkü hepsi aynı çağrıdan geçer.
+
 ## Sınırlar
+
+- **Kapatılıp kapatılmadığı yalnızca yerel sunucularda izlenir.** Çöken bir
+  bulut sağlayıcısı kendi hatasıyla başarısız olur; yalnızca yavaş olan bir
+  bulut çağrısı da diğerleri gibi *uzun sürüyor* uyarısını alır. Kapalı değil de
+  meşgul olan yerel bir sunucu canlı sayılır: çağrıyı erken bitiren yalnızca
+  reddedilen ya da kopan bir bağlantıdır.
 
 - Yerleşik yedek listeler sürümler arasında eskir. Canlı getirme tam da bunun
   içindir; yedek yalnızca getirmenin mümkün olmadığı durumu kapsar.
