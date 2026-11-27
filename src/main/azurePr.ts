@@ -349,7 +349,8 @@ export function mapAzureBuildPolicies(r: AzureRepo, evaluations: readonly AzPoli
         status: done ? 'completed' : st === 'queued' ? 'queued' : 'in_progress',
         conclusion,
         url: buildId ? azureBuildUrl(r.org, r.project, buildId) : '',
-        ...(buildId ? { hasLog: true } : {})
+        // The build is the CI runs page's run: it retries a build's failed jobs.
+        ...(buildId ? { hasLog: true, runId: String(buildId) } : {})
       }
     })
 }

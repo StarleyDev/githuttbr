@@ -29,6 +29,7 @@ import type {
   RemoteRepo
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
+import { isoToMs } from './ciRuns'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 import { finishPrCommits, orderOldestFirst, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
 import { finishPrUpdates, groupForgejoPushes, singleUpdate, type ForgejoPush } from '../shared/prUpdates'
@@ -606,17 +607,26 @@ export async function forgejoPullChecks(base: string, owner: string, repo: strin
   const pr = await fjJson<FjPull>(`${r}/pulls/${number}`, token)
   const sha = pr.head?.sha
   if (!sha) return []
-  const st = await fjJson<{ statuses?: Array<{ context: string; status: string; target_url?: string }> }>(
-    `${r}/commits/${sha}/status`,
-    token
-  ).catch(() => ({ statuses: [] }))
-  return (st.statuses ?? []).map((s) => ({
-    name: s.context,
-    status: s.status === 'pending' ? 'in_progress' : 'completed',
-    conclusion: s.status === 'pending' ? null : s.status === 'success' ? 'success' : s.status === 'warning' ? 'neutral' : 'failure',
-    url: s.target_url ?? '',
-    ...(forgejoJobLogUrl(base, s.target_url ?? '') ? { hasLog: true } : {})
-  }))
+  const st = await fjJson<{
+    statuses?: Array<{ context: string; status: string; target_url?: string; created_at?: string; updated_at?: string }>
+  }>(`${r}/commits/${sha}/status`, token).catch(() => ({ statuses: [] }))
+  return (st.statuses ?? []).map((s) => {
+    const done = s.status !== 'pending'
+    // A status has no run times of its own: posted when the job was queued,
+    // updated when it ended — so its span counts the wait in the queue too.
+    const startedAt = isoToMs(s.created_at)
+    const finishedAt = done ? isoToMs(s.updated_at) : undefined
+    return {
+      name: s.context,
+      status: done ? 'completed' : 'in_progress',
+      conclusion: !done ? null : s.status === 'success' ? 'success' : s.status === 'warning' ? 'neutral' : 'failure',
+      url: s.target_url ?? '',
+      ...(forgejoJobLogUrl(base, s.target_url ?? '') ? { hasLog: true } : {}),
+      ...(startedAt ? { startedAt } : {}),
+      ...(finishedAt ? { finishedAt } : {}),
+      sha
+    }
+  })
 }
 
 /**

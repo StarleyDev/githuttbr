@@ -856,6 +856,14 @@ export interface PrCheck {
   url: string // details/logs URL
   /** The app can read this check's log itself (a Forgejo Actions job on the PR's own server). */
   hasLog?: boolean
+  /** Epoch milliseconds, when the host says. Forgejo's are the status's own times, queue included. */
+  startedAt?: number
+  finishedAt?: number
+  /** The commit the check ran on. */
+  sha?: string
+  /** The CI run it belongs to, as the CI runs page knows it — set only where that
+   *  host lets the app re-run a run's failed jobs (GitHub Actions, GitLab, Azure). */
+  runId?: string
 }
 
 /** A changed file in a pull request (file-by-file review checklist). */

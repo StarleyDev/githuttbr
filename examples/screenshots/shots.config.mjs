@@ -1798,7 +1798,7 @@ export const shots = [
     }
   },
   {
-    // The Checks tab with a Forgejo Actions job's log open under its row.
+    // The Checks tab: the summary, a failed Forgejo Actions job with the test its log names, and the log.
     out: 'pr-check-log',
     repos: ['octopus-merge'],
     themes: ['dark'],
@@ -1811,11 +1811,20 @@ export const shots = [
           url: 'https://forge.example.org/studio/catalog/pulls/7', comments: [], reviews: [], reviewThreads: []
         }))
         const job = (n) => `https://forge.example.org/studio/catalog/actions/runs/12/jobs/${n}`
+        // Finished twelve minutes ago: 36 s of lint, 1 min 12 s of tests.
+        const end = Date.now() - 12 * 60_000
+        const sha = 'a41c9e2b7d0f5c3e8a1b6d4f2c9e7a5b3d1f0e8c'
         ipcMain.handle('hosting:prChecks', () => [
-          { name: 'ci / lint', status: 'completed', conclusion: 'success', url: job(0), hasLog: true },
-          { name: 'ci / test', status: 'completed', conclusion: 'failure', url: job(1), hasLog: true }
+          { name: 'ci / lint', status: 'completed', conclusion: 'success', url: job(0), hasLog: true, startedAt: end - 36_000 - 40_000, finishedAt: end - 40_000, sha },
+          { name: 'ci / test', status: 'completed', conclusion: 'failure', url: job(1), hasLog: true, startedAt: end - 72_000, finishedAt: end, sha }
         ])
-        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        ipcMain.handle('hosting:prFiles', () => ({
+          files: [
+            { filename: 'src/cache.ts', status: 'modified', additions: 14, deletions: 3, patch: '@@ -1,3 +1,4 @@\n+export const index = new Map()\n' },
+            { filename: 'src/cache.test.ts', status: 'modified', additions: 9, deletions: 0, patch: '@@ -20,3 +20,4 @@\n+  expect(calls).toBe(1)\n' }
+          ],
+          revision: null
+        }))
         const R = '\u001b[31m', G = '\u001b[32m', D = '\u001b[2m', X = '\u001b[0m'
         ipcMain.handle('hosting:prCheckLog', () => [
           `${D}Run npm test${X}`,
@@ -1839,8 +1848,9 @@ export const shots = [
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-tab').nth(4).click()
-      await page.locator('.prd-check-logs[aria-expanded]').nth(1).click()
-      await page.locator('.prp-check-log pre').waitFor()
+      // The failed check opens on its own, log and failed test included.
+      await page.locator('.prc-failures').waitFor()
+      await page.locator('.prc-log pre').waitFor()
       await page.waitForTimeout(300)
     }
   },
