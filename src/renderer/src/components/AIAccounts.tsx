@@ -13,7 +13,15 @@ import {
   type SubscriptionCli,
   type ModelCatalog
 } from '../../../shared/types'
-import { accountLabel, accountNeedsKey, modelFor, newAccount } from '../../../shared/aiAccounts'
+import {
+  accountLabel,
+  accountNeedsKey,
+  assignFeatureAccount,
+  assignFeatureModel,
+  findAccount,
+  modelFor,
+  newAccount
+} from '../../../shared/aiAccounts'
 import { aiApi } from '../infrastructure/api'
 import { SubscriptionSetup } from './SubscriptionSetup'
 import { useModelCatalogs } from './useModelCatalogs'
@@ -504,18 +512,16 @@ export function AIAccountsEditor({
           const assignment = ai.assignments?.[feature]
           const accountId = assignment?.accountId ?? ''
           const resolvedId = accountId || ai.defaultAccountId
-          const models = catalogs[resolvedId]?.models ?? aiProviderPreset(ai.provider).models
+          // Before its catalog loads, a row lists its own provider's presets — not
+          // the default account's, which put Gemini models on an Ollama row.
+          const provider = findAccount(ai, resolvedId)?.provider ?? ai.provider
+          const models = catalogs[resolvedId]?.models ?? aiProviderPreset(provider).models
           return (
             <div className="ai-assignment" key={feature}>
               <span className="ai-assignment-label">{t(FEATURE_LABELS[feature])}</span>
               <select
                 value={accountId}
-                onChange={(e) => {
-                  const next = { ...(ai.assignments ?? {}) }
-                  if (!e.target.value) delete next[feature]
-                  else next[feature] = { accountId: e.target.value, model: assignment?.model ?? '' }
-                  onChange({ ...ai, assignments: next })
-                }}
+                onChange={(e) => onChange({ ...ai, assignments: assignFeatureAccount(ai, feature, e.target.value) })}
               >
                 <option value="">{t('settings.useDefaultAccount')}</option>
                 {accounts.map((a) => (
@@ -531,12 +537,7 @@ export function AIAccountsEditor({
                 allModels={catalogs[resolvedId]?.allModels}
                 settled={settled.includes(resolvedId)}
                 emptyLabel={interp(t('settings.accountDefaultModel'), { model: modelFor(ai, feature) })}
-                onChange={(model) => {
-                  const next = { ...(ai.assignments ?? {}) }
-                  if (!model && !accountId) delete next[feature]
-                  else next[feature] = { accountId: resolvedId, model }
-                  onChange({ ...ai, assignments: next })
-                }}
+                onChange={(model) => onChange({ ...ai, assignments: assignFeatureModel(ai, feature, model) })}
               />
             </div>
           )
