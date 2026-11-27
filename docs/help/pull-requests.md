@@ -3,7 +3,7 @@ title: Pull requests page
 category: Sync & many repos
 order: 57
 summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff. The conversation as one timeline, with what is new since your last visit.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit mpare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
 ---
 
 # Pull requests page
@@ -184,6 +184,9 @@ them:
   commit page.
 
 ![The Commits tab: a pull request's commits grouped by day, one with its full message open](../screenshots/pr-commits.webp)
+
+Commits made after you last left the pull request sit below a **New since your
+last visit** line — the same mark as the Conversation tab, from the same visit.
 
 **View diff** — or a click on the row, or Tab to it and Enter — opens the
 commit in the app, as a click in the graph would: the repository's view, that

@@ -833,7 +833,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 onOpenCommits={() => setSection('commits')}
               />
             ) : section === 'commits' ? (
-              <PrCommitsSection repoPath={repoPath} remoteUrl={remoteUrl} pr={pr} list={commits.list} error={commits.error} />
+              <PrCommitsSection
+                repoPath={repoPath}
+                remoteUrl={remoteUrl}
+                pr={pr}
+                list={commits.list}
+                error={commits.error}
+                lastVisit={lastVisit}
+              />
             ) : section === 'updates' ? (
               <PrUpdatesSection
                 list={updates.list}

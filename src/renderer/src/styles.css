@@ -19468,6 +19468,9 @@ button.insights-row:hover { background: var(--bg-2); }
 
 .prt-new-divider { display: flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 600; color: var(--accent); }
 .prt-new-divider::before, .prt-new-divider::after { content: ''; flex: 1; height: 1px; background: var(--accent); }
+/* The Commits tab draws the same divider between its rows and day groups. */
+.prc-new-divider { margin: 6px 0; }
+.prc-new-row { list-style: none; padding: 4px 14px; }
 
 /* The sidebar's verdict next to a reviewer who decided. */
 .prt-verdict { flex: none; font-size: 12px; font-weight: 600; }

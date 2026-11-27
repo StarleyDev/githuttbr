@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Copy, DownloadCloud, ExternalLink, GitCompareArrows, Loader2, X } from 'lucide-react'
 import type { CiStatus, PrCommit, PrCommitList, PrCommitStats, PrDetail, ReferenceQuery } from '../../../shared/types'
 import { autolink, remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
+import { splitByLastVisit } from '../lib/prVisits'
 import { splitWorkItemMentions } from '../lib/references'
 import { getReferenceAutolinkOptions, ReferenceInlineTitle, usePrefetchReferences, useReferenceHost } from './ReferenceLink'
 import { gitApi, hostingApi, shellApi } from '../infrastructure/api'
@@ -76,13 +77,16 @@ export function PrCommitsSection({
   remoteUrl,
   pr,
   list,
-  error
+  error,
+  lastVisit
 }: {
   repoPath: string
   remoteUrl: string
   pr: PrDetail
   list: PrCommitList | null
   error: string | null
+  /** When you last left this pull request (lib/prVisits), null on a first visit. */
+  lastVisit: number | null
 }): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
@@ -152,6 +156,17 @@ export function PrCommitsSection({
   }, [repoPath, remoteUrl, shas, githubToken])
 
   const groups = useMemo(() => groupCommitsByDay(list?.commits ?? []), [list])
+  // The first commit made after your last visit, where the "new" divider goes —
+  // the same rule as the Conversation tab, so both tabs agree on what is new.
+  const firstFreshSha = useMemo(() => {
+    const items = (list?.commits ?? []).map((c) => ({ at: Date.parse(c.authoredAt) || 0, sha: c.sha }))
+    return splitByLastVisit(items, lastVisit).fresh[0]?.sha ?? null
+  }, [list, lastVisit])
+  const newDivider = (
+    <div className="prt-new-divider prc-new-divider" role="separator">
+      <span>{t('prTimeline.newDivider')}</span>
+    </div>
+  )
   const summary = useMemo(() => getPrCommitSummary(list?.commits ?? []), [list])
 
   // On Azure every work item in a subject (`AB#12`, or `#12`: the same item there) is read
@@ -297,11 +312,13 @@ export function PrCommitsSection({
       </div>
       {groups.map((g, i) => (
         <section key={`${g.day}-${i}`} className="prp-commit-day">
+          {g.commits[0]?.sha === firstFreshSha && newDivider}
           <h3 className="prc-day-title">{g.day ? fmtDay(g.day) : t('prPage.commitsNoDate')}</h3>
           <ul className="prc-list">
-            {g.commits.map((c) => (
+            {g.commits.map((c, j) => (
+              <Fragment key={c.sha}>
+              {j > 0 && c.sha === firstFreshSha && <li className="prc-new-row">{newDivider}</li>}
               <PrCommitRow
-                key={c.sha}
                 commit={c}
                 prUrl={pr.url}
                 web={web}
@@ -326,6 +343,7 @@ export function PrCommitsSection({
                   )
                 }
               />
+              </Fragment>
             ))}
           </ul>
         </section>

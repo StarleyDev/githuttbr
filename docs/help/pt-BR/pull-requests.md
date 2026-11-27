@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff. A conversa como uma linha do tempo, com o que é novo desde a sua última visita.
-keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco conversa linha do tempo threads abertas thread resolvida aprovou pediu alterações enviou commits papel revisor novo desde a última visita mparar dois commits selos de tipo ci por commit ver diff próximo não visto filtro não vistos com comentários progresso mudou
-source: 9a01f7680ebba41dba329d4da3baaa2b98465cfd
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco conversa linha do tempo threads abertas thread resolvida aprovou pediu alterações enviou commits papel revisor novo desde a última visita comparar dois commits selos de tipo ci por commit ver diff próximo não visto filtro não vistos com comentários progresso mudou
+source: 196e91891ca1b6e621df1a2c6d4aac55461b0746
 ---
 
 # Página de pull requests
@@ -190,6 +190,10 @@ Atualizações, lista os commits:
   página do commit no repositório.
 
 ![A aba Commits: os commits de um pull request agrupados por dia, um com a mensagem completa aberta](../../screenshots/pr-commits.webp)
+
+Os commits feitos depois que você saiu do pull request pela última vez ficam
+abaixo de uma linha **Novo desde a sua última visita** — a mesma marca da aba
+Conversa, da mesma visita.
 
 **Ver diff** — ou um clique na linha, ou chegar nela com Tab e apertar Enter —
 abre o commit no app, como um clique no grafo faria: a visão do repositório, o
