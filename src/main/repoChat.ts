@@ -509,7 +509,7 @@ export function conversationPrompt(repoName: string, branch: string): string {
 The app you run in has a local Git repository open: ${repoName} (branch ${branch || 'detached HEAD'}). Nothing from it has been read. It matters only when the user's message is about it — its code, files, changes, history, or a Git task such as committing.
 You have not seen its files, so never invent file names, file contents or repository details. If, and only if, answering needs that repository, reply with exactly one line and nothing else — the word "repo" written literally, not the repository's name:
 @repo <what you need from it, in a few words>
-You will then be given its Git state and file list. Otherwise, answer directly.`
+You will then be given its Git state and file list. Otherwise, answer directly. Never say you will check, look or review something later: you cannot act between messages, so either answer now or send the @repo line.`
 }
 
 /**
@@ -534,18 +534,21 @@ export function repoRequestOf(reply: string, repoName: string): string | null {
  */
 /** How a reply to the last answer starts — not a new question, however short. */
 const FOLLOW_UP =
-  /^(tem certeza|certeza|ser[aá]|verifi|confir|confer|checa|check|are you sure|sure\b|really|mesmo\b|e (o|a|os|as|qual|quanto)\b|and (the|what|which)\b|what about|olh[ae]|veja|abr[ae]|look|open it|again|de novo|novamente|why\b|por qu|how come)/i
+  /^(\?+$|isso|sim\b|ok\b|pode\b|faz\b|fa[cç]a\b|vai\b|continu|e\?|ent[aã]o|yes\b|yep|do it|go on|go ahead|tem certeza|certeza|ser[aá]|verifi|confir|confer|checa|check|are you sure|sure\b|really|mesmo\b|e (o|a|os|as|qual|quanto)\b|and (the|what|which)\b|what about|olh[ae]|veja|abr[ae]|look|open it|again|de novo|novamente|why\b|por qu|how come)/i
 
-export function followUpOf(messages: readonly RepoChatMessage[]): string | null {
+export function followUpOf(messages: readonly RepoChatMessage[]): string[] {
   const latest = messages.at(-1)
-  if (latest?.role !== 'user') return null
+  if (latest?.role !== 'user') return []
   const text = latest.content.trim()
-  if (text.split(/\s+/).length > 6 || !FOLLOW_UP.test(text)) return null
-  // "Tem certeza?" then "Verifique": walk back over the follow-ups to the
-  // question they hang on, a few turns at most.
-  const earlier = messages.slice(0, -1).filter((m) => m.role === 'user').slice(-3).reverse()
-  const anchor = earlier.find((m) => !FOLLOW_UP.test(m.content.trim()) || m.content.trim().split(/\s+/).length > 6)
-  return anchor?.content ?? null
+  if (text.split(/\s+/).length > 6 || !FOLLOW_UP.test(text)) return []
+  // "Tem certeza?" then "Verifique", or a complaint in between ("not what I
+  // expected"): the caller looks back over these for the one about the repository.
+  return messages
+    .slice(0, -1)
+    .filter((m) => m.role === 'user')
+    .slice(-4)
+    .reverse()
+    .map((m) => m.content)
 }
 
 /**
@@ -580,7 +583,9 @@ export function mentionsRepository(message: string, tracked: readonly string[]):
 
 /** "review the last commit", "o último commit", "HEAD": the commit is read, not guessed. */
 export function mentionsLastCommit(message: string): boolean {
-  return /\b([uú]ltimo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit\b|\bcommit\s+(mais recente|atual|anterior)\b|\bHEAD\b/i.test(
+  // No \b before "último": in a JavaScript regex \b only knows ASCII letters,
+  // so it never matches before "ú" — the accented spelling slipped through.
+  return /(?<!\p{L})([uú]ltimo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit(?!\p{L})|(?<!\p{L})commit\s+(mais recente|atual|anterior)(?!\p{L})|\bHEAD\b/iu.test(
     message
   )
 }
@@ -1206,9 +1211,11 @@ ${actionRules}
   // A conversation first. Pinned context is the user asking about the
   // repository already, so it goes straight to the grounded rounds below.
   const typed = messages.at(-1)?.content ?? ''
-  const earlier = followUpOf(messages)
-  // A short follow-up inherits what the question before it named.
-  const latest = !mentionsRepository(typed, candidates) && earlier && mentionsRepository(earlier, candidates) ? earlier : typed
+  // A short follow-up inherits the nearest earlier question about the repository.
+  const anchor = mentionsRepository(typed, candidates)
+    ? undefined
+    : followUpOf(messages).find((text) => mentionsRepository(text, candidates))
+  const latest = anchor ?? typed
   if (!attachments.length && mentionsRepository(latest, candidates)) {
     // Files the user named are read now: a small model given the list still
     // answered "I cannot see config.json" instead of asking for it. With the
@@ -1219,18 +1226,23 @@ ${actionRules}
     overviewShown = named.length === 0 && !lastCommit
     readAs = typedAs(latest, named)
     onProgress({ phase: 'reading', files: named.length + (lastCommit ? 1 : 0) })
-    if (lastCommit) {
+    // Resolved to a hash first: the diff reader caches by the name it is given,
+    // and "HEAD" would keep answering with the commit it first saw.
+    const headHash = lastCommit ? (await gitService.commitSummary(repoPath, 'HEAD').catch(() => null))?.hash : undefined
+    if (headHash) {
       // Read the way a pinned commit is: its message, author and diff hunks.
       const head = await collectAttachmentEvidence(
         repoPath,
-        [{ kind: 'commit', hash: 'HEAD' }],
+        [{ kind: 'commit', hash: headHash }],
         ignored,
         status,
         skipped,
         committedOnly
       )
-      collected.push(...head.evidence)
-      readAs.push(...head.notes)
+      // Not pinned by the user: labelled as what it is, or the model echoes
+      // "Pinned commit …" back as if that were the answer.
+      collected.push(...head.evidence.map((item) => ({ ...item, pinned: false })))
+      readAs.push(...head.notes.map((note) => note.replace(/^Pinned commit/, 'Latest commit (HEAD)')))
     }
     if (named.length) {
       collected.push(...(await collectEvidence(repoPath, { paths: named, searches: [] }, allowed, status, committedOnly)))

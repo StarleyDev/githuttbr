@@ -228,12 +228,20 @@ describe('short follow-ups', () => {
   ]
 
   it('carry the question before them', () => {
-    expect(followUpOf([...asked, { role: 'user', content: 'Tem certeza?' }])).toBe(asked[0].content)
-    expect(followUpOf([...asked, { role: 'user', content: 'Verifique' }])).toBe(asked[0].content)
+    expect(followUpOf([...asked, { role: 'user', content: 'Tem certeza?' }])).toEqual([asked[0].content])
+    expect(followUpOf([...asked, { role: 'user', content: 'Verifique' }])).toEqual([asked[0].content])
+    expect(followUpOf([...asked, { role: 'user', content: 'Isso' }])).toEqual([asked[0].content])
+    expect(followUpOf([...asked, { role: 'user', content: '?' }])).toEqual([asked[0].content])
     expect(
-      followUpOf([...asked, { role: 'user', content: 'Tem certeza?' }, { role: 'assistant', content: 'Sim' }, { role: 'user', content: 'Verifique' }])
-    ).toBe(asked[0].content)
-    expect(followUpOf([...asked, { role: 'user', content: 'Me explique como funciona um motor a combustão por dentro' }])).toBeNull()
+      followUpOf([
+        ...asked,
+        { role: 'user', content: 'Não foi exatamente a resposta que eu esperava' },
+        { role: 'assistant', content: 'Quer que eu verifique?' },
+        { role: 'user', content: 'Isso' }
+      ])
+    ).toEqual(['Não foi exatamente a resposta que eu esperava', asked[0].content])
+    expect(followUpOf([...asked, { role: 'user', content: 'Me explique como funciona um motor a combustão por dentro' }])).toEqual([])
+    expect(followUpOf([...asked, { role: 'user', content: 'Como é feito um rolamento?' }])).toEqual([])
   })
 
   it('"Tem certeza?" reads the file again, a new subject does not', async () => {
@@ -255,6 +263,8 @@ describe('short follow-ups', () => {
 describe('the last commit', () => {
   it('is recognised in either language', () => {
     expect(mentionsLastCommit('Faça uma review do ultimo commit')).toBe(true)
+    expect(mentionsLastCommit('Faça uma review do último commit!')).toBe(true)
+    expect(mentionsLastCommit('Revise a última alteração commit')).toBe(true)
     expect(mentionsLastCommit('review the last commit')).toBe(true)
     expect(mentionsLastCommit('o que mudou no HEAD?')).toBe(true)
     expect(mentionsLastCommit('o que é um commit?')).toBe(false)
@@ -266,7 +276,8 @@ describe('the last commit', () => {
     const steps: RepoChatProgressStep[] = []
     await answerRepoChat(repo, [{ role: 'user', content: 'Faça uma review do ultimo commit' }], cfg, [], (s) => steps.push(s))
     expect(steps[0]).toEqual({ phase: 'reading', files: 1 })
-    expect(promptOf(bodies[0])).toMatch(/Pinned commit [0-9a-f]{10}/)
+    expect(promptOf(bodies[0])).toMatch(/Latest commit \(HEAD\) [0-9a-f]{10}/)
+    expect(promptOf(bodies[0])).not.toMatch(/\] \(pinned by the user\)/)
   })
 })
 
