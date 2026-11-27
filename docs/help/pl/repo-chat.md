@@ -111,8 +111,25 @@ proponuje odpowiedzi, której nic nie może udzielić.
 To, który dostawca i model odpowiada w czacie, ustawia się na stronie **AI**,
 w sekcji **Model dla zadania** — zobacz [Funkcje AI](ai.md#model-dla-zadania).
 
-Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy dostawcy
-— to to samo ustawienie, bez otwierania Ustawień.
+### Pigułki w nagłówku
+
+Pod tytułem panelu trzy pigułki mówią, co czat zrobi z twoją następną
+wiadomością, a każda zmienia to bez otwierania Ustawień:
+
+| Pigułka | Pokazuje | Kliknij, aby |
+|---|---|---|
+| **Konto · model** | Kto odpowiada, z kropką stanu konta — gotowy, nie odpowiada, brak klucza albo jeszcze nie sprawdzono | Wybrać inny model z menu pogrupowanego według kont albo wrócić do modelu profilu. To samo ustawienie co **Model dla zadania → Czat** |
+| **Może: …** | Co czat może robić — *czytać*, a także *Git*, *pliki* i *zdalne*, gdy są włączone | Przełączyć **Lokalne akcje Git**, **Tworzenie, edycja i usuwanie plików** oraz **Akcje zdalne** albo otworzyć **Wszystkie ustawienia czatu** |
+| **Zatwierdzanie** | *Pyta przed uruchomieniem*, *Uruchamia bezpieczne akcje* albo *Uruchamia wszystkie akcje* | Wybrać jeden z trzech trybów zatwierdzania (niżej). Ukryta, gdy lokalne akcje Git są wyłączone, bo nic nie jest proponowane |
+
+To te same ustawienia co **Ustawienia → AI → Czat repozytorium**, zapisywane w
+tej samej AI, więc nigdy się nie rozjeżdżają. Przeniesienie jednego pytania do
+mocniejszego modelu to jedno kliknięcie i nie rusza reszty aplikacji. Kropka
+stanu pochodzi z listy modeli, którą panel i tak pobrał — nigdy nie wysyła
+własnego żądania, więc *Nie sprawdzono* znaczy tylko, że nic jeszcze nie
+potwierdziło konta.
+
+![Otwarta pigułka uprawnień](../../screenshots/repo-chat-capabilities.webp)
 
 Przycisk różdżki obok tytułu panelu otwiera **kreator konfiguracji AI** —
 prowadzony przepływ, który generuje pliki konfiguracyjne asystenta
@@ -143,9 +160,7 @@ która nie prowadzi do czytelnego obrazu, po prostu nic nie pokazuje.
 
 Poproś o zmianę zamiast o fakt — *dodaj pliki markdown do przechowalni,
 zatwierdź to jako poprawkę, wpisz wynik builda na listę ignorowanych* — a
-odpowiedź przyjdzie z **kartą akcji**. Pusta rozmowa proponuje pod
-wprowadzeniem kilka przykładowych próśb w postaci chipów; kliknięcie jednego
-wypełnia pole wiadomości, więc możesz je zredagować przed wysłaniem. Karta
+odpowiedź przyjdzie z **kartą akcji**. Pusta rozmowa zaczyna się od **Zapytaj o cokolwiek** i trzech podpowiedzi — *Przejrzyj ostatni commit*, *Co się zmieniło od main?* (z nazwą domyślnej gałęzi repozytorium, jeśli ją ma) i *Napisz opis PR dla tej gałęzi*. Kliknięcie jednej wypełnia pole wiadomości i niczego nie wysyła, więc możesz ją najpierw zredagować. Karta
 wymienia konkretne kroki, które asystent chce
 wykonać, jeden wiersz na akcję, z przyciskami **Uruchom** i **Odrzuć**. Nic z
 karty jeszcze się nie wydarzyło; model może tylko proponować, a każda
@@ -247,7 +262,7 @@ lub **Odrzuć**:
 
 ### Tryby zatwierdzania
 
-Lista z tarczą pod polem wiadomości (także w **Ustawienia → AI → Czat
+Pigułka zatwierdzania w nagłówku panelu (także w **Ustawienia → AI → Czat
 repozytorium**) decyduje, jak karta zostanie uruchomiona — dla każdego profilu
 na tej samej AI:
 

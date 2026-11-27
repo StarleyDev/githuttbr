@@ -112,8 +112,25 @@ custa menos que revisar, então um modelo menor costuma bastar.
 Com a IA desligada por completo, o chat some junto — nenhum painel oferecendo
 resposta quando nada pode responder.
 
-O modelo do chat também pode ser trocado no cabeçalho do próprio painel, ao lado
-do nome do provedor — a mesma configuração, sem abrir as Configurações.
+### As pílulas do cabeçalho
+
+Abaixo do título do painel, três pílulas dizem o que o chat vai fazer com a sua
+próxima mensagem, e cada uma muda isso sem abrir as Configurações:
+
+| Pílula | Mostra | Clique para |
+|---|---|---|
+| **Conta · modelo** | Quem responde, com um ponto para o estado da conta — pronto, não responde, sem chave ou ainda não verificado | Escolher outro modelo num menu agrupado por conta, ou voltar ao modelo do perfil. É a mesma configuração de **Modelo por tarefa → Chat** |
+| **Pode: …** | O que o chat pode fazer — *ler*, e também *Git*, *arquivos* e *remoto* quando estão ligados | Ligar ou desligar **Ações Git locais**, **Criar, editar e excluir arquivos** e **Ações remotas**, ou abrir **Todas as configurações do chat** |
+| **Aprovação** | *Pergunta antes de executar*, *Executa ações seguras* ou *Executa todas as ações* | Escolher um dos três modos de aprovação (abaixo). Fica oculta enquanto as ações Git locais estão desligadas, já que nada é proposto |
+
+São as mesmas configurações de **Configurações → IA → Chat do repositório**,
+gravadas na mesma IA, então as duas nunca discordam. Mandar uma única pergunta
+para um modelo mais forte é um clique e não mexe no resto do app. O ponto de
+status vem da lista de modelos que o painel já buscou — ele nunca faz uma
+requisição própria, então *Não verificado* só quer dizer que nada provou a conta
+ainda.
+
+![A pílula de capacidades aberta](../../screenshots/repo-chat-capabilities.webp)
 
 O botão de varinha ao lado do título do painel abre o **assistente de
 configuração de IA** — um fluxo guiado que gera arquivos de configuração do
@@ -145,9 +162,7 @@ legível simplesmente não mostra nada.
 
 Peça uma mudança em vez de um fato — *coloque os arquivos markdown no stage,
 commite isto como um fix, ponha a saída do build na lista de ignore* — e a
-resposta chega com um **cartão de ações**. Uma conversa vazia oferece alguns
-pedidos de exemplo como chips abaixo da introdução; clicar em um preenche a
-caixa de mensagem, para você editar antes de enviar. O cartão lista os passos
+resposta chega com um **cartão de ações**. Uma conversa vazia começa com **Pergunte qualquer coisa** e três sugestões — *Revise o último commit*, *O que mudou desde main?* (com o nome da branch padrão do repositório quando ela existe) e *Escreva a descrição do PR desta branch*. Clicar em uma preenche a caixa de mensagem e não envia nada, para você editar antes. O cartão lista os passos
 concretos que o assistente
 quer dar, uma linha por ação, com os botões **Executar** e **Dispensar**. Nada
 no cartão aconteceu ainda; o modelo só pode propor, e cada proposta é conferida
@@ -250,7 +265,7 @@ escolher **Executar** ou **Dispensar**:
 
 ### Modos de aprovação
 
-O menu com escudo abaixo da caixa de mensagem (também em **Configurações → IA →
+A pílula de aprovação no cabeçalho do painel (também em **Configurações → IA →
 Chat do repositório**) decide como um cartão executa — para todo perfil na mesma
 IA:
 

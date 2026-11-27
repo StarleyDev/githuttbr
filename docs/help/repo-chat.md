@@ -3,7 +3,7 @@ title: Repository chat
 category: AI
 order: 82
 summary: Ask anything — general questions or questions about this repository — pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
-keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look general question any question thinking reading files permissions create edit delete files read-only file read-only mode local git actions remote actions privacy approval
+keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look general question any question thinking reading files permissions create edit delete files read-only file read-only mode local git actions remote actions privacy approval header pills model pill status dot capabilities starters suggestions ask anything
 ---
 
 # Repository chat
@@ -117,10 +117,24 @@ Questions are cheaper than reviews, so a smaller model is often enough.
 With AI switched off entirely, chat disappears with it — there is no panel
 offering to answer once nothing can.
 
-The panel's own header switches account and model without opening Settings: the
-dropdown groups every model by the account that serves it, so moving a single
-question to a stronger model is one click and does not disturb the rest of the
-app.
+### The header pills
+
+Under the panel's title, three pills say what the chat will do with your next
+message, and each one changes it without opening Settings:
+
+| Pill | Shows | Click to |
+|---|---|---|
+| **Account · model** | Who answers, with a dot for the account's state — ready, not responding, no key, or not checked yet | Pick another model from a menu grouped by account, or go back to the profile's model. Same setting as **Model per task → Chat** |
+| **Can: …** | What chat may do — *read*, plus *Git*, *files* and *remote* when those are on | Flip **Local Git actions**, **Create, edit and delete files** and **Remote actions**, or open **All chat settings** |
+| **Approval** | *Asks before running*, *Runs safe actions* or *Runs all actions* | Choose one of the three [approval modes](#approval-modes). Hidden while local Git actions are off, since nothing is proposed |
+
+These are the same settings as **Settings → AI → Repository chat**, written to
+the same AI, so the two never disagree. Moving a single question to a stronger
+model is one click and does not disturb the rest of the app. The status dot is
+read from the model list the panel fetched anyway — it never sends a request of
+its own, so *Not checked* only means nothing has proven the account yet.
+
+![The capabilities pill open](../screenshots/repo-chat-capabilities.webp)
 
 The wand button next to the panel title opens the **AI config wizard** — a
 guided flow that generates assistant configuration files (instructions, agents,
@@ -149,15 +163,17 @@ not resolve to a readable image simply shows nothing.
 
 Ask for a change instead of a fact — *stage the markdown files, commit this as
 a fix, put the build output on the ignore list* — and the reply arrives with an
-**action card**. An empty conversation offers a few example requests as chips
-under the introduction; clicking one fills the composer so you can edit it
-before sending. The card lists the concrete steps the assistant wants to take,
+**action card**. An empty conversation starts with **Ask anything** and three
+starters — *Review the last commit*, *What changed since main?* (named after
+the repository's default branch when it has one) and *Write the PR description
+for this branch*. Clicking one fills the composer and sends nothing, so you can
+edit it first. The card lists the concrete steps the assistant wants to take,
 one row per action, with **Run** and **Dismiss** buttons. Nothing in the card has happened
 yet; the model can only propose, and every proposal is checked against the
 working tree before you ever see it — an action naming a file that does not
 exist is rejected, not rendered.
 
-![Empty chat with example requests](../screenshots/repo-chat-empty.webp)
+![Empty chat with starter requests](../screenshots/repo-chat-empty.webp)
 
 ![Proposed actions in chat](../screenshots/repo-chat-actions.webp)
 
@@ -250,7 +266,7 @@ that summary fails, the card remains the authoritative record.
 
 ### Approval modes
 
-The shield dropdown under the composer (also in **Settings → AI → Repository
+The approval pill in the panel's header (also in **Settings → AI → Repository
 chat**) decides how a card runs — for every profile on the same AI:
 
 | Mode | Runs |
