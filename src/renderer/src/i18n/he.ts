@@ -1616,6 +1616,7 @@ export const he: Dict = {
   'settings.useOwnAiLocked': 'זמין אחרי פתיחת הנעילה של מחזיק המפתחות: המפתחות של הבינה הכללית מועתקים לבינה המלאכותית של הפרופיל הזה.',
   'settings.backToGeneralAi': 'חזרה לבינה המלאכותית הכללית',
   'settings.removeOwnAi': 'הסרת ה-AI של פרופיל זה',
+  'settings.aiActiveUsesOwn': '„{profile}”, הפרופיל שבשימוש, יש לו AI משלו: שינויים ב-AI הכללי לא חלים עליו.',
   'settings.backToGeneralAiTitle': 'לחזור לבינה המלאכותית הכללית?',
   'settings.backToGeneralAiConfirm': '{profile} יפסיק להשתמש בבינה המלאכותית שלו: החשבונות, המפתחות וההעדפות שלו (סגנונות, הוראות, כללי צ׳אט) יוסרו, והוא יעבור לבינה הכללית. הבינה הכללית לא משתנה.',
   'settings.profileAiPrefs': 'העדפות הכתיבה של הבינה המלאכותית',

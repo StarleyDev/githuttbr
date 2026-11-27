@@ -1598,6 +1598,7 @@ export const tr: Dict = {
   'settings.useOwnAiLocked': 'Anahtarlık kilidi açılınca kullanılabilir: genel yapay zekânın anahtarları bu profilin kendi yapay zekâsına kopyalanır.',
   'settings.backToGeneralAi': 'Genel yapay zekâya dön',
   'settings.removeOwnAi': 'Bu profilin yapay zekâsını kaldır',
+  'settings.aiActiveUsesOwn': 'Kullanılan profil “{profile}” kendi yapay zekâsına sahip: genel yapay zekâdaki değişiklikler ona uygulanmaz.',
   'settings.backToGeneralAiTitle': 'Genel yapay zekâya dönülsün mü?',
   'settings.backToGeneralAiConfirm': '{profile} artık kendi yapay zekâsını kullanmaz: yapay zekâ hesapları, anahtarları ve tercihleri (stiller, talimatlar, sohbet kuralları) kaldırılır ve genel yapay zekâyı izler. Genel yapay zekâ değişmez.',
   'settings.profileAiPrefs': 'Yapay zekânın yazım tercihleri',

@@ -1610,6 +1610,7 @@ export const en = {
   'settings.useOwnAiLocked': 'Available once the keychain is unlocked: the general AI\'s keys are copied into this profile\'s own AI.',
   'settings.backToGeneralAi': 'Back to the general AI',
   'settings.removeOwnAi': 'Remove this profile\'s AI',
+  'settings.aiActiveUsesOwn': '“{profile}”, the profile in use, has its own AI: changes to the general AI do not reach it.',
   'settings.backToGeneralAiTitle': 'Back to the general AI?',
   'settings.backToGeneralAiConfirm': '{profile} stops using its own AI: its AI accounts, keys and preferences (styles, instructions, chat rules) are removed, and it follows the general AI. The general AI does not change.',
   'settings.profileAiPrefs': 'AI writing preferences',

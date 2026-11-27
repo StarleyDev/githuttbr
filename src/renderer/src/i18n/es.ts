@@ -1615,6 +1615,7 @@ export const es: Dict = {
   'settings.useOwnAiLocked': 'Disponible cuando el llavero esté desbloqueado: las claves de la IA general se copian a la IA propia de este perfil.',
   'settings.backToGeneralAi': 'Volver a la IA general',
   'settings.removeOwnAi': 'Quitar la IA de este perfil',
+  'settings.aiActiveUsesOwn': '“{profile}”, el perfil en uso, tiene su propia IA: los cambios en la IA general no le llegan.',
   'settings.backToGeneralAiTitle': '¿Volver a la IA general?',
   'settings.backToGeneralAiConfirm': '{profile} deja de usar su propia IA: se eliminan sus cuentas, claves y preferencias de IA (estilos, instrucciones, reglas del chat), y pasa a seguir la IA general. La IA general no cambia.',
   'settings.profileAiPrefs': 'Preferencias de escritura de la IA',

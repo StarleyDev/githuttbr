@@ -1617,6 +1617,7 @@ export const nl: Dict = {
   'settings.useOwnAiLocked': 'Beschikbaar zodra de sleutelhanger ontgrendeld is: de sleutels van de algemene AI worden naar de eigen AI van dit profiel gekopieerd.',
   'settings.backToGeneralAi': 'Terug naar de algemene AI',
   'settings.removeOwnAi': 'AI van dit profiel verwijderen',
+  'settings.aiActiveUsesOwn': '„{profile}”, het profiel dat in gebruik is, heeft een eigen AI: wijzigingen aan de algemene AI gelden er niet voor.',
   'settings.backToGeneralAiTitle': 'Terug naar de algemene AI?',
   'settings.backToGeneralAiConfirm': '{profile} gebruikt geen eigen AI meer: de AI-accounts, sleutels en voorkeuren ervan (stijlen, instructies, chatregels) worden verwijderd, en het volgt de algemene AI. De algemene AI verandert niet.',
   'settings.profileAiPrefs': 'Schrijfvoorkeuren van de AI',

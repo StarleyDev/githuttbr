@@ -1616,6 +1616,7 @@ export const ko: Dict = {
   'settings.useOwnAiLocked': '키체인 잠금이 해제되면 사용할 수 있습니다. 공통 AI의 키가 이 프로필의 별도 AI로 복사됩니다.',
   'settings.backToGeneralAi': '공통 AI로 돌아가기',
   'settings.removeOwnAi': '이 프로필의 AI 제거',
+  'settings.aiActiveUsesOwn': '사용 중인 프로필 “{profile}”에는 자체 AI가 있어, 일반 AI의 변경 사항이 적용되지 않습니다.',
   'settings.backToGeneralAiTitle': '공통 AI로 돌아갈까요?',
   'settings.backToGeneralAiConfirm': '{profile}은(는) 더 이상 별도의 AI를 쓰지 않습니다. 그 AI 계정, 키, 설정(스타일, 지침, 채팅 규칙)이 삭제되고 공통 AI를 따릅니다. 공통 AI는 바뀌지 않습니다.',
   'settings.profileAiPrefs': 'AI 작성 환경설정',

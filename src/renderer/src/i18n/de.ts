@@ -1616,6 +1616,7 @@ export const de: Dict = {
   'settings.useOwnAiLocked': 'Verfügbar, sobald der Schlüsselbund entsperrt ist: Die Schlüssel der allgemeinen KI werden in die eigene KI dieses Profils kopiert.',
   'settings.backToGeneralAi': 'Zurück zur allgemeinen KI',
   'settings.removeOwnAi': 'KI dieses Profils entfernen',
+  'settings.aiActiveUsesOwn': '„{profile}“, das aktive Profil, hat eine eigene KI: Änderungen an der allgemeinen KI gelten nicht für es.',
   'settings.backToGeneralAiTitle': 'Zurück zur allgemeinen KI?',
   'settings.backToGeneralAiConfirm': '{profile} nutzt keine eigene KI mehr: seine KI-Konten, Schlüssel und Einstellungen (Stile, Anweisungen, Chat-Regeln) werden entfernt, und es folgt der allgemeinen KI. Die allgemeine KI bleibt unverändert.',
   'settings.profileAiPrefs': 'Schreibstil der KI',

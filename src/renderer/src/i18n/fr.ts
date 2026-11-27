@@ -1598,6 +1598,7 @@ export const fr: Dict = {
   'settings.useOwnAiLocked': 'Disponible une fois le trousseau déverrouillé : les clés de l’IA générale sont copiées dans l’IA propre de ce profil.',
   'settings.backToGeneralAi': 'Revenir à l’IA générale',
   'settings.removeOwnAi': 'Supprimer l’IA de ce profil',
+  'settings.aiActiveUsesOwn': '« {profile} », le profil utilisé, a sa propre IA : les modifications de l’IA générale ne s’y appliquent pas.',
   'settings.backToGeneralAiTitle': 'Revenir à l’IA générale ?',
   'settings.backToGeneralAiConfirm': '{profile} n’utilise plus sa propre IA : ses comptes, clés et préférences d’IA (styles, instructions, règles du chat) sont supprimés, et il suit l’IA générale. L’IA générale ne change pas.',
   'settings.profileAiPrefs': 'Préférences d’écriture de l’IA',

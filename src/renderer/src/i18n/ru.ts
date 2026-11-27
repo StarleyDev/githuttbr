@@ -1616,6 +1616,7 @@ export const ru: Dict = {
   'settings.useOwnAiLocked': 'Доступно после разблокировки связки ключей: ключи общего ИИ копируются в собственный ИИ этого профиля.',
   'settings.backToGeneralAi': 'Вернуться к общему ИИ',
   'settings.removeOwnAi': 'Удалить ИИ этого профиля',
+  'settings.aiActiveUsesOwn': '«{profile}», используемый профиль, имеет собственный ИИ: изменения общего ИИ на него не действуют.',
   'settings.backToGeneralAiTitle': 'Вернуться к общему ИИ?',
   'settings.backToGeneralAiConfirm': '{profile} перестаёт использовать собственный ИИ: его учётные записи, ключи и настройки ИИ (стили, инструкции, правила чата) удаляются, и он переходит на общий ИИ. Общий ИИ не меняется.',
   'settings.profileAiPrefs': 'Как пишет ИИ',
