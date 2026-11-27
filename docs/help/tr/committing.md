@@ -85,6 +85,8 @@ böylece yavaş bir yerel model ya da pahalı bir model hiç sürpriz olmaz.
 
 ![Yapay zekâyla oluştur ve hesap menüsü](../../screenshots/commit-ai-generate.webp)
 
+![Hesabın yanında Geri al ve Yeniden oluştur ile oluşturulmuş bir mesaj](../../screenshots/commit-ai-generated.webp)
+
 [Commit düzenleme](commit-edit.md) aynı düğmeye sahiptir; o commit’in kendi
 diff’inden çalışır.
 

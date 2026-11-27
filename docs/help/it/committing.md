@@ -89,6 +89,8 @@ modello locale lento o uno costoso non è mai una sorpresa.
 
 ![Genera con l’IA e il menu degli account](../../screenshots/commit-ai-generate.webp)
 
+![Un messaggio generato, con Annulla e Genera di nuovo accanto all’account](../../screenshots/commit-ai-generated.webp)
+
 [Modifica commit](commit-edit.md) ha lo stesso pulsante, a partire dal diff di
 quel commit.
 

@@ -82,6 +82,8 @@ AI가 켜져 있으면 설명 아래에 **AI로 생성**이 있습니다. 스테
 
 ![AI로 생성과 계정 메뉴](../../screenshots/commit-ai-generate.webp)
 
+![계정 옆의 실행 취소와 다시 생성이 있는 생성된 메시지](../../screenshots/commit-ai-generated.webp)
+
 [커밋 편집](commit-edit.md)에도 같은 버튼이 있으며, 그 커밋의 diff로
 생성합니다.
 

@@ -87,6 +87,8 @@ un modelo local lento o uno caro nunca sea una sorpresa.
 
 ![Generar con IA y el menú de cuentas](../../screenshots/commit-ai-generate.webp)
 
+![Un mensaje generado, con Deshacer y Generar de nuevo junto a la cuenta](../../screenshots/commit-ai-generated.webp)
+
 [Editar commit](commit-edit.md) tiene el mismo botón, a partir del diff de ese
 commit.
 

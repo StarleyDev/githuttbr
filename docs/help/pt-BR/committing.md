@@ -93,6 +93,8 @@ lento ou um caro nunca seja surpresa.
 
 ![Gerar com IA e o menu de contas](../../screenshots/commit-ai-generate.webp)
 
+![Uma mensagem gerada, com Desfazer e Gerar de novo ao lado da conta](../../screenshots/commit-ai-generated.webp)
+
 [Editar commit](commit-edit.md) tem o mesmo botão, a partir do diff daquele
 commit.
 

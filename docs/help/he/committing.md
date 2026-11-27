@@ -81,6 +81,8 @@ keywords: קומיט הודעה מלחין קונבנציונלי כרטיס ת�
 
 ![יצירה עם AI ותפריט החשבונות](../../screenshots/commit-ai-generate.webp)
 
+![הודעה שנוצרה, עם ביטול ויצירה מחדש לצד החשבון](../../screenshots/commit-ai-generated.webp)
+
 ב-[עריכת קומיט](commit-edit.md) יש אותו כפתור, מתוך ה-diff של אותו קומיט.
 
 מגבלות:

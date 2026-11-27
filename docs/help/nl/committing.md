@@ -87,6 +87,8 @@ een traag lokaal model of een duur model nooit een verrassing is.
 
 ![Genereren met AI en het accountmenu](../../screenshots/commit-ai-generate.webp)
 
+![Een gegenereerd bericht, met Ongedaan maken en Opnieuw genereren naast het account](../../screenshots/commit-ai-generated.webp)
+
 [Commit bewerken](commit-edit.md) heeft dezelfde knop, op basis van de diff
 van die commit.
 

@@ -78,6 +78,8 @@ AI 也按同样的格式书写。如果模型漏了表情，或用 `:shortcode:`
 
 ![用 AI 生成及账户菜单](../../screenshots/commit-ai-generate.webp)
 
+![生成的消息，账户旁边是“撤销”和“重新生成”](../../screenshots/commit-ai-generated.webp)
+
 [编辑提交](commit-edit.md) 中有同样的按钮，基于那次提交自身的 diff 生成。
 
 限制：

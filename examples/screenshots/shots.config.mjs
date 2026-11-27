@@ -91,8 +91,9 @@ async function openCompareShot(page, repoPath, mode) {
 
 /**
  * A loopback stand-in for an OpenAI-compatible provider: it answers the model
- * listing and nothing else, so an AI shot can show a "Ready" provider without
- * reaching one on the capturing machine. Unref'd: it never keeps a run alive.
+ * listing, and a chat completion with one fixed commit message, so an AI shot
+ * can show a "Ready" provider and a finished generation without reaching one
+ * on the capturing machine. Unref'd: it never keeps a run alive.
  */
 let fakeModelsPort
 async function serveFakeModels() {
@@ -102,10 +103,22 @@ async function serveFakeModels() {
     object: 'list',
     data: ['llama3.2', 'qwen2.5-coder', 'mistral'].map((id) => ({ id, object: 'model', created: 1700000000 }))
   })
+  const message = JSON.stringify({
+    summary: 'feat(app): greet the visitor by name',
+    description: 'Reads the name from the query string and falls back to "there".'
+  })
+  const completion = JSON.stringify({
+    id: 'shot',
+    object: 'chat.completion',
+    choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: message } }]
+  })
   const server = createServer((req, res) => {
-    const ok = req.url?.endsWith('/models')
-    res.writeHead(ok ? 200 : 404, { 'content-type': 'application/json' })
-    res.end(ok ? body : '{}')
+    const isList = req.url?.endsWith('/models')
+    const isChat = req.method === 'POST' && req.url?.endsWith('/chat/completions')
+    // The request body is drained and ignored: the answer is the same for any prompt.
+    req.resume()
+    res.writeHead(isList || isChat ? 200 : 404, { 'content-type': 'application/json' })
+    res.end(isList ? body : isChat ? completion : '{}')
   })
   // A fixed port keeps the endpoint in the shot the same between runs; a busy
   // one falls back to any free port rather than failing the capture.
@@ -2318,6 +2331,26 @@ export const shots = [
       await page.click('.commit-ai-target')
       await page.locator('.context-menu .menu-item', { hasText: 'OpenAI' }).first().hover()
       await page.waitForSelector('.context-menu.submenu', { timeout: 5000 })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // A finished generation: the text in the fields, and Undo / Generate again
+    // as coloured icons beside the account. The local account answers from the
+    // loopback fake server, so no provider is called.
+    out: 'commit-ai-generated',
+    repos: ['commit-template'],
+    themes: ['dark'],
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['commit-template'], 'add', 'app.js'])
+    },
+    drive: async (page, repoPaths) => {
+      await seedChatAI(page)
+      const repo = repoPaths['commit-template']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForSelector('.commit-ai-main:not([disabled])', { timeout: 10000 })
+      await page.click('.commit-ai-main')
+      await page.waitForSelector('.commit-ai-icon.undo', { timeout: 15000 })
       await page.waitForTimeout(300)
     }
   },

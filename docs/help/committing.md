@@ -91,6 +91,8 @@ model or a costly one is never a surprise.
 
 ![Generate with AI and its account menu](../screenshots/commit-ai-generate.webp)
 
+![A generated message, with Undo and Generate again beside the account](../screenshots/commit-ai-generated.webp)
+
 [Edit commit](commit-edit.md) has the same button, working from that commit's
 own diff.
 

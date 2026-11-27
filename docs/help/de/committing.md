@@ -90,6 +90,8 @@ Modell nie überrascht.
 
 ![Mit KI erzeugen und das Kontomenü](../../screenshots/commit-ai-generate.webp)
 
+![Eine erzeugte Nachricht, mit Rückgängig und Erneut erzeugen neben dem Konto](../../screenshots/commit-ai-generated.webp)
+
 [Commit bearbeiten](commit-edit.md) hat denselben Button, ausgehend vom Diff
 dieses Commits.
 

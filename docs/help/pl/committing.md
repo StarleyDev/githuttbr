@@ -88,6 +88,8 @@ model nigdy nie zaskakuje.
 
 ![Wygeneruj z AI i menu kont](../../screenshots/commit-ai-generate.webp)
 
+![Wygenerowana wiadomość z Cofnij i Wygeneruj ponownie obok konta](../../screenshots/commit-ai-generated.webp)
+
 [Edycja commita](commit-edit.md) ma ten sam przycisk, na podstawie diffu tego
 commita.
 

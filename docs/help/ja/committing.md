@@ -86,6 +86,8 @@ AI がオンのとき、説明欄の下に **AI で生成** があります。�
 
 ![AI で生成とアカウントのメニュー](../../screenshots/commit-ai-generate.webp)
 
+![生成されたメッセージと、アカウントの横の「元に戻す」と「もう一度生成」](../../screenshots/commit-ai-generated.webp)
+
 [コミットの編集](commit-edit.md) にも同じボタンがあり、そのコミット自身の
 diff から生成します。
 
