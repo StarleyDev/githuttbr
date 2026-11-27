@@ -59,6 +59,25 @@ export function accountNeedsKey(account: AIAccount): boolean {
   return aiProviderPreset(account.provider).needsKey && !(account.apiKey ?? '').trim()
 }
 
+/**
+ * What a model list depends on: the account's connection, not its id. Moving an
+ * account from Ollama to Anthropic keeps the id, and keying the list on the id
+ * alone left Ollama's models on the Anthropic account until a manual refresh.
+ * The key itself is reduced to "is there one", so typing it does not refetch
+ * on every keystroke.
+ */
+export function accountConnectionKey(account: AIAccount): string {
+  return [
+    account.id,
+    account.provider,
+    accountEndpoint(account),
+    account.cli ?? '',
+    account.cliPath ?? '',
+    account.subscription ? 'subscription' : '',
+    accountNeedsKey(account) ? 'no-key' : 'ready'
+  ].join('|')
+}
+
 export function findAccount(ai: AIConfig, accountId: string | undefined): AIAccount | undefined {
   if (!accountId) return undefined
   return (ai.accounts ?? []).find((a) => a.id === accountId)
