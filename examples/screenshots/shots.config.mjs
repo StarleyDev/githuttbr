@@ -2856,9 +2856,50 @@ export const shots = [
     }
   },
   {
-    // Edit any commit — pick the README commit mid-history, edit its file,
-    // and run the cascade preview so the shot shows the whole promise.
+    // Edit any commit — pick the README commit mid-history, reword it, edit its
+    // file and run the cascade preview, so the shot shows the whole promise:
+    // the "edited" message card, the changed file, the "What will happen"
+    // panel with a verdict per commit and the force-push warning (the branch
+    // is pushed to a throwaway bare remote first).
     out: 'commit-edit',
+    repos: ['bisect-bug'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['bisect-bug']
+      const origin = join(tmpdir(), 'githuttbr-demo-remotes', 'bisect-bug.git')
+      await run('rm', ['-rf', origin])
+      await run('git', ['init', '-q', '--bare', origin])
+      await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
+      await run('git', ['-C', repo, 'remote', 'add', 'origin', origin])
+      await run('git', ['-C', repo, 'push', '-q', '-u', 'origin', 'main'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['bisect-bug']
+      await page.waitForFunction((p) => (window.__shot.repo.getState().repos[p]?.commits ?? []).length > 0, repo)
+      await page.evaluate((p) => {
+        const commits = window.__shot.repo.getState().repos[p].commits
+        const c = commits.find((x) => x.subject.toLowerCase().includes('readme')) ?? commits[Math.floor(commits.length / 2)]
+        window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
+      }, repo)
+      await page.waitForTimeout(900)
+      const summary = page.locator('#commitedit-summary')
+      await summary.fill((await summary.inputValue()) + ' and a test command')
+      await page.locator('.commitedit-message textarea').first().fill(
+        'Steps for git bisect, and the node command that tests each step.'
+      )
+      await page.locator('.commitedit-files .snapshot-file-row').first().click()
+      await page.waitForTimeout(500)
+      await page.locator('.commitedit-editor .code-editor-area').fill(
+        (await page.locator('.commitedit-editor .code-editor-area').inputValue()) + '\nEdited three weeks later.\n'
+      )
+      await page.locator('.commitedit-impact-preview').click()
+      await page.waitForTimeout(1500)
+    }
+  },
+  {
+    // The same edit, with the files card switched to "Compare with original":
+    // the file's diff between what the commit holds and the edited buffer.
+    out: 'commit-edit-compare',
     repos: ['bisect-bug'],
     themes: ['light'],
     drive: async (page, repoPaths) => {
@@ -2872,11 +2913,13 @@ export const shots = [
       await page.waitForTimeout(900)
       await page.locator('.commitedit-files .snapshot-file-row').first().click()
       await page.waitForTimeout(500)
-      await page.locator('.commitedit-editor .code-editor-area').fill(
-        (await page.locator('.commitedit-editor .code-editor-area').inputValue()) + '\nEdited three weeks later.\n'
+      const area = page.locator('.commitedit-editor .code-editor-area')
+      const text = await area.inputValue()
+      await area.fill(
+        text.replace('git bisect start', 'git bisect start main~6') + '\nRun the test command at every step.\n'
       )
-      await page.locator('.commitedit-cascade-head button').first().click()
-      await page.waitForTimeout(1500)
+      await page.locator('.commitedit-seg button').nth(1).click()
+      await page.waitForTimeout(800)
     }
   },
   {
@@ -2910,7 +2953,7 @@ export const shots = [
       await page.locator('.commitedit-message .commit-advanced-toggle').click()
       await page.waitForTimeout(300)
       await page.locator('.commitedit-message .commit-style-row select.commit-type').first().selectOption('build')
-      await page.locator('.commitedit-cascade-head button').first().click()
+      await page.locator('.commitedit-impact-preview').click()
       await page.waitForTimeout(1500)
     }
   },

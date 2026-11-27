@@ -732,6 +732,7 @@ export const gitApi = {
     call<string[]>('stackPruneMerged', path, alsoMerged, leaf),
   commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
   blobAtCommit: (path: string, sha: string, file: string) => call<BlobAtCommit>('blobAtCommit', path, sha, file),
+  commitEditableFiles: (path: string, sha: string) => call<string[]>('commitEditableFiles', path, sha),
   commitEditPreview: (path: string, sha: string, edits: Record<string, string>, message: string) =>
     call<CommitEditPreview>('commitEditPreview', path, sha, edits, message),
   commitEditApply: (path: string, sha: string, edits: Record<string, string>, message: string) =>
