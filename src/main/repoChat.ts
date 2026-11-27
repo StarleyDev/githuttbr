@@ -510,7 +510,32 @@ You will then be given its Git state and file list. Otherwise, answer directly.`
 export function repoRequestOf(reply: string, repoName: string): string | null {
   const name = repoName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const m = new RegExp(`^[\\s\`>*]*@(?:repo(?:sitory)?|${name})\\b[\`:\\s]*(.*)$`, 'im').exec(reply)
-  return m ? m[1].replace(/`+$/, '').trim() || 'the repository' : null
+  if (m) return m[1].replace(/`+$/, '').trim() || 'the repository'
+  // "repo package.json" — the @ dropped. Only a short reply that is nothing
+  // but that line: a sentence that merely starts with "repo" is an answer.
+  const bare = /^[\s`>*]*repo(?:sitory)?\b[`:\s]*([^\n]*)$/i.exec(reply.trim())
+  return bare && reply.trim().length <= 80 ? bare[1].replace(/`+$/, '').trim() || 'the repository' : null
+}
+
+/**
+ * A short follow-up — "tem certeza?", "verifique", "and the name?" — is about
+ * what the previous question opened. Asked again with nothing read, a small
+ * model answered "I do not know the version" right after giving it.
+ */
+/** How a reply to the last answer starts — not a new question, however short. */
+const FOLLOW_UP =
+  /^(tem certeza|certeza|ser[aá]|verifi|confir|confer|checa|check|are you sure|sure\b|really|mesmo\b|e (o|a|os|as|qual|quanto)\b|and (the|what|which)\b|what about|olh[ae]|veja|abr[ae]|look|open it|again|de novo|novamente|why\b|por qu|how come)/i
+
+export function followUpOf(messages: readonly RepoChatMessage[]): string | null {
+  const latest = messages.at(-1)
+  if (latest?.role !== 'user') return null
+  const text = latest.content.trim()
+  if (text.split(/\s+/).length > 6 || !FOLLOW_UP.test(text)) return null
+  // "Tem certeza?" then "Verifique": walk back over the follow-ups to the
+  // question they hang on, a few turns at most.
+  const earlier = messages.slice(0, -1).filter((m) => m.role === 'user').slice(-3).reverse()
+  const anchor = earlier.find((m) => !FOLLOW_UP.test(m.content.trim()) || m.content.trim().split(/\s+/).length > 6)
+  return anchor?.content ?? null
 }
 
 /**
@@ -1163,7 +1188,10 @@ ${actionRules}
   // caller is somewhere else" and the caller.
   // A conversation first. Pinned context is the user asking about the
   // repository already, so it goes straight to the grounded rounds below.
-  const latest = messages.at(-1)?.content ?? ''
+  const typed = messages.at(-1)?.content ?? ''
+  const earlier = followUpOf(messages)
+  // A short follow-up inherits what the question before it named.
+  const latest = !mentionsRepository(typed, candidates) && earlier && mentionsRepository(earlier, candidates) ? earlier : typed
   if (!attachments.length && mentionsRepository(latest, candidates)) {
     // Files the user named are read now: a small model given the list still
     // answered "I cannot see config.json" instead of asking for it. With the
