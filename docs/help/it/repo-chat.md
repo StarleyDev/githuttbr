@@ -2,8 +2,9 @@
 title: Chat del repository
 category: AI
 order: 82
-summary: Fai domande su questo repository, con i file e i commit che fissi come contesto — e lascia che proponga azioni git che approvi prima dell'esecuzione.
-keywords: chat domanda chiedere assistente contesto allegare fissare trascinare commit file prova ancorato ai pannello azioni eseguire approvare approvazione automatica consentire correggere errore notifica
+summary: Chiedi qualsiasi cosa — domande generali o su questo repository —, con i file e i commit che fissi come contesto, e lascia che proponga azioni git che approvi prima dell'esecuzione.
+keywords: chat domanda chiedere assistente contesto allegare fissare trascinare commit file prova ancorato ai pannello azioni eseguire approvare approvazione automatica consentire correggere errore notifica domanda generale qualsiasi domanda sto pensando lettura dei file
+source: 6416ab8260b0e6e859213d03b774dc5c118e8282
 ---
 
 # Chat del repository
@@ -13,6 +14,10 @@ avviene davvero il refresh del token? Che cosa ha cambiato questo commit, in una
 frase? Perché esiste questo file?* La chat del repository risponde sul
 repository aperto e mostra le righe su cui si è basata.
 
+È anche una normale chat di IA. Un saluto, una domanda generica di
+programmazione o qualsiasi altra cosa riceve una risposta diretta dal modello,
+senza leggere il repository: guarda i file solo quando la domanda li riguarda.
+
 Condivide la colonna destra con **Dettagli**: le schede in alto passano dall’una
 all’altra, così il grafo non perde la sua selezione.
 
@@ -20,20 +25,24 @@ all’altra, così il grafo non perde la sua selezione.
 
 ## Che cosa legge
 
-Ogni risposta nasce in due passaggi. Il primo sceglie un piccolo insieme di
-percorsi e ricerche letterali dall’elenco dei file tracciati del repository. Il
-secondo risponde usando solo gli estratti riportati, e può citare soltanto
-quelli: un file o una riga inventati sono un errore di validazione, non una
-risposta plausibile.
+Ogni messaggio parte con **una** chiamata. Il modello vede lo stato del
+repository (branch, file modificati) e l’elenco dei file tracciati, ma nessun
+contenuto dei file. Un saluto o una domanda che non riguarda il repository
+riceve risposta subito, in quell’unica chiamata.
 
-**Una seconda occhiata.** La prima passata deve indovinare quali file contano
-solo dal nome, ed è esattamente l'ipotesi che sbaglia su «da dove viene
-chiamato». Perciò una risposta può richiedere invece di indovinare: può indicare
-altri percorsi, altre ricerche letterali o hash di commit dalla cronologia
-recente, e la domanda viene ripetuta con ciò che emerge. Succede al massimo due
-volte — ogni giro è un'altra chiamata al modello che aspetti — e all'ultima deve
-rispondere con quello che ha. Non ne vedi nulla, se non un'attesa un po' più
-lunga e una risposta migliore.
+**Lettura su richiesta.** Quando la domanda riguarda il codice, il modello chiede
+ciò che gli serve invece di indovinare: percorsi esatti dall’elenco, ricerche
+letterali o hash di commit dalla cronologia recente. L’app li legge e ripropone
+la domanda con gli estratti. Succede al massimo tre volte — ogni giro è un’altra
+chiamata al modello che aspetti — e all’ultima deve rispondere con quello che
+ha. Una risposta sul repository può citare soltanto gli estratti ricevuti: un
+file o una riga inventati sono un errore di validazione, non una risposta
+plausibile.
+
+Mentre aspetti, la riga sotto il tuo messaggio dice che cosa sta succedendo:
+**Sto pensando…** mentre il modello lavora, **Lettura dei file (N)…** o
+**Ricerca nel repository…** solo mentre l’app sta davvero leggendo ciò che ha
+chiesto.
 
 | Incluso | Escluso |
 |---|---|
@@ -77,7 +86,6 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 | Impostazione | Effetto |
 |---|---|
 | **Fai domande sul repository** | Disattivata toglie la scheda, il pulsante e il bersaglio della scorciatoia. Il resto dell’IA continua |
-| **Modello della chat** | Un modello solo per la chat. Vuoto significa quello del profilo: chiedere costa meno che revisionare, spesso basta uno più piccolo |
 | **Solo contenuti committati** | Risponde dall’ultimo commit invece che dal working tree: le modifiche non committate non lasciano mai la macchina |
 | **Proponi azioni su file e Git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
 | **Modalità file di sola lettura** | Attivata blocca creazione, modifica, sostituzione ed eliminazione dei file, ma mantiene disponibili le azioni Git. È attiva per impostazione predefinita |
@@ -208,6 +216,16 @@ piano**. Riporta il branch a quel commit e ripristina l'albero, buttando via ci�
 che il piano ha prodotto: perciò chiede conferma e nomina il commit di ritorno.
 Le pull request aperte restano aperte — un remoto non è qualcosa che uno
 snapshot locale possa ritirare.
+
+Con **Esegui in automatico tutte le azioni**, una modifica di file valida viene
+eseguita subito e la scheda registra l’azione completata:
+
+![Azione su file della chat del repository completata automaticamente](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Con **Chiedi sempre**, lo stesso tipo di modifica resta in sospeso finché non
+scegli **Esegui** o **Ignora**:
+
+![Azione su file della chat del repository in attesa di approvazione](../../screenshots/repo-chat-file-action-approval.webp)
 
 ### Modalità di approvazione
 

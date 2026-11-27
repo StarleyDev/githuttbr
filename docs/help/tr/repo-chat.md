@@ -2,8 +2,9 @@
 title: Depo sohbeti
 category: Yapay zekâ
 order: 82
-summary: Bu depo hakkında soru sorun; bağlam olarak sabitlediğiniz dosya ve commit’lerle — ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
-keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim
+summary: Her şeyi sorun — genel sorular ya da bu depo hakkında sorular —; bağlam olarak sabitlediğiniz dosya ve commit’lerle, ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
+keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim genel soru herhangi bir soru düşünüyor dosyalar okunuyor
+source: 6416ab8260b0e6e859213d03b774dc5c118e8282
 ---
 
 # Depo sohbeti
@@ -12,6 +13,10 @@ Bazı soruları sormak, aramaktan hızlıdır. *Token yenileme aslında nerede
 oluyor? Bu commit tek cümleyle neyi değiştirdi? Bu dosya neden var?* Depo
 sohbeti bunları açık depo üzerinden yanıtlar ve dayandığı satırları gösterir.
 
+Sıradan bir yapay zekâ sohbeti de olur. Bir selam, genel bir programlama
+sorusu ya da başka herhangi bir şey, depo okunmadan modelden doğrudan yanıt
+alır — dosyalara yalnızca soru onlarla ilgiliyse bakar.
+
 Sağ sütunu **Ayrıntılar** ile paylaşır: üstteki sekmeler ikisi arasında geçiş
 yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 
@@ -19,19 +24,21 @@ yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 
 ## Ne okur
 
-Her yanıt iki geçişte kurulur. İlki, deponun kendi izlenen dosya listesinden
-küçük bir yol ve düz metin araması kümesi seçer. İkincisi yalnızca gelen
-alıntılarla yanıtlar ve yalnızca onlara kaynak gösterebilir: uydurulmuş bir
-dosya ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
+Her mesaj **tek** bir çağrıyla başlar. Model deponun durumunu (dal, değişen
+dosyalar) ve izlenen dosya listesini görür, ama hiçbir dosya içeriğini görmez.
+Bir selam ya da depoyla ilgili olmayan bir soru orada, o tek çağrıda yanıtlanır.
 
-**İkinci bir bakış.** İlk geçiş hangi dosyaların önemli olduğunu yalnızca
-adlarından tahmin etmek zorundadır — “bu nereden çağrılıyor” sorusunda tam da
-bu tahmin tutmaz. Bu yüzden bir yanıtın tahmin etmek yerine geri sorma hakkı
-vardır: daha fazla yol, daha fazla birebir arama ya da yakın geçmişten commit
-özetleri isteyebilir ve soru, bunların getirdikleriyle yeniden sorulur. Bu en
-çok iki kez olur — her tur beklediğiniz bir model çağrısı daha demektir — ve
-sonuncusunda elindekiyle yanıt vermek zorundadır. Bundan tek gördüğünüz biraz
-daha uzun bir bekleme ve daha iyi bir yanıttır.
+**İhtiyaç anında okuma.** Soru kodla ilgiliyse model tahmin etmek yerine neye
+ihtiyacı olduğunu ister: listeden tam yollar, birebir aramalar ya da yakın
+geçmişten commit özetleri. Uygulama bunları okur ve soruyu alıntılarla yeniden
+sorar. Bu en çok üç kez olur — her tur beklediğiniz bir model çağrısı daha
+demektir — ve sonuncusunda elindekiyle yanıt vermek zorundadır. Depoyla ilgili
+bir yanıt yalnızca kendisine verilen alıntılara kaynak gösterebilir: uydurulmuş
+bir dosya ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
+
+Siz beklerken mesajınızın altındaki satır ne olduğunu söyler: model çalışırken
+**Düşünüyor…**, yalnızca uygulama istenenleri gerçekten okurken **Dosyalar
+okunuyor (N)…** ya da **Depoda aranıyor…**.
 
 | Dahil | Hariç |
 |---|---|
@@ -200,6 +207,16 @@ commit’e döndürür ve ağacı geri yükler; bu, planın ürettiği her şeyi
 demektir, bu yüzden önce onay ister ve dönülecek commit’i adıyla söyler. Açılan
 pull request’ler açık kalır: uzak bir depoyu yerel bir anlık görüntü geri
 alamaz.
+
+**Tüm eylemleri otomatik çalıştır** ile geçerli bir dosya değişikliği hemen
+çalışır ve kart tamamlanan eylemi kaydeder:
+
+![Depo sohbetinde otomatik tamamlanan dosya eylemi](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+**Her zaman sor** ile aynı tür değişiklik, siz **Çalıştır** ya da **Reddet**
+seçene kadar bekler:
+
+![Depo sohbetinde onay bekleyen dosya eylemi](../../screenshots/repo-chat-file-action-approval.webp)
 
 ### Onay modları
 

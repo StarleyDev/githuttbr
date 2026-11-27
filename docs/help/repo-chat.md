@@ -2,8 +2,8 @@
 title: Repository chat
 category: AI
 order: 82
-summary: Ask questions about this repository, pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
-keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look
+summary: Ask anything — general questions or questions about this repository — pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
+keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look general question any question thinking reading files
 ---
 
 # Repository chat
@@ -13,6 +13,10 @@ refresh actually happen? What did this commit change, in one sentence? Why does
 this file exist?* Repository chat answers those against the repository that is
 open, and shows the lines it based each answer on.
 
+It is also an ordinary AI chat. A greeting, a general programming question or
+anything else gets a direct answer from the model, without reading the
+repository — it only looks at files when the question is about them.
+
 It shares the right-hand column with **Details**: the tab strip at the top
 switches between them, so the graph never loses its selection when you ask
 something.
@@ -21,19 +25,22 @@ something.
 
 ## What it reads
 
-Every answer is built in two passes. The first picks a small set of paths and
-literal searches from the repository's own tracked-file list. The second answers
-using only the excerpts that pass brings back, and may cite only those excerpts —
-a made-up file or line is a validation error, not a plausible-looking answer.
+Every message starts with **one** call. The model sees the repository's state
+(branch, changed files) and its tracked-file list, but no file contents. A
+greeting or a question that is not about the repository is answered right
+there, in that one call.
 
-**A second look.** The first pass has to guess which files matter from their
-names alone, which is exactly the guess that fails on "where is this called
-from". So an answer is allowed to ask back instead of guessing: it can name more
-paths, more literal searches, or commit hashes from the recent history, and the
-question is put again with what those turn up. That happens at most twice — each
-round is another model call you wait for — and on the last one it must answer
-with what it has. You see none of this except a slightly longer wait and a
-better answer.
+**Reading on demand.** When the question is about the code, the model asks for
+what it needs instead of guessing: exact paths from the list, literal searches,
+or commit hashes from the recent history. The app reads those and puts the
+question again with the excerpts. That happens at most three times — each round
+is another model call you wait for — and on the last one it must answer with
+what it has. A repository answer may cite only the excerpts it was given: a
+made-up file or line is a validation error, not a plausible-looking answer.
+
+While you wait, the line under your message says what is happening:
+**Thinking…** while the model works, **Reading files (N)…** or **Searching the
+repository…** only while the app is actually reading what it asked for.
 
 What it can see:
 

@@ -1964,6 +1964,12 @@ export interface RepoChatSkipped {
 }
 
 /** Answer returned by the repository-chat IPC handler. */
+/** What the repository chat is doing right now, for the panel's waiting line. */
+export type RepoChatProgressStep = { phase: 'thinking' } | { phase: 'reading'; files: number }
+
+/** A progress step as it crosses IPC, tagged with the repository it belongs to. */
+export type RepoChatProgress = RepoChatProgressStep & { repoPath: string }
+
 export interface RepoChatReply {
   content: string
   sources: RepoChatSource[]
