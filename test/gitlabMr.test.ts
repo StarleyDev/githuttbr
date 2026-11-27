@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { glJson, glJobToCheck, diffLineCounts } from '../src/main/hosting'
+import { glJson, glJobToCheck, diffLineCounts, getGitlabJobId } from '../src/main/hosting'
 
 const TOKEN = 'glpat-abcdefghijklmnop'
 
@@ -60,6 +60,26 @@ describe('glJobToCheck', () => {
       conclusion: null,
       url: 'https://x'
     })
+  })
+
+  it('carries the pipeline, the times and the log of a finished job', () => {
+    const c = glJobToCheck(
+      {
+        name: 'test',
+        status: 'failed',
+        web_url: 'https://gitlab.example.org/studio/catalog/-/jobs/456',
+        started_at: '2026-11-20T10:00:00Z',
+        finished_at: '2026-11-20T10:01:12Z'
+      },
+      { id: 78, sha: 'a41c9e2' }
+    )
+    expect(c).toMatchObject({ hasLog: true, runId: '78', sha: 'a41c9e2', startedAt: Date.parse('2026-11-20T10:00:00Z') })
+    expect(c.finishedAt! - c.startedAt!).toBe(72_000)
+  })
+
+  it('reads a job id only from a job link', () => {
+    expect(getGitlabJobId('https://gitlab.example.org/a/b/-/jobs/456')).toBe('456')
+    expect(getGitlabJobId('https://gitlab.example.org/a/b/-/pipelines/456')).toBeNull()
   })
 
   it('maps terminal states to the check-run vocabulary', () => {

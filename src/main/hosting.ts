@@ -29,8 +29,8 @@ import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prC
 import { finishPrUpdates, groupGithubTimeline, groupUpdatesByHeads, type GithubTimelineItem } from '../shared/prUpdates'
 import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../shared/prCommentHandle'
 import { countChecks } from './ciSummary'
-import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
-import { githubCiRuns } from './ciRunsGithub'
+import { NO_CI_CAPABILITIES, isoToMs, type CiRunsAdapter } from './ciRuns'
+import { getGithubActionsJob, githubCheckRun, githubCiRuns, type GhCheckRun } from './ciRunsGithub'
 import { gitlabCiRuns, gitlabCommitCiLookup } from './ciRunsGitlab'
 import { azureCiLookupBatch, azureCiRuns } from './ciRunsAzure'
 import { forgejoCiRuns, forgejoCommitCiLookup } from './ciRunsForgejo'
@@ -2021,7 +2021,18 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
 }
 
 /** GitLab job status → the check-run vocabulary the renderer already renders. */
-export function glJobToCheck(job: { name: string; status: string; web_url?: string | null }): PrCheck {
+/** A GitLab job's id from its page link, `…/-/jobs/<id>`. */
+export function getGitlabJobId(url: string | null | undefined): string | null {
+  return /\/-\/jobs\/(\d+)(?:[/?#]|$)/.exec(url ?? '')?.[1] ?? null
+}
+
+/** Statuses whose job never ran, so there is no trace to read (as ciRunsGitlab's). */
+const GL_NO_TRACE = new Set(['created', 'pending', 'manual', 'skipped', 'scheduled', 'waiting_for_resource', 'preparing', 'running'])
+
+export function glJobToCheck(
+  job: { name: string; status: string; web_url?: string | null; started_at?: string | null; finished_at?: string | null },
+  pipeline?: { id: number; sha?: string }
+): PrCheck {
   const map: Record<string, { status: string; conclusion: string | null }> = {
     created: { status: 'queued', conclusion: null },
     pending: { status: 'queued', conclusion: null },
@@ -2037,22 +2048,35 @@ export function glJobToCheck(job: { name: string; status: string; web_url?: stri
     manual: { status: 'completed', conclusion: 'action_required' }
   }
   const m = map[job.status] ?? { status: 'completed', conclusion: 'neutral' }
-  return { name: job.name, status: m.status, conclusion: m.conclusion, url: job.web_url || '' }
+  const startedAt = isoToMs(job.started_at)
+  const finishedAt = m.status === 'completed' ? isoToMs(job.finished_at) : undefined
+  return {
+    name: job.name,
+    status: m.status,
+    conclusion: m.conclusion,
+    url: job.web_url || '',
+    ...(getGitlabJobId(job.web_url) && !GL_NO_TRACE.has(job.status) ? { hasLog: true } : {}),
+    ...(startedAt ? { startedAt } : {}),
+    ...(finishedAt ? { finishedAt } : {}),
+    ...(pipeline?.sha ? { sha: pipeline.sha } : {}),
+    // GitLab retries a pipeline's failed jobs (the CI runs page's "re-run failed").
+    ...(pipeline ? { runId: String(pipeline.id) } : {})
+  }
 }
 
 async function glMergeRequestChecks(remoteUrl: string, token: string | undefined, number: number): Promise<PrCheck[]> {
   const { base, auth } = await glProjectOf(remoteUrl, token)
   // Pipelines come newest-first; the head pipeline's jobs are the checks.
-  const pipelines = await glJson<Array<{ id: number }>>(
+  const pipelines = await glJson<Array<{ id: number; sha?: string }>>(
     `${base}/merge_requests/${number}/pipelines?per_page=1`,
     auth
-  ).catch(() => [] as Array<{ id: number }>)
+  ).catch(() => [] as Array<{ id: number; sha?: string }>)
   if (pipelines.length === 0) return []
-  const jobs = await glJson<Array<{ name: string; status: string; web_url?: string | null }>>(
-    `${base}/pipelines/${pipelines[0].id}/jobs?per_page=100`,
-    auth
-  ).catch(() => [] as Array<{ name: string; status: string; web_url?: string | null }>)
-  return jobs.map(glJobToCheck)
+  type GlCheckJob = Parameters<typeof glJobToCheck>[0]
+  const jobs = await glJson<GlCheckJob[]>(`${base}/pipelines/${pipelines[0].id}/jobs?per_page=100`, auth).catch(
+    () => [] as GlCheckJob[]
+  )
+  return jobs.map((j) => glJobToCheck(j, pipelines[0]))
 }
 
 /** Count added/removed lines in a unified diff body (file headers excluded). */
@@ -2471,7 +2495,20 @@ async function pullRequestCheckLog(remoteUrl: string, tokens: HostTokens, url: s
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureBuildLog(a.optional, a.text, a.repo, url)
   }
-  if (parseRemoteUrl(remoteUrl)?.provider !== 'forgejo') return null
+  // GitHub Actions and GitLab jobs: the link names the job, and the CI runs page's
+  // adapter reads its log — only the numeric id travels, never the link itself.
+  const provider = parseRemoteUrl(remoteUrl)?.provider
+  if (provider === 'github') {
+    const job = getGithubActionsJob(url)
+    const adapter = job ? await ciRunsAdapterFor(remoteUrl, tokens) : null
+    return job && adapter ? adapter.getJobLog(job.runId, job.jobId) : null
+  }
+  if (provider === 'gitlab') {
+    const jobId = getGitlabJobId(url)
+    const adapter = jobId ? await ciRunsAdapterFor(remoteUrl, tokens) : null
+    return jobId && adapter ? adapter.getJobLog('', jobId) : null
+  }
+  if (provider !== 'forgejo') return null
   const f = await fjRepoOf(remoteUrl, tokens.forgejo)
   return forgejoJobLog(f.base, f.token, url)
 }
@@ -2495,17 +2532,12 @@ async function pullRequestChecks(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrChecks(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
-  const data = await ghJson<{
-    check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string | null; details_url: string | null }>
-  }>(`${api}/commits/${pr.head.sha}/check-runs?per_page=100`, token).catch(() => ({ check_runs: [] }))
-  return data.check_runs.map((c) => ({
-    name: c.name,
-    status: c.status,
-    conclusion: c.conclusion,
-    url: c.html_url || c.details_url || ''
-  }))
+  const data = await ghJson<{ check_runs: GhCheckRun[] }>(`${api}/commits/${pr.head.sha}/check-runs?per_page=100`, token).catch(
+    () => ({ check_runs: [] as GhCheckRun[] })
+  )
+  return data.check_runs.map((c) => githubCheckRun({ ...c, head_sha: c.head_sha ?? pr.head.sha }))
 }
 
 /**

@@ -252,7 +252,7 @@ The main column has three sections:
 |---|---|
 | **Conversation** | The description, comments and inline review threads (`file:line`, with replies). Only the conversation scrolls: the comment box with comment / approve / request changes, and the merge box (merge, squash or rebase), stay fixed at the bottom, so a long pull request never pushes them out of reach |
 | **Files** | Every changed file, and the selected one's diff beside the list, with syntax highlighting and word-level changes (secret-looking files masked when that setting is on). A ✓ "viewed" checklist remembers your progress. A file the host sends no diff for (a binary, or one too large) links to it on the host |
-| **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab), with pass/fail/pending and links to the logs. Every run of the repository — not only this pull request's — is on the [CI runs](ci-runs.md) page |
+| **Checks** | How the head commit's CI went, and why it failed — see [the Checks tab](#the-checks-tab). Every run of the repository — not only this pull request's — is on the [CI runs](ci-runs.md) page |
 
 The sidebar shows:
 
@@ -273,6 +273,54 @@ the file list once it loads. A row the host does not report is left out.
 
 If someone force-pushes mid-review, [what changed since](range-diff.md) shows
 you exactly what moved.
+
+### The Checks tab
+
+A red check answers one question badly: *what* broke. The Checks tab answers
+it without a trip to the CI's website. The tab's label carries a red count of
+the failing checks, so you know before opening it.
+
+![The Checks tab: a summary of the run, the failed test read from the log, and the numbered log](../screenshots/pr-check-log.webp)
+
+- **The summary** at the top says how many checks failed (or that they all
+  passed, or how many are still running), on which commit, when the last one
+  finished and how long they took together. **Re-run failed** starts the
+  failed jobs again on the host; **Open CI runs** opens the repository's
+  [CI runs](ci-runs.md) page.
+- **One card per check**, with how it ended and how long it took. A failed
+  check opens on its own; a passed one stays one line until **View log**.
+  **Copy log** copies the log as plain text; **View on host →** opens the
+  check on the host's site.
+- **The failed test.** When the log is a **vitest**, **jest** or **pytest**
+  run, the card names the tests that failed, the error, and where: the
+  `path:line` chip and **Open in editor** open the file at that line in your
+  [editor](editor.md), and **View in the PR diff** switches to the Files tab
+  on that file when the pull request changes it.
+- **The full log** folds under the card, numbered, colours kept, with the lines
+  that mark a failure highlighted. Very long logs show their last few thousand
+  lines, numbered from the real start.
+
+Where each host stands:
+
+| Host | Log in the app | Times and commit | Re-run failed |
+|---|---|---|---|
+| GitHub | GitHub Actions jobs | Yes | Yes — the job's workflow run |
+| GitLab | Pipeline jobs | Yes | Yes — retries the pipeline's failed jobs |
+| Azure DevOps | Build validation and pipeline statuses | No | Build validation — retries the build's failed jobs |
+| Forgejo | Forgejo Actions jobs | From the status, so the time counts the wait in the queue | No — Forgejo has no API for it |
+| Bitbucket Data Center | No | No | No |
+
+Limits:
+
+- The failed test is read from the log's text, not from a test report. Another
+  runner, a failure before the tests ran (a build or install error), or a log
+  cut before the failure section shows the log alone, as before. At most twenty
+  failures are listed.
+- A path the log prints as the CI machine's own (`/home/runner/work/…`) is
+  turned back into a path in the repository when it can be; one that cannot is
+  shown, but not opened.
+- A check from another app (a coverage or security service) has no log in the
+  app: **View on host →** is its only way in.
 
 ### Closing, reopening and drafts
 
@@ -662,10 +710,8 @@ logs, so the app asks for the same page its web log viewer downloads, sending
 the token only when the link is a job on this very server; a status from an
 external CI is never sent it. A server that serves logs only to a signed-in
 browser answers with its sign-in page, and the row says so and offers the
-browser instead. Very long logs show their last few thousand lines.
-
-
-![A Forgejo Actions job log open under its check row](../screenshots/pr-check-log.webp)
+browser instead. Very long logs show their last few thousand lines; [the Checks tab](#the-checks-tab)
+shows what it does with them.
 
 Just like GitLab tokens, **a Forgejo token only goes to the server that issued
 it**. A profile without a Forgejo address has no Forgejo credential at all.

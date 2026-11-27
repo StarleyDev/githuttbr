@@ -28,7 +28,6 @@ import {
   ClipboardList,
   Copy,
   MoreHorizontal,
-  ScrollText,
   Target,
   History
 } from 'lucide-react'
@@ -46,7 +45,7 @@ import type {
   PrReviewThread
 } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
-import { CheckLogPanel } from './CheckLogPanel'
+import { PrChecksSection } from './PrChecksSection'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
 import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
@@ -63,7 +62,6 @@ import type { IconTone } from '../lib/iconTone'
 import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 import {
   checkCounts,
-  checkState,
   labelColor,
   labelTextColor,
   participants,
@@ -158,9 +156,6 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   const [pr, setPr] = useState<PrDetail | null>(null)
   const [checks, setChecks] = useState<PrCheck[] | null>(null)
-  // The check whose log is open under its row.
-  // The check whose log is open, by its link: a refresh may reorder the list.
-  const [openLog, setOpenLog] = useState<string | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
   // The revision those files' diff was read at: a line comment carries it.
   const [filesRevision, setFilesRevision] = useState<PrDiffRevision | null>(null)
@@ -610,6 +605,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const refused = !!pr?.mergeRefused
   const mergeBlocked = pr?.mergeable === false || blockers.length > 0 || refused
   const counts = checks ? checkCounts(checks) : null
+  // The Checks tab (PrChecksSection.tsx): a failed test's file opens in the Files tab, whole-PR diff.
+  const prFileNames = useMemo(() => files?.map((f) => f.filename) ?? null, [files])
+  const showPrFile = (file: string): void => {
+    view.selectedFile = file
+    setUpdateView(null)
+    setSection('files')
+  }
+  const reloadChecks = (): Promise<void> =>
+    hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks, () => undefined)
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
@@ -745,7 +749,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 newCount={updatesSeen.unseen.size}
               />
               <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
-              <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
+              <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} failCount={counts?.fail} />
             </nav>
           </div>
 
@@ -924,33 +928,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             ) : checks.length === 0 ? (
               <p className="prp-muted prp-pad">{t('prPage.noChecks')}</p>
             ) : (
-              <div className="prd-checks prp-checks">
-                {checks.map((c, i) => (
-                  <div key={i} className="prp-check-item">
-                    <div className="prd-check">
-                      <span className={`prd-check-dot ${checkState(c)}`} />
-                      <span className="prd-check-name">{c.name}</span>
-                      <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
-                      {c.hasLog && (
-                        <button
-                          className="prd-check-logs"
-                          title={openLog === c.url ? t('prPage.hideLog') : t('prPage.showLog')}
-                          aria-expanded={openLog === c.url}
-                          onClick={() => setOpenLog(openLog === c.url ? null : c.url)}
-                        >
-                          <ScrollText size={12} />
-                        </button>
-                      )}
-                      {c.url && (
-                        <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
-                          <ExternalLink size={12} />
-                        </button>
-                      )}
-                    </div>
-                    {openLog === c.url && <CheckLogPanel repoPath={repoPath} remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
-                  </div>
-                ))}
-              </div>
+              <PrChecksSection
+                checks={checks}
+                repoPath={repoPath}
+                remoteUrl={remoteUrl}
+                tokens={tokens}
+                prFiles={prFileNames}
+                onShowFile={showPrFile}
+                onReloadChecks={reloadChecks}
+              />
             )}
           </div>
 
@@ -1466,7 +1452,8 @@ function SectionTab({
   icon,
   label,
   count,
-  newCount
+  newCount,
+  failCount
 }: {
   id: Section
   active: Section
@@ -1476,13 +1463,21 @@ function SectionTab({
   count?: number
   /** Items new since the last visit (the Updates tab). */
   newCount?: number
+  /** Failing items (the Checks tab): shown in red instead of the plain count. */
+  failCount?: number
 }): React.JSX.Element {
   const t = useT()
   const fresh = newCount !== undefined && newCount > 0 ? interp(t('prUpdates.tabNew'), { n: String(newCount) }) : null
+  const failing = failCount !== undefined && failCount > 0
   return (
     <button role="tab" aria-selected={active === id} className={`prp-tab ${active === id ? 'active' : ''}`} onClick={() => onPick(id)}>
       {icon} {label}
-      {count !== undefined && count > 0 && <span className="prp-tab-count">{count}</span>}
+      {failing && (
+        <span className="prp-tab-count prp-tab-fail" aria-label={interp(t('prChecks.tabFailing'), { n: String(failCount) })}>
+          {failCount}
+        </span>
+      )}
+      {!failing && count !== undefined && count > 0 && <span className="prp-tab-count">{count}</span>}
       {fresh && (
         <span className="prp-tab-count prp-tab-new" aria-label={interp(t('prUpdates.newCount'), { n: String(newCount) })}>
           {fresh}

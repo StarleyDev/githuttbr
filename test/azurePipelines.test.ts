@@ -66,9 +66,16 @@ describe('build validation as checks', () => {
     ...over
   })
 
-  it('maps each build policy to a check that can show its log', () => {
+  it('maps each build policy to a check that can show its log and re-run its build', () => {
     expect(mapAzureBuildPolicies(R, [ev()])).toEqual([
-      { name: 'PR build', status: 'completed', conclusion: 'success', url: azureBuildUrl('example-org', 'My Project', 42), hasLog: true }
+      {
+        name: 'PR build',
+        status: 'completed',
+        conclusion: 'success',
+        url: azureBuildUrl('example-org', 'My Project', 42),
+        hasLog: true,
+        runId: '42'
+      }
     ])
     expect(mapAzureBuildPolicies(R, [ev({ status: 'rejected' })])[0].conclusion).toBe('failure')
     expect(mapAzureBuildPolicies(R, [ev({ status: 'running' })])[0]).toMatchObject({ status: 'in_progress', conclusion: null })

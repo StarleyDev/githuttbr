@@ -88,7 +88,7 @@ A coluna principal tem três seções:
 |---|---|
 | **Conversa** | A descrição, os comentários e as threads de revisão inline (`file:line`, com respostas). Só a conversa rola: a caixa de comentário com comentar / aprovar / pedir mudanças e a caixa de merge (merge, squash ou rebase) ficam fixas embaixo, então um pull request longo nunca as tira de alcance |
 | **Arquivos** | Cada arquivo alterado e, ao lado da lista, o diff do selecionado, com destaque de sintaxe e mudança por palavra (arquivos com cara de segredo mascarados quando a opção está ligada). Um checklist ✓ de "visto" lembra o seu progresso. Um arquivo sem diff enviado pelo host (binário, ou grande demais) tem link para vê-lo no host |
-| **Checks** | Execuções de CI (GitHub) ou jobs de pipeline (GitLab), com aprovado/falhou/pendente e links para os logs. Todas as execuções do repositório — não só as deste pull request — estão na página [Execuções de CI](ci-runs.md) |
+| **Checks** | Como foi a CI do commit do head, e por que falhou — veja [a aba Checks](#a-aba-checks). Todas as execuções do repositório — não só as deste pull request — estão na página [Execuções de CI](ci-runs.md) |
 
 A barra lateral mostra:
 
@@ -110,6 +110,54 @@ fora.
 
 Se alguém der force-push no meio da revisão, [o que mudou desde](range-diff.md)
 mostra exatamente o que se mexeu.
+
+### A aba Checks
+
+Uma check vermelha responde mal a uma pergunta: *o que* quebrou. A aba Checks
+responde sem você ir ao site da CI. O rótulo da aba traz em vermelho quantos
+checks falharam, então você sabe antes de abrir.
+
+![A aba Checks: o resumo da execução, o teste que falhou lido do log e o log numerado](../../screenshots/pr-check-log.webp)
+
+- **O resumo** no topo diz quantos checks falharam (ou que todos passaram, ou
+  quantos ainda rodam), em qual commit, quando o último terminou e quanto
+  tempo levaram somados. **Rodar de novo os que falharam** reinicia os jobs que
+  falharam no host; **Abrir execuções de CI** abre a página
+  [Execuções de CI](ci-runs.md) do repositório.
+- **Um cartão por check**, com como terminou e quanto tempo levou. Uma check
+  que falhou já abre aberta; uma que passou fica numa linha até **Ver log**.
+  **Copiar log** copia o log como texto puro; **Ver no host →** abre a check no
+  site do host.
+- **O teste que falhou.** Quando o log é uma execução de **vitest**, **jest**
+  ou **pytest**, o cartão diz quais testes falharam, o erro e onde: o chip
+  `caminho:linha` e **Abrir no editor** abrem o arquivo nessa linha no seu
+  [editor](editor.md), e **Ver no diff do PR** vai para a aba Arquivos nesse
+  arquivo quando o pull request o altera.
+- **O log completo** fica recolhível embaixo do cartão, numerado, com as cores,
+  e as linhas que marcam uma falha destacadas. Logs muito longos mostram as
+  últimas milhares de linhas, numeradas a partir do começo real.
+
+Como cada host fica:
+
+| Host | Log no app | Tempos e commit | Rodar de novo os que falharam |
+|---|---|---|---|
+| GitHub | Jobs do GitHub Actions | Sim | Sim — a execução do workflow do job |
+| GitLab | Jobs do pipeline | Sim | Sim — tenta de novo os jobs que falharam no pipeline |
+| Azure DevOps | Validação de build e status de pipeline | Não | Validação de build — tenta de novo os jobs que falharam no build |
+| Forgejo | Jobs do Forgejo Actions | Do status, então o tempo conta a espera na fila | Não — o Forgejo não tem API para isso |
+| Bitbucket Data Center | Não | Não | Não |
+
+Limites:
+
+- O teste que falhou é lido do texto do log, não de um relatório de testes.
+  Outro runner, uma falha antes de os testes rodarem (erro de build ou de
+  instalação) ou um log cortado antes da parte das falhas mostram só o log,
+  como antes. No máximo vinte falhas são listadas.
+- Um caminho que o log escreve como o da máquina da CI (`/home/runner/work/…`)
+  volta a ser um caminho do repositório quando dá; um que não dá aparece, mas
+  não abre.
+- Uma check de outro app (um serviço de cobertura ou de segurança) não tem log
+  no app: **Ver no host →** é o único caminho.
 
 ### Fechar, reabrir e rascunho
 
@@ -235,10 +283,8 @@ logs de job, então o app pede a mesma página que o visualizador de log da web
 baixa, enviando o token só quando o link é um job deste mesmo servidor; um status
 de CI externa nunca o recebe. Um servidor que só entrega logs a um navegador com
 login responde com a tela de login, e a linha avisa isso e oferece o navegador.
-Logs muito longos mostram as últimas milhares de linhas.
-
-
-![O log de um job do Forgejo Actions aberto embaixo da linha da check](../../screenshots/pr-check-log.webp)
+Logs muito longos mostram as últimas milhares de linhas; [a aba Checks](#a-aba-checks)
+mostra o que ela faz com eles.
 
 Como no GitLab, **um token do Forgejo só vai para o servidor que o emitiu**. Um
 perfil sem endereço do Forgejo não tem credencial do Forgejo, e não existe

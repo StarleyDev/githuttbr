@@ -38,6 +38,8 @@ export default {
       'test/prViewed.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
+      // The PR Checks tab: failed tests read from vitest, jest and pytest logs.
+      'test/prChecks.test.ts',
       'test/prPickerLogic.test.ts',
       'test/prBranchGo.test.ts',
       'test/markdownEdit.test.ts',
