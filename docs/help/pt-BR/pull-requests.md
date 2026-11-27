@@ -3,8 +3,8 @@ title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
-keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: d91d96af92225cb74da274f8d168b07f6110b709
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco comparar dois commits selos de tipo ci por commit ver diff próximo não visto filtro não vistos com comentários progresso mudou
+source: ce706bdb2604b98f11e17f731fa006e48e4d6606
 ---
 
 # Página de pull requests
@@ -167,28 +167,39 @@ um commit de cada vez — como a maioria dos pull requests foi feita para ser
 lida — mandava você para o navegador. A aba **Commits**, entre Conversa e
 Atualizações, lista os commits:
 
+- **Uma linha de resumo** no topo: quantos commits, de quantos autores, o
+  **+/−** do pull request, e um selo colorido por tipo de
+  [Conventional Commit](https://www.conventionalcommits.org/) com a contagem —
+  *feat 2 · fix 1 · test 1* diz que tipo de mudança é essa antes de você ler
+  uma linha dela. Features em verde, correções e reverts em vermelho, testes na
+  cor de destaque, desempenho em amarelo, o resto em cinza.
 - **Do mais antigo para o mais novo**, a ordem em que se aplicam, agrupados
   pelo dia em que foram escritos. Um commit que entrou fora da ordem das datas
   num rebase abre um dia próprio em vez de ser movido.
-- Cada linha tem a foto do autor (quando o host dá uma), o assunto, o autor,
-  há quanto tempo e o SHA curto. Um selo **merge** marca um commit com dois
+- Cada linha tem a foto do autor (quando o host dá uma), o assunto — o tipo no
+  mesmo selo colorido e o escopo apagado, quando segue Conventional Commits —,
+  o autor, há quanto tempo e, para um commit que este clone tem, o **+/−** e
+  quantos arquivos ele mexeu. Depois um ponto de **CI** (verde passou, vermelho
+  falhou, amarelo rodando) quando o host informa uma execução para aquele
+  commit, o SHA curto e **Ver diff**. Um selo **merge** marca um commit com dois
   pais, quando o host informa.
-- **▸** ao lado de um commit com mais que o assunto mostra o resto da mensagem.
-- **Copiar** põe o SHA completo na área de transferência; **Abrir no
-  navegador** abre o commit no host — dentro do pull request quando o host tem
-  essa página (GitHub, GitLab, Bitbucket Data Center), senão na página do
-  commit no repositório.
+- Um commit com mais que o assunto mostra o resto da mensagem embaixo da linha.
+- Ao passar o mouse, **Copiar** põe o SHA completo na área de transferência e
+  **Abrir no navegador** abre o commit no host — dentro do pull request quando
+  o host tem essa página (GitHub, GitLab, Bitbucket Data Center), senão na
+  página do commit no repositório.
 
 ![A aba Commits: os commits de um pull request agrupados por dia, um com a mensagem completa aberta](../../screenshots/pr-commits.webp)
 
-**Clique numa linha** — ou chegue nela com Tab e aperte Enter — para abrir o
-commit no app, como um clique no grafo faria: a visão do repositório, o commit
-selecionado, os detalhes abertos. Isso funciona quando este clone **tem** o
-commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
+**Ver diff** — ou um clique na linha, ou chegar nela com Tab e apertar Enter —
+abre o commit no app, como um clique no grafo faria: a visão do repositório, o
+commit selecionado, os detalhes abertos. Isso funciona quando este clone
+**tem** o commit. Quando não tem, a linha diz *ainda não está no seu
+repositório* e o botão muda:
 
-- **Buscar a branch do PR para ver** — a mesma busca de uma branch só de
+- **Buscar a branch** — a mesma busca de uma branch só de
   [ir para a branch](#ir-para-a-branch-de-um-pull-request), sem o checkout.
-  Quando o commit veio junto, ele abre; quando não veio (um force push o
+  Todo commit que veio junto passa a abrir; se este não veio (um force push o
   reescreveu depois), o aviso diz isso.
 - **Buscar os commits do pull request**, num pull request vindo de um
   **fork**. A branch dele fica em outro repositório, mas a maioria dos hosts
@@ -201,6 +212,12 @@ commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
   move a ref para a ponta do momento. Se um force push deixou o commit de fora,
   o aviso diz isso.
 - **Abrir no navegador**, para quando buscar não é uma opção.
+
+**Comparar dois commits** pede que você marque duas linhas e abre a
+[comparação](merging.md#compare-duas-refs-quaisquer) entre elas na visão do
+repositório: o mais antigo é a base, então você vê o que aconteceu de um para o
+outro — os commits no meio e o diff somado. Os dois precisam estar neste clone;
+enquanto não estiverem, o botão fica apagado.
 
 A lista é lida na primeira vez que você abre a aba, não junto com a página, e
 de novo a cada **Atualizar**. Até ela chegar, o número da aba é o que o host
@@ -240,6 +257,16 @@ O que não faz:
 - **Squash merges.** Os commits de um pull request mesclado com squash nunca
   chegaram à branch de destino; depois que a branch dele é apagada, estão só no
   host.
+- **Os números de cada commit vêm do seu clone.** O **+/−** e a contagem de
+  arquivos são lidos do git, nunca pedidos ao host, então um commit ainda não
+  buscado não mostra nenhum, nem um merge (a mudança dele é contra dois pais).
+  Um clone parcial sem os arquivos de um commit não mostra nada em vez de
+  baixá-los.
+- **CI só dos 40 commits mais recentes**, em silêncio: uma requisição por
+  commit pesaria num pull request longo, e o CI costuma rodar nas pontas
+  enviadas mesmo. Sem credencial para o host, não há pontos, nunca um login.
+- **Os selos de tipo leem o assunto.** Um time que não escreve Conventional
+  Commits não ganha selos nem contagem por tipo — nada é adivinhado.
 - **Autores** aparecem como os commits os nomeiam. GitLab, Azure DevOps e
   Bitbucket Data Center não dão foto sem um login que uma imagem não consegue
   mandar, então essas linhas mostram a inicial.
@@ -389,19 +416,27 @@ de um force push são exatos, então o **Ver as mudanças** dele também é.
 ## Ler os arquivos
 
 Um pull request de duzentos arquivos é difícil de ler como duzentos caminhos
-completos. A lista da aba **Arquivos** tem a mesma chave **Caminho / Árvore**
+completos, e difícil de terminar sem perder o ponto. Acima da lista e do diff,
+uma linha faz a conta — *4 de 9 arquivos vistos*, com uma barra — e **Próximo
+não visto →** abre o próximo arquivo abaixo que você ainda não marcou, voltando
+ao topo no fim; fica apagado quando tudo o que está listado já foi visto.
+**Mostrar** reduz a lista aos arquivos **Não vistos** ou **Com comentários**
+(qualquer conversa de revisão neles), e volta para **Todos**.
+
+A lista da aba **Arquivos** tem a mesma chave **Caminho / Árvore**
 do painel de commit, e a escolha vale para o app inteiro. Em **Árvore**, os
 arquivos ficam sob as pastas (uma sequência como `src/main/ipc` vira uma linha
 só), e cada pasta mostra a soma de **+/−** e quantos dos seus arquivos já foram
 vistos (*3/5*). A caixa de uma pasta marca como vistos todos os arquivos dentro
 dela, ou desmarca todos; as marcas ficam só neste computador, nunca vão para o
 host. Uma marca guarda a versão do diff do arquivo: quando um push muda um
-arquivo visto, ele volta a aparecer como não visto, com um ponto amarelo
+arquivo visto, ele volta a aparecer como não visto, com o selo **mudou**
 (*mudou desde que você viu*). Um arquivo sem diff (binário, grande demais) é
 comparado só pelo status e pela contagem de linhas. Um arquivo com conversas
 de revisão mostra um balão com a contagem ao lado (as pastas somam as dos seus
 arquivos), para os que têm comentários se destacarem numa lista longa; as
-conversas desatualizadas também contam. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
+conversas desatualizadas também contam, e as resolvidas também — as listas que
+o app lê dos hosts não dizem quais estão resolvidas. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
 percorrem os arquivos na tela e abrem o diff de cada um. As pastas recolhidas
 são lembradas por pull request até o app fechar, e um arquivo aberto dentro de
 uma delas reabre o caminho até ele. A árvore é ordenada por nome, não na ordem

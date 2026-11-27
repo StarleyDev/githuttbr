@@ -1417,7 +1417,9 @@ export const shots = [
   {
     // The Files tab in Tree view: a PR's files under their folders, each folder
     // with its summed +/- and viewed count, one folder folded and fully viewed,
-    // another partly viewed. Faked detail and files — a fictional GitHub
+    // another partly viewed; above them the viewed progress, "next unviewed"
+    // and the filter; a file with a review conversation and one a push changed
+    // since it was viewed. Faked detail and files — a fictional GitHub
     // repository, no network.
     out: 'pr-files-tree',
     repos: ['octopus-merge'],
@@ -1454,7 +1456,15 @@ export const shots = [
           number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
           body: 'Search filenames across open repositories from the command palette.',
           state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
-          comments: [], reviews: [], reviewThreads: [],
+          comments: [], reviews: [],
+          // One conversation on index.ts: its speech-bubble count in the tree, and the card under its line.
+          reviewThreads: [{
+            path: 'src/search/index.ts', line: 4, side: 'new', diffHunk: '', rootId: 902,
+            comments: [{
+              id: 902, author: 'kalani', createdAt: '2026-11-25T10:00:00Z',
+              body: 'Should 50 come from the setting the description promises, rather than a literal here?'
+            }]
+          }],
           commits: 3, changedFiles: files.length, additions: 144, deletions: 40
         }))
         ipcMain.handle('hosting:prChecks', () => [])
@@ -1531,16 +1541,19 @@ export const shots = [
     }
   },
   {
-    // The Commits tab: a pull request's commits grouped by day, one with its
-    // full message open, and one this clone does not have — its notice
-    // offering the branch fetch. Faked detail and commits — a fictional GitHub
-    // repository, no network; the shas exist nowhere, so none is local.
+    // The Commits tab: the summary line with its type chips, the commits grouped
+    // by day with their type chip, +/− and files, CI dot and "View diff", and
+    // one this clone does not have — its row offering the branch fetch. Faked
+    // detail, commits and CI — a fictional GitHub repository, no network.
     out: 'pr-commits',
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page, repos, app) => {
-      await app.evaluate(({ ipcMain }) => {
-        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits']) ipcMain.removeHandler('hosting:' + method)
+      const local = execFileSync('git', ['-C', repos['octopus-merge'], 'rev-list', '--no-merges', '-n', '4', '--all'], {
+        encoding: 'utf8'
+      }).trim().split('\n')
+      await app.evaluate(({ ipcMain }, local) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits', 'ciStatuses']) ipcMain.removeHandler('hosting:' + method)
         ipcMain.handle('hosting:prDetail', () => ({
           number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
           body: 'Search filenames across open repositories from the command palette.',
@@ -1550,32 +1563,38 @@ export const shots = [
         }))
         ipcMain.handle('hosting:prChecks', () => [])
         ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        // Four real commits of the playground repo, so their +/− and file counts come
+        // from git; the fourth listed is a sha this clone does not have — its row
+        // offers the branch fetch.
+        const [a, b, c3, e] = local
         const c = (sha, subject, authorName, authorLogin, authoredAt, body) => ({
           sha: sha.padEnd(40, '0'), shortSha: sha.slice(0, 7), subject, authorName, authorLogin, authoredAt,
           parents: 1, ...(body ? { body } : {})
         })
+        const ci = (state) => ({ state, jobs: [] })
+        ipcMain.handle('hosting:ciStatuses', () => ({
+          [a]: ci('success'), [b]: ci('success'), [c3]: ci('failure'), ['d2a7f63'.padEnd(40, '0')]: ci('pending')
+        }))
         ipcMain.handle('hosting:prListCommits', () => ({
           truncated: false, kept: 'oldest',
           commits: [
-            c('3f9a1c2', 'feat(search): list files across open repositories', 'Sam Rivera', 'sam', '2026-11-18T09:12:00Z',
+            c(a, 'feat(search): list files across open repositories', 'Sam Rivera', 'sam', '2026-11-18T09:12:00Z',
               'The palette asks every open repository for its tracked files once,\nthen filters in memory as you type.'),
-            c('8b04d7e', 'test(search): cover an empty query', 'Sam Rivera', 'sam', '2026-11-18T15:40:00Z'),
-            c('c51e0aa', 'fix(search): trim the query before matching', 'Alex Chen', 'alex', '2026-11-19T10:05:00Z',
+            c(b, 'test(search): cover an empty query', 'Sam Rivera', 'sam', '2026-11-18T15:40:00Z'),
+            c(c3, 'fix(search): trim the query before matching', 'Alex Chen', 'alex', '2026-11-19T10:05:00Z',
               'A trailing space from the palette matched nothing.\n\nTrim once, up front, so every repository sees the same query.'),
             c('d2a7f63', 'perf(search): stop at one screen of results', 'Sam Rivera', 'sam', '2026-11-20T08:30:00Z'),
-            c('e90b4c1', 'docs(search): mention the result limit', 'Alex Chen', 'alex', '2026-11-20T11:47:00Z')
+            c(e, 'docs(search): mention the result limit', 'Alex Chen', 'alex', '2026-11-20T11:47:00Z')
           ]
         }))
-      })
+      }, local)
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
         type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-tab').nth(1).click()
-      await page.locator('.prp-commit').first().waitFor()
-      await page.locator('.prp-commit', { hasText: 'trim the query' }).locator('.prp-commit-more').click()
-      await page.locator('.prp-commit', { hasText: 'one screen of results' }).locator('.prp-commit-open').click()
-      await page.locator('.prp-commit-missing').waitFor()
+      await page.locator('.prc-commit .prc-ci').first().waitFor()
+      await page.locator('.prc-commit', { hasText: 'list files across' }).locator('.prc-meta', { hasText: '+' }).waitFor()
       await page.mouse.move(0, 0)
       await page.waitForTimeout(300)
     }

@@ -15382,6 +15382,111 @@ input[type='range']:focus-visible {
 .diff-split-cell.selectable:hover {
   filter: brightness(1.12);
 }
+/* ── Pull request Commits and Files tabs (summary, typed rows, review progress) ──
+   The Commits tab: a summary line with the Conventional Commit types as
+   coloured chips, then one bordered list per day, a row per commit with its
+   type chip, numbers, CI dot and a "View diff" button. The Files tab: a
+   header line with the viewed progress, "next unviewed" and the filter. */
+.prc-tone-green { --prc-tone: var(--green); }
+.prc-tone-red { --prc-tone: var(--red); }
+.prc-tone-accent { --prc-tone: var(--accent); }
+.prc-tone-yellow { --prc-tone: var(--yellow); }
+.prc-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 0 0 14px;
+  font-size: 12.5px; color: var(--text-2);
+}
+.prc-summary-counts > span + span::before { content: '·'; margin: 0 6px; }
+.prc-summary-types { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.prc-type-chip { padding: 1px 8px; border-radius: 999px; background: var(--bg-3); color: var(--text-1); }
+.prc-type-chip[class*='prc-tone-'], .prc-type[class*='prc-tone-'] {
+  background: color-mix(in srgb, var(--prc-tone, var(--text-2)) 15%, transparent);
+  color: color-mix(in srgb, var(--prc-tone, var(--text-2)) 70%, var(--text-0));
+}
+.prc-type-chip.prc-tone-neutral, .prc-type.prc-tone-neutral { background: var(--bg-3); color: var(--text-1); }
+.prc-summary-gap { flex: 1; }
+.prc-compare-picking { display: inline-flex; align-items: center; gap: 8px; color: var(--text-1); }
+.prc-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 4px 9px; border: none; border-radius: 5px;
+  background: var(--bg-3); color: var(--text-1); font: inherit; font-size: 12px; cursor: pointer;
+}
+.prc-summary .prc-btn { padding: 5px 11px; border-radius: 6px; }
+.prc-btn:hover:not(:disabled), .prc-btn:focus-visible { background: var(--bg-4); color: var(--text-0); }
+.prc-btn:disabled { opacity: 0.55; cursor: default; }
+.prc-btn.is-accent {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
+}
+.prc-btn.is-accent:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.prc-day-title { margin: 6px 0 8px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+.prc-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.prc-commit + .prc-commit { border-top: 1px solid var(--border-soft); }
+.prc-row { display: flex; align-items: center; gap: 12px; padding: 6px 14px 6px 8px; }
+.prc-pick { flex: none; margin: 0 0 0 6px; }
+.prc-open {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 4px 6px; border-radius: 6px;
+  background: none; border: none; text-align: start; font: inherit; color: inherit; cursor: pointer;
+}
+.prc-open:hover, .prc-open:focus-visible { background: var(--bg-2); }
+.prc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prc-subject { font-size: 13.5px; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prc-type { padding: 0 6px; border-radius: 4px; font-size: 11.5px; font-weight: 600; }
+.prc-scope { color: var(--text-2); }
+.prc-meta { display: flex; flex-wrap: wrap; align-items: center; font-size: 11.5px; color: var(--text-2); }
+.prc-meta > span + span::before { content: '·'; margin: 0 6px; }
+.prc-meta > .prp-commit-badge { margin-inline-start: 8px; }
+.prc-meta > .prp-commit-badge::before { content: none; }
+.prc-ci { flex: none; font-size: 12px; color: var(--text-2); }
+.prc-ci.is-success { color: var(--green); }
+.prc-ci.is-failure { color: var(--red); }
+.prc-ci.is-pending { color: var(--yellow); }
+.prc-sha { flex: none; font: 12px var(--mono); color: var(--accent); }
+.prc-commit.is-remote .prc-sha { color: var(--text-3); }
+/* Copy and open-on-host stay one hover away: the row shows what the mockup shows. */
+.prc-tools { display: inline-flex; gap: 2px; flex: none; opacity: 0; transition: opacity 0.12s; }
+.prc-row:hover .prc-tools, .prc-tools:focus-within { opacity: 1; }
+.prc-body {
+  margin: 0; padding: 0 14px 12px 48px; font-size: 13px; line-height: 1.55; color: var(--text-1);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+/* Files: the header line above the list and the diff. */
+.prf-files { display: flex; flex-direction: column; gap: 14px; height: 100%; min-height: 0; }
+.prf-files > .prp-files-split { flex: 1; height: auto; }
+.prf-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.prf-progress-count { font-size: 12.5px; color: var(--text-1); }
+.prf-progress-bar { flex: 0 1 260px; min-width: 80px; height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.prf-progress-bar > span { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
+.prf-next {
+  padding: 5px 11px; border: none; border-radius: 6px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
+}
+.prf-next:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.prf-next:disabled { opacity: 0.5; cursor: default; }
+.prf-progress-gap { flex: 1; }
+.prf-filter-label { font-size: 12px; color: var(--text-2); }
+.prf-filter { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 12px; }
+.prf-filter button {
+  padding: 5px 10px; border: none; border-radius: 0; background: none; font: inherit; color: var(--text-1); cursor: pointer;
+}
+.prf-filter button + button { border-inline-start: 1px solid var(--border); }
+.prf-filter button:hover { color: var(--text-0); }
+.prf-filter button.active {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
+}
+.prf-filter-empty { margin: 10px 8px; font-size: 12px; }
+/* Review conversations on a file or folder, and a viewed file a push changed. */
+.prf-threads {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; padding: 0 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow);
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.prf-changed {
+  flex: 0 0 auto; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
+}
+
 /* ── Line comments (a pull request's Files tab) ──
    The "+" sits over the first gutter and shows on hover or keyboard focus. It
    is absolutely placed so the row's columns do not move to make room. */

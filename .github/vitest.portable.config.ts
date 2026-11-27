@@ -34,6 +34,8 @@ export default {
       'test/missionHosting.test.ts',
       'test/fileTree.test.ts',
       'test/prViewed.test.ts',
+      // The Commits tab's summary and type chips; the Files tab's filter and "next unviewed".
+      'test/prCommitSummary.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
       'test/prPickerLogic.test.ts',

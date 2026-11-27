@@ -978,6 +978,13 @@ export interface PrCommit {
   parents?: number
 }
 
+/** What one commit changed against its parent: the Commits tab's "+12 −3 · 2 files". */
+export interface PrCommitStats {
+  additions: number
+  deletions: number
+  files: number
+}
+
 /** A pull request's commits, oldest first. `truncated` when the host has more
  *  than it listed (GitHub stops at 250) or the app stopped paging. */
 export interface PrCommitList {
