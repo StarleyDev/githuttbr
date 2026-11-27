@@ -967,6 +967,7 @@ function AISettingsPage({
   const ownProfile =
     scope === 'general' ? undefined : profiles.find((p) => p.id === scope.profileId && p.ownAI === true)
   const owners = profiles.filter((p) => p.ownAI === true)
+  const activeOwner = profiles.find((p) => p.id === activeId && p.ownAI === true)
 
   return (
     <>
@@ -995,6 +996,20 @@ function AISettingsPage({
           </button>
         )}
       </div>
+
+      {!ownProfile && activeOwner && (
+        // Editing the general AI while the profile in use has its own: what is
+        // changed here does not reach it, which looked like a broken default.
+        <div className="settings-ai-active-own" role="status">
+          <span>{interp(t('settings.aiActiveUsesOwn'), { profile: activeOwner.name })}</span>
+          <button className="btn small" onClick={() => onScope({ profileId: activeOwner.id })}>
+            {t('settings.aiEditOwn')}
+          </button>
+          <button className="btn danger small" onClick={() => removeOwnAI(activeOwner.id, activeOwner.name)}>
+            {t('settings.removeOwnAi')}
+          </button>
+        </div>
+      )}
 
       {ownProfile ? (
         <AIPage key={ownProfile.id} ai={ownProfile.ai} onChange={(next) => saveAIFor(ownProfile.id, next)} />

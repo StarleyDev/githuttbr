@@ -1616,6 +1616,7 @@ export const pl: Dict = {
   'settings.useOwnAiLocked': 'Dostępne po odblokowaniu pęku kluczy: klucze ogólnej AI są kopiowane do własnej AI tego profilu.',
   'settings.backToGeneralAi': 'Wróć do ogólnej AI',
   'settings.removeOwnAi': 'Usuń AI tego profilu',
+  'settings.aiActiveUsesOwn': '„{profile}”, używany profil, ma własne AI: zmiany w ogólnym AI go nie dotyczą.',
   'settings.backToGeneralAiTitle': 'Wrócić do ogólnej AI?',
   'settings.backToGeneralAiConfirm': '{profile} przestaje używać własnej AI: jego konta, klucze i preferencje AI (style, instrukcje, zasady czatu) zostaną usunięte, a profil będzie korzystał z ogólnej AI. Ogólna AI się nie zmienia.',
   'settings.profileAiPrefs': 'Preferencje pisania AI',

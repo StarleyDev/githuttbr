@@ -1598,6 +1598,7 @@ export const ja: Dict = {
   'settings.useOwnAiLocked': 'キーチェーンのロック解除後に使えます。共通の AI のキーがこのプロファイルの独自の AI にコピーされます。',
   'settings.backToGeneralAi': '共通の AI に戻す',
   'settings.removeOwnAi': 'このプロファイルの AI を削除',
+  'settings.aiActiveUsesOwn': '使用中のプロファイル「{profile}」は独自の AI を使っています。全体の AI への変更は反映されません。',
   'settings.backToGeneralAiTitle': '共通の AI に戻しますか？',
   'settings.backToGeneralAiConfirm': '{profile} は独自の AI を使わなくなります。その AI アカウント、キー、設定（スタイル、指示、チャットのルール）は削除され、共通の AI に従います。共通の AI は変わりません。',
   'settings.profileAiPrefs': 'AI の書き方の設定',

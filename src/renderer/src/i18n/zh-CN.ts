@@ -1616,6 +1616,7 @@ export const zhCN: Dict = {
   'settings.useOwnAiLocked': '钥匙串解锁后可用：通用 AI 的密钥会复制到此配置文件自己的 AI 中。',
   'settings.backToGeneralAi': '改回通用 AI',
   'settings.removeOwnAi': '移除此配置文件的 AI',
+  'settings.aiActiveUsesOwn': '正在使用的配置文件“{profile}”有自己的 AI：对通用 AI 的更改不会作用于它。',
   'settings.backToGeneralAiTitle': '改回通用 AI？',
   'settings.backToGeneralAiConfirm': '{profile} 将不再使用自己的 AI：其 AI 账户、密钥和偏好（风格、指令、聊天规则）会被删除，并改用通用 AI。通用 AI 不变。',
   'settings.profileAiPrefs': 'AI 写作偏好',
