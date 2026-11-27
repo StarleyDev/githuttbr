@@ -30,11 +30,11 @@ counts compare like a table:
 |---|---|
 | **Repository** | Name, its group, the branch and its upstream — or **no upstream** in amber, since such a branch can never be pushed by mistake but also never syncs |
 | **Last commit** | Its subject and author: what the repository was last doing, without opening it |
-| **Working tree** | Conflicts · ↓ to pull · ↑ to push · staged · modified · untracked · stashes. Hover any of them for what it counts |
+| **Local** | Conflicts · ↓ to pull · ↑ to push · staged · modified · untracked · stashes. Hover any of them for what it counts |
 | **Hosting** | The open pull requests, with the ones waiting for **your** review in amber, and HEAD's CI. Click the count to open that repository's **Pull requests** page, or **CI** to open its runs |
 | **Release** | The newest tag HEAD reaches, and how many commits came after it — **up to date** when none |
 | **Activity** | A 14-day commit sparkline, and how many commits that is |
-| **Ages** | How long since the last commit, and since the last **fetch** |
+| **Time** | How long since the last commit, and since the last **fetch** |
 
 Hover the status icon for the reasons the row ranks where it does — "2 to push ·
 1 uncommitted".

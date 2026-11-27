@@ -30,11 +30,11 @@ lista, então as contagens se comparam como numa tabela:
 |---|---|
 | **Repositório** | Nome, grupo, a branch e seu upstream — ou **sem upstream** em âmbar, já que uma branch assim nunca é enviada por engano, mas também nunca sincroniza |
 | **Último commit** | Assunto e autor: o que o repositório estava fazendo, sem abri-lo |
-| **Working tree** | Conflitos · ↓ para baixar · ↑ para enviar · no stage · modificados · não rastreados · stashes. Passe o mouse para ver o que cada uma conta |
+| **Local** | Conflitos · ↓ para baixar · ↑ para enviar · no stage · modificados · não rastreados · stashes. Passe o mouse para ver o que cada uma conta |
 | **Hospedagem** | Os pull requests abertos, com os que aguardam a **sua** revisão em âmbar, e o CI do HEAD. Clique no número para abrir a página de **Pull requests** daquele repositório, ou em **CI** para abrir as execuções |
 | **Release** | A tag mais recente alcançável do HEAD, e quantos commits vieram depois dela — **em dia** quando nenhum |
 | **Atividade** | Um sparkline de commits de 14 dias, e quantos commits são |
-| **Idades** | Quanto tempo desde o último commit, e desde o último **fetch** |
+| **Tempo** | Quanto tempo desde o último commit, e desde o último **fetch** |
 
 Passe o mouse no ícone de status para ver por que a linha está naquela posição —
 "2 para enviar · 1 sem commit".

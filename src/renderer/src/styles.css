@@ -14259,50 +14259,68 @@ input[type='range']:focus-visible {
   background: var(--bg-2);
 }
 
-/* ── Mission control (every repo on one screen) ── */
-.mc-root { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 18px 22px; gap: 12px; }
+/* ── Mission control (every repo on one screen) ──
+   Laid out as the approved mockup: a header line of pills, a totals line, and
+   one bordered table — column names on top, a hairline between rows. */
+.mc-root { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 20px 24px; gap: 14px; }
 .mc-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.mc-header h2 { margin: 0; font-size: 16px; }
+.mc-header h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text-0); }
 .mc-title-icon { color: var(--accent); }
 .mc-workspace {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
   padding: 2px 8px;
-  border-radius: 9px;
+  border-radius: 6px;
   background: var(--bg-4);
   color: var(--text-1);
 }
-.mc-repos { font-size: 11px; color: var(--text-2); }
-.mc-summary { display: flex; align-items: center; gap: 5px; }
+.mc-repos { font-size: 12px; color: var(--text-2); }
+.mc-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mc-summary-sep { align-self: stretch; width: 1px; min-height: 18px; background: var(--border); }
 .mc-pill {
-  font-size: 10.5px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
 }
 .mc-pill.on { border-color: currentColor; }
-.mc-pill.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
-.mc-pill.action { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
-.mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 18%, transparent); color: var(--warn, #d29922); }
-.mc-pill.clean { background: var(--bg-3); color: var(--text-2); }
-.mc-filter { margin-inline-start: auto; max-width: 200px; font-size: 12px; padding: 4px 9px; }
+.mc-pill.blocked { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
+.mc-pill.action { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
+.mc-pill.clean { background: var(--bg-4); color: var(--text-1); }
+.mc-pill.prs { background: color-mix(in srgb, var(--purple) 16%, transparent); color: var(--purple); }
+.mc-filter { margin-inline-start: auto; width: 200px; font-size: 12px; padding: 6px 10px; }
 .mc-sorts { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .mc-sort {
   background: transparent;
   border: 0;
   color: var(--text-1);
-  font-size: 11px;
-  padding: 4px 9px;
+  font-size: 12px;
+  padding: 5px 10px;
   cursor: pointer;
 }
-.mc-sort.active { background: var(--bg-4); color: var(--text-1); }
+.mc-sort.active { background: color-mix(in srgb, var(--accent) 18%, var(--bg-2)); color: var(--accent); }
 
 /* Workspace-wide totals, under the header. */
-.mc-stats { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--text-2); }
+.mc-stats { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--text-2); }
 .mc-stat { display: inline-flex; align-items: center; gap: 4px; }
 .mc-stat-right { margin-inline-start: auto; }
+.mc-stat-review {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 1px 6px;
+  background: color-mix(in srgb, var(--yellow) 14%, transparent);
+  color: var(--yellow);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-stat-review.on { border-color: currentColor; }
 
 /* Bulk bar, only present while rows are ticked. */
 .mc-bulk {
@@ -14312,116 +14330,68 @@ input[type='range']:focus-visible {
   padding: 6px 10px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .mc-bulk-count { font-weight: 600; color: var(--text-1); }
 .mc-loading { display: flex; justify-content: center; padding: 60px; }
-.mc-empty { padding: 40px; text-align: center; color: var(--text-2); font-size: 12.5px; }
+.mc-empty { padding: 40px; text-align: center; color: var(--text-2); font-size: 13px; }
+
+/* The table: one bordered card that ends with its last row and scrolls once
+   it outgrows the page, column names pinned on top. */
 .mc-list {
-  flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 1px;
+  flex: 0 1 auto;
+  overflow: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
   container-type: inline-size;
 }
-/* A grid rather than a flex row, so every column lines up down the list and the
-   counts read like a table: identity, last commit, counts, hosting, release,
-   activity, ages. Each row is its own grid, so the edge columns are fixed
-   widths — `auto` would size per row and the header would drift. */
+/* A grid rather than a flex row, so every column lines up down the list.
+   Each row is its own grid, so the edge columns are fixed widths — `auto`
+   would size per row and the column names would drift. */
 .mc-row {
   display: grid;
   grid-template-columns:
-    16px 16px 16px minmax(170px, 1fr) minmax(0, 1.4fr) 170px 150px 130px 92px 104px 128px;
+    22px 16px 22px minmax(190px, 1.2fr) minmax(190px, 1.4fr) 170px 200px 130px 92px 96px 150px;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 7px;
+  gap: 12px;
+  padding: 10px 14px;
   min-width: 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-soft);
 }
-/* Narrow window: the last commit goes first, the counts stay. */
+.mc-row-wrap:last-child .mc-row { border-bottom: 0; }
+/* Narrow window: the last commit and the release step aside; the counts stay. */
 @container (max-width: 1100px) {
-  .mc-row { grid-template-columns: 16px 16px 16px minmax(150px, 1fr) 160px 140px 80px 96px 128px; }
+  .mc-row { grid-template-columns: 22px 16px 22px minmax(150px, 1fr) 160px 180px 80px 96px 150px; }
   /* Scoped under .mc-row so they outrank the base rules further down. */
   .mc-row .mc-commit, .mc-row .mc-release { display: none; }
   .mc-row .mc-error { grid-column: span 2; }
 }
-.mc-row:not(.mc-head):hover { background: var(--bg-4); }
-/* Column names, pinned above the rows while the list scrolls. */
+.mc-row:not(.mc-head):hover { background: color-mix(in srgb, var(--text-0) 4%, transparent); }
 .mc-head {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding-block: 5px;
+  padding-block: 8px;
   background: var(--bg-1);
-  border-bottom: 1px solid var(--border-soft);
-  border-radius: 0;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-2);
 }
 .mc-head > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mc-head .mc-head-when { text-align: end; }
-/* Hosting: the PR count opens the repository's pull requests, CI its runs. */
-.mc-hosting { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
-.mc-pr-chip,
-.mc-ci {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 7px;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  font: inherit;
-  font-size: 10.5px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.mc-pr-chip {
-  background: color-mix(in srgb, var(--purple) 16%, transparent);
-  border-color: color-mix(in srgb, var(--purple) 35%, transparent);
-  color: color-mix(in srgb, var(--purple) 80%, var(--text-0));
-}
-.mc-pr-chip:hover { background: color-mix(in srgb, var(--purple) 30%, transparent); border-color: var(--purple); }
-.mc-pr-chip .mc-go { opacity: 0.55; }
-.mc-pr-chip:hover .mc-go { opacity: 1; }
-.mc-pr-awaiting {
-  padding: 0 5px;
-  border-radius: 8px;
-  background: var(--yellow);
-  color: var(--bg-0);
-  font-size: 10px;
-}
-.mc-ci.success { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
-.mc-ci.failure { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
-.mc-ci.pending { background: color-mix(in srgb, var(--warn, #d29922) 14%, transparent); color: var(--warn, #d29922); }
-.mc-ci.neutral { background: var(--bg-4); color: var(--text-2); }
-.mc-ci:hover { border-color: currentColor; }
-.mc-muted { font-size: 10.5px; color: var(--text-3, var(--text-2)); }
-/* Release: the newest tag HEAD reaches, and how far HEAD is past it. */
-.mc-release { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mc-tag { display: inline-flex; align-items: center; gap: 4px; min-width: 0; font-size: 11px; color: var(--text-1); }
-.mc-tag svg { flex: none; color: var(--yellow); }
-.mc-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-release-note { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mc-pill { display: inline-flex; align-items: center; gap: 4px; }
-.mc-pill.prs { background: color-mix(in srgb, var(--purple) 18%, transparent); color: var(--purple); }
-.mc-stat-review {
-  border: 1px solid transparent;
-  border-radius: 9px;
-  padding: 1px 7px;
-  background: color-mix(in srgb, var(--yellow) 14%, transparent);
-  color: var(--yellow);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.mc-stat-review.on { border-color: currentColor; }
 /* Keyboard cursor: a soft ring around the whole row rather than a bar stuck to
    its left edge, which read as a stray tab. */
 .mc-row-wrap.cursor .mc-row {
-  background: var(--bg-4);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
-.mc-check { flex: 0 0 auto; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.mc-check { flex: 0 0 auto; width: 14px; height: 14px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .mc-expand {
   display: flex;
   flex: 0 0 auto;
@@ -14432,74 +14402,124 @@ input[type='range']:focus-visible {
   cursor: pointer;
 }
 .mc-expand:hover { color: var(--text-1); }
-.mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--text-2); }
-.mc-activity.blocked { color: var(--danger, #f85149); }
-.mc-activity.action { color: var(--accent); }
-.mc-activity.pending { color: var(--warn, #d29922); }
-.mc-activity-n { font-size: 10px; color: var(--text-2); white-space: nowrap; }
-.mc-spark { display: block; opacity: 0.8; }
-
-/* Expanded row: what is waiting to be pushed and what is dirty. */
-.mc-detail {
-  display: flex;
-  gap: 26px;
-  padding: 4px 10px 10px 54px;
-  font-size: 11px;
-}
-.mc-detail-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 46%; }
-.mc-detail-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
-.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-1); }
-.mc-detail-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-detail-item code { font-family: var(--mono, monospace); font-size: 10.5px; color: var(--text-2); flex: 0 0 auto; }
-.mc-detail-empty { color: var(--text-2); }
-.mc-status.M { color: var(--warn, #d29922); }
-.mc-status.A { color: var(--green); }
-.mc-status.D { color: var(--danger, #f85149); }
-.mc-status.U { color: var(--danger, #f85149); }
 .mc-level { display: flex; flex: 0 0 auto; }
 .mc-level.blocked { color: var(--danger, #f85149); }
 .mc-level.action { color: var(--accent); }
 .mc-level.pending { color: var(--warn, #d29922); }
 .mc-level.clean { color: var(--text-2); }
+
 .mc-ident { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mc-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.mc-name { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-where { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-2); min-width: 0; }
+.mc-name { font-size: 13px; font-weight: 600; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-group {
-  flex: 0 0 auto; padding: 0 6px; border-radius: 7px; background: var(--bg-4);
-  font-size: 10px; color: var(--text-2); white-space: nowrap;
+  flex: 0 0 auto; padding: 0 6px; border-radius: 4px; background: var(--bg-4);
+  font-size: 10.5px; color: var(--text-2); white-space: nowrap;
 }
+.mc-where { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); min-width: 0; }
+.mc-branch { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-upstream { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-noupstream { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; color: var(--warn, #d29922); }
 .mc-commit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mc-subject { font-size: 11.5px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-author { font-size: 10.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-branch { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-upstream { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-badges { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
+.mc-subject { font-size: 13px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-author { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-error { grid-column: span 4; min-width: 0; font-size: 12px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Local: the working tree's counts. */
+.mc-badges { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
 .mc-badge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 600;
-  padding: 1px 7px;
-  border-radius: 9px;
+  padding: 2px 7px;
+  border-radius: 6px;
   background: var(--bg-4);
   color: var(--text-1);
 }
-.mc-badge.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
+.mc-badge.blocked { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
 .mc-badge.behind { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
 .mc-badge.ahead { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .mc-badge.dirty { color: var(--text-1); }
-.mc-badge.staged { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
-.mc-error { grid-column: span 4; min-width: 0; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-badge.staged { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+
+/* Hosting: the PR count opens the repository's pull requests, CI its runs. */
+.mc-hosting { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.mc-pr-chip,
+.mc-ci {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-pr-chip {
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--purple) 16%, transparent);
+  border-color: color-mix(in srgb, var(--purple) 35%, transparent);
+  color: color-mix(in srgb, var(--purple) 80%, var(--text-0));
+}
+.mc-pr-chip:hover { background: color-mix(in srgb, var(--purple) 32%, transparent); border-color: var(--purple); color: var(--text-0); }
+.mc-pr-chip .mc-go { opacity: 0.55; }
+.mc-pr-chip:hover .mc-go { opacity: 1; }
+.mc-pr-awaiting {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--bg-0);
+  font-size: 10.5px;
+}
+.mc-ci { padding: 3px 9px; }
+.mc-ci.success { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+.mc-ci.failure { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
+.mc-ci.pending { background: color-mix(in srgb, var(--warn, #d29922) 14%, transparent); color: var(--warn, #d29922); }
+.mc-ci.neutral { background: var(--bg-4); color: var(--text-2); }
+.mc-ci:hover { border-color: currentColor; }
+.mc-muted { font-size: 12px; color: var(--text-3, var(--text-2)); }
+
+/* Release: the newest tag HEAD reaches, and how far HEAD is past it. */
+.mc-release { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-tag { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 12.5px; color: var(--text-1); }
+.mc-tag svg { flex: none; color: var(--yellow); }
+.mc-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-release-note { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--accent); }
+.mc-activity.blocked { color: var(--danger, #f85149); }
+.mc-activity.pending { color: var(--warn, #d29922); }
+.mc-activity-n { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.mc-spark { display: block; }
+
 .mc-times { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
-.mc-age { font-size: 10.5px; color: var(--text-1); white-space: nowrap; }
-.mc-fetched { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mc-age { font-size: 11.5px; color: var(--text-1); white-space: nowrap; }
+.mc-fetched { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 /* The behind count is only as fresh as the last fetch — say so when it is old. */
 .mc-fetched.stale { color: var(--warn, #d29922); }
-.mc-actions { display: flex; justify-content: flex-end; gap: 4px; flex: 0 0 auto; opacity: 0; }
-.mc-row:hover .mc-actions { opacity: 1; }
+/* Always in view, as drawn: the row's actions are not a hover secret. */
+.mc-actions { display: flex; justify-content: flex-end; gap: 4px; flex: 0 0 auto; }
+
+/* Expanded row: what is waiting to be pushed and what is dirty. */
+.mc-detail {
+  display: flex;
+  gap: 26px;
+  padding: 4px 14px 12px 74px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.mc-detail-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; max-width: 46%; }
+.mc-detail-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
+.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-1); }
+.mc-detail-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-detail-item code { font-family: var(--mono, monospace); font-size: 11.5px; color: var(--text-2); flex: 0 0 auto; }
+.mc-detail-empty { color: var(--text-2); }
+.mc-status.M { color: var(--warn, #d29922); }
+.mc-status.A { color: var(--green); }
+.mc-status.D { color: var(--danger, #f85149); }
+.mc-status.U { color: var(--danger, #f85149); }
 
 /* ── Timelapse (animated history) ── */
 .tl-root { display: flex; flex-direction: column; gap: 10px; min-height: 0; }

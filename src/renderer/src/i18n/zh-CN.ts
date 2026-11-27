@@ -3423,7 +3423,7 @@ export const zhCN: Dict = {
   'mission.badge.prs': '{n} 个打开的拉取请求',
   'mission.col.repo': '仓库',
   'mission.col.commit': '最近提交',
-  'mission.col.local': '工作区',
+  'mission.col.local': '本地',
   'mission.col.hosting': '托管',
   'mission.col.release': '发布',
   'mission.col.activity': '活动',

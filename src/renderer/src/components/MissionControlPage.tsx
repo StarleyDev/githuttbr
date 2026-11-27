@@ -472,6 +472,7 @@ export function MissionControlPage(): React.JSX.Element {
           {levelChip('action', t('mission.action'))}
           {levelChip('pending', t('mission.pending'))}
           {levelChip('clean', t('mission.clean'))}
+          {(hostTotals.prs > 0 || hostTotals.ciFailing > 0) && <span className="mc-summary-sep" aria-hidden="true" />}
           {hostTotals.prs > 0 && (
             <button className={`mc-pill prs ${hostFilter === 'prs' ? 'on' : ''}`} onClick={() => toggleHostFilter('prs')}>
               <GitPullRequest size={11} /> {interp(t('mission.prsOpen'), { n: String(hostTotals.prs) })}
