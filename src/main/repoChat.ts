@@ -389,6 +389,28 @@ export function filterRepoChatPaths(paths: string[], ignored: Set<string> = new 
   )
 }
 
+/**
+ * Citations are a courtesy, not the answer. A small model cited a file it was
+ * never given, and rejecting the whole reply for it left the user with an
+ * error instead of the version number they asked for. Unknown ids are dropped;
+ * one that names an evidence path is mapped to that excerpt's id.
+ */
+export function normalizeChatSources(value: unknown, evidence: readonly RepoChatEvidence[]): unknown {
+  const root = asObject(value)
+  if (!root) return value
+  const ids = new Set(evidence.map((item) => item.id))
+  const byPath = new Map(evidence.map((item) => [item.path, item.id]))
+  const raw = Array.isArray(root.sourceIds) ? root.sourceIds : []
+  const sourceIds = [
+    ...new Set(
+      raw
+        .map((id) => (typeof id !== 'string' ? null : ids.has(id) ? id : (byPath.get(id) ?? null)))
+        .filter((id): id is string => id !== null)
+    )
+  ].slice(0, 12)
+  return { ...root, sourceIds }
+}
+
 export function validateChatAnswer(
   value: unknown,
   allowed: Set<string>,
@@ -521,16 +543,65 @@ export function mentionsRepository(message: string, tracked: readonly string[]):
   return ABOUT_THIS_REPOSITORY.test(message) || mentionedPaths(message, tracked).length > 0
 }
 
-/** Tracked files the message names, by path or by file name — read without waiting to be asked. */
+/** Edit distance, stopping early once it passes `limit`. */
+function withinEdits(a: string, b: string, limit: number): boolean {
+  if (Math.abs(a.length - b.length) > limit) return false
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i]
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+    }
+    if (Math.min(...row) > limit) return false
+    prev = row
+  }
+  return prev[b.length] <= limit
+}
+
+/** A typed file name and a tracked one: equal, or a slip of up to two letters in a longer name. */
+function sameFileName(typed: string, actual: string): boolean {
+  if (typed === actual) return true
+  const dot = actual.lastIndexOf('.')
+  if (dot <= 0 || typed.slice(typed.lastIndexOf('.')) !== actual.slice(dot)) return false
+  const stem = actual.slice(0, dot)
+  return stem.length >= 5 && withinEdits(typed.slice(0, typed.lastIndexOf('.')), stem, 2)
+}
+
+/**
+ * Tracked files the message names, by path or by file name — read without
+ * waiting to be asked. "packate.json" and "pakage.json" were typed for
+ * package.json, so a near miss of a long-enough name counts too.
+ */
 export function mentionedPaths(message: string, tracked: readonly string[]): string[] {
-  const words = new Set(message.toLowerCase().match(/[\w./-]+\.[a-z0-9]{1,8}\b/g) ?? [])
-  if (!words.size) return []
-  return tracked
-    .filter((path) => {
-      const lower = path.toLowerCase()
-      return words.has(lower) || words.has(lower.slice(lower.lastIndexOf('/') + 1))
+  const words = [...new Set(message.toLowerCase().match(/[\w./-]+\.[a-z0-9]{1,8}\b/g) ?? [])]
+  if (!words.length) return []
+  const exact = tracked.filter((path) => {
+    const lower = path.toLowerCase()
+    const name = lower.slice(lower.lastIndexOf('/') + 1)
+    return words.some((word) => word === lower || word === name)
+  })
+  // A near miss only when nothing matched exactly: "app.ts" must not also pull in "api.ts".
+  const found = exact.length
+    ? exact
+    : tracked.filter((path) => {
+        const name = path.toLowerCase().slice(path.lastIndexOf('/') + 1)
+        return words.some((word) => !word.includes('/') && sameFileName(word, name))
+      })
+  // The shallowest first: "package.json" means the root one before a nested copy.
+  return [...found].sort((x, y) => x.split('/').length - y.split('/').length).slice(0, REPO_CHAT_MAX_PATHS)
+}
+
+/** Notes for the file names the user typed that were read as another, nearby name. */
+export function typedAs(message: string, read: readonly string[]): string[] {
+  const words = [...new Set(message.toLowerCase().match(/[\w./-]+\.[a-z0-9]{1,8}\b/g) ?? [])]
+  const names = new Set(read.map((p) => p.toLowerCase().slice(p.lastIndexOf('/') + 1)))
+  const exact = new Set(read.map((p) => p.toLowerCase()))
+  return words
+    .filter((word) => !names.has(word) && !exact.has(word))
+    .flatMap((word) => {
+      const hit = read.find((p) => sameFileName(word, p.toLowerCase().slice(p.lastIndexOf('/') + 1)))
+      return hit ? [`The user's "${word}" is ${hit}, which was read below.`] : []
     })
-    .slice(0, REPO_CHAT_MAX_PATHS)
 }
 
 /** A thinking model's visible reasoning is not part of the answer. */
@@ -1000,10 +1071,13 @@ export async function answerRepoChat(
   // Until the model asks for the overview, the repository is a name and a
   // branch: the user's message goes out on its own, as in any chat.
   let overviewShown = false
+  /** "packate.json" read as package.json — said aloud, or the model hunts for the typo. */
+  let readAs: string[] = []
   const briefing = (): string =>
     [
       `Open repository: ${basename(repoPath)} (branch ${status.current || 'detached HEAD'}). Nothing from it has been read yet.`,
       attachments.length ? `Pinned context: ${attachments.map(attachmentLabel).join(', ')}` : '',
+      ...readAs,
       ...pinned.notes
     ]
       .filter(Boolean)
@@ -1047,10 +1121,13 @@ ${actionRules}
   // repository already, so it goes straight to the grounded rounds below.
   const latest = messages.at(-1)?.content ?? ''
   if (!attachments.length && mentionsRepository(latest, candidates)) {
-    overviewShown = true
     // Files the user named are read now: a small model given the list still
-    // answered "I cannot see config.json" instead of asking for it.
+    // answered "I cannot see config.json" instead of asking for it. With the
+    // file in hand the 16 000-character list only buries it, so the overview
+    // opens only when no file was named ("this repository", "my changes").
     const named = mentionedPaths(latest, candidates)
+    overviewShown = named.length === 0
+    readAs = typedAs(latest, named)
     onProgress({ phase: 'reading', files: named.length })
     if (named.length) {
       const read = await collectEvidence(repoPath, { paths: named, searches: [] }, allowed, status, committedOnly)
@@ -1090,7 +1167,9 @@ ${actionRules}
         {
           role: 'system',
           content: overviewShown
-            ? `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}${mayAskMore ? fileList : ''}`
+            ? // Evidence last, nearest the question: a 3B model given the file list
+              // after the excerpt answered "1.0.0" with package.json in hand.
+              `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}${mayAskMore ? fileList : ''}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}`
             : `Repository context (reference only; the user's question is the last message):\n${briefing()}${evidence.length ? `\n\nEvidence:\n${serializeEvidence(evidence)}` : ''}`
         },
         ...historyTurns(messages)
@@ -1099,6 +1178,7 @@ ${actionRules}
       {
         name: 'repo_chat_answer',
         schema: chatAnswerSchema(actionsEnabled, fileActionsEnabled, remoteActionsEnabled, mayAskMore),
+        normalize: (value) => normalizeChatSources(value, evidence),
         // Same grounding as the Ask planner: proposed paths must exist in the
         // working-tree state the model was shown, untracked files included.
         validate: async (value) => {
