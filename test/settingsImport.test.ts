@@ -863,6 +863,33 @@ describe('merging the profiles part', () => {
       expect(useSettingsStore.getState().settings.ai.enabled).toBe(fileAI.enabled)
     })
 
+    it('the behaviour marker travels with the general AI it describes', async () => {
+      useSettingsStore.setState((st) => ({
+        settings: { ...st.settings, aiBehaviourShared: true, ai: { ...st.settings.ai, commitStyle: 'gitmoji' } }
+      }))
+      // A 4.5x export: a general AI without the marker, the style on its active profile.
+      const old = (): Partial<AppSettings> => ({
+        profiles: theirs().map((p) => (p.id === 'client' ? { ...p, ai: { ...p.ai, commitStyle: 'haiku' } } : p)),
+        activeProfileId: 'client',
+        ai: { ...defaultSettings().ai, commitStyle: 'auto' }
+      })
+      // Merge keeps our general AI, so ours — marker and styles — stays.
+      await useSettingsStore.getState().importSettings(old(), { parts: ['profiles'], profiles: 'merge' })
+      expect(useSettingsStore.getState().settings.ai.commitStyle).toBe('gitmoji')
+      expect(useSettingsStore.getState().settings.aiBehaviourShared).toBe(true)
+      // Replace takes the file's AI: without a marker it is migrated like any
+      // upgrade, from the file's active profile.
+      await useSettingsStore.getState().importSettings(old(), { parts: ['profiles'], profiles: 'replace' })
+      expect(useSettingsStore.getState().settings.aiBehaviourShared).toBe(true)
+      expect(useSettingsStore.getState().settings.ai.commitStyle).toBe('haiku')
+      // A 4.60 export carries its marker: its general AI is taken as it is.
+      await useSettingsStore.getState().importSettings(
+        { ...old(), aiBehaviourShared: true, ai: { ...defaultSettings().ai, commitStyle: 'conventional' } },
+        { parts: ['profiles'], profiles: 'replace' }
+      )
+      expect(useSettingsStore.getState().settings.ai.commitStyle).toBe('conventional')
+    })
+
     it('merge keeps our keychain seed; replace drops bindings to removed profiles', async () => {
       useSettingsStore.setState((st) => ({ settings: { ...st.settings, aiSecretsFrom: 'mac-work' } }))
       await useSettingsStore.getState().importSettings({ profiles: theirs() }, { parts: ['profiles'], profiles: 'merge' })

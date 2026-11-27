@@ -7,10 +7,14 @@ import type { AIConfig, AppSettings, Profile } from './types'
  *
  * Like git's `--global` config with a local override: the app holds one AI
  * (`AppSettings.ai`) that every profile uses, and a profile may keep its own
- * (`Profile.ownAI`). Only the *engine* — who answers, with which key and model —
- * is shared. The *personal* fields — how the output reads — always stay on the
- * profile, because a work and a personal profile legitimately want different
- * commit styles while paying for the same account.
+ * (`Profile.ownAI`). Whichever one a profile uses, it uses whole: the *engine*
+ * (who answers, with which key and model) and the *behaviour* (how the output
+ * reads, what the chat may do) follow together. A work profile that wants other
+ * commit styles than a personal one gives itself its own AI.
+ *
+ * The two halves are still told apart (`AI_ENGINE_FIELDS`,
+ * `AI_PERSONAL_FIELDS`): the migrations measure engines alone, and the one-time
+ * move of the behaviour onto the general AI copies the personal half only.
  */
 
 /**
@@ -43,7 +47,9 @@ export const AI_ENGINE_FIELDS = [
 /**
  * Fields that shape the output, or what the assistant may do: styles, custom
  * instructions, trailers, hover, and the repository chat's privacy and action
- * policy. Always read from the profile, whichever engine answers.
+ * policy. Read from the same config as the engine — the general AI's, or the
+ * profile's own. Builds before 4.60 kept them on every profile instead; the
+ * name stays because it is what the migration copies (`ensureGeneralAI`).
  */
 export const AI_PERSONAL_FIELDS = [
   'commitStyle',
@@ -69,7 +75,7 @@ export type AIEngine = Pick<AIConfig, AIEngineField>
 export type AIPersonal = Pick<AIConfig, AIPersonalField>
 
 // A field added to AIConfig without being classified fails to compile here, so
-// it cannot silently stay per-profile (or silently become shared).
+// the migrations cannot silently miss it.
 type Unclassified = Exclude<keyof AIConfig, AIEngineField | AIPersonalField>
 type DoublyClassified = Extract<AIEngineField, AIPersonalField>
 const classified: [Unclassified, DoublyClassified] extends [never, never] ? true : never = true
@@ -100,20 +106,20 @@ export function personalOf(ai: Partial<AIConfig>): AIPersonal {
   return pick(ai, AI_PERSONAL_FIELDS)
 }
 
-/** True when the profile answers with the general AI's engine. */
+/** True when the profile answers with the general AI — engine and behaviour. */
 export function usesGeneralAI(profile: Pick<Profile, 'ownAI'>): boolean {
   return profile.ownAI !== true
 }
 
 /**
- * The config a profile actually runs with: its own when `ownAI`, otherwise its
- * personal fields over the general AI's engine. Engine fields left on a profile
- * that uses the general AI are dropped, not merged — a stale `cli` or key there
- * must never leak into the general engine's calls.
+ * The config a profile actually runs with: its own when `ownAI`, otherwise the
+ * general AI, whole. Nothing on a profile that uses the general AI is merged
+ * in — a stale `cli` or key there must never leak into the general engine's
+ * calls, nor a style left from an older build override the general one.
  */
 export function effectiveAI(settings: Pick<AppSettings, 'ai'>, profile: Pick<Profile, 'ai' | 'ownAI'>): AIConfig {
   if (!usesGeneralAI(profile) || !settings.ai) return profile.ai
-  return { ...personalOf(profile.ai), ...engineOf(settings.ai) }
+  return settings.ai
 }
 
 /** Key-order-independent JSON, so two equal configs always serialise alike. */
@@ -152,9 +158,9 @@ export function aiEnginesEqual(
 }
 
 /**
- * Brings a settings object that predates the general AI forward. Idempotent and
- * lossless: a file that already has `ai` only gets it migrated to the account
- * model.
+ * Brings a settings object that predates the general AI forward. Idempotent,
+ * and lossless for the engine: a file that already has `ai` only gets it
+ * migrated to the account model — and, once, the behaviour (below).
  *
  * Without one, the general AI's engine is the active profile's, and every
  * profile whose engine differs keeps its own — so one profile, or several
@@ -174,15 +180,20 @@ export function aiEnginesEqual(
 export function ensureGeneralAI<T extends Omit<AppSettings, 'ai'> & { ai?: Partial<AIConfig> }>(
   settings: T
 ): T & { ai: AIConfig } {
-  if (settings.ai) return { ...settings, ai: migrateAIConfig(settings.ai) }
+  if (settings.ai) {
+    const ai = migrateAIConfig(settings.ai)
+    if (settings.aiBehaviourShared === true) return { ...settings, ai }
+    return { ...settings, ai: withSharedBehaviour(ai, settings), aiBehaviourShared: true }
+  }
   const profiles = settings.profiles ?? []
   const active = profiles.find((p) => p.id === settings.activeProfileId) ?? profiles[0]
-  // Personal fields on the general AI are never read; keeping the source's
-  // means the stored object is still a whole, sensible config.
+  // The whole source config, behaviour included: every profile left on the
+  // general AI now writes the way the active one did.
   const ai = migrateAIConfig(active?.ai)
   const out = {
     ...settings,
     ai,
+    aiBehaviourShared: true,
     ...(active ? { aiSecretsFrom: active.id } : {}),
     profiles: profiles.map((p) => {
       const own = p !== active && !aiEnginesEqual(p.ai, ai)
@@ -195,31 +206,48 @@ export function ensureGeneralAI<T extends Omit<AppSettings, 'ai'> & { ai?: Parti
 }
 
 /**
- * Writes the general AI's engine. Its personal fields are left as they were:
- * nobody reads them, and replacing them would only churn the file.
+ * The one-time move of the behaviour onto the general AI (builds before 4.60
+ * kept it on every profile). The general AI keeps its engine and takes the
+ * personal fields of one profile that uses it: the active one, else the
+ * default profile, else the first one that does. With every profile on its
+ * own AI nobody reads the general behaviour, and the active one's is copied
+ * all the same, so a profile handed back later gets familiar values.
+ *
+ * What it costs, by design: a profile on the general AI whose styles,
+ * instructions or chat policy differed from the chosen one's now writes like
+ * it. Its old values are not deleted — they stay in its `ai`, unread, so an
+ * older build sharing the file still finds them — but this build never reads
+ * them again. Profiles with their own AI are untouched, and no key moves:
+ * keys are engine fields, which this never writes.
  */
+function withSharedBehaviour(ai: AIConfig, settings: Pick<AppSettings, 'profiles' | 'activeProfileId'>): AIConfig {
+  const profiles = settings.profiles ?? []
+  const active = profiles.find((p) => p.id === settings.activeProfileId)
+  const candidates = [active, profiles.find((p) => p.id === 'default'), ...profiles]
+  const source = candidates.find((p) => p && usesGeneralAI(p)) ?? active ?? profiles[0]
+  if (!source?.ai) return ai
+  return { ...ai, ...personalOf(source.ai) }
+}
+
+/** Writes the general AI — the whole config the AI page edits for it. */
 export function withGeneralAI(settings: AppSettings, ai: Partial<AIConfig>): AppSettings {
-  return { ...settings, ai: { ...personalOf(settings.ai), ...engineOf(ai) } as AIConfig }
+  return { ...settings, ai: { ...settings.ai, ...ai } }
 }
 
 /**
- * Routes a change to where it takes effect: engine fields to the general AI
- * when the profile uses it, or to the profile's own; personal fields always to
- * the profile. An unknown profile id changes nothing.
+ * Routes a change to where the profile reads it: everything to the general AI
+ * when the profile uses it, everything to its own when it has one. Writes go
+ * where reads come from — a style saved from the composer on a profile that
+ * uses the general AI changes it for every such profile. An unknown profile id
+ * changes nothing.
  */
 export function withAIPatch(settings: AppSettings, profileId: string, partial: Partial<AIConfig>): AppSettings {
   const profile = settings.profiles.find((p) => p.id === profileId)
-  if (!profile) return settings
-  const engine = engineOf(partial)
-  const personal = personalOf(partial)
-  const general = usesGeneralAI(profile)
-  const hasEngine = Object.keys(engine).length > 0
-  const next: AppSettings = general && hasEngine ? { ...settings, ai: { ...settings.ai, ...engine } } : settings
-  const profileHalf = general ? personal : { ...personal, ...engine }
-  if (Object.keys(profileHalf).length === 0) return next
+  if (!profile || Object.keys(partial).length === 0) return settings
+  if (usesGeneralAI(profile)) return withGeneralAI(settings, partial)
   return {
-    ...next,
-    profiles: next.profiles.map((p) => (p.id === profileId ? { ...p, ai: { ...p.ai, ...profileHalf } } : p))
+    ...settings,
+    profiles: settings.profiles.map((p) => (p.id === profileId ? { ...p, ai: { ...p.ai, ...partial } } : p))
   }
 }
 
@@ -243,24 +271,24 @@ export function withoutAISecretsSeed<T extends { aiSecretsFrom?: string }>(setti
 /**
  * Gives a profile its own AI, or hands it back to the general one.
  *
- * On: the profile starts from a copy of the general engine, so it is never an
- * empty, keyless config the user then has to rebuild.
+ * On: the profile starts from a copy of the general AI — engine and behaviour —
+ * so it is never an empty, keyless config the user then has to rebuild, and
+ * nothing about how it writes changes until the user edits it.
  *
- * Off: the profile's engine is reset to `fallback` (the defaults). Keeping it
- * would be harmless to behaviour, but its keys would stay in the keychain store
- * under a profile that no longer uses them — and an own AI turned back on
- * starts from the general one anyway, so nothing worth keeping is lost.
+ * Off: the profile's own config is dropped, reset to `fallback` (the defaults).
+ * It is no longer read, its keys would stay in the keychain store under a
+ * profile that no longer uses them, and an own AI turned back on starts from
+ * the general one anyway.
  */
 export function withProfileOwnAI(settings: AppSettings, profileId: string, own: boolean, fallback: AIConfig): AppSettings {
   return {
     ...settings,
     profiles: settings.profiles.map((p) => {
       if (p.id !== profileId || (p.ownAI === true) === own) return p
-      if (own) return { ...p, ownAI: true, ai: { ...personalOf(p.ai), ...engineOf(settings.ai) } as AIConfig }
-      const ai = withoutAIEngine(p.ai, fallback)
+      if (own) return { ...p, ownAI: true, ai: { ...settings.ai } }
       const { ownAI: _drop, ...rest } = p
       void _drop
-      return { ...rest, ai }
+      return { ...rest, ai: { ...fallback } }
     })
   }
 }

@@ -750,8 +750,8 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
                 const assignments = { ...(ai.assignments ?? {}) }
                 if (!accountId) delete assignments.chat
                 else assignments.chat = { accountId, model }
-                // The chat model is engine: it lands on the general AI unless
-                // this profile has its own.
+                // Lands on the AI this profile reads: the general one unless
+                // the profile has its own.
                 saveAIFor(profile.id, { assignments })
               }}
             >

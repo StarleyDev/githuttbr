@@ -3654,10 +3654,10 @@ export interface Profile {
   /** "Not now" on the suggestion to use a repository's icon as the avatar. */
   avatarRepoHintDismissed?: boolean
   /**
-   * Whether this profile answers with its own AI engine instead of the general
-   * one (`AppSettings.ai`). Absent or false: the general engine. `ai` always
-   * carries the profile's personal fields (styles, instructions, chat policy),
-   * and its engine fields only count while this is true — see `shared/aiScope.ts`.
+   * Whether this profile has its own AI instead of the general one
+   * (`AppSettings.ai`). Absent or false: the general AI, engine and behaviour
+   * alike, and `ai` here is not read. True: `ai` is the whole config this
+   * profile runs with — see `shared/aiScope.ts`.
    */
   ownAI?: boolean
   ai: AIConfig
@@ -4105,11 +4105,17 @@ export interface AppSettings {
    */
   aiAccountsNoticeSeen?: boolean
   /**
-   * The general AI: the engine (accounts, keys, assignments) every profile uses
-   * unless it has its own (`Profile.ownAI`). Its personal fields are ignored —
-   * those always come from the profile. See `shared/aiScope.ts`.
+   * The general AI: the whole config — engine (accounts, keys, assignments) and
+   * behaviour (styles, instructions, chat policy) — every profile uses unless it
+   * has its own (`Profile.ownAI`). See `shared/aiScope.ts`.
    */
   ai: AIConfig
+  /**
+   * Set once the general AI carries the behaviour fields too. Builds before it
+   * kept them on each profile; `ensureGeneralAI` copies one profile's into `ai`
+   * exactly once, then sets this so a later read never copies them again.
+   */
+  aiBehaviourShared?: boolean
   /**
    * The profile whose keychain entry still holds the general AI's keys: set when
    * the general AI was first built from that profile, read by `applySecrets`
