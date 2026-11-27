@@ -8153,10 +8153,11 @@ body.col-resizing .node-ava {
 
 /* Settings keep one size while you move between sections: the modal is fixed,
    and only the section column scrolls. It used to grow and shrink with each
-   section's content. */
+   section's content. 20% over the 900 × 760 it had, so the grouped pages'
+   rows stop wrapping; the viewport still caps it on a small screen. */
 .modal-settings {
-  width: min(900px, calc(100vw - 60px));
-  height: min(760px, calc(100vh - 80px));
+  width: min(1080px, calc(100vw - 60px));
+  height: min(912px, calc(100vh - 80px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -8177,8 +8178,10 @@ body.col-resizing .node-ava {
   padding-inline-end: 6px;
 }
 
+/* Wide enough for the longest page name ("Security & confirmations") in English
+   without an ellipsis; longer translations still truncate rather than wrap. */
 .settings-profiles {
-  width: 170px;
+  width: 214px;
   flex-shrink: 0;
   border-inline-end: 1px solid var(--border-soft);
   padding-inline-end: 12px;
@@ -8568,6 +8571,240 @@ body.col-resizing .node-ava {
   width: auto;
   max-width: 220px;
   font-weight: 700;
+}
+/* Settings → Profile & identity: the header card — the bar's switcher, with
+   the profile's picture and an editable name. */
+.settings-profile-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+.settings-profile-card-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+.settings-form .settings-profile-card-name label {
+  margin: 0;
+}
+.settings-profile-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-form .settings-profile-card-row input {
+  font-size: 14px;
+  font-weight: 700;
+  max-width: 240px;
+}
+.settings-profile-card-row .settings-profile-state {
+  margin-top: 0;
+}
+.settings-profile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-form .settings-profile-card-actions select {
+  width: auto;
+  max-width: 200px;
+}
+/* "This repository commits as someone else" — with the button that fixes it. */
+.settings-identity-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warn) 7%, var(--bg-2));
+}
+.settings-identity-hint p {
+  flex: 1;
+  margin: 0;
+}
+.settings-identity-hint strong {
+  color: var(--text-0);
+}
+
+/* Small status pills: Connected / expired / not connected, and the Security strip. */
+.settings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.settings-pill.ok {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 40%, var(--border));
+  background: color-mix(in srgb, var(--green) 10%, var(--bg-2));
+}
+.settings-pill.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--bg-2));
+}
+.settings-pill.bad {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-2));
+}
+.settings-pill-note {
+  font-weight: 500;
+  font-style: normal;
+  opacity: 0.85;
+}
+.settings-pill-note::before {
+  content: '· ';
+}
+
+/* Settings → Profile & identity → Connected accounts: one row per host. */
+.settings-accounts-summary {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.settings-accounts-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+.settings-accounts-row + .settings-accounts-row {
+  border-top: 1px solid var(--border-soft, var(--border));
+}
+.settings-accounts-host {
+  min-width: 96px;
+  font-weight: 600;
+}
+.settings-accounts-who {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-2);
+}
+
+/* Settings → Security & confirmations: what holds right now, above the switches. */
+.settings-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 6px;
+}
+/* A rule that is not a switch, set like a toggle row so it is read as one. */
+.settings-readonly-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text-2);
+}
+.settings-readonly-row > svg {
+  margin-top: 2px;
+  flex: none;
+}
+
+/* Settings → General: where the options that left this page went. */
+.settings-moved-note {
+  margin-top: 22px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.settings-moved-note p {
+  margin: 0 0 6px;
+}
+.settings-moved-note ul {
+  margin: 0;
+  padding-inline-start: 18px;
+}
+.settings-moved-note li {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* Settings → Data & backup: import / export up front, the wipes fenced off. */
+.settings-feature-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+.settings-feature-card .settings-section-title {
+  margin-top: 0;
+}
+.settings-danger-zone {
+  margin-top: 28px;
+}
+.settings-danger-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  border-radius: 10px;
+}
+.settings-danger-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.settings-danger-list li + li {
+  border-top: 1px solid color-mix(in srgb, var(--danger) 25%, var(--border));
+}
+.settings-danger-list .settings-toggle-copy {
+  flex: 1;
+}
+.settings-danger-list strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.settings-danger-list .btn.danger {
+  color: var(--danger);
+}
+
+/* The side menu's groups: headings set in capitals by CSS, so every locale writes them normally. */
+.settings-nav-group .settings-side-header {
+  text-transform: uppercase;
+}
+/* `.profile-item span` stretches the label; the warning must not stretch with it. */
+.profile-item .settings-nav-warn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
 }
 .settings-profile-bar-spacer {
   flex: 1;
