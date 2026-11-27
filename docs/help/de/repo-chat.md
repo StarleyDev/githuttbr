@@ -100,11 +100,14 @@ welche, siehe [Eine KI für alle Profile](ai.md#eine-ki-für-alle-profile)):
 | Einstellung | Wirkung |
 |---|---|
 | **Fragen zum Repository stellen** | Aus entfernt Reiter, Symbolleisten-Knopf und Kürzelziel. Der Rest der KI bleibt |
+| **Das Repository lesen** | Dateien, Verlauf und Diffs, um dir zu antworten. Dateien, die nach Geheimnissen aussehen, werden nie gelesen |
 | **Nur committete Inhalte** | Antwortet aus dem letzten Commit statt aus dem Arbeitsverzeichnis: nicht committete Änderungen verlassen den Rechner nie |
-| **Datei- und Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
-| **Dateien nur lesen** | Ein verhindert Erstellen, Bearbeiten, Ersetzen und Löschen von Dateien; Git-Aktionen bleiben verfügbar. Standardmäßig eingeschaltet |
-| **Wie vorgeschlagene Aktionen ausgeführt werden** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
-| **Chat darf Remote-Aktionen vorschlagen** | Standardmäßig aus. Eingeschaltet kommen Fetch, Pull, Push, das Öffnen eines Pull Requests und das Einreichen eines Stapels hinzu |
+| **Lokale Git-Aktionen** | Stagen, committen, Branch, Stash, Merge und mehr, vorgeschlagen als Karte, die du prüfst. Aus: der Chat antwortet nur |
+| **Dateien erstellen, bearbeiten und löschen** | Genaue Änderungen, neue Dateien, Ersetzungen und Löschungen, jeweils mit Diff auf der Karte. Braucht lokale Git-Aktionen. Standardmäßig aus. Ersetzt *Dateien nur lesen* mit umgekehrter Bedeutung: hier an heißt dieser Modus aus, und eine gespeicherte Einstellung gilt wie zuvor |
+| **Wenn die KI eine Aktion vorschlägt** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
+| **Remote-Aktionen** | Standardmäßig aus. Eingeschaltet kommen Fetch, Pull, Push, das Öffnen eines Pull Requests und das Einreichen eines Stapels hinzu |
+
+Über der Liste fasst ein Satz zusammen, was die KI mit diesen Einstellungen gerade tun kann. Er beschreibt die Einstellungen, nicht das Modell: ein Vorschlag wird weiterhin geprüft und abgelehnt, wenn er eine Regel verletzt.
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
 anbietet, was niemand beantworten kann.
@@ -210,7 +213,7 @@ täte: öffnen, neu ausrichten oder in Ruhe lassen.
 ### Aktionen, die den Rechner verlassen
 
 Abrufen, Pullen, Pushen, einen Pull Request öffnen und einen Stapel einreichen
-sind **standardmäßig aus**, hinter **Chat darf Remote-Aktionen vorschlagen**.
+sind **standardmäßig aus**, hinter **Remote-Aktionen**.
 Arbeit zu veröffentlichen ist eine Entscheidung, die man bewusst trifft, und mit
 ausgeschalteter Option erfährt das Modell nicht einmal, dass es diese Aktionen
 gibt: Es kann keine vorschlagen und abgelehnt werden — der Fehlerfall, der

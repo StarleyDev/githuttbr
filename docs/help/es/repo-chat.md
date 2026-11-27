@@ -96,11 +96,14 @@ todos los perfiles](ai.md#una-ia-para-todos-los-perfiles)):
 | Ajuste | Qué hace |
 |---|---|
 | **Haz preguntas sobre el repositorio** | Desactivado quita la pestaña, el botón de la barra y el destino del atajo. El resto de la IA sigue funcionando |
+| **Leer el repositorio** | Archivos, historial y diffs, para responderte. Los archivos que parecen secretos nunca se leen |
 | **Solo contenido confirmado** | Responde con el último commit en vez de la copia de trabajo: los cambios sin confirmar nunca salen del equipo |
-| **Proponer acciones de archivos y Git en el chat** | Desactivado vuelve el chat de solo lectura otra vez: sin tarjetas de acciones ni desplegable de aprobación |
-| **Modo de solo lectura de archivos** | Activado bloquea crear, editar, reemplazar y eliminar archivos, pero mantiene disponibles las acciones Git. Está activado de forma predeterminada |
-| **Cómo se ejecutan las acciones propuestas** | El modo de aprobación — consulta [Modos de aprobación](#modos-de-aprobación). Las acciones destructivas confirman de todos modos |
-| **Permitir que el chat proponga acciones remotas** | Desactivado de forma predeterminada. Activado añade fetch, pull, push, abrir un pull request y enviar una pila a lo que el chat puede proponer |
+| **Acciones Git locales** | Stage, commit, rama, stash, merge y más, propuestos en una tarjeta que revisas. Desactivado: el chat solo responde |
+| **Crear, editar y eliminar archivos** | Ediciones exactas, archivos nuevos, reemplazos y eliminaciones, cada uno con su diff en la tarjeta. Requiere las acciones Git locales. Desactivado de forma predeterminada. Sustituye a *Modo de solo lectura de archivos* con el sentido invertido: activado aquí es ese modo desactivado, y un ajuste guardado se lee igual que antes |
+| **Cuando la IA propone una acción** | El modo de aprobación — consulta [Modos de aprobación](#modos-de-aprobación). Las acciones destructivas confirman de todos modos |
+| **Acciones remotas** | Desactivado de forma predeterminada. Activado añade fetch, pull, push, abrir un pull request y enviar una pila a lo que el chat puede proponer |
+
+Encima de la lista, una frase resume lo que la IA puede hacer ahora con estos ajustes. Describe los ajustes, no el modelo: una propuesta se sigue comprobando y se rechaza si rompe una regla.
 
 Con la IA desactivada por completo, el chat desaparece con ella: no queda un
 panel ofreciendo respuestas que nadie puede dar.
@@ -189,7 +192,7 @@ resultado real.
 enlaces de tickets para JIRA-1234* o *protege las ramas de release* se convierte
 en una acción de archivo escrita contra el esquema real, no en claves plausibles
 que el cargador rechazaría. Requiere las acciones de archivo activadas — el
-mismo interruptor de **Modo de solo lectura de archivos**.
+mismo interruptor de **Crear, editar y eliminar archivos**.
 
 **Las filas que piden un dibujo lo tienen.** Un resumen de una línea basta para
 «prepara dos archivos» y se queda muy corto para «abre cuatro pull requests

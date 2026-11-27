@@ -96,11 +96,14 @@ vedi [Una sola IA per tutti i profili](ai.md#una-sola-ia-per-tutti-i-profili)):
 | Impostazione | Effetto |
 |---|---|
 | **Fai domande sul repository** | Disattivata toglie la scheda, il pulsante e il bersaglio della scorciatoia. Il resto dell’IA continua |
+| **Leggere il repository** | File, cronologia e diff, per risponderti. I file che sembrano segreti non vengono mai letti |
 | **Solo contenuti committati** | Risponde dall’ultimo commit invece che dal working tree: le modifiche non committate non lasciano mai la macchina |
-| **Proponi azioni su file e Git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
-| **Modalità file di sola lettura** | Attivata blocca creazione, modifica, sostituzione ed eliminazione dei file, ma mantiene disponibili le azioni Git. È attiva per impostazione predefinita |
-| **Come vengono eseguite le azioni proposte** | La modalità di approvazione — vedi [Modalità di approvazione](#modalità-di-approvazione). Le azioni distruttive chiedono comunque conferma |
-| **Consenti alla chat di proporre azioni remote** | Disattivo per impostazione predefinita. Attivo aggiunge fetch, pull, push, apertura di una pull request e invio di uno stack |
+| **Azioni Git locali** | Stage, commit, branch, stash, merge e altro, proposti in una scheda che controlli. Disattivato: la chat risponde soltanto |
+| **Creare, modificare ed eliminare file** | Modifiche esatte, file nuovi, sostituzioni ed eliminazioni, ognuno con il suo diff nella scheda. Richiede le azioni Git locali. Disattivato per impostazione predefinita. Sostituisce *Modalità file di sola lettura* con il senso invertito: attivo qui significa quella modalità disattivata, e un’impostazione salvata vale come prima |
+| **Quando l’IA propone un’azione** | La modalità di approvazione — vedi [Modalità di approvazione](#modalità-di-approvazione). Le azioni distruttive chiedono comunque conferma |
+| **Azioni remote** | Disattivo per impostazione predefinita. Attivo aggiunge fetch, pull, push, apertura di una pull request e invio di uno stack |
+
+Sopra l’elenco, una frase riassume cosa può fare ora l’IA con queste impostazioni. Descrive le impostazioni, non il modello: una proposta viene comunque verificata e rifiutata se viola una regola.
 
 Con l’IA spenta del tutto la chat sparisce con lei: nessun pannello che offre
 risposte che nessuno può dare.

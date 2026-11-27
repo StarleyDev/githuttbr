@@ -47,11 +47,14 @@ qu'elle peut faire, en sections :
 
 | Section | Contient |
 |---|---|
-| **Messages de commit** | Style des messages de commit, *Générer la description du commit*, la ligne de co-auteur |
+| **Messages de commit** | Le style de commit — Conventional, Gitmoji et Ticket en cartes avec une ligne d’exemple, les autres sous *Autres styles* — *Générer la description du commit*, la ligne de co-auteur, **Règles supplémentaires pour les commits** et un aperçu |
 | **Expliquer et survol** | Style des explications, *Expliquer le code au survol* et sa touche de modification |
-| **Conflits et branches** | Style de résolution des conflits, style de nommage des branches |
-| **Instructions personnalisées** | Vos propres règles, ajoutées à chaque requête de cette IA |
+| **Conflits et branches** | Style de résolution des conflits, style de nommage des branches, chacun avec un exemple du résultat |
 | **Discussion du dépôt** | Si la discussion est activée, ce qu'elle lit, les actions qu'elle peut proposer — voir [Discussion du dépôt](repo-chat.md#paramètres) |
+
+Les **Règles supplémentaires pour les commits** — *Instructions personnalisées* jusqu’à la 4.60 — ne s’ajoutent qu’à la génération des messages de commit : le chat, les explications, les revues et les noms de branche ne les lisent pas. L’aperçu est un exemple fixe, pas un appel au modèle : il montre la forme du style choisi, pas ce que l’IA écrira pour votre modification.
+
+![Messages de commit](../../screenshots/settings-ai-commits.webp)
 
 Le sélecteur de style du compositeur et les sélecteurs de modèle et
 d'approbation de la discussion écrivent dans la même IA que celle que lit le

@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai draft unsaved changes test and save status ready no key not checked not responding openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style custom instructions co-author hover explain own ai general ai
+keywords: ai draft unsaved changes test and save status ready no key not checked not responding openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style extra rules for commits custom instructions preview co-author hover explain own ai general ai
 ---
 
 # AI features
@@ -45,11 +45,25 @@ do, in sections:
 
 | Section | Holds |
 |---|---|
-| **Commit messages** | Commit message style, *Generate commit description*, the co-author line |
-| **Explain & hover** | Explanation style, *Explain code on hover* and its modifier key |
-| **Conflicts & branches** | Conflict resolution style, branch naming style |
-| **Custom instructions** | Your own rules, added to every request this AI makes |
-| **Repository chat** | Whether chat is on, what it reads, the actions it may propose — see [Repository chat](repo-chat.md#settings) |
+| **Commit messages** | The commit style — Conventional, Gitmoji and Ticket as cards with a sample line, the rest under *More styles* — *Generate commit description*, the co-author line, **Extra rules for commits**, and a preview |
+| **Explain & hover** | The explanation style, one button per tone, and *Explain on hover while holding* a key you pick |
+| **Conflicts & branches** | Conflict resolution style and branch naming style, each with an example of the result |
+| **Repository chat** | Whether chat is on, what it may do, how its proposals run, what it reads — see [Repository chat](repo-chat.md#settings) |
+
+A line above the sections says whose AI you are editing and who it reaches:
+*General AI · applies to Work and Personal*, or one profile's own.
+
+**Extra rules for commits** — *Custom instructions* until 4.60 — are added to
+commit message generation only. Chat, explanations, reviews and branch names do
+not read them, so a rule like "write in Spanish" there changes commits and
+nothing else. The setting search still finds it by its old name.
+
+**The preview is a fixed sample**, not a model call: it shows the shape of the
+chosen style, with a body when *Generate commit description* is on and the
+co-author line when that is on. What the AI writes for your change depends on
+the diff and on your extra rules, which the preview does not apply.
+
+![Commit messages: style cards, extra rules and the preview](../screenshots/settings-ai-commits.webp)
 
 The composer's style switch and the chat's model and approval pickers write to
 the same AI the profile reads: the general one, or the profile's own.

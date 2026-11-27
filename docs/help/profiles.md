@@ -39,7 +39,7 @@ in the same bar; deleting asks first.
 A profile does not need its own AI: one [general AI](ai.md#one-ai-for-every-profile)
 serves every profile, and a profile opts into its own only when it must. The
 choice covers everything: a profile on the general AI also writes the way the
-general AI is set to — commit style, custom instructions, repository chat. A
+general AI is set to — commit style, extra rules for commits, repository chat. A
 profile that needs another style gets its own AI, a copy of the general one it
 can then change. All of it is edited on the **AI** page; the Profile page only
 says which AI the profile uses and links there.

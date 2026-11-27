@@ -98,11 +98,14 @@ voor elk profiel](ai.md#één-ai-voor-elk-profiel)):
 | Instelling | Doet |
 |---|---|
 | **Vragen stellen over de repository** | Uit verwijdert het tabblad, de knop en het doel van de sneltoets. De rest van de AI blijft werken |
+| **De repository lezen** | Bestanden, geschiedenis en diffs, om je te antwoorden. Bestanden die op geheimen lijken, worden nooit gelezen |
 | **Alleen vastgelegde inhoud** | Antwoordt vanuit de laatste commit in plaats van je werkmap: niet-vastgelegde bewerkingen verlaten de machine nooit |
-| **Bestands- en Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
-| **Alleen-lezenmodus voor bestanden** | Aan blokkeert bestanden maken, bewerken, vervangen en verwijderen, maar Git-acties blijven beschikbaar. Standaard ingeschakeld |
-| **Hoe voorgestelde acties worden uitgevoerd** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
-| **Chat mag externe acties voorstellen** | Standaard uit. Aan voegt fetch, pull, push, een pull request openen en een stack indienen toe |
+| **Lokale Git-acties** | Stagen, committen, branch, stash, merge en meer, voorgesteld op een kaart die je controleert. Uit: de chat antwoordt alleen |
+| **Bestanden maken, bewerken en verwijderen** | Exacte bewerkingen, nieuwe bestanden, vervangingen en verwijderingen, elk met zijn diff op de kaart. Vereist lokale Git-acties. Standaard uit. Vervangt *Alleen-lezenmodus voor bestanden* met de betekenis omgedraaid: hier aan is die modus uit, en een opgeslagen instelling leest hetzelfde als voorheen |
+| **Als de AI een actie voorstelt** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
+| **Externe acties** | Standaard uit. Aan voegt fetch, pull, push, een pull request openen en een stack indienen toe |
+
+Boven de lijst vat één zin samen wat de AI met deze instellingen nu mag. Hij beschrijft de instellingen, niet het model: een voorstel wordt nog steeds gecontroleerd en geweigerd als het een regel breekt.
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
 aanbiedt dat niemand kan geven.
@@ -205,7 +208,7 @@ of laten staan.
 ### Acties die de machine verlaten
 
 Ophalen, pullen, pushen, een pull request openen en een stack indienen staan
-**standaard uit**, achter **Chat mag externe acties voorstellen**. Werk
+**standaard uit**, achter **Externe acties**. Werk
 publiceren verdient een bewuste keuze, en met de instelling uit hoort het model
 niet eens dat die acties bestaan: het kan er geen voorstellen en geweigerd
 worden — de fout die mensen leert dingen ongelezen aan te zetten.

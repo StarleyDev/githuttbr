@@ -96,11 +96,14 @@ wszystkich profili](ai.md#jedna-ai-dla-wszystkich-profili)):
 | Ustawienie | Działanie |
 |---|---|
 | **Zadawaj pytania o repozytorium** | Wyłączone usuwa kartę, przycisk paska i cel skrótu. Reszta AI działa dalej |
+| **Czytanie repozytorium** | Pliki, historia i diffy, żeby ci odpowiedzieć. Pliki wyglądające na sekrety nigdy nie są czytane |
 | **Tylko zatwierdzona treść** | Odpowiada z ostatniego commita zamiast z katalogu roboczego: niezatwierdzone zmiany nigdy nie opuszczają komputera |
-| **Proponowanie akcji na plikach i w Git** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
-| **Tryb plików tylko do odczytu** | Włączony blokuje tworzenie, edytowanie, zastępowanie i usuwanie plików, ale pozostawia dostępne akcje Git. Domyślnie jest włączony |
-| **Jak uruchamiane są proponowane akcje** | Tryb zatwierdzania — zobacz [Tryby zatwierdzania](#tryby-zatwierdzania). Akcje destrukcyjne i tak proszą o potwierdzenie |
-| **Pozwól czatowi proponować akcje zdalne** | Domyślnie wyłączone. Włączone dodaje fetch, pull, push, otwarcie pull requesta i wysłanie stosu |
+| **Lokalne akcje Git** | Stage, commit, gałąź, stash, merge i więcej, proponowane na karcie, którą sprawdzasz. Wyłączone: czat tylko odpowiada |
+| **Tworzenie, edycja i usuwanie plików** | Dokładne edycje, nowe pliki, zastąpienia i usunięcia, każde ze swoim diffem na karcie. Wymaga lokalnych akcji Git. Domyślnie wyłączone. Zastępuje *Tryb plików tylko do odczytu* z odwróconym znaczeniem: włączone tutaj to tamten tryb wyłączony, a zapisane ustawienie działa jak wcześniej |
+| **Gdy AI proponuje akcję** | Tryb zatwierdzania — zobacz [Tryby zatwierdzania](#tryby-zatwierdzania). Akcje destrukcyjne i tak proszą o potwierdzenie |
+| **Akcje zdalne** | Domyślnie wyłączone. Włączone dodaje fetch, pull, push, otwarcie pull requesta i wysłanie stosu |
+
+Nad listą jedno zdanie podsumowuje, co AI może teraz zrobić przy tych ustawieniach. Opisuje ustawienia, nie model: propozycja nadal jest sprawdzana i odrzucana, gdy łamie regułę.
 
 Gdy AI jest wyłączone w całości, czat znika razem z nim — żaden panel nie
 proponuje odpowiedzi, której nic nie może udzielić.
@@ -200,7 +203,7 @@ każdego poziomu i informacją, czy wysyłka go otworzy, przekieruje, czy zostaw
 ### Akcje wychodzące poza tę maszynę
 
 Pobieranie, pull, push, otwarcie pull requesta i wysłanie stosu są **domyślnie
-wyłączone**, za opcją **Pozwól czatowi proponować akcje zdalne**. Publikowanie
+wyłączone**, za opcją **Akcje zdalne**. Publikowanie
 pracy zasługuje na świadomą decyzję, a przy wyłączonej opcji model nie dowiaduje
 się nawet, że takie akcje istnieją: nie może zaproponować jednej i zostać
 odrzucony — a to właśnie ta usterka uczy ludzi włączać ustawienia bez czytania.

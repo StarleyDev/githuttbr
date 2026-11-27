@@ -40,7 +40,7 @@ Een profiel heeft geen eigen AI nodig: één [algemene
 AI](ai.md#één-ai-voor-elk-profiel) bedient elk profiel, en een profiel kiest
 alleen voor een eigen AI als het moet. Die keuze geldt voor alles: een profiel
 op de algemene AI schrijft ook zoals de algemene AI is ingesteld — commitstijl,
-eigen instructies, repository-chat. Een profiel dat een andere stijl nodig
+extra regels voor commits, repository-chat. Een profiel dat een andere stijl nodig
 heeft, krijgt een eigen AI, een kopie van de algemene die het daarna kan
 aanpassen. Alles wordt bewerkt op de pagina **AI**; de pagina Profiel zegt
 alleen welke AI het profiel gebruikt en linkt ernaartoe.

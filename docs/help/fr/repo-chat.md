@@ -100,11 +100,14 @@ profil quand il en a une (la barre **Modification de** choisit laquelle, voir
 | Réglage | Effet |
 |---|---|
 | **Poser des questions sur le dépôt** | Désactivé, l’onglet, le bouton et la cible du raccourci disparaissent. Le reste de l’IA continue |
+| **Lire le dépôt** | Fichiers, historique et diffs, pour vous répondre. Les fichiers qui ressemblent à des secrets ne sont jamais lus |
 | **Contenu validé uniquement** | Répond depuis le dernier commit plutôt que la copie de travail : les modifications non validées ne quittent jamais la machine |
-| **Proposer des actions sur les fichiers et Git** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
-| **Mode fichiers en lecture seule** | Activé, il bloque la création, la modification, le remplacement et la suppression de fichiers tout en gardant les actions Git disponibles. Activé par défaut |
-| **Comment s’exécutent les actions proposées** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
-| **Autoriser le chat à proposer des actions distantes** | Désactivé par défaut. Activé, il ajoute fetch, pull, push, l'ouverture d'une pull request et la soumission d'une pile |
+| **Actions Git locales** | Indexer, valider, créer une branche, remiser, fusionner et plus, proposés sur une carte que vous relisez. Désactivé : le chat ne fait que répondre |
+| **Créer, modifier et supprimer des fichiers** | Modifications exactes, nouveaux fichiers, remplacements et suppressions, chacun avec son diff sur la carte. Nécessite les actions Git locales. Désactivé par défaut. Remplace *Mode fichiers en lecture seule* avec le sens inversé : activé ici, c’est ce mode désactivé, et un réglage enregistré se lit comme avant |
+| **Quand l’IA propose une action** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
+| **Actions distantes** | Désactivé par défaut. Activé, il ajoute fetch, pull, push, l'ouverture d'une pull request et la soumission d'une pile |
+
+Au-dessus de la liste, une phrase résume ce que l’IA peut faire en ce moment avec ces réglages. Elle décrit les réglages, pas le modèle : une proposition reste vérifiée et refusée si elle enfreint une règle.
 
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
 panneau proposant une réponse que rien ne peut produire.

@@ -41,7 +41,7 @@ Un profilo non ha bisogno di un'IA propria: una sola [IA
 generale](ai.md#una-sola-ia-per-tutti-i-profili) serve tutti i profili, e un
 profilo sceglie la propria solo quando deve. La scelta vale per tutto: un
 profilo sull'IA generale scrive anche come è impostata l'IA generale — stile dei
-commit, istruzioni personalizzate, chat del repository. Un profilo che ha
+commit, regole extra per i commit, chat del repository. Un profilo che ha
 bisogno di un altro stile riceve un'IA propria, una copia di quella generale che
 può poi cambiare. Tutto si modifica nella pagina **AI**; la pagina Profilo dice
 solo quale IA usa il profilo e porta lì.

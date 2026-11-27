@@ -92,11 +92,14 @@ bkz. [Her profil için tek yapay zekâ](ai.md#her-profil-için-tek-yapay-zekâ))
 | Ayar | Ne yapar |
 |---|---|
 | **Depo hakkında soru sorun** | Kapalıyken sekmeyi, araç çubuğu düğmesini ve kısayol hedefini kaldırır. Diğer yapay zekâ özellikleri çalışmaya devam eder |
+| **Depoyu okumak** | Size yanıt vermek için dosyalar, geçmiş ve diff’ler. Sır gibi görünen dosyalar asla okunmaz |
 | **Yalnızca işlenmiş içerik** | Çalışma ağacı yerine son commit üzerinden yanıtlar: işlenmemiş düzenlemeler makineden hiç çıkmaz |
-| **Sohbette dosya ve Git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
-| **Dosyalar için salt okunur kip** | Açıkken dosya oluşturma, düzenleme, değiştirme ve silmeyi engeller; Git eylemleri kullanılabilir kalır. Varsayılan olarak açıktır |
-| **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
-| **Sohbet uzak eylemler önerebilsin** | Varsayılan olarak kapalı. Açıkken getirme, çekme, gönderme, pull request açma ve yığın gönderme eklenir |
+| **Yerel Git eylemleri** | Stage, commit, dal, stash, birleştirme ve fazlası, gözden geçirdiğiniz bir kartta önerilir. Kapalı: sohbet yalnızca yanıt verir |
+| **Dosya oluşturmak, düzenlemek ve silmek** | Kesin düzenlemeler, yeni dosyalar, değiştirmeler ve silmeler, her biri kartta kendi diff’iyle. Yerel Git eylemleri gerekir. Varsayılan olarak kapalı. *Dosyalar için salt okunur kip* seçeneğinin yerini anlamı ters çevrilmiş olarak alır: burada açık, o kipin kapalı olması demektir ve kayıtlı bir ayar eskisi gibi okunur |
+| **Yapay zekâ bir eylem önerdiğinde** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
+| **Uzak eylemler** | Varsayılan olarak kapalı. Açıkken getirme, çekme, gönderme, pull request açma ve yığın gönderme eklenir |
+
+Listenin üstünde tek bir cümle, bu ayarlarla yapay zekânın şu an neler yapabileceğini özetler. Ayarları anlatır, modeli değil: bir öneri yine denetlenir ve bir kuralı çiğnerse reddedilir.
 
 Sohbete hangi sağlayıcının ve modelin cevap vereceği **Yapay zekâ** sayfasında,
 **Göreve göre model** altında ayarlanır — bkz. [Yapay zekâ özellikleri](ai.md#göreve-göre-model).
@@ -196,7 +199,7 @@ merdiven olarak.
 ### Makineden çıkan eylemler
 
 Getirme, çekme, gönderme, pull request açma ve yığın gönderme **varsayılan
-olarak kapalıdır**; **Sohbet uzak eylemler önerebilsin** ayarının ardındadır.
+olarak kapalıdır**; **Uzak eylemler** ayarının ardındadır.
 İşi yayımlamak bilinçli bir karardır ve ayar kapalıyken modele bu eylemlerin
 varlığı bile söylenmez: birini önerip reddedilemez — insanlara ayarları
 okumadan açmayı öğreten kusur tam olarak budur.

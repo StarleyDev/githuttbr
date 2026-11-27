@@ -42,7 +42,7 @@ Un profil n'a pas besoin de sa propre IA : une [IA
 générale](ai.md#une-ia-pour-tous-les-profils) sert tous les profils, et un
 profil n'opte pour la sienne que lorsqu'il le faut. Ce choix couvre tout : un
 profil sur l'IA générale écrit aussi comme l'IA générale est réglée — style de
-commit, instructions personnalisées, discussion du dépôt. Un profil qui a besoin
+commit, règles supplémentaires pour les commits, discussion du dépôt. Un profil qui a besoin
 d'un autre style reçoit sa propre IA, une copie de la générale qu'il peut
 ensuite modifier. Tout cela se modifie sur la page **IA** ; la page Profil
 indique seulement quelle IA le profil utilise et y renvoie.
