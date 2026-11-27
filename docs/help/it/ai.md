@@ -99,6 +99,25 @@ OpenAI, quindi i modelli Claude funzionano davvero anziché sembrare
 funzionanti. Gemini viene raggiunto tramite l'endpoint compatibile con OpenAI di
 Google.
 
+### L’elenco dei fornitori
+
+Ogni fornitore salvato è una scheda: una lettera per il fornitore, il nome e,
+sotto, cosa usa davvero — così due account dello stesso fornitore si distinguono
+senza aprirne nessuno.
+
+| Tipo di fornitore | Seconda riga |
+| --- | --- |
+| Abbonamento o CLI locale | `CLI claude · sonnet` — il comando, poi il modello |
+| Ollama o server personalizzato | `http://localhost:11434 · qwen3:8b` — l’indirizzo, poi il modello |
+| API ospitata | `gpt-4o-mini · 41 modelli` — il modello, e quanti ne ha elencati il fornitore |
+
+Il numero di modelli compare solo dopo che il fornitore li ha elencati; l’elenco
+integrato su cui GitHuttBr ripiega è una stima, non un conteggio. Il badge di
+stato sta a destra. La scheda che stai modificando ha un bordo d’accento; una
+che non risponde ha un bordo rosso e il motivo sotto il nome, che termina con
+**Verifica di nuovo**. Fai clic su una scheda per aprirla nell’editor sotto
+l’elenco.
+
 ### Aggiungere e modificare un fornitore
 
 Un fornitore salvato a metà era una trappola silenziosa: una chiave vuota poteva
@@ -108,7 +127,7 @@ scheda viene salvato mentre scrivi.
 **Aggiungi fornitore** apre una scheda segnata **Bozza · non salvata**, con il bordo
 tratteggiato. Compila fornitore, chiave, endpoint e modello, poi scegli
 **Verifica e salva**. GitHuttBr prima elenca i modelli del fornitore con
-quella chiave — la stessa richiesta di **Scarica i modelli** — e salva solo se
+quella chiave — la stessa richiesta del pulsante di aggiornamento accanto a **Modello** — e salva solo se
 risponde. Vedi **Connesso · N modelli** e il fornitore entra nell'elenco come
 **Pronto**.
 
@@ -132,6 +151,8 @@ salvataggio. L'errore di un fornitore viene mostrato con la chiave e qualsiasi
 cosa simile a un token mascherate.
 
 ![Aggiungere e modificare un fornitore](../../screenshots/ai-provider-draft.webp)
+
+![Modificare un fornitore salvato: l’indirizzo è cambiato e non è ancora salvato](../../screenshots/ai-provider-editing.webp)
 
 | Tipo di fornitore | Cosa verifica **Verifica e salva** |
 | --- | --- |
@@ -162,8 +183,7 @@ prompt.
 ### Il fornitore in uso
 
 Un fornitore risponde a ogni attività che non ha un fornitore proprio in
-**Modello per attività**. La sua riga è segnata **In uso** — una pillola piena e
-un bordo d’accento — e resta al suo posto nella lista. L’AI generale e un profilo
+**Modello per attività**. La sua scheda è segnata **In uso** — subito dopo il nome — e resta al suo posto nella lista. L’AI generale e un profilo
 con la propria AI hanno ciascuno il proprio fornitore in uso; la lista cambia
 quello che stai modificando.
 

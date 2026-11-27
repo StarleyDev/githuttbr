@@ -25,6 +25,8 @@ export default {
       'test/sidebarFilter.test.ts',
       // Provider drafts, status badges and the masking of provider errors.
       'test/aiAccountDraft.test.ts',
+      // What each provider row says under its name.
+      'test/aiAccountSummary.test.ts',
       // First-run steps and how each AI card becomes an account.
       'test/onboarding.test.ts',
       'test/commitBody.test.ts',

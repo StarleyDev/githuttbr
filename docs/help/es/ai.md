@@ -97,6 +97,25 @@ Anthropic usa su propia API `/v1/messages` en vez de una llamada con forma de
 OpenAI, así que los modelos Claude funcionan de verdad en lugar de solo
 aparentarlo. A Gemini se llega por el endpoint compatible con OpenAI de Google.
 
+### La lista de proveedores
+
+Cada proveedor guardado es una tarjeta: una letra de su proveedor, su nombre y,
+debajo, lo que realmente usa — así se distinguen dos cuentas del mismo proveedor
+sin abrir ninguna.
+
+| Tipo de proveedor | Segunda línea |
+| --- | --- |
+| Suscripción o CLI local | `CLI claude · sonnet` — el comando y luego el modelo |
+| Ollama o servidor propio | `http://localhost:11434 · qwen3:8b` — la dirección y luego el modelo |
+| API alojada | `gpt-4o-mini · 41 modelos` — el modelo y cuántos listó el proveedor |
+
+El número de modelos solo aparece cuando el proveedor ha listado sus modelos; la
+lista incluida que GitHuttBr usa de reserva es una suposición, no un recuento.
+La insignia de estado va a la derecha. La tarjeta que estás editando tiene un
+borde de acento; una que no responde tiene un borde rojo y su motivo bajo el
+nombre, terminado en **Probar de nuevo**. Haz clic en una tarjeta para abrirla
+en el editor bajo la lista.
+
 ### Añadir y editar un proveedor
 
 Un proveedor guardado a medias era una trampa silenciosa: una clave vacía podía
@@ -106,7 +125,7 @@ se guarda mientras escribes.
 **Añadir proveedor** abre una tarjeta marcada **Borrador · sin guardar**, con borde
 discontinuo. Rellena proveedor, clave, endpoint y modelo y elige
 **Probar y guardar**. GitHuttBr primero lista los modelos del proveedor
-con esa clave —la misma petición que **Obtener modelos**— y solo guarda cuando
+con esa clave —la misma petición que el botón de actualizar junto a **Modelo**— y solo guarda cuando
 responde. Verás **Conectado · N modelos** y el proveedor entra en la lista como
 **Listo**.
 
@@ -130,6 +149,8 @@ El error de un proveedor se muestra con la clave y todo lo que parezca un token
 enmascarados.
 
 ![Añadir y editar un proveedor](../../screenshots/ai-provider-draft.webp)
+
+![Editar un proveedor guardado: la dirección cambió y aún no se guardó](../../screenshots/ai-provider-editing.webp)
 
 | Tipo de proveedor | Qué comprueba **Probar y guardar** |
 | --- | --- |
@@ -159,8 +180,7 @@ asegurarte. Una **CLI local** con ruta escrita queda en
 ### El proveedor en uso
 
 Un proveedor responde a toda tarea que no tenga un proveedor propio en
-**Modelo por tarea**. Su fila lleva la marca **En uso** — una píldora rellena y
-un borde de acento — y se queda donde está en la lista. La IA general y un perfil
+**Modelo por tarea**. Su tarjeta lleva la marca **En uso** — justo después del nombre — y se queda donde está en la lista. La IA general y un perfil
 con IA propia tienen cada uno su proveedor en uso; la lista cambia el que estás
 editando.
 
@@ -282,7 +302,7 @@ Al actualizar desde una versión anterior a las cuentas, esto se muestra una vez
 ## Modelos
 
 Las listas de modelos vienen del propio proveedor y se guardan en caché un día;
-**Obtener modelos** actualiza una al instante. Bajo la lista, GitHuttBr dice de
+el botón de actualizar junto a **Modelo** actualiza una al instante. Bajo la lista, GitHuttBr dice de
 dónde salió: en directo, de caché (con la fecha), o la lista integrada de
 reserva y por qué.
 

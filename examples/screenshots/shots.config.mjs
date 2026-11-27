@@ -792,10 +792,12 @@ export const shots = [
   },
   {
     // The provider list as it reads with more than one: the one in use marked,
-    // the others with "Use" beside their status — ready, no key, not responding.
-    // The ready one is a fake OpenAI-shaped server started here on loopback,
+    // the others with "Use" beside their status — ready, not checked, no key,
+    // not responding — and each card's second line saying what it uses. The
+    // ready ones are a fake OpenAI-shaped server started here on loopback,
     // never a provider on the capturing machine; the failing one is a port
-    // nothing listens on.
+    // nothing listens on. The subscription card has a typed CLI path, so it
+    // reads "Not checked" without running or even looking for a CLI.
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -811,16 +813,36 @@ export const shots = [
             apiKey: '',
             model: 'llama3.2'
           }
+          const plan = {
+            ...local,
+            id: 'cli',
+            label: 'Claude (subscription)',
+            provider: 'cli',
+            endpoint: '',
+            cli: 'claude',
+            cliPath: '/opt/demo/bin/claude',
+            subscription: true,
+            model: 'sonnet'
+          }
+          // A hosted provider pointed at the same loopback server, so its card
+          // shows the listed-model count; the key is a placeholder.
+          const gateway = { ...local, id: 'openrouter', label: 'OpenRouter', provider: 'openrouter', apiKey: 'demo-key' }
           // Keyless, so it reads "No key" without a request: the seeded demo
           // key would send a real one to the provider's API.
           const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
           const lab = { ...local, id: 'custom', label: 'Lab server', provider: 'custom', endpoint: 'http://127.0.0.1:9/v1' }
-          return { ...s, ai: { ...s.ai, accounts: [local, hosted, lab], defaultAccountId: 'ollama' } }
+          return { ...s, ai: { ...s.ai, accounts: [local, plan, gateway, hosted, lab], defaultAccountId: 'ollama' } }
         })
         window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' })
       }, port)
-      await page.locator('.ai-accounts-item .ai-status.ready').waitFor()
+      await page.locator('.ai-accounts-item .ai-status.ready').first().waitFor()
       await page.locator('.ai-accounts-item .ai-status.failing').waitFor()
+      await page.waitForTimeout(300)
+      // From the section title, so the hint above the list is in the shot too.
+      await page.evaluate(() => {
+        const list = document.querySelector('.ai-accounts-list')
+        list?.previousElementSibling?.previousElementSibling?.scrollIntoView({ block: 'start' })
+      })
       await page.waitForTimeout(300)
     }
   },
@@ -898,7 +920,40 @@ export const shots = [
       await page.locator('.ai-account.draft input[placeholder="https://api.openai.com/v1"]').fill('http://127.0.0.1:9/v1')
       await page.locator('.ai-account.draft .btn.primary').click()
       await page.locator('.ai-account-error').waitFor()
-      await page.evaluate(() => document.querySelector('.ai-accounts-list')?.scrollIntoView({ block: 'start' }))
+      await page.evaluate(() => document.querySelector('.ai-account-editor')?.scrollIntoView({ block: 'start' }))
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Editing a saved provider: the address changed and not yet saved, so the
+    // card has its amber edge, the "Unsaved changes" banner and "· changed" on
+    // the field. The saved address is a port nothing listens on — the header
+    // reads "Not responding" without a request leaving the machine.
+    out: 'ai-provider-editing',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => {
+          const local = {
+            id: 'ollama',
+            label: 'Local models',
+            provider: 'ollama',
+            endpoint: 'http://127.0.0.1:9/v1',
+            apiKey: '',
+            model: 'llama3.2'
+          }
+          const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
+          return { ...s, ai: { ...s.ai, accounts: [local, hosted], defaultAccountId: 'ollama' } }
+        })
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' })
+      })
+      await page.locator('.ai-account-header .ai-status.failing').waitFor()
+      await page.locator('.ai-account-editor input[placeholder="http://localhost:11434/v1"]').fill('http://127.0.0.1:11435/v1')
+      // Out of the field, or its focus ring hides the amber "changed" edge.
+      await page.evaluate(() => document.activeElement?.blur())
+      await page.locator('.ai-account-banner').waitFor()
+      await page.evaluate(() => document.querySelector('.ai-account-editor')?.scrollIntoView({ block: 'start' }))
       await page.waitForTimeout(400)
     }
   },

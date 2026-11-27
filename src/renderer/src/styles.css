@@ -10707,15 +10707,65 @@ input.is-invalid {
   gap: 5px;
 }
 
-/* AI accounts — one account edited at a time, chosen from the bar above. */
+/* AI providers — a list of cards, one per provider, and below it the one
+   being edited. Colours come from the theme tokens; each status tint is its
+   hue mixed toward the text colour, so it stays readable on light and dark. */
 .ai-accounts-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 8px 0;
+  gap: 10px;
+  margin: 4px 0 8px;
 }
-.ai-accounts-bar .btn {
+.ai-accounts-bar .btn,
+.ai-account-actions .btn {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+}
+/* Add, Use: the accent outline. */
+.btn.ai-btn-accent {
+  color: color-mix(in srgb, var(--accent) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid var(--accent);
+}
+.btn.ai-btn-accent:not(:disabled):hover {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+/* Cancel, Discard, Use my subscription, Test connection: a plain outline. */
+.btn.ai-btn-quiet {
+  color: var(--text-1);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+.btn.ai-btn-quiet:not(:disabled):hover {
+  color: var(--text-0);
+  background: var(--bg-3);
+}
+/* Save anyway: amber, because it saves something that did not answer. */
+.btn.ai-btn-warn {
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+}
+.btn.ai-btn-warn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+}
+/* Delete: a red outline, apart from the others at the left. */
+.btn.ai-btn-danger {
+  color: color-mix(in srgb, var(--danger) 80%, var(--text-0));
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+.btn.ai-btn-danger:not(:disabled):hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+.btn.icon-only {
+  padding-inline: 8px;
 }
 
 /* Free-text model entry, with the way back to the list beside it. */
@@ -10732,12 +10782,6 @@ input.is-invalid {
 .model-custom .btn {
   flex-shrink: 0;
 }
-.ai-account {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 10px 12px 12px;
-  background: var(--bg-2);
-}
 .subscription-setup {
   display: grid;
   gap: 8px;
@@ -10745,58 +10789,71 @@ input.is-invalid {
 .subscription-setup > button {
   justify-self: start;
 }
-.ai-account-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.ai-account-name {
-  flex: 1;
-  min-width: 0;
-  font-weight: 600;
-}
-.ai-account-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-.ai-account-badge.in-use {
-  font-weight: 700;
-  color: #fff;
-  background: var(--accent);
-}
-.ai-account .btn.danger:not(:disabled):hover {
-  color: var(--danger);
-}
 
-/* The provider list: one row per account, its status pill at the right. A
-   failing row carries the reason on a second line, with a way to retry. */
+/* The provider list: one card per account — avatar, name, what it uses on a
+   second line, status at the right. A failing card says why under its name. */
 .ai-accounts-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   margin: 8px 0;
 }
 .ai-accounts-item {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--bg-2);
   cursor: pointer;
   outline: none;
 }
 .ai-accounts-item:hover {
-  background: var(--bg-2);
+  background: color-mix(in srgb, var(--text-0) 3%, var(--bg-2));
 }
+.ai-accounts-item.failing {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+/* Selected wins over failing: it is the card the editor below belongs to. */
+.ai-accounts-item.active,
 .ai-accounts-item:focus-within:has(.ai-accounts-item-select:focus-visible) {
   border-color: var(--accent);
+}
+.ai-accounts-item.draft {
+  border-style: dashed;
+}
+.ai-accounts-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.ai-accounts-avatar {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-0);
+  background: color-mix(in srgb, var(--text-0) 10%, var(--bg-2));
+}
+.ai-accounts-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ai-accounts-item-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
 }
 /* The name is the row's select button: it reads as the name, not as a button. */
 .ai-accounts-item-select {
@@ -10810,116 +10867,155 @@ input.is-invalid {
 .ai-accounts-item-select:focus-visible {
   outline: none;
 }
-.ai-accounts-item.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.ai-accounts-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-0);
 }
-.ai-accounts-item.draft {
-  border-style: dashed;
+/* The provider in use keeps its place in the list — moving it on "Use" would
+   pull the card out from under the pointer — and says so right after its name. */
+.ai-accounts-item-in-use {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--accent);
 }
-.ai-accounts-item-main {
+.ai-accounts-item-unsaved {
+  display: inline-flex;
+  align-self: center;
+  color: var(--warn);
+}
+.ai-accounts-item-summary {
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-accounts-item-use {
+  padding: 4px 12px;
+}
+/* Indented past the avatar (30px + the 12px gap), so it reads under the name. */
+.ai-accounts-item-reason {
+  margin: 0;
+  padding-inline-start: 42px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--danger) 70%, var(--text-0));
+  overflow-wrap: anywhere;
+}
+.ai-accounts-item-reason .link-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Status pills: green ready, red not responding, amber no key, grey unchecked. */
+.ai-status {
+  --tone: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: color-mix(in srgb, var(--tone) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--tone) 18%, transparent);
+}
+.ai-status.ready {
+  --tone: var(--green);
+}
+.ai-status.failing {
+  --tone: var(--danger);
+}
+.ai-status.no-key {
+  --tone: var(--warn);
+}
+.ai-status.unchecked {
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--text-0) 8%, transparent);
+}
+.ai-status.compact {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+}
+.ai-status.draft {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--text-0) 8%, transparent);
+}
+
+/* The editor: a heading like a section's — the name, its state, a rule —
+   over one card. */
+.ai-account-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.ai-account-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
-.ai-accounts-item-name {
-  flex: 1;
+.ai-account-title {
+  margin: 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-0);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--accent);
 }
-/* The provider in use keeps its place in the list — moving it on "Use" would
-   pull the row out from under the pointer — and stands out by its accent edge
-   and a filled pill right after its name. */
-.ai-accounts-item.in-use {
-  border-inline-start: 3px solid var(--accent);
-  padding-inline-start: 8px;
+.ai-account-rule {
+  flex: 1;
+  min-width: 24px;
+  height: 1px;
+  background: var(--border);
 }
-.ai-accounts-item-in-use {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+.ai-account-chip.draft {
   flex-shrink: 0;
-  margin-inline-end: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  border-radius: 999px;
-  padding: 2px 8px;
-  color: #fff;
-  background: var(--accent);
-}
-/* The name takes the slack — and ellipsizes first at a narrow width — so the
-   pill sits right after it and the status and "Use" stay at the right edge. */
-.ai-accounts-item-name:has(+ .ai-accounts-item-in-use) {
-  flex: 0 1 auto;
-}
-.ai-accounts-item-use {
-  flex-shrink: 0;
-  padding: 2px 12px;
-}
-.ai-accounts-item-unsaved {
-  display: inline-flex;
-  color: var(--warn);
-}
-.ai-accounts-item-reason {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 3px;
-  font-size: 11.5px;
-  color: var(--danger);
-  min-width: 0;
-}
-.ai-accounts-item-reason > span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Status pills: green ready, red not responding, amber no key, grey unchecked. */
-.ai-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 2px 8px;
-  border: 1px solid currentColor;
-  color: var(--text-2);
-  background: color-mix(in srgb, currentColor 10%, transparent);
-}
-.ai-status.ready {
-  color: var(--ok, #2ea043);
-}
-.ai-status.failing {
-  color: var(--danger);
-}
-.ai-status.no-key {
-  color: var(--warn);
-}
-.ai-status.draft {
-  border-style: dashed;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
   color: var(--text-1);
+  background: color-mix(in srgb, var(--text-0) 10%, var(--bg-2));
 }
-
+.ai-account {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--bg-2);
+}
 /* A draft is not a provider yet: the dashed edge says so before any text does. */
 .ai-account.draft {
   border-style: dashed;
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--text-0) 28%, var(--border));
 }
-.ai-account-badge.draft {
-  color: var(--text-1);
-  border-color: var(--border);
-  border-style: dashed;
+.ai-account.dirty {
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--border));
 }
 .ai-account-fields {
   border: 0;
@@ -10928,17 +11024,31 @@ input.is-invalid {
   min-width: 0;
   display: contents;
 }
+.ai-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.settings-form .ai-account label {
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* A hint belongs to the field above it, not a row of its own. */
+.ai-account > .settings-hint,
+.ai-account-fields > .settings-hint {
+  margin-top: -8px;
+}
 .ai-account-banner {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
 }
 .ai-field-label {
   display: inline-flex;
@@ -10946,54 +11056,59 @@ input.is-invalid {
   gap: 6px;
 }
 .ai-field-changed {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--warn);
+  font-weight: 500;
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
   flex-shrink: 0;
 }
 .ai-account label.changed input,
-.ai-account label.changed select,
-.ai-account-name.changed {
-  border-color: var(--warn);
+.ai-account label.changed select {
+  border-color: color-mix(in srgb, var(--warn) 65%, var(--border));
+}
+.ai-account label.failed input,
+.ai-account label.failed select {
+  border-color: color-mix(in srgb, var(--danger) 65%, var(--border));
 }
 .ai-account-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
 }
-.ai-account-actions-spacer {
+/* The footer's sentence takes the free space, so the buttons stay at the
+   right edge; empty, it is only the spacer. */
+.ai-account-actions-hint {
   flex: 1;
-}
-.ai-account-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  min-width: 120px;
+  font-size: 12px;
+  color: var(--text-1);
 }
 .ai-account-error {
-  display: grid;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--danger) 80%, var(--text-0));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.ai-account-error > svg {
+  flex: none;
+  margin-top: 1px;
+}
+.ai-account-error-text {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  min-width: 0;
 }
 .ai-account-error strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  color: var(--danger);
+  font-size: 13px;
 }
 .ai-account-error-reason {
-  font-size: 12px;
-  color: var(--text-0);
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--danger) 45%, var(--text-0));
   overflow-wrap: anywhere;
-}
-.ai-account-error .ai-account-actions {
-  margin-top: 4px;
 }
 .settings-hint.ok {
   color: var(--ok, #2ea043);
