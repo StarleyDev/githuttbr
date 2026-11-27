@@ -37,10 +37,14 @@ ripete. Nuovo ed elimina sono nella stessa barra; eliminare chiede prima.
 
 ## L'IA è condivisa
 
-Un profilo non ha bisogno di un'IA propria: una sola [IA generale](ai.md#una-sola-ia-per-tutti-i-profili)
-serve tutti i profili, e un profilo sceglie la propria solo quando deve. Ciò che
-un profilo conserva sempre è come l'IA scrive per lui — lo stile dei commit, le
-istruzioni personalizzate e il resto delle *Preferenze di scrittura dell'IA*.
+Un profilo non ha bisogno di un'IA propria: una sola [IA
+generale](ai.md#una-sola-ia-per-tutti-i-profili) serve tutti i profili, e un
+profilo sceglie la propria solo quando deve. La scelta vale per tutto: un
+profilo sull'IA generale scrive anche come è impostata l'IA generale — stile dei
+commit, istruzioni personalizzate, chat del repository. Un profilo che ha
+bisogno di un altro stile riceve un'IA propria, una copia di quella generale che
+può poi cambiare. Tutto si modifica nella pagina **AI**; la pagina Profilo dice
+solo quale IA usa il profilo e porta lì.
 
 ## Ogni profilo, i suoi account
 

@@ -10,7 +10,9 @@ keywords: commit mesaj besteci conventional gitmoji ticket amend şablon ortak y
 
 ## Mesaj biçemleri
 
-Ayarlar'dan birini seçin; besteci paneli ona uyum sağlar.
+**Ayarlar → Yapay zekâ → Commit mesajları** içinden ya da doğrudan besteci
+panelinden birini seçin; besteci paneli ona uyum sağlar. Biçem, profilin
+kullandığı yapay zekâya aittir — genel olana ya da profilin kendisininkine.
 
 | Biçem | Nasıl görünür |
 |---|---|

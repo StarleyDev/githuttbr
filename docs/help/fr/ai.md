@@ -3,7 +3,7 @@ title: Fonctions IA
 category: IA
 order: 80
 summary: Optionnelles, indépendantes du fournisseur, et ancrées dans votre code réel.
-keywords: ia ai openai anthropic ollama llm local message de commit expliquer explain revue review wiki ancré grounded comptes compte clé api abonnement cli claude codex gemini modèles lent timeout délai prend plus de temps continuer à attendre annuler ne répond pas ollama fermé changer de compte autre compte
+keywords: ia ai openai anthropic ollama llm local message de commit expliquer explain revue review wiki ancré grounded comptes compte clé api abonnement cli claude codex gemini modèles lent timeout délai prend plus de temps continuer à attendre annuler ne répond pas ollama fermé changer de compte autre compte préférences d’écriture style de commit instructions personnalisées co-auteur survol expliquer ia propre ia générale
 ---
 
 # Fonctions IA
@@ -20,34 +20,56 @@ L'IA se configure une fois, dans **Paramètres → IA**, et tous les [profils](p
 l'utilisent : un profil créé plus tard a déjà l'IA, sans compte à rajouter. La
 page liste chaque profil et indique s'il suit cette **IA générale**.
 
-Un profil peut utiliser **sa propre IA** à la place — un profil professionnel qui
-doit passer par le compte de l'entreprise, pour des raisons de coût ou de
-politique de données. Sur la page **Profil** de ce profil, sous *IA de ce
-profil*, passez de **Générale** à **Propre** : elle part d'une copie de l'IA
-générale, et ses fournisseurs et clés n'appartiennent ensuite qu'à elle. Revenir
-à **Générale** les supprime, après confirmation, et laisse l'IA générale telle
-qu'elle était.
+Un profil peut utiliser **sa propre IA** à la place — un profil professionnel
+qui doit passer par le compte de l'entreprise, pour des raisons de coût ou de
+politique de données, ou qui écrit ses commits autrement. Sur la page **Profil**
+de ce profil, sous *IA de ce profil*, passez de **Générale** à **Propre** : elle
+part d'une copie de toute l'IA générale — comptes, clés et préférences — et tout
+cela n'appartient ensuite qu'à ce profil. Revenir à **Générale** la supprime,
+après confirmation, et laisse l'IA générale telle qu'elle était.
+
+Un profil utilise une IA **entière** : la générale, ou la sienne, jamais un
+mélange. Les comptes et les modèles *et* la façon dont l'IA écrit et ce que la
+discussion peut faire viennent du même endroit, si bien que changer le style de
+commit de l'IA générale le change pour tous les profils qui la suivent.
 
 Toutes les IA se configurent sur cette seule page. La barre **Modification de**
 en haut choisit laquelle : l'IA générale, ou celle d'un profil (*IA propre de
 Travail*). **Configurer l'IA propre** sur la page Profil, ou **Modifier son IA
 propre** dans la liste des profils, ouvre la page sur celle-là. La page Profil
 montre seulement quelle IA le profil utilise et ce qui répond — elle n'héberge
-jamais l'éditeur.
+jamais l'éditeur, ni aucune option d'IA à elle.
 
 ![L'IA d'un profil sur sa page Profil : Générale ou Propre, ce qui répond, et le moyen de la configurer](../../screenshots/settings-profile-ai.webp)
 
-La façon dont l'IA **écrit** reste propre à chaque profil dans les deux cas :
-style des messages de commit, style des explications, styles de résolution de
-conflits et de nommage des branches, instructions personnalisées, ligne de
-co-auteur et discussion du dépôt. Elles sont sur la page **Profil**, sous
-*Préférences d'écriture de l'IA*, si bien qu'un profil professionnel peut écrire
-des commits `ticket` pendant qu'un profil personnel écrit des `conventional`,
-tous deux avec la même IA.
+Sous les comptes, la même page contient la façon dont cette IA **écrit** et ce
+qu'elle peut faire, en sections :
+
+| Section | Contient |
+|---|---|
+| **Messages de commit** | Style des messages de commit, *Générer la description du commit*, la ligne de co-auteur |
+| **Expliquer et survol** | Style des explications, *Expliquer le code au survol* et sa touche de modification |
+| **Conflits et branches** | Style de résolution des conflits, style de nommage des branches |
+| **Instructions personnalisées** | Vos propres règles, ajoutées à chaque requête de cette IA |
+| **Discussion du dépôt** | Si la discussion est activée, ce qu'elle lit, les actions qu'elle peut proposer — voir [Discussion du dépôt](repo-chat.md#paramètres) |
+
+Le sélecteur de style du compositeur et les sélecteurs de modèle et
+d'approbation de la discussion écrivent dans la même IA que celle que lit le
+profil : la générale, ou celle du profil.
 
 La mise à jour depuis une version où chaque profil avait sa propre IA ne fait
 rien perdre : l'IA du profil en cours d'utilisation devient l'IA générale, et
 tout autre profil dont l'IA était différente la garde comme IA propre.
+
+**Mise à jour depuis la 4.59 ou antérieure**, où les préférences d'écriture
+étaient propres à chaque profil : une seule fois, les préférences du profil en
+cours d'utilisation (ou, s'il a sa propre IA, celles du premier profil sur l'IA
+générale) passent sur l'IA générale. Les profils qui ont leur propre IA gardent
+les leurs. **La limite :** si deux profils sur l'IA générale écrivaient
+différemment — un profil professionnel en `ticket` et un personnel en
+`conventional` —, les deux écrivent désormais comme celui qui a été repris. Pour
+garder la différence, donnez à l'un d'eux sa propre IA et redéfinissez-y son
+style.
 
 ## Fournisseurs
 

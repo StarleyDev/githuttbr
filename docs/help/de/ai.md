@@ -3,7 +3,7 @@ title: KI-Funktionen
 category: KI
 order: 80
 summary: Optional, anbieterunabhängig und in deinem echten Code verankert.
-keywords: ki ai openai anthropic ollama lokales llm commit-nachricht erklären review wiki verankert konten konto api-schlüssel abo abonnement cli claude codex gemini modelle langsam timeout zeitüberschreitung dauert länger weiter warten abbrechen antwortet nicht ollama geschlossen konto wechseln anderes konto
+keywords: ki ai openai anthropic ollama lokales llm commit-nachricht erklären review wiki verankert konten konto api-schlüssel abo abonnement cli claude codex gemini modelle langsam timeout zeitüberschreitung dauert länger weiter warten abbrechen antwortet nicht ollama geschlossen konto wechseln anderes konto schreibstil commit-stil eigene anweisungen co-autor hover erklären eigene ki allgemeine ki
 ---
 
 # KI-Funktionen
@@ -21,31 +21,55 @@ schon, ohne dass ein Konto erneut hinzugefügt werden muss. Die Seite listet jed
 Profil und ob es dieser **allgemeinen KI** folgt.
 
 Ein Profil kann stattdessen **seine eigene KI** verwenden — ein Arbeitsprofil,
-das aus Kosten- oder Datenschutzgründen über das Konto der Firma laufen muss. Auf
-der Seite **Profil** dieses Profils, unter *KI dieses Profils*, stellst du
-**Allgemein** auf **Eigene** um: Sie beginnt als Kopie der allgemeinen KI, und
-ihre Anbieter und Schlüssel gehören von da an nur ihr. Zurück auf **Allgemein**
-entfernt sie nach einer Bestätigung und lässt die allgemeine KI, wie sie war.
+das aus Kosten- oder Datenschutzgründen über das Konto der Firma laufen muss
+oder seine Commits anders schreibt. Auf der Seite **Profil** dieses Profils,
+unter *KI dieses Profils*, stellst du **Allgemein** auf **Eigene** um: Sie
+beginnt als Kopie der gesamten allgemeinen KI — Konten, Schlüssel und
+Einstellungen —, und all das gehört von da an nur diesem Profil. Zurück auf
+**Allgemein** entfernt sie nach einer Bestätigung und lässt die allgemeine KI,
+wie sie war.
+
+Ein Profil nutzt eine KI **ganz**: die allgemeine oder seine eigene, nie eine
+Mischung. Konten und Modelle *und* wie die KI schreibt und was der Chat darf,
+kommen von derselben Stelle — wer den Commit-Stil der allgemeinen KI ändert,
+ändert ihn für jedes Profil, das ihr folgt.
 
 Jede KI wird auf dieser einen Seite eingerichtet. Die Leiste **Bearbeitet wird**
 oben wählt, welche: die allgemeine KI oder die eigene eines Profils (*Eigene KI
 von Arbeit*). **Eigene KI einrichten** auf der Profilseite oder **Eigene KI
 bearbeiten** in der Profilliste öffnet die Seite auf genau dieser. Die
 Profilseite selbst zeigt nur, welche KI das Profil verwendet und was antwortet —
-den Editor enthält sie nie.
+den Editor enthält sie nie, und eigene KI-Optionen hat sie keine.
 
 ![Die KI eines Profils auf seiner Profilseite: Allgemein oder Eigene, was antwortet, und der Weg, sie einzurichten](../../screenshots/settings-profile-ai.webp)
 
-Wie die KI **schreibt**, bleibt in beiden Fällen pro Profil: Stil der
-Commit-Nachrichten, Stil der Erklärungen, Stile für Konfliktlösung und
-Branch-Namen, eigene Anweisungen, Co-Autor-Zeile und Repository-Chat. Das steht
-auf der Seite **Profil** unter *Schreibstil der KI*, sodass ein Arbeitsprofil
-`ticket`-Commits schreiben kann, während ein privates `conventional`-Commits
-schreibt, beide mit derselben KI.
+Unter den Konten enthält dieselbe Seite, wie diese KI **schreibt** und was sie
+darf, in Abschnitten:
+
+| Abschnitt | Enthält |
+|---|---|
+| **Commit-Nachrichten** | Stil der Commit-Nachrichten, *Commit-Beschreibung erzeugen*, die Co-Autor-Zeile |
+| **Erklären & Hover** | Stil der Erklärungen, *Code beim Überfahren erklären* und seine Zusatztaste |
+| **Konflikte & Branches** | Stil der Konfliktlösung, Stil der Branch-Namen |
+| **Eigene Anweisungen** | Deine eigenen Regeln, die jeder Anfrage dieser KI beigefügt werden |
+| **Repository-Chat** | Ob der Chat an ist, was er liest, welche Aktionen er vorschlagen darf — siehe [Repository-Chat](repo-chat.md#einstellungen) |
+
+Der Stilschalter im Editor und die Modell- und Freigabeauswahl des Chats
+schreiben in dieselbe KI, die das Profil liest: die allgemeine oder die eigene
+des Profils.
 
 Ein Upgrade von einer Version, in der jedes Profil seine eigene KI hatte, verliert
 nichts: Die KI des verwendeten Profils wird zur allgemeinen KI, und jedes andere
 Profil, dessen KI anders war, behält sie als eigene.
+
+**Upgrade von 4.59 oder älter**, wo die Schreibeinstellungen an jedem Profil
+hingen: Einmalig wandern die Einstellungen des verwendeten Profils (oder, falls
+dieses eine eigene KI hat, die des ersten Profils auf der allgemeinen KI) in die
+allgemeine KI. Profile mit eigener KI behalten ihre. **Die Grenze:** Wenn zwei
+Profile auf der allgemeinen KI unterschiedlich schrieben — ein Arbeitsprofil mit
+`ticket` und ein privates mit `conventional` —, schreiben jetzt beide wie das
+übernommene. Um den Unterschied zu behalten, gib einem von ihnen eine eigene KI
+und stelle seinen Stil dort erneut ein.
 
 ## Anbieter
 

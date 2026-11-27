@@ -89,7 +89,9 @@ entero.
 
 ## Ajustes
 
-**Ajustes → Perfil → Preferencias de escritura de la IA → Chat del repositorio** (cada perfil tiene las suyas):
+**Ajustes → IA → Chat del repositorio** — en la IA general, o en la propia de un
+perfil cuando la tiene (la barra **Editando** elige cuál, consulta [Una IA para
+todos los perfiles](ai.md#una-ia-para-todos-los-perfiles)):
 
 | Ajuste | Qué hace |
 |---|---|
@@ -236,8 +238,9 @@ eliges **Ejecutar** o **Ignorar**:
 
 ### Modos de aprobación
 
-El desplegable con el escudo bajo el cuadro de texto (también en **Ajustes →
-Perfil → Chat del repositorio**) decide cómo se ejecuta una tarjeta:
+El desplegable con el escudo bajo el cuadro de texto (también en **Ajustes → IA
+→ Chat del repositorio**) decide cómo se ejecuta una tarjeta — para todos los
+perfiles en la misma IA:
 
 | Modo | Ejecuta |
 |---|---|

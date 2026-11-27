@@ -39,10 +39,15 @@ Leiste; Löschen fragt vorher.
 
 ## Die KI wird geteilt
 
-Ein Profil braucht keine eigene KI: Eine [allgemeine KI](ai.md#eine-ki-für-alle-profile)
-bedient jedes Profil, und ein Profil entscheidet sich nur dann für eine eigene,
-wenn es muss. Was ein Profil immer behält, ist, wie die KI für es schreibt —
-Commit-Stil, eigene Anweisungen und der Rest von *Schreibstil der KI*.
+Ein Profil braucht keine eigene KI: Eine [allgemeine
+KI](ai.md#eine-ki-für-alle-profile) bedient jedes Profil, und ein Profil
+entscheidet sich nur dann für eine eigene, wenn es muss. Die Wahl gilt für
+alles: Ein Profil auf der allgemeinen KI schreibt auch so, wie die allgemeine KI
+eingestellt ist — Commit-Stil, eigene Anweisungen, Repository-Chat. Ein Profil,
+das einen anderen Stil braucht, bekommt eine eigene KI, eine Kopie der
+allgemeinen, die es dann ändern kann. All das wird auf der Seite **KI**
+bearbeitet; die Profilseite sagt nur, welche KI das Profil verwendet, und
+verlinkt dorthin.
 
 ## Jedes Profil, seine eigenen Konten
 

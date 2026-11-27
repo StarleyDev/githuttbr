@@ -10,7 +10,9 @@ keywords: commit boodschap message composer conventional gitmoji ticket amend sj
 
 ## Boodschapstijlen
 
-Kies er een in de instellingen; de opsteller past zich eraan aan.
+Kies er een in **Instellingen → AI → Commitberichten**, of direct in de
+opsteller; de opsteller past zich eraan aan. De stijl hoort bij de AI die het
+profiel gebruikt — de algemene of de eigen AI van het profiel.
 
 | Stijl | Ziet eruit als |
 |---|---|

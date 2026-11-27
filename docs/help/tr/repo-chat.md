@@ -85,7 +85,9 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 
 ## Ayarlar
 
-**Ayarlar → Profil → Yapay zekânın yazım tercihleri → Depo sohbeti** (her profilin kendine ait):
+**Ayarlar → Yapay zekâ → Depo sohbeti** — genel yapay zekâda ya da varsa bir
+profilin kendi yapay zekâsında (hangisi olduğunu **Düzenlenen** çubuğu seçer,
+bkz. [Her profil için tek yapay zekâ](ai.md#her-profil-için-tek-yapay-zekâ)):
 
 | Ayar | Ne yapar |
 |---|---|
@@ -229,8 +231,9 @@ seçene kadar bekler:
 
 ### Onay modları
 
-Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Profil → Depo
-sohbeti** içinde) bir kartın nasıl çalışacağına karar verir:
+Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Yapay zekâ → Depo
+sohbeti** içinde) bir kartın nasıl çalışacağına karar verir — aynı yapay
+zekâdaki her profil için:
 
 | Mod | Çalıştırdığı |
 |---|---|

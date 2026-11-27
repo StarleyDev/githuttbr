@@ -93,7 +93,9 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 
 ## Paramètres
 
-**Paramètres → Profil → Préférences d’écriture de l’IA → Discussion du dépôt** (chaque profil a les siennes) :
+**Paramètres → IA → Discussion du dépôt** — sur l’IA générale, ou sur celle d’un
+profil quand il en a une (la barre **Modification de** choisit laquelle, voir
+[Une IA pour tous les profils](ai.md#une-ia-pour-tous-les-profils)) :
 
 | Réglage | Effet |
 |---|---|
@@ -242,8 +244,9 @@ jusqu’à ce que vous choisissiez **Exécuter** ou **Ignorer** :
 
 ### Modes d’approbation
 
-Le menu au bouclier sous le champ de saisie (aussi dans **Paramètres → Profil →
-Discussion du dépôt**) décide de la façon dont une carte s’exécute :
+Le menu au bouclier sous le champ de saisie (aussi dans **Paramètres → IA →
+Discussion du dépôt**) décide de la façon dont une carte s’exécute — pour tous
+les profils sur la même IA :
 
 | Mode | Exécute |
 |---|---|

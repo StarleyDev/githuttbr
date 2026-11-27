@@ -89,7 +89,9 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 
 ## Ustawienia
 
-**Ustawienia → Profil → Preferencje pisania AI → Czat repozytorium** (każdy profil ma własne):
+**Ustawienia → AI → Czat repozytorium** — w ogólnej AI albo we własnej AI
+profilu, jeśli ją ma (pasek **Edytujesz** wybiera którą, zobacz [Jedna AI dla
+wszystkich profili](ai.md#jedna-ai-dla-wszystkich-profili)):
 
 | Ustawienie | Działanie |
 |---|---|
@@ -233,8 +235,9 @@ lub **Odrzuć**:
 
 ### Tryby zatwierdzania
 
-Lista z tarczą pod polem wiadomości (także w **Ustawienia → Profil → Czat
-repozytorium**) decyduje, jak karta zostanie uruchomiona:
+Lista z tarczą pod polem wiadomości (także w **Ustawienia → AI → Czat
+repozytorium**) decyduje, jak karta zostanie uruchomiona — dla każdego profilu
+na tej samej AI:
 
 | Tryb | Uruchamia |
 |---|---|
