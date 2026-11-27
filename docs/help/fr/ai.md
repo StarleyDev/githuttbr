@@ -3,7 +3,7 @@ title: Fonctions IA
 category: IA
 order: 80
 summary: Optionnelles, indépendantes du fournisseur, et ancrées dans votre code réel.
-keywords: ia ai openai anthropic ollama llm local message de commit expliquer explain revue review wiki ancré grounded comptes compte clé api abonnement cli claude codex gemini modèles
+keywords: ia ai openai anthropic ollama llm local message de commit expliquer explain revue review wiki ancré grounded comptes compte clé api abonnement cli claude codex gemini modèles lent timeout délai prend plus de temps continuer à attendre annuler ne répond pas ollama fermé changer de compte autre compte
 ---
 
 # Fonctions IA
@@ -156,7 +156,35 @@ en cache par version de fichier.
 **Les fichiers de secrets masqués ne sont jamais envoyés.** Les fichiers couverts
 par les règles de masquage des secrets non plus.
 
+## Quand un modèle est lent, ou ne répond plus
+
+Un modèle local sur un portable peut mettre une minute pour un message de
+commit, et un modèle qui « réfléchit » avant de répondre met plus longtemps
+encore — mais un serveur fermé en pleine requête ne devrait pas vous laisser
+fixer une roue qui tourne.
+
+| Ce qui se passe | Ce que vous voyez |
+|---|---|
+| Aucune réponse après 30 secondes | *« {compte} met plus de temps que prévu à répondre. »*, avec **Continuer à attendre**, **Utiliser {autre compte}** et **Annuler**. Continuer à attendre redemande une minute plus tard si la requête tourne encore |
+| Un serveur local (Ollama, LM Studio, llama.cpp…) est fermé pendant qu'il travaille | En quelques secondes : *« {compte} ne répond pas. Est-il toujours en cours d’exécution ? »*, avec un bouton pour chaque autre compte prêt à l'emploi, et **Annuler** |
+| Le serveur était déjà fermé au moment de la demande | La même chose, tout de suite |
+
+**Utiliser {autre compte}** annule la requête et envoie la même à ce compte,
+avec son modèle par défaut — le message de commit, la revue ou la réponse de la
+discussion arrive comme si vous l'aviez demandée là. Vos réglages ne changent
+pas : la requête suivante repart vers le compte choisi pour cette tâche.
+
+Cela couvre toutes les fonctions d'IA — messages de commit, discussion, revue,
+explication, conflits, thèmes, le wiki — parce qu'elles passent toutes par le
+même appel.
+
 ## Limites
+
+- **Seuls les serveurs locaux sont surveillés pour savoir s'ils ont été
+  fermés.** Un fournisseur cloud en panne échoue avec sa propre erreur ; un
+  appel cloud simplement lent reçoit l'invite *plus de temps que prévu* comme
+  n'importe quel autre. Un serveur local occupé, mais pas fermé, compte comme
+  vivant : seule une connexion refusée ou coupée met fin à l'appel plus tôt.
 
 - Les listes de modèles de repli vieillissent entre deux versions. C'est à cela
   que sert la récupération en direct ; le repli ne couvre que le cas où elle est

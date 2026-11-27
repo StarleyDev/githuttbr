@@ -3,7 +3,7 @@ title: KI-Funktionen
 category: KI
 order: 80
 summary: Optional, anbieterunabhängig und in deinem echten Code verankert.
-keywords: ki ai openai anthropic ollama lokales llm commit-nachricht erklären review wiki verankert konten konto api-schlüssel abo abonnement cli claude codex gemini modelle
+keywords: ki ai openai anthropic ollama lokales llm commit-nachricht erklären review wiki verankert konten konto api-schlüssel abo abonnement cli claude codex gemini modelle langsam timeout zeitüberschreitung dauert länger weiter warten abbrechen antwortet nicht ollama geschlossen konto wechseln anderes konto
 ---
 
 # KI-Funktionen
@@ -154,7 +154,36 @@ Dateiversion gecacht.
 **Maskierte Secret-Dateien werden nie gesendet.** Ebenso wenig Dateien, die
 unter die Regeln zur Secret-Maskierung fallen.
 
+## Wenn ein Modell langsam ist oder nicht mehr antwortet
+
+Ein lokales Modell auf einem Laptop kann für eine Commit-Nachricht eine Minute
+brauchen, und ein Modell, das vor der Antwort „nachdenkt“, noch länger — aber
+ein Server, der mitten in einer Anfrage geschlossen wurde, sollte dich nicht vor
+einem drehenden Kreis sitzen lassen.
+
+| Was passiert | Was du siehst |
+|---|---|
+| Nach 30 Sekunden keine Antwort | *„{Konto} braucht länger als erwartet für die Antwort.“*, mit **Weiter warten**, **{anderes Konto} verwenden** und **Abbrechen**. Weiter warten fragt eine Minute später erneut, falls es noch läuft |
+| Ein lokaler Server (Ollama, LM Studio, llama.cpp…) wird geschlossen, während er arbeitet | Innerhalb weniger Sekunden: *„{Konto} antwortet nicht. Läuft es noch?“*, mit einem Knopf für jedes andere einsatzbereite Konto und **Abbrechen** |
+| Der Server war schon geschlossen, als du gefragt hast | Dasselbe, sofort |
+
+**{anderes Konto} verwenden** bricht die Anfrage ab und schickt dieselbe an
+dieses Konto, mit dessen Standardmodell — die Commit-Nachricht, das Review oder
+die Chat-Antwort kommt an, als hättest du dort gefragt. An deinen Einstellungen
+ändert das nichts: Die nächste Anfrage geht wieder an das Konto, das du für
+diese Aufgabe gewählt hast.
+
+Das gilt für jede KI-Funktion — Commit-Nachrichten, Chat, Review, Erklären,
+Konflikte, Themes, das Wiki — denn sie laufen alle über denselben Aufruf.
+
 ## Grenzen
+
+- **Nur lokale Server werden darauf überwacht, ob sie geschlossen wurden.** Ein
+  Cloud-Anbieter, der ausfällt, scheitert mit seinem eigenen Fehler; ein
+  Cloud-Aufruf, der bloß langsam ist, bekommt die *dauert länger*-Abfrage wie
+  jeder andere. Ein lokaler Server, der beschäftigt statt geschlossen ist, gilt
+  als lebendig: Nur eine abgelehnte oder abgebrochene Verbindung beendet den
+  Aufruf vorzeitig.
 
 - Die eingebauten Ersatzlisten veralten zwischen Releases. Genau dafür gibt es
   den Live-Abruf; der Ersatz deckt nur den Fall ab, dass ein Abruf nicht möglich

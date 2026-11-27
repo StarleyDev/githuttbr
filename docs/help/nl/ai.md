@@ -3,7 +3,7 @@ title: AI-functies
 category: AI
 order: 80
 summary: Optioneel, providerneutraal en geworteld in je echte code.
-keywords: ai openai anthropic ollama lokaal llm commitboodschap commit message uitleggen explain review wiki grounded accounts account api-sleutel abonnement cli claude codex gemini modellen
+keywords: ai openai anthropic ollama lokaal llm commitboodschap commit message uitleggen explain review wiki grounded accounts account api-sleutel abonnement cli claude codex gemini modellen traag timeout duurt langer blijven wachten annuleren reageert niet ollama gesloten account wisselen ander account
 ---
 
 # AI-functies
@@ -148,7 +148,35 @@ bestandsversie gecachet.
 **Gemaskeerde geheimenbestanden worden nooit verstuurd.** Bestanden die onder de
 maskeerregels voor geheimen vallen evenmin.
 
+## Als een model traag is, of niet meer antwoordt
+
+Een lokaal model op een laptop kan een minuut doen over een commitboodschap, en
+een model dat "nadenkt" voor het antwoordt nog langer — maar een server die
+midden in een verzoek is gesloten, hoort je niet naar een draaiend wieltje te
+laten staren.
+
+| Wat er gebeurt | Wat je ziet |
+|---|---|
+| Na 30 seconden geen antwoord | *"{account} doet er langer over dan verwacht om te antwoorden."*, met **Blijven wachten**, **{ander account} gebruiken** en **Annuleren**. Blijven wachten vraagt het een minuut later opnieuw als het nog loopt |
+| Een lokale server (Ollama, LM Studio, llama.cpp…) wordt gesloten terwijl hij werkt | Binnen een paar seconden: *"{account} reageert niet. Draait het nog?"*, met een knop voor elk ander account dat klaar is voor gebruik, en **Annuleren** |
+| De server was al gesloten toen je het vroeg | Hetzelfde, meteen |
+
+**{ander account} gebruiken** annuleert het verzoek en stuurt hetzelfde naar dat
+account, met het standaardmodel ervan — de commitboodschap, de review of het
+chatantwoord komt binnen alsof je het daar had gevraagd. Je instellingen
+veranderen niet: het volgende verzoek gaat weer naar het account dat je voor die
+taak hebt gekozen.
+
+Dit geldt voor elke AI-functie — commitboodschappen, chat, review, uitleggen,
+conflicten, thema's, de wiki — omdat ze allemaal via dezelfde aanroep lopen.
+
 ## Grenzen
+
+- **Alleen lokale servers worden in de gaten gehouden op sluiten.** Een
+  cloudprovider die uitvalt, faalt met zijn eigen fout; een cloudaanroep die
+  alleen traag is, krijgt net als elke andere de melding *duurt langer*. Een
+  lokale server die bezig is in plaats van gesloten, telt als levend: alleen een
+  geweigerde of verbroken verbinding beëindigt de aanroep eerder.
 
 - De ingebouwde reservelijsten verouderen tussen releases. Daar is het live
   ophalen voor; de reserve dekt alleen het geval dat ophalen niet kan.
