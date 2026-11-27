@@ -55,8 +55,26 @@ describe('repository chat flow', () => {
     const prompt = promptOf(bodies[0])
     expect(prompt).toMatch(/They may ask anything/)
     expect(prompt).toMatch(/do not steer them toward the repository/)
-    // The file list rides along so a repository question can ask for files.
-    expect(prompt).toMatch(/Eligible tracked files:/)
+    // Like any chat: the message goes out with the repository's name only —
+    // no file list, no Git state, nothing the user did not ask for.
+    expect(prompt).not.toMatch(/Eligible tracked files:/)
+    expect(prompt).not.toMatch(/Staged|Unstaged|Untracked files/)
+    expect(prompt).toMatch(/Nothing from it has been read yet/)
+  })
+
+  it('shows the state and file list only once the model asks for the overview', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([
+      { content: 'Looking.', sourceIds: [], needMore: { overview: true } },
+      { content: 'Two files are tracked.', sourceIds: [] }
+    ])
+    const steps: RepoChatProgressStep[] = []
+    const reply = await answerRepoChat(repo, [{ role: 'user', content: 'What files are here?' }], cfg, [], (st) => steps.push(st))
+    expect(reply.content).toBe('Two files are tracked.')
+    expect(bodies).toHaveLength(2)
+    expect(promptOf(bodies[0])).not.toMatch(/Eligible tracked files:/)
+    expect(promptOf(bodies[1])).toMatch(/Eligible tracked files:[\s\S]*config\.json/)
+    expect(steps).toEqual([{ phase: 'thinking' }, { phase: 'reading', files: 0 }, { phase: 'thinking' }])
   })
 
   it('reads the files a repository question asks for, then answers from them', async () => {
