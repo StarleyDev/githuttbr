@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Vraag alles — algemene vragen of vragen over deze repository — met de bestanden en commits die je als context vastzet, en laat hem git-acties voorstellen die jij goedkeurt voordat ze lopen.
 keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel acties uitvoeren goedkeuren automatisch toestaan fout herstellen toast algemene vraag elke vraag aan het nadenken bestanden lezen
-source: 9a8e2844d500415fe360978afa13a72ced0ff985
+source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
 ---
 
 # Repository-chat
@@ -28,19 +28,27 @@ zodat de graaf zijn selectie niet kwijtraakt als je iets vraagt.
 
 Hij werkt zoals elke chat: **wat verstuurd wordt is je bericht**, met daarnaast
 alleen de naam en de branch van de repository — geen Git-toestand, geen
-bestandslijst, geen bestandsinhoud. Een begroeting of een vraag die niet over de
-repository gaat, wordt meteen beantwoord, in één aanroep, en niets uit de
-repository verlaat je machine.
+bestandslijst, geen bestandsinhoud — en het antwoord komt terug als platte
+tekst. Een begroeting of een vraag die niet over de repository gaat, wordt
+meteen beantwoord, in één aanroep, en niets uit de repository verlaat je
+machine.
 
-**Lezen op verzoek.** Gaat de vraag over de code, dan vraagt het model om wat
-het nodig heeft in plaats van te raden: eerst het **overzicht** (de Git-toestand
-en de lijst met gevolgde bestanden), daarna exacte paden uit die lijst,
-letterlijke zoekopdrachten of commit-hashes uit de recente historie. De app
-leest die en stelt de vraag opnieuw met wat ze opleverden. Dat gebeurt hooguit
-vier keer — elke ronde is weer een modelaanroep waar je op wacht — en in de
-laatste moet het antwoorden met wat het heeft. Een antwoord over de repository
-mag alleen de fragmenten citeren die het kreeg: een verzonnen bestand of regel
-is een validatiefout, geen aannemelijk klinkend antwoord.
+**Wanneer de repository erbij komt.** Die wordt in drie gevallen voor het model
+geopend:
+
+| Je… | Wat er gebeurt |
+|------|--------------|
+| Noemt een gevolgd bestand (`config.json`, `src/app.ts`) | Dat bestand wordt gelezen voordat het model antwoordt |
+| Zegt het met zoveel woorden — ‘deze repository’, ‘mijn wijzigingen’, ‘niet gecommit’, ‘huidige branch’ | De Git-toestand en de lijst met gevolgde bestanden worden meegestuurd |
+| Vraagt iets waarvoor het model besluit dat het die nodig heeft | Het antwoordt met één regel `@repo`, en de app opent de repository ervoor |
+
+Vanaf daar vraagt het model om wat het verder nodig heeft in plaats van te
+raden: exacte paden uit de lijst, letterlijke zoekopdrachten of commit-hashes
+uit de recente historie. De app leest die en stelt de vraag opnieuw met wat ze
+opleverden. Dat gebeurt hooguit vier keer — elke ronde is weer een modelaanroep
+waar je op wacht — en in de laatste moet het antwoorden met wat het heeft. Deze
+antwoorden citeren de fragmenten die ze gebruikten, en een verzonnen bestand of
+regel is een validatiefout, geen aannemelijk klinkend antwoord.
 
 Terwijl je wacht, zegt de regel onder je bericht wat er gebeurt: **Aan het
 nadenken…** terwijl het model werkt, **Bestanden lezen (N)…** of **Repository
@@ -266,6 +274,12 @@ er wordt niets verstuurd tot je op Verzenden drukt.
   niet eens voor.
 - **Gesprekken leven alleen in het geheugen.** Elke repository houdt zijn eigen
   draad; GitHuttBr afsluiten gooit ze weg.
+- **Kleine lokale modellen zijn zwakker in vragen over de repository.** Gemeten
+  met een 3B-model: algemene vragen beantwoordt het even goed als in zijn eigen
+  terminal, maar het vraagt misschien niet om de repository wanneer het zou
+  moeten, en een lang antwoord opgebouwd uit bestanden kan afgekapt terugkomen.
+  Het bestand noemen, of ‘deze repository’ zeggen, laat de app hem hoe dan ook
+  openen. Een model van 7B of groter doet het merkbaar beter.
 
 ## Openen
 

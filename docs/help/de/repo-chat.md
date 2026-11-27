@@ -4,7 +4,7 @@ category: KI
 order: 82
 summary: Frag alles — allgemeine Fragen oder Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest, und lass ihn Git-Aktionen vorschlagen, die du vor dem Ausführen freigibst.
 keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel aktionen ausführen freigeben freigabe automatisch erlauben beheben fehler toast allgemeine frage beliebige frage denkt nach dateien werden gelesen
-source: 9a8e2844d500415fe360978afa13a72ced0ff985
+source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
 ---
 
 # Repository-Chat
@@ -28,19 +28,27 @@ zwischen beiden, ohne dass der Graph seine Auswahl verliert.
 
 Er funktioniert wie jeder Chat: **gesendet wird Ihre Nachricht**, daneben nur
 der Name und der Branch des Repositorys — kein Git-Zustand, keine Dateiliste,
-keine Dateiinhalte. Eine Begrüßung oder eine Frage, die nicht das Repository
-betrifft, wird gleich dort beantwortet, in einem Aufruf, und nichts aus dem
-Repository verlässt Ihren Rechner.
+keine Dateiinhalte —, und die Antwort kommt als reiner Text zurück. Eine
+Begrüßung oder eine Frage, die nicht das Repository betrifft, wird gleich dort
+beantwortet, in einem Aufruf, und nichts aus dem Repository verlässt Ihren
+Rechner.
 
-**Lesen bei Bedarf.** Geht es in der Frage um den Code, fordert das Modell an,
-was es braucht, statt zu raten: zuerst den **Überblick** (den Git-Zustand und
-die Liste der versionierten Dateien), dann exakte Pfade aus dieser Liste,
-wörtliche Suchen oder Commit-Hashes aus der jüngsten Historie. Die App liest sie
-und stellt die Frage mit dem Gefundenen erneut. Das passiert höchstens viermal —
-jede Runde ist ein weiterer Modellaufruf, auf den Sie warten — und in der
-letzten muss es mit dem antworten, was es hat. Eine Antwort zum Repository darf
-nur die Ausschnitte zitieren, die sie bekommen hat: eine erfundene Datei oder
-Zeile ist ein Validierungsfehler, keine plausibel klingende Antwort.
+**Wann das Repository dazukommt.** Es wird dem Modell in drei Fällen geöffnet:
+
+| Sie … | Was passiert |
+|------|--------------|
+| Nennen eine versionierte Datei (`config.json`, `src/app.ts`) | Diese Datei wird gelesen, bevor das Modell antwortet |
+| Sagen es in Worten — „dieses Repository“, „meine Änderungen“, „nicht committet“, „aktueller Branch“ | Der Git-Zustand und die Liste der versionierten Dateien werden gesendet |
+| Fragen etwas, wofür das Modell es nach eigenem Urteil braucht | Es antwortet mit einer einzigen Zeile `@repo`, und die App öffnet ihm das Repository |
+
+Von da an fordert das Modell an, was es sonst noch braucht, statt zu raten:
+exakte Pfade aus der Liste, wörtliche Suchen oder Commit-Hashes aus der
+jüngsten Historie. Die App liest sie und stellt die Frage mit dem Gefundenen
+erneut. Das passiert höchstens viermal — jede Runde ist ein weiterer
+Modellaufruf, auf den Sie warten — und in der letzten muss es mit dem
+antworten, was es hat. Diese Antworten zitieren die Ausschnitte, die sie
+verwendet haben, und eine erfundene Datei oder Zeile ist ein Validierungsfehler,
+keine plausibel klingende Antwort.
 
 Während Sie warten, sagt die Zeile unter Ihrer Nachricht, was gerade passiert:
 **Denkt nach…**, solange das Modell arbeitet, **Dateien werden gelesen (N)…**
@@ -272,6 +280,12 @@ Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
   nicht einmal vor.
 - **Unterhaltungen liegen nur im Speicher.** Jedes Repository hat seinen eigenen
   Verlauf; beim Beenden von GitHuttBr sind sie weg.
+- **Kleine lokale Modelle tun sich mit Repository-Fragen schwerer.** Gemessen mit
+  einem 3B-Modell: Allgemeine Fragen beantwortet es so gut wie in seinem eigenen
+  Terminal, aber es fordert das Repository womöglich nicht an, wenn es sollte,
+  und eine lange, aus Dateien gebaute Antwort kann abgeschnitten zurückkommen.
+  Die Datei zu nennen oder „dieses Repository“ zu sagen, lässt die App es
+  trotzdem öffnen. Ein Modell ab 7B schlägt sich deutlich besser.
 
 ## Öffnen
 

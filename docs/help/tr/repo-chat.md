@@ -4,7 +4,7 @@ category: Yapay zekâ
 order: 82
 summary: Her şeyi sorun — genel sorular ya da bu depo hakkında sorular —; bağlam olarak sabitlediğiniz dosya ve commit’lerle, ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
 keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim genel soru herhangi bir soru düşünüyor dosyalar okunuyor
-source: 9a8e2844d500415fe360978afa13a72ced0ff985
+source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
 ---
 
 # Depo sohbeti
@@ -25,18 +25,25 @@ yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 ## Ne okur
 
 Her sohbet gibi çalışır: **gönderilen sizin mesajınızdır**, yanında da yalnızca
-deponun adı ve dalı — Git durumu yok, dosya listesi yok, dosya içeriği yok. Bir
-selam ya da depoyla ilgili olmayan bir soru orada, tek bir çağrıda yanıtlanır ve
-depodan hiçbir şey makinenizden çıkmaz.
+deponun adı ve dalı — Git durumu yok, dosya listesi yok, dosya içeriği yok — ve
+yanıt düz metin olarak gelir. Bir selam ya da depoyla ilgili olmayan bir soru
+orada, tek bir çağrıda yanıtlanır ve depodan hiçbir şey makinenizden çıkmaz.
 
-**İhtiyaç anında okuma.** Soru kodla ilgiliyse model tahmin etmek yerine neye
-ihtiyacı olduğunu ister: önce **genel bakışı** (Git durumu ve izlenen dosya
-listesi), sonra o listeden tam yolları, birebir aramaları ya da yakın geçmişten
-commit özetlerini. Uygulama bunları okur ve soruyu bulunanlarla yeniden sorar.
-Bu en çok dört kez olur — her tur beklediğiniz bir model çağrısı daha demektir —
-ve sonuncusunda elindekiyle yanıt vermek zorundadır. Depoyla ilgili bir yanıt
-yalnızca kendisine verilen alıntılara kaynak gösterebilir: uydurulmuş bir dosya
-ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
+**Depo ne zaman devreye girer.** Model için üç durumda açılır:
+
+| Siz… | Ne olur |
+|------|--------------|
+| İzlenen bir dosyanın adını verirseniz (`config.json`, `src/app.ts`) | Model yanıtlamadan önce o dosya okunur |
+| Bunu sözcüklerle söylerseniz — “bu depo”, “değişikliklerim”, “commit edilmemiş”, “geçerli dal” | Git durumu ve izlenen dosya listesi gönderilir |
+| Modelin depoya ihtiyaç duyduğuna karar verdiği bir şey sorarsanız | Model tek satırlık bir `@repo` ile yanıt verir ve uygulama depoyu onun için açar |
+
+Oradan sonra model tahmin etmek yerine başka neye ihtiyacı olduğunu ister:
+listeden tam yolları, birebir aramaları ya da yakın geçmişten commit
+özetlerini. Uygulama bunları okur ve soruyu bulunanlarla yeniden sorar. Bu en
+çok dört kez olur — her tur beklediğiniz bir model çağrısı daha demektir — ve
+sonuncusunda elindekiyle yanıt vermek zorundadır. Bu yanıtlar kullandıkları
+alıntılara kaynak gösterir; uydurulmuş bir dosya ya da satır, makul görünen bir
+yanıt değil, bir doğrulama hatasıdır.
 
 Siz beklerken mesajınızın altındaki satır ne olduğunu söyler: model çalışırken
 **Düşünüyor…**, yalnızca uygulama istenenleri gerçekten okurken **Dosyalar
@@ -258,6 +265,12 @@ Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
   bile.
 - **Konuşmalar yalnızca bellekte yaşar.** Her depo kendi başlığını tutar;
   GitHuttBr’dan çıkınca silinirler.
+- **Küçük yerel modeller depo sorularında daha zayıftır.** 3B bir modelle
+  ölçüldü: genel soruları kendi terminalindeki kadar iyi yanıtlar, ama
+  gerektiğinde depoyu istemeyebilir ve dosyalardan kurulan uzun bir yanıt
+  yarıda kesilmiş gelebilir. Dosyanın adını vermek ya da “bu depo” demek,
+  uygulamanın depoyu her durumda açmasını sağlar. 7B ve üzeri bir model
+  belirgin biçimde daha iyi iş çıkarır.
 
 ## Nasıl açılır
 

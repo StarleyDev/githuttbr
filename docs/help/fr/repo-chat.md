@@ -4,7 +4,7 @@ category: IA
 order: 82
 summary: Posez n’importe quelle question — générale ou sur ce dépôt —, avec les fichiers et les commits que vous épinglez comme contexte, et laissez-la proposer des actions git que vous approuvez avant leur exécution.
 keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification question générale n’importe quelle question réflexion lecture des fichiers
-source: 9a8e2844d500415fe360978afa13a72ced0ff985
+source: a6c444bf23c6ad26a7242a9503186d4a1d497aec
 ---
 
 # Discussion du dépôt
@@ -28,19 +28,27 @@ de l’un à l’autre, sans que le graphe perde sa sélection.
 
 Elle fonctionne comme n’importe quel chat : **c’est votre message qui est
 envoyé**, avec à côté rien d’autre que le nom et la branche du dépôt — ni état
-Git, ni liste de fichiers, ni contenu de fichier. Une salutation ou une question
-qui ne porte pas sur le dépôt reçoit sa réponse tout de suite, en un seul appel,
-et rien du dépôt ne quitte votre machine.
+Git, ni liste de fichiers, ni contenu de fichier — et la réponse revient en
+texte brut. Une salutation ou une question qui ne porte pas sur le dépôt reçoit
+sa réponse tout de suite, en un seul appel, et rien du dépôt ne quitte votre
+machine.
 
-**Lecture à la demande.** Quand la question porte sur le code, le modèle demande
-ce dont il a besoin au lieu de deviner : d’abord la **vue d’ensemble** (l’état
-Git et la liste des fichiers suivis), puis des chemins exacts de cette liste,
-des recherches littérales ou des hachages de commits de l’historique récent.
-L’application les lit et repose la question avec ce qu’ils ont donné. Cela
-arrive quatre fois au plus — chaque tour est un appel de modèle supplémentaire
-que vous attendez — et au dernier elle doit répondre avec ce qu’elle a. Une
-réponse sur le dépôt ne peut citer que les extraits reçus : un fichier ou une
-ligne inventés sont une erreur de validation, pas une réponse plausible.
+**Quand le dépôt entre en jeu.** Il est ouvert pour le modèle dans trois cas :
+
+| Vous… | Ce qui se passe |
+|------|--------------|
+| Nommez un fichier suivi (`config.json`, `src/app.ts`) | Ce fichier est lu avant que le modèle réponde |
+| Le dites en toutes lettres — « ce dépôt », « mes modifications », « non commité », « branche actuelle » | L’état Git et la liste des fichiers suivis sont envoyés |
+| Posez une question dont le modèle estime qu’elle en a besoin | Il répond par une seule ligne `@repo`, et l’application lui ouvre le dépôt |
+
+À partir de là, le modèle demande ce dont il a encore besoin au lieu de
+deviner : des chemins exacts de la liste, des recherches littérales ou des
+hachages de commits de l’historique récent. L’application les lit et repose la
+question avec ce qu’ils ont donné. Cela arrive quatre fois au plus — chaque tour
+est un appel de modèle supplémentaire que vous attendez — et au dernier elle
+doit répondre avec ce qu’elle a. Ces réponses citent les extraits qu’elles ont
+utilisés, et un fichier ou une ligne inventés sont une erreur de validation, pas
+une réponse plausible.
 
 Pendant l’attente, la ligne sous votre message dit ce qui se passe :
 **Réflexion…** pendant que le modèle travaille, **Lecture des fichiers (N)…** ou
@@ -273,6 +281,13 @@ que vous pressiez Envoyer.
   discussion** désactivé, elle ne propose même pas.
 - **Les conversations ne vivent qu’en mémoire.** Chaque dépôt garde son fil ;
   quitter GitHuttBr les efface.
+- **Les petits modèles locaux sont plus faibles sur les questions de dépôt.**
+  Mesuré avec un modèle 3B : les questions générales reçoivent d’aussi bonnes
+  réponses que dans son propre terminal, mais il peut ne pas demander le dépôt
+  quand il le faudrait, et une longue réponse bâtie à partir de fichiers peut
+  revenir tronquée. Nommer le fichier, ou dire « ce dépôt », fait que
+  l’application l’ouvre quoi qu’il arrive. Un modèle de 7B ou plus fait
+  nettement mieux.
 
 ## L’ouvrir
 
