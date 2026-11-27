@@ -4066,6 +4066,28 @@ body.col-resizing .node-ava {
   flex-direction: column;
   overflow-y: auto;
 }
+/* Commit details: the head (author, message, description, note), the file
+   toolbar and the search stay in place; the file list is the only part that
+   scrolls. A head taller than 60% of the panel scrolls on its own. */
+.details-info-split {
+  overflow: hidden;
+}
+.details-info-split > .details-head {
+  flex: 0 1 auto;
+  max-height: 60%;
+  min-height: 0;
+  overflow-y: auto;
+}
+.details-info-split > .panel-toolbar,
+.details-info-split > .file-search,
+.details-info-split > .sm-summary {
+  flex: none;
+}
+.details-info-split > .details-files {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 
 .commit-header {
   display: flex;

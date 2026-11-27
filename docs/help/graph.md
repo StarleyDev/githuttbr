@@ -116,6 +116,8 @@ HEAD nor the index.
 
 The commit's **description** — everything below its subject — shows under it, its hand-wrapped lines joined to fit the panel (list items and indented lines stay as written). A long one shows its first lines and **Show all**. The trailers git keeps at the end become chips: *Co-author: name* for each `Co-authored-by`, and others such as `Refs:` as written. A commit with no description shows only its subject.
 
+The author, the message and the file search stay in place while you scroll the files; a very long description scrolls on its own above them.
+
 ![A commit's description under its subject, with its trailers as chips](../screenshots/commit-body.webp)
 
 ![Walking through commit details](../screenshots/clip-commit-details.webp)

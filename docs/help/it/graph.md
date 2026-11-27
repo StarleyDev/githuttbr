@@ -101,6 +101,8 @@ senza toccare né HEAD né l'indice.
 
 La **descrizione** del commit — tutto ciò che segue l’oggetto — appare subito sotto, con le righe spezzate a mano riunite per stare nel pannello (elementi di elenco e righe rientrate restano come scritte). Una descrizione lunga mostra le prime righe e **Mostra tutto**. I trailer che git tiene in fondo diventano etichette: *Coautore: nome* per ogni `Co-authored-by`, e gli altri come `Refs:` così come sono scritti. Un commit senza descrizione mostra solo l’oggetto.
 
+L’autore, il messaggio e la ricerca dei file restano fermi mentre scorri i file; una descrizione molto lunga scorre da sola sopra di essi.
+
 ![La descrizione di un commit sotto l’oggetto, con i trailer come etichette](../../screenshots/commit-body.webp)
 
 ![Una passeggiata fra i dettagli dei commit](../../screenshots/clip-commit-details.webp)

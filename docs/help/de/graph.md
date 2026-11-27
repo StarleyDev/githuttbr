@@ -106,6 +106,8 @@ Arbeitskopien überschrieben — HEAD und Index bleiben unangetastet.
 
 Die **Beschreibung** des Commits — alles unter dem Betreff — steht direkt darunter; von Hand umbrochene Zeilen werden zusammengeführt, damit sie ins Panel passen (Listenpunkte und eingerückte Zeilen bleiben wie geschrieben). Eine lange zeigt ihre ersten Zeilen und **Alles anzeigen**. Die Trailer, die git am Ende führt, werden zu Chips: *Mitautor: Name* für jedes `Co-authored-by`, andere wie `Refs:` wie geschrieben. Ein Commit ohne Beschreibung zeigt nur seinen Betreff.
 
+Autor, Nachricht und Dateisuche bleiben stehen, während Sie durch die Dateien scrollen; eine sehr lange Beschreibung scrollt darüber für sich.
+
 ![Die Beschreibung eines Commits unter dem Betreff, Trailer als Chips](../../screenshots/commit-body.webp)
 
 ![Durch die Commit-Details laufen](../../screenshots/clip-commit-details.webp)

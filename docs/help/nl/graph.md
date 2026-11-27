@@ -104,6 +104,8 @@ HEAD of de index aan te raken.
 
 De **beschrijving** van de commit — alles onder het onderwerp — staat er direct onder; met de hand afgebroken regels worden samengevoegd zodat ze in het paneel passen (lijstitems en ingesprongen regels blijven zoals geschreven). Een lange toont de eerste regels en **Alles tonen**. De trailers die git aan het eind bewaart worden labels: *Co-auteur: naam* voor elke `Co-authored-by`, en andere zoals `Refs:` zoals geschreven. Een commit zonder beschrijving toont alleen het onderwerp.
 
+De auteur, het bericht en het zoeken in bestanden blijven staan terwijl je door de bestanden scrolt; een heel lange beschrijving scrolt er los boven.
+
 ![De beschrijving van een commit onder het onderwerp, trailers als labels](../../screenshots/commit-body.webp)
 
 ![Door de commitdetails lopen](../../screenshots/clip-commit-details.webp)

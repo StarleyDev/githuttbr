@@ -103,6 +103,8 @@ ani indeksu.
 
 **Opis** commita — wszystko pod tematem — pokazuje się tuż pod nim, a ręcznie łamane wiersze są łączone, by zmieściły się w panelu (elementy listy i wcięte wiersze zostają jak zapisano). Długi opis pokazuje pierwsze wiersze i **Pokaż wszystko**. Stopki, które git trzyma na końcu, stają się etykietami: *Współautor: imię* dla każdego `Co-authored-by`, a inne, jak `Refs:`, tak jak zapisano. Commit bez opisu pokazuje tylko temat.
 
+Autor, wiadomość i wyszukiwanie plików zostają na miejscu, gdy przewijasz pliki; bardzo długi opis przewija się osobno nad nimi.
+
 ![Opis commita pod tematem, ze stopkami jako etykietami](../../screenshots/commit-body.webp)
 
 ![Przechodzenie przez szczegóły commita](../../screenshots/clip-commit-details.webp)

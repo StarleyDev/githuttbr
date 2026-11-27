@@ -108,6 +108,8 @@ copies de travail sont écrasées, sans toucher ni HEAD ni l'index.
 
 La **description** du commit — tout ce qui suit son sujet — s’affiche juste dessous, ses lignes coupées à la main rejointes pour tenir dans le panneau (éléments de liste et lignes indentées restent tels qu’écrits). Une description longue montre ses premières lignes et **Tout afficher**. Les trailers que git garde à la fin deviennent des étiquettes : *Coauteur : nom* pour chaque `Co-authored-by`, et les autres comme `Refs:` tels qu’écrits. Un commit sans description ne montre que son sujet.
 
+L’auteur, le message et la recherche de fichiers restent en place pendant que vous faites défiler les fichiers ; une description très longue défile seule au-dessus.
+
 ![La description d’un commit sous son sujet, avec ses trailers en étiquettes](../../screenshots/commit-body.webp)
 
 ![Parcours des détails d'un commit](../../screenshots/clip-commit-details.webp)

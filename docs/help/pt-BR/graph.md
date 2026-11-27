@@ -100,6 +100,8 @@ cópias de trabalho, sem tocar em HEAD nem no índice.
 
 A **descrição** do commit — tudo que vem abaixo do título — aparece logo embaixo dele, com as linhas quebradas à mão juntadas para caber no painel (itens de lista e linhas recuadas ficam como foram escritos). Uma descrição longa mostra as primeiras linhas e **Mostrar tudo**. Os trailers que o git guarda no fim viram etiquetas: *Co-autor: nome* para cada `Co-authored-by`, e outros como `Refs:` do jeito que foram escritos. Um commit sem descrição mostra só o título.
 
+O autor, a mensagem e a busca de arquivos ficam no lugar enquanto você rola os arquivos; uma descrição muito longa rola sozinha acima deles.
+
 ![A descrição de um commit abaixo do título, com os trailers como etiquetas](../../screenshots/commit-body.webp)
 
 ![Percorrendo os detalhes de um commit](../../screenshots/clip-commit-details.webp)

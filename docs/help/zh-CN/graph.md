@@ -71,6 +71,8 @@ keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 bran
 
 提交的**描述**(标题以下的全部内容)显示在标题正下方,手动换行的行会合并以适应面板宽度(列表项和缩进行保持原样)。较长的描述只显示前几行和**显示全部**。git 放在末尾的尾注会变成标签:每个 `Co-authored-by` 显示为 *共同作者：姓名*,`Refs:` 等其他尾注按原样显示。没有描述的提交只显示标题。
 
+滚动文件列表时,作者、提交信息和文件搜索保持不动;很长的描述会在上方单独滚动。
+
 ![标题下方的提交描述,尾注显示为标签](../../screenshots/commit-body.webp)
 
 ![逐个查看提交详情](../../screenshots/clip-commit-details.webp)
