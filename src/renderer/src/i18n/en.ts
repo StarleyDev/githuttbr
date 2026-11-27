@@ -4203,6 +4203,7 @@ export const en = {
   'chat.skipBinary': '{name} is not text — not sent',
   'chat.skipTooLarge': '{name} is too large — not sent',
   'chat.skipUnreadable': '{name} could not be read',
+  'chat.fileReadOnlyNotice': 'File changes are off in chat, so nothing was created or edited. To allow them, turn off “{setting}” under {section} in Settings.',
   'chat.copySelection': 'Copy',
   'chat.copyMessage': 'Copy message',
   'chat.copyLink': 'Copy link',

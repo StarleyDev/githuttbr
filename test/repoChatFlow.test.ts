@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat, asksForAction, followUpOf, historyTurns, mentionsLastCommit, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
+import { answerRepoChat, asksForAction, asksToChangeFiles, followUpOf, historyTurns, mentionsLastCommit, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -302,6 +302,52 @@ describe('when the JSON answer fails', () => {
     expect(bodies[2].response_format).toBeUndefined()
     // The plain retry still carries the commit that was read.
     expect(promptOf(bodies[2])).toMatch(/Latest commit \(HEAD\)/)
+  })
+})
+
+describe('a request to change something', () => {
+  it('goes to the rounds that can propose it, never to the plain conversation', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([{ content: 'File changes are off.', sourceIds: [] }])
+    await answerRepoChat(repo, [{ role: 'user', content: 'Crie um arquivo na raiz chamado teste.txt' }], {
+      ...cfg,
+      repoChatActions: true
+    })
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].response_format).toBeDefined()
+    // File read-only mode is on by default: the model is told which setting to name.
+    expect(promptOf(bodies[0])).toMatch(/"File read-only mode" setting \(Settings → AI → Repository chat\)/)
+  })
+
+  it('says itself that file changes are off, whatever the model wrote', async () => {
+    const repo = cloneFixture('cherry-pick')
+    scriptedModel([{ content: 'olá mundo', sourceIds: [] }])
+    const ask = 'Crie um arquivo na raiz chamado teste.txt com o texto olá mundo'
+    const off = await answerRepoChat(repo, [{ role: 'user', content: ask }], { ...cfg, repoChatActions: true })
+    expect(off.notice).toBe('file-read-only')
+
+    scriptedModel([{ content: 'Proposed.', sourceIds: [] }])
+    const on = await answerRepoChat(repo, [{ role: 'user', content: ask }], { ...cfg, repoChatActions: true, repoChatReadOnly: false })
+    expect(on.notice).toBeUndefined()
+
+    scriptedModel([{ content: 'Stash proposed.', sourceIds: [] }])
+    const git = await answerRepoChat(repo, [{ role: 'user', content: 'faça um stash' }], { ...cfg, repoChatActions: true })
+    expect(git.notice).toBeUndefined()
+  })
+
+  it('knows a file change from a Git request', () => {
+    expect(asksToChangeFiles('Crie um arquivo na raiz chamado teste.txt')).toBe(true)
+    expect(asksToChangeFiles('edit README.md to add a line')).toBe(true)
+    expect(asksToChangeFiles('apague o arquivo log.txt')).toBe(true)
+    expect(asksToChangeFiles('faça um stash')).toBe(false)
+    expect(asksToChangeFiles('crie a branch feature/x')).toBe(false)
+  })
+
+  it('the plain conversation is told it cannot change anything', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel(['Olá!'])
+    await answerRepoChat(repo, [{ role: 'user', content: 'olá' }], cfg)
+    expect(promptOf(bodies[0])).toMatch(/never say you created, edited, committed or ran something/)
   })
 })
 

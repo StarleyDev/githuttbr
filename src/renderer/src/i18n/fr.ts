@@ -4143,6 +4143,7 @@ export const fr: Dict = {
   'chat.skipBinary': '{name} n’est pas du texte : non envoyé',
   'chat.skipTooLarge': '{name} est trop volumineux : non envoyé',
   'chat.skipUnreadable': '{name} n’a pas pu être lu',
+  'chat.fileReadOnlyNotice': 'Les modifications de fichiers sont désactivées dans le chat : rien n’a été créé ni modifié. Pour les autoriser, désactivez « {setting} » dans {section}, dans les Paramètres.',
   'chat.copySelection': 'Copier',
   'chat.copyMessage': 'Copier le message',
   'chat.copyLink': 'Copier le lien',

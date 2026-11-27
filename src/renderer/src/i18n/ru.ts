@@ -4196,6 +4196,7 @@ export const ru: Dict = {
   'chat.skipBinary': '{name} не является текстом — не отправлен',
   'chat.skipTooLarge': '{name} слишком большой — не отправлен',
   'chat.skipUnreadable': 'Не удалось прочитать {name}',
+  'chat.fileReadOnlyNotice': 'Изменение файлов в чате выключено, поэтому ничего не создано и не изменено. Чтобы разрешить его, выключите «{setting}» в разделе {section} в Настройках.',
   'chat.copySelection': 'Копировать',
   'chat.copyMessage': 'Копировать сообщение',
   'chat.copyLink': 'Копировать ссылку',

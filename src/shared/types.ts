@@ -1979,6 +1979,9 @@ export interface RepoChatReply {
    *  renderer renders them as a card and runs them only under the approval
    *  policy. Absent when the chat-actions setting is off. */
   actions?: RepoChatAction[]
+  /** Something the app itself must say, whatever the model wrote — set when a
+   *  file change was asked for while File read-only mode is on. */
+  notice?: 'file-read-only'
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */

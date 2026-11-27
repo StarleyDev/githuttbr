@@ -4204,6 +4204,7 @@ export const ptBR: Dict = {
   'chat.skipBinary': '{name} não é texto: não enviado',
   'chat.skipTooLarge': '{name} é grande demais: não enviado',
   'chat.skipUnreadable': 'Não foi possível ler {name}',
+  'chat.fileReadOnlyNotice': 'As alterações de arquivos estão desligadas no chat, então nada foi criado nem editado. Para permitir, desligue “{setting}” em {section}, nas Configurações.',
   'chat.copySelection': 'Copiar',
   'chat.copyMessage': 'Copiar mensagem',
   'chat.copyLink': 'Copiar link',

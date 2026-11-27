@@ -4139,6 +4139,7 @@ export const tr: Dict = {
   'chat.skipBinary': '{name} metin değil — gönderilmedi',
   'chat.skipTooLarge': '{name} çok büyük — gönderilmedi',
   'chat.skipUnreadable': '{name} okunamadı',
+  'chat.fileReadOnlyNotice': 'Sohbette dosya değişiklikleri kapalı, bu yüzden hiçbir şey oluşturulmadı veya düzenlenmedi. İzin vermek için Ayarlar’da {section} altında “{setting}” seçeneğini kapatın.',
   'chat.copySelection': 'Kopyala',
   'chat.copyMessage': 'Mesajı kopyala',
   'chat.copyLink': 'Bağlantıyı kopyala',

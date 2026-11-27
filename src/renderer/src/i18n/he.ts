@@ -4199,6 +4199,7 @@ export const he: Dict = {
   'chat.skipBinary': '{name} אינו טקסט ולא נשלח',
   'chat.skipTooLarge': '{name} גדול מדי ולא נשלח',
   'chat.skipUnreadable': 'לא ניתן לקרוא את {name}',
+  'chat.fileReadOnlyNotice': 'שינויי קבצים כבויים בצ׳אט, ולכן שום דבר לא נוצר או נערך. כדי לאפשר אותם, כבו את „{setting}” תחת {section} בהגדרות.',
   'chat.copySelection': 'העתקה',
   'chat.copyMessage': 'העתקת ההודעה',
   'chat.copyLink': 'העתקת הקישור',

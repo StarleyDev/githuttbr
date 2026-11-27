@@ -4199,6 +4199,7 @@ export const ar: Dict = {
   'chat.skipBinary': '{name} ليس نصاً ولم يُرسل',
   'chat.skipTooLarge': '{name} كبير جداً ولم يُرسل',
   'chat.skipUnreadable': 'تعذّرت قراءة {name}',
+  'chat.fileReadOnlyNotice': 'تعديل الملفات متوقف في المحادثة، لذلك لم يُنشأ أو يُعدَّل أي شيء. للسماح به، أوقف «{setting}» ضمن {section} في الإعدادات.',
   'chat.copySelection': 'نسخ',
   'chat.copyMessage': 'نسخ الرسالة',
   'chat.copyLink': 'نسخ الرابط',

@@ -4144,6 +4144,7 @@ export const it: Dict = {
   'chat.skipBinary': '{name} non è testo: non inviato',
   'chat.skipTooLarge': '{name} è troppo grande: non inviato',
   'chat.skipUnreadable': 'Impossibile leggere {name}',
+  'chat.fileReadOnlyNotice': 'Le modifiche ai file sono disattivate nella chat, quindi non è stato creato né modificato nulla. Per consentirle, disattiva “{setting}” in {section}, nelle Impostazioni.',
   'chat.copySelection': 'Copia',
   'chat.copyMessage': 'Copia messaggio',
   'chat.copyLink': 'Copia link',

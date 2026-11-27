@@ -4204,6 +4204,7 @@ export const nl: Dict = {
   'chat.skipBinary': '{name} is geen tekst — niet verstuurd',
   'chat.skipTooLarge': '{name} is te groot — niet verstuurd',
   'chat.skipUnreadable': '{name} kon niet worden gelezen',
+  'chat.fileReadOnlyNotice': 'Bestandswijzigingen staan uit in de chat, dus er is niets gemaakt of bewerkt. Zet „{setting}” uit onder {section} in Instellingen om ze toe te staan.',
   'chat.copySelection': 'Kopiëren',
   'chat.copyMessage': 'Bericht kopiëren',
   'chat.copyLink': 'Link kopiëren',

@@ -4196,6 +4196,7 @@ export const uk: Dict = {
   'chat.skipBinary': '{name} не є текстом — не надіслано',
   'chat.skipTooLarge': '{name} завеликий — не надіслано',
   'chat.skipUnreadable': 'Не вдалося прочитати {name}',
+  'chat.fileReadOnlyNotice': 'Зміни файлів у чаті вимкнено, тож нічого не створено й не змінено. Щоб дозволити їх, вимкніть «{setting}» у розділі {section} в Налаштуваннях.',
   'chat.copySelection': 'Копіювати',
   'chat.copyMessage': 'Копіювати повідомлення',
   'chat.copyLink': 'Копіювати посилання',
