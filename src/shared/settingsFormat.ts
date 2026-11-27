@@ -102,6 +102,7 @@ const KNOWN_SETTINGS: { [K in keyof Required<AppSettings>]: true } = {
   onboardingCompleted: true,
   aiAccountsNoticeSeen: true,
   ai: true,
+  aiBehaviourShared: true,
   aiSecretsFrom: true,
   autoOpenChangelog: true,
   wipSnapshotMinutes: true,

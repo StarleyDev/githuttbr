@@ -10,7 +10,9 @@ keywords: commit message composer conventional gitmoji ticket amend template co-
 
 ## メッセージのスタイル
 
-設定で 1 つ選ぶと、入力欄がそれに合わせて変わります。
+**設定 → AI → コミットメッセージ** で、または入力欄から直接 1
+つ選ぶと、入力欄がそれに合わせて変わります。スタイルはプロファイルが使う
+AI（共通の AI か、そのプロファイルの独自の AI）のものです。
 
 | スタイル | 見た目 |
 |---|---|

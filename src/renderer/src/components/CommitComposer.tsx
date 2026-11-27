@@ -197,13 +197,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
-  // The Conventional-Commit type dropdown shows only when the profile's commit
-  // style is Conventional (Settings → Profile → Preferences).
+  // The Conventional-Commit type dropdown shows only when the commit style of
+  // the AI this profile uses is Conventional (Settings → AI → Commit messages).
   const commitStyle = useSettingsStore((s) => s.activeAI().commitStyle)
   const usesConventional = commitStyle === 'conventional' || commitStyle === 'gitmoji-conventional'
   const usesGitmoji = commitStyle === 'gitmoji' || commitStyle === 'gitmoji-conventional'
-  // Switch the active commit style straight from the composer. AI-only styles
-  // (auto / caveman / haiku) are filtered out when AI is disabled.
+  // Switch the active commit style straight from the composer — on the AI the
+  // profile reads it from, so on the general AI it changes for every profile
+  // that uses it. AI-only styles (auto / caveman / haiku) are filtered out when
+  // AI is disabled.
   const styleOptions = useMemo(
     () => (aiEnabled ? COMMIT_STYLE_OPTIONS : COMMIT_STYLE_OPTIONS.filter((o) => !o.ai)),
     [aiEnabled]

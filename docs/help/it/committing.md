@@ -10,7 +10,9 @@ keywords: commit messaggio composer conventional gitmoji ticket amend template c
 
 ## Stili di messaggio
 
-Ne scegli uno nelle impostazioni; il compositore si adatta.
+Ne scegli uno in **Impostazioni → AI → Messaggi di commit**, o direttamente dal
+compositore; il compositore si adatta. Lo stile appartiene all'IA che il profilo
+usa — quella generale o quella propria del profilo.
 
 | Stile | Ha questo aspetto |
 |---|---|

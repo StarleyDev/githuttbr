@@ -36,11 +36,14 @@ repite. Nuevo y borrar están en la misma barra; borrar pregunta antes.
 
 ## La IA es compartida
 
-Un perfil no necesita su propia IA: una [IA general](ai.md#una-ia-para-todos-los-perfiles)
-sirve a todos los perfiles, y un perfil opta por la suya solo cuando hace falta.
-Lo que un perfil siempre conserva es cómo escribe la IA para él — el estilo de
-commit, las instrucciones personalizadas y el resto de *Preferencias de escritura
-de la IA*.
+Un perfil no necesita su propia IA: una [IA
+general](ai.md#una-ia-para-todos-los-perfiles) sirve a todos los perfiles, y un
+perfil opta por la suya solo cuando hace falta. La elección abarca todo: un
+perfil en la IA general también escribe como esté configurada la IA general —
+estilo de commit, instrucciones personalizadas, chat del repositorio. Un perfil
+que necesita otro estilo recibe su propia IA, una copia de la general que luego
+puede cambiar. Todo se edita en la página **IA**; la página Perfil solo dice qué
+IA usa el perfil y enlaza allí.
 
 ## Cada perfil, sus propias cuentas
 

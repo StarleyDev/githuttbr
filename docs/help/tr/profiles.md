@@ -37,11 +37,15 @@ silme aynı çubuktadır; silmeden önce sorar.
 
 ## Yapay zekâ ortaktır
 
-Bir profilin kendi yapay zekâsına ihtiyacı yoktur: tek bir
-[genel yapay zekâ](ai.md#her-profil-için-tek-yapay-zekâ) her profile hizmet eder
-ve bir profil yalnızca gerektiğinde kendi yapay zekâsına geçer. Bir profilin her
-zaman koruduğu şey, yapay zekânın onun için nasıl yazdığıdır — commit stili, özel
-talimatlar ve *Yapay zekânın yazım tercihleri* bölümünün geri kalanı.
+Bir profilin kendi yapay zekâsına ihtiyacı yoktur: tek bir [genel yapay
+zekâ](ai.md#her-profil-için-tek-yapay-zekâ) her profile hizmet eder ve bir
+profil yalnızca gerektiğinde kendi yapay zekâsına geçer. Bu seçim her şeyi
+kapsar: genel yapay zekâdaki bir profil, genel yapay zekâ nasıl ayarlandıysa
+öyle yazar — commit stili, özel yönergeler, depo sohbeti. Başka bir stile
+ihtiyaç duyan profil kendi yapay zekâsını alır: genel olanın, sonradan
+değiştirebileceği bir kopyası. Hepsi **Yapay zekâ** sayfasında düzenlenir;
+Profil sayfası yalnızca profilin hangi yapay zekâyı kullandığını söyler ve oraya
+bağlantı verir.
 
 ## Her profilin kendi hesapları
 

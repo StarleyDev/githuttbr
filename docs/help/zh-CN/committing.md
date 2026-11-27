@@ -10,7 +10,9 @@ keywords: commit 提交 message 消息 composer 编辑器 conventional gitmoji t
 
 ## 消息风格
 
-在设置里挑一种；编辑框会随之调整。
+在 **设置 → AI → 提交信息** 中，或直接在编辑框里挑一种；
+编辑框会随之调整。风格属于配置档案所用的 AI：通用 AI，或该配置档案的自有
+AI。
 
 | 风格 | 长这样 |
 |---|---|

@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback
+keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style custom instructions co-author hover explain own ai general ai
 ---
 
 # AI features
@@ -20,29 +20,51 @@ uses it: a profile you create later already has the AI, with no account to add
 again. The page lists each profile and whether it follows this **general AI**.
 
 A profile can use **its own AI** instead — a work profile that must go through
-the company's account, for cost or data policy. On that profile's **Profile**
-page, under *AI of this profile*, switch **General** to **Own**: it starts as a
-copy of the general AI, and its providers and keys from then on are its alone.
-Switching back to **General** removes them, after a confirmation, and leaves the
+the company's account, for cost or data policy, or that writes its commits
+another way. On that profile's **Profile** page, under *AI of this profile*,
+switch **General** to **Own**: it starts as a copy of the whole general AI —
+accounts, keys and preferences — and from then on all of it is its alone.
+Switching back to **General** removes it, after a confirmation, and leaves the
 general AI as it was.
+
+A profile uses one AI **whole**: the general one, or its own, never a mix. The
+accounts and models *and* how the AI writes and what the chat may do come from
+the same place, so changing the commit style on the general AI changes it for
+every profile that follows it.
 
 Every AI is set up on this one page. The **Editing** bar at the top picks whose:
 the general AI, or a profile's own (*Own AI of Work*). **Set up its own AI** on
 the Profile page, or **Edit its own AI** in the list of profiles, opens the page
 on that one. The Profile page itself only shows which AI the profile uses and
-what answers — it never hosts the editor.
+what answers — it never hosts the editor, and holds no AI option of its own.
 
 ![A profile's AI on its Profile page: General or Own, what answers, and the way to set it up](../screenshots/settings-profile-ai.webp)
 
-How the AI **writes** stays per profile either way: commit message style,
-explanation style, conflict and branch naming styles, custom instructions,
-co-author line and repository chat. They are on the **Profile** page, under
-*AI writing preferences*, so a work profile can write `ticket` commits
-while a personal one writes `conventional` ones, both on the same AI.
+Below the accounts, the same page holds how that AI **writes** and what it may
+do, in sections:
+
+| Section | Holds |
+|---|---|
+| **Commit messages** | Commit message style, *Generate commit description*, the co-author line |
+| **Explain & hover** | Explanation style, *Explain code on hover* and its modifier key |
+| **Conflicts & branches** | Conflict resolution style, branch naming style |
+| **Custom instructions** | Your own rules, added to every request this AI makes |
+| **Repository chat** | Whether chat is on, what it reads, the actions it may propose — see [Repository chat](repo-chat.md#settings) |
+
+The composer's style switch and the chat's model and approval pickers write to
+the same AI the profile reads: the general one, or the profile's own.
 
 Upgrading from a version where each profile had its own AI loses nothing: the
 AI of the profile in use becomes the general AI, and any other profile whose AI
 was different keeps it as its own.
+
+**Upgrading from 4.59 or earlier**, where the writing preferences lived on each
+profile: once, the preferences of the profile in use (or, if that one has its
+own AI, of the first profile on the general AI) move onto the general AI.
+Profiles with their own AI keep theirs. **The limit:** if two profiles on the
+general AI wrote differently — a `ticket` work profile and a `conventional`
+personal one — both now write like the one that was moved. To keep the
+difference, give one of them its own AI and set its style again there.
 
 ## Providers
 

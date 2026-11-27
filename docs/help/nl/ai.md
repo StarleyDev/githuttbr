@@ -3,7 +3,7 @@ title: AI-functies
 category: AI
 order: 80
 summary: Optioneel, providerneutraal en geworteld in je echte code.
-keywords: ai openai anthropic ollama lokaal llm commitboodschap commit message uitleggen explain review wiki grounded accounts account api-sleutel abonnement cli claude codex gemini modellen traag timeout duurt langer blijven wachten annuleren reageert niet ollama gesloten account wisselen ander account
+keywords: ai openai anthropic ollama lokaal llm commitboodschap commit message uitleggen explain review wiki grounded accounts account api-sleutel abonnement cli claude codex gemini modellen traag timeout duurt langer blijven wachten annuleren reageert niet ollama gesloten account wisselen ander account schrijfvoorkeuren commitstijl eigen instructies co-auteur hover uitleg eigen ai algemene ai
 ---
 
 # AI-functies
@@ -20,31 +20,55 @@ gebruikt hem: een profiel dat je later aanmaakt, heeft de AI al, zonder dat je
 opnieuw een account toevoegt. De pagina toont elk profiel en of het deze
 **algemene AI** volgt.
 
-Een profiel kan in plaats daarvan **een eigen AI** gebruiken — een werkprofiel dat
-via het account van het bedrijf moet, om kosten of om databeleid. Zet op de pagina
-**Profiel** van dat profiel, onder *AI van dit profiel*, **Algemeen** op **Eigen**:
-hij begint als kopie van de algemene AI, en zijn providers en sleutels zijn vanaf
-dan alleen van hem. Terug naar **Algemeen** verwijdert ze, na een bevestiging, en
-laat de algemene AI zoals hij was.
+Een profiel kan in plaats daarvan **een eigen AI** gebruiken — een werkprofiel
+dat via het account van het bedrijf moet, om kosten of om databeleid, of dat
+zijn commits anders schrijft. Zet op de pagina **Profiel** van dat profiel,
+onder *AI van dit profiel*, **Algemeen** op **Eigen**: hij begint als kopie van
+de hele algemene AI — accounts, sleutels en voorkeuren — en vanaf dan is dat
+allemaal alleen van dat profiel. Terug naar **Algemeen** verwijdert hem, na een
+bevestiging, en laat de algemene AI zoals hij was.
 
-Elke AI stel je op deze ene pagina in. De balk **Bewerken** bovenaan kiest welke:
-de algemene AI, of de eigen AI van een profiel (*Eigen AI van Werk*). **Eigen AI
-instellen** op de pagina Profiel, of **Eigen AI bewerken** in de lijst met
-profielen, opent de pagina op die AI. De pagina Profiel toont alleen welke AI het
-profiel gebruikt en wat er antwoordt — de editor staat er nooit op.
+Een profiel gebruikt één AI **in zijn geheel**: de algemene of zijn eigen, nooit
+een mengsel. De accounts en modellen *en* hoe de AI schrijft en wat de chat mag,
+komen van dezelfde plek, dus wie de commitstijl van de algemene AI wijzigt,
+wijzigt die voor elk profiel dat hem volgt.
+
+Elke AI stel je op deze ene pagina in. De balk **Bewerken** bovenaan kiest
+welke: de algemene AI, of de eigen AI van een profiel (*Eigen AI van Werk*).
+**Eigen AI instellen** op de pagina Profiel, of **Eigen AI bewerken** in de
+lijst met profielen, opent de pagina op die AI. De pagina Profiel toont alleen
+welke AI het profiel gebruikt en wat er antwoordt — de editor staat er nooit op,
+en eigen AI-opties evenmin.
 
 ![De AI van een profiel op zijn pagina Profiel: Algemeen of Eigen, wat er antwoordt, en de weg om hem in te stellen](../../screenshots/settings-profile-ai.webp)
 
-Hoe de AI **schrijft** blijft in beide gevallen per profiel: stijl van
-commitberichten, stijl van uitleg, stijlen voor conflictoplossing en branchnamen,
-eigen instructies, co-auteurregel en repository-chat. Ze staan op de pagina
-**Profiel**, onder *Schrijfvoorkeuren van de AI*, zodat een werkprofiel
-`ticket`-commits kan schrijven terwijl een persoonlijk profiel `conventional`
-schrijft, allebei met dezelfde AI.
+Onder de accounts houdt dezelfde pagina bij hoe die AI **schrijft** en wat hij
+mag, in secties:
+
+| Sectie | Bevat |
+|---|---|
+| **Commitberichten** | Stijl van commitberichten, *Commit-omschrijving genereren*, de co-auteurregel |
+| **Uitleg & hover** | Stijl van uitleg, *Code uitleggen bij hoveren* en de bijbehorende toets |
+| **Conflicten & branches** | Stijl voor conflictoplossing, stijl voor branchnamen |
+| **Eigen instructies** | Je eigen regels, toegevoegd aan elk verzoek dat deze AI doet |
+| **Repository-chat** | Of de chat aan staat, wat hij leest, welke acties hij mag voorstellen — zie [Repository-chat](repo-chat.md#instellingen) |
+
+De stijlschakelaar in de opsteller en de model- en goedkeuringskiezers van de
+chat schrijven naar dezelfde AI die het profiel leest: de algemene of de eigen
+AI van het profiel.
 
 Upgraden vanaf een versie waarin elk profiel zijn eigen AI had, kost niets: de AI
 van het profiel dat in gebruik is, wordt de algemene AI, en elk ander profiel met
 een afwijkende AI houdt die als eigen AI.
+
+**Upgraden vanaf 4.59 of eerder**, toen de schrijfvoorkeuren per profiel waren
+opgeslagen: eenmalig gaan de voorkeuren van het profiel dat in gebruik is (of,
+als dat een eigen AI heeft, van het eerste profiel op de algemene AI) naar de
+algemene AI. Profielen met een eigen AI houden die van hen. **De grens:** als
+twee profielen op de algemene AI verschillend schreven — een werkprofiel met
+`ticket` en een persoonlijk met `conventional` — schrijven ze nu allebei zoals
+het profiel dat is overgezet. Wil je het verschil houden, geef een van beide dan
+een eigen AI en stel daar de stijl opnieuw in.
 
 ## Providers
 

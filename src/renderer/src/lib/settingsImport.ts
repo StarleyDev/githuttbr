@@ -81,6 +81,7 @@ const PART_OF_KEY: Record<keyof AppSettings, ImportPart> = {
   profiles: 'profiles',
   activeProfileId: 'profiles',
   ai: 'profiles',
+  aiBehaviourShared: 'profiles',
   aiSecretsFrom: 'profiles',
   // Repositories: every path, and every map keyed by one.
   repoProfiles: 'repos',

@@ -3,7 +3,7 @@ title: Yapay zekâ özellikleri
 category: Yapay zekâ
 order: 80
 summary: İsteğe bağlı, sağlayıcıdan bağımsız ve gerçek kodunuza dayalı.
-keywords: yapay zekâ yerel model commit mesajı açıklama inceleme ai openai anthropic ollama local llm commit message explain review wiki grounded hesaplar hesap api anahtarı abonelik cli claude codex gemini modeller yavaş zaman aşımı timeout uzun sürüyor beklemeye devam et iptal yanıt vermiyor ollama kapalı hesap değiştir başka hesap
+keywords: yapay zekâ yerel model commit mesajı açıklama inceleme ai openai anthropic ollama local llm commit message explain review wiki grounded hesaplar hesap api anahtarı abonelik cli claude codex gemini modeller yavaş zaman aşımı timeout uzun sürüyor beklemeye devam et iptal yanıt vermiyor ollama kapalı hesap değiştir başka hesap yazım tercihleri commit stili özel yönergeler ortak yazar üzerine gelme açıklama kendi yapay zekâ genel yapay zekâ
 ---
 
 # Yapay zekâ özellikleri
@@ -21,33 +21,56 @@ Yapay zekâ bir kez, **Ayarlar → Yapay zekâ** içinde kurulur ve her
 zekâ zaten vardır, yeniden hesap eklemeniz gerekmez. Sayfa her profili ve bu
 **genel yapay zekâyı** izleyip izlemediğini listeler.
 
-Bir profil bunun yerine **kendi yapay zekâsını** kullanabilir — maliyet ya da veri
-politikası nedeniyle şirketin hesabından geçmesi gereken bir iş profili gibi. O
-profilin **Profil** sayfasında, *Bu profilin yapay zekâsı* altında **Genel**'i
-**Kendi** olarak değiştirin: genel yapay zekânın bir kopyası olarak başlar ve o
-andan itibaren sağlayıcıları ve anahtarları yalnızca onundur. Yeniden **Genel**'e
-geçmek, bir onaydan sonra onları kaldırır ve genel yapay zekâyı olduğu gibi
-bırakır.
+Bir profil bunun yerine **kendi yapay zekâsını** kullanabilir — maliyet ya da
+veri politikası nedeniyle şirketin hesabından geçmesi gereken ya da
+commit'lerini başka türlü yazan bir iş profili gibi. O profilin **Profil**
+sayfasında, *Bu profilin yapay zekâsı* altında **Genel**'i **Kendi** olarak
+değiştirin: genel yapay zekânın tamamının — hesaplar, anahtarlar ve tercihler —
+bir kopyası olarak başlar ve o andan itibaren hepsi yalnızca o profilindir.
+Yeniden **Genel**'e geçmek, bir onaydan sonra onu kaldırır ve genel yapay zekâyı
+olduğu gibi bırakır.
+
+Bir profil tek bir yapay zekâyı **bütün olarak** kullanır: genel olanı ya da
+kendisininkini, asla bir karışımı. Hesaplar ve modeller *ile* yapay zekânın
+nasıl yazdığı ve sohbetin neler yapabileceği aynı yerden gelir; bu yüzden genel
+yapay zekâda commit stilini değiştirmek, onu izleyen her profil için değiştirir.
 
 Her yapay zekâ bu tek sayfada kurulur. Üstteki **Düzenlenen** çubuğu hangisini
-seçer: genel yapay zekâyı ya da bir profilin kendisininkini (*İş profilinin kendi
-yapay zekâsı*). Profil sayfasındaki **Kendi yapay zekâsını ayarla** ya da profil
-listesindeki **Kendi yapay zekâsını düzenle**, sayfayı doğrudan onda açar. Profil
-sayfasının kendisi yalnızca profilin hangi yapay zekâyı kullandığını ve neyin
-cevap verdiğini gösterir — düzenleyici asla orada değildir.
+seçer: genel yapay zekâyı ya da bir profilin kendisininkini (*İş profilinin
+kendi yapay zekâsı*). Profil sayfasındaki **Kendi yapay zekâsını ayarla** ya da
+profil listesindeki **Kendi yapay zekâsını düzenle**, sayfayı doğrudan onda
+açar. Profil sayfasının kendisi yalnızca profilin hangi yapay zekâyı
+kullandığını ve neyin cevap verdiğini gösterir — düzenleyici asla orada
+değildir, kendine ait bir yapay zekâ seçeneği de yoktur.
 
 ![Bir profilin yapay zekâsı, Profil sayfasında: Genel ya da Kendi, neyin cevap verdiği ve nasıl kurulacağı](../../screenshots/settings-profile-ai.webp)
 
-Yapay zekânın nasıl **yazdığı** her iki durumda da profile özgü kalır: commit
-mesajı stili, açıklama stili, çakışma ve dal adlandırma stilleri, özel
-talimatlar, ortak yazar satırı ve depo sohbeti. Bunlar **Profil** sayfasında,
-*Yapay zekânın yazım tercihleri* altındadır; böylece bir iş profili `ticket`
-commit'leri yazarken kişisel profil `conventional` olanları yazar, ikisi de aynı
-yapay zekâyla.
+Hesapların altında aynı sayfa, o yapay zekânın nasıl **yazdığını** ve neler
+yapabileceğini bölümler hâlinde tutar:
+
+| Bölüm | İçerir |
+|---|---|
+| **Commit mesajları** | Commit mesajı stili, *Commit açıklaması üret*, ortak yazar satırı |
+| **Açıklama ve üzerine gelme** | Açıklama stili, *İmleç üzerindeyken kodu açıkla* ve değiştirici tuşu |
+| **Çakışmalar ve dallar** | Çakışma çözme stili, dal adlandırma stili |
+| **Özel yönergeler** | Kendi kurallarınız; bu yapay zekânın yaptığı her isteğe eklenir |
+| **Depo sohbeti** | Sohbetin açık olup olmadığı, neyi okuduğu, önerebileceği eylemler — bkz. [Depo sohbeti](repo-chat.md#ayarlar) |
+
+Besteci panelindeki stil değiştirici ve sohbetin model ve onay seçicileri,
+profilin okuduğu yapay zekâya yazar: genel olana ya da profilin kendisininkine.
 
 Her profilin kendi yapay zekâsı olan bir sürümden yükseltmek hiçbir şey
 kaybettirmez: kullanımdaki profilin yapay zekâsı genel yapay zekâ olur ve yapay
 zekâsı farklı olan diğer her profil onu kendisininki olarak korur.
+
+**4.59 veya daha eski bir sürümden yükseltirken**, yazım tercihlerinin her
+profilde durduğu dönemden: bir kez, kullanımdaki profilin tercihleri (ya da o
+profilin kendi yapay zekâsı varsa, genel yapay zekâdaki ilk profilin tercihleri)
+genel yapay zekâya taşınır. Kendi yapay zekâsı olan profiller kendilerininkini
+korur. **Sınır:** genel yapay zekâdaki iki profil farklı yazıyorsa — `ticket`
+kullanan bir iş profili ve `conventional` kullanan kişisel bir profil — ikisi de
+artık taşınan profil gibi yazar. Farkı korumak için birine kendi yapay zekâsını
+verin ve stilini orada yeniden ayarlayın.
 
 ## Sağlayıcılar
 

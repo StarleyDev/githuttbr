@@ -91,7 +91,9 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 
 ## Instellingen
 
-**Instellingen → Profiel → Schrijfvoorkeuren van de AI → Repository-chat** (elk profiel heeft de zijne):
+**Instellingen → AI → Repository-chat** — op de algemene AI, of op de eigen AI
+van een profiel als het die heeft (de balk **Bewerken** kiest welke, zie [Eén AI
+voor elk profiel](ai.md#één-ai-voor-elk-profiel)):
 
 | Instelling | Doet |
 |---|---|
@@ -247,8 +249,9 @@ Met **Altijd vragen** blijft dezelfde soort wijziging openstaan tot je
 
 ### Goedkeuringsmodi
 
-Het schildmenu onder het invoerveld (ook in **Instellingen → Profiel →
-Repository-chat**) bepaalt hoe een kaart loopt:
+Het schildmenu onder het invoerveld (ook in **Instellingen → AI →
+Repository-chat**) bepaalt hoe een kaart loopt — voor elk profiel op dezelfde
+AI:
 
 | Modus | Voert uit |
 |---|---|

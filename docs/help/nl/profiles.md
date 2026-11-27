@@ -36,10 +36,14 @@ Nieuw en verwijderen staan in dezelfde balk; verwijderen vraagt eerst.
 
 ## De AI wordt gedeeld
 
-Een profiel heeft geen eigen AI nodig: één [algemene AI](ai.md#één-ai-voor-elk-profiel)
-bedient elk profiel, en een profiel kiest alleen voor een eigen AI als het moet.
-Wat een profiel altijd houdt, is hoe de AI voor hem schrijft — commitstijl, eigen
-instructies en de rest van *Schrijfvoorkeuren van de AI*.
+Een profiel heeft geen eigen AI nodig: één [algemene
+AI](ai.md#één-ai-voor-elk-profiel) bedient elk profiel, en een profiel kiest
+alleen voor een eigen AI als het moet. Die keuze geldt voor alles: een profiel
+op de algemene AI schrijft ook zoals de algemene AI is ingesteld — commitstijl,
+eigen instructies, repository-chat. Een profiel dat een andere stijl nodig
+heeft, krijgt een eigen AI, een kopie van de algemene die het daarna kan
+aanpassen. Alles wordt bewerkt op de pagina **AI**; de pagina Profiel zegt
+alleen welke AI het profiel gebruikt en linkt ernaartoe.
 
 ## Elk profiel zijn eigen accounts
 

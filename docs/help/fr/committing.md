@@ -10,7 +10,9 @@ keywords: commit valider message compositeur composer conventional gitmoji ticke
 
 ## Styles de message
 
-Choisissez-en un dans les paramètres ; le compositeur s'y adapte.
+Choisissez-en un dans **Paramètres → IA → Messages de commit**, ou directement
+depuis le compositeur ; le compositeur s'y adapte. Le style appartient à l'IA
+qu'utilise le profil — la générale, ou celle du profil.
 
 | Style | Ce que ça donne |
 |---|---|

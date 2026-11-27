@@ -10,7 +10,9 @@ keywords: commit mensaje compositor convencional conventional gitmoji ticket ame
 
 ## Estilos de mensaje
 
-Elige uno en Ajustes; el compositor se adapta a él.
+Elige uno en **Ajustes → IA → Mensajes de commit**, o directamente en el
+compositor; el compositor se adapta a él. El estilo pertenece a la IA que usa el
+perfil — la general o la propia del perfil.
 
 | Estilo | Tiene esta pinta |
 |---|---|

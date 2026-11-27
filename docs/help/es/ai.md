@@ -3,7 +3,7 @@ title: Funciones de IA
 category: IA
 order: 80
 summary: Opcionales, agnósticas del proveedor, y ancladas a tu código real.
-keywords: ia ai inteligencia artificial openai anthropic ollama local llm mensaje de commit explicar review revisión wiki anclado grounded cuentas account clave api suscripción cli claude codex gemini modelos lento timeout tardando seguir esperando cancelar no responde ollama cerrado cambiar de cuenta otra cuenta
+keywords: ia ai inteligencia artificial openai anthropic ollama local llm mensaje de commit explicar review revisión wiki anclado grounded cuentas account clave api suscripción cli claude codex gemini modelos lento timeout tardando seguir esperando cancelar no responde ollama cerrado cambiar de cuenta otra cuenta preferencias de escritura estilo de commit instrucciones personalizadas coautor pasar el cursor explicar ia propia ia general
 ---
 
 # Funciones de IA
@@ -20,32 +20,55 @@ La IA se configura una vez, en **Ajustes → IA**, y todos los [perfiles](profil
 la usan: un perfil que crees después ya tiene la IA, sin volver a añadir ninguna
 cuenta. La página lista cada perfil y si sigue esta **IA general**.
 
-Un perfil puede usar **su propia IA** en su lugar — un perfil de trabajo que debe
-pasar por la cuenta de la empresa, por coste o por política de datos. En la
-página **Perfil** de ese perfil, en *IA de este perfil*, cambia **General** a
-**Propia**: empieza como una copia de la IA general, y sus proveedores y claves
-pasan a ser solo suyos. Volver a **General** los elimina, tras una confirmación,
-y deja la IA general como estaba.
+Un perfil puede usar **su propia IA** en su lugar — un perfil de trabajo que
+debe pasar por la cuenta de la empresa, por coste o por política de datos, o que
+escribe sus commits de otra forma. En la página **Perfil** de ese perfil, en *IA
+de este perfil*, cambia **General** a **Propia**: empieza como una copia de toda
+la IA general — cuentas, claves y preferencias — y desde entonces todo eso es
+solo suyo. Volver a **General** la elimina, tras una confirmación, y deja la IA
+general como estaba.
+
+Un perfil usa una IA **entera**: la general o la suya, nunca una mezcla. Las
+cuentas y los modelos *y* cómo escribe la IA y lo que puede hacer el chat vienen
+del mismo sitio, así que cambiar el estilo de commit en la IA general lo cambia
+para todos los perfiles que la siguen.
 
 Todas las IA se configuran en esta misma página. La barra **Editando** de arriba
 elige cuál: la IA general, o la propia de un perfil (*IA propia de Trabajo*).
 **Configurar la IA propia** en la página Perfil, o **Editar su IA propia** en la
-lista de perfiles, abre la página en esa. La página Perfil solo muestra qué IA usa
-el perfil y qué responde — nunca aloja el editor.
+lista de perfiles, abre la página en esa. La página Perfil solo muestra qué IA
+usa el perfil y qué responde — nunca aloja el editor, ni ninguna opción de IA
+propia.
 
 ![La IA de un perfil en su página Perfil: General o Propia, qué responde y cómo configurarla](../../screenshots/settings-profile-ai.webp)
 
-Cómo **escribe** la IA sigue siendo de cada perfil en ambos casos: el estilo del
-mensaje de commit, el estilo de las explicaciones, los estilos de resolución de
-conflictos y de nombres de rama, las instrucciones personalizadas, la línea de
-coautor y el chat del repositorio. Están en la página **Perfil**, en
-*Preferencias de escritura de la IA*, así que un perfil de trabajo puede escribir
-commits `ticket` mientras uno personal escribe `conventional`, los dos con la
-misma IA.
+Debajo de las cuentas, la misma página guarda cómo **escribe** esa IA y lo que
+puede hacer, en secciones:
+
+| Sección | Contiene |
+|---|---|
+| **Mensajes de commit** | Estilo del mensaje de commit, *Generar descripción del commit*, la línea de coautor |
+| **Explicar y al pasar el ratón** | Estilo de las explicaciones, *Explicar código al pasar el cursor* y su tecla modificadora |
+| **Conflictos y ramas** | Estilo de resolución de conflictos, estilo de nombres de rama |
+| **Instrucciones personalizadas** | Tus propias reglas, añadidas a cada petición que hace esta IA |
+| **Chat del repositorio** | Si el chat está activado, qué lee, las acciones que puede proponer — consulta [Chat del repositorio](repo-chat.md#ajustes) |
+
+El selector de estilo del compositor y los selectores de modelo y de aprobación
+del chat escriben en la misma IA que lee el perfil: la general o la propia del
+perfil.
 
 Actualizar desde una versión en la que cada perfil tenía su propia IA no pierde
 nada: la IA del perfil en uso pasa a ser la IA general, y cualquier otro perfil
 cuya IA fuera distinta la conserva como propia.
+
+**Actualizar desde la 4.59 o anterior**, cuando las preferencias de escritura
+estaban en cada perfil: una sola vez, las preferencias del perfil en uso (o, si
+ese tiene IA propia, las del primer perfil en la IA general) pasan a la IA
+general. Los perfiles con IA propia conservan las suyas. **El límite:** si dos
+perfiles en la IA general escribían distinto — uno de trabajo con `ticket` y uno
+personal con `conventional` —, ahora los dos escriben como el que se trasladó.
+Para mantener la diferencia, dale a uno de ellos su propia IA y vuelve a elegir
+allí su estilo.
 
 ## Proveedores
 

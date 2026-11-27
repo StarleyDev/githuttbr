@@ -346,10 +346,9 @@ interface SettingsState {
 
   activeProfile(): Profile
   /**
-   * The active profile's effective AI: its personal fields over the general
-   * AI's engine, or its own AI when it has one (`effectiveAI`). Read this, never
-   * `activeProfile().ai`, whose engine fields are ignored on a profile that uses
-   * the general AI. Memoized per config, so a selector returning it is stable.
+   * The active profile's effective AI: the general AI, or its own when it has
+   * one (`effectiveAI`). Read this, never `activeProfile().ai`, which is not
+   * read at all on a profile that uses the general AI. Memoized per config, so a selector returning it is stable.
    */
   activeAI(): AIConfig
   /** `activeAI` for any profile; the active one's for an unknown id. */
@@ -360,20 +359,20 @@ interface SettingsState {
    * a different account is a settings change and not a code change.
    */
   aiFor(feature?: AIFeature): AIConfig
-  /** Write the general AI's engine (`AppSettings.ai`). Personal fields in `ai` are ignored. */
+  /** Write the general AI (`AppSettings.ai`) — engine and behaviour. */
   saveGeneralAI(ai: AIConfig): void
   /**
-   * Give a profile its own AI (starting from a copy of the general engine) or
-   * hand it back to the general one (its own engine is reset, so its keys leave
+   * Give a profile its own AI (starting from a copy of the whole general AI) or
+   * hand it back to the general one (its own config is reset, so its keys leave
    * the store) — see `withProfileOwnAI`. Turning it on needs the general AI's
    * keys in hand (`unlocked`): copied while still encrypted they would arrive
    * blank. Refused then, and `false` says so; disable the control on `!unlocked`.
    */
   setProfileOwnAI(profileId: string, own: boolean): boolean
   /**
-   * Change a profile's AI where it takes effect: engine fields to the general
-   * AI when the profile uses it, or to its own; personal fields always to the
-   * profile. Every surface that edits AI settings writes through this.
+   * Change a profile's AI where it reads it: every field to the general AI when
+   * the profile uses it, or to its own when it has one (`withAIPatch`). Every
+   * surface that edits AI settings writes through this.
    */
   saveAIFor(profileId: string, partial: Partial<AIConfig>): void
   setActiveProfile(id: string): void
@@ -797,10 +796,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // it from those profiles (`ensureGeneralAI`), not keep ours — that would
     // put every imported profile on an engine none of them had.
     if (chosen.profiles && !chosen.ai) delete (merged as Partial<AppSettings>).ai
+    // The behaviour marker belongs to the general AI it describes: the file's
+    // with the file's AI — absent on an export from before 4.60, so its
+    // profiles' styles are moved onto it as on any upgrade — ours with ours.
+    if (chosen.ai || chosen.profiles) {
+      if (chosen.ai && chosen.aiBehaviourShared === true) merged.aiBehaviourShared = true
+      else delete merged.aiBehaviourShared
+    }
     // Merging keeps this machine's general AI: which engine and model answer
     // here was chosen here, and a file from another computer adds profiles,
     // not a new default for all of them. 'replace' takes the file's, as a restore.
-    if (withProfiles && profileMode === 'merge') merged.ai = current.ai
+    if (withProfiles && profileMode === 'merge') {
+      merged.ai = current.ai
+      if (current.aiBehaviourShared === true) merged.aiBehaviourShared = true
+      else delete merged.aiBehaviourShared
+    }
     // Our keychain seed names our profiles; with the file's profiles or general
     // AI in place it would hand our key to an account of theirs that merely
     // shares its id. The file's own seed (an older export) is the only one kept.

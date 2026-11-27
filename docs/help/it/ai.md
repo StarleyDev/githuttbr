@@ -3,7 +3,7 @@ title: Funzioni AI
 category: AI
 order: 80
 summary: Opzionali, indipendenti dal provider e ancorate al tuo codice reale.
-keywords: ai ia openai anthropic ollama llm locale messaggio di commit spiega review wiki grounded account chiave api abbonamento cli claude codex gemini modelli lento timeout impiegando più del previsto continua ad attendere annulla non risponde ollama chiuso cambia account altro account
+keywords: ai ia openai anthropic ollama llm locale messaggio di commit spiega review wiki grounded account chiave api abbonamento cli claude codex gemini modelli lento timeout impiegando più del previsto continua ad attendere annulla non risponde ollama chiuso cambia account altro account preferenze di scrittura stile dei commit istruzioni personalizzate coautore hover spiegazione ia propria ia generale
 ---
 
 # Funzioni AI
@@ -20,30 +20,54 @@ la usa: un profilo creato in seguito ha già l'IA, senza account da aggiungere d
 nuovo. La pagina elenca ogni profilo e se segue questa **IA generale**.
 
 Un profilo può usare invece **la propria IA** — un profilo di lavoro che deve
-passare dall'account dell'azienda, per costi o per politiche sui dati. Nella
-pagina **Profilo** di quel profilo, sotto *IA di questo profilo*, passa da
-**Generale** a **Propria**: parte come copia dell'IA generale, e da lì in poi i
-suoi fornitori e le sue chiavi sono solo suoi. Tornare a **Generale** li rimuove,
-dopo una conferma, e lascia l'IA generale com'era.
+passare dall'account dell'azienda, per costi o per politiche sui dati, o che
+scrive i suoi commit in un altro modo. Nella pagina **Profilo** di quel profilo,
+sotto *IA di questo profilo*, passa da **Generale** a **Propria**: parte come
+copia di tutta l'IA generale — account, chiavi e preferenze — e da lì in poi
+tutto questo è solo suo. Tornare a **Generale** la rimuove, dopo una conferma, e
+lascia l'IA generale com'era.
+
+Un profilo usa un'IA **intera**: quella generale o la propria, mai un miscuglio.
+Gli account e i modelli *e* il modo in cui l'IA scrive e ciò che la chat può
+fare vengono dallo stesso posto, quindi cambiare lo stile dei commit nell'IA
+generale lo cambia per ogni profilo che la segue.
 
 Ogni IA si configura in questa sola pagina. La barra **Modifica di** in alto
 sceglie quale: l'IA generale, o quella propria di un profilo (*IA propria di
 Lavoro*). **Configura l'IA propria** nella pagina Profilo, o **Modifica la sua
 IA** nell'elenco dei profili, apre la pagina su quella. La pagina Profilo mostra
-soltanto quale IA usa il profilo e chi risponde — non ospita mai l'editor.
+soltanto quale IA usa il profilo e chi risponde — non ospita mai l'editor, né
+alcuna opzione di IA propria.
 
 ![L'IA di un profilo nella sua pagina Profilo: Generale o Propria, chi risponde e come configurarla](../../screenshots/settings-profile-ai.webp)
 
-Come l'IA **scrive** resta per profilo in entrambi i casi: stile dei messaggi di
-commit, stile delle spiegazioni, stili di risoluzione dei conflitti e di nomi dei
-branch, istruzioni personalizzate, riga del coautore e chat del repository. Si
-trovano nella pagina **Profilo**, sotto *Preferenze di scrittura dell'IA*, così un
-profilo di lavoro può scrivere commit `ticket` mentre uno personale scrive
-`conventional`, entrambi con la stessa IA.
+Sotto gli account, la stessa pagina contiene come quell'IA **scrive** e che cosa
+può fare, in sezioni:
+
+| Sezione | Contiene |
+|---|---|
+| **Messaggi di commit** | Stile dei messaggi di commit, *Genera la descrizione del commit*, la riga del coautore |
+| **Spiegazione e hover** | Stile delle spiegazioni, *Spiega il codice al passaggio del mouse* e il suo tasto modificatore |
+| **Conflitti e branch** | Stile di risoluzione dei conflitti, stile dei nomi dei branch |
+| **Istruzioni personalizzate** | Le tue regole, aggiunte a ogni richiesta che fa questa IA |
+| **Chat del repository** | Se la chat è attiva, che cosa legge, le azioni che può proporre — vedi [Chat del repository](repo-chat.md#impostazioni) |
+
+Il selettore di stile del compositore e i selettori di modello e di approvazione
+della chat scrivono nella stessa IA che il profilo legge: quella generale o
+quella propria del profilo.
 
 Aggiornare da una versione in cui ogni profilo aveva la propria IA non fa perdere
 nulla: l'IA del profilo in uso diventa l'IA generale, e ogni altro profilo con
 un'IA diversa la conserva come propria.
+
+**Aggiornare dalla 4.59 o precedenti**, quando le preferenze di scrittura
+stavano in ogni profilo: una sola volta, le preferenze del profilo in uso (o, se
+quello ha un'IA propria, del primo profilo sull'IA generale) passano all'IA
+generale. I profili con un'IA propria tengono le loro. **Il limite:** se due
+profili sull'IA generale scrivevano in modo diverso — uno di lavoro con `ticket`
+e uno personale con `conventional` — ora entrambi scrivono come quello che è
+stato spostato. Per mantenere la differenza, dai a uno dei due un'IA propria e
+reimposta lì il suo stile.
 
 ## Fornitori
 

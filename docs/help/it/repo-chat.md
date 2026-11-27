@@ -89,7 +89,9 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 
 ## Impostazioni
 
-**Impostazioni → Profilo → Preferenze di scrittura dell’IA → Chat del repository** (ogni profilo ha le sue):
+**Impostazioni → AI → Chat del repository** — sull’IA generale, o su quella
+propria di un profilo quando ne ha una (la barra **Modifica di** sceglie quale,
+vedi [Una sola IA per tutti i profili](ai.md#una-sola-ia-per-tutti-i-profili)):
 
 | Impostazione | Effetto |
 |---|---|
@@ -246,8 +248,9 @@ scegli **Esegui** o **Ignora**:
 
 ### Modalità di approvazione
 
-Il menu con lo scudo sotto il campo di testo (anche in **Impostazioni → Profilo →
-Chat del repository**) decide come viene eseguita una scheda:
+Il menu con lo scudo sotto il campo di testo (anche in **Impostazioni → AI →
+Chat del repository**) decide come viene eseguita una scheda — per ogni profilo
+sulla stessa IA:
 
 | Modalità | Esegue |
 |---|---|

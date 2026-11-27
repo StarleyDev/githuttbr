@@ -10,7 +10,9 @@ keywords: commit committen nachricht message composer conventional gitmoji ticke
 
 ## Nachrichtenstile
 
-Wähle einen in den Einstellungen; der Editor passt sich daran an.
+Wähle einen unter **Einstellungen → KI → Commit-Nachrichten** oder direkt im
+Editor; der Editor passt sich daran an. Der Stil gehört zur KI, die das Profil
+verwendet — der allgemeinen oder der eigenen des Profils.
 
 | Stil | Sieht so aus |
 |---|---|

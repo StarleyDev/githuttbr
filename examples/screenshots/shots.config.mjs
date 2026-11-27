@@ -716,20 +716,20 @@ export const shots = [
   },
   {
     // Settings → AI, scrolled to the Repository chat block: the enable switch,
-    // the chat-only model, and the committed-content-only guard.
+    // the committed-content-only guard, the action switches and how they run.
     out: 'settings-repo-chat',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
-      // Repository chat is a writing preference, so it lives on the Profile page.
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
+      // Repository chat belongs to the AI a profile uses, so it lives on the AI page.
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
       await page.waitForTimeout(400)
       await page.evaluate(() => {
         // The section has no id of its own — its heading is the only handle.
         const heading = [...document.querySelectorAll('h4')].find((el) =>
           /repository chat/i.test(el.textContent ?? '')
         )
-        heading?.scrollIntoView({ block: 'center' })
+        heading?.scrollIntoView({ block: 'start' })
       })
       await page.waitForTimeout(400)
     }
@@ -3526,16 +3526,17 @@ export const shots = [
   },
   {
     // A profile's AI as one line — general or its own, what answers, and the
-    // way to the AI page — above its writing preferences.
+    // way to the AI page, where all of its options live.
     out: 'settings-profile-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
       await page.waitForTimeout(400)
+      // The block is now the last thing on the Profile page, so the page can only
+      // scroll far enough to show it at the bottom.
       await page.evaluate(() => {
-        document.querySelector('.settings-ai-mode')?.scrollIntoView({ block: 'start' })
-        document.querySelector('.settings-form')?.scrollBy(0, -60)
+        document.querySelector('.settings-ai-mode')?.scrollIntoView({ block: 'end' })
       })
       await page.waitForTimeout(400)
     }

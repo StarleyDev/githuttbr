@@ -90,7 +90,9 @@ touch an excluded path are dropped from that diff, not the whole commit.
 
 ## Settings
 
-**Settings → Profile → AI writing preferences → Repository chat** (each profile has its own):
+**Settings → AI → Repository chat** — on the general AI, or on a profile's own
+when it has one (the **Editing** bar picks which, see
+[One AI for every profile](ai.md#one-ai-for-every-profile)):
 
 | Setting | Does |
 |---|---|
@@ -241,8 +243,8 @@ that summary fails, the card remains the authoritative record.
 
 ### Approval modes
 
-The shield dropdown under the composer (also in **Settings → Profile → Repository
-chat**) decides how a card runs:
+The shield dropdown under the composer (also in **Settings → AI → Repository
+chat**) decides how a card runs — for every profile on the same AI:
 
 | Mode | Runs |
 |---|---|

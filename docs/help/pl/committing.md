@@ -10,7 +10,9 @@ keywords: commit wiadomość kompozytor szablon współautor linter amend conven
 
 ## Style wiadomości
 
-Wybierz jeden w Ustawieniach; kompozytor się do niego dostosuje.
+Wybierz jeden w **Ustawienia → AI → Komunikaty commitów** albo prosto z
+kompozytora; kompozytor się do niego dostosuje. Styl należy do AI, której używa
+profil — ogólnej albo własnej AI profilu.
 
 | Styl | Wygląda tak |
 |---|---|

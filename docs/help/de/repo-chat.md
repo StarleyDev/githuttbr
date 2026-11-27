@@ -93,7 +93,9 @@ Commit.
 
 ## Einstellungen
 
-**Einstellungen → Profil → Schreibstil der KI → Repository-Chat** (jedes Profil hat seine eigenen):
+**Einstellungen → KI → Repository-Chat** — bei der allgemeinen KI oder bei der
+eigenen eines Profils, wenn es eine hat (die Leiste **Bearbeitet wird** wählt,
+welche, siehe [Eine KI für alle Profile](ai.md#eine-ki-für-alle-profile)):
 
 | Einstellung | Wirkung |
 |---|---|
@@ -253,8 +255,9 @@ Mit **Immer fragen** bleibt dieselbe Art von Änderung offen, bis Sie
 
 ### Freigabemodi
 
-Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → Profil →
-Repository-Chat**) entscheidet, wie eine Karte läuft:
+Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → KI →
+Repository-Chat**) entscheidet, wie eine Karte läuft — für jedes Profil auf
+derselben KI:
 
 | Modus | Führt aus |
 |---|---|

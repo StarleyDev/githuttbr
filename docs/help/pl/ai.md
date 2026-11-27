@@ -3,7 +3,7 @@ title: Funkcje AI
 category: AI
 order: 80
 summary: Opcjonalne, niezależne od dostawcy i osadzone w twoim prawdziwym kodzie.
-keywords: ai openai anthropic ollama lokalny llm wiadomość commita wyjaśnij recenzja wiki osadzone commit message explain review grounded konta konto klucz api subskrypcja cli claude codex gemini modele wolno timeout dłużej niż oczekiwano czekaj dalej anuluj nie odpowiada ollama zamknięty zmień konto inne konto
+keywords: ai openai anthropic ollama lokalny llm wiadomość commita wyjaśnij recenzja wiki osadzone commit message explain review grounded konta konto klucz api subskrypcja cli claude codex gemini modele wolno timeout dłużej niż oczekiwano czekaj dalej anuluj nie odpowiada ollama zamknięty zmień konto inne konto preferencje pisania styl commitów własne instrukcje współautor najechanie wyjaśnianie własna ai ogólna ai
 ---
 
 # Funkcje AI
@@ -21,29 +21,53 @@ używa: profil utworzony później już ma AI, bez ponownego dodawania konta. St
 wymienia każdy profil i to, czy korzysta z tej **ogólnej AI**.
 
 Profil może zamiast tego używać **własnej AI** — profil służbowy, który musi
-przechodzić przez konto firmy ze względu na koszty albo politykę danych. Na
-stronie **Profil** tego profilu, w sekcji *AI tego profilu*, przełącz **Ogólna**
-na **Własna**: zaczyna jako kopia ogólnej AI, a jej dostawcy i klucze od tej
-pory należą tylko do niej. Powrót do **Ogólna** usuwa je, po potwierdzeniu,
-i zostawia ogólną AI bez zmian.
+przechodzić przez konto firmy ze względu na koszty albo politykę danych, albo
+który pisze commity inaczej. Na stronie **Profil** tego profilu, w sekcji *AI
+tego profilu*, przełącz **Ogólna** na **Własna**: zaczyna jako kopia całej
+ogólnej AI — kont, kluczy i preferencji — a od tej pory wszystko to należy tylko
+do tego profilu. Powrót do **Ogólna** usuwa ją, po potwierdzeniu, i zostawia
+ogólną AI bez zmian.
+
+Profil używa jednej AI **w całości**: ogólnej albo własnej, nigdy mieszanki.
+Konta i modele *oraz* to, jak AI pisze i co wolno czatowi, pochodzą z tego
+samego miejsca, więc zmiana stylu commitów w ogólnej AI zmienia go dla każdego
+profilu, który z niej korzysta.
 
 Każdą AI konfiguruje się na tej jednej stronie. Pasek **Edytujesz** na górze
 wybiera którą: ogólną AI albo własną AI profilu (*Własna AI profilu Praca*).
 **Skonfiguruj własną AI** na stronie Profil albo **Edytuj własną AI** na liście
 profili otwiera stronę na tej właśnie AI. Sama strona Profil pokazuje tylko,
-której AI profil używa i co odpowiada — nigdy nie zawiera edytora.
+której AI profil używa i co odpowiada — nigdy nie zawiera edytora ani żadnej
+własnej opcji AI.
 
 ![AI profilu na jego stronie Profil: Ogólna albo Własna, co odpowiada i jak ją skonfigurować](../../screenshots/settings-profile-ai.webp)
 
-Sposób, w jaki AI **pisze**, w obu przypadkach zostaje osobny dla każdego
-profilu: styl opisów commitów, styl wyjaśnień, style rozwiązywania konfliktów
-i nazywania branchy, własne instrukcje, wiersz współautora i czat repozytorium.
-Są na stronie **Profil**, w sekcji *Preferencje pisania AI*, więc profil służbowy
-może pisać commity `ticket`, a prywatny `conventional`, oba na tej samej AI.
+Pod kontami ta sama strona zawiera to, jak ta AI **pisze** i co może robić, w
+sekcjach:
+
+| Sekcja | Zawiera |
+|---|---|
+| **Komunikaty commitów** | Styl opisów commitów, *Generuj opis commita*, wiersz współautora |
+| **Wyjaśnianie i najechanie** | Styl wyjaśnień, *Wyjaśniaj kod po najechaniu* i jego klawisz modyfikujący |
+| **Konflikty i gałęzie** | Styl rozwiązywania konfliktów, styl nazywania gałęzi |
+| **Własne instrukcje** | Twoje własne zasady, dołączane do każdego zapytania tej AI |
+| **Czat repozytorium** | Czy czat jest włączony, co czyta, jakie akcje może proponować — zobacz [Czat repozytorium](repo-chat.md#ustawienia) |
+
+Przełącznik stylu w kompozytorze oraz wybór modelu i trybu zatwierdzania w
+czacie zapisują do tej samej AI, którą czyta profil: ogólnej albo własnej AI
+profilu.
 
 Aktualizacja z wersji, w której każdy profil miał własną AI, niczego nie gubi:
 AI używanego profilu staje się ogólną AI, a każdy inny profil, którego AI była
 inna, zachowuje ją jako własną.
+
+**Aktualizacja z 4.59 lub starszej**, gdy preferencje pisania były w każdym
+profilu: jednorazowo preferencje używanego profilu (albo, jeśli ma on własną AI,
+pierwszego profilu na ogólnej AI) przechodzą do ogólnej AI. Profile z własną AI
+zachowują swoje. **Ograniczenie:** jeśli dwa profile na ogólnej AI pisały
+inaczej — służbowy w stylu `ticket`, a prywatny w `conventional` — oba piszą
+teraz jak ten, którego preferencje przeniesiono. Aby zachować różnicę, daj
+jednemu z nich własną AI i ustaw tam ponownie jego styl.
 
 ## Dostawcy
 
