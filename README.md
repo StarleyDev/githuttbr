@@ -217,6 +217,9 @@ the sidebar and the status bar, and never written into the repo ·
 [**Sidebar panes**](docs/help/branching.md) — open sections share leftover height
 equally, each scrolling on its own; collapsed ones stay as headers, so they
 never drift off screen ·
+[**One sidebar filter**](docs/help/branching.md#one-filter-for-every-section) —
+narrows every section at once, counting "2 of 10" per header and folding the
+empty ones away ·
 [**Bookmarks**](docs/help/bookmarks.md) — remembered places in the code that
 re-locate themselves when the line moves, and say so when it is gone ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line

@@ -3,7 +3,7 @@ title: Branches, distants et barre latérale
 category: Branches et chirurgie
 order: 40
 summary: Tout ce que fait la barre latérale gauche, et les branches épinglées.
-keywords: branche branch branches créer create extraire checkout renommer rename supprimer delete distant remote épinglée pinned barre latérale sidebar présence ajouter un distant
+keywords: branche branch branches créer create extraire checkout renommer rename supprimer delete distant remote épinglée pinned barre latérale sidebar présence ajouter un distant filtre filter recherche search réordonner reorder déplacer section actions rapides
 ---
 
 # Branches, distants et barre latérale
@@ -13,6 +13,8 @@ les distants, les étiquettes, les remisages, les arbres de travail et les
 sous-modules**. Chaque section peut être masquée ou déplacée (Paramètres → Disposition et terminal), et le champ de filtre s'applique à toutes.
 Les sections et dossiers laissés ouverts ou repliés sont mémorisés par dépôt,
 même après un redémarrage.
+
+Pour réordonner, faites glisser une section par son en-tête — ou, sans souris, placez le focus sur l'en-tête et appuyez sur <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. Les mêmes entrées *Monter la section* et *Descendre la section* se trouvent dans le menu contextuel de l'en-tête (<kbd>Shift</kbd>+<kbd>F10</kbd> l'ouvre au clavier). L'ordre est lui aussi mémorisé par dépôt.
 
 La barre latérale est une pile de panneaux, pas une longue liste. Une section
 ouverte prend la hauteur laissée par les repliées, qui restent en dessous comme
@@ -32,6 +34,22 @@ les autres.
 
 ![La barre latérale, avec les branches épinglées maintenues en haut](../../screenshots/pinned-branches.webp)
 
+## Un filtre pour toutes les sections
+
+La zone en haut de la barre latérale filtre **toutes les sections à la fois** : branches locales et distantes, étiquettes, remises, worktrees, sous-modules, pull requests, issues, jalons, releases, signets et tâches. Elle compare noms, titres et chemins sans tenir compte de la casse ; une pull request correspond aussi par son `#numéro`, sa branche source et son auteur. La ligne sous la zone compte les résultats de toutes les sections.
+
+Tant qu’un filtre est actif :
+
+- chaque en-tête affiche **trouvés sur total** — `2 sur 10` ;
+- une section sans résultat quitte la liste et se replie sur une seule ligne en bas, pour que les résultats ne soient pas entrecoupés d’en-têtes vides ;
+- les sections et dossiers qui contiennent des résultats s’ouvrent d’eux-mêmes, sauf au-delà de 300 — ceux-là s’ouvrent à la main. Ce que vous ouvrez ou fermez ne dure que jusqu’à l’effacement du filtre ; votre disposition enregistrée reste intacte.
+
+<kbd>Esc</kbd> dans la zone l’efface.
+
+![La barre latérale filtrée sur « pay » : deux sections avec des résultats, le reste replié en bas](../../screenshots/sidebar-filter.webp)
+
+**Limites :** c’est une simple recherche de sous-chaîne — pas de jokers, pas de recherche approximative, pas d’expressions régulières. Elle cherche dans ce que la barre latérale a déjà chargé : les pull requests et issues au-delà de la liste renvoyée par l’hébergeur n’y figurent pas (la page des [pull requests](pull-requests.md) a son propre filtre). Les branches distantes correspondent sur le nom complet `remote/branche`, donc taper le nom d’un dépôt distant trouve toutes ses branches.
+
 ## Branches
 
 Créer, extraire, renommer et supprimer — en local comme en distant. Les lignes de
@@ -43,6 +61,8 @@ branche affichent :
 - un **point de risque** après un passage du [radar de
   conflits](conflict-radar.md),
 - un **marqueur ⟳** quand le distant a [réécrit l'histoire](range-diff.md).
+
+Survolez une ligne de branche locale, ou atteignez-la avec Tab, pour deux actions rapides : **Checkout** et **Créer une pull request**. Ce sont les mêmes actions que le menu contextuel, qui garde tout le reste ; la branche courante n’affiche que la seconde.
 
 Les branches dont le nom contient un `/` se replient automatiquement en dossiers
 pliables.

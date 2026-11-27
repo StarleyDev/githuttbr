@@ -4074,6 +4074,23 @@ export const shots = [
     }
   },
   {
+    // The one sidebar filter at work: every section narrowed at once, headers
+    // counting "matched of total", the empty ones folded into the line at the
+    // bottom, and a branch row hovered to show its Checkout / Create PR actions.
+    out: 'sidebar-filter',
+    repos: ['branch-grouping'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['branch-grouping']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(700)
+      await page.fill('.sb-filter input', 'pay')
+      await page.waitForTimeout(700)
+      await page.hover('.sidebar [data-kbkind="local"][data-kbid="feature/payments/stripe"]').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Status badges on the project tree: which files are modified, added or
     // ignored, without leaving the file browser.
     out: 'tree-badges',
