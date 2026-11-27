@@ -3,7 +3,7 @@ title: Committen
 category: Werken met wijzigingen
 order: 31
 summary: Boodschapstijlen, sjablonen, co-auteurs en de linter.
-keywords: commit boodschap message composer conventional gitmoji ticket amend sjabloon template co-author linter undo ongedaan maken reset
+keywords: commit boodschap message composer conventional gitmoji ticket amend sjabloon template co-author linter undo ongedaan maken reset generate with ai cancel undo
 ---
 
 # Committen
@@ -63,6 +63,42 @@ Grenzen:
   Conventional-preset draait, weigert een emoji vooraan. Dat is de regel van de
   hook, niet van GitHuttBr — stel commitlint in voor gitmoji of gebruik daar puur
   Conventional.
+
+## Het bericht met AI schrijven
+
+Met AI aan staat **Genereren met AI** onder de beschrijving. Het leest de
+gestagede diff en schrijft de samenvatting en de beschrijving in de stijl
+hierboven. De knop noemt wie antwoordt — *account · model*, het paar dat voor
+commitberichten is gekozen onder **Instellingen → AI → Model per taak** — zodat
+een traag lokaal model of een duur model nooit een verrassing is.
+
+- **▾** naast de naam toont je opgeslagen accounts, elk met een paar van zijn
+  modellen. Een keuze geldt **alleen voor die ene generatie**; de
+  Instellingen veranderen niet.
+- Terwijl het loopt, toont het vak *Genereren met account · model… 12s* en
+  **Annuleren**, dat het verzoek zelf stopt, niet alleen de spinner. Na 30
+  seconden biedt het ook **Gebruik** een ander gereed account aan, dat dezelfde
+  generatie daar uitvoert. De app-brede melding *duurt langer dan verwacht*
+  ([AI](ai.md)) verschijnt nog steeds.
+- De nieuwe tekst **vervangt** wat er stond, en de oude wordt bewaard: een
+  balk meldt *Gegenereerd door account · model in 7 s* en biedt **Ongedaan
+  maken**, dat je samenvatting en beschrijving terugzet, en **Opnieuw
+  genereren**. Hij verdwijnt zodra je de tekst bewerkt of commit.
+
+![Genereren met AI en het accountmenu](../../screenshots/commit-ai-generate.webp)
+
+[Commit bewerken](commit-edit.md) heeft dezelfde knop, op basis van de diff
+van die commit.
+
+Beperkingen:
+
+- Alleen de gestagede diff wordt verstuurd, ingekort als hij erg groot is —
+  nooit ongestagede wijzigingen of andere bestanden.
+- Ongedaan maken houdt één stap vast: de tekst van vóór de eerste generatie op
+  rij. Is de balk weg, dan is die kopie ook weg.
+- Annuleren geeft geen tokens terug die een provider al heeft verbruikt.
+- De ▾-lijst toont alle opgeslagen accounts, ook een zonder sleutel; die kiezen
+  mislukt met de eigen fout van dat account.
 
 ## Wat de opsteller voor je doet
 

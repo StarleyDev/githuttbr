@@ -209,7 +209,8 @@ const api = {
       ipcRenderer.on('ai:request', listener)
       return () => ipcRenderer.removeListener('ai:request', listener)
     },
-    answerSlow: (id: number, choice: unknown): Promise<unknown> => ipcRenderer.invoke('ai:answerSlow', id, choice)
+    answerSlow: (id: number, choice: unknown): Promise<unknown> => ipcRenderer.invoke('ai:answerSlow', id, choice),
+    cancelRequest: (tag: string): Promise<unknown> => ipcRenderer.invoke('ai:cancelRequest', tag)
   },
 
   wiki: {

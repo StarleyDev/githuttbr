@@ -2300,6 +2300,27 @@ export const shots = [
     }
   },
   {
+    // Generate with AI names who answers, and ▾ picks another account or model
+    // for this one generation. The shot profile's only account is the demo
+    // OpenAI one, so the flyout lists that provider's bundled models.
+    out: 'commit-ai-generate',
+    repos: ['commit-template'],
+    themes: ['light'],
+    // Something staged, or there is nothing to generate from and ▾ stays off.
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['commit-template'], 'add', 'app.js'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['commit-template']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForSelector('.commit-ai-target:not([disabled])', { timeout: 10000 })
+      await page.click('.commit-ai-target')
+      await page.locator('.context-menu .menu-item', { hasText: 'OpenAI' }).first().hover()
+      await page.waitForSelector('.context-menu.submenu', { timeout: 5000 })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // Gitmoji + Conventional: the subject carries both, and the picker beside it
     // is open on a search, so the shot shows the style and the 75-entry list.
     out: 'gitmoji-picker',

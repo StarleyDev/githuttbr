@@ -4,7 +4,7 @@ import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
 import { callModel, missingCredential, transportOf, type ChatMessage, type ModelCallOptions } from './aiTransport'
 import { listAccountModels } from './aiModels'
-import { answerSlowAIRequest, setAIRequestListener } from './aiRequests'
+import { answerSlowAIRequest, cancelAIRequestsByTag, runWithAIRequestTag, setAIRequestListener } from './aiRequests'
 import { detectCliBinaries, signInSubscription, testSubscription } from './aiCli'
 import { createHash } from 'node:crypto'
 import { PRODUCT_NAME } from '../shared/brand'
@@ -54,6 +54,13 @@ export interface AICommitMessage {
 
 export interface AICommitContext {
   branch: string
+  /** The renderer's name for this generation, so its Cancel can end it (`ai:cancelRequest`). */
+  requestTag?: string
+}
+
+/** A renderer-chosen job name, checked: it crosses IPC as untyped data. */
+function isRequestTag(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 64
 }
 
 const TICKET_RE = /([A-Z][A-Z0-9]+-\d+)/
@@ -1104,9 +1111,15 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:planActions', (_e, prompt: string, status: RepoStatus, cfg: AIConfig) =>
     planRepoActions(prompt, status, cfg)
   )
-  ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
-    generateCommitMessage(diff, cfg, ctx)
-  )
+  ipcMain.handle('ai:commitMessage', (event, diff: string, cfg: AIConfig, ctx: AICommitContext) => {
+    const tag = ctx?.requestTag
+    if (!isRequestTag(tag)) return generateCommitMessage(diff, cfg, ctx)
+    // Scoped to the window that asked, so one window cannot cancel another's job.
+    return runWithAIRequestTag(`${event.sender.id}:${tag}`, () => generateCommitMessage(diff, cfg, ctx))
+  })
+  ipcMain.handle('ai:cancelRequest', (event, tag: unknown) => {
+    if (isRequestTag(tag)) cancelAIRequestsByTag(`${event.sender.id}:${tag}`)
+  })
   ipcMain.handle('ai:listModels', async (_e, cfg: AIConfig, force?: boolean) =>
     listAccountModels(await withStoredKey(cfg), force === true)
   )

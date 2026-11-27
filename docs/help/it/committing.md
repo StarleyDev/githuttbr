@@ -3,7 +3,7 @@ title: Fare commit
 category: Lavorare con le modifiche
 order: 31
 summary: Stili di messaggio, template, coautori e il linter.
-keywords: commit messaggio composer conventional gitmoji ticket amend template co-author coautore linter annulla undo reset
+keywords: commit messaggio composer conventional gitmoji ticket amend template co-author coautore linter annulla undo reset generate with ai cancel undo
 ---
 
 # Fare commit
@@ -65,6 +65,42 @@ Limiti:
 - Un repository il cui hook `commit-msg` esegue commitlint con il preset
   Conventional standard rifiuta un emoji iniziale. È la regola dell'hook, non di
   GitHuttBr: configura commitlint per gitmoji o usa lì il Conventional puro.
+
+## Scrivere il messaggio con l’IA
+
+Con l’IA attiva, **Genera con l’IA** si trova sotto la descrizione. Legge il
+diff in stage e scrive il riepilogo e la descrizione nello stile scelto sopra.
+Il pulsante dice chi risponderà — *account · modello*, la coppia scelta per i
+messaggi di commit in **Impostazioni → IA → Modello per attività** — così un
+modello locale lento o uno costoso non è mai una sorpresa.
+
+- **▾** accanto al nome elenca gli account salvati, ciascuno con alcuni dei
+  suoi modelli. La scelta vale **solo per quella generazione**; le
+  Impostazioni non cambiano.
+- Mentre lavora, il riquadro mostra *Generazione con account · modello… 12s* e
+  **Annulla**, che ferma la richiesta stessa, non solo l’indicatore. Dopo 30
+  secondi offre anche **Usa** un altro account pronto, che esegue la stessa
+  generazione lì. L’avviso globale *ci sta mettendo più del previsto*
+  ([IA](ai.md)) compare comunque.
+- Il nuovo testo **sostituisce** quello che c’era, e il vecchio viene
+  conservato: un banner dice *Generato da account · modello in 7 s* e offre
+  **Annulla**, che rimette il tuo riepilogo e la tua descrizione, e **Genera di
+  nuovo**. Sparisce appena modifichi il testo o fai il commit.
+
+![Genera con l’IA e il menu degli account](../../screenshots/commit-ai-generate.webp)
+
+[Modifica commit](commit-edit.md) ha lo stesso pulsante, a partire dal diff di
+quel commit.
+
+Limiti:
+
+- Viene inviato solo il diff in stage, tagliato se molto grande — mai le
+  modifiche fuori stage o altri file.
+- Annulla tiene un passo: il testo di prima della prima generazione di fila.
+  Quando il banner sparisce, sparisce anche quella copia.
+- Annullare non restituisce i token che il fornitore ha già speso.
+- L’elenco ▾ mostra tutti gli account salvati, anche uno ancora senza chiave;
+  sceglierlo fallisce con l’errore di quell’account.
 
 ## Cose che il compositore fa per te
 

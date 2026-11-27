@@ -3,7 +3,7 @@ title: 提交
 category: 处理变更
 order: 31
 summary: 消息风格、模板、共同作者，以及检查器。
-keywords: commit 提交 message 消息 composer 编辑器 conventional gitmoji ticket 工单 amend 修补 template 模板 co-author 共同作者 linter 检查器 undo 撤销 reset 重置
+keywords: commit 提交 message 消息 composer 编辑器 conventional gitmoji ticket 工单 amend 修补 template 模板 co-author 共同作者 linter 检查器 undo 撤销 reset 重置 generate with ai cancel undo
 ---
 
 # 提交
@@ -60,6 +60,34 @@ AI 也按同样的格式书写。如果模型漏了表情，或用 `:shortcode:`
 - 如果仓库的 `commit-msg` 钩子用标准 Conventional 预设运行 commitlint，开头的
   表情会被拒绝。这是钩子的规则，不是 GitHuttBr 的：请把 commitlint 配置为支持
   gitmoji，或在该仓库使用纯 Conventional。
+
+## 用 AI 写提交信息
+
+开启 AI 后，描述下方有 **用 AI 生成**。它读取已暂存的 diff，按上面选的风格写出
+摘要和描述。按钮会写明由谁回答——*账户 · 模型*，即在 **设置 → AI → 按任务选择
+模型** 中为提交信息选定的组合——这样慢的本地模型或昂贵的模型都不会让你意外。
+
+- 名称旁的 **▾** 列出已保存的账户，每个账户附带几个模型。所选的只用于
+  **这一次生成**；设置不会改变。
+- 运行时，框内显示 *正在用 账户 · 模型 生成… 12 秒* 和 **取消**；取消会停止请求
+  本身，而不只是转圈。30 秒后还会出现 **使用** 另一个就绪账户的按钮，在那里运行
+  同一次生成。应用级的 *耗时比预期长* 提示（[AI](ai.md)）也照常出现。
+- 新文本会 **替换** 原有内容，原有内容会被保留：横幅显示 *由 账户 · 模型 在 7 秒
+  内生成*，并提供 **撤销**（恢复你的摘要和描述）和 **重新生成**。一旦你编辑文本
+  或提交，它就会消失。
+
+![用 AI 生成及账户菜单](../../screenshots/commit-ai-generate.webp)
+
+[编辑提交](commit-edit.md) 中有同样的按钮，基于那次提交自身的 diff 生成。
+
+限制：
+
+- 只发送已暂存的 diff，过大时会截断——绝不发送未暂存的更改或其他文件。
+- 撤销只保留一步：连续生成中第一次生成之前的文本。横幅消失后，这份副本也随之
+  消失。
+- 取消不会退回提供方已为该请求消耗的 token。
+- ▾ 列表显示所有已保存的账户，包括尚无密钥的账户；选择它会以该账户自身的错误
+  失败。
 
 ## 编辑框替你做的事
 

@@ -171,6 +171,7 @@ interface PreloadApi {
     onRepoChatProgress(cb: (p: import('../../shared/types').RepoChatProgress) => void): () => void
     onRequestEvent(cb: (event: import('../../shared/types').AIRequestEvent) => void): () => void
     answerSlow(id: number, choice: import('../../shared/types').AISlowChoice): Promise<unknown>
+    cancelRequest(tag: string): Promise<unknown>
   }
   wiki: {
     facts(repoPath: string): Promise<unknown>
