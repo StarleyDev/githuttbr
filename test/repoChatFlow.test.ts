@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat, historyTurns, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
+import { answerRepoChat, asksForAction, historyTurns, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -175,6 +175,49 @@ describe('file names as typed', () => {
     expect(mentionedPaths('open app.ts', tracked)).toEqual(['src/app.ts'])
     expect(mentionedPaths('open apx.ts', tracked)).toEqual([])
     expect(mentionedPaths('package.yaml', tracked)).toEqual([])
+  })
+})
+
+describe('questions never get actions to propose', () => {
+  it('reads a question as a question', () => {
+    for (const q of [
+      'Qual a versão do pakage deste projeto',
+      'o que é um commit?',
+      'what does stash do?',
+      'Qual a versão no package.json?',
+      'Em qual branch eu estou?',
+      'how do I rebase onto main?'
+    ]) {
+      expect(asksForAction(q), q).toBe(false)
+    }
+  })
+
+  it('reads a request as a request', () => {
+    for (const q of [
+      'Faça commit das alterações',
+      'faz um stash',
+      'crie a branch feature/x',
+      'commit the staged files',
+      'Please push this branch',
+      'pode dar um push?',
+      'ignore os arquivos *.log',
+      'corrija o typo no README.md'
+    ]) {
+      expect(asksForAction(q), q).toBe(true)
+    }
+  })
+
+  it('a question about the project carries no action schema', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([{ content: 'Version 1.5.0-main.', sourceIds: [] }])
+    await answerRepoChat(repo, [{ role: 'user', content: 'Qual a versão do config deste projeto' }], {
+      ...cfg,
+      repoChatActions: true
+    })
+    const schema = JSON.stringify((bodies[0].response_format as { json_schema?: unknown } | undefined) ?? {})
+    expect(schema).not.toMatch(/"actions"/)
+    // "config" beside "deste projeto" reads config.json at the root.
+    expect(promptOf(bodies[0])).toMatch(/demo-main/)
   })
 })
 

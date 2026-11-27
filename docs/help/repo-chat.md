@@ -262,6 +262,10 @@ nothing is sent until you press Send.
   [secret masking](security.md).
 - **Binaries and files over 512 KB** from outside the repository are skipped the
   same way. Inside the repository the usual readable-source rules apply.
+- **A question gets no proposals.** Actions are offered to the model only when
+  your message asks for something to be done — "commit the staged files",
+  "faça um stash", "create the branch". Asking what the version is, or what a
+  commit is, can never come back with a plan to run.
 - **The model never writes directly.** It returns structured proposals; GitHuttBr
   validates them, computes the diff, and runs them only under
   [your approval rules](#approval-modes). Destructive Git work always confirms.
