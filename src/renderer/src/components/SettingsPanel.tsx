@@ -106,7 +106,8 @@ import type {
   CodeThemeColors,
   TerminalThemeColors,
   ThemeMode,
-  IconColorMode
+  IconColorMode,
+  IconPalette
 } from '../../../shared/types'
 import {
   APP_THEMES,
@@ -1939,6 +1940,15 @@ function ThemesPage(): React.JSX.Element {
     { id: 'soft', key: 'settings.iconColorsSoft' },
     { id: 'full', key: 'settings.iconColorsFull' }
   ]
+  const ICON_PALETTE_OPTIONS: { id: IconPalette; key: TranslationKey }[] = [
+    { id: 'theme', key: 'settings.iconPaletteTheme' },
+    { id: 'cool', key: 'settings.iconPaletteCool' },
+    { id: 'warm', key: 'settings.iconPaletteWarm' },
+    { id: 'forest', key: 'settings.iconPaletteForest' },
+    { id: 'sunset', key: 'settings.iconPaletteSunset' },
+    { id: 'accent', key: 'settings.iconPaletteAccent' }
+  ]
+  const ICON_PALETTE_ROLES = ['incoming', 'outgoing', 'ref', 'shelf', 'guard'] as const
 
   const saveAppTheme = (): void => {
     const theme: AppTheme = {
@@ -2028,6 +2038,32 @@ function ThemesPage(): React.JSX.Element {
             <span>{t(o.key)}</span>
           </button>
         ))}
+      </div>
+
+      <h4 style={{ marginTop: 16 }}>{t('settings.iconPalette')}</h4>
+      <p className="settings-hint">{t('settings.iconPaletteHint')}</p>
+      <div className="icon-palette-grid" data-setting="settings.iconPalette">
+        {ICON_PALETTE_OPTIONS.map((o) => {
+          const active = (settings.iconPalette ?? 'theme') === o.id
+          return (
+            <button
+              key={o.id}
+              type="button"
+              className={`icon-palette-btn ${active ? 'active' : ''}`}
+              aria-pressed={active}
+              // The swatch carries its own palette, so its dots show that palette's colours.
+              data-icon-palette={o.id}
+              onClick={() => update((s) => ({ ...s, iconPalette: o.id }))}
+            >
+              <span className="icon-palette-dots" aria-hidden="true">
+                {ICON_PALETTE_ROLES.map((role) => (
+                  <span key={role} className="icon-palette-dot" style={{ background: `var(--tone-${role})` }} />
+                ))}
+              </span>
+              <span>{t(o.key)}</span>
+            </button>
+          )
+        })}
       </div>
 
       <div className="theme-section-header" style={{ marginTop: 22 }}>

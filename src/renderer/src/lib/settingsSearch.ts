@@ -132,6 +132,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   // Themes
   e('themes', 'settings.appearance'),
   e('themes', 'settings.iconColors', 'settings.iconColorsHint'),
+  e('themes', 'settings.iconPalette', 'settings.iconPaletteHint'),
   e('themes', 'settings.appTheme'),
   e('themes', 'settings.codeTheme'),
   e('themes', 'settings.codeFontSize'),

@@ -116,6 +116,7 @@ const PART_OF_KEY: Record<keyof AppSettings, ImportPart> = {
   themeMode: 'prefs',
   codeFontSize: 'prefs',
   iconColors: 'prefs',
+  iconPalette: 'prefs',
   customAppThemes: 'prefs',
   customCodeThemes: 'prefs',
   language: 'prefs',

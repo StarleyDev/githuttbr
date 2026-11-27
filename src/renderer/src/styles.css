@@ -1750,11 +1750,60 @@ textarea:focus {
    leading icon, a sidebar section's, a Settings page's, a menu row's — never
    the split arrow, grip or chevron. `mono` sets
    nothing and leaves every icon grey, as the app always was. */
-[data-tone='incoming'] { --tone: var(--purple); }
-[data-tone='outgoing'] { --tone: var(--green); }
-[data-tone='ref'] { --tone: var(--accent); }
-[data-tone='shelf'] { --tone: var(--yellow); }
-[data-tone='guard'] { --tone: var(--red); }
+/* Each role reads its hue from a --tone-* slot, and a palette (Settings →
+   Themes → Icon colours → Palette) fills the slots. Palettes are made of the
+   theme's five colours and mixes of them, so they repaint with the theme.
+   The slots are set on any element carrying data-icon-palette — the root for
+   the app, a swatch button for its own preview. */
+:root,
+[data-icon-palette='theme'] {
+  --tone-incoming: var(--purple);
+  --tone-outgoing: var(--green);
+  --tone-ref: var(--accent);
+  --tone-shelf: var(--yellow);
+  --tone-guard: var(--red);
+}
+[data-icon-palette='cool'] {
+  --tone-incoming: var(--accent);
+  --tone-outgoing: color-mix(in srgb, var(--green) 55%, var(--accent));
+  --tone-ref: var(--purple);
+  --tone-shelf: color-mix(in srgb, var(--accent) 50%, var(--purple));
+  --tone-guard: color-mix(in srgb, var(--red) 65%, var(--purple));
+}
+[data-icon-palette='warm'] {
+  --tone-incoming: color-mix(in srgb, var(--yellow) 50%, var(--red));
+  --tone-outgoing: var(--yellow);
+  --tone-ref: color-mix(in srgb, var(--red) 60%, var(--purple));
+  --tone-shelf: color-mix(in srgb, var(--yellow) 60%, var(--green));
+  --tone-guard: var(--red);
+}
+[data-icon-palette='forest'] {
+  --tone-incoming: color-mix(in srgb, var(--green) 60%, var(--accent));
+  --tone-outgoing: var(--green);
+  --tone-ref: color-mix(in srgb, var(--green) 50%, var(--yellow));
+  --tone-shelf: var(--yellow);
+  --tone-guard: var(--red);
+}
+[data-icon-palette='sunset'] {
+  --tone-incoming: var(--purple);
+  --tone-outgoing: color-mix(in srgb, var(--red) 50%, var(--yellow));
+  --tone-ref: color-mix(in srgb, var(--red) 60%, var(--purple));
+  --tone-shelf: var(--yellow);
+  --tone-guard: var(--red);
+}
+/* One colour: every role in the theme's accent — security stays red, a warning. */
+[data-icon-palette='accent'] {
+  --tone-incoming: var(--accent);
+  --tone-outgoing: var(--accent);
+  --tone-ref: var(--accent);
+  --tone-shelf: var(--accent);
+  --tone-guard: var(--red);
+}
+[data-tone='incoming'] { --tone: var(--tone-incoming); }
+[data-tone='outgoing'] { --tone: var(--tone-outgoing); }
+[data-tone='ref'] { --tone: var(--tone-ref); }
+[data-tone='shelf'] { --tone: var(--tone-shelf); }
+[data-tone='guard'] { --tone: var(--tone-guard); }
 /* Soft: the hue mixed into the grey the icon already had; whole on hover. */
 :root[data-icon-colors='soft'] .tool-btn[data-tone] > svg:first-child,
 :root[data-icon-colors='soft'] .sb-header[data-tone] > svg,
@@ -1809,6 +1858,52 @@ textarea:focus {
 [data-tone='target'] { --tone: var(--yellow); }
 [data-tone='edit'] { --tone: var(--accent); }
 [data-tone='delete'] { --tone: var(--red); }
+/* Another palette carries the row of action icons with it: each action takes
+   the role it is closest to, so the pull request header matches the sidebar. */
+:root:not([data-icon-palette='theme']) [data-tone='refresh'] { --tone: var(--tone-incoming); }
+:root:not([data-icon-palette='theme']) [data-tone='ai'] { --tone: var(--tone-ref); }
+:root:not([data-icon-palette='theme']) [data-tone='preview'] { --tone: var(--tone-shelf); }
+:root:not([data-icon-palette='theme']) [data-tone='source'] { --tone: var(--tone-outgoing); }
+:root:not([data-icon-palette='theme']) [data-tone='target'] { --tone: var(--tone-shelf); }
+:root:not([data-icon-palette='theme']) [data-tone='edit'] { --tone: var(--tone-ref); }
+:root:not([data-icon-palette='theme']) [data-tone='delete'] { --tone: var(--tone-guard); }
+/* The palette picker: each swatch shows its five role colours. */
+.icon-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.icon-palette-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--text-1);
+  font-size: 12.5px;
+  text-align: start;
+  cursor: pointer;
+}
+.icon-palette-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+.icon-palette-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-2));
+  color: var(--text-0);
+}
+.icon-palette-dots {
+  display: flex;
+  gap: 5px;
+}
+.icon-palette-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
 /* The glyph's ink leans a fifth toward the text colour: darker on a light
    theme, lighter on a dark one. Some themes' green or orange is too pale for a
    thin 12px stroke on white; this keeps every built-in theme above 3:1. */

@@ -4042,6 +4042,7 @@ export interface AppSettings {
   themeMode: ThemeMode
   codeFontSize: number
   iconColors: IconColorMode
+  iconPalette: IconPalette
   customAppThemes: AppTheme[]
   customCodeThemes: CodeTheme[]
   language: Language
@@ -4339,6 +4340,14 @@ export type ThemeMode = 'light' | 'dark' | 'auto'
  *  all grey, a tint mixed into the grey, or the theme's colour in full. */
 export type IconColorMode = 'mono' | 'soft' | 'full'
 export const ICON_COLOR_MODES: readonly IconColorMode[] = ['mono', 'soft', 'full']
+
+/**
+ * Which hue each icon role takes (Settings → Themes → Icon colours). Every
+ * palette is built from the theme's own five colours and mixes of them, so a
+ * palette repaints with the theme and keeps its contrast, light or dark.
+ */
+export type IconPalette = 'theme' | 'cool' | 'warm' | 'forest' | 'sunset' | 'accent'
+export const ICON_PALETTES: readonly IconPalette[] = ['theme', 'cool', 'warm', 'forest', 'sunset', 'accent']
 
 export type GraphColumnId =
   | 'branch'
@@ -4677,6 +4686,7 @@ export function defaultSettings(): AppSettings {
     themeMode: 'auto',
     codeFontSize: 12,
     iconColors: 'soft',
+    iconPalette: 'theme',
     customAppThemes: [],
     customCodeThemes: [],
     language: 'en',

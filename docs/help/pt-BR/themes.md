@@ -64,6 +64,24 @@ verde-azulado são misturas das cores do tema, então também acompanham o tema.
 As cores vêm do tema: um tema que muda o verde ou o destaque muda os ícones
 junto, inclusive os temas personalizados e os gerados por IA.
 
+**Paleta** escolhe que cor cada função recebe. Cada amostra mostra as suas
+cinco cores (entrada, saída, referências, guardados, segurança):
+
+| Paleta | Entrada · Saída · Referências · Guardados · Segurança |
+|---|---|
+| **Do tema** (padrão) | ciano · verde · destaque · laranja · vermelho — a tabela acima |
+| **Fria** | destaque · verde-azulado · roxo · lavanda · vinho |
+| **Quente** | laranja · amarelo · magenta · oliva · vermelho |
+| **Natureza** | verde-azulado · verde · lima · amarelo · vermelho |
+| **Pôr do sol** | roxo · laranja · magenta · amarelo · vermelho |
+| **Uma cor** | tudo no destaque; segurança continua vermelha |
+
+Toda paleta é feita das cores do próprio tema e de misturas delas, então muda
+junto com o tema e mantém o contraste no claro e no escuro. A fileira de botões
+da página de pull request também segue a paleta, cada botão com a função mais
+próxima dele. Segurança continua vermelha na maioria das paletas porque é um
+aviso; com **Monocromático** a paleta não tem o que colorir.
+
 Limites: só os botões principais da barra, os cabeçalhos das seções da lateral,
 o menu Ferramentas, as páginas das Configurações e os botões das páginas de pull
 request e de issue ganham cor; os outros menus, as

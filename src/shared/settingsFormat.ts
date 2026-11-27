@@ -71,6 +71,7 @@ const KNOWN_SETTINGS: { [K in keyof Required<AppSettings>]: true } = {
   themeMode: true,
   codeFontSize: true,
   iconColors: true,
+  iconPalette: true,
   customAppThemes: true,
   customCodeThemes: true,
   language: true,

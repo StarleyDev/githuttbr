@@ -807,7 +807,8 @@ export default function App(): React.JSX.Element {
   // icon's role (`data-tone`), so nothing re-renders when the mode changes.
   useEffect(() => {
     document.documentElement.dataset.iconColors = settings.iconColors ?? 'soft'
-  }, [settings.iconColors])
+    document.documentElement.dataset.iconPalette = settings.iconPalette ?? 'theme'
+  }, [settings.iconColors, settings.iconPalette])
 
   // Apply selected app + code themes whenever they change. When the appearance
   // mode is "auto" we also react to live OS light/dark changes.

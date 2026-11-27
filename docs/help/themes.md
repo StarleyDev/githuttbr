@@ -67,6 +67,24 @@ red — there and on the issue page. Blue and teal are mixes of the theme's colo
 The colors come from the theme — a theme that repaints its green or its accent
 repaints the icons with it, custom and AI-generated themes included.
 
+**Palette** picks which color each role takes. Each swatch shows its five colors
+(receiving, sending, refs, set aside, security):
+
+| Palette | Receiving · Sending · Refs · Set aside · Security |
+|---|---|
+| **From the theme** (default) | cyan slot · green · accent · orange slot · red — the table above |
+| **Cool** | accent · teal · purple · lavender · wine |
+| **Warm** | orange · yellow · magenta · olive · red |
+| **Nature** | teal · green · lime · yellow · red |
+| **Sunset** | purple · orange · magenta · yellow · red |
+| **One color** | everything in the accent; security stays red |
+
+Every palette is made of the theme's own colors and mixes of them, so it changes
+with the theme and keeps its contrast in light and dark. The pull request page's
+row of buttons follows the palette too, each button taking the role nearest to
+it. Security stays red in most palettes because it is a warning; with
+**Monochrome** the palette has nothing to color.
+
 Limits: only the toolbar's main buttons, the sidebar section headers, the Tools
 menu, the Settings pages and the buttons of the pull request and issue pages are colored; other menus, the rows inside a section
 and the commit graph are not. A hovered menu row keeps its usual look, icon

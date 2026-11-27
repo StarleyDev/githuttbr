@@ -14,6 +14,7 @@ import {
   defaultProfile,
   defaultSettings,
   ICON_COLOR_MODES,
+  ICON_PALETTES,
   defaultGraphStyle,
   type AIConfig,
   type AIFeature,
@@ -567,6 +568,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
   // An unknown value (a hand-edited file, a newer build's mode) falls back to the default.
   settings.iconColors = ICON_COLOR_MODES.includes(settings.iconColors) ? settings.iconColors : sd.iconColors
+  settings.iconPalette = ICON_PALETTES.includes(settings.iconPalette) ? settings.iconPalette : sd.iconPalette
   settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
   if (settings.terminalThemeId === 'gitcito') settings.terminalThemeId = 'githuttbr' // upstream-name: own old id
   settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
