@@ -89,7 +89,7 @@ scheinen. Gemini wird über Googles OpenAI-kompatiblen Endpunkt angesprochen.
 ### Einen Anbieter hinzufügen und bearbeiten
 
 Ein halb ausgefüllt gespeicherter Anbieter war eine stille Falle: Ein leerer
-Schlüssel konnte zum Standard werden, und nichts antwortete. Deshalb wird auf
+Schlüssel konnte in Verwendung landen, und nichts antwortete. Deshalb wird auf
 dieser Karte nichts beim Tippen gespeichert.
 
 **Anbieter hinzufügen** öffnet eine Karte mit der Markierung **Entwurf · nicht gespeichert**
@@ -147,9 +147,29 @@ Anbieter, der seit einer Stunde nicht mehr antwortet, steht weiter auf
 eingetipptem Pfad bleibt **Nicht geprüft**, weil der Nachweis einen
 Prompt kosten würde.
 
+### Der verwendete Anbieter
+
+Ein Anbieter beantwortet jede Aufgabe, die unter **Modell je Aufgabe** keinen
+eigenen Anbieter hat. Seine Zeile trägt **In Verwendung** — eine gefüllte Pille
+und einen Akzentrand — und bleibt an ihrem Platz in der Liste. Die allgemeine KI
+und ein Profil mit eigener KI haben jeweils ihren eigenen verwendeten Anbieter;
+die Liste ändert den, den du gerade bearbeitest.
+
+Jeder andere gespeicherte Anbieter hat rechts in seiner Zeile, neben seinem
+Abzeichen, eine Schaltfläche **Verwenden**. Ein Klick setzt ihn in Verwendung und
+speichert sofort: Welcher Anbieter antwortet, ist eine Wahl, keine Bearbeitung,
+also wartet es nicht auf **Testen und speichern**. Die Karte dieses Anbieters
+öffnet sich nicht, und eine Karte mit ungespeicherten Änderungen behält sie.
+
+**Die Grenze:** **Verwenden** testet nichts. Ein Anbieter mit **Kein Schlüssel**
+oder **Antwortet nicht** lässt sich verwenden — absichtlich, bevor du den
+Schlüssel reparierst — und sein Abzeichen sagt es weiterhin; die nächste
+KI-Aufgabe scheitert mit dem Grund dieses Anbieters. Ein Entwurf hat kein
+**Verwenden**: Er ist erst nach dem Speichern ein Anbieter.
+
 ### Ein Abo statt eines API-Schlüssels nutzen
 
-Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu. Das erste Konto der allgemeinen KI wird zum Standard.
+Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu. Das erste Konto der allgemeinen KI ist danach **In Verwendung**.
 
 Klicke nach der CLI-Installation auf Verbinden, um die Anmeldeseite des Anbieters zu öffnen. Eine laufende Verbindung kannst du abbrechen.
 
@@ -180,9 +200,9 @@ Konto ein.
 
 Unter **Modell je Aufgabe** kann jede Funktion — Commit-Nachrichten,
 Chat, Erklären, PR-Review, Konfliktlösung, Wiki, Themes — auf ein eigenes Konto
-und Modell zeigen. Lass eine Zeile auf dem Standard, um dem Standardkonto zu
-folgen. Ein günstiges Modell für Commit-Nachrichten und ein starkes für den Chat
-ist die übliche Aufteilung.
+und Modell zeigen. Lass eine Zeile auf **Verwendeter Anbieter**, um dem Anbieter
+mit **In Verwendung** zu folgen. Ein günstiges Modell für Commit-Nachrichten und
+ein starkes für den Chat ist die übliche Aufteilung.
 
 ### Upgrade-Hinweis
 

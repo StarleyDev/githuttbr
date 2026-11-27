@@ -87,7 +87,7 @@ op te lijken. Gemini wordt bereikt via Googles OpenAI-compatibele endpoint.
 ### Een provider toevoegen en bewerken
 
 Een half ingevulde, opgeslagen provider was een stille val: een lege sleutel kon
-de standaard worden, en niets antwoordde. Daarom wordt er op deze kaart niets
+in gebruik raken, en niets antwoordde. Daarom wordt er op deze kaart niets
 opgeslagen terwijl je typt.
 
 **Provider toevoegen** opent een kaart met **Concept · niet opgeslagen** en een gestippelde
@@ -145,9 +145,29 @@ zijn. Een **lokale CLI** met een getypt pad blijft
 **Niet gecontroleerd**, omdat bewijzen dat hij werkt een prompt zou
 kosten.
 
+### De provider in gebruik
+
+Eén provider beantwoordt elke taak die onder **Model per taak** geen eigen
+provider heeft. Zijn rij is gemarkeerd **In gebruik** — een gevulde pil en een
+accentrand — en blijft op haar plek in de lijst. De algemene AI en een profiel
+met een eigen AI hebben elk hun eigen provider in gebruik; de lijst wijzigt die
+je aan het bewerken bent.
+
+Elke andere opgeslagen provider heeft rechts in zijn rij, naast zijn badge, een
+knop **Gebruiken**. Eén klik zet hem in gebruik en slaat meteen op: welke
+provider antwoordt is een keuze, geen bewerking, dus het wacht niet op **Testen
+en opslaan**. De kaart van die provider gaat niet open, en een kaart met niet
+opgeslagen wijzigingen houdt ze.
+
+**De grens:** **Gebruiken** test niets. Een provider met **Geen sleutel** of
+**Reageert niet** kan in gebruik worden gezet — bewust, voordat je de sleutel
+herstelt — en zijn badge blijft dat zeggen; de volgende AI-taak mislukt met de
+reden van die provider. Een concept heeft geen **Gebruiken**: het is pas een
+provider als het is opgeslagen.
+
 ### Een abonnement in plaats van een API-sleutel
 
-Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt. Het eerste account van de algemene AI wordt de standaard.
+Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt. Het eerste account van de algemene AI komt **In gebruik**.
 
 Klik na de installatie van de CLI op Verbinden om de aanmeldpagina van de aanbieder te openen. Je kunt een lopende verbinding annuleren.
 
@@ -177,9 +197,9 @@ Staat het commando niet in je `PATH`, typ dan het volledige pad op het account.
 
 Onder **Model per taak** kan elke functie — commitberichten, chat,
 uitleggen, PR-review, conflictoplossing, wiki, thema's — naar een eigen account
-en model wijzen. Laat een rij op de standaard staan om het standaardaccount te
-volgen. Een goedkoop model voor commitberichten en een sterk model voor chat is
-de gebruikelijke verdeling.
+en model wijzen. Laat een rij op **Provider in gebruik** staan om de provider
+met **In gebruik** te volgen. Een goedkoop model voor commitberichten en een
+sterk model voor chat is de gebruikelijke verdeling.
 
 ### Upgrademelding
 

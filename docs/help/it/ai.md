@@ -88,7 +88,7 @@ Google.
 ### Aggiungere e modificare un fornitore
 
 Un fornitore salvato a metà era una trappola silenziosa: una chiave vuota poteva
-diventare quella predefinita e nulla rispondeva. Per questo nulla in questa
+finire in uso e nulla rispondeva. Per questo nulla in questa
 scheda viene salvato mentre scrivi.
 
 **Aggiungi fornitore** apre una scheda segnata **Bozza · non salvata**, con il bordo
@@ -145,9 +145,29 @@ per esserne certo. Una **CLI locale** con percorso digitato resta
 **Non verificato**, perché dimostrare che funziona costerebbe un
 prompt.
 
+### Il fornitore in uso
+
+Un fornitore risponde a ogni attività che non ha un fornitore proprio in
+**Modello per attività**. La sua riga è segnata **In uso** — una pillola piena e
+un bordo d’accento — e resta al suo posto nella lista. L’AI generale e un profilo
+con la propria AI hanno ciascuno il proprio fornitore in uso; la lista cambia
+quello che stai modificando.
+
+Ogni altro fornitore salvato ha un pulsante **Usa** a destra della sua riga,
+accanto al badge. Un clic lo mette in uso e salva subito: quale fornitore
+risponde è una scelta, non una modifica, quindi non aspetta **Verifica e salva**.
+La scheda di quel fornitore non si apre, e una scheda con modifiche non salvate
+le conserva.
+
+**Il limite:** **Usa** non verifica nulla. Un fornitore segnato **Nessuna
+chiave** o **Non risponde** può essere messo in uso — di proposito, prima di
+sistemarne la chiave — e il suo badge continua a dirlo; la prossima attività AI
+fallisce con il motivo di quel fornitore. Una bozza non ha **Usa**: diventa un
+fornitore solo dopo il salvataggio.
+
 ### Usare un abbonamento al posto di una chiave API
 
-Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account. Il primo account dell'IA generale diventa quello predefinito.
+Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account. Il primo account dell'IA generale diventa quello **In uso**.
 
 Dopo aver installato la CLI, premi Connetti per aprire la pagina di accesso del fornitore. Puoi annullare la connessione in corso.
 
@@ -177,9 +197,9 @@ Se il comando non è nel tuo `PATH`, scrivi il percorso completo nell'account.
 
 In **Modello per attività**, ogni funzione — messaggi di commit, chat,
 spiegazione, revisione PR, risoluzione dei conflitti, wiki, temi — può puntare
-al proprio account e modello. Lascia una riga sul valore predefinito per seguire
-l'account predefinito. Modello economico per i messaggi di commit e uno potente
-per la chat è la divisione più comune.
+al proprio account e modello. Lascia una riga su **Fornitore in uso** per
+seguire il fornitore segnato **In uso**. Modello economico per i messaggi di
+commit e uno potente per la chat è la divisione più comune.
 
 ### Avviso di aggiornamento
 

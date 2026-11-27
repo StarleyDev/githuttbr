@@ -90,6 +90,35 @@ async function openCompareShot(page, repoPath, mode) {
 }
 
 /**
+ * A loopback stand-in for an OpenAI-compatible provider: it answers the model
+ * listing and nothing else, so an AI shot can show a "Ready" provider without
+ * reaching one on the capturing machine. Unref'd: it never keeps a run alive.
+ */
+let fakeModelsPort
+async function serveFakeModels() {
+  if (fakeModelsPort) return fakeModelsPort
+  const { createServer } = await import('node:http')
+  const body = JSON.stringify({
+    object: 'list',
+    data: ['llama3.2', 'qwen2.5-coder', 'mistral'].map((id) => ({ id, object: 'model', created: 1700000000 }))
+  })
+  const server = createServer((req, res) => {
+    const ok = req.url?.endsWith('/models')
+    res.writeHead(ok ? 200 : 404, { 'content-type': 'application/json' })
+    res.end(ok ? body : '{}')
+  })
+  // A fixed port keeps the endpoint in the shot the same between runs; a busy
+  // one falls back to any free port rather than failing the capture.
+  await new Promise((resolve) => {
+    server.once('error', () => server.listen(0, '127.0.0.1', resolve))
+    server.listen(47811, '127.0.0.1', resolve)
+  })
+  server.unref()
+  fakeModelsPort = server.address().port
+  return fakeModelsPort
+}
+
+/**
  * Seed a repository's todo list through the settings store.
  *
  * Written straight into `repoTodos` rather than through `addTodo` so the ages
@@ -696,11 +725,37 @@ export const shots = [
     }
   },
   {
+    // The provider list as it reads with more than one: the one in use marked,
+    // the others with "Use" beside their status — ready, no key, not responding.
+    // The ready one is a fake OpenAI-shaped server started here on loopback,
+    // never a provider on the capturing machine; the failing one is a port
+    // nothing listens on.
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      const port = await serveFakeModels()
+      await page.evaluate((port) => {
+        window.__shot.settings.getState().update((s) => {
+          const local = {
+            id: 'ollama',
+            label: 'Local models',
+            provider: 'ollama',
+            endpoint: `http://127.0.0.1:${port}/v1`,
+            apiKey: '',
+            model: 'llama3.2'
+          }
+          // Keyless, so it reads "No key" without a request: the seeded demo
+          // key would send a real one to the provider's API.
+          const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
+          const lab = { ...local, id: 'custom', label: 'Lab server', provider: 'custom', endpoint: 'http://127.0.0.1:9/v1' }
+          return { ...s, ai: { ...s.ai, accounts: [local, hosted, lab], defaultAccountId: 'ollama' } }
+        })
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' })
+      }, port)
+      await page.locator('.ai-accounts-item .ai-status.ready').waitFor()
+      await page.locator('.ai-accounts-item .ai-status.failing').waitFor()
+      await page.waitForTimeout(300)
     }
   },
   {

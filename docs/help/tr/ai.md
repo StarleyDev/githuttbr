@@ -90,7 +90,7 @@ ulaşılır.
 ### Sağlayıcı eklemek ve düzenlemek
 
 Yarım doldurulup kaydedilen bir sağlayıcı sessiz bir tuzaktı: boş bir anahtar
-varsayılan olabiliyor ve hiçbir şey yanıt vermiyordu. Bu yüzden bu kartta
+kullanımda kalabiliyor ve hiçbir şey yanıt vermiyordu. Bu yüzden bu kartta
 yazarken hiçbir şey kaydedilmez.
 
 **Sağlayıcı ekle**, kesik kenarlı ve **Taslak · kaydedilmedi** işaretli bir kart
@@ -146,9 +146,29 @@ vermeyi bırakan bir sağlayıcı, bir şey ona yeniden sorana kadar
 seçin. Elle yazılmış yolu olan bir **yerel CLI** **Denetlenmedi**
 kalır, çünkü çalıştığını kanıtlamak bir isteme mal olur.
 
+### Kullanımdaki sağlayıcı
+
+**Göreve göre model** altında kendi sağlayıcısı olmayan her görevi tek bir
+sağlayıcı yanıtlar. Onun satırı **Kullanımda** olarak işaretlenir — dolu bir
+hap ve vurgu renginde bir kenar — ve listedeki yerinde kalır. Genel yapay zekâ ve
+kendi yapay zekâsı olan bir profil, her biri kendi kullanımdaki sağlayıcısına
+sahiptir; liste o an düzenlediğini değiştirir.
+
+Kaydedilmiş diğer her sağlayıcının satırının sağında, rozetinin yanında bir
+**Kullan** düğmesi vardır. Tek tıklama onu kullanıma alır ve hemen kaydeder:
+hangi sağlayıcının yanıtlayacağı bir düzenleme değil, bir seçimdir; bu yüzden
+**Test et ve kaydet** beklenmez. O sağlayıcının kartı açılmaz ve kaydedilmemiş
+değişiklikleri olan bir kart onları korur.
+
+**Sınır:** **Kullan** hiçbir şeyi test etmez. **Anahtar yok** ya da **Yanıt
+vermiyor** olarak işaretli bir sağlayıcı kullanıma alınabilir — bilerek,
+anahtarını düzeltmeden önce — ve rozeti bunu söylemeye devam eder; sonraki yapay
+zekâ görevi o sağlayıcının gerekçesiyle başarısız olur. Bir taslakta **Kullan**
+yoktur: kaydedilene kadar sağlayıcı değildir.
+
 ### API anahtarı yerine abonelik kullanmak
 
-İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin. Genel yapay zekânın ilk hesabı varsayılan olur.
+İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin. Genel yapay zekânın ilk hesabı **Kullanımda** olur.
 
 CLI kurulduktan sonra sağlayıcının oturum açma sayfasını açmak için Bağlan düğmesine basın. Bekleyen bağlantıyı iptal edebilirsiniz.
 
@@ -178,9 +198,9 @@ Komut `PATH` üzerinde değilse tam yolunu hesaba yaz.
 
 **Göreve göre model** başlığı altında her özellik — commit mesajları,
 sohbet, kodu açıklama, PR incelemesi, çakışma çözümü, wiki, temalar — kendi
-hesabını ve modelini gösterebilir. Varsayılan hesabı izlemesi için satırı
-varsayılanda bırak. Commit mesajlarına ucuz, sohbete güçlü bir model en yaygın
-paylaştırmadır.
+hesabını ve modelini gösterebilir. **Kullanımda** olarak işaretli sağlayıcıyı
+izlemesi için satırı **Kullanımdaki sağlayıcı** üzerinde bırak. Commit
+mesajlarına ucuz, sohbete güçlü bir model en yaygın paylaştırmadır.
 
 ### Yükseltme bildirimi
 

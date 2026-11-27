@@ -89,7 +89,7 @@ through Google's OpenAI-compatible endpoint.
 ### Adding and editing a provider
 
 A provider that was saved half-filled used to be a quiet trap: an empty key
-could become the default, and nothing answered. So nothing on this card is
+could end up in use, and nothing answered. So nothing on this card is
 saved as you type.
 
 **Add provider** opens a card marked **Draft · not saved**, with a dashed edge.
@@ -142,6 +142,24 @@ again — choose **Test connection** on its card to be sure. A **Local CLI**
 with a typed path stays **Not checked**, since proving it works would cost a
 prompt.
 
+### The provider in use
+
+One provider answers every task that has no provider of its own under
+**Model per task**. Its row is marked **In use** — a filled pill and an accent
+edge — and stays where it is in the list. The general AI and a profile with its
+own AI each have their own provider in use; the list changes the one you are
+editing.
+
+Every other saved provider has a **Use** button at the right of its row, next
+to its badge. One click puts it in use and saves at once: which provider
+answers is a choice, not an edit, so it never waits for **Test and save**. It
+does not open that provider's card, and a card with unsaved changes keeps them.
+
+**The limit:** **Use** tests nothing. A provider marked **No key** or **Not
+responding** can be put in use — on purpose, before fixing its key — and its
+badge keeps saying so; the next AI task fails with that provider's reason. A
+draft has no **Use**: it is not a provider until it is saved.
+
 ### Using a subscription instead of an API key
 
 In onboarding’s AI step or **Settings → AI**, choose **Use my subscription**.
@@ -158,8 +176,8 @@ A sign-in that takes more than three minutes stops and can be retried.
 
 Connecting also tests the session. If you signed in from a terminal, choose **Test connection**. GitHuttBr checks the CLI’s sign-in method and sends a short test
 prompt from an empty temporary directory. The request counts toward your provider’s allowance.
-After **Connected**, choose **Add account**. The first account of the general AI becomes the default.
-For an existing setup, use **Make default** or assign individual features below.
+After **Connected**, choose **Add account**. The first account of the general AI is put **In use**.
+For an existing setup, choose **Use** on its row or assign individual features below.
 To skip setup, continue onboarding and return to Settings when ready.
 
 If GitHuttBr cannot find the CLI, install it or enter its full executable path and test again.
@@ -191,7 +209,8 @@ If the command is not on your `PATH`, type its full path on the account.
 
 Under **Model per task**, each feature — commit messages, chat,
 explain, PR review, conflict resolution, wiki, themes — can point at its own
-account and model. Leave a row on the default to follow the default account.
+account and model. Leave a row on **Provider in use** to follow the provider
+marked **In use**.
 Cheap model for commit messages, strong one for chat, is the common setup.
 
 ### Upgrade notice

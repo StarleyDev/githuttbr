@@ -88,7 +88,7 @@ aparentarlo. A Gemini se llega por el endpoint compatible con OpenAI de Google.
 ### Añadir y editar un proveedor
 
 Un proveedor guardado a medias era una trampa silenciosa: una clave vacía podía
-convertirse en la predeterminada y nada respondía. Por eso nada de esta tarjeta
+acabar en uso y nada respondía. Por eso nada de esta tarjeta
 se guarda mientras escribes.
 
 **Añadir proveedor** abre una tarjeta marcada **Borrador · sin guardar**, con borde
@@ -144,9 +144,28 @@ hasta que algo vuelva a preguntarle; elige **Probar conexión** en su tarjeta pa
 asegurarte. Una **CLI local** con ruta escrita queda en
 **Sin comprobar**, porque demostrar que funciona costaría un prompt.
 
+### El proveedor en uso
+
+Un proveedor responde a toda tarea que no tenga un proveedor propio en
+**Modelo por tarea**. Su fila lleva la marca **En uso** — una píldora rellena y
+un borde de acento — y se queda donde está en la lista. La IA general y un perfil
+con IA propia tienen cada uno su proveedor en uso; la lista cambia el que estás
+editando.
+
+Cada otro proveedor guardado tiene un botón **Usar** a la derecha de su fila,
+junto a su insignia. Un clic lo pone en uso y lo guarda al momento: qué proveedor
+responde es una elección, no una edición, así que no espera a **Probar y
+guardar**. No abre la tarjeta de ese proveedor, y una tarjeta con cambios sin
+guardar los conserva.
+
+**El límite:** **Usar** no prueba nada. Un proveedor marcado **Sin clave** o
+**No responde** puede ponerse en uso — a propósito, antes de arreglar la clave —
+y su insignia lo sigue diciendo; la siguiente tarea de IA falla con el motivo de
+ese proveedor. Un borrador no tiene **Usar**: no es un proveedor hasta guardarlo.
+
 ### Usar una suscripción en vez de una clave de API
 
-Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general pasa a ser la predeterminada.
+Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general queda **En uso**.
 
 Una vez instalada la CLI, pulsa Conectar para abrir la página de inicio de sesión del proveedor. Puedes cancelar la conexión pendiente.
 
@@ -176,9 +195,9 @@ Si el comando no está en tu `PATH`, escribe su ruta completa en la cuenta.
 
 En **Modelo por tarea**, cada función — mensajes de commit, chat,
 explicar, revisión de PR, resolución de conflictos, wiki, temas — puede apuntar
-a su propia cuenta y modelo. Deja una fila en la predeterminada para seguir a la
-cuenta predeterminada. Modelo barato para los mensajes de commit y uno potente
-para el chat es el reparto habitual.
+a su propia cuenta y modelo. Deja una fila en **Proveedor en uso** para seguir al
+proveedor marcado **En uso**. Modelo barato para los mensajes de commit y uno
+potente para el chat es el reparto habitual.
 
 ### Aviso de actualización
 

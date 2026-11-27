@@ -86,8 +86,8 @@ osiągane przez zgodny z OpenAI endpoint Google.
 
 ### Dodawanie i edycja dostawcy
 
-Dostawca zapisany w połowie był cichą pułapką: pusty klucz mógł zostać
-domyślnym i nic nie odpowiadało. Dlatego nic na tej karcie nie zapisuje się
+Dostawca zapisany w połowie był cichą pułapką: pusty klucz mógł trafić
+do użycia i nic nie odpowiadało. Dlatego nic na tej karcie nie zapisuje się
 w trakcie pisania.
 
 **Dodaj dostawcę** otwiera kartę oznaczoną **Szkic · niezapisany**, z przerywaną
@@ -144,9 +144,29 @@ dopóki coś go znowu nie zapyta — wybierz **Testuj połączenie** na jego kar
 żeby mieć pewność. **Lokalne CLI** z wpisaną ścieżką zostaje
 **Nie sprawdzono**, bo udowodnienie, że działa, kosztowałoby prompt.
 
+### Dostawca w użyciu
+
+Jeden dostawca odpowiada na każde zadanie, które w sekcji **Model dla zadania**
+nie ma własnego dostawcy. Jego wiersz ma oznaczenie **W użyciu** — wypełnioną
+pigułkę i akcentową krawędź — i zostaje na swoim miejscu na liście. Ogólne AI i
+profil z własnym AI mają każde własnego dostawcę w użyciu; lista zmienia tego,
+którego właśnie edytujesz.
+
+Każdy inny zapisany dostawca ma przycisk **Użyj** po prawej stronie wiersza, obok
+plakietki. Jedno kliknięcie ustawia go w użyciu i od razu zapisuje: który
+dostawca odpowiada, to wybór, a nie edycja, więc nie czeka na **Testuj i
+zapisz**. Karta tego dostawcy się nie otwiera, a karta z niezapisanymi zmianami
+je zachowuje.
+
+**Ograniczenie:** **Użyj** niczego nie testuje. Dostawcę oznaczonego **Brak
+klucza** lub **Nie odpowiada** można ustawić w użyciu — celowo, przed
+poprawieniem klucza — a jego plakietka dalej to pokazuje; następne zadanie AI
+kończy się błędem z powodem tego dostawcy. Szkic nie ma **Użyj**: staje się
+dostawcą dopiero po zapisaniu.
+
 ### Subskrypcja zamiast klucza API
 
-Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI staje się domyślnym.
+Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI jest od razu **W użyciu**.
 
 Po zainstalowaniu CLI kliknij Połącz, aby otworzyć stronę logowania dostawcy. Możesz anulować trwające łączenie.
 
@@ -176,9 +196,9 @@ Jeśli polecenia nie ma w `PATH`, wpisz jego pełną ścieżkę przy koncie.
 
 W sekcji **Model dla zadania** każda funkcja — opisy commitów, czat,
 wyjaśnianie kodu, recenzja PR, rozwiązywanie konfliktów, wiki, motywy — może
-wskazywać własne konto i model. Zostaw wiersz na wartości domyślnej, aby szedł
-za kontem domyślnym. Tani model do opisów commitów i mocny do czatu to typowy
-podział.
+wskazywać własne konto i model. Zostaw wiersz na **Dostawca w użyciu**, aby szedł
+za dostawcą oznaczonym **W użyciu**. Tani model do opisów commitów i mocny do
+czatu to typowy podział.
 
 ### Powiadomienie o aktualizacji
 
