@@ -85,6 +85,66 @@ OpenAI, quindi i modelli Claude funzionano davvero anziché sembrare
 funzionanti. Gemini viene raggiunto tramite l'endpoint compatibile con OpenAI di
 Google.
 
+### Aggiungere e modificare un fornitore
+
+Un fornitore salvato a metà era una trappola silenziosa: una chiave vuota poteva
+diventare quella predefinita e nulla rispondeva. Per questo nulla in questa
+scheda viene salvato mentre scrivi.
+
+**Aggiungi fornitore** apre una scheda segnata **Bozza · non salvata**, con il bordo
+tratteggiato. Compila fornitore, chiave, endpoint e modello, poi scegli
+**Verifica e salva**. GitHuttBr prima elenca i modelli del fornitore con
+quella chiave — la stessa richiesta di **Scarica i modelli** — e salva solo se
+risponde. Vedi **Connesso · N modelli** e il fornitore entra nell'elenco come
+**Pronto**.
+
+Se il test fallisce, la scheda mostra **Impossibile connettersi** con il
+motivo del fornitore (una chiave rifiutata, `401`; un server non avviato) e
+**Non è stato salvato nulla.** Correggi il campo e riprova, scegli
+**Salva comunque** per tenerlo così — allora appare come
+**Non risponde** — oppure **Annulla**, che non lascia traccia.
+
+Modificare un fornitore salvato funziona allo stesso modo. Un banner dice
+**Modifiche non salvate: non cambia nulla finché non salvi** e ogni campo toccato è segnato
+**· modificato**. **Annulla modifiche** ripristina i valori salvati;
+**Verifica e salva** verifica e salva. Scegliere un altro fornitore,
+aggiungerne uno o aprire **Usa il mio abbonamento** con modifiche in sospeso chiede
+**Salvare le modifiche a «…»?** — **Salva**, **Annulla modifiche** o
+**Continua a modificare**. Chiudere le Impostazioni conserva la bozza in
+memoria, così la ritrovi al ritorno; non viene mai scritta su disco.
+
+Le chiavi si salvano esattamente come prima, nel portachiavi, e solo al
+salvataggio. L'errore di un fornitore viene mostrato con la chiave e qualsiasi
+cosa simile a un token mascherate.
+
+![Aggiungere e modificare un fornitore](../../screenshots/ai-provider-draft.webp)
+
+| Tipo di fornitore | Cosa verifica **Verifica e salva** |
+| --- | --- |
+| Chiave API o server locale (Ollama, endpoint personalizzato) | Elenca i modelli; il successo significa che l'endpoint ha risposto con quella chiave |
+| Abbonamento (Codex, Claude Code) | Invia il breve prompt di prova descritto sotto, dalla quota del tuo piano |
+| CLI locale | Cerca il comando nel tuo `PATH`; un percorso digitato viene salvato senza verifica |
+
+### Badge di stato
+
+Ogni fornitore dell'elenco ha un badge, ricavato da ciò che la pagina sa già —
+l'ultimo test, o l'elenco di modelli recuperato comunque. Nulla viene
+interrogato in background.
+
+| Badge | Significato |
+| --- | --- |
+| **Pronto** | L'ultimo test o elenco di modelli è riuscito |
+| **Non risponde** | L'ultimo tentativo è fallito; il motivo è nella riga sotto, con **Verifica di nuovo** |
+| **Nessuna chiave** | Il fornitore richiede una chiave API e non ce l'ha |
+| **Non verificato** | Nulla l'ha ancora interrogato — un abbonamento finché non viene testato, o un elenco non recuperato |
+
+**Il limite:** un badge è aggiornato quanto la sua ultima verifica. Un fornitore
+che ha smesso di rispondere un'ora fa resta **Pronto** finché
+qualcosa non lo interroga di nuovo — scegli **Verifica connessione** sulla sua scheda
+per esserne certo. Una **CLI locale** con percorso digitato resta
+**Non verificato**, perché dimostrare che funziona costerebbe un
+prompt.
+
 ### Usare un abbonamento al posto di una chiave API
 
 Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account. Il primo account dell'IA generale diventa quello predefinito.

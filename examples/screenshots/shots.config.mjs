@@ -704,6 +704,27 @@ export const shots = [
     }
   },
   {
+    // A new provider is a draft until "Test and save" passes. Pointed at a
+    // local port nothing listens on — not Ollama's, which may be running on the
+    // capturing machine and would put its real model list in the shot — the
+    // test fails without a request leaving the machine, and the card shows the
+    // reason, "Nothing was saved" and "Save anyway".
+    out: 'ai-provider-draft',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      await page.locator('.ai-accounts-bar .btn', { hasText: 'Add provider' }).click()
+      await page.locator('.ai-account.draft select').first().selectOption('custom')
+      await page.locator('.ai-account-name').fill('Local server')
+      await page.locator('.ai-account.draft input[placeholder="https://api.openai.com/v1"]').fill('http://127.0.0.1:9/v1')
+      await page.locator('.ai-account.draft .btn.primary').click()
+      await page.locator('.ai-account-error').waitFor()
+      await page.evaluate(() => document.querySelector('.ai-accounts-list')?.scrollIntoView({ block: 'start' }))
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // The one-time notice an upgraded install sees, explaining that the single
     // provider and key it had is now the first AI account.
     out: 'ai-accounts-notice',

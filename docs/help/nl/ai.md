@@ -84,6 +84,67 @@ Anthropic gebruikt zijn eigen `/v1/messages`-API in plaats van een
 OpenAI-vormige aanroep, dus Claude-modellen werken echt in plaats van er alleen
 op te lijken. Gemini wordt bereikt via Googles OpenAI-compatibele endpoint.
 
+### Een provider toevoegen en bewerken
+
+Een half ingevulde, opgeslagen provider was een stille val: een lege sleutel kon
+de standaard worden, en niets antwoordde. Daarom wordt er op deze kaart niets
+opgeslagen terwijl je typt.
+
+**Provider toevoegen** opent een kaart met **Concept · niet opgeslagen** en een gestippelde
+rand. Vul provider, sleutel, endpoint en model in en kies
+**Testen en opslaan**. GitHuttBr vraagt eerst met die sleutel de modellen
+van de provider op — hetzelfde verzoek als **Modellen ophalen** — en slaat pas op
+als hij antwoordt. Je ziet **Verbonden · N modellen**, en de provider staat in de
+lijst als **Klaar**.
+
+Mislukt de test, dan toont de kaart **Kan geen verbinding maken** met de reden
+van de provider (een geweigerde sleutel, `401`; een server die niet draait) en
+**Er is niets opgeslagen.** Verbeter het veld en test opnieuw, kies
+**Toch opslaan** om hem zo te houden — hij staat dan op
+**Reageert niet** — of **Annuleren**, dat geen spoor achterlaat.
+
+Een opgeslagen provider bewerken werkt hetzelfde. Een banner meldt
+**Niet-opgeslagen wijzigingen — er verandert niets tot je opslaat**, en elk veld dat je aanraakte krijgt
+**· gewijzigd**. **Wijzigingen verwerpen** zet de opgeslagen waarden
+terug; **Testen en opslaan** test en slaat op. Met openstaande wijzigingen
+een andere provider kiezen, er een toevoegen of **Mijn abonnement gebruiken** openen vraagt
+**Wijzigingen aan ‘…’ opslaan?** — **Opslaan**, **Wijzigingen verwerpen** of
+**Verder bewerken**. Instellingen sluiten houdt het concept in het
+geheugen, zodat het er nog is als je terugkomt; het wordt nooit naar schijf
+geschreven.
+
+Sleutels worden precies zoals vroeger in je sleutelbos opgeslagen, en alleen
+bij opslaan. De fout van een provider wordt getoond met de sleutel en alles wat
+op een token lijkt gemaskeerd.
+
+![Een provider toevoegen en bewerken](../../screenshots/ai-provider-draft.webp)
+
+| Soort provider | Wat **Testen en opslaan** controleert |
+| --- | --- |
+| API-sleutel of lokale server (Ollama, eigen endpoint) | Vraagt de modellen op; succes betekent dat het endpoint met deze sleutel antwoordde |
+| Abonnement (Codex, Claude Code) | Stuurt de korte testprompt die hieronder staat, van het tegoed van je abonnement |
+| Lokale CLI | Zoekt het commando in je `PATH`; een getypt pad wordt zonder controle opgeslagen |
+
+### Statuslabels
+
+Elke provider in de lijst heeft één label, afgeleid van wat de pagina al weet —
+de laatste test, of de modellenlijst die ze toch al ophaalde. Er wordt niets op
+de achtergrond gepeild.
+
+| Label | Betekenis |
+| --- | --- |
+| **Klaar** | De laatste test of modellenlijst is gelukt |
+| **Reageert niet** | De laatste poging mislukte; de reden staat op de regel eronder, met **Opnieuw testen** |
+| **Geen sleutel** | De provider heeft een API-sleutel nodig en heeft er geen |
+| **Niet gecontroleerd** | Nog niets heeft hem iets gevraagd — een abonnement tot het getest is, of een lijst die niet is opgehaald |
+
+**De grens:** een label is zo vers als de laatste controle. Een provider die een
+uur geleden stopte met antwoorden staat nog op **Klaar** tot
+iets hem opnieuw vraagt — kies **Verbinding testen** op zijn kaart om zeker te
+zijn. Een **lokale CLI** met een getypt pad blijft
+**Niet gecontroleerd**, omdat bewijzen dat hij werkt een prompt zou
+kosten.
+
 ### Een abonnement in plaats van een API-sleutel
 
 Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt. Het eerste account van de algemene AI wordt de standaard.

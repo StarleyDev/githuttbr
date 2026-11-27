@@ -1012,9 +1012,9 @@ function AISettingsPage({
       )}
 
       {ownProfile ? (
-        <AIPage key={ownProfile.id} ai={ownProfile.ai} onChange={(next) => saveAIFor(ownProfile.id, next)} />
+        <AIPage key={ownProfile.id} scope={`profile:${ownProfile.id}`} ai={ownProfile.ai} onChange={(next) => saveAIFor(ownProfile.id, next)} />
       ) : (
-        <AIPage key="general" ai={generalAI} onChange={saveGeneralAI} />
+        <AIPage key="general" scope="general" ai={generalAI} onChange={saveGeneralAI} />
       )}
 
       {!ownProfile && (
@@ -1147,10 +1147,16 @@ function ProfileAISection({
  */
 export function AIPage({
   ai,
-  onChange
+  onChange,
+  scope,
+  commitOnEdit
 }: {
   ai: AIConfig
   onChange: (next: AIConfig) => void
+  /** Which config this is, so an unsaved provider draft returns to it. */
+  scope?: string
+  /** Provider edits apply at once — for onboarding, itself saved only at the end. */
+  commitOnEdit?: boolean
 }): React.JSX.Element {
   const t = useT()
 
@@ -1172,7 +1178,7 @@ export function AIPage({
       </label>
 
       <div style={ai.enabled === false ? { opacity: 0.4, pointerEvents: 'none' } : undefined}>
-      <AIAccountsEditor ai={ai} onChange={(next) => onChange(next)} />
+      <AIAccountsEditor ai={ai} onChange={(next) => onChange(next)} scope={scope} commitOnEdit={commitOnEdit} />
 
       {/* How it writes and what the chat may do: part of this same config, so a
           profile on the general AI writes like every other one on it. */}

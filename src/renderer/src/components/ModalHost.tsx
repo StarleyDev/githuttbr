@@ -2053,7 +2053,7 @@ function ConfirmModal({
       <p className="modal-message">{spec.message}</p>
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
-          {t('common.cancel')}
+          {spec.cancelLabel ?? t('common.cancel')}
         </button>
         {spec.secondaryLabel && spec.onSecondary && (
           <button

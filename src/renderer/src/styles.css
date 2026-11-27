@@ -9667,10 +9667,6 @@ input.is-invalid {
   gap: 8px;
   margin: 8px 0;
 }
-.ai-accounts-bar select {
-  flex: 1;
-  min-width: 0;
-}
 .ai-accounts-bar .btn {
   flex-shrink: 0;
 }
@@ -9726,6 +9722,203 @@ input.is-invalid {
 }
 .ai-account .btn.danger:not(:disabled):hover {
   color: var(--danger);
+}
+
+/* The provider list: one row per account, its status pill at the right. A
+   failing row carries the reason on a second line, with a way to retry. */
+.ai-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.ai-accounts-item {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--bg-1);
+  cursor: pointer;
+  outline: none;
+}
+.ai-accounts-item:hover {
+  background: var(--bg-2);
+}
+.ai-accounts-item:focus-visible {
+  border-color: var(--accent);
+}
+.ai-accounts-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ai-accounts-item.draft {
+  border-style: dashed;
+}
+.ai-accounts-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ai-accounts-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-0);
+}
+/* The name takes the slack, so the default tag sits right after it. */
+.ai-accounts-item-name:has(+ .ai-accounts-item-default) {
+  flex: 0 1 auto;
+}
+.ai-accounts-item-default {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.ai-accounts-item-unsaved {
+  display: inline-flex;
+  color: var(--warn);
+}
+.ai-accounts-item-reason {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--danger);
+  min-width: 0;
+}
+.ai-accounts-item-reason > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status pills: green ready, red not responding, amber no key, grey unchecked. */
+.ai-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  color: var(--text-2);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.ai-status.ready {
+  color: var(--ok, #2ea043);
+}
+.ai-status.failing {
+  color: var(--danger);
+}
+.ai-status.no-key {
+  color: var(--warn);
+}
+.ai-status.draft {
+  border-style: dashed;
+  color: var(--text-1);
+}
+
+/* A draft is not a provider yet: the dashed edge says so before any text does. */
+.ai-account.draft {
+  border-style: dashed;
+  border-color: var(--border);
+}
+.ai-account-badge.draft {
+  color: var(--text-1);
+  border-color: var(--border);
+  border-style: dashed;
+}
+.ai-account-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: contents;
+}
+.ai-account-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+}
+.ai-field-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ai-field-changed {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--warn);
+  flex-shrink: 0;
+}
+.ai-account label.changed input,
+.ai-account label.changed select,
+.ai-account-name.changed {
+  border-color: var(--warn);
+}
+.ai-account-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ai-account-actions-spacer {
+  flex: 1;
+}
+.ai-account-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ai-account-error {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+.ai-account-error strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+.ai-account-error-reason {
+  font-size: 12px;
+  color: var(--text-0);
+  overflow-wrap: anywhere;
+}
+.ai-account-error .ai-account-actions {
+  margin-top: 4px;
+}
+.settings-hint.ok {
+  color: var(--ok, #2ea043);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 /* One row per AI feature: which account answers it, and with which model. */

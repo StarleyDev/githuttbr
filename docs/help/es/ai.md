@@ -85,6 +85,65 @@ Anthropic usa su propia API `/v1/messages` en vez de una llamada con forma de
 OpenAI, así que los modelos Claude funcionan de verdad en lugar de solo
 aparentarlo. A Gemini se llega por el endpoint compatible con OpenAI de Google.
 
+### Añadir y editar un proveedor
+
+Un proveedor guardado a medias era una trampa silenciosa: una clave vacía podía
+convertirse en la predeterminada y nada respondía. Por eso nada de esta tarjeta
+se guarda mientras escribes.
+
+**Añadir proveedor** abre una tarjeta marcada **Borrador · sin guardar**, con borde
+discontinuo. Rellena proveedor, clave, endpoint y modelo y elige
+**Probar y guardar**. GitHuttBr primero lista los modelos del proveedor
+con esa clave —la misma petición que **Obtener modelos**— y solo guarda cuando
+responde. Verás **Conectado · N modelos** y el proveedor entra en la lista como
+**Listo**.
+
+Si la prueba falla, la tarjeta dice **No se pudo conectar** con el
+motivo del proveedor (una clave rechazada, `401`; un servidor que no está en
+marcha) y **No se guardó nada.** Corrige el campo y vuelve a probar, elige
+**Guardar de todos modos** para conservarlo tal cual —entonces aparece como
+**No responde**— o **Cancelar**, que no deja rastro.
+
+Editar un proveedor guardado funciona igual. Un aviso dice
+**Cambios sin guardar: nada cambia hasta que guardes** y cada campo que tocaste queda marcado
+**· modificado**. **Descartar cambios** recupera los valores
+guardados; **Probar y guardar** prueba y guarda. Elegir otro proveedor,
+añadir uno o abrir **Usar mi suscripción** con cambios pendientes pregunta
+**¿Guardar los cambios en «…»?**: **Guardar**, **Descartar cambios** o
+**Seguir editando**. Cerrar Ajustes conserva el borrador en memoria, así
+que sigue ahí cuando vuelves; nunca se escribe en disco.
+
+Las claves se guardan exactamente como antes, en tu llavero, y solo al guardar.
+El error de un proveedor se muestra con la clave y todo lo que parezca un token
+enmascarados.
+
+![Añadir y editar un proveedor](../../screenshots/ai-provider-draft.webp)
+
+| Tipo de proveedor | Qué comprueba **Probar y guardar** |
+| --- | --- |
+| Clave de API o servidor local (Ollama, endpoint propio) | Lista los modelos; si funciona, el endpoint respondió con esa clave |
+| Suscripción (Codex, Claude Code) | Envía el breve prompt de prueba descrito abajo, con cargo a tu plan |
+| CLI local | Busca el comando en tu `PATH`; una ruta escrita se guarda sin comprobar |
+
+### Insignias de estado
+
+Cada proveedor de la lista lleva una insignia, deducida de lo que la página ya
+sabe: la última prueba o la lista de modelos que obtuvo de todos modos. No se
+consulta nada en segundo plano.
+
+| Insignia | Significado |
+| --- | --- |
+| **Listo** | La última prueba o lista de modelos funcionó |
+| **No responde** | El último intento falló; el motivo está en la línea de abajo, con **Probar de nuevo** |
+| **Sin clave** | El proveedor necesita una clave de API y no la tiene |
+| **Sin comprobar** | Nada le ha preguntado todavía: una suscripción hasta probarla, o una lista sin obtener |
+
+**El límite:** una insignia es tan reciente como su última comprobación. Un
+proveedor que dejó de responder hace una hora sigue en **Listo**
+hasta que algo vuelva a preguntarle; elige **Probar conexión** en su tarjeta para
+asegurarte. Una **CLI local** con ruta escrita queda en
+**Sin comprobar**, porque demostrar que funciona costaría un prompt.
+
 ### Usar una suscripción en vez de una clave de API
 
 Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general pasa a ser la predeterminada.

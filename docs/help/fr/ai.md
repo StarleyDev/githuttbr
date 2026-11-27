@@ -87,6 +87,66 @@ OpenAI : les modèles Claude fonctionnent vraiment au lieu d'en donner
 l'apparence. Gemini est joint via le point de terminaison compatible OpenAI de
 Google.
 
+### Ajouter et modifier un fournisseur
+
+Un fournisseur enregistré à moitié rempli était un piège discret : une clé vide
+pouvait devenir celle par défaut, et rien ne répondait. Rien sur cette carte
+n'est donc enregistré pendant la saisie.
+
+**Ajouter un fournisseur** ouvre une carte marquée **Brouillon · non enregistré**, au bord en
+pointillés. Renseignez le fournisseur, la clé, le point d'accès et le modèle,
+puis choisissez **Tester et enregistrer**. GitHuttBr liste d'abord les modèles
+du fournisseur avec cette clé — la même requête que **Récupérer les modèles** — et
+n'enregistre que s'il répond. Vous voyez **Connecté · N modèles**, et le
+fournisseur rejoint la liste comme **Prêt**.
+
+Quand le test échoue, la carte affiche **Connexion impossible** avec la
+raison donnée par le fournisseur (une clé refusée, `401` ; un serveur arrêté) et
+**Rien n'a été enregistré.** Corrigez le champ et testez à nouveau, choisissez
+**Enregistrer quand même** pour le garder tel quel — il apparaît alors comme
+**Ne répond pas** — ou **Annuler**, qui ne laisse aucune trace.
+
+Modifier un fournisseur enregistré fonctionne de la même façon. Un bandeau
+indique **Modifications non enregistrées — rien ne change tant que vous n'enregistrez pas**, et chaque champ touché est marqué
+**· modifié**. **Annuler les modifications** rétablit les valeurs
+enregistrées ; **Tester et enregistrer** teste et enregistre. Choisir un autre
+fournisseur, en ajouter un ou ouvrir **Utiliser mon abonnement** avec des modifications en
+attente demande **Enregistrer les modifications de « … » ?** — **Enregistrer**, **Annuler les modifications**
+ou **Continuer à modifier**. Fermer les Paramètres garde le brouillon en
+mémoire : il est encore là à votre retour, et n'est jamais écrit sur le disque.
+
+Les clés sont enregistrées exactement comme avant, dans votre trousseau, et
+seulement à l'enregistrement. L'erreur d'un fournisseur s'affiche avec la clé et
+tout ce qui ressemble à un jeton masqués.
+
+![Ajouter et modifier un fournisseur](../../screenshots/ai-provider-draft.webp)
+
+| Type de fournisseur | Ce que vérifie **Tester et enregistrer** |
+| --- | --- |
+| Clé d'API ou serveur local (Ollama, point d'accès personnalisé) | Liste les modèles ; un succès signifie que le point d'accès a répondu avec cette clé |
+| Abonnement (Codex, Claude Code) | Envoie le court prompt de test décrit plus bas, sur le quota de votre forfait |
+| CLI locale | Cherche la commande dans votre `PATH` ; un chemin saisi est enregistré sans vérification |
+
+### Badges d'état
+
+Chaque fournisseur de la liste porte un badge, déduit de ce que la page sait
+déjà — le dernier test, ou la liste de modèles récupérée de toute façon. Rien
+n'est interrogé en arrière-plan.
+
+| Badge | Signification |
+| --- | --- |
+| **Prêt** | Le dernier test ou la dernière liste de modèles a réussi |
+| **Ne répond pas** | La dernière tentative a échoué ; la raison figure sur la ligne en dessous, avec **Tester à nouveau** |
+| **Pas de clé** | Le fournisseur exige une clé d'API et n'en a pas |
+| **Non vérifié** | Rien ne l'a encore interrogé — un abonnement tant qu'il n'est pas testé, ou une liste non récupérée |
+
+**La limite :** un badge n'est pas plus récent que sa dernière vérification. Un
+fournisseur qui ne répond plus depuis une heure reste **Prêt**
+jusqu'à ce que quelque chose l'interroge à nouveau — choisissez
+**Tester la connexion** sur sa carte pour en être sûr. Une **CLI locale** avec un
+chemin saisi reste **Non vérifié**, car prouver qu'elle marche
+coûterait un prompt.
+
 ### Utiliser un abonnement plutôt qu'une clé d'API
 
 Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte. Le premier compte de l'IA générale devient le compte par défaut.
