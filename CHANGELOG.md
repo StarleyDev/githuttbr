@@ -1,5 +1,24 @@
 
 
+## [4.62.0](https://github.com/StarleyDev/githuttbr/compare/v4.61.0...v4.62.0) (2026-11-27)
+
+### Features
+
+* pull requests, CI and releases in Mission Control; commit descriptions; colored menus ([5b26a0a](https://github.com/StarleyDev/githuttbr/commit/5b26a0a30ce1c43552cef6088fdd0544877f98f5))
+  - Mission Control shows each repository's open pull requests and CI, a click away from their pages
+  - a release column with the newest tag and the commits since, colored in ranges set in Themes
+  - Mission Control's refresh interval in Settings, 30 seconds at least, only while it is open
+  - a commit's description under its subject, in a box that can be dragged taller
+  - Edit commit uses the composer's message tools
+  - a worktree joins its project's group, created or opened from Recents
+  - icon color palettes, and colored icons on commit, branch and repository menus
+  - the hosting services' own logos in their colors
+  - AI providers as cards, the one in use marked green at the end of its row
+  - a terminal can open with another shell from the terminal list
+  - the status bar's icons in color, the AI chip green when ready
+  - editing surfaces in a field tone instead of the theme's darkest shade
+  - the handbook pages of this release in every language
+
 ## [4.61.0](https://github.com/StarleyDev/githuttbr/compare/v4.60.1...v4.61.0) (2026-11-27)
 
 ### Features
