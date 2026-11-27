@@ -23,7 +23,7 @@ interface AIPromptState {
   /** The call ended on its own: its "taking longer" prompt is moot. */
   dropSlow: (requestId: number) => void
   askUnreachable: (label: string, others: AIAccount[]) => Promise<string | null>
-  dismiss: (key: string) => void
+  dismissPrompt: (key: string) => void
 }
 
 let seq = 0
@@ -42,10 +42,10 @@ export const useAIPromptStore = create<AIPromptState>((set, get) => ({
     new Promise((resolve) => {
       const key = `unreachable-${++seq}`
       const settle = (accountId: string | null): void => {
-        get().dismiss(key)
+        get().dismissPrompt(key)
         resolve(accountId)
       }
       set((s) => ({ prompts: [...s.prompts, { key, kind: 'unreachable', label, others, resolve: settle }] }))
     }),
-  dismiss: (key) => set((s) => ({ prompts: s.prompts.filter((p) => p.key !== key) }))
+  dismissPrompt: (key) => set((s) => ({ prompts: s.prompts.filter((p) => p.key !== key) }))
 }))

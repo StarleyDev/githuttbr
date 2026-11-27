@@ -47,8 +47,13 @@ export function useModelCatalogs(ai: AIConfig): {
       }
       return catalog
     } finally {
-      setLoading((ids) => ids.filter((id) => id !== accountId))
-      setSettled((ids) => (ids.includes(accountId) ? ids : [...ids, accountId]))
+      // A reply for a connection that has since changed settles nothing: the
+      // list for the new one is still on its way, and "settled" with no
+      // catalog would judge the saved model against an empty list.
+      if (requested.current.get(accountId) === connection) {
+        setLoading((ids) => ids.filter((id) => id !== accountId))
+        setSettled((ids) => (ids.includes(accountId) ? ids : [...ids, accountId]))
+      }
     }
   }
 

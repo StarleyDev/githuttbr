@@ -52,6 +52,9 @@ puede hacer, en secciones:
 | **Conflictos y ramas** | Estilo de resolución de conflictos, estilo de nombres de rama, cada uno con un ejemplo del resultado |
 | **Chat del repositorio** | Si el chat está activado, qué lee, las acciones que puede proponer — consulta [Chat del repositorio](repo-chat.md#ajustes) |
 
+Una línea sobre las secciones dice de quién es la IA que editas y a quién llega:
+*IA general · se aplica a Trabajo y Personal*, o la propia de un perfil.
+
 **Reglas extra para commits** — *Instrucciones personalizadas* hasta la 4.60 — solo se añaden a la generación de mensajes de commit: el chat, las explicaciones, las revisiones y los nombres de rama no las leen. La vista previa es un ejemplo fijo, no una llamada al modelo: muestra la forma del estilo elegido, no lo que la IA escribirá para tu cambio.
 
 ![Mensajes de commit](../../screenshots/settings-ai-commits.webp)
@@ -83,6 +86,12 @@ sesión.
 Los preajustes cubren **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral** y **Ollama** (enteramente local), además de cualquier endpoint
 compatible con OpenAI.
+
+**Una clave nunca sale de este equipo sin cifrar.** Una cuenta con clave llega a
+su endpoint por `https://`, o por `http://` simple solo en este equipo
+(`localhost`, `127.x`, `::1`). Una llamada que enviaría la clave por `http://` a
+otro host se rechaza antes de que salga nada, y lo dice. Un endpoint sin clave —
+Ollama en otra máquina de tu red — sigue funcionando por `http://`.
 
 Anthropic usa su propia API `/v1/messages` en vez de una llamada con forma de
 OpenAI, así que los modelos Claude funcionan de verdad en lugar de solo
@@ -203,25 +212,52 @@ no prueba el proveedor que pone en uso.
 
 ### Usar una suscripción en vez de una clave de API
 
-Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general queda **En uso**.
+En **Ajustes → IA**, elige **Usar mi suscripción**. En el [primer
+arranque](first-run.md), la tarjeta **Mi suscripción** del paso de IA encuentra
+Claude Code o Codex y lo prueba en un solo paso, y vuelve a esta misma
+configuración cuando no encuentra ninguno. Selecciona el plan que usas y abre
+**Documentación** para ver las instrucciones de instalación del proveedor. Una
+vez instalado, elige **Conectar ChatGPT (Codex)** o **Conectar Claude (Claude
+Code)**. El CLI del proveedor abre su página de inicio de sesión en el navegador
+y guarda su propia sesión. Una sesión de suscripción existente se reutiliza.
+**Cancelar** detiene una conexión pendiente. Un inicio de sesión que tarda más
+de tres minutos se detiene y puede reintentarse.
 
-Una vez instalada la CLI, pulsa Conectar para abrir la página de inicio de sesión del proveedor. Puedes cancelar la conexión pendiente.
+| Plan | CLI necesario | Iniciar sesión desde un terminal |
+| --- | --- | --- |
+| ChatGPT con acceso a Codex | Codex CLI | `codex login` y elige ChatGPT |
+| Claude con acceso a Claude Code | Claude Code | `claude auth login` y elige tu cuenta de suscripción |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+Conectar también prueba la sesión. Si iniciaste sesión desde un terminal, elige
+**Probar conexión**. GitHuttBr comprueba el método de inicio de sesión del CLI y
+envía un prompt de prueba corto desde un directorio temporal vacío. La solicitud
+cuenta para la cuota de tu proveedor. Tras **Conectada**, elige **Añadir
+proveedor**. La primera cuenta de la IA general queda **En uso**. Para una
+configuración existente, elige **Usar** en su fila o asigna funciones concretas
+más abajo. Para omitir la configuración en el primer arranque, elige **Omitir,
+sin IA** y vuelve a Ajustes cuando quieras.
 
-La prueba envía un mensaje breve al proveedor y consume cuota de tu plan. Has alcanzado el límite del plan. Reinténtalo cuando se renueve la cuota.
+Si GitHuttBr no encuentra el CLI, instálalo o escribe la ruta completa del
+ejecutable y prueba de nuevo. Si la sesión ha caducado o el CLI usa una clave de
+API, inicia sesión con la cuenta de suscripción. Si llegas a un límite de uso,
+espera a que se renueve la cuota del proveedor.
 
 ![Usar mi suscripción](../../screenshots/ai-subscription.webp)
 
-Elige el proveedor **CLI local** para responder con una CLI de agente ya
-instalada y con sesión iniciada en esta máquina — `claude`, `gemini` o `codex`.
-GitHuttBr ejecuta el binario con tu indicación y lee su respuesta; no hay clave de
-API que pegar ni token que guardar.
+Para la configuración manual, elige el proveedor **CLI local** para responder
+con un CLI de agente ya instalado y con sesión iniciada en esta máquina —
+`claude`, `gemini`, `codex` o `devin`. GitHuttBr ejecuta el binario con tu
+prompt y lee su respuesta; no hay clave de API que pegar ni se guarda ningún
+token.
 
 GitHuttBr solo ejecuta un comando que tú configuraste como cuenta, y siempre con
 una lista de argumentos en vez de un shell, así que nada de un diff o del nombre
 de una rama puede interpretarse como un comando.
+
+Cada llamada inicia el CLI con el repositorio como directorio de trabajo, para
+que los CLI de agente como Devin puedan abrir los archivos por los que preguntas
+en vez de responder a ciegas. Las funciones sin repositorio (generar temas) lo
+ejecutan desde el directorio propio de la app.
 
 > **Esto no es más privado que una clave de API.** Tus indicaciones siguen
 > llegando al mismo proveedor, bajo tu propia cuenta, igual que con una clave.
@@ -268,12 +304,29 @@ Ningún proveedor publica una lista ordenada ni curada, así que el criterio es 
 | **Mensaje de commit** | Resumen (y cuerpo opcional) a partir de tu diff preparado, en el estilo que elijas |
 | **Explicar este archivo** | Explicación en lenguaje llano en un panel lateral — Normal, Conciso, ELI5… incluso Pirata |
 | **Explicar al pasar el ratón** | Mantén <kbd>⇧</kbd> y apunta a un identificador para una explicación de una línea, más las líneas de las que la sacó |
+| **Edición con IA de la selección** | Selecciona líneas de un archivo, describe el cambio, y el modelo reescribe solo esas líneas en el borrador del editor |
 | **Resolución de conflictos** | Propone una fusión en la salida editable — nunca la aplica sola |
 | **Revisión de PR** | Resume un diff y señala riesgos, cada uno anclado a un `path:line` real |
 | **Descripción de PR** · **nombres de rama** | Redactados a partir de los commits y el diff de la rama |
 | **Temas** · **paletas del grafo** | Generados desde un prompt |
 | **Preparación inteligente** | Sugerencias de qué pertenece a este commit |
+| **[Chat del repositorio](repo-chat.md)** | Preguntas fundamentadas más cambios de archivos revisados, seguidos de acciones de Git validadas |
 | **Asistente de configuración de IA** | Genera archivos de configuración del asistente (instrucciones, agentes, hooks) para el repositorio — el botón de la varita en la cabecera del panel de chat |
+
+### Editar solo las líneas que seleccionas
+
+En la vista de archivo, arrastra sobre las líneas que quieres cambiar y pulsa
+**Edición con IA…** (o haz clic derecho en una línea y elígelo en el menú). Una
+barra abajo muestra el rango seleccionado y recoge tu instrucción — «renombra
+esta variable», «añade comprobaciones de null», «traduce estas cadenas». El
+modelo ve las líneas seleccionadas más un poco de contexto alrededor y devuelve
+solo el reemplazo de ese rango, que va al **borrador del editor** en lugar de al
+disco. Lo revisas allí y guardas o descartas con el flujo de edición normal, así
+que nada se escribe hasta que lo digas. Funciona con cualquier backend
+configurado, no solo con CLI de agente, porque la respuesta es texto, no una
+llamada a herramienta. Los límites: reescribe un rango contiguo cada vez, no
+puede crear ni borrar archivos enteros, y una selección que cruza hunks de un
+diff se rechaza — selecciona en la vista de archivo en su lugar.
 
 ## Anclada, no adivinando
 
@@ -287,8 +340,16 @@ en un diff, solo los hunks visibles en pantalla — así que cuando una definici
 vive en otra parte lo dice en lugar de inventársela. Las respuestas se cachean
 por versión de archivo.
 
-**Los archivos de secretos enmascarados no se envían nunca.** Tampoco los
-archivos que cubren las reglas de enmascarado de secretos.
+[Chat del repositorio](repo-chat.md) funciona igual: solo puede citar los
+fragmentos que recibió, y la solicitud en dos pasos los elige de la propia lista
+de archivos rastreados de Git, no de algo que escriba el modelo. Cuando propone
+un cambio, GitHuttBr valida acciones exactas sobre archivos, calcula sus diffs
+localmente y luego ejecuta las acciones de Git siguientes según la política de
+aprobación configurada.
+
+**Los archivos secretos enmascarados nunca se envían.** Tampoco los archivos que
+cubren las reglas de enmascaramiento de secretos — incluido un archivo que fijes
+al chat a mano, que se rechaza con un motivo en vez de leerse.
 
 ## Cuando un modelo va lento, o deja de responder
 
@@ -330,11 +391,11 @@ explicar, conflictos, temas, la wiki — porque todas pasan por la misma llamada
   llamadas.
 - Las respuestas por CLI son más lentas que una llamada directa a la API: el
   binario arranca una sesión entera por petición.
-- Las claves se guardan por cuenta en el llavero de tu sistema. Borrar una
-  cuenta borra su clave.
+- Las claves se guardan por cuenta en el llavero del sistema. Borrar una cuenta
+  borra su clave — pregunta antes, y no se puede deshacer.
 - Volver a una versión anterior a la IA general pierde las claves de la IA
   general: esa versión no sabe dónde se guardan y las descarta al guardar. Las
   cuentas se mantienen; vuelve a escribir las claves. La IA propia de un perfil
   no se ve afectada.
 
-**Ver también:** [Wiki del repositorio](repo-wiki.md) · [Seguridad y secretos](security.md)
+**Ver también:** [Chat del repositorio](repo-chat.md) · [Wiki del repositorio](repo-wiki.md) · [Seguridad y secretos](security.md)

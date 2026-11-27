@@ -3,7 +3,7 @@ title: 호스팅과 풀 리퀘스트
 category: 동기화와 여러 저장소
 order: 56
 summary: 어디서든 PR을 만들고, GitHub와 GitLab에서 리뷰하고 머지해요.
-keywords: 풀 리퀘스트 pull request PR 머지 리퀘스트 merge request GitHub GitLab Bitbucket Azure DevOps 리뷰 review 승인 approve 머지 merge 이슈 issues
+keywords: PR 닫기 다시 열기 중단 거절 초안 리뷰 준비 완료 초안으로 이동 close pull request reopen abandon decline draft ready for review mark ready move to draft 풀 리퀘스트 pull request PR 머지 리퀘스트 merge request GitHub GitLab Bitbucket Azure DevOps 리뷰 review 승인 approve 머지 merge 이슈 issues
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -102,6 +102,26 @@ GitLab은 머지 리퀘스트의 줄 합계를 보고하지 않으므로, 파일
 
 리뷰 도중 누가 force-push했다면, [그 뒤로 바뀐 것](range-diff.md)이 무엇이 움직였는지
 정확히 보여 줍니다.
+
+### 닫기, 다시 열기, 초안
+
+실수로 열었거나 더 이상 필요 없는 작업인가요? 머지 상자 옆의 **PR 닫기**는 머지하지 않고 닫습니다. 먼저 묻고, 무엇이 남는지 —
+브랜치, 그 커밋, 대화 — 알려 줍니다. 닫힌 풀 리퀘스트는 사이드바의 상태 줄에 **PR 다시 열기**를 보여 주며, 이것으로 닫기를
+되돌립니다.
+
+**초안으로 이동**은 열린 풀 리퀘스트를 초안 — 아직 준비되지 않았고 아무에게도 리뷰를 요청하지 않은 상태 — 으로 되돌리고, **리뷰 준비
+완료**는 초안을 다시 꺼냅니다. 서로가 서로를 되돌립니다.
+
+| 호스트 | 닫기 | 초안 |
+|---|---|---|
+| GitHub, GitHub Enterprise | 닫힘 | 호스트의 초안 상태 |
+| GitLab | 닫힘 | 제목이 *Draft:*로 시작 — GitLab 고유의 방식 |
+| Azure DevOps | **Abandoned**(중단), 닫힘을 뜻하는 그쪽 용어 | 호스트의 초안 상태 |
+| Bitbucket Data Center | **Declined**(거절), 닫힘을 뜻하는 그쪽 용어 | 호스트의 초안 상태(8.18 이상) |
+| Forgejo | 닫힘 | 제목이 *WIP:*로 시작 — Forgejo 고유의 방식 |
+
+제한: 누가 할 수 있는지는 호스트가 정합니다 — 보통 작성자와 저장소 관리자입니다 — 그리고 거부되면 호스트의 문구 그대로 보여 줍니다.
+닫아도 브랜치는 지워지지 않습니다. 그건 [브랜치 정리](branch-cleanup.md)가 합니다.
 
 GitLab과의 차이를 솔직하게 적습니다. GitLab에는 "리뷰 제출"에 해당하는 단일 호출이 없어서,
 **승인**은 승인 엔드포인트를 쓰고 **변경 요청**은 당신의 승인을 거두고 댓글을 올립니다.

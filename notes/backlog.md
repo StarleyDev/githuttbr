@@ -1,6 +1,6 @@
 # Backlog
 
-O que ficou para depois, com o contexto para retomar sem reler a conversa. Atualizado em 2026-11-26, na preparação da v4.54.0.
+O que ficou para depois, com o contexto para retomar sem reler a conversa. Atualizado em 2026-11-27, depois da v4.60.1.
 
 Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando teste ou decisão.
 
@@ -24,6 +24,29 @@ Legenda: 🔴 urgente · 🟠 importante · 🟡 quando der · ⏳ esperando tes
 |---|---|---|
 | 🟠 | **Instalador menor**: mover para `devDependencies` as bibliotecas usadas só pela interface (o Vite já as embute no bundle) | Estimativa: 50–70 MB a menos. Depois de mover, conferir o `app.asar` (nada da interface deve faltar), o `check:native` e um teste do AppImage e do .deb. Ver [`decisions.md`](decisions.md) |
 | 🟠 | **Mostrar os comentários formatados na conversa do PR.** Hoje aparecem com o markdown cru no app (no site do host aparecem formatados) | Precisa de um render próprio para conteúdo remoto (sem `style`, forms, só `https`/`mailto`), imagens de terceiros só com clique, e no GitHub usar o `body_html` (imagens via camo, anexos privados). Ver a review do editor em `.reviews/` |
+
+### Pendências das reviews da v4.60.0 e da v4.60.1 (Starley: "deixa para a próxima")
+
+Detalhes e linhas em `.reviews/2026-11-27-review-release-v4.60.0.md` (item 10) e `.reviews/2026-11-27-review-fix-composer-ai-compact.md`.
+
+| | Item | Esforço |
+|---|---|---|
+| 🟡 | Contador do título do commit não contar o emoji do gitmoji nos 50 caracteres | Simples |
+| 🟡 | Limpar `drafts` e `descriptionDrafts` (store `repo`) quando a aba do repositório fecha | Simples |
+| 🟡 | `repoChat.ts`: remover os ramos mortos de `fileChangeRefused` depois do `return` da `file-read-only` | Simples |
+| 🟡 | `repoChat.ts`: juntar o contexto ao primeiro `system` (alguns templates locais aceitam só um) | Simples |
+| 🟡 | `ai.ts` `rejectsJsonSchema`: não repetir a chamada num 400 de contexto longo demais | Simples |
+| 🟡 | `.catch` e guarda de unmount no `detectCli` (`AIStatusChip`, `AIAccounts`) | Simples |
+| 🟡 | Popover das pílulas do chat fechar quando o foco sai com Tab; dizer o escopo da permissão (IA geral ou do perfil) | Simples |
+| 🟡 | Nomes vagos: `save`/`test`/`commit`/`discard` (AIAccounts), `generate`/`cancel`/`undo`/`dismiss` (useCommitGeneration), `close`/`toggle` (AIStatusChip, RepoChatPills), `answer` (AIRequestPrompt), `dismiss` (aiPrompt) | Simples |
+| 🟡 | Onboarding: `edited` incrementar `run.current`; corrigir a chave depois de salvar não criar uma segunda conta | Simples |
+| 🟡 | Geração de commit: não sobrescrever o texto digitado durante a geração; um só "usar outra conta" aos 30 s (hoje aparecem o inline e o aviso global) | Médio |
+| 🟡 | Desfazer da IA sobreviver à troca de aba (estado da geração no store, junto com a descrição) | Médio |
+| 🟡 | Screenshot do composer no estado "gerado" (ícones Desfazer / Gerar novamente) — precisa de IA falsa no playground | Médio |
+| 🟡 | Contas de IA: botões dentro de `role="option"` e a option do rascunho sem Enter/Espaço | Médio |
+| 🟡 | Confirmação de "Remover da lista" usar `openDialog` (hoje substitui o modal e Cancelar fecha tudo); "Auto" no perfil do repo não troca o perfil ativo | Simples |
+| 🟡 | `useModelCatalogs` marcar `settled` só quando a resposta foi usada; dependência `ai` do effect do onboarding; `sortedTodos` em `useMemo` na barra lateral | Simples |
+| 🟡 | Traduções do handbook: `ai.md` incompleto em 14 idiomas; `source:` antigo em `pt-BR/repo-chat.md` | Médio |
 
 ---
 

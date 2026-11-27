@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Check, ChevronDown, CloudUpload, FilePen, GitBranch, Settings, ShieldCheck, Sparkles } from 'lucide-react'
 import type { AIConfig } from '../../../shared/types'
 import { modelFor } from '../../../shared/aiAccounts'
+import { usesGeneralAI } from '../../../shared/aiScope'
 import { interp, useT } from '../i18n'
 import { ACCOUNT_STATUS_LABEL, type AccountStatus } from '../lib/aiAccountDraft'
 import { chatCapabilities, fileEditsAllowed } from '../lib/aiBehaviour'
@@ -82,13 +83,14 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
   const saveAIFor = useSettingsStore((state) => state.saveAIFor)
   const keysKnown = useSettingsStore((state) => state.unlocked)
   const openModal = useUIStore((state) => state.openModal)
+  const profile = useSettingsStore((state) => state.settings.profiles.find((p) => p.id === profileId))
   const { catalogs } = useModelCatalogs(ai)
   const [open, setOpen] = useState<PillId | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggers = useRef<Partial<Record<PillId, HTMLButtonElement | null>>>({})
   const popRef = useRef<HTMLDivElement>(null)
 
-  const close = (refocus: boolean): void => {
+  const closePopover = (refocus: boolean): void => {
     const was = open
     setOpen(null)
     if (refocus && was) triggers.current[was]?.focus()
@@ -119,14 +121,14 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
   const statusText = t(ACCOUNT_STATUS_LABEL[pill.status])
   const modelText = pill.account ? `${pill.account} · ${pill.model}` : pill.model // i18n-ignore account and model names
 
-  const toggle = (id: PillId): void => setOpen((current) => (current === id ? null : id))
+  const togglePopover = (id: PillId): void => setOpen((current) => (current === id ? null : id))
   const pickModel = (accountId: string, model: string): void => {
     saveAIFor(profileId, { assignments: withChatModel(ai, accountId, model) })
-    close(true)
+    closePopover(true)
   }
   const pickApproval = (repoChatApproval: AIConfig['repoChatApproval']): void => {
     saveAIFor(profileId, { repoChatApproval })
-    close(true)
+    closePopover(true)
   }
 
   const trigger = (id: PillId, label: string, content: React.ReactNode, popupRole: 'menu' | 'dialog'): React.JSX.Element => (
@@ -140,7 +142,7 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
       aria-expanded={open === id}
       aria-controls={open === id ? `${ids}-${id}` : undefined}
       title={label}
-      onClick={() => toggle(id)}
+      onClick={() => togglePopover(id)}
     >
       {content}
       <ChevronDown size={11} className="repo-chat-pill-caret" aria-hidden="true" />
@@ -151,10 +153,15 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
     <div
       ref={rootRef}
       className="repo-chat-pills"
+      onBlur={(event) => {
+        // Tabbing out of the pills and their popover closes it, as a menu does.
+        const next = event.relatedTarget as Node | null
+        if (open && next && !rootRef.current?.contains(next)) setOpen(null)
+      }}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && open) {
           event.stopPropagation()
-          close(true)
+          closePopover(true)
         }
       }}
     >
@@ -275,6 +282,12 @@ export function RepoChatPills({ ai, profileId }: { ai: AIConfig; profileId: stri
               />
             </li>
           </ul>
+          {/* These switches write the AI the profile reads: say whose it is. */}
+          <p className="repo-chat-pop-scope">
+            {!profile || usesGeneralAI(profile)
+              ? t('settings.aiScopeGeneralHint')
+              : interp(t('settings.aiScopeOwnHint'), { profile: profile.name })}
+          </p>
           <button
             type="button"
             className="repo-chat-pop-link"

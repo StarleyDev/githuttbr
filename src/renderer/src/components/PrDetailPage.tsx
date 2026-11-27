@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   GitPullRequest,
+  Eye,
+  FilePen,
   GitPullRequestArrow,
   GitPullRequestClosed,
   GitPullRequestDraft,
@@ -370,6 +372,31 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     )
   const merge = (): void =>
     void act(() => hostingApi.prMerge(repoPath, remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
+  /**
+   * Closes without merging — for a pull request opened by mistake or no longer
+   * wanted. It asks first and says what stays: the branch, the commits and the
+   * conversation, so Reopen undoes it.
+   */
+  const closePullRequest = (): void => {
+    if (!pr) return
+    useUIStore.getState().openDialog({
+      kind: 'confirm',
+      title: interp(t('prDetail.closePrTitle'), { number }),
+      message: interp(t('prDetail.closePrMessage'), { branch: pr.source }),
+      danger: true,
+      confirmLabel: t('prDetail.closePr'),
+      onConfirm: () =>
+        void act(() => hostingApi.prSetState(repoPath, remoteUrl, tokens, number, 'closed'), t('prDetail.prClosed'))
+    })
+  }
+  const reopenPullRequest = (): void =>
+    void act(() => hostingApi.prSetState(repoPath, remoteUrl, tokens, number, 'open'), t('prDetail.prReopened'))
+  /** Back to draft (not ready, reviewers not asked yet), or a draft marked ready — each undoes the other. */
+  const setPullRequestDraft = (draft: boolean): void =>
+    void act(
+      () => hostingApi.prSetDraft(repoPath, remoteUrl, tokens, number, draft),
+      t(draft ? 'prDetail.movedToDraft' : 'prDetail.markedReady')
+    )
   /**
    * Reply in a review thread. True once the host took the reply — even when
    * reading the page again fails after it — so the card never offers the
@@ -986,6 +1013,23 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     <button className="btn primary small" onClick={merge} disabled={busy || mergeBlocked}>
                       {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
                     </button>
+                    <button
+                      className="btn ghost small"
+                      onClick={() => setPullRequestDraft(!pr.draft)}
+                      disabled={busy}
+                      title={t(pr.draft ? 'prDetail.markReadyHint' : 'prDetail.moveToDraftHint')}
+                    >
+                      {pr.draft ? <Eye size={13} /> : <FilePen size={13} />}{' '}
+                      {t(pr.draft ? 'prDetail.markReady' : 'prDetail.moveToDraft')}
+                    </button>
+                    <button
+                      className="btn ghost small danger"
+                      onClick={closePullRequest}
+                      disabled={busy}
+                      title={t('prDetail.closePrHint')}
+                    >
+                      <GitPullRequestClosed size={13} /> {t('prDetail.closePr')}
+                    </button>
                   </div>
                 </section>
               )}
@@ -1015,6 +1059,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 )}
                 {!pr.merged && pr.state === 'closed' && pr.closedAt && (
                   <div className="prp-side-note">{interp(t('prPage.closedOn'), { date: fmtDate(pr.closedAt) })}</div>
+                )}
+                {!pr.merged && pr.state === 'closed' && (
+                  <button className="btn ghost small prp-reopen" onClick={reopenPullRequest} disabled={busy}>
+                    <GitPullRequest size={13} /> {t('prDetail.reopenPr')}
+                  </button>
                 )}
                 {canMerge && pr.mergeable === false && <div className="prp-side-note prp-warn">{t('prPage.conflicts')}</div>}
                 {/* The vetoes are the server's own copy (its merge checks), shown as it words them. */}

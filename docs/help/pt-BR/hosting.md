@@ -3,7 +3,7 @@ title: Hosting e pull requests
 category: Sincronização e vários repositórios
 order: 56
 summary: Crie PRs em qualquer lugar; revise e faça merge deles no GitHub e no GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revisão review aprovar merge issues
+keywords: fechar pull request reabrir abandonar recusar rascunho pronto para revisão pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revisão review aprovar merge issues
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -110,6 +110,29 @@ fora.
 
 Se alguém der force-push no meio da revisão, [o que mudou desde](range-diff.md)
 mostra exatamente o que se mexeu.
+
+### Fechar, reabrir e rascunho
+
+Abriu por engano, ou o trabalho não é mais necessário? Ao lado da caixa de
+merge, **Fechar PR** fecha sem fazer o merge. Pergunta antes e diz o que fica:
+a branch, os commits e a conversa. Um pull request fechado mostra **Reabrir
+PR** na linha Status da barra lateral, o que desfaz o fechamento.
+
+**Mover para rascunho** leva um pull request aberto de volta a rascunho — ainda
+não pronto, ninguém chamado para revisar — e **Pronto para revisão** tira do
+rascunho. Um desfaz o outro.
+
+| Host | Fechar | Rascunho |
+|---|---|---|
+| GitHub, GitHub Enterprise | Fechado | O estado de rascunho do host |
+| GitLab | Fechado | O título começa com *Draft:* — o jeito do próprio GitLab |
+| Azure DevOps | **Abandonado**, a palavra dele para fechado | O estado de rascunho do host |
+| Bitbucket Data Center | **Recusado** (*declined*), a palavra dele para fechado | O estado de rascunho do host (8.18 ou mais novo) |
+| Forgejo | Fechado | O título começa com *WIP:* — o jeito do próprio Forgejo |
+
+Limites: quem pode fazer isso é o host que decide — em geral o autor e os
+mantenedores do repositório — e a recusa aparece com as palavras dele. Fechar
+não apaga a branch; a [limpeza de branches](branch-cleanup.md) faz isso.
 
 As diferenças do GitLab, ditas com clareza: o GitLab não tem uma chamada única
 de "enviar revisão", então **aprovar** usa o endpoint de aprovação dele e

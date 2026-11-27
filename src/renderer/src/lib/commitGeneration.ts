@@ -1,6 +1,5 @@
-import type { AIAccount, AIConfig, ModelCatalog } from '../../../shared/types'
+import type { AIConfig, ModelCatalog } from '../../../shared/types'
 import { accountFor, accountLabel, findAccount, modelFor, resolveAI } from '../../../shared/aiAccounts'
-import { otherAccounts } from './aiGuard'
 
 /**
  * The commit box's "Generate with AI": which account and model answer, how
@@ -20,8 +19,6 @@ export interface MessageDraft {
   description: string
 }
 
-/** After this long the inline progress also offers another account. */
-export const SLOW_GENERATION_SECONDS = 30
 /** Models offered per account in the menu: the list is a shortcut, not a catalogue. */
 export const MENU_MODELS_PER_ACCOUNT = 5
 
@@ -73,12 +70,7 @@ export function generationChoices(ai: AIConfig, catalogs: Record<string, ModelCa
   })
 }
 
-/** The account offered beside Cancel once a generation runs long: the first other one that is ready. */
-export function fallbackAccount(ai: AIConfig, currentAccountId: string, keysKnown = true): AIAccount | null {
-  return otherAccounts(ai, currentAccountId, keysKnown)[0] ?? null
-}
-
-/** The same account's default model — what "Use <account>" sends to. */
+/** An account's default model — the target "Generate again" takes after a switch. */
 export function accountDefaultTarget(ai: AIConfig, accountId: string): GenerationTarget {
   return { accountId, model: resolveAI({ ...ai, defaultAccountId: accountId, assignments: {} }).model }
 }

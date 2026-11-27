@@ -2,12 +2,8 @@ import { Check, ChevronDown, Loader2, Sparkles, Undo2, RotateCw, X } from 'lucid
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useT, interp } from '../i18n'
-import { accountLabel } from '../../../shared/aiAccounts'
 import {
-  SLOW_GENERATION_SECONDS,
-  accountDefaultTarget,
   defaultGenerationTarget,
-  fallbackAccount,
   generationChoices,
   targetLabel
 } from '../lib/commitGeneration'
@@ -22,7 +18,6 @@ import type { CommitGeneration } from './useCommitGeneration'
 export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; disabled: boolean }): React.JSX.Element {
   const t = useT()
   const ai = useSettingsStore((s) => s.activeAI())
-  const keysKnown = useSettingsStore((s) => s.unlocked)
   const { catalogs } = useModelCatalogs(ai)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const target = defaultGenerationTarget(ai)
@@ -42,12 +37,12 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
               label: model,
               icon:
                 target?.accountId === choice.accountId && target.model === model ? <Check size={13} /> : undefined,
-              onClick: (): void => void gen.generate({ accountId: choice.accountId, model })
+              onClick: (): void => void gen.generateMessage({ accountId: choice.accountId, model })
             }))
           : [
               {
                 label: t('composerAI.accountDefault'),
-                onClick: (): void => void gen.generate({ accountId: choice.accountId, model: '' })
+                onClick: (): void => void gen.generateMessage({ accountId: choice.accountId, model: '' })
               }
             ]
       }))
@@ -55,7 +50,9 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
     openContextMenu(r.left, r.bottom + 4, items)
   }
 
-  const fallback = busy && gen.elapsed >= SLOW_GENERATION_SECONDS ? fallbackAccount(ai, state.accountId, keysKnown) : null
+  // Moving a slow run to another account is the app-wide slow prompt's job
+  // (it appears at the same 30 s): a second "Use …" here did the same thing
+  // by another route, and two buttons for one choice only confused.
 
   const doneTitle =
     state.phase === 'generated' ? interp(t('composerAI.generated'), { name: state.label, seconds: state.seconds }) : ''
@@ -72,7 +69,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
           title={t('composer.generateWithAi')}
           aria-label={t('composerAI.generate')}
           disabled={disabled || busy}
-          onClick={() => void gen.generate()}
+          onClick={() => void gen.generateMessage()}
         >
           {busy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
         </button>
@@ -98,16 +95,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
           >
             {interp(t('composerAI.elapsed'), { seconds: gen.elapsed })}
           </span>
-          {fallback && (
-            <button
-              type="button"
-              className="btn ghost small"
-              onClick={() => void gen.generate(accountDefaultTarget(ai, fallback.id))}
-            >
-              {interp(t('aiGuard.useOther'), { name: accountLabel(fallback) })}
-            </button>
-          )}
-          <button type="button" className="btn ghost small" onClick={gen.cancel}>
+          <button type="button" className="btn ghost small" onClick={gen.cancelGeneration}>
             <X size={12} /> {t('aiGuard.cancel')}
           </button>
         </>
@@ -120,7 +108,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
             className="commit-ai-icon undo"
             title={interp(t('composerAI.undoTitle'), { action: t('composerAI.undo'), details: doneTitle })}
             aria-label={t('composerAI.undo')}
-            onClick={gen.undo}
+            onClick={gen.undoGeneration}
           >
             <Undo2 size={14} />
           </button>
@@ -130,7 +118,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
             title={t('composerAI.again')}
             aria-label={t('composerAI.again')}
             disabled={disabled}
-            onClick={() => void gen.regenerate()}
+            onClick={() => void gen.regenerateMessage()}
           >
             <RotateCw size={14} />
           </button>

@@ -4,7 +4,7 @@ category: Empieza aquí
 order: 2
 summary: El asistente del primer arranque — identidad de Git, cuentas de alojamiento, IA, apariencia — y lo que guarda cada paso.
 keywords: onboarding primer arranque primera vez asistente configuración bienvenida importar ajustes identidad git cuentas ia suscripción clave api ollama lm studio claude code codex omitir first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Primer arranque
@@ -33,7 +33,8 @@ La columna izquierda lista los pasos. Una marca verde señala un paso completado
 
 ## El paso de IA
 
-La IA es opcional. Elige una de las tres tarjetas, u **Omitir, sin IA**:
+La IA es opcional. Elige una de las tres tarjetas, u **Omitir, sin IA**, que apaga la IA
+hasta que la configures en [Ajustes → IA](ai.md):
 
 | Tarjeta | Qué usa | Qué necesita |
 |---|---|---|

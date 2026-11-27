@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Synchroniseren & meerdere repo's
 order: 56
 summary: Maak overal PR's aan; review en merge ze op GitHub en GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review goedkeuren approve mergen issues
+keywords: pr sluiten heropenen opgeven afwijzen concept klaar voor review terug naar concept close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review goedkeuren approve mergen issues
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -113,6 +113,30 @@ weg.
 
 Als iemand halverwege de review force-pusht, laat [wat er sindsdien veranderde](range-diff.md)
 precies zien wat er verschoof.
+
+### Sluiten, heropenen en concepten
+
+Per ongeluk geopend, of is het werk niet meer nodig? Naast het merge-vak sluit
+**PR sluiten** hem zonder te mergen. Het vraagt eerst en zegt wat blijft: de
+branch, zijn commits en het gesprek. Een gesloten pull request toont **PR
+heropenen** in de rij Status van de zijbalk, wat het sluiten ongedaan maakt.
+
+**Terug naar concept** zet een open pull request terug naar concept — niet
+klaar, niemand gevraagd om te reviewen — en **Klaar voor review** haalt een
+concept er weer uit. Elk maakt het andere ongedaan.
+
+| Host | Sluiten | Concept |
+|---|---|---|
+| GitHub, GitHub Enterprise | Gesloten | De conceptstatus van de host |
+| GitLab | Gesloten | De titel begint met *Draft:* — GitLabs eigen manier |
+| Azure DevOps | **Abandoned** (opgegeven), zijn woord voor gesloten | De conceptstatus van de host |
+| Bitbucket Data Center | **Declined** (afgewezen), zijn woord voor gesloten | De conceptstatus van de host (8.18 of nieuwer) |
+| Forgejo | Gesloten | De titel begint met *WIP:* — Forgejo’s eigen manier |
+
+Beperkingen: de host bepaalt wie het mag — meestal de auteur en de maintainers
+van de repository — en zijn weigering wordt getoond zoals hij die verwoordt.
+Sluiten verwijdert de branch niet; dat doet [Branches
+opruimen](branch-cleanup.md).
 
 GitLab-verschillen, eerlijk gezegd: GitLab heeft geen enkele „review
 indienen”-aanroep, dus **goedkeuren** gebruikt het goedkeuringsendpoint en

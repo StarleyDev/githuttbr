@@ -1,3 +1,4 @@
+import { titleForDraft } from './prDraftTitle'
 import type {
   PrUpdateList,
   ConnectedAccount,
@@ -814,6 +815,35 @@ export async function forgejoMerge(
     method: 'POST',
     body: JSON.stringify({ Do: method })
   })
+}
+
+/** Closes or reopens a pull request; its branch and commits stay as they are. */
+export async function forgejoSetPullState(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  state: 'open' | 'closed'
+): Promise<void> {
+  await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ state })
+  })
+}
+
+/** Moves a pull request to draft or back: Forgejo reads a "WIP:" title as a draft. */
+export async function forgejoSetPullDraft(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  draft: boolean
+): Promise<void> {
+  const url = `${repoApi(base, owner, repo)}/pulls/${number}`
+  const pr = await fjJson<{ title: string }>(url, token)
+  await fjJson(url, token, { method: 'PATCH', body: JSON.stringify({ title: titleForDraft(pr.title, draft, 'WIP:') }) })
 }
 
 // ── Issues, milestones, releases, notifications ─────────────────────────────

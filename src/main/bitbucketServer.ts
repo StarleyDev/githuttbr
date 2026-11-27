@@ -895,6 +895,45 @@ export async function bbsMerge(repo: BitbucketServerRepo, token: string, id: num
   })
 }
 
+/**
+ * Declines (closes) or reopens a pull request. Bitbucket Server names the
+ * version it saw, as the merge does, so a change in between is not overwritten.
+ */
+export async function bbsSetPullState(
+  repo: BitbucketServerRepo,
+  token: string,
+  id: number,
+  state: 'open' | 'closed'
+): Promise<void> {
+  const r = bbsRepoApi(repo)
+  const pr = await bbsJson<BbsPull>(`${r}/pull-requests/${id}`, token)
+  const action = state === 'closed' ? 'decline' : 'reopen'
+  await bbsJson(`${r}/pull-requests/${id}/${action}?version=${pr.version ?? 0}`, token, {
+    method: 'POST',
+    body: JSON.stringify({ version: pr.version ?? 0 })
+  })
+}
+
+/**
+ * Moves a pull request to draft or back to ready for review (Bitbucket Data
+ * Center 8.18+). The update resends the title, description and reviewers it
+ * read, so nothing else changes on the way.
+ */
+export async function bbsSetPullDraft(repo: BitbucketServerRepo, token: string, id: number, draft: boolean): Promise<void> {
+  const r = bbsRepoApi(repo)
+  const pr = await bbsJson<BbsPull>(`${r}/pull-requests/${id}`, token)
+  await bbsJson(`${r}/pull-requests/${id}`, token, {
+    method: 'PUT',
+    body: JSON.stringify({
+      version: pr.version ?? 0,
+      title: pr.title,
+      description: pr.description ?? '',
+      reviewers: (pr.reviewers ?? []).filter((p) => p.user).map((p) => ({ user: p.user })),
+      draft
+    })
+  })
+}
+
 export async function createBbsPull(repo: BitbucketServerRepo, token: string, opts: CreatePrOpts): Promise<CreatePrResult> {
   const ref = (branch: string): Record<string, unknown> => ({
     id: `refs/heads/${branch}`,

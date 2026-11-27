@@ -52,6 +52,9 @@ mag, in secties:
 | **Conflicten & branches** | Stijl voor conflictoplossing, stijl voor branchnamen, elk met een voorbeeld van het resultaat |
 | **Repository-chat** | Of de chat aan staat, wat hij leest, welke acties hij mag voorstellen — zie [Repository-chat](repo-chat.md#instellingen) |
 
+Een regel boven de secties zegt wiens AI je bewerkt en wie hij bereikt:
+*algemene AI · geldt voor Werk en Privé*, of de eigen AI van één profiel.
+
 **Extra regels voor commits** — tot 4.60 *Eigen instructies* — gaan alleen mee met het genereren van commitberichten: de chat, uitleg, reviews en branchnamen lezen ze niet. De voorbeeldweergave is een vast voorbeeld, geen modelaanroep: hij toont de vorm van de gekozen stijl, niet wat de AI voor jouw wijziging schrijft.
 
 ![Commitberichten](../../screenshots/settings-ai-commits.webp)
@@ -82,6 +85,13 @@ CLI waarop je al bent ingelogd.
 
 Er zijn presets voor **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral** en **Ollama** (volledig lokaal), plus elk OpenAI-compatibel endpoint.
+
+**Een sleutel verlaat deze machine nooit onversleuteld.** Een account met een
+sleutel bereikt zijn endpoint via `https://`, of via gewoon `http://` alleen op
+deze computer (`localhost`, `127.x`, `::1`). Een aanroep die de sleutel via
+`http://` naar een andere host zou sturen, wordt geweigerd voordat er iets
+vertrekt, en zegt dat. Een endpoint zonder sleutel — Ollama op een andere
+machine in je netwerk — blijft via `http://` werken.
 
 Anthropic gebruikt zijn eigen `/v1/messages`-API in plaats van een
 OpenAI-vormige aanroep, dus Claude-modellen werken echt in plaats van er alleen
@@ -205,25 +215,53 @@ als **Gebruiken** in Instellingen test het wisselen de aanbieder niet.
 
 ### Een abonnement in plaats van een API-sleutel
 
-Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt. Het eerste account van de algemene AI komt **In gebruik**.
+Kies in **Instellingen → AI** **Mijn abonnement gebruiken**. Bij de [eerste
+start](first-run.md) vindt de kaart **Mijn abonnement** in de AI-stap Claude
+Code of Codex en test die in één stap; wordt er geen gevonden, dan valt hij
+terug op deze zelfde instelling. Kies het abonnement dat je gebruikt en open dan
+**Documentatie** voor de installatie-instructies van de provider. Na de
+installatie kies je **ChatGPT (Codex) verbinden** of **Claude (Claude Code)
+verbinden**. De CLI van de provider opent zijn aanmeldpagina in je browser en
+bewaart zijn eigen sessie. Een bestaande abonnementssessie wordt hergebruikt.
+**Annuleren** stopt een lopende verbinding. Een aanmelding die langer dan drie
+minuten duurt, stopt en kan opnieuw worden geprobeerd.
 
-Klik na de installatie van de CLI op Verbinden om de aanmeldpagina van de aanbieder te openen. Je kunt een lopende verbinding annuleren.
+| Abonnement | Benodigde CLI | Aanmelden vanuit een terminal |
+| --- | --- | --- |
+| ChatGPT met toegang tot Codex | Codex CLI | `codex login` en kies ChatGPT |
+| Claude met toegang tot Claude Code | Claude Code | `claude auth login` en kies je abonnementsaccount |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+Verbinden test ook de sessie. Heb je je in een terminal aangemeld, kies dan
+**Verbinding testen**. GitHuttBr controleert de aanmeldmethode van de CLI en
+stuurt een korte testprompt vanuit een lege tijdelijke map. Het verzoek telt mee
+voor het tegoed van je provider. Na **Gekoppeld** kies je **Provider
+toevoegen**. Het eerste account van de algemene AI wordt **In gebruik** gezet.
+Voor een bestaande instelling kies je **Gebruiken** op zijn rij of wijs je
+hieronder losse functies toe. Wil je de instelling bij de eerste start
+overslaan, kies dan **Overslaan, geen AI** en kom terug naar Instellingen
+wanneer je zover bent.
 
-De test stuurt een kort bericht naar je aanbieder en verbruikt een deel van je quotum. Limiet bereikt. Probeer het opnieuw zodra je quotum is aangevuld.
+Vindt GitHuttBr de CLI niet, installeer hem dan of vul het volledige pad naar
+het programma in en test opnieuw. Is de aanmelding verlopen of gebruikt de CLI
+een API-sleutel, meld je dan aan met het abonnementsaccount. Bereik je een
+gebruikslimiet, wacht dan tot het tegoed van de provider wordt hersteld.
 
 ![Mijn abonnement gebruiken](../../screenshots/ai-subscription.webp)
 
-Kies de aanbieder **Lokale CLI** om te laten antwoorden door een agent-CLI die
-al op deze machine staat en is ingelogd — `claude`, `gemini` of `codex`. GitHuttBr
-start het programma met je prompt en leest het antwoord; er is geen API-sleutel
-om te plakken en geen token wordt bewaard.
+Voor handmatige instelling kies je de provider **Lokale CLI** om te antwoorden
+met een agent-CLI die al op deze machine is geïnstalleerd en aangemeld —
+`claude`, `gemini`, `codex` of `devin`. GitHuttBr start het programma met je
+prompt en leest het antwoord; er is geen API-sleutel om te plakken en er wordt
+geen token opgeslagen.
 
 GitHuttBr draait alleen een commando dat je zelf als account hebt ingesteld, en
 altijd met een lijst argumenten in plaats van een shell, zodat niets uit een
 diff of een branchnaam als commando gelezen kan worden.
+
+Elke aanroep start de CLI met de repository als werkmap, zodat agent-CLI's zoals
+Devin de bestanden kunnen openen waar je naar vraagt in plaats van blind te
+antwoorden. Functies zonder repository (thema's genereren) starten hem vanuit de
+eigen map van de app.
 
 > **Dit is niet privéer dan een API-sleutel.** Je prompts bereiken nog steeds
 > dezelfde aanbieder, onder je eigen account, precies zoals met een sleutel. Wat
@@ -269,12 +307,29 @@ Geen enkele aanbieder publiceert een gerangschikte of samengestelde lijst, dus d
 | **Commitboodschap** | Samenvatting (en optioneel een body) uit je gestagede diff, in de stijl die jij kiest |
 | **Leg dit bestand uit** | Uitleg in gewone taal in een zijpaneel — Normaal, Beknopt, ELI5… zelfs Piraat |
 | **Hover om uit te leggen** | Houd <kbd>⇧</kbd> ingedrukt en wijs een identifier aan voor een uitleg in één regel, plus de regels waarop die stoelt |
+| **AI-bewerking van de selectie** | Selecteer regels in een bestand, beschrijf de wijziging, en het model herschrijft alleen die regels in het editorconcept |
 | **Conflictoplossing** | Stelt een merge voor in de bewerkbare uitvoer — past nooit automatisch toe |
 | **PR-review** | Vat een diff samen en markeert risico's, elk verankerd aan een echte `path:line` |
 | **PR-beschrijving** · **branchnamen** | Opgesteld uit de commits en de diff van de branch |
 | **Thema's** · **grafiekpaletten** | Gegenereerd uit een prompt |
 | **Slim stagen** | Suggesties voor wat in deze commit thuishoort |
+| **[Repository-chat](repo-chat.md)** | Gefundeerde vragen plus beoordeelde bestandswijzigingen, gevolgd door gevalideerde Git-acties |
 | **AI-configuratiewizard** | Genereert assistentconfiguratiebestanden (instructies, agents, hooks) voor de repository — de toverstafknop in de koptekst van het chatpaneel |
+
+### Alleen de geselecteerde regels bewerken
+
+Sleep in de bestandsweergave over de regels die je wilt wijzigen en druk op
+**AI-bewerking…** (of klik met rechts op een regel en kies het in het menu). Een
+balk onderaan toont het geselecteerde bereik en neemt je instructie aan —
+‘hernoem deze variabele’, ‘voeg null-controles toe’, ‘vertaal deze strings’. Het
+model ziet de geselecteerde regels plus wat context eromheen en geeft alleen de
+vervanging voor dat bereik terug, die in het **editorconcept** belandt in plaats
+van op schijf. Je bekijkt hem daar en slaat op of verwerpt via de gewone
+bewerkingsflow, dus er wordt niets geschreven tot jij dat zegt. Het werkt met
+elke ingestelde backend, niet alleen met agent-CLI's, omdat het antwoord tekst
+is en geen tool-aanroep. De beperkingen: het herschrijft één aaneengesloten
+bereik per keer, kan geen hele bestanden maken of verwijderen, en een selectie
+over meerdere diff-hunks wordt geweigerd — selecteer dan in de bestandsweergave.
 
 ## Geworteld, niet gegokt
 
@@ -288,8 +343,17 @@ diff alleen de hunks die op het scherm staan — dus als een definitie ergens
 anders woont, zegt het dat in plaats van iets te verzinnen. Antwoorden worden per
 bestandsversie gecachet.
 
-**Gemaskeerde geheimenbestanden worden nooit verstuurd.** Bestanden die onder de
-maskeerregels voor geheimen vallen evenmin.
+[Repository-chat](repo-chat.md) werkt net zo: hij mag alleen de fragmenten
+citeren die hij kreeg, en het verzoek in twee stappen kiest die uit Gits eigen
+lijst van gevolgde bestanden, niet uit iets wat het model schrijft. Stelt hij
+een wijziging voor, dan valideert GitHuttBr exacte bestandsacties, berekent hun
+diffs lokaal en voert daarna de volgende Git-acties uit volgens het ingestelde
+goedkeuringsbeleid.
+
+**Gemaskeerde geheime bestanden worden nooit verstuurd.** Evenmin bestanden die
+onder de regels voor het maskeren van geheimen vallen — ook niet een bestand dat
+je met de hand aan de chat vastzet; dat wordt met een reden geweigerd in plaats
+van gelezen.
 
 ## Als een model traag is, of niet meer antwoordt
 
@@ -329,11 +393,12 @@ conflicten, thema's, de wiki — omdat ze allemaal via dezelfde aanroep lopen.
   gebruiks- en kostencijfers in Instellingen tellen die aanroepen dus te laag.
 - Antwoorden via een CLI zijn trager dan een directe API-aanroep: het programma
   start per verzoek een hele sessie.
-- Sleutels worden per account in je systeemsleutelhanger bewaard. Een account
-  verwijderen verwijdert de sleutel ervan.
+- Sleutels worden per account in de sleutelhanger van je systeem bewaard. Een
+  account verwijderen verwijdert zijn sleutel — het vraagt eerst, en ongedaan
+  maken kan niet.
 - Teruggaan naar een versie van vóór de algemene AI kost de sleutels van de
   algemene AI: die versie weet niet waar ze bewaard worden en laat ze vallen bij
   het opslaan. De accounts blijven; typ de sleutels opnieuw in. De eigen AI van
   een profiel blijft buiten schot.
 
-**Zie ook:** [Repo-wiki](repo-wiki.md) · [Beveiliging & geheimen](security.md)
+**Zie ook:** [Repository-chat](repo-chat.md) · [Repo-wiki](repo-wiki.md) · [Beveiliging & geheimen](security.md)

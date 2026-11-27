@@ -3,7 +3,7 @@ title: Hosting & pull requests
 category: Sync & many repos
 order: 56
 summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
-keywords: pull request PR merge request reviewers assignees labels request review GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises self-managed GitLab servers several GitLab instances Data Center Stash HTTP access token
+keywords: close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request reviewers assignees labels request review GitHub GitLab Bitbucket Azure DevOps review approve merge issues GitHub Enterprise Server GHES self-hosted on-premises self-managed GitLab servers several GitLab instances Data Center Stash HTTP access token
 ---
 
 # Hosting & pull requests
@@ -273,6 +273,31 @@ the file list once it loads. A row the host does not report is left out.
 
 If someone force-pushes mid-review, [what changed since](range-diff.md) shows
 you exactly what moved.
+
+### Closing, reopening and drafts
+
+Opened one by mistake, or the work is no longer wanted? Beside the merge box,
+**Close pull request** closes it without merging. It asks first, and says what
+stays: the branch, its commits and the conversation. A closed pull request
+shows **Reopen pull request** in its sidebar's Status row, which undoes the
+close.
+
+**Move to draft** takes an open pull request back to draft — not ready, nobody
+asked to review it — and **Ready for review** takes a draft out again. Each
+undoes the other.
+
+| Host | Close | Draft |
+|---|---|---|
+| GitHub, GitHub Enterprise | Closed | The host's draft state |
+| GitLab | Closed | The title starts with *Draft:* — GitLab's own way |
+| Azure DevOps | **Abandoned**, its word for closed | The host's draft state |
+| Bitbucket Data Center | **Declined**, its word for closed | The host's draft state (8.18 or newer) |
+| Forgejo | Closed | The title starts with *WIP:* — Forgejo's own way |
+
+Limits: the host decides who may do it — usually the author and the
+repository's maintainers — and its refusal is shown as it words it. Closing
+does not delete the branch; [branch cleanup](branch-cleanup.md) does that.
+
 
 GitLab differences, stated plainly: GitLab has no single "submit review" call,
 so **approve** uses its approval endpoint and **request changes** removes your

@@ -67,26 +67,34 @@ Limites :
 
 ## Écrire le message avec l’IA
 
-Quand l’IA est active, **Générer avec l’IA** se trouve sous la description. Il
-lit le diff indexé (staged) et écrit le résumé et la description dans le style
-ci-dessus. Le bouton nomme qui répondra — *compte · modèle*, la paire choisie
-pour les messages de commit dans **Réglages → IA → Modèle par tâche** — pour
-qu’un modèle local lent ou un modèle coûteux ne soit jamais une surprise.
+Quand l’IA est active, le bouton **✦** (*Générer avec l’IA* au survol) se trouve
+sous la description. Il lit le diff indexé (staged) et écrit le résumé et la
+description dans le style ci-dessus. À côté, la ligne nomme qui répondra —
+*compte · modèle*, la paire choisie pour les messages de commit dans **Réglages
+→ IA → Modèle par tâche** — pour qu’un modèle local lent ou un modèle coûteux ne
+soit jamais une surprise.
 
 - **▾** à côté du nom liste vos comptes enregistrés, chacun avec quelques-uns
   de ses modèles. Le choix vaut **pour cette génération seulement** ; les
   Réglages ne changent pas.
-- Pendant l’exécution, la zone affiche *Génération avec compte · modèle… 12 s*
-  et **Annuler**, qui arrête la requête elle-même, pas seulement l’indicateur.
-  Au bout de 30 secondes elle propose aussi **Utiliser** un autre compte prêt,
-  qui lance la même génération sur celui-ci. L’invite globale *prend plus de
-  temps que prévu* ([IA](ai.md)) apparaît toujours aussi.
-- Le nouveau texte **remplace** l’ancien, qui est conservé : un bandeau indique
-  *Généré par compte · modèle en 7 s* et propose **Annuler**, qui remet votre
-  résumé et votre description, et **Générer à nouveau**. Il disparaît dès que
-  vous modifiez le texte ou faites le commit.
+- Pendant l’exécution, le ✦ tourne et la même ligne affiche les secondes
+  écoulées et **Annuler**, qui arrête la requête elle-même, pas seulement
+  l’indicateur. Le résumé et la description sont en lecture seule pendant ce
+  temps, pour que la réponse n’écrase pas ce que vous tapez. Au bout de 30
+  secondes, l’invite globale *prend plus de temps que prévu* ([IA](ai.md))
+  propose de continuer à attendre ou de passer la même génération sur un autre
+  compte prêt ; **Générer à nouveau** utilise ensuite ce compte.
+- Le nouveau texte **remplace** l’ancien, qui est conservé : **Annuler** et
+  **Générer à nouveau** apparaissent sur la même ligne (au survol, *Généré par
+  compte · modèle en 7 s*). Annuler remet votre résumé et votre description. Les
+  deux disparaissent dès que vous modifiez le texte ou faites le commit.
+- La description que vous tapez, ou celle que l’IA a écrite, reste quand vous
+  passez à un autre onglet et revenez, comme le résumé — de même que **Annuler**
+  et **Générer à nouveau** après une génération.
 
 ![Générer avec l’IA et le menu des comptes](../../screenshots/commit-ai-generate.webp)
+
+![Un message généré, avec Annuler et Générer à nouveau à côté du compte](../../screenshots/commit-ai-generated.webp)
 
 [Modifier un commit](commit-edit.md) a le même bouton, à partir du diff de ce
 commit.
@@ -96,7 +104,7 @@ Limites :
 - Seul le diff indexé est envoyé, tronqué s’il est très gros — jamais les
   modifications non indexées ni d’autres fichiers.
 - L’annulation garde une étape : le texte d’avant la première génération d’une
-  série. Quand le bandeau disparaît, cette copie aussi.
+  série. Quand Annuler disparaît, cette copie aussi.
 - Annuler ne rend pas les jetons qu’un fournisseur a déjà consommés.
 - La liste ▾ montre tous les comptes enregistrés, y compris un compte encore
   sans clé ; le choisir échoue avec l’erreur propre à ce compte.

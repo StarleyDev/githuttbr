@@ -269,7 +269,7 @@ export class InvalidAIResponse extends Error {
 }
 
 /** True when native json_schema was rejected or exhausted its own validation retries. */
-function rejectsJsonSchema(err: unknown): boolean {
+export function rejectsJsonSchema(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
   // Every OpenAI-compatible provider words a refused schema its own way — Gemini
   // says "The specified schema produces a constraint that has too many states",
@@ -282,7 +282,12 @@ function rejectsJsonSchema(err: unknown): boolean {
     (/failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg))
   const exhaustedValidation =
     /structured_output_validation_error|failed to produce a schema-valid structured response/i.test(msg)
-  return rejectedFormat || exhaustedValidation
+  // A prompt too long for the model fails the same way without the schema:
+  // a retry only doubles the wait and the cost.
+  const tooLong = /context[_ ]length|maximum context|context window|too many tokens|prompt is too long|reduce the length/i.test(
+    msg
+  )
+  return !tooLong && (rejectedFormat || exhaustedValidation)
 }
 
 function correctionMessage(errors: string[]): string {

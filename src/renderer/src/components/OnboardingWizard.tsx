@@ -557,9 +557,9 @@ export function OnboardingWizard(): React.JSX.Element {
   // uses, and puts it in use: Settings then shows it as the account in use.
   // The AI lands where the active profile reads it — the general AI on a fresh
   // install — so the first profile added afterwards inherits it.
-  const ai = useOnboardingAI((account: AIAccount) => {
+  const ai = useOnboardingAI((account: AIAccount, replacingId?: string) => {
     const state = useSettingsStore.getState()
-    const { ai: next, accountId } = addAccountInUse(state.activeAI(), account)
+    const { ai: next, accountId } = addAccountInUse(state.activeAI(), account, replacingId)
     saveAIFor(state.settings.activeProfileId, next)
     return accountId
   })
@@ -573,9 +573,13 @@ export function OnboardingWizard(): React.JSX.Element {
 
   // Looked for when the AI step first opens, not when the wizard does: the
   // lookup spawns a process per CLI, which a wizard skipped earlier never needs.
+  // `ai` is a fresh object every render; the step change is what matters, and
+  // detectClis itself refuses a second lookup.
+  const detectClis = ai.detectClis
+  const onAIStep = step === aiIndex
   useEffect(() => {
-    if (step === aiIndex) ai.detectClis()
-  }, [step, aiIndex, ai])
+    if (onAIStep) detectClis()
+  }, [onAIStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress: OnboardingProgress = {
     gitName: data.gitName,

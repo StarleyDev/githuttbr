@@ -205,6 +205,19 @@ async function readError(res: Response): Promise<string> {
   return aiErrorMessage(res.status, body)
 }
 
+/**
+ * Every system message folded into one, first. Some local chat templates
+ * (Mistral-style, served by llama.cpp or LM Studio) accept a single system
+ * message at the start and reject or silently drop any other — the request
+ * then fails, or the model never sees its context.
+ */
+export function withOneSystemMessage(messages: ChatMessage[]): ChatMessage[] {
+  const system = messages.filter((m) => m.role === 'system')
+  if (system.length <= 1 && (system.length === 0 || messages[0].role === 'system')) return messages
+  const content = system.map((m) => m.content).join('\n\n')
+  return [{ role: 'system', content }, ...messages.filter((m) => m.role !== 'system')]
+}
+
 async function callOpenAI(
   cfg: AIConfig,
   messages: ChatMessage[],
@@ -221,7 +234,7 @@ async function callOpenAI(
   const payload: Record<string, unknown> = {
     model: cfg.model,
     temperature,
-    messages,
+    messages: withOneSystemMessage(messages),
     ...(tokenLimit !== undefined ? { [tokenField]: tokenLimit } : {}),
     ...(mayDisableThinking ? { chat_template_kwargs: { enable_thinking: false } } : {}),
     ...options?.extra

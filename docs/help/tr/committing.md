@@ -65,25 +65,32 @@ Sınırlar:
 
 ## Mesajı yapay zekâyla yazmak
 
-Yapay zekâ açıkken **Yapay zekâyla oluştur** açıklamanın altında durur.
-Hazırlanmış (staged) diff’i okur ve özeti ile açıklamayı yukarıdaki stilde
-yazar. Düğme kimin yanıt vereceğini söyler — *hesap · model*, **Ayarlar →
-Yapay zekâ → Görev başına model** altında commit mesajları için seçilen çift —
-böylece yavaş bir yerel model ya da pahalı bir model hiç sürpriz olmaz.
+Yapay zekâ açıkken **✦** düğmesi (üzerine gelince *Yapay zekâyla oluştur*)
+açıklamanın altında durur. Hazırlanmış (staged) diff’i okur ve özeti ile
+açıklamayı yukarıdaki stilde yazar. Yanındaki satır kimin yanıt vereceğini
+söyler — *hesap · model*, **Ayarlar → Yapay zekâ → Görev başına model** altında
+commit mesajları için seçilen çift — böylece yavaş bir yerel model ya da pahalı
+bir model hiç sürpriz olmaz.
 
 - Adın yanındaki **▾** kayıtlı hesaplarınızı, her birinin birkaç modeliyle
   listeler. Seçim **yalnızca o oluşturma için** geçerlidir; Ayarlar değişmez.
-- Çalışırken kutu *hesap · model ile oluşturuluyor… 12 sn* ve isteğin kendisini
-  durduran **İptal**’i gösterir; yalnızca göstergeyi değil. 30 saniye sonra
-  ayrıca başka hazır bir hesabı **Kullan** seçeneği çıkar; aynı oluşturma orada
-  çalışır. Uygulama genelindeki *beklenenden uzun sürüyor* uyarısı
-  ([Yapay zekâ](ai.md)) yine de görünür.
-- Yeni metin eskisinin **yerine geçer** ve eskisi saklanır: bir şerit *hesap ·
-  model tarafından 7 sn içinde oluşturuldu* der ve özetinizi ile açıklamanızı
-  geri getiren **Geri al** ile **Yeniden oluştur** sunar. Metni düzenlediğiniz
-  ya da commit ettiğiniz anda kaybolur.
+- Çalışırken ✦ döner ve aynı satır geçen saniyeleri ve isteğin kendisini
+  durduran **İptal**’i gösterir; yalnızca göstergeyi değil. Bu sırada özet ve
+  açıklama salt okunurdur, böylece yanıt yazdıklarınızın üzerine yazmaz. 30
+  saniye sonra uygulama genelindeki *beklenenden uzun sürüyor* uyarısı ([Yapay
+  zekâ](ai.md)) beklemeye devam etmeyi ya da aynı oluşturmayı başka hazır bir
+  hesaba taşımayı önerir; ardından **Yeniden oluştur** o hesabı kullanır.
+- Yeni metin eskisinin **yerine geçer** ve eskisi saklanır: **Geri al** ve
+  **Yeniden oluştur** aynı satırda görünür (üzerlerine gelince *hesap · model
+  tarafından 7 sn içinde oluşturuldu*). Geri al özetinizi ve açıklamanızı geri
+  getirir. Metni düzenlediğiniz ya da commit ettiğiniz anda ikisi de kaybolur.
+- Yazdığınız ya da yapay zekânın yazdığı açıklama, başka bir sekmeye geçip
+  döndüğünüzde özet gibi yerinde kalır — bir oluşturmadan sonra **Geri al** ve
+  **Yeniden oluştur** da.
 
 ![Yapay zekâyla oluştur ve hesap menüsü](../../screenshots/commit-ai-generate.webp)
+
+![Hesabın yanında Geri al ve Yeniden oluştur ile oluşturulmuş bir mesaj](../../screenshots/commit-ai-generated.webp)
 
 [Commit düzenleme](commit-edit.md) aynı düğmeye sahiptir; o commit’in kendi
 diff’inden çalışır.
@@ -92,7 +99,7 @@ Sınırlar:
 
 - Yalnızca hazırlanmış diff gönderilir, çok büyükse kırpılır — hazırlanmamış
   değişiklikler veya başka dosyalar asla.
-- Geri al tek adım tutar: art arda ilk oluşturmadan önceki metin. Şerit
+- Geri al tek adım tutar: art arda ilk oluşturmadan önceki metin. Geri al
   gidince o kopya da gider.
 - İptal, sağlayıcının istek için harcadığı token’ları geri getirmez.
 - ▾ listesi, henüz anahtarı olmayanlar dahil tüm kayıtlı hesapları gösterir;

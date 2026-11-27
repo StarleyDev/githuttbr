@@ -4,7 +4,7 @@ category: 시작하기
 order: 2
 summary: 첫 실행 설정 마법사 — Git 신원, 호스팅 계정, AI, 모양 — 와 각 단계가 저장하는 내용.
 keywords: 온보딩 첫 실행 설정 마법사 환영 설정 가져오기 git 신원 계정 ai 구독 api 키 ollama lm studio claude code codex 건너뛰기 onboarding first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # 첫 실행
@@ -33,7 +33,8 @@ GitHuttBr를 처음 열면 짧은 마법사가 첫 커밋부터 동작을 바꾸
 
 ## AI 단계
 
-AI는 선택 사항입니다. 세 카드 중 하나를 고르거나 **건너뛰기, AI 없음**을 누르세요:
+AI는 선택 사항입니다. 세 카드 중 하나를 고르거나 **건너뛰기, AI 없음**을 누르세요.
+건너뛰면 [설정 → AI](ai.md)에서 설정할 때까지 AI가 꺼집니다:
 
 | 카드 | 사용하는 것 | 필요한 것 |
 |---|---|---|

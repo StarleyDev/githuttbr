@@ -202,25 +202,42 @@ das Configurações, a troca não testa o provedor que põe em uso.
 
 ### Usar uma assinatura em vez de uma chave de API
 
-Na configuração inicial ou em Configurações → IA, escolha **Usar minha assinatura**. Selecione ChatGPT ou Claude e entre pelo terminal com o comando correspondente. Teste a conexão e adicione a conta após a confirmação.
+Em **Configurações → IA**, escolha **Usar minha assinatura**. Na [primeira abertura](first-run.md), o cartão **Minha assinatura** do passo de IA encontra o Claude Code ou o Codex e testa num passo só, e cai nesta mesma configuração quando não encontra nenhum.
+Selecione o plano que você usa e abra **Documentação** para ver as instruções de instalação do provedor.
+Depois de instalar, escolha **Conectar ChatGPT (Codex)** ou **Conectar Claude (Claude Code)**.
+A CLI do provedor abre a página de login no navegador e guarda a própria sessão.
+Uma sessão de assinatura que já existe é reaproveitada. **Cancelar** interrompe uma conexão pendente.
+Um login que leva mais de três minutos é interrompido e pode ser tentado de novo.
 
-Depois de instalar a CLI, clique em Conectar para abrir a página de login do provedor. Você pode cancelar a conexão pendente.
+| Plano | CLI necessária | Login pelo terminal |
+| --- | --- | --- |
+| ChatGPT com acesso ao Codex | Codex CLI | `codex login` e escolha ChatGPT |
+| Claude com acesso ao Claude Code | Claude Code | `claude auth login` e escolha a conta da assinatura |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+Conectar também testa a sessão. Se você entrou pelo terminal, escolha **Testar conexão**. O GitHuttBr confere o método de login da CLI e envia um prompt curto de teste
+a partir de uma pasta temporária vazia. A requisição conta na franquia do seu provedor.
+Depois de **Conectado**, escolha **Adicionar conta**. A primeira conta da IA geral fica **Em uso**.
+Numa configuração que já existe, escolha **Usar** na linha dela ou atribua recursos individuais abaixo.
+Para pular a configuração na primeira abertura, escolha **Pular, sem IA** e volte às Configurações quando quiser.
 
-O teste envia uma mensagem curta ao provedor e consome a cota do plano. Limite atingido. Tente novamente quando a cota for renovada.
+Se o GitHuttBr não encontrar a CLI, instale-a ou informe o caminho completo do executável e teste de novo.
+Se o login expirou ou a CLI está usando uma chave de API, entre com a conta da assinatura.
+Se chegar a um limite de uso, espere a cota do provedor renovar.
 
-![Usar minha assinatura](../../screenshots/ai-subscription.webp)
+![Conectando uma assinatura nas configurações de IA](../../screenshots/ai-subscription.webp)
 
-Escolha o provedor **CLI local** para responder com uma CLI de agente já
-instalada e autenticada nesta máquina — `claude`, `gemini` ou `codex`. O GitHuttBr
-executa o binário com o seu prompt e lê a resposta; não há chave de API para
-colar nem token guardado.
+Para configurar à mão, escolha o provedor **CLI local** para responder com uma CLI de agente já
+instalada e autenticada nesta máquina — `claude`, `gemini`, `codex` ou `devin`. O GitHuttBr executa o
+binário com o seu prompt e lê a resposta; não há chave de API para colar nem
+token guardado.
 
 O GitHuttBr só executa um comando que você configurou como conta, e sempre com uma
 lista de argumentos em vez de um shell, de modo que nada em um diff ou em um nome
 de branch pode ser interpretado como comando.
+
+Cada chamada inicia a CLI com o repositório como pasta de trabalho, para que
+CLIs de agente como o Devin possam abrir os arquivos sobre os quais você pergunta em vez de
+responder às cegas. Recursos que não têm repositório (geração de temas) a executam na pasta do próprio app.
 
 > **Isso não é mais privado que uma chave de API.** Seus prompts continuam
 > chegando ao mesmo fornecedor, na sua própria conta, exatamente como

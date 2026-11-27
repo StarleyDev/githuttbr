@@ -4,7 +4,7 @@ category: Per iniziare
 order: 2
 summary: La procedura guidata del primo avvio — identità Git, account di hosting, AI, aspetto — e cosa salva ogni passo.
 keywords: onboarding primo avvio procedura guidata configurazione benvenuto importa impostazioni identità git account ai abbonamento chiave api ollama lm studio claude code codex salta first run
-source: 5b5992d94b164ac6b9b101283ec044ba376b88de
+source: e8fa4f58f0acd79a07a40066c813a2ab49312255
 ---
 
 # Primo avvio
@@ -33,7 +33,8 @@ La colonna di sinistra elenca i passi. Un segno di spunta verde indica un passo 
 
 ## Il passo AI
 
-L’AI è facoltativa. Scegli una delle tre schede, oppure **Salta, senza AI**:
+L’AI è facoltativa. Scegli una delle tre schede, oppure **Salta, senza AI**, che spegne l’AI
+finché non la configuri in [Impostazioni → AI](ai.md):
 
 | Scheda | Cosa usa | Cosa serve |
 |---|---|---|

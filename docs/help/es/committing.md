@@ -66,26 +66,34 @@ Límites:
 
 ## Escribir el mensaje con IA
 
-Con la IA activada, **Generar con IA** aparece bajo la descripción. Lee el diff
-preparado (staged) y escribe el resumen y la descripción en el estilo de
-arriba. El botón dice quién responderá — *cuenta · modelo*, la pareja elegida
-para los mensajes de commit en **Ajustes → IA → Modelo por tarea** — para que
-un modelo local lento o uno caro nunca sea una sorpresa.
+Con la IA activada, el botón **✦** (*Generar con IA* al pasar el ratón) aparece
+bajo la descripción. Lee el diff preparado (staged) y escribe el resumen y la
+descripción en el estilo de arriba. A su lado, la fila dice quién responderá —
+*cuenta · modelo*, la pareja elegida para los mensajes de commit en **Ajustes →
+IA → Modelo por tarea** — para que un modelo local lento o uno caro nunca sea
+una sorpresa.
 
 - **▾** junto al nombre lista tus cuentas guardadas, cada una con algunos de
   sus modelos. La elección vale **solo para esa generación**; los Ajustes no
   cambian.
-- Mientras se ejecuta, el cuadro muestra *Generando con cuenta · modelo… 12s*
-  y **Cancelar**, que detiene la propia solicitud, no solo el indicador. A los
-  30 segundos también ofrece **Usar** otra cuenta lista, que ejecuta la misma
-  generación allí. El aviso global *está tardando más de lo esperado*
-  ([IA](ai.md)) sigue apareciendo también.
-- El texto nuevo **reemplaza** al que había, y el anterior se guarda: un aviso
-  dice *Generado por cuenta · modelo en 7 s* y ofrece **Deshacer**, que
-  devuelve tu resumen y tu descripción, y **Generar de nuevo**. Desaparece en
-  cuanto editas el texto o haces el commit.
+- Mientras se ejecuta, el ✦ gira y la misma fila muestra los segundos
+  transcurridos y **Cancelar**, que detiene la propia solicitud, no solo el
+  indicador. El resumen y la descripción quedan de solo lectura mientras tanto,
+  para que la respuesta no sobrescriba lo que escribas. A los 30 segundos, el
+  aviso global *está tardando más de lo esperado* ([IA](ai.md)) ofrece seguir
+  esperando o pasar la misma generación a otra cuenta lista; **Generar de
+  nuevo** usa entonces esa cuenta.
+- El texto nuevo **reemplaza** al que había, y el anterior se guarda:
+  **Deshacer** y **Generar de nuevo** aparecen en la misma fila (al pasar el
+  ratón, *Generado por cuenta · modelo en 7 s*). Deshacer devuelve tu resumen y
+  tu descripción. Ambos desaparecen en cuanto editas el texto o haces el commit.
+- La descripción que escribes, o la que escribió la IA, se mantiene cuando
+  cambias a otra pestaña y vuelves, como el resumen — y también **Deshacer** y
+  **Generar de nuevo** tras una generación.
 
 ![Generar con IA y el menú de cuentas](../../screenshots/commit-ai-generate.webp)
+
+![Un mensaje generado, con Deshacer y Generar de nuevo junto a la cuenta](../../screenshots/commit-ai-generated.webp)
 
 [Editar commit](commit-edit.md) tiene el mismo botón, a partir del diff de ese
 commit.
@@ -95,7 +103,7 @@ Límites:
 - Solo se envía el diff preparado, recortado cuando es muy grande — nunca
   cambios sin preparar ni otros archivos.
 - Deshacer guarda un paso: el texto de antes de la primera generación seguida.
-  Cuando el aviso desaparece, esa copia también.
+  Cuando Deshacer desaparece, esa copia también.
 - Cancelar no devuelve los tokens que el proveedor ya gastó en la solicitud.
 - La lista de ▾ muestra todas las cuentas guardadas, incluida una sin clave
   todavía; elegirla falla con el error de esa cuenta.

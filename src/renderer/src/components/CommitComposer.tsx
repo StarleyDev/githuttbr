@@ -9,7 +9,7 @@ import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import { MatchSummary, matchesByFile } from './SearchMatches'
 import { Avatar } from './Avatar'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcTypeWithGitmoji, applyCcScope, currentCcScope, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { lintCommit, subjectLength, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcTypeWithGitmoji, applyCcScope, currentCcScope, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
 import { GitmojiPicker } from './GitmojiPicker'
 import { appendTrailers, configTrailers } from '../lib/repoConfig'
 import { isSecretFile } from '../lib/secrets'
@@ -109,7 +109,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     return out
   }, [repo.commits])
   const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
-  const subjLevel = subjectCounterLevel(summary.trim().length)
+  const subjLen = subjectLength(summary)
+  const subjLevel = subjectCounterLevel(subjLen)
   const currentCcType = parseCcPrefix(summary).type
   const applyCcTypeToDraft = (ty: string): void => {
     histIdx.current = -1
@@ -695,6 +696,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // Replaces the summary and description; the banner it leaves offers Undo.
   const generation = useCommitGeneration({
     repoPath: path,
+    keepKey: `composer:${path}`,
     branch: repo.branches.current,
     diff: async () => {
       if (staged.length === 0) {
@@ -737,7 +739,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const runCommit = async (message: string): Promise<void> => {
     const ok = await repoActions.commit(path, message, amend)
     if (ok) {
-      generation.dismiss()
+      generation.dismissGenerationBanner()
       setSummary('')
       setDescription('')
       setAmend(false)
@@ -1108,6 +1110,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             placeholder={t('composer.summaryPlaceholder')}
             title={t('composer.summaryTitle')}
             value={summary}
+            // While the AI writes, typing here would be overwritten by its answer.
+            readOnly={generation.state.phase === 'generating'}
             maxLength={100}
             onChange={(e) => {
               histIdx.current = -1 // typing cancels history navigation
@@ -1129,7 +1133,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           />
           {summary.trim().length > 0 && (
             <span className={`commit-counter ${subjLevel}`} title={interp(t('composer.subjectLength'), { ideal: SUBJECT_IDEAL_LEN })}>
-              {summary.trim().length}
+              {subjLen}
             </span>
           )}
           <button className="commit-type commit-coauthor" title={t('composer.addCoAuthor')} onClick={(e) => void openCoAuthorMenu(e)}>
@@ -1205,6 +1209,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           className="commit-description"
           placeholder={t('composer.descriptionPlaceholder')}
           value={description}
+          readOnly={generation.state.phase === 'generating'}
           rows={3}
           onChange={(e) => setDescription(e.target.value)}
         />

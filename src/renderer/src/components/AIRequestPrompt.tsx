@@ -51,7 +51,7 @@ export function AIRequestPrompt(): React.JSX.Element | null {
 function PromptCard({ prompt }: { prompt: AIPrompt }): React.JSX.Element {
   const t = useT()
   const ai = useSettingsStore((s) => s.activeAI())
-  const dismiss = useAIPromptStore((s) => s.dismiss)
+  const dismissPrompt = useAIPromptStore((s) => s.dismissPrompt)
   const keysKnown = useSettingsStore((s) => s.unlocked)
 
   if (prompt.kind === 'unreachable') {
@@ -75,8 +75,8 @@ function PromptCard({ prompt }: { prompt: AIPrompt }): React.JSX.Element {
     )
   }
 
-  const answer = (choice: Parameters<typeof aiApi.answerSlow>[1]): void => {
-    dismiss(prompt.key)
+  const answerSlowPrompt = (choice: Parameters<typeof aiApi.answerSlow>[1]): void => {
+    dismissPrompt(prompt.key)
     void aiApi.answerSlow(prompt.requestId, choice)
   }
   const others = otherAccounts(ai, prompt.accountId, keysKnown).slice(0, 2)
@@ -86,19 +86,19 @@ function PromptCard({ prompt }: { prompt: AIPrompt }): React.JSX.Element {
       <div className="toast-body">
         <span className="toast-msg">{interp(t('aiGuard.slow'), { name: prompt.label })}</span>
         <div className="ai-prompt-actions">
-          <button className="btn small" onClick={() => answer({ kind: 'wait' })}>
+          <button className="btn small" onClick={() => answerSlowPrompt({ kind: 'wait' })}>
             {t('aiGuard.keepWaiting')}
           </button>
           {others.map((account) => (
             <button
               key={account.id}
               className="btn ghost small"
-              onClick={() => answer({ kind: 'switch', accountId: account.id })}
+              onClick={() => answerSlowPrompt({ kind: 'switch', accountId: account.id })}
             >
               {interp(t('aiGuard.useOther'), { name: accountLabel(account) })}
             </button>
           ))}
-          <button className="btn ghost small" onClick={() => answer({ kind: 'cancel' })}>
+          <button className="btn ghost small" onClick={() => answerSlowPrompt({ kind: 'cancel' })}>
             {t('aiGuard.cancel')}
           </button>
         </div>

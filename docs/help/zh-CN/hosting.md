@@ -3,7 +3,7 @@ title: 托管与拉取请求
 category: 同步与多仓库
 order: 56
 summary: 在任何平台上创建 PR；在 GitHub 和 GitLab 上评审并合并它们。
-keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab Bitbucket Azure DevOps review 评审 approve 批准 merge 合并 issues 议题
+keywords: 关闭 PR 重新打开 放弃 拒绝 草稿 可以审查 转为草稿 close pull request reopen abandon decline draft ready for review mark ready move to draft pull request 拉取请求 PR merge request 合并请求 GitHub GitLab Bitbucket Azure DevOps review 评审 approve 批准 merge 合并 issues 议题
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -88,6 +88,22 @@ fork 上。因此，当一个仓库有指向不同于 `origin` 的 GitHub 仓库
 GitLab 不报告合并请求的行数合计；文件列表加载后会从中求和。主机未报告的行会被省略。
 
 如果有人在评审中途 force-push，[此后的变化](range-diff.md)会准确显示移动了什么。
+
+### 关闭、重新打开与草稿
+
+误开了，或者这项工作不再需要？合并区域旁的 **关闭 PR** 会在不合并的情况下关闭它。它会先询问，并说明保留下来的内容：分支、它的提交和对话。已关闭的拉取请求会在侧边栏的状态行显示 **重新打开 PR**，用来撤销关闭。
+
+**转为草稿** 会把打开的拉取请求退回草稿——尚未就绪，也没有请任何人评审——而 **可以审查** 会让草稿重新转出。两者互为撤销。
+
+| 托管平台 | 关闭 | 草稿 |
+|---|---|---|
+| GitHub、GitHub Enterprise | 已关闭 | 托管平台自身的草稿状态 |
+| GitLab | 已关闭 | 标题以 *Draft:* 开头——GitLab 自己的方式 |
+| Azure DevOps | **Abandoned**（已放弃），它对“关闭”的叫法 | 托管平台自身的草稿状态 |
+| Bitbucket Data Center | **Declined**（已拒绝），它对“关闭”的叫法 | 托管平台自身的草稿状态（8.18 或更新版本） |
+| Forgejo | 已关闭 | 标题以 *WIP:* 开头——Forgejo 自己的方式 |
+
+限制：谁可以执行由托管平台决定——通常是作者和仓库维护者——被拒绝时按平台的原话显示。关闭不会删除分支；那是 [分支清理](branch-cleanup.md) 的工作。
 
 GitLab 的差异，直说如下：GitLab 没有单一的“提交评审”调用，所以**批准**使用其批准接口，
 **请求修改**会撤回你的批准并发布你的评论。不提供 **rebase-merge**——GitLab 按项目设置在合并

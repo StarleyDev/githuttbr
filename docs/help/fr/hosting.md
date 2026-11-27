@@ -3,7 +3,7 @@ title: Hébergement et pull requests
 category: Synchronisation et multi-dépôts
 order: 56
 summary: Créer des pull requests partout ; les relire et les fusionner sur GitHub et GitLab.
-keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revue review approuver approve fusionner merge tickets issues
+keywords: fermer la pull request rouvrir abandonner refuser brouillon prête pour la relecture repasser en brouillon close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revue review approuver approve fusionner merge tickets issues
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -112,6 +112,31 @@ donne pas est omise.
 
 Si quelqu’un force-push en pleine relecture, [ce qui a changé depuis](range-diff.md)
 vous montre exactement ce qui a bougé.
+
+### Fermer, rouvrir et brouillons
+
+Ouverte par erreur, ou le travail n’est plus voulu ? À côté de la zone de
+fusion, **Fermer la PR** la ferme sans fusionner. Elle demande d’abord et dit ce
+qui reste : la branche, ses commits et la conversation. Une pull request fermée
+affiche **Rouvrir la PR** dans la ligne Statut de sa barre latérale, ce qui
+annule la fermeture.
+
+**Repasser en brouillon** ramène une pull request ouverte à l’état de brouillon
+— pas prête, personne n’est sollicité pour la relire — et **Prête pour la
+relecture** sort à nouveau un brouillon. Chacun annule l’autre.
+
+| Hébergeur | Fermer | Brouillon |
+|---|---|---|
+| GitHub, GitHub Enterprise | Fermée | L’état brouillon de l’hébergeur |
+| GitLab | Fermée | Le titre commence par *Draft:* — la manière de GitLab |
+| Azure DevOps | **Abandoned** (abandonnée), son mot pour fermée | L’état brouillon de l’hébergeur |
+| Bitbucket Data Center | **Declined** (refusée), son mot pour fermée | L’état brouillon de l’hébergeur (8.18 ou plus récent) |
+| Forgejo | Fermée | Le titre commence par *WIP:* — la manière de Forgejo |
+
+Limites : c’est l’hébergeur qui décide qui peut le faire — en général l’auteur
+et les mainteneurs du dépôt — et son refus s’affiche tel qu’il le formule.
+Fermer ne supprime pas la branche ; c’est le rôle du [nettoyage des
+branches](branch-cleanup.md).
 
 Différences GitLab, dites franchement : GitLab n’a pas d’appel unique « soumettre
 la relecture », donc **approuver** utilise son endpoint d’approbation et

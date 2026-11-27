@@ -67,26 +67,33 @@ Ograniczenia:
 
 ## Pisanie wiadomości z AI
 
-Gdy AI jest włączone, **Wygeneruj z AI** znajduje się pod opisem. Czyta diff
-zmian w stage i pisze podsumowanie oraz opis w stylu wybranym wyżej. Przycisk
-mówi, kto odpowie — *konto · model*, para wybrana dla wiadomości commitów w
-**Ustawienia → AI → Model dla zadania** — więc wolny model lokalny czy drogi
-model nigdy nie zaskakuje.
+Gdy AI jest włączone, przycisk **✦** (*Wygeneruj z AI* po najechaniu) znajduje
+się pod opisem. Czyta diff zmian w stage i pisze podsumowanie oraz opis w stylu
+wybranym wyżej. Obok wiersz mówi, kto odpowie — *konto · model*, para wybrana
+dla wiadomości commitów w **Ustawienia → AI → Model dla zadania** — więc wolny
+model lokalny czy drogi model nigdy nie zaskakuje.
 
 - **▾** obok nazwy pokazuje zapisane konta, każde z kilkoma swoimi modelami.
   Wybór obowiązuje **tylko dla tego jednego generowania**; Ustawienia się nie
   zmieniają.
-- W trakcie pole pokazuje *Generowanie przez konto · model… 12 s* i
-  **Anuluj**, które zatrzymuje samo żądanie, nie tylko wskaźnik. Po 30
-  sekundach proponuje też **Użyj** innego gotowego konta, które uruchamia to
-  samo generowanie tam. Ogólnoaplikacyjny komunikat *trwa dłużej niż
-  oczekiwano* ([AI](ai.md)) nadal się pojawia.
-- Nowy tekst **zastępuje** poprzedni, a stary zostaje zachowany: pasek mówi
-  *Wygenerowane przez konto · model w 7 s* i oferuje **Cofnij**, które
-  przywraca twoje podsumowanie i opis, oraz **Wygeneruj ponownie**. Znika, gdy
-  tylko edytujesz tekst lub zrobisz commit.
+- W trakcie ✦ się obraca, a ten sam wiersz pokazuje dotychczasowe sekundy i
+  **Anuluj**, które zatrzymuje samo żądanie, nie tylko wskaźnik. Podsumowanie i
+  opis są w tym czasie tylko do odczytu, więc odpowiedź nie nadpisze tego, co
+  wpiszesz. Po 30 sekundach ogólnoaplikacyjny komunikat *trwa dłużej niż
+  oczekiwano* ([AI](ai.md)) proponuje dalsze czekanie albo przeniesienie tego
+  samego generowania na inne gotowe konto; **Wygeneruj ponownie** używa potem
+  tego konta.
+- Nowy tekst **zastępuje** poprzedni, a stary zostaje zachowany: **Cofnij** i
+  **Wygeneruj ponownie** pojawiają się w tym samym wierszu (po najechaniu
+  *Wygenerowane przez konto · model w 7 s*). Cofnij przywraca twoje podsumowanie
+  i opis. Oba znikają, gdy tylko edytujesz tekst lub zrobisz commit.
+- Opis, który wpisujesz, albo ten napisany przez AI, zostaje, gdy przełączysz
+  się na inną kartę i wrócisz, tak jak podsumowanie — a po generowaniu także
+  **Cofnij** i **Wygeneruj ponownie**.
 
 ![Wygeneruj z AI i menu kont](../../screenshots/commit-ai-generate.webp)
+
+![Wygenerowana wiadomość z Cofnij i Wygeneruj ponownie obok konta](../../screenshots/commit-ai-generated.webp)
 
 [Edycja commita](commit-edit.md) ma ten sam przycisk, na podstawie diffu tego
 commita.
@@ -96,7 +103,7 @@ Ograniczenia:
 - Wysyłany jest tylko diff ze stage, przycięty, gdy jest bardzo duży — nigdy
   zmiany spoza stage ani inne pliki.
 - Cofnij pamięta jeden krok: tekst sprzed pierwszego generowania z serii. Gdy
-  pasek zniknie, znika też ta kopia.
+  Cofnij zniknie, znika też ta kopia.
 - Anulowanie nie zwraca tokenów, które dostawca już zużył.
 - Lista ▾ pokazuje wszystkie zapisane konta, także konto bez klucza; wybranie
   go kończy się błędem tego konta.

@@ -77,18 +77,23 @@ lento ou um caro nunca seja surpresa.
   modelos. A escolha vale **só para aquela geração**; as Configurações não
   mudam.
 - Enquanto roda, o ✦ gira e a mesma linha mostra os segundos até ali e
-  **Cancelar**, que interrompe a própria requisição, não só o indicador. Depois
-  de 30 segundos também oferece **Usar** outra conta pronta, que roda a mesma
-  geração nela. O aviso global *está demorando mais que o esperado*
-  ([IA](ai.md)) continua aparecendo também.
+  **Cancelar**, que interrompe a própria requisição, não só o indicador. O
+  resumo e a descrição ficam só leitura enquanto isso, para a resposta não
+  apagar o que você digitar. Depois de 30 segundos, o aviso global *está
+  demorando mais que o esperado* ([IA](ai.md)) oferece continuar aguardando ou
+  levar a mesma geração para outra conta pronta; **Gerar de novo** passa a usar
+  essa conta.
 - O texto novo **substitui** o que havia, e o antigo é guardado: **Desfazer** e
   **Gerar de novo** aparecem na mesma linha (no hover, *Gerado por conta ·
   modelo em 7 s*). Desfazer devolve o seu resumo e a sua descrição. Os dois
   somem assim que você edita o texto ou faz o commit.
 - A descrição que você digitou, ou a que a IA escreveu, continua lá quando você
-  troca de aba e volta, como o resumo.
+  troca de aba e volta, como o resumo — e **Desfazer** e **Gerar de novo**
+  também, depois de uma geração.
 
 ![Gerar com IA e o menu de contas](../../screenshots/commit-ai-generate.webp)
+
+![Uma mensagem gerada, com Desfazer e Gerar de novo ao lado da conta](../../screenshots/commit-ai-generated.webp)
 
 [Editar commit](commit-edit.md) tem o mesmo botão, a partir do diff daquele
 commit.

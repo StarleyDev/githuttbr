@@ -654,10 +654,20 @@ export function AIAccountsEditor({
   }, [scope, draft, editingId, checks])
 
   useEffect(() => {
-    void aiApi.detectCli().then((found) => {
-      setClis(found)
-      setClisLoaded(true)
-    })
+    let live = true
+    // A failed detection still ends the loading, so CLI accounts do not stay
+    // "not checked" forever; a closed editor ignores the late answer.
+    void aiApi
+      .detectCli()
+      .catch(() => [])
+      .then((found) => {
+        if (!live) return
+        setClis(found)
+        setClisLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [])
 
   const newDraft = draft && !draft.original ? draft : null
@@ -706,7 +716,7 @@ export function AIAccountsEditor({
     }
   }
 
-  const commit = (d: AccountDraft, check: AccountCheck | null): void => {
+  const commitAccountDraft = (d: AccountDraft, check: AccountCheck | null): void => {
     const { ai: next, accountId } = commitDraft(latest.current.ai, d)
     const committed = (next.accounts ?? []).find((a) => a.id === accountId)
     onChange(next)
@@ -721,7 +731,7 @@ export function AIAccountsEditor({
   }
 
   /** Tests the draft and saves it when the test passes. True when saved. */
-  const save = async (): Promise<boolean> => {
+  const saveAccountDraft = async (): Promise<boolean> => {
     const d = latest.current.draft
     if (!d) return false
     const key = d.original ? d.original.id : NEW_DRAFT
@@ -733,14 +743,14 @@ export function AIAccountsEditor({
     if (check) setCheck(key, check)
     // Fields are locked while testing, so the draft is still the one tested.
     if (!check || check.ok) {
-      commit(d, check)
+      commitAccountDraft(d, check)
       return true
     }
     setFailedSave(true)
     return false
   }
 
-  const test = async (account: AIAccount, key: string): Promise<void> => {
+  const testAccountConnection = async (account: AIAccount, key: string): Promise<void> => {
     setTesting(key)
     const check = await runCheck(account)
     if (!mounted.current) return
@@ -775,10 +785,10 @@ export function AIAccountsEditor({
       secondaryLabel: t('settings.accountDiscard'),
       secondaryDanger: true,
       onConfirm: () => {
-        void save().then((saved) => saved && then())
+        void saveAccountDraft().then((saved) => saved && then())
       },
       onSecondary: () => {
-        discard()
+        discardAccountDraft()
         then()
       }
     })
@@ -800,7 +810,7 @@ export function AIAccountsEditor({
     setDraft(isDraftDirty(d) ? d : null)
   }
 
-  const discard = (): void => {
+  const discardAccountDraft = (): void => {
     setDraft(null)
     setFailedSave(false)
     setKeptNotice(false)
@@ -866,7 +876,9 @@ export function AIAccountsEditor({
       </h4>
       <span className="settings-hint">{t('settings.aiAccountsHint')}</span>
 
-      <div className="ai-accounts-list" role="listbox" aria-label={t('settings.selectAccount')}>
+      {/* A list, not a listbox: rows carry their own buttons (Use, Test again),
+          which an option may not contain. The name is the row's select button. */}
+      <div className="ai-accounts-list" role="list" aria-label={t('settings.selectAccount')}>
         {accounts.map((a) => {
           const active = !setup && !newDraft && a.id === saved?.id
           const view = statusOf(a, a.id)
@@ -880,20 +892,23 @@ export function AIAccountsEditor({
           }
           return (
             <div
-              role="option"
-              tabIndex={0}
-              aria-selected={active}
+              role="listitem"
               key={a.id}
               className={`ai-accounts-item${active ? ' active' : ''}${role === 'in-use' ? ' in-use' : ''}`}
               onClick={select}
-              onKeyDown={(e) => {
-                if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
-                e.preventDefault()
-                select()
-              }}
             >
               <div className="ai-accounts-item-main">
-                <span className="ai-accounts-item-name">{accountLabel(a)}</span>
+                <button
+                  type="button"
+                  className="ai-accounts-item-name ai-accounts-item-select"
+                  aria-current={active ? 'true' : undefined}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    select()
+                  }}
+                >
+                  {accountLabel(a)}
+                </button>
                 {role === 'in-use' && (
                   <span className="ai-accounts-item-in-use" title={t('settings.accountInUseTitle')}>
                     <Check size={11} /> {t('settings.accountInUse')}
@@ -930,7 +945,7 @@ export function AIAccountsEditor({
                     disabled={testing !== null}
                     onClick={(e) => {
                       e.stopPropagation()
-                      void test(a, a.id)
+                      void testAccountConnection(a, a.id)
                     }}
                   >
                     {testing === a.id ? <Loader2 size={11} className="spin" /> : null} {t('settings.accountTestAgain')}
@@ -941,9 +956,19 @@ export function AIAccountsEditor({
           )
         })}
         {newDraft && (
-          <div role="option" tabIndex={0} aria-selected={!setup} className={`ai-accounts-item draft${setup ? '' : ' active'}`} onClick={() => setSetup(false)}>
+          <div role="listitem" className={`ai-accounts-item draft${setup ? '' : ' active'}`} onClick={() => setSetup(false)}>
             <div className="ai-accounts-item-main">
-              <span className="ai-accounts-item-name">{accountLabel(newDraft.account)}</span>
+              <button
+                type="button"
+                className="ai-accounts-item-name ai-accounts-item-select"
+                aria-current={!setup ? 'true' : undefined}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSetup(false)
+                }}
+              >
+                {accountLabel(newDraft.account)}
+              </button>
               <span className="ai-status draft">{t('settings.accountNotSaved')}</span>
             </div>
           </div>
@@ -998,14 +1023,14 @@ export function AIAccountsEditor({
             deleteAccount(id)
           }}
           onUse={() => putAccountInUse(shown.id)}
-          onRefresh={() => (dirty ? void test(shown, shownKey) : void reload(shown))}
-          onSave={() => void save()}
+          onRefresh={() => (dirty ? void testAccountConnection(shown, shownKey) : void reload(shown))}
+          onSave={() => void saveAccountDraft()}
           onSaveAnyway={() => {
             const d = latest.current.draft
-            if (d) commit(d, checks[shownKey] ?? null)
+            if (d) commitAccountDraft(d, checks[shownKey] ?? null)
           }}
-          onDiscard={discard}
-          onTest={() => void test(shown, shownKey)}
+          onDiscard={discardAccountDraft}
+          onTest={() => void testAccountConnection(shown, shownKey)}
         />
       )}
 

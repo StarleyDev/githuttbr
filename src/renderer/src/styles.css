@@ -3413,6 +3413,11 @@ body.col-resizing .node-ava {
   opacity: 0.5;
 }
 
+.repo-chat-pop-scope {
+  margin: 6px 2px 0;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
 .repo-chat-pop-link {
   width: 100%;
   margin-top: 2px;
@@ -7703,6 +7708,12 @@ body.col-resizing .node-ava {
   background: var(--bg-4);
   color: var(--text-1);
 }
+/* A destructive action that is not the main one (Close pull request, Reset
+   bisect): the quiet ghost button, in red words. `.btn.ghost` comes after
+   `.btn.danger` and used to win both properties, so it never read as danger. */
+.btn.ghost.danger {
+  color: var(--red);
+}
 .btn.ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-4));
   color: var(--text-0);
@@ -10592,8 +10603,20 @@ input.is-invalid {
 .ai-accounts-item:hover {
   background: var(--bg-2);
 }
-.ai-accounts-item:focus-visible {
+.ai-accounts-item:focus-within:has(.ai-accounts-item-select:focus-visible) {
   border-color: var(--accent);
+}
+/* The name is the row's select button: it reads as the name, not as a button. */
+.ai-accounts-item-select {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.ai-accounts-item-select:focus-visible {
+  outline: none;
 }
 .ai-accounts-item.active {
   border-color: var(--accent);

@@ -66,26 +66,35 @@ Grenzen:
 
 ## Het bericht met AI schrijven
 
-Met AI aan staat **Genereren met AI** onder de beschrijving. Het leest de
-gestagede diff en schrijft de samenvatting en de beschrijving in de stijl
-hierboven. De knop noemt wie antwoordt — *account · model*, het paar dat voor
-commitberichten is gekozen onder **Instellingen → AI → Model per taak** — zodat
-een traag lokaal model of een duur model nooit een verrassing is.
+Met AI aan staat de knop **✦** (*Genereren met AI* bij aanwijzen) onder de
+beschrijving. Hij leest de gestagede diff en schrijft de samenvatting en de
+beschrijving in de stijl hierboven. Ernaast noemt de rij wie antwoordt —
+*account · model*, het paar dat voor commitberichten is gekozen onder
+**Instellingen → AI → Model per taak** — zodat een traag lokaal model of een
+duur model nooit een verrassing is.
 
 - **▾** naast de naam toont je opgeslagen accounts, elk met een paar van zijn
   modellen. Een keuze geldt **alleen voor die ene generatie**; de
   Instellingen veranderen niet.
-- Terwijl het loopt, toont het vak *Genereren met account · model… 12s* en
-  **Annuleren**, dat het verzoek zelf stopt, niet alleen de spinner. Na 30
-  seconden biedt het ook **Gebruik** een ander gereed account aan, dat dezelfde
-  generatie daar uitvoert. De app-brede melding *duurt langer dan verwacht*
-  ([AI](ai.md)) verschijnt nog steeds.
-- De nieuwe tekst **vervangt** wat er stond, en de oude wordt bewaard: een
-  balk meldt *Gegenereerd door account · model in 7 s* en biedt **Ongedaan
-  maken**, dat je samenvatting en beschrijving terugzet, en **Opnieuw
-  genereren**. Hij verdwijnt zodra je de tekst bewerkt of commit.
+- Terwijl het loopt, draait de ✦ en toont dezelfde rij de seconden tot nu toe en
+  **Annuleren**, dat het verzoek zelf stopt, niet alleen de spinner. De
+  samenvatting en de beschrijving zijn intussen alleen-lezen, zodat het antwoord
+  niets overschrijft wat je typt. Na 30 seconden biedt de app-brede melding
+  *duurt langer dan verwacht* ([AI](ai.md)) aan om te blijven wachten of
+  dezelfde generatie naar een ander gereed account te verplaatsen; **Opnieuw
+  genereren** gebruikt daarna dat account.
+- De nieuwe tekst **vervangt** wat er stond, en de oude wordt bewaard:
+  **Ongedaan maken** en **Opnieuw genereren** verschijnen op dezelfde rij (wijs
+  ze aan voor *Gegenereerd door account · model in 7 s*). Ongedaan maken zet je
+  samenvatting en beschrijving terug. Beide verdwijnen zodra je de tekst bewerkt
+  of commit.
+- De beschrijving die je typt, of die de AI schreef, blijft staan als je naar
+  een ander tabblad gaat en terugkomt, net als de samenvatting — en na een
+  generatie ook **Ongedaan maken** en **Opnieuw genereren**.
 
 ![Genereren met AI en het accountmenu](../../screenshots/commit-ai-generate.webp)
+
+![Een gegenereerd bericht, met Ongedaan maken en Opnieuw genereren naast het account](../../screenshots/commit-ai-generated.webp)
 
 [Commit bewerken](commit-edit.md) heeft dezelfde knop, op basis van de diff
 van die commit.
@@ -95,7 +104,7 @@ Beperkingen:
 - Alleen de gestagede diff wordt verstuurd, ingekort als hij erg groot is —
   nooit ongestagede wijzigingen of andere bestanden.
 - Ongedaan maken houdt één stap vast: de tekst van vóór de eerste generatie op
-  rij. Is de balk weg, dan is die kopie ook weg.
+  rij. Is Ongedaan maken weg, dan is die kopie ook weg.
 - Annuleren geeft geen tokens terug die een provider al heeft verbruikt.
 - De ▾-lijst toont alle opgeslagen accounts, ook een zonder sleutel; die kiezen
   mislukt met de eigen fout van dat account.

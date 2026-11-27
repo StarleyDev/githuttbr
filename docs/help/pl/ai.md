@@ -52,6 +52,9 @@ sekcjach:
 | **Konflikty i gałęzie** | Styl rozwiązywania konfliktów, styl nazywania gałęzi, każdy z przykładem wyniku |
 | **Czat repozytorium** | Czy czat jest włączony, co czyta, jakie akcje może proponować — zobacz [Czat repozytorium](repo-chat.md#ustawienia) |
 
+Wiersz nad sekcjami mówi, czyją AI edytujesz i do kogo trafia: *ogólna AI ·
+dotyczy: Praca i Prywatny*, albo własną AI jednego profilu.
+
 **Dodatkowe zasady dla commitów** — do wersji 4.60 *Własne instrukcje* — trafiają tylko do generowania komunikatów commitów: czat, wyjaśnienia, recenzje i nazwy gałęzi ich nie czytają. Podgląd to stały przykład, nie wywołanie modelu: pokazuje kształt wybranego stylu, a nie to, co AI napisze dla twojej zmiany.
 
 ![Komunikaty commitów](../../screenshots/settings-ai-commits.webp)
@@ -82,6 +85,13 @@ jesteś zalogowany.
 Gotowe ustawienia obejmują **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral** oraz **Ollama** (w pełni lokalnie), a także dowolny endpoint zgodny z
 OpenAI.
+
+**Klucz nigdy nie opuszcza tego komputera bez szyfrowania.** Konto z kluczem
+łączy się ze swoim endpointem przez `https://`, a przez zwykłe `http://` tylko
+na tym komputerze (`localhost`, `127.x`, `::1`). Wywołanie, które wysłałoby
+klucz przez `http://` do innego hosta, jest odrzucane, zanim cokolwiek wyjdzie,
+i mówi o tym. Endpoint bez klucza — Ollama na innej maszynie w twojej sieci —
+dalej działa przez `http://`.
 
 Anthropic używa własnego API `/v1/messages`, a nie wywołania w kształcie OpenAI,
 więc modele Claude naprawdę działają, zamiast tylko na to wyglądać. Gemini jest
@@ -203,25 +213,51 @@ przełączenie nie testuje dostawcy, którego ustawia.
 
 ### Subskrypcja zamiast klucza API
 
-Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI jest od razu **W użyciu**.
+W **Ustawienia → AI** wybierz **Użyj mojej subskrypcji**. Przy [pierwszym
+uruchomieniu](first-run.md) karta **Moja subskrypcja** w kroku AI znajduje
+Claude Code lub Codex i testuje go w jednym kroku, a gdy nie znajdzie żadnego,
+wraca do tej samej konfiguracji. Wybierz plan, z którego korzystasz, a potem
+otwórz **Dokumentacja**, by zobaczyć instrukcję instalacji od dostawcy. Po
+instalacji wybierz **Połącz ChatGPT (Codex)** lub **Połącz Claude (Claude
+Code)**. CLI dostawcy otwiera stronę logowania w przeglądarce i zapisuje własną
+sesję. Istniejąca sesja subskrypcji jest używana ponownie. **Anuluj** zatrzymuje
+oczekujące połączenie. Logowanie trwające dłużej niż trzy minuty zostaje
+przerwane i można je ponowić.
 
-Po zainstalowaniu CLI kliknij Połącz, aby otworzyć stronę logowania dostawcy. Możesz anulować trwające łączenie.
+| Plan | Wymagane CLI | Logowanie z terminala |
+| --- | --- | --- |
+| ChatGPT z dostępem do Codex | Codex CLI | `codex login` i wybierz ChatGPT |
+| Claude z dostępem do Claude Code | Claude Code | `claude auth login` i wybierz konto subskrypcji |
 
-- ChatGPT (Codex) — `codex login`
-- Claude (Claude Code) — `claude auth login`
+Połączenie testuje też sesję. Jeśli logowałeś się z terminala, wybierz
+**Przetestuj połączenie**. GitHuttBr sprawdza metodę logowania CLI i wysyła
+krótki prompt testowy z pustego katalogu tymczasowego. Żądanie wlicza się do
+limitu dostawcy. Po **Połączone** wybierz **Dodaj dostawcę**. Pierwsze konto
+ogólnej AI zostaje ustawione **W użyciu**. Przy istniejącej konfiguracji wybierz
+**Użyj** w jej wierszu albo przypisz poszczególne funkcje niżej. Aby pominąć
+konfigurację przy pierwszym uruchomieniu, wybierz **Pomiń, bez AI** i wróć do
+Ustawień, gdy będziesz gotów.
 
-Test wysyła krótką wiadomość do dostawcy i zużywa część limitu planu. Limit wykorzystany. Spróbuj ponownie po jego odnowieniu.
+Jeśli GitHuttBr nie znajduje CLI, zainstaluj je albo wpisz pełną ścieżkę do
+pliku wykonywalnego i przetestuj ponownie. Jeśli logowanie wygasło lub CLI używa
+klucza API, zaloguj się kontem subskrypcji. Jeśli dojdziesz do limitu użycia,
+poczekaj, aż limit dostawcy się odnowi.
 
 ![Użyj mojej subskrypcji](../../screenshots/ai-subscription.webp)
 
-Wybierz dostawcę **Lokalne CLI**, aby odpowiadało CLI agenta już zainstalowane i
-zalogowane na tej maszynie — `claude`, `gemini` lub `codex`. GitHuttBr uruchamia
-program z twoim zapytaniem i czyta odpowiedź; nie ma klucza API do wklejenia ani
-tokenu do przechowania.
+Przy ręcznej konfiguracji wybierz dostawcę **Lokalne CLI**, aby odpowiadało CLI
+agenta już zainstalowane i zalogowane na tym komputerze — `claude`, `gemini`,
+`codex` lub `devin`. GitHuttBr uruchamia program z twoim promptem i czyta
+odpowiedź; nie ma klucza API do wklejenia i żaden token nie jest zapisywany.
 
 GitHuttBr uruchamia wyłącznie polecenie, które sam skonfigurowałeś jako konto, i
 zawsze z listą argumentów zamiast powłoki — nic z diffa ani z nazwy gałęzi nie
 może zostać wzięte za polecenie.
+
+Każde wywołanie uruchamia CLI z repozytorium jako katalogiem roboczym, więc CLI
+agentów, takie jak Devin, mogą otworzyć pliki, o które pytasz, zamiast
+odpowiadać na ślepo. Funkcje bez repozytorium (generowanie motywów) uruchamiają
+je z własnego katalogu aplikacji.
 
 > **To nie jest bardziej prywatne niż klucz API.** Twoje zapytania i tak trafiają
 > do tego samego dostawcy, na twoje własne konto, dokładnie tak jak z kluczem.
@@ -268,12 +304,29 @@ listy wbudowanej zamiast pokazywać pustą listę rozwijaną.
 | **Wiadomość commita** | Podsumowanie (i opcjonalną treść) z twojego diffa z przechowalni, w wybranym przez ciebie stylu |
 | **Wyjaśnij ten plik** | Wyjaśnienie zwykłym językiem w panelu bocznym — Normalne, Zwięzłe, ELI5… a nawet Pirackie |
 | **Najedź, żeby wyjaśnić** | Przytrzymaj <kbd>⇧</kbd> i wskaż identyfikator, żeby dostać jednolinijkowe wyjaśnienie plus linie, na których się opiera |
+| **Edycja AI zaznaczenia** | Zaznacz wiersze w pliku, opisz zmianę, a model przepisze tylko te wiersze do szkicu edytora |
 | **Rozwiązywanie konfliktów** | Proponuje scalenie w edytowalnym wyniku — nigdy nie stosuje go samo |
 | **Recenzja PR-a** | Streszcza diff i wskazuje ryzyka, każde zakotwiczone w prawdziwym `plik:linia` |
 | **Opis PR-a** · **nazwy gałęzi** | Naszkicowane z commitów i diffa gałęzi |
 | **Motywy** · **palety grafu** | Generowane z promptu |
 | **Sprytna przechowalnia** | Sugestie, co należy do tego commita |
+| **[Czat repozytorium](repo-chat.md)** | Ugruntowane pytania plus przejrzane zmiany plików, a po nich zweryfikowane akcje Git |
 | **Kreator konfiguracji AI** | Generuje pliki konfiguracyjne asystenta (instrukcje, agenci, hooki) dla repozytorium — przycisk różdżki w nagłówku panelu czatu |
+
+### Edytuj tylko zaznaczone wiersze
+
+W widoku pliku przeciągnij po wierszach, które chcesz zmienić, i naciśnij
+**Edycja AI…** (albo kliknij wiersz prawym przyciskiem i wybierz ją z menu).
+Pasek na dole pokazuje zaznaczony zakres i przyjmuje twoje polecenie — „zmień
+nazwę tej zmiennej”, „dodaj sprawdzanie null”, „przetłumacz te napisy”. Model
+widzi zaznaczone wiersze plus trochę otaczającego kontekstu i zwraca tylko
+zamiennik dla tego zakresu, który trafia do **szkicu edytora**, a nie na dysk.
+Przeglądasz go tam i zapisujesz lub odrzucasz zwykłym trybem edycji, więc nic
+nie zostaje zapisane, dopóki nie zdecydujesz. Działa z każdym skonfigurowanym
+backendem, nie tylko z CLI agentów, bo odpowiedź jest tekstem, a nie wywołaniem
+narzędzia. Ograniczenia: przepisuje jeden ciągły zakres naraz, nie tworzy ani
+nie usuwa całych plików, a zaznaczenie obejmujące kilka hunków diffu jest
+odrzucane — zaznacz wtedy w widoku pliku.
 
 ## Osadzone, nie zgadywane
 
@@ -287,8 +340,15 @@ a w diffie jedynie hunki widoczne na ekranie — więc gdy definicja mieszka gdz
 indziej, mówi o tym, zamiast to zmyślać. Odpowiedzi są cache'owane dla każdej
 wersji pliku.
 
+[Czat repozytorium](repo-chat.md) działa tak samo: może cytować tylko fragmenty,
+które dostał, a dwuetapowe żądanie wybiera je z listy plików śledzonych przez
+Git, a nie z czegokolwiek, co napisze model. Gdy proponuje zmianę, GitHuttBr
+weryfikuje dokładne akcje na plikach, liczy ich diffy lokalnie, a potem wykonuje
+kolejne akcje Git zgodnie z ustawioną zasadą zatwierdzania.
+
 **Zamaskowane pliki z sekretami nigdy nie są wysyłane.** Tak samo pliki objęte
-regułami maskowania sekretów.
+regułami maskowania sekretów — także plik przypięty do czatu ręcznie, który
+zostaje odrzucony z podaniem powodu zamiast przeczytany.
 
 ## Gdy model działa wolno albo przestaje odpowiadać
 
@@ -329,9 +389,9 @@ wywołanie.
 - Odpowiedzi przez CLI są wolniejsze niż bezpośrednie wywołanie API: program
   uruchamia całą sesję na każde zapytanie.
 - Klucze są przechowywane osobno dla każdego konta w pęku kluczy systemu.
-  Usunięcie konta usuwa jego klucz.
+  Usunięcie konta usuwa jego klucz — najpierw pyta, i nie da się tego cofnąć.
 - Powrót do wersji sprzed ogólnej AI gubi klucze ogólnej AI: tamta wersja nie
   wie, gdzie są przechowywane, i porzuca je przy zapisie. Konta zostają; wpisz
   klucze ponownie. Własnej AI profilu to nie dotyczy.
 
-**Zobacz też:** [Wiki repozytorium](repo-wiki.md) · [Bezpieczeństwo i sekrety](security.md)
+**Zobacz też:** [Czat repozytorium](repo-chat.md) · [Wiki repozytorium](repo-wiki.md) · [Bezpieczeństwo i sekrety](security.md)

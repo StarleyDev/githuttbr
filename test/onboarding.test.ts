@@ -117,6 +117,36 @@ describe('onboarding AI cards', () => {
     expect(accountRowRole(second.ai, first.accountId)).toBe('use')
   })
 
+  it('fixing the key after saving updates that account instead of adding a second one', () => {
+    const base = defaultAIConfig()
+    const first = addAccountInUse(base, accountForChoice(base.accounts, { kind: 'api-key', provider: 'openai', apiKey: 'wrong' }))
+    const count = first.ai.accounts?.length ?? 0
+    const fixed = addAccountInUse(
+      first.ai,
+      accountForChoice(first.ai.accounts, { kind: 'api-key', provider: 'openai', apiKey: 'right' }),
+      first.accountId
+    )
+    expect(fixed.accountId).toBe(first.accountId)
+    expect(fixed.ai.accounts).toHaveLength(count)
+    expect(fixed.ai.accounts?.find((a) => a.id === first.accountId)?.apiKey).toBe('right')
+    expect(accountRowRole(fixed.ai, fixed.accountId)).toBe('in-use')
+  })
+
+  it('switching to another provider after saving replaces the account under its own id', () => {
+    const base = defaultAIConfig()
+    const first = addAccountInUse(base, accountForChoice(base.accounts, { kind: 'api-key', provider: 'openai', apiKey: 'k1' }))
+    const count = first.ai.accounts?.length ?? 0
+    const switched = addAccountInUse(
+      first.ai,
+      accountForChoice(first.ai.accounts, { kind: 'api-key', provider: 'gemini', apiKey: 'k2' }),
+      first.accountId
+    )
+    expect(switched.ai.accounts).toHaveLength(count)
+    expect(switched.ai.accounts?.some((a) => a.id === first.accountId)).toBe(false)
+    expect(switched.accountId).toMatch(/gemini/)
+    expect(accountRowRole(switched.ai, switched.accountId)).toBe('in-use')
+  })
+
   it('reports whole seconds, never zero', () => {
     expect(answeredInSeconds(0)).toBe(1)
     expect(answeredInSeconds(2600)).toBe(3)

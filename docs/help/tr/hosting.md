@@ -3,7 +3,7 @@ title: Sunucular ve pull request'ler
 category: Eşitleme ve çoklu depo
 order: 56
 summary: PR'ları her yerde oluşturun; GitHub ve GitLab'da inceleyip birleştirin.
-keywords: pull request PR merge request birleştirme isteği inceleme onay issue konu GitHub GitLab Bitbucket Azure DevOps review approve merge issues
+keywords: pr’ı kapat yeniden aç terk et reddet taslak incelemeye hazır taslağa taşı close pull request reopen abandon decline draft ready for review mark ready move to draft pull request PR merge request birleştirme isteği inceleme onay issue konu GitHub GitLab Bitbucket Azure DevOps review approve merge issues
 source: 1594d32b11147253f612a4748708d01ba57d465a
 ---
 
@@ -109,6 +109,30 @@ yüklendiğinde oradan toplanır. Sunucunun bildirmediği satır gösterilmez.
 
 Biri inceleme ortasında force-push yaparsa, [o zamandan beri ne değişti](range-diff.md)
 neyin kaydığını tam olarak gösterir.
+
+### Kapatma, yeniden açma ve taslaklar
+
+Yanlışlıkla mı açtınız, yoksa iş artık istenmiyor mu? Birleştirme kutusunun
+yanındaki **PR’ı kapat** onu birleştirmeden kapatır. Önce sorar ve neyin
+kaldığını söyler: dal, commit’leri ve konuşma. Kapatılmış bir pull request,
+kenar çubuğunun Durum satırında **PR’ı yeniden aç** gösterir; bu kapatmayı geri
+alır.
+
+**Taslağa taşı** açık bir pull request’i taslağa geri götürür — hazır değil,
+kimseden inceleme istenmemiş — ve **İncelemeye hazır** bir taslağı yeniden
+çıkarır. Her biri diğerini geri alır.
+
+| Sunucu | Kapatma | Taslak |
+|---|---|---|
+| GitHub, GitHub Enterprise | Kapatıldı | Sunucunun taslak durumu |
+| GitLab | Kapatıldı | Başlık *Draft:* ile başlar — GitLab’ın kendi yolu |
+| Azure DevOps | **Abandoned** (terk edildi), onun kapatma için kullandığı sözcük | Sunucunun taslak durumu |
+| Bitbucket Data Center | **Declined** (reddedildi), onun kapatma için kullandığı sözcük | Sunucunun taslak durumu (8.18 veya daha yeni) |
+| Forgejo | Kapatıldı | Başlık *WIP:* ile başlar — Forgejo’nun kendi yolu |
+
+Sınırlar: bunu kimin yapabileceğine sunucu karar verir — genellikle yazar ve
+deponun bakımcıları — ve reddi, sunucunun kendi ifadesiyle gösterilir. Kapatmak
+dalı silmez; bunu [Dal temizliği](branch-cleanup.md) yapar.
 
 GitLab farkları, açıkça: GitLab’ın tek bir “incelemeyi gönder” çağrısı yoktur; bu
 yüzden **onay** onay uç noktasını kullanır, **değişiklik iste** onayınızı geri alıp

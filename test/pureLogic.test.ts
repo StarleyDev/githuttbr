@@ -44,7 +44,7 @@ import { buildEditMenuItems, EDIT_MENU_FALLBACK_LABELS, parseEditMenuLabels } fr
 import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, applyCcScope, applyCcTypeWithGitmoji, currentCcScope, CC_TYPES, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
+import { commitHookFailureHint, lintCommit, subjectLength, subjectCounterLevel, parseCcPrefix, applyCcType, applyCcScope, applyCcTypeWithGitmoji, currentCcScope, CC_TYPES, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { CC_TYPE_GITMOJI, GITMOJI_CATALOG, emojifyGitmoji, findGitmoji, normalizeGitmojiConventional, normalizeGitmojiUnicode } from '../src/shared/gitmoji'
 import { GITMOJI_LABELS, searchGitmoji } from '../src/renderer/src/lib/gitmoji'
 import { ansiToSpans } from '../src/renderer/src/lib/ansi'
@@ -636,6 +636,18 @@ describe('commit lint', () => {
     const long = 'x'.repeat(80)
     const h = lintCommit(long, '')
     expect(h.some((x) => x.level === 'error')).toBe(true)
+  })
+
+  it('measures the subject without its leading gitmoji', () => {
+    const words = 'feat(campaign): use the coverages of each product'
+    expect(subjectLength(`✨ ${words}`)).toBe(words.length)
+    expect(subjectLength(`🐛 ${words}`)).toBe(words.length)
+    expect(subjectLength(`:sparkles: ${words}`)).toBe(words.length)
+    expect(subjectLength(words)).toBe(words.length)
+    // 49 characters of text plus the emoji: within the ideal, so no warning.
+    const fits = `✨ feat: ${'a'.repeat(43)}`
+    expect(subjectLength(fits)).toBe(49)
+    expect(lintCommit(fits, '').some((x) => x.key === 'commitLint.subjectLong')).toBe(false)
   })
 
   it('nudges to capitalize a lowercase non-conventional subject', () => {

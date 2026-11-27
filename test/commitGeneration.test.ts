@@ -7,7 +7,6 @@ import {
   configLabel,
   defaultGenerationTarget,
   elapsedSeconds,
-  fallbackAccount,
   generationChoices,
   nextGeneration,
   runningTag,
@@ -62,11 +61,7 @@ describe('who answers a generation', () => {
     expect(choices[1].models).toEqual(['gemini-2.5-flash'])
   })
 
-  it('the fallback beside Cancel is another account that can make a call', () => {
-    expect(fallbackAccount(ai(), 'google')?.id).toBe('ollama')
-    expect(fallbackAccount(ai(), 'ollama')?.id).toBe('google')
-    const alone = { ...ai(), accounts: [ai().accounts![0]] }
-    expect(fallbackAccount(alone, 'ollama')).toBeNull()
+  it('an account\'s default target is its own model', () => {
     expect(accountDefaultTarget(ai(), 'ollama')).toEqual({ accountId: 'ollama', model: 'qwen3' })
   })
 
