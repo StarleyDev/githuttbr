@@ -4674,6 +4674,7 @@ export const tr: Dict = {
   'composerAI.elapsed': '{seconds} sn',
   'composerAI.generated': '{name} tarafından {seconds} sn içinde oluşturuldu. Önceki metin saklandı.',
   'composerAI.undo': 'Geri al',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'Yeniden oluştur',
   'composer.ccType': 'Conventional-Commit türü',
   'composer.ccTypePlaceholder': 'tür',

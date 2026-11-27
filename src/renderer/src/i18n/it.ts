@@ -4680,6 +4680,7 @@ export const it: Dict = {
   'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Generato da {name} in {seconds} s. Il testo precedente è stato conservato.',
   'composerAI.undo': 'Annulla',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'Genera di nuovo',
   'composer.ccType': 'Tipo Conventional-Commit',
   'composer.ccTypePlaceholder': 'tipo',

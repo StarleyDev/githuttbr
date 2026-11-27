@@ -4734,6 +4734,7 @@ export const he: Dict = {
   'composerAI.elapsed': '{seconds} ש׳',
   'composerAI.generated': 'נוצר על ידי {name} תוך {seconds} ש׳. הטקסט הקודם נשמר.',
   'composerAI.undo': 'ביטול',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'יצירה מחדש',
   'composer.ccType': 'סוג Conventional Commit',
   'composer.ccTypePlaceholder': 'סוג',

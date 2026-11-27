@@ -4739,6 +4739,7 @@ export const nl: Dict = {
   'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Gegenereerd door {name} in {seconds} s. De vorige tekst is bewaard.',
   'composerAI.undo': 'Ongedaan maken',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'Opnieuw genereren',
   'composer.ccType': 'Conventional-Commit-type',
   'composer.ccTypePlaceholder': 'type',

@@ -4652,6 +4652,27 @@ body.col-resizing .node-ava {
   align-items: center;
   gap: 4px;
 }
+/* Undo and Generate again: icons in their own colour, named on hover. */
+.commit-ai-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--icon-c) 40%, var(--border));
+  background: color-mix(in srgb, var(--icon-c) 12%, var(--bg-1));
+  color: var(--icon-c);
+  cursor: pointer;
+}
+.commit-ai-icon:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--icon-c) 24%, var(--bg-1));
+}
+.commit-ai-icon:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.commit-ai-icon.undo { --icon-c: var(--yellow); }
+.commit-ai-icon.again { --icon-c: var(--accent); }
 .commit-ai-live {
   position: absolute;
   width: 1px;
@@ -4663,7 +4684,8 @@ body.col-resizing .node-ava {
 
 .commit-description {
   resize: vertical;
-  min-height: 54px;
+  /* Three rows plus padding and border (rows={3}), and 30px more room to write. */
+  min-height: calc(3lh + 16px + 30px);
   font-size: 12px;
 }
 

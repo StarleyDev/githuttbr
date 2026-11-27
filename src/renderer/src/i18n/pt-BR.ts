@@ -4740,6 +4740,7 @@ export const ptBR: Dict = {
   'composerAI.elapsed': '{seconds} s',
   'composerAI.generated': 'Gerado por {name} em {seconds} s. O texto anterior foi guardado.',
   'composerAI.undo': 'Desfazer',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'Gerar de novo',
   'composer.ccType': 'Tipo do Conventional Commit',
   'composer.ccTypePlaceholder': 'tipo',

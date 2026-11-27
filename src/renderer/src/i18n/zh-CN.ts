@@ -4731,6 +4731,7 @@ export const zhCN: Dict = {
   'composerAI.elapsed': '{seconds} 秒',
   'composerAI.generated': '由 {name} 在 {seconds} 秒内生成。之前的文本已保留。',
   'composerAI.undo': '撤销',
+  'composerAI.undoTitle': '{action}：{details}',
   'composerAI.again': '重新生成',
   'composer.ccType': 'Conventional Commit 类型',
   'composer.ccTypePlaceholder': '类型',

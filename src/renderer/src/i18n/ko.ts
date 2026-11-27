@@ -4731,6 +4731,7 @@ export const ko: Dict = {
   'composerAI.elapsed': '{seconds}초',
   'composerAI.generated': '{name}이(가) {seconds}초 만에 생성했습니다. 이전 텍스트는 보관했습니다.',
   'composerAI.undo': '실행 취소',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': '다시 생성',
   'composer.ccType': 'Conventional Commit 타입',
   'composer.ccTypePlaceholder': '타입',

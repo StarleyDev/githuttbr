@@ -4731,6 +4731,7 @@ export const ru: Dict = {
   'composerAI.elapsed': '{seconds} с',
   'composerAI.generated': 'Сгенерировано {name} за {seconds} с. Прежний текст сохранён.',
   'composerAI.undo': 'Отменить',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'Сгенерировать снова',
   'composer.ccType': 'Тип по Conventional Commits',
   'composer.ccTypePlaceholder': 'тип',

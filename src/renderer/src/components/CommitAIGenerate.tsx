@@ -115,17 +115,24 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
 
       {state.phase === 'generated' && (
         <>
-          <button type="button" className="btn ghost small" title={doneTitle} onClick={gen.undo}>
-            <Undo2 size={12} /> {t('composerAI.undo')}
+          <button
+            type="button"
+            className="commit-ai-icon undo"
+            title={interp(t('composerAI.undoTitle'), { action: t('composerAI.undo'), details: doneTitle })}
+            aria-label={t('composerAI.undo')}
+            onClick={gen.undo}
+          >
+            <Undo2 size={14} />
           </button>
           <button
             type="button"
-            className="btn ghost small"
-            title={doneTitle}
+            className="commit-ai-icon again"
+            title={t('composerAI.again')}
+            aria-label={t('composerAI.again')}
             disabled={disabled}
             onClick={() => void gen.regenerate()}
           >
-            <RotateCw size={12} /> {t('composerAI.again')}
+            <RotateCw size={14} />
           </button>
           <span className="commit-ai-live" role="status">
             {doneTitle}

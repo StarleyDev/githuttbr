@@ -4734,6 +4734,7 @@ export const ar: Dict = {
   'composerAI.elapsed': '{seconds} ث',
   'composerAI.generated': 'أنشأه {name} في {seconds} ث. تم الاحتفاظ بالنص السابق.',
   'composerAI.undo': 'تراجع',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'إنشاء مرة أخرى',
   'composer.ccType': 'نوع Conventional Commit',
   'composer.ccTypePlaceholder': 'النوع',

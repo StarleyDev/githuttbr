@@ -4731,6 +4731,7 @@ export const uk: Dict = {
   'composerAI.elapsed': '{seconds} с',
   'composerAI.generated': 'Згенеровано {name} за {seconds} с. Попередній текст збережено.',
   'composerAI.undo': 'Скасувати',
+  'composerAI.undoTitle': '{action} — {details}',
   'composerAI.again': 'Згенерувати знову',
   'composer.ccType': 'Тип Conventional Commit',
   'composer.ccTypePlaceholder': 'тип',
